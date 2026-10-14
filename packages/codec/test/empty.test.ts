@@ -17,7 +17,8 @@ import {
   emptyVariables,
 } from '../src/families/four-slot/empty.ts';
 import { modeZeroKeyList } from '../src/modezero.ts';
-import { DEVICES_KEY_TAG, DEVICE_MODE_PROGRAM_TAG, cornerPrograms } from '../src/families/four-slot/chrome.ts';
+import { DEVICES_KEY_TAG, DEVICE_MODE_PROGRAM_TAG, SCAN_FOUR_TAG, cornerPrograms } from '../src/families/four-slot/chrome.ts';
+import { FIRMWARE_SCREENS } from '../src/wiring.ts';
 import { CORNER_PLACES, cornerPlaceAt, cornerProgramAt, emptyFont } from '../src/families/four-slot/empty.ts';
 import { OUR_LOOK, deviceModeChrome, inOurLook } from '../src/families/four-slot/chrome.ts';
 import { fourSlotMenus, fourSlotTemplate } from '../src/families/four-slot/menus.ts';
@@ -155,6 +156,12 @@ function menusLead(skin: number): void {
     assert.deepEqual(own(mode, DEVICE_MODE_PROGRAM_TAG), { tag: DEVICE_MODE_PROGRAM_TAG, operand: 0, opcode: RUN_SCREEN_PROGRAM, flags: undefined });
   }
   assert.deepEqual(cornerPrograms(c), [0]);
+  // More Activities on the empty activity menu calls the list that shows "add Activities", as Logitech's
+  // compile with no activity does, section 383; with a mapping back it did nothing on the 650 and the 700.
+  const more = own(EMPTY_MODES.activityMenu, SCAN_FOUR_TAG);
+  assert.equal(more.opcode, 0x7f);
+  const list = c.actionLists()![more.operand]!;
+  assert.deepEqual(list.slice(1), [{ opcode: 0x07, operand: 0xfffd }, { opcode: ENTER_MODE, operand: FIRMWARE_SCREENS[emptyModelOf(skin)].indexOf('addActivities') }]);
 }
 
 test('11.1.1.3: every page has its copy where the reader finds it, and the bank holds what the screens draw', () => {
@@ -414,6 +421,8 @@ test('section 379: the first activity goes onto the empty configuration through 
       ['Watch TV', 'Watch a Movie', 'Listen to Music'].map((name) => (name === key ? [name, 'activity', found[0]!.set] : [name, 'placeholder', null])), type);
     // The wiring is the one its description builds, scan 4 mapping the location now there is an activity.
     checkWiring(c);
+    // And the activity menu maps More Activities back now it has a row, as every compile with activities does.
+    assert.equal(modeRecords(c)![fourSlotActivityMenu(c)!]!.entries.find((one) => one.tag === SCAN_FOUR_TAG)?.opcode, MAP_VALUE_OPCODE, type);
     // The activity's look was added next to the idle and the device ones.
     for (const state of ['idle', 'device', 'activity'] as const) assert.ok(stateLookOf(c, FOUR_SLOT_CHOICES.stateColours[state]), `${type} ${state}`);
     // The front list the key no longer needs is dropped with the lists nothing names.

@@ -34,11 +34,13 @@ status indicator** that "flashes whenever an IR command is being sent", and the 
 right corner. The device list's layouts, four to a page in the corners and a compiled two row list
 nothing opens, are the architecture's, section 326.
 
-**Mode 0 is a charging battery.** On the 700 the first mode of the configuration draws no text, only a
-charging battery, and sets one state variable to 1; the "add an Activity" placeholder an empty activity
-key opens is mode 4 instead, read from configurations, sections 311 and 314. That the battery is what the
-remote shows while it charges is this reference's reading of the picture and **not checked** at the
-bench.
+**Modes 0 to 3 are a charging battery.** On the 700 the first four modes of the configuration draw no
+text, only a battery under a lightning bolt filled a quarter, a half, three quarters and full, and each sets
+one state variable to 1; mode 9 draws a full battery with a tick, and "Please charge your remote", mode 8,
+an empty battery with a forbidden sign. The "add an Activity" placeholder an empty activity key opens is
+mode 4 instead, read from configurations, sections 311, 314 and 383. That the four are what the remote
+shows while it charges is this reference's reading of the pictures and **not checked** at the bench with
+Logitech's configuration.
 
 ## What the screen does not show
 

@@ -70,6 +70,18 @@ function rebuilt(c: Container): Uint8Array {
   return layOutContainer(withScreenRecords(layout, buildScreenRecords(d.spec, c), d.place)).bytes;
 }
 
+test('section 383: Logitech\'s compile with no activity rebuilds byte for byte, More Activities on its activity menu calling the list that shows "add Activities", and the back key read off the device list',
+     skipUnless('harvest_650_two_devices'), () => {
+  const c = parse(require_('harvest_650_two_devices'));
+  assert.deepEqual(firstDifference(rebuilt(c), c.blob), undefined);
+  const { spec } = describeScreenRecords(c, takeApart(c));
+  assert.equal(spec.menu.rows.length, 0);
+  assert.equal(spec.menu.addActivities, 1349);
+  // [07 FFFD, 7E 0001]: push the mode, then enter mode 1, the Harmony 650's "add Activities".
+  assert.deepEqual(c.actionLists()![1349], [{ opcode: 0x07, operand: 0xfffd }, { opcode: 0x7e, operand: 1 }]);
+  assert.equal(spec.menu.backKey, spec.idle.backKey);
+});
+
 test('the three screen records of 22 arch 14 Logitech compiles are rebuilt byte for byte from a description',
      skipUnless(...ALL), () => {
   const totals = { deviceRows: 0, activityRows: 0, idlePages: 0, menuPages: 0, offPages: 0, structure: 0, rowLists: 0 };

@@ -34,7 +34,7 @@ import {
   hourListBytes,
 } from '../../statetables.ts';
 import {
-  ACTIVITY_KEY_SCANS, FIRMWARE_SCREENS, FIXED_ENTRIES, buildWiring, wiringNeeds, type BuiltWiring, type WiringSettings,
+  ACTIVITY_KEY_SCANS, FIRMWARE_SCREENS, FIXED_ENTRIES, buildWiring, wiringFrontIndex, wiringNeeds, type BuiltWiring, type WiringSettings,
   type WiringSpec,
 } from '../../wiring.ts';
 import {
@@ -667,6 +667,7 @@ const USB_LISTS = 10;
 /** The device list, the activity menu and Off, empty, over the idle colour, with our start up picture on Off. */
 function emptyScreenRecords(
   model: EmptyModel, pictures: EmptyPictures, corner: number, homes: Map<string, PieceTarget>, spelling: Container,
+  addActivities: number,
 ): BuiltScreenRecords {
   const modes = emptyModes(model);
   const idle = { to: pictures.idle, offset: 0 };
@@ -674,7 +675,9 @@ function emptyScreenRecords(
     kind, mode, rows: [], slots: [],
     titleFont: EMPTY_SCREEN_FONTS.menu, counterFont: EMPTY_SCREEN_FONTS.menu,
     backKey: throughMap('backMap', 'location'),
-    ...(kind === 'activity menu' ? { devicesKey: throughMap('devicesMap', 'activity') } : {}),
+    // More Activities on the empty activity menu shows "add Activities" as Logitech's compile with no
+    // activity does, through the list base slot 9 entry 1 runs on it, section 383.
+    ...(kind === 'activity menu' ? { devicesKey: throughMap('devicesMap', 'activity'), addActivities } : {}),
     corner: corner, marker: emptyVariable('menuMarker'),
     pictures: { one: idle, several: idle, topBar: { to: pictures.topBar, offset: 0 }, bottomBar: { to: pictures.bottomBar, offset: 0 } },
   });
@@ -740,7 +743,7 @@ export function buildEmptyConfiguration(options: EmptyConfigurationOptions): Emp
   // to the screens, `usbLeave.first`.
   const firstList = Math.max(...numbered.lists.keys(), ...Object.values(numbered.spec.lists)) + 1;
   const firmware = emptyFirmwareScreens(numbered.spec, pictures, firstList, spelling);
-  const records = emptyScreenRecords(model, pictures, corner, firmware.inline, spelling);
+  const records = emptyScreenRecords(model, pictures, corner, firmware.inline, spelling, wiringFrontIndex(numbered.spec, 'entry1.0x84'));
   const lists = new Map([...numbered.lists, ...firmware.lists, ...records.rowLists]);
   if (firmware.lists.size !== USB_LISTS) throw new EmptyConfigurationError(`USB Connected runs ${firmware.lists.size} lists`);
 

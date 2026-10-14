@@ -1,0 +1,14 @@
+{
+  "name": "Harmony 700, More Activities on the empty configuration",
+  "description": "todo-compile-700 1.4, section 383: the empty configuration rewritten with More Activities on the empty Activities screen calling the list that shows 'add Activities', as Logitech's own compile with no activity does. Before, it mapped back to the Activities screen and nothing changed. Predicted: from the Activities screen and from the Devices screen alike, More Activities shows 'Use the Harmony setup software to add Activities.' with Exit, and Exit comes back to the screen it came from. Nothing is sent, so the Flirc hears nothing.",
+  "steps": [
+    {
+      "instruction": "After the write, unplug the cable and wait for the green Activities screen. Press More Activities. Expect a dark screen reading 'Use the Harmony setup software to add Activities.' with 'Exit' at the bottom. Press the centre button ('Exit') and expect the Activities screen again. The Flirc hears nothing",
+      "expect": []
+    },
+    {
+      "instruction": "Press the centre button ('Devices') for the Devices screen, then More Activities. Expect the same 'add Activities' screen. Press Exit and say where it comes back to, the Devices screen or Activities. The Flirc hears nothing",
+      "expect": []
+    }
+  ]
+}

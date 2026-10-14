@@ -51053,3 +51053,61 @@ not leave "USB Connected" when the cable comes out.
   `packages/codec/test/wiring.test.ts`: the Assistant off keeps the 700's leave handler, and the 600 stays
   refused with no activity; `packages/codec/test/icons.test.ts`: the 650's six pictures unchanged and the
   700's five pinned.
+
+## 383. The empty configuration runs on the Harmony 700, and More Activities shows "add Activities" only as Logitech's empty compile binds it
+
+`todo-compile-700.md` 1.4. Section 382's file, blended, 548006 bytes, was written to the bench Harmony 700 on
+13 October 2026: nine 64 KiB blocks, read back byte for byte identical to the file, the remote restarted by
+the writer. The bench test `700-empty.json` was run on it with the infrared monitor, seven steps, and the
+receiver heard nothing in any of them, as predicted for a configuration with no device.
+
+**What ran as predicted**: "USB Connected" on the cable, then "Turning system off" and the empty Activities
+screen when it came out; Devices and Activities leading to each other; each of the three activity keys
+showing "add an Activity on this button" and Exit coming back; All Off showing "Turning system off" and
+coming back; the screen going dark about 20 seconds after the last key, judged by eye, and waking on a key.
+
+**What did not**:
+
+* **More Activities did nothing on the Activities screen**, where the test predicted "add Activities". It
+  did nothing on the Harmony 650's empty configuration either, section 374's run, which predicted that.
+  Ours bound the press of scan 4 on the activity menu to section 352's record back to the running activity,
+  as all 23 compiles with activities do; with nothing running that leads back to the Activities screen, so
+  nothing changes. **Logitech's one compile with no activity, `harvest_650_two_devices`, binds it to a list
+  instead**, `[07 FFFD, 7E 0001]`, which pushes the mode and enters mode 1, the Harmony 650's "add
+  Activities". Our screen record reader refused that compile's activity menu for it until now. The "add
+  Activities" binding of base slot 9 entry 1, which the wiring writes with no activity, is reached only
+  from a screen whose own map does not bind scan 4, the device list, and that path was not pressed.
+* **On a USB phone charger no charging screen showed**: the remote went straight to the empty Activities
+  screen. With flat batteries put in, an empty battery picture showed briefly first; which screen that was,
+  the firmware's or one of the configuration's, is not told apart. The file draws the four charging frames
+  and binds the battery events as Logitech's 700 compiles do, since the wiring rebuilds those byte for byte,
+  so this run alone does not say whether Logitech's configuration shows them on that charger either. That
+  control is not run.
+
+**So the activity menu carries More Activities' list while it has no row.** `ScreenMenuSpec.addActivities`
+is the list scan 4 calls instead of mapping back; `describeScreenRecords` reads it where scan 4 calls a list
+and takes the back key off the device list then, since the activity menu's and the device list's back key are
+one operand on 23 of 23 compiles with activities; `buildScreenRecords` writes it only while the menu has no
+row, so the first activity composed onto the empty configuration maps back again. The empty configuration's
+list is the one entry 1 runs on scan 4, which writes the menu marker 0, the activity menu's own value, before
+the same two instructions. **Logitech's compile with no activity now rebuilds byte for byte**, its three
+screen records, which is the check that the reading is Logitech's and not fitted to ours.
+
+### Scope, decision 16
+
+More Activities' binding with no activity is read on one compile, a Harmony 650's; on the Harmony 700 it is
+ours, carried over. The bench runs are one unit each. The charging screens were not seen on either model.
+
+### Falsification
+
+A Logitech compile with no activity whose activity menu maps scan 4 back; a bench run on which More
+Activities on our empty Activities screen does anything other than show "add Activities".
+
+### Where it lands
+
+* `packages/codec/src/screenrecords.ts`, `addActivities`; `packages/codec/src/families/four-slot/empty.ts`
+  passes entry 1's list.
+* `packages/codec/test/screenrecords.test.ts`: Logitech's compile with no activity rebuilds and its list is
+  read; `packages/codec/test/empty.test.ts`: the empty activity menu calls the list on both models, and the
+  first activity composed onto it maps back.
+* `packages/bench/irtests/done/700-empty.json`, the test; its run is in the lab's `reads/`.

@@ -156,6 +156,14 @@ export interface ScreenMenuSpec {
    * under scan 4 on the activity menu, both section 352's record back to the running activity.
    */
   backKey: number;
+  /**
+   * The activity menu's alone, while it has no row: the list the press of scan 4, More Activities, calls
+   * instead of mapping back, which shows "add Activities". Logitech's one compile with no activity,
+   * `harvest_650_two_devices`, calls `[07 FFFD, 7E addActivities]` there, and More Activities on ours did
+   * nothing on the Harmony 650 and the 700 while it mapped back, section 383. A menu with a row maps back,
+   * as all 23 compiles with activities do, so this is written only while `rows` is empty.
+   */
+  addActivities?: number;
   /** The activity menu's alone: the operand its key under the display's centre maps through, section 334. */
   devicesKey?: number;
   /** The base slot 11 program queued under the program tag and on every page. */
@@ -540,12 +548,24 @@ export function describeScreenRecords(
     const f = frame(kind, mode);
     const tags = menuTags(kind);
     const ownEntries = f.record.entries;
+    // The activity menu's scan 4 calls a list instead while it has no row, `addActivities`.
+    const callsAList = (one: { tag: number; opcode: number }): boolean => kind === 'activity menu' && one.tag === SCAN_FOUR_TAG
+      && one.opcode === ACTION_LIST_INDEX_OPCODE;
     if (c.blob[f.ownOff] === 0 || ownEntries.length !== tags.length || ownEntries.some((one, k) => one.tag !== tags[k]
-      || one.opcode !== (one.tag === DEVICE_MODE_PROGRAM_TAG ? RUN_SCREEN_PROGRAM : MAP_VALUE_OPCODE))) {
+      || (one.opcode !== (one.tag === DEVICE_MODE_PROGRAM_TAG ? RUN_SCREEN_PROGRAM : MAP_VALUE_OPCODE) && !callsAList(one)))) {
       throw new ScreenRecordError(`the ${kind}'s own key map is not the one built`);
     }
     const operandOf = (tag: number): number => value16(f.ownOff + 1 + 4 * tags.indexOf(tag) + 1);
-    const backKey = operandOf(kind === 'idle device list' ? DEVICES_KEY_TAG : SCAN_FOUR_TAG);
+    const scanFour = ownEntries.find((one) => one.tag === SCAN_FOUR_TAG);
+    const addActivities = scanFour !== undefined && callsAList(scanFour) ? operandOf(SCAN_FOUR_TAG) : undefined;
+    // Without the back key of its own, the activity menu's is the device list's: the two are one operand on
+    // 23 of 23 compiles with activities, section 383.
+    const idleBack = (): number => {
+      const idle = frame('idle device list', modes['idle device list']);
+      return value16(idle.ownOff + 1 + 4 * menuTags('idle device list').indexOf(DEVICES_KEY_TAG) + 1);
+    };
+    const backKey = kind === 'idle device list' ? operandOf(DEVICES_KEY_TAG)
+      : addActivities === undefined ? operandOf(SCAN_FOUR_TAG) : idleBack();
     const devicesKey = kind === 'activity menu' ? operandOf(DEVICES_KEY_TAG) : undefined;
     const corner = operandOf(DEVICE_MODE_PROGRAM_TAG);
     // The program queued has to be a corner program, the sending mark's, section 369, by structure; and where
@@ -641,6 +661,7 @@ export function describeScreenRecords(
       spec: {
         kind, mode, rows, slots, titleFont, counterFont, backKey, corner, marker: written,
         ...(devicesKey === undefined ? {} : { devicesKey }),
+        ...(addActivities === undefined ? {} : { addActivities }),
         pictures: {
           ...(pictures.one === undefined ? {} : { one: pictures.one }),
           ...(pictures.several === undefined ? {} : { several: pictures.several }),
@@ -869,8 +890,11 @@ export function buildScreenRecords(spec: ScreenRecordsSpec, c: Container): Built
         rowLists.set(index, { bytes: body, refs: [], owner: 'slot-10-list' });
       }
     });
+    // More Activities shows "add Activities" while the menu has no row, and maps back once it has one.
+    const addActivities = m.kind === 'activity menu' && m.rows.length === 0 ? m.addActivities : undefined;
     const operand = (tag: number): number => {
       if (tag === DEVICE_MODE_PROGRAM_TAG) return m.corner;
+      if (tag === SCAN_FOUR_TAG && addActivities !== undefined) return addActivities;
       if (m.kind === 'activity menu' && tag === DEVICES_KEY_TAG) {
         if (m.devicesKey === undefined) throw new ScreenRecordError('the activity menu names no record for its key under Devices');
         return m.devicesKey;
@@ -878,7 +902,9 @@ export function buildScreenRecords(spec: ScreenRecordsSpec, c: Container): Built
       return m.backKey;
     };
     const own = menuTags(m.kind).map((tag) => ({
-      tag, operand: operand(tag), opcode: tag === DEVICE_MODE_PROGRAM_TAG ? RUN_SCREEN_PROGRAM : MAP_VALUE_OPCODE,
+      tag, operand: operand(tag),
+      opcode: tag === DEVICE_MODE_PROGRAM_TAG ? RUN_SCREEN_PROGRAM
+        : tag === SCAN_FOUR_TAG && addActivities !== undefined ? ACTION_LIST_INDEX_OPCODE : MAP_VALUE_OPCODE,
     }));
     return recordOf(own, programs, lists, copies);
   };
