@@ -51288,3 +51288,64 @@ ours against ours, and what Logitech's compiler would make of it for a 700 is no
 * `packages/codec/test/empty.test.ts`: the test setup on both models' empty configurations, compared by the
   setup comparison, the activity keys and the drawn device lists; and a Logitech 700 compile read as not ours
   and refused as a donor.
+
+## 386. The test setup runs on the Harmony 700, and the Off screen waits for a mark no file of ours set
+
+`todo-compile-700.md` 2.2 and 2.3: the test setup of section 385 written to the bench Harmony 700 and run with
+the infrared monitor, six devices and then seven, and what the runs showed about the Off screen, the colours
+and the titles.
+
+**Every code as the file predicts, on four runs.** The six device setup (`700-setup-six.json`, eleven steps),
+the seven device setup (`700-setup-seven.json`, ten), the seven in the bright test colours and the same with
+the titles lowered (`700-setup-bright-look.json` and `700-title-lower.json`): each frame the monitor heard
+decodes to the device and command the file sends at that step, in the predicted order, the Channel up after a
+visit to the Denon's pages to the KPN box and Radio's two digits about 2 s apart. Each file was read back byte
+for byte identical before its run. **The Harmony 700 takes a seventh device**: the Sony HT, the test setup's
+seventh, was switched on with its Function three times by Muziek and switched off by Film kijken. Its manual
+says six and Logitech's service eight; that the eighth is taken is not measured.
+
+**"Turning system off" showed on neither seven device run, and the mark it waits for read 0.** Our All Off path
+is Logitech's: on the 700 compile `h700_config` and on ours alike, the idle state's enter list first calls a
+list that tests one variable, one armed, and enters Off when it is 1, `[71 mark, 7E Off]` behind `1F FB01`,
+then maps the location through two value maps, the second queueing the list that switches every device off.
+The mark is variable 24 in a file of ours, and the firmware's state variables sit at `0x900 + n` on this build,
+section 384: a read of data memory over USB gave the clock in variables 0 to 6 as 14:10:39 on Wednesday 14
+October 2026, which places the window, and `0x918` held 0. Every compile of Logitech's starts the mark at 0, and
+the one list that writes it 1 is the tour's start list, called only by front list 4, `startTour`, which no
+list calls, an entry point section 286 left open, section 357; on the bench it did not run. So a file of ours, which holds no tour, now starts it at 1: after the
+write's restart `0x918` read 1, and All Off then showed "Turning system off", for a moment, before the menu,
+seen on the second try, the switching off heard after the screen had moved on. That the empty configuration
+showed Off, section 383, is read here as the mark left at 1 by what was on the remote before it, not measured.
+
+**Leaving the cable shows no Off screen with activities in the file**, where the empty configuration showed it
+there, section 383. The handler is Logitech's but for the Remote Assistant's three lists, section 382; it is not
+traced here.
+
+**The state colours a choice on a build from nothing.** The seven device setup built in the 650's bright test
+colours, menus orange, device pages red, activity screens blue, ran with every code as the default build's.
+How the colours are written is `todo-compile-700.md` 2.3.1.
+
+**The titles.** At Logitech's place, y 5, the tops of the "f"s of "Turning system off" looked cut off on the
+remote. Lowered two rows, y 7 and 21, the start up titles were judged good and the "f"s still looked cut. The
+letter is whole: in the title's set, 14 high, the glyphs of "f", "T" and "l" all leave rows 0 and 1 empty and
+start on row 2, where the "T"'s top row is drawn near white and the "f"'s top stroke a mid grey, since it falls
+between two pixel rows and our rasteriser, `todo-compile-650.md` 10.8, does not snap. Left so, the face being due to change;
+the two rows lower are kept, a choice of ours.
+
+### Scope, decision 16
+
+The Harmony 700, build 2.8, one unit. The mark and its test are the wiring's, generated alike for the Harmony
+600 and 650, so a file of ours for those starts it at 1 as well, not run on either here.
+
+### Falsification
+
+A Harmony 700 that shows "Turning system off" on All Off with the mark read 0 at `0x918`; a file of ours whose
+mark reads 0 after the write's restart.
+
+### Where it lands
+
+* `packages/codec/src/families/four-slot/empty.ts`: the mark starts at 1.
+* `packages/codec/src/families/four-slot/activityscreen.ts`: `startupTitleYs`, two rows lower on a file of ours.
+* `packages/codec/test/empty.test.ts`: both.
+* The runs: `packages/bench/irtests/done/700-setup-*.json` and `700-title-lower.json`, their recordings in the
+  lab's `reads/`.

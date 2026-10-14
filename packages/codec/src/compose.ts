@@ -35,6 +35,7 @@ export {
   STARTUP_TITLE_SECOND_Y,
   STARTUP_TITLE_Y,
   startupPicture,
+  startupTitleYs,
 } from './families/four-slot/activityscreen.ts';
 export {
   bottomLineParts,

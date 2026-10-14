@@ -36,6 +36,7 @@ import { assembleSetup, attributeBytes } from '../src/assemble.ts';
 import { OUR_FOUR_SLOT_CHOICES } from '../src/index.ts';
 import type { Recipe } from '../src/index.ts';
 import { fourSlotActivityMenu, fourSlotMenuMarkerWriter } from '../src/families/four-slot/chrome.ts';
+import { startupTitleYs } from '../src/families/four-slot/activityscreen.ts';
 import { activityMenuByRows, menuMarkerOf } from '../src/shared/menus.ts';
 import { allOffList, composeDevice, coverage, deviceIds, joinPowerOff } from '../src/index.ts';
 import { FIRST_DEVICE_IDENTIFIER } from '../src/shared/core.ts';
@@ -556,4 +557,13 @@ test('decision 20 on a build from nothing: the state colours are a choice, writt
   // An empty configuration holds the idle state alone, and the dark fill its firmware screens draw over is no state's.
   assert.deepEqual(ourStateColours(buildEmpty(false, 66).container), { idle: FOUR_SLOT_CHOICES.stateColours.idle });
   assert.throws(() => recolouredStates(plain, { ...bright, idle: bright.device }), /have to differ/);
+});
+
+test('todo-compile-700.md 2.3: a file of ours starts the mark the Off screen waits for at 1, and draws its start up and Off titles two rows below Logitech\'s', () => {
+  // Logitech's compiles start it at 0 and set it from the tour, which a file of ours does not hold; at 0 the
+  // bench Harmony 700 never showed "Turning system off", section 386.
+  assert.deepEqual(emptyVariables('harmony-700').find(([name]) => name === 'tourMark')?.[1], { first: 1, max: 1 });
+  assert.deepEqual(startupTitleYs(buildEmpty(false, 66).container), [7, 21]);
+  const strings = screenStrings(buildEmpty(false, 66).container, characterMap(buildEmpty(false, 66).container)!);
+  assert.equal(strings.find((one) => one.text === 'Turning system off')?.y, 7);
 });

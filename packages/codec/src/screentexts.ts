@@ -60,14 +60,13 @@ import {
   FOUR_SLOT_TITLE_XY,
   STARTUP_FIXED_LINE_Y,
   STARTUP_TITLE_MAX,
-  STARTUP_TITLE_SECOND_Y,
-  STARTUP_TITLE_Y,
   TWO_ROW_COUNTER_X,
   type ValueReader,
   activityKeyedRecords,
   blobReader,
   fourSlotMenus,
   speller,
+  startupTitleYs,
 } from './compose.ts';
 import type { ContainerLayout, ContainerPiece, PieceRef } from './frame.ts';
 import { arch14Starts } from './shared/activities.ts';
@@ -215,8 +214,6 @@ const TITLE_LINE_BELOW = 16;
 const BOTTOM_LINE_FROM = 112;
 /** The y that parts a two row page's two rows, and a fixed line screen's title from its fixed lines. */
 const SCREEN_MIDDLE = 64;
-/** A start up screen's title lines, at most two. */
-const HEADING_Y: readonly number[] = [STARTUP_TITLE_Y, STARTUP_TITLE_SECOND_Y];
 
 /** A program's texts with the font in effect at each, in the order the program draws them. */
 interface DrawnText {
@@ -534,6 +531,8 @@ export function buildScreenTexts(
 ): BuiltScreenTexts {
   const spell = speller(c, map);
   const sets = fontSets(c) ?? [];
+  // A start up screen's title lines, at most two, lower on a configuration of ours, `startupTitleYs`.
+  const HEADING_Y: readonly number[] = startupTitleYs(c);
   // A carried run's width is its glyphs' own, as a spelled one's is.
   const widthOf = (font: number, codes: readonly number[]): number => {
     const set = sets[font];

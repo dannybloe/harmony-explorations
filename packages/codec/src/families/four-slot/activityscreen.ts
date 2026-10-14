@@ -321,6 +321,21 @@ export const STARTUP_TITLE_MAX = 126;
 export const STARTUP_TITLE_SECOND_Y = 19;
 
 /**
+ * How much lower a configuration of ours draws a start up title and Off's, both lines: 2 rows, a choice of
+ * ours made at the bench, todo-compile-700.md 2.3, and the start up titles judged good there. It was made
+ * against the tops of the "f"s of "Turning system off" looking cut off on the bench Harmony 700, which it did
+ * not cure: the "f"'s top stroke falls between two pixel rows in our letters and is drawn a faint grey, the
+ * letter itself is whole, section 386. Left as it is until the letters' face changes.
+ */
+export const OUR_STARTUP_TITLE_LOWER = 2;
+
+/** The y of a start up title's two lines on this configuration: Logitech's, or ours lower. */
+export function startupTitleYs(c: Container): readonly [number, number] {
+  const lower = inOurLook(c) ? OUR_STARTUP_TITLE_LOWER : 0;
+  return [STARTUP_TITLE_Y + lower, STARTUP_TITLE_SECOND_Y + lower];
+}
+
+/**
  * Below the title every start up screen draws the same three lines, each centred in the start up font,
  * at y 82, 96 and 110, which is that font's height apart: 40 start up screens of 40 on the thirteen
  * compiles, section 336. Built rather than copied off another activity's screen since then. **Fitted**:
@@ -710,7 +725,7 @@ export function fixedLineScreenParts(c: Container, picture: number, font: number
   return [
     { op: 'image', address: picture },
     { op: 'font', font },
-    ...lines.map((line, k) => centred(line, k === 0 ? STARTUP_TITLE_Y : STARTUP_TITLE_SECOND_Y, 'title')),
+    ...lines.map((line, k) => centred(line, startupTitleYs(c)[k === 0 ? 0 : 1], 'title')),
     ...STARTUP_FIXED_LINES.map((line, k) => centred(line, STARTUP_FIXED_LINE_Y[k] as number, 'fixed')),
     { op: 'end' },
   ];
