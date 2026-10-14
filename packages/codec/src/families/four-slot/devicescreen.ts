@@ -35,7 +35,7 @@ import {
 import { codesFor, textWidth } from '../../shared/spelling.ts';
 import { characterMap } from '../../text.ts';
 import { FOUR_SLOT_CHOICES } from './choices.ts';
-import { withStateLook } from './statelook.ts';
+import { ourStateColours, withStateLook } from './statelook.ts';
 
 /** A mode page's program, sized before the block is placed and built once its addresses are known. */
 interface Arch14Program {
@@ -433,7 +433,7 @@ export function composeFourSlotDeviceScreen(
   if (rows.length === 0) throw new ComposeError('a device mode needs at least one command on its screen');
   // A configuration of ours draws its device pages in the device state's look, which an empty one does not
   // hold until its first device, section 377.
-  if (inOurLook(c)) c = withStateLook(c, FOUR_SLOT_CHOICES.stateColours.device);
+  if (inOurLook(c)) c = withStateLook(c, ourStateColours(c).device ?? FOUR_SLOT_CHOICES.stateColours.device);
   const perPage = FOUR_SLOT_ITEMS.length;
   const pageCount = Math.ceil(rows.length / perPage);
   // The compiler's layout draws a counter of two digits where the compiler does, `pageCounter`; the

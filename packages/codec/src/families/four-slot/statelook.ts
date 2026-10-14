@@ -18,14 +18,19 @@
  * below the 256 a queued program can reach, since the firmware indexes the table with the operand's low byte
  * alone, section 369. An empty configuration's table holds six entries.
  *
- * The Harmony 650 alone, the one model the state colours are built for. Read only towards hardware.
+ * The Harmony 650 and 700, the models the state colours are built for. Read only towards hardware.
  */
 import { u24 } from '../../bytes.ts';
 import type { ContainerPiece, PieceRef } from '../../frame.ts';
 import { layOutContainer, takeApart } from '../../frame.ts';
-import { archSlot, type Container } from '../../gspm.ts';
-import { RUNNABLE_SCREEN_PROGRAMS, statePatchBytes, stateBackgroundBytes } from '../../backgrounds.ts';
-import { SCREEN_TABLE_SLOT } from '../../screen.ts';
+import { archSlot, type Container, parse } from '../../gspm.ts';
+import {
+  type BackgroundColours, RUNNABLE_SCREEN_PROGRAMS, SCREEN_STATES, stateBackgroundColour, statePatchBytes, stateBackgroundBytes,
+} from '../../backgrounds.ts';
+import { deviceListRows } from '../../inventory.ts';
+import { SCREEN_TABLE_SLOT, bitmapReference, screenProgram } from '../../screen.ts';
+import { modeRecords } from '../../sections.ts';
+import { activityMenus } from '../../shared/menus.ts';
 import { contentKey } from '../../screencategories.ts';
 import { ComposeError } from '../../shared/core.ts';
 import { cornerPrograms, picturesByContent } from './chrome.ts';
@@ -116,4 +121,68 @@ export function withStateLook(c: Container, colour: number): Container {
 
 function blank(): ContainerPiece {
   return { bytes: new Uint8Array(0), refs: [], owner: 'picture-bank' };
+}
+
+/**
+ * The colours a configuration of ours draws its three states in, read off the pages that draw them rather
+ * than assumed, since they are a choice, decision 20: the idle state's from the activity menu's first page,
+ * the device state's from the first device mode page, each the state background that page draws first; and
+ * the activity state's as the one other state background the file holds with its corner patch beside it. The
+ * patch is what makes a fill a state's: the firmware screens of an empty configuration draw over a dark fill
+ * of their own, which has none. A state the file has no page of
+ * yet, an empty configuration's device and activity states, is left out, and so is every state on a
+ * configuration not drawn in our look.
+ */
+export function ourStateColours(c: Container): Partial<BackgroundColours> {
+  const records = modeRecords(c) ?? [];
+  const background = (mode: number | undefined): number | undefined => {
+    const program = mode === undefined ? undefined : records[mode]?.pages[0]?.program;
+    const draw = program === undefined ? undefined : (screenProgram(c, program) ?? []).find((one) => bitmapReference(one) !== undefined);
+    const at = draw === undefined ? undefined : c.blobOffsetOf(bitmapReference(draw) as number);
+    return at === undefined ? undefined : stateBackgroundColour(c.blob.subarray(at));
+  };
+  const idle = background(activityMenus(c).menu);
+  const device = background(deviceListRows(c)[0]?.mode);
+  const others = new Set<number>();
+  const pictures = picturesByContent(c);
+  for (const addresses of pictures.values()) {
+    for (const address of addresses) {
+      const at = c.blobOffsetOf(address);
+      const colour = at === undefined ? undefined : stateBackgroundColour(c.blob.subarray(at));
+      if (colour === undefined || colour === idle || colour === device) continue;
+      if ((pictures.get(contentKey(statePatchBytes(colour)))?.length ?? 0) > 0) others.add(colour);
+    }
+  }
+  if (others.size > 1) throw new ComposeError(`the configuration holds ${others.size + 2} state backgrounds, more than its three states`);
+  const activity = [...others][0];
+  return {
+    ...(idle === undefined ? {} : { idle }), ...(device === undefined ? {} : { device }), ...(activity === undefined ? {} : { activity }),
+  };
+}
+
+/**
+ * A configuration of ours redrawn in other state colours: each state's background and corner patch, found by
+ * `stateLookOf` in the colour it has, written over in the colour it is given. Both are a fill stored raw, so a
+ * colour changes none of their lengths and nothing moves. A state the file holds no look of is skipped, and
+ * three colours that are not three different ones are refused, since `stateLookOf` then could not tell the
+ * states apart. Run before the letters are smoothed, which reads the colour under each text.
+ */
+export function recolouredStates(c: Container, to: Readonly<BackgroundColours>): Container {
+  if (new Set(SCREEN_STATES.map((state) => to[state])).size !== SCREEN_STATES.length) {
+    throw new ComposeError('the three state colours have to differ, or a state\'s look cannot be found again');
+  }
+  const from = ourStateColours(c);
+  const blob = Uint8Array.from(c.blob);
+  for (const state of SCREEN_STATES) {
+    const colour = from[state];
+    if (colour === undefined || colour === to[state]) continue;
+    const look = stateLookOf(c, colour);
+    if (look === undefined) throw new ComposeError(`the ${state} state's background in ${colour.toString(16)} has no look around it`);
+    for (const [address, bytes] of [[look.background, stateBackgroundBytes(to[state])], [look.patch, statePatchBytes(to[state])]] as const) {
+      const at = c.blobOffsetOf(address);
+      if (at === undefined) throw new ComposeError(`the ${state} state's look names an address outside the file`);
+      blob.set(bytes, at);
+    }
+  }
+  return parse(blob);
 }

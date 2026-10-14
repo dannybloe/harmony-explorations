@@ -8,7 +8,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-  type Container, ENTER_MODE, FOUR_SLOT_CHOICES, LETTERING_CHARACTERS, MAP_VALUE_OPCODE, RUN_SCREEN_PROGRAM, SCREEN_QUEUE_INSTRUCTION,
+  type Container, ENTER_MODE, FOUR_SLOT_CHOICES, rgbTo565, LETTERING_CHARACTERS, MAP_VALUE_OPCODE, RUN_SCREEN_PROGRAM, SCREEN_QUEUE_INSTRUCTION,
   characterMap, claims, describeStateTables, describeWiring, fontSets, glyphOf, letterRows, modePages, modeRecords, oxaniumFace,
   pageListCopies, screenProgram, stateVariables, takeApart, taggedList, valueMaps,
 } from '../src/index.ts';
@@ -22,7 +22,7 @@ import { FIRMWARE_SCREENS } from '../src/wiring.ts';
 import { CORNER_PLACES, cornerPlaceAt, cornerProgramAt, emptyFont } from '../src/families/four-slot/empty.ts';
 import { OUR_LOOK, deviceModeChrome, inOurLook } from '../src/families/four-slot/chrome.ts';
 import { fourSlotMenus, fourSlotTemplate } from '../src/families/four-slot/menus.ts';
-import { stateLookOf } from '../src/families/four-slot/statelook.ts';
+import { ourStateColours, recolouredStates, stateLookOf } from '../src/families/four-slot/statelook.ts';
 import { composeCatalogueDevices } from '../src/composecatalogue.ts';
 import { bitmapReference } from '../src/screen.ts';
 import { activities, activityNames, deviceListRows } from '../src/inventory.ts';
@@ -536,4 +536,24 @@ test('todo-compile-700.md 2.1: Logitech\'s seven Harmony 700 compiles do not rea
   const setup = readRecipe(JSON.parse(readFileSync(new URL('../../corpus/setups/h650-test.json', import.meta.url), 'utf8')));
   assert.throws(() => assembleSetup({ ...setup, model: { name: 'Harmony 700', skin: 66 } } as Recipe, { donor: require_('h700_config') }),
     /on a donor of ours alone, an empty configuration, and this donor is Logitech's/);
+});
+
+test('decision 20 on a build from nothing: the state colours are a choice, written over the defaults the composers draw in, read back off the file\'s own pages, and nothing a person does changes', skipWithoutIrArchive(), () => {
+  const setup = readRecipe(JSON.parse(readFileSync(new URL('../../corpus/setups/h650-test.json', import.meta.url), 'utf8')));
+  // The 650's bench test colours, for a colourblind tester on a dim panel.
+  const bright = { device: rgbTo565(255, 0, 0), activity: rgbTo565(0, 96, 255), idle: rgbTo565(255, 140, 0) };
+  const on = (stateColours?: typeof bright) => assembleSetup({
+    ...setup, model: { name: 'Harmony 700', skin: 66 },
+    choices: { letters: 'oxanium', backgrounds: 'state colours', pictures: 'ours', blendLetters: true, ...(stateColours ? { stateColours } : {}) },
+  } as Recipe, { donor: buildEmpty(false, 66).bytes, archive: IR_ARCHIVE! }).container;
+  const plain = on();
+  const coloured = on(bright);
+  assert.ok(coloured.allChecksPass);
+  assert.deepEqual(ourStateColours(plain), FOUR_SLOT_CHOICES.stateColours);
+  assert.deepEqual(ourStateColours(coloured), bright);
+  assert.equal(coloured.blob.length, plain.blob.length);
+  assert.deepEqual(compareViews(setupView(plain), setupView(coloured), { menuOrder: true }), []);
+  // An empty configuration holds the idle state alone, and the dark fill its firmware screens draw over is no state's.
+  assert.deepEqual(ourStateColours(buildEmpty(false, 66).container), { idle: FOUR_SLOT_CHOICES.stateColours.idle });
+  assert.throws(() => recolouredStates(plain, { ...bright, idle: bright.device }), /have to differ/);
 });

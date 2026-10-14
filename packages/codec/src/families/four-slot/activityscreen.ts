@@ -44,7 +44,7 @@ import { codesFor, fontThatSpells, textWidth } from '../../shared/spelling.ts';
 import { stateVariableName } from '../../statetables.ts';
 import { characterMap, screenStrings } from '../../text.ts';
 import { type ValueMap, valueMaps } from '../../valuemap.ts';
-import { stateLookOf, withStateLook } from './statelook.ts';
+import { ourStateColours, stateLookOf, withStateLook } from './statelook.ts';
 import { screenRecordModes } from '../../screenrecords.ts';
 import { takeApart } from '../../frame.ts';
 import { u24 } from '../../bytes.ts';
@@ -631,7 +631,7 @@ export function activityScreenChrome(c: Container): ActivityScreenChrome {
  */
 function ourActivityScreenChrome(c: Container): ActivityScreenChrome {
   const device = deviceModeChrome(c);
-  const look = stateLookOf(c, FOUR_SLOT_CHOICES.stateColours.activity);
+  const look = stateLookOf(c, ourStateColours(c).activity ?? FOUR_SLOT_CHOICES.stateColours.activity);
   if (look === undefined) throw new ComposeError('the configuration holds no activity look to draw a working screen in');
   const off = screenRecordModes(c, takeApart(c)).off;
   const offPage = modeRecords(c)?.[off]?.pages[0];
@@ -851,7 +851,7 @@ export function composeFourSlotActivityScreen(
   const choices = options.choices ?? FOUR_SLOT_CHOICES;
   // A configuration of ours draws its working screens in the activity state's look, which it does not hold
   // until its first activity, section 379.
-  if (inOurLook(c)) c = withStateLook(c, FOUR_SLOT_CHOICES.stateColours.activity);
+  if (inOurLook(c)) c = withStateLook(c, ourStateColours(c).activity ?? FOUR_SLOT_CHOICES.stateColours.activity);
   const starts = arch14Starts(c);
   if (starts.startup.has(activity) || activity === starts.idle) {
     throw new ComposeError(`activity ${activity} already has a working screen`);

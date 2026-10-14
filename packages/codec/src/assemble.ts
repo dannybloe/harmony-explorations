@@ -120,6 +120,7 @@ import {
   FOUR_SLOT_CHOICES, OUR_FOUR_SLOT_CHOICES, type FourSlotChoices, type FourSlotChoicesGiven, fourSlotChoices,
 } from './families/four-slot/choices.ts';
 import { SCREEN_STATES, checkStateBackgrounds, ourPictureName, withStateBackgrounds } from './backgrounds.ts';
+import { ourStateColours, recolouredStates } from './families/four-slot/statelook.ts';
 import { cornerPrograms, inOurLook } from './families/four-slot/chrome.ts';
 import { cornerProgramAt, emptyFontTable } from './families/four-slot/empty.ts';
 import { caseProgram } from './shared/menus.ts';
@@ -526,9 +527,6 @@ export function assembleSetup(setup: Recipe, options: AssembleOptions): Assemble
     if (choices.letters !== 'oxanium' || choices.backgrounds !== 'state colours' || choices.pictures !== 'ours') {
       throw new AssemblyError('a donor of ours is in our letters, the state colours and our pictures, and the choices ask for another');
     }
-    if (SCREEN_STATES.some((state) => choices.stateColours[state] !== FOUR_SLOT_CHOICES.stateColours[state])) {
-      throw new AssemblyError('a donor of ours takes the default state colours, which the composers draw in');
-    }
     faces = donorFaces(c, choices);
     note('a donor of ours', `${faces.length} sets of our letters`);
   }
@@ -719,6 +717,15 @@ export function assembleSetup(setup: Recipe, options: AssembleOptions): Assemble
     c = layOutContainer(coloured.layout).container;
     checkStateBackgrounds(c, takeApart(c), choices.stateColours);
     note('state colours');
+  }
+  // On a donor of ours the composers draw in the colours the file has, the defaults on an empty one, and the
+  // chosen ones are written over them here, decision 20: a state's background and corner patch, same length.
+  if (ours && SCREEN_STATES.some((state) => choices.stateColours[state] !== FOUR_SLOT_CHOICES.stateColours[state])) {
+    c = recolouredStates(c, choices.stateColours);
+    const read = ourStateColours(c);
+    const wrong = SCREEN_STATES.filter((state) => read[state] !== undefined && read[state] !== choices.stateColours[state]);
+    if (wrong.length > 0) throw new AssemblyError(`the ${wrong.join(' and ')} state reads back in another colour than chosen`);
+    note('state colours', SCREEN_STATES.filter((state) => read[state] !== undefined).join(', '));
   }
 
   // 15. Our pictures, the six that are no state's background drawn from icons, 9.1.2.2. On the placed file

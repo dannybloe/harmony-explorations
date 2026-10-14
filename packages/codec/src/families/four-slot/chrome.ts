@@ -34,7 +34,7 @@ import { codesFor, spellsIn, textWidth } from '../../shared/spelling.ts';
 import { characterMap, glyphsReferencedBy, referencedStringAddress } from '../../text.ts';
 import { valueMaps } from '../../valuemap.ts';
 import { FOUR_SLOT_CHOICES } from './choices.ts';
-import { stateLookOf } from './statelook.ts';
+import { ourStateColours, stateLookOf } from './statelook.ts';
 import { BLENDED_LETTER_SKINS } from '../../backgrounds.ts';
 
 /*
@@ -509,9 +509,11 @@ export function holdsLogitechLook(c: Container): boolean {
  * checked against it**, `checkPageFrames`, so a configuration whose own pages disagree is refused
  * rather than extended.
  */
-export function deviceModeChrome(c: Container, colour: number = FOUR_SLOT_CHOICES.stateColours.device): DeviceModeChrome {
+export function deviceModeChrome(c: Container, colour?: number): DeviceModeChrome {
   if (c.architecture !== 14) throw new ComposeError('a device page\'s chrome is built for the Harmony 600, 650 and 700 only');
-  if (inOurLook(c)) return ourDeviceModeChrome(c, colour);
+  // The device state's colour, a choice, is the one the file's own device pages are drawn in, and the
+  // default where it has none yet, which is the colour a composer draws a first device in.
+  if (inOurLook(c)) return ourDeviceModeChrome(c, colour ?? ourStateColours(c).device ?? FOUR_SLOT_CHOICES.stateColours.device);
   const skin = (c.versionWord ?? -1) & 0xff;
   const pictures = picturesByContent(c);
   // The look is the one whose pictures the configuration holds, the one item background aside, which

@@ -113,6 +113,18 @@ export const stateBackgroundBytes = (colour: number): Uint8Array => flat(BACKGRO
 export const statePatchBytes = (colour: number): Uint8Array => flat(PATCH_WIDTH, PATCH_HEIGHT, colour);
 
 /**
+ * The colour of a state's background, where `bytes` start with one: a whole screen of one colour, stored
+ * raw, so every colour's background is the same length and `bytes` may run past its end. Undefined for any
+ * other picture.
+ */
+export function stateBackgroundColour(bytes: Uint8Array): number | undefined {
+  if (bytes[0] !== BITMAP_RAW || bytes.length < BITMAP_HEADER + 2) return undefined;
+  const colour = ((bytes[BITMAP_HEADER] as number) << 8) | (bytes[BITMAP_HEADER + 1] as number);
+  const built = stateBackgroundBytes(colour);
+  return bytes.length >= built.length && built.every((value, k) => value === bytes[k]) ? colour : undefined;
+}
+
+/**
  * The colours a picture's pixels hold, most frequent first, read off its bytes: a raw picture's pixels
  * one after another and an encoded one's literal runs, each pixel high byte first, `encodeBitmap`.
  */
