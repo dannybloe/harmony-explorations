@@ -51437,9 +51437,24 @@ with good contrast against it, and the background wanted "a lot darker". So the 
 colour lands on a shade between black and white. How many shades there are, and which channels count, is
 not measured.
 
-**The letters showed no smoothing**, which is what the file holds: smoothing is the blending of a letter's
-edge into the colour under it, section 370, and the 600 is built without it until its panel is known, so its
-letters are drawn in their ink and shadow alone. This run therefore says nothing about grey levels.
+**The one look, in grey 2.** Every state of a configuration of ours for the 600 is drawn in one look,
+decided on 14 October 2026: `ONE_LOOK_SKINS`, under which `ourStateColours` reads the device and activity
+states as the idle one, so a composer adds no look of its own and `recolouredStates` takes one colour. Its grey
+is `oneLookColour`, `0x2104`, grey 2 of sixteen steps from black to white, picked off the preview of a test
+card (`lab/work/h600-from-nothing/ramp.ts`) that was not itself written; Logitech's 600 compiles use the same
+value among their greys. Written to the bench 600 in the empty configuration, three blocks, the first run
+stopped by a chunk out of sequence while a test suite ran and the rerun with the same arguments completed and
+read back byte for byte; on the remote the greys were judged good.
+
+**The letters showed no smoothing**, which is what the file held: smoothing is the blending of a letter's
+edge into the colour under it, section 370, and the 600 was built without it until its panel was known, so its
+letters were drawn in their ink and shadow alone. That run said nothing about grey levels.
+
+**The letters blended into grey 2, kept.** With the panel seen to show a colour as a grey of its own, the
+600's skins joined `BLENDED_LETTER_SKINS` on 14 October 2026. The empty configuration in grey 2 with its
+letters blended, six blocks, read back byte for byte, was judged on the remote against the same file unblended
+and the blended letters looked better; kept. The firmware screen and screen record rebuilds fail on a blended
+file by design, the blending being the last step, as on the 650 and 700.
 
 **The settings store** holds one saved delay, an inter device delay of 15 tenths for key `0x0E26`
 (`reads/20261014T1445Z-h600-settings-empty-on.txt`), which a configuration with no device does not use.
@@ -51459,7 +51474,8 @@ file's `first`; a 600 that shows `0x0446` as black or as white.
 ### Where it lands
 
 * `packages/codec/src/families/four-slot/empty.ts`: skins 71 and 73; `packages/codec/src/wiring.ts`: no activity
-  on the 600; `packages/codec/src/backgrounds.ts`: the 600's skins in our look, blending not.
+  on the 600; `packages/codec/src/backgrounds.ts`: the 600's skins in our look, in one look and blended;
+  `packages/codec/src/families/four-slot/choices.ts`: `oneLookColour`.
 * `packages/codec/test/empty.test.ts`: the 600 built from nothing, and the mark at 1 on the built file.
 * `packages/bench/irtests/done/600-empty.json` and `600-empty-mark-off.json`, the tests; their runs and the reads
   are in the lab's `reads/`.

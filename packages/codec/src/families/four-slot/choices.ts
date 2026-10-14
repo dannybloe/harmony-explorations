@@ -83,6 +83,13 @@ export interface FourSlotChoices extends CommonChoices {
   /** The colour of each screen state, as RGB565, when `backgrounds` is `state colours`. */
   readonly stateColours: Readonly<BackgroundColours>;
   /**
+   * The one colour every state is drawn in on a model drawn in one look, `ONE_LOOK_SKINS`, the Harmony 600,
+   * in place of `stateColours`: decided on 14 October 2026, grey 2 of sixteen from black to white, off a
+   * preview of `todo-compile-600.md` 1.2.3's test card; not yet seen on the remote. Logitech's own 600 compiles
+   * use the same value among their greys.
+   */
+  readonly oneLookColour: number;
+  /**
    * The top and bottom bars' one colour with the state colours: white, decided with them (decision 20),
    * Logitech's shaded light grey bars made flat. The words on them stay dark.
    */
@@ -144,6 +151,8 @@ export const FOUR_SLOT_CHOICES: FourSlotChoices = {
     activity: rgbTo565(18, 37, 200),
     idle: rgbTo565(1, 136, 53),
   },
+  // Grey 2 of sixteen: red and blue 4 of 31, green 8 of 63.
+  oneLookColour: 0x2104,
   barColour: 0xffff,
   labelTooWide: 'smaller font',
   activityKeys: {

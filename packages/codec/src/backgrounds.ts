@@ -91,16 +91,18 @@ export const HARMONY_650_SKINS: ReadonlySet<number> = new Set([72, 74]);
  * Harmony 700's 66, whose screens are the 650's raster, faces and bars, section 382. Only a configuration
  * already lettered in our letters is blended, and turning Logitech's letters into ours, the font table, and
  * the state backgrounds stay the Harmony 650's alone, so no Logitech 700 compile passes through this. Its
- * EMEA twin 69 has no compile or unit here and stays out until one is read.
+ * EMEA twin 69 has no compile or unit here and stays out until one is read. The Harmony 600's 71 and 73 since
+ * `todo-compile-600.md` 1.2.4, decided on 14 October 2026 once its panel was seen to show a colour as a grey of
+ * its own rather than as black or white, section 387.
  */
-export const BLENDED_LETTER_SKINS: ReadonlySet<number> = new Set([...HARMONY_650_SKINS, 66]);
+export const BLENDED_LETTER_SKINS: ReadonlySet<number> = new Set([...HARMONY_650_SKINS, 66, 71, 73]);
 
 /**
- * The skins a configuration of ours is built for, which `inOurLook` can answer for: the blended letters' and,
- * since `todo-compile-600.md` 1.1, the Harmony 600's 71 and 73. The 600 is kept out of the blended letters
- * until 1.2 has settled what its monochrome panel makes of a colour pixel.
+ * The skins a configuration of ours is built for, which `inOurLook` can answer for: the Harmony 650's and 700's,
+ * and since `todo-compile-600.md` 1.1 the Harmony 600's 71 and 73. The same skins as the blended letters' since
+ * 1.2.4, and kept apart because they were not for a while and need not stay alike.
  */
-export const OUR_LOOK_SKINS: ReadonlySet<number> = new Set([...BLENDED_LETTER_SKINS, 71, 73]);
+export const OUR_LOOK_SKINS: ReadonlySet<number> = new Set([...BLENDED_LETTER_SKINS]);
 
 /**
  * The skins a configuration of ours draws in one look for every state, `todo-compile-600.md` 1.2.4: the Harmony

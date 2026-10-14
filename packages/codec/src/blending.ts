@@ -134,7 +134,7 @@ export function withBlendedLetters(layout: ContainerLayout, faces: readonly SetF
   const laid = layOutContainer(layout);
   const c = laid.container;
   if (c.architecture !== 14 || !BLENDED_LETTER_SKINS.has(layout.skin)) {
-    throw new FontTableError('blended letters are built for the Harmony 650, and for the Harmony 700 on a configuration of ours, section 382');
+    throw new FontTableError('blended letters are built for the Harmony 650, and for the Harmony 700 and 600 on a configuration of ours, sections 382 and 387');
   }
   const map = characterMap(c);
   if (map === undefined || map.alphabet !== 'oxanium') throw new FontTableError('the configuration is not lettered in our letters');

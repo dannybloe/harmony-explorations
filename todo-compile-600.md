@@ -30,13 +30,15 @@ bench test, as the 700's chapters 1 and 2 did.
 ## 1. The empty configuration for the 600
 
 - [x] 1.1 The empty builder takes the 600, skins 73 and 71: the wiring, the firmware screens, mode 0's key list and the mode count from the parts already built for the 600, and the no activity configuration the wiring refuses on the 600 today, as a choice of ours or from a Logitech compile if one holds none
-- [ ] 1.2 What the monochrome panel draws for a colour pixel, read in the 0.2 image's drawing path or seen on a test file, and then our look on it: the state colours, the letters' inks and smoothing, and the icons, each chosen so it reads on the panel
+- [x] 1.2 What the monochrome panel draws for a colour pixel, read in the 0.2 image's drawing path or seen on a test file, and then our look on it: the state colours, the letters' inks and smoothing, and the icons, each chosen so it reads on the panel
   - [x] 1.2.1 Read in the 0.2 image: the firmware sends every pixel to the panel unchanged, in the same sixteen bit mode as the 650, by the same display driver byte for byte; so what a colour pixel looks like is decided in the display module and the image cannot say
   - [x] 1.2.2 The panel's identity byte read over USB, data memory `0x384`: 0, as the 650's, so the same panel set up; whether 0 is an identity or a byte the read left unwritten the firmware does not say
-  - [ ] 1.2.3 A test picture on the bench 600: ramps of red, green, blue and grey and a mid grey beside a checkerboard, to count its grey levels and see which channels count
-  - [ ] 1.2.4 Our look chosen on that: the letters' inks and smoothing, and the icons
+  - [x] 1.2.3 A test card of sixteen greys and of red, green and blue ramps, `lab/work/h600-from-nothing/ramp.ts`; grey 2 picked off its preview, its other questions dropped as not needed, so the card was not written
+  - [x] 1.2.4 Our look chosen on that: the letters' inks and smoothing, and the icons; the inks and icons are the 650's carried over, the look made prettier later as decided for the letters
     - [x] 1.2.4.1 One look for every state, decided on 14 October 2026: the idle, device and activity screens share one background, patch and corner program, `ONE_LOOK_SKINS`
-    - [ ] 1.2.4.2 Its grey, picked off the 1.2.3 picture; Logitech's own 600 screens are three quarters black, and our green showed as a light grey that wants to be a lot darker, section 387
+    - [x] 1.2.4.2 Its grey: grey 2 of sixteen, `0x2104`, `oneLookColour`, picked off the card's preview
+    - [x] 1.2.4.3 Grey 2 seen on the remote, the empty configuration written in it: good, section 387
+    - [x] 1.2.4.4 The letters blended into grey 2, `BLENDED_LETTER_SKINS`: seen on the remote and kept, decided on 14 October 2026, section 387
 - [x] 1.3 Checked: it rebuilds, every screen rebuilds, every byte attributed to a generator and none carried, as the 650's 11.1.1.4
 - [x] 1.4 Written to the bench 600 with a bench test: it starts, Devices and Activities lead to each other, an activity key shows the placeholder, All Off returns; the region read into the lab first, and the delays saved on the remote read
   - [ ] 1.4.1 "Turning system off" did not show on the 600, on leaving the cable or on All Off, with its mark read 1, where the empty 650 and 700 files showed it with the mark at 0; nor with the mark at 0 on the 600, so the mark is not it: section 387

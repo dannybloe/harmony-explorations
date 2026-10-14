@@ -624,4 +624,28 @@ test('todo-compile-600.md 1.2.4: the Harmony 600 draws every state in one look, 
   assert.throws(() => recolouredStates(c, FOUR_SLOT_CHOICES.stateColours), /one colour for all three/);
   // The Harmony 650 keeps its three.
   assert.deepEqual(ourStateColours(buildEmpty(false, 72).container), { idle });
+  // The 600's one colour, chosen off the test card: grey 2 of sixteen.
+  assert.equal(FOUR_SLOT_CHOICES.oneLookColour, rgbTo565(33, 34, 33));
+  const one = FOUR_SLOT_CHOICES.oneLookColour;
+  const grey2 = buildEmptyConfiguration({
+    skin: 73, builtAt: BUILT_AT, inks: FOUR_SLOT_CHOICES.letterInks, settings: FOUR_SLOT_CHOICES.settings, look: { ...LOOK, idleColour: one },
+  }).container;
+  assert.deepEqual(ourStateColours(grey2), { idle: one, device: one, activity: one });
+});
+
+test('todo-compile-600.md 1.2.4: the Harmony 600\'s letters blend into its one grey, as the 650\'s into its colours', () => {
+  const build = (blendLetters: boolean) => buildEmptyConfiguration({
+    skin: 73, builtAt: BUILT_AT, inks: FOUR_SLOT_CHOICES.letterInks, settings: FOUR_SLOT_CHOICES.settings, blendLetters,
+    look: { ...LOOK, idleColour: FOUR_SLOT_CHOICES.oneLookColour },
+  });
+  const plain = build(false);
+  const built = build(true);
+  const c = built.container;
+  assert.ok(c.allChecksPass);
+  assert.ok((built.blended?.length ?? 0) > 0, 'a set blended');
+  assert.equal(fontSets(c)!.length, fontSets(plain.container)!.length + built.blended!.length);
+  assert.equal(characterMap(c)?.drawn.resolved, characterMap(c)?.drawn.total);
+  // Blending leaves the one look as it was.
+  const one = FOUR_SLOT_CHOICES.oneLookColour;
+  assert.deepEqual(ourStateColours(c), { idle: one, device: one, activity: one });
 });
