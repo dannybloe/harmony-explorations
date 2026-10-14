@@ -1,0 +1,12 @@
+{
+  "name": "Harmony 700, the start up and Off titles two rows lower",
+  "description": "todo-compile-700 2.3, one write of lab/work/h700-from-nothing/setup7-lower-700.bin: the bright seven device setup with every start up title and Off's drawn two rows lower than Logitech's, since the tops of the 'f's of 'Turning system off' were cut off at the top edge (700-setup-bright-look.json). Its ink starts on row 9 where it started on row 7. Nothing else changed; every code as before.",
+  "steps": [
+    {
+      "instruction": "Press Watch TV and look at 'Starting TV kijken' while it shows: say whether the tops of the 'S', 't', 'T', 'k' and 'j' are whole. The LG's, the KPN box's and the Denon's power, the LG's HDMI 1 and the Denon's CBL/SAT follow. Mark when it settles"
+    },
+    {
+      "instruction": "Press All Off while looking at the screen, and again after Watch TV if it went by too fast. Say whether the tops of the 'T' and the 'f's of 'Turning system off' are whole now, and whether the title sits well or now looks too low. Mark when it is quiet"
+    }
+  ]
+}

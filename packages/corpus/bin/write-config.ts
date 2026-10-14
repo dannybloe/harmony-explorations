@@ -246,6 +246,7 @@ const H700_DUMPS = new Set<string>([
   'h700_before_setup',
   'h700_six_on',
   'h700_seven_on',
+  'h700_bright_on',
 ]);
 
 /** A remote this may run against, per architecture read off the device. */
