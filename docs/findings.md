@@ -51093,6 +51093,18 @@ list is the one entry 1 runs on scan 4, which writes the menu marker 0, the acti
 the same two instructions. **Logitech's compile with no activity now rebuilds byte for byte**, its three
 screen records, which is the check that the reading is Logitech's and not fitted to ours.
 
+**On the remote**: the rebuilt file, written to the bench Harmony 700 on 14 October 2026 and read back byte
+for byte, and run with `700-empty-more-activities.json`: More Activities showed "add Activities" from the
+Activities screen and from the Devices screen alike, and Exit came back to the screen it was pressed on;
+nothing was sent.
+
+**The charging control**: Logitech's own configuration, the one the remote held before, put back unchanged
+and read back byte for byte, and run with `700-charging-control.json`: no charging screen with the charged
+set on the phone charger, with the defective set, with no batteries on the cable, with one flat and one
+full cell on the cable, or with the cable put in while the screen was dark; the remote ran its ordinary
+screens. So none of the cases tried shows a charging screen with either configuration, and the empty one is
+not why it did not show.
+
 ### Scope, decision 16
 
 More Activities' binding with no activity is read on one compile, a Harmony 650's; on the Harmony 700 it is
