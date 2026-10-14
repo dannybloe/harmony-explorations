@@ -51355,3 +51355,67 @@ mark reads 0 after the write's restart.
 * `packages/codec/test/empty.test.ts`: both.
 * The runs: `packages/bench/irtests/done/700-setup-*.json` and `700-title-lower.json`, their recordings in the
   lab's `reads/`.
+
+## 387. The Harmony 600 built from nothing runs, and shows no Off screen
+
+`todo-compile-600.md` 1.1 to 1.4: the empty configuration of section 374 built for the Harmony 600, what the
+0.2 image says about its colourless panel, and the file written to the bench 600 and run.
+
+**The 600 takes the 650's empty configuration.** The builder takes skins 71 and 73 and gives them the 650's
+fourteen firmware screens and their pictures, and the wiring builds the 600 with no activity as it builds the
+650, our choice carried over as it was to the Harmony 700, section 382. Built for skin 73 it rebuilds by every
+checker, every byte attributed to a generator and none carried, and differs from the 650's built for skin 72
+in three runs of bytes only: the skin, the settings block's third group, and the trailer checksum.
+
+**The bench unit reports skin 71 and its own compile states 73.** The version block read off the remote says
+71; `h600_config`, Logitech's compile of this unit's configuration, says 73, the European 600 of section 131.
+Base slot 1 is host side, section 81, so nothing on the remote reads which; ours states 73, as Logitech's does.
+
+**The firmware hands the panel every pixel unchanged.** On the 0.2 image a picture of either kind, raw or
+encoded, and every text glyph reach one row writer, `0x130B6`, which sends the controller's row and column
+address commands and then moves each byte from the external flash's SPI buffer to the panel's, two per pixel
+in stored order, with no arithmetic between; a filled rectangle sends its two byte colour the same way. The
+panel set up, sent at every start, selects sixteen bits per pixel, `3A 05`, and the drawing path, the set up
+and its two variants are byte for byte the Harmony 650's 0.2 code at the same addresses, so nothing in the
+600's firmware knows its panel has no colour. **What a colour becomes on the glass is decided in the display
+module**, and the image cannot say whether it is one bit or has grey levels, or which channels count. The set
+up reads the controller's first identity byte into data memory `0x384` and picks its variant on it; on the
+bench 600 that byte read 0, as the 650's does, so both take the same set up. Whether 0 is an identity or the
+byte never written is not told apart. Logitech's pictures for the 600 are all grey, within one step on every
+pixel of `calibration_h600` and `h600_config`, and use the full depth of shades: evidence of what their artists
+drew for, not of the panel.
+
+**On the remote**: written 14 October 2026, six 64 KiB blocks, read back byte for byte identical, restarted by
+the writer; run with `600-empty.json`, seven steps, and the receiver heard nothing in any of them, as predicted
+for a configuration with no device. Every step was marked reached: the Activities and Devices screens leading
+to each other, an activity key's placeholder and Exit, More Activities, All Off coming back, and the screen
+light, against which 20 s was noted; the notes made are the two below.
+
+**What did not show**: "Turning system off", neither when the cable came out nor on All Off, where the same
+file built for the Harmony 650, section 374, and for the 700, section 383, showed it both times. The mark it
+waits for starts at 1 in the file, asserted on the built file for skin 73, and the 600 has not loaded its
+configuration while on the cable, section 110, so the mark could not be read live. Off is entered by the idle
+entry's first list and the location map then enters the Activities screen from the second in the same pass,
+so it is up only for as long as that takes, which on the 700 was seen "for a moment". Whether the 600 does not
+draw it or draws it too briefly for this panel is not told apart.
+
+**The letters showed no smoothing**, which is what the file holds: smoothing is the blending of a letter's
+edge into the colour under it, section 377, and the 600 is built without it until its panel is known, so its
+letters are drawn in their ink and shadow alone. This run therefore says nothing about grey levels.
+
+### Scope, decision 16
+
+The Harmony 600, build 0.2, one unit, skin 73. The display path reading covers the 600's and the 650's 0.2
+images, which share it; the 700's 2.8 keeps both set up variants and adds two more, not read further.
+
+### Falsification
+
+A pixel path on the 0.2 image that transforms a colour before the panel's SPI buffer; a 600 bench run on our
+empty configuration that shows "Turning system off".
+
+### Where it lands
+
+* `packages/codec/src/families/four-slot/empty.ts`: skins 71 and 73; `packages/codec/src/wiring.ts`: no activity
+  on the 600; `packages/codec/src/backgrounds.ts`: the 600's skins in our look, blending not.
+* `packages/codec/test/empty.test.ts`: the 600 built from nothing, and the mark at 1 on the built file.
+* `packages/bench/irtests/done/600-empty.json`, the test; its run is in the lab's `reads/`.

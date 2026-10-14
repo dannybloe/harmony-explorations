@@ -36,7 +36,8 @@ bench test, as the 700's chapters 1 and 2 did.
   - [ ] 1.2.3 A test picture on the bench 600: ramps of red, green, blue and grey and a mid grey beside a checkerboard, to count its grey levels and see which channels count
   - [ ] 1.2.4 Our look chosen on that: the state colours, the letters' inks and smoothing, and the icons
 - [x] 1.3 Checked: it rebuilds, every screen rebuilds, every byte attributed to a generator and none carried, as the 650's 11.1.1.4
-- [ ] 1.4 Written to the bench 600 with a bench test: it starts, Devices and Activities lead to each other, an activity key shows the placeholder, All Off returns; the region read into the lab first, and the delays saved on the remote read
+- [x] 1.4 Written to the bench 600 with a bench test: it starts, Devices and Activities lead to each other, an activity key shows the placeholder, All Off returns; the region read into the lab first, and the delays saved on the remote read
+  - [ ] 1.4.1 "Turning system off" did not show on the 600, on leaving the cable or on All Off, where the 650 and 700 showed it: whether it is not drawn or too brief for this panel, section 387
 
 ## 2. The test setup on it
 
