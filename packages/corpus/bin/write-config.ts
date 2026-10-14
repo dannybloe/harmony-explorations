@@ -244,6 +244,7 @@ const H700_DUMPS = new Set<string>([
   // With the empty configuration on it, section 383: the compare base for putting the original back.
   'h700_empty_on',
   'h700_before_setup',
+  'h700_six_on',
 ]);
 
 /** A remote this may run against, per architecture read off the device. */
