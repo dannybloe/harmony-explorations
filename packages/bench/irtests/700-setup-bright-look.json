@@ -1,0 +1,15 @@
+{
+  "name": "Harmony 700, the seven device setup in the bright test colours, and the Off screen",
+  "description": "todo-compile-700 2.3, one write of lab/work/h700-from-nothing/setup7-bright-700.bin: the same seven device setup as 700-setup-seven.json, drawn in the 650's bright test colours (menus orange, device pages red, activity screens blue) and with the mark the Off screen waits for starting at 1, which read 1 over USB after the write's restart where it read 0 before. Predicted: 'Turning system off' now shows when the remote leaves the cable and, briefly, on All Off; every code as in 700-setup-seven.json.",
+  "steps": [
+    {
+      "instruction": "Take the remote off the cable while looking at the screen. Expect 'Turning system off' with the remote icon and three lines below it, then the orange Activities screen, 'Activities 1/3'. Say whether the tops of 'Turning system off', the 'T' and the two 'f's, are whole or cut off at the top edge, and whether the orange is easy to tell from the red and the blue later. Mark"
+    },
+    {
+      "instruction": "Press Watch TV. Expect 'Starting TV kijken', the LG's, the KPN box's and the Denon's power, the LG's HDMI 1 and the Denon's CBL/SAT, then the blue TV kijken screen. Press the centre button ('Devices'): expect the red device list. Press the centre button ('Activity') to go back. Mark when it settles"
+    },
+    {
+      "instruction": "Press All Off while looking at the screen. Expect 'Turning system off' briefly, the LG's, the KPN box's and the Denon's power, then the orange Activities screen. Say whether 'Turning system off' showed. Mark when it is quiet"
+    }
+  ]
+}

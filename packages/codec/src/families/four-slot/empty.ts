@@ -268,7 +268,11 @@ export const EMPTY_VARIABLES: readonly (readonly [string, StateVariableSpec])[] 
   ['flag', startSequenceVariables()[1]!],
   ['menuMarker', menuMarkerVariable()],
   ['lowBattery', { first: 0, max: 1 }],
-  ['tourMark', { first: 0, max: 1 }],
+  // Starts at 1, where every compile of Logitech's starts it at 0: the Off screen, "Turning system off", is
+  // entered only while it is 1, and nothing on a remote set it on the bench Harmony 700, which read 0 over
+  // USB and showed no Off screen with two files of ours, todo-compile-700.md 2.3. Logitech's own setter is the
+  // tour's start list, run by an entry point nobody has seen run, section 357; a file of ours holds no tour.
+  ['tourMark', { first: 1, max: 1 }],
   ['usb', { first: 0, max: 3 }],
 ];
 
