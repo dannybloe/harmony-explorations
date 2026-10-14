@@ -230,6 +230,8 @@ const H600_DUMPS = new Set<string>([
   // After the 600's first real write, the KPN box's power on delay raised from 15 to 45 tenths: the
   // two bytes the file changed and nothing else. The compare base for putting it back.
   'h600_kpn45_region',
+  // Before the empty configuration of `todo-compile-600.md` 1.4: the region to the 0x200000 ceiling.
+  'h600_before_empty',
 ]);
 const H700_DUMPS = new Set<string>([
   // Read straight after section 300 put block 0x030000 back unchanged: the 2.8 configuration, the

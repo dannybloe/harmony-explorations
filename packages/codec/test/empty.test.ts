@@ -32,6 +32,7 @@ import { archSlot, checkWiring, compareViews, parse, readRecipe, screenStrings, 
 import { readFileSync } from 'node:fs';
 import { checkFirmwareScreens } from '../src/firmwarescreens.ts';
 import { checkScreenRecords } from '../src/screenrecords.ts';
+import { stateRecords } from '../src/sections.ts';
 import { assembleSetup, attributeBytes } from '../src/assemble.ts';
 import { OUR_FOUR_SLOT_CHOICES } from '../src/index.ts';
 import type { Recipe } from '../src/index.ts';
@@ -563,9 +564,17 @@ test('todo-compile-700.md 2.3: a file of ours starts the mark the Off screen wai
   // Logitech's compiles start it at 0 and set it from the tour, which a file of ours does not hold; at 0 the
   // bench Harmony 700 never showed "Turning system off", section 386.
   assert.deepEqual(emptyVariables('harmony-700').find(([name]) => name === 'tourMark')?.[1], { first: 1, max: 1 });
+  // And in the file as built, where the remote's restart seeds it from, on each model of ours.
+  for (const skin of [66, 72, 73]) {
+    assert.equal(stateRecords(buildEmpty(false, skin).container)?.[emptyVariable('tourMark')]?.first, 1, `skin ${skin}`);
+  }
   assert.deepEqual(startupTitleYs(buildEmpty(false, 66).container), [7, 21]);
   const strings = screenStrings(buildEmpty(false, 66).container, characterMap(buildEmpty(false, 66).container)!);
   assert.equal(strings.find((one) => one.text === 'Turning system off')?.y, 7);
+});
+
+test('todo-compile-700.md 2.3: a Logitech compile keeps its start up titles at y 5 and 19', skipUnless('h700_config'), () => {
+  assert.deepEqual(startupTitleYs(parse(require_('h700_config'))), [5, 19]);
 });
 
 test('todo-compile-600.md 1.1: the Harmony 600 built from nothing, skins 73 and 71, rebuilds by every checker with every byte attributed, and differs from the Harmony 650\'s only in its skin, its settings block and the checksum', () => {

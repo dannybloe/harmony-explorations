@@ -1,0 +1,34 @@
+{
+  "name": "Harmony 600, the empty configuration built from nothing",
+  "description": "todo-compile-600 1.4, one write of lab/work/h600-from-nothing/empty-600-73.bin: the Harmony 650's empty configuration with the 600's skin and settings block, no device and no activity, built by our own generators with no Logitech file as input. It holds the firmware's fourteen screens, an empty Devices list, an empty Activities screen and the 'Turning system off' screen, in our letters and pictures, the two menus over the idle green with white bars. The 600's screen has no colour, and what it makes of our green, of the white bars and of our letters' edges is not known: the firmware sends every pixel unchanged and the screen decides. Predicted: no key sends anything, so the Flirc hears nothing at all during the whole run; Devices and Activities lead to each other; an activity button shows the 'add an Activity' screen; Off shows 'Turning system off' and comes back to Activities. The three buttons below the screen are the left arrow, the centre button and the right arrow.",
+  "steps": [
+    {
+      "instruction": "After the write, with the cable still in, the screen should show 'USB Connected' with our USB symbol. Unplug the cable. Expect 'Turning system off' with our remote icon and three lines below it, then the Activities screen: 'Activities' on a bar at the top, nothing in the middle, 'Devices' on a bar at the bottom. Say how it looks on this screen: whether the background is dark, light or a grey, whether the bars stand out from it, and whether the words are readable. The Flirc hears nothing",
+      "expect": []
+    },
+    {
+      "instruction": "Press the centre button below the screen ('Devices'). Expect the Devices screen: 'Devices' at the top, nothing in the middle, 'Activities' at the bottom. The Flirc hears nothing",
+      "expect": []
+    },
+    {
+      "instruction": "Press the centre button ('Activities'). Expect the Activities screen again. The Flirc hears nothing",
+      "expect": []
+    },
+    {
+      "instruction": "Press Watch TV. Expect a dark screen reading 'Use the Harmony setup software to add an Activity on this button.' with 'Exit' at the bottom. Press the centre button ('Exit'). Expect to be back on the screen you came from. The Flirc hears nothing",
+      "expect": []
+    },
+    {
+      "instruction": "Press More Activities. Expect to stay on, or come back to, the Activities screen; on Logitech's own compile with no activity this button shows 'Use the Harmony setup software to add Activities.' instead, so say which you see. The Flirc hears nothing",
+      "expect": []
+    },
+    {
+      "instruction": "Press All Off. Expect 'Turning system off' and then the Activities screen. The Flirc hears nothing: there is no device to switch off",
+      "expect": []
+    },
+    {
+      "instruction": "Leave the remote alone. Expect the screen to go dark after the 20 seconds the configuration sets, then wake it with any button and expect the Activities screen. Then press the left and right arrows below the screen and a few number keys: nothing should change and the Flirc hears nothing",
+      "expect": []
+    }
+  ]
+}

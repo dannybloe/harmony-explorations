@@ -16,8 +16,9 @@ says where the remote's facts are and holds the 600's write procedure.
 * the panel is **monochrome**, while its configurations carry colour pixels like the others';
 * it takes **five devices**, by Logitech's manual and service;
 * it has **delays saved on the remote** that override the configuration's at every start;
-* the bench unit is **skin 73**, the European 600, as is Logitech's compile of its own configuration,
-  `h600_config`; `calibration_h600` is skin 71;
+* the bench unit **reports skin 71** in its version block while Logitech's compile of its own configuration,
+  `h600_config`, states **73**, the European 600, as ours does; nothing on the remote reads the
+  configuration's skin, section 81; `calibration_h600` is skin 71;
 * on the cable it has **not loaded its configuration**, section 110, so a memory read there is not a
   live one, where the 700's was.
 
@@ -31,7 +32,7 @@ bench test, as the 700's chapters 1 and 2 did.
 - [x] 1.1 The empty builder takes the 600, skins 73 and 71: the wiring, the firmware screens, mode 0's key list and the mode count from the parts already built for the 600, and the no activity configuration the wiring refuses on the 600 today, as a choice of ours or from a Logitech compile if one holds none
 - [ ] 1.2 What the monochrome panel draws for a colour pixel, read in the 0.2 image's drawing path or seen on a test file, and then our look on it: the state colours, the letters' inks and smoothing, and the icons, each chosen so it reads on the panel
   - [x] 1.2.1 Read in the 0.2 image: the firmware sends every pixel to the panel unchanged, in the same sixteen bit mode as the 650, by the same display driver byte for byte; so what a colour pixel looks like is decided in the display module and the image cannot say
-  - [ ] 1.2.2 The panel's identity byte read over USB, data memory `0x384`, against the 650's 0
+  - [x] 1.2.2 The panel's identity byte read over USB, data memory `0x384`: 0, as the 650's, so the same panel set up; whether 0 is an identity or a byte the read left unwritten the firmware does not say
   - [ ] 1.2.3 A test picture on the bench 600: ramps of red, green, blue and grey and a mid grey beside a checkerboard, to count its grey levels and see which channels count
   - [ ] 1.2.4 Our look chosen on that: the state colours, the letters' inks and smoothing, and the icons
 - [x] 1.3 Checked: it rebuilds, every screen rebuilds, every byte attributed to a generator and none carried, as the 650's 11.1.1.4
