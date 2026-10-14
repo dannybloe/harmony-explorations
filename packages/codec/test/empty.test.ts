@@ -70,7 +70,7 @@ test('11.1.1.1: the skeleton lays out from nothing, every container check passin
       assert.deepEqual(glyph.rows, letterRows(face, ch, lettering, FOUR_SLOT_CHOICES.letterInks), `${face} ${lettering} '${ch}'`);
     }
   });
-  assert.throws(() => buildEmptySkeleton({ skin: 73, builtAt: BUILT_AT, inks: FOUR_SLOT_CHOICES.letterInks }), /Harmony 650/);
+  assert.throws(() => buildEmptySkeleton({ skin: 69, builtAt: BUILT_AT, inks: FOUR_SLOT_CHOICES.letterInks }), /not skin 69/);
 });
 
 /** The family's look, as an empty configuration takes it. */
@@ -566,4 +566,28 @@ test('todo-compile-700.md 2.3: a file of ours starts the mark the Off screen wai
   assert.deepEqual(startupTitleYs(buildEmpty(false, 66).container), [7, 21]);
   const strings = screenStrings(buildEmpty(false, 66).container, characterMap(buildEmpty(false, 66).container)!);
   assert.equal(strings.find((one) => one.text === 'Turning system off')?.y, 7);
+});
+
+test('todo-compile-600.md 1.1: the Harmony 600 built from nothing, skins 73 and 71, rebuilds by every checker with every byte attributed, and differs from the Harmony 650\'s only in its skin, its settings block and the checksum', () => {
+  for (const skin of [73, 71]) {
+    const c = buildEmpty(false, skin).container;
+    assert.ok(c.allChecksPass, `skin ${skin}`);
+    assert.ok(inOurLook(c), `skin ${skin}`);
+    checkWiring(c);
+    checkFirmwareScreens(c);
+    assert.deepEqual(checkScreenRecords(c), { structure: 485, rows: 0, pages: 3 }, `skin ${skin}`);
+    assert.deepEqual([...attributeBytes(c).carried.keys()], [], `skin ${skin}`);
+  }
+  const h650 = buildEmpty(false, 72).container.blob;
+  const h600 = buildEmpty(false, 73).container.blob;
+  assert.equal(h600.length, h650.length);
+  // Runs of differing bytes, joined across gaps of up to four: the skin, the settings block's group 3, the checksum.
+  const runs: [number, number][] = [];
+  h650.forEach((value, k) => {
+    if (value === h600[k]) return;
+    const last = runs.at(-1);
+    if (last !== undefined && k - last[1] <= 4) last[1] = k; else runs.push([k, k]);
+  });
+  assert.equal(runs.length, 3);
+  assert.deepEqual([...h600.subarray(runs[1]![0], runs[1]![1] + 1)], [1, 0, 3, 0, 5]);
 });

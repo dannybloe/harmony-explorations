@@ -165,13 +165,19 @@ export function clockSpec(builtAt: string): StateTablesSpec['clock'] {
  * The models an empty configuration is built for, by skin: the Harmony 650's two, and since
  * `todo-compile-700.md` the Harmony 700's 66. Its EMEA twin 69 has no compile or unit here and stays out.
  */
-export type EmptyModel = 'harmony-650' | 'harmony-700';
-const EMPTY_MODELS: ReadonlyMap<number, EmptyModel> = new Map([[72, 'harmony-650'], [74, 'harmony-650'], [66, 'harmony-700']]);
+export type EmptyModel = 'harmony-600' | 'harmony-650' | 'harmony-700';
+/**
+ * The skins an empty configuration is built for. The Harmony 600's two since `todo-compile-600.md` 1.1: 73,
+ * the European 600 the bench unit is and its own compile `h600_config` states, and 71, `calibration_h600`'s.
+ */
+const EMPTY_MODELS: ReadonlyMap<number, EmptyModel> = new Map([
+  [71, 'harmony-600'], [73, 'harmony-600'], [72, 'harmony-650'], [74, 'harmony-650'], [66, 'harmony-700'],
+]);
 
 /** The model an empty configuration of `skin` is built for, refused where none is. */
 export function emptyModelOf(skin: number): EmptyModel {
   const model = EMPTY_MODELS.get(skin);
-  if (model === undefined) throw new EmptyConfigurationError(`an empty configuration is built for the Harmony 650 and 700, not skin ${skin}`);
+  if (model === undefined) throw new EmptyConfigurationError(`an empty configuration is built for the Harmony 600, 650 and 700, not skin ${skin}`);
   return model;
 }
 
@@ -587,14 +593,18 @@ export const EMPTY_SCREEN_FONTS = {
  * 650 draws on its battery blank screen on "Please charge your remote" instead, and a full battery on the
  * battery blank screen.
  */
+const SIX_FIFTY_SCREEN_PICTURES: Readonly<Record<string, OurPictureName>> = {
+  usbConnected: 'USB Connected',
+  lowBattery: 'Low Battery',
+  batteryBlank: 'battery blank screen',
+  upgradeBlank: 'upgrade and learn blank screens',
+  learnBlank: 'upgrade and learn blank screens',
+};
+
 const FIRMWARE_SCREEN_PICTURES: Readonly<Record<EmptyModel, Readonly<Record<string, OurPictureName>>>> = {
-  'harmony-650': {
-    usbConnected: 'USB Connected',
-    lowBattery: 'Low Battery',
-    batteryBlank: 'battery blank screen',
-    upgradeBlank: 'upgrade and learn blank screens',
-    learnBlank: 'upgrade and learn blank screens',
-  },
+  // The Harmony 600's firmware screens are the 650's fourteen, `FIRMWARE_SCREENS`, and get the same pictures.
+  'harmony-600': SIX_FIFTY_SCREEN_PICTURES,
+  'harmony-650': SIX_FIFTY_SCREEN_PICTURES,
   'harmony-700': {
     frame0: 'charging 1',
     frame1: 'charging 2',
@@ -639,7 +649,6 @@ function emptyFirmwareScreens(
   spec: WiringSpec, pictures: EmptyPictures, firstList: number, spelling: Container,
 ): BuiltFirmwareScreens {
   const model = spec.model;
-  if (model === 'harmony-600') throw new EmptyConfigurationError('an empty configuration is built for the Harmony 650 and 700, not the Harmony 600');
   const screens = firmwareScreenTemplates(model);
   const seven = model === 'harmony-700';
   const cleared = seven ? spec.lists['usbLeave.first'] : firstList;

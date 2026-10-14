@@ -28,9 +28,13 @@ bench test, as the 700's chapters 1 and 2 did.
 
 ## 1. The empty configuration for the 600
 
-- [ ] 1.1 The empty builder takes the 600, skins 73 and 71: the wiring, the firmware screens, mode 0's key list and the mode count from the parts already built for the 600, and the no activity configuration the wiring refuses on the 600 today, as a choice of ours or from a Logitech compile if one holds none
+- [x] 1.1 The empty builder takes the 600, skins 73 and 71: the wiring, the firmware screens, mode 0's key list and the mode count from the parts already built for the 600, and the no activity configuration the wiring refuses on the 600 today, as a choice of ours or from a Logitech compile if one holds none
 - [ ] 1.2 What the monochrome panel draws for a colour pixel, read in the 0.2 image's drawing path or seen on a test file, and then our look on it: the state colours, the letters' inks and smoothing, and the icons, each chosen so it reads on the panel
-- [ ] 1.3 Checked: it rebuilds, every screen rebuilds, every byte attributed to a generator and none carried, as the 650's 11.1.1.4
+  - [x] 1.2.1 Read in the 0.2 image: the firmware sends every pixel to the panel unchanged, in the same sixteen bit mode as the 650, by the same display driver byte for byte; so what a colour pixel looks like is decided in the display module and the image cannot say
+  - [ ] 1.2.2 The panel's identity byte read over USB, data memory `0x384`, against the 650's 0
+  - [ ] 1.2.3 A test picture on the bench 600: ramps of red, green, blue and grey and a mid grey beside a checkerboard, to count its grey levels and see which channels count
+  - [ ] 1.2.4 Our look chosen on that: the state colours, the letters' inks and smoothing, and the icons
+- [x] 1.3 Checked: it rebuilds, every screen rebuilds, every byte attributed to a generator and none carried, as the 650's 11.1.1.4
 - [ ] 1.4 Written to the bench 600 with a bench test: it starts, Devices and Activities lead to each other, an activity key shows the placeholder, All Off returns; the region read into the lab first, and the delays saved on the remote read
 
 ## 2. The test setup on it

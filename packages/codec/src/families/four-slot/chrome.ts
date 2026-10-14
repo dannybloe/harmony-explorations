@@ -35,7 +35,7 @@ import { characterMap, glyphsReferencedBy, referencedStringAddress } from '../..
 import { valueMaps } from '../../valuemap.ts';
 import { FOUR_SLOT_CHOICES } from './choices.ts';
 import { ourStateColours, stateLookOf } from './statelook.ts';
-import { BLENDED_LETTER_SKINS } from '../../backgrounds.ts';
+import { OUR_LOOK_SKINS } from '../../backgrounds.ts';
 
 /*
  * ---- The screen half, arch 14 (Harmony 600, 650 and 700), section 285 ----
@@ -556,13 +556,14 @@ export const OUR_LOOK = 'state colours';
 
 /**
  * Whether a configuration's pages are drawn in our look: a Harmony 650's or, since `todo-compile-700.md` 2.1,
- * a Harmony 700's, `BLENDED_LETTER_SKINS`, holding none of Logitech's device page looks whole, of any skin. A
+ * a Harmony 700's, and since `todo-compile-600.md` 1.1 a Harmony 600's, `OUR_LOOK_SKINS`, holding none of
+ * Logitech's device page looks whole, of any skin. A
  * Logitech compile whose skin names a look nobody measured still holds its artwork, so it is refused as an
  * unmeasured look rather than read as ours; all seven of Logitech's Harmony 700 compiles in the lab hold one
  * whole and read as not ours, section 382's review.
  */
 export function inOurLook(c: Container): boolean {
-  if (!BLENDED_LETTER_SKINS.has((c.versionWord ?? -1) & 0xff)) return false;
+  if (!OUR_LOOK_SKINS.has((c.versionWord ?? -1) & 0xff)) return false;
   const pictures = picturesByContent(c);
   return !DEVICE_PAGE_LOOKS.some((look) => (['crossed', 'topBar', 'bottomBar', 'cornerPatch'] as const)
     .every((role) => (pictures.get(look[role])?.length ?? 0) > 0));

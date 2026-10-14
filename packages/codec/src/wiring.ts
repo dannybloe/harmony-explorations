@@ -910,12 +910,8 @@ export function buildWiring(spec: WiringSpec): BuiltWiring {
   // choice, for an activity of the Custom type on a configuration of ours, section 379.
   const emptyKeys = ACTIVITY_KEY_SCANS.filter((scan) => spec.activityKeys[scan] === null).length;
   if (!Number.isInteger(spec.activityCount) || spec.activityCount < 0) throw new WiringError(`${spec.activityCount} activities is not a count`);
-  // No activity is one Harmony 650 compile's, and on the Harmony 700 a configuration of ours that carries
-  // the 650's form over, `todo-compile-700.md` 1.1, section 382. The Harmony 600 stays refused until its
-  // own track reaches it.
-  if (spec.activityCount === 0 && spec.model === 'harmony-600') {
-    throw new WiringError(`no ${spec.model} compile with no activity has been read, only a Harmony 650's`);
-  }
+  // No activity is one Harmony 650 compile's, and on the Harmony 700 and 600 a configuration of ours that
+  // carries the 650's form over, `todo-compile-700.md` 1.1 and `todo-compile-600.md` 1.1, sections 382 and 387.
   if (spec.activityCount === 0 && emptyKeys !== ACTIVITY_KEY_SCANS.length) throw new WiringError('an activity key selects an entry and there is no activity');
   const cat = catalogue(spec.model, spec.settings, spec.activityKeys, spec.activityCount);
   const order = timerOrder(cat, spec.deviceTimers);
