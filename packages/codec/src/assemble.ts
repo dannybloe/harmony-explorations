@@ -120,7 +120,7 @@ import {
   FOUR_SLOT_CHOICES, OUR_FOUR_SLOT_CHOICES, type FourSlotChoices, type FourSlotChoicesGiven, fourSlotChoices,
 } from './families/four-slot/choices.ts';
 import { SCREEN_STATES, checkStateBackgrounds, ourPictureName, withStateBackgrounds } from './backgrounds.ts';
-import { ourStateColours, recolouredStates } from './families/four-slot/statelook.ts';
+import { oneLook, ourStateColours, recolouredStates } from './families/four-slot/statelook.ts';
 import { cornerPrograms, inOurLook } from './families/four-slot/chrome.ts';
 import { cornerProgramAt, emptyFontTable } from './families/four-slot/empty.ts';
 import { caseProgram } from './shared/menus.ts';
@@ -436,10 +436,10 @@ export const ASSEMBLY_SKINS: ReadonlySet<number> = new Set([72]);
 
 /**
  * The skins the assembly takes on a donor of ours alone, an empty configuration in our look: the Harmony
- * 700's 66, `todo-compile-700.md` 2.1. None of Logitech's 700 compiles has had the chain run on it, so one
- * of them as the donor is refused.
+ * 700's 66, `todo-compile-700.md` 2.1, and the Harmony 600's 71 and 73, `todo-compile-600.md` 2.1. None of
+ * Logitech's compiles for either has had the chain run on it, so one of them as the donor is refused.
  */
-export const OUR_DONOR_SKINS: ReadonlySet<number> = new Set([66]);
+export const OUR_DONOR_SKINS: ReadonlySet<number> = new Set([66, 71, 73]);
 
 export interface AssembleOptions {
   /** The container every part no generator builds is taken from: a Logitech compile, or a library. */
@@ -490,7 +490,7 @@ export function assembleSetup(setup: Recipe, options: AssembleOptions): Assemble
   // The recipe's model, whose definition says what it can hold and whose family builds for it.
   const target = recipeTarget(setup);
   if (target.family !== FOUR_SLOT || !(ASSEMBLY_SKINS.has(target.skin) || OUR_DONOR_SKINS.has(target.skin))) {
-    throw new AssemblyError(`the assembly is measured on the Harmony 650, skin 72, and the 700, skin 66, on a donor of ours, and the recipe is for the ${setup.model.name}`);
+    throw new AssemblyError(`the assembly is measured on the Harmony 650, skin 72, and on a donor of ours the 700, skin 66, and the 600, skins 71 and 73, and the recipe is for the ${setup.model.name}`);
   }
   let c = parse(options.donor);
   if (c.architecture !== 14) throw new AssemblyError(`the assembly is arch 14's, and the donor is arch ${c.architecture}`);
@@ -720,7 +720,17 @@ export function assembleSetup(setup: Recipe, options: AssembleOptions): Assemble
   }
   // On a donor of ours the composers draw in the colours the file has, the defaults on an empty one, and the
   // chosen ones are written over them here, decision 20: a state's background and corner patch, same length.
-  if (ours && SCREEN_STATES.some((state) => choices.stateColours[state] !== FOUR_SLOT_CHOICES.stateColours[state])) {
+  // A model drawn in one look, the Harmony 600, takes `oneLookColour` for all three, `todo-compile-600.md`
+  // 1.2.4, and refuses state colours chosen apart, which it has no looks to draw in.
+  if (ours && oneLook(c)) {
+    if (SCREEN_STATES.some((state) => choices.stateColours[state] !== FOUR_SLOT_CHOICES.stateColours[state])) {
+      throw new AssemblyError(`the ${setup.model.name} draws every state in one look, so its colour is oneLookColour and not stateColours`);
+    }
+    const one = choices.oneLookColour;
+    if (ourStateColours(c).idle !== one) c = recolouredStates(c, { idle: one, device: one, activity: one });
+    if (ourStateColours(c).idle !== one) throw new AssemblyError('the one look reads back in another colour than chosen');
+    note('one look', one.toString(16));
+  } else if (ours && SCREEN_STATES.some((state) => choices.stateColours[state] !== FOUR_SLOT_CHOICES.stateColours[state])) {
     c = recolouredStates(c, choices.stateColours);
     const read = ourStateColours(c);
     const wrong = SCREEN_STATES.filter((state) => read[state] !== undefined && read[state] !== choices.stateColours[state]);

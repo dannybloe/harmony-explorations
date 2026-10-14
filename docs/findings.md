@@ -51479,3 +51479,68 @@ file's `first`; a 600 that shows `0x0446` as black or as white.
 * `packages/codec/test/empty.test.ts`: the 600 built from nothing, and the mark at 1 on the built file.
 * `packages/bench/irtests/done/600-empty.json` and `600-empty-mark-off.json`, the tests; their runs and the reads
   are in the lab's `reads/`.
+
+## 388. The test setup assembles on the Harmony 600's empty configuration in one grey, and compares equal to the Harmony 650's
+
+`todo-compile-600.md` 2.1: the assembly takes skins 71 and 73 on a donor of ours, `OUR_DONOR_SKINS`, as it took
+the Harmony 700's in section 385, and the measurements a composer or the assembly holds for the 650 or 700
+alone that the todo names are checked against the 600's two compiles, one of each skin, `h600_config` 73 and
+`calibration_h600` 71. Measured on files only. Checked first: section 385's list for the 700 and section 358
+for the title; MyHarmony's client holds no compiler, so it has nothing on how a setup is laid out.
+
+**Five devices, Logitech's stated limit for the 600**, from its manual, its service and `models.ts`; whether a
+sixth is taken is 2.2. The 650's test setup, seven devices, is refused, "this model holds 5". Cut to five,
+without the Sony HT, and with it Muziek, and without the Switch, which only Kodi kijken held and in no role,
+the setup assembles on the 600's empty configuration with no composer refusing: four activities, TV kijken,
+Film kijken, Kodi kijken and Plasma kijken, and Listen to Music left on the placeholder. The same five device
+recipe on the 650's empty configuration compares equal by `compareViews` with the menu's order: 515 slots, 0
+differences. The activity keys, `activityKeys`, read alike on both, Watch TV selecting set 6, Watch a Movie set
+7 and Listen to Music the placeholder, and so do the five device lists each draws, the idle one and one per
+activity, page by page. Smoothed letters, the 600's default, change none of the 515.
+
+**One look, and its cost is exact.** Read page by page, each page's first state background: on the 600 all 61
+pages that draw one draw grey 2, `0x2104`, `oneLookColour`, section 387, where the 650's same 61 split 4, 53
+and 4 over its three colours. On both, nine firmware screen pages draw the icons' dark fill, `0x2945`, which is
+no state's and is not the one grey. With letters unblended the 600's file is 66118 bytes smaller than the 650's
+of the same setup, by the attribution 66036 of pictures, two state backgrounds of 32773 and two corner patches
+of 245, 76 of corner programs, two of 38, and 6 of addresses, their two table entries, and 0 in every other
+kind: all the 650's two further looks hold. With the default smoothed letters the difference is 113024 bytes,
+not broken down here. The assembly writes the one grey over a donor of ours in another colour, the build on the
+650's green donor coming out byte for byte the build on the grey one, and refuses any state colour choice on the
+600, whose one colour is `oneLookColour`.
+
+**The measurements, one by one:**
+
+| measurement | on the Harmony 600 |
+|---|---|
+| where a start up title wraps, 126 pixels, section 358 | inside the 600's bounds: its compiles draw 116 on one line and break 130, so 126 is not contradicted and where from 117 to 129 the 600's compiler breaks is not known. This setup's titles fall outside that range, "Starting TV kijken" 105, "Starting Film kijken" and "Starting Kodi kijken" 112, kept whole, and "Starting Plasma kijken" 130, broken, the width of the one Logitech breaks |
+| the activity keys, scans 5, 1 and 7 | `calibration_h600` reads Watch TV selecting set 6, Watch a Movie set 7 and Listen to Music the placeholder, as this build does; `h600_config` binds all three to activities, sets 8, 5 and 7 |
+| each activity's device list: its devices, then the rest in the idle list's order | the three four device lists of `h600_config` each fit with one leading device, 4 of the 24 orders of four doing so; `calibration_h600`'s two lists of three devices fit any order and carry no weight. That the leading device is the activity's own is not read off its start, so the shape is consistent and not checked |
+| the device page look, monochrome on Logitech's compiles | not used: a file of ours draws its own one look, and the two compiles read as not ours, `inOurLook` |
+| a two row device list | on both 600 compiles as on the 650's, entered by nothing, section 326, and built by neither of ours |
+| the device timer, section 385 | not composed here, as on the 650 and 700; `calibration_h600` carries a sixth timer, 45 s, instruction `0xA3` operand 1, that `h600_config` does not, and whether it is the device timer of sections 347 and 382 is not checked |
+
+### Scope, decision 16
+
+The Harmony 600, skin 73, as a file; skin 71 assembles too, the same size, differing in the skin byte and the
+checksum alone, and is not compared further. Nothing in this section was written to a remote. No Logitech
+compile of this setup for the 600 exists, so the comparison is ours against ours, on this one recipe.
+
+### What this does not establish
+
+* Anything on the remote, which is 2.3, nor whether a sixth device is taken, which is 2.2.
+* What the view leaves out: the firmware screens, the start up and Off titles, pauses, and the look.
+
+### Falsification
+
+A Logitech 600 compile that draws a start up title over 126 pixels on one line, or breaks one narrower; a view of
+this five device recipe on the 600 that differs from the 650's; a 600 build with a page drawn in a state colour
+other than `0x2104`; an unblended size difference other than 66118, or one attributed anywhere but pictures,
+corner programs and addresses; a donor of ours in another colour whose build is not byte identical to the grey
+donor's.
+
+### Where it lands
+
+* `packages/codec/src/assemble.ts`: `OUR_DONOR_SKINS` takes 71 and 73, and the one look's colour is applied.
+* `packages/codec/test/empty.test.ts`: the five device setup on both models, page by page and by attribution,
+  and Logitech's 600 compiles refused as donors.
