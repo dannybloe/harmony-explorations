@@ -51123,3 +51123,98 @@ Activities on our empty Activities screen does anything other than show "add Act
   read; `packages/codec/test/empty.test.ts`: the empty activity menu calls the list on both models, and the
   first activity composed onto it maps back.
 * `packages/bench/irtests/done/700-empty.json`, the test; its run is in the lab's `reads/`.
+
+## 384. The Harmony 700 shows its charging screens only on a charger whose data lines it reads as a dedicated charger
+
+`todo-compile-700.md` 1.4, the open half of section 383: no charging screen showed on the bench. With our
+empty configuration on a phone charger, with charged and with flat cells; with Logitech's own on the same
+charger, with the charged set, the defective set, no cells, one flat and one full cell, and the cable put in
+while the screen was dark. Read in the Harmony 700's 2.8 image, then seen on the remote.
+
+**How the battery events are raised.** An event is queued on the action queue as the three bytes `code, FC,
+1F` by `0x0E902`, and `1F FCxx` is handed to the handler stack where base slot 9's sets sit, section 104;
+a full queue drops it. The firmware's state variables sit at `0x900 + n` on this build. Four pollers raise
+the battery events, each only when its value changes:
+
+| events | raised at | when |
+|---|---|---|
+| `0x21`, then `0x30`, `0x22`, `0x23`, `0x25` or `0x24` | `0x103F4` to `0x1045C`, every main loop pass | the charge status, 0 to 4 in that order, `XORLW` chain at `0x10428`, changes from the one saved in variable 15 |
+| `0x20`, then `0x1F` or `0x1E` | `0x103A6` to `0x103DC` | the charger flag `0x0B1`, copied into variable 14, changes: `0x1F` when it becomes 1, `0x1E` when 0; polled only while the action queue and a second buffer at `0x064` are empty and no host has addressed the remote, `0x0B0` |
+| `0x28`, then `0x26` or `0x27` | `0x10494` to `0x104D4` | a USB host has addressed the remote, into variable 16 |
+| `0x10` or `0x0F`, then a level event | `0x0FB54` to `0x0FBDC` | the battery level, 0 to 7, variable 9, changes; not polled while a host is connected |
+
+**The charger test is the gate.** The USB poll at `0x16F30` keeps a state at `0x3AB`. With VBUS present it
+switches the USB module on, and once the bus leaves single ended zero it arms a timer of 2000 ticks, about 2
+seconds: a tick is 1000 counts of timer 3 (`0x1A3BA`), which `T3CON = 0xEC` at `0x1B90E` clocks at a quarter
+of the instruction rate, and the instruction rate is 4 million a second, section 13's measurement on this
+build and the unit's own configuration words, `8E F5 05 FB F8 F8` at internal `0xFFF8` in `h700_28_internal_ff`
+(a 4 MHz crystal, the PLL, the CPU clock divided by three, 16 MHz), so a tick is 1 ms. The timer is `0x07D0`,
+loaded at `0x16FDA`.
+A host that assigns an address, state 4, disarms it, where a bus reset alone does not, so on a computer no
+charger test ever runs and "USB Connected" shows. When the timer runs out, `0x17288` switches the USB module off, disables the transceiver,
+drives RG2 high and reads PORTF bits 3 and 4: **only if both read high** does the state become 7, the charger
+flag 1 and charging switched on (`0x10466`, LATG bit 1 cleared). Otherwise USB comes back on and the test
+repeats, raising nothing.
+
+**The charge status is a pulse pattern**, measured by `0x19D3A` while variable 14 and the charging flag
+`0x0B2` are both set. Off a charger, or on one with charging off, it is 1, which raises `0x22`, an event bound
+in none of the nine Harmony 700 configurations in the lab, seven of Logitech's and two region reads; but on a charger with charging off after status 3
+or 4 it reports nothing, so the full battery or the fault stays on the screen. It samples PORTB bit 0 once
+per 40 ms tick, `0x1C9` reloaded with 40: a high run of 2 to 6 samples then a low run of 18 to 22 is status 2,
+event `0x23`, the charging frames, reported at once; high and low runs of 2 to 6 is status 4, `0x24`, "Unable
+to charge batteries"; no edge for 50 samples while low is status 3, `0x25`, the full battery; no edge for 50
+samples while high is status 0, `0x30`, "Insert batteries", reported at once. **Statuses 3 and 4 are reported
+on their third detection in a row, counters `0x3D0` and `0x3D1`, and both switch charging off** (`0x19F28`,
+`0x19F7C`). Which screen each status leads
+to is the configuration's binding, `wiring.ts`' entry 1.
+
+**Inferred, not read**: that PORTB bit 1 is the cable's power, the gate at `0x16F36` and `0x104D8`; that RF3
+and RF4 are the USB data lines; RG2 a pull up for the test; LATG bit 1 the charger's enable, active low; and
+PORTB bit 0 the charge controller's status output. The pin table of the PIC18F67J50 says so for the data
+lines, the rest is how the code uses them. The code says only that both data lines read high: a charger
+whose two lines are joined would pass, by that inference; an open line floats and could read either way, and
+lines biased apart might read both high, depending on the input thresholds. Which chargers pass is not
+measured. That the phone charger of section 383 failed the test is inferred from no charging screen and no
+"USB Connected" showing on it.
+
+**On the remote**: with section 383's empty configuration on the bench Harmony 700, a cheap USB charger
+showed the charging screen sequence instead of the USB symbol, as seen at the bench on 14 October 2026; the
+phone charger showed no charging screen. That agrees with the reading and does not test its mechanism, since
+neither charger's data lines were measured. Logitech's configuration was not run on the cheap charger; that it
+would show its own frames there is an inference from the battery wiring, which rebuilds byte for byte,
+section 383, so the configuration is not why none showed before.
+
+**What it means beyond the screen**: on a computer or on a charger that fails the test, the firmware does not
+switch charging on by itself, so without a host command a Harmony 700 charges only from a charger it
+accepts. The one other way on is
+a host's version request with command state `0x1D` (`0x0CE4C`), `0x1E` switching it off and `0x18` to `0x1C`
+reading the charger flags back; this project's transport refuses all seven, and Logitech's clients are not
+checked for sending them. Not measured with a meter on the cells; inferred from the code.
+
+**Checked blind**: a second reading of the image, given the question and not this section, found the same
+posting routine, the same five pollers and event codes, the same charger test at `0x17288` with both PORTF
+bits required high, the same run lengths and counts, and the same switch, `LATG` bit 1 through `0x10466`. It
+added that a bus reset does not cancel the test, the host command that switches charging on, and that the
+`ADCON0` the test clears may be `ANCON1` under `WDTCON`'s shadow bit, which is not resolved.
+
+**The Harmony 600 0.2 and the Harmony 650 0.2 and 0.4 images post none of `0x1E`, `0x1F`, `0x20` to `0x25` or
+`0x30`** as far as direct posts go: their literal posts are `0x0D` to `0x10`, `0x17` to `0x1D`, `0x26` to `0x28`,
+`0x2D` and the keys. So the "Insert batteries" binding `h650_power_hold_compile` and `h600_config` carry is not
+raised that way on those models; they read PORTB bit 1 as the cable's gate as well, the 650 0.2 at `0x117EE`.
+
+### Scope, decision 16
+
+The Harmony 700, build 2.8, one unit and two chargers. Arch 14's other two models: the 600 0.2 and the 650
+0.2 and 0.4 checked for the events they post only. Every hardware reading is an inference from the code and the
+part's pin table.
+
+### Falsification
+
+A computer on which a Harmony 700 shows its charging frames without a host command; a charger whose data
+lines are measured both high at the test on which it shows no charging screen and no "USB Connected".
+
+### Where it lands
+
+* `reference/remotes/harmony-700/display.md` and `hardware.md`: when the charging screens show.
+* The lab's `work/charging-700/`: the listings of the 700 2.8 and 650 0.2 and 0.4 images the reading was
+  done on.

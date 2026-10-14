@@ -39,8 +39,9 @@ text, only a battery under a lightning bolt filled a quarter, a half, three quar
 one state variable to 1; mode 9 draws a full battery with a tick, and "Please charge your remote", mode 8,
 an empty battery with a forbidden sign. The "add an Activity" placeholder an empty activity key opens is
 mode 4 instead, read from configurations, sections 311, 314 and 383. That the four are what the remote
-shows while it charges is this reference's reading of the pictures and **not checked** at the bench with
-Logitech's configuration.
+shows while it charges is seen at the bench: on one USB charger they showed instead of "USB Connected", and on
+a phone charger no charging screen showed. By the firmware, they show only after a test of the cable's data
+lines passes, which a computer never lets run, section 384.
 
 ## What the screen does not show
 
@@ -51,5 +52,4 @@ Logitech's configuration.
 ## Not checked
 
 * The colour of a 700's panel, as seen.
-* What the screen shows while the remote charges.
 * Whether the IR status indicator appears, and where.

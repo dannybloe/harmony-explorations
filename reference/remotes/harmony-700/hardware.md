@@ -25,11 +25,13 @@ again only where the 700 adds something.
 | cells | "Power Source Rechargeable", "Power Type NiMH AA" | Logitech's manual, Product Specification |
 | charging | "insert the USB cable into the top of the remote, plug the other end of the cable into the AC adaptor, and then plug the AC adaptor into a wall outlet and charge" | Logitech's manual page 10, "Charging your remote" |
 | replacement cells | "Use only NiMH replacement batteries, size AA R6 with a minimum of 1800 mA" | Logitech's manual page 10 |
-| what the firmware does with charging | its mode 0 renders a **charging battery**, where the 600's and 650's mode 0 asks to add an activity | read from configurations, section 311 |
+| what the firmware does with charging | its modes 0 to 3 render a **charging battery**, where the 600's and 650's mode 0 asks to add an activity | read from configurations, sections 311 and 383 |
+| which chargers it charges from | one whose USB data lines it reads both high with its transceiver off, after no host has addressed it for about 2 seconds; then it switches charging on and shows the charging screens. On a computer the test never runs, and without a host command the firmware does not switch charging on | read in the firmware, section 384; the screens seen on one charger and not on another, neither charger's lines measured. Which chargers pass, and that it does not charge where the test fails, are **inferred from the code**, not measured |
 | battery voltage over USB | implemented in the 700's image, `READ_MISC` selector `0x0C` detail 1, in millivolts | read in the firmware, section 212; **never sent to a 700** |
 
-How the 700 senses the charger, and whether the Harmony One's charger input, `PORTB` bit 1, has a
-counterpart here, is **not checked**; section 105 read that on the Harmony One only.
+How the 700 senses the charger is read in section 384: the data line test, then a pulse pattern on an input
+whose wiring is inferred. Its cable gate is `PORTB` bit 1, read as the cable's power by inference, the bit the Harmony One reads as
+its charger input, section 105, and the Harmony 650 as its gate too.
 
 ## Infrared, light and case
 
@@ -52,6 +54,6 @@ on a 700 **not checked**.
 ## Not checked
 
 * The hardware version a 700 reports.
-* The charger input and the charging state in the firmware.
+* What the pins section 384 reads are wired to; its readings of them are inferred from the code.
 * The battery voltage on a 700, and the voltage its firmware treats as low.
 * The display controller and panel part, and whether the 700's screen differs physically from the 650's.
