@@ -238,6 +238,8 @@ const H600_DUMPS = new Set<string>([
   'h600_markoff_on',
   // With the empty configuration in grey 2 on it, before its letters blended, `todo-compile-600.md` 1.2.4.
   'h600_grey2_on',
+  // With the empty configuration in grey 2 and blended letters on it, before the five device setup, 2.2.
+  'h600_blended_on',
 ]);
 const H700_DUMPS = new Set<string>([
   // Read straight after section 300 put block 0x030000 back unchanged: the 2.8 configuration, the
