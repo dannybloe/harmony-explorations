@@ -36,7 +36,7 @@ fonts and the assembly all refuse anything but the Harmony 600, 650 and 700 toda
 spare; then every part the composers still borrow is built by us, as the 650's chapters 6 to 10 did; then
 the empty configuration from nothing, then the test setup on it.
 
-**The look**: our own letters and pictures, decision 24, decided on 15 October 2026; its colours are not
+**The look**: our own letters and pictures, the button boxes behind every touchable command included, decision 24, decided on 15 October 2026; its colours are not
 decided. **The test setup** is the 650 family's, `packages/corpus/setups/h650-test.json`, retargeted at the
 One with its sequence's keys translated by name, since the One's keys have other scan codes.
 
@@ -78,7 +78,7 @@ One with its sequence's keys translated by name, since the One's keys have other
 
 - [ ] 5.1 The text inside every screen program spelled from its word, as the 650's 8.1
 - [ ] 5.2 The fonts the One's screens draw, generated
-- [ ] 5.3 The pictures, built or drawn by us
+- [ ] 5.3 The pictures, built or drawn by us, the button boxes of the device pages and the menus among them
 
 ## 6. The container from nothing
 

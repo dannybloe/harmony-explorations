@@ -700,9 +700,11 @@ remote and 2 in the second, which is what section 117 measured as a generator er
    the builder takes either. A file of Logitech's written back as it is keeps its own number. Our own data
    on a remote, `todo.md` 3.6, sits beside this byte and does not replace it.
 
-24. **The Harmony One gets our own letters and pictures too.** *Taken by the project owner on 15 October
-   2026, for `todo-compile-one.md` 1.2.* Decisions 19, 20 and 22 were taken for the Harmony 650's screens
-   and carried to the 600 and 700; this carries the letters and the pictures to the One. Why it came up: a
+24. **The Harmony One gets our own letters and pictures too, its button boxes included.** *Taken by the
+   project owner on 15 October 2026, for `todo-compile-one.md` 1.2.* Decisions 19, 20 and 22 were taken for
+   the Harmony 650's screens and carried to the 600 and 700; this carries the letters and the pictures to
+   the One, and says outright that the boxes drawn behind a touchable command, a device page's pads and a
+   menu's row backgrounds, are pictures of ours as well. Why it came up: a
    Logitech configuration holds only the glyphs its own screens draw, and composing the test setup onto
    Logitech's two device compile for the One met a row font missing 24 of the 62 letters and digits, and no
    Harmony One configuration in the lab draws a `Z` in that font at all, so Logitech's letters cannot spell
