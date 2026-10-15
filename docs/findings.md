@@ -51604,7 +51604,15 @@ power off the activity's start holds, on a remote just restarted; its volume
 went to the LG; All Off sent the LG's power off, Kodi's power and the Switch's power toggle. The Switch's power
 on is the frame the catalogue names `ARC`, as on the Harmony 650, section 339. The Switch's own device page
 showed power on, power off, Input 1 and Input 2, as noted at the bench; the monitor heard no frame in that step,
-and whether a command was pressed there is not recorded. No other note was made.
+because no command was pressed there.
+
+**Each of the Switch's four page commands sends its code**, pressed afterwards with the remote off the cable and
+heard by the live monitor, `reads/20261015T0641Z-ir-monitor.jsonl` frames 43 to 52: power on (`ARC`), power
+toggle, Output A Input 1 and Output A Input 2, each named by the monitor from `h600_setup6_on`. The same log holds,
+before that, frames from the other five devices: the Plasma's power on, power off and HDMI 1 and 2, the Denon's
+Media Player and CBL/SAT, the KPN box's and Kodi's power and the LG's power on and HDMI 1, 42 frames, every one
+matching the written file. Which keys produced them was not recorded, so they show every device sending and not
+that any step sent what it should.
 
 **The monitor named the Switch "Not on a bench remote" at the bench**, as section 389 recorded for the five
 device setup: it named the 600 from `h600_setup5_on`, which has no Switch. It names from `h600_setup6_on` now,
@@ -51615,15 +51623,14 @@ and all twelve frames of the run match it.
 One Harmony 600, build 0.2, one run, six devices. Whether it takes a seventh, and whether anything on the
 remote counts devices at all, is not checked: what was shown is that a sixth device's codes go out from an
 activity's start and from All Off, and that the Devices screen reaches its page. Three of the six devices were
-heard, the LG, Kodi and the Switch; the KPN box, the Plasma and the Denon were not exercised, so whether a sixth
-device costs another its codes is not checked. The limit of 5 stays in `models.ts`, since it is Logitech's statement for the
+heard in the test, the LG, Kodi and the Switch; the KPN box, the Plasma and the Denon sent codes in the live log
+after it, with no record of which keys, so no code of theirs is shown missing and no step is shown right. The limit of 5 stays in `models.ts`, since it is Logitech's statement for the
 model and the library's refusal follows it.
 
 ### Falsification
 
 A frame of this run that no code of the written file matches, or one out of the order the test states for that
-step; a Switch command on its device page that sends nothing when pressed, which this run's step 4 does not
-settle: it heard nothing there and whether a command was pressed is not recorded.
+step; a Switch command on its device page that sends nothing when pressed, which all four did.
 
 ### Where it lands
 
