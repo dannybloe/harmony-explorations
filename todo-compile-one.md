@@ -43,7 +43,7 @@ were taken for the 650's screens) and which setup is the One's test setup.
 
 ## 1. The starting point
 
-- [ ] 1.1 Read the spare Harmony One's region into the lab as the compare base, and record which configuration it holds
+- [x] 1.1 Read the spare Harmony One's region into the lab as the compare base, and record which configuration it holds; done: `one_spare_track_start`, 0x1A0000 bytes from 0x040000, its unit checked against the spare's record; it holds MyHarmony's sync of the spare, seven devices and eight activities, with section 293's two test activities composed onto it, 1669427 bytes, every check passing
 - [ ] 1.2 The test setup composed with today's One composers on a Logitech One configuration, checked and written to the spare
 - [ ] 1.3 A bench test of it: every code as the file predicts, the touch rows, device mode and All Off
 
