@@ -32,7 +32,7 @@ Plan: [003-how-an-activity-is-built.md](docs/plans/003-how-an-activity-is-built.
   - [x] 1.1.6 What an entry in the activity switching table corresponds to: a per model prefix, one per activity, one more (section 272)
   - [x] 1.1.7 Where device mode's own keypad map comes from: the device's own screen record (section 271)
   - [x] 1.1.8 Scored against one_config and h600_config: seven of nine right, P6 incomplete, P7 wrong
-- [ ] 1.2 Compose an activity, the counterpart of `composeDevice`: `composeActivity`, on the Harmony One and the Harmony 600, 650 and 700
+- [x] 1.2 Compose an activity, the counterpart of `composeDevice`: `composeActivity`, on the Harmony One and the Harmony 600, 650 and 700
   - [x] 1.2.1 The screen half on arch 12 (Harmony One): a menu row, its hit rectangle and a drawn name (section 275)
   - [x] 1.2.2 A fourth activity, which needs a new menu page: a page counter, a pool copy, a page count, and undeadening the two page turn keys; Harmony One only, composed on two configurations and written to the spare Harmony One, which pages to four, and the device list's stale totals fixed with it (section 293)
   - [x] 1.2.3 The screen half on arch 14 (Harmony 600 and 650): the activity menu is the two row device list, a row on both buttons, and a page of one activity swaps to the full page picture; composed and checked on the 650, 600 and 700 configurations, not on hardware (section 289)
@@ -43,7 +43,7 @@ Plan: [003-how-an-activity-is-built.md](docs/plans/003-how-an-activity-is-built.
   - [x] 1.2.8 A composed device's power on delay on arch 14: the on transition runs the power command and then a 0x72 on PowerOnDelay through a 451 case table, a hundred tenths at a time, 15 of 15, and composed; not on hardware yet (section 288)
   - [x] 1.2.9 An arch 14 activity's own screens: a start up screen of its own, "Starting" and its name, and a working screen that is a device page with "Devices" at the bottom, plus a case in the four lookup records keyed by the activity; composed and checked on the 650, 600 and 700 configurations, not on hardware (section 290)
   - [x] 1.2.10 A composed arch 14 activity's own device list, "Activity" at the bottom: the idle list with the activity's devices first, reproducing all 13 real ones pixel for pixel; written to the 650 for LG kijken, and it shows and leads back as predicted (section 294)
-  - [ ] 1.2.11 Check a composed activity on the Harmony 700 itself, which so far is checked only against its configuration files: written once L7 has made it a write target
+  - [x] 1.2.11 Check a composed activity on the Harmony 700 itself, which so far is checked only against its configuration files: written once L7 has made it a write target; done on todo-compile-700's test setup, whose activities our assembly composed: written to the bench 700 and run, every code as the file predicts (sections 385 and 386)
 - [x] 1.3 Write one to the spare Harmony One and watch the television, per docs/plans/004-writing-an-activity.md
   - [x] 1.3.1 First write: the activity appears on the menu and beeps, and starts nothing (section 276)
   - [x] 1.3.2 Why: base slot 13's narrow and wide size the state variable storage and everything above it is painted with 0xFE at every boot, so the power variable held 65278 instead of 0. Measured on arch 12 and both arch 14 images, confirmed on hardware; the fill is unmeasured on arch 9

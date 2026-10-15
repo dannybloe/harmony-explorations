@@ -321,8 +321,8 @@ holds the table's shape.*
 
 ## What the corpus holds
 
-22<!--fact:corpus_dumps--> dumps from 9<!--fact:corpus_contributors--> contributors, carrying
-43<!--fact:corpus_configs--> configs across 5<!--fact:corpus_architectures--> architectures, plus the
+23<!--fact:corpus_dumps--> dumps from 9<!--fact:corpus_contributors--> contributors, carrying
+44<!--fact:corpus_configs--> configs across 5<!--fact:corpus_architectures--> architectures, plus the
 firmware images and bootloaders the table lists per architecture. `make corpus` inventories it and, importantly, reports which
 dumps nobody has described: a dump whose contributor has moved on is far harder to label later than one
 described on arrival.
@@ -336,7 +336,7 @@ described on arrival.
 | 9 | 510, 515, 520, 525, 550, 555 | 3<!--fact:corpus_arch9_dumps--> | 3<!--fact:corpus_arch9_configs--> | 525, 515 and 555, application and safe mode, three different builds | a 510, 520 or 550 |
 | 10 | 890, 895, 890 Pro | 2<!--fact:corpus_arch10_dumps--> | 12<!--fact:corpus_arch10_configs--> | **none** | **firmware**, which is the single hardest blocker here |
 | 12 | One | 2<!--fact:corpus_arch12_dumps--> | 2<!--fact:corpus_arch12_configs--> | One 3.4, plus safe mode and both internal pages | nothing: this one is covered |
-| 14 | 600, 650, 665, 700 | 5<!--fact:corpus_arch14_dumps--> | 6<!--fact:corpus_arch14_configs--> | 600, 650 and 700 | a 665 config |
+| 14 | 600, 650, 665, 700 | 6<!--fact:corpus_arch14_dumps--> | 7<!--fact:corpus_arch14_configs--> | 600, 650 and 700 | a 665 config |
 | 15 | 900, 1000, 1000i, 1100, 1100i | 0 | 0 | none | out of reach by construction: a network class device, not HID, so this library cannot address one. One contributed 900 configuration sits in the lab, a file system of XML and settings files that `make corpus` does not count |
 
 **Arch 10 is the interesting gap and it is not for want of configs.** The corpus holds reads of two
