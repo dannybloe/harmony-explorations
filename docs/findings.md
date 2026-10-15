@@ -51640,28 +51640,33 @@ step; a Switch command on its device page that sends nothing when pressed, which
 ## 391. The setup's look and timing on the Harmony 600
 
 `todo-compile-600.md` 2.3, run on the six device file already on the remote, section 390, so no write:
-`600-setup-look.json`, decoded afterwards against the written file with the monitor's own matcher.
+`600-setup-look.json`, decoded afterwards against the written file with the monitor's own matcher. Checked first:
+section 387's settings read, section 303 on how a saved delay is restored, and the file's wiring (`delayRestore`
+false).
 
 **The delays were checked before any timing was predicted.** The remote's settings store, read over USB before
-the run, holds one saved value, an inter device delay of 15 tenths under key `0x0E26`, as section 387 read it;
+the run (the read not saved), holds one saved value, an inter device delay of 15 tenths under key `0x0E26`, as section 387 read it;
 the file's wiring does not restore saved delays, so the file's own values are the ones that run. The file states
 a power on delay of 100 tenths for the LG, 50 for the Plasma, 20 for the Denon and 15 for the KPN box, Kodi and
 the Switch, and an inter device delay of 5 tenths for each device but the Switch, which has 15.
 
-**Every code as the file predicts, and every gap at least the delay that holds it back.** TV kijken sent the
+**Every code as the file predicts, and every gap measured at least the delay the file states for it.** TV kijken sent the
 LG's power on, the KPN box's power 0.7 s later and the Denon's 0.7 s after that, then the Denon's CBL/SAT 3.1 s
 after its power, against its 2 s, and the LG's HDMI 1 11.0 s after its power, against its 10 s. The Devices
 step sent nothing. Film kijken sent the Plasma's power on, Kodi's power, the Denon's Media Player and the LG's
 power off, then the Plasma's HDMI 2 6.7 s after its power, against its 5 s, and nothing to the KPN box. All Off
 sent the Plasma's power off, the Denon's power, the KPN box's power and Kodi's power, the four devices then on.
 The Denon's power frame matched the Denon but not one command, as in sections 386 and 389. The screen went dark
-after 20 s, as noted at the bench.
+after 20 s, as noted at the bench. The two 0.7 s gaps are against 0.5 s, and the shortest of the eleven gaps
+between successive frames is 0.69 s, so no device took the saved 1.5 s.
 
-**The look was judged good**: the Activities screen in grey 2 with smoothed letters, and the Denon's device pages,
-whose smaller labels were noted as looking fine too.
+**The look was judged good**: the Activities screen as reported from the bench, with no note in the run, and in
+the Devices step the device list and the Denon's first page, noted "looks good, also the smaller font-labels in
+the various pages look ok".
 
-**"Turning system off" showed neither when the cable came out nor on All Off**, as noted at the bench, on a file
-whose mark starts at 1 (section 388's assembly), so section 387's observation now holds with a setup on the
+**"Turning system off" showed neither when the cable came out nor on All Off**, as reported from the bench, the run
+holding no note on either step, on a file whose mark starts at 1 (variable 24's `first` in the written file, the
+start section 386 gave every file of ours), so section 387's observation now holds with a setup on the
 remote as well as with the empty configuration. On the Harmony 700 the same wiring showed it on All Off, section
 386. The mark was not read over USB for this run.
 
@@ -51669,7 +51674,9 @@ remote as well as with the empty configuration. On the Harmony 700 the same wiri
 
 One Harmony 600, build 0.2, one run, the six device file. The delays compared are lower bounds: each measured gap
 holds the delay and the sending of what comes between, so a delay ignored entirely would show and a delay a few
-tenths short would not.
+tenths short would not. Exercised: the power on delays of the LG, the Denon and the Plasma, and the 0.5 s inter
+device delay of five devices; not exercised: the Switch's 1.5 s and the power on delays of the KPN box, Kodi and
+the Switch.
 
 ### Falsification
 
@@ -51678,5 +51685,6 @@ matches; "Turning system off" shown by this file on this remote.
 
 ### Where it lands
 
-* `packages/bench/irtests/done/600-setup-look.json`, the test; its run is in the lab's `reads/`.
+* `packages/bench/irtests/done/600-setup-look.json`, the test; its run is
+  `reads/20261015T090758Z-ir-test-harmony-600-the-setup-s-look-and-timing.json` in the lab.
 * `todo-compile-600.md` 1.4.1 stays open with this run added to it.
