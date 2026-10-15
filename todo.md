@@ -85,6 +85,10 @@ Plan: [003-how-an-activity-is-built.md](docs/plans/003-how-an-activity-is-built.
 - [ ] 3.3 A document in, a whole container out
 - [ ] 3.4 Generate the text inside a screen program rather than carrying it
 - [ ] 3.5 Write a fully built configuration to the spare Harmony One and use it
+- [ ] 3.6 Room for a record of our own in every configuration we write, its contents undecided (FreeHarmony's document, its version, and more): carried in base slot 0, which the firmware never reads (section 81)
+  - [ ] 3.6.1 Confirm no firmware seeks base slot 0 on the images not yet scanned, the Harmony 600's and 650's 0.2 among them, per architecture
+  - [ ] 3.6.2 The codec writes and reads the record, kept apart from Logitech's name tree, and a configuration without one reads as having none
+  - [ ] 3.6.3 Written to a bench remote and read back, the remote running unchanged
 
 ## 4. The device library
 
