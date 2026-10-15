@@ -30,6 +30,7 @@ import { IR_ARCHIVE, needing, require_, skipUnless, skipWithoutIrArchive } from 
 import {
   ACTION_LIST_INDEX_OPCODE,
   type Container,
+  HARD_KEYS,
   IR_PULSE_MARK,
   LABEL_SIZES,
   oxaniumLabelSizes,
@@ -137,7 +138,7 @@ test('section 325: the screen after the leading commands is case folded, hyphens
   assert.deepEqual(sorted, ['Football', 'i-Manual', 'InputHdmi2', 'InputHDMI3', 'InputHdmi4', 'InputTv',
     'InputVideo', 'InputVideo 1/MD', 'InputVideo1', 'In-Start']);
   // Return leads the screen and also holds the Previous channel key; Cancel takes the Exit key.
-  const layout = deviceModeLayout(['Mute', 'Return', 'Cancel', 'PowerOff', 'PowerOn', 'Zoom', 'Aspect']);
+  const layout = deviceModeLayout(['Mute', 'Return', 'Cancel', 'PowerOff', 'PowerOn', 'Zoom', 'Aspect'], HARD_KEYS);
   assert.deepEqual(layout.screen, ['PowerOn', 'PowerOff', 'Aspect', 'Return', 'Zoom']);
   assert.equal(layout.keys.get(12), 'Cancel');
   assert.equal(layout.keys.get(43), 'Cancel');
@@ -613,7 +614,7 @@ test('section 325: the compiler\'s device mode rules against twenty catalogue de
     let lines = 0;
     const unsized: string[] = [];
     for (const f of CAL.map(find)) {
-      compare(s, f.one.label, f.read, predicted(titleOf(f.one), deviceModeLayout(f.commands.map((one) => one.name))));
+      compare(s, f.one.label, f.read, predicted(titleOf(f.one), deviceModeLayout(f.commands.map((one) => one.name), HARD_KEYS)));
       for (const line of f.read.pages.flatMap((page) => page.labels).flat()) {
         lines += 1;
         if (line.size === undefined) unsized.push(`${f.one.label} ${line.text}`);
@@ -653,7 +654,7 @@ test('section 325: the rules against a device they were not fitted to, in two co
     const s = score();
     for (const f of HELD_OUT.map(find)) {
       compare(s, `${f.one.fixture} ${f.one.label}`, f.read,
-              predicted(titleOf(f.one), deviceModeLayout(f.commands.map((one) => one.name))));
+              predicted(titleOf(f.one), deviceModeLayout(f.commands.map((one) => one.name), HARD_KEYS)));
     }
     if (process.env.DEVICEMODE_DETAIL) console.log(`HELD OUT ${report(s)}`);
     assert.deepEqual(tallies(s), {
@@ -678,7 +679,7 @@ function composeWhole(f: Found, order: 'compiler' | 'catalogue'):
     label: 'Whole', commands: buildable.map((one) => ({ stated: one.keycode })),
   });
   const listOf = new Map(buildable.map((one, k) => [one.name, composed.lists[k] as number]));
-  const layout = deviceModeLayout(f.commands.map((one) => one.name));
+  const layout = deviceModeLayout(f.commands.map((one) => one.name), HARD_KEYS);
   const screen = (order === 'compiler' ? layout.screen
     : f.commands.map((one) => one.name).filter((one) => layout.screen.includes(one)))
     .filter((one) => listOf.has(one));

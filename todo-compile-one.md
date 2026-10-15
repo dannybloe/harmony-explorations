@@ -11,7 +11,8 @@ work was first measured on; the spare Harmony One was first written on 30 August
 
 **Before working any item, load the `harmony-one` skill**, in this session and in every agent brief: it
 says where the remote's facts are, which of the two Ones may be written (the spare, never the everyday
-one), and holds the write procedure.
+one), and holds the write procedure. **Before writing build code, load `code-for-a-family`** too: the One's
+differences belong in the touch family, plan 007.
 
 **Why this track is the 650's long route and not the 600's short one**: the 600 and the 700 reused
 builders the 650 track had made. The One has composers that add a device, an activity and a menu page to
@@ -50,23 +51,42 @@ One with its sequence's keys translated by name, since the One's keys have other
   - [x] 1.2.2 A device's inputs composed on the One: Logitech's compiles of the same catalogue devices for the One and the 650 hold the same variables, values, transitions and waits, and a send there is the send and its quantity with no prelude
   - [x] 1.2.3 A device's power on delay composed on the One, a wait after its power on, which was missing: on Logitech's One compiles that wait is the catalogue's power on delay in tenths on 8 of 8 harvest devices (section 393)
   - [x] 1.2.4 The input put back after a power on (the Plasma's), placed after that wait as on the 600 family, where three of Logitech's One compiles put theirs too (section 393); 1.3 hears whether it goes out
-  - [x] 1.2.5 A device page of more than six commands takes several pages, numbered by `paginate`; not yet run end to end
+  - [x] 1.2.5 A device page of more than six commands takes several pages, numbered by `paginate`; run end to end in 1.2.9, where its entry stated one page pointer for several, section 397
   - [x] 1.2.6 A long command name broken over two or three lines and cut with `..`, as Logitech's One compiles draw one: one rule reproduces every pad label of the 19 One containers, in the pad font read off the device pages (section 394, `touchLabelLines`)
   - [x] 1.2.7 The donor lettered in ours before any composer spells a name: every set re-lettered in its own colours, every text reading as before (section 396)
   - [x] 1.2.8 The findings and tests for 1.2.2 to 1.2.4 (section 393); 1.2.5's waits for 1.2.6 and 1.2.7, since a paged device needs names it can spell
   - [ ] 1.2.9 The test setup composed on the lettered donor, checked, dry run against `one_spare_track_start`, and written to the spare
+  - [x] 1.2.10 A composed device's keys in device mode: the One composer writes an empty key map, where Logitech's One device modes are 49 entries in one order with 46 key presses, and the 650's `HARD_KEYS` does not carry over by key name (the One has no colour keys; Channel Up sends SkipForward on the Denon AVR-X4800H and PresetNext on the Philips 70FA930/00S); the One's own table fitted from its compiles; 1.2.9 waits on it, since an activity's keypad is read off its devices' maps; done, section 397: `TOUCH_HARD_KEYS`, the touch family's `deviceModeKeys`, and the record in Logitech's shape, every key of the harvest's eight devices as Logitech binds it
+  - [ ] 1.2.11 An activity's screens built for the One rather than copied, `todo-compile-one.md` 4.3 brought forward, decided on 15 October 2026: the One's activity composer copies its frame from an existing activity, and the donor has none; 1.2.9 waits on it
+    - [ ] 1.2.11.1 What a working screen and a start up screen of Logitech's One compiles consist of, fixed and per activity, measured
+    - [ ] 1.2.11.2 The touch family's activity screens built from that, the first activity composed onto a configuration with none
+    - [ ] 1.2.11.3 The activity's keypad from its roles with the One's own keys, section 323's rule checked on the One
 - [ ] 1.3 A bench test of it: every code as the file predicts, the touch rows, device mode and All Off
 
 ## 2. Measure before building
 
 - [ ] 2.1 Every screen byte of the Logitech One configurations in the lab sorted into fixed, dynamic and the setup's, as section 317 did for the 650
-- [ ] 2.2 What the One's configuration holds that the 600 family's does not: base slot 18, the touch hit map, the clock, the log area, and anything else found
-- [ ] 2.3 Which of the 600 family's measurements a builder relies on hold on the One, checked one by one against the One's compiles and its 3.4 image
+- [x] 2.2 What the One's configuration holds that the 600 family's does not: base slot 18, the touch hit map, the clock, the log area, and anything else found; done, a scratch measurement over the 19 distinct One compiles against five of the 600 family's, asserted when each builder lands:
+  - raw slot 18 is two zero bytes on 19 of 19, what the firmware does with it unread
+  - the touch hit map, base slot 17: 29 to 42 pages and 161 to 247 rectangles, 23 page shapes in every compile but only pages 0 to 2 at one place; nothing builds a whole map
+  - the clock's screen side: a second transition on the minute calling two short lists, four header programs at base slot 11 entries 0 to 3, and 13 to 20 timers redrawing a header every four seconds and restarting themselves
+  - the log area is 16 records from `0x3FFFF0` to `0x400000` with a three byte capacity, and the parameter block's 11 groups one value set, both on 19 of 19
+  - state records 13 and 14 start at 1 and 2 where the 600 family's are 0 and 1; one two byte variable and no delay variables; `ButtonSoundVolume_2` on 19 of 19 and 0 of 5
+  - the same structures with the One's content: base slot 8 opens with one call, the event map is 125 bytes with 10 firmware screens in front, the key table 221 bytes, 26 to 34 timers
+- [x] 2.3 Which of the 600 family's measurements a builder relies on hold on the One, checked one by one against the One's compiles and its 3.4 image; done against the 19 compiles, the 3.4 image not read for any row:
+  - hold: the placer's order, section 328, byte for byte on 19 of 19 once raw slot 18 is passed through `loosen` and `placePieces`; the first wide variable; the name tree's and the value maps' hash orders; the event map's rule with 10 screens in front; the 10 firmware screens then 30 status screens, their texts the One's own
+  - hold with the One's values: state records 7 to 17 are constant but 13 and 14 differ; a value map's case count is one byte, `VALUE_MAP_COUNT_WIDTH`; every variable above the clock block is one byte up to 121 where section 276's width rule says two; the minute's second transition. With these four the state tables rebuild byte for byte on 19 of 19 in a scratch copy of the builder
+  - do not hold: section 286's eleven start up entries (one call on the One), the 5 or 9 fixed timers (26 to 34, content dependent), section 272's six fixed base slot 9 entries (eight on the One), every four slot screen measurement
+  - so chapter 6's placer, state tables, parameter block, log area and event map open by data alone; the rest of the wiring needs section 347's reading again for the One, and chapters 4 and 5 wait on 2.1
 
 ## 3. The composers stop borrowing
 
 - [ ] 3.1 The One's composers moved behind the touch family's interface, plan 007, without changing a byte they write
 - [ ] 3.2 Each part a composer still copies out of the donor listed, and built by us one at a time
+- [ ] 3.3 No remote named outside `families/`, the `code-for-a-family` skill: code outside a family is generic, decided on 15 October 2026
+  - [x] 3.3.1 The floor made executable, `test/generic.test.ts`: 31 modules outside the families test which remote it is 37 times, use a family's names 180 times and hold 14 constants of key scans, each pinned so the list can only be lowered
+  - [ ] 3.3.2 The module by module audit, past what a pattern finds: every constant, coordinate, font, count and table in a module outside `families/` that is one remote's, `wiring.ts`'s parameter values among them
+  - [ ] 3.3.3 Each one moved into its family or into one per architecture table a reader consults, the list in `generic.test.ts` lowered with each move
 
 ## 4. Screens built by us
 

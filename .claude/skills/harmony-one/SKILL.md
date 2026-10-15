@@ -104,6 +104,8 @@ run so far is `packages/bench/irtests/done/one-spare-activities.json`.
 
 ## Related
 
+* `code-for-a-family`: before writing build code for the One, since most of what differs from the 600
+  family belongs in the touch family and nowhere else.
 * `writing-a-config`: every rail a configuration must respect, before changing any byte.
 * `recovering-a-remote`: safe mode, the bootloader and the latch on this model.
 * `probe-remote`: reading a remote read only, and the gate before any experimental packet.

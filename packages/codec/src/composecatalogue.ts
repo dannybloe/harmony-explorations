@@ -32,7 +32,7 @@
  *   would succeed and leave a configuration no Logitech account could have produced.
  */
 import type { DelayDefaults } from './families/family.ts';
-import { choicesOf } from './families/registry.ts';
+import { choicesOf, familyOf, traitsOf } from './families/registry.ts';
 import type { Container } from './gspm.ts';
 import { parse } from './gspm.ts';
 import {
@@ -61,7 +61,8 @@ import {
   type JoinedPowerOff,
   type ToggledCode,
 } from './compose.ts';
-import { devices, stateVariables } from './inventory.ts';
+import { DEVICE_QUANTITY, SEND_INFRARED, devices, deviceVariables, stateVariables } from './inventory.ts';
+import { irBlockWords, irGroups, irHeaderPointers } from './ir.ts';
 import { nameOfLabel } from './shared/core.ts';
 
 /** One catalogue device to compose, with the options `compose-device.ts` takes as flags. */
@@ -195,7 +196,11 @@ export function composeCatalogueDevice(
 
   // Under `full`, every name whose code composes, in catalogue order; the layout is computed over all
   // of them, as the compiler's is, and a command left out leaves its place to the next.
-  const layout = full ? deviceModeLayout([...byName.keys()]) : undefined;
+  // The keys a whole device's commands go to are its family's, since the compiler binds the same names
+  // differently per family; a configuration no family serves has no table to lay a whole device out by.
+  const hardKeys = full ? familyOf(c)?.deviceModeKeys : undefined;
+  if (full && hardKeys === undefined) throw new ComposeError(`no family states which command a key takes on arch ${c.architecture}`);
+  const layout = hardKeys === undefined ? undefined : deviceModeLayout([...byName.keys()], hardKeys);
   const leftOut = full ? [...byName].filter(([, keycode]) => !composable(keycode)).map(([name]) => name) : [];
   const wanted = full
     ? [...byName].filter(([, keycode]) => composable(keycode)).map(([name]) => name)
@@ -376,6 +381,89 @@ export function composeCatalogueDevices(
     current = parse(one.bytes);
   }
   return { bytes: current.blob, devices: composed, variables: finalVariables(current, composed) };
+}
+
+/** A device the configuration already holds, by its label, and the catalogue entry it is. */
+export interface DonorDeviceRequest {
+  readonly label: string;
+  readonly manufacturer: string;
+  readonly model: string;
+}
+
+/** The label the commands are composed under in the scratch copy, which is thrown away. */
+const SCRATCH_LABEL = 'Scratch';
+
+/** A record's three blocks as their words, `-` for a null pointer: what two records sending one code share. */
+function recordWords(c: Container, address: number): string {
+  return irHeaderPointers(c, address).slice(0, 3)
+    .map((pointer) => (pointer === 0 ? '-' : (irBlockWords(c, pointer) ?? []).join(','))).join('|');
+}
+
+/**
+ * The inputs of a device the configuration already holds, composed onto it: what a Logitech compile with
+ * no activities leaves out, since its compiler writes a device's input variables only for an activity
+ * that puts the device on an input. `todo-compile-one.md` 1.2.9, the donor's LG and Denon.
+ *
+ * `composeDeviceInputs` asks for the device's send list per command it sends. A compile names none of its
+ * commands, so each is found by its code: the command composed from the catalogue into a scratch copy, its
+ * record's three blocks matched word for word against the device's own group, and the one list that sends
+ * that record and nothing else but its quantity taken as the command's. **That rests on the records being
+ * the catalogue's**, which section 337 measured, 418 of 418 records of seven devices identical to one of
+ * Logitech's; and it is refused rather than guessed where a command's code is in no record of the group,
+ * or where no single list sends it. Two records with one code, the LG's `Home` twice, send the same code,
+ * so the first is taken. **A send list is the family's**, `FamilyTraits.sendPrelude`: the send and its quantity
+ * alone on the Harmony One, the only family this has been run on. The Harmony 600, 650 and 700's send opens with
+ * a prelude of three lists, which nothing here matches, so their family is refused up front.
+ *
+ * `undefined` for a device whose catalogue entry states no variable to compose, and for one that already
+ * has an input variable here.
+ */
+export function composeDonorDeviceInputs(
+  c: Container, archive: string, request: DonorDeviceRequest,
+): ComposedInputs | undefined {
+  if (traitsOf(c).sendPrelude) throw new ComposeError('a donor device\'s inputs are composed where a send is the send and its quantity alone, the Harmony One\'s');
+  const own = devices(c).find((one) => one.name === request.label);
+  if (own?.group === undefined) throw new ComposeError(`no device called ${request.label} with codes here`);
+  if (deviceVariables(c).some((one) => one.device === request.label && one.property === 'Input')) return undefined;
+  const driving = catalogueDriving(archive, request.manufacturer, request.model);
+  const plan = inputPlan(driving);
+  const variables = [...plan.states, ...(plan.input === undefined ? [] : [plan.input])];
+  if (variables.length === 0) return undefined;
+  const sent = [...new Set(variables.flatMap((one) => one.transitions.flatMap((t) => t.steps.flatMap((s) => (s.kind === 'send' ? [s.command] : [])))))];
+  const power = deviceVariables(c).find((one) => one.device === request.label && one.property === 'Power')?.index;
+  if (power === undefined) throw new ComposeError(`${request.label} has no power variable to compose inputs beside`);
+
+  // The commands sent, composed into a scratch copy for their records and nothing else, by the names the
+  // catalogue spells them, which the rules may spell in another case. Behind one other command, since a
+  // device composed without `full` sends its first command both ways and gives it no held block, where
+  // every input command of a compile is a command like any other and repeats while held.
+  const entry = catalogueDevice(archive, request.manufacturer, request.model);
+  const catalogueNames = entry.codeset === undefined || entry.codeset === null ? []
+    : [...new Set(catalogueCommands(archive, entry.codeset).map((one) => one.name))];
+  const spelt = sent.map((name) => catalogueNames[commandIndex(catalogueNames, name)]!);
+  const lead = catalogueNames.find((name) => !spelt.includes(name));
+  if (lead === undefined) throw new ComposeError(`${request.label}'s catalogue entry holds no command but the ones its inputs send`);
+  const scratch = composeCatalogueDevice(c, archive, {
+    manufacturer: request.manufacturer, model: request.model, label: SCRATCH_LABEL,
+    commands: [lead, ...spelt], powerSteps: false, powerOff: false,
+  });
+  const composed = parse(scratch.bytes);
+  const scratchGroup = devices(composed).find((one) => one.name === SCRATCH_LABEL)?.group;
+  const theirs = irGroups(c)?.[own.group]?.addresses.map((address) => recordWords(c, address)) ?? [];
+  const mine = scratchGroup === undefined ? [] : irGroups(composed)?.[scratchGroup]?.addresses ?? [];
+  const lists = c.actionLists() ?? [];
+  const listOf = sent.map((name) => {
+    const k = commandIndex(scratch.commandNames, spelt[sent.indexOf(name)]!);
+    const record = mine[k] === undefined ? -1 : theirs.indexOf(recordWords(composed, mine[k]!));
+    if (record < 0) throw new ComposeError(`${request.label} holds no record with the catalogue's code for ${name}`);
+    const operand = (own.group! << 8) | record;
+    const sending = lists.flatMap((list, at) => (list.length === 2 && list[0]!.opcode === SEND_INFRARED
+      && list[0]!.operand === operand && list[1]!.opcode === DEVICE_QUANTITY ? [at] : []));
+    if (sending.length !== 1) throw new ComposeError(`${sending.length} lists of ${request.label} send its ${name} alone, where one is wanted`);
+    return sending[0]!;
+  });
+  const device: ComposedDevice = { bytes: c.blob, group: own.group, lists: listOf, variable: power };
+  return composeDeviceInputs(c, { device, label: request.label, commandNames: sent, driving });
 }
 
 // ---------------------------------------------------------------------------------------------------

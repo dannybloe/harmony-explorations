@@ -89,7 +89,7 @@ const MENU_COUNTER_XY: readonly [number, number] = [13, 18];
 const MENU_COUNTER_SLASH_X = 18;
 
 /** The scan codes of a device list hit page, rows first, then the bottom key, then the two edges. */
-const MENU_ROW_SCAN = 48;
+export const MENU_ROW_SCAN = 48;
 
 export const MENU_EDGE_SCANS: readonly [number, number] = [46, 47];
 
@@ -320,8 +320,11 @@ export function composeMenuPage(
   }
   // The page counter: a number at the top left and a `/` beside it, in one font, wherever the
   // shape puts them. The number is drawn afresh for the new page and the `/` is the shared string.
-  const counterFont = (tail: readonly { opcode: number; operands: Uint8Array }[]): number | undefined => {
-    let font: number | undefined;
+  // The font a counter is drawn in is the one in force where it is drawn, which may have been selected before
+  // the tail does anything: on Logitech's compile of the Denon and the LG for the One the row labels' font
+  // carries on to the counter. `inherited` is the font in force when the tail starts.
+  const counterFont = (tail: readonly { opcode: number; operands: Uint8Array }[], inherited?: number): number | undefined => {
+    let font = inherited;
     for (const one of tail) {
       if (one.opcode === SCREEN_SELECT_FONT) font = one.operands[0];
       if (one.opcode === SCREEN_TEXT_AT && one.operands[1] === MENU_COUNTER_XY[1]) return font;
@@ -389,6 +392,11 @@ export function composeMenuPage(
   const nowProgram = screenProgram(current, realLast.program) ?? [];
   const nowAfterRows = nowProgram.slice(lastLabel + 1);
   const nowClosing = nowAfterRows.at(-1);
+  const fontAt = (upTo: number): number | undefined => {
+    let font: number | undefined;
+    nowProgram.slice(0, upTo).forEach((one) => { if (one.opcode === SCREEN_SELECT_FONT) font = one.operands[0]; });
+    return font;
+  };
   if (nowClosing === undefined || nowClosing.opcode !== closing.opcode) {
     throw new ComposeError('a menu page program changed shape while being copied');
   }
@@ -448,7 +456,7 @@ export function composeMenuPage(
     let tailLength = 0;
     for (const one of nowAfterRows) {
       if (isNumber(one)) {
-        const font = counterFont(nowAfterRows);
+        const font = counterFont(nowAfterRows, fontAt(lastLabel + 1));
         const inline = numberInline(font);
         tailLength += inline.length;
         tailPieces.push(() => inline);
@@ -472,8 +480,9 @@ export function composeMenuPage(
       if (end < 0) throw new ComposeError(`menu ${menu}'s bottom key arm does not end in a jump`);
       return instructions.slice(0, end + 1);
     });
-    const font = counterFont(tail);
-    const inline = numberInline(font);
+    // A menu of one page draws no counter, its tail only the end, and `paginate` below numbers every page
+    // once there are two; so a counter is redrawn only where the page had one.
+    const inline = tail.some(isNumber) ? numberInline(counterFont(tail, fontAt(nowProgram.length))) : new Uint8Array(0);
     const tailLength = tail.reduce((sum, one) => sum + (isNumber(one) ? inline.length : one.length), 0);
     const armLengths = arms.map((arm) => arm.reduce((sum, one) => sum + one.length, 0));
     blockLength = programHead + 12 + tailLength + (armLengths[0] as number) + (armLengths[1] as number) + 7;

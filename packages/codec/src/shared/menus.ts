@@ -386,13 +386,15 @@ export interface ComposeScreenOptions {
    */
   keysLike?: string;
   /**
-   * Arch 14 only: lay the device mode out the way Logitech's compiler does, `devicemode.ts`, section
+   * Lay the device mode out the way Logitech's compiler does, `devicemode.ts`, section
    * 325, rather than with one label font and a key map copied from another device. The rows' labels
    * are then sized, split and cut by the compiler's rules and drawn in a font of the size those rules
    * pick, the title is `title` cut to what the page counter leaves, a counter of two digits is drawn
    * where the compiler draws one, and the key map is `keys`, a list per scan, with every other key
-   * bound to nothing. `keysLike` is still the mode whose key map's shape is copied, its 47 tags and its
-   * two navigation entries, but none of its bindings.
+   * bound to nothing. On the Harmony 600, 650 and 700 `keysLike` is still the mode whose key map's shape
+   * is copied, its 47 tags and its two navigation entries, but none of its bindings. On the Harmony One the
+   * rows are laid out by the touch family's own rules, section 394, and of this only `keys` is read, into
+   * the shape of an existing device mode of as many pages, `todo-compile-one.md` 1.2.10.
    */
   compiled?: { title: string; keys: ReadonlyMap<number, number> };
 }

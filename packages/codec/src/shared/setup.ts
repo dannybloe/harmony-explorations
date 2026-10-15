@@ -6,7 +6,7 @@
  * family's choices where it read the four slot family's: the activity keys and the delays.
  */
 import { type Recipe, type RecipeActivity, type RecipeDevice, type RecipeTarget, recipeTarget } from '../recipe/recipe.ts';
-import { familyOf } from '../families/registry.ts';
+import { familyOf, traitsOf } from '../families/registry.ts';
 import { saveEdits } from '../edit.ts';
 import { coverage } from '../coverage.ts';
 import { trailerAgrees } from '../growth.ts';
@@ -23,8 +23,8 @@ import {
 import {
   activityFromRoles, activityKeysFromRoles, activityScreenRows, deviceKeypadLists, type ActivityDevice,
 } from '../activityroles.ts';
-import { composeCatalogueDevices, type ComposedCatalogueDevice } from '../composecatalogue.ts';
-import { inputPlan, inputTarget } from '../inputs.ts';
+import { composeCatalogueDevices, composeDonorDeviceInputs, type ComposedCatalogueDevice } from '../composecatalogue.ts';
+import { inputPlan, inputTarget, type ComposedInputs } from '../inputs.ts';
 import { catalogueDriving } from '../driving.ts';
 import { activityPauseGroups, composeSequence } from '../sequence.ts';
 
@@ -129,6 +129,34 @@ export function composeSetupParts(
     note('devices composed', composed.devices.join(', '));
   }
 
+  // 2b. The inputs of a donor device an activity puts on one, where the donor has no input variable for
+  //     it: a Logitech compile with no activities writes none, and the Harmony One's donor is one.
+  //     Only where a send is the send and its quantity alone, the Harmony One's, which is what
+  //     `composeDonorDeviceInputs` matches; the Harmony 600 family's donors are refused at step 4 as before.
+  const donorInputs = new Map<string, ComposedInputs>();
+  for (const wanted of setup.devices) {
+    if (traitsOf(c).sendPrelude || composedDevices.has(wanted.name)) continue;
+    if (!setup.activities.some((a) => a.devices.some((d) => d.device === wanted.name && d.input !== undefined))) continue;
+    const label = labelOf(wanted.name);
+    if (label === undefined) continue;
+    if (deviceVariables(c).some((one) => one.device === label && one.property === 'Input')) continue;
+    if (options.archive === undefined) {
+      throw new AssemblyError(`an activity puts ${wanted.name} on an input, and naming a donor device's input needs the catalogue's archive`);
+    }
+    const [manufacturer, model] = wanted.device.split('/');
+    let inputs: ComposedInputs | undefined;
+    try {
+      inputs = composeDonorDeviceInputs(c, options.archive, { label, manufacturer: manufacturer ?? '', model: model ?? '' });
+    } catch (error) {
+      if (error instanceof ComposeError) throw new AssemblyError(`composing ${wanted.name}'s inputs: ${error.message}`);
+      throw error;
+    }
+    if (inputs === undefined) continue;
+    c = parse(inputs.bytes);
+    donorInputs.set(wanted.name, inputs);
+  }
+  if (donorInputs.size > 0) note('donor inputs composed', [...donorInputs.keys()].join(', '));
+
   // 3. Keep on between activities, section 340, on the activities already there. A device with no
   //    power variable is always on. The activities composed below leave a kept on device on themselves.
   const keptOn: string[] = [];
@@ -162,7 +190,7 @@ export function composeSetupParts(
   for (const activity of setup.activities) {
     if (activities(c).some((one) => spoken(one.name) === activity.name)) continue;
     try {
-      c = composeSetupActivity(c, setup, activity, options, parts, labelOf, powerOf, composedDevices);
+      c = composeSetupActivity(c, setup, activity, options, parts, labelOf, powerOf, composedDevices, donorInputs);
     } catch (error) {
       if (error instanceof ComposeError || error instanceof AssemblyError) {
         throw new AssemblyError(`composing ${activity.name}: ${error.message}`);
@@ -194,7 +222,7 @@ function groupOfDevice(c: Container, label: string | undefined, name: string): n
 function composeSetupActivity(
   c: Container, setup: Recipe, activity: RecipeActivity, options: AssembleOptions, parts: SetupParts,
   labelOf: (name: string) => string | undefined, powerOf: (name: string) => number | undefined,
-  composedDevices: ReadonlyMap<string, ComposedCatalogueDevice>,
+  composedDevices: ReadonlyMap<string, ComposedCatalogueDevice>, donorInputs: ReadonlyMap<string, ComposedInputs>,
 ): Container {
   // A family whose remotes have activity keys knows which a type takes; the Harmony One has none.
   if (parts.choices.activityKeys !== undefined && !(activity.type in parts.choices.activityKeys)) {
@@ -205,7 +233,7 @@ function composeSetupActivity(
     const group = groupOfDevice(c, label, one.device);
     if (one.input === undefined) return { group, roles: one.roles };
     const setupDevice = setup.devices.find((each) => each.name === one.device);
-    const own = composedDevices.get(one.device)?.inputs;
+    const own = composedDevices.get(one.device)?.inputs ?? donorInputs.get(one.device);
     let names: readonly string[] | undefined;
     if (own !== undefined) {
       names = own.input === undefined ? undefined : [...own.input.values.keys()];

@@ -764,6 +764,9 @@ source file's own header is where its reading lives. The ones a session reaches 
 * **When two copies are found already disagreeing, the disagreement is the finding.** Reproduce it on
   the same inputs, find an external answer, say which copy was wrong **and why**, and only then remove
   one. Provenance is not a verdict.
+* **A difference between remotes lives in its family, never in a test of which remote it is**, plan 007.
+  Before writing any build code in `packages/codec/src`, invoke the `code-for-a-family` skill; it holds the
+  four questions and the check that catches a new architecture test in a diff.
 * **TypeScript owns the codec and the write path; the Python side reads.** A reader is added towards
   `packages/codec` and removed away from Python. Count the rails, not the readers, when judging whether
   the port is complete.

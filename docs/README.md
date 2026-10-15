@@ -637,6 +637,11 @@ because the guidance was too long to keep in this file:
   changing any byte of a container, not after: each rail is a way to produce a file the remote
   accepts and mishandles, and one of them hung a Harmony One three times out of three, each time
 needing the batteries out.
+* **`code-for-a-family`**, plan 007's family split kept at the moment build code is written: four
+  questions before writing (which family a fact is about, where it goes, whether shared code asks its
+  family or tests the remote, whether the other family's half is stated) and a check over the diff for a
+  new architecture test or an import across families. Written on 15 October 2026 after two such slips in
+  one stretch of the Harmony One's track, both caught by reading along rather than by the code.
 * **`recovering-a-remote`**, what a restore consists of per architecture: safe mode, the
   bootloader, the flash programmer, the EEPROM latch and the write protect interlock. Invoke it
   before planning a write and before entering safe mode on any model, since on a Harmony 525 that is

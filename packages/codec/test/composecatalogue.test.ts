@@ -30,6 +30,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { IR_ARCHIVE, needing, require_, skipUnless, skipWithoutIrArchive } from '@harmony/lab';
+import { layOutContainer, takeApart } from '../src/frame.ts';
+import { withOxaniumFonts } from '../src/fonttable.ts';
+import { deviceModeLayout, HARD_KEYS } from '../src/devicemode.ts';
+import { TOUCH_HARD_KEYS } from '../src/families/touch/devicekeys.ts';
 import {
   type CatalogueDeviceRequest,
   ComposeError,
@@ -41,6 +45,7 @@ import {
   characterMap,
   composeCatalogueDevice,
   composeCatalogueDevices,
+  composeDonorDeviceInputs,
   composedNameTreeOrder,
   deviceIdOfGroup,
   deviceIds,
@@ -52,6 +57,7 @@ import {
   irBlockWords,
   irGroups,
   irHeaderPointers,
+  inputPlan,
   modeRecords,
   nameNodes,
   parse,
@@ -633,4 +639,114 @@ test('a catalogue device composed onto a Harmony One switches on with its power 
   // And a delay the request states wins over the catalogue's, as on the 600 family.
   const stated = parse(composeCatalogueDevice(base, IR_ARCHIVE!, { ...request, powerOnDelay: 45 }).bytes);
   assert.equal(onList(stated, 'Test').list.at(-1)!.operand & 0xff, 45);
+});
+
+test('a Logitech compile\'s own device gets its inputs composed, each sent through the device\'s own record for the catalogue\'s code',
+     needing(skipWithoutIrArchive(), skipUnless('harvest_one_two_devices')), () => {
+  // Logitech's compile of the Denon and the LG for the Harmony One has no activity, so neither device has an
+  // input variable, and the test setup's activities put both on one, `todo-compile-one.md` 1.2.9.
+  const base = open('harvest_one_two_devices');
+  assert.equal(deviceVariables(base).filter((one) => one.property === 'Input').length, 0);
+  const lg = composeDonorDeviceInputs(base, IR_ARCHIVE!, { label: 'LG_OLED65G26LA', manufacturer: 'LG', model: 'OLED65G26LA' })!;
+  const composed = parse(lg.bytes);
+  assert.ok(composed.allChecksPass);
+  assert.deepEqual([...lg.input!.values.keys()], inputPlan(catalogueDriving(IR_ARCHIVE!, 'LG', 'OLED65G26LA')).input!.values);
+  assert.deepEqual([...lg.states.keys()], ['Screen', 'TVInput']);
+  // Every send a transition makes names one of the LG's records, and only Logitech's: nothing was appended
+  // to its group.
+  assert.equal(irGroups(composed)![0]!.addresses.length, irGroups(base)![0]!.addresses.length);
+  const denon = composeDonorDeviceInputs(composed, IR_ARCHIVE!, { label: 'Denon_AVR-X4800H', manufacturer: 'Denon', model: 'AVR-X4800H' })!;
+  assert.equal(denon.input!.values.size, inputPlan(catalogueDriving(IR_ARCHIVE!, 'Denon', 'AVR-X4800H')).input!.values.length);
+  // A device already holding its inputs is left alone.
+  assert.equal(composeDonorDeviceInputs(parse(denon.bytes), IR_ARCHIVE!, { label: 'Denon_AVR-X4800H', manufacturer: 'Denon', model: 'AVR-X4800H' }), undefined);
+  // The control: the same device read as another catalogue entry finds none of its codes there and is refused.
+  assert.throws(() => composeDonorDeviceInputs(base, IR_ARCHIVE!, { label: 'LG_OLED65G26LA', manufacturer: 'Denon', model: 'AVR-X4800H' }),
+                /holds no record with the catalogue's code/);
+});
+
+test('a device of more than six commands composed onto a Harmony One takes a page per six, every page read back with its own rows',
+     needing(skipWithoutIrArchive(), skipUnless('one_spare_myharmony')), () => {
+  // The mode's entry states a pointer per page, `modeRecords`; with one pointer for several pages the mode
+  // did not read at all, which nothing ran until the test setup's Plasma, `todo-compile-one.md` 1.2.9.
+  const base = open('one_spare_myharmony');
+  const pioneer = catalogueCommands(IR_ARCHIVE!, catalogueDevice(IR_ARCHIVE!, 'Pioneer', 'VSX-90TXV').codeset!)
+    .map((one) => one.name).filter((name) => /^[A-Za-z]+$/.test(name)).slice(0, 14);
+  assert.equal(pioneer.length, 14);
+  const composed = parse(composeCatalogueDevice(base, IR_ARCHIVE!, {
+    manufacturer: 'Pioneer', model: 'VSX-90TXV', label: 'Test', commands: pioneer, labels: pioneer.map((_, k) => `C${k}`),
+  }).bytes);
+  assert.ok(composed.allChecksPass);
+  const records = modeRecords(composed)!;
+  const record = records.at(-1)!;
+  assert.equal(record.pages.length, 3, 'six, six and two');
+  assert.deepEqual(record.pages.map((page) => taggedList(composed, page.list)!.entries.length), [6, 6, 2]);
+  // Each row runs its own command's list, in order across the pages.
+  const lists = record.pages.flatMap((page) => taggedList(composed, page.list)!.entries.map((entry) => entry.operand));
+  assert.equal(new Set(lists).size, 14);
+  // The control: the same device of six commands takes one page.
+  const six = parse(composeCatalogueDevice(base, IR_ARCHIVE!, {
+    manufacturer: 'Pioneer', model: 'VSX-90TXV', label: 'Test', commands: pioneer.slice(0, 6), labels: pioneer.slice(0, 6).map((_, k) => `C${k}`),
+  }).bytes);
+  assert.equal(modeRecords(six)!.at(-1)!.pages.length, 1);
+});
+
+test('a catalogue device composed whole onto a Harmony One binds its keys in device mode as Logitech\'s compile of it does, by the code each key sends',
+     needing(skipWithoutIrArchive(), skipUnless(...new Set(ONE_POWER.map(([config]) => config)))), () => {
+  // `TOUCH_HARD_KEYS`, fitted to 33 catalogue devices of eight compiles, section 397; here every device of the
+  // harvest is composed whole onto its own compile and each key's record compared with the one Logitech's key
+  // sends, three blocks word for word, which names nothing and so cannot be fitted to a naming.
+  const words = (c: Container, address: number): string => irHeaderPointers(c, address).slice(0, 3)
+    .map((pointer) => (pointer === 0 ? '-' : (irBlockWords(c, pointer) ?? []).join(','))).join('|');
+  const keyCodes = (c: Container, label: string): Map<number, string> => {
+    const group = devices(c).find((one) => one.name === label)!.group!;
+    const mode = deviceModeMaps(c).find((one) => one.group === group)!.mode;
+    const lists = c.actionLists() ?? [];
+    const addresses = irGroups(c)![group]!.addresses;
+    const out = new Map<number, string>();
+    for (const entry of modeRecords(c)![mode]!.entries) {
+      if (entry.tag >> 6 !== 2 || entry.opcode !== 0x7f) continue;
+      const send = lists[entry.operand]?.find((one) => one.opcode === 0x7d && one.operand >> 8 === group);
+      if (send !== undefined) out.set(entry.tag & 0x3f, words(c, addresses[send.operand & 0xff]!));
+    }
+    return out;
+  };
+  const read: Record<string, string> = {};
+  let shape = 0;
+  for (const [config, label, slug, file] of ONE_POWER) {
+    const theirs = open(config);
+    // Composed onto the compile lettered in ours, as `todo-compile-one.md` 1.2 composes, since a compile's own
+    // fonts carry only the letters its texts use and cannot always spell the label.
+    const lettered = parse(layOutContainer(withOxaniumFonts(takeApart(theirs), 'own').layout).bytes);
+    let composed: Container;
+    try {
+      composed = parse(composeCatalogueDevices(lettered, IR_ARCHIVE!, [{ manufacturer: slug, model: file, label: 'Test', full: true }], { maxDevices: 99 }).bytes);
+    } catch (error) {
+      read[label] = `refused: ${(error as Error).message.slice(0, 60)}`;
+      continue;
+    }
+    const want = keyCodes(theirs, label);
+    const got = keyCodes(composed, 'Test');
+    const scans = new Set([...want.keys(), ...got.keys()]);
+    const same = [...scans].filter((scan) => want.get(scan) === got.get(scan)).length;
+    read[label] = `${same}/${scans.size}`;
+    // The record is the shape of Logitech's: the same tags in the same order.
+    const tags = (c: Container, name: string) => {
+      const group = devices(c).find((one) => one.name === name)!.group!;
+      return modeRecords(c)![deviceModeMaps(c).find((one) => one.group === group)!.mode]!.entries.map((one) => one.tag);
+    };
+    if (tags(composed, 'Test').join() === tags(theirs, label).join()) shape += 1;
+  }
+  assert.deepEqual(read, {
+    'Denon_AVR-X4800H': '30/30', LG_OLED65G26LA: '32/32', 'Philips_70FA930/00S': '25/25', Samsung_LNR408DX: '28/28',
+    Gemini_TestQuhd: '35/35', 'Sony_RDR-GXD500': '30/30', 'Pioneer_VSX-90TXV': '31/31', 'Rosen_Aviation_0602-2XX-8': '30/30',
+  });
+  assert.equal(shape, ONE_POWER.length, 'every composed record in the tag order of Logitech\'s');
+  // The control: the Harmony 650's table, which the One's composer used until section 397, binds the Denon's
+  // commands to the 650's scans, which on the One are other keys: of its 31 bindings none is the One's.
+  const denon = catalogueCommands(IR_ARCHIVE!, catalogueDevice(IR_ARCHIVE!, 'Denon', 'AVR-X4800H').codeset!).map((one) => one.name);
+  const asOne = deviceModeLayout(denon, TOUCH_HARD_KEYS).keys;
+  const as650 = deviceModeLayout(denon, HARD_KEYS).keys;
+  assert.equal(asOne.size, 30);
+  assert.equal(as650.size, 31);
+  assert.equal([...as650].filter(([scan, name]) => asOne.get(scan) === name).length, 0);
 });

@@ -31260,7 +31260,9 @@ block embeds is read after the last relocation.
 
 The device page's own fonts, 9 for its title and its rows, and its hit page, 10, are per configuration
 in the same way section 239's three were: the nine device compile numbers its fonts differently and
-is refused for a missing glyph before its one row page can refuse it for the right reason. The spare
+is refused for a missing glyph before its one row page can refuse it for the right reason (**corrected by
+section 397**: a page of one row is grown to two now, and the fonts and the hit page are read off an existing
+device page since sections 394 and 396). The spare
 and `one_config` agree with the constants, so nothing here is blocked by it, and it is written down
 rather than fixed because phase 9's target is the spare. Section 239's method applies: read them off
 an existing device page.
@@ -52079,3 +52081,95 @@ original's.
 * `packages/codec/bin/alphabets.ts` and the regenerated `src/alphabets.ts`: the added shapes.
 * `packages/codec/test/fonttable.test.ts`: the census and the rows over the nineteen, the eighteen re-lettered
   and read back, and the donor; `typeface.test.ts`, `blending.test.ts` and `text.test.ts`.
+
+## 397. A device composed onto a Harmony One: its keys in device mode are its family's, its pages are several, and a donor's devices get their inputs
+
+**Asked for by `todo-compile-one.md` 1.2.9 and 1.2.10**: the test setup composed with the One's composers onto
+Logitech's compile of the Denon and the LG for the One, `harvest_one_two_devices`. Running it end to end for
+the first time stopped at six places in turn, each a part the composers had never been asked for. Five are
+closed here; the sixth, an activity's screens on a configuration with no activity, is 1.2.11's.
+
+**Sources.** Logitech's nineteen distinct compiles for the One, section 395's, and the catalogue archive,
+decision 15. Neither client nor firmware was opened. The fit of the key table is a scratch measurement over
+eight of those compiles and is not asserted; what is asserted is each composed device against Logitech's own
+compile of it, below.
+
+### A device mode's keys are the family's
+
+**What was wrong.** The One's device composer wrote an empty list for the mode's own key map, so a device
+composed onto a One bound nothing to any key in device mode, and the activity composer, which reads an
+activity's keypad off its devices' maps, section 323, found none. The table that says which command a key
+takes, `HARD_KEYS`, section 325, was the Harmony 650's, and it does not carry over by key name: the One has no
+colour keys, and on Logitech's One compiles Channel Up sends `PresetNext` on the Philips 70FA930/00S and the
+code of `SkipForward` on the Denon AVR-X4800H, and `OK` comes before `Select` on the Select, Play, Pause and
+Guide keys where the 650 has `Select` first. Of the Denon's 31 bindings under the 650's table, none is what
+the One's binds, which the test below asserts.
+
+**The fit.** 33 catalogue devices of eight compiles, each device's records named by matching their three
+blocks word for word with the catalogue's codes composed, section 337's identity. Per key, a list of commands
+in order of preference, the first the device has being bound: `TOUCH_HARD_KEYS` in
+`families/touch/devicekeys.ts`, the touch family's `deviceModeKeys`. It reproduces 1521 of the 1526 key
+bindings; all five misses are the Denon AVR-28's iPod commands, which Logitech binds to no key where the
+Pioneer VSX-90TXV's take them, and no order serves both. Held out one catalogue entry at a time it predicts
+1452 of 1480. The orders no device decides are named in the module as choices. Three things no plain list
+says: scan 13, which the drawing does not show, takes `NumberEnter`, and `Enter` **only where no other key of
+the device sends it already**, two devices against three, `HardKey.ifFree`; scan 36 takes `PageUp` and scan 26
+binds nothing on all 33; and scans 27 and 29 are the direction pair, which of them is up not read here.
+
+**The record.** All 76 device modes of the population have one shape: 49 entries in one order, a press of 46
+keys bound to a list or to nothing and three handlers, tags `0x06`, `0x07` and `0x2D`, run on entering and
+leaving the mode and for its screen; a mode of one page adds the two page turn keys bound to nothing, 51
+entries, with its handlers ordered otherwise. The handlers' lists hold the same instructions on every device
+of a compile, each device naming a copy of its own. The composer takes the shape from an existing device mode
+of as many pages, keeps its handlers and binds every key afresh; **it shares that device's handler lists
+rather than copying them**, which runs the same instructions and is a choice of ours.
+
+**Asserted**, `test/composecatalogue.test.ts`: each of the eight catalogue devices of the harvest composed
+whole onto its own compile, lettered in ours, binds every key to a record identical to the one Logitech's
+binds, 30 of 30, 32 of 32, 25 of 25, 28 of 28, 35 of 35, 30 of 30, 31 of 31 and 30 of 30, compared by the
+code each key sends and so by nothing a naming could fit; and every composed record has Logitech's tags in
+Logitech's order, 8 of 8.
+
+### A device page of more than six commands
+
+A mode's entry states a pointer per page, `modeRecords`; the composer wrote one for several pages, so a paged
+device mode did not read at all. Nothing had run it before the test setup's Plasma. Asserted: fourteen
+commands take pages of six, six and two, each page's rows its own commands; six take one page.
+
+### A donor's own device gets its inputs
+
+Logitech's compile of the Denon and the LG gives neither an input variable, since its compiler writes them
+only for an activity that puts the device on an input, and the setup's activities put both on one.
+`composeDonorDeviceInputs` composes them onto the device the configuration holds: every command its catalogue
+inputs send is composed into a scratch copy, its record matched word for word in the device's own group, and
+the one list that sends that record and its quantity alone taken as the command's. All 27 sends of the two
+devices find their record and their one list. **It reads the send's shape from the family**,
+`FamilyTraits.sendPrelude`, and refuses the Harmony 600 family, whose sends open with a prelude nothing here
+matches. Asserted: the LG's input variable takes the catalogue's inputs in order with nothing appended to its
+group, a device holding its inputs is left alone, and the LG read as the Denon's catalogue entry is refused.
+
+### A menu page of one row grows to two
+
+Adding a device to a menu whose last page held one row was refused, on the ground that what such a page
+becomes had not been measured beside its original. **Over the nineteen compiles a device menu's hit page of
+one, two or three rows is one geometry each**, held by 7, 5 and 13 of them, and each is the one before with a
+row 872 units below its last, the bottom key moved one scan up and the edges unmoved. So the composer builds
+the page of a row more from the page it has, `withHitPage`. The row's background is the second row's picture,
+which rows two and three share on all 195 of Logitech's three row pages, a scratch measurement, and a counter is redrawn in the font
+in force where it is drawn, which on the two device compile was selected before the counter's own tail began.
+Asserted in `test/menupage.test.ts` and `test/compose.test.ts`.
+
+### Reading a page's commands is the family's too
+
+The activity composer finds a device's command on its screen by the label drawn there. That reader was the
+four slot family's corners. On the One a label cannot be read back into the name it was drawn from, since a
+name breaks at a capital with nothing drawn between the parts and a long word is cut with `..`, section 394,
+so the touch family matches a name the other way round: laid out by the same rule and compared line for line.
+Both are members of the family now, `screenItems` and `drawsName`.
+
+### What would falsify it
+
+A Logitech One compile of a catalogue device whose device mode binds a key to another command than the table
+gives, beyond the AVR-28's iPod commands; a device mode of other than 49 or 51 entries; a device menu hit page
+of a known row count with a second geometry.
+

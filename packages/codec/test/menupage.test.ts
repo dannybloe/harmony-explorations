@@ -32,6 +32,9 @@ import {
   screenProgram,
   stateVariables,
 } from '../src/index.ts';
+import { MENU_EDGE_SCANS, MENU_ROW_SCAN, menuRowCapacity } from '../src/families/touch/menus.ts';
+import { touchPages } from '../src/tables.ts';
+import { deviceListMenus } from '../src/shared/menus.ts';
 
 /** The thirteen arch 14 compiles, as `compose.test.ts`'s `ARCH14_LISTS`. */
 const ARCH14 = ['h650_config_region', 'h650_panasonic_config', 'h600_config', 'calibration_h600',
@@ -209,5 +212,60 @@ test('section 334: grown and opened menu pages are the built pages, every menu o
     const word = program.at(-2)!;
     assert.equal(title.opcode, 4, `menu ${menu}'s title points`);
     assert.equal(word.opcode, 4, `menu ${menu}'s bottom word points`);
+  }
+});
+
+/** Logitech's compiles for the Harmony One, the nineteen distinct files `test/frame.test.ts` rebuilds. */
+const ONE_MENU_COMPILES = [
+  'one_config', 'one_config_unprogrammed', 'one_spare_after_sync', 'one_spare_myharmony', 'one_spare_20260830',
+  'calibration_one', 'calibration_favchannels', 'calibration_favzero', 'compiled_protocols', 'compiled_protocols_2',
+  'compiled_protocols_3', 'harvest_one_two_devices', 'one_friend_asfound_config', 'one_friend_legacy_sync_config',
+  'phase7_before', 'phase7_after', 'harvest_one_families_1', 'harvest_one_families_2', 'harvest_one_families_3',
+] as const;
+
+/** How many of them hold a device menu page of each size. */
+const HOLDING: Readonly<Record<string, number>> = { 1: 7, 2: 5, 3: 13 };
+
+test('a Harmony One device menu\'s hit page of one, two or three rows is one geometry over every compile, each the one before with a row 872 units below its last',
+     skipUnless(...ONE_MENU_COMPILES), () => {
+  // What `composeTouchDeviceScreen` grows a page of one or two rows by, `todo-compile-one.md` 1.2.9: the page of a
+  // row more is this page with a row added a step below its last, the bottom key moved one scan up and the edges
+  // unmoved. Few compiles hold two of the sizes, so the evidence is that each size has **one** geometry over all
+  // of them, compared without the areas' own addresses, which only say where each is stored; the three are then
+  // compared with each other.
+  type Area = { code: number; x: number; y: number; width: number; height: number };
+  const shapes = new Map<number, Set<string>>();
+  const holding = new Map<number, number>();
+  for (const name of ONE_MENU_COMPILES) {
+    const c = parse(require_(name));
+    const hits = touchPages(c)?.records ?? [];
+    const records = modeRecords(c) ?? [];
+    const sizes = new Set<number>();
+    for (const menu of deviceListMenus(c).menus) {
+      for (const page of records[menu]?.pages ?? []) {
+        const areas: Area[] = (hits[page.lead as number]?.areas ?? []).map(({ code, x, y, width, height }) => ({ code, x, y, width, height }));
+        const rows = menuRowCapacity(areas.map((area) => area.code));
+        if (rows === undefined) continue;
+        sizes.add(rows);
+        (shapes.get(rows) ?? shapes.set(rows, new Set()).get(rows)!).add(JSON.stringify(areas));
+      }
+    }
+    for (const rows of sizes) holding.set(rows, (holding.get(rows) ?? 0) + 1);
+  }
+  assert.deepEqual([...shapes].map(([rows, set]) => [rows, set.size]).sort(), [[1, 1], [2, 1], [3, 1]]);
+  assert.deepEqual(Object.fromEntries([...holding].sort()), HOLDING);
+  const shape = (rows: number): Area[] => JSON.parse([...shapes.get(rows)!][0]!) as Area[];
+  const at = (areas: Area[], code: number): Area => areas.find((area) => area.code === code)!;
+  const without = (area: Area): string => JSON.stringify({ ...area, code: 0 });
+  for (const k of [1, 2]) {
+    const small = shape(k);
+    const large = shape(k + 1);
+    for (let r = 0; r < k; r += 1) assert.deepEqual(at(large, MENU_ROW_SCAN + r), at(small, MENU_ROW_SCAN + r), `row ${r} of ${k + 1}`);
+    const row = at(large, MENU_ROW_SCAN + k);
+    const above = at(large, MENU_ROW_SCAN + k - 1);
+    assert.equal(row.y - above.y, -872);
+    assert.equal(without({ ...row, y: 0 }), without({ ...above, y: 0 }));
+    assert.equal(without(at(large, MENU_ROW_SCAN + k + 1)), without(at(small, MENU_ROW_SCAN + k)), 'the bottom key, one scan up');
+    for (const code of MENU_EDGE_SCANS) assert.deepEqual(at(large, code), at(small, code));
   }
 });

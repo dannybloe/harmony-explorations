@@ -1954,27 +1954,25 @@ test('the spare Harmony One config gets a third device list page on every menu, 
                'nine menu rows and the title');
 });
 
-test('a menu whose last page holds one row is refused rather than grown', skipUnless('one_spare_20260830'), () => {
-  // The one shape left without a route: what a one row page becomes when a row is added has not
-  // been measured beside its original, since Logitech recompiles the whole list. So it is refused
-  // with the count in the message. The fixture is the spare composed once, whose menus then end on
-  // the one row page the test above checks; `compiled_protocols_3` ends on one too but its fonts
-  // are numbered differently from the constants the device page still carries, section 241, so it
-  // is refused earlier and for the wrong reason.
+test('a menu whose last page holds one row grows to two: the second row on the next scan, the bottom key one scan up',
+     skipUnless('one_spare_20260830'), () => {
+  // Refused until `todo-compile-one.md` 1.2.9, on the ground that what a one row page becomes had not been
+  // measured beside its original. It is measured now, by geometry rather than by a before and after: the
+  // menus' hit pages of one, two and three rows are one geometry each and nested on all 19 One compiles, a
+  // row a fixed step below the one above it, so the two row page is the one row page with that row added.
+  // The fixture is the spare composed once, whose menus then end on a one row page.
   const pristine = parse(require_('one_spare_20260830'));
   const first = composeDevice(pristine, { label: 'LG', commands: TELEVISION, power: 0 });
   const once = composeDeviceScreen(parse(first.bytes), 'LG',
     ROWS.map((row) => ({ label: row.label, list: first.lists[row.k] as number })), { iconLike: 'TV' });
+  assert.deepEqual(deviceListRows(parse(once.bytes)).filter((row) => row.page === 2).map((row) => row.label), ['LG']);
   const second = composeDevice(parse(once.bytes), { label: 'TV', commands: TELEVISION, power: 0 });
-  const before = parse(second.bytes);
-  assert.throws(
-    () => composeDeviceScreen(before, 'TV',
-      ROWS.map((row) => ({ label: row.label, list: second.lists[row.k] as number }))),
-    (error: unknown) => {
-      assert.ok(error instanceof ComposeError);
-      assert.match(error.message, /holds 1 row\(s\)/);
-      return true;
-    });
+  const after = parse(composeDeviceScreen(parse(second.bytes), 'TV',
+    ROWS.map((row) => ({ label: row.label, list: second.lists[row.k] as number }))).bytes);
+  assert.ok(after.allChecksPass);
+  assert.deepEqual(deviceListRows(after).filter((row) => row.page === 2).map((row) => [row.scan, row.label]),
+                   [[48, 'LG'], [49, 'TV']]);
+  assert.equal(devices(after).length, 8);
 });
 
 /**

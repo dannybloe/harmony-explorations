@@ -1,0 +1,92 @@
+---
+name: code-for-a-family
+description: "The family split of plan 007, kept at the moment code is written. Use before adding or changing anything in packages/codec/src that builds or composes configuration bytes: a composer, a generator, a serializer, a layout rule, a table of keys, fonts, pictures or menus, a choice, or a fact a builder relies on; and when a measurement on one remote is about to become code. Also load it in every agent brief that touches the codec's build side."
+---
+
+# Code for a family: where a difference between remotes lives
+
+**The rule, in one sentence: code outside `families/` is generic.** It holds nothing that is true of one
+remote and not another: no scan code, no coordinate, no font number, no picture, no list shape, no count, no
+table of keys, no test of the architecture or the skin. Everything that differs between remotes is data or
+code **in a family**, and a module outside `families/` reaches it only by asking the configuration's
+family, `familyOf(c)`, `traitsOf(c)`, `choicesOf(c)`. A fact goes outside `families/` only when it is
+measured the same on every family that module serves, and its docstring names those families.
+
+**Readers of Logitech's formats are the one place an architecture may be named outside a family**, because
+reading a format is per architecture by nature (a slot number, a header length, a container cookie). Even
+there the architecture is looked up in **one table per fact** (`archSlot` is the model), never tested inline
+in a function's body, and a reader never decides how something is **built**.
+
+**This skill holds no rules of its own. The rules are plan 007's, and this is the moment that makes them
+bite.** The plan is `docs/plans/007-one-pipeline-many-families.md`, sections "A family is a bundle of
+parts, not a subclass", "The rules the structure keeps" and "Where the files go"; the interface is
+`packages/codec/src/families/family.ts`. Read both before writing.
+
+**Why a skill and not the plan alone.** The plan reads as an architecture to agree with, and it is
+agreed with. The moment that matters is the middle of a task: a builder half works, the next refusal
+comes from one remote, and the quickest fix is a test of which remote it is, or the shape of that
+remote's bytes written straight into a shared module. Twice in one stretch of `todo-compile-one.md` 1.2.9
+this happened: a composer for a donor device's inputs matched the Harmony One's send list shape inline
+in a shared module where the family already stated it as a trait, and the device mode key table stayed
+the Harmony 650's alone in a shared file when the Harmony One turned out to bind other commands. Both
+were caught by the person reading along, not by the code. So the trigger is the **act** of writing build
+code, whatever the task was.
+
+## Before writing, answer four questions
+
+1. **Is this a fact about one family, or about all of them?** A measurement on the Harmony One is a
+   fact about the touch family until another family is measured too, `CLAUDE.md` decision 16. Say which
+   families it was measured on in the docstring.
+2. **Where does it go?** By the plan's table:
+   * the same on every compiled family: `shared/` or the container modules (`frame.ts`, `placer.ts`,
+     `inputs.ts`, the infrared and action list modules);
+   * different per family, as **data** a shared composer asks about: a field of `FamilyTraits` (how
+     action lists differ, `sendPrelude`, `startSequence`, `screenItemsBeep`) or of the family's choices
+     (`CommonChoices` and the family's own `choices.ts`, every choice of ours with its default);
+   * different per family, as **code**: a member of the `Family` interface, implemented in
+     `families/four-slot/` and `families/touch/`, with the shared composer calling it.
+3. **Does the shared code ask its family, or test which remote it is?** `traitsOf(c)`, `choicesOf(c)`
+   and `familyOf(c)` in `families/registry.ts` are the questions; the registry is the one place a family
+   is chosen. A new `c.architecture === 12`, `archSlot(14, ...)` or skin test in a builder is the thing
+   this skill exists to stop. **Readers are exempt**: reading Logitech's compiles stays per architecture,
+   since reading is not building.
+4. **Is the other family's half stated?** A trait or interface member is filled in for every family. Where
+   the other family's answer is not measured, it refuses with a message that says so, rather than
+   borrowing the measured family's answer.
+
+## Checks before committing
+
+Run these over the change; each prints nothing when the change keeps the split.
+
+    # a new test of which remote it is, in build code
+    git diff -U0 -- packages/codec/src | grep -nE '^\+.*(architecture (===|!==) ?[0-9]|archSlot\((12|14),|\.skin (===|!==))'
+
+    # a family importing another family, or a shared part importing a family
+    grep -rn "from '\.\./four-slot\|from '\.\./touch" packages/codec/src/families/
+    grep -rn "families/\(four-slot\|touch\)" packages/codec/src/shared/
+
+A hit in a builder needs moving behind the family before it is committed. **`test/generic.test.ts` is the
+executable half**: it lists every module outside `families/` that still names a remote, with what it names,
+and fails when a module joins the list or a count on it rises. The list is the debt, `todo-compile-one.md`
+3.3, and it may only shrink: a module leaves it when its remote specific part has moved into a family.
+**Never add a module to that list to make a commit pass**; move the part instead.
+
+## The cases met so far
+
+| what | where it belongs |
+|---|---|
+| a send is three lists with a delay prelude, or the send and its quantity alone | `FamilyTraits.sendPrelude` |
+| the shape of an activity's start | `FamilyTraits.startSequence` |
+| a screen item's list opens with the beeper | `FamilyTraits.screenItemsBeep` |
+| the activity key a type of activity takes; the delays a device starts with | the family's choices, `CommonChoices` |
+| the device page, the activity screen, a menu row | `Family` members, one implementation per family |
+| which command each hard key sends in device mode | per family, since the Harmony 650's `HARD_KEYS` does not carry over to the Harmony One by key name |
+| our faces' weights, the pad font, the menu row fonts | the family's choices |
+
+Add a row when a new kind of difference lands.
+
+## Related
+
+* `writing-a-config`: the rails a configuration must respect, whichever family built it.
+* `finding`: a measurement that becomes a builder's fact goes through the finding gate first.
+* `harmony-one`, `harmony-650`, `harmony-600`, `harmony-700`: where each remote's facts are.

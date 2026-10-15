@@ -56,7 +56,24 @@ import { oxaniumAlphabet } from './text.ts';
  * the Menu key's Home on the Sony KDL-32W705B among them; and the Enter key's NumberEnter is the only
  * candidate any device here offered.
  */
-export const HARD_KEYS: readonly { scan: number; button: string; prefer: readonly string[] }[] = [
+/** One hard key a device mode binds: its scan, the key as printed, and the commands it takes in order. */
+export interface HardKey {
+  readonly scan: number;
+  readonly button: string;
+  readonly prefer: readonly string[];
+  /**
+   * Commands taken after `prefer`, each only where no other key of the device sends it already: the
+   * Harmony One's scan 13 takes Enter on two catalogue devices and nothing on the three whose Guide or
+   * Select key sends Enter, which no preference list can say.
+   */
+  readonly ifFree?: readonly string[];
+}
+
+/**
+ * The Harmony 600, 650 and 700's table, the four slot family's `deviceModeKeys`. It sits here beside the
+ * rest of that family's device mode layout, which predates plan 007's split.
+ */
+export const HARD_KEYS: readonly HardKey[] = [
   { scan: 10, button: 'Menu', prefer: ['Menu', 'Home'] },
   { scan: 12, button: 'Exit', prefer: ['Cancel', 'Exit', 'Clear', 'Return'] },
   { scan: 13, button: 'Red', prefer: ['Red'] },
@@ -154,16 +171,25 @@ export interface DeviceModeLayout {
 }
 
 /**
- * A device's device mode as the compiler lays it out, from its catalogue commands in catalogue order.
+ * A device's device mode as the compiler lays it out, from its catalogue commands in catalogue order, with
+ * the hard key table of the device's family, `Family.deviceModeKeys`, since which command a key takes is
+ * the family's: the Harmony One binds other commands to its keys than the Harmony 650 to the same names.
  * A name the catalogue states twice counts once, at its first place, which is what a composer reading
  * the catalogue by name has to do anyway.
  */
-export function deviceModeLayout(commands: readonly string[]): DeviceModeLayout {
+export function deviceModeLayout(commands: readonly string[], hardKeys: readonly HardKey[]): DeviceModeLayout {
   const names = [...new Set(commands)];
   const have = new Set(names);
   const keys = new Map<number, string>();
-  for (const key of HARD_KEYS) {
+  for (const key of hardKeys) {
     const chosen = key.prefer.find((name) => have.has(name));
+    if (chosen !== undefined) keys.set(key.scan, chosen);
+  }
+  // A key's free candidates once every key has had its preferences, since free means no key sends it.
+  for (const key of hardKeys) {
+    if (keys.has(key.scan) || key.ifFree === undefined) continue;
+    const held = new Set(keys.values());
+    const chosen = key.ifFree.find((name) => have.has(name) && !held.has(name));
     if (chosen !== undefined) keys.set(key.scan, chosen);
   }
   const onKeys = new Set(keys.values());

@@ -12,6 +12,8 @@
  * these.
  */
 import type { ActivityKey } from '../activitykeys.ts';
+import type { HardKey } from '../devicemode.ts';
+import type { DeviceScreenItem } from '../activityroles.ts';
 import type { Container, Instruction } from '../gspm.ts';
 import type {
   ComposeActivityRowOptions, ComposeActivityScreenOptions, ComposedActivityRow, ComposedActivityScreen, ComposedScreen,
@@ -69,6 +71,15 @@ export interface Family<Choices extends CommonChoices = CommonChoices> {
   readonly traits: FamilyTraits;
   /** Every choice of ours this family makes, at its default: what a recipe may set for it. */
   readonly choices: Choices;
+  /**
+   * Which command each hard key sends in a catalogue device's device mode, as Logitech's compiler binds them
+   * for this family: per key, the commands it takes in order of preference, `deviceModeLayout`.
+   */
+  readonly deviceModeKeys: readonly HardKey[];
+  /** The commands a mode's pages show, page by page in this family's item order, with each one's drawn label. */
+  screenItems(c: Container, mode: number): DeviceScreenItem[];
+  /** Whether an item is drawn the way this family draws a command called `name`. */
+  drawsName(c: Container, item: DeviceScreenItem, name: string): boolean;
   /** A device's own screen: its page or pages, `composeDeviceScreen`. */
   composeDeviceScreen(c: Container, label: string, rows: readonly ComposeRow[], options: WithChoices<ComposeScreenOptions, Choices>): ComposedScreen;
   /**

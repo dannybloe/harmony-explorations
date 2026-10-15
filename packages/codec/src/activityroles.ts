@@ -32,10 +32,9 @@ import {
   ACTION_LIST_INDEX_OPCODE, handlerSets, modeRecords, taggedList,
 } from './sections.ts';
 import {
-  activities, deviceModeMaps, devices, deviceVariables, FOUR_SLOT_ITEMS, fourSlotCellAt, INPUT_PROPERTY,
-  infraredCodesPerList, POWER_PROPERTY,
+  activities, deviceModeMaps, devices, deviceVariables, INPUT_PROPERTY, infraredCodesPerList, POWER_PROPERTY,
 } from './inventory.ts';
-import { characterMap, screenStrings } from './text.ts';
+import { familyOf } from './families/registry.ts';
 import { ComposeError, type ComposeActivityTarget, type ComposeRow } from './compose.ts';
 import { activityStartTargets } from './inputs.ts';
 
@@ -92,38 +91,35 @@ export function deviceKeypadLists(c: Container, group: number): Map<number, numb
 
 /** One item of a device's own screen pages: its drawn label and the list it runs. */
 export interface DeviceScreenItem {
+  /** The label as drawn, its lines joined with a space. */
   readonly label: string;
   readonly list: number;
+  /** The label's lines as drawn, where a family breaks a name over lines by a rule `drawsName` reapplies. */
+  readonly lines?: readonly string[];
 }
 
-/**
- * A device's own screen commands, page by page and within a page in the order the corners fill,
- * `FOUR_SLOT_ITEMS`. A label drawn over two lines is read back with a space between them.
- */
+/** The configuration's family, which reads its own screens; a configuration no family serves is refused. */
+function screenFamily(c: Container) {
+  const family = familyOf(c);
+  if (family === undefined) throw new ComposeError(`no family reads the screens of arch ${c.architecture}`);
+  return family;
+}
+
+/** A device's own screen commands, page by page, in the order its family's pages fill, `Family.screenItems`. */
 export function deviceScreenItems(c: Container, group: number): DeviceScreenItem[] {
   const map = deviceModeMaps(c).find((one) => one.group === group);
   if (map === undefined) throw new ComposeError(`device ${group} has no device mode record`);
   return modeScreenItems(c, map.mode);
 }
 
-/** The corner items of every page of a mode, in page order and corner order. */
+/** The items of every page of a mode, in page order and the family's item order, `Family.screenItems`. */
 export function modeScreenItems(c: Container, mode: number): DeviceScreenItem[] {
-  const record = (modeRecords(c) ?? [])[mode];
-  if (record === undefined) throw new ComposeError(`mode ${mode} does not exist`);
-  const drawn = screenStrings(c, characterMap(c));
-  const out: DeviceScreenItem[] = [];
-  for (const page of record.pages) {
-    const lines = drawn.filter((one) => one.program === page.program && one.y >= 20 && one.y <= 100);
-    const entries = taggedList(c, page.list)?.entries ?? [];
-    FOUR_SLOT_ITEMS.forEach((item, k) => {
-      const entry = entries.find((one) => (one.tag & 0x3f) === item.scan && one.opcode === ACTION_LIST_INDEX_OPCODE);
-      if (entry === undefined) return;
-      const label = lines.filter((one) => fourSlotCellAt(one.x, one.y) === k)
-        .sort((a, b) => a.y - b.y).map((one) => one.text.trim()).join(' ');
-      out.push({ label, list: entry.operand });
-    });
-  }
-  return out;
+  return screenFamily(c).screenItems(c, mode);
+}
+
+/** Whether an item is drawn the way its family draws `name`, `Family.drawsName`. */
+export function drawsName(c: Container, item: DeviceScreenItem, name: string): boolean {
+  return screenFamily(c).drawsName(c, item, name);
 }
 
 /**
@@ -160,7 +156,7 @@ export function activityKeysFromRoles(c: Container, roles: ActivityRoles): { sca
     if (channelIsDirection && SKIP_SCANS.every((scan) => own.has(scan))) {
       CHANNEL_SCANS.forEach((scan, k) => keys.set(scan, own.get(SKIP_SCANS[k] as number) as number));
     }
-    const exit = deviceScreenItems(c, roles.control).find((one) => one.label === EXIT_LABEL);
+    const exit = deviceScreenItems(c, roles.control).find((one) => drawsName(c, one, EXIT_LABEL));
     if (exit !== undefined) keys.set(EXIT_SCAN, exit.list);
   }
   if (roles.volume !== undefined) {
@@ -187,11 +183,11 @@ export interface ActivityScreenPick {
  */
 export function activityScreenRows(c: Container, picks: readonly ActivityScreenPick[]): ComposeRow[] {
   return picks.map((pick) => {
-    const found = deviceScreenItems(c, pick.group).find((one) => one.label === pick.label);
+    const found = deviceScreenItems(c, pick.group).find((one) => drawsName(c, one, pick.label));
     if (found === undefined) {
       throw new ComposeError(`device ${pick.group}'s own screen has no command labelled '${pick.label}'`);
     }
-    return { label: found.label, list: found.list };
+    return { label: pick.label, list: found.list };
   });
 }
 

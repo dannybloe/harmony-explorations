@@ -3,14 +3,19 @@
  * modules are `menus.ts` and `screens.ts`, its choices `choices.ts`; this is the object the registry hands out.
  */
 import type { Family } from '../family.ts';
+import { touchDrawsName, touchScreenItems } from './screenitems.ts';
 import { composeTouchActivityRow, composeTouchActivityScreen, composeTouchDeviceScreen } from './screens.ts';
 import { TOUCH_CHOICES, type TouchChoices } from './choices.ts';
+import { TOUCH_HARD_KEYS } from './devicekeys.ts';
 import { activityMenuByRows } from '../../shared/menus.ts';
 
 export const TOUCH: Family<TouchChoices> = {
   name: 'the Harmony One',
   traits: { sendPrelude: false, startSequence: 'timer cancel and active list', screenItemsBeep: true },
   choices: TOUCH_CHOICES,
+  screenItems: touchScreenItems,
+  drawsName: touchDrawsName,
+  deviceModeKeys: TOUCH_HARD_KEYS,
   composeDeviceScreen: composeTouchDeviceScreen,
   activityMenu: activityMenuByRows,
   // The Harmony One writes the marker outside its rows 2 to 9 times, none read as its own: section 329.
