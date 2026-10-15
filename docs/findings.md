@@ -51604,7 +51604,7 @@ power off the activity's start holds, on a remote just restarted; its volume
 went to the LG; All Off sent the LG's power off, Kodi's power and the Switch's power toggle. The Switch's power
 on is the frame the catalogue names `ARC`, as on the Harmony 650, section 339. The Switch's own device page
 showed power on, power off, Input 1 and Input 2, as noted at the bench; the monitor heard no frame in that step,
-because no command was pressed there.
+and the page's commands were pressed after the run instead.
 
 **Each of the Switch's four page commands sends its code**, pressed afterwards with the remote off the cable and
 heard by the live monitor, `reads/20261015T0641Z-ir-monitor.jsonl` frames 43 to 52: power on (`ARC`), power
