@@ -309,8 +309,9 @@ test('the frame refuses a layout it would get wrong, and an architecture it was 
 
 /**
  * Every Harmony One configuration Logitech compiled that the lab holds, `todo-compile-one.md` 6.1:
- * fifteen names and the three harvest compiles below, seventeen distinct containers, read off the
- * Harmony Ones here and a friend's or handed back by Logitech's service. `one_config_unprogrammed` and
+ * seventeen names and the three harvest compiles below, nineteen distinct containers, read off the
+ * Harmony Ones here and a friend's or handed back by Logitech's service. `phase7_before` and
+ * `phase7_after`, section 174, were missing until the review of section 395. `one_config_unprogrammed` and
  * `one_spare_before_sync` are one container read twice and both are named, since both are registered;
  * the configurations this project wrote to the spare are measured below as ours.
  */
@@ -318,7 +319,7 @@ const ONE_COMPILES = [
   'one_config', 'one_config_unprogrammed', 'one_spare_before_sync', 'one_spare_after_sync',
   'one_spare_myharmony', 'one_spare_20260830', 'calibration_one', 'calibration_favchannels',
   'calibration_favzero', 'compiled_protocols', 'compiled_protocols_2', 'compiled_protocols_3',
-  'harvest_one_two_devices', 'one_friend_asfound_config', 'one_friend_legacy_sync_config',
+  'harvest_one_two_devices', 'one_friend_asfound_config', 'one_friend_legacy_sync_config', 'phase7_before', 'phase7_after',
 ] as const;
 
 /**
@@ -397,7 +398,8 @@ test('every Harmony One configuration Logitech compiled is laid out again byte f
     assert.equal(firstDifference(layOutContainer(layout).bytes, c.blob), undefined, `${name} differs`);
     rebuilt += 1;
   }
-  assert.equal(rebuilt, 18);
+  // Twenty fixtures, nineteen distinct containers.
+  assert.equal(rebuilt, 20);
 });
 
 test('the configurations this project wrote to the spare Harmony One park differently and lay out byte for byte',
@@ -429,10 +431,11 @@ test('the two Harmony One containers that are not laid out, and why',
   assert.deepEqual([safe.blob[record + 3], out[record + 3]], [0x0c, 0x0d]);
 
   // A region read while a write was half done, section 242: one 64 KiB block erased, so the
-  // container fails its own trailer checksum and is not a configuration. It is refused, not rebuilt.
+  // container fails its own trailer checksum and is not a configuration. The frame checks no checksum:
+  // what refuses it is that the erased block leaves the key table in more than one piece.
   const mixed = containerOf('one_spare_mixed_region');
   assert.equal(mixed.checks['trailer_checksum_recomputes'], false);
-  assert.throws(() => takeApart(mixed), LayoutError);
+  assert.throws(() => takeApart(mixed), /the key table is not one piece/);
 });
 
 test('a Harmony One section that grows moves every address above it, end_addr and the checksum',

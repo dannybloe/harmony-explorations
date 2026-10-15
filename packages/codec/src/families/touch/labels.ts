@@ -6,16 +6,18 @@
  * 50 high at one of six places, `DEVICE_PAGE_SLOTS`, with the command's name drawn inside it. The composers
  * drew that name as one line and refused any name wider than the box, which is most of a receiver's sound
  * modes. Logitech's compiler instead breaks a name over up to three lines and cuts what still does not fit
- * with `..`, and one rule reproduces every pad label in the 19 distinct Harmony One containers the lab
- * holds: 8310 lines on 7525 pads, and 551 of the 558 pads whose command is known by the record its press
- * sends, the other seven being a `Z` the character map cannot name and one record named by its frame value.
+ * with `..`, and one rule reproduces every pad label it could be checked against in the 19 distinct
+ * configurations Logitech compiled for the Harmony One that the lab holds: 8310 lines on 7525 pads, and 551
+ * of the 558 pads whose command is known by the record its press sends, the other seven being a `Z` the
+ * character map could not name until section 396 and one record named by its frame value.
  *
  * **The rule, in four parts.**
  *
  * 1. **Words.** A name splits at each space, the space kept inside a line and dropped at a break; before an
  *    upper case letter, a digit or a `+` that follows a lower case letter; and after a hyphen not followed by
- *    another. It never splits a run of capitals (`DTSNEO`), a capital before a digit (`HDMI2V2`), a digit
- *    before a letter (`6Cinema`), or at `/`, `:` or `.`. Each of those was tested by adding or removing it:
+ *    another, an exception no drawn label measures, since none holds a doubled hyphen. It never splits a run
+ *    of capitals (`DTSNEO`), a capital before a digit (`HDMI2V2`), a digit before a letter (`6Cinema`), or
+ *    at `/`, `:` or `.`. Each of those was tested by adding or removing it:
  *    the digit boundary carries 11 labels, the hyphen 3, the plus 1 (`VolumeMain+`, thin); a slash as a
  *    boundary breaks 17.
  * 2. **Greedy lines.** A line takes the next word while the line, its separator and the word are at most

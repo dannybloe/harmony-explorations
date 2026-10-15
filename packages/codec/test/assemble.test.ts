@@ -552,7 +552,8 @@ test('10.8.5: the weight each face is drawn in is a choice, and a configuration 
   assert.ok(out.container.allChecksPass);
   assert.deepEqual(compareViews(setupView(out.container), setupView(containerOf('h650_test_config_clean')), { menuOrder: false }), []);
   assert.ok(out.faces !== undefined);
-  assert.ok(out.faces.every((one) => one.weight === faceWeights[one.face]));
+  // The Harmony One's faces are in the table too and no 650 set is one of them, so the lookup is by name.
+  assert.ok(out.faces.every((one) => one.weight === (faceWeights as Readonly<Record<string, string>>)[one.face]));
   checkOxaniumFonts(out.container, out.faces);
   // Read back with no memory of the build: every drawn code resolved, every text as in the default weights,
   // and the size table the one of these weights, read off the letters.

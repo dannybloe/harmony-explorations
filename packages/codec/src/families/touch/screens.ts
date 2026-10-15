@@ -60,8 +60,12 @@ export function composeTouchDeviceScreen(
   const map = characterMap(c);
   if (map === undefined) throw new ComposeError('the config draws no text this can spell from');
   const sets = fontSets(c) ?? [];
-  // The pads are drawn in the font the configuration's own device pages draw theirs in, section 394.
-  const padFont = padFontOf(c) ?? DEVICE_ROW_FONT;
+  // The pads are drawn in the font the configuration's own device pages draw theirs in, section 394. Where no
+  // device page is found there is nothing to read it off, and a guess is refused: on Logitech's compile of a
+  // Samsung test device, whose keys send nothing `deviceModeMaps` counts, font 9 is another subset of
+  // letters than the font 7 its pads are drawn in, and cannot spell `Mode`.
+  const padFont = padFontOf(c);
+  if (padFont === undefined) throw new ComposeError('no device page shows which font a pad is drawn in');
   const titleSet = sets[titleFont];
   const rowSet = sets[padFont];
   const menuSet = sets[MENU_ROW_FONT];

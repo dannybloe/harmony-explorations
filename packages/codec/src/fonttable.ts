@@ -158,6 +158,19 @@ export function measureSet(c: Container, set: FontSet, map: CharacterMap): SetFa
   const stroke = median(runs) ?? 0;
   const capitalTop = median(tops);
   const face = ((): OxaniumFaceName => {
+    // The Harmony One's faces by height, `lettering.ts`: every 14 pixel set of its eight compiles is bold and
+    // every 16 pixel set the greeting's, so only the 15 pixel sets need the stroke to tell them apart.
+    if (c.architecture === 12) {
+      switch (set.height) {
+        case 16: return 'One16';
+        case 15: return stroke >= 2 ? 'One15' : 'OneR15';
+        case 14:
+          if (stroke < 2) throw new FontTableError(`font set at ${set.address.toString(16)} is a regular 14, which no Harmony One compile draws`);
+          return 'One14';
+        case 11: return 'One11';
+        default: throw new FontTableError(`font set at ${set.address.toString(16)} is ${set.height} pixels high, which no Harmony One face is`);
+      }
+    }
     switch (set.height) {
       case 15: return stroke >= 2 ? 'F15' : 'R15';
       case 14: return stroke < 2 ? 'R14' : capitalTop === 1 ? 'F14W' : 'F14';
@@ -187,14 +200,14 @@ export interface FontTableBuilt {
  * do not have, a code past seven bits, and a glyph something other than its set points at.
  */
 export function withOxaniumFonts(
-  layout: ContainerLayout, inks: LetterInks, weights: Readonly<Partial<Record<OxaniumFaceName, OxaniumWeight>>> = {},
+  layout: ContainerLayout, inks: LetterInks | 'own', weights: Readonly<Partial<Record<OxaniumFaceName, OxaniumWeight>>> = {},
 ): FontTableBuilt {
-  if (new Set([inks.shadowed, inks.plain, inks.shadow]).size !== 3) {
+  if (inks !== 'own' && new Set([inks.shadowed, inks.plain, inks.shadow]).size !== 3) {
     throw new FontTableError('the two inks and the shadow are three colours, or a letter could not be read back');
   }
   const c = layOutContainer(layout).container;
-  if (c.architecture !== 14 || !HARMONY_650_SKINS.has(layout.skin)) {
-    throw new FontTableError('the font table is built for the Harmony 650 alone, whose fonts it was measured on');
+  if (c.architecture === 14 ? !HARMONY_650_SKINS.has(layout.skin) : c.architecture !== 12) {
+    throw new FontTableError('the font table is built for the Harmony 650 and the Harmony One, whose fonts it was measured on');
   }
   const map = characterMap(c);
   if (map === undefined) throw new FontTableError('the configuration draws no text a character map reads');
@@ -240,14 +253,24 @@ export function withOxaniumFonts(
 
   const faces = sets.map((set): SetFace => {
     const measured = measureSet(c, set, map);
-    return { ...measured, inks, weight: weights[measured.face] ?? defaultWeight(measured.face) };
+    // `own` keeps each set's colours, its ink and its shadow: a Harmony One draws every set in a pair of its
+    // own, ten pairs over its compiles, where the 650 family letters every set in one scheme.
+    const setInks = inks === 'own'
+      ? { shadowed: measured.ink, plain: measured.ink, shadow: measured.shadow ?? measured.ink }
+      : inks;
+    return { ...measured, inks: setInks, weight: weights[measured.face] ?? defaultWeight(measured.face) };
   });
   const glyphPieces = new Map<string, ContainerPiece>();
-  const glyphPiece = (face: SetFace, ch: string): ContainerPiece => {
-    const key = `${face.face} ${face.weight} ${face.lettering} ${ch}`;
+  // A glyph is shared between sets only where the firmware's text routine was read to allow it, section 368:
+  // the Harmony 650 and 700. The Harmony One's is unread, so each of its sets gets glyphs of its own; with a
+  // pair of colours per set that costs 95 glyphs of 1520 on Logitech's compile of the Denon and the LG.
+  const shared = c.architecture === 14;
+  const glyphPiece = (face: SetFace, ch: string, index: number): ContainerPiece => {
+    const own = lettered(face);
+    const key = `${shared ? '' : `${index} `}${face.face} ${face.weight} ${face.lettering} ${own.shadowed} ${own.plain} ${own.shadow} ${ch}`;
     let piece = glyphPieces.get(key);
     if (piece === undefined) {
-      const rows = letterRows(letterFaceOf(face), ch, face.lettering, inks);
+      const rows = letterRows(letterFaceOf(face), ch, face.lettering, own);
       piece = { bytes: encodeGlyph(rows[0]!.length, rows), refs: [], owner: 'slot-7-glyph' };
       glyphPieces.set(key, piece);
     }
@@ -281,7 +304,7 @@ export function withOxaniumFonts(
     for (let k = 0; k < count; k += 1) {
       const ch = characters.get(set.first + k);
       if (ch === undefined || !LETTERING_CHARACTERS.includes(ch)) continue;
-      refs.push({ at: 3 + 3 * k, to: glyphPiece(face, ch), offset: 0 });
+      refs.push({ at: 3 + 3 * k, to: glyphPiece(face, ch, index), offset: 0 });
     }
     piece.bytes = bytes;
     piece.refs = refs;

@@ -52,7 +52,7 @@ export interface LetterInks {
 export const LETTERING_CHARACTERS: readonly string[] = Array.from({ length: 95 }, (_, k) => String.fromCharCode(32 + k));
 
 /**
- * The nine faces our letters come in, one per face Logitech draws its Harmony 650 screens in, measured in
+ * The faces our letters come in. The first nine are one per face Logitech draws its Harmony 650 screens in, measured in
  * 8.2 over the 13 compiles in the lab's `work/sample-8-2/`: each one's cell height, the row its baseline
  * sits on, whether a glyph opens with a blank column, and the width of a space; the Oxanium cut and pixel
  * size whose capitals and x-height land on Logitech's rows, the weight chosen by look, Regular for the
@@ -79,6 +79,21 @@ export const OXANIUM_FACE_SPECS = {
     rows: { cap: 9, x: 7, ascender: 9, descender: 3 } },
   R13: { what: 'regular 13, Help', cell: 13, baseline: 9, lead: 0, weight: 'Regular', px: 11, space: 3,
     rows: { cap: 8, x: 6, ascender: 8, descender: 2 } },
+  // The Harmony One's five faces, measured over every set of its nine Logitech compiles in the lab
+  // (`work/one-track/fonts/rows.ts`): the same cells as the 650's, but a 14 or 15 pixel capital is a row
+  // shorter and starts a row lower, on row 3 on all 1009 of them, and the 16 pixel face is the greeting's alone.
+  // The 11 pixel face sits on the 650's rows and opens with ink rather than a blank column on 218 of 307
+  // letters. Findings section 396. Our letters reach the same rows on all five, `todo-compile-one.md` 5.2.
+  One16: { what: 'bold 16, the greeting', cell: 16, baseline: 12, lead: 1, weight: 'SemiBold', px: 14, space: 4,
+    rows: { cap: 10, x: 7, ascender: 10, descender: 3 } },
+  One15: { what: 'bold 15, menu rows and titles on the Harmony One', cell: 15, baseline: 11, lead: 0, weight: 'SemiBold', px: 12, space: 3,
+    rows: { cap: 9, x: 7, ascender: 9, descender: 2 } },
+  OneR15: { what: 'regular 15, Help and prose on the Harmony One', cell: 15, baseline: 11, lead: 1, weight: 'Regular', px: 12, space: 3,
+    rows: { cap: 9, x: 7, ascender: 9, descender: 2 } },
+  One14: { what: 'bold 14, pads and device rows on the Harmony One', cell: 14, baseline: 10, lead: 0, weight: 'SemiBold', px: 11, space: 3,
+    rows: { cap: 8, x: 6, ascender: 8, descender: 2 } },
+  One11: { what: 'bold 11, the clock and small labels on the Harmony One', cell: 11, baseline: 8, lead: 0, weight: 'SemiBold', px: 9, space: 3,
+    rows: { cap: 7, x: 5, ascender: 7, descender: 2 } },
 } as const satisfies Record<string, FaceSpec>;
 
 export type OxaniumFaceName = keyof typeof OXANIUM_FACE_SPECS;
@@ -87,6 +102,12 @@ export type OxaniumFaceName = keyof typeof OXANIUM_FACE_SPECS;
 export interface OxaniumFace extends FaceSpec, RenderedFace {}
 
 export const LETTERING_FACES = Object.keys(OXANIUM_FACE_SPECS) as OxaniumFaceName[];
+
+/** The nine faces measured on the Harmony 650, `todo-compile-650.md` 8.2. */
+export const HARMONY_650_FACES: readonly OxaniumFaceName[] = ['F15', 'F14W', 'F14', 'F13', 'F11', 'F10', 'R15', 'R14', 'R13'];
+
+/** The five measured on the Harmony One, `todo-compile-one.md` 5.2. */
+export const HARMONY_ONE_FACES: readonly OxaniumFaceName[] = ['One16', 'One15', 'OneR15', 'One14', 'One11'];
 
 /**
  * The cuts of Oxanium this repository carries, lightest first, `fonts/Oxanium/static/`. Which one a face is

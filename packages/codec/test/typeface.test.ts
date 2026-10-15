@@ -15,6 +15,8 @@ import { readFileSync } from 'node:fs';
 
 import {
   LETTERING_CHARACTERS,
+  HARMONY_650_FACES,
+  HARMONY_ONE_FACES,
   LETTERING_FACES,
   OXANIUM_FACE_SPECS,
   oxanium,
@@ -70,11 +72,15 @@ test('every face\'s capitals, x-height, ascenders and descenders reach exactly t
   }
 });
 
-test('what the renderer draws, all nine faces\' masks and grey levels, is the same bytes on every machine', () => {
-  const hash = createHash('sha256');
-  for (const name of LETTERING_FACES) {
-    const face = oxaniumFace(name);
-    for (const ch of LETTERING_CHARACTERS) hash.update(`${name} ${ch} ${face.glyphs[ch]!.join('/')} ${face.greys[ch]!.join('/')}\n`);
-  }
-  assert.equal(hash.digest('hex').slice(0, 16), '3cc228b1b060c8fb');
+test('what the renderer draws, the Harmony 650\'s nine faces\' and the Harmony One\'s five faces\' masks and grey levels, is the same bytes on every machine', () => {
+  const digest = (faces: readonly (typeof LETTERING_FACES)[number][]): string => {
+    const hash = createHash('sha256');
+    for (const name of faces) {
+      const face = oxaniumFace(name);
+      for (const ch of LETTERING_CHARACTERS) hash.update(`${name} ${ch} ${face.glyphs[ch]!.join('/')} ${face.greys[ch]!.join('/')}\n`);
+    }
+    return hash.digest('hex').slice(0, 16);
+  };
+  assert.equal(digest(HARMONY_650_FACES), '3cc228b1b060c8fb');
+  assert.equal(digest(HARMONY_ONE_FACES), 'cf4561f787905a4a');
 });

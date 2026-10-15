@@ -51792,22 +51792,34 @@ the composer builds one list per send there and three on the 600 family.
 
 Section 235 found that the One keeps a device's power on delay as one `0x7C` at the top level of the list
 its power variable runs from 0 to 1. Against the catalogue that wait is the entry's `powerOnDelay` in tenths
-of a second on 7 of 7 catalogue devices of the four harvest compiles: 20, 100, 15, 100, 20, 15 and 20 tenths,
-each the last instruction of its list and naming the device's own group. Over all eleven Harmony One
-compiles read, 25 power on lists: 22 are a call to the power steps and the wait, and 3 carry a `0x1F`
-between them, two LG televisions and a Sony, which nothing in the archive explains; the composer leaves it
-out. **Our device composer had no wait there**: `composeDevice` gave a One device's power variable the
+of a second on 8 of 8 catalogue devices of the four harvest compiles: 20, 100, 15, 100, 20, 15, 20 and 15
+tenths, each naming the device's own group. Over the 19 distinct configurations Logitech compiled for the One
+that the lab holds, 18 have power variables and 82 power on lists: 66 are a call to the power steps and the
+wait, 12 carry a `0x1F` between the two, 3 add a reset after the wait (below) and 1, a friend's Philips
+television, two waits, 100 and 40. So the wait is the list's last instruction on 79 of 82, and it names the
+device's own group on 82 of 82. **The `0x1F` comes with an online power variable**: it is on exactly the 12
+devices that carry `OnlinePower`, 12 of 12 against 0 of 70, the connected app machinery the input composer
+leaves out too, section 393's inputs; what it does is unread, and the composer leaves it out. **Our device
+composer had no wait there**: `composeDevice` gave a One device's power variable the
 power command's send list directly, so an activity's next command to the device followed its power on with
 nothing between. It writes the wait now, the request's delay over the catalogue's, and refuses one that is
 not a single quantity byte, 1 to 255 tenths, since no One compile here shows a longer one split.
 
-### What is not measured
+### A reset after power on
 
-**A reset after power on**, the catalogue's `power.onReset`, has no instance in any Harmony One compile read:
-none of the 25 power on lists calls a silent write. On the 600 family the reset lists are called after the
-power on delay, section 332, which found that either side of the delay leaves the same value in place. The
-composer puts them after the One's wait by that rule; whether the input then goes out is for the bench run of
+**The catalogue's `power.onReset` is in three of Logitech's One compiles**, the protocol harvest ones: a
+Samsung television in `compiled_protocols` and `compiled_protocols_2` and a Thomson in `compiled_protocols_3`,
+each calling a list of a silent write and a write of the device's input variable, two such for the Thomson,
+**after** the wait. That is where the composer puts them, by the 600 family's rule of section 332, so the
+placement is Logitech's on the One as well. Whether the input then goes out is still for the bench run of
 `todo-compile-one.md` 1.3, on the Panasonic plasma, whose `InputType` changes only when it differs.
+
+**Corrected per review.** This section said the wait was the catalogue's delay on 7 of 7 harvest devices,
+that eleven compiles held 25 power on lists of which 3 carried a `0x1F` nothing explained, and that no One
+compile held a reset. The eighth device, `Rosen_Aviation_0602-2XX-8`, was dropped because the lab script
+looked it up with a space for the underscore, and its wait is its delay as well; the population was the
+compiles the script was pointed at rather than the 19 the lab holds, and the three protocol harvest compiles,
+outside it, hold the resets. The reviewer's census is what the paragraphs above give.
 
 ### Scope, decision 16
 
@@ -51822,7 +51834,7 @@ send's shape, or whose power on wait is not the catalogue's delay in tenths.
 ### Where it lands
 
 * `packages/codec/test/inputs.test.ts`: the Harmony One's calibration of three devices.
-* `packages/codec/test/composecatalogue.test.ts`: Logitech's waits on 7 of 7 devices, and the composer's
+* `packages/codec/test/composecatalogue.test.ts`: Logitech's waits on 8 of 8 devices, and the composer's
   wait, the request's override, and the refusals of 0 and 300 tenths.
 * `packages/codec/src/inputs.ts` and `shared/devices.ts`, the composers. `docs/config-format.md`, the
   inputs and the inlined delay.
@@ -51833,7 +51845,7 @@ send's shape, or whose power on wait is not the catalogue's delay in tenths.
 the middle of its box and refused any name wider than the box, which on a receiver is most of its sound
 modes; Logitech's compiles break such a name over lines and cut what does not fit.
 
-**Sources.** The 19 distinct Harmony One containers the lab holds, every pad drawn at the six places of
+**Sources.** The 19 distinct configurations Logitech compiled for the Harmony One that the lab holds, every pad drawn at the six places of
 `DEVICE_PAGE_SLOTS`, and the device archive, decision 15, for the names of the four harvest compiles' catalogue
 devices. Neither client nor firmware was read: the firmware draws what a screen program states, and the
 layout is the compiler's, which ran on Logitech's server.
@@ -51844,13 +51856,13 @@ A pad is a box 81 pixels wide and 50 high, its label one to three lines in the c
 
 1. **Words.** A name splits at each space, the space kept inside a line and dropped at a break; before an
    upper case letter, a digit or a `+` that follows a lower case letter; and after a hyphen not followed by
-   another. Never inside a run of capitals, between a capital and a digit, between a digit and a letter, or
+   another, where the exception is unmeasured, since no drawn label holds a doubled hyphen. Never inside a run of capitals, between a capital and a digit, between a digit and a letter, or
    at `/`, `:` or `.`. Each element was tested by adding or removing it over the labels the archive names:
    the breaks drawn are 253 lower to upper, 27 at a space, 11 lower to digit, 3 after a hyphen and 1 before a
    plus (`VolumeMain+`, the only one); dropping the digit boundary loses 11 labels, the hyphen 3, the plus 1,
    and adding a slash as a boundary loses 17.
-2. **Greedy lines.** A line takes the next word while it stays at most 72 pixels with its separator: 111 pads
-   draw a joined line of exactly 72 and 39 break where joining would make 73. Greedy fills all 288 distinct
+2. **Greedy lines.** A line takes the next word while it stays at most 72 pixels with its separator: 111 pads,
+   18 distinct texts on 16 compiles, draw a joined line of exactly 72 and 39 break where joining would make 73. Greedy fills all 288 distinct
    names wider than 72 correctly; a balanced fill gets 39 of them wrong, one word per line 157.
 3. **A word alone may be 73.** A word wider than that takes a line of its own, cut to the longest prefix that
    is at most 73 with `..` after it, the rest dropped, and the next word starts a new line: "Mode" /
@@ -51864,20 +51876,31 @@ A pad is a box 81 pixels wide and 50 high, its label one to three lines in the c
 
 **The pad font is the configuration's**, one face 14 pixels high under base slot 7 index 5, 7, 8 or 9, one per
 configuration; `DEVICE_ROW_FONT`, 9, which the composers assumed, is it on 8 of the 19. It is read off the
-device pages, the modes the device list enters, since a page's lead byte names a hit page whose number differs
+device pages on 18 of the 19; on `harvest_one_families_1`, whose one device, a Samsung test device, sends
+nothing `deviceModeMaps` counts, no page is known as a device page, and the composer refuses rather than
+fall back to font 9, which there is another subset of letters than the font 7 its pads are drawn in. It is
+read off the device pages, the modes the device list enters, since a page's lead byte names a hit page whose number differs
 per configuration, and since on `calibration_one` 25 texts inside boxes on other pages are in a 15 pixel face
 against 325 in the pad font.
 
 ### The checks
 
 The rule reproduces the glyphs and places of 551 of the 558 pads in four catalogue compiles whose command is
-named by the record its press sends; six of the seven are a `Z` the character map cannot name, and one is a
+named by the record its press sends; six of the seven are a `Z` the character map could not name until
+section 396, and one is a
 record named by its frame value whose pad draws another command of the same device. Against the drawn lines
 joined back, with or without a space at each break, it reproduces all 6873 pads that carry no cut and no
-unnamed glyph, and in the repository's census over eight compiles' device pages 915 of 915, 24 apart. Against
+unnamed glyph, and in the repository's census over eighteen compiles' device pages 3195 of 3195. Against
 the whole archive, 1264 of the 1266 distinct drawn texts with a candidate name come out as drawn, the two
 others being `Sync-` and `Sync+`, whose only candidate is spelled `Sync -`. The census's control: centring by
 rounding reproduces 24 of 81 pads on the first compile.
+
+**Corrected per review.** This section named its population as every distinct Harmony One container in the
+lab, nineteen, which are 36 with our writes; it is Logitech's 19 compiles. The repository's census covered eight
+of them, 915 pads, and now covers the eighteen with device pages; the blind re-measure, given the question and
+not this section, placed 939 of 939 pads exactly on nine configurations, with the same limits, offsets and
+fill, and 342 of 342 more on four other Logitech region reads. The pad font fell back to 9 where it could not
+be read; it is refused now.
 
 ### What is refused, never having been seen
 
@@ -51910,25 +51933,30 @@ raw slot, so `sections` keeps meaning base slots on both architectures.
 
 **The measurement** is section 318's: `takeApart` zeroes every address field the census knows and drops the
 header, the table, base slots 1 and 3 and the trailer, and `layOutContainer` has to put every byte back. It
-does on all seventeen distinct configurations Logitech compiled for the One that the lab holds, eighteen
+does on all nineteen distinct configurations Logitech compiled for the One that the lab holds, twenty
 fixtures, and on all fifteen distinct configurations this project wrote to the spare and read back. The
 growth control holds: 54 bytes added to base slot 4 of `calibration_one` give `relocate`'s bytes exactly,
 every reader agreeing and the emitter's round trip closing. The arch 14 compiles still rebuild.
 
-**What the One's frame holds that arch 14's does not.** Twenty two slots: raw slot 8 NULL on 34 of 34
-containers, and raw slot 18 two zero bytes on 34 of 34 with nothing parked in front of it. Base slot 17 is the
-touch hit map's table, one piece on 34 of 34, and names the bank nowhere, section 62; the picture bank still
-starts on the byte after that table on 33 of 33 containers that have pictures. So the four regions are arch
+**What the One's frame holds that arch 14's does not.** Twenty two slots: raw slot 8 NULL on 36 of 36
+containers, and raw slot 18 two zero bytes on 36 of 36 with nothing parked in front of it. Base slot 17 is the
+touch hit map's table, one piece on 36 of 36, and names the bank nowhere, section 62; the picture bank still
+starts on the byte after that table on 35 of 35 containers that have pictures. So the four regions are arch
 14's, with a table of its own length where arch 14 has two bytes. Logitech parks the same five rows in front of
-the same tables on all seventeen One compiles as on the thirteen arch 14 ones; our writes park infrared blocks
+the same tables on all nineteen One compiles as on the thirteen arch 14 ones; our writes park infrared blocks
 in front of base slot 5 on 12 of 15 and base slot 9 lists in front of base slot 9 on 9 of 15, as the Harmony
 650's do.
 
 **Two containers are not rebuilt, and both are accounted for.** The safe mode configuration, stamped 2007,
 carries `0x0C` at its architecture record's byte 3 where every configuration from 2009 on carries `0x0D`,
 section 182; laid out again it differs in that byte and in the trailer checksum byte of the same parity and
-nowhere else. `one_spare_mixed_region` was read part way through a write, fails its own trailer checksum, and
-is refused.
+nowhere else. `one_spare_mixed_region` was read part way through a write and fails its own trailer checksum,
+which the frame does not check: what refuses it is that the erased block leaves the key table in more than one
+piece, and the test asserts that refusal.
+
+**Corrected per review.** This section said seventeen compiles, 34 and 33 containers, and that the mixed
+read was refused for its checksum. `phase7_before` and `phase7_after`, Logitech compiles of section 174, were
+left out of the population; both rebuild byte for byte, and the counts above include them.
 
 ### Scope, decision 16
 
@@ -51945,3 +51973,91 @@ the byte after base slot 17's table.
 
 * `packages/codec/src/frame.ts`: `FRAME_ARCHITECTURES`, `formatWord`, `ContainerLayout.inserted`.
 * `packages/codec/test/frame.test.ts`: the One's compiles, our writes, the two exceptions and the growth control.
+
+## 396. The Harmony One's fonts in our letters: five faces of its own, and each set keeps its pair of colours
+
+**Asked for by `todo-compile-one.md` 5.2 and 1.2.7**, under decision 24: the One's screens lettered in our
+own letters, which section 368's font table did for the Harmony 650 alone. Two things stood in the way. The
+650's faces do not sit on the One's rows, and the character map could not name every glyph of the One's
+compiles, so `withOxaniumFonts` refused at the first one.
+
+**Sources.** The nine distinct configurations Logitech compiled for the One that the lab holds, `one_config`,
+`one_config_unprogrammed`, `one_spare_after_sync`, `one_spare_myharmony`, `calibration_one` and the four
+harvest compiles, and the Harmony 650's `harvest_650_two_devices` as the 650's side of the comparison. Neither
+client nor firmware was opened; what is measured is what Logitech drew. Scripts in the lab's
+`work/one-track/fonts/`.
+
+### Five faces, by the rows their letters reach
+
+Every set of the nine compiles, 153 sets, was measured as `measureSet` measures a 650 set: its height, its two
+colours, the median ink run and the rows its capitals, lower case, ascenders and descenders reach.
+
+| height | stroke | capital rows | x top | descender bottom | lead column | the One's face |
+|---|---|---|---|---|---|---|
+| 16 | bold | 3 to 12 | 6 | 15 | blank | `One16`, the greeting's alone |
+| 15 | bold | 3 to 11 | 5 | 13 | ink on 388 of 403 letters | `One15` |
+| 15 | regular | 3 to 11 | 5 | 13 | blank on 385 of 412 | `OneR15` |
+| 14 | bold | 3 to 10 | 5 | 12 | ink on 1566 of 1821 | `One14` |
+| 11 | bold | 2 to 8 | 4 | 10 | ink on 218 of 307 | `One11` |
+
+**The 14 and 15 pixel faces are not the 650's.** On the 650 their capitals start on row 2; on the One every
+one of 1009 starts on row 3 and ends on the same baseline, so a capital is a row shorter, and a letter is
+typically a pixel narrower. Only the 11 pixel face sits on the 650's rows. No set of the nine is a regular 14,
+a 13 or a 10. The 16 pixel set draws the letters of `Welcome!` and only the `H` and `y` besides, which every set of
+the nine holds as its first two codes. So the One gets five faces of
+its own in `lettering.ts`, each an Oxanium cut and size fitted to those rows, and ours reach exactly the stated
+rows on all five, which `test/typeface.test.ts` holds for every face. Census: `One14` 90 sets, `One11` 31,
+`One15` 14, `One16` 9, `OneR15` 9.
+
+**The colours are per set.** A 650 set is white over black or dark alone, so the 650 family letters every set
+in one scheme, `letterInks`. A One set is one ink over one shadow of its own, ten pairs over the nine
+compiles: white over black or over a dark grey, four other inks each over a darker shade of itself or over
+that dark grey, and one white with no shadow. So `withOxaniumFonts` takes `'own'`, which letters
+each set in the ink and shadow it was measured in, and the colours stay Logitech's until decision 24's open
+half, the One's colours, is decided.
+
+### Five glyphs the character map could not name
+
+Re-lettering needs the character of every glyph, and the One's seed alphabet, section 112, had never drawn
+five shapes: a `Z` in the pad font, a `#`, a `*`, and an `X` in the regular 15 and the bold 15 pixel faces, on
+five of the nine compiles. Each was read off its glyph and added to `bin/alphabets.ts` as a code of the
+compile that draws it, as the `+` was. **The closure is the file's own ASCII**: the `X` decodes into
+`Denon AVR-X4800H` and `Samsung LNR408DX`, both in base slot 0's ASCII, and the `Z` into `AllZone`,
+`MainZone`, `ZoomIn` and `ZoomOut`, the receiver's and a player's commands. Every glyph of all nine now names
+its character.
+
+### The donor in our letters
+
+Logitech's compile of the Denon and the LG, `harvest_one_two_devices`, the donor of 1.2, lettered in ours:
+every check passes, all 16 sets spell all 95 printable characters with 21 codes added, `checkOxaniumFonts`
+holds every glyph to our letter in its face and colours, the character map reads it through our alphabet with
+every drawn code resolved, and all 1059 texts read the same as in Logitech's file. The file grows by 107083
+bytes. A preview of Logitech's letters beside ours was put to the bench before this was scaled; the weight of
+the One's faces is a choice, `faceWeights`, and they start in the 650's.
+
+**No glyph is shared between sets on the One.** On the 650 one glyph serves every set of its face and
+colouring, which section 368 read the Harmony 650 and 700's text routine to allow. The One's routine is
+unread, so each One set gets glyphs of its own: 1520 rather than 1425, since with a pair of colours per set
+little was shared anyway.
+
+### Scope, decision 16
+
+Arch 12 (Harmony One) and arch 14 (the Harmony 650); the Harmony 600 and 700 are still refused, and arch 8, 9
+and 10 were not looked at. The faces are measured on English compiles only. Whether the One's firmware reads a
+glyph as the 650's does, from the set's pointer at `3 + 3 * (code - 1)` regardless of the set's first code, is
+unread, and every One set starts at code 1, so nothing here depends on it.
+
+### Falsification
+
+A Harmony One compile with a set that is a regular 14, a 13 or a 10, or a 14 or 15 pixel set whose capitals
+start on a row other than 3; or a re-lettered One configuration whose screen texts read differently from the
+original's.
+
+### Where it lands
+
+* `packages/codec/src/lettering.ts`: `One16`, `One15`, `OneR15`, `One14`, `One11`, `HARMONY_650_FACES` and
+  `HARMONY_ONE_FACES`.
+* `packages/codec/src/fonttable.ts`: the One's faces in `measureSet`, `'own'` colours and no shared glyph on
+  the One in `withOxaniumFonts`.
+* `packages/codec/bin/alphabets.ts` and the regenerated `src/alphabets.ts`: the five shapes.
+* `packages/codec/test/fonttable.test.ts`, `typeface.test.ts`, `blending.test.ts` and `text.test.ts`.

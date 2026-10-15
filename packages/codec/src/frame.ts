@@ -44,9 +44,9 @@
  *    by the table. The tables ascend with the slot number in every container `parse` has read, its
  *    `sections_ascend` check. **The order is the architecture's raw slot order**, which on the
  *    Harmony One puts its own raw slot 18 between base slot 16 and base slot 17, where its table
- *    entry sits; it is two zero bytes on all 34 distinct One containers in the lab, Logitech's, ours
+ *    entry sits; it is two zero bytes on all 36 distinct One containers in the lab, Logitech's, ours
  *    and the safe mode one alike, and nothing is parked in front of it on any of them. **What Logitech
- *    parks in front of a table is the same on all thirteen arch 14 compiles and on all seventeen
+ *    parks in front of a table is the same on all thirteen arch 14 compiles and on all nineteen
  *    distinct Harmony One compiles**, which `test/frame.test.ts` measures: base slot 5's groups in
  *    front of base slot 5's table, base slot 7's glyphs and sets in front of base slot 7's, the mode
  *    pages' tagged lists in front of base slot 9's, some action lists in front of base slot 10's and
@@ -65,7 +65,7 @@
  *    container with it elsewhere has been written. Every later picture is the byte after the one before.
  *    **On the Harmony One base slot 17 is the touch hit map's table**, a count and that many page
  *    addresses, and names the bank nowhere, section 62, so the codec finds the One's bank by search,
- *    `pictureBank`. The bank still starts on the byte after base slot 17's table on all 33 distinct One
+ *    `pictureBank`. The bank still starts on the byte after base slot 17's table on all 35 distinct One
  *    containers in the lab that have one, which is the same region in the same place with a table of
  *    its own length in front of it rather than two bytes. The hit map's pages and areas are not in
  *    this region: they are pieces like any other, wherever the caller puts them.

@@ -557,3 +557,22 @@ test('resolving a container costs the pixel hash once, not once per alphabet', s
       'per alphabet hashing is back',
   );
 });
+
+test('section 396: the five shapes the Harmony One seed gained spell names the same files carry in ASCII',
+     skipUnless('harvest_one_two_devices', 'harvest_one_families_2', 'harvest_one_families_3'), () => {
+  // An `X` and a `Z` in device and command names; a `#` and a `*` are keys of their own, so their
+  // check is that they decode alone, as the keypad's two symbols do.
+  const strings = (name: string): { texts: Set<string>; ascii: string } => {
+    const c = parse(require_(name));
+    return { texts: new Set(screenStrings(c).map((one) => one.text)), ascii: new TextDecoder('latin1').decode(c.blob) };
+  };
+  const two = strings('harvest_one_two_devices');
+  // The model is in base slot 0's ASCII; a command name is in no ASCII of the file, so `Zone` is checked by
+  // reading as the receiver's zone commands and nothing else.
+  assert.ok(two.texts.has('Denon AVR-X4800H') && two.ascii.includes('AVR-X4800H'));
+  for (const text of ['AllZone', 'MainZone']) assert.ok(two.texts.has(text), text);
+  const families2 = strings('harvest_one_families_2');
+  assert.ok(families2.texts.has('Samsung LNR408DX') && families2.ascii.includes('LNR408DX'));
+  const families3 = strings('harvest_one_families_3');
+  for (const text of ['ZoomIn', 'ZoomOut', '#', '*']) assert.ok(families3.texts.has(text), text);
+});

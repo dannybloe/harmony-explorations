@@ -77,6 +77,15 @@ const SEEDS: Seed[] = [
       // the shared sizes honestly ambiguous, and the one size where they differ then settles `l`,
       // after which the rule that one code is one character settles `I`.
       { container: 'one_config', codes: { 32: 'l', 50: 'I', 72: '+' } },
+      // Shapes no earlier source draws, found when the Harmony One's fonts were re-lettered in ours,
+      // `todo-compile-one.md` 5.2, which needs every glyph's character: a `Z` in the pad font and the
+      // menu font, a `#` and a `*`, and an `X` in the regular face and in the bold 15 pixel one. Each
+      // was read off its glyph, and the names the codes spell are checked against base slot 0's ASCII
+      // in `test/text.test.ts`.
+      { container: 'harvest_one_two_devices', codes: { 73: 'Z' } },
+      { container: 'calibration_one', codes: { 71: '#' } },
+      { container: 'harvest_one_families_2', codes: { 68: 'X' } },
+      { container: 'harvest_one_families_3', codes: { 74: 'Z', 75: '#', 76: '*' } },
     ],
     proof: 'The battery level is low!',
   },

@@ -239,8 +239,8 @@ export function composeDeviceFor(
   // action's is what the off transition runs, as in Logitech's compile of the Knoll; the on action's
   // is for a device page's power key only, since the on transition calls the steps itself.
   // The Harmony One: no delay variables, and the power on delay a bare wait after the on steps, the
-  // device's own `0x7C` with the delay in tenths, as Logitech's compiler writes it on six catalogue
-  // devices of six whose entry states one, `todo-compile-one.md` 1.2. Its list goes straight after the sends.
+  // device's own `0x7C` with the delay in tenths, as Logitech's compiler writes it on eight catalogue
+  // devices of eight, findings section 393, `todo-compile-one.md` 1.2. Its list goes straight after the sends.
   // A delay past one quantity byte is not composed: no compile of a One here shows how one is split.
   const oneWait = delay === undefined ? device.powerOnDelay : undefined;
   if (oneWait !== undefined && (!Number.isInteger(oneWait) || oneWait < 1 || oneWait > 0xff)) {

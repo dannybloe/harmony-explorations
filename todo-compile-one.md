@@ -48,12 +48,13 @@ One with its sequence's keys translated by name, since the One's keys have other
 - [ ] 1.2 The test setup composed with the One's composers on a Logitech One configuration lettered in ours, checked and written to the spare; the donor is Logitech's compile of the Denon and the LG for the One (`harvest_one_two_devices`), skin 54 as the spare reports
   - [x] 1.2.1 The setup's device and activity steps shared by every family, `composeSetupParts` and `composeSetup` in `shared/setup.ts`, the Harmony 650 family's assembly unchanged byte for byte
   - [x] 1.2.2 A device's inputs composed on the One: Logitech's compiles of the same catalogue devices for the One and the 650 hold the same variables, values, transitions and waits, and a send there is the send and its quantity with no prelude
-  - [x] 1.2.3 A device's power on delay composed on the One, a wait after its power on, which was missing: on Logitech's One compiles that wait is the catalogue's power on delay in tenths on 6 of 6 devices whose entry resolves
-  - [x] 1.2.4 The input put back after a power on (the Plasma's), placed after that wait as on the 600 family; no Logitech One compile in the lab holds one, so 1.3 hears whether it goes out
+  - [x] 1.2.3 A device's power on delay composed on the One, a wait after its power on, which was missing: on Logitech's One compiles that wait is the catalogue's power on delay in tenths on 8 of 8 harvest devices (section 393)
+  - [x] 1.2.4 The input put back after a power on (the Plasma's), placed after that wait as on the 600 family, where three of Logitech's One compiles put theirs too (section 393); 1.3 hears whether it goes out
   - [x] 1.2.5 A device page of more than six commands takes several pages, numbered by `paginate`; not yet run end to end
   - [x] 1.2.6 A long command name broken over two or three lines and cut with `..`, as Logitech's One compiles draw one: one rule reproduces every pad label of the 19 One containers, in the pad font read off the device pages (section 394, `touchLabelLines`)
-  - [ ] 1.2.7 The donor lettered in ours before any composer spells a name, which needs 6.1's frame and 5.2's fonts first
+  - [x] 1.2.7 The donor lettered in ours before any composer spells a name: every set re-lettered in its own colours, every text reading as before (section 396)
   - [x] 1.2.8 The findings and tests for 1.2.2 to 1.2.4 (section 393); 1.2.5's waits for 1.2.6 and 1.2.7, since a paged device needs names it can spell
+  - [ ] 1.2.9 The test setup composed on the lettered donor, checked, dry run against `one_spare_track_start`, and written to the spare
 - [ ] 1.3 A bench test of it: every code as the file predicts, the touch rows, device mode and All Off
 
 ## 2. Measure before building
@@ -77,12 +78,12 @@ One with its sequence's keys translated by name, since the One's keys have other
 ## 5. Text, fonts and pictures
 
 - [ ] 5.1 The text inside every screen program spelled from its word, as the 650's 8.1
-- [ ] 5.2 The fonts the One's screens draw, generated
+- [x] 5.2 The fonts the One's screens draw, generated: five faces of the One's own, fitted to its rows, each set in its own colours (section 396); their weight is a choice, `faceWeights`
 - [ ] 5.3 The pictures, built or drawn by us, the button boxes of the device pages and the menus among them
 
 ## 6. The container from nothing
 
-- [x] 6.1 The frame for 22 slots: cookies, format word, the architecture record and the section table; `layOutContainer` rebuilds all 17 distinct Logitech One compiles and 15 of our writes byte for byte, the safe mode library and a half written read apart (section 395)
+- [x] 6.1 The frame for 22 slots: cookies, format word, the architecture record and the section table; `layOutContainer` rebuilds all 19 distinct Logitech One compiles and 15 of our writes byte for byte, the safe mode library and a half written read apart (section 395)
 - [ ] 6.2 The placer for the One's pictures and glyph sets
 - [ ] 6.3 The wiring: the One's own lists, settings and timers
 - [ ] 6.4 The parameter block's 11 groups, the clock records, the state variable storage and the log area

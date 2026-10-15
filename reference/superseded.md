@@ -588,3 +588,9 @@ it reachable in the same commit and the test comparing the two tables is what ca
 | `Which timer holds it on a 700` | section 347 | the screen light timer carries the glow time on every arch 14 compile read, the Harmony 700's among them |
 | `The 2.8 build's clock and validator routines` | sections 310, 322, 354 and 384 | the boot read, the month end routine, the state variables' place and the validator's checksum gate are read on the Harmony 700's 2.8 |
 | `no package of it is known` | `todo-secure-logitech.md` 4.1, 15 October 2026 | MyHarmony's version list names a Harmony 600 firmware 0.3; no image of it is held |
+| `has no instance in any Harmony One compile` | section 393, corrected per review | three of Logitech's 19 Harmony One compiles call a reset after a device's power on wait |
+| `no Harmony One compile read holds a reset` | section 393, corrected per review | as above |
+| `no Logitech One compile in the lab holds one` | section 393, corrected per review | as above |
+| `7 of 7 catalogue devices` | section 393, corrected per review | the Harmony One's power on wait is the catalogue's delay on 8 of 8 harvest devices; the eighth was dropped by a lookup |
+| `fails its own trailer checksum, and is refused` | section 395, corrected per review | the frame checks no checksum; the half written read is refused because its key table is not one piece |
+| `the 19 distinct Harmony One containers the lab holds` | section 394, corrected per review | the lab holds 36 distinct Harmony One containers; the label rule's population is Logitech's 19 compiles |

@@ -575,9 +575,11 @@ const ONE_POWER = [
   ['harvest_one_families_3', 'Gemini_TestQuhd', 'Gemini', 'TestQuhd'],
   ['harvest_one_families_3', 'Sony_RDR-GXD500', 'Sony', 'RDR-GXD500'],
   ['harvest_one_families_3', 'Pioneer_VSX-90TXV', 'Pioneer', 'VSX-90TXV'],
+  // Dropped until the review of section 393, by a lab script that looked its manufacturer up with a space.
+  ['harvest_one_families_3', 'Rosen_Aviation_0602-2XX-8', 'Rosen_Aviation', '0602-2XX-8'],
 ] as const;
 
-test('on the Harmony One, Logitech switches a device on with its power steps and then one wait of the catalogue\'s power on delay, on 7 of 7 catalogue devices',
+test('on the Harmony One, Logitech switches a device on with its power steps and then one wait of the catalogue\'s power on delay, on 8 of 8 catalogue devices',
      needing(skipWithoutIrArchive(), skipUnless(...new Set(ONE_POWER.map(([config]) => config)))), () => {
   // The One has no delay variables, so the delay a 600 family device carries in a variable and a table is
   // a bare `0x7C` here, the device's own quantity, at the end of the list its power variable runs from 0
@@ -602,6 +604,7 @@ test('on the Harmony One, Logitech switches a device on with its power steps and
   assert.deepEqual(read, {
     'Denon_AVR-X4800H': '20/20', LG_OLED65G26LA: '100/100', 'Philips_70FA930/00S': '15/15',
     Samsung_LNR408DX: '100/100', Gemini_TestQuhd: '20/20', 'Sony_RDR-GXD500': '15/15', 'Pioneer_VSX-90TXV': '20/20',
+    'Rosen_Aviation_0602-2XX-8': '15/15',
   });
 });
 

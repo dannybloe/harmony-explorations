@@ -12,10 +12,15 @@ import assert from 'node:assert/strict';
 
 import { load, skipUnless } from '@harmony/lab';
 import type { Container } from '../src/index.ts';
+import { characterMap } from '../src/text.ts';
+import { fontSets } from '../src/font.ts';
+import { measureSet } from '../src/fonttable.ts';
 import {
   FOUR_SLOT_CHOICES,
   FontTableError,
   LETTERING_CHARACTERS,
+  HARMONY_650_FACES,
+  HARMONY_ONE_FACES,
   LETTERING_FACES,
   oxaniumFace,
   checkOxaniumFonts,
@@ -45,7 +50,9 @@ const containerOf = (name: string): Container => parse(load(name) as Uint8Array)
 
 test('every face holds the 95 printable characters on its own cell, each ending on a blank column', () => {
   assert.equal(LETTERING_CHARACTERS.length, 95);
-  assert.deepEqual(LETTERING_FACES, ['F15', 'F14W', 'F14', 'F13', 'F11', 'F10', 'R15', 'R14', 'R13']);
+  assert.deepEqual(LETTERING_FACES, [...HARMONY_650_FACES, ...HARMONY_ONE_FACES]);
+  assert.deepEqual(HARMONY_650_FACES, ['F15', 'F14W', 'F14', 'F13', 'F11', 'F10', 'R15', 'R14', 'R13']);
+  assert.deepEqual(HARMONY_ONE_FACES, ['One16', 'One15', 'OneR15', 'One14', 'One11']);
   for (const face of LETTERING_FACES) {
     const { cell, glyphs } = oxaniumFace(face);
     for (const ch of LETTERING_CHARACTERS) {
@@ -89,7 +96,7 @@ test('our alphabet tells every character apart by form but I from l in the weigh
   // drawn in one weight share shapes since the weights were chosen by look (SemiBold for labels, Regular for
   // the three regular faces).
   const own = new Map<string, Set<string>>();
-  for (const face of LETTERING_FACES) {
+  for (const face of HARMONY_650_FACES) {
     for (const lettering of ['shadowed', 'plain'] as const) {
       for (const ch of LETTERING_CHARACTERS) {
         const form = maskForm(face, ch, lettering);
@@ -102,11 +109,12 @@ test('our alphabet tells every character apart by form but I from l in the weigh
   // The alphabet holds all seven weights of every face, 10.8.5, so a configuration in any is read. Across
   // weights more shapes are shared: `D` and `O`, `5` and `S`, and `!` with `I` and `l`, in the lightest and
   // heaviest cuts of the small faces; a code is still settled across the sets that draw it.
+  // The Harmony One's five faces add 4150 forms and no new kind of pair, section 396.
   const forms = Object.values(oxaniumAlphabet().forms ?? {});
-  assert.equal(forms.length, 5860);
+  assert.equal(forms.length, 10010);
   const shared: Record<string, number> = {};
   for (const one of forms) if (one.length > 1) shared[[...one].sort().join('')] = (shared[[...one].sort().join('')] ?? 0) + 1;
-  assert.deepEqual(shared, { '!Il': 4, '5S': 8, DO: 6, Il: 8 });
+  assert.deepEqual(shared, { '!Il': 6, '5S': 12, DO: 10, Il: 16 });
 });
 
 test('withOxaniumFonts re-letters all 13 Harmony 650 compiles, every text reading the same, the setup unchanged',
@@ -172,5 +180,52 @@ test('the check refuses Logitech\'s own letters and one glyph of ours changed', 
 });
 
 test('a Harmony 700 compile is refused, since its fonts were not measured', skipUnless('h700_28_config_region'), () => {
-  assert.throws(() => withOxaniumFonts(takeApart(containerOf('h700_28_config_region')), INKS), /Harmony 650 alone/);
+  assert.throws(() => withOxaniumFonts(takeApart(containerOf('h700_28_config_region')), INKS), /Harmony 650 and the Harmony One/);
+});
+
+/** Logitech's Harmony One compiles, one of each distinct container, whose font sets the One's faces were measured on. */
+const ONE_COMPILES = ['one_config', 'one_config_unprogrammed', 'one_spare_after_sync', 'one_spare_myharmony', 'calibration_one',
+  'harvest_one_two_devices', 'harvest_one_families_1', 'harvest_one_families_2', 'harvest_one_families_3'] as const;
+
+test('section 396: every font set of nine Harmony One compiles is one of the One\'s five faces, and every glyph names its character',
+     skipUnless(...ONE_COMPILES), () => {
+  const faces: Record<string, number> = {};
+  for (const name of ONE_COMPILES) {
+    const c = containerOf(name);
+    const map = characterMap(c)!;
+    for (const set of fontSets(c)!) {
+      faces[measureSet(c, set, map).face] = (faces[measureSet(c, set, map).face] ?? 0) + 1;
+      // A glyph whose character nothing settles is one `withOxaniumFonts` cannot re-letter: five shapes the
+      // first seeds never drew, a `Z`, a `#`, an `X` in two faces and a `*`, are named in `bin/alphabets.ts`.
+      set.glyphs.forEach((address, k) => {
+        if (address !== undefined) assert.ok(map.codes.has(set.first + k), `${name}: code ${set.first + k}`);
+      });
+    }
+  }
+  assert.deepEqual(faces, { One16: 9, One15: 14, OneR15: 9, One14: 90, One11: 31 });
+});
+
+test('section 396: Logitech\'s Harmony One compile of the Denon and the LG lettered in ours, each set in its own colours, reads the same',
+     skipUnless('harvest_one_two_devices'), () => {
+  const logitech = containerOf('harvest_one_two_devices');
+  const made = withOxaniumFonts(takeApart(logitech), 'own');
+  const out = parse(layOutContainer(made.layout).bytes);
+  assert.ok(out.allChecksPass);
+  checkOxaniumFonts(out, made.faces);
+  // Every set keeps the ink and the shadow Logitech drew it in: ten pairs over the One's compiles, where the
+  // 650 family letters every set in one scheme.
+  const map = characterMap(logitech)!;
+  // The check above holds every glyph to `letterRows` in the inks a face records, so these are the colours drawn.
+  assert.deepEqual(made.faces.map((one) => [one.inks!.shadowed, one.inks!.plain, one.lettering === 'shadowed' ? one.inks!.shadow : undefined]),
+    fontSets(logitech)!.map((set) => { const was = measureSet(logitech, set, map); return [was.ink, was.ink, was.shadow]; }));
+  assert.deepEqual(made.faces.map((one) => one.face), ['OneR15', 'One14', 'One14', 'One14', 'One14', 'One14', 'One11', 'One14',
+    'One14', 'One14', 'One14', 'One15', 'One16', 'One14', 'One11', 'One11']);
+  const read = characterMap(out)!;
+  assert.equal(read.alphabet, 'oxanium');
+  assert.equal(read.drawn.resolved, read.drawn.total);
+  const texts = (c: Container): string[] => screenStrings(c).map((one) => one.text).sort();
+  assert.deepEqual(texts(out), texts(logitech));
+  assert.equal(made.added.length, 21);
+  // No glyph shared between sets on the One, whose text routine is unread: 16 sets of 95 each.
+  assert.equal(made.glyphs, 16 * 95);
 });

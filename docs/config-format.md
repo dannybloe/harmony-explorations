@@ -379,7 +379,7 @@ Arch 14 (Harmony 600, 650 and 700); [findings.md](findings.md) section 318. Laid
 thirteen arch 14 compiles in the lab byte for byte with every address field zeroed first. **The same linker
 lays out the Harmony One**, section 395, with `0x1600` and twenty two slots, raw slot 8 NULL and raw slot 18
 two zero bytes, base slot 17 the touch hit map's own table with the picture bank on the byte after it, and the
-configuration at `0x040000`; all seventeen distinct Logitech One compiles and fifteen of our writes rebuild.
+configuration at `0x040000`; all nineteen distinct Logitech One compiles and fifteen of our writes rebuild.
 
 | bytes | value | decided by |
 |---|---|---|
@@ -1230,7 +1230,22 @@ pair, which every set of that face and colouring points at. All 13 Harmony 650 c
 text's words unchanged, and a fourteenth out of sample; the rule was derived on the 13. A shared glyph is read safe in the firmware of the Harmony 650 0.2 and the 700 2.8, which
 find a glyph per character from the set's address and the pointer at `3 + 3 * (code - 1)` and decode it to
 its own `0x00`; not yet drawn on a remote. The firmware ignores a set's first code byte, so a set not
-starting at code 1 is refused. Refused too: any model but the Harmony 650.
+starting at code 1 is refused. Refused too: any model but the Harmony 650 and the Harmony One.
+
+**On the Harmony One**, section 396, the faces are its own, since its 14 and 15 pixel capitals are a row
+shorter and start a row lower than the 650's:
+
+| height | measured | face |
+|---|---|---|
+| 16 | | One16, `Welcome!` only |
+| 15 | median ink run 2 / 1 | One15 / OneR15 |
+| 14 | median ink run 2; a regular 14 is refused | One14 |
+| 11 | | One11 |
+
+Each set is lettered in its own ink and shadow, `'own'`, ten pairs over the nine compiles, where the 650 family
+letters every set in one scheme; and no glyph is shared between sets, since the One's text routine is unread.
+Logitech's compile of the Denon and the LG lettered so passes every check and reads every text as before.
+Unconfirmed: any wording but English, and the result drawn on a remote.
 
 **The welcome tour is not built, and a configuration can leave its ten screens out**, section 357: in
 Logitech's skipped form, 19 of the 22, no instruction anywhere enters any of them. Its start list, the
@@ -2939,8 +2954,10 @@ transitions, every one carrying exactly one, against 16 on arch 14 carrying none
 same, which is settled by Logitech compiling one configuration per architecture for the same three
 devices, and the two agree device for device. `powerOnInstructions` returns the list, the position in
 it and the value, since on those architectures changing a delay is a one byte edit. On the Harmony One the
-wait is the catalogue's `powerOnDelay` in tenths, 7 of 7 catalogue devices, and it is the list's last
-instruction after a call to the power steps, section 393; 3 of 25 lists carry an unexplained `0x1F` between.
+wait is the catalogue's `powerOnDelay` in tenths, 8 of 8 harvest devices, after a call to the power steps,
+section 393. Over the 82 power on lists of Logitech's 19 One compiles it names the device's own group on 82,
+and is last on 79: 12 carry a `0x1F` between the call and the wait, exactly the 12 devices with an
+`OnlinePower` variable; 3 add a reset after the wait; one, a friend's Philips, carries two waits.
 
 What the inlining architectures do **not** state is a default, an identifier or an inter device
 delay. Where they keep an inter device delay, if they keep one, is open, and that is a **negative
@@ -3058,7 +3075,7 @@ one:
   gives none. A state no input writes, directly or through another state, is not compiled.
 * **The catalogue's `power.onReset`** becomes one list per state, `[0x07 0xFFFF, 0x80 | variable value]`,
   called from the power variable's `0 to 1` list after the power on delay, in the catalogue's order
-  (arch 14; no Harmony One compile read holds a reset, section 393):
+  (arch 14, and on the Harmony One the same shape after its wait in 3 of Logitech's 19 compiles, section 393):
   13 of 13 lists on the eight test device instances that compose, section 332, and a fourteenth on a
   device that does not compose has the same place and flag. The value is the named value's index,
   told apart from "always the first value" by one catalogue entry only; where the catalogue names a

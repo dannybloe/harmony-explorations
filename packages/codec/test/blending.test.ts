@@ -18,6 +18,8 @@ import {
   BLEND_DITHER_STEPS,
   FOUR_SLOT_CHOICES,
   LETTERING_CHARACTERS,
+  HARMONY_650_FACES,
+  HARMONY_ONE_FACES,
   LETTERING_FACES,
   oxaniumFace,
   UNDRAWN,
@@ -113,27 +115,37 @@ test('our alphabet names a blended letter by its structure, which tells every ch
   // against any: so `!` is `I`, `]` is `}` and one `0` is a `9` in F11, F10 and R13, where Pillow's left `I`
   // and `l` alone. None is a misreading: a code is settled across every set that draws it, the unblended set
   // among them, and by its ASCII value, `characterMap`.
-  const own = new Map<string, Set<string>>();
-  for (const face of LETTERING_FACES) {
-    for (const lettering of ['shadowed', 'plain'] as const) {
-      for (const ch of LETTERING_CHARACTERS) {
-        if (!maskForm(face, ch, lettering).includes('#')) continue;
-        const structure = coverageStructure(face, ch, lettering);
-        const key = `${structure.split('/').length}:${structure}`;
-        (own.get(key) ?? own.set(key, new Set()).get(key)!).add(ch);
+  const ownOf = (faces: readonly (typeof LETTERING_FACES)[number][]): Map<string, Set<string>> => {
+    const own = new Map<string, Set<string>>();
+    for (const face of faces) {
+      for (const lettering of ['shadowed', 'plain'] as const) {
+        for (const ch of LETTERING_CHARACTERS) {
+          if (!maskForm(face, ch, lettering).includes('#')) continue;
+          const structure = coverageStructure(face, ch, lettering);
+          const key = `${structure.split('/').length}:${structure}`;
+          (own.get(key) ?? own.set(key, new Set()).get(key)!).add(ch);
+        }
       }
     }
-  }
+    return own;
+  };
+  const sharedOf = (own: Map<string, Set<string>>): string[] =>
+    [...own.values()].filter((one) => one.size > 1).map((one) => [...one].sort().join('')).sort();
+  const own = ownOf(HARMONY_650_FACES);
   assert.equal(own.size, 1675);
-  assert.deepEqual([...own.values()].filter((one) => one.size > 1).map((one) => [...one].sort().join('')).sort(),
-    ['!I', '!I', '!Il', '!Il', '09', 'Il', ']}', ']}']);
+  assert.deepEqual(sharedOf(own), ['!I', '!I', '!Il', '!Il', '09', 'Il', ']}', ']}']);
+  // The Harmony One's five faces in their default weights share the same kinds, once each, in its 11 pixel face.
+  const one = ownOf(HARMONY_ONE_FACES);
+  assert.equal(one.size, 935);
+  assert.deepEqual(sharedOf(one), ['!I', '!Il', '09', ']}']);
   // Every weight, 10.8.5: more shared across the lightest and heaviest cuts, all of them pairs a larger face
-  // of the same configuration tells apart.
+  // of the same configuration tells apart. The Harmony One's faces brought 5458 structures and two new pairs,
+  // `-` with `~` and `8` with `B`, both in cuts no family draws by default.
   const structures = Object.values(oxaniumAlphabet().structures ?? {});
-  assert.equal(structures.length, 7711);
+  assert.equal(structures.length, 13169);
   const shared: Record<string, number> = {};
   for (const one of structures) if (one.length > 1) shared[[...one].sort().join('')] = (shared[[...one].sort().join('')] ?? 0) + 1;
-  assert.deepEqual(shared, { '!I': 6, '!Il': 7, '([': 2, '08': 6, '09': 3, '5S': 6, DO: 2, ']}': 3 });
+  assert.deepEqual(shared, { '!I': 13, '!Il': 12, '([': 4, '-~': 2, '08': 10, '09': 5, '5S': 9, '8B': 1, DO: 4, ']}': 4 });
 });
 
 test('flatColour takes a box of one colour, or dithered by one step, and nothing else', () => {
@@ -210,5 +222,5 @@ test('the check refuses Logitech\'s letters, a text in a copy for another colour
 test('a Harmony 700 compile of Logitech\'s is refused, since it is not in our letters and the font table that would letter it is the Harmony 650\'s alone, section 382', skipUnless('h700_28_config_region'), () => {
   const layout = takeApart(containerOf('h700_28_config_region'));
   assert.throws(() => withBlendedLetters(layout, []), /not lettered in our letters/);
-  assert.throws(() => withOxaniumFonts(layout, FOUR_SLOT_CHOICES.letterInks), /Harmony 650 alone/);
+  assert.throws(() => withOxaniumFonts(layout, FOUR_SLOT_CHOICES.letterInks), /Harmony 650 and the Harmony One/);
 });
