@@ -2556,9 +2556,9 @@ converter count, and the firmware compares the result against the literal 3400. 
 section 105.
 
 What analogue channel 1 measures is *not established*. Groups 2, 3, 8 and 10 are *not established*. **On arch 14
-group 3 is a second light's four levels**, read by a twin of group 1's light routine that fills the same
-scratch table and keeps its state in variable 12 rather than 10, with fallback values 1, 3, 5, 10 and 32; which
-light is *not established*. `findings.md` section 392.
+group 3 is a second light's four levels**, read by a routine built like group 1's light routine, which fills `0xD2F` to `0xD32` where
+group 1's fills `0xD2E` to `0xD31` and keeps its state in variable 12 rather than 10; the levels it falls back
+to are 3, 5, 10 and 32, group 1's own. Which light is *not established*. `findings.md` section 392.
 The thirteen two bit fields are channels of the I2C device at address 0x60, and **which device that
 is is not established**: thirteen channels of three states, two eight bit level registers, an enable
 pin and no readback, `findings.md` section 106.

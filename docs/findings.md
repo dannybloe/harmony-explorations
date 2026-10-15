@@ -51692,45 +51692,67 @@ matches; "Turning system off" shown by this file on this remote.
 ## 392. The Harmony 600 and 650 run one program, and the setting their files differ in is a light's levels
 
 `todo-compile-600.md` 1.4.1: why "Turning system off" shows on the Harmony 650 and not on the Harmony 600, with
-the same wiring and the mark it waits for at 1, sections 387 and 391. Checked first: sections 357, 386 and 387,
-and both 0.2 images; MyHarmony's client not read, since the question is what the remote draws.
+the same wiring and the mark it waits for at 1, sections 387 and 391. Checked first: sections 81, 281, 357, 386
+and 387, and both 0.2 images; MyHarmony's client not read, since the question is what the remote draws.
 
-**The two 0.2 builds are one program.** `600-0.2-code-base0x9000-COMPLETE.bin` and the 650's bench read are both
-70336 bytes and differ in 1395. Nearly all of them are addresses that moved: data memory operands six bytes apart
-throughout, a 240 byte routine placed elsewhere with the branches into it, and two table pointers twelve bytes
-apart that name byte identical tables. The one literal of meaning that differs is the model number each build
-reports, 71 on the 600 and 72 on the 650, in the version reply at `0x11964` and once more in the USB descriptor
-block. So whatever draws Off, or skips it, is the same code on both remotes.
+**The two 0.2 builds are one program, as section 281 found.** `600-0.2-code-base0x9000-COMPLETE.bin` and the
+650's bench read are both 70336 bytes and differ in 1395, as section 281 measured. Nearly all of them are code
+addresses that moved. Two routines near the top swap places: one of 232 bytes at `0x19E02` on the 600 sits 240
+bytes lower on the 650, and the one it swaps with, 228 bytes at `0x19D12`, a pulse train on `LATG` bit 0 with no
+direct caller, sits 232 higher. The 600's build also carries 12 bytes the 650's lacks, two routines returning
+`0x74E` and `0x74F` that nothing calls, so everything from the USB descriptors at `0x19EEA` up sits 12 bytes
+lower on the 650. The rest are references to moved code: 91 `CALL` and `GOTO` targets, 21 `MOVLW` literals that
+build code and table addresses, and seven three byte pointers, each 12 or 240 lower on the 650. The header
+checksum word at `0x9000` differs as a consequence. What differs in meaning is the model number each build
+reports, 71 on the 600 and 72 on the 650, in the version reply at `0x11964`, and the USB device descriptor's
+release number, `0x1071` against `0x1072`. So whatever draws Off, or skips it, is the same code on both remotes.
 
 **What their files differ in, the parameter block's group 3, is a light's four levels.** Our builds for the two
 differ in the skin, the mark and group 3, section 387; the mark was ruled out there. Group 3 is asked for once
-on each image read, offset 9 and length 4: at `0x11666` on the 600's 0.2 build through its guard `0x10E8E`, and
-at `0x1015E` on the Harmony 700's 2.8 through `0x0F8F0`. The routine around it is group 1's twin: both fill the
-scratch table at `0xD2E` from their group, or from constants when the length does not match, and pick one entry
-into `0xD2A` by a light state of eight values, the same shape as the arch 12 (Harmony One) display light setter
-of section 103. Group 1's routine keeps its state in variable 10 and group 3's in variable 12, and group 3's
-switches `LATG` bit 0 off at level 0. So it is a second light, set from levels 1, 3 and 5 on the 600 where the
-650 has 10, 20 and 8 and the 700 3, 5 and 10. Which light is not established. Its fallback values are 1, 3, 5,
-10 and 32 where group 1's are 3, 5, 10 and 32.
+on each image read, offset 9 and length 4: at `0x11666` on the 600's 0.2 build through its guard `0x10E8E`, of
+seven calls to it, and at `0x1015E` on the Harmony 700's 2.8 through `0x0F8F0`, of nine. Group 1's routine fills
+`0xD2E` to `0xD31` and group 3's `0xD2F` to `0xD32`, from their group or from constants when the length does not
+match, and each puts one of its four into `0xD2A` for states 2 to 5 and 0 for states 0 and 1, the shape of the
+arch 12 (Harmony One) display light setter of section 103, except that arch 14 takes state 6 as 4 where the
+Harmony One derives it again from the band. Group 1's routine keeps its state in variable 10 and group 3's in
+variable 12, and group 3's setter keeps the current level in variable 13. On the Harmony 700's 2.8 group 3's
+routine is the twin of group 1's, states 6 and 7 included, and chooses between two setters, one of which asks
+for group 2; on the 0.2 build it shares the fill and the pick but has the six arms 0 to 5 and one setter.
+Group 3's light is driven on `LATG` bit 0: by pulses on the 700's 2.8, cleared at level 0, and on the 0.2 build
+by a PWM on `CCP3`, its duty from 32 less the level, which at level 0 stops and sets the bit. Which light it is
+is not established. The files set it from 1, 3, 5 and 32 on the 600 where the 650 has 10, 20, 8 and 32 and the
+700 3, 5, 10 and 32. Its fallback writes 1, 3, 5, 10 and 32 from `0xD2E`, but its pick reads from `0xD2F` up,
+so the levels it falls back to are 3, 5, 10 and 32, group 1's own.
 
-**So neither the program nor the setting accounts for the missing screen, and two readings are left.** The
-skin: the file states 73 and the firmware's own constant is 71, and base slot 1 is host side on the images
-section 81 scanned, which did not include either 0.2 build. Or the panel: Off is entered and the menu follows
-at once, section 386, so Off is up for one drawing, and a monochrome panel slower to change than the 650's
-colour one would not show it. Neither is measured. A file built for skin 71, or a file that holds Off on the
-screen before the menu, would tell them apart, and a sighting of "Turning system off" on this 600 under
-Logitech's own configuration would say whether the remote ever shows it.
+**So the program does not account for the missing screen, and the setting does not unless the light group 3
+sets is one the screen is seen by; three readings are left.** The skin: the file states 73 and the firmware's
+own constant is 71. The 0.2 build's section seeker, `0x18020`, is called for raw slots 3 to 17 and never 0 or 1,
+section 81's census run on both 0.2 images, so the remote does not fetch base slot 1 through it; a read that
+bypasses the seeker is not ruled out. The light: if group 3 sets a light the screen is seen by, the 600's
+levels, 1, 3 and 5 of 32 against the 650's 10, 20 and 8, could leave a passing screen too dark to see. Or the
+panel: Off showed only for a moment before the menu on the Harmony 700, section 386, and the 600's grey panel,
+if slower to change than the 650's, would not show it. None is measured. A file built for skin 71 tests the
+first, and one carrying the 650's group 3 the second; a sighting under Logitech's own configuration cannot tell
+the light from the panel, since Logitech's 600 compile carries the same 1, 3, 5 and 32.
+
+**Seen afterwards: with the six device file built for skin 71 on the 600, "Turning system off" shows very
+briefly after a boot**, as reported from the bench; that file differs from the skin 73 one in the base slot 1
+byte alone, besides its build time and checksum, written and read back byte for byte. No run was recorded and
+All Off was not reported on. Every earlier run of a file of ours stating 73 began by taking the remote off the
+cable after a write's restart and reported no Off screen there, so the skin is the reading this favours; that
+the brief screen was there and missed on those runs is not excluded, nothing having timed it. The light reading
+is untouched by it, both files carrying the same group 3.
 
 ### Scope, decision 16
 
-Arch 14: both 0.2 images read for the comparison and the group 3 call, the Harmony 700's 2.8 for the group 3
-call; the 650's 0.4 image not compared. Nothing ran on a remote. Which light group 3 sets, and whether any
-drawing path reads base slot 1 on a 0.2 build, are not read.
+Arch 14: both 0.2 images read for the comparison, the group 3 call and the seeker census, the Harmony 700's 2.8
+for the group 3 call; the 650's 0.4 image not compared. Nothing ran on a remote. Which light group 3 sets, and
+whether any read outside the seeker fetches base slot 1 on a 0.2 build, are not read.
 
 ### Falsification
 
-A difference between the two 0.2 images that is not an address and not the model number; a second call asking
-for group 3, or a reader of the group 3 table outside the light routine.
+A difference between the two 0.2 images that is not a moved address, the model number, the checksum or code
+nothing calls; a second call asking for group 3, or a reader of `0xD2F` to `0xD32` outside the light routine.
 
 ### Where it lands
 
@@ -51738,4 +51760,4 @@ for group 3, or a reader of the group 3 table outside the light routine.
   the two 0.2 builds' byte count and model numbers.
 * `docs/config-format.md`, base slot 15: group 3 on arch 14. `packages/codec/src/wiring.ts`: the parameter
   groups' comment.
-* `todo-compile-600.md` 1.4.1 stays open with these two readings.
+* `todo-compile-600.md` 1.4.1 stays open with these three readings.

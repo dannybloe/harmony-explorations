@@ -1351,12 +1351,10 @@ class TestTheParameterBlock(unittest.TestCase):
         self.assertNotEqual([arch14[i] for i in sorted(shared)],
                             [arch12[i] for i in sorted(shared)])
 
-    def test_group_3_is_a_second_light_level_table_on_arch_14(self):
-        """findings.md section 392: on the Harmony 700's 2.8 image group 3 is asked for once, offset 9
-        and length 4, by a routine built like group 1's: both fill the same scratch table at `0xD2E`
-        and pick one entry into `0xD2A` by a light state, group 1's state saved in variable 10 and
-        group 3's in variable 12. So group 3 is light levels, not a timing, and the Off screen does not
-        read it. The defaults are the fallback when the length does not match."""
+    def test_group_3_is_asked_for_at_offset_9_length_4_with_a_fallback_on_arch_14(self):
+        """findings.md section 392: the call that asks for group 3, offset 9 and length 4, and the
+        constants written when the length does not match, on the Harmony 700's 2.8 and the Harmony
+        600's 0.2. What the routine around it does with the values is read in the section, not here."""
         base, guard = self.GUARDS['h700_code']
         lab.require('h700_code')
         code = lab.load('h700_code')
@@ -1376,10 +1374,10 @@ class TestTheParameterBlock(unittest.TestCase):
         self.assertEqual((call.mnemonic, call.fields['target']), ('RCALL', 0x10E8E))
         self.assertEqual(literals_at('h600_code_complete', base, 0x116BC, 16)[:5], [1, 3, 5, 10, 32])
 
-    def test_the_600_and_650_run_one_program_on_build_0_2(self):
-        """findings.md section 392: the two 0.2 images are the same length and differ in 1395 bytes,
-        nearly all of them addresses moved by a few bytes; the model number each reports is the one
-        literal of meaning that differs, 71 on the 600 and 72 on the 650, here in the version reply."""
+    def test_the_two_0_2_builds_differ_in_1395_bytes_and_report_71_and_72(self):
+        """findings.md sections 281 and 392: the two 0.2 images are the same length and differ in 1395
+        bytes, and each build's version reply states its own model number, 71 on the 600 and 72 on the
+        650. That the other differences are moved addresses is the section's reading, not asserted here."""
         lab.require('h600_code_complete', 'h650_bench_code')
         a, b = lab.load('h600_code_complete'), lab.load('h650_bench_code')
         self.assertEqual(len(a), len(b))
