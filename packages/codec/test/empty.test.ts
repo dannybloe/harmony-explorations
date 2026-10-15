@@ -567,7 +567,7 @@ test('todo-compile-700.md 2.3: a file of ours starts the mark the Off screen wai
   // configuration did, section 383, and on the Harmony 600 it did not show with the mark read 1, section 387.
   assert.deepEqual(emptyVariables('harmony-700').find(([name]) => name === 'tourMark')?.[1], { first: 1, max: 1 });
   // And in the file as built, where the remote's restart seeds it from, on each model of ours.
-  for (const skin of [66, 72, 73]) {
+  for (const skin of [66, 72, 71, 73]) {
     assert.equal(stateRecords(buildEmpty(false, skin).container)?.[emptyVariable('tourMark')]?.first, 1, `skin ${skin}`);
   }
   assert.deepEqual(startupTitleYs(buildEmpty(false, 66).container), [7, 21]);
@@ -590,7 +590,7 @@ test('todo-compile-600.md 1.1: the Harmony 600 built from nothing, skins 73 and 
     assert.deepEqual([...attributeBytes(c).carried.keys()], [], `skin ${skin}`);
   }
   const h650 = buildEmpty(false, 72).container.blob;
-  const h600 = buildEmpty(false, 73).container.blob;
+  const h600 = buildEmpty(false, 71).container.blob;
   assert.equal(h600.length, h650.length);
   // Runs of differing bytes, joined across gaps of up to four: the skin, the settings block's group 3, the checksum.
   const runs: [number, number][] = [];
@@ -604,7 +604,7 @@ test('todo-compile-600.md 1.1: the Harmony 600 built from nothing, skins 73 and 
 });
 
 test('todo-compile-600.md 1.2.4: the Harmony 600 draws every state in one look, so its first device\'s pages take the idle look and add none, and a recolouring takes one colour', skipWithoutIrArchive(), () => {
-  const empty = buildEmpty(false, 73).container;
+  const empty = buildEmpty(false, 71).container;
   const idle = FOUR_SLOT_CHOICES.stateColours.idle;
   // Before any page of theirs, the device and activity states read as the idle one.
   assert.deepEqual(ourStateColours(empty), { idle, device: idle, activity: idle });
@@ -629,7 +629,7 @@ test('todo-compile-600.md 1.2.4: the Harmony 600 draws every state in one look, 
   assert.equal(FOUR_SLOT_CHOICES.oneLookColour, rgbTo565(33, 34, 33));
   const one = FOUR_SLOT_CHOICES.oneLookColour;
   const grey2 = buildEmptyConfiguration({
-    skin: 73, builtAt: BUILT_AT, inks: FOUR_SLOT_CHOICES.letterInks, settings: FOUR_SLOT_CHOICES.settings, blendLetters: false,
+    skin: 71, builtAt: BUILT_AT, inks: FOUR_SLOT_CHOICES.letterInks, settings: FOUR_SLOT_CHOICES.settings, blendLetters: false,
     look: { ...LOOK, idleColour: one },
   }).container;
   assert.deepEqual(ourStateColours(grey2), { idle: one, device: one, activity: one });
@@ -637,7 +637,7 @@ test('todo-compile-600.md 1.2.4: the Harmony 600 draws every state in one look, 
 
 test('todo-compile-600.md 1.2.4: the Harmony 600\'s letters blend, every drawn code still reads, and the file stays in its one grey', () => {
   const build = (blendLetters: boolean) => buildEmptyConfiguration({
-    skin: 73, builtAt: BUILT_AT, inks: FOUR_SLOT_CHOICES.letterInks, settings: FOUR_SLOT_CHOICES.settings, blendLetters,
+    skin: 71, builtAt: BUILT_AT, inks: FOUR_SLOT_CHOICES.letterInks, settings: FOUR_SLOT_CHOICES.settings, blendLetters,
     look: { ...LOOK, idleColour: FOUR_SLOT_CHOICES.oneLookColour },
   });
   const plain = build(false);
@@ -672,7 +672,8 @@ test('todo-compile-600.md 2.1: the five device test setup assembles on the Harmo
     look: { ...LOOK, idleColour: colour },
   }).bytes, archive: IR_ARCHIVE! }).container;
   const one = FOUR_SLOT_CHOICES.oneLookColour;
-  const h600 = on(73, 'Harmony 600 EMEA', one);
+  // Decision 23: a file of ours states the model number the remote reports, 71 on the bench 600.
+  const h600 = on(71, 'Harmony 600', one);
   const h650 = on(72, 'Harmony 650', FOUR_SLOT_CHOICES.stateColours.idle);
   assert.ok(h600.allChecksPass);
   assert.ok(inOurLook(h600));
@@ -711,13 +712,23 @@ test('todo-compile-600.md 2.1: the five device test setup assembles on the Harmo
   assert.deepEqual(Object.fromEntries(Object.keys(g650).map((kind) => [kind, g650[kind]! - (g600[kind] ?? 0)]).filter(([, n]) => n !== 0)),
     { pictures: 2 * 32773 + 2 * 245, 'corner programs': 2 * 38, addresses: 2 * 3 });
   // A donor in another colour comes out byte for byte the build on the grey one; any state colour chosen is refused.
-  assert.deepEqual(on(73, 'Harmony 600 EMEA', FOUR_SLOT_CHOICES.stateColours.idle).blob, h600.blob);
-  assert.throws(() => assembleSetup({ ...setup, model: { name: 'Harmony 600 EMEA', skin: 73 },
+  assert.deepEqual(on(71, 'Harmony 600', FOUR_SLOT_CHOICES.stateColours.idle).blob, h600.blob);
+  // Built for 73, the European 600 Logitech's compile of the bench unit states, it differs in the model
+  // number's byte in base slot 1 and the checksum alone, section 392.
+  const emea = on(73, 'Harmony 600 EMEA', one).blob;
+  const differing = [...emea.keys()].filter((k) => emea[k] !== h600.blob[k]);
+  assert.equal(emea.length, h600.blob.length);
+  assert.deepEqual(differing.map((k) => emea[k]).slice(0, 1), [73]);
+  assert.deepEqual(differing.map((k) => h600.blob[k]).slice(0, 1), [71]);
+  // The other is the trailer checksum, the word before the end marker.
+  assert.equal(differing.length, 2);
+  assert.ok(differing[1]! > h600.blob.length - 16, `${differing} of ${h600.blob.length}`);
+  assert.throws(() => assembleSetup({ ...setup, model: { name: 'Harmony 600', skin: 71 },
     choices: { letters: 'oxanium', backgrounds: 'state colours', pictures: 'ours', blendLetters: false, stateColours: { device: rgbTo565(255, 0, 0) } } } as Recipe,
-  { donor: buildEmpty(false, 73).bytes, archive: IR_ARCHIVE! }), /one look, so its colour is oneLookColour/);
+  { donor: buildEmpty(false, 71).bytes, archive: IR_ARCHIVE! }), /one look, so its colour is oneLookColour/);
   // Smoothed letters, the 600's default, change nothing the view compares.
-  const blended = assembleSetup({ ...setup, model: { name: 'Harmony 600 EMEA', skin: 73 } } as Recipe, {
-    donor: buildEmptyConfiguration({ skin: 73, builtAt: BUILT_AT, inks: FOUR_SLOT_CHOICES.letterInks, settings: FOUR_SLOT_CHOICES.settings,
+  const blended = assembleSetup({ ...setup, model: { name: 'Harmony 600', skin: 71 } } as Recipe, {
+    donor: buildEmptyConfiguration({ skin: 71, builtAt: BUILT_AT, inks: FOUR_SLOT_CHOICES.letterInks, settings: FOUR_SLOT_CHOICES.settings,
       blendLetters: false, look: { ...LOOK, idleColour: one } }).bytes, archive: IR_ARCHIVE! }).container;
   assert.ok(blended.blob.length > h600.blob.length, 'blended');
   assert.deepEqual(compareViews(view, setupView(blended), { menuOrder: true }), []);
@@ -726,8 +737,9 @@ test('todo-compile-600.md 2.1: the five device test setup assembles on the Harmo
 test('todo-compile-600.md 2.1: Logitech\'s two Harmony 600 compiles do not read as our look, the assembly refuses one as a donor, and the seven device setup is refused at the 600\'s five', skipUnless('h600_config', 'calibration_h600'), () => {
   for (const name of ['h600_config', 'calibration_h600']) assert.equal(inOurLook(parse(new Uint8Array(require_(name)))), false, name);
   const setup = readRecipe(JSON.parse(readFileSync(new URL('../../corpus/setups/h650-test.json', import.meta.url), 'utf8')));
+  // Logitech's compile states 73, so the recipe names 73 too and the refusal is the donor's and not the number's.
   assert.throws(() => assembleSetup({ ...setup, model: { name: 'Harmony 600 EMEA', skin: 73 } } as Recipe, { donor: require_('h600_config') }),
     /on a donor of ours alone, an empty configuration, and this donor is Logitech's/);
-  assert.throws(() => assembleSetup({ ...setup, model: { name: 'Harmony 600 EMEA', skin: 73 } } as Recipe, { donor: buildEmpty(false, 73).bytes, archive: IR_ARCHIVE ?? '' }),
+  assert.throws(() => assembleSetup({ ...setup, model: { name: 'Harmony 600', skin: 71 } } as Recipe, { donor: buildEmpty(false, 71).bytes, archive: IR_ARCHIVE ?? '' }),
     /this model holds 5/);
 });

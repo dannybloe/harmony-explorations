@@ -169,7 +169,8 @@ export type EmptyModel = 'harmony-600' | 'harmony-650' | 'harmony-700';
 /**
  * The skins an empty configuration is built for. The Harmony 600's two since `todo-compile-600.md` 1.1: 73,
  * the European 600 that Logitech's compile of the bench unit's configuration, `h600_config`, states, and 71,
- * `calibration_h600`'s and the one the bench unit itself reports, section 387.
+ * `calibration_h600`'s and the one the bench unit itself reports, section 387. A file of ours states the number
+ * the remote reports, decision 23, so 71 on the bench 600; the builder takes either.
  */
 const EMPTY_MODELS: ReadonlyMap<number, EmptyModel> = new Map([
   [71, 'harmony-600'], [73, 'harmony-600'], [72, 'harmony-650'], [74, 'harmony-650'], [66, 'harmony-700'],

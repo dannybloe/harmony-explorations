@@ -687,3 +687,15 @@ remote and 2 in the second, which is what section 117 measured as a generator er
    background gets its own copy of a font, section 370. The weights were chosen on the same preview: the six
    label faces one step heavier than the Medium first tried, SemiBold, and the three regular faces of the
    start up, Off and Help screens Regular rather than ExtraLight. All remain tunable under decision 19.
+
+23. **A configuration of ours states the model number the remote reports.** *Taken on 15 October 2026, on
+   the recommendation in `todo-compile-600.md` 1.4.1, after the consequences were laid out.* Base slot 1
+   carries a model number, the skin, and Logitech's compile of the bench Harmony 600 states 73, the European
+   600, where the remote's own firmware reports 71. A file of ours states what the remote's version block
+   reports, so the bench 600 gets 71. Why: an application that writes a remote reads that number off the
+   remote and needs nothing else, where copying Logitech's choice would need the rule by which their service
+   picks one of a regional pair, and that rule is not known, section 131; and with 71 the 600 showed
+   "Turning system off" where no run with 73 reported it, section 392, one sighting that does not prove the
+   number is the cause. Nothing else changes: every table here treats both numbers of a pair alike, and
+   the builder takes either. A file of Logitech's written back as it is keeps its own number. Our own data
+   on a remote, `todo.md` 3.6, sits beside this byte and does not replace it.
