@@ -1,0 +1,15 @@
+{
+  "name": "Harmony 600, the Off screen with model 71",
+  "description": "todo-compile-600 1.4.1, one write of lab/work/h600-from-nothing/setup6-71-600-blended.bin: the six device file of 600-setup-six.json and 600-setup-look.json built for model number 71, the one the 600's own firmware reports, where the file before stated 73 as Logitech's compile of this unit does. That byte is the only difference besides the build time and the checksum. Findings section 392 left two readings for 'Turning system off' never showing on this 600: the model number, or the panel being too slow for a screen that is up only while it is drawn. Predicted, if it is the model number: 'Turning system off' shows when the cable comes out or on All Off. If it is the panel: it shows on neither, and everything else is as on the six device runs. The three buttons below the screen are the left arrow, the centre button and the right arrow. Please write in each step's note what you saw, also when it is what the step expects.",
+  "steps": [
+    {
+      "instruction": "Straight after the write the remote restarts. Take it off the cable while looking at the screen. Say whether 'Turning system off' shows, even for a moment. Expect 'Activities 1/2' with TV kijken and Film kijken. Mark when it is quiet"
+    },
+    {
+      "instruction": "Press Watch TV. Expect 'Starting TV kijken', the LG's, the KPN box's and the Denon's power, then the Denon's CBL/SAT and the LG's HDMI 1, then the TV kijken screen with Teletext and DVR. Mark when it settles"
+    },
+    {
+      "instruction": "Press All Off while looking at the screen. Say whether 'Turning system off' shows, even for a moment. Expect the power codes of the LG, the KPN box and the Denon, then the Activities screen. Mark when it is quiet"
+    }
+  ]
+}
