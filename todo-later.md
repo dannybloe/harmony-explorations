@@ -62,18 +62,18 @@ The Harmony One is a different type, with a touch screen and its own screens, so
   - [ ] 5.1.4 Power on and off with the long press version: not composed; whether its configurations hold long press versions is unchecked
   - [ ] 5.1.5 A power on delay: not composed, a composed device gets none on the Harmony One
   - [ ] 5.1.6 Everything else in the 650's track
-- [ ] 5.2 The Harmony 600: confirm the 650's track
+- [x] 5.2 The Harmony 600: confirm the 650's track; done: todo-compile-600.md, sections 387 to 392
   - [x] 5.2.1 A whole configuration written (sections 302 and 303)
-  - [ ] 5.2.2 A composed device: refused while its device list is full (section 285)
-  - [ ] 5.2.3 A composed activity and its own device list: against its file only (sections 289, 290 and 294)
-  - [ ] 5.2.4 A delay saved on the remote overrides the configuration's (section 303), so a written delay can do nothing
-- [ ] 5.3 The Harmony 700: confirm the 650's track; a build from nothing is its own track since 13 October 2026, [todo-compile-700.md](todo-compile-700.md)
+  - [x] 5.2.2 A composed device: refused while its device list is full (section 285); done (sections 388 to 390): five devices composed onto our empty 600 file, written and heard, and a sixth
+  - [x] 5.2.3 A composed activity and its own device list: against its file only (sections 289, 290 and 294); done on the remote (sections 389 and 391), todo-compile-600 2.2.1 and 2.3
+  - [x] 5.2.4 A delay saved on the remote overrides the configuration's (section 303), so a written delay can do nothing; done (section 391): a file of ours restores no saved delay, so its own delays run, every gap measured at least the file's delay
+- [x] 5.3 The Harmony 700: confirm the 650's track; a build from nothing is its own track since 13 October 2026, [todo-compile-700.md](todo-compile-700.md); done: todo-compile-700.md, sections 382 to 386
   - [x] 5.3.1 A whole configuration written (sections 300 and 301)
-  - [ ] 5.3.2 A composed device: refused while its device list is full (section 285)
-  - [ ] 5.3.3 A composed activity and its own device list: against its file only, and never on the remote (was 1.2.11)
+  - [x] 5.3.2 A composed device: refused while its device list is full (section 285); done (sections 385 and 386): seven devices composed, written and heard
+  - [x] 5.3.3 A composed activity and its own device list: against its file only, and never on the remote (was 1.2.11); done on the remote (sections 385 and 386), todo.md 1.2.11
 - [ ] 5.4 Compose and write an activity for the Harmony 525; nothing can compile a configuration for that model, so there is no vendor file to check ours against (was 1.5)
   - [x] 5.4.1 One block written back unchanged (section 269)
-  - [ ] 5.4.2 Whether the 0xFE fill above the state variable storage happens on the Harmony 525 too: unmeasured (was 1.3.2)
+  - [ ] 5.4.2 Whether the 0xFE fill above the state variable storage happens on the Harmony 525 too: unmeasured (was 1.3.2); read in the firmware (section 274): it fills from narrow + 2 * wide to 64; unmeasured on the remote
 - [ ] 5.5 The Harmony 300 and 350, and the Harmony Touch: the file based family, read only so far
 - [ ] 5.6 The legacy remotes, Harmony 880, 885, 890 and 895: contributed configurations only, no compiler
 - [x] 5.7 A reference folder and a skill for every remote on the bench, the way the Harmony 650 has `reference/remotes/harmony-650/` and the `harmony-650` skill: the folder holds the model's facts with a source each, the skill says to read it first and carries that remote's write and bench procedure, so an agent sent to any remote starts from what is known; the One, 600, 700, 300 and 350 moved to [todo-process-logitech.md](todo-process-logitech.md), whose processing lands in their folders
@@ -83,7 +83,7 @@ The Harmony One is a different type, with a touch screen and its own screens, so
 ## 6. Fine tuning and loose ends
 
 - [ ] 6.1 A library function for any remote: point a device's power keys in device mode at the long press version where the configuration holds one; done by hand once on the Harmony 650 (was L15)
-- [ ] 6.2 `blockOfStatedCode` builds a one frame press for the Memorex 32 Bit family where Logitech's compiled press holds three (was L13)
+- [x] 6.2 `blockOfStatedCode` builds a one frame press for the Memorex 32 Bit family where Logitech's compiled press holds three (was L13); done (section 350, todo.md L13): the composer builds at the device's own count, the Dell 35 of 35
 - [ ] 6.3 A delay saved on a Harmony 600, 650 or 700 wins over the configuration's: left are why the bench gap moved only 0.1 of 0.5 seconds, how the compiler picks a device's key, and what wrote the Harmony 600's two saved delays (was L9)
 - [ ] 6.4 Fix `deviceModeMaps`, which picks a help screen for the 700s' A/V switch, and restate section 271's counts (was 1.4.3's last item)
 - [ ] 6.5 `make protocols --write` no longer reproduces `src/protocols.ts`: a measured row's counts move and four tests fail (was L12)
@@ -93,14 +93,14 @@ The Harmony One is a different type, with a touch screen and its own screens, so
 - [ ] 6.9 `GET_VERSION` field 6 and field 9's accessor, the two fields of twelve with no reading (was L3)
 - [ ] 6.10 Excavate the lab: discovery is done, the reading phase is left, in tag order (was L2)
 - [ ] 6.11 Five documents call the spare Harmony One's first configuration a factory configuration; it is a Logitech compile with one television and one activity, so correct the claim in place and add the wording to `reference/superseded.md`
-- [ ] 6.12 Whether Logitech compiles a configuration with no activities, or none at all; MyHarmony greys out its Sync button without activities, but our compile call never goes through the button
-- [ ] 6.13 Six Python tests fail on the Harmony 650 and 700 compiles the long press work added to the lab, and the golden vector list lacks `h650_plasma_base`: the EzHex population counts 23 against 17, and the per config checks on those six files
-- [ ] 6.14 Moved to `todo-process-logitech.md` 2.1
-- [ ] 6.15 Moved to `todo-process-logitech.md` 2.5
+- [ ] 6.12 Whether Logitech compiles a configuration with no activities, or none at all; MyHarmony greys out its Sync button without activities, but our compile call never goes through the button; with no activities it does (sections 352 and 364, the harvest compiles); with no devices unknown
+- [x] 6.13 Six Python tests fail on the Harmony 650 and 700 compiles the long press work added to the lab, and the golden vector list lacks `h650_plasma_base`: the EzHex population counts 23 against 17, and the per config checks on those six files; done (commit 8ae451c): the six bare containers named and excluded, `h650_plasma_base`'s golden vector added
+- [x] 6.14 Moved to `todo-process-logitech.md` 2.1; done there (section 359)
+- [x] 6.15 Moved to `todo-process-logitech.md` 2.5; done there (section 365)
 - [ ] 6.16 Moved to `todo-process-logitech.md` 2.2
 - [x] 6.17 Toolchain checks walk `.claude/worktrees/`, so an agent's worktree fails the facts, prose and write review checks until it is removed
 - [ ] 6.18 Read the battery before writing to a remote, and refuse or warn when it is too low; a threshold per model is a guess until measured, but a remote that is about 3 V fresh and reads under 2 V is likely too low. For FreeHarmony as much as for the bench
-  - [ ] 6.18.1 What each model takes, from Logitech's manuals: Harmony One one lithium ion cell; Harmony 600 and 650 AA alkaline, two on the bench 650 (the manuals do not say how many); Harmony 700 NiMH AA, charged on USB; Harmony 525 four AAA; Harmony 300 and 350 two AA; Harmony Touch an internal rechargeable
+  - [x] 6.18.1 What each model takes, from Logitech's manuals: Harmony One one lithium ion cell; Harmony 600 and 650 AA alkaline, two on the bench 650 (the manuals do not say how many); Harmony 700 NiMH AA, charged on USB; Harmony 525 four AAA; Harmony 300 and 350 two AA; Harmony Touch an internal rechargeable; done: recorded with its source in each `reference/remotes/*/hardware.md`
   - [ ] 6.18.2 The read has been sent to the Harmony 650 only, 2860 mV against 2.92 V on a meter (section 340); whether the One, 600 and 700 answer it the same way is unchecked, and the Harmony 525 refuses it
 - [ ] 6.19 MyHarmony's sync changes the Harmony 650's screen to a USB logo with arrows around it while it writes, and our writes leave the plain USB logo: find in MyHarmony's sync code which command does that, and whether a write should send it too
 
