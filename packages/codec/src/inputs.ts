@@ -99,6 +99,7 @@ import { ACTION_LIST_INDEX_OPCODE, STATE_RECORD_HEADER, STATE_VALUE_LENGTH, stat
 import { DEVICE_QUANTITY, INPUT_PROPERTY, SEND_INFRARED, deviceVariables, stateVariables } from './inventory.ts';
 import { relocate } from './relocate.ts';
 import { nameOfLabel } from './shared/core.ts';
+import { traitsOf } from './families/registry.ts';
 import { Writer } from './emit.ts';
 import {
   ACTION_TABLE_SLOT, ComposeError, type ComposeActivityTarget, type ComposedDevice, SILENT_WRITE,
@@ -112,8 +113,13 @@ import type { DeviceDriving, DeviceState, DriveStep } from './driving.ts';
 export const FROM_ANY = -2;
 /** A transition's `from` that matches when the value changed, `0xFFFD`; `setType` 2. */
 export const FROM_CHANGED = -3;
-/** The architecture the encoding was measured on: the Harmony 600, 650 and 700. */
-const INPUT_ARCHITECTURE = 14;
+/**
+ * The architectures the encoding was measured on: the Harmony 600, 650 and 700, section 321, and the
+ * Harmony One, whose compiles hold the same variables, values, transitions and waits for the same catalogue
+ * devices, with a send of two instructions and no prelude, `FamilyTraits.sendPrelude`,
+ * `todo-compile-one.md` 1.2.
+ */
+const INPUT_ARCHITECTURES: ReadonlySet<number> = new Set([12, 14]);
 /** Delays in the catalogue are milliseconds, the `0x7C` quantity tenths. */
 const MS_PER_TENTH = 100;
 /** The quantity is the operand's low byte. */
@@ -403,6 +409,16 @@ function preludeOf(c: Container, device: ComposedDevice): Prelude {
   return { load: load[0]!, condition: condition[0]!, delayList: condition[1].operand };
 }
 
+/**
+ * The Harmony One's on list of a composed device: the list its power variable's transition from 0 to 1
+ * runs, read off the variable's record, since the One has no delay list for `ComposedDevice` to name.
+ */
+function onListOf(c: Container, device: ComposedDevice): { on: number } | undefined {
+  const record = stateVariables(c).find((one) => one.index === device.variable)?.record;
+  const on = record?.values.find((one) => one.from === 0 && one.to === 1);
+  return on?.opcode === ACTION_LIST_INDEX_OPCODE ? { on: on.operand } : undefined;
+}
+
 /** A transition record, as section 86 reads it: a seven byte header, then eight bytes per transition. */
 function encodeRecord(values: number, encoded: readonly { from: number; to: number; instruction: Instruction }[]): Uint8Array {
   const out = new Writer(STATE_RECORD_HEADER + STATE_VALUE_LENGTH * encoded.length)
@@ -416,7 +432,7 @@ function encodeRecord(values: number, encoded: readonly { from: number; to: numb
 /**
  * Compose a device's inputs into a configuration that already holds the device: one variable per
  * catalogue state and one for its inputs, every transition the plan states, and the action lists they
- * run. Arch 14 only.
+ * run. Arch 14 and arch 12, without the power on resets on arch 12.
  *
  * **The layout follows Logitech's where the bytes say so.** A transition whose whole body is one
  * state write carries that write itself, opcode `0x80 | variable`; one whose body is one send runs
@@ -434,9 +450,13 @@ function encodeRecord(values: number, encoded: readonly { from: number; to: numb
  * condition names the start sequence variable.
  */
 export function composeDeviceInputs(c: Container, inputs: ComposeInputs): ComposedInputs {
-  if (c.architecture !== INPUT_ARCHITECTURE) {
-    throw new ComposeError(`inputs are measured on arch ${INPUT_ARCHITECTURE} only, and this is ${c.architecture}`);
+  if (c.architecture === undefined || !INPUT_ARCHITECTURES.has(c.architecture)) {
+    throw new ComposeError(`inputs are measured on arch ${[...INPUT_ARCHITECTURES].join(' and ')} only, and this is ${c.architecture}`);
   }
+  // A send opens with the delay prelude on the Harmony 600, 650 and 700 and is the send and its quantity
+  // alone on the Harmony One, as the device composer writes each family's: one list or three per send.
+  const { sendPrelude } = traitsOf(c);
+  const listsPerSend = sendPrelude ? 3 : 1;
   const plan = inputPlan(inputs.driving);
   const variables = [...plan.states, ...(plan.input === undefined ? [] : [plan.input])];
 
@@ -463,7 +483,13 @@ export function composeDeviceInputs(c: Container, inputs: ComposeInputs): Compos
 
   // The list the power variable runs to switch the device on, which the resets are appended to. Every
   // arch 14 device `composeDevice` builds has one, ending in the power on delay.
-  const switchOn = inputs.device.powerOnDelay;
+  // The list the power variable runs to switch the device on, which the resets are appended to after its
+  // power on delay. On the Harmony 600, 650 and 700 that delay is a call to the device's delay list. On
+  // the Harmony One it is a bare `0x7C` wait at the end of the on list, and **no Logitech compile of a
+  // One read here holds a reset**, 25 power on lists over eleven compiles, so its place there is ours:
+  // after the wait, the 600 family's rule, which section 332 found leaves the same value in place either
+  // side of the delay. The bench run of `todo-compile-one.md` 1.3 hears whether the input then goes out.
+  const switchOn = sendPrelude ? inputs.device.powerOnDelay : onListOf(c, inputs.device);
   if (resetPlan.length > 0 && switchOn === undefined) {
     throw new ComposeError('the catalogue resets a state after a power on, and the device has no power on list');
   }
@@ -478,7 +504,7 @@ export function composeDeviceInputs(c: Container, inputs: ComposeInputs): Compos
   };
 
   const table = stateTable(c);
-  const actionSlot = archSlot(INPUT_ARCHITECTURE, ACTION_TABLE_SLOT);
+  const actionSlot = archSlot(c.architecture, ACTION_TABLE_SLOT);
   const actionTable = c.pointerArrayAt(actionSlot);
   if (table === undefined || actionTable === undefined) throw new ComposeError('base slots 10 and 13 do not read');
   if (table.count + variables.length > STATE_WRITE_LIMIT) {
@@ -497,7 +523,7 @@ export function composeDeviceInputs(c: Container, inputs: ComposeInputs): Compos
       for (const one of transition.steps) {
         if (one.kind === 'send' && !sendLists.has(sendKey(one))) {
           recordOf(one.command);
-          sendLists.set(sendKey(one), firstList + 3 * sendLists.size);
+          sendLists.set(sendKey(one), firstList + listsPerSend * sendLists.size);
         }
       }
     }
@@ -509,7 +535,7 @@ export function composeDeviceInputs(c: Container, inputs: ComposeInputs): Compos
     const only = steps.length === 1 ? steps[0]! : undefined;
     if (only?.kind === 'write') return { opcode: STATE_WRITE_BASE + indexOf.get(only.state)!, operand: only.value };
     if (only?.kind === 'send') return { opcode: ACTION_LIST_INDEX_OPCODE, operand: sendLists.get(sendKey(only))! };
-    const list = firstList + 3 * sendLists.size + bodies.length;
+    const list = firstList + listsPerSend * sendLists.size + bodies.length;
     bodies.push({ list, steps });
     return { opcode: ACTION_LIST_INDEX_OPCODE, operand: list };
   };
@@ -533,10 +559,16 @@ export function composeDeviceInputs(c: Container, inputs: ComposeInputs): Compos
   });
 
   // ---- 2. the lists ----
-  const prelude = preludeOf(current, inputs.device);
+  const prelude = sendPrelude ? preludeOf(current, inputs.device) : undefined;
   const encoded: Writer[] = [];
   for (const [key, list] of sendLists) {
     const [command, amount] = [key.slice(0, key.lastIndexOf('|')), Number(key.slice(key.lastIndexOf('|') + 1))];
+    if (prelude === undefined) {
+      encoded.push(new Writer(7).u8(2)
+        .u16((group << 8) | recordOf(command)).u8(SEND_INFRARED)
+        .u16((group << 8) | amount).u8(DEVICE_QUANTITY));
+      continue;
+    }
     // The send, then its private load and condition lists, in that order, as `list`, `+1`, `+2`.
     encoded.push(new Writer(10).u8(3)
       .u16(list + 1).u8(ACTION_LIST_INDEX_OPCODE)
@@ -562,7 +594,7 @@ export function composeDeviceInputs(c: Container, inputs: ComposeInputs): Compos
   // The resets, one list each, `[0x07 0xFFFF, 0x80 | variable value]`, laid out after the bodies.
   // **Silent**, as all fourteen Logitech compiled are: without the flag the write would run the
   // variable's transition and send the very command the reset exists to make unnecessary.
-  const firstReset = firstList + 3 * sendLists.size + bodies.length;
+  const firstReset = firstList + listsPerSend * sendLists.size + bodies.length;
   const resets: ComposedReset[] = resetPlan.map((one) => ({
     state: one.state, named: one.named, variable: indexOf.get(one.variable.property)!, value: one.value,
     declared: one.declared,
@@ -598,7 +630,7 @@ export function composeDeviceInputs(c: Container, inputs: ComposeInputs): Compos
     at += one.bytes.length;
   }
   current = parse(appendTableEntries(parse(hole.bytes), actionSlot, addresses));
-  if (resets.length > 0) current = parse(appendResetCalls(current, actionSlot, switchOn!, firstReset, resets.length));
+  if (resets.length > 0) current = parse(appendResetCalls(current, actionSlot, switchOn!, group, firstReset, resets.length));
 
   return {
     bytes: restamped(Uint8Array.from(current.blob)),
@@ -622,18 +654,23 @@ export function composeDeviceInputs(c: Container, inputs: ComposeInputs): Compos
  * placement copies theirs so the composed list compares with theirs byte for byte.
  */
 function appendResetCalls(
-  c: Container, actionSlot: number, switchOn: { list: number; on: number }, first: number, count: number,
+  c: Container, actionSlot: number, switchOn: { list?: number; on: number }, group: number, first: number, count: number,
 ): Uint8Array {
   const table = c.pointerArrayAt(actionSlot);
   const address = table?.values[switchOn.on];
   const at = address === undefined ? undefined : c.blobOffsetOf(address);
   const list = c.actionLists()?.[switchOn.on];
-  // The on list `composeDevice` writes: calls, the last of them to the power on delay list. Anything else
-  // means the list is not the one this was written against, and appending to it would be a guess.
-  if (at === undefined || list === undefined || list.length === 0 || c.blob[at] !== list.length
-      || !list.every((one) => one.opcode === ACTION_LIST_INDEX_OPCODE)
-      || list.at(-1)!.operand !== switchOn.list) {
-    throw new ComposeError(`the power on list ${switchOn.on} is not a list of calls ending in the power on delay`);
+  // The on list `composeDevice` writes: calls, the last of them to the power on delay list, or on the
+  // Harmony One calls ending in the device's own `0x7C` wait. Anything else means the list is not the one
+  // this was written against, and appending to it would be a guess.
+  const last = list?.at(-1);
+  const endsInDelay = switchOn.list === undefined
+    ? last?.opcode === DEVICE_QUANTITY && last.operand >> 8 === group
+      && list!.slice(0, -1).every((one) => one.opcode === ACTION_LIST_INDEX_OPCODE)
+    : list?.every((one) => one.opcode === ACTION_LIST_INDEX_OPCODE) === true && last?.operand === switchOn.list;
+  if (at === undefined || list === undefined || list.length === 0 || c.blob[at] !== list.length || !endsInDelay) {
+    const shape = (list ?? []).map((one) => `${one.opcode.toString(16)}:${one.operand.toString(16)}`).join(' ');
+    throw new ComposeError(`the power on list ${switchOn.on}, [${shape}], is not a list of calls ending in the power on delay`);
   }
   if (list.length + count > QUANTITY_MAX) throw new ComposeError(`a power on list of ${list.length + count} steps`);
   const end = at + 1 + 3 * list.length;

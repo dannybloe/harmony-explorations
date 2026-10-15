@@ -36,15 +36,24 @@ fonts and the assembly all refuse anything but the Harmony 600, 650 and 700 toda
 spare; then every part the composers still borrow is built by us, as the 650's chapters 6 to 10 did; then
 the empty configuration from nothing, then the test setup on it.
 
-**Open choices, not decided**: the One's look (its colours, letters and pictures; decisions 19, 20 and 22
-were taken for the 650's screens) and which setup is the One's test setup.
+**The look**: our own letters and pictures, decision 24, decided on 15 October 2026; its colours are not
+decided. **The test setup** is the 650 family's, `packages/corpus/setups/h650-test.json`, retargeted at the
+One with its sequence's keys translated by name, since the One's keys have other scan codes.
 
 ---
 
 ## 1. The starting point
 
 - [x] 1.1 Read the spare Harmony One's region into the lab as the compare base, and record which configuration it holds; done: `one_spare_track_start`, 0x1A0000 bytes from 0x040000, its unit checked against the spare's record; it holds MyHarmony's sync of the spare, seven devices and eight activities, with section 293's two test activities composed onto it, 1669427 bytes, every check passing
-- [ ] 1.2 The test setup composed with today's One composers on a Logitech One configuration, checked and written to the spare
+- [ ] 1.2 The test setup composed with the One's composers on a Logitech One configuration lettered in ours, checked and written to the spare; the donor is Logitech's compile of the Denon and the LG for the One (`harvest_one_two_devices`), skin 54 as the spare reports
+  - [x] 1.2.1 The setup's device and activity steps shared by every family, `composeSetupParts` and `composeSetup` in `shared/setup.ts`, the Harmony 650 family's assembly unchanged byte for byte
+  - [x] 1.2.2 A device's inputs composed on the One: Logitech's compiles of the same catalogue devices for the One and the 650 hold the same variables, values, transitions and waits, and a send there is the send and its quantity with no prelude
+  - [x] 1.2.3 A device's power on delay composed on the One, a wait after its power on, which was missing: on Logitech's One compiles that wait is the catalogue's power on delay in tenths on 6 of 6 devices whose entry resolves
+  - [x] 1.2.4 The input put back after a power on (the Plasma's), placed after that wait as on the 600 family; no Logitech One compile in the lab holds one, so 1.3 hears whether it goes out
+  - [x] 1.2.5 A device page of more than six commands takes several pages, numbered by `paginate`; not yet run end to end
+  - [ ] 1.2.6 A long command name broken over two or three lines and cut with `..`, as Logitech's One compiles draw one
+  - [ ] 1.2.7 The donor lettered in ours before any composer spells a name, which needs 6.1's frame and 5.2's fonts first
+  - [ ] 1.2.8 The findings and tests for 1.2.2 to 1.2.5
 - [ ] 1.3 A bench test of it: every code as the file predicts, the touch rows, device mode and All Off
 
 ## 2. Measure before building

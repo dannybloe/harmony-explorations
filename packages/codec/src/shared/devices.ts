@@ -72,8 +72,10 @@ export interface ComposeDevice {
    */
   readonly interDeviceDelay?: number;
   /**
-   * Arch 14 only: the power on delay in tenths of a second, 0 to 450, queued after the power
-   * command when the device is switched on. Default `POWER_ON_DELAY_DEFAULT`.
+   * The power on delay in tenths of a second, waited after the power command when the device is
+   * switched on. On arch 14 0 to 450, a variable mapped through base slot 14, default
+   * `POWER_ON_DELAY_DEFAULT`. On the Harmony One 1 to 255, a bare `0x7C` wait at the end of the on list,
+   * and none where it is not given.
    */
   readonly powerOnDelay?: number;
 }
@@ -236,7 +238,16 @@ export function composeDeviceFor(
   // 320, laid out after everything above so that no index a caller already relies on moves. The off
   // action's is what the off transition runs, as in Logitech's compile of the Knoll; the on action's
   // is for a device page's power key only, since the on transition calls the steps itself.
-  let nextList = delay === undefined ? firstList + n : onList + 1;
+  // The Harmony One: no delay variables, and the power on delay a bare wait after the on steps, the
+  // device's own `0x7C` with the delay in tenths, as Logitech's compiler writes it on six catalogue
+  // devices of six whose entry states one, `todo-compile-one.md` 1.2. Its list goes straight after the sends.
+  // A delay past one quantity byte is not composed: no compile of a One here shows how one is split.
+  const oneWait = delay === undefined ? device.powerOnDelay : undefined;
+  if (oneWait !== undefined && (!Number.isInteger(oneWait) || oneWait < 1 || oneWait > 0xff)) {
+    throw new ComposeError(`a power on delay of ${oneWait} tenths is not one wait on this remote`);
+  }
+  const oneOnList = oneWait === undefined ? undefined : firstList + n;
+  let nextList = delay === undefined ? firstList + n + (oneOnList === undefined ? 0 : 1) : onList + 1;
   const offAction = offCalls.length > 1 ? nextList++ : undefined;
   const onAction = onCalls.length > 1 ? nextList++ : undefined;
   if (delay !== undefined) {
@@ -257,6 +268,11 @@ export function composeDeviceFor(
     // the steps are called in this list directly rather than through the action's own list, which is
     // what the one step shape extends to, and no compile here switches a device on in several steps.
     bodies.push(callingList([...onCalls, powerDelayList]));
+  }
+  if (oneWait !== undefined) {
+    const on = new Writer(1 + 3 * (onCalls.length + 1)).u8(onCalls.length + 1);
+    for (const at of onCalls) on.u16(at).u8(ACTION_LIST_INDEX_OPCODE);
+    bodies.push(on.u16((group.group << 8) | oneWait).u8(DEVICE_QUANTITY));
   }
   if (offAction !== undefined) bodies.push(callingList(offCalls));
   if (onAction !== undefined) bodies.push(callingList(onCalls));
@@ -284,7 +300,7 @@ export function composeDeviceFor(
   // power on delay to follow it, and `onSend` otherwise.
   const onSend = onAction ?? (onCalls[0] as number);
   const offSend = offAction ?? (offCalls[0] as number);
-  const switchOn = delay === undefined ? onSend : onList;
+  const switchOn = delay === undefined ? oneOnList ?? onSend : onList;
   const record = new Writer(recordLength)
     .u16(0).u16(1).u16(2).u8(0)
     .u8(0).u16(0).u16(1).u16(switchOn).u8(ACTION_LIST_INDEX_OPCODE)

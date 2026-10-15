@@ -49,9 +49,12 @@ export function composeTouchDeviceScreen(
   c: Container, label: string, rows: readonly ComposeRow[], options: WithChoices<ComposeScreenOptions, TouchChoices> = {},
 ): ComposedScreen {
   const titleFont = (options.choices ?? TOUCH_CHOICES).deviceTitleFont;
-  if (rows.length === 0 || rows.length > DEVICE_PAGE_SCANS.length) {
-    throw new ComposeError(`a device page has one to six rows, not ${rows.length}`);
-  }
+  if (rows.length === 0) throw new ComposeError('a device page has at least one row');
+  // A page holds six rows, and more rows take more pages, filled in order with the last page short, the
+  // way the menus page, section 239; `paginate` then numbers them, `todo-compile-one.md` 1.2.
+  const perPage = DEVICE_PAGE_SCANS.length;
+  const pages: { rows: readonly ComposeRow[]; first: number }[] = [];
+  for (let first = 0; first < rows.length; first += perPage) pages.push({ rows: rows.slice(first, first + perPage), first });
   const map = characterMap(c);
   if (map === undefined) throw new ComposeError('the config draws no text this can spell from');
   const sets = fontSets(c) ?? [];
@@ -109,29 +112,44 @@ export function composeTouchDeviceScreen(
   // holds a base slot 9 set, section 69's own reading, so the copy extends the pool that exists
   // rather than starting one of its own. Appended to the last pool because the copies pair with
   // the pages positionally and the new page will be the last page of the last mode.
-  const listBytes = new Writer(1 + 4 * rows.length);
-  listBytes.u8(rows.length);
-  rows.forEach((row, k) => {
-    listBytes.u8(0x80 | (DEVICE_PAGE_SCANS[k] as number)).u16(row.list).u8(ACTION_LIST_INDEX_OPCODE);
+  // One list per page, the copies in page order, so they pair with the pages positionally.
+  const pageLists = pages.map((page) => {
+    const listBytes = new Writer(1 + 4 * page.rows.length);
+    listBytes.u8(page.rows.length);
+    page.rows.forEach((row, k) => {
+      listBytes.u8(0x80 | (DEVICE_PAGE_SCANS[k] as number)).u16(row.list).u8(ACTION_LIST_INDEX_OPCODE);
+    });
+    return listBytes.bytes;
   });
-  const lastPool = taggedListPools(current).at(-1);
-  if (lastPool === undefined) throw new ComposeError('no copy pool to extend');
-  const copyAt = lastPool.end;
-  const copyHole = relocate(current, copyAt, listBytes.bytes.length);
-  copyHole.bytes.set(listBytes.bytes, copyAt);
-  current = parse(copyHole.bytes);
+  for (const listBytes of pageLists) {
+    const lastPool = taggedListPools(current).at(-1);
+    if (lastPool === undefined) throw new ComposeError('no copy pool to extend');
+    const copyAt = lastPool.end;
+    const copyHole = relocate(current, copyAt, listBytes.length);
+    copyHole.bytes.set(listBytes, copyAt);
+    current = parse(copyHole.bytes);
+  }
 
   // 4. The page's own list, into base slot 8 where every page list lives, at the end of the run.
+  // The lists go in as one run, in page order, so each one's address is final once the run is written.
   const pageEnds = modePages(current).map((page) => {
     const off = current.blobOffsetOf(page.list);
     const list = taggedList(current, page.list);
     return off === undefined || list === undefined ? 0 : off + list.length;
   });
   const listAt = Math.max(...pageEnds);
-  const listHole = relocate(current, listAt, listBytes.bytes.length);
-  listHole.bytes.set(listBytes.bytes, listAt);
+  const listsLength = pageLists.reduce((sum, one) => sum + one.length, 0);
+  const listHole = relocate(current, listAt, listsLength);
+  const pageListAddresses: number[] = [];
+  let listOff = listAt;
+  for (const one of pageLists) {
+    listHole.bytes.set(one, listOff);
+    listOff += one.length;
+  }
   current = parse(listHole.bytes);
-  const pageListAddress = current.flashBase + listAt;
+  for (let k = 0, at = current.flashBase + listAt; k < pageLists.length; at += (pageLists[k] as Uint8Array).length, k += 1) {
+    pageListAddresses.push(at);
+  }
 
   // 5. The mode block, one hole where the mode region ends and the copy pool begins: the record's
   // empty list, the chrome program the page calls, the page's program, the page record and the
@@ -161,9 +179,11 @@ export function composeTouchDeviceScreen(
     throw new ComposeError('no existing page carries the pictures the layout reuses');
   }
   const chromeLength = 6 + 2 + (1 + 2 + titleCodes.length + 1) + 2;
-  const programLength = 4 + 2
-    + rows.reduce((sum, _, k) => sum + 6 + (1 + 2 + (rowCodes[k] as number[]).length + 1), 0) + 1;
-  const blockLength = 2 + chromeLength + programLength + 7 + (6 + 3);
+  // Each page's program: the call to the shared header, the row font, a pad and a label per row, the end.
+  const programLengths = pages.map((page) => 4 + 2
+    + page.rows.reduce((sum, _, k) => sum + 6 + (1 + 2 + (rowCodes[page.first + k] as number[]).length + 1), 0) + 1);
+  const programsLength = programLengths.reduce((sum, one) => sum + one, 0);
+  const blockLength = 2 + chromeLength + programsLength + 7 * pages.length + (6 + 3);
   const blockAt = Math.max(...records.map((record) => {
     const off = current.blobOffsetOf(record.address);
     return off === undefined ? 0 : off + record.entryLength;
@@ -182,41 +202,50 @@ export function composeTouchDeviceScreen(
   chrome.u8(0).u8(SCREEN_RETURN).u8(SCREEN_END);
   const blockHole = relocate(current, blockAt, blockLength);
   const chromeAddress = base + 2;
-  const programAddress = chromeAddress + chrome.bytes.length;
-  const pageAddress = programAddress + programLength;
-  const entryAddress = pageAddress + 7;
+  const programAddresses: number[] = [];
+  let programAt = chromeAddress + chrome.bytes.length;
+  for (const length of programLengths) {
+    programAddresses.push(programAt);
+    programAt += length;
+  }
+  const pageAddress = programAt;
+  const entryAddress = pageAddress + 7 * pages.length;
   const block = new Writer(blockLength);
   block.u8(0).u8(0);
   chrome.bytes.forEach((byte) => block.u8(byte));
-  block.u8(SCREEN_CALL).u24(chromeAddress);
-  block.u8(SCREEN_SELECT_FONT).u8(DEVICE_ROW_FONT);
   // The font table is read afresh here, section 242: `rowSet` above was read before four
   // relocations moved every glyph, so measuring a label through it gave zero for every label and
   // the first device page written to a remote had each label starting at its pad's middle and
   // running off the right edge. A set read before an insertion below it is stale by that insertion.
   const measuringSet = (fontSets(current) ?? [])[DEVICE_ROW_FONT];
   if (measuringSet === undefined) throw new ComposeError('the row font stopped reading');
-  rows.forEach((row, k) => {
-    const [x, y] = DEVICE_PAGE_SLOTS[k] as readonly [number, number];
-    const codes = rowCodes[k] as number[];
-    block.u8(SCREEN_DRAW_IMAGE).u8(x).u8(y).u24(shifted(slots[k] as number));
-    const width = bitmapAt(current, slots[k] as number)?.stride ?? 0;
-    const wide = textWidth(current, measuringSet, codes);
-    // A label wider than its pad is refused rather than drawn off the edge, which is what the
-    // catalogue's own command names do: `PowerToggle` is wider than the 81 pixel pad and read as
-    // `PowerT` on the remote. The caller supplies a display label instead.
-    if (wide > width) {
-      throw new ComposeError(`'${row.label}' is ${wide} pixels wide and its pad is ${width}, `
-        + 'so it would run off the pad: give the command a shorter label');
-    }
-    const labelX = x + Math.round((width - wide) / 2);
-    block.u8(SCREEN_TEXT_INLINE).u8(labelX).u8(y + DEVICE_LABEL_DROP);
-    codes.forEach((code) => block.u8(code));
-    block.u8(0);
+  for (const page of pages) {
+    block.u8(SCREEN_CALL).u24(chromeAddress);
+    block.u8(SCREEN_SELECT_FONT).u8(DEVICE_ROW_FONT);
+    page.rows.forEach((row, k) => {
+      const [x, y] = DEVICE_PAGE_SLOTS[k] as readonly [number, number];
+      const codes = rowCodes[page.first + k] as number[];
+      block.u8(SCREEN_DRAW_IMAGE).u8(x).u8(y).u24(shifted(slots[k] as number));
+      const width = bitmapAt(current, slots[k] as number)?.stride ?? 0;
+      const wide = textWidth(current, measuringSet, codes);
+      // A label wider than its pad is refused rather than drawn off the edge, which is what the
+      // catalogue's own command names do: `PowerToggle` is wider than the 81 pixel pad and read as
+      // `PowerT` on the remote. The caller supplies a display label instead.
+      if (wide > width) {
+        throw new ComposeError(`'${row.label}' is ${wide} pixels wide and its pad is ${width}, `
+          + 'so it would run off the pad: give the command a shorter label');
+      }
+      const labelX = x + Math.round((width - wide) / 2);
+      block.u8(SCREEN_TEXT_INLINE).u8(labelX).u8(y + DEVICE_LABEL_DROP);
+      codes.forEach((code) => block.u8(code));
+      block.u8(0);
+    });
+    block.u8(SCREEN_END);
+  }
+  pages.forEach((_, k) => {
+    block.u8(DEVICE_PAGE_LEAD).u24(shifted(pageListAddresses[k] as number)).u24(programAddresses[k] as number);
   });
-  block.u8(SCREEN_END);
-  block.u8(DEVICE_PAGE_LEAD).u24(shifted(pageListAddress)).u24(programAddress);
-  block.u8(0).u24(base).u16(1).u24(pageAddress);
+  block.u8(0).u24(base).u16(pages.length).u24(pageAddress);
   blockHole.bytes.set(block.bytes, blockAt);
 
   // The swap, in place on the same bytes: the table's last pointer moves from the placeholder to
@@ -227,6 +256,8 @@ export function composeTouchDeviceScreen(
   swapped.blob.set(new Writer(3).u24(entryAddress).bytes,
                    grownTable.start + 3 + 3 * mode);
   current = parse(swapped.blob);
+  // Several pages are numbered and the page turn keys left live, the menus' own step, section 293.
+  if (pages.length > 1) current = paginate(parse(restamped(current.blob)), mode);
 
   // 6. One row on each menu's last page: the bottom key moves from the two row layout's scan to
   // the three row one's, the lead byte says which layout is in force, the list and its pool copy

@@ -11,6 +11,7 @@
  * `todo-compile-650.md` 10.7.3: a composer takes its family's choices in its options and falls back to
  * these.
  */
+import type { ActivityKey } from '../activitykeys.ts';
 import type { Container, Instruction } from '../gspm.ts';
 import type {
   ComposeActivityRowOptions, ComposeActivityScreenOptions, ComposedActivityRow, ComposedActivityScreen, ComposedScreen,
@@ -52,6 +53,11 @@ export interface DelayDefaults {
  */
 export interface CommonChoices {
   readonly delays?: DelayDefaults;
+  /**
+   * The activity key each MyHarmony type of activity takes, where the family's remotes have activity keys:
+   * the Harmony 600, 650 and 700, section 314. The Harmony One has none.
+   */
+  readonly activityKeys?: Readonly<Record<string, ActivityKey | undefined>>;
 }
 
 /** A composer's options with the family's choices, which default to the family's own. */
