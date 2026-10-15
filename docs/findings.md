@@ -51826,3 +51826,122 @@ send's shape, or whose power on wait is not the catalogue's delay in tenths.
   wait, the request's override, and the refusals of 0 and 300 tenths.
 * `packages/codec/src/inputs.ts` and `shared/devices.ts`, the composers. `docs/config-format.md`, the
   inputs and the inlined delay.
+
+## 394. How Logitech's compiler lays a command's name on a Harmony One pad
+
+**Asked for by `todo-compile-one.md` 1.2.6.** The One's composers drew a pad's label as one line rounded to
+the middle of its box and refused any name wider than the box, which on a receiver is most of its sound
+modes; Logitech's compiles break such a name over lines and cut what does not fit.
+
+**Sources.** The 19 distinct Harmony One containers the lab holds, every pad drawn at the six places of
+`DEVICE_PAGE_SLOTS`, and the device archive, decision 15, for the names of the four harvest compiles' catalogue
+devices. Neither client nor firmware was read: the firmware draws what a screen program states, and the
+layout is the compiler's, which ran on Logitech's server.
+
+### The rule
+
+A pad is a box 81 pixels wide and 50 high, its label one to three lines in the configuration's pad font.
+
+1. **Words.** A name splits at each space, the space kept inside a line and dropped at a break; before an
+   upper case letter, a digit or a `+` that follows a lower case letter; and after a hyphen not followed by
+   another. Never inside a run of capitals, between a capital and a digit, between a digit and a letter, or
+   at `/`, `:` or `.`. Each element was tested by adding or removing it over the labels the archive names:
+   the breaks drawn are 253 lower to upper, 27 at a space, 11 lower to digit, 3 after a hyphen and 1 before a
+   plus (`VolumeMain+`, the only one); dropping the digit boundary loses 11 labels, the hyphen 3, the plus 1,
+   and adding a slash as a boundary loses 17.
+2. **Greedy lines.** A line takes the next word while it stays at most 72 pixels with its separator: 111 pads
+   draw a joined line of exactly 72 and 39 break where joining would make 73. Greedy fills all 288 distinct
+   names wider than 72 correctly; a balanced fill gets 39 of them wrong, one word per line 157.
+3. **A word alone may be 73.** A word wider than that takes a line of its own, cut to the longest prefix that
+   is at most 73 with `..` after it, the rest dropped, and the next word starts a new line: "Mode" /
+   "Direct/Ster..", "Effect" / "Entertainm.." / "Show". The 73 rests on one text, `DTSSurround`, drawn whole
+   on 9 pads; the cut's limit is pinned to 72 or 73 only. 35 pads carry a cut, over 9 names. The Harmony 600,
+   650 and 700 allow the same one pixel more to a label that cannot break, section 325.
+4. **Placement.** Each line is centred on its own width with the odd pixel to the left, `x = pad x +
+   floor((81 - w) / 2)`, on 8310 of 8310 lines; rounding, which the composers did, puts 6053 of them a pixel
+   right. The lines are 11 apart and centred on the one line position 20 below the box's top: 20; 15 and 26;
+   9, 20 and 31, on 6785, 695 and 45 pads with no exception. No pad draws a fourth line.
+
+**The pad font is the configuration's**, one face 14 pixels high under base slot 7 index 5, 7, 8 or 9, one per
+configuration; `DEVICE_ROW_FONT`, 9, which the composers assumed, is it on 8 of the 19. It is read off the
+device pages, the modes the device list enters, since a page's lead byte names a hit page whose number differs
+per configuration, and since on `calibration_one` 25 texts inside boxes on other pages are in a 15 pixel face
+against 325 in the pad font.
+
+### The checks
+
+The rule reproduces the glyphs and places of 551 of the 558 pads in four catalogue compiles whose command is
+named by the record its press sends; six of the seven are a `Z` the character map cannot name, and one is a
+record named by its frame value whose pad draws another command of the same device. Against the drawn lines
+joined back, with or without a space at each break, it reproduces all 6873 pads that carry no cut and no
+unnamed glyph, and in the repository's census over eight compiles' device pages 915 of 915, 24 apart. Against
+the whole archive, 1264 of the 1266 distinct drawn texts with a candidate name come out as drawn, the two
+others being `Sync-` and `Sync+`, whose only candidate is spelled `Sync -`. The census's control: centring by
+rounding reproduces 24 of 81 pads on the first compile.
+
+### What is refused, never having been seen
+
+A fourth line, which 54 of the archive's 37750 names would need; a word after a cut word that would have
+fitted beside it; a name with a leading, trailing or double space.
+
+### Scope, decision 16
+
+Arch 12 (Harmony One), on device pages, activity screens and the other pages that draw the six boxes. The 600
+family's labels are section 325's.
+
+### Falsification
+
+A Harmony One pad whose label breaks, cuts or sits otherwise than the rule says, in a compile of Logitech's.
+
+### Where it lands
+
+* `packages/codec/src/families/touch/labels.ts`: `touchLabelLines`, `touchLabelWords`, `padFontOf`; the device
+  page and activity screen composers lay their pads out with it.
+* `packages/codec/test/touchlabels.test.ts`: the cases that pin each part, and the census.
+* The measurement's scripts are in the lab's `work/one-track/labels/`.
+
+## 395. A Harmony One container's frame is laid out from its content by the same linker as arch 14's
+
+**Asked for by `todo-compile-one.md` 6.1.** Section 318's frame refused everything but arch 14. It lays out
+the Harmony One now, what differs held as data in `FRAME_ARCHITECTURES` rather than in a second linker: the
+slot count from `INSERTED_SLOTS`, the format word from that count, `0x1400` and `0x1600`, the flash base
+`0x040000`, and which inserted raw slot holds a section. `ContainerLayout.inserted` carries such a section by
+raw slot, so `sections` keeps meaning base slots on both architectures.
+
+**The measurement** is section 318's: `takeApart` zeroes every address field the census knows and drops the
+header, the table, base slots 1 and 3 and the trailer, and `layOutContainer` has to put every byte back. It
+does on all seventeen distinct configurations Logitech compiled for the One that the lab holds, eighteen
+fixtures, and on all fifteen distinct configurations this project wrote to the spare and read back. The
+growth control holds: 54 bytes added to base slot 4 of `calibration_one` give `relocate`'s bytes exactly,
+every reader agreeing and the emitter's round trip closing. The arch 14 compiles still rebuild.
+
+**What the One's frame holds that arch 14's does not.** Twenty two slots: raw slot 8 NULL on 34 of 34
+containers, and raw slot 18 two zero bytes on 34 of 34 with nothing parked in front of it. Base slot 17 is the
+touch hit map's table, one piece on 34 of 34, and names the bank nowhere, section 62; the picture bank still
+starts on the byte after that table on 33 of 33 containers that have pictures. So the four regions are arch
+14's, with a table of its own length where arch 14 has two bytes. Logitech parks the same five rows in front of
+the same tables on all seventeen One compiles as on the thirteen arch 14 ones; our writes park infrared blocks
+in front of base slot 5 on 12 of 15 and base slot 9 lists in front of base slot 9 on 9 of 15, as the Harmony
+650's do.
+
+**Two containers are not rebuilt, and both are accounted for.** The safe mode configuration, stamped 2007,
+carries `0x0C` at its architecture record's byte 3 where every configuration from 2009 on carries `0x0D`,
+section 182; laid out again it differs in that byte and in the trailer checksum byte of the same parity and
+nowhere else. `one_spare_mixed_region` was read part way through a write, fails its own trailer checksum, and
+is refused.
+
+### Scope, decision 16
+
+Arch 12 (Harmony One) and arch 14 (Harmony 600, 650 and 700); arch 8, 9 and 10 are refused, not checked.
+Neither firmware nor client was opened: whether the One demands the bank behind the touch table is unread, as
+it is on arch 14, section 328. `placer.ts`, the wiring and the screen builders still take arch 14 alone.
+
+### Falsification
+
+A Harmony One configuration whose raw slot 18 is not two zero bytes, or whose picture bank does not start on
+the byte after base slot 17's table.
+
+### Where it lands
+
+* `packages/codec/src/frame.ts`: `FRAME_ARCHITECTURES`, `formatWord`, `ContainerLayout.inserted`.
+* `packages/codec/test/frame.test.ts`: the One's compiles, our writes, the two exceptions and the growth control.

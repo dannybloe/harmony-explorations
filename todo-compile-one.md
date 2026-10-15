@@ -51,7 +51,7 @@ One with its sequence's keys translated by name, since the One's keys have other
   - [x] 1.2.3 A device's power on delay composed on the One, a wait after its power on, which was missing: on Logitech's One compiles that wait is the catalogue's power on delay in tenths on 6 of 6 devices whose entry resolves
   - [x] 1.2.4 The input put back after a power on (the Plasma's), placed after that wait as on the 600 family; no Logitech One compile in the lab holds one, so 1.3 hears whether it goes out
   - [x] 1.2.5 A device page of more than six commands takes several pages, numbered by `paginate`; not yet run end to end
-  - [ ] 1.2.6 A long command name broken over two or three lines and cut with `..`, as Logitech's One compiles draw one
+  - [x] 1.2.6 A long command name broken over two or three lines and cut with `..`, as Logitech's One compiles draw one: one rule reproduces every pad label of the 19 One containers, in the pad font read off the device pages (section 394, `touchLabelLines`)
   - [ ] 1.2.7 The donor lettered in ours before any composer spells a name, which needs 6.1's frame and 5.2's fonts first
   - [x] 1.2.8 The findings and tests for 1.2.2 to 1.2.4 (section 393); 1.2.5's waits for 1.2.6 and 1.2.7, since a paged device needs names it can spell
 - [ ] 1.3 A bench test of it: every code as the file predicts, the touch rows, device mode and All Off
@@ -82,7 +82,7 @@ One with its sequence's keys translated by name, since the One's keys have other
 
 ## 6. The container from nothing
 
-- [ ] 6.1 The frame for 22 slots: cookies, format word, the architecture record and the section table
+- [x] 6.1 The frame for 22 slots: cookies, format word, the architecture record and the section table; `layOutContainer` rebuilds all 17 distinct Logitech One compiles and 15 of our writes byte for byte, the safe mode library and a half written read apart (section 395)
 - [ ] 6.2 The placer for the One's pictures and glyph sets
 - [ ] 6.3 The wiring: the One's own lists, settings and timers
 - [ ] 6.4 The parameter block's 11 groups, the clock records, the state variable storage and the log area

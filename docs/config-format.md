@@ -374,9 +374,12 @@ the arch 9 device clone under [findings.md](findings.md) section 117.
 
 ### What decides each byte of the frame on arch 14
 
-Arch 14 (Harmony 600, 650 and 700) only; [findings.md](findings.md) section 318. Laid out by
+Arch 14 (Harmony 600, 650 and 700); [findings.md](findings.md) section 318. Laid out by
 `layOutContainer` in `packages/codec/src/frame.ts` and taken apart by `takeApart`, which reproduce all
-thirteen arch 14 compiles in the lab byte for byte with every address field zeroed first.
+thirteen arch 14 compiles in the lab byte for byte with every address field zeroed first. **The same linker
+lays out the Harmony One**, section 395, with `0x1600` and twenty two slots, raw slot 8 NULL and raw slot 18
+two zero bytes, base slot 17 the touch hit map's own table with the picture bank on the byte after it, and the
+configuration at `0x040000`; all seventeen distinct Logitech One compiles and fifteen of our writes rebuild.
 
 | bytes | value | decided by |
 |---|---|---|
@@ -2264,6 +2267,12 @@ alphabets in `packages/codec/src/alphabets.ts`, and `make text` for the per cont
 Read the sets and glyphs with `gspm.font_sets`, `gspm.Container.images` and `gspm.Container.glyph`;
 draw them with `tools/screen_dump.py --images` or `--strings`. [findings.md](findings.md) sections 46
 and 63.
+
+**A pad's label, the Harmony One**, section 394: a box 81 by 50 at one of six places, its name in the
+configuration's pad font (base slot 7 index 5, 7, 8 or 9, read off the device pages) split into words at
+spaces, before a capital, digit or `+` after a lower case letter, and after a single hyphen; lines filled
+greedily to 72 pixels, a lone word up to 73 and a wider one cut with `..` on its own line; at most three
+lines, 11 apart and centred on y + 20; each line at `x + floor((81 - w) / 2)`. `touchLabelLines`.
 
 ### Base slot 17: the touch screen hit map
 

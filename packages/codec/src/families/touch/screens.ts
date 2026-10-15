@@ -9,7 +9,7 @@ import { STATE_WRITE_BASE } from '../../actions.ts';
 import { u24 } from '../../bytes.ts';
 import { Writer } from '../../emit.ts';
 import {
-  composeMenuPage, DEVICE_LABEL_DROP, DEVICE_PAGE_LEAD, DEVICE_PAGE_SCANS, DEVICE_PAGE_SLOTS, DEVICE_ROW_FONT,
+  composeMenuPage, DEVICE_LABEL_DROP, DEVICE_PAGE_SCANS, DEVICE_PAGE_SLOTS, DEVICE_ROW_FONT,
   MENU_EDGE_SCANS, MENU_ICON_OFFSET, MENU_LABEL_X, MENU_ROW1_BG, MENU_ROW1_LABEL_Y, MENU_ROW3_BG,
   MENU_ROW3_LABEL_Y, MENU_ROW_FONT, MENU_ROW_PITCH, menuRowCapacity, MODE_TITLE_X, MODE_TITLE_Y, paginate,
   pictureDrawnAt, withHitPage,
@@ -20,6 +20,7 @@ import {
   activityBindings, activityNames, activityScreens, type ActivityScreens, BEEP_OPCODE, ENTER_MODE, SCREEN_ITEM_BEEP,
   SELECT_BINDING_SET, SELECT_BINDING_SET_MASK,
 } from '../../inventory.ts';
+import { deviceModeMaps } from '../../inventory.ts';
 import { relocate } from '../../relocate.ts';
 import {
   bitmapAt, SCREEN_CALL, SCREEN_DRAW_IMAGE, SCREEN_END, SCREEN_QUEUE_INSTRUCTION, SCREEN_RETURN, SCREEN_SELECT_FONT,
@@ -38,6 +39,7 @@ import {
   type ComposeScreenOptions, deviceListMenus,
 } from '../../shared/menus.ts';
 import { codesFor, fontThatSpells, headerOf, textWidth } from '../../shared/spelling.ts';
+import { padFontOf, TOUCH_PAD_WIDTH, type TouchLabelLine, touchLabelLength, touchLabelLines } from './labels.ts';
 import { type TouchArea, type TouchPage, touchPages } from '../../tables.ts';
 import { characterMap } from '../../text.ts';
 import { EDGE_CODES, LIST_ROW_PITCH, PANEL_LEFT, touchOwner, touchPageOf } from '../../touch.ts';
@@ -58,15 +60,22 @@ export function composeTouchDeviceScreen(
   const map = characterMap(c);
   if (map === undefined) throw new ComposeError('the config draws no text this can spell from');
   const sets = fontSets(c) ?? [];
+  // The pads are drawn in the font the configuration's own device pages draw theirs in, section 394.
+  const padFont = padFontOf(c) ?? DEVICE_ROW_FONT;
   const titleSet = sets[titleFont];
-  const rowSet = sets[DEVICE_ROW_FONT];
+  const rowSet = sets[padFont];
   const menuSet = sets[MENU_ROW_FONT];
   if (titleSet === undefined || rowSet === undefined || menuSet === undefined) {
     throw new ComposeError('the config does not carry the three fonts the layout uses');
   }
   const titleCodes = codesFor(map, c, titleSet, label, titleFont);
   const menuCodes = codesFor(map, c, menuSet, label, MENU_ROW_FONT);
-  const rowCodes = rows.map((row) => codesFor(map, c, rowSet, row.label, DEVICE_ROW_FONT));
+  // Every label laid out now, against the container its font set was read from, section 242: the lines and
+  // their places are the content's, so no insertion below changes them.
+  const rowLines = rows.map((row, k) => {
+    const [x, y] = DEVICE_PAGE_SLOTS[k % DEVICE_PAGE_SLOTS.length] as readonly [number, number];
+    return touchLabelLines(c, map, rowSet, padFont, row.label, { x, y });
+  });
 
   // The menus and the new mode's index, refused before anything moves.
   const found = deviceListMenus(c);
@@ -163,25 +172,30 @@ export function composeTouchDeviceScreen(
     bar = pictureDrawnAt(current, record.start + record.length, 0, 0);
     if (bar !== undefined) break;
   }
+  // The pads and the hit page come off an existing device page with all six pads drawn. The device pages
+  // are the modes the device list enters, `deviceModeMaps`; a page's lead byte names its hit page, whose
+  // number is the configuration's own (10 on the everyday One, 26 on Logitech's compile of the Denon and the
+  // LG, 4 on the factory file), so it is read here rather than assumed.
   const slots: number[] = [];
-  for (const record of records) {
-    for (const page of record.pages) {
-      if (page.lead !== DEVICE_PAGE_LEAD) continue;
+  let lead: number | undefined;
+  for (const mode of new Set(deviceModeMaps(current).map((one) => one.mode))) {
+    for (const page of records[mode]?.pages ?? []) {
       const one = DEVICE_PAGE_SLOTS.map(([x, y]) => pictureDrawnAt(current, page.program, x, y));
-      if (one.every((address) => address !== undefined)) {
+      if (page.lead !== undefined && one.every((address) => address !== undefined)) {
         slots.push(...(one as number[]));
+        lead = page.lead;
         break;
       }
     }
     if (slots.length > 0) break;
   }
-  if (bar === undefined || slots.length === 0) {
+  if (bar === undefined || slots.length === 0 || lead === undefined) {
     throw new ComposeError('no existing page carries the pictures the layout reuses');
   }
   const chromeLength = 6 + 2 + (1 + 2 + titleCodes.length + 1) + 2;
   // Each page's program: the call to the shared header, the row font, a pad and a label per row, the end.
   const programLengths = pages.map((page) => 4 + 2
-    + page.rows.reduce((sum, _, k) => sum + 6 + (1 + 2 + (rowCodes[page.first + k] as number[]).length + 1), 0) + 1);
+    + page.rows.reduce((sum, _, k) => sum + 6 + touchLabelLength(rowLines[page.first + k] as TouchLabelLine[]), 0) + 1);
   const programsLength = programLengths.reduce((sum, one) => sum + one, 0);
   const blockLength = 2 + chromeLength + programsLength + 7 * pages.length + (6 + 3);
   const blockAt = Math.max(...records.map((record) => {
@@ -213,37 +227,26 @@ export function composeTouchDeviceScreen(
   const block = new Writer(blockLength);
   block.u8(0).u8(0);
   chrome.bytes.forEach((byte) => block.u8(byte));
-  // The font table is read afresh here, section 242: `rowSet` above was read before four
-  // relocations moved every glyph, so measuring a label through it gave zero for every label and
-  // the first device page written to a remote had each label starting at its pad's middle and
-  // running off the right edge. A set read before an insertion below it is stale by that insertion.
-  const measuringSet = (fontSets(current) ?? [])[DEVICE_ROW_FONT];
-  if (measuringSet === undefined) throw new ComposeError('the row font stopped reading');
   for (const page of pages) {
     block.u8(SCREEN_CALL).u24(chromeAddress);
-    block.u8(SCREEN_SELECT_FONT).u8(DEVICE_ROW_FONT);
-    page.rows.forEach((row, k) => {
+    block.u8(SCREEN_SELECT_FONT).u8(padFont);
+    page.rows.forEach((_, k) => {
       const [x, y] = DEVICE_PAGE_SLOTS[k] as readonly [number, number];
-      const codes = rowCodes[page.first + k] as number[];
       block.u8(SCREEN_DRAW_IMAGE).u8(x).u8(y).u24(shifted(slots[k] as number));
       const width = bitmapAt(current, slots[k] as number)?.stride ?? 0;
-      const wide = textWidth(current, measuringSet, codes);
-      // A label wider than its pad is refused rather than drawn off the edge, which is what the
-      // catalogue's own command names do: `PowerToggle` is wider than the 81 pixel pad and read as
-      // `PowerT` on the remote. The caller supplies a display label instead.
-      if (wide > width) {
-        throw new ComposeError(`'${row.label}' is ${wide} pixels wide and its pad is ${width}, `
-          + 'so it would run off the pad: give the command a shorter label');
+      if (width !== TOUCH_PAD_WIDTH) throw new ComposeError(`a pad box is ${width} pixels wide, not the ${TOUCH_PAD_WIDTH} the labels are laid out on`);
+      // The label's lines, each centred on its own width with the odd pixel left, section 394. A name the
+      // rule cannot place was refused when the lines were laid out, above.
+      for (const line of rowLines[page.first + k] as TouchLabelLine[]) {
+        block.u8(SCREEN_TEXT_INLINE).u8(line.x).u8(line.y);
+        line.codes.forEach((code) => block.u8(code));
+        block.u8(0);
       }
-      const labelX = x + Math.round((width - wide) / 2);
-      block.u8(SCREEN_TEXT_INLINE).u8(labelX).u8(y + DEVICE_LABEL_DROP);
-      codes.forEach((code) => block.u8(code));
-      block.u8(0);
     });
     block.u8(SCREEN_END);
   }
   pages.forEach((_, k) => {
-    block.u8(DEVICE_PAGE_LEAD).u24(shifted(pageListAddresses[k] as number)).u24(programAddresses[k] as number);
+    block.u8(lead).u24(shifted(pageListAddresses[k] as number)).u24(programAddresses[k] as number);
   });
   block.u8(0).u24(base).u16(pages.length).u24(pageAddress);
   blockHole.bytes.set(block.bytes, blockAt);
@@ -1089,7 +1092,11 @@ export function composeTouchActivityScreen(
   const titleCodes = codesFor(map, current, sets14[titleFontUsed] as FontSet, label, titleFontUsed);
   const padSet = sets14[padFont];
   if (padSet === undefined) throw new ComposeError('the pad font does not read');
-  const rowCodes = rows.map((row) => codesFor(map, current, padSet, row.label, padFont));
+  // Every label laid out now, against the container the font set was read from, section 242.
+  const rowLines = rows.map((row, k) => {
+    const [x, y] = DEVICE_PAGE_SLOTS[k] as readonly [number, number];
+    return touchLabelLines(current, map, padSet, padFont, row.label, { x, y });
+  });
   const movedPictures = DEVICE_PAGE_SLOTS.slice(0, rows.length).map(([x, y]) => {
     for (const m of activityScreens(current)?.screens.values() ?? []) {
       for (const page of modeRecords(current)?.[m]?.pages ?? []) {
@@ -1105,7 +1112,7 @@ export function composeTouchActivityScreen(
   if (background === undefined) throw new ComposeError('the template chrome draws no background');
   const chromeLength = 2 + (3 + titleCodes.length + 1) + 6 + 4 * queued.length + 6 + 1 + 1;
   const programLength = 4 + 2 + 6
-    + rows.reduce((sum, _, k) => sum + 6 + (1 + 2 + (rowCodes[k] as number[]).length + 1), 0)
+    + rows.reduce((sum, _, k) => sum + 6 + touchLabelLength(rowLines[k] as TouchLabelLine[]), 0)
     + (rows.length > 0 ? 2 : 0) + 1;
   const blockLength = recordList.length + chromeLength + programLength + 7 + (6 + 3);
   const blockAt = Math.max(...(modeRecords(current) ?? []).map((record) => {
@@ -1148,13 +1155,12 @@ export function composeTouchActivityScreen(
     block.u8(SCREEN_DRAW_IMAGE).u8(x).u8(y).u24(shifted(picture));
     if (k === 0) block.u8(SCREEN_SELECT_FONT).u8(padFont);
     const width = bitmapAt(current, picture)?.stride ?? 0;
-    const wide = textWidth(current, padSet, rowCodes[k] as number[]);
-    if (wide > width) {
-      throw new ComposeError(`'${row.label}' is ${wide} pixels wide and its pad is ${width}`);
+    if (width !== TOUCH_PAD_WIDTH) throw new ComposeError(`'${row.label}''s pad box is ${width} pixels wide, not ${TOUCH_PAD_WIDTH}`);
+    for (const line of rowLines[k] as TouchLabelLine[]) {
+      block.u8(SCREEN_TEXT_INLINE).u8(line.x).u8(line.y);
+      line.codes.forEach((code) => block.u8(code));
+      block.u8(0);
     }
-    block.u8(SCREEN_TEXT_INLINE).u8(x + Math.round((width - wide) / 2)).u8(y + DEVICE_LABEL_DROP);
-    (rowCodes[k] as number[]).forEach((code) => block.u8(code));
-    block.u8(0);
   });
   block.u8(SCREEN_END);
   block.u8(template.page.lead).u24(shifted(pageListAddress)).u24(programAddress);

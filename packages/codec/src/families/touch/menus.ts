@@ -132,8 +132,11 @@ export function menuRowCapacity(areas: readonly number[]): number | undefined {
   return at < 0 ? undefined : at + 1;
 }
 
-/** The device page layout: six command slots, the bottom pair and the side keys. */
-export const DEVICE_PAGE_LEAD = 10;
+/*
+ * There is no device page hit page number: it is the configuration's own, 10 on the everyday Harmony One,
+ * 26 on Logitech's compile of the Denon and the LG, 4 on the factory file, and a composer reads it off an
+ * existing device page. A constant of 10 stood here until findings section 394 counted them.
+ */
 
 
 /** The first op 2 drawing at `(x, y)` in the program at `address`, as a picture address. */
