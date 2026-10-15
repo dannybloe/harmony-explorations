@@ -29,6 +29,18 @@ section 1 and findings section 19, and `reference/models.md` marks it confirmed 
 **Logitech's service**, `ProductsManager/GetAllProducts`, the European model, section 131. Logitech's
 compiles for skins 71 and 73 share one picture look, the monochrome one, section 330.
 
+**The model number the remote reports is the firmware's own constant, and a configuration may state the
+other one.** The 0.2 build reports 71 in its version reply, at `0x11964`, and `0x1071` in its USB device
+descriptor, where the Harmony 650's 0.2 build reports 72 and `0x1072`; that is the one difference in
+meaning between the two builds, read in the firmware, section 392. Logitech's two compiles for this model
+read here state 71 in one and 73 in the other, base slot 1, section 318, and a remote reporting 71 has run
+a Logitech compile stating 73, measured, section 387. The 0.2 build's section seeker is never asked for
+base slot 1, so the remote does not fetch the number that way; a read bypassing the seeker is not ruled
+out, section 392. **A configuration of this project's states the number the remote reports**, decision 23
+in `docs/decisions.md`: with 71 the 600 showed "Turning system off" briefly after a boot where no run of a
+file stating 73 reported it, one sighting, seen at the bench, section 392, which does not prove the number
+is the cause.
+
 ## Key numbers
 
 | | value | standing and source |
@@ -40,7 +52,9 @@ compiles for skins 71 and 73 share one picture look, the monochrome one, section
 | hardware version | 1.1 | measured, version block, sections 281 and 302 |
 | screen | 1.5 inch, 128 by 128, **monochrome** | Logitech's manual, Product Specification; monochrome also seen at the bench, `reference/capabilities.md`, and Logitech's service |
 | keys | 54 scan codes | read from configurations, section 17; a hardware census per matrix column of 14, 14, 13 and 13, section 48 |
-| devices | 5 | Logitech's manual and Logitech's service agree, [features.md](features.md) |
+| devices | 5 | Logitech's manual and Logitech's service agree, [features.md](features.md); the remote **runs a sixth**, its codes sent, measured, section 390 |
+| model number reported | 71 | read in the firmware, the version reply, section 392; measured, version block and `bcdDevice`, sections 19 and 302 |
+| state variables on the cable | **live**, from `0xE10` on build 0.2, the clock ticking between two reads | measured, sections 303 and 387 |
 | power | AA batteries, no charger | Logitech's manual, "Power Source AA batteries" |
 | external flash | 2 MiB SPI, EON F16, id `15:1C` | measured, section 88; Logitech's manual, "Memory Amount 2MB" |
 | user configuration | external `0x030000` | measured, `docs/memory-map-600.md` |
@@ -53,9 +67,9 @@ compiles for skins 71 and 73 share one picture look, the monochrome one, section
 |---|---|
 | [hardware.md](hardware.md) | processor, flash, battery, transmitters, backlight, size, the tilt sensor |
 | [keys.md](keys.md) | every key, its measured scan code, the drawing the 650 and 700 borrow |
-| [display.md](display.md) | the monochrome panel, the raster, what the screen shows and does not show |
+| [display.md](display.md) | the monochrome panel and the greys it shows, the raster, what the screen shows and does not show |
 | [features.md](features.md) | device limit, activities, favourites, help, delays, settings |
-| [behaviour.md](behaviour.md) | device mode, Help, what a saved delay does at start |
+| [behaviour.md](behaviour.md) | device mode, Help, what a saved delay does at start, the Off screen, six devices |
 | [memory.md](memory.md) | where the 600 differs from the architecture's map |
 | [firmware.md](firmware.md) | 0.2, the images in the lab, safe mode |
 | [usb.md](usb.md) | product id, `bcdDevice`, commands answered, write standing |
@@ -66,4 +80,6 @@ The architecture folder: [harmony-600-650-700](../../architectures/harmony-600-6
 ## Not checked
 
 * Whether a skin 73 unit differs from skin 71 in anything but the region and its keypad printing.
-* Any firmware for this model other than 0.2: no package of it is known, [firmware.md](firmware.md).
+* Any firmware for this model other than 0.2: Logitech's version list names 0.3 and no image of it is held,
+  [firmware.md](firmware.md). This said "no package of it is known"<!--superseded--> until 15 October 2026.
+* Whether the remote counts devices at all: it ran six where Logitech states five, section 390.

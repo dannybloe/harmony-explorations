@@ -45,8 +45,10 @@ All of it **Logitech's service**, `reference/capabilities.md`.
 The manual is the 2009 edition, and the same kind of disagreement exists for the Harmony 650, 5 against 8.
 **This table once held 6 for the 700 on the strength of a configuration holding six devices**, which
 bounds the maximum below and forbids no seventh; that was withdrawn in section 136 and is the worked
-example of a circular claim, `reference/capabilities.md`. **Whether the remote itself enforces any limit
-is not checked.**
+example of a circular claim, `reference/capabilities.md`. **The remote does not hold to six**: a
+configuration of seven devices ran on a unit, the seventh switched on, set three times and switched off by
+the activities that use it, measured with an infrared receiver, section 386. Whether it takes an eighth,
+and whether anything on the remote counts devices at all, is **not checked**.
 
 ## Activities
 
@@ -70,7 +72,10 @@ is not checked.**
   90 and put back on a unit, and **both heard** with an infrared receiver, section 301.
 * A delay saved on the remote would win over the configuration's at start, as measured on the Harmony 600,
   section 303; the 700's store held no saved delay, and the 2.8 build's restore path is **not read**,
-  section 303's scope.
+  section 303's scope. On Logitech's 700 configurations every delay variable, 10 of 10, is saved and has a
+  restore list, as on the 600, but the restore hangs off list 2, whose shape is the 600's list 1, while the
+  700's list 1 is another list; which list the 2.8 build runs at start is **open**, read from
+  configurations, section 303.
 
 ## Settings
 
@@ -78,7 +83,7 @@ is not checked.**
 |---|---|
 | how long the screen stays lit, "Glow Timing" | Logitech's manual page 10; Logitech's service, default 20 |
 | tilt sensor | Logitech's service, default on; the manual: the remote "senses when you pick it up" |
-| Remote Assistant | Logitech's service, default on |
+| Remote Assistant | Logitech's service, default on. No Logitech compile for the 700 with it off has been read: on every one, the Assistant's "Turn off Assistant" key writes a variable to 1, and leaving "USB Connected" restores the running activity's keys only while that variable is 0, read from configurations, section 382 |
 | leave devices on when switching activities | Logitech's service states `LeaveDevicesPoweredOn`; how it compiles is read on the Harmony 650, section 340 |
 
 ## Learning
@@ -88,6 +93,7 @@ manual and Product Specification. Learning on a 700 is **not checked**.
 
 ## Not checked
 
-* The device limit the remote or today's software actually enforces.
+* The device limit the remote or today's software actually enforces, past the seven the remote ran,
+  section 386.
 * How many activities a 700 holds.
 * How favourites and sequences are built on the 700's own compiles.

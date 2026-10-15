@@ -33,6 +33,7 @@ again only where the 600 adds something.
 | range | up to 50 ft | Logitech's manual |
 | learning | yes, up to 200 kHz, "Any IR Device" | Logitech's manual. Learning on a 600 is **not checked** |
 | keypad backlight | yes, **white** | Logitech's manual. The Harmony 650's says yellow |
+| a light the configuration sets in four levels | the parameter block's group 3, which Logitech's 600 compiles state as 1, 3, 5 and 32 where the 650's state 10, 20, 8 and 32 and the 700's 3, 5, 10 and 32; it is the one group the 600's and 650's differ in. On the 0.2 build it drives `LATG` bit 0 by a PWM on `CCP3`, its duty from 32 less the level, one of the four levels for each of the light states 2 to 5 and level 0 for states 0 and 1. **Which light it is is not established** | read from configurations, section 347; read in the 0.2 image, section 392 |
 | size and weight | 8.75 x 2.3 x 1.3 inch, 6 oz with battery installed | Logitech's manual; the same figures as the 650 and 700 manuals |
 | face | the face of the 650 and 700, key for key | a statement from the bench holding all three, [keys.md](keys.md) |
 
@@ -51,3 +52,4 @@ compile side is section 346, read on the Harmony 650.
 * The battery voltage reading on a 600.
 * The display controller and panel part: nothing names either for this architecture.
 * What differs between hardware 1.1 and the 650's 1.2 beyond the panel.
+* Which light the configuration's group 3 sets, and whether the screen is seen by it, section 392.

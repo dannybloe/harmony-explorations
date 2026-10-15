@@ -17,11 +17,26 @@ The bench unit has **not** been updated to 0.4 and nothing here proposes it.
 **The 650's 0.2 is not the 600's 0.2.** One program in two builds: 1395 bytes differ position by
 position, 67333 of 70336 sit at the same address, and a run near the top is shifted twelve bytes lower
 on the 650. So an address read on the 600 does not transfer to the 650 without checking, section 281.
-Why the builds differ is **not checked**; the colour panel is the obvious suspect and only that.
+
+**Why they differ is read now, and it is not the panel**, section 392: nearly every differing byte is a
+code address that moved. Two routines near the top swap places, one of 232 bytes sitting 240 bytes lower
+on the 650 and the other, 228 bytes, 232 higher; the 600's build carries 12 bytes the 650's lacks, two
+routines nothing calls, so everything from the USB descriptors up sits 12 bytes lower on the 650; the
+rest are 91 `CALL` and `GOTO` targets, 21 `MOVLW` literals and seven three byte pointers following that
+code, and the header checksum word. **What differs in meaning is the model number the build reports**, 72
+on the 650 and 71 on the 600 in the version reply, and the USB device descriptor's release number,
+`0x1072` against `0x1071`. Read in the firmware, both 0.2 images. This page said why the builds differ
+was not checked and that "the colour panel is the obvious suspect"<!--superseded--> until then; the
+drawing path the panel is fed by is byte for byte the same code on both builds, section 387.
 
 Routines read on both 0.2 builds and found identical: the flash classifier and eraser, section 281; the
 cache drop and the restart, section 282; the clock routines, section 310; the settings store read and
-write path, sections 304 and 305; the state variable seeder, section 284.
+write path, sections 304 and 305; the state variable seeder, section 284; the state transition walker,
+section 332; the configuration validator and the status screen routine, sections 354 and 355; the
+queued screen program's index, section 369; the pixel path to the panel, sections 367 and 387. Read on
+the 650's own 0.2 and not compared with the 600's: the text routine, section 368, and which infrared
+group a send plays, section 365. What each routine does is in
+[the architecture's firmware.md](../../architectures/harmony-600-650-700/firmware.md).
 
 ## Images in the lab
 
@@ -56,7 +71,8 @@ the second `h650_page_ff` and the 0.2 application cut from the first `h650_bench
 
 ## Not checked
 
-* Why the 650's and 600's 0.2 builds differ.
-* The 0.4 package's validator and clock routines, sections 299 and 310.
+* The 0.4 package's validator and clock routines, sections 299 and 310. Its walker, toggle update,
+  pixel loop and queued program run are located, sections 332, 365, 367 and 369, and not compared.
+* Whether the 0.4 build differs from 0.2 in anything a person sees.
 * What the 650's safe mode does with a status byte of 2, end to end.
 * How the bench unit behaves in safe mode, or how it is entered.

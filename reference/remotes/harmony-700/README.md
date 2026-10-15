@@ -38,7 +38,8 @@ read.
 | firmware | 2.8, application 76672 bytes, entry `0x1BB38`, Logitech's package; 2.5 and a 2.3 safe mode image also seen on a unit | read in the firmware and measured, sections 295 and 297; [firmware.md](firmware.md) |
 | screen | 1.5 inch, 128 by 128, "65,000 Color" | Logitech's manual, Product Specification; raster also measured from configurations, section 129 |
 | keys | 54 scan codes, the 600's face | read from configurations, section 17; a statement from the bench for the face |
-| devices | 8 per Logitech's service, **6 per Logitech's manual** | open disagreement, [features.md](features.md) |
+| devices | 8 per Logitech's service, **6 per Logitech's manual** | open disagreement, [features.md](features.md); the remote **runs a seventh**, measured, section 386 |
+| state variables on the cable | **live**, variable `n` at `0x900 + n` on build 2.8, the clock in variables 0 to 6 | read in the firmware, section 384; measured over USB, section 386 |
 | power | rechargeable NiMH AA, charged through the USB socket with an AC adaptor | Logitech's manual |
 | external flash | 2 MiB SPI, EON F16, id `15:1C` on a unit; the 2.8 package's header names `0x14:0x1C`, 1 MiB | measured, section 297; read in the package, section 295 |
 | user configuration | external `0x030000` | measured, section 300 |
@@ -53,7 +54,7 @@ read.
 | [keys.md](keys.md) | every key, the 600's scan codes carried over, the drawing |
 | [display.md](display.md) | the colour panel, the raster, mode 0's charging battery |
 | [features.md](features.md) | device limit, activities, favourites, help, delays, settings |
-| [behaviour.md](behaviour.md) | device mode, what a Harmony Desktop sync and a write do |
+| [behaviour.md](behaviour.md) | device mode, what a Harmony Desktop sync and a write do, the Off screen, seven devices |
 | [memory.md](memory.md) | where the 700 differs from the architecture's map, the staging region |
 | [firmware.md](firmware.md) | 2.3, 2.5 and 2.8, the install from a staged image, recovery |
 | [usb.md](usb.md) | product id, version block, commands answered, write standing |
@@ -64,5 +65,6 @@ The architecture folder: [harmony-600-650-700](../../architectures/harmony-600-6
 ## Not checked
 
 * Whether a skin 69 unit differs from skin 66 in anything but the region.
-* Which of the two device limits the remote or Logitech's software enforces.
+* Which of the two device limits the remote or Logitech's software enforces; it ran seven, section 386, and
+  an eighth is not measured.
 * The hardware version a 700 reports.

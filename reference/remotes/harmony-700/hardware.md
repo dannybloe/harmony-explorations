@@ -41,6 +41,7 @@ its charger input, section 105, and the Harmony 650 as its gate too.
 | range | up to 50 ft | Logitech's manual |
 | learning | yes, up to 200 kHz, "Any IR Device" | Logitech's manual. Learning on a 700 is **not checked** |
 | keypad backlight | yes, **white** | Logitech's manual. The Harmony 650's says yellow |
+| a light the configuration sets in four levels | the parameter block's group 3, which Logitech's 700 compiles state as 3, 5, 10 and 32, where the 600's state 1, 3, 5 and 32 and the 650's 10, 20, 8 and 32; the 700's also carry group 6's curve in group 5. On the 2.8 build it drives `LATG` bit 0 by pulses, cleared at level 0. **Which light it is is not established** | read from configurations, section 347; read in the 2.8 image, section 392 |
 | size and weight | 8.75 x 2.3 x 1.3 inch, 6 oz with battery installed | Logitech's manual; the same figures as the 600 and 650 manuals |
 | face | the face of the 600 and 650, key for key | a statement from the bench holding all three, [keys.md](keys.md) |
 
@@ -55,5 +56,6 @@ on a 700 **not checked**.
 
 * The hardware version a 700 reports.
 * What the pins section 384 reads are wired to; its readings of them are inferred from the code.
+* Which light the configuration's group 3 sets, section 392.
 * The battery voltage on a 700, and the voltage its firmware treats as low.
 * The display controller and panel part, and whether the 700's screen differs physically from the 650's.

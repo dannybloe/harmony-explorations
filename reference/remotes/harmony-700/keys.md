@@ -94,6 +94,13 @@ section 323 and the drawing still leaves them between two candidates, and More A
 measured. One difference: on the 700 the activity key with no activity enters **mode 4**, the "add an
 Activity" placeholder, where the 600 and 650 enter mode 0, section 314.
 
+**More Activities on the 700**: it did nothing on a configuration whose activity menu bound the press of scan
+4 back to the running activity, with none running, and showed "add Activities" once scan 4 called that
+screen's list instead, seen at the bench, section 383. That is consistent with More Activities being scan 4
+and is **not** a measurement of the key, which no section claims. The activity keys, scans 5, 1 and 7, read
+alike on seven of the 700's compiles, and a configuration of this project's binds them as the Harmony 650's
+does, section 385.
+
 ## Not checked
 
 * The 700's own button map: every scan code above is the 600's.

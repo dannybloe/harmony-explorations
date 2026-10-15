@@ -23,7 +23,8 @@ Generated from `MODELS_BY_SKIN` in `packages/usb/src/models.ts` by `make remote-
 <!-- /generated -->
 
 Skin 72 is **confirmed** from the 650's own safe mode container in the 0.4 package and from the bench
-unit's version block, measured. Skin 74 is **Logitech's service**, `ProductsManager/GetAllProducts`,
+unit's version block, measured; the 0.2 build reports it as a constant of its own, read in the firmware,
+section 392. Skin 74 is **Logitech's service**, `ProductsManager/GetAllProducts`,
 section 131; no skin 74 unit or compile has been read, and the composer refuses it, section 330.
 
 ## On the bench
@@ -48,7 +49,7 @@ activities onto it. What it holds at any moment is in the lab's
 | newest firmware published | 0.4 | the package in the lab, section 30 |
 | screen | 1.5 inch, 128 by 128, 65,000 colours | Logitech's manual; raster also measured from configurations |
 | keys | 54 scan codes, the 600's face | configurations, section 311; the project owner's statement for the face |
-| devices | 8 per Logitech's service, **5 per Logitech's manual** | open disagreement, [features.md](features.md) |
+| devices | 8 per Logitech's service, **5 per Logitech's manual**; the remote has run eight | the vendor figures disagree; eight measured, `todo-compile-650.md` 2.7, [features.md](features.md) |
 | power | AA alkaline cells, no charger | Logitech's manual |
 | external flash | 2 MiB SPI, EON F16, id `15:1C` | measured, section 281 |
 | user configuration | external `0x030000`, 907660 bytes as found | measured, section 281 |
@@ -74,4 +75,5 @@ The architecture folder: [harmony-600-650-700](../../architectures/harmony-600-6
 ## Not checked
 
 * Whether a skin 74 unit differs from skin 72 in anything but the region. No unit, no compile.
-* Which of the two device limits the remote or Logitech's software enforces.
+* Which device limit, if any, the remote or Logitech's software enforces above the eight the remote ran,
+  [features.md](features.md).

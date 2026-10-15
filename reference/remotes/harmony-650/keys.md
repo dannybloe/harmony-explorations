@@ -112,7 +112,7 @@ above, so the fix belongs there and not in this file.
 | the four up and down keys | **decided** since section 323: 26 is `UpArrow`, 27 `DownArrow`, 50 `DirectionUp`, 42 `DirectionDown` | from the device maps of the Harmony 600's calibration configuration, `reference/button-maps.md`. The drawing still leaves each between two candidates |
 | the four screen corners and the centre key | 8, 2, 9, 34 and 25, above | read from configurations, sections 285 and 311 |
 | Watch TV, Watch a Movie, Listen to Music | 5, 1 and 7 | read from 13 Logitech compiles including two of the 650's, section 314. Listen to Music by elimination |
-| More Activities | 4 | **not measured**, section 314 says so |
+| More Activities | 4 | **not measured on the 650**, section 314 says so. On the Harmony 700, which has this face, pressing More Activities ran what the activity menu binds to scan 4, both ways the binding was written, section 383; on the 650 the press did nothing on a file binding scan 4 back to the menu, as that file predicts, section 374 |
 
 The drawing calls the activity keys and Help `screen` keys, which is a statement about the drawing's
 layers. In the configuration they are hard keys bound by the always installed key map, section 314, not
@@ -143,6 +143,12 @@ belongs to later models.
 **Help waits longer.** The repeat timer is one value for every key and another for Help, starting at 10
 and 50, each multiplied by 100 before the timer starts, so Help waits five times longer before its repeat.
 The timer's unit and whether the repeat keeps firing while the key is held are not read.
+
+## Keys on the firmware's own screens
+
+The placeholders and "USB Connected" bind the keypad in a way of their own, the same on all three
+models: [the architecture's misc.md](../../architectures/harmony-600-650-700/misc.md). On the 650's
+drawing the keys "USB Connected" waits for, scans 11, 12 and 51, are an unnamed key, Exit and OK.
 
 ## Keys with no code at all
 

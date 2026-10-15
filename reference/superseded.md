@@ -568,3 +568,23 @@ it reachable in the same commit and the test comparing the two tables is what ca
 | `indexes with element size 2` | section 369, 11 October 2026 | the 2 is the two byte count header skipped, and the index is one byte, on the Harmony One 3.4 as on the arch 14 images |
 | `1546 distinct shapes` | section 370, 11 October 2026 | of our one bit alphabet in the Medium and ExtraLight weights; in SemiBold labels and Regular regular faces, decision 22, it is 1616 shapes with `I` and `l` alike in F11, F10 and R13 |
 | `no other version of the 600's firmware is known here` | todo-secure-logitech.md 4.1, 15 October 2026 | MyHarmony's own version list names 0.3 for skin 71; its image answers 404, so 0.2 is the newest held, not the newest known |
+| `the colour panel is the obvious suspect` | section 392 | the Harmony 600's and 650's 0.2 builds are one program: the bytes that differ are code that moved, references to it, the header checksum, two routines nothing calls, and the model number and USB release number each reports, 71 and `0x1071` on the 600, 72 and `0x1072` on the 650; the panel's drawing path is the same code on both, section 387 |
+| `Why builds of the same version differ between the 600 and 650` | section 392 | read: one program, its code moved and its model number its own |
+| `no saved MyHarmony answer for a 650 exists` | section 346 | Logitech's service lists `TiltSensor` for the Harmony 650, default on, with `GlowTime` and `RemoteAssistant`, and the bench 650 lights its dark screen when tilted with the setting on |
+| `Whether the 650 has the sensor` | section 346 | it has: tilting the Harmony 650 with its screen dark lights the screen, seen at the bench with `TiltSensor` on |
+| `Whether the 650 wakes when picked up` | section 346 | it does, seen at the bench with `TiltSensor` on |
+| `Whether a composed device's input commands go out` | section 332, `todo-compile-650.md` 2.5 | they do: with Logitech's silent input reset after power on composed in, both starts sent the Plasma's power and then HDMI 1 on the Harmony 650 |
+| `the two are not reconciled in any document here` | section 387 | the state variables are live on the cable on the Harmony 600 too, from `0xE10` on build 0.2; section 110 read five journal variables, another kind |
+| `are not reconciled anywhere, see the 650's` | section 387 | as above: live state variables on the cable on the Harmony 600, 650 and 700, and section 110's journal variables another kind |
+| `the 600 does not load its configuration` | section 387 | on the cable the Harmony 600's state variables are live from `0xE10` on build 0.2, the clock ticking between two reads; section 110's zero journal variables are five of another kind |
+| `the configuration's own variables were not loaded` | section 387 | as above: a connected Harmony 600's configuration variables read at the values its configuration starts them at |
+| `a connected 600 has not loaded its configuration` | section 387 | as above |
+| `are not reconciled anywhere here` | section 387 | section 387 reconciles section 110 with the live reads: section 110's five journal variables are another kind |
+| `journal variables read zero, so it was not loaded` | section 387 | the journal variables read zero and the configuration's state variables are live all the same, on the Harmony 600 |
+| `Their values were read live on the Harmony 650 only` | sections 303 and 387 | the 0.2 build's data memory is read live on the Harmony 600 too: the state variables from `0xE10` and the panel's identity byte at `0x384` |
+| `No data memory value has been read live on a 700` | section 386 | a read over USB found the Harmony 700's clock in state variables 0 to 6 at `0x900` on build 2.8 |
+| `Where the 2.8 build keeps its clock` | sections 384 and 386 | in the first seven state variables, as on the 0.2 builds, at `0x900 + n` on the Harmony 700's 2.8 |
+| `never sent to a 700 here` | section 386 | `READ_MISC` selector 7 was sent to the Harmony 700 and read its state variables live |
+| `Which timer holds it on a 700` | section 347 | the screen light timer carries the glow time on every arch 14 compile read, the Harmony 700's among them |
+| `The 2.8 build's clock and validator routines` | sections 310, 322, 354 and 384 | the boot read, the month end routine, the state variables' place and the validator's checksum gate are read on the Harmony 700's 2.8 |
+| `no package of it is known` | `todo-secure-logitech.md` 4.1, 15 October 2026 | MyHarmony's version list names a Harmony 600 firmware 0.3; no image of it is held |

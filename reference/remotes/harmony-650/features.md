@@ -30,8 +30,14 @@ The manual is the 2010 edition. Two readings fit and nothing here chooses: the l
 later software generation, or the two describe different things. The same kind of disagreement exists
 for the Harmony 525, `reference/capabilities.md`. **The bench unit holds six devices** in
 `h650_panasonic_config` and accepted a MyHarmony sync with them, section 305 and section 317's table,
-which is evidence that the current software allows more than five on this account. **Whether the
-remote itself enforces any limit is not checked**; nothing in the firmware has been read for one.
+which is evidence that the current software allows more than five on this account. **Logitech's
+service compiled seven** for the 650, the test setup's seven devices put on a 650 record and compiled
+by a MyHarmony sync, `todo-compile-650.md` 1.6. **The remote runs eight**: two devices composed in one
+run onto the six device configuration each sent their codes from their own pages,
+`todo-compile-650.md` 2.7 and section 331. So neither the remote nor today's software holds the 650 to
+the manual's five. **Whether the remote enforces any limit above eight is not checked**; nothing in the
+firmware has been read for one. On the other two models the remote also ran past its manual's figure:
+the Harmony 600 a sixth device, section 390, the Harmony 700 a seventh, section 386.
 
 The configuration's own ceiling is separate: at most 128 state variables, and a device costs three
 plus its inputs, so the device count binds first on every configuration measured, section 331.
@@ -47,6 +53,8 @@ plus its inputs, so the device count binds first on every configuration measured
 | no long press on an activity key, or on any key: the firmware raises press, repeat and release only | the firmware, build 0.2, section 340; [keys.md](keys.md) |
 | a pass through device, a switch the picture only passes through: switched on and set to its input by the activity, and bound no key and no screen item | read from configurations, composed and seen on the 650, section 339 |
 | the activity menu pages when full, with the page Logitech compiles | read from configurations and composed, section 316; paged 1/3 to 3/3 and wrapping at the bench on the combined file, `todo-compile-650.md` |
+| the activity menu's order is **not the owner's to choose** in MyHarmony on this model family, [the architecture's misc.md](../../architectures/harmony-600-650-700/misc.md); none of eight Logitech compiles for one 650 account follows the account's stored order, and the remote shows whatever order the configuration states | Logitech's compiles, section 351 |
+| a configuration with no activity starts and runs; More Activities then shows "add Activities" in Logitech's one compile of that kind | seen at the bench on a file of this project's, section 374; read from configurations, section 383 |
 
 ## Favourite channels
 
@@ -127,7 +135,8 @@ manual page 15. Learning on this unit is **not checked**.
 
 ## Not checked
 
-* The device limit the remote or today's MyHarmony actually enforces.
+* The device limit the remote or today's MyHarmony actually enforces, beyond eight on the remote and
+  seven compiled by Logitech, above.
 * How a favourite's sending is built: read on the Harmony One only.
 * Advanced help's delay and repeat screens on this model.
 * Long press, beyond Logitech's statement that the model has none.

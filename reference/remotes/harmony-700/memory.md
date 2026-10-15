@@ -30,7 +30,16 @@ section 296.
 
 The addresses differ from the 0.2 builds'. Those read: the verdict bits at `0x68E`, the cache drop's
 erase flag at `0x380` and its second flag at `0x1E9`, section 299; the update status byte at `0x100`, read
-on 2.5 and 2.8, section 298. **No data memory value has been read live on a 700.**
+on 2.5 and 2.8, section 298. Read in the firmware since: the state variables at `0x900 + n`, section 384;
+the counter of time since the configuration was built at `0xF0F`, section 310; the current mode at `0xF28`
+and the mode switch's argument at `0xF2D`, section 326, where the 2.5 build had `0x6E7` and `0x6EC`; the
+bit gating the trailer checksum at `0x3A9`, section 354; the infrared toggle word at `0x088`, section 365;
+and the USB poll's state, which runs the charger test, at `0x3AB`, a host having addressed the remote at `0x0B0`, the charger flag at
+`0x0B1` and the charging flag at `0x0B2`, section 384.
+
+**Data memory is read live on a 700**: a read over USB found the clock in state variables 0 to 6 and a
+configuration's variable at the value the file starts it at, from `0x900` on build 2.8, measured, section
+386. This said "**No data memory value has been read live on a 700.**"<!--superseded--> until section 386.
 
 ## The identity block
 
@@ -39,6 +48,7 @@ repository.
 
 ## Not checked
 
-* The 2.8 build's clock, its state variable addresses and its restore path for saved delays.
+* The 2.8 build's restore path for saved delays, and which list it runs at start, section 303. Its state
+  variable addresses and its clock are read since, sections 384 and 386.
 * External flash past the configuration on a 700.
 * What setting `0x80` means.

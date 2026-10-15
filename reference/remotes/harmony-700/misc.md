@@ -18,6 +18,13 @@ The 700's manual describes Logitech's older desktop software, the **Harmony Remo
 manual. Today's clients for this model are MyHarmony and Harmony Desktop; section 295 records how each
 behaved with a 700 in safe mode.
 
+## A boot step only the 2026 compiles carry
+
+Logitech's five 700 compiles of 2026 carry one more instruction in the configuration's boot list, `3F F715`
+after `3F F632`, which neither 700 compile of 2021 and 2023 carries, nor any Harmony 600 or 650 compile. No
+MyHarmony setting is known to cause it, and whether the firmware version the service compiles for or the
+service's own generation decides it is **not established**, read from configurations, section 347.
+
 ## Not checked
 
 * Nothing in this file is a claim about the remote beyond the cited sources.

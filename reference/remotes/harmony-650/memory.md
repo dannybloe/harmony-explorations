@@ -44,7 +44,10 @@ The addresses of the 0.2 build, which the 600 and 650 share for the routines rea
 `READ_MISC` selector 7, section 283: the state variables at `0xE10` with the clock as the first seven,
 the reload checksum at `0xED2`, the infrared ring at `0x500` kept across a bare restart, the verdict bits
 at `0x68B` and the cache drop flag at `0x725`. The current mode is at `0x0A8` and its argument at
-`0x0AD`, section 326.
+`0x0AD`, section 326. `0x68B` bit 4 selects which container a read goes to, the configuration at
+`0x030000` when set and the status screen library at `0x020000` when clear, and bit 2 is the
+configuration's verdict, read in the firmware and seen in memory as `0x16` with a good configuration,
+section 354.
 
 **The clock is the write's stamp after a restart**, measured on 8 October 2026: a write stamped the
 seven clock records with seconds 37, minutes 34, hour 8, day 7, weekday 4, month 9, year 26, and
@@ -68,5 +71,5 @@ The current contents are in the lab's `reads/`, newest last.
 * The 21 bytes between external `0x180` and `0x337`.
 * Why the 650 keeps no application copy in external flash, and whether that matters to a reinstall,
   [firmware.md](firmware.md).
-* What setting `0x80` in the store means, and what wrote `0xF8`.
+* What setting `0x80`'s bits other than bit 0 mean, and what wrote `0xF8`; bit 0 is read, above.
 * External flash between the end of the configuration and `0x200000` beyond what the region reads cover.

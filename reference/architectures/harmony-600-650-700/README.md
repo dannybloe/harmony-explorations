@@ -63,7 +63,12 @@ table's, third party, except the 600's monochrome panel, which is seen on the be
 | keypad backlight | white, manual | yellow, manual | white, manual |
 | devices, manual | 5 | 5 | 6 |
 | devices, Logitech's service | 5 | 8 | 8 |
-| firmware on the bench unit | 0.2 | 0.2, a different build | 2.8, staged by this project, section 297 |
+| firmware on the bench unit | 0.2 | 0.2, a different build of the same program: moved code, its own model number and USB release number, section 392 | 2.8, staged by this project, section 297 |
+| model number in the build's version reply | 71 | 72, section 392 | not read here |
+| devices run on the bench unit | 6, section 390 | 8, `todo-compile-650.md` 2.7 | 7, section 386 |
+| the firmware's own screens in a configuration | 14 | 14 | 19, the charging frames added, section 357 |
+| state variables in data memory | from `0xE10`, build 0.2, sections 303 and 387 | from `0xE10`, build 0.2, section 283 | from `0x900`, build 2.8, sections 384 and 386 |
+| parameter group 3, a light's four levels, in the compiles | 1, 3, 5, 32 | 10, 20, 8, 32 | 3, 5, 10, 32, section 392 |
 | application copy at external `0x000000` | yes | **no**, erased but for an identity copy | the staging region, section 297 |
 | hardware version reported | 1.1 | 1.2 | not recorded here |
 | mode 0, the empty activity key's screen | "add an Activity" | "add an Activity" | a charging battery; the placeholder is mode 4, section 311 |
@@ -81,5 +86,8 @@ table's, third party, except the 600's monochrome panel, which is seen on the be
 ## Not checked
 
 * The Harmony 665: whether it is architecture 14 in anything but Logitech's table.
-* Whether the 600's and 650's device limits differ in the remote or only in Logitech's software.
+* Whether the remote enforces any device limit at all: each bench unit has run more devices than its
+  manual names, the 600 six, the 650 eight and the 700 seven, above. This said whether the 600's and
+  650's limits differ in the remote or only in Logitech's software was not checked until those runs.
+* Which light parameter group 3 sets, section 392.
 * The 700's hardware version as reported, and whether its screen differs physically from the 650's.

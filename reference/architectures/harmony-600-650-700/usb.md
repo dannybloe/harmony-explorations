@@ -19,7 +19,10 @@ Generated from `packages/corpus` and `packages/usb` by `make remote-reference-wr
 * **One product id for three models**, measured on all three bench units. Nothing on the bus separates
   them but the skin in the version block and, per unit, the identity block, section 281.
 * `bcdDevice` is BCD of 1000 plus the skin, measured on the 600 as `0x1071`, `docs/usb-protocol.md`
-  section 1. On the 650 and 700 **not checked**.
+  section 1. The 650's 0.2 build carries `0x1072` in its device descriptor, read in the firmware, section
+  392; on the 650's bus and on the 700 **not checked**.
+* The model number in the version reply is the build's own constant: 71 in the 600's 0.2 and 72 in the
+  650's, section 392.
 * The version block's twelve bytes: firmware, hardware, flash id, architecture in field 4's high nibble,
   skin and platform, `docs/usb-protocol.md` "GET_VERSION's twelve bytes" and section 57.
 * Safe mode answers as software type 4, the application as 0.
@@ -37,8 +40,11 @@ addresses given for the 600's 0.2 and the 700's 2.8. Two arch 14 only additions:
 * The escape dispatches a sub command `0x05` that the Harmony One's does not, `ESCAPE_SUB_COMMANDS`.
 
 **Live data memory reads**, `READ_MISC` selector 7, work on this architecture, measured on the 650,
-section 283. Section 110 measured the configuration not loaded while a 600 was on the cable; the two
-are not reconciled anywhere, see the 650's [usb.md](../../remotes/harmony-650/usb.md).
+section 283, and the state variables read on the cable are live on all three: on the 600 its delays,
+its running clock and the Off screen's mark, sections 303 and 387, and on the 700 its clock, section 386.
+Section 110 measured the configuration not loaded while a 600 was on the cable, and this said "the two
+are not reconciled anywhere, see the 650's"<!--superseded--> usb.md; section 387 reconciles them, section
+110 having read five journal variables, another kind, [the 650's usb.md](../../remotes/harmony-650/usb.md).
 
 **The battery voltage can be read over USB**, `READ_MISC` selector `0x0C` detail 1: two bytes, high
 byte first, in millivolts, measured under load and so a little below what a meter shows on the cells.
@@ -77,6 +83,6 @@ the 650's first write, an erase and a write with no restart sent, left it on the
 
 ## Not checked
 
-* `bcdDevice` on the 650 and 700.
+* `bcdDevice` as the bus reports it on the 650 and 700.
 * The settings read and write on the 650 and 700.
 * The data memory, program memory and action queue members of the `0x1N` family, read and never sent.

@@ -44,9 +44,15 @@ All of it **Logitech's service**, `reference/capabilities.md`.
 | **5** | Logitech's service, `MaxDevicesPerAccount`, and the forum table; what `models.ts` holds |
 
 This is the one model of the three on this architecture where manual and service agree; the 650's manual
-says 5 against the service's 8, and the 700's 6 against 8. **Whether the remote itself enforces any
-limit is not checked.** The configuration's own ceiling is separate: at most 128 state variables, and the
-device count binds first on every configuration measured, section 331.
+says 5 against the service's 8, and the 700's 6 against 8. **The remote does not hold to five**: a
+configuration of six devices, built by this project's code with the library's limit raised for that one
+build, ran on a unit, and the sixth device's codes were sent from an activity's start, from All Off and
+from its own device page, which the Devices screen reached, measured with an infrared receiver, section 390.
+Whether it takes a seventh, and whether anything on the remote counts devices at all, is **not checked**;
+the library keeps refusing a sixth, since five is Logitech's statement for the model, section 390. The
+configuration's own ceiling is separate: at most 128 state variables, and the device count binds first on
+every configuration measured, section 331; Logitech's two 600 configurations read here hold 66 and 74
+state variables.
 
 ## Activities
 
@@ -83,6 +89,10 @@ device count binds first on every configuration measured, section 331.
   measured on a unit, where a power on delay changed in the configuration was not heard because a saved
   one overrode it, section 303. Which action on the remote saves a delay is **not established**.
 * A saved delay can be cleared over USB, measured on a unit, section 305; [usb.md](usb.md).
+* **The copy is the configuration's, not the firmware's**: a restore list per saved delay, reached from list
+  1, which the firmware is **inferred** to run at start, read on Logitech's 600 configurations, all 8 of 8 delay variables on one and 6 of 6 on the
+  other saved and restored, section 303. A configuration without those lists runs its own values even with
+  a delay saved on the remote, measured on a unit, section 391.
 
 ## Sequences
 
@@ -95,7 +105,7 @@ compiles it on this architecture is read on the Harmony 650, section 343; **on a
 |---|---|
 | how long the screen stays lit, "Glow Timing" | Logitech's manual; Logitech's service, default 20 |
 | tilt sensor | Logitech's service, default on; the manual: the remote "senses when you pick it up" |
-| Remote Assistant | Logitech's service, default on |
+| Remote Assistant | Logitech's service, default on. One of Logitech's 600 compiles read here has none of the Assistant's screens, branch or variable, which fits its being compiled with the setting off and is **not established**, since its settings at compile time were not saved, sections 333 and 347 |
 | leave devices on when switching activities | Logitech's service states `LeaveDevicesPoweredOn`; how it compiles is read on the Harmony 650, section 340 |
 
 ## Learning
@@ -105,7 +115,8 @@ manual page 20 and Product Specification. Learning on a 600 is **not checked**.
 
 ## Not checked
 
-* The device limit the remote or today's software actually enforces.
+* The device limit the remote or today's software actually enforces, past the six the remote ran, section
+  390.
 * How many activities a 600 holds.
 * How favourites and sequences are built on the 600's own compiles.
 * Which action saves a delay on the remote.

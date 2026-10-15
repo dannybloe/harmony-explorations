@@ -36,19 +36,26 @@ again only where the 650 adds something.
 | keypad backlight | yes, **yellow** | Logitech's manual. The Harmony 600's and 700's manuals say white |
 | size and weight | 8.75 x 2.3 x 1.3 inch, 6 oz with batteries | Logitech's manual; the same figures as the 600 and 700 manuals |
 | face | the Harmony 600's, key for key | the project owner's statement, [keys.md](keys.md) |
+| a light the configuration sets in four levels, parameter group 3 | the 650's configurations state 10, 20, 8 and 32; the Harmony 600's 1, 3, 5 and 32. The 0.2 build drives it as a PWM on `CCP3` at `LATG` bit 0, its duty from 32 less the level. **Which light it is is not established** | read in the firmware and from configurations, section 392 |
 
 ## A sensor for being picked up
 
 The Harmony 600 and 700 manuals say the remote "senses when you pick it up" and lights up, and
 MyHarmony lists a `TiltSensor` setting for both, section 292. **The 650's manual says nothing about
-it**, and no saved MyHarmony answer for a 650 exists. Whether the 650 has the sensor is **not
-checked**; `todo-compile-650.md` 4.3.3 is the open item.
+it.** **The 650 has one**: with the setting on, tilting the remote while its screen is dark lights the
+screen, as a key press does, seen at the bench, section 346; Logitech's service lists `TiltSensor` for
+the 650, default on, [features.md](features.md). What part senses it is **not checked**, nothing having
+been opened. This page said "no saved MyHarmony answer for a 650 exists"<!--superseded--> and that
+"Whether the 650 has the sensor is **not checked**"<!--superseded-->, with `todo-compile-650.md` 4.3.3 as
+the open item, until section 346 closed it.
 
 ## Not checked
 
 * The processor part on this unit, by any route other than the firmware.
 * The battery voltage the firmware treats as low, if it has one. The battery voltage itself can be read
   over USB, in millivolts, `READ_MISC` selector `0x0C` detail 1, section 340.
-* Whether the 650 has a motion or tilt sensor.
+* The part behind the tilt sensor, and what the flag instruction `3F F101` does in the firmware; that it
+  is what arms the sensor is the reading of two compiles, section 346. Whether the 650 has a sensor is
+  answered, above.
 * The display controller and panel part: nothing names either for this architecture.
 * What else differs between hardware 1.1 and 1.2, beyond the panel.

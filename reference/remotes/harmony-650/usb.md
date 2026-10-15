@@ -19,12 +19,12 @@ Generated from `packages/corpus` and `packages/usb` by `make remote-reference-wr
 | field | value on the bench 650 | standing and source |
 |---|---|---|
 | vendor and product id | `046D:C122`, the same as the Harmony 600 and 700 | measured, section 281. `PROFILES` still labels it "Harmony 600 or 700" |
-| `bcdDevice` | `0x1072` predicted, from the rule that it is BCD of 1000 plus the skin | **not checked** on this unit; the rule is measured on the 600 (`0x1071`), `docs/usb-protocol.md` section 1 |
+| `bcdDevice` | `0x1072` predicted, from the rule that it is BCD of 1000 plus the skin | the 650's 0.2 build carries `0x1072` as its USB device descriptor's release number, read in the firmware, section 392; **not measured** on the bus. The rule is measured on the 600 (`0x1071`), `docs/usb-protocol.md` section 1 |
 | firmware | 0.2 | measured, version block |
 | hardware | 1.2, where the 600 reports 1.1 | measured, version block, lab reads |
 | flash id | `15:1C`, EON F16, 2 MiB | measured, section 281 |
 | architecture | 14 | measured, version block field 4, section 57 |
-| skin | 72 | measured, version block |
+| skin | 72 | measured, version block; it is the 0.2 build's own constant in its version reply, where the 600's build has 71, read in the firmware, section 392 |
 | software type | 0, running normally | measured, section 282 |
 | identity block | two GUIDs at internal `0xFF` `+0xF400` | measured; **the values are the unit's serial and are kept in the lab's `units/h650.txt` only** |
 
@@ -37,7 +37,8 @@ section 281. Three arch 14 units are on the bench and all enumerate alike.
 | command | standing and source |
 |---|---|
 | `GET_VERSION`, `READ_FLASH` external and both internal pages | measured, read only, section 281 |
-| `READ_MISC` selector 7, live data memory | measured: config derived variables read live on the 650, section 283 |
+| `READ_MISC` selector 7, live data memory | measured: config derived variables read live on the 650, section 283; the verdict flags `0x68B` and setting `0x80`'s copy `0x744`, section 354 |
+| `READ_MISC` selector `0x0C` detail 1, the battery voltage | measured, in millivolts, section 340; [the architecture's usb.md](../../architectures/harmony-600-650-700/usb.md) |
 | `ERASE_FLASH` and `WRITE_FLASH`, configuration blocks | measured: first a block written back unchanged, section 281; then real changes, sections 283 onwards |
 | the cache drop, `WRITE_MISC` selector `0x02` | sent and measured, section 282: verdict `0x68B` from `0x16` to `0x02`, flag `0x725` from 0 to 1 |
 | the restart, the escape's `0x02` | sent and measured: off the bus in about 2 seconds, back in about 8, section 282 |
@@ -51,12 +52,16 @@ images. The 600's lie in the part of the program that sits at the same address i
 section 281, so they very likely hold for the 650; that is this reference's inference, **not checked**
 handler by handler.
 
-## A tension worth knowing
+## A tension, since reconciled
 
 `docs/usb-protocol.md`, under `READ_MISC`, says that on arch 14 the configuration is not loaded while
 the remote is on the cable, from section 110 on the Harmony 600. Section 283 then read config derived
-variables live on the 650. The two are not reconciled in any document here, and this page does not
-reconcile them: **not checked** which holds, or whether both do under different conditions.
+variables live on the 650. **Section 387 reconciles them**: the state variables are live on the cable on
+the Harmony 600 too, from `0xE10` on build 0.2, its clock running and the Off screen's mark readable, as
+section 303 read its delays; section 110 measured five variables of another kind, the journal's. So on
+this architecture the configuration's state variables can be read on the cable. This page said "The two
+are not reconciled in any document here"<!--superseded--> and did not reconcile them until then. What
+section 110's journal variables are for is a separate question, **not checked** here.
 
 ## Reads that misbehave
 
@@ -65,7 +70,7 @@ and a rerun succeeds, section 294 and `todo.md` L8. The cause is **not checked**
 
 ## Not checked
 
-* `bcdDevice` on this unit.
+* `bcdDevice` on this unit as the bus reports it; the build's value is read, above.
 * The settings read and write on this unit.
 * Safe mode's USB identity on the 650.
 * What `WRITE_MISC` selector `0x0A`, which concordance's arch 14 path sends before and after an erase,

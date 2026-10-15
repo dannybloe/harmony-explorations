@@ -12,8 +12,9 @@ where a Harmony One clicks before every command on its touch screen, section 337
 | | how | standing and source |
 |---|---|---|
 | in | **the centre key below the display**, under the word "Devices" on an activity's screens. There is no Devices key | Logitech's manual pages 3 and 4: "switch to device mode by pressing the center button below Devices"; seen at the bench on composed devices, section 285 |
-| choosing a device | the device list, four devices to a page, one beside each corner key, paged with the arrows | Logitech's manual page 4; read from configurations, section 285; seen at the bench, `LG` top right on the second page, section 285 |
-| a device's page | the device's commands four to a page, `LG 1/2` style page counter, its keypad map in force | seen at the bench, section 285 |
+| choosing a device | the device list, four devices to a page, one beside each corner key, paged with the arrows | Logitech's manual page 4; read from configurations, section 285; seen at the bench, `LG` top right on the second page, section 285. A fifth device opens a second page, as Logitech compiles it, section 312; seen on the idle list and on two activities' own lists, `todo-compile-650.md` 2.3 |
+| a device's page | the device's commands four to a page, `LG 1/2` style page counter, its keypad map in force | seen at the bench, section 285. The keypad map is the device's own, held in its screen record, section 271 |
+| back in the activity | the activity's keys go where the activity binds them again: Channel up went to the KPN box after a visit to the Denon's pages, on a file holding no keypad map record for the activity | measured with the infrared receiver, one run, section 381. Whether the activity's map stays selected or is selected again is not told apart |
 | out | the centre key again, which then writes "Activity" on an activity's own device list and "Activities" on the idle one | Logitech's manual page 4, "press the center button to return to Activities mode"; read from configurations and seen on the 650, sections 290 and 294 |
 
 The words are this model family's and not the product's: the Harmony One says "Current Activity",
@@ -61,6 +62,8 @@ television, with "Activity" at the bottom, section 294.
 | a restart undoes the running activity's state: an activity started off the cable was gone after a bare restart | seen and measured, section 283 |
 | a changed power on delay is in force straight after the write and restart | measured in memory, section 283 |
 | once, after a write, the screen stayed black off the cable until the batteries came out | seen once in two writes of the same shape, section 292; unexplained |
+| **a configuration with no device and no activity starts**: "USB Connected" on the cable, then the empty Activities screen; Devices and Activities lead to each other, an activity key shows the "add an Activity" screen and Exit returns, All Off shows "Turning system off" and comes back, the screen goes dark and wakes | seen at the bench on a file of this project's, section 374 |
+| the status screen library, moved to `0x030000` and written as the configuration, is **accepted** on its three markers, the verdict in memory reading good: off the cable "Go to Website to update settings", on it a plain blue screen once and "USB CONNECTED" without its picture once, and no key changing anything | measured in memory and seen at the bench, sections 353 and 354 |
 
 ## Power and held presses
 
@@ -73,13 +76,23 @@ television, with "Activity" at the bottom, section 294.
   its power commands to screen keys only, section 306. See [keys.md](keys.md) on which key that is.
 * The 650's seven frame power press puts its frames about 134.6 ms apart, measured with the infrared
   receiver, section 306.
+* Logitech gives a power command its family's held block like any other command, so a held power key
+  repeats; read from configurations, section 338, not timed on the remote.
+* **A toggling code alternates**: the firmware keeps one bit per infrared group, flips it on every send to
+  that group, and plays the record's first group, the code as stated, when the bit is set and the second,
+  its toggle bit flipped, when clear. The bit is the device's and not the command's. Read in the 650's
+  0.2 build, section 365; not checked on the remote.
 
 ## Not checked
 
-* Whether the 650 wakes when picked up, as the 600 and 700 manuals say those do.
+* What the tilt sensor's flag does in the firmware. That the 650 wakes when tilted is seen at the bench,
+  section 346 and [hardware.md](hardware.md); this list said "Whether the 650 wakes when picked
+  up"<!--superseded--> until then.
 * The infrared status indicator.
 * Advanced help, held Help for five seconds, on this model.
 * The two row device list, which no person can reach, section 326.
 * What starts the tour after a reload, and what decides between showing and skipping it, section 286.
-* Whether a composed device's input commands go out: on the combined file the plasma's input was not
-  sent, `todo-compile-650.md` 2.5.
+* Why the combined file's first start sent the plasma's power and not its input. The input does go out
+  since the composer resets it after power on as Logitech's compile does: both starts sent power and then
+  HDMI 1, `todo-compile-650.md` 2.5 and section 332. This list said "Whether a composed device's input
+  commands go out"<!--superseded--> until then.

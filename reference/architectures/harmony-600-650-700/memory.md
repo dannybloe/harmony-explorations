@@ -42,9 +42,9 @@ section 297; the store is read in the firmware and measured on the 600 and 650, 
 | address | contents | standing and source |
 |---|---|---|
 | `0x000000` to `0x020000` | the application as stored, or the staging region for an update. **Differs by unit**: an application copy on the 600, erased but for an identity copy on the 650, a staged image on the 700 | measured per unit, sections 281 and 297 |
-| `0x020000` | the safe mode configuration, 7115 bytes, format 1.4; its section table byte identical on all three models | measured on the 600, read out of the 650's and 700's packages, section 30 |
+| `0x020000` | the safe mode configuration, 7115 bytes, format 1.4; its section table byte identical on all three models. It is the **status screen library**: no devices, no activities, 35 status screens, linked for this address and ending at `0x021BC7`, declaring a log area of `0x0E0000` to `0x100000`; the 650's differs from the 700's in 50 bytes | measured on the 600, read out of the 650's and 700's packages, section 30; sections 353 and 244 |
 | `0x030000` to `0x200000` | the user configuration, 1856 KiB of room | measured on all three |
-| `0x1E0000` to `0x200000` | declared as a log area by user configurations | read from configurations, `docs/host-client.md`; nothing on arch 14 is known to write it |
+| `0x1E0000` to `0x200000` | declared as a log area by user configurations, every Harmony 650 configuration in the lab among them | read from configurations, `docs/host-client.md` and section 353; nothing on arch 14 is known to write it, the log area's writer being the Harmony One's alone, `todo-compile-650.md` 10.2 |
 
 ## Internal flash, two 64 KiB pages
 
@@ -53,7 +53,7 @@ section 297; the store is read in the firmware and measured on the 600 and 650, 
 | `0xFE` `+0x0000` | the bootloader, 4 KiB, which also carries a USB flash programmer | measured on the 600 and 650, section 189; differs between them |
 | `0xFE` `+0x1000` | the safe mode image | measured on the 600 and 650, 0.2; the 700's is 2.3, 29888 bytes, section 295 |
 | `0xFE` `+0x9000` | the application, running into page `0xFF` | measured on all three |
-| `0xFF` `+0xEC00` | the **settings store**: two 1 KiB blocks used one at a time, a four byte header `fc ff 00 00`, then two byte records, setting then value, appended. Settings `0x00` to `0x13` and `0x18` to `0x2B` are the saved power on and inter device delays, which override the configuration's at start | read in the firmware, measured on the 600 and 650, sections 282 and 303 |
+| `0xFF` `+0xEC00` | the **settings store**: two 1 KiB blocks used one at a time, a four byte header `fc ff 00 00`, then two byte records, setting then value, appended. Settings `0x00` to `0x13` and `0x18` to `0x2B` are the saved power on and inter device delays, which override the configuration's at start. **Setting `0x80`'s bit 0 decides whether the configuration's checksum is checked**, copied at start to `0x744` on the 0.2 builds and `0x3A9` on the 700's 2.8 | read in the firmware, measured on the 600 and 650, sections 282 and 303; bit 0 read in the firmware, section 354 |
 | `0xFF` `+0xF400` | the **identity block**: a 16 byte field that is named the serial and holds `0xEE` on every remote read, then two GUIDs, which Logitech's service takes as the serial. `docs/memory-map-600.md` counts the `0xEE` field as a third GUID | measured on the 600, 650 and 700, sections 226 and 281 and `CLAUDE.md`. Values only in the lab |
 | `0xFF` `+0xFFF8` | the processor's configuration words | `docs/memory-map.md` |
 
@@ -61,11 +61,15 @@ section 297; the store is read in the firmware and measured on the 600 and 650, 
 
 The addresses differ between builds, so they are per build and not per architecture. The 0.2 build's,
 shared by the 600 and 650, are in `docs/memory-map-600.md`; the 0.4 package's and 2.8's few known ones
-are in sections 282, 283 and 299.
+are in sections 282, 283 and 299. **The state variables** sit at `0xE10 + n` on the 0.2 builds, read live
+on the 650 and the 600, sections 283 and 387, and at `0x900 + n` on the 700's 2.8, section 384; on all
+three the first seven are the clock and are readable while the remote is on the cable, sections 283, 386
+and 387. On the 0.2 builds `0x68B` holds the container select bit, bit 4, and the configuration's
+verdict, bit 2, section 354.
 
 ## Not checked
 
 * External `0x0112C0` to `0x020000` and `0x021BCB` to `0x030000` on the 600, `docs/memory-map-600.md`.
-* What setting `0x80` in the store means.
+* What setting `0x80`'s bits other than bit 0 mean.
 * The four small unidentified records after the identity block.
 * Whether anything on this architecture writes the declared log area.

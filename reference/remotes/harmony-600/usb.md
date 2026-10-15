@@ -33,16 +33,21 @@ Generated from `packages/corpus` and `packages/usb` by `make remote-reference-wr
 the skin in the version block can for a person, and the **identity block** is what the write rails
 compare, section 281.
 
+**The skin it reports is the firmware's constant**: the 0.2 build's version reply states 71 at `0x11964`
+and its descriptor `0x1071`, where the Harmony 650's 0.2 states 72 and `0x1072`, read in the firmware,
+section 392. A configuration on the remote may state 73 and the remote still reports 71, measured, section
+387; a configuration of this project's states what the version block reports, decision 23.
+
 ## What has been sent to a 600
 
 | command | standing and source |
 |---|---|
 | `GET_VERSION`, `READ_FLASH` external and both internal pages | measured, read only, sections 23, 24 and 88 |
-| `READ_MISC` selector 7, live data memory | measured on a connected unit: the configuration's journal variables read zero, so it was not loaded, while the flash id sat at `0x686`, section 110 |
-| `ERASE_FLASH` and `WRITE_FLASH`, configuration blocks | measured: a block written back unchanged, section 302; then a delay changed and put back with the whole write sequence, section 303 |
+| `READ_MISC` selector 7, live data memory | measured on a connected unit: the state variables from `0xE10`, the clock among them ticking, and the panel's identity byte at `0x384`, section 387; the flash id at `0x686`, section 110. This row said "the configuration's journal variables read zero, so it was not loaded"<!--superseded-->; section 387 found those five variables to be of another kind |
+| `ERASE_FLASH` and `WRITE_FLASH`, configuration blocks | measured: a block written back unchanged, section 302; then a delay changed and put back with the whole write sequence, section 303; then configurations built by this project, up to eleven 64 KiB blocks at a time, each read back byte for byte, sections 387, 389 and 390 |
 | the cache drop, `WRITE_MISC` selector `0x02`, and the restart | sent as part of that write sequence, section 303 |
-| the settings read, `0x13 0xB2` | read in the 600's 0.2 image and its reply measured, section 304 |
-| the settings write, `0x14 0xB3` | **sent to a 600**, the only arch 14 unit to receive it: a saved delay cleared, and on the 0.2 build a successful write answers 1, section 305 |
+| the settings read, `0x13 0xB2` | read in the 600's 0.2 image and its reply measured, section 304; used again before predicting a configuration's timing, sections 387 and 391 |
+| the settings write, `0x14 0xB3` | **sent to a 600**, the only arch 14 unit to receive it: a saved delay cleared, and on the 0.2 build a successful write answers 1, section 305. Logitech's clients carry no template for skin 71 and none carries `0xB3`, so the firmware is the only source for this write, Logitech's client, section 305 |
 | the battery voltage, `READ_MISC` selector `0x0C` | implemented in the 600's image, section 212; **never sent to a 600** |
 | the reinstall, the staging write | **never sent** to a 600 |
 | `WRITE_MISC` selector `0x07`, a RAM write | **refused** on this architecture by the rails |
@@ -50,14 +55,16 @@ compare, section 281.
 The command table's handler addresses in `docs/usb-protocol.md` are given for the 600's 0.2 image and the
 Harmony 700's 2.8.
 
-## A tension worth knowing
+## A tension, now resolved
 
-Section 110 measured that a connected 600 has not loaded its configuration; section 283 read
-configuration derived variables live on a Harmony 650. The two are not reconciled anywhere here, see the
-650's [usb.md](../harmony-650/usb.md), and this page does not reconcile them. **On a 600 itself the
-configuration's variables are live on the cable**: section 303 read its delays there, and section 387 read its
-clock ticking between two reads and a variable at the value its configuration starts it at, both from `0xE10`
-on build 0.2.
+Section 110 measured five variables of a journal reading zero on a connected 600, and was read as the 600
+not loading its configuration on the cable; section 283 read configuration derived variables live on a
+Harmony 650. **On a 600 itself the configuration's variables are live on the cable**: section 303 read its
+delays there, and section 387 read its clock ticking between two reads and a variable at the value its
+configuration starts it at, both from `0xE10` on build 0.2. Section 387 reconciles the two: section 110's
+five are variables of another kind and do not say otherwise. This page said that "a connected 600 has not
+loaded its configuration"<!--superseded--> and that the two readings "are not reconciled anywhere
+here"<!--superseded--> until section 387.
 
 ## Not checked
 

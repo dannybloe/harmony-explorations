@@ -24,7 +24,9 @@ Internal page `0xFF` `+0xEC00`, the architecture's layout. The 600 is the unit o
 were found**: settings `0x00` to `0x13` and `0x18` to `0x2B` are two tables of five power on and five
 inter device delays, keyed per device, which the configuration copies over its own at start, read in the
 600's 0.2 image and measured, section 303. One was cleared over USB, section 305. The 650's and 700's
-stores held only setting `0x80`.
+stores held only setting `0x80`. A saved inter device delay was still in the store after this project's
+configuration writes, and a configuration that does not restore it runs its own value, measured, sections
+387 and 391.
 
 ## The identity block
 
@@ -35,13 +37,23 @@ identifying nothing. The values are one unit's serial and never appear in this r
 ## Data memory
 
 The 0.2 build's addresses, which the 600 and the 650 share for the routines read, are in
-`docs/memory-map-600.md`'s data memory table. **Their values were read live on the Harmony 650 only**,
-section 283; on a connected 600 the configuration's own variables were not loaded, section 110. What was
-read on a connected 600 is the flash id at `0x686` and `0x687`, `0x15` and `0x1C`, and three
-uninitialised bytes beside them, section 110.
+`docs/memory-map-600.md`'s data memory table. **They are read live on a connected 600**: the state
+variables from `0xE10`, variable `n` at `0xE10 + n`, with the clock in variables 0 to 6 ticking between
+two reads and a variable at the value its configuration starts it at, sections 303 and 387; the flash id at
+`0x686` and `0x687`, `0x15` and `0x1C`, section 110; and the panel's first identity byte at `0x384`, 0,
+section 387. This said "**Their values were read live on the Harmony 650 only**"<!--superseded--> and
+"on a connected 600 the configuration's own variables were not loaded"<!--superseded-->, section 110,
+until section 387 found section 110's five zero variables to be of another kind.
+
+Other 0.2 addresses read since, all read in the firmware: the counter of time since the configuration
+was built at `0x06F`, section 310; the current mode at `0x0A8`, section 326; the bit that gates the
+trailer checksum, bit 0 of `0x744`, loaded at start from setting `0x80`, section 354; the infrared toggle
+word at `0x3DA`, section 365; and the configuration's group 3 light levels at `0xD2F` to `0xD32`, the
+level in force at `0xD2A`, section 392.
 
 ## Not checked
 
 * External `0x0112C0` to `0x020000` and `0x021BCB` to `0x030000`, `docs/memory-map-600.md`.
 * What setting `0x80` in the store means, and the four small records after the identity block.
-* The data memory values of a 600 running its configuration off the cable.
+* The data memory values of a 600 running its configuration off the cable; on the cable they are read,
+  section 387.
