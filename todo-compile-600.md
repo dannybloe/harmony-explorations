@@ -41,7 +41,7 @@ bench test, as the 700's chapters 1 and 2 did.
     - [x] 1.2.4.4 The letters blended into grey 2, `BLENDED_LETTER_SKINS`: seen on the remote and kept, decided on 14 October 2026, section 387
 - [x] 1.3 Checked: it rebuilds, every screen rebuilds, every byte attributed to a generator and none carried, as the 650's 11.1.1.4
 - [x] 1.4 Written to the bench 600 with a bench test: it starts, Devices and Activities lead to each other, an activity key shows the placeholder, All Off returns; the region read into the lab first, and the delays saved on the remote read
-  - [ ] 1.4.1 "Turning system off" did not show on the 600, on leaving the cable or on All Off, with its mark read 1, where the empty 650 and 700 files showed it with the mark at 0; nor with the mark at 0 on the 600, so the mark is not it: section 387
+  - [ ] 1.4.1 "Turning system off" did not show on the 600, on leaving the cable or on All Off, with its mark read 1, where the empty 650 and 700 files showed it with the mark at 0; nor with the mark at 0 on the 600, so the mark is not it: section 387; nor with the six device setup on, on either, section 391
 
 ## 2. The test setup on it
 
@@ -49,4 +49,4 @@ bench test, as the 700's chapters 1 and 2 did.
 - [x] 2.2 The device limit: 5 per Logitech's manual and service (the reference's `features.md`); the test setup with five devices first, and whether a sixth is taken checked on its own
   - [x] 2.2.1 The five device setup written to the 600 and read back identical, its bench test `packages/bench/irtests/done/600-setup-five.json` run (`reads/20261015T055101Z-ir-test-...`): every code as the file predicts in all eleven steps, decoded against the file written, section 389
   - [x] 2.2.2 Whether a sixth device is taken: the test setup with the Switch back, written and its Switch input heard. Its codes are sent: its power and Input 2 at Kodi kijken's start and its power at All Off, and all four commands on its own page, built with the limit raised for that build only, `packages/bench/irtests/done/600-setup-six.json`, section 390
-- [ ] 2.3 Written to the 600 and run with a bench test as the 700's 2.3; behaviour as the file predicts, the look seen at the bench, and the delays saved on the remote checked against what the file states before predicting any timing
+- [x] 2.3 Written to the 600 and run with a bench test as the 700's 2.3; behaviour as the file predicts, the look seen at the bench, and the delays saved on the remote checked against what the file states before predicting any timing; done (section 391) on the six device file: every code as predicted, every gap at least its delay (the LG's input 11.0 s after its power against 10 s, the Plasma's 6.7 s against 5 s), the one saved delay not restored by the file, the look judged good, `packages/bench/irtests/done/600-setup-look.json`
