@@ -71,22 +71,22 @@ Plan: [003-how-an-activity-is-built.md](docs/plans/003-how-an-activity-is-built.
 
 ## 2. Screens
 
-- [ ] 2.1 Categorise everything the remote shows
-  - [ ] 2.1.1 What is identical on every remote of a model, so it can be carried
-  - [ ] 2.1.2 What is dynamic
-  - [ ] 2.1.3 What depends on the configuration's own content
-- [ ] 2.2 Measure 2.1.1 first: two configurations of one model side by side
-- [ ] 2.3 Build what cannot be carried
+- [x] 2.1 Categorise everything the remote shows; done for the Harmony 650 (section 317, todo-compile-650 7.2): every screen byte fixed, dynamic or the setup's; the 700 shares 53 of 55 fixed modes and the 600 none, the Harmony One not checked
+  - [x] 2.1.1 What is identical on every remote of a model, so it can be carried; done for the Harmony 650 (section 317)
+  - [x] 2.1.2 What is dynamic; done for the Harmony 650 (section 317)
+  - [x] 2.1.3 What depends on the configuration's own content; done for the Harmony 650 (section 317)
+- [x] 2.2 Measure 2.1.1 first: two configurations of one model side by side; done (section 317): four Harmony 650 compiles side by side, the fixed part the same size on all four to within a byte
+- [x] 2.3 Build what cannot be carried; done on the Harmony 600, 650 and 700, which are built from nothing (sections 356 to 358, 363, 373, 374, 380, 382 to 388); the Harmony One not built, which is 3.5
 
 ## 3. The compiler
 
-- [ ] 3.1 Lay out a container from nothing: the section table and every address
-- [ ] 3.2 Place the reused pictures and glyph sets
-- [ ] 3.3 A document in, a whole container out
-- [ ] 3.4 Generate the text inside a screen program rather than carrying it
+- [x] 3.1 Lay out a container from nothing: the section table and every address; done as todo-compile-650 10.1 (section 318): `layOutContainer`, all 13 arch 14 compiles byte for byte; arch 14 only, the Harmony One's 22 slots not done
+- [x] 3.2 Place the reused pictures and glyph sets; done as todo-compile-650 10.5 (section 328): `placer.ts`, 13 of 13, and a file placed our way run on the Harmony 650; arch 14 only
+- [x] 3.3 A document in, a whole container out; done as todo-compile-650 10.6 and 11.1 (sections 364, 380): a setup file in, a whole configuration out, run on the Harmony 650, 700 and 600 (sections 381, 386, 389)
+- [x] 3.4 Generate the text inside a screen program rather than carrying it; done as todo-compile-650 8.1 (section 358): every text spelled from its word, 22 Logitech compiles rebuilt byte for byte; arch 14 only
 - [ ] 3.5 Write a fully built configuration to the spare Harmony One and use it
 - [ ] 3.6 Room for a record of our own in every configuration we write, its contents undecided (FreeHarmony's document, its version, and more): carried in base slot 0, which the firmware never reads (section 81)
-  - [ ] 3.6.1 Confirm no firmware seeks base slot 0 on the images not yet scanned, the Harmony 600's and 650's 0.2 among them, per architecture
+  - [ ] 3.6.1 Confirm no firmware seeks base slot 0 on the images not yet scanned, the Harmony 600's and 650's 0.2 among them, per architecture; the Harmony 600 and 650 0.2 builds scanned since, never 0 or 1 (section 392), beside the One 3.4 and 700 2.8 (section 81) and the 525 (section 274); left: the 650 0.4 and 700 2.5 images, and reads that bypass the seeker
   - [ ] 3.6.2 The codec writes and reads the record, kept apart from Logitech's name tree, and a configuration without one reads as having none
   - [ ] 3.6.3 Written to a bench remote and read back, the remote running unchanged
 
@@ -95,11 +95,11 @@ Plan: [003-how-an-activity-is-built.md](docs/plans/003-how-an-activity-is-built.
 - [ ] 4.1 FreeHarmony: how a device is stored in our own library
 - [ ] 4.2 FreeHarmony: convert Logitech's database records into that format
   - [x] 4.2.1 Read a device's driving rules out of the archive, schema version 2: timing, power, inputs, channel tuning and states, `driving.ts`; a catalogue question, so no architecture applies (section 305)
-  - [ ] 4.2.2 Ask the archive's author whether his converter sorts every action list on `Order`, per input and per state lists included; once he confirms, delete the 329 MB raw features file from the lab and mark its register row as fetch from the release when needed (section 305)
-- [ ] 4.3 Turn device information into a compilation that works on a remote
+  - [x] 4.2.2 Ask the archive's author whether his converter sorts every action list on `Order`, per input and per state lists included; once he confirms, delete the 329 MB raw features file from the lab and mark its register row as fetch from the release when needed (section 305); done (section 305): his README states every list is sorted on Order, confirmed against the raw capture on all 792039 lists; the raw file stays, since it holds fields the archive drops (todo-later 1.2.2)
+- [x] 4.3 Turn device information into a compilation that works on a remote; done: every sub-item, 4.3.1 on the spare Harmony One and the rest on the Harmony 650
   - [x] 4.3.1 One device, six commands, catalogue to remote, television answered (section 242)
-  - [ ] 4.3.2 A full device of ninety commands
-  - [ ] 4.3.3 Several devices at once
+  - [x] 4.3.2 A full device of ninety commands; done as todo-compile-650 2.4 (section 325): every command the catalogue holds, laid out as Logitech does, and the whole TX-P42GT30E, 63 commands on 7 pages, run on the Harmony 650; arch 14 only
+  - [x] 4.3.3 Several devices at once; done as todo-compile-650 2.7 (section 331): `composeCatalogueDevices`, one run equal to one at a time, two devices written in one run and heard on the Harmony 650
   - [x] 4.3.4 A power step the catalogue holds for a stated time, composed as its own record of the frames that fit the hold, counted as the frames that start inside the hold on the lengths the protocol definition states, and a device page's power keys pointed at it too, which Logitech's compile does not do: the Harmony 650's device mode Power On sends three frames and leaves the Panasonic off, which needs four; measured on arch 14 only (sections 306 to 309)
     - [x] The count as code: `longPressFramesOfStatedCode` over the segment lengths Logitech's definitions state, generated by `make segmentlengths`, equal to the compiles' count on all 27 long press versions (section 308)
     - [x] The long press version composed from a stated code and a hold: `longPressBlockOfStatedCode`, word for word on 26 of the 27 compiled ones, the Technics one refused for want of a press block (section 309)
@@ -124,8 +124,8 @@ The remote's own settings rather than its devices and activities. Logitech's ser
   - [ ] 6.1.1 GlowTime, how long the screen stays lit: a timer (section 292)
     - [x] On the Harmony 650: timer 1, 8 seconds as compiled, written as 20 and then 10 and timed on the remote
     - [ ] On the Harmony 700: which of its pair of timers it is, on the bench unit
-  - [ ] 6.1.2 RemoteAssistant, the question after an activity starts, on the Harmony 600, 650 and 700
-  - [ ] 6.1.3 TiltSensor, waking when picked up, on the Harmony 600, 650 and 700
+  - [ ] 6.1.2 RemoteAssistant, the question after an activity starts, on the Harmony 600, 650 and 700; done on the Harmony 650 (section 345); the 600's compile without it holds none of its screens (section 347); the 700 not compiled with it off
+  - [ ] 6.1.3 TiltSensor, waking when picked up, on the Harmony 600, 650 and 700; done on the Harmony 650 (sections 346, 347); the 600 and 700 not compiled with it off
   - [ ] 6.1.4 The Harmony Touch's eleven, among them screen brightness and screen timeout
   - [ ] 6.1.5 The Harmony One's and the Harmony 525's, which Logitech's service does not list
 - [ ] 6.2 Read and change them from FreeHarmony
@@ -161,12 +161,12 @@ After 3 produces something.
   - [x] Record its identity as `h700` and read its whole configuration region
   - [x] Write one block back unchanged with `rehearse-block.ts` (section 300)
   - [x] A real write with `write-config.ts`: the Denon's power on delay raised and put back, heard by the bench's infrared receiver (section 301)
-- [ ] L9 A delay saved on a Harmony 600, 650 or 700 wins over the configuration's: the USB route is read, `0x13 0xB2` and `0x14 0xB3` (section 304), and the Harmony 600's saved KPN delay is cleared with it (section 305); after a start the remote holds the configuration's delay again, though the bench gap moved only 0.1 of the 0.5 seconds, and a raise to 4.5 seconds was heard in full (section 305); the television's seven copies are its account's one second hold on power on and off, predicted and confirmed on the Harmony 650 (section 305), and over twelve more devices compiled for a Harmony 650 and 700 the count is the frames that start inside the hold on the frame lengths Logitech's definition states, all 27 long press versions of six compiles (sections 306 to 308); left are why the 0.1, how the compiler picks a device's key, and what wrote the Harmony 600's two saved delays, before deciding how an editor shows or replaces one (section 303)
+- [ ] L9 A delay saved on a Harmony 600, 650 or 700 wins over the configuration's: the USB route is read, `0x13 0xB2` and `0x14 0xB3` (section 304), and the Harmony 600's saved KPN delay is cleared with it (section 305); after a start the remote holds the configuration's delay again, though the bench gap moved only 0.1 of the 0.5 seconds, and a raise to 4.5 seconds was heard in full (section 305); the television's seven copies are its account's one second hold on power on and off, predicted and confirmed on the Harmony 650 (section 305), and over twelve more devices compiled for a Harmony 650 and 700 the count is the frames that start inside the hold on the frame lengths Logitech's definition states, all 27 long press versions of six compiles (sections 306 to 308); left are why the 0.1, how the compiler picks a device's key, and what wrote the Harmony 600's two saved delays, before deciding how an editor shows or replaces one (section 303); how the compiler picks a device's key answered since: the id's last five decimal digits, or four where five exceed 65535, 290 of 290 (section 360)
 - [ ] L10 `composeDevice` emits no save and restore lists for a device composed for a Harmony 600, 650 or 700, so its delays changed on the remote are lost at the next start (section 303)
 - [ ] L11 The bench's infrared monitor names no KPN frame whose first flashes the receiver merged, which happened in both runs of section 303; match such a frame by its tail (section 303)
 - [ ] L12 `make protocols --write` against today's lab no longer reproduces `src/protocols.ts`: a measured row's counts move (Kreatel 164 to 276) and four tests fail, so the table is held at its committed state until the drift is read
 - [x] L13 `blockOfStatedCode` builds a one frame press for the Memorex 32 Bit family where Logitech's compiled press of the Dell 2300MP holds three (section 309). The table's block stays one device's count; the composer builds the Dell at its own three, 35 of 35 records whole (section 350)
-- [ ] L14 Composing a device onto a Harmony 600, 650 or 700 whose device list's last page is full is refused, since a new device list page is composed on the Harmony One only; the Harmony 650 with six devices is there now (section 309)
+- [x] L14 Composing a device onto a Harmony 600, 650 or 700 whose device list's last page is full is refused, since a new device list page is composed on the Harmony One only; the Harmony 650 with six devices is there now (section 309); done (section 312, todo-compile-650 2.3): a new device list page composed on arch 14 and seen on the Harmony 650, a fifth device opening a second page on the idle list and both activities' lists
 - [ ] L15 A library function for any remote: where a device's power keys in device mode send the short press but the configuration also holds the long press version the activity uses, point those keys at the long press version. Done by hand once on the Harmony 650; long press versions seen only in Harmony 650 and 700 configurations so far, the Harmony One and 600 unchecked (section 309)
 - [ ] L8 Flash reads stop out of sequence now and then in a write run, two and four whole chunks on the Harmony 700 and eleven on the 650 and the spare Harmony One, which is section 223's host side drop; what holds the reader up is open, and the writer's journal does not record the error that stopped it (section 301)
 
