@@ -9,10 +9,14 @@ how an image is laid out, what safe mode is and the `-safe.bin` naming trap, is 
 | version | where | standing and source |
 |---|---|---|
 | **0.2** | application 70336 bytes, entry `0x1A26E`, execution base `0x9000`; safe mode 0.2, 24320 bytes | measured, read off a unit whole and verified by its own header checksum, section 23 |
-| 0.2 | the forum table's "newest seen" | third party, `reference/capabilities.md`, which marks it confirmed on the remote |
+| 0.2 | the forum table's "newest seen", which is out of date | third party, `reference/capabilities.md`, which marks it confirmed on the remote |
+| **0.3** | named for skin 71 by MyHarmony's own version list, `VersionDbDefaults2.xml`, filed in the lab's `firmware/packages/versiondb/` | client sourced; the image it names answers 404, as every image on that list does, `todo-secure-logitech.md` 4.1 |
 
-No other version of the 600's firmware is known here, and no package of it: **Logitech's software update
-service answers 404 for skin 71**, section 295.
+**A newer version exists by Logitech's word and no copy of it is held**: the version list names 0.3 for
+skin 71, the 600 for the Americas, and no entry for skin 73. **Logitech's software update service answers
+404 for skin 71**, section 295. This said "no other version of the 600's firmware is known here"<!--superseded-->
+until 15 October 2026, while the version list had been filed for `todo-secure-logitech.md` 4.1 with 0.3 in
+it.
 
 **The 600's 0.2 is not the 650's 0.2.** One program in two builds, 1395 bytes differing position by
 position, so an address read on one does not transfer to the other without checking, section 281.
