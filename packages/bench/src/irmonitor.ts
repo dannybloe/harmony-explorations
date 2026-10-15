@@ -52,9 +52,9 @@ export const DEFAULT_IRTOOLS = '/Applications/Flirc.app/Contents/Resources/irtoo
  * the lab is skipped rather than refused.
  */
 export const BENCH_CONFIGS: readonly string[] = [
-  // The Harmony 600's since it holds the five device test setup, `todo-compile-600.md` 2.2, where Logitech's
-  // own compile it held before named none of that setup's devices.
-  'one_config', 'one_spare_page4_base', 'h600_setup5_on', 'h650_devicelist_region',
+  // The Harmony 600's since it holds the six device file, `todo-compile-600.md` 2.2.2, which is the five
+  // device test setup plus the Switch; Logitech's own compile it held before named none of those devices.
+  'one_config', 'one_spare_page4_base', 'h600_setup6_on', 'h650_devicelist_region',
   'h700_28_config_region', 'h525_config_2',
 ];
 

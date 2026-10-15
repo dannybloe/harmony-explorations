@@ -1,0 +1,21 @@
+{
+  "name": "Harmony 600, a sixth device",
+  "description": "todo-compile-600 2.2.2, one write of lab/work/h600-from-nothing/setup6-600-blended.bin: the test setup without the Sony HT and Muziek, the Switch kept, so six devices where Logitech states five for the 600; built by our own code with the device limit raised to six for that one build, section 389. What it answers: whether the 600 takes the Switch, the sixth device, so whether its codes are sent. Kodi kijken is the activity that uses it: by the file it switches on the LG, Kodi and the Switch, sets the LG to HDMI 3 and the Switch to Input 2, switches the Plasma and the Denon off, and leaves the KPN box alone; its volume goes to the LG. The monitor's list holds the 600's previous file, which has no Switch, so the Switch's codes may show unnamed or as 'Not on a bench remote' while you run; they are decoded against this file afterwards. The three buttons below the screen are the left arrow, the centre button and the right arrow. Please write in each step's note what you saw, also when it is what the step expects.",
+  "steps": [
+    {
+      "instruction": "Straight after the write the remote restarts. Take it off the cable and point it at the Flirc. Expect the Activities screen. Note what page 1 shows. Mark when it is quiet"
+    },
+    {
+      "instruction": "Press the right arrow below the screen once. Expect 'Activities 2/2' with Kodi kijken on the upper row and Plasma kijken on the lower row. Press the button beside Kodi kijken. Expect 'Starting Kodi kijken', then the LG's, Kodi's and the Switch's power, the LG's HDMI 3 and the Switch's Input 2. Note whether the monitor heard anything that is not the LG or Kodi. Mark when it settles"
+    },
+    {
+      "instruction": "Press Volume up once. Expect the LG's volume up. Mark"
+    },
+    {
+      "instruction": "Press the centre button below the screen ('Devices'). Expect 'Devices 1/2': LG TV upper left, Kodi upper right, Switch lower left, Plasma lower right, 'Activity' at the bottom. Press the button beside Switch (lower left). Expect the Switch's own pages. Note what its first page shows, then press the button beside one of its commands and note which one. Then press the centre button ('Back') until the Kodi kijken screen is back. Mark"
+    },
+    {
+      "instruction": "Press All Off. Expect power off codes for what Kodi kijken switched on, then the Activities screen. Note which devices the monitor heard. Mark when it is quiet"
+    }
+  ]
+}

@@ -51582,3 +51582,44 @@ A frame of this run that the written file does not send at that step.
 
 * `packages/bench/src/irmonitor.ts`: `BENCH_CONFIGS` names the 600 by its current read.
 * `packages/bench/irtests/done/600-setup-five.json`, the test; its run and the region read are in the lab's `reads/`.
+
+## 390. The Harmony 600 takes a sixth device
+
+`todo-compile-600.md` 2.2.2: the test setup with the Switch kept and the Sony HT and Muziek left out, so six
+devices where Logitech states five for the 600, written to the bench Harmony 600 and run with the infrared
+monitor.
+
+**Built by our own code with the limit raised for that one build.** The library refuses a sixth device on this
+model, `MODELS_BY_SKIN[73].maxDevices` being 5, section 388, so the lab script `setup6.ts` raised it to 6 in
+memory before assembling; nothing in the repository changed. `setup6-600-blended.bin`, 704895 bytes, written,
+read back byte for byte identical, the remote restarted by the writer; a read of the region after the run holds
+the written file unchanged at its start, `h600_setup6_on`.
+
+**The Switch's codes are sent**, decoded afterwards against the written file with the monitor's own matcher,
+twelve frames across the five steps of `600-setup-six.json`: Kodi kijken sent the LG's power on, Kodi's power,
+the Switch's power on, the Switch's Output A Input 2 and the LG's HDMI 3, and nothing to the KPN box; its volume
+went to the LG; All Off sent the LG's power off, Kodi's power and the Switch's power toggle. The Switch's power
+on is the frame the catalogue names `ARC`, as on the Harmony 650, section 339. The Switch's own device page
+showed power on, power off, Input 1 and Input 2, as noted at the bench; the monitor heard no frame in that step,
+and whether a command was pressed there is not recorded. No other note was made.
+
+**The monitor named the Switch "Not on a bench remote" at the bench**, as section 389 recorded for the five
+device setup: it named the 600 from `h600_setup5_on`, which has no Switch. It names from `h600_setup6_on` now,
+and every Switch frame of the run matches it.
+
+### Scope, decision 16
+
+One Harmony 600, build 0.2, one run, six devices. Whether it takes a seventh, and whether anything on the
+remote counts devices at all, is not checked: what was shown is that a sixth device's codes go out from an
+activity's start and from All Off. The limit of 5 stays in `models.ts`, since it is Logitech's statement for the
+model and the library's refusal follows it.
+
+### Falsification
+
+A frame of this run that the written file does not send at that step; a Switch command on its device page that
+sends nothing when pressed.
+
+### Where it lands
+
+* `packages/bench/src/irmonitor.ts`: `BENCH_CONFIGS` names the 600 by its current read.
+* `packages/bench/irtests/done/600-setup-six.json`, the test; its run and the region read are in the lab's `reads/`.
