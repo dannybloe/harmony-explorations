@@ -1351,6 +1351,42 @@ class TestTheParameterBlock(unittest.TestCase):
         self.assertNotEqual([arch14[i] for i in sorted(shared)],
                             [arch12[i] for i in sorted(shared)])
 
+    def test_group_3_is_a_second_light_level_table_on_arch_14(self):
+        """findings.md section 392: on the Harmony 700's 2.8 image group 3 is asked for once, offset 9
+        and length 4, by a routine built like group 1's: both fill the same scratch table at `0xD2E`
+        and pick one entry into `0xD2A` by a light state, group 1's state saved in variable 10 and
+        group 3's in variable 12. So group 3 is light levels, not a timing, and the Off screen does not
+        read it. The defaults are the fallback when the length does not match."""
+        base, guard = self.GUARDS['h700_code']
+        lab.require('h700_code')
+        code = lab.load('h700_code')
+        def at(addr):
+            return isa.decode(code, addr - base, base)
+        # The call: length 4 into 0xB8, offset 9 into 0xB7, then the guard.
+        self.assertEqual([at(a).fields.get('k') for a in (0x10154, 0x1015A)], [4, 9])
+        self.assertEqual((at(0x1015E).mnemonic, at(0x1015E).fields['target']), ('CALL', guard))
+        # Its defaults, and group 1's beside them for the same table.
+        self.assertEqual(literals_at('h700_code', base, 0x101B6, 16)[:5], [1, 3, 5, 10, 32])
+        self.assertEqual(literals_at('h700_code', base, 0x0FEE4, 12)[:4], [3, 5, 10, 32])
+        # The Harmony 600's 0.2 build asks the same of its own guard, `0x10E8E`, with the same fallback.
+        lab.require('h600_code_complete')
+        six = lab.load('h600_code_complete')
+        call = isa.decode(six, 0x11666 - base, base)
+        self.assertEqual([isa.decode(six, a - base, base).fields.get('k') for a in (0x1165C, 0x11662)], [4, 9])
+        self.assertEqual((call.mnemonic, call.fields['target']), ('RCALL', 0x10E8E))
+        self.assertEqual(literals_at('h600_code_complete', base, 0x116BC, 16)[:5], [1, 3, 5, 10, 32])
+
+    def test_the_600_and_650_run_one_program_on_build_0_2(self):
+        """findings.md section 392: the two 0.2 images are the same length and differ in 1395 bytes,
+        nearly all of them addresses moved by a few bytes; the model number each reports is the one
+        literal of meaning that differs, 71 on the 600 and 72 on the 650, here in the version reply."""
+        lab.require('h600_code_complete', 'h650_bench_code')
+        a, b = lab.load('h600_code_complete'), lab.load('h650_bench_code')
+        self.assertEqual(len(a), len(b))
+        self.assertEqual(sum(x != y for x, y in zip(a, b)), 1395)
+        reply = 0x11964 - 0x9000
+        self.assertEqual((a[reply:reply + 10:2], b[reply:reply + 10:2]), (bytes([2, 0, 71, 12, 14]), bytes([2, 0, 72, 12, 14])))
+
     def test_the_guard_demands_the_section_count_too(self):
         """Section 38's literal, re-asserted here because it is the same routine."""
         expected = {'h700_code': 9, 'one34_code': 11}

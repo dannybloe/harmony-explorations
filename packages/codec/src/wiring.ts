@@ -115,8 +115,9 @@ export const LOG_AREA = { capacity: 16384, start: 0x1e0000, limit: 0x200000 } as
 
 /**
  * The parameter block's nine groups per model, as `u16` values. One set per model on the thirteen; the
- * Harmony 600 and 650 differ in group 3 alone and the Harmony 700 in groups 3 and 5. What groups 2, 3
- * and 8 hold on arch 14 is not read, and no setting was seen to change any of them.
+ * Harmony 600 and 650 differ in group 3 alone and the Harmony 700 in groups 3 and 5. Group 3 is a second
+ * light's four levels, section 392; what groups 2 and 8 hold on arch 14 is not read, and no setting was
+ * seen to change any of them.
  */
 const PARAMETERS_COMMON = {
   g0: [44],
