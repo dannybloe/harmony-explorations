@@ -4,6 +4,7 @@
  * and `devicelist.ts`, its choices `choices.ts`; this is the object the registry hands out.
  */
 import type { Family } from '../family.ts';
+import { FOUR_SLOT_ACTIVITY_KEYS } from './keypadrules.ts';
 import { fourSlotDrawsName, fourSlotScreenItems } from './screenitems.ts';
 import { HARD_KEYS } from '../../devicemode.ts';
 import { composeFourSlotActivityRow, composeFourSlotActivityScreen } from './activityscreen.ts';
@@ -17,6 +18,7 @@ export const FOUR_SLOT: Family<FourSlotChoices> = {
   choices: FOUR_SLOT_CHOICES,
   screenItems: fourSlotScreenItems,
   drawsName: fourSlotDrawsName,
+  activityKeyRules: FOUR_SLOT_ACTIVITY_KEYS,
   deviceModeKeys: HARD_KEYS,
   composeDeviceScreen: composeFourSlotDeviceScreen,
   activityMenu: fourSlotActivityMenu,

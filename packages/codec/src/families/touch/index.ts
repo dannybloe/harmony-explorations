@@ -3,6 +3,7 @@
  * modules are `menus.ts` and `screens.ts`, its choices `choices.ts`; this is the object the registry hands out.
  */
 import type { Family } from '../family.ts';
+import { TOUCH_ACTIVITY_KEYS } from './keypadrules.ts';
 import { touchDrawsName, touchScreenItems } from './screenitems.ts';
 import { composeTouchActivityRow, composeTouchActivityScreen, composeTouchDeviceScreen } from './screens.ts';
 import { TOUCH_CHOICES, type TouchChoices } from './choices.ts';
@@ -15,6 +16,7 @@ export const TOUCH: Family<TouchChoices> = {
   choices: TOUCH_CHOICES,
   screenItems: touchScreenItems,
   drawsName: touchDrawsName,
+  activityKeyRules: TOUCH_ACTIVITY_KEYS,
   deviceModeKeys: TOUCH_HARD_KEYS,
   composeDeviceScreen: composeTouchDeviceScreen,
   activityMenu: activityMenuByRows,

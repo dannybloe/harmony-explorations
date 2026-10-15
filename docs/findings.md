@@ -52173,3 +52173,48 @@ A Logitech One compile of a catalogue device whose device mode binds a key to an
 gives, beyond the AVR-28's iPod commands; a device mode of other than 49 or 51 entries; a device menu hit page
 of a known row count with a second geometry.
 
+## 398. An activity's keypad from its roles holds on the Harmony One with its own keys
+
+**Asked for by `todo-compile-one.md` 1.2.11.3.** Section 323's rule builds an activity's keypad map from its
+roles: the volume keys from the volume device's own device mode map, every other key from the control
+device's, and three refinements. Its keys were the Harmony 650's scans, written as constants in a module
+every family shares, so on the Harmony One it took the One's digit keys 0, 8 and 9 for volume. The keys are
+each family's now, `Family.activityKeyRules`, and the rule is checked on the One.
+
+**Sources.** Logitech's One compiles whose activities' roles an account states: the calibration account's
+four and the second test account's six, 50 activities, nine of them distinct, their roles read off their own
+sends, `activityRolesFromSends`, which agree with the accounts' captured activity lists on all 50, a scratch
+comparison. Neither client nor firmware was opened.
+
+**The keys.** Volume up, volume down and mute are scans 3, 4 and 9; channel up and down 19 and 20; skip
+forward and back 22 and 6; Exit 2. **Which arrow is up is read**: 27 is DirectionUp and 29 DirectionDown, so
+36 is the upper arrow and 26 the lower, from the calibration account's stated device maps, which hold
+DirectionUp and DirectionDown and no arrows, against each device's own record binding 27 and 29 and leaving
+36 and 26 unbound. Section 397 left that pair undecided.
+
+**Two additions the One needs.** A screen item's list on the One is the click and then a call of the
+command's send list, `FamilyTraits.screenItemsBeep`, and **an activity key runs the send without the click**:
+the Exit refinement took the item's own list and was wrong on all four activities it fired on, and right on
+four of four taking the call's target. And **the lower arrow takes its partner off the device's screen**:
+where the control device's own map binds the upper arrow and leaves the lower unbound, Logitech puts the
+device's own `PageDown` or `StepBack` screen command on it, on 13 of 13 activities (the Denon AVR-X4800H's and
+a classic Denon's `PageDown`, the PlayStation 3's `StepBack`), `ActivityKeyRules.partners`.
+
+**Asserted**, `test/activityroles.test.ts`: on the 50 activities the rule with the One's keys gives 1704 of
+1752 keys and 38 activities whole; with the two roles swapped, the control, 174. Scan 55, bound on every one
+of the 64 activities of the One's compiles to entering a mode and setting a variable and held by no device's
+map, is not the rule's and is left out of both sides. Of the 48 keys left, measured per activity: 24 are
+"TV kijken"'s six copies with section 323's four key signature, Info and the two arrows left unbound and
+Select sending another command of the set top box, as on the Harmony 650; 12 are three more keys on four of
+those copies, number plus, Enter and the 6, which look like edits on the account; and 12 are "Bluetooth"'s six
+copies, a receiver as the control device, whose ChannelDown Logitech takes from its SkipBack and whose
+Previous channel it leaves unbound, which no refinement explains yet.
+
+**The Harmony 650's side is unchanged**: the four slot family's keys are the constants that were there, and
+section 323's test passes as it did.
+
+### What would falsify it
+
+An activity of a One compile with stated roles whose volume keys send a device other than the volume
+device; a control device binding the lower arrow itself and the activity putting a screen command there.
+

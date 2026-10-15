@@ -43,8 +43,8 @@ import {
   screenStrings,
   taggedList,
   valueMaps,
-  VOLUME_SCANS,
 } from '../src/index.ts';
+import { familyOf } from '../src/families/registry.ts';
 
 const COMPILES = ['h600_config', 'calibration_h600', 'h650_config_region',
   'h650_panasonic_config', 'h650_power_hold_compile', 'h650_power_hold_compile_2', 'h700_config',
@@ -214,10 +214,10 @@ test('the three refinements change exactly the keys they are for, and the plain 
   const plain = (c: Container, roles: ActivityRoles): Map<number, number> => {
     const out = new Map<number, number>();
     if (roles.control !== undefined) {
-      for (const [scan, list] of deviceKeypadLists(c, roles.control)) if (!VOLUME_SCANS.includes(scan)) out.set(scan, list);
+      for (const [scan, list] of deviceKeypadLists(c, roles.control)) if (!familyOf(c)!.activityKeyRules.volume.includes(scan)) out.set(scan, list);
     }
     if (roles.volume !== undefined) {
-      for (const [scan, list] of deviceKeypadLists(c, roles.volume)) if (VOLUME_SCANS.includes(scan)) out.set(scan, list);
+      for (const [scan, list] of deviceKeypadLists(c, roles.volume)) if (familyOf(c)!.activityKeyRules.volume.includes(scan)) out.set(scan, list);
     }
     return out;
   };
@@ -470,4 +470,41 @@ test('a corner label breaks at spaces greedily within 55 to 58 pixels, and no co
   const placedBy = (limit: number): number => measured.filter((one) => JSON.stringify(wrap(one, limit)) === JSON.stringify(one.lines)).length;
   // The band, and the two widths either side of it, which is the control.
   assert.deepEqual([54, 55, 56, 57, 58, 59].map(placedBy), [2036, 2037, 2037, 2037, 2037, 2034]);
+});
+
+/**
+ * Logitech's compiles for the Harmony One whose activities' roles an account states: the calibration account's
+ * four and the second test account's six. Their roles as `activityRolesFromSends` reads them agree with the
+ * stated ones on all 50 activities, a scratch comparison against the accounts' captured activity lists.
+ */
+const ONE_STATED = [
+  'calibration_one', 'calibration_favchannels', 'phase7_before', 'phase7_after', 'one_spare_myharmony',
+  'one_spare_20260830', 'calibration_favzero', 'compiled_protocols', 'compiled_protocols_2', 'compiled_protocols_3',
+] as const;
+
+test('on the Harmony One an activity\'s keypad from its roles is Logitech\'s on 38 of 50 activities with the One\'s keys, against 174 keys with the roles swapped',
+     skipUnless(...ONE_STATED), () => {
+  // Section 398. Scan 55, which every One activity binds to entering a mode and setting a variable and no
+  // device's map holds, is not the rule's and is left out of both sides.
+  const total = { match: 0, differ: 0, missing: 0, extra: 0 };
+  let whole = 0;
+  let activityCount = 0;
+  let swapped = 0;
+  const without55 = (map: Map<number, number>) => { map.delete(55); return map; };
+  for (const name of ONE_STATED) {
+    const c = load(name);
+    for (const one of activities(c)) {
+      activityCount++;
+      const roles = activityRolesFromSends(c, one.activity);
+      const theirs = without55(stated(c, one.set));
+      const result = score(without55(keysOf(c, roles)), theirs);
+      total.match += result.match; total.differ += result.differ;
+      total.missing += result.missing; total.extra += result.extra;
+      if (result.keys.length === 0) whole++;
+      swapped += score(without55(keysOf(c, { volume: roles.control, control: roles.volume })), theirs).match;
+    }
+  }
+  assert.deepEqual({ activityCount, whole, total, swapped }, {
+    activityCount: 50, whole: 38, total: { match: 1704, differ: 16, missing: 8, extra: 24 }, swapped: 174,
+  });
 });

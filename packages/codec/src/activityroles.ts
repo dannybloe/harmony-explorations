@@ -34,34 +34,46 @@ import {
 import {
   activities, deviceModeMaps, devices, deviceVariables, INPUT_PROPERTY, infraredCodesPerList, POWER_PROPERTY,
 } from './inventory.ts';
-import { familyOf } from './families/registry.ts';
+import { familyOf, traitsOf } from './families/registry.ts';
 import { ComposeError, type ComposeActivityTarget, type ComposeRow } from './compose.ts';
 import { activityStartTargets } from './inputs.ts';
 
-/** VolumeUp, VolumeDown and Mute on the Harmony 600, 650 and 700's keypad, `reference/button-maps.md`. */
-export const VOLUME_SCANS: readonly number[] = [14, 15, 16];
 /** A press, the event type of every key binding that sends anything, section 17. */
 const PRESS = 2;
 
 /**
- * Keys whose binding the compiler takes from another key of the same device when the device's own map
- * leaves them unbound. The two arrow keys above the direction pad on a Harmony 600, scans 26 and 27,
- * are bound to nothing in most devices' own maps, and an activity then sends the device's DirectionUp
- * and DirectionDown on them, scans 50 and 42.
+ * The keys section 323's rule names, per family, `Family.activityKeyRules`: which keys an activity takes from
+ * its volume device, and the keys its three refinements move. Data of the family because they are its keypad's
+ * scans; the rule is the same on the Harmony 600, 650 and 700 and on the Harmony One, section 398.
  */
-const FALLBACK_SCANS: ReadonlyMap<number, number> = new Map([[26, 50], [27, 42]]);
-/**
- * ChannelUp and ChannelDown, and what an activity puts on them instead when the device's own map has
- * them doing the direction pad's job: SkipForward and SkipBack. A device with no channels, a disc
- * player, carries its DirectionUp and DirectionDown on the channel keys in its own map, and the
- * compiler gives the activity the skip keys there instead, which is the stated map on the calibration
- * Harmony 600's "Watch a Movie" (`ChannelUp` to `SkipForward`).
- */
-const CHANNEL_SCANS: readonly [number, number] = [31, 32];
-const DIRECTION_SCANS: readonly [number, number] = [50, 42];
-const SKIP_SCANS: readonly [number, number] = [38, 21];
-/** The Exit key, and the label of a device's own Exit command where its map puts another on that key. */
-const EXIT_SCAN = 12;
+export interface ActivityKeyRules {
+  /** VolumeUp, VolumeDown and Mute: the keys taken from the volume device. */
+  readonly volume: readonly number[];
+  /**
+   * Keys taken from another key of the control device when its own map leaves them unbound, as key and the
+   * key it falls back to: the arrows beside the direction pad, which an activity sends DirectionUp and
+   * DirectionDown on.
+   */
+  readonly fallback: ReadonlyMap<number, number>;
+  /**
+   * ChannelUp and ChannelDown, and what an activity puts on them instead when the control device's own map has
+   * them doing the direction pad's job: SkipForward and SkipBack. A disc player carries its DirectionUp and
+   * DirectionDown on the channel keys, and the compiler gives the activity the skip keys there instead.
+   */
+  readonly channel: readonly [number, number];
+  readonly direction: readonly [number, number];
+  readonly skip: readonly [number, number];
+  /** The Exit key, which takes the control device's own `Exit` screen command where it has one. */
+  readonly exit: number;
+  /**
+   * A key whose partner the control device's own map binds and which it leaves unbound itself, and the screen
+   * commands of the device it then takes, in order: the Harmony One's lower arrow, which takes `PageDown` or
+   * `StepBack` off the device's screen where its own map put `PageUp` or `StepForward` on the upper one.
+   */
+  readonly partners?: readonly { readonly scan: number; readonly when: number; readonly names: readonly string[] }[];
+}
+
+/** The label of a device's own Exit command where its map puts another on the Exit key. */
 const EXIT_LABEL = 'Exit';
 
 /** The devices an activity's roles name, each as an index into base slot 5's group array. */
@@ -131,42 +143,65 @@ export function drawsName(c: Container, item: DeviceScreenItem, name: string): b
  * activities and wrong on four; the other two fire on one activity, the calibration disc player's, where
  * they agree with Logitech's stated map, so they are fitted to it:
  *
- * - the arrows, scans 26 and 27, fall back to the control device's DirectionUp and DirectionDown when
- *   its own map leaves them unbound;
+ * - the arrows, on a Harmony 600 scans 26 and 27, fall back to the control device's DirectionUp and
+ *   DirectionDown when its own map leaves them unbound;
  * - ChannelUp and ChannelDown take SkipForward and SkipBack when the control device's own map has the
  *   channel keys doing the direction pad's job;
  * - Exit takes the control device's own `Exit` screen command when it has one, which is where its own
  *   map put the command it calls Exit after giving the key to something else.
+ *
+ * The keys are the family's, `ActivityKeyRules`. On the Harmony One the rule holds with its own keys and
+ * two additions, section 398: a key runs the send a screen command calls rather than the command with its
+ * click, and the lower arrow takes the device's `PageDown` or `StepBack` off its screen where its own map
+ * put the partner on the upper one.
  *
  * The **order** of the set's entries is not this function's: `composeActivity` writes the set, and a
  * set's entries are in Java's hash bucket order, `keyListBucket`, on 40 of 40 activity sets, with the
  * order inside a bucket depending on the order they were added, which is not established.
  */
 export function activityKeysFromRoles(c: Container, roles: ActivityRoles): { scan: number; list: number }[] {
+  const rules = screenFamily(c).activityKeyRules;
   const keys = new Map<number, number>();
   if (roles.control !== undefined) {
     const own = deviceKeypadLists(c, roles.control);
-    for (const [scan, list] of own) if (!VOLUME_SCANS.includes(scan)) keys.set(scan, list);
-    for (const [scan, from] of FALLBACK_SCANS) {
+    for (const [scan, list] of own) if (!rules.volume.includes(scan)) keys.set(scan, list);
+    for (const [scan, from] of rules.fallback) {
       const fallback = own.get(from);
       if (!own.has(scan) && fallback !== undefined) keys.set(scan, fallback);
     }
-    const channelIsDirection = CHANNEL_SCANS.every((scan, k) =>
-      own.has(scan) && own.get(scan) === own.get(DIRECTION_SCANS[k] as number));
-    if (channelIsDirection && SKIP_SCANS.every((scan) => own.has(scan))) {
-      CHANNEL_SCANS.forEach((scan, k) => keys.set(scan, own.get(SKIP_SCANS[k] as number) as number));
+    const channelIsDirection = rules.channel.every((scan, k) =>
+      own.has(scan) && own.get(scan) === own.get(rules.direction[k] as number));
+    if (channelIsDirection && rules.skip.every((scan) => own.has(scan))) {
+      rules.channel.forEach((scan, k) => keys.set(scan, own.get(rules.skip[k] as number) as number));
     }
-    const exit = deviceScreenItems(c, roles.control).find((one) => drawsName(c, one, EXIT_LABEL));
-    if (exit !== undefined) keys.set(EXIT_SCAN, exit.list);
+    const items = deviceScreenItems(c, roles.control);
+    const exit = items.find((one) => drawsName(c, one, EXIT_LABEL));
+    if (exit !== undefined) keys.set(rules.exit, keyListOfItem(c, exit.list));
+    for (const partner of rules.partners ?? []) {
+      if (own.has(partner.scan) || !own.has(partner.when)) continue;
+      const item = partner.names.map((name) => items.find((one) => drawsName(c, one, name))).find((one) => one !== undefined);
+      if (item !== undefined) keys.set(partner.scan, keyListOfItem(c, item.list));
+    }
   }
   if (roles.volume !== undefined) {
     const own = deviceKeypadLists(c, roles.volume);
-    for (const scan of VOLUME_SCANS) {
+    for (const scan of rules.volume) {
       const list = own.get(scan);
       if (list !== undefined) keys.set(scan, list);
     }
   }
   return [...keys].sort((a, b) => a[0] - b[0]).map(([scan, list]) => ({ scan, list }));
+}
+
+/**
+ * The list a key runs for a screen command: the item's own where a screen item is the command alone, and the
+ * list it calls where a screen item opens with the click, `FamilyTraits.screenItemsBeep`, the Harmony One's,
+ * whose activity keys run the send without the click on four of four, section 398.
+ */
+function keyListOfItem(c: Container, list: number): number {
+  if (!traitsOf(c).screenItemsBeep) return list;
+  const last = (c.actionLists() ?? [])[list]?.at(-1);
+  return last?.opcode === ACTION_LIST_INDEX_OPCODE ? last.operand : list;
 }
 
 /** A command for the activity's screen: which device's, and the label its own screen draws it under. */
@@ -201,6 +236,7 @@ export function activityRolesFromSends(c: Container, activity: number): Activity
   const sets = handlerSets(c);
   if (one === undefined || sets === undefined) throw new ComposeError(`activity ${activity} does not exist`);
   const codes = infraredCodesPerList(c);
+  const volumeKeys = screenFamily(c).activityKeyRules.volume;
   const tally = new Map<number, number>();
   let volume: number | undefined;
   for (const entry of taggedList(c, sets.addresses[one.set] as number)?.entries ?? []) {
@@ -208,8 +244,8 @@ export function activityRolesFromSends(c: Container, activity: number): Activity
     const group = codes.get(entry.operand)?.[0]?.group;
     if (group === undefined) continue;
     const scan = entry.tag & 0x3f;
-    if (scan === VOLUME_SCANS[0]) volume = group;
-    else if (!VOLUME_SCANS.includes(scan)) tally.set(group, (tally.get(group) ?? 0) + 1);
+    if (scan === volumeKeys[0]) volume = group;
+    else if (!volumeKeys.includes(scan)) tally.set(group, (tally.get(group) ?? 0) + 1);
   }
   const control = [...tally].sort((a, b) => b[1] - a[1] || a[0] - b[0])[0]?.[0];
   return { volume, control };

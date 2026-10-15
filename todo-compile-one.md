@@ -58,9 +58,15 @@ One with its sequence's keys translated by name, since the One's keys have other
   - [ ] 1.2.9 The test setup composed on the lettered donor, checked, dry run against `one_spare_track_start`, and written to the spare
   - [x] 1.2.10 A composed device's keys in device mode: the One composer writes an empty key map, where Logitech's One device modes are 49 entries in one order with 46 key presses, and the 650's `HARD_KEYS` does not carry over by key name (the One has no colour keys; Channel Up sends SkipForward on the Denon AVR-X4800H and PresetNext on the Philips 70FA930/00S); the One's own table fitted from its compiles; 1.2.9 waits on it, since an activity's keypad is read off its devices' maps; done, section 397: `TOUCH_HARD_KEYS`, the touch family's `deviceModeKeys`, and the record in Logitech's shape, every key of the harvest's eight devices as Logitech binds it
   - [ ] 1.2.11 An activity's screens built for the One rather than copied, `todo-compile-one.md` 4.3 brought forward, decided on 15 October 2026: the One's activity composer copies its frame from an existing activity, and the donor has none; 1.2.9 waits on it
-    - [ ] 1.2.11.1 What a working screen and a start up screen of Logitech's One compiles consist of, fixed and per activity, measured
+    - [x] 1.2.11.1 What a working screen and a start up screen of Logitech's One compiles consist of, fixed and per activity, measured; done, a scratch measurement over the 64 activities of 15 compiles, asserted as each part is built: one grammar on 64 of 64, every byte fixed, the activity's (name, type, rows and their paging, favourites, its device list) or one of ten named unknowns
     - [ ] 1.2.11.2 The touch family's activity screens built from that, the first activity composed onto a configuration with none
-    - [ ] 1.2.11.3 The activity's keypad from its roles with the One's own keys, section 323's rule checked on the One
+      - [ ] 1.2.11.2.1 The pictures the donor lacks, drawn by us under decision 24 and shown before use (the look shown and agreed on 15 October 2026: rounded boxes in a light to dark blue gradient, white icons of the icon font, one box for every pad row): the activity menu row's background, each activity type's icon at the row's size and the start up screen's, and the working screen's three pad boxes
+      - [ ] 1.2.11.2.2 The start up screen built: its record of 55 entries, its hit page, its program and chrome ("Starting" and the name, the type's icon, the two lines), the start up timer created where none exists, and the header list
+      - [ ] 1.2.11.2.3 The working screen built: its record and handler lists (the timer, the lights by its pages and favourites), its hit page by pad count, its page lists and their pool copies, its pages (Devices, the pads in their boxes, the labels, the counter) and its chrome
+      - [ ] 1.2.11.2.4 The activity's own entries: base slot 11's four case programs, its device list, and the "an activity is running" list the first activity creates
+      - [ ] 1.2.11.2.5 The first row on an activity menu that has none
+      - [ ] 1.2.11.2.6 Each part checked against Logitech's: every one of the 64 activities' screens rebuilt from its name, type, rows and device list, the way the Harmony 650's builders are checked
+    - [x] 1.2.11.3 The activity's keypad from its roles with the One's own keys, section 323's rule checked on the One; done, section 398: 1704 of 1752 keys and 38 of 50 activities whole, the keys the family's, `activityKeyRules`
 - [ ] 1.3 A bench test of it: every code as the file predicts, the touch rows, device mode and All Off
 
 ## 2. Measure before building
@@ -84,9 +90,15 @@ One with its sequence's keys translated by name, since the One's keys have other
 - [ ] 3.1 The One's composers moved behind the touch family's interface, plan 007, without changing a byte they write
 - [ ] 3.2 Each part a composer still copies out of the donor listed, and built by us one at a time
 - [ ] 3.3 No remote named outside `families/`, the `code-for-a-family` skill: code outside a family is generic, decided on 15 October 2026
-  - [x] 3.3.1 The floor made executable, `test/generic.test.ts`: 31 modules outside the families test which remote it is 37 times, use a family's names 180 times and hold 14 constants of key scans, each pinned so the list can only be lowered
-  - [ ] 3.3.2 The module by module audit, past what a pattern finds: every constant, coordinate, font, count and table in a module outside `families/` that is one remote's, `wiring.ts`'s parameter values among them
-  - [ ] 3.3.3 Each one moved into its family or into one per architecture table a reader consults, the list in `generic.test.ts` lowered with each move
+  - [x] 3.3.1 The floor made executable, `test/generic.test.ts`, each module's counts pinned so the list can only be lowered; tightened by 3.3.2 to six shapes with comments left out: 23 modules
+  - [x] 3.3.2 The module by module audit, past what a pattern finds; done over the 73 modules outside `families/`: 28 generic, 18 readers holding their per architecture facts in tables, 11 inline per architecture tests in 7 readers, 38 builder facts of one family in 16 modules, and 6 modules that are the Harmony 600 family's whole (`wiring`, `firmwarescreens`, `screenrecords`, `screentexts`, `backgrounds`, `activitykeys`); `compose.ts` passes about 55 of a family's internal names through to shared modules
+  - [ ] 3.3.3 Each one moved into its family or into a per architecture table a reader consults, the list in `generic.test.ts` lowered with each move, least entangled first:
+    - [ ] 3.3.3.1 The inline reader tests into tables: `actions`, `tables`, `compare`, `touch`, `screencategories`, `statetables`'s second copy of the case count width
+    - [ ] 3.3.3.2 The six whole modules into `families/four-slot`, `screentexts` first and `wiring` once a family member replaces the rewiring `shared/activities.ts` triggers; with them the four slot half of `assemble` and `modezero`, and the skin sets into the family's choices
+    - [ ] 3.3.3.3 The splits shared code reaches into: `activitykeys`, `statetables`, `devicemode`; then `compose.ts` stops passing a family's internals through
+    - [ ] 3.3.3.4 One family member for a send's shape, the delay prelude or the bare pair, behind `shared/devices`, `inputs`, `sequence` and the donor input matcher; then the start sequence and the activity's own device list
+    - [ ] 3.3.3.5 Faces, fonts and blending per family: `fonttable`, `lettering`, `blending`
+    - [ ] 3.3.3.6 The four slot geometry and delay block of `inventory`, last, since moving it closes an import cycle through the registry
 
 ## 4. Screens built by us
 

@@ -13,7 +13,7 @@
  */
 import type { ActivityKey } from '../activitykeys.ts';
 import type { HardKey } from '../devicemode.ts';
-import type { DeviceScreenItem } from '../activityroles.ts';
+import type { ActivityKeyRules, DeviceScreenItem } from '../activityroles.ts';
 import type { Container, Instruction } from '../gspm.ts';
 import type {
   ComposeActivityRowOptions, ComposeActivityScreenOptions, ComposedActivityRow, ComposedActivityScreen, ComposedScreen,
@@ -76,6 +76,8 @@ export interface Family<Choices extends CommonChoices = CommonChoices> {
    * for this family: per key, the commands it takes in order of preference, `deviceModeLayout`.
    */
   readonly deviceModeKeys: readonly HardKey[];
+  /** The keys section 323's activity keypad rule names, on this family's keypad. */
+  readonly activityKeyRules: ActivityKeyRules;
   /** The commands a mode's pages show, page by page in this family's item order, with each one's drawn label. */
   screenItems(c: Container, mode: number): DeviceScreenItem[];
   /** Whether an item is drawn the way this family draws a command called `name`. */
