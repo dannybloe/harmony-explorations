@@ -1,0 +1,24 @@
+{
+  "name": "Harmony 600, the setup's look and timing",
+  "description": "todo-compile-600 2.3, on the six device file already on the remote (lab/work/h600-from-nothing/setup6-600-blended.bin, read back as h600_setup6_on, section 390), so no write: every screen in grey 2 with smoothed letters, and the mark the Off screen waits for starting at 1. Delays: the remote holds one saved delay, an inter device delay of 1.5 s, read again over USB before this test, and this file does not restore saved delays, so the timings are the file's own: the LG waits 10 s after switching on before its input, the Plasma 5 s, the Denon 2 s, the KPN box, Kodi and the Switch 1.5 s each, and 0.5 s between devices, 1.5 s after the Switch. Predicted codes, as in sections 389 and 390: TV kijken sends the LG's, the KPN box's and the Denon's power, then the Denon's CBL/SAT and the LG's HDMI 1 about 10 s after the LG's power; Film kijken from there sends the Plasma's power on (seven frames), Kodi's power, the Denon's Media Player, the LG's power off and the Plasma's HDMI 2 at least 5 s after the Plasma's power, and nothing to the KPN box. Open: 'Turning system off' has not shown on this 600 yet (todo-compile-600 1.4.1). Screens are taken from the file as the bench draws them. The three buttons below the screen are the left arrow, the centre button and the right arrow; the four beside the screen are named by their place. Please write in each step's note what you saw, also when it is what the step expects.",
+  "steps": [
+    {
+      "instruction": "Take the remote off the cable while looking at the screen. Say whether 'Turning system off' shows. Expect 'Activities 1/2' with TV kijken on the upper row, Film kijken on the lower row and 'Devices' at the bottom, all on one dark grey. Say whether the grey looks even and the letters smooth. Mark when it is quiet"
+    },
+    {
+      "instruction": "Press Watch TV. Expect 'Starting TV kijken' with the remote icon and 'Please keep the remote pointed at your system', then the TV kijken screen: Teletext upper left, DVR upper right, 'Devices' at the bottom. Expect the LG's, the KPN box's and the Denon's power, then the Denon's CBL/SAT and the LG's HDMI 1. Mark when it settles"
+    },
+    {
+      "instruction": "Press the centre button ('Devices'). Expect 'Devices 1/2': LG TV upper left, KPN upper right, Denon lower left, Plasma lower right, 'Activity' at the bottom. Press the button beside Denon (lower left) and say what its first page shows and how it looks. Then press the centre button ('Back') for the device list and again ('Activity') for the TV kijken screen. Nothing should be sent in this step. Mark"
+    },
+    {
+      "instruction": "Press Watch a Movie. Expect 'Starting Film kijken', then the Film kijken screen: Aspect upper left, 3D upper right, Sleep lower left. Expect the Plasma's power on (seven frames), Kodi's power, the Denon's Media Player, the LG's power off and the Plasma's HDMI 2, and nothing for the KPN box. Mark when it settles"
+    },
+    {
+      "instruction": "Press All Off while looking at the screen. Say whether 'Turning system off' shows. Expect power codes for the devices that are on, then the Activities screen. Mark when it is quiet"
+    },
+    {
+      "instruction": "Leave the remote alone. Expect the screen to go dark about 20 s after the last key. Mark when it goes dark"
+    }
+  ]
+}
