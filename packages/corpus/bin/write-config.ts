@@ -240,6 +240,8 @@ const H600_DUMPS = new Set<string>([
   'h600_grey2_on',
   // With the empty configuration in grey 2 and blended letters on it, before the five device setup, 2.2.
   'h600_blended_on',
+  // With the five device setup on it, after its bench run, 2.2.
+  'h600_setup5_on',
 ]);
 const H700_DUMPS = new Set<string>([
   // Read straight after section 300 put block 0x030000 back unchanged: the 2.8 configuration, the

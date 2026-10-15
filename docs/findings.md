@@ -51544,3 +51544,41 @@ donor's.
 * `packages/codec/src/assemble.ts`: `OUR_DONOR_SKINS` takes 71 and 73, and the one look's colour is applied.
 * `packages/codec/test/empty.test.ts`: the five device setup on both models, page by page and by attribution,
   and Logitech's 600 compiles refused as donors.
+
+## 389. The five device test setup runs on the Harmony 600 as the file predicts
+
+`todo-compile-600.md` 2.2: section 388's five device setup, with smoothed letters in grey 2, written to the
+bench Harmony 600 and run with the infrared monitor.
+
+**Written and read back.** `setup5-600-blended.bin`, 692195 bytes, eleven 64 KiB blocks, read back byte for byte
+identical, the remote restarted by the writer; a read of the region after the run holds the written file
+unchanged at its start, `h600_setup5_on`.
+
+**Every code as the file predicts, in all eleven steps of `600-setup-five.json`**, decoded afterwards against the
+written file with the monitor's own matcher, 27 frames: TV kijken sent the LG's, the KPN box's and the Denon's
+power and then the Denon's CBL/SAT and the LG's HDMI 1; its volume went to the Denon and its channels to the KPN
+box, also after a visit to the Denon's pages; Listen to Music sent nothing; Film kijken sent the Plasma's power
+on, Kodi's power, the Denon's Media Player, the LG's power off and the Plasma's HDMI 2, and nothing to the KPN
+box; Plasma kijken sent the Plasma's HDMI 1, the Denon and Kodi's power; Radio sent the KPN box's 1 and its 2
+2.2 s later; All Off sent the Plasma's power off and the KPN box's power; and 20 s was noted for the screen light.
+The Denon's power frame matched the Denon but not one command, as on the Harmony 700, section 386, and the NEC
+repeat frame matches three devices. No other note was made, so what the screens showed, and whether "Turning
+system off" did, is not recorded.
+
+**The monitor named none of them at the bench**, "Not on a bench remote": it names a frame from one configuration
+per bench remote, `BENCH_CONFIGS`, and for the 600 that was `h600_config`, Logitech's compile from before any
+write of ours, whose devices are none of this setup's. It names from `h600_setup5_on` now, and all 27 frames of
+the run match it.
+
+### Scope, decision 16
+
+One Harmony 600, build 0.2, one run, five devices. Whether a sixth is taken is 2.2.2.
+
+### Falsification
+
+A frame of this run that the written file does not send at that step.
+
+### Where it lands
+
+* `packages/bench/src/irmonitor.ts`: `BENCH_CONFIGS` names the 600 by its current read.
+* `packages/bench/irtests/done/600-setup-five.json`, the test; its run and the region read are in the lab's `reads/`.
