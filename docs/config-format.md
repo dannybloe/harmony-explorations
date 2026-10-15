@@ -2929,7 +2929,9 @@ them"<!--superseded-->. Arch 8, 9 and 12 put the power on delay in the action li
 transitions, every one carrying exactly one, against 16 on arch 14 carrying none. The unit is the
 same, which is settled by Logitech compiling one configuration per architecture for the same three
 devices, and the two agree device for device. `powerOnInstructions` returns the list, the position in
-it and the value, since on those architectures changing a delay is a one byte edit.
+it and the value, since on those architectures changing a delay is a one byte edit. On the Harmony One the
+wait is the catalogue's `powerOnDelay` in tenths, 7 of 7 catalogue devices, and it is the list's last
+instruction after a call to the power steps, section 393; 3 of 25 lists carry an unexplained `0x1F` between.
 
 What the inlining architectures do **not** state is a default, an identifier or an inter device
 delay. Where they keep an inter device delay, if they keep one, is open, and that is a **negative
@@ -3023,7 +3025,7 @@ starts on the Harmony 600:
 `deviceDelays`, `powerOnInstructions` and `deviceIdOfGroup` in `packages/codec/src/inventory.ts`.
 [findings.md](findings.md) sections 234 and 235.
 
-**A device's inputs**, arch 14, section 321, measured on the thirteen arch 14 compiles the lab holds.
+**A device's inputs**, arch 14, section 321, measured on the thirteen arch 14 compiles the lab holds, and the same on the Harmony One but for the send, which is two instructions there, section 393.
 Two layers of one byte variables, each a record with `first` 0 and `second` the number of values less
 one:
 
@@ -3046,7 +3048,8 @@ one:
 * One input that steps gives a variable of one value and no transitions; one input that does not step
   gives none. A state no input writes, directly or through another state, is not compiled.
 * **The catalogue's `power.onReset`** becomes one list per state, `[0x07 0xFFFF, 0x80 | variable value]`,
-  called from the power variable's `0 to 1` list after the power on delay, in the catalogue's order:
+  called from the power variable's `0 to 1` list after the power on delay, in the catalogue's order
+  (arch 14; no Harmony One compile read holds a reset, section 393):
   13 of 13 lists on the eight test device instances that compose, section 332, and a fourteenth on a
   device that does not compose has the same place and flag. The value is the named value's index,
   told apart from "always the first value" by one catalogue entry only; where the catalogue names a

@@ -577,3 +577,69 @@ test('a composed activity puts a composed device on its input, between the power
   const hdmi = commands.find((one) => one.name === 'InputHdmi1')!;
   assert.ok(hdmi.keycode.toLowerCase().includes(`0x${frame.value.toString(16)}`), `${hdmi.keycode} against ${frame.value.toString(16)}`);
 });
+
+/**
+ * The Harmony One's devices whose inputs are composed again here, `todo-compile-one.md` 1.2: Logitech's
+ * compiles of the spare Harmony One, the same catalogue entries as `CALIBRATION`'s on the 600 family, which
+ * the pin below checks rather than trusts.
+ */
+const ONE_CALIBRATION = [
+  ['one_spare_myharmony', 'TV', 'LG', 'OLED65G26LA'],
+  ['one_spare_myharmony', 'Denon', 'Denon', 'AVR-X4800H'],
+  ['calibration_one', 'Sony_TV', 'Sony', 'KDL-32W705B'],
+] as const;
+
+test('on the Harmony One, three devices Logitech compiled, composed again from the catalogue, agree transition for transition but for the connected app',
+     needing(skipUnless(...new Set(ONE_CALIBRATION.map(([config]) => config)), 'harvest_one_two_devices'),
+             skipWithoutIrArchive()), () => {
+  // The same route as the 600 family's calibration above, on a Harmony One host: the One's send is the
+  // send and its quantity with no prelude, `FamilyTraits.sendPrelude`, and everything an input does is
+  // the 600 family's, which is what this measures rather than assumes.
+  const root = IR_ARCHIVE!;
+  const host = open('harvest_one_two_devices');
+  const results: Record<string, Record<string, string>> = {};
+  const pinned: Record<string, string> = {};
+  for (const [config, label, slug, file] of ONE_CALIBRATION) {
+    const theirs = open(config);
+    const device = catalogueDevice(root, slug, file);
+    const commands = catalogueCommands(root, device.codeset!);
+    const nameOf = new Map<string, string>();
+    for (const one of commands) {
+      for (const value of one.keycode.matchAll(/\(0x([0-9A-Fa-f]+)\)/g)) {
+        if (!nameOf.has(codeKey(value[1]!))) nameOf.set(codeKey(value[1]!), one.name);
+      }
+    }
+    const group = devices(theirs).find((one) => one.name === label)?.group;
+    assert.ok(group !== undefined, `${config} has a device ${label}`);
+    const values = groupValues(theirs, group);
+    pinned[label] = `${values.filter((value) => nameOf.has(value)).length}/${values.length}`;
+    const driving = catalogueDriving(root, slug, file);
+    const plan = inputPlan(driving);
+    const distinct = commands.filter((one, k) => commands.findIndex((other) => other.name === one.name) === k);
+    const sent = [...new Set([...plan.states, ...(plan.input === undefined ? [] : [plan.input])]
+      .flatMap((v) => v.transitions.flatMap((t) => t.steps.flatMap((s) => (s.kind === 'send' ? [s.command] : [])))))];
+    const used = sent.map((name) => distinct[commandIndex(distinct.map((one) => one.name), name)]!);
+    const stated = used.length > 0 ? used : [distinct[0]!];
+    const composed = composeDevice(host, { label: 'Cal', commands: stated.map((one) => ({ stated: one.keycode })) });
+    const inputs = composeDeviceInputs(parse(composed.bytes), {
+      device: composed, label: 'Cal', commandNames: used.length > 0 ? sent : [distinct[0]!.name], driving,
+    });
+    const ours = parse(inputs.bytes);
+    // A send of ours is the bare pair, as every send list of a Harmony One configuration is.
+    for (const one of deviceStateMachines(ours, 'Cal')) {
+      for (const t of one.transitions) for (const step of t.steps) assert.notEqual(step.kind, 'other', `${label} ${one.property}`);
+    }
+    results[label] = compare(canonical(ours, deviceStateMachines(ours, 'Cal'), nameOf),
+                             canonical(theirs, deviceStateMachines(theirs, label), nameOf));
+  }
+  // The same counts as the 600 family's pins, so the same catalogue entries.
+  assert.deepEqual(pinned, { TV: '83/83', Denon: '115/144', Sony_TV: '100/100' });
+  const same = (n: number): string => `${n}/${n}/0/0`;
+  // The 600 family's results for the same three entries, transition for transition.
+  assert.deepEqual(results, {
+    TV: { Screen: same(8), TVInput: same(6), Input: same(10), OnlinePower: 'theirs only' },
+    Denon: { Input: same(19) },
+    // Netflix is the input Logitech marks online, as on the 600 family: their transition waits for the app.
+    Sony_TV: { Input: '10/10/1/1', OnlinePower: 'theirs only' },
+  });
+});

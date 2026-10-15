@@ -53,7 +53,7 @@ One with its sequence's keys translated by name, since the One's keys have other
   - [x] 1.2.5 A device page of more than six commands takes several pages, numbered by `paginate`; not yet run end to end
   - [ ] 1.2.6 A long command name broken over two or three lines and cut with `..`, as Logitech's One compiles draw one
   - [ ] 1.2.7 The donor lettered in ours before any composer spells a name, which needs 6.1's frame and 5.2's fonts first
-  - [ ] 1.2.8 The findings and tests for 1.2.2 to 1.2.5
+  - [x] 1.2.8 The findings and tests for 1.2.2 to 1.2.4 (section 393); 1.2.5's waits for 1.2.6 and 1.2.7, since a paged device needs names it can spell
 - [ ] 1.3 A bench test of it: every code as the file predicts, the touch rows, device mode and All Off
 
 ## 2. Measure before building

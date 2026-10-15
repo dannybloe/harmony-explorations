@@ -562,3 +562,72 @@ test('the test setup\'s seven devices composed whole are infrared records Logite
     // 400 alone, which our emitter reproduces byte for byte there. What sends it is not read here.
     assert.deepEqual(notCopies, ['LG_TV: 36768,4500,33168,1000']);
   });
+
+/**
+ * Logitech's compiles for the Harmony One that the lab holds of catalogue devices, each device by the label
+ * the compile gives it and its catalogue entry, from the harvest's own manifests. `todo-compile-one.md` 1.2.
+ */
+const ONE_POWER = [
+  ['harvest_one_two_devices', 'Denon_AVR-X4800H', 'Denon', 'AVR-X4800H'],
+  ['harvest_one_two_devices', 'LG_OLED65G26LA', 'LG', 'OLED65G26LA'],
+  ['harvest_one_families_2', 'Philips_70FA930/00S', 'Philips', '70FA930_00S'],
+  ['harvest_one_families_2', 'Samsung_LNR408DX', 'Samsung', 'LNR408DX'],
+  ['harvest_one_families_3', 'Gemini_TestQuhd', 'Gemini', 'TestQuhd'],
+  ['harvest_one_families_3', 'Sony_RDR-GXD500', 'Sony', 'RDR-GXD500'],
+  ['harvest_one_families_3', 'Pioneer_VSX-90TXV', 'Pioneer', 'VSX-90TXV'],
+] as const;
+
+test('on the Harmony One, Logitech switches a device on with its power steps and then one wait of the catalogue\'s power on delay, on 7 of 7 catalogue devices',
+     needing(skipWithoutIrArchive(), skipUnless(...new Set(ONE_POWER.map(([config]) => config)))), () => {
+  // The One has no delay variables, so the delay a 600 family device carries in a variable and a table is
+  // a bare `0x7C` here, the device's own quantity, at the end of the list its power variable runs from 0
+  // to 1. Read per device as `wait/stated`, both in tenths, the catalogue's milliseconds divided by 100.
+  const read: Record<string, string> = {};
+  for (const [config, label, slug, file] of ONE_POWER) {
+    const c = open(config);
+    const lists = c.actionLists() ?? [];
+    const power = deviceVariables(c).find((one) => one.device === label && one.property === 'Power');
+    assert.ok(power !== undefined, `${config} has a device ${label} with a power variable`);
+    const on = stateVariables(c).find((one) => one.index === power.index)!.record!.values.find((t) => t.from === 0 && t.to === 1)!;
+    const list = lists[on.operand] ?? [];
+    const waits = list.filter((one) => one.opcode === 0x7c);
+    // One wait, the last instruction, naming the device's own group.
+    assert.equal(waits.length, 1, `${label}: one wait`);
+    assert.equal(list.at(-1)!.opcode, 0x7c, `${label}: the wait is last`);
+    const group = devices(c).find((one) => one.name === label)!.group;
+    assert.equal(waits[0]!.operand >> 8, group, `${label}: the wait is the device's own`);
+    const stated = catalogueDriving(IR_ARCHIVE!, slug, file).timing.powerOnDelay;
+    read[label] = `${waits[0]!.operand & 0xff}/${stated === undefined ? '-' : stated / 100}`;
+  }
+  assert.deepEqual(read, {
+    'Denon_AVR-X4800H': '20/20', LG_OLED65G26LA: '100/100', 'Philips_70FA930/00S': '15/15',
+    Samsung_LNR408DX: '100/100', Gemini_TestQuhd: '20/20', 'Sony_RDR-GXD500': '15/15', 'Pioneer_VSX-90TXV': '20/20',
+  });
+});
+
+test('a catalogue device composed onto a Harmony One switches on with its power steps and the catalogue\'s power on delay, or the one the request states',
+     needing(skipWithoutIrArchive(), skipUnless('one_spare_myharmony')), () => {
+  // The spare's own sync, whose row font spells a short label where the two device compile's cannot.
+  const base = open('one_spare_myharmony');
+  const onList = (c: Container, label: string) => {
+    const power = deviceVariables(c).find((one) => one.device === label && one.property === 'Power')!;
+    const on = stateVariables(c).find((one) => one.index === power.index)!.record!.values.find((t) => t.from === 0 && t.to === 1)!;
+    return { list: (c.actionLists() ?? [])[on.operand] ?? [], group: devices(c).find((one) => one.name === label)!.group! };
+  };
+  const pioneer = catalogueCommands(IR_ARCHIVE!, catalogueDevice(IR_ARCHIVE!, 'Pioneer', 'VSX-90TXV').codeset!);
+  const request: CatalogueDeviceRequest = {
+    manufacturer: 'Pioneer', model: 'VSX-90TXV', label: 'Test', commands: [pioneer[0]!.name], labels: ['Test'],
+  };
+  const composed = parse(composeCatalogueDevice(base, IR_ARCHIVE!, request).bytes);
+  const { list, group } = onList(composed, 'Test');
+  assert.deepEqual(list.slice(0, -1).map((one) => one.opcode), list.slice(0, -1).map(() => 0x7f), 'the power steps are calls');
+  assert.deepEqual(list.at(-1), { opcode: 0x7c, operand: (group << 8) | 20 }, 'then the Pioneer\'s two seconds');
+  // The controls: a delay that is no single wait is refused rather than clamped.
+  assert.throws(() => composeCatalogueDevice(base, IR_ARCHIVE!, { ...request, powerOnDelay: 0 }),
+                /power on delay of 0 tenths/);
+  assert.throws(() => composeCatalogueDevice(base, IR_ARCHIVE!, { ...request, powerOnDelay: 300 }),
+                /power on delay of 300 tenths is not one wait/);
+  // And a delay the request states wins over the catalogue's, as on the 600 family.
+  const stated = parse(composeCatalogueDevice(base, IR_ARCHIVE!, { ...request, powerOnDelay: 45 }).bytes);
+  assert.equal(onList(stated, 'Test').list.at(-1)!.operand & 0xff, 45);
+});

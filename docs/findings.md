@@ -51761,3 +51761,68 @@ nothing calls; a second call asking for group 3, or a reader of `0xD2F` to `0xD3
 * `docs/config-format.md`, base slot 15: group 3 on arch 14. `packages/codec/src/wiring.ts`: the parameter
   groups' comment.
 * `todo-compile-600.md` 1.4.1 stays open with these three readings.
+
+## 393. On the Harmony One a device's inputs are the 600 family's, and its power on delay is the catalogue's
+
+**Asked for by `todo-compile-one.md` 1.2**, composing the 650 family's test setup onto Logitech's compile of
+two of its devices for the Harmony One. Two composers refused or fell short there: the input composer was
+gated on arch 14, and the device composer switched a One device on with its power steps alone.
+
+**Sources.** Logitech's compiles for the Harmony One that the lab holds: the spare's sync
+(`one_spare_myharmony`), the calibration account's (`calibration_one`), and the four harvest compiles of
+catalogue devices (`harvest_one_two_devices`, `harvest_one_families_1` to `_3`, registered for this). The
+device archive, decision 15, for the catalogue's entries and delays. Neither client nor firmware was read:
+what is measured is what Logitech's compiler wrote, which neither holds, and section 277 already read the
+One's transition walker that runs it.
+
+### Inputs
+
+The same three catalogue entries the 600 family's calibration composes, section 321, were composed again on
+a Harmony One host and compared with Logitech's One compiles transition by transition, by catalogue name and
+wait rather than by number. The pins agree with the 600 family's, 83 of 83, 115 of 144 and 100 of 100 group
+records decoding to a command of the entry, so the entries are the same. The result is the 600 family's
+result: the LG's `Screen`, `TVInput` and `Input` agree on 8, 6 and 10 transitions of 8, 6 and 10, the
+Denon's `Input` on 19 of 19, and the Sony's `Input` on 10 of 11, the eleventh being Netflix, the input
+Logitech marks online and gives a wait for the connected app first, as on the 600 family. `OnlinePower` is
+Logitech's alone on both architectures. **The one difference is the send**: on the One it is the send and
+its quantity, two instructions, where the 600 family opens every send with the delay step, section 287, so
+the composer builds one list per send there and three on the 600 family.
+
+### The power on delay
+
+Section 235 found that the One keeps a device's power on delay as one `0x7C` at the top level of the list
+its power variable runs from 0 to 1. Against the catalogue that wait is the entry's `powerOnDelay` in tenths
+of a second on 7 of 7 catalogue devices of the four harvest compiles: 20, 100, 15, 100, 20, 15 and 20 tenths,
+each the last instruction of its list and naming the device's own group. Over all eleven Harmony One
+compiles read, 25 power on lists: 22 are a call to the power steps and the wait, and 3 carry a `0x1F`
+between them, two LG televisions and a Sony, which nothing in the archive explains; the composer leaves it
+out. **Our device composer had no wait there**: `composeDevice` gave a One device's power variable the
+power command's send list directly, so an activity's next command to the device followed its power on with
+nothing between. It writes the wait now, the request's delay over the catalogue's, and refuses one that is
+not a single quantity byte, 1 to 255 tenths, since no One compile here shows a longer one split.
+
+### What is not measured
+
+**A reset after power on**, the catalogue's `power.onReset`, has no instance in any Harmony One compile read:
+none of the 25 power on lists calls a silent write. On the 600 family the reset lists are called after the
+power on delay, section 332, which found that either side of the delay leaves the same value in place. The
+composer puts them after the One's wait by that rule; whether the input then goes out is for the bench run of
+`todo-compile-one.md` 1.3, on the Panasonic plasma, whose `InputType` changes only when it differs.
+
+### Scope, decision 16
+
+Arch 12 (Harmony One), against arch 14's results of section 321 for the inputs. Arch 8 and 9 inline the
+delay as the One does, section 235, and no composer here builds for them.
+
+### Falsification
+
+A Harmony One compile of a catalogue device whose input transitions differ from the 600 family's beyond the
+send's shape, or whose power on wait is not the catalogue's delay in tenths.
+
+### Where it lands
+
+* `packages/codec/test/inputs.test.ts`: the Harmony One's calibration of three devices.
+* `packages/codec/test/composecatalogue.test.ts`: Logitech's waits on 7 of 7 devices, and the composer's
+  wait, the request's override, and the refusals of 0 and 300 tenths.
+* `packages/codec/src/inputs.ts` and `shared/devices.ts`, the composers. `docs/config-format.md`, the
+  inputs and the inlined delay.

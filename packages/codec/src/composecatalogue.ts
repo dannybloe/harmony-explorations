@@ -85,9 +85,12 @@ export interface CatalogueDeviceRequest {
   readonly powerSteps?: boolean;
   /** False leaves the device out of the lists that switch devices off, section 280. Default true. */
   readonly powerOff?: boolean;
-  /** Compose the catalogue's inputs and states too, section 321, arch 14 only. Default false. */
+  /** Compose the catalogue's inputs and states too, section 321, the 600 family and the Harmony One. Default false. */
   readonly inputs?: boolean;
-  /** Arch 14: the two delays in tenths, which win over the catalogue's. */
+  /**
+   * The two delays in tenths, which win over the catalogue's: both on the 600 family, the power on delay
+   * alone on the Harmony One, which carries no inter device delay of a device's own, `todo-compile-one.md` 1.2.
+   */
   readonly powerOnDelay?: number;
   readonly interDeviceDelay?: number;
 }

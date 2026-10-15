@@ -456,6 +456,9 @@ IMAGES = {
     # and no activity, under names of their own. Section 337.
     'harvest_one_two_devices': 'harvest-one-two-devices.EzHex',
     'harvest_650_two_devices': 'harvest-650-two-devices.EzHex',
+    'harvest_one_families_1': 'harvest-one-families-1.EzHex',
+    'harvest_one_families_2': 'harvest-one-families-2.EzHex',
+    'harvest_one_families_3': 'harvest-one-families-3.EzHex',
     # Two remotes given by a friend, Danny's own since 11 October 2026: a Harmony One with a dead display
     # as it came and after his legacy setup was synced onto it, and a Harmony 525 as it came.
     'one_friend_asfound_config': 'one-friend-asfound-config.bin',
@@ -800,6 +803,7 @@ PARSEABLE_EXCLUDED = ('vendor_region_user_config', 'vendor_region_embedded_confi
                       'h650_issue36_config', 'h650_issue8_config',
                       # Two harvest compiles no remote ever held, section 306's reason.
                       'harvest_one_two_devices', 'harvest_650_two_devices',
+                      'harvest_one_families_1', 'harvest_one_families_2', 'harvest_one_families_3',
                       # The friend's Harmony One and Harmony 525, out of the corpus wide totals
                       # until joining them is decided.
                       'one_friend_asfound_config', 'one_friend_legacy_sync_config',
