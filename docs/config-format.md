@@ -1237,15 +1237,18 @@ shorter and start a row lower than the 650's:
 
 | height | measured | face |
 |---|---|---|
-| 16 | | One16, `Welcome!` only |
+| 16 | | One16, the greeting's letters and the `H` and `y` every set holds |
 | 15 | median ink run 2 / 1 | One15 / OneR15 |
 | 14 | median ink run 2; a regular 14 is refused | One14 |
 | 11 | | One11 |
 
-Each set is lettered in its own ink and shadow, `'own'`, ten pairs over the nine compiles, where the 650 family
-letters every set in one scheme; and no glyph is shared between sets, since the One's text routine is unread.
-Logitech's compile of the Denon and the LG lettered so passes every check and reads every text as before.
-Unconfirmed: any wording but English, and the result drawn on a remote.
+The bold faces are Bold and the others SemiBold and Regular, the weights whose stroke is Logitech's. Each set
+is lettered in its own ink and shadow, `'own'`, ten pairs over the nineteen compiles, where the 650 family
+letters every set in one scheme; no glyph is shared between sets, since the One's text routine is unread; and
+a second code for one character, the One's second space, gets a copy of the glyph, since two codes of one set
+may not point at one. Eighteen of Logitech's nineteen One compiles lettered so pass every check and read every
+text as before; the nineteenth, Dutch, is refused for its `ë` and `é`. Unconfirmed: the result drawn on a
+remote.
 
 **The welcome tour is not built, and a configuration can leave its ten screens out**, section 357: in
 Logitech's skipped form, 19 of the 22, no instruction anywhere enters any of them. Its start list, the

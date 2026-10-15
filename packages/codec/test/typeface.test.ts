@@ -82,5 +82,5 @@ test('what the renderer draws, the Harmony 650\'s nine faces\' and the Harmony O
     return hash.digest('hex').slice(0, 16);
   };
   assert.equal(digest(HARMONY_650_FACES), '3cc228b1b060c8fb');
-  assert.equal(digest(HARMONY_ONE_FACES), 'cf4561f787905a4a');
+  assert.equal(digest(HARMONY_ONE_FACES), 'e61e4a3c80d16c12');
 });

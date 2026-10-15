@@ -558,10 +558,11 @@ test('resolving a container costs the pixel hash once, not once per alphabet', s
   );
 });
 
-test('section 396: the five shapes the Harmony One seed gained spell names the same files carry in ASCII',
+test('section 396: the X the Harmony One seed gained spells model names base slot 0 carries in ASCII, and the Z the receiver\'s and a player\'s commands',
      skipUnless('harvest_one_two_devices', 'harvest_one_families_2', 'harvest_one_families_3'), () => {
-  // An `X` and a `Z` in device and command names; a `#` and a `*` are keys of their own, so their
-  // check is that they decode alone, as the keypad's two symbols do.
+  // Only the `X` has a closure: the model names are in the file's ASCII. A command name is in no ASCII of
+  // the file, so the `Z` is checked by reading as the commands it should and nothing else; the `#` and the
+  // `*`, which the seed names by hand, have no check here that the seed itself does not make.
   const strings = (name: string): { texts: Set<string>; ascii: string } => {
     const c = parse(require_(name));
     return { texts: new Set(screenStrings(c).map((one) => one.text)), ascii: new TextDecoder('latin1').decode(c.blob) };
@@ -574,5 +575,5 @@ test('section 396: the five shapes the Harmony One seed gained spell names the s
   const families2 = strings('harvest_one_families_2');
   assert.ok(families2.texts.has('Samsung LNR408DX') && families2.ascii.includes('LNR408DX'));
   const families3 = strings('harvest_one_families_3');
-  for (const text of ['ZoomIn', 'ZoomOut', '#', '*']) assert.ok(families3.texts.has(text), text);
+  for (const text of ['ZoomIn', 'ZoomOut']) assert.ok(families3.texts.has(text), text);
 });

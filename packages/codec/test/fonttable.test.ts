@@ -13,7 +13,7 @@ import assert from 'node:assert/strict';
 import { load, skipUnless } from '@harmony/lab';
 import type { Container } from '../src/index.ts';
 import { characterMap } from '../src/text.ts';
-import { fontSets } from '../src/font.ts';
+import { fontSets, glyphOf } from '../src/font.ts';
 import { measureSet } from '../src/fonttable.ts';
 import {
   FOUR_SLOT_CHOICES,
@@ -22,6 +22,7 @@ import {
   HARMONY_650_FACES,
   HARMONY_ONE_FACES,
   LETTERING_FACES,
+  OXANIUM_FACE_SPECS,
   oxaniumFace,
   checkOxaniumFonts,
   compareViews,
@@ -183,26 +184,71 @@ test('a Harmony 700 compile is refused, since its fonts were not measured', skip
   assert.throws(() => withOxaniumFonts(takeApart(containerOf('h700_28_config_region')), INKS), /Harmony 650 and the Harmony One/);
 });
 
-/** Logitech's Harmony One compiles, one of each distinct container, whose font sets the One's faces were measured on. */
-const ONE_COMPILES = ['one_config', 'one_config_unprogrammed', 'one_spare_after_sync', 'one_spare_myharmony', 'calibration_one',
-  'harvest_one_two_devices', 'harvest_one_families_1', 'harvest_one_families_2', 'harvest_one_families_3'] as const;
+/**
+ * Logitech's Harmony One compiles, one of each distinct container, section 395's nineteen: the faces were
+ * measured on nine of them and hold on all nineteen, section 396 as corrected per review.
+ */
+const ONE_COMPILES = ['one_config', 'one_config_unprogrammed', 'one_spare_after_sync', 'one_spare_myharmony', 'one_spare_20260830',
+  'calibration_one', 'calibration_favchannels', 'calibration_favzero', 'compiled_protocols', 'compiled_protocols_2',
+  'compiled_protocols_3', 'harvest_one_two_devices', 'harvest_one_families_1', 'harvest_one_families_2', 'harvest_one_families_3',
+  'one_friend_asfound_config', 'one_friend_legacy_sync_config', 'phase7_before', 'phase7_after'] as const;
 
-test('section 396: every font set of nine Harmony One compiles is one of the One\'s five faces, and every glyph names its character',
+test('section 396: every font set of the nineteen Harmony One compiles is one of the One\'s five faces, on that face\'s rows, and every glyph names its character',
      skipUnless(...ONE_COMPILES), () => {
   const faces: Record<string, number> = {};
+  // Per face, the rows Logitech's capitals start and end on, J and Q aside, whose tails go elsewhere.
+  const rows: Record<string, Set<string>> = {};
   for (const name of ONE_COMPILES) {
     const c = containerOf(name);
     const map = characterMap(c)!;
     for (const set of fontSets(c)!) {
-      faces[measureSet(c, set, map).face] = (faces[measureSet(c, set, map).face] ?? 0) + 1;
-      // A glyph whose character nothing settles is one `withOxaniumFonts` cannot re-letter: five shapes the
-      // first seeds never drew, a `Z`, a `#`, an `X` in two faces and a `*`, are named in `bin/alphabets.ts`.
+      const { face, ink } = measureSet(c, set, map);
+      faces[face] = (faces[face] ?? 0) + 1;
       set.glyphs.forEach((address, k) => {
-        if (address !== undefined) assert.ok(map.codes.has(set.first + k), `${name}: code ${set.first + k}`);
+        if (address === undefined) return;
+        // A glyph whose character nothing settles is one `withOxaniumFonts` cannot re-letter, which is why
+        // `bin/alphabets.ts` names the shapes the first seeds never drew.
+        const ch = map.codes.get(set.first + k);
+        assert.ok(ch !== undefined, `${name}: code ${set.first + k}`);
+        if (!/^[A-IK-PR-Z]$/.test(ch)) return;
+        const inked = glyphOf(c, set, set.first + k)!.rows.flatMap((row, y) => (row.includes(ink) ? [y] : []));
+        (rows[face] ??= new Set()).add(`${inked[0]}-${inked.at(-1)}`);
       });
     }
   }
-  assert.deepEqual(faces, { One16: 9, One15: 14, OneR15: 9, One14: 90, One11: 31 });
+  assert.deepEqual(faces, { One16: 19, One15: 34, OneR15: 19, One14: 190, One11: 70 });
+  // One shape of row each, and the face's spec states the same rows: the cap height up from the baseline.
+  assert.deepEqual(Object.fromEntries(Object.entries(rows).map(([face, seen]) => [face, [...seen]])),
+    { One16: ['3-12'], One15: ['3-11'], OneR15: ['3-11'], One14: ['3-10'], One11: ['2-8'] });
+  for (const face of HARMONY_ONE_FACES) {
+    const spec = OXANIUM_FACE_SPECS[face];
+    assert.equal(`${spec.baseline - spec.rows.cap + 1}-${spec.baseline}`, [...rows[face]!][0], face);
+  }
+});
+
+test('section 396: eighteen of the nineteen Harmony One compiles lettered in ours read the same, each set read back as its face, and the Dutch one refused by name',
+     skipUnless(...ONE_COMPILES), () => {
+  let same = 0;
+  for (const name of ONE_COMPILES) {
+    const logitech = containerOf(name);
+    if (name === 'one_friend_asfound_config') {
+      // A friend's Dutch compile: `ë` and `é` are not in our letters, printable ASCII.
+      assert.throws(() => withOxaniumFonts(takeApart(logitech), 'own'), /draws 'ë', which our letters do not have/);
+      continue;
+    }
+    const made = withOxaniumFonts(takeApart(logitech), 'own');
+    const out = parse(layOutContainer(made.layout).bytes);
+    checkOxaniumFonts(out, made.faces);
+    const read = characterMap(out)!;
+    assert.equal(read.drawn.resolved, read.drawn.total, name);
+    const texts = (c: Container): string[] => screenStrings(c).map((one) => one.text).sort();
+    assert.deepEqual(texts(out), texts(logitech), name);
+    // Our letters in the default weights measure as the face they stand for, stroke and all: a SemiBold 14
+    // would read back as a regular 14, which no compile draws.
+    fontSets(out)!.forEach((set, k) => assert.equal(measureSet(out, set, read).face, made.faces[k]!.face, `${name} set ${k}`));
+    same += 1;
+  }
+  assert.equal(same, 18);
 });
 
 test('section 396: Logitech\'s Harmony One compile of the Denon and the LG lettered in ours, each set in its own colours, reads the same',

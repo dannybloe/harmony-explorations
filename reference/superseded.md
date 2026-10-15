@@ -594,3 +594,5 @@ it reachable in the same commit and the test comparing the two tables is what ca
 | `7 of 7 catalogue devices` | section 393, corrected per review | the Harmony One's power on wait is the catalogue's delay on 8 of 8 harvest devices; the eighth was dropped by a lookup |
 | `fails its own trailer checksum, and is refused` | section 395, corrected per review | the frame checks no checksum; the half written read is refused because its key table is not one piece |
 | `the 19 distinct Harmony One containers the lab holds` | section 394, corrected per review | the lab holds 36 distinct Harmony One containers; the label rule's population is Logitech's 19 compiles |
+| `The faces are measured on English compiles only` | section 396, corrected per review | the Harmony One's five faces hold on a friend's Dutch compile too, which re-lettering refuses for its accented letters |
+| `One16, \`Welcome!\` only` | section 396, corrected per review | the Harmony One's 16 pixel set draws the greeting's letters and the `H` and `y` every set holds |

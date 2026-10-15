@@ -83,14 +83,17 @@ export const OXANIUM_FACE_SPECS = {
   // (`work/one-track/fonts/rows.ts`): the same cells as the 650's, but a 14 or 15 pixel capital is a row
   // shorter and starts a row lower, on row 3 on all 1009 of them, and the 16 pixel face is the greeting's alone.
   // The 11 pixel face sits on the 650's rows and opens with ink rather than a blank column on 218 of 307
-  // letters. Findings section 396. Our letters reach the same rows on all five, `todo-compile-one.md` 5.2.
-  One16: { what: 'bold 16, the greeting', cell: 16, baseline: 12, lead: 1, weight: 'SemiBold', px: 14, space: 4,
+  // letters. Findings section 396.
+  // The weights are the ones whose stroke is Logitech's, the median run of ink along a row: Bold draws the
+  // bold faces two pixels wide, as Logitech's are, where SemiBold draws them one, which `measureSet` would
+  // read back as a regular face; the 11 pixel face is one pixel in both, and the regular 15 is Regular. Our letters reach the same rows on all five, `todo-compile-one.md` 5.2.
+  One16: { what: 'bold 16, the greeting', cell: 16, baseline: 12, lead: 1, weight: 'Bold', px: 14, space: 4,
     rows: { cap: 10, x: 7, ascender: 10, descender: 3 } },
-  One15: { what: 'bold 15, menu rows and titles on the Harmony One', cell: 15, baseline: 11, lead: 0, weight: 'SemiBold', px: 12, space: 3,
+  One15: { what: 'bold 15, menu rows and titles on the Harmony One', cell: 15, baseline: 11, lead: 0, weight: 'Bold', px: 12, space: 3,
     rows: { cap: 9, x: 7, ascender: 9, descender: 2 } },
   OneR15: { what: 'regular 15, Help and prose on the Harmony One', cell: 15, baseline: 11, lead: 1, weight: 'Regular', px: 12, space: 3,
     rows: { cap: 9, x: 7, ascender: 9, descender: 2 } },
-  One14: { what: 'bold 14, pads and device rows on the Harmony One', cell: 14, baseline: 10, lead: 0, weight: 'SemiBold', px: 11, space: 3,
+  One14: { what: 'bold 14, pads and device rows on the Harmony One', cell: 14, baseline: 10, lead: 0, weight: 'Bold', px: 11, space: 3,
     rows: { cap: 8, x: 6, ascender: 8, descender: 2 } },
   One11: { what: 'bold 11, the clock and small labels on the Harmony One', cell: 11, baseline: 8, lead: 0, weight: 'SemiBold', px: 9, space: 3,
     rows: { cap: 7, x: 5, ascender: 7, descender: 2 } },

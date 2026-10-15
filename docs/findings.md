@@ -51890,7 +51890,7 @@ named by the record its press sends; six of the seven are a `Z` the character ma
 section 396, and one is a
 record named by its frame value whose pad draws another command of the same device. Against the drawn lines
 joined back, with or without a space at each break, it reproduces all 6873 pads that carry no cut and no
-unnamed glyph, and in the repository's census over eighteen compiles' device pages 3195 of 3195. Against
+unnamed glyph, and in the repository's census over eighteen compiles' device pages 3197 of 3197, since section 396 named the last glyphs. Against
 the whole archive, 1264 of the 1266 distinct drawn texts with a candidate name come out as drawn, the two
 others being `Sync-` and `Sync+`, whose only candidate is spelled `Sync -`. The census's control: centring by
 rounding reproduces 24 of 81 pads on the first compile.
@@ -51981,71 +51981,88 @@ own letters, which section 368's font table did for the Harmony 650 alone. Two t
 650's faces do not sit on the One's rows, and the character map could not name every glyph of the One's
 compiles, so `withOxaniumFonts` refused at the first one.
 
-**Sources.** The nine distinct configurations Logitech compiled for the One that the lab holds, `one_config`,
-`one_config_unprogrammed`, `one_spare_after_sync`, `one_spare_myharmony`, `calibration_one` and the four
-harvest compiles, and the Harmony 650's `harvest_650_two_devices` as the 650's side of the comparison. Neither
-client nor firmware was opened; what is measured is what Logitech drew. Scripts in the lab's
-`work/one-track/fonts/`.
+**Sources.** The nineteen distinct configurations Logitech compiled for the One that the lab holds, section
+395's, and the Harmony 650's `harvest_650_two_devices` as the 650's side of the comparison. Neither client
+nor firmware was opened; what is measured is what Logitech drew. Scripts in the lab's `work/one-track/fonts/`.
 
 ### Five faces, by the rows their letters reach
 
-Every set of the nine compiles, 153 sets, was measured as `measureSet` measures a 650 set: its height, its two
-colours, the median ink run and the rows its capitals, lower case, ascenders and descenders reach.
+Every set of the nineteen compiles, 332 sets, was measured as `measureSet` measures a 650 set: its height,
+its two colours, the median ink run and the rows its capitals, lower case and descenders reach. `J` and `Q`
+are left out of the capitals, since their tails reach below the baseline.
 
-| height | stroke | capital rows | x top | descender bottom | lead column | the One's face |
-|---|---|---|---|---|---|---|
-| 16 | bold | 3 to 12 | 6 | 15 | blank | `One16`, the greeting's alone |
-| 15 | bold | 3 to 11 | 5 | 13 | ink on 388 of 403 letters | `One15` |
-| 15 | regular | 3 to 11 | 5 | 13 | blank on 385 of 412 | `OneR15` |
-| 14 | bold | 3 to 10 | 5 | 12 | ink on 1566 of 1821 | `One14` |
-| 11 | bold | 2 to 8 | 4 | 10 | ink on 218 of 307 | `One11` |
+| height | stroke | capital rows | x top | descender bottom | lead column | sets | the One's face |
+|---|---|---|---|---|---|---|---|
+| 16 | 2 | 3 to 12 | 6 | 15 | blank on 152 of 152 | 19 | `One16`, the greeting's |
+| 15 | 2 | 3 to 11 | 5 | 13 | ink on 996 of 1032 | 34 | `One15` |
+| 15 | 1 | 3 to 11 | 5 | 13 | blank on 812 of 871 | 19 | `OneR15` |
+| 14 | 2 | 3 to 10 | 5 | 12 | ink on 3548 of 4112 | 190 | `One14` |
+| 11 | 1 | 2 to 8 | 4 | 10 | ink on 479 of 676 | 70 | `One11` |
 
-**The 14 and 15 pixel faces are not the 650's.** On the 650 their capitals start on row 2; on the One every
-one of 1009 starts on row 3 and ends on the same baseline, so a capital is a row shorter, and a letter is
-typically a pixel narrower. Only the 11 pixel face sits on the 650's rows. No set of the nine is a regular 14,
-a 13 or a 10. The 16 pixel set draws the letters of `Welcome!` and only the `H` and `y` besides, which every set of
-the nine holds as its first two codes. So the One gets five faces of
-its own in `lettering.ts`, each an Oxanium cut and size fitted to those rows, and ours reach exactly the stated
-rows on all five, which `test/typeface.test.ts` holds for every face. Census: `One14` 90 sets, `One11` 31,
-`One15` 14, `One16` 9, `OneR15` 9.
+**The 14 and 15 pixel faces are not the 650's.** All 2331 capitals of the One's 14 and 15 pixel sets start on
+row 3 and end on the face's baseline; the 650's start on row 2, or row 1 in its wide bold 14, on the same
+baseline, so the One's capital is a row shorter, two against the wide 14. Against the 650's two device
+compile the One's letters are narrower at 15 pixels, 28 of 30 bold letters by one or two pixels and 35 of 45
+regular ones, and at 14 pixels 17 of 44 are a pixel narrower and 27 the same width. Only the 11 pixel face
+sits on the 650's rows. No set of the nineteen is a regular 14, a 13 or a 10. The 16 pixel set draws the
+letters of the greeting and only the `H` and `y` besides, which every set holds as its first two codes.
+
+So the One gets five faces of its own in `lettering.ts`, each an Oxanium cut and size fitted to those rows,
+and ours reach exactly the stated rows on all five. **Their weights are the ones whose stroke is Logitech's**:
+Bold draws the One's 14, 15 and 16 pixel faces two pixels wide, as Logitech's are, where SemiBold, the 650's
+choice, draws them one, and `measureSet` reads a set of ours back as the face it stands for only in those
+weights; the 11 pixel face is one pixel wide in SemiBold, and the regular 15 is Regular. A preview of
+Logitech's letters beside ours in both weights was put to the bench; the weight stays a choice, `faceWeights`.
 
 **The colours are per set.** A 650 set is white over black or dark alone, so the 650 family letters every set
-in one scheme, `letterInks`. A One set is one ink over one shadow of its own, ten pairs over the nine
-compiles: white over black or over a dark grey, four other inks each over a darker shade of itself or over
-that dark grey, and one white with no shadow. So `withOxaniumFonts` takes `'own'`, which letters
-each set in the ink and shadow it was measured in, and the colours stay Logitech's until decision 24's open
-half, the One's colours, is decided.
+in one scheme, `letterInks`. A One set is one ink over one shadow of its own, ten pairs over the nineteen
+compiles, every pair in every compile: white over black or over a dark grey, four other inks each over a
+darker shade of itself or over that dark grey, and one white with no shadow. So `withOxaniumFonts` takes
+`'own'`, which letters each set in the ink and shadow it was measured in, and the colours stay Logitech's
+until decision 24's open half, the One's colours, is decided.
 
-### Five glyphs the character map could not name
+### Shapes the character map could not name
 
 Re-lettering needs the character of every glyph, and the One's seed alphabet, section 112, had never drawn
-five shapes: a `Z` in the pad font, a `#`, a `*`, and an `X` in the regular 15 and the bold 15 pixel faces, on
-five of the nine compiles. Each was read off its glyph and added to `bin/alphabets.ts` as a code of the
-compile that draws it, as the `+` was. **The closure is the file's own ASCII**: the `X` decodes into
-`Denon AVR-X4800H` and `Samsung LNR408DX`, both in base slot 0's ASCII, and the `Z` into `AllZone`,
-`MainZone`, `ZoomIn` and `ZoomOut`, the receiver's and a player's commands. Every glyph of all nine now names
-its character.
+some: a `Z` in the pad font and in the regular 15, a `#`, a `*`, an `X` in the regular 15, the bold 15 and the
+bold 14, an underscore, both parentheses and a double quote, and in a friend's Dutch compile an `ë` and an
+`é`. Each was read off its glyph and added to `bin/alphabets.ts` as a code of a compile that draws it, as the
+`+` was. **Only the `X` has a closure in the file's own ASCII**: it decodes into `AVR-X4800H` and `LNR408DX`,
+both in base slot 0's name tree. The rest read as plausible text and nothing more: `AllZone`, `ZoomIn`,
+`Thomson TV (2)`, `press "Help" now`, `Chan_1`, the Dutch `beëindigd` and `één`, and a `#` and a `*` alone,
+the keypad's two symbols. Every glyph of the nineteen now names a character.
 
-### The donor in our letters
+### The compiles in our letters
 
-Logitech's compile of the Denon and the LG, `harvest_one_two_devices`, the donor of 1.2, lettered in ours:
-every check passes, all 16 sets spell all 95 printable characters with 21 codes added, `checkOxaniumFonts`
-holds every glyph to our letter in its face and colours, the character map reads it through our alphabet with
-every drawn code resolved, and all 1059 texts read the same as in Logitech's file. The file grows by 107083
-bytes. A preview of Logitech's letters beside ours was put to the bench before this was scaled; the weight of
-the One's faces is a choice, `faceWeights`, and they start in the 650's.
+**Eighteen of the nineteen re-letter**: every check passes, every set spells all 95 printable characters,
+`checkOxaniumFonts` holds every glyph to our letter in its face and colours, the character map reads the
+result through our alphabet with every drawn code resolved, all its texts read as in Logitech's file, and
+every set measures back as the face it was given. **The nineteenth is the Dutch compile**, refused by name,
+since `ë` and `é` are not in our letters, which are printable ASCII. The donor of 1.2, Logitech's compile of
+the Denon and the LG, grows by 112084 bytes.
 
-**No glyph is shared between sets on the One.** On the 650 one glyph serves every set of its face and
-colouring, which section 368 read the Harmony 650 and 700's text routine to allow. The One's routine is
-unread, so each One set gets glyphs of its own: 1520 rather than 1425, since with a pair of colours per set
-little was shared anyway.
+**Two things had to change for that.** Logitech's One compiles carry two blank codes, a 3 and a 4 pixel
+space, both a space by the character map; re-lettered they pointed at one glyph, and two codes of one set may
+not, since `decodedSet` bounds a glyph by the next one's address, so a second code for a character gets a
+copy of its own. And **no glyph is shared between sets on the One**: on the 650 one glyph serves every set of
+its face and colouring, which section 368 read the Harmony 650 and 700's text routine to allow, and the One's
+routine is unread, so each One set gets glyphs of its own, 1520 on the donor rather than 1425.
+
+**Corrected per review.** This section first measured nine of the nineteen compiles and said every glyph of
+those named its character, which was true of the nine and hid that re-lettering then worked on 4 of the 19:
+six were refused at a glyph no seed named, and five of the nine failed the read back at the second space. It
+counted five added shapes where the `X` is in three faces, claimed an ASCII closure for the `Z`, `#` and `*`
+that only the `X` has, called the faces English only where they hold on a Dutch compile too, compared the
+One with the 650's row 2 only, and said a One letter is typically a pixel narrower, which holds at 15 pixels
+and not at 14. The row measurement had no test in the repository; it has one now.
 
 ### Scope, decision 16
 
 Arch 12 (Harmony One) and arch 14 (the Harmony 650); the Harmony 600 and 700 are still refused, and arch 8, 9
-and 10 were not looked at. The faces are measured on English compiles only. Whether the One's firmware reads a
-glyph as the 650's does, from the set's pointer at `3 + 3 * (code - 1)` regardless of the set's first code, is
-unread, and every One set starts at code 1, so nothing here depends on it.
+and 10 were not looked at. The faces hold on English and Dutch compiles; a compile with a letter outside
+printable ASCII is refused. Whether the One's firmware reads a glyph as the 650's does, from the set's pointer
+at `3 + 3 * (code - 1)` regardless of the set's first code, is unread, and every One set starts at code 1, so
+nothing here depends on it. Nothing of this has been drawn on a remote.
 
 ### Falsification
 
@@ -52057,7 +52074,8 @@ original's.
 
 * `packages/codec/src/lettering.ts`: `One16`, `One15`, `OneR15`, `One14`, `One11`, `HARMONY_650_FACES` and
   `HARMONY_ONE_FACES`.
-* `packages/codec/src/fonttable.ts`: the One's faces in `measureSet`, `'own'` colours and no shared glyph on
-  the One in `withOxaniumFonts`.
-* `packages/codec/bin/alphabets.ts` and the regenerated `src/alphabets.ts`: the five shapes.
-* `packages/codec/test/fonttable.test.ts`, `typeface.test.ts`, `blending.test.ts` and `text.test.ts`.
+* `packages/codec/src/fonttable.ts`: the One's faces in `measureSet`, `'own'` colours, no glyph shared
+  between sets on the One, and a copy for a second code of one character.
+* `packages/codec/bin/alphabets.ts` and the regenerated `src/alphabets.ts`: the added shapes.
+* `packages/codec/test/fonttable.test.ts`: the census and the rows over the nineteen, the eighteen re-lettered
+  and read back, and the donor; `typeface.test.ts`, `blending.test.ts` and `text.test.ts`.

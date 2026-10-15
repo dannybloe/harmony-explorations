@@ -158,7 +158,7 @@ export function measureSet(c: Container, set: FontSet, map: CharacterMap): SetFa
   const stroke = median(runs) ?? 0;
   const capitalTop = median(tops);
   const face = ((): OxaniumFaceName => {
-    // The Harmony One's faces by height, `lettering.ts`: every 14 pixel set of its eight compiles is bold and
+    // The Harmony One's faces by height, `lettering.ts`: every 14 pixel set of its nineteen compiles is bold and
     // every 16 pixel set the greeting's, so only the 15 pixel sets need the stroke to tell them apart.
     if (c.architecture === 12) {
       switch (set.height) {
@@ -265,9 +265,14 @@ export function withOxaniumFonts(
   // the Harmony 650 and 700. The Harmony One's is unread, so each of its sets gets glyphs of its own; with a
   // pair of colours per set that costs 95 glyphs of 1520 on Logitech's compile of the Denon and the LG.
   const shared = c.architecture === 14;
-  const glyphPiece = (face: SetFace, ch: string, index: number): ContainerPiece => {
+  // `again` is the code of a second code in one set that stands for a character an earlier code already does:
+  // Logitech's Harmony One compiles carry two blank codes, a 3 and a 4 pixel space, both a space by the
+  // character map. Two codes of one set may not point at one glyph, since a set's glyphs are bounded by the
+  // next one's address, `decodedSet`, so the second gets a copy of its own.
+  const glyphPiece = (face: SetFace, ch: string, index: number, again?: number): ContainerPiece => {
     const own = lettered(face);
-    const key = `${shared ? '' : `${index} `}${face.face} ${face.weight} ${face.lettering} ${own.shadowed} ${own.plain} ${own.shadow} ${ch}`;
+    const key = `${shared ? '' : `${index} `}${face.face} ${face.weight} ${face.lettering} ${own.shadowed} ${own.plain} ${own.shadow} ${ch}`
+      + (again === undefined ? '' : ` again ${again}`);
     let piece = glyphPieces.get(key);
     if (piece === undefined) {
       const rows = letterRows(letterFaceOf(face), ch, face.lettering, own);
@@ -301,10 +306,12 @@ export function withOxaniumFonts(
       bytes[2] = 0;
     }
     const refs: PieceRef[] = [];
+    const drawn = new Set<string>();
     for (let k = 0; k < count; k += 1) {
       const ch = characters.get(set.first + k);
       if (ch === undefined || !LETTERING_CHARACTERS.includes(ch)) continue;
-      refs.push({ at: 3 + 3 * k, to: glyphPiece(face, ch, index), offset: 0 });
+      refs.push({ at: 3 + 3 * k, to: glyphPiece(face, ch, index, drawn.has(ch) ? set.first + k : undefined), offset: 0 });
+      drawn.add(ch);
     }
     piece.bytes = bytes;
     piece.refs = refs;

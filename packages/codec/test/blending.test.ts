@@ -136,7 +136,7 @@ test('our alphabet names a blended letter by its structure, which tells every ch
   assert.deepEqual(sharedOf(own), ['!I', '!I', '!Il', '!Il', '09', 'Il', ']}', ']}']);
   // The Harmony One's five faces in their default weights share the same kinds, once each, in its 11 pixel face.
   const one = ownOf(HARMONY_ONE_FACES);
-  assert.equal(one.size, 935);
+  assert.equal(one.size, 933);
   assert.deepEqual(sharedOf(one), ['!I', '!Il', '09', ']}']);
   // Every weight, 10.8.5: more shared across the lightest and heaviest cuts, all of them pairs a larger face
   // of the same configuration tells apart. The Harmony One's faces brought 5458 structures and two new pairs,

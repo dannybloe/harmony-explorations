@@ -135,14 +135,14 @@ test('every label the device pages of eighteen Logitech Harmony One compiles dra
     }
     counts[name] = `${reproduced}/${considered}+${skipped}`;
   }
-  // `reproduced/considered+skipped` per compile, every considered pad reproduced: 3195 of 3195. The skips are
-  // pads with a cut line, whose names cannot be rejoined, or a glyph the map cannot name; they fell when the Harmony One's alphabet learnt five shapes,
-  // section 396.
+  // `reproduced/considered+skipped` per compile, every considered pad reproduced. The skips are pads with a
+  // cut line, whose names cannot be rejoined, or a glyph the map cannot name; they fell as the Harmony One's
+  // alphabet learnt the shapes of section 396.
   assert.deepEqual(counts, {
     one_config: '81/81+0', one_config_unprogrammed: '50/50+0', one_spare_after_sync: '79/79+2', one_spare_myharmony: '188/188+3',
     one_spare_20260830: '195/195+3', calibration_one: '109/109+1', calibration_favchannels: '109/109+1',
     calibration_favzero: '195/195+3', compiled_protocols: '598/598+5', compiled_protocols_2: '399/399+3',
-    compiled_protocols_3: '326/326+6', harvest_one_two_devices: '120/120+3', harvest_one_families_2: '96/96+0',
+    compiled_protocols_3: '328/328+4', harvest_one_two_devices: '120/120+3', harvest_one_families_2: '96/96+0',
     harvest_one_families_3: '205/205+2', one_friend_asfound_config: '33/33+0', one_friend_legacy_sync_config: '158/158+3',
     phase7_before: '109/109+1', phase7_after: '145/145+1',
   });

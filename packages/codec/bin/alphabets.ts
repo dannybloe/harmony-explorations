@@ -78,14 +78,18 @@ const SEEDS: Seed[] = [
       // after which the rule that one code is one character settles `I`.
       { container: 'one_config', codes: { 32: 'l', 50: 'I', 72: '+' } },
       // Shapes no earlier source draws, found when the Harmony One's fonts were re-lettered in ours,
-      // `todo-compile-one.md` 5.2, which needs every glyph's character: a `Z` in the pad font and the
-      // menu font, a `#` and a `*`, and an `X` in the regular face and in the bold 15 pixel one. Each
-      // was read off its glyph, and the names the codes spell are checked against base slot 0's ASCII
-      // in `test/text.test.ts`.
+      // `todo-compile-one.md` 5.2, which needs every glyph's character: a `Z` in the pad font, a `#` and a
+      // `*`, and an `X` in the regular 15, the bold 15 and the bold 14. Each was read off its glyph; only the
+      // `X` spells a name base slot 0's ASCII carries too, `test/text.test.ts`, findings section 396.
       { container: 'harvest_one_two_devices', codes: { 73: 'Z' } },
       { container: 'calibration_one', codes: { 71: '#' } },
       { container: 'harvest_one_families_2', codes: { 68: 'X' } },
       { container: 'harvest_one_families_3', codes: { 74: 'Z', 75: '#', 76: '*' } },
+      // And more the blind review of section 396 found in the other ten of Logitech's One compiles: an
+      // underscore and both parentheses, and in a friend's Dutch compile a `Z` in the regular 15, a double
+      // quote, and two accented letters our letters do not draw, which a re-lettering then refuses by name.
+      { container: 'compiled_protocols_3', codes: { 65: '(', 66: ')', 70: '_' } },
+      { container: 'one_friend_asfound_config', codes: { 62: '\u00eb', 66: 'Z', 69: '"', 70: '\u00e9' } },
     ],
     proof: 'The battery level is low!',
   },
