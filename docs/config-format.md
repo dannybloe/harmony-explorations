@@ -2303,6 +2303,14 @@ whose hit page offers scans 43 and 44 binds both in its own tagged list, before 
 working screen record, 44 to a list `[75 0FCA, 72 <device list record>]`; 508 of 508. A composer copies both
 from the configuration's own device page, `deviceBottomKeys`.
 
+**An activity's device list and its start up title, the Harmony One**, section 402: each activity has a device
+list of its own holding every device once, 64 of 64 over the fifteen compiles with an activity, as some devices
+(the activity's own and on 32 another) and then the rest in the idle list's order, the head's order not read;
+the 600 family's order fits 12. A composer enters the idle list. A compile with an activity holds two font sets
+of face One15 and draws every start up title in one of them, at y 124, found by that, `startupTitleSet`.
+Screen instruction 1, operands `0 0 176 220 0 0`, sits one call deep on every page of the working screen on 23
+of 64 activities and is unread.
+
 **The keys' lights, the Harmony One**, section 400: a three instruction list `[3F C0a2, 3F C0b2, write 1]`
 sets channels `a` and `b` of the device at `0x60` on, the same with `C0a0`, `C0b0` and a write of 0 off.
 Channels 3 and 1 or 2 and 0 are the keys beside the screen. A screen's tag `0x07` list calls the pair's off

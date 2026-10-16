@@ -27,9 +27,10 @@
  * a list of its own, each the same three empty instructions, and each screen a timer and header lists of its
  * own with the same instructions as every other; ours shares one of each, which runs the same instructions.
  * It draws every text inline where Logitech's often points at a copy elsewhere. It draws no favourite
- * channels, which are refused, and not the small screen instruction Logitech's television activities carry,
- * which is unread. The activity's Devices key enters the idle device list, the one every device is on,
- * where Logitech's enters a list of the activity's own devices, which is not built yet.
+ * channels, which it has no input for, and not screen instruction 1, which Logitech's "Watch TV", "TV kijken",
+ * "LG WebOS" and "Chromecast" activities carry over the whole screen and which is unread, section 402. The
+ * activity's Devices key enters the idle device list, the one every device is on, where Logitech's enters a
+ * list of the activity's own holding every device too, some first and the rest in the idle order, section 402.
  */
 import { u24 } from '../../bytes.ts';
 import { Writer } from '../../emit.ts';
@@ -48,7 +49,7 @@ import {
 } from '../../screen.ts';
 import { contentKey } from '../../screencategories.ts';
 import {
-  ACTION_LIST_INDEX_OPCODE, HANDLER_TAG_ENTER, handlerSets, modeRecords, modeTable, taggedList, taggedListBytes,
+  ACTION_LIST_INDEX_OPCODE, HANDLER_TAG_ENTER, handlerSets, modePages, modeRecords, modeTable, taggedList, taggedListBytes,
 } from '../../sections.ts';
 import { activityKeyedMaps } from '../../shared/activities.ts';
 import { appendActionLists, ComposeError, restamped } from '../../shared/core.ts';
@@ -68,7 +69,7 @@ import { type ExtraFontSet, fontSetOn, measureSet } from '../../fonttable.ts';
 import type { LetterInks } from '../../lettering.ts';
 import { TOUCH_CHOICES, type TouchChoices } from './choices.ts';
 import {
-  fontOfFace, padFontOf, TOUCH_PAD_HEIGHT, TOUCH_PAD_WIDTH, type TouchLabelLine, touchLabelLength, touchLabelLines,
+  fontOfFace, fontsOfFace, padFontOf, TOUCH_PAD_HEIGHT, TOUCH_PAD_WIDTH, type TouchLabelLine, touchLabelLength, touchLabelLines,
 } from './labels.ts';
 import { DEVICE_PAGE_SLOTS, MENU_COUNTER_XY, MENU_EDGE_SCANS, MODE_TITLE_X, MODE_TITLE_Y, pagingStyle, withHitPage } from './menus.ts';
 
@@ -172,6 +173,37 @@ function drawnTexts(c: Container, address: number): Drawn[] {
   return out;
 }
 
+/**
+ * The set "Starting" and the activity's name are drawn in on a start up screen: the face's one set, or, where the
+ * configuration holds two of that face, the one its own screens draw at the title's height. Every Logitech
+ * One compile with an activity holds two sets of the face and draws its titles in one of them, and the four
+ * with none hold one, section 402; a configuration holding several and drawing a title in none or more than
+ * one is refused rather than guessed at.
+ */
+function startupTitleSet(c: Container): number {
+  const candidates = fontsOfFace(c, STARTUP_TITLE_FACE);
+  if (candidates.length === 1) return candidates[0] as number;
+  // Each text's font and height only, followed into the chrome a page calls: decoding the words of every page
+  // would read the character map once a page, which is most of a second each.
+  const used = new Set<number>();
+  for (const page of modePages(c)) {
+    let font: number | undefined;
+    const walk = (at: number, depth: number): void => {
+      for (const one of screenProgram(c, at) ?? []) {
+        if (one.opcode === SCREEN_SELECT_FONT) font = one.operands[0];
+        if (one.opcode === SCREEN_CALL && depth === 0) walk(u24(one.operands, 0), 1);
+        if ((one.opcode === SCREEN_TEXT_INLINE || one.opcode === SCREEN_TEXT_AT) && one.operands[1] === STARTUP_TITLE_Y
+            && font !== undefined && candidates.includes(font)) used.add(font);
+      }
+    };
+    walk(page.program, 0);
+  }
+  if (used.size !== 1) {
+    throw new ComposeError(`the config holds ${candidates.length} font sets of the start up title's face and draws a title in ${used.size} of them`);
+  }
+  return [...used][0] as number;
+}
+
 /** What the configuration's own device modes draw and run for their header, read off them all. */
 interface DeviceHeader {
   /** The full screen picture their chrome draws first. */
@@ -257,7 +289,7 @@ function startupBehind(c: Container): number {
  */
 export function touchActivityFonts(c: Container, choices: TouchChoices): ExtraFontSet[] {
   return [
-    { like: fontOfFace(c, STARTUP_TITLE_FACE), weight: choices.startTitleWeight, background: startupBehind(c) },
+    { like: startupTitleSet(c), weight: choices.startTitleWeight, background: startupBehind(c) },
     { like: pagingStyle(c).counterFont, background: counterBehind(c), inks: titleInks(c) },
   ];
 }
@@ -422,7 +454,7 @@ export function buildTouchActivityScreens(
   const fonts = {
     // In the lighter copy our font step added for it, `touchActivityFonts`, and in the face's own set otherwise.
     startTitle: (() => {
-      const like = fontOfFace(c, STARTUP_TITLE_FACE);
+      const like = startupTitleSet(c);
       return fontSetOn(c, like, choices.startTitleWeight, startupBehind(c)) ?? like;
     })(),
     startLines: fontOfFace(c, STARTUP_LINE_FACE),

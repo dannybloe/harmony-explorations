@@ -52606,3 +52606,109 @@ two keys before its rows and renders two screens.
 
 A Harmony One device page of Logitech's that does not close on the switch or does not bind a key its hit page
 offers; a composed page whose keys do not reach the working screen or the device list on a remote.
+
+## 402. Our Harmony One activity builder rebuilds 52 of Logitech's 64 activities part for part, and each activity of theirs has a device list holding every device
+
+**Asked for by `todo-compile-one.md` 1.2.11.2.6**: `buildTouchActivityScreens` builds an activity's working
+screen and start up screen from its name and its pads, section 399, and had been checked on our own setup
+only. The Harmony 650's builders are checked by rebuilding every activity of Logitech's compiles and comparing,
+and this does the same for the One.
+
+**Sources.** The fifteen Harmony One compiles holding an activity, 64 activities, and the four holding none;
+section 399 and the builder's own docstring for what is ours by design; section 279 for an activity's two
+screens. Logitech's client was not opened and the firmware was not read: what is compared is what the
+configurations hold.
+
+**Scope.** The Harmony One only. The 600, 650 and 700 have builders of their own, checked in their own sections.
+**The 64 are not 64 independent samples**: 42 of them are six compiles of one account's seven activities
+(`one_spare_myharmony`, `one_spare_20260830`, `calibration_favzero` and the three `compiled_protocols`
+compiles), and those six give 37 of the 52 rebuilt. Per compile, 14 of the 15 give at least one activity that
+rebuilt; the fifteenth is the one not lettered.
+
+### The method
+
+Each compile is lettered in ours first, `letterTouchDonor`, since the builder spells a name in the letters the
+configuration holds. Each activity is then rebuilt onto its own lettered compile under a fresh activity number,
+from its name and its pads, a pad being read off Logitech's working screen **by its place**: the key the touch
+area under each of the six boxes reports, the list the page binds to that key, and the words drawn inside the
+box. Both of our screens and both of Logitech's are then reduced to what they do and compared: the record's
+entries and handler lists, each page's hit areas and bindings, and each page's program, text by its height and
+its words and a picture by where it is drawn, following the programs a page calls.
+
+**The keys are read off the touch areas and not assumed**, and that was a correction before this landed: the
+first version took the six pads to be keys 49 to 53 and 43 everywhere, which holds on every working screen
+but those with a Favourites key, where the Favourites key is 48, Devices 49 and the six pads 50 to 53, 43 and
+44. The blind reviewer measured it; the categories below came out the same, and the reason the eight with
+favourite channels were set apart had been the Devices key read as a pad.
+
+**Left out of the comparison, each a choice already recorded**: where a text starts across, since our letters
+are other widths and a centred text moves with them, section 399; a font select before every label, which ours
+makes for the smoothing; which list a screen queues or which timer it starts, since ours shares one where
+Logitech gives each screen its own holding the same instructions; one picture drawn twice over the same pad;
+and screen instruction 1, below.
+
+### The result
+
+| | activities |
+|---|---|
+| rebuilt and the same in every compared part | 52 |
+| a Favourites key on the working screen, favourite channels, which the builder has no input for | 8 |
+| a page short of six pads before the last, which a list of rows does not state | 2 |
+| pads with no words, pictures only, which the builder does not draw | 1 |
+| on the one compile drawing a letter ours lack, "ë", not lettered and not rebuilt | 1 |
+| rebuilt and different | 0 |
+
+The categories are taken in that order, and with the pads read by their touch areas none overlaps. The eight
+with favourite channels are three "Watch TV" (`calibration_favchannels`, `phase7_before`, `phase7_after`) and
+five "TV kijken" (`one_spare_20260830`, `calibration_favzero` and the three `compiled_protocols` compiles). The
+two short pages are both on `one_config`: its "Bluetooth", pages of two pads and one, and its "TV kijken", pages
+of six, five and six. The picture pads are `one_config`'s "PlayStation 3".
+
+**Screen instruction 1 stands on 23 of the 64**, on the working screen only and on every page of it, one call
+deep in the program the page calls, always with the six operands `0 0 176 220 0 0`, the One's screen being 176
+by 220. The 23 are every activity named "Watch TV", "TV kijken", "LG WebOS" or "Chromecast" and no other, which
+is a list of names and not a cause: what selects it and what it does are unread. 14 of the 15 compiles carry
+it, all but `one_spare_after_sync`. 13 of the 52 that rebuilt are among them. The builder emits none.
+
+### The start up title's font set
+
+**Every Logitech One compile with an activity holds two font sets of the start up title's face**, 15 of 15,
+draws every activity's start up title, "Starting" and the activity's name at height 124, in one of them, 64 of
+64, and draws nothing at that height in the other. The four compiles with no activity hold one set of the face.
+The builder took "the face's one set" and refused on every compile with an activity, which is how this was
+found. It now takes the one set where there is one, and otherwise the one the configuration's own screens draw
+at the title's height, `startupTitleSet`, and refuses where several are held and none or more than one is used
+there. **The two have one ink and differ in their shadow**: the titles' set has none and the other has one, 15
+of 15, and the one set of the four compiles with no activity is the shadowed one. So on Logitech's compile of two
+devices, our donor, the builder takes the set no Logitech title is drawn in. Ours draws the title in a lighter
+copy of whichever it takes, re-lettered in ours, section 399, so the choice decides the copy's source and not the
+letters drawn.
+
+### Each activity's device list
+
+**Each activity of Logitech's One compiles has a device list of its own, holding every device once**, 64 of 64,
+the same devices as the list the Devices key opens with no activity running, which itself holds every device
+of the inventory on 15 of 15. Rows are taken in the order they stand on the screen, page by page and on a page
+by touch area. **Every such list is some devices and then the rest in the idle list's order**, 64 of 64. The
+head holds the activity's own devices, by infrared group, and on 32 of the 64 also a device the activity does not
+send to; its order is not read. The Harmony 600 family's rule, the activity's own devices first in group order
+and then the rest in the idle order, fits 12 of the 64, two of them on compiles with one device. Eight lists
+are in the idle order, six of them with several devices. **Ours enters the idle list**, so an activity we build
+shows every device in the idle order. Corrected per review: this said the 600 family's rule fits 4, a
+measurement that took the rows in the order the page's list stores them and an activity's devices as positions
+in the inventory rather than infrared groups.
+
+### Asserted
+
+`packages/codec/test/touchactivity.test.ts`: the rebuild over the 64 activities with the tally above and 13 of
+the 52 carrying instruction 1; the two sets of the title's face on 15 of 15 compiles with an activity, one ink
+and the shadow only on the other, every start up title of the 64 drawn in the builder's choice and nothing at
+that height in the other set, and one shadowed set on each of the four compiles with none; the device lists, every device once on 64, the idle list complete on 15,
+some devices then the idle order on 64, another device in the head on 32, the 600 family's order on 12 and the
+idle order on 8; and instruction 1 on 23 working screens with one operand set and on no start up screen.
+
+### What would falsify it
+
+A Logitech One activity whose rebuild differs in a compared part; a One compile with an activity holding one
+set of the title's face, or drawing titles in both; an activity's device list missing a device or holding one
+twice, or not ending in the idle order.

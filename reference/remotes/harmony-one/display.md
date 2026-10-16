@@ -55,6 +55,9 @@ Generated from `packages/codec`, `packages/usb` and the drawing by `make remote-
 * **An activity shows two screens**: a start up screen, "Keep the remote pointed at your system", and then
   a working screen, often with a Remote Assistant screen between them, read from 60 activities of thirteen
   configurations and seen on a unit, section 279.
+* **Devices, pressed while an activity runs, lists every device**, from a list that activity has of its own:
+  some devices first, the activity's among them, and then the rest in the order of the list shown with no
+  activity running, read from configurations, 64 activities of fifteen, section 402.
 * **Status icons**: an infrared indicator that "flashes whenever an IR command is being sent" and a battery
   indicator, Logitech's manual, "Status icons".
 * **Options**: the remote's own menu, with the date and time, screen sounds and a tutorial, Logitech's

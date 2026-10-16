@@ -214,15 +214,24 @@ export function padFontOf(c: Container): number | undefined {
  * our font step added for one background, `touchActivityFonts`, and not the face's set.
  */
 export function fontOfFace(c: Container, face: string): number {
+  const found = fontsOfFace(c, face);
+  if (found.length !== 1) throw new ComposeError(`the config holds ${found.length} font sets of the face ${face}, not one`);
+  return found[0] as number;
+}
+
+/**
+ * Every font set of the configuration drawn in `face`, smoothed sets passed over, in table order. A face can be
+ * held twice: every Logitech One compile with an activity holds two sets of the start up title's face, section
+ * 402, so a caller that meets two decides by what the configuration draws in them.
+ */
+export function fontsOfFace(c: Container, face: string): number[] {
   const map = characterMap(c);
   if (map === undefined) throw new ComposeError('the config draws no text this can spell from');
-  const found = (fontSets(c) ?? []).flatMap((set, k) => {
+  return (fontSets(c) ?? []).flatMap((set, k) => {
     try {
       return !isSmoothedSet(c, set) && measureSet(c, set, map).face === face ? [k] : [];
     } catch {
       return [];
     }
   });
-  if (found.length !== 1) throw new ComposeError(`the config holds ${found.length} font sets of the face ${face}, not one`);
-  return found[0] as number;
 }
