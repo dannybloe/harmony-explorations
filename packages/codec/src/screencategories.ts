@@ -203,11 +203,6 @@ export const PLACEMENT_OPCODES: ReadonlySet<number> = new Set([
   ENTER_MODE, ACTION_LIST_INDEX_OPCODE, MAP_VALUE_OPCODE, RUN_SCREEN_PROGRAM, STATE_BAND, SEND_INFRARED,
 ]);
 /**
- * The state variables the arch 14 firmware owns, 0 to 17, section 284. A switch on one of these is a
- * switch on the same thing in every configuration, so its index is content; above it is placement.
- */
-const FIRMWARE_VARIABLE_MAX = firmwareStateVariableMax(14);
-/**
  * A mode whose own list binds more than this many keys carries a whole keypad. The head of an arch 14
  * mode table is modes of that kind and modes binding nothing; a later mode binds at most 54 on every
  * arch 14 configuration here.
@@ -327,7 +322,9 @@ function instructionForm(
   if (one.opcode === SCREEN_SWITCH_NARROW || one.opcode === SCREEN_SWITCH_WIDE) {
     const decoded = screenSwitch(one);
     if (decoded === undefined) return 'S?';
-    const variable = look && decoded.variable > FIRMWARE_VARIABLE_MAX ? 'v' : `${decoded.variable}`;
+    // The state variables the firmware owns, 0 to 17 on arch 14, section 284: a switch on one of these is a switch
+    // on the same thing in every configuration, so its index is content; above it is placement.
+    const variable = look && decoded.variable > firmwareStateVariableMax(ctx.c.architecture) ? 'v' : `${decoded.variable}`;
     const arms = decoded.cases.map((arm) => {
       const key = arm.value !== undefined ? `${arm.value}` : `${arm.from}-${arm.to}`;
       return arm.target === 0 ? `${key}>0` : `${key}>@p${follow(arm.target)}`;

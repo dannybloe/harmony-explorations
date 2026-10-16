@@ -40,11 +40,10 @@ const PATTERNS: Readonly<Record<string, RegExp>> = {
 
 /** Every module outside `families/` that names a remote, with how often, as of `todo-compile-one.md` 3.3's start. */
 const DEBT: Readonly<Record<string, Readonly<Record<string, number>>>> = {
-  'actions.ts': { architecture: 4 },
   'activitykeys.ts': { architecture: 1 },
   'assemble.ts': { architecture: 2, family: 11, models: 3, imports: 5 },
   'backgrounds.ts': { architecture: 3, models: 4, barrel: 2 },
-  'compare.ts': { architecture: 1, family: 5, barrel: 1 },
+  'compare.ts': { family: 5, barrel: 1 },
   'compose.ts': { family: 18, imports: 7 },
   'devicemode.ts': { family: 9, scans: 41 },
   'firmwarescreens.ts': { architecture: 1, family: 2, scans: 2, models: 2, barrel: 2 },
@@ -53,14 +52,10 @@ const DEBT: Readonly<Record<string, Readonly<Record<string, number>>>> = {
   'inventory.ts': { architecture: 2, family: 17, scans: 4 },
   'modezero.ts': { scans: 3, models: 1 },
   'pictures.ts': { architecture: 1 },
-  'screencategories.ts': { architecture: 1 },
   'screenrecords.ts': { architecture: 2, family: 21, imports: 1, barrel: 18 },
   'screentexts.ts': { architecture: 1, family: 23, barrel: 8 },
   'shared/activities.ts': { architecture: 1 },
   'shared/setup.ts': { models: 1 },
-  'statetables.ts': { architecture: 1 },
-  'tables.ts': { architecture: 1 },
-  'touch.ts': { architecture: 1 },
   'wiring.ts': { scans: 3, models: 5 },
 };
 

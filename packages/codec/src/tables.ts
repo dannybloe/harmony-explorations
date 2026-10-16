@@ -105,6 +105,8 @@ export function timers(c: Container): Table<Timer> | undefined {
  * read; what is measured is which timer's list opens with it, and what changing that timer does.
  */
 export const SCREEN_LIGHT_STEP = 0xe910;
+/** Where `screenLightTimer` reads the screen light, arch 14 (Harmony 600, 650 and 700); its docstring says why not elsewhere. */
+export const SCREEN_LIGHT_STEP_ARCHITECTURES: ReadonlySet<number> = new Set([14]);
 
 /**
  * Which base slot 12 timer holds how long an arch 14 remote's screen stays lit, as an index.
@@ -130,7 +132,7 @@ export const SCREEN_LIGHT_STEP = 0xe910;
  * and its ten second one is the screen light, measured on the spare One, section 400: `touchScreenLightTimer` in the touch family.
  */
 export function screenLightTimer(c: Container): number | undefined {
-  if (c.architecture !== 14) return undefined;
+  if (c.architecture === undefined || !SCREEN_LIGHT_STEP_ARCHITECTURES.has(c.architecture)) return undefined;
   const table = timers(c);
   const lists = c.actionLists();
   if (table === undefined || lists === undefined) return undefined;

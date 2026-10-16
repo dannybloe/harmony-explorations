@@ -207,6 +207,8 @@ const STATE_OPERATIONS: readonly (readonly [string, boolean])[] = [
 export const ARITHMETIC_BLOCK: ReadonlySet<number> = new Set([
   0x65, 0x66, 0x67, 0x68, 0x69, 0x6a, 0x6b, 0x6c, 0x6d, 0x6e,
 ]);
+/** The architectures implementing `ARITHMETIC_BLOCK`, arch 14 (Harmony 600, 650 and 700) alone. Section 107. */
+export const ARITHMETIC_BLOCK_ARCHITECTURES: ReadonlySet<number> = new Set([14]);
 
 /**
  * `0x70` and `0x71`, whose operand bits 8 to 11 pick one of eight operations on a state variable.
@@ -583,19 +585,30 @@ const BAND_FLOORS: readonly (readonly [number, readonly Band[]])[] = [
   [ACTION_NOOP_LIMIT, BANDS_07],
 ];
 
+/**
+ * The ladders an architecture has of its own, read from its firmware; an architecture not named takes arch 14's.
+ *
+ * Arch 9 (Harmony 525) has its own `0x0F` ladder. Until 13 August 2026 it borrowed arch 14's, which is how twelve
+ * of its instructions were reported as no-ops.
+ */
+const BANDS_0F_BY_ARCHITECTURE: Readonly<Record<number, readonly Band[]>> = { 9: BANDS_0F_ARCH9 };
+/**
+ * Arch 12 (Harmony One) moves the lowest `0x3F` floor to `0xC0`. Arch 9 (Harmony 525) has its own lowest floor
+ * too, `0xC0` like arch 12's and with a different handler behind it. Until 13 August 2026 it borrowed arch 14's
+ * `0xB0`, so a `0xC0` instruction read as a base slot 8 seek and a `0xB0` one read as anything at all where its
+ * firmware exits.
+ */
+const BANDS_3F_BY_ARCHITECTURE: Readonly<Record<number, readonly Band[]>> = {
+  9: BANDS_3F_ARCH9,
+  12: BANDS_3F.map((b) => (b[0] === 0xb0 ? ([0xc0, band3fC0Arch12] as const) : b)),
+};
+
 function bandsFor(opcode: number, architecture: number): readonly Band[] | undefined {
   for (const [floor, bands] of BAND_FLOORS) {
     if (opcode < floor) continue;
-    // Arch 9 (Harmony 525) has its own `0x0F` ladder, read from its own firmware. Until 13 August
-    // 2026 it borrowed arch 14's, which is how twelve of its instructions were reported as no-ops.
-    if (bands === BANDS_0F && architecture === 9) return BANDS_0F_ARCH9;
-    if (bands !== BANDS_3F) return bands;
-    // Arch 9 (Harmony 525) has its own lowest floor too, `0xC0` like arch 12's and with a different
-    // handler behind it. Until 13 August 2026 it borrowed arch 14's `0xB0`, so a `0xC0` instruction
-    // read as a base slot 8 seek and a `0xB0` one read as anything at all where its firmware exits.
-    if (architecture === 9) return BANDS_3F_ARCH9;
-    if (architecture !== 12) return bands;
-    return BANDS_3F.map((b) => (b[0] === 0xb0 ? ([0xc0, band3fC0Arch12] as const) : b));
+    if (bands === BANDS_0F) return BANDS_0F_BY_ARCHITECTURE[architecture] ?? bands;
+    if (bands === BANDS_3F) return BANDS_3F_BY_ARCHITECTURE[architecture] ?? bands;
+    return bands;
   }
   return undefined;
 }
@@ -610,7 +623,7 @@ export function reading(instruction: Instruction, architecture: number): Reading
   if (opcode >= SECOND_SPACE_LIMIT) {
     // The arithmetic block exists only on arch 14. Everywhere else the ladder tests the opcode and
     // branches to the exit, so the reading is "nothing" rather than the arch 14 one. Section 107.
-    if (architecture !== 14 && ARITHMETIC_BLOCK.has(opcode)) return noop(107);
+    if (!ARITHMETIC_BLOCK_ARCHITECTURES.has(architecture) && ARITHMETIC_BLOCK.has(opcode)) return noop(107);
     const entry = MAIN.get(opcode);
     return typeof entry === 'function' ? entry(operand) : entry;
   }

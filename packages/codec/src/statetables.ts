@@ -70,7 +70,7 @@ import {
   STATE_TABLE_SLOT,
   STATE_VALUE_LENGTH,
 } from './sections.ts';
-import { VALUE_MAP_KEY_WIDTH, VALUE_MAP_RANGE_BYTES, VALUE_MAP_SLOT } from './valuemap.ts';
+import { VALUE_MAP_COUNT_WIDTH, VALUE_MAP_KEY_WIDTH, VALUE_MAP_RANGE_BYTES, VALUE_MAP_SLOT } from './valuemap.ts';
 
 /** A refusal, named so a caller can tell a bad description from a bug. */
 export class StateTablesError extends Error {}
@@ -78,8 +78,14 @@ export class StateTablesError extends Error {}
 /** Base slot 0, the name tree. */
 export const NAME_TREE_SLOT = 0;
 
+/**
+ * The architecture these tables are built for, arch 14 (Harmony 600, 650 and 700). The Harmony One's differ in four
+ * values, `todo-compile-one.md` 2.3, and this module moves into its family with 3.3.3.3.
+ */
+const STATE_TABLES_ARCHITECTURE = 14;
+
 /** How many state variables the firmware owns on arch 14, 0 to 17, section 284. */
-export const FIRMWARE_STATE_VARIABLE_COUNT = firmwareStateVariableMax(14) + 1;
+export const FIRMWARE_STATE_VARIABLE_COUNT = firmwareStateVariableMax(STATE_TABLES_ARCHITECTURE) + 1;
 
 /**
  * Records 7 to 17 on arch 14 as `[first, max]`: the same on all thirteen compiles, none with a
@@ -119,8 +125,8 @@ const CLOCK_YEAR = 6;
 
 /** The leading byte of every value map record on the thirteen, which the firmware steps over. */
 export const VALUE_MAP_LEAD = 2;
-/** Arch 14 states a value map's case count in two bytes, `VALUE_MAP_COUNT_WIDTH`. */
-const VALUE_MAP_CASE_COUNT_WIDTH = 2;
+/** A value map's case count, two bytes on arch 14, read off the readers' own table. */
+const VALUE_MAP_CASE_COUNT_WIDTH = VALUE_MAP_COUNT_WIDTH[STATE_TABLES_ARCHITECTURE] as number;
 
 /** The two level 0 nodes every name tree of the thirteen opens with, in this order. */
 export const NAME_TREE_ROOTS: readonly string[] = ['Root', 'State'];
@@ -510,7 +516,8 @@ export function buildValueMap(map: ValueMapSpec): ContainerPiece {
   const stride = VALUE_MAP_KEY_WIDTH + 3;
   const casesAt = 1 + VALUE_MAP_CASE_COUNT_WIDTH;
   const length = casesAt + stride * order.length + 1 + VALUE_MAP_RANGE_BYTES * ranges.length;
-  const out = new Writer(length).u8(VALUE_MAP_LEAD).u16(order.length);
+  const head = new Writer(length).u8(VALUE_MAP_LEAD);
+  const out = VALUE_MAP_CASE_COUNT_WIDTH === 1 ? head.u8(order.length) : head.u16(order.length);
   const refs: PieceRef[] = [];
   order.forEach((value, k) => {
     out.u16(value).u24(0);
@@ -620,7 +627,7 @@ export function describeStateTables(layout: ContainerLayout): StateTablesSpec {
     const fieldAt = (at: number): PieceRef | undefined => fields.find((one) => one.at === at);
     const stride = VALUE_MAP_KEY_WIDTH + 3;
     const casesAt = 1 + VALUE_MAP_CASE_COUNT_WIDTH;
-    const n = u16(b, 1);
+    const n = VALUE_MAP_CASE_COUNT_WIDTH === 1 ? u8(b, 1) : u16(b, 1);
     const cases = Array.from({ length: n }, (_, i) => ({
       value: u16(b, casesAt + stride * i),
       target: targetOf(fieldAt(casesAt + stride * i + VALUE_MAP_KEY_WIDTH)),

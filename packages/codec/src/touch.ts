@@ -8,13 +8,13 @@
  * `docs/findings.md` sections 45 and 125.
  */
 import { Container } from './gspm.ts';
-import { touchPages } from './tables.ts';
+import { TOUCH_MAP_ARCHITECTURE, touchPages } from './tables.ts';
 import type { TouchArea, TouchPage } from './tables.ts';
 import type { ModePage } from './sections.ts';
 import { SCREEN_SIZES } from './render.ts';
 
 /** The one architecture with a touch panel, so the one size this module needs. */
-const ARCH12_SCREEN = SCREEN_SIZES[12] as { width: number; height: number };
+const PANEL_SCREEN = SCREEN_SIZES[TOUCH_MAP_ARCHITECTURE] as { width: number; height: number };
 
 /**
  * The panel reports thirteen bit coordinates and the display is 176 by 220 pixels, so the two spaces
@@ -42,8 +42,8 @@ const ARCH12_SCREEN = SCREEN_SIZES[12] as { width: number; height: number };
  * two copies until one of them moves, and the drawing side is the one that would notice a wrong size
  * immediately while this side would quietly place every label a fraction out.
  */
-export const SCREEN_WIDTH = ARCH12_SCREEN.width;
-export const SCREEN_HEIGHT = ARCH12_SCREEN.height;
+export const SCREEN_WIDTH = PANEL_SCREEN.width;
+export const SCREEN_HEIGHT = PANEL_SCREEN.height;
 /** The panel y of pixel row 0, so `panel = PANEL_TOP - pitch * pixel`. */
 export const PANEL_TOP = 4356;
 /** One list row, in panel units and in pixels. Their ratio is the y scale. */

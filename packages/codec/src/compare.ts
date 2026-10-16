@@ -189,13 +189,18 @@ export function setupView(c: Container): SetupView {
 }
 
 
+/** Where an activity's working screen is read off the record keyed by the activity, section 329. */
+const ACTIVITY_KEYED_WORKING_ARCHITECTURES: ReadonlySet<number> = new Set([14]);
+
 /**
  * Activity value to the mode of its working screen. The Harmony One's route is `activityScreens`; on
  * the Harmony 600, 650 and 700 the working screen record keyed by the activity is the one to read,
  * `activityKeyedRecords`, section 329, each case queuing `0x7E <mode>`.
  */
 function workingScreens(c: Container): Map<number, number> {
-  if (c.architecture !== 14) return activityScreens(c)?.screens ?? new Map();
+  if (c.architecture === undefined || !ACTIVITY_KEYED_WORKING_ARCHITECTURES.has(c.architecture)) {
+    return activityScreens(c)?.screens ?? new Map();
+  }
   const out = new Map<number, number>();
   const record = valueMaps(c)?.[activityKeyedRecords(c).working];
   for (const [value, target] of record?.entries ?? []) {
