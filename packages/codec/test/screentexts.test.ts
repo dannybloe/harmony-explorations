@@ -29,12 +29,10 @@ import {
   type Container,
   type ContainerPiece,
   activityEntriesByName,
-  buildFirmwareScreens,
   buildScreenRecords,
   characterMap,
   compareViews,
   decode,
-  describeFirmwareScreens,
   describeScreenRecords,
   describeWiring,
   glyphsReferencedBy,
@@ -49,12 +47,12 @@ import {
   screenRecordModes,
   setupView,
   takeApart,
-  withFirmwareScreens,
   withScreenRecords,
   SCREEN_TEXT_AT,
   SCREEN_TEXT_INLINE,
 } from '../src/index.ts';
 import { ScreenTextError, buildScreenTexts, checkScreenTexts, describeScreenTexts, withScreenTexts } from '../src/families/four-slot/screentexts.ts';
+import { buildFirmwareScreens, describeFirmwareScreens, withFirmwareScreens } from '../src/families/four-slot/firmwarescreens.ts';
 
 /** The thirteen arch 14 compiles section 312 names. */
 const THIRTEEN = ['h650_config_region', 'h650_panasonic_config', 'h600_config', 'calibration_h600',

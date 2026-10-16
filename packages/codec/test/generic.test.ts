@@ -46,7 +46,6 @@ const DEBT: Readonly<Record<string, Readonly<Record<string, number>>>> = {
   'compare.ts': { family: 5, barrel: 1 },
   'compose.ts': { family: 18, imports: 7 },
   'devicemode.ts': { family: 9, scans: 41 },
-  'firmwarescreens.ts': { architecture: 1, family: 2, scans: 2, models: 2, barrel: 2 },
   'fonttable.ts': { architecture: 4 },
   'growth.ts': { family: 6 },
   'inventory.ts': { architecture: 2, family: 17, scans: 4 },

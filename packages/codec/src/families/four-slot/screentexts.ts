@@ -86,7 +86,7 @@ import {
 import { modeRoles } from '../../screencategories.ts';
 import { type CharacterMap, characterMap, glyphsReferencedBy } from '../../text.ts';
 import { valueMaps } from '../../valuemap.ts';
-import { FIRMWARE_SCREEN_TEMPLATES } from '../../firmwarescreens.ts';
+import { FIRMWARE_SCREEN_TEMPLATES } from './firmwarescreens.ts';
 import { FIRMWARE_SCREENS, describeWiring } from '../../wiring.ts';
 
 /** A refusal, named so a caller can tell a configuration this does not describe from a bug. */

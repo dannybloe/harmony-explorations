@@ -68,7 +68,6 @@ export * from './compose.ts';
 export * from './screenrecords.ts';
 // The firmware's own screens built whole from a description, todo-compile-650 7.4, section 357, on
 // `screenrecords.ts`'s reading, building and placing.
-export * from './firmwarescreens.ts';
 // Every text of a configuration generated from its word and its font, its place by its screen's rule and
 // its form by the first copy, todo-compile-650 8.1, section 358. After the screens it rewrites the texts of.
 // The Harmony 650's pictures, those drawn by rule built from their drawing and the artwork named,

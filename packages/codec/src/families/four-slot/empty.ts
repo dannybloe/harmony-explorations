@@ -54,7 +54,7 @@ import { ENTER_MODE, MAP_VALUE_OPCODE } from '../../inventory.ts';
 import { STATE_WRITE_BASE } from '../../actions.ts';
 import { SENDING_FLAG_VARIABLE } from './chrome.ts';
 import { caseProgram as caseProgramBytes } from '../../shared/menus.ts';
-import { type BuiltFirmwareScreens, buildFirmwareScreens, firmwareScreenTemplates } from '../../firmwarescreens.ts';
+import { type BuiltFirmwareScreens, buildFirmwareScreens, firmwareScreenTemplates } from './firmwarescreens.ts';
 import {
   type BuiltScreen, type BuiltScreenRecords, type ScreenMenuSpec, buildScreenRecords,
 } from '../../screenrecords.ts';

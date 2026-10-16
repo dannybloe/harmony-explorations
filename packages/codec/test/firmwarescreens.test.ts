@@ -27,11 +27,8 @@ import {
   FIRMWARE_SCREENS,
   ScreenRecordError,
   activityEntriesByName,
-  buildFirmwareScreens,
   buildScreenRecords,
-  checkFirmwareScreens,
   compareViews,
-  describeFirmwareScreens,
   describeScreenRecords,
   describeWiring,
   handlerSets,
@@ -52,10 +49,10 @@ import {
   taggedList,
   takeApart,
   timers,
-  withFirmwareScreens,
   withScreenRecords,
   valueMaps,
 } from '../src/index.ts';
+import { buildFirmwareScreens, checkFirmwareScreens, describeFirmwareScreens, withFirmwareScreens } from '../src/families/four-slot/firmwarescreens.ts';
 
 /** The thirteen arch 14 compiles section 312 names. */
 const THIRTEEN = ['h650_config_region', 'h650_panasonic_config', 'h600_config', 'calibration_h600',

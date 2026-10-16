@@ -23,10 +23,8 @@ import {
   FOUR_SLOT_CHOICES,
   assembleSetup,
   attributeBytes,
-  buildFirmwareScreens,
   buildScreenRecords,
   buildWiring,
-  checkFirmwareScreens,
   checkBlendedLetters,
   checkOxaniumFonts,
   checkStateBackgrounds,
@@ -38,7 +36,6 @@ import {
   claims,
   compareDrawnTexts,
   compareViews,
-  describeFirmwareScreens,
   describeScreenRecords,
   describeWiring,
   ACTIVITY_STATE_NAME,
@@ -59,11 +56,11 @@ import {
   setupView,
   stateVariables,
   takeApart,
-  withFirmwareScreens,
   withScreenRecords,
   withWiring,
 } from '../src/index.ts';
 import { buildScreenTexts, checkScreenTexts, describeScreenTexts, withScreenTexts } from '../src/families/four-slot/screentexts.ts';
+import { buildFirmwareScreens, checkFirmwareScreens, describeFirmwareScreens, withFirmwareScreens } from '../src/families/four-slot/firmwarescreens.ts';
 
 /**
  * The 22 arch 14 compiles sections 356 to 360 measure, by the skin each states: 13 Harmony 650, 2 Harmony

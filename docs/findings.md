@@ -47478,7 +47478,7 @@ section 347 builds. The screens themselves, fourteen at the front of base slot 6
 650 and nineteen on the Harmony 700, section 347's table, still came out of a Logitech compile: the two
 "add an Activity" placeholders, which 7.4 calls the setup screens, "USB Connected", the battery screens,
 "Update Successful" and "Upgrade Successful", the learning screens and the blanks between them.
-`packages/codec/src/firmwarescreens.ts` builds each whole on section 356's pattern, and with its
+`packages/codec/src/families/four-slot/firmwarescreens.ts` builds each whole on section 356's pattern, and with its
 machinery, which this section moves out of `screenrecords.ts`'s three screens into functions both share:
 `recordReading` reads a record's frame and accounts for its bytes, `recordBuilding` makes its pieces, and
 `withModeRecords` puts them in a layout.
@@ -47671,7 +47671,7 @@ its low battery flag; a skipped tour whose screens something enters.
 
 ### Where it lands
 
-* `packages/codec/src/firmwarescreens.ts`: `describeFirmwareScreens`, `buildFirmwareScreens`,
+* `packages/codec/src/families/four-slot/firmwarescreens.ts`: `describeFirmwareScreens`, `buildFirmwareScreens`,
   `withFirmwareScreens`, `checkFirmwareScreens`, `firmwareScreenParts`, `FIRMWARE_SCREEN_TEMPLATES`.
 * `packages/codec/src/screenrecords.ts`: `recordReading`, `recordBuilding`, `withModeRecords` and
   `assertRebuilt`, section 356's machinery shared rather than copied, its own three screens now going

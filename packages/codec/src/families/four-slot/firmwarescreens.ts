@@ -55,24 +55,27 @@
  * Arch 14 only, the Harmony 600, 650 and 700, and English only. Read only towards hardware: the result is
  * pieces.
  */
-import type { Container, Instruction } from './gspm.ts';
-import { actionListBytes } from './gspm.ts';
-import { ComposeError, type MenuPart, type ValueReader, blobReader, bottomLineParts, spelledText } from './compose.ts';
-import type { ContainerLayout, ContainerPiece } from './frame.ts';
-import { layOutContainer, takeApart } from './frame.ts';
+import type { Container, Instruction } from '../../gspm.ts';
+import { actionListBytes } from '../../gspm.ts';
+import { ComposeError } from '../../shared/core.ts';
+import { type ValueReader, blobReader, spelledText } from '../../shared/spelling.ts';
+import type { MenuPart } from './menus.ts';
+import { bottomLineParts } from './chrome.ts';
+import type { ContainerLayout, ContainerPiece } from '../../frame.ts';
+import { layOutContainer, takeApart } from '../../frame.ts';
 import {
   BYTE_REGISTER_LOAD, CONDITION_OPCODE, CONDITION_TWO_ARMS, FOUR_SLOT_SCREEN_WIDTH, KEY_EVENT_PRESS, KEY_EVENT_SHIFT,
-} from './inventory.ts';
-import { POP_MODE, SILENT_WRITE, STATE_BAND, STATE_WRITE_BASE } from './actions.ts';
-import { keyMapEntries } from './modezero.ts';
-import { ACTION_LIST_INDEX_OPCODE, taggedListBytes } from './sections.ts';
+} from '../../inventory.ts';
+import { POP_MODE, SILENT_WRITE, STATE_BAND, STATE_WRITE_BASE } from '../../actions.ts';
+import { keyMapEntries } from '../../modezero.ts';
+import { ACTION_LIST_INDEX_OPCODE, taggedListBytes } from '../../sections.ts';
 import {
   type BuiltScreen, type RecordFrame, type RecordPlace, ScreenRecordError, assertRebuilt, recordBuilding, recordReading,
   withModeRecords,
-} from './screenrecords.ts';
-import type { PieceTarget } from './statetables.ts';
-import { FIRMWARE_SCREENS, type WiringModel, type WiringSpec, describeWiring, wiringFrontIndex } from './wiring.ts';
-import { SCREEN_DRAW_IMAGE, SCREEN_DRAW_IMAGE_AT, SCREEN_SELECT_FONT } from './screen.ts';
+} from '../../screenrecords.ts';
+import type { PieceTarget } from '../../statetables.ts';
+import { FIRMWARE_SCREENS, type WiringModel, type WiringSpec, describeWiring, wiringFrontIndex } from '../../wiring.ts';
+import { SCREEN_DRAW_IMAGE, SCREEN_DRAW_IMAGE_AT, SCREEN_SELECT_FONT } from '../../screen.ts';
 
 /** Which of the five own key maps a firmware screen has. */
 export type FirmwareKeyMap = 'placeholder' | 'battery' | 'low battery' | 'usb' | 'none';

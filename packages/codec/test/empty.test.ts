@@ -31,7 +31,7 @@ import { activityKeys } from '../src/activitykeys.ts';
 import { IR_ARCHIVE, require_, skipUnless, skipWithoutIrArchive } from '@harmony/lab';
 import { archSlot, checkWiring, compareViews, parse, readRecipe, screenStrings, setupView } from '../src/index.ts';
 import { readFileSync } from 'node:fs';
-import { checkFirmwareScreens } from '../src/firmwarescreens.ts';
+import { checkFirmwareScreens } from '../src/families/four-slot/firmwarescreens.ts';
 import { checkScreenRecords } from '../src/screenrecords.ts';
 import { stateRecords } from '../src/sections.ts';
 import { assembleSetup, attributeBytes } from '../src/assemble.ts';

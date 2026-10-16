@@ -99,13 +99,13 @@ import {
   activityEntriesByName, buildScreenRecords, checkScreenRecords, describeScreenRecords, inActivityOrder,
   withScreenRecords,
 } from './screenrecords.ts';
-import { buildFirmwareScreens, checkFirmwareScreens, describeFirmwareScreens, withFirmwareScreens } from './firmwarescreens.ts';
 import { checkOxaniumFonts, withOxaniumFonts, type SetFace } from './fonttable.ts';
 import { LETTERING_FACES, letterForm, maskForm } from './lettering.ts';
 import { type FontSet, IMAGE_SET_HEADER, fontSets, glyphOf } from './font.ts';
 import type { ActivityRoleName } from './activityroles.ts';
 import {
-  FOUR_SLOT, buildScreenTexts, checkScreenTexts, describeScreenTexts, withScreenTexts,
+  FOUR_SLOT, buildFirmwareScreens, buildScreenTexts, checkFirmwareScreens, checkScreenTexts, describeFirmwareScreens,
+  describeScreenTexts, withFirmwareScreens, withScreenTexts,
 } from './families/four-slot/index.ts';
 import {
   FOUR_SLOT_CHOICES, OUR_FOUR_SLOT_CHOICES, type FourSlotChoices, type FourSlotChoicesGiven, fourSlotChoices,

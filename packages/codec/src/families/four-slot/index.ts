@@ -19,6 +19,9 @@ export {
   ScreenTextError, buildScreenTexts, checkScreenTexts, describeScreenTexts, withScreenTexts,
 } from './screentexts.ts';
 export type * from './screentexts.ts';
+export {
+  buildFirmwareScreens, checkFirmwareScreens, describeFirmwareScreens, withFirmwareScreens,
+} from './firmwarescreens.ts';
 
 export const FOUR_SLOT: Family<FourSlotChoices> = {
   name: 'the Harmony 600, 650 and 700',
