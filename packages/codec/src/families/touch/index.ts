@@ -9,6 +9,7 @@ import { composeTouchActivityRow, composeTouchActivityScreen, composeTouchDevice
 import { TOUCH_CHOICES, type TouchChoices } from './choices.ts';
 import { TOUCH_HARD_KEYS } from './devicekeys.ts';
 import { touchActivityMenu } from './activityscreen.ts';
+import { letterTouchDonor, withTouchLook } from './look.ts';
 
 export const TOUCH: Family<TouchChoices> = {
   name: 'the Harmony One',
@@ -28,4 +29,5 @@ export const TOUCH: Family<TouchChoices> = {
   // it at; Logitech's opens a list of the activity's own devices, which is not built yet,
   // `todo-compile-one.md` 1.2.11.2.4.
   activityDeviceList: (c) => c.blob,
+  composedLook: { letterDonor: letterTouchDonor, look: withTouchLook },
 };

@@ -15,6 +15,7 @@ import type { ActivityKey } from '../activitykeys.ts';
 import type { HardKey } from '../devicemode.ts';
 import type { ActivityKeyRules, DeviceScreenItem } from '../activityroles.ts';
 import type { Container, Instruction } from '../gspm.ts';
+import type { SetFace } from '../fonttable.ts';
 import type {
   ComposeActivityRowOptions, ComposeActivityScreenOptions, ComposedActivityRow, ComposedActivityScreen, ComposedScreen,
   ComposeRow, ComposeScreenOptions,
@@ -111,4 +112,13 @@ export interface Family<Choices extends CommonChoices = CommonChoices> {
   composeActivityScreen(
     c: Container, activity: number, label: string, rows: readonly ComposeRow[], options: WithChoices<ComposeActivityScreenOptions, Choices>,
   ): ComposedActivityScreen;
+  /**
+   * The family's look over a setup composed onto a Logitech compile, `composeSetup`, where it has one: the donor
+   * lettered in ours before anything is composed, and the rest over the composed file. Absent, the composed
+   * file keeps the donor's look. The Harmony One's, `todo-compile-one.md` 1.2.11.2.7.
+   */
+  readonly composedLook?: {
+    letterDonor(c: Container, choices: Choices): { readonly bytes: Uint8Array; readonly faces: readonly SetFace[] };
+    look(c: Container, faces: readonly SetFace[], choices: Choices, deviceType: (name: string | undefined) => number | undefined): Container;
+  };
 }

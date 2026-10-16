@@ -26,6 +26,7 @@ import {
 import { composeCatalogueDevices, composeDonorDeviceInputs, type ComposedCatalogueDevice } from '../composecatalogue.ts';
 import { inputPlan, inputTarget, type ComposedInputs } from '../inputs.ts';
 import { catalogueDriving } from '../driving.ts';
+import { catalogueDevice } from '../catalogue.ts';
 import { activityPauseGroups, composeSequence } from '../sequence.ts';
 
 /** A refusal, named so a caller can tell a setup the donor cannot serve from a bug. */
@@ -352,6 +353,25 @@ export function checkComposed(c: Container): void {
 }
 
 /**
+ * A device's catalogue type by the name a configuration states it under: the recipe's name for a device the
+ * composers add, and the catalogue's own manufacturer and model, joined by `_`, for one the donor already
+ * holds, the way Logitech names a device it compiled. Unknown without the archive.
+ */
+function catalogueTypes(setup: Recipe, archive: string | undefined): (name: string | undefined) => number | undefined {
+  const types = new Map<string, number>();
+  if (archive !== undefined) {
+    for (const device of setup.devices) {
+      const [slug, file] = device.device.split('/');
+      if (slug === undefined || file === undefined) continue;
+      const type = catalogueDevice(archive, slug, file).deviceType;
+      types.set(device.name, type);
+      types.set(`${slug}_${file}`, type);
+    }
+  }
+  return (name) => (name === undefined ? undefined : types.get(name));
+}
+
+/**
  * The skins `composeSetup` has been run on: the Harmony One, skin 54, which the spare Harmony One reports,
  * `todo-compile-one.md` 1.2. A family the assembly's generators build for goes through `assembleSetup`.
  */
@@ -388,8 +408,20 @@ export function composeSetup(setup: Recipe, options: AssembleOptions): ComposedS
     steps.push({ step, bytes: c.blob.length, ...(detail === undefined ? {} : { detail }) });
   };
   note('donor');
+  // The family's look, where it has one: the donor lettered first, so every name a composer spells finds its
+  // letters, and the rest over the composed file below.
+  const look = target.family.composedLook;
+  const lettered = look?.letterDonor(c, target.family.choices);
+  if (lettered !== undefined) {
+    c = parse(lettered.bytes);
+    note('lettered');
+  }
   const parts = composeSetupParts(c, setup, target, options, { family: target.family, choices: target.family.choices }, note);
   c = parts.container;
+  if (look !== undefined && lettered !== undefined) {
+    c = look.look(c, lettered.faces, target.family.choices, catalogueTypes(setup, options.archive));
+    note('look');
+  }
   if (options.builtAt !== undefined) {
     c = parse(saveEdits(c, [], options.builtAt).bytes);
     note('stamped', options.builtAt);

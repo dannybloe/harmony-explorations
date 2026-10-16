@@ -13,15 +13,17 @@ import { FOUR_SLOT_CHOICES, RecipeError, fourSlotChoices, modelName, readRecipe,
 const SETUPS = new URL('../../corpus/setups/', import.meta.url);
 const raw = (file: string): Record<string, unknown> => JSON.parse(readFileSync(new URL(file, SETUPS), 'utf8'));
 
-test('every setup file reads as a recipe for the Harmony 650, skin 72, which the four slot family builds for and which holds eight devices', () => {
+test('every setup file reads as a recipe: the three for the Harmony 650, skin 72, which the four slot family builds for and which holds eight devices, and the test setup for the Harmony One, skin 54, the touch family\'s',
+  () => {
   const files = readdirSync(SETUPS).filter((one) => one.endsWith('.json')).sort();
-  assert.deepEqual(files, ['h650-options.json', 'h650-start.json', 'h650-test.json']);
+  assert.deepEqual(files, ['h650-options.json', 'h650-start.json', 'h650-test.json', 'one-test.json']);
   for (const file of files) {
     const recipe = readRecipe(raw(file));
     const target = recipeTarget(recipe);
-    assert.equal(target.skin, 72, file);
-    assert.equal(target.family.name, 'the Harmony 600, 650 and 700', file);
-    assert.equal(target.model.maxDevices, 8, file);
+    const one = file.startsWith('one-');
+    assert.equal(target.skin, one ? 54 : 72, file);
+    assert.equal(target.family.name, one ? 'the Harmony One' : 'the Harmony 600, 650 and 700', file);
+    if (!one) assert.equal(target.model.maxDevices, 8, file);
   }
   // Only the test setup states working screens: Plasma kijken's, which it composes onto Logitech's starting
   // compile, and since todo-compile-650 11.2.1 the other four as Logitech's compile of the setup draws them,
@@ -31,7 +33,14 @@ test('every setup file reads as a recipe for the Harmony 650, skin 72, which the
   assert.deepEqual(screens, [
     'h650-test.json TV kijken 2', 'h650-test.json Film kijken 3', 'h650-test.json Muziek 1', 'h650-test.json Kodi kijken 1',
     'h650-test.json Plasma kijken 4',
+    'one-test.json TV kijken 2', 'one-test.json Film kijken 3', 'one-test.json Muziek 1', 'one-test.json Kodi kijken 1',
+    'one-test.json Plasma kijken 4',
   ]);
+  // The One's is the 650's with its model and the sequence's key: the same devices and activities.
+  const { about: _a, model: _m, ...h650 } = raw('h650-test.json');
+  const { about: _b, model: _n, ...one } = raw('one-test.json');
+  const devicesAndNames = (r: Record<string, unknown>) => JSON.stringify([r.devices, (r.activities as { name: string }[]).map((a) => a.name)]);
+  assert.equal(devicesAndNames(one), devicesAndNames(h650));
 });
 
 test('a model is found by its name, or by its skin where the two must agree, and refused where nothing builds for it', () => {

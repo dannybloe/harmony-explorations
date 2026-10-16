@@ -66,7 +66,7 @@ One with its sequence's keys translated by name, since the One's keys have other
       - [ ] 1.2.11.2.4 The activity's own entries: base slot 11's four case programs, its device list, and the "an activity is running" list the first activity creates
       - [ ] 1.2.11.2.5 The first row on an activity menu that has none
       - [ ] 1.2.11.2.6 Each part checked against Logitech's: every one of the 64 activities' screens rebuilt from its name, type, rows and device list, the way the Harmony 650's builders are checked
-      - [ ] 1.2.11.2.7 The One's look moved from the lab script into the codec's One pipeline: the flat boxes, smoothed letters, device look, colour button circles and centred pad labels
+      - [x] 1.2.11.2.7 The One's look moved from the lab script into the codec's One pipeline: the flat boxes, smoothed letters, device look, colour button circles and centred pad labels
       - [x] 1.2.11.2.9 The screen light timeout as a touch family choice: the 10 s timer of the one pair queueing two lists of the same content (the other 20 s; timer 2 or 3, so found by its shape) is the light, measured on the spare One at 60 s
       - [x] 1.2.11.2.10 The page keys lit on our multi page screens: the activity list and the device lists call the off list and never the on one, which Logitech's compiler adds to every screen whose page keys do something
       - [x] 1.2.11.2.11 The keys below a composed device page bound and labelled: "Activities" and "Devices" copied off the configuration's own device page, which every Logitech device page draws and binds; our pages lit the keys and bound nothing
