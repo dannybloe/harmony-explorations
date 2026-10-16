@@ -68,7 +68,8 @@ export interface ActivityKeyRules {
   /**
    * A key whose partner the control device's own map binds and which it leaves unbound itself, and the screen
    * commands of the device it then takes, in order: the Harmony One's lower arrow, which takes `PageDown` or
-   * `StepBack` off the device's screen where its own map put `PageUp` or `StepForward` on the upper one.
+   * `StepBack` off the device's screen where its own map put `PageUp` or `StepForward` on the upper one. The
+   * order is a choice of ours: no control device of the three activities it was read on draws both, section 398.
    */
   readonly partners?: readonly { readonly scan: number; readonly when: number; readonly names: readonly string[] }[];
 }
@@ -196,7 +197,8 @@ export function activityKeysFromRoles(c: Container, roles: ActivityRoles): { sca
 /**
  * The list a key runs for a screen command: the item's own where a screen item is the command alone, and the
  * list it calls where a screen item opens with the click, `FamilyTraits.screenItemsBeep`, the Harmony One's,
- * whose activity keys run the send without the click on four of four, section 398.
+ * whose activity keys run the send without the click on four of four, section 398, which are one activity in four
+ * compiles.
  */
 function keyListOfItem(c: Container, list: number): number {
   if (!traitsOf(c).screenItemsBeep) return list;

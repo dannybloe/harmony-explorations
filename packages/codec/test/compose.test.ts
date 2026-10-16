@@ -1967,12 +1967,26 @@ test('a menu whose last page holds one row grows to two: the second row on the n
     ROWS.map((row) => ({ label: row.label, list: first.lists[row.k] as number })), { iconLike: 'TV' });
   assert.deepEqual(deviceListRows(parse(once.bytes)).filter((row) => row.page === 2).map((row) => row.label), ['LG']);
   const second = composeDevice(parse(once.bytes), { label: 'TV', commands: TELEVISION, power: 0 });
-  const after = parse(composeDeviceScreen(parse(second.bytes), 'TV',
-    ROWS.map((row) => ({ label: row.label, list: second.lists[row.k] as number }))).bytes);
+  const grown = composeDeviceScreen(parse(second.bytes), 'TV',
+    ROWS.map((row) => ({ label: row.label, list: second.lists[row.k] as number })));
+  const after = parse(grown.bytes);
   assert.ok(after.allChecksPass);
   assert.deepEqual(deviceListRows(after).filter((row) => row.page === 2).map((row) => [row.scan, row.label]),
                    [[48, 'LG'], [49, 'TV']]);
   assert.equal(devices(after).length, 8);
+  // The bottom key, one scan up: on every menu's last page, what the one row page bound on scan 49 is bound
+  // on 50 once the row is added, and 49 runs the new row. Added per review of section 397, since the title
+  // claimed it and nothing asserted it.
+  const before = parse(second.bytes);
+  const boundOn = (c: Container, menu: number, scan: number): string[] =>
+    taggedList(c, modeRecords(c)![menu]!.pages.at(-1)!.list)!.entries
+      .filter((entry) => entry.tag === (0x80 | scan)).map((entry) => `${entry.opcode}:${entry.operand}`);
+  assert.ok(grown.menus.length > 0);
+  for (const menu of grown.menus) {
+    assert.equal(boundOn(before, menu, 49).length, 1, `menu ${menu}: one bottom key before`);
+    assert.deepEqual(boundOn(after, menu, 50), boundOn(before, menu, 49), `menu ${menu}: the bottom key, one scan up`);
+    assert.deepEqual(boundOn(after, menu, 49), [`${ACTION_LIST_INDEX_OPCODE}:${grown.rowList}`], `menu ${menu}: the new row`);
+  }
 });
 
 /**

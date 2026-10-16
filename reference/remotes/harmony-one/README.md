@@ -54,7 +54,7 @@ What makes a compile choose one or the other is **not checked**.
 | file | what it holds |
 |---|---|
 | [hardware.md](hardware.md) | processor, flash, the lithium cell and the gauge, the beeper, the light sensor, the keypad lines |
-| [keys.md](keys.md) | the keypad, the touch codes, the drawing, the undecided pairs |
+| [keys.md](keys.md) | the keypad, the touch codes, the drawing, the two arrow pairs |
 | [display.md](display.md) | the touch panel and its hit map, the screen grid, the clock, status screens |
 | [features.md](features.md) | Logitech's statement, device mode, sequences, delays, favourites |
 | [behaviour.md](behaviour.md) | the click before every screen command and the held touch, USB mode, writes and restarts |

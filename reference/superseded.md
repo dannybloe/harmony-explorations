@@ -596,3 +596,14 @@ it reachable in the same commit and the test comparing the two tables is what ca
 | `the 19 distinct Harmony One containers the lab holds` | section 394, corrected per review | the lab holds 36 distinct Harmony One containers; the label rule's population is Logitech's 19 compiles |
 | `The faces are measured on English compiles only` | section 396, corrected per review | the Harmony One's five faces hold on a friend's Dutch compile too, which re-lettering refuses for its accented letters |
 | `One16, \`Welcome!\` only` | section 396, corrected per review | the Harmony One's 16 pixel set draws the greeting's letters and the `H` and `y` every set holds |
+| `which rows two and three share` | section 397, corrected per review | a device menu row of the Harmony One draws one picture on every page of its menu, and the three rows of a three row page draw three different pictures, 195 of 195 |
+| `the second and third rows draw one picture` | section 397, corrected per review | as above |
+| `same instructions on every device of a compile` | section 397, corrected per review | the Harmony One's `0x07` and `0x2D` handler lists are alike on every device mode of a compile, and the `0x06` list holds four instructions on a mode of several pages and three on a mode of one page |
+| `handlers' lists are the same on every device of a compile` | section 397, corrected per review | as above |
+| `33 catalogue devices of eight compiles` | section 397, corrected per review | the Harmony One's device mode key table was fitted to 33 device modes of seven compiles, 32 distinct catalogue entries |
+| `which of them is up not read` | section 397, corrected per review | the candidates pair 27 with 36 and 26 with 29, and section 398 reads 27 as DirectionUp, 29 DirectionDown, 36 the up arrow and 26 the down arrow, on the calibration account's three devices |
+| `which of each pair is up is not read` | section 397, corrected per review | as above |
+| `Two pairs stay undecided` | section 398 | as above |
+| `Pause and Guide keys` | section 397, corrected per review | on the Harmony One `OK` comes before `Select` on the Select, Play and Pause keys, resting on one device; its Guide row is the Harmony 650's |
+| `SkipForward's code on the Denon` | section 397, corrected per review | the Denon AVR-X4800H's Channel Up on the One is the code the 650's order gives too, as `TuneUp`, so it is no difference between the two tables |
+| `Channel Up sends SkipForward on the Denon` | section 397, corrected per review | as above |

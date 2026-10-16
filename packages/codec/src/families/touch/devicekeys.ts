@@ -3,21 +3,28 @@
  * compiler binds them: the touch family's `deviceModeKeys`, `todo-compile-one.md` 1.2.10.
  *
  * **Fitted to the One's own compiles, not carried over from the Harmony 650's `HARD_KEYS` by key name**,
- * which binds other commands to the same keys: on the One, Channel Up sends PresetNext on the Philips
- * 70FA930/00S and SkipForward's code on the Denon AVR-X4800H, OK comes before Select on the Select, Play,
- * Pause and Guide keys where the 650 has Select first, and the One has no colour keys. The population is
- * 33 catalogue devices of eight Logitech compiles for the One, each device's records named by matching
- * them with the catalogue's codes; the table reproduces 1521 of their 1526 key bindings, every miss on the
- * Denon AVR-28, whose iPod commands Logitech binds to no key where the Pioneer VSX-90TXV's take them, and
- * held out one entry at a time it predicts 1452 of 1480. Findings section 397 has the counts and the
- * control, and `test/composecatalogue.test.ts` scores the harvest's devices end to end.
+ * which binds other commands to some of the same keys: on the One, Channel Up sends PresetNext on the Philips
+ * 70FA930/00S and the Yamaha DSP-A592 where the 650's order gives DirectionUp, and DirectionUp on the Sony
+ * CMT-ED2 where it gives NextDisc; OK comes before Select on the Select, Play and Pause keys where the 650 has
+ * Select first, which rests on one device, the Samsung CB-5322A; and the One has no colour keys. Carried over
+ * by key name the 650's table gives 860 of the population's 891 bound keys against this table's 888, a
+ * scratch measurement. The population is 33 device modes of seven Logitech compiles for the One, 32 distinct
+ * catalogue entries, each device's records named by matching them with the catalogue's codes; the table
+ * reproduces 1521 of their 1526 key entries, 897 of the 900 bound to a command, every miss on the Denon
+ * AVR-28, which holds iPod commands and no plain transport ones: Logitech leaves its Rewind and Fast forward
+ * unbound and sends Enter on Play and Pause and Return on Stop, where the Pioneer VSX-90TXV's take its iPod
+ * commands. Held out one entry at a time, the fitting procedure without the orders set by hand predicts 1452
+ * of 1480. On the 43 device modes of the account set up configurations, outside the fit, it gives 1223 of
+ * 1330 bound keys. Findings section 397 has the counts, corrected per review, and
+ * `test/composecatalogue.test.ts` scores the harvest's devices end to end.
  *
  * **Several orders are a choice**, no device offering both candidates: Exit's Clear against Exit and
  * Return against Back, every candidate of the skip, rewind and fast forward keys, Channel Up's ChannelUp
  * against TuneUp, and Select's OK against Enter. OK on Guide and Cancel on Previous channel have no device
  * of the population behind them and come from the 650's table and the account's Panasonic Blu-ray, a
- * control. Scans 27 and 29 are the direction keys and 36 and 26 the other pair of the four around them;
- * which of each pair is up is not read here, and 26 binds nothing on all 33 devices.
+ * control. Scans 27 and 29 are the direction pad's DirectionUp and DirectionDown, 36 the up arrow above it
+ * and 26 the down arrow, section 398; 36 takes PageUp on the 2 of the 33 that bind it, and 26 binds nothing
+ * on all 33.
  */
 import type { HardKey } from '../../devicemode.ts';
 
@@ -50,14 +57,15 @@ export const TOUCH_HARD_KEYS: readonly HardKey[] = [
   { scan: 23, button: 'Stop', prefer: ['Stop', 'iPodStop', 'Return'] },
   { scan: 33, button: 'Right', prefer: ['DirectionRight'] },
   { scan: 11, button: 'Left', prefer: ['DirectionLeft'] },
-  { scan: 27, button: 'Up or down', prefer: ['DirectionUp'] },
-  { scan: 29, button: 'Down or up', prefer: ['DirectionDown'] },
-  { scan: 36, button: 'Page up or down', prefer: ['PageUp'] },
+  { scan: 27, button: 'Up', prefer: ['DirectionUp'] },
+  { scan: 29, button: 'Down', prefer: ['DirectionDown'] },
+  { scan: 36, button: 'Up arrow', prefer: ['PageUp'] },
   { scan: 35, button: 'Previous channel', prefer: ['ChannelPrev', 'Cancel', 'Return', 'Back'] },
   { scan: 30, button: 'Play', prefer: ['Play', 'iPodPlay', 'OK', 'Select'] },
   { scan: 31, button: 'Pause', prefer: ['Pause', 'iPodPause', 'OK', 'Select'] },
   { scan: 28, button: 'Select', prefer: ['OK', 'Select', 'Enter', 'Stop'] },
-  // Not on the drawing, `packages/silhouettes`; NumberEnter on four devices, and Enter only where no other
-  // key sends it, `HardKey.ifFree`.
+  // Not on the drawing, `packages/silhouettes`; NumberEnter on four device modes, and Enter only where no other
+  // key is bound to the command of that name, `HardKey.ifFree`: three device modes against three, the test by
+  // name and not by code.
   { scan: 13, button: 'Enter', prefer: ['NumberEnter'], ifFree: ['Enter'] },
 ];

@@ -672,17 +672,21 @@ test('a device of more than six commands composed onto a Harmony One takes a pag
   const pioneer = catalogueCommands(IR_ARCHIVE!, catalogueDevice(IR_ARCHIVE!, 'Pioneer', 'VSX-90TXV').codeset!)
     .map((one) => one.name).filter((name) => /^[A-Za-z]+$/.test(name)).slice(0, 14);
   assert.equal(pioneer.length, 14);
-  const composed = parse(composeCatalogueDevice(base, IR_ARCHIVE!, {
+  const result = composeCatalogueDevice(base, IR_ARCHIVE!, {
     manufacturer: 'Pioneer', model: 'VSX-90TXV', label: 'Test', commands: pioneer, labels: pioneer.map((_, k) => `C${k}`),
-  }).bytes);
+  });
+  const composed = parse(result.bytes);
   assert.ok(composed.allChecksPass);
   const records = modeRecords(composed)!;
   const record = records.at(-1)!;
   assert.equal(record.pages.length, 3, 'six, six and two');
   assert.deepEqual(record.pages.map((page) => taggedList(composed, page.list)!.entries.length), [6, 6, 2]);
-  // Each row runs its own command's list, in order across the pages.
+  // Each row runs its own command's list, in order across the pages: the fourteen rows are the device's
+  // fourteen command lists in the order the commands were given.
   const lists = record.pages.flatMap((page) => taggedList(composed, page.list)!.entries.map((entry) => entry.operand));
   assert.equal(new Set(lists).size, 14);
+  assert.equal(result.device.lists.length, 14);
+  assert.deepEqual(lists, result.device.lists);
   // The control: the same device of six commands takes one page.
   const six = parse(composeCatalogueDevice(base, IR_ARCHIVE!, {
     manufacturer: 'Pioneer', model: 'VSX-90TXV', label: 'Test', commands: pioneer.slice(0, 6), labels: pioneer.slice(0, 6).map((_, k) => `C${k}`),
@@ -692,9 +696,11 @@ test('a device of more than six commands composed onto a Harmony One takes a pag
 
 test('a catalogue device composed whole onto a Harmony One binds its keys in device mode as Logitech\'s compile of it does, by the code each key sends',
      needing(skipWithoutIrArchive(), skipUnless(...new Set(ONE_POWER.map(([config]) => config)))), () => {
-  // `TOUCH_HARD_KEYS`, fitted to 33 catalogue devices of eight compiles, section 397; here every device of the
+  // `TOUCH_HARD_KEYS`, fitted to 33 device modes of seven compiles, section 397; here every device of the
   // harvest is composed whole onto its own compile and each key's record compared with the one Logitech's key
-  // sends, three blocks word for word, which names nothing and so cannot be fitted to a naming.
+  // sends, three blocks word for word, which names nothing and so cannot be fitted to a naming. The eight are
+  // devices of the fit's own population, so this checks the composer against the compiles, not the table
+  // against devices it was not fitted to.
   const words = (c: Container, address: number): string => irHeaderPointers(c, address).slice(0, 3)
     .map((pointer) => (pointer === 0 ? '-' : (irBlockWords(c, pointer) ?? []).join(','))).join('|');
   const keyCodes = (c: Container, label: string): Map<number, string> => {
@@ -742,7 +748,9 @@ test('a catalogue device composed whole onto a Harmony One binds its keys in dev
   });
   assert.equal(shape, ONE_POWER.length, 'every composed record in the tag order of Logitech\'s');
   // The control: the Harmony 650's table, which the One's composer used until section 397, binds the Denon's
-  // commands to the 650's scans, which on the One are other keys: of its 31 bindings none is the One's.
+  // commands to the 650's scans, which on the One are other keys: of its 31 bindings none is the One's. This
+  // shows the old composer's output wrong; it is not the 650's table carried over by key name, which section 397
+  // compares in scratch only.
   const denon = catalogueCommands(IR_ARCHIVE!, catalogueDevice(IR_ARCHIVE!, 'Denon', 'AVR-X4800H').codeset!).map((one) => one.name);
   const asOne = deviceModeLayout(denon, TOUCH_HARD_KEYS).keys;
   const as650 = deviceModeLayout(denon, HARD_KEYS).keys;

@@ -52091,8 +52091,8 @@ closed here; the sixth, an activity's screens on a configuration with no activit
 
 **Sources.** Logitech's nineteen distinct compiles for the One, section 395's, and the catalogue archive,
 decision 15. Neither client nor firmware was opened. The fit of the key table is a scratch measurement over
-eight of those compiles and is not asserted; what is asserted is each composed device against Logitech's own
-compile of it, below.
+seven of those compiles and is not asserted; what is asserted is each composed device against Logitech's own
+compile of it, below. Corrected per review, see the end of this section.
 
 ### A device mode's keys are the family's
 
@@ -52101,34 +52101,63 @@ composed onto a One bound nothing to any key in device mode, and the activity co
 activity's keypad off its devices' maps, section 323, found none. The table that says which command a key
 takes, `HARD_KEYS`, section 325, was the Harmony 650's, and it does not carry over by key name: the One has no
 colour keys, and on Logitech's One compiles Channel Up sends `PresetNext` on the Philips 70FA930/00S and the
-code of `SkipForward` on the Denon AVR-X4800H, and `OK` comes before `Select` on the Select, Play, Pause and
-Guide keys where the 650 has `Select` first. Of the Denon's 31 bindings under the 650's table, none is what
-the One's binds, which the test below asserts.
+Yamaha DSP-A592 where the 650's order gives `DirectionUp`, and `DirectionUp` on the Sony CMT-ED2 where it gives
+`NextDisc`; and `OK` comes before `Select` on the Select, Play and Pause keys where the 650 has `Select` first,
+which rests on one device, the Samsung CB-5322A, the only one of the fit's population offering both. Carried
+over by key name, with the arrows read as section 398 reads them, the 650's table gives 860 of the
+population's 891 bound keys and 20 of its 33 device modes whole, against 888 of 891 and 32 of 33 for the One's
+table, a scratch measurement that leaves out scans 36 and 13, which have no key of the same name on the 650.
+**The test below asserts something narrower**: the 650's table by its own scans, which is what the One's
+composer used until now, puts none of the Denon AVR-X4800H's 31 commands where the One's table puts them,
+since the 650's scans are other keys on the One. That is the old composer's output shown wrong, and not the
+by name comparison, which no test makes.
 
-**The fit.** 33 catalogue devices of eight compiles, each device's records named by matching their three
-blocks word for word with the catalogue's codes composed, section 337's identity. Per key, a list of commands
-in order of preference, the first the device has being bound: `TOUCH_HARD_KEYS` in
+**The fit.** 33 device modes of seven compiles, 32 distinct catalogue entries since the Microsoft MS-1039 is in
+two, each device's records named against the catalogue's codes composed, section 337's identity: by all three
+blocks word for word for 878 of the 900 bound keys, and by the first block alone for 22. Per key, a list of
+commands in order of preference, the first the device has being bound: `TOUCH_HARD_KEYS` in
 `families/touch/devicekeys.ts`, the touch family's `deviceModeKeys`. It reproduces 1521 of the 1526 key
-bindings; all five misses are the Denon AVR-28's iPod commands, which Logitech binds to no key where the
-Pioneer VSX-90TXV's take them, and no order serves both. Held out one catalogue entry at a time it predicts
-1452 of 1480. The orders no device decides are named in the module as choices. Three things no plain list
-says: scan 13, which the drawing does not show, takes `NumberEnter`, and `Enter` **only where no other key of
-the device sends it already**, two devices against three, `HardKey.ifFree`; scan 36 takes `PageUp` and scan 26
-binds nothing on all 33; and scans 27 and 29 are the direction pair, which of them is up not read here.
+entries, which is 897 of the 900 keys Logitech binds to a command and 624 of the 626 it binds to nothing; all
+five misses are on
+the Denon AVR-28, which holds iPod commands and no plain transport ones. Logitech leaves its Rewind and Fast
+forward unbound, sends `Enter` on Play and Pause and `Return` on Stop, where the Pioneer VSX-90TXV's same keys
+send its iPod commands. No order serves both devices on Rewind, Fast forward and Stop, the Pioneer having a
+`Return` as well; on Play and Pause one would, `Enter` before the iPod commands, and the table keeps the order
+it has. Held out one catalogue entry at a time, the fitting procedure, run without the orders set by hand and
+without the condition on scan 13 below, predicts 1452 of the 1480 key entries of the 32 catalogue entries. The orders no
+device decides are named in the module as choices. Three things no plain list says: scan 13, which the drawing
+does not show, takes `NumberEnter`, and `Enter` **only where no other key of the device is bound to the
+command of that name**, `HardKey.ifFree`. Of the six device modes holding `Enter` and no `NumberEnter`, three
+bind it there and three do not, two distinct catalogue devices against three, and the test is by name rather
+than by code: the Pioneer CLD50's `Enter` is the same code its Guide and Select keys send under the name
+`Select`, and scan 13 binds it. Scan 36 takes `PageUp`, which rests on the 2 of the 33 that bind it, and scan 26
+binds nothing on all 33, though it does on 3 of the 43 device modes outside the fit. Scans 27 and 29 take
+`DirectionUp` and `DirectionDown`.
 
-**The record.** All 76 device modes of the population have one shape: 49 entries in one order, a press of 46
-keys bound to a list or to nothing and three handlers, tags `0x06`, `0x07` and `0x2D`, run on entering and
-leaving the mode and for its screen; a mode of one page adds the two page turn keys bound to nothing, 51
-entries, with its handlers ordered otherwise. The handlers' lists hold the same instructions on every device
-of a compile, each device naming a copy of its own. The composer takes the shape from an existing device mode
-of as many pages, keeps its handlers and binds every key afresh; **it shares that device's handler lists
-rather than copying them**, which runs the same instructions and is a choice of ours.
+**Outside the fit.** The population leaves out 43 device modes: the devices of the configurations set up
+through the two test accounts, in their own compiles and carried into the three protocol harvest compiles and
+`phase7_after`, and those of `one_config`. Why they were left out is not recorded; what they share is that a
+person set them up through an account, so a map may hold an edit, which is not checked. On them the table gives 1223 of 1330
+bound keys and 26 of 43 device modes whole, a scratch measurement, and what the misses are is not read here.
+
+**The record.** All 90 device modes of the eighteen of the nineteen compiles that hold one have one of two
+shapes, a scratch measurement: the 85 of several pages have 49 entries in one order, a press of 46 keys bound
+to a list or to nothing and three handlers, tags `0x06`, `0x07` and `0x2D`, run on entering and leaving the
+mode and for its screen; the 5 of one page add the two page turn keys bound to nothing, 51 entries, with the
+handlers ordered otherwise. The `0x07` and `0x2D` lists hold the same instructions on every device mode of a
+compile. **The `0x06` list does not**: it holds four instructions on every mode of several pages and the first
+three of those on every mode of one page, which shows on the four compiles holding both kinds. Each device names
+a copy of its own. The composer takes the shape from an existing device mode of as many pages, so of its own
+kind, keeps its handlers and binds every key afresh; **it shares that device's handler lists rather than
+copying them**, which runs the same instructions and is a choice of ours.
 
 **Asserted**, `test/composecatalogue.test.ts`: each of the eight catalogue devices of the harvest composed
 whole onto its own compile, lettered in ours, binds every key to a record identical to the one Logitech's
 binds, 30 of 30, 32 of 32, 25 of 25, 28 of 28, 35 of 35, 30 of 30, 31 of 31 and 30 of 30, compared by the
 code each key sends and so by nothing a naming could fit; and every composed record has Logitech's tags in
-Logitech's order, 8 of 8.
+Logitech's order, 8 of 8. **The eight are devices of the fit's own population**, so this checks the composer
+against the compiles and not the table against devices it was not fitted to; the held out figure above is the
+nearest thing to that, and it is scratch.
 
 ### A device page of more than six commands
 
@@ -52154,10 +52183,13 @@ Adding a device to a menu whose last page held one row was refused, on the groun
 becomes had not been measured beside its original. **Over the nineteen compiles a device menu's hit page of
 one, two or three rows is one geometry each**, held by 7, 5 and 13 of them, and each is the one before with a
 row 872 units below its last, the bottom key moved one scan up and the edges unmoved. So the composer builds
-the page of a row more from the page it has, `withHitPage`. The row's background is the second row's picture,
-which rows two and three share on all 195 of Logitech's three row pages, a scratch measurement, and a counter is redrawn in the font
-in force where it is drawn, which on the two device compile was selected before the counter's own tail began.
-Asserted in `test/menupage.test.ts` and `test/compose.test.ts`.
+the page of a row more from the page it has, `withHitPage`. The row's background is the picture the menu's
+first page draws at that row: on Logitech's compiles a row draws one picture on every page of its menu that has
+it, all 102 device menus of the nineteen, and the three rows of a three row page draw three different pictures,
+195 of 195 pages, both scratch measurements. Where the first page has no such row, its second row's picture is
+taken, which is a choice of ours. A counter is redrawn in the font in force where it is drawn, which on the two
+device compile was selected before the counter's own tail began. Asserted in `test/menupage.test.ts` and
+`test/compose.test.ts`.
 
 ### Reading a page's commands is the family's too
 
@@ -52167,11 +52199,28 @@ name breaks at a capital with nothing drawn between the parts and a long word is
 so the touch family matches a name the other way round: laid out by the same rule and compared line for line.
 Both are members of the family now, `screenItems` and `drawsName`.
 
+**Corrected per review.** This section first said the fit was over eight compiles and 33 catalogue devices,
+where it is seven compiles and 33 device modes of 32 catalogue entries; gave the Denon AVR-X4800H's Channel Up
+as a difference from the 650's table, where the 650's order sends that same code under the name `TuneUp`; put
+Guide among the keys where `OK` comes before `Select`, where the One's Guide row is the 650's, and did not say
+the order on the other three rests on one device; called its asserted control a test of the 650's table by key
+name, where it compares scans; quoted 1521 of 1526 without saying 626 of them are keys bound to nothing, and
+said every record was named by its three blocks; counted 76 device modes, the scratch's population, as all of
+them; said the handler lists were alike on every device of one compile, which the `0x06` list
+does not on the four compiles holding a mode of one page; gave scan 13 as two against three without the unit;
+did not report the 43 device modes outside the fit; called scans 27 and 29 a pair whose up was not read, where
+the drawing's candidates already paired 27 with 36 and 26 with 29, which section 398 then decided; and said a
+three row page draws one picture in its second and third rows, where all three differ on every such page. **Two of
+those were wrong reasons for a right behaviour**: the composer takes a device mode of its own kind as the
+template, so its `0x06` list is the right length, and it takes a row's picture from the first page at that row,
+which is Logitech's because a row draws one picture on every page. Only the fallback to the second row rested on
+the wrong sentence, and it is now named as a choice.
+
 ### What would falsify it
 
 A Logitech One compile of a catalogue device whose device mode binds a key to another command than the table
 gives, beyond the AVR-28's iPod commands; a device mode of other than 49 or 51 entries; a device menu hit page
-of a known row count with a second geometry.
+of a known row count with a second geometry; a device menu whose row draws two pictures on two pages.
 
 ## 398. An activity's keypad from its roles holds on the Harmony One with its own keys
 
@@ -52187,21 +52236,29 @@ sends, `activityRolesFromSends`, which agree with the accounts' captured activit
 comparison. Neither client nor firmware was opened.
 
 **The keys.** Volume up, volume down and mute are scans 3, 4 and 9; channel up and down 19 and 20; skip
-forward and back 22 and 6; Exit 2. **Which arrow is up is read**: 27 is DirectionUp and 29 DirectionDown, so
-36 is the upper arrow and 26 the lower, from the calibration account's stated device maps, which hold
-DirectionUp and DirectionDown and no arrows, against each device's own record binding 27 and 29 and leaving
-36 and 26 unbound. Section 397 left that pair undecided.
+forward and back 22 and 6; Exit 2. **Which arrow is up is read**, on the calibration account's three devices:
+their stated device maps hold DirectionUp and DirectionDown and no arrows, and each device's own record binds 27
+and 29 and leaves 36 and 26 unbound, so 27 and 29 are DirectionUp and DirectionDown. The drawing's candidates
+pair 27 with 36 as the two up keys and 26 with 29 as the two down keys, so 27 is DirectionUp, 29 DirectionDown,
+36 the upper arrow and 26 the lower. Section 397 left the four undecided, and described the pairing wrongly,
+corrected there.
 
 **Two additions the One needs.** A screen item's list on the One is the click and then a call of the
 command's send list, `FamilyTraits.screenItemsBeep`, and **an activity key runs the send without the click**:
 the Exit refinement took the item's own list and was wrong on all four activities it fired on, and right on
-four of four taking the call's target. And **the lower arrow takes its partner off the device's screen**:
-where the control device's own map binds the upper arrow and leaves the lower unbound, Logitech puts the
-device's own `PageDown` or `StepBack` screen command on it, on 13 of 13 activities (the Denon AVR-X4800H's and
-a classic Denon's `PageDown`, the PlayStation 3's `StepBack`), `ActivityKeyRules.partners`.
+four of four taking the call's target. Those four are one activity, the calibration account's "Watch a Movie"
+with its Panasonic Blu-ray as the control device, in four compiles. And **the lower arrow takes its partner off
+the device's screen**: where the control device's own map binds the upper arrow and leaves the lower unbound,
+Logitech puts the device's own `PageDown` or `StepBack` screen command on it, on 13 of 13 activities, a scratch
+count: 12 of the 50, the "Bluetooth" and "PlayStation 3" of the second test account's six compiles, and the
+"Listen to Music" of the spare One after a sync, which is outside them. So three distinct activities, the Denon
+AVR-X4800H's `PageDown`, a classic Denon's `PageDown` and the PlayStation 3's `StepBack`,
+`ActivityKeyRules.partners`. **Which of the two names is tried first is a choice of ours**: none of those
+control devices draws both on its screen.
 
 **Asserted**, `test/activityroles.test.ts`: on the 50 activities the rule with the One's keys gives 1704 of
-1752 keys and 38 activities whole; with the two roles swapped, the control, 174. Scan 55, bound on every one
+1752 keys and 38 activities whole, which is seven of the nine distinct activities whole on every copy and the
+other two, "TV kijken" and "Bluetooth", on none; with the two roles swapped, the control, 174. Scan 55, bound on every one
 of the 64 activities of the One's compiles to entering a mode and setting a variable and held by no device's
 map, is not the rule's and is left out of both sides. Of the 48 keys left, measured per activity: 24 are
 "TV kijken"'s six copies with section 323's four key signature, Info and the two arrows left unbound and
@@ -52210,8 +52267,19 @@ those copies, number plus, Enter and the 6, which look like edits on the account
 copies, a receiver as the control device, whose ChannelDown Logitech takes from its SkipBack and whose
 Previous channel it leaves unbound, which no refinement explains yet.
 
+**The fourteen activities outside the 50**, those of the five other One compiles holding an activity
+(`one_config`, `one_config_unprogrammed`, `one_spare_after_sync` and the friend's two), have no roles an account
+states. With roles read off their own sends the
+rule gives 329 of their 459 keys and 3 of the 14 activities whole, a scratch measurement; what the misses are
+is not read here, and they are not in the assertion.
+
 **The Harmony 650's side is unchanged**: the four slot family's keys are the constants that were there, and
 section 323's test passes as it did.
+
+**Corrected per review.** This section first gave the partner rule as 13 of 13 without saying that 12 of them
+are in the 50 and that they are three activities, gave the Exit addition's four of four without saying it is one
+activity, gave 38 of 50 without the per activity split, said nothing of the fourteen activities outside the
+population, and stated which arrow is up without scoping it to the three devices it was read on.
 
 ### What would falsify it
 

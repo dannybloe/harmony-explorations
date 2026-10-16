@@ -70,10 +70,13 @@ project controls, by decoding the code each scan sends and looking it up in that
 and button maps, section 133 and `reference/button-maps.md`. Logitech's maps name 36 buttons, the 32 plus
 the four of two pairs below, with none left over.
 
-**Two pairs stay undecided**: scans 27 and 36 are `DirectionUp` and `UpArrow`, and 26 and 29 are
-`DirectionDown` and `DownArrow`, because every activity gives both members of a pair the same command,
-`reference/button-maps.md`. The Harmony 600's pairs were decided from device maps in section 323; the
-One's were not.
+**Two pairs were left open by the activities and are decided by device maps**: scans 27 and 36 are
+`DirectionUp` and `UpArrow`, and 26 and 29 are `DirectionDown` and `DownArrow`, and every activity gives both
+members of a pair the same command, `reference/button-maps.md`. Section 398 decided them from device maps, as
+section 323 did the Harmony 600's: the calibration account's three devices state `DirectionUp` and
+`DirectionDown` and no arrows, and their own records bind 27 and 29 and leave 36 and 26 unbound, so 27 is
+`DirectionUp`, 29 `DirectionDown`, 36 `UpArrow` and 26 `DownArrow`. Read on those three devices only. The
+drawing still carries the four as candidates, so the table above says "one of".
 
 Off, Activities, Help and Enter carry no scan because no configuration read binds them,
 `reference/button-maps.md`.
@@ -126,6 +129,7 @@ arrows**, and a screen of several pages leaves them live, read from configuratio
 
 ## Not checked
 
-* The two undecided pairs.
+* The arrow pairs beyond the calibration account's three devices, and the drawing, which still carries them as
+  candidates.
 * The physical matrix: the board is the only route left, `docs/status.md`.
 * Which keys give the bootloader's codes `0x0E` and `0x1E`.

@@ -32,7 +32,10 @@
  *
  * **Four keys carry candidates in two pairs**, `reference/button-maps.md`: 27 and 36 are `DirectionUp`
  * and `UpArrow`, 26 and 29 are `DirectionDown` and `DownArrow`, and every activity gives the two members
- * of a pair the same command, so no amount of decoding separates them.
+ * of a pair the same command, so no activity separates them. Device maps do: findings section 398 read the
+ * calibration account's three devices, whose stated maps hold `DirectionUp` and `DirectionDown` and whose
+ * own records bind 27 and 29, so 27 is `DirectionUp`, 29 `DirectionDown`, 36 `UpArrow` and 26 `DownArrow`.
+ * The keys below still carry the candidates; turning them into scans is a change to this drawing of its own.
  *
  * The Menu, Exit, Info and Guide keys are **sharp cornered quadrilaterals** here because that is what
  * the drawing states; the product rounds them. Changing that would mean inventing a radius, so it is
