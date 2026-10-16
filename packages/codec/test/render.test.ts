@@ -166,8 +166,10 @@ test('every instruction that names a picture draws one, on every architecture th
     [[8, 8244], [9, 2255], [12, 2819], [14, 2287]],
     'pictures named by a program, per architecture');
   assert.deepEqual([...drawn].sort((a, b) => a[0] - b[0]),
-    [[8, 8147], [9, 2255], [12, 1673], [14, 2271]],
+    [[8, 8147], [9, 2255], [12, 2430], [14, 2271]],
     'pictures a rendering actually draws, per architecture');
+  // Arch 12 (Harmony One) drew 1673 until 16 October 2026, when the renderer started following a page's
+  // call into its chrome and back, findings section 399: the chrome's pictures were named and not drawn.
   // **Arch 9 is where the two are equal**, and that is the tightest form the claim takes: a Harmony 525
   // config has no branching screen program, so every picture its programs name is one a rendering
   // draws, with nothing to explain away. It was 0 against 2255 before opcode 3 was drawn. Elsewhere the

@@ -84,7 +84,7 @@ export const MENU_ROW1_LABEL_Y = 0x39;
 export const MENU_ROW_PITCH = SCREEN_ROW_PITCH;
 
 /** Where a page draws its own number, top left, and the `/` that follows it. */
-const MENU_COUNTER_XY: readonly [number, number] = [13, 18];
+export const MENU_COUNTER_XY: readonly [number, number] = [13, 18];
 
 const MENU_COUNTER_SLASH_X = 18;
 
@@ -584,7 +584,7 @@ function counterProgram(c: Container, page: ModePage): number {
 }
 
 /** What a configuration's own multi page screens draw their paging in, read rather than assumed. */
-interface PagingStyle {
+export interface PagingStyle {
   /** The font a page's number and slash are drawn in. */
   counterFont: number;
   /** The font the header's total and word are drawn in. */
@@ -601,7 +601,7 @@ interface PagingStyle {
  * word is read rather than written in English. A configuration with no multi page screen at all has
  * nothing to copy, and paging is refused rather than drawn in a font that may not have the glyphs.
  */
-function pagingStyle(c: Container): PagingStyle {
+export function pagingStyle(c: Container): PagingStyle {
   const map = characterMap(c);
   if (map === undefined) throw new ComposeError('the config carries no character map');
   for (const record of modeRecords(c) ?? []) {
@@ -700,7 +700,7 @@ export function paginate(start: Container, menu: number): Container {
       ...t.drawn(MENU_COUNTER_SLASH_X - t.width(style.counterFont, String(k + 1)), MENU_COUNTER_XY[1],
                String(k + 1), style.counterFont, undefined),
       ...t.drawn(MENU_COUNTER_SLASH_X, MENU_COUNTER_XY[1], '/', style.counterFont, undefined),
-    ]);
+    ], { opens: where !== page.program && closing.start === (t.current.blobOffsetOf(where) as number) });
   }
   return t.current;
 }

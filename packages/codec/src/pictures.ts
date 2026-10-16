@@ -41,7 +41,8 @@ import { layOutContainer, takeApart } from './frame.ts';
 import type { Container } from './gspm.ts';
 import { drawIcon } from './icons.ts';
 import { rgb565, rgbTo565 } from './png.ts';
-import { encodeBitmap } from './screen.ts';
+import { namedContentEnd } from './coverage.ts';
+import { bitmaps, encodeBitmap, pictureBank } from './screen.ts';
 import { contentKey } from './screencategories.ts';
 
 /** A refusal, named so a caller can tell a bad description from a bug. */
@@ -397,4 +398,70 @@ export function checkPictures(c: Container, entries: readonly PictureEntry[] = H
     bytes: built.reduce((sum, one) => sum + one.piece.bytes.length, 0),
     kept: described.length - built.length,
   };
+}
+
+/** Every picture of a configuration by its content, the bank's and the ones outside it, as `screenUnits` lists them. */
+export function picturesByContent(c: Container): Map<string, number[]> {
+  const bank = pictureBank(c, namedContentEnd(c)) ?? [];
+  const inBank = new Set(bank.map((one) => one.address));
+  const out = new Map<string, number[]>();
+  for (const picture of [...bank, ...bitmaps(c).filter((one) => !inBank.has(one.address))]) {
+    const off = c.blobOffsetOf(picture.address);
+    if (off === undefined || picture.length === undefined) continue;
+    const key = contentKey(c.blob.subarray(off, off + picture.length));
+    out.set(key, [...(out.get(key) ?? []), picture.address]);
+  }
+  return out;
+}
+
+/**
+ * The configuration with `pictures` in its picture bank, each one the bank does not already hold appended
+ * at its end, and every picture's address, in the order given. A picture the bank holds already is found
+ * by its bytes and not added twice. Nothing names an appended picture yet, and the bank keeps it all the
+ * same: a picture is read off the bank in sequence and not by reference, measured on the Harmony One's
+ * compile of two devices, every byte still claimed once.
+ */
+export function withBankPictures(c: Container, pictures: readonly Uint8Array[]): { container: Container; addresses: number[] } {
+  const held = picturesByContent(c);
+  const missing = pictures.filter((bytes, k) => !held.has(contentKey(bytes))
+    && pictures.findIndex((one) => contentKey(one) === contentKey(bytes)) === k);
+  let container = c;
+  if (missing.length > 0) {
+    const layout = takeApart(c);
+    layout.pictures = [...layout.pictures, ...missing.map((bytes) => ({ bytes, refs: [], owner: 'picture-bank' }))];
+    container = layOutContainer(layout).container;
+  }
+  const now = picturesByContent(container);
+  const addresses = pictures.map((bytes) => {
+    const address = now.get(contentKey(bytes))?.[0];
+    if (address === undefined) throw new PictureError('a picture put in the bank does not read back');
+    return address;
+  });
+  return { container, addresses };
+}
+
+/**
+ * `under` with an icon of Material Design Icons blended into it by coverage in `colour`, its grid square
+ * `size` pixels wide centred in the `width` by `height` box at `x`, `y`: the way our letters and the
+ * icons of `IconDrawing` are blended, over whatever the picture holds there rather than one colour. A
+ * pixel nothing is drawn at stays undrawn. Changes `under` and returns it.
+ */
+export function iconOverRows(
+  under: (number | undefined)[][], x: number, y: number, width: number, height: number, icon: string, size: number,
+  colour: number,
+): (number | undefined)[][] {
+  const drawn = drawIcon(icon, width, height, width / 2, height / 2, size);
+  const ink = rgb565(colour);
+  for (let row = 0; row < height; row += 1) {
+    for (let column = 0; column < width; column += 1) {
+      const v = drawn.coverage[row * width + column] as number;
+      const line = under[y + row];
+      const paper = line?.[x + column];
+      if (v === 0 || line === undefined || paper === undefined) continue;
+      const from = rgb565(paper);
+      const mixed = [0, 1, 2].map((k) => Math.round((ink[k] as number) * v + (from[k] as number) * (1 - v)));
+      line[x + column] = rgbTo565(mixed[0] as number, mixed[1] as number, mixed[2] as number);
+    }
+  }
+  return under;
 }

@@ -2290,7 +2290,10 @@ and 63.
 configuration's pad font (base slot 7 index 5, 7, 8 or 9, read off the device pages) split into words at
 spaces, before a capital, digit or `+` after a lower case letter, and after a single hyphen; lines filled
 greedily to 72 pixels, a lone word up to 73 and a wider one cut with `..` on its own line; at most three
-lines, 11 apart and centred on y + 20; each line at `x + floor((81 - w) / 2)`. `touchLabelLines`.
+lines, 11 apart and centred on y + 20; each line at `x + floor((81 - w) / 2)`. `touchLabelLines`. That is Logitech's placement on device pages, 2504, 683 and 45 pads at one, two and three lines over the
+eighteen compiles whose device modes are read; in the 14 pixel set those labels use it puts a one line label's
+capitals 2 pixels below the pad's middle, and a
+configuration of ours moves each label's y to centre its capitals, `withCentredPadLabels`, section 399.
 
 ### Base slot 17: the touch screen hit map
 

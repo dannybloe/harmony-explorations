@@ -14,7 +14,7 @@ import { applyEdits } from '../edit.ts';
 import { Writer } from '../emit.ts';
 import { archSlot, Container, type Instruction, parse, SCAN_MASK } from '../gspm.ts';
 import {
-  activities, ACTIVITY_STATE_NAME, activityBindings, deviceVariables, ENTER_MODE, firmwareStateVariableMax,
+  activities, ACTIVITY_STATE_NAME, activityBindings, caseQueued, deviceVariables, ENTER_MODE, firmwareStateVariableMax,
   handlerSetRoles, INPUT_PROPERTY, KEY_EVENT_PRESS, KEY_EVENT_SHIFT, MAP_VALUE_OPCODE, SELECT_BINDING_SET,
   SELECT_BINDING_SET_MASK, stateVariables,
 } from '../inventory.ts';
@@ -22,7 +22,7 @@ import { layOutContainer, takeApart } from '../frame.ts';
 import { relocate } from '../relocate.ts';
 import {
   ACTION_LIST_INDEX_OPCODE, HANDLER_TAG_ENTER, HANDLER_TAG_LEAVE, handlerSets, NAME_NODE_HEADER, type NameNode,
-  nameNodes, stateTable, taggedList,
+  modeRecords, nameNodes, stateTable, taggedList,
 } from '../sections.ts';
 import {
   ACTION_TABLE_SLOT, assertGeneratedRecord, ComposeError, HANDLER_TAG_RESUME, restamped, STATE_WRITE_LIMIT,
@@ -30,6 +30,7 @@ import {
 import { appendTableEntries } from '../shared/infrared.ts';
 import { startSequenceVariables, type StateVariableSpec } from '../statetables.ts';
 import { describeWiring, rewiredForActivities, type WiringSpec } from '../wiring.ts';
+import { valueMaps } from '../valuemap.ts';
 
 /**
  * One device's target state when an activity is running: a base slot 13 variable and its value.
@@ -346,10 +347,12 @@ export function composeActivityFor(c: Container, activity: ComposeActivity, trai
     if (screen.activity !== value) {
       throw new ComposeError(`the screen was composed for activity ${screen.activity}, this is ${value}`);
     }
+    // A screen that selects the keypad map states which, and it has to be this activity's: on the Harmony 600,
+    // 650 and 700 always, and on the Harmony One where the screens were built rather than copied.
+    if ((withStartVariable || screen.set !== undefined) && screen.set !== set) {
+      throw new ComposeError(`the screen selects keypad map ${screen.set}, and this activity's is ${set}`);
+    }
     if (withStartVariable) {
-      if (screen.set !== set) {
-        throw new ComposeError(`the screen selects keypad map ${screen.set}, and this activity's is ${set}`);
-      }
       for (const [what, index] of [['start', screen.startVariable], ['flag', screen.flagVariable]] as const) {
         if (index === undefined || !Number.isInteger(index) || index <= firmwareStateVariableMax(c.architecture)
             || index >= Math.min(states.count, STATE_WRITE_LIMIT)) {
@@ -761,4 +764,98 @@ export function arch14Starts(c: Container): Arch14Starts {
   return {
     counter, idle: counterVariable.record.first, startVariable, flagVariable, startup, sets: setOf, endsOn,
   };
+}
+
+/** The base slot 14 records keyed by the activity, by what their cases do. */
+export interface ActivityMaps {
+  working: number;
+  devices: number[];
+  /**
+   * The keypad map record, whose case per activity selects its handler set. Undefined on a Harmony 600, 650
+   * or 700 configuration with no activity, which has no case to hold, so an empty configuration of ours
+   * holds no such record, section 379; the first activity composed there adds none either. The Harmony
+   * One's compile of two devices holds it with no case at all, `todo-compile-one.md` 1.2.11.
+   */
+  select: number | undefined;
+}
+
+/**
+ * The base slot 14 records keyed by the activity counter `counter`, found by their keys and what their cases
+ * queue: every activity and the idle value, activities entering a mode and the idle value not, is the
+ * working screen's; the same keys all entering a mode are the key under Devices'; every activity and not
+ * the idle value, each selecting that activity's own keypad map from `sets`, is the binding set's. One, one
+ * or more, and at most one, and anything else is refused rather than guessed at. Measured on the thirteen
+ * compiles of the Harmony 600, 650 and 700, section 329, and on the Harmony One's fifteen, whose records are
+ * the same three kinds, section 399.
+ *
+ * **With no activity** each record holds the idle case alone and the keys cannot tell them apart, among
+ * the records mapped through on the counter, section 379. What the case does can: the working screen
+ * record's queues a further record, the one that enters the activity menu, section 336, and each record
+ * under the key under Devices enters a mode, the idle device list, section 330. A record mapped through on
+ * the counter with no case at all is the keypad map record, which the Harmony One's compile of two devices
+ * holds and no configuration of the Harmony 600, 650 or 700 without an activity does.
+ */
+export function activityKeyedMaps(
+  c: Container, counter: number, idle: number, activities: readonly number[], sets: ReadonlyMap<number, number>,
+): ActivityMaps {
+  const maps = valueMaps(c);
+  if (maps === undefined) throw new ComposeError('base slot 14 does not read');
+  const same = (keys: readonly number[], want: readonly number[]): boolean =>
+    keys.length === want.length && [...keys].sort((a, b) => a - b).every((key, k) => key === [...want].sort((a, b) => a - b)[k]);
+  const everything = [...activities, idle];
+  if (activities.length === 0) {
+    // Only the records something maps through on the counter: a mode's key map, an action list or a case's
+    // program, `0x72` on `(record << 8) | counter`. The location's records hold an idle looking case too.
+    const named = new Set<number>();
+    const note = (opcode: number, operand: number): void => {
+      if (opcode === MAP_VALUE_OPCODE && (operand & 0xff) === counter) named.add(operand >> 8);
+    };
+    for (const record of modeRecords(c) ?? []) for (const entry of record.entries) note(entry.opcode, entry.operand);
+    for (const list of c.actionLists() ?? []) for (const one of list) note(one.opcode, one.operand);
+    for (const map of maps) for (const [, target] of map.entries) {
+      const queued = caseQueued(c, target);
+      if (queued !== undefined) note(queued.opcode, queued.operand);
+    }
+    const working: number[] = [];
+    const devices: number[] = [];
+    const select: number[] = [];
+    maps.forEach((map, index) => {
+      if (!named.has(index) || map.ranges.length !== 0) return;
+      if (map.entries.length === 0) {
+        select.push(index);
+        return;
+      }
+      if (!same(map.entries.map(([key]) => key), [idle])) return;
+      const queued = caseQueued(c, (map.entries[0] as [number, number])[1]);
+      if (queued?.opcode === MAP_VALUE_OPCODE) working.push(index);
+      else if (queued?.opcode === ENTER_MODE) devices.push(index);
+    });
+    if (working.length !== 1 || devices.length === 0 || select.length > 1) {
+      throw new ComposeError(`with no activity the records keyed by it read as ${working.length} working screen, `
+        + `${devices.length} Devices key and ${select.length} keypad map records, not 1, some and at most 1`);
+    }
+    return { working: working[0] as number, devices, select: select[0] };
+  }
+  const working: number[] = [];
+  const devices: number[] = [];
+  const select: number[] = [];
+  maps.forEach((map, index) => {
+    if (map.ranges.length !== 0) return;
+    const keys = map.entries.map(([key]) => key);
+    const queued = new Map(map.entries.map(([key, target]) => [key, caseQueued(c, target)]));
+    const enters = (key: number): boolean => queued.get(key)?.opcode === ENTER_MODE;
+    if (same(keys, everything) && activities.every(enters)) {
+      (enters(idle) ? devices : working).push(index);
+    } else if (same(keys, activities) && activities.every((key) => {
+      const one = queued.get(key);
+      return one?.opcode === SELECT_BINDING_SET && one.operand === (SELECT_BINDING_SET_MASK | (sets.get(key) as number));
+    })) {
+      select.push(index);
+    }
+  });
+  if (working.length !== 1 || devices.length === 0 || select.length > 1) {
+    throw new ComposeError(`the activity keyed records read as ${working.length} working screen, `
+      + `${devices.length} Devices key and ${select.length} keypad map records, not 1, some and at most 1`);
+  }
+  return { working: working[0] as number, devices, select: select[0] };
 }

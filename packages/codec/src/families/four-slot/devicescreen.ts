@@ -29,6 +29,7 @@ import {
 } from '../../sections.ts';
 import { ACTION_TABLE_SLOT, ComposeError, restamped } from '../../shared/core.ts';
 import { appendTableEntries } from '../../shared/infrared.ts';
+import { appendMode, type ModeProgram } from '../../shared/modes.ts';
 import {
   type ComposedScreen, type ComposeRow, type ComposeScreenOptions, deviceListMenus,
 } from '../../shared/menus.ts';
@@ -37,11 +38,6 @@ import { characterMap } from '../../text.ts';
 import { FOUR_SLOT_CHOICES } from './choices.ts';
 import { ourStateColours, withStateLook } from './statelook.ts';
 
-/** A mode page's program, sized before the block is placed and built once its addresses are known. */
-interface Arch14Program {
-  length: number;
-  build: (shifted: (address: number) => number) => Uint8Array;
-}
 
 /**
  * A four slot page's program: the template's background for one item or none, or for more, the rest
@@ -67,7 +63,7 @@ export function fourSlotPageProgram(
      */
     fonts?: readonly number[];
   },
-): Arch14Program {
+): ModeProgram {
   const text = (x: number, y: number, codes: readonly number[]): number[] =>
     [SCREEN_TEXT_INLINE, x, y, ...codes, 0];
   const middle: number[] = [SCREEN_SELECT_FONT, template.titleFont,
@@ -108,123 +104,6 @@ export function fourSlotPageProgram(
       ...template.chrome.head(shifted), ...middle, ...template.chrome.tail(shifted),
     ]),
   };
-}
-
-/**
- * Add a mode to an arch 14 configuration: the step `composeFourSlotDeviceScreen` and
- * `composeFourSlotActivityScreen` share, decision 17's shared step, so the order that keeps the
- * container parseable through it is written once.
- *
- * 1. the mode table gains an entry, on a placeholder until the block exists, as on the Harmony One;
- * 2. each page's list, its copy at the end of the last pool and itself at the end of the page lists,
- *    in page order, because the copies pair with the pages by position, section 69; one hole each
- *    for all the copies and all the lists, since a list nothing names yet is invisible to the walks
- *    that find the ends, and a second insertion then lands in front of the first;
- * 3. the block, where the mode entries end: the mode's own tagged list, then per page its program
- *    and a six byte page record, then the entry. Its own addresses are final, and the ones a program
- *    copies are shifted by its length the way the census would shift them, since the census cannot
- *    see bytes not yet written. `programsFor` is called after step 2, with the container as it then
- *    is, so a template read inside it is not stale;
- * 4. the swap: the table's last pointer from the placeholder to the entry.
- */
-export function appendArch14Mode(
-  start: Container, mode: number, own: readonly { tag: number; operand: number; opcode: number }[],
-  lists: readonly Uint8Array[], programsFor: (current: Container) => Arch14Program[],
-  // The pool copies, page for page, where they are not the lists' own bytes: a copy that binds row
-  // lists of its own, as the compiler's do, differs from its page's list in its operands only, section
-  // 69. Omitted, each copy is its page's list byte for byte.
-  copies: readonly Uint8Array[] = lists,
-): Container {
-  let current = start;
-  const stale = modeTable(current);
-  if (stale === undefined) throw new ComposeError('base slot 6 stopped reading');
-  if (stale.addresses.length !== mode) {
-    throw new ComposeError(`the new mode would be ${stale.addresses.length}, not the ${mode} expected`);
-  }
-  if (copies.length !== lists.length || copies.some((one, k) => one.length !== (lists[k] as Uint8Array).length)) {
-    throw new ComposeError('a page list and its copy differ in length');
-  }
-  const placeholderEntry = stale.addresses[0];
-  if (placeholderEntry === undefined) throw new ComposeError('a config with no modes has no menus');
-  const tableAt = stale.start + stale.length;
-  const tableHole = relocate(current, tableAt, 3);
-  tableHole.bytes.set(new Writer(3).u24(placeholderEntry).bytes, tableAt);
-  tableHole.bytes.set(new Writer(3).u24(mode + 1).bytes, stale.start);
-  current = parse(tableHole.bytes);
-
-  const joined = (parts: readonly Uint8Array[]): Uint8Array => {
-    const out = new Uint8Array(parts.reduce((sum, bytes) => sum + bytes.length, 0));
-    parts.reduce((offset, bytes) => { out.set(bytes, offset); return offset + bytes.length; }, 0);
-    return out;
-  };
-  const allLists = joined(lists);
-  const allCopies = joined(copies);
-  const lastPool = taggedListPools(current).at(-1);
-  if (lastPool === undefined) throw new ComposeError('no copy pool to extend');
-  const copyHole = relocate(current, lastPool.end, allCopies.length);
-  copyHole.bytes.set(allCopies, lastPool.end);
-  current = parse(copyHole.bytes);
-  const listAt = Math.max(...modePages(current).map((page) => {
-    const off = current.blobOffsetOf(page.list);
-    const list = taggedList(current, page.list);
-    return off === undefined || list === undefined ? 0 : off + list.length;
-  }));
-  const listHole = relocate(current, listAt, allLists.length);
-  listHole.bytes.set(allLists, listAt);
-  current = parse(listHole.bytes);
-  const pageListAddresses: number[] = [];
-  lists.reduce((offset, bytes) => {
-    pageListAddresses.push(current.flashBase + offset);
-    return offset + bytes.length;
-  }, listAt);
-
-  const records = modeRecords(current);
-  if (records === undefined) throw new ComposeError('base slot 6 does not read');
-  const programs = programsFor(current);
-  if (programs.length !== lists.length) {
-    throw new ComposeError(`${programs.length} programs for ${lists.length} pages`);
-  }
-  const ownLength = 1 + 4 * own.length;
-  const pageRecord = 6;
-  const blockLength = ownLength + programs.reduce((sum, one) => sum + one.length + pageRecord, 0)
-    + 6 + 3 * programs.length;
-  const blockAt = Math.max(...records.map((record) => {
-    const off = current.blobOffsetOf(record.address);
-    return off === undefined ? 0 : off + record.entryLength;
-  }));
-  const base = current.flashBase + blockAt;
-  const shifted = (address: number): number => (address >= base ? address + blockLength : address);
-  const block = new Writer(blockLength);
-  block.u8(own.length);
-  for (const entry of own) block.u8(entry.tag).u16(entry.operand).u8(entry.opcode);
-  const pageAddresses: number[] = [];
-  let at = base + ownLength;
-  programs.forEach((program, p) => {
-    const programAddress = at;
-    const bytes = program.build(shifted);
-    if (bytes.length !== program.length) {
-      throw new ComposeError(`page ${p}'s program came to ${bytes.length} bytes against ${program.length}`);
-    }
-    block.raw(bytes);
-    at += program.length;
-    pageAddresses.push(at);
-    block.u24(shifted(pageListAddresses[p] as number)).u24(programAddress);
-    at += pageRecord;
-  });
-  const entryAddress = at;
-  block.u8(0).u24(base).u16(programs.length);
-  pageAddresses.forEach((address) => block.u24(address));
-  if (block.bytes.length !== blockLength) {
-    throw new ComposeError(`the block came to ${block.bytes.length} bytes against the ${blockLength} its hole has`);
-  }
-  const blockHole = relocate(current, blockAt, blockLength);
-  blockHole.bytes.set(block.bytes, blockAt);
-
-  const swapped = parse(blockHole.bytes);
-  const grownTable = modeTable(swapped);
-  if (grownTable === undefined) throw new ComposeError('base slot 6 stopped reading');
-  swapped.blob.set(new Writer(3).u24(entryAddress).bytes, grownTable.start + 3 + 3 * mode);
-  return parse(swapped.blob);
 }
 
 /** A text a compiled layout page draws: the glyph codes, where, and in which font. */
@@ -404,7 +283,7 @@ function compiledDeviceModePages(
  * and the template's bottom chrome. `fourSlotPageProgram` with the layout made explicit, since here every
  * text carries its own font and position.
  */
-function compiledPageProgram(c: Container, template: FourSlotTemplate, page: CompiledPage): Arch14Program {
+function compiledPageProgram(c: Container, template: FourSlotTemplate, page: CompiledPage): ModeProgram {
   const middle: number[] = [];
   let inEffect: number | undefined;
   const draw = (one: CompiledText): void => {
@@ -581,7 +460,7 @@ export function composeFourSlotDeviceScreen(
   // `FOUR_SLOT_ITEMS` order and stored in `FOUR_SLOT_STORED_ORDER`, as every page is.
   const pageRows = Array.from({ length: pageCount }, (_, p) => rows.slice(p * perPage, (p + 1) * perPage));
   const pageListBytes = pageRows.map((onPage) => fourSlotPageList(onPage.map((row) => row.list)));
-  current = appendArch14Mode(current, mode, own, pageListBytes, (now) => {
+  current = appendMode(current, mode, own, pageListBytes, (now) => {
     // Read again: every address and offset the first reading holds is stale by the insertions above.
     const fresh = fourSlotTemplate(now, options.keysLike);
     if (laidOut !== undefined) return laidOut.pages.map((page) => compiledPageProgram(now, fresh, page));

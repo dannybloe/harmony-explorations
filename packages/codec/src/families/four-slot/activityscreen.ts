@@ -12,7 +12,8 @@ import {
   inlineHomes, inOurLook, type KeyMapEntry, OUR_LOOK, type PageFrame, picturesByContent, smallerLabelFonts,
 } from '../../families/four-slot/chrome.ts';
 import { activityRowListBody } from '../../families/four-slot/devicelist.ts';
-import { appendArch14Mode, fourSlotPageProgram } from '../../families/four-slot/devicescreen.ts';
+import { fourSlotPageProgram } from '../../families/four-slot/devicescreen.ts';
+import { appendMode } from '../../shared/modes.ts';
 import {
   assertTextsAtHome, FOUR_SLOT_MAX_PAGES, fourSlotMenuChrome, fourSlotMenus, fourSlotPageList, type FourSlotTemplate,
   fourSlotTemplate, growFourSlotMenu, idleDeviceList, menuLayout, menuPageBytes, type MenuPart, openFourSlotMenuPage,
@@ -33,7 +34,9 @@ import {
   screenProgram,
 } from '../../screen.ts';
 import { handlerSets, modeRecords, modeTable, type TaggedEntry, taggedList } from '../../sections.ts';
-import { arch14Starts, type Arch14Starts, nextActivityValue } from '../../shared/activities.ts';
+import {
+  activityKeyedMaps, type ActivityMaps, arch14Starts, type Arch14Starts, nextActivityValue,
+} from '../../shared/activities.ts';
 import { ACTION_TABLE_SLOT, ComposeError, restamped } from '../../shared/core.ts';
 import { appendTableEntries } from '../../shared/infrared.ts';
 import {
@@ -349,17 +352,6 @@ export const STARTUP_FIXED_LINE_Y: readonly number[] = [82, 96, 110];
 /** The word under the working screen's centre key, which goes to the device list, section 290. */
 const WORKING_SCREEN_WORD = 'Devices';
 
-/** The four records keyed by the activity, by what their cases do. */
-interface ActivityMaps {
-  working: number;
-  devices: number[];
-  /**
-   * The keypad map record, whose case per activity selects its handler set. Undefined on a configuration
-   * with no activity, which has no case to hold, so an empty configuration of ours holds no such record,
-   * section 379; the first activity composed there adds none either.
-   */
-  select: number | undefined;
-}
 
 /**
  * The base slot 14 records keyed by the activity, found by their keys and what their cases queue: every
@@ -406,33 +398,13 @@ export function activityMaps(c: Container, starts: Arch14Starts): ActivityMaps {
     throw new ComposeError(`the counter states activities ${activities.join(', ') || 'none'} and the start lists `
       + `hold ${held.join(', ') || 'none'}`);
   }
-  const same = (keys: number[], want: number[]): boolean =>
-    keys.length === want.length && [...keys].sort((a, b) => a - b).every((key, k) => key === want[k]);
-  if (activities.length === 0) return noActivityMaps(c, maps, starts.idle, starts.counter, same);
-  const working: number[] = [];
-  const devices: number[] = [];
-  const select: number[] = [];
-  maps.forEach((map, index) => {
-    if (map.ranges.length !== 0) return;
-    const keys = map.entries.map(([key]) => key);
-    const queued = new Map(map.entries.map(([key, target]) => [key, caseQueued(c, target)]));
-    const enters = (key: number): boolean => queued.get(key)?.opcode === ENTER_MODE;
-    if (same(keys, everything) && activities.every(enters)) {
-      (enters(starts.idle) ? devices : working).push(index);
-    } else if (same(keys, activities) && activities.every((key) => {
-      const one = queued.get(key);
-      return one?.opcode === SELECT_BINDING_SET && one.operand === (SELECT_BINDING_SET_MASK | (starts.sets.get(key) as number));
-    })) {
-      select.push(index);
-    }
-  });
+  const found = activityKeyedMaps(c, starts.counter, starts.idle, activities, starts.sets);
   // The keypad map record is in every file here that holds an activity, 55 of 55 distinct Harmony 600, 650
   // and 700 files, Logitech's and ours built on them alike, and in none built on our empty configuration,
   // whose first activity was composed with no record to add a case to, section 379.
-  if (working.length !== 1 || devices.length === 0 || select.length > 1) {
-    throw new ComposeError(`the activity keyed records read as ${working.length} working screen, `
-      + `${devices.length} Devices key and ${select.length} keypad map records, not 1, some and at most 1`);
-  }
+  const working = [found.working];
+  const devices = found.devices;
+  const select = found.select === undefined ? [] : [found.select];
   // Each record's stored order, generated and compared: a record in another order is not one whose
   // order an appended case keeps the compiler's.
   for (const index of [...working, ...devices, ...select]) {
@@ -442,46 +414,6 @@ export function activityMaps(c: Container, starts: Arch14Starts): ActivityMaps {
     }
   }
   return { working: working[0] as number, devices, select: select[0] };
-}
-
-/**
- * The records keyed by the activity on a configuration with no activity, section 379, where each holds the
- * idle case alone and the keys cannot tell them apart, among the records mapped through on the counter.
- * What the case does can: the working screen record's
- * queues a further record, the one that enters the activity menu, section 336, and each record under the key
- * under Devices enters a mode, the idle device list, section 330. One of the first and at least one of the
- * second, as on every compile with activities; the keypad map record has no idle case and so does not exist.
- * An empty configuration of ours is the file this is for; Logitech's one compile with no activity,
- * `harvest_650_two_devices`, reads the same way and stops later, at a start up screen it does not hold.
- */
-function noActivityMaps(
-  c: Container, maps: readonly ValueMap[], idle: number, counter: number, same: (keys: number[], want: number[]) => boolean,
-): ActivityMaps {
-  // Only the records something maps through on the counter: a mode's key map, an action list or a case's
-  // program, `0x72` on `(record << 8) | counter`. The location's records hold an idle looking case too.
-  const named = new Set<number>();
-  const note = (opcode: number, operand: number): void => {
-    if (opcode === MAP_VALUE_OPCODE && (operand & 0xff) === counter) named.add(operand >> 8);
-  };
-  for (const record of modeRecords(c) ?? []) for (const entry of record.entries) note(entry.opcode, entry.operand);
-  for (const list of c.actionLists() ?? []) for (const one of list) note(one.opcode, one.operand);
-  for (const map of maps) for (const [, target] of map.entries) {
-    const queued = caseQueued(c, target);
-    if (queued !== undefined) note(queued.opcode, queued.operand);
-  }
-  const working: number[] = [];
-  const devices: number[] = [];
-  maps.forEach((map, index) => {
-    if (!named.has(index) || map.ranges.length !== 0 || !same(map.entries.map(([key]) => key), [idle])) return;
-    const queued = caseQueued(c, (map.entries[0] as [number, number])[1]);
-    if (queued?.opcode === MAP_VALUE_OPCODE) working.push(index);
-    else if (queued?.opcode === ENTER_MODE) devices.push(index);
-  });
-  if (working.length !== 1 || devices.length === 0) {
-    throw new ComposeError(`with no activity the records keyed by it read as ${working.length} working screen and `
-      + `${devices.length} Devices key records, not 1 and some`);
-  }
-  return { working: working[0] as number, devices, select: undefined };
 }
 
 /**
@@ -947,7 +879,7 @@ export function composeFourSlotActivityScreen(
   // 1. The start up screen: the built key map, one page with an empty list, and the built program, every
   // text pointing at the compiler's one inline copy of it where the configuration holds one.
   const startupPointed: ReadonlySet<string> = new Set(['title', 'fixed']);
-  let current = appendArch14Mode(c, startupMode, chrome.startupKeyMap, [fourSlotPageList([])], (now) => {
+  let current = appendMode(c, startupMode, chrome.startupKeyMap, [fourSlotPageList([])], (now) => {
     const parts = startupParts(now, activityScreenChrome(now), label);
     const homes = inlineHomes(now);
     return [{
@@ -959,7 +891,7 @@ export function composeFourSlotActivityScreen(
   // 2. The working screen: a device mode page's program with the working screen's built chrome and
   // backgrounds, and the working screen's built key map.
   const pageListBytes = pageRows.map((onPage) => fourSlotPageList(onPage.map((row) => row.list)));
-  current = appendArch14Mode(current, mode, chrome.workingKeyMap, pageListBytes, (now) => {
+  current = appendMode(current, mode, chrome.workingKeyMap, pageListBytes, (now) => {
     const freshDevice = fourSlotTemplate(now, undefined);
     const working = activityScreenChrome(now).working;
     const template: FourSlotTemplate = {

@@ -26,6 +26,7 @@ import {
   SCREEN_TABLE_SLOT, SCREEN_TEXT_AT, SCREEN_TEXT_INLINE, type ScreenInstruction, screenProgram,
 } from '../../screen.ts';
 import { contentKey } from '../../screencategories.ts';
+import { picturesByContent } from '../../pictures.ts';
 import { ACTION_LIST_INDEX_OPCODE, handlerSets, modeRecords, type TaggedEntry, taggedList } from '../../sections.ts';
 import { STATE_WRITE_BASE } from '../../actions.ts';
 import { ComposeError } from '../../shared/core.ts';
@@ -357,19 +358,7 @@ export interface DeviceModeChrome extends PageFrame {
   crossed: number;
 }
 
-/** Every picture of a configuration by its content, the bank's and the ones outside it, as `screenUnits` lists them. */
-export function picturesByContent(c: Container): Map<string, number[]> {
-  const bank = pictureBank(c, namedContentEnd(c)) ?? [];
-  const inBank = new Set(bank.map((one) => one.address));
-  const out = new Map<string, number[]>();
-  for (const picture of [...bank, ...bitmaps(c).filter((one) => !inBank.has(one.address))]) {
-    const off = c.blobOffsetOf(picture.address);
-    if (off === undefined || picture.length === undefined) continue;
-    const key = contentKey(c.blob.subarray(off, off + picture.length));
-    out.set(key, [...(out.get(key) ?? []), picture.address]);
-  }
-  return out;
-}
+export { picturesByContent };
 
 /**
  * The corner program a device page queues: **the first base slot 11 entry that no base slot 14 case

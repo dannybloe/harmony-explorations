@@ -17,7 +17,7 @@ import type { CommonChoices, Family } from '../families/family.ts';
 import { parse, type Container } from '../gspm.ts';
 import { activities, devices, deviceVariables, SEND_INFRARED, DEVICE_QUANTITY } from '../inventory.ts';
 import {
-  ComposeError, type ComposeRow, composeActivity, composeActivityDeviceList, composeActivityMenuRow, keepDeviceOn,
+  ComposeError, type ComposeRow, composeActivity, composeActivityMenuRow, keepDeviceOn,
   nextActivityValue, startsSwitchingOff,
 } from '../compose.ts';
 import {
@@ -305,18 +305,22 @@ function composeSetupActivity(
     sequenced = true;
   }
 
-  const screen = parts.family.composeActivityScreen(c, nextActivityValue(c), activity.name, rows, { choices: parts.choices });
+  const screen = parts.family.composeActivityScreen(c, nextActivityValue(c), activity.name, rows,
+    { choices: parts.choices, type: activity.type });
   const key = parts.choices.activityKeys?.[activity.type];
+  // The keys the screens need bound, which take the place of a role's on the same key.
+  const screenKeys = screen.keys ?? [];
+  const allKeys = [...keys.filter((one) => !screenKeys.some((other) => other.scan === one.scan)), ...screenKeys];
   const built = composeActivity(parse(screen.bytes), {
-    label: activity.name, targets, keys,
+    label: activity.name, targets, keys: allKeys,
     screen: {
-      startupMode: screen.startupMode, workingMode: screen.mode, activity: screen.activity,
+      startupMode: screen.startupMode, workingMode: screen.mode, activity: screen.activity, activeList: screen.activeList,
       startVariable: screen.startVariable, flagVariable: screen.flagVariable, set: screen.set,
     },
     ...(key === undefined ? {} : { activityKey: key }),
   });
-  const rowed = parse(composeActivityMenuRow(parse(built.bytes), built.label, built.set).bytes);
-  const after = parse(composeActivityDeviceList(rowed, built.activity).bytes);
+  const rowed = parse(composeActivityMenuRow(parse(built.bytes), built.label, built.set, { type: activity.type }).bytes);
+  const after = parse(parts.family.activityDeviceList(rowed, built.activity));
   // A sequence's pauses name the activity's devices as its start switches them on, which is read back.
   if (sequenced) {
     const started = activityPauseGroups(after, built.set);

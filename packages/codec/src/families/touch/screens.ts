@@ -7,6 +7,7 @@ import type { WithChoices } from '../family.ts';
 import { TOUCH_CHOICES, type TouchChoices } from './choices.ts';
 import { STATE_WRITE_BASE } from '../../actions.ts';
 import { u24 } from '../../bytes.ts';
+import { renderProgram } from '../../render.ts';
 import { Writer } from '../../emit.ts';
 import {
   composeMenuPage, DEVICE_LABEL_DROP, DEVICE_PAGE_SCANS, DEVICE_PAGE_SLOTS, DEVICE_ROW_FONT,
@@ -43,6 +44,17 @@ import { padFontOf, TOUCH_PAD_WIDTH, type TouchLabelLine, touchLabelLength, touc
 import { type TouchArea, type TouchPage, touchPages } from '../../tables.ts';
 import { characterMap } from '../../text.ts';
 import { EDGE_CODES, LIST_ROW_PITCH, PANEL_LEFT, touchOwner, touchPageOf } from '../../touch.ts';
+import { buildTouchActivityScreens } from './activityscreen.ts';
+import {
+  ACTIVITY_ROW_FACE, ACTIVITY_ROW_SIZE, activityIconOf, activityPadBox, activityRowBox, activityRowIcon as ourRowIcon,
+  colourBehind,
+} from './activitypictures.ts';
+import { activityPadBehind } from './activityscreen.ts';
+import { fontOfFace } from './labels.ts';
+import { picturesByContent, withBankPictures } from '../../pictures.ts';
+import { contentKey } from '../../screencategories.ts';
+
+/** The face every activity menu row's label is drawn in, 64 rows of 64 on the Harmony One's compiles. */
 
 /**
  * The Harmony One's half of `composeDeviceScreen`, whose docstring describes it.
@@ -196,16 +208,18 @@ export function composeTouchDeviceScreen(
   if (bar === undefined || slots.length === 0 || lead === undefined) {
     throw new ComposeError('no existing page carries the pictures the layout reuses');
   }
-  // The mode's own key map, the record's list. Logitech's One device modes are one shape, measured on all 76
-  // device modes of its compiles: 49 entries in one order, a press of 46 keys bound to a list or to nothing
-  // and three handlers, tags 0x06, 0x07 and 0x2D, run on entering and leaving the mode and for its screen;
-  // a mode of one page adds a press of the two page turn keys bound to nothing, 51 entries, and orders the
-  // handlers otherwise. The handlers' lists are the same on every device of a compile, so the shape is taken
-  // from an existing device mode of as many pages, `deviceModeMaps`, its handlers kept and every key bound
-  // afresh: to the list `compiled.keys` names for its scan, or to nothing. Logitech gives each device a copy
-  // of the handler lists with the same content; this one shares the existing device's, which runs the same
-  // instructions. A configuration with no device mode of the kind keeps the empty list, as before
-  // `todo-compile-one.md` 1.2.10, and one asked for keys refuses rather than inventing the shape.
+  // The mode's own key map, the record's list. Logitech's One device modes are two shapes, measured on all 90
+  // device modes of its nineteen compiles, section 397: a mode of several pages is 49 entries in one order, a
+  // press of 46 keys bound to a list or to nothing and three handlers, tags 0x06, 0x07 and 0x2D, run on
+  // entering and leaving the mode and for its screen; a mode of one page adds a press of the two page turn
+  // keys bound to nothing, 51 entries, and orders the handlers otherwise. The handlers' lists are alike on
+  // every device mode of a compile **of the same kind**: the 0x06 list holds four instructions on a mode of
+  // several pages and the first three of them on a mode of one page. So the shape is taken from an existing
+  // device mode of as many pages, `deviceModeMaps`, its handlers kept and every key bound afresh: to the list
+  // `compiled.keys` names for its scan, or to nothing. Logitech gives each device a copy of the handler lists
+  // with the same content; this one shares the existing device's, which runs the same instructions. A
+  // configuration with no device mode of the kind keeps the empty list, as before `todo-compile-one.md`
+  // 1.2.10, and one asked for keys refuses rather than inventing the shape. Corrected per review, section 397.
   const keyTemplate = [...new Set(deviceModeMaps(current).map((one) => one.mode))]
     .map((one) => records[one])
     .find((record) => record !== undefined && (record.pages.length === 1) === (pages.length === 1));
@@ -221,8 +235,11 @@ export function composeTouchDeviceScreen(
   const keyList = taggedListBytes(keyEntries);
   const chromeLength = 6 + 2 + (1 + 2 + titleCodes.length + 1) + 2;
   // Each page's program: the call to the shared header, the row font, a pad and a label per row, the end.
-  const programLengths = pages.map((page) => 4 + 2
-    + page.rows.reduce((sum, _, k) => sum + 6 + touchLabelLength(rowLines[page.first + k] as TouchLabelLine[]), 0) + 1);
+  // A font select before every label rather than one per page, so each label is its own select and the blending
+  // step can smooth it against what is behind it alone: a colour button's label sits on its circle and the
+  // others on the box, `colourbuttons.ts`.
+  const programLengths = pages.map((page) => 4
+    + page.rows.reduce((sum, _, k) => sum + 6 + 2 + touchLabelLength(rowLines[page.first + k] as TouchLabelLine[]), 0) + 1);
   const programsLength = programLengths.reduce((sum, one) => sum + one, 0);
   // The entry is six bytes and a pointer per page, `modeRecords`: one page's pointer alone left a paged mode
   // unreadable, which nothing ran until the test setup's Plasma, `todo-compile-one.md` 1.2.9.
@@ -258,12 +275,12 @@ export function composeTouchDeviceScreen(
   chrome.bytes.forEach((byte) => block.u8(byte));
   for (const page of pages) {
     block.u8(SCREEN_CALL).u24(chromeAddress);
-    block.u8(SCREEN_SELECT_FONT).u8(padFont);
     page.rows.forEach((_, k) => {
       const [x, y] = DEVICE_PAGE_SLOTS[k] as readonly [number, number];
       block.u8(SCREEN_DRAW_IMAGE).u8(x).u8(y).u24(shifted(slots[k] as number));
       const width = bitmapAt(current, slots[k] as number)?.stride ?? 0;
       if (width !== TOUCH_PAD_WIDTH) throw new ComposeError(`a pad box is ${width} pixels wide, not the ${TOUCH_PAD_WIDTH} the labels are laid out on`);
+      block.u8(SCREEN_SELECT_FONT).u8(padFont);
       // The label's lines, each centred on its own width with the odd pixel left, section 394. A name the
       // rule cannot place was refused when the lines were laid out, above.
       for (const line of rowLines[page.first + k] as TouchLabelLine[]) {
@@ -418,8 +435,10 @@ export function composeTouchDeviceScreen(
     const rowLabelY = MENU_ROW1_LABEL_Y + k * MENU_ROW_PITCH;
     // The background is read here, after the grows above moved it, and not at the top of the
     // loop: a picture address read before an insertion below it is stale by that insertion. It is the one
-    // the first page draws at that row, or else its second row's: the second and third rows draw one picture
-    // on 195 of 195 three row pages of Logitech's nineteen One compiles, the first row another.
+    // the first page draws at that row, which is Logitech's: on its nineteen One compiles a row draws one
+    // picture on every page of its menu, and the three rows of a page three different ones, section 397.
+    // Where the first page has no such row, its second row's is taken, which is a choice of ours.
+    // Corrected per review: this said rows two and three drew one picture.
     const firstProgram = grownRecord.pages[0]?.program ?? 0;
     const bg = pictureDrawnAt(current, firstProgram, ...rowBg)
       ?? pictureDrawnAt(current, firstProgram, MENU_ROW1_BG[0], MENU_ROW1_BG[1] + MENU_ROW_PITCH);
@@ -536,6 +555,28 @@ function activityPageLayout(page: TouchPage): ActivityPageLayout | undefined {
   return { rows, keys, edges, content };
 }
 
+/** Where the activity menu's two bottom keys sit, in the panel's coordinates: `y` 271 on every page. */
+const ACTIVITY_BOTTOM_KEY_Y = 271;
+
+/**
+ * The first row of an activity menu, its area on the touch panel: every first row of the fifteen Harmony One
+ * compiles with an activity is this rectangle, findings section 399. Read off a page's rows wherever it has
+ * one; this is for the page that has none.
+ */
+const FIRST_ROW_AREA = { x: 1257, width: 2600, y: 3016, height: 807 } as const;
+
+/**
+ * An activity menu page with no row yet, as `activityPageLayout` would read it: the two bottom keys and the
+ * two edges, which is what the Harmony One's compiles with no activity offer, 4 of 4. Undefined for any
+ * other page.
+ */
+function emptyActivityPageLayout(page: TouchPage): ActivityPageLayout | undefined {
+  const edges = page.areas.filter((area) => area.code === MENU_EDGE_SCANS[0] || area.code === MENU_EDGE_SCANS[1]);
+  const content = page.areas.filter((area) => !edges.includes(area));
+  if (edges.length !== 2 || content.length === 0 || content.some((area) => area.y !== ACTIVITY_BOTTOM_KEY_Y)) return undefined;
+  return { rows: [], keys: content, edges, content };
+}
+
 /**
  * The icon an activity menu row draws, for the row labelled `iconLike`, so a new television activity
  * wears the television icon the configuration already carries.
@@ -584,7 +625,7 @@ function activityRowIconAt(c: Container, program: number, rank: number, iconLike
  */
 export function composeTouchActivityRow(
   c: Container, label: string, set: number, menu: number, marker: Instruction,
-  options: ComposeActivityRowOptions,
+  options: WithChoices<ComposeActivityRowOptions, TouchChoices>,
 ): ComposedActivityRow {
 
   let current = c;
@@ -601,8 +642,9 @@ export function composeTouchActivityRow(
   };
 
   // The layout, and the one refusal that decides whether this can run at all.
-  const startLayout = activityPageLayout(
-    touchPageOf(current, pageOf()) ?? { address: 0, areas: [], start: 0, length: 0 });
+  const startPage = touchPageOf(current, pageOf()) ?? { address: 0, areas: [], start: 0, length: 0 };
+  // The empty page first: its wider bottom key would otherwise read as a row.
+  const startLayout = emptyActivityPageLayout(startPage) ?? activityPageLayout(startPage);
   if (startLayout === undefined) {
     throw new ComposeError("the activity menu's last page is not a row layout this knows");
   }
@@ -632,12 +674,38 @@ export function composeTouchActivityRow(
   };
   const map = characterMap(current);
   if (map === undefined) throw new ComposeError('the config carries no character map');
-  const rowFont = fontThatSpells(current, map, label, rowFontOf(startProgram));
+  // A menu with no row has none to copy the font off, and its first row is drawn in the face every
+  // activity row of the compiles is drawn in, One15, 64 of 64.
+  const choices = options.choices ?? TOUCH_CHOICES;
+  const rowFont = startLayout.rows.length === 0 && !full
+    ? fontOfFace(current, ACTIVITY_ROW_FACE)
+    : fontThatSpells(current, map, label, rowFontOf(startProgram));
   const fontSet = (fontSets(current) ?? [])[rowFont];
   if (fontSet === undefined) {
     throw new ComposeError('the config does not carry the font the activity menu draws its rows in');
   }
   const labelCodes = codesFor(map, current, fontSet, label, rowFont);
+
+  // Our pictures, decision 24, where the activity's type is given: the row box and the type's icon over it,
+  // `activitypictures.ts`. Without a type the row copies the first row's, as it did before.
+  const ours = options.type === undefined ? undefined : (() => {
+    // The menu's own background behind the three rows, which the row box's corners are smoothed against.
+    const call = startProgram.find((one) => one.opcode === SCREEN_CALL);
+    const raster = call === undefined ? undefined : renderProgram(current, u24(call.operands, 0))?.raster;
+    if (raster === undefined) throw new ComposeError("the activity menu's page calls no chrome to read its background off");
+    const pixels = Array.from({ length: raster.height }, (_, y) => Array.from({ length: raster.width },
+      (__, x) => raster.pixels[y * raster.width + x] as number));
+    const behind = colourBehind(pixels, Array.from({ length: ACTIVITY_ROWS }, (_, k) =>
+      [MENU_ROW1_BG[0], MENU_ROW1_BG[1] + MENU_ROW_PITCH * k, ...ACTIVITY_ROW_SIZE] as const));
+    return {
+      bg: activityRowBox(choices.activityBox, behind),
+      icon: ourRowIcon(choices.activityBox, behind, activityIconOf(choices, options.type), choices.activityIconGrid.row),
+    };
+  })();
+  if (ours === undefined && startLayout.rows.length === 0) {
+    throw new ComposeError('the activity menu has no row to copy a picture from, and no type to draw one for');
+  }
+  if (ours !== undefined) current = withBankPictures(current, [ours.bg, ours.icon]).container;
 
   // 1. The row's action list: beep, select the activity's keypad map, clear the device mode marker.
   // The marker's **variable** is read off the config and only its value is ours, since which
@@ -699,8 +767,9 @@ export function composeTouchActivityRow(
   // above moved them: an address read before an insertion below it is stale by that insertion.
   const firstProgram = recordOf().pages[0]?.program;
   if (firstProgram === undefined) throw new ComposeError('the activity menu has no first page');
-  const bg = pictureDrawnAt(current, firstProgram, ...MENU_ROW1_BG);
-  const icon = options.iconLike === undefined
+  const held = picturesByContent(current);
+  const bg = ours !== undefined ? held.get(contentKey(ours.bg))?.[0] : pictureDrawnAt(current, firstProgram, ...MENU_ROW1_BG);
+  const icon = ours !== undefined ? held.get(contentKey(ours.icon))?.[0] : options.iconLike === undefined
     ? pictureDrawnAt(current, firstProgram,
       MENU_ROW1_BG[0] + MENU_ICON_OFFSET[0], MENU_ROW1_BG[1] + MENU_ICON_OFFSET[1])
     : activityRowIcon(current, options.iconLike);
@@ -915,11 +984,11 @@ function withActivityHitPage(start: Container, menu: number, rank: number): Cont
   };
   const hits = touchPages(current);
   const old = touchPageOf(current, pageOf());
-  const layout = old === undefined ? undefined : activityPageLayout(old);
+  const layout = old === undefined ? undefined : emptyActivityPageLayout(old) ?? activityPageLayout(old);
   if (hits === undefined || old === undefined || layout === undefined) {
     throw new ComposeError('the hit map stopped reading');
   }
-  const top = layout.rows[0] as TouchArea;
+  const top: TouchArea = layout.rows[0] ?? { ...FIRST_ROW_AREA, code: 0, self: 0, address: 0 };
   const added: TouchArea = {
     ...top, y: top.y - ACTIVITY_ROW_PITCH * rank, code: MENU_FIRST_SCAN + layout.content.length,
   };
@@ -988,13 +1057,39 @@ function workingTemplate(c: Container, screens: ActivityScreens): WorkingTemplat
   return chosen;
 }
 
+/** Whether every working screen the configuration's activities show draws our pad box, and only ours. */
+function allWorkingScreensOurs(c: Container, choices: TouchChoices): boolean {
+  let behind: number;
+  try {
+    behind = activityPadBehind(c);
+  } catch {
+    return false;
+  }
+  const ours = contentKey(activityPadBox(choices.activityBox, behind));
+  const screens = activityScreens(c);
+  if (screens === undefined || screens.screens.size === 0) return false;
+  const held = picturesByContent(c).get(ours) ?? [];
+  const records = modeRecords(c) ?? [];
+  return [...screens.screens.values()].every((mode) => (records[mode]?.pages ?? []).every((page) => {
+    const drawn = pictureDrawnAt(c, page.program, ...(DEVICE_PAGE_SLOTS[0] as readonly [number, number]));
+    return drawn === undefined || held.includes(drawn);
+  }));
+}
+
 /**
  * The Harmony One's half of `composeActivityScreen`, whose docstring describes it.
  */
 export function composeTouchActivityScreen(
   c: Container, activity: number, label: string, rows: readonly ComposeRow[],
-  options: ComposeActivityScreenOptions = {},
+  options: WithChoices<ComposeActivityScreenOptions, TouchChoices> = {},
 ): ComposedActivityScreen {
+  // A configuration with no activity has no screen to copy the frame from, and its screens are built,
+  // `todo-compile-one.md` 1.2.11.2; this copying path stays for configurations with activities until the
+  // builder is checked against all 64 of Logitech's, 1.2.11.2.6, and then goes.
+  // So are the screens of a configuration whose working screens are all ours, each drawing our pad box.
+  if (activityBindings(c).length === 0 || allWorkingScreensOurs(c, options.choices ?? TOUCH_CHOICES)) {
+    return buildTouchActivityScreens(c, activity, label, rows, options);
+  }
   const screens = activityScreens(c);
   if (screens === undefined) throw new ComposeError('no record says which screen an activity shows');
   if (screens.screens.has(activity)) {

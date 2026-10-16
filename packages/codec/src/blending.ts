@@ -24,18 +24,24 @@
  * Glyphs are shared as `fonttable.ts` shares them: one face in one colouring on one background draws a
  * character once.
  *
- * Gated on the Harmony 650, as `fonttable.ts` is. The firmware takes a select's operand as one byte, so at
- * most 256 sets; a configuration that would need more is refused.
+ * **Nothing in it is a remote's**: it reads a rendering, the colour under each text and the faces it is given.
+ * Whether a configuration's letters are blended is its builder's choice, `CommonChoices.blendLetters` on the
+ * Harmony 600, 650 and 700; this said the step was gated on the Harmony 650 until 16 October 2026, when the
+ * Harmony One's configuration came to be blended too, `todo-compile-one.md` 1.2.11.2, and the gate moved to
+ * the callers, where the choice already was. The firmware takes a select's operand as one byte, read on the
+ * Harmony 650 0.2 and the Harmony One 3.4, so at most 256 sets; a configuration that would need more is refused.
+ *
+ * A select already pointing at a set smoothed for one background, one a font step added, `ExtraFontSet`, is
+ * left as it is: its letters are right where they are drawn, and a copy of a copy would blend twice.
  */
 import type { Container } from './gspm.ts';
 import type { ContainerLayout, ContainerPiece, PieceRef } from './frame.ts';
 import { layOutContainer } from './frame.ts';
 import { IMAGE_TABLE_SLOT, encodeGlyph, fontSets, glyphOf } from './font.ts';
 import { characterMap } from './text.ts';
-import { letterRows } from './lettering.ts';
+import { letterRows, type OxaniumWeight } from './lettering.ts';
 import { UNDRAWN, renderVariants, type TextDrawn } from './render.ts';
 import { modePages } from './sections.ts';
-import { BLENDED_LETTER_SKINS } from './backgrounds.ts';
 import { FontTableError, type SetFace, letterFaceOf, lettered } from './fonttable.ts';
 
 /** How many appearances of one page are drawn before the page counts as not fully seen. */
@@ -49,7 +55,17 @@ export interface BlendedSet {
   source: number;
   background: number;
   set: number;
+  /** The weight it is lettered in where `weightFor` chose one other than its source's. */
+  weight?: OxaniumWeight;
 }
+
+/**
+ * A builder's say over the weight of a copy: given the face of the set a text was drawn in and the colour it
+ * is drawn on, the weight to letter the copy in, or undefined for the set's own. What lets a family draw the
+ * labels on its own boxes lighter than the same face elsewhere, which a set shared by every screen cannot
+ * be: the Harmony One's labels on its activity and device boxes, `TouchChoices.labelWeight`.
+ */
+export type WeightFor = (face: SetFace, background: number) => OxaniumWeight | undefined;
 
 export interface LettersBlended {
   layout: ContainerLayout;
@@ -110,7 +126,8 @@ function selectColours(c: Container): Map<number, { font: number; colour?: numbe
   const { texts, truncated } = observeTexts(c);
   const out = new Map<number, { font: number; colour?: number; why?: 'notFlat' | 'twoColours' | 'unseen' }>();
   for (const text of texts) {
-    if (text.selectAt === undefined) continue;
+    // A string pictures paint over afterwards is never seen, so the colour under it says nothing.
+    if (text.selectAt === undefined || text.covered) continue;
     const had = out.get(text.selectAt);
     if (had?.why !== undefined) continue;
     const colour = flatColour(text.under);
@@ -130,12 +147,9 @@ function selectColours(c: Container): Map<number, { font: number; colour?: numbe
  * laid out and taken apart or as it returned it, and `faces` its `faces`, one per set in table order: a set's
  * face was read off Logitech's glyphs, which are gone.
  */
-export function withBlendedLetters(layout: ContainerLayout, faces: readonly SetFace[]): LettersBlended {
+export function withBlendedLetters(layout: ContainerLayout, faces: readonly SetFace[], weightFor?: WeightFor): LettersBlended {
   const laid = layOutContainer(layout);
   const c = laid.container;
-  if (c.architecture !== 14 || !BLENDED_LETTER_SKINS.has(layout.skin)) {
-    throw new FontTableError('blended letters are built for the Harmony 650, and for the Harmony 700 and 600 on a configuration of ours, sections 382 and 387');
-  }
   const map = characterMap(c);
   if (map === undefined || map.alphabet !== 'oxanium') throw new FontTableError('the configuration is not lettered in our letters');
   const sets = fontSets(c) ?? [];
@@ -181,7 +195,9 @@ export function withBlendedLetters(layout: ContainerLayout, faces: readonly SetF
     if (had !== undefined) return had;
     const index = sets.length + newSets.length;
     if (index >= FONT_SET_CEILING) throw new FontTableError(`a blended copy would be font set ${index}, past the one byte a select holds`);
-    const face = faces[source]!;
+    const own = faces[source]!;
+    const weight = weightFor?.(own, background);
+    const face: SetFace = weight === undefined ? own : { ...own, weight };
     const set = sets[source]!;
     const from = setPieces[source]!;
     const refs: PieceRef[] = [];
@@ -189,7 +205,10 @@ export function withBlendedLetters(layout: ContainerLayout, faces: readonly SetF
       const code = set.first + (ref.at - 3) / 3;
       const ch = map.codes.get(code);
       if (ch === undefined) throw new FontTableError(`code ${code} of font set ${source} draws no character the map settles`);
-      const glyphKey = `${face.face} ${face.lettering} ${background} ${ch}`;
+      // Shared by face, weight, colouring, inks and background: two sets of one face in different inks, which
+      // every Harmony One configuration has and no Harmony 650 one does, blend a character apart.
+      const inks = lettered(face);
+      const glyphKey = `${face.face} ${face.weight} ${face.lettering} ${inks.shadowed} ${inks.plain} ${inks.shadow} ${background} ${ch}`;
       let piece = glyphPieces.get(glyphKey);
       if (piece === undefined) {
         const rows = letterRows(letterFaceOf(face), ch, face.lettering, lettered(face), background);
@@ -199,7 +218,7 @@ export function withBlendedLetters(layout: ContainerLayout, faces: readonly SetF
       refs.push({ at: ref.at, to: piece, offset: 0 });
     }
     newSets.push({ bytes: Uint8Array.from(from.bytes), refs, owner: from.owner ?? 'slot-7-set' });
-    blended.push({ source, background, set: index });
+    blended.push({ source, background, set: index, ...(weight === undefined ? {} : { weight }) });
     copies.set(key, index);
     return index;
   };
@@ -212,6 +231,7 @@ export function withBlendedLetters(layout: ContainerLayout, faces: readonly SetF
       continue;
     }
     if (found.font < 0 || found.font >= sets.length) continue;
+    if (faces[found.font]?.background !== undefined) continue;
     const index = copyOf(found.font, found.colour as number);
     const { piece, at } = pieceAt(select);
     if (piece.bytes[select - at] !== 16 || piece.bytes[select - at + 1] !== found.font) {
@@ -257,8 +277,9 @@ export function checkBlendedLetters(c: Container, faces: readonly SetFace[], ble
   let glyphs = 0;
   for (const one of blended) {
     const set = sets[one.set];
-    const face = faces[one.source];
-    if (set === undefined || face === undefined) throw new FontTableError(`font set ${one.set} is missing`);
+    const own = faces[one.source];
+    if (set === undefined || own === undefined) throw new FontTableError(`font set ${one.set} is missing`);
+    const face: SetFace = one.weight === undefined ? own : { ...own, weight: one.weight };
     for (let code = set.first; code < set.first + set.count; code += 1) {
       const ch = map.codes.get(code);
       const glyph = glyphOf(c, set, code);
@@ -272,7 +293,7 @@ export function checkBlendedLetters(c: Container, faces: readonly SetFace[], ble
   let strings = 0;
   for (const text of observeTexts(c).texts) {
     const copy = copies.get(text.font);
-    if (copy === undefined) continue;
+    if (copy === undefined || text.covered) continue;
     const colour = flatColour(text.under);
     if (colour !== copy.background) {
       throw new FontTableError(`the string at ${text.at} is drawn in a set blended for ${copy.background.toString(16)} on ${colour?.toString(16) ?? 'more than one colour'}`);

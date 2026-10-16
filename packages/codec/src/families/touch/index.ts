@@ -8,7 +8,7 @@ import { touchDrawsName, touchScreenItems } from './screenitems.ts';
 import { composeTouchActivityRow, composeTouchActivityScreen, composeTouchDeviceScreen } from './screens.ts';
 import { TOUCH_CHOICES, type TouchChoices } from './choices.ts';
 import { TOUCH_HARD_KEYS } from './devicekeys.ts';
-import { activityMenuByRows } from '../../shared/menus.ts';
+import { touchActivityMenu } from './activityscreen.ts';
 
 export const TOUCH: Family<TouchChoices> = {
   name: 'the Harmony One',
@@ -19,9 +19,13 @@ export const TOUCH: Family<TouchChoices> = {
   activityKeyRules: TOUCH_ACTIVITY_KEYS,
   deviceModeKeys: TOUCH_HARD_KEYS,
   composeDeviceScreen: composeTouchDeviceScreen,
-  activityMenu: activityMenuByRows,
+  activityMenu: touchActivityMenu,
   // The Harmony One writes the marker outside its rows 2 to 9 times, none read as its own: section 329.
   menuMarkerWriter: () => undefined,
   composeActivityRow: composeTouchActivityRow,
   composeActivityScreen: composeTouchActivityScreen,
+  // The Harmony One's Devices key opens the idle device list, every device, which the built screens point
+  // it at; Logitech's opens a list of the activity's own devices, which is not built yet,
+  // `todo-compile-one.md` 1.2.11.2.4.
+  activityDeviceList: (c) => c.blob,
 };

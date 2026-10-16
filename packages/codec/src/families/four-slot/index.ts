@@ -9,6 +9,7 @@ import { fourSlotDrawsName, fourSlotScreenItems } from './screenitems.ts';
 import { HARD_KEYS } from '../../devicemode.ts';
 import { composeFourSlotActivityRow, composeFourSlotActivityScreen } from './activityscreen.ts';
 import { composeFourSlotDeviceScreen } from './devicescreen.ts';
+import { composeActivityDeviceList } from './devicelist.ts';
 import { fourSlotActivityMenu, fourSlotMenuMarkerWriter } from './chrome.ts';
 import { FOUR_SLOT_CHOICES, type FourSlotChoices } from './choices.ts';
 
@@ -25,4 +26,5 @@ export const FOUR_SLOT: Family<FourSlotChoices> = {
   menuMarkerWriter: fourSlotMenuMarkerWriter,
   composeActivityRow: composeFourSlotActivityRow,
   composeActivityScreen: composeFourSlotActivityScreen,
+  activityDeviceList: (c, activity) => composeActivityDeviceList(c, activity).bytes,
 };

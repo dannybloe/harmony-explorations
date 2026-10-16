@@ -233,6 +233,25 @@ test('a cut refuses to remove a pointer field or anything a pointer names', skip
   assert.throws(() => excise(c, borrower.at + 3, 3), /removes the .* field at/);
 });
 
+test('a cut may take a whole pointer field with the instruction that holds it, when asked, and still refuses a field it only overlaps',
+     skipUnless('one_config'), () => {
+  const c = parse(load('one_config') as Uint8Array);
+  // A text drawn by reference that nothing points into: six bytes, the opcode, its place and its pointer.
+  const lands = new Set(pointers(c).map((p) => p.lands));
+  const borrower = screenStrings(c).find((one) => one.referencedFrom !== undefined && one.at > relocationFloor(c)
+    && ![1, 2, 3, 4, 5].some((k) => lands.has(one.at + k)));
+  assert.ok(borrower !== undefined);
+  assert.throws(() => excise(c, borrower.at, 6), /removes the .* field at/);
+  const cut = excise(c, borrower.at, 6, { wholeFields: true });
+  const after = parse(cut.bytes);
+  assert.ok(after.allChecksPass);
+  // The census lost exactly the one field and every other still lands where it did, less the cut above it.
+  const before = pointers(c).filter((p) => p.at !== borrower.at + 3).map((p) => p.lands === undefined || p.lands < borrower.at ? p.lands : p.lands - 6);
+  assert.deepEqual(pointers(after).map((p) => p.lands), before);
+  // Overlapping the field without holding all of it is refused either way.
+  assert.throws(() => excise(c, borrower.at, 5, { wholeFields: true }), /removes the .* field at/);
+});
+
 /** Where every census field sits and where it lands, which is what a rebase must leave alone. */
 const landings = (c: Container): string[] => pointers(c).map((p) => `${p.holder}@${p.at}>${p.lands}`);
 

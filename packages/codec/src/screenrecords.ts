@@ -982,7 +982,7 @@ export interface ModeRecordsPlace {
  * length, since nothing names a copy and so nothing could follow it moving. A reference from elsewhere
  * into a replaced program, a text another screen points at, is pointed at the built copy of the same
  * text, or at its home outside. A page count other than the configuration's is refused: a page is added
- * by `appendArch14Mode`, not here. So is a built list the configuration's records do not run, and a list
+ * by `appendMode`, not here. So is a built list the configuration's records do not run, and a list
  * they run that is not built.
  */
 export function withModeRecords(
@@ -1023,7 +1023,7 @@ export function withModeRecords(
     const kind = old.what;
     if (old.programs.length !== made.programs.length) {
       throw new ScreenRecordError(`the ${kind} would have ${made.programs.length} pages where the configuration has `
-        + `${old.programs.length}, and a page is added by appendArch14Mode`);
+        + `${old.programs.length}, and a page is added by appendMode`);
     }
     swap(old.own, made.own);
     swap(old.entry, made.entry);

@@ -8,7 +8,7 @@ import { activityMaps } from '../../families/four-slot/activityscreen.ts';
 import {
   DEVICE_MODE_PROGRAM_TAG, DEVICES_KEY_TAG, inlineHomes, type KeyMapEntry,
 } from '../../families/four-slot/chrome.ts';
-import { appendArch14Mode } from '../../families/four-slot/devicescreen.ts';
+import { appendMode } from '../../shared/modes.ts';
 import {
   fourSlotMenuChrome, type FourSlotMenuChrome, type FourSlotMenuLabel, type FourSlotMenuPageContent,
   fourSlotPageList, idleDeviceList, menuPageBytes, menuPageContent, menuPageParts, pageRecordDifference,
@@ -430,7 +430,7 @@ export function composeActivityDeviceList(c: Container, activity: number): Compo
     fourSlotPageList(modes.map((_, k) => rowList + (firstOf[p] as number) + k)));
   const copyLists = built.pages.map((modes, p) =>
     fourSlotPageList(modes.map((_, k) => rowList + rows + (firstOf[p] as number) + k)));
-  current = appendArch14Mode(current, mode, built.entries, pageLists, (now) => {
+  current = appendMode(current, mode, built.entries, pageLists, (now) => {
     const chrome = fourSlotMenuChrome(now, 'activity device list');
     const homes = inlineHomes(now);
     return built.contents.map((content) => {
@@ -440,7 +440,7 @@ export function composeActivityDeviceList(c: Container, activity: number): Compo
         build: (shifted: (address: number) => number) => menuPageBytes(parts, homes, DEVICE_LIST_POINTED, shifted),
       };
     });
-  }, copyLists);
+  }, { copies: copyLists });
 
   // 3. The key under Devices: each record's case for the activity queues the new list instead. The
   // operand is the instruction's first two bytes after the opcode, low byte first, as `caseQueued`

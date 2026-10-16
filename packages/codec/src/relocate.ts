@@ -166,8 +166,15 @@ export function relocate(
  * moves to `at`. Like `relocate`, the choice of `at` is the caller's: cutting through an implied
  * chain produces a file that parses and means something else, so a caller cuts whole entries at a
  * stated boundary and its own check is what shows the readers agree afterwards.
+ *
+ * **`wholeFields` lets a pointer field go when it lies wholly inside the cut**, for a caller cutting a whole
+ * instruction that holds one: a text drawn by reference, `SCREEN_TEXT_AT`, is six bytes whose last three
+ * point at another text's glyphs, and cutting the instruction takes its pointer with it and leaves nothing
+ * naming anything that moved. A field the cut only overlaps is still refused, and so is a pointer landing
+ * inside the cut, either way. Added on 16 October 2026 for the Harmony One's colour buttons, whose words
+ * Logitech's compiles draw by reference, 360 of 424, findings section 399.
  */
-export function excise(c: Container, at: number, count: number): Relocated {
+export function excise(c: Container, at: number, count: number, options: { wholeFields?: boolean } = {}): Relocated {
   if (!Number.isInteger(at) || !Number.isInteger(count) || count <= 0) {
     throw new RelocateError(`a cut removes a positive whole number of bytes, not ${count}`);
   }
@@ -184,8 +191,9 @@ export function excise(c: Container, at: number, count: number): Relocated {
     throw new RelocateError(`the census disagrees with its readers: ${refusals[0]}`);
   }
   const end = at + count;
+  const inside = (p: { at: number }): boolean => p.at >= at && p.at + POINTER_WIDTH <= end;
   for (const p of census) {
-    if (p.at < end && p.at + POINTER_WIDTH > at) {
+    if (p.at < end && p.at + POINTER_WIDTH > at && !(options.wholeFields === true && inside(p))) {
       throw new RelocateError(`a cut of ${count} at ${at} removes the ${p.holder} field at ${p.at}`);
     }
     if (p.lands !== undefined && p.lands >= at && p.lands < end) {
@@ -200,7 +208,8 @@ export function excise(c: Container, at: number, count: number): Relocated {
 
   const rewritten: RewrittenField[] = [];
   for (const p of census) {
-    if (p.lands === undefined || p.lands < end) continue;
+    // A field the cut took with it, `wholeFields`, is gone and has nothing to rewrite.
+    if (p.lands === undefined || p.lands < end || inside(p)) continue;
     const fieldAt = p.at >= end ? p.at - count : p.at;
     bytes.set(new Writer(POINTER_WIDTH).u24(p.target - count).bytes, fieldAt);
     rewritten.push({ at: fieldAt, to: p.target - count, holder: p.holder });

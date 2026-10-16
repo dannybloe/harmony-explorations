@@ -41,11 +41,12 @@
  * Measured in the lab's `work/one-track/labels/`. The Harmony One only: the 600 family lays its labels out
  * with a ladder of sizes and two lines, `fourSlotLabelLines`.
  */
-import type { FontSet } from '../../font.ts';
+import { type FontSet, fontSets } from '../../font.ts';
+import { isSmoothedSet, measureSet } from '../../fonttable.ts';
 import type { Container } from '../../gspm.ts';
 import { ComposeError } from '../../shared/core.ts';
 import { codesFor, textWidth } from '../../shared/spelling.ts';
-import type { CharacterMap } from '../../text.ts';
+import { type CharacterMap, characterMap } from '../../text.ts';
 import { modeRecords } from '../../sections.ts';
 import { SCREEN_DRAW_IMAGE, SCREEN_SELECT_FONT, SCREEN_TEXT_AT, SCREEN_TEXT_INLINE, screenProgram } from '../../screen.ts';
 import { DEVICE_LABEL_DROP, DEVICE_PAGE_SLOTS } from './menus.ts';
@@ -204,4 +205,24 @@ export function padFontOf(c: Container): number | undefined {
   }
   if (fonts.size > 1) throw new ComposeError(`the device pages draw their pads in fonts ${[...fonts].join(' and ')}`);
   return [...fonts][0];
+}
+
+/**
+ * The one font set of the configuration drawn in `face`, as `fonttable.ts` measures a set's face, or a
+ * refusal: the Harmony One's texts are drawn in a face per role, the same on every compile, where the set's
+ * number differs per configuration, findings section 399. A smoothed set is passed over, since it is one
+ * our font step added for one background, `touchActivityFonts`, and not the face's set.
+ */
+export function fontOfFace(c: Container, face: string): number {
+  const map = characterMap(c);
+  if (map === undefined) throw new ComposeError('the config draws no text this can spell from');
+  const found = (fontSets(c) ?? []).flatMap((set, k) => {
+    try {
+      return !isSmoothedSet(c, set) && measureSet(c, set, map).face === face ? [k] : [];
+    } catch {
+      return [];
+    }
+  });
+  if (found.length !== 1) throw new ComposeError(`the config holds ${found.length} font sets of the face ${face}, not one`);
+  return found[0] as number;
 }

@@ -31,8 +31,10 @@ import {
   BITMAP_ROW_BREAK,
   PIXEL_BITS,
   PIXEL_BYTES,
+  SCREEN_CALL,
   SCREEN_DRAW_IMAGE,
   SCREEN_DRAW_IMAGE_AT,
+  SCREEN_RETURN,
   SCREEN_SELECT_FONT,
   SCREEN_TEXT_AT,
   SCREEN_TEXT_INLINE,
@@ -307,7 +309,7 @@ function textDrawn(
       under.push(raster.pixels[row * raster.width + column] as number);
     }
   }
-  return { at, selectAt, font, x, y, width, height, under };
+  return { at, selectAt, font, x, y, width, height, under, covered: false };
 }
 
 /**
@@ -381,9 +383,10 @@ export function renderVariants(
  * A string as the renderer met it, for a caller that wants to know what a text was drawn over:
  * `blending.ts` blends a letter into the colour under it, and this is where that colour is read.
  *
- * `under` is the raster in the string's box at the moment before the string was drawn, so it is what the
- * program had painted there by then: pictures, earlier strings, or `UNDRAWN`. The box is the string's
- * glyphs side by side, its set's height high, clipped to the screen. A path met twice reports twice.
+ * `under` is what the pictures had painted in the string's box at the moment before the string was drawn,
+ * or `UNDRAWN`, and `covered` whether pictures drawn after it painted over the whole box. The box is the
+ * string's glyphs side by side, its set's height high, clipped to the screen. A path met twice reports twice,
+ * and a page's strings are reported once the page is drawn, since only then is `covered` known.
  */
 export interface TextDrawn {
   /** Blob offset of the text instruction. */
@@ -396,8 +399,21 @@ export interface TextDrawn {
   y: number;
   width: number;
   height: number;
-  /** The pixels in the box before the draw, row major, clipped to the screen. */
+  /**
+   * The pixels the pictures drew in the box before the draw, row major, clipped to the screen: what lies
+   * behind the text, with every other text left out. Two lines of a screen can overlap by a row or more, 3 on
+   * a Harmony One help screen, so a line's box can hold the bottom of the one above; that is another text and
+   * not the background, and a letter blended for it would be blended for a neighbour's ink. Said "the pixels
+   * in the box before the draw" until 16 October 2026, which was the same thing while letters were one bit
+   * and nothing overlapping had been blended.
+   */
   under: number[];
+  /**
+   * Whether pictures drawn after the string painted over every pixel of its box, so nobody sees it: the
+   * Harmony One's chrome draws an activity's title once before its background and once after, and the first
+   * lies on nothing drawn yet and is then covered.
+   */
+  covered: boolean;
 }
 
 /**
@@ -428,7 +444,14 @@ function draw(
   observe?: (text: TextDrawn) => void,
 ): RenderedPage | undefined {
   const raster = blankScreen(c);
-  if (raster === undefined) return undefined;
+  // The pictures alone, which is what a text's `under` is read from, and per pixel the number of the last
+  // picture draw that painted it, which is what says a string was covered after it was drawn.
+  const backdrop = blankScreen(c);
+  const stamps = blankScreen(c);
+  if (raster === undefined || backdrop === undefined || stamps === undefined) return undefined;
+  stamps.pixels.fill(-1);
+  let draws = 0;
+  const pending: { text: TextDrawn; after: number }[] = [];
   const out: RenderedPage = {
     raster,
     pictures: 0,
@@ -438,76 +461,115 @@ function draw(
     branches: 0,
   };
   const sets = fontSets(c) ?? [];
-  const seen = new Set<number>();
-  let at: number | undefined = address;
   let font = -1;
   let selectAt: number | undefined;
-  while (at !== undefined && !seen.has(at)) {
-    seen.add(at);
-    const program: ScreenInstruction[] | undefined = screenProgram(c, at);
-    if (program === undefined) return out;
-    let next: number | undefined;
-    for (const instruction of program) {
-      if (instruction.opcode === SCREEN_SELECT_FONT) {
-        font = instruction.operands[0] ?? -1;
-        selectAt = instruction.start;
-      } else if (instruction.opcode === SCREEN_DRAW_IMAGE
-               || instruction.opcode === SCREEN_DRAW_IMAGE_AT) {
-        const named = pictureReference(instruction);
-        const picture = named === undefined ? undefined : bitmapAt(c, named);
-        const rows = picture === undefined ? undefined : bitmapPixels(c, picture);
-        if (rows === undefined) out.picturesMissing += 1;
-        else {
-          const o = instruction.operands;
-          if (instruction.opcode === SCREEN_DRAW_IMAGE) {
-            drawPixels(raster, rows, o[0] ?? 0, o[1] ?? 0);
-          } else {
-            // Opcode 3 is a **region copy**, not a whole picture draw: six bytes are
-            // `dx, dy, sx, sy, w, h` with the destination first, section 118 and section 148.
-            drawRegion(raster, rows, o[0] ?? 0, o[1] ?? 0, o[2] ?? 0, o[3] ?? 0, o[4] ?? 0, o[5] ?? 0);
+  // A call walks into its target and comes back at its return, on the architectures whose call names a
+  // program, `SCREEN_CALL_TARGET_ARCHITECTURES`: the Harmony One's pages call a chrome program that draws
+  // their background and title, so a page drawn without it is a page without its header. The font the
+  // callee selects stays in force after the return, as on the remote. Bounded in depth, since a call is
+  // never more than one level deep in the corpus and a cycle must not hang the walk.
+  const walk = (address: number, depth: number): void => {
+    const seen = new Set<number>();
+    let at: number | undefined = address;
+    while (at !== undefined && !seen.has(at)) {
+      seen.add(at);
+      const program: ScreenInstruction[] | undefined = screenProgram(c, at);
+      if (program === undefined) return;
+      let next: number | undefined;
+      for (const instruction of program) {
+        if (instruction.opcode === SCREEN_RETURN && depth > 0) return;
+        if (instruction.opcode === SCREEN_CALL && instruction.targets[0] !== undefined && depth < CALL_DEPTH) {
+          walk(instruction.targets[0], depth + 1);
+          continue;
+        }
+        if (instruction.opcode === SCREEN_SELECT_FONT) {
+          font = instruction.operands[0] ?? -1;
+          selectAt = instruction.start;
+        } else if (instruction.opcode === SCREEN_DRAW_IMAGE
+                 || instruction.opcode === SCREEN_DRAW_IMAGE_AT) {
+          const named = pictureReference(instruction);
+          const picture = named === undefined ? undefined : bitmapAt(c, named);
+          const rows = picture === undefined ? undefined : bitmapPixels(c, picture);
+          if (rows === undefined) out.picturesMissing += 1;
+          else {
+            const o = instruction.operands;
+            if (instruction.opcode === SCREEN_DRAW_IMAGE) {
+              drawPixels(raster, rows, o[0] ?? 0, o[1] ?? 0);
+            drawPixels(backdrop, rows, o[0] ?? 0, o[1] ?? 0);
+            drawPixels(stamps, stamped(rows, draws), o[0] ?? 0, o[1] ?? 0);
+            } else {
+              // Opcode 3 is a **region copy**, not a whole picture draw: six bytes are
+              // `dx, dy, sx, sy, w, h` with the destination first, section 118 and section 148.
+              drawRegion(raster, rows, o[0] ?? 0, o[1] ?? 0, o[2] ?? 0, o[3] ?? 0, o[4] ?? 0, o[5] ?? 0);
+            drawRegion(backdrop, rows, o[0] ?? 0, o[1] ?? 0, o[2] ?? 0, o[3] ?? 0, o[4] ?? 0, o[5] ?? 0);
+            drawRegion(stamps, stamped(rows, draws), o[0] ?? 0, o[1] ?? 0, o[2] ?? 0, o[3] ?? 0, o[4] ?? 0, o[5] ?? 0);
+            }
+            out.pictures += 1;
+          draws += 1;
           }
-          out.pictures += 1;
+        } else if (instruction.opcode === SCREEN_TEXT_INLINE || instruction.opcode === SCREEN_TEXT_AT) {
+          const codes = instruction.opcode === SCREEN_TEXT_INLINE
+            ? instruction.glyphs
+            : glyphsReferencedBy(c, instruction);
+          if (codes !== undefined) {
+            const x = instruction.operands[0] ?? 0;
+            const y = instruction.operands[1] ?? 0;
+            if (observe !== undefined) {
+              pending.push({ text: textDrawn(c, backdrop, sets[font], codes, x, y, instruction.start, selectAt, font), after: draws });
+            }
+            out.glyphsMissing += drawString(c, raster, sets[font], codes, x, y);
+            out.strings += 1;
+          }
         }
-      } else if (instruction.opcode === SCREEN_TEXT_INLINE || instruction.opcode === SCREEN_TEXT_AT) {
-        const codes = instruction.opcode === SCREEN_TEXT_INLINE
-          ? instruction.glyphs
-          : glyphsReferencedBy(c, instruction);
-        if (codes !== undefined) {
-          const x = instruction.operands[0] ?? 0;
-          const y = instruction.operands[1] ?? 0;
-          if (observe !== undefined) observe(textDrawn(c, raster, sets[font], codes, x, y, instruction.start, selectAt, font));
-          out.glyphsMissing += drawString(c, raster, sets[font], codes, x, y);
-          out.strings += 1;
+        if (!transfers(instruction)) continue;
+        if (instruction.targets.length > 1) {
+          out.branches += 1;
+          const decided = decisions[choices.length] ?? 0;
+          const switched = screenSwitch(instruction);
+          // Every other arm is a variant somebody may want to see, so it is offered as a prefix.
+          const taken = [...decisions.slice(0, choices.length), decided];
+          for (let arm = 0; arm < instruction.targets.length; arm += 1) {
+            if (arm !== decided) forks.push([...taken.slice(0, -1), arm]);
+          }
+          const one = switched?.cases[decided];
+          choices.push({
+            variable: switched?.variable ?? -1,
+            arms: instruction.targets.length,
+            target: instruction.targets[decided] as number,
+            ...(one?.value === undefined ? {} : { value: one.value }),
+            ...(one?.from === undefined ? {} : { from: one.from, to: one.to as number }),
+          });
+          next = instruction.targets[decided];
+          break;
         }
-      }
-      if (!transfers(instruction)) continue;
-      if (instruction.targets.length > 1) {
-        out.branches += 1;
-        const decided = decisions[choices.length] ?? 0;
-        const switched = screenSwitch(instruction);
-        // Every other arm is a variant somebody may want to see, so it is offered as a prefix.
-        const taken = [...decisions.slice(0, choices.length), decided];
-        for (let arm = 0; arm < instruction.targets.length; arm += 1) {
-          if (arm !== decided) forks.push([...taken.slice(0, -1), arm]);
-        }
-        const one = switched?.cases[decided];
-        choices.push({
-          variable: switched?.variable ?? -1,
-          arms: instruction.targets.length,
-          target: instruction.targets[decided] as number,
-          ...(one?.value === undefined ? {} : { value: one.value }),
-          ...(one?.from === undefined ? {} : { from: one.from, to: one.to as number }),
-        });
-        next = instruction.targets[decided];
+        next = instruction.targets[0];
         break;
       }
-      next = instruction.targets[0];
-      break;
+      at = next;
     }
-    at = next;
+  };
+  walk(address, 0);
+  if (observe !== undefined) {
+    for (const { text, after } of pending) {
+      let covered = text.width > 0 && text.height > 0;
+      for (let row = Math.max(0, text.y); covered && row < Math.min(stamps.height, text.y + text.height); row += 1) {
+        for (let column = Math.max(0, text.x); column < Math.min(stamps.width, text.x + text.width); column += 1) {
+          if ((stamps.pixels[row * stamps.width + column] as number) < after) { covered = false; break; }
+        }
+      }
+      observe({ ...text, covered });
+    }
   }
   return out;
 }
+
+/** A picture's rows with every drawn pixel replaced by `draw`, for the stamp raster. */
+function stamped(rows: readonly (readonly (number | undefined)[])[], draw: number): (number | undefined)[][] {
+  return rows.map((row) => row.map((pixel) => (pixel === undefined ? undefined : draw)));
+}
+
+/** How deep calls are followed: one level is all the corpus uses, and two leaves room without risking a loop. */
+const CALL_DEPTH = 2;
 
 /** Render a mode page, which is the unit a person sees: one screen of one mode. Section 66. */
 export function renderPage(c: Container, page: ModePage): RenderedPage | undefined {

@@ -218,7 +218,7 @@ interface PageTexts {
   spell: (preferred: number, text: string) => { font: number; codes: number[] };
   width: (preferred: number, text: string) => number;
   drawn: (x: number, y: number, text: string, preferred: number, current_: number | undefined) => number[];
-  insert: (at: number, bytes: readonly number[]) => void;
+  insert: (at: number, bytes: readonly number[], options?: { opens?: boolean }) => void;
   restate: (one: ScreenInstruction, font: number | undefined, want: string, what: string, endsAt?: number) => void;
 }
 
@@ -249,10 +249,23 @@ export function pageTexts(start: Container, menu: number): PageTexts {
     const back = font !== current_ && current_ !== undefined ? [SCREEN_SELECT_FONT, current_] : [];
     return [...(font === current_ ? [] : [SCREEN_SELECT_FONT, font]), ...inline(x, y, codes), ...back];
   };
-  // Insert `bytes` at blob offset `at`, which must be an instruction boundary the caller chose.
-  const insert = (at: number, bytes: readonly number[]): void => {
+  // Insert `bytes` at blob offset `at`, which must be an instruction boundary the caller chose. A
+  // relocation moves every pointer landing at `at` up with the bytes that were there, which is right for
+  // bytes put **in front of** a program and wrong for bytes that **open** one: a page closing on a switch
+  // draws its counter in the program its arms jump back to, and where that program is the end marker
+  // alone, the number goes in at the very address the arms name. Moved with the end marker, the arms
+  // jumped past the number, which nothing then drew, and a second paging of the same screen found no
+  // number and inserted it again: 56 bytes claimed by nothing on the first configuration composed for
+  // the spare Harmony One with a paged device page. `opens` keeps those pointers on the inserted bytes.
+  const insert = (at: number, bytes: readonly number[], options: { opens?: boolean } = {}): void => {
     const hole = relocate(state.current, at, bytes.length);
     hole.bytes.set(bytes, at);
+    if (options.opens === true) {
+      const named = state.current.flashBase + at;
+      for (const field of hole.rewritten) {
+        if (field.to - bytes.length === named) hole.bytes.set(new Writer(3).u24(named).bytes, field.at);
+      }
+    }
     state.current = parse(restamped(hole.bytes));
   };
   // Keep a text that reads `want`. Otherwise an inline one is cut and drawn again, in a font that has
@@ -510,6 +523,12 @@ export interface ComposeActivityRowOptions {
    * first row is a music activity, so an unqualified television activity comes out wearing a disc.
    */
   iconLike?: string;
+  /**
+   * The activity's MyHarmony type: on the Harmony One the row is then drawn in our pictures, the row box and
+   * the type's icon, `TouchChoices.activityIcons`, rather than copied off the first row; a menu with no row
+   * needs it. The Harmony 600, 650 and 700 draw no icon on a row and ignore it.
+   */
+  type?: string;
 }
 
 export interface ComposeActivityScreenOptions {
@@ -521,6 +540,12 @@ export interface ComposeActivityScreenOptions {
    * built, section 336, so it is refused there rather than ignored.
    */
   startupLike?: string;
+  /**
+   * The activity's MyHarmony type, `WatchTV`, `ListenToMusic` and so on, which decides the icon a built
+   * screen draws: the Harmony One's, `TouchChoices.activityIcons`. The Harmony 600, 650 and 700 draw one
+   * picture for every type and ignore it.
+   */
+  type?: string;
 }
 
 export interface ComposedActivityScreen {
@@ -548,6 +573,12 @@ export interface ComposedActivityScreen {
   maps?: number[];
   /** Arch 14 only: how many pages the working screen has. */
   pages?: number;
+  /**
+   * Keys the screens need the activity's own keypad to bind, which `composeActivity` adds to the ones the
+   * roles give: on the Harmony One, scan 55, the key that opens the device list, bound in every activity of
+   * Logitech's compiles, findings section 399.
+   */
+  keys?: { scan: number; list: number }[];
 }
 
 /**

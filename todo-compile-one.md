@@ -66,6 +66,8 @@ One with its sequence's keys translated by name, since the One's keys have other
       - [ ] 1.2.11.2.4 The activity's own entries: base slot 11's four case programs, its device list, and the "an activity is running" list the first activity creates
       - [ ] 1.2.11.2.5 The first row on an activity menu that has none
       - [ ] 1.2.11.2.6 Each part checked against Logitech's: every one of the 64 activities' screens rebuilt from its name, type, rows and device list, the way the Harmony 650's builders are checked
+      - [ ] 1.2.11.2.7 The One's look moved from the lab script into the codec's One pipeline: the flat boxes, smoothed letters, device look, colour button circles and centred pad labels
+      - [ ] 1.2.11.2.8 A colour button's word wider than its circle ("Yellow") lies on two colours and stays unsmoothed; settle it before the words go back on by default (a whole button in the colour was tried and rejected)
     - [x] 1.2.11.3 The activity's keypad from its roles with the One's own keys, section 323's rule checked on the One; done, section 398: 1704 of 1752 keys and 38 of 50 activities whole, seven of the nine distinct ones, the keys the family's, `activityKeyRules`
 - [ ] 1.3 A bench test of it: every code as the file predicts, the touch rows, device mode and All Off
 

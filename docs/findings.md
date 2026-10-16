@@ -4623,12 +4623,17 @@ a terminator.
 
 ### Why it is the screen
 
-The drawing primitive behind opcodes 2, 3, 4 and 5 bounds both its coordinates against `0x80`,
-drives `LATB` bit 3 between two write paths, which is a display controller's register select line,
-and resolves a glyph by indexing a font table at `0x398` by **the code minus one**. That last
-detail is why the inline strings are not text: they are glyph indices. Of the 1000 or so strings in
-the corpus, **not one decodes as printable ASCII**, and calling them text would be the easy
-mistake.
+On the Harmony 700, the drawing primitive behind opcodes 2, 3, 4 and 5 bounds both its coordinates
+against `0x80`, drives `LATB` bit 3 between two write paths, which is a display controller's register
+select line, and resolves a glyph by indexing a font table whose address it holds in RAM at `0x398` by
+**the code minus one**. That last detail is why the inline strings are not text: they are glyph indices.
+Of the 1000 or so strings in the corpus, **not one decodes as printable ASCII**, and calling them text
+would be the easy mistake.
+
+**On the Harmony One** the font pointer is at `0x2EC` to `0x2EE`, written by the copy at `0x2B93C` that the
+font select handler at `0x292AC` calls, the glyph is likewise the code minus one, at `0x2940A`, and its pixel
+push at `0x228AA` clips at 176 by 220, section 399. The 600's is not read. This said "a font table at
+`0x398`" with no image named until 16 October 2026, which is the 700's address only.
 
 ### The closure
 
@@ -4683,8 +4688,8 @@ those opcodes render actually are.
 over every offset pair found no replacement, so those two architectures reach their screen programs
 some other way.
 
-**The glyph table.** Its address is held in RAM at `0x398` and where that is loaded from is not
-traced.
+**The glyph table.** Its address is held in RAM, at `0x398` on the Harmony 700, and where that is loaded
+from is not traced. Section 46 traced it: the font select instruction stores it there.
 
 ## 41. The trailer checksum
 
@@ -52286,3 +52291,138 @@ population, and stated which arrow is up without scoping it to the three devices
 An activity of a One compile with stated roles whose volume keys send a device other than the volume
 device; a control device binding the lower arrow itself and the activity putting a screen command there.
 
+
+## 399. The Harmony One's look in our pictures: what Logitech's pads hold, and the title, colour buttons and labels on ours
+
+**Asked for by `todo-compile-one.md` 1.2.11.2**, while the One's screens were given our own pictures under
+decision 24: flat boxes in one colour, so that a label's letters can be smoothed against the one colour behind
+them, a device look of our own, the four colour keys drawn as circles, and the labels centred. Each of those
+rests on a measurement of what Logitech's compiles draw, and those are this section.
+
+**Sources.** Logitech's nineteen Harmony One compiles, `ONE_COMPILES`; the One 3.4 application image for the
+font select. Logitech's client was not opened: every claim here is about what a compile holds or what the
+firmware does with it, and the client holds neither.
+
+**Scope.** Everything here is the Harmony One's. The 600, 650 and 700 have no pads of this shape; the 700's
+font select is section 46's, and the 600's and 650's are not read.
+
+### The working screen's title is drawn in the activity menu's title font
+
+On every page of every activity's working screen, the title at the corner is drawn in the font the activity
+menu's own header draws its title in, and never in the font a device page's header uses: 101 pages over the
+fifteen compiles holding an activity, the other four holding none. A font carries its colour in its glyphs, so
+taking the device pages' font drew the title in their colour, which is how this was found.
+`activityTitleFont`. **The index differs between compiles**, 3 in eleven, 8 in `one_config_unprogrammed` and
+7 in the three `compiled_protocols`, and 3 is the device title's index in some of them, so a composer finds
+the font by its use and never by its number. The menu title, the device title and the pad labels are one 14
+pixel face in three colours, glyph for glyph, as the blind reviewer measured.
+
+### Logitech's pads
+
+**A device page draws one pad picture per place, three distinct pictures in all, each averaging `#ae6a37`**
+over its interior two rows and three columns in from the edge, an orange brown gradient (a four pixel margin
+gives `#ac6734`), on the eighteen compiles whose device modes the reader finds. The nineteenth,
+`harvest_one_families_1`, has device pages that `deviceModeMaps` does not find, and its 263 pad draws agree,
+all `#ae6a37`, as a reviewer measured; the device look refuses that compile, reading its device modes' chromes
+as no header at all, which is not read here. **An activity's pad averages `#2b98ba`**, blue, on all fifteen
+compiles holding an activity; the other means measured on activity pages are other pictures, not read here. The look chosen for ours is in
+`TouchChoices.deviceBox` and `activityBox`, and the device colour was first set to that mean and then
+replaced by a green chosen by eye.
+
+**Two compiles draw the colour keys as pictures of their own, on one activity page each.** In `one_config`
+and `one_config_unprogrammed`, on one activity page, the four pads labelled Red, Green, Yellow and Blue draw
+the ordinary blue pad and then a second picture over it, a glossy circle in that colour, one per colour; no
+other picture is drawn only under those words with a centre unlike its edge. Their other colour pads, the
+device pages', draw the word on the ordinary pad: 4 of 16 colour places in `one_config` carry a circle and 4
+of 8 in `one_config_unprogrammed`. **Logitech draws the word over its circle**, in the pad font. None of the
+other seventeen compiles draws one. So the
+shape is borrowed from a configuration and drawing it is ours. `withColourButtons` recognises the pad by its word,
+`TouchChoices.colourButtons`, and draws our circle with a white outline over our box.
+
+**The words go by default**, `colourButtonLabels`. Cutting them needed one change to the relocator: most
+colour words in Logitech's compiles are drawn by reference, 360 of 424, on 14 of the 16 compiles that carry
+them, a six byte text whose last three bytes point at another text's glyphs, and `excise` refused to cut an
+instruction holding a pointer field. A cut that holds the whole field takes it with the instruction and leaves
+nothing naming anything that moved, so `excise` allows that when asked, `wholeFields`, and still refuses a
+field it only overlaps; the step cuts the referencing texts in one pass and the word they drew in the next.
+**Each word is cut once, and only a text is ever cut**: where Logitech draws two pictures under one word, the
+word was listed under both draws, cut twice, and the second cut took the six bytes after it, a picture draw,
+which `wholeFields` let through. On `one_config` the step now turns all 20 colour pad draws, at 16 places,
+into circles, leaves no word, and leaves every other picture draw of every page where it was.
+
+**A word wider than its circle cannot be smoothed.** "Yellow" in our pad letters is 35 to 36 pixels wide,
+40 in Logitech's, and the 38 pixel circle chosen for words on is narrower than that at the rows its letters
+occupy, so its letters lie on the circle, its rim and the box, and a smoothed letter is
+mixed against one colour in advance, the remote copying it as stored. The blending step leaves such a text
+in its unsmoothed letters. With the words off it does not arise; `todo-compile-one.md` 1.2.11.2.8 holds it.
+
+### Where a pad's label sits, and centring it
+
+**On a device page a pad's label lines sit 20 pixels into the pad, at 15 and 26, or at 9, 20 and 31**: 2504,
+683 and 45 pads over the eighteen compiles whose device modes the reader finds, and no other placement, and
+`harvest_one_families_1`'s are all at 20 as well. That is section 394's rule, lines 11 apart centred on 20.
+**Placed by its capitals the label sits low**: device page labels are drawn in a 14 pixel set on all
+eighteen, whose capitals run from row 3 to row 10, section 396, so a one line label's capitals have their
+middle 2 pixels below the pad's, in Logitech's own letters as in ours, since ours reach the same rows. It was
+seen on our flat boxes; Logitech's boxes are a gradient, and whether that hid it is not known. **Activity
+screens place their labels as device pages do**, at 20 for one line and 15 and 26 for two, on all fifteen;
+the remote's other pages differ, at 19 or 20 for one line, 13 and 25 for two, and 7, 19 and 31 for three on
+two compiles. The blind reviewer, who grouped a pad's lines as the texts drawn after it on one path, found only
+20 on the other pages; the 19s are there in the instructions, on `one_config`'s mode 45 for one, each after
+its page's only pad at that place, and why the two walks differ is not resolved.
+
+**`withCentredPadLabels` places every pad's label by its letters**: the block from the first line's capital
+top to the last line's capital foot is centred in the pad, descenders hanging below, and only each text's y
+byte changes, on every page that draws a pad at that place. **A label is the lines of one page at one
+place**: grouping a place's lines across every page joined one page's last line to the next page's first and
+moved 6 to 31 lines per compile by the wrong amount, as a reviewer measured. On Logitech's compile of two
+devices it moves 368 label lines, 348 up by two pixels and 20 by one, changes no other byte, moves nothing on
+a second pass, and puts back a label pushed three pixels down.
+
+### The font select on the Harmony One
+
+**Read in the 3.4 image, the handler at `0x292AC`** fetches its one byte operand into `0xD1F`, seeks base
+slot 7 (`0x2BA76`), reads the set count into `0xD20` and never uses it, steps three bytes per set with the
+operand as the low byte of a sixteen bit index whose high byte it clears (`0x2BAD2`), and calls the copy at
+`0x2B93C`, which writes the three bytes it finds to `0x2EC` to `0x2EE`. The only reader of that pointer is the
+text routine at `0x293D0`, which indexes the glyphs by the code minus one at `0x2940A` and never compares the
+code with the set's count. **Nothing on that path compares the index with anything**, read twice, by an agent
+and by a reviewer. Logitech's compiles carry 16 sets on four compiles, 17 on two and 18
+on thirteen; a configuration lettered in ours carries more, since each smoothed set is a copy, 31 on the one
+built for the spare Harmony One. So **whether a set past Logitech's eighteenth draws is unconfirmed on
+hardware**; the reading says it should, and the write to the spare One is the test.
+
+### The renderer follows a page's call into its chrome
+
+A Harmony One page calls its chrome, `SCREEN_CALL`, and the renderer drew only the page's own program, so the
+chrome's pictures and texts were missing from every rendering and from what the steps above read off one: the
+colour a row sits on, the header's fonts. It follows the call and returns now, two levels deep, the font
+selected in the chrome staying selected after it, as the firmware's text routine keeps the one pointer. A
+rendering of the render test's six Harmony One containers, its two safe mode ones and four configurations,
+draws 2430 pictures where it drew 1673, against 2819 the programs name, `test/render.test.ts`.
+
+Section 40 said the font table's address is held "at `0x398`" with no image named, which is the Harmony
+700's address; corrected there.
+
+**Asserted**, `packages/codec/test/onelook.test.ts`: the title font over the 101 pages, the pad means, the two
+compiles with colour pictures and their four words each, the device page heights as a census, centring on
+the compile of two devices with its control applied, the device look's pad colour against Logitech's, and
+the colour buttons turning all 20 colour pad draws into circles with no word left and every other draw
+kept. `test/relocate.test.ts`: a cut taking a whole pointer field when asked, the census
+losing exactly that field, and an overlapping cut still refused.
+
+**Corrected per review.** This section first had both steps' counts from code with a defect in it, the
+colour step's 17 circles from a cut that deleted three of Logitech's draws and a fourth under a label that is
+not a colour, and the centring's 342 and 26 from labels grouped across pages; it said 2.5 pixels low from the
+15 pixel face where device page labels use the 14; called the device pad one picture where it is three, and
+the eighteen compiles the ones with a device page where a nineteenth has them unread; placed the colour
+circles on the two compiles' colour pads where they are on one activity page of each; said activity screens
+place their labels differently, which only the remote's other pages do; said "Yellow" is wider than the
+circle at its diameter; said most colour words are drawn by reference on most pages without the count; and
+left the seek of the font select to one reading.
+
+### What would falsify it
+
+A One compile whose working screen draws its title in a device page's font; a device page pad placed at
+another height; a label the centring step moves twice; a set past the eighteenth that the remote draws
+wrongly or not at all.

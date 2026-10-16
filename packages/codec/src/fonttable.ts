@@ -51,7 +51,8 @@
 import type { Container } from './gspm.ts';
 import type { ContainerLayout, ContainerPiece, PieceRef } from './frame.ts';
 import { layOutContainer } from './frame.ts';
-import { IMAGE_TABLE_SLOT, encodeGlyph, fontSets, glyphOf, type FontSet, type Glyph } from './font.ts';
+import { FONT_TABLE_COUNT_WIDTH, IMAGE_TABLE_SLOT, encodeGlyph, fontSets, glyphOf, type FontSet, type Glyph } from './font.ts';
+import { Writer } from './emit.ts';
 import { characterMap, type CharacterMap } from './text.ts';
 import {
   LETTERING_CHARACTERS, defaultWeight, letterRows, type LetterFace, type LetterInks, type Lettering, type OxaniumFaceName,
@@ -84,6 +85,28 @@ export interface SetFace {
   inks?: LetterInks;
   /** The weight it is lettered in, the family's choice per face, `todo-compile-650.md` 10.8.5. Absent as `inks` is. */
   weight?: OxaniumWeight;
+  /**
+   * The one colour its letters are smoothed against, RGB565, on a set added by `extra`: every pixel a letter
+   * partly covers is its ink mixed with this, so the set reads right on that colour alone. Absent on a set
+   * drawn in its inks only.
+   */
+  background?: number;
+}
+
+/**
+ * A font set added after a configuration's own: a copy of set `like`, in its face, height, lettering and
+ * inks, lettered in `weight` and smoothed against `background`, RGB565. What a family asks for when text
+ * sits on one known colour, the label on a flat box of ours, `todo-compile-one.md` 1.2.11.2: a letter's
+ * smoothed edge carries the colour it was mixed with, so a set is smoothed for one background and no other,
+ * and no set of the configuration's own can be, since each is drawn over several.
+ */
+export interface ExtraFontSet {
+  like: number;
+  /** Omitted, the weight set `like` is lettered in. */
+  weight?: OxaniumWeight;
+  background: number;
+  /** Omitted, the inks set `like` is lettered in: a copy in another set's colours where given. */
+  inks?: LetterInks;
 }
 
 /** The decoded glyphs of a set with the code each draws. */
@@ -201,6 +224,7 @@ export interface FontTableBuilt {
  */
 export function withOxaniumFonts(
   layout: ContainerLayout, inks: LetterInks | 'own', weights: Readonly<Partial<Record<OxaniumFaceName, OxaniumWeight>>> = {},
+  extra: readonly ExtraFontSet[] = [],
 ): FontTableBuilt {
   if (inks !== 'own' && new Set([inks.shadowed, inks.plain, inks.shadow]).size !== 3) {
     throw new FontTableError('the two inks and the shadow are three colours, or a letter could not be read back');
@@ -272,10 +296,10 @@ export function withOxaniumFonts(
   const glyphPiece = (face: SetFace, ch: string, index: number, again?: number): ContainerPiece => {
     const own = lettered(face);
     const key = `${shared ? '' : `${index} `}${face.face} ${face.weight} ${face.lettering} ${own.shadowed} ${own.plain} ${own.shadow} ${ch}`
-      + (again === undefined ? '' : ` again ${again}`);
+      + (face.background === undefined ? '' : ` on ${face.background}`) + (again === undefined ? '' : ` again ${again}`);
     let piece = glyphPieces.get(key);
     if (piece === undefined) {
-      const rows = letterRows(letterFaceOf(face), ch, face.lettering, own);
+      const rows = letterRows(letterFaceOf(face), ch, face.lettering, own, face.background);
       piece = { bytes: encodeGlyph(rows[0]!.length, rows), refs: [], owner: 'slot-7-glyph' };
       glyphPieces.set(key, piece);
     }
@@ -317,8 +341,93 @@ export function withOxaniumFonts(
     piece.refs = refs;
   });
 
-  section.before = [...glyphPieces.values(), ...setPieces];
-  return { layout, faces, added, glyphs: glyphPieces.size };
+  // The added sets, after the configuration's own so no index a screen selects moves: each spells every
+  // code the others do, in its header's form, and the table grows by their pointers and its count.
+  const extraFaces: SetFace[] = [];
+  const extraPieces = extra.map((one, k): ContainerPiece => {
+    const like = sets[one.like];
+    const likeFace = faces[one.like];
+    if (like === undefined || likeFace === undefined) throw new FontTableError(`an added set copies set ${one.like}, which the configuration does not carry`);
+    const face: SetFace = {
+      ...likeFace, weight: one.weight ?? likeFace.weight ?? defaultWeight(likeFace.face), background: one.background,
+      ...(one.inks === undefined ? {} : { inks: one.inks }),
+    };
+    extraFaces.push(face);
+    const index = sets.length + k;
+    const count = last - like.first + 1;
+    const bytes = new Uint8Array(3 + 3 * count);
+    bytes[0] = like.height;
+    if (like.countAt === 2) {
+      bytes[1] = like.first;
+      bytes[2] = count;
+    } else {
+      bytes[1] = count;
+      bytes[2] = 0;
+    }
+    const refs: PieceRef[] = [];
+    const drawn = new Set<string>();
+    for (let code = like.first; code <= last; code += 1) {
+      const ch = characters.get(code);
+      if (ch === undefined || !LETTERING_CHARACTERS.includes(ch)) continue;
+      refs.push({ at: 3 + 3 * (code - like.first), to: glyphPiece(face, ch, index, drawn.has(ch) ? code : undefined), offset: 0 });
+      drawn.add(ch);
+    }
+    return { bytes, refs, owner: setPieces[0]?.owner ?? 'slot-7-set' };
+  });
+  if (extraPieces.length > 0) {
+    if (table.bytes.length !== FONT_TABLE_COUNT_WIDTH + 3 * sets.length) {
+      throw new FontTableError('the font table is not a count and its pointers alone, so it is not grown');
+    }
+    const total = sets.length + extraPieces.length;
+    const grown = new Uint8Array(FONT_TABLE_COUNT_WIDTH + 3 * total);
+    grown.set(table.bytes);
+    grown.set(new Writer(2).u16(total).bytes, 0);
+    table.bytes = grown;
+    table.refs = [...table.refs,
+      ...extraPieces.map((to, k): PieceRef => ({ at: FONT_TABLE_COUNT_WIDTH + 3 * (sets.length + k), to, offset: 0 }))];
+  }
+
+  section.before = [...glyphPieces.values(), ...setPieces, ...extraPieces];
+  return { layout, faces: [...faces, ...extraFaces], added, glyphs: glyphPieces.size };
+}
+
+/**
+ * Whether a set's letters are smoothed: drawn in more colours than an ink and a shadow, every pixel a letter
+ * partly covers being a mix. Every set of Logitech's is an ink and at most a shadow, `lettering.ts`, so a
+ * smoothed set is one of ours, lettered against a background.
+ */
+export function isSmoothedSet(c: Container, set: FontSet): boolean {
+  const colours = new Set<number>();
+  for (const [, glyph] of setGlyphs(c, set)) {
+    for (const row of glyph.rows) for (const p of row) if (p !== undefined) colours.add(p);
+    if (colours.size > 2) return true;
+  }
+  return false;
+}
+
+/**
+ * The set `withOxaniumFonts` added as a copy of set `like` in `weight` smoothed against `background`, found by
+ * its letters rather than its index: the one whose capital A is that face's, so a caller holds no set number.
+ * `weight` omitted is the face's default, the weight `like` is lettered in where its build named none, and
+ * `inks` omitted are `like`'s own.
+ * Undefined where the configuration carries no such set.
+ */
+export function fontSetOn(
+  c: Container, like: number, weight: OxaniumWeight | undefined, background: number, inks?: LetterInks,
+): number | undefined {
+  const map = characterMap(c);
+  const sets = fontSets(c);
+  const likeSet = sets?.[like];
+  if (map === undefined || sets === undefined || likeSet === undefined) return undefined;
+  const measured = measureSet(c, likeSet, map);
+  const own = inks ?? { shadowed: measured.ink, plain: measured.ink, shadow: measured.shadow ?? measured.ink };
+  const want = JSON.stringify(letterRows({ name: measured.face, weight: weight ?? defaultWeight(measured.face) }, 'A',
+    measured.lettering, own, background));
+  const code = [...map.codes].find(([, ch]) => ch === 'A')?.[0];
+  if (code === undefined) return undefined;
+  const found = sets.findIndex((set, index) => index !== like && set.height === likeSet.height
+    && JSON.stringify(glyphOf(c, set, code)?.rows) === want);
+  return found < 0 ? undefined : found;
 }
 
 export interface FontTableChecked {
@@ -351,7 +460,7 @@ export function checkOxaniumFonts(c: Container, faces: readonly SetFace[]): Font
       if (code === undefined) throw new FontTableError(`no code draws '${ch}'`);
       const glyph = glyphOf(c, set, code);
       if (glyph === undefined) throw new FontTableError(`font set ${index} has no glyph for '${ch}'`);
-      const want = letterRows(letterFaceOf(face), ch, face.lettering, lettered(face));
+      const want = letterRows(letterFaceOf(face), ch, face.lettering, lettered(face), face.background);
       if (JSON.stringify(glyph.rows) !== JSON.stringify(want)) {
         throw new FontTableError(`font set ${index}'s '${ch}' is not ${face.face} ${face.weight} ${face.lettering}`);
       }

@@ -62,6 +62,28 @@ Generated from `packages/codec`, `packages/usb` and the drawing by `make remote-
 * **Safe mode** lists five images, each with a checksum and a version, seen at the bench and matched to
   the images read off the unit, section 190; [firmware.md](firmware.md).
 
+## Letters and pads
+
+* **A letter is a stored picture, copied as it is.** The configuration carries its font sets, each glyph in
+  its own colours, and the remote draws text by copying those pixels; it mixes nothing with what lies behind,
+  so a smoothed letter is smoothed against one background colour chosen in advance, read in configurations,
+  sections 46 and 396.
+* **Five faces**, at 11, 14 and 16 pixels and at 15 in two weights, each set in its own ink, over a shadow of its own on all but one; the
+  button labels carry a dark shadow one pixel down and right, read from configurations, section 396.
+* **How many font sets**: Logitech's compiles carry 16 to 18. The font select instruction takes its index as
+  one byte and nothing in its handler bounds it, read in the 3.4 firmware, section 399; that a set past the
+  eighteenth draws is **not checked** on a unit.
+* **A pad** is a box 81 pixels wide and 50 tall at one of six places, two per row, read from configurations,
+  section 394. On a device page Logitech puts a label's lines 20 pixels into the pad, or at 15 and 26, or 9,
+  20 and 31, in a 14 pixel set, which leaves a one line label's capitals 2 pixels below the middle;
+  activity screens place them alike, section 399.
+* **Logitech's pad colours**: a device page's pads are orange brown gradients averaging `#ae6a37`, an
+  activity's a blue one averaging `#2b98ba`, read from configurations, section 399.
+* **The colour keys**: two configurations draw a glossy circle over the pad labelled Red, Green, Yellow or
+  Blue on one activity page; everywhere else the word sits on the ordinary pad, section 399.
+* **An activity's working screen draws its title in the activity menu's title font**, not a device page's,
+  read from configurations, section 399.
+
 ## The clock
 
 **The One shows the time**: small, the day and the time in twelve hour form, `Sun 3:42` after a battery
@@ -77,3 +99,4 @@ never been used, section 111.
 * The horizontal scale of the panel to pixel transform.
 * Whether the date on screen, not only the time, matches the stamp, sections 242 and 322.
 * What the slideshow looks like on this unit, and the infrared indicator.
+* Whether a font set past the eighteenth draws, section 399.
