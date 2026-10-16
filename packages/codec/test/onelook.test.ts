@@ -10,10 +10,13 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { load, skipUnless } from '@harmony/lab';
-import { type Container, activityScreens, deviceModeMaps, modeRecords, parse } from '../src/index.ts';
+import { type Container, activityScreens, composeDevice, composeDeviceScreen, deviceModeMaps, modeRecords, parse, taggedList, touchPages } from '../src/index.ts';
 import { bitmapPixels, renderVariants } from '../src/render.ts';
 import { rgb565, rgbTo565 } from '../src/png.ts';
-import { bitmapAt, reachablePrograms, SCREEN_CALL, SCREEN_DRAW_IMAGE, SCREEN_TEXT_AT, SCREEN_TEXT_INLINE, screenProgram } from '../src/screen.ts';
+import {
+  bitmapAt, reachablePrograms, SCREEN_CALL, SCREEN_DRAW_IMAGE, SCREEN_END, SCREEN_JUMP, SCREEN_SWITCH_NARROW, SCREEN_TEXT_AT,
+  SCREEN_TEXT_INLINE, screenProgram,
+} from '../src/screen.ts';
 import { characterMap, decode } from '../src/text.ts';
 import { textGlyphs } from '../src/shared/spelling.ts';
 import { activityTitleFont } from '../src/families/touch/activityscreen.ts';
@@ -300,4 +303,96 @@ test('section 400: a screen\'s entry switches its page keys\' lights on where it
   assert.equal(back.blob.length, without.blob.length + 3);
   const entering = back.actionLists()![enter]!;
   assert.ok(entering.some((one) => one.opcode === 0x7f && lists[one.operand]?.[0]?.operand === 0xc022));
+});
+
+test('section 401: every device page of the One compiles closes on the two arm switch, and every one whose hit page offers both keys below the screen binds both',
+     skipUnless(...ONE_COMPILES), () => {
+  const tally = { containers: 0, pages: 0, switched: 0, offering: 0, bindsBoth: 0, bindsOne: 0, boundNotOffered: 0 };
+  for (const name of ONE_COMPILES) {
+    const c = containerOf(name);
+    const records = modeRecords(c)!;
+    const hits = touchPages(c)!;
+    const modes = new Set(deviceModeMaps(c).map((one) => one.mode));
+    if (modes.size > 0) tally.containers += 1;
+    for (const mode of modes) {
+      for (const page of records[mode]!.pages) {
+        tally.pages += 1;
+        const closing = (screenProgram(c, page.program) ?? []).at(-1);
+        if (closing?.opcode === SCREEN_SWITCH_NARROW && closing.operands[1] === 2) tally.switched += 1;
+        const codes = (hits.records[page.lead!]?.areas ?? []).map((area) => area.code);
+        const offers = codes.includes(43) && codes.includes(44);
+        const entries = taggedList(c, page.list)?.entries ?? [];
+        const bound = [43, 44].filter((scan) => entries.some((one) => one.tag === (0x80 | scan) && one.opcode !== 0)).length;
+        if (offers) {
+          tally.offering += 1;
+          if (bound === 2) tally.bindsBoth += 1;
+          if (bound === 1) tally.bindsOne += 1;
+        } else if (bound > 0) {
+          tally.boundNotOffered += 1;
+        }
+      }
+    }
+  }
+  // Eighteen of the nineteen have a device page; the pages that do not offer both are a device's short last page.
+  assert.deepEqual(tally,
+    { containers: 18, pages: 571, switched: 571, offering: 508, bindsBoth: 508, bindsOne: 0, boundNotOffered: 14 });
+});
+
+test('section 401: a composed device page binds the keys below the screen as the configuration\'s own device page does and closes on a copy of its switch, and without one to copy closes plainly',
+     skipUnless('harvest_one_two_devices'), () => {
+  const TELEVISION = [
+    { stated: 'G:Toshiba 32 Bit:(0x20DF10EF)(Repeat)():3', held: false },
+    { stated: 'G:Toshiba 32 Bit:(0x20DF40BF)(Repeat)():3', held: true },
+  ] as const;
+  const rows = ['Power', 'Mute', 'Input', 'Guide', 'Menu', 'Exit', 'Info'];
+  const compose = (c: Container) => {
+    const device = composeDevice(c, { label: 'TV', commands: TELEVISION, power: 0 });
+    const screen = composeDeviceScreen(parse(device.bytes), 'TV', rows.map((label) => ({ label, list: device.lists[0] as number })));
+    return { after: parse(screen.bytes), mode: screen.mode };
+  };
+  const c = containerOf('harvest_one_two_devices');
+  const { after, mode } = compose(c);
+  const records = modeRecords(after)!;
+  // The page it copies: the first device page of Logitech's that binds both.
+  const donor = [...new Set(deviceModeMaps(after).map((one) => one.mode))].filter((one) => one !== mode)
+    .flatMap((one) => records[one]!.pages)
+    .find((page) => (taggedList(after, page.list)?.entries ?? []).filter((one) => [0x80 | 43, 0x80 | 44].includes(one.tag)).length === 2)!;
+  const bottomOf = (list: number) => (taggedList(after, list)?.entries ?? [])
+    .filter((one) => [0x80 | 43, 0x80 | 44].includes(one.tag)).map((one) => [one.tag, one.operand, one.opcode]);
+  const armsOf = (program: number) => {
+    const closing = screenProgram(after, program)!.at(-1)!;
+    assert.equal(closing.opcode, SCREEN_SWITCH_NARROW);
+    const tail = after.flashBase + closing.start + closing.length;
+    return [u24(closing.operands, 3), u24(closing.operands, 7)].map((arm) => {
+      const program = screenProgram(after, arm)!;
+      const jump = program.findIndex((one) => one.opcode === SCREEN_JUMP);
+      // Each arm jumps back to the byte after the switch, where the counter and "Devices" are drawn.
+      assert.equal(u24(program[jump]!.operands, 0), tail);
+      return program.slice(0, jump).map((one) => [...after.blob.slice(one.start, one.start + one.length)].join(','));
+    });
+  };
+  const pages = records[mode]!.pages;
+  assert.equal(pages.length, 2);
+  for (const page of pages) {
+    assert.deepEqual(bottomOf(page.list), bottomOf(donor.list));
+    // The arms draw what the copied page's draw, the same fonts and the same strings.
+    assert.deepEqual(armsOf(page.program), armsOf(donor.program));
+  }
+  // The control: the same configuration with every device page's two bindings cut to nothing, a same length
+  // edit, has no page to copy, and the composed pages bind neither key and close on the end marker.
+  const cut = Uint8Array.from(c.blob);
+  for (const one of new Set(deviceModeMaps(c).map((m) => m.mode))) {
+    for (const page of modeRecords(c)![one]!.pages) {
+      const at = c.blobOffsetOf(page.list)!;
+      (taggedList(c, page.list)?.entries ?? []).forEach((entry, k) => {
+        if ([0x80 | 43, 0x80 | 44].includes(entry.tag)) cut.set([0, 0, 0], at + 1 + 4 * k + 1);
+      });
+    }
+  }
+  const plain = compose(parse(restamped(cut)));
+  assert.equal(modeRecords(plain.after)![plain.mode]!.pages.length, 2);
+  for (const page of modeRecords(plain.after)![plain.mode]!.pages) {
+    assert.deepEqual((taggedList(plain.after, page.list)?.entries ?? []).filter((one) => [0x80 | 43, 0x80 | 44].includes(one.tag)), []);
+    assert.equal(screenProgram(plain.after, page.program)!.at(-1)!.opcode, SCREEN_END);
+  }
 });

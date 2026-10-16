@@ -367,13 +367,18 @@ test('one_config takes the television onto its screen and every check holds', sk
   const page = record.pages[0]!;
   assert.equal(page.lead, 10, 'the six slot device layout, reused rather than inserted');
   const bindings = taggedList(after, page.list)!;
+  // The two keys below the screen first, bound as the configuration's own first device page binds them, the
+  // working screen's table and the list back to the device list, section 401; then the rows.
   assert.deepEqual(bindings.entries.map((one) => [one.tag & 0x3f, one.opcode, one.operand]),
-                   ROWS.map((row) => [48 + row.k, 0x7f, device.lists[row.k]]),
-                   'the rows run the commands, top left to middle left');
+                   [[43, 0x72, 0x823], [44, 0x7f, 3815], ...ROWS.map((row) => [48 + row.k, 0x7f, device.lists[row.k]])],
+                   'the keys below the screen, then the rows running the commands, top left to middle left');
+  // The page closes on the switch labelling those keys "Activities" or "Current Activity", so two screens.
   const rendered = renderVariants(after, page.program);
-  assert.equal(rendered.variants.length, 1, 'no switch, so one screen');
-  assert.equal(rendered.variants[0]!.page.glyphsMissing, 0);
-  assert.equal(rendered.variants[0]!.page.picturesMissing, 0);
+  assert.equal(rendered.variants.length, 2, 'one switch of two arms, so two screens');
+  for (const variant of rendered.variants) {
+    assert.equal(variant.page.glyphsMissing, 0);
+    assert.equal(variant.page.picturesMissing, 0);
+  }
   // Every label sits inside its pad, section 242: the first device page written to a remote had
   // each label starting at the pad's middle, because the label was measured through a font table
   // read before the relocations moved the glyphs, so it measured zero wide. The check is the
@@ -425,7 +430,7 @@ test('one_config takes the television onto its screen and every check holds', sk
                    [[0x75, 0x0fca], [0x7e, composed.mode], [0x98, 1]],
                    'the row beeps, enters the mode and marks device mode, as every corpus row does');
   ROWS.forEach((row) => {
-    const bound = bindings.entries[row.k]!;
+    const bound = bindings.entries.find((one) => (one.tag & 0x3f) === 48 + row.k)!;
     assert.deepEqual(lists[bound.operand]!.map((one) => [one.opcode, one.operand]),
                      [[0x7d, (device.group << 8) | row.k],
                       [0x7c, (device.group << 8) | DEVICE_QUANTITY_DEFAULT]],

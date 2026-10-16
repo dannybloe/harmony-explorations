@@ -152,6 +152,8 @@ const SPARE_DUMPS = new Set([
   'one_spare_look_written',
   // The spare after the light timer test, the base for the page key light write.
   'one_spare_glow_written',
+  // The spare with its page keys lit, the base for the write binding the keys below a device page.
+  'one_spare_arrows_written',
 ]);
 
 /**

@@ -13,7 +13,7 @@ import {
   composeMenuPage, DEVICE_LABEL_DROP, DEVICE_PAGE_SCANS, DEVICE_PAGE_SLOTS, DEVICE_ROW_FONT,
   MENU_EDGE_SCANS, MENU_ICON_OFFSET, MENU_LABEL_X, MENU_ROW1_BG, MENU_ROW1_LABEL_Y, MENU_ROW3_BG,
   MENU_ROW3_LABEL_Y, MENU_ROW_FONT, MENU_ROW_PITCH, menuRowCapacity, MODE_TITLE_X, MODE_TITLE_Y, paginate,
-  MENU_ROW_SCAN, pictureDrawnAt, withHitPage,
+  MENU_COUNTER_XY, MENU_ROW_SCAN, pictureDrawnAt, withHitPage,
 } from '../../families/touch/menus.ts';
 import { type FontSet, fontSets } from '../../font.ts';
 import { archSlot, Container, type Instruction, parse, SCAN_MASK } from '../../gspm.ts';
@@ -25,7 +25,7 @@ import { deviceModeMaps, KEY_EVENT_PRESS, KEY_EVENT_SHIFT, SCAN_CODE_MASK } from
 import { relocate } from '../../relocate.ts';
 import {
   bitmapAt, SCREEN_CALL, SCREEN_DRAW_IMAGE, SCREEN_END, SCREEN_QUEUE_INSTRUCTION, SCREEN_RETURN, SCREEN_SELECT_FONT,
-  SCREEN_SWITCH_NARROW, SCREEN_TEXT_AT, SCREEN_TEXT_INLINE, screenProgram,
+  SCREEN_JUMP, SCREEN_SWITCH_NARROW, SCREEN_TEXT_AT, SCREEN_TEXT_INLINE, screenProgram,
 } from '../../screen.ts';
 import {
   ACTION_LIST_INDEX_OPCODE, HANDLER_TAG_ENTER, handlerSets, type ModePage, modePages, type ModeRecord, modeRecords,
@@ -55,6 +55,125 @@ import { picturesByContent, withBankPictures } from '../../pictures.ts';
 import { contentKey } from '../../screencategories.ts';
 
 /** The face every activity menu row's label is drawn in, 64 rows of 64 on the Harmony One's compiles. */
+
+/** The two keys below the screen, which a device page labels "Activities" and "Devices", section 401. */
+const DEVICE_BOTTOM_SCANS: readonly number[] = [43, 44];
+
+/** Where a configuration's own device page binds the keys below the screen: the page, and its two entries. */
+interface DeviceBottomKeys {
+  mode: number;
+  page: number;
+  bindings: readonly TaggedEntry[];
+}
+
+/**
+ * A device page of the configuration's own that binds both keys below the screen and closes on the two arm
+ * switch labelling them, or `undefined` where it has none.
+ *
+ * **Every device page of Logitech's One compiles closes on that switch**: over a state variable that says
+ * whether an activity runs, one arm drawing "Activities" and the other "Current Activity", both jumping back to
+ * a tail that draws "Devices" and the page counter. And every page whose hit page offers the two keys binds
+ * both, the left one through the working screen's table and the right one to a list that beeps and goes back
+ * to the device list, all 18 One containers, section 401. A page we compose without them shows two lit keys
+ * with no label that do nothing, which the spare Harmony One showed on every device we composed.
+ */
+function deviceBottomKeys(c: Container): DeviceBottomKeys | undefined {
+  const records = modeRecords(c) ?? [];
+  for (const mode of new Set(deviceModeMaps(c).map((one) => one.mode))) {
+    for (const [index, page] of (records[mode]?.pages ?? []).entries()) {
+      const entries = taggedList(c, page.list)?.entries ?? [];
+      const bindings = DEVICE_BOTTOM_SCANS.map((scan) => entries.find((entry) => entry.tag === (0x80 | scan)));
+      if (bindings.some((entry) => entry === undefined || entry.opcode === 0)) continue;
+      if (twoArmSwitch((screenProgram(c, page.program) ?? []).at(-1)) === undefined) continue;
+      return { mode, page: index, bindings: bindings as TaggedEntry[] };
+    }
+  }
+  return undefined;
+}
+
+/** A narrow switch with exactly two arms, for the values 0 and 1: its two arm addresses, or `undefined`. */
+function twoArmSwitch(one: { opcode: number; operands: Uint8Array } | undefined): readonly [number, number] | undefined {
+  if (one?.opcode !== SCREEN_SWITCH_NARROW || one.operands[1] !== 2 || one.operands[2] !== 0 || one.operands[6] !== 1) {
+    return undefined;
+  }
+  return [u24(one.operands, 3), u24(one.operands, 7)];
+}
+
+/**
+ * The bytes that close a composed device page: the switch, the tail its arms jump back to, and the two arms,
+ * copied off the page `deviceBottomKeys` found, in the order `composeMenuPage` lays a device list page's out.
+ *
+ * The page counter is left out of the tail, the number and its slash, because `paginate` draws each page's own
+ * where the arms rejoin, and a font selected for nothing after it goes with them. `write` takes the address
+ * the closing lands at and the shift the block's own hole applies to every address it embeds.
+ */
+function deviceBottomClosing(c: Container, found: DeviceBottomKeys): {
+  length: number;
+  write: (at: number, shifted: (address: number) => number) => Uint8Array;
+} {
+  const page = modeRecords(c)?.[found.mode]?.pages[found.page];
+  const closing = page === undefined ? undefined : (screenProgram(c, page.program) ?? []).at(-1);
+  const arms = twoArmSwitch(closing);
+  if (closing === undefined || arms === undefined) throw new ComposeError('the device page to copy stopped closing on its switch');
+  const tailStart = c.flashBase + closing.start + closing.length;
+  const isCounter = (one: ScreenInstructionLike): boolean =>
+    (one.opcode === SCREEN_TEXT_AT || one.opcode === SCREEN_TEXT_INLINE) && one.operands[1] === MENU_COUNTER_XY[1];
+  const kept = (screenProgram(c, tailStart) ?? []).filter((one) => !isCounter(one));
+  if (kept.at(-1)?.opcode !== SCREEN_END) throw new ComposeError("a device page's tail does not end");
+  // A font selected with nothing drawn before the next selection or the end selects for nothing.
+  const tail = kept.filter((one, k) => one.opcode !== SCREEN_SELECT_FONT
+    || ![SCREEN_SELECT_FONT, SCREEN_END].includes((kept[k + 1] as ScreenInstructionLike).opcode));
+  const armPrograms = arms.map((address) => {
+    const program = screenProgram(c, address) ?? [];
+    const end = program.findIndex((one) => one.opcode === SCREEN_JUMP);
+    if (end < 0 || u24((program[end] as ScreenInstructionLike).operands, 0) !== tailStart) {
+      throw new ComposeError("a device page's switch has an arm that does not jump back to its tail");
+    }
+    return program.slice(0, end + 1);
+  });
+  const lengthOf = (program: readonly ScreenInstructionLike[]): number => program.reduce((sum, one) => sum + one.length, 0);
+  const switchLength = closing.length;
+  const tailLength = lengthOf(tail);
+  const armLengths = armPrograms.map(lengthOf) as [number, number];
+  // One instruction copied with any address it embeds restamped, and anything else carrying one refused.
+  const copied = (one: ScreenInstructionLike, shifted: (address: number) => number, jumpTo: number): Uint8Array => {
+    const bytes = Uint8Array.from(c.blob.slice(one.start, one.start + one.length));
+    if (one.opcode === SCREEN_TEXT_AT || one.opcode === SCREEN_DRAW_IMAGE) {
+      bytes.set(new Writer(3).u24(shifted(u24(bytes, 3))).bytes, 3);
+    } else if (one.opcode === SCREEN_CALL) {
+      bytes.set(new Writer(3).u24(shifted(u24(bytes, 1))).bytes, 1);
+    } else if (one.opcode === SCREEN_JUMP) {
+      bytes.set(new Writer(3).u24(jumpTo).bytes, 1);
+    } else if (one.opcode !== SCREEN_SELECT_FONT && one.opcode !== SCREEN_END && one.opcode !== SCREEN_TEXT_INLINE) {
+      throw new ComposeError(`a device page's closing holds screen opcode ${one.opcode}, which this does not copy`);
+    }
+    return bytes;
+  };
+  return {
+    length: switchLength + tailLength + armLengths[0] + armLengths[1],
+    write: (at, shifted) => {
+      const tailAt = at + switchLength;
+      const armA = tailAt + tailLength;
+      const armB = armA + armLengths[0];
+      const out = new Writer(switchLength + tailLength + armLengths[0] + armLengths[1]);
+      const head = Uint8Array.from(c.blob.slice(closing.start, closing.start + switchLength));
+      head.set(new Writer(3).u24(armA).bytes, 4);
+      head.set(new Writer(3).u24(armB).bytes, 8);
+      head.forEach((byte) => out.u8(byte));
+      for (const one of tail) copied(one, shifted, tailAt).forEach((byte) => out.u8(byte));
+      for (const arm of armPrograms) for (const one of arm) copied(one, shifted, tailAt).forEach((byte) => out.u8(byte));
+      return out.bytes;
+    },
+  };
+}
+
+/** What `deviceBottomClosing` reads of a screen instruction. */
+interface ScreenInstructionLike {
+  opcode: number;
+  start: number;
+  length: number;
+  operands: Uint8Array;
+}
 
 /**
  * The Harmony One's half of `composeDeviceScreen`, whose docstring describes it.
@@ -138,9 +257,13 @@ export function composeTouchDeviceScreen(
   // rather than starting one of its own. Appended to the last pool because the copies pair with
   // the pages positionally and the new page will be the last page of the last mode.
   // One list per page, the copies in page order, so they pair with the pages positionally.
+  // The two keys below the screen go first, bound as the configuration's own device page binds them, section
+  // 401; the bindings are list and map operands, which none of the insertions here renumber.
+  const bottom = deviceBottomKeys(current);
   const pageLists = pages.map((page) => {
-    const listBytes = new Writer(1 + 4 * page.rows.length);
-    listBytes.u8(page.rows.length);
+    const listBytes = new Writer(1 + 4 * (page.rows.length + (bottom?.bindings.length ?? 0)));
+    listBytes.u8(page.rows.length + (bottom?.bindings.length ?? 0));
+    bottom?.bindings.forEach((entry) => listBytes.u8(entry.tag).u16(entry.operand).u8(entry.opcode));
     page.rows.forEach((row, k) => {
       listBytes.u8(0x80 | (DEVICE_PAGE_SCANS[k] as number)).u16(row.list).u8(ACTION_LIST_INDEX_OPCODE);
     });
@@ -238,8 +361,12 @@ export function composeTouchDeviceScreen(
   // A font select before every label rather than one per page, so each label is its own select and the blending
   // step can smooth it against what is behind it alone: a colour button's label sits on its circle and the
   // others on the box, `colourbuttons.ts`.
+  // A page closes the way the configuration's own device page closes, on the switch that labels the two keys
+  // below the screen, or on the end marker where there is no such page to read it off, section 401.
+  const closing = bottom === undefined ? undefined : deviceBottomClosing(current, bottom);
   const programLengths = pages.map((page) => 4
-    + page.rows.reduce((sum, _, k) => sum + 6 + 2 + touchLabelLength(rowLines[page.first + k] as TouchLabelLine[]), 0) + 1);
+    + page.rows.reduce((sum, _, k) => sum + 6 + 2 + touchLabelLength(rowLines[page.first + k] as TouchLabelLine[]), 0)
+    + (closing?.length ?? 1));
   const programsLength = programLengths.reduce((sum, one) => sum + one, 0);
   // The entry is six bytes and a pointer per page, `modeRecords`: one page's pointer alone left a paged mode
   // unreadable, which nothing ran until the test setup's Plasma, `todo-compile-one.md` 1.2.9.
@@ -273,7 +400,7 @@ export function composeTouchDeviceScreen(
   const block = new Writer(blockLength);
   keyList.forEach((byte) => block.u8(byte));
   chrome.bytes.forEach((byte) => block.u8(byte));
-  for (const page of pages) {
+  pages.forEach((page, pageIndex) => {
     block.u8(SCREEN_CALL).u24(chromeAddress);
     page.rows.forEach((_, k) => {
       const [x, y] = DEVICE_PAGE_SLOTS[k] as readonly [number, number];
@@ -289,8 +416,10 @@ export function composeTouchDeviceScreen(
         block.u8(0);
       }
     });
-    block.u8(SCREEN_END);
-  }
+    if (closing === undefined) block.u8(SCREEN_END);
+    else closing.write(programAddresses[pageIndex] as number + (programLengths[pageIndex] as number) - closing.length,
+                       shifted).forEach((byte) => block.u8(byte));
+  });
   pages.forEach((_, k) => {
     block.u8(lead).u24(shifted(pageListAddresses[k] as number)).u24(programAddresses[k] as number);
   });
