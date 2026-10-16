@@ -146,6 +146,8 @@ const SPARE_DUMPS = new Set([
   // Read at the start of todo-compile-one: MyHarmony's sync of the spare with the two test activities of
   // section 293 composed onto it, the compare base for that track's first write.
   'one_spare_track_start',
+  // The same unit unchanged and read further, because the configuration with our look, section 399, outgrew it.
+  'one_spare_look_base',
 ]);
 
 /**
