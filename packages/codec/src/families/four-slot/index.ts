@@ -13,6 +13,13 @@ import { composeActivityDeviceList } from './devicelist.ts';
 import { fourSlotActivityMenu, fourSlotMenuMarkerWriter } from './chrome.ts';
 import { FOUR_SLOT_CHOICES, type FourSlotChoices } from './choices.ts';
 
+// The family's generated texts, which the four slot assembler runs, `assemble.ts`, until its four slot half moves
+// here too, `todo-compile-one.md` 3.3.3.2.
+export {
+  ScreenTextError, buildScreenTexts, checkScreenTexts, describeScreenTexts, withScreenTexts,
+} from './screentexts.ts';
+export type * from './screentexts.ts';
+
 export const FOUR_SLOT: Family<FourSlotChoices> = {
   name: 'the Harmony 600, 650 and 700',
   traits: { sendPrelude: true, startSequence: 'start variable and flag', screenItemsBeep: false },

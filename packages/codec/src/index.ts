@@ -71,7 +71,6 @@ export * from './screenrecords.ts';
 export * from './firmwarescreens.ts';
 // Every text of a configuration generated from its word and its font, its place by its screen's rule and
 // its form by the first copy, todo-compile-650 8.1, section 358. After the screens it rewrites the texts of.
-export * from './screentexts.ts';
 // The Harmony 650's pictures, those drawn by rule built from their drawing and the artwork named,
 // todo-compile-650 9.1, section 363.
 export * from './pictures.ts';

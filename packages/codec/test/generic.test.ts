@@ -53,7 +53,6 @@ const DEBT: Readonly<Record<string, Readonly<Record<string, number>>>> = {
   'modezero.ts': { scans: 3, models: 1 },
   'pictures.ts': { architecture: 1 },
   'screenrecords.ts': { architecture: 2, family: 21, imports: 1, barrel: 18 },
-  'screentexts.ts': { architecture: 1, family: 23, barrel: 8 },
   'shared/activities.ts': { architecture: 1 },
   'shared/setup.ts': { models: 1 },
   'wiring.ts': { scans: 3, models: 5 },

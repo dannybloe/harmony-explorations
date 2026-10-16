@@ -28,18 +28,14 @@ import { require_, skipUnless } from '@harmony/lab';
 import {
   type Container,
   type ContainerPiece,
-  ScreenTextError,
   activityEntriesByName,
   buildFirmwareScreens,
   buildScreenRecords,
-  buildScreenTexts,
   characterMap,
-  checkScreenTexts,
   compareViews,
   decode,
   describeFirmwareScreens,
   describeScreenRecords,
-  describeScreenTexts,
   describeWiring,
   glyphsReferencedBy,
   inActivityOrder,
@@ -55,10 +51,10 @@ import {
   takeApart,
   withFirmwareScreens,
   withScreenRecords,
-  withScreenTexts,
   SCREEN_TEXT_AT,
   SCREEN_TEXT_INLINE,
 } from '../src/index.ts';
+import { ScreenTextError, buildScreenTexts, checkScreenTexts, describeScreenTexts, withScreenTexts } from '../src/families/four-slot/screentexts.ts';
 
 /** The thirteen arch 14 compiles section 312 names. */
 const THIRTEEN = ['h650_config_region', 'h650_panasonic_config', 'h600_config', 'calibration_h600',

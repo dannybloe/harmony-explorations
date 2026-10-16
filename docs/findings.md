@@ -47699,7 +47699,7 @@ builder spelled the words it knew and carried the rest. So a configuration compo
 compile still drew most of its texts as Logitech's bytes, and even the built screens read some of theirs as
 glyph codes: a menu row's label, an activity's own device list's labels, and every text drawn by reference
 to a copy outside the built screens, by that copy's address, which sections 356 and 357 list as read.
-`packages/codec/src/screentexts.ts` is one pass over a whole configuration that makes three things of every
+`packages/codec/src/families/four-slot/screentexts.ts` is one pass over a whole configuration that makes three things of every
 text generated: its glyph codes, spelled from its word in its font; its place, by the rule its screen kind
 uses; and its form, inline (opcode 5) or by reference (opcode 4).
 
@@ -47972,7 +47972,7 @@ wrong.
 
 ### Where it lands
 
-* `packages/codec/src/screentexts.ts`: `describeScreenTexts`, `buildScreenTexts`, `withScreenTexts`,
+* `packages/codec/src/families/four-slot/screentexts.ts`: `describeScreenTexts`, `buildScreenTexts`, `withScreenTexts`,
   `checkScreenTexts`, `ScreenTextError`.
 * `packages/codec/src/compose.ts`: `speller`, which `spelledText` now spells through, the place constants
   exported once, and `STARTUP_TITLE_MAX` raised to 126.
@@ -48450,7 +48450,7 @@ Logitech compile with no activities whose scan 4 list maps the location.
   `stop` and `test` instructions, `ALL_OFF_SCAN`, `FIXED_ENTRIES`, the activity count, `listNames`,
   `checkWiring`, and the refusals of a Harmony 700 with the Assistant off and of the rule with no
   activities where it is not read.
-* `packages/codec/src/screentexts.ts`: `menusOf`, the refusal of a configuration whose menus are not read,
+* `packages/codec/src/families/four-slot/screentexts.ts`: `menusOf`, the refusal of a configuration whose menus are not read,
   where the compile with no activities is refused now.
 * `packages/codec/test/wiring.test.ts`: the thirteen's and section 347's corrected counts, the 23 byte for
   byte per model, the settings and the activity count, the blind control and its refusal, the carried

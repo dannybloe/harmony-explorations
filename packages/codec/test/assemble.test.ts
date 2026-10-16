@@ -25,7 +25,6 @@ import {
   attributeBytes,
   buildFirmwareScreens,
   buildScreenRecords,
-  buildScreenTexts,
   buildWiring,
   checkFirmwareScreens,
   checkBlendedLetters,
@@ -35,14 +34,12 @@ import {
   ladderOf,
   oxaniumLabelSizes,
   checkScreenRecords,
-  checkScreenTexts,
   checkWiring,
   claims,
   compareDrawnTexts,
   compareViews,
   describeFirmwareScreens,
   describeScreenRecords,
-  describeScreenTexts,
   describeWiring,
   ACTIVITY_STATE_NAME,
   DEVICES_KEY_TAG,
@@ -64,9 +61,9 @@ import {
   takeApart,
   withFirmwareScreens,
   withScreenRecords,
-  withScreenTexts,
   withWiring,
 } from '../src/index.ts';
+import { buildScreenTexts, checkScreenTexts, describeScreenTexts, withScreenTexts } from '../src/families/four-slot/screentexts.ts';
 
 /**
  * The 22 arch 14 compiles sections 356 to 360 measure, by the skin each states: 13 Harmony 650, 2 Harmony
