@@ -22,7 +22,9 @@ import { TOUCH_CHOICES } from '../src/families/touch/choices.ts';
 import { withColourButtons } from '../src/families/touch/colourbuttons.ts';
 import { withTouchDeviceLook } from '../src/families/touch/devicelook.ts';
 import { TOUCH_PAD_HEIGHT, TOUCH_PAD_WIDTH } from '../src/families/touch/labels.ts';
-import { DEVICE_PAGE_SLOTS, MODE_TITLE_X, MODE_TITLE_Y } from '../src/families/touch/menus.ts';
+import { DEVICE_PAGE_SLOTS, MODE_TITLE_X, MODE_TITLE_Y, withPageKeyLights } from '../src/families/touch/menus.ts';
+import { ACTION_LIST_TABLE_SLOT, archSlot } from '../src/gspm.ts';
+import { restamped } from '../src/shared/core.ts';
 
 /** The nineteen Harmony One compiles, as `fonttable.test.ts`'s. */
 const ONE_COMPILES = ['one_config', 'one_config_unprogrammed', 'one_spare_after_sync', 'one_spare_myharmony', 'one_spare_20260830',
@@ -269,4 +271,33 @@ test('section 399: the colour buttons turn every pad draw named Red, Green, Yell
   assert.deepEqual(before, { named: 20, circles: 0, others: before.others });
   // Every colour pad draw now a circle, every word gone, and no other draw lost or gained.
   assert.deepEqual(after, { named: 0, circles: 20, others: before.others });
+});
+
+test('section 400: a screen\'s entry switches its page keys\' lights on where its leaving switches them off, and Logitech\'s screens need nothing added',
+     skipUnless('one_config'), () => {
+  const c = containerOf('one_config');
+  const lists = c.actionLists()!;
+  const records = modeRecords(c)!;
+  // Every screen of the everyday One's configuration whose entry already makes the call is left byte for byte.
+  let screens = 0;
+  let untouched = 0;
+  records.forEach((record, mode) => {
+    if (record.pages.length < 2) return;
+    screens += 1;
+    if (withPageKeyLights(c, mode).blob.length === c.blob.length) untouched += 1;
+  });
+  assert.deepEqual({ screens, untouched }, { screens: 28, untouched: 28 });
+  // The control: the device list's call switching the amber pair on, mode 57's, pointed at the list beside it
+  // instead, a same length edit; the step puts the call back, and only that.
+  const enter = records[57]!.entries.find((one) => one.tag === 6)!.operand;
+  const listAt = c.blobOffsetOf(c.pointerArray(archSlot(12, ACTION_LIST_TABLE_SLOT))![enter]!)!;
+  const call = lists[enter]!.findIndex((one) => one.opcode === 0x7f && lists[one.operand]!.some((i) => i.operand === 0xc022));
+  assert.equal(call, 1);
+  const bytes = Uint8Array.from(c.blob);
+  bytes.set([0, 0], listAt + 1 + 3 * call);
+  const without = parse(restamped(bytes));
+  const back = withPageKeyLights(without, 57);
+  assert.equal(back.blob.length, without.blob.length + 3);
+  const entering = back.actionLists()![enter]!;
+  assert.ok(entering.some((one) => one.opcode === 0x7f && lists[one.operand]?.[0]?.operand === 0xc022));
 });

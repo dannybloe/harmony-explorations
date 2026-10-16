@@ -6,7 +6,7 @@
 import { u24 } from '../../bytes.ts';
 import { Writer } from '../../emit.ts';
 import { fontSets } from '../../font.ts';
-import { Container, parse, SCAN_MASK } from '../../gspm.ts';
+import { ACTION_LIST_TABLE_SLOT, archSlot, Container, INSTRUCTION_LENGTH, type Instruction, parse, SCAN_MASK } from '../../gspm.ts';
 import { deviceListRows } from '../../inventory.ts';
 import { excise, relocate } from '../../relocate.ts';
 import {
@@ -702,5 +702,67 @@ export function paginate(start: Container, menu: number): Container {
       ...t.drawn(MENU_COUNTER_SLASH_X, MENU_COUNTER_XY[1], '/', style.counterFont, undefined),
     ], { opens: where !== page.program && closing.start === (t.current.blobOffsetOf(where) as number) });
   }
-  return t.current;
+  // 4. The page keys' lights, which the screen's entry has to switch on now that the keys turn pages.
+  return withPageKeyLights(t.current, menu);
+}
+
+/** The band `0xC0` instruction switching one key light: its number in bits 4 to 7, 2 for on and 0 for off. */
+const KEY_LIGHT_OPCODE = 0x3f;
+const KEY_LIGHT_BAND = 0xc000;
+/** A mode record's own entry tags for entering and leaving the screen. */
+const ENTER_TAG = 0x06;
+const LEAVE_TAG = 0x07;
+
+/**
+ * The lights of a screen's page keys switched on as it is entered, `todo-compile-one.md` 1.2.11.2.10.
+ *
+ * **The firmware has no page logic for these lights**: it switches a key's light exactly when an action
+ * list says so, through band `0xC0`, and Logitech's compiler puts the call switching the page keys' pair on
+ * into the entry list of every screen whose page keys turn pages, white on the activity screens and amber
+ * in device mode, findings section 400. A one page menu grown to several pages keeps the leaving list's
+ * call switching the pair off and has no call switching it on, so its keys turn pages in the dark, which is
+ * what the spare Harmony One showed on the activity list and both device lists.
+ *
+ * So the pair is the one the leaving list switches off, its "on" list is the configuration's own list that
+ * switches the same lights on and writes 1 where the "off" list writes 0, and the call goes in after the
+ * entry list's first instruction, where Logitech's multi page screens have it. A screen whose entry already
+ * makes the call is left as it is.
+ */
+export function withPageKeyLights(c: Container, mode: number): Container {
+  const lists = c.actionLists();
+  const record = modeRecords(c)?.[mode];
+  if (lists === undefined || record === undefined) throw new ComposeError(`mode ${mode} does not read`);
+  const call = (tag: number): number | undefined => {
+    const entry = record.entries.find((one) => one.tag === tag);
+    return entry?.opcode === ACTION_LIST_INDEX_OPCODE ? entry.operand : undefined;
+  };
+  const enter = call(ENTER_TAG);
+  const leave = call(LEAVE_TAG);
+  if (enter === undefined || leave === undefined) throw new ComposeError(`mode ${mode} has no list to enter or leave by`);
+  // A pair switch: two key lights and the state write that remembers them, `[3F C0a0, 3F C0b0, write 0]`.
+  const pairOf = (list: readonly Instruction[], on: boolean): string | undefined => {
+    if (list.length !== 3) return undefined;
+    const [one, two, write] = list as [Instruction, Instruction, Instruction];
+    const light = (i: Instruction): number | undefined => (i.opcode === KEY_LIGHT_OPCODE
+      && (i.operand & 0xff0f) === (KEY_LIGHT_BAND | (on ? 2 : 0)) ? (i.operand >> 4) & 0xf : undefined);
+    const lights = [light(one), light(two)];
+    if (lights.includes(undefined) || write.opcode < 0x80 || write.operand !== (on ? 1 : 0)) return undefined;
+    return `${lights.join(',')} ${write.opcode}`;
+  };
+  const off = (lists[leave] ?? []).filter((one) => one.opcode === ACTION_LIST_INDEX_OPCODE)
+    .map((one) => pairOf(lists[one.operand] ?? [], false)).find((pair) => pair !== undefined);
+  if (off === undefined) return c;
+  const on = lists.findIndex((list) => pairOf(list, true) === off);
+  if (on < 0) throw new ComposeError(`the configuration holds no list switching lights ${off} on`);
+  const entering = lists[enter] ?? [];
+  if (entering.some((one) => one.opcode === ACTION_LIST_INDEX_OPCODE && one.operand === on)) return c;
+  if (entering.length === 0 || entering.length >= 0xff) throw new ComposeError(`mode ${mode}'s entry list cannot take a call`);
+  const table = c.pointerArray(archSlot(c.architecture as number, ACTION_LIST_TABLE_SLOT));
+  const listAt = table === undefined ? undefined : c.blobOffsetOf(table[enter] as number);
+  if (listAt === undefined) throw new ComposeError(`mode ${mode}'s entry list moved out of reach`);
+  const at = listAt + 1 + INSTRUCTION_LENGTH;
+  const grown = relocate(c, at, INSTRUCTION_LENGTH).bytes;
+  grown.set([on & 0xff, on >>> 8, ACTION_LIST_INDEX_OPCODE], at);
+  grown[listAt] = entering.length + 1;
+  return parse(restamped(grown));
 }

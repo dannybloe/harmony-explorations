@@ -150,6 +150,8 @@ const SPARE_DUMPS = new Set([
   'one_spare_look_base',
   // The spare with that configuration on it, the base for the next write.
   'one_spare_look_written',
+  // The spare after the light timer test, the base for the page key light write.
+  'one_spare_glow_written',
 ]);
 
 /**
