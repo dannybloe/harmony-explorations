@@ -725,8 +725,9 @@ const LEAVE_TAG = 0x07;
  *
  * So the pair is the one the leaving list switches off, its "on" list is the configuration's own list that
  * switches the same lights on and writes 1 where the "off" list writes 0, and the call goes in after the
- * entry list's first instruction, where Logitech's multi page screens have it. A screen whose entry already
- * makes the call is left as it is.
+ * entry list's first instruction. Logitech's multi page screens have it there or two or three instructions
+ * later, 82, 145 and 110 of 337, so the place is a choice among theirs. A screen whose entry already makes the
+ * call is left as it is.
  */
 export function withPageKeyLights(c: Container, mode: number): Container {
   const lists = c.actionLists();

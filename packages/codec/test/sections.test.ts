@@ -279,7 +279,7 @@ const OLDER_PAIRS: readonly [string, number, number][] = [
   ['h895_config', 20, 10],
 ];
 
-test('arch 8 and arch 10 carry the same pair of light timers, the Harmony 525 one and the Harmony One none',
+test('arch 8 and arch 10 carry the same pair of light timers, the Harmony 525 one and the Harmony One none of that shape',
   skipUnless(...OLDER_PAIRS.map(([name]) => name), 'h525_config', 'h525_config_2', 'one_config'), () => {
     for (const [name, lower, higher] of OLDER_PAIRS) {
       const c = parse(require_(name));

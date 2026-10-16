@@ -13587,6 +13587,10 @@ What would settle it: the address, the register numbers and the value ranges are
 the part from a datasheet search, and a photograph of the board would do it outright. Neither is
 firmware work.
 
+**Settled for four channels by section 400, at the bench**: channels 0 to 3 light the keys beside the screen,
+since a call setting two of them, added to a screen's entry, is what lit them on the spare Harmony One. The
+part number is still not established.
+
 ## 107. The action list language has multiply, divide and modulo, and the block one of them sits in is arch 14 only
 
 `0x6E` was the last opcode in the corpus with no reading at all, six instructions in three configs.
@@ -52389,8 +52393,10 @@ text routine at `0x293D0`, which indexes the glyphs by the code minus one at `0x
 code with the set's count. **Nothing on that path compares the index with anything**, read twice, by an agent
 and by a reviewer. Logitech's compiles carry 16 sets on four compiles, 17 on two and 18
 on thirteen; a configuration lettered in ours carries more, since each smoothed set is a copy, 31 on the one
-built for the spare Harmony One. So **whether a set past Logitech's eighteenth draws is unconfirmed on
-hardware**; the reading says it should, and the write to the spare One is the test.
+built for the spare Harmony One. **A set past Logitech's eighteenth draws**: this said it was unconfirmed on
+hardware until the configuration was written to the spare One, whose device pages select sets 21 and 28 and
+whose activity menu selects 21 to 25, and those screens showed in the new design, seen at the bench, section
+400.
 
 ### The renderer follows a page's call into its chrome
 
@@ -52426,3 +52432,177 @@ left the seek of the font select to one reading.
 A One compile whose working screen draws its title in a device page's font; a device page pad placed at
 another height; a label the centring step moves twice; a set past the eighteenth that the remote draws
 wrongly or not at all.
+
+## 400. The Harmony One's key lights and its screen light are the configuration's, and our multi page screens lacked the call that lights their page keys
+
+**Asked for by the bench**, `todo-compile-one.md` 1.2.11.2.9 and 1.2.11.2.10: after the configuration of section
+399 was written to the spare Harmony One, the two keys beside the screen stayed dark on the activity list, on
+both device lists and on the LG's pages, where on the everyday One they light whenever a screen has more pages
+than one, in one colour on the activity screens and another in device mode. The screen light went out after
+ten seconds, too short to test with.
+
+**Sources.** Sections 103 and 106, and the One 3.4 application image, read by an agent for the light path; the
+nineteen Harmony One compiles, `ONE_COMPILES`; the spare Harmony One at the bench, three writes. Logitech's
+client was not opened: what lights a key is a configuration's action lists and the firmware's handler, and the
+client holds neither.
+
+**Scope.** The Harmony One only. The Harmony 650's screen light is section 292's timer pair, which this
+resembles; the key lights of the 600, 650 and 700 are not read.
+
+### The firmware has no page logic for the key lights
+
+**Sections 103 and 106 read the instruction**: action opcode `0x3F` in band `0xC0` with a selector of 0 to 12 sets
+one of thirteen channels of the device at `0x60`, the selector in bits 4 to 7 and a flag in bits 1 to 3, the
+handler at `0x2492E` taking the channel's state from base slot 15's group 9, whose eight bytes `00 00 00 00 55
+55 55 55` make it 0 with the flag clear and 1 with it set; `0x2D254` keeps the states as a bitmap at `0x259`,
+and the device is written from it. **This section adds that nothing on that path consults a page count**, read
+in the 3.4 image by an agent and again, blind, by a reviewer: the bitmap at `0x259` to `0x25C` is written only by
+`0x2D254`, which marks it dirty at `0x25D`, and by the boot clear at `0x2D1A6`; of `0x2D254`'s 40 callers, the
+level ladder, the power on and the all off sequences are chosen at `0x23CB2` by `0xF14`, which is only ever
+cleared, so only the all off arm is reachable, and the remaining caller is the band handler, whose operand
+comes from the action list or, in two indirect forms, from a state variable. So a channel is on exactly when
+an action list says so. The cross reference cannot see computed jumps, which is that reading's limit. Section
+106 left **which device** it is as an inference, a keypad backlight; the bench below settles it for four
+channels, **0 to 3 light the keys beside the screen**, since adding a call that sets 0 and 2 or 1 and 3 is what
+lit them. Channels 4 and 6 are set by every device mode's entry, and the bench saw the keys below the screen
+lit on device pages, which fits them being those keys' lights and was not isolated.
+
+### What the configuration does
+
+A light is switched in pairs by a three instruction list, two `0x3F` instructions and a state write, `[3F C0a2,
+3F C0b2, write 1]` to switch channels `a` and `b` on and the same with flag 0 and a write of 0 to switch them
+off. Two pairs switch the page keys, channels 3 and 1 and channels 2 and 0. **Every device mode uses the second pair**, 90 of 90 over
+the nineteen; 104 other screens use it too and 646 the first. A screen's leaving list, the handler under tag
+`0x07`, calls the list switching its pair off, and its entering list, tag `0x06`, calls the one switching it
+on where both page keys do something:
+
+| the 840 screens whose leaving list switches a pair off, over the nineteen compiles | entry switches the pair on |
+|---|---|
+| several pages, which the keys turn | 337 of 337 |
+| one page, both page keys bound in the record | 95 of 95 |
+| one page, one page key bound, scan 46, to a beep and a mode | 0 of 95, which light that key alone |
+| one page, neither bound | 0 of 313 |
+
+The one key screens call a third list, channel 1 alone on with the pair's variable set to 2, in all nineteen
+compiles, so that variable holds 0 for off, 1 for both and 2 for one; Logitech lights exactly the keys that do
+something. The population is the screens with an off call: over every screen, 216 one page screens bind both page keys,
+and the 121 not in the table have no off call and bind the keys to empty or other lists; 114 bind one and
+2927 neither. Per compile the first row holds on every multi page screen, from 8 of 8 on
+`harvest_one_families_1` to 34 of 34 on `compiled_protocols`. **Where the call sits varies**: on the 337 multi
+page screens it comes directly after the entry list's first instruction on 82, two later on 145 and three
+later on 110, all 85 lit device modes among those; on the 95 one page screens the first instruction is itself
+a call. Placing it after the first instruction, as ours does, is a choice among the shapes Logitech uses.
+Corrected per review: this said the call sits after the first instruction, on 82 of 337, and named the
+population as every screen.
+
+### Our screens, and the fix
+
+**The screens we grew from one page to several kept the leaving call and had no entering one**: the activity
+menu and both device lists. Logitech's compile had given them one page, so it had no reason to light their
+keys, and `paginate` made them page without adding the call. So their keys turned pages in the dark.
+`withPageKeyLights` is now the last step of `paginate`: it reads the pair the leaving list switches off, finds
+the configuration's own list switching the same lights on with the write of 1, and calls it after the entry
+list's first instruction. On `one_config` it changes none of the 28 multi page screens, and with one of them
+cut, mode 57's call pointed elsewhere by a same length edit, it adds the call back and nothing else.
+
+**Seen at the bench**, written to the spare One: the page keys light on the activity list and on the device
+list, and still on Options, which is Logitech's own screen.
+
+**The LG's pages were dark too, and lit after the fix without being changed.** Before the fix every one of the
+seven device modes on the spare, the LG, the Denon and the five composed devices, already called the on list
+from its entry, and only the activity menu and the two device lists did not, measured on
+`one_spare_look_written`; the fix touched those three and no device mode. Before it the LG's keys stayed dark;
+after it they lit, seen at the bench on the spare. The other device modes' page keys were not looked at before
+the fix, so whether the LG was alone in staying dark is not known. **Why the device list's call decides a
+device mode's lights is not read**: the order in which the remote runs the leaving list of one screen and the
+entering list of the next is the obvious place to look, and nobody has looked.
+
+### The screen light is the pair's ten second timer
+
+Every one of the nineteen compiles holds **exactly one pair of timers queueing two lists of the same content**,
+two calls, one timer of 10 seconds and one of 20: a pair, like the Harmony 650's in section 292, though not its
+shape, since the 650's list opens with `0x1F E910` and the One's first callee with `0x1F EA02` or `EA03`. **Which timer that is
+varies**: the 10 second one is timer 2 on thirteen compiles and timer 3 on six, and its partner is timer 6, 7,
+10 or 14, so a writer finds the pair by its shape and never by its number. On the configuration written to the
+spare they are timers 2 and 7. **Raised to 60 and 120 seconds, distinct so the reading says which, the screen
+stayed lit about 60 seconds**, seen at the bench: the 10 second timer is the screen light. What the 20 second
+timer does is not observed.
+
+**The screen light is a family choice now**, `screenLightSeconds`, 10 by default as Logitech's compiles hold it,
+written by `withScreenLight` into the timer `touchScreenLightTimer` finds by the pair's shape.
+
+**Asserted**, `packages/codec/test/onelook.test.ts`: the table and the pair counts over the 840 screens, 90 of
+90 device modes on the second pair; on `one_config` the 28 multi page screens returned as they are and the cut
+call coming back with no other list changed; the timer pair on all nineteen, the lower one 10 seconds and its
+one partner 20, timer 2 on thirteen and 3 on six; and the choice rewriting that one timer, a second time
+changing nothing, and refusing 0 and `0x10000` seconds.
+
+### What would falsify it
+
+A Harmony One compile with a screen of several pages whose entry does not light its pair; a key lit by the
+firmware with no list calling it; a remote whose screen light follows the 20 second timer.
+
+## 401. The keys below a composed Harmony One device page are bound and labelled as the configuration's own device pages bind and label them
+
+**Asked for by the bench**, `todo-compile-one.md` 1.2.11.2.11: on the spare Harmony One, from an activity into
+the device list and on to a device we composed, the two keys below the screen lit up, had no label above them,
+and did nothing.
+
+**Sources.** The nineteen Harmony One compiles; the configuration written to the spare and the spare itself.
+Logitech's client was not opened, for the reason section 400 gives. The firmware was not read: what a page
+binds and draws is the configuration's.
+
+**Scope.** The Harmony One only. The 600, 650 and 700 have keys below the screen of their own, labelled by
+their screens, section 293; they were not looked at here.
+
+### What Logitech's device pages do
+
+**Every device page of the eighteen compiles that have one closes its screen program on a two arm switch**,
+571 of 571: on the state variable that says whether an activity is running, one arm draws "Activities" and the
+other "Current Activity" on two lines, and both jump back to a tail drawing "Devices" and the page counter, on
+564; the other 7, all on `one_friend_asfound_config`, draw the configuration's own language, "Activiteiten" and
+"Huidige activiteit", and their tail draws no "Devices". The variable's number differs between compiles, 35 to
+54, and it is the activity running flag the Activities key's chain maps first, section 279: the left key's
+`0x72` operand names it in its low byte on 508 of 508 pages. Corrected per review: this said 23 to 36, the
+numbers in hexadecimal, and named section 357 and the table's own variable.
+
+**Every device page whose hit page offers both keys below the screen binds both**, 508 of 508: the left one
+through the working screen's chain, `0x72` on a record keyed by that flag, and the right one to a list that
+beeps and returns to the device list. The other 63 pages are each a device's last page, 23 of them holding all
+six rows. On 49 the hit page offers neither key and the page binds neither. On 14 it offers scan 43 alone, and
+**its rectangle is at the right key's place**, so the right key reports 43, which the page binds to the right
+key's list, and the left key reports nothing. All 90 device mode records bind both keys to nothing, opcode 0,
+so the record gives them nothing either. **So on those last pages the labels sit over keys that do nothing**,
+both on 49 and the left one on 14, which is what the hit map says and has not been tried at the bench.
+Corrected per review: this called those pages short, which 23 are not, and said the 14 keep the left key, where
+the blind reviewer measured the rectangle on the right.
+
+### Our device pages, and the fix
+
+`composeTouchDeviceScreen` bound a page's rows and nothing else and closed its program on the end marker, while
+the device mode's entry list, shared with the configuration's own device mode, lit both keys. So the keys lit,
+showed no label and did nothing, on every page of all five devices composed for the spare.
+
+**It now copies both off the configuration's own device page**: the first page of a device mode that binds
+both keys and closes on the two arm switch. Its two bindings go first in each page's list, where Logitech puts
+them, and each page closes on a copy of its switch, its tail and its two arms, every embedded address
+restamped and the arms jumping back to the copied tail. The tail's page counter is left out, the number and
+its slash, since `paginate` draws each page's own. A configuration with no such page keeps the old closing and
+binds neither key, rather than inventing a binding.
+
+**Seen at the bench**, written to the spare One: on a composed device's pages the two keys are labelled
+"Activities" and "Devices" and both work.
+
+**Asserted**, `packages/codec/test/onelook.test.ts`: the census above over the nineteen compiles, 18 with a
+device page, 571 pages, 571 closing on the switch, 508 offering both keys and binding both, none binding one
+of two offered, 14 binding a key their page does not offer both of; and a television of seven rows composed
+onto Logitech's compile of two devices binds both keys on both its pages with the entries of the
+configuration's own device page and draws the same two arms, each jumping back to the byte after its switch,
+while the same compile with every device page's two bindings cut to nothing, a same length edit, gets pages
+binding neither and closing on the end marker. `test/compose.test.ts`'s television on `one_config` binds the
+two keys before its rows and renders two screens.
+
+### What would falsify it
+
+A Harmony One device page of Logitech's that does not close on the switch or does not bind a key its hit page
+offers; a composed page whose keys do not reach the working screen or the device list on a remote.

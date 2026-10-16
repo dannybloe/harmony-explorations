@@ -2295,6 +2295,23 @@ eighteen compiles whose device modes are read; in the 14 pixel set those labels 
 capitals 2 pixels below the pad's middle, and a
 configuration of ours moves each label's y to centre its capitals, `withCentredPadLabels`, section 399.
 
+**A device page's closing and its two keys below the screen, the Harmony One**, section 401: every device page
+program ends on a narrow switch of two arms over the activity running variable (its number per compile), arm 0
+drawing "Activities" and arm 1 "Current Activity" (in the configuration's language), both jumping to the byte after the switch, which draws
+"Devices" and the page counter and ends; 571 of 571 pages over the eighteen compiles with device pages. A page
+whose hit page offers scans 43 and 44 binds both in its own tagged list, before its rows: 43 to `0x72` on the
+working screen record, 44 to a list `[75 0FCA, 72 <device list record>]`; 508 of 508. A composer copies both
+from the configuration's own device page, `deviceBottomKeys`.
+
+**The keys' lights, the Harmony One**, section 400: a three instruction list `[3F C0a2, 3F C0b2, write 1]`
+sets channels `a` and `b` of the device at `0x60` on, the same with `C0a0`, `C0b0` and a write of 0 off.
+Channels 3 and 1 or 2 and 0 are the keys beside the screen. A screen's tag `0x07` list calls the pair's off
+list, and its tag `0x06` list calls the on list, one to four instructions in, wherever both page keys do
+something: 337 of 337 screens of several pages and 95 of 95 one page screens binding both page keys; none of
+the 408 others. `withPageKeyLights`. The screen light is the 10 second timer of the one pair of timers queueing
+two lists of the same content, 10 and 20 seconds, in all nineteen compiles; its index varies, so it is found by
+that shape.
+
 ### Base slot 17: the touch screen hit map
 
 **Confirmed on the two Harmony One configs and the Harmony One 3.4 image.** Empty, with a count of

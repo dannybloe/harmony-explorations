@@ -27,6 +27,8 @@ import { withTouchDeviceLook } from '../src/families/touch/devicelook.ts';
 import { TOUCH_PAD_HEIGHT, TOUCH_PAD_WIDTH } from '../src/families/touch/labels.ts';
 import { DEVICE_PAGE_SLOTS, MODE_TITLE_X, MODE_TITLE_Y, withPageKeyLights } from '../src/families/touch/menus.ts';
 import { ACTION_LIST_TABLE_SLOT, archSlot } from '../src/gspm.ts';
+import { touchScreenLightTimer, withScreenLight } from '../src/families/touch/screenlight.ts';
+import { timers } from '../src/tables.ts';
 import { restamped } from '../src/shared/core.ts';
 
 /** The nineteen Harmony One compiles, as `fonttable.test.ts`'s. */
@@ -276,7 +278,7 @@ test('section 399: the colour buttons turn every pad draw named Red, Green, Yell
   assert.deepEqual(after, { named: 0, circles: 20, others: before.others });
 });
 
-test('section 400: a screen\'s entry switches its page keys\' lights on where its leaving switches them off, and Logitech\'s screens need nothing added',
+test('section 400: the step that lights a screen\'s page keys leaves the 28 multi page screens of the everyday One\'s configuration as they are, and puts back a call cut from one',
      skipUnless('one_config'), () => {
   const c = containerOf('one_config');
   const lists = c.actionLists()!;
@@ -287,7 +289,7 @@ test('section 400: a screen\'s entry switches its page keys\' lights on where it
   records.forEach((record, mode) => {
     if (record.pages.length < 2) return;
     screens += 1;
-    if (withPageKeyLights(c, mode).blob.length === c.blob.length) untouched += 1;
+    if (withPageKeyLights(c, mode) === c) untouched += 1;
   });
   assert.deepEqual({ screens, untouched }, { screens: 28, untouched: 28 });
   // The control: the device list's call switching the amber pair on, mode 57's, pointed at the list beside it
@@ -303,6 +305,11 @@ test('section 400: a screen\'s entry switches its page keys\' lights on where it
   assert.equal(back.blob.length, without.blob.length + 3);
   const entering = back.actionLists()![enter]!;
   assert.ok(entering.some((one) => one.opcode === 0x7f && lists[one.operand]?.[0]?.operand === 0xc022));
+  // Only that: every other list as it was, by content.
+  const show = (list: readonly { opcode: number; operand: number }[] | undefined) => JSON.stringify(list?.map((i) => [i.opcode, i.operand]));
+  const before = without.actionLists()!;
+  const changed = back.actionLists()!.flatMap((list, k) => (show(list) === show(before[k]) ? [] : [k]));
+  assert.deepEqual(changed, [enter]);
 });
 
 test('section 401: every device page of the One compiles closes on the two arm switch, and every one whose hit page offers both keys below the screen binds both',
@@ -356,7 +363,8 @@ test('section 401: a composed device page binds the keys below the screen as the
   // The page it copies: the first device page of Logitech's that binds both.
   const donor = [...new Set(deviceModeMaps(after).map((one) => one.mode))].filter((one) => one !== mode)
     .flatMap((one) => records[one]!.pages)
-    .find((page) => (taggedList(after, page.list)?.entries ?? []).filter((one) => [0x80 | 43, 0x80 | 44].includes(one.tag)).length === 2)!;
+    .find((page) => (taggedList(after, page.list)?.entries ?? []).filter((one) => [0x80 | 43, 0x80 | 44].includes(one.tag) && one.opcode !== 0).length === 2
+      && screenProgram(after, page.program)?.at(-1)?.opcode === SCREEN_SWITCH_NARROW)!;
   const bottomOf = (list: number) => (taggedList(after, list)?.entries ?? [])
     .filter((one) => [0x80 | 43, 0x80 | 44].includes(one.tag)).map((one) => [one.tag, one.operand, one.opcode]);
   const armsOf = (program: number) => {
@@ -395,4 +403,88 @@ test('section 401: a composed device page binds the keys below the screen as the
     assert.deepEqual((taggedList(plain.after, page.list)?.entries ?? []).filter((one) => [0x80 | 43, 0x80 | 44].includes(one.tag)), []);
     assert.equal(screenProgram(plain.after, page.program)!.at(-1)!.opcode, SCREEN_END);
   }
+});
+
+/** A three instruction list switching two key light channels and writing the pair's variable: the channels, or undefined. */
+function lightPair(list: readonly { opcode: number; operand: number }[] | undefined, on: boolean): string | undefined {
+  if (list?.length !== 3) return undefined;
+  const channels = list.slice(0, 2).map((one) => (one.opcode === 0x3f && (one.operand & 0xff0f) === (0xc000 | (on ? 2 : 0))
+    ? (one.operand >> 4) & 0xf : undefined));
+  if (channels.includes(undefined) || list[2]!.opcode < 0x80 || list[2]!.operand !== (on ? 1 : 0)) return undefined;
+  return channels.join('+');
+}
+
+test('section 400: of the 840 One screens whose leaving switches a page key pair off, the entry switches it on exactly where both page keys do something',
+     skipUnless(...ONE_COMPILES), () => {
+  const rows = new Map<string, number>();
+  const pairs = new Map<string, number>();
+  let deviceModes = 0;
+  let deviceModesOnTheSecond = 0;
+  for (const name of ONE_COMPILES) {
+    const c = containerOf(name);
+    const lists = c.actionLists()!;
+    const devices = new Set(deviceModeMaps(c).map((one) => one.mode));
+    modeRecords(c)!.forEach((record, mode) => {
+      const call = (tag: number) => {
+        const entry = record.entries.find((one) => one.tag === tag);
+        return entry?.opcode === 0x7f ? entry.operand : undefined;
+      };
+      const enter = call(0x06);
+      const leave = call(0x07);
+      if (enter === undefined || leave === undefined) return;
+      const off = (lists[leave] ?? []).filter((one) => one.opcode === 0x7f).map((one) => lightPair(lists[one.operand], false))
+        .find((pair) => pair !== undefined);
+      if (off === undefined) return;
+      pairs.set(off, (pairs.get(off) ?? 0) + 1);
+      if (devices.has(mode)) {
+        deviceModes += 1;
+        if (off === '2+0') deviceModesOnTheSecond += 1;
+      }
+      const on = (lists[enter] ?? []).some((one) => one.opcode === 0x7f && lightPair(lists[one.operand], true) === off);
+      const bound = record.entries.filter((one) => [0x80 | 46, 0x80 | 47].includes(one.tag) && one.opcode !== 0).length;
+      const kind = record.pages.length > 1 ? 'several' : ['neither', 'one', 'both'][bound]!;
+      const key = `${kind} ${on ? 'on' : 'dark'}`;
+      rows.set(key, (rows.get(key) ?? 0) + 1);
+    });
+  }
+  assert.deepEqual(Object.fromEntries([...rows].sort()),
+    { 'both on': 95, 'neither dark': 313, 'one dark': 95, 'several on': 337 });
+  assert.deepEqual(Object.fromEntries([...pairs].sort()), { '2+0': 194, '3+1': 646 });
+  assert.deepEqual({ deviceModes, deviceModesOnTheSecond }, { deviceModes: 90, deviceModesOnTheSecond: 90 });
+});
+
+test('section 400: the screen light is the lower of the One pair of timers queueing lists of the same content, 10 seconds against 20, timer 2 on thirteen compiles and 3 on six',
+     skipUnless(...ONE_COMPILES), () => {
+  const at = new Map<number, number>();
+  for (const name of ONE_COMPILES) {
+    const c = containerOf(name);
+    const index = touchScreenLightTimer(c);
+    assert.notEqual(index, undefined, name);
+    at.set(index!, (at.get(index!) ?? 0) + 1);
+    const records = timers(c)!.records;
+    assert.equal(records[index!]!.duration, 10, name);
+    // Its partner, counted here without the reader: the one other timer queueing a list of the same content.
+    const lists = c.actionLists()!;
+    const content = (k: number) => JSON.stringify(lists[records[k]!.instruction.operand]?.map((i) => [i.opcode, i.operand]));
+    const partners = records.flatMap((one, k) => (k !== index && one.instruction.opcode === 0x7f && content(k) === content(index!) ? [k] : []));
+    assert.equal(partners.length, 1, name);
+    assert.ok(partners[0]! > index!, name);
+    assert.equal(records[partners[0]!]!.duration, 20, name);
+  }
+  assert.deepEqual(Object.fromEntries([...at].sort()), { 2: 13, 3: 6 });
+});
+
+test('section 400: the screen light choice rewrites that one timer and nothing else, and refuses what a timer cannot hold',
+     skipUnless('one_config'), () => {
+  const c = containerOf('one_config');
+  const index = touchScreenLightTimer(c)!;
+  const lit = withScreenLight(c, 60);
+  assert.equal(lit.blob.length, c.blob.length);
+  const durations = (one: Container) => timers(one)!.records.map((t) => t.duration);
+  assert.deepEqual(durations(lit), durations(c).map((d, k) => (k === index ? 60 : d)));
+  assert.ok(lit.allChecksPass);
+  assert.equal(withScreenLight(lit, 60), lit);
+  assert.equal(TOUCH_CHOICES.screenLightSeconds, 10);
+  assert.throws(() => withScreenLight(c, 0x10000), /outside a timer/);
+  assert.throws(() => withScreenLight(c, 0), /outside a timer/);
 });

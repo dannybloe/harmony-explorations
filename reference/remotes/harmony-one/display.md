@@ -46,7 +46,12 @@ Generated from `packages/codec`, `packages/usb` and the drawing by `make remote-
   manual and section 275.
 * **A page counter** in three places on a list of several pages: "2 pages" at the top and "1/", "2/" on
   each page, read from configurations, section 293; the arrows beside the screen "illuminate only if there
-  are multiple pages", Logitech's manual.
+  are multiple pages", Logitech's manual. **The firmware does not decide that, the configuration does**: a
+  screen's entry list switches the pair of lights on and its leaving list switches it off, on every screen of
+  several pages in the nineteen compiles, section 400.
+* **A device page labels the two keys below it** "Activities", or "Current Activity" while an activity runs,
+  and "Devices", in the configuration's language, and binds both where its hit page offers them, every device page of Logitech's compiles,
+  section 401.
 * **An activity shows two screens**: a start up screen, "Keep the remote pointed at your system", and then
   a working screen, often with a Remote Assistant screen between them, read from 60 activities of thirteen
   configurations and seen on a unit, section 279.
@@ -71,8 +76,9 @@ Generated from `packages/codec`, `packages/usb` and the drawing by `make remote-
 * **Five faces**, at 11, 14 and 16 pixels and at 15 in two weights, each set in its own ink, over a shadow of its own on all but one; the
   button labels carry a dark shadow one pixel down and right, read from configurations, section 396.
 * **How many font sets**: Logitech's compiles carry 16 to 18. The font select instruction takes its index as
-  one byte and nothing in its handler bounds it, read in the 3.4 firmware, section 399; that a set past the
-  eighteenth draws is **not checked** on a unit.
+  one byte and nothing in its handler bounds it, read in the 3.4 firmware, section 399; and a set past the
+  eighteenth draws: a configuration carrying 31 showed its screens in sets 21 to 28 on the spare One, seen at
+  the bench, section 399.
 * **A pad** is a box 81 pixels wide and 50 tall at one of six places, two per row, read from configurations,
   section 394. On a device page Logitech puts a label's lines 20 pixels into the pad, or at 15 and 26, or 9,
   20 and 31, in a 14 pixel set, which leaves a one line label's capitals 2 pixels below the middle;
@@ -99,4 +105,3 @@ never been used, section 111.
 * The horizontal scale of the panel to pixel transform.
 * Whether the date on screen, not only the time, matches the stamp, sections 242 and 322.
 * What the slideshow looks like on this unit, and the infrared indicator.
-* Whether a font set past the eighteenth draws, section 399.

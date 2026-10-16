@@ -40,10 +40,11 @@ configurations, section 311.
 | clock crystal | 32.768 kHz on Timer 1 | read in the firmware, sections 106 and 111 |
 | a light sensor | analogue channel 1 sampled into a four level band; the configuration states its thresholds | read in the firmware, sections 103 and 111. What it senses is **not checked** |
 | screen light | set through `CVRCON` in 27 levels, enabled on `LATA` bit 5 | read in the firmware, section 103 |
-| an I2C device at address `0x60` | thirteen channels of three states and two level registers, most plausibly the keypad backlight driver | read in the firmware, section 106; **not named**, deliberately |
+| an I2C device at address `0x60` | thirteen channels of three states and two level registers; **channels 0 to 3 light the keys beside the screen**, in two pairs, 2 and 0 on every device mode and 3 and 1 on most other screens | read in the firmware, section 106; the four channels seen at the bench, section 400; the part **not named**, deliberately |
 | a programmable logic image | 8438 bytes, version 1.6, at internal `0xFF` `+0x0000`; Logitech's client calls it the CPLD image | measured and Logitech's client, sections 94 and 212 |
 | keypad backlight | "White or Amber (depending on mode)" | Logitech's manual |
 | picked up | "The Harmony One senses when you pick it up, and lights up the display and buttons" | Logitech's manual, "Setting the backlight timing" |
+| how long the screen stays lit | the 10 second timer of the one pair of timers, 10 and 20 seconds, that queue two lists of the same content in every compile; raised to 60, the screen stayed lit about 60 seconds | read from configurations and seen at the bench, section 400 |
 
 ## Keys and touch, electrically
 
@@ -66,7 +67,7 @@ configurations, section 311.
 ## Not checked
 
 * The processor's marking, and the display controller and panel part.
-* What the light sensor senses, and what the I2C device at `0x60` is.
+* What the light sensor senses, which part the I2C device at `0x60` is, and what its channels 4 to 12 light.
 * What the programmable logic image drives.
 * How fast the clock drifts: it "runs badly wrong after a while", an account from the bench, section 111,
   and its rate was deliberately not measured.

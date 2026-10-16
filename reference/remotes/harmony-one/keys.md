@@ -112,7 +112,7 @@ tested**, section 48.
 Screen keys and keypad keys share no scan code, four of four configurations, section 128.
 
 **The two keys below the screen are labelled by the screen**: "Options" and "Devices" on the activity menu,
-"Activities" and nothing on the device list, read from configurations and seen, sections 125 and 275;
+"Activities" and nothing on the device list, "Activities" (or "Current Activity") and "Devices" on a device page, read from configurations and seen, sections 125, 275 and 401;
 Logitech's manual calls them the function buttons, "dynamic". **A one page screen deadens both page
 arrows**, and a screen of several pages leaves them live, read from configurations, sections 275 and 293.
 

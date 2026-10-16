@@ -72,7 +72,8 @@ interface DeviceBottomKeys {
  *
  * **Every device page of Logitech's One compiles closes on that switch**: over a state variable that says
  * whether an activity runs, one arm drawing "Activities" and the other "Current Activity", both jumping back to
- * a tail that draws "Devices" and the page counter. And every page whose hit page offers the two keys binds
+ * a tail that draws "Devices" and the page counter, in the configuration's own language, which is why they are
+ * copied rather than spelled. And every page whose hit page offers the two keys binds
  * both, the left one through the working screen's table and the right one to a list that beeps and goes back
  * to the device list, all 18 One containers, section 401. A page we compose without them shows two lit keys
  * with no label that do nothing, which the spare Harmony One showed on every device we composed.

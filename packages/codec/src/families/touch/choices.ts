@@ -77,10 +77,17 @@ export interface TouchChoices extends CommonChoices {
    */
   readonly deviceIcons: Readonly<Record<number, string>>;
   readonly otherDeviceIcon: string;
+  /**
+   * How many seconds the screen stays lit, `withScreenLight`, findings section 400. Logitech's compiles all hold
+   * 10, which is the default; the test setup takes longer, asked for at the bench on 16 October 2026 since ten
+   * seconds is too short to test with.
+   */
+  readonly screenLightSeconds: number;
 }
 
 export const TOUCH_CHOICES: TouchChoices = {
   deviceTitleFont: 9,
+  screenLightSeconds: 10,
   activityBox: { fill: '#166fa7', rim: '#bfeeff' },
   deviceBox: { fill: '#1c9c53', rim: '#e8cbb4' },
   labelWeight: 'Medium',
