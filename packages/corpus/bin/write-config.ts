@@ -148,6 +148,8 @@ const SPARE_DUMPS = new Set([
   'one_spare_track_start',
   // The same unit unchanged and read further, because the configuration with our look, section 399, outgrew it.
   'one_spare_look_base',
+  // The spare with that configuration on it, the base for the next write.
+  'one_spare_look_written',
 ]);
 
 /**
