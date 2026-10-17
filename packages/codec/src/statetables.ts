@@ -5,8 +5,10 @@
  * Section 318's frame lays a container out from pieces, and until this module the pieces of these
  * three slots could only come out of a Logitech compile. Here they are built: a caller describes the
  * configuration's own variables and value maps, and everything the format or the firmware decides is
- * generated rather than carried. Arch 14 (Harmony 600, 650 and 700) only, because that is where the
- * constants below were measured, over the thirteen compiles section 312 lists.
+ * generated rather than carried. For arch 14 (Harmony 600, 650 and 700), measured over the thirteen
+ * compiles section 312 lists, and since `todo-compile-one.md` 6.4 for arch 12 (Harmony One), measured
+ * over its 19 distinct compiles: what differs between the two is `STATE_TABLE_ARCHITECTURES`, read in
+ * one place, and the rest below holds on both.
  *
  * **What is generated**, each measured on the thirteen and each a place a carried copy could have
  * hidden a stale byte:
@@ -25,6 +27,8 @@
  *   firmware's block has a maximum of at most 100 and every two byte one at least 254, so the width
  *   is generated and `narrow`, `wide`, `count` and the repeated `narrow` follow from it, section 276.
  *   **Where between 100 and 254 the line falls is not pinned**, and a maximum in that gap is refused.
+ *   On the Harmony One's 19 one byte maxima reach 121 and no variable but the compiler's first is two
+ *   bytes, so a maximum past 121 is refused there.
  * * **The name of a named variable**, which is its stem plus `_` plus the number of values, its
  *   maximum plus one, section 86; and the two level 0 nodes, `Root` and `State`, which open every
  *   name tree of the thirteen in that order.
@@ -35,7 +39,9 @@
  *   the eleven others, 51 to 90, fit 128 and fail at 64. A tie in a bucket is refused, since its
  *   order is the insertion order of a compiler nobody here has read, and none of the thirteen has one.
  * * **A value map's case order**, `compilerCaseOrder`, section 319, and its leading byte, 2 on every
- *   record; arch 14 states its case count in two bytes.
+ *   record; arch 14 states its case count in two bytes and the Harmony One in one.
+ * * **The minute's call**, on the Harmony One: a second transition on the minute calling a list on every
+ *   write, whose index is the description's like the hour's, `StateTablesSpec.minuteList`.
  *
  * **What is carried**, the description: which variables the configuration has, in the order their
  * indices run within each width; each one's stem if it is named, its value when the configuration is
@@ -79,15 +85,6 @@ export class StateTablesError extends Error {}
 export const NAME_TREE_SLOT = 0;
 
 /**
- * The architecture these tables are built for, arch 14 (Harmony 600, 650 and 700). The Harmony One's differ in four
- * values, `todo-compile-one.md` 2.3, and this module moves into its family with 3.3.3.3.
- */
-const STATE_TABLES_ARCHITECTURE = 14;
-
-/** How many state variables the firmware owns on arch 14, 0 to 17, section 284. */
-export const FIRMWARE_STATE_VARIABLE_COUNT = firmwareStateVariableMax(STATE_TABLES_ARCHITECTURE) + 1;
-
-/**
  * Records 7 to 17 on arch 14 as `[first, max]`: the same on all thirteen compiles, none with a
  * transition, section 284. The clock, 0 to 6, is the caller's. What 8 to 11 hold was read on arch 12
  * (Harmony One), section 138, and is not claimed here.
@@ -98,16 +95,77 @@ export const FIRMWARE_STATE_RECORDS: readonly (readonly [number, number])[] = [
 
 /**
  * The variable the compiler emits straight after the firmware's block: index `narrow`, the first two
- * byte index, holding 0 with a maximum of 65277 and no transitions, unnamed, on all thirteen.
+ * byte index, holding 0 with a maximum of 65277 and no transitions, unnamed, on all thirteen arch 14
+ * compiles and on all 19 of the Harmony One's, `todo-compile-one.md` 6.4.
  */
 export const FIRST_WIDE_VARIABLE = { first: 0, max: 65277 } as const;
 
 /**
- * The widest maximum a one byte variable has on the thirteen, and the narrowest a two byte one has.
- * The rule between them is not pinned, so a maximum strictly between the two is refused.
+ * The widest maximum a one byte variable has on the thirteen arch 14 compiles, and the narrowest a two
+ * byte one has. The rule between them is not pinned, so a maximum strictly between the two is refused.
  */
 export const NARROW_MAX_MEASURED = 100;
 export const WIDE_MAX_MEASURED = 254;
+
+/**
+ * What the state tables hold that differs between architectures, measured on each architecture's own
+ * compiles. The case count width of a value map is not here, since the readers hold it,
+ * `VALUE_MAP_COUNT_WIDTH`, and neither is the firmware's block, `firmwareStateVariableMax`: every fact
+ * once, and the builder reads those two where the readers do.
+ */
+export interface StateTableArchitecture {
+  /** Records 7 to 17 as `[first, max]`, none with a transition. */
+  readonly firmwareRecords: readonly (readonly [number, number])[];
+  /** The widest maximum a one byte variable above the firmware's block has on this architecture's compiles. */
+  readonly narrowMaxMeasured: number;
+  /**
+   * The narrowest maximum a two byte variable other than `FIRST_WIDE_VARIABLE` has, or undefined where no
+   * compile holds one, so that every maximum above `narrowMaxMeasured` is refused.
+   */
+  readonly wideMinMeasured: number | undefined;
+}
+
+/**
+ * The architectures these tables are built for, each measured on its own compiles: arch 14 (Harmony 600,
+ * 650 and 700) on the thirteen section 312 lists, arch 12 (Harmony One) on the 19 distinct compiles of
+ * `todo-compile-one.md` 2.2, where records 13 and 14 are `1/1, 2/4` against arch 14's `0/32, 1/1`, every
+ * variable above the firmware's block but the first two byte one is one byte with maxima up to 121, and
+ * `FIRST_WIDE_VARIABLE` is the only two byte variable, so no two byte maximum is measured there.
+ */
+export const STATE_TABLE_ARCHITECTURES: Readonly<Record<number, StateTableArchitecture>> = {
+  12: {
+    firmwareRecords: [[0, 2], [0, 3], [5, 7], [0, 7], [0, 32], [0, 1], [1, 1], [2, 4], [0, 3], [0, 1], [0, 3]],
+    narrowMaxMeasured: 121,
+    wideMinMeasured: undefined,
+  },
+  14: { firmwareRecords: FIRMWARE_STATE_RECORDS, narrowMaxMeasured: NARROW_MAX_MEASURED, wideMinMeasured: WIDE_MAX_MEASURED },
+};
+
+/** The state table facts of `architecture`, read in this one place, or a refusal naming those that are built. */
+export function stateTableArchitecture(architecture: number): StateTableArchitecture & {
+  /** How many state variables the firmware owns, section 284. */
+  readonly firmwareCount: number;
+  /** A value map's case count width, the readers' own table. */
+  readonly caseCountWidth: number;
+} {
+  const facts = STATE_TABLE_ARCHITECTURES[architecture];
+  const caseCountWidth = VALUE_MAP_COUNT_WIDTH[architecture];
+  if (facts === undefined || caseCountWidth === undefined) {
+    const known = Object.keys(STATE_TABLE_ARCHITECTURES).map((one) => `arch ${one}`).join(' and ');
+    throw new StateTablesError(`state tables are built for ${known}, not arch ${architecture}`);
+  }
+  const firmwareCount = firmwareStateVariableMax(architecture) + 1;
+  // The records listed are 7 to the firmware's last; a table that disagrees with the block is a bug here.
+  if (CLOCK_FIELD_COUNT + facts.firmwareRecords.length !== firmwareCount) {
+    throw new StateTablesError(`arch ${architecture}'s firmware block is ${firmwareCount} variables and ${CLOCK_FIELD_COUNT + facts.firmwareRecords.length} are listed`);
+  }
+  return { ...facts, firmwareCount, caseCountWidth };
+}
+
+/** How many state variables the firmware owns on `architecture`, 0 to 17 on arch 12 and 14, section 284. */
+export function firmwareStateVariableCount(architecture: number): number {
+  return stateTableArchitecture(architecture).firmwareCount;
+}
 
 /** `0x1F` sub opcode `0xF2` increments the state variable its operand's low byte names, section 73. */
 const INCREMENT = 0xf2;
@@ -115,6 +173,8 @@ const INCREMENT = 0xf2;
 const CALL = ACTION_LIST_INDEX_OPCODE;
 /** The sentinel a transition's `from` holds when it fires on reaching `to` from any value. */
 const FROM_ANY = -2;
+/** The same sentinel in `to`: it matches any new value, so `FROM_ANY` to `TO_ANY` fires on every write. */
+const TO_ANY = -2;
 
 /** The clock's indices, section 130. */
 const CLOCK_MINUTE = 1;
@@ -123,12 +183,13 @@ const CLOCK_DAY = 3;
 const CLOCK_MONTH = 5;
 const CLOCK_YEAR = 6;
 
-/** The leading byte of every value map record on the thirteen, which the firmware steps over. */
+/**
+ * The leading byte of every value map record on the thirteen arch 14 compiles and the 19 Harmony One
+ * compiles, which the firmware steps over.
+ */
 export const VALUE_MAP_LEAD = 2;
-/** A value map's case count, two bytes on arch 14, read off the readers' own table. */
-const VALUE_MAP_CASE_COUNT_WIDTH = VALUE_MAP_COUNT_WIDTH[STATE_TABLES_ARCHITECTURE] as number;
 
-/** The two level 0 nodes every name tree of the thirteen opens with, in this order. */
+/** The two level 0 nodes every name tree of the thirteen opens with, in this order, and of the One's 19. */
 export const NAME_TREE_ROOTS: readonly string[] = ['Root', 'State'];
 
 /** A transition of a state record: from one value to another, and the one instruction it runs. */
@@ -165,10 +226,19 @@ export interface ValueMapSpec {
 }
 
 export interface StateTablesSpec {
+  /** The architecture built for, one `STATE_TABLE_ARCHITECTURES` holds. */
+  architecture: number;
   /** Records 0 to 6, `first` and `max`: second, minute, hour, day, weekday, month, year. */
   clock: readonly { first: number; max: number }[];
   /** The base slot 10 list the hour calls when it rolls over, which increments the day and weekday. */
   hourList: number;
+  /**
+   * The base slot 10 list the minute calls on every change, `-2` to `-2`, after its increment of the hour:
+   * on all 19 Harmony One compiles, the clock's screen side, a list calling two short lists, `todo-compile-one.md` 2.2,
+   * and since both ends are the sentinel it fires on every write of the minute that is not silent;
+   * on none of the thirteen arch 14 compiles, whose screens show no clock. Absent, the minute calls nothing.
+   */
+  minuteList?: number;
   /**
    * The configuration's own variables. Their indices run in this order within each width, the one
    * byte variables first: a variable's width is generated from its maximum.
@@ -191,13 +261,16 @@ export interface BuiltStateTables {
   wide: number;
 }
 
-/** Whether a maximum makes a two byte variable; refuses the unpinned gap. */
-export function isWideVariable(max: number): boolean {
-  if (max <= NARROW_MAX_MEASURED) return false;
-  if (max >= WIDE_MAX_MEASURED) return true;
-  throw new StateTablesError(
-    `a maximum of ${max} falls between ${NARROW_MAX_MEASURED}, the widest one byte variable on the thirteen `
-    + `arch 14 compiles, and ${WIDE_MAX_MEASURED}, the narrowest two byte one, so its width is not established`);
+/** Whether a maximum makes a two byte variable on `architecture`; refuses the unpinned gap. */
+export function isWideVariable(max: number, architecture: number): boolean {
+  const { narrowMaxMeasured, wideMinMeasured } = stateTableArchitecture(architecture);
+  if (max <= narrowMaxMeasured) return false;
+  if (wideMinMeasured !== undefined && max >= wideMinMeasured) return true;
+  throw new StateTablesError(wideMinMeasured === undefined
+    ? `a maximum of ${max} is past ${narrowMaxMeasured}, the widest one byte variable on arch ${architecture}'s compiles, `
+      + 'which hold no two byte variable but the compiler\'s first, so its width is not established'
+    : `a maximum of ${max} falls between ${narrowMaxMeasured}, the widest one byte variable on arch ${architecture}'s `
+      + `compiles, and ${wideMinMeasured}, the narrowest two byte one, so its width is not established`);
 }
 
 /** The name base slot 0 gives a variable: its stem and its number of values, section 86. */
@@ -338,12 +411,16 @@ export function hourListBytes(): Uint8Array {
   return actionListBytes([CLOCK_DAY, CLOCK_WEEKDAY].map((variable) => ({ opcode: STATE_BAND, operand: (INCREMENT << 8) | variable })));
 }
 
-/** The clock's transitions, section 130: the three rollovers that increment, and the hour's call. */
-export function clockTransitions(index: number, hourList: number): StateTransitionSpec[] {
+/**
+ * The clock's transitions, section 130: the three rollovers that increment, and the hour's call; and with
+ * `minuteList`, the minute's call of it on every change after its increment, `StateTablesSpec.minuteList`.
+ */
+export function clockTransitions(index: number, hourList: number, minuteList?: number): StateTransitionSpec[] {
   const increment = (variable: number): StateTransitionSpec[] =>
     [{ from: FROM_ANY, to: 0, operand: (INCREMENT << 8) | variable, opcode: STATE_BAND }];
   switch (index) {
-    case CLOCK_MINUTE: return increment(CLOCK_HOUR);
+    case CLOCK_MINUTE: return minuteList === undefined ? increment(CLOCK_HOUR)
+      : [...increment(CLOCK_HOUR), { from: FROM_ANY, to: TO_ANY, operand: minuteList, opcode: CALL }];
     case CLOCK_HOUR: return [{ from: FROM_ANY, to: 0, operand: hourList, opcode: CALL }];
     case CLOCK_DAY: return increment(CLOCK_MONTH);
     case CLOCK_MONTH: return increment(CLOCK_YEAR);
@@ -437,6 +514,7 @@ const piece = (bytes: Uint8Array, owner: string, refs: PieceRef[] = []): Contain
  * not pin, and more variables or value maps than an instruction can name.
  */
 export function buildStateTables(spec: StateTablesSpec): BuiltStateTables {
+  const facts = stateTableArchitecture(spec.architecture);
   if (spec.clock.length !== CLOCK_FIELD_COUNT) {
     throw new StateTablesError(`the clock is ${CLOCK_FIELD_COUNT} records, not ${spec.clock.length}`);
   }
@@ -444,22 +522,22 @@ export function buildStateTables(spec: StateTablesSpec): BuiltStateTables {
   // then the other two byte ones. A stable partition, so the description's order is kept per width.
   const narrowSpecs: number[] = [];
   const wideSpecs: number[] = [];
-  spec.variables.forEach((v, k) => (isWideVariable(v.max) ? wideSpecs : narrowSpecs).push(k));
-  const narrow = FIRMWARE_STATE_VARIABLE_COUNT + narrowSpecs.length;
+  spec.variables.forEach((v, k) => (isWideVariable(v.max, spec.architecture) ? wideSpecs : narrowSpecs).push(k));
+  const narrow = facts.firmwareCount + narrowSpecs.length;
   const wide = 1 + wideSpecs.length;
   const count = narrow + wide;
   // `0x72` names a variable in a byte, and the write band `0x80 | n` reaches 127; a table past 256
   // holds variables nothing can name.
   if (count > 0x100) throw new StateTablesError(`${count} state variables is more than a byte can name`);
   const indexOf: number[] = new Array(spec.variables.length);
-  narrowSpecs.forEach((k, i) => { indexOf[k] = FIRMWARE_STATE_VARIABLE_COUNT + i; });
+  narrowSpecs.forEach((k, i) => { indexOf[k] = facts.firmwareCount + i; });
   wideSpecs.forEach((k, i) => { indexOf[k] = narrow + 1 + i; });
 
   const recordBytes: Uint8Array[] = new Array(count);
   spec.clock.forEach((field, index) => {
-    recordBytes[index] = buildStateRecord(field.first, field.max, clockTransitions(index, spec.hourList));
+    recordBytes[index] = buildStateRecord(field.first, field.max, clockTransitions(index, spec.hourList, spec.minuteList));
   });
-  FIRMWARE_STATE_RECORDS.forEach(([first, max], i) => {
+  facts.firmwareRecords.forEach(([first, max], i) => {
     recordBytes[CLOCK_FIELD_COUNT + i] = buildStateRecord(first, max);
   });
   recordBytes[narrow] = buildStateRecord(FIRST_WIDE_VARIABLE.first, FIRST_WIDE_VARIABLE.max);
@@ -477,7 +555,7 @@ export function buildStateTables(spec: StateTablesSpec): BuiltStateTables {
   });
 
   if (spec.valueMaps.length > 0xff) throw new StateTablesError(`${spec.valueMaps.length} value maps is more than its one byte count holds`);
-  const valueMaps = spec.valueMaps.map(buildValueMap);
+  const valueMaps = spec.valueMaps.map((map) => buildValueMap(map, spec.architecture));
   const mapTable = new Writer(1 + 3 * valueMaps.length).u8(valueMaps.length);
   for (let k = 0; k < valueMaps.length; k += 1) mapTable.u24(0);
   const mapRefs: PieceRef[] = valueMaps.map((to, k) => ({ at: 1 + 3 * k, to, offset: 0 }));
@@ -494,8 +572,12 @@ export function buildStateTables(spec: StateTablesSpec): BuiltStateTables {
   };
 }
 
-/** One value map record: the lead, the case count, the cases in the compiler's order, the ranges. */
-export function buildValueMap(map: ValueMapSpec): ContainerPiece {
+/**
+ * One value map record: the lead, the case count, the cases in the compiler's order, the ranges. The case
+ * count is `architecture`'s width, two bytes on arch 14 and one on arch 12 (Harmony One).
+ */
+export function buildValueMap(map: ValueMapSpec, architecture: number): ContainerPiece {
+  const { caseCountWidth } = stateTableArchitecture(architecture);
   const ranges = map.ranges ?? [];
   if (ranges.length > 0xff) throw new StateTablesError(`${ranges.length} ranges is more than a one byte count holds`);
   const byValue = new Map<number, PieceTarget>();
@@ -514,10 +596,11 @@ export function buildValueMap(map: ValueMapSpec): ContainerPiece {
     throw error;
   }
   const stride = VALUE_MAP_KEY_WIDTH + 3;
-  const casesAt = 1 + VALUE_MAP_CASE_COUNT_WIDTH;
+  const casesAt = 1 + caseCountWidth;
   const length = casesAt + stride * order.length + 1 + VALUE_MAP_RANGE_BYTES * ranges.length;
   const head = new Writer(length).u8(VALUE_MAP_LEAD);
-  const out = VALUE_MAP_CASE_COUNT_WIDTH === 1 ? head.u8(order.length) : head.u16(order.length);
+  if (caseCountWidth === 1 && order.length > 0xff) throw new StateTablesError(`${order.length} cases is more than a one byte count holds`);
+  const out = caseCountWidth === 1 ? head.u8(order.length) : head.u16(order.length);
   const refs: PieceRef[] = [];
   order.forEach((value, k) => {
     out.u16(value).u24(0);
@@ -553,10 +636,11 @@ function targetOf(ref: PieceRef | undefined): PieceTarget {
 }
 
 /**
- * Read a description back off a laid out arch 14 container, `takeApart`'s result.
+ * Read a description back off a laid out container, `takeApart`'s result, of an architecture
+ * `STATE_TABLE_ARCHITECTURES` holds.
  *
- * Reads only what the description carries: the clock's seven values and maxima, the hour's list,
- * and every variable from 18 upward but the first two byte one, with its stem, value, maximum and
+ * Reads only what the description carries: the architecture, the clock's seven values and maxima, the
+ * hour's list and the minute's where it calls one, and every variable from 18 upward but the first two byte one, with its stem, value, maximum and
  * transitions; and every value map's cases by value. Of the header it reads `count` and the first
  * `narrow`, to find the records and to know which index is the first two byte one. Nothing else the
  * generator writes is read, the firmware's records 7 to 17, the first two byte variable, the
@@ -564,6 +648,8 @@ function targetOf(ref: PieceRef | undefined): PieceTarget {
  * among them, so a rebuild that matches the container computed every one of them.
  */
 export function describeStateTables(layout: ContainerLayout): StateTablesSpec {
+  const { architecture } = layout;
+  const facts = stateTableArchitecture(architecture);
   const table = tablePiece(layout, STATE_TABLE_SLOT);
   const count = u16(table.bytes, 0);
   const narrow = u16(table.bytes, 2);
@@ -582,7 +668,7 @@ export function describeStateTables(layout: ContainerLayout): StateTablesSpec {
     }
     return { first: u16(b, 0), max: u16(b, 2), transitions };
   };
-  if (count <= narrow || narrow < FIRMWARE_STATE_VARIABLE_COUNT) {
+  if (count <= narrow || narrow < facts.firmwareCount) {
     throw new StateTablesError(`base slot 13 splits ${count} variables at ${narrow}, which leaves no room for the firmware's block`);
   }
 
@@ -606,7 +692,7 @@ export function describeStateTables(layout: ContainerLayout): StateTablesSpec {
     at += 3 + stated;
   }
   const variables: StateVariableSpec[] = [];
-  for (let index = FIRMWARE_STATE_VARIABLE_COUNT; index < count; index += 1) {
+  for (let index = facts.firmwareCount; index < count; index += 1) {
     if (index === narrow) continue;
     const { first, max, transitions } = recordOf(index);
     const name = names.get(index);
@@ -626,8 +712,8 @@ export function describeStateTables(layout: ContainerLayout): StateTablesSpec {
     const fields = refsByPosition(ref.to);
     const fieldAt = (at: number): PieceRef | undefined => fields.find((one) => one.at === at);
     const stride = VALUE_MAP_KEY_WIDTH + 3;
-    const casesAt = 1 + VALUE_MAP_CASE_COUNT_WIDTH;
-    const n = VALUE_MAP_CASE_COUNT_WIDTH === 1 ? u8(b, 1) : u16(b, 1);
+    const casesAt = 1 + facts.caseCountWidth;
+    const n = facts.caseCountWidth === 1 ? u8(b, 1) : u16(b, 1);
     const cases = Array.from({ length: n }, (_, i) => ({
       value: u16(b, casesAt + stride * i),
       target: targetOf(fieldAt(casesAt + stride * i + VALUE_MAP_KEY_WIDTH)),
@@ -641,7 +727,13 @@ export function describeStateTables(layout: ContainerLayout): StateTablesSpec {
     return ranges.length > 0 ? { cases, ranges } : { cases };
   });
 
-  return { clock, hourList: hour[0]!.operand, variables, valueMaps };
+  // The minute's second transition, where it has one, is a call: only the list it names is read, so the
+  // rest of it is generated and a rebuild that matches computed it.
+  const minute = recordOf(CLOCK_MINUTE).transitions;
+  if (minute.length > 2) throw new StateTablesError(`record 1, the clock's minute, holds ${minute.length} transitions`);
+  const spec: StateTablesSpec = { architecture, clock, hourList: hour[0]!.operand, variables, valueMaps };
+  if (minute.length === 2) spec.minuteList = minute[1]!.operand;
+  return spec;
 }
 
 /**

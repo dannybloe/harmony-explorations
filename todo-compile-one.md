@@ -128,7 +128,7 @@ One with its sequence's keys translated by name, since the One's keys have other
 - [x] 6.1 The frame for 22 slots: cookies, format word, the architecture record and the section table; `layOutContainer` rebuilds all 19 distinct Logitech One compiles and 15 of our writes byte for byte, the safe mode library and a half written read apart (section 395)
 - [ ] 6.2 The placer for the One's pictures and glyph sets
 - [ ] 6.3 The wiring: the One's own lists, settings and timers
-- [ ] 6.4 The parameter block's 11 groups, the clock records, the state variable storage and the log area
+- [x] 6.4 The parameter block's 11 groups, the clock records, the state variable storage and the log area; done: the same builders with the One's differences as data, `STATE_TABLE_ARCHITECTURES` and `LOG_AREAS` per architecture and its values `TOUCH_PARAMETERS` in the touch family, rebuild all 19 One compiles byte for byte part by part (133 clock records, 209 firmware records, 538 of its own variables, 303 value maps, 19 log areas, 209 parameter groups), a blinded description too, the arch 14 builds unchanged
 
 ## 7. The empty configuration for the One
 

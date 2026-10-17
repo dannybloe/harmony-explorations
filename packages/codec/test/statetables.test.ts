@@ -29,6 +29,7 @@ import {
   FIRMWARE_STATE_RECORDS,
   FIRST_WIDE_VARIABLE,
   NARROW_MAX_MEASURED,
+  STATE_TABLE_ARCHITECTURES,
   VALUE_MAP_LEAD,
   StateTablesError,
   WIDE_MAX_MEASURED,
@@ -43,6 +44,7 @@ import {
   compilerCaseOrder,
   describeStateTables,
   deviceDelayVariables,
+  hourListBytes,
   isWideVariable,
   keyListCapacity,
   keyListHash,
@@ -102,9 +104,10 @@ test('base slots 0, 13 and 14 of every arch 14 compile are rebuilt byte for byte
 /**
  * A copy of `layout` with every byte the generator owns overwritten, so a description read off it
  * cannot carry any of them. Only the three slots' pieces are copied; the rest are shared, which is
- * what lets the value maps' targets still name the pieces the layout holds.
+ * what lets the value maps' targets still name the pieces the layout holds. A value map's case count is
+ * `countWidth` bytes, two on arch 14 and one on the Harmony One.
  */
-function blinded(layout: ContainerLayout): ContainerLayout {
+function blinded(layout: ContainerLayout, countWidth = 2): ContainerLayout {
   const table = layout.sections[13]!.head[0]!;
   const records = [...table.refs].sort((a, b) => a.at - b.at).map((ref) => ('to' in ref ? ref.to : undefined)!);
   const narrow = table.bytes[2]! | (table.bytes[3]! << 8);
@@ -123,6 +126,11 @@ function blinded(layout: ContainerLayout): ContainerLayout {
   for (const index of [1, 3, 5]) {
     const bytes = records[index]!.bytes.slice();
     bytes.fill(0xee, 7 + 5, 7 + 8);
+    // The Harmony One's minute calls a list on every write: all of that transition but the list it names.
+    if (index === 1 && bytes.length === 7 + 16) {
+      bytes.fill(0xee, 7 + 8, 7 + 8 + 5);
+      bytes[7 + 8 + 7] = 0xee;
+    }
     copy(records[index]!, bytes);
   }
   // The header's `wide` and repeated `narrow`; `count` and `narrow` stay, since the description
@@ -156,15 +164,16 @@ function blinded(layout: ContainerLayout): ContainerLayout {
   const newMaps = mapTable.refs.map((ref) => {
     if (!('to' in ref)) throw new Error('a value map is not a piece');
     const p = ref.to;
-    const n = p.bytes[1]! | (p.bytes[2]! << 8);
+    const at = 1 + countWidth;
+    const n = countWidth === 1 ? p.bytes[1]! : p.bytes[1]! | (p.bytes[2]! << 8);
     const bytes = p.bytes.slice();
     bytes[0] = 0xee;
     const refs = p.refs.map((one) => {
-      if (one.at < 3 || one.at >= 3 + 5 * n) return one;
-      const k = Math.floor((one.at - 3) / 5);
-      return { ...one, at: 3 + 5 * (n - 1 - k) + 2 };
+      if (one.at < at || one.at >= at + 5 * n) return one;
+      const k = Math.floor((one.at - at) / 5);
+      return { ...one, at: at + 5 * (n - 1 - k) + 2 };
     });
-    for (let k = 0; k < n; k += 1) bytes.set(p.bytes.subarray(3 + 5 * k, 3 + 5 * k + 5), 3 + 5 * (n - 1 - k));
+    for (let k = 0; k < n; k += 1) bytes.set(p.bytes.subarray(at + 5 * k, at + 5 * k + 5), at + 5 * (n - 1 - k));
     const out = copy(p, bytes);
     out.refs = refs;
     return { ...ref, to: out };
@@ -523,9 +532,9 @@ test('the activity variables are built from the activity count, which the menu s
 
 test('the generator refuses what it cannot establish', () => {
   // A width in the gap between the measured one byte and two byte maxima.
-  assert.throws(() => isWideVariable(150), StateTablesError);
-  assert.equal(isWideVariable(NARROW_MAX_MEASURED), false);
-  assert.equal(isWideVariable(WIDE_MAX_MEASURED), true);
+  assert.throws(() => isWideVariable(150, 14), StateTablesError);
+  assert.equal(isWideVariable(NARROW_MAX_MEASURED, 14), false);
+  assert.equal(isWideVariable(WIDE_MAX_MEASURED, 14), true);
   // Two indices in one bucket: 20 and 80 both land in bucket 21 of 64.
   const crowded = [20, 80, ...Array.from({ length: 39 }, (_, k) => 30 + k).filter((v) => v !== 80)];
   assert.equal(keyListCapacity(crowded.length), 64);
@@ -536,16 +545,17 @@ test('the generator refuses what it cannot establish', () => {
   assert.doesNotThrow(() => buildStateRecord(65535, 254));
   const target = { to: { bytes: new Uint8Array(1), refs: [] }, offset: 0 };
   // A case key set no compile pins, and a key twice.
-  assert.throws(() => buildValueMap({ cases: [2, 3, 16].map((value) => ({ value, target })) }), StateTablesError);
-  assert.throws(() => buildValueMap({ cases: [{ value: 1, target }, { value: 1, target }] }), StateTablesError);
+  assert.throws(() => buildValueMap({ cases: [2, 3, 16].map((value) => ({ value, target })) }, 14), StateTablesError);
+  assert.throws(() => buildValueMap({ cases: [{ value: 1, target }, { value: 1, target }] }, 14), StateTablesError);
   const spec: StateTablesSpec = {
-    clock: Array.from({ length: 6 }, () => ({ first: 0, max: 59 })), hourList: 12, variables: [], valueMaps: [],
+    architecture: 14, clock: Array.from({ length: 6 }, () => ({ first: 0, max: 59 })), hourList: 12, variables: [], valueMaps: [],
   };
   assert.throws(() => buildStateTables(spec), StateTablesError);
 });
 
 test('a built table names its records, and the header follows the widths', () => {
   const built = buildStateTables({
+    architecture: 14,
     clock: [[1, 59], [2, 59], [3, 23], [4, 30], [5, 6], [6, 11], [26, 27]].map(([first, max]) => ({ first: first!, max: max! })),
     hourList: 12,
     variables: [
@@ -559,4 +569,127 @@ test('a built table names its records, and the header follows the widths', () =>
   assert.equal(built.records.length, 22);
   assert.deepEqual(built.stateTable.refs.map((ref) => ('to' in ref ? built.records.indexOf(ref.to) : -1)),
                    Array.from({ length: 22 }, (_, k) => k));
+});
+
+// ---------------------------------------------------------------------------------------------------
+// The Harmony One, `todo-compile-one.md` 6.4: the same builder, with the facts `STATE_TABLE_ARCHITECTURES`
+// holds for it.
+// ---------------------------------------------------------------------------------------------------
+
+/** The 19 distinct Harmony One compiles, `todo-compile-one.md` 2.2, as `startupassistant.test.ts` lists them. */
+const ONE_COMPILES = ['one_config', 'one_config_unprogrammed', 'one_spare_after_sync', 'one_spare_myharmony', 'one_spare_20260830',
+  'calibration_one', 'calibration_favchannels', 'calibration_favzero', 'compiled_protocols', 'compiled_protocols_2',
+  'compiled_protocols_3', 'harvest_one_two_devices', 'harvest_one_families_1', 'harvest_one_families_2', 'harvest_one_families_3',
+  'one_friend_asfound_config', 'one_friend_legacy_sync_config', 'phase7_before', 'phase7_after'] as const;
+
+const pieceTargets = (table: ContainerPiece): ContainerPiece[] =>
+  [...table.refs].sort((a, b) => a.at - b.at).map((ref) => ('to' in ref ? ref.to : undefined)!);
+const same = (a: Uint8Array, b: Uint8Array): boolean => a.length === b.length && a.every((v, i) => v === b[i]);
+
+test('todo-compile-one 6.4: base slots 0, 13 and 14 of all 19 Harmony One compiles are rebuilt byte for byte from a description, part by part',
+     skipUnless(...ONE_COMPILES), () => {
+  const tally = { whole: 0, clock: 0, firmware: 0, firstWide: 0, own: 0, table: 0, tree: 0, mapTable: 0, maps: 0, minute: 0 };
+  let variables = 0;
+  let maps = 0;
+  for (const name of ONE_COMPILES) {
+    const c = containerOf(name);
+    const layout = takeApart(c);
+    const spec = describeStateTables(layout);
+    assert.equal(spec.architecture, 12, name);
+    if (spec.minuteList !== undefined) tally.minute += 1;
+    variables += spec.variables.length;
+    maps += spec.valueMaps.length;
+    const built = buildStateTables(spec);
+    // Each built piece against the piece of Logitech's it takes the place of; `takeApart` zeroes every
+    // address field, and the built pieces leave theirs zero, so the bytes compare as they stand.
+    const table = layout.sections[13]!.head[0]!;
+    const theirs = pieceTargets(table);
+    const narrow = table.bytes[2]! | (table.bytes[3]! << 8);
+    built.records.forEach((p, index) => {
+      if (!same(p.bytes, theirs[index]!.bytes)) return;
+      if (index < 7) tally.clock += 1;
+      else if (index < 18) tally.firmware += 1;
+      else if (index === narrow) tally.firstWide += 1;
+      else tally.own += 1;
+    });
+    if (same(built.stateTable.bytes, table.bytes)) tally.table += 1;
+    if (same(built.nameTree.bytes, layout.sections[0]!.head[0]!.bytes)) tally.tree += 1;
+    const mapTable = layout.sections[14]!.head[0]!;
+    if (same(built.valueMapTable.bytes, mapTable.bytes)) tally.mapTable += 1;
+    pieceTargets(mapTable).forEach((p, k) => { if (same(built.valueMaps[k]!.bytes, p.bytes)) tally.maps += 1; });
+    if (firstDifference(rebuilt(layout), c.blob) === undefined) tally.whole += 1;
+  }
+  // 19 compiles: seven clock records, eleven of the firmware's and one first two byte variable each, and
+  // every variable and value map the descriptions carry.
+  assert.equal(variables, 538);
+  assert.equal(maps, 303);
+  assert.deepEqual(tally, {
+    whole: 19, clock: 133, firmware: 209, firstWide: 19, own: 538, table: 19, tree: 19, mapTable: 19, maps: 303, minute: 19,
+  });
+});
+
+test('todo-compile-one 6.4: the rebuild reads none of the bytes the generator owns: a blinded description rebuilds all 19 Harmony One compiles',
+     skipUnless(...ONE_COMPILES), () => {
+  for (const name of ONE_COMPILES) {
+    const c = containerOf(name);
+    const layout = takeApart(c);
+    const blind = blinded(layout, 1);
+    assert.notDeepEqual(blind.sections[0]!.head[0]!.bytes, layout.sections[0]!.head[0]!.bytes, `${name}: tree`);
+    assert.notDeepEqual(blind.sections[13]!.head[0]!.bytes, layout.sections[13]!.head[0]!.bytes, `${name}: header`);
+    assert.equal(firstDifference(rebuilt(layout, blind), c.blob), undefined, `${name} differs`);
+  }
+});
+
+test('todo-compile-one 6.4: the Harmony One\'s firmware block, clock and widths are its own on all 19, and arch 14\'s fail it',
+     skipUnless(...ONE_COMPILES), () => {
+  const one = STATE_TABLE_ARCHITECTURES[12]!;
+  const tally = { firmware: 0, fourteenFirmware: 0, clock: 0, clockWithoutMinute: 0, hourList: 0, minuteNext: 0, firstWide: 0, onlyWide: 0 };
+  let narrowWidest = 0;
+  for (const name of ONE_COMPILES) {
+    const c = containerOf(name);
+    const t = stateTable(c)!;
+    const records = stateRecords(c)!;
+    const held = (r: (typeof records)[number]): [number, number] => [r.first, r.second];
+    const firmware = records.slice(7, 18);
+    if (firmware.every((r, k) => r.count === 0 && JSON.stringify(held(r)) === JSON.stringify(one.firmwareRecords[k]))) tally.firmware += 1;
+    if (firmware.every((r, k) => JSON.stringify(held(r)) === JSON.stringify(FIRMWARE_STATE_RECORDS[k]))) tally.fourteenFirmware += 1;
+    const hour = records[2]!.values[0]!.operand;
+    const minute = records[1]!.values[1]?.operand;
+    const transitions = (index: number) => records[index]!.values.map((v) => ({ from: v.from, to: v.to, operand: v.operand, opcode: v.opcode }));
+    if ([0, 1, 2, 3, 4, 5, 6].every((index) => JSON.stringify(transitions(index)) === JSON.stringify(clockTransitions(index, hour, minute)))) tally.clock += 1;
+    if ([0, 1, 2, 3, 4, 5, 6].every((index) => JSON.stringify(transitions(index)) === JSON.stringify(clockTransitions(index, hour)))) tally.clockWithoutMinute += 1;
+    const hourList = c.actionLists()![hour]!;
+    if (same(new Uint8Array([hourList.length, ...hourList.flatMap((one) => [one.operand & 0xff, one.operand >> 8, one.opcode])]), hourListBytes())) tally.hourList += 1;
+    // The minute's list sits straight before the hour's in base slot 10 on all 19; both indices are the
+    // description's, so this is an observation and nothing builds on it.
+    if (minute === hour - 1) tally.minuteNext += 1;
+    const firstWide = records[t.narrow]!;
+    if (firstWide.first === FIRST_WIDE_VARIABLE.first && firstWide.second === FIRST_WIDE_VARIABLE.max && firstWide.count === 0) tally.firstWide += 1;
+    if (t.count === t.narrow + 1) tally.onlyWide += 1;
+    records.forEach((r, index) => { if (index >= 18 && index < t.narrow) narrowWidest = Math.max(narrowWidest, r.second); });
+  }
+  assert.deepEqual(tally, { firmware: 19, fourteenFirmware: 0, clock: 19, clockWithoutMinute: 0, hourList: 19, minuteNext: 19, firstWide: 19, onlyWide: 19 });
+  assert.equal(narrowWidest, one.narrowMaxMeasured);
+  assert.equal(one.wideMinMeasured, undefined);
+  // The width rule refuses past what is measured, and arch 14's rule would make 101 to 121 two bytes.
+  assert.equal(isWideVariable(121, 12), false);
+  assert.throws(() => isWideVariable(122, 12), StateTablesError);
+  assert.throws(() => isWideVariable(121, 14), StateTablesError);
+});
+
+test('todo-compile-one 6.4: a Harmony One description built as arch 14 is refused on all 19 for a width arch 14 has not measured, and an unbuilt architecture is refused',
+     skipUnless(...ONE_COMPILES), () => {
+  let refused = 0;
+  for (const name of ONE_COMPILES) {
+    const spec = describeStateTables(takeApart(containerOf(name)));
+    // Its variables' maxima reach past arch 14's one byte rule, which refuses them as not established.
+    try {
+      buildStateTables({ ...spec, architecture: 14 });
+    } catch (error) {
+      if (!(error instanceof StateTablesError) || !error.message.includes('falls between')) throw error;
+      refused += 1;
+    }
+  }
+  assert.equal(refused, 19);
+  assert.throws(() => buildStateTables({ architecture: 9, clock: [], hourList: 0, variables: [], valueMaps: [] }), StateTablesError);
 });

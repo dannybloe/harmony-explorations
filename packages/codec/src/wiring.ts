@@ -12,7 +12,8 @@
  *
  * * **The log area**, sixteen thousand eight byte records from `0x1E0000` to `0x200000`, the same on
  *   all thirteen. Only the Harmony One's firmware writes to its log area, section 47; no arch 14 image
- *   here has been found to.
+ *   here has been found to. Built by `firmwaresections.ts`, with the parameter block, since
+ *   `todo-compile-one.md` 6.4.
  * * **The event map**: thirty firmware status codes, code `k` to mode `N + k`, and `N` is the number of
  *   screens the firmware owns at the front of base slot 6, fourteen on the Harmony 600 and 650 and
  *   nineteen on the Harmony 700. So it follows from the model.
@@ -62,6 +63,7 @@ import type { ModeZeroModel } from './modezero.ts';
 import { KEYPAD_FIRST_SCAN, KEYPAD_LAST_SCAN } from './modezero.ts';
 import { EVENT_MAP_SLOT, HANDLER_TABLE_SLOT, LOG_AREA_SLOT, taggedListExtent } from './sections.ts';
 import { PARAMETER_SLOT, TIMER_KIND_SCHEDULED, TIMER_RECORD_LENGTH, TIMER_SLOT } from './tables.ts';
+import { LOG_AREAS, buildLogArea, buildParameterBlock, type LogAreaRegion } from './firmwaresections.ts';
 
 /** A refusal, named so a caller can tell a bad description from a bug. */
 export class WiringError extends Error {}
@@ -107,11 +109,16 @@ export const FIRMWARE_SCREENS: Readonly<Record<WiringModel, readonly string[]>> 
 export const EVENT_COUNT = 30;
 
 /**
- * The log area on every arch 14 user configuration: capacity in eight byte records, then the region.
- * Logitech's client declares `0x0E0000` to `0x100000` instead, which is the safe mode image's, section
- * 206; every configuration here states this one.
+ * The architecture this module builds for, arch 14 (Harmony 600, 650 and 700). It moves into the four
+ * slot family with `todo-compile-one.md` 3.3.3.2; the shared builders it calls take it as data.
  */
-export const LOG_AREA = { capacity: 16384, start: 0x1e0000, limit: 0x200000 } as const;
+const WIRING_ARCHITECTURE = 14;
+
+/**
+ * The log area on every arch 14 user configuration: capacity in eight byte records, then the region,
+ * `firmwaresections.ts`' table, where the Harmony One's sits beside it.
+ */
+export const LOG_AREA: LogAreaRegion = LOG_AREAS[WIRING_ARCHITECTURE]!;
 
 /**
  * The parameter block's nine groups per model, as `u16` values. One set per model on the thirteen; the
@@ -943,8 +950,8 @@ export function buildWiring(spec: WiringSpec): BuiltWiring {
   };
 
   // Base slot 2: capacity, then the region's two ends, which are addresses outside the container.
-  const log = new Writer(8).u16(LOG_AREA.capacity).u24(0).u24(0);
-  const logArea = made(log.bytes, 'slot-2-log', [], [{ at: 2, address: LOG_AREA.start }, { at: 5, address: LOG_AREA.limit }]);
+  const logArea = buildLogArea(WIRING_ARCHITECTURE);
+  described.set(logArea, []);
 
   // Base slot 4: status code k enters the firmware screen after the model's own screens, or with no status
   // screens carried, every code the one blank screen that binds nothing.
@@ -959,15 +966,9 @@ export function buildWiring(spec: WiringSpec): BuiltWiring {
   const lead = encodeList(cat.lead, symbols, generated);
   const leadingList = made(lead.bytes, 'slot-8-list', lead.described);
 
-  // Base slot 15.
-  const groups = PARAMETER_VALUES[spec.model].map((values) => {
-    const w = new Writer(1 + 2 * values.length).u8(values.length);
-    for (const v of values) w.u16(v);
-    return made(w.bytes, 'slot-15-group', []);
-  });
-  const ptable = new Writer(1 + 3 * groups.length).u8(groups.length);
-  for (let k = 0; k < groups.length; k += 1) ptable.u24(0);
-  const parameterTable = made(ptable.bytes, 'slot-15-table', [], groups.map((to, k) => ({ at: 1 + 3 * k, to, offset: 0 })));
+  // Base slot 15, the model's values: none of it is the description's.
+  const { table: parameterTable, groups } = buildParameterBlock(WIRING_ARCHITECTURE, { groups: PARAMETER_VALUES[spec.model] });
+  for (const p of [parameterTable, ...groups]) described.set(p, []);
 
   // Base slot 12: the firmware's timers and the device timers at their places.
   const byName = new Map(cat.timers.map((t) => [t.name, t]));

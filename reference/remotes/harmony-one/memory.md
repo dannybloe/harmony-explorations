@@ -13,7 +13,7 @@ where the two disagree, `docs/findings.md` is right.
 | `0x020000` to `0x02EA92` | the application, 3.4, 60050 bytes, **executed in place** | measured, byte identical to the package, section 3 |
 | `0x040000` upward | the user configuration | measured, section 88 |
 | `0x3D0000` to `0x3DEA92` | a **second, stored copy of the application**; this is why writes stop at `0x3D0000` | measured on two units, section 88; `WRITABLE_CEILING` in `packages/usb/src/rails.ts` |
-| `0x3F0000` to `0x400000` | `00 FF` repeating, last two bytes `0x00`; who writes it is unidentified, and it kills the configuration's log area | measured on two units, sections 47 and 111 |
+| `0x3F0000` to `0x400000` | `00 FF` repeating, last two bytes `0x00`; who writes it is unidentified, and it kills the configuration's log area, which every configuration places at `0x3FFFF0` to `0x400000`, sixteen one byte records | measured on two units, sections 47 and 111; the log area on all 19 distinct compiles, `todo-compile-one.md` 2.2 and 6.4 |
 
 **The space past a configuration's end is not blank**: on one unit 408034 bytes of a previous configuration
 sat there, never erased, because flash is only erased where a write needs the room, measured, section 215.
@@ -49,6 +49,13 @@ variable `n` at `0x108 + n`, the clock the first seven and the firmware's own va
 246; the font pointer, the address of the set the next text is drawn in, at `0x2EC` to `0x2EE`, written
 by the copy at `0x2B93C` that the font select handler at `0x292AC` calls, in the 3.4 image, section 399. The write path's own variables are in `docs/usb-protocol.md` and are deliberately not repeated
 here. At every boot the state variable storage above `narrow + 2 * wide` is painted `0xFE`, section 276.
+
+What a configuration seeds that storage with, measured on all 19 distinct compiles and built so since
+`todo-compile-one.md` 6.4 (`docs/config-format.md`, base slot 13): the firmware's variables 13 and 14
+start at 1 and 2 with maxima 1 and 4, where the Harmony 600, 650 and 700's start at 0 and 1; every
+variable of the configuration's own is one byte, maxima up to 121, and the compiler's `0/65277` at index
+`narrow` is the only two byte one; and the minute, besides moving the hour on, calls a list on every write,
+the clock's screen side, which calls two short lists, `todo-compile-one.md` 2.2.
 
 ## Not checked
 

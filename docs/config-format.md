@@ -732,6 +732,11 @@ bound rejects it by zeroing the remaining count. **A writer cannot use this regi
 Read with `gspm.log_area`; `gspm.log_reference` names the append case an instruction selects.
 [findings.md](findings.md) sections 47 and 111.
 
+**Built**, by `buildLogArea` in `packages/codec/src/firmwaresections.ts`, from the per architecture table
+`LOG_AREAS`, which holds the user configuration rows of arch 12 and arch 14: byte for byte on all 19
+distinct Harmony One compiles and on the thirteen arch 14 compiles section 312 lists, the Harmony One's
+with its `u24` capacity, `todo-compile-one.md` 6.4. The safe mode row is not built.
+
 **Case 3's record is a timestamp**: its six bytes reversed are year, month, day, hour, minute and
 second, taken from the clock's broken out fields at data memory `0x108` to `0x10E` on arch 12. The
 other four cases are shapes without meanings. The stride of 8 on the three architectures whose
@@ -2679,6 +2684,14 @@ curves and about nothing else. A device's own numbers are state variables in bas
 
 Read with `gspm.parameter_groups`. [findings.md](findings.md) sections 44, 103 and 105.
 
+**Built**, by `buildParameterBlock` in `packages/codec/src/firmwaresections.ts`, from the model's values
+and checked against `PARAMETER_GROUP_COUNTS`, refusing a group of another length: the Harmony 600, 650
+and 700's are `PARAMETER_VALUES` in `wiring.ts`, and the Harmony One's are `TOUCH_PARAMETERS` in
+`families/touch/parameters.ts`, one set on all 19 distinct Harmony One compiles, group 9's twelve bytes
+past its declared entries included, `ff 00 ff 00` and `00 00 00 00 55 55 55 55`. The groups the table
+above does not read hold `60`, `80`, `2500, 10980` and `129, 21, 3, 1, 0, 0, 0, 0` (groups 2, 3, 8 and
+10) on all 19. Byte for byte on the 19 and on the thirteen arch 14 compiles, `todo-compile-one.md` 6.4.
+
 **On arch 14 the values are one set per model**, 13 of 13: groups 0 to 8 are `44`, `3 5 10 32`, `44`, then
 `1 3 5 32` on the Harmony 600, `10 20 8 32` on the Harmony 650 and `3 5 10 32` on the Harmony 700, then
 `96 98 308 310 768 770`, group 5's curve, group 6's `2025 2075 2375 2425 2475 2525` and eight of 3300, `0`
@@ -3195,6 +3208,21 @@ not for every compile. The constants are arch 14's: on arch 8 and 12 records 7 t
 hold the same values while 13 and 14 hold `1/1, 0/1` (Harmony 880 and 885) and `1/1, 2/4` (Harmony
 One), arch 9 differs from record 8 on, and on all three the `0/65277` variable at index `narrow` is the only
 two byte one while one byte maxima reach 121, inside the gap refused here.
+
+**Built for the Harmony One too**, since `todo-compile-one.md` 6.4: the same builder, with what differs
+between the two architectures in `STATE_TABLE_ARCHITECTURES`, read in one place. All 19 distinct Harmony
+One compiles rebuild byte for byte from a description, and from a blinded one, the clock's seven records,
+the firmware's eleven and the first two byte variable among them. What is the Harmony One's own:
+
+| what | value on arch 12 (Harmony One) |
+|---|---|
+| records 7 to 17, `first / max` | `0/2, 0/3, 5/7, 0/7, 0/32, 0/1, 1/1, 2/4, 0/3, 0/1, 0/3`, no transitions |
+| a variable's width | one byte for a maximum up to 121; no two byte variable but index `narrow` on any of the 19, so a maximum past 121 is refused |
+| a value map's case count | one byte, `VALUE_MAP_COUNT_WIDTH` |
+| the minute's second transition | `{-2 to -2, 0x7F list}` after its increment of the hour, on all 19: since both ends are the sentinel it fires on every write of the minute that is not silent, and the list it calls is the clock's screen side, calling two short lists (`todo-compile-one.md` 2.2), its index the configuration's (`minuteList`); on all 19 that list sits straight before the hour's |
+
+The clock's other transitions, the hour's list `[0x1F 0xF203, 0x1F 0xF204]`, index `narrow`'s `0/65277`,
+the value map lead byte and the name tree's roots and order are arch 14's on all 19.
 
 Read with `gspm.state_table`, `gspm.state_records` and `gspm.state_index`; `stateTable` and
 `stateRecords` in `packages/codec`.
