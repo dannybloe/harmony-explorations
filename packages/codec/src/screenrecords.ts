@@ -50,9 +50,12 @@
  * **The machinery is shared since section 357**: `recordReading` reads a mode record's frame and accounts
  * for its bytes, `recordBuilding` makes a record's pieces, `withModeRecords` puts built records in a layout
  * and `assertRebuilt` compares the result, and `firmwarescreens.ts` builds the firmware's own screens
- * through the same four rather than a copy of them.
+ * through the same four rather than a copy of them. Since section 411 a reading also takes the program pieces a
+ * page reaches by a switch or a jump, `RecordReading.program`, which `withModeRecords` places as a record's
+ * `extras`: the Harmony One's Options page draws its rows that way.
  *
- * Arch 14 only, the Harmony 600, 650 and 700. Read only towards hardware: the result is pieces.
+ * Arch 14, the Harmony 600, 650 and 700, and since `todo-compile-one.md` 4.4.2 arch 12, the Harmony One.
+ * Read only towards hardware: the result is pieces.
  */
 import { ACTIVITY_MENU_MARKER_VALUE, DEVICE_MENU_MARKER_VALUE, menuMarkerOf } from './shared/menus.ts';
 import {
@@ -327,6 +330,12 @@ export interface RecordPlace {
   copies: (PieceTarget & { length: number })[];
   /** The programs the pages call, each once: the Harmony One's chrome. Empty where the pages call none. */
   chromes: ContainerPiece[];
+  /**
+   * The program pieces a page's program reaches by a switch or a jump, in the order the caller read them,
+   * `RecordReading.program`: a Harmony One Options page's arms and the pieces they join again at. Empty
+   * where the caller reads none.
+   */
+  extras: ContainerPiece[];
 }
 
 /**
@@ -361,9 +370,15 @@ export interface RecordReading {
   span: (from: number, length: number, what: string) => void;
   addressField: (from: number, kind: 'read' | 'built') => void;
   frame: (what: string, mode: number) => RecordFrame;
+  /**
+   * A program piece a record's page reaches other than through `frame`, by a switch or a jump: spanned,
+   * its pictures and texts read as a page program's are, once however often it is reached. Its address
+   * fields for the jump and the switch are the caller's to record.
+   */
+  program: (address: number, what: string) => { program: ScreenInstruction[]; piece: ContainerPiece };
   list: (index: number, what: string) => { body: Instruction[]; off: number; piece: ContainerPiece };
   homes: () => Map<string, PieceTarget>;
-  placeOf: (what: string, f: RecordFrame) => RecordPlace;
+  placeOf: (what: string, f: RecordFrame, extras?: readonly ContainerPiece[]) => RecordPlace;
 }
 
 /**
@@ -431,6 +446,35 @@ export function recordReading(c: Container, layout: ContainerLayout, read: Value
   const programPieces = new Set<ContainerPiece>();
   const textRefs: { at: number; one: ScreenInstruction }[] = [];
 
+  // A program's pictures, as read addresses, its inline texts by where their codes start, and the texts it
+  // draws by reference, which `homes` resolves.
+  const readProgram = (piece: ContainerPiece, instructions: ScreenInstruction[], at: number): void => {
+    const texts = new Map<number, string>();
+    for (const one of instructions) {
+      if (one.opcode === 0x02 || one.opcode === 0x03) addressField(one.start + one.length - 3, 'read');
+      if (one.opcode === 0x05 && one.glyphs !== undefined) texts.set(one.start + 3 - at, [...one.glyphs].join(','));
+      if (one.opcode === 0x04) textRefs.push({ at: one.start + 3, one });
+    }
+    inline.set(piece, texts);
+  };
+
+  // A program that is a piece of its own, the chrome a page calls or a piece a page's program reaches by a
+  // jump or a switch: spanned and read once however many times it is reached.
+  const programAt = (address: number, what: string): { program: ScreenInstruction[]; piece: ContainerPiece } => {
+    const instructions = screenProgram(c, address);
+    if (instructions === undefined) throw new ScreenRecordError(`${what} does not read`);
+    const piece = wholePiece(address, what);
+    if (!programPieces.has(piece)) {
+      const off = blobOf(address);
+      const length = Math.max(...instructions.map((one) => one.start + one.length)) - off;
+      lengths.set(piece, length);
+      span(off, length, `the ${what}`);
+      programPieces.add(piece);
+      readProgram(piece, instructions, off);
+    }
+    return { program: instructions, piece };
+  };
+
   // One record's frame: own list, pages, page lists, copies, programs, entry. What it holds is read
   // by the caller.
   const frame = (kind: string, mode: number): RecordFrame => {
@@ -477,34 +521,13 @@ export function recordReading(c: Container, layout: ContainerLayout, read: Value
       span(listOff, list.length, `the ${kind}'s page ${p + 1}'s list`);
       span(copyOff, copy.length, `the ${kind}'s page ${p + 1}'s copy`);
       programPieces.add(programPiece);
-      const readProgram = (piece: ContainerPiece, instructions: ScreenInstruction[], at: number): void => {
-        const texts = new Map<number, string>();
-        for (const one of instructions) {
-          if (one.opcode === 0x02 || one.opcode === 0x03) addressField(one.start + one.length - 3, 'read');
-          if (one.opcode === 0x05 && one.glyphs !== undefined) texts.set(one.start + 3 - at, [...one.glyphs].join(','));
-          if (one.opcode === 0x04) textRefs.push({ at: one.start + 3, one });
-        }
-        inline.set(piece, texts);
-      };
       readProgram(programPiece, program, programOff);
       // The chrome a Harmony One page calls, read once however many pages call it, `chromes`.
       const call = program.find((one) => one.opcode === SCREEN_CALL && one.targets[0] !== undefined);
       let chrome: RecordPageFrame['chrome'];
       if (call !== undefined) {
-        const target = call.targets[0] as number;
         addressField(call.start + 1, 'built');
-        const instructions = screenProgram(c, target);
-        if (instructions === undefined) throw new ScreenRecordError(`${kind}'s page ${p + 1}'s chrome does not read`);
-        const piece = wholePiece(target, `${kind}'s page ${p + 1}'s chrome`);
-        if (!programPieces.has(piece)) {
-          const off = blobOf(target);
-          const length = Math.max(...instructions.map((one) => one.start + one.length)) - off;
-          lengths.set(piece, length);
-          span(off, length, `the ${kind}'s chrome`);
-          programPieces.add(piece);
-          readProgram(piece, instructions, off);
-        }
-        chrome = { program: instructions, piece };
+        chrome = programAt(call.targets[0] as number, `${kind}'s chrome`);
       }
       return {
         page, list, listOff, copy, copyOff, program, programPiece, recordPiece, listPiece,
@@ -553,19 +576,20 @@ export function recordReading(c: Container, layout: ContainerLayout, read: Value
     return found;
   };
 
-  const placeOf = (what: string, f: RecordFrame): RecordPlace => ({
+  const placeOf = (what: string, f: RecordFrame, extras: readonly ContainerPiece[] = []): RecordPlace => ({
     what, own: f.own, entry: f.entry,
     programs: f.pages.map((one) => one.programPiece),
     records: f.pages.map((one) => one.recordPiece),
     lists: f.pages.map((one) => one.listPiece),
     copies: f.pages.map((one) => one.copyAt),
     chromes: [...new Set(f.pages.flatMap((one) => (one.chrome === undefined ? [] : [one.chrome.piece])))],
+    extras: [...extras],
   });
 
   return {
     value, value16, value24, described, structure, addresses, regions, lengths, inline, lists,
     offsetOf: (piece) => laid.offsetOf(piece) as number,
-    blobOf, targetOf, wholePiece, span, addressField, frame, list, homes, placeOf,
+    blobOf, targetOf, wholePiece, span, addressField, frame, list, homes, placeOf, program: programAt,
   };
 }
 
@@ -796,6 +820,8 @@ export interface BuiltScreen {
   entry: ContainerPiece;
   /** The programs the pages call, paired by position with `RecordPlace.chromes`; the Harmony One's chrome. */
   chromes?: ContainerPiece[];
+  /** The pieces a page's program reaches by a switch or a jump, paired by position with `RecordPlace.extras`. */
+  extras?: ContainerPiece[];
 }
 
 export interface BuiltScreenRecords {
@@ -1091,6 +1117,11 @@ export function withModeRecords(
       throw new ScreenRecordError(`the ${kind} would call ${chromes.length} chromes where the configuration's calls ${old.chromes.length}`);
     }
     old.chromes.forEach((piece, k) => swap(piece, chromes[k] as ContainerPiece));
+    const extras = made.extras ?? [];
+    if (old.extras.length !== extras.length) {
+      throw new ScreenRecordError(`the ${kind} would reach ${extras.length} program pieces by a switch or a jump where the configuration's reaches ${old.extras.length}`);
+    }
+    old.extras.forEach((piece, k) => swap(piece, extras[k] as ContainerPiece));
     old.programs.forEach((piece, p) => {
       swap(piece, made.programs[p] as ContainerPiece);
       swap(old.records[p] as ContainerPiece, made.records[p] as ContainerPiece);

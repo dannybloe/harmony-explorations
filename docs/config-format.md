@@ -2652,6 +2652,29 @@ screens', numbered in stored key order with each chrome's queued list after its 
 produces it, `keyListOrderInserted`, is inferred. Rebuilt byte for byte on the
 sixteen English compiles of skin 54 and the European factory file.
 
+**Twenty three more fixed screens, built**, section 411: code 9's status screen, Options, the screen sensitivity
+picker and its five confirmations, the Year, Month, Day (28, 30 and 31 days), Hour, Minute and Time of Day pickers,
+and seven blank screens. `families/touch/fixedscreens.ts` finds each by its look, describes which mode it is, its
+hit pages, pictures, fonts by role, the build year and the configuration's numbers (list indices, modes, timers,
+base slot 11 programs, value maps, state variables), and generates the rest; the 531 lists the screens name directly
+are built at the described indices, the 207 below them are named by index.
+
+| what | rule, on the sixteen |
+|---|---|
+| a mode entry's first byte | 1 where the mode's own key map binds tag `0x29`, else 0; 139 and 3455 records of the nineteen One compiles |
+| a tagged list's stored order | `keyListOrder`; no two tags of these screens share a bucket |
+| a word on a button | `x + floor((width - w) / 2)`, buttons 81 wide at x 6, 48 or 89 and 164 wide at x 6; 192 per compile; the 164 wide case is the body rule's function |
+| a word of the key below the screen | centred on its half, `floor((88 - w) / 2)` left, `88 + floor((88 - w) / 2)` right; 44; the right half rests on "OK" alone, so its rounding is not determined |
+| a page number on a screen of several pages | ends at x 18, `18 - w`; 32 |
+| a body line | `floor((176 - w) / 2)`; 12 |
+| constants | title at 6, 4; "/" at 18, 18; the page count at 23, 18 and "pages" at 35, 18; every y |
+| inline or by reference | inline in the first program to draw it unless a program outside holds it; programs are laid out in mode order, chrome first, then each page's main line, the pieces its switches join at, and the switches' arms |
+| the Year picker | the build year and the year either side, nineteen of nineteen compiles; a range holding a leap year brings a Day 29 picker and a second Month picker, not built, so such a year is refused; its `0x79` is minus the first year offered less 2000, generated; the font sets hold only the compile's own digits, so another year is refused by the speller |
+
+A Harmony One page program may switch on a state variable, `0x12`, each arm a program piece of its own ending in
+a jump to the piece the arms join at: Options draws its rows so. **Unconfirmed**: what the `0x1F ED` and `0x1F F2`
+bands do; both low bytes are taken as numbers the configuration chose, since they differ by compile.
+
 **Which of the 78 the 3.4 firmware draws by number**: one. A mode becomes current only from an `0x7E` operand, the
 mode stack (a mode that was current) or base slot 4, and base slot 4 is walked only for status code 9, "LCD Module
 Failed", after the licence check passed and while the configuration's verdict stands, so its key 9 (mode 19 in

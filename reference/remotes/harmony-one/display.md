@@ -86,6 +86,21 @@ Generated from `packages/codec`, `packages/usb` and the drawing by `make remote-
   centred on the 176 pixel width, and on Low Battery and the charging problem screen "OK" at 124, 201, inside the
   touch area the page binds, code 49, the lower right of the screen. Read from configurations on the eighteen
   English compiles, section 409.
+* **Options and its screens**: Options is two pages of rows, "Turn Remote Assistant" On or Off, "Tutorial" and
+  "Date and Time", then "Turn Screen Sounds Off" or On and "Screen Sensitivity", the bottom left key reading
+  "Activities" or "Current Activity". Screen sensitivity offers five levels, Very Low to Very High, and confirms the
+  one picked with "Screen sensitivity is set to" the level and "OK". Date and Time walks through pickers: Year,
+  Month, Day, Hour, Minute and Time of Day, AM or PM. A picker is up to six buttons, two to a row, except Year's
+  three full width buttons and Screen Sensitivity's Medium alone in the middle row, with "Back" on the bottom left
+  key, and on a screen of several pages its page and the count at the top, "1/5 pages"; the Month picker leads to a
+  Day picker of the month's days, 28, 30 or 31. Read from configurations on the sixteen English compiles of skin 54,
+  section 411.
+* **The Year picker offers the year the configuration was built and the year either side**, 2025 to 2027 on
+  compiles of 2026, on all nineteen compiles read. Where those years hold a leap year the compiles carry a Day
+  picker of 29 days and a second Month picker whose February enters it, on all three compiles read that hold one;
+  the European compiles' Hour picker counts 24 hours and they have no Time of Day picker. Read from configurations, section 411.
+* **The status screen code 9 draws** says "System Message: 9" as its title over "LCD Module" and "Failed"; the seven
+  blank screens the timers enter show one picture each and no text. Read from configurations, section 411.
 * **USB**: "USB Connected" on the cable, seen at the bench, section 155.
 * **Safe mode** lists five images, each with a checksum and a version, seen at the bench and matched to
   the images read off the unit, section 190; [firmware.md](firmware.md).

@@ -53749,3 +53749,232 @@ count rather than as itself.
 * `packages/codec/src/families/touch/wiring.ts`, `packages/codec/src/wiringparts.ts`, `Family.wiring`.
 * `docs/config-format.md`, "The firmware's own wiring on the Harmony One" and base slot 12's timer table;
   `reference/remotes/harmony-one/behaviour.md`.
+
+## 411. The Harmony One's twenty three fixed screens past the firmware's ten are built from a description of their numbering, byte for byte on the sixteen English compiles of skin 54
+
+**Todo `todo-compile-one.md` 4.4.4.1**: the screens section 408 says a configuration needs beyond the ten firmware
+screens, built as section 409 built those: the status screen for code 9, the seven blank screens the timers enter,
+Options, screen sensitivity's picker and its five confirmations, and the clock's eight pickers. Section 410 is
+another item's.
+
+**Sources checked**: sections 405 (the census, the 38 fixed others of role `other`), 408 (code 9's screen is the
+only one the firmware takes by number; the others are entered by the configuration), 409 (the ten firmware
+screens' build, its blind control and its centring rule), 334 and 406 (a text is stored inline once and pointed
+at after), 66 (the mode entry's first byte, a flag the firmware tests bit 0 of), 125 and 275 (the hit page lead,
+the page arrows a one page screen swallows), 130 (the clock's records); `screenrecords.ts`'s record machinery,
+`firmwarescreens.ts` and `modezero.ts`'s `keyListOrder`. Neither the firmware nor Logitech's client was read: the
+question is what their compiler emits, which the compiles answer.
+
+### The screens, and how each is found
+
+Twenty three on each of the sixteen, at mode numbers that differ per compile since they sit between the setup's
+screens: the event map's screen for key 9 (mode 19 on all nineteen compiles); Options, whose chrome draws
+"Options" as its title at 6, 4; the screen sensitivity picker, titled "Screen Sensitivity"; its five
+confirmations, untitled pages drawing "Screen sensitivity is set to" over a level; the Year, Month, Hour, Minute
+and Time of Day pickers by title; three pickers titled "Day", told apart by the last day they offer, 28, 30 and
+31; and seven blank screens, the only modes of one page whose page program is the chrome's call alone, whose
+chrome draws one picture, and whose own key map binds exactly the page arrows, scan 38 and the enter and leave
+handlers, taken in mode order. `touchFixedScreenModes` finds each exactly once on every one of the sixteen.
+
+### One shape once the numbering is set aside
+
+Every screen was walked into a sequence of fields, the lists its own key map, page lists, copies and chrome name
+inlined, and the sixteen compared field by field. Once the paths agree, what differs is the configuration's
+numbering and nothing else: base slot 10 list indices, the modes an `0x7E` enters, the timers an `0x1F EB` starts
+and an `0x1F EA` cancels, the base slot 11 programs an `0x73` runs, the value maps an `0x72` looks up, the state
+variables a switch tests and the low bytes of `0x1F ED` and `0x1F F2`, which differ per compile and are
+described as numbers the configuration chose, the fonts, the pictures, the hit pages, and the addresses of texts
+drawn by reference. The paths themselves differ in one way only, a text drawn inline on one compile and by
+reference on another, which is the next section's.
+
+**The mode entry's first byte is generated**: section 66's flag is 1 exactly on a mode whose own key map binds tag
+`0x29`, 139 of 139 such records, and 0 on the other 3455 of the nineteen compiles. Here those are the seven clock
+pickers that bind it, Year, Month, the three Day pickers, Hour and Minute; Time of Day binds no `0x29` and holds
+0.
+
+### What the screens are
+
+| screens | own key map | pages | page list |
+|---|---|---|---|
+| code 9's, "System Message: 9" over "LCD Module" and "Failed" | arrows swallowed, a timer started and cancelled directly, the header handler's three programs | 1 | empty |
+| five confirmations, "Screen sensitivity is set to" and the level, "OK" | arrows and scan 38 swallowed, enter and leave lists, the header handler | 1 each | scan 49, OK, enters Options |
+| the sensitivity picker, five levels | the same | 1 | scans 48 to 52 write the level, `0x3F F508`, `F50C`, `F500`, `F504`, `F507` from Very Low to Very High, and enter its confirmation; scan 53, Back |
+| Year, the build year and its neighbours | arrows, scan 38, enter, leave, `0x29`, the header handler | 1 | scans 48 to 50, a year each, enter Month; scan 51, Back |
+| Month, Day of 28, 30 and 31, Hour of twelve, Minute of sixty | scan 38, enter, leave, `0x29`, the header handler | 2, 5, 5, 6, 2, 10 | six to a page at scans 48 to 53, Back at scan 43; a last page of n at scans 48 on, Back at the next |
+| Time of Day, AM and PM | arrows, enter, leave, the header handler | 1 | scans 48 and 49, scan 50 Back |
+| Options | scan 38, enter, leave, the header handler | 2 | page 1: a value map at 48, Tutorial at 49, Date and Time at 50, a value map at 51; page 2: a value map at 48, Screen Sensitivity at 49, a value map at 50 |
+| seven blank screens, one picture | arrows and scan 38 swallowed, enter and leave lists | 1 each | empty |
+
+Every chrome but a blank's queues a base slot 11 program and a list of its own; a titled chrome draws the title in
+the title font at 6, 4 before its full screen picture and again after it, the second time by reference to the first
+copy: its own where it holds the title inline, 8 of the 11 titled chromes, Day 28's for the other two Day pickers,
+and a copy outside the screens for Options, which draws "Options" by reference both times. A chrome of several
+pages, Options' and the pickers', draws its page count, "N pages", between the two titles, so its second title
+selects the title font again. A page draws its buttons, a picture and a word each, the bottom left key's word and on
+a screen of several pages its number and "/". Options draws its rows through switches on state variables, an arm per value: "Turn Remote
+Assistant" over "On" for value 3 of one variable and "Off" for 0 to 2, "Turn Screen Sounds Off" or "On" for 0 and 1
+of another, and the bottom left key's "Activities" or "Current" over "Activity" for 0 and 1 of a third. Each arm is a
+program piece of its own that jumps back to the piece the arms join at, where the next row is drawn.
+
+Section 405's "case programs of a lookup" are not these: the switch arms are reached from the page program, and
+`screenrecords.ts` now reads and places them, `RecordReading.program` and `RecordPlace.extras`.
+
+The seven blank screens are two kinds in mode order on all sixteen: three whose enter list is `07 FFFB`, `1F FE03`
+and a timer, the third adding a `1F F2` of a number the configuration chose, then four whose enter list is `07
+FFFB`, `1F FE02`, `1F E805` and a timer, the fourth adding the `1F F2` too; each kind has a leave list of its own,
+`1F FD03` or `07 FFFB` and `1F FD02`, a call, the timer cancelled and a call.
+
+### Where the words go
+
+The screens hold 348 text instructions per compile, every one the same word at the same place on the sixteen, 5568
+in all, and every x follows one of these, with no misfit:
+
+| rule | per compile |
+|---|---|
+| centred on a button, `x + floor((width - w) / 2)`, buttons 81 wide at x 6, 48 and 89 or 164 wide at x 6 | 192 |
+| centred on half the screen, the left for "Back", "Activities", "Current" and "Activity", the right for "OK": `floor((88 - w) / 2)` and `88 + floor((88 - w) / 2)` | 44 |
+| the page number, ending at x 18, `18 - w` | 32 |
+| a body line centred on the screen, `floor((176 - w) / 2)`, section 409's rule | 12 |
+| constants: the title at 6, the "/" at 18, the page count at 23 and "pages" at 35 | 22, 32, 7 and 7 |
+
+Every y is a measured constant: a word 20 below a half width button's top and 19 below a full width one's, and
+Options' two line rows 13 and 25. A half width button's word is always in the item font and a full width one's in
+the wide font, on all 192 per compile, so the font and the button's width cannot be told apart as the cause of the
+difference.
+
+**How far each rule is tested.** The button rule is told from rounding up by 157 odd remainders per compile, and the
+left half rule by "Activities" and "Activity". The right half rule rests on one word, "OK", 16 wide, five per
+compile and the only word the sixteen draw there, so it fits the constant 124 as well and its rounding is not
+determined; section 409's "OK" at 124 is the same point, 88 + floor((88 - 16) / 2). The full width button rule and
+the body rule are one function, 6 + floor((164 - w) / 2) = floor((176 - w) / 2), so the 192 and the 12 are a split by
+role and not by formula, and the body's rounding rests on one odd width on the sixteen, "Screen sensitivity is set
+to", 149. Out of sample, the same rules with the Dutch "pagina's" for "pages" place every text of these screens on
+the two European compiles and the Dutch one, 427, 431 and 421 texts.
+
+### Inline or by reference
+
+A text the screens draw is drawn by reference to a copy outside them where a program outside holds one, a home the
+description carries; otherwise the first of these programs to draw it holds it inline and every later one points
+there, section 406's rule. **"First" is the order the programs are laid out in**, measured on the sixteen: mode
+order, each screen's chrome before its pages, and in a page the main line first, then each piece a switch's arms
+join at, then the arms of each switch in turn. So the builder builds in mode order, and which program holds a
+text inline follows from the modes the description carries: 103 to 127 texts inline per compile and the rest by
+reference. Swapping the Low and High confirmations' modes in a description, every other byte as read, changes the
+rebuilt file, which is the control that the order is the mode order: on the compile the control runs on, the
+sensitivity picker lies between the two in mode order and draws "Low" and "High" too, so the swap moves which
+program holds those two words inline. "Screen sensitivity is set to" stays with the first confirmation in mode
+order, Very High there, and does not move.
+
+### The years, and a leap year
+
+The Year picker offers the build year and the year either side, measured on all nineteen compiles: 2025 to 2027 on
+the sixteen, all stamped in 2026, 2022 to 2024 on the two European compiles stamped in 2023, and 2012 to 2014 on
+the Dutch one stamped in 2013. So the years are generated from the build year, which the description reads off
+the configuration's stamp and a writer would give.
+
+**Where the three years hold a leap year, Logitech's compiles hold two more screens**: a Day picker of 29 days and
+a second Month picker whose February enters it. Both are held by the two European compiles (2024 in range) and the
+Dutch one (2012), each in another look or language; on all three the leap year's button enters the second Month
+picker, whose February enters Day 29, and the other two years' buttons the first, whose February enters Day 28. So
+the rule holds 19 of 19 both ways: the three with a leap year in range carry the two screens, the sixteen without
+carry neither, and no compile of skin 54 in English has one, since 2026 is the one build year of the sixteen and its
+range holds none. It is confounded with look and language, and the wiring is what carries it. Those two screens are
+not built here, and a build year whose range holds a leap year is refused. Only one build year in four escapes it:
+2026 and 2030 do, 2027 does not.
+
+**The year is data in two more places.** The Year picker's enter and `0x29` lists each hold a `0x79` whose operand
+is minus the first year offered less 2000: `FFE7`, -25, on the sixteen, `FFEA`, -22, on the two compiles of 2023,
+and `FFF4`, -12, on the Dutch one. It was a constant in the first build,
+right on the sixteen only because all were built in 2026, and the blind reviewer's report showed it; it is generated
+from the build year now. And each year button runs a list below the 531 that writes the year less 2000, which
+stays the configuration's.
+
+**And a year other than the compile's own is refused by its fonts**: Logitech's font sets hold only the glyphs a
+compile draws, so the wide font the year buttons use holds the digits of 2025 to 2027 and no others. On
+`harvest_one_two_devices` 2030 is refused for a 9 the set does not hold, 2022 for a 1 and 2034 for a 3. So the
+builder builds the configuration's own build year; another needs the glyphs, the font work of chapter 5, and the
+year buttons' lists below. The European compiles also hold a twenty four
+hour Hour picker of four pages and no Time of Day, section 405's other look.
+
+### The lists
+
+The lists the screens' own key maps, page lists, copies and chromes name are 531 on each of the sixteen, and
+nothing outside the twenty three screens names any of them: not another list, another mode's key map, page list
+or copy, base slot 9's sets, a timer, a state transition, a value map, base slot 8's leading list or another screen
+program. They are built, each at the index the description carries, which is numbering: the indices are not
+consecutive, page lists and their copies take theirs from separate runs, and nothing found generates them.
+
+**Below them are 207 lists on each of the sixteen that stay the configuration's**, named by index: among them the
+clock's setters, a `07 FFFF` and a state write each, and the lists the enter and leave handlers share. 17 of them
+are named directly by something outside the screens, and following every call down from those reaches 60, on each
+of the sixteen; the other 147 are run by nothing but these screens. Building the 147 is the lists' own item, with
+the wiring of 6.3. A first draft of this paragraph said 150 or 151 and 57 or 56, with one list moving between
+compiles, from a walk that was not kept; the second reviewer's count, asserted now, is 147 and 60 on every compile,
+and 531 and 147 make the blind reviewer's 678.
+
+### What the description carries and what is generated
+
+Per compile the screens are 13139 to 13158 bytes, the difference being texts inline or by reference. The
+description reads 3958 to 4471 bytes: inside the screens the list indices, the modes, the timers, the programs, the
+value maps, the variables, every font select's font, every hit page and the pictures' and homes' addresses, 65416
+bytes over the sixteen; and outside them each home's glyph codes, 596. It also reads the build year. Everything
+else is generated: every opcode and constant operand, every tag and its stored order, `keyListOrder`'s with no
+two tags sharing a bucket here, every list's instructions, the switches, every word and its place, the page counts
+and numbers, which texts are inline, the entry's flag, the page records and the entries.
+
+**The blind control**: every one of the 144864 bytes the description does not read overwritten, in the file it
+reads, in the file the fonts are spelled from and in the layout's own pieces, and the sixteen come back byte for
+byte, with the same offsets read. **The controls fail where they should**: the status screen's timer moved one on,
+Options' first two pictures swapped, or two confirmations' modes swapped, and the rebuilt file differs.
+
+### Beyond the sixteen
+
+* **The two European compiles**, `one_config` and `one_config_unprogrammed`, are refused for their build year,
+  2023, whose range holds 2024; their screens also hold the second Month picker, which `touchFixedScreenModes`
+  refuses on its own.
+* **The Dutch compile**, `one_friend_asfound_config`, is refused for its build year, 2013, whose range holds 2012,
+  and its screens for their words: no title reads "Options". Other languages are out of scope.
+
+### Reviewer 1, blind
+
+Given the question and the corpus and not this section, on a clean export of the commit before this change, the
+blind reviewer found the same 23 screens on each of the sixteen at the same modes, one shape each once the numbering
+and the inline or by reference form are masked, the same 348 texts per compile under the same rules with the same
+counts (192, 39 and 5 for the two halves, 32, 12 and the constants), the same two indistinguishable rules and the
+right half's unsettled rounding, the entry flag's 139 and 3455 with Time of Day the clock picker holding 0, the Year
+picker's years on all nineteen and the leap year screens on the three, and the layout order the inline rule rests on.
+It counted 678 lists run by the screens alone where uncalled lists count as runners, which is the 531 built and the
+147 below; 681 or 682 where they do not, the difference being 7 to 22 two instruction lists nothing names that lead
+into the pickers' shared lists.
+
+**It found what the first build had wrong**: the Year picker's `0x79` carries the year, and was written as the
+sixteen's constant. That is corrected above and asserted on all nineteen. It also read the blanks as two timer
+loops, three screens of one second each and four with one of five seconds, which nothing here contradicts and
+nothing builds beyond the timers the description carries; and that a reference to a stored text crosses fonts, 102
+of 528 on `harvest_one_two_devices`, so a home is keyed by glyph codes alone, as section 406 has it.
+
+The second reviewer, auditing the sentences, corrected a confirmation's OK (it enters Options, not the picker), the
+list split below the 531 (147 and 60, where a draft said 150 or 151), the second title's reference, the
+confirmations control's account, which button rules are tested by what, the y rule's confound with the font, and the
+width of the leap year wiring; and asked for the flag rule, the years and the Day 29 picker to be asserted, which
+they are. Testing that a year of 2030 builds found the font limit above.
+
+### Asserted
+
+`packages/codec/test/touchfixedscreens.test.ts`: the sixteen rebuilt, 23 screens and 531 lists each, with each
+compile's bytes read and spanned; the three beyond them refused with their messages, 2027 refused for its leap year
+and 2030 for a digit its font set lacks; the Year picker's years and the Day pickers' last days on all nineteen; the
+entry flag's 139 and 3455 over the nineteen; the blind control with its counts; the three failing controls; the 531
+named by nothing outside the screens, the 207 below them, the 17 of those named from outside and the 60 reached from
+those.
+
+### What would falsify it
+
+A compile of skin 54 in English whose twenty three screens the description refuses or the builder does not
+reproduce; a text whose place breaks one of the five rules; a Harmony One mode binding `0x29` whose entry's first
+byte is 0, or one binding none whose byte is 1; a list of the 531 named from outside the screens.
+
+### Which architectures
+
+Arch 12 (Harmony One) alone, and skin 54 in English; the module is the touch family's. The Harmony 600, 650 and 700
+carry other fixed screens, section 357's.
