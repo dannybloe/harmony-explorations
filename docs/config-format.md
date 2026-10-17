@@ -1207,6 +1207,23 @@ the opcodes, codes and reference addresses, and is the second input. Refused: th
 a configuration whose firmware wiring is not read, `h650_bench_4_2_base`, and one whose menus are not read,
 `harvest_650_two_devices`, refused at its wiring until section 360 read it. Unconfirmed: any wording but English, any architecture but arch 14.
 
+**Every text of a Harmony One configuration, spelled from its word**, section 406, the touch family's
+`screentexts.ts`, on the 18 English Harmony One compiles of `test/touchscreentexts.test.ts`, byte for byte: each
+text's glyph codes spelled from its word in the font its program selected, and its form by the first copy rule
+above, which holds on every draw, 33907. Each text's place is read, not built: this pass builds no screen, chapter 4 of
+`todo-compile-one.md` does.
+
+| what | rule | agree |
+|---|---|---|
+| form | the first copy rule of section 358, unchanged | 33907 of 33907 draws, 9674 inline |
+| start up title | "Starting", the **joiner**, the activity's name, one instruction at y 124. The joiner is a blank of its own: the code read as a space that one font set alone holds, the title's, where the space is held by 8 or 9 sets; 4 pixels wide in Logitech's letters against the space's 3. A character map reads it as a space; `touchCharacterMap` names it `TITLE_JOINER` | 63 titles, 126 draws, on 14 compiles; the 4 with no activity hold no joiner |
+
+Read, not built: each text's place, its font, the fonts and the character map. A donor lettered in ours holds
+both blanks in every set, drawn alike, so the joiner is not told from the space there. The Dutch
+`one_friend_asfound_config` rebuilds too, its title joined after "Bezig met starten". Unconfirmed: what character
+Logitech's compiler meant by the joiner, possibly the non-breaking space, since the French Harmony 650 compile
+holds a wider blank where French puts one; any wording but English and that one Dutch compile.
+
 **The font table, generated**, section 368, `fonttable.ts`. Each of Logitech's sets is re-lettered in place:
 its table position, height, header form and every code it had are kept, each glyph is the same character in
 our letters, and every printable ASCII character with no code gets one after the highest, the same in every

@@ -59,7 +59,10 @@ import { type ValueReader, blobReader, speller } from '../../shared/spelling.ts'
 import { DEVICE_PAGE_BACK_Y, FOUR_SLOT_TITLE_XY } from './chrome.ts';
 import { STARTUP_FIXED_LINE_Y, STARTUP_TITLE_MAX, activityKeyedRecords, startupTitleYs } from './activityscreen.ts';
 import { TWO_ROW_COUNTER_X, fourSlotMenus } from './menus.ts';
-import type { ContainerLayout, ContainerPiece, PieceRef } from '../../frame.ts';
+import type { ContainerLayout } from '../../frame.ts';
+import {
+  type BuiltDraw, type BuiltScreenTexts, INLINE_HEAD, ScreenTextError, type ScreenTextsPlace, pieceLocator, shareRuns, withScreenTexts,
+} from '../../shared/screentexts.ts';
 import { arch14Starts } from '../../shared/activities.ts';
 import { layOutContainer, takeApart } from '../../frame.ts';
 import { fontSets, glyphOf } from '../../font.ts';
@@ -89,8 +92,10 @@ import { valueMaps } from '../../valuemap.ts';
 import { FIRMWARE_SCREEN_TEMPLATES } from './firmwarescreens.ts';
 import { FIRMWARE_SCREENS, describeWiring } from '../../wiring.ts';
 
-/** A refusal, named so a caller can tell a configuration this does not describe from a bug. */
-export class ScreenTextError extends Error {}
+// The form rule, the refusal and writing texts into a layout are every family's, `shared/screentexts.ts`, where
+// they moved from here unchanged; exported again from here for the callers that name this module.
+export { ScreenTextError, withScreenTexts };
+export type { BuiltDraw, BuiltScreenTexts, ScreenTextsPlace };
 
 /**
  * The kinds of screen whose texts are placed by a rule, and the kind left as Logitech compiled it.
@@ -161,14 +166,6 @@ export interface ScreenTextsSpec {
   texts: ScreenTextSpec[];
 }
 
-/**
- * Where each text of the description sat in the layout, parallel to `ScreenTextsSpec.texts`: the piece,
- * the offset in it and how many bytes, which for a heading is the run of its lines' instructions.
- */
-export interface ScreenTextsPlace {
-  texts: { piece: ContainerPiece; at: number; length: number }[];
-}
-
 export interface ScreenTextsDescribed {
   spec: ScreenTextsSpec;
   place: ScreenTextsPlace;
@@ -182,24 +179,6 @@ export interface ScreenTextsDescribed {
   unresolved: Set<number>;
 }
 
-/** One instruction built: its codes, its place and, for every copy after the first, the draw it points at. */
-export interface BuiltDraw {
-  codes: number[];
-  x: number;
-  y: number;
-  /** The index in `draws` of the first draw of the same codes, where this one is drawn by reference. */
-  home?: number;
-}
-
-export interface BuiltScreenTexts {
-  /** Every instruction, in layout order. */
-  draws: BuiltDraw[];
-  /** Per text of the description, the range of `draws` it is drawn by, `[from, to)`. */
-  spans: [number, number][];
-}
-
-/** A text drawn inline is the opcode, two place bytes, the codes and a zero; by reference, six bytes. */
-const INLINE_HEAD = 3;
 /** Below this y a text is on the title's line, the title and the counter; from this y it is the bottom word. */
 const TITLE_LINE_BELOW = 16;
 const BOTTOM_LINE_FROM = 112;
@@ -310,22 +289,7 @@ export function describeScreenTexts(
   };
 
   // Where every piece sits, so a text's blob offset can be named as a piece and an offset.
-  const laid = layOutContainer(layout);
-  if (laid.bytes.length !== c.blob.length) throw new ScreenTextError('the layout is not the configuration taken apart');
-  const all = [layout.keyTable, ...layout.body,
-    ...layout.sections.flatMap((s) => (s === undefined ? [] : [...s.before, ...s.head])), ...layout.pictures];
-  const starts = all.map((piece) => ({ piece, at: laid.offsetOf(piece) as number })).sort((a, b) => a.at - b.at);
-  const pieceAt = (offset: number): { piece: ContainerPiece; at: number } => {
-    let low = 0;
-    let high = starts.length - 1;
-    while (low < high) {
-      const mid = (low + high + 1) >> 1;
-      if ((starts[mid] as (typeof starts)[number]).at <= offset) low = mid;
-      else high = mid - 1;
-    }
-    const found = starts[low] as (typeof starts)[number];
-    return { piece: found.piece, at: offset - found.at };
-  };
+  const pieceAt = pieceLocator(layout, c.blob.length);
 
   // Which screen draws each program: a mode's pages, by the mode's kind, and every other program left out.
   const kinds = modeKinds(c, layout);
@@ -616,105 +580,8 @@ export function buildScreenTexts(
     spans.push([from, draws.length]);
   });
   // The form: the first draw of a run of codes draws it inline, and every later one points at it.
-  const first = new Map<string, number>();
-  draws.forEach((one, k) => {
-    const key = one.codes.join(',');
-    const home = first.get(key);
-    if (home === undefined) first.set(key, k);
-    else one.home = home;
-  });
+  shareRuns(draws);
   return { draws, spans };
-}
-
-/** A built draw's bytes; a reference's address is left zero for the frame to write. */
-function drawBytes(one: BuiltDraw): number[] {
-  if (one.home !== undefined) return [SCREEN_TEXT_AT, one.x, one.y, 0, 0, 0];
-  if (one.codes.some((code) => code < 1 || code >= 0x80)) throw new ScreenTextError('a glyph code outside 1 to 127 is not written');
-  return [SCREEN_TEXT_INLINE, one.x, one.y, ...one.codes, 0];
-}
-
-/**
- * A layout with every text rewritten as built, in place in its program piece. Each piece keeps its
- * identity, so whatever points at it still does; an address into a piece whose texts changed length is
- * moved with the bytes it names, and every reference a text makes is written anew, to the inline copy
- * of its home.
- */
-export function withScreenTexts(layout: ContainerLayout, built: BuiltScreenTexts, place: ScreenTextsPlace): ContainerLayout {
-  if (built.spans.length !== place.texts.length) throw new ScreenTextError('the built texts are not the described ones');
-  // Per piece, its texts in order.
-  const byPiece = new Map<ContainerPiece, number[]>();
-  place.texts.forEach((one, k) => {
-    const list = byPiece.get(one.piece) ?? [];
-    list.push(k);
-    byPiece.set(one.piece, list);
-  });
-  // The new bytes of each piece and, per piece, how an old offset maps to a new one.
-  const remap = new Map<ContainerPiece, (offset: number) => number>();
-  const drawAt = new Map<number, { piece: ContainerPiece; at: number }>();
-  const rewritten = new Map<ContainerPiece, { bytes: Uint8Array; refs: PieceRef[] }>();
-  for (const [piece, indices] of byPiece) {
-    indices.sort((a, b) => (place.texts[a] as { at: number }).at - (place.texts[b] as { at: number }).at);
-    const out: number[] = [];
-    const shifts: { from: number; to: number; delta: number }[] = [];
-    let cursor = 0;
-    for (const k of indices) {
-      const { at, length } = place.texts[k] as { at: number; length: number };
-      if (at < cursor) throw new ScreenTextError('two texts overlap');
-      for (let b = cursor; b < at; b += 1) out.push(piece.bytes[b] as number);
-      shifts.push({ from: at, to: at + length, delta: out.length - at });
-      const [from, to] = built.spans[k] as [number, number];
-      for (let d = from; d < to; d += 1) {
-        drawAt.set(d, { piece, at: out.length });
-        out.push(...drawBytes(built.draws[d] as BuiltDraw));
-      }
-      cursor = at + length;
-    }
-    const after = out.length - cursor;
-    for (let b = cursor; b < piece.bytes.length; b += 1) out.push(piece.bytes[b] as number);
-    // An offset moves by the change of every text before it. One inside a text may only be the text's
-    // own start, where a program continuing at the text lands; a text's own references are not moved but
-    // written anew, below.
-    remap.set(piece, (offset) => {
-      for (const one of shifts) {
-        if (offset >= one.to) continue;
-        if (offset > one.from) throw new ScreenTextError('an address lands inside a text');
-        return offset + one.delta;
-      }
-      return offset + after;
-    });
-    rewritten.set(piece, { bytes: Uint8Array.from(out), refs: [] });
-  }
-
-  const inText = (piece: ContainerPiece, at: number): boolean => (byPiece.get(piece) ?? []).some((k) => {
-    const one = place.texts[k] as { at: number; length: number };
-    return at >= one.at && at < one.at + one.length;
-  });
-  const all = [layout.keyTable, ...layout.body,
-    ...layout.sections.flatMap((s) => (s === undefined ? [] : [...s.before, ...s.head])), ...layout.pictures];
-  for (const piece of all) {
-    const refs: PieceRef[] = [];
-    for (const ref of piece.refs) {
-      if (byPiece.has(piece) && inText(piece, ref.at)) continue;
-      const at = remap.get(piece)?.(ref.at) ?? ref.at;
-      if ('address' in ref) refs.push({ at, address: ref.address });
-      else refs.push({ at, to: ref.to, offset: remap.get(ref.to)?.(ref.offset) ?? ref.offset });
-    }
-    const was = rewritten.get(piece);
-    if (was !== undefined) was.refs = refs;
-    else piece.refs = refs;
-  }
-  // The texts' own references, to the inline copy of their home.
-  built.draws.forEach((one, d) => {
-    if (one.home === undefined) return;
-    const here = drawAt.get(d) as { piece: ContainerPiece; at: number };
-    const home = drawAt.get(one.home) as { piece: ContainerPiece; at: number };
-    (rewritten.get(here.piece) as { refs: PieceRef[] }).refs.push({ at: here.at + INLINE_HEAD, to: home.piece, offset: home.at + INLINE_HEAD });
-  });
-  for (const [piece, { bytes, refs }] of rewritten) {
-    piece.bytes = bytes;
-    piece.refs = refs.sort((a, b) => a.at - b.at);
-  }
-  return layout;
 }
 
 /** What `checkScreenTexts` compared. */

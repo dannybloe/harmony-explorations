@@ -119,7 +119,7 @@ One with its sequence's keys translated by name, since the One's keys have other
 
 ## 5. Text, fonts and pictures
 
-- [ ] 5.1 The text inside every screen program spelled from its word, as the 650's 8.1
+- [x] 5.1 The text inside every screen program spelled from its word, as the 650's 8.1; done, section 406: the 18 English compiles rebuild byte for byte from each text's word, font and place, 33907 draws, every one in the first copy rule's form; the One's own is the start up title's joiner, a blank the title's set alone holds, named in the touch family's character map; places stay read until chapter 4
 - [x] 5.2 The fonts the One's screens draw, generated: five faces of the One's own, fitted to its rows, each set in its own colours (section 396); their weight is a choice, `faceWeights`
 - [ ] 5.3 The pictures, built or drawn by us, the button boxes of the device pages and the menus among them
 

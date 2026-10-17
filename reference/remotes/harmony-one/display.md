@@ -97,6 +97,10 @@ Generated from `packages/codec`, `packages/usb` and the drawing by `make remote-
   Blue on one activity page; everywhere else the word sits on the ordinary pad, section 399.
 * **An activity's working screen draws its title in the activity menu's title font**, not a device page's,
   read from configurations, section 399.
+* **A start up screen's title is one line**, "Starting" and the activity's name, and Logitech joins the two with
+  a blank of its own rather than the space: a glyph only the title's font set holds, a pixel wider than the
+  space in Logitech's letters, read from configurations, section 406. A text is stored once and every later
+  copy of the same codes points at it, on this model as on the 600 family, section 406.
 
 ## The clock
 

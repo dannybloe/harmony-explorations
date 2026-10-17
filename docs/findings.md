@@ -53029,3 +53029,151 @@ would make it the setup's feature rather than the remote's.
 * 5.1: the fixed screens' text is the same on the sixteen; the European compiles' clock pickers, the everyday
   One's Options menu and missing Remote Assistant, and a Dutch compile's text are the known variations.
 * 5.3: 36 pictures are fixed and 16 dynamic; 6 are the setup's.
+
+## 406. Every text of a Harmony One compile is spelled from its word, and a start up title joins "Starting" and the name with a blank of its own
+
+**Status:** confirmed by construction over the 18 English Harmony One compiles of section 403's set, with a blind control
+and a failing control, and on the Dutch one reported apart; nothing built this way has been written to a remote.
+**Todo `todo-compile-one.md` 5.1**, the touch family's half of section 358.
+
+**The question.** A text instruction draws glyph codes, and a code is the configuration's own number for a
+character in the font set its program has selected, section 112. Spelling a text from its word means producing
+those codes from the plain string through the configuration's character map and font sets, and deciding as
+Logitech's compiler does whether the text is drawn inline (opcode 5) or by reference to another program's copy
+(opcode 4). Section 358 did both for the Harmony 600, 650 and 700, and also placed every text by its screen's
+rule; placing the Harmony One's texts is building its screens, `todo-compile-one.md` chapter 4, so here each
+text's place is read and only its codes and its form are generated.
+
+**Sources checked**: this document, sections 112, 121, 358, 394, 396 and 402; `text.ts`, `shared/spelling.ts` and
+the four slot family's `screentexts.ts`; the touch family's `activityscreen.ts`, which spells a start up title.
+MyHarmony's client was searched for the start up title's wording and holds none: the texts are what Logitech's
+compiler wrote on their server, section 293's reasoned exemption. The firmware was not opened; what opcodes 4 and
+5 draw is the screen language's reading.
+
+### The measurement
+
+`describeTouchScreenTexts` walks every screen program the configuration reaches in address order and reads each
+text instruction once: its word, through the character map, from its own codes or from the copy it points at;
+the font its program selected before it; and its place. `buildTouchScreenTexts` spells each word in its font,
+`speller`, and gives each draw its form by the first copy rule, `shareRuns`, which the four slot family's pass
+now uses too. `withScreenTexts` writes the result into the compile taken apart and `layOutContainer` lays it out
+again.
+
+**All 18 come back byte for byte**: 33907 draws, 9674 inline and 24233 by reference, 279701 bytes of text
+instructions. Every program selects a font before it draws a text, and the character map resolves every code
+drawn, so no text keeps its codes. The form rule holds on every draw with no exception: the first draw in
+address order of a run of codes is inline, and every later draw points at that copy, three bytes past its start.
+As on the Harmony 600 family, the match is on the codes alone: 5746 of the 24233 references are drawn in another
+font set than their copy, which works because a character has one code in every set that holds it.
+
+**The font a text is drawn in is its own program's**: every program selects a font before its first text, and
+none calls a program that selects one between its own select and a text, 34975 draws over the 19 compiles. The
+blind re-measure, which carried the font through calls, jumps and switches, found every draw reached with exactly
+one font.
+
+### What is the Harmony One's own: the start up title's joiner
+
+**Spelled through the character map as it reads, 126 draws come back wrong, and they are all start up titles.**
+A start up screen's title is "Starting", then a blank, then the activity's name, drawn once inline and once by
+reference, 63 titles on the 14 English compiles with an activity. The blank after "Starting" is not the
+configuration's space:
+
+| | the space | the joiner |
+|---|---|---|
+| font sets holding it | 8 or 9 | 1, the start up title's |
+| width in that set, Logitech's letters | 3 | 4 |
+| drawn by | every text with a space | the 63 start up titles alone, at y 124 |
+| its code | 30 on 18 of the 19 compiles, 26 on the Dutch one | 66 to 75 |
+
+A character map names a glyph by its pixels, section 112, and a blank has none, so it reads both as a space,
+and the speller then gives the space's code back. The touch family names the joiner instead,
+`touchCharacterMap`: the code read as a space that only one font set holds, beside one held by several, is read as
+`TITLE_JOINER`, a character of Unicode's private use area, since which character Logitech's compiler meant by it is
+not stated anywhere read. Spelled through that map, the 126 draws come back as Logitech wrote them and nothing else
+changes. The four compiles with no activity hold one blank and no joiner. Its code is among the last eleven a
+compile hands out on all 15 compiles holding it, among the last seven on 10 and the very last on 3, which fits
+the numbering's reading, a code given in the order a character first appears in the compiler's string list, section
+112; that is a fit and not a measurement.
+
+### The controls
+
+**Blind**: the description handed bytes in which every byte of the texts it does not read is `0xEE`, 116280 over
+the 18, and a layout whose texts are `0xEE` throughout, still rebuilds the 18 byte for byte. What it reads is
+every text's codes and place, 163421 bytes; what is blinded is every opcode, terminator and reference address, so
+the forms and the addresses come from the rule alone. 52 of the blinded bytes were `0xEE` already, every one a byte
+of a reference's address field, which the frame writes whatever a piece holds there. The container the description
+finds its way through is not blinded: it says which instruction is a text and which copy a reference draws, and it
+holds the fonts and the character map.
+
+**Failing**: `calibration_one` with one reference pointed one code into its copy is refused, since that draws a
+run no earlier text draws, which the rule builds inline. And the control above: the joiner read as a space spells
+126 draws wrong.
+
+### The Dutch compile
+
+`one_friend_asfound_config` comes back byte for byte as well: 1068 draws, 389 inline and 679 by reference. Its one
+start up title is "Bezig met starten", the joiner and "TV kijken", so the joiner follows the wording and not the
+English word. Three of its texts carry an accent, "beëindigd", "zodat u met één druk op" and
+"U kunt nu met één druk de", and each is spelled back from its word in Logitech's own letters. Our letters refuse
+them, `letterTouchDonor` stopping at the "ë", section 402, so that refusal is our lettering's and not this pass's.
+
+### What is still read, and so what this does not establish
+
+* Every text's place. A pad label's lines are separate instructions, each read as a word; how a label is broken is
+  the device composer's rule, section 394.
+* The fonts, which font each text is drawn in, and the character map.
+* **A donor lettered in ours**, `letterTouchDonor`, puts both blanks in every set, drawn alike, so the joiner
+  cannot be told from the space there: spelled back, the donor's own start up titles get the space's code, 16
+  draws on `one_config` lettered and 4 on `calibration_one`. Our activity builder spells a start up title with
+  the space too, `activityscreen.ts`; in our letters the two blanks are the same width, so nothing on the screen
+  differs. Section 402's comparison reads texts as words and so does not see it.
+* A text in a screen program no root reaches: the pass walks `reachablePrograms`, and the blind control blinds
+  only what the description found, so it could not see one.
+* That the remote draws a configuration whose texts were written this way: nothing was written.
+
+### Scope, decision 16
+
+The Harmony One, 18 English compiles and one Dutch. The form rule is now measured on both families, the Harmony
+600, 650 and 700 in section 358 and the Harmony One here, which is why `shareRuns` and `withScreenTexts` moved to
+`shared/screentexts.ts`. **The joiner's role in a start up title is the touch family's**, since the 600 family's
+22 compiles rebuild with the character map as it reads. **A second, wider blank is not the One's alone**: the
+sentence auditor found one on the French `h650_issue8_config`, outside section 358's 22, code 78, 4 pixels wide
+and held by 4 sets, drawn before the "!" of "Parfait!" and inside "Harmony 650?", which is where French typography puts a
+non-breaking space. So the joiner may be Logitech's non-breaking space, U+00A0; that is a hypothesis, and the
+touch family names it by its role until something states the character. `titleJoinerCode` finds no joiner on that
+compile, since no set holds the blank alone.
+
+**Further points that agree, outside the population**, by the sentence auditor: `one_spare_before_sync` and
+`vendor_region_user_config`, English compiles of one configuration, pass `checkTouchScreenTexts`, 382 inline and
+674 by reference with one joined title; and the configuration embedded in the firmware's region,
+`vendor_region_embedded_config`, agrees on codes and form for all 56 of its texts, though its frame does not lay
+out byte for byte, so it is not rebuilt. The Harmony 525 and the contributed Harmony 880 and 890 configurations were not compared.
+
+### The reviews
+
+Both reviewers of the `finding` skill ran on this section. **The blind re-measure**, given the question and not
+this section, found the same counts compile by compile, 33907 draws, 9674 inline, the form rule with no
+exception, and the same 126 draws spelled wrong through the plain character map, every one the blank after the
+fixed words of a start up title; it added that references are drawn in other fonts than their copy, and carried
+the font through calls to find every draw reached with one font, both now above. **The sentence audit** confirmed
+every figure per compile and corrected four things in place: the joiner's code was said to be among the last seven
+on seven compiles looked at, where over all 15 it is among the last eleven; the joiner was called the touch
+family's outright, where the French Harmony 650 holds a wider blank too; the population was called every English
+One compile in the lab, where two more pass; and a test title said the titles are drawn in the joiner's set
+without asserting it.
+
+### Falsification
+
+A Logitech Harmony One compile whose texts do not rebuild byte for byte, or rebuild differently from the blinded
+bytes; a reference that points at a later copy or inside a run; a text other than a start up title drawing the
+joiner; a start up title joined with the space.
+
+### Where it lands
+
+* `packages/codec/src/families/touch/screentexts.ts`: `touchCharacterMap`, `titleJoinerCode`, `TITLE_JOINER`,
+  `describeTouchScreenTexts`, `buildTouchScreenTexts`, `checkTouchScreenTexts`.
+* `packages/codec/src/shared/screentexts.ts`: `shareRuns`, `pieceLocator`, `withScreenTexts` and its types and
+  `ScreenTextError`, moved out of the four slot family's module with their code unchanged, which exports them again.
+* `packages/codec/test/touchscreentexts.test.ts`: the 18 byte for byte with the counts above, the joiner and its
+  control, the blind control, the failing control and the Dutch compile.
+* `docs/config-format.md`, after section 358's table; `reference/remotes/harmony-one/display.md`.

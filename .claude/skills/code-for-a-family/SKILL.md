@@ -82,6 +82,7 @@ and fails when a module joins the list or a count on it rises. The list is the d
 | the device page, the activity screen, a menu row | `Family` members, one implementation per family |
 | which command each hard key sends in device mode | per family, since the Harmony 650's `HARD_KEYS` does not carry over to the Harmony One by key name |
 | our faces' weights, the pad font, the menu row fonts | the family's choices |
+| a character only one family's compiles draw, such as the Harmony One's start up title joiner, a blank a plain character map reads as a space | the family's own character map over the shared one, `touchCharacterMap`; the speller and the form rule stay shared |
 
 Add a row when a new kind of difference lands.
 
