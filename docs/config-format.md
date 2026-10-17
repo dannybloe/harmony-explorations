@@ -2688,6 +2688,28 @@ does not remove them: the ladder, the leftover entry's events 1 and 5 and Option
 | a mode list's form | wide (`0`, count, then flags, tag, operand, opcode per entry) exactly where a state write is bound directly, flag 1 on the write and 0 on every other binding (mode lists only: base slot 9's handler sets are wide on 95 lists binding no write): 18 own key maps of the nineteen compiles, one on each compile with the assistant, each binding scan 34's press to the write, the welcome's on the seventeen English ones the builder reads |
 | which "Ensure all your devices are off" is which | the one the wiring's ladder enters, `assistantDevicesOff`, whose OK enters the question; the other, whose OK runs a list |
 
+**The clock header, built**, section 414: base slot 11's four programs no mode calls and the six lists the clock's
+minute and hour call, `families/touch/clockheader.ts`, through the same engine as programs of their own. 249 pieces
+on every One compile and 42 bytes of lists; 3516 bytes of programs on the sixteen, 3537 on the European two and 3509
+on the Dutch one; rebuilt byte for byte on the sixteen and both
+European compiles, the Dutch one refused.
+
+| what | rule, on the sixteen |
+|---|---|
+| the four | the gauge (a switch on firmware variable 9, eight pictures at 153, 4); the gauge while charging (variable 15: 0 the gauge again, 3 a picture, 1 to 2 a switch on the gauge, its level 0 a picture and levels 1 to 3 and 4 to 7 a switch on the second stepping three pictures, second modulo 3, or the first and third, second modulo 2); the sending mark (variable 17: 0 and 1 to 3 a picture each at 128, 0, then a queued `07 FFFA`; the 600 family's corner program of section 374 at another place); the clock (its face at 88, 19, then switches on the weekday, the hour in its join and the minute in its join) |
+| which entry each is | the description's: entries 0 to 3 on all nineteen, in three orders |
+| the switches' variables | the firmware's, 0, 1, 2, 4, 9, 15 and 17, constants of the template |
+| a switch inside an arm | its join closes as the arm would, a jump to the outer join |
+| layout | the four one after another in entry order; within each, a piece's main line and its switches' joins, then each arm whole, depth first |
+| the clock's words | one font, y 18: the day ending at x 138, the hour and a colon ending at 156, the minute's two digits from 158; twelve hour on skin 54 ("12:", "1:" to "11:"), twenty four hour on skin 59 ("00:" to "23:"), the description's `hours` |
+| inline or by reference | the days and the twelve hour words of hours 0 to 11 inline, 19, hours 12 to 23 by reference to them; the sixty minutes by reference to copies outside, homes the description carries, 950 of 960 in section 411's clock pickers; every word by reference to the earliest inline copy of its codes, inline where none is earlier |
+| the pictures | sixteen addresses, carried once each by slot and drawn from every arm that shows them; section 405's sixteen that only these programs draw; thirteen images, the full gauge's stored three times (level 7, charged, the animation's first frame) and level 4's twice |
+| the minute's lists | a list of two calls, each `1F FB00` then a call of `0x71 01vv` and `1F F2vv` on a variable of the configuration's, unnamed in the name tree; the description carries the four indices and the two variables |
+| the hour's list | `hourListBytes`, its index the description's |
+
+**Unconfirmed**: that variable 15 is the charger's state, which rests on what it draws; what `07 FFFA` does; what
+the two counted variables count.
+
 A Harmony One page program may switch on a state variable, `0x12`, each arm a program piece of its own ending in
 a jump to the piece the arms join at: Options draws its rows so. **Unconfirmed**: what the `0x1F ED` and `0x1F F2`
 bands do; both low bytes are taken as numbers the configuration chose, since they differ by compile.

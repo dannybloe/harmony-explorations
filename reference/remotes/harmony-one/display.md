@@ -159,6 +159,14 @@ clock is the first seven state variables and is seeded from the configuration's 
 [behaviour.md](behaviour.md). On the account from the bench, it "runs badly wrong after a while" and has
 never been used, section 111.
 
+**The strip along the top is four screen programs of the configuration's own**, read from configurations,
+section 414: the battery gauge, eight pictures by the firmware's gauge at the top right; a second gauge on a second
+firmware variable, which at 0 draws the gauge, at 3 the full gauge, and at 1 or 2 a picture of its own at level 0 and
+otherwise an animation stepped by the second, three frames at levels 1 to 3 and two at 4 to 7, read as charging by
+what it draws and unconfirmed; the sending mark, the infrared indicator, one picture or another at the top by the
+firmware's sending flag; and the clock at y 18, the day ending at x 138, the hour and its colon ending at x 156 and
+the minutes from x 158. On all seventeen compiles of skin 54 the hour is on a twelve hour clock, as the bench saw; on both compiles of the European skin 59 on a twenty four hour clock. The strip draws no AM or PM.
+
 ## Not checked
 
 * The panel part and the touch controller.

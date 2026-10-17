@@ -54424,3 +54424,222 @@ screens or calling one; a text of these screens inline on one compile and by ref
 Arch 12 (Harmony One) alone, skin 54 and the European skin 59, in English; the module is the touch family's. The
 Harmony 600, 650 and 700 are the four slot family, whose screens are its own (plan 007), and our configurations
 for them leave the status screens out, section 405's correction; the Harmony 525 is not read.
+
+## 414. The Harmony One's clock header, four screen programs and the six lists the clock calls, is built from a description of its numbering, byte for byte on the sixteen English compiles of skin 54 and both European ones
+
+**Todo `todo-compile-one.md` 4.7**: base slot 11's four header programs and the lists the clock's minute and hour
+call, 3558 bytes on the composed test setup and carried out of its donor until now (3.2.1), built from a
+description as sections 409 to 412 built the One's other fixed parts. Its 16 pictures stay described, 5.3's.
+
+**Sources checked**: section 405 (the census: base slot 11 entries 0 to 3 are no value map's, dynamic, 3516 bytes
+with the 16 pictures only they draw), 407 (the minute's second transition and `StateTablesSpec.minuteList`), 410
+(the redraw timers queuing two programs, and the `07 FFFA` left unread), 374 (the 600 family's corner program, the
+same tail left unread there), 411 and 412 (the template engine, the place
+rules, the inline rule), 73 (the `1F` bands), 103 and 111 (variable 9, the gauge), 284 (variables 13 to 17 are the
+firmware's), 322 (the weekday counts from Sunday); `screentemplate.ts` and `statetables.ts`' `hourListBytes`; the
+nineteen Harmony One compiles. Neither the firmware nor Logitech's client was read: the question is what their
+compiler emits, which the compiles answer.
+
+### What the four draw
+
+The strip along the top of the One's screen is four screen programs, each a tree of switches whose arms are program
+pieces of their own: 249 pieces on every compile; 3516 bytes on the sixteen, 3537 on the two European compiles,
+whose twelve more hour words are inline, and 3509 on the Dutch one, whose days are two letters.
+
+| program | what it switches on | what it draws |
+|---|---|---|
+| the gauge | firmware variable 9, the battery gauge, values 0 to 7 | one picture per level at 153, 4 |
+| the gauge while charging | firmware variable 15: 0, 3, and 1 to 2 | at 0 the gauge again, its own copy of the eight arms drawing the gauge's eight pictures; at 3 the full gauge's image, stored again at an address of its own; at 1 or 2 a switch on the gauge: at level 0 a picture of its own, at levels 1 to 3 a switch on the second whose sixty arms step through three pictures, the second modulo 3 (copies of the full gauge and of level 4 and a picture of its own), and at 4 to 7 through the first and third of them, the second modulo 2 |
+| the sending mark | firmware variable 17: 0, and 1 to 3 | one picture each at 128, 0, then a queued `07 FFFA` |
+| the clock | the weekday, then in its join the hour, then in its join the minute | its face at 88, 19, then a word per arm in one font at y 18: the day, the hour and a colon, the minute |
+
+Reading variable 15 as the charger's state is by what it draws and is **unconfirmed**; its firmware side is not
+read. The `07 FFFA` is the instruction section 410 left unread on the wiring's tag `0x2D`.
+
+**Which entry each program is differs**: three orders over the nineteen, the gauge, the charging gauge, the sending
+mark and the clock at entries 0, 1, 2, 3 on 12 compiles, at 0, 1, 3, 2 on 4 and at 1, 0, 2, 3 on 3. They are entries
+0 to 3 on all nineteen.
+
+**The sending mark is the Harmony 600 family's corner program at another place**: the same 38 bytes, a switch on
+variable 17 with 0 and 1 to 3, two arms drawing a picture and the `07 FFFA` tail, which section 374 found on every
+compile of the 600, 650 and 700 and builds in `families/four-slot/empty.ts`' `cornerProgram`, drawn there at 114,
+112 and here at 128, 0. The two families now hold one shape in two encoders, the four slot family's and this
+template; whether one should serve both is a plan 007 decision and is left open.
+
+**Who runs them agrees with what they are found to be by look.** Over the nineteen, every action list holding a
+`0x73` that names one of the four runs either the gauge, the clock and the sending mark, 3195 lists, or the clock and
+the charging gauge, 3513, of which 318 also start a timer, and the screen programs that queue one queue the sending
+mark, 3195 times. The lists of three are the header handler's of section 411, tag `0x2D`; the 318 are section 410's
+redraw timers' own, 13 to 20 a compile; and by both reviewers' walks, not asserted here, the lists of three are named
+by mode key maps at tag `0x2D` alone, the other 3195 lists of two only by the chromes that queue the sending mark, and
+the 318 by timers, with the sending mark's queues equal to the lists of three on every compile. A list runs the four in the order above whatever their entries are.
+
+### One shape once the numbering is set aside
+
+The template, `families/touch/clockheader.ts`, states the four whole, in the language of `screentemplate.ts`. The
+reader refuses any instruction, case, picture place or font role other than the template's, and the byte comparison
+after the build refuses any other word or text place; both pass on the sixteen and the two European compiles, which
+is the measurement. What differs between compiles is the numbering: which entry each program is, the pictures'
+addresses, the clock's font (15, 16 or 17), the homes of the texts drawn by reference, and the two variables the
+minute's lists count. **The variables the switches test are the firmware's** (0, 1, 2, 4, 9, 15 and 17) and the same
+on all nineteen, so the template holds them as constants rather than the description, as the wiring of section 410
+holds firmware variable 16.
+
+The engine needed three things the screens of sections 411 and 412 did not, each generic to its language:
+
+* **a switch on a variable the firmware owns**, a constant the reader checks;
+* **a switch inside an arm**: the charging gauge's arms hold switches of their own, and the nested switch's join
+  closes as the arm would have, with a jump to the piece the outer arms join at, so a join that draws nothing is a
+  lone jump onwards, on all nineteen;
+* **a picture drawn from several places**, taken by slot from one table the description carries once: the gauge's
+  eight pictures are drawn by both gauges, and the charging animation's three by 120 arms, 50, 20 and 50 times.
+
+The reader and the builder were factored out of the screen functions, so the screens and the programs share them,
+and both now take a switch's arms depth first: a piece's main line and the pieces its switches join at, then each
+arm whole, its own switches' joins and arms included, before the next. **That is Logitech's layout order**: the four
+programs' pieces are laid out one after another in entry order and, within each, in this order, on all eighteen
+compiles that describe. Sections 411's and 412's screens hold no switch in an arm, so on them the order is the one
+they were read in before, and their tests pass unchanged.
+
+### Where the words go
+
+| word | rule | told from another rule by, on the sixteen |
+|---|---|---|
+| the day, "Sun" to "Sat" from the weekday's 0 | ends at x 138 | five widths, 11 to 20; out of sample the Dutch days, four widths from 7 to 13, end there too |
+| the hour and a colon | ends at x 156 | three widths, 8, 9 and 13; out of sample the European hours, 13 and 14 wide, end there too |
+| the minute, two digits | starts at x 158 | 15 of 60 a compile are wider than 10, 14 at 11 and 1 at 12, which tells it from an end rule; only the one 12 wide word a compile tells it from centring in a window, which fits 1121 of the 1140 minute words over the nineteen |
+
+All three hold on all nineteen compiles by the second reviewer, 133 days, 456 hours and 1140 minutes.
+
+**A twelve hour clock on skin 54, a twenty four hour clock on skin 59**: on the sixteen, hours 0 and 12 draw "12:"
+and 1 to 11 and 13 to 23 "1:" to "11:"; on both European compiles hours 0 to 23 draw "00:" to "23:". What decides it
+is not read: the skin and the clock vary together over the nineteen, so it is the description's, `hours`, read off
+the word the first hour draws. The Dutch compile draws a twelve hour clock and its days in Dutch, "zo" to "za", ending
+at x 138 too.
+
+**Inline or by reference** is section 411's rule through the same engine. The clock draws 19 words inline on each of
+the sixteen, the seven days and the twelve hour words at hours 0 to 11, hours 12 to 23 drawn by reference to them;
+the sixty minutes are drawn by reference to copies outside the programs, homes the description carries. Over the
+sixteen, 950 of those 960 copies are held by section 411's clock pickers (the Minute picker 647, Day 28 294, Day 30
+6, Day 31 3) and 10, "10" to "19" on `harvest_one_families_3`, by a mode of nineteen pages laid out before them,
+a device's page whose page numbers they are, by the blind reviewer. One rule covers every point, by the second
+reviewer, 1729 of 1729 clock words on the nineteen: a word is drawn by reference to the earliest inline copy of its
+codes anywhere in the configuration, and inline where none is earlier. So which program holds a minute's copy is the
+setup's as much as the remote's, and the description carries it as it carries every home. Nothing outside the four points into them: the put back refuses such a reference, and none
+stops a rebuild.
+
+**The sixteen pictures** sit at sixteen addresses on each of the sixteen compiles, exactly the sixteen section 405
+found only these programs draw, and hold **thirteen images**: the full gauge's is stored three times, as level 7,
+as the charged picture and as the animation's first frame, and level 4's twice, as the gauge's and as the second
+frame, each copy byte identical at an address of its own. The description carries the sixteen addresses as they
+stand; whether a picture builder may store the three as one is 5.3's question.
+
+### The lists the clock calls
+
+The minute's transition on every change, section 407, calls a list of two calls; each loads the byte register with 0
+(`1F FB00`) and calls a list that compares it with a variable of the configuration's (`0x71`, operation 1, "is not
+equal to") and increments that variable (`1F F2`). The hour's rollover calls the hour list `hourListBytes` writes,
+which increments the day and the weekday. The minute's other transition, on reaching 0, increments the hour
+directly and calls nothing. Six lists and 42 bytes on all nineteen, and nothing else names any of them. None of them
+redraws the clock: the clock is redrawn by the lists above that run it, the redraw timers' among them.
+The two counted variables are unnamed in the name tree on all nineteen, one with a maximum of 4 and one of 121; what
+they count is not read.
+
+The minute's list is built from the template's steps, its four list indices and the two variables (each read where
+it is tested and where it is incremented) the description's; the hour list from `hourListBytes`, read back into
+the template's steps so that its one encoder stays the only copy, its index the description's.
+
+### What the description carries and what is generated
+
+Per compile the programs and lists are 3558 bytes on the sixteen and 3579 on the two European compiles, whose 24
+hour words are all inline. The description reads 461 bytes on each of the sixteen: inside, the sixteen pictures'
+addresses where each is first drawn (48), every font select's operand (91), the homes' addresses (180), the four list
+indices inside the minute's lists and the two variables twice (12), and the glyph codes of "Sun" and "12:", which say
+the language and the clock (6), 337 in all; outside, the homes' glyph codes (120) and the two lists' indices the
+state records hold (4). Everything else is generated: every opcode and operand, the firmware's variables, every case
+and every arm, which picture each arm draws (the gauge's second copy and the charging animation among them), every
+word and its place, which text is inline, and the six lists' instructions.
+
+**The blind control**: every one of the 51536 bytes the description does not read over the sixteen, 3221 a compile,
+overwritten in the file it reads, the file the fonts are spelled from and the layout's own pieces, and the sixteen
+come back byte for byte with the same offsets read. **The controls fail where they should**: the gauge's first two
+pictures swapped, a twenty four hour clock on a compile that draws twelve, or the first counted variable moved one on
+where it is incremented, and the rebuilt file differs; the clock's font one down is refused by the speller, that font
+holding no "S"; a shared picture short is refused by the builder. **One does not bite, and says what it is not**: the
+gauge and the charging gauge at each other's entries rebuild the same file, since the entries order the build alone,
+no text crosses between the four but the clock's, and the base slot 11 table that names the entries is
+`todo-compile-one.md` 6.6's and not rebuilt here.
+
+### Beyond the sixteen
+
+* **The two European compiles**, `one_config` and `one_config_unprogrammed`, rebuild byte for byte on a twenty four
+  hour clock, 3579 bytes.
+* **The Dutch compile** is refused for its days. Other languages are out of scope. The second reviewer rebuilt it
+  byte for byte through the same engine with the days "zo" to "za" put in, 3551 bytes, so every rule but the day
+  words holds on a compile outside the sixteen.
+* **The thirteen images** hold on all nineteen, by the second reviewer.
+* **The clock's font is the configuration's last font set** on 19 of 19 (15 of 16, 16 of 17, 17 of 18), by the
+  second reviewer: a candidate to generate it rather than describe it, not adopted here.
+
+### Reviewer 1, blind
+
+Given the question and the corpus and not this section or the module, on a clean export of the commit before this
+change, the blind reviewer found the same four programs on all nineteen, 249 pieces, 3516 bytes on the sixteen, 3537
+on the European two and 3509 on the Dutch one; identical once addresses, picture addresses and the font are set aside,
+the three without words on all nineteen and the clock on the sixteen; no variable above the firmware's block; the
+same three entry orders with the same counts; the same place rules, the day ending at 138 in English and Dutch, the
+hour at 156 and the minute from 158, with the same widths telling them from constants; the same 19 inline words and
+sixty homes, the ten on `harvest_one_families_3` a device page's page numbers; the same layout order, back to back in
+entry order with each switch's join before its arms and a nested switch laid out whole before the next arm; and the
+same six lists and 42 bytes, each with exactly one caller. **It found what the draft had wrong**: the sixteen
+pictures are thirteen images, the full gauge stored three times and level 4 twice, where the draft called the
+charged picture and the animation's frames pictures of their own; and the lists of two split into the redraw
+timers' 318 and 3195 the chromes call. Both are corrected above and asserted. It also reported that the minute's
+transition on reaching 0 calls no list, and that nothing in the clock's lists redraws the clock, both added.
+
+### Reviewer 2, the sentences
+
+The second reviewer audited every sentence of the diff against its own measurements and confirmed the four programs'
+roles by look, the entries' orders, the switch variables, the lone jump joins, the frames' counts, the layout, nothing
+outside pointing in, the lists and their bodies, the description's 461 bytes split as stated, the blind totals, the
+controls, and that the template's refactor keeps sections 411 and 412's order, their only switches being Options'
+with the nested one in a join. **It corrected, in place before this landed**: 3516 bytes stated for every compile,
+3516 on the sixteen only; the hour words drawn by reference, twelve and not one; the place table's column, which
+named a constant where an end and a centring rule are what the widths separate, and the minute's thin margin
+against centring; the population of the table and its out of sample widths; six test titles that claimed more than
+their bodies (the six lists named by nothing else checks action lists alone, the layout runs on eighteen, the ten
+homes' holder, the European inline count, the table check on one compile and the font control's scope), each body
+widened or title narrowed; the sending mark's being section 374's corner program, uncited, and the module's section
+360 for it, which is 369 and 374; the reference's wording; and three claims narrower than their evidence, now
+widened above. It also noted, outside this diff, that `listCallSites` in `families/four-slot/assemble.ts` reads raw
+slot 10, which on the Harmony One is not base slot 10, so it reports no list calls there; nothing here uses it.
+
+### Where it is held
+
+Plan 007: the four programs and the minute's list are the touch family's, `families/touch/clockheader.ts`; the
+program reader and writer, the standalone programs and their put back, `withTemplatePrograms`, are
+`screentemplate.ts`'; `statetables.ts` exports the clock's indices it already held. Not on the composed path: 7.1
+takes it there.
+
+### Asserted
+
+`packages/codec/test/touchclockheader.test.ts`: the sixteen rebuilt, 4 programs in 249 pieces, 6 lists, 461 bytes
+read and 3558 spanned each; the two European compiles on a twenty four hour clock, 3579, 31 words inline, and the
+Dutch one refused; the entries' three orders over the nineteen and the layout order on the eighteen that describe; who runs the four, 3195, 3195, 318 and
+3195; the sixteen pictures against section 405's and their thirteen images; 19 inline words, 60 homes and their holders, 647, 294, 6, 3 and 10; the six
+lists and 42 bytes, called by no other action list on the nineteen; the blind control's totals, 56928, 5392, 1984 and 51536; the
+five failing controls and the one that does not bite; the entries against the table. `touchfixedscreens.test.ts` and
+`touchtourscreens.test.ts` unchanged.
+
+### What would falsify it
+
+A compile of skin 54 in English whose four programs or six lists the description refuses or the builder does not
+reproduce; a header program laid out other than in entry order and the reader's order; a list running the four in a
+combination other than the two; a minute word placed other than from x 158, or a day or hour not ending at 138 or 156.
+
+### Which architectures
+
+Arch 12 (Harmony One) alone, skin 54 and the European skin 59, in English; the module is the touch family's. The
+Harmony 600, 650 and 700 show no clock, `CLAUDE.md`; their corner program on variable 17, sections 369 and 374, is
+the One's sending mark at another place. The
+engine's three additions are generic to the template language, used by the One's modules only.

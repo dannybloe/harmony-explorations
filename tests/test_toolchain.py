@@ -455,8 +455,9 @@ class ATypeScriptSampleLoopStatesItsPopulation(unittest.TestCase):
         # section 411, todo-compile-one 4.4.4.1. 126 with touchtourscreens.test.ts, section 412, 4.4.4.2, and
         # screenlists.ts, the list walk it shares with touchfixedscreens.test.ts, a helper rather than a test file.
         # 127 with touchstatusscreens.test.ts, section 413, todo-compile-one 4.5. 128 with touchbuilders.test.ts,
-        # todo-compile-one 3.2.2.1, the builders on the composed path.
-        self.assertEqual(scanned, 128, 'the TypeScript test files, as ABoundOnACorpusTotalIsExact counts them')
+        # todo-compile-one 3.2.2.1, the builders on the composed path. 129 with touchclockheader.test.ts,
+        # section 414, todo-compile-one 4.7.
+        self.assertEqual(scanned, 129, 'the TypeScript test files, as ABoundOnACorpusTotalIsExact counts them')
         self.assertEqual(
             {name: len(lines) for name, lines in counted.items()},
             TYPESCRIPT_LOOPS_ALLOWED_TO_SKIP_A_SAMPLE,
@@ -608,8 +609,8 @@ class ABoundOnACorpusTotalIsExact(unittest.TestCase):
         # 4.4.4.1, section 411. 126 with touchtourscreens, 4.4.4.2, section 412, and screenlists, the
         # list walk it shares with touchfixedscreens, a helper rather than a test file. 127 with
         # touchstatusscreens, 4.5, section 413. 128 with touchbuilders,
-        # todo-compile-one 3.2.2.1.
-        self.assertEqual(len(scanned), 128, 'TypeScript test files, which moves when one is added')
+        # todo-compile-one 3.2.2.1. 129 with touchclockheader, 4.7, section 414.
+        self.assertEqual(len(scanned), 129, 'TypeScript test files, which moves when one is added')
         self.assertIn(self.CONTROL, found, 'the pattern matches nothing it should match')
 
     def test_every_remaining_bound_says_why_it_is_not_a_measurement(self):

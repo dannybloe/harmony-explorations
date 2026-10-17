@@ -29,6 +29,13 @@
  * **The mode entry's first byte** is generated: 1 exactly where the screen's own key map binds tag `0x29`,
  * section 411's 139 of 139 over the nineteen compiles.
  *
+ * **Programs of their own**, `TemplateProgram`, since `todo-compile-one.md` 4.7 (section 414): a base slot 11
+ * entry that no mode calls, read and built by the same program reader and writer as a screen's pages, with the
+ * lists a state transition calls beside them, `TemplateCall`, and put back by `withTemplatePrograms`. The
+ * clock's header programs needed three things the screens did not, each generic to the language: a switch on
+ * a variable the firmware owns, a constant of the template; a switch inside an arm, whose join closes as the
+ * arm would; and pictures drawn from several places, taken from a shared table by slot.
+ *
  * The Harmony One alone, the touch family's. Read only towards hardware: the result is pieces.
  */
 import type { Container, Instruction } from '../../gspm.ts';
@@ -42,7 +49,7 @@ import {
 } from '../../screen.ts';
 import { keyListOrder } from '../../modezero.ts';
 import {
-  type BuiltScreen, type RecordFrame, type RecordPlace, ScreenRecordError, recordBuilding, recordReading,
+  type BuiltScreen, type RecordFrame, type RecordPlace, type RecordReading, ScreenRecordError, recordBuilding, recordReading,
 } from '../../screenrecords.ts';
 import { type ValueReader, blobReader, speller } from '../../shared/spelling.ts';
 
@@ -109,7 +116,13 @@ export const SCAN_38: Entry = [press(38), SWALLOW];
 export type Place = number | { in: readonly [number, number] } | { endAt: number };
 
 export type Part<F extends string = string> =
-  | { op: 'picture'; x: number; y: number }
+  /**
+   * A picture at a place. Without `slot` it is the next of the description's pictures in walk order, as every
+   * screen's are; with one it is that entry of a table of pictures the programs share, for a picture drawn
+   * from several places, which the clock's header programs do (`clockheader.ts`, section 414): the
+   * description then carries each picture once and the template says where it is drawn again.
+   */
+  | { op: 'picture'; x: number; y: number; slot?: number }
   | { op: 'font'; font: F }
   | { op: 'text'; word: string; x: Place; y: number }
   | { op: 'queue'; step: Step }
@@ -118,10 +131,19 @@ export type Part<F extends string = string> =
   /** A drawing instruction whose operands are all constants, the tour's chrome opening with opcode 1. */
   | { op: 'constant'; opcode: number; operands: readonly number[] }
   /**
-   * A switch on a state variable the configuration chose: exact values first, then ranges, each arm a
-   * program piece of its own ending in a jump to `then`, the piece the arms join again at.
+   * A switch on a state variable: exact values first, then ranges, each arm a program piece of its own ending
+   * in a jump to `then`, the piece the arms join again at. The variable is a number the configuration chose,
+   * or with `variable` one the firmware owns and every configuration names alike, the clock's and the
+   * battery's, which is then the template's constant and not the description's.
+   *
+   * **A switch may sit inside an arm.** Its `then` piece closes as the arm would have, with a jump to the
+   * piece the outer arms join at, measured on the clock's header programs, section 414: there a join that
+   * draws nothing is a lone jump onwards. At the top of a program it closes with the end, as before.
    */
-  | { op: 'switch'; arms: readonly { match: number | readonly [number, number]; parts: readonly Part<F>[] }[]; then: readonly Part<F>[] };
+  | {
+    op: 'switch'; variable?: number;
+    arms: readonly { match: number | readonly [number, number]; parts: readonly Part<F>[] }[]; then: readonly Part<F>[];
+  };
 
 export interface TemplatePage<F extends string = string> {
   /** The page list's bindings, which its copy repeats with lists of its own. */
@@ -138,6 +160,8 @@ export interface TemplateScreen<F extends string = string> {
 
 export const font = <F extends string>(which: F): Part<F> => ({ op: 'font', font: which });
 export const picture = (x: number, y: number): Part<never> => ({ op: 'picture', x, y });
+/** A picture taken from the programs' shared table by `slot`, `Part`'s first form. */
+export const pictureOf = (slot: number, x: number, y: number): Part<never> => ({ op: 'picture', x, y, slot });
 export const text = (word: string, x: Place, y: number): Part<never> => ({ op: 'text', word, x, y });
 /** A body line centred on the 176 pixel width rounded down, `floor((176 - w) / 2)`, section 409's rule. */
 export const centred = (word: string, y: number): Part<never> => text(word, { in: [0, SCREEN_WIDTH] }, y);
@@ -224,6 +248,185 @@ function switchTables(one: ScreenInstruction): { exact: number[]; ranges: [numbe
   return { exact, ranges, fields };
 }
 
+// ---------------------------------------------------------------------------------------------------------
+// Reading a program against its parts, shared by the screens and the programs of their own.
+
+/** What a program reader collects as it reads, which its caller owns: one per screen, or per program. */
+interface ReadCursor<F extends string> {
+  /** For a refusal's wording: a screen's name, or a program's. */
+  name: string;
+  numbers: number[];
+  pictures: PieceTarget[];
+  /** The shared table a picture with a `slot` is read into; absent where no part may name one. */
+  slots?: (PieceTarget | undefined)[];
+  fonts: Partial<Record<F, number>>;
+  /** The program pieces a switch reaches, in the order the builder makes them. */
+  extras: ContainerPiece[];
+  /** What a `chrome` part reads; absent on a program of its own, which calls none. */
+  chrome?: (call: ScreenInstruction) => void;
+}
+
+/**
+ * Read instructions and programs against a template's steps and parts. `step` reads one instruction against
+ * a step, `at` being where its operand starts and `at + 2` its opcode. `unit` reads a program piece and
+ * everything it reaches: its main line and every piece a switch on it joins at, then each of those switches'
+ * arms in turn, each arm read whole, its own switches' joins and arms included, before the next arm.
+ *
+ * **That order is the order the builder makes pieces in, and the order Logitech lays them out in**: on a page
+ * the main line, then the joins, then the arms, section 411, and an arm holding a switch of its own laid out
+ * with that switch's join and arms straight after it, section 414 on the clock's header programs. Section 411's
+ * and 412's screens hold no switch inside an arm, so on them this is the order they were read in before.
+ */
+function programReader<F extends string>(c: Container, reading: RecordReading, cursor: ReadCursor<F>) {
+  const { value, value16, value24 } = reading;
+  const name = cursor.name;
+  const numbers = cursor.numbers;
+
+  // An instruction against its step, `at` being where its operand starts and `at + 2` its opcode.
+  const step = (want: Step, got: { opcode: number; operand: number }, at: number, what: string): void => {
+    if (want.kind === 'constant') {
+      if (got.opcode !== want.opcode || got.operand !== want.operand) {
+        throw new ScreenRecordError(`${name}'s ${what} is ${hex(got.opcode)} ${hex(got.operand)}, not ${hex(want.opcode)} ${hex(want.operand)}`);
+      }
+    } else if (want.kind === 'number') {
+      if (got.opcode !== want.opcode) throw new ScreenRecordError(`${name}'s ${what} is not ${hex(want.opcode)}`);
+      if (want.band !== undefined) {
+        if (got.operand >> 8 !== want.band) throw new ScreenRecordError(`${name}'s ${what} is in another band`);
+        numbers.push(value(at));
+      } else numbers.push(value16(at));
+    } else if (want.kind === 'write') {
+      // The variable is the opcode less 0x80, a number the configuration chose; the value is the template's.
+      if (got.opcode < STATE_WRITE || got.operand !== want.operand) {
+        throw new ScreenRecordError(`${name}'s ${what} is ${hex(got.opcode)} ${hex(got.operand)}, not a write of ${want.operand}`);
+      }
+      numbers.push(value(at + 2) - STATE_WRITE);
+    } else {
+      if (got.opcode !== CALL) throw new ScreenRecordError(`${name}'s ${what} calls no list`);
+      numbers.push(value16(at));
+      const list = reading.list(got.operand, `${name}'s ${what}`);
+      if (list.body.length !== want.steps.length) {
+        throw new ScreenRecordError(`${name}'s ${what} is ${list.body.length} instructions, not ${want.steps.length}`);
+      }
+      want.steps.forEach((one, i) => step(one, list.body[i] as Instruction, list.off + 1 + 3 * i, `${what}, instruction ${i}`));
+    }
+  };
+
+  /**
+   * Where an arm goes on to: the target of its closing jump, or, where it ends in a switch of its own, where
+   * that switch's join goes on to. The arms of one switch all go on to one piece, the switch's join.
+   */
+  const exitOf = (address: number, what: string): number => {
+    const program = screenProgram(c, address);
+    const last = program?.[program.length - 1];
+    if (last?.opcode === SCREEN_JUMP) return last.targets[0] as number;
+    if (last?.opcode === SCREEN_SWITCH_NARROW) return exitOf(exitOf(last.targets[0] as number, what), what);
+    throw new ScreenRecordError(`${name}'s ${what}'s first arm does not jump back`);
+  };
+
+  interface Arm { parts: readonly Part<F>[]; address: number; join: number; what: string }
+
+  // A piece's main line against its parts, and the pieces its switches join at: the arms are returned, in
+  // order, for `unit` to read. `join` is what follows the last part where it is not an end: a jump to the
+  // piece the arms around it join at.
+  const chain = (parts: readonly Part<F>[], program: readonly ScreenInstruction[], what: string, join?: number): Arm[] => {
+    let i = 0;
+    const next = (opcode: number, part: string): ScreenInstruction => {
+      const one = program[i];
+      if (one === undefined || one.opcode !== opcode) throw new ScreenRecordError(`${name}'s ${what}, instruction ${i}, is not ${part}`);
+      i += 1;
+      return one;
+    };
+    for (const part of parts) {
+      if (part.op === 'picture') {
+        const one = next(SCREEN_DRAW_IMAGE, 'a picture');
+        if (one.operands[0] !== part.x || one.operands[1] !== part.y) throw new ScreenRecordError(`${name}'s ${what} draws a picture elsewhere`);
+        const field = one.start + one.length - 3;
+        if (part.slot === undefined) cursor.pictures.push(reading.targetOf(value24(field)));
+        else {
+          // A shared picture is the description's where it is first drawn; every later place it is drawn is
+          // checked against it through the configuration's own bytes and is the template's.
+          const slots = cursor.slots;
+          if (slots === undefined) throw new ScreenRecordError(`${name}'s ${what} draws a shared picture, and nothing holds a table of them`);
+          const was = slots[part.slot];
+          if (was === undefined) slots[part.slot] = reading.targetOf(value24(field));
+          else {
+            const now = reading.targetOf((c.blob[field] as number) | ((c.blob[field + 1] as number) << 8) | ((c.blob[field + 2] as number) << 16));
+            if (now.to !== was.to || now.offset !== was.offset) throw new ScreenRecordError(`${name}'s ${what} draws another picture for shared picture ${part.slot}`);
+          }
+        }
+      } else if (part.op === 'font') {
+        const one = next(SCREEN_SELECT_FONT, 'a font');
+        const number = value(one.start + 1);
+        const was = cursor.fonts[part.font];
+        if (was !== undefined && was !== number) throw new ScreenRecordError(`the screens select two fonts for ${part.font}`);
+        cursor.fonts[part.font] = number;
+      } else if (part.op === 'text') {
+        const one = program[i];
+        if (one === undefined || (one.opcode !== SCREEN_TEXT_AT && one.opcode !== SCREEN_TEXT_INLINE)) {
+          throw new ScreenRecordError(`${name}'s ${what}, instruction ${i}, is not a text`);
+        }
+        i += 1;
+      } else if (part.op === 'constant') {
+        const one = next(part.opcode, `opcode ${part.opcode}`);
+        if (one.operands.length !== part.operands.length || part.operands.some((v, j) => one.operands[j] !== v)) {
+          throw new ScreenRecordError(`${name}'s ${what}, instruction ${i - 1}, has other operands`);
+        }
+      } else if (part.op === 'queue') {
+        const one = next(SCREEN_QUEUE_INSTRUCTION, 'a queued instruction');
+        const o = one.operands;
+        step(part.step, { opcode: o[2] as number, operand: (o[0] as number) | ((o[1] as number) << 8) }, one.start + 1, `${what}'s queued instruction`);
+      } else if (part.op === 'return') {
+        next(SCREEN_RETURN, 'a return');
+      } else if (part.op === 'chrome') {
+        const one = next(SCREEN_CALL, 'the call of the chrome');
+        if (cursor.chrome === undefined) throw new ScreenRecordError(`${name}'s ${what} calls a chrome, and a program of its own has none`);
+        cursor.chrome(one);
+      } else {
+        const one = next(SCREEN_SWITCH_NARROW, 'a switch');
+        if (i !== program.length || part !== parts[parts.length - 1]) throw new ScreenRecordError(`${name}'s ${what} goes on after its switch`);
+        // A variable the firmware owns is the template's constant, checked; any other is the description's.
+        if (part.variable === undefined) numbers.push(value(one.start + 1));
+        else if (one.operands[0] !== part.variable) {
+          throw new ScreenRecordError(`${name}'s ${what} switches on variable ${one.operands[0]}, not ${part.variable}`);
+        }
+        const tables = switchTables(one);
+        const wantExact = part.arms.filter((arm) => typeof arm.match === 'number').map((arm) => arm.match as number);
+        const wantRanges = part.arms.filter((arm) => typeof arm.match !== 'number').map((arm) => arm.match as [number, number]);
+        if (part.arms.some((arm, a) => (typeof arm.match === 'number') !== (a < wantExact.length))
+          || tables.exact.join() !== wantExact.join() || tables.ranges.join() !== wantRanges.join()) {
+          throw new ScreenRecordError(`${name}'s ${what} switches on other values`);
+        }
+        tables.fields.forEach((at) => reading.addressField(at, 'built'));
+        // The piece the arms join at, where the first arm goes on to: the main line goes on there.
+        const joinAt = exitOf(one.targets[0] as number, what);
+        const arms = part.arms.map((arm, a): Arm => ({ parts: arm.parts, address: one.targets[a] as number, join: joinAt, what: `${what}'s arm ${a + 1}` }));
+        const then = reading.program(joinAt, `${name}'s ${what}'s join`);
+        cursor.extras.push(then.piece);
+        return [...arms, ...chain(part.then, then.program, `${what}'s join`, join)];
+      }
+    }
+    if (join === undefined) next(SCREEN_END, 'the end');
+    else {
+      const one = next(SCREEN_JUMP, 'a jump');
+      if (one.targets[0] !== join) throw new ScreenRecordError(`${name}'s ${what} jumps elsewhere`);
+      reading.addressField(one.start + 1, 'built');
+    }
+    if (i !== program.length) throw new ScreenRecordError(`${name}'s ${what} holds more than its parts`);
+    return [];
+  };
+
+  /** A program piece and everything it reaches, arms depth first after the main line and its joins. */
+  const unit = (parts: readonly Part<F>[], program: readonly ScreenInstruction[], what: string, join?: number): void => {
+    for (const arm of chain(parts, program, what, join)) {
+      const one = reading.program(arm.address, `${name}'s ${arm.what}`);
+      cursor.extras.push(one.piece);
+      unit(arm.parts, one.program, arm.what, arm.join);
+    }
+  };
+
+  return { step, unit };
+}
+
 /**
  * Read off a configuration what a composer would supply for the template's screens, and where Logitech's sat.
  * `modes` names the mode of each screen, in the template's order, and `roles` the font roles the screens
@@ -237,7 +440,6 @@ export function describeTemplateScreens<F extends string>(
 ): TemplateScreensDescribed<F> {
   if (modes.length !== screens.length) throw new ScreenRecordError(`${modes.length} modes for ${screens.length} screens`);
   const reading = recordReading(c, layout, read);
-  const { value, value16, value24 } = reading;
   const fonts: Partial<Record<F, number>> = {};
   const places: RecordPlace[] = [];
 
@@ -250,35 +452,22 @@ export function describeTemplateScreens<F extends string>(
     const numbers: number[] = [];
     const pictures: PieceTarget[] = [];
     const extras: ContainerPiece[] = [];
-
-    // An instruction against its step, `at` being where its operand starts and `at + 2` its opcode.
-    const step = (want: Step, got: { opcode: number; operand: number }, at: number, what: string): void => {
-      if (want.kind === 'constant') {
-        if (got.opcode !== want.opcode || got.operand !== want.operand) {
-          throw new ScreenRecordError(`${screen.name}'s ${what} is ${hex(got.opcode)} ${hex(got.operand)}, not ${hex(want.opcode)} ${hex(want.operand)}`);
+    // The chrome every page calls, read where the first page calls it.
+    let chromeRead = false;
+    const cursor: ReadCursor<F> = {
+      name: screen.name, numbers, pictures, fonts, extras,
+      chrome: (one) => {
+        if (chromeRead) return;
+        chromeRead = true;
+        const chrome = f.pages[0]?.chrome;
+        if (chrome === undefined || chrome.program[0]?.start !== reading.blobOf(one.targets[0] as number)) {
+          throw new ScreenRecordError(`${screen.name}'s chrome does not read`);
         }
-      } else if (want.kind === 'number') {
-        if (got.opcode !== want.opcode) throw new ScreenRecordError(`${screen.name}'s ${what} is not ${hex(want.opcode)}`);
-        if (want.band !== undefined) {
-          if (got.operand >> 8 !== want.band) throw new ScreenRecordError(`${screen.name}'s ${what} is in another band`);
-          numbers.push(value(at));
-        } else numbers.push(value16(at));
-      } else if (want.kind === 'write') {
-        // The variable is the opcode less 0x80, a number the configuration chose; the value is the template's.
-        if (got.opcode < STATE_WRITE || got.operand !== want.operand) {
-          throw new ScreenRecordError(`${screen.name}'s ${what} is ${hex(got.opcode)} ${hex(got.operand)}, not a write of ${want.operand}`);
-        }
-        numbers.push(value(at + 2) - STATE_WRITE);
-      } else {
-        if (got.opcode !== CALL) throw new ScreenRecordError(`${screen.name}'s ${what} calls no list`);
-        numbers.push(value16(at));
-        const list = reading.list(got.operand, `${screen.name}'s ${what}`);
-        if (list.body.length !== want.steps.length) {
-          throw new ScreenRecordError(`${screen.name}'s ${what} is ${list.body.length} instructions, not ${want.steps.length}`);
-        }
-        want.steps.forEach((one, i) => step(one, list.body[i] as Instruction, list.off + 1 + 3 * i, `${what}, instruction ${i}`));
-      }
+        reader.unit(screen.chrome, chrome.program, 'chrome');
+      },
     };
+    const reader = programReader(c, reading, cursor);
+
     // A tagged list against its entries, in the stored order, and in the form `isWide` says the template's
     // bindings take: its first byte is the form, which the reader finds its way by, and is checked.
     const tagged = (want: readonly Entry[], entries: readonly { tag: number; opcode: number; operand: number; flags?: number | undefined }[], off: number, what: string): void => {
@@ -294,91 +483,8 @@ export function describeTemplateScreens<F extends string>(
       tags.forEach((tag, i) => {
         const binding = by.get(tag) as Step;
         if (wide && entries[i]?.flags !== flagOf(binding)) throw new ScreenRecordError(`${screen.name}'s ${what}'s binding of tag ${hex(tag)} carries another flag`);
-        step(binding, entries[i] as { opcode: number; operand: number }, off + head + stride * i + stride - 3, `${what}'s binding of tag ${hex(tag)}`);
+        reader.step(binding, entries[i] as { opcode: number; operand: number }, off + head + stride * i + stride - 3, `${what}'s binding of tag ${hex(tag)}`);
       });
-    };
-
-    let chromeRead = false;
-    // A program piece against its parts. `join` is what follows the last part where it is not an end: a jump to
-    // the piece the arms join at. Switches leave their arms in `arms`, walked after the main line.
-    const arms: { parts: readonly Part<F>[]; address: number; join: number; what: string }[] = [];
-    const walk = (parts: readonly Part<F>[], program: readonly ScreenInstruction[], what: string, join?: number): void => {
-      let i = 0;
-      const next = (opcode: number, part: string): ScreenInstruction => {
-        const one = program[i];
-        if (one === undefined || one.opcode !== opcode) throw new ScreenRecordError(`${screen.name}'s ${what}, instruction ${i}, is not ${part}`);
-        i += 1;
-        return one;
-      };
-      for (const part of parts) {
-        if (part.op === 'picture') {
-          const one = next(SCREEN_DRAW_IMAGE, 'a picture');
-          if (one.operands[0] !== part.x || one.operands[1] !== part.y) throw new ScreenRecordError(`${screen.name}'s ${what} draws a picture elsewhere`);
-          pictures.push(reading.targetOf(value24(one.start + one.length - 3)));
-        } else if (part.op === 'font') {
-          const one = next(SCREEN_SELECT_FONT, 'a font');
-          const number = value(one.start + 1);
-          const was = fonts[part.font];
-          if (was !== undefined && was !== number) throw new ScreenRecordError(`the screens select two fonts for ${part.font}`);
-          fonts[part.font] = number;
-        } else if (part.op === 'text') {
-          const one = program[i];
-          if (one === undefined || (one.opcode !== SCREEN_TEXT_AT && one.opcode !== SCREEN_TEXT_INLINE)) {
-            throw new ScreenRecordError(`${screen.name}'s ${what}, instruction ${i}, is not a text`);
-          }
-          i += 1;
-        } else if (part.op === 'constant') {
-          const one = next(part.opcode, `opcode ${part.opcode}`);
-          if (one.operands.length !== part.operands.length || part.operands.some((v, j) => one.operands[j] !== v)) {
-            throw new ScreenRecordError(`${screen.name}'s ${what}, instruction ${i - 1}, has other operands`);
-          }
-        } else if (part.op === 'queue') {
-          const one = next(SCREEN_QUEUE_INSTRUCTION, 'a queued instruction');
-          const o = one.operands;
-          step(part.step, { opcode: o[2] as number, operand: (o[0] as number) | ((o[1] as number) << 8) }, one.start + 1, `${what}'s queued instruction`);
-        } else if (part.op === 'return') {
-          next(SCREEN_RETURN, 'a return');
-        } else if (part.op === 'chrome') {
-          const one = next(SCREEN_CALL, 'the call of the chrome');
-          if (!chromeRead) {
-            chromeRead = true;
-            const chrome = f.pages[0]?.chrome;
-            if (chrome === undefined || chrome.program[0]?.start !== reading.blobOf(one.targets[0] as number)) {
-              throw new ScreenRecordError(`${screen.name}'s chrome does not read`);
-            }
-            walk(screen.chrome, chrome.program, 'chrome');
-          }
-        } else {
-          const one = next(SCREEN_SWITCH_NARROW, 'a switch');
-          if (i !== program.length || part !== parts[parts.length - 1]) throw new ScreenRecordError(`${screen.name}'s ${what} goes on after its switch`);
-          numbers.push(value(one.start + 1));
-          const tables = switchTables(one);
-          const wantExact = part.arms.filter((arm) => typeof arm.match === 'number').map((arm) => arm.match as number);
-          const wantRanges = part.arms.filter((arm) => typeof arm.match !== 'number').map((arm) => arm.match as [number, number]);
-          if (part.arms.some((arm, a) => (typeof arm.match === 'number') !== (a < wantExact.length))
-            || tables.exact.join() !== wantExact.join() || tables.ranges.join() !== wantRanges.join()) {
-            throw new ScreenRecordError(`${screen.name}'s ${what} switches on other values`);
-          }
-          tables.fields.forEach((at) => reading.addressField(at, 'built'));
-          // The piece the arms join at, from the first arm's closing jump: the main line goes on there.
-          const first = screenProgram(c, one.targets[0] as number);
-          const jump = first?.[first.length - 1];
-          if (jump === undefined || jump.opcode !== SCREEN_JUMP) throw new ScreenRecordError(`${screen.name}'s ${what}'s first arm does not jump back`);
-          const joinAt = jump.targets[0] as number;
-          part.arms.forEach((arm, a) => arms.push({ parts: arm.parts, address: one.targets[a] as number, join: joinAt, what: `${what}'s arm ${a + 1}` }));
-          const then = reading.program(joinAt, `${screen.name}'s ${what}'s join`);
-          extras.push(then.piece);
-          walk(part.then, then.program, `${what}'s join`);
-          return;
-        }
-      }
-      if (join === undefined) next(SCREEN_END, 'the end');
-      else {
-        const one = next(SCREEN_JUMP, 'a jump');
-        if (one.targets[0] !== join) throw new ScreenRecordError(`${screen.name}'s ${what} jumps elsewhere`);
-        reading.addressField(one.start + 1, 'built');
-      }
-      if (i !== program.length) throw new ScreenRecordError(`${screen.name}'s ${what} holds more than its parts`);
     };
 
     tagged(screen.own, f.record.entries, f.ownOff, 'own key map');
@@ -386,13 +492,7 @@ export function describeTemplateScreens<F extends string>(
       const frame = f.pages[p] as RecordFrame['pages'][number];
       tagged(page.list, frame.list.entries, frame.listOff, `page ${p + 1}'s list`);
       tagged(page.list, frame.copy.entries, frame.copyOff, `page ${p + 1}'s copy`);
-      walk(page.parts, frame.program, `page ${p + 1}`);
-      while (arms.length > 0) {
-        const arm = arms.shift() as (typeof arms)[number];
-        const one = reading.program(arm.address, `${screen.name}'s ${arm.what}`);
-        extras.push(one.piece);
-        walk(arm.parts, one.program, arm.what, arm.join);
-      }
+      reader.unit(page.parts, frame.program, `page ${p + 1}`);
       return frame.page.lead as number;
     });
     places.push(reading.placeOf(screen.name, f, extras));
@@ -426,6 +526,137 @@ function startOf(place: Place, w: number): number {
   return place.in[0] + Math.floor((place.in[1] - w) / 2);
 }
 
+/** What a program writer takes from as it builds, which its caller owns: one per screen, or per program. */
+interface WriteCursor {
+  name: string;
+  numbers: number[];
+  pictures: PieceTarget[];
+  /** The shared pictures by slot, where the template draws one. */
+  slots?: readonly PieceTarget[];
+  /** Every shared picture drawn, by slot, for the caller to check none is left over. */
+  slotsDrawn?: Set<number>;
+  /** The program pieces a switch reaches, in the order they are made. */
+  extras: ContainerPiece[];
+  /** The chrome a `chrome` part calls, built on its first call; absent on a program of its own. */
+  chrome?: () => ContainerPiece;
+}
+
+/**
+ * Build instructions and programs from a template's steps and parts, `programReader`'s other half: the same
+ * order, every number and picture taken from the cursor in the order the reader put them there. `inline` and
+ * `lists` are shared by everything one build makes, since a text is held inline once and a list built once.
+ */
+function programWriter<F extends string>(
+  spell: ReturnType<typeof speller>, fonts: Record<F, number>, homes: ReadonlyMap<string, PieceTarget>,
+  inline: Map<string, PieceTarget>, lists: Map<number, ContainerPiece>, cursor: WriteCursor,
+) {
+  const take = (): number => {
+    const one = cursor.numbers.shift();
+    if (one === undefined) throw new ScreenRecordError(`the description holds too few numbers for ${cursor.name}`);
+    return one;
+  };
+  const instruction = (want: Step): Instruction => {
+    if (want.kind === 'constant') return { opcode: want.opcode, operand: want.operand };
+    if (want.kind === 'number') return { opcode: want.opcode, operand: want.band === undefined ? take() : (want.band << 8) | take() };
+    if (want.kind === 'write') return { opcode: STATE_WRITE + take(), operand: want.operand };
+    const index = take();
+    const bytes = actionListBytes(want.steps.map(instruction));
+    const was = lists.get(index);
+    if (was !== undefined && was.bytes.join() !== bytes.join()) throw new ScreenRecordError(`list ${index} is built two ways`);
+    lists.set(index, { bytes, refs: [], owner: 'slot-10-list' });
+    return { opcode: CALL, operand: index };
+  };
+
+  interface Arm { parts: readonly Part<F>[]; piece: ContainerPiece; join: ContainerPiece }
+
+  // One program piece from its parts, closed by an end or by a jump to `join`; a switch closes it early, and
+  // its join is made next, closing as this piece would have. The arms are returned, in order, for `unit`.
+  const chain = (parts: readonly Part<F>[], piece: ContainerPiece, join?: ContainerPiece): Arm[] => {
+    const out: number[] = [];
+    const refs: PieceRef[] = [];
+    const pointer = (to: ContainerPiece, offset = 0): void => {
+      refs.push({ at: out.length, to, offset });
+      out.push(0, 0, 0);
+    };
+    let current: F | undefined;
+    for (const part of parts) {
+      if (part.op === 'picture') {
+        let target: PieceTarget | undefined;
+        if (part.slot === undefined) target = cursor.pictures.shift();
+        else {
+          target = cursor.slots?.[part.slot];
+          cursor.slotsDrawn?.add(part.slot);
+        }
+        if (target === undefined) throw new ScreenRecordError(`the description holds too few pictures for ${cursor.name}`);
+        out.push(SCREEN_DRAW_IMAGE, part.x, part.y);
+        pointer(target.to, target.offset);
+      } else if (part.op === 'font') {
+        current = part.font;
+        out.push(SCREEN_SELECT_FONT, fonts[part.font]);
+      } else if (part.op === 'text') {
+        if (current === undefined) throw new ScreenRecordError(`${cursor.name} draws ${part.word} with no font selected`);
+        const { codes, width } = spell(fonts[current], part.word);
+        const key = codes.join(',');
+        const home = homes.get(key) ?? inline.get(key);
+        const x = startOf(part.x, width);
+        if (home !== undefined) {
+          out.push(SCREEN_TEXT_AT, x, part.y);
+          pointer(home.to, home.offset);
+        } else {
+          out.push(SCREEN_TEXT_INLINE, x, part.y);
+          inline.set(key, { to: piece, offset: out.length });
+          out.push(...codes, 0);
+        }
+      } else if (part.op === 'constant') {
+        out.push(part.opcode, ...part.operands);
+      } else if (part.op === 'queue') {
+        const one = instruction(part.step);
+        out.push(SCREEN_QUEUE_INSTRUCTION, one.operand & 0xff, one.operand >> 8, one.opcode);
+      } else if (part.op === 'return') {
+        out.push(SCREEN_RETURN);
+      } else if (part.op === 'chrome') {
+        if (cursor.chrome === undefined) throw new ScreenRecordError(`${cursor.name} calls a chrome, and a program of its own has none`);
+        out.push(SCREEN_CALL);
+        pointer(cursor.chrome());
+      } else {
+        // The switch, then the piece its arms join at, which goes on with the main line; the arms after it.
+        const variable = part.variable ?? take();
+        const then: ContainerPiece = { bytes: new Uint8Array(0), refs: [], owner: 'slot-11-program' };
+        const exact = part.arms.filter((arm) => typeof arm.match === 'number');
+        const ranges = part.arms.filter((arm) => typeof arm.match !== 'number');
+        const pieces = new Map(part.arms.map((arm) => [arm, { bytes: new Uint8Array(0), refs: [], owner: 'slot-11-program' } as ContainerPiece]));
+        out.push(SCREEN_SWITCH_NARROW, variable, exact.length);
+        for (const arm of exact) { out.push(arm.match as number); pointer(pieces.get(arm) as ContainerPiece); }
+        out.push(ranges.length);
+        for (const arm of ranges) { out.push(...(arm.match as readonly [number, number])); pointer(pieces.get(arm) as ContainerPiece); }
+        piece.bytes = Uint8Array.from(out);
+        piece.refs = refs;
+        cursor.extras.push(then);
+        const arms = part.arms.map((arm): Arm => ({ parts: arm.parts, piece: pieces.get(arm) as ContainerPiece, join: then }));
+        return [...arms, ...chain(part.then, then, join)];
+      }
+    }
+    if (join === undefined) out.push(SCREEN_END);
+    else {
+      out.push(SCREEN_JUMP);
+      pointer(join);
+    }
+    piece.bytes = Uint8Array.from(out);
+    piece.refs = refs;
+    return [];
+  };
+
+  /** A program piece and everything it reaches, made in `programReader`'s order. */
+  const unit = (parts: readonly Part<F>[], piece: ContainerPiece, join?: ContainerPiece): void => {
+    for (const arm of chain(parts, piece, join)) {
+      cursor.extras.push(arm.piece);
+      unit(arm.parts, arm.piece, arm.join);
+    }
+  };
+
+  return { instruction, unit };
+}
+
 /**
  * The screens built from a description, in mode order since the programs are laid out in that order and the
  * first program to draw a text holds it inline. Everything but the description's numbers is generated. `c` is
@@ -446,26 +677,24 @@ export function buildTemplateScreens<F extends string>(
     const described = spec.screens[s] as TemplateScreensSpec<F>['screens'][number];
     const numbers = [...described.numbers];
     const pictures = [...described.pictures];
-    const take = (): number => {
-      const one = numbers.shift();
-      if (one === undefined) throw new ScreenRecordError(`the description holds too few numbers for ${screen.name}`);
-      return one;
-    };
-    const instruction = (want: Step): Instruction => {
-      if (want.kind === 'constant') return { opcode: want.opcode, operand: want.operand };
-      if (want.kind === 'number') return { opcode: want.opcode, operand: want.band === undefined ? take() : (want.band << 8) | take() };
-      if (want.kind === 'write') return { opcode: STATE_WRITE + take(), operand: want.operand };
-      const index = take();
-      const bytes = actionListBytes(want.steps.map(instruction));
-      const was = lists.get(index);
-      if (was !== undefined && was.bytes.join() !== bytes.join()) throw new ScreenRecordError(`list ${index} is built two ways`);
-      lists.set(index, { bytes, refs: [], owner: 'slot-10-list' });
-      return { opcode: CALL, operand: index };
-    };
+    const extras: ContainerPiece[] = [];
+    const chromePiece: ContainerPiece = { bytes: new Uint8Array(0), refs: [], owner: 'slot-11-program' };
+    let chromeBuilt = false;
+    const writer = programWriter(spell, spec.fonts, spec.homes, inline, lists, {
+      name: screen.name, numbers, pictures, extras,
+      // The chrome every page calls, built where the first page calls it, so its texts come first.
+      chrome: () => {
+        if (!chromeBuilt) {
+          chromeBuilt = true;
+          writer.unit(screen.chrome, chromePiece);
+        }
+        return chromePiece;
+      },
+    });
     const tagged = (entries: readonly Entry[]): Uint8Array => {
       const by = new Map(entries);
       const order = keyListOrder(entries.map(([tag]) => tag));
-      const built = order.map((tag) => ({ tag, flags: flagOf(by.get(tag) as Step), ...instruction(by.get(tag) as Step) }));
+      const built = order.map((tag) => ({ tag, flags: flagOf(by.get(tag) as Step), ...writer.instruction(by.get(tag) as Step) }));
       if (!isWide(entries)) return taggedListBytes(built);
       // The wide form: a zero, the count, and per entry its flags byte before the narrow form's four.
       const { head, stride } = form(true);
@@ -476,85 +705,6 @@ export function buildTemplateScreens<F extends string>(
     };
 
     const own = tagged(screen.own);
-    const chromePiece: ContainerPiece = { bytes: new Uint8Array(0), refs: [], owner: 'slot-11-program' };
-    let chromeBuilt = false;
-    const extras: ContainerPiece[] = [];
-    const arms: { parts: readonly Part<F>[]; piece: ContainerPiece; join: ContainerPiece }[] = [];
-
-    // One program piece from its parts, closed by an end or by a jump to `join`.
-    const emit = (parts: readonly Part<F>[], piece: ContainerPiece, join?: ContainerPiece): void => {
-      const out: number[] = [];
-      const refs: PieceRef[] = [];
-      const pointer = (to: ContainerPiece, offset = 0): void => {
-        refs.push({ at: out.length, to, offset });
-        out.push(0, 0, 0);
-      };
-      let current: F | undefined;
-      for (const part of parts) {
-        if (part.op === 'picture') {
-          const target = pictures.shift();
-          if (target === undefined) throw new ScreenRecordError(`the description holds too few pictures for ${screen.name}`);
-          out.push(SCREEN_DRAW_IMAGE, part.x, part.y);
-          pointer(target.to, target.offset);
-        } else if (part.op === 'font') {
-          current = part.font;
-          out.push(SCREEN_SELECT_FONT, spec.fonts[part.font]);
-        } else if (part.op === 'text') {
-          if (current === undefined) throw new ScreenRecordError(`${screen.name} draws ${part.word} with no font selected`);
-          const { codes, width } = spell(spec.fonts[current], part.word);
-          const key = codes.join(',');
-          const home = spec.homes.get(key) ?? inline.get(key);
-          const x = startOf(part.x, width);
-          if (home !== undefined) {
-            out.push(SCREEN_TEXT_AT, x, part.y);
-            pointer(home.to, home.offset);
-          } else {
-            out.push(SCREEN_TEXT_INLINE, x, part.y);
-            inline.set(key, { to: piece, offset: out.length });
-            out.push(...codes, 0);
-          }
-        } else if (part.op === 'constant') {
-          out.push(part.opcode, ...part.operands);
-        } else if (part.op === 'queue') {
-          const one = instruction(part.step);
-          out.push(SCREEN_QUEUE_INSTRUCTION, one.operand & 0xff, one.operand >> 8, one.opcode);
-        } else if (part.op === 'return') {
-          out.push(SCREEN_RETURN);
-        } else if (part.op === 'chrome') {
-          out.push(SCREEN_CALL);
-          pointer(chromePiece);
-          if (!chromeBuilt) {
-            chromeBuilt = true;
-            emit(screen.chrome, chromePiece);
-          }
-        } else {
-          // The switch, then the piece its arms join at, which goes on with the main line; the arms after it.
-          const variable = take();
-          const then: ContainerPiece = { bytes: new Uint8Array(0), refs: [], owner: 'slot-11-program' };
-          const exact = part.arms.filter((arm) => typeof arm.match === 'number');
-          const ranges = part.arms.filter((arm) => typeof arm.match !== 'number');
-          const pieces = new Map(part.arms.map((arm) => [arm, { bytes: new Uint8Array(0), refs: [], owner: 'slot-11-program' } as ContainerPiece]));
-          out.push(SCREEN_SWITCH_NARROW, variable, exact.length);
-          for (const arm of exact) { out.push(arm.match as number); pointer(pieces.get(arm) as ContainerPiece); }
-          out.push(ranges.length);
-          for (const arm of ranges) { out.push(...(arm.match as readonly [number, number])); pointer(pieces.get(arm) as ContainerPiece); }
-          for (const arm of part.arms) arms.push({ parts: arm.parts, piece: pieces.get(arm) as ContainerPiece, join: then });
-          piece.bytes = Uint8Array.from(out);
-          piece.refs = refs;
-          extras.push(then);
-          emit(part.then, then);
-          return;
-        }
-      }
-      if (join === undefined) out.push(SCREEN_END);
-      else {
-        out.push(SCREEN_JUMP);
-        pointer(join);
-      }
-      piece.bytes = Uint8Array.from(out);
-      piece.refs = refs;
-    };
-
     const programs: ContainerPiece[] = [];
     const pageLists: Uint8Array[] = [];
     const copies: Uint8Array[] = [];
@@ -562,12 +712,7 @@ export function buildTemplateScreens<F extends string>(
       pageLists.push(tagged(page.list));
       copies.push(tagged(page.list));
       const program: ContainerPiece = { bytes: new Uint8Array(0), refs: [], owner: 'slot-11-program' };
-      emit(page.parts, program);
-      while (arms.length > 0) {
-        const arm = arms.shift() as (typeof arms)[number];
-        extras.push(arm.piece);
-        emit(arm.parts, arm.piece, arm.join);
-      }
+      writer.unit(page.parts, program);
       programs.push(program);
     }
     if (numbers.length !== 0) throw new ScreenRecordError(`the description holds ${numbers.length} numbers more than ${screen.name} takes`);
@@ -580,4 +725,223 @@ export function buildTemplateScreens<F extends string>(
     built[s] = { ...one, extras };
   }
   return { screens: built, lists, inline, homes: spec.homes };
+}
+
+// ---------------------------------------------------------------------------------------------------------
+// Programs of their own: base slot 11 entries no mode calls.
+
+/**
+ * A screen program that is a base slot 11 entry of its own rather than a mode's page, the clock's header
+ * programs of section 414: run by a queued `0x73` that names its entry, not called by a page. It is parts
+ * alone; it has no key map, no page record and no chrome.
+ */
+export interface TemplateProgram<F extends string = string> {
+  name: string;
+  parts: readonly Part<F>[];
+}
+
+/**
+ * A list the template builds that a program does not name: a state transition's call, the clock's minute's,
+ * section 414. `at` is where the instruction that calls it holds its operand in the configuration, its opcode
+ * two bytes on, `step`'s convention; the instruction itself is the caller's to write.
+ */
+export interface TemplateCall {
+  what: string;
+  step: Step;
+  at: number;
+}
+
+export interface TemplateProgramsSpec<F extends string = string> {
+  /** One font per role. */
+  fonts: Record<F, number>;
+  /**
+   * Per program, in the template's order: the base slot 11 entry it is, which also orders the build, since
+   * the programs are laid out in entry order; its pictures in walk order; and every other number it reads.
+   */
+  programs: { entry: number; pictures: PieceTarget[]; numbers: number[] }[];
+  /** The pictures the programs share, by slot, each where it is first drawn. */
+  slots: PieceTarget[];
+  /** Per call, in the order given, its numbers in walk order: the list it calls first. */
+  calls: number[][];
+  /** Texts drawn by reference to a copy outside these programs, by glyph codes joined. */
+  homes: Map<string, PieceTarget>;
+}
+
+export interface TemplateProgramsPlace {
+  /** Per program, its pieces in the order `programReader` reads them, the entry's own first. */
+  programs: ContainerPiece[][];
+  lists: Map<number, ContainerPiece>;
+  lengths: Map<ContainerPiece, number>;
+  inline: Map<ContainerPiece, Map<number, string>>;
+}
+
+export interface TemplateProgramsDescribed<F extends string = string> {
+  spec: TemplateProgramsSpec<F>;
+  place: TemplateProgramsPlace;
+  described: Set<number>;
+  structure: Set<number>;
+  regions: { from: number; to: number; what: string }[];
+}
+
+/**
+ * Read off a configuration what a composer would supply for programs of their own and the lists `calls`
+ * name, against the template, and where Logitech's sat. `addresses` is where each program starts, in the
+ * template's order, and `entries` the base slot 11 entry each is; `roles` the font roles the programs select.
+ * Refuses as `describeTemplateScreens` does. `layout` is `takeApart(c)`; `read` is where every value is taken
+ * from.
+ */
+export function describeTemplatePrograms<F extends string>(
+  c: Container, layout: ContainerLayout, programs: readonly TemplateProgram<F>[], addresses: readonly number[],
+  entries: readonly number[], roles: readonly F[], calls: readonly TemplateCall[] = [], read: ValueReader = blobReader(c),
+): TemplateProgramsDescribed<F> {
+  if (addresses.length !== programs.length || entries.length !== programs.length) {
+    throw new ScreenRecordError(`${addresses.length} addresses and ${entries.length} entries for ${programs.length} programs`);
+  }
+  const reading = recordReading(c, layout, read);
+  const fonts: Partial<Record<F, number>> = {};
+  const slots: (PieceTarget | undefined)[] = [];
+  const places: ContainerPiece[][] = [];
+  const described = programs.map((program, p) => {
+    const numbers: number[] = [];
+    const pictures: PieceTarget[] = [];
+    const extras: ContainerPiece[] = [];
+    const root = reading.program(addresses[p] as number, program.name);
+    programReader(c, reading, { name: program.name, numbers, pictures, slots, fonts, extras }).unit(program.parts, root.program, 'program');
+    places.push([root.piece, ...extras]);
+    return { entry: entries[p] as number, pictures, numbers };
+  });
+  const called = calls.map((call) => {
+    const numbers: number[] = [];
+    const operand = (c.blob[call.at] as number) | ((c.blob[call.at + 1] as number) << 8);
+    programReader(c, reading, { name: call.what, numbers, pictures: [], fonts, extras: [] })
+      .step(call.step, { opcode: c.blob[call.at + 2] as number, operand }, call.at, 'call');
+    return numbers;
+  });
+  for (const one of roles) if (fonts[one] === undefined) throw new ScreenRecordError(`the programs select no ${one} font`);
+  const missing = slots.findIndex((one) => one === undefined);
+  if (missing >= 0) throw new ScreenRecordError(`the programs draw no shared picture ${missing}`);
+  return {
+    spec: { fonts: fonts as Record<F, number>, programs: described, slots: slots as PieceTarget[], calls: called, homes: reading.homes() },
+    place: { programs: places, lists: reading.lists, lengths: reading.lengths, inline: reading.inline },
+    described: reading.described,
+    structure: reading.structure,
+    regions: reading.regions,
+  };
+}
+
+export interface BuiltTemplatePrograms {
+  /** Per program, in the template's order, its pieces in the order they are made, the entry's own first. */
+  programs: ContainerPiece[][];
+  /** Per call, the instruction that calls its list, for the caller that writes it. */
+  calls: Instruction[];
+  lists: Map<number, ContainerPiece>;
+  inline: Map<string, PieceTarget>;
+}
+
+/**
+ * Programs of their own and the lists `calls` name, built from a description: the programs in entry order,
+ * the order they are laid out in, so the first to draw a text holds it inline; the calls' lists after them.
+ * Everything but the description's numbers, pictures, fonts and homes is generated. `c` is read for its fonts
+ * and character map only.
+ */
+export function buildTemplatePrograms<F extends string>(
+  c: Container, spec: TemplateProgramsSpec<F>, programs: readonly TemplateProgram<F>[], calls: readonly Omit<TemplateCall, 'at'>[] = [],
+): BuiltTemplatePrograms {
+  if (spec.programs.length !== programs.length) throw new ScreenRecordError(`the description holds ${spec.programs.length} programs, not ${programs.length}`);
+  if (spec.calls.length !== calls.length) throw new ScreenRecordError(`the description holds ${spec.calls.length} calls, not ${calls.length}`);
+  const spell = speller(c);
+  const inline = new Map<string, PieceTarget>();
+  const lists = new Map<number, ContainerPiece>();
+  const slotsDrawn = new Set<number>();
+  const built: ContainerPiece[][] = [];
+  const order = programs.map((_, p) => p).sort((a, b) => (spec.programs[a]?.entry as number) - (spec.programs[b]?.entry as number));
+  for (const p of order) {
+    const program = programs[p] as TemplateProgram<F>;
+    const described = spec.programs[p] as TemplateProgramsSpec<F>['programs'][number];
+    const numbers = [...described.numbers];
+    const pictures = [...described.pictures];
+    const extras: ContainerPiece[] = [];
+    const root: ContainerPiece = { bytes: new Uint8Array(0), refs: [], owner: 'slot-11-program' };
+    programWriter(spell, spec.fonts, spec.homes, inline, lists, { name: program.name, numbers, pictures, slots: spec.slots, slotsDrawn, extras })
+      .unit(program.parts, root);
+    if (numbers.length !== 0) throw new ScreenRecordError(`the description holds ${numbers.length} numbers more than ${program.name} takes`);
+    if (pictures.length !== 0) throw new ScreenRecordError(`the description holds ${pictures.length} pictures more than ${program.name} draws`);
+    built[p] = [root, ...extras];
+  }
+  if (slotsDrawn.size !== spec.slots.length) {
+    throw new ScreenRecordError(`the description holds ${spec.slots.length} shared pictures and the programs draw ${slotsDrawn.size}`);
+  }
+  const called = calls.map((call, k) => {
+    const numbers = [...(spec.calls[k] as number[])];
+    const one = programWriter(spell, spec.fonts, spec.homes, inline, lists, { name: call.what, numbers, pictures: [], extras: [] }).instruction(call.step);
+    if (numbers.length !== 0) throw new ScreenRecordError(`the description holds ${numbers.length} numbers more than ${call.what} takes`);
+    return one;
+  });
+  return { programs: built, calls: called, lists, inline };
+}
+
+/**
+ * A layout with programs of their own and their lists swapped for built ones, where the configuration's sat:
+ * each built piece takes the place of the piece read in the same order, a list the place of the list of the
+ * same index, which keeps the layout's emission order. Every reference to a replaced piece's start, the base
+ * slot 11 table's among them, names the built piece. Refused: a replaced piece carrying bytes after its
+ * structure, a reference from elsewhere into the inside of one (a text drawn by reference to one of their
+ * inline copies, which no Harmony One compile holds, section 414), a built list the place does not hold and a
+ * placed list not built.
+ */
+export function withTemplatePrograms(layout: ContainerLayout, built: BuiltTemplatePrograms, place: TemplateProgramsPlace): ContainerLayout {
+  if (built.programs.length !== place.programs.length) {
+    throw new ScreenRecordError(`${built.programs.length} programs were built for ${place.programs.length} places`);
+  }
+  const replace = new Map<ContainerPiece, ContainerPiece>();
+  const swap = (old: ContainerPiece, made: ContainerPiece, what: string): void => {
+    if (replace.has(old)) throw new ScreenRecordError('one piece is replaced twice');
+    if (place.lengths.get(old) !== old.bytes.length) throw new ScreenRecordError(`${what} carries bytes after its structure`);
+    replace.set(old, made);
+  };
+  place.programs.forEach((pieces, p) => {
+    const made = built.programs[p] as ContainerPiece[];
+    if (made.length !== pieces.length) {
+      throw new ScreenRecordError(`program ${p + 1} would be ${made.length} pieces where the configuration's is ${pieces.length}`);
+    }
+    pieces.forEach((old, k) => swap(old, made[k] as ContainerPiece, `program ${p + 1}'s piece ${k + 1}`));
+  });
+  for (const [index, made] of built.lists) {
+    const old = place.lists.get(index);
+    if (old === undefined) throw new ScreenRecordError(`list ${index} is not one the programs or their calls run`);
+    swap(old, made, `list ${index}`);
+  }
+  for (const index of place.lists.keys()) {
+    if (!built.lists.has(index)) throw new ScreenRecordError(`list ${index} is run by nothing built`);
+  }
+  // Every piece of the result a fresh object, so the input layout is left as it was and a piece whose
+  // references change is the one every other piece names.
+  const all = [layout.keyTable, ...layout.body,
+    ...layout.sections.flatMap((s) => (s === undefined ? [] : [...s.before, ...s.head])), ...layout.pictures];
+  const fresh = new Map<ContainerPiece, ContainerPiece>();
+  const sourceOf = new Map<ContainerPiece, ContainerPiece>();
+  for (const old of all) {
+    const made = replace.get(old) ?? old;
+    const one: ContainerPiece = { ...made, refs: [] };
+    fresh.set(old, one);
+    fresh.set(made, one);
+    sourceOf.set(one, made);
+  }
+  for (const [one, made] of sourceOf) {
+    one.refs = made.refs.map((ref) => {
+      if (!('to' in ref)) return ref;
+      if (replace.has(ref.to) && ref.offset !== 0) {
+        throw new ScreenRecordError('a reference names the inside of a replaced program');
+      }
+      return { ...ref, to: fresh.get(ref.to) ?? ref.to };
+    });
+  }
+  const rewrite = (run: ContainerPiece[]): ContainerPiece[] => run.map((piece) => fresh.get(piece) as ContainerPiece);
+  return {
+    ...layout,
+    keyTable: fresh.get(layout.keyTable) as ContainerPiece,
+    body: rewrite(layout.body),
+    sections: layout.sections.map((s) => (s === undefined ? s : { before: rewrite(s.before), head: rewrite(s.head) })),
+    pictures: rewrite(layout.pictures),
+  };
 }

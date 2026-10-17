@@ -140,9 +140,13 @@ const FROM_ANY = -2;
 /** The same sentinel in `to`: it matches any new value, so `FROM_ANY` to `TO_ANY` fires on every write. */
 const TO_ANY = -2;
 
-/** The clock's indices, section 130. */
-const CLOCK_MINUTE = 1;
-const CLOCK_HOUR = 2;
+/**
+ * The clock's indices, section 130. The second, the minute and the hour are exported for the Harmony One's
+ * clock header, which switches on them, `families/touch/clockheader.ts`, section 414.
+ */
+export const CLOCK_SECOND = 0;
+export const CLOCK_MINUTE = 1;
+export const CLOCK_HOUR = 2;
 const CLOCK_DAY = 3;
 const CLOCK_MONTH = 5;
 const CLOCK_YEAR = 6;
@@ -362,7 +366,7 @@ export function buildStateRecord(first: number, max: number, transitions: readon
 }
 
 /** The weekday, the clock's record 4, which the hour list increments beside the day. */
-const CLOCK_WEEKDAY = 4;
+export const CLOCK_WEEKDAY = 4;
 
 /**
  * The clock's hour list, the action list the hour's rollover calls: increment the day, then the weekday,
