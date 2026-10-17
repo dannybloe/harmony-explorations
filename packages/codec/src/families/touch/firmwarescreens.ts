@@ -104,6 +104,8 @@ const swallow: Binding = { kind: 'swallow' };
 const own = (...steps: Step[]): Binding => ({ kind: 'own', steps });
 
 interface TouchFirmwareScreen {
+  /** The screen's name in code, which the wiring uses to enter it. */
+  id: string;
   name: string;
   /** The keypad presses' binding, absent where a screen binds only `tags`. */
   keys?: Binding;
@@ -124,36 +126,37 @@ interface TouchFirmwareScreen {
 /** The ten screens, in mode order, on the sixteen English compiles of skin 54. */
 const SCREENS: readonly TouchFirmwareScreen[] = [
   {
-    name: 'Low Battery', keys: own(nop, nop, nop),
+    id: 'lowBattery', name: 'Low Battery', keys: own(nop, nop, nop),
     tags: [[ENTER, own(call, timerStart, call)], [LEAVE, own(call, timerCancel, call)], 'keys', [HEADER, own(run, run, run)]],
     queued: [run, run], second: [58, 103], lines: [['The battery level is low!', 143]], ok: true, scan49: true,
   },
   {
-    name: 'USB Connected', keys: own(call, nop),
+    id: 'usbConnected', name: 'USB Connected', keys: own(call, nop),
     tags: [[ENTER, { kind: 'elsewhere' }], [LEAVE, own(call, call)], 'keys',
       [PRESS | 2, { kind: 'elsewhere' }], [PRESS | 28, { kind: 'elsewhere' }]],
     second: [56, 89], lines: [['USB Connected', 168]],
   },
   {
-    name: 'blank, one', tags: [[PRESS | 47, swallow], [PRESS | 46, swallow],
+    id: 'blankA', name: 'blank, one', tags: [[PRESS | 47, swallow], [PRESS | 46, swallow],
       [ENTER, own(fixed(0x07, 0xfffb), fixed(BAND, 0xfe02), fixed(BAND, 0xe805))],
       [LEAVE, own(fixed(0x07, 0xfffb), fixed(BAND, 0xfd02), call, call)]],
     lines: [],
   },
   {
-    name: 'blank, two', tags: [[PRESS | 47, swallow], [PRESS | 46, swallow],
+    id: 'blankB', name: 'blank, two', tags: [[PRESS | 47, swallow], [PRESS | 46, swallow],
       [ENTER, own(fixed(0x07, 0xfffb), fixed(BAND, 0xfe03))],
       [LEAVE, own(fixed(BAND, 0xfd03), call, call)]],
     lines: [],
   },
-  ...([['Update Successful', 168], ['Upgrade Success', 168], ['Update in progress', 168], ['Learning...', 168],
-    ['Firmware upgrade in progress', 168]] as const).map(([line, y]): TouchFirmwareScreen => ({
-    name: line, tags: [[PRESS | 47, swallow], [PRESS | 46, swallow], [ENTER, { kind: 'direct', step: timerStart }],
+  ...([['updateSuccessful', 'Update Successful', 168], ['upgradeSuccess', 'Upgrade Success', 168],
+    ['updateInProgress', 'Update in progress', 168], ['learning', 'Learning...', 168],
+    ['firmwareUpgrade', 'Firmware upgrade in progress', 168]] as const).map(([id, line, y]): TouchFirmwareScreen => ({
+    id, name: line, tags: [[PRESS | 47, swallow], [PRESS | 46, swallow], [ENTER, { kind: 'direct', step: timerStart }],
       [LEAVE, { kind: 'direct', step: timerCancel }], [HEADER, own(run, run, run)]],
     queued: [run, run], lines: [[line, y]],
   })),
   {
-    name: 'Charging problem', keys: own(call, nop, nop),
+    id: 'chargingProblem', name: 'Charging problem', keys: own(call, nop, nop),
     tags: ['keys', [ENTER, own(timerStart, call)], [LEAVE, own(timerCancel, call)], [HEADER, own(run, run, run)],
       [TAG_0X30, own(call, nop, nop)]],
     queued: [run, run], second: [43, 34],
@@ -162,6 +165,13 @@ const SCREENS: readonly TouchFirmwareScreen[] = [
     ok: true, scan49: true,
   },
 ];
+
+/**
+ * The ten screens by their names in code, in mode order. Their count is the event map's base on 19 of 19, as on
+ * the Harmony 600, 650 and 700, section 347; the wiring, `families/touch/wiring.ts`, enters three of them, 0, 1
+ * and 9, which section 408 found are the only ones of the head a configuration enters.
+ */
+export const TOUCH_FIRMWARE_SCREENS: readonly string[] = SCREENS.map((screen) => screen.id);
 
 /**
  * A screen's tags in the order inserted, and what each runs. A tag listed after the keys overrides the keys' own

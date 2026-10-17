@@ -17,6 +17,7 @@ import type { Container, Instruction } from '../gspm.ts';
 import type { Edit } from '../edit.ts';
 import type { SetFace } from '../fonttable.ts';
 import type { StateTableFacts } from '../statetables.ts';
+import type { WiringChecked } from '../wiringparts.ts';
 import type {
   ComposeActivityRowOptions, ComposeActivityScreenOptions, ComposedActivityRow, ComposedActivityScreen, ComposedScreen,
   ComposeRow, ComposeScreenOptions,
@@ -118,6 +119,13 @@ export interface Family<Choices extends CommonChoices = CommonChoices> {
    * differ in four values, `todo-compile-one.md` 2.3, built since 6.4.
    */
   readonly stateTables: StateTableFacts;
+  /**
+   * The family's own wiring, the event map, the leading list, the timers, base slot 9's fixed entries and the
+   * lists they reach: a configuration's checked against what the family's builder makes from the description
+   * read off it, byte for byte, refused at the first difference. The Harmony 600, 650 and 700's is `wiring.ts`,
+   * sections 347 and 360; the Harmony One's `families/touch/wiring.ts`, section 410.
+   */
+  readonly wiring: { check(c: Container): WiringChecked };
   /** The commands a mode's pages show, page by page in this family's item order, with each one's drawn label. */
   screenItems(c: Container, mode: number): DeviceScreenItem[];
   /** Whether an item is drawn the way this family draws a command called `name`. */

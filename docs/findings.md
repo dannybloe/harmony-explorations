@@ -53571,3 +53571,177 @@ first 178 lists are not these screens'.
 
 Arch 12 (Harmony One) alone; the Harmony 600, 650 and 700's are section 357's builder. The module is the touch
 family's.
+
+## 410. The Harmony One's own wiring is one catalogue on all 19 compiles, the same but for three settings, two kinds of timer and its numbering, and it is built from a description byte for byte
+
+**Todo `todo-compile-one.md` 6.3**: the lists, entries, timers and tables that connect the Harmony One's firmware
+to its configuration, built rather than copied, as section 347 built the Harmony 600, 650 and 700's.
+
+**Sources checked**: sections 286, 292, 347 and 360 for the four slot family's wiring and `wiring.ts`, which this
+splits; sections 400 (the lights), 403 (the Remote Assistant at start), 405 (the 19 compiles and the head of the
+mode table), 407 (the log area and parameter block) and 408 (which head screens a configuration enters); section
+43 for the timer table; the 19 distinct Harmony One compiles of section 405 and seven configurations of ours
+written to the spare. Neither the firmware nor Logitech's client was read for this: the question is what their
+compiler emits, and every list below is a measurement of its output.
+
+### The method
+
+Each compile was taken apart, every list reachable from base slot 8's leading list, from base slot 9's entries 0
+to 6 and the leftover entry, and from the timers was followed through every call, and each structure was
+rewritten with its numbers replaced by names: a list by where it is bound or called, a mode, variable, value map
+or screen program by the list naming it. With the numbers named, **the 19 agree structure for structure but for
+three settings, a three second timer with its list on two compiles, and 13 to 20 redraw timers with theirs**;
+those and the numbering are all a compile varies in. The settings:
+
+* **the Remote Assistant at start**, section 403: the ladder on the assistant's variable and the leftover entry's
+  binding that sets it, on 18; `one_config` has neither, its ladder being the last rung alone, and its leftover
+  entry narrow where the others are wide, since the assistant's binding is the one with a flag;
+* **a `07 FFFB`** opening the ladder list, which section 73 reads as cancelling all four running timers, on
+  `one_config_unprogrammed` and `one_friend_asfound_config` and on none of the other 16 with the assistant. What
+  decides it is not read; it is carried, and refused without the assistant since no compile shows that;
+* **the screen light's two timers**, 10 and 20 seconds on all 19 of Logitech's, and raised on five of our seven
+  writes, both timers on three.
+
+### What the catalogue holds
+
+`families/touch/wiring.ts` states it as about 165 named lists in a small text form, `call X`, `enter X`,
+`V := n`, `map M on V`, `test V FF`, `select E`, `start T`, `stop T`, `queue P` and raw `HH HHHH`:
+
+* **the leading list**, one instruction, `call start`; the start calls the boot, a list selecting the leftover
+  entry, and a test of firmware variable 16 that enters USB Connected;
+* **the boot**, sixteen instructions, among them the ladder, the events list, the lights, the firmware's
+  `1F FExx` steps and eleven of the configuration's variables cleared, four of them behind `07 FFFF`;
+* **the lights**, section 400's channels and page keys, with the tick that keeps them, and their switching off;
+* **base slot 9's entries**: 0 binds events `0x1A` to `0x1D` to the events list; 1 binds fourteen tags, ten
+  events below the presses and the presses of scans 34, 37, 46 and 47, among them `0x23` to a list entering the
+  charging problem screen, `0xA5`, scan 37's press, selecting the leftover entry and `0x2D` and `0x19` single `07` instructions; 2 and 3 bind the 52 key presses, scans 1 to 40,
+  43 to 53 and 55, and tag `0x30` each to a list of its own, one body per entry, entry 3 adding `0x17`, `0x1F` and
+  `0x26`; 4 binds the presses the same way, `0x30` to the lights and `0x17` to a list of its own; 5 binds `0x1E`
+  to `07 FFFB`; 6 binds `0x18` and `0x19` to the events list; the leftover entry binds `0x01` and `0x05` to two
+  lists and three presses, `0xA2`, scan 34's, to setting the assistant's variable, `0xA6`, scan 38's, to a value
+  map and `0xB7`, scan 55's, to a list entering a screen;
+* **the timers**: thirteen on every compile once each, the screen light and its partner, the tick (2 s), the
+  lights out (1 s), two of five seconds calling a list, one of five seconds entering a screen and six of one
+  second entering a screen each, the fifth of those the screen the ready list enters, on 19 of 19; a three second timer relighting the screen and entering a
+  screen of the configuration's on `harvest_one_families_1` and `one_friend_asfound_config`; 13 to 20 redraw
+  timers of four seconds, each list `[0x73 P, 0x73 Q, restart itself]` with the same two screen programs on
+  every one of a compile, started from lists outside the wiring between 0 and 168 times each, one of them by none; and a device's own timer on 12 of the 19, carried whole as `wiring.ts` carries one;
+* **the event map**: status code `k` to mode `10 + k`, `k` 0 to 29, fallback 10, the ten firmware screens of
+  section 408 being the event map's base, as section 347 found the Harmony 600 family's screen count is.
+
+Stored order is `tagSlotOrder`, section 347's, with ties measured on 19 of 19: entry 1 `0xAF` before `0x26`,
+`0xAE` before `0x27` and `0x0F` before `0x2D`; entry 3 `0x17` before `0x9E`, `0x1F` before `0x96` and `0x26`
+before `0xAF`; entry 4 `0x17` before `0x9E`; the leftover entry `0xA6` before `0xB7`. Every tie resolves the same
+way on every compile.
+
+**The front of base slot 10** is entries 1 to 4's own lists in each entry's stored order, 9, 53, 53 and 53,
+**168 lists**, starting three past the start list on 19 of 19, with two lists between that nothing in base slot 9
+or 10 names, mode 39's.
+Their indices follow from where the front starts, which is the description's one number for them. The start list
+is 238 on 18 compiles and 237 on `one_config`, and the wiring builds none of the lists before it.
+
+### Generated and described
+
+| | generated | the description's |
+|---|---|---|
+| base slot 2, base slot 15 | whole, by section 407's builders | nothing |
+| base slot 4 | whole | nothing |
+| base slot 8 | the list | the start list's index |
+| base slot 12 | the table, each record's kind, a device timer's place | the table's order, read as each firmware timer's duration and opcode, the two settings' durations, and a device timer whole |
+| base slot 9's eight entries | tags, flags, form, order, every opcode | the lists, maps, variable and modes they name, the leftover entry's index and its form, which is the assistant |
+| base slot 10, the front | every list, its index from where the front starts | where it starts and what it calls |
+| base slot 10, the rest | every list | its index and the modes, variables, maps and programs it names; the ladder's first opcode, which is the second setting |
+
+Over the pieces built for the 19, **62992 bytes are generated and 24352 are the description's**. Of the 62992,
+3686 are section 407's builders' and about 2364 are table addresses `layOutContainer` rewrites whatever they hold,
+so the wiring's own are about 57000: lists 38246, entries 16312, the event map 2375, the timers' kind 579 and
+the leading list 38. The order of
+the thirteen firmware timers differs between compiles, **three orders over the 19**, five when the three second
+timer's place is counted, and the whole tables with the redraw and device timers are 16 sequences; nothing read
+explains it, so it is carried. The description reads it off each record's duration and opcode, and the two
+pairs a duration cannot tell apart, the five second ones and the screen light's, by the list that starts each;
+so of a timer record only the kind byte is generated, 579 bytes against 3474 described.
+
+### The measurement
+
+| | |
+|---|---|
+| whole container rebuilt byte for byte with every wiring piece swapped in | 19 of 19 |
+| lists, entries and timers built | 6431, 152 and 579 |
+| a blinded input, every byte the description does not mark overwritten first | 19 of 19 rebuilt; none of the 62992 generated bytes already held the blinding's value |
+| our seven writes to the spare, blinded the same way | 7 of 7 |
+| description keys equal to what the catalogue names and does not generate | 19 of 19 |
+
+**The controls fail where they should**: two firmware timers swapped in the table differ from the compile at
+their record; a description short of a list, a table short of a firmware timer, a redraw timer out of its
+numbering, an enter timer of a length none of the thirteen has, the ladder's `07 FFFB` without the assistant,
+and the Harmony 600 family's description reader handed a Harmony One are each refused with their own message.
+A call timer of an unknown length is read as a third screen light and refused by the count of those.
+
+### How it is held
+
+Plan 007: the engine section 347 wrote, the instruction, list and entry encodings, the description's symbols
+and the swap into a layout, moved from `wiring.ts` into a new generic `wiringparts.ts`, and the One's catalogue
+and numbering are the touch family's `families/touch/wiring.ts`. `Family.wiring.check` is the question for a shared
+caller, asked by the test alone so far; the four slot family answers it with `checkWiring`, still in `wiring.ts` until
+`todo-compile-one.md` 3.3.3.2 moves it. The engine gained a `queue` instruction, `0x73`, and per tag flags in an
+entry; `wiring.ts`' own builder is otherwise unchanged and its tests pass as before.
+
+### What is not built, and what is not read
+
+* The lists before the start list, the two between it and the front, the screens the wiring enters
+  (`todo-compile-one.md` 4.4.3 and 4.4.4), the activities' entries, the lists that start the redraw timers and
+  what the activities' lists call: 1620 to 6636 lists a compile, against 332 to 342 built. The description
+  carries the numbers the wiring names among them.
+* What decides the timer table's order, the ladder's `07 FFFB`, how many redraw timers a compile has and where the
+  three second timer comes from. A screen light of 1 to 5 seconds would be read as another firmware timer and
+  is refused, since the reader tells the timers apart by their length; no compile or write here has one.
+* What the one second timers' screens are for, which section 408 left to this section as six blank screens:
+  they are built and numbered here, one of them is the ready list's screen, and the purpose of the other five is
+  still not read.
+* What `0x2D`'s `07 FFFA`, the `3F C1xx` and `3F F0xx` steps and the boot's `1F FExx` do on this remote.
+
+### Falsification
+
+A Harmony One compile of Logitech's whose wiring does not rebuild from its description; one whose structures
+differ from the catalogue other than in the three settings, the three second timer and the redraw timers' count; a tie that resolves the other way; a front not of
+168 lists or not three past the start list; a timer outside the thirteen, the three second one, the redraw timers
+and a device's.
+
+### Which architectures
+
+Arch 12 (Harmony One) alone, the only model on its platform. The engine is shared with arch 14 (Harmony 600, 650
+and 700), whose wiring section 347 measures and whose tests pass unchanged; no other architecture has a wiring
+builder.
+
+### The reviews
+
+Both reviewers of the `finding` skill ran. **The blind re-measure**, given the question and not this section,
+found the same leading list and entries on 16 of 19 as identical text, the two compiles with the extra `07 FFFB`
+differing in that one instruction and `one_config` in the Remote Assistant's tree and its leftover entry's
+narrow form alone, which is the first two settings; the same event map, front of 168 lists three past the start
+list, ties, forms, device timers on 12 (8 of 30 seconds and 4 of 45) and 13 to 20 redraw timers with one pair of
+screen programs per compile; and that the wiring reaches none of the lists before the start list. It read
+section 410's one sentence on the timer orders, in the base slot 12 entry it was allowed, and measured three
+orders of the thirteen where that sentence said five; the draft had counted the three second timer's place with
+them. It also found the leftover entry's index varying, 7, 8, 10, 13 or 14, and so not always the last entry,
+and pointed out that section 73 reads `07 FFFB` as cancelling all four running timers, which the draft had
+called a push. **The sentence audit** found the same order count and corrected, in place before this landed:
+the generated column for base slot 12, which named a timer's duration and instruction where the blind can test
+the kind byte alone; one of the six one second timers' screens being the ready list's, which the description
+carried as two symbols for one mode and the catalogue now names once; the heading and method, which left out the
+three second and redraw timers as variations; the screen light raised on five of our seven writes and not on all
+seven; entry 1's fourteen tags, four of them key presses; the boot clearing eleven variables and not four; a
+docstring tying the redraw timers to screens one each, which the lists do not show, one timer being started by
+no list; the reference file this lands in; and four test titles and comments that claimed more than their
+bodies, among them the control on a call timer of unknown length, which is refused through the screen light's
+count rather than as itself.
+
+### Where it lands
+
+* `packages/codec/test/wiring-one.test.ts`: the 19 rebuilt with the counts, the blinded description on the 19 and
+  on our seven writes, the settings and timer census, the description's keys, the family's check, and the
+  controls.
+* `packages/codec/src/families/touch/wiring.ts`, `packages/codec/src/wiringparts.ts`, `Family.wiring`.
+* `docs/config-format.md`, "The firmware's own wiring on the Harmony One" and base slot 12's timer table;
+  `reference/remotes/harmony-one/behaviour.md`.

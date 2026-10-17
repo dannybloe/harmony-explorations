@@ -11,6 +11,7 @@ import { TOUCH_HARD_KEYS } from './devicekeys.ts';
 import { touchActivityMenu } from './activityscreen.ts';
 import { letterTouchDonor, withTouchLook } from './look.ts';
 import { TOUCH_STATE_TABLES } from './statetables.ts';
+import { checkTouchWiring } from './wiring.ts';
 
 export const TOUCH: Family<TouchChoices> = {
   name: 'the Harmony One',
@@ -21,6 +22,7 @@ export const TOUCH: Family<TouchChoices> = {
   activityKeyRules: TOUCH_ACTIVITY_KEYS,
   deviceModeKeys: TOUCH_HARD_KEYS,
   stateTables: TOUCH_STATE_TABLES,
+  wiring: { check: checkTouchWiring },
   composeDeviceScreen: composeTouchDeviceScreen,
   activityMenu: touchActivityMenu,
   // The Harmony One writes the marker outside its rows 2 to 9 times, none read as its own: section 329.

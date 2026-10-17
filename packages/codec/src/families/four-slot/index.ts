@@ -14,6 +14,7 @@ import { fourSlotActivityMenu, fourSlotMenuMarkerWriter } from './chrome.ts';
 import { FOUR_SLOT_CHOICES, type FourSlotChoices } from './choices.ts';
 import { FOUR_SLOT_ACTIVITY_KEY_EDITOR } from './activitykeys.ts';
 import { FOUR_SLOT_STATE_TABLES } from './statetables.ts';
+import { checkWiring } from '../../wiring.ts';
 
 // The family's generated texts, which the four slot assembler runs, `assemble.ts`, until its four slot half moves
 // here too, `todo-compile-one.md` 3.3.3.2.
@@ -44,6 +45,8 @@ export const FOUR_SLOT: Family<FourSlotChoices> = {
   activityKeyRules: FOUR_SLOT_ACTIVITY_KEYS,
   activityKeyEditor: FOUR_SLOT_ACTIVITY_KEY_EDITOR,
   stateTables: FOUR_SLOT_STATE_TABLES,
+  // Still outside the family until `todo-compile-one.md` 3.3.3.2 moves it here.
+  wiring: { check: checkWiring },
   deviceModeKeys: HARD_KEYS,
   composeDeviceScreen: composeFourSlotDeviceScreen,
   activityMenu: fourSlotActivityMenu,

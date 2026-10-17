@@ -73,6 +73,14 @@ devices is a separate step, section 337.
 | after an incomplete write the screen said "USB CONNECTED" on the cable and "Go to Website to update settings" off it | seen at the bench, sections 242 and 244 |
 | safe mode does not stick: a plain power cycle boots normally | seen at the bench, section 190 |
 
+## What every configuration wires
+
+| what | standing and source |
+|---|---|
+| **the lists, entries and timers that connect the firmware's events to a configuration are one catalogue on every compile**, the same on all 19 of Logitech's but for the numbering, how many timers of two kinds below there are, and three settings: the Remote Assistant at start, a `07 FFFB` opening its ladder on two, and the screen light's two timers, 10 and 20 seconds on all 19 | read from configurations, section 410 |
+| thirteen of the timers are on every compile once each: the screen light pair, a 2 second tick, a 1 second lights out, three of 5 seconds and six of 1 second each entering a screen, one of those the screen the ordinary start enters; beside them 13 to 20 timers of 4 seconds, each running one compile's same two screen programs and starting itself again, and on two compiles a 3 second one | read from configurations, section 410. What the other five one second screens are for is **not read** |
+| the status codes 0 to 29 map to modes 10 to 39, behind the ten firmware screens | read from configurations, sections 408 and 410 |
+
 ## The clock
 
 The clock is state variables 0 to 6, at data memory `0x108` to `0x10E`, seeded from the configuration's

@@ -50,10 +50,10 @@
  * Arch 14 only, the Harmony 600, 650 and 700. Read only towards hardware: the result is pieces.
  */
 import { u16, u24, u8 } from './bytes.ts';
-import { ACTION_LIST_TABLE_SLOT, BINDING_SLOT, actionListBytes } from './gspm.ts';
+import { ACTION_LIST_TABLE_SLOT, BINDING_SLOT } from './gspm.ts';
 import { Writer } from './emit.ts';
 import type { ContainerLayout, ContainerPiece, PieceRef } from './frame.ts';
-import { layOutContainer, takeApart } from './frame.ts';
+import { takeApart } from './frame.ts';
 import type { Container } from './gspm.ts';
 import {
   BYTE_REGISTER_LOAD, CONDITION_OPCODE, CONDITION_TWO_ARMS, KEY_EVENT_PRESS, KEY_EVENT_SHIFT, tagSlotOrder,
@@ -61,12 +61,19 @@ import {
 import { DEFERRED, POP_MODE as POP_MODE_INSTRUCTION, PUSH_MODE as PUSH_MODE_INSTRUCTION, STATE_BAND } from './actions.ts';
 import type { ModeZeroModel } from './modezero.ts';
 import { KEYPAD_FIRST_SCAN, KEYPAD_LAST_SCAN } from './modezero.ts';
-import { EVENT_MAP_SLOT, HANDLER_TABLE_SLOT, LOG_AREA_SLOT, taggedListExtent } from './sections.ts';
-import { PARAMETER_SLOT, TIMER_KIND_SCHEDULED, TIMER_RECORD_LENGTH, TIMER_SLOT } from './tables.ts';
+import { EVENT_MAP_SLOT, HANDLER_TABLE_SLOT } from './sections.ts';
+import { TIMER_KIND_SCHEDULED, TIMER_RECORD_LENGTH, TIMER_SLOT } from './tables.ts';
 import { LOG_AREAS, buildLogArea, buildParameterBlock, type LogAreaRegion } from './firmwaresections.ts';
+import {
+  ONE, WiringError, buildEventMap, checkRange, compareWiring, decode, emptySymbols, encode, encodeEntry, encodeList, lookup,
+  namedBy, orderOf, piece, tableTargets, tablePiece, tie, withWiring,
+  type BuiltWiring, type DeviceTimer, type EntryTemplate, type SymbolKind, type Symbols, type WiringChecked, type WiringInstruction,
+} from './wiringparts.ts';
 
-/** A refusal, named so a caller can tell a bad description from a bug. */
-export class WiringError extends Error {}
+// The engine moved to `wiringparts.ts` when the Harmony One's wiring came to share it, section 410; its
+// public names are passed on from here, where every caller has always found them.
+export { WiringError, builtPieces, withWiring } from './wiringparts.ts';
+export type { BuiltWiring, DeviceTimer, WiringChecked, WiringInstruction } from './wiringparts.ts';
 
 /** The models this builds for, by their skin, section 131. The European 650 and 700 are not measured. */
 export type WiringModel = ModeZeroModel;
@@ -145,31 +152,6 @@ export const PARAMETER_VALUES: Readonly<Record<WiringModel, readonly (readonly n
     PARAMETERS_COMMON.g4, PARAMETERS_COMMON.g6, PARAMETERS_COMMON.g6, PARAMETERS_COMMON.g7, PARAMETERS_COMMON.g8],
 };
 
-/**
- * One instruction of a generated list, with what it names left symbolic.
- *
- * `call` names a list, `enter` a mode, `write` a state variable (`0x80 + v` with a constant value),
- * `map` a value map evaluated on a variable (`0x72`, map in the high byte), `select` a base slot 9 entry
- * (`0x1F 0xFF00 | entry`) and `start` a timer (`0x1F 0xEB00 | timer`), sections 73, 140 and 280. A
- * symbol is either generated here, the firmware's screens, the front lists and the timers, or the
- * description's.
- */
-export type WiringInstruction =
-  | { readonly op: number; readonly operand: number }
-  | { readonly call: string }
-  | { readonly enter: string }
-  | { readonly write: string; readonly value: number }
-  | { readonly map: string; readonly on: string }
-  | { readonly select: string }
-  | { readonly start: string }
-  /** `0x1F 0xEA00 | timer`, which the light lists send before starting a timer again; read as a stop. */
-  | { readonly stop: string }
-  /**
-   * `0x71 form | variable`, a comparison of a variable the description names with the byte register,
-   * section 140: `form` is the operand's high byte, bit 15 the else arm and bits 8 to 11 the operation.
-   * A comparison of one of the firmware's own variables, 0 to 17, is written with `op` instead.
-   */
-  | { readonly test: string; readonly form: number };
 
 /** The settings a configuration carries, MyHarmony's names in the comments. */
 export interface WiringSettings {
@@ -213,12 +195,6 @@ export interface WiringSettings {
   help: boolean;
 }
 
-/** A device's own timer, carried whole, and the index it has in the table. */
-export interface DeviceTimer {
-  at: number;
-  duration: number;
-  instruction: { opcode: number; operand: number };
-}
 
 export interface WiringSpec {
   model: WiringModel;
@@ -251,28 +227,6 @@ export interface WiringSpec {
   entries: Readonly<Record<string, number>>;
 }
 
-export interface BuiltWiring {
-  logArea: ContainerPiece;
-  eventMap: ContainerPiece;
-  leadingList: ContainerPiece;
-  parameterTable: ContainerPiece;
-  parameterGroups: ContainerPiece[];
-  timerTable: ContainerPiece;
-  timerRecords: ContainerPiece[];
-  /** Base slot 9 index to the entry built for it: 0 to 4 and the leftover entry. */
-  entries: Map<number, ContainerPiece>;
-  /** Base slot 10 index to the list built for it: the front, the shared lists and the tree they call. */
-  lists: Map<number, ContainerPiece>;
-  /** Base slot 10 index to the name this module gives the list built there, for a caller that reports. */
-  listNames: Map<number, string>;
-  /** How many lists the front holds, which is the index the clock's hour list takes, section 324. */
-  frontLength: number;
-  /**
-   * Per built piece, the byte offsets that came from the description or a setting rather than from the
-   * generator. Everything else in a piece is the generator's, which is what the blind control tests.
-   */
-  described: Map<ContainerPiece, number[]>;
-}
 
 // ---------------------------------------------------------------------------------------------------
 // The catalogue: every generated structure per model, as templates over symbols.
@@ -331,14 +285,6 @@ const press = (scan: number): number => (KEY_EVENT_PRESS << KEY_EVENT_SHIFT) | s
 const keypadScans = (): number[] =>
   Array.from({ length: KEYPAD_LAST_SCAN - KEYPAD_FIRST_SCAN + 1 }, (_, k) => KEYPAD_FIRST_SCAN + k);
 
-interface EntryTemplate {
-  /** Base slot 9 index, or the entry symbol it is found under. */
-  index: number | string;
-  wide: boolean;
-  bindings: Map<number, WiringInstruction>;
-  /** The measured order of the tags that share a slot, first stored first. */
-  ties: ReadonlyMap<string, readonly [number, number]>;
-}
 
 interface TimerTemplate {
   name: string;
@@ -356,7 +302,6 @@ interface Catalogue {
   timers: TimerTemplate[];
 }
 
-const tie = (a: number, b: number): [string, readonly [number, number]] => [[a, b].sort((x, y) => x - y).join(','), [a, b]];
 
 /**
  * The lists the generated ones call, `todo-compile-650.md` 10.2.2: a tree of comparisons on the
@@ -685,138 +630,6 @@ function catalogue(
   return { screens: FIRMWARE_SCREENS[model], lists, front, lead, entries, timers };
 }
 
-// ---------------------------------------------------------------------------------------------------
-// Symbols, and encoding an instruction with them.
-// ---------------------------------------------------------------------------------------------------
-
-type SymbolKind = 'lists' | 'modes' | 'variables' | 'maps' | 'entries' | 'timers';
-/** A kind's name for one symbol, for a refusal's message. */
-const ONE: Readonly<Record<SymbolKind, string>> = {
-  lists: 'list', modes: 'mode', variables: 'variable', maps: 'map', entries: 'entry', timers: 'timer',
-};
-type Symbols = Record<SymbolKind, Map<string, number>>;
-const emptySymbols = (): Symbols => ({
-  lists: new Map(), modes: new Map(), variables: new Map(), maps: new Map(), entries: new Map(), timers: new Map(),
-});
-
-/** The symbols an instruction names, with their kind. */
-function namedBy(ins: WiringInstruction): [SymbolKind, string][] {
-  if ('call' in ins) return [['lists', ins.call]];
-  if ('enter' in ins) return [['modes', ins.enter]];
-  if ('write' in ins) return [['variables', ins.write]];
-  if ('map' in ins) return [['maps', ins.map], ['variables', ins.on]];
-  if ('select' in ins) return [['entries', ins.select]];
-  if ('start' in ins) return [['timers', ins.start]];
-  if ('stop' in ins) return [['timers', ins.stop]];
-  if ('test' in ins) return [['variables', ins.test]];
-  return [];
-}
-
-function lookup(symbols: Symbols, kind: SymbolKind, name: string): number {
-  const value = symbols[kind].get(name);
-  if (value === undefined) throw new WiringError(`the description names no ${ONE[kind]} ${JSON.stringify(name)}`);
-  return value;
-}
-
-function checkRange(what: string, value: number, max: number): number {
-  if (!Number.isInteger(value) || value < 0 || value > max) throw new WiringError(`${what} ${value} is outside 0 to ${max}`);
-  return value;
-}
-
-/**
- * An instruction's operand and opcode, and which of its three bytes the description decided: the
- * operand of a call, an enter, a map or a select when its symbol is not generated, the opcode of a
- * write when its variable is not. Offsets are 0 and 1 for the operand and 2 for the opcode.
- */
-function encode(ins: WiringInstruction, symbols: Symbols, generated: Symbols): { operand: number; opcode: number; described: number[] } {
-  const isGenerated = (kind: SymbolKind, name: string): boolean => generated[kind].has(name);
-  if ('op' in ins) return { operand: ins.operand, opcode: ins.op, described: [] };
-  if ('call' in ins) {
-    return { operand: checkRange('a list index', lookup(symbols, 'lists', ins.call), 0xffff), opcode: 0x7f, described: isGenerated('lists', ins.call) ? [] : [0, 1] };
-  }
-  if ('enter' in ins) {
-    return { operand: checkRange('a mode', lookup(symbols, 'modes', ins.enter), 0xffff), opcode: 0x7e, described: isGenerated('modes', ins.enter) ? [] : [0, 1] };
-  }
-  if ('write' in ins) {
-    const v = checkRange('a written variable', lookup(symbols, 'variables', ins.write), 0x7f);
-    return { operand: ins.value, opcode: 0x80 + v, described: [2] };
-  }
-  if ('map' in ins) {
-    const m = checkRange('a value map', lookup(symbols, 'maps', ins.map), 0xff);
-    const v = checkRange('a mapped variable', lookup(symbols, 'variables', ins.on), 0xff);
-    return { operand: (m << 8) | v, opcode: 0x72, described: [0, 1] };
-  }
-  if ('select' in ins) {
-    return { operand: 0xff00 | checkRange('an entry', lookup(symbols, 'entries', ins.select), 0xff), opcode: 0x1f, described: [0] };
-  }
-  if ('test' in ins) {
-    const v = checkRange('a compared variable', lookup(symbols, 'variables', ins.test), 0xff);
-    return { operand: ins.form | v, opcode: 0x71, described: [0] };
-  }
-  if ('stop' in ins) return { operand: 0xea00 | checkRange('a timer', lookup(symbols, 'timers', ins.stop), 0xff), opcode: 0x1f, described: [] };
-  return { operand: 0xeb00 | checkRange('a timer', lookup(symbols, 'timers', ins.start), 0xff), opcode: 0x1f, described: [] };
-}
-
-/** Read a template's symbols off the instruction it was encoded as, and only those bytes. */
-function decode(ins: WiringInstruction, operand: number, opcode: number, symbols: Symbols, generated: Symbols): void {
-  const take = (kind: SymbolKind, name: string, value: number): void => {
-    if (generated[kind].has(name)) return;
-    const had = symbols[kind].get(name);
-    if (had !== undefined && had !== value) {
-      throw new WiringError(`${ONE[kind]} ${JSON.stringify(name)} is ${had} in one place and ${value} in another`);
-    }
-    symbols[kind].set(name, value);
-  };
-  if ('call' in ins) take('lists', ins.call, operand);
-  else if ('enter' in ins) take('modes', ins.enter, operand);
-  else if ('write' in ins) take('variables', ins.write, opcode - 0x80);
-  else if ('map' in ins) { take('maps', ins.map, operand >>> 8); take('variables', ins.on, operand & 0xff); }
-  else if ('select' in ins) take('entries', ins.select, operand & 0xff);
-  else if ('test' in ins) take('variables', ins.test, operand & 0xff);
-}
-
-const piece = (bytes: Uint8Array, owner: string, refs: PieceRef[] = []): ContainerPiece => ({ bytes, refs, owner });
-
-/** An action list: `u8 count` then `{u16 operand; u8 opcode}`, section 26. */
-function encodeList(body: readonly WiringInstruction[], symbols: Symbols, generated: Symbols): { bytes: Uint8Array; described: number[] } {
-  if (body.length > 0xff) throw new WiringError(`a list of ${body.length} instructions is more than its count holds`);
-  const described: number[] = [];
-  const instructions = body.map((ins, k) => {
-    const e = encode(ins, symbols, generated);
-    for (const at of e.described) described.push(1 + 3 * k + at);
-    return { operand: e.operand, opcode: e.opcode };
-  });
-  return { bytes: actionListBytes(instructions), described };
-}
-
-/** A tagged list in either form, section 52; every wide entry here carries flags 1. */
-const WIDE_FLAGS = 1;
-function encodeEntry(template: EntryTemplate, symbols: Symbols, generated: Symbols): { bytes: Uint8Array; described: number[] } {
-  const order = orderOf(template);
-  const stride = template.wide ? 5 : 4;
-  const head = template.wide ? 2 : 1;
-  const out = new Writer(head + stride * order.length);
-  if (template.wide) out.u8(0).u8(order.length);
-  else out.u8(order.length);
-  const described: number[] = [];
-  order.forEach((tag, k) => {
-    if (template.wide) out.u8(WIDE_FLAGS);
-    out.u8(tag);
-    const e = encode(template.bindings.get(tag)!, symbols, generated);
-    out.u16(e.operand).u8(e.opcode);
-    for (const at of e.described) described.push(head + stride * k + stride - 3 + at);
-  });
-  return { bytes: out.bytes, described };
-}
-
-function orderOf(template: EntryTemplate): number[] {
-  try {
-    return tagSlotOrder([...template.bindings.keys()], template.ties);
-  } catch (error) {
-    if (error instanceof RangeError) throw new WiringError(error.message);
-    throw error;
-  }
-}
 
 // ---------------------------------------------------------------------------------------------------
 // Building.
@@ -843,7 +656,8 @@ export function wiringNeeds(
   const generated = generatedSymbols(cat, timerOrder(cat, []));
   const out = { lists: new Set<string>(), modes: new Set<string>(), variables: new Set<string>(), maps: new Set<string>(), entries: new Set<string>() };
   const add = (kind: SymbolKind, name: string): void => {
-    if (kind === 'timers' || generated[kind].has(name)) return;
+    // No four slot catalogue queues a screen program, and its timers are all generated.
+    if (kind === 'timers' || kind === 'programs' || generated[kind].has(name)) return;
     if (kind === 'entries' && name.startsWith('activityKey')) return;
     out[kind].add(name);
   };
@@ -957,10 +771,8 @@ export function buildWiring(spec: WiringSpec): BuiltWiring {
   // screens carried, every code the one blank screen that binds nothing.
   const carried = spec.statusScreens !== false;
   const base = carried ? cat.screens.length : cat.screens.indexOf(NO_STATUS_SCREEN);
-  const event = new Writer(5 + 4 * EVENT_COUNT).u24(base).u16(EVENT_COUNT);
-  for (let k = 0; k < EVENT_COUNT; k += 1) event.u8(k).u24(carried ? base + k : base);
   // Its base is what the description reads to tell the two forms apart, section 375.
-  const eventMap = made(event.bytes, 'slot-4-event', [0, 1, 2]);
+  const eventMap = made(buildEventMap(base, EVENT_COUNT, carried), 'slot-4-event', [0, 1, 2]);
 
   // Base slot 8's leading list.
   const lead = encodeList(cat.lead, symbols, generated);
@@ -1047,19 +859,6 @@ export function buildWiring(spec: WiringSpec): BuiltWiring {
 // Reading a description back off a laid out container.
 // ---------------------------------------------------------------------------------------------------
 
-function tablePiece(layout: ContainerLayout, slot: number): ContainerPiece {
-  const head = layout.sections[slot]?.head;
-  if (head === undefined || head.length !== 1) throw new WiringError(`base slot ${slot}'s table is not one piece`);
-  return head[0]!;
-}
-
-/** The pieces a counted pointer table names, in table order. */
-function tableTargets(table: ContainerPiece): ContainerPiece[] {
-  return [...table.refs].sort((a, b) => a.at - b.at).map((ref, k) => {
-    if (!('to' in ref) || ref.offset !== 0) throw new WiringError(`entry ${k} of a table is not a piece of its own`);
-    return ref.to;
-  });
-}
 
 /**
  * What a layout's wiring is shaped by and the description's symbols are not: the model, the timers a
@@ -1232,99 +1031,6 @@ export function describeWiring(layout: ContainerLayout): WiringSpec {
   };
 }
 
-// ---------------------------------------------------------------------------------------------------
-// Putting the built pieces in a layout.
-// ---------------------------------------------------------------------------------------------------
-
-/**
- * A layout with its wiring swapped for the built pieces.
- *
- * Tables the frame lays out are swapped whole: base slots 2, 4, 8, 12 and 15, with the parameter groups
- * as base slot 15's parked run, section 318. A timer record, a base slot 9 entry or a base slot 10 list
- * takes the place of the piece its table names at the same index, which keeps the caller's emission
- * order; base slot 9's and 10's tables are copied with their references redirected. A built list or
- * entry at an index the table does not hold is refused, as is any other piece naming a replaced one.
- */
-export function withWiring(layout: ContainerLayout, built: BuiltWiring): ContainerLayout {
-  const replace = new Map<ContainerPiece, ContainerPiece>();
-  const swapTable = (slot: number, table: ContainerPiece, records: ContainerPiece[]): void => {
-    const old = tablePiece(layout, slot);
-    replace.set(old, table);
-    const oldRecords = tableTargets(old);
-    if (oldRecords.length !== records.length) {
-      throw new WiringError(`base slot ${slot} holds ${oldRecords.length} records and ${records.length} were built`);
-    }
-    oldRecords.forEach((p, k) => replace.set(p, records[k]!));
-  };
-  replace.set(tablePiece(layout, LOG_AREA_SLOT), built.logArea);
-  replace.set(tablePiece(layout, EVENT_MAP_SLOT), built.eventMap);
-  replace.set(tablePiece(layout, BINDING_SLOT), built.leadingList);
-  swapTable(TIMER_SLOT, built.timerTable, built.timerRecords);
-  swapTable(PARAMETER_SLOT, built.parameterTable, built.parameterGroups);
-
-  // Tables whose entries are swapped one by one keep their other entries.
-  const redirect = (slot: number, byIndex: Map<number, ContainerPiece>): void => {
-    const old = tablePiece(layout, slot);
-    const targets = tableTargets(old);
-    for (const [index, p] of byIndex) {
-      if (targets[index] === undefined) throw new WiringError(`base slot ${slot} has no entry ${index}`);
-      replace.set(targets[index]!, p);
-    }
-    replace.set(old, { ...old, refs: old.refs.map((ref) => ('to' in ref && byIndex.size > 0 && replace.has(ref.to) ? { ...ref, to: replace.get(ref.to)! } : ref)) });
-  };
-  // A handler set is a tagged list, and the bytes behind it that no address names travel with its piece,
-  // `takeApart`: the page lists' copies where a set ends the pool, which is how an empty configuration of
-  // ours lays its pool and where the device composer appends a new mode's copies. A rebuilt set keeps
-  // them behind it, or they are lost with every checksum passing. Logitech's compiles hold no such tail on
-  // a set this rebuilds. Section 378.
-  // Laid as a piece of their own straight behind the built set, so the built piece stays the one it is.
-  const handlers = tableTargets(tablePiece(layout, HANDLER_TABLE_SLOT));
-  const tails = new Map<ContainerPiece, ContainerPiece>();
-  for (const [index, p] of built.entries) {
-    const old = handlers[index];
-    const extent = old === undefined ? undefined : taggedListExtent(old.bytes, 0);
-    if (old === undefined || extent === undefined || extent.length >= old.bytes.length) continue;
-    if (old.refs.some((ref) => ref.at >= extent.length)) throw new WiringError(`base slot 9 entry ${index} carries an address behind its list`);
-    tails.set(old, { bytes: old.bytes.slice(extent.length), refs: [], ...(old.owner === undefined ? {} : { owner: old.owner }) });
-  }
-  redirect(HANDLER_TABLE_SLOT, built.entries);
-  redirect(ACTION_LIST_TABLE_SLOT, built.lists);
-
-  const rewrite = (run: ContainerPiece[]): ContainerPiece[] => run.flatMap((p) => {
-    const tail = tails.get(p);
-    return tail === undefined ? [replace.get(p) ?? p] : [replace.get(p) ?? p, tail];
-  });
-  const sections = layout.sections.map((s) => (s === undefined ? s : { before: rewrite(s.before), head: rewrite(s.head) }));
-  const body = rewrite(layout.body);
-  const pictures = rewrite(layout.pictures);
-
-  const ours = new Set<ContainerPiece>(replace.values());
-  const kept = [layout.keyTable, ...body, ...sections.flatMap((s) => (s === undefined ? [] : [...s.before, ...s.head])), ...pictures];
-  for (const p of kept) {
-    if (ours.has(p)) continue;
-    if (p.refs.some((r) => 'to' in r && replace.has(r.to))) {
-      throw new WiringError(`a piece${p.owner === undefined ? '' : ` (${p.owner})`} names a piece being replaced`);
-    }
-  }
-  return { ...layout, body, sections, pictures };
-}
-
-/** Every piece `buildWiring` made, for a caller counting what it generated. */
-export function builtPieces(built: BuiltWiring): ContainerPiece[] {
-  return [
-    built.logArea, built.eventMap, built.leadingList, built.parameterTable, ...built.parameterGroups,
-    built.timerTable, ...built.timerRecords, ...built.entries.values(), ...built.lists.values(),
-  ];
-}
-
-/** What `checkWiring` compared. */
-export interface WiringChecked {
-  /** Bytes of every built piece. */
-  bytes: number;
-  lists: number;
-  entries: number;
-}
-
 /**
  * The configuration's wiring against the one built from its own description: described, built, put
  * back, laid out and compared byte for byte, refused with the first difference and the built piece it
@@ -1332,26 +1038,6 @@ export interface WiringChecked {
  */
 export function checkWiring(c: Container): WiringChecked {
   const layout = takeApart(c);
-  const built = buildWiring(describeWiring(layout));
-  const laid = layOutContainer(withWiring(layout, built));
-  const out = laid.bytes;
-  let at = -1;
-  const length = Math.min(out.length, c.blob.length);
-  for (let k = 0; k < length; k += 1) {
-    if (out[k] !== c.blob[k]) { at = k; break; }
-  }
-  if (at < 0 && out.length !== c.blob.length) at = length;
-  if (at >= 0) {
-    const names = new Map<ContainerPiece, string>();
-    for (const [index, p] of built.lists) names.set(p, `list ${index}, ${built.listNames.get(index)}`);
-    for (const [index, p] of built.entries) names.set(p, `base slot 9 entry ${index}`);
-    const where = builtPieces(built).find((p) => {
-      const from = laid.offsetOf(p);
-      return from !== undefined && at >= from && at < from + p.bytes.length;
-    });
-    throw new WiringError(`the built wiring differs from the configuration's at byte ${at}`
-      + (where === undefined ? ', outside it, where something it names moved' : `, in ${names.get(where) ?? where.owner ?? 'a built piece'}`));
-  }
-  const pieces = builtPieces(built);
-  return { bytes: pieces.reduce((n, p) => n + p.bytes.length, 0), lists: built.lists.size, entries: built.entries.size };
+  return compareWiring(c, layout, buildWiring(describeWiring(layout)));
 }
+
