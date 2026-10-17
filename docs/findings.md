@@ -52845,7 +52845,9 @@ with a call: 102 of 102 in `calibration_h600`, 137 of 137 in each of `h700_confi
 touch panel and no click, `docs/how-a-harmony-works.md`. The 600 family's device page builder is untouched, and its
 activity screen's sequence copy is the same body as before.
 
-**Not yet heard at the bench**: the file with the fix has not been written to the spare.
+**Heard at the bench**: written to the spare, every touch of the test clicked once, rows of the KPN box's device
+page, Teletext on TV kijken's screen and Radio on Plasma kijken's, each before its code. The run is in the lab's
+`reads/`, from `packages/bench/irtests/done/one-1-3b-row-click.json`.
 
 ### Asserted
 
@@ -52856,5 +52858,5 @@ composed onto `one_config` binds each row to the click and a call of its command
 
 ### What would falsify it
 
-A row of a Logitech One device page that runs its command without the click; the spare, written with the fix,
-still silent on a touched row, or clicking twice on an activity screen's pad.
+A row of a Logitech One device page that runs its command without the click; a configuration built with the fix
+silent on a touched row, or clicking twice on an activity screen's pad.
