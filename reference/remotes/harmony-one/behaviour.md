@@ -30,7 +30,9 @@ later than the same command on a key:
   command does: 241 of 241 screen sends and none of 377 key sends on that configuration, and the same on
   three more of Logitech's compiles. Read in the firmware and configurations, section 337. It is
   Logitech's convention and not a requirement: screen sends this project wrote without it still went out,
-  section 242. With the button sound off the click is skipped.
+  section 242. With the button sound off the click is skipped. Without it a touched row sends with no
+  sound at all, which at the bench read as a touch that did not register, seen on one composed device page;
+  every row of Logitech's device pages opens with the click, 3545 of 3545 over nineteen compiles, section 404.
 * **Holding a command on the screen repeats it, as holding a key does**: the touch code sets the same
   hold flag, read in the firmware, section 337, which corrects section 127.
 * **Unconfirmed** in section 337: that a touch is posted while the finger is down, how long it settles,

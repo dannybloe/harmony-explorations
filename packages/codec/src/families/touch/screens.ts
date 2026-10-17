@@ -32,7 +32,7 @@ import {
   modeTable, pageListCopies, type TaggedEntry, taggedList, taggedListBytes, taggedListPools,
 } from '../../sections.ts';
 import { SILENT_WRITE } from '../../shared/activities.ts';
-import { ACTION_TABLE_SLOT, ComposeError, restamped } from '../../shared/core.ts';
+import { ACTION_TABLE_SLOT, appendActionLists, ComposeError, restamped } from '../../shared/core.ts';
 import { appendTableEntries } from '../../shared/infrared.ts';
 import {
   ACTIVITY_MENU_MARKER_VALUE, appendValueMapCase, type ComposeActivityRowOptions, type ComposeActivityScreenOptions,
@@ -184,6 +184,18 @@ export function composeTouchDeviceScreen(
 ): ComposedScreen {
   const titleFont = (options.choices ?? TOUCH_CHOICES).deviceTitleFont;
   if (rows.length === 0) throw new ComposeError('a device page has at least one row');
+  // A row clicks before it runs its command, as every row of Logitech's One device pages does, 3545 of 3545 over
+  // nineteen compiles, findings section 404: a list of the beep and a call of the row's own, added here for every
+  // row whose list does not open with the beep already. Without it the remote sent the code and gave no click,
+  // seen at the bench.
+  const unclicked = rows.flatMap((row, k) => ((c.actionLists() ?? [])[row.list]?.[0]?.opcode === BEEP_OPCODE ? [] : [k]));
+  if (unclicked.length > 0) {
+    const clicks = appendActionLists(c, unclicked.map((k) => [
+      [SCREEN_ITEM_BEEP.operand, SCREEN_ITEM_BEEP.opcode], [(rows[k] as ComposeRow).list, ACTION_LIST_INDEX_OPCODE],
+    ]));
+    c = parse(clicks.bytes);
+    rows = rows.map((row, k) => (unclicked.includes(k) ? { ...row, list: clicks.first + unclicked.indexOf(k) } : row));
+  }
   // A page holds six rows, and more rows take more pages, filled in order with the last page short, the
   // way the menus page, section 239; `paginate` then numbers them, `todo-compile-one.md` 1.2.
   const perPage = DEVICE_PAGE_SCANS.length;

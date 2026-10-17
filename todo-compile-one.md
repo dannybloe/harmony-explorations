@@ -73,7 +73,7 @@ One with its sequence's keys translated by name, since the One's keys have other
       - [x] 1.2.11.2.12 The Remote Assistant and the "Welcome!" screen left out at start, asked for at the bench since every write showed them: the assistant's state variable started at 3, a touch family choice off by default; done, section 403, seen on the spare
       - [ ] 1.2.11.2.8 A colour button's word wider than its circle ("Yellow") lies on two colours and stays unsmoothed; settle it before the words go back on by default (a whole button in the colour was tried and rejected)
     - [x] 1.2.11.3 The activity's keypad from its roles with the One's own keys, section 323's rule checked on the One; done, section 398: 1704 of 1752 keys and 38 of 50 activities whole, seven of the nine distinct ones, the keys the family's, `activityKeyRules`
-- [ ] 1.3 A bench test of it: every code as the file predicts, the touch rows, device mode and All Off
+- [ ] 1.3 A bench test of it: every code as the file predicts, the touch rows, device mode and All Off; run, every code heard as predicted and a composed device page row silent, its click missing, section 404; the fix waits on the bench
 
 ## 2. Measure before building
 

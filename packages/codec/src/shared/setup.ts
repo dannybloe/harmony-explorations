@@ -300,7 +300,9 @@ function composeSetupActivity(
       interKeyDelays[group] = quantity.operand & 0xff;
       return { send: { group, code: send.operand & 0xff } };
     });
-    const sequence = composeSequence(c, { steps, pauseGroups, interKeyDelays, copies: ['screen'] });
+    // The key copy, without the click: the activity screen's pad clicks itself on the Harmony One, and the two copies
+    // are the same body on the 600 family, section 404.
+    const sequence = composeSequence(c, { steps, pauseGroups, interKeyDelays, copies: ['key'] });
     c = parse(sequence.bytes);
     rows.push({ label: item.sequence, list: sequence.lists[0] as number });
     sequenced = true;

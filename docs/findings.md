@@ -52783,3 +52783,78 @@ starting value alone, to 3, with every check passing, and returning `one_config`
 ### What would falsify it
 
 A One compile whose start shows the assistant with its variable at 3; a One that, written so, still shows it.
+
+## 404. A composed Harmony One device page's row sent its command without the click, where every row of Logitech's device pages opens with it
+
+**Seen at the bench**, `todo-compile-one.md` 1.3: on the spare Harmony One written with the test setup composed
+onto Logitech's compile of two devices, touching a command on the KPN box's device page, three presses, sent its
+code, which the infrared monitor heard, and made no sound, so it read as a touch that had not registered. The run,
+its presses and that note are filed in the lab's `reads/`, the second of two files there for it; the comparison of
+the other codes with the file's prediction was made in the session and found nothing else, and is not part of
+what was filed.
+
+**Sources checked**: section 337, which found Logitech's compiler clicks before every screen send on four of its
+One compiles and that this project's writes leave the click out with the remote still sending, section 242;
+section 401 on the keys below a device page; `screens.ts`, the touch family's device page; `activityroles.ts`
+and `setup.ts`, where an activity screen's rows come from. MyHarmony's client was not read, since the question is
+what our builder writes against what Logitech's files hold.
+
+### What the files hold
+
+A row here is a press binding of `0x7F`, a call, on a device page; the two keys below the screen, scans 43 and 44,
+are section 401's and left out. Over the device modes the device list enters, `deviceListRows`, on the nineteen
+One compiles, every row's list opens with the click `0x75 0x0FCA`:
+
+| rows | compiles | the click first | the click and a call | the click and a `0x72` |
+|---|---|---|---|---|
+| 3545 | 19 of 19 | 3545 | 3495 | 50 |
+
+Every row found is a press on scans 48 to 53. `deviceModeMaps` alone finds 3281 rows on eighteen: it takes a mode
+only where the mode's own keypad map sends something, which passes over every device mode of
+`harvest_one_families_1` and one of `compiled_protocols_3`. The second reviewer also found, unasserted, that the
+last page of each device mode binds one row slot straight to `0x72`, 65 over the corpus, with no list and so no
+click; those are not rows by the definition above.
+
+**Ours bound a row to the command's list directly**, `[0x7D, 0x7C]`, which is section 337's "this project's own
+writes omit it". In the bench file as written, 100 of its 571 screen bindings reached a send with no click before
+it, walking calls depth first, and all 100 were rows of the five composed device modes; every other screen binding
+clicked, the donor's own device pages included.
+
+### The fix, and the double click it first made
+
+`composeTouchDeviceScreen` appends one list per row whose list does not already open with a click, `{0x75 0x0FCA,
+0x7F row}`, and binds the row to it, Logitech's shape.
+
+**The first version made eleven activity screen pads click twice**, which the blind reviewer found: an activity
+screen's row takes the list of the device page's row of the same label, `activityScreenRows`, and the One's
+activity screen wraps it in a click of its own, so once the device page's list was the click the pad ran two.
+`activityScreenRows` now takes the list the device page's list calls where the family's screen items click, as an
+activity key already did, section 398. One pad clicked twice before either change, the Radio sequence's: the setup
+asked the sequence composer for its screen copy, which opens with the click, and the activity screen added
+another; it asks for the key copy now, which on the Harmony 600, 650 and 700 is the same body, since their screen
+copy has no click. Logitech's compiles hold no binding that reaches two clicks, and no click list that another list
+calls, by the blind reviewer's count.
+
+In the bench file every screen binding that reaches a send now clicks before it, 571 of 571, and none reaches two;
+in Logitech's compile of two devices, the donor, 417 of 417. The file is 997 bytes longer than as written: a
+hundred lists and their pointers, less the Radio copy's click.
+
+**Which architectures**: the Harmony One alone. The device page rows of the Harmony 600, 650 and 700 compiles open
+with a call: 102 of 102 in `calibration_h600`, 137 of 137 in each of `h700_config` and `h700_config_2`, and 173,
+199 and 227 in `h650_config_region`, `h650_panasonic_config` and `h650_power_hold_compile`; those remotes have no
+touch panel and no click, `docs/how-a-harmony-works.md`. The 600 family's device page builder is untouched, and its
+activity screen's sequence copy is the same body as before.
+
+**Not yet heard at the bench**: the file with the fix has not been written to the spare.
+
+### Asserted
+
+`packages/codec/test/touchrowclick.test.ts`: the census above, every column. `composesetup.test.ts`: every row of
+the test setup's seven device modes opens with the click, 225 rows, the donor's 125 and the composed 100; no
+binding of any page reaches two clicks; and the file's length, 1751852 bytes. `compose.test.ts`: a television
+composed onto `one_config` binds each row to the click and a call of its command.
+
+### What would falsify it
+
+A row of a Logitech One device page that runs its command without the click; the spare, written with the fix,
+still silent on a touched row, or clicking twice on an activity screen's pad.

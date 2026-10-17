@@ -358,7 +358,9 @@ section 337:
   between one device and the next.
 * **Every screen command also plays a click first**, the button sound, about 26 ms, and no key command
   does. Logitech's compiler always puts it there; this project's own writes have left it out and the
-  remote still sent, so it is a convention. With the button sound off the click is skipped.
+  remote still sent, so it is a convention. With the button sound off the click is skipped. Left out, a
+  touch gave no sound at all and read as one that did not register, seen on one row at the bench, which is
+  why our device pages put it back, section 404.
 * **Holding a command on the screen repeats it**, as holding a key does.
 
 Nothing of this applies to the Harmony 600, 650 and 700: they have no touch panel and play no click, and

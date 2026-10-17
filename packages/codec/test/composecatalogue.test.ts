@@ -680,10 +680,17 @@ test('a device of more than six commands composed onto a Harmony One takes a pag
   const records = modeRecords(composed)!;
   const record = records.at(-1)!;
   assert.equal(record.pages.length, 3, 'six, six and two');
-  assert.deepEqual(record.pages.map((page) => taggedList(composed, page.list)!.entries.length), [6, 6, 2]);
-  // Each row runs its own command's list, in order across the pages: the fourteen rows are the device's
-  // fourteen command lists in the order the commands were given.
-  const lists = record.pages.flatMap((page) => taggedList(composed, page.list)!.entries.map((entry) => entry.operand));
+  // The rows, scans 48 to 53; each page also binds the two keys below the screen, section 401.
+  const rows = (page: { list: number }) => taggedList(composed, page.list)!.entries.filter((entry) => (entry.tag & 0x3f) >= 48);
+  assert.deepEqual(record.pages.map((page) => rows(page).length), [6, 6, 2]);
+  // Each row runs its own command's list, in order across the pages, through a list of the click and a call of it,
+  // section 404: the fourteen rows are the device's fourteen command lists in the order the commands were given.
+  const all = composed.actionLists()!;
+  const lists = record.pages.flatMap((page) => rows(page).map((entry) => {
+    const [click, call] = all[entry.operand]!;
+    assert.deepEqual([click!.opcode, click!.operand, call!.opcode], [0x75, 0x0fca, 0x7f]);
+    return call!.operand;
+  }));
   assert.equal(new Set(lists).size, 14);
   assert.equal(result.device.lists.length, 14);
   assert.deepEqual(lists, result.device.lists);

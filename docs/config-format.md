@@ -5019,7 +5019,12 @@ loop turns later. A screen binding's send is also more often a **one block copy*
 with its device's delay between devices, 500 or 1000 ms on the One, where a two block record opens with
 50 ms: 148 of `one_config`'s 241 screen sends against 23 of its 377 key sends. A touch reaches the same
 event poster as a key, and the touch code `0x202` sets the streamer's hold flag as a held key does.
-[findings.md](findings.md) section 337.
+[findings.md](findings.md) section 337. **A device page's row, a `0x7F` binding, runs a list that opens with
+the click**, on 3545 of 3545 rows over nineteen of Logitech's One compiles: `{0x75 0x0FCA, 0x7F list}` on 3495,
+the click and a `0x72` on 50. The touch family's device page wraps every row whose list does not already open with
+a click that way, and an activity screen's pad, which clicks itself, calls the command under the device page's
+click, so no binding reaches two clicks, as none in Logitech's compiles does. The Harmony 600, 650 and 700
+compiles' device page rows open with a call instead. [findings.md](findings.md) section 404.
 
 #### State variables 3, 5 and 6 are the date
 

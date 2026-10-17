@@ -158,6 +158,8 @@ const SPARE_DUMPS = new Set([
   'one_spare_bottom_written',
   // The spare with the screen lit 60 s, the base for the write at 20 s without the Remote Assistant at start.
   'one_spare_light60_written',
+  // The spare at 20 s without the Remote Assistant at start, the base for the write giving composed rows their click.
+  'one_spare_noassistant_written',
 ]);
 
 /**

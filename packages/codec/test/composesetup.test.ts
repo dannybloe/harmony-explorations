@@ -42,7 +42,34 @@ test('the One test setup composed onto Logitech\'s compile of two devices comes 
       assert.equal(bound.length, 2, `mode ${mode}`);
     }
   }
-  // The file the spare Harmony One was given before the screen light was raised, the lab's `one-test-setup.bin`
-  // as the lab script built it, is this one byte for byte; its length is pinned so a change shows here first.
-  assert.equal(c.blob.length, 1750855);
+  // Every row's list opens with the click, as Logitech's do, section 404: the donor's two devices and the five
+  // composed, 125 rows and 100.
+  const lists = c.actionLists()!;
+  let rows = 0;
+  for (const mode of modes) {
+    for (const page of records[mode]!.pages) {
+      for (const entry of taggedList(c, page.list)?.entries ?? []) {
+        const scan = entry.tag & 0x3f;
+        if (entry.opcode !== 0x7f || scan === 43 || scan === 44) continue;
+        rows += 1;
+        assert.deepEqual([lists[entry.operand]?.[0]?.opcode, lists[entry.operand]?.[0]?.operand], [0x75, 0x0fca],
+                         `mode ${mode} scan ${scan}`);
+      }
+    }
+  }
+  assert.equal(rows, 225);
+  // And no binding of any page clicks twice: an activity screen's pad clicks itself and calls the command under
+  // the device page's click, and a sequence's key copy, which has none, section 404. Logitech's compiles hold none.
+  const clicks = (at: number, seen: Set<number>): number => {
+    if (seen.has(at)) return 0;
+    seen.add(at);
+    return (lists[at] ?? []).reduce((sum, one) => sum + (one.opcode === 0x75 && one.operand === 0x0fca ? 1
+      : one.opcode === 0x7f ? clicks(one.operand, seen) : 0), 0);
+  };
+  const twice = records.flatMap((record, mode) => (record?.pages ?? []).flatMap((page) => (taggedList(c, page.list)?.entries ?? [])
+    .filter((one) => one.opcode === 0x7f && clicks(one.operand, new Set()) > 1).map((one) => `${mode}:${one.tag & 0x3f}`)));
+  assert.deepEqual(twice, []);
+  // Its length is pinned so a change shows here first: 1750855 until each composed row got its click, section 404,
+  // and 1751852 once the Radio sequence's pad took the key copy, without a click of its own.
+  assert.equal(c.blob.length, 1751852);
 });

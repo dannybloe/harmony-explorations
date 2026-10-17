@@ -1,0 +1,12 @@
+{
+  "name": "Harmony One, the click on composed screen rows",
+  "description": "todo-compile-one 1.3, after findings section 404: the spare Harmony One with the test setup as in one-1-3-composed-setup.json, plus a list per composed device page row that clicks before the command, and activity screen buttons that call the command under that click so they click once. What it answers: whether a touched row on a composed device page now clicks, and whether an activity screen button and the Radio sequence click once rather than twice. Predicted from the written file: every touch below gives one short click and then the code; nothing else about the setup changed. Keep the remote pointed at the Flirc throughout, and please write in each step's note what you heard, also when it is what the step expects.",
+  "steps": [
+    { "instruction": "Press Off and wait until the remote is quiet. Expect the activity list. Mark" },
+    { "instruction": "Touch 'Devices' below the screen, then touch KPN. Expect its own pages. Touch one of its commands and note which. Expect one click, then the KPN box's code for it. Mark" },
+    { "instruction": "Still on the KPN box's pages, touch two more commands, one at a time. Expect one click before each code. Mark" },
+    { "instruction": "Press the key below the screen labelled 'Activities', touch TV kijken and wait until it settles. Then touch Teletext. Expect one click, not two, then the KPN box's Teletext. Mark" },
+    { "instruction": "Press the Activities key, turn to page 2 with the arrow beside the screen, touch Plasma kijken and wait until it settles. Touch Radio. Expect one click, not two, then the KPN box's 1, a pause of about 2 s, then its 2. Mark" },
+    { "instruction": "Press Off. Mark when it is quiet" }
+  ]
+}

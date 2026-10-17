@@ -214,7 +214,7 @@ export interface ActivityScreenPick {
 
 /**
  * The activity screen's rows from the commands chosen for it, each resolved to the device's own screen
- * item of that label, so it runs the same list and is drawn under the same name. Refused where the
+ * item of that label, so it runs the same command and is drawn under the same name. Refused where the
  * device's own screen has no such item, rather than reaching for a keypad command or a catalogue name,
  * since neither says how the remote should label it.
  */
@@ -224,7 +224,9 @@ export function activityScreenRows(c: Container, picks: readonly ActivityScreenP
     if (found === undefined) {
       throw new ComposeError(`device ${pick.group}'s own screen has no command labelled '${pick.label}'`);
     }
-    return { label: pick.label, list: found.list };
+    // The command under the device page's click, since the activity screen's pad clicks itself: the item's own
+    // list would click twice, section 404.
+    return { label: pick.label, list: keyListOfItem(c, found.list) };
   });
 }
 

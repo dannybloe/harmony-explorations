@@ -368,10 +368,15 @@ test('one_config takes the television onto its screen and every check holds', sk
   assert.equal(page.lead, 10, 'the six slot device layout, reused rather than inserted');
   const bindings = taggedList(after, page.list)!;
   // The two keys below the screen first, bound as the configuration's own first device page binds them, the
-  // working screen's table and the list back to the device list, section 401; then the rows.
-  assert.deepEqual(bindings.entries.map((one) => [one.tag & 0x3f, one.opcode, one.operand]),
-                   [[43, 0x72, 0x823], [44, 0x7f, 3815], ...ROWS.map((row) => [48 + row.k, 0x7f, device.lists[row.k]])],
-                   'the keys below the screen, then the rows running the commands, top left to middle left');
+  // working screen's table and the list back to the device list, section 401; then the rows, each running a list
+  // of the click and a call of its command, as Logitech's rows do, section 404.
+  const rowLists = after.actionLists()!;
+  assert.deepEqual(bindings.entries.map((one) => [one.tag & 0x3f, one.opcode, one.operand]).slice(0, 2),
+                   [[43, 0x72, 0x823], [44, 0x7f, 3815]], 'the keys below the screen');
+  assert.deepEqual(bindings.entries.slice(2).map((one) => [one.tag & 0x3f, one.opcode,
+    ...rowLists[one.operand]!.map((item) => [item.opcode, item.operand])]),
+                   ROWS.map((row) => [48 + row.k, 0x7f, [0x75, 0xfca], [0x7f, device.lists[row.k]]]),
+                   'then the rows clicking and running the commands, top left to middle left');
   // The page closes on the switch labelling those keys "Activities" or "Current Activity", so two screens.
   const rendered = renderVariants(after, page.program);
   assert.equal(rendered.variants.length, 2, 'one switch of two arms, so two screens');
@@ -431,7 +436,8 @@ test('one_config takes the television onto its screen and every check holds', sk
                    'the row beeps, enters the mode and marks device mode, as every corpus row does');
   ROWS.forEach((row) => {
     const bound = bindings.entries.find((one) => (one.tag & 0x3f) === 48 + row.k)!;
-    assert.deepEqual(lists[bound.operand]!.map((one) => [one.opcode, one.operand]),
+    // Through its click list, section 404.
+    assert.deepEqual(lists[lists[bound.operand]![1]!.operand]!.map((one) => [one.opcode, one.operand]),
                      [[0x7d, (device.group << 8) | row.k],
                       [0x7c, (device.group << 8) | DEVICE_QUANTITY_DEFAULT]],
                      `row ${row.label} reaches the new command, paired as every corpus send is`);
