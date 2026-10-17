@@ -18,6 +18,7 @@ import type { TouchChoices } from './choices.ts';
 import { withColourButtons } from './colourbuttons.ts';
 import { withTouchDeviceLook } from './devicelook.ts';
 import { withScreenLight } from './screenlight.ts';
+import { withoutStartupAssistant } from './startupassistant.ts';
 
 /** A donor lettered in ours, and the face each of its font sets was given, which the blending needs. */
 export interface LetteredDonor {
@@ -38,7 +39,7 @@ export function letterTouchDonor(c: Container, choices: TouchChoices): LetteredD
 /**
  * The look over the composed configuration: device mode in flat boxes and our icons, the colour buttons as
  * circles, every pad's label centred by its letters, every text smoothed against the colour under it, and the
- * screen light's time. `deviceType` names a device's catalogue type by the name the configuration states, which
+ * screen light's time, and the Remote Assistant and welcome screen at start left out unless chosen. `deviceType` names a device's catalogue type by the name the configuration states, which
  * picks its icon from `choices.deviceIcons`.
  */
 export function withTouchLook(
@@ -52,5 +53,6 @@ export function withTouchLook(
   const blending = withBlendedLetters(takeApart(centred), faces, touchLabelWeight(choices));
   const blended = layOutContainer(blending.layout).container;
   checkBlendedLetters(blended, faces, blending.blended);
-  return withScreenLight(blended, choices.screenLightSeconds);
+  const lit = withScreenLight(blended, choices.screenLightSeconds);
+  return choices.startupAssistant ? lit : withoutStartupAssistant(lit);
 }

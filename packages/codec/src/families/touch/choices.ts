@@ -83,11 +83,18 @@ export interface TouchChoices extends CommonChoices {
    * seconds is too short to test with.
    */
   readonly screenLightSeconds: number;
+  /**
+   * Whether the remote shows the Remote Assistant's welcome, its "devices off" screen and the "Welcome!" screen when
+   * it starts, `withoutStartupAssistant`, findings section 403. Logitech's compiles show them, and since a write
+   * restarts the remote they come up after every write; off, asked for at the bench on 17 October 2026.
+   */
+  readonly startupAssistant: boolean;
 }
 
 export const TOUCH_CHOICES: TouchChoices = {
   deviceTitleFont: 9,
   screenLightSeconds: 10,
+  startupAssistant: false,
   activityBox: { fill: '#166fa7', rim: '#bfeeff' },
   deviceBox: { fill: '#1c9c53', rim: '#e8cbb4' },
   labelWeight: 'Medium',

@@ -604,6 +604,7 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // The spare after the page key light write, section 400.
   one_spare_arrows_written: '20261016T1200Z-one-spare-arrows-written-region.bin',
   one_spare_bottom_written: '20261017T0858Z-one-spare-bottom-written-region.bin',
+  one_spare_light60_written: '20261017T0944Z-one-spare-light60-written-region.bin',
   // Two configs Logitech compiled to a specification we wrote, 13 August 2026: the corpus's only
   // known answer samples. Section 132. Not in the corpus wide lists, on purpose; see tests/lab.py.
   calibration_one: 'calibration-one-spare.bin',
@@ -756,6 +757,7 @@ export const PARSEABLE_EXCLUDED: readonly string[] =
     'one_spare_retarget_base', 'one_spare_paired_base', 'one_spare_screen_base',
     'one_spare_poweroff_base', 'one_spare_page4_base', 'one_spare_track_start', 'one_spare_look_base',
     'one_spare_look_written', 'one_spare_glow_written', 'one_spare_arrows_written', 'one_spare_bottom_written',
+    'one_spare_light60_written',
     // The Harmony 525's erase block, added 6 September 2026, and it is the first entry here that is
     // not a Harmony One's. It parses because its first 51195 bytes are `h525_config_2` exactly, so
     // counting it would add a configuration that does not exist. Same reason as

@@ -156,6 +156,8 @@ const SPARE_DUMPS = new Set([
   'one_spare_arrows_written',
   // The spare with the keys below a device page bound, the base for the write raising the screen light to 60 s.
   'one_spare_bottom_written',
+  // The spare with the screen lit 60 s, the base for the write at 20 s without the Remote Assistant at start.
+  'one_spare_light60_written',
 ]);
 
 /**
