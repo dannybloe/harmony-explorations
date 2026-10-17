@@ -162,10 +162,14 @@ class TestAPhraseCanHideInALineBreak(unittest.TestCase):
         seen = list(facts.sources())
         self.assertTrue(any(p.endswith('gspm.py') for p in seen))
         self.assertTrue(any(p.endswith('gspm.ts') for p in seen))
-        # Nothing from a build output or a dependency, which would be somebody else's prose.
+        # Nothing from a build output or a dependency, which would be somebody else's prose. Judged on
+        # the path below the checkout, since the walk skips directories inside it: a checkout that is
+        # itself a git worktree under `.claude/worktrees/` carries `worktrees` above its root, and the
+        # absolute path failed this test there while the walk was doing exactly what it should.
         for path in seen:
+            below = os.sep + os.path.relpath(path, facts.ROOT)
             for skipped in facts.SKIP_DIRECTORIES:
-                self.assertNotIn(os.sep + skipped + os.sep, path, path)
+                self.assertNotIn(os.sep + skipped + os.sep, below, path)
 
     def test_a_source_comment_may_not_lean_on_the_markdown_escapes(self):
         """Only the explicit token counts in source, and the reason is mechanical.

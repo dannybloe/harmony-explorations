@@ -166,16 +166,23 @@ class TestArch12RegionSplit(unittest.TestCase):
         self.assertTrue(firmware.verify_checksum(code))
 
 
-# Six files named `.EzHex` that are not EzHex at all: section 306 saved the bare `GSPM` container
+# Eleven files named `.EzHex` that are not EzHex at all: section 306 saved the bare `GSPM` container
 # out of each compile's ZIP under the name the download carries, so they have no XML header and
 # no declared checksum, and every check in this class would fail on them for a reason that says
 # nothing about the EzHex format. Named rather than detected, since detecting would need the lab
-# loaded while the class is defined, and a fresh clone has none.
+# loaded while the class is defined, and a fresh clone has none. **The name list is checked against
+# the bytes** by `test_a_file_is_excluded_as_a_bare_container_exactly_when_it_has_no_header`, which is
+# the predicate this list stands for: a file with no XML header.
 BARE_CONTAINERS_NAMED_EZHEX = (
     'h650_power_hold_compile', 'h650_power_hold_compile_2', 'h700_power_hold_compile',
     'h700_power_hold_compile_2', 'h700_power_hold_compile_3', 'h700_power_hold_compile_4',
-    # Logitech's compiles gathered by `packages/corpus/bin/harvest.ts`, saved under the service's own name.
-    'harvest_650_two_devices', 'harvest_one_two_devices')
+    # Logitech's compiles gathered by `packages/corpus/bin/harvest.ts`, which writes each ZIP member
+    # byte for byte under the service's own member name, `Result.EzHex`.
+    'harvest_650_two_devices', 'harvest_one_two_devices',
+    # The three Harmony One compiles of `work/harvest/families-one`, the same kind of file, which were
+    # registered without joining this list. Thirteen failures in this file were the result, each a
+    # check of a header these files do not have.
+    'harvest_one_families_1', 'harvest_one_families_2', 'harvest_one_families_3')
 _BARE = BARE_CONTAINERS_NAMED_EZHEX
 
 
@@ -222,11 +229,35 @@ class TestEzHexHeader(unittest.TestCase):
         ez = {n for n, f in lab.IMAGES.items() if f.lower().endswith('.ezhex')}
         # 27 since two contributed Harmony 650 configs, section 323's issue 8 and issue 36, and two harvest
         # compiles, bare containers, were registered.
-        self.assertEqual(len(ez), 27)
+        # 30 since the three harvest compiles of `work/harvest/families-one`, bare containers too, so
+        # the population below stays at 15 and the exclusions grow by three.
+        self.assertEqual(len(ez), 30)
         self.assertEqual(sorted(ez - set(self.CONFIGS)),
                          sorted(['h890_config', 'h890_config_2', 'h890_config_2_rescan',
                                  'h890_config_rescan', *self.BARE_CONTAINERS_NAMED_EZHEX]))
         self.assertEqual(len(self.CONFIGS), 15)
+
+    def test_a_file_is_excluded_as_a_bare_container_exactly_when_it_has_no_header(self):
+        """The name list above, held against the predicate it stands for.
+
+        Three harvest compiles were registered without joining `BARE_CONTAINERS_NAMED_EZHEX`, and what
+        reported it was thirteen failures elsewhere in this file, each a header check on a file with no
+        header, which reads as a broken reader rather than as a population gap. So both directions are
+        asserted here by name: every listed file has no XML header and starts at its container cookie,
+        and every other `.ezhex` named file has a header. A new bare container fails this test, with
+        its name, until it is listed.
+        """
+        ez = sorted(n for n, f in lab.IMAGES.items() if f.lower().endswith('.ezhex'))
+        lab.require(*ez)
+        headerless = []
+        for name in ez:
+            blob = lab.load(name)
+            if not ezfile.parse_ezhex(blob, name).has_a_header:
+                headerless.append(name)
+                with self.subTest(bare=name):
+                    self.assertEqual(blob[:4], b'GSPM', 'a headerless file starts at its container')
+        self.assertEqual(sorted(headerless), sorted(self.BARE_CONTAINERS_NAMED_EZHEX))
+        self.assertEqual(len(headerless), 11)
 
     def test_every_config_verifies_its_own_split(self):
         # The population up front, so a partial lab skips this whole test rather than shrinking its

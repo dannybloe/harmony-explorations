@@ -248,6 +248,40 @@ CONTAINERS = (
     'h700_prehd_staging_region', 'h700_posthd_staging_region',
     # The blank staging region and the 2.8 staged one, section 297, the same container again.
     'h700_after_failed_stage_region', 'h700_28_staging_region',
+    # **68 samples registered in `tests/lab.py` without a vector**, found on 17 October 2026 when
+    # `test_the_vector_list_covers_every_container_in_the_corpus` was read as failing rather than as
+    # noise. Every one parses and none had a vector, so both codecs had skipped them without saying
+    # so, which is the gap that test exists to report. Their vectors were written by generating only
+    # the missing files, and the 112 already stored were compared first and all still matched.
+    #
+    # The bench regions and configurations of todo-compile-650, in registration order.
+    'h650_clock_base', 'h650_start_base', 'h650_start_config', 'h650_bench_2_3_base',
+    'h650_bench_3_9_base', 'h650_options_base', 'h650_options_config', 'h650_bench_4_2_base',
+    'h650_sequence_config', 'h650_favourites_config', 'h650_favourites_base',
+    'h650_milestone_5_1_base', 'h650_test_config', 'h650_5_2_5_base', 'h650_6_2_13_base',
+    'h650_7_1_base', 'h650_7_1_stopped', 'h650_7_1_probe', 'h650_7_5_base', 'h650_10_5_base',
+    'h650_9_1_2_base', 'h650_stuck_9_1_2', 'h650_freeze_a_base', 'h650_9_1_2_fixed_base',
+    'h650_bright_base', 'h650_8_2_base', 'h650_8_2_6_base', 'h650_empty_blended_base',
+    'h650_11_2_3_base', 'h650_11_2_4_base', 'h650_11_2_4_look_base',
+    'h650_8_2_6_after', 'h650_8_2_6_control', 'h650_test_config_clean', 'h650_milestone_5_1_config',
+    'h650_assistant_off_config', 'h650_tilt_off_config',
+    # The bench regions of todo-compile-700 and todo-compile-600.
+    'h700_before_empty', 'h700_empty_on', 'h700_before_setup', 'h700_six_on', 'h700_seven_on',
+    'h700_bright_on',
+    'h600_before_empty', 'h600_empty_on', 'h600_markoff_on', 'h600_grey2_on', 'h600_blended_on',
+    'h600_setup5_on', 'h600_setup6_on',
+    # The two contributed Harmony 650 configurations of section 323, EZHex wrapped, so their vectors
+    # carry a nonzero blob offset like the other EZHex samples here.
+    'h650_issue36_config', 'h650_issue8_config',
+    # Logitech's harvest compiles, bare containers saved under an `.EzHex` name, section 337 and after.
+    'harvest_one_two_devices', 'harvest_650_two_devices',
+    'harvest_one_families_1', 'harvest_one_families_2', 'harvest_one_families_3',
+    # The friend's Harmony One as it came and after a sync, and the friend's Harmony 525 as it came.
+    'one_friend_asfound_config', 'one_friend_legacy_sync_config', 'h525_friend_asfound_config',
+    # The spare Harmony One's bench regions of todo-compile-one.
+    'one_spare_track_start', 'one_spare_look_base', 'one_spare_look_written',
+    'one_spare_glow_written', 'one_spare_arrows_written', 'one_spare_bottom_written',
+    'one_spare_light60_written', 'one_spare_noassistant_written',
 )
 
 

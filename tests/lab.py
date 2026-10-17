@@ -456,6 +456,11 @@ IMAGES = {
     # and no activity, under names of their own. Section 337.
     'harvest_one_two_devices': 'harvest-one-two-devices.EzHex',
     'harvest_650_two_devices': 'harvest-650-two-devices.EzHex',
+    # The three harvest compiles of `work/harvest/families-one`, infrared families on a test account's
+    # Harmony One record, copied under names of their own as the two above were. **All five harvest
+    # files are bare `GSPM` containers with no EzHex header**, whatever the extension says: the service
+    # names its ZIP member `Result.EzHex` and the harvest writes it byte for byte. So they sit in
+    # `test_ezfile.py`'s `BARE_CONTAINERS_NAMED_EZHEX`, which a test there checks against the bytes.
     'harvest_one_families_1': 'harvest-one-families-1.EzHex',
     'harvest_one_families_2': 'harvest-one-families-2.EzHex',
     'harvest_one_families_3': 'harvest-one-families-3.EzHex',

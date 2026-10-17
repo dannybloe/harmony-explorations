@@ -239,6 +239,36 @@ const CONTAINERS = [
   // The blank staging region and the 2.8 staged one, section 297, the same container again.
   'h700_after_failed_stage_region',
   'h700_28_staging_region',
+  // 68 samples registered without a vector, which the Python side's coverage test reported and nothing
+  // here could: a name missing from both lists is invisible to the comparison below. `tools/golden.py`
+  // carries the same 68 and says how their vectors were written. The bench regions and configurations
+  // of todo-compile-650 first.
+  'h650_clock_base', 'h650_start_base', 'h650_start_config', 'h650_bench_2_3_base',
+  'h650_bench_3_9_base', 'h650_options_base', 'h650_options_config', 'h650_bench_4_2_base',
+  'h650_sequence_config', 'h650_favourites_config', 'h650_favourites_base',
+  'h650_milestone_5_1_base', 'h650_test_config', 'h650_5_2_5_base', 'h650_6_2_13_base',
+  'h650_7_1_base', 'h650_7_1_stopped', 'h650_7_1_probe', 'h650_7_5_base', 'h650_10_5_base',
+  'h650_9_1_2_base', 'h650_stuck_9_1_2', 'h650_freeze_a_base', 'h650_9_1_2_fixed_base',
+  'h650_bright_base', 'h650_8_2_base', 'h650_8_2_6_base', 'h650_empty_blended_base',
+  'h650_11_2_3_base', 'h650_11_2_4_base', 'h650_11_2_4_look_base',
+  'h650_8_2_6_after', 'h650_8_2_6_control', 'h650_test_config_clean', 'h650_milestone_5_1_config',
+  'h650_assistant_off_config', 'h650_tilt_off_config',
+  // The bench regions of todo-compile-700 and todo-compile-600.
+  'h700_before_empty', 'h700_empty_on', 'h700_before_setup', 'h700_six_on', 'h700_seven_on',
+  'h700_bright_on',
+  'h600_before_empty', 'h600_empty_on', 'h600_markoff_on', 'h600_grey2_on', 'h600_blended_on',
+  'h600_setup5_on', 'h600_setup6_on',
+  // The two contributed Harmony 650 configurations of section 323, EZHex wrapped.
+  'h650_issue36_config', 'h650_issue8_config',
+  // Logitech's harvest compiles, bare containers under an `.EzHex` name, section 337 and after.
+  'harvest_one_two_devices', 'harvest_650_two_devices',
+  'harvest_one_families_1', 'harvest_one_families_2', 'harvest_one_families_3',
+  // The friend's Harmony One as it came and after a sync, and the friend's Harmony 525 as it came.
+  'one_friend_asfound_config', 'one_friend_legacy_sync_config', 'h525_friend_asfound_config',
+  // The spare Harmony One's bench regions of todo-compile-one.
+  'one_spare_track_start', 'one_spare_look_base', 'one_spare_look_written',
+  'one_spare_glow_written', 'one_spare_arrows_written', 'one_spare_bottom_written',
+  'one_spare_light60_written', 'one_spare_noassistant_written',
 ];
 
 for (const name of CONTAINERS) {
@@ -348,7 +378,8 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // 308's one, 102 since the 650's region before section 309's test device, 103 since the one after it.
   // 112 with the 650's eight bench compare bases after the seventh device and section 335's third
   // bench configuration, which had been registered without a vector.
-  assert.equal(present.length, 112, 'every vector, which is what `make golden` compares');
+  // 180 with the 68 other samples registered without one, listed at the end of `CONTAINERS`.
+  assert.equal(present.length, 180, 'every vector, which is what `make golden` compares');
   // 38 since the Harmony 895 landed: its key table reads with the existing reader even though
   // every other arch 10 reader is gated, which is what made section 177's keypad closure possible
   // without any arch 10 progress at all.
@@ -394,7 +425,9 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // 92 since section 306's two compiles, 95 since 307's three, 96 since 308's one, 97 since
   // the 650's region before section 309's test device, 98 since the one after it.
   // 107 with the 650's eight bench compare bases and section 335's third bench configuration.
-  assert.equal(complete, 107, 'the vectors whose container has a key table at all');
+  // 174 with the 68 registered without a vector: 67 have one, and the friend's Harmony 525 is the one
+  // that does not, an arch 9 container like the other Harmony 525 samples here.
+  assert.equal(complete, 174, 'the vectors whose container has a key table at all');
 
   // **The number sender field, and why it needs its own guard.** It is an empty array on 30 vectors
   // and null on 8, with eight carrying a record since 30 August 2026, and this comment said 25 and 9
@@ -446,7 +479,8 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // 64 since 308's one, and 65 since the 650's region before section 309's test device, 66 since the one after it.
   // 75 with the 650's eight bench compare bases and section 335's third bench configuration, none of
   // which declares one.
-  assert.equal(senders.filter((one) => Array.isArray(one) && one.length === 0).length, 75);
+  // 136 with the 68 registered without a vector: 61 of them declare none, and none of the 68 is null.
+  assert.equal(senders.filter((one) => Array.isArray(one) && one.length === 0).length, 136);
   // **Four since the second compiled sample**, and the reason is the account rather than the request:
   // every configuration compiled from the account that carries favourite channels carries the sender
   // record too, whichever appliances are on it that day. Three of them were made deliberately for base
@@ -487,7 +521,10 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // 28 since the compare base for the working screen write, section 279, one erase and write further.
   // 29 since the compare base for the power off write, section 280, and 30 since the one for the
   // four page activity menu write, section 293.
-  assert.equal(senders.filter((one) => Array.isArray(one) && one.length > 0).length, 30,
+  // 37 with the 68 registered without a vector, seven of which populate it: the Harmony 650's
+  // favourites configuration and region, its milestone 5.1 base and its assistant off and tilt off
+  // configurations, and the spare Harmony One's track start and look base regions.
+  assert.equal(senders.filter((one) => Array.isArray(one) && one.length > 0).length, 37,
     'the configs that populate base slot 16');
 });
 
@@ -523,7 +560,8 @@ test('the list above covers exactly what the Python side writes a vector for', (
   // 97 since section 306's two compiles, 100 since 307's three, 101 since 308's one, and 102 since
   // the 650's region before section 309's test device, 103 since its region after it.
   // 112 with the 650's eight bench compare bases and section 335's third bench configuration.
-  assert.equal(python.length, 112, 'the golden vectors, which is what `make golden` prints');
+  // 180 with the 68 other samples registered without a vector.
+  assert.equal(python.length, 180, 'the golden vectors, which is what `make golden` prints');
   assert.deepEqual([...CONTAINERS].sort(), python.sort());
 });
 

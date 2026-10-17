@@ -36,6 +36,11 @@ def _concordance_config_base(architecture):
     """`config_base` for an architecture, or None when the checkout is not beside this one."""
     try:
         import test_concordance_notes
+        # No checkout found: `_read` would join onto None and raise a TypeError, which this function
+        # did not catch, so both tests calling it errored instead of skipping. Seen in a git worktree,
+        # where the sibling `concordance` is not beside the checkout.
+        if test_concordance_notes.SRC is None:
+            return None
         return test_concordance_notes._arch_table()[architecture]['config_base']
     except (ImportError, OSError, KeyError):
         return None
