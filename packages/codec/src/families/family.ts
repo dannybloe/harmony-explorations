@@ -22,6 +22,7 @@ import type { Writer } from '../emit.ts';
 import type { ComposeActivity } from '../shared/activities.ts';
 import type { ComposeDevice, ComposedDevice } from '../shared/devices.ts';
 import type { WiringChecked } from '../wiringparts.ts';
+import type { BlendedSet } from '../blending.ts';
 import type {
   ComposeActivityRowOptions, ComposeActivityScreenOptions, ComposedActivityRow, ComposedActivityScreen, ComposedScreen,
   ComposeRow, ComposeScreenOptions,
@@ -319,6 +320,22 @@ export interface Family<Choices extends CommonChoices = CommonChoices> {
    */
   readonly composedLook?: {
     letterDonor(c: Container, choices: Choices): { readonly bytes: Uint8Array; readonly faces: readonly SetFace[] };
-    look(c: Container, faces: readonly SetFace[], choices: Choices, deviceType: (name: string | undefined) => number | undefined): Container;
+    /**
+     * The look over the composed file, with the copies of each set its blending made, `withBlendedLetters`, so
+     * that a reader of the result can point a blended select back at the set it was blended from,
+     * `unblendedSelects`; empty where the look blends nothing.
+     */
+    look(c: Container, faces: readonly SetFace[], choices: Choices, deviceType: (name: string | undefined) => number | undefined):
+      { readonly container: Container; readonly blended: readonly BlendedSet[] };
   };
+  /**
+   * The parts the family's builders make from a description over a setup composed onto a Logitech compile,
+   * `composeSetup`, where it has builders for parts the donor carries: run after the composers and before the
+   * look, each part described off the configuration composed so far, built, and put in place of the donor's,
+   * so its bytes come out of the builder rather than out of the donor. Refuses with the builder's refusal where
+   * a builder refuses the configuration, never falling back to the donor's part; returns the configuration and
+   * the names of the parts built, in the order built. The Harmony One's, `todo-compile-one.md` 3.2.2:
+   * `families/touch/builders.ts`. Absent, every part no composer writes stays the donor's.
+   */
+  readonly composedBuilders?: (c: Container) => { readonly container: Container; readonly built: readonly string[] };
 }

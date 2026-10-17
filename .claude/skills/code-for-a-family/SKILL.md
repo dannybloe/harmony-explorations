@@ -91,6 +91,8 @@ and fails when a module joins the list or a count on it rises. The list is the d
 | which of our faces a set of Logitech's becomes, whether two sets may share a glyph, and which of a family's skins its faces were measured on | `Family.fonts`, the family's `fonts.ts`; the shared font table measures a set the same way for every family and asks, and the faces themselves stay one catalogue in `lettering.ts`, since every family's are drawn and read back by the same code |
 | a keypad's scan range, the key map over it and mode 0's list; the chain that builds a whole configuration from a setup, with the skins it takes | the family's `modezero.ts`, `assemble.ts` and `skins.ts`; what every family's lists share stays outside: the order a key list is stored in, `modezero.ts`, and the renumbering of base slot 10, `assemble.ts`. A module still outside the family takes a family's name through the family's index, on an import it already has |
 
+| which of a family's builders run over a setup composed onto a Logitech compile, in place of the donor's parts, and what of the finished file they reproduce | `Family.composedBuilders`, the Harmony One's `families/touch/builders.ts` with its attribution `touchBuiltBytes`; `composeSetup` calls the member and names no builder, `todo-compile-one.md` 3.2.2 |
+
 Add a row when a new kind of difference lands.
 
 ## Related

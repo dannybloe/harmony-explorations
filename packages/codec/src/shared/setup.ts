@@ -1,8 +1,9 @@
 /**
  * A recipe's devices and activities put onto a donor by the composers, plan 007's shared part: the steps
  * every family takes, whatever builds the rest. `assembleSetup` runs them on a Harmony 600, 650 or 700
- * before its generators, and `composeSetup` runs them alone on a family the generators do not build for
- * yet, the Harmony One, `todo-compile-one.md` 1.2. Cut out of `assemble.ts` unchanged but for asking the
+ * before its generators, and `composeSetup` runs them on a family no assembly builds whole yet, the Harmony
+ * One, `todo-compile-one.md` 1.2, followed since 3.2.2 by the builders that family has for parts the donor
+ * carried, `Family.composedBuilders`. Cut out of `assemble.ts` unchanged but for asking the
  * family's choices where it read the four slot family's: the activity keys and the delays.
  */
 import { type Recipe, type RecipeActivity, type RecipeDevice, type RecipeTarget, recipeTarget } from '../recipe/recipe.ts';
@@ -12,6 +13,7 @@ import { coverage } from '../coverage.ts';
 import { trailerAgrees } from '../growth.ts';
 import { roundTrip } from '../emit.ts';
 import { assertQueueFits } from '../queue.ts';
+import type { BlendedSet } from '../blending.ts';
 import { assertStateTableConsistent } from '../sections.ts';
 import type { CommonChoices, Family } from '../families/family.ts';
 import { parse, type Container } from '../gspm.ts';
@@ -73,7 +75,7 @@ export interface SetupParts {
  * the donor checked to hold nothing the setup does not, the devices it lacks composed from the catalogue,
  * keep on applied to its activities, and the activities it lacks composed. Shared by `assembleSetup` and
  * `composeSetup`, which differ in what runs after: the assembly builds every part a generator exists for,
- * and `composeSetup` keeps the donor's.
+ * and `composeSetup` keeps the donor's but for the parts its family's builders make, `Family.composedBuilders`.
  */
 export function composeSetupParts(
   donor: Container, setup: Recipe, target: RecipeTarget, options: AssembleOptions, parts: SetupParts,
@@ -388,13 +390,19 @@ export interface ComposedSetup {
   keptOn: string[];
   /** The setup's devices and activities the composers added, by the setup's name, in the order added. */
   composed: { devices: string[]; activities: string[] };
+  /**
+   * The copies of a font set the family's look blended, empty where it blends nothing: what a reader of the result
+   * needs to point a blended select back at its set, `unblendedSelects`, as the Harmony One's attribution does.
+   */
+  blended: readonly BlendedSet[];
 }
 
 /**
- * The setup's devices and activities put onto the donor by the composers alone, every other byte the
- * donor's: the first file of `todo-compile-one.md`, a Logitech compile with the test setup composed onto
- * it, for a family no generator builds for yet. The family is the recipe's model's and its choices are the
- * family's own; a recipe stating choices is refused, since what a choice changes is the generators' work.
+ * The setup's devices and activities put onto the donor by the composers, and the parts the family has builders
+ * for put in place of the donor's, `Family.composedBuilders`; every other byte the donor's: the first file of
+ * `todo-compile-one.md`, a Logitech compile with the test setup composed onto it, for a family no assembly builds
+ * whole yet, with its parts built one at a time since 3.2.2. The family is the recipe's model's and its choices
+ * are the family's own; a recipe stating choices is refused, since what a choice changes is the generators' work.
  */
 export function composeSetup(setup: Recipe, options: AssembleOptions): ComposedSetup {
   const target = recipeTarget(setup);
@@ -421,8 +429,21 @@ export function composeSetup(setup: Recipe, options: AssembleOptions): ComposedS
   }
   const parts = composeSetupParts(c, setup, target, options, { family: target.family, choices: target.family.choices }, note);
   c = parts.container;
+  // The parts the family's builders make, each from a description of the configuration composed so far, in place
+  // of the donor's, `todo-compile-one.md` 3.2.2: before the look, whose blending gives one role of a screen several
+  // fonts, which a builder's description refuses. A builder's refusal is the composition's; nothing falls back to
+  // the donor's part.
+  const builders = target.family.composedBuilders;
+  if (builders !== undefined) {
+    const built = builders(c);
+    c = built.container;
+    note('built', built.built.join(', '));
+  }
+  let blended: readonly BlendedSet[] = [];
   if (look !== undefined && lettered !== undefined) {
-    c = look.look(c, lettered.faces, target.family.choices, catalogueTypes(setup, options.archive));
+    const looked = look.look(c, lettered.faces, target.family.choices, catalogueTypes(setup, options.archive));
+    c = looked.container;
+    blended = looked.blended;
     note('look');
   }
   if (options.builtAt !== undefined) {
@@ -430,5 +451,5 @@ export function composeSetup(setup: Recipe, options: AssembleOptions): ComposedS
     note('stamped', options.builtAt);
   }
   checkComposed(c);
-  return { bytes: c.blob, container: c, steps, keptOn: parts.keptOn, composed: parts.composed };
+  return { bytes: c.blob, container: c, steps, keptOn: parts.keptOn, composed: parts.composed, blended };
 }

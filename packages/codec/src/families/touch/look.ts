@@ -7,7 +7,7 @@
  * has to find its letters in the configuration's sets, section 396, so the donor is lettered first, and the rest
  * runs on the composed file, the blending last, since it smooths each label against what ends up behind it.
  */
-import { checkBlendedLetters, withBlendedLetters } from '../../blending.ts';
+import { type BlendedSet, checkBlendedLetters, withBlendedLetters } from '../../blending.ts';
 import { type SetFace, withOxaniumFonts } from '../../fonttable.ts';
 import { layOutContainer, takeApart } from '../../frame.ts';
 import type { Container } from '../../gspm.ts';
@@ -41,10 +41,14 @@ export function letterTouchDonor(c: Container, choices: TouchChoices): LetteredD
  * circles, every pad's label centred by its letters, every text smoothed against the colour under it, and the
  * screen light's time, and the Remote Assistant and welcome screen at start left out unless chosen. `deviceType` names a device's catalogue type by the name the configuration states, which
  * picks its icon from `choices.deviceIcons`.
+ *
+ * Returns the copies the blending made with the configuration, since a select it repointed names a copy and a
+ * reader that knows a role by one font, a screen builder's description, has to be pointed back at the set the
+ * copy was blended from to read the result, `unblendedSelects`; `todo-compile-one.md` 3.2.2's attribution does.
  */
 export function withTouchLook(
   c: Container, faces: readonly SetFace[], choices: TouchChoices, deviceType: (name: string | undefined) => number | undefined,
-): Container {
+): { container: Container; blended: readonly BlendedSet[] } {
   const looked = withTouchDeviceLook(c, choices, (name) => {
     const type = deviceType(name);
     return type === undefined ? undefined : choices.deviceIcons[type];
@@ -54,5 +58,5 @@ export function withTouchLook(
   const blended = layOutContainer(blending.layout).container;
   checkBlendedLetters(blended, faces, blending.blended);
   const lit = withScreenLight(blended, choices.screenLightSeconds);
-  return choices.startupAssistant ? lit : withoutStartupAssistant(lit);
+  return { container: choices.startupAssistant ? lit : withoutStartupAssistant(lit), blended: blending.blended };
 }

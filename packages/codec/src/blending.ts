@@ -36,9 +36,10 @@
  * A select already pointing at a set smoothed for one background, one a font step added, `ExtraFontSet`, is
  * left as it is: its letters are right where they are drawn, and a copy of a copy would blend twice.
  */
-import type { Container } from './gspm.ts';
+import { type Container, parse } from './gspm.ts';
 import type { ContainerLayout, ContainerPiece, PieceRef } from './frame.ts';
-import { layOutContainer } from './frame.ts';
+import { layOutContainer, takeApart } from './frame.ts';
+import { SCREEN_SELECT_FONT, reachablePrograms } from './screen.ts';
 import { IMAGE_TABLE_SLOT, encodeGlyph, fontSets, glyphOf } from './font.ts';
 import { characterMap } from './text.ts';
 import { letterRows, type OxaniumWeight } from './lettering.ts';
@@ -303,4 +304,35 @@ export function checkBlendedLetters(c: Container, faces: readonly SetFace[], ble
     strings += 1;
   }
   return { strings, glyphs };
+}
+
+/**
+ * The configuration with every font select the blending pointed at a copy pointed back at the set the copy was
+ * blended from, `blended` being what `withBlendedLetters` made of it: the same length and every other byte as
+ * it is, the copies themselves left in the font table, named by nothing, and the trailer restated.
+ *
+ * **What it is for**: a reader that knows a role by one font. The blending gives a select the copy for the
+ * colour under its strings, so the selects one role makes on several backgrounds name several sets after it,
+ * where they named one before; a screen builder's description refuses that, as it should on a compile of
+ * Logitech's, which blends nothing. Pointed back, the configuration reads as it did before the blending, which
+ * is what `todo-compile-one.md` 3.2.2's attribution describes the screens off. Only a select some page reaches,
+ * `reachablePrograms`, is pointed back; the blending reads its selects off the same pages' renderings, and one
+ * it repointed that this misses stays a copy, which the description then refuses rather than misreads.
+ */
+export function unblendedSelects(c: Container, blended: readonly BlendedSet[]): Container {
+  if (blended.length === 0) return c;
+  const source = new Map(blended.map((one) => [one.set, one.source]));
+  const bytes = c.blob.slice();
+  for (const program of reachablePrograms(c).values()) {
+    for (const one of program) {
+      if (one.opcode !== SCREEN_SELECT_FONT) continue;
+      const from = source.get(one.operands[0] ?? -1);
+      if (from === undefined) continue;
+      // `start` is the opcode's blob offset, and a select is the opcode and the set, `withBlendedLetters`' check.
+      if (bytes[one.start] !== SCREEN_SELECT_FONT) throw new FontTableError(`the select at ${one.start} is not where its program puts it`);
+      bytes[one.start + 1] = from;
+    }
+  }
+  // Laid out again so the trailer agrees with the bytes; nothing moves, since no length changed.
+  return layOutContainer(takeApart(parse(bytes))).container;
 }

@@ -15,6 +15,7 @@ import { TOUCH_FONTS } from './fonts.ts';
 import { checkTouchWiring } from './wiring.ts';
 import { TOUCH_SENDS } from './sends.ts';
 import { TOUCH_START } from './start.ts';
+import { withTouchBuilders } from './builders.ts';
 
 export const TOUCH: Family<TouchChoices> = {
   name: 'the Harmony One',
@@ -40,4 +41,6 @@ export const TOUCH: Family<TouchChoices> = {
   // `todo-compile-one.md` 1.2.11.2.4.
   activityDeviceList: (c) => c.blob,
   composedLook: { letterDonor: letterTouchDonor, look: withTouchLook },
+  // The parts the donor carried that a builder of the family's makes from a description, `todo-compile-one.md` 3.2.2.
+  composedBuilders: withTouchBuilders,
 };

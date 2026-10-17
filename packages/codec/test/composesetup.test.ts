@@ -16,6 +16,7 @@ import { characterMap } from '../src/text.ts';
 import { timers } from '../src/tables.ts';
 import { touchScreenLightTimer } from '../src/families/touch/screenlight.ts';
 import { TOUCH_CHOICES } from '../src/families/touch/choices.ts';
+import { TOUCH_BUILT, type TouchBuiltBytes, touchBuiltBytes } from '../src/families/touch/builders.ts';
 
 const recipe = () => readRecipe(JSON.parse(readFileSync(new URL('../../corpus/setups/one-test.json', import.meta.url), 'utf8')));
 
@@ -104,16 +105,29 @@ interface Unit { kind: string; key: string; skeleton: string; bytes: number }
  * thing sits abstracted), and every other byte by the first claim of `coverage.ts` that holds it, keyed by its
  * bytes with every address field the census knows zeroed. A unit's skeleton is its key with the texts, fonts,
  * text positions and pictures abstracted, which is what is left of a screen once ours are put in.
+ *
+ * `built`, per byte, is nonzero where a builder on the composed path reproduces the byte, `touchBuiltBytes`, since
+ * `todo-compile-one.md` 3.2.2: a unit counts only its bytes no builder reproduces, and a unit every byte of which
+ * a builder reproduces is left out, so it neither counts nor takes a donor unit a carried one could match. A
+ * builder's part comes out byte for byte as Logitech's in places, the wiring whole, and only this tells it from
+ * the donor's.
  */
-function unitsOf(c: Container): Unit[] {
+function unitsOf(c: Container, built?: Uint8Array): Unit[] {
   const out: Unit[] = [];
   const owned = new Uint8Array(c.blob.length);
+  const left = (from: number, to: number): number => {
+    let n = 0;
+    for (let i = from; i < to; i += 1) if (built === undefined || built[i] === 0) n += 1;
+    return n;
+  };
   for (const unit of screenUnits(c)!) {
     const skeleton = unit.verbatim
       .replace(/(^|[ :|#[])(4|5)\(([0-9a-f]{4})\)[0-9a-f]*/g, '$1T').replace(/F\d+/g, 'F').replace(/@pic:[0-9a-f?]+/g, '@pic');
-    out.push({ kind: unit.kind === 'mode' ? `mode ${unit.role}` : unit.kind, key: `${unit.kind}|${unit.verbatim}`,
-               skeleton: `${unit.kind}|${skeleton}`, bytes: unit.bytes });
     for (const range of unit.ranges) owned.fill(1, range.start, range.start + range.length);
+    const bytes = unit.ranges.reduce((n, range) => n + left(range.start, range.start + range.length), 0);
+    if (bytes === 0) continue;
+    out.push({ kind: unit.kind === 'mode' ? `mode ${unit.role}` : unit.kind, key: `${unit.kind}|${unit.verbatim}`,
+               skeleton: `${unit.kind}|${skeleton}`, bytes });
   }
   const zeroed = c.blob.slice();
   for (const field of pointers(c)) zeroed.fill(0, field.at, field.at + 3);
@@ -121,7 +135,10 @@ function unitsOf(c: Container): Unit[] {
     if (SCREEN_OWNERS.has(claim.owner)) continue;
     let fresh = 0;
     for (let i = claim.start; i < claim.start + claim.length; i += 1) {
-      if (owned[i] === 0) { owned[i] = 1; fresh += 1; }
+      if (owned[i] === 0) {
+        owned[i] = 1;
+        if (built === undefined || built[i] === 0) fresh += 1;
+      }
     }
     if (fresh === 0) continue;
     const key = `${claim.owner}|${Buffer.from(zeroed.subarray(claim.start, claim.start + claim.length)).toString('hex')}`;
@@ -134,9 +151,9 @@ function unitsOf(c: Container): Unit[] {
 
 /**
  * The output's bytes per kind whose unit the donor holds: verbatim first, then by skeleton among the donor's units
- * not taken, each donor unit taken once.
+ * not taken, each donor unit taken once. `built` is the output's bytes a builder reproduces, which are not carried.
  */
-function carried(out: Container, donor: Container): Record<string, number> {
+function carried(out: Container, donor: Container, built?: Uint8Array): Record<string, number> {
   const tally = (units: Unit[], field: 'key' | 'skeleton'): Map<string, number> => {
     const m = new Map<string, number>();
     for (const one of units) m.set(one[field], (m.get(one[field]) ?? 0) + 1);
@@ -148,7 +165,7 @@ function carried(out: Container, donor: Container): Record<string, number> {
   const result: Record<string, number> = {};
   const take = (one: Unit): void => { result[one.kind] = (result[one.kind] ?? 0) + one.bytes; };
   const rest: Unit[] = [];
-  for (const one of unitsOf(out).filter((unit) => !NEVER_CARRIED.has(unit.kind))) {
+  for (const one of unitsOf(out, built).filter((unit) => !NEVER_CARRIED.has(unit.kind))) {
     const left = keys.get(one.key) ?? 0;
     if (left === 0) { rest.push(one); continue; }
     keys.set(one.key, left - 1);
@@ -164,23 +181,52 @@ function carried(out: Container, donor: Container): Record<string, number> {
   return result;
 }
 
-test('todo-compile-one 3.2: the One\'s composed test setup carries 1162052 of its 1751852 bytes out of Logitech\'s donor, per kind as pinned here, a list that may only shrink',
+/** What the builders on the composed path reproduce of the composed setup, measured on it once: about half a minute. */
+let builtOnce: TouchBuiltBytes | undefined;
+const builtBytes = (): TouchBuiltBytes => {
+  builtOnce ??= touchBuiltBytes(composed().container, composed().blended);
+  return builtOnce;
+};
+
+test('todo-compile-one 3.2.2: the firmware screens, the fixed screens, the tour and Remote Assistant, the wiring and the state tables of the composed setup come out of the touch family\'s builders, run on the composed path and measured on the result',
+     NEEDS, () => {
+  const out = composed();
+  // On the path: one step after the composers and before the look, naming the five parts in the order built.
+  const names = out.steps.map((one) => one.step);
+  assert.equal(out.steps.find((one) => one.step === 'built')?.detail, TOUCH_BUILT.join(', '));
+  assert.ok(names.indexOf('activity composed') < names.indexOf('built') && names.indexOf('built') < names.indexOf('look'));
+  // The look blended our letters for thirteen backgrounds, and a screen's description reads the result only with
+  // those selects pointed back: as the look left it, the firmware screens' body text is in two fonts.
+  assert.equal(out.blended.length, 13);
+  assert.throws(() => touchBuiltBytes(out.container, []), /firmware screens: the firmware screens select two fonts for one role/);
+  // Measured on the finished file, no memory of the path: each part described, rebuilt and held to the file byte
+  // for byte, through the look's blending and centring; then its bytes, and of those the description's.
+  const a = builtBytes();
+  assert.deepEqual(a.generated, {
+    'firmware screens': 3099, 'fixed screens': 13139, 'tour and Remote Assistant': 3900, wiring: 4527, 'state tables': 2322,
+  });
+  assert.deepEqual(a.described, {
+    'firmware screens': 401, 'fixed screens': 3967, 'tour and Remote Assistant': 680, wiring: 1243, 'state tables': 0,
+  });
+});
+
+test('todo-compile-one 3.2: the One\'s composed test setup carries 1136980 of its 1751852 bytes out of Logitech\'s donor, per kind as pinned here, a list that may only shrink',
      NEEDS, () => {
   const out = composed().container;
-  const got = carried(out, parse(require_('harvest_one_two_devices')));
+  const got = carried(out, parse(require_('harvest_one_two_devices')), builtBytes().owners);
   // Each kind with the item that builds it, `todo-compile-one.md` 3.2. A builder joining the composed path
-  // lowers its row; a row that rises is a composer that started copying.
+  // lowers its row; a row that rises is a composer that started copying. 1162052 when 3.2.1 listed it; 3.2.2's
+  // first step put the firmware screens, the fixed screens, the tour and Remote Assistant, the wiring and the state
+  // tables on the path, 25072 bytes, the sum 3.2.1 listed for the five: `mode system` and every row of base slots 2,
+  // 4, 8, 9, 12, 13, 14 and 15 went, and `mode other`, `mode status` and the lists came down.
   assert.deepEqual(got, {
     'picture': 1012839, // 5.3: the 36 every compile holds, the clock's 16 and the donor's 6
     'slot-5-block': 96946, 'slot-5-header': 4116, 'slot-5-group': 594, // the donor's two devices' infrared, 8.1
-    'slot-10-list': 17609, // per builder in the listing
-    'mode other': 11983, 'mode status': 4025, 'mode system': 970, 'mode device': 4569,
+    'slot-10-list': 6649, // per builder in the listing: 17609 before 3.2.2
+    'mode other': 1495, 'mode status': 3379, 'mode device': 4569, // 11983, 4025 and the same before 3.2.2
     'dynamic-program': 3516, 'hit-page': 2444, 'case-program': 341, 'table': 89,
-    'slot-9-list': 892, 'slot-12-record': 189, 'slot-12-table': 82, 'slot-4-event': 125, 'slot-8-list': 4, 'slot-2-log': 9,
-    'slot-15-group': 139, 'slot-15-table': 34, 'slot-15-band-fields': 8, 'slot-15-band-pair': 4, // 6.3
-    'slot-13-record': 317, 'slot-14-record': 156, 'slot-14-table': 49, // 6.4
     'raw-18-table': 2, 'slot-16-table': 1,
   });
-  assert.equal(Object.values(got).reduce((sum, one) => sum + one, 0), 1162052);
+  assert.equal(Object.values(got).reduce((sum, one) => sum + one, 0), 1136980);
   assert.equal(out.blob.length, 1751852);
 });
