@@ -2579,6 +2579,12 @@ and 4 of the 78 fixed modes (the clock's pickers on both, Options and the absent
 One's compile only), and the Dutch compile in 69 of the 78, every one that draws text.
 Nothing in a configuration states its language. [findings.md](findings.md) section 405.
 
+**Read and put back by the record machinery**, `todo-compile-one.md` 4.4.2: `recordReading` reads a One page
+record as seven bytes, the hit page, then the list and program addresses, describing the hit page; follows a
+page program's `0x16` call to its chrome and spans the chrome as a piece of its own; and `recordOf` writes
+both back. All 40 head screens of all nineteen One compiles come back byte for byte with nothing generated,
+`packages/codec/test/screenrecords-one.test.ts`.
+
 **Which of the 78 the 3.4 firmware draws by number**: one. A mode becomes current only from an `0x7E` operand, the
 mode stack (a mode that was current) or base slot 4, and base slot 4 is walked only for status code 9, "LCD Module
 Failed", after the licence check passed and while the configuration's verdict stands, so its key 9 (mode 19 in

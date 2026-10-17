@@ -99,10 +99,10 @@ import {
 import { STATE_WRITE_BASE } from './actions.ts';
 import { KEYPAD_FIRST_SCAN, KEYPAD_LAST_SCAN } from './modezero.ts';
 import {
-  ACTION_LIST_INDEX_OPCODE, type ModePage, type ModeRecord, type TaggedList, modePages, modeRecords, pageListCopies, taggedList,
-  taggedListBytes,
+  ACTION_LIST_INDEX_OPCODE, MODE_PAGE_POINTERS, type ModePage, type ModeRecord, type TaggedList, modePages, modeRecords,
+  pageListCopies, taggedList, taggedListBytes,
 } from './sections.ts';
-import { SCREEN_DRAW_IMAGE, SCREEN_DRAW_IMAGE_AT, type ScreenInstruction, screenProgram } from './screen.ts';
+import { SCREEN_CALL, SCREEN_DRAW_IMAGE, SCREEN_DRAW_IMAGE_AT, type ScreenInstruction, screenProgram } from './screen.ts';
 import { describeWiring } from './wiring.ts';
 import type { PieceTarget } from './statetables.ts';
 
@@ -119,8 +119,12 @@ export const SCREEN_RECORD_KINDS: readonly ScreenRecordKind[] = ['idle device li
  */
 export const OFF_TITLE = 'Turning system off';
 
-/** A page record on arch 14 is two pointers, the list then the program, section 66. */
-const PAGE_RECORD_LENGTH = 6;
+/**
+ * A page record is two pointers, the list then the program, section 66, and on the Harmony One a lead byte
+ * in front naming the page's hit page, section 275, which the reader reports as `ModePage.lead`.
+ */
+const PAGE_RECORD_LENGTH = MODE_PAGE_POINTERS;
+const pageRecordLength = (page: ModePage): number => MODE_PAGE_POINTERS + (page.lead === undefined ? 0 : 1);
 /** A mode entry: kind, the back pointer, the page count, then three bytes per page, section 52. */
 const ENTRY_HEAD = 6;
 
@@ -293,6 +297,8 @@ export interface RecordPageFrame {
   recordPiece: ContainerPiece;
   listPiece: ContainerPiece;
   copyAt: PieceTarget & { length: number };
+  /** The program the page calls, the Harmony One's chrome, read as a page's program is; absent elsewhere. */
+  chrome?: { program: ScreenInstruction[]; piece: ContainerPiece };
 }
 
 /** A mode record as `RecordReading.frame` reads it: its own key map, its entry and its pages. */
@@ -315,6 +321,8 @@ export interface RecordPlace {
   entry: ContainerPiece;
   /** Each page list's second copy: where it sits, and its length. */
   copies: (PieceTarget & { length: number })[];
+  /** The programs the pages call, each once: the Harmony One's chrome. Empty where the pages call none. */
+  chromes: ContainerPiece[];
 }
 
 /**
@@ -401,7 +409,8 @@ export function recordReading(c: Container, layout: ContainerLayout, read: Value
   const allPages = modePages(c);
   const copies = pageListCopies(c);
   const actionLists = c.actionLists() ?? [];
-  const listAddresses = c.pointerArrayAt(archSlot(14, ACTION_TABLE_SLOT))?.values ?? [];
+  if (c.architecture === undefined) throw new ScreenRecordError('the configuration states no architecture');
+  const listAddresses = c.pointerArrayAt(archSlot(c.architecture, ACTION_TABLE_SLOT))?.values ?? [];
   const structure = new Set<number>();
   const addresses = { read: new Set<number>(), built: new Set<number>() };
   const regions: RecordReading['regions'] = [];
@@ -433,12 +442,16 @@ export function recordReading(c: Container, layout: ContainerLayout, read: Value
     span(entryOff, record.entryLength, `the ${kind}'s entry`);
     addressField(entryOff + 1, 'built');
     const pages = record.pages.map((page, p): RecordPageFrame => {
-      if (page.length !== PAGE_RECORD_LENGTH) throw new ScreenRecordError(`${kind}'s page ${p + 1} is not a six byte page record`);
+      const recordLength = pageRecordLength(page);
+      if (page.length !== recordLength) throw new ScreenRecordError(`${kind}'s page ${p + 1} is not a ${recordLength} byte page record`);
       const recordOff = blobOf(page.address);
       addressField(entryOff + ENTRY_HEAD + 3 * p, 'built');
-      span(recordOff, PAGE_RECORD_LENGTH, `the ${kind}'s page ${p + 1}'s record`);
-      addressField(recordOff, 'built');
-      addressField(recordOff + 3, 'built');
+      span(recordOff, recordLength, `the ${kind}'s page ${p + 1}'s record`);
+      // The lead, the hit page the page is touched through, is the description's; the pointers are built.
+      const lead = recordLength - PAGE_RECORD_LENGTH;
+      if (lead > 0) value(recordOff);
+      addressField(recordOff + lead, 'built');
+      addressField(recordOff + lead + 3, 'built');
       const listOff = blobOf(page.list);
       const list = taggedList(c, page.list);
       const program = screenProgram(c, page.program);
@@ -454,22 +467,45 @@ export function recordReading(c: Container, layout: ContainerLayout, read: Value
       const recordPiece = wholePiece(page.address, `${kind}'s page ${p + 1}'s record`);
       const listPiece = wholePiece(page.list, `${kind}'s page ${p + 1}'s list`);
       lengths.set(programPiece, programLength);
-      lengths.set(recordPiece, PAGE_RECORD_LENGTH);
+      lengths.set(recordPiece, recordLength);
       lengths.set(listPiece, list.length);
       span(programOff, programLength, `the ${kind}'s page ${p + 1}'s program`);
       span(listOff, list.length, `the ${kind}'s page ${p + 1}'s list`);
       span(copyOff, copy.length, `the ${kind}'s page ${p + 1}'s copy`);
       programPieces.add(programPiece);
-      const texts = new Map<number, string>();
-      for (const one of program) {
-        if (one.opcode === 0x02 || one.opcode === 0x03) addressField(one.start + one.length - 3, 'read');
-        if (one.opcode === 0x05 && one.glyphs !== undefined) texts.set(one.start + 3 - programOff, [...one.glyphs].join(','));
-        if (one.opcode === 0x04) textRefs.push({ at: one.start + 3, one });
+      const readProgram = (piece: ContainerPiece, instructions: ScreenInstruction[], at: number): void => {
+        const texts = new Map<number, string>();
+        for (const one of instructions) {
+          if (one.opcode === 0x02 || one.opcode === 0x03) addressField(one.start + one.length - 3, 'read');
+          if (one.opcode === 0x05 && one.glyphs !== undefined) texts.set(one.start + 3 - at, [...one.glyphs].join(','));
+          if (one.opcode === 0x04) textRefs.push({ at: one.start + 3, one });
+        }
+        inline.set(piece, texts);
+      };
+      readProgram(programPiece, program, programOff);
+      // The chrome a Harmony One page calls, read once however many pages call it, `chromes`.
+      const call = program.find((one) => one.opcode === SCREEN_CALL && one.targets[0] !== undefined);
+      let chrome: RecordPageFrame['chrome'];
+      if (call !== undefined) {
+        const target = call.targets[0] as number;
+        addressField(call.start + 1, 'built');
+        const instructions = screenProgram(c, target);
+        if (instructions === undefined) throw new ScreenRecordError(`${kind}'s page ${p + 1}'s chrome does not read`);
+        const piece = wholePiece(target, `${kind}'s page ${p + 1}'s chrome`);
+        if (!programPieces.has(piece)) {
+          const off = blobOf(target);
+          const length = Math.max(...instructions.map((one) => one.start + one.length)) - off;
+          lengths.set(piece, length);
+          span(off, length, `the ${kind}'s chrome`);
+          programPieces.add(piece);
+          readProgram(piece, instructions, off);
+        }
+        chrome = { program: instructions, piece };
       }
-      inline.set(programPiece, texts);
       return {
         page, list, listOff, copy, copyOff, program, programPiece, recordPiece, listPiece,
         copyAt: { ...pieceAt(copyOff), length: copy.length },
+        ...(chrome === undefined ? {} : { chrome }),
       };
     });
     return { record, ownOff, own, entry, pages };
@@ -519,6 +555,7 @@ export function recordReading(c: Container, layout: ContainerLayout, read: Value
     records: f.pages.map((one) => one.recordPiece),
     lists: f.pages.map((one) => one.listPiece),
     copies: f.pages.map((one) => one.copyAt),
+    chromes: [...new Set(f.pages.flatMap((one) => (one.chrome === undefined ? [] : [one.chrome.piece])))],
   });
 
   return {
@@ -753,6 +790,8 @@ export interface BuiltScreen {
   /** Each page list's second copy, section 69, as bytes, since nothing names it. */
   copies: Uint8Array[];
   entry: ContainerPiece;
+  /** The programs the pages call, paired by position with `RecordPlace.chromes`; the Harmony One's chrome. */
+  chromes?: ContainerPiece[];
 }
 
 export interface BuiltScreenRecords {
@@ -777,7 +816,10 @@ export interface BuiltScreenRecords {
  */
 export interface RecordBuilding {
   programOf: (parts: readonly MenuPart[], pictures: readonly (PieceTarget | undefined)[]) => ContainerPiece;
-  recordOf: (own: Uint8Array, programs: ContainerPiece[], lists: Uint8Array[], copies: Uint8Array[], ownOwner?: string) => BuiltScreen;
+  recordOf: (
+    own: Uint8Array, programs: ContainerPiece[], lists: Uint8Array[], copies: Uint8Array[], ownOwner?: string,
+    touch?: { leads: readonly number[]; chromes: ContainerPiece[] },
+  ) => BuiltScreen;
   inline: Map<string, PieceTarget>;
 }
 
@@ -804,16 +846,28 @@ export function recordBuilding(homes: ReadonlyMap<string, PieceTarget>): RecordB
     return piece;
   };
 
-  /** A record's pieces around its programs: page lists, page records, own list and entry. */
+  /**
+   * A record's pieces around its programs: page lists, page records, own list and entry. `touch` is the
+   * Harmony One's: each page record opens with its hit page, and the pages call the chromes given.
+   */
   const recordOf = (
     own: Uint8Array, programs: ContainerPiece[], lists: Uint8Array[], copies: Uint8Array[], ownOwner = 'slot-6-mode',
+    touch?: { leads: readonly number[]; chromes: ContainerPiece[] },
   ): BuiltScreen => {
+    if (touch !== undefined && touch.leads.length !== programs.length) {
+      throw new ScreenRecordError(`${touch.leads.length} hit pages for ${programs.length} pages`);
+    }
+    const lead = touch === undefined ? 0 : 1;
     const ownPiece: ContainerPiece = { bytes: own, refs: [], owner: ownOwner };
     const listPieces = lists.map((bytes): ContainerPiece => ({ bytes, refs: [], owner: 'slot-6-page-list' }));
-    const records = programs.map((program, p): ContainerPiece => ({
-      bytes: new Uint8Array(PAGE_RECORD_LENGTH), owner: 'slot-6-page',
-      refs: [{ at: 0, to: listPieces[p] as ContainerPiece, offset: 0 }, { at: 3, to: program, offset: 0 }],
-    }));
+    const records = programs.map((program, p): ContainerPiece => {
+      const bytes = new Uint8Array(PAGE_RECORD_LENGTH + lead);
+      if (touch !== undefined) bytes[0] = touch.leads[p] as number;
+      return {
+        bytes, owner: 'slot-6-page',
+        refs: [{ at: lead, to: listPieces[p] as ContainerPiece, offset: 0 }, { at: lead + 3, to: program, offset: 0 }],
+      };
+    });
     const entry = new Uint8Array(ENTRY_HEAD + 3 * programs.length);
     entry[4] = programs.length & 0xff;
     entry[5] = programs.length >> 8;
@@ -822,6 +876,7 @@ export function recordBuilding(homes: ReadonlyMap<string, PieceTarget>): RecordB
     return {
       own: ownPiece, programs, records, lists: listPieces, copies,
       entry: { bytes: entry, refs: entryRefs, owner: 'slot-6-entry' },
+      ...(touch === undefined ? {} : { chromes: touch.chromes }),
     };
   };
 
@@ -1027,6 +1082,11 @@ export function withModeRecords(
     }
     swap(old.own, made.own);
     swap(old.entry, made.entry);
+    const chromes = made.chromes ?? [];
+    if (old.chromes.length !== chromes.length) {
+      throw new ScreenRecordError(`the ${kind} would call ${chromes.length} chromes where the configuration's calls ${old.chromes.length}`);
+    }
+    old.chromes.forEach((piece, k) => swap(piece, chromes[k] as ContainerPiece));
     old.programs.forEach((piece, p) => {
       swap(piece, made.programs[p] as ContainerPiece);
       swap(old.records[p] as ContainerPiece, made.records[p] as ContainerPiece);
