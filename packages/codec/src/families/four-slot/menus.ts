@@ -4,7 +4,7 @@
  * four slot family, cut out of `compose.ts` unchanged.
  */
 import { u24 } from '../../bytes.ts';
-import { TWO_LINE_RISE } from '../../devicemode.ts';
+import { TWO_LINE_RISE } from './devicemode.ts';
 import { Writer } from '../../emit.ts';
 import {
   cornerPrograms, bottomWord, builtChrome, DEVICE_PAGE_BACKGROUND_AT, DEVICE_PAGE_BOTTOM_BAR_AT, DEVICE_PAGE_LOOKS,
@@ -13,7 +13,7 @@ import {
   MENU_TOP_LINE_Y, type PageChrome, picturesByContent, programDraws,
 } from '../../families/four-slot/chrome.ts';
 import { type FontSet, fontSets, glyphOf } from '../../font.ts';
-import { fontsBySize, ladderOf, TITLE_RUNG } from '../../devicemode.ts';
+import { fontsBySize, ladderOf, TITLE_RUNG } from './devicemode.ts';
 import { letterForm } from '../../lettering.ts';
 import { Container, parse, SCAN_MASK } from '../../gspm.ts';
 import {

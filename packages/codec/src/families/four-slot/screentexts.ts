@@ -76,7 +76,7 @@ import {
   caseQueued,
   fourSlotCellAt, ENTER_MODE,
 } from '../../inventory.ts';
-import { TWO_LINE_RISE } from '../../devicemode.ts';
+import { TWO_LINE_RISE } from './devicemode.ts';
 import { modeRecords } from '../../sections.ts';
 import {
   type ScreenInstruction,

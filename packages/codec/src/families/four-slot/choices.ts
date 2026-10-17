@@ -21,7 +21,7 @@
  * Which of our faces letters each of Logitech's sizes is not a choice: each face's rows are Logitech's,
  * measured in 8.2, and the outline is fitted to them. Its weight is, `faceWeights`, since 10.8.5.
  */
-import type { ActivityKey } from '../../activitykeys.ts';
+import type { ActivityKey } from './activitykeys.ts';
 import type { BackgroundColours } from '../../backgrounds.ts';
 import { rgbTo565 } from '../../png.ts';
 import {

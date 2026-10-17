@@ -57,6 +57,7 @@ import {
   takeApart,
   withWiring,
 } from '../src/index.ts';
+import { FOUR_SLOT_STATE_TABLES } from '../src/families/four-slot/statetables.ts';
 
 /** The thirteen arch 14 compiles section 312 names, as `frame.test.ts` lists them. */
 const ARCH14_COMPILES = [
@@ -112,7 +113,7 @@ test('the wiring of every arch 14 compile is rebuilt byte for byte from a descri
     assert.equal(firstDifference(layOutContainer(withWiring(layout, built)).bytes, c.blob), undefined, `${name} differs`);
     // The front is everything base slot 10 holds before the clock's hour list, section 324: the two
     // generators agree about where one stops and the other starts.
-    assert.equal(built.frontLength, describeStateTables(layout).hourList, `${name}: front`);
+    assert.equal(built.frontLength, describeStateTables(layout, FOUR_SLOT_STATE_TABLES).hourList, `${name}: front`);
   }
   // 388 lists until section 360 built the tree they call: 1174 now, 786 more.
   assert.equal(lists, 1174);
@@ -173,7 +174,7 @@ test('the six later Harmony 650 compiles rebuild too, including the two with the
     const spec = describeWiring(layout);
     settings.push(`${name}:${spec.settings.remoteAssistant ? 'A' : '-'}${spec.settings.tiltSensor ? 'T' : '-'}`);
     assert.equal(firstDifference(rebuilt(layout, spec), c.blob), undefined, `${name} differs`);
-    assert.equal(buildWiring(spec).frontLength, describeStateTables(layout).hourList, `${name}: front`);
+    assert.equal(buildWiring(spec).frontLength, describeStateTables(layout, FOUR_SLOT_STATE_TABLES).hourList, `${name}: front`);
   }
   assert.deepEqual(settings, [
     'h650_start_config:AT', 'h650_options_config:AT', 'h650_sequence_config:AT', 'h650_favourites_config:AT',

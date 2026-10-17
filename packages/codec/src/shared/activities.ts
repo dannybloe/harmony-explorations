@@ -5,10 +5,9 @@
  * `todo-compile-650.md` 10.7.2's last stage hands it to the family.
  */
 import { DEFERRED, SILENT_WRITE } from '../actions.ts';
-import type { FamilyTraits } from '../families/family.ts';
+import type { Family, FamilyTraits } from '../families/family.ts';
 import { traitsOf } from '../families/registry.ts';
 import { STATE_WRITE_BASE } from '../actions.ts';
-import { type ActivityKey, activityKeyEntry, activityKeys, setActivityKey } from '../activitykeys.ts';
 import { u24 } from '../bytes.ts';
 import { applyEdits } from '../edit.ts';
 import { Writer } from '../emit.ts';
@@ -74,14 +73,14 @@ export interface ComposeActivity {
    */
   readonly leaveList?: number;
   /**
-   * The activity key to put the new activity on, Watch TV, Watch a Movie or Listen to Music, section
-   * 314. Harmony 600, 650 and 700 only, where it is one entry in base slot 9 entry 1 and a same length
-   * edit made by `setActivityKey` after everything else here. Omitted leaves every key as it was, and
-   * the activity is reachable from the menu only, which is what an activity on no key is on those
-   * models. Whatever the key did before is replaced, an activity included; that one keeps its own
-   * menu row and loses only the key.
+   * The activity key to put the new activity on, by the name printed on it, Watch TV, Watch a Movie or
+   * Listen to Music, section 314. Only where the family has activity keys, `Family.activityKeyEditor`: the
+   * Harmony 600, 650 and 700, where it is one entry in base slot 9 entry 1 and a same length edit made after
+   * everything else here. Omitted leaves every key as it was, and the activity is reachable from the menu
+   * only, which is what an activity on no key is on those models. Whatever the key did before is replaced,
+   * an activity included; that one keeps its own menu row and loses only the key.
    */
-  readonly activityKey?: ActivityKey;
+  readonly activityKey?: string;
   /**
    * What tag 5 runs. Tag 5 is on all 50 activities and **always runs a real list**, so it cannot be
    * the null instruction the way tag 2 can. What fires it is read now, section 313: the activity
@@ -195,8 +194,13 @@ export interface ComposedActivity {
  * **What this does not do is emit a second binding on arch 14.** An activity there is bound by two
  * keys and by one on the other three architectures, section 273, but that is a property of the
  * *menu row*, which is the screen half's job. This function produces the one thing a row points at.
+ *
+ * `family` is the configuration's, `familyOf`, asked for its activity keys and nothing else here; the
+ * traits are passed apart, since a configuration no family serves still has `PLAIN_TRAITS`.
  */
-export function composeActivityFor(c: Container, activity: ComposeActivity, traits: FamilyTraits): ComposedActivity {
+export function composeActivityFor(
+  c: Container, activity: ComposeActivity, traits: FamilyTraits, family: Family | undefined,
+): ComposedActivity {
   if (activity.label === ''
       || [...activity.label].some((ch) => ch.charCodeAt(0) < 0x20 || ch.charCodeAt(0) > 0x7e)) {
     throw new ComposeError('an activity label is printable ASCII, which is what the glyphs draw');
@@ -263,12 +267,19 @@ export function composeActivityFor(c: Container, activity: ComposeActivity, trai
   if (variable.index >= STATE_WRITE_LIMIT) {
     throw new ComposeError('the activity counter is past the index a state write can carry');
   }
+  // The family's activity keys, where its remotes have them, which is the only way this reaches them.
+  const keyEditor = family?.activityKeyEditor;
   if (activity.activityKey !== undefined) {
     // Checked before anything is built, so a key this configuration cannot take refuses the whole
     // composition rather than leaving a composed activity and a refusal behind. It is the same location
-    // the edit at the end uses: the architecture, entry 1 and the key's press entry.
+    // the edit at the end uses: the family's check, on the Harmony 600, 650 and 700 the architecture,
+    // entry 1 and the key's press entry.
+    if (keyEditor === undefined) {
+      throw new ComposeError(`the activity cannot go on ${activity.activityKey}: `
+        + `${family?.name ?? `a configuration of architecture ${c.architecture}`} has no activity keys a composer knows`);
+    }
     try {
-      activityKeyEntry(c, activity.activityKey);
+      keyEditor.check(c, activity.activityKey);
     } catch (error) {
       throw new ComposeError(`the activity cannot go on ${activity.activityKey}: ${(error as Error).message}`);
     }
@@ -279,8 +290,10 @@ export function composeActivityFor(c: Container, activity: ComposeActivity, trai
   // built and rebuilt at the end, section 379. Only then, so a donor whose wiring is already right for the
   // activity is left byte for byte as it was.
   let wiringBefore: WiringSpec | undefined;
-  if (c.architecture === 14) {
-    const keys = activityKeys(c);
+  // Which configurations rewire is still tested here, `todo-compile-one.md` 3.3.3.2's family member for
+  // the wiring; the keys it looks at are the family's.
+  if (c.architecture === 14 && keyEditor !== undefined) {
+    const keys = keyEditor.read(c);
     const none = keys.every((one) => one.kind !== 'activity');
     const onEmpty = activity.activityKey !== undefined && keys.find((one) => one.key === activity.activityKey)?.kind === 'placeholder';
     if (none || onEmpty) wiringBefore = describeWiring(takeApart(c));
@@ -557,9 +570,9 @@ export function composeActivityFor(c: Container, activity: ComposeActivity, trai
   // wrote. `applyEdits` recomputes the trailer itself, so the restamp before it is what lets its own
   // check, that the input's checksum agrees with its bytes, pass.
   let bytes = restamped(nameHole.bytes);
-  if (activity.activityKey !== undefined) {
+  if (activity.activityKey !== undefined && keyEditor !== undefined) {
     const finished = parse(bytes);
-    bytes = applyEdits(finished, setActivityKey(finished, activity.activityKey, set)).bytes;
+    bytes = applyEdits(finished, keyEditor.set(finished, activity.activityKey, set)).bytes;
   }
   if (wiringBefore !== undefined) bytes = layOutContainer(rewiredForActivities(takeApart(parse(bytes)), wiringBefore)).bytes;
 

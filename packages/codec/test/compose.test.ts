@@ -29,7 +29,6 @@ import {
   composeActivity,
   composeActivityMenuRow,
   composeActivityScreen,
-  composeActivityDeviceList,
   activityScreens,
   caseQueued,
   nextActivityValue,
@@ -70,7 +69,6 @@ import {
   sendPreludes,
   interDeviceDelayCases,
   INTER_DEVICE_DELAY_VALUES,
-  FOUR_SLOT_CHOICES,
   POWER_ON_DELAY_CASES,
   powerOnDelays,
   powerOnDelayCases,
@@ -79,7 +77,6 @@ import {
   archSlot,
   characterMap,
   composeDeviceScreen,
-  deviceModeChrome,
   deviceListRows,
   fontSets,
   glyphOf,
@@ -113,8 +110,6 @@ import {
   startSequenceVariables,
   menuMarkerOf,
   menuMarkerVariable,
-  activityKeyedRecords,
-  activityStateVariables,
   ACTION_LIST_INDEX_OPCODE,
   MAP_VALUE_OPCODE,
   MODE_TAG_ENTER,
@@ -122,6 +117,11 @@ import {
   STATE_WRITE_BASE,
   reachablePrograms,
 } from '../src/index.ts';
+import { activityStateVariables } from '../src/families/four-slot/statetables.ts';
+import { FOUR_SLOT_CHOICES } from '../src/families/four-slot/choices.ts';
+import { composeActivityDeviceList } from '../src/families/four-slot/devicelist.ts';
+import { deviceModeChrome } from '../src/families/four-slot/chrome.ts';
+import { activityKeyedRecords } from '../src/families/four-slot/activityscreen.ts';
 import { startAndFlag, startTargets, tagFiveMisfit, tagFiveShape } from './tagfive.ts';
 import { FIRST_DEVICE_IDENTIFIER } from '../src/shared/core.ts';
 

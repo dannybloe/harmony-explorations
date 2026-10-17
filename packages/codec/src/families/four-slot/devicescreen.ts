@@ -7,7 +7,7 @@ import { u24 } from '../../bytes.ts';
 import {
   deviceModeTitle, fontsBySize, LABEL_WIDTH, labelLayout, ladderOf, pageCounter, placeLabel, TITLE_RUNG,
   TWO_LINE_RISE,
-} from '../../devicemode.ts';
+} from './devicemode.ts';
 import { Writer } from '../../emit.ts';
 import {
   DEVICE_PAGE_BACKGROUND_AT, deviceModeKeyMap, FOUR_SLOT_TITLE_XY, fourSlotCounterX, inOurLook, sentFrame,

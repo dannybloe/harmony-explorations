@@ -89,7 +89,10 @@ import { activities, devices, deviceVariables, SEND_INFRARED, DEVICE_QUANTITY } 
 import type { ContainerLayout, ContainerPiece } from './frame.ts';
 import { layOutContainer, takeApart } from './frame.ts';
 import { LOOSE_KINDS, loosen, placePieces } from './placer.ts';
-import { buildStateTables, describeStateTables, hourListBytes, withStateTables } from './statetables.ts';
+import {
+  buildStateTables, describeStateTables, hourListBytes, type StateTableFacts, withStateTables,
+} from './statetables.ts';
+import { familyOf } from './families/registry.ts';
 import {
   buildWiring, builtPieces, checkWiring, describeWiring, withWiring, wiringModelOfSkin, type WiringSettings, type WiringSpec,
 } from './wiring.ts';
@@ -557,9 +560,10 @@ export function assembleSetup(setup: Recipe, options: AssembleOptions): Assemble
   c = parse(layOutContainer(withWiring(layout, built)).bytes);
   note('wiring', JSON.stringify(settings));
 
-  // 10. The state tables.
+  // 10. The state tables, by the family's facts.
   layout = takeApart(c);
-  c = parse(layOutContainer(withStateTables(layout, buildStateTables(describeStateTables(layout)))).bytes);
+  const tableFacts = stateTablesOf(c);
+  c = parse(layOutContainer(withStateTables(layout, buildStateTables(describeStateTables(layout, tableFacts), tableFacts))).bytes);
   note('state tables');
 
   // 11. Mode 0's key list, after the end marker.
@@ -727,11 +731,21 @@ export function checkAssembled(c: Container): void {
   checkScreenTexts(c);
   checkPictures(c);
   const layout = takeApart(c);
-  const rebuilt = layOutContainer(withStateTables(layout, buildStateTables(describeStateTables(layout)))).bytes;
+  const facts = stateTablesOf(c);
+  const rebuilt = layOutContainer(withStateTables(layout, buildStateTables(describeStateTables(layout, facts), facts))).bytes;
   if (!sameBytes(rebuilt, c.blob)) throw new AssemblyError('the state tables do not rebuild from their description');
   if (!sameBytes(layout.keyTable.bytes, modeZeroOf(describeWiring(layout)))) {
     throw new AssemblyError('mode 0\'s key list is not the generated one');
   }
+}
+
+/** The facts the configuration's family builds its state tables from, `Family.stateTables`, or a refusal. */
+function stateTablesOf(c: Container): StateTableFacts {
+  const facts = familyOf(c)?.stateTables;
+  if (facts === undefined) {
+    throw new AssemblyError(`${familyOf(c)?.name ?? 'this configuration'} has no state tables this assembly builds`);
+  }
+  return facts;
 }
 
 /**
@@ -850,8 +864,8 @@ export function attributeBytes(c: Container): AttributedBytes {
     mark(at, piece.bytes.length, 'wiring');
   }
   // The state tables, likewise, the whole of what they build.
-  const tablesSpec = describeStateTables(layout);
-  const tables = buildStateTables(tablesSpec);
+  const tablesSpec = describeStateTables(layout, stateTablesOf(c));
+  const tables = buildStateTables(tablesSpec, stateTablesOf(c));
   const tablesLaid = layOutContainer(withStateTables(layout, tables));
   if (!sameBytes(tablesLaid.bytes, c.blob)) throw new AssemblyError('the state tables do not rebuild from their description');
   for (const piece of [tables.nameTree, tables.stateTable, tables.valueMapTable, ...tables.records, ...tables.valueMaps]) {

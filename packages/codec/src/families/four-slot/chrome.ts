@@ -8,7 +8,7 @@ import { u24 } from '../../bytes.ts';
 import { namedContentEnd } from '../../coverage.ts';
 import {
   fontsBySize, HARD_KEYS, LABEL_WIDTH, LABEL_WRAP_WIDTH, ladderOf, pageCounter, sizeOfSet, TITLE_RUNG, wrapAtSpaces,
-} from '../../devicemode.ts';
+} from './devicemode.ts';
 import { Writer } from '../../emit.ts';
 import { activityKeyedRecords } from '../../families/four-slot/activityscreen.ts';
 import { idleDeviceList, type MenuPart } from '../../families/four-slot/menus.ts';

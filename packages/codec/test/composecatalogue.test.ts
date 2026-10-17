@@ -32,7 +32,8 @@ import assert from 'node:assert/strict';
 import { IR_ARCHIVE, needing, require_, skipUnless, skipWithoutIrArchive } from '@harmony/lab';
 import { layOutContainer, takeApart } from '../src/frame.ts';
 import { withOxaniumFonts } from '../src/fonttable.ts';
-import { deviceModeLayout, HARD_KEYS } from '../src/devicemode.ts';
+import { deviceModeLayout } from '../src/devicemode.ts';
+import { HARD_KEYS } from '../src/families/four-slot/devicemode.ts';
 import { TOUCH_HARD_KEYS } from '../src/families/touch/devicekeys.ts';
 import {
   type CatalogueDeviceRequest,

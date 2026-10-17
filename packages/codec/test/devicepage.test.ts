@@ -17,13 +17,8 @@ import {
   ComposeError,
   FOUR_SLOT_ITEMS,
   FOUR_SLOT_STORED_ORDER,
-  HARD_KEYS,
   KEY_EVENT_PRESS,
   KEY_EVENT_SHIFT,
-  LABEL_SIZES,
-  LABEL_WIDTH,
-  LABEL_WRAP_WIDTH,
-  activityKeyedRecords,
   archSlot,
   attributeScreens,
   composeDevice,
@@ -32,8 +27,6 @@ import {
   compilerTagOrder,
   contentKey,
   deviceListRows,
-  deviceModeChrome,
-  deviceModeKeyMap,
   modeRecords,
   parse,
   payloadOf,
@@ -44,10 +37,18 @@ import {
   screenProgram,
   screenUnits,
   taggedList,
-  textWidthIn,
   valueMaps,
-  wrapAtSpaces,
 } from '../src/index.ts';
+import { deviceModeChrome, deviceModeKeyMap } from '../src/families/four-slot/chrome.ts';
+import { activityKeyedRecords } from '../src/families/four-slot/activityscreen.ts';
+import {
+  HARD_KEYS,
+  LABEL_SIZES,
+  LABEL_WIDTH,
+  LABEL_WRAP_WIDTH,
+  textWidthIn,
+  wrapAtSpaces,
+} from '../src/families/four-slot/devicemode.ts';
 import { namedContentEnd } from '../src/coverage.ts';
 
 /** The thirteen arch 14 compiles, as `compose.test.ts`'s `ARCH14_LISTS`. */

@@ -8,10 +8,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-  type Container, ENTER_MODE, FOUR_SLOT_CHOICES, rgbTo565, LETTERING_CHARACTERS, MAP_VALUE_OPCODE, RUN_SCREEN_PROGRAM, SCREEN_QUEUE_INSTRUCTION,
+  type Container, ENTER_MODE, rgbTo565, LETTERING_CHARACTERS, MAP_VALUE_OPCODE, RUN_SCREEN_PROGRAM, SCREEN_QUEUE_INSTRUCTION,
   characterMap, claims, describeStateTables, describeWiring, fontSets, glyphOf, letterRows, modePages, modeRecords, oxaniumFace,
   pageListCopies, screenProgram, stateVariables, takeApart, taggedList, valueMaps,
 } from '../src/index.ts';
+import { FOUR_SLOT_CHOICES, OUR_FOUR_SLOT_CHOICES } from '../src/families/four-slot/choices.ts';
 import {
   EMPTY_FONT_SETS, EMPTY_VARIABLES, buildEmptyConfiguration, buildEmptySkeleton, emptyCodeOf, emptyModelOf, emptyModes, emptyVariable,
   emptyVariables,
@@ -27,7 +28,7 @@ import { composeCatalogueDevices } from '../src/composecatalogue.ts';
 import { bitmapReference } from '../src/screen.ts';
 import { stateBackgroundColour } from '../src/backgrounds.ts';
 import { activities, activityNames, deviceListRows } from '../src/inventory.ts';
-import { activityKeys } from '../src/activitykeys.ts';
+import { activityKeys } from '../src/families/four-slot/activitykeys.ts';
 import { IR_ARCHIVE, require_, skipUnless, skipWithoutIrArchive } from '@harmony/lab';
 import { archSlot, checkWiring, compareViews, parse, readRecipe, screenStrings, setupView } from '../src/index.ts';
 import { readFileSync } from 'node:fs';
@@ -35,13 +36,13 @@ import { checkFirmwareScreens } from '../src/families/four-slot/firmwarescreens.
 import { checkScreenRecords } from '../src/screenrecords.ts';
 import { stateRecords } from '../src/sections.ts';
 import { assembleSetup, attributeBytes } from '../src/assemble.ts';
-import { OUR_FOUR_SLOT_CHOICES } from '../src/index.ts';
 import type { Recipe } from '../src/index.ts';
 import { fourSlotActivityMenu, fourSlotMenuMarkerWriter } from '../src/families/four-slot/chrome.ts';
 import { startupTitleYs } from '../src/families/four-slot/activityscreen.ts';
 import { activityMenuByRows, menuMarkerOf } from '../src/shared/menus.ts';
 import { allOffList, composeDevice, coverage, deviceIds, joinPowerOff } from '../src/index.ts';
 import { FIRST_DEVICE_IDENTIFIER } from '../src/shared/core.ts';
+import { FOUR_SLOT_STATE_TABLES } from '../src/families/four-slot/statetables.ts';
 
 const BUILT_AT = '2026-10-12T12:00:00';
 
@@ -108,7 +109,7 @@ test('11.1.1.2: the wiring and the state tables read back as the description the
   );
   // Every variable read back as built, in index order after the firmware's eighteen, the named ones under
   // their names at the index `emptyVariable` gives.
-  assert.deepEqual(describeStateTables(layout).variables, EMPTY_VARIABLES.map(([, one]) => ({ transitions: [], ...one })));
+  assert.deepEqual(describeStateTables(layout, FOUR_SLOT_STATE_TABLES).variables, EMPTY_VARIABLES.map(([, one]) => ({ transitions: [], ...one })));
   for (const name of ['activity', 'location']) {
     assert.ok(stateVariables(c).some((one) => one.index === emptyVariable(name)), name);
   }
@@ -258,7 +259,7 @@ test('todo-compile-700.md 1.1 to 1.3: the Harmony 700 built from nothing: its wi
     { lists: built.wiring.spec.lists, maps: built.wiring.spec.maps, variables: built.wiring.spec.variables, modes: built.wiring.spec.modes, entries: built.wiring.spec.entries, settings: built.wiring.spec.settings },
   );
   // The 650's variables, then the Assistant's mark the USB leave handler compares, section 382.
-  assert.deepEqual(describeStateTables(layout).variables, emptyVariables('harmony-700').map(([, one]) => ({ transitions: [], ...one })));
+  assert.deepEqual(describeStateTables(layout, FOUR_SLOT_STATE_TABLES).variables, emptyVariables('harmony-700').map(([, one]) => ({ transitions: [], ...one })));
   assert.equal(emptyVariables('harmony-700').length, EMPTY_VARIABLES.length + 1);
   assert.deepEqual(checkFirmwareScreens(c), { structure: 8864, screens: 19, lists: 10 });
   assert.equal(modeRecords(c)!.length, emptyModes('harmony-700').off + 1);

@@ -15,7 +15,6 @@ import { load, skipUnless } from '@harmony/lab';
 import type { Container } from '../src/index.ts';
 import {
   BackgroundError,
-  FOUR_SLOT_CHOICES,
   HARMONY_650_PICTURES,
   bitmapAt,
   bitmaps,
@@ -35,6 +34,7 @@ import {
   takeApart,
   withStateBackgrounds,
 } from '../src/index.ts';
+import { FOUR_SLOT_CHOICES } from '../src/families/four-slot/choices.ts';
 
 const H650 = [
   'h650_config_region', 'h650_panasonic_config', 'h650_power_hold_compile', 'h650_power_hold_compile_2',

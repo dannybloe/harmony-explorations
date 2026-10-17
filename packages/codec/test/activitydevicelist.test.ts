@@ -16,14 +16,8 @@ import assert from 'node:assert/strict';
 import { require_, skipUnless } from '@harmony/lab';
 import {
   type Container,
-  activityDeviceList,
-  activityKeyedRecords,
   caseQueued,
-  checkActivityDeviceLists,
-  checkFourSlotMenuPages,
-  composeActivityDeviceList,
   FOUR_SLOT_ITEMS,
-  fourSlotMenus,
   modeRecords,
   parse,
   renderPage,
@@ -31,6 +25,13 @@ import {
   taggedList,
   valueMaps,
 } from '../src/index.ts';
+import { checkFourSlotMenuPages, fourSlotMenus } from '../src/families/four-slot/menus.ts';
+import {
+  activityDeviceList,
+  checkActivityDeviceLists,
+  composeActivityDeviceList,
+} from '../src/families/four-slot/devicelist.ts';
+import { activityKeyedRecords } from '../src/families/four-slot/activityscreen.ts';
 
 /** The thirteen arch 14 compiles, as `compose.test.ts`'s `ARCH14_LISTS`. */
 const THIRTEEN = ['h650_config_region', 'h650_panasonic_config', 'h600_config', 'calibration_h600',

@@ -1617,7 +1617,7 @@ are one of two four byte forms in all 13 Logitech compiles measured:
 | Listen to Music | 7 | the same, or `80+scan`, `p`, `7F`: call list `p` = `[07 FFFD, 7E m]`, push the mode and enter the "add an Activity" mode `m` (mode 0 on the 600 and 650, mode 4 on the 700) |
 
 Both forms are the same length, so putting an activity on a key or emptying one is a same length
-edit: `setActivityKey` and `clearActivityKey` in `packages/codec/src/activitykeys.ts`, and
+edit: `setActivityKey` and `clearActivityKey` in `packages/codec/src/families/four-slot/activitykeys.ts`, and
 `composeActivity`'s `activityKey`. **Emptying needs list `p` to exist already**: Logitech compiles it
 only while some key is empty, 6 of the 13, which are two setups, and adding it is a length change, so the edit refuses on a
 configuration without it. **Appending the list first works**: `appendActionLists` with `[07 FFFD, 7E m]`
@@ -3205,7 +3205,8 @@ one:
 `packages/codec/src/inputs.ts`; `packages/codec/test/inputs.test.ts`.
 
 **Built from a description, arch 14**, [findings.md](findings.md) section 324. `buildStateTables` in
-`packages/codec/src/statetables.ts` rebuilds all thirteen arch 14 compiles' base slots 0, 13 and 14
+`packages/codec/src/statetables.ts`, with the four slot family's facts of
+`packages/codec/src/families/four-slot/statetables.ts`, rebuilds all thirteen arch 14 compiles' base slots 0, 13 and 14
 byte for byte. What it generates rather than carries:
 
 | what | value on arch 14 |
@@ -3229,7 +3230,8 @@ One), arch 9 differs from record 8 on, and on all three the `0/65277` variable a
 two byte one while one byte maxima reach 121, inside the gap refused here.
 
 **Built for the Harmony One too**, since `todo-compile-one.md` 6.4: the same builder, with what differs
-between the two architectures in `STATE_TABLE_ARCHITECTURES`, read in one place. All 19 distinct Harmony
+between the two families held as each family's `StateTableFacts`, the Harmony One's `TOUCH_STATE_TABLES` in
+`packages/codec/src/families/touch/statetables.ts` beside the four slot family's. All 19 distinct Harmony
 One compiles rebuild byte for byte from a description, and from a blinded one, the clock's seven records,
 the firmware's eleven and the first two byte variable among them. What is the Harmony One's own:
 

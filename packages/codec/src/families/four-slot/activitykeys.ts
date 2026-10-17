@@ -37,9 +37,12 @@
  * **Scope, decision 16**: arch 14 (Harmony 600, 650 and 700) only, which is where section 314 measured
  * it. The Harmony One's activity keys have not been compared and every function here refuses another
  * architecture rather than guessing that they agree.
+ *
+ * The four slot family's own since `todo-compile-one.md` 3.3.3.3: a shared composer reaches it through the
+ * family's `activityKeyEditor`, `FOUR_SLOT_ACTIVITY_KEY_EDITOR` below, and never by importing it.
  */
-import { ACTION_LIST_INDEX_OPCODE, HANDLER_TAG_ENTER, handlerSets, modeRecords, taggedList } from './sections.ts';
-import type { TaggedList } from './sections.ts';
+import { ACTION_LIST_INDEX_OPCODE, HANDLER_TAG_ENTER, handlerSets, modeRecords, taggedList } from '../../sections.ts';
+import type { TaggedList } from '../../sections.ts';
 import {
   ACTIVITY_STATE_NAME,
   idleActivityValue,
@@ -48,12 +51,13 @@ import {
   SELECT_BINDING_SET,
   SELECT_BINDING_SET_MASK,
   stateVariables, ENTER_MODE,
-} from './inventory.ts';
-import { PUSH_MODE, STATE_WRITE_BASE } from './actions.ts';
-import { characterMap, screenStrings } from './text.ts';
-import { EditError } from './edit.ts';
-import type { Edit } from './edit.ts';
-import type { Container } from './gspm.ts';
+} from '../../inventory.ts';
+import { PUSH_MODE, STATE_WRITE_BASE } from '../../actions.ts';
+import { characterMap, screenStrings } from '../../text.ts';
+import { EditError } from '../../edit.ts';
+import type { Edit } from '../../edit.ts';
+import type { Container } from '../../gspm.ts';
+import type { ActivityKeyEditor } from '../family.ts';
 
 /**
  * The three activity keys and their scan codes, section 314.
@@ -281,3 +285,14 @@ export function clearActivityKey(c: Container, key: ActivityKey): Edit[] {
     owner: `activity key ${key}`,
   }];
 }
+
+/**
+ * The family's `activityKeyEditor`: what a shared composer asks of the three keys. A key arrives as a name,
+ * and `activityKeyEntry` refuses one that is not one of `ACTIVITY_KEYS`, so the casts here narrow nothing
+ * the functions do not check themselves.
+ */
+export const FOUR_SLOT_ACTIVITY_KEY_EDITOR: ActivityKeyEditor = {
+  check: (c, key) => { activityKeyEntry(c, key as ActivityKey); },
+  read: activityKeys,
+  set: (c, key, set) => setActivityKey(c, key as ActivityKey, set),
+};

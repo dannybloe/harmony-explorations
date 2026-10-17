@@ -28,12 +28,10 @@ import {
   type ActivityDevice,
   activities,
   activityFromRoles,
-  activityKeyedRecords,
   activityKeysFromRoles,
   activityScreenRows,
   caseQueued,
   composeActivity,
-  composeActivityDeviceList,
   composeActivityMenuRow,
   composeActivityScreen,
   composeCatalogueDevices,
@@ -56,6 +54,8 @@ import {
   taggedList,
   valueMaps,
 } from '../src/index.ts';
+import { composeActivityDeviceList } from '../src/families/four-slot/devicelist.ts';
+import { activityKeyedRecords } from '../src/families/four-slot/activityscreen.ts';
 
 const START = 'h650_start_config';
 const BASE = 'h650_panasonic_config';

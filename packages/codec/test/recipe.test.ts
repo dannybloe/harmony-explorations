@@ -8,7 +8,8 @@ import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
 
 import { MODELS_BY_SKIN } from '@harmony/usb/models';
-import { FOUR_SLOT_CHOICES, RecipeError, fourSlotChoices, modelName, readRecipe, recipeTarget } from '../src/index.ts';
+import { RecipeError, modelName, readRecipe, recipeTarget } from '../src/index.ts';
+import { FOUR_SLOT_CHOICES, fourSlotChoices } from '../src/families/four-slot/choices.ts';
 
 const SETUPS = new URL('../../corpus/setups/', import.meta.url);
 const raw = (file: string): Record<string, unknown> => JSON.parse(readFileSync(new URL(file, SETUPS), 'utf8'));

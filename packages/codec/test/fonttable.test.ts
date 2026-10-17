@@ -16,7 +16,6 @@ import { characterMap } from '../src/text.ts';
 import { fontSets, glyphOf } from '../src/font.ts';
 import { measureSet } from '../src/fonttable.ts';
 import {
-  FOUR_SLOT_CHOICES,
   FontTableError,
   LETTERING_CHARACTERS,
   HARMONY_650_FACES,
@@ -36,6 +35,7 @@ import {
   takeApart,
   withOxaniumFonts,
 } from '../src/index.ts';
+import { FOUR_SLOT_CHOICES } from '../src/families/four-slot/choices.ts';
 
 /** The inks our letters are drawn in, the four slot family's default, `todo-compile-650.md` 10.7.5. */
 const INKS = FOUR_SLOT_CHOICES.letterInks;

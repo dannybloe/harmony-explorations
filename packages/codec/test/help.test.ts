@@ -20,7 +20,6 @@ import {
   activityRolesFromSends,
   characterMap,
   composeActivity,
-  composeActivityDeviceList,
   composeActivityMenuRow,
   composeActivityScreen,
   type Container,
@@ -35,6 +34,7 @@ import {
   stateRecords,
   taggedList,
 } from '../src/index.ts';
+import { composeActivityDeviceList } from '../src/families/four-slot/devicelist.ts';
 import { startTargets } from './tagfive.ts';
 
 /** The thirteen Logitech compiles section 312 measured, the same population as the inventory test's. */

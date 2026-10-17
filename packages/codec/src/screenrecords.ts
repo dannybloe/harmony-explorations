@@ -55,12 +55,10 @@
  * Arch 14 only, the Harmony 600, 650 and 700. Read only towards hardware: the result is pieces.
  */
 import { ACTIVITY_MENU_MARKER_VALUE, DEVICE_MENU_MARKER_VALUE, menuMarkerOf } from './shared/menus.ts';
-import { SCAN_FOUR_TAG, cornerPrograms, holdsLogitechLook } from './families/four-slot/chrome.ts';
-import { MAP_VALUE_OPCODE } from './inventory.ts';
-import type { Container, Instruction } from './gspm.ts';
 import {
-  ACTION_TABLE_SLOT,
-  ComposeError,
+  SCAN_FOUR_TAG,
+  cornerPrograms,
+  holdsLogitechLook,
   DEVICE_MODE_PROGRAM_TAG,
   DEVICES_KEY_TAG,
   type FourSlotMenuChrome,
@@ -68,9 +66,7 @@ import {
   type FourSlotMenuLabel,
   type FourSlotMenuPageContent,
   type MenuPart,
-  type ValueReader,
   activityRowListBody,
-  blobReader,
   deviceListRowBody,
   fixedLineScreenParts,
   fourSlotMenuChrome,
@@ -81,6 +77,14 @@ import {
   menuPageParts,
   menuPartsBytes,
   startupPicture,
+} from './families/four-slot/index.ts';
+import { MAP_VALUE_OPCODE } from './inventory.ts';
+import type { Container, Instruction } from './gspm.ts';
+import {
+  ACTION_TABLE_SLOT,
+  ComposeError,
+  type ValueReader,
+  blobReader,
   textValues,
 } from './compose.ts';
 import { archSlot } from './gspm.ts';

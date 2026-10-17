@@ -39,7 +39,7 @@ import { irBlockWords, irGroups, irHeaderPointers } from './ir.ts';
 import { irFrame } from './irframe.ts';
 import { caseQueued } from './inventory.ts';
 import { valueMaps } from './valuemap.ts';
-import { activityKeyedRecords } from './compose.ts';
+import { activityKeyedRecords } from './families/four-slot/index.ts';
 
 /** What one binding shows and does, in names that mean the same in both files. */
 export interface ViewItem {

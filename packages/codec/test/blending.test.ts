@@ -16,7 +16,6 @@ import { load, skipUnless } from '@harmony/lab';
 import type { Container } from '../src/index.ts';
 import {
   BLEND_DITHER_STEPS,
-  FOUR_SLOT_CHOICES,
   LETTERING_CHARACTERS,
   HARMONY_650_FACES,
   HARMONY_ONE_FACES,
@@ -43,6 +42,7 @@ import {
   withOxaniumFonts,
   withStateBackgrounds,
 } from '../src/index.ts';
+import { FOUR_SLOT_CHOICES } from '../src/families/four-slot/choices.ts';
 
 /** The inks our letters are drawn in, the four slot family's default, `todo-compile-650.md` 10.7.5. */
 const INKS = FOUR_SLOT_CHOICES.letterInks;

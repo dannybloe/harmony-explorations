@@ -43034,7 +43034,8 @@ two byte variable stating other values on an arch 14 compile.
 ### Where it lands
 
 * `packages/codec/src/statetables.ts`: `buildStateTables`, `describeStateTables`, `withStateTables`,
-  `nameTreeOrder`, `isWideVariable`, `deviceDelayVariables`, `activityStateVariables`.
+  `nameTreeOrder`, `isWideVariable`; `deviceDelayVariables`, `activityStateVariables` and the arch 14
+  facts in `packages/codec/src/families/four-slot/statetables.ts` since `todo-compile-one.md` 3.3.3.3.
 * `packages/codec/test/statetables.test.ts`: the thirteen byte for byte, the blind control, the name
   tree order and its alternatives with their split, the Logitech trees of the other architectures and
   the ties in them, the composed trees that break the order, the names' string hash, the case order with
@@ -43310,8 +43311,8 @@ device has an earlier one; a counter or title off the stated places.
 
 ### Where it lands
 
-* `packages/codec/src/devicemode.ts`: the key table, the screen order, the size table, labels, title,
-  counter.
+* `packages/codec/src/devicemode.ts`: the screen order; the key table, the size table, labels, title and
+  counter in `packages/codec/src/families/four-slot/devicemode.ts` since `todo-compile-one.md` 3.3.3.3.
 * `packages/codec/src/compose.ts`: `compiledDeviceModePages` and `compiledPageProgram`, and the
   `compiled` option of `composeDeviceScreen`; `packages/codec/bin/compose-device.ts --full`.
 * `packages/codec/test/devicemode.test.ts`: the rules on their own, the size table as the union, the
@@ -44175,7 +44176,8 @@ Each is corrected above.
   the chrome and key map checks, and `fourSlotTemplate` building the chrome rather than copying a page.
 * `packages/codec/src/inventory.ts`: `compilerTagOrder`.
 * `packages/codec/src/screencategories.ts`: `contentKey`, the picture hash, exported.
-* `packages/codec/src/devicemode.ts`: `LABEL_WRAP_WIDTH`, and `wrapAtSpaces` exported over a width function.
+* `packages/codec/src/families/four-slot/devicemode.ts`, `devicemode.ts` until `todo-compile-one.md` 3.3.3.3:
+  `LABEL_WRAP_WIDTH`, and `wrapAtSpaces` exported over a width function.
 * `packages/codec/test/devicepage.test.ts`: the calibration on the thirteen and the controls.
 * `docs/config-format.md`, after section 325's table.
 ## 331. Several catalogue devices composed in one run are composing them one at a time, and they land where Logitech's compile of the same devices puts them
@@ -45807,7 +45809,7 @@ where an empty key calls something other than the two instruction list.
 * `packages/codec/test/activitykeys.test.ts`: the refusal on the options compile, the append, the list
   equal to `calibration_h600`'s, the three keys after, the lists and menu unchanged, and the byte count.
 * `docs/config-format.md` under entry 1's activity keys, and the header of
-  `packages/codec/src/activitykeys.ts`.
+  `packages/codec/src/families/four-slot/activitykeys.ts`.
 * The run files in the lab's `reads/`, `20261008T141329Z`, `20261008T142549Z`, `20261008T142833Z` and
   `20261008T143827Z`, and the configuration in `work/bench-3-11/`.
 
@@ -50258,7 +50260,7 @@ the ink mask and where its shadow falls, so our letters count in any inks; a spa
 no form, counts when it has the size of one of our faces' spaces. Since 10.8 the letters are drawn by the
 codec, section 372, and the same assembly counts 93675 glyph bytes, all of them.
 
-* `packages/codec/src/devicemode.ts`, `oxaniumLabelSizes` (`OXANIUM_LABEL_SIZES` until 10.8, when it became
+* `packages/codec/src/families/four-slot/devicemode.ts` since `todo-compile-one.md` 3.3.3.3, `oxaniumLabelSizes` (`OXANIUM_LABEL_SIZES` until 10.8, when it became
   a function since the faces are drawn on first use), `TITLE_RUNG`, `ladderOf` and the ladder
   parameter; `families/four-slot/chrome.ts` since the split of todo 10.7.2, `fourSlotLabelLines`,
   `smallerLabelFonts`, `fourSlotCounterX`; `shared/spelling.ts`, `spellsIn`;
@@ -53196,10 +53198,13 @@ Neither the firmware nor Logitech's client was read: the question is what their 
 
 ### What differs, and where it is held
 
-Per architecture tables read in one place each, as the frame's were in 6.1: `STATE_TABLE_ARCHITECTURES` in
-`statetables.ts` and `LOG_AREAS` in the new `firmwaresections.ts`. The parameter values are a model's and not an
-architecture's, so the Harmony One's one set is `TOUCH_PARAMETERS` in the touch family and the Harmony 600, 650
-and 700's stay in `wiring.ts`. `docs/config-format.md` carries the values:
+The state tables' differences are the touch family's `StateTableFacts`, `TOUCH_STATE_TABLES` in
+`families/touch/statetables.ts`, which the builder takes as `Family.stateTables` beside the four slot family's
+`FOUR_SLOT_STATE_TABLES`, so the builder tests no architecture; whether the minute calls a list is the family's
+`minuteCall` and which list the description's. The log area's region is a per architecture table, `LOG_AREAS`
+in the new `firmwaresections.ts`. The parameter values are a model's and not an architecture's, so the Harmony
+One's one set is `TOUCH_PARAMETERS` in the touch family and the Harmony 600, 650 and 700's stay in `wiring.ts`.
+`docs/config-format.md` carries the values:
 
 * **the firmware's records 7 to 17**, where 13 and 14 start at 1 and 2 with maxima 1 and 4 on the One against
   0 and 1 on the Harmony 600 family;
@@ -53215,6 +53220,19 @@ and 700's stay in `wiring.ts`. `docs/config-format.md` carries the values:
 
 The hour's list `[0x1F 0xF203, 0x1F 0xF204]`, the value map lead byte, the name tree's roots and order and the
 first two byte variable are the Harmony 600 family's on all 19.
+
+**Corrected in place, when `todo-compile-one.md` 3.3.3.3 reached main.** This section first held the state
+tables' differences as a per architecture table in the shared module, `STATE_TABLE_ARCHITECTURES`<!--superseded-->
+in `statetables.ts`, read by a lookup on the container's architecture, as the frame's were in 6.1. 3.3.3.3 had
+meanwhile made the builder take a family's facts, plan 007, whose rule is that a builder's per remote facts live
+in the family and only a reader of Logitech's formats may look a fact up by architecture. The two met, and the
+family's form was kept: the Harmony One's records 7 to 17, its width line, its one byte case count and the
+minute's call became the touch family's `TOUCH_STATE_TABLES`, the description lost the architecture it carried
+for the lookup, and the builder refuses a minute's list that disagrees with its family. No value changed and
+every count below was measured again after the move. `LOG_AREAS` stays a per architecture table for now: its
+four slot row is read by `wiring.ts`, which is the four slot family's but still outside it, and moving the row
+into the family would make that module reach into a family before it moves there itself, `todo-compile-one.md`
+3.3.3.2.
 
 ### The measurement
 
@@ -53234,7 +53252,7 @@ compiles come back byte for byte from the same builders.
 
 **The controls fail where they should**: the Harmony 600 family's firmware records match 0 of the 19, a clock
 without the minute's call 0, the 600 family's log area 0, a One description built with the 600 family's width
-rule is refused on all 19, and a missing or misplaced group 9 tail, a group of another length and a value too
+rule is refused on all 19, and so is one without its minute's list, and a missing or misplaced group 9 tail, a group of another length and a value too
 large for two bytes are each refused.
 
 ### Asserted
@@ -53249,7 +53267,7 @@ its description; or one holding a variable of its own above 121, which the build
 ### Which architectures
 
 Arch 12 (Harmony One) and arch 14 (Harmony 600, 650 and 700) are built and measured; every other architecture
-has no row in either table and is refused.
+has no family to give the builder its state table facts and no row in the log area's table, and is refused.
 
 ## 408. The Harmony One's firmware names a configuration's screen by number once, the status screen for code 9, and every other screen is entered by the configuration's own instructions or by nothing
 

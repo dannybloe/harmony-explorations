@@ -29,10 +29,11 @@ import { placePieces } from '../../placer.ts';
 import { encodeGlyph } from '../../font.ts';
 import { CLOCK_STATE_MAXIMA } from '../../sections.ts';
 import {
-  activityStateVariables, buildStateTables, firmwareStateVariableCount, menuMarkerVariable, startSequenceVariables,
+  buildStateTables, menuMarkerVariable, startSequenceVariables,
   type BuiltStateTables, type PieceTarget, type StateTablesSpec, type StateVariableSpec, type ValueMapSpec,
   hourListBytes,
 } from '../../statetables.ts';
+import { FIRMWARE_STATE_VARIABLE_COUNT, FOUR_SLOT_STATE_TABLES, activityStateVariables } from './statetables.ts';
 import {
   ACTIVITY_KEY_SCANS, FIRMWARE_SCREENS, FIXED_ENTRIES, buildWiring, wiringFrontIndex, wiringNeeds, type BuiltWiring, type WiringSettings,
   type WiringSpec,
@@ -87,8 +88,6 @@ export function emptyCodeOf(ch: string): number {
 const FONT_SET_HEADER = 3;
 /** Every table here names its entries in three byte addresses. */
 const POINTER = 3;
-/** How many state variables the firmware owns on the Harmony 600, 650 and 700, 0 to 17, section 284. */
-const FIRMWARE_STATE_VARIABLE_COUNT = firmwareStateVariableCount(14);
 
 /** Our font table, built from `EMPTY_FONT_SETS`: the table, the sets and the glyphs, each shared glyph once. */
 export interface EmptyFontTable {
@@ -218,7 +217,7 @@ export function buildEmptySkeleton(options: EmptyOptions): EmptyBuilt {
 function layOutSkeleton(options: EmptyOptions, programs: ContainerPiece[]): EmptyBuilt {
   const model = emptyModelOf(options.skin);
   const fonts = emptyFontTable(options.inks, options.weights);
-  const states = buildStateTables({ architecture: 14, clock: clockSpec(options.builtAt), hourList: 0, variables: [], valueMaps: [] });
+  const states = buildStateTables({ clock: clockSpec(options.builtAt), hourList: 0, variables: [], valueMaps: [] }, FOUR_SLOT_STATE_TABLES);
   const empty = (owner: string, length: number): ContainerPiece => ({ bytes: new Uint8Array(length), refs: [], owner });
   const tables: (ContainerPiece | undefined)[] = new Array(20).fill(undefined);
   tables[0] = states.nameTree;
@@ -422,10 +421,10 @@ export function emptyWiring(settings: WiringSettings, builtAt: string, model: Em
   };
   const variables = emptyVariables(model);
   const states = buildStateTables({
-    architecture: 14, clock: clockSpec(builtAt), hourList,
+    clock: clockSpec(builtAt), hourList,
     variables: variables.map(([, variable]) => variable),
     valueMaps: maps.map((name) => cases[name]),
-  });
+  }, FOUR_SLOT_STATE_TABLES);
   states.indexOf.forEach((index, k) => {
     if (index !== FIRMWARE_STATE_VARIABLE_COUNT + k) throw new EmptyConfigurationError(`variable ${variables[k]![0]} took ${index}`);
   });

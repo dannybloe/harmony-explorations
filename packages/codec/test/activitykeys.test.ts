@@ -10,17 +10,23 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { require_, skipUnless } from '@harmony/lab';
-import { activities as activityList, activityKeys as keysOf, parse as parseConfig } from '../src/index.ts';
+import { activities as activityList, parse as parseConfig } from '../src/index.ts';
 import {
+  activityKeys as keysOf,
   ACTIVITY_KEYS,
   type ActivityKey,
-  ACTIVITY_STATE_NAME,
   activityKeyEntry,
   activityKeys,
   activityOfSet,
+  clearActivityKey,
+  placeholderList,
+  placeholderMode,
+  setActivityKey,
+} from '../src/families/four-slot/activitykeys.ts';
+import {
+  ACTIVITY_STATE_NAME,
   appendActionLists,
   applyEdits,
-  clearActivityKey,
   ComposeError,
   composeActivity,
   coverage,
@@ -29,11 +35,8 @@ import {
   handlerSetRoles,
   idleActivityValue,
   parse,
-  placeholderList,
-  placeholderMode,
   restamped,
   roundTrip,
-  setActivityKey,
   stateVariables,
   trailerAgrees,
 } from '../src/index.ts';

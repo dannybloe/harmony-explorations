@@ -54,7 +54,7 @@ import {
 } from './screen.ts';
 import { contentKey, modeRoles } from './screencategories.ts';
 import { buildScreenRecords, describeScreenRecords, screenRecordModes, withScreenRecords } from './screenrecords.ts';
-import { DEVICE_MODE_PROGRAM_TAG, activityKeyedRecords } from './compose.ts';
+import { DEVICE_MODE_PROGRAM_TAG, activityKeyedRecords } from './families/four-slot/index.ts';
 import { valueMaps } from './valuemap.ts';
 import { modeRecords } from './sections.ts';
 import { ENTER_MODE, RUN_SCREEN_PROGRAM } from './inventory.ts';

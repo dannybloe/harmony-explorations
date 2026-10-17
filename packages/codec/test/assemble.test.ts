@@ -20,7 +20,6 @@ import { screenProgram } from '../src/screen.ts';
 import { valueMaps } from '../src/valuemap.ts';
 import {
   AssemblyError,
-  FOUR_SLOT_CHOICES,
   assembleSetup,
   attributeBytes,
   buildScreenRecords,
@@ -29,8 +28,6 @@ import {
   checkOxaniumFonts,
   checkStateBackgrounds,
   characterMap,
-  ladderOf,
-  oxaniumLabelSizes,
   checkScreenRecords,
   checkWiring,
   claims,
@@ -39,7 +36,6 @@ import {
   describeScreenRecords,
   describeWiring,
   ACTIVITY_STATE_NAME,
-  DEVICES_KEY_TAG,
   MAP_VALUE_OPCODE,
   devices,
   dropLists,
@@ -59,6 +55,9 @@ import {
   withScreenRecords,
   withWiring,
 } from '../src/index.ts';
+import { FOUR_SLOT_CHOICES } from '../src/families/four-slot/choices.ts';
+import { DEVICES_KEY_TAG } from '../src/families/four-slot/chrome.ts';
+import { ladderOf, oxaniumLabelSizes } from '../src/families/four-slot/devicemode.ts';
 import { buildScreenTexts, checkScreenTexts, describeScreenTexts, withScreenTexts } from '../src/families/four-slot/screentexts.ts';
 import { buildFirmwareScreens, checkFirmwareScreens, describeFirmwareScreens, withFirmwareScreens } from '../src/families/four-slot/firmwarescreens.ts';
 

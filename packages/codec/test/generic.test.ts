@@ -9,7 +9,8 @@
  * audit**: a module can hold one remote's coordinates, fonts or counts under names no pattern knows. The module
  * by module audit, `todo-compile-one.md` 3.3.2, found the rest: five modules remote specific in substance that the
  * patterns here count in part or not at all, `statetables.ts`, `shared/devices.ts`, `shared/setup.ts`, `sequence.ts` and
- * `composecatalogue.ts`, and 3.3.3 moves them all the same.
+ * `composecatalogue.ts`, and 3.3.3 moves them all the same; `statetables.ts`' four slot facts are the family's
+ * since 3.3.3.3, the builder taking them from `Family.stateTables`.
  *
  * The counts are asserted exactly, so a module joining the list or a count rising fails, and so does one falling,
  * which is the moment to lower the list and keep the gain. **Never add a module or raise a count to make a commit
@@ -38,20 +39,24 @@ const PATTERNS: Readonly<Record<string, RegExp>> = {
   imports: /from '(\.\.?\/)+families\/(four-slot|touch)\//g,
 };
 
-/** Every module outside `families/` that names a remote, with how often, as of `todo-compile-one.md` 3.3's start. */
+/**
+ * Every module outside `families/` that names a remote, with how often, as of `todo-compile-one.md` 3.3's start.
+ *
+ * Since 3.3.3.3 `compose.ts` passes nothing of a family's through, so no module has a `barrel` count left: the
+ * three four slot modules still outside the family that took a family's names that way, `backgrounds`,
+ * `compare` and `screenrecords`, import them from the family's index instead, which shows as one import
+ * each where the barrel counted the names, `screenrecords`' joining the import it had.
+ */
 const DEBT: Readonly<Record<string, Readonly<Record<string, number>>>> = {
-  'activitykeys.ts': { architecture: 1 },
   'assemble.ts': { architecture: 2, family: 11, models: 3, imports: 5 },
-  'backgrounds.ts': { architecture: 3, models: 4, barrel: 2 },
-  'compare.ts': { family: 5, barrel: 1 },
-  'compose.ts': { family: 18, imports: 7 },
-  'devicemode.ts': { family: 9, scans: 41 },
+  'backgrounds.ts': { architecture: 3, models: 4, imports: 1 },
+  'compare.ts': { family: 5, imports: 1 },
   'fonttable.ts': { architecture: 4 },
   'growth.ts': { family: 6 },
   'inventory.ts': { architecture: 2, family: 17, scans: 4 },
   'modezero.ts': { scans: 3, models: 1 },
   'pictures.ts': { architecture: 1 },
-  'screenrecords.ts': { architecture: 1, family: 21, imports: 1, barrel: 18 },
+  'screenrecords.ts': { architecture: 1, family: 21, imports: 1 },
   'shared/activities.ts': { architecture: 1 },
   'shared/setup.ts': { models: 1 },
   'wiring.ts': { scans: 3, models: 5 },

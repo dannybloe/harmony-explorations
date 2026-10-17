@@ -83,6 +83,9 @@ and fails when a module joins the list or a count on it rises. The list is the d
 | which command each hard key sends in device mode | per family, since the Harmony 650's `HARD_KEYS` does not carry over to the Harmony One by key name |
 | our faces' weights, the pad font, the menu row fonts | the family's choices |
 | a character only one family's compiles draw, such as the Harmony One's start up title joiner, a blank a plain character map reads as a space | the family's own character map over the shared one, `touchCharacterMap`; the speller and the form rule stay shared |
+| the activity keys an activity is put on, read and edited | `Family.activityKeyEditor`, absent where a family has none |
+| the values a family's state tables hold that another's do not, the Harmony One's minute call and width line among them | `Family.stateTables`, which the generic `buildStateTables` takes; not a per architecture table in the shared module, which is how `todo-compile-one.md` 6.4 first held the One's |
+| how a four slot page sizes, splits and places a label, the title and the counter | the four slot family's `devicemode.ts`; which command goes to which key or to the screen stays shared |
 
 Add a row when a new kind of difference lands.
 

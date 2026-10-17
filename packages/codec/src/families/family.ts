@@ -11,11 +11,12 @@
  * `todo-compile-650.md` 10.7.3: a composer takes its family's choices in its options and falls back to
  * these.
  */
-import type { ActivityKey } from '../activitykeys.ts';
 import type { HardKey } from '../devicemode.ts';
 import type { ActivityKeyRules, DeviceScreenItem } from '../activityroles.ts';
 import type { Container, Instruction } from '../gspm.ts';
+import type { Edit } from '../edit.ts';
 import type { SetFace } from '../fonttable.ts';
+import type { StateTableFacts } from '../statetables.ts';
 import type {
   ComposeActivityRowOptions, ComposeActivityScreenOptions, ComposedActivityRow, ComposedActivityScreen, ComposedScreen,
   ComposeRow, ComposeScreenOptions,
@@ -58,9 +59,36 @@ export interface CommonChoices {
   readonly delays?: DelayDefaults;
   /**
    * The activity key each MyHarmony type of activity takes, where the family's remotes have activity keys:
-   * the Harmony 600, 650 and 700, section 314. The Harmony One has none.
+   * the Harmony 600, 650 and 700, section 314. The Harmony One has none. A key by the name printed on it,
+   * which names the family's `activityKeyEditor` knows.
    */
-  readonly activityKeys?: Readonly<Record<string, ActivityKey | undefined>>;
+  readonly activityKeys?: Readonly<Record<string, string | undefined>>;
+}
+
+/** What one activity key does, as a family's `activityKeyEditor` reads it. */
+export interface ActivityKeyState {
+  /** The key by the name printed on it. */
+  readonly key: string;
+  /**
+   * `activity` when it starts the activity whose key map is base slot 9 entry `set`, `placeholder` when it
+   * opens the family's screen for a key with no activity, and `other` for anything else.
+   */
+  readonly kind: 'activity' | 'placeholder' | 'other';
+  readonly set?: number;
+}
+
+/**
+ * The hard keys that each start one activity, read and put an activity on, where a family's remotes have
+ * them: the three of the Harmony 600, 650 and 700, section 314. What a shared composer asks of them, so it
+ * neither knows where a family keeps its keys nor which names they have.
+ */
+export interface ActivityKeyEditor {
+  /** Refuses, with the reason, a key this configuration cannot take an activity on; asked before anything is built. */
+  check(c: Container, key: string): void;
+  /** What each of the family's activity keys does, in the family's order. */
+  read(c: Container): readonly ActivityKeyState[];
+  /** The edits that put the activity whose key map is base slot 9 entry `set` on `key`. */
+  set(c: Container, key: string, set: number): Edit[];
 }
 
 /** A composer's options with the family's choices, which default to the family's own. */
@@ -79,6 +107,17 @@ export interface Family<Choices extends CommonChoices = CommonChoices> {
   readonly deviceModeKeys: readonly HardKey[];
   /** The keys section 323's activity keypad rule names, on this family's keypad. */
   readonly activityKeyRules: ActivityKeyRules;
+  /**
+   * The family's activity keys, where its remotes have them: the Harmony 600, 650 and 700's three, section
+   * 314. Absent on the Harmony One, which has none, so a composer asked to put an activity on one refuses.
+   */
+  readonly activityKeyEditor?: ActivityKeyEditor;
+  /**
+   * What `buildStateTables` builds this family's base slots 0, 13 and 14 from, and `describeStateTables` reads
+   * them by: the Harmony 600, 650 and 700's, `todo-compile-650.md` 10.3, and the Harmony One's, whose tables
+   * differ in four values, `todo-compile-one.md` 2.3, built since 6.4.
+   */
+  readonly stateTables: StateTableFacts;
   /** The commands a mode's pages show, page by page in this family's item order, with each one's drawn label. */
   screenItems(c: Container, mode: number): DeviceScreenItem[];
   /** Whether an item is drawn the way this family draws a command called `name`. */

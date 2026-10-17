@@ -15,16 +15,11 @@ import { require_, skipUnless } from '@harmony/lab';
 import {
   type Container,
   ACTIVITY_STATE_NAME,
-  activityMenuSingle,
-  checkFourSlotMenuPages,
   composeActivity,
   composeActivityMenuRow,
   composeDevice,
   composeDeviceScreen,
-  deviceModeChrome,
   firmwareStateVariableMax,
-  fourSlotMenuChrome,
-  fourSlotMenus,
   modeRecords,
   parse,
   pictureReference,
@@ -32,6 +27,9 @@ import {
   screenProgram,
   stateVariables,
 } from '../src/index.ts';
+import { checkFourSlotMenuPages, fourSlotMenuChrome, fourSlotMenus } from '../src/families/four-slot/menus.ts';
+import { deviceModeChrome } from '../src/families/four-slot/chrome.ts';
+import { activityMenuSingle } from '../src/families/four-slot/activityscreen.ts';
 import { MENU_EDGE_SCANS, MENU_ROW_SCAN, menuRowCapacity } from '../src/families/touch/menus.ts';
 import { touchPages } from '../src/tables.ts';
 import { deviceListMenus } from '../src/shared/menus.ts';

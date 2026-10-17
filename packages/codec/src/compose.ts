@@ -1,7 +1,9 @@
 /**
- * The composers' public face, plan 007: every name callers have always imported from here, now living in
- * `shared/` and `families/`, and the three composers whose work differs by kind of screen, which choose
- * the family through `families/registry.ts` and nowhere else.
+ * The composers' public face, plan 007: the shared composers' names callers have always imported from here,
+ * now living in `shared/`, and the three composers whose work differs by kind of screen, which choose
+ * the family through `families/registry.ts` and nowhere else. **Nothing of a family's own passes through
+ * here** since `todo-compile-one.md` 3.3.3.3: a family's modules are reached through the family, and a test
+ * or a script that wants one of them imports it from `families/` itself.
  *
  * **The layout.** `shared/` holds what every family does alike: infrared groups, devices, activities,
  * power, spelling in a configuration's fonts, the menus' common records and the core edits. `families/`
@@ -22,68 +24,6 @@ import {
   type ComposedActivityScreen, type ComposedScreen, type ComposeRow, type ComposeScreenOptions,
 } from './shared/menus.ts';
 
-export {
-  activityKeyedRecords,
-  activityMenuSingle,
-  type ActivityScreenChrome,
-  activityScreenChrome,
-  type ActivityScreensChecked,
-  checkActivityScreens,
-  fixedLineScreenParts,
-  STARTUP_FIXED_LINE_Y,
-  STARTUP_TITLE_MAX,
-  STARTUP_TITLE_SECOND_Y,
-  STARTUP_TITLE_Y,
-  startupPicture,
-  startupTitleYs,
-} from './families/four-slot/activityscreen.ts';
-export {
-  bottomLineParts,
-  DEVICE_MODE_PROGRAM_TAG,
-  DEVICE_PAGE_BACK_WORD,
-  DEVICE_PAGE_BACK_Y,
-  type DeviceModeChrome,
-  deviceModeChrome,
-  deviceModeKeyMap,
-  DEVICES_KEY_TAG,
-  FOUR_SLOT_COUNTER_X,
-  FOUR_SLOT_TITLE_XY,
-  fourSlotCounterX,
-  inlineHomes,
-  type KeyMapEntry,
-  type PageFrame,
-} from './families/four-slot/chrome.ts';
-export {
-  type ActivityDeviceList,
-  activityDeviceList,
-  type ActivityDeviceListsChecked,
-  activityRowListBody,
-  checkActivityDeviceLists,
-  composeActivityDeviceList,
-  type ComposedActivityDeviceList,
-  deviceListRowBody,
-} from './families/four-slot/devicelist.ts';
-export {
-  checkFourSlotMenuPages,
-  type FourSlotMenu,
-  type FourSlotMenuChrome,
-  fourSlotMenuChrome,
-  type FourSlotMenuKind,
-  type FourSlotMenuLabel,
-  type FourSlotMenuPageContent,
-  fourSlotMenus,
-  fourSlotMenuWords,
-  idleDeviceList,
-  menuPageContent,
-  menuPageListBytes,
-  menuPageParts,
-  type MenuPart,
-  menuPartsBytes,
-  TWO_ROW_COUNTER_X,
-} from './families/four-slot/menus.ts';
-export {
-  paginate,
-} from './families/touch/menus.ts';
 export {
   type ComposeActivity,
   type ComposeActivityTarget,
@@ -252,15 +192,11 @@ export function composeDevice(
 }
 
 /**
- * Compose an activity into a configuration, with the traits of the family its remote is in:
- * `composeActivityFor` in `shared/activities.ts` carries the whole account.
+ * Compose an activity into a configuration, with the traits of the family its remote is in and that
+ * family's activity keys: `composeActivityFor` in `shared/activities.ts` carries the whole account.
  */
 export function composeActivity(c: Container, activity: ComposeActivity): ComposedActivity {
-  return composeActivityFor(c, activity, traitsOf(c));
+  return composeActivityFor(c, activity, traitsOf(c), familyOf(c));
 }
 
-export {
-  ChoiceError, FOUR_SLOT_CHOICES, OUR_FOUR_SLOT_CHOICES, type FourSlotChoices, type FourSlotChoicesGiven, fourSlotChoices,
-} from './families/four-slot/choices.ts';
-export { TOUCH_CHOICES, type TouchChoices } from './families/touch/choices.ts';
 export type { CommonChoices, DelayDefaults, FamilyTraits, WithChoices } from './families/family.ts';

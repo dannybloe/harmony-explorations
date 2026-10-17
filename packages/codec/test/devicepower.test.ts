@@ -26,7 +26,6 @@ import {
   ComposeError,
   type Container,
   DEVICE_QUANTITY_DEFAULT,
-  FOUR_SLOT_CHOICES,
   catalogueCommands,
   catalogueDevice,
   catalogueDevicePower,
@@ -42,6 +41,7 @@ import {
   payloadOf,
   stateRecords,
 } from '../src/index.ts';
+import { FOUR_SLOT_CHOICES } from '../src/families/four-slot/choices.ts';
 
 const CALL = 0x7f;
 const SEND = 0x7d;
