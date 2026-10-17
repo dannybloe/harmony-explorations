@@ -225,10 +225,12 @@ test('the config writer refuses a commit on a firmware build whose drop and rest
   assert.match(text, /unitLabel: 'h650', dumps: H650_DUMPS, sequenceReadOn: \['0\.2'\] \}/);
   assert.match(text, /unitLabel: 'h600', dumps: H600_DUMPS, sequenceReadOn: \['0\.2'\] \}/);
   assert.match(text, /unitLabel: 'h700', dumps: H700_DUMPS, sequenceReadOn: \['2\.8'\] \}/);
-  // What each may be written against: for the 600 and the 700 the read taken straight after its
-  // first block went back unchanged, sections 302 and 300, and the 700's after its delay write too.
-  assert.match(text, /const H600_DUMPS = new Set<string>\(\[\s*(\/\/[^\n]*\n\s*)*'h600_after_rehearsal_region',\s*(\/\/[^\n]*\n\s*)*'h600_kpn45_region',\s*\]\);/);
-  assert.match(text, /const H700_DUMPS = new Set<string>\(\[\s*(\/\/[^\n]*\n\s*)*'h700_after_rehearsal_region',\s*(\/\/[^\n]*\n\s*)*'h700_delay90_region',\s*\]\);/);
+  // What each may be written against starts with the read taken straight after its first block went
+  // back unchanged, sections 302 and 300, then the read after its delay write. Every later write appends
+  // the read it leaves behind, so the list is asserted from its start and not to its end, which is what
+  // this asserted until the 600's empty configuration added the third.
+  assert.match(text, /const H600_DUMPS = new Set<string>\(\[\s*(\/\/[^\n]*\n\s*)*'h600_after_rehearsal_region',\s*(\/\/[^\n]*\n\s*)*'h600_kpn45_region',/);
+  assert.match(text, /const H700_DUMPS = new Set<string>\(\[\s*(\/\/[^\n]*\n\s*)*'h700_after_rehearsal_region',\s*(\/\/[^\n]*\n\s*)*'h700_delay90_region',/);
   assert.match(text, /if \(commit && !unit\.sequenceReadOn\.includes\(identity\.firmware\)\) \{\s*throw new Refusal/);
   assert.match(text, /const unit = units\.find\(\(one\) => one\.dumps\.has\(dumpName\)\);/);
 });
