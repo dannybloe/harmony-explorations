@@ -85,9 +85,9 @@ import {
   type TemplatePage, type TemplateScreen, type TemplateScreensDescribed, type TemplateScreensSpec, banded, buildTemplateScreens, centred,
   chrome as templateChrome, describeTemplateScreens, font as fontPart, k, owns, picture, press, text,
 } from './screentemplate.ts';
-
-/** The status code whose screen the firmware draws from a configuration, section 408. */
-const DISPLAY_TEST_CODE = 9;
+// Code 9's screen is one of the thirty status screens, whose one shape `statusscreens.ts` states (section 413), so
+// it is built through that rather than written here a second time; the code is section 408's.
+import { DISPLAY_TEST_CODE, statusScreen } from './statusscreens.ts';
 
 const FIRST_BLOCK = 48;
 const BLOCKS = 6;
@@ -224,12 +224,7 @@ function fixedScreens(year: number): FixedScreen[] {
   // build year rather than written as the sixteen's constant. Found by the blind reviewer, section 411.
   const yearOffset = (2001 - year) & 0xffff;
   return [
-    {
-      name: 'LCD Module Failed',
-      own: [...ARROWS, [TAG_ENTER, TIMER_START], [TAG_LEAVE, TIMER_CANCEL], [TAG_HEADER, HEADER]],
-      chrome: chrome(`System Message: ${DISPLAY_TEST_CODE}`, 1),
-      pages: [{ list: [], parts: [{ op: 'chrome' }, font('body'), centred('LCD Module', 162), centred('Failed', 174)] }],
-    },
+    { ...statusScreen<FixedScreenFont>(DISPLAY_TEST_CODE, { title: 'title', body: 'body' }), name: 'LCD Module Failed' },
     {
       name: 'Options',
       own: [[TAG_ENTER, owns(TIMER_START, LIST, LIST, LIST)], [TAG_LEAVE, owns(TIMER_CANCEL, LIST, LIST, LIST)], SCAN_38,

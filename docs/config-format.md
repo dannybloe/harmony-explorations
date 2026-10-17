@@ -2692,6 +2692,23 @@ A Harmony One page program may switch on a state variable, `0x12`, each arm a pr
 a jump to the piece the arms join at: Options draws its rows so. **Unconfirmed**: what the `0x1F ED` and `0x1F F2`
 bands do; both low bytes are taken as numbers the configuration chose, since they differ by compile.
 
+**The other 29 status screens, built**, section 413: `families/touch/statusscreens.ts` through the same engine. The
+event map names status code k at mode 10 + k, fallback 10, on all nineteen compiles, and the builder takes the 29
+from it, every code but 9, whose screen section 411's module builds through the same `statusScreen`. All thirty are
+one shape, code 9's; what differs is the code in the title and Logitech's words, the same on the sixteen and both
+European compiles. 58 lists per compile, two per screen, named by nothing outside and calling none, on those
+eighteen. 3872 bytes per compile, of which the description reads 699, and 13 outside them. Leaving them out instead is untested on a remote, `todo-compile-one.md` 4.9.
+
+| what | rule, on the sixteen and both European compiles |
+|---|---|
+| own key map | the arrows swallowed, tag 6 a timer started, tag 7 that timer cancelled, tag `0x2D` a list of three `0x73` |
+| pages | one, its list and copy empty |
+| chrome | section 411's, titled "System Message: N", N the code, with its own list of two `0x73` |
+| page | the chrome's call, the body font, one to four lines |
+| a line | x `floor((176 - w) / 2)`; n lines from y `174 - 6n`, twelve apart (blocks of 1 to 4); also on the Dutch compile in its own words |
+| inline or by reference | section 411's rule in mode order; code 28's "USB Connected" by reference to the firmware screen USB Connected's copy, mode 1 |
+| code 16's line | one text, "Battery Trickle\Charge", backslash drawn as the character |
+
 **Which of the 78 the 3.4 firmware draws by number**: one. A mode becomes current only from an `0x7E` operand, the
 mode stack (a mode that was current) or base slot 4, and base slot 4 is walked only for status code 9, "LCD Module
 Failed", after the licence check passed and while the configuration's verdict stands, so its key 9 (mode 19 in

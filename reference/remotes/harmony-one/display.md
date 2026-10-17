@@ -101,6 +101,11 @@ Generated from `packages/codec`, `packages/usb` and the drawing by `make remote-
   the European compiles' Hour picker counts 24 hours and they have no Time of Day picker. Read from configurations, section 411.
 * **The status screen code 9 draws** says "System Message: 9" as its title over "LCD Module" and "Failed"; the seven
   blank screens the timers enter show one picture each and no text. Read from configurations, section 411.
+* **The configuration's thirty status screens** all look like code 9's: "System Message: N" as the title, N the
+  status code, over one to four centred lines of Logitech's words for the code, such as "Go to Website" and "to update
+  settings" for 0, "Configuration" and "Corrupted" for 26, and for 16 the one line "Battery Trickle\Charge", backslash
+  and all. The firmware draws none of them but code 9's as read, section 408. Read from configurations on the sixteen
+  English compiles of skin 54 and both European ones, section 413.
 * **The welcome tour** is eleven screens, each a picture, a few lines of text at the left and "Exit" at the bottom
   right. A person meets them as "Welcome!", the arrows, what activities are, "Watch TV", selecting it, the display,
   another activity, the Help button, Help asking questions, the Off button and "It's that easy!"; the arrows turn

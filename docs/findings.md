@@ -54224,3 +54224,203 @@ Arch 12 (Harmony One) alone, skin 54 and the European skin 59, in English; the m
 Harmony 600, 650 and 700 carry a welcome tour of ten screens of another shape and a Remote Assistant screen of their
 own, section 357's; none of the 102 arch 14 samples the lab names holds the One's start ladder, by the second
 reviewer's run of `touchStartupVariables`, where section 403 checked five.
+
+## 413. The Harmony One's twenty nine status screens past code 9's are one shape with Logitech's words, built from a description of their numbering byte for byte on the sixteen English compiles of skin 54 and both European ones
+
+**Todo `todo-compile-one.md` 4.5**: the 29 status screens of the head that nothing enters, section 408's, either
+built from a description as section 411 built code 9's, or left out with the head shortened and the event map
+renumbered. This section takes the first branch and builds them; the second needs a remote and is assessed at the
+end from the configuration's side only.
+
+**Sources checked**: sections 244 (the status container's thirty screens, a reading aid for the words and
+nothing the builder reads), 355 (the Harmony 650 draws none of its thirty), 381, 383 and 387 (our arch 14
+configurations ran, and section 405's correction with `families/four-slot/empty.ts`, `todo-compile-650.md` 11.1.1,
+say they carry no status screens), 405 (the head is the event map's fallback plus thirty), 408 (the
+firmware walks the event map for code 9 alone; nothing else names modes 10 to 39), 409 (the centring rule), 411
+(code 9's screen built, the template and the inline rule), 412 (the engine shared); `screentemplate.ts`,
+`fixedscreens.ts`, `wiringparts.ts`' `buildEventMap` and the four slot family's `NO_STATUS_SCREEN`; the nineteen
+Harmony One compiles. Neither the firmware nor Logitech's client was read for this: what their compiler emits is
+the question, and the compiles answer it; section 408 already read what the firmware does with these screens.
+
+### The screens, and how each is found
+
+The event map names status code k at mode 10 + k for all thirty codes, with fallback 10, on all nineteen compiles,
+so the 29 are modes 10 to 39 but 19, and `touchStatusScreenModes` takes them from the event map, the way the
+configuration names a status screen; a map without exactly the thirty codes, or naming one mode twice, is refused.
+
+**Every one of the thirty is code 9's shape**, section 411's table: its own key map swallows the page arrows,
+starts a timer on entering and cancels it on leaving, both bound directly, and binds the header handler, a list
+running three base slot 11 programs; one page, whose list and copy are empty; section 411's chrome titled "System
+Message: N" with N the code, drawing the title in the title font at 6, 4, the full screen picture, a queued base
+slot 11 program and a queued list of the screen's own running two more, and the title again by reference to its
+first copy; and a page that calls the chrome, selects the body font and draws one to four lines. On the sixteen
+and both European compiles the thirty differ only in the code in the title and the lines, and the lines are the
+same words on all eighteen. The description reader refuses any other binding, instruction, list length or font
+disagreement, and the byte comparison after the build any other word or place; both pass on the eighteen, which is
+the measurement. So `statusScreen(code)` states the shape once, and section 411's code 9 is now built through it.
+
+The words, per code: 0 "Go to Website / to update settings", 1 "USB / Initialization", 2 "Bootloader / Locked", 3
+"Real Time Clock", 4 "IR LEDs / and / Photodiode", 5 to 8 "FLASH Memory" over "ID", "Erase", "Write" and "Clear",
+9 "LCD Module / Failed", 10 "PLL Failure", 11 "BootRAM / Truncated", 12 "Safe Mode", 13 "Safe Mode / Requested",
+14 "Battery Low", 15 "Battery Fast / Charge", 16 "Battery Trickle\Charge", 17 "Battery Charge / Complete", 18 "IR
+Sending", 19 "Invalid / Configuration", 20 "Bootloader / Bad Image", 21 "Bootloader / Upgrade Failed", 22 to 24
+"Battery ADC", "LightSense ADC" and "Revision ADC" over "Not Calibrated", 25 "Application / Terminated", 26
+"Configuration / Corrupted", 27 "Missing / License", 28 "USB Connected" and 29 "Needs to be / setup. / Battery /
+Charging". **Code 16 is one text with a backslash in it**, drawn as the character on all eighteen, and the firmware's own
+status containers draw it as one text too, both Harmony One images and the Harmony 600's, 650's and 700's, by the
+second reviewer's run, so the backslash is Logitech's and not the configuration compiler's; the Dutch
+compile draws two lines for the same code, "Batterij langzaam" over "opladen", which suggests the backslash was
+meant as a line break, and the builder reproduces it as drawn.
+
+### Where the words go
+
+Each compile's thirty screens hold 112 texts past code 9's, 58 titles and 54 lines, and every one is placed by
+these rules with no misfit:
+
+| rule | per compile |
+|---|---|
+| the title at 6, 4, twice | 58 |
+| a line centred on the 176 pixel width rounded down, `floor((176 - w) / 2)`, section 409's rule | 54, 31 with an odd remainder |
+| the lines twelve apart in a block centred on y 168, so n lines start at `174 - 6n`: 168, 162, 156 and 150 for one to four lines | 54 |
+
+Code 9's two lines at 162 and 174, which section 411 wrote as constants, are the same rule. The 31 odd remainders
+tell rounding down from rounding up. **Out of sample**, both rules place every line of the Dutch compile's thirty
+in its own words, 55 lines past code 9's, 32 with an odd remainder, with blocks of one to four lines; the builder
+is English only, and the Dutch compile is a control.
+
+### Inline or by reference
+
+Section 411's rule through the same engine, in mode order. Of the 112 texts per compile 73 are inline and 39 by
+reference: the 29 second titles, to their own first copy; nine repeated lines to the first status screen drawing
+them ("FLASH Memory" three times to code 5's, "Safe Mode" to code 12's, "Bootloader" twice to code 2's, "Not
+Calibrated" twice to code 22's, "Configuration" to code 19's); and one home outside, code 28's "USB Connected",
+drawn by reference to the copy the firmware screen USB Connected holds, mode 1, which section 409's builder makes.
+So a composer building both has to give this builder the built firmware screen's copy as the home.
+
+**One text crosses the other way**: on `one_config`, the everyday One's European compile, a device page of four
+pages, mode 117, draws "Clear" in its own font by reference to code 8's copy in the body font, a reference across
+fonts as section 411 found them; on the other seventeen English compiles no text outside these screens is drawn by
+reference into them, and on all eighteen no program piece is shared with them, by the second reviewer's run. `withModeRecords` points that reference at the built copy, and
+`one_config` rebuilds byte for byte. It also shows the compiler's one inline copy is shared across the whole
+configuration, which matters for leaving the screens out, below.
+
+### The lists
+
+Each screen names two lists of its own, the header handler's (three `0x73`) and its chrome's queued one (two
+`0x73`), 58 per compile, built at the described indices. On the sixteen, nothing outside the 29 screens names any
+of them, by `screenlists.ts`' walk, and none of them calls a list, so nothing below them stays the configuration's;
+the same on both European compiles. On `harvest_one_two_devices` they are indices 178 to 237 but 196 and 197, code
+9's pair, two per screen in mode order, and on `one_config` 177 to 236 but 195 and 196.
+
+### What the description carries and what is generated
+
+Per compile the screens are 3872 bytes, the figure 3.2.1 counted as carried on the test setup, and the description
+reads 699 of them and 13 outside them, 712 in all, the same on all eighteen: inside the screens the list indices,
+the modes, the timers, the base slot 11 programs, both fonts, the hit pages and the pictures' and the home's
+addresses; outside them the home's thirteen glyph codes. Everything else is generated: every opcode and constant operand, the tags and their
+stored order, both lists' instructions, every word and its place, the title's code, which text is inline, the
+entry's flag (0, none binding `0x29`), the page records and the entries.
+
+**The blind control**: every one of the 50768 bytes the description does not read over the sixteen overwritten, in
+the file it reads, in the file the fonts are spelled from and in the layout's own pieces, and the sixteen come back
+byte for byte, with the same offsets read; it reads 11184 bytes inside the 61952 and 208 outside. **The controls
+fail where they should**: code 0's timer moved one on, and the rebuilt file differs; its header list moved one on,
+and the builder refuses to build list 179 two ways, it being the same screen's chrome list; the title and body
+fonts swapped, and the speller refuses, the title font holding no "G"; the home dropped, and the file is eleven
+bytes longer with "USB Connected" inline; codes 5 and 6's modes swapped, and the file differs.
+
+### Beyond the sixteen
+
+* **Both European compiles**, `one_config` and `one_config_unprogrammed`, rebuild byte for byte with the same
+  counts: their status screens are skin 54's word for word, and the build year that refuses them in section 411
+  plays no part here.
+* **The Dutch compile**, `one_friend_asfound_config`, is refused by the description at code 16's page, two lines
+  where the template draws one, before any word is compared. Other languages are out of scope.
+
+### Leaving them out, from the configuration's side
+
+The other branch of 4.5 was not taken: whether a Harmony One runs without these screens is a question for the
+spare unit, and nothing was written. What the configurations and earlier findings say:
+
+* **What names them**: only the event map, on all nineteen compiles, section 408's walk of every instruction,
+  `onestatusscreens.test.ts`; their 58 lists are named by nothing else and call nothing; and one later text, the
+  everyday One's "Clear", points into them. The firmware walks the event map only for code 9, section 408.
+* **What it would take in a configuration of ours**, which numbers its modes itself: the event map keeping code 9
+  on its screen and pointing the other 29 codes somewhere. Here the One differs from the four slot family, whose
+  uncarried form, `buildEventMap` with `NO_STATUS_SCREEN`, points every code at one blank firmware screen, which on
+  the One would lose code 9's screen; so a third form, code 9 to its screen and the others to that same screen or a
+  blank one, or a map of fewer than thirty entries, which no compile and none of our builds holds. Then the head 29
+  modes shorter and every mode above it renumbered: every `0x7E` operand, the wiring's named modes and the event
+  map's values; section 405's head rule, which reads the head off the event map's targets, would need checking
+  against such a form. Then base slot 10 without the 58 lists, the indices above renumbered, and "Clear", or any
+  text a later screen draws by reference into these, held inline by its first drawer instead, which the inline rule
+  already does when the screens are absent. And the list renumbering itself: `assemble.ts`' `listCallSites` reads
+  raw slots 10 and 8, which on the Harmony One are base slot 9 and the inserted empty slot, so on a One it finds
+  1553 of 3067 call sites on `harvest_one_two_devices`, missing every call inside an action list, by the blind
+  reviewer's census; its header already scopes it to arch 14. 3872 bytes of a configuration of 1.2 to 2.1 MB on the
+  nineteen compiles and 1.75 MB for the test setup, 0.2 to 0.3 percent.
+* **What bears on whether a remote tolerates it**: on the Harmony 600, 650 and 700, configurations of ours with no
+  status screens and every code pointed at one blank screen ran, sections 381, 383 and 387 with section 405's
+  correction. The Harmony 600's and 650's firmware draws none of its thirty, section 355, and the 700's was not read
+  for that; the One walks its event map for code 9 and runs
+  its configuration in place, so the arch 14 runs are not evidence for the One. Whether anything on the One
+  checks the event map's length or values beyond the walker, the configuration validator included, was not read.
+* **What a bench test could not show**: code 9's screen, which the firmware draws only after its display test
+  fails. And section 408's open redraw: for codes 26 and 0 the status container's arm leaves the code as the current
+  mode with the configuration selected; if the verdict came back (section 251) and the current mode were redrawn, the
+  configuration's mode of that number would
+  be drawn, which for 26 is today code 16's status screen and after a 29 mode cut would be a screen past the head,
+  whose enter list runs, and for 0 is Low Battery either way. Not traced, as in section 408.
+
+So leaving them out saves at most a third of a percent of a configuration and changes nothing a person sees as
+read; its cost is a new event map form, the renumbering, and a write to the spare Harmony One to find out whether
+it starts. It stays open as `todo-compile-one.md` 4.9.
+
+### Reviewer 1, blind
+
+Given the question and the corpus and not this section or the module, the blind reviewer found the same event map on
+all nineteen, the same 29 modes per compile, 551 screens of one shape once the numbering is masked (four shapes by
+line count, eight with the inline form unmasked), the numbering uniform within a compile (one timer, the same base
+slot 11 programs, fonts 0 and 2, hit page 1, one full screen picture), the same 112 texts with 58 titles and 54
+lines (55 Dutch), the floor rule with 31 odd remainders per English compile and 32 Dutch, the ceiling fitting only
+23, the y rule on 1027 of 1027 lines over the nineteen, the same 73 inline and 39 by reference with the same nine
+repeated lines and one home at mode 1, the one crossing on `one_config` (mode 117, a reference across fonts), the 58
+lists at the same indices named once each and calling none, and 3872 bytes on all eighteen English compiles, 3950 on
+the Dutch one. It added, for the leave-out branch: the screens share their timer, the base slot 11 programs, the
+picture, the fonts and hit page 1 with other modes, all of which stay; 527 to 1731 `0x7E` sites per compile name a
+mode above the head and would move by 29; and `listCallSites` misses the action lists' calls on a Harmony One, above.
+It also noted state variables or value maps holding a mode number as data were not checked, which stays open.
+
+### Reviewer 2, the sentences
+
+The audit re-ran every figure per compile and found them right, and corrected in place before this landed: "712 of"
+the 3872 bytes, where 13 of the 712 are outside them; the leave-out saving measured on the smallest compile; section
+355's scope, the Harmony 600 and 650 and not the 700; the citation for our arch 14 configurations carrying no status
+screens, which is section 405's correction and not the runs' sections; the module's "the same words" as the status
+container, true for 29 of 30; "one text on every compile read", which is every English one; the lists' claim, which
+the test now asserts on both European compiles too; the crossing sentence, which the test measures for texts drawn
+by reference, the reviewer adding that no program piece is shared; and section 408's condition on the redraw. It
+also found the backslash in the firmware's status containers and checked code 9's shape on the European compiles,
+which the test now builds through `statusScreen`.
+
+### Asserted
+
+`packages/codec/test/touchstatusscreens.test.ts`: the sixteen rebuilt, 29 screens and 58 lists each, 699 bytes read
+of the 3872 and 13 outside; both European compiles rebuilt, code 9's screen through `statusScreen` on them too, and
+the Dutch one refused; every text's place by the rules on the eighteen
+and the Dutch compile, with the titles, the lines' words, 54 lines and 31 odd per English compile and 55 and 32 on
+the Dutch one; the blind control with its totals; the five failing controls; the event map's thirty codes at 10 + k
+and fallback 10 on all nineteen; the 58 named by nothing outside and calling nothing on the sixteen and both
+European compiles; and the one crossing text. `touchfixedscreens.test.ts` unchanged, its code 9 screen now built through `statusScreen`.
+
+### What would falsify it
+
+A compile of skin 54 in English whose 29 screens the description refuses or the builder does not reproduce; a line
+off either rule; an event map naming a status code other than at 10 + k; a list of the 58 named from outside the
+screens or calling one; a text of these screens inline on one compile and by reference on another.
+
+### Which architectures
+
+Arch 12 (Harmony One) alone, skin 54 and the European skin 59, in English; the module is the touch family's. The
+Harmony 600, 650 and 700 are the four slot family, whose screens are its own (plan 007), and our configurations
+for them leave the status screens out, section 405's correction; the Harmony 525 is not read.
