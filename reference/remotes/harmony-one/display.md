@@ -71,6 +71,14 @@ Generated from `packages/codec`, `packages/usb` and the drawing by `make remote-
   screens, with 36 pictures, the same on sixteen compiles of skin 54, read from configurations, section 405.
   The European skin's clock pickers differ, the everyday One's compile also has another Options menu and no
   Remote Assistant, and a Dutch compile has the same screens in Dutch.
+* **Which of those the firmware shows by itself: one.** The 3.4 firmware takes a screen from the configuration by
+  number only for status code 9, "LCD Module Failed", after its display test fails at start; "Missing License",
+  "Configuration Corrupted" and "Go to Website to update settings" come from the status screens at `0x002000`
+  while those verify, "Application Terminated" sits behind a state its main loop never reaches as read, and no
+  other status code is raised, so the configuration's other 29 status screens are not shown at all. Every other
+  screen that is shown is shown because the configuration's own lists enter it, and seven at the head (two blanks,
+  the update, upgrade and learning screens) are entered by nothing, read in the firmware and in nineteen
+  configurations, section 408.
 * **USB**: "USB Connected" on the cable, seen at the bench, section 155.
 * **Safe mode** lists five images, each with a checksum and a version, seen at the bench and matched to
   the images read off the unit, section 190; [firmware.md](firmware.md).
@@ -117,3 +125,4 @@ never been used, section 111.
 * The horizontal scale of the panel to pixel transform.
 * Whether the date on screen, not only the time, matches the stamp, sections 242 and 322.
 * What the slideshow looks like on this unit, and the infrared indicator.
+* Whether the One runs a configuration that leaves out the screens nothing enters, section 408.

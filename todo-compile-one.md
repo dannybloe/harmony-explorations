@@ -112,10 +112,10 @@ One with its sequence's keys translated by name, since the One's keys have other
 - [ ] 4.2 A device's pages: rows of commands and their hit rectangles
 - [ ] 4.3 An activity's own screens: its start up screen and its working screen
 - [ ] 4.4 The screens every configuration carries: the menus, Off, Help and the rest found in 2.2
-  - [ ] 4.4.1 Which of section 405's 78 fixed screens the One's 3.4 firmware draws from a configuration, as section 355 read for the 650: the 30 status screens through the event map, the 10 firmware screens, the tour
+  - [x] 4.4.1 Which of section 405's 78 fixed screens the One's 3.4 firmware draws from a configuration, as section 355 read for the 650: the 30 status screens through the event map, the 10 firmware screens, the tour; done, section 408: by number only the event map's screen for status code 9, "LCD Module Failed" (mode 19); 0, 26 and 27 come from the status container, 25 is unreachable as read; every other screen shown is entered by the configuration's own instructions (modes 0, 1 and 9 of the head and all 38 others, 30 of them from a key or touch), and modes 2 to 8 and the other 29 status screens by nothing
   - [ ] 4.4.2 The record reader and builder of `screenrecords.ts` reading a One screen: its seven byte page record, naming the hit page, and the chrome its page calls; one of Logitech's head screens read and rebuilt byte for byte with nothing generated
   - [ ] 4.4.3 The 10 firmware screens built from a description, as the 650's 7.4 (section 357): what is described is the configuration's numbering (lists, sets, variables, fonts, pictures), the rest generated, rebuilt byte for byte on the sixteen compiles of skin 54
-  - [ ] 4.4.4 The screens 4.4.1 says a configuration needs among the status screens, the tour, Options, screen sensitivity, the clock's pickers, the Remote Assistant and the blanks, built the same way
+  - [ ] 4.4.4 The screens 4.4.1 says a configuration needs, built the same way: by section 408 the firmware needs only the event map and its code 9 screen, so the list is that screen, Low Battery, USB Connected and the charging problem screen (modes 0, 1, 9, which the wiring enters), the blank screens the timers enter, and Options with screen sensitivity (6) and the clock's pickers (8), the tour (11) and the Remote Assistant (5) only where the wiring keeps those features; modes 2 to 8 and the other 29 status screens are entered by nothing, and whether they can be left out (a shorter head, the event map renumbered) is untested
 
 ## 5. Text, fonts and pictures
 

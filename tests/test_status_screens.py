@@ -1251,5 +1251,189 @@ class OnTheHarmony600And650NoStatusScreenIsDrawnFromTheConfiguration(unittest.Te
                 self.assertEqual(by_address[0x1938A].mnemonic, 'SLEEP')
 
 
+#: Section 408, the Harmony One 3.4 image. The routine that makes a mode current, its argument pair,
+#: the current mode, and the one deep mode stack `07 FFFD` pushes and `07 FFFC` pops.
+ONE_MODE_SWITCH = 0x281E2
+ONE_MODE_ARGUMENT = (0x227, 0x228)
+ONE_CURRENT_MODE = (0x222, 0x223)
+ONE_MODE_STACK = (0xE17, 0xE18)
+#: Every write of the argument's low byte, and what it copies: the `0x7E` handler's operand, the mode
+#: stack, the status screen routine's own code, and the event map walker's match and fallback.
+ONE_MODE_ARGUMENT_SOURCES = {0x24FDA: 0xEBD, 0x25836: 0xE17, 0x28744: 0x22F, 0x287E4: 0xD14, 0x28812: 0xD0E}
+ONE_MODE_SWITCH_CALLERS = [0x24FE2, 0x2583E, 0x2874C, 0x287EC, 0x2881A]
+#: The section seeker takes its raw slot in 0x1F1, and the event map walker that seeks raw slot 4.
+ONE_SEEKER = 0x2BA76
+ONE_EVENT_MAP_WALKER = 0x28784
+#: The status screen routine's three arms, by the bits of 0x1A4 it tests: the configuration's
+#: verdict (bit 2), the status container's own verdict (bit 1), and the container select (bit 3).
+ONE_STATUS_FLAGS = 0x1A4
+ONE_CONTAINER_SELECT_BIT, ONE_STATUS_CONTAINER_VERIFIED_BIT = 3, 1
+ONE_DRAWS_ITS_OWN = 0x286F8
+#: The LCD self test whose failure raises code 9, and the byte its answer goes into.
+ONE_LCD_SELF_TEST = 0x2112C
+ONE_LCD_RESULT = 0xD84
+#: The main loop's state, 2 being what sends the loop head to "Application Terminated".
+ONE_LOOP_STATE = 0x315
+ONE_LOOP_HEAD = 0x28B12
+
+
+class OnTheHarmonyOneOnlyCodeNineIsDrawnFromTheConfiguration(unittest.TestCase):
+    """Section 408: which of a configuration's screens the Harmony One's 3.4 firmware draws by number.
+
+    The firmware makes a mode current through one routine, and its argument comes from five places:
+    an `0x7E` instruction's operand, the mode stack, which only ever holds a mode that was current, the
+    event map walker's match or fallback, and the status screen routine's own code with the status
+    container selected. So the firmware names a configuration mode by a number of its own only through
+    the event map, and it walks the configuration's event map only while the configuration's verdict
+    stands, which is the case at one of the five status screen calls: code 9, after the LCD self test.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        lab.require('one34_code')
+        cls.code = lab.load('one34_code')
+        cls.instrs = _instructions('one34_code', 0x20000)
+        cls.at = dict(cls.instrs)
+
+    def _callers(self, target):
+        return [a for a, i in self.instrs if i.mnemonic in ('CALL', 'RCALL', 'GOTO', 'BRA')
+                and i.fields.get('target') == target]
+
+    def _writes(self, address):
+        return [hit.addr for hit in trace.trace(self.code, 0x20000, [address])[address] if 'WRITE' in hit.kind]
+
+    def _bit_test(self, address, mnemonic, bit):
+        instr = self.at[address]
+        where, _ = isa.resolve_file(instr.fields['f'], instr.fields['a'], ONE_STATUS_FLAGS >> 8)
+        self.assertEqual((instr.mnemonic, where, instr.fields['b']), (mnemonic, ONE_STATUS_FLAGS, bit),
+                         '0x%05X' % address)
+
+    def test_a_mode_becomes_current_through_one_routine_whose_argument_has_five_sources(self):
+        self.assertEqual(self._callers(ONE_MODE_SWITCH), ONE_MODE_SWITCH_CALLERS)
+        low, high = ONE_MODE_ARGUMENT
+        self.assertEqual(sorted(self._writes(low)), sorted(ONE_MODE_ARGUMENT_SOURCES))
+        self.assertEqual(sorted(self._writes(high)), sorted(a + 4 for a in ONE_MODE_ARGUMENT_SOURCES))
+        for address, source in ONE_MODE_ARGUMENT_SOURCES.items():
+            instr = self.at[address]
+            self.assertEqual((instr.mnemonic, instr.fields['src'], instr.fields['dst']), ('MOVFF', source, low))
+        # The current mode is written from the argument, and otherwise only to the empty value 0xFEFE.
+        writes = self._writes(ONE_CURRENT_MODE[0])
+        self.assertEqual(sorted(writes), [0x2814E, 0x28244, 0x28264])
+        self.assertEqual(self.at[0x28264].fields['src'], low)
+        for address in (0x2814E, 0x28244):
+            self.assertEqual(self.at[address - 2].mnemonic, 'MOVLW')
+            self.assertEqual(self.at[address - 2].fields['k'], 0xFE)
+
+    def test_the_instruction_source_is_the_0x7e_handler_and_no_firmware_path_stages_a_literal_0x7e(self):
+        compare = self.at[0x24FD4]
+        self.assertEqual((compare.mnemonic, compare.fields['k']), ('MOVLW', 0x7E))
+        self.assertEqual(self.at[0x24FD6].mnemonic, 'SUBWF')
+        # MOVLW 0x7E occurs four times: the dispatcher's compare, and three that compare 0x068 or 0xD55 or
+        # store into 0x068, none near the queue's staging bytes; no RETLW returns it. A 0x7E computed or read
+        # from a table is not excluded by this.
+        literal = [a for a, i in self.instrs if i.mnemonic == 'MOVLW' and i.fields['k'] == 0x7E]
+        self.assertEqual(literal, [0x24FD4, 0x2CE5E, 0x2DE20, 0x2DE2A])
+        self.assertEqual([a for a, i in self.instrs if i.mnemonic == 'RETLW' and i.fields['k'] == 0x7E], [])
+        # The one literal instruction staged for a push is the clock's tick, 1F F201, loaded at 0x27B52.
+        self.assertEqual([self.at[a].fields['k'] for a in (0x27B52, 0x27B56, 0x27B5A)], [0x1F, 0xF2, 0x01])
+        self.assertEqual(self.at[0x27B70].fields['target'], 0x24CFE)
+        # Both instruction pushes stage three bytes, and every write of them copies another variable.
+        for staged in (0xEAC, 0xEAD, 0xEAE, 0xEAF, 0xEB0, 0xEB1):
+            writes = self._writes(staged)
+            self.assertTrue(writes, hex(staged))
+            for address in writes:
+                self.assertEqual(self.at[address].mnemonic, 'MOVFF', '0x%05X' % address)
+
+    def test_the_mode_stack_only_ever_holds_a_mode_that_was_current(self):
+        writes = sorted(self._writes(ONE_MODE_STACK[0]))
+        self.assertEqual(writes, [0x24BEA, 0x25820, 0x25846])
+        self.assertEqual(self.at[0x25820].fields['src'], ONE_CURRENT_MODE[0])
+        for address in (0x24BEA, 0x25846):
+            self.assertEqual(self.at[address - 2].fields['k'], 0xFE)
+
+    def test_the_event_map_is_sought_once_by_the_walker_the_status_routine_alone_calls(self):
+        slots = {}
+        for k, (address, instr) in enumerate(self.instrs):
+            if instr.mnemonic == 'CALL' and instr.fields['target'] == ONE_SEEKER:
+                load, store = self.instrs[k - 2][1], self.instrs[k - 1][1]
+                self.assertEqual((load.mnemonic, store.mnemonic, store.fields['f']), ('MOVLW', 'MOVWF', 0xF1))
+                slots.setdefault(load.fields['k'], []).append(address)
+        self.assertEqual(sum(len(v) for v in slots.values()), 24)
+        self.assertEqual(slots[4], [0x28792])
+        self.assertTrue(ONE_EVENT_MAP_WALKER < 0x28792 < 0x28822)
+        self.assertEqual(self._callers(ONE_EVENT_MAP_WALKER), [0x2872A])
+        # The mode table, raw slot 6, is sought by the switch itself, by the touch lookup and by a count
+        # read whose routine nothing calls directly.
+        self.assertEqual(slots[6], [0x25D24, 0x28280, 0x28380])
+        self.assertEqual(self._callers(0x2835E), [])
+
+    def test_the_status_routine_walks_the_configurations_event_map_only_while_its_verdict_stands(self):
+        self._bit_test(0x2871E, 'BTFSS', ONE_VERIFIED_BIT)
+        self.assertEqual(self.at[0x2872A].fields['target'], ONE_EVENT_MAP_WALKER)
+        # Without the verdict: the status container's own mode of the same number, selected by
+        # clearing the select bit around the switch, when that container verified.
+        self._bit_test(0x2872E, 'BTFSS', ONE_STATUS_CONTAINER_VERIFIED_BIT)
+        self._bit_test(0x28742, 'BCF', ONE_CONTAINER_SELECT_BIT)
+        self.assertEqual(self.at[0x2874C].fields['target'], ONE_MODE_SWITCH)
+        # And when neither verified, a routine that reaches neither the seek nor the switch.
+        self.assertEqual(self.at[0x28766].fields['target'], ONE_DRAWS_ITS_OWN)
+        self.assertFalse(_reaches(self.instrs, ONE_DRAWS_ITS_OWN, ONE_SEEKER, ONE_SEEKER + 2, depth=12))
+        self.assertFalse(_reaches(self.instrs, ONE_DRAWS_ITS_OWN, ONE_MODE_SWITCH, ONE_MODE_SWITCH + 2, depth=12))
+        # The control for that negative: the same search finds both from the walker.
+        self.assertTrue(_reaches(self.instrs, ONE_EVENT_MAP_WALKER, ONE_SEEKER, ONE_SEEKER + 2, depth=12))
+        self.assertTrue(_reaches(self.instrs, ONE_EVENT_MAP_WALKER, ONE_MODE_SWITCH, ONE_MODE_SWITCH + 2, depth=12))
+        # The select bit names the container every seek reads, section 249.
+        self._bit_test(0x2BA2E, 'BTFSS', ONE_CONTAINER_SELECT_BIT)
+
+    def test_codes_27_26_and_0_are_raised_with_the_verdict_gone(self):
+        # Missing License: the verdict is cleared on the instruction before its code is loaded.
+        self._bit_test(0x28AB6, 'BCF', ONE_VERIFIED_BIT)
+        self.assertEqual(self.at[0x28AB8].fields['k'], 27)
+        # The two configuration screens sit behind a test that jumps past both when it stands.
+        self._bit_test(0x29010, 'BTFSC', ONE_VERIFIED_BIT)
+        self.assertEqual(self.at[0x29012].fields['target'], 0x29032)
+        sites = sorted(a for a, n in SHOWERS['one34_code'][2].items() if n in (26, 0))
+        self.assertEqual(sites, [0x29022, 0x2902E])
+        self.assertTrue(all(0x29012 < a < 0x29032 for a in sites))
+
+    def test_code_25_sits_behind_a_state_no_path_leaves_at_the_loop_head(self):
+        self.assertEqual(self.at[ONE_LOOP_HEAD].fields['k'], 2)
+        self.assertEqual(self.at[0x28B1A].fields['target'], 0x28D82)
+        self.assertEqual(self._callers(ONE_LOOP_HEAD), [0x28D80])
+        self.assertEqual(self.at[0x28B0A].mnemonic, 'CLRF')
+        self.assertEqual(self.at[0x28D7E].mnemonic, 'CLRF')
+        writes = sorted(self._writes(ONE_LOOP_STATE))
+        self.assertEqual(writes, [0x28B0A, 0x28C32, 0x28C3E, 0x28C86, 0x28C96, 0x28D7E])
+        # The four that write a value all fall to 0x28C98, which branches past the loop head's test.
+        self.assertEqual(self.at[0x28C98].fields['target'], 0x28B1E)
+        self.assertEqual(self.at[0x28C88].fields['target'], 0x28C98)
+
+    def test_code_9_is_the_lcd_self_test_and_is_raised_with_the_configuration_selected_and_verified(self):
+        self.assertEqual(self.at[0x28A42].fields['target'], ONE_LCD_SELF_TEST)
+        self.assertEqual(sorted(self._writes(ONE_LCD_RESULT)), [0x28A48, 0x28B10, 0x28D74])
+        self.assertEqual(self.at[0x28AC6].mnemonic, 'MOVF')
+        self.assertEqual(self.at[0x28ACA].fields['k'], 9)
+        # The self test returns 0 from its readback comparisons and 1 at its one exit otherwise.
+        test = _routine(self.instrs, ONE_LCD_SELF_TEST)
+        self.assertEqual(test[-1][0], 0x21386)
+        self.assertEqual(self.at[0x21382].fields['k'], 1)
+        zeros = [a for a, i in self.instrs if ONE_LCD_SELF_TEST <= a < 0x21386
+                 and i.mnemonic == 'MOVLW' and i.fields['k'] == 0]
+        self.assertEqual(zeros, [0x211EE, 0x211FC, 0x212B4, 0x2136C])
+        # The user configuration is validated with the select bit set, and nothing between that and
+        # code 9's call writes the verdict or the select bit: the one call in between reaches neither.
+        self._bit_test(0x28A98, 'BSF', ONE_CONTAINER_SELECT_BIT)
+        self.assertEqual(self.at[0x28A9A].fields['target'], ONE_VALIDATOR)
+        writers = set(_bit_writes('one34_code', 0x20000, ONE_STATUS_FLAGS, ONE_VERIFIED_BIT)) | set(
+            _bit_writes('one34_code', 0x20000, ONE_STATUS_FLAGS, ONE_CONTAINER_SELECT_BIT))
+        self.assertEqual([a for a in writers if 0x28A9A < a < 0x28AD2], [0x28AB0, 0x28AB6])
+        self.assertEqual(self.at[0x28AA4].fields['target'], 0x28718)
+        for writer in writers:
+            self.assertFalse(_reaches(self.instrs, 0x28858, writer, writer + 2, depth=12), '0x%05X' % writer)
+        # 0x28AB0 and 0x28AB6 are the arms where the verdict is absent or the licence failed.
+        self.assertEqual(self.at[0x28AA8].fields['target'], 0x28AB2)
+        self.assertEqual(self.at[0x28AB2].fields['target'], 0x28AC4)
+
+
 if __name__ == '__main__':
     unittest.main()

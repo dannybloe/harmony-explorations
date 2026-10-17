@@ -143,6 +143,18 @@ The largest square and the least read. 6758 files, 1.1 GB.
 | `work/test-setup/` | our scan of which catalogue devices compose completely onto a Harmony 650 configuration | 1 | `catalogued` 7 October 2026 | | plan 006, todo-compile-650 1.4 |
 | `work/harvest/` | Logitech compiles gathered by `packages/corpus/bin/harvest.ts`, one folder per run with its manifest and every reply, and the repurposed records' state before | 2 | `catalogued` 7 October 2026 | | todo-secure-logitech |
 | `work/setups/` | Setups put on a test record and compiled by `packages/corpus/bin/build-setup.ts`, one folder per label with every reply, the compile and its check; the setups are left on the record | 2 | `catalogued` 8 October 2026 | | todo-compile-650 |
+| `work/agent-one-fontselect/` | **ours**: a read only firmware reading of the Harmony One 3.4's screen opcode 16, the font select, and what limits the number of font sets: `NOTES.md`, a census, listings and cross references | 6 | `catalogued` | `intermediate` | todo-compile-one |
+| `work/charging-700/` | **ours**: listings of the Harmony 700 2.8 and Harmony 650 0.2 and 0.4 images and the chain scripts behind the charging screen reading, with the sentence audit's diff | 6 | `catalogued` | `intermediate` | section 384 |
+| `work/empty-11-1-5/` | **ours**: scripts, built files and render sheets for the empty configuration's first activity and its blending | 65 | `catalogued` | `intermediate` | todo-compile-650 11.1.5 |
+| `work/h600-from-nothing/` | **ours**: the Harmony 600 built from nothing: scripts, the test card `ramp.ts`, built files of skins 71 and 73, and the write journals of the one written | 37 | `catalogued` | `intermediate` | todo-compile-600, section 387 |
+| `work/h700-from-nothing/` | **ours**: the Harmony 700 built from nothing: checks, comparisons with the Harmony 650's and backups of edited modules | 82 | `catalogued` | `intermediate` | todo-compile-700 |
+| `work/mono-600/` | **ours**: listings of the Harmony 600 0.2, Harmony 650 0.4 and Harmony 700 2.8 images and census scripts for the 600's monochrome screen | 7 | `catalogued` | `intermediate` | todo-compile-600 |
+| `work/names-11-2-2/` | **ours**: an inventory of names before and after, for an activity named as a device or a menu word | 6 | `catalogued` | `intermediate` | todo-compile-650 11.2.2 |
+| `work/one-track/` | **ours**: the Harmony One track's renders, label and font measurements, and scripts | 86 | `catalogued` | `intermediate` | todo-compile-one, sections 394 and 396 |
+| `work/review-382/` | **ours**: the blind re-measure of section 382, its scripts | 22 | `catalogued` | `intermediate` | section 382 |
+| `work/review-382-prose/` | **ours**: the sentence audit of section 382, its scripts and the built files it re-measured | 428 | `catalogued` | `intermediate` | section 382 |
+| `work/review-384/` | **ours**: the blind re-measure of section 384, two chain scripts | 2 | `catalogued` | `intermediate` | section 384 |
+| `work/review-384-prose/` | **ours**: the sentence audit of section 384, its listings and scripts | 8 | `catalogued` | `intermediate` | section 384 |
 
 ## Firmware
 

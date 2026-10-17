@@ -53250,3 +53250,186 @@ its description; or one holding a variable of its own above 121, which the build
 
 Arch 12 (Harmony One) and arch 14 (Harmony 600, 650 and 700) are built and measured; every other architecture
 has no row in either table and is refused.
+
+## 408. The Harmony One's firmware names a configuration's screen by number once, the status screen for code 9, and every other screen is entered by the configuration's own instructions or by nothing
+
+**Todo `todo-compile-one.md` 4.4.1**: which of section 405's 78 fixed screens the Harmony One's 3.4 firmware draws
+from a configuration, as section 355 read for the Harmony 650. The 78 are the head of the mode table, 10 firmware
+screens and one screen per status code, 30, and 38 others: the welcome tour (11), screen sensitivity (6), the
+clock's pickers (8), Options (1), the Remote Assistant at start (5) and blank screens (7).
+
+**Sources checked**: sections 36, 37, 244, 249 to 251, 274, 326, 355, 357, 403 and 405; the 3.4 application image,
+`one34_code`; the nineteen Harmony One compiles of section 405. Logitech's client was opened for this (decision 2):
+its skin 54 template, `SKIN54.userconfiguration.xml`, is the packet sequence that writes a configuration and names
+no screen, and the client draws nothing on a remote, so the firmware is the source.
+
+### How a mode becomes current
+
+`0x281E2` makes a mode current: it runs the outgoing mode's leaving list, copies its argument `0x227`/`0x228` into
+the current mode `0x222`/`0x223`, seeks raw slot 6, the mode table, at `0x28280`, and reads the record. It has five
+callers, and the argument is written at exactly five places, each a `MOVFF` from:
+
+| writes the argument | from | what it is |
+|---|---|---|
+| `0x24FDA` | `0xEBD` | the operand of the instruction being run, in the dispatcher's arm for opcode `0x7E`, compared at `0x24FD4` |
+| `0x25836` | `0xE17` | the mode stack, popped by `07 FFFC`; it is written only from the current mode, at `0x25820` by `07 FFFD`, and with `0xFE`, empty |
+| `0x287E4` | `0xD14` | the event map entry whose key matches the status code |
+| `0x28812` | `0xD0E` | the event map's fallback, when no key matches |
+| `0x28744` | `0x22F` | the status code itself, with the status container selected, below |
+
+The current mode is written from the argument at `0x28264` and otherwise only with `0xFE`, at `0x28244` and
+`0x2814E`. **So a configuration mode the firmware makes current is one an `0x7E` names, one that was current
+before, or one the event map names**, the shape section 326 read on the Harmony 600, 650 and 700.
+
+**No firmware path stages a literal `0x7E`.** The two routines that push an instruction onto the action queue,
+`0x24CD6` and `0x24CFE`, take it from six staging bytes, `0xEAC` to `0xEB1`, and every write of those is a `MOVFF`
+from another variable: bytes read from the configuration, the instruction being run, the send queue, which holds
+instruction operands, and one instruction the firmware builds from literals, the clock's tick `1F F201` at `0x27B52`.
+The events it raises, `1F FC` and the event's number, go onto the queue through `0x24BF0` and are not enters.
+`MOVLW 0x7E` occurs four times in the image, the dispatcher's compare and three that compare `0x068` or `0xD55` or
+store into `0x068`, and no `RETLW` returns it; a `0x7E` computed by arithmetic or read from a table is not excluded
+by that census. **Nor does a configuration build one**: an instruction is rebuilt at run time only by `0x7B`, whose
+operand's high byte becomes the opcode (`0x25032`), or by an opcode from `0x1F` to `0x3E` over `0xF7`, whose low
+byte does (`0x254F0`), and each of the nineteen compiles holds seven or nine of those, every one `1F F776`, which
+builds an `0x76`. Action lists are named by number nowhere either: base slot 10 is spooled at `0x2E9FE`, whose list
+number comes only from a `0x7F` operand, at `0x24FC4`.
+
+### The thirty status screens: one is drawn from the configuration
+
+`0x2871C`, section 249's display routine, has three arms on the flags at `0x1A4`:
+
+* **the configuration's verdict, bit 2, set**: the walker `0x28784` seeks raw slot 4, the event map, through the
+  seeker, which reads the container the select bit, bit 3, names, finds the entry keyed by the code and makes its
+  value current, or the fallback;
+* **the verdict clear and the status container's own verdict, bit 1, set**: the select bit is cleared around a
+  call of the mode switch with the code itself as the mode, so the screen is the status container's at flash
+  `0x002000`, whose modes are the codes, section 249, and the blind reviewer found its modes 0, 9, 25, 26 and 27
+  drawing those five screens' words; the select bit is put back as it was afterwards;
+* **both clear**: `0x286F8`, which reaches neither the seeker nor the mode switch.
+
+The walker is the only reader of the event map: of the seeker's 24 call sites, section 274's census, one loads raw
+slot 4, `0x28792`, inside the walker, whose one caller is `0x2872A` in the routine. Which arm each of the five
+codes takes:
+
+| code | screen | caller | arm |
+|---|---|---|---|
+| 27 | Missing License | `0x28AC0` | `0x28AB6` clears the verdict on the instruction before, so never the configuration's |
+| 26 | Configuration Corrupted | `0x29022` | behind `BTFSC 0x1A4,2` at `0x29010`, which jumps past both calls while the verdict stands, so never the configuration's |
+| 0 | Go to Website to update settings | `0x2902E` | the same |
+| 25 | Application Terminated | `0x28D8A` | behind state 2 of `0x315` at the loop head `0x28B12`, whose two predecessors clear `0x315` first, at `0x28B0A` and `0x28D7E`; the four writes of a value all branch to `0x28B1E`, past the test. Unreachable as read, as on the Harmony 600 and 650 |
+| 9 | LCD Module Failed | `0x28AD2` | **the configuration's**, when the licence check passed and the user configuration verified at boot; otherwise the status container's or `0x286F8`'s |
+
+**Code 9 is the one.** At boot the main routine calls `0x2112C` at `0x28A42` and keeps its answer in `0xD84`; that
+routine writes 220 by 176 values through the external bus and compares what it reads back, returning 0 at four
+mismatch exits and 1 at its one other exit, `0x21382`. The boot then validates the status container, checks the
+licence at `0x2CA80` (unread), and, if it passes, validates the user configuration with the select bit set,
+`0x28A98`; if that sets the verdict, nothing between the validation and the
+call at `0x28AD2` writes bit 2 or bit 3 (the one call in between, `0x28718`, reaches no writer of either), so with
+`0xD84` zero the routine walks **the configuration's** event map for key 9. That the routine tests the display's
+memory is read from its dimensions and from the screen the code names, not traced to the panel's controller.
+
+Over the nineteen compiles the event map holds keys 0 to 29 with values 10 to 39 and the fallback 10, so key 9
+names mode 19, and on the eighteen English compiles mode 19 draws "LCD Module" and "Failed". **The other 29
+status screens of a Harmony One configuration are never drawn by this firmware as read**: three codes are raised
+only with the verdict gone, one is unreachable, and the other 25 are raised by no caller in the image.
+
+### The ten firmware screens and the 38 others: entered by the configuration, or by nothing
+
+Since the firmware names no other mode, a screen outside the event map is shown only if an instruction of the
+configuration enters it, as read, the redraw left open below aside. Every instruction the readers locate was walked, over all nineteen compiles: every action
+list, every mode's own and page lists, base slot 9's handler sets, the timers, base slot 13's transitions, the value
+maps' one instruction payloads, every screen program's queued instruction and base slot 8's leading list, section
+357's walk with the screen programs added. Each `0x7E` was followed up through every `0x7F` that calls its list to
+what runs it.
+
+* **Of the head, the configuration enters modes 0, 1 and 9 and nothing else, 19 of 19**: Low Battery ("The battery
+  level is low!"), USB Connected and the charging problem screen, through base slot 9's handler sets on events the
+  firmware raises, a state transition, a timer, the leading list and touches. **Modes 2 to 8 are entered by no
+  instruction the readers locate**: two blank screens, then Update Successful, Upgrade Success, Update in progress,
+  Learning... and Firmware upgrade in progress, which are the five the arch 14 status container holds in front of
+  the thirty, section 244, carried in the One's configuration where neither the firmware nor the configuration
+  reaches them. Modes 10 to 39 are named only by the event map, so of the head only mode 19 is ever drawn by the
+  firmware.
+* **Every one of the 38 others is entered by the configuration, 16 of 16 compiles of skin 54**, and none by the
+  firmware. On each, 30 have a key or a touch press behind at least one instruction that enters them (the tour,
+  screen sensitivity, the clock's pickers, Options, three of the Remote Assistant's screens and one blank screen);
+  the Remote Assistant's "Welcome to your remote." and "Ensure all your devices are off" are entered from the
+  leading list and base slot 9's handler sets, the start section 403 read; and six blank screens only by timers.
+  Off skin 54 the count is the compile's own: measured against the sixteen, the two European compiles and the
+  Dutch one hold 28, 34 and 7 fixed others, every one entered.
+* **Above the head, one mode of each of the nineteen compiles is named by no enter at all**, not even by a mode
+  number, a zero and `0x7E` in a row anywhere in the file: a device list, on the eighteen English compiles the one
+  drawing "Activities" alone under its rows where the others switch between "Activities" and "Current Activity",
+  checked by drawn text. It is the setup's, outside the 78,
+  and by the reading above the firmware never makes it current either, the Harmony One's counterpart of section
+  326's two row list. Whether a remote ever shows it is not checked.
+
+**A raw byte search agrees and says little**, as in section 326: a mode number from 2 to 8 or 10 to 39, a zero and
+`0x7E` in a row occur 16 times over the nineteen files, every one inside an address table, a mode entry or page, a
+screen program's operands or a state record, none where the readers find an instruction.
+
+### What it means for the plan
+
+* **4.4.4's list.** The firmware needs from a configuration only the event map and the screen it names for code 9;
+  everything else on the list is there because the configuration's own wiring enters it. So a configuration of
+  ours carries the three firmware screens its wiring enters (Low Battery, USB Connected, the charging problem),
+  the screen for code 9, the blank screens its timers enter, and the Options menu with screen sensitivity and the
+  clock's pickers, the tour and the Remote Assistant only as far as its own wiring keeps those features. Modes 2
+  to 8 and the other 29 status screens are needed by nothing the firmware or Logitech's wiring does.
+* **What leaving them out costs is a numbering question**, as for the tour in section 357: the event map's values
+  and every `0x7E` name modes by number, so a configuration built from a description numbers its modes itself. That
+  the remote accepts an event map whose values do not run 10 to 39, or a head shorter than 40, is untested.
+
+### Scope
+
+The Harmony One's 3.4 application image and the Harmony One compiles. The safe mode image and the status container
+at `0x002000` were not read for this; the Harmony 600 and 650 are section 355's, and the Harmony 525 and 700 are
+not read. Direct transfers only: a computed jump into the mode switch, the status routine or the walker, and a
+write of `0x315` or the argument through `FSR`, are not excluded. Nothing was measured on a remote: no status
+screen was raised on purpose and nothing was written.
+
+### What this does not establish
+
+* That a configuration without modes 2 to 8 or the 29 status screens runs: nothing enters them, read, and nobody
+  has written one.
+* What the 25 codes no caller raises are for in this image; the safe mode image may raise them, unread.
+* What a redraw does after the status container's arm. That arm leaves the status code as the current mode and
+  puts the select bit back, which for codes 26 and 0 is the user configuration's; if the verdict came back
+  (section 251) and something redrew the current mode, it would read the configuration's mode of that number.
+  Nothing here traced a redraw of that kind.
+* That the routine behind code 9 tests the display's memory, read from its shape, and what `0x2CA80` checks.
+* What the six timer entered blank screens are for; that is the wiring's reading, `todo-compile-one.md` 6.3.
+
+### The reviews
+
+Both reviewers of the `finding` skill ran. **The blind re-measure**, given the question and not this section,
+found the same switch, the same five argument sources and callers, the same three arms and the same answer per
+code, code 9 as the only reachable walk of the configuration's event map, modes 0, 1 and 9 alone entered in the
+head on 19 of 19, and the 38 others entered on every copy; it added the status container's modes drawing the five
+codes' words, the firmware's literal pushes (its events and the clock's tick), and the two instruction rebuilders,
+all above, and matched one more mode by pixels, section 405's generic help screen, which 405 leaves out of the 78.
+**The sentence audit** confirmed the addresses and counts and corrected, in place before this landed: 26 codes
+raised by no caller where it is 25; the staging bytes' sources, which left out the clock's tick, and a claim that
+rested on them rather than on the census of literals; the device list nothing names, which the census had not
+reported; the scope of the 38 to skin 54; the status container's screens holding only while it verifies; code 9's
+condition, which needs the licence check too; one of the three `0x7E` literals, which compares `0xD55`; the redraw
+left open above; and a test that asserted the event map's values in key order rather than its keys.
+
+### Falsification
+
+A caller of the mode switch, the status routine or the walker beyond the five, five and one listed; a write of the
+mode argument from a literal; a Harmony One compile whose configuration enters a mode from 2 to 8 or 10 to 39, or
+leaves one of the 38 unentered; a One that, with a verified configuration and a failing display test, shows the
+status container's screen rather than the configuration's.
+
+### Where it lands
+
+* `tests/test_status_screens.py`: `OnTheHarmonyOneOnlyCodeNineIsDrawnFromTheConfiguration`, the switch's five
+  callers and five argument sources, the current mode's writers, the mode stack's, the `0x7E` literals and the
+  staging bytes, the seeker census with raw slot 4 once, the status routine's three arms with a control for the
+  reach search, the conditions of codes 27, 26, 0 and 25, and code 9's path from the self test.
+* `packages/codec/test/onestatusscreens.test.ts`: the head entered at 0, 1 and 9 alone and the event map on all
+  nineteen, the one device list above the head named by no enter and every built instruction an `0x76`, mode 19's
+  text on the eighteen English compiles, and the 38 others entered, by what, on the sixteen, with the two the start
+  enters by their text.
+* `docs/config-format.md`, after the Harmony One's screen categories; `reference/remotes/harmony-one/display.md`.
