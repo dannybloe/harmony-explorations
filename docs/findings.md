@@ -54618,8 +54618,9 @@ slot 10, which on the Harmony One is not base slot 10, so it reports no list cal
 
 Plan 007: the four programs and the minute's list are the touch family's, `families/touch/clockheader.ts`; the
 program reader and writer, the standalone programs and their put back, `withTemplatePrograms`, are
-`screentemplate.ts`'; `statetables.ts` exports the clock's indices it already held. Not on the composed path: 7.1
-takes it there.
+`screentemplate.ts`'; `statetables.ts` exports the clock's indices it already held. This said it was not on the
+composed path and that 7.1 would take it there; `todo-compile-one.md` 3.2.2.2 put it there, with section 413's status
+screens, `families/touch/builders.ts`, after the fixed screens whose clock pickers hold its sixty minutes.
 
 ### Asserted
 

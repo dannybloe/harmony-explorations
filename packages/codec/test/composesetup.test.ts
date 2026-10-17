@@ -188,10 +188,10 @@ const builtBytes = (): TouchBuiltBytes => {
   return builtOnce;
 };
 
-test('todo-compile-one 3.2.2: the firmware screens, the fixed screens, the tour and Remote Assistant, the wiring and the state tables of the composed setup come out of the touch family\'s builders, run on the composed path and measured on the result',
+test('todo-compile-one 3.2.2: the firmware screens, the fixed screens, the tour and Remote Assistant, the status screens, the clock header, the wiring and the state tables of the composed setup come out of the touch family\'s builders, run on the composed path and measured on the result',
      NEEDS, () => {
   const out = composed();
-  // On the path: one step after the composers and before the look, naming the five parts in the order built.
+  // On the path: one step after the composers and before the look, naming the seven parts in the order built.
   const names = out.steps.map((one) => one.step);
   assert.equal(out.steps.find((one) => one.step === 'built')?.detail, TOUCH_BUILT.join(', '));
   assert.ok(names.indexOf('activity composed') < names.indexOf('built') && names.indexOf('built') < names.indexOf('look'));
@@ -202,15 +202,19 @@ test('todo-compile-one 3.2.2: the firmware screens, the fixed screens, the tour 
   // Measured on the finished file, no memory of the path: each part described, rebuilt and held to the file byte
   // for byte, through the look's blending and centring; then its bytes, and of those the description's.
   const a = builtBytes();
+  // The status screens' 3872 and the clock header's 3558 are the figures 3.2.1 listed for them, the clock header's
+  // being its four programs' 3516 and its six lists' 42; its sixteen pictures and base slot 11's table are not in it.
   assert.deepEqual(a.generated, {
-    'firmware screens': 3099, 'fixed screens': 13139, 'tour and Remote Assistant': 3900, wiring: 4527, 'state tables': 2322,
+    'firmware screens': 3099, 'fixed screens': 13139, 'tour and Remote Assistant': 3900, 'status screens': 3872,
+    'clock header': 3558, wiring: 4527, 'state tables': 2322,
   });
   assert.deepEqual(a.described, {
-    'firmware screens': 401, 'fixed screens': 3967, 'tour and Remote Assistant': 680, wiring: 1243, 'state tables': 0,
+    'firmware screens': 401, 'fixed screens': 3967, 'tour and Remote Assistant': 680, 'status screens': 699,
+    'clock header': 337, wiring: 1243, 'state tables': 0,
   });
 });
 
-test('todo-compile-one 3.2: the One\'s composed test setup carries 1136980 of its 1751852 bytes out of Logitech\'s donor, per kind as pinned here, a list that may only shrink',
+test('todo-compile-one 3.2: the One\'s composed test setup carries 1129550 of its 1751852 bytes out of Logitech\'s donor, per kind as pinned here, a list that may only shrink',
      NEEDS, () => {
   const out = composed().container;
   const got = carried(out, parse(require_('harvest_one_two_devices')), builtBytes().owners);
@@ -218,15 +222,18 @@ test('todo-compile-one 3.2: the One\'s composed test setup carries 1136980 of it
   // lowers its row; a row that rises is a composer that started copying. 1162052 when 3.2.1 listed it; 3.2.2's
   // first step put the firmware screens, the fixed screens, the tour and Remote Assistant, the wiring and the state
   // tables on the path, 25072 bytes, the sum 3.2.1 listed for the five: `mode system` and every row of base slots 2,
-  // 4, 8, 9, 12, 13, 14 and 15 went, and `mode other`, `mode status` and the lists came down.
+  // 4, 8, 9, 12, 13, 14 and 15 went, and `mode other`, `mode status` and the lists came down. Its second step,
+  // 3.2.2.2, put the status screens and the clock header there, 7430 bytes: `mode status` went, 3379, the status
+  // screens' 3872 less their 493 list bytes, and so did `dynamic-program`, the clock header's four programs, 3516,
+  // and the lists came down by the status screens' 493 and the clock's 42.
   assert.deepEqual(got, {
     'picture': 1012839, // 5.3: the 36 every compile holds, the clock's 16 and the donor's 6
     'slot-5-block': 96946, 'slot-5-header': 4116, 'slot-5-group': 594, // the donor's two devices' infrared, 8.1
-    'slot-10-list': 6649, // per builder in the listing: 17609 before 3.2.2
-    'mode other': 1495, 'mode status': 3379, 'mode device': 4569, // 11983, 4025 and the same before 3.2.2
-    'dynamic-program': 3516, 'hit-page': 2444, 'case-program': 341, 'table': 89,
+    'slot-10-list': 6114, // per builder in the listing: 17609 before 3.2.2, 6649 before 3.2.2.2
+    'mode other': 1495, 'mode device': 4569, // 11983 and the same before 3.2.2
+    'hit-page': 2444, 'case-program': 341, 'table': 89,
     'raw-18-table': 2, 'slot-16-table': 1,
   });
-  assert.equal(Object.values(got).reduce((sum, one) => sum + one, 0), 1136980);
+  assert.equal(Object.values(got).reduce((sum, one) => sum + one, 0), 1129550);
   assert.equal(out.blob.length, 1751852);
 });

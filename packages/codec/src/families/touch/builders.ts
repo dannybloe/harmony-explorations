@@ -11,9 +11,18 @@
  *    year, the donor's stamp until `composeSetup` stamps the result;
  * 3. the welcome tour and, where the wiring keeps its start ladder, the Remote Assistant, section 412,
  *    `tourscreens.ts`;
- * 4. the wiring, section 410, `wiring.ts` over `wiringparts.ts`: the event map, the leading list, the timers, base
+ * 4. the twenty nine status screens past code 9's, section 413, `statusscreens.ts`, after the firmware screens
+ *    because status code 28's "USB Connected" is drawn by reference to the copy the firmware screen USB Connected
+ *    holds: described off the configuration with that screen already built, the home it carries is the built copy;
+ * 5. the clock header, base slot 11's four header programs and the six lists the clock calls, section 414,
+ *    `clockheader.ts`, after the fixed screens because the clock's sixty minutes are drawn by reference to the
+ *    copies the clock pickers hold, the same argument; its sixteen pictures stay the configuration's (5.3) and so
+ *    do base slot 11's table and its other entries (6.6), the description carrying where each sits;
+ * 6. the wiring, section 410, `wiring.ts` over `wiringparts.ts`: the event map, the leading list, the timers, base
  *    slot 9's eight entries, the lists they reach, and through it the log area and the parameter block, section 407;
- * 5. the state records and value maps with their tables, section 407, `statetables.ts` with the family's facts.
+ * 7. the state records and value maps with their tables, section 407, `statetables.ts` with the family's facts,
+ *    after the clock header, whose two calls are instructions of the clock's state records naming its lists by
+ *    index: the clock header keeps the indices its description read, so the records' calls stay right.
  *
  * **Before the look and not after**, because the look blends our letters into the colour under each text,
  * `withBlendedLetters`, and that gives the selects one role makes on several backgrounds several fonts: every
@@ -25,19 +34,22 @@
  * pickers' buttons sit where a device page's pads do, so it moves their words after the builder placed them.
  *
  * **Where the output is not the donor's bytes, and why.** The wiring and the state tables come out byte for byte
- * as the donor carried them. The three screen sets do not: every text they centre or end at a place, a line on
- * the screen, a word on a button, "Exit" at 163, is placed by the widths of the letters it is drawn in, and the
+ * as the donor carried them. The screen sets and the clock header do not: every text they centre or end at a
+ * place, a line on the screen, a word on a button, "Exit" at 163, the clock's day ending at 138, is placed by the
+ * widths of the letters it is drawn in, and the
  * donor is lettered in ours before anything is composed, `letterTouchDonor`, which keeps every text where
  * Logitech placed it for Logitech's letters. So the builders place those texts in our letters' widths, a pixel
  * or a few from where the donor's sat, and nothing else changes: on `harvest_one_two_devices` lettered in ours, the
- * test setup's donor, the x of 10 texts of the firmware screens, 93 of the fixed ones and 32 of the tour's, and
- * no other byte but the trailer's, `test/touchbuilders.test.ts`.
+ * test setup's donor, the x of 10 texts of the firmware screens, 93 of the fixed ones, 32 of the tour's, 37 of the
+ * status screens' and 25 of the clock's days and hours, and no other byte but the trailer's,
+ * `test/touchbuilders.test.ts`.
  *
  * **Refusals are the composed path's.** A builder that refuses the configuration refuses the composition, with its
  * message, `TouchBuildError`: a donor whose build year offers a leap year (its Day 29 and second Month pickers are
  * not built, section 411), one in another language (the Dutch compile, sections 409, 411 and 412), the everyday
- * One's compile, whose USB Connected screen leaves through a list of its own (section 409). Nothing falls back to
- * the donor's part.
+ * One's compile, whose USB Connected screen leaves through a list of its own (section 409), and past those an
+ * event map that does not name one status screen per code (section 413) or a base slot 11 that does not hold each
+ * of the clock header's four programs once (section 414). Nothing falls back to the donor's part.
  *
  * Arch 12 (Harmony One) alone, skin 54 as `composeSetup` takes it; every builder here is the touch family's but the
  * state tables', which is shared and takes the family's facts.
@@ -53,6 +65,8 @@ import { ComposeError } from '../../shared/core.ts';
 import { buildTouchFirmwareScreens, describeTouchFirmwareScreens, withTouchFirmwareScreens } from './firmwarescreens.ts';
 import { buildTouchFixedScreens, describeTouchFixedScreens, withTouchFixedScreens } from './fixedscreens.ts';
 import { buildTouchTourScreens, describeTouchTourScreens, withTouchTourScreens } from './tourscreens.ts';
+import { buildTouchStatusScreens, describeTouchStatusScreens, withTouchStatusScreens } from './statusscreens.ts';
+import { buildTouchClockHeader, describeTouchClockHeader, withTouchClockHeader } from './clockheader.ts';
 import { buildTouchWiring, describeTouchWiring } from './wiring.ts';
 import { TOUCH_STATE_TABLES } from './statetables.ts';
 import { withCentredPadLabels } from './centring.ts';
@@ -61,8 +75,19 @@ import { withCentredPadLabels } from './centring.ts';
 export class TouchBuildError extends Error {}
 
 /** The parts the builders make, in the order they run and the order `touchBuiltBytes` attributes a byte. */
-export const TOUCH_BUILT = ['firmware screens', 'fixed screens', 'tour and Remote Assistant', 'wiring', 'state tables'] as const;
+export const TOUCH_BUILT = [
+  'firmware screens', 'fixed screens', 'tour and Remote Assistant', 'status screens', 'clock header', 'wiring', 'state tables',
+] as const;
 export type TouchBuilt = (typeof TOUCH_BUILT)[number];
+
+/**
+ * The builders whose part is screens and screen programs, in the order they run: each a description of what it
+ * draws over a configuration that keeps every other byte where it was, so they chain, one described off the one
+ * before, and the attribution counts them by what their descriptions span. The clock header is screen programs
+ * rather than screens, built through the same template engine and described the same way.
+ */
+const SCREEN_BUILT = ['firmware screens', 'fixed screens', 'tour and Remote Assistant', 'status screens', 'clock header'] as const;
+type ScreenBuilt = (typeof SCREEN_BUILT)[number];
 
 /**
  * One screen set as its builder reads and makes it: what the description spans of the configuration, which of
@@ -75,8 +100,8 @@ interface ScreenBuild {
   layout: ContainerLayout;
 }
 
-/** The three screen sets, each described off `c` and built: the same three calls each module's check makes. */
-const SCREENS: Readonly<Record<'firmware screens' | 'fixed screens' | 'tour and Remote Assistant', (c: Container) => ScreenBuild>> = {
+/** The screen sets and the clock header, each described off `c` and built: the same three calls each module's check makes. */
+const SCREENS: Readonly<Record<ScreenBuilt, (c: Container) => ScreenBuild>> = {
   'firmware screens': (c) => {
     const layout = takeApart(c);
     const d = describeTouchFirmwareScreens(c, layout);
@@ -91,6 +116,16 @@ const SCREENS: Readonly<Record<'firmware screens' | 'fixed screens' | 'tour and 
     const layout = takeApart(c);
     const d = describeTouchTourScreens(c, layout);
     return { ...d, layout: withTouchTourScreens(layout, buildTouchTourScreens(c, d.spec), d.place) };
+  },
+  'status screens': (c) => {
+    const layout = takeApart(c);
+    const d = describeTouchStatusScreens(c, layout);
+    return { ...d, layout: withTouchStatusScreens(layout, buildTouchStatusScreens(c, d.spec), d.place) };
+  },
+  'clock header': (c) => {
+    const layout = takeApart(c);
+    const d = describeTouchClockHeader(c, layout);
+    return { ...d, layout: withTouchClockHeader(layout, buildTouchClockHeader(c, d.spec), d.place) };
   },
 };
 
@@ -127,7 +162,7 @@ function building<T>(what: TouchBuilt, run: () => T): T {
  */
 export function withTouchBuilders(c: Container): { container: Container; built: TouchBuilt[] } {
   let out = c;
-  for (const what of ['firmware screens', 'fixed screens', 'tour and Remote Assistant'] as const) {
+  for (const what of SCREEN_BUILT) {
     out = building(what, () => layOutContainer(SCREENS[what](out).layout).container);
   }
   out = building('wiring', () => {
@@ -183,13 +218,15 @@ export function touchBuiltBytes(c: Container, blended: readonly BlendedSet[]): T
     }
   };
 
-  // The three screen sets rebuilt one after the other into one configuration, each described off the one before,
-  // which holds the same bytes at the same offsets wherever it is not a rebuilt screen, so every set's offsets are
-  // the view's: a screen rebuilt is the same length as the one it replaces.
+  // The screen sets and the clock header rebuilt one after the other into one configuration, each described off the
+  // one before, which holds the same bytes at the same offsets wherever it is not a rebuilt screen or program, so
+  // every set's offsets are the view's: a screen or a program rebuilt is the same length as the one it replaces.
+  // In the order the composed path builds them, so a text drawn by reference into an earlier set, status code 28's
+  // "USB Connected" and the clock's sixty minutes, is read off the copy the earlier builder made.
   const view = unblendedSelects(c, blended);
   let rebuilt = view;
   const sets: { what: TouchBuilt; one: ScreenBuild }[] = [];
-  for (const what of ['firmware screens', 'fixed screens', 'tour and Remote Assistant'] as const) {
+  for (const what of SCREEN_BUILT) {
     building(what, () => {
       const one = SCREENS[what](rebuilt);
       rebuilt = layOutContainer(one.layout).container;
@@ -198,7 +235,7 @@ export function touchBuiltBytes(c: Container, blended: readonly BlendedSet[]): T
   }
   // The look centres every label drawn in a pad by its letters, `withCentredPadLabels`, and the clock pickers'
   // buttons sit where a device page's pads do, so their words are moved after the builder placed them; the
-  // rebuild takes the same step, which moves nothing the look has centred already. Once over all three sets,
+  // rebuild takes the same step, which moves nothing the look has centred already. Once over all the sets,
   // since the step draws every page of the configuration.
   const centred = withCentredPadLabels(rebuilt).blob;
   const at = centred.findIndex((one, k) => one !== view.blob[k]);
