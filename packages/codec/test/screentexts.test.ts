@@ -34,7 +34,6 @@ import {
   compareViews,
   decode,
   describeScreenRecords,
-  describeWiring,
   glyphsReferencedBy,
   inActivityOrder,
   layOutContainer,
@@ -53,6 +52,7 @@ import {
 } from '../src/index.ts';
 import { ScreenTextError, buildScreenTexts, checkScreenTexts, describeScreenTexts, withScreenTexts } from '../src/families/four-slot/screentexts.ts';
 import { buildFirmwareScreens, describeFirmwareScreens, withFirmwareScreens } from '../src/families/four-slot/firmwarescreens.ts';
+import { describeWiring } from '../src/families/four-slot/wiring.ts';
 
 /** The thirteen arch 14 compiles section 312 names. */
 const THIRTEEN = ['h650_config_region', 'h650_panasonic_config', 'h600_config', 'calibration_h600',

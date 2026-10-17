@@ -29,7 +29,6 @@ import {
   checkScreenRecords,
   compareViews,
   describeScreenRecords,
-  describeWiring,
   inActivityOrder,
   layOutContainer,
   modeRecords,
@@ -42,6 +41,7 @@ import {
   takeApart,
   withScreenRecords,
 } from '../src/index.ts';
+import { describeWiring } from '../src/families/four-slot/wiring.ts';
 
 /** The thirteen arch 14 compiles section 312 names. */
 const THIRTEEN = ['h650_config_region', 'h650_panasonic_config', 'h600_config', 'calibration_h600',

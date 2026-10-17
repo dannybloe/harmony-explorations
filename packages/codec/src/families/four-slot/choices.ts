@@ -27,7 +27,7 @@ import { rgbTo565 } from '../../png.ts';
 import {
   LETTERING_FACES, OXANIUM_WEIGHTS, defaultWeight, type LetterInks, type OxaniumFaceName, type OxaniumWeight,
 } from '../../lettering.ts';
-import type { WiringSettings } from '../../wiring.ts';
+import type { WiringSettings } from './wiring.ts';
 import { iconNames } from '../../icons.ts';
 import type { OurPictureName } from '../../pictures.ts';
 import type { CommonChoices, DelayDefaults } from '../family.ts';

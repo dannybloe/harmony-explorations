@@ -26,24 +26,14 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { load, skipUnless } from '@harmony/lab';
-import type { Container, ContainerLayout, ContainerPiece, WiringSpec } from '../src/index.ts';
+import type { Container, ContainerLayout, ContainerPiece } from '../src/index.ts';
 import {
   ACTION_LIST_TABLE_SLOT,
-  ACTIVITY_KEY_SCANS,
-  ALL_OFF_SCAN,
-  EVENT_COUNT,
-  FIRMWARE_SCREENS,
-  LOG_AREA,
-  PARAMETER_VALUES,
   WiringError,
   activityCount,
   archSlot,
-  buildWiring,
-  checkWiring,
   builtPieces,
   describeStateTables,
-  describeWiring,
-  wiringFrontIndex,
   eventMap,
   layOutContainer,
   logArea,
@@ -58,6 +48,10 @@ import {
   withWiring,
 } from '../src/index.ts';
 import { FOUR_SLOT_STATE_TABLES } from '../src/families/four-slot/statetables.ts';
+import {
+  type WiringSpec, ACTIVITY_KEY_SCANS, ALL_OFF_SCAN, EVENT_COUNT, FIRMWARE_SCREENS, LOG_AREA, PARAMETER_VALUES, buildWiring,
+  checkWiring, describeWiring, wiringFrontIndex,
+} from '../src/families/four-slot/wiring.ts';
 
 /** The thirteen arch 14 compiles section 312 names, as `frame.test.ts` lists them. */
 const ARCH14_COMPILES = [

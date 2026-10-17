@@ -48,32 +48,32 @@
  * the table, since what orders the table is not established.
  *
  * Arch 14 only, the Harmony 600, 650 and 700. Read only towards hardware: the result is pieces.
+ *
+ * **The family's catalogue over the shared engine.** The engine, symbols, encoding and putting pieces in a
+ * layout, is `wiringparts.ts`, which the Harmony One's catalogue, `families/touch/wiring.ts`, runs on too;
+ * this module is the Harmony 600, 650 and 700's catalogue and numbering, asked as `Family.wiring`. It moved
+ * here from `src/wiring.ts` with `todo-compile-one.md` 3.3.3.2, unchanged but for where its names come from;
+ * the engine's public names, which it used to pass on, the codec's index takes from `wiringparts.ts` itself.
  */
-import { u16, u24, u8 } from './bytes.ts';
-import { ACTION_LIST_TABLE_SLOT, BINDING_SLOT } from './gspm.ts';
-import { Writer } from './emit.ts';
-import type { ContainerLayout, ContainerPiece, PieceRef } from './frame.ts';
-import { takeApart } from './frame.ts';
-import type { Container } from './gspm.ts';
+import { u16, u24, u8 } from '../../bytes.ts';
+import { ACTION_LIST_TABLE_SLOT, BINDING_SLOT } from '../../gspm.ts';
+import { Writer } from '../../emit.ts';
+import type { ContainerLayout, ContainerPiece, PieceRef } from '../../frame.ts';
+import { takeApart } from '../../frame.ts';
+import type { Container } from '../../gspm.ts';
 import {
   BYTE_REGISTER_LOAD, CONDITION_OPCODE, CONDITION_TWO_ARMS, KEY_EVENT_PRESS, KEY_EVENT_SHIFT, tagSlotOrder,
-} from './inventory.ts';
-import { DEFERRED, POP_MODE as POP_MODE_INSTRUCTION, PUSH_MODE as PUSH_MODE_INSTRUCTION, STATE_BAND } from './actions.ts';
-import type { ModeZeroModel } from './modezero.ts';
-import { KEYPAD_FIRST_SCAN, KEYPAD_LAST_SCAN } from './modezero.ts';
-import { EVENT_MAP_SLOT, HANDLER_TABLE_SLOT } from './sections.ts';
-import { TIMER_KIND_SCHEDULED, TIMER_RECORD_LENGTH, TIMER_SLOT } from './tables.ts';
-import { LOG_AREAS, buildLogArea, buildParameterBlock, type LogAreaRegion } from './firmwaresections.ts';
+} from '../../inventory.ts';
+import { DEFERRED, POP_MODE as POP_MODE_INSTRUCTION, PUSH_MODE as PUSH_MODE_INSTRUCTION, STATE_BAND } from '../../actions.ts';
+import { KEYPAD_FIRST_SCAN, KEYPAD_LAST_SCAN, type ModeZeroModel } from './modezero.ts';
+import { EVENT_MAP_SLOT, HANDLER_TABLE_SLOT } from '../../sections.ts';
+import { TIMER_KIND_SCHEDULED, TIMER_RECORD_LENGTH, TIMER_SLOT } from '../../tables.ts';
+import { LOG_AREAS, buildLogArea, buildParameterBlock, type LogAreaRegion } from '../../firmwaresections.ts';
 import {
   ONE, WiringError, buildEventMap, checkRange, compareWiring, decode, emptySymbols, encode, encodeEntry, encodeList, lookup,
   namedBy, orderOf, piece, tableTargets, tablePiece, tie, withWiring,
   type BuiltWiring, type DeviceTimer, type EntryTemplate, type SymbolKind, type Symbols, type WiringChecked, type WiringInstruction,
-} from './wiringparts.ts';
-
-// The engine moved to `wiringparts.ts` when the Harmony One's wiring came to share it, section 410; its
-// public names are passed on from here, where every caller has always found them.
-export { WiringError, builtPieces, withWiring } from './wiringparts.ts';
-export type { BuiltWiring, DeviceTimer, WiringChecked, WiringInstruction } from './wiringparts.ts';
+} from '../../wiringparts.ts';
 
 /** The models this builds for, by their skin, section 131. The European 650 and 700 are not measured. */
 export type WiringModel = ModeZeroModel;
@@ -116,8 +116,8 @@ export const FIRMWARE_SCREENS: Readonly<Record<WiringModel, readonly string[]>> 
 export const EVENT_COUNT = 30;
 
 /**
- * The architecture this module builds for, arch 14 (Harmony 600, 650 and 700). It moves into the four
- * slot family with `todo-compile-one.md` 3.3.3.2; the shared builders it calls take it as data.
+ * The architecture this module builds for, arch 14 (Harmony 600, 650 and 700), the family's own; the shared
+ * builders it calls, the log area and the parameter block, take it as data.
  */
 const WIRING_ARCHITECTURE = 14;
 

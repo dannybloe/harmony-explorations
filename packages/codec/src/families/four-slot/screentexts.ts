@@ -90,7 +90,7 @@ import { modeRoles } from '../../screencategories.ts';
 import { type CharacterMap, characterMap, glyphsReferencedBy } from '../../text.ts';
 import { valueMaps } from '../../valuemap.ts';
 import { FIRMWARE_SCREEN_TEMPLATES } from './firmwarescreens.ts';
-import { FIRMWARE_SCREENS, describeWiring } from '../../wiring.ts';
+import { FIRMWARE_SCREENS, describeWiring } from './wiring.ts';
 
 // The form rule, the refusal and writing texts into a layout are every family's, `shared/screentexts.ts`, where
 // they moved from here unchanged; exported again from here for the callers that name this module.

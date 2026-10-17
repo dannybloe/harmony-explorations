@@ -67,14 +67,14 @@ import {
   BYTE_REGISTER_LOAD, CONDITION_OPCODE, CONDITION_TWO_ARMS, FOUR_SLOT_SCREEN_WIDTH, KEY_EVENT_PRESS, KEY_EVENT_SHIFT,
 } from '../../inventory.ts';
 import { POP_MODE, SILENT_WRITE, STATE_BAND, STATE_WRITE_BASE } from '../../actions.ts';
-import { keyMapEntries } from '../../modezero.ts';
+import { keyMapEntries } from './modezero.ts';
 import { ACTION_LIST_INDEX_OPCODE, taggedListBytes } from '../../sections.ts';
 import {
   type BuiltScreen, type RecordFrame, type RecordPlace, ScreenRecordError, assertRebuilt, recordBuilding, recordReading,
   withModeRecords,
 } from '../../screenrecords.ts';
 import type { PieceTarget } from '../../statetables.ts';
-import { FIRMWARE_SCREENS, type WiringModel, type WiringSpec, describeWiring, wiringFrontIndex } from '../../wiring.ts';
+import { FIRMWARE_SCREENS, type WiringModel, type WiringSpec, describeWiring, wiringFrontIndex } from './wiring.ts';
 import { SCREEN_DRAW_IMAGE, SCREEN_DRAW_IMAGE_AT, SCREEN_SELECT_FONT } from '../../screen.ts';
 
 /** Which of the five own key maps a firmware screen has. */

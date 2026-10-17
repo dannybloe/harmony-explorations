@@ -27,7 +27,7 @@ import {
   KEY_EVENT_PRESS, KEY_EVENT_SHIFT, MAP_VALUE_OPCODE, RUN_SCREEN_PROGRAM, SELECT_BINDING_SET,
   SELECT_BINDING_SET_MASK, stateVariables,
 } from '../../inventory.ts';
-import { KEYPAD_FIRST_SCAN, KEYPAD_LAST_SCAN } from '../../modezero.ts';
+import { KEYPAD_FIRST_SCAN, KEYPAD_LAST_SCAN } from './modezero.ts';
 import { relocate } from '../../relocate.ts';
 import {
   bitmapReference, SCREEN_DRAW_IMAGE, SCREEN_DRAW_IMAGE_AT, SCREEN_END, SCREEN_QUEUE_INSTRUCTION, SCREEN_SELECT_FONT,

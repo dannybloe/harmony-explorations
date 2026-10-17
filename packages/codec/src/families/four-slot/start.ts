@@ -21,7 +21,7 @@ import {
 import { ACTION_LIST_INDEX_OPCODE, HANDLER_TAG_ENTER, handlerSets, taggedList } from '../../sections.ts';
 import { assertGeneratedRecord, ComposeError, HANDLER_TAG_RESUME, STATE_WRITE_LIMIT } from '../../shared/core.ts';
 import { type StateVariableSpec } from '../../statetables.ts';
-import { describeWiring, rewiredForActivities } from '../../wiring.ts';
+import { describeWiring, rewiredForActivities } from './wiring.ts';
 import { FOUR_SLOT_ACTIVITY_KEY_EDITOR } from './activitykeys.ts';
 import { startSequenceVariables } from './statetables.ts';
 

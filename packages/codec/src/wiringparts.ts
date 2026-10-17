@@ -6,8 +6,8 @@
  * Split out of `wiring.ts`, where it was written for the Harmony 600, 650 and 700, section 347, when the
  * Harmony One's wiring came to be built by the same code, section 410: a family holds its catalogue, the
  * lists, entries and timers its remotes carry, and this module holds nothing that is true of one remote and
- * not another. The four slot catalogue is still `wiring.ts`, which moves into its family with
- * `todo-compile-one.md` 3.3.3.2; the touch catalogue is `families/touch/wiring.ts`.
+ * not another. The four slot catalogue was `wiring.ts` until `todo-compile-one.md` 3.3.3.2 moved it into its
+ * family, `families/four-slot/wiring.ts`; the touch catalogue is `families/touch/wiring.ts`.
  *
  * **A symbol is either generated or described.** A catalogue names every list, mode, variable, value map,
  * base slot 9 entry, timer and screen program by a name of its own; the family's builder decides which of

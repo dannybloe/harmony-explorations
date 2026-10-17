@@ -55,18 +55,22 @@ const PATTERNS: Readonly<Record<string, RegExp>> = {
  * `Family.activityRewiring`, where it tested the architecture, and leaves the list; a send's shape and an
  * activity's start are family members too, `Family.sends` and `Family.activityStart`, which the patterns here
  * counted in no module, since each was a test of a trait rather than of the architecture.
+ *
+ * Since 3.3.3.2's second run `wiring.ts` is the four slot family's, `families/four-slot/wiring.ts`, and so are
+ * mode 0's list and the keypad's scan range, `families/four-slot/modezero.ts`, and the assembly with its skin
+ * sets, `families/four-slot/assemble.ts` and `skins.ts`; all three leave the list. `modezero.ts` keeps the key
+ * list order every family's lists share and `assemble.ts` the renumbering of base slot 10, neither naming a
+ * remote, and `screenrecords.ts` takes the wiring's description and the scan range through the family's index,
+ * on the import it had, so none of its counts moves.
  */
 const DEBT: Readonly<Record<string, Readonly<Record<string, number>>>> = {
-  'assemble.ts': { architecture: 2, family: 11, models: 3, imports: 5 },
   'backgrounds.ts': { architecture: 3, models: 3, imports: 1 },
   'compare.ts': { family: 5, imports: 1 },
   'growth.ts': { family: 6 },
   'inventory.ts': { architecture: 2, family: 17, scans: 4 },
-  'modezero.ts': { scans: 3, models: 1 },
   'pictures.ts': { architecture: 1 },
   'screenrecords.ts': { architecture: 1, family: 21, imports: 1 },
   'shared/setup.ts': { models: 1 },
-  'wiring.ts': { scans: 3, models: 5 },
 };
 
 /** The names `compose.ts` passes through from a family's modules, read off its own `export { ... } from` lists. */

@@ -3,7 +3,7 @@
  * into the eleven groups and the twelve bytes past group 9 that its firmware reads, `todo-compile-one.md`
  * 6.4. One set on all 19 distinct Harmony One compiles the lab holds, `ONE_COMPILES` in
  * `test/startupassistant.test.ts`, as the Harmony 600, 650 and 700 each carry one set of their own,
- * `wiring.ts`' `PARAMETER_VALUES`.
+ * `families/four-slot/wiring.ts`' `PARAMETER_VALUES`.
  *
  * What the groups hold is `docs/config-format.md` under base slot 15, read off the 3.4 image: 0 the display
  * light fade's step delay, 1 four display light levels, 4 the analogue channel 1 band thresholds, 5 and 6

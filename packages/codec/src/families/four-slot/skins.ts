@@ -18,3 +18,18 @@
  * alone, `fonts.ts`.
  */
 export const HARMONY_650_SKINS: ReadonlySet<number> = new Set([72, 74]);
+
+/**
+ * The skins the assembly takes, `assemble.ts`. The Harmony 650 alone, skin 72, which is the one model every
+ * step was run on together; each generator states its own wider scope, and what the Harmony 600 and 700 would
+ * need is in section 362: the 700's wiring refuses the Remote Assistant off, and neither model has had this
+ * chain run on one of its compiles. Held in `src/assemble.ts` until `todo-compile-one.md` 3.3.3.2.
+ */
+export const ASSEMBLY_SKINS: ReadonlySet<number> = new Set([72]);
+
+/**
+ * The skins the assembly takes on a donor of ours alone, an empty configuration in our look: the Harmony
+ * 700's 66, `todo-compile-700.md` 2.1, and the Harmony 600's 71 and 73, `todo-compile-600.md` 2.1. None of
+ * Logitech's compiles for either has had the chain run on it, so one of them as the donor is refused.
+ */
+export const OUR_DONOR_SKINS: ReadonlySet<number> = new Set([66, 71, 73]);

@@ -41370,7 +41370,7 @@ The rule produced the right observation and the wrong reading of it.
 
 ### For a writer
 
-`modeZeroKeyList` in `packages/codec/src/modezero.ts` emits the list for the Harmony 600 and 650, and
+`modeZeroKeyList` in `packages/codec/src/families/four-slot/modezero.ts` emits the list for the Harmony 600 and 650, and
 for the Harmony 700 given the state variable its leading entry sets, byte equal to every sample of
 those models named below. Those ten samples carry one ordering between them, the 600's, plus the 700's
 tag `0x06` in bucket 6. A list of another population can be ordered by `keyListOrder` as long as it has
@@ -45279,7 +45279,7 @@ menu row too and that refuses in both codecs, so 18, 21 and 3 stand and the thre
   menu page check, the start up and working pictures in `DEVICE_PAGE_LOOKS`, and
   `composeFourSlotActivityScreen` building both screens and the four cases; `workingTemplate14` and
   `copiedChrome` removed.
-* `packages/codec/src/modezero.ts`: the keypad's scan range exported, `KEYPAD_FIRST_SCAN` and
+* `packages/codec/src/families/four-slot/modezero.ts`: the keypad's scan range exported, `KEYPAD_FIRST_SCAN` and
   `KEYPAD_LAST_SCAN`, so the start up key map and mode 0's list share it.
 * `packages/codec/test/activityscreen.test.ts`: the calibration, the two routes, the controls and the
   composed activities.
@@ -46094,7 +46094,7 @@ corrects one sentence of section 346.
 every arch 14 configuration carries besides its devices, activities and screens is the part connecting
 the remote's own events to the configuration: the log area, the event map, the parameter block, the
 timers, base slot 8's leading list, base slot 9's five entries nothing selects and the one left over,
-and the lists those name. `packages/codec/src/wiring.ts` builds all of it from a description.
+and the lists those name. `packages/codec/src/families/four-slot/wiring.ts` builds all of it from a description.
 
 **Sources checked**: this document, sections 26, 27, 36, 43, 44, 47, 83, 140, 206, 249, 272, 286, 290,
 292, 311, 312, 313, 314, 318, 321, 324, 329, 333, 345 and 346; the thirteen compiles and
@@ -46271,7 +46271,7 @@ model's tie; a Logitech compile with the tilt sensor off that binds `0x17`.
 
 ### Where it lands
 
-* `packages/codec/src/wiring.ts`: `buildWiring`, `describeWiring`, `withWiring`, `builtPieces`,
+* `packages/codec/src/families/four-slot/wiring.ts`: `buildWiring`, `describeWiring`, `withWiring`, `builtPieces`,
   `FIRMWARE_SCREENS`, `PARAMETER_VALUES`, `LOG_AREA`; `tagSlotOrder` in `inventory.ts`.
 * `packages/codec/test/wiring.test.ts`: the thirteen byte for byte with the front against the hour list,
   the blind control, the six later compiles and their settings, the tilt sensor's difference, the settings
@@ -48217,7 +48217,7 @@ re-measure, below, which agrees and adds the restore's device constant.
 
 **Todo `todo-compile-650.md` 10.2.2.** Section 347 built the firmware's wiring, the front of base slot 10
 and the shared lists every key press runs, and named by index every list those call. This section builds
-that tree in `packages/codec/src/wiring.ts`, on section 347's own describe, build and put back pattern,
+that tree in `packages/codec/src/families/four-slot/wiring.ts`, on section 347's own describe, build and put back pattern,
 which sections 356 to 358 copied: the new lists are more templates in the same catalogue, `conditionals`,
 so `describeWiring` reads their indices and the few variables they name, `buildWiring` builds them, and
 `withWiring` puts them where Logitech's sat. `checkWiring` is the calibration.
@@ -48455,7 +48455,7 @@ Logitech compile with no activities whose scan 4 list maps the location.
 
 ### Where it lands
 
-* `packages/codec/src/wiring.ts`: `conditionals`, the settings `tourShown`, `delayRestore` and `help`, the
+* `packages/codec/src/families/four-slot/wiring.ts`: `conditionals`, the settings `tourShown`, `delayRestore` and `help`, the
   `stop` and `test` instructions, `ALL_OFF_SCAN`, `FIXED_ENTRIES`, the activity count, `listNames`,
   `checkWiring`, and the refusals of a Harmony 700 with the Assistant off and of the rule with no
   activities where it is not read.
@@ -48719,7 +48719,7 @@ too weak in the same way.
 **Todo `todo-compile-650.md` 10.6**, "a setup description in, a whole container out". Until now a
 configuration of ours was a chain of lab scripts, each starting from a Logitech compile and replacing one
 part: the 6.2.13 file's composers, the 7.5 file's three screen passes, then 10.2.2's wiring. This item
-makes that chain one function, `assembleSetup` in `packages/codec/src/assemble.ts`, with its inputs named:
+makes that chain one function, `assembleSetup` in `packages/codec/src/families/four-slot/assemble.ts`, with its inputs named:
 the setup file `packages/corpus/setups/` already holds, the settings, and a **donor**, the container every
 part no generator builds yet comes from. The donor is a parameter so that 11.1 can hand in another one and
 count what is left.
@@ -48973,9 +48973,9 @@ person something other than the donor in a cell outside the activity menu.
 
 ### Where it lands
 
-* `packages/codec/src/assemble.ts`: `assembleSetup`, `checkAssembled`, `listCallSites`, `namedLists`,
-  `dropLists`, `checkRenumbering`, `attributeBytes`, `drawnTexts` and `compareDrawnTexts`, and
-  `TRACK_SETTINGS`.
+* `packages/codec/src/families/four-slot/assemble.ts`: `assembleSetup`, `checkAssembled`, `attributeBytes`, `drawnTexts`
+  and `compareDrawnTexts`, and `TRACK_SETTINGS`; `packages/codec/src/assemble.ts`: `listCallSites`, `namedLists`,
+  `dropLists` and `checkRenumbering`.
 * `packages/codec/src/compose.ts`: `startsSwitchingOff`, out of `keepDeviceOn`.
 * `packages/corpus/src/setup.ts`: the setup file's device and activity are the codec's types now, since
   the codec reads the same file.
@@ -49405,7 +49405,7 @@ starting compile's route differing from the 6.2.13 file's assembly anywhere but 
 
 ### Where it lands
 
-* `packages/codec/src/assemble.ts`: the donor matched by the setup's name or the catalogue's, the device and
+* `packages/codec/src/families/four-slot/assemble.ts`: the donor matched by the setup's name or the catalogue's, the device and
   activity composition, `options.archive`, `options.maxDevices` and `options.screens`, the pictures pass,
   `composedIntoBody`, and the attribution's `pictures`.
 * `packages/codec/test/assemble.test.ts`: the starting compile's route against the lab's composed file, the
@@ -50759,7 +50759,7 @@ records, the first following one, 73 of 73 arch 14 files, so no one kind marks w
 **Falsification**: a donor of ours whose reassembly loses a page list's copy, which the test counts, or
 whose attribution carries anything but the composed device.
 
-* `packages/codec/src/assemble.ts`, the donor of ours, `donorFaces`, `composedIntoBody`;
+* `packages/codec/src/families/four-slot/assemble.ts`, the donor of ours, `donorFaces`, `composedIntoBody`;
   `families/four-slot/menus.ts`, `growFourSlotMenu`'s list rewritten whole; `wiring.ts`, `withWiring`'s
   tails; `statetables.ts`, `buildNameTree`.
 * `packages/codec/test/empty.test.ts`: the assembly on the empty configuration, its steps, its one row,
@@ -51070,8 +51070,8 @@ not leave "USB Connected" when the cable comes out.
 ### Where it lands
 
 * `packages/codec/src/families/four-slot/empty.ts`: `emptyModelOf`, `emptyModes`, `emptyVariables`,
-  `emptyMaps` and the pictures per model; `packages/codec/src/wiring.ts`, the two refusals lifted with their
-  reasons; `packages/codec/src/assemble.ts`, mode 0's check with the 700's variable.
+  `emptyMaps` and the pictures per model; `packages/codec/src/families/four-slot/wiring.ts`, the two refusals lifted with their
+  reasons; `packages/codec/src/families/four-slot/assemble.ts`, mode 0's check with the 700's variable.
 * `packages/codec/test/empty.test.ts`: the 700 built from nothing and the menus' keys on both models;
   `packages/codec/test/wiring.test.ts`: the Assistant off keeps the 700's leave handler, and the 600 stays
   refused with no activity; `packages/codec/test/icons.test.ts`: the 650's six pictures unchanged and the
@@ -51496,7 +51496,7 @@ file's `first`; a 600 that shows `0x0446` as black or as white.
 
 ### Where it lands
 
-* `packages/codec/src/families/four-slot/empty.ts`: skins 71 and 73; `packages/codec/src/wiring.ts`: no activity
+* `packages/codec/src/families/four-slot/empty.ts`: skins 71 and 73; `packages/codec/src/families/four-slot/wiring.ts`: no activity
   on the 600; `packages/codec/src/backgrounds.ts`: the 600's skins in our look, in one look and blended;
   `packages/codec/src/families/four-slot/choices.ts`: `oneLookColour`.
 * `packages/codec/test/empty.test.ts`: the 600 built from nothing, and the mark at 1 on the built file.
@@ -51564,7 +51564,8 @@ donor's.
 
 ### Where it lands
 
-* `packages/codec/src/assemble.ts`: `OUR_DONOR_SKINS` takes 71 and 73, and the one look's colour is applied.
+* `packages/codec/src/families/four-slot/skins.ts`: `OUR_DONOR_SKINS` takes 71 and 73;
+  `packages/codec/src/families/four-slot/assemble.ts`: the one look's colour is applied.
 * `packages/codec/test/empty.test.ts`: the five device setup on both models, page by page and by attribution,
   and Logitech's 600 compiles refused as donors.
 
@@ -51781,7 +51782,7 @@ nothing calls; a second call asking for group 3, or a reader of `0xD2F` to `0xD3
 
 * `tests/test_interpreter.py`, `TestTheParameterBlock`: the group 3 call on both images with its fallback, and
   the two 0.2 builds' byte count and model numbers.
-* `docs/config-format.md`, base slot 15: group 3 on arch 14. `packages/codec/src/wiring.ts`: the parameter
+* `docs/config-format.md`, base slot 15: group 3 on arch 14. `packages/codec/src/families/four-slot/wiring.ts`: the parameter
   groups' comment.
 * `todo-compile-600.md` 1.4.1 stays open with these three readings.
 

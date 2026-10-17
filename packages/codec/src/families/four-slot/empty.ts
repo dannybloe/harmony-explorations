@@ -37,14 +37,15 @@ import {
   FIRMWARE_STATE_VARIABLE_COUNT, FOUR_SLOT_STATE_TABLES, activityStateVariables, startSequenceVariables,
 } from './statetables.ts';
 import {
-  ACTIVITY_KEY_SCANS, FIRMWARE_SCREENS, FIXED_ENTRIES, buildWiring, wiringFrontIndex, wiringNeeds, type BuiltWiring, type WiringSettings,
+  ACTIVITY_KEY_SCANS, FIRMWARE_SCREENS, FIXED_ENTRIES, buildWiring, wiringFrontIndex, wiringNeeds, type WiringSettings,
   type WiringSpec,
-} from '../../wiring.ts';
+} from './wiring.ts';
+import type { BuiltWiring } from '../../wiringparts.ts';
 import {
   SCREEN_DRAW_IMAGE, SCREEN_END, SCREEN_JUMP, SCREEN_QUEUE_INSTRUCTION, SCREEN_SELECT_FONT, SCREEN_SWITCH_NARROW,
   SCREEN_TEXT_INLINE,
 } from '../../screen.ts';
-import { modeZeroKeyList } from '../../modezero.ts';
+import { modeZeroKeyList } from './modezero.ts';
 import { type SetFace, letterFaceOf } from '../../fonttable.ts';
 import {
   LETTERING_CHARACTERS, OXANIUM_FACE_SPECS, defaultWeight, letterRows, type LetterInks, type Lettering,

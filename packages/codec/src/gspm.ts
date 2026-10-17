@@ -536,7 +536,7 @@ export interface Instruction {
 /**
  * An action list's bytes, the inverse of `Container.actionList`: a one byte count, then per instruction
  * the operand, low byte first, and the opcode, section 26. The one encoder of the form for lists built
- * from a description, `wiring.ts`'s and the firmware screens', section 357.
+ * from a description, the four slot family's `wiring.ts`'s and the firmware screens', section 357.
  */
 export function actionListBytes(body: readonly Instruction[]): Uint8Array {
   if (body.length > 0xff) throw new RangeError(`a list of ${body.length} instructions is more than its count holds`);

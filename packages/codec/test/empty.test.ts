@@ -9,7 +9,7 @@ import assert from 'node:assert/strict';
 
 import {
   type Container, ENTER_MODE, rgbTo565, LETTERING_CHARACTERS, MAP_VALUE_OPCODE, RUN_SCREEN_PROGRAM, SCREEN_QUEUE_INSTRUCTION,
-  characterMap, claims, describeStateTables, describeWiring, fontSets, glyphOf, letterRows, modePages, modeRecords, oxaniumFace,
+  characterMap, claims, describeStateTables, fontSets, glyphOf, letterRows, modePages, modeRecords, oxaniumFace,
   pageListCopies, screenProgram, stateVariables, takeApart, taggedList, valueMaps,
 } from '../src/index.ts';
 import { FOUR_SLOT_CHOICES, OUR_FOUR_SLOT_CHOICES } from '../src/families/four-slot/choices.ts';
@@ -17,9 +17,7 @@ import {
   EMPTY_FONT_SETS, EMPTY_VARIABLES, buildEmptyConfiguration, buildEmptySkeleton, emptyCodeOf, emptyModelOf, emptyModes, emptyVariable,
   emptyVariables,
 } from '../src/families/four-slot/empty.ts';
-import { modeZeroKeyList } from '../src/modezero.ts';
 import { DEVICES_KEY_TAG, DEVICE_MODE_PROGRAM_TAG, SCAN_FOUR_TAG, cornerPrograms } from '../src/families/four-slot/chrome.ts';
-import { FIRMWARE_SCREENS } from '../src/wiring.ts';
 import { CORNER_PLACES, cornerPlaceAt, cornerProgramAt, emptyFont } from '../src/families/four-slot/empty.ts';
 import { OUR_LOOK, deviceModeChrome, inOurLook } from '../src/families/four-slot/chrome.ts';
 import { fourSlotMenus, fourSlotTemplate } from '../src/families/four-slot/menus.ts';
@@ -30,12 +28,11 @@ import { stateBackgroundColour } from '../src/backgrounds.ts';
 import { activities, activityNames, deviceListRows } from '../src/inventory.ts';
 import { activityKeys } from '../src/families/four-slot/activitykeys.ts';
 import { IR_ARCHIVE, require_, skipUnless, skipWithoutIrArchive } from '@harmony/lab';
-import { archSlot, checkWiring, compareViews, parse, readRecipe, screenStrings, setupView } from '../src/index.ts';
+import { archSlot, compareViews, parse, readRecipe, screenStrings, setupView } from '../src/index.ts';
 import { readFileSync } from 'node:fs';
 import { checkFirmwareScreens } from '../src/families/four-slot/firmwarescreens.ts';
 import { checkScreenRecords } from '../src/screenrecords.ts';
 import { stateRecords } from '../src/sections.ts';
-import { assembleSetup, attributeBytes } from '../src/assemble.ts';
 import type { Recipe } from '../src/index.ts';
 import { fourSlotActivityMenu, fourSlotMenuMarkerWriter } from '../src/families/four-slot/chrome.ts';
 import { startupTitleYs } from '../src/families/four-slot/activityscreen.ts';
@@ -43,6 +40,9 @@ import { activityMenuByRows, menuMarkerOf } from '../src/shared/menus.ts';
 import { allOffList, composeDevice, coverage, deviceIds, joinPowerOff } from '../src/index.ts';
 import { FIRST_DEVICE_IDENTIFIER } from '../src/shared/core.ts';
 import { FOUR_SLOT_STATE_TABLES } from '../src/families/four-slot/statetables.ts';
+import { describeWiring, FIRMWARE_SCREENS, checkWiring } from '../src/families/four-slot/wiring.ts';
+import { modeZeroKeyList } from '../src/families/four-slot/modezero.ts';
+import { assembleSetup, attributeBytes } from '../src/families/four-slot/assemble.ts';
 
 const BUILT_AT = '2026-10-12T12:00:00';
 

@@ -20,12 +20,13 @@ import assert from 'node:assert/strict';
 
 import { load, skipUnless } from '@harmony/lab';
 import type { Container, ContainerLayout, ContainerPiece } from '../src/index.ts';
-import { describeWiring, layOutContainer, parse, takeApart } from '../src/index.ts';
+import { layOutContainer, parse, takeApart } from '../src/index.ts';
 import { familyOf } from '../src/families/registry.ts';
 import { WiringError, builtPieces, compareWiring, withWiring, type BuiltWiring } from '../src/wiringparts.ts';
 import {
   TOUCH_FIRMWARE_SCREENS, buildTouchWiring, checkTouchWiring, describeTouchWiring, touchWiringNeeds, type TouchWiringSpec,
 } from '../src/families/touch/wiring.ts';
+import { describeWiring } from '../src/families/four-slot/wiring.ts';
 
 /** The nineteen Harmony One compiles of section 405, `test/screenrecords-one.test.ts`' list. */
 const ONES = ['harvest_one_two_devices', 'one_spare_after_sync', 'one_spare_myharmony', 'one_spare_20260830',

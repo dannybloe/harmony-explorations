@@ -4,8 +4,8 @@
  * What a One configuration carries besides its devices, activities and screens and connects the remote's
  * own events to it: the event map, base slot 8's leading list, the timers, base slot 9's seven entries
  * nothing selects and the one left over, and the action lists those name, followed through every call. The
- * log area and the parameter block, which `wiring.ts` builds with the rest on the Harmony 600, 650 and 700,
- * are built here too, by 6.4's builders, so one call swaps every piece a check compares. The engine, the
+ * log area and the parameter block, which `families/four-slot/wiring.ts` builds with the rest on the Harmony
+ * 600, 650 and 700, are built here too, by 6.4's builders, so one call swaps every piece a check compares. The engine, the
  * encoding of an instruction, a list and an entry and the swap into a layout, is `wiringparts.ts`, shared
  * with the four slot family; this module is the catalogue and the numbering, the One's alone.
  *
@@ -447,7 +447,7 @@ function catalogue(settings: TouchWiringSettings, timers: readonly string[]): Ca
   return { lists, entries, lead, timers: table, front };
 }
 
-/** A device's own timer, as `wiring.ts` carries the Harmony 600, 650 and 700's. */
+/** A device's own timer, as `families/four-slot/wiring.ts` carries the Harmony 600, 650 and 700's. */
 export type { DeviceTimer };
 
 export interface TouchWiringSpec {
@@ -457,7 +457,7 @@ export interface TouchWiringSpec {
   /**
    * The timer table in order: a firmware timer's name, `FIXED_TIMERS`, a redraw timer's, `redraw0` upward,
    * or `''` for a device's, which `deviceTimers` holds whole at that place. The order is the compile's and
-   * differs between them, so it is carried, as `wiring.ts` carries a device timer's place.
+   * differs between them, so it is carried, as `families/four-slot/wiring.ts` carries a device timer's place.
    */
   timers: readonly string[];
   deviceTimers: readonly DeviceTimer[];

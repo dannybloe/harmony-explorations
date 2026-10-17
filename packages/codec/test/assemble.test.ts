@@ -20,21 +20,15 @@ import { screenProgram } from '../src/screen.ts';
 import { valueMaps } from '../src/valuemap.ts';
 import {
   AssemblyError,
-  assembleSetup,
-  attributeBytes,
   buildScreenRecords,
-  buildWiring,
   checkBlendedLetters,
   checkOxaniumFonts,
   checkStateBackgrounds,
   characterMap,
   checkScreenRecords,
-  checkWiring,
   claims,
-  compareDrawnTexts,
   compareViews,
   describeScreenRecords,
-  describeWiring,
   ACTIVITY_STATE_NAME,
   MAP_VALUE_OPCODE,
   devices,
@@ -60,6 +54,8 @@ import { DEVICES_KEY_TAG } from '../src/families/four-slot/chrome.ts';
 import { ladderOf, oxaniumLabelSizes } from '../src/families/four-slot/devicemode.ts';
 import { buildScreenTexts, checkScreenTexts, describeScreenTexts, withScreenTexts } from '../src/families/four-slot/screentexts.ts';
 import { buildFirmwareScreens, checkFirmwareScreens, describeFirmwareScreens, withFirmwareScreens } from '../src/families/four-slot/firmwarescreens.ts';
+import { buildWiring, checkWiring, describeWiring } from '../src/families/four-slot/wiring.ts';
+import { assembleSetup, attributeBytes, compareDrawnTexts } from '../src/families/four-slot/assemble.ts';
 
 /**
  * The 22 arch 14 compiles sections 356 to 360 measure, by the skin each states: 13 Harmony 650, 2 Harmony

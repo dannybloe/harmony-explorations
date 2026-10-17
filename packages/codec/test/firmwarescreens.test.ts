@@ -24,19 +24,16 @@ import { require_, skipUnless } from '@harmony/lab';
 import {
   type Container,
   type ContainerPiece,
-  FIRMWARE_SCREENS,
   ScreenRecordError,
   activityEntriesByName,
   buildScreenRecords,
   compareViews,
   describeScreenRecords,
-  describeWiring,
   handlerSets,
   inActivityOrder,
   introductionTour,
   layOutContainer,
   modeRecords,
-  modeZeroKeyList,
   parse,
   recordReading,
   restamped,
@@ -53,6 +50,8 @@ import {
   valueMaps,
 } from '../src/index.ts';
 import { buildFirmwareScreens, checkFirmwareScreens, describeFirmwareScreens, withFirmwareScreens } from '../src/families/four-slot/firmwarescreens.ts';
+import { FIRMWARE_SCREENS, describeWiring } from '../src/families/four-slot/wiring.ts';
+import { modeZeroKeyList } from '../src/families/four-slot/modezero.ts';
 
 /** The thirteen arch 14 compiles section 312 names. */
 const THIRTEEN = ['h650_config_region', 'h650_panasonic_config', 'h600_config', 'calibration_h600',

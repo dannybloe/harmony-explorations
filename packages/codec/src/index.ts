@@ -46,7 +46,8 @@ export * from './coverage.ts';
 // Section 317.
 export * from './screencategories.ts';
 export * from './edit.ts';
-// Mode 0's key list, the table after the end marker, generated from its rule, section 311.
+// The order a key list is stored in, section 315; mode 0's own list is the four slot family's since
+// todo-compile-one 3.3.3.2, families/four-slot/modezero.ts.
 export * from './modezero.ts';
 export * from './queue.ts';
 export * from './growth.ts';
@@ -59,8 +60,10 @@ export * from './placer.ts';
 export * from './statetables.ts';
 // The log area and the parameter block built for an architecture, todo-compile-one 6.4.
 export * from './firmwaresections.ts';
-// The firmware's own wiring built from a description, todo-compile-650 10.2.
-export * from './wiring.ts';
+// The engine the families' wiring is built on, sections 347 and 410; the Harmony 600, 650 and 700's own
+// catalogue, todo-compile-650 10.2, is families/four-slot/wiring.ts since todo-compile-one 3.3.3.2.
+export { WiringError, builtPieces, withWiring } from './wiringparts.ts';
+export type { BuiltWiring, DeviceTimer, WiringChecked, WiringInstruction } from './wiringparts.ts';
 export * from './compose.ts';
 // The idle device list's, the activity menu's and Off's whole records built from a description,
 // todo-compile-650 7.3, section 356. After `compose.ts`, whose page builders it calls.
@@ -118,8 +121,9 @@ export * from './pronto.ts';
 export * from './activityroles.ts';
 // Two configurations of one setup compared by what a person sees and hears, todo-compile-650 5.2.
 export * from './compare.ts';
-// A setup description and a donor in, a whole container out, and which of its bytes a generator
-// reproduces, todo-compile-650 10.6. Last, since it runs every generator above.
+// Which action lists a configuration names, and dropping the ones nothing names, the renumbering the
+// assembly runs; the assembly itself, todo-compile-650 10.6, is families/four-slot/assemble.ts since
+// todo-compile-one 3.3.3.2.
 export * from './assemble.ts';
 // The setup's devices and activities composed onto a donor, every family's steps, plan 007.
 export * from './shared/setup.ts';

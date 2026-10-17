@@ -64,12 +64,15 @@ import {
   holdsLogitechLook,
   DEVICE_MODE_PROGRAM_TAG,
   DEVICES_KEY_TAG,
+  KEYPAD_FIRST_SCAN,
+  KEYPAD_LAST_SCAN,
   type FourSlotMenuChrome,
   type FourSlotMenuKind,
   type FourSlotMenuLabel,
   type FourSlotMenuPageContent,
   type MenuPart,
   activityRowListBody,
+  describeWiring,
   deviceListRowBody,
   fixedLineScreenParts,
   fourSlotMenuChrome,
@@ -104,13 +107,11 @@ import {
   compilerTagOrder, ENTER_MODE, RUN_SCREEN_PROGRAM,
 } from './inventory.ts';
 import { STATE_WRITE_BASE } from './actions.ts';
-import { KEYPAD_FIRST_SCAN, KEYPAD_LAST_SCAN } from './modezero.ts';
 import {
   ACTION_LIST_INDEX_OPCODE, MODE_PAGE_POINTERS, type ModePage, type ModeRecord, type TaggedList, modePages, modeRecords,
   pageListCopies, taggedList, taggedListBytes,
 } from './sections.ts';
 import { SCREEN_CALL, SCREEN_DRAW_IMAGE, SCREEN_DRAW_IMAGE_AT, type ScreenInstruction, screenProgram } from './screen.ts';
-import { describeWiring } from './wiring.ts';
 import type { PieceTarget } from './statetables.ts';
 
 /** A refusal, named so a caller can tell a description this does not build from a bug. */
