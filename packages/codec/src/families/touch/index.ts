@@ -11,6 +11,7 @@ import { TOUCH_HARD_KEYS } from './devicekeys.ts';
 import { touchActivityMenu } from './activityscreen.ts';
 import { letterTouchDonor, withTouchLook } from './look.ts';
 import { TOUCH_STATE_TABLES } from './statetables.ts';
+import { TOUCH_FONTS } from './fonts.ts';
 import { checkTouchWiring } from './wiring.ts';
 
 export const TOUCH: Family<TouchChoices> = {
@@ -22,6 +23,7 @@ export const TOUCH: Family<TouchChoices> = {
   activityKeyRules: TOUCH_ACTIVITY_KEYS,
   deviceModeKeys: TOUCH_HARD_KEYS,
   stateTables: TOUCH_STATE_TABLES,
+  fonts: TOUCH_FONTS,
   wiring: { check: checkTouchWiring },
   composeDeviceScreen: composeTouchDeviceScreen,
   activityMenu: touchActivityMenu,

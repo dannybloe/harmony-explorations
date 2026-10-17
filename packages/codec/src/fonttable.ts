@@ -1,5 +1,6 @@
 /**
- * The Harmony 650's font table in our own letters: `todo-compile-650.md` 8.2, decisions 19 and 20.
+ * A configuration's font table in our own letters: `todo-compile-650.md` 8.2, decisions 19 and 20, built for
+ * the Harmony 650 first and for the Harmony One since `todo-compile-one.md` 5.2.
  *
  * Base slot 7 is a table of font sets, a set a list of glyphs by code, and a code the configuration's own
  * number for a character, the same in every set (`text.ts`). A configuration gives a code only to a
@@ -13,24 +14,13 @@
  * the same in every set, appended after the highest. So every set spells every printable character, and a
  * text drawn in any of them can be spelled from its word.
  *
- * **Which of our faces a set gets is read off the set**, by four measurements that tell Logitech's faces
- * apart: its height, whether its glyphs carry a shadow, the stroke, as the median run of ink along a row,
- * and on the 14 pixel bold sets the median row a capital starts on. The rule was derived on the 13 Harmony
- * 650 compiles in the lab (`work/fonts-8-2/faces.ts`), so on those it is a description; out of sample it
- * places all 18 sets of a fourteenth compile, `harvest_650_two_devices`, in the same groups. Nine faces,
- * `typeface.ts`, sized to land on Logitech's rows:
- *
- * | height | stroke | face |
- * |---|---|---|
- * | 15 | one pixel | R15 |
- * | 15 | two | F15 |
- * | 14 | one | R14 |
- * | 14 | two, a capital from row 1 | F14W |
- * | 14 | two, a capital lower | F14 |
- * | 13 | one | R13, a Help style |
- * | 13 | two | F13 |
- * | 11 | any | F11 |
- * | 10 | any | F10 |
+ * **Which of our faces a set gets is read off the set**, by measurements that tell Logitech's faces apart: its
+ * height, whether its glyphs carry a shadow, the stroke, as the median run of ink along a row, and the median
+ * row a capital starts on. `measureSet` takes the measurements, which are the same on every family, and the
+ * configuration's family names the face, `Family.fonts`: the four slot family's nine faces by the table in
+ * `families/four-slot/fonts.ts`, derived on the 13 Harmony 650 compiles, and the touch family's five by the
+ * one in `families/touch/fonts.ts`, section 396. The faces themselves are `lettering.ts`'s, sized to land on
+ * Logitech's rows. This module tested the architecture for it until `todo-compile-one.md` 3.3.3.5.
  *
  * **How a set is coloured is read off it as well**, `lettering.ts`: a set Logitech draws with a shadow gets
  * white letters over a black one, and a set drawn without one, the words on the white bars, dark letters.
@@ -42,11 +32,14 @@
  * read in the firmware before it was relied on, section 368: on the Harmony 650 0.2 and the Harmony 700 2.8
  * the text routine finds a glyph from scratch for every character, the set's address and then the pointer
  * at `3 + 3 * (code - 1)`, and decodes it to its own end byte, consulting no neighbour, no count and no
- * cache. **It also ignores a set's first code**, always subtracting 1, so a set that does not start at code
- * 1 is refused here rather than carried; every set of the 13 compiles starts there.
+ * cache. So whether sets share a glyph is the family's to say, `FamilyFonts.sharesGlyphs`, and the touch
+ * family, whose routine is unread, does not. **It also ignores a set's first code**, always subtracting 1, so
+ * a set that does not start at code 1 is refused here rather than carried; every set of the 13 compiles
+ * starts there, and every set of the Harmony One's nineteen.
  *
- * Gated on the Harmony 650, whose compiles the faces were measured on, as `backgrounds.ts` is. Read only
- * towards hardware: the result is pieces.
+ * Built only where the family says its faces were measured, `FamilyFonts.refusal`: the four slot family's on
+ * the Harmony 650's skins alone, the touch family's on every Harmony One, and nothing for a configuration no
+ * family serves. Read only towards hardware: the result is pieces.
  */
 import type { Container } from './gspm.ts';
 import type { ContainerLayout, ContainerPiece, PieceRef } from './frame.ts';
@@ -58,7 +51,7 @@ import {
   LETTERING_CHARACTERS, defaultWeight, letterRows, type LetterFace, type LetterInks, type Lettering, type OxaniumFaceName,
   type OxaniumWeight,
 } from './lettering.ts';
-import { HARMONY_650_SKINS } from './backgrounds.ts';
+import { familyOf } from './families/registry.ts';
 
 /** A refusal, named so a caller can tell a configuration this does not describe from a bug. */
 export class FontTableError extends Error {}
@@ -109,6 +102,23 @@ export interface ExtraFontSet {
   inks?: LetterInks;
 }
 
+/**
+ * What `measureSet` reads off one of Logitech's sets that a family names its face by, `FamilyFonts.faceOf`.
+ * The same measurements on every family; which face they make is the family's.
+ */
+export interface SetMeasurement {
+  /** Where the set is, for a refusal. */
+  address: number;
+  height: number;
+  /** The median run of ink along a row: one pixel for a regular stroke, two for a bold one. */
+  stroke: number;
+  /** The median first row of ink of its capitals, undefined where it draws none. */
+  capitalTop: number | undefined;
+}
+
+/** A family's answer to `faceOf`: the face, or why none of its faces fits the set, which `measureSet` refuses with. */
+export type FaceOrRefusal = OxaniumFaceName | { readonly refusal: string };
+
 /** The decoded glyphs of a set with the code each draws. */
 function setGlyphs(c: Container, set: FontSet): [number, Glyph][] {
   const out: [number, Glyph][] = [];
@@ -128,9 +138,10 @@ const median = (values: number[]): number | undefined => {
 };
 
 /**
- * Measure a set and name its face, by the table in the header. The shadow is the colour every pixel of
- * which has the ink one up and one left of it; the ink is then the other most common colour. Refuses a
- * height none of the faces has.
+ * Measure a set and name its face, the configuration's family naming it from the measurements, per the
+ * header. The shadow is the colour every pixel of which has the ink one up and one left of it; the ink is
+ * then the other most common colour. Refuses a height none of the family's faces has, and a configuration no
+ * family serves.
  */
 export function measureSet(c: Container, set: FontSet, map: CharacterMap): SetFace {
   const glyphs = setGlyphs(c, set);
@@ -180,29 +191,15 @@ export function measureSet(c: Container, set: FontSet, map: CharacterMap): SetFa
   }
   const stroke = median(runs) ?? 0;
   const capitalTop = median(tops);
-  const face = ((): OxaniumFaceName => {
-    // The Harmony One's faces by height, `lettering.ts`: every 14 pixel set of its nineteen compiles is bold and
-    // every 16 pixel set the greeting's, so only the 15 pixel sets need the stroke to tell them apart.
-    if (c.architecture === 12) {
-      switch (set.height) {
-        case 16: return 'One16';
-        case 15: return stroke >= 2 ? 'One15' : 'OneR15';
-        case 14:
-          if (stroke < 2) throw new FontTableError(`font set at ${set.address.toString(16)} is a regular 14, which no Harmony One compile draws`);
-          return 'One14';
-        case 11: return 'One11';
-        default: throw new FontTableError(`font set at ${set.address.toString(16)} is ${set.height} pixels high, which no Harmony One face is`);
-      }
-    }
-    switch (set.height) {
-      case 15: return stroke >= 2 ? 'F15' : 'R15';
-      case 14: return stroke < 2 ? 'R14' : capitalTop === 1 ? 'F14W' : 'F14';
-      case 13: return stroke >= 2 ? 'F13' : 'R13';
-      case 11: return 'F11';
-      case 10: return 'F10';
-      default: throw new FontTableError(`font set at ${set.address.toString(16)} is ${set.height} pixels high, which no face is`);
-    }
-  })();
+  // The family names the face, since which of our faces a set of a given height and stroke is differs between
+  // the families' compiles; a configuration no family serves has had no face measured for it.
+  const fonts = familyOf(c)?.fonts;
+  if (fonts === undefined) {
+    throw new FontTableError(`no family serves architecture ${c.architecture}, so no face of ours was measured for its font sets`);
+  }
+  const named = fonts.faceOf({ address: set.address, height: set.height, stroke, capitalTop });
+  if (typeof named !== 'string') throw new FontTableError(named.refusal);
+  const face = named;
   return { height: set.height, shadow, ink, stroke, capitalTop, face, lettering: shadow === undefined ? 'plain' : 'shadowed' };
 }
 
@@ -217,7 +214,7 @@ export interface FontTableBuilt {
 }
 
 /**
- * Re-letter every font set of a Harmony 650 configuration in our letters and give every printable ASCII
+ * Re-letter every font set of a configuration in our letters and give every printable ASCII
  * character a code, per the header. `layout` is `takeApart` of the configuration. Refuses a configuration
  * whose texts no character map reads, a glyph whose character it does not settle, a character our letters
  * do not have, a code past seven bits, and a glyph something other than its set points at.
@@ -230,9 +227,13 @@ export function withOxaniumFonts(
     throw new FontTableError('the two inks and the shadow are three colours, or a letter could not be read back');
   }
   const c = layOutContainer(layout).container;
-  if (c.architecture === 14 ? !HARMONY_650_SKINS.has(layout.skin) : c.architecture !== 12) {
-    throw new FontTableError('the font table is built for the Harmony 650 and the Harmony One, whose fonts it was measured on');
-  }
+  // Built only where the family's faces were measured, which the family says per skin, and nowhere no family
+  // serves; the reason is the family's own.
+  const fonts = familyOf(c)?.fonts;
+  const unmeasured = 'the font table is built only where a family\'s faces were measured';
+  if (fonts === undefined) throw new FontTableError(`${unmeasured}: no family serves architecture ${c.architecture}`);
+  const refusal = fonts.refusal(layout.skin);
+  if (refusal !== undefined) throw new FontTableError(`${unmeasured}: ${refusal}`);
   const map = characterMap(c);
   if (map === undefined) throw new FontTableError('the configuration draws no text a character map reads');
   const sets = fontSets(c);
@@ -285,10 +286,9 @@ export function withOxaniumFonts(
     return { ...measured, inks: setInks, weight: weights[measured.face] ?? defaultWeight(measured.face) };
   });
   const glyphPieces = new Map<string, ContainerPiece>();
-  // A glyph is shared between sets only where the firmware's text routine was read to allow it, section 368:
-  // the Harmony 650 and 700. The Harmony One's is unread, so each of its sets gets glyphs of its own; with a
-  // pair of colours per set that costs 95 glyphs of 1520 on Logitech's compile of the Denon and the LG.
-  const shared = c.architecture === 14;
+  // A glyph is shared between sets only where the firmware's text routine was read to allow it, section 368,
+  // which is the family's to say: otherwise each set gets glyphs of its own.
+  const shared = fonts.sharesGlyphs;
   // `again` is the code of a second code in one set that stands for a character an earlier code already does:
   // Logitech's Harmony One compiles carry two blank codes, a 3 and a 4 pixel space, both a space by the
   // character map. Two codes of one set may not point at one glyph, since a set's glyphs are bounded by the

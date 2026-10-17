@@ -25,7 +25,9 @@
  * character once.
  *
  * **Nothing in it is a remote's**: it reads a rendering, the colour under each text and the faces it is given.
- * Whether a configuration's letters are blended is its builder's choice, `CommonChoices.blendLetters` on the
+ * Checked again for `todo-compile-one.md` 3.3.3.5, which moved the font table's per family facts into the
+ * families: this module had none to move, the weight of a copy being already the caller's, `WeightFor`.
+ * Whether a configuration's letters are blended is its builder's choice, `FourSlotChoices.blendLetters` on the
  * Harmony 600, 650 and 700; this said the step was gated on the Harmony 650 until 16 October 2026, when the
  * Harmony One's configuration came to be blended too, `todo-compile-one.md` 1.2.11.2, and the gate moved to
  * the callers, where the choice already was. The firmware takes a select's operand as one byte, read on the

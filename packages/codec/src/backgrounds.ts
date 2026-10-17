@@ -54,7 +54,9 @@ import {
 } from './screen.ts';
 import { contentKey, modeRoles } from './screencategories.ts';
 import { buildScreenRecords, describeScreenRecords, screenRecordModes, withScreenRecords } from './screenrecords.ts';
-import { DEVICE_MODE_PROGRAM_TAG, activityKeyedRecords } from './families/four-slot/index.ts';
+// The Harmony 650's skins are the family's since `todo-compile-one.md` 3.3.3.5, `families/four-slot/skins.ts`,
+// where the font table asks for them too.
+import { DEVICE_MODE_PROGRAM_TAG, HARMONY_650_SKINS, activityKeyedRecords } from './families/four-slot/index.ts';
 import { valueMaps } from './valuemap.ts';
 import { modeRecords } from './sections.ts';
 import { ENTER_MODE, RUN_SCREEN_PROGRAM } from './inventory.ts';
@@ -78,13 +80,6 @@ export const DESIGNED_BACKGROUNDS: readonly string[] = [
 const DEVICE_BACKGROUNDS = new Set(['device page crossed', 'device page of one item']);
 /** The patches a corner program draws at 0, which take the colour of the background under them. */
 const STATE_PATCHES = new Set(['corner patch, grey', 'corner patch, red']);
-
-/**
- * The Harmony 650's two skins, 72 and its EMEA twin 74 (`packages/usb/src/models.ts`). The Harmony 700's 2026
- * compiles share the look and run through this too, which nobody has checked on a 700, and the 600's do
- * not, so the model is gated rather than the architecture.
- */
-export const HARMONY_650_SKINS: ReadonlySet<number> = new Set([72, 74]);
 
 /**
  * The skins our blended letters are built for: the Harmony 650's two, and since `todo-compile-700.md` 1.1 the

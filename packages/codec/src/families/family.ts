@@ -15,7 +15,8 @@ import type { HardKey } from '../devicemode.ts';
 import type { ActivityKeyRules, DeviceScreenItem } from '../activityroles.ts';
 import type { Container, Instruction } from '../gspm.ts';
 import type { Edit } from '../edit.ts';
-import type { SetFace } from '../fonttable.ts';
+import type { FaceOrRefusal, SetFace, SetMeasurement } from '../fonttable.ts';
+import type { OxaniumFaceName } from '../lettering.ts';
 import type { StateTableFacts } from '../statetables.ts';
 import type { WiringChecked } from '../wiringparts.ts';
 import type {
@@ -92,6 +93,30 @@ export interface ActivityKeyEditor {
   set(c: Container, key: string, set: number): Edit[];
 }
 
+/**
+ * How a family's font sets are lettered in our letters, `withOxaniumFonts`, `todo-compile-one.md` 3.3.3.5: the
+ * shared font table measures each of Logitech's sets the same way on every family and asks this which face of
+ * ours it becomes, whether two sets may point at one glyph, and whether the family's faces were measured on
+ * the configuration's skin at all.
+ */
+export interface FamilyFonts {
+  /** The faces of ours the family's sets are lettered in, `lettering.ts`'s `OXANIUM_FACE_SPECS`, in the family's order. */
+  readonly faces: readonly OxaniumFaceName[];
+  /**
+   * The face of ours a set measured so is lettered in, or why none of the family's faces fits it, which the
+   * font table refuses with. A reason and not a throw, so a family's module needs nothing of the font table's
+   * but its types.
+   */
+  faceOf(set: SetMeasurement): FaceOrRefusal;
+  /**
+   * Whether two sets may point at one glyph, which needs the firmware's text routine read to find a glyph from
+   * its own set's pointer alone, section 368.
+   */
+  readonly sharesGlyphs: boolean;
+  /** Why the font table is not built for a configuration of this family in `skin`, or undefined where it is. */
+  refusal(skin: number): string | undefined;
+}
+
 /** A composer's options with the family's choices, which default to the family's own. */
 export type WithChoices<Options, Choices> = Options & { readonly choices?: Choices };
 
@@ -126,6 +151,11 @@ export interface Family<Choices extends CommonChoices = CommonChoices> {
    * sections 347 and 360; the Harmony One's `families/touch/wiring.ts`, section 410.
    */
   readonly wiring: { check(c: Container): WiringChecked };
+  /**
+   * How the family's font sets become our letters: the Harmony 600, 650 and 700's nine faces, measured on the
+   * 650 alone, `families/four-slot/fonts.ts`; the Harmony One's five, `families/touch/fonts.ts`, section 396.
+   */
+  readonly fonts: FamilyFonts;
   /** The commands a mode's pages show, page by page in this family's item order, with each one's drawn label. */
   screenItems(c: Container, mode: number): DeviceScreenItem[];
   /** Whether an item is drawn the way this family draws a command called `name`. */

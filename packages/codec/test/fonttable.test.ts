@@ -12,14 +12,15 @@ import assert from 'node:assert/strict';
 
 import { load, skipUnless } from '@harmony/lab';
 import type { Container } from '../src/index.ts';
+// Which faces a family letters in is the family's since `todo-compile-one.md` 3.3.3.5.
+import { HARMONY_650_FACES } from '../src/families/four-slot/fonts.ts';
+import { HARMONY_ONE_FACES } from '../src/families/touch/fonts.ts';
 import { characterMap } from '../src/text.ts';
 import { fontSets, glyphOf } from '../src/font.ts';
 import { measureSet } from '../src/fonttable.ts';
 import {
   FontTableError,
   LETTERING_CHARACTERS,
-  HARMONY_650_FACES,
-  HARMONY_ONE_FACES,
   LETTERING_FACES,
   OXANIUM_FACE_SPECS,
   oxaniumFace,
@@ -181,7 +182,7 @@ test('the check refuses Logitech\'s own letters and one glyph of ours changed', 
 });
 
 test('a Harmony 700 compile is refused, since its fonts were not measured', skipUnless('h700_28_config_region'), () => {
-  assert.throws(() => withOxaniumFonts(takeApart(containerOf('h700_28_config_region')), INKS), /Harmony 650 and the Harmony One/);
+  assert.throws(() => withOxaniumFonts(takeApart(containerOf('h700_28_config_region')), INKS), /faces were measured on the Harmony 650's compiles alone/);
 });
 
 /**

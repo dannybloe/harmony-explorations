@@ -50027,7 +50027,9 @@ written: the colon and `J` claimed on all 13 compiles, three shapes for eight, 7
 counting the ink alone, our letters called wider throughout, the overflow's reach claimed for the drift
 too, the table called about as large on every compile, and the borrowing called ended.
 
-* `packages/codec/src/lettering.ts`, `fonttable.ts`, `oxanium.ts`; `text.ts`, `oxaniumAlphabet`.
+* `packages/codec/src/lettering.ts`, `fonttable.ts`, `oxanium.ts`; `text.ts`, `oxaniumAlphabet`. Since
+  `todo-compile-one.md` 3.3.3.5 the face table and the shared glyphs are the four slot family's,
+  `packages/codec/src/families/four-slot/fonts.ts`, which `fonttable.ts` asks as `Family.fonts`.
 * `packages/codec/test/fonttable.test.ts`.
 
 ## 369. A queued screen program is indexed by one byte, so only base slot 11's first 256 entries can run
@@ -52085,10 +52087,12 @@ original's.
 
 ### Where it lands
 
-* `packages/codec/src/lettering.ts`: `One16`, `One15`, `OneR15`, `One14`, `One11`, `HARMONY_650_FACES` and
-  `HARMONY_ONE_FACES`.
+* `packages/codec/src/lettering.ts`: `One16`, `One15`, `OneR15`, `One14`, `One11`; `HARMONY_650_FACES` and
+  `HARMONY_ONE_FACES` there until `todo-compile-one.md` 3.3.3.5, and in each family's `fonts.ts` since.
 * `packages/codec/src/fonttable.ts`: the One's faces in `measureSet`, `'own'` colours, no glyph shared
-  between sets on the One, and a copy for a second code of one character.
+  between sets on the One, and a copy for a second code of one character. The faces and the unshared glyphs
+  are the touch family's since `todo-compile-one.md` 3.3.3.5, `packages/codec/src/families/touch/fonts.ts`,
+  which `measureSet` and `withOxaniumFonts` ask as `Family.fonts`.
 * `packages/codec/bin/alphabets.ts` and the regenerated `src/alphabets.ts`: the added shapes.
 * `packages/codec/test/fonttable.test.ts`: the census and the rows over the nineteen, the eighteen re-lettered
   and read back, and the donor; `typeface.test.ts`, `blending.test.ts` and `text.test.ts`.

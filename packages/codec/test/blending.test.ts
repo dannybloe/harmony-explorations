@@ -14,11 +14,12 @@ import assert from 'node:assert/strict';
 
 import { load, skipUnless } from '@harmony/lab';
 import type { Container } from '../src/index.ts';
+// Which faces a family letters in is the family's since `todo-compile-one.md` 3.3.3.5.
+import { HARMONY_650_FACES } from '../src/families/four-slot/fonts.ts';
+import { HARMONY_ONE_FACES } from '../src/families/touch/fonts.ts';
 import {
   BLEND_DITHER_STEPS,
   LETTERING_CHARACTERS,
-  HARMONY_650_FACES,
-  HARMONY_ONE_FACES,
   LETTERING_FACES,
   oxaniumFace,
   UNDRAWN,
@@ -222,5 +223,5 @@ test('the check refuses Logitech\'s letters, a text in a copy for another colour
 test('a Harmony 700 compile of Logitech\'s is refused, since it is not in our letters and the font table that would letter it is the Harmony 650\'s alone, section 382', skipUnless('h700_28_config_region'), () => {
   const layout = takeApart(containerOf('h700_28_config_region'));
   assert.throws(() => withBlendedLetters(layout, []), /not lettered in our letters/);
-  assert.throws(() => withOxaniumFonts(layout, FOUR_SLOT_CHOICES.letterInks), /Harmony 650 and the Harmony One/);
+  assert.throws(() => withOxaniumFonts(layout, FOUR_SLOT_CHOICES.letterInks), /faces were measured on the Harmony 650's compiles alone/);
 });

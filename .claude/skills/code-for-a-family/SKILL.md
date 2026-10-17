@@ -87,6 +87,7 @@ and fails when a module joins the list or a count on it rises. The list is the d
 | the values a family's state tables hold that another's do not, the Harmony One's minute call and width line among them | `Family.stateTables`, which the generic `buildStateTables` takes; not a per architecture table in the shared module, which is how `todo-compile-one.md` 6.4 first held the One's |
 | how a four slot page sizes, splits and places a label, the title and the counter | the four slot family's `devicemode.ts`; which command goes to which key or to the screen stays shared |
 | a remote's own wiring, the lists, entries and timers that connect its firmware to a configuration, whose catalogue differs whole between families | the family's catalogue and numbering, `families/touch/wiring.ts`, over the generic engine `wiringparts.ts`, and asked as `Family.wiring`; not a second catalogue beside the four slot one in `wiring.ts` |
+| which of our faces a set of Logitech's becomes, whether two sets may share a glyph, and which of a family's skins its faces were measured on | `Family.fonts`, the family's `fonts.ts`; the shared font table measures a set the same way for every family and asks, and the faces themselves stay one catalogue in `lettering.ts`, since every family's are drawn and read back by the same code |
 
 Add a row when a new kind of difference lands.
 

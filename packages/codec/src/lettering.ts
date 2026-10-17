@@ -52,7 +52,10 @@ export interface LetterInks {
 export const LETTERING_CHARACTERS: readonly string[] = Array.from({ length: 95 }, (_, k) => String.fromCharCode(32 + k));
 
 /**
- * The faces our letters come in. The first nine are one per face Logitech draws its Harmony 650 screens in, measured in
+ * The faces our letters come in, one catalogue for every family: a face is a size and cut of Oxanium fitted to
+ * rows Logitech drew on, which the shared renderer draws and the shared alphabet reads back whichever family
+ * lettered a configuration, so it is kept here once rather than per family; which family letters in which
+ * face is the family's, `FamilyFonts`. The first nine are one per face Logitech draws its Harmony 650 screens in, measured in
  * 8.2 over the 13 compiles in the lab's `work/sample-8-2/`: each one's cell height, the row its baseline
  * sits on, whether a glyph opens with a blank column, and the width of a space; the Oxanium cut and pixel
  * size whose capitals and x-height land on Logitech's rows, the weight chosen by look, Regular for the
@@ -104,13 +107,13 @@ export type OxaniumFaceName = keyof typeof OXANIUM_FACE_SPECS;
 /** A face and its letters: per character the one bit mask and the grey coverage on the same box. */
 export interface OxaniumFace extends FaceSpec, RenderedFace {}
 
+/**
+ * Every face of ours, whichever family letters in it: what the alphabet reads any configuration of ours by,
+ * `text.ts`. Which faces a family letters its sets in, and which of Logitech's sets becomes which, is the
+ * family's, `FamilyFonts.faces` and `faceOf`, where `HARMONY_650_FACES` and `HARMONY_ONE_FACES` live since
+ * `todo-compile-one.md` 3.3.3.5.
+ */
 export const LETTERING_FACES = Object.keys(OXANIUM_FACE_SPECS) as OxaniumFaceName[];
-
-/** The nine faces measured on the Harmony 650, `todo-compile-650.md` 8.2. */
-export const HARMONY_650_FACES: readonly OxaniumFaceName[] = ['F15', 'F14W', 'F14', 'F13', 'F11', 'F10', 'R15', 'R14', 'R13'];
-
-/** The five measured on the Harmony One, `todo-compile-one.md` 5.2. */
-export const HARMONY_ONE_FACES: readonly OxaniumFaceName[] = ['One16', 'One15', 'OneR15', 'One14', 'One11'];
 
 /**
  * The cuts of Oxanium this repository carries, lightest first, `fonts/Oxanium/static/`. Which one a face is

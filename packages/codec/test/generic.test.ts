@@ -46,12 +46,15 @@ const PATTERNS: Readonly<Record<string, RegExp>> = {
  * three four slot modules still outside the family that took a family's names that way, `backgrounds`,
  * `compare` and `screenrecords`, import them from the family's index instead, which shows as one import
  * each where the barrel counted the names, `screenrecords`' joining the import it had.
+ *
+ * Since 3.3.3.5 `fonttable.ts` asks the family which face a set becomes, whether sets share a glyph and whether
+ * its faces were measured on the skin, `Family.fonts`, and `backgrounds.ts` takes the Harmony 650's skin set from
+ * the family's index, through the import it had, rather than defining it.
  */
 const DEBT: Readonly<Record<string, Readonly<Record<string, number>>>> = {
   'assemble.ts': { architecture: 2, family: 11, models: 3, imports: 5 },
-  'backgrounds.ts': { architecture: 3, models: 4, imports: 1 },
+  'backgrounds.ts': { architecture: 3, models: 3, imports: 1 },
   'compare.ts': { family: 5, imports: 1 },
-  'fonttable.ts': { architecture: 4 },
   'growth.ts': { family: 6 },
   'inventory.ts': { architecture: 2, family: 17, scans: 4 },
   'modezero.ts': { scans: 3, models: 1 },
