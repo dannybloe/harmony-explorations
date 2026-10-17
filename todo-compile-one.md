@@ -135,7 +135,7 @@ One with its sequence's keys translated by name, since the One's keys have other
 - [ ] 4.6 The help screens: the power off questions asked about each device and the four generic ones, with their lists; 2226 bytes on the test setup, carried (3.2.1)
 - [ ] 4.7 The clock's header: base slot 11's four header programs and the lists the clock's minute and hour call; 3558 bytes on the test setup, carried (3.2.1); its 16 pictures are 5.3's
 - [ ] 4.8 The touch map's hit pages the fixed screens name, 25 on every compile of skin 54 (2.2: nothing builds a whole map); 4.1 and 4.2 build the setup's
-- [ ] 4.9 The other branch of 4.5, a choice and not needed for it: leave the 29 status screens out, the event map keeping code 9 on its screen in a form neither family builds yet, the head 29 modes shorter and every mode above it renumbered, the 58 lists out of base slot 10; then a write to the spare Harmony One to see that it starts, section 413
+- [ ] 4.9 The other branch of 4.5, a choice and not needed for it: leave the 29 status screens out, the event map keeping code 9 on its screen in a form neither family builds yet, the head 29 modes shorter and every mode above it renumbered, the 58 lists out of base slot 10, which first needs `listCallSites` in `assemble.ts` to find a Harmony One's list calls (it reads raw slots 10 and 8 and finds 1553 of 3067 on `harvest_one_two_devices`, none inside an action list, section 413); then a write to the spare Harmony One to see that it starts, section 413
 
 ## 5. Text, fonts and pictures
 
