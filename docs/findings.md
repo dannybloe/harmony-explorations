@@ -52712,3 +52712,74 @@ idle order on 8; and instruction 1 on 23 working screens with one operand set an
 A Logitech One activity whose rebuild differs in a compared part; a One compile with an activity holding one
 set of the title's face, or drawing titles in both; an activity's device list missing a device or holding one
 twice, or not ending in the idle order.
+
+## 403. What the Harmony One shows when it starts is one state variable starting at 0, and starting it at 3 starts the remote as usual
+
+**Asked for at the bench**: after every write the spare Harmony One started on the Remote Assistant's "Welcome to
+your remote", then "Ensure all your devices are off", then a "Welcome!" screen with a hand, before its ordinary
+screen. The bench wanted it gone.
+
+**Sources.** The nineteen Harmony One compiles, the configuration written to the spare and the spare itself;
+sections 138 and 274 for a cold start seeding every state variable from its record and a warm start keeping them.
+Logitech's client was not opened, since the question is what a configuration holds, and the One offers no Remote
+Assistant setting to compile one with (`reference/remotes/harmony-one/features.md`). The 3.4 image was not read:
+every step below is the configuration's.
+
+**Scope.** The Harmony One only. The Harmony 650's start runs an introduction tour of another shape, skipped in
+its own way (`skipIntroductionTour`, `docs/config-format.md`); `introductionTour` finds no tour of that shape on any
+of the nineteen One compiles. The One's shape is absent from `h600_config`, `calibration_h600`, `h700_config`,
+`h700_config_2` and the Harmony 650's region: `touchStartupVariables` finds no assistant on any of them.
+
+### The assistant's variable
+
+It is not named in base slot 0, so it is found by the shape of what the start runs, `touchStartupVariables`: a
+ladder of three lists, each loading 1, 2 and 3 into the byte register and calling a list that tests the variable.
+Its record runs 0 to 3 and starts at 0, on 18 of the 19 compiles, and on each of the 18 exactly one "the register
+is at least the variable" test and exactly one "equal" test of it have an enter as their first arm. On all 18 the
+three rungs are: at most 1, enter the welcome; equal to 2, enter "Ensure all your devices are off"; equal to 3, go
+on with the ordinary start, the screens in English on 17 and in Dutch on `one_friend_asfound_config`. OK on the
+welcome writes 1 and Yes on "Do you want to hide the Remote Assistant?" writes 3. **3 is not only "hidden"**: on 14
+of the 18 the activities' own assistant screens write 2 and 3 as well, where the four compiles with no activity
+write only 1 and 3. The nineteenth compile, `one_config`, draws no "Welcome to your remote" and no "Ensure all your
+devices are off" at all, and holds no ladder.
+
+### The "Welcome!" screen follows the assistant
+
+**It is reached from the OK on "Ensure all your devices are off"**, so it shows only after the assistant: on the
+spare's configuration that OK runs a list testing a firmware variable and then, through a load of 0, a test of the
+screen's own variable, whose first arm writes it 1 and enters "Welcome!". That variable's record runs 0 to 1 and
+starts at 0 on 19 of 19, the screen being "Welkom!" on the friend's. **Its starting value decides nothing**: each of
+the nineteen compiles holds a list writing it 0 silently, `07 FFFF` and then the write, which the blind reviewer's
+run of the start found it executes first. It also measured that 12 compiles wire the "Welcome!" screen to that OK
+and 6 do not, the screen's lists left in the file uncalled; that split was not measured again here.
+
+**Corrected per review**: this section first said two variables decide what shows and the edit started the
+welcome screen's at 1 as well, which a reading of its test as part of the start produced; the blind reviewer ran
+the start and found the silent reset. The edit sets the assistant's alone now.
+
+**A write restarts the One**, section 247. A cold start seeds every variable from its record's starting value and
+a warm start keeps them, section 274, and which one the restart after a write is was not checked; that the whole
+sequence came back after every write is the bench's evidence that it reseeds the assistant's.
+
+### Starting past it
+
+`withoutStartupAssistant` sets the assistant's record's starting value, a same length edit of its opening `u16`, to
+3, a value the configuration's own screens write, so the edit asks the firmware for no state it cannot reach. A
+configuration with no assistant is returned as it is. The touch family applies it with the rest of its look unless
+the choice `startupAssistant` asks for the screens.
+
+**Seen at the bench**: written to the spare One with the screen light at 20 seconds, the assistant's variable at 3
+and the welcome screen's at 1, it started straight on its ordinary screen, with no assistant and no welcome screen,
+and its screen stayed lit 20 seconds. By the correction above the second value played no part.
+
+### Asserted
+
+`packages/codec/test/startupassistant.test.ts`: the assistant's variable on 18 of the 19 compiles, running 0 to 3
+from 0, with exactly one test of each of the two kinds whose first arm is an enter, and none on `one_config`, which
+draws neither assistant screen; the welcome screen's on 19, running 0 to 1 from 0, never the same variable, and
+written 0 silently by a list of each; and the edit on Logitech's compile of two devices moving the assistant's
+starting value alone, to 3, with every check passing, and returning `one_config` as it is.
+
+### What would falsify it
+
+A One compile whose start shows the assistant with its variable at 3; a One that, written so, still shows it.

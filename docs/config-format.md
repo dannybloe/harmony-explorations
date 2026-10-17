@@ -2311,6 +2311,15 @@ of face One15 and draws every start up title in one of them, at y 124, found by 
 Screen instruction 1, operands `0 0 176 220 0 0`, sits one call deep on every page of the working screen on 23
 of 64 activities and is unread.
 
+**The Remote Assistant at start, the Harmony One**, section 403: one unnamed state variable, running 0 to 3, tested
+by a ladder of lists loading 1, 2 and 3 into the byte register (`1F FB0k`, then a test `71`), the first two rungs
+entering the welcome and the "devices off" screens (English on 17, Dutch on the friend's), the third going on with
+the start; 18 of 19 compiles, none on `one_config`. Yes on the hide question writes 3, and on 14 of the 18 the
+activities' assistant screens write 2 and 3 too. It starts at 0 in Logitech's compiles; starting it at 3 starts the
+remote on its ordinary screen, `withoutStartupAssistant`. The "Welcome!" screen follows the "devices off" screen's
+OK; its own variable, 0 to 1, is written 0 silently by a list of every compile, so its starting value is not what
+decides it.
+
 **The keys' lights, the Harmony One**, section 400: a three instruction list `[3F C0a2, 3F C0b2, write 1]`
 sets channels `a` and `b` of the device at `0x60` on, the same with `C0a0`, `C0b0` and a write of 0 off.
 Channels 3 and 1 or 2 and 0 are the keys beside the screen. A screen's tag `0x07` list calls the pair's off

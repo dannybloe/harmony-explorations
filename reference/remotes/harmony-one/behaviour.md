@@ -64,6 +64,7 @@ devices is a separate step, section 337.
 | what happens | standing and source |
 |---|---|
 | **after the full write sequence the remote restarts itself**, off the bus and back in about 13 seconds, on its ordinary screen, not asking for a sync. The restart is the write's, because the One runs its configuration out of the flash an erase clears | measured on a unit, sections 247 and 251 |
+| **after a write's restart it shows the Remote Assistant, and after it a "Welcome!" screen**, while a state variable of the configuration stands at its starting value 0, which Logitech's compiles give it; started at 3 it goes straight to its ordinary screen | read from configurations and seen on a unit, section 403 |
 | a write without the cache drop leaves the remote keeping a verdict earned against other bytes; with a failed validation the status screen **latches until a power cycle**, a latch this model has and the 600, 650, 700 and 525 do not | read in the firmware and measured, sections 248, 250, 252 and 253 |
 | the re-check of the configuration runs on the cable's removal and not while it is in | measured on a unit, section 251 |
 | after an incomplete write the screen said "USB CONNECTED" on the cable and "Go to Website to update settings" off it | seen at the bench, sections 242 and 244 |

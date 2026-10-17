@@ -1,20 +1,23 @@
 /**
  * What the Harmony One shows when it starts: the Remote Assistant's "Welcome to your remote", then "Ensure all your
  * devices are off", then a "Welcome!" screen with a hand, findings section 403. Seen on the spare Harmony One after
- * every write, since a write restarts it and a restart seeds every state variable from its record.
+ * every write: a write restarts it, and these two came back at their starting values each time, though whether
+ * that restart is cold, which reseeds every variable, or warm, which keeps them, section 274, was not checked.
  *
- * **Two state variables decide it, and neither is named in the configuration**, so both are found by the shape of
- * what the start runs:
+ * **One state variable decides it, the assistant's**, which the configuration does not name, so it is found by the
+ * shape of what the start runs: a ladder of three lists, each loading 1, 2 and 3 into the byte register and testing
+ * the variable against it, the first two arms entering the welcome and the "devices off" screens, the third going on
+ * with the ordinary start. Its record runs 0 to 3 and starts at 0, on 18 of Logitech's 19 One compiles; answering
+ * Yes to "Do you want to hide the Remote Assistant?" writes 3, as the activities' own assistant screens do on most
+ * compiles. The everyday One's compile holds no assistant screens.
  *
- * * **the assistant's**: a ladder of three lists, each loading 1, 2 and 3 into the byte register and testing one
- *   variable against it, the first two arms entering the welcome and the "devices off" screens, the third going
- *   on with the ordinary start. Its record runs 0 to 3, and answering Yes to "Do you want to hide the Remote
- *   Assistant?" writes 3. On 18 of Logitech's 19 One compiles; the everyday One's holds no assistant screens;
- * * **the welcome screen's**: a list testing a variable against the byte register, whose first arm runs a list
- *   writing that variable 1 and running a list that enters a screen. Its record runs 0 to 1, on 19 of 19.
+ * **The "Welcome!" screen follows the assistant and has a variable of its own that does not decide anything at
+ * start**: the screen is reached from the OK on "Ensure all your devices are off", and a list writes its variable 0
+ * silently on all nineteen, which the blind review of section 403 found the start runs first. So it is reported
+ * here and never edited: this file once started it at 1 as well, which changed nothing.
  *
- * Starting the first at 3 and the second at 1 starts the remote as one whose assistant was hidden and whose
- * welcome screen was seen, a state it reaches itself, so nothing new is asked of the firmware.
+ * Starting the assistant at 3 starts the remote with a value its own screens write, so the firmware is asked for no
+ * state it cannot reach.
  */
 import { type Container, parse } from '../../gspm.ts';
 import { stateRecords } from '../../sections.ts';
@@ -30,7 +33,7 @@ const STATE_WRITE = 0x80;
 
 /** The assistant's value at which the start goes on as usual: the one hiding it writes. */
 export const ASSISTANT_HIDDEN = 3;
-/** The welcome screen's value once it has been shown. */
+/** The value the welcome screen's variable is written once the screen is shown. */
 export const WELCOME_SEEN = 1;
 
 /** The two variables, by number. */
@@ -78,26 +81,23 @@ export function touchStartupVariables(c: Container): TouchStartupVariables {
 }
 
 /**
- * The configuration starting with the Remote Assistant hidden and the welcome screen seen: each variable's
- * record's starting value, its opening `u16`, set. Refuses a configuration holding neither; one holding only the
- * welcome screen, as the everyday One's compile does, gets that one.
+ * The configuration starting with the Remote Assistant hidden: the assistant's record's starting value, its opening
+ * `u16`, set to 3. A configuration with no assistant, as the everyday One's compile, shows none at start and is
+ * returned as it is.
  */
 export function withoutStartupAssistant(c: Container): Container {
-  const found = touchStartupVariables(c);
-  const records = stateRecords(c) ?? [];
-  const bytes = Uint8Array.from(c.blob);
-  let changed = 0;
-  for (const [variable, value, max] of [[found.assistant, ASSISTANT_HIDDEN, 3], [found.welcome, WELCOME_SEEN, 1]] as const) {
-    if (variable === undefined) continue;
-    const record = records[variable];
-    const at = record === undefined ? undefined : c.blobOffsetOf(record.address);
-    if (record === undefined || at === undefined) throw new ComposeError(`state variable ${variable} has no record here`);
-    // The record has to run to the value, or the shape matched something else.
-    if (record.second !== max) throw new ComposeError(`state variable ${variable} runs to ${record.second}, not ${max}`);
-    bytes[at] = value & 0xff;
-    bytes[at + 1] = value >>> 8;
-    changed += 1;
+  const variable = touchStartupVariables(c).assistant;
+  if (variable === undefined) return c;
+  const record = (stateRecords(c) ?? [])[variable];
+  const at = record === undefined ? undefined : c.blobOffsetOf(record.address);
+  if (record === undefined || at === undefined) throw new ComposeError(`state variable ${variable} has no record here`);
+  // The record has to run to the value, or the shape matched something else.
+  if (record.second !== ASSISTANT_HIDDEN) {
+    throw new ComposeError(`state variable ${variable} runs to ${record.second}, not ${ASSISTANT_HIDDEN}`);
   }
-  if (changed === 0) throw new ComposeError('no Remote Assistant or welcome screen to start past here');
+  if (record.first === ASSISTANT_HIDDEN) return c;
+  const bytes = Uint8Array.from(c.blob);
+  bytes[at] = ASSISTANT_HIDDEN & 0xff;
+  bytes[at + 1] = ASSISTANT_HIDDEN >>> 8;
   return parse(restamped(bytes));
 }
