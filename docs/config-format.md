@@ -2585,6 +2585,14 @@ page program's `0x16` call to its chrome and spans the chrome as a piece of its 
 both back. All 40 head screens of all nineteen One compiles come back byte for byte with nothing generated,
 `packages/codec/test/screenrecords-one.test.ts`.
 
+**The ten firmware screens, built**, section 409: `families/touch/firmwarescreens.ts` describes the two fonts, the
+hit pages, thirteen pictures and the configuration's numbers (lists outside the screens, timers, base slot 11
+programs) and generates the rest. On the seventeen it rebuilds, base slot 10's first 178 lists are these
+screens', numbered in stored key order with each chrome's queued list after its keys. Lines are centred, `floor((176 - width) / 2)`; "OK" at 124,
+201. Three shared buckets are stored in an order measured the same on all nineteen; the insertion order that
+produces it, `keyListOrderInserted`, is inferred. Rebuilt byte for byte on the
+sixteen English compiles of skin 54 and the European factory file.
+
 **Which of the 78 the 3.4 firmware draws by number**: one. A mode becomes current only from an `0x7E` operand, the
 mode stack (a mode that was current) or base slot 4, and base slot 4 is walked only for status code 9, "LCD Module
 Failed", after the licence check passed and while the configuration's verdict stands, so its key 9 (mode 19 in

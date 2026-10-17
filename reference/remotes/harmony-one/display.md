@@ -79,6 +79,13 @@ Generated from `packages/codec`, `packages/usb` and the drawing by `make remote-
   screen that is shown is shown because the configuration's own lists enter it, and seven at the head (two blanks,
   the update, upgrade and learning screens) are entered by nothing, read in the firmware and in nineteen
   configurations, section 408.
+* **The ten firmware screens' words and places**: Low Battery says "The battery level is low!", USB Connected
+  "USB Connected", the update and learning screens "Update Successful", "Upgrade Success", "Update in
+  progress", "Learning..." and "Firmware upgrade in progress", and the charging problem screen four lines,
+  "Charging problem.", "Contact customer support:", "http://supportinfo." and "harmonyremote.com"; each line
+  centred on the 176 pixel width, and on Low Battery and the charging problem screen "OK" at 124, 201, inside the
+  touch area the page binds, code 49, the lower right of the screen. Read from configurations on the eighteen
+  English compiles, section 409.
 * **USB**: "USB Connected" on the cable, seen at the bench, section 155.
 * **Safe mode** lists five images, each with a checksum and a version, seen at the bench and matched to
   the images read off the unit, section 190; [firmware.md](firmware.md).

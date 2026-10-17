@@ -53451,3 +53451,123 @@ status container's screen rather than the configuration's.
   text on the eighteen English compiles, and the 38 others entered, by what, on the sixteen, with the two the start
   enters by their text.
 * `docs/config-format.md`, after the Harmony One's screen categories; `reference/remotes/harmony-one/display.md`.
+
+## 409. The Harmony One's ten firmware screens are built from a description of their numbering, byte for byte on the sixteen English compiles of skin 54 and the European factory file
+
+**Todo `todo-compile-one.md` 4.4.3**: the ten screens at the head of a Harmony One mode table built whole, what
+a description carries being the configuration's numbering and the rest generated, as the Harmony 650's were in
+section 357.
+
+**Sources checked**: sections 357 (the Harmony 650's build and its blind control), 405 (the head is the event
+map's fallback, 10, plus 30), 408 (the firmware enters none of the ten by number; the configuration enters 0, 1
+and 9), 315 and `modezero.ts` (a key list's stored order is a hash order), `inventory.ts`'s `compilerTagOrder`
+(a shared bucket's order fits Java 6 and 7 putting a new entry at the head of its slot, an inference about a
+compiler nobody here has read);
+`actions.ts` for instruction `0x73`, which runs the base slot 11 program its operand names; the touch activity
+composer's timer constants, `0xEB` and `0xEA` starting and cancelling a timer. Neither the firmware nor
+Logitech's client was read: the question is what their compiler emits.
+
+### One shape once the numbering is set aside
+
+On the sixteen English compiles of skin 54 every one of the ten screens has one shape when the numbers the
+configuration chooses are masked: the indices of lists outside the screens that their lists call, the timers,
+the base slot 11 programs `0x73` runs, and the pictures. The one state variable a list writes, `1F E805`, is the
+same on all sixteen. Everything else is
+the same: the tags and their order, the opcodes and every other operand, the lists' lengths, the programs, the
+words and where they are drawn, the hit pages and the fonts.
+
+* **Three screens bind every key code**, Low Battery, USB Connected and the charging problem screen: every press
+  of 52 key codes, 1 to 55 but 41, 42 and 54, covering the 40 keypad keys and the touch codes (`keys.md`), each to
+  a list of its own but for scans 2 and 28 on USB Connected, which call lists outside the screens: `[00 0000] x3`
+  on Low Battery, a call and a no operation on USB Connected, a call and two on the charging problem screen. The
+  enter and leave handlers, tags 6 and 7: on Low Battery a call, a timer started or cancelled, and a call; on USB
+  Connected a list outside the screens on entering and two calls on leaving; on the charging problem screen the
+  timer first, then a call. On Low Battery and the charging problem screen the header handler, tag `0x2D`, runs
+  three base slot 11 programs, and the charging problem screen binds tag `0x30` as it binds its keys.
+* **The other seven** swallow the presses of scans 46 and 47 and bind the handlers: on the two blanks, lists
+  with constant operands, `07 FFFB` and `1F FE02` or `1F FE03` among them, and calls; on the five update and
+  learning screens a timer started and cancelled directly, and the header handler.
+* **Base slot 10's first 178 lists are these screens'** on all sixteen and the European factory file, and nothing
+  outside the ten screens names one of them, numbered from 0 in each screen's stored
+  key order, a list outside the screens skipped, and after a screen's keys the list its chrome queues, two
+  `0x73` runs. So their indices are generated, not described.
+* **Three buckets are shared, and their stored order is measured, the same on all nineteen**: Low Battery and
+  USB Connected store scan 15's press before the enter handler and scan 14's before the leave handler, in
+  buckets 6 and 7; the charging problem screen stores them the other way round; and in bucket 47 `0x2D` comes
+  before scan 36's press on both screens that bind it, as device mode stores it. **The insertion order that
+  produces it is inferred**: chosen per screen under the head insertion rule `compilerTagOrder` found the corpus
+  fits, the handlers before the keys on the first two and after them on the third, which a simulation of Java 6
+  also reproduces with its chain reversals on resize; where the header handler went in is not settled, since
+  before or after the keys reproduces both screens under Java 6. `keyListOrderInserted` orders by bucket and puts
+  the later inserted first; it is fitted to these three screens and cannot fail on them.
+* **The chrome** draws the full screen picture, then on the screens that have them queues a base slot 11
+  program and the screen's own list, then on Low Battery, USB Connected and the charging problem screen draws a
+  second picture at 58, 103, at 56, 89 and at 43, 34.
+* **The page program** calls the chrome, selects the body font and draws each line centred on the 176 pixel
+  width rounded down, `floor((176 - width) / 2)` on all eleven lines, nine of them with an odd difference, which
+  tells floor from ceiling and rounding, and on all thirteen of the Dutch compile's, and on Low Battery and the charging
+  problem screen selects the second font and draws "OK" at 124, 201, inside the touch area of code 49 the page binds, the charging problem screen's by reference
+  to Low Battery's.
+* **The page list** binds the press of scan 49 to a list on Low Battery and the charging problem screen, and
+  its copy binds it to another, 239 and 240 on all sixteen, the factory file and the Dutch compile, and 238 and
+  239 on the everyday One's, where the page list's own varies on every compile; the
+  other eight have both empty.
+
+### What the description carries and what is generated
+
+The description reads 401 bytes of each compile's 3099: the two fonts, read at ten places, and the ten hit
+pages, 20 bytes; thirteen pictures' addresses, 39; and 342 bytes of numbers, 178 of them, in a fixed walk order,
+`slotsOf`. The fonts, the hit pages and the two copy lists are the same on all seventeen that rebuild, though
+described. The builder generates the other 2698.
+**The blind control**: every one of those 2698 bytes overwritten in the file the description reads, in the file
+the fonts are spelled from and in the layout's own pieces, and the sixteen come back byte for byte, with the same
+401 offsets read.
+
+**The controls fail where they should**: Low Battery's first call moved one list on, or the charging problem
+screen's two pictures swapped, and the rebuilt file differs.
+
+### Beyond the sixteen
+
+* **The European factory file**, `one_config_unprogrammed`, rebuilds byte for byte too.
+* **The everyday One's compile**, `one_config`, is refused: its USB Connected leave handler runs list 532, a list
+  outside the screens with other instructions, `07 FFFF, A5 0000`, where the rest run two calls of their own, so
+  its screens own 177 lists. Its key codes and shared bucket orders are the sixteen's. Which generation of the service compiled it is not
+  checked.
+* **The Dutch compile**, skin 54 like the sixteen, is refused: English words drawn in place of its Dutch ones leave texts other screens
+  draw by reference with nothing to point at. Other languages are out of scope.
+
+### Reviewer 1, blind
+
+A second agent, given the question and the corpus and not this section or the module, labelled every byte the ten
+screens reach and compared the sixteen position by position. It found the same one shape once numbering is set
+aside; the ten records as one block at the same address on all sixteen; lists 0 to 177 numbered in walk order;
+the same three shared buckets and their stored order on all nineteen, and a simulation of Java 6, chain
+reversals included, reproducing all three stored orders with the handlers inserted before the keys on Low
+Battery and USB Connected and after them on the charging problem screen, where Java 7's conditional resize fails
+USB Connected; the centring rule on all eleven English lines and all thirteen Dutch ones; "OK" at 124, 201; the
+hit pages; the copies' lists at 239 and 240. It also found the base slot 11 programs `0x73` runs queued from
+outside the ten screens too, so they are not the screens'.
+
+**It counts 191 lists the screens own, where this section builds 178**, and 3199 bytes where the description
+spans 3099. By reach, a list run only by the ten screens or by a list they own, thirteen more are theirs: the two
+the page lists' copies run, 239 and 240, the two the page lists run, USB Connected's lists for scans 2 and 28,
+and seven lists below those and below the handlers. They sit later in base slot 10, at indices that vary but for
+239 and 240, and this module names each by its index as a number the configuration chose and leaves it as it is.
+So **the ten screens are built and thirteen of the lists they reach are still the configuration's**; building
+those belongs with the lists they lead into, `todo-compile-one.md` 6.3 and 4.4.4. The European factory file
+differs from the sixteen only in the glyph code of ':', which the builder spells from the file's own fonts.
+
+### Asserted
+
+`packages/codec/test/touchfirmwarescreens.test.ts`: the sixteen rebuilt with 178 lists each; the three beyond
+them with their messages; the blind control with its counts; the two failing controls.
+
+### What would falsify it
+
+A compile of skin 54 whose ten screens the description refuses or the builder does not reproduce; or one whose
+first 178 lists are not these screens'.
+
+### Which architectures
+
+Arch 12 (Harmony One) alone; the Harmony 600, 650 and 700's are section 357's builder. The module is the touch
+family's.

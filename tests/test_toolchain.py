@@ -451,7 +451,7 @@ class ATypeScriptSampleLoopStatesItsPopulation(unittest.TestCase):
         # section 313's tag 5 check shared by the corpus test and the composer's, which is a helper
         # rather than a test file and is counted because the glob reads every `.ts` under `test/`. 69 with
         # section 315's two and 70 with `packages/codec/test/screencategories.test.ts`, section 317. 71 with frame.test.ts, section 318, and 72 with devicepower.test.ts, section 320, and 73 with inputs.test.ts, section 321, and 74 with activityroles.test.ts, section 323, and 75 with statetables.test.ts, section 324, and 76 with devicemode.test.ts, section 325. 77 with tworowlist.test.ts, section 326, and 78 with sequence.test.ts, section 327. 80 with devicepage.test.ts, section 330, and 81 with composecatalogue.test.ts, section 331. 82 with `packages/silhouettes/test/remotes.test.ts`, the per remote reference's generated blocks. 83 with `packages/codec/test/catalogueraw.test.ts`, todo-later 1.3 and 1.4. 84 with help.test.ts, section 333, and 85 with menupage.test.ts, section 334. 86 with `packages/corpus/test/stamp.test.ts`, todo-compile-650 1.3. 87 with activityscreen.test.ts, section 336. 88 with `packages/corpus/test/harvest.test.ts`, the harvest script of todo-secure-logitech 1.1, which did not move this count when it landed. 89 with `packages/corpus/test/setup.test.ts`, the setup builder of todo-compile-650 1.6. 90 with `packages/codec/test/passthrough.test.ts`, the pass through device of todo-compile-650 3.14. 91 with `packages/codec/test/wiring.test.ts`, section 347, and 92 with pressrepeats.test.ts, section 348. 93 with compare.test.ts, todo-compile-650 5.2, and 94 with activitydevicelist.test.ts, section 352. 95 with screenrecords.test.ts, section 356, and 96 with firmwarescreens.test.ts, section 357; neither moved this count when it landed. 97 with screentexts.test.ts, section 358. 98 with cataloguereading.test.ts, section 359. 99 with catalogueleftovers.test.ts, section 361, todo-process-logitech 2.3. 100 with assemble.test.ts, section 362, todo-compile-650 10.6. 101 with pictures.test.ts, section 363, todo-compile-650 9.1. 102 with togglegroups.test.ts, section 365, todo-process-logitech 2.5. 103 with backgrounds.test.ts, section 366, todo-compile-650 9.1.2. 104 with fonttable.test.ts, section 368.
-        self.assertEqual(scanned, 121, 'the TypeScript test files, as ABoundOnACorpusTotalIsExact counts them')
+        self.assertEqual(scanned, 122, 'the TypeScript test files, as ABoundOnACorpusTotalIsExact counts them')
         self.assertEqual(
             {name: len(lines) for name, lines in counted.items()},
             TYPESCRIPT_LOOPS_ALLOWED_TO_SKIP_A_SAMPLE,
@@ -598,8 +598,8 @@ class ABoundOnACorpusTotalIsExact(unittest.TestCase):
         # count when it landed. 120 with the eleven of todo-compile-one, none of which moved this count when it
         # landed: composesetup, generic, onelook, startupassistant, touchactivity, touchlabels, touchrowclick,
         # screencategories-one (section 405), touchscreentexts (406), firmwaresections (407) and
-        # onestatusscreens (408). 121 with screenrecords-one, 4.4.2.
-        self.assertEqual(len(scanned), 121, 'TypeScript test files, which moves when one is added')
+        # onestatusscreens (408). 121 with screenrecords-one, 4.4.2, and 122 with touchfirmwarescreens, 4.4.3.
+        self.assertEqual(len(scanned), 122, 'TypeScript test files, which moves when one is added')
         self.assertIn(self.CONTROL, found, 'the pattern matches nothing it should match')
 
     def test_every_remaining_bound_says_why_it_is_not_a_measurement(self):

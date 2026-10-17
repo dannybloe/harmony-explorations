@@ -112,6 +112,22 @@ export function keyListOrder(tags: readonly number[]): number[] {
   return [...tags].sort((a, b) => keyListBucket(a, tags.length) - keyListBucket(b, tags.length));
 }
 
+/**
+ * Tags in the order a key list stores them, given an order they were inserted in, which settles two tags
+ * sharing a bucket: the later one is stored first, the head insertion rule `compilerTagOrder` in
+ * `inventory.ts` found the corpus fits, without the chain reversal Java 6 and 7 perform on a resize. The
+ * stored order is what is measured; an insertion order given here is inferred to reproduce it, as on the
+ * Harmony One's firmware screens, whose three screens over every key code share three buckets between a key
+ * and a handler, findings section 409. Where no insertion order is given, `keyListOrder` refuses.
+ */
+export function keyListOrderInserted(inserted: readonly number[]): number[] {
+  const count = inserted.length;
+  if (new Set(inserted).size !== count) throw new RangeError('a tag is inserted twice');
+  const rank = new Map(inserted.map((tag, at) => [tag, at]));
+  return [...inserted].sort((a, b) => (keyListBucket(a, count) - keyListBucket(b, count))
+    || ((rank.get(b) as number) - (rank.get(a) as number)));
+}
+
 /** One entry of mode 0's list: a tag and one action list instruction. */
 export interface ModeZeroEntry {
   tag: number;
