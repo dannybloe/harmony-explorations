@@ -26,7 +26,7 @@ import {
   ACTION_LIST_INDEX_OPCODE, HANDLER_TAG_ENTER, handlerSets, modePages, modeRecords, modeTable, pageListCopies,
   type TaggedEntry, taggedList,
 } from '../../sections.ts';
-import { arch14Starts, type Arch14Starts, LOCATION_STATE_NAME } from '../../shared/activities.ts';
+import { arch14Starts, type Arch14Starts, LOCATION_STATE_NAME } from './start.ts';
 import { ACTION_TABLE_SLOT, ComposeError, restamped } from '../../shared/core.ts';
 import { appendTableEntries } from '../../shared/infrared.ts';
 import { ACTIVITY_MENU_MARKER_VALUE } from '../../shared/menus.ts';

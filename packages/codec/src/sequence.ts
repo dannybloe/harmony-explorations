@@ -67,22 +67,19 @@
  * the softer bound is a decision nobody has taken, section 238.
  */
 import { SCREEN_ITEM_BEEP } from './inventory.ts';
-import { familyOf, traitsOf } from './families/registry.ts';
+import { familyOf, sendsOf, traitsOf } from './families/registry.ts';
 import type { Container, Instruction } from './gspm.ts';
 import { parse } from './gspm.ts';
 import { archSlot } from './gspm.ts';
-import { STATE_BAND, STATE_WRITE_BASE } from './actions.ts';
+import { STATE_WRITE_BASE } from './actions.ts';
 import { ACTION_LIST_INDEX_OPCODE, HANDLER_TAG_ENTER, handlerSets, taggedList } from './sections.ts';
 import {
-  CONDITION_OPCODE,
   DEVICE_QUANTITY,
   KEY_EVENT_PRESS,
   KEY_EVENT_SHIFT,
   SCAN_CODE_MASK,
-  SEND_INFRARED,
   deviceVariables,
   infraredGroupsPerList,
-  sendPreludes,
   stateVariables,
 } from './inventory.ts';
 import {
@@ -410,49 +407,6 @@ export function activityPauseGroups(c: Container, set: number): number[] {
   return out;
 }
 
-interface SendList {
-  list: number;
-  group: number;
-  code: number;
-  quantity: number;
-  /**
-   * Arch 14 only: the device's delay list, which every command's private condition list calls, and the
-   * operands of the private load and condition, section 287. What a new send list's own pair copies.
-   */
-  prelude?: { delay: number; load: number; condition: number };
-}
-
-/**
- * Every list in the configuration's ordinary send shape: `{0x7D, 0x7C}` naming one device on the
- * Harmony One, and the delay step `sendPreludes` reads in front of that on the 600, 650 and 700.
- */
-function sendListsOf(c: Container): SendList[] {
-  const lists = c.actionLists() ?? [];
-  const out: SendList[] = [];
-  if (traitsOf(c).sendPrelude) {
-    for (const one of sendPreludes(c)) {
-      const body = lists[one.list] as Instruction[];
-      const send = body[1] as Instruction;
-      const quantity = body[2] as Instruction;
-      if (quantity.operand >>> 8 !== one.group) continue;
-      out.push({
-        list: one.list, group: one.group, code: send.operand & 0xff,
-        quantity: quantity.operand & 0xff,
-        prelude: { delay: one.delay, load: one.loadOperand, condition: one.conditionOperand },
-      });
-    }
-    return out;
-  }
-  lists.forEach((body, list) => {
-    if (body.length !== 2) return;
-    const [send, quantity] = body as [Instruction, Instruction];
-    if (send.opcode !== SEND_INFRARED || quantity.opcode !== DEVICE_QUANTITY) return;
-    if (send.operand >>> 8 !== quantity.operand >>> 8) return;
-    out.push({ list, group: send.operand >>> 8, code: send.operand & 0xff, quantity: quantity.operand & 0xff });
-  });
-  return out;
-}
-
 /**
  * Compose a sequence onto a configuration: a send list for every command that lacks one, and one
  * sequence list per copy, appended to base slot 10.
@@ -500,12 +454,12 @@ export function composeSequence(given: Container, sequence: ComposeSequence): Co
 
   // The record each command sends, before any list is made, since a copy the group lacks is a record
   // appended to base slot 5 and the lists below are numbered in the container that results.
+  // What a send is, and which record a command sends where the caller does not say, is the family's,
+  // `Family.sends`, since `todo-compile-one.md` 3.3.3.4.
   const traits = traitsOf(given);
-  const mode = sequence.records ?? (traits.sendPrelude ? 'copy' : 'named');
-  if (mode === 'copy' && !traits.sendPrelude) {
-    throw new ComposeError('a one block copy is composed on the Harmony 600, 650 and 700 only: the Harmony One\'s '
-      + 'open with the device\'s delay between devices, section 337, which this does not compose');
-  }
+  const shape = sendsOf(given);
+  const mode = sequence.records ?? shape.sequenceRecords;
+  if (mode === 'copy' && shape.oneBlockCopyRefusal !== undefined) throw new ComposeError(shape.oneBlockCopyRefusal);
   let c = given;
   const sent = new Map<string, number>();
   const recordsCreated: string[] = [];
@@ -532,7 +486,7 @@ export function composeSequence(given: Container, sequence: ComposeSequence): Co
   // Resolve every distinct command to a send list: the configuration's own where one sends that code at
   // the device's inter key delay, and a new one otherwise. The Harmony One compile made its own for the
   // eighteen commands no list sent at that amount and shared one per command between every step and copy.
-  const existing = sendListsOf(c);
+  const existing = shape.sendLists(c);
   const table = c.pointerArrayAt(archSlot(architecture, ACTION_TABLE_SLOT));
   if (table === undefined) throw new ComposeError('base slot 10 does not read as a table');
   let next = table.values.length;
@@ -554,30 +508,12 @@ export function composeSequence(given: Container, sequence: ComposeSequence): Co
     }
     created.push(next);
     sendLists.set(key, next);
-    if (!traits.sendPrelude) {
-      bodies.push([[(group << 8) | code, SEND_INFRARED], [(group << 8) | quantity, DEVICE_QUANTITY]]);
-      next += 1;
-      continue;
-    }
-    // On arch 14 a send opens with a delay step of three lists, section 287: a load and a condition
-    // **private to the command**, then a delay list **shared by the device**, which queues its inter
-    // device delay while a start, All Off or Help runs, section 335. So a new send gets a new pair, laid out after it in
-    // `composeDevice`'s order, calling the device's one delay list with the operands its other
-    // commands' pairs carry. More than one delay list or operand for one device is a configuration this
-    // was not measured on.
-    const preludes = existing.filter((one) => one.group === group).map((one) => one.prelude);
-    const distinct = new Set(preludes.map((one) => `${one?.delay}:${one?.load}:${one?.condition}`));
-    if (distinct.size !== 1 || preludes[0] === undefined) {
-      throw new ComposeError(`group ${group}'s send lists open with ${distinct.size} different delay steps`);
-    }
-    const { delay, load, condition } = preludes[0];
-    bodies.push(
-      [[next + 1, ACTION_LIST_INDEX_OPCODE], [(group << 8) | code, SEND_INFRARED],
-       [(group << 8) | quantity, DEVICE_QUANTITY]],
-      [[load, STATE_BAND], [next + 2, ACTION_LIST_INDEX_OPCODE]],
-      [[condition, CONDITION_OPCODE], [delay, ACTION_LIST_INDEX_OPCODE]],
-    );
-    next += 3;
+    // The family's send, its own list first: the send and its quantity alone, or on the Harmony 600, 650 and
+    // 700 the send behind a delay step of a private load and condition calling the device's one delay list,
+    // section 287, with the operands its other commands' pairs carry.
+    const made = shape.newSendLists(existing, group, code, quantity, next);
+    bodies.push(...made.map((one) => [...one]));
+    next += made.length;
   }
 
   const body = sequenceBody(sequence.steps, (group, code) => sendLists.get(`${group}:${code}`) as number,

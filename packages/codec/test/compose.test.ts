@@ -106,8 +106,6 @@ import {
   POWER_ON_DELAY_VALUES,
   SEND_PRELUDE_LOAD,
   sendPreludeCondition,
-  startSequenceOf,
-  startSequenceVariables,
   menuMarkerOf,
   menuMarkerVariable,
   ACTION_LIST_INDEX_OPCODE,
@@ -117,7 +115,8 @@ import {
   STATE_WRITE_BASE,
   reachablePrograms,
 } from '../src/index.ts';
-import { activityStateVariables } from '../src/families/four-slot/statetables.ts';
+import { activityStateVariables, startSequenceVariables } from '../src/families/four-slot/statetables.ts';
+import { startSequenceOf } from '../src/families/four-slot/start.ts';
 import { FOUR_SLOT_CHOICES } from '../src/families/four-slot/choices.ts';
 import { composeActivityDeviceList } from '../src/families/four-slot/devicelist.ts';
 import { deviceModeChrome } from '../src/families/four-slot/chrome.ts';

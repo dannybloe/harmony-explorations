@@ -18,6 +18,8 @@ import { FOUR_SLOT_CHOICES, type FourSlotChoices } from './choices.ts';
 import { FOUR_SLOT_ACTIVITY_KEY_EDITOR } from './activitykeys.ts';
 import { FOUR_SLOT_STATE_TABLES } from './statetables.ts';
 import { FOUR_SLOT_FONTS } from './fonts.ts';
+import { FOUR_SLOT_SENDS } from './sends.ts';
+import { FOUR_SLOT_START, fourSlotActivityRewiring } from './start.ts';
 import { checkWiring } from '../../wiring.ts';
 
 // The family's generated texts, which the four slot assembler runs, `assemble.ts`, until its four slot half moves
@@ -42,7 +44,7 @@ export {
 
 export const FOUR_SLOT: Family<FourSlotChoices> = {
   name: 'the Harmony 600, 650 and 700',
-  traits: { sendPrelude: true, startSequence: 'start variable and flag', screenItemsBeep: false },
+  traits: { screenItemsBeep: false },
   choices: FOUR_SLOT_CHOICES,
   screenItems: fourSlotScreenItems,
   drawsName: fourSlotDrawsName,
@@ -50,6 +52,9 @@ export const FOUR_SLOT: Family<FourSlotChoices> = {
   activityKeyEditor: FOUR_SLOT_ACTIVITY_KEY_EDITOR,
   stateTables: FOUR_SLOT_STATE_TABLES,
   fonts: FOUR_SLOT_FONTS,
+  sends: FOUR_SLOT_SENDS,
+  activityStart: FOUR_SLOT_START,
+  activityRewiring: fourSlotActivityRewiring,
   // Still outside the family until `todo-compile-one.md` 3.3.3.2 moves it here.
   wiring: { check: checkWiring },
   deviceModeKeys: HARD_KEYS,

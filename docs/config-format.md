@@ -1364,7 +1364,8 @@ tag 5:  [S:=1, F:=0, 0x7F or 0x72 on CurrentLocation, 0x72 on CurrentLocation, S
 prelude tests that `S`, 6100 of 6100. Both are records `first` 0, max 1, no transition and no name,
 13 of 13; 51 other unnamed variables on the thirteen hold the same record, so the record alone does not
 single either out. Their indices are the configuration's own: `S` from 46 to 59 and `F` from 28 to 44.
-`startSequenceOf` reads them; `startSequenceVariables` in `statetables.ts` is the record.
+`startSequenceOf` in `families/four-slot/start.ts` reads them; `startSequenceVariables` in
+`families/four-slot/statetables.ts` is the record.
 
 **The four records' key sets follow from the counter**, section 329: values 0 to its maximum, the idle
 value its `first`, the activities the rest, section 273; on the thirteen the counter is

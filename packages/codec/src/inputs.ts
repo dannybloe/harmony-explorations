@@ -99,7 +99,8 @@ import { ACTION_LIST_INDEX_OPCODE, STATE_RECORD_HEADER, STATE_VALUE_LENGTH, stat
 import { DEVICE_QUANTITY, INPUT_PROPERTY, SEND_INFRARED, deviceVariables, stateVariables } from './inventory.ts';
 import { relocate } from './relocate.ts';
 import { nameOfLabel } from './shared/core.ts';
-import { traitsOf } from './families/registry.ts';
+import { sendsOf } from './families/registry.ts';
+import type { ListBody } from './families/family.ts';
 import { Writer } from './emit.ts';
 import {
   ACTION_TABLE_SLOT, ComposeError, type ComposeActivityTarget, type ComposedDevice, SILENT_WRITE,
@@ -116,8 +117,7 @@ export const FROM_CHANGED = -3;
 /**
  * The architectures the encoding was measured on: the Harmony 600, 650 and 700, section 321, and the
  * Harmony One, whose compiles hold the same variables, values, transitions and waits for the same catalogue
- * devices, with a send of two instructions and no prelude, `FamilyTraits.sendPrelude`,
- * `todo-compile-one.md` 1.2.
+ * devices, with a send of two instructions and no prelude, `Family.sends`, `todo-compile-one.md` 1.2.
  */
 const INPUT_ARCHITECTURES: ReadonlySet<number> = new Set([12, 14]);
 /** Delays in the catalogue are milliseconds, the `0x7C` quantity tenths. */
@@ -387,36 +387,11 @@ export interface ComposedInputs {
   plan: InputPlan;
 }
 
-/** The arch 14 send prelude of a device's commands, read off one of its own send lists. */
-interface Prelude {
-  /** `0x1F` operand of the load list: load the byte register with 1. */
-  load: Instruction;
-  /** `0x71` operand of the condition list: only while the start sequence variable equals it. */
-  condition: Instruction;
-  /** The device's delay list, which the condition calls. */
-  delayList: number;
-}
-
-function preludeOf(c: Container, device: ComposedDevice): Prelude {
-  const lists = c.actionLists();
-  const send = lists?.[device.lists[0] ?? -1];
-  const load = send?.[0]?.opcode === ACTION_LIST_INDEX_OPCODE ? lists?.[send[0].operand] : undefined;
-  const condition = load?.[1]?.opcode === ACTION_LIST_INDEX_OPCODE ? lists?.[load[1].operand] : undefined;
-  if (send?.length !== 3 || send[1]?.opcode !== SEND_INFRARED || load?.length !== 2 || condition?.length !== 2
-      || condition[1]?.opcode !== ACTION_LIST_INDEX_OPCODE) {
-    throw new ComposeError('the device\'s first command does not open with the arch 14 send prelude');
-  }
-  return { load: load[0]!, condition: condition[0]!, delayList: condition[1].operand };
-}
-
-/**
- * The Harmony One's on list of a composed device: the list its power variable's transition from 0 to 1
- * runs, read off the variable's record, since the One has no delay list for `ComposedDevice` to name.
- */
-function onListOf(c: Container, device: ComposedDevice): { on: number } | undefined {
-  const record = stateVariables(c).find((one) => one.index === device.variable)?.record;
-  const on = record?.values.find((one) => one.from === 0 && one.to === 1);
-  return on?.opcode === ACTION_LIST_INDEX_OPCODE ? { on: on.operand } : undefined;
+/** An action list as a writer, `u8 count` and then `u16 operand; u8 opcode` per instruction. */
+function encodedList(body: ListBody): Writer {
+  const out = new Writer(1 + 3 * body.length).u8(body.length);
+  for (const [operand, opcode] of body) out.u16(operand).u8(opcode);
+  return out;
 }
 
 /** A transition record, as section 86 reads it: a seven byte header, then eight bytes per transition. */
@@ -453,10 +428,10 @@ export function composeDeviceInputs(c: Container, inputs: ComposeInputs): Compos
   if (c.architecture === undefined || !INPUT_ARCHITECTURES.has(c.architecture)) {
     throw new ComposeError(`inputs are measured on arch ${[...INPUT_ARCHITECTURES].join(' and ')} only, and this is ${c.architecture}`);
   }
-  // A send opens with the delay prelude on the Harmony 600, 650 and 700 and is the send and its quantity
-  // alone on the Harmony One, as the device composer writes each family's: one list or three per send.
-  const { sendPrelude } = traitsOf(c);
-  const listsPerSend = sendPrelude ? 3 : 1;
+  // A send is the family's, `Family.sends`, as the device composer writes it: the delay prelude on the
+  // Harmony 600, 650 and 700 and the send and its quantity alone on the Harmony One, three lists or one.
+  const shape = sendsOf(c);
+  const { listsPerSend } = shape;
   const plan = inputPlan(inputs.driving);
   const variables = [...plan.states, ...(plan.input === undefined ? [] : [plan.input])];
 
@@ -489,7 +464,7 @@ export function composeDeviceInputs(c: Container, inputs: ComposeInputs): Compos
   // One read here holds a reset**, 25 power on lists over eleven compiles, so its place there is ours:
   // after the wait, the 600 family's rule, which section 332 found leaves the same value in place either
   // side of the delay. The bench run of `todo-compile-one.md` 1.3 hears whether the input then goes out.
-  const switchOn = sendPrelude ? inputs.device.powerOnDelay : onListOf(c, inputs.device);
+  const switchOn = shape.switchOnList(c, inputs.device);
   if (resetPlan.length > 0 && switchOn === undefined) {
     throw new ComposeError('the catalogue resets a state after a power on, and the device has no power on list');
   }
@@ -559,27 +534,14 @@ export function composeDeviceInputs(c: Container, inputs: ComposeInputs): Compos
   });
 
   // ---- 2. the lists ----
-  const prelude = sendPrelude ? preludeOf(current, inputs.device) : undefined;
+  // Each send's lists as the family writes them, read off the device's own sends after the variables went
+  // in: on the Harmony 600, 650 and 700 the send, then its private load and condition lists, as `list`,
+  // `+1` and `+2`.
+  const writeSend = shape.sendWriter(current, inputs.device);
   const encoded: Writer[] = [];
   for (const [key, list] of sendLists) {
     const [command, amount] = [key.slice(0, key.lastIndexOf('|')), Number(key.slice(key.lastIndexOf('|') + 1))];
-    if (prelude === undefined) {
-      encoded.push(new Writer(7).u8(2)
-        .u16((group << 8) | recordOf(command)).u8(SEND_INFRARED)
-        .u16((group << 8) | amount).u8(DEVICE_QUANTITY));
-      continue;
-    }
-    // The send, then its private load and condition lists, in that order, as `list`, `+1`, `+2`.
-    encoded.push(new Writer(10).u8(3)
-      .u16(list + 1).u8(ACTION_LIST_INDEX_OPCODE)
-      .u16((group << 8) | recordOf(command)).u8(SEND_INFRARED)
-      .u16((group << 8) | amount).u8(DEVICE_QUANTITY));
-    encoded.push(new Writer(7).u8(2)
-      .u16(prelude.load.operand).u8(prelude.load.opcode)
-      .u16(list + 2).u8(ACTION_LIST_INDEX_OPCODE));
-    encoded.push(new Writer(7).u8(2)
-      .u16(prelude.condition.operand).u8(prelude.condition.opcode)
-      .u16(prelude.delayList).u8(ACTION_LIST_INDEX_OPCODE));
+    for (const body of writeSend(list, group, recordOf(command), amount)) encoded.push(encodedList(body));
   }
   for (const body of bodies) {
     if (body.steps.length > QUANTITY_MAX) throw new ComposeError(`a list of ${body.steps.length} steps`);

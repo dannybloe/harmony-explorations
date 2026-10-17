@@ -41,7 +41,7 @@ code, whatever the task was.
    * the same on every compiled family: `shared/` or the container modules (`frame.ts`, `placer.ts`,
      `inputs.ts`, the infrared and action list modules);
    * different per family, as **data** a shared composer asks about: a field of `FamilyTraits` (how
-     action lists differ, `sendPrelude`, `startSequence`, `screenItemsBeep`) or of the family's choices
+     action lists differ, `screenItemsBeep`) or of the family's choices
      (`CommonChoices` and the family's own `choices.ts`, every choice of ours with its default);
    * different per family, as **code**: a member of the `Family` interface, implemented in
      `families/four-slot/` and `families/touch/`, with the shared composer calling it.
@@ -75,8 +75,9 @@ and fails when a module joins the list or a count on it rises. The list is the d
 
 | what | where it belongs |
 |---|---|
-| a send is three lists with a delay prelude, or the send and its quantity alone | `FamilyTraits.sendPrelude` |
-| the shape of an activity's start | `FamilyTraits.startSequence` |
+| a send is three lists with a delay prelude, or the send and its quantity alone: a device's lists and delays, a composed device's new send, a sequence's sends, the donor input matcher | `Family.sends`, the family's `sends.ts`; a trait the four composers each tested until `todo-compile-one.md` 3.3.3.4, now one member they ask; the four slot delay maximum is the family's `statetables.ts` |
+| the shape of an activity's start, its tag 5 list, and the readers of the four slot start variable and flag | `Family.activityStart`, the family's `start.ts`, with `startSequenceOf` and `arch14Starts` in the four slot one |
+| what composing an activity changes in a family's own wiring | `Family.activityRewiring`, absent where nothing changes; not a test of the architecture in the shared activity composer |
 | a screen item's list opens with the beeper | `FamilyTraits.screenItemsBeep` |
 | the activity key a type of activity takes; the delays a device starts with | the family's choices, `CommonChoices` |
 | the device page, the activity screen, a menu row | `Family` members, one implementation per family |

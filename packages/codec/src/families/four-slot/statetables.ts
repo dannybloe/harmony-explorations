@@ -11,9 +11,7 @@
  */
 import { firmwareStateVariableMax } from '../../inventory.ts';
 import { VALUE_MAP_COUNT_WIDTH } from '../../valuemap.ts';
-import {
-  DELAY_MAX, StateTablesError, type StateTableFacts, type StateVariableSpec,
-} from '../../statetables.ts';
+import { StateTablesError, type StateTableFacts, type StateVariableSpec } from '../../statetables.ts';
 
 /** The architecture of the family's remotes, which the readers' per architecture tables are keyed by. */
 const ARCHITECTURE = 14;
@@ -76,8 +74,35 @@ export function deviceDelayVariables(
   ];
 }
 
+/**
+ * A delay variable's stated maximum, which bounds nothing, section 301. On every one of them the name ends
+ * `_65278`, one more, like every variable's, section 86; wider than either table, which is the compiler's.
+ * The device composer's delays name it too, `sends.ts`; it moved here from `statetables.ts` with
+ * `todo-compile-one.md` 3.3.3.4, once a send's shape was the family's.
+ */
+export const DELAY_MAX = 65277;
+
 /** A default delay variable's stated maximum, the companion of `DELAY_MAX`, section 301. */
 const DEFAULT_DELAY_MAX = 254;
+
+/**
+ * The two unnamed variables an arch 14 start sequence brackets itself with, section 329: the start
+ * variable `S`, held at 1 while a start runs, which every command prelude tests, section 319, and
+ * the flag `F`, written 1 just before an activity defers its working screen and 0 by the Off key
+ * map. Both hold 0 with a maximum of 1, no name and no transition, on all thirteen compiles. In that
+ * order, start then flag.
+ *
+ * **Their indices are not generated.** Where a variable sits among the others is the description's
+ * order, and what decides Logitech's is open, section 324; on the thirteen `S` takes indices from 46
+ * to 59 and `F` from 28 to 44. A description that holds these two gets their indices from
+ * `buildStateTables`' `indexOf`, which is where a composer building from nothing reads them.
+ *
+ * The family's start sequence, `start.ts`, checks a configuration's against these; they moved here from
+ * `statetables.ts` with `todo-compile-one.md` 3.3.3.4, once the start sequence was the family's.
+ */
+export function startSequenceVariables(): StateVariableSpec[] {
+  return [{ first: 0, max: 1 }, { first: 0, max: 1 }];
+}
 
 /**
  * The two variables every arch 14 compile of the thirteen names for its activities: which activity

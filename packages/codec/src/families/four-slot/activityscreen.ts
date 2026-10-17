@@ -34,9 +34,8 @@ import {
   screenProgram,
 } from '../../screen.ts';
 import { handlerSets, modeRecords, modeTable, type TaggedEntry, taggedList } from '../../sections.ts';
-import {
-  activityKeyedMaps, type ActivityMaps, arch14Starts, type Arch14Starts, nextActivityValue,
-} from '../../shared/activities.ts';
+import { activityKeyedMaps, type ActivityMaps, nextActivityValue } from '../../shared/activities.ts';
+import { arch14Starts, type Arch14Starts } from './start.ts';
 import { ACTION_TABLE_SLOT, ComposeError, restamped } from '../../shared/core.ts';
 import { appendTableEntries } from '../../shared/infrared.ts';
 import {

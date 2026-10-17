@@ -29,11 +29,13 @@ import { placePieces } from '../../placer.ts';
 import { encodeGlyph } from '../../font.ts';
 import { CLOCK_STATE_MAXIMA } from '../../sections.ts';
 import {
-  buildStateTables, menuMarkerVariable, startSequenceVariables,
+  buildStateTables, menuMarkerVariable,
   type BuiltStateTables, type PieceTarget, type StateTablesSpec, type StateVariableSpec, type ValueMapSpec,
   hourListBytes,
 } from '../../statetables.ts';
-import { FIRMWARE_STATE_VARIABLE_COUNT, FOUR_SLOT_STATE_TABLES, activityStateVariables } from './statetables.ts';
+import {
+  FIRMWARE_STATE_VARIABLE_COUNT, FOUR_SLOT_STATE_TABLES, activityStateVariables, startSequenceVariables,
+} from './statetables.ts';
 import {
   ACTIVITY_KEY_SCANS, FIRMWARE_SCREENS, FIXED_ENTRIES, buildWiring, wiringFrontIndex, wiringNeeds, type BuiltWiring, type WiringSettings,
   type WiringSpec,

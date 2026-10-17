@@ -6,7 +6,7 @@
  * family's choices where it read the four slot family's: the activity keys and the delays.
  */
 import { type Recipe, type RecipeActivity, type RecipeDevice, type RecipeTarget, recipeTarget } from '../recipe/recipe.ts';
-import { familyOf, traitsOf } from '../families/registry.ts';
+import { familyOf, sendsOf } from '../families/registry.ts';
 import { saveEdits } from '../edit.ts';
 import { coverage } from '../coverage.ts';
 import { trailerAgrees } from '../growth.ts';
@@ -132,11 +132,12 @@ export function composeSetupParts(
 
   // 2b. The inputs of a donor device an activity puts on one, where the donor has no input variable for
   //     it: a Logitech compile with no activities writes none, and the Harmony One's donor is one.
-  //     Only where a send is the send and its quantity alone, the Harmony One's, which is what
-  //     `composeDonorDeviceInputs` matches; the Harmony 600 family's donors are refused at step 4 as before.
+  //     Only where the family matches a donor's sends, `SendShape.donorSendList`: the send and its quantity
+  //     alone, the Harmony One's, which is what `composeDonorDeviceInputs` matches; the Harmony 600 family's
+  //     donors are refused at step 4 as before.
   const donorInputs = new Map<string, ComposedInputs>();
   for (const wanted of setup.devices) {
-    if (traitsOf(c).sendPrelude || composedDevices.has(wanted.name)) continue;
+    if (sendsOf(c).donorSendList === undefined || composedDevices.has(wanted.name)) continue;
     if (!setup.activities.some((a) => a.devices.some((d) => d.device === wanted.name && d.input !== undefined))) continue;
     const label = labelOf(wanted.name);
     if (label === undefined) continue;

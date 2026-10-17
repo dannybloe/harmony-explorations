@@ -593,7 +593,7 @@ test('on the Harmony One, three devices Logitech compiled, composed again from t
      needing(skipUnless(...new Set(ONE_CALIBRATION.map(([config]) => config)), 'harvest_one_two_devices'),
              skipWithoutIrArchive()), () => {
   // The same route as the 600 family's calibration above, on a Harmony One host: the One's send is the
-  // send and its quantity with no prelude, `FamilyTraits.sendPrelude`, and everything an input does is
+  // send and its quantity with no prelude, `Family.sends`, and everything an input does is
   // the 600 family's, which is what this measures rather than assumes.
   const root = IR_ARCHIVE!;
   const host = open('harvest_one_two_devices');

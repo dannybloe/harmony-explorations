@@ -392,35 +392,6 @@ export function clockTransitions(index: number, hourList: number, minuteList?: n
 }
 
 /**
- * A delay variable's stated maximum, which bounds nothing, section 301. On every one of them the name ends
- * `_65278`, one more, like every variable's, section 86; wider than either table, which is the compiler's.
- * The Harmony 600, 650 and 700's, whose devices carry delay variables, `FamilyTraits.sendPrelude`: here and
- * not beside that family's `deviceDelayVariables` because the shared device composer names it, until a
- * send's shape is the family's, `todo-compile-one.md` 3.3.3.4.
- */
-export const DELAY_MAX = 65277;
-
-/**
- * The two unnamed variables an arch 14 start sequence brackets itself with, section 329: the start
- * variable `S`, held at 1 while a start runs, which every command prelude tests, section 319, and
- * the flag `F`, written 1 just before an activity defers its working screen and 0 by the Off key
- * map. Both hold 0 with a maximum of 1, no name and no transition, on all thirteen compiles. In that
- * order, start then flag.
- *
- * **Their indices are not generated.** Where a variable sits among the others is the description's
- * order, and what decides Logitech's is open, section 324; on the thirteen `S` takes indices from 46
- * to 59 and `F` from 28 to 44. A description that holds these two gets their indices from
- * `buildStateTables`' `indexOf`, which is where a composer building from nothing reads them.
- *
- * The four slot family's start sequence, `FamilyTraits.startSequence`; here because the shared activity
- * composer checks a configuration's against it, until the start sequence is the family's,
- * `todo-compile-one.md` 3.3.3.4.
- */
-export function startSequenceVariables(): StateVariableSpec[] {
-  return [{ first: 0, max: 1 }, { first: 0, max: 1 }];
-}
-
-/**
  * The variable every menu row writes last, section 329: 1 by a device list row and 0 by an activity
  * row, section 275. It holds 0 with a maximum of 3, no name and no transition, on every configuration
  * of those models in the lab that has a menu row, the 27 of section 329, although no list writes it

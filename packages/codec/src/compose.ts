@@ -12,7 +12,7 @@
  * Today it reads the architecture the container states; when the recipe names its model,
  * `todo-compile-650.md` 10.7.4, it reads the model's definition instead.
  */
-import { choicesOf, familyOf, traitsOf } from './families/registry.ts';
+import { activityStartOf, choicesOf, familyOf, sendsOf } from './families/registry.ts';
 import type { DelayDefaults } from './families/family.ts';
 import { Container } from './gspm.ts';
 import { handlerSets } from './sections.ts';
@@ -30,8 +30,6 @@ export {
   type ComposedActivity,
   nextActivityValue,
   SILENT_WRITE,
-  startSequenceOf,
-  type StartSequenceVariables,
 } from './shared/activities.ts';
 export {
   ACTION_TABLE_SLOT,
@@ -181,22 +179,23 @@ export function composeActivityMenuRow(
 }
 
 /**
- * Compose a device into a configuration, with the traits of the family its remote is in and, where the
- * device states no delay, the family's delays or the ones given: `composeDeviceFor`
+ * Compose a device into a configuration, with the send of the family its remote is in, `sendsOf`, and,
+ * where the device states no delay, the family's delays or the ones given: `composeDeviceFor`
  * in `shared/devices.ts` carries the whole account.
  */
 export function composeDevice(
   c: Container, device: ComposeDevice, delays: DelayDefaults | undefined = choicesOf(c).delays,
 ): ComposedDevice {
-  return composeDeviceFor(c, device, traitsOf(c), delays);
+  return composeDeviceFor(c, device, sendsOf(c), delays);
 }
 
 /**
- * Compose an activity into a configuration, with the traits of the family its remote is in and that
- * family's activity keys: `composeActivityFor` in `shared/activities.ts` carries the whole account.
+ * Compose an activity into a configuration, with the start of the family its remote is in,
+ * `activityStartOf`, and that family's activity keys and wiring: `composeActivityFor` in
+ * `shared/activities.ts` carries the whole account.
  */
 export function composeActivity(c: Container, activity: ComposeActivity): ComposedActivity {
-  return composeActivityFor(c, activity, traitsOf(c), familyOf(c));
+  return composeActivityFor(c, activity, activityStartOf(c), familyOf(c));
 }
 
 export type { CommonChoices, DelayDefaults, FamilyTraits, WithChoices } from './families/family.ts';

@@ -32,7 +32,7 @@
  *   would succeed and leave a configuration no Logitech account could have produced.
  */
 import type { DelayDefaults } from './families/family.ts';
-import { choicesOf, familyOf, traitsOf } from './families/registry.ts';
+import { choicesOf, familyOf, sendsOf } from './families/registry.ts';
 import type { Container } from './gspm.ts';
 import { parse } from './gspm.ts';
 import {
@@ -61,7 +61,7 @@ import {
   type JoinedPowerOff,
   type ToggledCode,
 } from './compose.ts';
-import { DEVICE_QUANTITY, SEND_INFRARED, devices, deviceVariables, stateVariables } from './inventory.ts';
+import { devices, deviceVariables, stateVariables } from './inventory.ts';
 import { irBlockWords, irGroups, irHeaderPointers } from './ir.ts';
 import { nameOfLabel } from './shared/core.ts';
 
@@ -411,9 +411,10 @@ function recordWords(c: Container, address: number): string {
  * the catalogue's**, which section 337 measured, 418 of 418 records of seven devices identical to one of
  * Logitech's; and it is refused rather than guessed where a command's code is in no record of the group,
  * or where no single list sends it. Two records with one code, the LG's `Home` twice, send the same code,
- * so the first is taken. **A send list is the family's**, `FamilyTraits.sendPrelude`: the send and its quantity
- * alone on the Harmony One, the only family this has been run on. The Harmony 600, 650 and 700's send opens with
- * a prelude of three lists, which nothing here matches, so their family is refused up front.
+ * so the first is taken. **A send list is the family's**, `Family.sends`, and so is matching one,
+ * `SendShape.donorSendList`: the send and its quantity alone on the Harmony One, the only family this has been
+ * run on. The Harmony 600, 650 and 700's send opens with a prelude of three lists, which nothing matches, so their
+ * family states no matcher and is refused up front.
  *
  * `undefined` for a device whose catalogue entry states no variable to compose, and for one that already
  * has an input variable here.
@@ -421,7 +422,8 @@ function recordWords(c: Container, address: number): string {
 export function composeDonorDeviceInputs(
   c: Container, archive: string, request: DonorDeviceRequest,
 ): ComposedInputs | undefined {
-  if (traitsOf(c).sendPrelude) throw new ComposeError('a donor device\'s inputs are composed where a send is the send and its quantity alone, the Harmony One\'s');
+  const matchSend = sendsOf(c).donorSendList;
+  if (matchSend === undefined) throw new ComposeError('a donor device\'s inputs are composed where a send is the send and its quantity alone, the Harmony One\'s');
   const own = devices(c).find((one) => one.name === request.label);
   if (own?.group === undefined) throw new ComposeError(`no device called ${request.label} with codes here`);
   if (deviceVariables(c).some((one) => one.device === request.label && one.property === 'Input')) return undefined;
@@ -457,8 +459,7 @@ export function composeDonorDeviceInputs(
     const record = mine[k] === undefined ? -1 : theirs.indexOf(recordWords(composed, mine[k]!));
     if (record < 0) throw new ComposeError(`${request.label} holds no record with the catalogue's code for ${name}`);
     const operand = (own.group! << 8) | record;
-    const sending = lists.flatMap((list, at) => (list.length === 2 && list[0]!.opcode === SEND_INFRARED
-      && list[0]!.operand === operand && list[1]!.opcode === DEVICE_QUANTITY ? [at] : []));
+    const sending = matchSend(lists, operand);
     if (sending.length !== 1) throw new ComposeError(`${sending.length} lists of ${request.label} send its ${name} alone, where one is wanted`);
     return sending[0]!;
   });

@@ -63,7 +63,7 @@ import type { ContainerLayout } from '../../frame.ts';
 import {
   type BuiltDraw, type BuiltScreenTexts, INLINE_HEAD, ScreenTextError, type ScreenTextsPlace, pieceLocator, shareRuns, withScreenTexts,
 } from '../../shared/screentexts.ts';
-import { arch14Starts } from '../../shared/activities.ts';
+import { arch14Starts } from './start.ts';
 import { layOutContainer, takeApart } from '../../frame.ts';
 import { fontSets, glyphOf } from '../../font.ts';
 import {

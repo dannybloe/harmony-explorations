@@ -13,10 +13,12 @@ import { letterTouchDonor, withTouchLook } from './look.ts';
 import { TOUCH_STATE_TABLES } from './statetables.ts';
 import { TOUCH_FONTS } from './fonts.ts';
 import { checkTouchWiring } from './wiring.ts';
+import { TOUCH_SENDS } from './sends.ts';
+import { TOUCH_START } from './start.ts';
 
 export const TOUCH: Family<TouchChoices> = {
   name: 'the Harmony One',
-  traits: { sendPrelude: false, startSequence: 'timer cancel and active list', screenItemsBeep: true },
+  traits: { screenItemsBeep: true },
   choices: TOUCH_CHOICES,
   screenItems: touchScreenItems,
   drawsName: touchDrawsName,
@@ -24,6 +26,8 @@ export const TOUCH: Family<TouchChoices> = {
   deviceModeKeys: TOUCH_HARD_KEYS,
   stateTables: TOUCH_STATE_TABLES,
   fonts: TOUCH_FONTS,
+  sends: TOUCH_SENDS,
+  activityStart: TOUCH_START,
   wiring: { check: checkTouchWiring },
   composeDeviceScreen: composeTouchDeviceScreen,
   activityMenu: touchActivityMenu,

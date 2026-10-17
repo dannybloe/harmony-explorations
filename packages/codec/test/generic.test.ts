@@ -50,6 +50,11 @@ const PATTERNS: Readonly<Record<string, RegExp>> = {
  * Since 3.3.3.5 `fonttable.ts` asks the family which face a set becomes, whether sets share a glyph and whether
  * its faces were measured on the skin, `Family.fonts`, and `backgrounds.ts` takes the Harmony 650's skin set from
  * the family's index, through the import it had, rather than defining it.
+ *
+ * Since 3.3.3.4 `shared/activities.ts` asks the family whether composing an activity changes its wiring,
+ * `Family.activityRewiring`, where it tested the architecture, and leaves the list; a send's shape and an
+ * activity's start are family members too, `Family.sends` and `Family.activityStart`, which the patterns here
+ * counted in no module, since each was a test of a trait rather than of the architecture.
  */
 const DEBT: Readonly<Record<string, Readonly<Record<string, number>>>> = {
   'assemble.ts': { architecture: 2, family: 11, models: 3, imports: 5 },
@@ -60,7 +65,6 @@ const DEBT: Readonly<Record<string, Readonly<Record<string, number>>>> = {
   'modezero.ts': { scans: 3, models: 1 },
   'pictures.ts': { architecture: 1 },
   'screenrecords.ts': { architecture: 1, family: 21, imports: 1 },
-  'shared/activities.ts': { architecture: 1 },
   'shared/setup.ts': { models: 1 },
   'wiring.ts': { scans: 3, models: 5 },
 };
