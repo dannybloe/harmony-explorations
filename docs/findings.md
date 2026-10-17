@@ -53987,3 +53987,239 @@ byte is 0, or one binding none whose byte is 1; a list of the 531 named from out
 
 Arch 12 (Harmony One) alone, and skin 54 in English; the module is the touch family's. The Harmony 600, 650 and 700
 carry other fixed screens, section 357's.
+
+## 412. The Harmony One's welcome tour and Remote Assistant are built from a description of their numbering, byte for byte on the sixteen English compiles of skin 54 and both European ones, the assistant where the wiring's start ladder keeps it
+
+**Todo `todo-compile-one.md` 4.4.4.2**: the welcome tour (11 screens) and the Remote Assistant (5), the last of section
+405's 38 fixed screens past the head, built as section 411 built twenty three of the others, and kept or left out by
+the start choice of section 403 as the wiring decides.
+
+**Sources checked**: sections 403 (the assistant's variable, its ladder and the start choice), 405 (the census and
+its 38), 408 (every one of the 38 is entered by the configuration), 410 (the wiring's `startupAssistant`, the
+ladder and the leftover entry), 411 (the template, the place rules and the inline rule) and section 52 for the
+tagged list's two forms; `fixedscreens.ts`, whose template engine this factors out, and `wiring.ts`; the nineteen
+Harmony One compiles. Neither the firmware nor Logitech's client was read: the question is what their compiler
+emits, which the compiles answer.
+
+### The screens, and how each is found
+
+**The welcome tour** is eleven screens of one page each. Its chrome is not section 411's: one rectangle instruction,
+opcode 1 with the constant operands 0, 0, 176, 220, 0, 0, and a return. A page draws a picture, a few lines in the
+tour's font, "Exit" at 142, 202 in another, and on four screens a word in a third. `touchTourScreenModes` finds each by its first line; on all eighteen English
+compiles the eleven are laid out in the same relative order, "To select another Activity," first and "It's that
+easy!" last, though not at consecutive modes on every compile. A person meets them in another order: "Welcome!",
+the arrows, the Activities, "Watch TV", selecting it, the display, another activity, the Help button, Help asks,
+the Off button and "It's that easy!". The right arrow (scan 47) and the left (scan 46) turn the page, the
+Activities, Help and Off keys (scans 34, 38 and 37) go on where a screen asks for them, and the touch areas each
+page's hit page names go on or leave.
+
+**The Remote Assistant** is five screens of one page: section 411's chrome titled "PowerOff:", "Remote Assistant:"
+first and the screen's lines below it, centred, then "OK", or "Yes" and "No". The welcome ("Welcome to your
+remote."), "Ensure all your devices are off" twice, the question ("Do you want to hide the Remote Assistant?") and
+its answer ("To hide the remote assistant, use the software ..."). The two "Ensure" screens draw the same and differ
+in their OK: on the one the start's ladder enters, the wiring's `assistantDevicesOff`, OK enters the question; on
+the other, which the welcome's OK enters, OK runs a list of the configuration's. So the wiring tells them apart, and
+the welcome's mode is checked against the wiring's `assistantWelcome`, on all seventeen compiles holding the five.
+The welcome's OK and its scan 34 press write the assistant's variable 1 and Yes on the question writes it 3,
+section 403's values, through a state write whose opcode names the variable.
+
+With section 411's twenty two above the head, these sixteen are section 405's 38 fixed screens past the head on
+each of the sixteen compiles, mode for mode.
+
+### Which a configuration gets is the wiring's to say
+
+The Remote Assistant's five are held exactly where the wiring keeps the start's ladder on the assistant's variable,
+section 410's `startupAssistant`: on 17 of the 18 English compiles, the sixteen and `one_config_unprogrammed`, and
+not on `one_config`, the everyday One's, which holds neither the ladder nor any of the five and still holds the
+tour. So the description carries the five exactly when the wiring keeps the ladder, and a configuration whose wiring
+keeps none but holds one of the five is refused.
+
+**The tour is always built**, since Options' Tutorial row (scan 49 of its first page) enters its "Welcome!" through
+every call on the sixteen, and Options is section 411's, always built.
+
+**The start choice of section 403 does not take the five out.** `withoutStartupAssistant` starts the variable at 3,
+a same length edit of its record, and on the sixteen: the wiring still keeps its ladder; the leftover entry's
+events 1 and 5 still run it, through every call, to the welcome's enter; and Options' first row, "Turn Remote
+Assistant On" at 3, still looks up a value map on the variable (`0x72` with the map in its high byte and the
+variable in its low) whose arm for 3 runs a list writing it 1. Section 403 also found the activities' own assistant
+screens writing 2 on 14 of its 18. So with the choice the configuration still holds a path to the five, and they
+are built; the sixteen rebuild from the edited configurations byte for byte as from Logitech's. **What raises
+events 1 and 5 is not read**, nor when the leftover entry is selected beyond section 410's scan 37 press, and the
+path was not seen on a remote. Leaving them out needs the wiring
+without its ladder, as `one_config` has it.
+
+### One shape once the numbering is set aside
+
+The template, `families/touch/tourscreens.ts`, states each screen whole. The description reader refuses any
+binding, instruction, list length, picture place or disagreeing font role other than the template's, and the byte
+comparison after the build refuses any other word or text place; both pass on the sixteen and the two European
+compiles, which is the measurement. What differs between compiles is the
+configuration's numbering: the mode each screen is, the base slot 10 index of every list, the modes an `0x7E`
+enters, the timers an `0x1F EB` starts and an `0x1F EA` cancels, the base slot 11 programs an `0x73` runs, the
+assistant's variable a state write names, the tour's fonts (the assistant's three are 2, 0 and 1 on all
+eighteen English compiles, still read), the pictures, the hit pages, and whether a text is drawn inline or by
+reference.
+
+| screens | own key map | page list |
+|---|---|---|
+| the tour's eleven | the arrows, a page turn (the click, an enter and the empty instruction) or swallowed; enter and leave, two lists of the configuration's each, or on "Welcome!" one bound directly; Help clicks, or enters the next screen on the Help button's screen; Activities and Off enter the next screen where the screen asks for them | per touch area, an enter, the click and an enter, or the click and a list of the configuration's that leaves |
+| the assistant's five | the arrows swallowed; enter and leave, a timer and one list of the configuration's, two on the question; the header handler's three programs; on the welcome, scan 34 writes the variable 1 | scan 49 (OK or Yes), and on the question scan 50 (No): the click and a list, or an enter, or a write and an enter, or a write, a list and an enter |
+
+### Where the words go
+
+Each compile's sixteen screens hold 109 text instructions, 1744 over the sixteen, every x by one of these:
+
+| rule | per compile |
+|---|---|
+| the tour's margin, x 10: its lines and "Welcome!" | 58 |
+| centred on the screen, `floor((176 - w) / 2)`: the assistant's lines and the tour's "Is the TV on?" | 19, 7 of odd width |
+| centred on the left half, `floor((88 - w) / 2)`: "Yes" | 1, of odd width |
+| centred on the right half, `88 + floor((88 - w) / 2)`: "No" and four "OK" | 5, none of odd width, so this half's rounding is not determined in English |
+| ending at x 163: "Exit" | 11 |
+| centred on a picture's part: "Display" and "Aspect" on 81 pixel buttons at x 6 and 89, the tour's "Yes" and "No" on the halves of a 133 pixel picture at x 21, `[21, 87)` and `[88, 154)` | 4, two ("Display", "Yes") with an odd remainder |
+| constants: the title at 6 ten times, "Watch TV" at 69 | 11 |
+
+**The tour's rules other than the margin and the screen rest on one English word each**, so in English they fit a
+constant as well; the blind reviewer told them apart on the Dutch compile, whose "Afsluiten" ends at 163 too, whose
+"Ja" and "Nee" sit at 47 and 110 by the halves rule, and whose "Nee" on the assistant's question, of odd width,
+settles the right half's floor; "Watch TV" stays at 69 in Dutch, a constant. The assistant's lines are twelve apart
+in a block centred on y 111, so n lines start at `117 - 6n`, which the builder generates, on English blocks of 2 to
+5 lines and Dutch ones of 4, 5, 6 and 8; the tour's y are measured constants (the blind reviewer fitted a centring
+rule for them from two languages only, not adopted).
+
+### Inline or by reference, and the two sets apart
+
+The rule is section 411's, through the same engine: a text a program outside the screens holds is drawn by
+reference to it, a home the description carries; otherwise the first program in layout order holds it inline.
+62 to 72 of the 109 are inline per compile. **No text crosses between these sixteen and section 411's twenty three**
+on any of the sixteen compiles, neither set drawing by reference into the other's programs, so the two are built
+apart without moving an inline copy. The control: "Another Activity" and "Selecting Watch TV" swapped in mode
+order, every other byte as read, changes the rebuilt file, since the second draws "Press the right arrow to" and
+"continue." by reference to the first.
+
+### A state write bound in a mode's key map makes the list wide
+
+A mode's own key map with a state write bound directly is in section 52's wide form, a zero, the count, and a flags
+byte before each entry, 1 on the write and 0 on every other binding; every other own key map is narrow. Over the
+nineteen compiles: 18 wide own key maps, one on each compile with the Remote Assistant and none on `one_config`,
+each binding scan 34's press to the write; none of the 3576 narrow ones binds a write; 18 bindings flagged 1 and 90
+flagged 0; every page list and copy is narrow and binds no write. The engine generates the form and the flags.
+**The rule rests on one binding**, the welcome's scan 34 press, eighteen times; no other state write bound
+directly in a mode's list exists to test it on. **It is a rule about mode lists only**: base slot 9's handler sets
+are wide on 95 lists that bind no write, with flag 1 on calls and `07` instructions, by the second reviewer's
+census, so the wiring's leftover entry being wide for the same binding, section 410, is not evidence for it.
+
+### The lists
+
+The 98 lists these screens' own key maps, page lists, copies and chromes name are built at the described indices,
+66 on `one_config`, and nothing outside the sixteen screens names one of them, by `screenlists.ts`' walk, now
+shared with section 411's test. Below them sit lists that stay the configuration's, named by index: 69 on 11 of
+the sixteen and 22 on the other 5. **The difference is section 403's**: on the 11 the OK of the second "Ensure all
+your devices are off" leads on, through every call, to the tour's "Welcome!", and on the 5 it does not, the
+blind reviewer of section 403 having counted twelve and six over eighteen compiles. Of the lists below, 15, 16 or 10
+are named directly from outside the screens (the tour's handler lists and the click lists among them) and 56, 59
+or 15 are those and what they reach, per compile in the test.
+
+### What the description carries and what is generated
+
+Per compile the screens are 3785 to 3901 bytes, the difference being texts inline or by reference. The description
+reads 670 to 884 bytes: inside the screens the list indices, the modes, the timers, the programs, the assistant's
+variable, every font select's font (eight roles, five the tour's and three the assistant's), every hit page and the
+pictures' and homes' addresses, 11276 bytes over the sixteen; and outside them each home's glyph codes, 1278.
+Everything else is generated: every opcode and constant operand, every tag and its stored order (`keyListOrder`'s,
+no two tags of these screens sharing a bucket), the wide form and its flags, every list's instructions, every word
+and its place, which texts are inline, the entry's flag (0 on all sixteen screens, none binding `0x29`), the page
+records and the entries.
+
+**The blind control**: every one of the 50078 bytes the description does not read overwritten, in the file it
+reads, in the file the fonts are spelled from and in the layout's own pieces, and the sixteen come back byte for
+byte, with the same offsets read. As in section 411, the modes are found by look in the configuration itself and
+the wiring is read off the configuration's own layout; what is blinded is the screens' bytes the builder writes.
+**The controls fail where they should**: the question's timer moved one on, the first two tour screens' pictures
+swapped, the welcome's variable moved one on, the two tour screens' modes swapped, and the rebuilt file differs; a
+description without the assistant on a configuration whose wiring keeps it builds eleven records for sixteen places
+and is refused.
+
+### The engine, factored
+
+`families/touch/screentemplate.ts` is `fixedscreens.ts`' template language, description reader and builder, moved
+so the two modules share one copy; `fixedscreens.ts` keeps its screens, its mode finder and its year. It gained
+three things for these screens, each generic to the template: a state write whose opcode names the variable, a
+drawing instruction with constant operands, and the wide form. Section 411's tests pass unchanged but for its list
+walk, which moved into `screenlists.ts` with the same counts. **`firmwarescreens.ts` keeps its own older step
+language**, section 409's, which has shared bucket insertion orders the template engine does not; moving it is
+left open.
+
+### Beyond the sixteen
+
+* **`one_config`**, the everyday One's, rebuilds byte for byte with the tour alone, eleven screens and 66 lists, its
+  wiring keeping no ladder.
+* **`one_config_unprogrammed`**, the European factory file, rebuilds byte for byte with all sixteen and 98 lists:
+  the European skin's tour and assistant are skin 54's, where its clock pickers are not (section 411).
+* **The Dutch compile** is refused: no screen draws the tour's English first lines. Other languages are out of scope.
+
+### Reviewer 1, blind
+
+Given the question and the corpus and not this section or the modules, on a clean export of the commit before this
+change, the blind reviewer found the same sixteen screens on each of the sixteen compiles making section 405's 38
+with section 411's 22, the tour's eleven in one relative mode order; the same tour chrome and the assistant's
+section 411 chrome; every text the same on the sixteen, 109 a compile, with the inline copy at the lowest address
+(109 of 109 on each, 128 of 128 on the Dutch compile, 75 of 75 on `one_config`) and no text crossing with section
+411's 23 in either direction; stored tag order `keyListOrder`'s on all 897 own, page and copy lists of these screens
+over the nineteen compiles; the welcome's own key map the one wide own key map, flag 1 on scan 34's write and 0
+elsewhere, 3576 narrow; the five on 18 of 19, entered by 8 instructions a compile and nothing else (the ladder's two
+rungs, the welcome's OK, the second "Ensure" screen's OK and the question's Yes, page list and copy), and after the
+start choice the same three paths back this section names, with the activities' own screens writing 2 on 0 to 14 a
+compile. **It counts 100 lists the screens name directly where this section builds 98**: the other two are the light
+lists "Welcome!"'s handlers bind directly, which every tour screen's handlers and the wiring call too, so they are the
+configuration's. Its lists below the 100, 67 and 20, are this section's 69 and 22 less those two, and it found the
+difference is the second "Ensure" screen's OK chain, as above, the 6 compiles without it holding the welcome test
+chain uncalled. **It found better place rules than the draft's constants**, which are adopted above: "Exit" ending
+at 163, "Display" and "Aspect" on their buttons, the tour's "Yes" and "No" on the picture's halves, and the
+assistant's block centred on 111, each told from a constant by the Dutch compile. It also counted the numbering's
+sequences (8 of fonts, 15 of timers, 3 of base slot 11 entries 1 to 3, 12 of hit pages over the sixteen), the tour's
+hit pages consecutive in mode order, and two tour pictures that are copies of one image, all of which the
+description carries as numbers or addresses.
+
+### Reviewer 2, the sentences
+
+The second reviewer audited every sentence of the diff against the corpus and confirmed the text census (109 a
+compile, 58, 19, 1, 5 and 26, the odd widths), the inline counts, the blind totals, the five controls, the 98 lists
+named from nowhere outside on every compile including both European ones, the lists below (20 on every compile
+outside the second "Ensure" screen's OK, which holds 57 on the 11 and 6 on the 5), the assistant's wiring per
+compile, the tour's order (ascending on all eighteen, consecutive on three), the 38, no text crossing, section
+411's tests asserting what they did, and no test of which remote it is in the build code. **It corrected, in place
+before this landed**: the wide form stated for tagged lists in general, where base slot 9's handler sets are wide
+on 95 lists binding no write, so the rule is a mode list's; "the five are still reachable", where what is shown is
+a path in the configuration whose two events nothing here reads, now said so; the module header's Tutorial on "all
+nineteen" (16 measured) and its "Ensure" screen leading to the tour on "the eighteen" (12 of 18, section 403); a
+docstring's eleven pixel line spacing, twelve; "the reader refuses any word or place", where words and text places
+are refused by the byte comparison after the build, the reader only checking a text is a text; "the fonts" among the
+numbering, where the assistant's three are the same on all eighteen; the tour page's fonts, three on four screens;
+a test line true by construction, since the finder takes the assistant from the wiring, now beside a count by look
+that does not; and the scope sentence, which cited five arch 14 samples where it ran all 102 the lab names.
+
+### Asserted
+
+`packages/codec/test/touchtourscreens.test.ts`: the sixteen rebuilt, 16 screens and 98 lists each, with each
+compile's bytes read and spanned; the European two rebuilt and the Dutch one refused; the wiring deciding the five
+on the eighteen English compiles, 17 with the ladder and 1 without, and the two "Ensure" screens told apart by it;
+Options' Tutorial entering the tour on the sixteen; the start choice keeping the ladder, the leftover entry's
+events and Options' write, and the sixteen rebuilding from the edited configuration; the wide form's 18, 0, 0, 18
+and 90; the blind control with its totals; the five failing controls; the 98 lists named by nothing outside and the
+lists below per compile; no text crossing the two sets, and the 38. `touchfixedscreens.test.ts` and
+`touchfirmwarescreens.test.ts` unchanged in what they assert.
+
+### What would falsify it
+
+A compile of skin 54 in English whose sixteen screens the description refuses or the builder does not reproduce; a
+compile holding one of the five whose wiring keeps no ladder, or the ladder without the five; a key map binding a
+state write in the narrow form, or a wide one binding none; a text crossing between these sixteen and section 411's
+twenty three; a list of the 98 named from outside the screens.
+
+### Which architectures
+
+Arch 12 (Harmony One) alone, skin 54 and the European skin 59, in English; the modules are the touch family's. The
+Harmony 600, 650 and 700 carry a welcome tour of ten screens of another shape and a Remote Assistant screen of their
+own, section 357's; none of the 102 arch 14 samples the lab names holds the One's start ladder, by the second
+reviewer's run of `touchStartupVariables`, where section 403 checked five.

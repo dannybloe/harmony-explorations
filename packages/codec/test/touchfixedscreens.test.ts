@@ -15,11 +15,11 @@ import assert from 'node:assert/strict';
 
 import { require_, skipUnless } from '@harmony/lab';
 import {
-  type Container, type ContainerPiece, SCREEN_QUEUE_INSTRUCTION, ScreenRecordError, archSlot, characterMap, decode,
-  handlerSets, layOutContainer, modePages, modeRecords, pageListCopies, parse, reachablePrograms, screenProgram,
-  stateRecords, taggedList, takeApart, timers, valueMaps,
+  type Container, type ContainerPiece, ScreenRecordError, characterMap, decode, layOutContainer, modeRecords, parse,
+  screenProgram, takeApart,
 } from '../src/index.ts';
 import { textGlyphs } from '../src/shared/spelling.ts';
+import { listsBelow } from './screenlists.ts';
 import {
   TOUCH_FIXED_SCREENS, buildTouchFixedScreens, checkTouchFixedScreens, describeTouchFixedScreens,
   touchFixedScreenModes, withTouchFixedScreens,
@@ -214,94 +214,15 @@ test('todo-compile-one 4.4.4.1: a description with a timer moved, two pictures s
   }), moved);
 });
 
-/**
- * Every list a holder outside the given modes names with `0x7F`, wherever section 408's walk finds an
- * instruction: other lists, other modes' key maps, page lists and copies, base slot 9's sets, the timers, base
- * slot 13's transitions, the value maps' payloads, base slot 8's leading list and every screen program the
- * given modes' pages do not reach.
- */
-function namedOutside(c: Container, modes: ReadonlySet<number>, own: ReadonlySet<number>): Set<number> {
-  const named = new Set<number>();
-  const records = modeRecords(c) ?? [];
-  const theirs = new Set([...reachablePrograms(c, [...modes].flatMap((mode) => (records[mode]?.pages ?? []).map((page) => page.program))).keys()]);
-  for (const [address, program] of reachablePrograms(c)) {
-    if (theirs.has(address)) continue;
-    for (const one of program) {
-      if (one.opcode === SCREEN_QUEUE_INSTRUCTION && one.operands[2] === 0x7f) named.add((one.operands[0] as number) | ((one.operands[1] as number) << 8));
-    }
-  }
-  for (const record of stateRecords(c) ?? []) for (const v of record.values) if (v.opcode === 0x7f) named.add(v.operand);
-  for (const map of valueMaps(c) ?? []) {
-    for (const address of [...map.entries.map((one) => one[1]), ...map.ranges.map((one) => one[2])]) {
-      const at = c.blobOffsetOf(address);
-      if (at !== undefined && c.blob[at] === 0x11 && c.blob[at + 3] === 0x7f) named.add((c.blob[at + 1] as number) | ((c.blob[at + 2] as number) << 8));
-    }
-  }
-  const lead = c.blobOffsetOf((c.sections[archSlot(c.architecture as number, 8)] as { address: number }).address) as number;
-  for (let k = 0; k < (c.blob[lead] as number); k += 1) {
-    if (c.blob[lead + 3 + 3 * k] === 0x7f) named.add((c.blob[lead + 1 + 3 * k] as number) | ((c.blob[lead + 2 + 3 * k] as number) << 8));
-  }
-  (c.actionLists() ?? []).forEach((list, index) => {
-    if (own.has(index)) return;
-    for (const one of list) if (one.opcode === 0x7f) named.add(one.operand);
-  });
-  const pages = modePages(c);
-  const copies = pageListCopies(c);
-  (modeRecords(c) ?? []).forEach((record, mode) => {
-    if (modes.has(mode)) return;
-    const lists = [record.entries, ...record.pages.flatMap((page) => {
-      const rank = pages.findIndex((one) => one.address === page.address);
-      return [taggedList(c, page.list)?.entries ?? [], taggedList(c, c.flashBase + (copies[rank] as number))?.entries ?? []];
-    })];
-    for (const entries of lists) for (const one of entries) if (one.opcode === 0x7f) named.add(one.operand);
-  });
-  for (const address of handlerSets(c)?.addresses ?? []) {
-    for (const one of taggedList(c, address)?.entries ?? []) if (one.opcode === 0x7f) named.add(one.operand);
-  }
-  for (const timer of timers(c)?.records ?? []) if (timer.instruction.opcode === 0x7f) named.add(timer.instruction.operand);
-  return named;
-}
-
 test('todo-compile-one 4.4.4.1: the 531 lists built are named by nothing outside the 23 screens, and they name 207 lists below them that stay the configuration\'s, 147 run by these screens alone and 60 shared',
      skipUnless(...NAMES), () => {
-  const shared: number[] = [];
-  const sharedBelow: number[] = [];
-  for (const name of NAMES) {
+  const found = NAMES.map((name) => {
     const c = parse(require_(name));
     const d = describeTouchFixedScreens(c, takeApart(c));
-    const built = new Set(buildTouchFixedScreens(c, d.spec).lists.keys());
-    const modes = new Set(touchFixedScreenModes(c));
-    const outside = namedOutside(c, modes, built);
-    assert.deepEqual([...built].filter((index) => outside.has(index)), [], name);
-    // Below them, through every call: the clock's setters and the lists the handlers share.
-    const lists = c.actionLists() ?? [];
-    const below = new Set<number>();
-    const queue = [...built];
-    while (queue.length > 0) {
-      for (const one of lists[queue.shift() as number] ?? []) {
-        if (one.opcode !== 0x7f || built.has(one.operand) || below.has(one.operand)) continue;
-        below.add(one.operand);
-        queue.push(one.operand);
-      }
-    }
-    assert.equal(below.size, 207, name);
-    // The control that the walk finds a name where there is one: of the 207, those something outside the
-    // screens and every list they reach names too, the lists the handlers share with the rest.
-    const reached = namedOutside(c, modes, new Set([...built, ...below]));
-    shared.push([...below].filter((index) => reached.has(index)).length);
-    // And through every call down from those: a list of the 207 any of them reaches runs for the rest of the
-    // configuration too, so it is shared; the others run for these screens alone.
-    const down = new Set([...reached].filter((index) => below.has(index)));
-    const more = [...down];
-    while (more.length > 0) {
-      for (const one of lists[more.shift() as number] ?? []) {
-        if (one.opcode !== 0x7f || !below.has(one.operand) || down.has(one.operand)) continue;
-        down.add(one.operand);
-        more.push(one.operand);
-      }
-    }
-    sharedBelow.push(down.size);
-  }
-  assert.deepEqual(shared, NAMES.map(() => 17));
-  assert.deepEqual(sharedBelow, NAMES.map(() => 60));
+    // Below them, through every call: the clock's setters and the lists the handlers share. Of those, 17 are
+    // named directly by something outside the screens, and every call down from those reaches 60; the other
+    // 147 run for these screens alone. The walk is `screenlists.ts`', shared with the tour's test.
+    return listsBelow(c, new Set(touchFixedScreenModes(c)), new Set(buildTouchFixedScreens(c, d.spec).lists.keys()));
+  });
+  assert.deepEqual(found, NAMES.map(() => ({ namedFromOutside: [], below: 207, shared: 17, sharedBelow: 60 })));
 });

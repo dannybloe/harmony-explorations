@@ -2672,6 +2672,22 @@ are built at the described indices, the 207 below them are named by index.
 | inline or by reference | inline in the first program to draw it unless a program outside holds it; programs are laid out in mode order, chrome first, then each page's main line, the pieces its switches join at, and the switches' arms |
 | the Year picker | the build year and the year either side, nineteen of nineteen compiles; a range holding a leap year brings a Day 29 picker and a second Month picker, not built, so such a year is refused; its `0x79` is minus the first year offered less 2000, generated; the font sets hold only the compile's own digits, so another year is refused by the speller |
 
+**The welcome tour and the Remote Assistant, built**, section 412: `families/touch/tourscreens.ts` through the same
+template engine, `families/touch/screentemplate.ts`, which section 411's module now shares. The tour's eleven
+always; the Remote Assistant's five exactly where the wiring keeps the start's ladder, `TouchWiringSettings.startupAssistant`
+(17 of the 18 English compiles; `one_config` holds neither the ladder nor the five). The start choice of section 403
+does not remove them: the ladder, the leftover entry's events 1 and 5 and Options' value map on the variable stay, a path in the configuration; what raises those events is not read.
+98 lists built per compile, 66 without the assistant; the lists below are named by index.
+
+| what | rule, on the sixteen |
+|---|---|
+| the tour's chrome | opcode 1 with the constant operands 0, 0, 176, 220, 0, 0, then a return |
+| the assistant's chrome | section 411's, titled "PowerOff:" |
+| a word | the tour's lines and "Welcome!" at x 10 (58 per compile); the assistant's lines and "Is the TV on?" centred on the screen (19); "Yes" on the left half (1); "No" and "OK" on the right half (5); "Exit" ending at 163 (11); "Display" and "Aspect" centred on 81 pixel buttons at 6 and 89, the tour's "Yes" and "No" on `[21, 87)` and `[88, 154)` (4); the title at 6 and "Watch TV" at 69 (11). The assistant's lines 12 apart, n lines from `117 - 6n`; the tour's y constants |
+| a state write bound in a key map | its opcode, `0x80 + variable`, is the description's; the value is the template's |
+| a mode list's form | wide (`0`, count, then flags, tag, operand, opcode per entry) exactly where a state write is bound directly, flag 1 on the write and 0 on every other binding (mode lists only: base slot 9's handler sets are wide on 95 lists binding no write): 18 own key maps of the nineteen compiles, one on each compile with the assistant, each binding scan 34's press to the write, the welcome's on the seventeen English ones the builder reads |
+| which "Ensure all your devices are off" is which | the one the wiring's ladder enters, `assistantDevicesOff`, whose OK enters the question; the other, whose OK runs a list |
+
 A Harmony One page program may switch on a state variable, `0x12`, each arm a program piece of its own ending in
 a jump to the piece the arms join at: Options draws its rows so. **Unconfirmed**: what the `0x1F ED` and `0x1F F2`
 bands do; both low bytes are taken as numbers the configuration chose, since they differ by compile.

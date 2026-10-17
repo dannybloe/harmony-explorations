@@ -101,6 +101,19 @@ Generated from `packages/codec`, `packages/usb` and the drawing by `make remote-
   the European compiles' Hour picker counts 24 hours and they have no Time of Day picker. Read from configurations, section 411.
 * **The status screen code 9 draws** says "System Message: 9" as its title over "LCD Module" and "Failed"; the seven
   blank screens the timers enter show one picture each and no text. Read from configurations, section 411.
+* **The welcome tour** is eleven screens, each a picture, a few lines of text at the left and "Exit" at the bottom
+  right. A person meets them as "Welcome!", the arrows, what activities are, "Watch TV", selecting it, the display,
+  another activity, the Help button, Help asking questions, the Off button and "It's that easy!"; the arrows turn
+  the page, and the Activities, Help and Off keys and the touch areas go on where a screen asks for them. Options'
+  Tutorial row starts it, read on the sixteen English compiles of skin 54. Read from configurations on those sixteen
+  and both European ones, section 412.
+* **The Remote Assistant at start** is five screens titled "PowerOff:" under "Remote Assistant:": "Welcome to your
+  remote.", "Ensure all your devices are off" (twice, once as the start shows it and once after the welcome), "Do
+  you want to hide the Remote Assistant?" and "To hide the remote assistant, use the software to update the display
+  settings for your remote.", with "OK" or "Yes" and "No" below. A configuration holds them where its start runs
+  the assistant's ladder, every compile read but the everyday One's, section 412; starting the remote past it leaves
+  them in the configuration, which holds a path back to them through Options' "Turn Remote Assistant On", not seen
+  on a remote, sections 403 and 412.
 * **USB**: "USB Connected" on the cable, seen at the bench, section 155.
 * **Safe mode** lists five images, each with a checksum and a version, seen at the bench and matched to
   the images read off the unit, section 190; [firmware.md](firmware.md).
