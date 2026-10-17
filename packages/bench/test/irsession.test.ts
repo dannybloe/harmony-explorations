@@ -218,9 +218,10 @@ test('a run file is named for when it started, what it is and what it is called'
 
 test('every test definition in the repository is well formed', () => {
   // These are written by hand, by either of us, and a malformed one would only show as a confusing page.
-  // Both folders: a test that has been run moves to `done/` and stays in the repository, so it is
-  // still checked, and the open folder is often empty between bench sessions.
-  const definitions = ['../irtests/', '../irtests/done/']
+  // All three folders: a test that has been run moves to `done/` and stays in the repository, so it is
+  // still checked, one written for a remote not on the bench waits in `later/`, out of the bench's list, and
+  // the open folder is often empty between bench sessions.
+  const definitions = ['../irtests/', '../irtests/done/', '../irtests/later/']
     .flatMap((folder) => testDefinitions(fileURLToPath(new URL(folder, import.meta.url))));
   assert.ok(definitions.length > 0);
   for (const { id, definition } of definitions) {
