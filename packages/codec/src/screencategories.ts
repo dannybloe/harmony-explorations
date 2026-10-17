@@ -108,7 +108,6 @@ import {
   taggedListExtent,
   eventMap,
 } from './sections.ts';
-import { EVENT_COUNT } from './wiring.ts';
 import { glyphRunAt, referencedStringAddress } from './text.ts';
 import { valueMaps } from './valuemap.ts';
 import { STATE_BAND, STATE_WRITE_BASE } from './actions.ts';
@@ -357,13 +356,27 @@ export function modeRoles(c: Container): ModeRole[] {
     record.pages.flatMap((page) => taggedList(c, page.list)?.entries ?? []);
 
   // The head of the table: the compiler emits the firmware's own screens first, as many as the event map's
-  // fallback names, and then one for each of its status codes, section 36 and `FIRMWARE_SCREENS`. Split by
-  // whether a mode binds a whole keypad. This read the head as the run of modes binding a whole keypad or
-  // nothing, which holds on arch 14 and ends at mode 0 on the Harmony One, and at mode 2 even with a keypad taken
-  // as more than 20 entries, since its head modes bind four or five handler entries; on every arch 14 configuration here the two rules give the same 44 or 49.
-  const head = Math.min(records.length, (eventMap(c)?.fallback ?? 0) + EVENT_COUNT);
-  for (let m = 0; m < head; m += 1) {
-    roles[m] = (records[m] as ModeRecord).entries.length > WHOLE_KEYPAD ? 'system' : 'status';
+  // fallback names, and then the status screens its events name, one per status code, section 36 and
+  // `FIRMWARE_SCREENS`; split by whether a mode binds a whole keypad. A configuration carrying no status
+  // screens, as ours leave them out (section 355), points every event at one blank firmware screen, so its
+  // event map does not say where the head ends, and there the head is the run section 317 read: modes binding
+  // a whole keypad or nothing, ended by the first of any other shape. That run alone ends at mode 0 on the
+  // Harmony One, and at mode 2 even with a keypad taken as more than 20 entries, since its head modes bind four
+  // or five handler entries; on every arch 14 compile of Logitech's here the two rules give the same 44 or 49.
+  const events = eventMap(c);
+  const targets = [...new Set(events?.entries.values() ?? [])];
+  if (targets.length > 1) {
+    const head = Math.min(records.length, Math.max(events?.fallback ?? 0, Math.max(...targets) + 1));
+    for (let m = 0; m < head; m += 1) {
+      roles[m] = (records[m] as ModeRecord).entries.length > WHOLE_KEYPAD ? 'system' : 'status';
+    }
+  } else {
+    for (let m = 0; m < records.length; m += 1) {
+      const record = records[m] as ModeRecord;
+      if (record.entries.length > WHOLE_KEYPAD) roles[m] = 'system';
+      else if (record.entries.length === 0 && pageEntries(record).length === 0) roles[m] = 'status';
+      else break;
+    }
   }
 
   // Devices and their lists, by the readers that already know them.

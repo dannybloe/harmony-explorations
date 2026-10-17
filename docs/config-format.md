@@ -2558,7 +2558,8 @@ the 2026 Harmony 700 compiles, none of the modes and 2 of the pictures on the Ha
 
 The same cut, section 405, with the touch map, base slot 17, as one unit per hit page. **The head of the mode
 table** is the event map's fallback, the number of firmware screens, plus its 30 status codes: 40 modes on the
-One, 3 binding a keypad and 37 not, and 44 or 49 on arch 14, where this agrees with section 317's reading. A
+One, 3 binding a keypad and 37 not, and 44 or 49 on arch 14, where this agrees with section 317's reading. A configuration
+whose events all name one mode carries no status screens, as ours, and there the head is section 317's run. A
 page's `0x16` call into its chrome is a transfer in the normal form; each chrome is called by one mode.
 
 Over the sixteen English compiles of skin 54, no device or activity name being in all of them, the census decides

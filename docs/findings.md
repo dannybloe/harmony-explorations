@@ -52878,6 +52878,12 @@ the question is what their compiler emits, which the compiles answer.
   is the event map's fallback, the number of firmware screens, plus one screen per status code, 30: 40 modes on
   every One compile, 3 binding a keypad (54 to 56 entries) and 37 not (4 or 5), and 44 or 49 on all thirteen arch
   14 compiles, where the two readings agree and section 317's figures are unchanged.
+  **Corrected after the commit**: that rule was first written for every configuration, and our own empty
+  configurations carry no status screens, section 355, and point every event at one blank firmware screen,
+  so the event map does not say where their head ends and the rule read their working screens as status
+  screens. Six assembly tests caught it on the next whole suite run, which this section's commit had not
+  waited for. The head is the events' targets where they name more than one mode, and section 317's run
+  where they name one.
 * **The screen call.** A One page calls its chrome with `0x16`, and the normal form wrote the call's operand, an
   address, as it stood, so every mode's look held a placement. It is a transfer now, as a jump is. Each chrome is
   called by one mode, so no program bytes are shared on the One either.
@@ -53177,3 +53183,70 @@ joiner; a start up title joined with the space.
 * `packages/codec/test/touchscreentexts.test.ts`: the 18 byte for byte with the counts above, the joiner and its
   control, the blind control, the failing control and the Dutch compile.
 * `docs/config-format.md`, after section 358's table; `reference/remotes/harmony-one/display.md`.
+
+## 407. The Harmony One's state tables, clock, log area and parameter block are built by the Harmony 600 family's builders with its differences as data, byte for byte on all 19 compiles
+
+**Todo `todo-compile-one.md` 6.4**: the parameter block's groups, the clock records, the state variable storage
+and the log area of a Harmony One configuration built rather than copied, as the Harmony 650's were.
+
+**Sources checked**: `statetables.ts` and `wiring.ts`, whose builders this extends; sections 138, 274, 284 and
+322 for the clock and the firmware's records; section 47 for the log area; `docs/config-format.md`'s base slot
+13 and base slot 15; the 19 distinct Harmony One compiles and the thirteen arch 14 compiles section 312 lists.
+Neither the firmware nor Logitech's client was read: the question is what their compiler emits.
+
+### What differs, and where it is held
+
+Per architecture tables read in one place each, as the frame's were in 6.1: `STATE_TABLE_ARCHITECTURES` in
+`statetables.ts` and `LOG_AREAS` in the new `firmwaresections.ts`. The parameter values are a model's and not an
+architecture's, so the Harmony One's one set is `TOUCH_PARAMETERS` in the touch family and the Harmony 600, 650
+and 700's stay in `wiring.ts`. `docs/config-format.md` carries the values:
+
+* **the firmware's records 7 to 17**, where 13 and 14 start at 1 and 2 with maxima 1 and 4 on the One against
+  0 and 1 on the Harmony 600 family;
+* **a variable's width**: one byte for every variable of a configuration's own on the 19, maxima up to 121, the
+  compiler's `0/65277` at index `narrow` the only two byte one. The builder refuses a larger maximum rather than
+  guessing the One's rule for it, since no compile shows one;
+* **the minute's second transition**, `{-2 to -2, 0x7F list}` after its increment of the hour, calling the
+  clock's screen list, whose index the description carries as `minuteList`. On all 19 that list sits straight
+  before the hour's, observed and not built on;
+* **the log area**, sixteen one byte records at `0x3FFFF0` to `0x400000` with a three byte capacity;
+* **the parameter block's eleven groups**, group 9 with twelve bytes past its declared entries, and groups 2, 3,
+  8 and 10 holding the same values on all 19, which nothing here reads.
+
+The hour's list `[0x1F 0xF203, 0x1F 0xF204]`, the value map lead byte, the name tree's roots and order and the
+first two byte variable are the Harmony 600 family's on all 19.
+
+### The measurement
+
+| part | rebuilt byte for byte |
+|---|---|
+| whole state tables | 19 of 19 |
+| clock records | 133 of 133 |
+| firmware records 7 to 17 | 209 of 209 |
+| the compiles' own variables | 538 of 538 |
+| value maps | 303 of 303 |
+| log area, references included | 19 of 19 |
+| parameter groups | 209 of 209 |
+| whole container with log area and parameter block swapped in | 19 of 19 |
+
+A description with every byte the builder does not read blanked rebuilds all 19 too, and the thirteen arch 14
+compiles come back byte for byte from the same builders.
+
+**The controls fail where they should**: the Harmony 600 family's firmware records match 0 of the 19, a clock
+without the minute's call 0, the 600 family's log area 0, a One description built with the 600 family's width
+rule is refused on all 19, and a missing or misplaced group 9 tail, a group of another length and a value too
+large for two bytes are each refused.
+
+### Asserted
+
+`packages/codec/test/statetables.test.ts`, four new tests, and `packages/codec/test/firmwaresections.test.ts`.
+
+### What would falsify it
+
+A Harmony One compile whose state tables, log area or parameter block differ from what these builders make from
+its description; or one holding a variable of its own above 121, which the builder refuses.
+
+### Which architectures
+
+Arch 12 (Harmony One) and arch 14 (Harmony 600, 650 and 700) are built and measured; every other architecture
+has no row in either table and is refused.
