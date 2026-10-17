@@ -66,9 +66,12 @@
  *   configurations is fixed in look and **re-encoded** per configuration: its glyph codes, its font index,
  *   its string sharing or its table indices are that configuration's own. `attributeScreens` says which.
  *
- * Arch 14 (Harmony 600, 650 and 700) only: `screenUnits` returns undefined anywhere else, because the
- * roles rest on readers whose arch 14 shapes are the ones checked, and a Harmony One's pages call
- * shared programs, which would put its chrome into shared units with no meaning of their own.
+ * Arch 14 (Harmony 600, 650 and 700) and the Harmony One, section 405; `screenUnits` returns undefined
+ * anywhere else. The One brought three changes, each a no op on arch 14: the head of the mode table is read
+ * from the event map, a page's call into its chrome is a followed transfer in the normal form, and its touch
+ * map, base slot 17, is cut into hit pages. Its chrome turned out to be called by one mode each, so no
+ * program is shared on the One either. And where a population shares no device and no activity, as the
+ * One's sixteen compiles of skin 54 do and the 650's four do not, the census decides the `other` screens.
  */
 import { MAP_VALUE_OPCODE, RUN_SCREEN_PROGRAM, SEND_INFRARED, firmwareStateVariableMax } from './inventory.ts';
 import { type Container, archSlot } from './gspm.ts';
@@ -76,6 +79,7 @@ import { claims, namedContentEnd } from './coverage.ts';
 import { decodedSet, fontSets } from './font.ts';
 import {
   type ScreenInstruction,
+  SCREEN_CALL,
   SCREEN_JUMP,
   SCREEN_QUEUE_INSTRUCTION,
   SCREEN_SELECT_FONT,
@@ -102,7 +106,9 @@ import {
   pageListCopies,
   taggedList,
   taggedListExtent,
+  eventMap,
 } from './sections.ts';
+import { EVENT_COUNT } from './wiring.ts';
 import { glyphRunAt, referencedStringAddress } from './text.ts';
 import { valueMaps } from './valuemap.ts';
 import { STATE_BAND, STATE_WRITE_BASE } from './actions.ts';
@@ -111,32 +117,34 @@ import {
   deviceListRowMode,
   deviceModeMarker,
   deviceVariables,
+  activities,
   devices,
   handlerSetRoles,
   stateVariables, ENTER_MODE,
 } from './inventory.ts';
 import { introductionTour } from './edit.ts';
+import { TOUCH_AREA_LENGTH, type TouchArea, touchPages } from './tables.ts';
 
-/** The architectures `screenUnits` answers on. See the module comment for why only one. */
-export const SCREEN_CATEGORY_ARCHITECTURES: ReadonlySet<number> = new Set([14]);
+/** The architectures `screenUnits` answers on: arch 14 since section 317 and the Harmony One since 405. */
+export const SCREEN_CATEGORY_ARCHITECTURES: ReadonlySet<number> = new Set([12, 14]);
 
 /**
  * The byte accounting's owners that make up the screen sections, as `coverage.ts` names them.
  *
- * `slot-17-table` is the two bytes in front of the picture bank on arch 14; on arch 12 the same owner is
- * the touch map, which is one reason `screenUnits` refuses that architecture.
+ * `slot-17-table` is the two bytes in front of the picture bank on arch 14; on the Harmony One the same owner
+ * is the touch map's table, with its pages and areas beside it.
  */
 export const SCREEN_OWNERS: ReadonlySet<string> = new Set([
   'slot-6-table', 'slot-6-mode', 'key-table', 'slot-6-entry', 'slot-6-page', 'slot-6-page-list',
   'slot-6-page-list-copy', 'slot-11-table', 'slot-11-program', 'slot-11-bitmap', 'picture-bank',
-  'slot-7-table', 'slot-7-set', 'slot-7-glyph', 'slot-17-table',
+  'slot-7-table', 'slot-7-set', 'slot-7-glyph', 'slot-17-table', 'slot-17-page', 'slot-17-area',
 ]);
 
 export type ScreenCategory = 'fixed' | 'dynamic' | 'setup';
 
 export type ScreenUnitKind =
   | 'mode' | 'dynamic-program' | 'case-program' | 'shared-program'
-  | 'picture' | 'glyph' | 'font-set' | 'table';
+  | 'picture' | 'glyph' | 'font-set' | 'table' | 'hit-page' | 'hit-area';
 
 /**
  * What a mode is, by structure alone and before any census.
@@ -203,11 +211,11 @@ export const PLACEMENT_OPCODES: ReadonlySet<number> = new Set([
   ENTER_MODE, ACTION_LIST_INDEX_OPCODE, MAP_VALUE_OPCODE, RUN_SCREEN_PROGRAM, STATE_BAND, SEND_INFRARED,
 ]);
 /**
- * A mode whose own list binds more than this many keys carries a whole keypad. The head of an arch 14
- * mode table is modes of that kind and modes binding nothing; a later mode binds at most 54 on every
- * arch 14 configuration here.
+ * A mode of the head whose own list binds more than this many entries carries a whole keypad. In the head
+ * the counts are 0 or 162 to 164 on every arch 14 configuration here and 4 or 5 or 54 to 56 on every
+ * Harmony One configuration, so the head splits the same way at any value between.
  */
-const WHOLE_KEYPAD = 100;
+const WHOLE_KEYPAD = 20;
 
 /**
  * A short stable hash of some bytes, FNV-1a and a second multiplier, as sixteen hex digits. What a look
@@ -319,6 +327,8 @@ function instructionForm(
     return `A${entryForm({ tag: 0, operand, opcode: ops[2] as number, flags: undefined }, look)}`;
   }
   if (one.opcode === SCREEN_JUMP) return `J@p${follow(one.targets[0] as number)}`;
+  // The Harmony One's call into a mode's chrome, a transfer like the jump: where the chrome sits is placement.
+  if (one.opcode === SCREEN_CALL && one.targets[0] !== undefined) return `C@p${follow(one.targets[0])}`;
   if (one.opcode === SCREEN_SWITCH_NARROW || one.opcode === SCREEN_SWITCH_WIDE) {
     const decoded = screenSwitch(one);
     if (decoded === undefined) return 'S?';
@@ -346,13 +356,14 @@ export function modeRoles(c: Container): ModeRole[] {
   const pageEntries = (record: ModeRecord): TaggedEntry[] =>
     record.pages.flatMap((page) => taggedList(c, page.list)?.entries ?? []);
 
-  // The head of the table: the compiler emits the firmware's own screens first, those that bind a
-  // whole keypad and those that bind nothing, and the first mode of any other shape ends the run.
-  for (let m = 0; m < records.length; m += 1) {
-    const record = records[m] as ModeRecord;
-    if (record.entries.length > WHOLE_KEYPAD) roles[m] = 'system';
-    else if (record.entries.length === 0 && pageEntries(record).length === 0) roles[m] = 'status';
-    else break;
+  // The head of the table: the compiler emits the firmware's own screens first, as many as the event map's
+  // fallback names, and then one for each of its status codes, section 36 and `FIRMWARE_SCREENS`. Split by
+  // whether a mode binds a whole keypad. This read the head as the run of modes binding a whole keypad or
+  // nothing, which holds on arch 14 and ends at mode 0 on the Harmony One, and at mode 2 even with a keypad taken
+  // as more than 20 entries, since its head modes bind four or five handler entries; on every arch 14 configuration here the two rules give the same 44 or 49.
+  const head = Math.min(records.length, (eventMap(c)?.fallback ?? 0) + EVENT_COUNT);
+  for (let m = 0; m < head; m += 1) {
+    roles[m] = (records[m] as ModeRecord).entries.length > WHOLE_KEYPAD ? 'system' : 'status';
   }
 
   // Devices and their lists, by the readers that already know them.
@@ -635,13 +646,67 @@ export function screenUnits(c: Container): ScreenUnit[] | undefined {
       ...(keyedBy === undefined ? {} : { setupBy: `a case of the lookup keyed by ${keyedBy}, one per device delay or activity` }),
     }));
   });
+  // Programs several units reach, one unit per set of users: none on arch 14, and on the Harmony One the
+  // chrome its pages call. Its form is the graph from the programs that open inside its bytes, each program
+  // formed alone first so their order is their content's and not where they sit. It is the setup's when every
+  // user is, dynamic when every user is a dynamic program, and otherwise left to the census, since a chrome a
+  // fixed screen calls is emitted with that screen.
+  const programStarts = [...reachablePrograms(c).keys()];
+  const startOwner = new Map<number, string>();
+  for (const address of programStarts) {
+    const off = c.blobOffsetOf(address);
+    const users = off === undefined ? undefined : reachedBy.get(off);
+    if (users !== undefined && users.size > 1) startOwner.set(address, [...users].sort((a, b) => a - b).join(','));
+  }
+  const setupUser = (index: number): boolean => {
+    const unit = owning[index] as Owning;
+    if (unit.kind === 'mode') return !FIXED_MODE_ROLES.has(roles[index] as ModeRole);
+    return unit.kind === 'case-program' && keyed.size > 0
+      && (caseOf.get(unit.roots[0] as number) ?? []).some((record) => keyed.has(record));
+  };
   for (const [key, ranges] of shared) {
-    const users = key.split(',').map((one) => (owning[Number(one)] as Owning).label);
-    const bytes = ranges.map((r) => hex(c.blob.subarray(r.start, r.start + r.length))).join('');
-    // Nothing on arch 14 is shared, so this is a defence with no case behind it, and it is the setup's
-    // until a configuration shows what such bytes are.
+    const userIndices = key.split(',').map(Number);
+    const users = userIndices.map((one) => (owning[one] as Owning).label);
+    const roots = [...startOwner].filter(([, k]) => k === key).map(([address]) => address);
+    const ordered = roots.map((address) => ({ address, look: graphForm(ctx, [address], true) }))
+      .sort((a, b) => (a.look < b.look ? -1 : a.look > b.look ? 1 : 0)).map((one) => one.address);
+    const glyphs = new Set<string>();
+    const look = ordered.length === 0
+      ? `shared:${ranges.map((r) => hex(c.blob.subarray(r.start, r.start + r.length))).join('')}`
+      : `shared:${graphForm(ctx, ordered, true, glyphs)}`;
+    const verbatim = ordered.length === 0 ? look : `shared:${graphForm(ctx, ordered, false)}`;
+    const allSetup = userIndices.every(setupUser);
+    const allDynamic = userIndices.every((one) => (owning[one] as Owning).kind === 'dynamic-program');
     units.push(finish({ kind: 'shared-program', label: `program bytes shared by ${users.join(', ')}`, ranges,
-                        look: `shared:${bytes}`, verbatim: `shared:${bytes}`, setupBy: 'program bytes several units reach' }));
+                        look, verbatim, drawsGlyphs: [...glyphs],
+                        ...(allDynamic ? { dynamicBy: 'program bytes only dynamic programs reach' }
+                          : allSetup ? { setupBy: 'program bytes only setup units reach' } : {}) }));
+  }
+
+  // The Harmony One's touch map, base slot 17: a page per hit page a screen names, each with its areas. An
+  // area two pages share is a unit of its own. Its look is where it lies and the code it reports; the table's
+  // length counts the setup's hit pages.
+  const touch = touchPages(c);
+  if (touch !== undefined) {
+    const areaUsers = new Map<number, number>();
+    for (const page of touch.records) for (const area of page.areas) areaUsers.set(area.address, (areaUsers.get(area.address) ?? 0) + 1);
+    const areaForm = (area: TouchArea): string => `${area.x},${area.width},${area.y},${area.height}:${area.code}`;
+    const sharedAreas = new Set<number>();
+    touch.records.forEach((page, index) => {
+      const ranges: ByteRange[] = [{ start: page.start, length: page.length }];
+      for (const area of page.areas) {
+        if ((areaUsers.get(area.address) ?? 0) > 1) { sharedAreas.add(area.address); continue; }
+        ranges.push({ start: c.blobOffsetOf(area.address) as number, length: TOUCH_AREA_LENGTH });
+      }
+      const form = `hit:${page.areas.map(areaForm).join(' ')}`;
+      units.push(finish({ kind: 'hit-page', label: `hit page ${index}`, ranges, look: form, verbatim: form }));
+    });
+    for (const address of sharedAreas) {
+      const area = touch.records.flatMap((page) => page.areas).find((one) => one.address === address) as TouchArea;
+      const form = `area:${areaForm(area)}`;
+      units.push(finish({ kind: 'hit-area', label: `hit area at ${address.toString(16)}`,
+                          ranges: [{ start: c.blobOffsetOf(address) as number, length: TOUCH_AREA_LENGTH }], look: form, verbatim: form }));
+    }
   }
 
   // Pictures, one unit each. One only dynamic programs draw is dynamic; the rest are left to the census,
@@ -673,7 +738,10 @@ export function screenUnits(c: Container): ScreenUnit[] | undefined {
     ['slot-6-table', "base slot 6's table", 'its count is the number of modes the setup needs'],
     ['slot-11-table', "base slot 11's table", 'its count is the number of programs the setup needs'],
     ['slot-7-table', "base slot 7's table", "its count is the number of font sets the setup's text needs"],
-    ['slot-17-table', "base slot 17's two bytes", undefined],
+    // A touch map's table counts its hit pages; where base slot 17 names the picture bank instead, its two bytes
+    // are compared as they are.
+    ['slot-17-table', touch !== undefined ? "base slot 17's table" : "base slot 17's two bytes",
+     touch !== undefined ? 'its count is the number of hit pages the setup needs' : undefined],
   ];
   for (const [name, label, why] of tables) {
     const ranges = runsOf(owner, (o) => o === name);
@@ -731,6 +799,38 @@ export function screenCensus(units: readonly ScreenUnit[]): Map<string, number> 
 export interface CensusMember {
   name: string;
   units: readonly ScreenUnit[];
+  /**
+   * The names of its devices and activities, `householdNames`. Given for every member, they let a population
+   * that shares no device and no activity decide the `other` screens by census, `attributeScreens`.
+   */
+  household?: { devices: readonly string[]; activities: readonly string[] };
+}
+
+/** A configuration's devices and activities by name, for `CensusMember.household`. */
+export function householdNames(c: Container): { devices: string[]; activities: string[] } {
+  // A name the configuration does not hold or a reader cannot read cannot be shared, so it is left out: kept,
+  // two members with an unreadable name would share a device.
+  const named = (names: readonly unknown[]): string[] => names.filter((name): name is string => typeof name === 'string');
+  return { devices: named(devices(c).map((one) => one.name)), activities: named(activities(c).map((one) => one.name)) };
+}
+
+/**
+ * Whether no device name and no activity name is in every member, so that no screen naming one can occur in all
+ * of them. It says nothing of a screen a feature every member has brings with it: two generic help screens are in
+ * fifteen of the sixteen Harmony One compiles of skin 54, kept out of fixed by one compile alone. Undefined where a member does not say. The four Harmony 650 compiles share five devices and three
+ * activities and the eighteen English Harmony One compiles share none, findings section 405.
+ */
+export function sharesNoHousehold(population: readonly CensusMember[]): boolean | undefined {
+  if (population.length === 0 || population.some((member) => member.household === undefined)) return undefined;
+  const common = (pick: (one: CensusMember) => readonly string[]): number => {
+    let shared = new Set(pick(population[0] as CensusMember));
+    for (const member of population.slice(1)) {
+      const names = new Set(pick(member));
+      shared = new Set([...shared].filter((name) => names.has(name)));
+    }
+    return shared.size;
+  };
+  return common((one) => one.household!.devices) === 0 && common((one) => one.household!.activities) === 0;
 }
 
 /** One unit's answer. */
@@ -763,12 +863,19 @@ export function attributeScreens(
   units: readonly ScreenUnit[], population: readonly CensusMember[],
 ): ScreenAttribution[] {
   const own = screenCensus(units);
+  // Structure makes an `other` screen the setup's because a census of one household cannot tell its help
+  // screens from a fixed one. A population sharing no device and no activity can: a screen naming one cannot
+  // be in every member, though a screen a feature of every member brings can, so there the census decides
+  // `other` screens like any eligible unit.
+  const otherByCensus = sharesNoHousehold(population) === true;
+  const structural = (unit: ScreenUnit): string | undefined =>
+    (otherByCensus && unit.kind === 'mode' && unit.role === 'other' ? undefined : unit.setupBy);
   const members = population.map((member) => {
     const verbatim = new Map<string, Set<string>>();
     const setup = new Set<string>();
     for (const unit of member.units) {
       verbatim.set(unit.look, (verbatim.get(unit.look) ?? new Set<string>()).add(unit.verbatim));
-      if (unit.setupBy !== undefined) setup.add(unit.look);
+      if (structural(unit) !== undefined) setup.add(unit.look);
     }
     return { name: member.name, census: screenCensus(member.units), verbatim, setup };
   });
@@ -796,7 +903,7 @@ export function attributeScreens(
   for (const unit of units) {
     if (unit.kind === 'glyph' || unit.kind === 'font-set') continue;
     if (unit.dynamicBy !== undefined) out.set(unit, { unit, category: 'dynamic', reason: unit.dynamicBy });
-    else if (unit.setupBy !== undefined) out.set(unit, { unit, category: 'setup', reason: unit.setupBy });
+    else if (structural(unit) !== undefined) out.set(unit, { unit, category: 'setup', reason: structural(unit) as string });
     else out.set(unit, byCensus(unit));
   }
   const needed = new Set<string>();

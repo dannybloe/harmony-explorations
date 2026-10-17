@@ -77,7 +77,7 @@ One with its sequence's keys translated by name, since the One's keys have other
 
 ## 2. Measure before building
 
-- [ ] 2.1 Every screen byte of the Logitech One configurations in the lab sorted into fixed, dynamic and the setup's, as section 317 did for the 650
+- [x] 2.1 Every screen byte of the Logitech One configurations in the lab sorted into fixed, dynamic and the setup's, as section 317 did for the 650; done, section 405: over the sixteen English compiles of skin 54, fixed 795792 to 795925 bytes each (78 modes, 36 pictures, 280 glyphs, 25 hit pages), dynamic the clock's 12203; the European skin's clock pickers and a Dutch compile's text differ
 - [x] 2.2 What the One's configuration holds that the 600 family's does not: base slot 18, the touch hit map, the clock, the log area, and anything else found; done, a scratch measurement over the 19 distinct One compiles against five of the 600 family's, asserted when each builder lands:
   - raw slot 18 is two zero bytes on 19 of 19, what the firmware does with it unread
   - the touch hit map, base slot 17: 29 to 42 pages and 161 to 247 rectangles, 23 page shapes in every compile but only pages 0 to 2 at one place; nothing builds a whole map
@@ -112,6 +112,10 @@ One with its sequence's keys translated by name, since the One's keys have other
 - [ ] 4.2 A device's pages: rows of commands and their hit rectangles
 - [ ] 4.3 An activity's own screens: its start up screen and its working screen
 - [ ] 4.4 The screens every configuration carries: the menus, Off, Help and the rest found in 2.2
+  - [ ] 4.4.1 Which of section 405's 78 fixed screens the One's 3.4 firmware draws from a configuration, as section 355 read for the 650: the 30 status screens through the event map, the 10 firmware screens, the tour
+  - [ ] 4.4.2 The record reader and builder of `screenrecords.ts` reading a One screen: its seven byte page record, naming the hit page, and the chrome its page calls; one of Logitech's head screens read and rebuilt byte for byte with nothing generated
+  - [ ] 4.4.3 The 10 firmware screens built from a description, as the 650's 7.4 (section 357): what is described is the configuration's numbering (lists, sets, variables, fonts, pictures), the rest generated, rebuilt byte for byte on the sixteen compiles of skin 54
+  - [ ] 4.4.4 The screens 4.4.1 says a configuration needs among the status screens, the tour, Options, screen sensitivity, the clock's pickers, the Remote Assistant and the blanks, built the same way
 
 ## 5. Text, fonts and pictures
 

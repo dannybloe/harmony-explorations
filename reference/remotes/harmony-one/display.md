@@ -66,6 +66,11 @@ Generated from `packages/codec`, `packages/usb` and the drawing by `make remote-
 * **Status screens** for a configuration the remote rejects: thirty, held in the container at external
   `0x002000`, read from configurations, section 244. A failed validation **latches** the screen until a
   power cycle on this model and on no other read, sections 250, 252 and 253; [behaviour.md](behaviour.md).
+* **What Logitech emits whatever the setup**: 78 screens, the 40 firmware and status screens, the welcome
+  tour, screen sensitivity, the clock's pickers, Options, the Remote Assistant at start and seven blank
+  screens, with 36 pictures, the same on sixteen compiles of skin 54, read from configurations, section 405.
+  The European skin's clock pickers differ, the everyday One's compile also has another Options menu and no
+  Remote Assistant, and a Dutch compile has the same screens in Dutch.
 * **USB**: "USB Connected" on the cable, seen at the bench, section 155.
 * **Safe mode** lists five images, each with a checksum and a version, seen at the bench and matched to
   the images read off the unit, section 190; [firmware.md](firmware.md).

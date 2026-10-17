@@ -52860,3 +52860,172 @@ composed onto `one_config` binds each row to the click and a call of its command
 
 A row of a Logitech One device page that runs its command without the click; a configuration built with the fix
 silent on a touched row, or clicking twice on an activity screen's pad.
+
+## 405. Every screen byte of a Harmony One configuration is fixed, dynamic or the setup's, and fixed is 795792 to 795925 bytes on each compile of its skin
+
+**Todo `todo-compile-one.md` 2.1**: every screen byte of the Logitech One configurations in the lab sorted into
+fixed, dynamic and the setup's, as section 317 did for the Harmony 650.
+
+**Sources checked**: section 317 and `screencategories.ts`, whose cut this extends; sections 36, 244, 275, 293,
+399 to 403 for the One's screens; `wiring.ts`'s `FIRMWARE_SCREENS`, which states that the firmware screens'
+count is the event map's base; the nineteen One compiles. Neither the firmware nor Logitech's client was read:
+the question is what their compiler emits, which the compiles answer.
+
+### Three things the Harmony 650's cut assumed
+
+* **The head of the mode table.** Section 317 read it as the run of modes binding a whole keypad or nothing,
+  which ends at mode 0 on the One, and at mode 2 even with a keypad taken as more than 20 entries, since its firmware and status screens bind four or five handler entries. The head
+  is the event map's fallback, the number of firmware screens, plus one screen per status code, 30: 40 modes on
+  every One compile, 3 binding a keypad (54 to 56 entries) and 37 not (4 or 5), and 44 or 49 on all thirteen arch
+  14 compiles, where the two readings agree and section 317's figures are unchanged.
+* **The screen call.** A One page calls its chrome with `0x16`, and the normal form wrote the call's operand, an
+  address, as it stood, so every mode's look held a placement. It is a transfer now, as a jump is. Each chrome is
+  called by one mode, so no program bytes are shared on the One either.
+* **The touch map**, base slot 17, which is the One's: one unit per hit page with the areas it alone names, a
+  unit per area two pages share, none here, and the table, whose length counts the hit pages.
+
+With those, every screen byte of all nineteen compiles is in exactly one unit, asserted on all nineteen.
+
+### The population: skin 54 and English
+
+**One compile is in Dutch**, `one_friend_asfound_config`, measured by a separate agent reading only: 38 of its 40
+head screens differ from the English ones in text and where it sits and in nothing else, the other two draw no
+text, and its help, tour, Remote Assistant and menu screens are the same screens in Dutch. Its later sync,
+`one_friend_legacy_sync_config`, is English with the same skin, so the language follows the compile and not the
+remote, and nothing in a configuration states it, as section 149 found. **Two English compiles carry skin 59**,
+the European One, `one_config` and `one_config_unprogrammed`: both hold the Month picker twice where skin 54
+holds it once and lack skin 54's Year, Hour and Time of Day pickers, and the everyday One's compile holds Year
+and Hour pickers of another look, a 24 hour clock and the years 2022 to 2024. So the census is over the sixteen English
+compiles of skin 54, the skin the spare reports, and the other three are measured against it.
+
+### The answer, per configuration
+
+| configuration | screen bytes | fixed | dynamic | setup |
+|---|---|---|---|---|
+| `harvest_one_two_devices` | 1093936 | 795905 | 12203 | 285828 |
+| `one_spare_after_sync` | 1203552 | 795873 | 12203 | 395476 |
+| `one_spare_myharmony` | 1410970 | 795797 | 12203 | 602970 |
+| `one_spare_20260830` | 1419517 | 795797 | 12203 | 611517 |
+| `calibration_one` | 1316051 | 795848 | 12203 | 508000 |
+| `calibration_favchannels` | 1317078 | 795848 | 12203 | 509027 |
+| `calibration_favzero` | 1419133 | 795797 | 12203 | 611133 |
+| `compiled_protocols` | 1471029 | 795793 | 12203 | 663033 |
+| `compiled_protocols_2` | 1442114 | 795793 | 12203 | 634118 |
+| `compiled_protocols_3` | 1433127 | 795792 | 12203 | 625132 |
+| `harvest_one_families_1` | 1071184 | 795906 | 12203 | 263075 |
+| `harvest_one_families_2` | 1093488 | 795925 | 12203 | 285360 |
+| `harvest_one_families_3` | 1121864 | 795913 | 12203 | 313748 |
+| `one_friend_legacy_sync_config` | 1345522 | 795807 | 12203 | 537512 |
+| `phase7_before` | 1317078 | 795848 | 12203 | 509027 |
+| `phase7_after` | 1321688 | 795848 | 12203 | 513637 |
+
+Fixed is 54% to 74% of the screen bytes, and it is not one size. The 78 fixed modes have the same look on all
+sixteen and none is byte identical once relocated, since each binds action lists and handler sets the
+configuration numbers, but only the 38 other modes change size: they are 10375 to 10508 bytes, and everything
+else fixed, the 40 head modes, the pictures, the glyphs, the hit pages and the case programs, is 785417 bytes on
+each of the sixteen. So the fixed totals differ by up to 133 bytes between compiles. Dynamic is the same 12203 bytes on
+each.
+
+What each category holds on `harvest_one_two_devices`:
+
+| category | what | units | bytes |
+|---|---|---|---|
+| fixed | pictures | 36 | 745610 |
+| fixed | glyphs drawn by fixed or dynamic screens | 280 | 32426 |
+| fixed | other modes: the welcome tour (11), screen sensitivity (6), the clock's pickers (8), the Remote Assistant at start (5), Options (1), blank screens (7) | 38 | 10488 |
+| fixed | the head's status screens | 37 | 4025 |
+| fixed | hit pages | 25 | 2125 |
+| fixed | the head's screens binding a keypad | 3 | 970 |
+| fixed | case programs of a lookup tied to no device or activity | 9 | 261 |
+| dynamic | pictures only the clock's programs draw | 16 | 8687 |
+| dynamic | base slot 11 entries 0 to 3, the clock's header programs | 4 | 3516 |
+| setup | pictures | 6 | 258542 |
+| setup | glyphs only setup screens draw | 133 | 14532 |
+| setup | a device's own mode | 2 | 6226 |
+| setup | font set headers | 16 | 3600 |
+| setup | other modes: help about a device, the activity menu and the rest | 11 | 1626 |
+| setup | the four tables | 4 | 509 |
+| setup | device lists | 2 | 394 |
+| setup | hit pages | 4 | 319 |
+| setup | case programs | 16 | 80 |
+
+The Remote Assistant's five start screens are section 403's, titled "PowerOff:" and naming no device; the help
+screen asking "Is the LG OLED65G26LA off?" is the setup's, absent from fifteen of the sixteen.
+
+### Why the census decides the other screens here and not on the Harmony 650
+
+Section 317 made every `other` screen the setup's by structure, because its four compiles are one household's
+and a help screen about the Denon occurs once in each. **No device name and no activity name is in all sixteen**, and
+none is in all eighteen English compiles, where the 650's four share five devices and three activities. They
+are not sixteen households: four hold no activity at all, the two harvests of families and of two devices, and
+several share their whole household with another, `calibration_one`, `calibration_favchannels` and
+`phase7_before` all three devices and both activities, and the four spare and protocol compiles of seven
+activities those seven. The two European compiles share one device name, TV, which nine of the sixteen hold
+too, and no activity. So no screen naming a device or an activity can be in every member, and `attributeScreens` lets the census decide `other` screens exactly when `sharesNoHousehold` says the
+population shares none, a property of the population and not of the remote. Without it fixed is 763273 bytes on
+each of the sixteen, the 38 other modes and the glyphs only they draw counted as setup.
+
+**The census rules out screens naming a device or an activity, not screens a feature every member has brings
+with it.** Modes 69 and 91 of `harvest_one_two_devices` are generic help screens, "Attempting to fix the
+problem..." and "Did that fix the problem? If not...", naming no device, held once in fifteen of the sixteen
+and absent only from `harvest_one_families_1`; that one compile is all that keeps them out of fixed. None of the
+38 looks tied to the setup: the tour and the Remote Assistant are in the four compiles with no activity, and
+section 403 found the One offers no setting for the assistant.
+
+**The rendered pixels are the closure**, as in section 317: each of the 78 fixed modes of
+`harvest_one_two_devices`, page by page, draws the same pixels as its twin in each of the other fifteen, 1170
+pairs of 1170.
+
+### Beyond skin 54
+
+* **The two European compiles** differ from skin 54 in 10 and 4 of the 78 fixed modes, counted by how often
+  each look is held: on both the Year, Hour and Time of Day pickers are absent in skin 54's look and the Month
+  picker is held twice; on `one_config` the Year and Hour pickers have another look, Options has another look
+  and the five Remote Assistant screens are absent, which its compile does not hold, section 403. The European
+  factory file holds skin 54's Options and all five, so within skin 59 the two compiles disagree, and the skin
+  alone does not decide the fixed screens.
+* **The Dutch compile** differs in 69 of the 78, every one that draws text: 38 of the 40 head modes and 31 of
+  the 38 others; the two head modes and seven blank screens without text are the same.
+* **Whether skin 54's fixed screens hold on another service generation** is not settled: which generation
+  compiled each of the sixteen was not checked.
+* **Arch 14** is unchanged, and **every other architecture** is refused by `screenUnits`, the Harmony 525
+  tested.
+
+### Reviewer 1, blind
+
+A second agent, given the question and the corpus and not this section or `screencategories.ts`, matched modes by
+rendered pixels and the kinds of their key bindings. It reached the same screen byte totals on all nineteen, the
+same 52 common pictures at 754297 bytes (745610 fixed and 8687 dynamic here), the same four base slot 11 entries
+no value map names and the 16 pictures only they draw, the event map's fallback of 10 on all nineteen with modes 0
+to 39 the same on all sixteen, and no device or activity shared by the sixteen. **It found 77 common modes where
+this section finds 78**, and the one between is the Remote Assistant's "Welcome to your remote.": its OK writes the
+assistant's state variable, 33 in `harvest_one_two_devices` and 29 in fourteen others, and the reviewer's signature
+kept the variable's number where the look, as section 317 defined it, drops which variable a write names. The
+configuration numbers its variables, so this section keeps 78. It also found the European compiles' Year picker
+showing 2022 to 2024 and their Hour picker 24 hour, and the clock's program drawing "Sun" to "Sat" and the hours,
+with the Dutch compile drawing "zo", "ma", "di".
+
+### Asserted
+
+`packages/codec/test/screencategories-one.test.ts`: the per configuration totals with coverage and no overlaps;
+the sixteen sharing no household, the eighteen English neither, the European pair sharing theirs; coverage with no overlaps on the three
+beyond skin 54 too; the head of 40, 3 and 37 and the event map's fallback of 10, on all nineteen; the 78 fixed modes by role and strength and the 1170 rendered pairs; the table
+above; and the European and Dutch counts. `screencategories.test.ts`: the refusal narrowed to the Harmony 525,
+and the 650's four sharing five devices and three activities, with section 317's totals unchanged when their
+names are given.
+
+### What would falsify it
+
+A compile of skin 54 from another household or service generation in which one of the 78 fixed modes, the 36
+fixed pictures or the clock's programs is absent or has another look; a fixed mode whose pages render
+differently from its twin's; or a compile with no device that still holds one of the 38 other modes, which
+would make it the setup's feature rather than the remote's.
+
+### For the plan
+
+* 4.1 and 4.2: the activity menu, the device lists and the device pages are setup and have to be composed.
+* 4.4: the screens every configuration carries are the 78, 40 of them the firmware's, and none is byte
+  identical across compiles, so each is emitted with the configuration's own numbers written in.
+* 5.1: the fixed screens' text is the same on the sixteen; the European compiles' clock pickers, the everyday
+  One's Options menu and missing Remote Assistant, and a Dutch compile's text are the known variations.
+* 5.3: 36 pictures are fixed and 16 dynamic; 6 are the setup's.

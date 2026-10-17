@@ -2529,9 +2529,32 @@ red patch on all seven Harmony 700 compiles, and the top bar on both Harmony 600
 | `h650_power_hold_compile_2` | 681067 | 471328 | 13391 | 196348 |
 
 Fixed is per model and per service generation: 53 of the 55 fixed modes and all 19 pictures recur on
-the 2026 Harmony 700 compiles, none of the modes and 2 of the pictures on the Harmony 600's. Arch 14
-only; the Harmony One is not checked. Read with `screenUnits`, `attributeScreens` and
-`screenCategoryTotals`. [findings.md](findings.md) section 317.
+the 2026 Harmony 700 compiles, none of the modes and 2 of the pictures on the Harmony 600's. Read with
+`screenUnits`, `attributeScreens` and `screenCategoryTotals`. [findings.md](findings.md) section 317.
+
+### The screen sections by category, the Harmony One
+
+The same cut, section 405, with the touch map, base slot 17, as one unit per hit page. **The head of the mode
+table** is the event map's fallback, the number of firmware screens, plus its 30 status codes: 40 modes on the
+One, 3 binding a keypad and 37 not, and 44 or 49 on arch 14, where this agrees with section 317's reading. A
+page's `0x16` call into its chrome is a transfer in the normal form; each chrome is called by one mode.
+
+Over the sixteen English compiles of skin 54, no device or activity name being in all of them, the census decides
+the screens structure calls `other`. That rules out a screen naming a device or an activity and not one a
+feature every member has brings with it: two generic help screens are in fifteen of the sixteen.
+
+| category | units on the compile of two devices | bytes |
+|---|---|---|
+| fixed | 36 pictures, 280 glyphs, 25 hit pages, 9 case programs, and 78 modes: the 40 of the head and 38 others, the welcome tour, screen sensitivity, the clock's pickers, Options, the Remote Assistant at start and seven blank screens | 795905 |
+| dynamic | base slot 11 entries 0 to 3, the clock's header programs, and the 16 pictures only they draw | 12203 |
+| setup | device modes and lists, help about a device, the activity menu, 6 pictures, 133 glyphs and every font set header, 4 hit pages, 16 case programs, the tables | 285828 |
+
+Fixed is 795792 to 795925 bytes on each of the sixteen, every fixed mode re-encoded per compile and none byte
+identical once relocated; only the 38 other modes change size, the rest of fixed being 785417 bytes on each.
+**Fixed is per skin, per language and per compile**: the two compiles of skin 59, the European One, differ in 10
+and 4 of the 78 fixed modes (the clock's pickers on both, Options and the absent Remote Assistant on the everyday
+One's compile only), and the Dutch compile in 69 of the 78, every one that draws text.
+Nothing in a configuration states its language. [findings.md](findings.md) section 405.
 
 ### Base slot 15: the parameter block
 

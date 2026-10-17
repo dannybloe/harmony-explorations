@@ -31,6 +31,8 @@ import {
   screenCategoryTotals,
   screenCensus,
   screenUnits,
+  householdNames,
+  sharesNoHousehold,
 } from '../src/index.ts';
 
 /** The four Harmony 650 compiles, in the order the per configuration figures below are listed. */
@@ -245,10 +247,25 @@ test('the mode roles hold on all thirteen arch 14 compiles: one Off, a start up 
   }
 });
 
-test('screen categories answer only on arch 14', skipUnless('one_config', 'h525_config'), () => {
-  for (const name of ['one_config', 'h525_config']) {
-    assert.equal(screenUnits(parse(require_(name))), undefined, name);
-  }
+test('screen categories answer on arch 14 and the Harmony One and refuse the Harmony 525', skipUnless('one_config', 'h525_config'), () => {
+  // This refused the Harmony One until section 405 cut its screens too: the head of the mode table from the event
+  // map, the screen call followed as a transfer, and its touch map as units; `screencategories-one.test.ts`.
+  assert.notEqual(screenUnits(parse(require_('one_config'))), undefined);
+  assert.equal(screenUnits(parse(require_('h525_config'))), undefined);
+});
+
+test('the four Harmony 650 compiles share a household, five devices and three activities, so structure decides their other screens',
+     skipUnless(...H650), () => {
+  // Section 405's rule lets a population sharing no device and no activity decide `other` screens by census; these
+  // four do share, so section 317's answer above stands as it was.
+  const four = population(H650).map((one) => ({ ...one, household: householdNames(one.c) }));
+  assert.equal(sharesNoHousehold(four), false);
+  const common = (pick: (names: ReturnType<typeof householdNames>) => string[]): number =>
+    pick(four[0]!.household).filter((name) => four.every((one) => pick(one.household).includes(name))).length;
+  assert.deepEqual([common((one) => one.devices), common((one) => one.activities)], [5, 3]);
+  // With the names given the totals are section 317's.
+  const totals = screenCategoryTotals(attributeScreens(four[0]!.units, four));
+  assert.deepEqual([totals.fixed, totals.dynamic, totals.setup], [471329, 13391, 143727]);
 });
 
 test('an empty population makes nothing fixed', skipUnless('h650_config_region'), () => {
