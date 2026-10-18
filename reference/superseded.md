@@ -32,6 +32,7 @@ and leave this table alone.
 
 | phrase | superseded by | what is true instead |
 |---|---|---|
+| `absent only from` | section 415, correcting section 405 | the Harmony One's power off help attempt screen is on all eighteen English compiles, on `harvest_one_families_1` in the shape of a chain with no device; only its "If not" question is absent there |
 | `FamilyTraits.sendPrelude` | `todo-compile-one.md` 3.3.3.4 | a send's shape is a family member, `Family.sends`, which the device, input and sequence composers and the donor input matcher ask, not a trait each tested; the four slot family's is `families/four-slot/sends.ts` and the Harmony One's `families/touch/sends.ts` |
 | `FamilyTraits.startSequence` | `todo-compile-one.md` 3.3.3.4 | an activity's start is a family member, `Family.activityStart`, in each family's `start.ts`, with the four slot readers `startSequenceOf` and `arch14Starts` beside it |
 | `STATE_TABLE_ARCHITECTURES` | section 407, corrected when `todo-compile-one.md` 3.3.3.3 reached main | the Harmony One's state table facts are the touch family's `TOUCH_STATE_TABLES`, `Family.stateTables`, beside the four slot family's `FOUR_SLOT_STATE_TABLES`; the shared builder takes a family's facts and holds no per architecture table |

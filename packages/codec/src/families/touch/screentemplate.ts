@@ -36,6 +36,12 @@
  * a variable the firmware owns, a constant of the template; a switch inside an arm, whose join closes as the
  * arm would; and pictures drawn from several places, taken from a shared table by slot.
  *
+ * **A text wrapped to a width**, `wrapped`, since `todo-compile-one.md` 4.6 (section 415): the help screens'
+ * questions name a device, so how many lines a question takes is the device name's and the font's, not the
+ * template's. The template states the words, the width and the block; the builder breaks the words into lines
+ * with the font in force, `wrapLines`, and centres each; the reader takes every text instruction in a row as
+ * the question's lines, since how many there are is what the builder decides and the byte comparison checks.
+ *
  * The Harmony One alone, the touch family's. Read only towards hardware: the result is pieces.
  */
 import type { Container, Instruction } from '../../gspm.ts';
@@ -125,6 +131,12 @@ export type Part<F extends string = string> =
   | { op: 'picture'; x: number; y: number; slot?: number }
   | { op: 'font'; font: F }
   | { op: 'text'; word: string; x: Place; y: number }
+  /**
+   * A text broken into lines no wider than `width` pixels by `wrapLines`, each line centred on the screen, the
+   * lines `pitch` apart in a block centred on y `centre`: the help screens' questions, section 415, whose line
+   * count follows the device name they hold. One text instruction per line.
+   */
+  | { op: 'wrapped'; word: string; width: number; centre: number; pitch: number }
   | { op: 'queue'; step: Step }
   | { op: 'chrome' }
   | { op: 'return' }
@@ -170,6 +182,58 @@ export const leftHalf = (word: string, y: number): Part<never> => text(word, { i
 /** A word of the key below the screen, centred on the right half, the "OK" or "No" side. */
 export const rightHalf = (word: string, y: number): Part<never> => text(word, { in: [HALF, HALF] }, y);
 export const TITLE_AT = [6, 4] as const;
+
+/**
+ * Lines centred on the screen, `pitch` apart in a block centred on y `centre`, so n lines start at
+ * `centre - (pitch / 2) (n - 1)`. An empty row is a line's place left blank, which moves the rows after it as a
+ * drawn line would: the help screens' "Did that fix the problem?" over a blank row and three more, section 415.
+ */
+export function centredBlock(rows: readonly string[], centre: number, pitch: number): Part<never>[] {
+  const top = centre - (pitch / 2) * (rows.length - 1);
+  return rows.flatMap((row, r) => (row === '' ? [] : [centred(row, top + pitch * r)]));
+}
+
+/** A text wrapped to `width` and centred on the screen in a block centred on y `centre`, `Part`'s `wrapped`. */
+export const wrapped = (word: string, width: number, centre: number, pitch: number): Part<never> => ({ op: 'wrapped', word, width, centre, pitch });
+
+/**
+ * `word` broken into lines no wider than `width` by `widthOf`, greedily: as many pieces to a line as fit, a piece
+ * ending at a space, which the break swallows, or just after a hyphen, which stays at the end of its line. So a
+ * device name breaks at its hyphens as well as its spaces: "Now is the Denon AVR-" over "X4800H off?", and never
+ * at a slash, "Now is the Philips" over "70FA930/00S off?". Measured on every help question of the eighteen
+ * English Harmony One compiles, the "on?", "off?" and input ones alike, section 415: 171 pixels is the widest line
+ * drawn and 172 the narrowest a next piece would have made. A piece wider than `width` on its own is refused,
+ * since no compile shows how the compiler breaks one.
+ */
+export function wrapLines(word: string, width: number, widthOf: (line: string) => number): string[] {
+  const pieces: { text: string; sep: string }[] = [];
+  let piece = '';
+  for (const ch of word) {
+    if (ch === ' ') {
+      pieces.push({ text: piece, sep: ' ' });
+      piece = '';
+    } else if (ch === '-') {
+      pieces.push({ text: piece + ch, sep: '' });
+      piece = '';
+    } else piece += ch;
+  }
+  if (piece !== '') pieces.push({ text: piece, sep: '' });
+  const lines: string[] = [];
+  let line = '';
+  let sep = '';
+  for (const one of pieces) {
+    if (one.text === '') throw new ScreenRecordError(`'${word}' holds a doubled space or hyphen, which no compile shows broken`);
+    if (widthOf(one.text) > width) throw new ScreenRecordError(`'${one.text}' is wider than ${width} pixels on its own`);
+    const longer = line === '' ? one.text : line + sep + one.text;
+    if (line !== '' && widthOf(longer) > width) {
+      lines.push(line);
+      line = one.text;
+    } else line = longer;
+    sep = one.sep;
+  }
+  lines.push(line);
+  return lines;
+}
 
 /**
  * A chrome: the title, the full screen picture, the queued program and list, the page count where there are
@@ -366,6 +430,12 @@ function programReader<F extends string>(c: Container, reading: RecordReading, c
           throw new ScreenRecordError(`${name}'s ${what}, instruction ${i}, is not a text`);
         }
         i += 1;
+      } else if (part.op === 'wrapped') {
+        // Every text instruction in a row is a line of it: how many there are is the builder's to decide, from
+        // the words and the font, and the byte comparison after the build is what checks it.
+        const from = i;
+        while (program[i]?.opcode === SCREEN_TEXT_AT || program[i]?.opcode === SCREEN_TEXT_INLINE) i += 1;
+        if (i === from) throw new ScreenRecordError(`${name}'s ${what}, instruction ${i}, is not a text`);
       } else if (part.op === 'constant') {
         const one = next(part.opcode, `opcode ${part.opcode}`);
         if (one.operands.length !== part.operands.length || part.operands.some((v, j) => one.operands[j] !== v)) {
@@ -579,6 +649,26 @@ function programWriter<F extends string>(
       out.push(0, 0, 0);
     };
     let current: F | undefined;
+    // One text at its place: by reference to its home outside or to the copy an earlier program holds, else
+    // inline here, where every later program drawing the same codes will point.
+    const draw = (word: string, place: Place, y: number): void => {
+      if (current === undefined) throw new ScreenRecordError(`${cursor.name} draws ${word} with no font selected`);
+      const { codes, width } = spell(fonts[current], word);
+      const key = codes.join(',');
+      const home = homes.get(key) ?? inline.get(key);
+      const x = startOf(place, width);
+      // A text wider than its place starts left of it, and a negative x stored in a byte would draw at 255: refused
+      // rather than written. Section 415's attempt line in our letters, 177 pixels on a 176 pixel screen, is one.
+      if (x < 0 || x >= SCREEN_WIDTH) throw new ScreenRecordError(`'${word}' is ${width} pixels wide and would start at x ${x}, off the screen`);
+      if (home !== undefined) {
+        out.push(SCREEN_TEXT_AT, x, y);
+        pointer(home.to, home.offset);
+      } else {
+        out.push(SCREEN_TEXT_INLINE, x, y);
+        inline.set(key, { to: piece, offset: out.length });
+        out.push(...codes, 0);
+      }
+    };
     for (const part of parts) {
       if (part.op === 'picture') {
         let target: PieceTarget | undefined;
@@ -594,19 +684,13 @@ function programWriter<F extends string>(
         current = part.font;
         out.push(SCREEN_SELECT_FONT, fonts[part.font]);
       } else if (part.op === 'text') {
+        draw(part.word, part.x, part.y);
+      } else if (part.op === 'wrapped') {
         if (current === undefined) throw new ScreenRecordError(`${cursor.name} draws ${part.word} with no font selected`);
-        const { codes, width } = spell(fonts[current], part.word);
-        const key = codes.join(',');
-        const home = homes.get(key) ?? inline.get(key);
-        const x = startOf(part.x, width);
-        if (home !== undefined) {
-          out.push(SCREEN_TEXT_AT, x, part.y);
-          pointer(home.to, home.offset);
-        } else {
-          out.push(SCREEN_TEXT_INLINE, x, part.y);
-          inline.set(key, { to: piece, offset: out.length });
-          out.push(...codes, 0);
-        }
+        const set = fonts[current];
+        const lines = wrapLines(part.word, part.width, (line) => spell(set, line).width);
+        const top = part.centre - (part.pitch / 2) * (lines.length - 1);
+        lines.forEach((line, r) => draw(line, { in: [0, SCREEN_WIDTH] }, top + part.pitch * r));
       } else if (part.op === 'constant') {
         out.push(part.opcode, ...part.operands);
       } else if (part.op === 'queue') {

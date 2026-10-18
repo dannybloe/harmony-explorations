@@ -52988,9 +52988,14 @@ population shares none, a property of the population and not of the remote. With
 each of the sixteen, the 38 other modes and the glyphs only they draw counted as setup.
 
 **The census rules out screens naming a device or an activity, not screens a feature every member has brings
-with it.** Modes 69 and 91 of `harvest_one_two_devices` are generic help screens, "Attempting to fix the
-problem..." and "Did that fix the problem? If not...", naming no device, held once in fifteen of the sixteen
-and absent only from `harvest_one_families_1`; that one compile is all that keeps them out of fixed. None of the
+with it.** Modes 69 and 91 of `harvest_one_two_devices` are generic help screens, "Attemping to fix the
+problem..." (Logitech's spelling) and "Did that fix the problem? If not...", naming no device, held with that look
+once in fifteen of the sixteen; that one compile is all that keeps them out of fixed. **Corrected by section 415**:
+this said they were "absent only from"<!--superseded--> `harvest_one_families_1`, and the attempt screen is there, as mode 66, in
+the shape of a chain with no device (its enter handler two timers, its leave a timer cancel bound directly), which
+the look told apart; only the "If not" question is absent there. It also spelled the screen's word "Attempting",
+which is the reading and not what the screen draws. Both screens head a chain whose other screens ask about each
+device, so they go with the help feature rather than with fixed. None of the
 38 looks tied to the setup: the tour and the Remote Assistant are in the four compiles with no activity, and
 section 403 found the One offers no setting for the assistant.
 
@@ -54642,8 +54647,268 @@ combination other than the two; a minute word placed other than from x 158, or a
 
 Arch 12 (Harmony One) alone, skin 54 and the European skin 59, in English; the module is the touch family's. The
 Harmony 600, 650 and 700 show no clock, `CLAUDE.md`; their corner program on variable 17, sections 369 and 374, is
-the One's sending mark at another place. The
-engine's three additions are generic to the template language, used by the One's modules only.
+the One's sending mark at another place. The engine's three additions are generic to the template language, used by the One's modules only.
+
+## 415. The Harmony One's power off help is a chain of 4n + 2 screens for n devices, built from a description of its numbering and the devices' names, byte for byte on the sixteen English compiles of skin 54 and both European ones
+
+**Todo `todo-compile-one.md` 4.6**: the help screens, "the power off questions asked about each device and the
+four generic ones, with their lists", 2226 bytes on the composed test setup by 3.2.1's cut and carried out of its
+donor until now, built from a description as sections 409 to 414 built the One's other screens.
+
+**Sources checked**: section 149 (the Help walkthrough, a chain asking one question per device, a third to a half
+of a configuration's mode pages, measured as pages over seven configurations), 405 (the census, and its two generic
+help screens, modes 69 and 91 of `harvest_one_two_devices`, found by look on fifteen of the sixteen), 408 (what
+enters a mode), 411 to 414 (the
+template engine, the place rules, the inline rule), 333 and 335 (help on the Harmony 650, which the 650's compile
+track builds without, `todo-compile-650.md` 3.13 and `todo-later.md` 3.3); `screentemplate.ts`, `tourscreens.ts`,
+`statusscreens.ts` and `test/screenlists.ts`; the nineteen Harmony One compiles. Logitech's client was searched for
+the screens' words and holds none: the screens are compiled on Logitech's side, so what their compiler emits is the
+question and the compiles answer it. The client's power model, `PowerFeature`, holds a power type and power toggle
+actions beside power off actions, which is where the one reading below that the compiles leave open points. The
+firmware was not read for this. **The brief this was written to named the Harmony 650 family's help screens as
+built; they are not**: nothing in `families/four-slot/` builds a help screen and the four slot family's help is
+postponed whole, `todo-later.md` 3.3, so there is no built shape to compare with.
+
+### What it is, for a person
+
+Help pressed while nothing is on runs Logitech's power off help, every screen titled "PowerOff" by section 411's
+chrome. First "Attemping to fix the problem..." (Logitech's spelling) over "Keep the remote pointed to your
+system.", while it sends again the power off command of every device whose power off it sends unasked; then "Did
+that fix the problem? If not, the remote will ask you questions to help correct the problem." Yes leaves help. No
+asks about one device at a time: "Is the Denon AVR-X4800H off?". No there sends that device's power off again and
+asks "Now is the Denon AVR-X4800H off?", whose No sends it again and asks the first question again, on a screen of
+its own, and so on until Yes, which asks "Did that fix the problem?"; Yes there leaves help and No goes on to the next
+device. Yes on a device's first question, before No resent anything, goes straight on to the next device. On the
+last device, Yes on its first question and both answers on its "Did that fix the problem?" leave help. Read from the
+lists that link the screens; not watched on a remote.
+
+### The screens, and how each is found
+
+**4n + 2 screens for a chain of n devices**: the attempt screen, the "If not" question, and per device its first
+question, the question after a resend, the first question again, and its "Did that fix the problem?". On the test
+setup's donor, two devices, ten screens; the "four generic ones" of 3.2.1 are the attempt screen, the "If not"
+question and the two devices' "Did that fix the problem?", so two of the four go with the devices. **A household
+with no device in the chain**, `harvest_one_families_1`, holds two: the attempt screen, its enter handler two timers
+and its leave handler one timer cancel bound directly rather than through a list, and "Nothing to do" with "OK", which
+the first of those timers enters: timer 8, three seconds, whose instruction calls a list of `07 FFFB`, one of the
+remote's lists and the `0x7E`, the one list entering it. One compile, so this shape rests on one sample. That is
+why section 405's look found the attempt screen absent there: it is there, in that shape, and 405 is corrected in
+place.
+
+`touchHelpScreenModes` finds the attempt screen by look, the one page screen whose chrome is titled "PowerOff" at
+6, 4 and whose page first draws "Attemping to fix the problem...", and every other screen through the lists that
+link them: the attempt's enter list enters the "If not" question, whose No enters the first device's first question,
+and so on as above; a first question's No list names the device's power off lists. Every screen titled "PowerOff"
+(not "PowerOff:", the Remote Assistant's) is in the chain on all eighteen English compiles, and the finder refuses
+a configuration where one is not. On `harvest_one_two_devices` the bytes `45 00 7E` (enter mode 69, the attempt
+screen) occur once in the file, queued by value map 2's case for value 0, and on each of the eighteen English
+compiles the attempt screen's mode occurs so once, at a value map's case for value 0, value map 2, 5 or 7 by
+compile, by the second reviewer's run; so Help reaches it through a value map's case, `todo-compile-one.md` 6.6's.
+The blind reviewer traced the rest: the Help key of the idle handler set runs a one entry value map on
+`CurrentLocation`, whose case for 0 is that queued enter, the shape section 333 read on the Harmony 650.
+
+**Which devices are in the chain**: exactly those with a power state variable, on all nineteen compiles by the blind
+reviewer's count; the ones left out are devices with none, Kodi on eight compiles, a Wii with no infrared, and
+`harvest_one_families_1`'s two. **A chain none of whose devices is sent unasked** has no "If not" question: the
+attempt screen sends nothing and a three second timer enters the first device's question, as it enters "Nothing to
+do" with no device. Only the Dutch compile holds it, nine screens, so the builder refuses such a description.
+
+The bytes below are the screens with their own lists, 703 of the donor's 2198 being its 76 lists.
+
+| compile | devices | screens | lists | screens and lists, bytes | read |
+|---|---|---|---|---|---|
+| `harvest_one_two_devices` | 2 | 10 | 76 | 2198 | 660 |
+| `one_spare_after_sync` | 1 | 6 | 44 | 1220 | 569 |
+| `one_spare_myharmony` | 4 | 18 | 140 | 3593 | 1466 |
+| `one_spare_20260830` | 5 | 22 | 172 | 4413 | 1765 |
+| `calibration_one`, `calibration_favchannels`, `phase7_before`, each | 3 | 14 | 108 | 2860 | 1218 |
+| `calibration_favzero` | 5 | 22 | 172 | 4413 | 1765 |
+| `compiled_protocols` | 14 | 58 | 460 | 11925 | 4068 |
+| `compiled_protocols_2` | 14 | 58 | 460 | 11870 | 4145 |
+| `compiled_protocols_3` | 8 | 34 | 268 | 6940 | 2680 |
+| `harvest_one_families_1` | 0 | 2 | 9 | 359 | 81 |
+| `harvest_one_families_2` | 2 | 10 | 76 | 2209 | 715 |
+| `harvest_one_families_3` | 4 | 18 | 140 | 3891 | 1440 |
+| `one_friend_legacy_sync_config` | 3 | 14 | 108 | 2838 | 1205 |
+| `phase7_after` | 4 | 18 | 140 | 3684 | 1520 |
+| `one_config` (skin 59) | 4 | 18 | 140 | 3593 | 1466 |
+| `one_config_unprogrammed` (skin 59) | 1 | 6 | 44 | 1177 | 590 |
+
+75 devices, 332 screens and 2589 lists over the sixteen; 80 devices over the eighteen.
+
+**What the template states and what varies.** Every question's own key map swallows the page arrows and binds its
+enter and leave handlers, the Help key (scan 38) to a value map and the header handler's three base slot 11
+programs; its page list binds scan 50 (No) and scan 49 (Yes), each a list opening with the click. The handlers are
+a timer and two of the remote's lists each way, with these exceptions the template states: the "If not" question
+and every device's first question run a second pair of the remote's lists before the timer on entering; a first
+question sends the device's power off lists between the two pairs where the device is sent unasked; and the "If
+not" question runs `07 FFFB` and one more of the remote's lists before its leave handler's timer cancel, where the
+attempt screen runs `07 FFFB` on entering and that same list on leaving. A touch area either runs the value map,
+which leaves help, or enters a mode, preceded on No on a device's three questions by its power off lists and on No
+on the "If not" question by `07 FFFB` and that list; a "Did that fix the problem?" question's No enters with
+nothing before it. Only the chain's end changes a value map for an enter, as above.
+
+**Two things per device vary beyond its name**, both read off its lists, counted over the 80 chain entries of the
+eighteen English compiles (several households repeat between compiles, so they are fewer devices): whether its
+power off is sent unasked, 39 of the 80, and how many lists its power off is, one on 79 and two on
+`compiled_protocols_2`'s Samsung DVD. The attempt screen's enter list sends exactly the lists of the entries sent
+unasked, in the chain's order, on all eighteen. **Which are sent unasked follows the device's power**, measured on
+the second reviewer's lead from the client's power model, which holds power toggle actions beside power off ones:
+an entry's power variable is the one whose change to off sends the codes its power off lists send (all 80 have
+one), and its power is a toggle where the change to on sends those same codes. The 34 toggles are not sent
+unasked, the 39 discrete ones are, and the PS3, discrete, is not, on all seven compiles that hold it; 73 of 80, the
+PS3 unexplained. Sending a toggle blind could turn a device back on, which is a reason, not a reading. **The
+chain's order** is the description's; no rule was sought, and the reviewer's lead is that on 16 of the 17 chains
+with a device every entry not sent unasked comes before every one that is, `one_config` with its PS3 last the
+exception.
+
+### Where the words go
+
+1907 texts over the eighteen English compiles' power off help, each placed by these rules:
+
+| rule | |
+|---|---|
+| the title "PowerOff" at 6, 4, twice | section 411's chrome, inline in the first screen in mode order and by reference after |
+| a question, or a line, centred on the screen, `floor((176 - w) / 2)` | 316 lines over the eighteen with an odd remainder |
+| a question's lines twelve apart in a block centred on y 143 | one line at 143, two at 137 and 149 |
+| the "If not" question | a block of five rows centred on y 143 with its second row blank: 119, 143, 155, 167 |
+| the attempt screen | its first line at y 43, the other two a block centred on y 168, the status screens' place |
+| "Yes", "No" and "OK" | centred on the left or right half at y 201, section 411's rule for the keys below the screen |
+
+**A question breaks into lines by one greedy wrap at 171 pixels**, `wrapLines`, at spaces and just after hyphens and
+never at a slash: "Now is the Denon AVR-" over "X4800H off?", "Now is the Philips" over "70FA930/00S off?", "Is the
+Rosen Aviation 0602-" over "2XX-8 off?". Measured on every help question of the eighteen English compiles, the power
+off help's and every activity's, "on?", "off?" and the input questions alike: 957 questions, 426 on more than one
+line, every one reproduced; 171 pixels is the widest line drawn and 172 the narrowest the next piece would have
+made, so the corpus pins the width to the one value. The activities' input questions take up to three lines, the
+power off questions one or two. The breaks that decide the rule are few: a hyphen decides on four distinct texts
+(the Denon AVR-, Rosen 0602-, Sony RDR- and Pioneer VSX- names) and the slash on about two, by the second reviewer's
+count. **Out of sample** the same wrap at 171 reproduces the Dutch compile's 13 distinct questions, one of three
+lines and two with lines of exactly 171, by the second reviewer's run; the builder is English only. The engine
+takes it as a part of its language, `wrapped`, whose reader takes the run of text instructions as the lines and
+whose builder decides how many there are.
+
+### What the description carries and what is generated
+
+**Described**: the devices in the chain's order, each by its name, whether it is sent unasked and how many power
+off lists it has; per screen its mode, its hit page and its picture; every list index (the screens' own lists, the
+devices' power off lists and the remote's own lists the handlers call), the timers, the value map, the base slot
+11 programs, the modes the lists enter, and the three fonts. **The names are the one value that is words**, read off
+each device's first question through the reader, so their glyph codes count as read. **Generated**: every opcode
+and constant operand, the tags and their order, every list of the screens' own, every word, the questions from the
+names, how each breaks into lines, every place, which text is inline, the entries and the records.
+
+**The blind control**: the 44431 bytes of the 68133 over the sixteen that the description does not read overwritten,
+in the file it reads, the file the fonts are spelled from and the layout's own pieces, and the sixteen come back
+byte for byte, with the same offsets read and the same devices; it reads 23702 bytes inside the screens and 2031
+outside, the glyph codes of homes, texts these screens draw by reference to copies earlier in mode order. The share
+read is 35 percent over the sixteen and 22 to 40 percent per compile, against 18 percent for section 413's status
+screens and about 10 for section 414's clock header, and it is the lists: a question screen runs eight lists of its
+own (enter, leave, header, the chrome's, and No and Yes on the page list and on its copy), nearly every operand of
+which is a number the configuration chose. **The controls fail where they should**: a name one
+letter different, and two devices swapped, the file differs; a device's unasked resend turned off, the numbers no
+longer fit the template and list 26 is built two ways; a second power off list, the description holds too few
+numbers; the attempt's enter list moved one on, onto its leave list, which is built two ways; its timer moved, and
+two screens' modes swapped, the file differs; the body and key fonts swapped, the speller refuses.
+
+### The lists
+
+Every list built is named by nothing outside the help screens, on all eighteen English compiles. The lists below
+them, 916 over the eighteen, 287 of them named directly from outside the screens, are every one reached from outside
+too, so nothing below is the help screens' alone: the devices' power off lists, the remote's lists the handlers and
+the "If not" question call, and what those call. That walk follows `0x7F` calls and not timers, so the list timer 8
+runs on `harvest_one_families_1` to enter "Nothing to do" is neither built nor counted here; it stays the
+configuration's. On the donor the builder makes 2198 bytes and 76 lists where 3.2.1's
+cut counted 2226 and 80; the difference is four lists of 7 bytes, and each of the seven lists the screens call is 7
+bytes there, so which four that cut gave to the help screens is not settled here.
+
+### Beyond the sixteen
+
+* **Both European compiles** rebuild byte for byte, `one_config` with four devices, `one_config_unprogrammed` with one.
+* **The Dutch compile** is refused: it holds no attempt screen in English words. Other languages are out of scope.
+* **Activities' own help**, titled with the activity's name and asking whether each device is on and set to its
+  input, is the same kind of screen and is not built: it goes with an activity, `todo-compile-one.md` 4.3, and its
+  shape was not measured beyond the wrap above.
+
+### On the composed path, not taken
+
+`families/touch/builders.ts` is unchanged. **On the test setup's donor lettered in ours the builder refuses**:
+"Attemping to fix the problem..." is 177 pixels wide in our letters, 170 in Logitech's, wider than the 176 pixel
+screen, and centring it gives x -1. Before the engine refused a text off the screen, the second reviewer found it
+written as x 255, the file otherwise the same length with the x of 24 other texts moved into our letters' widths, no
+y moved and no question of the donor's two devices breaking differently. The refusal is in `screentemplate.ts` now,
+for every builder through it, and the other screen sets' tests and the composed path's pass with it. What putting
+it on the path needs:
+
+* **A line for the attempt screen that fits**, in our letters: a narrower face for the help screens' body text, or
+  that line wrapped or placed otherwise, which no Logitech compile shows.
+
+* **A composed device gets no help.** On the path the builder would describe the donor's chain, which asks about the
+  donor's devices; a device the setup adds would need its four screens appended (`appendMode`, since
+  `withModeRecords` refuses a new page), the attempt's enter list grown where it is sent unasked, every mode above
+  renumbered, and its lists in base slot 10.
+* **That description has to come from the setup**: each device's name, its power off list or lists (the device
+  composer's), whether it is sent unasked, which its power being discrete gives on 73 of 80 entries with the PS3
+  the exception, and the chain's order, for which no rule was sought.
+* **The rest comes from the configuration**: the remote's lists the screens call, the value map, the timers, the
+  base slot 11 programs and the fonts, as every builder on the path takes them; and the attempt screen's mode stays
+  where a value map's case for value 0 names it, 6.6's.
+
+### Reviewer 1, blind
+
+Given the question and the corpus and not this section or the module, the blind reviewer found the same 332 screens
+over the sixteen and 356 over the eighteen, 2 + 4n on every English compile, the same 75 and 80 devices asked about,
+39 of the 80 sent unasked and the Samsung DVD's two lists, the same links between the screens, the same 2198 bytes
+and 76 lists on the donor and 68133 bytes over the sixteen, the lists named by nothing outside and none below
+called only from these screens, and the wrap at 171 with 172 failing, on 1617 paragraphs of every help screen of
+the eighteen (596 of more than one line), where a limit of 170 fails 44 and 172 fails 20. It added what is now in
+the section: devices are in the chain exactly where they have a power variable; Help's route through the idle
+handler set's value map on `CurrentLocation`; and the Dutch compile's chain with no "If not" question, nine screens,
+which the builder now refuses rather than building wrongly. It found no rule for the chain's order: not the
+infrared group, the power variable, the All Off list or the Devices list, either way round. It noted the two
+chrome timers are started by these screens alone on four compiles, and by activities' help too elsewhere.
+
+### Reviewer 2, the sentences
+
+The audit re-ran every figure per compile and found them right, and corrected these before this landed: "Nothing
+to do", which this said no list enters, presumably by a timer, not traced, is entered by timer 8's list, traced
+above; the toggle reading, which this called untested, measured on its lead, 73 of 80 with the PS3 the exception;
+the handler exceptions, which named the "If not" question's second pair and not every first question's; the touch
+area rule, which missed "If not"'s No and the plain enter of a "Did that fix" No; "before anything was resent",
+false for the 39 sent unasked as the question comes up; the attempt screen's entry, value map 2 on the donor and 2,
+5 or 7 by compile; the table's bytes, which include the lists; "every operand"; the read share against the other
+sets, given per compile now; the counts in the module's comments, 64 of 65 where it is 79 of 80, four of the
+remote's lists where it is five, and the attempt screen alone where there are two with no device; and section
+405's claim that the generic pair was missing from `harvest_one_families_1`, corrected in place. Its most useful find was on the composed
+path: in our letters the attempt line is 177 pixels wide and was written at x 255, which the engine now refuses
+for every builder. It also measured the wrap out of sample on the Dutch compile, above, and the y 143 block on the
+717 activity questions.
+
+### Asserted
+
+`packages/codec/test/touchhelpscreens.test.ts`: the sixteen rebuilt with the table's counts and 4n + 2 screens, 75
+devices, 332 screens and 2589 lists; both European compiles rebuilt and the Dutch one refused; every text's place by
+the rules on the eighteen, 1907 texts and 316 odd remainders; the wrap on 957 questions, 426 wrapped, 171 and 172; the
+attempt's lists against the devices sent unasked on the eighteen, 80, 39 and 1; sent unasked against the power
+variable, 39 discrete, 34 toggles and the PS3's 7 of 7; "Nothing to do" entered by timer 8's list, three seconds;
+the blind control's totals, 68133, 23702, 2031 and 44431; the failing controls, a chain with none sent unasked
+among them; the lists, named by nothing outside and all below shared, 916 and 287; and the donor lettered in ours
+refused for the attempt line, 177 pixels wide at x -1. The other screen sets' tests, `touchbuilders.test.ts` and
+`composesetup.test.ts` pass unchanged with the engine's refusal of a text off the screen.
+
+### What would falsify it
+
+A compile of skin 54 in English whose power off help the finder or the description refuses or the builder does not
+reproduce; a help question breaking other than by the wrap at 171; a text of these screens off the place rules; a
+list built here named from outside the screens.
+
+### Which architectures
+
+Arch 12 (Harmony One) alone, skin 54 and the European skin 59, in English; the module is the touch family's,
+`families/touch/helpscreens.ts`, and the engine's `wrapped` part, `wrapLines` and `centredBlock` are the template
+language's, `screentemplate.ts`, used by the One's modules only. The Harmony 600, 650 and 700 are the four slot
+family, whose help is not built anywhere, `todo-later.md` 3.3, and was not compared here. The Harmony 525 is not
+read.
 
 ## 416. The Harmony One's value maps are one catalogue of sixteen records, and base slot 11's case programs and its table are built from a description of their numbering, byte for byte on all nineteen compiles
 

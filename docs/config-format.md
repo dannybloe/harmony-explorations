@@ -2788,6 +2788,34 @@ eighteen. 3872 bytes per compile, of which the description reads 699, and 13 out
 | inline or by reference | section 411's rule in mode order; code 28's "USB Connected" by reference to the firmware screen USB Connected's copy, mode 1 |
 | code 16's line | one text, "Battery Trickle\Charge", backslash drawn as the character |
 
+**The power off help, built**, section 415: `families/touch/helpscreens.ts` through the same engine. Help pressed
+while nothing is on; every screen's chrome is section 411's, titled "PowerOff". A chain of n devices is 4n + 2
+screens: the attempt screen, the "If not" question, and per device its first question, the question after a resend,
+the first question again and its "Did that fix the problem?"; with no device, the attempt screen and "Nothing to
+do", which a three second timer the attempt starts enters (`harvest_one_families_1`, one compile). The devices in
+the chain are those with a power state variable. Found by the attempt screen's look and then the lists that link
+the screens; the Help key of the idle handler set reaches the attempt screen through a value map on
+`CurrentLocation`, its case for 0 a queued `0x7E`. Rebuilt byte for byte on the sixteen and both European compiles;
+the Dutch one refused, and a chain none of whose devices is sent unasked (no "If not" question, the Dutch compile's
+shape) is refused. 75 devices, 332 screens and 2589 lists over the sixteen.
+
+| what | rule, on the sixteen and both European compiles |
+|---|---|
+| a question's own key map | the arrows swallowed, tag 6 a list (a timer started and two of the remote's lists), tag 7 a list (that timer cancelled and two more), scan 38's press a value map, tag `0x2D` a list of three `0x73` |
+| the exceptions | the "If not" question's and every device's first question's tag 6 run a second pair of the remote's lists before the timer; a first question sends the device's power off lists between the pairs where it is sent unasked; the "If not" question's tag 7 runs `07 FFFB` and one more of the remote's lists before the cancel |
+| a question's page list | scan 50 (No) and scan 49 (Yes), each a list opening with the click `75 0FCA`, then either the value map, which leaves help, or an `0x7E`, preceded on a device's three questions' No by its power off lists and on the "If not" question's No by `07 FFFB` and one of the remote's lists |
+| the links | attempt to "If not"; "If not" No to device 1's first question; first question No to the question after a resend, whose No enters the first question again and whose Yes the device's "Did that fix"; first question Yes and "Did that fix" No to the next device's first question; on the last device both leave, as does every Yes on a "Did that fix" and on "If not" |
+| the attempt screen | no page list; tag 6 a list of `07 FFFB`, the power off lists of every device sent unasked in the chain's order, an `0x7E` to "If not" and a timer started; tag 7 a list of one of the remote's lists and the timer cancelled |
+| per device | its name; whether its power off is sent unasked (39 of 80 chain entries over the eighteen English compiles: the 39 discrete, not the 34 toggles nor the PS3's 7, discrete); how many lists its power off is (two on one entry, one on 79) |
+| a question's lines | `wrapLines` at 171 pixels, greedy, breaking at spaces and after hyphens, never at a slash; centred, `floor((176 - w) / 2)`; twelve apart in a block centred on y 143 |
+| the "If not" question | five rows centred on y 143, the second blank: 119, 143, 155, 167 |
+| the attempt screen's lines | "Attemping to fix the problem..." (sic) centred at y 43; two lines centred on y 168 |
+| "Yes", "No", "OK" | centred on the left or right half at y 201; then the picture at 57, 67, or 57, 95 on the attempt screen |
+| inline or by reference | section 411's rule in mode order |
+
+**Unconfirmed**: why the PS3, whose power is discrete, is not sent unasked. The chain's order, for which no rule is
+known: not the infrared group, the power variable, the All Off list or the Devices list.
+
 **Which of the 78 the 3.4 firmware draws by number**: one. A mode becomes current only from an `0x7E` operand, the
 mode stack (a mode that was current) or base slot 4, and base slot 4 is walked only for status code 9, "LCD Module
 Failed", after the licence check passed and while the configuration's verdict stands, so its key 9 (mode 19 in

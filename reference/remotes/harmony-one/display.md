@@ -132,6 +132,13 @@ Generated from `packages/codec`, `packages/usb` and the drawing by `make remote-
   the assistant's ladder, every compile read but the everyday One's, section 412; starting the remote past it leaves
   them in the configuration, which holds a path back to them through Options' "Turn Remote Assistant On", not seen
   on a remote, sections 403 and 412.
+* **Help pressed with nothing on** runs the power off help, every screen titled "PowerOff": "Attemping to fix the
+  problem..." (Logitech's spelling) while it sends some devices' power off again, then "Did that fix the problem?
+  If not, the remote will ask you questions to help correct the problem.", and on No one question per device, "Is
+  the TV off?", whose No sends that device's power off again and asks "Now is the TV off?", until Yes; where it was
+  sent again, "Did that fix the problem?" comes before the next device. A device name too long for a line breaks at a space or after a hyphen.
+  With no device to turn off it shows "Nothing to do". Read from configurations on the sixteen English compiles of
+  skin 54 and both European ones, not watched on a remote, section 415.
 * **USB**: "USB Connected" on the cable, seen at the bench, section 155.
 * **Safe mode** lists five images, each with a checksum and a version, seen at the bench and matched to
   the images read off the unit, section 190; [firmware.md](firmware.md).
