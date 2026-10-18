@@ -20,21 +20,41 @@ import {
   type Container, type ContainerPiece, SCREEN_CALL, SCREEN_SELECT_FONT, SCREEN_TEXT_AT, SCREEN_TEXT_INLINE, ScreenRecordError,
   characterMap, decode, layOutContainer, modeRecords, parse, screenProgram, stateVariables, taggedList, takeApart, timers,
 } from '../src/index.ts';
-import { wrapLines } from '../src/families/touch/screentemplate.ts';
+import { buildTemplateScreens, centred, font, wrapLines } from '../src/families/touch/screentemplate.ts';
 import {
-  ATTEMPT_LINE, HELP_TITLE, NO, QUESTION_WIDTH, YES, buildTouchHelpScreens, checkTouchHelpScreens, describeTouchHelpScreens,
-  touchHelpScreenModes, withTouchHelpScreens,
+  ATTEMPT_LINE, HELP_FIXED_ROWS, HELP_TITLE, NO, QUESTION_WIDTH, YES, buildTouchHelpScreens, checkTouchHelpScreens, describeTouchHelpScreens,
+  helpNumbering, helpScreens, numberedHelpScreens, touchHelpScreenModes, withTouchHelpChain, withTouchHelpScreens,
 } from '../src/families/touch/helpscreens.ts';
 import { speller, textGlyphs } from '../src/shared/spelling.ts';
 import { listsBelow } from './screenlists.ts';
 import { TOUCH } from '../src/families/touch/index.ts';
 
-test('todo-compile-one 4.6: on the test setup\'s donor lettered in ours the attempt screen\'s first line is 177 pixels wide, wider than the screen, and the engine refuses it rather than writing x 255',
+test('todo-compile-one 3.2.2.4: on the test setup\'s donor lettered in ours two fixed lines are wider than the questions\' 171 pixels, the attempt line at 177 and "If not, the remote will ask you" at 174, and the builder breaks each by the questions\' wrap and centres its block again, where the engine refused the attempt line, which would start at x -1',
      skipUnless('harvest_one_two_devices'), () => {
-  // As `composeSetup` letters the donor before anything is composed; the builder is not on that path, section 415.
+  // As `composeSetup` letters the donor before anything is composed, section 415.
   const lettered = parse(TOUCH.composedLook!.letterDonor(parse(require_('harvest_one_two_devices')), TOUCH.choices).bytes);
-  assert.throws(() => checkTouchHelpScreens(lettered),
-    (error: Error) => error instanceof ScreenRecordError && /'Attemping to fix the problem\.\.\.' is 177 pixels wide and would start at x -1/.test(error.message));
+  const d = describeTouchHelpScreens(lettered, takeApart(lettered));
+  const spell = speller(lettered);
+  const wide = HELP_FIXED_ROWS.map((row) => [row, spell(d.spec.fonts.body, row).width] as const).filter(([, width]) => width > QUESTION_WIDTH);
+  assert.deepEqual(wide, [[ATTEMPT_LINE, 177], ['If not, the remote will ask you', 174]]);
+  // Built in place: two lines more, each a text drawn inline, six bytes; and the result reads as a chain and
+  // rebuilds from its own description, its lines found by their words.
+  const out = withTouchHelpChain(lettered);
+  assert.equal(out.blob.length - lettered.blob.length, 6);
+  const [attempt] = touchHelpScreenModes(out).modes as [number];
+  assert.deepEqual(textsOf(out, attempt).filter((one) => one.word !== HELP_TITLE).map((one) => `${one.word} ${one.x},${one.y}`), [
+    'Attemping to fix the 29,37', 'problem... 59,49', 'Keep the remote pointed to 9,162', 'your system. 50,174',
+  ]);
+  assert.deepEqual(checkTouchHelpScreens(out), { devices: 2, screens: 10, lists: 76, described: 660, structure: 2204 });
+  // The engine still refuses a text that would start off the screen, for every builder through it: a line centred
+  // on the screen and wider than it, which the help screens no longer draw unwrapped.
+  const screen = { name: 'Too Wide', own: [], chrome: [], pages: [{ list: [], parts: [font('body'), centred(`${ATTEMPT_LINE} and more`, 100)] }] };
+  assert.throws(() => buildTemplateScreens(lettered, { fonts: { body: d.spec.fonts.body }, screens: [{ mode: 0, leads: [0], pictures: [], numbers: [] }], homes: new Map() }, [screen]),
+    (error: Error) => error instanceof ScreenRecordError && /'Attemping to fix the problem\.\.\. and more' is \d+ pixels wide and would start at x -\d+, off the screen/.test(error.message));
+  // And the wrap refuses a piece of a question wider than 171 on its own, which no compile shows broken.
+  const long = { ...d.spec, devices: d.spec.devices.map((one, i) => (i === 0 ? { ...one, name: 'Supercalifragilisticexpialidocious' } : one)) };
+  assert.throws(() => buildTouchHelpScreens(lettered, long),
+    (error: Error) => error instanceof ScreenRecordError && /'Supercalifragilisticexpialidocious' is wider than 171 pixels on its own/.test(error.message));
 });
 
 /** The first offset two files differ at, or undefined where they are the same. */
@@ -75,6 +95,47 @@ const EUROPEAN: Readonly<Record<string, { devices: number; screens: number; list
 };
 const DUTCH = 'one_friend_asfound_config';
 const ENGLISH = [...SIXTEEN, ...Object.keys(EUROPEAN)];
+
+test('todo-compile-one 3.2.2.4: every fixed line of the power off help fits the questions\' 171 pixels in Logitech\'s letters on all eighteen English compiles, the attempt line the widest at 170, so the wrap leaves each one line where it was, and each compile rebuilds byte for byte',
+     skipUnless(...ENGLISH), () => {
+  const widest = { width: 0, row: '' };
+  for (const name of ENGLISH) {
+    const c = parse(require_(name));
+    const body = describeTouchHelpScreens(c, takeApart(c)).spec.fonts.body;
+    const spell = speller(c);
+    for (const row of HELP_FIXED_ROWS) {
+      const width = spell(body, row).width;
+      if (width > widest.width) Object.assign(widest, { width, row });
+    }
+    // The rebuild through the wrapped blocks is held to the compile byte for byte.
+    checkTouchHelpScreens(c);
+  }
+  assert.deepEqual(widest, { width: 170, row: ATTEMPT_LINE });
+});
+
+test('todo-compile-one 3.2.2.4: on every English compile with a device the chain\'s numbers read by role give back the description\'s, each role one value throughout, which is what numbers a composed device\'s questions; a role held two ways is refused',
+     skipUnless(...ENGLISH), () => {
+  let chains = 0;
+  for (const name of ENGLISH) {
+    const c = parse(require_(name));
+    const d = describeTouchHelpScreens(c, takeApart(c));
+    if (d.spec.devices.length === 0) {
+      assert.throws(() => helpNumbering(d), (error: Error) => error instanceof ScreenRecordError && /asks about no device/.test(error.message), name);
+      continue;
+    }
+    const { roles, own } = helpNumbering(d);
+    assert.deepEqual(numberedHelpScreens(helpScreens(d.spec.devices), roles, own), d.spec.screens.map((one) => one.numbers), name);
+    chains += 1;
+  }
+  assert.equal(chains, 17);
+  // The donor's "If not" question made to start another question timer on entering than it cancels on leaving.
+  const c = parse(require_('harvest_one_two_devices'));
+  const d = describeTouchHelpScreens(c, takeApart(c));
+  const ifNot = d.spec.screens[1]!;
+  const moved = { ...d, spec: { ...d.spec, screens: d.spec.screens.map((one, s) => (s === 1 ? { ...ifNot, numbers: ifNot.numbers.map((v, k) => (k === 3 ? v + 1 : v)) } : one)) } };
+  assert.throws(() => helpNumbering(moved),
+    (error: Error) => error instanceof ScreenRecordError && /^Help If Not holds 18 as its question timer where the chain's other screens hold 19$/.test(error.message));
+});
 
 test('todo-compile-one 4.6: the power off help of the sixteen English compiles of skin 54 is rebuilt byte for byte from a description, 4n + 2 screens for n devices and the two of the household with none, 332 screens and 2589 lists over the sixteen',
      skipUnless(...SIXTEEN), () => {

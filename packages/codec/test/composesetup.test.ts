@@ -17,6 +17,8 @@ import { timers } from '../src/tables.ts';
 import { touchScreenLightTimer } from '../src/families/touch/screenlight.ts';
 import { TOUCH_CHOICES } from '../src/families/touch/choices.ts';
 import { TOUCH_BUILT, type TouchBuiltBytes, touchBuiltBytes } from '../src/families/touch/builders.ts';
+import { describeTouchHelpScreens, touchHelpScreenModes } from '../src/families/touch/helpscreens.ts';
+import { takeApart } from '../src/frame.ts';
 
 const recipe = () => readRecipe(JSON.parse(readFileSync(new URL('../../corpus/setups/one-test.json', import.meta.url), 'utf8')));
 
@@ -87,8 +89,12 @@ test('the One test setup composed onto Logitech\'s compile of two devices comes 
   // `todo-compile-one.md` 3.2.2.3, 110 bytes more: the activity composer gives each of the five activities a case in
   // the unread copy of the Devices record as Logitech's compiles do, five bytes of case and five of program each, 50,
   // and enters every case it makes in base slot 11's table, the five unread ones and the fifteen it made before,
-  // three bytes an entry, 60, section 416.
-  assert.equal(c.blob.length, 1751962);
+  // three bytes an entry, 60, section 416. 1756552 since 3.2.2.4, 4590 bytes more: the power off help asks about
+  // the five composed devices too, all five having a power variable, section 415: four screens each, 20, with
+  // their 160 lists, 4038, and their entries in the mode table and base slot 10, three bytes each, 540; the attempt
+  // screen resending the two of them sent unasked, two instructions, 6; and the attempt line and one line of the
+  // "If not" question broken in two in our letters, 6.
+  assert.equal(c.blob.length, 1756552);
 });
 
 // ---------------------------------------------------------------------------------------------------------
@@ -192,10 +198,10 @@ const builtBytes = (): TouchBuiltBytes => {
   return builtOnce;
 };
 
-test('todo-compile-one 3.2.2: the firmware screens, the fixed screens, the tour and Remote Assistant, the status screens, the clock header, the case programs, the hit pages, the wiring and the state tables of the composed setup come out of the touch family\'s builders, run on the composed path and measured on the result',
+test('todo-compile-one 3.2.2: the firmware screens, the fixed screens, the tour and Remote Assistant, the status screens, the clock header, the help screens, the case programs, the hit pages, the wiring and the state tables of the composed setup come out of the touch family\'s builders, run on the composed path and measured on the result',
      NEEDS, () => {
   const out = composed();
-  // On the path: one step after the composers and before the look, naming the seven parts in the order built.
+  // On the path: one step after the composers and before the look, naming the ten parts in the order built.
   const names = out.steps.map((one) => one.step);
   assert.equal(out.steps.find((one) => one.step === 'built')?.detail, TOUCH_BUILT.join(', '));
   assert.ok(names.indexOf('activity composed') < names.indexOf('built') && names.indexOf('built') < names.indexOf('look'));
@@ -213,20 +219,46 @@ test('todo-compile-one 3.2.2: the firmware screens, the fixed screens, the tour 
   // each of the five composed activities. The hit pages' 2013 are the 23 pages the fixed screens name, 1898, and
   // the touch map's table over all 38 pages, 115. The state tables' rose by 25 with them, the five cases the unread
   // copy of the Devices record took.
+  //
+  // The help screens' 6248, since 3.2.2.4, are the chain of seven devices, 30 screens and their 236 lists: the
+  // donor's ten screens and 76 lists, 2198 on the donor, and the composed five's 20 and 160, section 415.
   assert.deepEqual(a.generated, {
     'firmware screens': 3099, 'fixed screens': 13139, 'tour and Remote Assistant': 3900, 'status screens': 3872,
-    'clock header': 3558, 'case programs': 572, 'hit pages': 2013, wiring: 4527, 'state tables': 2347,
+    'clock header': 3558, 'help screens': 6248, 'case programs': 572, 'hit pages': 2013, wiring: 4527, 'state tables': 2347,
   });
   assert.deepEqual(a.described, {
     'firmware screens': 401, 'fixed screens': 3967, 'tour and Remote Assistant': 680, 'status screens': 699,
-    'clock header': 337, 'case programs': 33, 'hit pages': 0, wiring: 1243, 'state tables': 0,
+    'clock header': 337, 'help screens': 1994, 'case programs': 33, 'hit pages': 0, wiring: 1243, 'state tables': 0,
   });
+  // The help screens' 1994 against 660 on the donor are the numbers and names of a chain of seven rather than two:
+  // nearly every operand of a question's eight lists is a number the configuration chose, section 415, and so is
+  // read, however the numbers were come by.
   // The case programs' 33 are section 416's 24 numbers, one per power variable the all off writes, seven here, the
   // donor's two and the five composed, and two for its list. The hit pages' description reads 23 bytes, the leads of
   // the screen pages that name them, none of them inside the pages it builds, so none of its bytes is described.
 });
 
-test('todo-compile-one 3.2: the One\'s composed test setup carries 1127172 of its 1751962 bytes out of Logitech\'s donor, per kind as pinned here, a list that may only shrink',
+test('todo-compile-one 3.2.2.4: the composed setup\'s power off help asks about its seven devices, the donor\'s two and then the five composed in the order composed, each discrete one sent unasked and each toggle not',
+     NEEDS, () => {
+  const out = composed();
+  const c = out.container;
+  // Every composed device has a power variable, so every one is asked about, section 415; after the donor's own,
+  // in the order composed, a choice of ours. The catalogue states the Plasma and the Switch discrete and the KPN,
+  // Kodi and the Sony HT toggles, so only the first two are sent unasked, by the measured rule and its exception.
+  assert.deepEqual(out.composed.devices, ['Plasma', 'KPN', 'Kodi', 'Switch', 'Sony HT']);
+  const d = describeTouchHelpScreens(c, takeApart(c));
+  assert.deepEqual(d.spec.devices.map((one) => `${one.name}: ${one.resend ? 'sent unasked' : 'asked'}`), [
+    'Denon AVR-X4800H: sent unasked', 'LG OLED65G26LA: sent unasked', 'Plasma: sent unasked', 'KPN: asked', 'Kodi: asked',
+    'Switch: sent unasked', 'Sony HT: asked',
+  ]);
+  // 4n + 2 screens, the donor's ten where they were and the twenty new ones the next free modes in chain order.
+  const modes = touchHelpScreenModes(c).modes;
+  assert.equal(modes.length, 30);
+  assert.deepEqual(modes.slice(10), Array.from({ length: 20 }, (_, k) => 108 + k));
+  assert.equal(modeRecords(c)!.length, 128);
+});
+
+test('todo-compile-one 3.2: the One\'s composed test setup carries 1124974 of its 1756552 bytes out of Logitech\'s donor, per kind as pinned here, a list that may only shrink',
      NEEDS, () => {
   const out = composed().container;
   const got = carried(out, parse(require_('harvest_one_two_devices')), builtBytes().owners);
@@ -240,7 +272,9 @@ test('todo-compile-one 3.2: the One\'s composed test setup carries 1127172 of it
   // and the lists came down by the status screens' 493 and the clock's 42. Its third, 3.2.2.3, put the case
   // programs and the hit pages the fixed screens name there, 2378 bytes: `table`, base slot 11's, went, 89, the case
   // programs came down by their 25 programs' 341, the lists by the six toggles' 60 (the all off's list is the device
-  // composer's, written and never carried) and the hit pages by the 23 pages' 1898.
+  // composer's, written and never carried) and the hit pages by the 23 pages' 1898. Its fourth, 3.2.2.4, put the
+  // power off help there, 2198 bytes: `mode other` went, 1495, which was the help screens' ten alone, and the lists
+  // came down by their 76, 703, section 415.
   //
   // **What is left of those two rows.** `hit-page` 546 is the six pages no builder makes: the two of the census's 25
   // only setup screens name, a device page's six commands with both page keys (4.2) and the generic help screen's
@@ -251,11 +285,11 @@ test('todo-compile-one 3.2: the One\'s composed test setup carries 1127172 of it
   assert.deepEqual(got, {
     'picture': 1012839, // 5.3: the 36 every compile holds, the clock's 16 and the donor's 6
     'slot-5-block': 96946, 'slot-5-header': 4116, 'slot-5-group': 594, // the donor's two devices' infrared, 8.1
-    'slot-10-list': 6054, // per builder in the listing: 17609 before 3.2.2, 6649 before 3.2.2.2, 6114 before 3.2.2.3
-    'mode other': 1495, 'mode device': 4569, // 11983 and the same before 3.2.2
+    'slot-10-list': 5351, // per builder in the listing: 17609 before 3.2.2, 6649 before 3.2.2.2, 6114 before 3.2.2.3, 6054 before 3.2.2.4
+    'mode device': 4569, // and `mode other` 11983 before 3.2.2 and 1495 before 3.2.2.4
     'hit-page': 546, 'case-program': 10, // 2444 and 341 before 3.2.2.3, and base slot 11's `table` 89
     'raw-18-table': 2, 'slot-16-table': 1,
   });
-  assert.equal(Object.values(got).reduce((sum, one) => sum + one, 0), 1127172);
-  assert.equal(out.blob.length, 1751962);
+  assert.equal(Object.values(got).reduce((sum, one) => sum + one, 0), 1124974);
+  assert.equal(out.blob.length, 1756552);
 });

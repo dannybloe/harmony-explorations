@@ -46,23 +46,36 @@
  * map, the timer that enters "Nothing to do" and its list, and what enters the attempt screen, a queued `0x7E` in
  * a value map's case for value 0 (`todo-compile-one.md` 6.6).
  *
+ * **On the composed path since `todo-compile-one.md` 3.2.2.4**, `builders.ts`, through `withTouchHelpChain`: the
+ * chain the donor holds, rebuilt, and four questions for every device the composers added that has a power
+ * variable, numbered from the chain's own screens by the role each number plays (`named`, `helpNumbering`). Every
+ * block of text is wrapped at the questions' 171 pixels, `block`, which leaves Logitech's lines where they are and
+ * breaks the two our letters make wider, the attempt line and one row of the "If not" question.
+ *
  * English only; skin 54 and the European skin 59. The Harmony One alone, the touch family's; the Harmony 600,
  * 650 and 700 are the four slot family, whose help is postponed (`todo-later.md` 3.3) and not built anywhere.
  * Read only towards hardware: the result is pieces.
  */
 import type { Container } from '../../gspm.ts';
-import type { ContainerLayout } from '../../frame.ts';
+import type { ContainerLayout, ContainerPiece } from '../../frame.ts';
 import { layOutContainer, takeApart } from '../../frame.ts';
-import { modeRecords, taggedList } from '../../sections.ts';
-import { SCREEN_CALL, SCREEN_SELECT_FONT, SCREEN_TEXT_AT, SCREEN_TEXT_INLINE, type ScreenInstruction, screenProgram } from '../../screen.ts';
+import { parse } from '../../gspm.ts';
+import { modeRecords, stateRecords, taggedList } from '../../sections.ts';
+import {
+  SCREEN_CALL, SCREEN_END, SCREEN_RETURN, SCREEN_SELECT_FONT, SCREEN_TEXT_AT, SCREEN_TEXT_INLINE, type ScreenInstruction, screenProgram,
+} from '../../screen.ts';
 import { characterMap, decode } from '../../text.ts';
-import { ScreenRecordError, assertRebuilt, withModeRecords } from '../../screenrecords.ts';
+import { type BuiltScreen, type ModeRecordsPlace, ScreenRecordError, assertRebuilt, recordReading, withModeRecords } from '../../screenrecords.ts';
 import { type ValueReader, blobReader, textGlyphs } from '../../shared/spelling.ts';
+import { deviceVariables } from '../../inventory.ts';
+import { appendActionLists } from '../../shared/core.ts';
+import { appendMode } from '../../shared/modes.ts';
+import type { ComposedDeviceNote } from '../family.ts';
 import {
   ARROWS, type BuiltTemplateScreens, CLICK, ENTER, type Entry, HEADER, LIST, MAP, type Part, type Step, TAG_ENTER,
   TAG_HEADER, TAG_LEAVE, TIMER_CANCEL, TIMER_START, TITLE_AT, type TemplateScreen, type TemplateScreensDescribed,
-  type TemplateScreensSpec, buildTemplateScreens, centred, centredBlock, chrome, describeTemplateScreens, font as fontPart, k,
-  leftHalf, owns, picture, press, rightHalf, wrapped,
+  type TemplateScreensSpec, buildTemplateScreens, chrome, describeTemplateScreens, font as fontPart, k,
+  joinLines, leftHalf, named, owns, picture, press, rightHalf, templateNumberSlots, wrapped,
 } from './screentemplate.ts';
 
 /** The fonts the screens select: the chrome's title, the questions and lines, and "Yes" and "No". */
@@ -103,9 +116,34 @@ const HELP_KEY = press(38);
 /** Opcode 7 with `0xFFFB`, a constant instruction the attempt and "If not" screens run, as the wiring's start ladder does. */
 const SEVEN = k(7, 0xfffb);
 
+/*
+ * **Every number the template takes from the configuration carries a role**, `named`, so the screens a composed
+ * device needs can be numbered from the ones the configuration holds, `todo-compile-one.md` 3.2.2.4: the reader
+ * and the builder ignore roles, and `helpNumbering` reads each role's value off the chain as described and gives
+ * it to the new screens. The roles are what section 415's numbers turned out to be on the test setup's donor:
+ * the same two of the remote's lists open every enter handler after the timer, or before it and again after it,
+ * the same two close every leave handler, one list follows `07 FFFB` wherever it runs, one timer serves the
+ * questions and another the attempt screen, and one value map leaves help. That each role holds one value
+ * throughout a chain is checked on every English compile, `touchhelpscreens.test.ts`, and refused where not.
+ */
+const ENTER_1 = named(LIST, 'enter list 1');
+const ENTER_2 = named(LIST, 'enter list 2');
+const LEAVE_1 = named(LIST, 'leave list 1');
+const LEAVE_2 = named(LIST, 'leave list 2');
+const SEVEN_LIST = named(LIST, 'seven list');
+const QUESTION_START = named(TIMER_START, 'question timer');
+const QUESTION_CANCEL = named(TIMER_CANCEL, 'question timer');
+const ATTEMPT_START = named(TIMER_START, 'attempt timer');
+const ATTEMPT_CANCEL = named(TIMER_CANCEL, 'attempt timer');
+const LEAVES = named(MAP, 'map');
+/** The enter of the screen named `screen`, whose mode is that screen's. */
+const to = (screen: string): Step => named(ENTER, `mode ${screen}`);
+/** Device `i`'s power off lists, `count` of them, in its order. */
+const offLists = (i: number, count: number): Step[] => Array.from({ length: count }, (_, k) => named(LIST, `off ${i} ${k}`));
+
 /** A question's own key map: the arrows swallowed, its handlers, Help's value map, and the header handler. */
 function questionOwn(enter: Step, leave: Step): Entry[] {
-  return [...ARROWS, [TAG_ENTER, enter], [TAG_LEAVE, leave], [HELP_KEY, MAP], [TAG_HEADER, HEADER]];
+  return [...ARROWS, [TAG_ENTER, enter], [TAG_LEAVE, leave], [HELP_KEY, LEAVES], [TAG_HEADER, HEADER]];
 }
 
 /** A question screen: its chrome titled "PowerOff", its words above the picture, "Yes" and "No" below it. */
@@ -123,16 +161,24 @@ function question(name: string, own: readonly Entry[], no: Step, yes: Step, word
   };
 }
 
-/** A question about a device, wrapped as its name makes it. */
-const asked = (words: string): HelpPart[] => [wrapped(words, QUESTION_WIDTH, QUESTION_CENTRE, LINE_PITCH)];
+/**
+ * Rows of a block centred on y `centre`, each wrapped at the questions' width, `wrapped`: a question about a
+ * device, wrapped as its name makes it, and since `todo-compile-one.md` 3.2.2.4 every other block of these
+ * screens. In Logitech's letters every fixed row fits in 171 pixels on all eighteen English compiles, the attempt
+ * line the widest at 170, so each is one line where it was and the compiles rebuild byte for byte; in ours the
+ * attempt line is 177 and "If not, the remote will ask you" 174, and each breaks by the questions' rule, the
+ * block re-centred, where the attempt line would otherwise start off the screen. A decision of ours, not a
+ * reading: no compile shows a fixed line wrapped.
+ */
+const block = (rows: string | readonly string[], centre: number = QUESTION_CENTRE): HelpPart => wrapped(rows, QUESTION_WIDTH, centre, LINE_PITCH);
+const asked = (words: string): HelpPart[] => [block(words)];
 
 /** The handlers most questions bind: a timer and two of the remote's lists each. */
-const ENTER_PLAIN = owns(TIMER_START, LIST, LIST);
-const LEAVE_PLAIN = owns(TIMER_CANCEL, LIST, LIST);
+const ENTER_PLAIN = owns(QUESTION_START, ENTER_1, ENTER_2);
+const LEAVE_PLAIN = owns(QUESTION_CANCEL, LEAVE_1, LEAVE_2);
 /** A touch area's list: the click, then what it runs. */
 const tap = (...steps: Step[]): Step => owns(CLICK, ...steps);
-const GO_TO = tap(ENTER);
-const LEAVE_HELP = tap(MAP);
+const LEAVE_HELP = tap(LEAVES);
 
 /**
  * A device the chain asks about: the name its questions draw, and whether its power off command is sent without
@@ -156,13 +202,21 @@ export interface HelpDevice {
 export const NOTHING_LINE = 'Nothing to do';
 
 /**
+ * Every row of these screens whose words are the template's own, every one but the questions about a device: what
+ * the questions' wrap at 171 pixels decides for in our letters, `block`, where it leaves Logitech's lines as they
+ * are because each fits in Logitech's letters on all eighteen English compiles.
+ */
+export const HELP_FIXED_ROWS: readonly string[] = [ATTEMPT_LINE, ...ATTEMPT_LINES, ...IF_NOT.filter((row) => row !== ''), NOTHING_LINE];
+
+/**
  * The template's screens for a chain asking about `devices`, in the order a description lists them: the attempt
  * screen, the "If not" question, then per device its first question, the question after a resend, the first
  * question again, and its "Did that fix the problem?". With no device, the attempt screen and "Nothing to do".
  */
 export function helpScreens(devices: readonly HelpDevice[]): HelpScreen[] {
-  const attemptParts: HelpPart[] = [{ op: 'chrome' }, font('body'), centred(ATTEMPT_LINE, ATTEMPT_Y),
-    ...centredBlock(ATTEMPT_LINES, ATTEMPT_CENTRE, LINE_PITCH), picture(...ATTEMPT_PICTURE)];
+  // The first line a block of its own centred on y 43, so in our letters it breaks into two lines around it.
+  const attemptParts: HelpPart[] = [{ op: 'chrome' }, font('body'), block([ATTEMPT_LINE], ATTEMPT_Y),
+    block(ATTEMPT_LINES, ATTEMPT_CENTRE), picture(...ATTEMPT_PICTURE)];
   const attempt = (enter: Step, leave: Step): HelpScreen => ({
     name: 'Help Attempt',
     own: [...ARROWS, [TAG_ENTER, enter], [TAG_LEAVE, leave], [TAG_HEADER, HEADER]],
@@ -180,40 +234,52 @@ export function helpScreens(devices: readonly HelpDevice[]): HelpScreen[] {
       chrome: chrome<HelpScreenFont>(HELP_TITLE, 1, { title: 'title', count: 'title' }),
       pages: [{
         list: [[YES, LEAVE_HELP]],
-        parts: [{ op: 'chrome' }, font('body'), ...centredBlock([NOTHING_LINE], QUESTION_CENTRE, LINE_PITCH), font('ok'),
+        parts: [{ op: 'chrome' }, font('body'), block([NOTHING_LINE]), font('ok'),
           rightHalf('OK', KEYS_Y), picture(...QUESTION_PICTURE)],
       }],
     }];
   }
   const n = devices.length;
-  const lists = (count: number): Step[] => Array<Step>(count).fill(LIST);
   const resent = devices.reduce((sum, one) => sum + (one.resend ? one.offLists : 0), 0);
   // A chain none of whose devices is sent unasked has no "If not" question: the attempt screen sends nothing and a
   // timer goes on to the first device, as with no device at all. Only the Dutch compile shows it, by the blind
   // reviewer of section 415, so it is refused rather than built in a shape no English compile holds.
   if (resent === 0) throw new ScreenRecordError('a chain whose devices are none sent unasked holds no "If not" question, a shape no English compile shows');
+  const names = devices.map((_, i) => helpScreenNames(i));
   return [
     // The power off lists of every device resent unasked, in the chain's order, then the "If not" question entered.
-    attempt(owns(SEVEN, ...lists(resent), ENTER, TIMER_START), owns(LIST, TIMER_CANCEL)),
-    question('Help If Not', questionOwn(owns(LIST, LIST, TIMER_START, LIST, LIST), owns(SEVEN, LIST, TIMER_CANCEL, LIST, LIST)),
-      tap(SEVEN, LIST, ENTER), LEAVE_HELP, centredBlock(IF_NOT, QUESTION_CENTRE, LINE_PITCH)),
-    ...devices.flatMap(({ name, resend, offLists }, i) => {
-      const last = i === n - 1;
+    attempt(owns(SEVEN, ...devices.flatMap((one, i) => (one.resend ? offLists(i, one.offLists) : [])), to(IF_NOT_SCREEN), ATTEMPT_START),
+      owns(SEVEN_LIST, ATTEMPT_CANCEL)),
+    question(IF_NOT_SCREEN, questionOwn(owns(ENTER_1, ENTER_2, QUESTION_START, ENTER_1, ENTER_2), owns(SEVEN, SEVEN_LIST, QUESTION_CANCEL, LEAVE_1, LEAVE_2)),
+      tap(SEVEN, SEVEN_LIST, to(names[0]!.first)), LEAVE_HELP, [block(IF_NOT)]),
+    ...devices.flatMap(({ name, resend, offLists: count }, i) => {
+      const own = names[i] as HelpScreenNames;
+      // The device after this one's first question, or leaving help after the last.
+      const next = i === n - 1 ? LEAVE_HELP : tap(to((names[i + 1] as HelpScreenNames).first));
       // Every first question runs a second pair of the remote's lists before the timer, as "If not" does; a device
       // resent unasked is resent again as its first question comes up, its lists between the two pairs. No
-      // resends them on every question.
-      const first = owns(LIST, LIST, ...(resend ? lists(offLists) : []), TIMER_START, LIST, LIST);
-      const sendAgain = tap(...lists(offLists), ENTER);
+      // resends them on every question and goes on to the screen after.
+      const first = owns(ENTER_1, ENTER_2, ...(resend ? offLists(i, count) : []), QUESTION_START, ENTER_1, ENTER_2);
+      const sendAgain = (screen: string): Step => tap(...offLists(i, count), to(screen));
+      const fixed = tap(to(own.fixed));
       return [
-        question(`Help ${i + 1} Is Off`, questionOwn(first, LEAVE_PLAIN), sendAgain, last ? LEAVE_HELP : GO_TO, asked(`Is the ${name} off?`)),
-        question(`Help ${i + 1} Now Off`, questionOwn(ENTER_PLAIN, LEAVE_PLAIN), sendAgain, GO_TO, asked(`Now is the ${name} off?`)),
-        question(`Help ${i + 1} Is Off Again`, questionOwn(ENTER_PLAIN, LEAVE_PLAIN), sendAgain, GO_TO, asked(`Is the ${name} off?`)),
-        question(`Help ${i + 1} Fixed`, questionOwn(ENTER_PLAIN, LEAVE_PLAIN), last ? LEAVE_HELP : GO_TO, LEAVE_HELP,
-          centredBlock([FIXED], QUESTION_CENTRE, LINE_PITCH)),
+        question(own.first, questionOwn(first, LEAVE_PLAIN), sendAgain(own.now), next, asked(`Is the ${name} off?`)),
+        question(own.now, questionOwn(ENTER_PLAIN, LEAVE_PLAIN), sendAgain(own.again), fixed, asked(`Now is the ${name} off?`)),
+        question(own.again, questionOwn(ENTER_PLAIN, LEAVE_PLAIN), sendAgain(own.now), fixed, asked(`Is the ${name} off?`)),
+        question(own.fixed, questionOwn(ENTER_PLAIN, LEAVE_PLAIN), next, LEAVE_HELP, [block([FIXED])]),
       ];
     }),
   ];
 }
+
+/** The "If not" question's name, which its mode's role is named by. */
+const IF_NOT_SCREEN = 'Help If Not';
+
+/** A device's four screens' names, in the order `helpScreens` lists them, by its place in the chain. */
+interface HelpScreenNames { first: string; now: string; again: string; fixed: string }
+const helpScreenNames = (i: number): HelpScreenNames => ({
+  first: `Help ${i + 1} Is Off`, now: `Help ${i + 1} Now Off`, again: `Help ${i + 1} Is Off Again`, fixed: `Help ${i + 1} Fixed`,
+});
 
 // ---------------------------------------------------------------------------------------------------------
 // Which mode each screen is.
@@ -259,9 +325,10 @@ export function touchHelpScreenModes(c: Container): HelpChain {
     if (title === undefined || title.operands[0] !== TITLE_AT[0] || title.operands[1] !== TITLE_AT[1]) return;
     if (decode(textGlyphs(c, title) as Uint8Array, map) !== HELP_TITLE) return;
     titled.add(mode);
-    const first = words(program)[0];
-    if (first === ATTEMPT_LINE) attempt = [...attempt, mode];
-    if (first === NOTHING_LINE) nothing = [...nothing, mode];
+    // The first line or lines: the attempt line is one line in Logitech's letters and two in ours, `block`.
+    const drawn = words(program);
+    if (opensWith(drawn, ATTEMPT_LINE)) attempt = [...attempt, mode];
+    if (opensWith(drawn, NOTHING_LINE)) nothing = [...nothing, mode];
   });
   if (attempt.length !== 1) throw new ScreenRecordError(`the configuration holds ${attempt.length} power off attempt screens, not one`);
   const start = attempt[0] as number;
@@ -362,10 +429,15 @@ function nameOf(c: Container, mode: number, read: ValueReader, at: Set<number>):
     });
     return decode(codes, map);
   });
-  const whole = lines.reduce((sum, line) => (sum === '' ? line : sum + (sum.endsWith('-') ? '' : ' ') + line), '');
+  const whole = joinLines(lines);
   const found = /^Is the (.+) off\?$/.exec(whole);
   if (found === null) throw new ScreenRecordError(`mode ${mode} asks '${whole}', not whether a device is off`);
   return found[1] as string;
+}
+
+/** Whether the first of `drawn`'s lines, one or more, are `text` wrapped. */
+function opensWith(drawn: readonly string[], text: string): boolean {
+  return drawn.some((_, k) => joinLines(drawn.slice(0, k + 1)) === text);
 }
 
 /** The blob offset of the glyph codes a text drawn by reference points at. */
@@ -428,4 +500,225 @@ export function checkTouchHelpScreens(c: Container, read?: ValueReader): { devic
     devices: described.spec.devices.length, screens: built.screens.length, lists: built.lists.size,
     described: described.described.size, structure: described.structure.size,
   };
+}
+
+// ---------------------------------------------------------------------------------------------------------
+// A composed device's help, `todo-compile-one.md` 3.2.2.4.
+
+/**
+ * A chain as a description reads it, numbered by role, `named`: every role's one value (the remote's lists, the
+ * timers, the value map, the base slot 11 programs, the modes and the devices' power off lists), and per screen
+ * the lists of its own in the order it takes them. The roles are read through `templateNumberSlots`, the
+ * builder's own walk, so each of the description's numbers is paired with the step that takes it.
+ *
+ * Refused: a chain with no device, whose two screens hold no question to number another by, and a role two
+ * screens hold different values for, which would leave a new screen two numbers to choose between.
+ */
+export interface HelpNumbering {
+  roles: Map<string, number>;
+  own: number[][];
+}
+
+export function helpNumbering(d: TouchHelpScreensDescribed): HelpNumbering {
+  if (d.spec.devices.length === 0) throw new ScreenRecordError('the power off help asks about no device, so it holds no question a device\'s could be numbered by');
+  const roles = new Map<string, number>();
+  const own = helpScreens(d.spec.devices).map((screen, s) => {
+    const numbers = (d.spec.screens[s] as TouchHelpScreensSpec['screens'][number]).numbers;
+    const slots = templateNumberSlots(screen);
+    if (slots.length !== numbers.length) throw new ScreenRecordError(`${screen.name} takes ${slots.length} numbers and its description holds ${numbers.length}`);
+    const lists: number[] = [];
+    slots.forEach((slot, j) => {
+      const value = numbers[j] as number;
+      if (slot.kind === 'owns') {
+        lists.push(value);
+        return;
+      }
+      const role = slot.kind === 'number' ? slot.role : undefined;
+      if (role === undefined) throw new ScreenRecordError(`${screen.name}'s number ${j} has no role`);
+      const was = roles.get(role);
+      if (was !== undefined && was !== value) {
+        throw new ScreenRecordError(`${screen.name} holds ${value} as its ${role} where the chain's other screens hold ${was}`);
+      }
+      roles.set(role, value);
+    });
+    return lists;
+  });
+  return { roles, own };
+}
+
+/**
+ * The numbers each screen of `template` takes, in the order it takes them: a list of its own from `own`, in
+ * order, and every other number from `roles`. `helpNumbering`'s other half, so on a chain as described the two
+ * give back the description's numbers, which `touchhelpscreens.test.ts` holds on every English compile.
+ */
+export function numberedHelpScreens(
+  template: readonly HelpScreen[], roles: ReadonlyMap<string, number>, own: readonly (readonly number[])[],
+): number[][] {
+  return template.map((screen, s) => {
+    const lists = [...(own[s] ?? [])];
+    const numbers = templateNumberSlots(screen).map((slot) => {
+      if (slot.kind === 'owns') {
+        const one = lists.shift();
+        if (one === undefined) throw new ScreenRecordError(`${screen.name} runs more lists of its own than it is given`);
+        return one;
+      }
+      const role = slot.kind === 'number' ? slot.role : undefined;
+      const value = role === undefined ? undefined : roles.get(role);
+      if (value === undefined) throw new ScreenRecordError(`${screen.name} takes a number, ${role ?? 'with no role'}, the chain does not hold`);
+      return value;
+    });
+    if (lists.length !== 0) throw new ScreenRecordError(`${screen.name} runs fewer lists of its own than it is given`);
+    return numbers;
+  });
+}
+
+/** A device a composer added, as its help asks about it: `HelpDevice`, and the power off lists it resends. */
+export interface ComposedHelpDevice extends HelpDevice {
+  lists: number[];
+}
+
+/** The opcode a transition calls a list by, and a list calls another by. */
+const CALL_OPCODE = 0x7f;
+
+/**
+ * A device the composers added as the power off help asks about it, or undefined where it is not asked about.
+ *
+ * * **In the chain or not**: exactly the devices with a power state variable are, on all nineteen compiles,
+ *   section 415, so a composed device with none is left out, as Kodi is on eight compiles.
+ * * **Its name** is the setup's, which its device list row draws.
+ * * **Its power off lists** are read back off the configuration, through the variable `joinPowerOff` put in the
+ *   all off list: its transition from on to off runs what the device composer made, the off action's send list,
+ *   or for an action of several steps a list calling each step's send list in order (section 320,
+ *   `composeDevice`); the lists a question resends are those send lists, as a Logitech compile's resend each
+ *   step's own (two on `compiled_protocols_2`'s Samsung DVD).
+ * * **Sent unasked or not** by the power type the catalogue states: a discrete device's power off is sent
+ *   unasked, a toggle's is not. That is section 415's measured rule, 73 of 80 chain entries over the eighteen
+ *   English compiles, **with its exception**: the PS3, discrete, is not sent unasked on any of the seven compiles
+ *   holding it, unexplained. Sending a toggle blind could turn a device back on, which is a reason, not a reading.
+ *   A device whose catalogue states no type is refused rather than guessed.
+ */
+export function composedHelpDevice(c: Container, note: ComposedDeviceNote): ComposedHelpDevice | undefined {
+  const power = deviceVariables(c).find((one) => one.device === note.label && one.property === 'Power');
+  if (power === undefined) return undefined;
+  if (note.power === undefined) {
+    throw new ScreenRecordError(`the catalogue states no power type for ${note.name}, which is what says whether its power off is sent unasked`);
+  }
+  const off = stateRecords(c)?.[power.index]?.values.find((one) => one.from === 1 && one.to === 0);
+  if (off === undefined || off.opcode !== CALL_OPCODE) throw new ScreenRecordError(`${note.name}'s power variable calls no list switching it off`);
+  const body = c.actionLists()?.[off.operand];
+  if (body === undefined || body.length === 0) throw new ScreenRecordError(`${note.name}'s power off list ${off.operand} does not read`);
+  const lists = body.every((one) => one.opcode === CALL_OPCODE) ? body.map((one) => one.operand) : [off.operand];
+  return { name: note.name, resend: note.power === 'discrete', offLists: lists.length, lists };
+}
+
+/**
+ * The power off help put in place of the configuration's own, asking about every composed device too:
+ * `todo-compile-one.md` 3.2.2.4, section 415's "putting it on the path". With no composed device asked about,
+ * the chain described, built and put back, as `checkTouchHelpScreens` does without the comparison.
+ *
+ * **With some**, each gets the four screens a device's questions are, after the chain's own devices, in the
+ * order composed: no rule for the chain's order was found, section 415, so **this order is a choice of ours**.
+ * The section's lead, that a chain puts every device not sent unasked before every one that is on 16 of 17
+ * chains, is not followed: it is a lead, and following it would move the configuration's own devices. Then:
+ *
+ * 1. **Numbered from the chain**, `helpNumbering`: every number a new screen takes that is not its own list or a
+ *    mode or a power off list is the value the configuration's screens hold for that role, the remote's lists,
+ *    the timers, the value map and the programs; its modes are the next free ones, in the template's order, its
+ *    lists of its own the next free base slot 10 indices, and its hit page and pictures the same screen's of
+ *    the chain's last device. The chain's own screens keep every number but where the chain grows: the attempt
+ *    screen resends the composed devices sent unasked too, and the last of its own devices goes on to the first
+ *    composed one rather than leaving help.
+ * 2. **Made room for**, since `withModeRecords` replaces records and adds none: the new lists appended to base
+ *    slot 10 as built, and each new screen appended with `appendMode`, its own key map, page list and copy as
+ *    built and a stand in program that calls a stand in chrome, so the records have their final shape.
+ * 3. **Built and put in place**, the chain's own screens where they sat and the stand ins replaced, as every
+ *    builder on the composed path puts its part; the stand ins' places read by `recordReading`, which the
+ *    description reads every record by.
+ *
+ * The value map's case entering the attempt screen stays where it is (`todo-compile-one.md` 6.6): the attempt
+ * screen keeps its mode. Refused: a chain with no device, a composed device already asked about by name, and
+ * whatever the description, the numbering or the builder refuses.
+ */
+export function withTouchHelpChain(c: Container, composed: readonly ComposedDeviceNote[] = []): Container {
+  const added = composed.flatMap((note) => {
+    const one = composedHelpDevice(c, note);
+    return one === undefined ? [] : [one];
+  });
+  const layout = takeApart(c);
+  const d = describeTouchHelpScreens(c, layout);
+  if (added.length === 0) return layOutContainer(withTouchHelpScreens(layout, buildTouchHelpScreens(c, d.spec), d.place)).container;
+
+  const asked = new Set(d.spec.devices.map((one) => one.name));
+  const twice = added.find((one) => asked.has(one.name));
+  if (twice !== undefined) throw new ScreenRecordError(`the power off help already asks about ${twice.name}`);
+  const { roles, own } = helpNumbering(d);
+  const devices: HelpDevice[] = [...d.spec.devices, ...added.map(({ name, resend, offLists }) => ({ name, resend, offLists }))];
+  const template = helpScreens(devices);
+  // The screens the configuration holds are the template's first ones, the attempt, "If not" and its devices'.
+  const held = d.spec.screens.length;
+  const firstMode = (modeRecords(c) ?? []).length;
+  const firstList = (c.actionLists() ?? []).length;
+  const modeOf = (s: number): number => (s < held ? (d.spec.screens[s] as TouchHelpScreensSpec['screens'][number]).mode : firstMode + s - held);
+  template.forEach((screen, s) => roles.set(`mode ${screen.name}`, modeOf(s)));
+  added.forEach((one, j) => one.lists.forEach((list, k) => roles.set(`off ${d.spec.devices.length + j} ${k}`, list)));
+  let nextList = firstList;
+  const owned = template.map((screen, s) => (s < held ? own[s] as number[]
+    : templateNumberSlots(screen).filter((slot) => slot.kind === 'owns').map(() => nextList++)));
+  const numbers = numberedHelpScreens(template, roles, owned);
+  // A new screen's hit page and pictures are the same screen's of the chain's last device: the four kinds of
+  // question each take one, the same on every device of a chain.
+  const referenceOf = (s: number): number => held - 4 + ((s - held) % 4);
+  const specOf = (one: TouchHelpScreensDescribed): TouchHelpScreensSpec => ({
+    ...one.spec, devices,
+    screens: template.map((_, s) => {
+      const from = one.spec.screens[s < held ? s : referenceOf(s)] as TouchHelpScreensSpec['screens'][number];
+      return { mode: modeOf(s), leads: [...from.leads], pictures: [...from.pictures], numbers: numbers[s] as number[] };
+    }),
+  });
+
+  // 2. Room: the new lists as built, then each new screen with stand ins for its programs.
+  const first = buildTemplateScreens(c, specOf(d), template);
+  const fresh = [...first.lists.keys()].filter((index) => index >= firstList).sort((a, b) => a - b);
+  if (fresh.length !== nextList - firstList || fresh.some((index, k) => index !== firstList + k)) {
+    throw new ScreenRecordError('the new screens\' lists are not the next free indices in order');
+  }
+  const appended = appendActionLists(c, fresh.map((index) => {
+    const bytes = (first.lists.get(index) as ContainerPiece).bytes;
+    return Array.from({ length: bytes[0] as number }, (_, k): [number, number] =>
+      [(bytes[1 + 3 * k] as number) | ((bytes[2 + 3 * k] as number) << 8), bytes[3 + 3 * k] as number]);
+  }));
+  if (appended.first !== firstList) throw new ScreenRecordError(`the new lists start at ${appended.first}, not ${firstList}`);
+  let grown = parse(appended.bytes);
+  for (let s = held; s < template.length; s += 1) {
+    const screen = first.screens[s] as BuiltScreen;
+    const ownBytes = screen.own.bytes;
+    if (ownBytes.length !== 1 + 4 * (ownBytes[0] as number)) throw new ScreenRecordError(`${(template[s] as HelpScreen).name}'s own key map is not in the narrow form`);
+    const entries = Array.from({ length: ownBytes[0] as number }, (_, k) => ({
+      tag: ownBytes[1 + 4 * k] as number,
+      operand: (ownBytes[2 + 4 * k] as number) | ((ownBytes[3 + 4 * k] as number) << 8),
+      opcode: ownBytes[4 + 4 * k] as number,
+    }));
+    grown = appendMode(grown, modeOf(s), entries, [(screen.lists[0] as ContainerPiece).bytes], (_, headAt) => ({
+      // The stand in chrome returns at once, and the page calls it and ends, so the record reads as a Harmony One
+      // page whose chrome the built one replaces.
+      head: { length: 1, build: () => Uint8Array.of(SCREEN_RETURN) },
+      pages: [{ length: 5, build: () => Uint8Array.of(SCREEN_CALL, headAt & 0xff, (headAt >> 8) & 0xff, headAt >> 16, SCREEN_END) }],
+    }), { copies: [screen.copies[0] as Uint8Array], leads: (specOf(d).screens[s] as TouchHelpScreensSpec['screens'][number]).leads });
+  }
+
+  // 3. Built over the grown configuration and put in place: the chain's own screens where the description of the
+  // chain as it was finds them, the stand ins where `recordReading` reads them.
+  const grownLayout = takeApart(grown);
+  const again = describeTouchHelpScreens(grown, grownLayout);
+  const built = buildTemplateScreens(grown, specOf(again), template);
+  const reading = recordReading(grown, grownLayout, blobReader(grown));
+  const stands = template.slice(held).map((screen, j) => reading.placeOf(screen.name, reading.frame(screen.name, firstMode + j)));
+  for (const index of fresh) reading.list(index, 'a composed device\'s help');
+  const place: ModeRecordsPlace = {
+    screens: [...again.place.screens, ...stands],
+    lists: new Map([...again.place.lists, ...reading.lists]),
+    lengths: new Map([...again.place.lengths, ...reading.lengths]),
+    inline: new Map([...again.place.inline, ...reading.inline]),
+  };
+  return layOutContainer(withModeRecords(grownLayout, built, place)).container;
 }

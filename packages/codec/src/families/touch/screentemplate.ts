@@ -39,8 +39,15 @@
  * **A text wrapped to a width**, `wrapped`, since `todo-compile-one.md` 4.6 (section 415): the help screens'
  * questions name a device, so how many lines a question takes is the device name's and the font's, not the
  * template's. The template states the words, the width and the block; the builder breaks the words into lines
- * with the font in force, `wrapLines`, and centres each; the reader takes every text instruction in a row as
- * the question's lines, since how many there are is what the builder decides and the byte comparison checks.
+ * with the font in force, `wrapLines`, and centres each. Since `todo-compile-one.md` 3.2.2.4 a wrapped part is rows
+ * of a block, every block of the help screens is one, and the reader takes each row's lines by their words,
+ * `joinLines`, rather than every text in a row, since one block may follow another and since the description of a
+ * configuration lettered anew reads the lines Logitech's letters made while the builder breaks them in its own.
+ *
+ * **Roles**, `named`, since 3.2.2.4: a number step may say which number of the configuration's it is, and
+ * `templateNumberSlots` walks a screen in the order the builder takes its numbers, so a caller can read each
+ * role's value off the screens a configuration holds and number a screen it does not hold yet, the help screens'
+ * questions about a composed device. The reader and the builder ignore roles.
  *
  * The Harmony One alone, the touch family's. Read only towards hardware: the result is pieces.
  */
@@ -57,7 +64,8 @@ import { keyListOrder } from '../../modezero.ts';
 import {
   type BuiltScreen, type RecordFrame, type RecordPlace, type RecordReading, ScreenRecordError, recordBuilding, recordReading,
 } from '../../screenrecords.ts';
-import { type ValueReader, blobReader, speller } from '../../shared/spelling.ts';
+import { type ValueReader, blobReader, speller, textGlyphs } from '../../shared/spelling.ts';
+import { type CharacterMap, characterMap, decode } from '../../text.ts';
 
 export const CALL = 0x7f;
 export const BAND = 0x1f;
@@ -81,7 +89,7 @@ export type NumberKind = 'list' | 'mode' | 'program' | 'timer' | 'map' | 'variab
  */
 export type Step =
   | { kind: 'constant'; opcode: number; operand: number }
-  | { kind: 'number'; opcode: number; band?: number; what: NumberKind }
+  | { kind: 'number'; opcode: number; band?: number; what: NumberKind; role?: string }
   | { kind: 'write'; operand: number }
   | { kind: 'owns'; steps: readonly Step[] };
 
@@ -92,6 +100,19 @@ export const owns = (...steps: Step[]): Step => ({ kind: 'owns', steps });
 /** A write of `value` to a state variable the configuration chose, `0x80 + variable`. */
 export const write = (value: number): Step => ({ kind: 'write', operand: value });
 
+/**
+ * A number step given a name, its **role**: which number of the configuration's it is, where the step's kind
+ * says only what sort of number it is. The reader and the builder ignore it, so a template reads and builds the
+ * same with roles or without. What it is for is numbering screens a configuration does not hold yet, the help
+ * screens of a device a composer added, section 415 and `todo-compile-one.md` 3.2.2.4: `templateNumberSlots`
+ * walks a screen in the order the builder takes its numbers, and a caller that knows the value of each role
+ * (read off the screens the configuration does hold, by the same walk) can number a new screen from it.
+ */
+export const named = (step: Step, role: string): Step => {
+  if (step.kind !== 'number') throw new ScreenRecordError(`only a number step takes a role, not ${role}'s`);
+  return { ...step, role };
+};
+
 export const SWALLOW = k(0, 0);
 /** The click every button's list opens with, `0x75` with `0x0FCA`. */
 export const CLICK = k(0x75, 0x0fca);
@@ -101,8 +122,11 @@ export const RUN = n(0x73, 'program');
 export const MAP = n(0x72, 'map');
 export const TIMER_START = banded(0xeb, 'timer');
 export const TIMER_CANCEL = banded(0xea, 'timer');
-/** The header handler, tag `0x2D`: three base slot 11 programs. */
-export const HEADER = owns(RUN, RUN, RUN);
+/**
+ * The header handler, tag `0x2D`: three base slot 11 programs, named by their place so a screen numbered from
+ * roles runs the programs the configuration's other screens run, `named`.
+ */
+export const HEADER = owns(named(RUN, 'header 1'), named(RUN, 'header 2'), named(RUN, 'header 3'));
 
 const PRESS = 0x80;
 export const press = (scan: number): number => PRESS | scan;
@@ -132,11 +156,15 @@ export type Part<F extends string = string> =
   | { op: 'font'; font: F }
   | { op: 'text'; word: string; x: Place; y: number }
   /**
-   * A text broken into lines no wider than `width` pixels by `wrapLines`, each line centred on the screen, the
-   * lines `pitch` apart in a block centred on y `centre`: the help screens' questions, section 415, whose line
-   * count follows the device name they hold. One text instruction per line.
+   * Rows of text, each broken into lines no wider than `width` pixels by `wrapLines`, every line centred on the
+   * screen, the lines `pitch` apart in a block centred on y `centre`, an empty row a line's place left blank as
+   * in `centredBlock`: the help screens' questions, section 415, whose line count follows the device name they
+   * hold, and since `todo-compile-one.md` 3.2.2.4 every other block of the help screens, so a fixed line our
+   * letters make wider than `width` breaks by the questions' rule rather than leaving the screen. A row that fits
+   * is one line where `centredBlock` would have put it, so a block whose every row fits is that block. One text
+   * instruction per line.
    */
-  | { op: 'wrapped'; word: string; width: number; centre: number; pitch: number }
+  | { op: 'wrapped'; rows: readonly string[]; width: number; centre: number; pitch: number }
   | { op: 'queue'; step: Step }
   | { op: 'chrome' }
   | { op: 'return' }
@@ -193,8 +221,29 @@ export function centredBlock(rows: readonly string[], centre: number, pitch: num
   return rows.flatMap((row, r) => (row === '' ? [] : [centred(row, top + pitch * r)]));
 }
 
-/** A text wrapped to `width` and centred on the screen in a block centred on y `centre`, `Part`'s `wrapped`. */
-export const wrapped = (word: string, width: number, centre: number, pitch: number): Part<never> => ({ op: 'wrapped', word, width, centre, pitch });
+/**
+ * A text, or rows of text, wrapped to `width` and centred on the screen in a block centred on y `centre`,
+ * `Part`'s `wrapped`. A single text is a block of one row, the help screens' questions.
+ */
+export const wrapped = (rows: string | readonly string[], width: number, centre: number, pitch: number): Part<never> =>
+  ({ op: 'wrapped', rows: typeof rows === 'string' ? [rows] : rows, width, centre, pitch });
+
+/**
+ * Lines `wrapLines` made joined back into the text they were broken from: a space between two, none after a
+ * hyphen, which stays at the end of its line. The reader of a `wrapped` part takes a row's lines by it.
+ */
+export function joinLines(lines: readonly string[]): string {
+  return lines.reduce((sum, line) => (sum === '' ? line : sum + (sum.endsWith('-') ? '' : ' ') + line), '');
+}
+
+/**
+ * The rows a `wrapped` part draws: each row that is not blank broken by `wrapLines`, a blank row kept as a
+ * place. One function for the reader, which counts the lines to take, and the builder, which draws them, so the
+ * two agree on how many lines a block is by construction; the byte comparison after a build checks the rest.
+ */
+export function wrapRows(rows: readonly string[], width: number, widthOf: (line: string) => number): string[] {
+  return rows.flatMap((row) => (row === '' ? [''] : wrapLines(row, width, widthOf)));
+}
 
 /**
  * `word` broken into lines no wider than `width` by `widthOf`, greedily: as many pieces to a line as fit, a piece
@@ -246,8 +295,9 @@ export function chrome<F extends string>(title: string | undefined, pages: numbe
   const head: Part<F>[] = title === undefined ? [] : [font(fonts.title), text(title, TITLE_AT[0], TITLE_AT[1])];
   const count: Part<F>[] = pages > 1 ? [font(fonts.count), text(String(pages), 23, 18), text('pages', 35, 18)] : [];
   const again: Part<F>[] = title === undefined ? [] : [...(pages > 1 ? [font(fonts.title)] : []), text(title, TITLE_AT[0], TITLE_AT[1])];
-  return [...head, picture(0, 0), { op: 'queue', step: RUN }, ...count, { op: 'queue', step: owns(RUN, RUN) }, ...again,
-    { op: 'return' }];
+  // The three programs it queues named by their place, as `HEADER`'s are, for a screen numbered from roles.
+  return [...head, picture(0, 0), { op: 'queue', step: named(RUN, 'chrome 1') }, ...count,
+    { op: 'queue', step: owns(named(RUN, 'chrome 2'), named(RUN, 'chrome 3')) }, ...again, { op: 'return' }];
 }
 
 // ---------------------------------------------------------------------------------------------------------
@@ -345,6 +395,9 @@ function programReader<F extends string>(c: Container, reading: RecordReading, c
   const { value, value16, value24 } = reading;
   const name = cursor.name;
   const numbers = cursor.numbers;
+  // The configuration's character map, which a `wrapped` part's lines are read by, made on the first one met: most
+  // templates have none.
+  let map: CharacterMap | undefined;
 
   // An instruction against its step, `at` being where its operand starts and `at + 2` its opcode.
   const step = (want: Step, got: { opcode: number; operand: number }, at: number, what: string): void => {
@@ -431,11 +484,28 @@ function programReader<F extends string>(c: Container, reading: RecordReading, c
         }
         i += 1;
       } else if (part.op === 'wrapped') {
-        // Every text instruction in a row is a line of it: how many there are is the builder's to decide, from
-        // the words and the font, and the byte comparison after the build is what checks it.
-        const from = i;
-        while (program[i]?.opcode === SCREEN_TEXT_AT || program[i]?.opcode === SCREEN_TEXT_INLINE) i += 1;
-        if (i === from) throw new ScreenRecordError(`${name}'s ${what}, instruction ${i}, is not a text`);
+        // Each row's lines, read by their words: text instructions taken while the lines joined, `joinLines`, are
+        // still the start of the row, until they are the row. **Not by measuring the row in the font in force**,
+        // which is how the builder breaks it: a configuration whose letters were changed under its screens, the
+        // donor lettered in ours on the composed path, draws a row in the lines Logitech's letters made, and the
+        // description reads what is there while the build decides what will be. Nor by the run of texts, since a
+        // block may be followed by another, the help screens' attempt line by its other two lines. The byte
+        // comparison after a build checks where each line sits and what it is.
+        map ??= characterMap(c);
+        for (const row of part.rows) {
+          if (row === '') continue;
+          let drawn = '';
+          while (drawn !== row) {
+            const one = program[i];
+            const glyphs = one === undefined ? undefined : textGlyphs(c, one);
+            if (one === undefined || glyphs === undefined || map === undefined) {
+              throw new ScreenRecordError(`${name}'s ${what}, instruction ${i}, is not a text, where '${row}' goes on`);
+            }
+            drawn = joinLines([drawn, decode(glyphs, map)].filter((line) => line !== ''));
+            if (!row.startsWith(drawn)) throw new ScreenRecordError(`${name}'s ${what} draws '${drawn}' where it says '${row}'`);
+            i += 1;
+          }
+        }
       } else if (part.op === 'constant') {
         const one = next(part.opcode, `opcode ${part.opcode}`);
         if (one.operands.length !== part.operands.length || part.operands.some((v, j) => one.operands[j] !== v)) {
@@ -609,7 +679,15 @@ interface WriteCursor {
   extras: ContainerPiece[];
   /** The chrome a `chrome` part calls, built on its first call; absent on a program of its own. */
   chrome?: () => ContainerPiece;
+  /**
+   * Where each number comes from in place of `numbers`, given the step that takes it: `templateNumberSlots`'
+   * walk, which records the steps rather than numbering them. Absent, the numbers are `numbers` in order.
+   */
+  numberOf?: (step: Step) => number;
 }
+
+/** What a switch's variable is taken as, where the template leaves it to the configuration: a number like any other. */
+const SWITCH_VARIABLE: Step = { kind: 'number', opcode: SCREEN_SWITCH_NARROW, what: 'variable' };
 
 /**
  * Build instructions and programs from a template's steps and parts, `programReader`'s other half: the same
@@ -620,16 +698,17 @@ function programWriter<F extends string>(
   spell: ReturnType<typeof speller>, fonts: Record<F, number>, homes: ReadonlyMap<string, PieceTarget>,
   inline: Map<string, PieceTarget>, lists: Map<number, ContainerPiece>, cursor: WriteCursor,
 ) {
-  const take = (): number => {
+  const take = (want: Step): number => {
+    if (cursor.numberOf !== undefined) return cursor.numberOf(want);
     const one = cursor.numbers.shift();
     if (one === undefined) throw new ScreenRecordError(`the description holds too few numbers for ${cursor.name}`);
     return one;
   };
   const instruction = (want: Step): Instruction => {
     if (want.kind === 'constant') return { opcode: want.opcode, operand: want.operand };
-    if (want.kind === 'number') return { opcode: want.opcode, operand: want.band === undefined ? take() : (want.band << 8) | take() };
-    if (want.kind === 'write') return { opcode: STATE_WRITE + take(), operand: want.operand };
-    const index = take();
+    if (want.kind === 'number') return { opcode: want.opcode, operand: want.band === undefined ? take(want) : (want.band << 8) | take(want) };
+    if (want.kind === 'write') return { opcode: STATE_WRITE + take(want), operand: want.operand };
+    const index = take(want);
     const bytes = actionListBytes(want.steps.map(instruction));
     const was = lists.get(index);
     if (was !== undefined && was.bytes.join() !== bytes.join()) throw new ScreenRecordError(`list ${index} is built two ways`);
@@ -686,11 +765,13 @@ function programWriter<F extends string>(
       } else if (part.op === 'text') {
         draw(part.word, part.x, part.y);
       } else if (part.op === 'wrapped') {
-        if (current === undefined) throw new ScreenRecordError(`${cursor.name} draws ${part.word} with no font selected`);
+        if (current === undefined) throw new ScreenRecordError(`${cursor.name} draws ${part.rows.join(' ')} with no font selected`);
         const set = fonts[current];
-        const lines = wrapLines(part.word, part.width, (line) => spell(set, line).width);
-        const top = part.centre - (part.pitch / 2) * (lines.length - 1);
-        lines.forEach((line, r) => draw(line, { in: [0, SCREEN_WIDTH] }, top + part.pitch * r));
+        // Every row broken at the width, then the block centred as `centredBlock` centres one, a blank row
+        // keeping its place: a row that fits is the line `centredBlock` would have drawn.
+        for (const line of centredBlock(wrapRows(part.rows, part.width, (row) => spell(set, row).width), part.centre, part.pitch)) {
+          if (line.op === 'text') draw(line.word, line.x, line.y);
+        }
       } else if (part.op === 'constant') {
         out.push(part.opcode, ...part.operands);
       } else if (part.op === 'queue') {
@@ -704,7 +785,7 @@ function programWriter<F extends string>(
         pointer(cursor.chrome());
       } else {
         // The switch, then the piece its arms join at, which goes on with the main line; the arms after it.
-        const variable = part.variable ?? take();
+        const variable = part.variable ?? take(SWITCH_VARIABLE);
         const then: ContainerPiece = { bytes: new Uint8Array(0), refs: [], owner: 'slot-11-program' };
         const exact = part.arms.filter((arm) => typeof arm.match === 'number');
         const ranges = part.arms.filter((arm) => typeof arm.match !== 'number');
@@ -742,6 +823,80 @@ function programWriter<F extends string>(
 }
 
 /**
+ * One screen's pieces made from its template: the own key map, then per page its list, the list's copy and its
+ * program, the chrome made where the first page calls it. **This is the order a screen takes its numbers in**,
+ * the reader's order in `describeTemplateScreens`, and it is written once here for both the builder and
+ * `templateNumberSlots`, which walks it to learn which step takes which number.
+ */
+function writeScreen<F extends string>(
+  screen: TemplateScreen<F>, spell: ReturnType<typeof speller>, fonts: Record<F, number>, homes: ReadonlyMap<string, PieceTarget>,
+  inline: Map<string, PieceTarget>, lists: Map<number, ContainerPiece>,
+  source: { numbers: number[]; pictures: PieceTarget[]; numberOf?: (step: Step) => number },
+): { own: Uint8Array; programs: ContainerPiece[]; pageLists: Uint8Array[]; copies: Uint8Array[]; chromePiece: ContainerPiece; extras: ContainerPiece[] } {
+  const extras: ContainerPiece[] = [];
+  const chromePiece: ContainerPiece = { bytes: new Uint8Array(0), refs: [], owner: 'slot-11-program' };
+  let chromeBuilt = false;
+  const writer = programWriter(spell, fonts, homes, inline, lists, {
+    name: screen.name, numbers: source.numbers, pictures: source.pictures, extras,
+    ...(source.numberOf === undefined ? {} : { numberOf: source.numberOf }),
+    // The chrome every page calls, built where the first page calls it, so its texts come first.
+    chrome: () => {
+      if (!chromeBuilt) {
+        chromeBuilt = true;
+        writer.unit(screen.chrome, chromePiece);
+      }
+      return chromePiece;
+    },
+  });
+  const tagged = (entries: readonly Entry[]): Uint8Array => {
+    const by = new Map(entries);
+    const order = keyListOrder(entries.map(([tag]) => tag));
+    const built = order.map((tag) => ({ tag, flags: flagOf(by.get(tag) as Step), ...writer.instruction(by.get(tag) as Step) }));
+    if (!isWide(entries)) return taggedListBytes(built);
+    // The wide form: a zero, the count, and per entry its flags byte before the narrow form's four.
+    const { head, stride } = form(true);
+    const out = new Uint8Array(head + stride * built.length);
+    out[1] = built.length;
+    built.forEach((one, i) => out.set([one.flags, one.tag, one.operand & 0xff, one.operand >> 8, one.opcode], head + stride * i));
+    return out;
+  };
+
+  const own = tagged(screen.own);
+  const programs: ContainerPiece[] = [];
+  const pageLists: Uint8Array[] = [];
+  const copies: Uint8Array[] = [];
+  for (const page of screen.pages) {
+    pageLists.push(tagged(page.list));
+    copies.push(tagged(page.list));
+    const program: ContainerPiece = { bytes: new Uint8Array(0), refs: [], owner: 'slot-11-program' };
+    writer.unit(page.parts, program);
+    programs.push(program);
+  }
+  return { own, programs, pageLists, copies, chromePiece, extras };
+}
+
+/**
+ * The steps of a template screen that take a number, in the order the screen takes them: an `owns` step for a
+ * list of the screen's own, whose index is a number, a number step for an operand, a write for its variable.
+ * The builder's own walk, `writeScreen`, run with nothing drawn: every text measured as nothing wide, every
+ * picture a stand in, so neither the configuration nor its fonts are needed. **So a description's numbers for
+ * this screen pair one to one with what this returns**, and a caller can read each number's role off the
+ * steps, `named`, or number a screen no configuration holds from roles it knows the values of: section 415's
+ * help screens for a device a composer added, `todo-compile-one.md` 3.2.2.4.
+ */
+export function templateNumberSlots<F extends string>(screen: TemplateScreen<F>): Step[] {
+  const slots: Step[] = [];
+  const stand: PieceTarget = { to: { bytes: new Uint8Array(0), refs: [], owner: 'slot-11-program' }, offset: 0 };
+  const fonts = new Proxy({} as Record<F, number>, { get: () => 0 });
+  // Each list a distinct index, so the lists built on the way are never built two ways.
+  writeScreen(screen, () => ({ codes: [], width: 0 }), fonts, new Map(), new Map(), new Map(), {
+    numbers: [], pictures: Array<PieceTarget>(256).fill(stand),
+    numberOf: (step) => { slots.push(step); return slots.length; },
+  });
+  return slots;
+}
+
+/**
  * The screens built from a description, in mode order since the programs are laid out in that order and the
  * first program to draw a text holds it inline. Everything but the description's numbers is generated. `c` is
  * read for its fonts and character map only, which spell the words and measure them.
@@ -761,44 +916,7 @@ export function buildTemplateScreens<F extends string>(
     const described = spec.screens[s] as TemplateScreensSpec<F>['screens'][number];
     const numbers = [...described.numbers];
     const pictures = [...described.pictures];
-    const extras: ContainerPiece[] = [];
-    const chromePiece: ContainerPiece = { bytes: new Uint8Array(0), refs: [], owner: 'slot-11-program' };
-    let chromeBuilt = false;
-    const writer = programWriter(spell, spec.fonts, spec.homes, inline, lists, {
-      name: screen.name, numbers, pictures, extras,
-      // The chrome every page calls, built where the first page calls it, so its texts come first.
-      chrome: () => {
-        if (!chromeBuilt) {
-          chromeBuilt = true;
-          writer.unit(screen.chrome, chromePiece);
-        }
-        return chromePiece;
-      },
-    });
-    const tagged = (entries: readonly Entry[]): Uint8Array => {
-      const by = new Map(entries);
-      const order = keyListOrder(entries.map(([tag]) => tag));
-      const built = order.map((tag) => ({ tag, flags: flagOf(by.get(tag) as Step), ...writer.instruction(by.get(tag) as Step) }));
-      if (!isWide(entries)) return taggedListBytes(built);
-      // The wide form: a zero, the count, and per entry its flags byte before the narrow form's four.
-      const { head, stride } = form(true);
-      const out = new Uint8Array(head + stride * built.length);
-      out[1] = built.length;
-      built.forEach((one, i) => out.set([one.flags, one.tag, one.operand & 0xff, one.operand >> 8, one.opcode], head + stride * i));
-      return out;
-    };
-
-    const own = tagged(screen.own);
-    const programs: ContainerPiece[] = [];
-    const pageLists: Uint8Array[] = [];
-    const copies: Uint8Array[] = [];
-    for (const page of screen.pages) {
-      pageLists.push(tagged(page.list));
-      copies.push(tagged(page.list));
-      const program: ContainerPiece = { bytes: new Uint8Array(0), refs: [], owner: 'slot-11-program' };
-      writer.unit(page.parts, program);
-      programs.push(program);
-    }
+    const { own, programs, pageLists, copies, chromePiece, extras } = writeScreen(screen, spell, spec.fonts, spec.homes, inline, lists, { numbers, pictures });
     if (numbers.length !== 0) throw new ScreenRecordError(`the description holds ${numbers.length} numbers more than ${screen.name} takes`);
     if (pictures.length !== 0) throw new ScreenRecordError(`the description holds ${pictures.length} pictures more than ${screen.name} draws`);
     const one = recordOf(own, programs, pageLists, copies, undefined, { leads: described.leads, chromes: [chromePiece] });

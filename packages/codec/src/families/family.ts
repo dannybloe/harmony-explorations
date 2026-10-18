@@ -336,6 +336,23 @@ export interface Family<Choices extends CommonChoices = CommonChoices> {
    * a builder refuses the configuration, never falling back to the donor's part; returns the configuration and
    * the names of the parts built, in the order built. The Harmony One's, `todo-compile-one.md` 3.2.2:
    * `families/touch/builders.ts`. Absent, every part no composer writes stays the donor's.
+   *
+   * `composed` is the devices the composers added, in the order composed, since `todo-compile-one.md` 3.2.2.4:
+   * a part that asks about every device, the Harmony One's power off help, has to be told which devices are new
+   * and what the catalogue states of them, which the configuration does not say.
    */
-  readonly composedBuilders?: (c: Container) => { readonly container: Container; readonly built: readonly string[] };
+  readonly composedBuilders?: (c: Container, composed: readonly ComposedDeviceNote[]) => { readonly container: Container; readonly built: readonly string[] };
+}
+
+/**
+ * A device the composers added to a donor, as a builder on the composed path is told of it, `composedBuilders`:
+ * what the setup and the catalogue say of it that the configuration does not.
+ */
+export interface ComposedDeviceNote {
+  /** The setup's name for it, which a screen asking about it draws. */
+  readonly name: string;
+  /** Its label in the configuration, the stem of its state variables' names, `deviceVariables`. */
+  readonly label: string;
+  /** The power type the catalogue states, where it states one: a toggle sends the same steps on and off. */
+  readonly power?: 'discrete' | 'toggle';
 }

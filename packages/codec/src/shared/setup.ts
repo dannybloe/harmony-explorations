@@ -15,7 +15,7 @@ import { roundTrip } from '../emit.ts';
 import { assertQueueFits } from '../queue.ts';
 import type { BlendedSet } from '../blending.ts';
 import { assertStateTableConsistent } from '../sections.ts';
-import type { CommonChoices, Family } from '../families/family.ts';
+import type { CommonChoices, ComposedDeviceNote, Family } from '../families/family.ts';
 import { parse, type Container } from '../gspm.ts';
 import { activities, devices, deviceVariables, SEND_INFRARED, DEVICE_QUANTITY } from '../inventory.ts';
 import {
@@ -75,12 +75,16 @@ export interface SetupParts {
  * the donor checked to hold nothing the setup does not, the devices it lacks composed from the catalogue,
  * keep on applied to its activities, and the activities it lacks composed. Shared by `assembleSetup` and
  * `composeSetup`, which differ in what runs after: the assembly builds every part a generator exists for,
- * and `composeSetup` keeps the donor's but for the parts its family's builders make, `Family.composedBuilders`.
+ * and `composeSetup` keeps the donor's but for the parts its family's builders make, `Family.composedBuilders`,
+ * which it tells of the devices composed, `devicesComposed`, since `todo-compile-one.md` 3.2.2.4.
  */
 export function composeSetupParts(
   donor: Container, setup: Recipe, target: RecipeTarget, options: AssembleOptions, parts: SetupParts,
   note: (step: string, detail?: string) => void,
-): { container: Container; composed: { devices: string[]; activities: string[] }; keptOn: string[] } {
+): {
+  container: Container; composed: { devices: string[]; activities: string[] }; keptOn: string[];
+  devicesComposed: ComposedDeviceNote[];
+} {
   let c = donor;
   // 1. The donor holds nothing the setup does not, since no composer removes a device or an activity.
   //    A donor device is the setup's by the setup's name, or by `<manufacturer>_<model>`, the name the
@@ -204,7 +208,15 @@ export function composeSetupParts(
     composed.activities.push(activity.name);
     note('activity composed', activity.name);
   }
-  return { container: c, composed, keptOn };
+  // The devices composed, as a builder on the composed path is told of them: each one's label read back off the
+  // finished configuration, and the power type the catalogue stated, which the configuration does not say.
+  const devicesComposed = composed.devices.map((name): ComposedDeviceNote => {
+    const label = labelOf(name);
+    if (label === undefined) throw new AssemblyError(`the composed device ${name} is not in the container`);
+    const power = composedDevices.get(name)?.power?.type;
+    return { name, label, ...(power === undefined ? {} : { power }) };
+  });
+  return { container: c, composed, keptOn, devicesComposed };
 }
 
 /** The group of the device a setup names, through its label in the container. */
@@ -435,7 +447,7 @@ export function composeSetup(setup: Recipe, options: AssembleOptions): ComposedS
   // the donor's part.
   const builders = target.family.composedBuilders;
   if (builders !== undefined) {
-    const built = builders(c);
+    const built = builders(c, parts.devicesComposed);
     c = built.container;
     note('built', built.built.join(', '));
   }

@@ -1,12 +1,13 @@
 /**
  * The Harmony One's builders on the composed path, `todo-compile-one.md` 3.2.2, `families/touch/builders.ts`: the
- * firmware screens, the fixed screens, the tour and Remote Assistant, the status screens, the clock header, the case
- * programs, the hit pages, the wiring and the state tables, each built from a description of the configuration being
- * composed in place of the donor's part; the first five and the last two since 3.2.2.1, the status screens and the
- * clock header since 3.2.2.2, the case programs and the hit pages since 3.2.2.3.
+ * firmware screens, the fixed screens, the tour and Remote Assistant, the status screens, the clock header, the help
+ * screens, the case programs, the hit pages, the wiring and the state tables, each built from a description of the
+ * configuration being composed in place of the donor's part; the first five and the last two since 3.2.2.1, the
+ * status screens and the clock header since 3.2.2.2, the case programs and the hit pages since 3.2.2.3, the help
+ * screens since 3.2.2.4.
  *
  * What is held here is what the composition in `composesetup.test.ts` cannot show cheaply: that on Logitech's own
- * compile the nine come back byte for byte, so putting them on the path changes nothing a builder does not mean to;
+ * compile the ten come back byte for byte, so putting them on the path changes nothing a builder does not mean to;
  * what does change on the donor lettered in ours and why; that a builder's refusal is the path's; and that the
  * attribution refuses a screen the donor's placing carried, which is what lets it tell a built part from a carried
  * one where their bytes differ.
@@ -18,12 +19,16 @@ import assert from 'node:assert/strict';
 
 import { require_, skipUnless } from '@harmony/lab';
 import {
-  type Container, EVENT_MAP_SLOT, archSlot, claims, eventMap, modeRecords, parse, screenProgram, screenUnits, touchPages, valueMaps,
+  type Container, EVENT_MAP_SLOT, archSlot, claims, eventMap, modeRecords, parse, screenProgram, screenUnits, taggedList, touchPages,
+  valueMaps,
 } from '../src/index.ts';
 import { saveEdits } from '../src/edit.ts';
 import { SCREEN_TEXT_AT, SCREEN_TEXT_INLINE } from '../src/screen.ts';
 import { TOUCH } from '../src/families/touch/index.ts';
-import { TouchBuildError, touchBuiltBytes, withTouchBuilders } from '../src/families/touch/builders.ts';
+import { TOUCH_BUILT, TouchBuildError, touchBuiltBytes, withTouchBuilders } from '../src/families/touch/builders.ts';
+import { ATTEMPT_LINE, NO, YES, checkTouchHelpScreens, touchHelpScreenModes, withTouchHelpChain } from '../src/families/touch/helpscreens.ts';
+import { characterMap, decode } from '../src/text.ts';
+import { textGlyphs } from '../src/shared/spelling.ts';
 import { touchFixedScreenModes } from '../src/families/touch/fixedscreens.ts';
 import { touchTourScreenModes } from '../src/families/touch/tourscreens.ts';
 import { touchStatusScreenModes } from '../src/families/touch/statusscreens.ts';
@@ -32,6 +37,7 @@ import { touchValueMapRoles } from '../src/families/touch/caseprograms.ts';
 import { withCentredPadLabels } from '../src/families/touch/centring.ts';
 import { ENTER_MODE, caseQueued } from '../src/inventory.ts';
 import { appendValueMapCase, caseProgram } from '../src/shared/menus.ts';
+import { restamped } from '../src/shared/core.ts';
 
 const DONOR = 'harvest_one_two_devices';
 
@@ -42,22 +48,25 @@ const lettered = (): Container => {
   return letteredOnce;
 };
 
-test('todo-compile-one 3.2.2: on Logitech\'s compile of two devices the nine builders on the composed path give back every byte as it was',
+test('todo-compile-one 3.2.2: on Logitech\'s compile of two devices the ten builders on the composed path give back every byte as it was',
      skipUnless(DONOR), () => {
   const donor = parse(require_(DONOR));
   const out = withTouchBuilders(donor);
   assert.deepEqual(out.built, [
-    'firmware screens', 'fixed screens', 'tour and Remote Assistant', 'status screens', 'clock header', 'case programs', 'hit pages',
-    'wiring', 'state tables',
+    'firmware screens', 'fixed screens', 'tour and Remote Assistant', 'status screens', 'clock header', 'help screens', 'case programs',
+    'hit pages', 'wiring', 'state tables',
   ]);
   assert.equal(out.container.blob.length, donor.blob.length);
   assert.ok(out.container.blob.every((one, k) => one === donor.blob[k]));
 });
 
-test('todo-compile-one 3.2.2: on that compile lettered in ours the builders move the x of 197 texts, 10 of the firmware screens, 93 of the fixed screens, 32 of the tour\'s, 37 of the status screens\' and 25 of the clock\'s, placing them in our letters\' widths, and change no other byte but the trailer',
+/** Every builder but the help screens, whose wrapped lines change the file's length, held apart below. */
+const BUT_HELP = TOUCH_BUILT.filter((what) => what !== 'help screens');
+
+test('todo-compile-one 3.2.2: on that compile lettered in ours the builders but the help screens move the x of 197 texts, 10 of the firmware screens, 93 of the fixed screens, 32 of the tour\'s, 37 of the status screens\' and 25 of the clock\'s, placing them in our letters\' widths, and change no other byte but the trailer',
      skipUnless(DONOR), () => {
   const before = lettered();
-  const after = withTouchBuilders(before).container;
+  const after = withTouchBuilders(before, [], BUT_HELP).container;
   assert.equal(after.blob.length, before.blob.length);
   const differing = [...before.blob.keys()].filter((k) => before.blob[k] !== after.blob[k]);
   const trailer = claims(before).find((one) => one.owner === 'trailer')!;
@@ -101,6 +110,68 @@ test('todo-compile-one 3.2.2: on that compile lettered in ours the builders move
   // its minutes start at 158 whatever their width and do not move. The case programs and the hit pages draw no
   // text, so they move nothing here, 3.2.2.3.
   assert.deepEqual(count, { firmware: 10, fixed: 93, tour: 32, status: 37, clock: 25, other: 0 });
+});
+
+/** The texts the first page of mode `mode` draws, in program order, as `word x,y`. */
+function textsOf(c: Container, mode: number): string[] {
+  const map = characterMap(c)!;
+  return screenProgram(c, modeRecords(c)![mode]!.pages[0]!.program)!.flatMap((one) => {
+    const glyphs = textGlyphs(c, one);
+    return glyphs === undefined ? [] : [`${decode(glyphs, map)} ${one.operands[0]},${one.operands[1]}`];
+  });
+}
+
+test('todo-compile-one 3.2.2.4: on that compile lettered in ours the help screens break the attempt line, 177 pixels in our letters, and "If not, the remote will ask you", 174, by the questions\' wrap at 171, each block centred again; six bytes longer, and the rest is the other builders\' alone',
+     skipUnless(DONOR), () => {
+  const without = withTouchBuilders(lettered(), [], BUT_HELP).container;
+  const all = withTouchBuilders(lettered()).container;
+  // The help builder run after the others gives what it gives among them, so the difference is the help screens'.
+  assert.equal(Buffer.compare(withTouchHelpChain(without).blob, all.blob), 0);
+  // Each wrapped line one more text drawn inline: three bytes of opcode and place and a zero, less the space the
+  // break swallows. Logitech's letters make both lines fit, 170 and 165 pixels, so the compiles keep one line each.
+  assert.equal(all.blob.length - without.blob.length, 6);
+  const [attempt, ifNot] = touchHelpScreenModes(all).modes as [number, number];
+  // The attempt line a block of two centred on y 43, 37 and 49, each line centred across, floor((176 - w) / 2);
+  // the two lines under it as before, a block on y 168.
+  assert.deepEqual(textsOf(all, attempt), [
+    'Attemping to fix the 29,37', 'problem... 59,49', 'Keep the remote pointed to 9,162', 'your system. 50,174',
+  ]);
+  // "If not" a block of six rows on y 143 now, its second row still blank: 113, 137, 149, 161, 173.
+  assert.deepEqual(textsOf(all, ifNot).slice(0, 5), [
+    'Did that fix the problem? 16,113', 'If not, the remote will ask 13,137', 'you 77,149', 'questions to help correct the 6,161', 'problem. 62,173',
+  ]);
+  assert.equal(ATTEMPT_LINE, 'Attemping to fix the problem...');
+});
+
+test('todo-compile-one 3.2.2.4: a composed device with a power variable gets its four questions after the chain\'s own, numbered from the chain, and the result reads and rebuilds as a chain of three; one with none is not asked about; one the chain asks about already, or whose catalogue states no power type, is refused',
+     skipUnless(DONOR), () => {
+  const donor = parse(require_(DONOR));
+  // The donor's LG told of as a composed device under another name: it has a power variable, so the chain asks
+  // about it, after the Denon and the LG, with the LG's power off list.
+  const out = withTouchBuilders(donor, [{ name: 'Television', label: 'LG_OLED65G26LA', power: 'toggle' }]).container;
+  const chain = touchHelpScreenModes(out);
+  const modes = modeRecords(donor)!.length;
+  assert.deepEqual(chain.modes.slice(10), [modes, modes + 1, modes + 2, modes + 3]);
+  assert.deepEqual(chain.firsts.map((one) => one.resend), [true, true, false]);
+  // Its 32 lists appended to base slot 10, eight a question, and every screen read back and rebuilt byte for byte.
+  assert.equal(out.actionLists()!.length - donor.actionLists()!.length, 32);
+  // The donor's 2198 bytes and 660 read grow by the four screens and their lists, 816 bytes, 270 of them read.
+  assert.deepEqual(checkTouchHelpScreens(out), { devices: 3, screens: 14, lists: 108, described: 930, structure: 3014 });
+  // The new first question asks by the name it was given, one line; and the LG, the last of the chain's own, goes
+  // on to it where it left help before, from its first question's Yes and its "Did that fix the problem?"'s No.
+  assert.deepEqual(textsOf(out, modes).slice(0, 1).map((one) => one.replace(/ \d+,\d+$/, '')), ['Is the Television off?']);
+  const lg = { first: chain.modes[6]!, fixed: chain.modes[9]! };
+  const enters = (mode: number, tag: number): number | undefined => {
+    const entry = taggedList(out, modeRecords(out)![mode]!.pages[0]!.list)!.entries.find((one) => one.tag === tag)!;
+    return out.actionLists()![entry.operand]!.find((one) => one.opcode === 0x7e)?.operand;
+  };
+  assert.deepEqual([enters(lg.first, YES), enters(lg.fixed, NO)], [modes, modes]);
+  // A device with no power variable is not in the chain, as on every compile: the help is the donor's, byte for byte.
+  assert.equal(Buffer.compare(withTouchBuilders(donor, [{ name: 'Kodi', label: 'Kodi', power: 'toggle' }]).container.blob, donor.blob), 0);
+  assert.throws(() => withTouchBuilders(donor, [{ name: 'Denon AVR-X4800H', label: 'LG_OLED65G26LA', power: 'discrete' }]),
+    (error: unknown) => error instanceof TouchBuildError && /^building the Harmony One's help screens: the power off help already asks about Denon AVR-X4800H$/.test(error.message));
+  assert.throws(() => withTouchBuilders(donor, [{ name: 'Television', label: 'LG_OLED65G26LA' }]),
+    (error: unknown) => error instanceof TouchBuildError && /^building the Harmony One's help screens: the catalogue states no power type for Television/.test(error.message));
 });
 
 test('todo-compile-one 3.2.2: a builder\'s refusal is the composed path\'s, never the donor\'s part kept: a build year offering a leap year, the Dutch compile, the everyday One\'s, an event map naming one status screen for two codes, a clock header with two gauges, an idle write of another value and two hit pages at one index',
@@ -165,22 +236,24 @@ const donorBuilt = (): Container => {
   return donorBuiltOnce;
 };
 
-test('todo-compile-one 3.2.2.3: the attribution counts each builder\'s bytes on Logitech\'s compile of two devices, the case programs\' 497 and the hit pages\' 1986 being what their own checks span on that compile, sections 416 and 417',
+test('todo-compile-one 3.2.2.3: the attribution counts each builder\'s bytes on Logitech\'s compile of two devices, the help screens\' 2198, the case programs\' 497 and the hit pages\' 1986 being what their own checks span on that compile, sections 415, 416 and 417',
      skipUnless(DONOR), () => {
   const a = touchBuiltBytes(donorBuilt(), []);
-  // Each part's bytes, its description's included. The case programs' 497 are their 25 programs, seven lists and
+  // Each part's bytes, its description's included. The help screens' 2198 are their ten screens and 76 lists, the
+  // structure `checkTouchHelpScreens` reports on this compile, section 415. The case programs' 497 are their 25 programs, seven lists and
   // the table of 29 entries, the structure `checkTouchCasePrograms` reports on this compile; the hit pages' 1986 the
   // 23 pages and the touch map's table of 29, `checkTouchHitPages`'. Two independent counts of one span: the module
   // checks claim it from their descriptions, the attribution from what the rebuild put where.
   assert.deepEqual(a.generated, {
     'firmware screens': 3099, 'fixed screens': 13139, 'tour and Remote Assistant': 3900, 'status screens': 3872,
-    'clock header': 3558, 'case programs': 497, 'hit pages': 1986, wiring: 4527, 'state tables': 962,
+    'clock header': 3558, 'help screens': 2198, 'case programs': 497, 'hit pages': 1986, wiring: 4527, 'state tables': 962,
   });
-  // Of those, the bytes read as values: the case programs' 28 are section 416's figure for this compile; the hit
+  // Of those, the bytes read as values: the help screens' 660 and the case programs' 28 are sections 415's and 416's
+  // figures for this compile; the hit
   // pages read only the leads of the pages naming them, which lie outside what they build.
   assert.deepEqual(a.described, {
     'firmware screens': 401, 'fixed screens': 3967, 'tour and Remote Assistant': 680, 'status screens': 699,
-    'clock header': 337, 'case programs': 28, 'hit pages': 0, wiring: 1243, 'state tables': 0,
+    'clock header': 337, 'help screens': 660, 'case programs': 28, 'hit pages': 0, wiring: 1243, 'state tables': 0,
   });
 });
 
@@ -188,12 +261,15 @@ test('todo-compile-one 3.2.2.3: the attribution refuses a case entered in no tab
      skipUnless(DONOR), () => {
   // A case appended to the unread copy of the Devices record the way the activity composer appended every case
   // until 3.2.2.3, its program put in base slot 11 and named by address only: the case programs' table, generated
-  // whole, names one program more, and the rebuild is one entry, three bytes, longer.
-  const donor = parse(require_(DONOR));
+  // whole, names one program more, and the rebuild is one entry, three bytes, longer. On the donor as the composed
+  // path leaves it, centred, `donorBuilt`: since 3.2.2.4 the sets before a set of another length are compared first,
+  // and the donor's clock pickers, whose words the look centres, would be named before the case programs.
+  const donor = donorBuilt();
   const roles = touchValueMapRoles(donor);
   const unread = roles.records.get('devices unread')!;
   const idleList = caseQueued(donor, valueMaps(donor)![unread]!.entries[0]![1])!.operand;
-  const appended = appendValueMapCase(donor, unread, roles.idle + 1, caseProgram(ENTER_MODE, idleList));
+  // Its trailer restamped, as a composer's save does, so the comparison of the sets before finds nothing.
+  const appended = parse(restamped(Uint8Array.from(appendValueMapCase(donor, unread, roles.idle + 1, caseProgram(ENTER_MODE, idleList)).blob)));
   assert.throws(() => touchBuiltBytes(appended, []),
     (error: unknown) => error instanceof TouchBuildError && /^building the Harmony One's case programs: the rebuild is 3 bytes longer than the configuration$/.test(error.message));
   // Low Battery's hit page, page 0, with its first rectangle one unit further across.

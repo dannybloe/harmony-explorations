@@ -54854,6 +54854,43 @@ it on the path needs:
   base slot 11 programs and the fonts, as every builder on the path takes them; and the attempt screen's mode stays
   where a value map's case for value 0 names it, 6.6's.
 
+**Put on the path by `todo-compile-one.md` 3.2.2.4**, each point above answered as follows. None of it is a new
+reading of the remote: the wrap of a fixed line and the place of a composed device in the chain are decisions of
+ours, said as such in the code.
+
+* **The attempt line is wrapped as a question is.** Every block of these screens is now the template's `wrapped`
+  part, rows broken at 171 pixels by `wrapLines` and the block centred again. In Logitech's letters every fixed row
+  fits on all eighteen English compiles, the attempt line the widest at 170, so each stays one line where it was and
+  every compile rebuilds byte for byte as before. In ours two do not: the attempt line, 177, becomes "Attemping to fix
+  the" over "problem..." at y 37 and 49, and "If not, the remote will ask you", 174, becomes two rows of the "If not"
+  block, now six rows centred on y 143, the second of them "you" alone. Six bytes more on the donor lettered in ours.
+  The reader of a wrapped part takes a row's lines by their words rather than by the run of texts, since the attempt
+  line's block is followed by another and since a description of the donor lettered in ours reads the one line
+  Logitech's letters made while the build breaks it in two. The engine's refusal of a text starting off the screen
+  stays, for every builder; the help screens no longer meet it.
+* **A composed device gets its four screens.** The devices in the chain are exactly those with a power variable, so
+  every composed device with one is asked about, after the donor's devices in the order composed. Its name is the
+  setup's; its power off lists are what its power variable's switch off runs, the device composer's send list or,
+  for an action of several steps, the send lists the composer's calling list names; it is sent unasked where the
+  catalogue states its power discrete, the rule above with the PS3 its exception. The setup's catalogue type reaches
+  the builder through `Family.composedBuilders`, which is told of the composed devices since then. The new screens
+  take the next free modes and base slot 10 lists, so nothing is renumbered and the case entering the attempt screen
+  is untouched; each is made room for with `appendMode` and stand in programs and then put in place by
+  `withModeRecords` with the chain's own.
+* **Their numbers come from the chain's own screens, by role.** Each number the template takes says which number of
+  the configuration's it is: the two of the remote's lists every enter handler runs, the two every leave handler
+  runs, the one after `07 FFFB`, the questions' timer, the attempt's timer, the value map, the three header programs
+  and the three the chrome queues. On all 17 English compiles whose chain asks about a device each role holds one
+  value throughout the chain, and reading the numbers by role and numbering the chain again from them gives back the
+  description's numbers exactly. A chain where a role is held two ways is refused, since a new screen would have two
+  numbers to choose between.
+
+On the composed test setup the chain asks about seven devices, 30 screens: the Denon and the LG, then the Plasma, the
+KPN, Kodi, the Switch and the Sony HT, the Plasma and the Switch sent unasked, their catalogue power being discrete,
+and the other three toggles. The file grows by 4590 bytes, `mode other` and the help screens' 703 bytes of lists
+leave the carried listing, and `touchBuiltBytes` attributes 6248 bytes to the help screens, 1994 of them read.
+`packages/codec/test/touchhelpscreens.test.ts`, `touchbuilders.test.ts` and `composesetup.test.ts` hold it.
+
 ### Reviewer 1, blind
 
 Given the question and the corpus and not this section or the module, the blind reviewer found the same 332 screens
@@ -54894,7 +54931,10 @@ variable, 39 discrete, 34 toggles and the PS3's 7 of 7; "Nothing to do" entered 
 the blind control's totals, 68133, 23702, 2031 and 44431; the failing controls, a chain with none sent unasked
 among them; the lists, named by nothing outside and all below shared, 916 and 287; and the donor lettered in ours
 refused for the attempt line, 177 pixels wide at x -1. The other screen sets' tests, `touchbuilders.test.ts` and
-`composesetup.test.ts` pass unchanged with the engine's refusal of a text off the screen.
+`composesetup.test.ts` pass unchanged with the engine's refusal of a text off the screen. **That last refusal was
+replaced by 3.2.2.4**, above: the test holds the donor lettered in ours built with its two wide lines broken in
+two, the fixed lines fitting in 171 pixels in Logitech's letters on all eighteen, the widest 170, the chain's
+numbers by role on the 17 with a device, and the engine's refusal of a text off the screen on a line of its own.
 
 ### What would falsify it
 

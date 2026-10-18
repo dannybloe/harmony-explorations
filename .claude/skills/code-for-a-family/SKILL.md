@@ -93,6 +93,7 @@ and fails when a module joins the list or a count on it rises. The list is the d
 
 | which of a family's builders run over a setup composed onto a Logitech compile, in place of the donor's parts, and what of the finished file they reproduce | `Family.composedBuilders`, the Harmony One's `families/touch/builders.ts` with its attribution `touchBuiltBytes`; `composeSetup` calls the member and names no builder, `todo-compile-one.md` 3.2.2 |
 | which base slot 14 records an activity's cases go in beyond those `activityKeyedMaps` finds, and whether they are entered in base slot 11's table | the family's activity composer asking its own catalogue and table rule, the Harmony One's `touchValueMapRoles` and `withTouchScreenTable` in `families/touch/caseprograms.ts`, `todo-compile-one.md` 3.2.2.3; not a change to the shared finder, which the Harmony 600 family uses too and where no unread copy is measured |
+| what a builder on the composed path needs of a composed device that the configuration does not say, its setup name and the power type the catalogue states | `ComposedDeviceNote`, which the shared `composeSetup` passes to `Family.composedBuilders`; the Harmony One's power off help asks it, `withTouchHelpChain`, `todo-compile-one.md` 3.2.2.4. Not a test of the remote in the shared setup: it passes the same note to every family |
 
 Add a row when a new kind of difference lands.
 
