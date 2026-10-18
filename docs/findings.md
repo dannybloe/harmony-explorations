@@ -52164,11 +52164,16 @@ through the two test accounts, in their own compiles and carried into the three 
 person set them up through an account, so a map may hold an edit, which is not checked. On them the table gives 1223 of 1330
 bound keys and 26 of 43 device modes whole, a scratch measurement, and what the misses are is not read here.
 
-**The record.** All 90 device modes of the eighteen of the nineteen compiles that hold one have one of two
+**The record.** All 91 device modes of the eighteen of the nineteen compiles that hold one have one of two
 shapes, a scratch measurement: the 85 of several pages have 49 entries in one order, a press of 46 keys bound
 to a list or to nothing and three handlers, tags `0x06`, `0x07` and `0x2D`, run on entering and leaving the
-mode and for its screen; the 5 of one page add the two page turn keys bound to nothing, 51 entries, with the
-handlers ordered otherwise. The `0x07` and `0x2D` lists hold the same instructions on every device mode of a
+mode and for its screen; the 6 of one page add the two page turn keys bound to nothing, 51 entries, with the
+handlers ordered otherwise.
+*Corrected by section 420's review: this said 90 device modes and 5 of one page. Counted mode by mode there are
+91, the 89 of the English compiles and the Dutch compile's two, and 6 of one page: modes 105, 255, 126, 219
+and 223 of the three protocol campaign compiles and `one_config`'s 166, one of them, 219, a page that draws no
+pad. Which one the count of 5 missed is not known. The 85 stand. The device reader names no mode for
+`harvest_one_families_1`'s devices, whose mode 73 is a device page by shape, so none of these counts holds it.* The `0x07` and `0x2D` lists hold the same instructions on every device mode of a
 compile. **The `0x06` list does not**: it holds four instructions on every mode of several pages and the first
 three of those on every mode of one page, which shows on the four compiles holding both kinds. Each device names
 a copy of its own. The composer takes the shape from an existing device mode of as many pages, so of its own
@@ -55793,3 +55798,227 @@ other instructions, a copy calling the page list's own lists, or a hit page shar
 Arch 12 (Harmony One) alone: the screens and the builder are the touch family's. The Harmony 600, 650 and 700 lay
 their activity menus out otherwise (section 316) and were not checked for this. Skin 54 and the European skin 59 in
 English; the Dutch compile refused.
+
+## 420. The Harmony One's device pages are one shape on every English compile, built whole from each device's name, label lines and keys and the configuration's numbering, byte for byte on the eighteen; on the composed path a device's pages are built by the same template
+
+**Todo `todo-compile-one.md` 4.2 and 3.2.2.8**: a device's pages, the rows of commands and their hit rectangles,
+which the composed path carried for the donor's two devices (`mode device`, 4569 bytes, and their lists and hit
+pages) and drew for every composed device on a frame copied off the donor's device page, sections 401 and 404.
+
+**Sources checked**: sections 69 (a page list's copy), 271 (device mode's map is the mode's own key map), 275 (the
+page arrows swallowed on a screen of one page), 293 (paging), 394 (a pad's label), 397 (a device mode's two shapes of
+own key map), 400 (the key lights), 401 (the keys below a device page), 404 (a pad opens with the click), 411 to 419
+(the template engine, the hit page rules, the activity menu); `docs/how-a-harmony-works.md` on device mode; the
+nineteen Harmony One compiles. Logitech's client was searched by name only: its button mapping views
+(`CustomizeSoftButtonsView`, `InlineLCDButtonCustomizationView`) edit which commands a screen offers, and the pages
+are compiled by the service, as section 419 found for the menu, so the form comes from the compiles. The firmware
+was not read again.
+
+### One shape
+
+**On all eighteen English compiles every device mode is one template**, `devicePageScreen` in
+`families/touch/devicepages.ts`, whose inputs are the device's name, its pads' label lines page by page, and the
+keypad keys its own key map binds. 89 device modes of one to 22 pages, as the device reader, `devices`, names them;
+it names no mode for `harvest_one_families_1`'s two devices, though that compile's mode 73 is a device page, below.
+
+| part | the shape |
+|---|---|
+| own key map | 46 key codes, 37 keypad keys (scans 1 to 33, 35, 36, 39 and 40, so every keypad scan of 1 to 40 but the Activities, Off and Help keys, 34, 37 and 38 by section 412's reading) and 9 touch codes (43 to 45 and 48 to 53), each bound straight to a list or to nothing, the touch codes always to nothing, so only keypad keys are ever bound; on a mode of one page the arrows 46 and 47 swallowed too, so 51 entries against 49, section 397's two shapes; entering starts the header timer and calls the lists lighting keys 4 and 6 and, on several pages, the pair 2 and 0; leaving cancels the timer and calls the three matching off lists, on one page too; the header handler three `0x73` |
+| stored order | three tags share a bucket with a key: `0x06` with scan 15's `0x8F`, `0x07` with scan 14's `0x8E`, `0x2D` with scan 36's `0xA4`; on several pages each handler is stored after its key, on one page `0x06` and `0x07` before theirs and `0x2D` after, on all 89 |
+| chrome | section 411's, titled with the device's name, the total and "pages" where there are several pages |
+| a page | the chrome's call; each pad its picture at `DEVICE_PAGE_SLOTS[k]`, six to a page in reading order and the last page short, and its label's lines each centred on the 81 pixel pad, the block on the pad's label row, section 394's placement; the pad font selected once, after the first pad's picture |
+| the keys below | a switch on a variable saying whether an activity runs: 0 draws "Activities" centred on the left half at y 202, 1 "Current" and "Activity" at 196 and 207; both arms jump to a tail drawing "Devices" centred on the right half at 202 and, on several pages, the page's number ending at x 18 and "/" at 18, y 18 |
+| a page's list | a pad the click and a call of its command, codes 48 up by its place; the left key bound straight to a value map, `0x72`; the right key the click and another value map; the keys at the two codes after the pads, so 43 and 44 on a page of six |
+| the copy | lists of its own, the page list's instructions |
+| a hit page | one per page shape by section 417's rules: the pads in reading order, the left and the right key, the two edges |
+
+**The number of lists is a closure**, held by the test against each file: `4 * devices + 2 * pages + 2 * pads + 3`,
+a pad's list and its copy's, the right key's and its copy's on every page, each device's entering, leaving, header
+and chrome lists, and the three off lists every device's leaving calls, built once.
+
+| compiles | devices | pages | pads | lists | hit pages | described | device page bytes |
+|---|---|---|---|---|---|---|---|
+| `harvest_one_two_devices` | 2 | 22 | 123 | 301 | 3 | 3555 | 8684 |
+| `harvest_one_families_1` | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| `harvest_one_families_2` | 2 | 17 | 96 | 237 | 3 | 2740 | 6955 |
+| `harvest_one_families_3` | 4 | 35 | 207 | 503 | 3 | 5018 | 14088 |
+| `one_spare_after_sync` | 1 | 14 | 81 | 197 | 2 | 2353 | 5724 |
+| `one_config_unprogrammed` | 1 | 9 | 50 | 125 | 2 | 1187 | 3573 |
+| `calibration_one`, `calibration_favchannels`, `phase7_before` | 3 | 19 | 110 | 273 | 3 | 3193 | 7809 |
+| `phase7_after` | 4 | 25 | 146 | 361 | 3 | 4095 | 10127 |
+| `one_friend_legacy_sync_config` | 4 | 28 | 161 | 397 | 3 | 4115 | 11318 |
+| `one_spare_myharmony` | 5 | 33 | 191 | 471 | 3 | 5007 | 13221 |
+| `one_spare_20260830`, `calibration_favzero` | 6 | 35 | 198 | 493 | 4 | 5281 | 14060 |
+| `compiled_protocols` | 15 | 107 | 603 | 1483 | 5 | 16169 | 41154 |
+| `compiled_protocols_2` | 15 | 73 | 402 | 1013 | 6 | 11146 | 28955 |
+| `compiled_protocols_3` | 10 | 59 | 332 | 825 | 5 | 9201 | 23242 |
+| `one_config` | 5 | 16 | 81 | 217 | 6 | 2272 | 6923 |
+
+### What the description carries and what is generated
+
+**Read**: per device its name, off the chrome's first text, and the font its title is drawn in, a role per device
+(on Logitech's compiles every device's title font is the same one; a composed device whose name that font cannot
+spell takes another of its height, below); each pad's label as the lines it is drawn in, the texts inside its
+picture; and which keypad keys its own key map binds. And the numbering: the mode, every list index, the
+command each key and each pad sends among them, the timer, the light lists, the two value maps, the switch's variable,
+the header and chrome programs, the pictures (the full screen background and each pad's), five fonts, each page's hit
+page index and the homes of texts drawn by reference. **Generated**: every opcode and constant, the tags and their
+stored order, every list's instructions, the words "Activities", "Current", "Activity", "Devices", "pages" and the
+page numbers and where each goes, where every label line goes, which text is inline, the records, the switch and its
+tail, and the hit pages' areas and codes. **The blind control** overwrites every byte of the device pages the
+description does not read, 140624 of 225511 over the eighteen, and every compile comes back byte for byte; the
+description reads 84887 bytes inside them and 2112 outside, the glyph codes of the homes.
+
+**A label is read as its lines, not as the command's name.** A configuration holds no name a pad could be checked
+against, section 394 naming 558 pads by the record they send, and a name cut with `..` cannot be read back whole; so
+the lines are the description and their places are generated. A composer lays a name out with `touchLabelLines`.
+
+**The stored order of the own key map is the one inference**: the order is measured, and the engine's
+`keyListOrder` refuses three tags sharing a bucket, so the template states an insertion order that reproduces it,
+`keyListOrderInserted`: the handlers before the keys on a mode of several pages, and on one of one page the header
+handler before them and the other two after. Another insertion order could give the same 89. The order of one page
+rests on 6 modes in four compiles, and no other own key map of the nineteen compiles stores its handlers that way:
+of the 122 others where a handler shares a bucket with a key, 83 screens of one page store all three before their
+keys, 19 store `0x2D` before and `0x06` and `0x07` after, 19 hold no `0x2D` and store the two after, and the one of
+several pages stores all after. On the device modes one page and swallowed arrows are the same 6 modes, so either
+could be what decides it.
+
+**Our look is a choice of the same template**: the pad and background pictures and the fonts are the description's,
+and one structural choice is the touch family's, `selectEach`, a select of the pad font before every pad, which our
+composer made so that a colour button's word on its circle can be smoothed apart from the words on the boxes,
+`colourbuttons.ts`. It is read off a page as it stands; 88 of the 89 modes select once a page, and the 89th,
+`compiled_protocols_3`'s Wii, mode 219, is one page that draws no pad and selects nothing, so it is read as
+Logitech's by construction rather than by measurement. It is also the zero end of the pad range: a device page
+of no pad draws the keys below the screen alone, and is rebuilt byte for byte with the rest.
+
+**The controls fail where they should**: two labels swapped give a different file; a pad dropped shifts every number
+after it one role early and is refused as a list built two ways; Volume up's command one on gives a different file;
+two pads given one list are refused as a list built two ways; the two key fonts the other way round are refused by
+the speller; our select before every pad on Logitech's page gives a different file; a page of other shape named to
+another's hit page is refused by the builder.
+
+### Beyond the eighteen
+
+The Dutch compile, `one_friend_asfound_config`, is refused by its words: its counter font holds the letters of its
+own word for "pages" and no `e`. No language branch. Its two modes' own key maps agree with the shape (49 entries,
+keys before handlers, entering and leaving lists of four), read by the second reviewer; its pages are not compared.
+
+**`harvest_one_families_1`'s mode 73 is a device page the device reader misses**, found by the blind re-measure:
+`devices` gives the compile's two devices no mode, so the builder, which takes its modes from that reader, builds
+none there and the mode is carried as it was. Named by hand, the template rebuilds it byte for byte: one device,
+"Samsung Samsung ..", 44 pages, 263 pads, 621 lists, which is the closure's `4 + 88 + 526 + 3`, and 15848 bytes.
+So the shape holds there too, and what is missing is the reader's, which stays open.
+
+### On the composed path
+
+**Put there by `todo-compile-one.md` 3.2.2.8.** The touch family's `composeTouchDeviceScreen` keeps the device list's
+row and its list and builds the mode with `withTouchDevicePage`: the device pages the configuration holds are
+described and their shared numbers read by role (the timer, the light lists, the value maps, the switch's variable,
+the header and chrome programs), the device described (its name, its pads six to a page with lines laid out by
+`touchLabelLines`, the keys `compiled.keys` binds, our select before every pad), its lists of its own numbered from
+the next free base slot 10 index, each page given the table's hit page of its shape or one appended, the mode added
+with stand in programs of the built page's shape, and **every device mode built together**, so a text a held page
+draws inline is drawn by reference there, as the whole set's build draws it. Built alone, the new pages drew
+"Activities", "Current", "Activity", "Devices" and a label inline, 26 bytes more than the set's rebuild, which the
+check of the result then refused. Then the builder on the path, `builders.ts`' device pages, after the activity menu
+and before the case programs, rebuilds every device mode, the donor's and the composed ones, and `touchBuiltBytes`
+attributes them.
+
+**Measured on the composed test setup**, seven devices and 41 pages: the device pages are built whole, 16155 bytes,
+6269 of them described; `mode device` 4569 went, the hit pages came down 485 to 167 (the 318 of the donor's three
+device page shapes), the lists 3960 to 1820 (the device pages' own lists that matched the donor's); carried 1123519
+to 1116492. What is left of the hit pages is two pages the help screens name, index 4, which their questions are
+touched through, and the generic help screen's, 24 (4.6); `todo-compile-one.md` 3.2.1 had read the first as a setup
+page of 4.2's, corrected there. The file is 1642 bytes longer, 1756491 to 1758133: the
+lists 1655 more, 158 lists and their pointers, the five composed devices' own entering, leaving, header and chrome
+lists where the copying composer shared another device's or called no header, 20, the right key's list on each of
+their 19 pages and on its copy, 38, and the copies' own pad lists, 100, where the copying composer's copies ran the
+page lists' own; a hit page of three pads, 109 bytes, where every composed page named the page of six pads; and the
+programs 122 fewer, the chromes and pages in Logitech's shape where the copying composer drew its own.
+
+**What changed on the screen**, rendered before and after, the LG's first and last pages and the Plasma's and KPN's
+first two: "Activities" and "Devices" sit a few pixels right, centred by our letters' widths where the donor's places
+were kept; the LG's pad labels are centred by our letters' widths too. Not drawn by the renderer, which runs no
+queued program: a composed device's header now runs the header programs the donor's device pages run (the clock,
+the gauges, the sending mark), where the copying composer's chrome queued none; and a composed short page's hit page
+holds its pads alone, where it named the page of six.
+
+**Still open**: the composed hit page table is not in first use order (section 419's), the device page's appended at
+the end; the composed devices' lists are numbered from the next free index, not per page as Logitech numbers them;
+the stored order's insertion order is inferred; a device's commands, the lists a pad and a key call, stay the device
+composer's (8.1), and the donor's carried with its infrared; `harvest_one_families_1`'s mode 73 is not found
+by the device reader and so not built.
+
+**A composed device's title**: the configuration's title font holds only the letters of its own devices' names on a
+Logitech compile that is not lettered in ours, so a composed name it cannot spell is drawn in another font of the
+same height that can, `fontThatSpells`, which is why the title font is a role per device. On the composed test
+setup, lettered in ours, every title is in the one font.
+
+**Tests rewritten, none deleted.** Four tests asserted the copying composer's page and assert the template's now:
+a composed short page on the hit page of its own shape rather than the six pad page, its keys at the codes after its
+pads with a right key list of its own, and the title drawn twice, since the chrome is section 411's, which draws the
+title, queues the header programs and draws it again, as every held device's chrome does
+(`compose.test.ts` twice, `composecatalogue.test.ts`, and `onelook.test.ts`'s section 401 test, whose control, a
+configuration whose device pages bind no keys, is now refused rather than composed plainly). On Logitech's compile
+of two devices lettered in ours the builders move 260 more texts, the 123 pads' 172 label lines and the 22 pages'
+88 key words, each centred in our letters, `touchbuilders.test.ts`.
+
+### Reviewer 1, blind
+
+A fresh agent, given the item's question and none of this section or its code, re-measured the device pages on the
+nineteen compiles with scripts of its own. **Agreed**: 89 device modes, 565 pages and 3199 pads on the eighteen;
+every page but the last holds six pads, in reading order on 565 of 565; the own key map of 49 entries on the 83
+modes of several pages and 51 on the 6 of one page, in the stored orders above, with `0x06` lighting channels 4, 6
+and 2 and 0 and `0x07` switching them off, and the pair left out of the entering list on one page; the chrome, the
+page program, the switch's words and places, the counter; a pad's list the click and its command, the left key a
+direct value map and the right key the click and another; the copy's own lists of the same instructions, 565 of
+565; the hit page's codes 48 to 53 then 43 and 44, then 46 and 47, one hit page per pad count in each compile; and
+the lists `4 * modes + 2 * (pads + pages)` on every compile, the six shared light lists counted apart (the three off lists among them, which this builds), which is the
+closure here. **Found**: `harvest_one_families_1`'s mode 73, a device page the device reader misses, written up
+above and asserted; the one device mode of no pad, `compiled_protocols_3`'s mode 219, now said; three variants of
+the header handler's values and the chrome's queue, uniform within each compile, which are read as numbering by
+role and so need no rule; nine titles cut with `..`, read as the name; and four compiles in which an activity
+screen of six pads names the device pages' six pad hit page, which is that hit page's other reader and not a
+device page.
+
+### Reviewer 2, the sentences
+
+A second agent checked every sentence and figure against the files. **Held**: all four tests, every column of the
+table and its sums, the list closure on every compile, the composed setup's length and carried arithmetic by owner,
+the composed device pages' 16155 bytes and 559 lists all credited to this builder, the hit pages left, the own key
+map mode by mode on all 89, the render's description, no dashes and no personal names. **Corrected here**: the
+own key map's 46 were called hard keys and are 37 keypad keys and 9 touch codes, and scan 34 was called the Off key
+and is the Activities key, section 412; "89 of 89" select once was 88 and the padless mode; a code comment said a
+mode of one page's two more entries move the buckets, and both shapes lay out in 128 buckets, only the order
+within one changing; a comment said no padless device page is in the corpus; section 397's 90 device modes and 5
+of one page, corrected in place, 91 and 6; the one page insertion order's narrow evidence, now stated; the compose
+setup's key loop, which skipped the short pages and holds all 41 now; a control's pattern, narrowed to the byte
+comparison; the module's claim about the Dutch compile's layout, narrowed to its own key map; and 3.2.1's reading
+of a help screen's hit page as 4.2's. **Not reproduced**: the 26 bytes a page built alone drew more, and whether
+all 2112 bytes read outside are the homes' glyph codes, whose count agrees. **Noted**: the check refuses the
+finished composed setup once un-blended, at a page's font selects, so the composed figures are held through the
+attribution, `touchBuiltBytes`, which compares after the look's centring.
+
+### Asserted
+
+`packages/codec/test/touchdevicepages.test.ts`: the rebuild on the eighteen with every figure in the table above, the
+list closure, six pads to a page and the last short, Logitech's single select and the one mode of no pad counted
+apart; the Dutch refusal; `harvest_one_families_1`'s mode 73 rebuilt when named and missed by the reader; the blind
+control's totals; the failing controls; and the composed path, two devices composed onto `one_config` lettered in ours, one
+page and two, each result rebuilt byte for byte and each page on the hit page of its shape, and a key of scan 34
+refused. `composesetup.test.ts` holds the attribution, the carried list, every device page list opening with the
+click (223 pads and 41 right keys), both keys bound on all 41 pages at the codes their hit pages name, and the file
+length. `touchbuilders.test.ts` holds the 260 texts moved and the attribution on Logitech's compile of two devices,
+8684 bytes and 3482 described, the 3555 the check reads less 73 read outside what it builds.
+
+### What would falsify it
+
+An English Harmony One compile whose device page draws its keys below otherwise, a pad list of other instructions, a
+copy calling the page list's own lists, a pad off its place, or a device mode whose own key map binds a key outside
+the 46.
+
+### Which architectures
+
+Arch 12 (Harmony One) alone: the screens and the builder are the touch family's. The Harmony 600, 650 and 700 draw
+their device pages with `screenrecords.ts` (sections 330 and 397) and were not checked for this. Skin 54 and the
+European skin 59 in English; the Dutch compile refused.

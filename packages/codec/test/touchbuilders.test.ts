@@ -8,7 +8,7 @@
  * since 3.2.2.6, the activity menu since 3.2.2.7.
  *
  * What is held here is what the composition in `composesetup.test.ts` cannot show cheaply: that on Logitech's own
- * compile the thirteen come back byte for byte, so putting them on the path changes nothing a builder does not mean to;
+ * compile the fourteen come back byte for byte, so putting them on the path changes nothing a builder does not mean to;
  * what does change on the donor lettered in ours and why; that a builder's refusal is the path's; and that the
  * attribution refuses a screen the donor's placing carried, which is what lets it tell a built part from a carried
  * one where their bytes differ.
@@ -35,6 +35,7 @@ import { touchTourScreenModes } from '../src/families/touch/tourscreens.ts';
 import { touchStatusScreenModes } from '../src/families/touch/statusscreens.ts';
 import { touchClockHeaderEntries } from '../src/families/touch/clockheader.ts';
 import { touchActivityMenu } from '../src/families/touch/activityscreen.ts';
+import { touchDeviceModes } from '../src/families/touch/devicepages.ts';
 import { touchValueMapRoles } from '../src/families/touch/caseprograms.ts';
 import { withCentredPadLabels } from '../src/families/touch/centring.ts';
 import { ENTER_MODE, caseQueued } from '../src/inventory.ts';
@@ -54,13 +55,13 @@ const lettered = (): Container => {
   return letteredOnce;
 };
 
-test('todo-compile-one 3.2.2: on Logitech\'s compile of two devices the thirteen builders on the composed path give back every byte as it was',
+test('todo-compile-one 3.2.2: on Logitech\'s compile of two devices the fourteen builders on the composed path give back every byte as it was',
      skipUnless(DONOR), () => {
   const donor = parse(require_(DONOR));
   const out = withTouchBuilders(donor);
   assert.deepEqual(out.built, [
     'firmware screens', 'fixed screens', 'tour and Remote Assistant', 'status screens', 'clock header', 'help screens', 'activity menu',
-    'case programs', 'hit pages', 'wiring', 'state tables', 'raw slot 18', 'number senders',
+    'device pages', 'case programs', 'hit pages', 'wiring', 'state tables', 'raw slot 18', 'number senders',
   ]);
   assert.equal(out.container.blob.length, donor.blob.length);
   assert.ok(out.container.blob.every((one, k) => one === donor.blob[k]));
@@ -69,7 +70,7 @@ test('todo-compile-one 3.2.2: on Logitech\'s compile of two devices the thirteen
 /** Every builder but the help screens, whose wrapped lines change the file's length, held apart below. */
 const BUT_HELP = TOUCH_BUILT.filter((what) => what !== 'help screens');
 
-test('todo-compile-one 3.2.2: on that compile lettered in ours the builders but the help screens move the x of 199 texts, 10 of the firmware screens, 93 of the fixed screens, 32 of the tour\'s, 37 of the status screens\', 25 of the clock\'s and the activity menu\'s two key words, placing them in our letters\' widths, and change no other byte but the trailer',
+test('todo-compile-one 3.2.2: on that compile lettered in ours the builders but the help screens move the x of 459 texts, 10 of the firmware screens, 93 of the fixed screens, 32 of the tour\'s, 37 of the status screens\', 25 of the clock\'s, the activity menu\'s two key words and the device pages\' 260, placing them in our letters\' widths, and change no other byte but the trailer',
      skipUnless(DONOR), () => {
   const before = lettered();
   const after = withTouchBuilders(before, [], BUT_HELP).container;
@@ -100,7 +101,8 @@ test('todo-compile-one 3.2.2: on that compile lettered in ours the builders but 
   const status = new Set(touchStatusScreenModes(before));
   const clock = new Set(touchClockHeaderEntries(before).entries);
   const menu = touchActivityMenu(before);
-  const count = { firmware: 0, fixed: 0, tour: 0, status: 0, clock: 0, menu: 0, other: 0 };
+  const deviceModes = new Set(touchDeviceModes(before));
+  const count = { firmware: 0, fixed: 0, tour: 0, status: 0, clock: 0, menu: 0, deviceLabels: 0, deviceKeys: 0, other: 0 };
   for (const k of texts) {
     const mode = modeOf.get(k);
     const entry = entryOf.get(k);
@@ -110,6 +112,10 @@ test('todo-compile-one 3.2.2: on that compile lettered in ours the builders but 
     else if (mode !== undefined && status.has(mode)) count.status += 1;
     else if (entry !== undefined && clock.has(entry)) count.clock += 1;
     else if (mode !== undefined && mode === menu) count.menu += 1;
+    // A device page's text below y 190 is a line of a pad's label, and at or below it a word on the keys below
+    // the screen, "Activities", "Current", "Activity" or "Devices", the y being the byte after the x.
+    else if (mode !== undefined && deviceModes.has(mode) && before.blob[k + 1]! < 190) count.deviceLabels += 1;
+    else if (mode !== undefined && deviceModes.has(mode)) count.deviceKeys += 1;
     else count.other += 1;
   }
   // The status screens' 37 are lines centred on the screen, in 27 of the 29 screens: one or two lines each, the
@@ -117,8 +123,11 @@ test('todo-compile-one 3.2.2: on that compile lettered in ours the builders but 
   // in the clock itself, the days ending at x 138 and the hours at 156, which our letters' widths end elsewhere;
   // its minutes start at 158 whatever their width and do not move. The case programs and the hit pages draw no
   // text, so they move nothing here, 3.2.2.3. The activity menu's two are "Options" and "Devices", centred on the
-  // halves below the screen, section 419; the donor's menu holds no row, so no name of one moves.
-  assert.deepEqual(count, { firmware: 10, fixed: 93, tour: 32, status: 37, clock: 25, menu: 2, other: 0 });
+  // halves below the screen, section 419; the donor's menu holds no row, so no name of one moves. The device pages'
+  // 260, section 420, are 172 lines of their 123 pads' labels, each centred on its pad, and the 88 words below the
+  // screen, the four of each of the 22 pages, centred on their halves; the device pages built before section 420
+  // were carried, so none of these moved and they counted nowhere.
+  assert.deepEqual(count, { firmware: 10, fixed: 93, tour: 32, status: 37, clock: 25, menu: 2, deviceLabels: 172, deviceKeys: 88, other: 0 });
 });
 
 /** The texts the first page of mode `mode` draws, in program order, as `word x,y`. */
@@ -258,9 +267,11 @@ test('todo-compile-one 3.2.2.3: the attribution counts each builder\'s bytes on 
   // `todo-compile-one.md` 6.5 built the lists below the screens and the wiring's variables' transitions, section 418.
   // The activity menu's 260 are its 284, `checkTouchActivityMenu`'s on this compile, section 419, less the three off
   // lists its leaving calls, the page keys' and lights 5 and 7's, 24 bytes, which the firmware screens build first.
+  // The device pages' 8684 are `checkTouchDevicePages`' structure on this compile, section 420: two devices, 22 pages,
+  // their lists and their three hit pages' areas, the hit pages' table staying the hit pages builder's.
   assert.deepEqual(a.generated, {
     'firmware screens': 3237, 'fixed screens': 14332, 'tour and Remote Assistant': 4015, 'status screens': 3872,
-    'clock header': 3558, 'help screens': 2198, 'activity menu': 260, 'case programs': 497, 'hit pages': 1986, wiring: 4625, 'state tables': 962,
+    'clock header': 3558, 'help screens': 2198, 'activity menu': 260, 'device pages': 8684, 'case programs': 497, 'hit pages': 1986, wiring: 4625, 'state tables': 962,
     'raw slot 18': 2, 'number senders': 1,
   });
   // Of those, the bytes read as values: the help screens' 660 and the case programs' 28 are sections 415's and 416's
@@ -268,10 +279,12 @@ test('todo-compile-one 3.2.2.3: the attribution counts each builder\'s bytes on 
   // pages read only the leads of the pages naming them, which lie outside what they build; raw slot 18 is a
   // constant and base slot 16's table a count and addresses, 6.7. The activity menu's 57 are its 60 on this compile,
   // section 419, less the three off lists' variables, read by the firmware screens, which build those lists first.
-  // 401, 3967, 680 and 1243 for the four before section 418.
+  // 401, 3967, 680 and 1243 for the four before section 418. The device pages' 3482 are the 3555 their check reads
+  // on this compile, section 420, less the 73 it reads outside what it builds, the glyph codes of texts other screens
+  // hold that a device page draws by reference.
   assert.deepEqual(a.described, {
     'firmware screens': 439, 'fixed screens': 4038, 'tour and Remote Assistant': 719, 'status screens': 699,
-    'clock header': 337, 'help screens': 660, 'activity menu': 57, 'case programs': 28, 'hit pages': 0, wiring: 1274, 'state tables': 0,
+    'clock header': 337, 'help screens': 660, 'activity menu': 57, 'device pages': 3482, 'case programs': 28, 'hit pages': 0, wiring: 1274, 'state tables': 0,
     'raw slot 18': 0, 'number senders': 0,
   });
 });

@@ -45,36 +45,49 @@ test('the One test setup composed onto Logitech\'s compile of two devices comes 
   assert.equal(characterMap(c)?.alphabet, 'oxanium');
   // The screen light at the family's default.
   assert.equal(timers(c)!.records[touchScreenLightTimer(c)!]!.duration, TOUCH_CHOICES.screenLightSeconds);
-  // Every device page whose hit page offers the keys below the screen binds both, the composed ones included,
-  // section 401: seven devices, the two the donor held and the five composed.
+  // Every device page binds both keys below the screen, the composed ones included, section 401: seven devices, the
+  // two the donor held and the five composed. The keys are the two codes its hit page offers after the pads, 43 and
+  // 44 on a page of six and the next two codes on a short page, section 420, so all 41 pages are held, the short
+  // ones too, and both keys at the codes the hit page names.
   const records = modeRecords(c)!;
   const hits = touchPages(c)!;
   const modes = [...new Set(deviceModeMaps(c).map((one) => one.mode))];
   assert.equal(modes.length, 7);
+  let keyed = 0;
   for (const mode of modes) {
     for (const page of records[mode]!.pages) {
-      const codes = (hits.records[page.lead!]?.areas ?? []).map((area) => area.code);
-      if (!codes.includes(43) || !codes.includes(44)) continue;
-      const bound = (taggedList(c, page.list)?.entries ?? []).filter((one) => [0x80 | 43, 0x80 | 44].includes(one.tag) && one.opcode !== 0);
+      // The hit page's codes but the edges: the pads, then the left and the right key.
+      const codes = (hits.records[page.lead!]?.areas ?? []).map((area) => area.code).filter((code) => code !== 46 && code !== 47);
+      const keyCodes = codes.slice(-2);
+      const bound = (taggedList(c, page.list)?.entries ?? []).filter((one) => keyCodes.some((code) => one.tag === (0x80 | code)) && one.opcode !== 0);
       assert.equal(bound.length, 2, `mode ${mode}`);
+      keyed += 1;
     }
   }
-  // Every row's list opens with the click, as Logitech's do, section 404: the donor's two devices and the five
-  // composed, 125 rows and 100.
+  assert.equal(keyed, 41);
+  // Every list a device page binds opens with the click, as Logitech's do, section 404: a pad's, the click and a call
+  // of its command, and the right key's, the click and the value map entering the device list. Since the device
+  // pages are built, `todo-compile-one.md` 4.2, a page binds its keys at the codes after its pads, so the right key
+  // of a short page is no longer at 44; told apart by what follows the click. 223 pads, the donor's 123 and the
+  // composed 100, and a right key on each of the 41 pages, the donor's 22 and the composed devices' 19.
   const lists = c.actionLists()!;
-  let rows = 0;
+  let pads = 0;
+  let keys = 0;
+  let pages = 0;
   for (const mode of modes) {
     for (const page of records[mode]!.pages) {
+      pages += 1;
       for (const entry of taggedList(c, page.list)?.entries ?? []) {
         const scan = entry.tag & 0x3f;
-        if (entry.opcode !== 0x7f || scan === 43 || scan === 44) continue;
-        rows += 1;
-        assert.deepEqual([lists[entry.operand]?.[0]?.opcode, lists[entry.operand]?.[0]?.operand], [0x75, 0x0fca],
-                         `mode ${mode} scan ${scan}`);
+        if (entry.opcode !== 0x7f) continue;
+        const body = lists[entry.operand] ?? [];
+        assert.deepEqual([body[0]?.opcode, body[0]?.operand], [0x75, 0x0fca], `mode ${mode} scan ${scan}`);
+        if (body[1]?.opcode === 0x7f) pads += 1;
+        else if (body[1]?.opcode === 0x72) keys += 1;
       }
     }
   }
-  assert.equal(rows, 225);
+  assert.deepEqual([pads, keys, pages], [223, 41, 41]);
   // And no binding of any page clicks twice: an activity screen's pad clicks itself and calls the command under
   // the device page's click, and a sequence's key copy, which has none, section 404. Logitech's compiles hold none.
   const clicks = (at: number, seen: Set<number>): number => {
@@ -102,8 +115,14 @@ test('the One test setup composed onto Logitech\'s compile of two devices comes 
   // row lists, as Logitech's copies run lists of their own; and its programs 20 fewer: each font, the rows' and the
   // counter's, selected once a page rather than once a text, 10, the second page's key words drawn by reference to
   // the first page's, 10, the header's total and "pages" under one select, 2, less 2 for the second page's counter
-  // drawn by reference, a byte a text more.
-  assert.equal(c.blob.length, 1756491);
+  // drawn by reference, a byte a text more. 1758133 since 3.2.2.8, 1642 bytes more: every composed device's pages
+  // built by the device page template, section 420, in Logitech's shape. Its lists 1655 more, 158 lists and their
+  // pointers: each of the five devices' own entering, leaving, header and chrome lists where the copying composer
+  // shared another device's or drew no header, 20, the right key's list on each of the 19 pages and on its copy, 38,
+  // and the copies' own pad lists, 100, where the copying composer's copies ran the page lists' own; a hit page of
+  // three pads, 109, where every composed page named the page of six pads; and the programs 122 fewer, the chrome
+  // and the pages in Logitech's shape where the copying composer drew its own.
+  assert.equal(c.blob.length, 1758133);
 });
 
 // ---------------------------------------------------------------------------------------------------------
@@ -207,10 +226,10 @@ const builtBytes = (): TouchBuiltBytes => {
   return builtOnce;
 };
 
-test('todo-compile-one 3.2.2: the firmware screens, the fixed screens, the tour and Remote Assistant, the status screens, the clock header, the help screens, the activity menu, the case programs, the hit pages, the wiring, the state tables, raw slot 18 and base slot 16\'s table of the composed setup come out of the touch family\'s builders, run on the composed path and measured on the result',
+test('todo-compile-one 3.2.2: the firmware screens, the fixed screens, the tour and Remote Assistant, the status screens, the clock header, the help screens, the activity menu, the device pages, the case programs, the hit pages, the wiring, the state tables, raw slot 18 and base slot 16\'s table of the composed setup come out of the touch family\'s builders, run on the composed path and measured on the result',
      NEEDS, () => {
   const out = composed();
-  // On the path: one step after the composers and before the look, naming the thirteen parts in the order built.
+  // On the path: one step after the composers and before the look, naming the fourteen parts in the order built.
   const names = out.steps.map((one) => one.step);
   assert.equal(out.steps.find((one) => one.step === 'built')?.detail, TOUCH_BUILT.join(', '));
   assert.ok(names.indexOf('activity composed') < names.indexOf('built') && names.indexOf('built') < names.indexOf('look'));
@@ -237,6 +256,13 @@ test('todo-compile-one 3.2.2: the firmware screens, the fixed screens, the tour 
   // build first; its 204 described below are 207 less those lists' three variables. The hit pages' 2013 came down to 2007 with it: the table holds two
   // pages fewer, three bytes an entry.
   //
+  // The device pages' 16155, since 3.2.2.8, are the seven device modes, 41 pages, built whole, section 420: their
+  // own key maps, chromes, pages, switches and tails, page lists and copies, the 559 lists those reach but a pad's
+  // command (each device's entering, leaving, header and chrome lists, 28, the three off lists, a right key's list
+  // and its copy's on each page, 82, and a pad's list and its copy's, 446), and their four hit pages; its 6269 described are the devices' names and label lines and the numbering,
+  // every command a key or a pad sends among it. The hit pages' 2010, three more, are the table's entry for the
+  // page of three pads the composed devices' short pages added.
+  //
   // Raw slot 18's 2 and base slot 16's 1, since `todo-compile-one.md` 6.7, are the two zero bytes every One
   // container holds and the number sender table's count of zero, the composers making no favourite channel sent
   // as a number; neither reads a byte as a value.
@@ -248,14 +274,14 @@ test('todo-compile-one 3.2.2: the firmware screens, the fixed screens, the tour 
   // composed path renumbered (`0x29` on the donor, `0x37` here), so they matched no donor list and were never carried.
   assert.deepEqual(a.generated, {
     'firmware screens': 3237, 'fixed screens': 14332, 'tour and Remote Assistant': 4015, 'status screens': 3872,
-    'clock header': 3558, 'help screens': 6245, 'activity menu': 786, 'case programs': 572, 'hit pages': 2007, wiring: 4625, 'state tables': 2347,
+    'clock header': 3558, 'help screens': 6245, 'activity menu': 786, 'device pages': 16155, 'case programs': 572, 'hit pages': 2010, wiring: 4625, 'state tables': 2347,
     'raw slot 18': 2, 'number senders': 1,
   });
   // 401, 3967, 680 and 1243 for the four before 6.5: what a list below reads is the numbers of the lists it calls
   // and of the variables it writes, and the tour's setting, one byte.
   assert.deepEqual(a.described, {
     'firmware screens': 439, 'fixed screens': 4038, 'tour and Remote Assistant': 719, 'status screens': 699,
-    'clock header': 337, 'help screens': 1994, 'activity menu': 204, 'case programs': 33, 'hit pages': 0, wiring: 1274, 'state tables': 0,
+    'clock header': 337, 'help screens': 1994, 'activity menu': 204, 'device pages': 6269, 'case programs': 33, 'hit pages': 0, wiring: 1274, 'state tables': 0,
     'raw slot 18': 0, 'number senders': 0,
   });
   // The help screens' 1994 against 660 on the donor are the numbers and names of a chain of seven rather than two:
@@ -287,7 +313,7 @@ test('todo-compile-one 3.2.2.4: the composed setup\'s power off help asks about 
   assert.equal(modeRecords(c)!.length, 128);
 });
 
-test('todo-compile-one 3.2: the One\'s composed test setup carries 1123519 of its 1756491 bytes out of Logitech\'s donor, per kind as pinned here, a list that may only shrink',
+test('todo-compile-one 3.2: the One\'s composed test setup carries 1116492 of its 1758133 bytes out of Logitech\'s donor, per kind as pinned here, a list that may only shrink',
      NEEDS, () => {
   const out = composed().container;
   const got = carried(out, parse(require_('harvest_one_two_devices')), builtBytes().owners);
@@ -311,11 +337,14 @@ test('todo-compile-one 3.2: the One\'s composed test setup carries 1123519 of it
   // by 61, the donor's page of no row, which the menu's first page is rebuilt over, and the lists by 44: the 58 bytes
   // of menu lists that matched the donor's went (its page's key lists and their copies, the leaving, header and
   // chrome lists), and two of the activity composer's lists, the Devices key's `[75 0FCA, 7E 3D]` on two of its
-  // working screens (4.3), 14 bytes, took the two donor lists of that shape the menu's had taken before.
+  // working screens (4.3), 14 bytes, took the two donor lists of that shape the menu's had taken before. Its eighth,
+  // 3.2.2.8, put the device pages there, section 420: `mode device` went, 4569, the donor's two devices' modes, the
+  // hit pages came down by the 318 of the three device page shapes, and the lists by 2140, the device pages' own
+  // lists that matched the donor's, its pads' lists and their copies', the keys' and the handlers'.
   //
-  // **What is left of those two rows.** `hit-page` 485 is the five pages no builder makes: the two of the census's 25
-  // only setup screens name, a device page's six commands with both page keys (4.2) and the generic help screen's
-  // (4.6), and the donor's three of its device screens (4.2). `case-program` 10 is not a part carried: it is two
+  // **What is left of those two rows.** `hit-page` 167 is the two pages of the donor's no builder makes, both the help
+  // screens' (4.6): index 4, which their questions are touched through, and the generic help screen's, 24. 485 before
+  // 3.2.2.8, with the donor's three device page shapes, the six pad one among them. `case-program` 10 is not a part carried: it is two
   // of the ten cases the activity composer writes under Devices, `11 mode 7E 00` entering the idle device list, byte
   // for byte the donor's idle cases of the Devices record and its unread copy, which this match takes once the
   // builder's own, built and so left out, no longer take them. The composer writes them, `caseProgram`.
@@ -325,12 +354,12 @@ test('todo-compile-one 3.2: the One\'s composed test setup carries 1123519 of it
   assert.deepEqual(got, {
     'picture': 1012839, // 5.3: the 36 every compile holds, the clock's 16 and the donor's 6
     'slot-5-block': 96946, 'slot-5-header': 4116, 'slot-5-group': 594, // the donor's two devices' infrared, 8.1
-    'slot-10-list': 3960, // per builder in the listing: 17609 before 3.2.2, 6649 before 3.2.2.2, 6114 before 3.2.2.3, 6054 before 3.2.2.4, 5351 before 3.2.2.5, 4004 before 3.2.2.7
-    'mode device': 4569, // and `mode other` 11983 before 3.2.2 and 1495 before 3.2.2.4
-    'hit-page': 485, 'case-program': 10, // 2444 and 341 before 3.2.2.3, 546 before 3.2.2.7, and base slot 11's `table` 89
+    'slot-10-list': 1820, // per builder in the listing: 17609 before 3.2.2, 6649 before 3.2.2.2, 6114 before 3.2.2.3, 6054 before 3.2.2.4, 5351 before 3.2.2.5, 4004 before 3.2.2.7, 3960 before 3.2.2.8
+    // `mode device` 4569 before 3.2.2.8, and `mode other` 11983 before 3.2.2 and 1495 before 3.2.2.4
+    'hit-page': 167, 'case-program': 10, // 2444 and 341 before 3.2.2.3, 546 before 3.2.2.7, 485 before 3.2.2.8, and base slot 11's `table` 89
   });
-  assert.equal(Object.values(got).reduce((sum, one) => sum + one, 0), 1123519);
-  assert.equal(out.blob.length, 1756491);
+  assert.equal(Object.values(got).reduce((sum, one) => sum + one, 0), 1116492);
+  assert.equal(out.blob.length, 1758133);
 });
 
 /** The 34 lists of the donor the composed setup carries and nothing can run, `todo-compile-one.md` 6.7. */
@@ -371,7 +400,7 @@ test('todo-compile-one 6.7: the composed setup carries 34 lists of its donor, 26
     one[0] += 1;
     one[1] += bytesOf(index);
   }
-  assert.equal(lists.length, 2696);
+  assert.equal(lists.length, 2854);
   assert.deepEqual(tally, { carried: [34, 262], 'donor sends': [11, 77], written: [26, 215] });
   assert.deepEqual(unreached.filter((index) => group(index) === 'carried'), UNRUN);
   assert.equal(unreached.filter((index) => group(index) === 'written' && index < theirs.length).length, 14);

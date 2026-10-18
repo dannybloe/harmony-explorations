@@ -681,8 +681,13 @@ test('a device of more than six commands composed onto a Harmony One takes a pag
   const records = modeRecords(composed)!;
   const record = records.at(-1)!;
   assert.equal(record.pages.length, 3, 'six, six and two');
-  // The rows, scans 48 to 53; each page also binds the two keys below the screen, section 401.
-  const rows = (page: { list: number }) => taggedList(composed, page.list)!.entries.filter((entry) => (entry.tag & 0x3f) >= 48);
+  // The rows, scans 48 to 53; each page also binds the two keys below the screen, section 401, and since section 420
+  // a short page binds them at the two codes after its pads, 50 and 51 on a page of two, so a row is told from a key
+  // by what it runs: a row's list calls its command, the right key's sets a value map and the left key is one. Taken
+  // in code order, which is reading order, since the page list stores its entries in Logitech's bucket order.
+  const listsOf = composed.actionLists()!;
+  const rows = (page: { list: number }) => taggedList(composed, page.list)!.entries.filter((entry) => (entry.tag & 0x3f) >= 48
+    && entry.opcode === 0x7f && listsOf[entry.operand]?.[1]?.opcode === 0x7f).sort((a, b) => a.tag - b.tag);
   assert.deepEqual(record.pages.map((page) => rows(page).length), [6, 6, 2]);
   // Each row runs its own command's list, in order across the pages, through a list of the click and a call of it,
   // section 404: the fourteen rows are the device's fourteen command lists in the order the commands were given.

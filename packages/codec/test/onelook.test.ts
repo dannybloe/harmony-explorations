@@ -40,6 +40,8 @@ const ONE_COMPILES = ['one_config', 'one_config_unprogrammed', 'one_spare_after_
 const containerOf = (name: string): Container => parse(load(name) as Uint8Array);
 
 const u24 = (bytes: Uint8Array, at: number): number => (bytes[at] as number) | ((bytes[at + 1] as number) << 8) | ((bytes[at + 2] as number) << 16);
+/** The codes a device page's pads and then its two keys take, section 417: the pads 48 up, then 43 and 44 once they run out. */
+const HIT_ORDER = [48, 49, 50, 51, 52, 53, 43, 44];
 
 /** A page's instructions, its own and its chrome's, following every transfer. */
 function pageInstructions(c: Container, program: number) {
@@ -345,8 +347,14 @@ test('section 401: every device page of the One compiles closes on the two arm s
     { containers: 18, pages: 571, switched: 571, offering: 508, bindsBoth: 508, bindsOne: 0, boundNotOffered: 14 });
 });
 
-test('section 401: a composed device page binds the keys below the screen as the configuration\'s own device page does and closes on a copy of its switch, and without one to copy closes plainly',
+test('section 401, rebuilt by section 420: a composed device page binds the keys below the screen at the codes after its pads as the configuration\'s own device pages do, and closes on their switch, and a configuration whose device pages bind no keys is refused',
      skipUnless('harvest_one_two_devices'), () => {
+  // **This test asserted a copy until section 420**: the composer took the first device page of Logitech's that
+  // binds both keys and copied its two bindings and its switch's arms, and with none to copy it closed plainly.
+  // The device pages are built by the template now, `devicepages.ts`, so a composed page binds the keys at the two
+  // codes after its pads (43 and 44 on a page of six, 49 and 50 on a page of one) and the right key runs a list of
+  // its own, as each of Logitech's pages does; what has to agree with the configuration's own pages is the left
+  // key's value map, the right key's instructions, and what the switch's arms draw.
   const TELEVISION = [
     { stated: 'G:Toshiba 32 Bit:(0x20DF10EF)(Repeat)():3', held: false },
     { stated: 'G:Toshiba 32 Bit:(0x20DF40BF)(Repeat)():3', held: true },
@@ -360,34 +368,44 @@ test('section 401: a composed device page binds the keys below the screen as the
   const c = containerOf('harvest_one_two_devices');
   const { after, mode } = compose(c);
   const records = modeRecords(after)!;
-  // The page it copies: the first device page of Logitech's that binds both.
-  const donor = [...new Set(deviceModeMaps(after).map((one) => one.mode))].filter((one) => one !== mode)
-    .flatMap((one) => records[one]!.pages)
-    .find((page) => (taggedList(after, page.list)?.entries ?? []).filter((one) => [0x80 | 43, 0x80 | 44].includes(one.tag) && one.opcode !== 0).length === 2
-      && screenProgram(after, page.program)?.at(-1)?.opcode === SCREEN_SWITCH_NARROW)!;
-  const bottomOf = (list: number) => (taggedList(after, list)?.entries ?? [])
-    .filter((one) => [0x80 | 43, 0x80 | 44].includes(one.tag)).map((one) => [one.tag, one.operand, one.opcode]);
+  const lists = after.actionLists()!;
+  // A page's pads are the codes 48 up whose list opens with the click and calls a command; the keys take the next two
+  // codes of section 417's order, 48 to 53 and then 43 and 44, so 43 and 44 on a page of six.
+  const padsOf = (list: number) => (taggedList(after, list)?.entries ?? []).filter((one) => (one.tag & 0x3f) >= 48
+    && one.opcode === 0x7f && lists[one.operand]?.[1]?.opcode === 0x7f).length;
+  const keysOf = (list: number) => {
+    const pads = padsOf(list);
+    const entries = taggedList(after, list)?.entries ?? [];
+    return [HIT_ORDER[pads]!, HIT_ORDER[pads + 1]!].map((code) => entries.find((one) => one.tag === (0x80 | code))).map((one) => one === undefined
+      ? undefined : one.opcode === 0x7f ? [one.opcode, lists[one.operand]!.map((item) => [item.opcode, item.operand])] : [one.opcode, one.operand]);
+  };
+  // The page to agree with: a page of Logitech's that is not the first in mode order, so its texts are drawn by
+  // reference as every page after the first draws them, and the arms' bytes compare whole.
+  const held = [...new Set(deviceModeMaps(after).map((one) => one.mode))].filter((one) => one !== mode).sort((a, b) => a - b)
+    .flatMap((one) => records[one]!.pages);
+  const donor = held[1]!;
   const armsOf = (program: number) => {
     const closing = screenProgram(after, program)!.at(-1)!;
     assert.equal(closing.opcode, SCREEN_SWITCH_NARROW);
-    const tail = after.flashBase + closing.start + closing.length;
     return [u24(closing.operands, 3), u24(closing.operands, 7)].map((arm) => {
       const program = screenProgram(after, arm)!;
       const jump = program.findIndex((one) => one.opcode === SCREEN_JUMP);
-      // Each arm jumps back to the byte after the switch, where the counter and "Devices" are drawn.
-      assert.equal(u24(program[jump]!.operands, 0), tail);
       return program.slice(0, jump).map((one) => [...after.blob.slice(one.start, one.start + one.length)].join(','));
     });
   };
   const pages = records[mode]!.pages;
   assert.equal(pages.length, 2);
+  assert.deepEqual(pages.map((page) => padsOf(page.list)), [6, 1]);
   for (const page of pages) {
-    assert.deepEqual(bottomOf(page.list), bottomOf(donor.list));
-    // The arms draw what the copied page's draw, the same fonts and the same strings.
+    assert.deepEqual(keysOf(page.list), keysOf(donor.list));
     assert.deepEqual(armsOf(page.program), armsOf(donor.program));
   }
-  // The control: the same configuration with every device page's two bindings cut to nothing, a same length
-  // edit, has no page to copy, and the composed pages bind neither key and close on the end marker.
+  // The right key's list is each page's own, as on Logitech's pages: two pages, two lists.
+  const rightOf = (list: number) => taggedList(after, list)!.entries.find((one) => one.tag === (0x80 | HIT_ORDER[padsOf(list) + 1]!))!.operand;
+  assert.notEqual(rightOf(pages[0]!.list), rightOf(pages[1]!.list));
+  // The control: the same configuration with every device page's two bindings cut to nothing, a same length edit,
+  // holds device pages that are not the template's shape, and the composer refuses rather than build a page whose
+  // keys do nothing.
   const cut = Uint8Array.from(c.blob);
   for (const one of new Set(deviceModeMaps(c).map((m) => m.mode))) {
     for (const page of modeRecords(c)![one]!.pages) {
@@ -397,12 +415,7 @@ test('section 401: a composed device page binds the keys below the screen as the
       });
     }
   }
-  const plain = compose(parse(restamped(cut)));
-  assert.equal(modeRecords(plain.after)![plain.mode]!.pages.length, 2);
-  for (const page of modeRecords(plain.after)![plain.mode]!.pages) {
-    assert.deepEqual((taggedList(plain.after, page.list)?.entries ?? []).filter((one) => [0x80 | 43, 0x80 | 44].includes(one.tag)), []);
-    assert.equal(screenProgram(plain.after, page.program)!.at(-1)!.opcode, SCREEN_END);
-  }
+  assert.throws(() => compose(parse(restamped(cut))), /page 1's list's binding of tag 0xab is not 0x72/);
 });
 
 /** A three instruction list switching two key light channels and writing the pair's variable: the channels, or undefined. */

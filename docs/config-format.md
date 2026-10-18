@@ -2857,6 +2857,33 @@ described, its numbering read by role, new lists the next free indices, a hit pa
 it is. **Unconfirmed**: what decides which three header programs and in what order; they are read, not generated. The
 shape of a menu of two pages, which no Logitech compile here holds, is taken from the later pages of menus of three.
 
+**The device pages, built**, section 420: `families/touch/devicepages.ts` through the same engine, arch 12 (Harmony
+One) only. Every device mode, its own key map (the device's map of the hard keys, section 271), its chrome, its pages
+of pads and the keys below the screen, the lists those run but a pad's command, and the hit pages: one template on
+the eighteen English compiles whose input is a device's name, its pads' label lines and the keypad keys it binds.
+89 device modes of one to 22 pages read, rebuilt byte for byte, among them one of no pad; the device reader names no
+mode for `harvest_one_families_1`'s two devices, though its mode 73 is a device page the template rebuilds when named
+(open); the Dutch compile refused by its words. `4 * devices + 2 * pages + 2 * pads + 3` lists per compile.
+
+| what | rule, on the eighteen English compiles |
+|---|---|
+| own key map | 46 key codes, 37 keypad keys (scans 1 to 33, 35, 36, 39 and 40; not the Activities, Off and Help keys, 34, 37 and 38) and 9 touch codes (43 to 45 and 48 to 53), each bound straight to a list or to nothing, the touch codes always to nothing; on a mode of one page the arrows 46 and 47 swallowed too, 51 entries against 49; tag 6 the timer started, the lights of keys 4 and 6 on and, on several pages, the pair 2 and 0; tag 7 the timer cancelled and the three off lists; tag `0x2D` three `0x73` |
+| stored order | `keyListOrderInserted`, the handlers inserted before the keys on several pages, and on one page the header handler before them and the other two after; inferred from the stored order, which is what is measured |
+| chrome | section 411's, titled with the device's name, the total and "pages" where there are several |
+| a page | the chrome's call; pad k at `DEVICE_PAGE_SLOTS[k]`, six to a page in reading order and the last page short, each line of its label centred on the 81 pixel pad and the block on the pad's label row (section 394's placement); the pad font selected once, after the first pad's picture; then a switch on whether an activity runs, "Activities" at y 202 or "Current" and "Activity" at 196 and 207 centred on the left half, both arms joining a tail drawing "Devices" on the right half at 202 and, on several pages, the page's number ending at x 18 and "/" at 18, y 18 |
+| a page's list | a pad: the click and a call of its command, at codes 48 up; then the left key bound straight to a value map (`0x72`), the right key the click and another value map, at the codes after the pads |
+| the copy | lists of its own with the page list's instructions |
+| a hit page | one per page shape by section 417's rules: the pads, the left and the right key, the edges |
+| read | the name off the chrome and its title font, a role per device, the label lines off the texts inside each pad, the bound keys; the mode, every list index (each key's and each pad's command among them), the timer, the light lists, the two value maps, the switch's variable, the header and chrome programs, the pictures, five fonts, the hit page indices, the homes |
+
+**Our look** is the same template with one structural choice, a select of the pad font before every pad, so a colour
+button's word can be smoothed against its circle; read off a page as it stands. **On the composed path** a device's
+pages are built by the template, `withTouchDevicePage`, numbered from the configuration's device modes by role, all
+device modes built together so a text is drawn inline once. **Unconfirmed**: the insertion order behind the stored
+order of a device mode's own key map, the one page order resting on 6 modes on which one page and swallowed arrows
+coincide; whether the compiler ever puts pads on a page other than six to a page in the
+command order, which the description reads rather than generates.
+
 **Which of the 78 the 3.4 firmware draws by number**: one. A mode becomes current only from an `0x7E` operand, the
 mode stack (a mode that was current) or base slot 4, and base slot 4 is walked only for status code 9, "LCD Module
 Failed", after the licence check passed and while the configuration's verdict stands, so its key 9 (mode 19 in

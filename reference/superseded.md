@@ -616,4 +616,5 @@ it reachable in the same commit and the test comparing the two tables is what ca
 | `Pause and Guide keys` | section 397, corrected per review | on the Harmony One `OK` comes before `Select` on the Select, Play and Pause keys, resting on one device; its Guide row is the Harmony 650's |
 | `SkipForward's code on the Denon` | section 397, corrected per review | the Denon AVR-X4800H's Channel Up on the One is the code the 650's order gives too, as `TuneUp`, so it is no difference between the two tables |
 | `Channel Up sends SkipForward on the Denon` | section 397, corrected per review | as above |
+| `All 90 device modes` | section 397, corrected by section 420's review | 91 device modes, 85 of several pages and 6 of one page; `harvest_one_families_1`'s mode 73 is a device page the device reader misses |
 | `indexing a font table at` | section 40, corrected | the font pointer is in RAM at `0x398` on the Harmony 700 and at `0x2EC` on the Harmony One; the 600's is not read |

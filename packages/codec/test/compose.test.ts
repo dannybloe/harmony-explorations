@@ -123,6 +123,7 @@ import { deviceModeChrome } from '../src/families/four-slot/chrome.ts';
 import { activityKeyedRecords } from '../src/families/four-slot/activityscreen.ts';
 import { startAndFlag, startTargets, tagFiveMisfit, tagFiveShape } from './tagfive.ts';
 import { FIRST_DEVICE_IDENTIFIER } from '../src/shared/core.ts';
+import { textGlyphs } from '../src/shared/spelling.ts';
 
 /**
  * The goal device's commands, as the catalogue states them for the LG 42LM3400: power is a toggle
@@ -358,24 +359,31 @@ test('one_config takes the television onto its screen and every check holds', sk
   assert.ok(trailerAgrees(after));
   assert.equal(roundTrip(after).equal, true, 'the emitter reproduces the composed file');
 
-  // The new page: one page on hit page 10, the standard device layout, binding the three commands
-  // on the layout's first three slots, and its screen program drawing the label and the rows with
-  // nothing unresolved in any variant.
+  // The new page: one page of three pads, binding the three commands on the layout's first three places, and its
+  // screen program drawing the label and the rows with nothing unresolved in any variant. **Its hit page is one
+  // of three pads since section 420**, by section 417's rules, and `one_config` holds one of that shape already, a
+  // device's short last page's, index 39, so it is reused and none appended; until then every composed page named
+  // the six pad page, index 10, whose three lower pads then answered a touch with nothing.
   const record = modeRecords(after)![composed.mode]!;
   assert.equal(record.pageCount, 1);
   const page = record.pages[0]!;
-  assert.equal(page.lead, 10, 'the six slot device layout, reused rather than inserted');
+  assert.equal(page.lead, 39, 'the hit page of its own shape, reused');
+  assert.equal(touchPages(after)!.records.length, touchPages(before)!.records.length, 'none appended');
+  assert.deepEqual(touchPages(after)!.records[page.lead as number]!.areas.map((area) => area.code), [48, 49, 50, 51, 52, 46, 47],
+                   'the three pads, the two keys at the codes after them, and the edges');
   const bindings = taggedList(after, page.list)!;
-  // The two keys below the screen first, bound as the configuration's own first device page binds them, the
-  // working screen's table and the list back to the device list, section 401; then the rows, each running a list
-  // of the click and a call of its command, as Logitech's rows do, section 404.
+  // The rows, each running a list of the click and a call of its command, as Logitech's rows do, section 404; then
+  // the two keys below the screen at the next two codes, the left key the value map the configuration's own device
+  // pages bind and the right key a list of its own of the click and the value map back to the device list,
+  // section 420.
   const rowLists = after.actionLists()!;
-  assert.deepEqual(bindings.entries.map((one) => [one.tag & 0x3f, one.opcode, one.operand]).slice(0, 2),
-                   [[43, 0x72, 0x823], [44, 0x7f, 3815]], 'the keys below the screen');
-  assert.deepEqual(bindings.entries.slice(2).map((one) => [one.tag & 0x3f, one.opcode,
-    ...rowLists[one.operand]!.map((item) => [item.opcode, item.operand])]),
-                   ROWS.map((row) => [48 + row.k, 0x7f, [0x75, 0xfca], [0x7f, device.lists[row.k]]]),
-                   'then the rows clicking and running the commands, top left to middle left');
+  const at = (code: number) => bindings.entries.find((one) => one.tag === (0x80 | code))!;
+  assert.deepEqual(ROWS.map((row) => at(48 + row.k)).map((one) => [one.opcode, ...rowLists[one.operand]!.map((item) => [item.opcode, item.operand])]),
+                   ROWS.map((row) => [0x7f, [0x75, 0xfca], [0x7f, device.lists[row.k]]]),
+                   'the rows clicking and running the commands, top left to middle left');
+  assert.deepEqual([[at(51).opcode, at(51).operand], [at(52).opcode, ...rowLists[at(52).operand]!.map((item) => [item.opcode, item.operand])]],
+                   [[0x72, 0x823], [0x7f, [0x75, 0xfca], [0x72, 0x13]]], 'the keys below the screen');
+  assert.equal(bindings.entries.length, 5, 'and nothing else');
   // The page closes on the switch labelling those keys "Activities" or "Current Activity", so two screens.
   const rendered = renderVariants(after, page.program);
   assert.equal(rendered.variants.length, 2, 'one switch of two arms, so two screens');
@@ -394,13 +402,15 @@ test('one_config takes the television onto its screen and every check holds', sk
     x: one.operands[0]!, y: one.operands[1]!,
     width: bitmapAt(after, one.operands[2]! | (one.operands[3]! << 8) | (one.operands[4]! << 16))!.stride,
   }));
-  const labels = program.filter((one) => one.opcode === 0x05 && one.operands[1]! > 20);
+  // A label is drawn inline or, since section 420 builds every device mode together, by reference to the one
+  // inline copy of the same word on another device page, so both opcodes count and the codes are read through.
+  const labels = program.filter((one) => (one.opcode === 0x05 || one.opcode === 0x04) && one.operands[1]! > 20);
   assert.equal(labels.length, ROWS.length);
   labels.forEach((text, k) => {
     const pad = pads.find((one) => one.y + 20 === text.operands[1]! && one.x <= text.operands[0]!
       && text.operands[0]! < one.x + one.width)!;
     assert.ok(pad !== undefined, `label ${k} is drawn on a pad`);
-    const width = [...(text.glyphs ?? [])].reduce((sum, code) => sum + (glyphOf(after, rowSet, code)?.width ?? 0), 0);
+    const width = [...(textGlyphs(after, text) ?? [])].reduce((sum, code) => sum + (glyphOf(after, rowSet, code)?.width ?? 0), 0);
     assert.ok(width > 0, `label ${k} measures wider than nothing`);
     assert.ok(text.operands[0]! + width <= pad.x + pad.width, `label ${k} ends inside its pad`);
     assert.ok(text.operands[0]! >= pad.x, `label ${k} starts inside its pad`);
@@ -467,10 +477,13 @@ test('one_config takes the television onto its screen and every check holds', sk
     });
   }
 
-  // The label is drawn everywhere the checklist wants it: once per menu and once as the title.
+  // The label is drawn everywhere the checklist wants it: once per menu and twice as the title. **Twice since
+  // section 420**: the device mode's chrome is section 411's, which draws the title, queues the header programs and
+  // draws it again over them, as every held device's chrome here does (`one_config`'s TV, for one, is found in its
+  // chrome program twice); the copying composer's chrome drew it once.
   const map = characterMap(after)!;
   const drawn = screenStrings(after, map).filter((one) => one.text === 'LG');
-  assert.equal(drawn.length, MENUS.length + 1, 'ten menu rows and the title');
+  assert.equal(drawn.length, MENUS.length + 2, 'ten menu rows and the title twice');
 });
 
 /** The device list menus of the Harmony 650's own configuration: four in corners, 179 in two rows. */
@@ -1960,8 +1973,9 @@ test('the spare Harmony One config gets a third device list page on every menu, 
   assert.deepEqual(rows.filter((row) => row.page === 2).map((row) => [row.scan, row.label]), [[48, 'LG']]);
   assert.equal(devices(after).length, 7);
   const map = characterMap(after)!;
-  assert.equal(screenStrings(after, map).filter((one) => one.text === 'LG').length, composed.menus.length + 1,
-               'nine menu rows and the title');
+  // The title twice since section 420, the chrome being section 411's, as the test above says.
+  assert.equal(screenStrings(after, map).filter((one) => one.text === 'LG').length, composed.menus.length + 2,
+               'nine menu rows and the title twice');
 });
 
 test('a menu whose last page holds one row grows to two: the second row on the next scan, the bottom key one scan up',

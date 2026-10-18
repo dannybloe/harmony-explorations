@@ -60,7 +60,7 @@ import {
   SCREEN_CALL, SCREEN_DRAW_IMAGE, SCREEN_END, SCREEN_JUMP, SCREEN_QUEUE_INSTRUCTION, SCREEN_RETURN,
   SCREEN_SELECT_FONT, SCREEN_SWITCH_NARROW, SCREEN_TEXT_AT, SCREEN_TEXT_INLINE, type ScreenInstruction, screenProgram,
 } from '../../screen.ts';
-import { keyListOrder } from '../../modezero.ts';
+import { keyListOrder, keyListOrderInserted } from '../../modezero.ts';
 import {
   type BuiltScreen, type RecordFrame, type RecordPlace, type RecordReading, ScreenRecordError, recordBuilding, recordReading,
 } from '../../screenrecords.ts';
@@ -143,7 +143,7 @@ export const SET = k(0x07, 0xffff);
  * off list; every screen whose entering list lights a key leaves through one, so the screen sets state them,
  * section 418, each set that reaches one building it alike.
  */
-const lightOff = (...channels: number[]): Step => owns(...channels.map((one) => k(0x3f, 0xc000 | (one << 4))), write(0));
+export const lightOff = (...channels: number[]): Step => owns(...channels.map((one) => k(0x3f, 0xc000 | (one << 4))), write(0));
 export const PAGE_KEYS_OFF = lightOff(3, 1);
 export const LIGHT_5_OFF = lightOff(5);
 export const LIGHT_7_OFF = lightOff(7);
@@ -215,6 +215,8 @@ export type Part<F extends string = string> =
    */
   | {
     op: 'switch'; variable?: number;
+    /** The role of the variable where the configuration chose it, `named`'s; the reader and the builder ignore it. */
+    role?: string;
     arms: readonly { match: number | readonly [number, number]; parts: readonly Part<F>[] }[]; then: readonly Part<F>[];
   };
 
@@ -227,6 +229,12 @@ export interface TemplatePage<F extends string = string> {
 export interface TemplateScreen<F extends string = string> {
   name: string;
   own: readonly Entry[];
+  /**
+   * Whether `own` is in the order its entries were inserted, which settles two tags sharing a bucket of the stored
+   * order, `keyListOrderInserted`: a device mode's own key map, whose 49 or 51 tags put a handler and a key in one
+   * bucket, section 420. Otherwise the stored order is `keyListOrder`'s, which refuses a shared bucket.
+   */
+  ownInserted?: boolean;
   chrome: readonly Part<F>[];
   pages: readonly TemplatePage<F>[];
 }
@@ -694,8 +702,8 @@ export function describeTemplateScreens<F extends string>(
 
     // A tagged list against its entries, in the stored order, and in the form `isWide` says the template's
     // bindings take: its first byte is the form, which the reader finds its way by, and is checked.
-    const tagged = (want: readonly Entry[], entries: readonly { tag: number; opcode: number; operand: number; flags?: number | undefined }[], off: number, what: string): void => {
-      const tags = keyListOrder(want.map(([tag]) => tag));
+    const tagged = (want: readonly Entry[], entries: readonly { tag: number; opcode: number; operand: number; flags?: number | undefined }[], off: number, what: string, inserted = false): void => {
+      const tags = (inserted ? keyListOrderInserted : keyListOrder)(want.map(([tag]) => tag));
       const by = new Map(want);
       if (entries.length !== tags.length || entries.some((one, i) => one.tag !== tags[i])) {
         throw new ScreenRecordError(`${screen.name}'s ${what} holds other tags or another order`);
@@ -711,7 +719,7 @@ export function describeTemplateScreens<F extends string>(
       });
     };
 
-    tagged(screen.own, f.record.entries, f.ownOff, 'own key map');
+    tagged(screen.own, f.record.entries, f.ownOff, 'own key map', screen.ownInserted === true);
     const leads = screen.pages.map((page, p) => {
       const frame = f.pages[p] as RecordFrame['pages'][number];
       tagged(page.list, frame.list.entries, frame.listOff, `page ${p + 1}'s list`);
@@ -859,7 +867,9 @@ function programWriter<F extends string>(
         pointer(cursor.chrome());
       } else {
         // The switch, then the piece its arms join at, which goes on with the main line; the arms after it.
-        const variable = part.variable ?? take(SWITCH_VARIABLE);
+        // A switch's variable may carry a role, as a number step does, for a screen numbered from roles: the device
+        // pages' switch on whether an activity runs, `devicepages.ts`.
+        const variable = part.variable ?? take(part.role === undefined ? SWITCH_VARIABLE : named(SWITCH_VARIABLE, part.role));
         const then: ContainerPiece = { bytes: new Uint8Array(0), refs: [], owner: 'slot-11-program' };
         const exact = part.arms.filter((arm) => typeof arm.match === 'number');
         const ranges = part.arms.filter((arm) => typeof arm.match !== 'number');
@@ -922,9 +932,9 @@ function writeScreen<F extends string>(
       return chromePiece;
     },
   });
-  const tagged = (entries: readonly Entry[]): Uint8Array => {
+  const tagged = (entries: readonly Entry[], inserted = false): Uint8Array => {
     const by = new Map(entries);
-    const order = keyListOrder(entries.map(([tag]) => tag));
+    const order = (inserted ? keyListOrderInserted : keyListOrder)(entries.map(([tag]) => tag));
     const built = order.map((tag) => ({ tag, flags: flagOf(by.get(tag) as Step), ...writer.instruction(by.get(tag) as Step) }));
     if (!isWide(entries)) return taggedListBytes(built);
     // The wide form: a zero, the count, and per entry its flags byte before the narrow form's four.
@@ -935,7 +945,7 @@ function writeScreen<F extends string>(
     return out;
   };
 
-  const own = tagged(screen.own);
+  const own = tagged(screen.own, screen.ownInserted === true);
   const programs: ContainerPiece[] = [];
   const pageLists: Uint8Array[] = [];
   const copies: Uint8Array[] = [];

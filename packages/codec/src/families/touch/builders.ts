@@ -30,6 +30,11 @@
  *    `withTouchActivityMenuRow`, so this rebuilds the menu the composers left and nothing of the donor's is carried.
  *    After the help screens and the screens before them, whose texts it may draw by reference, and before the case
  *    programs and the hit pages, which read the leads it keeps;
+ * 7a. the device pages, every device mode's own key map, pages, their lists and copies, the lists they run and their
+ *    hit pages, section 420, `devicepages.ts`: on the composed path each composed device's pages are built by the
+ *    same template, `withTouchDevicePage`, so this rebuilds those and the donor's devices' alike, and nothing of a
+ *    device page is carried. After the activity menu, beside it in kind, and before the case programs and the hit
+ *    pages, which read the leads it keeps; the lists a pad calls, a device's commands, stay the device composer's;
  * 8. base slot 11's case programs of the value maps, the lists the toggles and the all off call, and base slot 11's
  *    table, section 416, `caseprograms.ts`, after the clock header because the table names its four programs at
  *    their entries, and after the composers because the table names every case, the activities' among them. The
@@ -116,6 +121,7 @@ import { buildTouchClockHeader, describeTouchClockHeader, withTouchClockHeader }
 import { buildTouchCasePrograms, buildTouchScreenTable, describeTouchCasePrograms, withTouchCasePrograms } from './caseprograms.ts';
 import { buildTouchHitPages, describeTouchHitPages, withTouchHitPages } from './hitpages.ts';
 import { buildTouchActivityMenu, describeTouchActivityMenu, withTouchActivityMenu } from './activitymenu.ts';
+import { buildTouchDevicePages, describeTouchDevicePages, withTouchDevicePages } from './devicepages.ts';
 import { buildTouchHelpScreens, describeTouchHelpScreens, withTouchHelpChain, withTouchHelpScreens } from './helpscreens.ts';
 import type { ComposedDeviceNote } from '../family.ts';
 import { buildTouchWiring, describeTouchWiring } from './wiring.ts';
@@ -129,7 +135,7 @@ export class TouchBuildError extends Error {}
 /** The parts the builders make, in the order they run and the order `touchBuiltBytes` attributes a byte. */
 export const TOUCH_BUILT = [
   'firmware screens', 'fixed screens', 'tour and Remote Assistant', 'status screens', 'clock header', 'help screens',
-  'activity menu', 'case programs', 'hit pages', 'wiring', 'state tables', 'raw slot 18', 'number senders',
+  'activity menu', 'device pages', 'case programs', 'hit pages', 'wiring', 'state tables', 'raw slot 18', 'number senders',
 ] as const;
 export type TouchBuilt = (typeof TOUCH_BUILT)[number];
 
@@ -152,7 +158,7 @@ const SMALL_TABLES: Readonly<Record<'raw slot 18' | 'number senders', (c: Contai
  */
 const SCREEN_BUILT = [
   'firmware screens', 'fixed screens', 'tour and Remote Assistant', 'status screens', 'clock header', 'help screens',
-  'activity menu', 'case programs', 'hit pages',
+  'activity menu', 'device pages', 'case programs', 'hit pages',
 ] as const;
 type ScreenBuilt = (typeof SCREEN_BUILT)[number];
 
@@ -207,6 +213,13 @@ const SCREENS: Readonly<Record<ScreenBuilt, (c: Container) => ScreenBuild>> = {
     const layout = takeApart(c);
     const d = describeTouchActivityMenu(c, layout);
     return { ...d, layout: withTouchActivityMenu(layout, buildTouchActivityMenu(c, d.spec), d.place) };
+  },
+  // Every device mode as the configuration holds it: on the composed path each composed device's pages were built by
+  // the same template, `withTouchDevicePage`, so this rebuilds them and the donor's devices' alike.
+  'device pages': (c) => {
+    const layout = takeApart(c);
+    const d = describeTouchDevicePages(c, layout);
+    return { ...d, layout: withTouchDevicePages(layout, buildTouchDevicePages(c, d.spec), d.place) };
   },
   // The table is generated whole from the clock header's entries and the value maps, so on a configuration whose
   // table the rule does not give, the composition before `todo-compile-one.md` 3.2.2.3 among them, the rebuild is

@@ -450,12 +450,14 @@ const after = (offset: number, at: number, n: number): number => (offset >= at ?
 
 /**
  * The list switching the page keys' lights on that the wiring holds, `[3F C032, 3F C012, write 1]` to the variable the
- * menu's leaving list writes 0 to, section 400: a menu grown to several pages calls it as it is entered. Refused
+ * menu's leaving list writes 0 to, section 400: a menu grown to several pages calls it as it is entered, and so does
+ * a composed device's mode of several pages, `devicepages.ts`, whose pair is channels 2 and 0. Refused
  * where the configuration holds no such list or several.
  */
-function pageKeysOn(c: Container, variable: number): number {
+export function pageKeysOn(c: Container, variable: number, channels: readonly [number, number] = [3, 1]): number {
   const lists = c.actionLists() ?? [];
-  const want = [[0x3f, 0xc032], [0x3f, 0xc012], [STATE_WRITE + variable, 1]];
+  // A channel's light on is `3F C0n2`, its off `3F C0n0`, section 400.
+  const want = [[0x3f, 0xc002 | (channels[0] << 4)], [0x3f, 0xc002 | (channels[1] << 4)], [STATE_WRITE + variable, 1]];
   const found = lists.flatMap((list, index) => (list.length === want.length
     && list.every((one, k) => one.opcode === want[k]?.[0] && one.operand === want[k]?.[1]) ? [index] : []));
   if (found.length !== 1) throw new ComposeError(`the configuration holds ${found.length} lists switching the page keys on, not one`);
