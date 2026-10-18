@@ -52379,7 +52379,7 @@ into circles, leaves no word, and leaves every other picture draw of every page 
 40 in Logitech's, and the 38 pixel circle chosen for words on is narrower than that at the rows its letters
 occupy, so its letters lie on the circle, its rim and the box, and a smoothed letter is
 mixed against one colour in advance, the remote copying it as stored. The blending step leaves such a text
-in its unsmoothed letters. With the words off it does not arise; `todo-compile-one.md` 1.2.11.2.8 holds it.
+in its unsmoothed letters. With the words off it does not arise; `todo-later.md` 6.21 holds it, moved there from `todo-compile-one.md` 1.2.11.2.8.
 
 ### Where a pad's label sits, and centring it
 

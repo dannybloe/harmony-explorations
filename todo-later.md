@@ -104,6 +104,7 @@ The Harmony One is a different type, with a touch screen and its own screens, so
   - [ ] 6.18.2 The read has been sent to the Harmony 650 only, 2860 mV against 2.92 V on a meter (section 340); whether the One, 600 and 700 answer it the same way is unchecked, and the Harmony 525 refuses it
 - [ ] 6.19 MyHarmony's sync changes the Harmony 650's screen to a USB logo with arrows around it while it writes, and our writes leave the plain USB logo: find in MyHarmony's sync code which command does that, and whether a write should send it too
 - [ ] 6.20 Screen instruction 1 on the Harmony One, unread: six operands `0 0 176 220 0 0`, the whole screen, one call deep on every page of 23 of Logitech's 64 activity working screens, those named "Watch TV", "TV kijken", "LG WebOS" and "Chromecast", and on no start up screen; what it does (its handler in the 3.4 image) and what makes the compiler emit it; our builder emits none (section 402)
+- [ ] 6.21 A Harmony One colour button's word wider than its circle ("Yellow") lies on two colours and stays unsmoothed; settle it before the words go back on by default (a whole button in the colour was tried and rejected); was `todo-compile-one.md` 1.2.11.2.8, findings section 399
 
 ## 8. The specification and the code are the product ([plan 005](docs/plans/005-specs-and-code.md))
 
