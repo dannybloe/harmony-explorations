@@ -108,6 +108,8 @@ The Harmony One is a different type, with a touch screen and its own screens, so
 
 ## 8. The specification and the code are the product ([plan 005](docs/plans/005-specs-and-code.md))
 
+Brought forward: `todo.md` 3.6 starts it straight after the Harmony One's track, decided on 18 October 2026.
+
 - [ ] 8.1 The decision: three deliverables, the `docs/spec/` layout, `findings.md` frozen as an archive, evidence per fact
 - [ ] 8.2 Move the files into the layout and rewrite every path that names them
 - [ ] 8.3 One folder per model in `docs/spec/remotes/`, ten files each, every fact with its standing, generated where the code already knows, nothing about our own units
