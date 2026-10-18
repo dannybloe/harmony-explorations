@@ -121,24 +121,25 @@ function textsOf(c: Container, mode: number): string[] {
   });
 }
 
-test('todo-compile-one 3.2.2.4: on that compile lettered in ours the help screens break the attempt line, 177 pixels in our letters, and "If not, the remote will ask you", 174, by the questions\' wrap at 171, each block centred again; six bytes longer, and the rest is the other builders\' alone',
+test('todo-compile-one 3.2.2.4: on that compile lettered in ours the help screens break the attempt line, 177 pixels in our letters, by the questions\' wrap at 171 and flow the "If not" paragraph onto three lines of their own, each block centred again; three bytes longer, and the rest is the other builders\' alone',
      skipUnless(DONOR), () => {
   const without = withTouchBuilders(lettered(), [], BUT_HELP).container;
   const all = withTouchBuilders(lettered()).container;
   // The help builder run after the others gives what it gives among them, so the difference is the help screens'.
   assert.equal(Buffer.compare(withTouchHelpChain(without).blob, all.blob), 0);
-  // Each wrapped line one more text drawn inline: three bytes of opcode and place and a zero, less the space the
-  // break swallows. Logitech's letters make both lines fit, 170 and 165 pixels, so the compiles keep one line each.
-  assert.equal(all.blob.length - without.blob.length, 6);
+  // The attempt line's second line one more text drawn inline: three bytes of opcode and place and a zero, less the
+  // space the break swallows. The "If not" paragraph stays three lines, broken elsewhere, so it adds nothing.
+  // Logitech's letters make the attempt line fit, 170 pixels, and flow the paragraph onto Logitech's own lines.
+  assert.equal(all.blob.length - without.blob.length, 3);
   const [attempt, ifNot] = touchHelpScreenModes(all).modes as [number, number];
   // The attempt line a block of two centred on y 43, 37 and 49, each line centred across, floor((176 - w) / 2);
-  // the two lines under it as before, a block on y 168.
+  // the paragraph under it as before, two lines in a block on y 168.
   assert.deepEqual(textsOf(all, attempt), [
     'Attemping to fix the 29,37', 'problem... 59,49', 'Keep the remote pointed to 9,162', 'your system. 50,174',
   ]);
-  // "If not" a block of six rows on y 143 now, its second row still blank: 113, 137, 149, 161, 173.
-  assert.deepEqual(textsOf(all, ifNot).slice(0, 5), [
-    'Did that fix the problem? 16,113', 'If not, the remote will ask 13,137', 'you 77,149', 'questions to help correct the 6,161', 'problem. 62,173',
+  // "If not" still a block of five rows on y 143, its second blank, the paragraph's three lines at other breaks.
+  assert.deepEqual(textsOf(all, ifNot).slice(0, 4), [
+    'Did that fix the problem? 16,119', 'If not, the remote will ask 13,143', 'you questions to help correct 4,155', 'the problem. 51,167',
   ]);
   assert.equal(ATTEMPT_LINE, 'Attemping to fix the problem...');
 });

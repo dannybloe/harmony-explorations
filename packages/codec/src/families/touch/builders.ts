@@ -64,9 +64,9 @@
  * test setup's donor, the x of 10 texts of the firmware screens, 93 of the fixed ones, 32 of the tour's, 37 of the
  * status screens' and 25 of the clock's days and hours, and no other byte but the trailer's,
  * `test/touchbuilders.test.ts`. **The help screens change more**: every block of theirs is wrapped at the questions'
- * 171 pixels, and two of their fixed lines are wider than that in our letters, the attempt line at 177 and "If not,
- * the remote will ask you" at 174, so each is broken in two and its block centred again, six bytes more on that
- * donor; in Logitech's letters every fixed line fits, so a compile is rebuilt byte for byte.
+ * 171 pixels, each paragraph flowed as one, and in our letters the attempt line is 177 pixels and breaks in two,
+ * three bytes more on that donor, and the "If not" paragraph keeps three lines at other breaks; in Logitech's
+ * letters the wrap gives Logitech's own lines, so a compile is rebuilt byte for byte.
  *
  * **Refusals are the composed path's.** A builder that refuses the configuration refuses the composition, with its
  * message, `TouchBuildError`: a donor whose build year offers a leap year (its Day 29 and second Month pickers are

@@ -89,12 +89,12 @@ test('the One test setup composed onto Logitech\'s compile of two devices comes 
   // `todo-compile-one.md` 3.2.2.3, 110 bytes more: the activity composer gives each of the five activities a case in
   // the unread copy of the Devices record as Logitech's compiles do, five bytes of case and five of program each, 50,
   // and enters every case it makes in base slot 11's table, the five unread ones and the fifteen it made before,
-  // three bytes an entry, 60, section 416. 1756552 since 3.2.2.4, 4590 bytes more: the power off help asks about
+  // three bytes an entry, 60, section 416. 1756549 since 3.2.2.4, 4587 bytes more: the power off help asks about
   // the five composed devices too, all five having a power variable, section 415: four screens each, 20, with
   // their 160 lists, 4038, and their entries in the mode table and base slot 10, three bytes each, 540; the attempt
-  // screen resending the two of them sent unasked, two instructions, 6; and the attempt line and one line of the
-  // "If not" question broken in two in our letters, 6.
-  assert.equal(c.blob.length, 1756552);
+  // screen resending the two of them sent unasked, two instructions, 6; and the attempt line broken in two in our
+  // letters, 3, the "If not" paragraph flowing onto three lines as Logitech's does.
+  assert.equal(c.blob.length, 1756549);
 });
 
 // ---------------------------------------------------------------------------------------------------------
@@ -220,11 +220,11 @@ test('todo-compile-one 3.2.2: the firmware screens, the fixed screens, the tour 
   // the touch map's table over all 38 pages, 115. The state tables' rose by 25 with them, the five cases the unread
   // copy of the Devices record took.
   //
-  // The help screens' 6248, since 3.2.2.4, are the chain of seven devices, 30 screens and their 236 lists: the
+  // The help screens' 6245, since 3.2.2.4, are the chain of seven devices, 30 screens and their 236 lists: the
   // donor's ten screens and 76 lists, 2198 on the donor, and the composed five's 20 and 160, section 415.
   assert.deepEqual(a.generated, {
     'firmware screens': 3099, 'fixed screens': 13139, 'tour and Remote Assistant': 3900, 'status screens': 3872,
-    'clock header': 3558, 'help screens': 6248, 'case programs': 572, 'hit pages': 2013, wiring: 4527, 'state tables': 2347,
+    'clock header': 3558, 'help screens': 6245, 'case programs': 572, 'hit pages': 2013, wiring: 4527, 'state tables': 2347,
   });
   assert.deepEqual(a.described, {
     'firmware screens': 401, 'fixed screens': 3967, 'tour and Remote Assistant': 680, 'status screens': 699,
@@ -258,7 +258,7 @@ test('todo-compile-one 3.2.2.4: the composed setup\'s power off help asks about 
   assert.equal(modeRecords(c)!.length, 128);
 });
 
-test('todo-compile-one 3.2: the One\'s composed test setup carries 1124974 of its 1756552 bytes out of Logitech\'s donor, per kind as pinned here, a list that may only shrink',
+test('todo-compile-one 3.2: the One\'s composed test setup carries 1124974 of its 1756549 bytes out of Logitech\'s donor, per kind as pinned here, a list that may only shrink',
      NEEDS, () => {
   const out = composed().container;
   const got = carried(out, parse(require_('harvest_one_two_devices')), builtBytes().owners);
@@ -291,5 +291,5 @@ test('todo-compile-one 3.2: the One\'s composed test setup carries 1124974 of it
     'raw-18-table': 2, 'slot-16-table': 1,
   });
   assert.equal(Object.values(got).reduce((sum, one) => sum + one, 0), 1124974);
-  assert.equal(out.blob.length, 1756552);
+  assert.equal(out.blob.length, 1756549);
 });

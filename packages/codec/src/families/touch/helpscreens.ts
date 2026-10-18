@@ -50,7 +50,8 @@
  * chain the donor holds, rebuilt, and four questions for every device the composers added that has a power
  * variable, numbered from the chain's own screens by the role each number plays (`named`, `helpNumbering`). Every
  * block of text is wrapped at the questions' 171 pixels, `block`, which leaves Logitech's lines where they are and
- * breaks the two our letters make wider, the attempt line and one row of the "If not" question.
+ * breaks the attempt line, which our letters make wider; the attempt screen's other words and the "If not" question
+ * are each one paragraph flowed by the same wrap.
  *
  * English only; skin 54 and the European skin 59. The Harmony One alone, the touch family's; the Harmony 600,
  * 650 and 700 are the four slot family, whose help is postponed (`todo-later.md` 3.3) and not built anywhere.
@@ -90,9 +91,18 @@ const font = (which: HelpScreenFont): HelpPart => fontPart(which);
 export const HELP_TITLE = 'PowerOff';
 /** The attempt screen's first line, as Logitech spells it, which is how `touchHelpScreenModes` finds it. */
 export const ATTEMPT_LINE = 'Attemping to fix the problem...';
-const ATTEMPT_LINES = ['Keep the remote pointed to', 'your system.'];
+/**
+ * The attempt screen's other words and the "If not" question's, each **one paragraph** wrapped at 171 pixels as a
+ * question is, `block`, rather than the lines Logitech drew: the greedy wrap of each paragraph in Logitech's letters
+ * gives exactly Logitech's lines on all eighteen English compiles ("Keep the remote pointed to" over "your system.",
+ * and "If not, the remote will ask you" over "questions to help correct the" over "problem."), so the compiles
+ * rebuild byte for byte, and in letters of other widths the paragraph flows again rather than leaving a word alone
+ * on a line, as wrapping each of Logitech's lines did in ours until `todo-compile-one.md` 3.2.2.4 was revised.
+ */
+const ATTEMPT_TEXT = 'Keep the remote pointed to your system.';
 const FIXED = 'Did that fix the problem?';
-const IF_NOT = [FIXED, '', 'If not, the remote will ask you', 'questions to help correct the', 'problem.'];
+const IF_NOT_TEXT = 'If not, the remote will ask you questions to help correct the problem.';
+const IF_NOT = [FIXED, '', IF_NOT_TEXT];
 
 /** The widest a question's line is drawn, `wrapLines`' measurement. */
 export const QUESTION_WIDTH = 171;
@@ -164,11 +174,11 @@ function question(name: string, own: readonly Entry[], no: Step, yes: Step, word
 /**
  * Rows of a block centred on y `centre`, each wrapped at the questions' width, `wrapped`: a question about a
  * device, wrapped as its name makes it, and since `todo-compile-one.md` 3.2.2.4 every other block of these
- * screens. In Logitech's letters every fixed row fits in 171 pixels on all eighteen English compiles, the attempt
- * line the widest at 170, so each is one line where it was and the compiles rebuild byte for byte; in ours the
- * attempt line is 177 and "If not, the remote will ask you" 174, and each breaks by the questions' rule, the
- * block re-centred, where the attempt line would otherwise start off the screen. A decision of ours, not a
- * reading: no compile shows a fixed line wrapped.
+ * screens, each paragraph of them one row. In Logitech's letters the wrap gives Logitech's own lines on all eighteen
+ * English compiles, the attempt line one line at 170, so the compiles rebuild byte for byte; in ours the attempt
+ * line is 177 and breaks in two, where it would otherwise start off the screen, and the "If not" paragraph flows
+ * onto its three lines at other breaks. A decision of ours, not a reading: no compile shows a fixed line wrapped
+ * other than as Logitech drew it.
  */
 const block = (rows: string | readonly string[], centre: number = QUESTION_CENTRE): HelpPart => wrapped(rows, QUESTION_WIDTH, centre, LINE_PITCH);
 const asked = (words: string): HelpPart[] => [block(words)];
@@ -202,11 +212,11 @@ export interface HelpDevice {
 export const NOTHING_LINE = 'Nothing to do';
 
 /**
- * Every row of these screens whose words are the template's own, every one but the questions about a device: what
- * the questions' wrap at 171 pixels decides for in our letters, `block`, where it leaves Logitech's lines as they
- * are because each fits in Logitech's letters on all eighteen English compiles.
+ * Every row of these screens whose words are the template's own, a line or a paragraph, every one but the questions
+ * about a device: what the questions' wrap at 171 pixels breaks, `block`, into Logitech's own lines in Logitech's
+ * letters on all eighteen English compiles and into lines of its own in ours.
  */
-export const HELP_FIXED_ROWS: readonly string[] = [ATTEMPT_LINE, ...ATTEMPT_LINES, ...IF_NOT.filter((row) => row !== ''), NOTHING_LINE];
+export const HELP_FIXED_ROWS: readonly string[] = [ATTEMPT_LINE, ATTEMPT_TEXT, FIXED, IF_NOT_TEXT, NOTHING_LINE];
 
 /**
  * The template's screens for a chain asking about `devices`, in the order a description lists them: the attempt
@@ -216,7 +226,7 @@ export const HELP_FIXED_ROWS: readonly string[] = [ATTEMPT_LINE, ...ATTEMPT_LINE
 export function helpScreens(devices: readonly HelpDevice[]): HelpScreen[] {
   // The first line a block of its own centred on y 43, so in our letters it breaks into two lines around it.
   const attemptParts: HelpPart[] = [{ op: 'chrome' }, font('body'), block([ATTEMPT_LINE], ATTEMPT_Y),
-    block(ATTEMPT_LINES, ATTEMPT_CENTRE), picture(...ATTEMPT_PICTURE)];
+    block([ATTEMPT_TEXT], ATTEMPT_CENTRE), picture(...ATTEMPT_PICTURE)];
   const attempt = (enter: Step, leave: Step): HelpScreen => ({
     name: 'Help Attempt',
     own: [...ARROWS, [TAG_ENTER, enter], [TAG_LEAVE, leave], [TAG_HEADER, HEADER]],

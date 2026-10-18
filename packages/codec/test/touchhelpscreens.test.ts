@@ -29,23 +29,26 @@ import { speller, textGlyphs } from '../src/shared/spelling.ts';
 import { listsBelow } from './screenlists.ts';
 import { TOUCH } from '../src/families/touch/index.ts';
 
-test('todo-compile-one 3.2.2.4: on the test setup\'s donor lettered in ours two fixed lines are wider than the questions\' 171 pixels, the attempt line at 177 and "If not, the remote will ask you" at 174, and the builder breaks each by the questions\' wrap and centres its block again, where the engine refused the attempt line, which would start at x -1',
+test('todo-compile-one 3.2.2.4: on the test setup\'s donor lettered in ours the attempt line, 177 pixels, breaks in two by the questions\' wrap at 171 and the "If not" paragraph flows onto three lines of its own, each block centred again, where the engine refused the attempt line, which would start at x -1',
      skipUnless('harvest_one_two_devices'), () => {
   // As `composeSetup` letters the donor before anything is composed, section 415.
   const lettered = parse(TOUCH.composedLook!.letterDonor(parse(require_('harvest_one_two_devices')), TOUCH.choices).bytes);
   const d = describeTouchHelpScreens(lettered, takeApart(lettered));
   const spell = speller(lettered);
-  const wide = HELP_FIXED_ROWS.map((row) => [row, spell(d.spec.fonts.body, row).width] as const).filter(([, width]) => width > QUESTION_WIDTH);
-  assert.deepEqual(wide, [[ATTEMPT_LINE, 177], ['If not, the remote will ask you', 174]]);
-  // Built in place: two lines more, each a text drawn inline, six bytes; and the result reads as a chain and
-  // rebuilds from its own description, its lines found by their words.
+  assert.equal(spell(d.spec.fonts.body, ATTEMPT_LINE).width, 177);
+  const lines = HELP_FIXED_ROWS.map((row) => wrapLines(row, QUESTION_WIDTH, (line) => spell(d.spec.fonts.body, line).width));
+  assert.deepEqual(lines, OURS);
+  // Built in place: one line more, the attempt line's second, drawn inline, three bytes (the paragraph keeps its
+  // three lines); and the result reads as a chain and rebuilds from its own description, its lines found by their words.
   const out = withTouchHelpChain(lettered);
-  assert.equal(out.blob.length - lettered.blob.length, 6);
-  const [attempt] = touchHelpScreenModes(out).modes as [number];
-  assert.deepEqual(textsOf(out, attempt).filter((one) => one.word !== HELP_TITLE).map((one) => `${one.word} ${one.x},${one.y}`), [
+  assert.equal(out.blob.length - lettered.blob.length, 3);
+  const [attempt, ifNot] = touchHelpScreenModes(out).modes as [number, number];
+  const drawn = (mode: number): string[] => textsOf(out, mode).filter((one) => one.word !== HELP_TITLE).map((one) => `${one.word} ${one.x},${one.y}`);
+  assert.deepEqual(drawn(attempt), [
     'Attemping to fix the 29,37', 'problem... 59,49', 'Keep the remote pointed to 9,162', 'your system. 50,174',
   ]);
-  assert.deepEqual(checkTouchHelpScreens(out), { devices: 2, screens: 10, lists: 76, described: 660, structure: 2204 });
+  assert.deepEqual(drawn(ifNot).slice(0, 4), IF_NOT_DRAWN);
+  assert.deepEqual(checkTouchHelpScreens(out), { devices: 2, screens: 10, lists: 76, described: 660, structure: 2201 });
   // The engine still refuses a text that would start off the screen, for every builder through it: a line centred
   // on the screen and wider than it, which the help screens no longer draw unwrapped.
   const screen = { name: 'Too Wide', own: [], chrome: [], pages: [{ list: [], parts: [font('body'), centred(`${ATTEMPT_LINE} and more`, 100)] }] };
@@ -94,23 +97,36 @@ const EUROPEAN: Readonly<Record<string, { devices: number; screens: number; list
   one_config_unprogrammed: { devices: 1, screens: 6, lists: 44, described: 590, structure: 1177 },
 };
 const DUTCH = 'one_friend_asfound_config';
+
+/** The lines `HELP_FIXED_ROWS` are drawn in on every English compile, which the wrap at 171 has to give back. */
+const LOGITECH = [
+  [ATTEMPT_LINE], ['Keep the remote pointed to', 'your system.'], ['Did that fix the problem?'],
+  ['If not, the remote will ask you', 'questions to help correct the', 'problem.'], ['Nothing to do'],
+];
+/** The same rows wrapped in our letters, the test setup's donor lettered in ours. */
+const OURS = [
+  ['Attemping to fix the', 'problem...'], ['Keep the remote pointed to', 'your system.'], ['Did that fix the problem?'],
+  ['If not, the remote will ask', 'you questions to help correct', 'the problem.'], ['Nothing to do'],
+];
+/** The "If not" question in ours: the paragraph's three lines in a block of five rows on y 143, the second blank. */
+const IF_NOT_DRAWN = ['Did that fix the problem? 16,119', 'If not, the remote will ask 13,143', 'you questions to help correct 4,155', 'the problem. 51,167'];
 const ENGLISH = [...SIXTEEN, ...Object.keys(EUROPEAN)];
 
-test('todo-compile-one 3.2.2.4: every fixed line of the power off help fits the questions\' 171 pixels in Logitech\'s letters on all eighteen English compiles, the attempt line the widest at 170, so the wrap leaves each one line where it was, and each compile rebuilds byte for byte',
+test('todo-compile-one 3.2.2.4: the power off help\'s own words wrapped at the questions\' 171 pixels in Logitech\'s letters give Logitech\'s own lines on all eighteen English compiles, each paragraph flowed as one, the attempt line one line at 170, the widest; and each compile rebuilds byte for byte',
      skipUnless(...ENGLISH), () => {
-  const widest = { width: 0, row: '' };
+  let widest = 0;
   for (const name of ENGLISH) {
     const c = parse(require_(name));
     const body = describeTouchHelpScreens(c, takeApart(c)).spec.fonts.body;
     const spell = speller(c);
-    for (const row of HELP_FIXED_ROWS) {
-      const width = spell(body, row).width;
-      if (width > widest.width) Object.assign(widest, { width, row });
-    }
+    const width = (line: string): number => spell(body, line).width;
+    const lines = HELP_FIXED_ROWS.map((row) => wrapLines(row, QUESTION_WIDTH, width));
+    assert.deepEqual(lines, LOGITECH, name);
+    widest = Math.max(widest, ...lines.flat().map(width));
     // The rebuild through the wrapped blocks is held to the compile byte for byte.
     checkTouchHelpScreens(c);
   }
-  assert.deepEqual(widest, { width: 170, row: ATTEMPT_LINE });
+  assert.equal(widest, 170);
 });
 
 test('todo-compile-one 3.2.2.4: on every English compile with a device the chain\'s numbers read by role give back the description\'s, each role one value throughout, which is what numbers a composed device\'s questions; a role held two ways is refused',
