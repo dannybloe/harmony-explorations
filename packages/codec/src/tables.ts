@@ -15,8 +15,10 @@
  * the same sentence could be written today about the three unused infrared encoding classes, and it
  * would be just as true and just as temporary.
  */
-import { Container, GspmError, archSlot } from './gspm.ts';
+import { Container, GspmError, POINTER_SIZE, archSlot } from './gspm.ts';
 import type { Instruction } from './gspm.ts';
+// Types only: `frame.ts` imports this module, and a type import is erased, so it closes no cycle.
+import type { ContainerPiece, PieceRef } from './frame.ts';
 import { u16, u24, u8 } from './bytes.ts';
 import { countedPointers } from './valuemap.ts';
 
@@ -232,6 +234,27 @@ export function numberSenders(c: Container): Table<NumberSender> | undefined {
     });
   }
   return { records, start: table.start, length: table.length };
+}
+
+/**
+ * Base slot 16's table built from the records it names, the encoder beside `numberSenders` above:
+ * `u8 count` then a three byte address per record, each a reference the frame writes once the records
+ * are placed. So no favourite channel sent as a number is one byte, a count of zero and not a NULL slot,
+ * the form `docs/config-format.md` states for a configuration with no channels; one record is four, section
+ * 154's sample. The same shape on every architecture that has the slot, so it is no family's;
+ * the four slot family's empty configuration still writes its empty form inline, `families/four-slot/empty.ts`.
+ *
+ * The records stay what they are: building them is a favourite channel's composer's, which there is not
+ * yet, so a caller hands over the pieces the configuration holds, in the order its table names them.
+ */
+export function numberSenderTable(records: readonly ContainerPiece[]): ContainerPiece {
+  // The count is one byte, so 255 methods is the most a table can name. A method is one per device that
+  // takes a number and not one per channel, section 154, so no configuration comes near it.
+  if (records.length > 0xff) throw new RangeError(`${records.length} number senders do not fit a one byte count`);
+  const bytes = new Uint8Array(1 + POINTER_SIZE * records.length);
+  bytes[0] = records.length;
+  const refs: PieceRef[] = records.map((to, k) => ({ at: 1 + POINTER_SIZE * k, to, offset: 0 }));
+  return { bytes, refs, owner: 'slot-16-table' };
 }
 
 export interface ParameterGroup {

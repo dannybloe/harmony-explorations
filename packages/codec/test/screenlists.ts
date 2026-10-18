@@ -1,7 +1,8 @@
 /**
  * Which base slot 10 lists a set of screens owns, shared by the Harmony One's fixed screens test
  * (`touchfixedscreens.test.ts`, findings section 411) and its tour and Remote Assistant test
- * (`touchtourscreens.test.ts`, section 412).
+ * (`touchtourscreens.test.ts`, section 412), and since `todo-compile-one.md` 6.7 the lists anything can run,
+ * `listsReached`, by the composed setup's test (`composesetup.test.ts`).
  *
  * **It lives in one file because it is one derivation**, as `tagfive.ts` is: both tests claim that the lists a
  * builder makes are named by nothing outside its screens, and that the lists below them split into those the
@@ -11,7 +12,7 @@
  * Not a test file itself, the name does not end in `.test.ts`, so the runner does not pick it up.
  */
 import {
-  type Container, SCREEN_QUEUE_INSTRUCTION, archSlot, handlerSets, modePages, modeRecords, pageListCopies,
+  type Container, SCREEN_QUEUE_INSTRUCTION, archSlot, handlerSets, modePages, modeRecords, numberSenders, pageListCopies,
   reachablePrograms, stateRecords, taggedList, timers, valueMaps,
 } from '../src/index.ts';
 
@@ -100,4 +101,36 @@ export function listsBelow(
     }
   }
   return { namedFromOutside: [...built].filter((index) => outside.has(index)), below: below.size, shared, sharedBelow: down.size };
+}
+
+/**
+ * The base slot 10 lists something can run, `todo-compile-one.md` 6.7: every list `namedOutside` finds named by
+ * a holder that is not an action list (with no modes set apart, so every mode, every screen program reachable
+ * from base slot 11, the value maps and the modes, and every other holder it walks), and every instruction a
+ * base slot 16 number sender queues, its own three and its digit tables', section 154, which `namedOutside`
+ * does not read; then every list those call, through every call down. A list only lists nothing reaches call,
+ * a dead chain, is not reached.
+ *
+ * **Why that is what the remote can run**, section 408 on the Harmony One's 3.4 image: base slot 10 is spooled
+ * at one place, whose list number comes only from an `0x7F` operand, and an instruction is rebuilt at run time
+ * only by `0x7B` or by an opcode `0x1F` to `0x3E` over `0xF7`, every one of which on the nineteen compiles is
+ * `1F F776`, building an `0x76`. So a list no `0x7F` reached from a root names is one the firmware never runs.
+ */
+export function listsReached(c: Container): Set<number> {
+  const lists = c.actionLists() ?? [];
+  const roots = namedOutside(c, new Set(), new Set(lists.keys()));
+  for (const sender of numberSenders(c)?.records ?? []) {
+    for (const one of [sender.prologue, sender.epilogue, sender.prefix, ...sender.tables.flatMap((table) => table.instructions)]) {
+      if (one.opcode === CALL) roots.add(one.operand);
+    }
+  }
+  const reached = new Set<number>();
+  const queue = [...roots];
+  while (queue.length > 0) {
+    const index = queue.pop() as number;
+    if (reached.has(index)) continue;
+    reached.add(index);
+    for (const one of lists[index] ?? []) if (one.opcode === CALL && !reached.has(one.operand)) queue.push(one.operand);
+  }
+  return reached;
 }

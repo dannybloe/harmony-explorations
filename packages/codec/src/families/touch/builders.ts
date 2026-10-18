@@ -43,7 +43,10 @@
  *    slot 9's eight entries, the lists they reach, and through it the log area and the parameter block, section 407;
  * 10. the state records and value maps with their tables, section 407, `statetables.ts` with the family's facts,
  *    after the clock header, whose two calls are instructions of the clock's state records naming its lists by
- *    index: the clock header keeps the indices its description read, so the records' calls stay right.
+ *    index: the clock header keeps the indices its description read, so the records' calls stay right;
+ * 11. raw slot 18, two zero bytes generated as the constant every One container holds, and base slot 16's
+ *    table generated from the number sender records it names, `smalltables.ts`, `todo-compile-one.md` 6.7: the
+ *    one refusing a raw slot 18 holding anything else, the other keeping a donor's records as they are.
  *
  * **Before the look and not after**, because the look blends our letters into the colour under each text,
  * `withBlendedLetters`, and that gives the selects one role makes on several backgrounds several fonts: every
@@ -76,7 +79,8 @@
  * of the clock header's four programs once (section 414), value maps that do not read as the One's catalogue or
  * whose numbers disagree (section 416), two hit pages read at one index (section 417), and at the help screens a
  * composed device the chain already asks about by name, one whose catalogue states no power type, a donor whose
- * chain asks about no device, and a role of the chain's numbering held two ways (section 415). Nothing falls back
+ * chain asks about no device, and a role of the chain's numbering held two ways (section 415), and a raw slot 18
+ * holding anything but two zero bytes (`todo-compile-one.md` 6.7). Nothing falls back
  * to the donor's part.
  *
  * Arch 12 (Harmony One) alone, skin 54 as `composeSetup` takes it; every builder here is the touch family's but the
@@ -102,6 +106,7 @@ import type { ComposedDeviceNote } from '../family.ts';
 import { buildTouchWiring, describeTouchWiring } from './wiring.ts';
 import { TOUCH_STATE_TABLES } from './statetables.ts';
 import { withCentredPadLabels } from './centring.ts';
+import { type WithGenerated, withNumberSenderTable, withTouchInsertedSection } from './smalltables.ts';
 
 /** A builder on the composed path refusing the configuration, with the part it was building. */
 export class TouchBuildError extends Error {}
@@ -109,9 +114,18 @@ export class TouchBuildError extends Error {}
 /** The parts the builders make, in the order they run and the order `touchBuiltBytes` attributes a byte. */
 export const TOUCH_BUILT = [
   'firmware screens', 'fixed screens', 'tour and Remote Assistant', 'status screens', 'clock header', 'help screens', 'case programs',
-  'hit pages', 'wiring', 'state tables',
+  'hit pages', 'wiring', 'state tables', 'raw slot 18', 'number senders',
 ] as const;
 export type TouchBuilt = (typeof TOUCH_BUILT)[number];
+
+/**
+ * The two small tables, `smalltables.ts`, `todo-compile-one.md` 6.7: each a configuration taken apart and
+ * answered with its generated piece in place, so the path lays it out and the attribution finds the piece.
+ */
+const SMALL_TABLES: Readonly<Record<'raw slot 18' | 'number senders', (c: Container) => WithGenerated>> = {
+  'raw slot 18': (c) => withTouchInsertedSection(takeApart(c)),
+  'number senders': (c) => withNumberSenderTable(takeApart(c)),
+};
 
 /**
  * The builders whose part is screens and screen programs, in the order they run: each a description of what it
@@ -245,6 +259,11 @@ export function withTouchBuilders(
       return layOutContainer(withStateTables(layout, built)).container;
     });
   }
+  // Last, since nothing reads them: on a configuration holding the form every One container holds, neither
+  // changes a byte, so their place among the builders is free.
+  for (const what of ['raw slot 18', 'number senders'] as const) {
+    if (parts.includes(what)) out = building(what, () => layOutContainer(SMALL_TABLES[what](out).layout).container);
+  }
   return { container: out, built: TOUCH_BUILT.filter((what) => parts.includes(what)) };
 }
 
@@ -360,6 +379,20 @@ export function touchBuiltBytes(c: Container, blended: readonly BlendedSet[]): T
       if (at !== undefined) mark(at, piece.bytes.length, 'state tables', () => false);
     }
   });
+  // The two small tables, each generated whole and held to the configuration before its bytes are counted.
+  // Nothing of either is read as a value: raw slot 18 is a constant, and base slot 16's table is a count and
+  // addresses, the addresses the frame's, so neither has a described byte.
+  for (const what of ['raw slot 18', 'number senders'] as const) {
+    building(what, () => {
+      const { layout, piece } = SMALL_TABLES[what](c);
+      const laid = layOutContainer(layout);
+      if (laid.bytes.length !== c.blob.length || laid.bytes.some((one, k) => one !== c.blob[k])) {
+        throw new ComposeError(`${what === 'raw slot 18' ? 'raw slot 18' : 'the number sender table'} does not rebuild from the configuration`);
+      }
+      const at = laid.offsetOf(piece);
+      if (at !== undefined) mark(at, piece.bytes.length, what, () => false);
+    });
+  }
 
   const generated = Object.fromEntries(TOUCH_BUILT.map((who) => [who, 0])) as Record<TouchBuilt, number>;
   const described = Object.fromEntries(TOUCH_BUILT.map((who) => [who, 0])) as Record<TouchBuilt, number>;

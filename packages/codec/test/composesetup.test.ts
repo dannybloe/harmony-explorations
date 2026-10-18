@@ -9,7 +9,7 @@ import { readFileSync } from 'node:fs';
 
 import { IR_ARCHIVE, require_, skipUnless, skipWithoutIrArchive } from '@harmony/lab';
 import {
-  type ComposedSetup, type Container, SCREEN_OWNERS, claims, composeSetup, deviceModeMaps, modeRecords, parse, pointers,
+  type ComposedSetup, type Container, SCREEN_OWNERS, archSlot, claims, composeSetup, deviceModeMaps, modeRecords, parse, pointers,
   readRecipe, screenUnits, taggedList, touchPages,
 } from '../src/index.ts';
 import { characterMap } from '../src/text.ts';
@@ -19,6 +19,8 @@ import { TOUCH_CHOICES } from '../src/families/touch/choices.ts';
 import { TOUCH_BUILT, type TouchBuiltBytes, touchBuiltBytes } from '../src/families/touch/builders.ts';
 import { describeTouchHelpScreens, touchHelpScreenModes } from '../src/families/touch/helpscreens.ts';
 import { takeApart } from '../src/frame.ts';
+import { dropLists } from '../src/assemble.ts';
+import { listsReached } from './screenlists.ts';
 
 const recipe = () => readRecipe(JSON.parse(readFileSync(new URL('../../corpus/setups/one-test.json', import.meta.url), 'utf8')));
 
@@ -198,10 +200,10 @@ const builtBytes = (): TouchBuiltBytes => {
   return builtOnce;
 };
 
-test('todo-compile-one 3.2.2: the firmware screens, the fixed screens, the tour and Remote Assistant, the status screens, the clock header, the help screens, the case programs, the hit pages, the wiring and the state tables of the composed setup come out of the touch family\'s builders, run on the composed path and measured on the result',
+test('todo-compile-one 3.2.2: the firmware screens, the fixed screens, the tour and Remote Assistant, the status screens, the clock header, the help screens, the case programs, the hit pages, the wiring, the state tables, raw slot 18 and base slot 16\'s table of the composed setup come out of the touch family\'s builders, run on the composed path and measured on the result',
      NEEDS, () => {
   const out = composed();
-  // On the path: one step after the composers and before the look, naming the ten parts in the order built.
+  // On the path: one step after the composers and before the look, naming the twelve parts in the order built.
   const names = out.steps.map((one) => one.step);
   assert.equal(out.steps.find((one) => one.step === 'built')?.detail, TOUCH_BUILT.join(', '));
   assert.ok(names.indexOf('activity composed') < names.indexOf('built') && names.indexOf('built') < names.indexOf('look'));
@@ -222,13 +224,19 @@ test('todo-compile-one 3.2.2: the firmware screens, the fixed screens, the tour 
   //
   // The help screens' 6245, since 3.2.2.4, are the chain of seven devices, 30 screens and their 236 lists: the
   // donor's ten screens and 76 lists, 2198 on the donor, and the composed five's 20 and 160, section 415.
+  //
+  // Raw slot 18's 2 and base slot 16's 1, since `todo-compile-one.md` 6.7, are the two zero bytes every One
+  // container holds and the number sender table's count of zero, the composers making no favourite channel sent
+  // as a number; neither reads a byte as a value.
   assert.deepEqual(a.generated, {
     'firmware screens': 3099, 'fixed screens': 13139, 'tour and Remote Assistant': 3900, 'status screens': 3872,
     'clock header': 3558, 'help screens': 6245, 'case programs': 572, 'hit pages': 2013, wiring: 4527, 'state tables': 2347,
+    'raw slot 18': 2, 'number senders': 1,
   });
   assert.deepEqual(a.described, {
     'firmware screens': 401, 'fixed screens': 3967, 'tour and Remote Assistant': 680, 'status screens': 699,
     'clock header': 337, 'help screens': 1994, 'case programs': 33, 'hit pages': 0, wiring: 1243, 'state tables': 0,
+    'raw slot 18': 0, 'number senders': 0,
   });
   // The help screens' 1994 against 660 on the donor are the numbers and names of a chain of seven rather than two:
   // nearly every operand of a question's eight lists is a number the configuration chose, section 415, and so is
@@ -258,7 +266,7 @@ test('todo-compile-one 3.2.2.4: the composed setup\'s power off help asks about 
   assert.equal(modeRecords(c)!.length, 128);
 });
 
-test('todo-compile-one 3.2: the One\'s composed test setup carries 1124974 of its 1756549 bytes out of Logitech\'s donor, per kind as pinned here, a list that may only shrink',
+test('todo-compile-one 3.2: the One\'s composed test setup carries 1124971 of its 1756549 bytes out of Logitech\'s donor, per kind as pinned here, a list that may only shrink',
      NEEDS, () => {
   const out = composed().container;
   const got = carried(out, parse(require_('harvest_one_two_devices')), builtBytes().owners);
@@ -282,14 +290,94 @@ test('todo-compile-one 3.2: the One\'s composed test setup carries 1124974 of it
   // of the ten cases the activity composer writes under Devices, `11 mode 7E 00` entering the idle device list, byte
   // for byte the donor's idle cases of the Devices record and its unread copy, which this match takes once the
   // builder's own, built and so left out, no longer take them. The composer writes them, `caseProgram`.
+  //
+  // `raw-18-table` 2 and `slot-16-table` 1 went with 6.7, generated on the path by `families/touch/smalltables.ts`.
+  // Of `slot-10-list`, 262 are the 34 lists nothing can run, kept with 6.7's reason, the test below.
   assert.deepEqual(got, {
     'picture': 1012839, // 5.3: the 36 every compile holds, the clock's 16 and the donor's 6
     'slot-5-block': 96946, 'slot-5-header': 4116, 'slot-5-group': 594, // the donor's two devices' infrared, 8.1
     'slot-10-list': 5351, // per builder in the listing: 17609 before 3.2.2, 6649 before 3.2.2.2, 6114 before 3.2.2.3, 6054 before 3.2.2.4
     'mode device': 4569, // and `mode other` 11983 before 3.2.2 and 1495 before 3.2.2.4
     'hit-page': 546, 'case-program': 10, // 2444 and 341 before 3.2.2.3, and base slot 11's `table` 89
-    'raw-18-table': 2, 'slot-16-table': 1,
   });
-  assert.equal(Object.values(got).reduce((sum, one) => sum + one, 0), 1124974);
+  assert.equal(Object.values(got).reduce((sum, one) => sum + one, 0), 1124971);
   assert.equal(out.blob.length, 1756549);
+});
+
+/** The 34 lists of the donor the composed setup carries and nothing can run, `todo-compile-one.md` 6.7. */
+const UNRUN = [
+  422, 424, 438, 443, 480, 550, 684, 686, 741, 742, 743, 744, 747, 753, 754, 756, 758, 759, 760, 762, 763, 804, 807,
+  821, 840, 865, 1499, 1516, 1528, 1551, 1562, 1567, 1570, 1573,
+];
+
+test('todo-compile-one 6.7: the composed setup carries 34 lists of its donor, 262 bytes, that nothing in it can run, and keeps them, since leaving them out renumbers base slot 10 and the one renumbering there is refuses a Harmony One',
+     NEEDS, () => {
+  const c = composed().container;
+  const donor = parse(require_('harvest_one_two_devices'));
+  const lists = c.actionLists()!;
+  const theirs = donor.actionLists()!;
+  const owners = builtBytes().owners;
+  const table = c.pointerArray(archSlot(c.architecture!, 10))!;
+  const reached = listsReached(c);
+  const unreached = [...lists.keys()].filter((index) => !reached.has(index));
+  const bytesOf = (index: number): number => 1 + 3 * lists[index]!.length;
+  const same = (index: number): boolean => theirs[index] !== undefined && theirs[index]!.length === lists[index]!.length
+    && theirs[index]!.every((one, k) => one.opcode === lists[index]![k]!.opcode && one.operand === lists[index]![k]!.operand);
+  // No builder on the path reproduces a byte of any list nothing reaches: a builder builds what its part runs.
+  for (const index of unreached) {
+    const at = c.blobOffsetOf(table[index]!)!;
+    assert.ok(owners.subarray(at, at + bytesOf(index)).every((one) => one === 0), `list ${index}`);
+  }
+  // Every list of the 2687 nothing reaches, by what it is. The donor's at the same index byte for byte and no
+  // send: the 34 this item is about. The donor's at the same index and a send: its two devices' 11 commands no key
+  // binds, 4.2 and 8.1. The rest the composers wrote: 14 of the donor's own lists nothing reaches in it either,
+  // at the same indices but naming a state variable the composed devices renumbered, and 12 of their own past the
+  // donor's 2060, the composed devices' 7 commands no key binds and five lists selecting base slot 9 entries 8 to
+  // 12, each one instruction, which nothing names.
+  const group = (index: number): string => (!same(index) ? 'written'
+    : lists[index]!.some((one) => one.opcode === 0x7d) ? 'donor sends' : 'carried');
+  const tally: Record<string, [number, number]> = {};
+  for (const index of unreached) {
+    const one = (tally[group(index)] ??= [0, 0]);
+    one[0] += 1;
+    one[1] += bytesOf(index);
+  }
+  assert.equal(lists.length, 2687);
+  assert.deepEqual(tally, { carried: [34, 262], 'donor sends': [11, 77], written: [26, 215] });
+  assert.deepEqual(unreached.filter((index) => group(index) === 'carried'), UNRUN);
+  assert.equal(unreached.filter((index) => group(index) === 'written' && index < theirs.length).length, 14);
+
+  // **That nothing can run them**, section 408 on the 3.4 image: base slot 10 is spooled only by an `0x7F`'s
+  // operand, and an instruction is rebuilt at run time only by `0x7B` or an opcode `0x1F` to `0x3E` over `0xF7`.
+  // Here every one of those is `1F F776`, building an `0x76`, seven of them, as on the nineteen compiles.
+  const builders = lists.flat().filter((one) => one.opcode === 0x7b || (one.opcode >= 0x1f && one.opcode <= 0x3e && one.operand >> 8 === 0xf7));
+  assert.deepEqual([...new Set(builders.map((one) => `${one.opcode.toString(16)} ${one.operand.toString(16)}`))], ['1f f776']);
+  assert.equal(builders.length, 7);
+  // And the control on the walk, which reads holders one by one and so could miss one: three bytes `lo hi 7F`
+  // naming one of the 34, anywhere in the file, whatever holds them, instruction or not. None outside the 34
+  // themselves. Inside them, 12: the dead chains, a list of the 34 calling another, which is the census seeing a
+  // name where there is one.
+  const own = new Set(UNRUN.flatMap((index) => {
+    const at = c.blobOffsetOf(table[index]!)!;
+    return Array.from({ length: bytesOf(index) }, (_, k) => at + k);
+  }));
+  const named = new Set(UNRUN);
+  let outside = 0;
+  let inside = 0;
+  for (let at = 0; at + 2 < c.blob.length; at += 1) {
+    if (c.blob[at + 2] !== 0x7f || !named.has(c.blob[at]! | (c.blob[at + 1]! << 8))) continue;
+    if (own.has(at)) inside += 1;
+    else outside += 1;
+  }
+  assert.deepEqual([outside, inside], [0, 12]);
+
+  // **Why they stay.** They sit at 34 indices from 422 to 1573 among 2687, so leaving them out moves the index of
+  // every kept list above 422, 2231 of them, at every place that names one. The renumbering there is, `dropLists`,
+  // rests on `listCallSites`, which reads raw slots 10 and 8, on the Harmony One base slot 9 and the inserted
+  // NULL, so it misses every call inside an action list and the leading list; its own check catches the first
+  // list left holding an old index and refuses, rather than writing a wrong one. What leaving them out would take
+  // is that census read through `archSlot`, the drop run on the path, and a write to the spare Harmony One to see
+  // the result start: by the same walk every one of Logitech's nineteen One compiles carries lists nothing
+  // reaches, a scratch measurement, so a One configuration without them is a form no remote here has run.
+  assert.throws(() => dropLists(c, UNRUN), /does not hold what it held/);
 });

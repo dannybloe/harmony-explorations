@@ -1,13 +1,13 @@
 /**
  * The Harmony One's builders on the composed path, `todo-compile-one.md` 3.2.2, `families/touch/builders.ts`: the
  * firmware screens, the fixed screens, the tour and Remote Assistant, the status screens, the clock header, the help
- * screens, the case programs, the hit pages, the wiring and the state tables, each built from a description of the
- * configuration being composed in place of the donor's part; the first five and the last two since 3.2.2.1, the
- * status screens and the clock header since 3.2.2.2, the case programs and the hit pages since 3.2.2.3, the help
- * screens since 3.2.2.4.
+ * screens, the case programs, the hit pages, the wiring, the state tables, raw slot 18 and base slot 16's table,
+ * each built from a description of the configuration being composed in place of the donor's part; the first five
+ * and the wiring and state tables since 3.2.2.1, the status screens and the clock header since 3.2.2.2, the case
+ * programs and the hit pages since 3.2.2.3, the help screens since 3.2.2.4, the two small tables since 3.2.2.6.
  *
  * What is held here is what the composition in `composesetup.test.ts` cannot show cheaply: that on Logitech's own
- * compile the ten come back byte for byte, so putting them on the path changes nothing a builder does not mean to;
+ * compile the twelve come back byte for byte, so putting them on the path changes nothing a builder does not mean to;
  * what does change on the donor lettered in ours and why; that a builder's refusal is the path's; and that the
  * attribution refuses a screen the donor's placing carried, which is what lets it tell a built part from a carried
  * one where their bytes differ.
@@ -38,6 +38,10 @@ import { withCentredPadLabels } from '../src/families/touch/centring.ts';
 import { ENTER_MODE, caseQueued } from '../src/inventory.ts';
 import { appendValueMapCase, caseProgram } from '../src/shared/menus.ts';
 import { restamped } from '../src/shared/core.ts';
+import { layOutContainer, takeApart } from '../src/frame.ts';
+import { numberSenders } from '../src/tables.ts';
+import { TOUCH_INSERTED_SECTION, withNumberSenderTable, withTouchInsertedSection } from '../src/families/touch/smalltables.ts';
+import { listsReached } from './screenlists.ts';
 
 const DONOR = 'harvest_one_two_devices';
 
@@ -48,13 +52,13 @@ const lettered = (): Container => {
   return letteredOnce;
 };
 
-test('todo-compile-one 3.2.2: on Logitech\'s compile of two devices the ten builders on the composed path give back every byte as it was',
+test('todo-compile-one 3.2.2: on Logitech\'s compile of two devices the twelve builders on the composed path give back every byte as it was',
      skipUnless(DONOR), () => {
   const donor = parse(require_(DONOR));
   const out = withTouchBuilders(donor);
   assert.deepEqual(out.built, [
     'firmware screens', 'fixed screens', 'tour and Remote Assistant', 'status screens', 'clock header', 'help screens', 'case programs',
-    'hit pages', 'wiring', 'state tables',
+    'hit pages', 'wiring', 'state tables', 'raw slot 18', 'number senders',
   ]);
   assert.equal(out.container.blob.length, donor.blob.length);
   assert.ok(out.container.blob.every((one, k) => one === donor.blob[k]));
@@ -248,13 +252,16 @@ test('todo-compile-one 3.2.2.3: the attribution counts each builder\'s bytes on 
   assert.deepEqual(a.generated, {
     'firmware screens': 3099, 'fixed screens': 13139, 'tour and Remote Assistant': 3900, 'status screens': 3872,
     'clock header': 3558, 'help screens': 2198, 'case programs': 497, 'hit pages': 1986, wiring: 4527, 'state tables': 962,
+    'raw slot 18': 2, 'number senders': 1,
   });
   // Of those, the bytes read as values: the help screens' 660 and the case programs' 28 are sections 415's and 416's
   // figures for this compile; the hit
-  // pages read only the leads of the pages naming them, which lie outside what they build.
+  // pages read only the leads of the pages naming them, which lie outside what they build; raw slot 18 is a
+  // constant and base slot 16's table a count and addresses, 6.7.
   assert.deepEqual(a.described, {
     'firmware screens': 401, 'fixed screens': 3967, 'tour and Remote Assistant': 680, 'status screens': 699,
     'clock header': 337, 'help screens': 660, 'case programs': 28, 'hit pages': 0, wiring: 1243, 'state tables': 0,
+    'raw slot 18': 0, 'number senders': 0,
   });
 });
 
@@ -287,4 +294,55 @@ test('todo-compile-one 3.2.2: the attribution refuses the donor lettered in ours
   assert.throws(() => touchBuiltBytes(lettered(), []),
     (error: unknown) => error instanceof TouchBuildError
       && /^building the Harmony One's firmware screens: the built records differ from the configuration's at byte 353, in the Low Battery's page 1's program$/.test(error.message));
+});
+
+// ---------------------------------------------------------------------------------------------------------
+// The two small tables and the lists nothing reaches, `todo-compile-one.md` 6.7, over every One compile.
+
+const NINETEEN = ['one_config', 'one_config_unprogrammed', 'one_spare_after_sync', 'one_spare_myharmony', 'one_spare_20260830',
+  'calibration_one', 'calibration_favchannels', 'calibration_favzero', 'compiled_protocols', 'compiled_protocols_2',
+  'compiled_protocols_3', 'harvest_one_two_devices', 'harvest_one_families_1', 'harvest_one_families_2', 'harvest_one_families_3',
+  'one_friend_asfound_config', 'one_friend_legacy_sync_config', 'phase7_before', 'phase7_after'] as const;
+
+test('todo-compile-one 6.7: raw slot 18 and base slot 16\'s table rebuild byte for byte on all nineteen One compiles, two zero bytes on each and a count with an address per number sender, one on eight of them; a raw slot 18 holding anything else is refused',
+     skipUnless(...NINETEEN), () => {
+  const senders: Record<number, number> = {};
+  for (const name of NINETEEN) {
+    const c = parse(require_(name));
+    for (const build of [withTouchInsertedSection, withNumberSenderTable]) {
+      const { layout, piece } = build(takeApart(c));
+      const laid = layOutContainer(layout);
+      assert.equal(Buffer.compare(laid.bytes, c.blob), 0, `${name}: ${build.name}`);
+      if (build === withTouchInsertedSection) assert.deepEqual([...piece.bytes], [...TOUCH_INSERTED_SECTION], name);
+    }
+    // The table names its records by the address the frame wrote from where each record landed, `takeApart`
+    // having zeroed the field: so the rebuilt table and the reader's record agree from two sides.
+    const records = numberSenders(c)!.records;
+    senders[records.length] = (senders[records.length] ?? 0) + 1;
+    const { layout, piece } = withNumberSenderTable(takeApart(c));
+    const laid = layOutContainer(layout);
+    const at = laid.offsetOf(piece)!;
+    assert.equal(piece.bytes.length, 1 + 3 * records.length, name);
+    records.forEach((record, k) => assert.equal(laid.bytes[at + 1 + 3 * k]! | (laid.bytes[at + 2 + 3 * k]! << 8)
+      | (laid.bytes[at + 3 + 3 * k]! << 16), record.address, name));
+  }
+  // Eight of the nineteen hold one favourite channel sender, which the builder keeps; none holds two.
+  assert.deepEqual(senders, { 0: 11, 1: 8 });
+  // The control: raw slot 18 holding 00 01 is a configuration nothing here has seen, and is refused, not rebuilt.
+  const layout = takeApart(parse(require_(DONOR)));
+  const raw = Number(Object.keys(layout.inserted!)[0]);
+  layout.inserted![raw]!.head[0]!.bytes[1] = 1;
+  assert.throws(() => withTouchInsertedSection(layout), /^Error: raw slot 18 holds 2 bytes, 0001, where every Harmony One container holds two zero bytes/);
+});
+
+test('todo-compile-one 6.7: every one of the nineteen One compiles holds base slot 10 lists nothing reaches, 44 to 193 of them, so a configuration carrying some is Logitech\'s own form',
+     skipUnless(...NINETEEN), () => {
+  const counts = NINETEEN.map((name) => {
+    const c = parse(require_(name));
+    const reached = listsReached(c);
+    return c.actionLists()!.filter((_, index) => !reached.has(index)).length;
+  });
+  assert.deepEqual([Math.min(...counts), Math.max(...counts)], [44, 193]);
+  // The test setup's donor, by the same walk: 59, the 34 the composed setup carries among them, 6.7.
+  assert.equal(counts[NINETEEN.indexOf(DONOR)], 59);
 });
