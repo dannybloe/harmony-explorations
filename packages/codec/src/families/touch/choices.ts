@@ -34,6 +34,13 @@ export interface TouchChoices extends CommonChoices {
    */
   readonly deviceBox: { readonly fill: string; readonly rim: string };
   /**
+   * The colours of the settings screens' boxes, as `activityBox`: the rows on Options and the pads of the clock
+   * pickers and Screen Sensitivity, which Logitech draws in a green gradient. Neither an activity's colour nor a
+   * device's, so a third one, chosen on 18 October 2026 with the colour playground, `todo-compile-one.md` 5.3.2.
+   * Nothing draws it yet: the pictures that take it are 5.3.1's.
+   */
+  readonly settingsBox: { readonly fill: string; readonly rim: string };
+  /**
    * The weight a label on one of our boxes is lettered in, when the blending step smooths it against the box,
    * `touchLabelWeight`. Lighter than the Bold the configuration's own sets take, asked for on 16 October 2026.
    */
@@ -97,6 +104,7 @@ export const TOUCH_CHOICES: TouchChoices = {
   startupAssistant: false,
   activityBox: { fill: '#166fa7', rim: '#bfeeff' },
   deviceBox: { fill: '#1c9c53', rim: '#e8cbb4' },
+  settingsBox: { fill: '#f76100', rim: '#ffefde' },
   labelWeight: 'Medium',
   startTitleWeight: 'Medium',
   colourButtons: {

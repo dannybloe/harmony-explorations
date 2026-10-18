@@ -153,7 +153,7 @@ One with its sequence's keys translated by name, since the One's keys have other
 - [x] 5.2 The fonts the One's screens draw, generated: five faces of the One's own, fitted to its rows, each set in its own colours (section 396); their weight is a choice, `faceWeights`
 - [ ] 5.3 The pictures, built or drawn by us, the button boxes of the device pages and the menus among them
   - [ ] 5.3.1 Ours for the 42 fixed pictures past the setup's, each Logitech's size and mask, as the sample of 18 October 2026 drew them; decided on it the same day: the battery gauge shows no charging difference for now, the pixels outside a box's rounded corners are black (smaller to store, the same on a black screen), the tour's illustrations are not drawn when 4.10 leaves the tour out
-  - [ ] 5.3.2 The settings buttons' colour (Options, the clock pickers, Screen Sensitivity), a third box colour in the touch family's choices, picked in the lab's colour playground
+  - [x] 5.3.2 The settings buttons' colour (Options, the clock pickers, Screen Sensitivity), a third box colour in the touch family's choices, picked in the lab's colour playground; done, `settingsBox`, orange `#f76100` with the rim `#ffefde`, chosen on 18 October 2026
   - [ ] 5.3.3 The whole screen picture behind 75 screens is black, stored three times uncompressed by Logitech; ours one black picture, and the six screens a timer shows on the charger draw it too in place of Logitech's three photographs, so the charger shows nothing; decided on 18 October 2026
 
 ## 6. The container from nothing
