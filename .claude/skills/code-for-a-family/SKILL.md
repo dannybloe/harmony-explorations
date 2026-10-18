@@ -95,6 +95,8 @@ and fails when a module joins the list or a count on it rises. The list is the d
 | which base slot 14 records an activity's cases go in beyond those `activityKeyedMaps` finds, and whether they are entered in base slot 11's table | the family's activity composer asking its own catalogue and table rule, the Harmony One's `touchValueMapRoles` and `withTouchScreenTable` in `families/touch/caseprograms.ts`, `todo-compile-one.md` 3.2.2.3; not a change to the shared finder, which the Harmony 600 family uses too and where no unread copy is measured |
 | what a builder on the composed path needs of a composed device that the configuration does not say, its setup name and the power type the catalogue states | `ComposedDeviceNote`, which the shared `composeSetup` passes to `Family.composedBuilders`; the Harmony One's power off help asks it, `withTouchHelpChain`, `todo-compile-one.md` 3.2.2.4. Not a test of the remote in the shared setup: it passes the same note to every family |
 
+| a list below a family's screens that several of its screen sets reach, and whose bytes it is | stated in each set's template and built alike by each, the touch family's `screentemplate.ts` steps (`PAGE_KEYS_OFF`, `LIGHT_5_OFF`, `LIGHT_7_OFF`, `ASSISTANT_ON`); the family's attribution credits the first in its build order, `touchBuiltBytes`, `todo-compile-one.md` 6.5; not an owner table outside the family |
+
 Add a row when a new kind of difference lands.
 
 ## Related

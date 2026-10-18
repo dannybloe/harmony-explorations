@@ -43,8 +43,12 @@
  * 2)`, twelve apart in a block centred on y 111, and its keys' words on the halves, "Yes" on the left and "OK" and
  * "No" on the right, section 411's rules. The tour's y are measured constants.
  *
- * **What is not built**: the lists these screens' own lists call, which stay the configuration's and are named
- * by index, among them the tour's enter and leave lists' callees and the lists the assistant's buttons run.
+ * **The lists below them are built too**, since `todo-compile-one.md` 6.5, section 418: the 17 the screens' own
+ * lists call, through every level, that the wiring does not build, 13 where "Devices Off Again"'s OK does not go
+ * on to the tour, among them the key lights' off lists, what leaving the tour and the assistant runs and what the
+ * assistant's buttons run, each at the index the description reads. What is left below them, seven or six lists, is
+ * the wiring's; section 412 named them all by index and built none. Which shape the OK takes is the one setting
+ * read here, `onToTour`, off one opcode.
  *
  * English only; skin 54 and the European skin 59, whose tour and assistant are skin 54's. Read only towards
  * hardware: the result is pieces.
@@ -52,16 +56,17 @@
 import type { Container } from '../../gspm.ts';
 import type { ContainerLayout } from '../../frame.ts';
 import { layOutContainer, takeApart } from '../../frame.ts';
-import { modeRecords } from '../../sections.ts';
+import { ACTION_LIST_TABLE_SLOT, archSlot } from '../../gspm.ts';
+import { modeRecords, taggedList } from '../../sections.ts';
 import { SCREEN_CALL, screenProgram } from '../../screen.ts';
 import { characterMap, decode } from '../../text.ts';
 import { ScreenRecordError, assertRebuilt, withModeRecords } from '../../screenrecords.ts';
-import { type ValueReader, textGlyphs } from '../../shared/spelling.ts';
+import { type ValueReader, blobReader, textGlyphs } from '../../shared/spelling.ts';
 import {
-  ARROWS, type BuiltTemplateScreens, CLICK, ENTER, type Entry, HEADER, LIST, type Part, SCREEN_WIDTH, SWALLOW, type Step,
-  TAG_ENTER, TAG_HEADER, TAG_LEAVE, TIMER_CANCEL, TIMER_START, TITLE_AT, type TemplateScreen, type TemplateScreensDescribed,
-  type TemplateScreensSpec, buildTemplateScreens, centred, chrome, describeTemplateScreens, font as fontPart, leftHalf,
-  owns, picture, press, rightHalf, text, write,
+  ARROWS, ASSISTANT_ON, BAND, type BuiltTemplateScreens, CALL, CLICK, ENTER, type Entry, HEADER, LIGHT_5_OFF, LIGHT_7_OFF, LIST, MAP,
+  PAGE_KEYS_OFF, type Part, SCREEN_WIDTH, SWALLOW, type Step, TAG_ENTER, TAG_HEADER, TAG_LEAVE, TEST, TIMER_CANCEL, TIMER_START,
+  TITLE_AT, type TemplateScreen, type TemplateScreensDescribed, type TemplateScreensSpec, buildTemplateScreens, centred, chrome,
+  describeTemplateScreens, font as fontPart, k, leftHalf, owns, picture, press, rightHalf, text, write,
 } from './screentemplate.ts';
 import { describeTouchWiring } from './wiring.ts';
 
@@ -93,8 +98,12 @@ const lines = (...rows: readonly (readonly [string, number])[]): TourPart[] =>
   [font('tour'), ...rows.map(([word, y]) => text(word, MARGIN, y))];
 /** An arrow that turns the page: the click, the screen it enters, and the empty instruction. */
 const ARROW = owns(CLICK, ENTER, SWALLOW);
-/** The enter and leave handlers of most tour screens: two lists of the configuration's each. */
-const TWO_LISTS = owns(LIST, LIST);
+/**
+ * The enter and leave handlers of most tour screens: on entering the wiring's on lists of channel 7 and of the
+ * page keys (or of the right one alone), two numbers; on leaving the two off lists, built here, section 418.
+ */
+const ENTER_LIGHTS = owns(LIST, LIST);
+const LEAVE_LIGHTS = owns(LIGHT_7_OFF, PAGE_KEYS_OFF);
 /** The tour's Activities, Off and Help keys, scans 34, 37 and 38. */
 const ACTIVITIES = press(34);
 const OFF = press(37);
@@ -106,11 +115,11 @@ const HELP = press(38);
  */
 function tour(
   name: string, right: Step, left: Step, keys: readonly Entry[], list: readonly Entry[], parts: readonly TourPart[],
-  handlers: Step = TWO_LISTS,
+  handlers: readonly [Step, Step] = [ENTER_LIGHTS, LEAVE_LIGHTS],
 ): TourScreen {
   return {
     name,
-    own: [[press(47), right], [press(46), left], [TAG_ENTER, handlers], [TAG_LEAVE, handlers], ...keys],
+    own: [[press(47), right], [press(46), left], [TAG_ENTER, handlers[0]], [TAG_LEAVE, handlers[1]], ...keys],
     chrome: TOUR_CHROME,
     pages: [{ list, parts: [{ op: 'chrome' }, ...parts] }],
   };
@@ -118,8 +127,11 @@ function tour(
 
 /** The tour's touch areas, scans 48 to 52, as the hit page of each screen names them. */
 const touch = press;
-/** A touch that leaves the tour, the click and a list of the configuration's. */
-const LEAVE_TOUR = owns(CLICK, LIST);
+/**
+ * A touch that leaves the tour: the click and a list below, which writes 0 to the variable the Remote Assistant's
+ * start writes 1 to and looks the location's value map up, section 418.
+ */
+const LEAVE_TOUR = owns(CLICK, owns(write(0), MAP));
 /** A touch that goes on, the click and the screen it enters. */
 const GO_ON = owns(CLICK, ENTER);
 
@@ -164,12 +176,13 @@ const TOUR: readonly TourScreen[] = [
     [picture(7, 135), font('tourButton'), text('Watch TV', 69, 151),
       ...lines(['Activities are what you', 33], ['actually do with your', 44], ['entertainment system, like', 55],
         ['watch TV or listen to', 66], ['music.', 77], ['Touch Watch TV now.', 99]), ...EXIT]),
-  // The tour's start: its enter and leave handlers are one list of the configuration's each, bound directly.
+  // The tour's start: its enter and leave handlers are bound directly, the wiring's on list of channel 7 and
+  // the off list built here.
   tour('Welcome', ARROW, SWALLOW, [[HELP, CLICK]],
     [[touch(50), GO_ON], [touch(51), ENTER], [touch(48), GO_ON], [touch(49), ENTER], [touch(52), LEAVE_TOUR]],
     [picture(65, 137), font('tourTitle'), text('Welcome!', MARGIN, 13),
       ...lines(['Welcome to your', 56], ['Harmony One touch-', 67], ['screen remote. Touch', 78], ['the screen to learn', 89],
-        ['more.', 100]), ...EXIT], LIST),
+        ['more.', 100]), ...EXIT], [LIST, LIGHT_7_OFF]),
   tour('Arrows', ARROW, ARROW, [[HELP, CLICK]],
     [[touch(50), LEAVE_TOUR], [touch(49), ENTER]],
     [picture(7, 106), ...lines(['Use the arrow buttons on', 35], ['the sides of this screen to', 46], ['move between pages.', 57],
@@ -209,14 +222,15 @@ const BLOCK_CENTRE = 111;
  * 8 lines by the blind reviewer of section 412); then its keys' words.
  */
 function assistant(
-  name: string, handlerLists: number, keys: readonly Entry[], list: readonly Entry[], rows: readonly string[],
+  name: string, leave: readonly Step[], keys: readonly Entry[], list: readonly Entry[], rows: readonly string[],
   below: readonly TourPart[],
 ): TourScreen {
-  const lists = Array<Step>(handlerLists).fill(LIST);
+  // Entering, the wiring's on lists, a number each; leaving, the off lists of the same lights, built here.
+  const lists = Array<Step>(leave.length).fill(LIST);
   const top = BLOCK_CENTRE + LINE_PITCH / 2 - (LINE_PITCH / 2) * (rows.length + 1);
   return {
     name,
-    own: [...ARROWS, [TAG_ENTER, owns(TIMER_START, ...lists)], [TAG_LEAVE, owns(TIMER_CANCEL, ...lists)], ...keys,
+    own: [...ARROWS, [TAG_ENTER, owns(TIMER_START, ...lists)], [TAG_LEAVE, owns(TIMER_CANCEL, ...leave)], ...keys,
       [TAG_HEADER, HEADER]],
     chrome: chrome<TourScreenFont>(ASSISTANT_TITLE, 1, { title: 'title', count: 'title' }),
     pages: [{
@@ -228,39 +242,91 @@ function assistant(
 }
 
 const OK: readonly TourPart[] = [rightHalf('OK', KEYS_Y)];
+
+/**
+ * The lists below the assistant's buttons, section 418. Leaving the assistant: `1F FB01`, a comparison of the
+ * firmware's variable 13, the wiring's list that leaves for the activities (a number) and the location's value
+ * map looked up; "Hide Question"'s "Yes" and "Hidden"'s OK each run a copy of their own.
+ */
+const LEAVE_ASSISTANT = owns(k(BAND, 0xfb01), owns(k(0x71, 0x800d), LIST, MAP));
+/**
+ * "Devices Off Again"'s OK: the same opening, then where the assistant has not been hidden the Remote Assistant
+ * turned on, `ASSISTANT_ON`, with two variables written 1, and the location's value map looked up.
+ */
+const DEVICES_OFF_AGAIN = owns(k(BAND, 0xfb01), owns(k(0x71, 0x800d), LIST,
+  owns(k(BAND, 0xfb00), owns(TEST(0x80), owns(ASSISTANT_ON, write(1), write(1)), MAP))));
+/**
+ * Hiding the assistant, "Hide Question"'s "No": the key light lists the wiring's `e4.0x17.keys` calls, two of them
+ * copies of the wiring's `boot.keys.2` and `boot.keys.0` of their own, and one the wiring's.
+ */
+const HIDE = owns(owns(k(BAND, 0xfb02), k(0x0f, 0xffe1)), LIST, k(0x0f, 0xffe3), k(0x0f, 0xffe3), owns(k(BAND, 0xfb00), k(0x0f, 0xffe1)));
 const DEVICES_OFF = ['Ensure all your devices are', 'off.  If any devices are still on,', 'press "Help" now.'];
 
 /**
  * The five, in the order a description lists them. "Devices Off" is the one the start's ladder enters, whose OK
- * enters the question; "Devices Off Again" is the one the welcome's OK enters, whose OK runs a list of the
- * configuration's that goes on to the tour's "Welcome!", section 403.
+ * enters the question; "Devices Off Again" is the one the welcome's OK enters, whose OK runs a list that on
+ * eleven of the sixteen English compiles of skin 54 goes on to the tour's "Welcome!", section 403, and on the
+ * other five leaves as "Hidden"'s OK does, `onToTour`, section 418.
  */
-const ASSISTANT: readonly TourScreen[] = [
-  assistant('Hide Question', 2, [],
-    [[touch(50), owns(CLICK, LIST)], [touch(49), owns(CLICK, write(3), LIST, ENTER)]],
+const assistantScreens = (onToTour: boolean): readonly TourScreen[] => [
+  assistant('Hide Question', [LIGHT_5_OFF, LIGHT_7_OFF], [],
+    [[touch(50), owns(CLICK, LEAVE_ASSISTANT)], [touch(49), owns(CLICK, write(3), HIDE, ENTER)]],
     ['Do you want to hide the', 'Remote Assistant?'], [leftHalf('Yes', KEYS_Y), rightHalf('No', KEYS_Y)]),
-  assistant('Hidden', 1, [],
-    [[touch(49), owns(CLICK, LIST)]],
+  assistant('Hidden', [LIGHT_7_OFF], [],
+    [[touch(49), owns(CLICK, LEAVE_ASSISTANT)]],
     ['To hide the remote assistant,', 'use the software to update', 'the display settings for your', 'remote.'], OK),
-  assistant('Welcome', 1, [[press(34), write(1)]],
+  assistant('Welcome', [LIGHT_7_OFF], [[press(34), write(1)]],
     [[touch(49), owns(CLICK, write(1), ENTER)]],
     ['Welcome to your remote.'], OK),
-  assistant('Devices Off', 1, [],
+  assistant('Devices Off', [LIGHT_7_OFF], [],
     [[touch(49), owns(CLICK, ENTER)]],
     DEVICES_OFF, OK),
-  assistant('Devices Off Again', 1, [],
-    [[touch(49), owns(CLICK, LIST)]],
+  assistant('Devices Off Again', [LIGHT_7_OFF], [],
+    [[touch(49), owns(CLICK, onToTour ? DEVICES_OFF_AGAIN : LEAVE_ASSISTANT)]],
     DEVICES_OFF, OK),
 ];
 
 /** The screens' names, in the order a description lists them: the tour's eleven, then the assistant's five. */
 export const TOUCH_TOUR_SCREENS: readonly string[] = TOUR.map((one) => `Tour ${one.name}`);
-export const TOUCH_ASSISTANT_SCREENS: readonly string[] = ASSISTANT.map((one) => `Assistant ${one.name}`);
+export const TOUCH_ASSISTANT_SCREENS: readonly string[] = assistantScreens(true).map((one) => `Assistant ${one.name}`);
 
-/** The template's screens for a configuration with or without the Remote Assistant. */
-function tourScreens(withAssistant: boolean): TourScreen[] {
+/**
+ * The template's screens for a configuration with or without the Remote Assistant, and with "Devices Off
+ * Again"'s OK going on to the tour or not.
+ */
+function tourScreens(withAssistant: boolean, onToTour: boolean): TourScreen[] {
   const name = (prefix: string) => (one: TourScreen): TourScreen => ({ ...one, name: `${prefix} ${one.name}` });
-  return [...TOUR.map(name('Tour')), ...(withAssistant ? ASSISTANT.map(name('Assistant')) : [])];
+  return [...TOUR.map(name('Tour')), ...(withAssistant ? assistantScreens(onToTour).map(name('Assistant')) : [])];
+}
+
+/**
+ * Whether "Devices Off Again"'s OK goes on to the tour, read off the configuration, section 418: its OK's list
+ * calls one list, that list calls a comparison's, and the third instruction there calls the list leading on
+ * (`0x7F`) or looks the location's value map up and stops (`0x72`), the setting section 403 found differing
+ * between compiles. What decides it is not read, so it is the description's, one byte, the opcode, read
+ * through `read` so a blind control keeps it. Refused where that byte is neither.
+ */
+/** A value map looked up, `0x72`, `screentemplate.ts`' `MAP`. */
+const MAP_OPCODE = 0x72;
+
+function readOnToTour(c: Container, mode: number, read: ValueReader): { onToTour: boolean; at: number } {
+  const lists = c.actionLists() ?? [];
+  const page = (modeRecords(c) ?? [])[mode]?.pages[0];
+  const ok = page === undefined ? undefined : taggedList(c, page.list)?.entries.find((one) => one.tag === press(49));
+  const first = ok === undefined ? undefined : lists[ok.operand]?.[1];
+  const second = first === undefined ? undefined : lists[first.operand]?.[1];
+  const table = c.pointerArray(archSlot(c.architecture as number, ACTION_LIST_TABLE_SLOT)) ?? [];
+  const address = second === undefined ? undefined : table[second.operand];
+  const off = address === undefined ? undefined : c.blobOffsetOf(address);
+  if (off === undefined || lists[second!.operand]?.length !== 3) {
+    throw new ScreenRecordError('Assistant Devices Off Again\'s OK does not lead to a comparison of three instructions');
+  }
+  const at = off + 1 + 3 * 2 + 2;
+  const opcode = read(at);
+  if (opcode !== CALL && opcode !== MAP_OPCODE) {
+    throw new ScreenRecordError(`Assistant Devices Off Again's OK's comparison ends in opcode 0x${opcode.toString(16)}`);
+  }
+  return { onToTour: opcode === CALL, at };
 }
 
 // ---------------------------------------------------------------------------------------------------------
@@ -328,6 +394,8 @@ export function touchTourScreenModes(c: Container, layout: ContainerLayout = tak
 export interface TouchTourScreensSpec extends TemplateScreensSpec<TourScreenFont> {
   /** Whether the Remote Assistant's five are described and built after the tour's eleven: the wiring's ladder. */
   assistant: boolean;
+  /** Whether "Devices Off Again"'s OK goes on to the tour, `readOnToTour`; false where there is no assistant. */
+  onToTour: boolean;
 }
 
 export interface TouchTourScreensDescribed extends Omit<TemplateScreensDescribed<TourScreenFont>, 'spec'> {
@@ -342,15 +410,21 @@ export interface TouchTourScreensDescribed extends Omit<TemplateScreensDescribed
 export function describeTouchTourScreens(c: Container, layout: ContainerLayout, read?: ValueReader): TouchTourScreensDescribed {
   const { modes, assistant } = touchTourScreenModes(c, layout);
   const roles = [...TOUR_FONTS, ...(assistant ? ASSISTANT_FONTS : [])];
-  const d = describeTemplateScreens(c, layout, tourScreens(assistant), modes, roles, read);
-  return { ...d, spec: { ...d.spec, assistant } };
+  const reader = read ?? blobReader(c);
+  const setting = assistant
+    ? readOnToTour(c, modes[TOUCH_TOUR_SCREENS.length + TOUCH_ASSISTANT_SCREENS.indexOf('Assistant Devices Off Again')] as number, reader)
+    : undefined;
+  const d = describeTemplateScreens(c, layout, tourScreens(assistant, setting?.onToTour ?? false), modes, roles, reader);
+  // The setting's byte is the description's, inside a list the screens build.
+  if (setting !== undefined) d.described.add(setting.at);
+  return { ...d, spec: { ...d.spec, assistant, onToTour: setting?.onToTour ?? false } };
 }
 
 export type BuiltTouchTourScreens = BuiltTemplateScreens;
 
 /** The screens built from a description, in mode order; everything but the description's numbers is generated. */
 export function buildTouchTourScreens(c: Container, spec: TouchTourScreensSpec): BuiltTouchTourScreens {
-  return buildTemplateScreens(c, spec, tourScreens(spec.assistant));
+  return buildTemplateScreens(c, spec, tourScreens(spec.assistant, spec.onToTour));
 }
 
 /** A layout with these screens swapped for the built ones, where the configuration's sat. */

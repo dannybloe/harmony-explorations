@@ -587,6 +587,7 @@ first. The engine, an instruction's, a list's and an entry's encoding and the sw
 | base slot 9 entries 0 to 6 and the leftover entry | tags, flags, form, stored order, every opcode | what the bindings name; the leftover entry's index |
 | base slot 10's front | 168 lists, entries 1 to 4's own in stored order, indices from the first | where the front starts, three past the start list on 19 of 19 |
 | the other lists the wiring reaches | every instruction | their indices and the modes, variables, value maps and screen programs they name |
+| the 14 lists reached only through the transitions of `readyVar`, `relightVar` and `settleVar`, section 418 | every instruction | their indices: the four the transitions call off the variables' base slot 13 records, the ten below off their parents' calls |
 | settings | | the Remote Assistant at start, the ladder's `07 FFFB`, the screen light's two durations |
 
 **The settings**: the Remote Assistant on 18 of 19, the leftover entry wide with it and narrow without, and
@@ -2708,14 +2709,16 @@ programs) and generates the rest. On the seventeen it rebuilds, base slot 10's f
 screens', numbered in stored key order with each chrome's queued list after its keys. Lines are centred, `floor((176 - width) / 2)`; "OK" at 124,
 201. Three shared buckets are stored in an order measured the same on all nineteen; the insertion order that
 produces it, `keyListOrderInserted`, is inferred. Rebuilt byte for byte on the
-sixteen English compiles of skin 54 and the European factory file.
+sixteen English compiles of skin 54 and the European factory file. Since section 418 the 18 lists the screens reach
+that the wiring does not build are built too, at the indices the description reads.
 
 **Twenty three more fixed screens, built**, section 411: code 9's status screen, Options, the screen sensitivity
 picker and its five confirmations, the Year, Month, Day (28, 30 and 31 days), Hour, Minute and Time of Day pickers,
 and seven blank screens. `families/touch/fixedscreens.ts` finds each by its look, describes which mode it is, its
 hit pages, pictures, fonts by role, the build year and the configuration's numbers (list indices, modes, timers,
 base slot 11 programs, value maps, state variables), and generates the rest; the 531 lists the screens name directly
-are built at the described indices, the 207 below them are named by index.
+are built at the described indices, and since section 418 so are the 154 below them the wiring does not build.
+The other 53 below them are the wiring's.
 
 | what | rule, on the sixteen |
 |---|---|
@@ -2734,7 +2737,8 @@ template engine, `families/touch/screentemplate.ts`, which section 411's module 
 always; the Remote Assistant's five exactly where the wiring keeps the start's ladder, `TouchWiringSettings.startupAssistant`
 (17 of the 18 English compiles; `one_config` holds neither the ladder nor the five). The start choice of section 403
 does not remove them: the ladder, the leftover entry's events 1 and 5 and Options' value map on the variable stay, a path in the configuration; what raises those events is not read.
-98 lists built per compile, 66 without the assistant; the lists below are named by index.
+98 lists built per compile, 66 without the assistant, and since section 418 the 17 below them the wiring does not
+build (13 on five compiles, 3 on the everyday One's), with the one setting that decides their shape.
 
 | what | rule, on the sixteen |
 |---|---|
@@ -2744,6 +2748,19 @@ does not remove them: the ladder, the leftover entry's events 1 and 5 and Option
 | a state write bound in a key map | its opcode, `0x80 + variable`, is the description's; the value is the template's |
 | a mode list's form | wide (`0`, count, then flags, tag, operand, opcode per entry) exactly where a state write is bound directly, flag 1 on the write and 0 on every other binding (mode lists only: base slot 9's handler sets are wide on 95 lists binding no write): 18 own key maps of the nineteen compiles, one on each compile with the assistant, each binding scan 34's press to the write, the welcome's on the seventeen English ones the builder reads |
 | which "Ensure all your devices are off" is which | the one the wiring's ladder enters, `assistantDevicesOff`, whose OK enters the question; the other, whose OK runs a list |
+
+**The lists below the screens, built**, section 418, arch 12 (Harmony One) only: every list the firmware screens,
+the fixed screens and the tour and Remote Assistant reach, directly or through every call, is built either by that
+set or by the wiring, never both, on the sixteen English compiles of skin 54.
+
+| what | rule, on the sixteen |
+|---|---|
+| a list several sets reach | built by each, identically: channel 7's off list (`3F C070`, write 0) and the page keys' (`3F C030`, `3F C010`, write 0) by all three, channel 5's (`3F C050`, write 0) by the fixed screens and the tour, the Remote Assistant turned on (`07 FFFB`, call, enter, write 1) by the fixed screens and the tour where it reaches it; `touchBuiltBytes` credits the first in `TOUCH_BUILT` order |
+| shared or copied | as Logitech's: a day's setter is one list every Day picker holding that day runs, each Day picker has its own enter list and the first lists below its tag `0x29` handler |
+| a setter | `07 FFFF`, then a write of the item's value into the clock field, generated; the year less 2000, months, days, hours and minutes from 0; Time of Day's two write 0 and 1 into a variable read |
+| "Devices Off Again"'s OK | its list calls a band test, which calls a comparison of variable 13 whose third instruction calls on towards the Remote Assistant turned on (`0x7F`, it leads on to the tour's "Welcome!", 11 of 16) or looks a value map up (`0x72`, it leaves the assistant, 5 of 16); that opcode is the setting `onToTour` |
+| a state write's variable | at most 127; a larger number is refused as a description slid against the template |
+| the wiring's own variables' transitions | `readyVar` one, `relightVar` two, `settleVar` one, each a call, on all nineteen compiles; the 14 lists reached only through them (of 20 they reach, the others being `idleEnter.3.1.1.1` and what it reaches) are the wiring's catalogue lines, the four the transitions call read off the records, which must hold exactly that many transitions |
 
 **The clock header, built**, section 414: base slot 11's four programs no mode calls and the six lists the clock's
 minute and hour call, `families/touch/clockheader.ts`, through the same engine as programs of their own. 249 pieces

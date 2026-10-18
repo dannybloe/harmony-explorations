@@ -228,14 +228,22 @@ test('todo-compile-one 3.2.2: the firmware screens, the fixed screens, the tour 
   // Raw slot 18's 2 and base slot 16's 1, since `todo-compile-one.md` 6.7, are the two zero bytes every One
   // container holds and the number sender table's count of zero, the composers making no favourite channel sent
   // as a number; neither reads a byte as a value.
+  //
+  // The firmware screens', the fixed screens', the tour's and the wiring's rose by 138, 1193, 115 and 98 with
+  // `todo-compile-one.md` 6.5, section 418: the lists below the screens that the wiring does not build, 183 lists,
+  // and the 14 the wiring's own variables' transitions call. 1544 bytes, where the carried lists below came down by
+  // 1347: the other 197 are 17 lists below the clock pickers' tag `0x29` handlers, which name a state variable the
+  // composed path renumbered (`0x29` on the donor, `0x37` here), so they matched no donor list and were never carried.
   assert.deepEqual(a.generated, {
-    'firmware screens': 3099, 'fixed screens': 13139, 'tour and Remote Assistant': 3900, 'status screens': 3872,
-    'clock header': 3558, 'help screens': 6245, 'case programs': 572, 'hit pages': 2013, wiring: 4527, 'state tables': 2347,
+    'firmware screens': 3237, 'fixed screens': 14332, 'tour and Remote Assistant': 4015, 'status screens': 3872,
+    'clock header': 3558, 'help screens': 6245, 'case programs': 572, 'hit pages': 2013, wiring: 4625, 'state tables': 2347,
     'raw slot 18': 2, 'number senders': 1,
   });
+  // 401, 3967, 680 and 1243 for the four before 6.5: what a list below reads is the numbers of the lists it calls
+  // and of the variables it writes, and the tour's setting, one byte.
   assert.deepEqual(a.described, {
-    'firmware screens': 401, 'fixed screens': 3967, 'tour and Remote Assistant': 680, 'status screens': 699,
-    'clock header': 337, 'help screens': 1994, 'case programs': 33, 'hit pages': 0, wiring: 1243, 'state tables': 0,
+    'firmware screens': 439, 'fixed screens': 4038, 'tour and Remote Assistant': 719, 'status screens': 699,
+    'clock header': 337, 'help screens': 1994, 'case programs': 33, 'hit pages': 0, wiring: 1274, 'state tables': 0,
     'raw slot 18': 0, 'number senders': 0,
   });
   // The help screens' 1994 against 660 on the donor are the numbers and names of a chain of seven rather than two:
@@ -266,7 +274,7 @@ test('todo-compile-one 3.2.2.4: the composed setup\'s power off help asks about 
   assert.equal(modeRecords(c)!.length, 128);
 });
 
-test('todo-compile-one 3.2: the One\'s composed test setup carries 1124971 of its 1756549 bytes out of Logitech\'s donor, per kind as pinned here, a list that may only shrink',
+test('todo-compile-one 3.2: the One\'s composed test setup carries 1123624 of its 1756549 bytes out of Logitech\'s donor, per kind as pinned here, a list that may only shrink',
      NEEDS, () => {
   const out = composed().container;
   const got = carried(out, parse(require_('harvest_one_two_devices')), builtBytes().owners);
@@ -282,7 +290,11 @@ test('todo-compile-one 3.2: the One\'s composed test setup carries 1124971 of it
   // programs came down by their 25 programs' 341, the lists by the six toggles' 60 (the all off's list is the device
   // composer's, written and never carried) and the hit pages by the 23 pages' 1898. Its fourth, 3.2.2.4, put the
   // power off help there, 2198 bytes: `mode other` went, 1495, which was the help screens' ten alone, and the lists
-  // came down by their 76, 703, section 415.
+  // came down by their 76, 703, section 415. Its fifth, 3.2.2.5, put the lists below the screens there, section
+  // 418: the lists came down by 1347, 180 lists: the 166 below the firmware screens, the fixed screens and the
+  // tour that matched a donor list, and the 14 the wiring's variables' transitions call. 197 bytes more are built than that,
+  // 17 lists below the clock pickers' tag `0x29` handlers naming a state variable the composed path renumbered,
+  // which matched nothing.
   //
   // **What is left of those two rows.** `hit-page` 546 is the six pages no builder makes: the two of the census's 25
   // only setup screens name, a device page's six commands with both page keys (4.2) and the generic help screen's
@@ -296,11 +308,11 @@ test('todo-compile-one 3.2: the One\'s composed test setup carries 1124971 of it
   assert.deepEqual(got, {
     'picture': 1012839, // 5.3: the 36 every compile holds, the clock's 16 and the donor's 6
     'slot-5-block': 96946, 'slot-5-header': 4116, 'slot-5-group': 594, // the donor's two devices' infrared, 8.1
-    'slot-10-list': 5351, // per builder in the listing: 17609 before 3.2.2, 6649 before 3.2.2.2, 6114 before 3.2.2.3, 6054 before 3.2.2.4
+    'slot-10-list': 4004, // per builder in the listing: 17609 before 3.2.2, 6649 before 3.2.2.2, 6114 before 3.2.2.3, 6054 before 3.2.2.4, 5351 before 3.2.2.5
     'mode device': 4569, // and `mode other` 11983 before 3.2.2 and 1495 before 3.2.2.4
     'hit-page': 546, 'case-program': 10, // 2444 and 341 before 3.2.2.3, and base slot 11's `table` 89
   });
-  assert.equal(Object.values(got).reduce((sum, one) => sum + one, 0), 1124971);
+  assert.equal(Object.values(got).reduce((sum, one) => sum + one, 0), 1123624);
   assert.equal(out.blob.length, 1756549);
 });
 

@@ -123,6 +123,36 @@ export const MAP = n(0x72, 'map');
 export const TIMER_START = banded(0xeb, 'timer');
 export const TIMER_CANCEL = banded(0xea, 'timer');
 /**
+ * A number in an operand's low byte under a constant high byte, for an opcode other than the band's `0x1F`: the
+ * comparison `0x71 form | variable` of section 140, and `0x70`'s two forms the clock pickers' handlers run,
+ * section 418.
+ */
+export const lowByte = (opcode: number, high: number, what: NumberKind): Step => ({ kind: 'number', opcode, band: high, what });
+/** A comparison of a variable the configuration chose with the byte register, `0x71 form | variable`, section 140. */
+export const TEST = (form: number): Step => lowByte(0x71, form, 'variable');
+/** The `07 FFFF` every setter below the clock pickers opens with, section 418; what it does is not read. */
+export const SET = k(0x07, 0xffff);
+
+/**
+ * The lists that switch a key light off, section 400's `[3F C0a0, 3F C0b0, write 0]`: the page keys' pair,
+ * channels 3 and 1, and channels 5 and 7 alone, each writing 0 to the variable the wiring's matching on list
+ * writes 1 to. The wiring builds the on lists, `families/touch/wiring.ts`' `keyLights`, and never reaches an
+ * off list; every screen whose entering list lights a key leaves through one, so the screen sets state them,
+ * section 418, each set that reaches one building it alike.
+ */
+const lightOff = (...channels: number[]): Step => owns(...channels.map((one) => k(0x3f, 0xc000 | (one << 4))), write(0));
+export const PAGE_KEYS_OFF = lightOff(3, 1);
+export const LIGHT_5_OFF = lightOff(5);
+export const LIGHT_7_OFF = lightOff(7);
+
+/**
+ * The list that turns the Remote Assistant on: `07 FFFB`, the wiring's `lights`, the screen it starts on entered
+ * and its variable written 1. Options' first row runs it, and the tour's "Devices Off Again" reaches it through
+ * the start choice, so the fixed screens and the tour state it alike, section 418.
+ */
+export const ASSISTANT_ON = owns(k(0x07, 0xfffb), LIST, ENTER, write(1));
+
+/**
  * The header handler, tag `0x2D`: three base slot 11 programs, named by their place so a screen numbered from
  * roles runs the programs the configuration's other screens run, `named`.
  */
@@ -363,6 +393,82 @@ function switchTables(one: ScreenInstruction): { exact: number[]; ranges: [numbe
 }
 
 // ---------------------------------------------------------------------------------------------------------
+// One instruction against its step, read and written: shared by the template's screens and programs and, since
+// `todo-compile-one.md` 6.5, by the firmware screens' lists below them, `firmwarescreens.ts`, whose own older
+// language takes a template step wherever a list of the configuration's is built rather than named.
+
+/**
+ * Read one instruction against its step, pushing the numbers it holds onto `numbers` in walk order: an `owns`
+ * step's index, then its list's instructions read in turn, depth first. `at` is where the instruction's operand
+ * starts and `at + 2` its opcode; `name` and `what` word a refusal. **A list reached twice is read twice**, its
+ * index a number each time, which is what lets the lists below a screen be shared: the Day pickers' setters,
+ * which all three Day pickers run, and the key lights' off lists most screens' leaving lists call, section 418.
+ */
+export function readStep(
+  reading: RecordReading, name: string, numbers: number[], want: Step, got: { opcode: number; operand: number }, at: number, what: string,
+): void {
+  const { value, value16 } = reading;
+  if (want.kind === 'constant') {
+    if (got.opcode !== want.opcode || got.operand !== want.operand) {
+      throw new ScreenRecordError(`${name}'s ${what} is ${hex(got.opcode)} ${hex(got.operand)}, not ${hex(want.opcode)} ${hex(want.operand)}`);
+    }
+  } else if (want.kind === 'number') {
+    if (got.opcode !== want.opcode) throw new ScreenRecordError(`${name}'s ${what} is not ${hex(want.opcode)}`);
+    if (want.band !== undefined) {
+      if (got.operand >> 8 !== want.band) throw new ScreenRecordError(`${name}'s ${what} is in another band`);
+      numbers.push(value(at));
+    } else numbers.push(value16(at));
+  } else if (want.kind === 'write') {
+    // The variable is the opcode less 0x80, a number the configuration chose; the value is the template's.
+    if (got.opcode < STATE_WRITE || got.operand !== want.operand) {
+      throw new ScreenRecordError(`${name}'s ${what} is ${hex(got.opcode)} ${hex(got.operand)}, not a write of ${want.operand}`);
+    }
+    numbers.push(value(at + 2) - STATE_WRITE);
+  } else {
+    if (got.opcode !== CALL) throw new ScreenRecordError(`${name}'s ${what} calls no list`);
+    numbers.push(value16(at));
+    const list = reading.list(got.operand, `${name}'s ${what}`);
+    if (list.body.length !== want.steps.length) {
+      throw new ScreenRecordError(`${name}'s ${what} is ${list.body.length} instructions, not ${want.steps.length}`);
+    }
+    want.steps.forEach((one, i) => readStep(reading, name, numbers, one, list.body[i] as Instruction, list.off + 1 + 3 * i, `${what}, instruction ${i}`));
+  }
+}
+
+/**
+ * One instruction made from its step, `readStep`'s other half: every number taken by `take` in the order the
+ * reader pushed it, and an `owns` step's list built into `lists` at the index it takes. A list built twice must
+ * come out the same both times, or the description is refused: two places naming one index with lists of two
+ * shapes is a description no configuration has.
+ */
+export function writeStep(want: Step, take: (step: Step) => number, lists: Map<number, ContainerPiece>): Instruction {
+  if (want.kind === 'constant') return { opcode: want.opcode, operand: want.operand };
+  if (want.kind === 'number') return { opcode: want.opcode, operand: want.band === undefined ? take(want) : (want.band << 8) | take(want) };
+  if (want.kind === 'write') {
+    // A write names its variable in the opcode's low seven bits, so a number past 127 is not a variable: a
+    // description whose numbers have slid against the template, one short, say, where a setting reads the other
+    // way, which is refused here in the template's words rather than by the list encoder's range check.
+    const variable = take(want);
+    if (variable < 0 || variable > 0x7f) throw new ScreenRecordError(`${variable} is not a variable a state write can name`);
+    return { opcode: STATE_WRITE + variable, operand: want.operand };
+  }
+  const index = take(want);
+  const bytes = actionListBytes(want.steps.map((one) => writeStep(one, take, lists)));
+  const was = lists.get(index);
+  if (was !== undefined && was.bytes.join() !== bytes.join()) throw new ScreenRecordError(`list ${index} is built two ways`);
+  lists.set(index, { bytes, refs: [], owner: 'slot-10-list' });
+  return { opcode: CALL, operand: index };
+}
+
+/** What each number a step takes is, in the order `readStep` pushes them: a firmware screen's slots, section 418. */
+export function stepKinds(want: Step): NumberKind[] {
+  if (want.kind === 'constant') return [];
+  if (want.kind === 'number') return [want.what];
+  if (want.kind === 'write') return ['variable'];
+  return ['list', ...want.steps.flatMap(stepKinds)];
+}
+
+// ---------------------------------------------------------------------------------------------------------
 // Reading a program against its parts, shared by the screens and the programs of their own.
 
 /** What a program reader collects as it reads, which its caller owns: one per screen, or per program. */
@@ -392,7 +498,7 @@ interface ReadCursor<F extends string> {
  * and 412's screens hold no switch inside an arm, so on them this is the order they were read in before.
  */
 function programReader<F extends string>(c: Container, reading: RecordReading, cursor: ReadCursor<F>) {
-  const { value, value16, value24 } = reading;
+  const { value, value24 } = reading;
   const name = cursor.name;
   const numbers = cursor.numbers;
   // The configuration's character map, which a `wrapped` part's lines are read by, made on the first one met: most
@@ -400,33 +506,8 @@ function programReader<F extends string>(c: Container, reading: RecordReading, c
   let map: CharacterMap | undefined;
 
   // An instruction against its step, `at` being where its operand starts and `at + 2` its opcode.
-  const step = (want: Step, got: { opcode: number; operand: number }, at: number, what: string): void => {
-    if (want.kind === 'constant') {
-      if (got.opcode !== want.opcode || got.operand !== want.operand) {
-        throw new ScreenRecordError(`${name}'s ${what} is ${hex(got.opcode)} ${hex(got.operand)}, not ${hex(want.opcode)} ${hex(want.operand)}`);
-      }
-    } else if (want.kind === 'number') {
-      if (got.opcode !== want.opcode) throw new ScreenRecordError(`${name}'s ${what} is not ${hex(want.opcode)}`);
-      if (want.band !== undefined) {
-        if (got.operand >> 8 !== want.band) throw new ScreenRecordError(`${name}'s ${what} is in another band`);
-        numbers.push(value(at));
-      } else numbers.push(value16(at));
-    } else if (want.kind === 'write') {
-      // The variable is the opcode less 0x80, a number the configuration chose; the value is the template's.
-      if (got.opcode < STATE_WRITE || got.operand !== want.operand) {
-        throw new ScreenRecordError(`${name}'s ${what} is ${hex(got.opcode)} ${hex(got.operand)}, not a write of ${want.operand}`);
-      }
-      numbers.push(value(at + 2) - STATE_WRITE);
-    } else {
-      if (got.opcode !== CALL) throw new ScreenRecordError(`${name}'s ${what} calls no list`);
-      numbers.push(value16(at));
-      const list = reading.list(got.operand, `${name}'s ${what}`);
-      if (list.body.length !== want.steps.length) {
-        throw new ScreenRecordError(`${name}'s ${what} is ${list.body.length} instructions, not ${want.steps.length}`);
-      }
-      want.steps.forEach((one, i) => step(one, list.body[i] as Instruction, list.off + 1 + 3 * i, `${what}, instruction ${i}`));
-    }
-  };
+  const step = (want: Step, got: { opcode: number; operand: number }, at: number, what: string): void =>
+    readStep(reading, name, numbers, want, got, at, what);
 
   /**
    * Where an arm goes on to: the target of its closing jump, or, where it ends in a switch of its own, where
@@ -704,17 +785,7 @@ function programWriter<F extends string>(
     if (one === undefined) throw new ScreenRecordError(`the description holds too few numbers for ${cursor.name}`);
     return one;
   };
-  const instruction = (want: Step): Instruction => {
-    if (want.kind === 'constant') return { opcode: want.opcode, operand: want.operand };
-    if (want.kind === 'number') return { opcode: want.opcode, operand: want.band === undefined ? take(want) : (want.band << 8) | take(want) };
-    if (want.kind === 'write') return { opcode: STATE_WRITE + take(want), operand: want.operand };
-    const index = take(want);
-    const bytes = actionListBytes(want.steps.map(instruction));
-    const was = lists.get(index);
-    if (was !== undefined && was.bytes.join() !== bytes.join()) throw new ScreenRecordError(`list ${index} is built two ways`);
-    lists.set(index, { bytes, refs: [], owner: 'slot-10-list' });
-    return { opcode: CALL, operand: index };
-  };
+  const instruction = (want: Step): Instruction => writeStep(want, take, lists);
 
   interface Arm { parts: readonly Part<F>[]; piece: ContainerPiece; join: ContainerPiece }
 

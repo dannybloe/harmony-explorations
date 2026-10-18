@@ -32,7 +32,10 @@
  * * **its page record**, seven bytes with the hit page first, and its page list and the list's copy,
  *   which on Low Battery and the charging problem screen bind the press of scan 49, each to a list of
  *   its own: the copy's is 239 and 240 on all sixteen, the factory file and the Dutch compile, and 238 and 239
- *   on the everyday One's, where the page list's varies on every compile.
+ *   on the everyday One's, where the page list's varies on every compile;
+ * * **the lists below it**, since `todo-compile-one.md` 6.5, section 418: every list its own lists call, through
+ *   every level, that the wiring does not build, 18 over the ten screens on all sixteen, each at the index the
+ *   description reads, written in `screentemplate.ts`' steps. The six left below them are the wiring's.
  *
  * **What the description carries**, read off a configuration: the two fonts; per screen its hit page, its
  * pictures, the clock program its chrome queues, and in a fixed walk order every other number the
@@ -59,6 +62,10 @@ import {
   recordReading, withModeRecords,
 } from '../../screenrecords.ts';
 import { type ValueReader, blobReader, speller } from '../../shared/spelling.ts';
+import {
+  CLICK, LIGHT_7_OFF, LIST, MAP, PAGE_KEYS_OFF, SET, SWALLOW, type Step as TemplateStep, TEST, k, owns, readStep, stepKinds, write,
+  writeStep,
+} from './screentemplate.ts';
 
 const PRESS = 0x80;
 const ENTER = 0x06;
@@ -84,22 +91,33 @@ const OK_WORD = 'OK';
 export const TOUCH_FIRMWARE_KEYPAD: readonly number[] = Array.from({ length: 55 }, (_, k) => k + 1)
   .filter((scan) => scan !== 41 && scan !== 42 && scan !== 54);
 
-/** One instruction of a list: its opcode and its operand, or the kind of number the configuration chose. */
+/**
+ * One instruction of a list: its opcode and its operand, or the kind of number the configuration chose; or,
+ * `below`, a call of a list below the screens that they build, at an index the configuration chose, stated in
+ * `screentemplate.ts`' language, section 418.
+ */
 type Operand = number | 'list' | 'timer' | 'program';
-interface Step { opcode: number; operand: Operand; band?: number }
+interface Plain { opcode: number; operand: Operand; band?: number }
+type Step = Plain | { below: TemplateStep };
 const nop: Step = { opcode: 0, operand: 0 };
+/** A call of a list below the screens, built from its template step, section 418. */
+const below = (step: TemplateStep): Step => ({ below: step });
 const call: Step = { opcode: CALL, operand: 'list' };
 const run: Step = { opcode: RUN_PROGRAM, operand: 'program' };
 const timerStart: Step = { opcode: BAND, band: TIMER_START, operand: 'timer' };
 const timerCancel: Step = { opcode: BAND, band: TIMER_CANCEL, operand: 'timer' };
 const fixed = (opcode: number, operand: number): Step => ({ opcode, operand });
 
-/** What a tag runs: nothing, a list of the screen's own, a list elsewhere, or one instruction. */
+/**
+ * What a tag runs: nothing, a list of the screen's own, one instruction, or a list below the screens bound
+ * directly, built from its template step at an index the configuration chose (section 418; until then a list
+ * elsewhere, named and not built).
+ */
 type Binding =
   | { kind: 'swallow' }
   | { kind: 'own'; steps: readonly Step[] }
-  | { kind: 'elsewhere' }
-  | { kind: 'direct'; step: Step };
+  | { kind: 'below'; step: TemplateStep }
+  | { kind: 'direct'; step: Plain };
 const swallow: Binding = { kind: 'swallow' };
 const own = (...steps: Step[]): Binding => ({ kind: 'own', steps });
 
@@ -119,33 +137,60 @@ interface TouchFirmwareScreen {
   lines: readonly (readonly [string, number])[];
   /** Whether the screen draws the right hand key's "OK". */
   ok?: true;
-  /** Whether the page list binds the press of scan 49 to a list. */
-  scan49?: true;
+  /**
+   * What the page list and its copy bind the press of scan 49 to, where they bind it: a list below the screens
+   * each, of one shape, at two indices the configuration chose.
+   */
+  scan49?: TemplateStep;
 }
+
+// ---------------------------------------------------------------------------------------------------------
+// The lists below the screens, section 418: every list the screens' own lists call that the wiring does not
+// build, in `screentemplate.ts`' language, each at an index the configuration chose. The wiring's stay `call`,
+// a number: the key lights' on lists, `lights`, `events`, `boot.3`, `boot.4` and `settle.1`.
+
+/** USB Connected's variable written: 1 on entering and on most keys, 2 and 3 by the keys below, `07 FFFF` first. */
+const usbState = (value: number): TemplateStep => owns(SET, write(value));
+/**
+ * What USB Connected's scans 2, 28 and 46 run below their own lists: `1F FB0n`, then a comparison of the
+ * variable written above whose arms write it again or `07 FFFC` and then 1.
+ */
+const usbKey = (byte: number, ...arm: readonly TemplateStep[]): TemplateStep => owns(k(BAND, 0xfb00 | byte), owns(TEST(0x80), ...arm));
 
 /** The ten screens, in mode order, on the sixteen English compiles of skin 54. */
 const SCREENS: readonly TouchFirmwareScreen[] = [
   {
+    // Entering writes 1 to a variable of the configuration's below the screen and lights channel 7 through the
+    // wiring's list; leaving runs the wiring's `boot.3`, which writes it 0, and channel 7's off list.
     id: 'lowBattery', name: 'Low Battery', keys: own(nop, nop, nop),
-    tags: [[ENTER, own(call, timerStart, call)], [LEAVE, own(call, timerCancel, call)], 'keys', [HEADER, own(run, run, run)]],
-    queued: [run, run], second: [58, 103], lines: [['The battery level is low!', 143]], ok: true, scan49: true,
+    tags: [[ENTER, own(below(owns(SET, write(1))), timerStart, call)], [LEAVE, own(call, timerCancel, below(LIGHT_7_OFF))], 'keys',
+      [HEADER, own(run, run, run)]],
+    // Its OK: the click and the wiring's `settle.1`, on the page list and on its copy.
+    queued: [run, run], second: [58, 103], lines: [['The battery level is low!', 143]], ok: true, scan49: owns(CLICK, LIST),
   },
   {
-    id: 'usbConnected', name: 'USB Connected', keys: own(call, nop),
-    tags: [[ENTER, { kind: 'elsewhere' }], [LEAVE, own(call, call)], 'keys',
-      [PRESS | 2, { kind: 'elsewhere' }], [PRESS | 28, { kind: 'elsewhere' }]],
+    // Every key and entering write 1 below the screen; scan 46 and the two the keys override, 2 and 28, go
+    // through a comparison; leaving runs the wiring's `boot.4` and a comparison of a variable of the
+    // configuration's that looks the location's value map up.
+    id: 'usbConnected', name: 'USB Connected', keys: own(below(usbState(1)), nop),
+    tags: [[ENTER, { kind: 'below', step: usbState(1) }],
+      [LEAVE, own(call, below(owns(k(BAND, 0xfb00), owns(TEST(0x00), MAP))))], 'keys',
+      [PRESS | 2, { kind: 'below', step: usbKey(2, usbState(3), usbState(1)) }],
+      [PRESS | 28, { kind: 'below', step: usbKey(3, k(0x07, 0xfffc), usbState(1)) }],
+      [PRESS | 46, own(below(usbKey(1, usbState(2), usbState(1))), nop)]],
     second: [56, 89], lines: [['USB Connected', 168]],
   },
   {
+    // Leaving runs the wiring's `events` and the page keys' off list.
     id: 'blankA', name: 'blank, one', tags: [[PRESS | 47, swallow], [PRESS | 46, swallow],
       [ENTER, own(fixed(0x07, 0xfffb), fixed(BAND, 0xfe02), fixed(BAND, 0xe805))],
-      [LEAVE, own(fixed(0x07, 0xfffb), fixed(BAND, 0xfd02), call, call)]],
+      [LEAVE, own(fixed(0x07, 0xfffb), fixed(BAND, 0xfd02), call, below(PAGE_KEYS_OFF))]],
     lines: [],
   },
   {
     id: 'blankB', name: 'blank, two', tags: [[PRESS | 47, swallow], [PRESS | 46, swallow],
       [ENTER, own(fixed(0x07, 0xfffb), fixed(BAND, 0xfe03))],
-      [LEAVE, own(fixed(BAND, 0xfd03), call, call)]],
+      [LEAVE, own(fixed(BAND, 0xfd03), call, below(PAGE_KEYS_OFF))]],
     lines: [],
   },
   ...([['updateSuccessful', 'Update Successful', 168], ['upgradeSuccess', 'Upgrade Success', 168],
@@ -156,13 +201,15 @@ const SCREENS: readonly TouchFirmwareScreen[] = [
     queued: [run, run], lines: [[line, y]],
   })),
   {
+    // Every key and tag 0x30 run the wiring's `lights`; leaving, channel 7's off list; its OK, the click and the
+    // location's value map, on the page list and on its copy.
     id: 'chargingProblem', name: 'Charging problem', keys: own(call, nop, nop),
-    tags: ['keys', [ENTER, own(timerStart, call)], [LEAVE, own(timerCancel, call)], [HEADER, own(run, run, run)],
+    tags: ['keys', [ENTER, own(timerStart, call)], [LEAVE, own(timerCancel, below(LIGHT_7_OFF))], [HEADER, own(run, run, run)],
       [TAG_0X30, own(call, nop, nop)]],
     queued: [run, run], second: [43, 34],
     lines: [['Charging problem.', 125], ['Contact customer support:', 137], ['http://supportinfo.', 149],
       ['harmonyremote.com', 161]],
-    ok: true, scan49: true,
+    ok: true, scan49: owns(CLICK, MAP),
   },
 ];
 
@@ -197,20 +244,24 @@ function bindings(screen: TouchFirmwareScreen): { inserted: number[]; binding: M
 }
 
 /** The numbers a screen's lists and bindings take, in walk order, and the kinds they are. */
-function slotsOf(screen: TouchFirmwareScreen): ('list' | 'timer' | 'program')[] {
-  const out: ('list' | 'timer' | 'program')[] = [];
+function slotsOf(screen: TouchFirmwareScreen): string[] {
+  const out: string[] = [];
   const { inserted, binding } = bindings(screen);
-  const steps = (body: readonly Step[]) => body.forEach((one) => { if (typeof one.operand === 'string') out.push(one.operand); });
+  // A list below takes its index and then its own numbers, depth first, `stepKinds`' walk.
+  const steps = (body: readonly Step[]) => body.forEach((one) => {
+    if ('below' in one) out.push(...stepKinds(one.below));
+    else if (typeof one.operand === 'string') out.push(one.operand);
+  });
   for (const tag of keyListOrderInserted(inserted)) {
     const bound = binding.get(tag) as Binding;
     if (bound.kind === 'own') steps(bound.steps);
-    else if (bound.kind === 'elsewhere') out.push('list');
+    else if (bound.kind === 'below') out.push(...stepKinds(bound.step));
     else if (bound.kind === 'direct') steps([bound.step]);
   }
   if (screen.queued !== undefined) steps(screen.queued);
   if (screen.queued !== undefined) out.push('program');
-  // The page list's list, then its copy's, which Logitech points at another.
-  if (screen.scan49) out.push('list', 'list');
+  // The page list's list, then its copy's, which Logitech points at another of the same shape.
+  if (screen.scan49 !== undefined) out.push(...stepKinds(screen.scan49), ...stepKinds(screen.scan49));
   return out;
 }
 
@@ -238,7 +289,7 @@ export interface TouchFirmwareScreensDescribed {
   regions: { from: number; to: number; what: string }[];
 }
 
-const shift = (step: Step, value: number): number => (step.band === undefined ? value : (step.band << 8) | value);
+const shift = (step: Plain, value: number): number => (step.band === undefined ? value : (step.band << 8) | value);
 
 /**
  * Read off a configuration what a composer would supply for the One's firmware screens, and where
@@ -278,8 +329,13 @@ export function describeTouchFirmwareScreens(
       if (list.body.length !== steps.length) throw new ScreenRecordError(`${screen.name}'s ${what} is not ${steps.length} instructions`);
       steps.forEach((step, k) => {
         const got = list.body[k] as Instruction;
-        if (got.opcode !== step.opcode) throw new ScreenRecordError(`${screen.name}'s ${what}, instruction ${k}, is not 0x${step.opcode.toString(16)}`);
         const at = list.off + 1 + 3 * k;
+        // A list below: read against its template, its index and every number in it the description's.
+        if ('below' in step) {
+          readStep(reading, screen.name, numbers, step.below, got, at, `${what}, instruction ${k}`);
+          return;
+        }
+        if (got.opcode !== step.opcode) throw new ScreenRecordError(`${screen.name}'s ${what}, instruction ${k}, is not 0x${step.opcode.toString(16)}`);
         if (typeof step.operand === 'number') {
           if (got.operand !== step.operand) throw new ScreenRecordError(`${screen.name}'s ${what}, instruction ${k}, has another operand`);
         } else if (step.band !== undefined) {
@@ -300,10 +356,11 @@ export function describeTouchFirmwareScreens(
           throw new ScreenRecordError(`${screen.name}'s ${what} is not its instruction`);
         }
         numbers.push(value(at));
+      } else if (bound.kind === 'below') {
+        readStep(reading, screen.name, numbers, bound.step, entry, at, what);
       } else {
         if (entry.opcode !== CALL) throw new ScreenRecordError(`${screen.name}'s ${what} calls no list`);
-        if (bound.kind === 'elsewhere') numbers.push(value16(at));
-        else ownList(entry.operand, bound.steps, what);
+        ownList(entry.operand, bound.steps, what);
       }
     });
     // The chrome: its pictures, and what it queues.
@@ -324,17 +381,17 @@ export function describeTouchFirmwareScreens(
       if (one === page.program.find((ins) => ins.opcode === SCREEN_SELECT_FONT)) body = fontOf(one.start, body);
       else ok = fontOf(one.start, ok);
     }
-    if (screen.scan49) {
+    if (screen.scan49 !== undefined) {
       const entry = page.list.entries[0];
-      if (page.list.entries.length !== 1 || entry?.tag !== (PRESS | 49) || entry.opcode !== CALL) {
-        throw new ScreenRecordError(`${screen.name}'s page list does not bind scan 49's press to a list`);
+      if (page.list.entries.length !== 1 || entry?.tag !== (PRESS | 49)) {
+        throw new ScreenRecordError(`${screen.name}'s page list does not bind scan 49's press`);
       }
-      numbers.push(value16(page.listOff + 1 + 1));
+      readStep(reading, screen.name, numbers, screen.scan49, entry, page.listOff + 1 + 1, 'page list\'s binding of scan 49');
       const copied = page.copy.entries[0];
-      if (page.copy.entries.length !== 1 || copied?.tag !== (PRESS | 49) || copied.opcode !== CALL) {
-        throw new ScreenRecordError(`${screen.name}'s page list's copy does not bind scan 49's press to a list`);
+      if (page.copy.entries.length !== 1 || copied?.tag !== (PRESS | 49)) {
+        throw new ScreenRecordError(`${screen.name}'s page list's copy does not bind scan 49's press`);
       }
-      numbers.push(value16(page.copyOff + 1 + 1));
+      readStep(reading, screen.name, numbers, screen.scan49, copied, page.copyOff + 1 + 1, 'page list copy\'s binding of scan 49');
     } else if (page.list.entries.length !== 0 || page.copy.entries.length !== 0) throw new ScreenRecordError(`${screen.name}'s page list binds something`);
     const slots = slotsOf(screen);
     if (slots.length !== numbers.length) throw new ScreenRecordError(`${screen.name} read ${numbers.length} numbers for ${slots.length} slots`);
@@ -377,9 +434,12 @@ export function buildTouchFirmwareScreens(c: Container, spec: TouchFirmwareScree
       if (one === undefined) throw new ScreenRecordError(`the description holds too few numbers for ${screen.name}`);
       return one;
     };
-    const instruction = (step: Step): Instruction => ({
-      opcode: step.opcode, operand: typeof step.operand === 'number' ? step.operand : shift(step, take()),
-    });
+    // A list below is built from its template at the index the description gives it, `writeStep`, into the same
+    // map as the screens' own lists: the two runs of indices never meet, since the own lists are 0 on and every
+    // list below sits past them.
+    const below = (step: TemplateStep): Instruction => writeStep(step, take, lists);
+    const instruction = (step: Step): Instruction => ('below' in step ? below(step.below)
+      : { opcode: step.opcode, operand: typeof step.operand === 'number' ? step.operand : shift(step, take()) });
     const ownList = (steps: readonly Step[]): number => {
       const index = nextList;
       nextList += 1;
@@ -391,7 +451,7 @@ export function buildTouchFirmwareScreens(c: Container, spec: TouchFirmwareScree
       const bound = binding.get(tag) as Binding;
       if (bound.kind === 'swallow') return { tag, operand: 0, opcode: 0 };
       if (bound.kind === 'direct') return { tag, ...instruction(bound.step) };
-      if (bound.kind === 'elsewhere') return { tag, operand: take(), opcode: CALL };
+      if (bound.kind === 'below') return { tag, ...below(bound.step) };
       return { tag, operand: ownList(bound.steps), opcode: CALL };
     });
 
@@ -450,8 +510,8 @@ export function buildTouchFirmwareScreens(c: Container, spec: TouchFirmwareScree
     out.push(SCREEN_END);
     program.bytes = Uint8Array.from(out);
 
-    const pageList = taggedListBytes(screen.scan49 ? [{ tag: PRESS | 49, operand: take(), opcode: CALL }] : []);
-    const copy = taggedListBytes(screen.scan49 ? [{ tag: PRESS | 49, operand: take(), opcode: CALL }] : []);
+    const pageList = taggedListBytes(screen.scan49 !== undefined ? [{ tag: PRESS | 49, ...below(screen.scan49) }] : []);
+    const copy = taggedListBytes(screen.scan49 !== undefined ? [{ tag: PRESS | 49, ...below(screen.scan49) }] : []);
     if (numbers.length !== 0) throw new ScreenRecordError(`the description holds ${numbers.length} numbers more than ${screen.name} takes`);
     return recordOf(taggedListBytes(entries), [program], [pageList], [copy], undefined,
       { leads: [described.hitPage], chromes: [chrome] });

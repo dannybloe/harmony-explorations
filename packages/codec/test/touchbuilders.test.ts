@@ -249,18 +249,21 @@ test('todo-compile-one 3.2.2.3: the attribution counts each builder\'s bytes on 
   // the table of 29 entries, the structure `checkTouchCasePrograms` reports on this compile; the hit pages' 1986 the
   // 23 pages and the touch map's table of 29, `checkTouchHitPages`'. Two independent counts of one span: the module
   // checks claim it from their descriptions, the attribution from what the rebuild put where.
+  // The firmware screens', the fixed screens', the tour's and the wiring's 3099, 13139, 3900 and 4527 until
+  // `todo-compile-one.md` 6.5 built the lists below the screens and the wiring's variables' transitions, section 418.
   assert.deepEqual(a.generated, {
-    'firmware screens': 3099, 'fixed screens': 13139, 'tour and Remote Assistant': 3900, 'status screens': 3872,
-    'clock header': 3558, 'help screens': 2198, 'case programs': 497, 'hit pages': 1986, wiring: 4527, 'state tables': 962,
+    'firmware screens': 3237, 'fixed screens': 14332, 'tour and Remote Assistant': 4015, 'status screens': 3872,
+    'clock header': 3558, 'help screens': 2198, 'case programs': 497, 'hit pages': 1986, wiring: 4625, 'state tables': 962,
     'raw slot 18': 2, 'number senders': 1,
   });
   // Of those, the bytes read as values: the help screens' 660 and the case programs' 28 are sections 415's and 416's
   // figures for this compile; the hit
   // pages read only the leads of the pages naming them, which lie outside what they build; raw slot 18 is a
   // constant and base slot 16's table a count and addresses, 6.7.
+  // 401, 3967, 680 and 1243 for the four before section 418.
   assert.deepEqual(a.described, {
-    'firmware screens': 401, 'fixed screens': 3967, 'tour and Remote Assistant': 680, 'status screens': 699,
-    'clock header': 337, 'help screens': 660, 'case programs': 28, 'hit pages': 0, wiring: 1243, 'state tables': 0,
+    'firmware screens': 439, 'fixed screens': 4038, 'tour and Remote Assistant': 719, 'status screens': 699,
+    'clock header': 337, 'help screens': 660, 'case programs': 28, 'hit pages': 0, wiring: 1274, 'state tables': 0,
     'raw slot 18': 0, 'number senders': 0,
   });
 });

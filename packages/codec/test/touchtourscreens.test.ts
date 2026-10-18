@@ -27,7 +27,7 @@ import { TOUCH_FIXED_SCREENS, describeTouchFixedScreens, touchFixedScreenModes }
 import { touchStartupVariables, withoutStartupAssistant } from '../src/families/touch/startupassistant.ts';
 import { describeTouchWiring } from '../src/families/touch/wiring.ts';
 import { textGlyphs } from '../src/shared/spelling.ts';
-import { listsBelow } from './screenlists.ts';
+import { listsBelow, namedByRecords } from './screenlists.ts';
 
 /** The first offset two files differ at, or undefined where they are the same. */
 function firstDifference(a: Uint8Array, b: Uint8Array): number | undefined {
@@ -39,25 +39,28 @@ function firstDifference(a: Uint8Array, b: Uint8Array): number | undefined {
 /**
  * The sixteen English compiles of skin 54, section 405, with what each check reads: the bytes of the sixteen
  * screens and the bytes the description reads, which differ by compile because a text is drawn inline or by
- * reference to a copy outside the screens as the compile's other screens fall.
+ * reference to a copy outside the screens as the compile's other screens fall, and the lists built. Since
+ * `todo-compile-one.md` 6.5 those count the lists below the screens the wiring does not build, section 418: 17,
+ * 152 bytes of which the description reads 46 and the setting's one byte, on the eleven where "Devices Off
+ * Again"'s OK goes on to the tour, and 13, 112 bytes of which it reads 31, on the five where it does not.
  */
-const SKIN_54: Readonly<Record<string, { described: number; structure: number }>> = {
-  harvest_one_two_devices: { described: 687, structure: 3900 },
-  one_spare_after_sync: { described: 765, structure: 3849 },
-  one_spare_myharmony: { described: 838, structure: 3791 },
-  one_spare_20260830: { described: 838, structure: 3791 },
-  calibration_one: { described: 776, structure: 3843 },
-  calibration_favchannels: { described: 776, structure: 3843 },
-  calibration_favzero: { described: 838, structure: 3791 },
-  compiled_protocols: { described: 884, structure: 3785 },
-  compiled_protocols_2: { described: 884, structure: 3785 },
-  compiled_protocols_3: { described: 884, structure: 3785 },
-  harvest_one_families_1: { described: 670, structure: 3901 },
-  harvest_one_families_2: { described: 670, structure: 3901 },
-  harvest_one_families_3: { described: 670, structure: 3901 },
-  one_friend_legacy_sync_config: { described: 822, structure: 3802 },
-  phase7_before: { described: 776, structure: 3843 },
-  phase7_after: { described: 776, structure: 3843 },
+const SKIN_54: Readonly<Record<string, { described: number; structure: number; lists: number }>> = {
+  harvest_one_two_devices: { described: 734, structure: 4052, lists: 115 },
+  one_spare_after_sync: { described: 812, structure: 4001, lists: 115 },
+  one_spare_myharmony: { described: 885, structure: 3943, lists: 115 },
+  one_spare_20260830: { described: 869, structure: 3903, lists: 111 },
+  calibration_one: { described: 823, structure: 3995, lists: 115 },
+  calibration_favchannels: { described: 823, structure: 3995, lists: 115 },
+  calibration_favzero: { described: 869, structure: 3903, lists: 111 },
+  compiled_protocols: { described: 915, structure: 3897, lists: 111 },
+  compiled_protocols_2: { described: 915, structure: 3897, lists: 111 },
+  compiled_protocols_3: { described: 915, structure: 3897, lists: 111 },
+  harvest_one_families_1: { described: 717, structure: 4053, lists: 115 },
+  harvest_one_families_2: { described: 717, structure: 4053, lists: 115 },
+  harvest_one_families_3: { described: 717, structure: 4053, lists: 115 },
+  one_friend_legacy_sync_config: { described: 869, structure: 3954, lists: 115 },
+  phase7_before: { described: 823, structure: 3995, lists: 115 },
+  phase7_after: { described: 823, structure: 3995, lists: 115 },
 };
 const NAMES = Object.keys(SKIN_54);
 
@@ -79,19 +82,21 @@ function assistantLooks(c: ReturnType<typeof parse>): number {
   }).length;
 }
 
-test('todo-compile-one 4.4.4.2: the tour\'s 11 screens and the Remote Assistant\'s 5 of the sixteen English compiles of skin 54 are rebuilt byte for byte from a description, 98 lists among them',
+test('todo-compile-one 4.4.4.2 and 6.5: the tour\'s 11 screens and the Remote Assistant\'s 5 of the sixteen English compiles of skin 54 are rebuilt byte for byte from a description, their own 98 lists and 17 below them on eleven, 13 on five',
      skipUnless(...NAMES), () => {
   assert.equal(TOUCH_TOUR_SCREENS.length, 11);
   assert.equal(TOUCH_ASSISTANT_SCREENS.length, 5);
   for (const name of NAMES) {
-    assert.deepEqual(checkTouchTourScreens(parse(require_(name))), { screens: 16, lists: 98, ...SKIN_54[name] }, name);
+    assert.deepEqual(checkTouchTourScreens(parse(require_(name))), { screens: 16, ...SKIN_54[name] }, name);
   }
 });
 
 test('todo-compile-one 4.4.4.2: beyond the sixteen, the European compiles rebuild too, the everyday One\'s with the tour alone since its wiring keeps no Remote Assistant, and the Dutch compile is refused for its words',
      skipUnless('one_config', 'one_config_unprogrammed', 'one_friend_asfound_config'), () => {
-  assert.deepEqual(checkTouchTourScreens(parse(require_('one_config'))), { screens: 11, lists: 66, described: 466, structure: 2795 });
-  assert.deepEqual(checkTouchTourScreens(parse(require_('one_config_unprogrammed'))), { screens: 16, lists: 98, described: 769, structure: 3843 });
+  // The everyday One's tour builds the three lists below it, the off lists of channel 7 and the page keys and
+  // what leaving the tour runs, 24 bytes of which 5 are read; the factory file's sixteen the five's 13.
+  assert.deepEqual(checkTouchTourScreens(parse(require_('one_config'))), { screens: 11, lists: 69, described: 471, structure: 2819 });
+  assert.deepEqual(checkTouchTourScreens(parse(require_('one_config_unprogrammed'))), { screens: 16, lists: 111, described: 800, structure: 3955 });
   assert.throws(() => checkTouchTourScreens(parse(require_('one_friend_asfound_config'))),
     (error: Error) => error instanceof ScreenRecordError && /holds 0 screens of the look of Tour Another Activity, not one/.test(error.message));
 });
@@ -161,7 +166,7 @@ test('todo-compile-one 4.4.4.2: starting past the Remote Assistant keeps its lad
     // enters the welcome at 1 and "Ensure all your devices are off" at 2, and the screens rebuild as before.
     assert.equal((stateRecords(started) ?? [])[variable]?.first, 3, name);
     assert.equal(describeTouchWiring(takeApart(started)).settings.startupAssistant, true, name);
-    assert.deepEqual(checkTouchTourScreens(started), { screens: 16, lists: 98, ...SKIN_54[name] }, name);
+    assert.deepEqual(checkTouchTourScreens(started), { screens: 16, ...SKIN_54[name] }, name);
     // The leftover entry's events 1 and 5 still run the ladder, through every call, to the welcome's enter.
     const wiring = describeTouchWiring(takeApart(started));
     const idle = taggedList(started, (handlerSets(started)?.addresses ?? [])[wiring.entries['idle'] as number] as number)?.entries ?? [];
@@ -254,9 +259,11 @@ test('todo-compile-one 4.4.4.2: a blinded input rebuilds all sixteen: no byte of
     const out = layOutContainer(withTouchTourScreens(layout, buildTouchTourScreens(parse(blinded), d.spec), d.place)).bytes;
     assert.equal(firstDifference(out, c.blob), undefined, `${name} differs`);
   }
-  // 61354 bytes of screens over the sixteen, 61354 - 11276 = 50078 of them written by the builder and every one
-  // blinded; the description reads 11276 bytes inside them and 1278 outside, the homes' glyph codes.
-  assert.deepEqual(totals, { structure: 61354, inside: 11276, outside: 1278, blinded: 50078 });
+  // 63586 bytes of screens over the sixteen, the lists below them among them since section 418, 63586 - 11948 =
+  // 51638 of them written by the builder and every one blinded; the description reads 11948 bytes inside them,
+  // 672 of those the lists below's numbers and the setting's byte, and 1278 outside, the homes' glyph codes.
+  // 61354, 11276 and 50078 before the lists below were built.
+  assert.deepEqual(totals, { structure: 63586, inside: 11948, outside: 1278, blinded: 51638 });
 });
 
 test('todo-compile-one 4.4.4.2: a description with a timer moved, two screens\' pictures swapped, the welcome\'s variable moved, two tour screens\' modes swapped or the Remote Assistant left out is refused',
@@ -298,7 +305,7 @@ test('todo-compile-one 4.4.4.2: a description with a timer moved, two screens\' 
     (error: Error) => error instanceof ScreenRecordError && /11 records were built for 16 places/.test(error.message));
 });
 
-test('todo-compile-one 4.4.4.2: the 98 lists built are named by nothing outside the sixteen screens; the lists below them stay the configuration\'s, 69 where the second "Ensure all your devices are off" leads on to the tour\'s "Welcome!", on 11, and 22 where it does not, on 5',
+test('todo-compile-one 4.4.4.2 and 6.5: of the 99 lists the sixteen screens name, the 98 their own are named by nothing outside them and the 99th is named from outside too; the setting read off one byte agrees with the walk: on 11 "Devices Off Again"\'s OK leads on to the tour\'s "Welcome!" and 17 lists are built below, on 5 it does not and 13 are; what is left below is named from outside, so none runs for these screens alone',
      skipUnless(...NAMES), () => {
   const names = [...TOUCH_TOUR_SCREENS, ...TOUCH_ASSISTANT_SCREENS];
   const found = NAMES.map((name) => {
@@ -306,7 +313,8 @@ test('todo-compile-one 4.4.4.2: the 98 lists built are named by nothing outside 
     const d = describeTouchTourScreens(c, takeApart(c));
     const modeOf = (screen: string): number => (d.spec.screens[names.indexOf(screen)] as { mode: number }).mode;
     // Whether the OK of the second "Ensure all your devices are off" runs, through every call, an enter of the
-    // tour's "Welcome!": section 403's twelve compiles that wire it and six that leave its lists uncalled.
+    // tour's "Welcome!": section 403's twelve compiles that wire it and six that leave its lists uncalled. Walked
+    // here over every call, where the description reads one opcode, `onToTour`: two readings of other bytes.
     const lists = c.actionLists() ?? [];
     const ok = taggedList(c, (modeRecords(c) ?? [])[modeOf('Assistant Devices Off Again')]?.pages[0]?.list as number)?.entries[0];
     const seen = new Set<number>();
@@ -321,30 +329,47 @@ test('todo-compile-one 4.4.4.2: the 98 lists built are named by nothing outside 
         if (one.opcode === 0x7f) queue.push(one.operand);
       }
     }
-    const below = listsBelow(c, new Set(d.spec.screens.map((one) => one.mode)), new Set(buildTouchTourScreens(c, d.spec).lists.keys()));
-    return [name, { welcome, ...below }] as const;
+    const modes = new Set(d.spec.screens.map((one) => one.mode));
+    const built = new Set(buildTouchTourScreens(c, d.spec).lists.keys());
+    const own = namedByRecords(c, modes);
+    const below = listsBelow(c, modes, built);
+    // The screens' own lists are those their records name, but for the one list below bound directly, "Welcome!"'s
+    // leaving list, channel 7's off list, which other screens' lists call too.
+    const ownBuilt = [...built].filter((index) => own.has(index));
+    return [name, {
+      welcome, onToTour: d.spec.onToTour, own: ownBuilt.length, built: built.size, ...below,
+      namedFromOutside: below.namedFromOutside.length,
+      ownNamedFromOutside: below.namedFromOutside.filter((index) => own.has(index)).length,
+    }] as const;
   });
-  // Of the lists below, `shared` are named directly by something outside the screens, the tour's enter and leave
-  // lists' callees and the click lists among them, and `sharedBelow` are those and every list they reach.
-  const leads = { welcome: true, namedFromOutside: [], below: 69 };
-  const stops = { welcome: false, namedFromOutside: [], below: 22, shared: 10, sharedBelow: 15 };
+  // Until `todo-compile-one.md` 6.5 the 98 were all the builder made, named by nothing outside, and the walk found
+  // 69 lists below them where the OK leads on and 22 where it does not, 56 or 59 and 15 of those shared. Since
+  // section 418 the lists below that the wiring does not build are built too, and of all built `namedFromOutside`
+  // are named directly from outside as well: the off lists of the page keys, of channel 5 and of channel 7 and,
+  // where the OK leads on, the list turning the Remote Assistant on, each reached by the fixed screens too, and on
+  // twelve compiles, seven where the OK leads on and all five where it does not, the list "Hide Question"'s Yes
+  // runs, named by an activity's own assistant screen. The one own
+  // list named from outside is channel 7's off list, which "Welcome!" binds directly. What is left below, 52 or 9
+  // lists, is the wiring's, `touchbelowlists.test.ts`, every one named from outside.
+  const leads = { welcome: true, onToTour: true, own: 99, built: 115, ownNamedFromOutside: 1, below: 52, shared: 11, sharedBelow: 52 };
+  const stops = { welcome: false, onToTour: false, own: 99, built: 111, ownNamedFromOutside: 1, below: 9, shared: 6, sharedBelow: 9, namedFromOutside: 4 };
   assert.deepEqual(Object.fromEntries(found), {
-    harvest_one_two_devices: { ...leads, shared: 15, sharedBelow: 56 },
-    one_spare_after_sync: { ...leads, shared: 16, sharedBelow: 59 },
-    one_spare_myharmony: { ...leads, shared: 16, sharedBelow: 59 },
+    harvest_one_two_devices: { ...leads, namedFromOutside: 4 },
+    one_spare_after_sync: { ...leads, namedFromOutside: 5 },
+    one_spare_myharmony: { ...leads, namedFromOutside: 5 },
     one_spare_20260830: stops,
-    calibration_one: { ...leads, shared: 16, sharedBelow: 59 },
-    calibration_favchannels: { ...leads, shared: 16, sharedBelow: 59 },
+    calibration_one: { ...leads, namedFromOutside: 5 },
+    calibration_favchannels: { ...leads, namedFromOutside: 5 },
     calibration_favzero: stops,
     compiled_protocols: stops,
     compiled_protocols_2: stops,
     compiled_protocols_3: stops,
-    harvest_one_families_1: { ...leads, shared: 15, sharedBelow: 56 },
-    harvest_one_families_2: { ...leads, shared: 15, sharedBelow: 56 },
-    harvest_one_families_3: { ...leads, shared: 15, sharedBelow: 56 },
-    one_friend_legacy_sync_config: { ...leads, shared: 16, sharedBelow: 59 },
-    phase7_before: { ...leads, shared: 16, sharedBelow: 59 },
-    phase7_after: { ...leads, shared: 16, sharedBelow: 59 },
+    harvest_one_families_1: { ...leads, namedFromOutside: 4 },
+    harvest_one_families_2: { ...leads, namedFromOutside: 4 },
+    harvest_one_families_3: { ...leads, namedFromOutside: 4 },
+    one_friend_legacy_sync_config: { ...leads, namedFromOutside: 5 },
+    phase7_before: { ...leads, namedFromOutside: 5 },
+    phase7_after: { ...leads, namedFromOutside: 5 },
   });
 });
 

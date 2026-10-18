@@ -32,6 +32,11 @@ and leave this table alone.
 
 | phrase | superseded by | what is true instead |
 |---|---|---|
+| `thirteen of the lists they reach are still the configuration's` | section 418 | the Harmony One's firmware screens build every list they reach that the wiring does not, 18 on the sixteen English compiles of skin 54 |
+| `207 lists on each of the sixteen that stay the configuration's` | section 418 | of the 207 lists below the Harmony One's fixed screens, they build the 154 the wiring does not and the other 53 are the wiring's |
+| `Below them sit lists that stay the configuration's` | section 418 | the Harmony One's tour and Remote Assistant build every list they reach that the wiring does not, 17 or 13 |
+| `the 207 below them are named by index` | section 418 | as above, 154 built and 53 the wiring's |
+| `the lists below are named by index` | section 418 | as above, the tour's 17 or 13 built |
 | `absent only from` | section 415, correcting section 405 | the Harmony One's power off help attempt screen is on all eighteen English compiles, on `harvest_one_families_1` in the shape of a chain with no device; only its "If not" question is absent there |
 | `FamilyTraits.sendPrelude` | `todo-compile-one.md` 3.3.3.4 | a send's shape is a family member, `Family.sends`, which the device, input and sequence composers and the donor input matcher ask, not a trait each tested; the four slot family's is `families/four-slot/sends.ts` and the Harmony One's `families/touch/sends.ts` |
 | `FamilyTraits.startSequence` | `todo-compile-one.md` 3.3.3.4 | an activity's start is a family member, `Family.activityStart`, in each family's `start.ts`, with the four slot readers `startSequenceOf` and `arch14Starts` beside it |

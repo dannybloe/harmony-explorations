@@ -48,6 +48,13 @@
  *    table generated from the number sender records it names, `smalltables.ts`, `todo-compile-one.md` 6.7: the
  *    one refusing a raw slot 18 holding anything else, the other keeping a donor's records as they are.
  *
+ * **The lists below the screens are the screen sets' and the wiring's**, `todo-compile-one.md` 3.2.2.5, section
+ * 418: every list a set's own lists call, through every level, is built either by that set or by the wiring, never
+ * both, and none is left to the donor. Logitech's compiler shares a few between sets, the key lights' off lists and
+ * the list turning the Remote Assistant on, and each set reaching one states it and builds it alike; `mark` takes
+ * the first, so those bytes are the firmware screens' where they reach them and the fixed screens' otherwise. The
+ * wiring builds the lists the transitions of its own variables `readyVar`, `relightVar` and `settleVar` call.
+ *
  * **Before the look and not after**, because the look blends our letters into the colour under each text,
  * `withBlendedLetters`, and that gives the selects one role makes on several backgrounds several fonts: every
  * screen description here knows a role by one font and refuses the blended file. Built first, the screens go

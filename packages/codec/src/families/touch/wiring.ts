@@ -42,7 +42,7 @@ import { takeApart } from '../../frame.ts';
 import type { Container } from '../../gspm.ts';
 import { ACTION_LIST_TABLE_SLOT, BINDING_SLOT } from '../../gspm.ts';
 import { KEY_EVENT_PRESS, KEY_EVENT_SHIFT } from '../../inventory.ts';
-import { HANDLER_TABLE_SLOT } from '../../sections.ts';
+import { HANDLER_TABLE_SLOT, STATE_RECORD_HEADER, STATE_TABLE_SLOT, STATE_VALUE_LENGTH } from '../../sections.ts';
 import { TIMER_KIND_SCHEDULED, TIMER_RECORD_LENGTH, TIMER_SLOT } from '../../tables.ts';
 import { buildLogArea, buildParameterBlock } from '../../firmwaresections.ts';
 import {
@@ -299,7 +299,42 @@ const LISTS: readonly (readonly [string, string])[] = [
   ['idleResume.2', '1F FB02 | call idleResume.2.1'],
   ['idleResume.2.1', '71 8409 | call idleEnter.3.1.1.1 | call ladder'],
   ['idleB7', 'enter idleB7.screen | idleB7Var := 1'],
+  // The lists the transitions of three of the wiring's own variables call, `TRANSITIONS`, section 418: named
+  // `<variable>.t<k>` for the variable's k-th transition, and below that by instruction as everywhere here.
+  // `readyVar`'s, which `ready.2` clears: a comparison of the firmware's variable 10 and the lights out timer.
+  ['readyVar.t0', '1F FB01 | call readyVar.t0.1'],
+  ['readyVar.t0.1', '71 030A | call readyVar.t0.1.1'],
+  ['readyVar.t0.1.1', '07 FFFB | start lightsOut'],
+  // `relightVar`'s two, which `relight` sets and `settle` clears: `settleVar` moved on, and where `settleVar`
+  // holds 0 the leftover entry's battery check, `idleEnter.3.1.1.1`, and `settleVar` set 1.
+  ['relightVar.t0', 'settleVar := 2 | relightVar := 1'],
+  ['relightVar.t1', '1F FB00 | call relightVar.t1.1'],
+  ['relightVar.t1.1', 'test settleVar 00 | call relightVar.t1.1.1'],
+  ['relightVar.t1.1.1', 'call idleEnter.3.1.1.1 | settleVar := 1'],
+  // `settleVar`'s, which `settle.1` clears: the chime's first note and the battery check where `settleVar`
+  // compares so, and on the firmware's variable 13 the reset timer started.
+  ['settleVar.t0', 'call settleVar.t0.0 | call settleVar.t0.1'],
+  ['settleVar.t0.0', '1F FB01 | call settleVar.t0.0.1'],
+  ['settleVar.t0.0.1', 'test settleVar 03 | call settleVar.t0.0.1.1'],
+  ['settleVar.t0.0.1.1', '75 4664 | call idleEnter.3.1.1.1'],
+  ['settleVar.t0.1', '1F FB01 | call settleVar.t0.1.1'],
+  ['settleVar.t0.1.1', '71 000D | call settleVar.t0.1.1.1'],
+  ['settleVar.t0.1.1.1', '07 FFFB | start readyReset'],
 ];
+
+/**
+ * The wiring's own variables whose base slot 13 transitions call a list, and the list each transition calls, in
+ * the record's order, section 418: every transition of the three is a call, one, two and one, on all nineteen
+ * Harmony One compiles. The records themselves are the state tables', `statetables.ts`, which carry what a
+ * transition runs as their description; the lists are this catalogue's, since they test and set the wiring's
+ * variables and call and start its lists and timers, and nothing else reaches them. A description finds their
+ * indices in the records, the one place they are named.
+ */
+const TRANSITIONS: Readonly<Record<string, readonly string[]>> = {
+  readyVar: ['readyVar.t0'],
+  relightVar: ['relightVar.t0', 'relightVar.t1'],
+  settleVar: ['settleVar.t0'],
+};
 
 /** The bodies of the per key lists of entries 2 to 4, each key's own list, 19 of 19. */
 const PER_KEY: Readonly<Record<2 | 3 | 4, string>> = {
@@ -441,10 +476,28 @@ function catalogue(settings: TouchWiringSettings, timers: readonly string[]): Ca
     body.forEach(visit);
   };
   lead.forEach(visit);
+  for (const names of Object.values(TRANSITIONS)) for (const name of names) visit({ call: name });
   for (const e of entries) for (const ins of e.bindings.values()) visit(ins);
   for (const t of table) if (t !== undefined) visit(t.instruction);
   for (const name of [...lists.keys()]) if (!reached.has(name)) lists.delete(name);
   return { lists, entries, lead, timers: table, front };
+}
+
+/**
+ * The lists a variable's transitions call, read off its base slot 13 record: `count` transitions, each a call,
+ * its operand the list's index, section 418. Refuses a record of another count or a transition that runs
+ * anything but a call.
+ */
+function transitionLists(records: readonly ContainerPiece[], variable: number, name: string, count: number): number[] {
+  const record = records[variable];
+  if (record === undefined) throw new WiringError(`${name}, variable ${variable}, has no base slot 13 record`);
+  const held = u16(record.bytes, 4);
+  if (held !== count) throw new WiringError(`${name}'s record holds ${held} transitions, where the wiring's holds ${count}`);
+  return Array.from({ length: count }, (_, k) => {
+    const at = STATE_RECORD_HEADER + STATE_VALUE_LENGTH * k;
+    if (u8(record.bytes, at + 7) !== 0x7f) throw new WiringError(`${name}'s transition ${k} calls no list`);
+    return u16(record.bytes, at + 5);
+  });
 }
 
 /** A device's own timer, as `families/four-slot/wiring.ts` carries the Harmony 600, 650 and 700's. */
@@ -623,6 +676,7 @@ export function describeTouchWiring(layout: ContainerLayout): TouchWiringSpec {
   const listPieces = tableTargets(tablePiece(layout, ACTION_LIST_TABLE_SLOT));
   const timerPieces = tableTargets(tablePiece(layout, TIMER_SLOT));
   const leadPiece = tablePiece(layout, BINDING_SLOT);
+  const stateRecords = tableTargets(tablePiece(layout, STATE_TABLE_SLOT));
   if (entryPieces.length < 8) throw new WiringError(`base slot 9 holds ${entryPieces.length} entries, fewer than the eight every One configuration has`);
   // The event map is generated whole, so nothing is read off it: a compile whose base is not the ten
   // firmware screens is refused by the comparison, not here.
@@ -708,6 +762,13 @@ export function describeTouchWiring(layout: ContainerLayout): TouchWiringSpec {
         if (p === undefined) throw new WiringError(`list ${name} would be action list ${index}, which the table does not hold`);
         decodeList(body, p.bytes, symbols, generated);
         pending.delete(name);
+        progress = true;
+      }
+      // The transitions' lists, named by the state records of variables already read, section 418.
+      for (const [variable, names] of Object.entries(TRANSITIONS)) {
+        const v = symbols.variables.get(variable);
+        if (v === undefined || names.every((name) => symbols.lists.has(name))) continue;
+        transitionLists(stateRecords, v, variable, names.length).forEach((index, k) => symbols.lists.set(names[k]!, index));
         progress = true;
       }
       for (let k = entriesPending.length - 1; k >= 0; k -= 1) {

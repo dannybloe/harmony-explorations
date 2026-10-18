@@ -38,9 +38,11 @@ const ONES = ['harvest_one_two_devices', 'one_spare_after_sync', 'one_spare_myha
 const OUR_WRITES = ['one_spare_light60_written', 'one_spare_noassistant_written', 'one_spare_glow_written',
   'one_spare_look_written', 'one_spare_written_by_us', 'one_spare_arrows_written', 'one_spare_bottom_written'] as const;
 
-const GENERATED = 62992;
-const DESCRIBED = 24352;
-const CHANGED = 62992;
+// Over the 19 compiles. 62992, 24352 and 62992 until `todo-compile-one.md` 6.5 added the 14 lists the transitions
+// of `readyVar`, `relightVar` and `settleVar` call, 98 bytes a compile, 67 generated and 31 described, section 418.
+const GENERATED = 64265;
+const DESCRIBED = 24941;
+const CHANGED = 64265;
 const DEVICE_TIMERS = 12;
 const REDRAWS = [13, 15, 19, 20, 16, 17, 20, 20, 20, 20, 13, 13, 13, 18, 17, 17, 17, 15, 15];
 const ORDERS = 3;
@@ -76,7 +78,7 @@ function pairsIn(layout: ContainerLayout, built: BuiltWiring): [ContainerPiece, 
 const rebuilt = (layout: ContainerLayout, spec: TouchWiringSpec): Uint8Array =>
   layOutContainer(withWiring(layout, buildTouchWiring(spec))).bytes;
 
-test('section 410: the wiring of each of the 19 Harmony One compiles is rebuilt byte for byte from a description, 6431 lists, 152 entries and 579 timers, the front 168 lists starting three past the start list',
+test('sections 410 and 418: the wiring of each of the 19 Harmony One compiles is rebuilt byte for byte from a description, 6697 lists, 152 entries and 579 timers, the front 168 lists starting three past the start list',
      skipUnless(...ONES), () => {
   let lists = 0;
   let entries = 0;
@@ -94,7 +96,8 @@ test('section 410: the wiring of each of the 19 Harmony One compiles is rebuilt 
     // Mode 39's two lists sit between the start list and the front, section 410, on every compile.
     assert.equal(spec.front, spec.lists.start! + 3, name);
   }
-  assert.deepEqual([lists, entries, timers], [6431, 152, 579]);
+  // 6431 lists until section 418 added the transitions' 14 on each of the 19, 266.
+  assert.deepEqual([lists, entries, timers], [6697, 152, 579]);
 });
 
 test('section 410: the rebuild reads none of the bytes the generator owns: a blinded input rebuilds all 19, and so do seven configurations of ours written to the spare',

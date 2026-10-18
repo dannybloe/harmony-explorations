@@ -67,6 +67,62 @@ export function namedOutside(c: Container, modes: ReadonlySet<number>, own: Read
 }
 
 /**
+ * The lists the given modes name themselves: their own key maps', page lists' and copies' calls, and the lists the
+ * screen programs their pages reach queue. Section 418 tells a screen set's own lists from the lists below them by
+ * it: a list below is one the screens reach only through a list of theirs, or, as the firmware screens' and the
+ * tour's few bound directly, one this names too.
+ */
+export function namedByRecords(c: Container, modes: ReadonlySet<number>): Set<number> {
+  const named = new Set<number>();
+  const records = modeRecords(c) ?? [];
+  const pages = modePages(c);
+  const copies = pageListCopies(c);
+  for (const mode of modes) {
+    const record = records[mode];
+    if (record === undefined) continue;
+    const lists = [record.entries, ...record.pages.flatMap((page) => {
+      const rank = pages.findIndex((one) => one.address === page.address);
+      return [taggedList(c, page.list)?.entries ?? [], taggedList(c, c.flashBase + (copies[rank] as number))?.entries ?? []];
+    })];
+    for (const entries of lists) for (const one of entries) if (one.opcode === CALL) named.add(one.operand);
+    for (const [, program] of reachablePrograms(c, record.pages.map((page) => page.program))) {
+      for (const one of program) {
+        if (one.opcode === SCREEN_QUEUE_INSTRUCTION && one.operands[2] === CALL) named.add((one.operands[0] as number) | ((one.operands[1] as number) << 8));
+      }
+    }
+  }
+  return named;
+}
+
+/**
+ * What a screen set leaves below the lists it builds, set against the wiring's, section 418's claim since
+ * `todo-compile-one.md` 6.5: through every call from the lists the set builds, the lists it does not build
+ * (`left`, how many), those of them the wiring does not build either (`notWiring`, which a builder that states
+ * every list below its screens needs empty), and the lists both the set and the wiring build (`both`, which
+ * needs empty too, or one list would be two builders' and the attribution would take the first).
+ */
+export function leftBelow(c: Container, built: ReadonlySet<number>, wiring: ReadonlySet<number>): { left: number; notWiring: number[]; both: number[] } {
+  const lists = c.actionLists() ?? [];
+  const left = new Set<number>();
+  const seen = new Set<number>(built);
+  const queue = [...built];
+  while (queue.length > 0) {
+    for (const one of lists[queue.shift() as number] ?? []) {
+      if (one.opcode !== CALL || seen.has(one.operand)) continue;
+      seen.add(one.operand);
+      left.add(one.operand);
+      // A list the wiring builds is followed no further: what it reaches is the wiring's to build or to name.
+      if (!wiring.has(one.operand)) queue.push(one.operand);
+    }
+  }
+  return {
+    left: left.size,
+    notWiring: [...left].filter((index) => !wiring.has(index)).sort((a, b) => a - b),
+    both: [...built].filter((index) => wiring.has(index)).sort((a, b) => a - b),
+  };
+}
+
+/**
  * The lists below a set of screens' built lists, the ones those call through every call and the builder leaves
  * as the configuration's: how many there are, how many of them something outside the screens names directly
  * (`shared`), and how many any of those reaches through every call down (`sharedBelow`), which run for the rest

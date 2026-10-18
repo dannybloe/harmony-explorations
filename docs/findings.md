@@ -53572,9 +53572,14 @@ spans 3099. By reach, a list run only by the ten screens or by a list they own, 
 the page lists' copies run, 239 and 240, the two the page lists run, USB Connected's lists for scans 2 and 28,
 and seven lists below those and below the handlers. They sit later in base slot 10, at indices that vary but for
 239 and 240, and this module names each by its index as a number the configuration chose and leaves it as it is.
-So **the ten screens are built and thirteen of the lists they reach are still the configuration's**; building
-those belongs with the lists they lead into, `todo-compile-one.md` 6.3 and 4.4.4. The European factory file
-differs from the sixteen only in the glyph code of ':', which the builder spells from the file's own fonts.
+So **the ten screens are built and thirteen of the lists they reach are still the configuration's**<!--superseded-->; building
+those belongs with the lists they lead into, `todo-compile-one.md` 6.3 and 4.4.4.
+
+> **Built since section 418**, `todo-compile-one.md` 6.5: every list the ten screens reach that the wiring does not
+> build, 18, the thirteen among them, each at the index the description reads; what is left below is the wiring's.
+
+The European factory file differs from the sixteen only in the glyph code of ':', which the builder spells from the
+file's own fonts.
 
 ### Asserted
 
@@ -53919,13 +53924,17 @@ or copy, base slot 9's sets, a timer, a state transition, a value map, base slot
 program. They are built, each at the index the description carries, which is numbering: the indices are not
 consecutive, page lists and their copies take theirs from separate runs, and nothing found generates them.
 
-**Below them are 207 lists on each of the sixteen that stay the configuration's**, named by index: among them the
+**Below them are 207 lists on each of the sixteen that stay the configuration's**<!--superseded-->, named by index: among them the
 clock's setters, a `07 FFFF` and a state write each, and the lists the enter and leave handlers share. 17 of them
 are named directly by something outside the screens, and following every call down from those reaches 60, on each
 of the sixteen; the other 147 are run by nothing but these screens. Building the 147 is the lists' own item, with
 the wiring of 6.3. A first draft of this paragraph said 150 or 151 and 57 or 56, with one list moving between
 compiles, from a walk that was not kept; the second reviewer's count, asserted now, is 147 and 60 on every compile,
 and 531 and 147 make the blind reviewer's 678.
+
+> **Built since section 418**, `todo-compile-one.md` 6.5: of the 207, the 154 the wiring does not build, each at the
+> index the description reads, among them every setter and the key lights' off lists; the other 53 are lists the
+> wiring builds, and walking from the 685 lists built now meets five of them first.
 
 ### What the description carries and what is generated
 
@@ -54119,12 +54128,16 @@ census, so the wiring's leftover entry being wide for the same binding, section 
 
 The 98 lists these screens' own key maps, page lists, copies and chromes name are built at the described indices,
 66 on `one_config`, and nothing outside the sixteen screens names one of them, by `screenlists.ts`' walk, now
-shared with section 411's test. Below them sit lists that stay the configuration's, named by index: 69 on 11 of
+shared with section 411's test. Below them sit lists that stay the configuration's<!--superseded-->, named by index: 69 on 11 of
 the sixteen and 22 on the other 5. **The difference is section 403's**: on the 11 the OK of the second "Ensure all
 your devices are off" leads on, through every call, to the tour's "Welcome!", and on the 5 it does not, the
 blind reviewer of section 403 having counted twelve and six over eighteen compiles. Of the lists below, 15, 16 or 10
 are named directly from outside the screens (the tour's handler lists and the click lists among them) and 56, 59
 or 15 are those and what they reach, per compile in the test.
+
+> **Built since section 418**, `todo-compile-one.md` 6.5: of those, the 16 the wiring does not build on the eleven
+> and 12 on the five, and channel 7's off list, which "Welcome!" binds directly; the rest are lists the wiring
+> builds.
 
 ### What the description carries and what is generated
 
@@ -55369,3 +55382,222 @@ page naming another shape on another compile; a table not in first use order on 
 Arch 12 (Harmony One) alone, the only model with a touch map: on the Harmony 600, 650 and 700 base slot 17 names
 the picture bank (section 62), and the Harmony 525 has none. Skin 54 in English for the build; the rules on all
 nineteen compiles, both European ones and the Dutch one included. The module is the touch family's.
+
+## 418. The Harmony One's lists below its screens are each built by the screen set or the wiring that reaches them, from a description of their numbering, byte for byte on the sixteen English compiles of skin 54
+
+**Todo `todo-compile-one.md` 6.5**: the lists sections 409, 411 and 412 named by index and did not build, and the
+lists the transitions of the wiring's own variables call, which 3.2.1 counted as 178 lists and 1333 bytes carried
+out of the donor on the composed test setup.
+
+**Sources checked**: sections 403 (the start choice and the "Devices Off Again" OK that leads on to the tour on
+twelve compiles of eighteen), 408 (the firmware spools a list only by an `0x7F` operand, which makes a walk of
+calls the whole of what runs), 409, 410, 411 and 412 (the four builders, each naming its lists below by index),
+`screenlists.ts`' walks, the wiring's catalogue in `families/touch/wiring.ts`, and the nineteen Harmony One compiles.
+The firmware was not read again: what a setter's `07 FFFF` or a light list's `3F C0x0` does is not needed to build
+them, and section 400 read the key light channels.
+
+### What is below the screens
+
+A **list below** a screen set, here, is one its screens reach that its builder named by index and did not build:
+every list its own lists call, through every level, that is not itself one of its own, and for the firmware screens
+and the tour a few their records bind directly that sit elsewhere in base slot 10 (six of section 409's thirteen
+are of that kind, the other seven below the screens' own lists). On each of the sixteen:
+
+| set | built before | built below now | left below, the wiring's |
+|---|---|---|---|
+| the ten firmware screens | 178 | 18 | 6 |
+| the 23 fixed screens | 531 | 154 | 5 |
+| the tour and the Remote Assistant | 98 | 17 on eleven, 13 on five | 7 on eleven, 6 on five |
+
+**The split is the measurement this section rests on**: on every one of the sixteen, walking every call from the
+lists a set builds now, every list reached that the set does not build is one the wiring builds (section 410), and
+no list the set builds is one the wiring builds. So nothing below the screens is left to the donor. The walk stops
+at a list the wiring builds, since what that list reaches is the wiring's to build or to name. The six, five and
+seven left are, by the wiring's catalogue names on `harvest_one_two_devices`, key light lists (`keyLights.*`),
+`lights` below the firmware and the fixed screens and below the tour on the eleven, `events` below the firmware and
+the fixed screens, `boot.3`, `boot.4` and `settle.1` below
+the firmware screens, and `ready` and `boot.keys.0` below the tour.
+
+**What they are**, by set, on `harvest_one_two_devices`:
+
+* **The firmware screens' 18**: seven their records bind directly, two that click and call a list, two that click
+  and look a map up, a setter (`07 FFFF` and a write of 1) and two band tests USB Connected's keys run; and eleven
+  below them, the setters of 2 and 3 of the variable USB Connected keeps its state in (its setter of 1 is among the
+  seven) and the setter of 1 of the variable Low Battery's entering writes, six lists of band tests and tests of
+  USB Connected's variable and of another that its leave and its three keys run, and the off lists of channel 7 and
+  the page keys.
+* **The fixed screens' 154**: 120 setters, a `07 FFFF` and a write: of the picked value into the clock's field, one
+  per item of the Year (the year less 2000), Month, Day (31, each run by every Day picker holding that day), Hour and Minute
+  pickers, and the two of Time of Day, writing the half of the day into a variable the configuration chose; the
+  lists below the clock pickers' tag `0x29` handlers, 7 of `70 0029` and a call, and below those the field's band
+  tests, the `77`, `78` width pair and a map lookup; the seven clock field pickers' enter lists (not Time of Day's),
+  `1F EF0n`, `77 06`, `1F F776`, `07 FFF7` (the Year's without the band and with `77 03`); the twelve hour arithmetic the Hour picker and Time of Day's
+  PM run, six lists; the off lists of channels 7 and 5 and of the page keys; and the list turning the Remote
+  Assistant on, below Options' Remote Assistant row.
+* **The tour's 17**: the off lists of channels 7 and 5 and of the page keys, channel 7's bound directly by
+  "Welcome!"; what leaving the tour runs, a write of 0 and a map lookup; what leaving the Remote Assistant runs
+  (Hide Question's No, Hidden's OK), two band tests and two comparisons of variable 13 that call the wiring's
+  `ready` and look a map up, four lists; what "Hide Question"'s Yes calls besides the wiring's `boot.keys.0`, four
+  `0x0F` instructions, two of them each behind a band test of its own, three lists; and on the eleven the six
+  "Devices Off Again"'s OK reaches on its way to the tour: a band test and a comparison of variable 13 of the
+  leaving shape but for its last instruction, then a band test, a test of another variable, a list writing two
+  variables and the list turning the Remote Assistant on. On the five the OK's two lists are of the leaving shape
+  whole, so six leaving lists, and 13 in all.
+
+**The wiring's 14** are the lists the transitions of its own variables `readyVar`, `relightVar` and `settleVar` call,
+one, two and one transitions on all nineteen compiles, each a call, and the ten below them. `readyVar`'s: a band
+test, a test of the firmware's variable 10, then the four running timers cancelled (`07 FFFB`, section 73) and the
+lights out timer started. `relightVar`'s first: `settleVar` set to 2 and `relightVar` to 1; its second: a band test,
+a test of `settleVar` (form 0), then the leftover entry's battery check and `settleVar` set to 1. `settleVar`'s: after
+a band test and a test of itself (form 3), the chime's note (`75 4664`) and the battery check, and after a band test
+and a test of variable 13, the four timers cancelled and the ready reset timer started. Each of the four a
+transition calls is named by its variable's record and by no list, and each of the other ten by its one parent among
+the 14. They are catalogue lines in the wiring's text language like its others, with the records read for their
+indices: a record holding another count of transitions, or a transition that is not a call, is refused.
+
+### Shared and copied, and who builds which
+
+**Logitech's compiler shares some lists and copies others**, and the builders follow it. The setter of a day is one
+list every Day picker (28, 30 and 31 days) holding that day runs, while each of them has its own copy of the enter
+list and of the first lists below its tag `0x29` handler, and the key lights' off lists are one list each that many screens'
+leaves call. So a list below can be reached by more than one set. On each of the sixteen:
+
+| list | built by |
+|---|---|
+| channel 7's off list, `3F C070` and a write of 0 | the firmware screens, the fixed screens and the tour |
+| the page keys' off list, `3F C030`, `3F C010` and a write of 0 | the firmware screens, the fixed screens and the tour |
+| channel 5's off list, `3F C050` and a write of 0 | the fixed screens and the tour |
+| the Remote Assistant turned on, `07 FFFB`, a call, an enter and a write of 1 | the fixed screens and, on the eleven, the tour |
+
+**The rule is that every set reaching a list the wiring does not build states it**, in its own template, and each
+builds it alike, the bytes identical on every compile, so any one of them alone rebuilds its screens and everything
+below them. On the composed path `touchBuiltBytes` gives a byte to the first builder in `TOUCH_BUILT` order, so
+channel 7's and the page keys' off lists are the firmware screens', and channel 5's and the Remote Assistant's list
+the fixed screens'. The alternative, one owner
+naming the list and the others naming it by index, was not taken: a set built alone would then need the owner's
+numbering to rebuild, and the shared lists are a few constants that cost nothing to state twice. A list the wiring
+builds is never stated by a set, which `leftBelow` in `screenlists.ts` checks: it walks from a set's built lists,
+stops at the wiring's, and reports what is left that the wiring does not build and what both build, both empty.
+`listsReached`, which 6.7 added to the same file, walks from every root at once and could not tell the sets apart,
+so the walk from built lists stays a function of its own.
+
+### The setting the tour reads
+
+**"Devices Off Again"'s OK takes one of two shapes**, the difference section 403 found. "Devices Off Again" is the
+module's name for the second "Ensure all your devices are off", the one "Welcome to your remote"'s OK enters; the
+start ladder enters the other, whose OK enters the hide question. On 11 of the sixteen its OK leads on, through
+every call, to the tour's "Welcome!", and on the five (`one_spare_20260830`, `calibration_favzero`,
+`compiled_protocols` and its two siblings) it leaves the assistant as "Hidden"'s OK does. The OK's list calls a
+band test, which calls a comparison of variable 13; that comparison's third instruction either calls the list
+leading on, three lists above the Remote Assistant turned on (`0x7F`), or looks a value map up (`0x72`), and that
+one opcode is the description's setting, `onToTour`. The walk agrees with it on all sixteen, and
+the factory file, which the tour builds with the five's shape, stops too. Section 403's blind reviewer counted twelve
+compiles of eighteen leading on and six not: the sixteen's eleven and five and the factory file are seventeen of
+those, and the Dutch compile, whose screens the finder does not find by their English words, was not walked here.
+
+### What the description carries and what is generated
+
+**Read**: every list below's index, the variables its writes, tests and bands name, the maps its lookups name and the modes it
+enters, in each set's walk order, a list reached twice read twice and built once (a list built two ways refuses the
+description); the tour's setting, one byte; the wiring's transition lists' indices, off the records. **Generated**:
+every opcode and constant operand, the band selectors, the setters' fields and their values from the item's place in its
+picker, the year's from the build year, and every list's shape but the one the tour's setting chooses.
+
+By each builder's own check on `harvest_one_two_devices`: the firmware screens 3237 bytes, 439 read, against 3099 and
+401 before; the fixed screens 14349, 4074 read, against 13139 and 4001; the tour 4052, 734 read, against 3900 and
+687; and the wiring 98 bytes more, 31 read. An own check counts a shared list for every set that builds it, where
+the attribution on the composed path counts it once, for the first. **The blind controls** of the four builders'
+own tests overwrite every byte they do not read, now including the lists below, and every compile still comes back
+byte for byte: 44768 bytes over the sixteen for the firmware screens, 163056 for the fixed screens, 51638 for the
+tour and 64265 over the nineteen for the wiring.
+
+**The controls fail where they should**: a list below the fixed screens moved to the next index lands on another
+list they build and is refused for being built two ways; one below the tour moved is refused as a list no record of
+theirs runs; the tour's setting turned the other way is refused for numbers left over or for a number past 127
+read as a variable, which the template now refuses in its own words rather than through the list encoder; the
+Remote Assistant's variable moved in Options' description gives a different file; two transitions' lists of the
+wiring swapped give a different file; and a `relightVar` record holding a transition more than the wiring's is
+refused by the description.
+
+### Beyond the sixteen
+
+The everyday One's tour, eleven screens without the Remote Assistant, builds three lists below: channel 7's off
+list, the page keys' and what leaving the tour runs, 69 lists in all; the factory file's sixteen build the five's
+13. The European factory file's firmware screens rebuild with their 18; the everyday One's firmware screens stay
+refused for their leave handler calling another list (section 409). The Dutch compile stays refused for its words.
+The wiring's 14 rebuild on all nineteen.
+
+### On the composed path
+
+**Put there by `todo-compile-one.md` 3.2.2.5**, with nothing to add to the path: the four builders were already on
+it, and building their lists below is what took the carried lists down. On the composed test setup the carried lists
+came down from 5351 bytes to 4004, the total carried from 1124971 to 1123624, the file the same 1756549 bytes and the
+same bytes. The four builders' attribution rose by 138, 1193, 115 and 98, 1544 bytes, where the carried lists came down
+by 1347: 180 lists matched a donor list, 166 below the three sets and the 14 of the transitions; the other 197
+bytes are 17 lists below the clock pickers' tag `0x29` handlers, which name a state variable the composed path
+renumbered (`0x29` on the donor, `0x37` there), so they matched no donor list and were never counted carried. That is 197 lists newly built, against 3.2.1's 178, which counted those
+17 nowhere and two shared off lists under the donor's devices.
+
+### Reviewer 1, blind
+
+Given the questions and the corpus, the mode finders and the wiring's builder, and not this section, the builders'
+templates or their tests, the blind reviewer defined a set's own lists as those its records name and found on each
+of the sixteen: the firmware screens 185 own (this section's 178 and the seven they bind directly) and 71 below, 60
+the wiring's and 11 not; the fixed screens 531 and 207, 53 and 154; the tour 100 and 67, 51 and 16 on the eleven and
+100 and 20, 8 and 12 on the five, its hundredth own list being the wiring's `keyLights.5.1.1`, which "Welcome!"
+binds. No own list of the firmware or fixed screens is the wiring's, and every list below a set that the wiring does
+not build is reached without passing through one the wiring does. Those are this section's 18, 154 and 17 or 13 once
+the tour's directly bound channel 7 list is counted with its built lists. It found the same wiring lists first met
+(six, five, and six or five where this section counts seven or six, `keyLights.5.1.1` being own by its definition),
+the same shared lists, with the tour's share of channel 7's off list absent from its table for the same reason, and
+the list turning the Remote Assistant on present on the five too, reached from Options alone. Of the two "Ensure all
+your devices are off" screens it found one, entered by the wiring's start ladder, whose OK enters "Welcome!" on none
+of the sixteen, and the other, entered from "Welcome to your remote"'s OK, whose OK enters it on eleven and on the
+five reaches seven lists ending in the wiring's `ready`; the second is the one the module calls "Devices Off Again".
+For the wiring it found 20 lists reached from the three variables' transitions, 14 once every list also reached
+from anything else is left out, all 14 built by the wiring, three, four and seven per variable, the six left out
+being `idleEnter.3.1.1.1` and what it reaches, on all nineteen.
+
+### Reviewer 2, the sentences
+
+The audit re-ran every figure at the granularity stated, the pre-change builders from `origin/main`, and found the
+main table per compile, the byte figures, the blind totals, the wiring's 14 on all nineteen (named by nothing but
+their records and parents, every holder checked), the composed path's figures and section 409's thirteen, re-derived
+by that section's own definition, all among the 18 on every compile. It corrected in place before this landed: the
+reason the 17 lists on the composed path matched nothing, which this section first gave as calls naming renumbered
+lists, where their calls are the donor's and one of them calls nothing, and what differs is the state variable the
+clock's tag `0x29` chain names; the OK's shape, first written as two levels of band tests above a list calling the
+Remote Assistant turned on, where it is one band test above the comparison whose third instruction decides; the
+tour's leaving lists, four, and the OK's, six, first written as five and five; the firmware screens' setters, where
+USB Connected's setter of 1 is bound directly and the eleven hold Low Battery's; "section 409's thirteen are of that
+kind", which is six of them; the Day setters, three of which are run by fewer than three pickers; the enter lists,
+seven for the seven clock field pickers; which off lists the attribution credits to the firmware screens; the Hide
+Question list also calling the wiring's `boot.keys.0`; `lights`, which is below the tour on the eleven only; the
+variables tests and bands name being read as well; and, in `docs/config-format.md` and the todo, the transition
+lists' indices, of which only the four top ones come off the records, and the 14, which are the lists reached only
+through the transitions of the 20 they reach. It also corrected comments and three test titles that named more
+than their bodies assert, and a quote in section 409 that swallowed the sentence after it.
+
+### Asserted
+
+`packages/codec/test/touchbelowlists.test.ts`: per compile on the sixteen, each set's lists and what is left below
+it, every one the wiring's and none built by both; the four shared lists, built identically by each set and in
+those shapes; the wiring's 14 on all nineteen, the four named by their records and by no list and the ten each by
+one parent, the records holding one, two and one transitions; and the failing controls. The four builders' own
+tests hold their rebuilds with the lists below and the blind totals above: `touchfirmwarescreens.test.ts` 196
+lists, `touchfixedscreens.test.ts` 685 and the 154 below six of which are named from outside too, and
+`touchtourscreens.test.ts` 115 or 111 and the setting against the walk on all sixteen, `wiring-one.test.ts` 6697
+lists over the nineteen. `touchbuilders.test.ts` and `composesetup.test.ts` hold the attribution on the donor and on
+the composed setup and the carried list at 4004.
+
+### What would falsify it
+
+A compile of skin 54 in English where a list below one of the three sets is neither the wiring's nor built by the
+set; a list two sets reach in two shapes; a "Devices Off Again" OK whose shape is neither of the two; a fourth
+transition calling a list on one of the three variables.
+
+### Which architectures
+
+Arch 12 (Harmony One) alone: the screens, the wiring's catalogue and the builders are the touch family's. The
+Harmony 600, 650 and 700 family was not checked for this. Skin 54 in
+English for the screens; the wiring's transitions on all nineteen compiles.

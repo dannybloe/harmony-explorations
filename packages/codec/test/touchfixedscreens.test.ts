@@ -19,7 +19,7 @@ import {
   screenProgram, takeApart,
 } from '../src/index.ts';
 import { textGlyphs } from '../src/shared/spelling.ts';
-import { listsBelow } from './screenlists.ts';
+import { listsBelow, namedByRecords } from './screenlists.ts';
 import {
   TOUCH_FIXED_SCREENS, buildTouchFixedScreens, checkTouchFixedScreens, describeTouchFixedScreens,
   touchFixedScreenModes, withTouchFixedScreens,
@@ -35,36 +35,40 @@ function firstDifference(a: Uint8Array, b: Uint8Array): number | undefined {
 /**
  * The sixteen English compiles of skin 54, section 405, with what each check reads: the bytes of the 23
  * screens and the bytes the description reads, which differ by compile because a text is drawn inline or by
- * reference to a copy outside the screens as the compile's other screens fall.
+ * reference to a copy outside the screens as the compile's other screens fall. Since `todo-compile-one.md` 6.5
+ * the screens' bytes count the 154 lists below them, 1210 bytes on every compile, and the description reads
+ * 73 bytes of those, their indices and the variables their writes name, section 418.
  */
 const SKIN_54: Readonly<Record<string, { described: number; structure: number }>> = {
-  harvest_one_two_devices: { described: 4001, structure: 13139 },
-  one_spare_after_sync: { described: 3958, structure: 13158 },
-  one_spare_myharmony: { described: 4217, structure: 13140 },
-  one_spare_20260830: { described: 4217, structure: 13140 },
-  calibration_one: { described: 4001, structure: 13139 },
-  calibration_favchannels: { described: 4001, structure: 13139 },
-  calibration_favzero: { described: 4217, structure: 13140 },
-  compiled_protocols: { described: 4267, structure: 13142 },
-  compiled_protocols_2: { described: 4267, structure: 13142 },
-  compiled_protocols_3: { described: 4239, structure: 13141 },
-  harvest_one_families_1: { described: 4001, structure: 13139 },
-  harvest_one_families_2: { described: 3958, structure: 13158 },
-  harvest_one_families_3: { described: 4471, structure: 13146 },
-  one_friend_legacy_sync_config: { described: 4195, structure: 13139 },
-  phase7_before: { described: 4001, structure: 13139 },
-  phase7_after: { described: 4001, structure: 13139 },
+  harvest_one_two_devices: { described: 4074, structure: 14349 },
+  one_spare_after_sync: { described: 4031, structure: 14368 },
+  one_spare_myharmony: { described: 4290, structure: 14350 },
+  one_spare_20260830: { described: 4290, structure: 14350 },
+  calibration_one: { described: 4074, structure: 14349 },
+  calibration_favchannels: { described: 4074, structure: 14349 },
+  calibration_favzero: { described: 4290, structure: 14350 },
+  compiled_protocols: { described: 4340, structure: 14352 },
+  compiled_protocols_2: { described: 4340, structure: 14352 },
+  compiled_protocols_3: { described: 4312, structure: 14351 },
+  harvest_one_families_1: { described: 4074, structure: 14349 },
+  harvest_one_families_2: { described: 4031, structure: 14368 },
+  harvest_one_families_3: { described: 4544, structure: 14356 },
+  one_friend_legacy_sync_config: { described: 4268, structure: 14349 },
+  phase7_before: { described: 4074, structure: 14349 },
+  phase7_after: { described: 4074, structure: 14349 },
 };
 const NAMES = Object.keys(SKIN_54);
 
 /** The three Harmony One compiles beyond the sixteen: the European factory file and its programmed copy, and the Dutch one. */
 const BEYOND = ['one_config', 'one_config_unprogrammed', 'one_friend_asfound_config'];
 
-test('todo-compile-one 4.4.4.1: the 23 fixed screens past the firmware\'s ten of the sixteen English compiles of skin 54 are rebuilt byte for byte from a description, 531 lists among them',
+test('todo-compile-one 4.4.4.1 and 6.5: the 23 fixed screens past the firmware\'s ten of the sixteen English compiles of skin 54 are rebuilt byte for byte from a description, 685 lists among them, their own 531 and 154 below them',
      skipUnless(...NAMES), () => {
   assert.equal(TOUCH_FIXED_SCREENS.length, 23);
+  // The 531 their own key maps, page lists, copies and chromes name, section 411, and since `todo-compile-one.md`
+  // 6.5 the 154 below those that the wiring does not build, section 418.
   for (const name of NAMES) {
-    assert.deepEqual(checkTouchFixedScreens(parse(require_(name))), { screens: 23, lists: 531, ...SKIN_54[name] }, name);
+    assert.deepEqual(checkTouchFixedScreens(parse(require_(name))), { screens: 23, lists: 685, ...SKIN_54[name] }, name);
   }
 });
 
@@ -180,9 +184,11 @@ test('todo-compile-one 4.4.4.1: a blinded input rebuilds all sixteen: no byte of
     const out = layOutContainer(withTouchFixedScreens(layout, buildTouchFixedScreens(parse(blinded), d.spec), d.place)).bytes;
     assert.equal(firstDifference(out, c.blob), undefined, `${name} differs`);
   }
-  // 210280 bytes of screens over the sixteen, 210280 - 65416 = 144864 of them written by the builder and every
-  // one blinded; the description reads 65416 bytes inside them and 596 outside, the homes' glyph codes.
-  assert.deepEqual(totals, { structure: 210280, inside: 65416, outside: 596, blinded: 144864 });
+  // 229640 bytes of screens over the sixteen, the lists below them among them since section 418, 229640 - 66584 =
+  // 163056 of them written by the builder and every one blinded; the description reads 66584 bytes inside them,
+  // 1168 of those the lists below's indices and variables, and 596 outside, the homes' glyph codes. 210280,
+  // 65416 and 144864 before the lists below were built.
+  assert.deepEqual(totals, { structure: 229640, inside: 66584, outside: 596, blinded: 163056 });
 });
 
 test('todo-compile-one 4.4.4.1: a description with a timer moved, two pictures swapped or two screens\' modes swapped is refused by the byte comparison',
@@ -214,15 +220,28 @@ test('todo-compile-one 4.4.4.1: a description with a timer moved, two pictures s
   }), moved);
 });
 
-test('todo-compile-one 4.4.4.1: the 531 lists built are named by nothing outside the 23 screens, and they name 207 lists below them that stay the configuration\'s, 147 run by these screens alone and 60 shared',
+test('todo-compile-one 4.4.4.1 and 6.5: of the 685 lists built, the 531 the screens name are named by nothing outside them, and of the 154 below those 6 are named from outside too; the 53 left below are each named from outside or reached from a list that is, so none runs for these screens alone',
      skipUnless(...NAMES), () => {
   const found = NAMES.map((name) => {
     const c = parse(require_(name));
     const d = describeTouchFixedScreens(c, takeApart(c));
-    // Below them, through every call: the clock's setters and the lists the handlers share. Of those, 17 are
-    // named directly by something outside the screens, and every call down from those reaches 60; the other
-    // 147 run for these screens alone. The walk is `screenlists.ts`', shared with the tour's test.
-    return listsBelow(c, new Set(touchFixedScreenModes(c)), new Set(buildTouchFixedScreens(c, d.spec).lists.keys()));
+    const modes = new Set(touchFixedScreenModes(c));
+    const built = new Set(buildTouchFixedScreens(c, d.spec).lists.keys());
+    const own = namedByRecords(c, modes);
+    const below = listsBelow(c, modes, built);
+    // The screens' own lists are those their records name; every other list built is below them.
+    return {
+      own: [...built].filter((index) => own.has(index)).length, ...below,
+      namedFromOutside: below.namedFromOutside.length,
+      ownNamedFromOutside: below.namedFromOutside.filter((index) => own.has(index)).length,
+    };
   });
-  assert.deepEqual(found, NAMES.map(() => ({ namedFromOutside: [], below: 207, shared: 17, sharedBelow: 60 })));
+  // Until `todo-compile-one.md` 6.5 the 531 were all the builder made and the walk found 207 lists below them,
+  // 147 run by these screens alone and 60 shared, 17 of them named directly from outside. Since section 418 the
+  // 154 below that the wiring does not build are built too: the 147 and 7 shared ones, the off lists of the page
+  // keys, of channel 5 and of channel 7, the list turning the Remote Assistant on, which the tour reaches, and
+  // the clock handlers' last two lists and the one they share, which lists nothing reaches name too (section
+  // 411's blind count). Of those, 6 are named directly from outside. What is left below, 53 lists, is the
+  // wiring's and named from outside, 11 directly, `touchbelowlists.test.ts`. The walk is `screenlists.ts`'.
+  assert.deepEqual(found, NAMES.map(() => ({ own: 531, namedFromOutside: 6, ownNamedFromOutside: 0, below: 53, shared: 11, sharedBelow: 53 })));
 });

@@ -32,16 +32,20 @@ const SKIN_54 = ['harvest_one_two_devices', 'one_spare_after_sync', 'one_spare_m
   'compiled_protocols_3', 'harvest_one_families_1', 'harvest_one_families_2', 'harvest_one_families_3',
   'one_friend_legacy_sync_config', 'phase7_before', 'phase7_after'] as const;
 
-test('todo-compile-one 4.4.3: the ten firmware screens of the sixteen English Harmony One compiles of skin 54 are rebuilt byte for byte from a description, 178 lists among them',
+test('todo-compile-one 4.4.3 and 6.5: the ten firmware screens of the sixteen English Harmony One compiles of skin 54 are rebuilt byte for byte from a description, 196 lists among them, 18 more than before section 418',
      skipUnless(...SKIN_54), () => {
+  // 178 the screens' own, section 409, and since `todo-compile-one.md` 6.5 the 18 below them that the wiring does
+  // not build, section 418: 16 nothing else reachable runs (three of them, USB Connected's setters, are also called
+  // by lists nothing reaches), and the off lists of channel 7 and of the page keys, which the fixed screens and the
+  // tour reach too. Seven of the 18 the screens' records bind directly.
   for (const name of SKIN_54) {
-    assert.deepEqual(checkTouchFirmwareScreens(parse(require_(name))), { lists: 178, described: 401 }, name);
+    assert.deepEqual(checkTouchFirmwareScreens(parse(require_(name))), { lists: 196, described: 439 }, name);
   }
 });
 
 test('todo-compile-one 4.4.3: beyond the sixteen, the European factory file rebuilds, the everyday One\'s compile is refused for a leave handler calling another list, and the Dutch compile for its words',
      skipUnless('one_config', 'one_config_unprogrammed', 'one_friend_asfound_config'), () => {
-  assert.deepEqual(checkTouchFirmwareScreens(parse(require_('one_config_unprogrammed'))), { lists: 178, described: 401 });
+  assert.deepEqual(checkTouchFirmwareScreens(parse(require_('one_config_unprogrammed'))), { lists: 196, described: 439 });
   assert.throws(() => checkTouchFirmwareScreens(parse(require_('one_config'))),
     (error: Error) => error instanceof ScreenRecordError && /USB Connected's binding of tag 0x7 is list 532, not 64/.test(error.message));
   // Its screens' words are Dutch, and English ones drawn in their place leave the texts other screens name in
@@ -86,13 +90,14 @@ test('todo-compile-one 4.4.3: a blinded input rebuilds all sixteen: no byte the 
     assert.equal(firstDifference(out, c.blob), undefined, `${name} differs`);
     assert.ok([...first.described].every((at) => first.structure.has(at)), `${name}: a read outside the screens`);
   }
-  // Per compile the screens are 3099 bytes: 401 the description reads, 39 of them the addresses of thirteen
-  // pictures and 362 the numbers, the fonts and the hit pages; and 2698 the builder writes, every one blinded.
-  // No address is read without being described.
-  assert.deepEqual(totals, { structure: 16 * 3099, described: 16 * 401, readAddresses: 0, blinded: 16 * 2698 });
+  // Per compile the screens are 3099 bytes, section 409, and the 18 lists below them 138 more since
+  // `todo-compile-one.md` 6.5, section 418: 439 the description reads, 39 of them the addresses of thirteen
+  // pictures and 400 the numbers, the fonts and the hit pages, 38 of those the indices and variables of the lists
+  // below; and 2798 the builder writes, every one blinded. No address is read without being described.
+  assert.deepEqual(totals, { structure: 16 * 3237, described: 16 * 439, readAddresses: 0, blinded: 16 * 2798 });
 });
 
-test('todo-compile-one 4.4.3: a description with one number moved, or a picture swapped, is refused by the byte comparison',
+test('todo-compile-one 4.4.3 and 6.5: a description with one number moved, or a picture swapped, is refused by the byte comparison, and a list below moved to an index the screens do not reach by their placing',
      skipUnless('harvest_one_two_devices'), () => {
   const c = parse(require_('harvest_one_two_devices'));
   const tamper = (change: (spec: ReturnType<typeof describeTouchFirmwareScreens>['spec']) => void): void => {
@@ -104,8 +109,14 @@ test('todo-compile-one 4.4.3: a description with one number moved, or a picture 
   };
   tamper(() => undefined);
   const moved = /the rebuilt file differs/;
-  // Low Battery's enter handler's first call, one list on.
-  assert.throws(() => tamper((spec) => { (spec.screens[0] as { numbers: number[] }).numbers[0]! += 1; }), moved);
+  // Low Battery's enter handler's call of the wiring's on list, its fourth number after the list below's index,
+  // its variable and the timer, one list on. Section 409's control moved its first call, which is a list below
+  // since section 418, so it moves this one.
+  assert.throws(() => tamper((spec) => { (spec.screens[0] as { numbers: number[] }).numbers[3]! += 1; }), moved);
+  // That list below one index on: built at an index none of the screens' lists reached in the configuration,
+  // so it has no place to go, and the placing refuses it.
+  assert.throws(() => tamper((spec) => { (spec.screens[0] as { numbers: number[] }).numbers[0]! += 1; }),
+    /is not one the configuration's records run/);
   // The charging problem screen's second picture in place of its first.
   assert.throws(() => tamper((spec) => { const p = (spec.screens[9] as { pictures: unknown[] }).pictures; p.reverse(); }), moved);
 });
