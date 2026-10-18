@@ -37,6 +37,16 @@ Generated from `packages/codec`, `packages/usb` and the drawing by `make remote-
   220 pixel picture.
 * Panel to pixel, vertically: `panel_y = 4356 - (872/54) * pixel_y`, measured, section 125; the horizontal
   half rests on one reading. `packages/codec/src/touch.ts` is the executable form.
+* **A rectangle follows from what the screen draws** where it is a button or a key: a 50 pixel button picture on
+  the grid has a rectangle of its own place and column, its fifty rows raised five pixels, and a word drawn below
+  the screen on the right half has the right key's rectangle, both on every page of the nineteen compiles read; a
+  rectangle's code is its place on the page, 48 to 53, then 43 and 44, then the side strips' 46 and 47. Rectangles
+  drawn around text or pictures follow no such rule: the welcome tour's own, a message screen's body, the start up
+  and help screens', 771 of the 2524 before the side strips on the nineteen compiles. Section 417,
+  `packages/codec/src/families/touch/hitpages.ts`.
+* **Logitech numbers the hit pages by first use**: walking the screens and their pages in order, each new page
+  takes the next number, so the first three screens, Low Battery, USB Connected and a blank screen, are touched
+  through pages 0, 1 and 2 on every compile read. Section 417.
 
 ## What the screen shows
 

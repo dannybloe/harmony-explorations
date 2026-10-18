@@ -2607,6 +2607,29 @@ blocks on 48 to 50 with the bar on 51 and 52.
 Read with `gspm.touch_pages` and `gspm.Container.touch_hit`, or in TypeScript with `touchPages`,
 `touchPageOf` and `touchOwner`. [findings.md](findings.md) sections 45 and 125.
 
+**The hit pages the fixed screens name, built**, section 417: `families/touch/hitpages.ts`. The 103 pages of the
+firmware, status, fixed, tour and Remote Assistant screens name 23 hit pages on each of the sixteen English compiles
+of skin 54, each screen page the same one on all sixteen; section 405's 25 hit pages in every compile are those 23
+and two named by setup screens alone, a device page's six commands with both page keys and the generic help screen's, mode 69 on `harvest_one_two_devices`.
+Rebuilt byte for byte with the table on the sixteen; 1898 bytes of pages and the
+table's `1 + 3 * pages`, 1986 on `harvest_one_two_devices`.
+
+| what | rule, measured on all nineteen Harmony One compiles |
+|---|---|
+| an area's code | its place among the page's areas before the edges: 48 to 53, then 43, 44; 2524 of 2524 areas |
+| the edges | last on every page, 765 and 3556, width 492, y 1400, height 2000, codes 46 and 47; 662 of 662 pages |
+| a button's rectangle | held in the module as the picture's place, measured against every page: a 50 row picture on rows 38, 92 or 146: 81 wide at x 6, 48 or 89 gives x 1257, 1772 or 2422 and width 1284, 1284 or 1134; 164 wide at x 6 gives 1257 and 2600; y 3016, 2144 or 1272, height 807, section 125's formula rounded with the rows exactly 872 apart; 8430 of 8430 such buttons, as distinct rectangles per page. The x columns are a table, not a map from pixels |
+| the left key, 1257, 1395, 271, 1001 | on a page only where it draws a word on the left half at y 190 or below, 3064 of 3064; 3064 of the 3128 pages drawing one, the other 64 activity start up screens drawing no key word, their body line "your system." starting left of centre at y 191 |
+| the right key, 2406, 1150, 271, 1001 | where and only where a page draws a word on the right half at y 190 or below, 2871 of 2871 both ways |
+| stated | 34 of the 23 pages' 79 rectangles: the tour's 30, and the body rectangles of the message and OK page, the message page, the confirmation and the Remote Assistant's question |
+| a page's bytes | its areas, twelve bytes each ending in its own address, then its header, a count and the areas' addresses; no area shared between pages; 662 of 662 |
+| the table | a count and each page's header address in index order |
+| the index of a page | the description's, read from the lead of one screen page that names it, 23 bytes; Logitech numbers by first use, a page's index the number of distinct pages named before it walking modes and pages in order, 19 of 19, so the head's first three modes name 0, 1 and 2 |
+| where the pages sit | the configuration's places, two runs on Logitech's compiles, pages 0 to 2 after base slot 13's records and the rest after base slot 14's or 16's |
+
+**Unconfirmed**: whether the firmware takes the hit map from the status container while it draws that container's
+screens, which would make indices 0 to 2 a demand rather than Logitech's numbering.
+
 ### The screen sections by category, arch 14
 
 **Screen bytes** are the bytes the byte accounting gives base slots 6, 7 and 11, the picture bank and

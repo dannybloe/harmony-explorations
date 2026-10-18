@@ -54820,3 +54820,206 @@ The Harmony 600, 650 and 700 are not read here; by the second reviewer the finde
 in the lab, and the 6 of arch 8 (Harmony 880, 885) and 6 of arch 9 (Harmony 525), at the page toggle it does not find,
 so this catalogue is not theirs as found; arch 10 (Harmony 890, 895) and 16 (Harmony 300, 350) have no base slot 14
 that reads.
+
+## 417. The Harmony One's fixed screens are touched through 23 hit pages, built from a description of their numbering byte for byte on the sixteen English compiles of skin 54, a rectangle by rule wherever it is a button or a key below the screen
+
+**Todo `todo-compile-one.md` 4.8**: the touch map's hit pages the fixed screens name, carried out of the donor on
+the composed test setup until now (3.2.1), built from a description as sections 409 to 414 built the screens that
+name them.
+
+**Sources checked**: sections 45 (the map's structure and the firmware's walk at `0x25D70`), 125 (the lead byte, the
+panel scale), 241 (a short device list page is the full page's rectangles), 275 (a code is a position), 293 (the
+page keys), 405 (the census: 25 hit pages in every compile of the sixteen, 2125 bytes), and 409 to 413 (the screens,
+whose descriptions read each page's lead as a number the configuration chose); `tables.ts`' `touchPages`, `touch.ts`
+and `menus.ts`' `withHitPage`; the nineteen Harmony One compiles. Logitech's client, MyHarmony's decompiled source,
+was searched for a hit map, a touch zone or a hit rectangle and holds none, which fits its compiler running on
+Logitech's service. The firmware was not read again: section 45's walk is the consumer, and it reaches a page only
+through the table.
+
+### Which hit pages
+
+The firmware screens, the 29 status screens, the 23 fixed screens, the eleven tour screens and the Remote Assistant's
+five are 78 modes and 103 screen pages on each of the sixteen, and they name **23** distinct hit pages, each screen
+page the same one on all sixteen. Section 405's census counts **25** hit pages in every one of the sixteen; the other
+two are named by setup screens alone, a device page's six commands with both page keys, the one `todo-compile-one.md`
+4.2 builds a device on, and the generic help screen's, "Attemping to fix the problem..." (so spelled; mode 69 on
+`harvest_one_two_devices`, 4.6), and are not built here. So the todo line's 25 was the census's count and not the fixed screens'. Several of the
+23 are named by other screens as well: the confirmation page by three kinds of Remote Assistant screen repeated per
+activity (216 mode pages over the sixteen), the question page by the per activity hide question (54), neither built
+by the tour's builder, and the three and two row pages by device lists.
+
+| hit page | named by | rectangles before the edges |
+|---|---|---|
+| message and OK | Low Battery, the charging problem | a body, the right key |
+| message | USB Connected and five more firmware screens, code 9's and the 29 status screens | a body |
+| blank | the two blank firmware screens, the seven blank screens | none |
+| confirmation | the five sensitivity confirmations, four Remote Assistant screens | a body, the right key |
+| six, four, two and one buttons | the pickers' pages | the buttons, the left key |
+| three rows, two rows | Year and Options' first page; Options' second | the whole width buttons, the left key |
+| sensitivity | Screen Sensitivity | five buttons, the middle one alone at x 48, the left key |
+| question | the Remote Assistant's "hide" question | a body, the left and right keys |
+| eleven tour pages | one tour screen each | its own rectangles, the right key ("Exit") |
+
+### The rules, measured on every page of the nineteen compiles
+
+A rule that held only on the 23 would be a table in disguise, so each is measured on all 662 hit pages and all 4810
+mode pages of the nineteen.
+
+* **An area's code is its place on the page**: the areas before the edges carry 48 to 53, then 43 and 44, on 2524
+  of 2524 areas. Section 45's table of nine page sizes is this one rule.
+* **The two edge strips close every page**, 765 and 3556, width 492, y 1400, height 2000, codes 46 and 47, on 662
+  of 662.
+* **A button's rectangle follows from its picture.** A 50 row picture on rows 38, 92 or 146, 81 pixels wide at x 6,
+  48 or 89 or 164 wide at x 6, has its rectangle on its page's hit page: 8430 of 8430, counted as distinct
+  rectangles per page (8481 draws, since Options draws its rows in a switch's arms). In y the rectangle is the
+  picture's fifty rows raised five pixels through section 125's scale, y 3016, 2144 or 1272 and height 807, the
+  formula's 3015.70, 2143.70, 1271.70 and 807.41 rounded to the nearest unit and the rows exactly 872 apart, 54
+  pixels; the same rectangle without the rise, 81 panel units lower, is on the hit page of none of the 8430 buttons. **In x it is a table of four columns** (1257 and 1284, 1772 and
+  1284, 2422 and 1134, 1257 and 2600): the left column starts at the screen's left edge, 1257, and the right one
+  ends at its right edge, 3556, under section 125's reading of x, which leaves too few points to tell a map from
+  pixels from a fit. Of the 8487
+  rectangles 807 high starting at x 1257, 1772 or 2422, 8430 come from a button and 57 do not, three per compile, all on two
+  tour pages whose buttons are one picture.
+* **The keys below the screen go with a word there.** A page draws a word on the right half at y 190 or below
+  exactly when its hit page has the right key's rectangle, 2406, 1150, 271, 1001: 2871 of 2871 both ways. Every page
+  with the left key's, 1257, 1395, 271, 1001, draws a word on the left half there, 3064 of 3064, and 3064 of the
+  3128 pages drawing one have it; the 64 others are activity start up screens, which draw no key word at all:
+  their message's second line, "your system.", starts left of centre at y 191, which the cut at 190 takes for one,
+  and their one rectangle, 1257, 2791, 885, 2470, covers the screen. At 192 the rule holds both ways, by the blind
+  reviewer's run.
+
+**What no rule gives is stated**: 34 of the 23 pages' 79 rectangles, the tour's 30, drawn around pictures and
+paragraphs no rule here reaches, and the body rectangle of the message and OK page, the message page, the
+confirmation and the question. They are the same on all sixteen and the module holds them as Logitech's, as the
+status screens hold Logitech's words. The other 45 come from the button and key rules, and every code and both edge
+strips of all 23 pages from the first two.
+
+### The table, the order and where the pages sit
+
+* **A page's bytes**: its areas, twelve bytes each ending in its own address, laid out immediately in front of its
+  header, a count and the areas' addresses; no area is shared between pages; 662 of 662. The table is a count and
+  each page's header address in index order.
+* **Logitech numbers the pages by first use**: walking the modes and each mode's pages in order, a page's index is
+  the number of distinct pages named before it, on 19 of 19, and no two pages of one compile are one shape, 19 of
+  19. So the head's first three modes, Low Battery, USB Connected and the first blank screen, name pages 0, 1 and 2 on
+  every compile, and the other 20 of the 23 take indices that differ across the sixteen, moved by the setup's
+  screens between them.
+* **Where the pages sit**: in two unbroken runs on all nineteen compiles, pages 0 to 2 after base slot 13's records
+  and before an infrared block, at blob offset 9759 on all sixteen, and the rest after base slot 14's records (eleven
+  compiles) or base slot 16's (eight), before an infrared block or an action list. That is emission order; nothing
+  names a page but the table.
+
+**Is the place of pages 0 to 2 a constraint the builder must keep?** The builder keeps both: every index the
+description read, and every page where the configuration's sat. Neither is shown to be a demand. The index would
+be one if the firmware read the configuration's map while drawing a screen of its own status container, whose page
+records would then name these indices; which container the hit test seeks while the status container is selected
+(section 408) was not read, and is left unconfirmed in `docs/config-format.md`. First use numbering puts the head's
+three pages at 0 to 2 on any configuration whose head is the ten firmware screens, so a builder that numbers by first
+use keeps them there either way.
+
+### What the description carries and what is generated
+
+The description reads one byte per page, the lead of one screen page that names it, found through the four screen
+builders' mode finders: 23 bytes a compile, all outside the touch map. It finds the configuration's pages through
+the table and refuses a page whose areas do not sit in front of its header. Everything else is generated: every
+rectangle by the rules or as stated, every code, both edges, every area's own address, the headers, the table's
+count and pointers, and each built page in place of the configuration's, so the runs stay where they were.
+
+Per compile the 23 pages are 125 areas, 1500 bytes, and 398 header bytes, and the table is `1 + 3 * pages`, the two together 1986
+bytes on `harvest_one_two_devices`, 1986 to 2022 over the sixteen. **The blind control**: every one of those bytes,
+32052 over the sixteen, overwritten in the layout's pieces, and the sixteen come back byte for byte; the description
+reads 368 bytes, none inside. **The controls fail where they should**: two pages' indices swapped, a page moved onto
+hit page 3, a setup page, and the table one page short each give a different file; two pages at one index are refused
+by the builder.
+
+### Beyond the sixteen
+
+The Dutch compile holds all 23 pages as built, and the two European compiles all but the Time of Day picker's,
+which skin 59 lacks (section 405), the everyday One's the Remote Assistant's question too, since it has no Remote
+Assistant (section 403). All three are refused by the fixed screens' finder, the European ones for their two Month
+pickers and the Dutch one for its words, before any page is built.
+
+### On the composed path, measured and not put there
+
+The composed test setup on `harvest_one_two_devices`, `composeSetup`, holds 38 hit pages, and the builder rebuilds its
+23 byte for byte, structure 2013 bytes. Its table is **not** in first use order: the composers append the setup's
+pages after the last, `withHitPage`, and two of its 38 pages, 3 and 32, are named by no mode page, which 4.1's and
+6.7's accounting will want.
+
+What putting it on the path needs, beside the five and two builders of 3.2.2.1 and 3.2.2.2: a member in
+`families/touch/builders.ts` describing the configuration composed so far and putting the 23 back, at any point after
+the composers, since it reads only leads and the screen finders and writes nothing they read; and `touchBuiltBytes`
+counting the 23 pages and the table as built and the two setup only pages as carried until 4.2 and 4.6 build them.
+**How it meets the screens' builders**: each screen builder reads its pages' leads as numbers the configuration chose,
+and this builder reads the same leads, so on one configuration they agree by construction. For a configuration built
+from nothing they would have to come from one numbering instead: each screen page naming its hit page by shape, which
+the button and key rules give from the page's own drawing for all but the tour and the four bodies, and first use
+over the modes giving every index, which both builders then take.
+
+### Reviewer 1, blind
+
+Given the question and the corpus and not this section, the module or the test, the blind reviewer found the same 662
+pages and 3848 areas on the nineteen, the 25 shapes on all sixteen and 48 on any, the 78 modes and 103 screen pages
+naming 23 shapes, each the same on all sixteen, and the two others: the generic help page, named by 83 of 83 mode
+pages drawing "Attemping to fix the problem..." (so spelled), and the six command device page, named by 555 of 555 mode pages
+drawing six buttons. The code by place on 3848 of 3848 areas, and the control that a rule by geometry, the key
+rectangles taking 43 and 44, misses 1066; first use order on 19 of 19; areas in front of their headers and none
+shared on 662 of 662; pages 0 to 2 one 138 byte block at 9759 on the sixteen and on the European factory file, 9752
+on the everyday One's and 9870 on the Dutch one, and pages 3 onward one unbroken run after a base slot 14 or 16 record,
+ending before an infrared block or a list; the table after raw slot 18's two bytes and before the picture bank on
+all nineteen. The button rule 8481 of 8481 draws, the 57 other cells on the tour's two label pages, and the key rule
+both ways, its 64 forward misses all one body line at y 191, "your system." on activity start up screens (the
+Dutch compile's once), so the cut at 190 takes a body line for a key word there; at 192 the rule holds both ways.
+1898 bytes and the table's `1 + 3 * pages` per compile, and the European and Dutch shapes as above.
+
+It added three things. A y rule for other pictures, a rectangle from five pixels above the picture for its rows,
+holds for 292 pictures and misses 2315, so it is not a rule, and 11 of the 34 stated rectangles fit it in y alone;
+they stay stated. On pages of grid buttons and keys alone the areas are stored in the order their words are drawn,
+317 of 317, which a builder of such a page from its drawing can use; on all pages it fails 104 of 662, the
+overlapping and tour ones. And the Remote Assistant's screens repeat per activity, the "hide" question three times
+on `calibration_one`, all naming one hit page: the other screens naming the confirmation page are such repeats.
+
+### Reviewer 2, the sentences
+
+The audit re-ran every figure and found the rule counts, the sizes, the blind control's totals, the composed path's
+figures, the MyHarmony search and the scope right, and corrected in place before this landed: the message page is
+named by five firmware screens past USB Connected, not four; the confirmation page's other namers are three kinds of
+per activity Remote Assistant screen on 216 mode pages, and the question page is named outside the builders too,
+by the per activity hide question, which the first draft left out; the generic help page is mode 69 alone on
+`harvest_one_two_devices`, where the draft cited section 405's 69 and 91 and mode 91 names a six area setup page; the
+second run follows base slot 14's records on eleven compiles and 16's on eight, not nine and ten; the lowered
+control counts buttons, not pages; the button rows are section 125's formula rounded, 3015.70 to 3016 and 807.41 to
+807, exact only in their 872 unit step, where the draft called them exact; the 64 left word exceptions draw no key
+word at all, their message's second line starting left of centre at y 191, which the blind reviewer found too;
+"the table is 1986 bytes", which is the pages and the table together; the sixth test's title, where only two pages
+at one index is refused and the other three controls are caught by the byte comparison; the todo line and the
+module's header, which said a button's rectangle comes from the picture it draws where the module holds each
+page's button places and keys as constants and reads no drawing, the rules being checked against the corpus rather
+than applied to it; and the reference's "the tour's rectangles and a message body follow no such rule", where the
+tour's right keys do and 771 of the 2524 rectangles before the edges on the nineteen, 34 distinct, follow neither,
+start up and help screens' among them. It also had the fourth test assert per compile that both setup only pages
+are named by setup screens, which it had asserted on the sixteen's union. One passenger stays open: the module's
+picker grid repeats `fixedscreens.ts`' button places, since that module does not export them, and the test is what
+ties the two, through the pictures every picker page draws.
+
+### Asserted
+
+`packages/codec/test/touchhitpages.test.ts`: the 23 rebuilt on the sixteen with the table, 125 areas, 34 stated, 23
+bytes read and the structure per compile; on all nineteen the code by place on 2524 of 2524 areas, the edges, the
+areas in front of their headers and their own on 662 of 662 pages, first use order and unique shapes on 19 of 19; on
+every mode page of the nineteen the button rule, 8430 of 8430, its control at 0, the 57 other cells and the key
+rules both ways; the 103 screen pages naming the 23 and no other, each the same on all sixteen, and the two of the
+census's 25 named by setup screens alone; the blind control with its totals; indices 0 to 2 on all sixteen and the
+other 20 moving; the four failing controls; the European and Dutch compiles' pages and refusals.
+
+### What would falsify it
+
+A compile of skin 54 in English whose 23 pages do not rebuild; an area whose code is not its place; a button picture
+on the grid without its rectangle, or a word below the screen's right half without the right key's; a fixed screen
+page naming another shape on another compile; a table not in first use order on a compile of Logitech's.
+
+### Which architectures
+
+Arch 12 (Harmony One) alone, the only model with a touch map: on the Harmony 600, 650 and 700 base slot 17 names
+the picture bank (section 62), and the Harmony 525 has none. Skin 54 in English for the build; the rules on all
+nineteen compiles, both European ones and the Dutch one included. The module is the touch family's.
