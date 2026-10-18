@@ -38,7 +38,7 @@
 import { u16, u24, u8 } from '../../bytes.ts';
 import { Writer } from '../../emit.ts';
 import type { ContainerLayout, ContainerPiece } from '../../frame.ts';
-import { takeApart } from '../../frame.ts';
+import { layOutContainer, takeApart } from '../../frame.ts';
 import type { Container } from '../../gspm.ts';
 import { ACTION_LIST_TABLE_SLOT, BINDING_SLOT } from '../../gspm.ts';
 import { KEY_EVENT_PRESS, KEY_EVENT_SHIFT } from '../../inventory.ts';
@@ -47,7 +47,7 @@ import { TIMER_KIND_SCHEDULED, TIMER_RECORD_LENGTH, TIMER_SLOT } from '../../tab
 import { buildLogArea, buildParameterBlock } from '../../firmwaresections.ts';
 import {
   SYMBOL_KINDS, WiringError, buildEventMap, checkRange, compareWiring, decodeEntry, decodeList, emptySymbols, encode,
-  encodeEntry, encodeList, lookup, namedBy, orderOf, piece, tablePiece, tableTargets, tie, wiringList,
+  encodeEntry, encodeList, lookup, namedBy, orderOf, piece, tablePiece, tableTargets, tie, wiringList, withWiring,
   type BuiltWiring, type DeviceTimer, type EntryTemplate, type SymbolKind, type Symbols, type WiringChecked,
   type WiringInstruction,
 } from '../../wiringparts.ts';
@@ -819,4 +819,19 @@ export function describeTouchWiring(layout: ContainerLayout): TouchWiringSpec {
 export function checkTouchWiring(c: Container): WiringChecked {
   const layout = takeApart(c);
   return compareWiring(c, layout, buildTouchWiring(describeTouchWiring(layout)));
+}
+
+/**
+ * The configuration's wiring built again with the start's ladder as `one_config` holds it, its last rung alone, and
+ * the leftover entry without the scan 34 press that writes the Remote Assistant's variable 1: the Remote Assistant at
+ * start left out, `todo-compile-one.md` 4.10, findings section 421. The ladder's `07 FFFB` goes with it, since no
+ * compile holds one without the assistant (section 410). Every list the assistant's rungs were is left in base slot
+ * 10, reached by nothing, for the caller to drop; a configuration whose wiring keeps no ladder is returned as it is.
+ */
+export function withoutTouchStartupLadder(c: Container): Container {
+  const layout = takeApart(c);
+  const spec = describeTouchWiring(layout);
+  if (!spec.settings.startupAssistant) return c;
+  const settings: TouchWiringSettings = { ...spec.settings, startupAssistant: false, ladderCancelsTimers: false };
+  return layOutContainer(withWiring(layout, buildTouchWiring({ ...spec, settings }))).container;
 }

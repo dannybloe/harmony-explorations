@@ -19,7 +19,13 @@ import { TOUCH_CHOICES } from '../src/families/touch/choices.ts';
 import { TOUCH_BUILT, type TouchBuiltBytes, touchBuiltBytes } from '../src/families/touch/builders.ts';
 import { describeTouchHelpScreens, touchHelpScreenModes } from '../src/families/touch/helpscreens.ts';
 import { takeApart } from '../src/frame.ts';
-import { dropLists } from '../src/assemble.ts';
+import { dropLists, instructionSites, listCallSites } from '../src/assemble.ts';
+import { assertStateTableConsistent } from '../src/sections.ts';
+import { assertQueueFits } from '../src/queue.ts';
+import { touchTourScreenModes } from '../src/families/touch/tourscreens.ts';
+import { checkTouchWiring } from '../src/families/touch/wiring.ts';
+import { checkTouchScreenTexts } from '../src/families/touch/screentexts.ts';
+import { withoutTourAndAssistant } from '../src/families/touch/withouttour.ts';
 import { listsReached } from './screenlists.ts';
 
 const recipe = () => readRecipe(JSON.parse(readFileSync(new URL('../../corpus/setups/one-test.json', import.meta.url), 'utf8')));
@@ -121,8 +127,12 @@ test('the One test setup composed onto Logitech\'s compile of two devices comes 
   // shared another device's or drew no header, 20, the right key's list on each of the 19 pages and on its copy, 38,
   // and the copies' own pad lists, 100, where the copying composer's copies ran the page lists' own; a hit page of
   // three pads, 109, where every composed page named the page of six pads; and the programs 122 fewer, the chrome
-  // and the pages in Logitech's shape where the copying composer drew its own.
-  assert.equal(c.blob.length, 1758133);
+  // and the pages in Logitech's shape where the copying composer drew its own. 1512234 since `todo-compile-one.md`
+  // 4.10, 245899 bytes fewer: the welcome tour's eleven screens and the start's Remote Assistant's five left out by
+  // default, section 421, with the 121 lists only they reached, their twelve hit pages and the eleven pictures only
+  // they drew, Options on one page without the two rows that led there, and every text drawn inline once and by
+  // reference after, in address order, over what is left.
+  assert.equal(c.blob.length, 1512234);
 });
 
 // ---------------------------------------------------------------------------------------------------------
@@ -226,7 +236,7 @@ const builtBytes = (): TouchBuiltBytes => {
   return builtOnce;
 };
 
-test('todo-compile-one 3.2.2: the firmware screens, the fixed screens, the tour and Remote Assistant, the status screens, the clock header, the help screens, the activity menu, the device pages, the case programs, the hit pages, the wiring, the state tables, raw slot 18 and base slot 16\'s table of the composed setup come out of the touch family\'s builders, run on the composed path and measured on the result',
+test('todo-compile-one 3.2.2 and 4.10: the firmware screens, the fixed screens, the status screens, the clock header, the help screens, the activity menu, the device pages, the case programs, the hit pages, the wiring, the state tables, raw slot 18 and base slot 16\'s table of the composed setup come out of the touch family\'s builders, run on the composed path and measured on the result, and the tour and Remote Assistant are left out',
      NEEDS, () => {
   const out = composed();
   // On the path: one step after the composers and before the look, naming the fourteen parts in the order built.
@@ -272,16 +282,27 @@ test('todo-compile-one 3.2.2: the firmware screens, the fixed screens, the tour 
   // and the 14 the wiring's own variables' transitions call. 1544 bytes, where the carried lists below came down by
   // 1347: the other 197 are 17 lists below the clock pickers' tag `0x29` handlers, which name a state variable the
   // composed path renumbered (`0x29` on the donor, `0x37` here), so they matched no donor list and were never carried.
+  //
+  // Since `todo-compile-one.md` 4.10, section 421, the tour's eleven screens and the Remote Assistant's five are left
+  // out on the composed path by default, so their part builds nothing, where it built 4015 and described 719. The
+  // fixed screens' 14332 came down to 14087 with Options on one page without the Remote Assistant's row and the
+  // Tutorial's, and their 4038 described rose to 4156, the texts' form rule applied once more over what is left
+  // moving inline copies; the device pages' 16155 to 16139 and their 6269 described to 6273 the same way. With the
+  // tour kept the composed setup breaks that rule ("pages" drawn inline where the rule draws it by reference), and
+  // without it the setup keeps it, `checkTouchScreenTexts`, the test below. The hit pages' 2010 to
+  // 863, the twelve pages only the sixteen were touched through and their entries in the table; and the wiring's
+  // 4625 to 4560 and its 1274 described to 1250, the start's ladder in the form of Logitech's compile without the
+  // Remote Assistant.
   assert.deepEqual(a.generated, {
-    'firmware screens': 3237, 'fixed screens': 14332, 'tour and Remote Assistant': 4015, 'status screens': 3872,
-    'clock header': 3558, 'help screens': 6245, 'activity menu': 786, 'device pages': 16155, 'case programs': 572, 'hit pages': 2010, wiring: 4625, 'state tables': 2347,
+    'firmware screens': 3237, 'fixed screens': 14087, 'tour and Remote Assistant': 0, 'status screens': 3872,
+    'clock header': 3558, 'help screens': 6245, 'activity menu': 786, 'device pages': 16139, 'case programs': 572, 'hit pages': 863, wiring: 4560, 'state tables': 2347,
     'raw slot 18': 2, 'number senders': 1,
   });
   // 401, 3967, 680 and 1243 for the four before 6.5: what a list below reads is the numbers of the lists it calls
   // and of the variables it writes, and the tour's setting, one byte.
   assert.deepEqual(a.described, {
-    'firmware screens': 439, 'fixed screens': 4038, 'tour and Remote Assistant': 719, 'status screens': 699,
-    'clock header': 337, 'help screens': 1994, 'activity menu': 204, 'device pages': 6269, 'case programs': 33, 'hit pages': 0, wiring: 1274, 'state tables': 0,
+    'firmware screens': 439, 'fixed screens': 4156, 'tour and Remote Assistant': 0, 'status screens': 699,
+    'clock header': 337, 'help screens': 1994, 'activity menu': 204, 'device pages': 6273, 'case programs': 33, 'hit pages': 0, wiring: 1250, 'state tables': 0,
     'raw slot 18': 0, 'number senders': 0,
   });
   // The help screens' 1994 against 660 on the donor are the numbers and names of a chain of seven rather than two:
@@ -291,6 +312,25 @@ test('todo-compile-one 3.2.2: the firmware screens, the fixed screens, the tour 
   // The case programs' 33 are section 416's 24 numbers, one per power variable the all off writes, seven here, the
   // donor's two and the five composed, and two for its list. The hit pages' description reads 23 bytes, the leads of
   // the screen pages that name them, none of them inside the pages it builds, so none of its bytes is described.
+});
+
+test('todo-compile-one 4.10: the composed setup holds no tour and no Remote Assistant, every list call, mode it enters and hit page it names resolves, and the state table, the queue, the wiring and the texts\' form hold',
+     NEEDS, () => {
+  const c = composed().container;
+  assert.deepEqual(touchTourScreenModes(c).modes, []);
+  const lists = c.actionLists()!.length;
+  const records = modeRecords(c)!;
+  const pages = touchPages(c)!.records.length;
+  assert.deepEqual([lists, records.length, pages], [2733, 112, 24]);
+  assert.equal(listCallSites(c).filter((one) => one.list >= lists).length, 0);
+  assert.equal(instructionSites(c, 0x7e).filter((one) => one.operand >= records.length).length, 0);
+  assert.equal(records.flatMap((one) => one.pages).filter((page) => page.lead! >= pages).length, 0);
+  assertStateTableConsistent(c);
+  assertQueueFits(c);
+  checkTouchWiring(c);
+  // 471 texts drawn inline and 878 by reference, each inline copy the first draw of its codes in address order.
+  const texts = checkTouchScreenTexts(c);
+  assert.deepEqual([texts.inline, texts.references], [471, 878]);
 });
 
 test('todo-compile-one 3.2.2.4: the composed setup\'s power off help asks about its seven devices, the donor\'s two and then the five composed in the order composed, each discrete one sent unasked and each toggle not',
@@ -309,11 +349,12 @@ test('todo-compile-one 3.2.2.4: the composed setup\'s power off help asks about 
   // 4n + 2 screens, the donor's ten where they were and the twenty new ones the next free modes in chain order.
   const modes = touchHelpScreenModes(c).modes;
   assert.equal(modes.length, 30);
-  assert.deepEqual(modes.slice(10), Array.from({ length: 20 }, (_, k) => 108 + k));
-  assert.equal(modeRecords(c)!.length, 128);
+  // 108 to 127 until `todo-compile-one.md` 4.10 left out the tour's and the Remote Assistant's sixteen modes below.
+  assert.deepEqual(modes.slice(10), Array.from({ length: 20 }, (_, k) => 92 + k));
+  assert.equal(modeRecords(c)!.length, 112);
 });
 
-test('todo-compile-one 3.2: the One\'s composed test setup carries 1116492 of its 1758133 bytes out of Logitech\'s donor, per kind as pinned here, a list that may only shrink',
+test('todo-compile-one 3.2: the One\'s composed test setup carries 876509 of its 1512234 bytes out of Logitech\'s donor, per kind as pinned here, a list that may only shrink',
      NEEDS, () => {
   const out = composed().container;
   const got = carried(out, parse(require_('harvest_one_two_devices')), builtBytes().owners);
@@ -349,29 +390,37 @@ test('todo-compile-one 3.2: the One\'s composed test setup carries 1116492 of it
   // for byte the donor's idle cases of the Devices record and its unread copy, which this match takes once the
   // builder's own, built and so left out, no longer take them. The composer writes them, `caseProgram`.
   //
+  // **4.10 left out the tour and the Remote Assistant**, section 421: `picture` came down by 239709, the eleven
+  // pictures only the sixteen screens drew, and `slot-10-list` by 264, the donor's lists only they reached that the
+  // tour's builder had not built. `case-program` 10 went with them: the two cases enter the idle device list, which
+  // is mode 50 here where it is 61 on the donor, eleven of the sixteen modes left out sitting below it, so they no
+  // longer match the donor's bytes. Written by the composer either way, so a row that went for a reason of its own.
+  //
   // `raw-18-table` 2 and `slot-16-table` 1 went with 6.7, generated on the path by `families/touch/smalltables.ts`.
   // Of `slot-10-list`, 262 are the 34 lists nothing can run, kept with 6.7's reason, the test below.
   assert.deepEqual(got, {
-    'picture': 1012839, // 5.3: the 36 every compile holds, the clock's 16 and the donor's 6
+    'picture': 773130, // 5.3: the 36 every compile holds but the tour's 11, the clock's 16 and the donor's 6; 1012839 before 4.10
     'slot-5-block': 96946, 'slot-5-header': 4116, 'slot-5-group': 594, // the donor's two devices' infrared, 8.1
-    'slot-10-list': 1820, // per builder in the listing: 17609 before 3.2.2, 6649 before 3.2.2.2, 6114 before 3.2.2.3, 6054 before 3.2.2.4, 5351 before 3.2.2.5, 4004 before 3.2.2.7, 3960 before 3.2.2.8
+    'slot-10-list': 1556, // per builder in the listing: 17609 before 3.2.2, 6649 before 3.2.2.2, 6114 before 3.2.2.3, 6054 before 3.2.2.4, 5351 before 3.2.2.5, 4004 before 3.2.2.7, 3960 before 3.2.2.8, 1820 before 4.10
     // `mode device` 4569 before 3.2.2.8, and `mode other` 11983 before 3.2.2 and 1495 before 3.2.2.4
-    'hit-page': 167, 'case-program': 10, // 2444 and 341 before 3.2.2.3, 546 before 3.2.2.7, 485 before 3.2.2.8, and base slot 11's `table` 89
+    'hit-page': 167, // 2444 before 3.2.2.3, 546 before 3.2.2.7, 485 before 3.2.2.8; `case-program` 341 before 3.2.2.3 and 10 before 4.10, and base slot 11's `table` 89
   });
-  assert.equal(Object.values(got).reduce((sum, one) => sum + one, 0), 1116492);
-  assert.equal(out.blob.length, 1758133);
+  assert.equal(Object.values(got).reduce((sum, one) => sum + one, 0), 876509);
+  assert.equal(out.blob.length, 1512234);
 });
 
 /** The 34 lists of the donor the composed setup carries and nothing can run, `todo-compile-one.md` 6.7. */
 const UNRUN = [
-  422, 424, 438, 443, 480, 550, 684, 686, 741, 742, 743, 744, 747, 753, 754, 756, 758, 759, 760, 762, 763, 804, 807,
-  821, 840, 865, 1499, 1516, 1528, 1551, 1562, 1567, 1570, 1573,
+  422, 424, 437, 442, 479, 549, 678, 680, 735, 736, 737, 738, 741, 747, 748, 750, 752, 753, 754, 756, 757, 797, 799,
+  813, 829, 854, 1410, 1423, 1435, 1452, 1463, 1468, 1471, 1474,
 ];
 
-test('todo-compile-one 6.7: the composed setup carries 34 lists of its donor, 262 bytes, that nothing in it can run, and keeps them, since leaving them out renumbers base slot 10 and the one renumbering there is refuses a Harmony One',
+test('todo-compile-one 6.7: the composed setup carries 34 lists of its donor, 262 bytes, that nothing in it can run, and keeps them, though since 4.10 the renumbering there is leaves them out of a Harmony One\'s configuration with every check passing',
      NEEDS, () => {
   const c = composed().container;
-  const donor = parse(require_('harvest_one_two_devices'));
+  // Held against the donor as the composed path leaves it, without the tour and the Remote Assistant, 4.10: the
+  // lists those left out renumber every list above them, so the same index names the same list only there.
+  const donor = withoutTourAndAssistant(parse(require_('harvest_one_two_devices'))).container;
   const lists = c.actionLists()!;
   const theirs = donor.actionLists()!;
   const owners = builtBytes().owners;
@@ -386,11 +435,11 @@ test('todo-compile-one 6.7: the composed setup carries 34 lists of its donor, 26
     const at = c.blobOffsetOf(table[index]!)!;
     assert.ok(owners.subarray(at, at + bytesOf(index)).every((one) => one === 0), `list ${index}`);
   }
-  // Every list of the 2696 nothing reaches, by what it is. The donor's at the same index byte for byte and no
+  // Every list nothing reaches, 71 of 2733, by what it is. The donor's at the same index byte for byte and no
   // send: the 34 this item is about. The donor's at the same index and a send: its two devices' 11 commands no key
   // binds, 4.2 and 8.1. The rest the composers wrote: 14 of the donor's own lists nothing reaches in it either,
   // at the same indices but naming a state variable the composed devices renumbered, and 12 of their own past the
-  // donor's 2060, the composed devices' 7 commands no key binds and five lists selecting base slot 9 entries 8 to
+  // donor's 1939 (2060 with the tour), the composed devices' 7 commands no key binds and five lists selecting base slot 9 entries 8 to
   // 12, each one instruction, which nothing names.
   const group = (index: number): string => (!same(index) ? 'written'
     : lists[index]!.some((one) => one.opcode === 0x7d) ? 'donor sends' : 'carried');
@@ -400,7 +449,7 @@ test('todo-compile-one 6.7: the composed setup carries 34 lists of its donor, 26
     one[0] += 1;
     one[1] += bytesOf(index);
   }
-  assert.equal(lists.length, 2854);
+  assert.equal(lists.length, 2733);
   assert.deepEqual(tally, { carried: [34, 262], 'donor sends': [11, 77], written: [26, 215] });
   assert.deepEqual(unreached.filter((index) => group(index) === 'carried'), UNRUN);
   assert.equal(unreached.filter((index) => group(index) === 'written' && index < theirs.length).length, 14);
@@ -429,13 +478,15 @@ test('todo-compile-one 6.7: the composed setup carries 34 lists of its donor, 26
   }
   assert.deepEqual([outside, inside], [0, 12]);
 
-  // **Why they stay.** They sit at 34 indices from 422 to 1573 among 2696, so leaving them out moves the index of
-  // every kept list above 422, 2240 of them, at every place that names one. The renumbering there is, `dropLists`,
-  // rests on `listCallSites`, which reads raw slots 10 and 8, on the Harmony One base slot 9 and the inserted
-  // NULL, so it misses every call inside an action list and the leading list; its own check catches the first
-  // list left holding an old index and refuses, rather than writing a wrong one. What leaving them out would take
-  // is that census read through `archSlot`, the drop run on the path, and a write to the spare Harmony One to see
-  // the result start: by the same walk every one of Logitech's nineteen One compiles carries lists nothing
-  // reaches, a scratch measurement, so a One configuration without them is a form no remote here has run.
-  assert.throws(() => dropLists(c, UNRUN), /does not hold what it held/);
+  // **Why they stay.** They sit at 34 indices from 422 to 1474 among 2733, so leaving them out moves the index of
+  // every kept list above 422, 2277 of them, at every place that names one. The renumbering there is, `dropLists`,
+  // rested on a `listCallSites` that read raw slots 10 and 8, on the Harmony One base slot 9 and the inserted NULL,
+  // so it missed every call inside an action list and refused this drop; since 4.10, section 421, it reads them
+  // through `archSlot` and the drop goes through: 34 lists and 262 bytes out of base slot 10, 364 out of the file
+  // with their pointers, and every check passing. They stay because every one of Logitech's nineteen One compiles
+  // carries lists nothing reaches, 44 to 193 of them, so a One configuration without any is a form no remote here
+  // has run; leaving them out on the path waits for a write to the spare Harmony One, as 4.10's own does.
+  const without = dropLists(c, UNRUN);
+  assert.deepEqual([without.dropped.length, without.length, c.blob.length - without.bytes.length], [34, 262, 364]);
+  assert.ok(parse(without.bytes).allChecksPass);
 });

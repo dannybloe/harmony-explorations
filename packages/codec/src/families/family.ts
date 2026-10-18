@@ -340,8 +340,11 @@ export interface Family<Choices extends CommonChoices = CommonChoices> {
    * `composed` is the devices the composers added, in the order composed, since `todo-compile-one.md` 3.2.2.4:
    * a part that asks about every device, the Harmony One's power off help, has to be told which devices are new
    * and what the catalogue states of them, which the configuration does not say.
+   *
+   * `choices` is the family's, since `todo-compile-one.md` 4.10: what a configuration of ours holds that Logitech's
+   * do not, the Harmony One's welcome tour and Remote Assistant left out unless chosen, is the builders' to make.
    */
-  readonly composedBuilders?: (c: Container, composed: readonly ComposedDeviceNote[]) => { readonly container: Container; readonly built: readonly string[] };
+  composedBuilders?(c: Container, composed: readonly ComposedDeviceNote[], choices: Choices): { readonly container: Container; readonly built: readonly string[] };
 }
 
 /**

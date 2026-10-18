@@ -2437,6 +2437,21 @@ remote on its ordinary screen, `withoutStartupAssistant`. The "Welcome!" screen 
 OK; its own variable, 0 to 1, is written 0 silently by a list of every compile, so its starting value is not what
 decides it.
 
+**The welcome tour and the start's Remote Assistant left out, the Harmony One**, section 421, `withoutTourAndAssistant`
+in `families/touch/withouttour.ts`, the composed path's default: the sixteen modes of section 412 go with base slot 6's
+count, every `0x7E` and event map value naming a mode above them renumbered; the wiring takes `one_config`'s start, the
+ladder's last rung alone and the leftover entry narrow; Options is one page of three rows, Date and Time (scan 48),
+the sounds' value map (49) and Screen Sensitivity (50), the key's value map at 51, its own key map taking scans 46 and
+47 to nothing (section 275) and drawing no page count or number, on the hit page of three rows, a form no compile
+holds; base slot 10 loses every list reached before and by nothing after, and every list nothing reached before
+that names one of those, three on five of the sixteen English compiles of skin 54; base slot 17 loses the pages only
+the sixteen named; the eleven pictures only they drew go. **A text drawn by reference may point into any screen**,
+and on 14 of those sixteen a page that stays draws into one of the sixteen, so every text is first drawn as if the
+sixteen and Options came last and, after the cut, the form rule of section 406 is applied again. 245246 to 245593
+bytes shorter on the sixteen, and every builder of the touch family rebuilds the result byte for byte. What stays
+reached by nothing: the assistant's value map, its two case programs and their lists, and the assistant's and the
+welcome's state variables. Unconfirmed: the result started on a remote.
+
 **The keys' lights, the Harmony One**, section 400: a three instruction list `[3F C0a2, 3F C0b2, write 1]`
 sets channels `a` and `b` of the device at `0x60` on, the same with `C0a0`, `C0b0` and a write of 0 off.
 Channels 3 and 1 or 2 and 0 are the keys beside the screen. A screen's tag `0x07` list calls the pair's off

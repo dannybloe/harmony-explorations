@@ -54054,8 +54054,12 @@ not on `one_config`, the everyday One's, which holds neither the ladder nor any 
 tour. So the description carries the five exactly when the wiring keeps the ladder, and a configuration whose wiring
 keeps none but holds one of the five is refused.
 
-**The tour is always built**, since Options' Tutorial row (scan 49 of its first page) enters its "Welcome!" through
-every call on the sixteen, and Options is section 411's, always built.
+**The tour is built wherever a configuration holds it**, since Options' Tutorial row (scan 49 of its first page)
+enters its "Welcome!" through every call on the sixteen, and Options is section 411's, always built.
+> Corrected by section 421: this said the tour is always built, which held until the composed path learned to leave
+> the tour and the Remote Assistant out, its default since `todo-compile-one.md` 4.10. Logitech's compiles keep both
+> and the builder still rebuilds them; a configuration of ours holds neither unless `TouchChoices.welcomeTour` keeps
+> them.
 
 **The start choice of section 403 does not take the five out.** `withoutStartupAssistant` starts the variable at 3,
 a same length edit of its record, and on the sixteen: the wiring still keeps its ladder; the leftover entry's
@@ -54377,10 +54381,11 @@ spare unit, and nothing was written. What the configurations and earlier finding
   map's values; section 405's head rule, which reads the head off the event map's targets, would need checking
   against such a form. Then base slot 10 without the 58 lists, the indices above renumbered, and "Clear", or any
   text a later screen draws by reference into these, held inline by its first drawer instead, which the inline rule
-  already does when the screens are absent. And the list renumbering itself: `assemble.ts`' `listCallSites` reads
-  raw slots 10 and 8, which on the Harmony One are base slot 9 and the inserted empty slot, so on a One it finds
+  already does when the screens are absent. And the list renumbering itself: `assemble.ts`' `listCallSites` read
+  raw slots 10 and 8, which on the Harmony One are base slot 9 and the inserted empty slot, so on a One it found
   1553 of 3067 call sites on `harvest_one_two_devices`, missing every call inside an action list, by the blind
-  reviewer's census; its header already scopes it to arch 14. 3872 bytes of a configuration of 1.2 to 2.1 MB on the
+  reviewer's census; its header scoped it to arch 14. Repaired by section 421, which reads both through `archSlot`
+  and finds all 3067. 3872 bytes of a configuration of 1.2 to 2.1 MB on the
   nineteen compiles and 1.75 MB for the test setup, 0.2 to 0.3 percent.
 * **What bears on whether a remote tolerates it**: on the Harmony 600, 650 and 700, configurations of ours with no
   status screens and every code pointed at one blank screen ran, sections 381, 383 and 387 with section 405's
@@ -56022,3 +56027,156 @@ the 46.
 Arch 12 (Harmony One) alone: the screens and the builder are the touch family's. The Harmony 600, 650 and 700 draw
 their device pages with `screenrecords.ts` (sections 330 and 397) and were not checked for this. Skin 54 and the
 European skin 59 in English; the Dutch compile refused.
+
+## 421. The Harmony One's welcome tour and start up Remote Assistant can be left out of a configuration whole, on all sixteen English compiles of skin 54 and on the composed path by default, once the list census reads base slots 10 and 8 through `archSlot`
+
+**Todo `todo-compile-one.md` 4.10**, a decision of 18 October 2026: a person reads the manual instead of the tour, so
+every configuration we build leaves out the tour's eleven screens and the start's Remote Assistant's five (section
+412), Options loses "Turn Remote Assistant On" and "Tutorial", and the Help button's troubleshooting screens (section
+415) stay.
+
+**Sources checked**: sections 275 (the page arrows swallowed on a screen of one page), 357 (the Harmony 600, 650 and
+700's tour, skipped another way), 360 and 362 (the census and the renumbering of base slot 10), 403 and 410 (the start
+ladder), 405 (the event map), 406 (the texts' form rule), 408 (base slot 10 is spooled only by an `0x7F`'s operand),
+411 and 412 (Options, the tour and the five), 413 (the census's raw slots), 417 (the hit pages), 418 (the lists below
+the screens), the 6.7 test in `composesetup.test.ts`; the nineteen Harmony One compiles. The form without the
+assistant is Logitech's own, `one_config`'s start, read off that compile. Logitech's client was not read for this
+step: what its `RemoteAssistant` setting changes is the question section 357 left open, and no compile holds a
+configuration without the tour to read. The firmware was not read again.
+
+### The census, read through `archSlot`
+
+`listCallSites` read raw slots 10 and 8 for the action list table and the leading list; on the Harmony One, which
+inserts a NULL at raw slot 8, those are base slot 9's handler sets and the NULL, so it found 1553 of 3067 sites on
+`harvest_one_two_devices` and none inside an action list (section 413's blind reviewer). It reads both by base slot
+now, `instructionSites` in `assemble.ts`, which also answers the same walk for any opcode; for `0x7E` it is every
+place that enters a mode by number, which `shared/dropmodes.ts` renumbers.
+
+| compile | sites | lists nothing reaches, dropped | their bytes |
+|---|---|---|---|
+| `harvest_one_two_devices` | 3067 | 59 | 485 |
+| `one_spare_after_sync` | 3154 | 60 | 540 |
+| `one_spare_myharmony` | 7071 | 106 | 862 |
+| `one_spare_20260830`, `calibration_favzero` | 7476, 7328 | 111 | 903 |
+| `calibration_one` | 4322 | 74 | 638 |
+| `calibration_favchannels`, `phase7_before` | 4403 | 64 | 568 |
+| `compiled_protocols` | 10311 | 173 | 1385 |
+| `compiled_protocols_2` | 9429 | 193 | 1525 |
+| `compiled_protocols_3` | 8453 | 135 | 1071 |
+| `harvest_one_families_1` | 3462 | 44 | 380 |
+| `harvest_one_families_2` | 2937 | 58 | 478 |
+| `harvest_one_families_3` | 3642 | 62 | 506 |
+| `one_friend_legacy_sync_config` | 4877 | 94 | 778 |
+| `phase7_after` | 4676 | 76 | 652 |
+| `one_config` | 6701 | 111 | 987 |
+| `one_config_unprogrammed` | 3331 | 52 | 454 |
+| `one_friend_asfound_config` | 3281 | 90 | 774 |
+
+102324 sites over the nineteen. On every one, dropping every list nothing reaches leaves every check passing, every
+list reached, and the wiring read where it was read before; none of those lists sits below the start list, base slot
+8's call, 238 on eighteen and 237 on `one_config`. **The holders on the donor**: 1513 inside action lists, 430 in own
+key maps, 417 each in page lists and their copies, 181 in base slot 9's entries, 79 queued by screen programs, 19 in
+timers, 10 in transitions and the leading list's 1. A drop short of any of them is refused but the leading list's,
+whose one call is the start list, below the lowest list dropped, 422. Of the 3094 three byte runs `lo hi 7F` in the
+donor's file naming a list, the 27 the walk does not hold are coincidences, in tables, infrared, glyphs or across
+instructions.
+
+So the reason `todo-compile-one.md` 6.7 gave for keeping the 34 lists nothing can run is gone: `dropLists` takes them
+out of the composed setup now, 262 bytes of base slot 10 and 364 of the file with their pointers, every check
+passing. They stay for the other half of that reason, that every One compile carries lists nothing reaches (44 to 193
+of them, above) and no remote here has run a configuration without.
+
+### What goes and how
+
+What entered the sixteen was found by that census for `0x7E` on the donor: outside the sixteen themselves, the start's
+ladder, which the leftover entry's events 1 and 5 run; Options' Tutorial row, which enters "Welcome!"; and the OK of
+"Devices Off Again", one of the five, which goes on to the tour on eleven of the sixteen compiles. The steps,
+`withoutTourAndAssistant` in `families/touch/withouttour.ts`:
+
+1. **The wiring with `one_config`'s start**: the ladder its last rung alone and the leftover entry narrow, without the
+   scan 34 press writing the assistant's variable, `withoutTouchStartupLadder`.
+2. **Every text drawn away from what goes.** A text is drawn inline once and by reference everywhere else (section
+   406), and Logitech's compiles share across screens that have nothing else to do with each other: on 14 of the
+   sixteen compiles a page that stays draws by reference into a page of the sixteen, 4 to 36 draws a compile counted
+   between page programs, an activity's own Remote Assistant screens drawing the start's words among them; the donor
+   and `harvest_one_families_1` have none. On `compiled_protocols` a text that stays points into Options' page as
+   well. So every text is drawn by the form rule with those of the sixteen and of Options counted last, and the
+   others hold the inline copies. **The control**: on `one_spare_after_sync` the same steps without this one are
+   refused, a program that stays naming one being taken out.
+3. **Options, one page**: Date and Time, the sounds' row and Screen Sensitivity, built by the fixed screens' template
+   in a form of ours (`TouchFixedScreensSpec.tour` false), numbered from the two page form the configuration holds by
+   role and the button pictures matched by place, since each row's height has its own picture on every compile. A
+   screen of one page takes the page arrows, scans 46 and 47, in its own key map and does nothing with them, section
+   275, and draws no page count or number. It is touched through the hit page of three rows. No compile holds this
+   form: Logitech's without the assistant, `one_config`, keeps Tutorial and two pages.
+4. **The sixteen modes taken out**, `dropModes`: their entries, own lists, pages, lists and copies, the programs only
+   they reach, and the pictures only those drew, 11; base slot 6's count restated and every `0x7E` and event map value
+   naming a mode above them renumbered. A site still naming one of the sixteen is refused unless it sits in a list
+   nothing kept reaches, which goes in the next step.
+5. **The lists**: every list reached before and by nothing after, and every list nothing reached before either that
+   calls one of those or enters one of the sixteen, `dropLists` renumbering base slot 10. That second kind is a dead
+   chain of Logitech's: on `one_spare_20260830` a chain of lists nothing reaches calls a list that was reached before
+   and enters one of the tour's screens. Three such lists on five compiles.
+6. **The hit pages** named before and by nothing after, `withoutHitPages`, the leads renumbered.
+7. **The form rule again** over what is left, so every inline copy is the first draw of its codes in address order.
+
+| compile | bytes fewer | lists | their bytes | of them dead before | hit pages |
+|---|---|---|---|---|---|
+| `harvest_one_two_devices` | 245513 | 121 | 970 | 0 | 12 |
+| `one_spare_after_sync` | 245340 | 118 | 940 | 0 | 12 |
+| `one_spare_myharmony` | 245246 | 118 | 940 | 0 | 11 |
+| `one_spare_20260830` | 245323 | 118 | 940 | 3 | 12 |
+| `calibration_one`, `calibration_favchannels`, `phase7_before` | 245332 | 118 | 940 | 0 | 12 |
+| `calibration_favzero` | 245325 | 118 | 940 | 3 | 12 |
+| `compiled_protocols` | 245322 | 118 | 940 | 3 | 12 |
+| `compiled_protocols_2`, `compiled_protocols_3` | 245323 | 118 | 940 | 3 | 12 |
+| `harvest_one_families_1` | 245593 | 121 | 970 | 0 | 13 |
+| `harvest_one_families_2` | 245504 | 121 | 970 | 0 | 12 |
+| `harvest_one_families_3` | 245583 | 121 | 970 | 0 | 13 |
+| `one_friend_legacy_sync_config` | 245325 | 118 | 940 | 0 | 12 |
+| `phase7_after` | 245328 | 118 | 940 | 0 | 12 |
+
+**On each of the sixteen**: the result passes both checksums; every list call, every mode entered and every page's hit
+page resolves; the state table and the queue rails hold; the wiring and the texts read; no screen of the sixteen is
+found; the lists nothing reaches are those before less the dead ones taken; the step is a fixed point; and **every
+builder of the touch family rebuilds the result byte for byte**, all fourteen parts, so the result is in the form the
+family builds. The two European compiles are refused by the fixed screens' finder (a second Month picker) and the
+Dutch one by the tour's (its words), as those builders refuse them.
+
+**What stays, reached by nothing**: the assistant's value map, its two case programs and their lists, since leaving a
+value map out renumbers base slot 14 and every `0x72`, which nothing here does yet; it writes a variable nothing tests
+once the ladder is gone. And the assistant's and the welcome's state variables, which base slot 13 keeps in place.
+
+### On the composed path
+
+`TouchChoices.welcomeTour`, default false: `Family.composedBuilders` takes the family's choices now, and the touch
+family's `withTouchComposedBuilders` runs the step before every builder unless the choice keeps the tour, in which
+case it builds exactly what it built before. **On the composed test setup** the file goes from 1758133 to 1512234
+bytes, 245899 fewer. Per builder: the tour's 4015 built and 719 described go to nothing; the fixed screens' 14332 to
+14087 and their described 4038 to 4156; the hit pages' 2010 to 863; the wiring's 4625 to 4560, described 1274 to 1250;
+the device pages' 16155 to 16139, described 6269 to 6273, the form rule moving inline copies. **Carried** 1116492 to
+876509: `picture` 1012839 to 773130, the eleven; `slot-10-list` 1820 to 1556; and `case-program` 10 to nothing, the
+two cases the activity composer writes entering the idle device list, which is mode 50 here and 61 on the donor, so
+they no longer match the donor's bytes. The composed setup holds 2733 lists, 112 modes and 24 hit pages, every
+reference resolves, and its texts keep the form rule, 471 inline and 878 by reference. **With the tour kept it does
+not**: "pages" at 35, 18 on one program is drawn inline where the rule draws it by reference, on the path as it
+stood before this step; without the tour the last step puts it right. Whether that matters to a remote is not known,
+since a reference and an inline copy draw the same pixels.
+
+**Rendered, before and after**, Options and the screens the start list enters. Options was "1/2 pages" with "Turn
+Remote Assistant On", "Tutorial" and "Date and Time", and is now one page of "Date and Time", "Turn Screen Sounds Off"
+and "Screen Sensitivity" under the title alone. The start list entered the welcome ("Remote Assistant: Welcome to your
+remote."), "Ensure all your devices are off", the battery picture's screen and USB Connected, each behind the ladder's
+tests; now the battery picture's screen and USB Connected. What a person sees first off the cradle is not read off
+the list: the renderer runs no condition.
+
+### Which architectures
+
+Arch 12 (Harmony One) alone: the step is the touch family's. The census's `archSlot` reading changes nothing on the
+Harmony 600, 650 and 700, whose base and raw slots 10 and 8 coincide; their census stays `assemble.test.ts`'s. Their
+tour is skipped another way, section 357.
+
+### Still open
+
+`todo-compile-one.md` 4.10.1: the result written to the spare Harmony One and seen to start. The assistant's value map
+and its programs left out. Options of one page is a form no compile holds and no remote here has shown.

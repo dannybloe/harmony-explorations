@@ -10,7 +10,9 @@
  * 2. the twenty three fixed screens past them, section 411, `fixedscreens.ts`, for the configuration's own build
  *    year, the donor's stamp until `composeSetup` stamps the result;
  * 3. the welcome tour and, where the wiring keeps its start ladder, the Remote Assistant, section 412,
- *    `tourscreens.ts`;
+ *    `tourscreens.ts`, where the configuration holds them: on the composed path they are left out before any builder
+ *    runs unless `TouchChoices.welcomeTour` keeps them, `withTouchComposedBuilders`, section 421, so there this builds
+ *    nothing;
  * 4. the twenty nine status screens past code 9's, section 413, `statusscreens.ts`, after the firmware screens
  *    because status code 28's "USB Connected" is drawn by reference to the copy the firmware screen USB Connected
  *    holds: described off the configuration with that screen already built, the home it carries is the built copy;
@@ -128,6 +130,8 @@ import { buildTouchWiring, describeTouchWiring } from './wiring.ts';
 import { TOUCH_STATE_TABLES } from './statetables.ts';
 import { withCentredPadLabels } from './centring.ts';
 import { type WithGenerated, withNumberSenderTable, withTouchInsertedSection } from './smalltables.ts';
+import type { TouchChoices } from './choices.ts';
+import { withoutTourAndAssistant } from './withouttour.ts';
 
 /** A builder on the composed path refusing the configuration, with the part it was building. */
 export class TouchBuildError extends Error {}
@@ -300,6 +304,19 @@ export function withTouchBuilders(
     if (parts.includes(what)) out = building(what, () => layOutContainer(SMALL_TABLES[what](out).layout).container);
   }
   return { container: out, built: TOUCH_BUILT.filter((what) => parts.includes(what)) };
+}
+
+/**
+ * `Family.composedBuilders` for the touch family: the welcome tour and the Remote Assistant left out first unless the
+ * choice keeps them, `withoutTourAndAssistant`, `todo-compile-one.md` 4.10, and then every builder, `withTouchBuilders`,
+ * so each describes the configuration as it will be: Options in its one page, no tour for the tour's builder to read
+ * and the hit pages without theirs. A refusal of the step is the composition's, named as the builders' are.
+ */
+export function withTouchComposedBuilders(
+  c: Container, composed: readonly ComposedDeviceNote[], choices: Pick<TouchChoices, 'welcomeTour'>,
+): { container: Container; built: TouchBuilt[] } {
+  const start = choices.welcomeTour ? c : building('tour and Remote Assistant', () => withoutTourAndAssistant(c).container);
+  return withTouchBuilders(start, composed);
 }
 
 // ---------------------------------------------------------------------------------------------------------

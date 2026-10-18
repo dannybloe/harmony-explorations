@@ -15,7 +15,7 @@ import { TOUCH_FONTS } from './fonts.ts';
 import { checkTouchWiring } from './wiring.ts';
 import { TOUCH_SENDS } from './sends.ts';
 import { TOUCH_START } from './start.ts';
-import { withTouchBuilders } from './builders.ts';
+import { withTouchComposedBuilders } from './builders.ts';
 import { withTouchActivityMenuRow } from './activitymenu.ts';
 
 export const TOUCH: Family<TouchChoices> = {
@@ -46,6 +46,7 @@ export const TOUCH: Family<TouchChoices> = {
   // `todo-compile-one.md` 1.2.11.2.4.
   activityDeviceList: (c) => c.blob,
   composedLook: { letterDonor: letterTouchDonor, look: withTouchLook },
-  // The parts the donor carried that a builder of the family's makes from a description, `todo-compile-one.md` 3.2.2.
-  composedBuilders: withTouchBuilders,
+  // The parts the donor carried that a builder of the family's makes from a description, `todo-compile-one.md` 3.2.2,
+  // after the welcome tour and the Remote Assistant are left out unless chosen, 4.10.
+  composedBuilders: withTouchComposedBuilders,
 };
