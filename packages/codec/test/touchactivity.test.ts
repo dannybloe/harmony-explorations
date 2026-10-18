@@ -17,9 +17,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { load, skipUnless } from '@harmony/lab';
-import { activities, activityScreens, type Container, modeRecords, parse, taggedList, touchPages } from '../src/index.ts';
+import { activities, activityScreens, type Container, modeRecords, parse, taggedList, touchPages, valueMaps } from '../src/index.ts';
 import { touchOwner } from '../src/touch.ts';
-import { deviceListRowMode, devices, idleActivityValue } from '../src/inventory.ts';
+import {
+  ENTER_MODE, SELECT_BINDING_SET, SELECT_BINDING_SET_MASK, activityBindings, caseQueued, deviceListRowMode, devices, idleActivityValue,
+} from '../src/inventory.ts';
 import { SCREEN_CALL, SCREEN_DRAW_IMAGE, SCREEN_JUMP, SCREEN_SELECT_FONT, SCREEN_SWITCH_NARROW, SCREEN_TEXT_AT, SCREEN_TEXT_INLINE, screenProgram } from '../src/screen.ts';
 import { deviceListMenus } from '../src/shared/menus.ts';
 import { textGlyphs } from '../src/shared/spelling.ts';
@@ -27,6 +29,7 @@ import { characterMap, decode } from '../src/text.ts';
 import { fontSets } from '../src/font.ts';
 import { measureSet } from '../src/fonttable.ts';
 import { buildTouchActivityScreens, touchActivityFonts } from '../src/families/touch/activityscreen.ts';
+import { checkTouchCasePrograms, touchValueMapRoles } from '../src/families/touch/caseprograms.ts';
 import { TOUCH_CHOICES } from '../src/families/touch/choices.ts';
 import { fontsOfFace } from '../src/families/touch/labels.ts';
 import { letterTouchDonor } from '../src/families/touch/look.ts';
@@ -306,4 +309,60 @@ test('section 402: screen instruction 1 stands on the working screens of 23 of L
   assert.equal(carriers, 23);
   // The One's screen is 176 by 220.
   assert.deepEqual([...seen.keys()], ['depth 1: 0 0 176 220 0 0']);
+});
+
+/** The four records an activity's case goes in, by the touch family's catalogue, section 416. */
+const ACTIVITY_ROLES = ['devices', 'devices unread', 'working', 'select'] as const;
+
+test('todo-compile-one 3.2.2.3: an activity our builder composes onto each Logitech One compile takes a case in the four records every activity of theirs has one in, the unread copy of the Devices record among them, and base slot 11\'s table then names its cases as their compiler names every case, the case programs\' builder rebuilding the file with the table it generates',
+     skipUnless(...WITH_ACTIVITIES, ...WITHOUT_ACTIVITIES), () => {
+  // Section 402's method: each compile lettered in ours, as `composeSetup` letters its donor, and an activity built
+  // onto it under a fresh number. Its pads do not matter here, so it has none.
+  const tally = { compiles: 0, theirs: 0, notLettered: [] as string[] };
+  for (const name of [...WITH_ACTIVITIES, ...WITHOUT_ACTIVITIES]) {
+    let c: Container;
+    try {
+      c = parse(letterTouchDonor(parse(load(name) as Uint8Array), TOUCH_CHOICES).bytes);
+    } catch {
+      tally.notLettered.push(name);
+      continue;
+    }
+    const { records, idle } = touchValueMapRoles(c);
+    const values = [...new Set(activityBindings(c).map((one) => one.activity))];
+    // Per activity value, the cases held at it among the four records keyed by the activity; the other records are
+    // keyed by the location, a picker's cell or a toggle, whose values an activity's may equal.
+    const casesAt = (cc: Container, value: number) => ACTIVITY_ROLES.flatMap((role) => {
+      const target = valueMaps(cc)![records.get(role)!]!.entries.find(([key]) => key === value)?.[1];
+      return target === undefined ? [] : [{ role, queued: caseQueued(cc, target)! }];
+    });
+    // Logitech's: every activity a case in all four, the unread copy's queuing what the Devices record's does.
+    for (const value of values) {
+      const theirs = casesAt(c, value);
+      assert.deepEqual(theirs.map((one) => one.role), [...ACTIVITY_ROLES], `${name}: activity ${value}`);
+      assert.deepEqual(theirs[1]!.queued, theirs[0]!.queued, `${name}: activity ${value}`);
+      tally.theirs += 1;
+    }
+    const entries = checkTouchCasePrograms(c).entries;
+    let fresh = 0;
+    while (values.includes(fresh) || fresh === idle) fresh += 1;
+    const built = buildTouchActivityScreens(c, fresh, 'Test', [], {});
+    const b = parse(built.bytes);
+    // Ours: the same four records, the two under Devices entering the idle device list (ours enters that one where
+    // Logitech's enters a list of the activity's own, section 402), working its working screen, select its keypad
+    // map. On the four compiles with no activity the unread copy is the record the composer used to pass by.
+    const idleList = caseQueued(c, valueMaps(c)![records.get('devices')!]!.entries.find(([key]) => key === idle)![1])!;
+    assert.deepEqual(casesAt(b, fresh).map((one) => [one.role, one.queued.opcode, one.queued.operand]), [
+      ['devices', idleList.opcode, idleList.operand], ['devices unread', idleList.opcode, idleList.operand],
+      ['working', ENTER_MODE, built.mode], ['select', SELECT_BINDING_SET, SELECT_BINDING_SET_MASK | built.set!],
+    ], name);
+    // And the table: the case programs' builder generates it whole by the rule every compile of theirs follows and
+    // rebuilds the composed file byte for byte, four entries longer than the compile's. Before
+    // `todo-compile-one.md` 3.2.2.3 this refused, the generated table naming cases the composed one did not.
+    assert.equal(checkTouchCasePrograms(b).entries, entries + 4, name);
+    tally.compiles += 1;
+  }
+  // The Dutch compile draws a letter ours lack and one compile of two devices has no single device mode header to
+  // letter by, both refused by the letterer and not composed onto; the 63 of theirs are the 64 of section 402 but
+  // the Dutch compile's one.
+  assert.deepEqual(tally, { compiles: 17, theirs: 63, notLettered: ['one_friend_asfound_config', 'harvest_one_families_1'] });
 });

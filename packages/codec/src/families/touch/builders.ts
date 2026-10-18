@@ -16,11 +16,25 @@
  *    holds: described off the configuration with that screen already built, the home it carries is the built copy;
  * 5. the clock header, base slot 11's four header programs and the six lists the clock calls, section 414,
  *    `clockheader.ts`, after the fixed screens because the clock's sixty minutes are drawn by reference to the
- *    copies the clock pickers hold, the same argument; its sixteen pictures stay the configuration's (5.3) and so
- *    do base slot 11's table and its other entries (6.6), the description carrying where each sits;
- * 6. the wiring, section 410, `wiring.ts` over `wiringparts.ts`: the event map, the leading list, the timers, base
+ *    copies the clock pickers hold, the same argument; its sixteen pictures stay the configuration's (5.3), the
+ *    description carrying where each sits;
+ * 6. base slot 11's case programs of the value maps, the lists the toggles and the all off call, and base slot 11's
+ *    table, section 416, `caseprograms.ts`, after the clock header because the table names its four programs at
+ *    their entries, and after the composers because the table names every case, the activities' among them. The
+ *    table is generated whole, so it is the composition's only because the activity composer enters every case it
+ *    makes as Logitech's compiler does, `withTouchScreenTable`, `todo-compile-one.md` 3.2.2.3; the device composer's
+ *    one contribution, the all off's power variables and list, is read back off the composed file;
+ * 7. the 23 hit pages the fixed screens name and the touch map's table over every page, section 417, `hitpages.ts`,
+ *    at any point after the composers, since it reads only the leads of the screen pages naming them and writes
+ *    nothing a screen builder reads; each page keeps the index the configuration gave it, so the screens' builders,
+ *    which read the same leads, agree with it. The touch map's other pages stay the configuration's: a device page's
+ *    six commands with both page keys and the generic help screen's, named only by setup screens (`todo-compile-one.md`
+ *    4.2 and 4.6), and the donor's pages of its own screens (4.1, 4.2). The composed table is not in Logitech's first
+ *    use order, the composers appending their pages at the end, `withHitPage`, and two of its pages are named by no
+ *    mode page, section 417; neither is this builder's to change, since it keeps the numbering it reads;
+ * 8. the wiring, section 410, `wiring.ts` over `wiringparts.ts`: the event map, the leading list, the timers, base
  *    slot 9's eight entries, the lists they reach, and through it the log area and the parameter block, section 407;
- * 7. the state records and value maps with their tables, section 407, `statetables.ts` with the family's facts,
+ * 9. the state records and value maps with their tables, section 407, `statetables.ts` with the family's facts,
  *    after the clock header, whose two calls are instructions of the clock's state records naming its lists by
  *    index: the clock header keeps the indices its description read, so the records' calls stay right.
  *
@@ -33,8 +47,8 @@
  * descriptions all the same. The look also centres every label drawn in a pad by its letters, and the clock
  * pickers' buttons sit where a device page's pads do, so it moves their words after the builder placed them.
  *
- * **Where the output is not the donor's bytes, and why.** The wiring and the state tables come out byte for byte
- * as the donor carried them. The screen sets and the clock header do not: every text they centre or end at a
+ * **Where the output is not the donor's bytes, and why.** The wiring, the state tables, the case programs and the hit
+ * pages come out byte for byte as the donor carried them, none of them drawing a text. The screen sets and the clock header do not: every text they centre or end at a
  * place, a line on the screen, a word on a button, "Exit" at 163, the clock's day ending at 138, is placed by the
  * widths of the letters it is drawn in, and the
  * donor is lettered in ours before anything is composed, `letterTouchDonor`, which keeps every text where
@@ -48,8 +62,10 @@
  * message, `TouchBuildError`: a donor whose build year offers a leap year (its Day 29 and second Month pickers are
  * not built, section 411), one in another language (the Dutch compile, sections 409, 411 and 412), the everyday
  * One's compile, whose USB Connected screen leaves through a list of its own (section 409), and past those an
- * event map that does not name one status screen per code (section 413) or a base slot 11 that does not hold each
- * of the clock header's four programs once (section 414). Nothing falls back to the donor's part.
+ * event map that does not name one status screen per code (section 413), a base slot 11 that does not hold each
+ * of the clock header's four programs once (section 414), value maps that do not read as the One's catalogue or
+ * whose numbers disagree (section 416) and two hit pages read at one index (section 417). Nothing falls back to the
+ * donor's part.
  *
  * Arch 12 (Harmony One) alone, skin 54 as `composeSetup` takes it; every builder here is the touch family's but the
  * state tables', which is shared and takes the family's facts.
@@ -67,6 +83,8 @@ import { buildTouchFixedScreens, describeTouchFixedScreens, withTouchFixedScreen
 import { buildTouchTourScreens, describeTouchTourScreens, withTouchTourScreens } from './tourscreens.ts';
 import { buildTouchStatusScreens, describeTouchStatusScreens, withTouchStatusScreens } from './statusscreens.ts';
 import { buildTouchClockHeader, describeTouchClockHeader, withTouchClockHeader } from './clockheader.ts';
+import { buildTouchCasePrograms, buildTouchScreenTable, describeTouchCasePrograms, withTouchCasePrograms } from './caseprograms.ts';
+import { buildTouchHitPages, describeTouchHitPages, withTouchHitPages } from './hitpages.ts';
 import { buildTouchWiring, describeTouchWiring } from './wiring.ts';
 import { TOUCH_STATE_TABLES } from './statetables.ts';
 import { withCentredPadLabels } from './centring.ts';
@@ -76,7 +94,8 @@ export class TouchBuildError extends Error {}
 
 /** The parts the builders make, in the order they run and the order `touchBuiltBytes` attributes a byte. */
 export const TOUCH_BUILT = [
-  'firmware screens', 'fixed screens', 'tour and Remote Assistant', 'status screens', 'clock header', 'wiring', 'state tables',
+  'firmware screens', 'fixed screens', 'tour and Remote Assistant', 'status screens', 'clock header', 'case programs', 'hit pages',
+  'wiring', 'state tables',
 ] as const;
 export type TouchBuilt = (typeof TOUCH_BUILT)[number];
 
@@ -84,9 +103,13 @@ export type TouchBuilt = (typeof TOUCH_BUILT)[number];
  * The builders whose part is screens and screen programs, in the order they run: each a description of what it
  * draws over a configuration that keeps every other byte where it was, so they chain, one described off the one
  * before, and the attribution counts them by what their descriptions span. The clock header is screen programs
- * rather than screens, built through the same template engine and described the same way.
+ * rather than screens, built through the same template engine and described the same way; the case programs are
+ * screen programs and their table, and the hit pages what a screen is touched through, each described the same way
+ * too, by what it spans and reads, so they chain with the rest.
  */
-const SCREEN_BUILT = ['firmware screens', 'fixed screens', 'tour and Remote Assistant', 'status screens', 'clock header'] as const;
+const SCREEN_BUILT = [
+  'firmware screens', 'fixed screens', 'tour and Remote Assistant', 'status screens', 'clock header', 'case programs', 'hit pages',
+] as const;
 type ScreenBuilt = (typeof SCREEN_BUILT)[number];
 
 /**
@@ -126,6 +149,20 @@ const SCREENS: Readonly<Record<ScreenBuilt, (c: Container) => ScreenBuild>> = {
     const layout = takeApart(c);
     const d = describeTouchClockHeader(c, layout);
     return { ...d, layout: withTouchClockHeader(layout, buildTouchClockHeader(c, d.spec), d.place) };
+  },
+  // The table is generated whole from the clock header's entries and the value maps, so on a configuration whose
+  // table the rule does not give, the composition before `todo-compile-one.md` 3.2.2.3 among them, the rebuild is
+  // another length and the comparison refuses it.
+  'case programs': (c) => {
+    const layout = takeApart(c);
+    const d = describeTouchCasePrograms(c, layout);
+    const table = buildTouchScreenTable(d.table.header, d.table.valueMaps);
+    return { ...d, layout: withTouchCasePrograms(layout, buildTouchCasePrograms(d.spec), d.place, table) };
+  },
+  'hit pages': (c) => {
+    const layout = takeApart(c);
+    const d = describeTouchHitPages(c, layout);
+    return { ...d, layout: withTouchHitPages(layout, buildTouchHitPages(d.spec), d.place) };
   },
 };
 
@@ -229,7 +266,15 @@ export function touchBuiltBytes(c: Container, blended: readonly BlendedSet[]): T
   for (const what of SCREEN_BUILT) {
     building(what, () => {
       const one = SCREENS[what](rebuilt);
-      rebuilt = layOutContainer(one.layout).container;
+      const next = layOutContainer(one.layout).container;
+      // A rebuild of another length moves every byte after it, so the comparison below would name the first of
+      // them, the header's end address, and blame the first set. Named here instead, by the set that changed it:
+      // the case programs, whose table is generated whole, on a configuration whose table the rule does not give.
+      if (next.blob.length !== rebuilt.blob.length) {
+        const by = next.blob.length - rebuilt.blob.length;
+        throw new ScreenRecordError(`the rebuild is ${Math.abs(by)} bytes ${by > 0 ? 'longer' : 'shorter'} than the configuration`);
+      }
+      rebuilt = next;
       sets.push({ what, one });
     });
   }

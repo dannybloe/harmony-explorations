@@ -83,8 +83,12 @@ test('the One test setup composed onto Logitech\'s compile of two devices comes 
     .filter((one) => one.opcode === 0x7f && clicks(one.operand, new Set()) > 1).map((one) => `${mode}:${one.tag & 0x3f}`)));
   assert.deepEqual(twice, []);
   // Its length is pinned so a change shows here first: 1750855 until each composed row got its click, section 404,
-  // and 1751852 once the Radio sequence's pad took the key copy, without a click of its own.
-  assert.equal(c.blob.length, 1751852);
+  // and 1751852 once the Radio sequence's pad took the key copy, without a click of its own. 1751962 since
+  // `todo-compile-one.md` 3.2.2.3, 110 bytes more: the activity composer gives each of the five activities a case in
+  // the unread copy of the Devices record as Logitech's compiles do, five bytes of case and five of program each, 50,
+  // and enters every case it makes in base slot 11's table, the five unread ones and the fifteen it made before,
+  // three bytes an entry, 60, section 416.
+  assert.equal(c.blob.length, 1751962);
 });
 
 // ---------------------------------------------------------------------------------------------------------
@@ -188,7 +192,7 @@ const builtBytes = (): TouchBuiltBytes => {
   return builtOnce;
 };
 
-test('todo-compile-one 3.2.2: the firmware screens, the fixed screens, the tour and Remote Assistant, the status screens, the clock header, the wiring and the state tables of the composed setup come out of the touch family\'s builders, run on the composed path and measured on the result',
+test('todo-compile-one 3.2.2: the firmware screens, the fixed screens, the tour and Remote Assistant, the status screens, the clock header, the case programs, the hit pages, the wiring and the state tables of the composed setup come out of the touch family\'s builders, run on the composed path and measured on the result',
      NEEDS, () => {
   const out = composed();
   // On the path: one step after the composers and before the look, naming the seven parts in the order built.
@@ -204,17 +208,25 @@ test('todo-compile-one 3.2.2: the firmware screens, the fixed screens, the tour 
   const a = builtBytes();
   // The status screens' 3872 and the clock header's 3558 are the figures 3.2.1 listed for them, the clock header's
   // being its four programs' 3516 and its six lists' 42; its sixteen pictures and base slot 11's table are not in it.
+  // The case programs' 572, since 3.2.2.3, are their 25 programs, 341, their seven lists, 82, the six toggles' and
+  // the all off's, and base slot 11's table, 149, its 49 entries the clock header's four, the 25 and four cases for
+  // each of the five composed activities. The hit pages' 2013 are the 23 pages the fixed screens name, 1898, and
+  // the touch map's table over all 38 pages, 115. The state tables' rose by 25 with them, the five cases the unread
+  // copy of the Devices record took.
   assert.deepEqual(a.generated, {
     'firmware screens': 3099, 'fixed screens': 13139, 'tour and Remote Assistant': 3900, 'status screens': 3872,
-    'clock header': 3558, wiring: 4527, 'state tables': 2322,
+    'clock header': 3558, 'case programs': 572, 'hit pages': 2013, wiring: 4527, 'state tables': 2347,
   });
   assert.deepEqual(a.described, {
     'firmware screens': 401, 'fixed screens': 3967, 'tour and Remote Assistant': 680, 'status screens': 699,
-    'clock header': 337, wiring: 1243, 'state tables': 0,
+    'clock header': 337, 'case programs': 33, 'hit pages': 0, wiring: 1243, 'state tables': 0,
   });
+  // The case programs' 33 are section 416's 24 numbers, one per power variable the all off writes, seven here, the
+  // donor's two and the five composed, and two for its list. The hit pages' description reads 23 bytes, the leads of
+  // the screen pages that name them, none of them inside the pages it builds, so none of its bytes is described.
 });
 
-test('todo-compile-one 3.2: the One\'s composed test setup carries 1129550 of its 1751852 bytes out of Logitech\'s donor, per kind as pinned here, a list that may only shrink',
+test('todo-compile-one 3.2: the One\'s composed test setup carries 1127172 of its 1751962 bytes out of Logitech\'s donor, per kind as pinned here, a list that may only shrink',
      NEEDS, () => {
   const out = composed().container;
   const got = carried(out, parse(require_('harvest_one_two_devices')), builtBytes().owners);
@@ -225,15 +237,25 @@ test('todo-compile-one 3.2: the One\'s composed test setup carries 1129550 of it
   // 4, 8, 9, 12, 13, 14 and 15 went, and `mode other`, `mode status` and the lists came down. Its second step,
   // 3.2.2.2, put the status screens and the clock header there, 7430 bytes: `mode status` went, 3379, the status
   // screens' 3872 less their 493 list bytes, and so did `dynamic-program`, the clock header's four programs, 3516,
-  // and the lists came down by the status screens' 493 and the clock's 42.
+  // and the lists came down by the status screens' 493 and the clock's 42. Its third, 3.2.2.3, put the case
+  // programs and the hit pages the fixed screens name there, 2378 bytes: `table`, base slot 11's, went, 89, the case
+  // programs came down by their 25 programs' 341, the lists by the six toggles' 60 (the all off's list is the device
+  // composer's, written and never carried) and the hit pages by the 23 pages' 1898.
+  //
+  // **What is left of those two rows.** `hit-page` 546 is the six pages no builder makes: the two of the census's 25
+  // only setup screens name, a device page's six commands with both page keys (4.2) and the generic help screen's
+  // (4.6), and the donor's four of its own screens (4.1 and 4.2). `case-program` 10 is not a part carried: it is two
+  // of the ten cases the activity composer writes under Devices, `11 mode 7E 00` entering the idle device list, byte
+  // for byte the donor's idle cases of the Devices record and its unread copy, which this match takes once the
+  // builder's own, built and so left out, no longer take them. The composer writes them, `caseProgram`.
   assert.deepEqual(got, {
     'picture': 1012839, // 5.3: the 36 every compile holds, the clock's 16 and the donor's 6
     'slot-5-block': 96946, 'slot-5-header': 4116, 'slot-5-group': 594, // the donor's two devices' infrared, 8.1
-    'slot-10-list': 6114, // per builder in the listing: 17609 before 3.2.2, 6649 before 3.2.2.2
+    'slot-10-list': 6054, // per builder in the listing: 17609 before 3.2.2, 6649 before 3.2.2.2, 6114 before 3.2.2.3
     'mode other': 1495, 'mode device': 4569, // 11983 and the same before 3.2.2
-    'hit-page': 2444, 'case-program': 341, 'table': 89,
+    'hit-page': 546, 'case-program': 10, // 2444 and 341 before 3.2.2.3, and base slot 11's `table` 89
     'raw-18-table': 2, 'slot-16-table': 1,
   });
-  assert.equal(Object.values(got).reduce((sum, one) => sum + one, 0), 1129550);
-  assert.equal(out.blob.length, 1751852);
+  assert.equal(Object.values(got).reduce((sum, one) => sum + one, 0), 1127172);
+  assert.equal(out.blob.length, 1751962);
 });

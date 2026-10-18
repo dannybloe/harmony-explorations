@@ -1,11 +1,12 @@
 /**
  * The Harmony One's builders on the composed path, `todo-compile-one.md` 3.2.2, `families/touch/builders.ts`: the
- * firmware screens, the fixed screens, the tour and Remote Assistant, the status screens, the clock header, the
- * wiring and the state tables, each built from a description of the configuration being composed in place of the
- * donor's part; the first five and the last two since 3.2.2.1, the status screens and the clock header since 3.2.2.2.
+ * firmware screens, the fixed screens, the tour and Remote Assistant, the status screens, the clock header, the case
+ * programs, the hit pages, the wiring and the state tables, each built from a description of the configuration being
+ * composed in place of the donor's part; the first five and the last two since 3.2.2.1, the status screens and the
+ * clock header since 3.2.2.2, the case programs and the hit pages since 3.2.2.3.
  *
  * What is held here is what the composition in `composesetup.test.ts` cannot show cheaply: that on Logitech's own
- * compile the seven come back byte for byte, so putting them on the path changes nothing a builder does not mean to;
+ * compile the nine come back byte for byte, so putting them on the path changes nothing a builder does not mean to;
  * what does change on the donor lettered in ours and why; that a builder's refusal is the path's; and that the
  * attribution refuses a screen the donor's placing carried, which is what lets it tell a built part from a carried
  * one where their bytes differ.
@@ -16,7 +17,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { require_, skipUnless } from '@harmony/lab';
-import { type Container, EVENT_MAP_SLOT, archSlot, claims, eventMap, parse, screenProgram, screenUnits } from '../src/index.ts';
+import {
+  type Container, EVENT_MAP_SLOT, archSlot, claims, eventMap, modeRecords, parse, screenProgram, screenUnits, touchPages, valueMaps,
+} from '../src/index.ts';
 import { saveEdits } from '../src/edit.ts';
 import { SCREEN_TEXT_AT, SCREEN_TEXT_INLINE } from '../src/screen.ts';
 import { TOUCH } from '../src/families/touch/index.ts';
@@ -25,6 +28,10 @@ import { touchFixedScreenModes } from '../src/families/touch/fixedscreens.ts';
 import { touchTourScreenModes } from '../src/families/touch/tourscreens.ts';
 import { touchStatusScreenModes } from '../src/families/touch/statusscreens.ts';
 import { touchClockHeaderEntries } from '../src/families/touch/clockheader.ts';
+import { touchValueMapRoles } from '../src/families/touch/caseprograms.ts';
+import { withCentredPadLabels } from '../src/families/touch/centring.ts';
+import { ENTER_MODE, caseQueued } from '../src/inventory.ts';
+import { appendValueMapCase, caseProgram } from '../src/shared/menus.ts';
 
 const DONOR = 'harvest_one_two_devices';
 
@@ -35,12 +42,13 @@ const lettered = (): Container => {
   return letteredOnce;
 };
 
-test('todo-compile-one 3.2.2: on Logitech\'s compile of two devices the seven builders on the composed path give back every byte as it was',
+test('todo-compile-one 3.2.2: on Logitech\'s compile of two devices the nine builders on the composed path give back every byte as it was',
      skipUnless(DONOR), () => {
   const donor = parse(require_(DONOR));
   const out = withTouchBuilders(donor);
   assert.deepEqual(out.built, [
-    'firmware screens', 'fixed screens', 'tour and Remote Assistant', 'status screens', 'clock header', 'wiring', 'state tables',
+    'firmware screens', 'fixed screens', 'tour and Remote Assistant', 'status screens', 'clock header', 'case programs', 'hit pages',
+    'wiring', 'state tables',
   ]);
   assert.equal(out.container.blob.length, donor.blob.length);
   assert.ok(out.container.blob.every((one, k) => one === donor.blob[k]));
@@ -90,11 +98,12 @@ test('todo-compile-one 3.2.2: on that compile lettered in ours the builders move
   // The status screens' 37 are lines centred on the screen, in 27 of the 29 screens: one or two lines each, the
   // ones whose width in our letters rounds to the same place as in Logitech's staying put. The clock's 25 are all
   // in the clock itself, the days ending at x 138 and the hours at 156, which our letters' widths end elsewhere;
-  // its minutes start at 158 whatever their width and do not move.
+  // its minutes start at 158 whatever their width and do not move. The case programs and the hit pages draw no
+  // text, so they move nothing here, 3.2.2.3.
   assert.deepEqual(count, { firmware: 10, fixed: 93, tour: 32, status: 37, clock: 25, other: 0 });
 });
 
-test('todo-compile-one 3.2.2: a builder\'s refusal is the composed path\'s, never the donor\'s part kept: a build year offering a leap year, the Dutch compile, the everyday One\'s, an event map naming one status screen for two codes and a clock header with two gauges',
+test('todo-compile-one 3.2.2: a builder\'s refusal is the composed path\'s, never the donor\'s part kept: a build year offering a leap year, the Dutch compile, the everyday One\'s, an event map naming one status screen for two codes, a clock header with two gauges, an idle write of another value and two hit pages at one index',
      skipUnless(DONOR, 'one_friend_asfound_config', 'one_config'), () => {
   // Logitech's compile stamped a year later: its Year picker would offer 2028, whose Day 29 and second Month
   // pickers are not built, section 411.
@@ -125,8 +134,75 @@ test('todo-compile-one 3.2.2: a builder\'s refusal is the composed path\'s, neve
   gauges[sending.start + 1] = 9;
   assert.throws(() => withTouchBuilders(parse(gauges)),
     (error: unknown) => error instanceof TouchBuildError && /^building the Harmony One's clock header: the configuration holds 2 programs of the look of gauge, not one$/.test(error.message));
+  // 3.2.2.3's two. The case programs: the idle case's write made to write the value after the idle value, so the
+  // description reads two idle values, the write's and the working record's idle case's.
+  const roles = touchValueMapRoles(donor);
+  const idleCase = valueMaps(donor)![roles.records.get('idle')!]!.entries[0]![1];
+  const idleWrite = Uint8Array.from(donor.blob);
+  idleWrite[donor.blobOffsetOf(idleCase)! + 1] = roles.idle + 1;
+  assert.throws(() => withTouchBuilders(parse(idleWrite)),
+    (error: unknown) => error instanceof TouchBuildError && /^building the Harmony One's case programs: the idle write writes 1 where the working record's idle case is at 0$/.test(error.message));
+  // The hit pages: USB Connected's page made to name Low Battery's hit page, so two of the 23 read as one index.
+  // The screens' builders take a lead as a number the configuration chose and pass it; this is the builder that reads
+  // one numbering off them.
+  const records = modeRecords(donor)!;
+  const lead = Uint8Array.from(donor.blob);
+  lead[donor.blobOffsetOf(records[1]!.pages[0]!.address)!] = records[0]!.pages[0]!.lead!;
+  assert.throws(() => withTouchBuilders(parse(lead)),
+    (error: unknown) => error instanceof TouchBuildError && /^building the Harmony One's hit pages: message and OK and message are both hit page 0$/.test(error.message));
   // And the family's member on the composed path is this function, which `composeSetup` calls on every composition.
   assert.equal(TOUCH.composedBuilders, withTouchBuilders);
+});
+
+/**
+ * Logitech's compile of two devices through the nine builders and then the step of the look the attribution undoes,
+ * the centring of the words in a pad, so that it reads as a configuration the composed path made: built, it is the
+ * donor byte for byte, and centred, its clock pickers' words sit where the look puts them.
+ */
+let donorBuiltOnce: Container | undefined;
+const donorBuilt = (): Container => {
+  donorBuiltOnce ??= withCentredPadLabels(withTouchBuilders(parse(require_(DONOR))).container);
+  return donorBuiltOnce;
+};
+
+test('todo-compile-one 3.2.2.3: the attribution counts each builder\'s bytes on Logitech\'s compile of two devices, the case programs\' 497 and the hit pages\' 1986 being what their own checks span on that compile, sections 416 and 417',
+     skipUnless(DONOR), () => {
+  const a = touchBuiltBytes(donorBuilt(), []);
+  // Each part's bytes, its description's included. The case programs' 497 are their 25 programs, seven lists and
+  // the table of 29 entries, the structure `checkTouchCasePrograms` reports on this compile; the hit pages' 1986 the
+  // 23 pages and the touch map's table of 29, `checkTouchHitPages`'. Two independent counts of one span: the module
+  // checks claim it from their descriptions, the attribution from what the rebuild put where.
+  assert.deepEqual(a.generated, {
+    'firmware screens': 3099, 'fixed screens': 13139, 'tour and Remote Assistant': 3900, 'status screens': 3872,
+    'clock header': 3558, 'case programs': 497, 'hit pages': 1986, wiring: 4527, 'state tables': 962,
+  });
+  // Of those, the bytes read as values: the case programs' 28 are section 416's figure for this compile; the hit
+  // pages read only the leads of the pages naming them, which lie outside what they build.
+  assert.deepEqual(a.described, {
+    'firmware screens': 401, 'fixed screens': 3967, 'tour and Remote Assistant': 680, 'status screens': 699,
+    'clock header': 337, 'case programs': 28, 'hit pages': 0, wiring: 1243, 'state tables': 0,
+  });
+});
+
+test('todo-compile-one 3.2.2.3: the attribution refuses a case entered in no table, as the activity composer entered them before, at the case programs, and a hit page\'s rectangle moved, at the hit pages',
+     skipUnless(DONOR), () => {
+  // A case appended to the unread copy of the Devices record the way the activity composer appended every case
+  // until 3.2.2.3, its program put in base slot 11 and named by address only: the case programs' table, generated
+  // whole, names one program more, and the rebuild is one entry, three bytes, longer.
+  const donor = parse(require_(DONOR));
+  const roles = touchValueMapRoles(donor);
+  const unread = roles.records.get('devices unread')!;
+  const idleList = caseQueued(donor, valueMaps(donor)![unread]!.entries[0]![1])!.operand;
+  const appended = appendValueMapCase(donor, unread, roles.idle + 1, caseProgram(ENTER_MODE, idleList));
+  assert.throws(() => touchBuiltBytes(appended, []),
+    (error: unknown) => error instanceof TouchBuildError && /^building the Harmony One's case programs: the rebuild is 3 bytes longer than the configuration$/.test(error.message));
+  // Low Battery's hit page, page 0, with its first rectangle one unit further across.
+  const built = donorBuilt();
+  const moved = Uint8Array.from(built.blob);
+  const at = built.blobOffsetOf(touchPages(built)!.records[0]!.areas[0]!.address)!;
+  moved[at] = (moved[at]! + 1) & 0xff;
+  assert.throws(() => touchBuiltBytes(parse(moved), []),
+    (error: unknown) => error instanceof TouchBuildError && /^building the Harmony One's hit pages: the built records differ from the configuration's at byte 9759, in the hit page message and OK, hit page 0$/.test(error.message));
 });
 
 test('todo-compile-one 3.2.2: the attribution refuses the donor lettered in ours, whose screens still sit where Logitech placed them for its letters, at the first firmware screen text the builder places otherwise',

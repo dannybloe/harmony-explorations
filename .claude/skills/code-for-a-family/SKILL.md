@@ -92,6 +92,7 @@ and fails when a module joins the list or a count on it rises. The list is the d
 | a keypad's scan range, the key map over it and mode 0's list; the chain that builds a whole configuration from a setup, with the skins it takes | the family's `modezero.ts`, `assemble.ts` and `skins.ts`; what every family's lists share stays outside: the order a key list is stored in, `modezero.ts`, and the renumbering of base slot 10, `assemble.ts`. A module still outside the family takes a family's name through the family's index, on an import it already has |
 
 | which of a family's builders run over a setup composed onto a Logitech compile, in place of the donor's parts, and what of the finished file they reproduce | `Family.composedBuilders`, the Harmony One's `families/touch/builders.ts` with its attribution `touchBuiltBytes`; `composeSetup` calls the member and names no builder, `todo-compile-one.md` 3.2.2 |
+| which base slot 14 records an activity's cases go in beyond those `activityKeyedMaps` finds, and whether they are entered in base slot 11's table | the family's activity composer asking its own catalogue and table rule, the Harmony One's `touchValueMapRoles` and `withTouchScreenTable` in `families/touch/caseprograms.ts`, `todo-compile-one.md` 3.2.2.3; not a change to the shared finder, which the Harmony 600 family uses too and where no unread copy is measured |
 
 Add a row when a new kind of difference lands.
 

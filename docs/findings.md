@@ -55030,6 +55030,28 @@ moved: `case-program` 341 and `table` 89 to 0, `slot-10-list` down by the six to
 by those 490, and the file 45 bytes longer for the table's 15 entries. Whether the activity composer should give the unread copy its cases too, as Logitech's do, is that
 composer's question.
 
+**Put on the path by `todo-compile-one.md` 3.2.2.3**, which answered the composer's question as Logitech's
+compiler does, so the generated table is the composed one rather than a larger file. The activity composer,
+`buildTouchActivityScreens`, now appends each activity's case under Devices to the unread copy as well, the copy
+found through this section's catalogue, `touchValueMapRoles`, which tells it by its idle case with no activity as with
+several; and after appending its four cases it generates base slot 11's table by this section's rule,
+`withTouchScreenTable`, which enters every case where Logitech's compiler names one. Only entries 0 to 3 are run by
+entry, and they stay the clock header's; the step refuses where the header's programs are not those four entries, or
+where the configuration's table names a program the rule's would not. **So the pin this section predicted moved
+otherwise**: the composed file is 110 bytes longer, not 45, the five unread cases adding ten bytes each and the table
+20 entries, three bytes each; the case programs generate 572 bytes on it (their 25 programs 341, seven lists 82, the
+table of 49 entries 149, 33 bytes described), and the state tables 25 more for the copy's cases. `case-program` went
+from 341 to 10, not 0: the 10 are two of the ten cases the composer writes under Devices, a queued `0x7E` entering
+the idle device list, byte for byte the donor's idle cases of Devices and its copy, which the carried measurement
+matches once the builder's own, built and so left out, no longer take them; they are written, `caseProgram`.
+`slot-10-list` came down by the 60, and `table` went. **Checked against Logitech's activities**:
+`touchactivity.test.ts` builds one activity onto each of the seventeen compiles our letterer takes and finds its
+cases in the four records each of their 63 activities on them has one in, the unread copy's case the Devices
+record's, and the case programs' builder rebuilding the result byte for byte with a table four entries longer. The
+controls bite: with the copy withheld the test fails at the first compile of no activity, the fourteen with
+activities passing since there `activityKeyedMaps` finds the copy by its cases, and with the table step withheld it
+fails at the first compile, the builder's table longer than the composed one.
+
 ### Reviewer 1, blind
 
 Given the question and the corpus and not this section or the module, on the worktree before this change, the blind
@@ -55070,7 +55092,8 @@ beyond; every record one role, sixteen on eighteen and fifteen on one, in four o
 entries with the count per compile, and the 19806 `0x73` naming entries 0 to 3 alone; the activities' cases, 64 and 256; the unread copy named by nothing and equal to
 devices, and help named by one handler set entry alone, 19 each; the all off against the power variables, 1, 2 and 16; the two runs; the blind control's totals, 8720,
 487 and 8233; on the compile of two devices the five failing controls, the three refusals and the one that does not
-bite.
+bite. Since `todo-compile-one.md` 3.2.2.3, `packages/codec/test/touchactivity.test.ts` holds the composed activity's
+cases against Logitech's, and `touchbuilders.test.ts` and `composesetup.test.ts` the builder on the composed path.
 
 ### What would falsify it
 
@@ -55209,7 +55232,11 @@ pickers and the Dutch one for its words, before any page is built.
 The composed test setup on `harvest_one_two_devices`, `composeSetup`, holds 38 hit pages, and the builder rebuilds its
 23 byte for byte, structure 2013 bytes. Its table is **not** in first use order: the composers append the setup's
 pages after the last, `withHitPage`, and two of its 38 pages, 3 and 32, are named by no mode page, which 4.1's and
-6.7's accounting will want.
+6.7's accounting will want. **Both are the activity menu's**, measured when 3.2.2.3 put the builder on the path: page
+3 is the donor's menu page of no row, the two keys below the screen, which its menu named before the composer gave it
+rows, and page 32 the page of one row the composer appended after the first activity and replaced as more came; the
+menu, mode 40 there, names 36 and 34 now. So 4.1, which builds the activity menu, owns them, and until then 6.7's
+census of pieces nothing reaches will count them.
 
 What putting it on the path needs, beside the five and two builders of 3.2.2.1 and 3.2.2.2: a member in
 `families/touch/builders.ts` describing the configuration composed so far and putting the 23 back, at any point after
@@ -55220,6 +55247,11 @@ and this builder reads the same leads, so on one configuration they agree by con
 from nothing they would have to come from one numbering instead: each screen page naming its hit page by shape, which
 the button and key rules give from the page's own drawing for all but the tour and the four bodies, and first use
 over the modes giving every index, which both builders then take.
+
+**Put on the path by `todo-compile-one.md` 3.2.2.3**, as described above, after the case programs: the 23 pages,
+1898 bytes, and the touch map's table over all 38, 115, are built and counted, `touchBuiltBytes` 2013 with none
+described, since the leads the description reads lie outside what it builds. The six pages left carried, 546 bytes,
+are the two setup only pages and the donor's four of its own screens, those 4.2 and 4.6, these 4.1 and 4.2.
 
 ### Reviewer 1, blind
 
@@ -55275,7 +55307,10 @@ areas in front of their headers and their own on 662 of 662 pages, first use ord
 every mode page of the nineteen the button rule, 8430 of 8430, its control at 0, the 57 other cells and the key
 rules both ways; the 103 screen pages naming the 23 and no other, each the same on all sixteen, and the two of the
 census's 25 named by setup screens alone; the blind control with its totals; indices 0 to 2 on all sixteen and the
-other 20 moving; the four failing controls; the European and Dutch compiles' pages and refusals.
+other 20 moving; the four failing controls; the European and Dutch compiles' pages and refusals. Since
+`todo-compile-one.md` 3.2.2.3, `touchbuilders.test.ts` and `composesetup.test.ts` hold the builder on the composed
+path: its 1986 bytes counted on the compile of two devices, its refusal of two pages at one index, and the 2013 and
+the 546 left carried on the composed setup.
 
 ### What would falsify it
 

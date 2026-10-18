@@ -48,6 +48,8 @@
  * USB Connected and the first blank screen, always name pages 0, 1 and 2, and the other 20 take indices that move
  * with the setup's screens between them. This module keeps every index the description read and builds the table
  * from it; it does not renumber, so the composed path can give the screens' builders the same indices.
+ * On the composed path since `todo-compile-one.md` 3.2.2.3, `builders.ts`, where the composers' pages keep the
+ * numbering they were appended in, `withHitPage`, which is not first use, and this builder keeps it.
  *
  * **Where the pages sit**: each built page in place of the configuration's, its areas then its header, so Logitech's
  * two runs stay where they were, the head's three pages after the base slot 13 records and the rest after the base
