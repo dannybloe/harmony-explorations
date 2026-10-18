@@ -126,14 +126,20 @@ export function buttonArea(x: number, y: number, width: number): HitRectangle | 
   return { x: column[0], width: column[1], y: TOP_BUTTON_BOTTOM - LIST_ROW_PITCH * row, height: BUTTON_HEIGHT };
 }
 
-/** A part of a hit page: a button by its picture, a key below the screen, or a rectangle the module states. */
-type HitPart =
+/**
+ * A part of a hit page: a button by its picture, a key below the screen, or a rectangle the module states. Exported
+ * with `whole`, `hitPageAreasOf` and `hitPageRunOf` for the activity menu's pages, `activitymenu.ts`,
+ * `todo-compile-one.md` 4.1, whose rows are whole width buttons and whose keys are the two below the screen, so they
+ * take these rules rather than a copy of them.
+ */
+export type HitPart =
   | { button: readonly [x: number, y: number, width: number] }
   | 'left' | 'right'
   | { stated: readonly [x: number, width: number, y: number, height: number] };
 
 const half = (x: number, y: number): HitPart => ({ button: [x, y, 81] });
-const whole = (y: number): HitPart => ({ button: [6, y, 164] });
+/** A whole width button, its picture 164 pixels wide at x 6, on the button row at `y`. */
+export const whole = (y: number): HitPart => ({ button: [6, y, 164] });
 const stated = (x: number, width: number, y: number, height: number): HitPart => ({ stated: [x, width, y, height] });
 /**
  * The six half width buttons of a picker page, two to a row, in reading order: `fixedscreens.ts`' grid, a second copy
@@ -228,9 +234,14 @@ function rectangleOf(part: HitPart): HitRectangle {
 export function touchHitPageAreas(name: string): { area: HitRectangle; code: number }[] {
   const shape = SHAPES.find((one) => one.name === name);
   if (shape === undefined) throw new ScreenRecordError(`no hit page is called ${name}`);
-  if (shape.parts.length > HIT_CODES.length) throw new ScreenRecordError(`${name} holds more areas than a page has codes`);
+  return hitPageAreasOf(shape.parts, name);
+}
+
+/** The areas of a page of `parts`, each with its code by its place, then the two edge strips; `what` words a refusal. */
+export function hitPageAreasOf(parts: readonly HitPart[], what: string): { area: HitRectangle; code: number }[] {
+  if (parts.length > HIT_CODES.length) throw new ScreenRecordError(`${what} holds more areas than a page has codes`);
   return [
-    ...shape.parts.map((part, k) => ({ area: rectangleOf(part), code: HIT_CODES[k] as number })),
+    ...parts.map((part, k) => ({ area: rectangleOf(part), code: HIT_CODES[k] as number })),
     ...HIT_EDGES.map((area, k) => ({ area, code: EDGE_CODES[k] as number })),
   ];
 }
@@ -312,6 +323,33 @@ export function describeTouchHitPages(
     if (indices.indexOf(index) !== k) throw new ScreenRecordError(`${SHAPES[indices.indexOf(index)]?.name} and ${SHAPES[k]?.name} are both hit page ${index}`);
   });
 
+  const { runs, table } = touchHitPagesPlace(c, layout);
+
+  // The structure: the built pages' bytes, and the table's count and pointers.
+  const structure = new Set<number>();
+  const regions: { from: number; to: number; what: string }[] = [];
+  const claim = (from: number, length: number, what: string): void => {
+    for (let k = 0; k < length; k += 1) structure.add(from + k);
+    regions.push({ from, to: from + length, what });
+  };
+  claim(map.start, 1 + 3 * map.records.length, 'the touch map\'s table');
+  indices.forEach((index, k) => {
+    const page = map.records[index] as (typeof map.records)[number];
+    const first = page.start - TOUCH_AREA_LENGTH * page.areas.length;
+    claim(first, page.start + page.length - first, `the hit page ${SHAPES[k]?.name}, hit page ${index}`);
+  });
+  return { spec: { indices }, place: { runs, table }, described, structure, regions };
+}
+
+/**
+ * Where a configuration's hit pages sit: every page of its table as its run of pieces, the areas and then the header,
+ * and the table itself. `describeTouchHitPages`' half that reads no namer, so the activity menu's builder,
+ * `activitymenu.ts`, `todo-compile-one.md` 4.1, puts its pages back through `withTouchHitPages` the same way. Refuses
+ * a page whose areas do not sit in front of its header as every compile places them.
+ */
+export function touchHitPagesPlace(c: Container, layout: ContainerLayout): TouchHitPagesPlace {
+  const map = touchPages(c);
+  if (map === undefined) throw new ScreenRecordError('the configuration has no touch map');
   // The configuration's pieces, by where they sit: every page's areas, which have to be its header's run.
   const laid = layOutContainer(layout);
   const at = new Map<number, ContainerPiece>();
@@ -332,21 +370,7 @@ export function describeTouchHitPages(
     if (header === undefined) throw new ScreenRecordError(`hit page ${index}'s header is not a piece of its own`);
     return [...areas, header];
   });
-
-  // The structure: the built pages' bytes, and the table's count and pointers.
-  const structure = new Set<number>();
-  const regions: { from: number; to: number; what: string }[] = [];
-  const claim = (from: number, length: number, what: string): void => {
-    for (let k = 0; k < length; k += 1) structure.add(from + k);
-    regions.push({ from, to: from + length, what });
-  };
-  claim(map.start, 1 + 3 * map.records.length, 'the touch map\'s table');
-  indices.forEach((index, k) => {
-    const page = map.records[index] as (typeof map.records)[number];
-    const first = page.start - TOUCH_AREA_LENGTH * page.areas.length;
-    claim(first, page.start + page.length - first, `the hit page ${SHAPES[k]?.name}, hit page ${index}`);
-  });
-  return { spec: { indices }, place: { runs, table }, described, structure, regions };
+  return { runs, table };
 }
 
 // ---------------------------------------------------------------------------------------------------------
@@ -359,7 +383,12 @@ export interface BuiltTouchHitPages {
 
 /** One hit page's run: each area twelve bytes ending in its own address, then the header naming the areas. */
 function hitPageRun(name: string): ContainerPiece[] {
-  const areas = touchHitPageAreas(name).map(({ area, code }) => {
+  return hitPageRunOf(touchHitPageAreas(name));
+}
+
+/** The run of a page holding `wanted`, in order: `hitPageRun`'s for any page the rules give. */
+export function hitPageRunOf(wanted: readonly { area: HitRectangle; code: number }[]): ContainerPiece[] {
+  const areas = wanted.map(({ area, code }) => {
     const bytes = new Writer(TOUCH_AREA_LENGTH).u16(area.x).u16(area.width).u16(area.y).u16(area.height).u8(code).u24(0).bytes;
     const piece: ContainerPiece = { bytes, refs: [], owner: 'slot-17-area' };
     // The back pointer at +9 is the area's own address, which the frame writes once it has placed the piece.

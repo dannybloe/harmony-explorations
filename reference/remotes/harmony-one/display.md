@@ -52,6 +52,11 @@ Generated from `packages/codec`, `packages/usb` and the drawing by `make remote-
 
 * **The activity menu**, "My Activities", three rows a page, with "Options" and "Devices" above the two
   keys below the screen, Logitech's manual and read from configurations, sections 275 and 293.
+* **The activity menu is one layout on every English configuration read**, eighteen, holding none to eight
+  activities: each row the row picture, the activity's icon and its name left aligned; "Options" and "Devices" drawn
+  before the rows on the first page and after them on every later page (read on menus of three pages, none of two),
+  and touched in that order; a row touched
+  clicks, selects the activity's key map and leaves device mode. Section 419.
 * **The device list**, three rows a page, reached from "Devices", with "Activities" below it, Logitech's
   manual and section 275.
 * **A page counter** in three places on a list of several pages: "2 pages" at the top and "1/", "2/" on

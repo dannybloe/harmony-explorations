@@ -55295,7 +55295,8 @@ pages after the last, `withHitPage`, and two of its 38 pages, 3 and 32, are name
 3 is the donor's menu page of no row, the two keys below the screen, which its menu named before the composer gave it
 rows, and page 32 the page of one row the composer appended after the first activity and replaced as more came; the
 menu, mode 40 there, names 36 and 34 now. So 4.1, which builds the activity menu, owns them, and until then 6.7's
-census of pieces nothing reaches will count them.
+census of pieces nothing reaches will count them. **Closed by section 419**: the menu is built whole on the path,
+its first page's hit page rebuilt over page 3 where it is, and the table holds 36 pages, every one named.
 
 What putting it on the path needs, beside the five and two builders of 3.2.2.1 and 3.2.2.2: a member in
 `families/touch/builders.ts` describing the configuration composed so far and putting the 23 back, at any point after
@@ -55601,3 +55602,194 @@ transition calling a list on one of the three variables.
 Arch 12 (Harmony One) alone: the screens, the wiring's catalogue and the builders are the touch family's. The
 Harmony 600, 650 and 700 family was not checked for this. Skin 54 in
 English for the screens; the wiring's transitions on all nineteen compiles.
+
+## 419. The Harmony One's activity menu is one shape on every English compile, built whole from the activities' names and the configuration's numbering, byte for byte on the eighteen; on the composed path a row is added by building the menu again
+
+**Todo `todo-compile-one.md` 4.1 and 3.2.2.7**: the activity menu, its rows, hit rectangles, page counters and page
+turn keys, which the composed path built by starting from the donor's menu and appending rows to it, the copying
+composer of sections 275 and 293.
+
+**Sources checked**: sections 69 (a page list's copy, which nothing reads), 239 (the device mode marker a menu row
+writes), 275 (an activity menu page holds three rows, and a menu of one page swallows the page arrows), 293 (paging
+stated in three places, the counter), 400 (the page keys' lights switched by a screen of several pages), 404 (a row
+opens with the click), 411 to 415 (the template engine, `screentemplate.ts`), 417 (hit pages by rule) and 418; the
+nineteen Harmony One compiles. Logitech's client was searched for the menu: its activity data carries the activities
+and no menu order or screen layout, the menu being compiled by the service (section 58), so the form comes from the
+compiles. The firmware was not read again: what it does with a page's list is section 69's and 275's.
+
+### One shape
+
+**On all eighteen English compiles the menu is one template**, `activityMenuScreen` in
+`families/touch/activitymenu.ts`, whose only input is the activities' names in menu order: three rows to a page,
+the last page short, at least one page. The menus read hold 0, 1, 2, 3, 7 and 8 activities, so pages of none to
+three rows and menus of one page and of three.
+
+| part | the shape |
+|---|---|
+| own key map | on a menu of one page the page arrows' presses swallowed (section 275), on one of several none; entering starts the header timer, calls the page keys' on list where there are several pages (section 400), then the lists switching light 5 and light 7 on; leaving cancels the timer and calls the page keys', light 5's and light 7's off lists, on a menu of one page too; scan 34's press a value map lookup; the header tag a list of three base slot 11 programs, which three and in what order read: entries 0, 3, 2 on twelve compiles, 0, 2, 3 on four and 1, 3, 2 on the three `compiled_protocols` |
+| chrome | section 411's, titled "My Activities", with the page total and "pages" where there are several |
+| a page | the chrome's call; on the first page the key words, then the rows; on every later page the rows, then the key words; on a menu of several pages the page's own number ending at x 18 and "/" at 18, y 18, in the counter's font |
+| a row | the row picture at (6, 38 + 54k), the activity's icon at (11, 39 + 54k), the name at (63, 57 + 54k); the row font selected once a page, before its first name |
+| the key words | "Options" centred on the left half and "Devices" on the right, y 202, each in a font of its own |
+| a page's key list | an entry per area, codes from 48 in draw order: a row's list clicks, selects the activity's base slot 9 entry (`1F FFnn`) and writes 0 to the device mode marker (section 239); the left key's clicks and enters the options, the right key's clicks and enters the idle device list |
+| the copy | its own lists, the same instructions as the page list's, not the same indices |
+| a hit page | one per page shape, which on every menu read is one per page, section 417's rules, the areas in the order the page draws them, so the two keys first on the first page and last on every other, a row being the whole width button its picture is, then the two edges; named by no other screen |
+
+**The number of lists is a closure**, held by the test against each file: `2 * (2 * pages + rows) + 7`, the
+distinct lists the template builds, a list per
+key and row bound on each page, as many again for the copies, and the menu's own seven (entering, leaving, the
+header's, the chrome's and the three off lists): 11 for no activity, 13, 15 and 17 for one to three, 33 for seven
+and 35 for eight.
+
+| compiles | rows | pages | lists | hit pages | described | menu bytes |
+|---|---|---|---|---|---|---|
+| `harvest_one_two_devices`, `harvest_one_families_1` to `_3` | 0 | 1 | 11 | 1 | 60 | 284 |
+| `one_spare_after_sync` | 1 | 1 | 13 | 1 | 90 | 360 |
+| `one_config_unprogrammed` | 1 | 1 | 13 | 1 | 96 | 342 |
+| `calibration_one`, `calibration_favchannels`, `phase7_before`, `phase7_after` | 2 | 1 | 15 | 1 | 116 | 408 |
+| `one_friend_legacy_sync_config` | 3 | 1 | 17 | 1 | 134 | 482 |
+| `one_spare_myharmony`, `one_spare_20260830`, `calibration_favzero` | 7 | 3 | 33 | 3 | 284 | 1086 |
+| `compiled_protocols` and its two siblings | 7 | 3 | 33 | 3 | 348 | 1041 |
+| `one_config` | 8 | 3 | 35 | 3 | 314 | 1141 |
+
+The menu bytes differ between compiles of one size by the activities' names, on the pair of one activity ("Listen
+to Music" against "Watch TV", 7 of their 18 bytes), and by texts drawn by reference on one and inline on the other,
+section 411's rule: a text another program already holds is drawn by reference to that copy, whose glyph codes the
+description reads, 13 such homes on `compiled_protocols` against 2 on `one_spare_myharmony`, whose seven names are
+the same.
+
+### What the description carries and what is generated
+
+**Read**: the activities' names in menu order, off the texts drawn at x 63 inside a row picture's band; and the
+numbering: the mode, every list index, the timer, the light lists, the value map, the three header programs' order,
+the two modes the keys enter, each row's base slot 9 entry and the marker variable, the pictures (the background and
+each row's picture and icon), the five fonts, each page's hit page index and the homes of texts drawn by reference.
+**Generated**: every opcode and constant, the tags and their order, every list's instructions, the words and where
+they go, which text is inline, the records, and the hit pages' areas and codes. **The blind control** overwrites
+every byte of the menus the description does not read, 8716 of 11474 over the eighteen, and every compile comes back
+byte for byte; the description reads 2758 bytes inside the menus and 476 outside, the glyph codes of the homes.
+
+**Our look is not a second builder.** Our menu differs from Logitech's in its pictures, our row box and the activity
+type's icon, and in its fonts, our letters; both are the description's, so one template builds both as composed,
+before the look. On the finished composed file the header's two title selects differ, the look's blending having
+given the second, drawn by reference, another font, so the menu describes there only with the blending undone, as
+every screen set does, `touchBuiltBytes` through `unblendedSelects`; the pixels are the same.
+
+**The controls fail where they should**: two rows' names swapped give a different file; a row dropped is refused for
+14 numbers left over, seven rows being three pages and six two; a row's keypad map moved gives a different file; two
+rows given one list are refused as a list built two ways; the two key words' fonts the other way round are refused by
+the speller, each font holding only its own word's letters; two pages of different shapes named to one hit page are
+refused by the builder.
+
+### Beyond the eighteen
+
+The Dutch compile, `one_friend_asfound_config`, is refused by its words: the template spells Logitech's English
+words, and the Dutch compile's fonts hold the letters of its own, so the speller finds no "A" in its font 3. No
+language branch; other languages are out of scope.
+
+### On the composed path
+
+**Put there by `todo-compile-one.md` 3.2.2.7.** The touch family's `composeActivityRow`, wherever the activity's
+type is given, is now `withTouchActivityMenuRow`: the menu as the configuration holds it is described, its numbering
+read by role, the row added to the description and the whole menu built again. Every number the menu held keeps its
+value; a list of its own it did not hold takes the next free base slot 10 index in the order the menu takes them;
+grown to several pages it calls the wiring's page keys on list and draws its counter in the configuration's paging
+font. A page whose hit page already holds the rules' areas keeps it; one whose hit page no other page names has that
+page rebuilt where it is, keeping its index; any other takes a page of its shape or one appended. The builder then
+runs among the others, after the help screens and before the case programs, and `touchBuiltBytes` attributes it.
+
+**Measured on the composed test setup**, five activities on two pages: the menu is built whole, 810 bytes, 786 of
+them credited to it by `touchBuiltBytes`, its three off lists, 24, going to the firmware screens, which build them
+first; none of the donor's menu is carried. The file is 58 bytes shorter, 1756549 to 1756491: the hit pages 143
+fewer, two pages where the copying composer left four, two of them named by no mode page (pages 3 and 32, section
+417); the lists 105 more, nine lists, the second page's two key lists where the copying composer reused the first
+page's, their copies' and five of the copies' row lists, as Logitech's copies run lists of their own; the programs
+20 fewer: each font, the rows' and the counter's, selected once a page where the copying composer selected it per
+text, 10; the second page's key words drawn by reference to the first page's, 10; the header's total and "pages"
+under one font select, 2; less 2 for the second page's counter, now drawn by reference ("2" to the header's total,
+"/" to the first page's), a byte a text more. The carried bytes come down 105, 1123624 to 1123519: the hit page of
+no row, 61, and the lists 44: the 58 bytes of menu lists that matched the donor's (both key lists of its page and
+their copies, the leaving, header and chrome lists) less two of the activity composer's working screen lists,
+`[75 0FCA, 7E 3D]`, 14 bytes, which now match the two donor lists of that shape the menu's had matched. The table
+holds 36 pages, every one named.
+
+**The menu of two pages is extrapolated.** The rule for a later page rests on 14 later pages of three distinct
+Logitech menus of three pages (the `one_spare_myharmony` trio, the `compiled_protocols` trio and `one_config`); no
+Logitech menu of two pages is in the corpus, so the composed one takes its second page's shape from those.
+
+**What changed on the screen**, rendered before and after: "Options" and "Devices" sit a few pixels right, centred
+by our letters' widths where the copying composer kept the donor's places; and the second page's first row, "Kodi
+kijken", an activity of type Custom, now draws the icon that type gives, where the copying composer had drawn the
+television icon of the first page's top row on the page it added.
+
+**Still open**: the composed hit page table is not in Logitech's first use order, the composers appending their
+pages at the end; renumbering every page would be the hit pages builder's and touch the device pages, 4.2. A menu
+page whose shape another screen's hit page already holds would be given that page on the composed path, where no
+Logitech menu shares one; no screen holds a menu page's shape on the donor, five Logitech compiles or the composed
+setup, so this is untested rather than live. And the
+menu's lists are not numbered as Logitech numbers them: on all nineteen compiles each page's lists are consecutive
+and the copies' lists one run across the menu, where the composed menu keeps the donor's indices for what it held
+and takes the next free ones for the rest. The numbering is the description's, read and not generated, so the bytes
+built are right for the indices given; whether the order matters to anything but a comparison with Logitech's is
+unknown.
+
+### Reviewer 1, blind
+
+Given the questions and the corpus, the menu finder and the generic readers, and not this section, the module or
+its test, the blind reviewer measured all nineteen compiles, 33 pages, and the composed setup. It found the same
+rows and pages per compile; the areas stored as the two keys, the rows and the edges on all 19 first pages and as
+the rows, the keys and the edges on all 14 later pages, the draw order the stored order on all 33, the key words
+drawn before the rows on exactly the 19 first pages; one font select a page, before the first name, on all 33; the
+counter at (13, 18) and "/" at (18, 18), the total and "pages" in the chrome; a menu of one page swallowing the edge
+presses and a menu of several not, its enter list calling three lists where one page's calls two; every page list
+and its copy calling different indices whose lists are identical, 33 of 33; a row's list the click, `1F FFnn` and a
+write of 0 to one variable per compile, a key's the click and an `0x7E`; no other screen naming a menu's hit page,
+19 of 19. Its count of lists, those the own key map, the page lists and the copies name directly, is
+`3 + 2 * (rows + 2 * pages)` on 19 of 19, which is this section's `2 * (2 * pages + rows) + 7` without the chrome's
+list and the three off lists the leaving list calls: the two closures agree from two definitions. On the composed
+setup it found the file 1756491 bytes, 36 hit pages and none unnamed, the menu of five rows on hit pages 3 and 34 in
+Logitech's shape, 21 lists by its count. Where the composed menu differs from Logitech's it reported three things:
+the second page's hit page appended near the end, so the first use order is broken (and a second swap among the
+device pages, 29 named before 21); the key words at x 26 and 113 and the names at y 56, 110 and 164, where Logitech
+draws 22, 110 and 57, 111, 165, which are our letters and the look's centring of a label on our boxes; and the list
+numbering above, which it found consecutive per page and contiguous for the copies on 19 of 19. The first and third
+are recorded as open above; the second is the look's and the same on every composed screen. It also measured the
+Dutch compile's menu, of one row, in the same shape, its words "Opties" and "Apparaten" at x 25 and 102.
+
+### Reviewer 2, the sentences
+
+The audit re-ran the three test files, every figure of the table and the composed file's arithmetic, and confirmed
+the 58 bytes (hit pages 143: nine areas, two headers, two table entries; lists 105; programs 20), the carried 105
+(61 and 44, the donor holding exactly two lists `[75 0FCA, 7E 3D]`), the television icon and that the visible changes
+named are the only pixels that differ, the list closure on all eighteen, the blind totals and the off lists' 24 bytes
+and three variables. It corrected in place before this landed: the programs' 20, first given as the row font once a
+page and the second page's counter drawn by reference, where the counter's font once a page and the header's shared
+select save too and the counter drawn by reference costs two bytes; the 786, which is 810 less the off lists the
+firmware screens are credited with; "the menu's own 58", which were the menu lists that had matched the donor's and
+not the seven of the closure; "476 outside", which are the homes' glyph codes and not the leads too; the bytes of the
+one activity pair, which differ by the names as well as by texts drawn by reference; the header programs, whose set
+differs as well as their order; "one per page" for the hit pages, which the code makes one per page shape; the
+template building our menu, true as composed and not on the finished file, whose second title select the look
+blends; the scope of the later page rule, three distinct menus of three pages, none of two; the module's docstring,
+which named fewer menu sizes and a nineteenth compile in one shape; and a test title that named the draw order its
+body does not read.
+
+### Asserted
+
+`packages/codec/test/touchactivitymenu.test.ts`: the rebuild on the eighteen with every figure in the table above and
+the list closure; the Dutch refusal; the blind control's totals; the failing controls; the hit page rules on the
+eighteen held against the rectangles rather than the codes; and the composed path from a compile of no activity
+through four rows, one page to two, each result rebuilt byte for byte and no hit page left unnamed, with the copying
+composer as the control, which leaves one unnamed. `composesetup.test.ts` holds the attribution, the carried list and
+the file length.
+
+### What would falsify it
+
+An English Harmony One compile whose menu takes another order of key words and rows, another counter, a row list of
+other instructions, a copy calling the page list's own lists, or a hit page shared with another screen.
+
+### Which architectures
+
+Arch 12 (Harmony One) alone: the screens and the builder are the touch family's. The Harmony 600, 650 and 700 lay
+their activity menus out otherwise (section 316) and were not checked for this. Skin 54 and the European skin 59 in
+English; the Dutch compile refused.

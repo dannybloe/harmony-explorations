@@ -25,26 +25,33 @@
  *    unasked where the catalogue states its power discrete, section 415's rule with its exception. The new screens
  *    are numbered from the chain's own by role and take the next free modes and base slot 10 lists, so they add
  *    no base slot 11 entry and change no hit page, and the case entering the attempt screen stays where it is;
- * 7. base slot 11's case programs of the value maps, the lists the toggles and the all off call, and base slot 11's
+ * 7. the activity menu, its screen, its pages' lists and copies, the lists they run and its hit pages, section 419,
+ *    `activitymenu.ts`: on the composed path every row is put on by building the whole menu again,
+ *    `withTouchActivityMenuRow`, so this rebuilds the menu the composers left and nothing of the donor's is carried.
+ *    After the help screens and the screens before them, whose texts it may draw by reference, and before the case
+ *    programs and the hit pages, which read the leads it keeps;
+ * 8. base slot 11's case programs of the value maps, the lists the toggles and the all off call, and base slot 11's
  *    table, section 416, `caseprograms.ts`, after the clock header because the table names its four programs at
  *    their entries, and after the composers because the table names every case, the activities' among them. The
  *    table is generated whole, so it is the composition's only because the activity composer enters every case it
  *    makes as Logitech's compiler does, `withTouchScreenTable`, `todo-compile-one.md` 3.2.2.3; the device composer's
  *    one contribution, the all off's power variables and list, is read back off the composed file;
- * 8. the 23 hit pages the fixed screens name and the touch map's table over every page, section 417, `hitpages.ts`,
+ * 9. the 23 hit pages the fixed screens name and the touch map's table over every page, section 417, `hitpages.ts`,
  *    at any point after the composers, since it reads only the leads of the screen pages naming them and writes
  *    nothing a screen builder reads; each page keeps the index the configuration gave it, so the screens' builders,
- *    which read the same leads, agree with it. The touch map's other pages stay the configuration's: a device page's
- *    six commands with both page keys and the generic help screen's, named only by setup screens (`todo-compile-one.md`
- *    4.2 and 4.6), and the donor's pages of its own screens (4.1, 4.2). The composed table is not in Logitech's first
- *    use order, the composers appending their pages at the end, `withHitPage`, and two of its pages are named by no
- *    mode page, section 417; neither is this builder's to change, since it keeps the numbering it reads;
- * 9. the wiring, section 410, `wiring.ts` over `wiringparts.ts`: the event map, the leading list, the timers, base
+ *    which read the same leads, agree with it. The touch map's other pages are the activity menu's, built above, and
+ *    the configuration's: a device page's six commands with both page keys and the generic help screen's, named only
+ *    by setup screens (`todo-compile-one.md` 4.2 and 4.6), and the donor's pages of its device screens (4.2). The
+ *    composed table is not in Logitech's first use order, the composers appending their pages at the end,
+ *    `withHitPage`, which is not this builder's to change, since it keeps the numbering it reads. Every page is named
+ *    by a mode page since the activity menu is built, section 419: the two named by nothing, section 417, were the
+ *    menu's pages of no row and of one, left behind as the copying composer gave each grown page a new hit page;
+ * 10. the wiring, section 410, `wiring.ts` over `wiringparts.ts`: the event map, the leading list, the timers, base
  *    slot 9's eight entries, the lists they reach, and through it the log area and the parameter block, section 407;
- * 10. the state records and value maps with their tables, section 407, `statetables.ts` with the family's facts,
+ * 11. the state records and value maps with their tables, section 407, `statetables.ts` with the family's facts,
  *    after the clock header, whose two calls are instructions of the clock's state records naming its lists by
  *    index: the clock header keeps the indices its description read, so the records' calls stay right;
- * 11. raw slot 18, two zero bytes generated as the constant every One container holds, and base slot 16's
+ * 12. raw slot 18, two zero bytes generated as the constant every One container holds, and base slot 16's
  *    table generated from the number sender records it names, `smalltables.ts`, `todo-compile-one.md` 6.7: the
  *    one refusing a raw slot 18 holding anything else, the other keeping a donor's records as they are.
  *
@@ -108,6 +115,7 @@ import { buildTouchStatusScreens, describeTouchStatusScreens, withTouchStatusScr
 import { buildTouchClockHeader, describeTouchClockHeader, withTouchClockHeader } from './clockheader.ts';
 import { buildTouchCasePrograms, buildTouchScreenTable, describeTouchCasePrograms, withTouchCasePrograms } from './caseprograms.ts';
 import { buildTouchHitPages, describeTouchHitPages, withTouchHitPages } from './hitpages.ts';
+import { buildTouchActivityMenu, describeTouchActivityMenu, withTouchActivityMenu } from './activitymenu.ts';
 import { buildTouchHelpScreens, describeTouchHelpScreens, withTouchHelpChain, withTouchHelpScreens } from './helpscreens.ts';
 import type { ComposedDeviceNote } from '../family.ts';
 import { buildTouchWiring, describeTouchWiring } from './wiring.ts';
@@ -120,8 +128,8 @@ export class TouchBuildError extends Error {}
 
 /** The parts the builders make, in the order they run and the order `touchBuiltBytes` attributes a byte. */
 export const TOUCH_BUILT = [
-  'firmware screens', 'fixed screens', 'tour and Remote Assistant', 'status screens', 'clock header', 'help screens', 'case programs',
-  'hit pages', 'wiring', 'state tables', 'raw slot 18', 'number senders',
+  'firmware screens', 'fixed screens', 'tour and Remote Assistant', 'status screens', 'clock header', 'help screens',
+  'activity menu', 'case programs', 'hit pages', 'wiring', 'state tables', 'raw slot 18', 'number senders',
 ] as const;
 export type TouchBuilt = (typeof TOUCH_BUILT)[number];
 
@@ -143,8 +151,8 @@ const SMALL_TABLES: Readonly<Record<'raw slot 18' | 'number senders', (c: Contai
  * too, by what it spans and reads, so they chain with the rest.
  */
 const SCREEN_BUILT = [
-  'firmware screens', 'fixed screens', 'tour and Remote Assistant', 'status screens', 'clock header', 'help screens', 'case programs',
-  'hit pages',
+  'firmware screens', 'fixed screens', 'tour and Remote Assistant', 'status screens', 'clock header', 'help screens',
+  'activity menu', 'case programs', 'hit pages',
 ] as const;
 type ScreenBuilt = (typeof SCREEN_BUILT)[number];
 
@@ -192,6 +200,13 @@ const SCREENS: Readonly<Record<ScreenBuilt, (c: Container) => ScreenBuild>> = {
     const layout = takeApart(c);
     const d = describeTouchHelpScreens(c, layout);
     return { ...d, layout: withTouchHelpScreens(layout, buildTouchHelpScreens(c, d.spec), d.place) };
+  },
+  // The menu as the configuration holds it: on the composed path every row was put on by building the menu again,
+  // `withTouchActivityMenuRow`, so this rebuilds the same bytes, and the attribution describes it the same way.
+  'activity menu': (c) => {
+    const layout = takeApart(c);
+    const d = describeTouchActivityMenu(c, layout);
+    return { ...d, layout: withTouchActivityMenu(layout, buildTouchActivityMenu(c, d.spec), d.place) };
   },
   // The table is generated whole from the clock header's entries and the value maps, so on a configuration whose
   // table the rule does not give, the composition before `todo-compile-one.md` 3.2.2.3 among them, the rebuild is

@@ -2833,6 +2833,30 @@ shape) is refused. 75 devices, 332 screens and 2589 lists over the sixteen.
 **Unconfirmed**: why the PS3, whose power is discrete, is not sent unasked. The chain's order, for which no rule is
 known: not the infrared group, the power variable, the All Off list or the Devices list.
 
+**The activity menu, built**, section 419: `families/touch/activitymenu.ts` through the same engine, arch 12 (Harmony
+One) only. "My Activities", one template on the eighteen English compiles whose only input is the activities' names
+in menu order, three rows to a page, at least one page; menus of 0, 1, 2, 3, 7 and 8 activities read. Rebuilt byte
+for byte with its hit pages on the eighteen, the Dutch compile refused by its words. `2 * (2 * pages + rows) + 7`
+lists per menu, 11 to 35; 284 to 1141 bytes per menu, and the description reads 60 to 348 bytes, up to 88 of them
+outside the menu, the glyph codes of texts drawn by reference.
+
+| what | rule, on the eighteen English compiles |
+|---|---|
+| own key map | arrows swallowed on a menu of one page only; tag 6 the timer started, the page keys' on list where there are several pages, lights 5 and 7 on; tag 7 the timer cancelled, the page keys', light 5's and light 7's off lists; scan 34's press a value map; tag `0x2D` a list of three `0x73`, which entries and their order read (0, 3, 2 on twelve compiles, 0, 2, 3 on four, 1, 3, 2 on three) |
+| chrome | section 411's, titled "My Activities", the total and "pages" where there are several |
+| a page | the chrome's call; the first page the key words then the rows, every later page the rows then the key words; the page's number ending at x 18 and "/" at 18, y 18, in the counter's font, where there are several |
+| a row k of a page | its picture at 6, `38 + 54k`, the icon at 11, `39 + 54k`, the name at 63, `57 + 54k`; the row font selected once, before the page's first name |
+| the key words | "Options" centred on the left half, "Devices" on the right, y 202, a font each |
+| a page's key list | codes from 48 in draw order; a row: the click, `1F FFnn` selecting base slot 9 entry nn, a write of 0 to the device mode marker; a key: the click and an `0x7E` to the options or to the idle device list |
+| the copy | lists of its own with the page list's instructions |
+| a hit page | one per page shape (on every menu read one per page) by section 417's rules, the areas in draw order (the keys first on the first page, last on every other), then the edges; no other screen names it |
+| read | the names, off texts at x 63 in a row picture's band; the mode, every list index, the timer, the light lists, the value map, the header programs' order, the two modes, each row's entry and the marker variable, the pictures, five fonts, the hit page indices, the homes |
+
+**On the composed path** a row is added by building the whole menu again, `withTouchActivityMenuRow`: the menu
+described, its numbering read by role, new lists the next free indices, a hit page no other page names rebuilt where
+it is. **Unconfirmed**: what decides which three header programs and in what order; they are read, not generated. The
+shape of a menu of two pages, which no Logitech compile here holds, is taken from the later pages of menus of three.
+
 **Which of the 78 the 3.4 firmware draws by number**: one. A mode becomes current only from an `0x7E` operand, the
 mode stack (a mode that was current) or base slot 4, and base slot 4 is walked only for status code 9, "LCD Module
 Failed", after the licence check passed and while the configuration's verdict stands, so its key 9 (mode 19 in

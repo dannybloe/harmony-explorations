@@ -16,6 +16,7 @@ import { checkTouchWiring } from './wiring.ts';
 import { TOUCH_SENDS } from './sends.ts';
 import { TOUCH_START } from './start.ts';
 import { withTouchBuilders } from './builders.ts';
+import { withTouchActivityMenuRow } from './activitymenu.ts';
 
 export const TOUCH: Family<TouchChoices> = {
   name: 'the Harmony One',
@@ -34,7 +35,11 @@ export const TOUCH: Family<TouchChoices> = {
   activityMenu: touchActivityMenu,
   // The Harmony One writes the marker outside its rows 2 to 9 times, none read as its own: section 329.
   menuMarkerWriter: () => undefined,
-  composeActivityRow: composeTouchActivityRow,
+  // A row in our pictures, which the activity's type gives, the composed path's, is put on by building the whole menu
+  // again, `todo-compile-one.md` 4.1; without a type the copying composer adds one to a menu of Logitech's in its look.
+  composeActivityRow: (c, label, set, menu, marker, options) => (options.type === undefined
+    ? composeTouchActivityRow(c, label, set, menu, marker, options)
+    : withTouchActivityMenuRow(c, label, set, menu, marker, options)),
   composeActivityScreen: composeTouchActivityScreen,
   // The Harmony One's Devices key opens the idle device list, every device, which the built screens point
   // it at; Logitech's opens a list of the activity's own devices, which is not built yet,

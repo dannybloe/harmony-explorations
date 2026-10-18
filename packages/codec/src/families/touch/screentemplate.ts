@@ -78,8 +78,11 @@ export const HALF = SCREEN_WIDTH / 2;
 // ---------------------------------------------------------------------------------------------------------
 // The template's language.
 
-/** What a number the configuration chose is, for the reader of a description; each is read the same way. */
-export type NumberKind = 'list' | 'mode' | 'program' | 'timer' | 'map' | 'variable';
+/**
+ * What a number the configuration chose is, for the reader of a description; each is read the same way. `set` is a
+ * base slot 9 entry, the keypad map an activity menu row selects, `todo-compile-one.md` 4.1.
+ */
+export type NumberKind = 'list' | 'mode' | 'program' | 'timer' | 'map' | 'variable' | 'set';
 
 /**
  * One instruction: a constant; an instruction whose operand (or, for an opcode with a band, whose low byte)

@@ -96,6 +96,7 @@ and fails when a module joins the list or a count on it rises. The list is the d
 | what a builder on the composed path needs of a composed device that the configuration does not say, its setup name and the power type the catalogue states | `ComposedDeviceNote`, which the shared `composeSetup` passes to `Family.composedBuilders`; the Harmony One's power off help asks it, `withTouchHelpChain`, `todo-compile-one.md` 3.2.2.4. Not a test of the remote in the shared setup: it passes the same note to every family |
 
 | a list below a family's screens that several of its screen sets reach, and whose bytes it is | stated in each set's template and built alike by each, the touch family's `screentemplate.ts` steps (`PAGE_KEYS_OFF`, `LIGHT_5_OFF`, `LIGHT_7_OFF`, `ASSISTANT_ON`); the family's attribution credits the first in its build order, `touchBuiltBytes`, `todo-compile-one.md` 6.5; not an owner table outside the family |
+| how a family puts an activity's row on its activity menu, copied or built | `Family.composeActivityRow`: the Harmony One builds its whole menu again from a description, `withTouchActivityMenuRow` in `families/touch/activitymenu.ts`, wherever the activity's type is given, and keeps the copying composer where it is not; not a menu step skipped in the shared activity composer, whose later steps read the row, `todo-compile-one.md` 4.1 |
 
 Add a row when a new kind of difference lands.
 

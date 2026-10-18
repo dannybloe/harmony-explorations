@@ -7,7 +7,6 @@ import type { WithChoices } from '../family.ts';
 import { TOUCH_CHOICES, type TouchChoices } from './choices.ts';
 import { STATE_WRITE_BASE } from '../../actions.ts';
 import { u24 } from '../../bytes.ts';
-import { renderProgram } from '../../render.ts';
 import { Writer } from '../../emit.ts';
 import {
   composeMenuPage, DEVICE_LABEL_DROP, DEVICE_PAGE_SCANS, DEVICE_PAGE_SLOTS, DEVICE_ROW_FONT,
@@ -45,16 +44,10 @@ import { type TouchArea, type TouchPage, touchPages } from '../../tables.ts';
 import { characterMap } from '../../text.ts';
 import { EDGE_CODES, LIST_ROW_PITCH, PANEL_LEFT, touchOwner, touchPageOf } from '../../touch.ts';
 import { buildTouchActivityScreens } from './activityscreen.ts';
-import {
-  ACTIVITY_ROW_FACE, ACTIVITY_ROW_SIZE, activityIconOf, activityPadBox, activityRowBox, activityRowIcon as ourRowIcon,
-  colourBehind,
-} from './activitypictures.ts';
+import { activityPadBox } from './activitypictures.ts';
 import { activityPadBehind } from './activityscreen.ts';
-import { fontOfFace } from './labels.ts';
-import { picturesByContent, withBankPictures } from '../../pictures.ts';
+import { picturesByContent } from '../../pictures.ts';
 import { contentKey } from '../../screencategories.ts';
-
-/** The face every activity menu row's label is drawn in, 64 rows of 64 on the Harmony One's compiles. */
 
 /** The two keys below the screen, which a device page labels "Activities" and "Devices", section 401. */
 const DEVICE_BOTTOM_SCANS: readonly number[] = [43, 44];
@@ -816,38 +809,19 @@ export function composeTouchActivityRow(
   };
   const map = characterMap(current);
   if (map === undefined) throw new ComposeError('the config carries no character map');
-  // A menu with no row has none to copy the font off, and its first row is drawn in the face every
-  // activity row of the compiles is drawn in, One15, 64 of 64.
-  const choices = options.choices ?? TOUCH_CHOICES;
-  const rowFont = startLayout.rows.length === 0 && !full
-    ? fontOfFace(current, ACTIVITY_ROW_FACE)
-    : fontThatSpells(current, map, label, rowFontOf(startProgram));
+  // This composer copies the first row's pictures, so a menu with no row is refused. A row in our pictures, which
+  // the activity's type gives, is not added here: the family builds the whole menu again for it,
+  // `withTouchActivityMenuRow` in `activitymenu.ts`, `todo-compile-one.md` 4.1, where until then this composer drew
+  // our row box and icon and appended the row as it appends one copied.
+  if (startLayout.rows.length === 0) {
+    throw new ComposeError('the activity menu has no row to copy a picture from, and no type to draw one for');
+  }
+  const rowFont = fontThatSpells(current, map, label, rowFontOf(startProgram));
   const fontSet = (fontSets(current) ?? [])[rowFont];
   if (fontSet === undefined) {
     throw new ComposeError('the config does not carry the font the activity menu draws its rows in');
   }
   const labelCodes = codesFor(map, current, fontSet, label, rowFont);
-
-  // Our pictures, decision 24, where the activity's type is given: the row box and the type's icon over it,
-  // `activitypictures.ts`. Without a type the row copies the first row's, as it did before.
-  const ours = options.type === undefined ? undefined : (() => {
-    // The menu's own background behind the three rows, which the row box's corners are smoothed against.
-    const call = startProgram.find((one) => one.opcode === SCREEN_CALL);
-    const raster = call === undefined ? undefined : renderProgram(current, u24(call.operands, 0))?.raster;
-    if (raster === undefined) throw new ComposeError("the activity menu's page calls no chrome to read its background off");
-    const pixels = Array.from({ length: raster.height }, (_, y) => Array.from({ length: raster.width },
-      (__, x) => raster.pixels[y * raster.width + x] as number));
-    const behind = colourBehind(pixels, Array.from({ length: ACTIVITY_ROWS }, (_, k) =>
-      [MENU_ROW1_BG[0], MENU_ROW1_BG[1] + MENU_ROW_PITCH * k, ...ACTIVITY_ROW_SIZE] as const));
-    return {
-      bg: activityRowBox(choices.activityBox, behind),
-      icon: ourRowIcon(choices.activityBox, behind, activityIconOf(choices, options.type), choices.activityIconGrid.row),
-    };
-  })();
-  if (ours === undefined && startLayout.rows.length === 0) {
-    throw new ComposeError('the activity menu has no row to copy a picture from, and no type to draw one for');
-  }
-  if (ours !== undefined) current = withBankPictures(current, [ours.bg, ours.icon]).container;
 
   // 1. The row's action list: beep, select the activity's keypad map, clear the device mode marker.
   // The marker's **variable** is read off the config and only its value is ours, since which
@@ -909,9 +883,8 @@ export function composeTouchActivityRow(
   // above moved them: an address read before an insertion below it is stale by that insertion.
   const firstProgram = recordOf().pages[0]?.program;
   if (firstProgram === undefined) throw new ComposeError('the activity menu has no first page');
-  const held = picturesByContent(current);
-  const bg = ours !== undefined ? held.get(contentKey(ours.bg))?.[0] : pictureDrawnAt(current, firstProgram, ...MENU_ROW1_BG);
-  const icon = ours !== undefined ? held.get(contentKey(ours.icon))?.[0] : options.iconLike === undefined
+  const bg = pictureDrawnAt(current, firstProgram, ...MENU_ROW1_BG);
+  const icon = options.iconLike === undefined
     ? pictureDrawnAt(current, firstProgram,
       MENU_ROW1_BG[0] + MENU_ICON_OFFSET[0], MENU_ROW1_BG[1] + MENU_ICON_OFFSET[1])
     : activityRowIcon(current, options.iconLike);
