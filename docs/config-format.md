@@ -2185,6 +2185,40 @@ the start at entry 0, and the device state's appended at the table's length when
 composed, with the state's flat background and patch beside it. Both are this shape, the patch in the
 state's colour and the mark the same picture. Found again by content in the colour, `stateLookOf`.
 
+**On the Harmony One the table is generated and every case program is built**, section 416,
+`families/touch/caseprograms.ts`. On all nineteen One compiles the table is the clock header's four
+programs at their entries (section 414), then every base slot 14 case's program in record order, each
+record's cases in stored order and its ranges after, no program twice: `4 + ours + 4 × activities`
+entries, 805 over the nineteen. Base slot 14 is one catalogue of sixteen records on every compile,
+fifteen on the everyday One's, which keeps no Remote Assistant; the order of the records differs by
+compile. Every case program is five bytes queuing one instruction (`11 lo hi op 00`), a lone `00`, or a
+frame of four fills.
+
+| role | keyed by | its cases |
+|---|---|---|
+| devices route, working route, select route | the location | at 0, `0x72` on the record named, on the activity counter |
+| idle | the location | at 0, write the idle value into the counter |
+| menu, help | the location | at 0, `0x7E` the activity menu; `0x7E` the power off help screen, help looked up by one handler set's tag `0xA6` alone |
+| all off | the location | at 0, every power variable: a lone `00` with none, the one write `Power := 0` with one, `0x7F` a list of every power variable's write with several (1, 2 and 16 of 19) |
+| devices, devices unread | the counter's values | at the idle value `0x7E` the idle device list; per activity, the activity's; the unread copy is looked up by nothing, 19 of 19 |
+| working | the counter | at the idle value `0x72` menu on the location; per activity `0x7E` its working screen |
+| select | the counter | none at the idle value; per activity `1F FF00 | set` |
+| page | a variable the keys of the device pages, Options and the device lists look up | at 0 `0x7F` `[75 0FCA, 0x72 menu]`, at 1 `0x7F` `[75 0FCA, 0x72 working route]`, both on the location |
+| assistant | the start up variable, section 403 | at 3 `0x7F` `[75 0FCA, v := 1, 07 FFF7]`, at 0 to 2 the same writing 3 |
+| sound | the button sound variable | at 0 `0x7F` `[75 0FCA, 3F F300, v := 1, 07 FFF7]`, at 1 `[75 0FCA, 3F F301, v := 0, 07 FFF7]` |
+| grid, column | a clock picker's variable | a frame per cell, `01 x y w h 07 EC` four times: cell k of the grid at x `4 + 83 (k mod 2)`, y `36 + 54 floor(k / 2)`, 83 wide; the column's three 166 wide; edges left (2, 52), right at x + w (2, 54), top (w, 2), bottom at y + 52 (w, 2) |
+
+The location takes one value, 0. The cases at an activity's value are the activity's: one per activity
+in each of devices, devices unread, working and select, 256 over the nineteen for 64 activities.
+**Laid out** in table order, back to back, in two runs, the frames the second. **Described**: which
+record each role is, the location, the counter, the idle value, the three modes, the six toggle lists'
+indices and two toggle variables, and the all off's power variables in its order and its list; 24 bytes
+read, besides the records' positions found by look, plus one per power variable and two for the all off's list, each number read once. **Generated**: every
+opcode and the queue framing, the case values, the routes' and the page lists' `0x72` operands, the
+clicks and constants, the unread copy's case, the frames, and the table. Rebuilt byte for byte on all
+nineteen. **Unconfirmed**: what `07 FFF7` and the `3F F3vv` instruction do; which cell of a picker the
+framed one is to a person.
+
 **A program's storage ends with a `SCREEN_END` byte even where the last instruction is a jump or a
 switch**, which no execution can reach. Confirmed positionally: in the same place, in front of a
 mode page record, 91 to 294 programs per container end with a terminator that is reached, against

@@ -99,6 +99,9 @@ Generated from `packages/codec`, `packages/usb` and the drawing by `make remote-
   compiles of 2026, on all nineteen compiles read. Where those years hold a leap year the compiles carry a Day
   picker of 29 days and a second Month picker whose February enters it, on all three compiles read that hold one;
   the European compiles' Hour picker counts 24 hours and they have no Time of Day picker. Read from configurations, section 411.
+* **A picker frames one of its buttons**: four lines two pixels wide round a cell of six in two columns, or of three full
+  width, in one colour, the same bytes on every compile read; which button is framed is the value of one state variable both
+  frames are looked up on, and what that is to a person is not checked on a remote. Read from configurations, section 416.
 * **The status screen code 9 draws** says "System Message: 9" as its title over "LCD Module" and "Failed"; the seven
   blank screens the timers enter show one picture each and no text. Read from configurations, section 411.
 * **The configuration's thirty status screens** all look like code 9's: "System Message: N" as the title, N the

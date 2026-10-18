@@ -54644,3 +54644,179 @@ Arch 12 (Harmony One) alone, skin 54 and the European skin 59, in English; the m
 Harmony 600, 650 and 700 show no clock, `CLAUDE.md`; their corner program on variable 17, sections 369 and 374, is
 the One's sending mark at another place. The
 engine's three additions are generic to the template language, used by the One's modules only.
+
+## 416. The Harmony One's value maps are one catalogue of sixteen records, and base slot 11's case programs and its table are built from a description of their numbering, byte for byte on all nineteen compiles
+
+**Todo `todo-compile-one.md` 6.6**: base slot 11's case programs of the value maps, with the lists they call, and the
+table, 490 bytes on the composed test setup and carried out of its donor until now (3.2.1). With the clock header's
+four programs (section 414) and the activities' own cases (`activityscreen.ts`) every base slot 11 entry has a
+builder now.
+
+**Sources checked**: sections 369 (only entries below 256 run, and the table's one reader), 374 and 376 (`caseProgram`,
+the all off's forms with fewer than two devices), 399 and 402 (the working screen record and the activity menu behind
+it), 403 (the start up variable), 405 (the census: 9 case programs fixed and 16 the setup's on the compile of two
+devices), 407 (the value maps rebuilt by the state tables' builder), 411 (the clock pickers), 414 (the header's
+entries); `valueMaps`, `caseQueued`, `compilerCaseOrder`, `activityKeyedMaps`; the nineteen Harmony One compiles.
+Neither the firmware nor Logitech's client was read: the question is what their compiler emits, which the compiles
+answer, and base slot 11's one reader in the firmware is section 369's.
+
+### What a case program is, and the catalogue
+
+Base slot 14 holds value maps: for a state variable, which program runs at each of its values. On the One every
+program a case names is one of three things: five bytes queuing one instruction (`11 lo hi op 00`, `caseProgram`),
+a lone end, or a frame of four filled rectangles. And the records are **one catalogue on every compile**: sixteen,
+fifteen on the everyday One's compile. What differs is their order in base slot 14 (four orders over the nineteen,
+on 11, 4, 3 and 1 compiles), the numbers they name, and how many activities and devices the setup has.
+
+| role | keyed by | its cases |
+|---|---|---|
+| devices route, working route, select route | the location | at 0, look up devices, working or select on the activity counter |
+| idle | the location | at 0, write the idle value into the counter |
+| menu | the location | at 0, enter the activity menu |
+| help | the location | at 0, enter the screen a handler set's tag `0xA6` (scan 38's press) reaches through it, a power off help screen ("Attemping to fix the problem...", the configuration's spelling) |
+| all off | the location | at 0, write 0 into every power variable |
+| devices | the counter | at the idle value, enter the idle device list; at each activity's, that activity's |
+| devices unread | the counter's values, though nothing looks it up | the same cases as devices |
+| working | the counter | at the idle value, look up menu on the location; at each activity's, enter its working screen |
+| select | the counter | none at the idle value; at each activity's, select its binding set |
+| page | a variable the keys of the device pages, Options and the device lists look up | at 0 a list clicking and looking up menu, at 1 one clicking and looking up working route, on the location |
+| assistant | the start up variable | at 3 a list clicking, writing 1 and queuing `07 FFF7`; at 0 to 2 the same writing 3 |
+| sound | the button sound variable | at 0 a list clicking, `3F F300`, writing 1 and queuing `07 FFF7`; at 1 `3F F301` and 0 |
+| grid, column | a clock picker's variable | a frame round each of six cells in two columns, or of three full width |
+
+The location takes one value, 0, on all nineteen. **The everyday One's compile lacks the start up toggle**, as it lacks
+the Remote Assistant (section 412). **The unread copy** holds byte identical cases to devices and no `0x72` anywhere
+names it (action lists, queued screen instructions, mode and page key maps, handler sets, state transitions), 19 of 19; why the compiler
+emits it is not read. **Help** is looked up by one instruction alone on 19 of 19, a handler set's tag `0xA6` entry on the
+location. On the everyday One's compile select route is looked up by nothing too, its two `0x71` lists going with the
+start up toggle it lacks, so select there is reached by nothing. **The all off writes every power variable**, the set equal to the inventory's on 19 of 19: as
+the lone end with no power variable (1 compile, `harvest_one_families_1`, whose two devices have none), as the write
+itself with one (2) and as a call of a list of the writes with several (16), section 376's forms with the empty one
+added; a device with no power variable is left out of it, 11 devices on 9 of the 19. No order derived here fits the
+writes across the sixteen lists, the variables' on 2 and the inventory's on 1, so the order is the description's. **The activities' cases** are one per activity in each of devices, the
+unread copy, working and select: 64 activities and 256 cases over the nineteen, the 64 of section 402.
+
+### The table
+
+**Base slot 11's table is generated whole**: the four clock header programs at their entries, then every case's
+program in base slot 14's record order, each record's cases in their stored order and its ranges after, no program
+named twice, on all nineteen. So it holds `4 + 25 + 4 × activities` entries where a start up toggle is and two fewer
+where none is: 805 over the nineteen. That count is the catalogue's arithmetic, ours plus one per activity in each of
+four records, and all of it is base slot 14's bytes, so it checks the table's rule and is not an independent closure. Only the header's four are run by entry: every `0x73` on the nineteen, 19806 in lists, queued screen
+instructions, mode and page key maps, handler sets and state transitions, names an entry from 0 to 3, so the table's
+other entries name programs the value maps already address. The builder takes the clock header's entries and the state tables' value maps, two other builders'
+descriptions, and applies `compilerCaseOrder`, the order `buildValueMap` stores cases in; it reads nothing of its own.
+
+**Laid out** in table order, back to back, in exactly two runs, the frames the second, on all nineteen; the builder
+puts each program back where the configuration's sat, so the order is measured and not generated here.
+
+### What the description carries and what is generated
+
+The roles are found by look (`touchValueMapRoles`): the frames, the sound and start up toggles and the page toggle by
+their programs and lists; the location from the page toggle's look ups; the counter and working from working route;
+the idle value from working's one case that looks up; the location's other records by what their one case does; the
+unread copy as the other record whose idle case enters the idle device list; help as the location's record left. A
+record taking no role or two refuses.
+
+**Described**, each number read once where it first occurs: which record each role is (positions in base slot 14,
+which the state tables' description carries too); the counter (in devices route), the location (in working's idle
+case), the idle value (in the idle write), the menu, help and device list modes, the page toggle's two lists, the start
+up and sound toggles' variables and two lists each, and the all off's power variables in order with its list where it
+has one. That is 24 bytes read, besides the records' positions, which are found by look, plus one per power variable and two for the all off's list: 28 on the compile of two
+devices, 24 to 40 on the sixteen. **Generated**: every opcode and the queue framing, every case's value, the routes'
+and the page lists' `0x72` operands (record and variable), the clicks, the toggles' constants and the values they
+write, the unread copy's case, the 36 fill instructions of the frames, and the table. The case values are base slot
+14's, built by the state tables' builder; the put back holds each built case to the configuration's value at its place
+and refuses a mismatch, so the values this builder generates are checked too.
+
+**Rebuilt byte for byte on all nineteen**: on each of the sixteen 25 cases, 6 or 7 lists and 486 to 617 bytes; the
+everyday One's compile with 23 cases and 5 lists; the European factory file; and the Dutch compile, since nothing here
+draws a word.
+
+**The blind control**: every one of the 8233 bytes over the sixteen the description does not read, of 8720, overwritten
+in the file it reads and in the layout's own pieces, and the sixteen come back byte for byte; the description reads
+487, all inside what it builds. **The controls fail where they should**, on the compile of two devices: the page
+toggle's lists swapped, devices' record moved, the sound variable moved, the all off's order reversed, or the clock header's
+entries reordered, and the rebuilt file differs, the last being the control that did not bite in section 414 because
+the table was not rebuilt there; the idle value moved, a case built for another value and a list index the
+configuration does not hold are refused by the put back. **One does
+not bite, and says what it is not**: help's and the unread copy's records exchanged rebuild the same file, since no
+byte built here names either record; which record each is matters to base slot 14's table, section 407's.
+
+### On the composed test setup, not on the path
+
+Described off the composed setup and built, the case programs and lists put back with the configuration's own table
+kept give the file back byte for byte, the all off's list included, which the device composer wrote for seven power variables
+(the donor's two, then the five composed, in composition order). **With the generated table the file grows by 45
+bytes**: 15 more entries, the cases the activity composer appended for the five composed activities, three each, which
+it does not enter in the table, where every Logitech compile names each case. It appends to devices, working and
+select and not to the unread copy, since with no activity it takes only the records something looks up on the counter,
+and nothing looks up the copy; Logitech's compiles
+give the copy the activities' cases too. A scratch measurement, not asserted: the composition takes a minute and the
+composed setup's tests are 3.2.2's.
+
+**Putting it on the path** (`families/touch/builders.ts`, `Family.composedBuilders`) needs: the builder after the
+activity composer and the clock header, since the table names the header's entries and every case; the description
+read off the configuration composed so far, as the other builders' are, which is how a composed device's case
+programs get theirs, since the only case that depends on the devices is the all off and its power variables and list
+are `joinPowerOff`'s, read back off the composed file; `touchBuiltBytes` attributing the case programs, lists and
+table, which gives `touchbuilders.test.ts` a part name more; and the composed setup's pins in `composesetup.test.ts`
+moved: `case-program` 341 and `table` 89 to 0, `slot-10-list` down by the six toggle lists' 60, the carried total down
+by those 490, and the file 45 bytes longer for the table's 15 entries. Whether the activity composer should give the unread copy its cases too, as Logitech's do, is that
+composer's question.
+
+### Reviewer 1, blind
+
+Given the question and the corpus and not this section or the module, on the worktree before this change, the blind
+reviewer found the same sixteen roles on eighteen compiles and fifteen on the everyday One's, without the start up
+toggle, in the same four orders (11, 4, 3 and 1 compiles); 805 table entries, the header's four then every case's
+program in record order, exact cases as stored and ranges after, 729 case programs and none named twice; the unread
+copy byte identical to devices and looked up by nothing on 19 of 19; the activities' cases at 25 plus 4 per activity;
+the nine frames the only programs byte identical on all nineteen, 261 bytes; the same constants (`75 0FCA`,
+`07 FFF7`, `3F F300` and `F301`); the toggle lists and their contents; and the layout, the five byte programs in table
+order in one run and the frames in another after their two records. **It found what the draft had wrong**: the all off
+is the lone end on `harvest_one_families_1` because its two devices have no power variable, not because it has no
+device, and a device without one is left out of the list; the draft said "no device" and "seven devices". Corrected
+above, and the test's title with it. It also found select route looked up by nothing on the everyday One's compile,
+added above, and scored the all off's order against seven candidate orders, none fitting more than 3 of 16, which
+agrees that the order is the description's.
+
+### Reviewer 2, the sentences
+
+The second reviewer audited every sentence of the diff against its own measurements and confirmed the three shapes,
+the sixteen and fifteen records, the rebuilds beyond the sixteen, the 24 to 40 bytes read, the lists and bytes per
+compile, 64 and 256, 805, 19806, the two runs, section 405's 9 and 16, the 490 and the composed setup's figures, and
+that the finder finds all sixteen roles on 29 of the lab's 32 other Harmony One containers, the three it refuses not
+user compiles. **It corrected, in place before this landed**: "every device's power variable", where 11 devices on 9
+compiles have none, now every power variable, here, in the module and in the reference; the all off's order, now
+scored per compile; the page toggle's variable, which Options and the device lists look up as well as the device
+pages; the reference's "sixteen lookups", one of which nothing looks up, its "screen sound", the button sound, and the
+all off missing from what differs; the pickers' frames, which both look up one variable and not one per picker; the
+805 called a closure though both ends are base slot 14's; "24 bytes" beside the records' positions, which are not
+bytes read; a pin said to be in `touchbuilders.test.ts`; why the activity composer skips the unread copy; and the help
+screen, measured on all nineteen and now asserted there. It found three test gaps, each closed: the unread copy's scan
+skipped state transitions, help's look up was unasserted, and the case values were checked by nothing, which the put
+back now refuses on a mismatch, with a control. It also scored the finder outside the One, the scope above.
+
+### Asserted
+
+`packages/codec/test/touchcaseprograms.test.ts`: the sixteen rebuilt with their counts per compile, and the three
+beyond; every record one role, sixteen on eighteen and fifteen on one, in four orders; the table's rule and its 805
+entries with the count per compile, and the 19806 `0x73` naming entries 0 to 3 alone; the activities' cases, 64 and 256; the unread copy named by nothing and equal to
+devices, and help named by one handler set entry alone, 19 each; the all off against the power variables, 1, 2 and 16; the two runs; the blind control's totals, 8720,
+487 and 8233; on the compile of two devices the five failing controls, the three refusals and the one that does not
+bite.
+
+### What would falsify it
+
+A Harmony One compile with a value map the finder places in no role or two; a table entry out of the order stated or
+a program it names twice; a case program the description does not reproduce; an all off that leaves a power variable
+out.
+
+### Which architectures
+
+Arch 12 (Harmony One) alone, all nineteen compiles, both skins and the Dutch one; the module is the touch family's.
+The Harmony 600, 650 and 700 are not read here; by the second reviewer the finder refuses all 102 arch 14 containers
+in the lab, and the 6 of arch 8 (Harmony 880, 885) and 6 of arch 9 (Harmony 525), at the page toggle it does not find,
+so this catalogue is not theirs as found; arch 10 (Harmony 890, 895) and 16 (Harmony 300, 350) have no base slot 14
+that reads.
