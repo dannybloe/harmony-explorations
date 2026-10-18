@@ -76,19 +76,21 @@
  * English only; skin 54, the Harmony One the spare reports. Read only towards hardware: the result is pieces.
  */
 import type { Container } from '../../gspm.ts';
-import type { ContainerLayout } from '../../frame.ts';
+import type { ContainerLayout, ContainerPiece } from '../../frame.ts';
 import { layOutContainer, takeApart } from '../../frame.ts';
 import { eventMap, modeRecords } from '../../sections.ts';
 import { SCREEN_CALL, SCREEN_DRAW_IMAGE, SCREEN_TEXT_AT, SCREEN_TEXT_INLINE, screenProgram } from '../../screen.ts';
 import { characterMap, decode } from '../../text.ts';
-import { ScreenRecordError, assertRebuilt, withModeRecords } from '../../screenrecords.ts';
-import { type ValueReader, textGlyphs } from '../../shared/spelling.ts';
+import { ScreenRecordError, assertRebuilt, recordReading, withModeRecords } from '../../screenrecords.ts';
+import { type ValueReader, blobReader, textGlyphs } from '../../shared/spelling.ts';
+import { dropModePages } from '../../shared/dropmodes.ts';
+import type { PieceTarget } from '../../statetables.ts';
 import {
   ARROWS, ASSISTANT_ON, BAND, CLICK, ENTER, type Entry, HALF, HEADER, LIGHT_5_OFF, LIGHT_7_OFF, LIST, MAP, PAGE_KEYS_OFF, type Part,
   SCAN_38, SET, STATE_WRITE, SWALLOW, type Step, TAG_CLOCK, TAG_ENTER, TAG_HEADER, TAG_LEAVE, TIMER_CANCEL, TIMER_START, TITLE_AT,
   type BuiltTemplateScreens, type TemplatePage, type TemplateScreen, type TemplateScreensDescribed, type TemplateScreensSpec, banded,
-  buildTemplateScreens, centred, chrome as templateChrome, describeTemplateScreens, font as fontPart, k, lowByte, owns, picture, press,
-  text, write,
+  buildTemplateScreens, carriedNumbers, centred, chrome as templateChrome, describeTemplateScreens, font as fontPart, k, lowByte, named,
+  owns, picture, press, templatePicturePlaces, text, write,
 } from './screentemplate.ts';
 // Code 9's screen is one of the thirty status screens, whose one shape `statusscreens.ts` states (section 413), so
 // it is built through that rather than written here a second time; the code is section 408's.
@@ -251,20 +253,87 @@ function blank(index: number, kind: 'three' | 'two', extra: boolean): FixedScree
   };
 }
 
-/** The bottom left key's word on Options, by whether an activity runs: "Activities" or "Current Activity". */
-const optionsKey = (page: number): FixedPart => ({
-  op: 'switch',
+/**
+ * The bottom left key's word on Options, by whether an activity runs: "Activities" or "Current Activity", and the
+ * page number after it where Options has several pages.
+ */
+const optionsKey = (page: number | undefined): FixedPart => ({
+  op: 'switch', role: 'options key variable',
   arms: [{ match: 0, parts: leftKey(['Activities', 202]) }, { match: 1, parts: leftKey(['Current', 196], ['Activity', 207]) }],
-  then: pageNumber(page),
+  then: page === undefined ? [] : pageNumber(page),
 });
 const row = (y: number, ...words: readonly (readonly [string, number])[]): FixedPart[] =>
   [picture(6, y), font('wide'), ...words.map(([word, below]) => text(word, { in: [6, 164] }, y + below))];
 
+// Options' numbers by role, so its form without the Remote Assistant's and the Tutorial's rows is numbered from the
+// form a configuration holds, `carriedNumbers`. The reader and the builder ignore a role, so Logitech's Options reads
+// and builds as before.
+const OPTIONS_KEY_MAP = named(MAP, 'options key map');
+const OPTIONS_SOUND_MAP = named(MAP, 'options sound map');
+const OPTIONS_DATE = owns(CLICK, named(ENTER, 'options date'));
+const OPTIONS_SENSITIVITY = owns(CLICK, named(ENTER, 'options sensitivity'));
+const OPTIONS_OWN: readonly Entry[] = [
+  // The wiring's on lists of channel 5, the page keys and channel 5 again, and the off lists in their order.
+  [TAG_ENTER, owns(TIMER_START, LIST, LIST, LIST)], [TAG_LEAVE, owns(TIMER_CANCEL, LIGHT_5_OFF, PAGE_KEYS_OFF, LIGHT_5_OFF)],
+  SCAN_38, [TAG_HEADER, HEADER],
+];
+/** Screen sounds' row, which writes the button sound variable's other value through its value map. */
+const soundRow = (y: number): FixedPart => ({
+  op: 'switch', role: 'options sound variable',
+  arms: [{ match: 0, parts: row(y, ['Turn Screen Sounds Off', 19]) }, { match: 1, parts: row(y, ['Turn Screen Sounds On', 19]) }],
+  then: [],
+});
+
+/**
+ * Options. **As Logitech's compiles hold it**, measured on the sixteen English compiles of skin 54, two pages:
+ * "Turn Remote Assistant On" or "Off", "Tutorial" and "Date and Time", then "Turn Screen Sounds Off" or "On" and
+ * "Screen Sensitivity". **Without the welcome tour and the Remote Assistant**, `todo-compile-one.md` 4.10, our form,
+ * the first two rows are gone and the three left are one page in the same order: so its own key map swallows the page
+ * arrows, as every one page screen's does (section 275), and it draws no page count and no page number. Which form a
+ * configuration holds is its Options' page count, `optionsForm`.
+ */
+function optionsScreen(tour: boolean): FixedScreen {
+  if (!tour) {
+    const sounds = soundRow(92);
+    return {
+      name: 'Options',
+      own: [...ARROWS, ...OPTIONS_OWN],
+      chrome: chrome('Options', 1),
+      pages: [{
+        list: [[press(48), OPTIONS_DATE], [press(49), OPTIONS_SOUND_MAP], [press(50), OPTIONS_SENSITIVITY], [press(51), OPTIONS_KEY_MAP]],
+        parts: [{ op: 'chrome' }, ...row(38, ['Date and Time', 19]),
+          { ...sounds, then: [...row(146, ['Screen Sensitivity', 19]), optionsKey(undefined)] } as FixedPart],
+      }],
+    };
+  }
+  return {
+    name: 'Options',
+    own: OPTIONS_OWN,
+    chrome: chrome('Options', 2),
+    pages: [
+      {
+        list: [[press(48), named(MAP, 'options assistant map')], [press(49), owns(CLICK, ASSISTANT_ON)], [press(50), OPTIONS_DATE],
+          [press(51), OPTIONS_KEY_MAP]],
+        parts: [{ op: 'chrome' }, {
+          op: 'switch', role: 'options assistant variable',
+          arms: [{ match: 3, parts: row(38, ['Turn Remote Assistant', 13], ['On', 25]) },
+            { match: [0, 2], parts: row(38, ['Turn Remote Assistant', 13], ['Off', 25]) }],
+          then: [...row(92, ['Tutorial', 19]), picture(6, 146), text('Date and Time', { in: [6, 164] }, 165), optionsKey(1)],
+        }],
+      },
+      {
+        list: [[press(48), OPTIONS_SOUND_MAP], [press(49), OPTIONS_SENSITIVITY], [press(50), OPTIONS_KEY_MAP]],
+        parts: [{ op: 'chrome' }, { ...soundRow(38), then: [...row(92, ['Screen Sensitivity', 19]), optionsKey(2)] } as FixedPart],
+      },
+    ],
+  };
+}
+
 /**
  * The twenty three screens, in the order a description lists them; `year` is the build year the Year picker
- * is centred on.
+ * is centred on, and `tour` whether Options holds the Remote Assistant's and the Tutorial's rows.
  */
-function fixedScreens(year: number): FixedScreen[] {
+function fixedScreens(year: number, tour = true): FixedScreen[] {
   assertFixedScreensYear(year);
   const confirmation = (level: string): FixedScreen => ({
     name: `Sensitivity ${level}`,
@@ -286,32 +355,7 @@ function fixedScreens(year: number): FixedScreen[] {
   const yearHead = [k(BAND, 0xef00 | FIELD.year), k(0x79, yearOffset)];
   return [
     { ...statusScreen<FixedScreenFont>(DISPLAY_TEST_CODE, { title: 'title', body: 'body' }), name: 'LCD Module Failed' },
-    {
-      name: 'Options',
-      // The wiring's on lists of channel 5, the page keys and channel 5 again, and the off lists in their order.
-      own: [[TAG_ENTER, owns(TIMER_START, LIST, LIST, LIST)], [TAG_LEAVE, owns(TIMER_CANCEL, LIGHT_5_OFF, PAGE_KEYS_OFF, LIGHT_5_OFF)],
-        SCAN_38, [TAG_HEADER, HEADER]],
-      chrome: chrome('Options', 2),
-      pages: [
-        {
-          list: [[press(48), MAP], [press(49), owns(CLICK, ASSISTANT_ON)], [press(50), owns(CLICK, ENTER)], [press(51), MAP]],
-          parts: [{ op: 'chrome' }, {
-            op: 'switch',
-            arms: [{ match: 3, parts: row(38, ['Turn Remote Assistant', 13], ['On', 25]) },
-              { match: [0, 2], parts: row(38, ['Turn Remote Assistant', 13], ['Off', 25]) }],
-            then: [...row(92, ['Tutorial', 19]), picture(6, 146), text('Date and Time', { in: [6, 164] }, 165), optionsKey(1)],
-          }],
-        },
-        {
-          list: [[press(48), MAP], [press(49), owns(CLICK, ENTER)], [press(50), MAP]],
-          parts: [{ op: 'chrome' }, {
-            op: 'switch',
-            arms: [{ match: 0, parts: row(38, ['Turn Screen Sounds Off', 19]) }, { match: 1, parts: row(38, ['Turn Screen Sounds On', 19]) }],
-            then: [...row(92, ['Screen Sensitivity', 19]), optionsKey(2)],
-          }],
-        },
-      ],
-    },
+    optionsScreen(tour),
     picker('Screen Sensitivity', 'Screen Sensitivity',
       [...ARROWS, [TAG_ENTER, owns(TIMER_START, LIST)], [TAG_LEAVE, owns(TIMER_CANCEL, ...LEAVE_LIGHTS)], SCAN_38, [TAG_HEADER, HEADER]],
       SENSITIVITY.map(([word, writes]) => ({ word, step: owns(CLICK, k(0x3f, writes), ENTER) })), sensitivityButtons, 'item'),
@@ -429,6 +473,11 @@ export function touchFixedScreenModes(c: Container): number[] {
 export interface TouchFixedScreensSpec extends TemplateScreensSpec<FixedScreenFont> {
   /** The build year, which the Year picker offers with the year either side. */
   year: number;
+  /**
+   * Whether Options holds the Remote Assistant's and the Tutorial's rows, on two pages as Logitech's compiles do,
+   * or is the one page our configurations hold without the tour and the assistant, `todo-compile-one.md` 4.10.
+   */
+  tour: boolean;
 }
 
 export interface TouchFixedScreensDescribed extends Omit<TemplateScreensDescribed<FixedScreenFont>, 'spec'> {
@@ -447,8 +496,23 @@ export function describeTouchFixedScreens(
 ): TouchFixedScreensDescribed {
   const year = Number(c.builtAt?.slice(0, 4));
   if (!Number.isInteger(year)) throw new ScreenRecordError('the configuration states no build year');
-  const d = describeTemplateScreens(c, layout, fixedScreens(year), touchFixedScreenModes(c), FIXED_SCREEN_FONTS, read);
-  return { ...d, spec: { ...d.spec, year } };
+  // The year first, as before Options' form was read: a year these screens are not built for is the first
+  // refusal, ahead of what the screens look like.
+  assertFixedScreensYear(year);
+  const modes = touchFixedScreenModes(c);
+  const tour = optionsForm(c, modes);
+  const d = describeTemplateScreens(c, layout, fixedScreens(year, tour), modes, FIXED_SCREEN_FONTS, read);
+  return { ...d, spec: { ...d.spec, year, tour } };
+}
+
+/**
+ * Which Options a configuration holds, by its page count: two pages with the Remote Assistant's and the Tutorial's
+ * rows, as Logitech's compiles hold it, or one without them, ours, `optionsScreen`. Refuses any other count.
+ */
+function optionsForm(c: Container, modes: readonly number[]): boolean {
+  const pages = (modeRecords(c) ?? [])[modes[TOUCH_FIXED_SCREENS.indexOf('Options')] as number]?.pages.length;
+  if (pages !== 1 && pages !== 2) throw new ScreenRecordError(`Options has ${pages} pages, where it has two with the tour's rows and one without`);
+  return pages === 2;
 }
 
 // ---------------------------------------------------------------------------------------------------------
@@ -462,7 +526,7 @@ export type BuiltTouchFixedScreens = BuiltTemplateScreens;
  * text holds it inline. Everything but the description's numbers is generated.
  */
 export function buildTouchFixedScreens(c: Container, spec: TouchFixedScreensSpec): BuiltTouchFixedScreens {
-  return buildTemplateScreens(c, spec, fixedScreens(spec.year));
+  return buildTemplateScreens(c, spec, fixedScreens(spec.year, spec.tour));
 }
 
 /** A layout with these screens swapped for the built ones, where the configuration's sat. */
@@ -480,4 +544,76 @@ export function checkTouchFixedScreens(c: Container, read?: ValueReader): { scre
   const out = layOutContainer(withTouchFixedScreens(layout, built, described.place)).bytes;
   assertRebuilt(out, c, described.regions);
   return { screens: built.screens.length, lists: built.lists.size, described: described.described.size, structure: described.structure.size };
+}
+
+// ---------------------------------------------------------------------------------------------------------
+// Options without the tour's rows.
+
+/**
+ * The configuration with Options in its form without the Remote Assistant's and the Tutorial's rows, our form,
+ * `todo-compile-one.md` 4.10, findings section 421: one page of "Date and Time", the screen sounds' row and "Screen
+ * Sensitivity", numbered from the Options the configuration holds. A configuration holding that form already is
+ * returned as it is.
+ *
+ * 1. **Numbered from Logitech's form**, `carriedNumbers`: every number of the one page is the one its role, or the
+ *    same step, holds on the two, so the rows run the lists, enter the modes and look up the value maps they did, and
+ *    the hit page is the first page's, whose three whole width buttons and left key are the one page's too.
+ * 2. **The second page taken out**, `dropModePages`: its record, list, copy and the programs only it reaches. The
+ *    lists the dropped rows ran are left in base slot 10 for the caller to drop, the Tutorial's leading on to the
+ *    tour's "Welcome!" among them.
+ * 3. **The one page built and put in place of the first**, read with a template of that page alone; its pictures
+ *    are the chrome's and the row button's that page draws.
+ *
+ * Refused where Options does not read as Logitech's form, where its row pictures are not one button, and wherever
+ * a step's own check refuses.
+ */
+export function withTouchOptionsWithoutTour(c: Container): Container {
+  const d = describeTouchFixedScreens(c, takeApart(c));
+  if (!d.spec.tour) return c;
+  const s = TOUCH_FIXED_SCREENS.indexOf('Options');
+  const held = d.spec.screens[s] as TouchFixedScreensSpec['screens'][number];
+  const from = optionsScreen(true);
+  const to = optionsScreen(false);
+  const numbers = carriedNumbers(from, held.numbers, to);
+
+  const one = dropModePages(c, held.mode, 1);
+  const layout = takeApart(one);
+  const firstPage: FixedScreen = { ...from, pages: [from.pages[0] as FixedPage] };
+  const d1 = describeTemplateScreens(one, layout, [firstPage], [held.mode], ['title', 'count', 'wide', 'key'] as FixedScreenFont[]);
+  const read = d1.spec.screens[0] as TouchFixedScreensSpec['screens'][number];
+  // Each picture by where it is drawn: the screen's and a row button per row, which differ by row on every compile
+  // read (the Year picker draws the same three).
+  const byPlace = new Map<string, PieceTarget>();
+  templatePicturePlaces(firstPage).forEach(({ x, y }, k) => {
+    const target = read.pictures[k] as PieceTarget;
+    const was = byPlace.get(`${x},${y}`);
+    if (was !== undefined && (was.to !== target.to || was.offset !== target.offset)) {
+      throw new ScreenRecordError(`Options draws two pictures at ${x}, ${y}`);
+    }
+    byPlace.set(`${x},${y}`, target);
+  });
+  const pictures = templatePicturePlaces(to).map(({ x, y }) => {
+    const target = byPlace.get(`${x},${y}`);
+    if (target === undefined) throw new ScreenRecordError(`Options draws no picture at ${x}, ${y} to carry`);
+    return target;
+  });
+  const built = buildTemplateScreens(one, {
+    fonts: d.spec.fonts, homes: d1.spec.homes,
+    screens: [{ mode: held.mode, leads: [held.leads[0] as number], pictures, numbers }],
+  }, [to]);
+  // The lists the one page runs: the first page's where it ran them, and the second page's read where they sit.
+  const reading = recordReading(one, layout, blobReader(one));
+  const lists = new Map<number, ContainerPiece>();
+  const lengths = new Map(d1.place.lengths);
+  for (const index of built.lists.keys()) {
+    const had = d1.place.lists.get(index);
+    if (had !== undefined) {
+      lists.set(index, had);
+      continue;
+    }
+    const { piece } = reading.list(index, 'Options');
+    lists.set(index, piece);
+    lengths.set(piece, reading.lengths.get(piece) as number);
+  }
+  return layOutContainer(withModeRecords(layout, built, { screens: d1.place.screens, lists, lengths, inline: d1.place.inline })).container;
 }

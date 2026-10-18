@@ -58,7 +58,7 @@
  * English only, skin 54; the Harmony One alone, the touch family's: the Harmony 600, 650 and 700 have no touch map
  * (base slot 17 names their picture bank, section 62). Read only towards hardware: the result is pieces.
  */
-import type { Container } from '../../gspm.ts';
+import { type Container, parse } from '../../gspm.ts';
 import type { ContainerLayout, ContainerPiece, PieceRef } from '../../frame.ts';
 import { layOutContainer, takeApart } from '../../frame.ts';
 import { modeRecords } from '../../sections.ts';
@@ -67,6 +67,7 @@ import { EDGE_CODES, LIST_ROW_PITCH, SCREEN_ROW_PITCH } from '../../touch.ts';
 import { ScreenRecordError, assertRebuilt } from '../../screenrecords.ts';
 import { type ValueReader, blobReader } from '../../shared/spelling.ts';
 import { Writer } from '../../emit.ts';
+import { withoutRanges } from '../../shared/dropmodes.ts';
 import { TOUCH_FIRMWARE_SCREENS } from './firmwarescreens.ts';
 import { TOUCH_FIXED_SCREENS, touchFixedScreenModes } from './fixedscreens.ts';
 import { TOUCH_ASSISTANT_SCREENS, TOUCH_TOUR_SCREENS, touchTourScreenModes } from './tourscreens.ts';
@@ -155,6 +156,15 @@ interface HitShape {
   namer: { screen: string; page: number };
   parts: readonly HitPart[];
 }
+
+/**
+ * The hit pages a configuration of ours holds only where it keeps the welcome tour and the Remote Assistant,
+ * `todo-compile-one.md` 4.10: the tour's ten, the assistant's question, and Options' second page's, which Options
+ * without the tour's rows does not have. Every compile of Logitech's holds all of them; a configuration whose namer of
+ * one of these is absent describes and builds the rest.
+ */
+const isTourShape = (shape: HitShape): boolean =>
+  shape.namer.screen.startsWith('Tour ') || shape.namer.screen.startsWith('Assistant ') || shape.name === 'two rows';
 
 /**
  * The 23 hit pages the fixed screens name, in the order the sixteen's tables hold them. Each is named by the page
@@ -256,8 +266,13 @@ export function touchHitPageStated(name: string): number {
 
 /** What a composer supplies: the index each hit page takes in the map's table. */
 export interface TouchHitPagesSpec {
-  /** Per hit page, in `TOUCH_HIT_PAGES`' order, its index in the table. */
+  /** Per hit page, in `names`' order, its index in the table. */
   indices: number[];
+  /**
+   * The hit pages described, in `TOUCH_HIT_PAGES`' order: all 23, or without the tour's where the configuration
+   * leaves the tour and the assistant out, `isTourShape`. Absent, all 23.
+   */
+  names?: readonly string[];
 }
 
 /** Where the configuration's pages sat: per table index, its run of pieces, the areas and then the header. */
@@ -311,7 +326,13 @@ export function describeTouchHitPages(
   // The index each hit page takes: the lead byte of its namer's page record, the record's first byte.
   const records = modeRecords(c) ?? [];
   const modes = namerModes(c, layout);
-  const indices = SHAPES.map((shape) => {
+  // A tour shape whose namer page the configuration does not hold is left out: ours without the tour.
+  const shapes = SHAPES.filter((shape) => {
+    if (!isTourShape(shape)) return true;
+    const mode = modes.get(shape.namer.screen);
+    return mode !== undefined && records[mode]?.pages[shape.namer.page] !== undefined;
+  });
+  const indices = shapes.map((shape) => {
     const mode = modes.get(shape.namer.screen);
     if (mode === undefined) throw new ScreenRecordError(`the configuration holds no ${shape.namer.screen}, which names ${shape.name}`);
     const page = records[mode]?.pages[shape.namer.page];
@@ -319,8 +340,8 @@ export function describeTouchHitPages(
     return value(c.blobOffsetOf(page.address) as number);
   });
   indices.forEach((index, k) => {
-    if (index >= map.records.length) throw new ScreenRecordError(`${SHAPES[k]?.name} is hit page ${index} of a table of ${map.records.length}`);
-    if (indices.indexOf(index) !== k) throw new ScreenRecordError(`${SHAPES[indices.indexOf(index)]?.name} and ${SHAPES[k]?.name} are both hit page ${index}`);
+    if (index >= map.records.length) throw new ScreenRecordError(`${shapes[k]?.name} is hit page ${index} of a table of ${map.records.length}`);
+    if (indices.indexOf(index) !== k) throw new ScreenRecordError(`${shapes[indices.indexOf(index)]?.name} and ${shapes[k]?.name} are both hit page ${index}`);
   });
 
   const { runs, table } = touchHitPagesPlace(c, layout);
@@ -336,9 +357,10 @@ export function describeTouchHitPages(
   indices.forEach((index, k) => {
     const page = map.records[index] as (typeof map.records)[number];
     const first = page.start - TOUCH_AREA_LENGTH * page.areas.length;
-    claim(first, page.start + page.length - first, `the hit page ${SHAPES[k]?.name}, hit page ${index}`);
+    claim(first, page.start + page.length - first, `the hit page ${shapes[k]?.name}, hit page ${index}`);
   });
-  return { spec: { indices }, place: { runs, table }, described, structure, regions };
+  const names = shapes.map((shape) => shape.name);
+  return { spec: { indices, ...(names.length === SHAPES.length ? {} : { names }) }, place: { runs, table }, described, structure, regions };
 }
 
 /**
@@ -405,9 +427,16 @@ export function hitPageRunOf(wanted: readonly { area: HitRectangle; code: number
 
 /** Build the 23 hit pages at the indices the spec gives. Refuses two at one index. */
 export function buildTouchHitPages(spec: TouchHitPagesSpec): BuiltTouchHitPages {
-  if (spec.indices.length !== SHAPES.length) throw new ScreenRecordError(`${spec.indices.length} indices for ${SHAPES.length} hit pages`);
+  const shapes = spec.names === undefined ? SHAPES : spec.names.map((name) => {
+    const shape = SHAPES.find((one) => one.name === name);
+    if (shape === undefined) throw new ScreenRecordError(`no hit page is called ${name}`);
+    return shape;
+  });
+  const required = SHAPES.filter((shape) => !isTourShape(shape) && !shapes.includes(shape));
+  if (required.length > 0) throw new ScreenRecordError(`the description leaves out ${required.map((one) => one.name).join(', ')}, which every configuration holds`);
+  if (spec.indices.length !== shapes.length) throw new ScreenRecordError(`${spec.indices.length} indices for ${shapes.length} hit pages`);
   const runs = new Map<number, ContainerPiece[]>();
-  SHAPES.forEach((shape, k) => {
+  shapes.forEach((shape, k) => {
     const index = spec.indices[k] as number;
     if (runs.has(index)) throw new ScreenRecordError(`hit page ${index} is built twice`);
     runs.set(index, hitPageRun(shape.name));
@@ -463,18 +492,72 @@ export function withTouchHitPages(layout: ContainerLayout, built: BuiltTouchHitP
 }
 
 /**
- * The configuration's 23 hit pages against the ones built from its own description: described, built, put back,
+ * The configuration's 23 hit pages, or the 11 of ours without the tour, against the ones built from its own description: described, built, put back,
  * laid out and compared byte for byte, refused with the first difference and the page it falls in.
  */
 export function checkTouchHitPages(c: Container, read?: ValueReader): { pages: number; areas: number; stated: number; described: number; structure: number } {
   const layout = takeApart(c);
   const d = describeTouchHitPages(c, layout, read);
   assertRebuilt(layOutContainer(withTouchHitPages(layout, buildTouchHitPages(d.spec), d.place)).bytes, c, d.regions);
+  const shapes = SHAPES.filter((one) => d.spec.names === undefined || d.spec.names.includes(one.name));
   return {
-    pages: SHAPES.length,
-    areas: SHAPES.reduce((sum, one) => sum + one.parts.length + HIT_EDGES.length, 0),
-    stated: SHAPES.reduce((sum, one) => sum + touchHitPageStated(one.name), 0),
+    pages: shapes.length,
+    areas: shapes.reduce((sum, one) => sum + one.parts.length + HIT_EDGES.length, 0),
+    stated: shapes.reduce((sum, one) => sum + touchHitPageStated(one.name), 0),
     described: d.described.size,
     structure: d.structure.size,
   };
+}
+
+// ---------------------------------------------------------------------------------------------------------
+// Taking hit pages out.
+
+/** The hit pages the configuration's screen pages name, by the lead byte of each page record. */
+export function namedHitPages(c: Container): Set<number> {
+  return new Set((modeRecords(c) ?? []).flatMap((record) => record.pages.map((page) => page.lead as number)));
+}
+
+/**
+ * The configuration without the hit pages `drop` names, `todo-compile-one.md` 4.10, findings section 421: each page's
+ * areas and header taken out, the touch map's table without its entry and its count restated, and every page
+ * record's lead renumbered past the pages dropped below it. Nothing but the table names a hit page's pieces and
+ * nothing but a lead names its index, section 417, so those are the places a drop moves. Refuses a page some screen
+ * page still names, and an index the table does not hold.
+ */
+export function withoutHitPages(c: Container, drop: Iterable<number>): Container {
+  const map = touchPages(c);
+  if (map === undefined) throw new ScreenRecordError('the configuration has no touch map');
+  const dropping = [...new Set(drop)].sort((a, b) => a - b);
+  if (dropping.length === 0) return c;
+  const named = namedHitPages(c);
+  for (const index of dropping) {
+    if (!Number.isInteger(index) || index < 0 || index >= map.records.length) throw new ScreenRecordError(`there is no hit page ${index} to drop`);
+    if (named.has(index)) throw new ScreenRecordError(`hit page ${index} is named by a screen page, so it cannot be dropped`);
+  }
+  const below = (index: number): number => dropping.filter((one) => one < index).length;
+  const bytes = c.blob.slice();
+  for (const record of modeRecords(c) ?? []) {
+    for (const page of record.pages) {
+      const at = c.blobOffsetOf(page.address) as number;
+      bytes[at] = (bytes[at] as number) - below(bytes[at] as number);
+    }
+  }
+  const cuts = dropping.flatMap((index) => {
+    const page = map.records[index] as (typeof map.records)[number];
+    return [
+      { from: page.start - TOUCH_AREA_LENGTH * page.areas.length, to: page.start + page.length },
+      { from: map.start + 1 + 3 * index, to: map.start + 4 + 3 * index },
+    ];
+  });
+  const cut = withoutRanges(parse(bytes), cuts);
+  const head = cut.at(map.start);
+  if (head === undefined || head.offset !== 0) throw new ScreenRecordError('the touch map\'s table did not survive the cut');
+  head.piece.bytes[0] = map.records.length - dropping.length;
+  const out = layOutContainer(cut.layout).container;
+  const after = touchPages(out);
+  if (after?.records.length !== map.records.length - dropping.length) throw new ScreenRecordError('the touch map does not read after the drop');
+  const leads = (modeRecords(out) ?? []).flatMap((record) => record.pages.map((page) => page.lead as number));
+  const was = (modeRecords(c) ?? []).flatMap((record) => record.pages.map((page) => (page.lead as number) - below(page.lead as number)));
+  if (leads.join() !== was.join()) throw new ScreenRecordError('a screen page names another hit page after the drop');
+  return out;
 }

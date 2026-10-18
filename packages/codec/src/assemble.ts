@@ -10,8 +10,13 @@
  * the number senders and base slot 8's leading list, and name no remote.
  *
  * **Scope, decision 16**: the holders were enumerated and the renumbering measured on arch 14 compiles,
- * `h650_test_config_clean` among them, sections 360 and 362, and the Harmony 600, 650 and 700's assembly is
- * the one caller; whether a Harmony One configuration names a list from anywhere else is not checked.
+ * `h650_test_config_clean` among them, sections 360 and 362, and the Harmony 600, 650 and 700's assembly was
+ * the first caller. **On the Harmony One since `todo-compile-one.md` 4.10**, section 421: base slots 10 and 8 read
+ * through `archSlot`, the census finds 102324 sites over the nineteen One compiles and every list nothing reaches
+ * drops out of each with every check passing, and the touch family's `withoutTourAndAssistant` is the second
+ * caller. On the test setup's donor the 27 three byte runs `lo hi 7F` the walk does not hold are coincidences, in
+ * tables, infrared, glyphs or across instructions, and a drop short of any holder but the leading list is refused;
+ * the leading list names only the start list, below every drop.
  *
  * **The assembly itself moved into its family** with `todo-compile-one.md` 3.3.3.2,
  * `families/four-slot/assemble.ts`: `assembleSetup`, its checks and `attributeBytes` are the Harmony 600,
@@ -19,7 +24,7 @@
  */
 import { AssemblyError } from './shared/setup.ts';
 import { u16, u8 } from './bytes.ts';
-import { BINDING_SLOT, INSTRUCTION_LENGTH, parse, type Container } from './gspm.ts';
+import { ACTION_LIST_TABLE_SLOT, BINDING_SLOT, GspmError, INSTRUCTION_LENGTH, archSlot, parse, type Container } from './gspm.ts';
 import {
   ACTION_LIST_INDEX_OPCODE, handlerSets, modePages, modeRecords, pageListCopies, stateRecords, taggedListExtent,
 } from './sections.ts';
@@ -63,17 +68,57 @@ export interface ListCallSite {
  * An instruction reached twice, a list two tables share, is one site.
  */
 export function listCallSites(c: Container): ListCallSite[] {
-  const sites = new Map<number, ListCallSite>();
+  return instructionSites(c, ACTION_LIST_INDEX_OPCODE).map(({ operand, ...rest }) => ({ ...rest, list: operand }));
+}
+
+/** One instruction of a given opcode wherever the configuration holds one: `ListCallSite` for any opcode. */
+export interface InstructionSite {
+  /** Blob offset of the instruction's operand, the `u16` before its opcode byte. */
+  at: number;
+  operand: number;
+  holder: ListSiteHolder;
+  /** For a site inside an action list, that list's index. */
+  within?: number;
+}
+
+/**
+ * Every instruction of `opcode` in the container, by the holders `listCallSites` walks: the action lists' own
+ * instructions, every tagged list, the timers, the state transitions, the instructions screen programs queue, the
+ * number senders and base slot 8's leading list. `listCallSites` is this for `0x7F`; for `0x7E` it is every place
+ * that enters a mode by number, which a renumbering of base slot 6 rewrites, `shared/dropmodes.ts`. An instruction
+ * reached twice is one site.
+ *
+ * **Measured on the Harmony One since `todo-compile-one.md` 4.10**: for `0x7F` it finds 3067 sites on
+ * `harvest_one_two_devices`, the figure section 413's blind reviewer counted by a walk of its own, where reading
+ * raw slots 10 and 8 found 1553. The holders were enumerated on arch 14 compiles, sections 360 and 362.
+ */
+export function instructionSites(c: Container, opcode: number): InstructionSite[] {
+  const sites = new Map<number, InstructionSite>();
   const blob = c.blob;
   const add = (operandAt: number, holder: ListSiteHolder, within?: number): void => {
     if (operandAt < 0 || operandAt + INSTRUCTION_LENGTH > blob.length) return;
-    if (blob[operandAt + 2] !== ACTION_LIST_INDEX_OPCODE || sites.has(operandAt)) return;
-    sites.set(operandAt, { at: operandAt, list: u16(blob, operandAt), holder, ...(within === undefined ? {} : { within }) });
+    if (blob[operandAt + 2] !== opcode || sites.has(operandAt)) return;
+    sites.set(operandAt, { at: operandAt, operand: u16(blob, operandAt), holder, ...(within === undefined ? {} : { within }) });
   };
   const offsetOf = (address: number): number | undefined => c.blobOffsetOf(address);
 
+  // The two sections read by slot, each through `archSlot`: base slot 10 and base slot 8 are raw slots 11 and 9 on
+  // the Harmony One, which inserts a NULL at raw slot 8, so reading raw slots 10 and 8 there walked base slot 9's
+  // handler sets as if they were action lists and the inserted NULL as the leading list, todo-compile-one.md 4.10.
+  const rawSlot = (base: number): number | undefined => {
+    if (c.architecture === undefined) return undefined;
+    try {
+      return archSlot(c.architecture, base);
+    } catch (error) {
+      if (error instanceof GspmError) return undefined;
+      throw error;
+    }
+  };
+  const tableSlot = rawSlot(ACTION_LIST_TABLE_SLOT);
+  const leadSlot = rawSlot(BINDING_SLOT);
+
   // The action lists, through the table, so a list two entries share is walked once.
-  const table = c.pointerArray(10) ?? [];
+  const table = (tableSlot === undefined ? undefined : c.pointerArray(tableSlot)) ?? [];
   const seenLists = new Set<number>();
   table.forEach((address, index) => {
     if (seenLists.has(address)) return;
@@ -117,7 +162,7 @@ export function listCallSites(c: Container): ListCallSite[] {
     }
   }
   // Base slot 8's leading list: a count, then one instruction per entry point, section 286.
-  const lead = c.sections[BINDING_SLOT];
+  const lead = leadSlot === undefined ? undefined : c.sections[leadSlot];
   const leadAt = lead === undefined || lead.isNull ? undefined : offsetOf(lead.address);
   if (leadAt !== undefined) for (let k = 0; k < u8(blob, leadAt); k += 1) add(leadAt + 1 + INSTRUCTION_LENGTH * k, 'leading list');
 

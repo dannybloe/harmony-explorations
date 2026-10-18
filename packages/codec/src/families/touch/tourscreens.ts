@@ -27,8 +27,10 @@
  * at 2, and the configuration writes those values from Options' "Turn Remote Assistant On" value map, the
  * leftover entry's scan 34 press and, on fourteen compiles, the activities' own assistant screens; the leftover
  * entry's events 1 and 5 run the ladder. So the configuration still holds a path to the five, and they are built;
- * what raises those two events is not read, and the path was not seen on a remote. Leaving them out would need
- * the wiring without its ladder, as `one_config` is.
+ * what raises those two events is not read, and the path was not seen on a remote. Leaving them out needs the
+ * wiring without its ladder, as `one_config` is, and Options without the two rows: `withoutTourAndAssistant`,
+ * `todo-compile-one.md` 4.10, section 421, the composed path's default since, after which a configuration holds
+ * none of the sixteen and this module describes and builds nothing.
  *
  * **One shape each once the numbering is set aside**, measured on the sixteen English compiles of skin 54 and
  * the two European ones: every tag, opcode and constant operand, every list's length, every word, its font
@@ -294,9 +296,9 @@ export const TOUCH_ASSISTANT_SCREENS: readonly string[] = assistantScreens(true)
  * The template's screens for a configuration with or without the Remote Assistant, and with "Devices Off
  * Again"'s OK going on to the tour or not.
  */
-function tourScreens(withAssistant: boolean, onToTour: boolean): TourScreen[] {
+function tourScreens(withAssistant: boolean, onToTour: boolean, tour = true): TourScreen[] {
   const name = (prefix: string) => (one: TourScreen): TourScreen => ({ ...one, name: `${prefix} ${one.name}` });
-  return [...TOUR.map(name('Tour')), ...(withAssistant ? assistantScreens(onToTour).map(name('Assistant')) : [])];
+  return [...(tour ? TOUR.map(name('Tour')) : []), ...(withAssistant ? assistantScreens(onToTour).map(name('Assistant')) : [])];
 }
 
 /**
@@ -341,7 +343,7 @@ function readOnToTour(c: Container, mode: number, read: ValueReader): { onToTour
  * wiring's `startupAssistant`, and a configuration whose wiring keeps no assistant and still holds one of its
  * screens is refused, as is one holding a screen other than once.
  */
-export function touchTourScreenModes(c: Container, layout: ContainerLayout = takeApart(c)): { modes: number[]; assistant: boolean } {
+export function touchTourScreenModes(c: Container, layout: ContainerLayout = takeApart(c)): { modes: number[]; assistant: boolean; tour: boolean } {
   const map = characterMap(c);
   if (map === undefined) throw new ScreenRecordError('the configuration draws no text this can read');
   const wiring = describeTouchWiring(layout);
@@ -375,6 +377,8 @@ export function touchTourScreenModes(c: Container, layout: ContainerLayout = tak
   if (!withAssistant) {
     const held = TOUCH_ASSISTANT_SCREENS.filter((name) => found.has(name));
     if (held.length > 0) throw new ScreenRecordError(`the wiring keeps no Remote Assistant and the configuration holds ${held.join(', ')}`);
+    // Ours without the tour as well, `todo-compile-one.md` 4.10: none of the eleven, which no compile of Logitech's is.
+    if (TOUCH_TOUR_SCREENS.every((name) => !found.has(name))) return { modes: [], assistant: false, tour: false };
   }
   const names = [...TOUCH_TOUR_SCREENS, ...(withAssistant ? TOUCH_ASSISTANT_SCREENS : [])];
   const modes = names.map((name) => {
@@ -385,13 +389,18 @@ export function touchTourScreenModes(c: Container, layout: ContainerLayout = tak
   if (withAssistant && modes[names.indexOf('Assistant Welcome')] !== wiring.modes['assistantWelcome']) {
     throw new ScreenRecordError('the Remote Assistant\'s welcome is not the screen the wiring\'s ladder enters');
   }
-  return { modes, assistant: withAssistant };
+  return { modes, assistant: withAssistant, tour: true };
 }
 
 // ---------------------------------------------------------------------------------------------------------
 // The description, the builder and the check.
 
 export interface TouchTourScreensSpec extends TemplateScreensSpec<TourScreenFont> {
+  /**
+   * Whether the tour's eleven are described and built: every compile of Logitech's holds them, and ours leave them
+   * out with the assistant's five unless chosen, `todo-compile-one.md` 4.10, which this module then builds nothing of.
+   */
+  tour: boolean;
   /** Whether the Remote Assistant's five are described and built after the tour's eleven: the wiring's ladder. */
   assistant: boolean;
   /** Whether "Devices Off Again"'s OK goes on to the tour, `readOnToTour`; false where there is no assistant. */
@@ -408,23 +417,23 @@ export interface TouchTourScreensDescribed extends Omit<TemplateScreensDescribed
  * `takeApart(c)`; `read` is where every value is taken from.
  */
 export function describeTouchTourScreens(c: Container, layout: ContainerLayout, read?: ValueReader): TouchTourScreensDescribed {
-  const { modes, assistant } = touchTourScreenModes(c, layout);
-  const roles = [...TOUR_FONTS, ...(assistant ? ASSISTANT_FONTS : [])];
+  const { modes, assistant, tour } = touchTourScreenModes(c, layout);
+  const roles = [...(tour ? TOUR_FONTS : []), ...(assistant ? ASSISTANT_FONTS : [])];
   const reader = read ?? blobReader(c);
   const setting = assistant
     ? readOnToTour(c, modes[TOUCH_TOUR_SCREENS.length + TOUCH_ASSISTANT_SCREENS.indexOf('Assistant Devices Off Again')] as number, reader)
     : undefined;
-  const d = describeTemplateScreens(c, layout, tourScreens(assistant, setting?.onToTour ?? false), modes, roles, reader);
+  const d = describeTemplateScreens(c, layout, tourScreens(assistant, setting?.onToTour ?? false, tour), modes, roles, reader);
   // The setting's byte is the description's, inside a list the screens build.
   if (setting !== undefined) d.described.add(setting.at);
-  return { ...d, spec: { ...d.spec, assistant, onToTour: setting?.onToTour ?? false } };
+  return { ...d, spec: { ...d.spec, tour, assistant, onToTour: setting?.onToTour ?? false } };
 }
 
 export type BuiltTouchTourScreens = BuiltTemplateScreens;
 
 /** The screens built from a description, in mode order; everything but the description's numbers is generated. */
 export function buildTouchTourScreens(c: Container, spec: TouchTourScreensSpec): BuiltTouchTourScreens {
-  return buildTemplateScreens(c, spec, tourScreens(spec.assistant, spec.onToTour));
+  return buildTemplateScreens(c, spec, tourScreens(spec.assistant, spec.onToTour, spec.tour));
 }
 
 /** A layout with these screens swapped for the built ones, where the configuration's sat. */

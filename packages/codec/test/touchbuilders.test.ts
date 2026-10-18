@@ -26,7 +26,7 @@ import {
 import { saveEdits } from '../src/edit.ts';
 import { SCREEN_TEXT_AT, SCREEN_TEXT_INLINE } from '../src/screen.ts';
 import { TOUCH } from '../src/families/touch/index.ts';
-import { TOUCH_BUILT, TouchBuildError, touchBuiltBytes, withTouchBuilders } from '../src/families/touch/builders.ts';
+import { TOUCH_BUILT, TouchBuildError, touchBuiltBytes, withTouchBuilders, withTouchComposedBuilders } from '../src/families/touch/builders.ts';
 import { ATTEMPT_LINE, NO, YES, checkTouchHelpScreens, touchHelpScreenModes, withTouchHelpChain } from '../src/families/touch/helpscreens.ts';
 import { characterMap, decode } from '../src/text.ts';
 import { textGlyphs } from '../src/shared/spelling.ts';
@@ -240,8 +240,10 @@ test('todo-compile-one 3.2.2: a builder\'s refusal is the composed path\'s, neve
   lead[donor.blobOffsetOf(records[1]!.pages[0]!.address)!] = records[0]!.pages[0]!.lead!;
   assert.throws(() => withTouchBuilders(parse(lead)),
     (error: unknown) => error instanceof TouchBuildError && /^building the Harmony One's hit pages: message and OK and message are both hit page 0$/.test(error.message));
-  // And the family's member on the composed path is this function, which `composeSetup` calls on every composition.
-  assert.equal(TOUCH.composedBuilders, withTouchBuilders);
+  // And the family's member on the composed path is this function behind the tour's choice, which `composeSetup`
+  // calls on every composition: the tour and the Remote Assistant left out first unless the choice keeps them,
+  // `todo-compile-one.md` 4.10, `test/touchwithouttour.test.ts`.
+  assert.equal(TOUCH.composedBuilders, withTouchComposedBuilders);
 });
 
 /**

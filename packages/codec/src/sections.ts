@@ -75,6 +75,8 @@ export interface EventMap {
   entries: Map<number, number>;
   /** The whole section, so the byte accounting needs no second copy of the layout. */
   length: number;
+  /** Where the section starts, a blob offset: the fallback, then each entry's key and its `u24` from `start + 5`. */
+  start: number;
 }
 
 /**
@@ -99,7 +101,7 @@ export function eventMap(c: Container): EventMap | undefined {
     const p = off + 5 + 4 * k;
     entries.set(u8(c.blob, p), u24(c.blob, p + 1));
   }
-  return { fallback: u24(c.blob, off), entries, length };
+  return { fallback: u24(c.blob, off), entries, length, start: off };
 }
 
 /** Base slot 0's node tag. Every node in every frame in the corpus opens with it. */

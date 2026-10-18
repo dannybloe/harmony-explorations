@@ -96,12 +96,21 @@ export interface TouchChoices extends CommonChoices {
    * restarts the remote they come up after every write; off, asked for at the bench on 17 October 2026.
    */
   readonly startupAssistant: boolean;
+  /**
+   * Whether the configuration keeps the welcome tour (eleven screens) and the Remote Assistant (five) at all, findings
+   * sections 412 and 421. Off, decided on 18 October 2026, since a person reads the manual instead: the sixteen
+   * screens, the lists, hit pages and pictures only they reach are left out, and Options loses "Turn Remote Assistant
+   * On" and "Tutorial", `withoutTourAndAssistant`. On, the configuration keeps Logitech's, and `startupAssistant`
+   * decides whether the assistant shows at start.
+   */
+  readonly welcomeTour: boolean;
 }
 
 export const TOUCH_CHOICES: TouchChoices = {
   deviceTitleFont: 9,
   screenLightSeconds: 10,
   startupAssistant: false,
+  welcomeTour: false,
   activityBox: { fill: '#166fa7', rim: '#bfeeff' },
   deviceBox: { fill: '#1c9c53', rim: '#e8cbb4' },
   settingsBox: { fill: '#f76100', rim: '#ffefde' },

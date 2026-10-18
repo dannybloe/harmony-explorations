@@ -136,7 +136,9 @@ Generated from `packages/codec`, `packages/usb` and the drawing by `make remote-
   settings for your remote.", with "OK" or "Yes" and "No" below. A configuration holds them where its start runs
   the assistant's ladder, every compile read but the everyday One's, section 412; starting the remote past it leaves
   them in the configuration, which holds a path back to them through Options' "Turn Remote Assistant On", not seen
-  on a remote, sections 403 and 412.
+  on a remote, sections 403 and 412. Leaving the tour and these five out of a configuration takes Options down to
+  one page without "Tutorial" and "Turn Remote Assistant", a form no compile read holds; how a remote starts with
+  it is not yet seen, section 421.
 * **Help pressed with nothing on** runs the power off help, every screen titled "PowerOff": "Attemping to fix the
   problem..." (Logitech's spelling) while it sends some devices' power off again, then "Did that fix the problem?
   If not, the remote will ask you questions to help correct the problem.", and on No one question per device, "Is

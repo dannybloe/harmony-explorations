@@ -443,7 +443,7 @@ export function composeSetup(setup: Recipe, options: AssembleOptions): ComposedS
   // the donor's part.
   const builders = target.family.composedBuilders;
   if (builders !== undefined) {
-    const built = builders(c, parts.devicesComposed);
+    const built = builders(c, parts.devicesComposed, target.family.choices);
     c = built.container;
     note('built', built.built.join(', '));
   }

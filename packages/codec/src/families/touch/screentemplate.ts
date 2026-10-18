@@ -981,6 +981,80 @@ export function templateNumberSlots<F extends string>(screen: TemplateScreen<F>)
 }
 
 /**
+ * Where a template screen draws each picture the description supplies, in the order it takes them: the builder's own
+ * walk with a stand in for every picture, read back off the programs it made. So a caller can carry pictures from one
+ * form of a screen to another by place, `todo-compile-one.md` 4.10's Options, whose row buttons differ by row.
+ */
+export function templatePicturePlaces<F extends string>(screen: TemplateScreen<F>): { x: number; y: number }[] {
+  const stands = Array.from({ length: 256 }, (): PieceTarget => ({ to: { bytes: new Uint8Array(0), refs: [], owner: 'picture-bank' }, offset: 0 }));
+  const order = new Map(stands.map((one, k) => [one.to, k]));
+  const fonts = new Proxy({} as Record<F, number>, { get: () => 0 });
+  let next = 0;
+  const made = writeScreen(screen, () => ({ codes: [], width: 0 }), fonts, new Map(), new Map(), new Map(), {
+    numbers: [], pictures: stands, numberOf: () => { next += 1; return next; },
+  });
+  const places: { k: number; x: number; y: number }[] = [];
+  for (const piece of [made.chromePiece, ...made.programs, ...made.extras]) {
+    for (const ref of piece.refs) {
+      const k = 'to' in ref ? order.get(ref.to) : undefined;
+      if (k !== undefined && piece.bytes[ref.at - 3] === SCREEN_DRAW_IMAGE) {
+        places.push({ k, x: piece.bytes[ref.at - 2] as number, y: piece.bytes[ref.at - 1] as number });
+      }
+    }
+  }
+  return places.sort((a, b) => a.k - b.k).map(({ x, y }) => ({ x, y }));
+}
+
+/**
+ * What a step is for carrying its number to another form of a screen, `carriedNumbers`: its role where it has one,
+ * else its kind and constants, an `owns` step by what it holds.
+ */
+function stepSignature(step: Step): string {
+  if (step.kind === 'constant') return `k ${step.opcode} ${step.operand}`;
+  if (step.kind === 'number') return step.role !== undefined ? `role ${step.role}` : `${step.what} ${step.opcode} ${step.band ?? ''}`;
+  if (step.kind === 'write') return `write ${step.operand}`;
+  return `owns(${step.steps.map(stepSignature).join(', ')})`;
+}
+
+/**
+ * A screen's numbers carried from one form of it to another, `todo-compile-one.md` 4.10: Options without the Remote
+ * Assistant's and the Tutorial's rows, numbered from the Options the configuration holds. Slot by slot in
+ * `templateNumberSlots`' order: a number with a role takes the value that role holds in `from`, the same at every
+ * place `from` names it, and any other slot the value of the same step, by what it is, at the same occurrence.
+ * Refuses a slot `from` has no value for, a role holding two values, and numbers that do not pair with `from`'s
+ * slots.
+ */
+export function carriedNumbers<F extends string>(
+  from: TemplateScreen<F>, numbers: readonly number[], to: TemplateScreen<F>,
+): number[] {
+  const slots = templateNumberSlots(from);
+  if (slots.length !== numbers.length) throw new ScreenRecordError(`${from.name} takes ${slots.length} numbers and ${numbers.length} are given`);
+  const values = new Map<string, number>();
+  const seen = new Map<string, number>();
+  const keyOf = (step: Step): string => {
+    const signature = stepSignature(step);
+    if (step.kind === 'number' && step.role !== undefined) return signature;
+    const k = (seen.get(signature) ?? 0) + 1;
+    seen.set(signature, k);
+    return `${signature} #${k}`;
+  };
+  slots.forEach((step, k) => {
+    const key = keyOf(step);
+    const value = numbers[k] as number;
+    const was = values.get(key);
+    if (was !== undefined && was !== value) throw new ScreenRecordError(`${from.name}'s ${key} holds ${was} and ${value}`);
+    values.set(key, value);
+  });
+  seen.clear();
+  return templateNumberSlots(to).map((step) => {
+    const key = keyOf(step);
+    const value = values.get(key);
+    if (value === undefined) throw new ScreenRecordError(`${from.name} holds no number for ${to.name}'s ${key}`);
+    return value;
+  });
+}
+
+/**
  * The screens built from a description, in mode order since the programs are laid out in that order and the
  * first program to draw a text holds it inline. Everything but the description's numbers is generated. `c` is
  * read for its fonts and character map only, which spell the words and measure them.
