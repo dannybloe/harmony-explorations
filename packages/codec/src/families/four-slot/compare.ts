@@ -1,6 +1,8 @@
 /**
  * Two configurations of the same setup, compared by what a person sees and hears, `todo-compile-650.md`
  * 5.2: every key and every screen item, in every activity, in device mode and with nothing running.
+ * The four slot family's since `todo-compile-one.md` 3.3.3.2, which is the only family it has been run on: the
+ * Harmony 600, 650 and 700.
  *
  * **Why not compare bytes.** Two compiles of one setup share almost no addresses, list numbers or page
  * numbers, section 154, and ours is laid out by our own composers besides. So each file is first
@@ -20,26 +22,25 @@
  * which 5.2 leaves out; and screen text other than a corner item's label, a page's title included. A
  * binding that sends nothing, navigation, is compared by its presence and not by where it leads.
  */
-import type { Container } from './gspm.ts';
-import { STATE_WRITE_BASE } from './actions.ts';
-import { characterMap, screenStrings } from './text.ts';
-import { ACTION_LIST_INDEX_OPCODE, HANDLER_TAG_ENTER, handlerSets, modeRecords, nameNodes, taggedList } from './sections.ts';
+import type { Container } from '../../gspm.ts';
+import { STATE_WRITE_BASE } from '../../actions.ts';
+import { characterMap, screenStrings } from '../../text.ts';
+import { ACTION_LIST_INDEX_OPCODE, HANDLER_TAG_ENTER, handlerSets, modeRecords, nameNodes, taggedList } from '../../sections.ts';
 import {
-  FOUR_SLOT_ITEMS,
   activities,
   activityScreens,
   deviceListRows,
   deviceModeMaps,
   devices,
-  fourSlotCellAt,
   handlerSetRoles,
   infraredCodesPerList, ENTER_MODE,
-} from './inventory.ts';
-import { irBlockWords, irGroups, irHeaderPointers } from './ir.ts';
-import { irFrame } from './irframe.ts';
-import { caseQueued } from './inventory.ts';
-import { valueMaps } from './valuemap.ts';
-import { activityKeyedRecords } from './families/four-slot/index.ts';
+} from '../../inventory.ts';
+import { irBlockWords, irGroups, irHeaderPointers } from '../../ir.ts';
+import { irFrame } from '../../irframe.ts';
+import { caseQueued } from '../../inventory.ts';
+import { valueMaps } from '../../valuemap.ts';
+import { cornerCellAt, cornerLayoutOf } from '../../cornerlayout.ts';
+import { activityKeyedRecords } from './activityscreen.ts';
 
 /** What one binding shows and does, in names that mean the same in both files. */
 export interface ViewItem {
@@ -107,6 +108,10 @@ export function setupView(c: Container): SetupView {
   const lists = c.actionLists() ?? [];
   const named = new Map(devices(c).map((one) => [one.group, one.name ?? `group ${one.group}`]));
   const sent = sender(c);
+  // Where the corners of a page are, read off the configuration's architecture. Measured on the Harmony 600, 650
+  // and 700 alone, the only remotes this comparison has been run on; elsewhere no page is paired by corner and a
+  // menu cell is named by its place.
+  const corners = cornerLayoutOf(c.architecture);
 
   // A key map: every press binding by its scan, and a press that sends nothing as an empty item, so a
   // key bound in one file and not the other is still seen.
@@ -124,10 +129,10 @@ export function setupView(c: Container): SetupView {
     record.pages.forEach((page, p) => {
       const lines = drawn.filter((one) => one.program === page.program && one.y >= 20 && one.y <= 100);
       const entries = taggedList(c, page.list)?.entries ?? [];
-      FOUR_SLOT_ITEMS.forEach((item, k) => {
+      (corners?.items ?? []).forEach((item, k) => {
         const entry = entries.find((one) => (one.tag & 0x3f) === item.scan && one.opcode === ACTION_LIST_INDEX_OPCODE);
         if (entry === undefined) return;
-        const label = lines.filter((one) => fourSlotCellAt(one.x, one.y) === k)
+        const label = lines.filter((one) => cornerCellAt(corners!, one.x, one.y) === k)
           .sort((a, b) => a.y - b.y).map((one) => one.text.trim()).join(' ');
         view.set(`${context} | page ${p + 1} | scan ${item.scan}`, { label, ...sent(entry.operand) });
       });
@@ -164,7 +169,7 @@ export function setupView(c: Container): SetupView {
   const menuPages = [...new Set(menu.map((one) => one.page))].sort((x, y) => x - y);
   for (const one of menu) {
     const at = one.at as { x: number; y: number };
-    view.set(`activity menu | page ${menuPages.indexOf(one.page) + 1} | cell ${fourSlotCellAt(at.x, at.y) ?? `${at.x},${at.y}`}`,
+    view.set(`activity menu | page ${menuPages.indexOf(one.page) + 1} | cell ${(corners === undefined ? undefined : cornerCellAt(corners, at.x, at.y)) ?? `${at.x},${at.y}`}`,
       { label: one.name ?? String(one.activity), frames: [], records: [] });
   }
   // The device lists. A configuration holds several copies, each with its own order, and nothing names a

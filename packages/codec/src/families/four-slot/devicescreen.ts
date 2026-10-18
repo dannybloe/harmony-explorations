@@ -19,7 +19,7 @@ import {
 import { type FontSet, fontSets } from '../../font.ts';
 import { archSlot, Container, parse, SCAN_MASK } from '../../gspm.ts';
 import {
-  ENTER_MODE, FOUR_SLOT_ITEMS, FOUR_SLOT_LABEL_Y, FOUR_SLOT_LEFT_X, FOUR_SLOT_RIGHT_END, FOUR_SLOT_ROWS,
+  ENTER_MODE,
   KEY_EVENT_PRESS, KEY_EVENT_SHIFT,
 } from '../../inventory.ts';
 import { relocate } from '../../relocate.ts';
@@ -37,6 +37,7 @@ import { codesFor, textWidth } from '../../shared/spelling.ts';
 import { characterMap } from '../../text.ts';
 import { FOUR_SLOT_CHOICES } from './choices.ts';
 import { ourStateColours, withStateLook } from './statelook.ts';
+import { FOUR_SLOT_ITEMS, FOUR_SLOT_LEFT_X, FOUR_SLOT_RIGHT_END, FOUR_SLOT_LABEL_Y, FOUR_SLOT_ROWS } from './geometry.ts';
 
 
 /**

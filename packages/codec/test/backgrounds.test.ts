@@ -14,12 +14,8 @@ import assert from 'node:assert/strict';
 import { load, skipUnless } from '@harmony/lab';
 import type { Container } from '../src/index.ts';
 import {
-  BackgroundError,
-  HARMONY_650_PICTURES,
   bitmapAt,
   bitmaps,
-  checkStateBackgrounds,
-  compareViews,
   contentKey,
   layOutContainer,
   modeRecords,
@@ -28,13 +24,12 @@ import {
   reachablePrograms,
   rgb565,
   rgbTo565,
-  screenRecordModes,
-  screenStates,
-  setupView,
-  takeApart,
-  withStateBackgrounds,
-} from '../src/index.ts';
+  takeApart} from '../src/index.ts';
 import { FOUR_SLOT_CHOICES } from '../src/families/four-slot/choices.ts';
+import { screenRecordModes } from '../src/families/four-slot/screenrecords.ts';
+import { BackgroundError, checkStateBackgrounds, screenStates, withStateBackgrounds } from '../src/families/four-slot/backgrounds.ts';
+import { HARMONY_650_PICTURES } from '../src/families/four-slot/pictures.ts';
+import { compareViews, setupView } from '../src/families/four-slot/compare.ts';
 
 const H650 = [
   'h650_config_region', 'h650_panasonic_config', 'h650_power_hold_compile', 'h650_power_hold_compile_2',

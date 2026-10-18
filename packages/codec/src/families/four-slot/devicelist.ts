@@ -17,7 +17,7 @@ import {
 import { archSlot, Container, type Instruction, parse, SCAN_MASK } from '../../gspm.ts';
 import {
   caseQueued, compilerTagOrder, devices as deviceInventory, deviceListRowMode, deviceModeMarker, deviceVariables,
-  ENTER_MODE, FOUR_SLOT_ITEMS, KEY_EVENT_PRESS, KEY_EVENT_SHIFT, MAP_VALUE_OPCODE, POWER_PROPERTY,
+  ENTER_MODE, KEY_EVENT_PRESS, KEY_EVENT_SHIFT, MAP_VALUE_OPCODE, POWER_PROPERTY,
   RUN_SCREEN_PROGRAM, SELECT_BINDING_SET, SELECT_BINDING_SET_MASK, stateVariables,
 } from '../../inventory.ts';
 import { relocate } from '../../relocate.ts';
@@ -31,6 +31,7 @@ import { ACTION_TABLE_SLOT, ComposeError, restamped } from '../../shared/core.ts
 import { appendTableEntries } from '../../shared/infrared.ts';
 import { ACTIVITY_MENU_MARKER_VALUE } from '../../shared/menus.ts';
 import { valueMaps } from '../../valuemap.ts';
+import { FOUR_SLOT_ITEMS } from './geometry.ts';
 
 /** What `composeActivityDeviceList` built. */
 export interface ComposedActivityDeviceList {

@@ -23,15 +23,11 @@ import {
   BITMAP_ENCODED,
   BITMAP_RAW,
   type Container,
-  HARMONY_650_PICTURES,
   PictureError,
   type PictureEntry,
   bitmapPixels,
   bitmaps,
-  buildPictures,
-  checkPictures,
   contentKey,
-  describePictures,
   encodeBitmap,
   encodeGlyph,
   glyphs,
@@ -40,9 +36,8 @@ import {
   parse,
   pictureBank,
   pictureRows,
-  takeApart,
-  withPictures,
-} from '../src/index.ts';
+  takeApart} from '../src/index.ts';
+import { HARMONY_650_PICTURES, buildPictures, checkPictures, describePictures, withPictures } from '../src/families/four-slot/pictures.ts';
 
 /** Section 356's 22 Logitech compiles of the Harmony 600, 650 and 700. */
 const COMPILES = ['h650_config_region', 'h650_panasonic_config', 'h600_config', 'calibration_h600',

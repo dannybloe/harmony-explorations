@@ -20,22 +20,15 @@ import { screenProgram } from '../src/screen.ts';
 import { valueMaps } from '../src/valuemap.ts';
 import {
   AssemblyError,
-  buildScreenRecords,
   checkBlendedLetters,
   checkOxaniumFonts,
-  checkStateBackgrounds,
   characterMap,
-  checkScreenRecords,
   claims,
-  compareViews,
-  describeScreenRecords,
   ACTIVITY_STATE_NAME,
   MAP_VALUE_OPCODE,
   devices,
   dropLists,
   fontSets,
-  inActivityOrder,
-  activityEntriesByName,
   layOutContainer,
   listCallSites,
   modeRecords,
@@ -43,12 +36,9 @@ import {
   parse,
   readRecipe,
   screenStrings,
-  setupView,
   stateVariables,
   takeApart,
-  withScreenRecords,
-  withWiring,
-} from '../src/index.ts';
+  withWiring} from '../src/index.ts';
 import { FOUR_SLOT_CHOICES } from '../src/families/four-slot/choices.ts';
 import { DEVICES_KEY_TAG } from '../src/families/four-slot/chrome.ts';
 import { ladderOf, oxaniumLabelSizes } from '../src/families/four-slot/devicemode.ts';
@@ -56,6 +46,9 @@ import { buildScreenTexts, checkScreenTexts, describeScreenTexts, withScreenText
 import { buildFirmwareScreens, checkFirmwareScreens, describeFirmwareScreens, withFirmwareScreens } from '../src/families/four-slot/firmwarescreens.ts';
 import { buildWiring, checkWiring, describeWiring } from '../src/families/four-slot/wiring.ts';
 import { assembleSetup, attributeBytes, compareDrawnTexts } from '../src/families/four-slot/assemble.ts';
+import { activityEntriesByName, buildScreenRecords, checkScreenRecords, describeScreenRecords, inActivityOrder, withScreenRecords } from '../src/families/four-slot/screenrecords.ts';
+import { checkStateBackgrounds } from '../src/families/four-slot/backgrounds.ts';
+import { compareViews, setupView } from '../src/families/four-slot/compare.ts';
 
 /**
  * The 22 arch 14 compiles sections 356 to 360 measure, by the skin each states: 13 Harmony 650, 2 Harmony

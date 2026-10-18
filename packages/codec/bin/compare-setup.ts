@@ -15,7 +15,8 @@
 import { existsSync, readFileSync } from 'node:fs';
 
 import { load } from '@harmony/lab';
-import { compareViews, parse, setupView } from '../src/index.ts';
+import { parse} from '../src/index.ts';
+import { compareViews, setupView } from '../src/families/four-slot/compare.ts';
 
 const argument = (name: string): string | undefined => {
   const at = process.argv.indexOf(`--${name}`);

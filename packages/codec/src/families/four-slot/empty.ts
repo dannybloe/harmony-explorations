@@ -52,17 +52,17 @@ import {
   type OxaniumFaceName, type OxaniumWeight,
 } from '../../lettering.ts';
 import { type BlendedSet, checkBlendedLetters, withBlendedLetters } from '../../blending.ts';
-import { barBytes, stateBackgroundBytes, statePatchBytes } from '../../backgrounds.ts';
-import { buildOurPictures, buildPictures, type OurPictureChoices, type OurPictureName } from '../../pictures.ts';
+
 import { ENTER_MODE, MAP_VALUE_OPCODE } from '../../inventory.ts';
 import { STATE_WRITE_BASE } from '../../actions.ts';
 import { SENDING_FLAG_VARIABLE } from './chrome.ts';
 import { caseProgram as caseProgramBytes } from '../../shared/menus.ts';
 import { type BuiltFirmwareScreens, buildFirmwareScreens, firmwareScreenTemplates } from './firmwarescreens.ts';
 import {
-  type BuiltScreen, type BuiltScreenRecords, type ScreenMenuSpec, buildScreenRecords,
-} from '../../screenrecords.ts';
-
+  type BuiltScreen} from '../../screenrecords.ts';
+import { type BuiltScreenRecords, type ScreenMenuSpec, buildScreenRecords } from './screenrecords.ts';
+import { barBytes, stateBackgroundBytes, statePatchBytes } from './backgrounds.ts';
+import { type OurPictureChoices, type OurPictureName, buildOurPictures, buildPictures } from './pictures.ts';
 
 /** A refusal, named so a caller can tell a request this does not build from a bug. */
 export class EmptyConfigurationError extends Error {}

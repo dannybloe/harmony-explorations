@@ -24,24 +24,16 @@ import {
   type Container,
   type ContainerPiece,
   ScreenRecordError,
-  activityEntriesByName,
-  buildScreenRecords,
-  checkScreenRecords,
-  compareViews,
-  describeScreenRecords,
-  inActivityOrder,
   layOutContainer,
   modeRecords,
   parse,
   restamped,
-  screenRecordModes,
   screenStrings,
-  setupView,
   taggedList,
-  takeApart,
-  withScreenRecords,
-} from '../src/index.ts';
+  takeApart} from '../src/index.ts';
 import { describeWiring } from '../src/families/four-slot/wiring.ts';
+import { activityEntriesByName, buildScreenRecords, checkScreenRecords, describeScreenRecords, inActivityOrder, screenRecordModes, withScreenRecords } from '../src/families/four-slot/screenrecords.ts';
+import { compareViews, setupView } from '../src/families/four-slot/compare.ts';
 
 /** The thirteen arch 14 compiles section 312 names. */
 const THIRTEEN = ['h650_config_region', 'h650_panasonic_config', 'h600_config', 'calibration_h600',

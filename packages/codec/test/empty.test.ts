@@ -24,14 +24,14 @@ import { fourSlotMenus, fourSlotTemplate } from '../src/families/four-slot/menus
 import { ourStateColours, recolouredStates, stateLookOf } from '../src/families/four-slot/statelook.ts';
 import { composeCatalogueDevices } from '../src/composecatalogue.ts';
 import { bitmapReference } from '../src/screen.ts';
-import { stateBackgroundColour } from '../src/backgrounds.ts';
+
 import { activities, activityNames, deviceListRows } from '../src/inventory.ts';
 import { activityKeys } from '../src/families/four-slot/activitykeys.ts';
 import { IR_ARCHIVE, require_, skipUnless, skipWithoutIrArchive } from '@harmony/lab';
-import { archSlot, compareViews, parse, readRecipe, screenStrings, setupView } from '../src/index.ts';
+import { archSlot, parse, readRecipe, screenStrings} from '../src/index.ts';
 import { readFileSync } from 'node:fs';
 import { checkFirmwareScreens } from '../src/families/four-slot/firmwarescreens.ts';
-import { checkScreenRecords } from '../src/screenrecords.ts';
+
 import { stateRecords } from '../src/sections.ts';
 import type { Recipe } from '../src/index.ts';
 import { fourSlotActivityMenu, fourSlotMenuMarkerWriter } from '../src/families/four-slot/chrome.ts';
@@ -43,6 +43,9 @@ import { FOUR_SLOT_STATE_TABLES } from '../src/families/four-slot/statetables.ts
 import { describeWiring, FIRMWARE_SCREENS, checkWiring } from '../src/families/four-slot/wiring.ts';
 import { modeZeroKeyList } from '../src/families/four-slot/modezero.ts';
 import { assembleSetup, attributeBytes } from '../src/families/four-slot/assemble.ts';
+import { checkScreenRecords } from '../src/families/four-slot/screenrecords.ts';
+import { stateBackgroundColour } from '../src/families/four-slot/backgrounds.ts';
+import { compareViews, setupView } from '../src/families/four-slot/compare.ts';
 
 const BUILT_AT = '2026-10-12T12:00:00';
 

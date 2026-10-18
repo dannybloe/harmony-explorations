@@ -84,7 +84,6 @@ import {
   bitmapAt,
   deviceModeMarker,
   devices,
-  FOUR_SLOT_ITEMS,
   touchPages,
   modePages,
   modeRecords,
@@ -124,6 +123,7 @@ import { activityKeyedRecords } from '../src/families/four-slot/activityscreen.t
 import { startAndFlag, startTargets, tagFiveMisfit, tagFiveShape } from './tagfive.ts';
 import { FIRST_DEVICE_IDENTIFIER } from '../src/shared/core.ts';
 import { textGlyphs } from '../src/shared/spelling.ts';
+import { FOUR_SLOT_ITEMS } from '../src/families/four-slot/geometry.ts';
 
 /**
  * The goal device's commands, as the catalogue states them for the LG 42LM3400: power is a toggle

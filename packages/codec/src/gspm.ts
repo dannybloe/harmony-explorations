@@ -400,6 +400,14 @@ export const ARCH16_SLOT_MAP: readonly (number | undefined)[] = [
 ];
 
 /**
+ * A reader's table of one fact per architecture, keyed by the architecture's number: plan 007's sanctioned form
+ * for a fact that differs between remotes outside `families/`, read with the configuration's own architecture and
+ * never with a literal one. Named so that `test/generic.test.ts` can tell such a table from code testing which
+ * remote it is: what sits inside one is the table's to hold, a key scan included.
+ */
+export type PerArchitecture<T> = Readonly<Record<number, T>>;
+
+/**
  * Base slot to raw slot for every architecture whose alignment is established.
  *
  * **The four insertion architectures are derived from `INSERTED_SLOTS` rather than written out**, so

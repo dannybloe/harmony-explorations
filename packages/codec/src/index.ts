@@ -65,9 +65,12 @@ export * from './firmwaresections.ts';
 export { WiringError, builtPieces, withWiring } from './wiringparts.ts';
 export type { BuiltWiring, DeviceTimer, WiringChecked, WiringInstruction } from './wiringparts.ts';
 export * from './compose.ts';
-// The idle device list's, the activity menu's and Off's whole records built from a description,
-// todo-compile-650 7.3, section 356. After `compose.ts`, whose page builders it calls.
+// The machinery every family builds a mode record with, reading its frame, building its pieces and placing
+// them, sections 356 and 357. The Harmony 600, 650 and 700's own three screen records and their state
+// backgrounds are that family's since todo-compile-one 3.3.3.2, families/four-slot/screenrecords.ts and
+// backgrounds.ts, and the screen part encoder is screenparts.ts.
 export * from './screenrecords.ts';
+export * from './screenparts.ts';
 // The firmware's own screens built whole from a description, todo-compile-650 7.4, section 357, on
 // `screenrecords.ts`'s reading, building and placing.
 // Every text of a configuration generated from its word and its font, its place by its screen's rule and
@@ -75,7 +78,6 @@ export * from './screenrecords.ts';
 // The Harmony 650's pictures, those drawn by rule built from their drawing and the artwork named,
 // todo-compile-650 9.1, section 363.
 export * from './pictures.ts';
-export * from './backgrounds.ts';
 export * from './raster.ts';
 export * from './typeface.ts';
 export * from './lettering.ts';
@@ -119,8 +121,6 @@ export * from './pronto.ts';
 // An activity's keypad map and screen commands from its roles, section 323. After `compose.ts`, whose
 // rows and errors it uses.
 export * from './activityroles.ts';
-// Two configurations of one setup compared by what a person sees and hears, todo-compile-650 5.2.
-export * from './compare.ts';
 // Which action lists a configuration names, and dropping the ones nothing names, the renumbering the
 // assembly runs; the assembly itself, todo-compile-650 10.6, is families/four-slot/assemble.ts since
 // todo-compile-one 3.3.3.2.

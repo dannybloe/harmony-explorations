@@ -25,12 +25,7 @@ import {
   type Container,
   type ContainerPiece,
   ScreenRecordError,
-  activityEntriesByName,
-  buildScreenRecords,
-  compareViews,
-  describeScreenRecords,
   handlerSets,
-  inActivityOrder,
   introductionTour,
   layOutContainer,
   modeRecords,
@@ -38,20 +33,18 @@ import {
   recordReading,
   restamped,
   screenProgram,
-  screenRecordModes,
   screenStrings,
-  setupView,
   stateRecords,
   stateVariableSite,
   taggedList,
   takeApart,
   timers,
-  withScreenRecords,
-  valueMaps,
-} from '../src/index.ts';
+  valueMaps} from '../src/index.ts';
 import { buildFirmwareScreens, checkFirmwareScreens, describeFirmwareScreens, withFirmwareScreens } from '../src/families/four-slot/firmwarescreens.ts';
 import { FIRMWARE_SCREENS, describeWiring } from '../src/families/four-slot/wiring.ts';
 import { modeZeroKeyList } from '../src/families/four-slot/modezero.ts';
+import { activityEntriesByName, buildScreenRecords, describeScreenRecords, inActivityOrder, screenRecordModes, withScreenRecords } from '../src/families/four-slot/screenrecords.ts';
+import { compareViews, setupView } from '../src/families/four-slot/compare.ts';
 
 /** The thirteen arch 14 compiles section 312 names. */
 const THIRTEEN = ['h650_config_region', 'h650_panasonic_config', 'h600_config', 'calibration_h600',

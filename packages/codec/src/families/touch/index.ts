@@ -48,4 +48,5 @@ export const TOUCH: Family<TouchChoices> = {
   composedLook: { letterDonor: letterTouchDonor, look: withTouchLook },
   // The parts the donor carried that a builder of the family's makes from a description, `todo-compile-one.md` 3.2.2.
   composedBuilders: withTouchBuilders,
+  composedSkins: new Set([54]),
 };

@@ -11,11 +11,12 @@ import {
 } from './devicemode.ts';
 import { Writer } from '../../emit.ts';
 import { activityKeyedRecords } from '../../families/four-slot/activityscreen.ts';
-import { idleDeviceList, type MenuPart } from '../../families/four-slot/menus.ts';
+import { idleDeviceList } from '../../families/four-slot/menus.ts';
+import type { MenuPart } from '../../screenparts.ts';
 import { type FontSet, fontSets, glyphOf } from '../../font.ts';
 import { archSlot, Container, type Instruction } from '../../gspm.ts';
 import {
-  activities, ACTIVITY_STATE_NAME, compilerTagOrder, deviceListRows, FOUR_SLOT_ITEMS, FOUR_SLOT_SCREEN_WIDTH, KEY_EVENT_PRESS,
+  activities, ACTIVITY_STATE_NAME, compilerTagOrder, deviceListRows, KEY_EVENT_PRESS,
   KEY_EVENT_SHIFT, MAP_VALUE_OPCODE, RUN_SCREEN_PROGRAM, SEND_INFRARED, stateVariables,
 } from '../../inventory.ts';
 import { irGroups } from '../../ir.ts';
@@ -36,7 +37,9 @@ import { characterMap, glyphsReferencedBy, referencedStringAddress } from '../..
 import { valueMaps } from '../../valuemap.ts';
 import { FOUR_SLOT_CHOICES } from './choices.ts';
 import { ourStateColours, stateLookOf } from './statelook.ts';
-import { OUR_LOOK_SKINS } from '../../backgrounds.ts';
+
+import { FOUR_SLOT_ITEMS, FOUR_SLOT_SCREEN_WIDTH } from './geometry.ts';
+import { OUR_LOOK_SKINS } from './backgrounds.ts';
 
 /*
  * ---- The screen half, arch 14 (Harmony 600, 650 and 700), section 285 ----

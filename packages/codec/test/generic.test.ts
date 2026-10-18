@@ -27,7 +27,7 @@ const PATTERNS: Readonly<Record<string, RegExp>> = {
   // A test of which remote it is: an architecture or skin compared with a number, an architecture's slot or a
   // per architecture table handed a literal architecture. A table of architectures, `*_ARCHITECTURES`, is how a
   // reader is meant to hold one, and is not counted.
-  architecture: /\b(architecture|arch)\s*(===|!==)\s*\d+\b|archSlot\(\s*\d+\s*,|\.skin\s*(===|!==)\s*\d+|(firmwareStateVariableMax\(|SCREEN_SIZES\[|VALUE_MAP_COUNT_WIDTH\[)\s*\d+/g,
+  architecture: /\b(architecture|arch)\s*(===|!==)\s*\d+\b|archSlot\(\s*\d+\s*,|\.skin\s*(===|!==)\s*\d+|(firmwareStateVariableMax\(|SCREEN_SIZES\[|VALUE_MAP_COUNT_WIDTH\[|CORNER_LAYOUTS\[)\s*\d+/g,
   // A name belonging to one family. The base slot 17 reader's own names, `touchPages` and its kin, are a
   // reader's and are left out.
   family: /\b(FOUR_SLOT_[A-Z_]+|fourSlot[A-Za-z]*|FourSlot[A-Za-z]*|TOUCH_(?!MAP_|AREA_)[A-Z_]+|touch(?!Pages|MapStart|PageOf|Owner|Area)[A-Z][A-Za-z]*|DEVICE_PAGE_[A-Z_]+|MENU_ROW[A-Z_]*)\b/g,
@@ -62,16 +62,23 @@ const PATTERNS: Readonly<Record<string, RegExp>> = {
  * list order every family's lists share and `assemble.ts` the renumbering of base slot 10, neither naming a
  * remote, and `screenrecords.ts` takes the wiring's description and the scan range through the family's index,
  * on the import it had, so none of its counts moves.
+ *
+ * Since 3.3.3.6 the Harmony 600, 650 and 700's corner layout is a reader's table keyed by architecture,
+ * `CORNER_LAYOUTS` in `cornerlayout.ts`, which the four slot family takes under its own names through
+ * `families/four-slot/geometry.ts`, and the device list reader's two inline tests of the architecture are that table
+ * and one more, so `inventory.ts` leaves the list; `compare.ts` reads the layout by the configuration's
+ * architecture and keeps only its import of the family's index; `screenrecords.ts` takes the layout from the
+ * family's index, on the import it had.
+ *
+ * And since 3.3.3.2's last run the list is empty: `screenrecords.ts` keeps the machinery every family builds a
+ * mode record with and its three Harmony 600, 650 and 700 screens are that family's `screenrecords.ts`; the screen
+ * part encoder both halves spell through is shared, `screenparts.ts`; `backgrounds.ts` and `compare.ts` are the
+ * family's whole; `pictures.ts` keeps the drawing every family uses and the Harmony 650's pictures are the family's
+ * `pictures.ts`; the skins a setup is composed for are `Family.composedSkins`; and `growth.ts`' two names that
+ * read like the touch family's were its own locals for base slot 17, renamed. A module that joins the list now
+ * has to move its part into a family instead.
  */
-const DEBT: Readonly<Record<string, Readonly<Record<string, number>>>> = {
-  'backgrounds.ts': { architecture: 3, models: 3, imports: 1 },
-  'compare.ts': { family: 5, imports: 1 },
-  'growth.ts': { family: 6 },
-  'inventory.ts': { architecture: 2, family: 17, scans: 4 },
-  'pictures.ts': { architecture: 1 },
-  'screenrecords.ts': { architecture: 1, family: 21, imports: 1 },
-  'shared/setup.ts': { models: 1 },
-};
+const DEBT: Readonly<Record<string, Readonly<Record<string, number>>>> = {};
 
 /** The names `compose.ts` passes through from a family's modules, read off its own `export { ... } from` lists. */
 function familyNamesThroughCompose(): Set<string> {
@@ -101,7 +108,7 @@ function census(): Record<string, Record<string, number>> {
       // Comments are where a module says which remotes a fact was measured on, which is what they are for.
       const text = readFileSync(path, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"`])\/\/[^\n]*/g, '$1');
       for (const [kind, pattern] of Object.entries(PATTERNS)) {
-        const count = (text.match(pattern) ?? []).length;
+        const count = ((kind === 'scans' ? withoutArchitectureTables(text) : text).match(pattern) ?? []).length;
         if (count > 0) (out[relative(SOURCE, path)] ??= {})[kind] = count;
       }
       if (name !== 'compose.ts') {
@@ -118,6 +125,28 @@ function census(): Record<string, Record<string, number>> {
   return out;
 }
 
+/**
+ * A module's text with the bodies of its per architecture tables left out, `PerArchitecture` in `gspm.ts`: a key
+ * scan inside one is a reader's table holding a remote's fact, plan 007's sanctioned form, where a scan anywhere
+ * else is code knowing one keypad. Only the scans are counted this way; a table indexed with a literal
+ * architecture is still the architecture pattern's. Since `todo-compile-one.md` 3.3.3.6, whose corner layout is
+ * the first such table holding scans.
+ */
+function withoutArchitectureTables(text: string): string {
+  let out = text;
+  for (;;) {
+    const head = /:\s*PerArchitecture<[^=]*=\s*\{/.exec(out);
+    if (head === null) return out;
+    let depth = 0;
+    let end = head.index + head[0].length - 1;
+    for (; end < out.length; end += 1) {
+      if (out[end] === '{') depth += 1;
+      else if (out[end] === '}' && --depth === 0) break;
+    }
+    out = out.slice(0, head.index) + out.slice(end + 1);
+  }
+}
+
 // `GENERIC_CENSUS=1` prints the census as the list's source, for lowering it after a move.
 if (process.env.GENERIC_CENSUS === '1') console.log(JSON.stringify(census()));
 
@@ -131,4 +160,8 @@ test('the census finds each shape it counts, so an empty count is the code\'s an
     + "const S_SKINS = new Set([72]);\nimport { a } from '../families/touch/menus.ts';\n";
   const found = Object.fromEntries(Object.entries(PATTERNS).map(([kind, pattern]) => [kind, (sample.match(pattern) ?? []).length]));
   assert.deepEqual(found, { architecture: 2, family: 1, scans: 1, models: 1, imports: 1 });
+  // A scan inside a per architecture table is the table's, and the same entry outside one is counted.
+  const table = 'const T: PerArchitecture<Item[]> = { 14: [{ scan: 8 }, { scan: 2 }] };\n';
+  assert.equal((withoutArchitectureTables(table).match(PATTERNS.scans!) ?? []).length, 0);
+  assert.equal((withoutArchitectureTables(`const u = [{ scan: 8 }];\n${table}`).match(PATTERNS.scans!) ?? []).length, 1);
 });

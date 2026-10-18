@@ -377,12 +377,12 @@ export function pointers(c: Container, refusals: string[] = []): Pointer[] {
           'slot-14-table', `record ${k}`);
     });
   }
-  const touchSlot = slot(TOUCH_MAP_SLOT);
-  const touchHeader = touchSlot === undefined ? undefined : countedPointers(c, touchSlot, 1);
+  const mapSlot = slot(TOUCH_MAP_SLOT);
+  const mapHeader = mapSlot === undefined ? undefined : countedPointers(c, mapSlot, 1);
   const touch = touchPages(c);
-  if (touchHeader !== undefined && touch !== undefined) {
+  if (mapHeader !== undefined && touch !== undefined) {
     touch.records.forEach((page, k) => {
-      add(touchHeader.start + 1 + POINTER_WIDTH * k, page.address, 'slot-17-table', `page ${k}`);
+      add(mapHeader.start + 1 + POINTER_WIDTH * k, page.address, 'slot-17-table', `page ${k}`);
     });
   }
 

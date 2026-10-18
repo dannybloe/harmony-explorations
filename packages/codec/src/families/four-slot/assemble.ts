@@ -89,15 +89,11 @@ import type { ContainerLayout } from '../../frame.ts';
 import { layOutContainer, takeApart } from '../../frame.ts';
 import { LOOSE_KINDS, loosen, placePieces } from '../../placer.ts';
 import { buildStateTables, describeStateTables, hourListBytes, type StateTableFacts, withStateTables } from '../../statetables.ts';
-import { LOGITECH_REPLACED, buildOurPictures, buildPictures, checkOurPictures, checkPictures, describePictures, withPictures } from '../../pictures.ts';
-import {
-  activityEntriesByName, buildScreenRecords, checkScreenRecords, describeScreenRecords, inActivityOrder,
-  withScreenRecords,
-} from '../../screenrecords.ts';
+
 import { checkOxaniumFonts, withOxaniumFonts, type SetFace } from '../../fonttable.ts';
 import { LETTERING_FACES, letterForm, maskForm } from '../../lettering.ts';
 import { type FontSet, IMAGE_SET_HEADER, fontSets, glyphOf } from '../../font.ts';
-import { SCREEN_STATES, checkStateBackgrounds, ourPictureName, withStateBackgrounds } from '../../backgrounds.ts';
+
 import { caseProgram } from '../../shared/menus.ts';
 import { valueMaps } from '../../valuemap.ts';
 import { type BlendedSet, checkBlendedLetters, type LettersBlended, withBlendedLetters } from '../../blending.ts';
@@ -117,6 +113,9 @@ import { ASSEMBLY_SKINS, OUR_DONOR_SKINS } from './skins.ts';
 import { buildWiring, checkWiring, describeWiring, wiringModelOfSkin, type WiringSettings, type WiringSpec } from './wiring.ts';
 import { builtPieces, withWiring } from '../../wiringparts.ts';
 import { modeZeroKeyList } from './modezero.ts';
+import { activityEntriesByName, buildScreenRecords, checkScreenRecords, describeScreenRecords, inActivityOrder, withScreenRecords } from './screenrecords.ts';
+import { SCREEN_STATES, checkStateBackgrounds, ourPictureName, withStateBackgrounds } from './backgrounds.ts';
+import { LOGITECH_REPLACED, buildOurPictures, buildPictures, checkOurPictures, checkPictures, describePictures, withPictures } from './pictures.ts';
 
 // ---------------------------------------------------------------------------------------------------
 // The assembly
@@ -137,8 +136,6 @@ export interface Assembled {
   /** With blending, the copies of each set blended for a background, which `checkBlendedLetters` reads. */
   blended?: BlendedSet[];
 }
-
-
 
 /**
  * Build the setup's container out of the donor and every generator there is, refusing where the donor

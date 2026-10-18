@@ -5,10 +5,11 @@
  */
 import type { Container } from '../../gspm.ts';
 import { ACTION_LIST_INDEX_OPCODE, modeRecords, taggedList } from '../../sections.ts';
-import { FOUR_SLOT_ITEMS, fourSlotCellAt } from '../../inventory.ts';
+
 import { characterMap, screenStrings } from '../../text.ts';
 import { ComposeError } from '../../shared/core.ts';
 import type { DeviceScreenItem } from '../../activityroles.ts';
+import { FOUR_SLOT_ITEMS, fourSlotCellAt } from './geometry.ts';
 
 export function fourSlotScreenItems(c: Container, mode: number): DeviceScreenItem[] {
   const record = (modeRecords(c) ?? [])[mode];

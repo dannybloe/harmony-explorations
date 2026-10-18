@@ -59,12 +59,12 @@ import type { Container, Instruction } from '../../gspm.ts';
 import { actionListBytes } from '../../gspm.ts';
 import { ComposeError } from '../../shared/core.ts';
 import { type ValueReader, blobReader, spelledText } from '../../shared/spelling.ts';
-import type { MenuPart } from './menus.ts';
+import type { MenuPart } from '../../screenparts.ts';
 import { bottomLineParts } from './chrome.ts';
 import type { ContainerLayout, ContainerPiece } from '../../frame.ts';
 import { layOutContainer, takeApart } from '../../frame.ts';
 import {
-  BYTE_REGISTER_LOAD, CONDITION_OPCODE, CONDITION_TWO_ARMS, FOUR_SLOT_SCREEN_WIDTH, KEY_EVENT_PRESS, KEY_EVENT_SHIFT,
+  BYTE_REGISTER_LOAD, CONDITION_OPCODE, CONDITION_TWO_ARMS, KEY_EVENT_PRESS, KEY_EVENT_SHIFT,
 } from '../../inventory.ts';
 import { POP_MODE, SILENT_WRITE, STATE_BAND, STATE_WRITE_BASE } from '../../actions.ts';
 import { keyMapEntries } from './modezero.ts';
@@ -76,6 +76,7 @@ import {
 import type { PieceTarget } from '../../statetables.ts';
 import { FIRMWARE_SCREENS, type WiringModel, type WiringSpec, describeWiring, wiringFrontIndex } from './wiring.ts';
 import { SCREEN_DRAW_IMAGE, SCREEN_DRAW_IMAGE_AT, SCREEN_SELECT_FONT } from '../../screen.ts';
+import { FOUR_SLOT_SCREEN_WIDTH } from './geometry.ts';
 
 /** Which of the five own key maps a firmware screen has. */
 export type FirmwareKeyMap = 'placeholder' | 'battery' | 'low battery' | 'usb' | 'none';

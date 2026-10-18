@@ -31,7 +31,9 @@ import { EDGE_CODES, PANEL_LEFT, panelPoint, touchOwner, touchPageOf } from './t
 import type { ScreenString } from './text.ts';
 import type { TouchArea } from './tables.ts';
 import type { ModePage, ModeRecord, StateRecord } from './sections.ts';
-import type { Instruction } from './gspm.ts';
+import type { Instruction, PerArchitecture } from './gspm.ts';
+import { cornerCellAt, cornerLayoutOf } from './cornerlayout.ts';
+import type { CornerLayout } from './cornerlayout.ts';
 import type { ScreenChoice } from './render.ts';
 
 /**
@@ -1531,6 +1533,13 @@ export function deviceVariables(c: Container): DeviceVariable[] {
  * unrelated code, base slot 0's bytes against base slot 7's glyph pixels.
  */
 /**
+ * Whether a device list row opens with the beeper, per architecture, in a table so that the reader names an
+ * architecture in one place rather than testing it inline. Arch 14 (Harmony 600, 650 and 700) is the one without,
+ * section 285; every other architecture is read with the Harmony One's shape, which has it.
+ */
+const DEVICE_LIST_ROW_BEEPS: PerArchitecture<boolean> = { 14: false };
+
+/**
  * A device list row's shape, per architecture, or false where none is known.
  *
  * Arch 12 (Harmony One): beep, enter a mode, mark device mode. Arch 14 (Harmony 600, 650 and 700):
@@ -1549,7 +1558,7 @@ export function isDeviceListRowShape(
   list: readonly Instruction[] | undefined, architecture: number | undefined,
 ): boolean {
   if (list === undefined) return false;
-  if (architecture === 14) {
+  if (DEVICE_LIST_ROW_BEEPS[architecture ?? -1] === false) {
     return list.length === 2
       && list[0]?.opcode === ENTER_MODE
       && (list[1] as Instruction).opcode >= STATE_WRITE_BASE;
@@ -1663,8 +1672,9 @@ export function deviceListRows(c: Container): DeviceListRow[] {
   // lines rather than labels is what left the Wii's page unpaired in section 240's first reading.
   const record = records[best[0]!.menu] as ModeRecord;
   const drawn = screenStrings(c, characterMap(c));
-  if (c.architecture === 14) {
-    labelFourSlotRows(best, record, drawn);
+  const corners = cornerLayoutOf(c.architecture);
+  if (corners !== undefined) {
+    labelCornerRows(best, record, drawn, corners);
     return best;
   }
   record.pages.forEach((page, pageIndex) => {
@@ -1693,70 +1703,7 @@ export function deviceListRows(c: Container): DeviceListRow[] {
 const DEVICE_LIST_ROW_PITCH = 54;
 
 /**
- * The four items of an arch 14 (Harmony 600, 650 and 700) page, in the order a page fills them:
- * one per button around the display, top left, top right, bottom left, bottom right, and each
- * item's cell. Section 285, measured on all four arch 14 user configurations: every page of a
- * device list or a device mode binds a prefix of this order, 184 of 184, and holds four but the last
- * of its mode and one page of the 700s' receiver mode. The scans are the buttons' own, the screen
- * being no touch screen.
- */
-export const FOUR_SLOT_ITEMS: readonly { scan: number; column: 0 | 1; row: 0 | 1 }[] = [
-  { scan: 8, column: 0, row: 0 },
-  { scan: 2, column: 1, row: 0 },
-  { scan: 9, column: 0, row: 1 },
-  { scan: 34, column: 1, row: 1 },
-];
-/**
- * The order a page's tagged list **stores** the four scans in, which is not the order they fill:
- * bottom left, top left, bottom right, top right, with a scan the page does not bind left out. All 184
- * device list and device mode pages of the four arch 14 user configurations store theirs this way,
- * full ones as 9, 8, 34, 2 and a three item one as 9, 8, 2. The firmware searches a list for a tag, so
- * nothing here says the order matters to the remote; a composer keeps it so that a composed page is
- * one the compiler could have written. Section 285.
- */
-export const FOUR_SLOT_STORED_ORDER: readonly number[] = [9, 8, 34, 2];
-/**
- * Where an item's label sits, per cell, on a 128 pixel screen. A left label starts at x 3 and a right
- * one **ends** at 125, whatever its font, 448 of 448 and 414 of 414 on the corner pages of the four arch
- * 14 user configurations' device lists and device modes, where the start moves with the width. In the
- * top row a one line label sits at y 40 whatever its font, and a two line label starts at 25 with its
- * second line one font height below, which is 40 again in the usual font; the bottom row is 50 lower.
- */
-export const FOUR_SLOT_LEFT_X = 3;
-export const FOUR_SLOT_RIGHT_END = 125;
-export const FOUR_SLOT_LABEL_Y: readonly [number, number] = [40, 90];
-/**
- * The second layout a device list takes on arch 14: **two rows**, a device per row bound to both
- * buttons of that row, its label centred, at `x = floor((128 - width) / 2)` on 21 of 21 such labels
- * over the four arch 14 user configurations, and at y 35 and 79. One device list menu per
- * configuration is drawn this way, beside the corner ones. Section 285.
- */
-export const TWO_ROW_LABEL_Y: readonly [number, number] = [35, 79];
-export const FOUR_SLOT_SCREEN_WIDTH = 128;
-/** The two scans of each row, top then bottom, as `FOUR_SLOT_ITEMS` places them. */
-export const FOUR_SLOT_ROWS: readonly (readonly number[])[] = [0, 1].map((row) =>
-  FOUR_SLOT_ITEMS.filter((item) => item.row === row).map((item) => item.scan));
-
-/** The vertical bands the two rows' labels fall in: above the title bar's end and below the bar. */
-const FOUR_SLOT_ROW_BANDS: readonly [number, number, number] = [16, 64, 112];
-const FOUR_SLOT_COLUMN_SPLIT = 64;
-
-/**
- * The corner a line drawn at `(x, y)` belongs to, as an index into `FOUR_SLOT_ITEMS`, or undefined for
- * a line above or below the two label rows, which is the title, the page counter and the bottom word.
- * One place, because the reader pairs labels with rows by it and `composeActivityDeviceList` moves a
- * label from one corner to another by it.
- */
-export function fourSlotCellAt(x: number, y: number): number | undefined {
-  const row = FOUR_SLOT_ROW_BANDS.findIndex((top, k) =>
-    k < 2 && y >= top && y < (FOUR_SLOT_ROW_BANDS[k + 1] as number));
-  if (row < 0) return undefined;
-  const column = x < FOUR_SLOT_COLUMN_SPLIT ? 0 : 1;
-  return FOUR_SLOT_ITEMS.findIndex((one) => one.row === row && one.column === column);
-}
-
-/**
- * An arch 14 device list page's labels, paired with its rows by **cell** rather than by rank: two
+ * A corner laid device list page's labels, arch 14's (Harmony 600, 650 and 700), paired with its rows by **cell** rather than by rank: two
  * labels share a line when they sit side by side, so the rank pairing arch 12 uses would read "TV
  * KPN" as one label. The lines of a cell join top to bottom, which is how a long name wraps.
  *
@@ -1765,18 +1712,18 @@ export function fourSlotCellAt(x: number, y: number): number | undefined {
  * first of the tied lists, which is a corner one on every configuration here because its mode number
  * is lower; so the case does not arise, by that tie order rather than by width, and is not read.
  */
-function labelFourSlotRows(
-  rows: DeviceListRow[], record: ModeRecord, drawn: ReturnType<typeof screenStrings>,
+function labelCornerRows(
+  rows: DeviceListRow[], record: ModeRecord, drawn: ReturnType<typeof screenStrings>, corners: CornerLayout,
 ): void {
   record.pages.forEach((page, pageIndex) => {
     const lines = drawn.filter((one) => one.program === page.program
       && one.text.trim().length >= SHORTEST_USEFUL_LABEL);
     for (const row of rows) {
       if (row.page !== pageIndex) continue;
-      const item = FOUR_SLOT_ITEMS.findIndex((one) => one.scan === row.scan);
+      const item = corners.items.findIndex((one) => one.scan === row.scan);
       if (item < 0) continue;
       const inCell = lines
-        .filter((one) => fourSlotCellAt(one.x, one.y) === item)
+        .filter((one) => cornerCellAt(corners, one.x, one.y) === item)
         .sort((a, b) => a.y - b.y);
       if (inCell.length > 0) row.label = inCell.map((one) => one.text.trim()).join(' ');
     }

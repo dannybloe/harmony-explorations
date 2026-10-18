@@ -25,18 +25,16 @@ import {
   OXANIUM_FACE_SPECS,
   oxaniumFace,
   checkOxaniumFonts,
-  compareViews,
   layOutContainer,
   letterRows,
   maskForm,
   oxaniumAlphabet,
   parse,
   screenStrings,
-  setupView,
   takeApart,
-  withOxaniumFonts,
-} from '../src/index.ts';
+  withOxaniumFonts} from '../src/index.ts';
 import { FOUR_SLOT_CHOICES } from '../src/families/four-slot/choices.ts';
+import { compareViews, setupView } from '../src/families/four-slot/compare.ts';
 
 /** The inks our letters are drawn in, the four slot family's default, `todo-compile-650.md` 10.7.5. */
 const INKS = FOUR_SLOT_CHOICES.letterInks;

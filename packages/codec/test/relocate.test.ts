@@ -40,9 +40,8 @@ import {
   rebase,
   relocate,
   relocationFloor,
-  setupView,
-  trailerAgrees,
-} from '../src/index.ts';
+  trailerAgrees} from '../src/index.ts';
+import { setupView } from '../src/families/four-slot/compare.ts';
 
 /** The whole corpus, the same nineteen as every corpus wide claim. */
 const SAMPLES = [

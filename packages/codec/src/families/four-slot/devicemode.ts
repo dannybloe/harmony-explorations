@@ -16,11 +16,12 @@
  */
 import type { Container } from '../../gspm.ts';
 import { fontSets, glyphOf, type FontSet } from '../../font.ts';
-import { FOUR_SLOT_LEFT_X, FOUR_SLOT_RIGHT_END, FOUR_SLOT_LABEL_Y } from '../../inventory.ts';
+
 import {
   OXANIUM_WEIGHTS, defaultWeight, oxaniumFace, type OxaniumFaceName, type OxaniumWeight,
 } from '../../lettering.ts';
 import { type HardKey, oxaniumFacesOf } from '../../devicemode.ts';
+import { FOUR_SLOT_LEFT_X, FOUR_SLOT_RIGHT_END, FOUR_SLOT_LABEL_Y } from './geometry.ts';
 
 // ---------------------------------------------------------------------------------------------------
 // Keys

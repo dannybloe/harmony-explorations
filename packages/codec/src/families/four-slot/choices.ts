@@ -22,15 +22,17 @@
  * measured in 8.2, and the outline is fitted to them. Its weight is, `faceWeights`, since 10.8.5.
  */
 import type { ActivityKey } from './activitykeys.ts';
-import type { BackgroundColours } from '../../backgrounds.ts';
+
 import { rgbTo565 } from '../../png.ts';
 import {
   LETTERING_FACES, OXANIUM_WEIGHTS, defaultWeight, type LetterInks, type OxaniumFaceName, type OxaniumWeight,
 } from '../../lettering.ts';
 import type { WiringSettings } from './wiring.ts';
 import { iconNames } from '../../icons.ts';
-import type { OurPictureName } from '../../pictures.ts';
+
 import type { CommonChoices, DelayDefaults } from '../family.ts';
+import { type BackgroundColours } from './backgrounds.ts';
+import { type OurPictureName } from './pictures.ts';
 
 export interface FourSlotChoices extends CommonChoices {
   /**

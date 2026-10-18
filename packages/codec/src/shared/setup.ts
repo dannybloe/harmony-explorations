@@ -388,12 +388,6 @@ function catalogueTypes(setup: Recipe, archive: string | undefined): (name: stri
   return (name) => (name === undefined ? undefined : types.get(name));
 }
 
-/**
- * The skins `composeSetup` has been run on: the Harmony One, skin 54, which the spare Harmony One reports,
- * `todo-compile-one.md` 1.2. A family the assembly's generators build for goes through `assembleSetup`.
- */
-export const COMPOSE_SETUP_SKINS: ReadonlySet<number> = new Set([54]);
-
 export interface ComposedSetup {
   bytes: Uint8Array;
   container: Container;
@@ -418,7 +412,9 @@ export interface ComposedSetup {
  */
 export function composeSetup(setup: Recipe, options: AssembleOptions): ComposedSetup {
   const target = recipeTarget(setup);
-  if (!COMPOSE_SETUP_SKINS.has(target.skin)) {
+  // The skins composing alone has been run on are the family's, `Family.composedSkins`; a family the assembly's
+  // generators build for goes through `assembleSetup`.
+  if (target.family.composedSkins?.has(target.skin) !== true) {
     throw new AssemblyError(`composing a setup alone is measured on the Harmony One, skin 54, and the recipe is for the ${setup.model.name}, skin ${target.skin}`);
   }
   if (setup.choices !== undefined) throw new AssemblyError('the composers alone take the family\'s own choices, and the recipe states some');

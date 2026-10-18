@@ -17,10 +17,7 @@ import { fontsBySize, ladderOf, TITLE_RUNG } from './devicemode.ts';
 import { letterForm } from '../../lettering.ts';
 import { Container, parse, SCAN_MASK } from '../../gspm.ts';
 import {
-  activities, ACTIVITY_STATE_NAME, caseQueued, deviceListRows, ENTER_MODE, FOUR_SLOT_ITEMS, FOUR_SLOT_LABEL_Y,
-  FOUR_SLOT_LEFT_X, FOUR_SLOT_RIGHT_END, FOUR_SLOT_ROWS, FOUR_SLOT_SCREEN_WIDTH, FOUR_SLOT_STORED_ORDER,
-  fourSlotCellAt, KEY_EVENT_PRESS, KEY_EVENT_SHIFT, MAP_VALUE_OPCODE, RUN_SCREEN_PROGRAM, stateVariables,
-  TWO_ROW_LABEL_Y,
+  activities, ACTIVITY_STATE_NAME, caseQueued, deviceListRows, ENTER_MODE, KEY_EVENT_PRESS, KEY_EVENT_SHIFT, MAP_VALUE_OPCODE, RUN_SCREEN_PROGRAM, stateVariables,
 } from '../../inventory.ts';
 import { relocate } from '../../relocate.ts';
 import {
@@ -38,6 +35,8 @@ import {
 } from '../../shared/spelling.ts';
 import { characterMap, referencedStringAddress } from '../../text.ts';
 import { valueMaps } from '../../valuemap.ts';
+import { type MenuPart, menuPartsBytes } from '../../screenparts.ts';
+import { FOUR_SLOT_ITEMS, FOUR_SLOT_STORED_ORDER, FOUR_SLOT_LEFT_X, FOUR_SLOT_RIGHT_END, FOUR_SLOT_LABEL_Y, TWO_ROW_LABEL_Y, FOUR_SLOT_SCREEN_WIDTH, FOUR_SLOT_ROWS, fourSlotCellAt } from './geometry.ts';
 
 /**
  * What a composer reads out of an arch 14 configuration before it moves anything. The chrome and the
@@ -842,14 +841,6 @@ export interface FourSlotMenuPageContent {
   labels: FourSlotMenuLabel[];
 }
 
-/** One instruction of a built menu page, before it is spelled as bytes. */
-export type MenuPart =
-  | { op: 'image'; address: number }
-  | { op: 'queue'; program: number }
-  | { op: 'bar'; at: readonly number[]; address: number }
-  | { op: 'font'; font: number }
-  | { op: 'text'; x: number; y: number; codes: number[]; role: 'title' | 'counter' | 'label' | 'bottom' | 'fixed' }
-  | { op: 'end' };
 
 /**
  * Where a place's label lines go: on a corner page as section 285 measured, a left label from x 3 and a
@@ -953,48 +944,6 @@ export function menuPageBytes(
   );
 }
 
-/**
- * The one encoder of a built page's parts, which `menuPageBytes` and the screen records of
- * `screenrecords.ts`, section 356, both spell through. `home` gives the value a text is drawn by
- * reference to, or undefined to draw it inline; `address` spells a three byte address field for a
- * value at byte `at` of the program, for the part it belongs to, which is how a caller that writes addresses itself and a caller
- * that leaves them to the frame as references share it; `inline`, where given, is told where an inline
- * text's glyph codes start, which is the address a later text drawing the same codes points at.
- */
-export function menuPartsBytes(
-  parts: readonly MenuPart[],
-  home: (part: Extract<MenuPart, { op: 'text' }>) => number | undefined,
-  address: (value: number, at: number, part: MenuPart) => readonly number[],
-  inline?: (part: Extract<MenuPart, { op: 'text' }>, at: number) => void,
-): Uint8Array {
-  const out: number[] = [];
-  for (const part of parts) {
-    if (part.op === 'image') {
-      out.push(SCREEN_DRAW_IMAGE, ...DEVICE_PAGE_BACKGROUND_AT);
-      out.push(...address(part.address, out.length, part));
-    } else if (part.op === 'queue') {
-      out.push(SCREEN_QUEUE_INSTRUCTION, part.program & 0xff, part.program >> 8, RUN_SCREEN_PROGRAM);
-    } else if (part.op === 'bar') {
-      out.push(SCREEN_DRAW_IMAGE_AT, ...part.at);
-      out.push(...address(part.address, out.length, part));
-    } else if (part.op === 'font') {
-      out.push(SCREEN_SELECT_FONT, part.font);
-    } else if (part.op === 'end') {
-      out.push(SCREEN_END);
-    } else {
-      const target = home(part);
-      if (target === undefined) {
-        out.push(SCREEN_TEXT_INLINE, part.x, part.y);
-        inline?.(part, out.length);
-        out.push(...part.codes, 0);
-      } else {
-        out.push(SCREEN_TEXT_AT, part.x, part.y);
-        out.push(...address(target, out.length, part));
-      }
-    }
-  }
-  return new Uint8Array(out);
-}
 
 /**
  * What a menu page of the configuration holds, read for the builder: its fonts and its labels. Each text

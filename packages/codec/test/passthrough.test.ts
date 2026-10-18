@@ -40,7 +40,6 @@ import {
   deviceStateMachines,
   deviceVariables,
   devices,
-  FOUR_SLOT_ITEMS,
   handlerSets,
   infraredCodesPerList,
   inputTarget,
@@ -56,6 +55,7 @@ import {
 } from '../src/index.ts';
 import { composeActivityDeviceList } from '../src/families/four-slot/devicelist.ts';
 import { activityKeyedRecords } from '../src/families/four-slot/activityscreen.ts';
+import { FOUR_SLOT_ITEMS } from '../src/families/four-slot/geometry.ts';
 
 const START = 'h650_start_config';
 const BASE = 'h650_panasonic_config';

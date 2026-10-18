@@ -67,14 +67,7 @@ import { arch14Starts } from './start.ts';
 import { layOutContainer, takeApart } from '../../frame.ts';
 import { fontSets, glyphOf } from '../../font.ts';
 import {
-  FOUR_SLOT_ITEMS,
-  FOUR_SLOT_LABEL_Y,
-  FOUR_SLOT_LEFT_X,
-  FOUR_SLOT_RIGHT_END,
-  FOUR_SLOT_SCREEN_WIDTH,
-  TWO_ROW_LABEL_Y,
-  caseQueued,
-  fourSlotCellAt, ENTER_MODE,
+  caseQueued, ENTER_MODE,
 } from '../../inventory.ts';
 import { TWO_LINE_RISE } from './devicemode.ts';
 import { modeRecords } from '../../sections.ts';
@@ -91,6 +84,7 @@ import { type CharacterMap, characterMap, glyphsReferencedBy } from '../../text.
 import { valueMaps } from '../../valuemap.ts';
 import { FIRMWARE_SCREEN_TEMPLATES } from './firmwarescreens.ts';
 import { FIRMWARE_SCREENS, describeWiring } from './wiring.ts';
+import { FOUR_SLOT_ITEMS, FOUR_SLOT_LEFT_X, FOUR_SLOT_RIGHT_END, FOUR_SLOT_LABEL_Y, TWO_ROW_LABEL_Y, FOUR_SLOT_SCREEN_WIDTH, fourSlotCellAt } from './geometry.ts';
 
 // The form rule, the refusal and writing texts into a layout are every family's, `shared/screentexts.ts`, where
 // they moved from here unchanged; exported again from here for the callers that name this module.

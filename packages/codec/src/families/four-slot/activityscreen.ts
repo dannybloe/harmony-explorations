@@ -16,14 +16,14 @@ import { fourSlotPageProgram } from '../../families/four-slot/devicescreen.ts';
 import { appendMode } from '../../shared/modes.ts';
 import {
   assertTextsAtHome, FOUR_SLOT_MAX_PAGES, fourSlotMenuChrome, fourSlotMenus, fourSlotPageList, type FourSlotTemplate,
-  fourSlotTemplate, growFourSlotMenu, idleDeviceList, menuLayout, menuPageBytes, type MenuPart, openFourSlotMenuPage,
+  fourSlotTemplate, growFourSlotMenu, idleDeviceList, menuLayout, menuPageBytes, openFourSlotMenuPage,
   pageRecordDifference, partsDifference,
 } from '../../families/four-slot/menus.ts';
 import { type FontSet, fontSets } from '../../font.ts';
 import { archSlot, Container, type Instruction, parse } from '../../gspm.ts';
 import {
   activities, ACTIVITY_STATE_NAME, activityBindings, activityNames, caseQueued, compilerCaseOrder, compilerTagOrder,
-  ENTER_MODE, FOUR_SLOT_ITEMS, FOUR_SLOT_LEFT_X, FOUR_SLOT_RIGHT_END, FOUR_SLOT_ROWS, FOUR_SLOT_SCREEN_WIDTH,
+  ENTER_MODE,
   KEY_EVENT_PRESS, KEY_EVENT_SHIFT, MAP_VALUE_OPCODE, RUN_SCREEN_PROGRAM, SELECT_BINDING_SET,
   SELECT_BINDING_SET_MASK, stateVariables,
 } from '../../inventory.ts';
@@ -47,9 +47,12 @@ import { stateVariableName } from '../../statetables.ts';
 import { characterMap, screenStrings } from '../../text.ts';
 import { type ValueMap, valueMaps } from '../../valuemap.ts';
 import { ourStateColours, stateLookOf, withStateLook } from './statelook.ts';
-import { screenRecordModes } from '../../screenrecords.ts';
+
 import { takeApart } from '../../frame.ts';
 import { u24 } from '../../bytes.ts';
+import { FOUR_SLOT_ITEMS, FOUR_SLOT_LEFT_X, FOUR_SLOT_RIGHT_END, FOUR_SLOT_SCREEN_WIDTH, FOUR_SLOT_ROWS } from './geometry.ts';
+import type { MenuPart } from '../../screenparts.ts';
+import { screenRecordModes } from './screenrecords.ts';
 
 /**
  * The picture a page of the arch 14 activity menu holding **one** activity draws, section 316: the
@@ -350,7 +353,6 @@ export const STARTUP_FIXED_LINE_Y: readonly number[] = [82, 96, 110];
 
 /** The word under the working screen's centre key, which goes to the device list, section 290. */
 const WORKING_SCREEN_WORD = 'Devices';
-
 
 /**
  * The base slot 14 records keyed by the activity, found by their keys and what their cases queue: every

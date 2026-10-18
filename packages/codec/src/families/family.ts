@@ -342,6 +342,13 @@ export interface Family<Choices extends CommonChoices = CommonChoices> {
    * and what the catalogue states of them, which the configuration does not say.
    */
   readonly composedBuilders?: (c: Container, composed: readonly ComposedDeviceNote[]) => { readonly container: Container; readonly built: readonly string[] };
+  /**
+   * The skins `composeSetup` has been run on for this family, where it composes a setup onto a donor at all; a
+   * skin outside it is refused. Absent, the family's setups are not composed that way. The Harmony One's is skin
+   * 54, which the spare Harmony One reports, `todo-compile-one.md` 1.2; it was a set in `shared/setup.ts` until
+   * 3.3.3.2.
+   */
+  readonly composedSkins?: ReadonlySet<number>;
 }
 
 /**

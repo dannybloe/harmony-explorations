@@ -28,14 +28,9 @@ import { require_, skipUnless } from '@harmony/lab';
 import {
   type Container,
   type ContainerPiece,
-  activityEntriesByName,
-  buildScreenRecords,
   characterMap,
-  compareViews,
   decode,
-  describeScreenRecords,
   glyphsReferencedBy,
-  inActivityOrder,
   layOutContainer,
   modeRecords,
   parse,
@@ -43,16 +38,14 @@ import {
   referencedStringAddress,
   restamped,
   screenProgram,
-  screenRecordModes,
-  setupView,
   takeApart,
-  withScreenRecords,
   SCREEN_TEXT_AT,
-  SCREEN_TEXT_INLINE,
-} from '../src/index.ts';
+  SCREEN_TEXT_INLINE} from '../src/index.ts';
 import { ScreenTextError, buildScreenTexts, checkScreenTexts, describeScreenTexts, withScreenTexts } from '../src/families/four-slot/screentexts.ts';
 import { buildFirmwareScreens, describeFirmwareScreens, withFirmwareScreens } from '../src/families/four-slot/firmwarescreens.ts';
 import { describeWiring } from '../src/families/four-slot/wiring.ts';
+import { activityEntriesByName, buildScreenRecords, describeScreenRecords, inActivityOrder, screenRecordModes, withScreenRecords } from '../src/families/four-slot/screenrecords.ts';
+import { compareViews, setupView } from '../src/families/four-slot/compare.ts';
 
 /** The thirteen arch 14 compiles section 312 names. */
 const THIRTEEN = ['h650_config_region', 'h650_panasonic_config', 'h600_config', 'calibration_h600',

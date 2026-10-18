@@ -68,7 +68,7 @@ Run these over the change; each prints nothing when the change keeps the split.
 A hit in a builder needs moving behind the family before it is committed. **`test/generic.test.ts` is the
 executable half**: it lists every module outside `families/` that still names a remote, with what it names,
 and fails when a module joins the list or a count on it rises. The list is the debt, `todo-compile-one.md`
-3.3, and it may only shrink: a module leaves it when its remote specific part has moved into a family.
+3.3, and it is empty since that item was finished: a module that would join it moves its part into a family instead.
 **Never add a module to that list to make a commit pass**; move the part instead.
 
 ## The cases met so far
@@ -83,6 +83,8 @@ and fails when a module joins the list or a count on it rises. The list is the d
 | the device page, the activity screen, a menu row | `Family` members, one implementation per family |
 | which command each hard key sends in device mode | per family, since the Harmony 650's `HARD_KEYS` does not carry over to the Harmony One by key name |
 | our faces' weights, the pad font, the menu row fonts | the family's choices |
+| a layout a reader needs to read Logitech's pages and a builder needs to write ours | a reader's table of type `PerArchitecture` (`CORNER_LAYOUTS`), which the family takes under its own names; `generic.test.ts` counts no scan inside one |
+| the skins a shared step has been run on | a `Family` member, as `composedSkins` |
 | a character only one family's compiles draw, such as the Harmony One's start up title joiner, a blank a plain character map reads as a space | the family's own character map over the shared one, `touchCharacterMap`; the speller and the form rule stay shared |
 | the activity keys an activity is put on, read and edited | `Family.activityKeyEditor`, absent where a family has none |
 | the values a family's state tables hold that another's do not, the Harmony One's minute call and width line among them | `Family.stateTables`, which the generic `buildStateTables` takes; not a per architecture table in the shared module, which is how `todo-compile-one.md` 6.4 first held the One's |

@@ -8,10 +8,10 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 
 import {
-  IconError, OUR_PICTURE_PLACES, buildOurPictures, drawIcon, iconNames, iconPath,
-} from '../src/index.ts';
+  IconError, drawIcon, iconNames, iconPath} from '../src/index.ts';
 import { FOUR_SLOT_CHOICES } from '../src/families/four-slot/choices.ts';
 import { STARTUP_FIXED_LINE_Y, STARTUP_TITLE_SECOND_Y } from '../src/families/four-slot/activityscreen.ts';
+import { OUR_PICTURE_PLACES, buildOurPictures } from '../src/families/four-slot/pictures.ts';
 
 /** The ink's box on a drawing `width` wide: leftmost, rightmost, top and bottom ink pixel, and the count. */
 function inkBox(ink: Uint8Array, width: number): [number, number, number, number, number] {

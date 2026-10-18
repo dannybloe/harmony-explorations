@@ -23,10 +23,9 @@ import {
   ACTION_QUEUE_INSTRUCTIONS, ARCH14_INFERRED, ComposeError, EditError, QueueError, SCREEN_ITEM_BEEP,
   activities, activityPauseGroups, applyEdits, devices, assertQueueFits, bindKeyToList, composeSequence,
   coverage, deviceKeypadLists, handlerSets, infraredCodesPerList, irCarrier, irFrames, irGroups, irRecordBlocks,
-  keepDeviceOn, listSends, modeRecords, parse, payloadOf, queueRun, roundTrip, sendPreludes, sequenceBody,
-  setupView, taggedList, trailerAgrees,
-  type Container, type Instruction, type SequenceStep,
-} from '../src/index.ts';
+  keepDeviceOn, modeRecords, parse, payloadOf, queueRun, roundTrip, sendPreludes, sequenceBody, taggedList, trailerAgrees,
+  type Container, type Instruction, type SequenceStep} from '../src/index.ts';
+import { listSends, setupView } from '../src/families/four-slot/compare.ts';
 
 /** Every arch 14 configuration Logitech compiled that the lab holds, as `compose.test.ts` lists them. */
 const ARCH14 = ['h650_config_region', 'h650_panasonic_config', 'h600_config', 'calibration_h600',
@@ -556,7 +555,6 @@ test('Logitech\'s sequence on the Harmony 650 is the composer\'s list, given its
     assert.deepEqual(theirs.map((code) => blocksIn(c, code, kpn)), [1, 1, 1]);
     assert.deepEqual([24, 47, 13].map((scan) => blocksIn(before, beforeCode(scan), kpn)), [2, 2, 2]);
   });
-
 
 /** What a list sends, as the setup comparison states it, `compare.ts`. */
 const PLASMA_RADIO = 'activity Plasma kijken | page 1 | scan 34';

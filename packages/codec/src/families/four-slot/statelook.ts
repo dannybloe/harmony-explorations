@@ -24,10 +24,7 @@ import { u24 } from '../../bytes.ts';
 import type { ContainerPiece, PieceRef } from '../../frame.ts';
 import { layOutContainer, takeApart } from '../../frame.ts';
 import { archSlot, type Container, parse } from '../../gspm.ts';
-import {
-  type BackgroundColours, ONE_LOOK_SKINS, RUNNABLE_SCREEN_PROGRAMS, SCREEN_STATES, stateBackgroundColour, statePatchBytes,
-  stateBackgroundBytes,
-} from '../../backgrounds.ts';
+
 import { deviceListRows } from '../../inventory.ts';
 import { SCREEN_TABLE_SLOT, bitmapReference, screenProgram } from '../../screen.ts';
 import { modeRecords } from '../../sections.ts';
@@ -36,6 +33,7 @@ import { contentKey } from '../../screencategories.ts';
 import { ComposeError } from '../../shared/core.ts';
 import { cornerPrograms, picturesByContent } from './chrome.ts';
 import { cornerPlaceAt, cornerProgram, cornerProgramAt } from './empty.ts';
+import { type BackgroundColours, ONE_LOOK_SKINS, RUNNABLE_SCREEN_PROGRAMS, SCREEN_STATES, stateBackgroundBytes, stateBackgroundColour, statePatchBytes } from './backgrounds.ts';
 
 /** Where a state's look sits: its background and its patch as addresses, its corner program as a base slot 11 entry. */
 export interface StateLook {
