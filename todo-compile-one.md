@@ -176,9 +176,23 @@ One with its sequence's keys translated by name, since the One's keys have other
 ## 7. The empty configuration for the One
 
 - [ ] 7.1 Built for the skin the spare reports, decision 23, and checked: it rebuilds, every byte attributed to a generator and none carried
+  - [ ] 7.1.1 The One's font table stated, not read off a donor: which sets the sixteen English compiles of skin 54 hold, their order and inks, as the Harmony 650's `EMPTY_FONT_SETS` does
+  - [ ] 7.1.2 The fixed pictures built with no donor picture read: each picture's transparency is where our own drawing leaves a pixel empty, in place of Logitech's mask (the gauges' corners and the cross differ by a few pixels), to be seen at the bench in 7.2
+  - [ ] 7.1.3 A skeleton laid out from nothing through 6.2's placer (font table, state tables, key table, empty counted tables) that passes the parse checks, and a probe container the builders spell through
+  - [ ] 7.1.4 An empty One numbered: its modes, variables, value maps, lists and hit pages, each `describeTouch*` split into reading a file and making a spec, as `four-slot/empty.ts` does
+  - [ ] 7.1.5 Wiring and timers for an empty One: the redraw timers (13 to 20 on Logitech's compiles, rule not read), the fixed cases, the hour list
+  - [ ] 7.1.6 The idle device list with no rows from the template (shared with 4.3.3), and the help screens' two hit pages, index 4 and 24, 167 bytes, which no builder makes
+  - [ ] 7.1.7 The empty One assembled, every part by its generator, the fixed screens for the build year (a leap year in the Year picker's range is refused today)
+  - [ ] 7.1.8 An attribution over the whole file, frame, letters, table headers and builders, pinned at zero bytes carried
+  - [ ] 7.1.9 The finding says what no Logitech compile shows (no One compile holds zero devices: no device list rows, no All Off case, empty device records), unconfirmed until 7.2
 - [ ] 7.2 Written to the spare Harmony One with a bench test: it starts, shows its menus, the clock runs, All Off returns
 
 ## 8. The finish line
 
 - [ ] 8.1 The test setup assembled on the empty configuration, checked against the same setup composed in 1.2
+  - [ ] 8.1.1 The composers stop reading Logitech's content on an empty One: the device list menu and its marker, the pad font, the unread Devices copy, the first device's All Off case
+  - [ ] 8.1.2 `composeSetup` takes the empty One as a donor of ours, with no lettering or Logitech picture step
+  - [ ] 8.1.3 All seven devices composed from the catalogue, the Denon and the LG too, so the donor's 101656 infrared bytes are gone
+  - [ ] 8.1.4 Carried pinned at zero beside `composesetup.test.ts`, the 34 unrun lists gone with the donor
+  - [ ] 8.1.5 Compared with the 1.2 composition: drawn texts, key bindings, lists reached, each difference explained
 - [ ] 8.2 Written to the spare Harmony One and run with a bench test: behaviour as the file predicts and the look seen at the bench
