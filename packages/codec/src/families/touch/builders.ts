@@ -37,6 +37,12 @@
  *    same template, `withTouchDevicePage`, so this rebuilds those and the donor's devices' alike, and nothing of a
  *    device page is carried. After the activity menu, beside it in kind, and before the case programs and the hit
  *    pages, which read the leads it keeps; the lists a pad calls, a device's commands, stay the device composer's;
+ * 7b. every activity's start up screen and working screen, their own key maps, pages, the lists they run but a pad's
+ *    command, and their hit pages, section 422, `activityscreens.ts`: on the composed path the activity composer
+ *    lays each activity's screens out by the same template, `withTouchActivityScreensRebuilt`, so this rebuilds them,
+ *    the donor's activities' and the composed ones alike. After the device pages, beside them in kind, whose words
+ *    ("Devices") a working screen may draw by reference, and before the case programs and the hit pages, which read
+ *    the leads it keeps; the lists a pad calls, a command or a sequence's steps, stay the composers';
  * 8. base slot 11's case programs of the value maps, the lists the toggles and the all off call, and base slot 11's
  *    table, section 416, `caseprograms.ts`, after the clock header because the table names its four programs at
  *    their entries, and after the composers because the table names every case, the activities' among them. The
@@ -124,6 +130,7 @@ import { buildTouchCasePrograms, buildTouchScreenTable, describeTouchCaseProgram
 import { buildTouchHitPages, describeTouchHitPages, withTouchHitPages } from './hitpages.ts';
 import { buildTouchActivityMenu, describeTouchActivityMenu, withTouchActivityMenu } from './activitymenu.ts';
 import { buildTouchDevicePages, describeTouchDevicePages, withTouchDevicePages } from './devicepages.ts';
+import { buildTouchActivityScreenSet, describeTouchActivityScreens, withTouchActivityScreenSet } from './activityscreens.ts';
 import { buildTouchHelpScreens, describeTouchHelpScreens, withTouchHelpChain, withTouchHelpScreens } from './helpscreens.ts';
 import type { ComposedDeviceNote } from '../family.ts';
 import { buildTouchWiring, describeTouchWiring } from './wiring.ts';
@@ -139,7 +146,8 @@ export class TouchBuildError extends Error {}
 /** The parts the builders make, in the order they run and the order `touchBuiltBytes` attributes a byte. */
 export const TOUCH_BUILT = [
   'firmware screens', 'fixed screens', 'tour and Remote Assistant', 'status screens', 'clock header', 'help screens',
-  'activity menu', 'device pages', 'case programs', 'hit pages', 'wiring', 'state tables', 'raw slot 18', 'number senders',
+  'activity menu', 'device pages', 'activity screens', 'case programs', 'hit pages', 'wiring', 'state tables', 'raw slot 18',
+  'number senders',
 ] as const;
 export type TouchBuilt = (typeof TOUCH_BUILT)[number];
 
@@ -162,7 +170,7 @@ const SMALL_TABLES: Readonly<Record<'raw slot 18' | 'number senders', (c: Contai
  */
 const SCREEN_BUILT = [
   'firmware screens', 'fixed screens', 'tour and Remote Assistant', 'status screens', 'clock header', 'help screens',
-  'activity menu', 'device pages', 'case programs', 'hit pages',
+  'activity menu', 'device pages', 'activity screens', 'case programs', 'hit pages',
 ] as const;
 type ScreenBuilt = (typeof SCREEN_BUILT)[number];
 
@@ -224,6 +232,13 @@ const SCREENS: Readonly<Record<ScreenBuilt, (c: Container) => ScreenBuild>> = {
     const layout = takeApart(c);
     const d = describeTouchDevicePages(c, layout);
     return { ...d, layout: withTouchDevicePages(layout, buildTouchDevicePages(c, d.spec), d.place) };
+  },
+  // Every activity's two screens as the configuration holds them: on the composed path each composed activity's were
+  // laid out by the same template, `withTouchActivityScreensRebuilt`, so this rebuilds them and Logitech's alike.
+  'activity screens': (c) => {
+    const layout = takeApart(c);
+    const d = describeTouchActivityScreens(c, layout);
+    return { ...d, layout: withTouchActivityScreenSet(layout, buildTouchActivityScreenSet(c, d.spec), d.place) };
   },
   // The table is generated whole from the clock header's entries and the value maps, so on a configuration whose
   // table the rule does not give, the composition before `todo-compile-one.md` 3.2.2.3 among them, the rebuild is

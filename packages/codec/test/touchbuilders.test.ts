@@ -55,13 +55,13 @@ const lettered = (): Container => {
   return letteredOnce;
 };
 
-test('todo-compile-one 3.2.2: on Logitech\'s compile of two devices the fourteen builders on the composed path give back every byte as it was',
+test('todo-compile-one 3.2.2: on Logitech\'s compile of two devices the fifteen builders on the composed path give back every byte as it was',
      skipUnless(DONOR), () => {
   const donor = parse(require_(DONOR));
   const out = withTouchBuilders(donor);
   assert.deepEqual(out.built, [
     'firmware screens', 'fixed screens', 'tour and Remote Assistant', 'status screens', 'clock header', 'help screens', 'activity menu',
-    'device pages', 'case programs', 'hit pages', 'wiring', 'state tables', 'raw slot 18', 'number senders',
+    'device pages', 'activity screens', 'case programs', 'hit pages', 'wiring', 'state tables', 'raw slot 18', 'number senders',
   ]);
   assert.equal(out.container.blob.length, donor.blob.length);
   assert.ok(out.container.blob.every((one, k) => one === donor.blob[k]));
@@ -270,10 +270,11 @@ test('todo-compile-one 3.2.2.3: the attribution counts each builder\'s bytes on 
   // The activity menu's 260 are its 284, `checkTouchActivityMenu`'s on this compile, section 419, less the three off
   // lists its leaving calls, the page keys' and lights 5 and 7's, 24 bytes, which the firmware screens build first.
   // The device pages' 8684 are `checkTouchDevicePages`' structure on this compile, section 420: two devices, 22 pages,
-  // their lists and their three hit pages' areas, the hit pages' table staying the hit pages builder's.
+  // their lists and their three hit pages' areas, the hit pages' table staying the hit pages builder's. The activity
+  // screens' 0 since `todo-compile-one.md` 4.3, section 422: the compile holds no activity.
   assert.deepEqual(a.generated, {
     'firmware screens': 3237, 'fixed screens': 14332, 'tour and Remote Assistant': 4015, 'status screens': 3872,
-    'clock header': 3558, 'help screens': 2198, 'activity menu': 260, 'device pages': 8684, 'case programs': 497, 'hit pages': 1986, wiring: 4625, 'state tables': 962,
+    'clock header': 3558, 'help screens': 2198, 'activity menu': 260, 'device pages': 8684, 'activity screens': 0, 'case programs': 497, 'hit pages': 1986, wiring: 4625, 'state tables': 962,
     'raw slot 18': 2, 'number senders': 1,
   });
   // Of those, the bytes read as values: the help screens' 660 and the case programs' 28 are sections 415's and 416's
@@ -286,7 +287,7 @@ test('todo-compile-one 3.2.2.3: the attribution counts each builder\'s bytes on 
   // hold that a device page draws by reference.
   assert.deepEqual(a.described, {
     'firmware screens': 439, 'fixed screens': 4038, 'tour and Remote Assistant': 719, 'status screens': 699,
-    'clock header': 337, 'help screens': 660, 'activity menu': 57, 'device pages': 3482, 'case programs': 28, 'hit pages': 0, wiring: 1274, 'state tables': 0,
+    'clock header': 337, 'help screens': 660, 'activity menu': 57, 'device pages': 3482, 'activity screens': 0, 'case programs': 28, 'hit pages': 0, wiring: 1274, 'state tables': 0,
     'raw slot 18': 0, 'number senders': 0,
   });
 });

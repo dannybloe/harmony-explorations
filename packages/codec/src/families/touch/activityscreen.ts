@@ -74,21 +74,14 @@ import {
   fontOfFace, fontsOfFace, padFontOf, TOUCH_PAD_HEIGHT, TOUCH_PAD_WIDTH, type TouchLabelLine, touchLabelLength, touchLabelLines,
 } from './labels.ts';
 import { DEVICE_PAGE_SLOTS, MENU_COUNTER_XY, MENU_EDGE_SCANS, MODE_TITLE_X, MODE_TITLE_Y, pagingStyle, withHitPage } from './menus.ts';
+import {
+  DEVICES_WORD, KEY_WORD_Y as DEVICES_Y, SIGNAL_AT, STARTUP_LINES, STARTUP_TAGS, STARTUP_TITLE_WORD, STARTUP_TITLE_Y,
+  withTouchActivityScreensRebuilt,
+} from './activityscreens.ts';
 
 /** The screen is this wide, in pixels. */
 const SCREEN_WIDTH = 176;
 
-/**
- * A start up screen's key map, in Logitech's stored order: the press of 52 keys, each bound to a list that
- * does nothing, and three handlers, tag `0x06` on entering the screen, `0x07` on leaving it and `0x2D` for
- * its header. The same 55 tags in the same order on all 63 start up screens of the Harmony One's compiles.
- */
-const STARTUP_TAGS: readonly number[] = [
-  0x89, 0x88, 0x8b, 0x8a, 0x8d, 0x8c, 0x06, 0x8f, 0x07, 0x8e, 0x81, 0x83, 0x82, 0x85, 0x84, 0x87, 0x86,
-  0x98, 0x99, 0x9a, 0x9b, 0x9c, 0x9d, 0x9e, 0x9f, 0x90, 0x91, 0x92, 0x93, 0x94, 0x95, 0x96, 0x97,
-  0xab, 0xa8, 0xaf, 0xae, 0xad, 0xac, 0xa3, 0xa2, 0xa1, 0xa0, 0xa7, 0xa6, 0xa5, 0x2d, 0xa4,
-  0xb2, 0xb3, 0xb0, 0xb1, 0xb7, 0xb4, 0xb5,
-];
 const TAG_ENTERING = 0x06;
 const TAG_LEAVING = 0x07;
 const TAG_HEADER = 0x2d;
@@ -125,17 +118,10 @@ const PAD_HITS: readonly Omit<TouchArea, 'self' | 'address'>[] = [
 ];
 const DEVICES_SCAN = DEVICES_AREA.code;
 
-/** Where the texts go, measured on all 64: the start up title's row and the two fixed lines'. */
-const STARTUP_TITLE_Y = 124;
-const STARTUP_LINES: readonly (readonly [string, number])[] = [['Keep the remote pointed at', 179], ['your system.', 191]];
-const STARTUP_TITLE_WORD = 'Starting';
-/** The picture of the remote's signal a start up screen's chrome draws, 62 by 33, and where. */
+/** The picture of the remote's signal a start up screen's chrome draws, 62 by 33, at `SIGNAL_AT`. */
 const SIGNAL_SIZE: readonly [number, number] = [62, 33];
-const SIGNAL_AT: readonly [number, number] = [57, 33];
-/** "Devices" under the right half of the screen: centred on x 132, on row 202. */
-const DEVICES_WORD = 'Devices';
+/** "Devices" under the right half of the screen: centred on x 132, on row `DEVICES_Y`. */
 const DEVICES_CENTRE_TWICE = 264;
-const DEVICES_Y = 202;
 /** The page counter: a page's number ends at the slash, both on row 18, and the chrome draws the total. */
 const COUNTER_SLASH_X = 18;
 const COUNTER_Y = 18;
@@ -705,6 +691,18 @@ export function buildTouchActivityScreens(
       return withTouchScreenTable(current);
     } catch (error) {
       if (error instanceof ScreenRecordError) throw new ComposeError(`base slot 11's table: ${error.message}`);
+      throw error;
+    }
+  })();
+  // 8. Every activity's two screens laid out again by the template, `activityscreens.ts`, `todo-compile-one.md` 4.3:
+  // the new ones described and built with the ones the configuration held, so a text they draw that an earlier screen
+  // holds inline is drawn by reference to it, the template's one inline copy, and the activity is in the form the
+  // builder on the composed path rebuilds byte for byte. Built alone they drew every text inline.
+  current = (() => {
+    try {
+      return withTouchActivityScreensRebuilt(current);
+    } catch (error) {
+      if (error instanceof ScreenRecordError) throw new ComposeError(`the activity screens: ${error.message}`);
       throw error;
     }
   })();
