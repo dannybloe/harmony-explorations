@@ -70,7 +70,7 @@ import { type ValueReader, blobReader } from '../../shared/spelling.ts';
 import { Writer } from '../../emit.ts';
 import { withoutRanges } from '../../shared/dropmodes.ts';
 import { TOUCH_FIRMWARE_SCREENS } from './firmwarescreens.ts';
-import { TOUCH_FIXED_SCREENS, touchFixedScreenModes } from './fixedscreens.ts';
+import { TOUCH_FIXED_SCREENS, touchFixedScreenModes, touchFixedScreenNames } from './fixedscreens.ts';
 import { TOUCH_ASSISTANT_SCREENS, TOUCH_TOUR_SCREENS, touchTourScreenModes } from './tourscreens.ts';
 
 // ---------------------------------------------------------------------------------------------------------
@@ -252,8 +252,23 @@ export const HELP_HIT_PARTS: Readonly<Record<'attempt' | 'question' | 'nothing',
   nothing: [OK_MESSAGE, 'right', QUESTION_BODY],
 };
 
+/**
+ * The hit page a Year picker offering a leap year brings, `fixedscreens.ts`' `LEAP_SCREENS`: the Day 29 picker's last
+ * page, five buttons and the left key, by the rules every other picker page takes. A configuration holds it exactly
+ * where it holds that picker, as Logitech's three of a leap year do, which name it from that page alone, section 434;
+ * after the 23, so their order in a description stays what it was.
+ */
+const LEAP_SHAPES: readonly HitShape[] = [
+  { name: 'five buttons', namer: { screen: 'Day 29', page: 4 }, parts: [...GRID.slice(0, 5), 'left'] },
+];
+
 /** The 23 hit pages' names, in the order a description lists them. */
 export const TOUCH_HIT_PAGES: readonly string[] = SHAPES.map((one) => one.name);
+/** The hit pages a leap year brings, `LEAP_SHAPES`, after the 23 in a description that holds them. */
+export const TOUCH_LEAP_HIT_PAGES: readonly string[] = LEAP_SHAPES.map((one) => one.name);
+
+/** A shape by name, among the 23 and the leap year's. */
+const shapeNamed = (name: string): HitShape | undefined => SHAPES.find((one) => one.name === name) ?? LEAP_SHAPES.find((one) => one.name === name);
 
 /** A part's rectangle, by its rule or as stated. */
 function rectangleOf(part: HitPart): HitRectangle {
@@ -271,7 +286,7 @@ function rectangleOf(part: HitPart): HitRectangle {
 
 /** A hit page's areas in order, each with its code: the shape's parts, then the two edge strips. */
 export function touchHitPageAreas(name: string): { area: HitRectangle; code: number }[] {
-  const shape = SHAPES.find((one) => one.name === name);
+  const shape = shapeNamed(name);
   if (shape === undefined) throw new ScreenRecordError(`no hit page is called ${name}`);
   return hitPageAreasOf(shape.parts, name);
 }
@@ -287,7 +302,7 @@ export function hitPageAreasOf(parts: readonly HitPart[], what: string): { area:
 
 /** How many of a hit page's rectangles this module states rather than generates. */
 export function touchHitPageStated(name: string): number {
-  return (SHAPES.find((one) => one.name === name)?.parts ?? []).filter((part) => typeof part === 'object' && 'stated' in part).length;
+  return (shapeNamed(name)?.parts ?? []).filter((part) => typeof part === 'object' && 'stated' in part).length;
 }
 
 // ---------------------------------------------------------------------------------------------------------
@@ -299,7 +314,8 @@ export interface TouchHitPagesSpec {
   indices: number[];
   /**
    * The hit pages described, in `TOUCH_HIT_PAGES`' order: all 23, or without the tour's where the configuration
-   * leaves the tour and the assistant out, `isTourShape`. Absent, all 23.
+   * leaves the tour and the assistant out, `isTourShape`; then `TOUCH_LEAP_HIT_PAGES` where the configuration holds the
+   * Day 29 picker. Absent, all 23.
    */
   names?: readonly string[];
 }
@@ -331,7 +347,9 @@ export interface TouchHitPagesDescribed {
 function namerModes(c: Container, layout: ContainerLayout): Map<string, number> {
   const modes = new Map<string, number>();
   TOUCH_FIRMWARE_SCREENS.forEach((id, mode) => modes.set(id, mode));
-  touchFixedScreenModes(c).forEach((mode, k) => modes.set(TOUCH_FIXED_SCREENS[k] as string, mode));
+  const year = Number(c.builtAt?.slice(0, 4));
+  const fixed = Number.isInteger(year) ? touchFixedScreenNames(year) : TOUCH_FIXED_SCREENS;
+  touchFixedScreenModes(c).forEach((mode, k) => modes.set(fixed[k] as string, mode));
   const tour = touchTourScreenModes(c, layout);
   const names = [...TOUCH_TOUR_SCREENS, ...(tour.assistant ? TOUCH_ASSISTANT_SCREENS : [])];
   tour.modes.forEach((mode, k) => modes.set(names[k] as string, mode));
@@ -356,11 +374,12 @@ export function describeTouchHitPages(
   const records = modeRecords(c) ?? [];
   const modes = namerModes(c, layout);
   // A tour shape whose namer page the configuration does not hold is left out: ours without the tour.
-  const shapes = SHAPES.filter((shape) => {
-    if (!isTourShape(shape)) return true;
+  const held = (shape: HitShape): boolean => {
     const mode = modes.get(shape.namer.screen);
     return mode !== undefined && records[mode]?.pages[shape.namer.page] !== undefined;
-  });
+  };
+  // A leap year's shape where the configuration holds its namer, after the 23.
+  const shapes = [...SHAPES.filter((shape) => !isTourShape(shape) || held(shape)), ...LEAP_SHAPES.filter(held)];
   const indices = shapes.map((shape) => {
     const mode = modes.get(shape.namer.screen);
     if (mode === undefined) throw new ScreenRecordError(`the configuration holds no ${shape.namer.screen}, which names ${shape.name}`);
@@ -457,7 +476,7 @@ export function hitPageRunOf(wanted: readonly { area: HitRectangle; code: number
 /** Build the 23 hit pages at the indices the spec gives. Refuses two at one index. */
 export function buildTouchHitPages(spec: TouchHitPagesSpec): BuiltTouchHitPages {
   const shapes = spec.names === undefined ? SHAPES : spec.names.map((name) => {
-    const shape = SHAPES.find((one) => one.name === name);
+    const shape = shapeNamed(name);
     if (shape === undefined) throw new ScreenRecordError(`no hit page is called ${name}`);
     return shape;
   });

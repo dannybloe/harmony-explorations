@@ -303,7 +303,7 @@ test('todo-compile-one 4.8: the head\'s three pages are indices 0, 1 and 2 on al
   assert.throws(() => tamper((d) => { d.place.runs.pop(); }), differs);
 });
 
-test('todo-compile-one 4.8: beyond the sixteen, the Dutch compile holds all 23 pages as built and the two European ones all but the Time of Day picker\'s, the everyday One\'s the Remote Assistant\'s question too; all three are refused by the fixed screens\' finder',
+test('todo-compile-one 4.8: beyond the sixteen, the Dutch compile holds all 23 pages as built and the two European ones all but the Time of Day picker\'s, the everyday One\'s the Remote Assistant\'s question too; all three are refused by the fixed screens\' finder, the European two since section 434 for the Time of Day picker skin 59 does not hold rather than for a second Month picker',
      skipUnless(...EUROPEAN, DUTCH), () => {
   const missing = [...EUROPEAN, DUTCH].map((name) => {
     const forms = new Set(touchPages(load(name))!.records.map((page) => pageForm(page.areas)));
@@ -311,7 +311,8 @@ test('todo-compile-one 4.8: beyond the sixteen, the Dutch compile holds all 23 p
   });
   // Skin 59 has no Time of Day picker, section 405, and the everyday One's compile no Remote Assistant, section 403.
   assert.deepEqual(missing, [['question', 'two buttons'], ['two buttons'], []]);
-  assert.throws(() => checkTouchHitPages(load('one_config')), /2 screens of the look of Month/);
-  assert.throws(() => checkTouchHitPages(load('one_config_unprogrammed')), /2 screens of the look of Month/);
+  // Section 434 reads the second Month picker as the leap year's, so the European two stop at the picker they lack.
+  assert.throws(() => checkTouchHitPages(load('one_config')), /0 screens of the look of Time of Day/);
+  assert.throws(() => checkTouchHitPages(load('one_config_unprogrammed')), /0 screens of the look of Time of Day/);
   assert.throws(() => checkTouchHitPages(load(DUTCH)), /0 screens of the look of Options/);
 });

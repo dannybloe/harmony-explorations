@@ -213,8 +213,10 @@ test('todo-compile-one 4.10: on the sixteen English compiles of skin 54 the tour
 
 test('todo-compile-one 4.10: the three compiles beyond the sixteen are refused, by the fixed screens\' finder and the tour\'s',
      skipUnless(...BEYOND), () => {
+  // The European two by the Time of Day picker skin 59 does not hold, since section 434 reads their second Month
+  // picker as the leap year's rather than refusing it.
   for (const name of ['one_config', 'one_config_unprogrammed']) {
-    assert.throws(() => withoutTourAndAssistant(containerOf(name)), /holds 2 screens of the look of Month, not one/, name);
+    assert.throws(() => withoutTourAndAssistant(containerOf(name)), /holds 0 screens of the look of Time of Day, not one/, name);
   }
   assert.throws(() => withoutTourAndAssistant(containerOf('one_friend_asfound_config')), /holds 0 screens of the look of Tour Another Activity, not one/);
 });
