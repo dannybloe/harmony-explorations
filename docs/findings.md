@@ -56858,6 +56858,20 @@ asserted, a page gained is now asserted, and the refused activities are named. (
 now labelled as looked at and not tested, the 4971 as measured through the look's blending undone, and the concept
 document's sentence as the configuration's and not the remote's.
 
+**Seen on the remote, and wrong there first, `todo-compile-one.md` 4.3.3.** The composed test setup with these lists,
+983644 bytes, written to the spare Harmony One, showed the idle order inside TV kijken: Denon, LG, Plasma, then KPN,
+Kodi, Switch, then Sony HT. The cases under the Devices record entered the activity's own list, which is what this
+section's test held, and they are not the way a person goes in. Two ways are, and both still entered the idle list:
+**the Devices key of the activity's working screen**, a list of `75 0FCA` and `7E` the idle list's mode the screen
+composer made before this list existed, and **scan 55 of the key map the activity installs**, its base slot 9 set,
+bound by the composer to the one list the idle list's key runs, `7E` the idle mode and a write. Logitech's compiles
+give each activity a scan 55 list of its own entering that activity's list, three of three read on
+`one_spare_myharmony`. `withTouchActivityDeviceList` now repoints the working screen's Devices lists in place and gives
+each activity's key map a copy of the scan 55 list entering its own, five lists and 50 bytes on the test setup,
+983694 in all; each activity's chain now enters its start up screen, its working screen and its own list, the shape
+`activities` reads off Logitech's. The test asserts both ways on each of the five, and the trace taken before the fix
+is its control: both entered mode 50, the idle list. Arch 12 (Harmony One) alone.
+
 ## 425. Screen opcode 1 is a filled rectangle, x, y, width, height and a colour, read in full on the Harmony One and the Harmony 650 and to its row loop on the Harmony 600 and 700; the Harmony One draws a mode page over what the screen held, and our black background is one fill a draw
 
 `todo-compile-one.md` 5.3.4. Section 422 left the background a whole screen picture of 77445 bytes, because a picture

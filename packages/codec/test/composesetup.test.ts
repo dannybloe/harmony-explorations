@@ -21,7 +21,7 @@ import { describeTouchHelpScreens, touchHelpScreenModes } from '../src/families/
 import { layOutContainer, takeApart } from '../src/frame.ts';
 import { loosen, placePieces } from '../src/placer.ts';
 import { dropLists, instructionSites, listCallSites } from '../src/assemble.ts';
-import { assertStateTableConsistent } from '../src/sections.ts';
+import { assertStateTableConsistent, handlerSets } from '../src/sections.ts';
 import { assertQueueFits } from '../src/queue.ts';
 import { touchTourScreenModes } from '../src/families/touch/tourscreens.ts';
 import { checkTouchWiring } from '../src/families/touch/wiring.ts';
@@ -35,7 +35,7 @@ import { touchDeviceLists } from '../src/families/touch/devicelists.ts';
 import { touchValueMapRoles } from '../src/families/touch/caseprograms.ts';
 import { deviceListMenus } from '../src/shared/menus.ts';
 import { startSwitchedOn } from '../src/shared/activities.ts';
-import { ENTER_MODE, activities, caseQueued, deviceListRowMode, devices } from '../src/inventory.ts';
+import { ENTER_MODE, activities, activityScreens, caseQueued, deviceListRowMode, devices } from '../src/inventory.ts';
 import { valueMaps } from '../src/valuemap.ts';
 
 const recipe = () => readRecipe(JSON.parse(readFileSync(new URL('../../corpus/setups/one-test.json', import.meta.url), 'utf8')));
@@ -171,8 +171,10 @@ test('the One test setup composed onto Logitech\'s compile of two devices comes 
   // one; and the four pictures only the list nothing enters drew, Logitech's two row pictures and two icons, 42612
   // bytes, out of the bank, since our look now draws every list.
   // 983644 with both, 5.3.4's fill and 4.3.3's lists: 77329 below 1060973, the picture's 77445 less a byte for each
-  // of the 116 draws, the seven lists' chromes five of them.
-  assert.equal(c.blob.length, 983644);
+  // of the 116 draws, the seven lists' chromes five of them. 983694 since 4.3.3's fix at the bench: each activity's
+  // own copy of the scan 55 list its key map runs, entering its own device list, five lists of two instructions and
+  // their pointers, 50 bytes; the working screens' Devices keys repointed in place.
+  assert.equal(c.blob.length, 983694);
 });
 
 // ---------------------------------------------------------------------------------------------------------
@@ -398,7 +400,8 @@ test('todo-compile-one 4.10: the composed setup holds no tour and no Remote Assi
   const lists = c.actionLists()!.length;
   const records = modeRecords(c)!;
   const pages = touchPages(c)!.records.length;
-  assert.deepEqual([lists, records.length, pages], [2842, 117, 24]);
+  // 2847 since 4.3.3's fix: five lists, each activity's own scan 55 list.
+  assert.deepEqual([lists, records.length, pages], [2847, 117, 24]);
   assert.equal(listCallSites(c).filter((one) => one.list >= lists).length, 0);
   assert.equal(instructionSites(c, 0x7e).filter((one) => one.operand >= records.length).length, 0);
   assert.equal(records.flatMap((one) => one.pages).filter((page) => page.lead! >= pages).length, 0);
@@ -491,6 +494,19 @@ test('todo-compile-one 4.3.3: each of the composed setup\'s five activities open
   for (const activity of activities(c)) {
     const own = lists.find((one) => one.activity === activity.activity)!;
     assert.deepEqual(opened(activity.activity), [own.mode, own.mode], activity.name);
+    // **The ways in a person takes**, which the cases above are not, and which the spare Harmony One showed entering
+    // the idle list until they were repointed: the Devices key of the activity's working screen, and the scan 55
+    // entry of the key map the activity installs. Each enters the activity's own list and no other, and the
+    // activity's chain enters exactly its start up screen, its working screen and that list, as Logitech's do.
+    const working = activityScreens(c)!.screens.get(activity.activity)!;
+    const entersFrom = (index: number): number[] => (all[index] ?? []).filter((one) => one.opcode === ENTER_MODE).map((one) => one.operand);
+    const devicesKey = modeRecords(c)![working]!.pages.flatMap((page) => (taggedList(c, page.list)?.entries ?? [])
+      .filter((one) => one.opcode === 0x7f).flatMap((one) => entersFrom(one.operand)).filter((one) => lists.some((list) => list.mode === one)));
+    assert.deepEqual(devicesKey, [own.mode], `${activity.name}'s working screen`);
+    const keyMap = (taggedList(c, handlerSets(c)!.addresses[activity.set]!)?.entries ?? [])
+      .filter((one) => one.opcode === 0x7f).flatMap((one) => entersFrom(one.operand)).filter((one) => lists.some((list) => list.mode === one));
+    assert.deepEqual(keyMap, [own.mode], `${activity.name}'s key map`);
+    assert.equal(activity.modes[2], own.mode, activity.name);
     const head = startSwitchedOn(c, activity.set, idleModes, activity.name!);
     assert.deepEqual(modesOf(own.mode), [...head, ...idleModes.filter((one) => !head.includes(one))], activity.name);
     heads[activity.name!] = named(head);
@@ -502,7 +518,7 @@ test('todo-compile-one 4.3.3: each of the composed setup\'s five activities open
   });
 });
 
-test('todo-compile-one 3.2: the One\'s composed test setup carries 103331 of its 983644 bytes out of Logitech\'s donor, per kind as pinned here, a list that may only shrink',
+test('todo-compile-one 3.2: the One\'s composed test setup carries 103331 of its 983694 bytes out of Logitech\'s donor, per kind as pinned here, a list that may only shrink',
      NEEDS, () => {
   const out = composed().container;
   const got = carried(out, parse(require_('harvest_one_two_devices')), builtBytes().owners);
@@ -570,7 +586,7 @@ test('todo-compile-one 3.2: the One\'s composed test setup carries 103331 of its
     'hit-page': 167, // 2444 before 3.2.2.3, 546 before 3.2.2.7, 485 before 3.2.2.8; `case-program` 341 before 3.2.2.3 and 10 before 4.10, and base slot 11's `table` 89
   });
   assert.equal(Object.values(got).reduce((sum, one) => sum + one, 0), 103331);
-  assert.equal(out.blob.length, 983644);
+  assert.equal(out.blob.length, 983694);
   // 1099596 until 5.3.4 made the background a fill, section 425, which moved no row above: what drew it is built, or
   // is mode 70's and mode 50's chromes, which matched no donor unit before the fill either.
 });
@@ -615,7 +631,7 @@ test('todo-compile-one 6.7: the composed setup carries 34 lists of its donor, 26
     one[0] += 1;
     one[1] += bytesOf(index);
   }
-  assert.equal(lists.length, 2842);
+  assert.equal(lists.length, 2847);
   assert.deepEqual(tally, { carried: [34, 262], 'donor sends': [11, 77], written: [26, 215] });
   assert.deepEqual(unreached.filter((index) => group(index) === 'carried'), UNRUN);
   assert.equal(unreached.filter((index) => group(index) === 'written' && index < theirs.length).length, 14);

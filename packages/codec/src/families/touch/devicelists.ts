@@ -66,10 +66,10 @@
  */
 import { u24 } from '../../bytes.ts';
 import { Writer } from '../../emit.ts';
-import { type Container, parse } from '../../gspm.ts';
+import { ACTION_LIST_TABLE_SLOT, type Container, archSlot, parse } from '../../gspm.ts';
 import { type ContainerLayout, type ContainerPiece, layOutContainer, takeApart } from '../../frame.ts';
 import type { PieceTarget } from '../../statetables.ts';
-import { ENTER_MODE, activities, caseQueued } from '../../inventory.ts';
+import { ENTER_MODE, activities, activityScreens, caseQueued } from '../../inventory.ts';
 import { picturesByContent } from '../../pictures.ts';
 import {
   SCREEN_CALL, SCREEN_DRAW_IMAGE, SCREEN_END, SCREEN_JUMP, SCREEN_RETURN, SCREEN_SWITCH_NARROW, SCREEN_TEXT_AT,
@@ -78,7 +78,7 @@ import {
 import {
   type BuiltScreen, type ModeRecordsPlace, ScreenRecordError, assertRebuilt, recordReading, withModeRecords,
 } from '../../screenrecords.ts';
-import { modePages, modeRecords, modeTable, pageListCopies } from '../../sections.ts';
+import { handlerSets, modePages, modeRecords, modeTable, pageListCopies, taggedList } from '../../sections.ts';
 import { startSwitchedOn } from '../../shared/activities.ts';
 import { appendActionLists, ComposeError, restamped } from '../../shared/core.ts';
 import { appendMode } from '../../shared/modes.ts';
@@ -942,5 +942,51 @@ export function withTouchActivityDeviceList(start: Container, activity: number):
     if (offset === undefined) throw new ComposeError(`record ${record} lost its case for activity ${activity}`);
     built.blob.set(new Writer(2).u16(mode).bytes, offset + 1);
   }
-  return restamped(parse(built.blob).blob);
+  // **And the Devices key of the activity's own working screen**, which is the way in a person takes: its list,
+  // `75 0FCA` and `7E` the idle list's mode, was composed before this list existed, so it entered the idle list
+  // while the cases above entered this one, and the spare Harmony One showed the idle order inside an activity.
+  // Every list a page of the working screen binds that enters the idle list enters this one now; each is the
+  // activity's own, the screen composer making one per page, so nothing another screen runs moves with it.
+  const working = activityScreens(built)?.screens.get(activity);
+  if (working === undefined) throw new ComposeError(`activity ${activity} has no working screen to point at its device list`);
+  const table = built.actionLists() ?? [];
+  const addresses = built.pointerArray(archSlot(built.architecture as number, ACTION_LIST_TABLE_SLOT)) ?? [];
+  let pointed = 0;
+  for (const page of modeRecords(built)?.[working]?.pages ?? []) {
+    for (const entry of taggedList(built, page.list)?.entries ?? []) {
+      if (entry.opcode !== 0x7f) continue;
+      const list = table[entry.operand] ?? [];
+      const at = list.findIndex((one) => one.opcode === ENTER_MODE && one.operand === idle.mode);
+      if (at < 0) continue;
+      const address = addresses[entry.operand];
+      const sites = address === undefined ? undefined : built.actionListSites(address);
+      const site = sites?.[at];
+      if (site === undefined) throw new ComposeError(`list ${entry.operand} of activity ${activity}'s screen has no site for its instruction ${at}`);
+      built.blob.set(new Writer(2).u16(mode).bytes, site.operandAt);
+      pointed += 1;
+    }
+  }
+  if (pointed === 0) throw new ComposeError(`activity ${activity}'s working screen has no Devices key entering the idle list`);
+
+  // **And the activity's own key map**, base slot 9's set its chain selects: its scan 55 entry runs a list that
+  // enters a device list and writes a variable. Logitech's compiles give every activity a list of its own there,
+  // entering that activity's list (`7E` its mode, then the write), where the composer bound every activity to the
+  // one list the idle device list's key runs. So each such entry gets a copy of that list entering this one.
+  let current = parse(built.blob);
+  const setAddress = (one: Container): number => handlerSets(one)?.addresses[found.set] as number;
+  const bodies = current.actionLists() ?? [];
+  const bound = (taggedList(current, setAddress(current))?.entries ?? []).flatMap((entry, k) => {
+    const body = entry.opcode === 0x7f ? bodies[entry.operand] : undefined;
+    return body?.some((one) => one.opcode === ENTER_MODE && one.operand === idle.mode) === true ? [{ k, body }] : [];
+  });
+  for (const { k, body } of bound) {
+    const copy = body.map((one): [number, number] => [one.opcode === ENTER_MODE && one.operand === idle.mode ? mode : one.operand, one.opcode]);
+    const appended = appendActionLists(current, [copy]);
+    current = parse(appended.bytes);
+    const list = taggedList(current, setAddress(current));
+    if (list === undefined) throw new ComposeError(`activity ${activity}'s key map lost its tagged list`);
+    const stride = list.wide ? 5 : 4;
+    current.blob.set(new Writer(2).u16(appended.first).bytes, (list.wide ? list.start + 2 : list.start + 1) + stride * k + stride - 3);
+  }
+  return restamped(parse(current.blob).blob);
 }
