@@ -9,13 +9,13 @@
  * structures, the action lists, the tagged lists, the timers, the state transitions, the screen programs,
  * the number senders and base slot 8's leading list, and name no remote.
  *
- * **Scope, decision 16**: the holders were enumerated and the renumbering measured on arch 14 compiles,
+ * **Scope, decision 16**: the holders were enumerated and the renumbering measured on arch 14 (Harmony 600, 650 and 700) compiles,
  * `h650_test_config_clean` among them, sections 360 and 362, and the Harmony 600, 650 and 700's assembly was
  * the first caller. **On the Harmony One since `todo-compile-one.md` 4.10**, section 421: base slots 10 and 8 read
  * through `archSlot`, the census finds 102324 sites over the nineteen One compiles and every list nothing reaches
  * drops out of each with every check passing, and the touch family's `withoutTourAndAssistant` is the second
- * caller. On the test setup's donor the 27 three byte runs `lo hi 7F` the walk does not hold are coincidences, in
- * tables, infrared, glyphs or across instructions, and a drop short of any holder but the leading list is refused;
+ * caller. On the test setup's donor the 27 three byte runs `lo hi 7F` the walk does not hold sit in no action list,
+ * and a drop short of any holder but the leading list is refused;
  * the leading list names only the start list, below every drop.
  *
  * **The assembly itself moved into its family** with `todo-compile-one.md` 3.3.3.2,
@@ -90,7 +90,17 @@ export interface InstructionSite {
  *
  * **Measured on the Harmony One since `todo-compile-one.md` 4.10**: for `0x7F` it finds 3067 sites on
  * `harvest_one_two_devices`, the figure section 413's blind reviewer counted by a walk of its own, where reading
- * raw slots 10 and 8 found 1553. The holders were enumerated on arch 14 compiles, sections 360 and 362.
+ * raw slots 10 and 8 found 1553. The holders were enumerated on arch 14 (Harmony 600, 650 and 700) compiles,
+ * sections 360 and 362, and on the nineteen arch 12 (Harmony One) compiles since 4.10. **Which architectures the
+ * `archSlot` reading changes**: none on arch 14 (Harmony 600, 650 and 700) and arch 9 (Harmony 525), whose base and
+ * raw slots 8 and 10 coincide. Not checked on the others, where it changes what the walk reads: arch 8 (Harmony 880
+ * and 885) maps base 8 and 10 to raw 9 and 11, arch 10 (Harmony 890 and 895) has no base slot 8 (the leading list is
+ * skipped) and maps base 10 to raw 12, arch 16 (Harmony 300 and 350) has no base slot 8 or 9 and maps base 10 to raw
+ * 7. No test covers those three, so a census there is unmeasured.
+ *
+ * Of the 3094 three byte runs `lo hi 7F` naming a list in the Harmony One donor's file, the walk holds 3067 and the 27
+ * it does not sit in no action list: 11 before the first section, 12 in base slot 10's address array and 4 in raw
+ * slots 4, 6 and 13, pinned in `touchwithouttour.test.ts`.
  */
 export function instructionSites(c: Container, opcode: number): InstructionSite[] {
   const sites = new Map<number, InstructionSite>();

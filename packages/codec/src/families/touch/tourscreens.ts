@@ -21,7 +21,8 @@
  * **Which screens a configuration gets is the wiring's to say**, section 410: the start's ladder on the
  * assistant's variable, `TouchWiringSettings.startupAssistant`, is on 18 of Logitech's 19 compiles, and the one
  * without it, the everyday One's `one_config`, holds none of the five and still holds the tour. So the five are
- * described and built exactly when the wiring keeps the ladder, and the tour always. **The start choice of
+ * described and built exactly when the wiring keeps the ladder, and the tour whenever the choice
+ * `TouchChoices.welcomeTour` keeps it. **The start choice of
  * section 403 does not take them out**: `withoutStartupAssistant` starts the variable at 3, so the remote
  * starts past the assistant, but the ladder still enters the welcome at 1 and "Ensure all your devices are off"
  * at 2, and the configuration writes those values from Options' "Turn Remote Assistant On" value map, the

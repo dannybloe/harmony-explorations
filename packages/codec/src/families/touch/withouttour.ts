@@ -90,8 +90,9 @@ function startList(c: Container): number {
  * else, and Logitech's compiles share across screens that otherwise have nothing to do with each other. On 14 of the
  * sixteen English compiles of skin 54 a page that stays draws text by reference into a page of the sixteen, 4 to 36
  * such draws a compile, an activity's own Remote Assistant screens drawing the start's words among them; the test
- * setup's donor and `harvest_one_families_1` have none. On `compiled_protocols` a text that stays points into
- * Options' page as well, which the Options step refuses. Taking a screen out while another points into it would
+ * setup's donor and `harvest_one_families_1` have none. On three compiles, `one_spare_after_sync`,
+ * `harvest_one_families_2` and `compiled_protocols`, a text that stays points into Options' page as well, which
+ * the Options step refuses. Taking a screen out while another points into it would
  * leave the pointer naming nothing, so the copies are moved out of the screens that go first, and once they are
  * gone the rule is applied again over what is left, which puts every inline copy back at the first draw in
  * address order.
@@ -136,8 +137,11 @@ function programRootsOf(c: Container, modes: readonly number[]): Set<number> {
 
 /**
  * The configuration without the welcome tour and the Remote Assistant. A configuration holding neither, ours after
- * this step, is returned as it is; one holding the tour without the assistant, the everyday One's compile, is taken
- * the same way, its ladder already the last rung.
+ * this step, is returned as it is. **One holding the tour without the assistant, the everyday One's `one_config`,
+ * is refused and has never run through this**: Options on it holds two screens of the look of Month, so the
+ * Options finder throws (and the fixed screens' builder refuses it for a leap year). The wiring with its start, the
+ * ladder as its last rung alone, is read off that compile and given to the sixteen, so it rests on one
+ * compile of skin 59, read and not run through this step.
  */
 export function withoutTourAndAssistant(c: Container): WithoutTour {
   const found = touchTourScreenModes(c);

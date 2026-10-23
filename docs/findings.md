@@ -56078,8 +56078,11 @@ list reached, and the wiring read where it was read before; none of those lists 
 key maps, 417 each in page lists and their copies, 181 in base slot 9's entries, 79 queued by screen programs, 19 in
 timers, 10 in transitions and the leading list's 1. A drop short of any of them is refused but the leading list's,
 whose one call is the start list, below the lowest list dropped, 422. Of the 3094 three byte runs `lo hi 7F` in the
-donor's file naming a list, the 27 the walk does not hold are coincidences, in tables, infrared, glyphs or across
-instructions.
+donor's file naming a list, the 27 the walk does not hold sit in no action list, which is what the measurement
+supports and a test pins: 11 before the first section, 12 in base slot 10's address array, and 4 in raw slots 4, 6 and
+13. Two of the 27 lie within two bytes of a site. Beyond that, whether each is a table entry, infrared, a glyph or a
+fragment across instructions was not classified, and this said "coincidences, in tables, infrared, glyphs or across
+instructions" without that classification.
 
 So the reason `todo-compile-one.md` 6.7 gave for keeping the 34 lists nothing can run is gone: `dropLists` takes them
 out of the composed setup now, 262 bytes of base slot 10 and 364 of the file with their pointers, every check
@@ -56099,10 +56102,14 @@ ladder, which the leftover entry's events 1 and 5 run; Options' Tutorial row, wh
    406), and Logitech's compiles share across screens that have nothing else to do with each other: on 14 of the
    sixteen compiles a page that stays draws by reference into a page of the sixteen, 4 to 36 draws a compile counted
    between page programs, an activity's own Remote Assistant screens drawing the start's words among them; the donor
-   and `harvest_one_families_1` have none. On `compiled_protocols` a text that stays points into Options' page as
-   well. So every text is drawn by the form rule with those of the sixteen and of Options counted last, and the
-   others hold the inline copies. **The control**: on `one_spare_after_sync` the same steps without this one are
-   refused, a program that stays naming one being taken out.
+   and `harvest_one_families_1` have none. On three compiles, `one_spare_after_sync`, `harvest_one_families_2` and
+   `compiled_protocols`, a text that stays points into Options' page as well, and the Options step alone refuses
+   exactly those three. So every text is drawn by the form rule with those of the sixteen and of Options counted
+   last, and the others hold the inline copies. **The control**, per compile: the ladder and Options steps and then
+   the drop, without this step. The drop refuses on eleven compiles, `one_spare_myharmony` among them, the isolating
+   one since its Options step passes on its own; the Options step refuses on the three above; on the donor and
+   `harvest_one_families_1` nothing is refused, there being no text of the kind. The control was first written on
+   `one_spare_after_sync`, where the Options step refuses before the drop is reached (correction below).
 3. **Options, one page**: Date and Time, the sounds' row and Screen Sensitivity, built by the fixed screens' template
    in a form of ours (`TouchFixedScreensSpec.tour` false), numbered from the two page form the configuration holds by
    role and the button pictures matched by place, since each row's height has its own picture on every compile. A
@@ -56138,10 +56145,14 @@ ladder, which the leftover entry's events 1 and 5 run; Options' Tutorial row, wh
 
 **On each of the sixteen**: the result passes both checksums; every list call, every mode entered and every page's hit
 page resolves; the state table and the queue rails hold; the wiring and the texts read; no screen of the sixteen is
-found; the lists nothing reaches are those before less the dead ones taken; the step is a fixed point; and **every
-builder of the touch family rebuilds the result byte for byte**, all fourteen parts, so the result is in the form the
-family builds. The two European compiles are refused by the fixed screens' finder (a second Month picker) and the
-Dutch one by the tour's (its words), as those builders refuse them.
+found; the lists nothing reaches are those before less the dead ones taken; a configuration without the sixteen comes back as it is, which is the step's early return
+when the tour finder reads nothing and not a second run of it; and **every builder of the touch family rebuilds the
+result byte for byte**, all fourteen parts, so the result is in the form the family builds. The three compiles beyond
+the sixteen are refused: the two European compiles, `one_config` and `one_config_unprogrammed`, by the Options finder,
+which finds two screens of the look of Month where the English ones have one (the fixed screens' builder refuses them
+too, for a different reason, a leap year), and the Dutch one by the tour's finder (its words). **`one_config` is the
+everyday One's compile, skin 59, with no ladder and eleven tour modes, and the step has never run on it**: the
+wiring's start, taken from that compile's own, is therefore read and not run through the step.
 
 **What stays, reached by nothing**: the assistant's value map, its two case programs and their lists, since leaving a
 value map out renumbers base slot 14 and every `0x72`, which nothing here does yet; it writes a variable nothing tests
@@ -56159,8 +56170,12 @@ the device pages' 16155 to 16139, described 6269 to 6273, the form rule moving i
 two cases the activity composer writes entering the idle device list, which is mode 50 here and 61 on the donor, so
 they no longer match the donor's bytes. The composed setup holds 2733 lists, 112 modes and 24 hit pages, every
 reference resolves, and its texts keep the form rule, 471 inline and 878 by reference. **With the tour kept it does
-not**: "pages" at 35, 18 on one program is drawn inline where the rule draws it by reference, on the path as it
-stood before this step; without the tour the last step puts it right. Whether that matters to a remote is not known,
+not**, pinned by a test in `composesetup.test.ts` that composes the setup a second time with the choice flipped:
+"pages" at 35, 18 on one program is drawn inline where the rule draws it by reference, on the path as it stood
+before this step; without the tour the last step puts it right. **The 386 byte difference** between the 245899 the
+composed setup shrinks by and the 245513 of the bare donor is not explained: the eleven pictures are the same 239709
+bytes on both, so it lies in the other 6190 bytes against 5804, and no per list or per builder comparison between the
+two was made. Whether that matters to a remote is not known,
 since a reference and an inline copy draw the same pixels.
 
 **Rendered, before and after**, Options and the screens the start list enters. Options was "1/2 pages" with "Turn
@@ -56172,11 +56187,49 @@ the list: the renderer runs no condition.
 
 ### Which architectures
 
-Arch 12 (Harmony One) alone: the step is the touch family's. The census's `archSlot` reading changes nothing on the
-Harmony 600, 650 and 700, whose base and raw slots 10 and 8 coincide; their census stays `assemble.test.ts`'s. Their
-tour is skipped another way, section 357.
+Arch 12 (Harmony One) alone: the step is the touch family's. The census's `archSlot` reading changes nothing on arch
+14 (Harmony 600, 650 and 700) and arch 9 (Harmony 525), whose base and raw slots 10 and 8 coincide; the arch 14 census
+stays `assemble.test.ts`'s. **Not checked** on arch 8 (Harmony 880 and 885), where base slots 8 and 10 are raw 9 and 11
+so the walk reads other slots than before; on arch 10 (Harmony 890 and 895), where there is no base slot 8, so the
+leading list is silently skipped, and base slot 10 is raw 12; and on arch 16 (Harmony 300 and 350), which has no base
+slot 8 or 9 and maps base slot 10 to raw 7. No test covers those three, and `archSlot`'s behaviour there is as it was:
+nothing here changes it. The Harmony 600, 650 and 700's tour is skipped another way, section 357.
 
 ### Still open
 
-`todo-compile-one.md` 4.10.1: the result written to the spare Harmony One and seen to start. The assistant's value map
-and its programs left out. Options of one page is a form no compile holds and no remote here has shown.
+The assistant's value map and its programs left out. Options of one page is a form no compile holds; it has been seen
+on a remote, below.
+
+**Written to a remote, `todo-compile-one.md` 4.10.1**: the composed test setup without the tour, 1512234 bytes, was
+written to the spare Harmony One as 24 erase blocks and read back byte for byte identical, and the remote restarted
+itself. At the bench it started straight on its ordinary screen with no welcome, no "Ensure all your devices are off"
+and no "Welcome!", and Options showed one page of three rows, Date and Time, Screen Sounds and Screen Sensitivity,
+with no page counter. That settles what this section left unconfirmed on a remote, one unit of arch 12 (Harmony One).
+The start was seen, but the renderer could not show it, since it runs no condition. Not seen: a second Harmony One,
+and the `one_config` form of the wiring, which the step has never run on.
+
+### Reconciling the list counts, and a correction
+
+A blind re-measure of the same question counted 111 lists, 888 bytes, that only the sixteen's screens reach on
+`harvest_one_two_devices` and on each of `harvest_one_families_1`, `_2` and `_3`, against this section's 121 lists and
+970 bytes. **Both are right and they count different things**: the 111 are the lists reached only from the sixteen
+screens' own holders, and the other 10, 82 bytes, are reached from outside, from rows this step rewrites. Three are
+Options' Tutorial row, 27 bytes: the list that enters "Welcome!" and the two lists that call it, one called from the
+Options page's list and one from its copy. Seven are a chain reached from outside the sixteen, 55 bytes, two of whose
+lists enter the assistant's own screens (modes 66 and 78 on the donor), which is the wiring's side that section 412
+found and step 1 above rewrites. On the donor these are lists 806, 1285 and 1844, and 639, 764, 826, 836, 1538,
+1512 and 1539; the other three compiles show the same ten in the same shapes, with their own numbers. The 10 and 82 reproduce exactly (121 less 111, 970 less 888), and the blind count also holds 59 lists dead
+before any removal on the donor, which no step here takes and which are not among the 121. That review's own count of
+"Remote Assistant" screens, 21 to 51 on the other compiles, includes each activity's own assistant screens, which this
+step keeps by design, so it compares only on those four compiles.
+
+**Corrections to this section, recorded in place.** Three of its sentences overstated what was measured, and the
+reviewers' second pass found them. (1) The control for the texts step named `one_spare_after_sync`, but there the
+Options step refuses before the drop runs, so it did not isolate the step it claimed; the control is now per compile
+with the refusing step named, and `one_spare_myharmony` is the clean one. (2) "On `compiled_protocols` a text that stays
+points into Options' page" is true of three compiles, not one. (3) The 27 runs the walk does not hold were called
+coincidences "in tables, infrared, glyphs or across instructions" with no classification behind it; what is measured
+is that none sits in an action list. The code header also said the everyday One's compile is "taken the same way", when
+it is refused and has never run. In none of the four did a wrong rule produce a right answer: the code did what the
+sentences did not say. Two smaller points: "the step is a fixed point" was an early return, and the scope sentence
+named arch 14 only.

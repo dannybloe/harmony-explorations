@@ -2450,7 +2450,10 @@ and on 14 of those sixteen a page that stays draws into one of the sixteen, so e
 sixteen and Options came last and, after the cut, the form rule of section 406 is applied again. 245246 to 245593
 bytes shorter on the sixteen, and every builder of the touch family rebuilds the result byte for byte. What stays
 reached by nothing: the assistant's value map, its two case programs and their lists, and the assistant's and the
-welcome's state variables. Unconfirmed: the result started on a remote.
+welcome's state variables. Confirmed on the spare Harmony One, section 421: the composed test setup written without
+the tour started on its ordinary screen, and Options showed the one page of three rows. Unconfirmed: the same on a
+Harmony One other than the spare, and the tour's absence from the everyday One's `one_config` form, never run through
+the step.
 
 **The keys' lights, the Harmony One**, section 400: a three instruction list `[3F C0a2, 3F C0b2, write 1]`
 sets channels `a` and `b` of the device at `0x60` on, the same with `C0a0`, `C0b0` and a write of 0 off.
