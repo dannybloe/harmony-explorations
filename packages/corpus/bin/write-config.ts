@@ -160,6 +160,8 @@ const SPARE_DUMPS = new Set([
   'one_spare_light60_written',
   // The spare at 20 s without the Remote Assistant at start, the base for the write giving composed rows their click.
   'one_spare_noassistant_written',
+  // The spare with composed rows clicking, read before the write without the tour, todo-compile-one.md 4.10.1.
+  'one_spare_tourfree_base',
 ]);
 
 /**
