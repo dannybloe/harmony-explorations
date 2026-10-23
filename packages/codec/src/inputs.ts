@@ -339,6 +339,18 @@ export interface ComposeInputs {
   readonly label: string;
   /** The catalogue name of each of the device's commands, index for index with its `commands`. */
   readonly commandNames: readonly string[];
+  /**
+   * Each command's record in the device's group, index for index with `commandNames`, where that is not the
+   * command's own index. Absent, a command's record is its index, which is what a device composed from the
+   * catalogue holds, its records laid out in command order. A device the configuration already held keeps its
+   * compiler's order, so `composeDonorDeviceInputs` states the record it matched each command's code to.
+   *
+   * **Absent for a donor's device, the inputs sent the wrong commands**, `todo-compile-one.md` 8.1.5, findings
+   * section 436: the record taken was the command's place among the inputs' own commands, so on the Harmony One test
+   * setup composed onto Logitech's compile of two devices the Denon's CBL/SAT sent its Pure mode and the LG's HDMI 1
+   * its picture mode, which the bench run of 1.3 heard and nobody compared with the command meant.
+   */
+  readonly records?: readonly number[];
   readonly driving: DeviceDriving;
 }
 
@@ -475,7 +487,10 @@ export function composeDeviceInputs(c: Container, inputs: ComposeInputs): Compos
     if (at >= inputs.device.lists.length) {
       throw new ComposeError(`the inputs send ${command}, which is not among the device's commands`);
     }
-    return at;
+    if (inputs.records === undefined) return at;
+    const record = inputs.records[at];
+    if (record === undefined) throw new ComposeError(`the inputs send ${command}, and no record of the device is stated for it`);
+    return record;
   };
 
   const table = stateTable(c);

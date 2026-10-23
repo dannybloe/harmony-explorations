@@ -52212,6 +52212,12 @@ matches. Since `todo-compile-one.md` 3.3.3.4 the match itself is the family's, `
 `families/touch/sends.ts`, which the four slot family does not state. Asserted: the LG's input variable takes the catalogue's inputs in order with nothing appended to its
 group, a device holding its inputs is left alone, and the LG read as the Denon's catalogue entry is refused.
 
+*Corrected in section 436:* finding each command's record was right and using it was not. The composer handed the
+shared input composer only the list of the commands the inputs send, which took a command's position in that list as
+its record, so every one of the Denon's inputs, and the LG's two state variables, sent another command: the Denon's
+CBL/SAT sent Mode Pure, heard so at the bench in `todo-compile-one.md` 1.3. Nothing asserted which record a send
+named, only that each command had one. The records are passed now, `ComposeInputs.records`.
+
 ### A menu page of one row grows to two
 
 Adding a device to a menu whose last page held one row was refused, on the ground that what such a page
@@ -52826,6 +52832,11 @@ code, which the infrared monitor heard, and made no sound, so it read as a touch
 its presses and that note are filed in the lab's `reads/`, the second of two files there for it; the comparison of
 the other codes with the file's prediction was made in the session and found nothing else, and is not part of
 what was filed.
+
+*Corrected in section 436:* the filed run does hold a difference. At TV kijken the step asks for the LG to HDMI 1 and
+the Denon to CBL/SAT, and the monitor heard the LG's Picture Mode and the Denon's Mode Pure; at Film kijken the Denon's
+Blu-ray input where Media Player was asked for. The file sent those codes, a defect in section 397's donor input
+composer, so the remote did as the file said and the file was wrong.
 
 **Sources checked**: section 337, which found Logitech's compiler clicks before every screen send on four of its
 One compiles and that this project's writes leave the click out with the remote still sending, section 242;
@@ -58147,6 +58158,9 @@ pages by shape (`TOUCH_FIRMWARE_HIT_PAGES`, `touchFixedHitPages`) are the pages 
 composed path starts it at 3 to hide the assistant at start (section 403), and what USB Connected's leaving list does
 with each value is not read. A device list read back off a file with no device waits for 7.1.7's file.
 
+*Corrected in section 436:* the composed path started it at 3 from section 403 until section 421, and by default at 0
+since, section 421's step taking out the ladder `withoutStartupAssistant` finds the variable by.
+
 ### The reviews
 
 Two reviewers read this section before it was committed. The one auditing the sentences against the numbers
@@ -58378,6 +58392,12 @@ centred, and our letters blended into the colour under each text, decision 22; `
   The empty One holds no assistant screen and no start ladder, so the only reader left is USB Connected's leaving
   list, section 432, and what that list does with 3 rather than Logitech's 0 is not read.
 
+  *Corrected in section 436:* the composed path has started it at 0 since section 421, whose step takes the start
+  ladder out before `withoutStartupAssistant` looks for the variable by that ladder; 3 held from section 403 until
+  then, and holds still where the tour is kept. The spare's six region reads from the tour free write on hold it
+  starting at 0, as Logitech's compiles start it; its running value in memory was not read. So the choice of 3 rests on
+  the hide answer's value alone, and which value the empty One should start with is open until the bench, 8.2.
+
 ### The file
 
 | what | the empty One's, built in 2026 |
@@ -58510,6 +58530,8 @@ One runs the file**, `todo-compile-one.md` 7.2:
 * **the assistant variable started at 3 with no Remote Assistant and no tour**: Logitech's compiles start it at 0, the
   eighteen that hold it, section 403; ours without both ran on the spare on the composed path, section 421, never with
   no device;
+  *corrected in section 436:* that run's configuration, read back off the spare, starts it at 0, not 3, so 3 with no
+  assistant has not been on a remote;
 * **the attempt screen reaching "Nothing to do" by the three second timer**, which rests on one compile,
   `harvest_one_families_1`, section 430;
 * **the mode order past 39**, ours, section 432, and one stored copy of a picture several places draw;
@@ -58762,3 +58784,197 @@ status screen on the spare, or a device page whose clock stops.
 * `packages/codec/test/composeempty.test.ts`, new; `test/carried.ts`, the census moved out of `composesetup.test.ts`;
   `compose.test.ts`, the dropped hit page; `composesetup.test.ts`, every hit page named; `packages/codec/bin/empty-one.ts`,
   `--setup`.
+
+## 436. The test setup composed two ways and compared by what a person meets: 389 differences, every one of seven causes, and a defect on the composition onto Logitech's compile that put the Denon and the LG on the wrong input, fixed
+
+**Todo `todo-compile-one.md` 8.1.5.** The Harmony One test setup, seven devices and five activities,
+`packages/corpus/setups/one-test.json`, is composed two ways: onto Logitech's compile of two devices,
+`harvest_one_two_devices`, 980473 bytes, sections 397 and 433, and onto our own empty One, 905173 bytes, section 435.
+Section 435 counted the two by builder part. The item: compare them by what a person using the remote meets, every
+text drawn on every screen, what every key and every touch does on every screen, in every activity and in device mode
+down to the infrared code sent, and every action list either can run; list every difference and explain each, as
+intended, and by what, or as a defect.
+
+**Sources, checked before the work.** Sections 69, 154, 309, 331, 347, 385 (the Harmony 700's setup comparison, the
+four slot family's `setupView`), 397, 403, 404, 415, 420, 421, 424, 430, 432, 433, 434 and 435; the readers already in
+the codec for each part; the bench run of `todo-compile-one.md` 1.3 filed in the lab's `reads/`. Logitech's client was
+not read: the question is what two files of ours hold.
+
+### The view
+
+`touchView`, `families/touch/view.ts`, reduces a Harmony One configuration to names the two compositions share, and
+`compareTouchViews` lists every name the two hold differently or only one holds. The four slot family's `setupView`
+names a screen item by the corner its label sits in, which the One does not have, and leaves out the screens no
+activity or device names, so the One got a view of its own, built only from readers the codec already had:
+`modeRecords`, `modePages`, `pageListCopies` and `taggedList` for what a screen and a key bind; `touchPageOf` and
+`touchOwner` for which texts a touch area holds; `renderVariants` and `screenStrings` for what a page draws;
+`stateRecords`, `valueMaps`, `timers`, `numberSenders`, `eventMap` and `handlerSets` for what runs without a screen;
+and `recordSent`, moved out of the four slot family's `compare.ts` into `irframe.ts` so that both families state a
+send the same way, for what a send emits.
+
+**A name is what a person could say**, because two files of one setup share almost no index, section 154. A device by
+the setup's name; a sent record by the catalogue commands whose record it is (through `composeDonorDeviceInfrared`'s
+mapping by code, read only), with its decoded frame and a key of its stored blocks; a device's own screen by the
+device; another screen by the texts it draws, and where several draw the same, by the devices their bindings send to;
+a device list, a variable, a value map, a timer or a program by **where it is first met** on a walk from the firmware's
+event map, base slot 9's key maps, the number senders and base slot 8's leading list, the walk taking the next thing in
+the order of its name and never of its index. An action list has no name: every list a binding runs is written out
+where it is run, calls followed. A page's second list copy, which no firmware path is known to read, section 69, is
+described too, since its lists are its own. What nothing reaches is described as well: a screen by its texts or its
+role, a variable by its name, a timer or a value map by a key of its content.
+
+**The view is whole, by two closures.** The lists it writes out are exactly the lists `listsReached`, the list census
+of `test/screenlists.ts`, counts: 2776 on the composition onto Logitech's compile and 2771 on ours, none missing and
+none extra either way. And every mode, timer, value map and state variable the file holds has its entry: 117, 27, 16
+and 56 on Logitech's path and 117, 26, 15 and 55 on ours. The views hold 4095 and 4093 entries, 190 pages each.
+
+**The second closure found two gaps in the view, closed before anything was counted.** Things first met only by a
+screen nothing enters were named and never described, three timers on Logitech's path, since the walk's queue was not
+run again after the unreached screens; and two status screens nothing enters shared their role as a name, so one
+overwrote the other. The queue now runs after each, and a role two unreached screens share is completed by a key of
+the screen's content.
+
+### The defect: the donor's Denon and LG were put on the wrong input
+
+On the composition onto Logitech's compile, every input transition of the Denon, and of the LG's two state variables,
+sent a command other than the one meant. `composeDonorDeviceInputs`, section 397, matched each catalogue command the
+inputs send to its record in the device's group correctly, and then handed the shared `composeDeviceInputs` only the
+list of those commands, so it took each command's position in that short list as its record. A composed device's
+command list is its whole record list in order, which is why the five composed devices, and the whole composition
+onto our empty One, were right. With Logitech's records, before section 433, the Denon's CBL/SAT sent Mode Pure and
+the LG's HDMI 1 Picture Mode, as the bench heard; with the catalogue's, after section 433, they sent "+10" and ".".
+
+**The bench had heard it.** The run of `todo-compile-one.md` 1.3, the second of two files in the lab's `reads/` for
+the composition onto Logitech's compile, asks at TV kijken for "the LG to HDMI 1 and the Denon to CBL/SAT"; decoded,
+the monitor heard the Denon's Mode Pure and the LG's Picture Mode there, and at Film kijken the Denon's Blu-ray input
+where Media Player was asked for. Section 404 says the comparison of the other codes with the prediction "was made in
+the session and found nothing else"; for these three codes it did not hold, and the todo's 1.3 note is corrected.
+
+**Fixed** in the shared composer: `ComposeInputs.records`, optional, states each command's record where the commands
+are not the device's whole list, and `recordOf` refuses a command with none stated. The Harmony 600 family composes no
+donor device's inputs (section 397's composer refuses it), so it passes nothing new. A test in
+`composecatalogue.test.ts` names the record each transition sending one command alone sends, by the catalogue command
+whose code it is: the Denon's 19 right and none wrong, and the LG's two state variables 7 and 3 right and none wrong;
+the LG's input variable sends nothing itself and has none to check. Without the fix the same test finds 0 of the
+Denon's 19 right. The fix changes which record each send names and nothing else: the file stays 980473 bytes and every
+figure `composesetup.test.ts` pins is unchanged.
+
+### The 389 differences
+
+Every one is one of seven causes, counted exactly by `composecompare.test.ts`, which also measures for each cause that
+it is that cause and not something else under its name.
+
+| cause | differences | intended, by |
+|---|---|---|
+| the donor's two devices' pages are described off Logitech's | 285 | section 420: `builders.ts` rebuilds every device page by our template from a description read off the page held, so the LG's and the Denon's carry Logitech's command order, label lines and title; the composed devices' are ours |
+| the device lists: the donor's labels and its device order | 53 | sections 424 and 433 |
+| the power off help: the same labels and order | 35 | section 415, the chain built from the file's devices in order |
+| the order an activity's start and All Off switch devices off | 7 | the file's device order, the same devices both ways |
+| the donor LG's online power variable | 4 | sections 347 and 385: Logitech's connected app machinery, which we do not compose |
+| the start up assistant's variable | 3 | section 421 on Logitech's path, section 434 on ours; see below |
+| a timer nothing starts, one in each file | 2 | section 421's step on Logitech's path, section 435 on ours |
+
+**The device pages, 285.** The LG on 6 pages and the Denon on 16 both ways, 74 and 211 differences. Their pads offer
+the same codes, 28 and 88, in Logitech's order rather than the catalogue's, so the Denon's last page holds one pad on
+Logitech's path and two on ours, and on ours its Devices key takes touch code 51 where Logitech's takes 50. A command
+is split over its lines differently on 23 of the Denon's 88 pads and 2 of the LG's 30, in either direction ("AllBase"
+over "Down" on Logitech's pages and one line on ours, "AllZone" over "StereoOn" on theirs and "AllZoneStereo" over "On"
+on ours), and the title is the model, "Denon AVR-X4800H". Per command, what a pad does is the same both ways on the 88
+and the 28 codes both offer. The only codes one side offers that the other does not are the power pads: the LG's on
+Logitech's path send the plain PowerOn and PowerOff where ours send the power step, sections 309 and 331; the Denon's
+on Logitech's path send the main zone's records, which its main zone pads send too, so there only ours has two pads
+more, the power steps. All 49 entries of each device's own key map, the hard keys in device mode, agree, so in device
+mode a person presses the same commands and sees different pages. The Plasma, a
+composed device, offers the same codes both ways.
+
+**The device lists, 53, and the help, 35.** Logitech's path labels its two devices as Logitech named them, "Denon
+AVR-X4800H" and "LG OLED65G26LA", and "Now is the LG OLED65G26LA off?" breaks over two lines where ours asks "Now is
+the LG TV off?" on one. It orders them as Logitech's compile does, the Denon before the LG, with the five composed
+devices after in the setup's order, where ours takes the setup's order throughout, the LG first. So the idle list, the
+list nothing enters, the help's questions and All Off run Denon, LG TV, Plasma, KPN, Kodi, Switch, Sony HT on one and
+LG TV, Plasma, Denon, KPN, Kodi, Switch, Sony HT on the other. An activity's own list puts the devices its start
+switches on first on both, section 424, and TV kijken's then holds its devices in one order both ways, so it differs
+by the labels alone.
+
+**The starts and All Off, 7.** Kodi kijken's, Muziek's and Plasma kijken's starts switch off the same devices both
+ways in each file's order, two keys each, and All Off's case.
+
+**The LG's online power, 4.** Logitech's compile gives its LG a variable set 30 seconds after the LG is switched on
+and cleared when it is switched off, which nothing reads. The composition onto it keeps the variable and its timer;
+ours, composing the LG from the catalogue, has neither. Two transitions, the timer and the variable.
+
+**The assistant's variable, 3.** On Logitech's path the start up assistant's variable starts at 0, Logitech's value,
+and on ours at 3. Section 421's step, by default, takes the assistant's start ladder out before the look runs
+`withoutStartupAssistant`, section 403, which finds the variable by that ladder, finds none, and leaves it as it is.
+Section 434 chose 3 for the empty One because "3 is what the composed path starts it at"<!--superseded-->, which held
+from section 403 until section 421's step and since then only where the tour is kept. The spare's region reads from
+section 421's write on hold it at 0. Its one reader on both is USB Connected's leaving list, which
+with the variable at 0 looks the current location up in a value map selecting the running activity's keys, and with 3
+does not; what that does on the remote is not read. Logitech's path also keeps the assistant's own value map, which
+nothing reaches, two cases writing 3 and 1. The value is left as section 434 chose it, since which one a person should
+have is a bench question, `todo-compile-one.md` 8.2; 0 is Logitech's.
+
+**The timers nothing starts, 2.** On Logitech's path a four second redraw timer, one class's of section 430, which
+nothing starts once section 421's step has taken out its screens: Logitech's donor starts its timer of the same index
+from one mode's key map, the Remote Assistant's hide question ("Do you want to hide the Remote Assistant?"), and every
+other four second class has its counterpart in the composition. On
+ours, the power off help's three second show timer, section 435.
+
+### What is the same
+
+Of the 4090 names both views hold, 3709 are the same: every text and pixel key of every other page; every binding of
+every activity's keys, down to the code sent, and of every activity's screens but its device list; every start and
+transition but the seven orders, the LG's power and the assistant's variable above; every input of the seven devices
+(of them the 47 entries of the Denon's and the LG's four input variables are asserted equal); the clock and its
+pickers, the settings, the firmware's screens and the leading list.
+
+### The control
+
+A send planted in the composition onto our empty One, the KPN's Teletext list sending its DVR record, is found where a
+person meets it, on the KPN's device page and on the TV kijken and Plasma kijken screens, each binding and its copy,
+six differences; against Logitech's path the same six are differences no cause takes.
+
+### What is not settled
+
+The comparison is of the files; neither composition with the fix has been on a remote. Unconfirmed until
+`todo-compile-one.md` 8.2: that the Denon and the LG go to the inputs the file now sends, and what USB Connected's
+leaving list does with the assistant's variable at 3 on the composition onto the empty One.
+
+Arch 12 (Harmony One) only, skin 54 only. The fix to the shared input composer changes nothing on the Harmony 600, 650
+and 700, whose families compose no donor device's inputs.
+
+### The reviews
+
+Two reviewers read the change before it was committed, one the code and tests and one this text against the code, the
+compiles and the bench file. The first found no defect, and closed gaps: a device label another label begins with could
+take the longer one's texts and variables, now matched longest first; the docstring said naming never hangs on
+placement, where the roots are walked in stored order, now said; the start and All Off cause took any difference in an
+activity's keys, and now asserts the two are one string with the switched off devices taken out; the Plasma's codes
+could be equal by both being empty, now counted, 30; and two titles claimed more than their bodies, an order not
+asserted and every transition where only those sending one command alone are, both renamed. It also measured that no
+name is given to two different things in either view.
+
+The second decoded the bench file's pulses itself and confirmed the three wrong codes, and that the Plasma's, the
+Sony's and the Switch's inputs were heard as the file predicts; confirmed that before the fix every one of the Denon's
+19 input transitions sent the wrong record; and traced the unreached four second timer to the Remote Assistant's hide
+question directly, where this text had it by elimination. It corrected six sentences, now in the text: the LG's HDMI
+1 sent "." after section 433, not Picture Mode; the spare's region reads do hold the assistant's variable at 0, where
+the note said it was not read off the remote; section 421's step leaves the ladder out by default only; a sentence of
+section 432's on the composed path's 3 had no correction; "What is the same" said every start, transition and screen
+binding where the seven orders, the LG's power and the device lists differ; the label break example named two
+commands, and the power pads' account held for the LG and not the Denon. The seven causes' counts were checked by it
+against content for five causes and by key pattern, order and labels for the device lists and the help.
+
+### Falsification
+
+A difference between the two views that none of the seven causes takes; a list either file can run that the view does
+not write out; the Denon or the LG heard on an input other than the one the file sends.
+
+### Where it lands
+
+* `packages/codec/src/families/touch/view.ts`, new: `touchView`, `compareTouchViews`.
+* `packages/codec/src/inputs.ts`: `ComposeInputs.records`; `composecatalogue.ts`: `composeDonorDeviceInputs` passes
+  the records it matched.
+* `packages/codec/src/irframe.ts`: `recordSent`, which `families/four-slot/compare.ts` now takes.
+* `packages/codec/test/composecompare.test.ts`, new; `composecatalogue.test.ts`, each input sent as its command.
+* Corrections in place: sections 397, 404 and 434, `docs/config-format.md`'s assistant row, `todo-compile-one.md` 1.3.

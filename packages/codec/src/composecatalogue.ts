@@ -497,17 +497,23 @@ export function composeDonorDeviceInputs(
   const theirs = irGroups(c)?.[own.group]?.addresses.map((address) => recordWords(c, address)) ?? [];
   const mine = scratchGroup === undefined ? [] : irGroups(composed)?.[scratchGroup]?.addresses ?? [];
   const lists = c.actionLists() ?? [];
-  const listOf = sent.map((name) => {
+  // Each command's record in the device's own group, which is in its compiler's order and not the commands'.
+  const records = sent.map((name) => {
     const k = commandIndex(scratch.commandNames, spelt[sent.indexOf(name)]!);
     const record = mine[k] === undefined ? -1 : theirs.indexOf(recordWords(composed, mine[k]!));
     if (record < 0) throw new ComposeError(`${request.label} holds no record with the catalogue's code for ${name}`);
-    const operand = (own.group! << 8) | record;
+    return record;
+  });
+  const listOf = sent.map((name, k) => {
+    const operand = (own.group! << 8) | records[k]!;
     const sending = matchSend(lists, operand);
     if (sending.length !== 1) throw new ComposeError(`${sending.length} lists of ${request.label} send its ${name} alone, where one is wanted`);
     return sending[0]!;
   });
   const device: ComposedDevice = { bytes: c.blob, group: own.group, lists: listOf, variable: power };
-  return composeDeviceInputs(c, { device, label: request.label, commandNames: sent, driving });
+  // The records go with the commands: the input composer writes its own send lists, and without them it would
+  // take a command's place among `sent` for its record, findings section 436.
+  return composeDeviceInputs(c, { device, label: request.label, commandNames: sent, records, driving });
 }
 
 // ---------------------------------------------------------------------------------------------------

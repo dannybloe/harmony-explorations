@@ -35,6 +35,7 @@ import { withOxaniumFonts } from '../src/fonttable.ts';
 import { deviceModeLayout } from '../src/devicemode.ts';
 import { HARD_KEYS } from '../src/families/four-slot/devicemode.ts';
 import { TOUCH_HARD_KEYS } from '../src/families/touch/devicekeys.ts';
+import { composeDonorDeviceInfrared } from '../src/composecatalogue.ts';
 import {
   type CatalogueDeviceRequest,
   ComposeError,
@@ -685,7 +686,7 @@ test('a catalogue device composed onto a Harmony One switches on with its power 
   assert.equal(onList(stated, 'Test').list.at(-1)!.operand & 0xff, 45);
 });
 
-test('a Logitech compile\'s own device gets its inputs composed, each sent through the device\'s own record for the catalogue\'s code',
+test('a Logitech compile\'s own device gets its inputs composed, each transition sending one command alone sending the device\'s own record for the catalogue\'s code',
      needing(skipWithoutIrArchive(), skipUnless('harvest_one_two_devices')), () => {
   // Logitech's compile of the Denon and the LG for the Harmony One has no activity, so neither device has an
   // input variable, and the test setup's activities put both on one, `todo-compile-one.md` 1.2.9.
@@ -701,6 +702,38 @@ test('a Logitech compile\'s own device gets its inputs composed, each sent throu
   assert.equal(irGroups(composed)![0]!.addresses.length, irGroups(base)![0]!.addresses.length);
   const denon = composeDonorDeviceInputs(composed, IR_ARCHIVE!, { label: 'Denon_AVR-X4800H', manufacturer: 'Denon', model: 'AVR-X4800H' })!;
   assert.equal(denon.input!.values.size, inputPlan(catalogueDriving(IR_ARCHIVE!, 'Denon', 'AVR-X4800H')).input!.values.length);
+  // Each transition that sends one command sends the device's own record with the catalogue's code for that
+  // command, named here by the other reader of a donor's records, `composeDonorDeviceInfrared`'s mapping by code.
+  // Until `todo-compile-one.md` 8.1.5, section 436, it sent the record at the command's place among the inputs'
+  // commands, the Denon's CBL/SAT its Pure mode; 0 of the Denon's 19 input values sent the command meant.
+  const after = parse(denon.bytes);
+  const lists = after.actionLists()!;
+  const sentBy = (label: string, manufacturer: string, model: string, variable: number, plan: ReturnType<typeof inputPlan>['input']):
+    { right: number; wrong: string[] } => {
+    const named = new Map(composeDonorDeviceInfrared(after, IR_ARCHIVE!, { label, manufacturer, model }).mapped.map((one) => [one.from, one.name]));
+    const group = devices(after).find((one) => one.name === label)!.group!;
+    const out = { right: 0, wrong: [] as string[] };
+    for (const transition of plan!.transitions) {
+      const only = transition.steps.length === 1 && transition.steps[0]!.kind === 'send' ? transition.steps[0]!.command : undefined;
+      if (only === undefined) continue;
+      const value = stateRecords(after)![variable]!.values.find((one) => one.from === transition.from && one.to === transition.to)!;
+      assert.equal(value.opcode, CALL);
+      const send = lists[value.operand]![0]!;
+      assert.equal(send.opcode, SEND);
+      assert.equal(send.operand >> 8, group);
+      const name = named.get(send.operand & 0xff);
+      if (name?.toLowerCase() === only.toLowerCase()) out.right += 1;
+      else out.wrong.push(`${only} sent as ${name}`);
+    }
+    return out;
+  };
+  const denonPlan = inputPlan(catalogueDriving(IR_ARCHIVE!, 'Denon', 'AVR-X4800H')).input;
+  assert.deepEqual(sentBy('Denon_AVR-X4800H', 'Denon', 'AVR-X4800H', denon.input!.variable, denonPlan), { right: 19, wrong: [] });
+  // The LG's input sends nothing itself: it writes its two states, and those send.
+  const lgPlan = inputPlan(catalogueDriving(IR_ARCHIVE!, 'LG', 'OLED65G26LA'));
+  assert.deepEqual(sentBy('LG_OLED65G26LA', 'LG', 'OLED65G26LA', lg.input!.variable, lgPlan.input), { right: 0, wrong: [] });
+  const lgStates = lgPlan.states.map((one) => sentBy('LG_OLED65G26LA', 'LG', 'OLED65G26LA', lg.states.get(one.property)!.variable, one));
+  assert.deepEqual(lgStates, [{ right: 7, wrong: [] }, { right: 3, wrong: [] }]);
   // A device already holding its inputs is left alone.
   assert.equal(composeDonorDeviceInputs(parse(denon.bytes), IR_ARCHIVE!, { label: 'Denon_AVR-X4800H', manufacturer: 'Denon', model: 'AVR-X4800H' }), undefined);
   // The control: the same device read as another catalogue entry finds none of its codes there and is refused.

@@ -237,6 +237,23 @@ export function irFrame(
 }
 
 /**
+ * What one infrared record sends, in the two forms a comparison of two configurations holds it in: `frame`, its first
+ * block decoded as `bits:value` in hex or `undecoded`, which is what a receiver hears; and `stored`, every block's words
+ * joined, which is what the remote stores, so two records that send one frame a different number of times or with a
+ * different hold still differ there, section 343.
+ *
+ * One derivation for both families' comparisons, the four slot family's `setupView` and the touch family's
+ * `touchView`, `todo-compile-one.md` 8.1.5: the second needed it per send where the first had it per list.
+ */
+export function recordSent(c: Container, record: number): { frame: string; stored: string } {
+  const frame = irFrame(c, record);
+  return {
+    frame: frame === undefined ? 'undecoded' : `${frame.bits}:${frame.value.toString(16)}`,
+    stored: irHeaderPointers(c, record).map((pointer) => (irBlockWords(c, pointer) ?? []).join(',')).join(' | '),
+  };
+}
+
+/**
  * Every convention under which a record's first block reads as a frame.
  *
  * **Usually one, sometimes both, often none**, and this said "which is one or none here" while the

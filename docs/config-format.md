@@ -2967,7 +2967,7 @@ skeleton, no byte read off a compile. Unconfirmed on a remote until `todo-compil
 | base slot 7 | 29 font sets, section 427's 18 and 11 blended copies |
 | base slot 11 | 27 entries, the clock header's four first; the fewest on the nineteen is 29 |
 | the start | the activity menu, the case the start's ready map takes for location 0 |
-| the assistant variable | `first` 3, as the composed path starts it, section 403 |
+| the assistant variable | `first` 3, the value the hide answer writes, section 403; the composed path onto Logitech's compile starts it at 0 since section 421, Logitech's value, and which an empty One should take is unconfirmed, section 436 |
 | a picture | stored once and named by every draw of it, where Logitech stores some several times |
 | attribution | every byte to a generator: the builders, the frame (header, section table, marker, base slots 1 and 3, trailer), the letters (each glyph equal to the stated table's or its blended copy's) and the counted tables' counts and addresses; none carried, `touchAttributedBytes` |
 | mode pieces | the own key map, the chrome, then per page its program, its switch's pieces and its page record, then the entry: Logitech's order on all 102 device lists of the nineteen compiles, section 435, which corrected section 434's chrome after the page records |
@@ -3838,7 +3838,7 @@ the firmware's eleven and the first two byte variable among them. What is the Ha
 | a variable's width | one byte for a maximum up to 121; no two byte variable but index `narrow` on any of the 19, so a maximum past 121 is refused |
 | a value map's case count | one byte, `VALUE_MAP_COUNT_WIDTH` |
 | index `narrow`, the first two byte variable | the clock pickers' variable: the one the seven pickers' tag `0x29` handlers read and write and the `grid` and `column` value maps are looked up on, on all sixteen English compiles of skin 54, section 432 |
-| the assistant variable USB Connected's leaving list tests | 0 to 3, `first` 0, unnamed, on the sixteen, whose wiring holds the Remote Assistant's ladder, and on `one_config_unprogrammed` and `one_friend_asfound_config` read by hand; an empty One holds it with no ladder, `first` 3 as the composed path starts it (section 434), so what its leaving list does with it there is unconfirmed |
+| the assistant variable USB Connected's leaving list tests | 0 to 3, `first` 0, unnamed, on the sixteen, whose wiring holds the Remote Assistant's ladder, and on `one_config_unprogrammed` and `one_friend_asfound_config` read by hand; an empty One holds it with no ladder, `first` 3 (section 434), where the composed path onto Logitech's compile starts it at 0 since section 421 (section 436), so what its leaving list does with it there is unconfirmed |
 | Time of Day's variable | 0 to 1, `first` 0, unnamed, written 0 by AM and 1 by PM, on the sixteen |
 | the minute's second transition | `{-2 to -2, 0x7F list}` after its increment of the hour, on all 19: since both ends are the sentinel it fires on every write of the minute that is not silent, and the list it calls is the clock's screen side, calling two short lists (`todo-compile-one.md` 2.2), its index the configuration's (`minuteList`); on all 19 that list sits straight before the hour's |
 
