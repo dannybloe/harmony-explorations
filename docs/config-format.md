@@ -2910,6 +2910,32 @@ order of a device mode's own key map, the one page order resting on 6 modes on w
 coincide; whether the compiler ever puts pads on a page other than six to a page in the
 command order, which the description reads rather than generates.
 
+**The activity screens, built**, section 423: `families/touch/activityscreens.ts` through the same engine, arch 12
+(Harmony One) only. Every activity's start up screen and working screen, their own key maps, chromes, pages, the lists
+those run but a pad's command, the copies and the hit pages: one template each on the eighteen English compiles, whose
+input is the activity's name, its pads' label lines and what each pad runs. 63 activities of one to four pages
+rebuilt byte for byte; the Dutch compile refused by its words. `58 * activities + 2 * (keys + pads) + off` lists per
+compile, `keys` the keys below the screen on every page and `off` two, or three with favourites. The working screens
+are the modes the touch family's `working` value map record enters; a start up screen is a mode whose own key map is
+the 55 tags.
+
+| what | rule, on the eighteen English compiles |
+|---|---|
+| start up, own key map | 55 tags in one stored order, `STARTUP_TAGS`: 52 key presses each a list of its own of three empty instructions; tag 6 straight to the header timer's start, tag 7 straight to its cancel, tag `0x2D` the header list |
+| start up, chrome and page | "Starting", the title set's own blank and the name centred on row 124, the full screen picture, the queued lists, the signal picture at (57, 33), the title again; the page the type's icon at (57, 67) and "Keep the remote pointed at" and "your system." centred on rows 179 and 191, an empty page list, one hit page of one stated area |
+| working, own key map | arrows swallowed on one page; tag 6 the timer started, light 5 on with favourites, light 7 on, the page keys' pair on several pages; tag 7 the timer cancelled and the matching off lists, the page keys' always; tag `0x2D` the header list |
+| working, chrome | section 411's, titled with the name; screen instruction 1 before the picture on 22 of 63, described |
+| working, a page | "Favorites" on the left half with favourites and "Devices" on the right, row 202; pad k at `DEVICE_PAGE_SLOTS[k]`, a second picture where it draws one instead of words, its lines centred on the 81 pixel pad; the pad font selected once, before the first label; the counter on several pages |
+| working, a page's list | each key the click and a mode entered; a pad the click and its command's call, or a sequence's calls and `0x7C` pauses inline |
+| the copy | lists of its own with the page list's instructions |
+| a hit page | section 417's rules: the left key with favourites, the right key, the pads, the edges |
+| read | the name off the start up title, whether its blank is the title set's or a space, the label lines and pictures off each pad, what each pad runs, favourites, instruction 1, whether every pad selects its font; the modes, every list index, the timers, the light lists, the header and chrome programs, the pictures, the fonts a role per screen, the hit page indices, the homes |
+
+**On the composed path** the activity composer ends by building every activity screen again through this template,
+`withTouchActivityScreensRebuilt`. **Unconfirmed**: an activity's own help screen and its own device list are not
+built; the insertion order behind the start up screen's stored order is inferred from the order, which is what is
+measured.
+
 **Which of the 78 the 3.4 firmware draws by number**: one. A mode becomes current only from an `0x7E` operand, the
 mode stack (a mode that was current) or base slot 4, and base slot 4 is walked only for status code 9, "LCD Module
 Failed", after the licence check passed and while the configuration's verdict stands, so its key 9 (mode 19 in

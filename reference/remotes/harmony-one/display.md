@@ -182,6 +182,11 @@ Generated from `packages/codec`, `packages/usb` and the drawing by `make remote-
   a blank of its own rather than the space: a glyph only the title's font set holds, a pixel wider than the
   space in Logitech's letters, read from configurations, section 406. A text is stored once and every later
   copy of the same codes points at it, on this model as on the 600 family, section 406.
+* **An activity's two screens are one shape each in English**: the start up screen binds 52 keys, each to a list of
+  its own of three empty instructions; the working screen shows the activity's commands six to a page, a short page only
+  where a page is the last or the activity's own layout leaves one short, "Devices" on the right key below the screen
+  and "Favorites" on the left where the activity has favourite channels, and a command on it may be a sequence of
+  commands and pauses, read from configurations, 63 activities of fourteen, section 423.
 
 ## The clock
 

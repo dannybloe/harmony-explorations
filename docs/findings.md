@@ -56347,3 +56347,154 @@ Where it lives:
   `withoutUndrawnPictures`.
 * `packages/codec/test/touchpictures.test.ts`: the census, the masks over the sixteen, the control, the places and
   the background; `composesetup.test.ts` and `touchbuilders.test.ts` for the path and the attribution.
+
+## 423. The Harmony One's activity screens are one shape each on every English compile, every activity's start up screen and working screen built whole from its name, its pads' label lines and what each pad runs and the configuration's numbering, byte for byte on the eighteen; on the composed path the composer's are laid out by the same template
+
+**Todo `todo-compile-one.md` 4.3**: an activity's own screens, its start up screen and its working screen. Nothing of
+them was carried on the composed test setup: the activity composer has built both since 1.2.11 (sections 399 and 402),
+so what was left was the builder that rebuilds Logitech's from a description, with the blind control, and its place
+on the composed path after the device pages, as sections 419 and 420 did for the menu and the device pages.
+
+**Sources checked**: sections 69 (a page list's copy), 154 (favourite channels), 275 (the page arrows swallowed on a
+screen of one page), 279 (an activity's two screens), 327 (a sequence is one action list of calls and pauses), 394 (a
+pad's label), 399 and 402 (our activity composer, and Logitech's activities rebuilt part for part), 400 (the key
+lights), 404 (a pad opens with the click), 406 (the start up title's own blank), 411 to 420 (the template engine, the
+hit page rules, the menu, the device pages); the nineteen Harmony One compiles. Logitech's client was searched by name
+only: no start up screen text and no activity screen view is in it, and what matches "favorite" is capabilities and
+catalogue types, so the screens are compiled by the service, as sections 419 and 420 found for the menu and the device
+pages, and the form comes from the compiles. The firmware was not read again.
+
+### Two shapes
+
+**On all eighteen English compiles every activity's two screens are one template each**, `activityTemplateScreen` in
+`families/touch/activityscreens.ts`. 63 activities on fourteen compiles, the four of devices alone holding none. **They
+are not 63 independent samples**, section 402's caveat: 42 are six compiles of one account's seven activities.
+
+| part | the shape |
+|---|---|
+| start up, own key map | 55 tags in one stored order on all 63, `STARTUP_TAGS`: the press of 52 keys, each a list of its own of three empty instructions, and three handlers, tag 6 bound straight to the start of the header timer, tag 7 straight to its cancel, tag `0x2D` a list of three `0x73`; the three handlers stored before the keys they share a bucket with, which head insertion with the keys first gives |
+| start up, chrome | "Starting" and the name centred on row 124 in the start up title's font, joined by the title's own blank (63 of 63, section 406), the full screen picture, the queued header programs, the signal picture at (57, 33), the title again by reference |
+| start up, page | the chrome's call, the type's icon at (57, 67), "Keep the remote pointed at" and "your system." centred on rows 179 and 191, an empty page list, one hit page of one stated area and the two edges |
+| working, own key map | on one page the arrows' presses swallowed; tag 6 the timer started, light 5 on (with favourites), light 7 on, the page keys' pair on (several pages); tag 7 the timer cancelled and the matching off lists, the page keys' on one page too; tag `0x2D` the header list |
+| working, chrome | section 411's, titled with the name, the total and "pages" on several pages; on 22 of the 63 screen instruction 1 over the whole screen before the picture, unread and described as there or not |
+| working, a page | the chrome's call; "Favorites" centred on the left half (with favourites) and "Devices" on the right, row 202; pad k's picture at `DEVICE_PAGE_SLOTS[k]`, a second picture there where the pad draws one instead of words, its label's lines centred on the 81 pixel pad; the pad font selected once a page, before the first label; on several pages the counter |
+| working, a page's list | Favorites the click and its screen entered, Devices the click and the activity's device list entered; a pad the click and then what it runs: a call of its command, or a sequence's calls and `0x7C` pauses inline (section 327), 8 pads of 4 compiles with 60 pauses |
+| the copy | lists of its own, the page list's instructions |
+| a hit page | by section 417's rules: the left key with favourites, the right key, the pads in reading order, the two edges |
+
+**The number of lists is a closure**, held by the test against each file: `58 * activities + 2 * (keys + pads) +
+off`, where the 58 are a start up screen's 52 key lists, its header list and its chrome's queued list and a working
+screen's entering, leaving, header and chrome lists; `keys` counts the keys below the screen on every page, one or
+two; and `off` the off lists every working screen's leaving calls, built once, two, or three where an activity has
+favourites.
+
+| compiles | activities | pages | pads | lists | hit pages | described | activity screen bytes |
+|---|---|---|---|---|---|---|---|
+| `harvest_one_two_devices`, `harvest_one_families_1` to `_3` | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| `one_spare_after_sync` | 1 | 1 | 3 | 68 | 2 | 298 | 1291 |
+| `one_config_unprogrammed` | 1 | 2 | 9 | 82 | 3 | 457 | 1735 |
+| `calibration_one` | 2 | 4 | 23 | 172 | 3 | 874 | 3342 |
+| `calibration_favchannels`, `phase7_before`, `phase7_after` | 2 | 4 | 23 | 177 | 4 | 897 | 3573 |
+| `one_friend_legacy_sync_config` | 3 | 4 | 17 | 218 | 5 | 968 | 4216 |
+| `one_spare_myharmony` | 7 | 9 | 40 | 506 | 5 | 2148 | 9090 |
+| `one_spare_20260830` | 7 | 11 | 49 | 535 | 6 | 2565 | 10071 |
+| `calibration_favzero` | 7 | 9 | 40 | 509 | 5 | 2162 | 9155 |
+| `compiled_protocols`, `compiled_protocols_2` | 7 | 11 | 49 | 535 | 6 | 2634 | 10076 |
+| `compiled_protocols_3` | 7 | 11 | 49 | 535 | 6 | 2625 | 10085 |
+| `one_config` | 8 | 15 | 55 | 606 | 7 | 2846 | 11181 |
+
+**Per activity, over the 63**: 8 with favourite channels, 22 with instruction 1, 63 titles joined by the title's
+blank, 0 selecting the pad font before every pad, the longest of 4 pages. `one_config` holds the corner cases: 14
+pads that draw a picture rather than words (its PlayStation 3's first two pages and its TV kijken's first page, and
+`one_config_unprogrammed`'s Watch TV's first page), its Chromecast's one page of no pad, and two pages short of six
+before the last (Bluetooth's first, TV kijken's second), so the description reads pads by their slots and does not
+assume six to a page.
+
+### What the description carries and what is generated
+
+**Read**: per activity its name, off the start up title after "Starting" and its blank; whether that blank is the title
+set's own or a space; each pad's label as the lines drawn inside it, whether it draws a picture, and what it runs,
+call by call and pause by pause; whether it has favourites (the working page's first words are two); whether its chrome
+carries instruction 1; whether every pad selects its font. And the numbering: the modes, every list index (each pad's
+commands and pauses among them, and the screens each key enters), the timers, the light lists, the header and chrome
+programs, the pictures (the full screen picture, the signal, the type icons and each pad's), the fonts, a role per
+screen, each page's hit page index and the homes of texts drawn by reference. **Generated**: every opcode and
+constant, the tags and their stored order, every list's instructions, the words "Starting", "Keep the remote pointed
+at", "your system.", "Favorites", "Devices", "pages" and the page numbers and where each goes, where every label line
+goes, which text is inline, the records, and the hit pages' areas and codes. **The blind control** overwrites every
+byte of the activity screens the description does not read, 69417 of 91037 over the eighteen, and every compile comes
+back byte for byte; the description reads 21620 bytes inside them and 1282 outside, the glyph codes of the homes.
+
+**The working screens are found by the touch family's `working` value map record**, the mode each activity's case
+enters, `touchValueMapRoles`, and not by `activityScreens`, which reads them through the activity menu's bindings
+that a composer adds after the screens; the two agree on all fourteen compiles with an activity. A start up screen is
+any mode whose own key map is the 55 tags, and the counts must agree.
+
+**The start up title's blank is a code only the title's set holds**, read as a space by a plain character map, so the
+template spells through the touch family's own map, `touchCharacterMap`, which the engine now takes as a parameter,
+and the description records whether the blank is that code or a space: ours is a space, since a donor lettered in ours
+holds both and they draw alike.
+
+**The fonts are a role per screen**, not per part: the composer's start up title is spelled in a lighter set of ours
+where Logitech's titles share one, so two screens' title fonts may differ; per activity name would not do, since
+section 402's test composes activities that share a name.
+
+**Our look is a choice of the same template**: the composer's activities share one list of three empty instructions
+among a start up screen's 52 keys and share the device pages' header list and timer, where Logitech gives each screen
+its own; both are numbering, the description's. One structural difference is described, `selectEach`, as on the device
+pages. **The controls fail where they should**: two labels swapped, the favourites taken away, instruction 1 taken away,
+the title's blank made a space and our select on Logitech's page each give a different file; a pad dropped moves
+every number after it and is refused or differs; a working page named to the start up screen's hit page is refused
+by the builder.
+
+### Beyond the eighteen
+
+The Dutch compile, `one_friend_asfound_config`, is refused by its words before any byte is compared: its start up
+title reads "Bezig met starten" and not "Starting" and a name. No language branch.
+
+### On the composed path
+
+**Put there by this item**, beside sections 419's and 420's: the touch family's activity composer,
+`buildTouchActivityScreens`, ends by describing every activity screen the configuration holds and building them
+again, `withTouchActivityScreensRebuilt`, so the activity it adds is in the form the builder rebuilds; and the builder
+runs after the device pages in `builders.ts`, `TOUCH_BUILT` naming fifteen parts. An activity composed with eight pads
+onto `harvest_one_two_devices` and onto `one_config`, both lettered in ours, rebuilds byte for byte with Logitech's
+eight beside it, its pages six and two, the title's blank a space and our select before every pad.
+
+**Measured on the composed test setup**, five activities of one page each (modes 82 to 91): the activity screens are
+built whole, 2888 bytes, 1068 of them described. **The file is the same byte for byte, 1512234, and carried stays
+876509**: the look, which centres every text in our letters, had already left the composer's screens as the template
+builds them, and nothing of them was carried. What the screens share with a set built earlier in
+`TOUCH_BUILT` order is credited there: the header list to the device pages, the light lists to the wiring and the
+firmware screens, the empty list a start up screen's keys run, the configuration's first, to the firmware screens.
+
+**What changed on the screen**: nothing. The five activities' start up and working screens rendered before and after
+are identical.
+
+**Still open**: an activity's own help screen and its own device list, section 402, the other two modes an activity
+enters, are not built here; the composed activity's lists are numbered from the next free index, as the menu's and
+the device pages' are.
+
+### Asserted
+
+`packages/codec/test/touchactivityscreens.test.ts`: the rebuild on the eighteen with every figure in the table above,
+the list closure, the per activity counts and the corner cases; the Dutch refusal; the working screens agreeing with
+`activityScreens`; the blind control's totals; the failing controls; and the composed path, an activity of eight pads
+on two compiles. `composesetup.test.ts` holds the attribution, 2888 and 1068, and the carried list unchanged;
+`touchbuilders.test.ts` the fifteen builders giving back Logitech's compile of two devices, the activity screens 0.
+
+### What would falsify it
+
+An English Harmony One compile whose start up screen holds another key set, another title or other lines; a working
+screen whose keys below hold other words, whose pad list runs something other than the click and calls or pauses, or
+whose copy calls the page list's own lists; a pad off its slot.
+
+### Which architectures
+
+Arch 12 (Harmony One) alone: the screens and the builder are the touch family's. The Harmony 600, 650 and 700 draw
+their activities' screens with `screenrecords.ts` and were not checked for this. Skin 54 and the European skin 59 in
+English; the Dutch compile refused.
+
+### Reviewers
+
+The two reviewers of the `finding` skill were not run for this section; it is written for them to check.

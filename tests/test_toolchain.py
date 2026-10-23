@@ -462,8 +462,8 @@ class ATypeScriptSampleLoopStatesItsPopulation(unittest.TestCase):
         # 134 with touchactivitymenu.test.ts, section 419, todo-compile-one 4.1. 135 with
         # touchdevicepages.test.ts, section 420, todo-compile-one 4.2. 136 with touchwithouttour.test.ts,
         # section 421, todo-compile-one 4.10. 137 with touchpictures.test.ts, section 422, todo-compile-one 5.3.1
-        # and 5.3.3.
-        self.assertEqual(scanned, 137, 'the TypeScript test files, as ABoundOnACorpusTotalIsExact counts them')
+        # and 5.3.3. 138 with touchactivityscreens.test.ts, section 423, todo-compile-one 4.3.
+        self.assertEqual(scanned, 138, 'the TypeScript test files, as ABoundOnACorpusTotalIsExact counts them')
         self.assertEqual(
             {name: len(lines) for name, lines in counted.items()},
             TYPESCRIPT_LOOPS_ALLOWED_TO_SKIP_A_SAMPLE,
@@ -619,8 +619,8 @@ class ABoundOnACorpusTotalIsExact(unittest.TestCase):
         # 6.6, section 416. 131 with touchhitpages, 4.8, section 417. 132 with touchhelpscreens, 4.6, section 415.
         # 133 with touchbelowlists, 6.5, section 418. 134 with touchactivitymenu, 4.1, section 419.
         # 135 with touchdevicepages, 4.2, section 420. 136 with touchwithouttour, 4.10, section 421.
-        # 137 with touchpictures, 5.3.1 and 5.3.3, section 422.
-        self.assertEqual(len(scanned), 137, 'TypeScript test files, which moves when one is added')
+        # 137 with touchpictures, 5.3.1 and 5.3.3, section 422. 138 with touchactivityscreens, 4.3, section 423.
+        self.assertEqual(len(scanned), 138, 'TypeScript test files, which moves when one is added')
         self.assertIn(self.CONTROL, found, 'the pattern matches nothing it should match')
 
     def test_every_remaining_bound_says_why_it_is_not_a_measurement(self):

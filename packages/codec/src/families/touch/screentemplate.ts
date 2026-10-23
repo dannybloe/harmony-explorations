@@ -80,9 +80,10 @@ export const HALF = SCREEN_WIDTH / 2;
 
 /**
  * What a number the configuration chose is, for the reader of a description; each is read the same way. `set` is a
- * base slot 9 entry, the keypad map an activity menu row selects, `todo-compile-one.md` 4.1.
+ * base slot 9 entry, the keypad map an activity menu row selects, `todo-compile-one.md` 4.1. `pause` is a `0x7C`'s
+ * operand, a device's wait in a sequence an activity's pad runs, `todo-compile-one.md` 4.3.
  */
-export type NumberKind = 'list' | 'mode' | 'program' | 'timer' | 'map' | 'variable' | 'set';
+export type NumberKind = 'list' | 'mode' | 'program' | 'timer' | 'map' | 'variable' | 'set' | 'pause';
 
 /**
  * One instruction: a constant; an instruction whose operand (or, for an opcode with a band, whose low byte)
@@ -1057,12 +1058,14 @@ export function carriedNumbers<F extends string>(
 /**
  * The screens built from a description, in mode order since the programs are laid out in that order and the
  * first program to draw a text holds it inline. Everything but the description's numbers is generated. `c` is
- * read for its fonts and character map only, which spell the words and measure them.
+ * read for its fonts and character map only, which spell the words and measure them. `map` is the character map
+ * the words are spelled by, the configuration's by default: an activity's start up title spells its joiner by the
+ * touch family's, `touchCharacterMap`, `todo-compile-one.md` 4.3.
  */
 export function buildTemplateScreens<F extends string>(
-  c: Container, spec: TemplateScreensSpec<F>, screens: readonly TemplateScreen<F>[],
+  c: Container, spec: TemplateScreensSpec<F>, screens: readonly TemplateScreen<F>[], map: CharacterMap | undefined = characterMap(c),
 ): BuiltTemplateScreens {
-  const spell = speller(c);
+  const spell = speller(c, map);
   const { recordOf } = recordBuilding(spec.homes);
   if (spec.screens.length !== screens.length) throw new ScreenRecordError(`the description holds ${spec.screens.length} screens, not ${screens.length}`);
   const inline = new Map<string, PieceTarget>();

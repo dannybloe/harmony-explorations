@@ -242,10 +242,10 @@ const builtBytes = (): TouchBuiltBytes => {
   return builtOnce;
 };
 
-test('todo-compile-one 3.2.2 and 4.10: the firmware screens, the fixed screens, the status screens, the clock header, the help screens, the activity menu, the device pages, the case programs, the hit pages, the wiring, the state tables, raw slot 18, base slot 16\'s table and the pictures of the composed setup come out of the touch family\'s builders, run on the composed path and measured on the result, and the tour and Remote Assistant are left out',
+test('todo-compile-one 3.2.2, 4.3 and 4.10: the firmware screens, the fixed screens, the status screens, the clock header, the help screens, the activity menu, the device pages, the activity screens, the case programs, the hit pages, the wiring, the state tables, raw slot 18, base slot 16\'s table and the pictures of the composed setup come out of the touch family\'s builders, run on the composed path and measured on the result, and the tour and Remote Assistant are left out',
      NEEDS, () => {
   const out = composed();
-  // On the path: one step after the composers and before the look, naming the fourteen parts in the order built.
+  // On the path: one step after the composers and before the look, naming the fifteen parts in the order built.
   const names = out.steps.map((one) => one.step);
   assert.equal(out.steps.find((one) => one.step === 'built')?.detail, TOUCH_BUILT.join(', '));
   assert.ok(names.indexOf('activity composed') < names.indexOf('built') && names.indexOf('built') < names.indexOf('look'));
@@ -301,9 +301,18 @@ test('todo-compile-one 3.2.2 and 4.10: the firmware screens, the fixed screens, 
   // 863, the twelve pages only the sixteen were touched through and their entries in the table; and the wiring's
   // 4625 to 4560 and its 1274 described to 1250, the start's ladder in the form of Logitech's compile without the
   // Remote Assistant.
+  //
+  // The activity screens' 2888, since `todo-compile-one.md` 4.3, section 423, are the five activities' start up and
+  // working screens built whole, each of one page: their own key maps, entries, chromes and pages, the page lists and
+  // copies, the lists those run but a pad's command, and their five hit pages, the start up screens' one and four of
+  // the working screens' shapes. What the screens share with a set built before them is that set's: the header list
+  // the device pages', the key lights' lists the wiring's and the firmware screens', and the empty list the 52 keys of
+  // a start up screen run, the configuration's first, the firmware screens'. The composed file is the same byte for
+  // byte as before the builder joined the path, so nothing of the others moved. Its 1068 described are the names, the
+  // label lines and the numbering, every command a pad sends and every picture among it.
   assert.deepEqual(a.generated, {
     'firmware screens': 3237, 'fixed screens': 14087, 'tour and Remote Assistant': 0, 'status screens': 3872,
-    'clock header': 3558, 'help screens': 6245, 'activity menu': 786, 'device pages': 16139, 'case programs': 572, 'hit pages': 863, wiring: 4560, 'state tables': 2347,
+    'clock header': 3558, 'help screens': 6245, 'activity menu': 786, 'device pages': 16139, 'activity screens': 2888, 'case programs': 572, 'hit pages': 863, wiring: 4560, 'state tables': 2347,
     'raw slot 18': 2, 'number senders': 1, pictures: 294663,
   });
   // The pictures' 294663, since `todo-compile-one.md` 5.3.1 and 5.3.3, section 422, are the 32 of ours the path put in
@@ -315,7 +324,7 @@ test('todo-compile-one 3.2.2 and 4.10: the firmware screens, the fixed screens, 
   // and of the variables it writes, and the tour's setting, one byte.
   assert.deepEqual(a.described, {
     'firmware screens': 439, 'fixed screens': 4156, 'tour and Remote Assistant': 0, 'status screens': 699,
-    'clock header': 337, 'help screens': 1994, 'activity menu': 204, 'device pages': 6273, 'case programs': 33, 'hit pages': 0, wiring: 1250, 'state tables': 0,
+    'clock header': 337, 'help screens': 1994, 'activity menu': 204, 'device pages': 6273, 'activity screens': 1068, 'case programs': 33, 'hit pages': 0, wiring: 1250, 'state tables': 0,
     'raw slot 18': 0, 'number senders': 0, pictures: 0,
   });
   // The help screens' 1994 against 660 on the donor are the numbers and names of a chain of seven rather than two:
@@ -410,7 +419,10 @@ test('todo-compile-one 3.2: the One\'s composed test setup carries 145991 of its
   // working screens (4.3), 14 bytes, took the two donor lists of that shape the menu's had taken before. Its eighth,
   // 3.2.2.8, put the device pages there, section 420: `mode device` went, 4569, the donor's two devices' modes, the
   // hit pages came down by the 318 of the three device page shapes, and the lists by 2140, the device pages' own
-  // lists that matched the donor's, its pads' lists and their copies', the keys' and the handlers'.
+  // lists that matched the donor's, its pads' lists and their copies', the keys' and the handlers'. `todo-compile-one.md`
+  // 4.3 put the activity screens there, section 423, and no row came down: the composer has written them since 1.2.11,
+  // so nothing of them was carried, and the two Devices key lists 3.2.2.7 found matching the donor's matched no more
+  // once 4.10 renumbered the idle device list they enter.
   //
   // **What is left of those two rows.** `hit-page` 167 is the two pages of the donor's no builder makes, both the help
   // screens' (4.6): index 4, which their questions are touched through, and the generic help screen's, 24. 485 before

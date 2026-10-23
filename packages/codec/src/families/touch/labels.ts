@@ -158,11 +158,20 @@ export function touchLabelLines(
   if (lines.length > TOUCH_LABEL_MAX_LINES) {
     throw new ComposeError(`'${label}' takes ${lines.length} lines and a pad was only ever drawn with ${TOUCH_LABEL_MAX_LINES}`);
   }
-  const top = pad.y + DEVICE_LABEL_DROP - Math.floor((TOUCH_LABEL_PITCH * (lines.length - 1)) / 2);
   return lines.map((text, k) => {
     const codes = codesFor(map, c, set, text, font);
-    return { text, codes, x: pad.x + Math.floor((TOUCH_PAD_WIDTH - textWidth(c, set, codes)) / 2), y: top + TOUCH_LABEL_PITCH * k };
+    return { text, codes, x: pad.x + Math.floor((TOUCH_PAD_WIDTH - textWidth(c, set, codes)) / 2), y: padLineY(pad.y, lines.length, k) };
   });
+}
+
+/**
+ * Where line `line` of a label of `n` lines starts in y on a pad whose picture's top is `padY`: the block on the one
+ * line drop, `DEVICE_LABEL_DROP`, the lines `TOUCH_LABEL_PITCH` apart, section 394. One rule for every pad a Harmony
+ * One draws a label on: the device pages', `devicepages.ts`, an activity's working screen's, `activityscreens.ts`,
+ * and a label a composer lays out, `touchLabelLines`.
+ */
+export function padLineY(padY: number, n: number, line: number): number {
+  return padY + DEVICE_LABEL_DROP - Math.floor((TOUCH_LABEL_PITCH * (n - 1)) / 2) + TOUCH_LABEL_PITCH * line;
 }
 
 /** The bytes a label's lines take in a screen program: an inline text per line, its x, y, codes and end. */

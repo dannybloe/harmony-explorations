@@ -81,8 +81,8 @@ import { type ValueReader, blobReader, fontThatSpells, textGlyphs } from '../../
 import { TOUCH_AREA_LENGTH, touchPages } from '../../tables.ts';
 import { characterMap, decode } from '../../text.ts';
 import { type HitPart, hitPageAreasOf, hitPageRunOf, touchHitPagesPlace, withTouchHitPages } from './hitpages.ts';
-import { TOUCH_LABEL_PITCH, TOUCH_PAD_HEIGHT, TOUCH_PAD_WIDTH } from './labels.ts';
-import { DEVICE_LABEL_DROP, DEVICE_PAGE_SLOTS, pagingStyle, withHitPage } from './menus.ts';
+import { TOUCH_PAD_HEIGHT, TOUCH_PAD_WIDTH, padLineY } from './labels.ts';
+import { DEVICE_PAGE_SLOTS, pagingStyle, withHitPage } from './menus.ts';
 import { pageKeysOn } from './activitymenu.ts';
 import {
   ARROWS, type BuiltTemplateScreens, CLICK, type Entry, HEADER, LIST, MAP, lightOff,
@@ -197,12 +197,9 @@ const OFF_LISTS = (() => {
   return [LIGHT_4_OFF, LIGHT_6_OFF, PAGE_KEYS_OFF];
 })();
 
-/** Where pad `k` of a page sits, and where each line of a label of `n` lines starts in y, section 394. */
+/** Where pad `k` of a page sits; each line of its label starts in y at `padLineY`, section 394. */
 function padPlace(k: number): readonly [number, number] {
   return DEVICE_PAGE_SLOTS[k] as readonly [number, number];
-}
-function lineY(padY: number, n: number, line: number): number {
-  return padY + DEVICE_LABEL_DROP - Math.floor((TOUCH_LABEL_PITCH * (n - 1)) / 2) + TOUCH_LABEL_PITCH * line;
 }
 
 /**
@@ -255,7 +252,7 @@ export function devicePageScreen(device: DevicePageDevice): TemplateScreen<Devic
         return [
           picture(x, y),
           ...(k === 0 || device.selectEach ? [font<DevicePageFont>('row')] : []),
-          ...lines.map((line, j) => text(line, { in: [x, TOUCH_PAD_WIDTH] }, lineY(y, lines.length, j))),
+          ...lines.map((line, j) => text(line, { in: [x, TOUCH_PAD_WIDTH] }, padLineY(y, lines.length, j))),
         ];
       });
       const tail: Part<DevicePageFont>[] = [
