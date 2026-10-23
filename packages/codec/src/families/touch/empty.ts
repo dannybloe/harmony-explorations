@@ -30,10 +30,11 @@
  * * **The background drawn by one fill**, `TouchChoices.backgroundFill`, section 425, unless the choice keeps it a
  *   picture; **our letters blended** into the colour under each text, decision 22, and **every label in a pad centred**
  *   by its letters, which are the composed path's look, `look.ts`, in its order.
- * * **The Remote Assistant's variable starts at 3**, `ASSISTANT_HIDDEN`, the value its own "hide" answer writes, as the
- *   composed path starts it, section 403. The empty One holds no assistant screen and no start ladder, so the only
- *   reader is USB Connected's leaving list, section 432; what that list does with 3 rather than Logitech's 0 is not
- *   read, and the choice follows the composed path that has been on the spare Harmony One.
+ * * **The Remote Assistant's variable starts at 0**, as the numbering states it, Logitech's value on every compile that
+ *   holds it, section 403. The empty One holds no assistant screen and no start ladder, so the only reader is USB
+ *   Connected's leaving list, section 432. It started at 3 until section 436 found that the composed path, which it
+ *   was chosen to follow, has started it at 0 since section 421's step, and the spare Harmony One has run that path
+ *   since; what the leaving list does with either value is not read.
  *
  * **The build year** is the year of `builtAt`, which the Year picker offers with the year either side. Where those
  * three hold a leap year the fixed screens add a Day 29 picker and a second Month picker, `fixedscreens.ts`.
@@ -68,7 +69,6 @@ import { buildTouchActivityMenu } from './activitymenu.ts';
 import { buildTouchDeviceLists } from './devicelists.ts';
 import { buildTouchHitPages } from './hitpages.ts';
 import { buildTouchScreenTable } from './caseprograms.ts';
-import { ASSISTANT_HIDDEN } from './startupassistant.ts';
 import { withCentredPadLabels } from './centring.ts';
 import { touchLabelWeight } from './activitypictures.ts';
 import type { TouchScreenSet } from './numbering.ts';
@@ -297,11 +297,11 @@ export function buildEmptyTouchConfiguration(options: EmptyTouchOptions): EmptyT
   const screenTable = buildTouchScreenTable(header, valueMaps);
   const cases = [...wiring.cases.built.cases.values()].flat().map((one) => one.piece);
 
-  // The state tables: the wiring's variables, the assistant's started hidden, Time of Day's, and the clock's two
-  // calls at the indices the clock header numbered them.
+  // The state tables: the wiring's variables, the assistant's, Time of Day's, and the clock's two calls at the
+  // indices the clock header numbered them.
   const [minuteCall, hourCall] = clock.calls;
   if (hourCall?.operand !== wiring.hourList.index) throw new EmptyTouchError('the clock header\'s hour call is not the hour list the wiring numbered');
-  const variables = numbering.variables.map(([name, variable]) => (name === 'assistantStep' ? { ...variable, first: ASSISTANT_HIDDEN } : variable));
+  const variables = numbering.variables.map(([, variable]) => variable);
 
   // Each mode laid out as the Harmony 650's assembly lays one, the copies after the last entry and base slot 9's sets
   // behind them; mode 0's own key map is the key table.

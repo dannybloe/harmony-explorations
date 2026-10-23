@@ -103,8 +103,8 @@ const CAUSES: readonly (readonly [string, (d: TouchViewDifference) => boolean])[
   ['the order an activity\'s start and All Off switch devices off', (d) => /^keys activity /.test(d.key) || d.key.startsWith('map map@(keys idle 1.4) |')],
   ['the donor LG\'s online power variable', (d) => /OnlinePower/.test(d.key) || d.key.startsWith('variable LG_TV_Power_2 |')
     || d.key.startsWith('timer timer@(variable LG_TV_Power_2')],
-  ['the start up assistant\'s variable', (d) => d.key.startsWith('variable variable@(screen "USBConnected"')
-    || (d.key.startsWith('map unreached') && /USBConnected/.test(d.a ?? d.b ?? ''))],
+  ['the start up assistant\'s value map, which Logitech\'s path keeps and nothing reaches', (d) => d.key.startsWith('map unreached')
+    && /USBConnected/.test(d.a ?? d.b ?? '')],
   ['a timer nothing starts', (d) => d.key.startsWith('timer unreached')],
 ];
 
@@ -147,7 +147,7 @@ const offOrder = (value: string | undefined): string[] =>
 
 // ---------------------------------------------------------------------------------------------------------
 
-test('8.1.5: the two compositions differ in 389 places, every one of them one of seven causes and none unexplained', NEEDS, () => {
+test('8.1.5: the two compositions differ in 388 places, every one of them one of seven causes and none unexplained', NEEDS, () => {
   const differences = compareTouchViews(a(), b());
   const counted = Object.fromEntries([...causes(differences)].map(([cause, list]) => [cause, list.length]));
   assert.deepEqual(counted, {
@@ -156,10 +156,10 @@ test('8.1.5: the two compositions differ in 389 places, every one of them one of
     'the power off help: the donor\'s labels and its device order': 35,
     'the order an activity\'s start and All Off switch devices off': 7,
     'the donor LG\'s online power variable': 4,
-    'the start up assistant\'s variable': 3,
+    'the start up assistant\'s value map, which Logitech\'s path keeps and nothing reaches': 2,
     'a timer nothing starts': 2,
   });
-  assert.equal(differences.length, 389);
+  assert.equal(differences.length, 388);
 });
 
 test('8.1.5: each view runs exactly the lists listsReached counts and holds every mode, timer, value map and state variable, so nothing either file can run goes uncompared', NEEDS, () => {
@@ -250,10 +250,11 @@ test('8.1.5: the donor LG\'s online power, the assistant\'s starting value and t
   assert.equal(a().get('timer timer@(variable LG_TV_Power_2 0.1)'), 'kind 1, 30 s: LG_TV_OnlinePower_2=1');
   assert.equal([...a().values()].filter((value) => /71\.[0-9a-f]+ LG_TV_OnlinePower_2/.test(value)).length, 0);
   assert.equal(b().has('variable LG_TV_OnlinePower_2'), false);
-  // The start up assistant's variable starts at 0 on Logitech's compile with the assistant taken out, and at 3 on ours.
+  // The start up assistant's variable starts at 0 both ways: on Logitech's compile with the assistant taken out, and on
+  // our empty One, which took 3 until section 436 found the composed path had started it at 0 since section 421.
   const assistant = 'variable variable@(screen "USBConnected" key 7.1.1.0)';
   assert.equal(a().get(assistant), 'starts 0, at most 3');
-  assert.equal(b().get(assistant), 'starts 3, at most 3');
+  assert.equal(b().get(assistant), 'starts 0, at most 3');
   // A timer each holds that nothing starts: Logitech's compile a redraw timer of four seconds, ours the power off help's
   // three second show timer, section 435.
   const unstarted = (view: TouchView): string[] => [...view].filter(([key]) => key.startsWith('timer unreached')).map(([, value]) => value.slice(0, 15));

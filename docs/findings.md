@@ -58395,8 +58395,9 @@ centred, and our letters blended into the colour under each text, decision 22; `
   *Corrected in section 436:* the composed path has started it at 0 since section 421, whose step takes the start
   ladder out before `withoutStartupAssistant` looks for the variable by that ladder; 3 held from section 403 until
   then, and holds still where the tour is kept. The spare's six region reads from the tour free write on hold it
-  starting at 0, as Logitech's compiles start it; its running value in memory was not read. So the choice of 3 rests on
-  the hide answer's value alone, and which value the empty One should start with is open until the bench, 8.2.
+  starting at 0, as Logitech's compiles start it; its running value in memory was not read. So the choice of 3 rested
+  on the hide answer's value alone, and the empty One starts it at 0 since section 436, Logitech's value and the one
+  the spare has run.
 
 ### The file
 
@@ -58406,7 +58407,7 @@ centred, and our letters blended into the colour under each text, decision 22; `
 | modes | 67, section 432's order |
 | lists | 1314, base slot 10 from 0 with no gap |
 | hit pages | 14 |
-| state variables | the firmware's 18, then 20 one byte ones, the assistant variable's `first` 3 and `max` 3, then the clock pickers' |
+| state variables | the firmware's 18, then 20 one byte ones, the assistant variable's `first` 3 (0 since section 436) and `max` 3, then the clock pickers' |
 | font sets | 29: section 427's 18 and 11 blended copies |
 | the start | the activity menu: the start's ready map takes, for location 0, a case that enters it |
 
@@ -58531,7 +58532,7 @@ One runs the file**, `todo-compile-one.md` 7.2:
   eighteen that hold it, section 403; ours without both ran on the spare on the composed path, section 421, never with
   no device;
   *corrected in section 436:* that run's configuration, read back off the spare, starts it at 0, not 3, so 3 with no
-  assistant has not been on a remote;
+  assistant has not been on a remote, and the empty One starts it at 0 since;
 * **the attempt screen reaching "Nothing to do" by the three second timer**, which rests on one compile,
   `harvest_one_families_1`, section 430;
 * **the mode order past 39**, ours, section 432, and one stored copy of a picture several places draw;
@@ -58549,7 +58550,7 @@ Devices key enters the idle device list, "Devices", with Activities on its key; 
 Time", "Turn Screen Sounds Off" and "Screen Sensitivity"; the strip across the top shows the day, the time and the
 gauge. Drawn to PNG from the file by `packages/codec/bin/empty-one.ts --screens`. Not yet seen on a remote: whether it
 starts, whether the clock runs from the stamp, whether the device lists' Activities key and Options' pickers behave, and
-what USB Connected's leaving list does with the assistant variable at 3.
+what USB Connected's leaving list does with the assistant variable at 3 (at 0 since section 436, as on the spare).
 
 **The build year and the stamp have to agree.** The Year picker's years, and whether the two leap screens are there,
 come from the year the file is built for, and our readers find those screens from the year of the stamp the file holds.
@@ -58785,7 +58786,7 @@ status screen on the spare, or a device page whose clock stops.
   `compose.test.ts`, the dropped hit page; `composesetup.test.ts`, every hit page named; `packages/codec/bin/empty-one.ts`,
   `--setup`.
 
-## 436. The test setup composed two ways and compared by what a person meets: 389 differences, every one of seven causes, and a defect on the composition onto Logitech's compile that put the Denon and the LG on the wrong input, fixed
+## 436. The test setup composed two ways and compared by what a person meets: 388 differences, every one of seven causes, and a defect on the composition onto Logitech's compile that put the Denon and the LG on the wrong input, fixed
 
 **Todo `todo-compile-one.md` 8.1.5.** The Harmony One test setup, seven devices and five activities,
 `packages/corpus/setups/one-test.json`, is composed two ways: onto Logitech's compile of two devices,
@@ -58859,10 +58860,11 @@ the LG's input variable sends nothing itself and has none to check. Without the 
 Denon's 19 right. The fix changes which record each send names and nothing else: the file stays 980473 bytes and every
 figure `composesetup.test.ts` pins is unchanged.
 
-### The 389 differences
+### The 388 differences
 
 Every one is one of seven causes, counted exactly by `composecompare.test.ts`, which also measures for each cause that
-it is that cause and not something else under its name.
+it is that cause and not something else under its name. The comparison first found 389: the start up assistant's
+variable, which the empty One started at 3, was a difference too, until the empty One was made to start it at 0, below.
 
 | cause | differences | intended, by |
 |---|---|---|
@@ -58871,7 +58873,7 @@ it is that cause and not something else under its name.
 | the power off help: the same labels and order | 35 | section 415, the chain built from the file's devices in order |
 | the order an activity's start and All Off switch devices off | 7 | the file's device order, the same devices both ways |
 | the donor LG's online power variable | 4 | sections 347 and 385: Logitech's connected app machinery, which we do not compose |
-| the start up assistant's variable | 3 | section 421 on Logitech's path, section 434 on ours; see below |
+| the start up assistant's value map, which Logitech's path keeps and nothing reaches | 2 | section 421; see below |
 | a timer nothing starts, one in each file | 2 | section 421's step on Logitech's path, section 435 on ours |
 
 **The device pages, 285.** The LG on 6 pages and the Denon on 16 both ways, 74 and 211 differences. Their pads offer
@@ -58903,16 +58905,19 @@ ways in each file's order, two keys each, and All Off's case.
 and cleared when it is switched off, which nothing reads. The composition onto it keeps the variable and its timer;
 ours, composing the LG from the catalogue, has neither. Two transitions, the timer and the variable.
 
-**The assistant's variable, 3.** On Logitech's path the start up assistant's variable starts at 0, Logitech's value,
-and on ours at 3. Section 421's step, by default, takes the assistant's start ladder out before the look runs
+**The assistant's variable, and its value map, 2.** On Logitech's path the start up assistant's variable starts at 0,
+Logitech's value, and the empty One started it at 3, a third difference. Section 421's step, by default, takes the
+assistant's start ladder out before the look runs
 `withoutStartupAssistant`, section 403, which finds the variable by that ladder, finds none, and leaves it as it is.
 Section 434 chose 3 for the empty One because "3 is what the composed path starts it at"<!--superseded-->, which held
 from section 403 until section 421's step and since then only where the tour is kept. The spare's region reads from
 section 421's write on hold it at 0. Its one reader on both is USB Connected's leaving list, which
 with the variable at 0 looks the current location up in a value map selecting the running activity's keys, and with 3
-does not; what that does on the remote is not read. Logitech's path also keeps the assistant's own value map, which
-nothing reaches, two cases writing 3 and 1. The value is left as section 434 chose it, since which one a person should
-have is a bench question, `todo-compile-one.md` 8.2; 0 is Logitech's.
+does not; what that does on the remote is not read. **The empty One now starts it at 0**, decided once this was
+found: 0 is Logitech's value, and it is what the spare Harmony One has run since section 421's write, which started
+clean at the bench. `families/touch/empty.ts` no longer overrides the numbering's 0; the empty One's length, 905173
+bytes for the composition, is unchanged. What remains is Logitech's path keeping the assistant's own value map, which
+nothing reaches, two cases writing 3 and 1, from Logitech's compile.
 
 **The timers nothing starts, 2.** On Logitech's path a four second redraw timer, one class's of section 430, which
 nothing starts once section 421's step has taken out its screens: Logitech's donor starts its timer of the same index
@@ -58922,9 +58927,9 @@ ours, the power off help's three second show timer, section 435.
 
 ### What is the same
 
-Of the 4090 names both views hold, 3709 are the same: every text and pixel key of every other page; every binding of
+Of the 4090 names both views hold, 3710 are the same: every text and pixel key of every other page; every binding of
 every activity's keys, down to the code sent, and of every activity's screens but its device list; every start and
-transition but the seven orders, the LG's power and the assistant's variable above; every input of the seven devices
+transition but the seven orders and the LG's power above; every input of the seven devices
 (of them the 47 entries of the Denon's and the LG's four input variables are asserted equal); the clock and its
 pickers, the settings, the firmware's screens and the leading list.
 
@@ -58937,8 +58942,7 @@ six differences; against Logitech's path the same six are differences no cause t
 ### What is not settled
 
 The comparison is of the files; neither composition with the fix has been on a remote. Unconfirmed until
-`todo-compile-one.md` 8.2: that the Denon and the LG go to the inputs the file now sends, and what USB Connected's
-leaving list does with the assistant's variable at 3 on the composition onto the empty One.
+`todo-compile-one.md` 8.2: that the Denon and the LG go to the inputs the file now sends.
 
 Arch 12 (Harmony One) only, skin 54 only. The fix to the shared input composer changes nothing on the Harmony 600, 650
 and 700, whose families compose no donor device's inputs.
