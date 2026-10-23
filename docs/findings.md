@@ -58012,3 +58012,168 @@ sentences stated as measured that were expected.
   raw slot 18 and the key table on the nineteen with the control; the spelling of the two compiles' texts; the nine
   screen sets through the probe and not the skeleton.
 * `docs/config-format.md`, "What decides each byte of the frame on arch 14", the One's empty forms.
+
+## 432. The Harmony One's screen sets numbered by role: every number an empty One's screens take is a name, one name is one number across every set on the sixteen English compiles of skin 54, and an empty One is numbered from nothing
+
+**Todo `todo-compile-one.md` 7.1.4**: an empty Harmony One numbered, its modes, variables, value maps, lists and hit
+pages, each screen set's description made from that numbering rather than read off a file, as the Harmony 650's
+`four-slot/empty.ts` makes its own.
+
+**Sources checked**: sections 409 to 419 (the firmware, fixed, tour, status, clock header, help, case programs, hit
+pages, lists below the screens and activity menu, whose builders take the descriptions), 424 and 429 (the device lists
+and the empty ones), 427 (the stated font table), 430 (the empty wiring, whose modes this numbering gives),
+`four-slot/empty.ts`; the sixteen English compiles of skin 54. **Neither Logitech's client nor the firmware was read
+for this**: the numbers are the compiler's choices, the compiler runs on Logitech's side (sections 415 and 430), and
+the compiles are what answer which number is which.
+
+### What a number is
+
+Every screen builder of the touch family takes a description: per screen its mode, hit pages, pictures, and a run of
+other numbers in the builder's walk order, the screen an `0x7E` enters, the list an `0x7F` calls, the timer a screen
+starts, the program its chrome queues, the variable a write or a test names, the value map an `0x72` looks up. Until
+now that run was only ever read off a compile. Each number now has a **name** stated in the template that takes it:
+`mode Year`, `list keyLights.4.1.1` (the wiring's list lighting channel 5, by its catalogue name), `timer of
+fixed:Month` (the redraw timer of the Month picker's class), `program clock`, `variable bootVar3`, `map grid on clock
+picker`. The fixed, firmware, status, help and clock header templates state theirs since this section; Options, the
+help chain, the activity menu and the device lists stated theirs before. A name the touch family does not know is a
+setup's, a device's or an activity's, per screen.
+
+**The closure**: on each of the sixteen, every number of every set an empty One holds (the ten firmware screens, the
+twenty three fixed ones, the twenty nine status ones, the power off help, the activity menu, the device lists and the
+clock header's two calls) is read off the compile as the value of its name, across every set at once, so a name read
+as two numbers anywhere is refused. Then the sets' numbers are made again from the names alone and compared with the
+compile's own; a list the screens own is compared up to a renaming that has to hold in both directions, so a list
+shared where the compile holds two, or two where it holds one, fails.
+
+| compile | names | numbers compared | of them lists the screens own | distinct such lists |
+|---|---|---|---|---|
+| `harvest_one_two_devices` | 151 | 2606 | 1210 | 868 |
+| `one_spare_after_sync` | 129 | 2519 | 1185 | 841 |
+| `one_spare_myharmony` | 254 | 3319 | 1423 | 1067 |
+| `one_spare_20260830` | 286 | 3481 | 1473 | 1117 |
+| `calibration_one` | 187 | 2819 | 1275 | 929 |
+| `calibration_favchannels` | 187 | 2819 | 1275 | 929 |
+| `calibration_favzero` | 286 | 3481 | 1473 | 1117 |
+| `compiled_protocols` | 575 | 5025 | 1929 | 1573 |
+| `compiled_protocols_2` | 582 | 5039 | 1929 | 1573 |
+| `compiled_protocols_3` | 393 | 4081 | 1645 | 1289 |
+| `harvest_one_families_1` | 95 | 2361 | 1140 | 797 |
+| `harvest_one_families_2` | 150 | 2604 | 1210 | 868 |
+| `harvest_one_families_3` | 202 | 2855 | 1284 | 942 |
+| `one_friend_legacy_sync_config` | 198 | 2916 | 1301 | 953 |
+| `phase7_before` | 187 | 2819 | 1275 | 929 |
+| `phase7_after` | 216 | 2970 | 1317 | 971 |
+
+Every number equal on all sixteen. **What that checks differs between the two kinds**: a list the screens own (1140
+to 1929 numbers a compile) is numbered by the rule below, so its agreement is the rule's; every other number is a
+name's value read off the same compile, so for those the closure checks only that one name is one number across every
+set, and what each name is, is checked by the readers below. **The control**: the names read off `harvest_one_two_devices` valued in
+`compiled_protocols`' walks give 1502 numbers that are not that compile's.
+
+**The names against readers that find them another way**, on the sixteen: every `list` name is the index the wiring's
+own description gives that catalogue name, and the hour list the one the state tables name; every wiring variable is
+the wiring description's; every value map's high byte is the record `touchValueMapRoles` finds by what its cases do;
+every fixed screen's mode is `touchFixedScreenModes`', every help screen's `touchHelpScreenModes`' and the idle device
+list's `touchDeviceLists`', 571 of the 587 mode names, the other sixteen being "Remote Assistant start", which no
+finder here names and which an empty One does not hold; every named timer is that name in the wiring's timer table, a
+blank screen's the table below, and every other screen's redraw timer one its own mode starts on entering,
+`touchRedrawStarters`, every status screen's mode for the status screens' one name and every help screen's past the
+attempt for "help after"; every program the entry `touchClockHeaderEntries` finds
+by its look. Summed over the sixteen: 169 list names, 128 map names, 587 mode names, 64 program names, 561 timer
+names, 256 variable names and 2313 setup names, the last not checked against anything.
+
+| blank screen | the timer it starts on entering, on the sixteen |
+|---|---|
+| Blank 1 to 7 | `second1`, `second0`, `second3`, `enter5`, `second5`, `second2`, `second4` |
+
+### Three variables the wiring does not name
+
+* **The clock pickers' variable is the configuration's first two byte variable**, index `narrow`, the `0/65277`
+  record section 324 found the compiler emitting and whose purpose was unread: the seven clock pickers' tag `0x29`
+  handlers read and write it and the `grid` and `column` value maps are looked up on it, in the template, and on all
+  sixteen the index those numbers name is the state table's `narrow`, whose record is `0/65277`. Arch 12 (Harmony One) only; the Harmony 600, 650 and 700 hold the same record and no
+  clock picker, and what reads it there is not read.
+* **The assistant variable**: USB Connected's leaving list tests it (`TEST(0x00)`, then the select route's value map
+  on the location), whether or not the configuration keeps the Remote Assistant, as the firmware screens' template
+  states it (section 409). 0 to 3, `first` 0, on the sixteen, and on `one_config_unprogrammed` and
+  `one_friend_asfound_config` read by a script that is not a test. The everyday One's
+  `one_config` binds USB Connected's leaving tag to another list, which the firmware screens' template refuses, so it
+  is not counted.
+* **Time of Day's**: AM writes 0 and PM 1, 0 to 1, `first` 0, on the sixteen.
+
+### Which lists the screens share
+
+Section 418 found that a day's setter is one list every Day picker runs while each Day picker has its own entering list
+and its own first lists below its `0x29` handler. As a rule for numbering: **a list another list calls is shared
+within one screen by content, and across screens only where a template states it once**, the key lights' three off
+lists, a day's setter, the clock pickers' last list below the handler and the list that one calls; **a list a tag or a
+page binds straight is its own**, unless a list of that content is called on the same screen, which is USB Connected's
+entering list. The Day pickers are what separates the rule from the simpler one: on all sixteen, the three Day pickers'
+entering list for the day field and the middle list below their handler are three lists each with one content
+between them; the handler's own list below the tag, the third list each Day picker holds alone, differs between them
+only in the index of the middle list it calls. **The rule is fitted to these lists**, which is said plainly: sharing
+every called list by content alone missed six numbers a compile, three each on the Day 30 and Day 31 pickers, those
+three lists; sharing only a template's one step, before the
+setters and the clock pickers' last list were made one step each, missed 69. Stated as above it misses none on the
+sixteen.
+
+### The empty One
+
+`emptyTouchNumbering` in `families/touch/emptynumbering.ts`, for a build year whose Year picker offers no leap year:
+
+| what | the empty One's |
+|---|---|
+| modes | 67: the firmware screens 0 to 9, the status screens 10 to 39 with code 9's at 19 being "LCD Module Failed" (the event map's, section 413), then the activity menu 40, the idle device list 41, the list nothing enters 42, the other twenty two fixed screens 43 to 64 in their builder's order, the help attempt screen 65 and "Nothing to do" 66; past 39 an order of ours, which Logitech's compiles do not share |
+| variables | 39: the firmware's 18, the wiring's 18 (section 430), the assistant variable 36, Time of Day's 37, the clock pickers' 38 |
+| value maps, timers, entries, the clock header's programs | section 430's: 15, 25, 8, entries 0 to 3 |
+| lists | the firmware screens' own 178 at 0 to 177, which their builder generates; the wiring's 346 at 178 to 523; the screens' own 790 at 524 to 1313, numbered by the rule above in mode order |
+| hit pages | 14, numbered by first use in mode order: ten of `hitpages.ts`' table, and the activity menu's page of no row, the device lists' (one page shared by both), the help attempt screen's and "Nothing to do"'s, which those sets build |
+| fonts | the indices section 427's stated table puts them at, its order being `harvest_one_two_devices`': firmware body 0 and OK 1; fixed body 0, OK 1, title 2, count 6, item 7, key 8, wide 11; status body 0, title 2; help body 0, OK 1, title 2; activity menu title 3, left 4, right 5; device lists left 8, title 13; the clock 15. These are the fonts every description reads off `harvest_one_two_devices`, the compile whose order section 427 took; `compiled_protocols` holds the fixed screens' count, item, key and wide fonts at other indices, which is the control |
+
+`emptyTouchSpecs` turns the numbering into the description of every set, the pictures supplied by the caller by the
+place each screen draws one. Built from those descriptions, spelled through `harvest_one_two_devices`, every set
+builds, and the lists they and the wiring build cover base slot 10 from 0 to 1313 with no gap: four lists are built
+by more than one builder, identically, six builds past the first, the three key lights' off lists and the hour list,
+which the wiring builds for the state tables and the clock header for its call. The firmware and fixed pages' hit
+pages by shape (`TOUCH_FIRMWARE_HIT_PAGES`, `touchFixedHitPages`) are the pages each of the sixteen names, 928 pages.
+
+**Not confirmed on a remote**, `todo-compile-one.md` 7.2: that a Harmony One runs these screens with these numbers.
+**Not decided here**: the assistant variable's first value with no Remote Assistant, 0 as on every compile read; the
+composed path starts it at 3 to hide the assistant at start (section 403), and what USB Connected's leaving list does
+with each value is not read. A device list read back off a file with no device waits for 7.1.7's file.
+
+### The reviews
+
+Two reviewers read this section before it was committed. The one auditing the sentences against the numbers
+reproduced the closure's counts, the control's 1502, the six and the 69 misses of the two simpler rules, and every
+figure of the empty One, and corrected: that the numbers compared are of two kinds, and only the lists among them
+test the rule (the column and the paragraph after the table are its); that the redraw timers of the firmware, status
+and help screens and of the activity menu were checked only as timers some mode starts (each is now checked against its
+own screens' modes), and "Remote Assistant start" against no finder; that the font test reads `harvest_one_two_devices` and not the stated table; that "unnamed" and
+the clock pickers' record were not asserted (the record now is, "unnamed" is dropped); that the Day pickers' three
+missed lists include the handler's own; and that the blank screens' timers running as a chain and nothing reading the
+mode order past 39 were unmeasured, both taken out. The configuration format's table of names gained the row of the
+screens' own lists it lacked.
+
+The one reading the code and the tests found no wrong output and four weak points, all taken: the empty device lists
+were numbered a second way beside section 429's `emptyTouchDeviceListsSpec`, and are now made through it, refused
+where the two disagree; a walk numbered without being collected took a shared fallback key, and a walk collected twice
+shifted the next walk's id, both now refused, with a control; the Day pickers' test is a measurement and was called a
+control in the file's header, which now says so; and that the fixed screens' names are the same with Options of one
+page, which the empty One's keys rely on, is asserted. It also observed that whether a list is a template's constant
+is known only from the walks collected, so a numbering must collect all of a configuration's, which the class says.
+
+### Where it lands
+
+* `packages/codec/src/families/touch/numbering.ts`: the names, `roleKey`, the walks, `TouchNumbering`, `readKeys`.
+* `packages/codec/src/families/touch/emptynumbering.ts`: `emptyTouchNumbering`, `emptyTouchSpecs`,
+  `EMPTY_TOUCH_SCREENS`, `EMPTY_TOUCH_FONTS`, `BLANK_TIMERS`.
+* The templates' roles: `firmwarescreens.ts` (with `touchFirmwareSlots`, `touchFirmwarePicturePlaces`,
+  `TOUCH_FIRMWARE_HIT_PAGES`, `TOUCH_FIRMWARE_OWN_LISTS`), `fixedscreens.ts` (with `touchFixedScreenTemplates` and
+  `touchFixedHitPages`; a setter and the clock pickers' last list one step each), `statusscreens.ts`,
+  `helpscreens.ts`, `clockheader.ts`, `screentemplate.ts` (a write may carry a role; `templateNumberSlots` and
+  `templatePicturePlaces` no longer count a write's value as a slot of its own, which refused a menu of eight
+  activities whose write numbers passed 127). The readers and builders ignore roles, and every existing builder test
+  passes with the same counts.
+* `packages/codec/test/touchnumbering.test.ts`; `docs/config-format.md`, base slot 13 and the lists below the screens;
+  `packages/codec/src/statetables.ts`, `FIRST_WIDE_VARIABLE`; `reference/remotes/harmony-one/memory.md`.

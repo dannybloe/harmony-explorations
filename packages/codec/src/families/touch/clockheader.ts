@@ -59,7 +59,7 @@ import { type ValueReader, blobReader, textGlyphs, textValues } from '../../shar
 import {
   BAND, type BuiltTemplatePrograms, CALL, type Part, type Step, type TemplateCall, type TemplateProgram,
   type TemplateProgramsDescribed, type TemplateProgramsSpec, buildTemplatePrograms, describeTemplatePrograms, font,
-  k, owns, pictureOf, text, withTemplatePrograms,
+  k, named, owns, pictureOf, text, withTemplatePrograms,
 } from './screentemplate.ts';
 
 /** The one font the clock's words are drawn in; a number the configuration chose, 15 to 17 on the nineteen. */
@@ -188,10 +188,16 @@ const TEST: Step = { kind: 'number', opcode: 0x71, band: 0x01, what: 'variable' 
 const INCREMENT: Step = { kind: 'number', opcode: BAND, band: 0xf2, what: 'variable' };
 /** Load the byte register with 0, `1F FB00`. */
 const LOAD_ZERO = k(BAND, 0xfb00);
-/** One of the minute's two calls: load 0, then a list testing a variable against it and incrementing it. */
-const COUNT = owns(LOAD_ZERO, owns(TEST, INCREMENT));
-/** The list the minute calls on every change: two counts, each of a variable of the configuration's. */
-const MINUTE_LIST: Step = owns(COUNT, COUNT);
+/**
+ * One of the minute's two calls: load 0, then a list testing a variable against it and incrementing it. The variable
+ * by its role, `todo-compile-one.md` 7.1.4, for a configuration numbered from nothing, `numbering.ts`.
+ */
+const count = (variable: string): Step => owns(LOAD_ZERO, owns(named(TEST, variable), named(INCREMENT, variable)));
+/**
+ * The list the minute calls on every change: two counts, each of a variable of the configuration's, the wiring's
+ * `settleVar` and then its `relightVar` (section 410's names) on all sixteen English compiles of skin 54, section 432.
+ */
+const MINUTE_LIST: Step = owns(count('settle variable'), count('relight variable'));
 
 /**
  * The hour list, as its one encoder `hourListBytes` writes it: read back into constant steps so the template
@@ -199,7 +205,8 @@ const MINUTE_LIST: Step = owns(COUNT, COUNT);
  */
 function hourList(): Step {
   const bytes = hourListBytes();
-  return owns(...range(bytes[0] as number).map((i) => k(bytes[3 + 3 * i] as number, (bytes[1 + 3 * i] as number) | ((bytes[2 + 3 * i] as number) << 8))));
+  // Named, since its index is the state tables' hour list and not a list of the clock's own, section 432.
+  return named(owns(...range(bytes[0] as number).map((i) => k(bytes[3 + 3 * i] as number, (bytes[1 + 3 * i] as number) | ((bytes[2 + 3 * i] as number) << 8)))), 'hour list');
 }
 
 /** Where a transition holds the instruction it runs: its operand five bytes in, its opcode seven. */
@@ -314,6 +321,14 @@ export function describeTouchClockHeader(c: Container, layout: ContainerLayout, 
   const d = describeTemplatePrograms(c, layout, clockHeaderPrograms(hours), addresses, entries, ['clock'], clockCalls(c), read);
   for (const at of words) d.described.add(at);
   return { ...d, spec: { ...d.spec, hours } };
+}
+
+/**
+ * The four programs for a clock of `hours` and the two calls, as templates, for a configuration numbered from nothing,
+ * `numbering.ts`, `todo-compile-one.md` 7.1.4.
+ */
+export function touchClockHeaderTemplates(hours: 12 | 24): { programs: TemplateProgram<ClockHeaderFont>[]; calls: Omit<TemplateCall, 'at'>[] } {
+  return { programs: clockHeaderPrograms(hours), calls: CALL_STEPS() };
 }
 
 /** The four programs and the six lists built from a description; everything but its numbers is generated. */

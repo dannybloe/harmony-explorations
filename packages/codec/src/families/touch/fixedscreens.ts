@@ -132,10 +132,11 @@ interface Item { word: string; step: Step }
 
 /**
  * A picker: its items on pages of the buttons given, the n items of a page at scans 48 on and Back at the next
- * scan, or scan 43 when the page holds six; its chrome counts its pages where there are several.
+ * scan, or scan 43 when the page holds six, entering `back`; its chrome counts its pages where there are several.
  */
 function picker(
   name: string, title: string, own: readonly Entry[], items: readonly Item[], buttons: readonly Button[], itemFont: FixedScreenFont,
+  back: string,
 ): FixedScreen {
   const pages: FixedPage[] = [];
   const count = Math.ceil(items.length / buttons.length);
@@ -150,12 +151,29 @@ function picker(
     });
     parts.push(...BACK);
     if (count > 1) parts.push(...pageNumber(p + 1));
-    const back = on.length < BLOCKS ? FIRST_BLOCK + on.length : LEFT_KEY;
-    const list: Entry[] = [...on.map((item, i): Entry => [press(FIRST_BLOCK + i), item.step]), [press(back), owns(CLICK, ENTER)]];
+    const backScan = on.length < BLOCKS ? FIRST_BLOCK + on.length : LEFT_KEY;
+    const list: Entry[] = [...on.map((item, i): Entry => [press(FIRST_BLOCK + i), item.step]), [press(backScan), owns(CLICK, to(back))]];
     pages.push({ list, parts });
   }
   return { name, own, chrome: chrome(title, count), pages };
 }
+
+// ---------------------------------------------------------------------------------------------------------
+// Roles, `todo-compile-one.md` 7.1.4: every number the screens take that is not a list of their own says which
+// number of the configuration's it is, `named`, so a configuration built from nothing can number them,
+// `numbering.ts`. The reader and the builder ignore roles; Options' roles are older, 4.10.2's, and keep their names.
+
+/** The enter of the screen named `screen`, by its name in `TOUCH_FIXED_SCREENS`. */
+const to = (screen: string): Step => named(ENTER, `mode ${screen}`);
+/** The wiring's lists the screens' entering lists call: the page keys' lights, channel 5's and channel 7's. */
+const PAGE_KEYS_ON = named(LIST, 'page keys on');
+const LIGHT_5_ON = named(LIST, 'light 5 on');
+const LIGHT_7_ON = named(LIST, 'light 7 on');
+/** The wiring's list a blank screen's leaving list calls, `events`. */
+const EVENTS = named(LIST, 'events');
+/** The variable the clock pickers' lists read and write, and the one AM and PM write. */
+const CLOCK_VARIABLE = 'clock picker variable';
+const TIME_OF_DAY_VARIABLE = 'time of day variable';
 
 /** The clock's fields as the `0x29` handler names them, section 130's records: minute 1, hour 2, day 3, month 5, year 6. */
 const FIELD = { minute: 1, hour: 2, day: 3, month: 5, year: 6 } as const;
@@ -168,7 +186,7 @@ const FIELD = { minute: 1, hour: 2, day: 3, month: 5, year: 6 } as const;
 /** The leaving list of every screen that lights the page keys and the key of channel 5 on entering. */
 const LEAVE_LIGHTS = [PAGE_KEYS_OFF, LIGHT_5_OFF] as const;
 /** The entering list's two calls of the wiring's on lists, the page keys' pair and channel 5's. */
-const ENTER_LIGHTS = [LIST, LIST] as const;
+const ENTER_LIGHTS = [PAGE_KEYS_ON, LIGHT_5_ON] as const;
 
 /**
  * A setter a clock picker's button runs: `07 FFFF` and the firmware's clock variable of the field written. The
@@ -176,7 +194,16 @@ const ENTER_LIGHTS = [LIST, LIST] as const;
  * number the configuration chose; the value is the button's, a day counting from 0, section 322, and a year
  * less 2000.
  */
-const setField = (field: number, value: number): Step => owns(SET, k(STATE_WRITE + field, value));
+const setField = (field: number, value: number): Step => {
+  // One step per field and value, since Logitech's compiles hold one list per setter however many pickers run it: the
+  // Day 28, Day 30 and Day 31 pickers share the list writing each day, on 16 of 16, section 432, and a numbering
+  // shares a list between screens only where the template states it once, `numbering.ts`.
+  const key = `${field} ${value}`;
+  const made = SETTERS.get(key) ?? owns(SET, k(STATE_WRITE + field, value));
+  SETTERS.set(key, made);
+  return made;
+};
+const SETTERS = new Map<string, Step>();
 
 /**
  * What a clock picker opens with, in the order its `0x29` handler and its entering list repeat it: the field
@@ -184,7 +211,7 @@ const setField = (field: number, value: number): Step => owns(SET, k(STATE_WRITE
  * of the `0x77` and `0x78` that follow, 6 on the clock fields' pickers and 3 on the Year's; what it means is not
  * read.
  */
-interface ClockHead { head: readonly Step[]; w: number }
+interface ClockHead { head: readonly Step[]; w: number; map: 'clock grid map' | 'clock column map' }
 
 /**
  * Tag `0x29`'s handler, which the firmware runs as the clock ticks over (section 411), and the chain of three
@@ -192,13 +219,21 @@ interface ClockHead { head: readonly Step[]; w: number }
  * Hour and Minute) share and the Year's has a copy of with its own `w`: it runs `0x70` and a variable twice, once with `07` in the high byte in
  * a list of its own, compares by band `0xF0` and `0xEE`, and looks a value map up. Section 418.
  */
-function clockHandler({ head, w }: ClockHead): Step {
-  const variable = banded(0xed, 'variable');
-  const last = owns(k(0x77, w), k(0x78, w), owns(lowByte(0x70, 0x07, 'variable'), SWALLOW), k(BAND, 0xfb00),
-    banded(0xf0, 'variable'), banded(0xee, 'variable'), MAP);
-  const chain = owns(lowByte(0x70, 0x00, 'variable'), owns(...head, variable, ...head, last));
+function clockHandler({ head, w, map }: ClockHead): Step {
+  // Every variable here is the one the pickers read, the configuration's first two byte variable, section 432.
+  const variable = named(banded(0xed, 'variable'), CLOCK_VARIABLE);
+  // The last list is one step per form, so the pickers that share it in Logitech's compiles share it here, where a
+  // numbering shares a list between screens only when the template states it once, `numbering.ts`, section 432.
+  const form = `${w} ${map}`;
+  const last = CLOCK_LAST.get(form) ?? owns(k(0x77, w), k(0x78, w), CLOCK_READ, k(BAND, 0xfb00), named(banded(0xf0, 'variable'), CLOCK_VARIABLE), named(banded(0xee, 'variable'), CLOCK_VARIABLE), named(MAP, map));
+  CLOCK_LAST.set(form, last);
+  const chain = owns(named(lowByte(0x70, 0x00, 'variable'), CLOCK_VARIABLE), owns(...head, variable, ...head, last));
   return owns(k(BAND, 0xe700), variable, ...head, k(0x77, w), chain);
 }
+
+const CLOCK_LAST = new Map<string, Step>();
+/** The list the last list calls, `07` in the high byte: one list on all seven pickers, the Year's copy too, 16 of 16. */
+const CLOCK_READ = owns(named(lowByte(0x70, 0x07, 'variable'), CLOCK_VARIABLE), SWALLOW);
 
 /** The list a clock field's picker's entering list calls first: the field selected and the `0x77` the handler runs. */
 const fieldEnter = (field: number): Step => owns(k(BAND, 0xef00 | field), k(0x77, 6), k(BAND, 0xf776), k(0x07, 0xfff7));
@@ -217,7 +252,7 @@ function clockOwn(enter: readonly Step[], field: number, single = false): Entry[
     ...(single ? ARROWS : []),
     [TAG_ENTER, owns(TIMER_START, ...enter)],
     [TAG_LEAVE, owns(TIMER_CANCEL, ...LEAVE_LIGHTS)],
-    [TAG_CLOCK, clockHandler({ head: [k(BAND, 0xef00 | field)], w: 6 })],
+    [TAG_CLOCK, clockHandler({ head: [k(BAND, 0xef00 | field)], w: 6, map: 'clock grid map' })],
     SCAN_38, [TAG_HEADER, HEADER],
   ];
 }
@@ -227,9 +262,9 @@ const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 
 /** A day picker of `days` days: each day writes the day and goes on to the Hour picker. */
 function dayPicker(days: number): FixedScreen {
   const items = Array.from({ length: days }, (_, d): Item => ({
-    word: String(d + 1), step: owns(CLICK, setField(FIELD.day, d), k(0x07, 0xfff8), ENTER),
+    word: String(d + 1), step: owns(CLICK, setField(FIELD.day, d), k(0x07, 0xfff8), to('Hour')),
   }));
-  return picker(`Day ${days}`, 'Day', clockOwn([fieldEnter(FIELD.day), ...ENTER_LIGHTS], FIELD.day), items, GRID, 'item');
+  return picker(`Day ${days}`, 'Day', clockOwn([fieldEnter(FIELD.day), ...ENTER_LIGHTS], FIELD.day), items, GRID, 'item', 'Month');
 }
 
 /** The five screen sensitivity levels in the order the picker shows them, and what each writes. */
@@ -243,11 +278,13 @@ function blank(index: number, kind: 'three' | 'two', extra: boolean): FixedScree
     : [k(0x07, 0xfffb), k(BAND, 0xfe02), k(BAND, 0xe805), TIMER_START];
   // The wiring's `events`, then the page keys' off list.
   const leave = kind === 'three'
-    ? [k(BAND, 0xfd03), LIST, TIMER_CANCEL, PAGE_KEYS_OFF]
-    : [k(0x07, 0xfffb), k(BAND, 0xfd02), LIST, TIMER_CANCEL, PAGE_KEYS_OFF];
+    ? [k(BAND, 0xfd03), EVENTS, TIMER_CANCEL, PAGE_KEYS_OFF]
+    : [k(0x07, 0xfffb), k(BAND, 0xfd02), EVENTS, TIMER_CANCEL, PAGE_KEYS_OFF];
+  // Two of the seven increment the wiring's `readyVar` on entering.
+  const ready = named(banded(0xf2, 'variable'), 'ready variable');
   return {
     name: `Blank ${index}`,
-    own: [...ARROWS, [TAG_ENTER, owns(...enter, ...(extra ? [banded(0xf2, 'variable')] : []))], [TAG_LEAVE, owns(...leave)], SCAN_38],
+    own: [...ARROWS, [TAG_ENTER, owns(...enter, ...(extra ? [ready] : []))], [TAG_LEAVE, owns(...leave)], SCAN_38],
     chrome: [picture(0, 0), { op: 'return' }],
     pages: [{ list: [], parts: [{ op: 'chrome' }] }],
   };
@@ -352,10 +389,10 @@ function fixedScreens(year: number, tour = true): FixedScreen[] {
   assertFixedScreensYear(year);
   const confirmation = (level: string): FixedScreen => ({
     name: `Sensitivity ${level}`,
-    own: [...ARROWS, [TAG_ENTER, owns(TIMER_START, LIST)], [TAG_LEAVE, owns(TIMER_CANCEL, LIGHT_7_OFF)], SCAN_38, [TAG_HEADER, HEADER]],
+    own: [...ARROWS, [TAG_ENTER, owns(TIMER_START, LIGHT_7_ON)], [TAG_LEAVE, owns(TIMER_CANCEL, LIGHT_7_OFF)], SCAN_38, [TAG_HEADER, HEADER]],
     chrome: chrome(undefined, 1),
     pages: [{
-      list: [[press(49), owns(CLICK, ENTER)]],
+      list: [[press(49), owns(CLICK, to('Options'))]],
       parts: [{ op: 'chrome' }, font('body'), centred('Screen sensitivity is set to', 105), centred(level, 117),
         font('ok'), text('OK', { in: [HALF, HALF] }, 201)],
     }],
@@ -368,35 +405,39 @@ function fixedScreens(year: number, tour = true): FixedScreen[] {
   const yearOffset = (2001 - year) & 0xffff;
   // What the Year picker's entering list and its `0x29` handler open with: the year field and that offset.
   const yearHead = [k(BAND, 0xef00 | FIELD.year), k(0x79, yearOffset)];
+  // Each month's button enters the Day picker of its length; February's is 28, a leap year being refused.
+  const monthDays = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
   return [
     { ...statusScreen<FixedScreenFont>(DISPLAY_TEST_CODE, { title: 'title', body: 'body' }), name: 'LCD Module Failed' },
     optionsScreen(tour),
     picker('Screen Sensitivity', 'Screen Sensitivity',
-      [...ARROWS, [TAG_ENTER, owns(TIMER_START, LIST)], [TAG_LEAVE, owns(TIMER_CANCEL, ...LEAVE_LIGHTS)], SCAN_38, [TAG_HEADER, HEADER]],
-      SENSITIVITY.map(([word, writes]) => ({ word, step: owns(CLICK, k(0x3f, writes), ENTER) })), sensitivityButtons, 'item'),
+      [...ARROWS, [TAG_ENTER, owns(TIMER_START, LIGHT_5_ON)], [TAG_LEAVE, owns(TIMER_CANCEL, ...LEAVE_LIGHTS)], SCAN_38, [TAG_HEADER, HEADER]],
+      SENSITIVITY.map(([word, writes]) => ({ word, step: owns(CLICK, k(0x3f, writes), to(`Sensitivity ${word}`)) })), sensitivityButtons, 'item',
+      'Options'),
     ...SENSITIVITY.map(([level]) => confirmation(level)),
     picker('Year', 'Year',
       [...ARROWS,
-        [TAG_ENTER, owns(TIMER_START, ...yearHead, owns(k(0x77, 3), k(BAND, 0xf776), k(0x07, 0xfff7)), LIST)],
+        [TAG_ENTER, owns(TIMER_START, ...yearHead, owns(k(0x77, 3), k(BAND, 0xf776), k(0x07, 0xfff7)), LIGHT_5_ON)],
         [TAG_LEAVE, owns(TIMER_CANCEL, ...LEAVE_LIGHTS)],
-        [TAG_CLOCK, clockHandler({ head: yearHead, w: 3 })],
+        [TAG_CLOCK, clockHandler({ head: yearHead, w: 3, map: 'clock column map' })],
         SCAN_38, [TAG_HEADER, HEADER]],
-      [year - 1, year, year + 1].map((one) => ({ word: String(one), step: owns(CLICK, setField(FIELD.year, one - 2000), ENTER) })),
-      [whole(38), whole(92), whole(146)], 'wide'),
+      [year - 1, year, year + 1].map((one) => ({ word: String(one), step: owns(CLICK, setField(FIELD.year, one - 2000), to('Month')) })),
+      [whole(38), whole(92), whole(146)], 'wide', 'Options'),
     picker('Month', 'Month', clockOwn([fieldEnter(FIELD.month), ...ENTER_LIGHTS], FIELD.month),
-      MONTHS.map((word, m) => ({ word, step: owns(CLICK, setField(FIELD.month, m), ENTER) })), GRID, 'item'),
+      MONTHS.map((word, m) => ({ word, step: owns(CLICK, setField(FIELD.month, m), to(`Day ${monthDays[m] as number}`)) })), GRID, 'item',
+      'Year'),
     dayPicker(28), dayPicker(30), dayPicker(31),
     picker('Hour', 'Hour', clockOwn([twelve(3, 0xf4), fieldEnter(FIELD.hour), ...ENTER_LIGHTS], FIELD.hour),
-      hours.map((word, h) => ({ word, step: owns(CLICK, setField(FIELD.hour, h), ENTER) })), GRID, 'item'),
+      hours.map((word, h) => ({ word, step: owns(CLICK, setField(FIELD.hour, h), to('Minute')) })), GRID, 'item', 'Day 31'),
     picker('Minute', 'Minute', clockOwn([fieldEnter(FIELD.minute), ...ENTER_LIGHTS], FIELD.minute),
-      Array.from({ length: 60 }, (_, m) => ({ word: String(m).padStart(2, '0'), step: owns(CLICK, setField(FIELD.minute, m), ENTER) })),
-      GRID, 'item'),
+      Array.from({ length: 60 }, (_, m) => ({ word: String(m).padStart(2, '0'), step: owns(CLICK, setField(FIELD.minute, m), to('Time of Day')) })),
+      GRID, 'item', 'Hour'),
     // AM and PM write 0 and 1 to a variable the configuration chose, PM moving the hour on by twelve first.
     picker('Time of Day', 'Time of Day',
-      [...ARROWS, [TAG_ENTER, owns(TIMER_START, LIST)], [TAG_LEAVE, owns(TIMER_CANCEL, ...LEAVE_LIGHTS)], [TAG_HEADER, HEADER]],
-      [{ word: 'AM', step: owns(CLICK, owns(SET, write(0)), k(0x07, 0xfff9), ENTER) },
-        { word: 'PM', step: owns(CLICK, twelve(2, 0x0c), owns(SET, write(1)), k(0x07, 0xfff9), ENTER) }],
-      [half(6, 38), half(89, 38)], 'item'),
+      [...ARROWS, [TAG_ENTER, owns(TIMER_START, LIGHT_5_ON)], [TAG_LEAVE, owns(TIMER_CANCEL, ...LEAVE_LIGHTS)], [TAG_HEADER, HEADER]],
+      [{ word: 'AM', step: owns(CLICK, owns(SET, named(write(0), TIME_OF_DAY_VARIABLE)), k(0x07, 0xfff9), to('Options')) },
+        { word: 'PM', step: owns(CLICK, twelve(2, 0x0c), owns(SET, named(write(1), TIME_OF_DAY_VARIABLE)), k(0x07, 0xfff9), to('Options')) }],
+      [half(6, 38), half(89, 38)], 'item', 'Minute'),
     blank(1, 'three', false), blank(2, 'three', false), blank(3, 'three', true),
     blank(4, 'two', false), blank(5, 'two', false), blank(6, 'two', false), blank(7, 'two', true),
   ];
@@ -420,6 +461,40 @@ export function assertFixedScreensYear(year: number): void {
 
 /** The screens' names, in the order a description lists them. */
 export const TOUCH_FIXED_SCREENS: readonly string[] = fixedScreens(2026).map((one) => one.name);
+
+/**
+ * The twenty three as templates for a build year and a form of Options, in the order a description lists them, for a
+ * configuration numbered from nothing, `numbering.ts`. Refuses a year whose Year picker offers a leap year.
+ */
+export function touchFixedScreenTemplates(year: number, tour: boolean): TemplateScreen<FixedScreenFont>[] {
+  return fixedScreens(year, tour);
+}
+
+/**
+ * The hit page each page of the twenty three is touched through, by its name in `hitpages.ts`' table, per screen in
+ * the order a description lists them, for a configuration numbered from nothing, `todo-compile-one.md` 7.1.4: code 9's
+ * message; Options' three rows, and its second page's two where it keeps the tour's rows; Screen Sensitivity's five
+ * buttons; a confirmation's message over OK; the Year's three rows; a picker's page by how many of the six buttons
+ * it fills, six, four, two or one; a blank screen's page of no area. Each page's hit page on all sixteen English
+ * compiles of skin 54, `test/touchnumbering.test.ts`, section 432.
+ */
+export function touchFixedHitPages(year: number, tour: boolean): string[][] {
+  const filled: Readonly<Record<number, string>> = { 6: 'six buttons', 4: 'four buttons', 2: 'two buttons', 1: 'one button' };
+  return fixedScreens(year, tour).map((screen) => {
+    if (screen.name === 'LCD Module Failed') return ['message'];
+    if (screen.name === 'Options') return tour ? ['three rows', 'two rows'] : ['three rows'];
+    if (screen.name === 'Screen Sensitivity') return ['sensitivity'];
+    if (screen.name.startsWith('Sensitivity ')) return ['confirmation'];
+    if (screen.name === 'Year') return ['three rows'];
+    if (screen.name.startsWith('Blank ')) return ['blank'];
+    // A picker's page binds a press per button it fills and Back.
+    return screen.pages.map((page) => {
+      const name = filled[page.list.length - 1];
+      if (name === undefined) throw new ScreenRecordError(`${screen.name} has a page of ${page.list.length - 1} buttons, which no hit page is`);
+      return name;
+    });
+  });
+}
 
 // ---------------------------------------------------------------------------------------------------------
 // Which mode each screen is.

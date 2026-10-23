@@ -95,7 +95,7 @@ export type NumberKind = 'list' | 'mode' | 'program' | 'timer' | 'map' | 'variab
 export type Step =
   | { kind: 'constant'; opcode: number; operand: number }
   | { kind: 'number'; opcode: number; band?: number; what: NumberKind; role?: string }
-  | { kind: 'write'; operand: number }
+  | { kind: 'write'; operand: number; role?: string }
   | { kind: 'owns'; steps: readonly Step[]; role?: string };
 
 export const k = (opcode: number, operand: number): Step => ({ kind: 'constant', opcode, operand });
@@ -116,9 +116,13 @@ export const write = (value: number): Step => ({ kind: 'write', operand: value }
  * **An `owns` step takes one too**, since its list's own index is a number the builder takes: so a list that holds
  * fewer steps in one form of a screen than in another is carried by name, `carriedNumbers`, where its contents would
  * not match. Options' entering list of one page, `todo-compile-one.md` 4.10.2.
+ *
+ * **And a state write**, since `todo-compile-one.md` 7.1.4, whose variable is a number the builder takes: so a
+ * configuration built from nothing knows which of its variables each write names, `numbering.ts`. `carriedNumbers`
+ * still carries a write by what it is and not by its role, as it did before writes took one.
  */
 export const named = (step: Step, role: string): Step => {
-  if (step.kind !== 'number' && step.kind !== 'owns') throw new ScreenRecordError(`only a number or a list step takes a role, not ${role}'s`);
+  if (step.kind === 'constant') throw new ScreenRecordError(`only a number, a write or a list step takes a role, not ${role}'s`);
   return { ...step, role };
 };
 
@@ -159,7 +163,7 @@ export const LIGHT_7_OFF = lightOff(7);
  * and its variable written 1. Options' first row runs it, and the tour's "Devices Off Again" reaches it through
  * the start choice, so the fixed screens and the tour state it alike, section 418.
  */
-export const ASSISTANT_ON = owns(k(0x07, 0xfffb), LIST, ENTER, write(1));
+export const ASSISTANT_ON = owns(k(0x07, 0xfffb), named(LIST, 'lights'), named(ENTER, 'mode Remote Assistant start'), named(write(1), 'assistant on variable'));
 
 /**
  * The header handler, tag `0x2D`: three base slot 11 programs, named by their place so a screen numbered from
@@ -991,10 +995,12 @@ export function templateNumberSlots<F extends string>(screen: TemplateScreen<F>)
   const slots: Step[] = [];
   const stand: PieceTarget = { to: { bytes: new Uint8Array(0), refs: [], owner: 'slot-11-program' }, offset: 0 };
   const fonts = new Proxy({} as Record<F, number>, { get: () => 0 });
-  // Each list a distinct index, so the lists built on the way are never built two ways.
+  // Each list a distinct index, so the lists built on the way are never built two ways; a write's variable 0, since a
+  // write names its variable in seven bits and a screen of many rows takes more than 127 numbers, which the menu of
+  // eight activities showed when `todo-compile-one.md` 7.1.4 first walked every compile's.
   writeScreen(screen, () => ({ codes: [], width: 0 }), fonts, new Map(), new Map(), new Map(), {
     numbers: [], pictures: Array<PieceTarget>(256).fill(stand),
-    numberOf: (step) => { slots.push(step); return slots.length; },
+    numberOf: (step) => { slots.push(step); return step.kind === 'write' ? 0 : slots.length; },
   });
   return slots;
 }
@@ -1010,7 +1016,7 @@ export function templatePicturePlaces<F extends string>(screen: TemplateScreen<F
   const fonts = new Proxy({} as Record<F, number>, { get: () => 0 });
   let next = 0;
   const made = writeScreen(screen, () => ({ codes: [], width: 0 }), fonts, new Map(), new Map(), new Map(), {
-    numbers: [], pictures: stands, numberOf: () => { next += 1; return next; },
+    numbers: [], pictures: stands, numberOf: (step) => { next += 1; return step.kind === 'write' ? 0 : next; },
   });
   const places: { k: number; x: number; y: number }[] = [];
   for (const piece of [made.chromePiece, ...made.programs, ...made.extras]) {

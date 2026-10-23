@@ -2931,6 +2931,30 @@ set or by the wiring, never both, on the sixteen English compiles of skin 54.
 | a state write's variable | at most 127; a larger number is refused as a description slid against the template |
 | the wiring's own variables' transitions | `readyVar` one, `relightVar` two, `settleVar` one, each a call, on all nineteen compiles; the 14 lists reached only through them (of 20 they reach, the others being `idleEnter.3.1.1.1` and what it reaches) are the wiring's catalogue lines, the four the transitions call read off the records, which must hold exactly that many transitions |
 
+**Numbered by role**, section 432, arch 12 (Harmony One) only, `families/touch/numbering.ts`: every number the
+firmware, fixed, status and power off help screens, the activity menu, the device lists and the clock header's two
+calls take is one of these, and on each of the sixteen English compiles of skin 54 one name is one number across
+every set:
+
+| the name | what it is |
+|---|---|
+| `mode <screen>` | a fixed or help screen, or the idle device list |
+| `list <name>` | one of the wiring's lists by its catalogue name, section 410, or the hour list the state tables name |
+| `timer <name>`, `timer of <screen>` | one of the wiring's timers; the timer a screen starts on entering, its class's redraw timer (section 430) or a blank screen's: Blank 1 to 7 start `second1`, `second0`, `second3`, `enter5`, `second5`, `second2`, `second4` |
+| `program <name>` | one of the clock header's four |
+| `variable <name>` | the wiring's by name, the assistant variable, Time of Day's, and the clock pickers' at `narrow` |
+| `map <role> on <variable>` | an `0x72` operand, the value map of a section 416 role in the high byte and the variable in the low |
+| a setup's | a device's or an activity's numbers, per screen |
+| a list the screens own | not named: numbered by the rule below |
+
+**A list the screens own is shared exactly where a template states it once**: a list another list calls is one per
+content within one screen and one across screens only where it is the same step of a template (the key lights' off
+lists, a day's setter, the clock pickers' last list and the list it calls); a list a tag or a page binds straight is
+its own unless a list of that content is called on the same screen. Two screens' lists of the same content are two
+lists: the three Day pickers' entering list and the middle list below their `0x29` handler, the "shared or copied"
+row above. Every number of every set made again from the names alone is the compile's own on all sixteen, lists up
+to a renaming in both directions.
+
 **The clock header, built**, section 414: base slot 11's four programs no mode calls and the six lists the clock's
 minute and hour call, `families/touch/clockheader.ts`, through the same engine as programs of their own. 249 pieces
 on every One compile and 42 bytes of lists; 3516 bytes of programs on the sixteen, 3537 on the European two and 3509
@@ -3748,7 +3772,7 @@ byte for byte. What it generates rather than carries:
 |---|---|
 | records 7 to 17, `first / max` | `0/2, 0/3, 5/7, 0/7, 0/32, 0/1, 0/32, 1/1, 0/3, 0/1, 0/3`, no transitions |
 | the clock's transitions | minute, day, month: `{-2 to 0, 0x1F 0xF2nn}` incrementing hour, month, year; hour: `{-2 to 0, 0x7F list}`, the list `[0x1F 0xF203, 0x1F 0xF204]` incrementing day and weekday, its index the configuration's |
-| index `narrow` | `first` 0, max 65277, no transitions, unnamed, stored straight after record 17; purpose **unread** |
+| index `narrow` | `first` 0, max 65277, no transitions, unnamed, stored straight after record 17; purpose **unread** on arch 14 (on the Harmony One it is the clock pickers' variable, below) |
 | a variable's width | one byte for a maximum up to 100, two from 254; **between is unpinned** and refused |
 | a device's eight delay variables | `PowerOnDelay` and `InterDeviceDelay` max 65277, their `Default` copies max 254, all two bytes; `PowerOnDelayFlagCounter` 0/5, `InterDeviceDelayFlagCounter` 0/3, both `FixingTriggered` 0/100, one byte; 83 of 83 devices, `deviceDelayVariables` |
 | `CurrentActivityState_0` and `CurrentLocation` | the activity count for both value and max, and 0/0, `activityStateVariables` |
@@ -3775,6 +3799,9 @@ the firmware's eleven and the first two byte variable among them. What is the Ha
 | records 7 to 17, `first / max` | `0/2, 0/3, 5/7, 0/7, 0/32, 0/1, 1/1, 2/4, 0/3, 0/1, 0/3`, no transitions |
 | a variable's width | one byte for a maximum up to 121; no two byte variable but index `narrow` on any of the 19, so a maximum past 121 is refused |
 | a value map's case count | one byte, `VALUE_MAP_COUNT_WIDTH` |
+| index `narrow`, the first two byte variable | the clock pickers' variable: the one the seven pickers' tag `0x29` handlers read and write and the `grid` and `column` value maps are looked up on, on all sixteen English compiles of skin 54, section 432 |
+| the assistant variable USB Connected's leaving list tests | 0 to 3, `first` 0, unnamed, on the sixteen, whose wiring holds the Remote Assistant's ladder, and on `one_config_unprogrammed` and `one_friend_asfound_config` read by hand; an empty One holds it with no ladder, so what its leaving list does with it there is unconfirmed |
+| Time of Day's variable | 0 to 1, `first` 0, unnamed, written 0 by AM and 1 by PM, on the sixteen |
 | the minute's second transition | `{-2 to -2, 0x7F list}` after its increment of the hour, on all 19: since both ends are the sentinel it fires on every write of the minute that is not silent, and the list it calls is the clock's screen side, calling two short lists (`todo-compile-one.md` 2.2), its index the configuration's (`minuteList`); on all 19 that list sits straight before the hour's |
 
 The clock's other transitions, the hour's list `[0x1F 0xF203, 0x1F 0xF204]`, index `narrow`'s `0/65277`,

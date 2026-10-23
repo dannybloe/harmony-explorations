@@ -54,7 +54,8 @@ What a configuration seeds that storage with, measured on all 19 distinct compil
 `todo-compile-one.md` 6.4 (`docs/config-format.md`, base slot 13): the firmware's variables 13 and 14
 start at 1 and 2 with maxima 1 and 4, where the Harmony 600, 650 and 700's start at 0 and 1; every
 variable of the configuration's own is one byte, maxima up to 121, and the compiler's `0/65277` at index
-`narrow` is the only two byte one; and the minute, besides moving the hour on, calls a list on every write,
+`narrow` is the only two byte one, the variable the clock pickers read and write while the time is being set
+(section 432, the sixteen English compiles); and the minute, besides moving the hour on, calls a list on every write,
 the clock's screen side, which calls two short lists, `todo-compile-one.md` 2.2.
 
 ## Not checked

@@ -134,6 +134,9 @@ const SCREENS: readonly TemplateScreen<StatusScreenFont>[] = BUILT_CODES.map((co
 /** The screens' names, in the order a description lists them, which is code order. */
 export const TOUCH_STATUS_SCREENS: readonly string[] = SCREENS.map((one) => one.name);
 
+/** The twenty nine as templates, in code order, for a configuration numbered from nothing, `numbering.ts`. */
+export const TOUCH_STATUS_TEMPLATES: readonly TemplateScreen<StatusScreenFont>[] = SCREENS;
+
 // ---------------------------------------------------------------------------------------------------------
 // Which mode each screen is.
 
