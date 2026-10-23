@@ -57,9 +57,10 @@ import type { ContainerLayout, ContainerPiece, PieceRef } from '../../frame.ts';
 import type { PieceTarget } from '../../statetables.ts';
 import { taggedListBytes } from '../../sections.ts';
 import {
-  SCREEN_CALL, SCREEN_DRAW_IMAGE, SCREEN_END, SCREEN_JUMP, SCREEN_QUEUE_INSTRUCTION, SCREEN_RETURN,
+  SCREEN_CALL, SCREEN_DRAW_IMAGE, SCREEN_END, SCREEN_FILL, SCREEN_JUMP, SCREEN_QUEUE_INSTRUCTION, SCREEN_RETURN,
   SCREEN_SELECT_FONT, SCREEN_SWITCH_NARROW, SCREEN_TEXT_AT, SCREEN_TEXT_INLINE, type ScreenInstruction, screenProgram,
 } from '../../screen.ts';
+import { fillBytes, fillOf, fillTarget } from '../../pictures.ts';
 import { keyListOrder, keyListOrderInserted } from '../../modezero.ts';
 import {
   type BuiltScreen, type RecordFrame, type RecordPlace, type RecordReading, ScreenRecordError, recordBuilding, recordReading,
@@ -552,8 +553,16 @@ function programReader<F extends string>(c: Container, reading: RecordReading, c
     };
     for (const part of parts) {
       if (part.op === 'picture') {
-        const one = next(SCREEN_DRAW_IMAGE, 'a picture');
+        // A fill where a picture is drawn is the picture made one, `withPictureFilled`, section 425: carried as the
+        // fill's target, its size and colour read as values.
+        const filled = program[i]?.opcode === SCREEN_FILL && part.slot === undefined;
+        const one = next(filled ? SCREEN_FILL : SCREEN_DRAW_IMAGE, 'a picture');
         if (one.operands[0] !== part.x || one.operands[1] !== part.y) throw new ScreenRecordError(`${name}'s ${what} draws a picture elsewhere`);
+        if (filled) {
+          const at = one.start + 3;
+          cursor.pictures.push(fillTarget(value(at), value(at + 1), (value(at + 2) << 8) | value(at + 3)));
+          continue;
+        }
         const field = one.start + one.length - 3;
         if (part.slot === undefined) cursor.pictures.push(reading.targetOf(value24(field)));
         else {
@@ -844,6 +853,11 @@ function programWriter<F extends string>(
           cursor.slotsDrawn?.add(part.slot);
         }
         if (target === undefined) throw new ScreenRecordError(`the description holds too few pictures for ${cursor.name}`);
+        const fill = fillOf(target);
+        if (fill !== undefined) {
+          out.push(...fillBytes(part.x, part.y, fill));
+          continue;
+        }
         out.push(SCREEN_DRAW_IMAGE, part.x, part.y);
         pointer(target.to, target.offset);
       } else if (part.op === 'font') {

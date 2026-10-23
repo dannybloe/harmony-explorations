@@ -34,6 +34,7 @@ import {
   SCREEN_CALL,
   SCREEN_DRAW_IMAGE,
   SCREEN_DRAW_IMAGE_AT,
+  SCREEN_FILL,
   SCREEN_RETURN,
   SCREEN_SELECT_FONT,
   SCREEN_TEXT_AT,
@@ -101,6 +102,8 @@ export interface RenderedPage {
   /** How many pictures were drawn, and how many the program named and this could not decode. */
   pictures: number;
   picturesMissing: number;
+  /** How many filled rectangles were drawn, opcode 1, `SCREEN_FILL`. */
+  fills: number;
   /** How many strings were drawn, and how many glyph codes had no glyph in the selected font. */
   strings: number;
   glyphsMissing: number;
@@ -456,6 +459,7 @@ function draw(
     raster,
     pictures: 0,
     picturesMissing: 0,
+    fills: 0,
     strings: 0,
     glyphsMissing: 0,
     branches: 0,
@@ -507,6 +511,15 @@ function draw(
             out.pictures += 1;
           draws += 1;
           }
+        } else if (instruction.opcode === SCREEN_FILL) {
+          // A rectangle in one colour, which on the remote is pixels like a picture's, so it goes where a picture
+          // goes: the raster, the backdrop a text is read against, and the stamps that say a text was covered.
+          const rows = fillRows(instruction.operands, raster);
+          drawPixels(raster, rows.pixels, rows.x, rows.y);
+          drawPixels(backdrop, rows.pixels, rows.x, rows.y);
+          drawPixels(stamps, stamped(rows.pixels, draws), rows.x, rows.y);
+          out.fills += 1;
+          draws += 1;
         } else if (instruction.opcode === SCREEN_TEXT_INLINE || instruction.opcode === SCREEN_TEXT_AT) {
           const codes = instruction.opcode === SCREEN_TEXT_INLINE
             ? instruction.glyphs
@@ -561,6 +574,24 @@ function draw(
     }
   }
   return out;
+}
+
+/**
+ * The pixels opcode 1 writes, `SCREEN_FILL`, as rows from `x, y`: the firmware's walk, findings section 425. One row
+ * at a time from `y` while the row is below `y + height` **taken in eight bits**, so a rectangle whose `y + height`
+ * is 256 or more draws nothing on the Harmony One, where 220 rows from y 40 end at row 4; each row clipped to the display, its
+ * width to the columns right of `x`, and a row or a column past the screen drawn nowhere. The colour is high byte
+ * first, as a picture's pixel is. A width of 0 is drawn as nothing here: the Harmony One's row routine then writes
+ * 256 pixels into a column window that ends before it starts, and what the panel makes of that is not read.
+ */
+export function fillRows(operands: Uint8Array, raster: Pick<Raster, 'width' | 'height'>): { x: number; y: number; pixels: (number | undefined)[][] } {
+  const [x = 0, y = 0, width = 0, height = 0, high = 0, low = 0] = operands;
+  const colour = (high << 8) | low;
+  const end = (y + height) & 0xff;
+  const columns = Math.max(0, Math.min(width, raster.width - x));
+  const pixels: (number | undefined)[][] = [];
+  for (let row = y; row < end && row < raster.height; row += 1) pixels.push(new Array<number | undefined>(columns).fill(colour));
+  return { x, y, pixels };
 }
 
 /** A picture's rows with every drawn pixel replaced by `draw`, for the stamp raster. */

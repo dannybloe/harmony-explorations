@@ -141,7 +141,9 @@ test('the One test setup composed onto Logitech\'s compile of two devices comes 
   // as many bytes.
   // 1099596 since 4.10.2: Options of one page enters without the page keys' on list, its entering list two steps,
   // six bytes, shorter, which lit the page keys over a screen with nothing to turn to at the bench.
-  assert.equal(c.blob.length, 1099596);
+  // 1022262 since `todo-compile-one.md` 5.3.4, section 425, 77334 fewer: the black background one fill a draw where
+  // it was a picture, the picture's 77445 out of the bank and each of its 111 draws a byte longer, seven bytes for six.
+  assert.equal(c.blob.length, 1022262);
 });
 
 // ---------------------------------------------------------------------------------------------------------
@@ -314,21 +316,31 @@ test('todo-compile-one 3.2.2, 4.3 and 4.10: the firmware screens, the fixed scre
   // a start up screen run, the configuration's first, the firmware screens'. The composed file is the same byte for
   // byte as before the builder joined the path, so nothing of the others moved. Its 1068 described are the names, the
   // label lines and the numbering, every command a pad sends and every picture among it.
+  //
+  // Since `todo-compile-one.md` 5.3.4, section 425, the background is a fill in each program that drew it, a byte
+  // longer a draw, and each builder that describes such a program builds the fill: the firmware screens' 3237 to 3247,
+  // the fixed screens' 14081 to 14103, the status screens' 3872 to 3901, the help screens' 6245 to 6275, the activity
+  // menu's 786 to 787, the device pages' 16139 to 16146 and the activity screens' 2888 to 2898, 109 bytes, the draws
+  // of the programs they build. The other two draws are in chromes no builder makes, mode 70's and mode 50's.
   assert.deepEqual(a.generated, {
-    'firmware screens': 3237, 'fixed screens': 14081, 'tour and Remote Assistant': 0, 'status screens': 3872,
-    'clock header': 3558, 'help screens': 6245, 'activity menu': 786, 'device pages': 16139, 'activity screens': 2888, 'case programs': 572, 'hit pages': 863, wiring: 4560, 'state tables': 2347,
-    'raw slot 18': 2, 'number senders': 1, pictures: 294663,
+    'firmware screens': 3247, 'fixed screens': 14103, 'tour and Remote Assistant': 0, 'status screens': 3901,
+    'clock header': 3558, 'help screens': 6275, 'activity menu': 787, 'device pages': 16146, 'activity screens': 2898, 'case programs': 572, 'hit pages': 863, wiring: 4560, 'state tables': 2347,
+    'raw slot 18': 2, 'number senders': 1, pictures: 217218,
   });
   // The pictures' 294663, since `todo-compile-one.md` 5.3.1 and 5.3.3, section 422, are the 32 of ours the path put in
   // place of Logitech's, each its picture of Logitech's size and mask: the status strip's sixteen, 8687, the gauge's
   // and the charging gauge's thirteen, the sending mark on and off and the clock face; the six of the firmware screens
   // and the power off help, 110686; the settings screens' nine buttons, six pads and three rows, 97845; and the one
   // whole screen background, 77445. None of their bytes is read as a value: a mask says only which pixels are drawn.
+  // 217218 since 5.3.4, section 425: 31 pictures, the background a fill and no longer a picture of the bank.
   // 401, 3967, 680 and 1243 for the four before 6.5: what a list below reads is the numbers of the lists it calls
   // and of the variables it writes, and the tour's setting, one byte.
+  // Since 5.3.4, section 425, each of the 109 fills is a byte more read as a value than the draw it replaced: its
+  // size and colour, four bytes, where the draw named its picture in three. 439, 4152, 699, 1994, 204, 6273 and 1068
+  // before it.
   assert.deepEqual(a.described, {
-    'firmware screens': 439, 'fixed screens': 4152, 'tour and Remote Assistant': 0, 'status screens': 699,
-    'clock header': 337, 'help screens': 1994, 'activity menu': 204, 'device pages': 6273, 'activity screens': 1068, 'case programs': 33, 'hit pages': 0, wiring: 1250, 'state tables': 0,
+    'firmware screens': 449, 'fixed screens': 4174, 'tour and Remote Assistant': 0, 'status screens': 728,
+    'clock header': 337, 'help screens': 2024, 'activity menu': 205, 'device pages': 6280, 'activity screens': 1078, 'case programs': 33, 'hit pages': 0, wiring: 1250, 'state tables': 0,
     'raw slot 18': 0, 'number senders': 0, pictures: 0,
   });
   // The help screens' 1994 against 660 on the donor are the numbers and names of a chain of seven rather than two:
@@ -372,7 +384,8 @@ test('todo-compile-one 4.10: with the tour kept the composed setup does not keep
     choices.welcomeTour = false;
   }
   assert.equal(touchTourScreenModes(kept).modes.length, 16);
-  assert.throws(() => checkTouchScreenTexts(kept), /the program at 0x5b421's text 'pages' at 35, 18 is drawn inline where it is built by reference/);
+  // 0x5b421 until `todo-compile-one.md` 5.3.4, section 425: the fills before it are a byte longer a draw each.
+  assert.throws(() => checkTouchScreenTexts(kept), /the program at 0x5b44d's text 'pages' at 35, 18 is drawn inline where it is built by reference/);
 });
 
 test('todo-compile-one 3.2.2.4: the composed setup\'s power off help asks about its seven devices, the donor\'s two and then the five composed in the order composed, each discrete one sent unasked and each toggle not',
@@ -396,7 +409,7 @@ test('todo-compile-one 3.2.2.4: the composed setup\'s power off help asks about 
   assert.equal(modeRecords(c)!.length, 112);
 });
 
-test('todo-compile-one 3.2: the One\'s composed test setup carries 145991 of its 1099596 bytes out of Logitech\'s donor, per kind as pinned here, a list that may only shrink',
+test('todo-compile-one 3.2: the One\'s composed test setup carries 145991 of its 1022262 bytes out of Logitech\'s donor, per kind as pinned here, a list that may only shrink',
      NEEDS, () => {
   const out = composed().container;
   const got = carried(out, parse(require_('harvest_one_two_devices')), builtBytes().owners);
@@ -459,7 +472,9 @@ test('todo-compile-one 3.2: the One\'s composed test setup carries 145991 of its
     'hit-page': 167, // 2444 before 3.2.2.3, 546 before 3.2.2.7, 485 before 3.2.2.8; `case-program` 341 before 3.2.2.3 and 10 before 4.10, and base slot 11's `table` 89
   });
   assert.equal(Object.values(got).reduce((sum, one) => sum + one, 0), 145991);
-  assert.equal(out.blob.length, 1099596);
+  // 1099596 until 5.3.4 made the background a fill, section 425, which moved no row above: what drew it is built, or
+  // is mode 70's and mode 50's chromes, which matched no donor unit before the fill either.
+  assert.equal(out.blob.length, 1022262);
 });
 
 /** The 34 lists of the donor the composed setup carries and nothing can run, `todo-compile-one.md` 6.7. */

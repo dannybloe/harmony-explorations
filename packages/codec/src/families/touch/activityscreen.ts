@@ -44,7 +44,7 @@ import {
 import { picturesByContent, withBankPictures } from '../../pictures.ts';
 import { bitmapPixels } from '../../render.ts';
 import {
-  bitmapAt, bitmaps, SCREEN_CALL, SCREEN_DRAW_IMAGE, SCREEN_END, SCREEN_QUEUE_INSTRUCTION, SCREEN_RETURN,
+  bitmapAt, bitmaps, SCREEN_CALL, SCREEN_DRAW_IMAGE, SCREEN_END, SCREEN_FILL, SCREEN_QUEUE_INSTRUCTION, SCREEN_RETURN,
   SCREEN_SELECT_FONT, SCREEN_TEXT_AT, SCREEN_TEXT_INLINE, screenProgram,
 } from '../../screen.ts';
 import { contentKey } from '../../screencategories.ts';
@@ -194,8 +194,11 @@ function startupTitleSet(c: Container): number {
 
 /** What the configuration's own device modes draw and run for their header, read off them all. */
 interface DeviceHeader {
-  /** The full screen picture their chrome draws first. */
-  background: number;
+  /**
+   * The full screen picture their chrome draws first, by its address, or the fill drawn in its place once the
+   * background is made one, `withPictureFilled`, findings section 425.
+   */
+  background: number | { fill: { width: number; height: number; colour: number } };
   /** The two instructions their chrome queues, the first before the page total and the second after. */
   queued: readonly [Instruction, Instruction];
   /** The timer their entering handler starts, which refreshes the header. */
@@ -223,7 +226,8 @@ function deviceHeader(c: Container): DeviceHeader {
     const queued = program.filter((one) => one.opcode === SCREEN_QUEUE_INSTRUCTION).map((one) => ({
       operand: (one.operands[0] as number) | ((one.operands[1] as number) << 8), opcode: one.operands[2] as number,
     }));
-    const background = program.find((one) => one.opcode === SCREEN_DRAW_IMAGE && one.operands[0] === 0 && one.operands[1] === 0);
+    const background = program.find((one) => (one.opcode === SCREEN_DRAW_IMAGE || one.opcode === SCREEN_FILL)
+      && one.operands[0] === 0 && one.operands[1] === 0);
     const entering = record.entries.find((one) => one.tag === TAG_ENTERING);
     const header = record.entries.find((one) => one.tag === TAG_HEADER);
     const timer = entering?.opcode === ACTION_LIST_INDEX_OPCODE
@@ -232,14 +236,17 @@ function deviceHeader(c: Container): DeviceHeader {
     if (queued.length !== 2 || background === undefined || timer === undefined
         || header?.opcode !== ACTION_LIST_INDEX_OPCODE) continue;
     const one: DeviceHeader = {
-      background: u24(background.operands, 2),
+      background: background.opcode === SCREEN_FILL
+        ? { fill: { width: background.operands[2] as number, height: background.operands[3] as number,
+          colour: ((background.operands[4] as number) << 8) | (background.operands[5] as number) } }
+        : u24(background.operands, 2),
       queued: [queued[0] as Instruction, queued[1] as Instruction], timer: timer.operand & 0xff, header: header.operand,
     };
     // Logitech gives every mode a list of its own for what the chrome queues and the header runs, the same
     // instructions in each, so two modes agree when their lists hold the same instructions.
     const body = (one_: Instruction): unknown => (one_.opcode === ACTION_LIST_INDEX_OPCODE ? lists[one_.operand] : one_);
     const key = JSON.stringify({
-      ...one, background: contentKeyAt(c, one.background), queued: one.queued.map(body), header: lists[one.header],
+      ...one, background: typeof one.background === 'number' ? contentKeyAt(c, one.background) : one.background, queued: one.queued.map(body), header: lists[one.header],
     });
     if (!found.has(key)) found.set(key, one);
   }
@@ -249,7 +256,12 @@ function deviceHeader(c: Container): DeviceHeader {
   return [...found.values()][0] as DeviceHeader;
 }
 
-function backgroundPixels(c: Container, address: number): (number | undefined)[][] {
+function backgroundPixels(c: Container, address: DeviceHeader['background']): (number | undefined)[][] {
+  // A fill is its colour in every pixel of its rectangle, which at 0, 0 is the screen, section 425.
+  if (typeof address !== 'number') {
+    const { width, height, colour } = address.fill;
+    return Array.from({ length: height }, () => new Array<number | undefined>(width).fill(colour));
+  }
   const background = bitmapAt(c, address);
   const pixels = background === undefined ? undefined : bitmapPixels(c, background);
   if (pixels === undefined) throw new ComposeError('the device pages\' background does not decode');
@@ -507,6 +519,8 @@ export function buildTouchActivityScreens(
   const signalKey = [...signals][0] as string;
 
   // 1. Our pictures, in the bank: the pad box and the type's icon over the background where it goes.
+  // The composers run before the background is made a fill on the composed path, so this one draws a picture.
+  if (typeof header.background !== 'number') throw new ComposeError('the device modes draw their background as a fill, and this composer draws a picture');
   const pixels = backgroundPixels(c, header.background);
   const [ix, iy] = STARTUP_ICON_AT;
   const under = pixels.slice(iy, iy + STARTUP_ICON_SIZE[1]).map((row) => row.slice(ix, ix + STARTUP_ICON_SIZE[0]));

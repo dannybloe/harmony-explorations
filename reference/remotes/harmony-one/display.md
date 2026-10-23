@@ -125,6 +125,13 @@ Generated from `packages/codec`, `packages/usb` and the drawing by `make remote-
   picture, six show three photographs of blurred lights instead of the black, two screens each, and the seventh the
   charging screen's picture; what the six are for is not read. Read from configurations on the sixteen English
   compiles of skin 54, section 422.
+* **A screen can be filled with one instruction**: screen instruction 1 fills a rectangle, `x`, `y`, width and height
+  and a colour, clipped to the screen, its rows counted to `y` plus the height in eight bits. Logitech uses it for the
+  welcome tour's black background and for the frames round a picker's button; a configuration of ours draws the black
+  background with it, one instruction where a picture of 77445 bytes stood. Read in the 3.4 firmware, section 425.
+* **A page is drawn over what the screen held**: the firmware clears the whole screen at start up and on three of its
+  own screens, and the routine that draws a page clears nothing before it, so a pixel a page leaves undrawn shows the screen before, and every screen has to draw its whole
+  background. Read in the 3.4 firmware by its direct calls, section 425; not seen on a remote.
 * **The configuration's thirty status screens** all look like code 9's: "System Message: N" as the title, N the
   status code, over one to four centred lines of Logitech's words for the code, such as "Go to Website" and "to update
   settings" for 0, "Configuration" and "Corrupted" for 26, and for 16 the one line "Battery Trickle\Charge", backslash

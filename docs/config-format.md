@@ -1842,7 +1842,7 @@ display. Programs are reached from base slot 11, from a base slot 14 lookup, and
 | opcode | operands | meaning |
 |---|---|---|
 | 0 | none | end |
-| 1 | 4 bytes, `u16` | repeat a primitive |
+| 1 | `x`, `y`, `width`, `height`, then a colour high byte first | fill the rectangle with the colour, **below** |
 | 2 | 2 position bytes, `u24` | draw the **bitmap** at that address, below |
 | 3 | 6 bytes, `u24` | the same with **destination, source, size**, below |
 | 4 | 2 position bytes, `u24` | draw the glyph string at that address, **another program's own**, below |
@@ -1854,6 +1854,21 @@ display. Programs are reached from base slot 11, from a base slot 14 lookup, and
 | 21 | 4 bytes | *arch 8 only*, meaning unknown, length inferred from the corpus |
 | 22 | **per architecture**, below | *arch 12*: call. *arch 9*: select a screen row |
 | 23 | none | **per architecture**: *arch 12* the return matching opcode 22; *arch 9* the page transfer |
+
+**Opcode 1 is a filled rectangle**, read in the firmware, [findings.md](findings.md) section 425. Six bytes: `x`, `y`,
+`width`, `height`, each one byte, then the colour as two bytes in the order a picture's pixel is stored, high byte
+first, the order read on the Harmony One 3.4 and the Harmony 650 0.2. The remote fills one row at a time from `y` while the row is below `y + height` **taken in eight bits**, so a
+rectangle whose `y + height` is 256 or more draws nothing (220 rows from `y` 40 end at row 4); each row is clipped to the
+display, its width to the columns right of `x`, and a row or a column past the screen is drawn nowhere. A width of 0 is
+not read. Read on the Harmony One 3.4 in full, and on the Harmony 600 and 650 0.2 and the Harmony 700 2.8 to the same
+row loop and the row routine's clip at 128 by 128; the Harmony 650 0.4 image and arch 8, 9 and 10 are not checked.
+Over the sixteen English compiles of skin 54 Logitech uses it for the welcome tour's black background, 11 a compile,
+for a black fill before a full screen picture, 18 in all, and for the four lines two pixels wide that frame a picker's
+button, 9 frames a compile, each closing exactly round a button picture drawn there, 144 of 144.
+
+**The Harmony One draws a page over what the screen held**: the routine that draws a mode page runs its program with
+no fill before it, and the whole screen fill is reached at start up and from three firmware screens only, by direct
+calls. So a pixel a page leaves undrawn keeps the previous screen's, and a background has to draw every pixel.
 
 **Opcode 4 is the commoner of the two text opcodes and its target is never a place of its own.**
 Confirmed on every container of the corpus, four architectures: in 12052 of 12052 instances the
@@ -2061,7 +2076,9 @@ Why is unread and it costs nothing either way, since the copy is idempotent.
 pixel `0x0000`, 77445 bytes, three times on four of the sixteen English compiles of skin 54 and four times on the
 other twelve, each copy byte identical. Six of the seven blank screens a timer enters draw three photographs of the same size
 instead, two screens each, and the seventh draws the charging screen's picture. A configuration of ours holds the background once and those screens draw it too, every
-reference to a copy or a photograph pointed at the one. **A picture nothing names is not a piece of its own** to
+reference to a copy or a photograph pointed at the one; and since section 425 that one is not a picture but one fill of
+the screen per draw, opcode 1 with 0, 0, 176, 220 and colour 0, seven bytes where a draw is six, `withPictureFilled`,
+unless `TouchChoices.backgroundFill` keeps the picture. **A picture nothing names is not a piece of its own** to
 `takeApart`: its bytes are carried on the end of the piece before it, so taking one out is a cut by the extent its
 header states. [findings.md](findings.md) section 422.
 

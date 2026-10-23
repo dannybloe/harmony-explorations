@@ -69,7 +69,8 @@ import { type ContainerLayout, type ContainerPiece, layOutContainer, takeApart }
 import { ENTER_MODE, caseQueued } from '../../inventory.ts';
 import { valueMaps } from '../../valuemap.ts';
 import {
-  SCREEN_CALL, SCREEN_DRAW_IMAGE, SCREEN_SELECT_FONT, SCREEN_TEXT_AT, SCREEN_TEXT_INLINE, type ScreenInstruction, screenProgram,
+  SCREEN_CALL, SCREEN_DRAW_IMAGE, SCREEN_FILL, SCREEN_SELECT_FONT, SCREEN_TEXT_AT, SCREEN_TEXT_INLINE, type ScreenInstruction,
+  screenProgram,
 } from '../../screen.ts';
 import { type ModeRecordsPlace, ScreenRecordError, assertRebuilt, withModeRecords } from '../../screenrecords.ts';
 import { modeRecords, taggedList } from '../../sections.ts';
@@ -125,12 +126,24 @@ const COUNTER_Y = 18;
 const SLASH_X = 18;
 
 /**
- * Screen instruction 1 as 23 of Logitech's 64 activities' chromes carry it, over the whole 176 by 220 screen, unread.
+ * Screen instruction 1 as 23 of Logitech's 64 activities' chromes carry it, over the whole 176 by 220 screen: a black
+ * fill of the whole screen, read in the firmware since section 425, which the full screen picture after it then covers.
  * It is on exactly the activities whose start up icon is one picture, 23 of 23 and 0 of 41, a correlation over 8 icons
- * and not derived: the description states it.
+ * and not derived: the description states it. Said "unread" until section 425.
+ *
+ * **Told from a background made a fill by its place**, section 425: where the full screen picture is drawn as a fill
+ * of the same rectangle, `withPictureFilled`, the chrome holds this instruction once for the background, so the
+ * activity carries this one where its chrome holds two whole screen backdrops, a fill and then a fill or a picture.
  */
-const WHOLE_SCREEN_OPCODE = 1;
+const WHOLE_SCREEN_OPCODE = SCREEN_FILL;
 const WHOLE_SCREEN: Part<never> = { op: 'constant', opcode: WHOLE_SCREEN_OPCODE, operands: [0, 0, 176, 220, 0, 0] };
+
+/** Whether a chrome carries `WHOLE_SCREEN` before its background: two backdrops at 0, 0, the first a fill. */
+function carriesWholeScreen(chrome: readonly ScreenInstruction[]): boolean {
+  const backdrops = chrome.filter((one) => (one.opcode === SCREEN_FILL || one.opcode === SCREEN_DRAW_IMAGE)
+    && one.operands[0] === 0 && one.operands[1] === 0);
+  return backdrops.length === 2 && backdrops[0]?.opcode === WHOLE_SCREEN_OPCODE;
+}
 
 /** The key codes of a page's areas in their order, section 417's `HIT_CODES`. */
 const CODES: readonly number[] = [48, 49, 50, 51, 52, 53, 43, 44];
@@ -386,7 +399,7 @@ function readWorking(c: Container, mode: number, read: ValueReader, at: Set<numb
     const program = screenProgram(c, page.program) ?? [];
     if (name === undefined) {
       name = spelled(chromeTitle(c, program, what));
-      wholeScreen = (screenProgram(c, program[0]?.targets[0] as number) ?? []).some((one) => one.opcode === WHOLE_SCREEN_OPCODE);
+      wholeScreen = carriesWholeScreen(screenProgram(c, program[0]?.targets[0] as number) ?? []);
     }
     // The keys' words come before the first picture: "Devices", after "Favorites" where the activity has them.
     const first = program.findIndex((one) => one.opcode === SCREEN_DRAW_IMAGE);

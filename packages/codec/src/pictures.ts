@@ -12,7 +12,11 @@ import { type Container } from './gspm.ts';
 import { drawIcon } from './icons.ts';
 import { rgb565, rgbTo565 } from './png.ts';
 import { namedContentEnd } from './coverage.ts';
-import { bitmaps, pictureBank } from './screen.ts';
+import {
+  BITMAP_RAW, SCREEN_DRAW_IMAGE, SCREEN_FILL, bitmapAt, bitmaps, pictureBank, pictureReference, reachablePrograms,
+} from './screen.ts';
+import { bitmapPixels } from './render.ts';
+import type { PieceTarget } from './statetables.ts';
 import { contentKey } from './screencategories.ts';
 
 /** A refusal, named so a caller can tell a bad description from a bug. */
@@ -230,4 +234,151 @@ export function withReplacedPictures(
     }),
     pictures: rewrite(layout.pictures),
   };
+}
+
+/**
+ * A fill in the place of a picture, as a description of screens carries it among its pictures: a target naming no
+ * piece of the layout, whose bytes are the fill's width, height and colour, high byte first. One per rectangle, so
+ * two draws of the same fill carry the same target, as two draws of one picture do. A reader of a program that meets
+ * a `SCREEN_FILL` where a template draws a picture takes `fillTarget`, and a writer that meets one emits the fill,
+ * `fillOf`: so a screen whose background `withPictureFilled` made a fill is described and rebuilt as it is, findings
+ * section 425.
+ */
+const FILLS = new Map<string, PieceTarget>();
+const FILL_OWNER = 'fill';
+
+/** The target a description carries for a fill of `width` by `height` in `colour`, the same object for the same fill. */
+export function fillTarget(width: number, height: number, colour: number): PieceTarget {
+  const key = `${width},${height},${colour}`;
+  let target = FILLS.get(key);
+  if (target === undefined) {
+    target = { to: { bytes: Uint8Array.of(width, height, colour >> 8, colour & 0xff), refs: [], owner: FILL_OWNER }, offset: 0 };
+    FILLS.set(key, target);
+  }
+  return target;
+}
+
+/** The fill a description's picture target stands for, or undefined where it names a picture. */
+export function fillOf(target: PieceTarget): { width: number; height: number; colour: number } | undefined {
+  if (target.to.owner !== FILL_OWNER) return undefined;
+  const [width = 0, height = 0, high = 0, low = 0] = target.to.bytes;
+  return { width, height, colour: (high << 8) | low };
+}
+
+/** The bytes of a fill at `x, y` in the place of a picture, `fillOf`'s. */
+export function fillBytes(x: number, y: number, fill: { width: number; height: number; colour: number }): number[] {
+  return [SCREEN_FILL, x, y, fill.width, fill.height, fill.colour >> 8, fill.colour & 0xff];
+}
+
+/** What `withPictureFilled` did. */
+export interface PictureFilled {
+  container: Container;
+  /** The draws made fills, one per instruction that drew the picture. */
+  filled: number;
+  /** The picture's bytes, gone from the bank with it. */
+  dropped: number;
+}
+
+/** A `SCREEN_DRAW_IMAGE` is the opcode, two place bytes and a three byte address; a `SCREEN_FILL` the opcode and six. */
+const DRAW_LENGTH = 6;
+const DRAW_ADDRESS_AT = 3;
+const FILL_LENGTH = 7;
+
+/**
+ * The configuration with every draw of the picture at `address` made a filled rectangle of its size and colour,
+ * opcode 1, `SCREEN_FILL`, and the picture out of the bank: findings section 425, where the firmware's handler is
+ * read. One instruction of seven bytes in place of a draw of six, in the same place, every address into the program
+ * after it moved by the byte it gains.
+ *
+ * **Only a picture a fill draws exactly is taken**, so the result shows what the input showed: a raw picture drawn in
+ * every pixel, every pixel one colour, each draw a `SCREEN_DRAW_IMAGE` whose `y + height` is below 256, since the
+ * fill's stop row is taken in eight bits, and a width and a height that fit a byte. Refused otherwise, and refused
+ * where anything but such a draw names the picture, or an address lands inside a draw made a fill.
+ *
+ * Generic, and every compiled family's: it reads the references the frame keeps and the picture header every
+ * architecture's compiles share. Opcode 1 is read as this rectangle in full on the Harmony One 3.4 and the Harmony 650
+ * 0.2, and to its row loop and clip on the Harmony 600 0.2 and 700 2.8, section 425; it has run on the Harmony One alone. The Harmony One's background is the one caller, `families/touch/pictures.ts`.
+ */
+export function withPictureFilled(c: Container, address: number): PictureFilled {
+  const layout = takeApart(c);
+  const laid = layOutContainer(layout);
+  if (laid.bytes.length !== c.blob.length) throw new PictureError('the configuration does not take apart into itself');
+  const from = c.blobOffsetOf(address);
+  const picture = layout.pictures.find((one) => laid.offsetOf(one) === from);
+  const header = bitmapAt(c, address);
+  const rows = header === undefined ? undefined : bitmapPixels(c, header);
+  if (picture === undefined || header === undefined || rows === undefined) throw new PictureError(`no picture of the bank at 0x${address.toString(16)}`);
+  if (header.kind !== BITMAP_RAW) throw new PictureError('a fill takes the place of a raw picture only, drawn in every pixel');
+  const colour = rows[0]?.[0];
+  if (colour === undefined || rows.some((row) => row.some((pixel) => pixel !== colour))) {
+    throw new PictureError('the picture is not one colour in every pixel, so a fill does not draw it');
+  }
+  const width = header.stride;
+  const height = header.rows;
+  if (width > 0xff || height > 0xff || width === 0 || height === 0) throw new PictureError(`a fill of ${width} by ${height} does not fit its operands`);
+
+  // Every draw of the picture, by the piece holding it and the instruction's offset in that piece. The programs'
+  // own walk says which references are draws: a reference to the picture that is not a draw's address is refused.
+  const draws = new Set<number>();
+  for (const [, program] of reachablePrograms(c)) {
+    for (const one of program) if (one.opcode === SCREEN_DRAW_IMAGE && pictureReference(one) === address) draws.add(one.start);
+  }
+  const all = everyPiece(layout);
+  const sites = new Map<ContainerPiece, number[]>();
+  for (const piece of all) {
+    for (const ref of piece.refs) {
+      if (!('to' in ref) || ref.to !== picture) continue;
+      const start = ref.at - DRAW_ADDRESS_AT;
+      if (ref.offset !== 0 || !draws.has((laid.offsetOf(piece) as number) + start)) {
+        throw new PictureError(`the picture is named ${ref.at} bytes into a ${piece.owner ?? 'piece'} by something not a draw`);
+      }
+      const y = piece.bytes[start + 2] as number;
+      if (y + height > 0xff) throw new PictureError(`a draw at y ${y} has y + height ${y + height}, 256 or more, where a fill's stop row wraps and it draws nothing`);
+      sites.set(piece, [...(sites.get(piece) ?? []), start]);
+    }
+  }
+  const named = [...sites.values()].reduce((sum, one) => sum + one.length, 0);
+  if (named !== draws.size) throw new PictureError(`${draws.size} draws of the picture and ${named} references to it`);
+
+  // Each piece holding a draw made again: the draw's six bytes become the fill's seven, its address field goes, and
+  // an offset into the piece moves by a byte for every draw before it. An offset inside a draw past its first byte
+  // would name half an instruction, and is refused.
+  const remap = new Map<ContainerPiece, (offset: number) => number>();
+  for (const [piece, at] of sites) {
+    at.sort((a, b) => a - b);
+    remap.set(piece, (offset) => {
+      let gained = 0;
+      for (const start of at) {
+        if (offset <= start) break;
+        if (offset < start + DRAW_LENGTH) throw new PictureError(`an address lands ${offset - start} bytes into a draw made a fill`);
+        gained += FILL_LENGTH - DRAW_LENGTH;
+      }
+      return offset + gained;
+    });
+  }
+  // The references, every piece's at once and before any piece's bytes change, so each is moved by its own piece's
+  // draws and the draws of the piece it names; a draw's own address field goes with its draw.
+  const moved = all.map((piece) => {
+    const mine = sites.get(piece);
+    return piece.refs.flatMap((ref): PieceRef[] => {
+      if (mine?.some((start) => ref.at >= start && ref.at < start + DRAW_LENGTH)) return [];
+      const at = remap.get(piece)?.(ref.at) ?? ref.at;
+      if (!('to' in ref)) return [{ ...ref, at }];
+      return [{ at, to: ref.to, offset: remap.get(ref.to)?.(ref.offset) ?? ref.offset }];
+    });
+  });
+  all.forEach((piece, k) => { piece.refs = moved[k] as PieceRef[]; });
+  for (const [piece, at] of sites) {
+    const out: number[] = [];
+    let cursor = 0;
+    for (const start of at) {
+      out.push(...piece.bytes.subarray(cursor, start));
+      out.push(...fillBytes(piece.bytes[start + 1] as number, piece.bytes[start + 2] as number, { width, height, colour }));
+      cursor = start + DRAW_LENGTH;
+    }
+    out.push(...piece.bytes.subarray(cursor));
+    piece.bytes = Uint8Array.from(out);
+  }
+  layout.pictures = layout.pictures.filter((one) => one !== picture);
+  return { container: layOutContainer(layout).container, filled: draws.size, dropped: picture.bytes.length };
 }

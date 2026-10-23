@@ -222,8 +222,8 @@ class TheRunnerSeesEveryTest(unittest.TestCase):
         # 44 since `tests/test_harmony_700_cache_drop.py`, section 299.
         # 45 since `tests/test_clock_counting.py`, section 322.
         # 47 since `tests/test_touch_send.py`, section 337.
-        # 48 since `tests/test_toggle_groups.py`, section 365.
-        self.assertEqual(len(files), 48, 'the Python test files')
+        # 48 since `tests/test_toggle_groups.py`, section 365. 49 with `tests/test_screen_fill.py`, section 425.
+        self.assertEqual(len(files), 49, 'the Python test files')
         with_block = 0
         for path in files:
             with open(path, encoding='utf-8') as handle:
@@ -248,7 +248,8 @@ class TheRunnerSeesEveryTest(unittest.TestCase):
         # 43 since `tests/test_clock_counting.py`, section 322, which carries one.
         # 45 since `tests/test_touch_send.py`, section 337, which carries one.
         # 46 since `tests/test_toggle_groups.py`, section 365, which carries one.
-        self.assertEqual(with_block, 46,
+        # 47 since `tests/test_screen_fill.py`, section 425, which carries one.
+        self.assertEqual(with_block, 47,
                          'files carrying a __main__ block, of %d' % len(files))
 
 
@@ -462,8 +463,9 @@ class ATypeScriptSampleLoopStatesItsPopulation(unittest.TestCase):
         # 134 with touchactivitymenu.test.ts, section 419, todo-compile-one 4.1. 135 with
         # touchdevicepages.test.ts, section 420, todo-compile-one 4.2. 136 with touchwithouttour.test.ts,
         # section 421, todo-compile-one 4.10. 137 with touchpictures.test.ts, section 422, todo-compile-one 5.3.1
-        # and 5.3.3. 138 with touchactivityscreens.test.ts, section 423, todo-compile-one 4.3.
-        self.assertEqual(scanned, 138, 'the TypeScript test files, as ABoundOnACorpusTotalIsExact counts them')
+        # and 5.3.3. 138 with touchactivityscreens.test.ts, section 423, todo-compile-one 4.3. 139 with
+        # screenfill.test.ts, section 425, todo-compile-one 5.3.4.
+        self.assertEqual(scanned, 139, 'the TypeScript test files, as ABoundOnACorpusTotalIsExact counts them')
         self.assertEqual(
             {name: len(lines) for name, lines in counted.items()},
             TYPESCRIPT_LOOPS_ALLOWED_TO_SKIP_A_SAMPLE,
@@ -620,7 +622,8 @@ class ABoundOnACorpusTotalIsExact(unittest.TestCase):
         # 133 with touchbelowlists, 6.5, section 418. 134 with touchactivitymenu, 4.1, section 419.
         # 135 with touchdevicepages, 4.2, section 420. 136 with touchwithouttour, 4.10, section 421.
         # 137 with touchpictures, 5.3.1 and 5.3.3, section 422. 138 with touchactivityscreens, 4.3, section 423.
-        self.assertEqual(len(scanned), 138, 'TypeScript test files, which moves when one is added')
+        # 139 with screenfill, 5.3.4, section 425.
+        self.assertEqual(len(scanned), 139, 'TypeScript test files, which moves when one is added')
         self.assertIn(self.CONTROL, found, 'the pattern matches nothing it should match')
 
     def test_every_remaining_bound_says_why_it_is_not_a_measurement(self):
@@ -730,8 +733,8 @@ class APythonBoundOnACorpusTotalIsExact(unittest.TestCase):
         # 44 since `tests/test_harmony_700_cache_drop.py`, section 299.
         # 45 since `tests/test_clock_counting.py`, section 322.
         # 47 since `tests/test_touch_send.py`, section 337.
-        # 48 since `tests/test_toggle_groups.py`, section 365.
-        self.assertEqual(len(scanned), 48, 'Python test files, which moves when one is added')
+        # 48 since `tests/test_toggle_groups.py`, section 365. 49 with `tests/test_screen_fill.py`, section 425.
+        self.assertEqual(len(scanned), 49, 'Python test files, which moves when one is added')
         self.assertIn(self.CONTROL, found, 'the pattern matches nothing it should match')
 
     def test_every_remaining_bound_says_why_it_is_not_a_measurement(self):

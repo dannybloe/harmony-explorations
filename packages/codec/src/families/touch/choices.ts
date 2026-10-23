@@ -50,6 +50,14 @@ export interface TouchChoices extends CommonChoices {
    */
   readonly logitechPictures: boolean;
   /**
+   * Whether the whole screen background, all black, is drawn by one instruction that fills the screen, screen opcode
+   * 1, in place of a 176 by 220 picture of 77445 bytes, `withPictureFilled`, findings section 425. On by default since
+   * the firmware's handler is read: it writes the rectangle's colour to every pixel of it, so the screen shows what the
+   * picture showed. Off, the background stays the one black picture of section 422. Taken only where
+   * `logitechPictures` is off, since it is that picture of ours that becomes the fill.
+   */
+  readonly backgroundFill: boolean;
+  /**
    * The icon of Material Design Icons, `icons.ts`, each of our pictures that draws one wears, in white: the sending
    * mark of the status strip, the firmware screens' pictures and the power off help's. The Harmony 650's choices for
    * the same screens where it has them, section 373, and the rest chosen on the sample of 18 October 2026.
@@ -130,6 +138,7 @@ export const TOUCH_CHOICES: TouchChoices = {
   deviceBox: { fill: '#1c9c53', rim: '#e8cbb4' },
   settingsBox: { fill: '#f76100', rim: '#ffefde' },
   logitechPictures: false,
+  backgroundFill: true,
   pictureIcons: {
     'sending mark on': 'wifi', 'Low Battery': 'battery-alert-variant-outline', 'USB Connected': 'usb',
     'charging problem': 'close-circle-outline', 'charging screen': 'battery-charging', power: 'power', 'sending, large': 'wifi',
