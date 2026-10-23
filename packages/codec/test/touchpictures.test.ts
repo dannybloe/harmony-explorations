@@ -33,6 +33,8 @@ const DONOR = 'harvest_one_two_devices';
 /** The compiles of the sixteen that store the whole screen background three times; the other twelve store it four times. */
 const THREE_BACKGROUNDS = new Set(['harvest_one_two_devices', 'harvest_one_families_1', 'harvest_one_families_2', 'harvest_one_families_3']);
 const backgrounds = (name: string): number => (THREE_BACKGROUNDS.has(name) ? 3 : 4);
+/** The family's choices with the background left a picture, which is how 5.3.1 to 5.3.3 placed it; 5.3.4 makes it a fill. */
+const AS_PICTURE = { ...TOUCH_CHOICES, backgroundFill: false };
 
 type Rows = readonly (readonly (number | undefined)[])[];
 
@@ -66,7 +68,9 @@ test('todo-compile-one 5.3.1: on each of the sixteen every picture of ours encod
   for (const name of SIXTEEN) {
     const c = parse(require_(name));
     const { pictures } = readTouchPictures(c);
-    const placed = withTouchPictures(c, TOUCH_CHOICES);
+    // The background kept a picture: this is the replacement and the merge, and the fill 5.3.4 makes of the
+    // background afterwards is `screenfill.test.ts`'s, section 425.
+    const placed = withTouchPictures(c, AS_PICTURE);
     const after = picturesByContent(placed.container);
     // The bank's pictures in order, as the placed file holds them: the replaced ones keep their order, and the
     // background's other copies and the photographs, merged onto the first copy, are the ones gone.
@@ -193,7 +197,8 @@ test('todo-compile-one 5.3.3: on Logitech\'s compile of two devices the whole sc
   // The references to the background's three copies, 75 on this compile (66 to 314 over the sixteen), and to each
   // photograph two: six blank screens a timer enters draw them, which is all this says of what they are for.
   assert.deepEqual(background.map((key) => before.get(key)), [75, 2, 2, 2]);
-  const placed = withTouchPictures(c, TOUCH_CHOICES).container;
+  // The background kept a picture, as 5.3.3 left it; 5.3.4 makes it one fill, `screenfill.test.ts`, section 425.
+  const placed = withTouchPictures(c, AS_PICTURE).container;
   assert.equal(c.blob.length - placed.blob.length, 5 * 77445);
   const after = namings(placed);
   // One picture holds them all, all black and uncompressed, Logitech's own bytes.
@@ -209,7 +214,7 @@ test('todo-compile-one 5.3.3: on Logitech\'s compile of two devices the whole sc
     (error: unknown) => error instanceof PictureError && /merged onto one that is merged itself/.test(error.message));
 });
 
-test('todo-compile-one 5.3: on the composed path ours go in unless the choice keeps Logitech\'s, and the attribution, which recognises a picture by reproducing it with the drawing rule, counts 32 on the finished file and on Logitech\'s compile of two devices, with three background copies, the five all black ones the rule reproduces',
+test('todo-compile-one 5.3: on the composed path ours go in unless the choice keeps Logitech\'s, and the attribution, which recognises a picture by reproducing it with the drawing rule, counts 31 on the finished file, 32 with the background left a picture, and on Logitech\'s compile of two devices, with three background copies, the five all black ones the rule reproduces',
      skipUnless(DONOR), () => {
   assert.equal(TOUCH_CHOICES.logitechPictures, false);
   const c = parse(require_(DONOR));
@@ -221,8 +226,11 @@ test('todo-compile-one 5.3: on the composed path ours go in unless the choice ke
   assert.equal(ours.built.at(-1), 'pictures');
   assert.equal(Buffer.compare(ours.container.blob, withTouchPictures(kept.container, TOUCH_CHOICES).container.blob), 0);
   // Ours found by reproducing each with the drawing rule, which is what the attribution does and so cannot miss one of
-  // ours: 32 pictures, the 37 less the five taken out for the one background.
-  assert.equal(touchOurPictures(ours.container, TOUCH_CHOICES).length, 32);
+  // ours: 31 pictures, the 37 less the five taken out for the one background and less that background, which is a
+  // fill since `todo-compile-one.md` 5.3.4, section 425. With the background left a picture it is 32.
+  assert.equal(touchOurPictures(ours.container, TOUCH_CHOICES).length, 31);
+  const pictured = withTouchComposedBuilders(c, [], AS_PICTURE);
+  assert.equal(touchOurPictures(pictured.container, AS_PICTURE).length, 32);
   // On Logitech's compile, with the background stored three times here: five all black pictures. On the twelve of
   // the sixteen that store it four times the rule reproduces six, measured in section 422.
   assert.deepEqual(touchOurPictures(c, TOUCH_CHOICES).map((one) => one.name).sort(), [

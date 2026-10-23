@@ -32,9 +32,10 @@
  *   and the three photographs of blurred lights six blank screens show, entered by timers, draw it too, so those
  *   screens show nothing. What those six are for is open, section 408; a seventh blank screen draws the charging
  *   screen's picture, which has its own entry. The copies and the photographs are taken out of the bank and every draw of
- *   theirs is pointed at the one. It stays a whole screen and drawn in every pixel, 77445 bytes: a picture is
- *   drawn at its own size, and a pixel left undrawn shows what was on the screen before unless the firmware clears
- *   the screen before a page, which is not read, so a smaller or a transparent one would rest on a guess.
+ *   theirs is pointed at the one. **And then, 5.3.4, the one is no picture at all**: every draw of it becomes one fill of
+ *   the screen, screen opcode 1, `withPictureFilled`, and the 77445 bytes leave the bank, unless
+ *   `TouchChoices.backgroundFill` keeps the picture. It has to draw every pixel either way: the Harmony One draws a page
+ *   over what the screen held, with no clear before it, so a pixel left undrawn would show the screen before, section 425.
  *
  * **What is not drawn here.** The welcome tour's illustrations, since the tour is left out by default (4.10,
  * section 421) and kept as Logitech's where the choice keeps it. The device pages' pads and the device list's rows
@@ -47,7 +48,7 @@
  */
 import { type ContainerPiece, layOutContainer, takeApart } from '../../frame.ts';
 import { type Container } from '../../gspm.ts';
-import { PictureError, iconOverRows, withReplacedPictures } from '../../pictures.ts';
+import { PictureError, iconOverRows, withPictureFilled, withReplacedPictures } from '../../pictures.ts';
 import { rgbTo565 } from '../../png.ts';
 import { bitmapPixels } from '../../render.ts';
 import { bitmapAt, encodeBitmap } from '../../screen.ts';
@@ -248,6 +249,8 @@ export interface TouchPicturesPlaced {
   replaced: string[];
   /** The pictures taken out and drawn as the one background, 5.3.3: its copies and the photographs. */
   merged: number;
+  /** The draws of the background made one fill each, 5.3.4, and 0 where `TouchChoices.backgroundFill` keeps the picture. */
+  filled: number;
 }
 
 /**
@@ -275,9 +278,16 @@ export function withTouchPictures(c: Container, choices: TouchChoices): TouchPic
     replace.set(picture.piece, touchPictureBytes(picture.entry, picture.pixels, choices));
     replaced.push(picture.entry.name);
   }
-  if (replace.size === 0 && onto.size === 0) return { container: c, replaced, merged: 0 };
-  const container = layOutContainer(withReplacedPictures(layout, replace, onto)).container;
-  return { container, replaced, merged: onto.size };
+  if (replace.size === 0 && onto.size === 0) return { container: c, replaced, merged: 0, filled: 0 };
+  const placed = layOutContainer(withReplacedPictures(layout, replace, onto));
+  if (!choices.backgroundFill || one === undefined) return { container: placed.container, replaced, merged: onto.size, filled: 0 };
+  // 5.3.4: the background, ours and all black, drawn by one fill where it was drawn, and out of the bank.
+  const ours = replace.get(one.piece) as Uint8Array;
+  const background = readTouchPictures(placed.container).pictures
+    .find((picture) => picture.piece.bytes.length === ours.length && picture.piece.bytes.every((byte, k) => byte === ours[k]));
+  if (background === undefined) throw new PictureError('the background put in the bank does not read back');
+  const filled = withPictureFilled(placed.container, background.address);
+  return { container: filled.container, replaced, merged: onto.size, filled: filled.filled };
 }
 
 /**

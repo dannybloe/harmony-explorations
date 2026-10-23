@@ -4589,7 +4589,7 @@ The dispatcher reads one byte, runs a handler, and loops. `XORLW` chains decoded
 | opcode | operands | handler does |
 |---|---|---|
 | 0 | none | return; the program ends |
-| 1 | 4 bytes then a `u16` | repeats a primitive `count` times, bounded against the display width |
+| 1 | 4 bytes then a `u16` | **fills a rectangle**: `x`, `y`, `width`, `height` and a colour, section 425. This said "repeats a primitive `count` times, bounded against the display width"<!--superseded-->, the row loop read without the routine it calls once a row |
 | 2 | 2 position bytes, `u24` | render the object at that address at that position |
 | 3 | 6 bytes, `u24` | the same with a larger position record |
 | 4 | 2 position bytes, `u24` | draw the glyph string at that address |
@@ -56328,8 +56328,10 @@ screen's picture, which has an entry of its own. Nothing here says what the six 
 The plan said one small black picture. **It is one picture and not a small one**: 176 by 220, every pixel drawn,
 77445 bytes, which is the smallest form that covers the screen. A picture is drawn at its own size, opcode 2 at an
 origin, and a raw picture costs two bytes a pixel; the encoded kind saves bytes only on undrawn pixels, and a pixel
-left undrawn shows whatever the screen held before **unless the firmware clears the screen before a page, which is not
-read**. A smaller or transparent background waits for that reading, or for a remote to show it.
+left undrawn shows whatever the screen held before unless the firmware clears the screen before a page, which was not
+read here<!--superseded-->. A smaller or transparent background waited for that reading, or for a remote to show it.
+**Answered by section 425**: the Harmony One draws a page with no clear before it, so a transparent background is ruled
+out, and opcode 1 is a filled rectangle, so the background is one fill instruction a draw since then and no picture.
 
 ### Device mode's pictures, and a piece the frame did not see
 
@@ -56388,8 +56390,9 @@ pages that cover the whole screen with one instruction of screen program opcode 
 220 and colour 0, and draw no whole screen picture, only one smaller picture after it, on each of the sixteen; further
 compiles hold up to five more pages with the same instruction and a whole screen picture too, 11 to 16 pages a
 compile in all, counted on each page's default path with calls followed. If opcode 1 is a fill, our background could
-be one instruction and not a 77445 byte picture. That reading is the reviewer's inference: `render.ts` ignores the
-opcode and the firmware's handler is not read. **And one further structure from the same review**: on every compile
+be one instruction and not a 77445 byte picture. That reading was the reviewer's inference: `render.ts` ignored the
+opcode and the firmware's handler was not read<!--superseded-->. **Read since, section 425**: it is a fill, the eleven
+pages are the welcome tour's, and the background is a fill on the composed path. **And one further structure from the same review**: on every compile
 many pages draw text before a whole screen picture, 100 to 458 pages a compile, 105 of 127 whole screen pages on the
 donor, same default path, and the picture, which has no undrawn pixel, then covers the text completely. Mode 70's rows and icons, Logitech's still. The two European compiles and the Dutch one, refused
 before this step by the builders before it.
@@ -56628,6 +56631,159 @@ without contribute nothing. (10) The one page, six pad gap is recorded under ope
 reviewers were not run is replaced by this one. **Where the reviewers' counts differ from ours**: the blind review counted
 34 one page working screens with 19 of five pads, which includes the Dutch compile's; on this section's 63 it is 33 and
 19. Nothing else a reviewer reported was wrong on checking.
+
+## 425. Screen opcode 1 is a filled rectangle, x, y, width, height and a colour, read in full on the Harmony One and the Harmony 650 and to its row loop on the Harmony 600 and 700; the Harmony One draws a mode page over what the screen held, and our black background is one fill a draw
+
+`todo-compile-one.md` 5.3.4. Section 422 left the background a whole screen picture of 77445 bytes, because a picture
+is drawn at its own size and whether the firmware clears the screen before a page was not read; its blind reviewer
+pointed at Logitech's own pages that cover the screen with opcode 1 instead. **Sources checked first**: section 40's
+opcode table, whose reading of opcode 1 is corrected there in place, section 367 for the route a pixel takes to the
+panel, sections 408, 411, 412, 416, 422 and 423 for where Logitech's compiles run the opcode, the four firmware
+images, and `src/harmony/` and `packages/codec/src/` for the constants, where `SCREEN_FIXED_OPERANDS` held its six
+operand bytes and nothing named it. Logitech's client was not consulted: it renders no screen, the reason section 367
+gives.
+
+### The handler, Harmony One 3.4
+
+The screen interpreter is at `0x295AC` with its opcode chain at `0x295E6`, section 40; decoded with `chains.py`,
+opcode 1 goes to `0x29618`, `RCALL 0x290AA`. That handler:
+
+* calls the stream byte reader `0x2B8F8` four times, into `0xD1F`, `0xD20`, `0xD21` and `0xD22`: `x`, `y`, the
+  width and the height, in that order;
+* adds `0xD20` into `0xD22`, so the height becomes the row to stop at, **in eight bits**;
+* reads two bytes with `0x2B90A` into `0xD23` and `0xD24`, the colour, the first byte read first;
+* loads `TBLPTR` with `0x020029` and loops while `0xD20` is below `0xD22`: `x` to `0x6DA`, the row to `0x6DB`, the
+  width to `0x6DE`, the colour's two bytes to `0x6DC` and `0x6DD`, `CALL 0x2294C`, `INCF 0xD20`.
+
+`0x2294C` draws one row. It returns at once where `x` is 176 or more (`MOVLW 0xB0`) or the row 220 or more
+(`MOVLW 0xDC`); takes as many pixels as the smaller of the width and `176 - x`; sets the panel's row and its column
+window from `x` to `x + n - 1` (`0x20DCE`, `0x20F84`) and starts a write (`0x2105C`); and then writes `0x6DC` and
+`0x6DD` with two `TBLWT*` per pixel, counted down in `W` with `DECFSZ`. Two bytes a pixel, the first byte read from
+the program first, which is the order section 367 read for a picture's pixel through `0x228AA`. So **opcode 1 fills
+the rectangle `x, y, width, height` with one colour, clipped to the screen**, the colour stored as a picture's pixel
+is. Two edges follow from the code and nothing in the corpus reaches them: a rectangle whose `y + height` is 256 or
+more draws nothing, since the stop row wraps (220 rows from `y` 40 stop at row 4); and a width of 0 runs the pixel loop 256
+times into a window that ends before it starts, which the panel's answer to is not read.
+
+Section 40's reading of opcode 1 is that handler read without its callee: the loop is per row and the bound is the
+row routine's clip.
+
+### Does the Harmony One clear the screen before a page: no
+
+The routine that draws a mode page, `0x28166` (called from `0x25882`, `0x2835A`, `0x285C8` and `0x286F4`), seeks
+twice into the page record and makes its last call to the interpreter, at `0x281DC`; it calls nothing that fills.
+The whole screen fill is `0x22E10`, 220 rows of 176 through `0x2294C` in the colour at `0x6E5`, and it has three
+direct callers and two wrappers: start up, through the black wrapper `0x22E44` at `0x28A4A`, before the main loop;
+`0x20B52`, in colour bytes `0x1F, 0x00`, whose screen is not read; and `0x2886A` and `0x2894C`, two routines that
+fill in a colour they load from a variable and then draw text from a table in the image in the firmware's own one bit
+font. The white wrapper `0x22E4E` has no
+direct caller. Two more full screen routines, `0x229D0` (three colour bars) and `0x22A64` (a ramp), have no direct
+caller either, test patterns by their look. **So a page is drawn over what the screen held**, and a pixel it leaves
+undrawn shows the previous screen's: the screen is cleared at start up and by those three firmware screens, none of
+them on the page draw's path. A computed call is invisible to `pic18_xref.py`, so this rests on the direct calls; it
+is not seen on a remote. It is about the mode page routine: the interpreter has two other direct references, a call
+at `0x2E1CE` and a jump at `0x29710`, and what draws through them is not read.
+
+That settles section 422's question the other way from the hope: a transparent background is not possible, and a
+background has to draw every pixel. It does not need a picture to do it.
+
+### Arch 14
+
+The same handler on three images, by the chain: the Harmony 600 0.2 and the bench Harmony 650 0.2 send opcode 1
+from `0x16E44` to `0x16E6E`, `RCALL 0x16A28`, the Harmony 700 2.8 from `0x187A8` to `0x187D2`, `RCALL 0x1838C`. Each
+reads four bytes into `0xD2A` to `0xD2D`, adds `y` into the height, reads a sixteen bit colour into `0xD2F` and
+`0xD30`, and loops the rows into one routine, `0x12DA8` on the 600 and 650 and `0x0DF20` on the 700, whose first
+tests clip `x` and the row at 128 (`MOVLW 0x80` three times), the 128 by 128 screen. On the 650 0.2 that routine is
+read to its end: it sends the panel `0x2B` with the row twice, `0x2A` with `x` and `x + n - 1`, `0x2C`, and then
+the colour's two bytes per pixel, `0x387` first, which holds the first byte read. The 600's and the 700's row
+routines are read to their clips only, and the 650 0.4 image is not checked; arch 8, 9 and 10 are not checked.
+Whether an arch 14 remote clears the screen before a page is not read.
+
+### What Logitech's compiles use it for
+
+Over the sixteen English compiles of skin 54 every draw of the background and of the three photographs is an opcode 2
+at 0, 0: 2907 draws, 2811 of the background, 66 to 314 a compile, and 96 of the photographs. Opcode 1 appears three
+ways: the welcome tour's chrome, a black fill of the whole screen with no full screen picture after it, exactly 11 a
+compile, the eleven pages section 422's reviewer counted on the donor's default paths; a whole screen fill before a
+full screen picture, which then covers it, 0 to 2 a compile and 18 over the sixteen, the chromes section 423 found
+before the picture in 23 of the 64 activities of its fifteen compiles, the Dutch one among them; and the frames of
+section 416, four fills two pixels wide round a picker's button. So 11 to 13 whole screen fills a compile, 194 in all.
+
+**The closure, whose two ends share no field.** Read as `x, y, width, height`, every run of four consecutive fills
+that are not the whole screen in one program, 9 a compile and 144 over the sixteen, closes into a ring exactly two
+pixels wide whose inside is a picture a program draws: its place from that opcode 2's operands, its size from the
+picture's own header, 164 by 50 for a whole row and 81 by 50 for a half. **The control**: read with the width and the
+height swapped, 0 of the 144 do. The frames' colour is `0x07EC` read high byte first; that is the firmware's order and
+not a second check of it.
+
+**Logitech's eleven tour pages under the renderer**, which now draws opcode 1, `fillRows` in `render.ts`: every pixel
+the renderer drew before is drawn the same, and the 19022 to 33348 a page left undrawn are black, none undrawn now.
+
+### On the composed path
+
+`withPictureFilled` in `pictures.ts`, generic: it takes a raw picture drawn in every pixel in one colour, makes each
+opcode 2 that draws it a fill of its size and colour in the same place, seven bytes for six, moves every address into
+a program after it by the byte gained, and takes the picture out of the bank. It refuses an encoded picture (a battery
+gauge), a raw one of more than one colour (the charging screen) or with an undrawn pixel, a reference to the picture
+that is not a draw, a draw whose `y + height` is 256 or more, and an address landing inside a draw; the test exercises
+the gauge, the charging screen and a background draw moved to row 40, and the other three have no sample. `withTouchPictures` runs it on our black
+background after 5.3.3's merge, behind `TouchChoices.backgroundFill`, on by default.
+
+The descriptions the builders and the attribution read learned the fill as a background, so a composed file is
+described and rebuilt as it is: `fillTarget` stands in a description's pictures for a fill, read where the template
+engine's `picture` part meets opcode 1 and written back as the fill, and the same in the firmware screens' chrome, the
+fixed screens' blank screen finder, the activity screens' test for the constant fill (now two backdrops, a fill and
+then a fill or a picture, since ours is a fill too) and the look's reading of the device modes' background.
+
+**On the sixteen**: 2907 draws made fills, each compile `77445 - draws` bytes shorter than with the picture, every
+check passing, and every mode page rendering pixel for pixel as before. **On the composed test setup**: 1099596 to
+1022262 bytes, 77334 fewer, the picture's 77445 less 111 draws a byte longer each; all 175 mode pages render pixel for
+pixel as with the picture, 174 of them drawing the fill. The attribution credits the fills to the builders that
+describe them, 109 more bytes over the firmware screens (10), fixed screens (22), status screens (29), help screens
+(30), activity menu (1), device pages (7) and activity screens (10), the pictures' part 294663 to 217218, and 2 draws
+sit in chromes no builder makes, mode 70's (the second list of every device, section 422) and mode 50's (a device list
+headed "Current Activity"), so 2 more bytes are made by no builder. What the setup carries out of the donor by
+`todo-compile-one.md` 3.2's listing stays 145991 bytes: neither chrome matched a donor unit before the fill either.
+
+Rendered before and after, in the session's scratch directory: seven composed pages with the picture and with the
+fill, and two of Logitech's tour pages before and after the renderer learned the opcode.
+
+### The blind review
+
+A reviewer given the questions and the images and not this section read the same handler, the same operand order,
+the eight bit stop row, the clip at 176 by 220 and at 128 by 128, the colour's first byte written first, and no fill
+on the page draw's path, by direct calls; and over the sixteen counted 770 opcode 1 instructions, 194 of them the
+whole screen and 576 frame bars, 36 a compile, all in colour `0x07EC`, closing into 144 frames round a picture drawn,
+144 of 144, and 0 of 144 with the width and the height swapped and in each of four corner orders. It also found that
+reading both the fills and opcode 2's place with `x` and `y` swapped closes 96 of 144, so the closure rests on opcode
+2's place being `x, y` too, which every render here takes and this section does not read in the firmware; and that 2811 of the 2923 draws of 176 by 220 pictures over the
+sixteen are one colour, black, the other 112 the photographs and the charging screen. One slip it reported: it saw
+the docstring of `SCREEN_FILL` while looking up operand widths, after its firmware reading was done. Two points it
+left open are open here too: what the routine at `0x20B52` draws, and the Harmony 700's colour order, whose row
+routine branches on `0x3D2` into two panel controllers.
+
+### Which architectures
+
+The handler is read on arch 12 (Harmony One 3.4) in full and on arch 14 (Harmony 600 0.2, 650 0.2, 700 2.8) to the
+row loop and the clip, with the 650 0.2's row routine in full. No clear before a page is read on the Harmony One
+alone. The composed path is the Harmony One's alone; `withPictureFilled` names no remote and has run on the Harmony
+One alone. Not checked: the Harmony 650 0.4 image, arch 8, 9 and 10.
+
+### Still open
+
+**Seen on a remote**: not yet. The composed setup with the fill, 1022262 bytes, is for the bench to write to the spare
+Harmony One; what to look at is that every screen still has its black background, the blank screens included, and
+that nothing of the screen before shows through. What a fill of width 0 does on the panel. The byte order of the
+colour on the Harmony 700, whose row routine branches into two panel controllers, is not read past the clip. Whether an arch 14 remote clears the screen before a page.
+
+Where it lives:
+
+* `packages/codec/src/screen.ts`: `SCREEN_FILL`; `packages/codec/src/render.ts`: `fillRows`, and the renderer draws it.
+* `packages/codec/src/pictures.ts`: `withPictureFilled`, `fillTarget`, `fillOf`, `fillBytes`;
+  `packages/codec/src/families/touch/pictures.ts`: `withTouchPictures`; `choices.ts`: `backgroundFill`.
+* `tests/test_screen_fill.py`: the handler on the four images, the row routine's clip, the control on opcode 2's
+  handler, and the One's page draw calling no fill; `packages/codec/test/screenfill.test.ts`: the fill's pixels, the
+  frame closure and its control, the sixteen, and three of the six refusals.
 
 ## 426. The Harmony One's pictures and glyph sets are placed by section 328's rule unchanged, on all nineteen of Logitech's One compiles, and the composed path places what it builds the same way
 

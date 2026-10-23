@@ -73,7 +73,8 @@
  *    unless `TouchChoices.logitechPictures` keeps them. A choice and not a rebuild, as leaving the tour out is, so
  *    `withTouchBuilders` does not run it and Logitech's compile still comes back byte for byte through the rest;
  *    last, since the screens' descriptions read a picture as a reference and not by its bytes, and the background's
- *    copies and photographs taken out make several references one.
+ *    copies and photographs taken out make several references one; and the background then drawn by one fill a draw,
+ *    `TouchChoices.backgroundFill`, 5.3.4, section 425, which the descriptions read as the background, `fillTarget`.
  *
  * **The lists below the screens are the screen sets' and the wiring's**, `todo-compile-one.md` 3.2.2.5, section
  * 418: every list a set's own lists call, through every level, is built either by that set or by the wiring, never

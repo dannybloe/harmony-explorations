@@ -53,9 +53,10 @@ import { layOutContainer, takeApart } from '../../frame.ts';
 import type { PieceTarget } from '../../statetables.ts';
 import { taggedListBytes } from '../../sections.ts';
 import {
-  SCREEN_CALL, SCREEN_DRAW_IMAGE, SCREEN_END, SCREEN_QUEUE_INSTRUCTION, SCREEN_RETURN, SCREEN_SELECT_FONT,
+  SCREEN_CALL, SCREEN_DRAW_IMAGE, SCREEN_END, SCREEN_FILL, SCREEN_QUEUE_INSTRUCTION, SCREEN_RETURN, SCREEN_SELECT_FONT,
   SCREEN_TEXT_AT, SCREEN_TEXT_INLINE,
 } from '../../screen.ts';
+import { fillBytes, fillOf, fillTarget } from '../../pictures.ts';
 import { keyListOrderInserted } from '../../modezero.ts';
 import {
   type BuiltScreen, type RecordFrame, type RecordPlace, ScreenRecordError, assertRebuilt, recordBuilding,
@@ -366,8 +367,11 @@ export function describeTouchFirmwareScreens(
     // The chrome: its pictures, and what it queues.
     const chrome = page.chrome;
     if (chrome === undefined) throw new ScreenRecordError(`${screen.name}'s page calls no chrome`);
-    const pictures = chrome.program.filter((one) => one.opcode === SCREEN_DRAW_IMAGE)
-      .map((one) => reading.targetOf(value24(one.start + one.length - 3)));
+    // A fill in a picture's place is the picture made one, section 425, carried as the fill's target.
+    const pictures = chrome.program.filter((one) => one.opcode === SCREEN_DRAW_IMAGE || one.opcode === SCREEN_FILL)
+      .map((one) => (one.opcode === SCREEN_FILL
+        ? fillTarget(value(one.start + 3), value(one.start + 4), (value(one.start + 5) << 8) | value(one.start + 6))
+        : reading.targetOf(value24(one.start + one.length - 3))));
     if (pictures.length !== (screen.second === undefined ? 1 : 2)) throw new ScreenRecordError(`${screen.name}'s chrome draws another number of pictures`);
     const queues = chrome.program.filter((one) => one.opcode === SCREEN_QUEUE_INSTRUCTION);
     if (queues.length !== (screen.queued === undefined ? 0 : 2)) throw new ScreenRecordError(`${screen.name}'s chrome queues another number of instructions`);
@@ -463,6 +467,11 @@ export function buildTouchFirmwareScreens(c: Container, spec: TouchFirmwareScree
     const chrome: ContainerPiece = { bytes: new Uint8Array(0), refs: [], owner: 'slot-11-program' };
     const chromeBytes: number[] = [];
     const picture = (x: number, y: number, target: PieceTarget): void => {
+      const fill = fillOf(target);
+      if (fill !== undefined) {
+        chromeBytes.push(...fillBytes(x, y, fill));
+        return;
+      }
       chromeBytes.push(SCREEN_DRAW_IMAGE, x, y);
       chrome.refs.push({ at: chromeBytes.length, to: target.to, offset: target.offset });
       chromeBytes.push(0, 0, 0);

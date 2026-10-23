@@ -48,6 +48,16 @@ export const SCREEN_FIXED_OPERANDS: Readonly<Record<number, number>> = {
 
 export const SCREEN_END = 0;
 /**
+ * A filled rectangle: six operand bytes, `x`, `y`, `width`, `height` and a colour, the colour high byte first as a
+ * picture's pixel is, findings section 425. Read in the firmware: the Harmony One 3.4's handler at `0x290AA` reads
+ * the four bytes and the colour and calls the routine at `0x2294C` once a row, from `y` while the row is below
+ * `y + height` taken in eight bits, and that routine clips the row to the display, `width` to the columns left of
+ * `x` and nothing drawn at a row or column past the screen, and writes the colour to every pixel of it. The same
+ * row loop on the Harmony 600 and 650 0.2 at `0x16A28` and the Harmony 700 2.8 at `0x1838C`. Section 40 read the
+ * handler as repeating a primitive `count` times, which is the row loop seen without its callee.
+ */
+export const SCREEN_FILL = 1;
+/**
  * Two position bytes then a `u24` naming a glyph run that lives **somewhere else**, section 121.
  *
  * The out of line twin of `SCREEN_TEXT_INLINE`, and the more common of the two by four to one. Its

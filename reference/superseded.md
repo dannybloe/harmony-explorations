@@ -32,6 +32,10 @@ and leave this table alone.
 
 | phrase | superseded by | what is true instead |
 |---|---|---|
+| `repeats a primitive` | section 425, correcting section 40 | screen opcode 1 fills a rectangle, `x`, `y`, width, height and a colour, read in full on the Harmony One and the Harmony 650 and to its row loop on the Harmony 600 and 700 |
+| `repeat a primitive` | section 425, correcting section 40 | screen opcode 1 fills a rectangle with a colour, clipped to the screen |
+| `clears the screen before a page, which is not` | section 425, answering section 422 | the Harmony One draws a page with no clear before it, so an undrawn pixel shows the screen before |
+| `the firmware's handler is not read` | section 425, answering section 422 | opcode 1's handler is read on the Harmony One 3.4 and on three arch 14 images |
 | `The tour is always built` | section 421, correcting section 412 | the Harmony One's tour and Remote Assistant are built wherever a configuration holds them; the composed path leaves both out unless `TouchChoices.welcomeTour` keeps them |
 | `are coincidences, in tables, infrared, glyphs or across instructions` | section 421, corrected in place | the 27 runs of `lo hi 7F` the Harmony One census does not hold sit in no action list; which kind of bytes each is was not classified |
 | `the same steps without first drawing the texts away are refused` | section 421, corrected in place | the control is per compile: the drop refuses on eleven compiles, the Options step on three, and nothing on two |

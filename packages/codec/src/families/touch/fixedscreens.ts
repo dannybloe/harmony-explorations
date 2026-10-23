@@ -79,7 +79,7 @@ import type { Container } from '../../gspm.ts';
 import type { ContainerLayout, ContainerPiece } from '../../frame.ts';
 import { layOutContainer, takeApart } from '../../frame.ts';
 import { eventMap, modeRecords } from '../../sections.ts';
-import { SCREEN_CALL, SCREEN_DRAW_IMAGE, SCREEN_TEXT_AT, SCREEN_TEXT_INLINE, screenProgram } from '../../screen.ts';
+import { SCREEN_CALL, SCREEN_DRAW_IMAGE, SCREEN_FILL, SCREEN_TEXT_AT, SCREEN_TEXT_INLINE, screenProgram } from '../../screen.ts';
 import { characterMap, decode } from '../../text.ts';
 import { ScreenRecordError, assertRebuilt, recordReading, withModeRecords } from '../../screenrecords.ts';
 import { type ValueReader, blobReader, textGlyphs } from '../../shared/spelling.ts';
@@ -458,7 +458,9 @@ export function touchFixedScreenModes(c: Container): number[] {
       const at = page.indexOf('Screen sensitivity is set to');
       if (at >= 0) add(`Sensitivity ${page[at + 1]}`, mode);
       const tags = record.entries.map((one) => one.tag).sort((a, b) => a - b).join(',');
-      const bare = first.length === 2 && chromeProgram.length === 3 && chromeProgram[0]?.opcode === SCREEN_DRAW_IMAGE;
+      // Its one picture, or the fill a background made one is, section 425.
+      const drawn = chromeProgram[0]?.opcode;
+      const bare = first.length === 2 && chromeProgram.length === 3 && (drawn === SCREEN_DRAW_IMAGE || drawn === SCREEN_FILL);
       if (bare && record.pages.length === 1 && tags === [TAG_ENTER, TAG_LEAVE, press(38), press(46), press(47)].join(',')) {
         add('blank', mode);
       }
