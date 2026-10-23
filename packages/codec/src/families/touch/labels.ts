@@ -44,6 +44,7 @@
 import { type FontSet, fontSets } from '../../font.ts';
 import { isSmoothedSet, measureSet } from '../../fonttable.ts';
 import type { Container } from '../../gspm.ts';
+import { type BytesMemo, memoOverBytes } from '../../memo.ts';
 import { ComposeError } from '../../shared/core.ts';
 import { codesFor, textWidth } from '../../shared/spelling.ts';
 import { type CharacterMap, characterMap } from '../../text.ts';
@@ -188,6 +189,14 @@ export function touchLabelLength(lines: readonly TouchLabelLine[]): number {
  * font. Undefined where no device page draws one, and a refusal where device pages disagree.
  */
 export function padFontOf(c: Container): number | undefined {
+  // Read once per container and its bytes, `memo.ts`: `touchDrawsName` asks for it once per screen item and
+  // name it compares, which made this walk of every device page most of what that comparison cost.
+  return memoOverBytes(PAD_FONTS, c, readPadFont);
+}
+
+const PAD_FONTS: BytesMemo<number | undefined> = new WeakMap();
+
+function readPadFont(c: Container): number | undefined {
   const fonts = new Set<number>();
   const records = modeRecords(c) ?? [];
   // The device pages are the modes the device list enters, one per device, `deviceModeMaps`; a page's lead

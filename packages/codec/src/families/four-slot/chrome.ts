@@ -21,6 +21,7 @@ import {
 } from '../../inventory.ts';
 import { irGroups } from '../../ir.ts';
 import { irFrame } from '../../irframe.ts';
+import { type BytesMemo, memoOverBytes } from '../../memo.ts';
 import {
   bitmapReference, bitmaps, pictureBank, pictureReference, reachablePrograms, SCREEN_DRAW_IMAGE,
   SCREEN_DRAW_IMAGE_AT, SCREEN_END, SCREEN_QUEUE_INSTRUCTION, SCREEN_SELECT_FONT, SCREEN_SWITCH_NARROW,
@@ -555,6 +556,14 @@ export const OUR_LOOK = 'state colours';
  * whole and read as not ours, section 382's review.
  */
 export function inOurLook(c: Container): boolean {
+  // Once per container and its bytes, `memo.ts`: each chrome reader asks, and a composer reads several
+  // chromes of one configuration per page, where the answer walks every picture of the file.
+  return memoOverBytes(IN_OUR_LOOK, c, readInOurLook);
+}
+
+const IN_OUR_LOOK: BytesMemo<boolean> = new WeakMap();
+
+function readInOurLook(c: Container): boolean {
   if (!OUR_LOOK_SKINS.has((c.versionWord ?? -1) & 0xff)) return false;
   const pictures = picturesByContent(c);
   return !DEVICE_PAGE_LOOKS.some((look) => (['crossed', 'topBar', 'bottomBar', 'cornerPatch'] as const)

@@ -29,6 +29,7 @@ import { BINDING_SLOT, CLOCK_RECORD_LENGTH, CLOCK_SECTION_LENGTH, Container,
   archRecordExtent, archSlot }
   from './gspm.ts';
 import { fontSets, glyphs } from './font.ts';
+import { type BytesMemo, memoOverBytes } from './memo.ts';
 import {
   PICTURE_BANK_BIAS,
   TRAILER_LENGTH,
@@ -583,6 +584,14 @@ export function claims(c: Container, withPictures = true, refusals: string[] = [
  * is used to find and the second because it sits at the very end of the container.
  */
 export function namedContentEnd(c: Container): number {
+  // Once per container and its bytes, `memo.ts`: every `picturesByContent` starts here, and a composer asks
+  // that of one configuration once per page it draws, each time claiming every byte of the file again.
+  return memoOverBytes(NAMED_CONTENT_ENDS, c, readNamedContentEnd);
+}
+
+const NAMED_CONTENT_ENDS: BytesMemo<number> = new WeakMap();
+
+function readNamedContentEnd(c: Container): number {
   let top = 0;
   for (const claim of claims(c, false)) {
     if (claim.owner === 'trailer') continue;

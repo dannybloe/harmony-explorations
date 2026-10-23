@@ -45,7 +45,7 @@ import { ladderOf, oxaniumLabelSizes } from '../src/families/four-slot/devicemod
 import { buildScreenTexts, checkScreenTexts, describeScreenTexts, withScreenTexts } from '../src/families/four-slot/screentexts.ts';
 import { buildFirmwareScreens, checkFirmwareScreens, describeFirmwareScreens, withFirmwareScreens } from '../src/families/four-slot/firmwarescreens.ts';
 import { buildWiring, checkWiring, describeWiring } from '../src/families/four-slot/wiring.ts';
-import { assembleSetup, attributeBytes, compareDrawnTexts } from '../src/families/four-slot/assemble.ts';
+import { type Assembled, assembleSetup, attributeBytes, compareDrawnTexts } from '../src/families/four-slot/assemble.ts';
 import { activityEntriesByName, buildScreenRecords, checkScreenRecords, describeScreenRecords, inActivityOrder, withScreenRecords } from '../src/families/four-slot/screenrecords.ts';
 import { checkStateBackgrounds } from '../src/families/four-slot/backgrounds.ts';
 import { compareViews, setupView } from '../src/families/four-slot/compare.ts';
@@ -70,6 +70,34 @@ const composing = (): { archive: string } => ({ archive: IR_ARCHIVE! });
 /** A setup file, read as a recipe, which checks its shape. */
 const setupOf = (file: string): Recipe =>
   readRecipe(JSON.parse(readFileSync(new URL(`../../corpus/setups/${file}`, import.meta.url), 'utf8')));
+/**
+ * An assembly, made once per file for the same setup, choices and donor, and handed to every test that asks
+ * for it again.
+ *
+ * **Why.** An assembly of the Harmony 650's test setup takes several seconds, and seven of this file's calls
+ * asked for three assemblies between them: our letters on the starting compile three times, the blended
+ * look twice and the clean compile twice, so four were made again. Measured on 23 October 2026, when this file was the
+ * slowest of the suite. The calls that assemble something only one test makes, and every refusal, still
+ * call `assembleSetup` themselves.
+ *
+ * **Every test only reads its assembly, and that is checked rather than assumed**: the bytes and the
+ * container's blob are kept as copies when assembled and compared on every reuse, so a test that changed a
+ * shared assembly fails in the next one that asks for it instead of passing on bytes it did not build.
+ */
+const ASSEMBLED = new Map<string, { out: Assembled; bytes: Uint8Array; blob: Uint8Array }>();
+function assembled(setup: Recipe, donor: string, extra: { archive?: string } = {}): Assembled {
+  // The setup is plain JSON data and the donor a lab name, so the key states the whole of the input.
+  const key = JSON.stringify([setup, donor, extra]);
+  const kept = ASSEMBLED.get(key);
+  if (kept !== undefined) {
+    assert.ok(Buffer.from(kept.out.bytes).equals(kept.bytes) && Buffer.from(kept.out.container.blob).equals(kept.blob),
+      'a test changed an assembly another test reuses');
+    return kept.out;
+  }
+  const out = assembleSetup(setup, { donor: require_(donor), ...extra });
+  ASSEMBLED.set(key, { out, bytes: out.bytes.slice(), blob: out.container.blob.slice() });
+  return out;
+}
 /** A recipe with no working screen stated for any activity. */
 const withoutScreens = (recipe: Recipe): Recipe =>
   ({ ...recipe, activities: recipe.activities.map(({ screen: _, ...rest }) => rest) });
@@ -258,7 +286,7 @@ test('the test setup assembled on Logitech\'s clean compile drops section 360\'s
 
 test('the assembled test setup and the 10.2.2 composition show and draw the same, and the 1723 bytes are Logitech\'s Plasma kijken with its Help, the 70 lists the old way left behind, and the two donors\' own unreached lists',
      skipUnless('h650_test_config_clean', 'h650_7_1_base'), () => {
-  const ours = assembleSetup(setupOf('h650-test.json'), { donor: require_('h650_test_config_clean') }).container;
+  const ours = assembled(setupOf('h650-test.json'), 'h650_test_config_clean').container;
   const theirs = tenTwoTwo();
   assert.equal(theirs.blob.length, 998199);
   assert.deepEqual(compareViews(setupView(ours), setupView(theirs)), []);
@@ -320,7 +348,7 @@ test('a setup the donor cannot serve is refused: an input named with no catalogu
 
 test('a generator lays 148256 bytes of the test setup assembled on the clean compile and rewrites 67836 of address fields in the donor\'s pieces, and the rest is the donor\'s by what it is',
      skipUnless('h650_test_config_clean'), () => {
-  const out = assembleSetup(setupOf('h650-test.json'), { donor: require_('h650_test_config_clean') });
+  const out = assembled(setupOf('h650-test.json'), 'h650_test_config_clean');
   const a = attributeBytes(out.container);
   assert.equal(a.total, 999922);
   assert.deepEqual(a.generated, {
@@ -434,9 +462,7 @@ test('with no screen stated, the composed activity\'s screen is empty: the menu\
 
 test('8.2.3: in our letters the test setup assembles on Logitech\'s starting compile with every label in its page\'s font, and Teletext, too wide for it in ours, a size down',
      needing(skipWithoutIrArchive(), skipUnless('h650_start_config', 'h650_test_config_clean')), () => {
-  const out = assembleSetup({ ...setupOf('h650-test.json'), choices: { letters: 'oxanium' } }, {
-    donor: require_('h650_start_config'), ...composing(),
-  });
+  const out = assembled({ ...setupOf('h650-test.json'), choices: { letters: 'oxanium' } }, 'h650_start_config', composing());
   assert.deepEqual(out.composed, { devices: [], activities: ['Plasma kijken'] });
   assert.ok(out.container.allChecksPass);
   assert.deepEqual(compareViews(setupView(out.container), setupView(containerOf('h650_test_config_clean')), { menuOrder: false }), []);
@@ -474,7 +500,7 @@ test('10.7.3: the four slot family\'s choices reach the assembly: state colours 
   assert.throws(() => assembleSetup({ ...setup, choices: { letters: 'oxanium', labelTooWide: 'refuse' } }, given),
     /'Teletext' is 60 pixels wide and a corner holds 59/);
   // The look the Harmony 650 was written with, 9.1.2.1 and 8.2.6, from the assembly alone.
-  const out = assembleSetup({ ...setup, choices: { letters: 'oxanium', backgrounds: 'state colours', blendLetters: true } }, given);
+  const out = assembled({ ...setup, choices: { letters: 'oxanium', backgrounds: 'state colours', blendLetters: true } }, 'h650_start_config', composing());
   assert.deepEqual(out.steps.slice(-2).map((one) => one.step), ['state colours', 'blended letters']);
   assert.ok(out.container.allChecksPass);
   assert.deepEqual(compareViews(setupView(out.container), setupView(containerOf('h650_test_config_clean')), { menuOrder: false }), []);
@@ -491,7 +517,7 @@ test('10.7.5: the letters\' colours are a choice, and letters in other inks are 
   // Blended over the state colours as the Harmony 650 was written, and plain where the tally reads it, since
   // the tally knows a device page by its designed backgrounds.
   const inks = { shadowed: 0xffe0, plain: 0x001f, shadow: 0xf800 };
-  const ours = assembleSetup({ ...setup, choices: { letters: 'oxanium' } }, given);
+  const ours = assembled({ ...setup, choices: { letters: 'oxanium' } }, 'h650_start_config', composing());
   const out = assembleSetup({ ...setup, choices: { letters: 'oxanium', letterInks: inks } }, given);
   const blended = assembleSetup({ ...setup, choices: {
     letters: 'oxanium', letterInks: inks, backgrounds: 'state colours', blendLetters: true,
@@ -529,7 +555,7 @@ test('10.8.5: the weight each face is drawn in is a choice, and a configuration 
   const faceWeights = {
     F15: 'Bold', F14W: 'Bold', F14: 'Bold', F13: 'Bold', F11: 'Medium', F10: 'Medium', R15: 'Light', R14: 'Light', R13: 'Light',
   } as const;
-  const ours = assembleSetup({ ...setup, choices: { letters: 'oxanium' } }, given);
+  const ours = assembled({ ...setup, choices: { letters: 'oxanium' } }, 'h650_start_config', composing());
   const out = assembleSetup({ ...setup, choices: { letters: 'oxanium', faceWeights } }, given);
   assert.ok(out.container.allChecksPass);
   assert.deepEqual(compareViews(setupView(out.container), setupView(containerOf('h650_test_config_clean')), { menuOrder: false }), []);
@@ -565,7 +591,7 @@ test('9.1.2.2: our pictures replace the six that are no state\'s background, aft
   const given = { donor: require_('h650_start_config'), ...composing() };
   const setup = setupOf('h650-test.json');
   const look = { letters: 'oxanium', backgrounds: 'state colours', blendLetters: true } as const;
-  const theirs = assembleSetup({ ...setup, choices: look }, given);
+  const theirs = assembled({ ...setup, choices: look }, 'h650_start_config', composing());
   const out = assembleSetup({ ...setup, choices: { ...look, pictures: 'ours' } }, given);
   assert.ok(out.container.allChecksPass);
   assert.deepEqual(compareViews(setupView(out.container), setupView(containerOf('h650_test_config_clean')), { menuOrder: false }), []);
