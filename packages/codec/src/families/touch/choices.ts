@@ -8,6 +8,7 @@
  */
 import type { OxaniumWeight } from '../../lettering.ts';
 import type { CommonChoices } from '../family.ts';
+import type { TouchIconPicture } from './pictures.ts';
 
 export interface TouchChoices extends CommonChoices {
   /**
@@ -37,9 +38,23 @@ export interface TouchChoices extends CommonChoices {
    * The colours of the settings screens' boxes, as `activityBox`: the rows on Options and the pads of the clock
    * pickers and Screen Sensitivity, which Logitech draws in a green gradient. Neither an activity's colour nor a
    * device's, so a third one, chosen on 18 October 2026 with the colour playground, `todo-compile-one.md` 5.3.2.
-   * Nothing draws it yet: the pictures that take it are 5.3.1's.
+   * The pictures that take it are 5.3.1's, `pictures.ts`.
    */
   readonly settingsBox: { readonly fill: string; readonly rim: string };
+  /**
+   * Whether the configuration keeps Logitech's fixed pictures, the status strip's, the firmware screens', the power
+   * off help's, the settings buttons' and the whole screen background with the charger's photographs, findings
+   * section 422. Off by default: ours are drawn in their place, each Logitech's size and mask, as the sample of 18
+   * October 2026 drew them and as decided on it, and the background is one black picture the charger's screens draw
+   * too, `todo-compile-one.md` 5.3.1 and 5.3.3.
+   */
+  readonly logitechPictures: boolean;
+  /**
+   * The icon of Material Design Icons, `icons.ts`, each of our pictures that draws one wears, in white: the sending
+   * mark of the status strip, the firmware screens' pictures and the power off help's. The Harmony 650's choices for
+   * the same screens where it has them, section 373, and the rest chosen on the sample of 18 October 2026.
+   */
+  readonly pictureIcons: Readonly<Record<TouchIconPicture, string>>;
   /**
    * The weight a label on one of our boxes is lettered in, when the blending step smooths it against the box,
    * `touchLabelWeight`. Lighter than the Bold the configuration's own sets take, asked for on 16 October 2026.
@@ -114,6 +129,11 @@ export const TOUCH_CHOICES: TouchChoices = {
   activityBox: { fill: '#166fa7', rim: '#bfeeff' },
   deviceBox: { fill: '#1c9c53', rim: '#e8cbb4' },
   settingsBox: { fill: '#f76100', rim: '#ffefde' },
+  logitechPictures: false,
+  pictureIcons: {
+    'sending mark on': 'wifi', 'Low Battery': 'battery-alert-variant-outline', 'USB Connected': 'usb',
+    'charging problem': 'close-circle-outline', 'charging screen': 'battery-charging', power: 'power', 'sending, large': 'wifi',
+  },
   labelWeight: 'Medium',
   startTitleWeight: 'Medium',
   colourButtons: {

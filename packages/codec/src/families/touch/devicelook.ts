@@ -9,7 +9,10 @@
  * every device list row its row picture and, where it has one, an icon a pixel in from the row's corner. Each
  * of those draws is pointed at a picture of ours added to the bank, which changes the draw's three address
  * bytes and nothing else, so no program moves and the pages composed onto the configuration and the donor's
- * own are recoloured alike. Logitech's pictures are left in the bank, drawn by nothing.
+ * own are recoloured alike. Logitech's pictures it no longer draws are then taken out of the bank,
+ * `withoutUndrawnPictures`, since `todo-compile-one.md` 5.3.1, findings section 422: they were left there drawn by
+ * nothing until then. On the test setup that is the six pads, 48630 bytes; the device list's rows and icons stay,
+ * since a second list of every device, which this step does not recolour, draws them too.
  *
  * Which pictures are pads is read, not tabulated: whatever a device mode's page draws at one of the six pad
  * places, `DEVICE_PAGE_SLOTS`. On the six Harmony One configurations measured those are pictures that nothing
@@ -21,6 +24,7 @@ import { Writer } from '../../emit.ts';
 import { type Container, parse } from '../../gspm.ts';
 import { deviceListRows, deviceModeMaps, devices } from '../../inventory.ts';
 import { picturesByContent, withBankPictures } from '../../pictures.ts';
+import { withoutUndrawnPictures } from '../../shared/dropmodes.ts';
 import { contentKey } from '../../screencategories.ts';
 import { renderProgram, renderVariants, type TextDrawn } from '../../render.ts';
 import { reachablePrograms, SCREEN_CALL, SCREEN_DRAW_IMAGE, type ScreenInstruction, screenProgram } from '../../screen.ts';
@@ -126,7 +130,10 @@ export function withTouchDeviceLook(
     const font = fonts[select.role];
     if (font !== undefined) bytes[select.at + 1] = font;
   }
-  return parse(restamped(bytes));
+  // 3. The pictures those draws named before, where nothing names them now, out of the bank: pointing a draw
+  // changed its address field and nothing else, so the addresses read off the grown configuration still hold.
+  const before = [...again.pads.map((draw) => draw.picture), ...again.rows.map((one) => one.draw.picture)];
+  return withoutUndrawnPictures(parse(restamped(bytes)), before).container;
 }
 
 /**

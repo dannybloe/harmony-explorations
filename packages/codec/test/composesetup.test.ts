@@ -131,8 +131,14 @@ test('the One test setup composed onto Logitech\'s compile of two devices comes 
   // 4.10, 245899 bytes fewer: the welcome tour's eleven screens and the start's Remote Assistant's five left out by
   // default, section 421, with the 121 lists only they reached, their twelve hit pages and the eleven pictures only
   // they drew, Options on one page without the two rows that led there, and every text drawn inline once and by
-  // reference after, in address order, over what is left.
-  assert.equal(c.blob.length, 1512234);
+  // reference after, in address order, over what is left. 1099602 since `todo-compile-one.md` 5.3.1 and 5.3.3, 412632
+  // bytes fewer, section 422: the whole screen background one picture where Logitech's compile stores three, and the
+  // charger's three photographs drawn as it, five pictures of 77445 bytes out, 387225; the device pages' six pads of
+  // Logitech's out of the bank, 48630, which the look had pointed every draw away from and left drawn by nothing; and
+  // two font sets more, 23223, our letters blended for the settings screens' buttons, now one orange where Logitech's
+  // were a gradient. Every other picture of ours is the size of Logitech's it replaces, with its mask, so encodes to
+  // as many bytes.
+  assert.equal(c.blob.length, 1099602);
 });
 
 // ---------------------------------------------------------------------------------------------------------
@@ -236,16 +242,18 @@ const builtBytes = (): TouchBuiltBytes => {
   return builtOnce;
 };
 
-test('todo-compile-one 3.2.2 and 4.10: the firmware screens, the fixed screens, the status screens, the clock header, the help screens, the activity menu, the device pages, the case programs, the hit pages, the wiring, the state tables, raw slot 18 and base slot 16\'s table of the composed setup come out of the touch family\'s builders, run on the composed path and measured on the result, and the tour and Remote Assistant are left out',
+test('todo-compile-one 3.2.2 and 4.10: the firmware screens, the fixed screens, the status screens, the clock header, the help screens, the activity menu, the device pages, the case programs, the hit pages, the wiring, the state tables, raw slot 18, base slot 16\'s table and the pictures of the composed setup come out of the touch family\'s builders, run on the composed path and measured on the result, and the tour and Remote Assistant are left out',
      NEEDS, () => {
   const out = composed();
   // On the path: one step after the composers and before the look, naming the fourteen parts in the order built.
   const names = out.steps.map((one) => one.step);
   assert.equal(out.steps.find((one) => one.step === 'built')?.detail, TOUCH_BUILT.join(', '));
   assert.ok(names.indexOf('activity composed') < names.indexOf('built') && names.indexOf('built') < names.indexOf('look'));
-  // The look blended our letters for thirteen backgrounds, and a screen's description reads the result only with
-  // those selects pointed back: as the look left it, the firmware screens' body text is in two fonts.
-  assert.equal(out.blended.length, 13);
+  // The look blended our letters for fifteen backgrounds, and a screen's description reads the result only with
+  // those selects pointed back: as the look left it, the firmware screens' body text is in two fonts. Thirteen until
+  // `todo-compile-one.md` 5.3.1, section 422: the settings screens' buttons are one orange of ours, which the labels
+  // of the clock pickers' pads and the rows of Options are blended against, two sets more.
+  assert.equal(out.blended.length, 15);
   assert.throws(() => touchBuiltBytes(out.container, []), /firmware screens: the firmware screens select two fonts for one role/);
   // Measured on the finished file, no memory of the path: each part described, rebuilt and held to the file byte
   // for byte, through the look's blending and centring; then its bytes, and of those the description's.
@@ -296,14 +304,19 @@ test('todo-compile-one 3.2.2 and 4.10: the firmware screens, the fixed screens, 
   assert.deepEqual(a.generated, {
     'firmware screens': 3237, 'fixed screens': 14087, 'tour and Remote Assistant': 0, 'status screens': 3872,
     'clock header': 3558, 'help screens': 6245, 'activity menu': 786, 'device pages': 16139, 'case programs': 572, 'hit pages': 863, wiring: 4560, 'state tables': 2347,
-    'raw slot 18': 2, 'number senders': 1,
+    'raw slot 18': 2, 'number senders': 1, pictures: 294663,
   });
+  // The pictures' 294663, since `todo-compile-one.md` 5.3.1 and 5.3.3, section 422, are the 32 of ours the path put in
+  // place of Logitech's, each its picture of Logitech's size and mask: the status strip's sixteen, 8687, the gauge's
+  // and the charging gauge's thirteen, the sending mark on and off and the clock face; the six of the firmware screens
+  // and the power off help, 110686; the settings screens' nine buttons, six pads and three rows, 97845; and the one
+  // whole screen background, 77445. None of their bytes is read as a value: a mask says only which pixels are drawn.
   // 401, 3967, 680 and 1243 for the four before 6.5: what a list below reads is the numbers of the lists it calls
   // and of the variables it writes, and the tour's setting, one byte.
   assert.deepEqual(a.described, {
     'firmware screens': 439, 'fixed screens': 4156, 'tour and Remote Assistant': 0, 'status screens': 699,
     'clock header': 337, 'help screens': 1994, 'activity menu': 204, 'device pages': 6273, 'case programs': 33, 'hit pages': 0, wiring: 1250, 'state tables': 0,
-    'raw slot 18': 0, 'number senders': 0,
+    'raw slot 18': 0, 'number senders': 0, pictures: 0,
   });
   // The help screens' 1994 against 660 on the donor are the numbers and names of a chain of seven rather than two:
   // nearly every operand of a question's eight lists is a number the configuration chose, section 415, and so is
@@ -370,7 +383,7 @@ test('todo-compile-one 3.2.2.4: the composed setup\'s power off help asks about 
   assert.equal(modeRecords(c)!.length, 112);
 });
 
-test('todo-compile-one 3.2: the One\'s composed test setup carries 876509 of its 1512234 bytes out of Logitech\'s donor, per kind as pinned here, a list that may only shrink',
+test('todo-compile-one 3.2: the One\'s composed test setup carries 145991 of its 1099602 bytes out of Logitech\'s donor, per kind as pinned here, a list that may only shrink',
      NEEDS, () => {
   const out = composed().container;
   const got = carried(out, parse(require_('harvest_one_two_devices')), builtBytes().owners);
@@ -412,17 +425,25 @@ test('todo-compile-one 3.2: the One\'s composed test setup carries 876509 of its
   // is mode 50 here where it is 61 on the donor, eleven of the sixteen modes left out sitting below it, so they no
   // longer match the donor's bytes. Written by the composer either way, so a row that went for a reason of its own.
   //
+  // **5.3.1 and 5.3.3 drew ours in place of Logitech's pictures**, section 422: `picture` came down by 730518, to
+  // 42612. Ours of the status strip, the firmware screens, the power off help and the settings buttons are built, and
+  // so is the one black background, the photographs and the background's other copies gone; the device pages' pads,
+  // which the look draws in ours, went out of the bank with it. What is left is the four pictures only mode 70 draws,
+  // the donor's mode 86, a second list of every device, three pages here, which the look's device step does not
+  // recolour, `deviceListRows` naming the idle list alone: its two row pictures, 16405 each, and the two device icons
+  // drawn on them, 4901 each.
+  //
   // `raw-18-table` 2 and `slot-16-table` 1 went with 6.7, generated on the path by `families/touch/smalltables.ts`.
   // Of `slot-10-list`, 262 are the 34 lists nothing can run, kept with 6.7's reason, the test below.
   assert.deepEqual(got, {
-    'picture': 773130, // 5.3: the 36 every compile holds but the tour's 11, the clock's 16 and the donor's 6; 1012839 before 4.10
+    'picture': 42612, // mode 70's rows and icons; 773130 before 5.3.1 and 5.3.3, 1012839 before 4.10
     'slot-5-block': 96946, 'slot-5-header': 4116, 'slot-5-group': 594, // the donor's two devices' infrared, 8.1
     'slot-10-list': 1556, // per builder in the listing: 17609 before 3.2.2, 6649 before 3.2.2.2, 6114 before 3.2.2.3, 6054 before 3.2.2.4, 5351 before 3.2.2.5, 4004 before 3.2.2.7, 3960 before 3.2.2.8, 1820 before 4.10
     // `mode device` 4569 before 3.2.2.8, and `mode other` 11983 before 3.2.2 and 1495 before 3.2.2.4
     'hit-page': 167, // 2444 before 3.2.2.3, 546 before 3.2.2.7, 485 before 3.2.2.8; `case-program` 341 before 3.2.2.3 and 10 before 4.10, and base slot 11's `table` 89
   });
-  assert.equal(Object.values(got).reduce((sum, one) => sum + one, 0), 876509);
-  assert.equal(out.blob.length, 1512234);
+  assert.equal(Object.values(got).reduce((sum, one) => sum + one, 0), 145991);
+  assert.equal(out.blob.length, 1099602);
 });
 
 /** The 34 lists of the donor the composed setup carries and nothing can run, `todo-compile-one.md` 6.7. */

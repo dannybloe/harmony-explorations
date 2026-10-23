@@ -290,10 +290,11 @@ test('todo-compile-one 4.10: the composed path leaves the tour and the Remote As
      skipUnless('harvest_one_two_devices'), () => {
   assert.equal(TOUCH_CHOICES.welcomeTour, false);
   const c = containerOf('harvest_one_two_devices');
-  const kept = withTouchComposedBuilders(c, [], { welcomeTour: true }).container;
+  // Logitech's pictures kept, `todo-compile-one.md` 5.3's choice, so what is held here is the tour's choice alone.
+  const kept = withTouchComposedBuilders(c, [], { ...TOUCH_CHOICES, welcomeTour: true, logitechPictures: true }).container;
   assert.equal(Buffer.compare(kept.blob, withTouchBuilders(c).container.blob), 0);
   assert.equal(Buffer.compare(kept.blob, c.blob), 0);
-  const left = withTouchComposedBuilders(c, [], { welcomeTour: false }).container;
+  const left = withTouchComposedBuilders(c, [], { ...TOUCH_CHOICES, welcomeTour: false, logitechPictures: true }).container;
   assert.equal(Buffer.compare(left.blob, withoutTourAndAssistant(c).container.blob), 0);
   assert.equal(c.blob.length - left.blob.length, 245513);
 });

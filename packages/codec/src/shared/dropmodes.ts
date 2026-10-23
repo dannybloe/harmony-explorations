@@ -31,7 +31,7 @@ import { type Container, parse } from '../gspm.ts';
 import { type ContainerLayout, type ContainerPiece, type PieceRef, layOutContainer, takeApart } from '../frame.ts';
 import { type InstructionSite, instructionSites, listCallSites, namedLists } from '../assemble.ts';
 import { eventMap, modePages, modeProgramRoots, modeRecords, modeTable, pageListCopies, taggedListExtent } from '../sections.ts';
-import { reachablePrograms, screenProgramRoots } from '../screen.ts';
+import { bitmapAt, reachablePrograms, screenProgramRoots } from '../screen.ts';
 import { ComposeError } from './core.ts';
 
 /** Opcode `0x7E`, entering a mode by number, `inventory.ts`' `ENTER_MODE`, named here to keep this module's imports small. */
@@ -410,3 +410,35 @@ export function dropModePages(c: Container, mode: number, keep: number): Contain
   return container;
 }
 
+/**
+ * The configuration without those of the pictures at `addresses` that nothing names any more, and how many went: a
+ * step that pointed a picture's draws at another, as a family's look does when it draws a device page's pads in
+ * pictures of its own, takes the pictures it left behind out of the bank with this, `todo-compile-one.md` 5.3.1. A
+ * picture something still names stays, so passing every address a step drew before is safe.
+ *
+ * **Why a cut and not a piece dropped.** Once nothing names a picture, `takeApart` no longer reads it as a piece of
+ * its own: its bytes are carried on the end of the piece before it, as any unnamed run is. So the picture is cut out
+ * as a run of bytes, `withoutRanges`, by the extent its own header states, `bitmapAt`. Generic: it reads the
+ * references the frame keeps and the picture header every architecture's compiles share, and names no remote.
+ */
+export function withoutUndrawnPictures(c: Container, addresses: Iterable<number>): { container: Container; dropped: number } {
+  const layout = takeApart(c);
+  const laid = layOutContainer(layout);
+  if (laid.bytes.length !== c.blob.length) throw new ComposeError('the configuration does not take apart into itself');
+  const inserted = Object.values(layout.inserted ?? {});
+  const all = [layout.keyTable, ...layout.body, ...layout.sections.flatMap((s) => (s === undefined ? [] : [...s.before, ...s.head])),
+    ...inserted.flatMap((s) => [...s.before, ...s.head]), ...layout.pictures];
+  const named = new Set<number>();
+  for (const piece of all) {
+    for (const ref of piece.refs) if ('to' in ref) named.add((laid.offsetOf(ref.to) as number) + ref.offset);
+  }
+  const cuts: Cut[] = [];
+  for (const address of new Set(addresses)) {
+    const from = c.blobOffsetOf(address);
+    const length = bitmapAt(c, address)?.length;
+    if (from === undefined || length === undefined) throw new ComposeError(`no picture at 0x${address.toString(16)} to take out`);
+    if (!named.has(from)) cuts.push({ from, to: from + length });
+  }
+  if (cuts.length === 0) return { container: c, dropped: 0 };
+  return { container: layOutContainer(withoutRanges(c, cuts).layout).container, dropped: cuts.length };
+}

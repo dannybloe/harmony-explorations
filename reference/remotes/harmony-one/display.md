@@ -119,6 +119,10 @@ Generated from `packages/codec`, `packages/usb` and the drawing by `make remote-
   frames are looked up on, and what that is to a person is not checked on a remote. Read from configurations, section 416.
 * **The status screen code 9 draws** says "System Message: 9" as its title over "LCD Module" and "Failed"; the seven
   blank screens the timers enter show one picture each and no text. Read from configurations, section 411.
+* **The screens' background is black**: one whole screen picture, every pixel black, behind 75 screens, the firmware
+  and status screens among them, stored three or four times by Logitech's compiles; the charger's six blank screens,
+  entered by timers, show three photographs of blurred lights instead, two screens each. Read from configurations on
+  the sixteen English compiles of skin 54, section 422.
 * **The configuration's thirty status screens** all look like code 9's: "System Message: N" as the title, N the
   status code, over one to four centred lines of Logitech's words for the code, such as "Go to Website" and "to update
   settings" for 0, "Configuration" and "Corrupted" for 26, and for 16 the one line "Battery Trickle\Charge", backslash

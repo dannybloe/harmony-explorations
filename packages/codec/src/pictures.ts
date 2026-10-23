@@ -7,7 +7,7 @@
  * `families/four-slot/pictures.ts`, section 363; the touch family draws the Harmony One's boxes and icons through
  * the same `pictureRows` and `iconOverRows`. Read only towards hardware: the result is pixels or pieces.
  */
-import { layOutContainer, takeApart } from './frame.ts';
+import { type ContainerLayout, type ContainerPiece, type PieceRef, layOutContainer, takeApart } from './frame.ts';
 import { type Container } from './gspm.ts';
 import { drawIcon } from './icons.ts';
 import { rgb565, rgbTo565 } from './png.ts';
@@ -163,4 +163,71 @@ export function iconOverRows(
     }
   }
   return under;
+}
+
+/**
+ * Every piece of a layout, the inserted sections' among them, in the order `takeApart` lists them: what a step
+ * rewriting references walks.
+ */
+function everyPiece(layout: ContainerLayout): ContainerPiece[] {
+  const inserted = Object.values(layout.inserted ?? {});
+  return [layout.keyTable, ...layout.body, ...layout.sections.flatMap((s) => (s === undefined ? [] : [...s.before, ...s.head])),
+    ...inserted.flatMap((s) => [...s.before, ...s.head]), ...layout.pictures];
+}
+
+/**
+ * The layout with pictures of its bank replaced: each picture in `replace` takes the bytes given, in its own place,
+ * and each picture in `onto` is taken out with every reference to it pointed at the picture it maps to, which stays.
+ * A picture is a leaf, so a reference names its first byte; one naming another byte of a replaced or a merged
+ * picture is refused, and so is a picture merged onto one that is itself merged or not in the bank. The input layout
+ * is left as it was: every piece is made fresh.
+ *
+ * Generic, and every family's: the Harmony 650's rule pictures and ours of its artwork, `families/four-slot/pictures.ts`,
+ * and the Harmony One's, `families/touch/pictures.ts`, whose black background takes the place of three copies and
+ * three photographs, `todo-compile-one.md` 5.3.3.
+ */
+export function withReplacedPictures(
+  layout: ContainerLayout, replace: ReadonlyMap<ContainerPiece, Uint8Array>,
+  onto: ReadonlyMap<ContainerPiece, ContainerPiece> = new Map(),
+): ContainerLayout {
+  const bank = new Set(layout.pictures);
+  for (const [from, to] of onto) {
+    if (!bank.has(from) || !bank.has(to)) throw new PictureError('a picture merged onto another is not in the bank');
+    if (onto.has(to)) throw new PictureError('a picture is merged onto one that is merged itself');
+  }
+  const all = everyPiece(layout);
+  const fresh = new Map<ContainerPiece, ContainerPiece>();
+  for (const old of all) {
+    if (onto.has(old)) continue;
+    const bytes = replace.get(old);
+    fresh.set(old, bytes === undefined ? { ...old, refs: [] }
+      : { bytes, refs: [], ...(old.owner === undefined ? {} : { owner: old.owner }) });
+  }
+  for (const old of all) {
+    if (onto.has(old) || replace.has(old)) continue;
+    (fresh.get(old) as ContainerPiece).refs = old.refs.map((ref): PieceRef => {
+      if (!('to' in ref)) return ref;
+      const merged = onto.get(ref.to);
+      if ((merged !== undefined || replace.has(ref.to)) && ref.offset !== 0) {
+        throw new PictureError('a reference names the inside of a picture replaced here');
+      }
+      return { ...ref, to: fresh.get(merged ?? ref.to) ?? ref.to };
+    });
+  }
+  const rewrite = (run: readonly ContainerPiece[]): ContainerPiece[] => run.flatMap((piece) => {
+    const made = fresh.get(piece);
+    return made === undefined ? [] : [made];
+  });
+  const placement = (s: { before: ContainerPiece[]; head: ContainerPiece[] }): { before: ContainerPiece[]; head: ContainerPiece[] } =>
+    ({ before: rewrite(s.before), head: rewrite(s.head) });
+  return {
+    ...layout,
+    keyTable: fresh.get(layout.keyTable) as ContainerPiece,
+    body: rewrite(layout.body),
+    sections: layout.sections.map((s) => (s === undefined ? s : placement(s))),
+    ...(layout.inserted === undefined ? {} : {
+      inserted: Object.fromEntries(Object.entries(layout.inserted).map(([raw, s]) => [raw, placement(s)])),
+    }),
+    pictures: rewrite(layout.pictures),
+  };
 }
