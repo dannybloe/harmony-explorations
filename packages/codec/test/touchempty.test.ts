@@ -54,7 +54,6 @@ import { touchActivityMenu } from '../src/families/touch/activityscreen.ts';
 import { touchHitPageAreas } from '../src/families/touch/hitpages.ts';
 import { EMPTY_TOUCH_REDRAW_CLASSES, touchRedrawStarters } from '../src/families/touch/emptywiring.ts';
 import { touchValueMapRoles } from '../src/families/touch/caseprograms.ts';
-import { ASSISTANT_HIDDEN } from '../src/families/touch/startupassistant.ts';
 import { buildTemplateScreens, describeTemplateScreens } from '../src/families/touch/screentemplate.ts';
 import { readKeys, templateWalk } from '../src/families/touch/numbering.ts';
 import { activities, caseQueued, devices, ENTER_MODE } from '../src/inventory.ts';
@@ -97,7 +96,7 @@ test('7.1.7: the empty One parses, passes every container check, takes apart int
   assert.ok(bytes.length <= 0x3d0000 - 0x040000);
 });
 
-test('7.1.7: the empty One holds section 432\'s numbering: 67 modes, 1314 lists, 14 hit pages, 20 one byte variables after the firmware\'s, the assistant started hidden', () => {
+test('7.1.7: the empty One holds section 432\'s numbering: 67 modes, 1314 lists, 14 hit pages, 20 one byte variables after the firmware\'s, the assistant started at 0 as Logitech starts it', () => {
   const built = build(BUILT_AT);
   const c = built.container;
   assert.equal(modeRecords(c)?.length, 67);
@@ -107,7 +106,7 @@ test('7.1.7: the empty One holds section 432\'s numbering: 67 modes, 1314 lists,
   // The firmware's 18 are the state tables' own; the configuration's 20 one byte ones follow, then the clock pickers'.
   assert.equal(states.variables.length, 20);
   const assistant = built.numbering.variables.findIndex(([name]) => name === 'assistantStep');
-  assert.deepEqual(states.variables[assistant], { first: ASSISTANT_HIDDEN, max: 3, transitions: [] });
+  assert.deepEqual(states.variables[assistant], { first: 0, max: 3, transitions: [] });
   // Every screen set reads back at the modes the numbering gave it.
   // Described as the attribution describes them, with each blended copy's selects pointed back at its source set:
   // a role drawn over two backgrounds selects two sets, which no reader of a single screen set takes.

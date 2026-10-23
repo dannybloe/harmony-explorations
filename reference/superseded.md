@@ -636,3 +636,6 @@ it reachable in the same commit and the test comparing the two tables is what ca
 | `a build year whose range holds a leap year is refused` | section 434, correcting section 411 | the Harmony One's fixed screens build the leap year's Month picker and the Day 29 picker, 25 screens, where the Year picker offers a leap year |
 | `a build year whose Year picker offers a leap year is refused` | section 434, correcting section 411 | the same: built since section 434, as on Logitech's three compiles whose range holds one |
 | `then per page its program and page record, then the chrome` | section 435, correcting section 434 | the empty One lays a mode's chrome first, then per page its program, its switch's pieces and its page record, Logitech's order |
+| `3 is what the composed path starts it at` | section 436, correcting section 434 | the composed path onto Logitech's compile starts the assistant's variable at 0 since section 421; 3 is the empty One's choice, its effect unconfirmed |
+| `as the composed path starts it` | section 436, correcting section 434 | the same: the composed path starts it at 0 since section 421 |
+| `every code heard as predicted` | section 436, correcting `todo-compile-one.md` 1.3 and section 404 | the 1.3 run heard the Denon's and the LG's inputs as other commands, the composed file's defect |

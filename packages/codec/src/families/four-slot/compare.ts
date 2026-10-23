@@ -35,8 +35,8 @@ import {
   handlerSetRoles,
   infraredCodesPerList, ENTER_MODE,
 } from '../../inventory.ts';
-import { irBlockWords, irGroups, irHeaderPointers } from '../../ir.ts';
-import { irFrame } from '../../irframe.ts';
+import { irGroups } from '../../ir.ts';
+import { recordSent } from '../../irframe.ts';
 import { caseQueued } from '../../inventory.ts';
 import { valueMaps } from '../../valuemap.ts';
 import { cornerCellAt, cornerLayoutOf } from '../../cornerlayout.ts';
@@ -92,10 +92,9 @@ function sender(c: Container): (list: number) => Pick<ViewItem, 'frames' | 'reco
         stored.push(`${device} ?`);
         continue;
       }
-      const frame = irFrame(c, address);
-      frames.push(`${device} ${frame === undefined ? 'undecoded' : `${frame.bits}:${frame.value.toString(16)}`}`);
-      const blocks = irHeaderPointers(c, address).map((pointer) => (irBlockWords(c, pointer) ?? []).join(','));
-      stored.push(`${device} ${blocks.join(' | ')}`);
+      const heard = recordSent(c, address);
+      frames.push(`${device} ${heard.frame}`);
+      stored.push(`${device} ${heard.stored}`);
     }
     return { frames, records: stored };
   };
