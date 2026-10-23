@@ -188,7 +188,7 @@ Generated from `packages/codec`, `packages/usb` and the drawing by `make remote-
   its own of three empty instructions; the working screen shows the activity's commands six to a page, a short page only
   where a page is the last or the activity's own layout leaves one short, "Devices" on the right key below the screen
   and "Favorites" on the left where the activity has favourite channels, and a command on it may be a sequence of
-  commands and pauses, read from configurations, 63 activities of fourteen, section 423.
+  commands and pauses, read from configurations, 63 activities of 11 names on fourteen compiles, section 423.
 
 ## The clock
 
