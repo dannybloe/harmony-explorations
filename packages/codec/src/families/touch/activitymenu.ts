@@ -58,9 +58,9 @@ import { u24 } from '../../bytes.ts';
 import { type Container, type Instruction, parse } from '../../gspm.ts';
 import { type ContainerLayout, type ContainerPiece, layOutContainer, takeApart } from '../../frame.ts';
 import type { PieceTarget } from '../../statetables.ts';
-import { picturesByContent, withBankPictures } from '../../pictures.ts';
+import { fillTarget, picturesByContent, withBankPictures } from '../../pictures.ts';
 import { renderProgram } from '../../render.ts';
-import { SCREEN_CALL, SCREEN_DRAW_IMAGE, SCREEN_TEXT_AT, SCREEN_TEXT_INLINE, type ScreenInstruction, screenProgram } from '../../screen.ts';
+import { SCREEN_CALL, SCREEN_DRAW_IMAGE, SCREEN_FILL, SCREEN_TEXT_AT, SCREEN_TEXT_INLINE, type ScreenInstruction, screenProgram } from '../../screen.ts';
 import { contentKey } from '../../screencategories.ts';
 import {
   type ModeRecordsPlace, ScreenRecordError, assertRebuilt, recordReading, withModeRecords,
@@ -622,8 +622,12 @@ export function withTouchActivityMenuRow(
   const layout = takeApart(c);
   const reading = recordReading(c, layout, blobReader(c));
   const f = reading.frame('Activity Menu', menu);
+  // A picture, or the fill drawn in a picture's place once the background is made one, `withPictureFilled`, which a
+  // donor of ours, the empty One, holds already, `todo-compile-one.md` 8.1.2.
   const drawn = (program: readonly ScreenInstruction[]): PieceTarget[] => program
-    .filter((one) => one.opcode === SCREEN_DRAW_IMAGE).map((one) => reading.targetOf(u24(one.operands, 2)));
+    .filter((one) => one.opcode === SCREEN_DRAW_IMAGE || one.opcode === SCREEN_FILL).map((one) => (one.opcode === SCREEN_FILL
+      ? fillTarget(one.operands[2] as number, one.operands[3] as number, ((one.operands[4] as number) << 8) | (one.operands[5] as number))
+      : reading.targetOf(u24(one.operands, 2))));
   const ourAt = (bytes: Uint8Array): PieceTarget => {
     const at = picturesByContent(c).get(contentKey(bytes))?.[0];
     if (at === undefined) throw new ComposeError('our row picture is not in the configuration');

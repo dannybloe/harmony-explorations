@@ -121,6 +121,7 @@ import { composeActivityDeviceList } from '../src/families/four-slot/devicelist.
 import { deviceModeChrome } from '../src/families/four-slot/chrome.ts';
 import { activityKeyedRecords } from '../src/families/four-slot/activityscreen.ts';
 import { startAndFlag, startTargets, tagFiveMisfit, tagFiveShape } from './tagfive.ts';
+import { namedHitPages } from '../src/families/touch/hitpages.ts';
 import { FIRST_DEVICE_IDENTIFIER } from '../src/shared/core.ts';
 import { textGlyphs } from '../src/shared/spelling.ts';
 import { FOUR_SLOT_ITEMS } from '../src/families/four-slot/geometry.ts';
@@ -363,12 +364,16 @@ test('one_config takes the television onto its screen and every check holds', sk
   // screen program drawing the label and the rows with nothing unresolved in any variant. **Its hit page is one
   // of three pads since section 420**, by section 417's rules, and `one_config` holds one of that shape already, a
   // device's short last page's, index 39, so it is reused and none appended; until then every composed page named
-  // the six pad page, index 10, whose three lower pads then answered a touch with nothing.
+  // the six pad page, index 10, whose three lower pads then answered a touch with nothing. **38 since section 435**:
+  // the ten device lists' last page held two rows, hit page 13, and with the LG's row it holds three and takes the
+  // table's page of that shape, so page 13 is named by nothing and the device lists drop it, as none of Logitech's
+  // nineteen compiles holds a hit page named by nothing; every page above it moves down one.
   const record = modeRecords(after)![composed.mode]!;
   assert.equal(record.pageCount, 1);
   const page = record.pages[0]!;
-  assert.equal(page.lead, 39, 'the hit page of its own shape, reused');
-  assert.equal(touchPages(after)!.records.length, touchPages(before)!.records.length, 'none appended');
+  assert.equal(page.lead, 38, 'the hit page of its own shape, reused');
+  assert.equal(touchPages(after)!.records.length, touchPages(before)!.records.length - 1, 'none appended, and the one the lists left dropped');
+  assert.equal(namedHitPages(after).size, touchPages(after)!.records.length, 'every hit page named');
   assert.deepEqual(touchPages(after)!.records[page.lead as number]!.areas.map((area) => area.code), [48, 49, 50, 51, 52, 46, 47],
                    'the three pads, the two keys at the codes after them, and the edges');
   const bindings = taggedList(after, page.list)!;

@@ -41,7 +41,7 @@ import {
   SCREEN_ITEM_BEEP,
   SELECT_BINDING_SET, SELECT_BINDING_SET_MASK, stateVariables, ACTIVITY_STATE_NAME, idleActivityValue,
 } from '../../inventory.ts';
-import { picturesByContent, withBankPictures } from '../../pictures.ts';
+import { fillBytes, picturesByContent, withBankPictures } from '../../pictures.ts';
 import { bitmapPixels } from '../../render.ts';
 import {
   bitmapAt, bitmaps, SCREEN_CALL, SCREEN_DRAW_IMAGE, SCREEN_END, SCREEN_FILL, SCREEN_QUEUE_INSTRUCTION, SCREEN_RETURN,
@@ -193,7 +193,7 @@ function startupTitleSet(c: Container): number {
 }
 
 /** What the configuration's own device modes draw and run for their header, read off them all. */
-interface DeviceHeader {
+export interface DeviceHeader {
   /**
    * The full screen picture their chrome draws first, by its address, or the fill drawn in its place once the
    * background is made one, `withPictureFilled`, findings section 425.
@@ -326,6 +326,26 @@ export function headerCounterFont(c: Container): number | undefined {
  */
 export function activityPadBehind(c: Container): number {
   return padsBehind(backgroundPixels(c, deviceHeader(c).background));
+}
+
+/**
+ * The colour behind the six pad places of a screen whose background is `background`, a picture's address or the fill
+ * drawn in its place: what `activityPadBehind` reads off the device modes' chrome, for a caller holding the background
+ * itself, the first device page composed onto a configuration with none, `todo-compile-one.md` 8.1.1.
+ */
+export function padsBehindBackground(c: Container, background: DeviceHeader['background']): number {
+  return padsBehind(backgroundPixels(c, background));
+}
+
+/**
+ * The colour behind `boxes` on a screen whose background is `background`, as `padsBehindBackground` reads the pads':
+ * a device list's first row composed onto a list with none, whose row box is smoothed against it, `todo-compile-one.md`
+ * 8.1.1.
+ */
+export function colourBehindBackground(
+  c: Container, background: DeviceHeader['background'], boxes: readonly (readonly [number, number, number, number])[],
+): number {
+  return colourBehind(backgroundPixels(c, background), boxes);
 }
 
 function contentKeyAt(c: Container, address: number): string {
@@ -518,15 +538,21 @@ export function buildTouchActivityScreens(
   if (signals.size !== 1) throw new ComposeError(`the config holds ${signals.size} pictures of the remote's signal, not one`);
   const signalKey = [...signals][0] as string;
 
-  // 1. Our pictures, in the bank: the pad box and the type's icon over the background where it goes.
-  // The composers run before the background is made a fill on the composed path, so this one draws a picture.
-  if (typeof header.background !== 'number') throw new ComposeError('the device modes draw their background as a fill, and this composer draws a picture');
+  // 1. Our pictures, in the bank: the pad box and the type's icon over the background where it goes. On a Logitech
+  // compile the composers run before the background is made a fill, so the background is a picture; on a donor of
+  // ours, the empty One, it is a fill already, `todo-compile-one.md` 8.1.2, and both chromes draw that fill.
   const pixels = backgroundPixels(c, header.background);
+  const backgroundFill = typeof header.background === 'number' ? undefined : header.background.fill;
+  const backgroundLength = backgroundFill === undefined ? 6 : 7;
+  const drawBackground = (out: Writer, shifted: (address: number) => number, now: Container): void => {
+    if (backgroundFill !== undefined) fillBytes(0, 0, backgroundFill).forEach((one) => out.u8(one));
+    else out.u8(SCREEN_DRAW_IMAGE).u8(0).u8(0).u24(shifted(pictureOf(now, backgroundKey as string)));
+  };
   const [ix, iy] = STARTUP_ICON_AT;
   const under = pixels.slice(iy, iy + STARTUP_ICON_SIZE[1]).map((row) => row.slice(ix, ix + STARTUP_ICON_SIZE[0]));
   const padBox = activityPadBox(choices.activityBox, padsBehind(pixels));
   const icon = startupIcon(activityIconOf(choices, options.type), under, choices.activityIconGrid.startup);
-  const backgroundKey = contentKeyAt(c, header.background);
+  const backgroundKey = typeof header.background === 'number' ? contentKeyAt(c, header.background) : undefined;
   let current = withBankPictures(c, [padBox, icon]).container;
   const pictureOf = (now: Container, key: string): number => {
     const address = picturesByContent(now).get(key)?.[0];
@@ -588,12 +614,12 @@ export function buildTouchActivityScreens(
   };
   current = appendMode(current, startupMode, startupOwn, [taggedListBytes([])], (now, chromeAt) => {
     const startChrome: ModeProgram = {
-      length: 2 + inlineLength(startTitle) + 6 + 4 + 4 + 6 + 6 + 1 + 1,
+      length: 2 + inlineLength(startTitle) + backgroundLength + 4 + 4 + 6 + 6 + 1 + 1,
       build: (shifted) => {
         const out = new Writer(startChrome.length);
         out.u8(SCREEN_SELECT_FONT).u8(fonts.startTitle);
         inline(out, startTitleX, STARTUP_TITLE_Y, startTitle);
-        out.u8(SCREEN_DRAW_IMAGE).u8(0).u8(0).u24(shifted(pictureOf(now, backgroundKey)));
+        drawBackground(out, shifted, now);
         queue(out, header.queued[0]);
         queue(out, header.queued[1]);
         out.u8(SCREEN_DRAW_IMAGE).u8(SIGNAL_AT[0]).u8(SIGNAL_AT[1]).u24(shifted(pictureOf(now, signalKey)));
@@ -635,14 +661,14 @@ export function buildTouchActivityScreens(
   });
   current = appendMode(current, mode, workingOwn, pageLists, (now, chromeAt) => {
     const chrome: ModeProgram = {
-      length: 2 + inlineLength(title) + 6 + 4
+      length: 2 + inlineLength(title) + backgroundLength + 4
         + (counter_ === undefined ? 0 : 2 + inlineLength(counter_.total) + inlineLength(counter_.word))
         + 4 + (counter_ === undefined ? 0 : 2) + 6 + 1 + 1,
       build: (shifted) => {
         const out = new Writer(chrome.length);
         out.u8(SCREEN_SELECT_FONT).u8(fonts.title);
         inline(out, MODE_TITLE_X, MODE_TITLE_Y, title);
-        out.u8(SCREEN_DRAW_IMAGE).u8(0).u8(0).u24(shifted(pictureOf(now, backgroundKey)));
+        drawBackground(out, shifted, now);
         queue(out, header.queued[0]);
         if (counter_ !== undefined && paging !== undefined) {
           out.u8(SCREEN_SELECT_FONT).u8(paging.totalFont);

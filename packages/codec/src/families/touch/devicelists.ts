@@ -70,9 +70,14 @@ import { ACTION_LIST_TABLE_SLOT, type Container, archSlot, parse } from '../../g
 import { type ContainerLayout, type ContainerPiece, layOutContainer, takeApart } from '../../frame.ts';
 import type { PieceTarget } from '../../statetables.ts';
 import { ENTER_MODE, activities, activityScreens, caseQueued } from '../../inventory.ts';
-import { picturesByContent } from '../../pictures.ts';
+import { fillTarget, picturesByContent, withBankPictures } from '../../pictures.ts';
+import { contentKey } from '../../screencategories.ts';
+import { TOUCH_CHOICES, type TouchChoices } from './choices.ts';
+import { ACTIVITY_ROW_SIZE, activityRowBox, activityRowIcon } from './activitypictures.ts';
+import { colourBehindBackground } from './activityscreen.ts';
+import { describeTouchFixedScreens } from './fixedscreens.ts';
 import {
-  SCREEN_CALL, SCREEN_DRAW_IMAGE, SCREEN_END, SCREEN_JUMP, SCREEN_RETURN, SCREEN_SWITCH_NARROW, SCREEN_TEXT_AT,
+  SCREEN_CALL, SCREEN_DRAW_IMAGE, SCREEN_END, SCREEN_FILL, SCREEN_JUMP, SCREEN_RETURN, SCREEN_SWITCH_NARROW, SCREEN_TEXT_AT,
   SCREEN_TEXT_INLINE, screenProgram,
 } from '../../screen.ts';
 import {
@@ -88,9 +93,11 @@ import { TOUCH_AREA_LENGTH, touchPages } from '../../tables.ts';
 import { characterMap, decode } from '../../text.ts';
 import { SCREEN_ROW_PITCH } from '../../touch.ts';
 import { valueMaps } from '../../valuemap.ts';
-import { type HitPart, hitPageAreasOf, hitPageRunOf, touchHitPagesPlace, whole, withTouchHitPages } from './hitpages.ts';
+import {
+  type HitPart, hitPageAreasOf, hitPageRunOf, namedHitPages, touchHitPagesPlace, whole, withTouchHitPages, withoutHitPages,
+} from './hitpages.ts';
 import { touchValueMapRoles } from './caseprograms.ts';
-import { pagingStyle, withHitPage } from './menus.ts';
+import { pagingStyle, touchMenuMarkerWriter, withHitPage } from './menus.ts';
 import { pageKeysOn } from './activitymenu.ts';
 import { CHROME_AND_END, type StandIn, grownList, withMenuPage } from './menupages.ts';
 import {
@@ -588,8 +595,18 @@ export function deviceListNameLines(c: Container, font: number, name: string): s
   return wrapLines(name, DEVICE_LIST_NAME_WIDTH, (line) => spell(font, line).width);
 }
 
-/** What a list draws, by address: its background, and per row its picture and its icon, in list order. */
-interface ListPictures { background: number; rows: { picture: number; icon: number }[] }
+/**
+ * What a list draws, by address: its background, a picture's address or the fill drawn in its place once the background
+ * is made one, `withPictureFilled`, findings section 425, and per row its picture and its icon, in list order.
+ */
+interface ListPictures { background: number | { fill: { width: number; height: number; colour: number } }; rows: { picture: number; icon: number }[] }
+
+/**
+ * A fill's stand in for a picture's content key, so a plan names its background whichever it is: `fill:` and the
+ * fill's width, height and colour, which no content key starts with, `contentKey`.
+ */
+const FILL_KEY = 'fill:';
+const fillKey = (fill: { width: number; height: number; colour: number }): string => `${FILL_KEY}${fill.width},${fill.height},${fill.colour}`;
 
 /** The pictures a device list draws, read off its chrome and its pages in the template's walk order. */
 function listPictures(c: Container, mode: number): ListPictures {
@@ -597,7 +614,8 @@ function listPictures(c: Container, mode: number): ListPictures {
   if (record === undefined) throw new ComposeError(`device list ${mode} does not read`);
   const draw = (one: { operands: Uint8Array }): number => u24(one.operands, 2);
   const chromeAt = screenProgram(c, record.pages[0]?.program ?? 0)?.find((one) => one.opcode === SCREEN_CALL)?.targets[0];
-  const background = chromeAt === undefined ? undefined : screenProgram(c, chromeAt)?.find((one) => one.opcode === SCREEN_DRAW_IMAGE);
+  const background = chromeAt === undefined ? undefined : screenProgram(c, chromeAt)?.find((one) =>
+    (one.opcode === SCREEN_DRAW_IMAGE || one.opcode === SCREEN_FILL) && one.operands[0] === 0 && one.operands[1] === 0);
   if (background === undefined) throw new ComposeError(`device list ${mode} draws no background`);
   const rows: { picture: number; icon: number }[] = [];
   for (const page of record.pages) {
@@ -614,7 +632,10 @@ function listPictures(c: Container, mode: number): ListPictures {
     }
     if (row !== undefined) throw new ComposeError(`device list ${mode} draws a row with no icon`);
   }
-  return { background: draw(background), rows };
+  const drawn = background.opcode === SCREEN_FILL
+    ? { fill: { width: background.operands[2] as number, height: background.operands[3] as number, colour: ((background.operands[4] as number) << 8) | (background.operands[5] as number) } }
+    : draw(background);
+  return { background: drawn, rows };
 }
 
 /** A stand in page program of the reached kind's shape: the chrome's call, a switch of two arms, its join and its arms. */
@@ -655,9 +676,12 @@ function hitShape(areas: readonly { x: number; width: number; y: number; height:
  * Each page of each plan given the hit page of its shape, `leads` filled in, the configuration grown where a page is
  * appended: a page whose hit page holds what the rules give keeps it; one whose shape the table holds takes that
  * page; one whose shape is nowhere takes a hit page the lists' pages left, named by nothing now, rebuilt where it is,
- * and else a page appended, `withHitPage`. Returns the indices rebuilt in place, whose runs the build writes.
+ * and else a page appended, `withHitPage`. Returns the indices rebuilt in place, whose runs the build writes, and the
+ * pages the lists' pages left, `freed`, of which the build drops those still named by nothing.
  */
-function assignHitPages(start: Container, plans: ListPlan[], oldLeads: ReadonlyMap<number, readonly number[]>): { container: Container; inPlace: Set<number> } {
+function assignHitPages(
+  start: Container, plans: ListPlan[], oldLeads: ReadonlyMap<number, readonly number[]>,
+): { container: Container; inPlace: Set<number>; freed: Set<number> } {
   let c = start;
   const namers = new Map<number, number>();
   (modeRecords(c) ?? []).forEach((record, mode) => {
@@ -665,6 +689,7 @@ function assignHitPages(start: Container, plans: ListPlan[], oldLeads: ReadonlyM
     for (const page of record.pages) namers.set(page.lead as number, (namers.get(page.lead as number) ?? 0) + 1);
   });
   const left = new Set([...oldLeads.values()].flat().filter((index) => (namers.get(index) ?? 0) === 0));
+  const freed = new Set(left);
   const inPlace = new Map<number, string>();
   for (const plan of plans) {
     const old = oldLeads.get(plan.mode) ?? [];
@@ -695,7 +720,7 @@ function assignHitPages(start: Container, plans: ListPlan[], oldLeads: ReadonlyM
       return lead;
     });
   }
-  return { container: c, inPlace: new Set(inPlace.keys()) };
+  return { container: c, inPlace: new Set(inPlace.keys()), freed };
 }
 
 /**
@@ -706,10 +731,16 @@ function assignHitPages(start: Container, plans: ListPlan[], oldLeads: ReadonlyM
  * is built from its plan over the grown configuration and every piece read off it, `recordReading`, the stand ins
  * replaced like the rest; built together, since a name a later list draws is drawn by reference to the copy the
  * first holds inline, section 334, and only a build of them all knows those copies.
+ *
+ * Last, a page of `freed`, a hit page only the lists' pages named before, that no page names now is dropped,
+ * `withoutHitPages`. A list growing from no row to several leaves one: on the empty Harmony One the idle list and the
+ * list nothing enters share the hit page of no row, and the composed setup's lists of three pages take the shapes
+ * the table already holds, so that page was rebuilt for a shape a later row outgrew and was then named by nothing,
+ * findings section 435. Logitech's compiles hold no hit page named by nothing.
  */
 function withDeviceListPlans(
   start: Container, plans: readonly ListPlan[], fonts: Record<DeviceListFont, number>, inPlace: ReadonlySet<number>,
-  firstList: number, nextList: number, running: number | undefined,
+  freed: ReadonlySet<number>, firstList: number, nextList: number, running: number | undefined,
 ): Container {
   let c = start;
   // A picture by its content, found again wherever the file has moved it; a held one stands in for every picture
@@ -719,8 +750,14 @@ function withDeviceListPlans(
     if (at === undefined) throw new ComposeError('a device list\'s picture left the configuration');
     return at;
   };
+  // A fill's key names its target, which no layout holds.
+  const targetOfKey = (reading: ReturnType<typeof recordReading>, key: string): PieceTarget => {
+    if (!key.startsWith(FILL_KEY)) return reading.targetOf(addressOfKey(key));
+    const [width, height, colour] = key.slice(FILL_KEY.length).split(',').map(Number);
+    return fillTarget(width as number, height as number, colour as number);
+  };
   const reading0 = recordReading(c, takeApart(c), blobReader(c));
-  const stand = reading0.targetOf(addressOfKey(plans[0]?.pictures[0] as string));
+  const stand = targetOfKey(reading0, plans[0]?.pictures[0] as string);
   const specWith = (pictures: (plan: ListPlan) => PieceTarget[], homes: Map<string, PieceTarget>): TemplateScreensSpec<DeviceListFont> => ({
     fonts, homes, screens: plans.map((plan) => ({ mode: plan.mode, leads: plan.leads, pictures: pictures(plan), numbers: [...plan.numbers] })),
   });
@@ -800,7 +837,7 @@ function withDeviceListPlans(
     });
     return reading.placeOf('Device List', f, extras);
   });
-  const built = buildTemplateScreens(c, specWith((plan) => plan.pictures.map((key) => reading.targetOf(addressOfKey(key))), reading.homes()), screens);
+  const built = buildTemplateScreens(c, specWith((plan) => plan.pictures.map((key) => targetOfKey(reading, key)), reading.homes()), screens);
   for (const index of built.lists.keys()) reading.list(index, 'a device list');
   const hits = new Map<number, ContainerPiece[]>();
   plans.forEach((plan) => plan.leads.forEach((index, p) => {
@@ -812,7 +849,9 @@ function withDeviceListPlans(
     screens: { screens: places, lists: reading.lists, lengths: reading.lengths, inline: reading.inline },
     hits: touchHitPagesPlace(c, layout),
   };
-  return layOutContainer(withTouchDeviceLists(layout, { screens: built, hits }, place)).container;
+  const out = layOutContainer(withTouchDeviceLists(layout, { screens: built, hits }, place)).container;
+  const named = namedHitPages(out);
+  return withoutHitPages(out, [...freed].filter((index) => !named.has(index)));
 }
 
 /** Each held list as a plan, its numbers' roles and its pictures by content, read off `c`'s description. */
@@ -832,7 +871,10 @@ function heldPlans(c: Container, d: TouchDeviceListsDescribed, lists: readonly T
     const drawn = listPictures(c, list.mode);
     return {
       mode: list.mode, shape, numbers: [...described.numbers], leads: [...described.leads],
-      pictures: [keyOf(drawn.background), ...drawn.rows.flatMap((row) => [keyOf(row.picture), keyOf(row.icon)])],
+      pictures: [
+        typeof drawn.background === 'number' ? keyOf(drawn.background) : fillKey(drawn.background.fill),
+        ...drawn.rows.flatMap((row) => [keyOf(row.picture), keyOf(row.icon)]),
+      ],
       held: described.leads.length,
     };
   });
@@ -855,6 +897,23 @@ function listFonts(c: Container, held: Record<DeviceListFont, number>, plans: re
 }
 
 /**
+ * The pictures the first row of a list with none draws, where any of `lists` has none: our row box in the device look,
+ * `TouchChoices.deviceBox`, and the icon of a device of no named type, `TouchChoices.otherDeviceIcon`, each smoothed
+ * against the colour behind the first row on the first such list's background. Undefined where every list has a row.
+ */
+function emptyListRow(c: Container, lists: readonly TouchDeviceList[], choices: TouchChoices): { box: Uint8Array; icon: Uint8Array } | undefined {
+  const empty = lists.find((list) => (modeRecords(c)?.[list.mode]?.pages ?? []).every((page) =>
+    !(screenProgram(c, page.program) ?? []).some((one) => one.opcode === SCREEN_DRAW_IMAGE && one.operands[0] === ROW_PICTURE[0])));
+  if (empty === undefined) return undefined;
+  const behind = colourBehindBackground(c, listPictures(c, empty.mode).background,
+    [[ROW_PICTURE[0], ROW_PICTURE[1], ACTIVITY_ROW_SIZE[0], ACTIVITY_ROW_SIZE[1]]]);
+  return {
+    box: activityRowBox(choices.deviceBox, behind),
+    icon: activityRowIcon(choices.deviceBox, behind, choices.otherDeviceIcon, choices.activityIconGrid.row),
+  };
+}
+
+/**
  * A device's row put on every device list by building the lists again, `todo-compile-one.md` 4.3.3: the touch
  * family's device composer, in place of appending a row to each the way `composeMenuPage` appends one.
  *
@@ -870,18 +929,38 @@ function listFonts(c: Container, held: Record<DeviceListFont, number>, plans: re
  *    the next free base slot 10 index in the order the lists take them, `numberedList`.
  * 4. **Its hit pages**, `assignHitPages`; 5. **made room for and built**, `withDeviceListPlans`.
  */
-export function withTouchDeviceListRow(start: Container, mode: number, name: string, iconLike?: string): Container {
-  const lists = touchDeviceLists(start);
+export function withTouchDeviceListRow(
+  given: Container, mode: number, name: string, iconLike?: string, choices: TouchChoices = TOUCH_CHOICES,
+): Container {
+  const lists = touchDeviceLists(given);
   if (lists.length === 0) throw new ComposeError('no device list to put a row on');
+  // A list with no row has none to take the new row's pictures from, the empty One's, `todo-compile-one.md` 8.1.1: its
+  // first row draws our row box and the icon of a device of no named type, smoothed against the list's background,
+  // put in the bank first. Our look then gives the row its icon by the device's type, as it does every row,
+  // `devicelook.ts`, and leaves out the icon nothing draws by then. On Logitech's compiles every list has a row.
+  const firstRow = emptyListRow(given, lists, choices);
+  const start = firstRow === undefined ? given : withBankPictures(given, [firstRow.box, firstRow.icon]).container;
   const held = describeTouchDeviceLists(start, takeApart(start), blobReader(start), lists);
   const { plans, roles } = heldPlans(start, held, lists);
-  const lines = deviceListNameLines(start, held.spec.screen.fonts.row, name);
+  // Lists of no row select no row font, the empty One's, `todo-compile-one.md` 8.1.1: their first row is drawn in the
+  // font the fixed screens draw their whole width rows in, which is the device lists' row font on all sixteen English
+  // compiles of skin 54 that describe both, findings section 435.
+  const heldFonts = { ...held.spec.screen.fonts };
+  if ((heldFonts as Partial<typeof heldFonts>).row === undefined) heldFonts.row = describeTouchFixedScreens(start, takeApart(start)).spec.fonts.wide;
+  const lines = deviceListNameLines(start, heldFonts.row, name);
   const firstList = (start.actionLists() ?? []).length;
   let nextList = firstList;
   plans.forEach((plan, s) => {
     const shape: DeviceListShape = { ...plan.shape, rows: [...plan.shape.rows, lines] };
     const role = roles[s] as Map<string, number>;
     role.set(`device ${plan.shape.rows.length}`, mode);
+    // A list of no row writes the marker nowhere to read it off; the variable is the one the Devices key's list writes 1
+    // to, the family's marker writer, which is the rows' marker on all nineteen compiles, findings section 435.
+    if (!role.has('marker')) {
+      const marker = touchMenuMarkerWriter(start);
+      if (marker === undefined) throw new ComposeError('no list says which variable marks device mode');
+      role.set('marker', marker);
+    }
     if (deviceListPages(shape.rows.length) > 1 && !role.has('page keys on')) {
       const variable = role.get('page keys variable');
       if (variable === undefined) throw new ComposeError('no device list says which variable the page keys\' lights write');
@@ -892,16 +971,18 @@ export function withTouchDeviceListRow(start: Container, mode: number, name: str
     const rowAt = (k: number): string => drawn[1 + 2 * k] as string;
     const sameplace = plan.shape.rows.findIndex((_, k) => k % DEVICE_LIST_ROWS === place);
     const like = iconLike === undefined ? -1 : plan.shape.rows.findIndex((one) => joinLines(one) === iconLike);
-    plan.pictures = [...drawn, rowAt(sameplace >= 0 ? sameplace : 0), drawn[2 + 2 * (like >= 0 ? like : 0)] as string];
+    plan.pictures = plan.shape.rows.length === 0 && firstRow !== undefined
+      ? [...drawn, contentKey(firstRow.box), contentKey(firstRow.icon)]
+      : [...drawn, rowAt(sameplace >= 0 ? sameplace : 0), drawn[2 + 2 * (like >= 0 ? like : 0)] as string];
     plan.shape = shape;
   });
   // Numbered once every list's roles are known, in mode order, so the new lists come out in the order the build takes them.
   for (const [s, plan] of plans.entries()) plan.numbers = numberedList(plan.shape, roles[s] as Map<string, number>, () => nextList++);
-  const fonts = listFonts(start, held.spec.screen.fonts, plans);
+  const fonts = listFonts(start, heldFonts, plans);
   const oldLeads = new Map(plans.map((plan) => [plan.mode, [...plan.leads]]));
   const hit = assignHitPages(start, plans, oldLeads);
   const running = roles.find((one) => one.has('running'))?.get('running');
-  return withDeviceListPlans(hit.container, plans, fonts, hit.inPlace, firstList, nextList, running);
+  return withDeviceListPlans(hit.container, plans, fonts, hit.inPlace, hit.freed, firstList, nextList, running);
 }
 
 /**
@@ -969,7 +1050,7 @@ export function withTouchActivityDeviceList(start: Container, activity: number):
   const all = [...plans, plan];
   const fonts = listFonts(start, held.spec.screen.fonts, all);
   const hit = assignHitPages(start, all, new Map(plans.map((one) => [one.mode, [...one.leads]])));
-  const built = withDeviceListPlans(hit.container, all, fonts, hit.inPlace, firstList, nextList, idleRoles.get('running'));
+  const built = withDeviceListPlans(hit.container, all, fonts, hit.inPlace, hit.freed, firstList, nextList, idleRoles.get('running'));
 
   // The Devices cases for the activity queue the new list. The operand is the queued instruction's first two bytes
   // after the opcode, low byte first, as `caseQueued` reads them.
@@ -1125,6 +1206,6 @@ export function withTouchEmptyDeviceLists(start: Container): { container: Contai
   const all = [...plans, ...added];
   const fonts = listFonts(start, held.spec.screen.fonts, all);
   const hit = assignHitPages(start, all, new Map(plans.map((one) => [one.mode, [...one.leads]])));
-  const container = withDeviceListPlans(hit.container, all, fonts, hit.inPlace, firstList, nextList, roles[0]?.get('running'));
+  const container = withDeviceListPlans(hit.container, all, fonts, hit.inPlace, hit.freed, firstList, nextList, roles[0]?.get('running'));
   return { container, modes: added.map((one) => one.mode) };
 }

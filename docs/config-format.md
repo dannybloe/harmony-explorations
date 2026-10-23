@@ -2970,6 +2970,28 @@ skeleton, no byte read off a compile. Unconfirmed on a remote until `todo-compil
 | the assistant variable | `first` 3, as the composed path starts it, section 403 |
 | a picture | stored once and named by every draw of it, where Logitech stores some several times |
 | attribution | every byte to a generator: the builders, the frame (header, section table, marker, base slots 1 and 3, trailer), the letters (each glyph equal to the stated table's or its blended copy's) and the counted tables' counts and addresses; none carried, `touchAttributedBytes` |
+| mode pieces | the own key map, the chrome, then per page its program, its switch's pieces and its page record, then the entry: Logitech's order on all 102 device lists of the nineteen compiles, section 435, which corrected section 434's chrome after the page records |
+
+**A setup composed onto the empty One**, section 435, arch 12 (Harmony One) only, `composeSetup` with the empty One
+built unblended (`blend: false`) as the donor: a donor of ours when its font table is the stated one
+(`touchDonorFaces`), so it is not lettered and neither the tour step nor the picture step runs. Unconfirmed on a remote
+until `todo-compile-one.md` 8.2.
+
+| what the composers take on a configuration with no device | from |
+|---|---|
+| a device list row's marker | the variable the idle handler set's Devices key list writes 1 last, `idleB7Var` (19 of 19 compiles) |
+| a device list's first row | the fixed screens' `wide` font (16 of 16); our row box and icon |
+| the first device page's shared numbers | the wiring's lists and variables, the clock header's programs and two value maps by name, `FIRST_DEVICE_KEYS` (15 of 15) |
+| its fonts | the device lists' title and left fonts, the activity menu's right font, the fixed screens' `item` font, the One11 set in the title's colours (15 of 15) |
+| its off lists | each the only list of its content (15 of 15); one not held is made |
+| its redraw timer | appended at the timer table's end, `[73 clock, 73 charging, 1F EBnn]`, four seconds |
+| the first All Off case | the case of no device, a lone end, grown in place into the write of 0 |
+| the power off help's show timer | kept, started by nothing once the help asks about a device; of the sixteen English compiles only the one asking about no device holds it, a difference |
+| the power off help's first questions | the wiring's `keyLights.4.1.1`, `keyLights.5.1.1` and `lights`, and the only lists switching channel 5 and 7 off (15 of 15) |
+| a hit page a device list freed | dropped where nothing names it; no compile holds one named by nothing (19 of 19) |
+
+The test setup so composed is 905173 bytes, 2787 lists, 117 modes and 24 hit pages, and carries no unit of its donor
+that nothing on the path writes, `test/carried.ts`.
 
 **The clock header, built**, section 414: base slot 11's four programs no mode calls and the six lists the clock's
 minute and hour call, `families/touch/clockheader.ts`, through the same engine as programs of their own. 249 pieces

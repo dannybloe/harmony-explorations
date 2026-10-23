@@ -68,7 +68,7 @@ import { type ContainerLayout, type ContainerPiece, layOutContainer, takeApart }
 import type { PieceTarget } from '../../statetables.ts';
 import { devices } from '../../inventory.ts';
 import {
-  SCREEN_CALL, SCREEN_DRAW_IMAGE, SCREEN_END, SCREEN_JUMP, SCREEN_RETURN, SCREEN_SELECT_FONT, SCREEN_SWITCH_NARROW,
+  SCREEN_CALL, SCREEN_DRAW_IMAGE, SCREEN_END, SCREEN_FILL, SCREEN_JUMP, SCREEN_RETURN, SCREEN_SELECT_FONT, SCREEN_SWITCH_NARROW,
   SCREEN_TEXT_AT, SCREEN_TEXT_INLINE, screenProgram,
 } from '../../screen.ts';
 import {
@@ -83,7 +83,22 @@ import { characterMap, decode } from '../../text.ts';
 import { type HitPart, hitPageAreasOf, hitPageRunOf, touchHitPagesPlace, withTouchHitPages } from './hitpages.ts';
 import { TOUCH_PAD_HEIGHT, TOUCH_PAD_WIDTH, padLineY } from './labels.ts';
 import { DEVICE_PAGE_SLOTS, pagingStyle, withHitPage } from './menus.ts';
-import { pageKeysOn } from './activitymenu.ts';
+import { describeTouchActivityMenu, pageKeysOn } from './activitymenu.ts';
+import { STATE_WRITE_BASE } from '../../actions.ts';
+import { fontSets } from '../../font.ts';
+import { measureSet } from '../../fonttable.ts';
+import { fillTarget, picturesByContent, withBankPictures } from '../../pictures.ts';
+import { contentKey } from '../../screencategories.ts';
+import { SCREEN_HEIGHT, SCREEN_WIDTH } from '../../touch.ts';
+import { TOUCH_CHOICES, type TouchChoices } from './choices.ts';
+import { activityPadBox } from './activitypictures.ts';
+import { padsBehindBackground } from './activityscreen.ts';
+import { type TouchValueMapRole, touchValueMapRoles } from './caseprograms.ts';
+import { CLOCK_HEADER_PROGRAMS, type ClockHeaderProgram, touchClockHeaderEntries } from './clockheader.ts';
+import { describeTouchDeviceLists, touchDeviceLists } from './devicelists.ts';
+import { appendTouchRedrawTimer } from './emptywiring.ts';
+import { describeTouchFixedScreens } from './fixedscreens.ts';
+import { describeTouchWiring } from './wiring.ts';
 import {
   ARROWS, type BuiltTemplateScreens, CLICK, type Entry, HEADER, LIST, MAP, lightOff,
   type Part, type Step, SWALLOW, TAG_ENTER, TAG_HEADER, TAG_LEAVE, TIMER_CANCEL, TIMER_START, type TemplateScreen,
@@ -542,14 +557,23 @@ const STAND_IN_PAGE = 4 + 12 + 1 + 4 + 4;
  * `mode` is the next free mode, which the caller's menu row already enters.
  */
 export function withTouchDevicePage(
-  start: Container, mode: number, label: string, pads: readonly ComposedPad[], keys: ReadonlyMap<number, number>,
+  into: Container, mode: number, label: string, pads: readonly ComposedPad[], keys: ReadonlyMap<number, number>,
+  choices: TouchChoices = TOUCH_CHOICES,
 ): Container {
-  // 1. The device pages as they are.
-  const heldModes = touchDeviceModes(start);
-  if (heldModes.length === 0) throw new ComposeError('no device page of the configuration\'s gives the pages their numbering and pictures');
-  const held = describeTouchDevicePages(start, takeApart(start), blobReader(start), heldModes);
-  const roles = sharedRoles(held.spec);
-  const fonts = { ...held.spec.screen.fonts } as Partial<Record<DevicePageFont, number>>;
+  // 1. The device pages as they are; on a configuration holding none, the empty One, what the first one takes from the
+  // configuration's other screens, `firstDevicePage`, `todo-compile-one.md` 8.1.1, with the timer and the pad
+  // picture it brings added.
+  const heldModes = touchDeviceModes(into);
+  const opening = heldModes.length === 0 ? firstDevicePage(into, choices) : undefined;
+  const start = opening?.container ?? into;
+  const held = opening === undefined ? describeTouchDevicePages(start, takeApart(start), blobReader(start), heldModes) : undefined;
+  const roles = opening?.roles ?? sharedRoles((held as TouchDevicePagesDescribed).spec);
+  const fonts = { ...(opening?.fonts ?? (held as TouchDevicePagesDescribed).spec.screen.fonts) } as Partial<Record<DevicePageFont, number>>;
+  // A text a held page draws by reference to a copy elsewhere is drawn so again; the first device's are inline.
+  const homes = held?.spec.screen.homes ?? new Map<string, PieceTarget>();
+  // The mode whose chrome draws the background a device page takes: the first held device's, or for the first device
+  // the idle device list's, whose chrome draws the same background on the empty One.
+  const chromeMode = opening?.chromeMode ?? (heldModes[0] as number);
 
   // 2. The device.
   const pages: string[][][] = [];
@@ -571,7 +595,8 @@ export function withTouchDevicePage(
   // The title in the device pages' title font where it spells the name, and otherwise in another of its height
   // that does, `fontThatSpells`: a Logitech compile's title font holds only the letters of its own devices' names.
   const map = characterMap(start);
-  const heldTitle = held.spec.devices[0] === undefined ? undefined : fonts[titleRole(held.spec.devices[0].name)];
+  const heldDevice = held?.spec.devices[0];
+  const heldTitle = opening?.title ?? (heldDevice === undefined ? undefined : fonts[titleRole(heldDevice.name)]);
   if (map === undefined || heldTitle === undefined) throw new ComposeError('no device page shows which font a title is drawn in');
   fonts[titleRole(label)] ??= fontThatSpells(start, map, label, heldTitle);
   const screen = devicePageScreen(device);
@@ -589,7 +614,11 @@ export function withTouchDevicePage(
     if (command !== null) return (pads[DEVICE_PAGE_PADS * Number(command[1]) + Number(command[2])] as ComposedPad).command;
     const made = given.get(role);
     if (made !== undefined) return made;
-    if (!list || SHARED_ROLES.has(role)) throw new ComposeError(`a device page takes a number, its ${role}, the configuration does not say`);
+    // A shared role is the configuration's, except an off list the first device finds nowhere else, which it numbers
+    // as its own, as a device after it then shares, `firstDevicePage`.
+    if (!list || (SHARED_ROLES.has(role) && opening?.fresh.has(role) !== true)) {
+      throw new ComposeError(`a device page takes a number, its ${role}, the configuration does not say`);
+    }
     given.set(role, nextList);
     return nextList++;
   });
@@ -604,14 +633,14 @@ export function withTouchDevicePage(
   });
 
   // 5. Room. Built once for the lists' and the pages' bytes, which no picture changes, so a held picture stands in
-  // for every one.
-  const stand = held.spec.screen.screens[0]?.pictures[0];
+  // for every one, or on the first device a fill, which sizes nothing that is kept.
+  const stand = opening === undefined ? held?.spec.screen.screens[0]?.pictures[0] : fillTarget(SCREEN_WIDTH, SCREEN_HEIGHT, 0);
   if (stand === undefined) throw new ComposeError('the device pages draw no picture');
   const padCount = pages.reduce((sum, page) => sum + page.length, 0);
-  const specWith = (pictures: PieceTarget[], homes: Map<string, PieceTarget>): TemplateScreensSpec<DevicePageFont> => ({
-    fonts: fonts as Record<DevicePageFont, number>, homes, screens: [{ mode, leads, pictures, numbers: [...numbers] }],
+  const specWith = (pictures: PieceTarget[], with_: Map<string, PieceTarget>): TemplateScreensSpec<DevicePageFont> => ({
+    fonts: fonts as Record<DevicePageFont, number>, homes: with_, screens: [{ mode, leads, pictures, numbers: [...numbers] }],
   });
-  const first = buildTemplateScreens(c, specWith(Array<PieceTarget>(1 + padCount).fill(stand), held.spec.screen.homes), [screen]);
+  const first = buildTemplateScreens(c, specWith(Array<PieceTarget>(1 + padCount).fill(stand), homes), [screen]);
   const fresh = [...first.lists.keys()].filter((index) => index >= firstList).sort((a, b) => a - b);
   if (fresh.length !== nextList - firstList || fresh.some((index, k) => index !== firstList + k)) {
     throw new ComposeError('a device page\'s new lists are not the next free indices in order');
@@ -669,14 +698,16 @@ export function withTouchDevicePage(
     return [join, ...call.targets].map((address, k) => reading.program(address, `${screen.name}'s stand in ${k}`).piece);
   });
   const stands = reading.placeOf(screen.name, f, extras);
-  // The pictures, read off the grown configuration: the background the first held device's chrome draws, and each
-  // pad place's picture as the held device pages draw it, the first page drawing that place.
+  // The pictures, read off the grown configuration: the background `chromeMode`'s chrome draws, a picture or the fill
+  // drawn in its place, and each pad place's picture as the held device pages draw it, the first page drawing that
+  // place; the first device's pads all draw the pad box it brought, found by its content.
   const records = modeRecords(c) ?? [];
-  const firstHeld = records[heldModes[0] as number]?.pages[0];
-  const chromeAt = firstHeld === undefined ? undefined : screenProgram(c, firstHeld.program)?.find((one) => one.opcode === SCREEN_CALL)?.targets[0];
-  const background = chromeAt === undefined ? undefined : pictureAt(c, chromeAt, 0, 0);
+  const background = backgroundOf(c, records[chromeMode]?.pages[0]?.program);
   if (background === undefined) throw new ComposeError('the device pages draw no background to take');
+  const ownPad = opening === undefined ? undefined : picturesByContent(c).get(contentKey(opening.pad))?.[0];
+  if (opening !== undefined && ownPad === undefined) throw new ComposeError('the first device page\'s pad picture left the bank');
   const padPictures = DEVICE_PAGE_SLOTS.map(([x, y]) => {
+    if (ownPad !== undefined) return ownPad;
     for (const m of heldModes) {
       for (const page of records[m]?.pages ?? []) {
         const found = pictureAt(c, page.program, x, y);
@@ -685,7 +716,7 @@ export function withTouchDevicePage(
     }
     return undefined;
   });
-  const pictures = [reading.targetOf(background), ...pages.flatMap((page) => page.map((_, k) => {
+  const pictures = [typeof background === 'number' ? reading.targetOf(background) : background, ...pages.flatMap((page) => page.map((_, k) => {
     const address = padPictures[k];
     if (address === undefined) throw new ComposeError(`no device page draws a pad at place ${k + 1} to take its picture`);
     return reading.targetOf(address);
@@ -705,6 +736,175 @@ export function withTouchDevicePage(
     inline: new Map([...again.place.screens.inline, ...reading.inline]),
   };
   return layOutContainer(withModeRecords(layout, built, place)).container;
+}
+
+/**
+ * The whole screen picture the chrome of the page program at `page` draws at 0, 0: its address, or the fill's target
+ * where the background is a fill, `withPictureFilled`, findings section 425. The page calls its chrome first.
+ */
+function backgroundOf(c: Container, page: number | undefined): number | PieceTarget | undefined {
+  const chromeAt = page === undefined ? undefined : screenProgram(c, page)?.find((one) => one.opcode === SCREEN_CALL)?.targets[0];
+  const drawn = chromeAt === undefined ? undefined : screenProgram(c, chromeAt)?.find((one) =>
+    (one.opcode === SCREEN_DRAW_IMAGE || one.opcode === SCREEN_FILL) && one.operands[0] === 0 && one.operands[1] === 0);
+  if (drawn === undefined) return undefined;
+  return drawn.opcode === SCREEN_FILL
+    ? fillTarget(drawn.operands[2] as number, drawn.operands[3] as number, ((drawn.operands[4] as number) << 8) | (drawn.operands[5] as number))
+    : u24(drawn.operands, 2);
+}
+
+// ---------------------------------------------------------------------------------------------------------
+// The first device page, on a configuration holding none, `todo-compile-one.md` 8.1.1.
+
+/**
+ * The numbering keys the shared roles of the first device page take, by role: the wiring's lists and variables by
+ * their catalogue names, section 410, the clock header's programs, section 414, and the value maps the keys below the
+ * screen look up, each `(record << 8) | variable`. Measured on the fifteen English compiles of skin 54 holding a
+ * device page, every device page of each: each role's one value is the configuration's number by that key, findings
+ * section 435, `test/composeempty.test.ts`. What the key names is Logitech's; that a device page takes it where no
+ * device page is held to read it off is the inference.
+ */
+export const FIRST_DEVICE_KEYS: Readonly<Record<string, string>> = {
+  'light 4 on': 'list keyLights.6.1.1', 'light 6 on': 'list keyLights.7.1.1', 'page keys on': 'list keyLights.3.1.1.1.1',
+  'light 4 variable': 'variable keyLight6', 'light 6 variable': 'variable keyLight7', 'page keys variable': 'variable keyLightsB',
+  running: 'variable bootVar5',
+  'header 1': 'program gauge', 'header 2': 'program clock', 'header 3': 'program sending',
+  'chrome 1': 'program sending', 'chrome 2': 'program clock', 'chrome 3': 'program charging',
+  activities: 'map page on bootVar5', devices: 'map devices route on location',
+};
+
+/** The off lists a device page reaches on leaving, by role, each with the variable role its write names. */
+const FIRST_OFF_LISTS: readonly { role: string; variable: string; step: Step }[] = [
+  { role: 'light 4 off', variable: 'light 4 variable', step: LIGHT_4_OFF },
+  { role: 'light 6 off', variable: 'light 6 variable', step: LIGHT_6_OFF },
+  { role: 'page keys off', variable: 'page keys variable', step: PAGE_KEYS_OFF },
+];
+
+/**
+ * The numbers a configuration holds by `FIRST_DEVICE_KEYS`' names, read off it: the wiring's lists and variables,
+ * `describeTouchWiring`, the clock header's programs, `touchClockHeaderEntries`, and the two value maps,
+ * `touchValueMapRoles`. Refuses a name the configuration does not hold.
+ */
+export function firstDeviceRoles(c: Container): Map<string, number> {
+  const wiring = describeTouchWiring(takeApart(c));
+  const clock = touchClockHeaderEntries(c);
+  const maps = touchValueMapRoles(c);
+  const variable = (name: string): number | undefined => wiring.variables[name];
+  const record = (role: TouchValueMapRole): number | undefined => maps.records.get(role);
+  const byKey = (key: string): number | undefined => {
+    const [kind, ...rest] = key.split(' ');
+    const name = rest.join(' ');
+    if (kind === 'list') return wiring.lists[name];
+    if (kind === 'variable') return variable(name);
+    if (kind === 'program') return clock.entries[CLOCK_HEADER_PROGRAMS.indexOf(name as ClockHeaderProgram)];
+    const map = /^(.+) on (.+)$/.exec(name);
+    if (kind === 'map' && map !== null) {
+      const at = record(map[1] as TouchValueMapRole);
+      const on = map[2] === 'location' ? maps.location : variable(map[2] as string);
+      return at === undefined || on === undefined ? undefined : (at << 8) | on;
+    }
+    return undefined;
+  };
+  return new Map(Object.entries(FIRST_DEVICE_KEYS).map(([role, key]) => {
+    const value = byKey(key);
+    if (value === undefined) throw new ComposeError(`the configuration holds no ${key}, a device page's ${role}`);
+    return [role, value] as const;
+  }));
+}
+
+/**
+ * The fonts the first device page draws in, read off the configuration's other screens: the title and the key words
+ * on the left in the device lists' title and left fonts, the word on the right in the activity menu's, the pads in the
+ * fixed screens' item font, and the page counter in the configuration's One11 set in the title's colours, where it
+ * holds one. Each is what every device page draws on the fifteen English compiles of skin 54 holding one, findings
+ * section 435; the counter's set is absent from a configuration that holds none, and the composer then takes the
+ * paging font, as it does on a held device page with no counter.
+ */
+export function firstDevicePageFonts(c: Container): { title: number; row: number; left: number; right: number; count?: number } {
+  const layout = takeApart(c);
+  const lists = describeTouchDeviceLists(c, layout).spec.screen.fonts;
+  const menu = describeTouchActivityMenu(c, layout).spec.screen.fonts;
+  const fixed = describeTouchFixedScreens(c, layout).spec.fonts;
+  const map = characterMap(c);
+  const sets = fontSets(c) ?? [];
+  const titleSet = sets[lists.title];
+  if (map === undefined || titleSet === undefined) throw new ComposeError('the device lists\' title font does not read');
+  const title = measureSet(c, titleSet, map);
+  const counts = sets.flatMap((set, k) => {
+    try {
+      const one = measureSet(c, set, map);
+      return one.face === COUNTER_FACE && one.ink === title.ink && one.shadow === title.shadow ? [k] : [];
+    } catch {
+      return [];
+    }
+  });
+  if (counts.length > 1) throw new ComposeError(`the configuration holds ${counts.length} ${COUNTER_FACE} sets in the title's colours`);
+  return { title: lists.title, row: fixed.item, left: lists.left, right: menu.right, ...(counts.length === 1 ? { count: counts[0] as number } : {}) };
+}
+
+/** The face a device page's counter is drawn in on every compile holding one with several pages. */
+const COUNTER_FACE = 'One11';
+
+interface FirstDevicePage {
+  /** The configuration with the pad picture in its bank and the device pages' redraw timer appended. */
+  container: Container;
+  roles: Map<string, number>;
+  fonts: Partial<Record<DevicePageFont, number>>;
+  title: number;
+  /** The off lists no list of the configuration already is, which the page numbers as its own. */
+  fresh: Set<string>;
+  /** The mode whose chrome draws the background: the idle device list. */
+  chromeMode: number;
+  /** The pad box's bytes, which find it again once the configuration has grown. */
+  pad: Uint8Array;
+}
+
+/**
+ * What the first device page composed onto a configuration holding none takes, `todo-compile-one.md` 8.1.1: the
+ * empty One, section 434, where until now the composer read all of it off a device page Logitech's compile held.
+ *
+ * * **The shared roles**, `firstDeviceRoles`, by the names they have on every compile, section 435.
+ * * **The off lists**, a list of the configuration's own of the same instructions where there is one, the device
+ *   lists' light 4 off among them, and otherwise the page's own.
+ * * **The timer**: a redraw timer of the device pages' own, appended, `appendTouchRedrawTimer`, as each of
+ *   Logitech's compiles gives its device pages one, section 430.
+ * * **The fonts**, `firstDevicePageFonts`.
+ * * **The pictures**: the background the idle device list's chrome draws and our pad box in the device pages' look,
+ *   `TouchChoices.deviceBox`, put in the bank, the box the look gives every device page on the composed path.
+ */
+function firstDevicePage(c: Container, choices: TouchChoices): FirstDevicePage {
+  const idle = touchDeviceLists(c).find((one) => one.idle === true);
+  if (idle === undefined) throw new ComposeError('the configuration holds no idle device list to take a device page\'s background from');
+  const background = backgroundOf(c, (modeRecords(c) ?? [])[idle.mode]?.pages[0]?.program);
+  if (background === undefined) throw new ComposeError('the idle device list draws no background');
+  const pad = activityPadBox(choices.deviceBox, padsBehindBackground(c, typeof background === 'number'
+    ? background : { fill: { width: background.to.bytes[0] as number, height: background.to.bytes[1] as number, colour: ((background.to.bytes[2] as number) << 8) | (background.to.bytes[3] as number) } }));
+  const roles = firstDeviceRoles(c);
+  const fresh = new Set<string>();
+  const lists = c.actionLists() ?? [];
+  for (const off of FIRST_OFF_LISTS) {
+    const wanted = offInstructions(off.step, roles.get(off.variable) as number);
+    const found = lists.findIndex((list) => list.length === wanted.length && list.every((one, k) => one.opcode === wanted[k]?.opcode && one.operand === wanted[k]?.operand));
+    if (found >= 0) roles.set(off.role, found);
+    else fresh.add(off.role);
+  }
+  const fonts = firstDevicePageFonts(c);
+  const pictured = withBankPictures(c, [pad]).container;
+  const timed = appendTouchRedrawTimer(pictured);
+  roles.set('timer', timed.timer);
+  return {
+    container: timed.container, roles, title: fonts.title, fresh, chromeMode: idle.mode, pad,
+    fonts: { row: fonts.row, left: fonts.left, right: fonts.right, ...(fonts.count === undefined ? {} : { count: fonts.count }) },
+  };
+}
+
+/** An off list's instructions, section 400's form: each light's `3F C0n0`, then 0 written to `variable`. */
+function offInstructions(step: Step, variable: number): { opcode: number; operand: number }[] {
+  if (step.kind !== 'owns') throw new ComposeError('an off list is a list of its own');
+  return step.steps.map((one) => {
+    if (one.kind === 'constant') return { opcode: one.opcode, operand: one.operand };
+    if (one.kind === 'write') return { opcode: STATE_WRITE_BASE + variable, operand: one.operand };
+    throw new ComposeError(`an off list holds a ${one.kind} step`);
+  });
 }
 
 /** The first picture the program at `address` draws at `(x, y)`, as an address. */

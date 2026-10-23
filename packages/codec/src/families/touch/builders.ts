@@ -142,7 +142,7 @@ import { buildTouchDevicePages, describeTouchDevicePages, withTouchDevicePages }
 import { buildTouchDeviceLists, describeTouchDeviceLists, withTouchDeviceLists } from './devicelists.ts';
 import { buildTouchActivityScreenSet, describeTouchActivityScreens, withTouchActivityScreenSet } from './activityscreens.ts';
 import { buildTouchHelpScreens, describeTouchHelpScreens, withTouchHelpChain, withTouchHelpScreens } from './helpscreens.ts';
-import type { ComposedDeviceNote } from '../family.ts';
+import type { ComposedBuildersOptions, ComposedDeviceNote } from '../family.ts';
 import { buildTouchWiring, describeTouchWiring } from './wiring.ts';
 import { TOUCH_STATE_TABLES } from './statetables.ts';
 import { withCentredPadLabels } from './centring.ts';
@@ -358,11 +358,14 @@ export function withTouchBuilders(
  * builders' are.
  */
 export function withTouchComposedBuilders(
-  c: Container, composed: readonly ComposedDeviceNote[], choices: TouchChoices,
+  c: Container, composed: readonly ComposedDeviceNote[], choices: TouchChoices, options: ComposedBuildersOptions = {},
 ): { container: Container; built: TouchBuilt[] } {
-  const start = choices.welcomeTour ? c : building('tour and Remote Assistant', () => withoutTourAndAssistant(c).container);
+  // A donor of ours, the empty One, holds no tour and no Remote Assistant unless chosen and draws our pictures
+  // already, so neither step runs on it, `todo-compile-one.md` 8.1.2.
+  const ours = options.donorOfOurs === true;
+  const start = choices.welcomeTour || ours ? c : building('tour and Remote Assistant', () => withoutTourAndAssistant(c).container);
   const built = withTouchBuilders(start, composed);
-  if (choices.logitechPictures) return built;
+  if (choices.logitechPictures || ours) return built;
   const container = building('pictures', () => withTouchPictures(built.container, choices).container);
   return { container, built: [...built.built, 'pictures'] };
 }

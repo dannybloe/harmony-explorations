@@ -321,6 +321,13 @@ export interface Family<Choices extends CommonChoices = CommonChoices> {
   readonly composedLook?: {
     letterDonor(c: Container, choices: Choices): { readonly bytes: Uint8Array; readonly faces: readonly SetFace[] };
     /**
+     * The faces of a donor of ours, an empty configuration of the family's, which is in our letters already and is
+     * not lettered again; undefined for a Logitech compile. Refuses a donor of ours that is blended, since the look's
+     * blending runs once, over the composed file. The Harmony One's, `todo-compile-one.md` 8.1.2. Absent, every donor
+     * is lettered.
+     */
+    donorOfOurs?(c: Container, choices: Choices): readonly SetFace[] | undefined;
+    /**
      * The look over the composed file, with the copies of each set its blending made, `withBlendedLetters`, so
      * that a reader of the result can point a blended select back at the set it was blended from,
      * `unblendedSelects`; empty where the look blends nothing.
@@ -344,7 +351,9 @@ export interface Family<Choices extends CommonChoices = CommonChoices> {
    * `choices` is the family's, since `todo-compile-one.md` 4.10: what a configuration of ours holds that Logitech's
    * do not, the Harmony One's welcome tour and Remote Assistant left out unless chosen, is the builders' to make.
    */
-  composedBuilders?(c: Container, composed: readonly ComposedDeviceNote[], choices: Choices): { readonly container: Container; readonly built: readonly string[] };
+  composedBuilders?(
+    c: Container, composed: readonly ComposedDeviceNote[], choices: Choices, options?: ComposedBuildersOptions,
+  ): { readonly container: Container; readonly built: readonly string[] };
   /**
    * The skins `composeSetup` has been run on for this family, where it composes a setup onto a donor at all; a
    * skin outside it is refused. Absent, the family's setups are not composed that way. The Harmony One's is skin
@@ -352,6 +361,15 @@ export interface Family<Choices extends CommonChoices = CommonChoices> {
    * 3.3.3.2.
    */
   readonly composedSkins?: ReadonlySet<number>;
+}
+
+/** What `composedBuilders` is told of the donor beyond the configuration itself. */
+export interface ComposedBuildersOptions {
+  /**
+   * Whether the donor is one of ours, `composedLook.donorOfOurs`, `todo-compile-one.md` 8.1.2: its pictures are ours
+   * already, so no step turning Logitech's into ours runs.
+   */
+  readonly donorOfOurs?: boolean;
 }
 
 /**

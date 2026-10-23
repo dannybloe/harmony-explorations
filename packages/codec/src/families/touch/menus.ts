@@ -7,17 +7,18 @@ import { u24 } from '../../bytes.ts';
 import { Writer } from '../../emit.ts';
 import { fontSets } from '../../font.ts';
 import { ACTION_LIST_TABLE_SLOT, archSlot, Container, INSTRUCTION_LENGTH, type Instruction, parse, SCAN_MASK } from '../../gspm.ts';
-import { deviceListRows } from '../../inventory.ts';
+import { deviceListRows, handlerSetRoles } from '../../inventory.ts';
+import { STATE_WRITE_BASE } from '../../actions.ts';
 import { excise, relocate } from '../../relocate.ts';
 import {
   SCREEN_CALL, SCREEN_DRAW_IMAGE, SCREEN_END, SCREEN_JUMP, SCREEN_RETURN, SCREEN_SELECT_FONT, SCREEN_SWITCH_NARROW,
   SCREEN_TEXT_AT, SCREEN_TEXT_INLINE, type ScreenInstruction, screenProgram,
 } from '../../screen.ts';
 import {
-  ACTION_LIST_INDEX_OPCODE, type ModePage, modePages, type ModeRecord, modeRecords, pageListCopies, taggedList,
+  ACTION_LIST_INDEX_OPCODE, handlerSets, type ModePage, modePages, type ModeRecord, modeRecords, pageListCopies, taggedList,
 } from '../../sections.ts';
 import { ComposeError, restamped } from '../../shared/core.ts';
-import { pageTexts } from '../../shared/menus.ts';
+import { DEVICE_MENU_MARKER_VALUE, pageTexts } from '../../shared/menus.ts';
 import { codesFor, headerOf, textAt, textGlyphs } from '../../shared/spelling.ts';
 import { TOUCH_AREA_LENGTH, type TouchArea, touchPages } from '../../tables.ts';
 import { characterMap, decode } from '../../text.ts';
@@ -766,4 +767,36 @@ export function withPageKeyLights(c: Container, mode: number): Container {
   grown.set([on & 0xff, on >>> 8, ACTION_LIST_INDEX_OPCODE], at);
   grown[listAt] = entering.length + 1;
   return parse(restamped(grown));
+}
+
+// ---------------------------------------------------------------------------------------------------------
+// The menu marker outside the rows, `todo-compile-one.md` 8.1.1.
+
+/** The Devices key's press, scan 55, as the leftover entry binds it, section 329's entry: `0x80 | 55`. */
+const DEVICES_KEY_PRESS = 0xb7;
+
+/**
+ * The menu marker as the Harmony One writes it outside its menu rows, `Family.menuMarkerWriter`: the variable the
+ * leftover entry's Devices key list writes 1 last, the wiring's `idleB7`, `enter idleB7.screen | idleB7Var := 1`,
+ * section 410. Undefined where the configuration has no leftover entry, or that key runs no list ending so.
+ *
+ * **Measured on all nineteen Harmony One compiles**, findings section 435: the marker every device list row and
+ * every activity row writes last, `menuMarkerOf` read off the rows, is the wiring's `idleB7Var` on 19 of 19, nine
+ * different variables over them. So a configuration with no menu row of either kind, the empty One, section 434,
+ * still names its marker, and the first device row composed onto it writes the variable the Devices key writes,
+ * where until then no row meant no marker and the device composer refused. A row, where there is one, is held to
+ * this answer by `menuMarkerOf`, which refuses two variables.
+ */
+export function touchMenuMarkerWriter(c: Container): number | undefined {
+  const sets = handlerSets(c);
+  const roles = handlerSetRoles(c);
+  const lists = c.actionLists() ?? [];
+  const idle = roles.indexOf('idle');
+  const address = idle < 0 ? undefined : sets?.addresses[idle];
+  if (address === undefined) return undefined;
+  const bound = (taggedList(c, address)?.entries ?? []).find((one) => one.tag === DEVICES_KEY_PRESS);
+  if (bound?.opcode !== ACTION_LIST_INDEX_OPCODE) return undefined;
+  const last = lists[bound.operand]?.at(-1);
+  if (last === undefined || last.opcode < STATE_WRITE_BASE || last.operand !== DEVICE_MENU_MARKER_VALUE) return undefined;
+  return last.opcode - STATE_WRITE_BASE;
 }
