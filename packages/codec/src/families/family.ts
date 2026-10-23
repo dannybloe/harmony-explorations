@@ -303,10 +303,10 @@ export interface Family<Choices extends CommonChoices = CommonChoices> {
     c: Container, label: string, set: number, menu: number, marker: Instruction, options: WithChoices<ComposeActivityRowOptions, Choices>,
   ): ComposedActivityRow;
   /**
-   * The device list an activity's Devices key opens, given after the activity has its row: the Harmony 600,
-   * 650 and 700 build one of the activity's own, `composeActivityDeviceList`; the Harmony One keeps the idle
-   * device list its built screens already open, until one of its own is built. Returns the configuration's
-   * bytes.
+   * The device list an activity's Devices key opens, given after the activity has its row: one of the activity's
+   * own on both families, every device with those its start switches on first, `startSwitchedOn`; the Harmony 600,
+   * 650 and 700's `composeActivityDeviceList`, section 352, and the Harmony One's `withTouchActivityDeviceList`,
+   * section 424. Returns the configuration's bytes.
    */
   activityDeviceList(c: Container, activity: number): Uint8Array;
   /** An activity's working screen, `composeActivityScreen`. */

@@ -11,8 +11,11 @@
  * bytes and nothing else, so no program moves and the pages composed onto the configuration and the donor's
  * own are recoloured alike. Logitech's pictures it no longer draws are then taken out of the bank,
  * `withoutUndrawnPictures`, since `todo-compile-one.md` 5.3.1, findings section 422: they were left there drawn by
- * nothing until then. On the test setup that is the six pads, 48630 bytes; the device list's rows and icons stay,
- * since a second list of every device, which this step does not recolour, draws them too.
+ * nothing until then. **Every** device list is recoloured, since `todo-compile-one.md` 4.3.3, findings section 424:
+ * the list the Devices item opens with nothing running, each activity's own and the one list nothing enters, which
+ * this step left in Logitech's look until then because it read the rows of one list, `deviceListRows`. That list
+ * nothing enters still drew Logitech's row pictures and icons, so they stayed in the bank, 42612 bytes on the test
+ * setup; with every list read, nothing draws them and they go with the pads.
  *
  * Which pictures are pads is read, not tabulated: whatever a device mode's page draws at one of the six pad
  * places, `DEVICE_PAGE_SLOTS`. On the six Harmony One configurations measured those are pictures that nothing
@@ -22,13 +25,14 @@
 import { u24 } from '../../bytes.ts';
 import { Writer } from '../../emit.ts';
 import { type Container, parse } from '../../gspm.ts';
-import { deviceListRows, deviceModeMaps, devices } from '../../inventory.ts';
+import { ACTION_LIST_INDEX_OPCODE, modeRecords, taggedList } from '../../sections.ts';
+import { deviceListRowMode, deviceModeMaps, devices } from '../../inventory.ts';
+import { deviceListMenus } from '../../shared/menus.ts';
 import { picturesByContent, withBankPictures } from '../../pictures.ts';
 import { withoutUndrawnPictures } from '../../shared/dropmodes.ts';
 import { contentKey } from '../../screencategories.ts';
 import { renderProgram, renderVariants, type TextDrawn } from '../../render.ts';
 import { reachablePrograms, SCREEN_CALL, SCREEN_DRAW_IMAGE, type ScreenInstruction, screenProgram } from '../../screen.ts';
-import { modeRecords } from '../../sections.ts';
 import { ComposeError, restamped } from '../../shared/core.ts';
 import {
   ACTIVITY_ROW_SIZE, activityPadBox, activityRowBox, activityRowIcon, colourBehind,
@@ -166,14 +170,15 @@ function deviceLookDraws(
   const named = new Map(devices(c).filter((one) => one.mode !== undefined).map((one) => [one.mode as number, one.name]));
   const rows: { draw: Draw; icon?: string }[] = [];
   let rowBehind: number | undefined;
-  for (const row of deviceListRows(c)) {
+  const listRows = everyDeviceListRow(c);
+  for (const row of listRows) {
     const page = records[row.menu]?.pages[row.page];
     const rank = row.scan - MENU_ROW_SCAN;
     if (page === undefined || rank < 0 || rank >= LIST_ROWS) continue;
     const y = MENU_ROW1_BG[1] + MENU_ROW_PITCH * rank;
     const draws = pageDraws(c, page.program);
     const background = draws.find((one) => one.x === MENU_ROW1_BG[0] && one.y === y);
-    if (background === undefined) throw new ComposeError(`the device list row of ${row.label ?? 'a device'} draws no background`);
+    if (background === undefined) throw new ComposeError(`the device list row of ${named.get(row.mode) ?? `mode ${row.mode}`} draws no background`);
     rows.push({ draw: background });
     const icon = draws.find((one) => one.x === MENU_ROW1_BG[0] + MENU_ICON_OFFSET[0] && one.y === y + MENU_ICON_OFFSET[1]);
     if (icon !== undefined) rows.push({ draw: icon, icon: iconFor(named.get(row.mode)) ?? choices.otherDeviceIcon });
@@ -187,7 +192,7 @@ function deviceLookDraws(
     return text.y === MENU_COUNTER_XY[1] ? 'counter' : undefined;
   };
   const roles = new Map<number, Set<'title' | 'counter' | undefined>>();
-  const listMenus = new Set(deviceListRows(c).map((row) => row.menu));
+  const listMenus = new Set(listRows.map((row) => row.menu));
   for (const mode of [...deviceModes, ...listMenus]) {
     for (const page of records[mode]?.pages ?? []) {
       renderVariants(c, page.program, HEADER_VARIANTS, (text) => {
@@ -207,4 +212,20 @@ function deviceLookDraws(
     }
   }
   return { pads, rows, rowBehind, headerSelects };
+}
+
+/**
+ * Every row of every device list, `deviceListMenus`: its mode, its page, its scan and the device mode it enters. Not
+ * `deviceListRows`, which reads the widest list alone, since every list here is drawn in our look.
+ */
+function everyDeviceListRow(c: Container): { menu: number; page: number; scan: number; mode: number }[] {
+  const { menus, marker } = deviceListMenus(c);
+  const lists = c.actionLists() ?? [];
+  const records = modeRecords(c) ?? [];
+  return menus.flatMap((menu) => (records[menu]?.pages ?? []).flatMap((page, index) =>
+    (taggedList(c, page.list)?.entries ?? []).flatMap((entry) => {
+      if (entry.opcode !== ACTION_LIST_INDEX_OPCODE) return [];
+      const mode = deviceListRowMode(lists[entry.operand], c.architecture, marker);
+      return mode === undefined ? [] : [{ menu, page: index, scan: entry.tag & 0x3f, mode }];
+    })));
 }

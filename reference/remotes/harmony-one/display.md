@@ -58,7 +58,12 @@ Generated from `packages/codec`, `packages/usb` and the drawing by `make remote-
   and touched in that order; a row touched
   clicks, selects the activity's key map and leaves device mode. Section 419.
 * **The device list**, three rows a page, reached from "Devices", with "Activities" below it, Logitech's
-  manual and section 275.
+  manual and section 275. **A configuration holds one per activity as well as the one shown with nothing
+  running**: every device once, the devices the activity's start switches on first in that order, then the rest
+  in the order of the list with nothing running, on 61 of the 64 activities of Logitech's compiles, the other
+  three not decidable from the file, read from configurations, section 424. **And one list nothing in the configuration opens**, the
+  same rows in the same order, on 19 of 19 compiles; whether the remote ever shows it was not read. Each row the row
+  picture, the device's icon and its name left aligned in one to three lines.
 * **A page counter** in three places on a list of several pages: "2 pages" at the top and "1/", "2/" on
   each page, read from configurations, section 293; the arrows beside the screen "illuminate only if there
   are multiple pages", Logitech's manual. **The firmware does not decide that, the configuration does**: a

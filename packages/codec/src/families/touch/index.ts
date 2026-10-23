@@ -17,6 +17,7 @@ import { TOUCH_SENDS } from './sends.ts';
 import { TOUCH_START } from './start.ts';
 import { withTouchComposedBuilders } from './builders.ts';
 import { withTouchActivityMenuRow } from './activitymenu.ts';
+import { withTouchActivityDeviceList } from './devicelists.ts';
 
 export const TOUCH: Family<TouchChoices> = {
   name: 'the Harmony One',
@@ -41,10 +42,9 @@ export const TOUCH: Family<TouchChoices> = {
     ? composeTouchActivityRow(c, label, set, menu, marker, options)
     : withTouchActivityMenuRow(c, label, set, menu, marker, options)),
   composeActivityScreen: composeTouchActivityScreen,
-  // The Harmony One's Devices key opens the idle device list, every device, which the built screens point
-  // it at; Logitech's opens a list of the activity's own devices, which is not built yet,
-  // `todo-compile-one.md` 1.2.11.2.4.
-  activityDeviceList: (c) => c.blob,
+  // The Devices item opens a list of the activity's own, every device with those its start switches on first, as on
+  // Logitech's compiles, `todo-compile-one.md` 4.3.3, findings section 424; until then it opened the idle list.
+  activityDeviceList: withTouchActivityDeviceList,
   composedLook: { letterDonor: letterTouchDonor, look: withTouchLook },
   // The parts the donor carried that a builder of the family's makes from a description, `todo-compile-one.md` 3.2.2,
   // after the welcome tour and the Remote Assistant are left out unless chosen, 4.10.

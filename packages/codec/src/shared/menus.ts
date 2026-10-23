@@ -112,7 +112,11 @@ export interface ComposedScreen {
   mode: number;
   /** The device list modes that gained a row, by table index. */
   menus: readonly number[];
-  /** The base slot 10 list the new menu rows run: beep, enter the mode, mark device mode. */
+  /**
+   * The base slot 10 list the new menu rows run: beep, enter the mode, mark device mode. On the Harmony One since
+   * `todo-compile-one.md` 4.3.3 every row runs a list of its own, as Logitech's do, section 424, and this is the first
+   * list index the rebuilt device lists took.
+   */
   rowList: number;
   /** The menus whose last page was full, so a new one row page was added to each, section 240. */
   pagesAdded: number[];

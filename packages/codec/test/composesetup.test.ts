@@ -31,6 +31,12 @@ import { listsReached } from './screenlists.ts';
 import { IMAGE_TABLE_SLOT, fontSets } from '../src/font.ts';
 import { buildTouchFontTable, donorGlyphOrder } from '../src/families/touch/fontsets.ts';
 import { colour565 } from '../src/families/touch/activitypictures.ts';
+import { touchDeviceLists } from '../src/families/touch/devicelists.ts';
+import { touchValueMapRoles } from '../src/families/touch/caseprograms.ts';
+import { deviceListMenus } from '../src/shared/menus.ts';
+import { startSwitchedOn } from '../src/shared/activities.ts';
+import { ENTER_MODE, activities, caseQueued, deviceListRowMode, devices } from '../src/inventory.ts';
+import { valueMaps } from '../src/valuemap.ts';
 
 const recipe = () => readRecipe(JSON.parse(readFileSync(new URL('../../corpus/setups/one-test.json', import.meta.url), 'utf8')));
 
@@ -159,7 +165,14 @@ test('the One test setup composed onto Logitech\'s compile of two devices comes 
   // six bytes, shorter, which lit the page keys over a screen with nothing to turn to at the bench.
   // 1022262 since `todo-compile-one.md` 5.3.4, section 425, 77334 fewer: the black background one fill a draw where
   // it was a picture, the picture's 77445 out of the bank and each of its 111 draws a byte longer, seven bytes for six.
-  assert.equal(c.blob.length, 1022262);
+  // 1060973 since 4.3.3, 38623 bytes fewer, section 424: every device list built whole and each of the five activities
+  // given a list of its own, five modes of three pages more, their records, page lists and copies 710 bytes, 109 lists
+  // more and their pointers 1390, and 381 screen programs more, 1889, the rows' own lists where the composer shared
+  // one; and the four pictures only the list nothing enters drew, Logitech's two row pictures and two icons, 42612
+  // bytes, out of the bank, since our look now draws every list.
+  // 983644 with both, 5.3.4's fill and 4.3.3's lists: 77329 below 1060973, the picture's 77445 less a byte for each
+  // of the 116 draws, the seven lists' chromes five of them.
+  assert.equal(c.blob.length, 983644);
 });
 
 // ---------------------------------------------------------------------------------------------------------
@@ -263,10 +276,10 @@ const builtBytes = (): TouchBuiltBytes => {
   return builtOnce;
 };
 
-test('todo-compile-one 3.2.2, 4.3 and 4.10: the firmware screens, the fixed screens, the status screens, the clock header, the help screens, the activity menu, the device pages, the activity screens, the case programs, the hit pages, the wiring, the state tables, raw slot 18, base slot 16\'s table and the pictures of the composed setup come out of the touch family\'s builders, run on the composed path and measured on the result, and the tour and Remote Assistant are left out',
+test('todo-compile-one 3.2.2, 4.3, 4.3.3 and 4.10: the firmware screens, the fixed screens, the status screens, the clock header, the help screens, the activity menu, the device pages, the device lists, the activity screens, the case programs, the hit pages, the wiring, the state tables, raw slot 18, base slot 16\'s table and the pictures of the composed setup come out of the touch family\'s builders, run on the composed path and measured on the result, and the tour and Remote Assistant are left out',
      NEEDS, () => {
   const out = composed();
-  // On the path: one step after the composers and before the look, naming the fifteen parts in the order built.
+  // On the path: one step after the composers and before the look, naming the sixteen parts in the order built.
   const names = out.steps.map((one) => one.step);
   assert.equal(out.steps.find((one) => one.step === 'built')?.detail, TOUCH_BUILT.join(', '));
   assert.ok(names.indexOf('activity composed') < names.indexOf('built') && names.indexOf('built') < names.indexOf('look'));
@@ -338,9 +351,16 @@ test('todo-compile-one 3.2.2, 4.3 and 4.10: the firmware screens, the fixed scre
   // the fixed screens' 14081 to 14103, the status screens' 3872 to 3901, the help screens' 6245 to 6275, the activity
   // menu's 786 to 787, the device pages' 16139 to 16146 and the activity screens' 2888 to 2898, 109 bytes, the draws
   // of the programs they build. The other two draws are in chromes no builder makes, mode 70's and mode 50's.
+  // The device lists' 4971, since `todo-compile-one.md` 4.3.3, section 424, are the seven lists built whole, the idle
+  // list, the list nothing enters and the five activities' own, three pages each: their own key maps, chromes,
+  // pages and switches, the page lists and copies, every list those run, and their hit page's areas; what they share
+  // with a set built before them is that set's, the off lists below the screens the device pages'. The hit pages'
+  // 863 came down to 772 with it, the 91 bytes of the device lists' pages' areas. 4978 with 5.3.4's fill, a byte
+  // longer in each of the seven lists' chromes.
   assert.deepEqual(a.generated, {
     'firmware screens': 3247, 'fixed screens': 14103, 'tour and Remote Assistant': 0, 'status screens': 3901,
-    'clock header': 3558, 'help screens': 6275, 'activity menu': 787, 'device pages': 16146, 'activity screens': 2898, 'case programs': 572, 'hit pages': 863, wiring: 4560, 'state tables': 2347,
+    'clock header': 3558, 'help screens': 6275, 'activity menu': 787, 'device pages': 16146, 'device lists': 4978, 'activity screens': 2898,
+    'case programs': 572, 'hit pages': 772, wiring: 4560, 'state tables': 2347,
     'raw slot 18': 2, 'number senders': 1, pictures: 217218,
   });
   // The pictures' 294663, since `todo-compile-one.md` 5.3.1 and 5.3.3, section 422, are the 32 of ours the path put in
@@ -356,7 +376,8 @@ test('todo-compile-one 3.2.2, 4.3 and 4.10: the firmware screens, the fixed scre
   // before it.
   assert.deepEqual(a.described, {
     'firmware screens': 449, 'fixed screens': 4174, 'tour and Remote Assistant': 0, 'status screens': 728,
-    'clock header': 337, 'help screens': 2024, 'activity menu': 205, 'device pages': 6280, 'activity screens': 1078, 'case programs': 33, 'hit pages': 0, wiring: 1250, 'state tables': 0,
+    'clock header': 337, 'help screens': 2024, 'activity menu': 205, 'device pages': 6280, 'device lists': 1538, 'activity screens': 1078,
+    'case programs': 33, 'hit pages': 0, wiring: 1250, 'state tables': 0,
     'raw slot 18': 0, 'number senders': 0, pictures: 0,
   });
   // The help screens' 1994 against 660 on the donor are the numbers and names of a chain of seven rather than two:
@@ -366,6 +387,8 @@ test('todo-compile-one 3.2.2, 4.3 and 4.10: the firmware screens, the fixed scre
   // The case programs' 33 are section 416's 24 numbers, one per power variable the all off writes, seven here, the
   // donor's two and the five composed, and two for its list. The hit pages' description reads 23 bytes, the leads of
   // the screen pages that name them, none of them inside the pages it builds, so none of its bytes is described.
+  // The device lists' 1531 are the seven lists' rows' names and their numbering, every device mode a row enters and
+  // every list index, value map, variable and picture among it, section 424.
 });
 
 test('todo-compile-one 4.10: the composed setup holds no tour and no Remote Assistant, every list call, mode it enters and hit page it names resolves, and the state table, the queue, the wiring and the texts\' form hold',
@@ -375,16 +398,18 @@ test('todo-compile-one 4.10: the composed setup holds no tour and no Remote Assi
   const lists = c.actionLists()!.length;
   const records = modeRecords(c)!;
   const pages = touchPages(c)!.records.length;
-  assert.deepEqual([lists, records.length, pages], [2733, 112, 24]);
+  assert.deepEqual([lists, records.length, pages], [2842, 117, 24]);
   assert.equal(listCallSites(c).filter((one) => one.list >= lists).length, 0);
   assert.equal(instructionSites(c, 0x7e).filter((one) => one.operand >= records.length).length, 0);
   assert.equal(records.flatMap((one) => one.pages).filter((page) => page.lead! >= pages).length, 0);
   assertStateTableConsistent(c);
   assertQueueFits(c);
   checkTouchWiring(c);
-  // 471 texts drawn inline and 878 by reference, each inline copy the first draw of its codes in address order.
+  // 471 texts drawn inline and 1020 by reference, each inline copy the first draw of its codes in address order; 878
+  // by reference until 4.3.3 built the device lists and gave the five activities one each: 142 texts more, every one
+  // drawn by reference to a copy before it.
   const texts = checkTouchScreenTexts(c);
-  assert.deepEqual([texts.inline, texts.references], [471, 878]);
+  assert.deepEqual([texts.inline, texts.references], [471, 1020]);
 });
 
 test('todo-compile-one 4.10: with the tour kept the composed setup does not keep the texts\' form rule, "pages" at 35, 18 drawn inline where the rule draws it by reference',
@@ -422,12 +447,62 @@ test('todo-compile-one 3.2.2.4: the composed setup\'s power off help asks about 
   // 4n + 2 screens, the donor's ten where they were and the twenty new ones the next free modes in chain order.
   const modes = touchHelpScreenModes(c).modes;
   assert.equal(modes.length, 30);
-  // 108 to 127 until `todo-compile-one.md` 4.10 left out the tour's and the Remote Assistant's sixteen modes below.
-  assert.deepEqual(modes.slice(10), Array.from({ length: 20 }, (_, k) => 92 + k));
-  assert.equal(modeRecords(c)!.length, 112);
+  // 108 to 127 until `todo-compile-one.md` 4.10 left out the tour's and the Remote Assistant's sixteen modes below,
+  // and 92 to 111 until 4.3.3 gave the five activities a device list each below them.
+  assert.deepEqual(modes.slice(10), Array.from({ length: 20 }, (_, k) => 97 + k));
+  assert.equal(modeRecords(c)!.length, 117);
 });
 
-test('todo-compile-one 3.2: the One\'s composed test setup carries 145991 of its 1022262 bytes out of Logitech\'s donor, per kind as pinned here, a list that may only shrink',
+test('todo-compile-one 4.3.3: each of the composed setup\'s five activities opens a device list of its own, every device with those its start switches on first in that order, and the idle list and the list nothing enters stay',
+     NEEDS, () => {
+  const c = composed().container;
+  const lists = touchDeviceLists(c);
+  const { records, idle } = touchValueMapRoles(c);
+  const maps = valueMaps(c)!;
+  const names = new Map(devices(c).map((one) => [one.mode, one.name]));
+  const all = c.actionLists() ?? [];
+  const hits = touchPages(c)!.records;
+  const { marker } = deviceListMenus(c);
+  // The device modes a list's rows enter, in the order they stand on the screen: page by page, a page by its touch area.
+  const modesOf = (mode: number): number[] => modeRecords(c)![mode]!.pages.flatMap((page) => {
+    const areas = hits[page.lead as number]?.areas ?? [];
+    return (taggedList(c, page.list)?.entries ?? []).flatMap((one) => {
+      if (one.opcode !== 0x7f) return [];
+      const entered = deviceListRowMode(all[one.operand] ?? [], c.architecture, marker);
+      const area = areas.find((a) => a.code === (one.tag & 0x3f));
+      return entered === undefined || area === undefined ? [] : [{ entered, y: area.y, x: area.x }];
+    }).sort((a, b) => (b.y - a.y) || (a.x - b.x)).map((one) => one.entered);
+  });
+  const named = (modes: number[]): string[] => modes.map((mode) => names.get(mode) ?? `mode ${mode}`);
+  assert.deepEqual(lists.map((one) => (one.kind === 'unreached' ? 'nothing' : one.idle === true ? 'idle' : `activity ${one.activity}`)),
+    ['idle', 'nothing', 'activity 1', 'activity 2', 'activity 3', 'activity 4', 'activity 5']);
+  const idleList = lists.find((one) => one.idle === true)!;
+  const idleModes = modesOf(idleList.mode);
+  assert.deepEqual(modesOf(lists.find((one) => one.kind === 'unreached')!.mode), idleModes);
+  // The device modes the cases under Devices at `value` enter, the record's and its unread copy's.
+  const opened = (value: number): number[] => (['devices', 'devices unread'] as const).map((role) => {
+    const target = maps[records.get(role)!]!.entries.find(([key]) => key === value)![1];
+    const queued = caseQueued(c, target)!;
+    assert.equal(queued.opcode, ENTER_MODE);
+    return queued.operand;
+  });
+  assert.deepEqual(opened(idle), [idleList.mode, idleList.mode]);
+  const heads: Record<string, string[]> = {};
+  for (const activity of activities(c)) {
+    const own = lists.find((one) => one.activity === activity.activity)!;
+    assert.deepEqual(opened(activity.activity), [own.mode, own.mode], activity.name);
+    const head = startSwitchedOn(c, activity.set, idleModes, activity.name!);
+    assert.deepEqual(modesOf(own.mode), [...head, ...idleModes.filter((one) => !head.includes(one))], activity.name);
+    heads[activity.name!] = named(head);
+  }
+  // The heads, as the setup's activities name their devices and in the order the composer's starts switch them on.
+  assert.deepEqual(heads, {
+    'TV kijken': ['LG_OLED65G26LA', 'KPN', 'Denon_AVR-X4800H'], 'Film kijken': ['Plasma', 'Kodi', 'Denon_AVR-X4800H'],
+    'Muziek': ['Kodi', 'Sony_HT'], 'Kodi kijken': ['LG_OLED65G26LA', 'Kodi', 'Switch'], 'Plasma kijken': ['Plasma', 'KPN'],
+  });
+});
+
+test('todo-compile-one 3.2: the One\'s composed test setup carries 103331 of its 983644 bytes out of Logitech\'s donor, per kind as pinned here, a list that may only shrink',
      NEEDS, () => {
   const out = composed().container;
   const got = carried(out, parse(require_('harvest_one_two_devices')), builtBytes().owners);
@@ -475,24 +550,29 @@ test('todo-compile-one 3.2: the One\'s composed test setup carries 145991 of its
   // **5.3.1 and 5.3.3 drew ours in place of Logitech's pictures**, section 422: `picture` came down by 730518, to
   // 42612. Ours of the status strip, the firmware screens, the power off help and the settings buttons are built, and
   // so is the one black background, the photographs and the background's other copies gone; the device pages' pads,
-  // which the look draws in ours, went out of the bank with it. What is left is the four pictures only mode 70 draws,
-  // the donor's mode 86, a second list of every device, three pages here, which the look's device step does not
+  // which the look draws in ours, went out of the bank with it. What was left then was the four pictures only mode 70
+  // drew, the donor's mode 86, the list nothing enters, three pages here, which the look's device step did not
   // recolour, `deviceListRows` naming the idle list alone: its two row pictures, 16405 each, and the two device icons
   // drawn on them, 4901 each.
+  //
+  // **4.3.3 built the device lists**, section 424: `picture` went, the 42612 above, since the look draws every list in
+  // ours, and `slot-10-list` came down by 48, the lists of the donor's two device lists that the built lists' own
+  // match: two header lists of three programs, 20, two lists the chrome queues, 14, and the left key's list of the
+  // list nothing enters and its copy's, 14.
   //
   // `raw-18-table` 2 and `slot-16-table` 1 went with 6.7, generated on the path by `families/touch/smalltables.ts`.
   // Of `slot-10-list`, 262 are the 34 lists nothing can run, kept with 6.7's reason, the test below.
   assert.deepEqual(got, {
-    'picture': 42612, // mode 70's rows and icons; 773130 before 5.3.1 and 5.3.3, 1012839 before 4.10
+    // `picture` 42612 before 4.3.3, mode 70's rows and icons; 773130 before 5.3.1 and 5.3.3, 1012839 before 4.10
     'slot-5-block': 96946, 'slot-5-header': 4116, 'slot-5-group': 594, // the donor's two devices' infrared, 8.1
-    'slot-10-list': 1556, // per builder in the listing: 17609 before 3.2.2, 6649 before 3.2.2.2, 6114 before 3.2.2.3, 6054 before 3.2.2.4, 5351 before 3.2.2.5, 4004 before 3.2.2.7, 3960 before 3.2.2.8, 1820 before 4.10
+    'slot-10-list': 1508, // per builder in the listing: 17609 before 3.2.2, 6649 before 3.2.2.2, 6114 before 3.2.2.3, 6054 before 3.2.2.4, 5351 before 3.2.2.5, 4004 before 3.2.2.7, 3960 before 3.2.2.8, 1820 before 4.10, 1556 before 4.3.3
     // `mode device` 4569 before 3.2.2.8, and `mode other` 11983 before 3.2.2 and 1495 before 3.2.2.4
     'hit-page': 167, // 2444 before 3.2.2.3, 546 before 3.2.2.7, 485 before 3.2.2.8; `case-program` 341 before 3.2.2.3 and 10 before 4.10, and base slot 11's `table` 89
   });
-  assert.equal(Object.values(got).reduce((sum, one) => sum + one, 0), 145991);
+  assert.equal(Object.values(got).reduce((sum, one) => sum + one, 0), 103331);
+  assert.equal(out.blob.length, 983644);
   // 1099596 until 5.3.4 made the background a fill, section 425, which moved no row above: what drew it is built, or
   // is mode 70's and mode 50's chromes, which matched no donor unit before the fill either.
-  assert.equal(out.blob.length, 1022262);
 });
 
 /** The 34 lists of the donor the composed setup carries and nothing can run, `todo-compile-one.md` 6.7. */
@@ -535,7 +615,7 @@ test('todo-compile-one 6.7: the composed setup carries 34 lists of its donor, 26
     one[0] += 1;
     one[1] += bytesOf(index);
   }
-  assert.equal(lists.length, 2733);
+  assert.equal(lists.length, 2842);
   assert.deepEqual(tally, { carried: [34, 262], 'donor sends': [11, 77], written: [26, 215] });
   assert.deepEqual(unreached.filter((index) => group(index) === 'carried'), UNRUN);
   assert.equal(unreached.filter((index) => group(index) === 'written' && index < theirs.length).length, 14);
