@@ -437,6 +437,28 @@ whose bodies differ in five clock records, put 3 of 75 pictures and 1 of 198 pag
 place; what fixes the order is open, and no two One compiles share a build time. The firmware half is unread on the One, whose bank the container states nowhere. On the
 composed path `composeSetup` places the result the same way, after the look and before the stamp.
 
+**A Harmony One with nothing in it**, [findings.md](findings.md) section 431, `buildTouchSkeleton` in
+`families/touch/skeleton.ts`: every check the parser runs passes with these empty forms, and nothing has been written
+to a remote.
+
+| base slot | empty form | count width, 19 of 19 One compiles |
+|---|---|---|
+| 2 | nine zero bytes, the log area's length on the One; a placeholder, since every compile states its region | |
+| 4 | `00 00 00 00 00`, fallback mode 0 and no status code | |
+| 5, 9, 12, 15, 17 | `00` | one byte |
+| 6 | `00 00 00` | three bytes |
+| 8 | `00`, an action list of nothing | |
+| 10, 11 | `00 00` | two bytes |
+| 16 | `00`, no favourite channel | one byte |
+| raw slot 18 | `00 00`, nothing parked in front, as on every One compile | |
+| key table | `00 00`, the empty tagged list, until mode 0, Low Battery, has its own key map | |
+
+The key table every One compile holds is one constant, the same bytes on 19 of 19: 55 entries, entry `k` calling
+action list `k`, the firmware screens' own lists, so it comes with them. Base slots 0, 13 and 14 hold the eighteen
+firmware variables, the first seven the stamped clock, and the compiler's two byte variable; base slot 7 holds
+section 427's 18 sets. `takeApart` refuses a container with no mode, since it finds the key table's end through mode
+0's record.
+
 The order of the body is carried, not derived. **Nothing on the remote reads any of these orders or
 positions that has been found**: on the Harmony 600 and 650 0.2, 650 0.4 and 700 2.8 images, base slot
 17 is fetched at two call sites, both indexing it as the hit map's `count, u24[]` and neither adding

@@ -57846,3 +57846,169 @@ per activity. The test changes it asked for are in the test file.
 * `packages/codec/src/families/touch/wiring.ts`, the redraw and three second timers' docstrings;
   `docs/config-format.md`, "The firmware's own wiring on the Harmony One" and base slot 12;
   `reference/remotes/harmony-one/behaviour.md`.
+
+## 431. The Harmony One's skeleton is laid out from nothing and passes every parse check, and a probe drawing every code once lets every screen set's builder spell through it
+
+**Status:** confirmed by construction with no lab, against the nineteen distinct Harmony One compiles for the table
+forms and the key table, and against two of them for the spelling; nothing built this way has been written to a
+remote.
+**Todo `todo-compile-one.md` 7.1.3**, the touch family's half of what `families/four-slot/empty.ts`' `buildEmptySkeleton`
+was for the Harmony 650, `todo-compile-650.md` 11.1.1.1 and plan 008 step 1.
+
+**Sources checked**: `families/four-slot/empty.ts` and its test, `todo-compile-650.md` 11.1.1, sections 311 (the key
+table), 395 (the One's frame), 405 (its firmware screens), 426 (the placer on the One), 427 (the One's stated font
+table), 429 and 430 (the empty One's device lists and wiring); `frame.ts`, `placer.ts`, `statetables.ts`, `text.ts`
+and `shared/spelling.ts`. **Logitech's client** was searched for the container's cookies, `GSPM`, `PTYY` and `LWJL`,
+in the decompiled source and in the client's assemblies as ASCII and as UTF-16, and names none: the client does not
+lay out a configuration. The firmware was not read: nothing here is a claim about what the remote does.
+
+### What the skeleton is
+
+`buildTouchSkeleton` in `families/touch/skeleton.ts` lays out a Harmony One configuration with no Logitech file as
+input: our font table, section 427's 18 sets of the 95 printable characters; the state tables, with the eighteen
+firmware variables, the first seven of them the clock stamped from the moment of building, then the compiler's two
+byte variable; the One's raw slot 18; and every other table in its empty form. Placed by `placePieces` and laid out
+by `layOutContainer`, it is **183949 bytes, and every check the parser runs passes**, `allChecksPass`; the emitter's
+round trip holds, the inventory reads, and **every byte is claimed by a reader but the key table's two**, the empty
+tagged list `00 00` at `0x67`, which no mode names because the skeleton has none. Base slot 7 is 183518 of those
+bytes. Skin 54 alone, the spare's, decision 23; skin 59 is refused, since the stated code order is skin 54's, section
+427.
+
+**The empty forms, and the count widths measured**: the tables of a count and three byte addresses take the width of
+the count every One compile has, `TOUCH_COUNT_WIDTHS`: base slots 5, 9, 12, 15, 16 and 17 one byte, 10 and 11 two, 6
+three, on 19 of 19 compiles, read as each table's length less three bytes per entry it names. **The control**: the
+same reading with four bytes an entry, the `u32` table section 20 corrected, disagrees with the widths on 19 of 19.
+Raw slot 18 is two zero bytes with nothing parked in front on 19 of 19, as section 426 found on twenty fixtures. Base
+slot 16 is `numberSenderTable` of nothing, base slot 8 an action list of nothing, base slot 4 an event map with
+fallback mode 0 and no status code, and base slot 2 nine zero bytes, the log area's length on the One: a placeholder,
+since every compile states its region there, `buildLogArea`. Base slots 2, 4, 8, 12 and 15 are the wiring's, built by
+`buildTouchWiring`, which `emptyTouchWiring` calls, section 430, so the skeleton holds none of the wiring.
+
+**The key table is empty, where the Harmony 650's skeleton carries mode 0's list.** On the 650 mode 0 is the "add an
+Activity" placeholder, whose list runs nothing a configuration numbers, section 311. On the Harmony One mode 0 is Low
+Battery, the first firmware screen, section 405, and the key table is its own key map: **the same bytes on all
+nineteen compiles, 55 entries, each calling the action list its position numbers**, lists 0 to 54, which are the
+firmware screens' own lists. So the key table is a constant, but one that names 55 lists a skeleton does not hold; it
+comes with the firmware screens, whose builder makes it, 7.1.7. This was first written here as a key map calling "52
+lists of its own", which is the count of key codes section 405 gives for the screen's bindings, a different number;
+the sentence audit below measured the 55, and the test now holds them.
+
+**`takeApart` does not read the skeleton**: it finds the key table's end through mode 0's record, `relocationFloor`,
+and the skeleton has no mode, so it refuses with "the key table is not one piece". That is a limit of the reader on a
+configuration with no mode, which no compile is; the layout as placed lays out to the same bytes again. A
+configuration with modes, 7.1.7's, is expected to be read by it as every compile is, and has not yet been.
+
+### The seam with the numbering
+
+The skeleton numbers nothing. `layOutTouchSkeleton(options, parts)` takes everything numbered as parts: a table for
+any base slot but 0, 7, 13 and 14, which the skeleton builds, and 1, 3, 18 and 19, which hold none (both refused); the
+key table; the configuration's own variables, value maps and the clock's hour and minute lists; the body; and the
+loose pieces the placer places. The skeleton is that call with no parts, the probe below is it with one, and the
+assembly, 7.1.7, hands it the rest, so an empty One's tables, state tables, font table and placement reach the frame by
+one route. With no state parts both of the clock's transitions name list 0, which the skeleton does not hold, and the
+parse checks pass with it.
+
+### The probe the builders spell through
+
+A screen builder spells a word in a configuration's own codes through its character map, `characterMap`, which names
+every glyph of every set by the alphabet that explains the most of the codes the configuration's programs draw. The
+skeleton draws nothing, so it has no character map, and **every one of the nine screen sets' builders refuses on
+it**, "the config draws no text this can spell from". The Harmony 650's empty build met the same and solved it with a
+container it spells from and never emits; `touchSpellingContainer` is the One's: the skeleton with one base slot 11
+program that selects set 0 and draws codes 1 to 95 once, inline. **How "spell through" is read here**: every touch
+builder that writes a word takes the container it spells from as its first argument and reads from it the character
+map, the font table's sets and the glyphs' widths; so given the probe a builder writes our codes and measures our
+letters, and nothing it writes names a piece of the probe. The probe is 105 bytes longer than the skeleton, the
+program and its table entry, and holds the same font table glyph for glyph.
+
+* **Every code reads back as the character the table states**: the probe's map is our letters' alphabet, which
+  explains 95 of the 95 codes drawn, and names code `k + 1` `TOUCH_GLYPH_ORDER[k]` for every `k`; every one of the 18
+  sets spells all 95 printable characters in those codes. The two ends are independent: one is the order the table
+  was built in, the other our letters' alphabet recognising the glyphs. **Two controls.** A probe drawing the space
+  alone, which every alphabet reads as a blank, ties, and the first alphabet in the list wins, one seeded from
+  Logitech's own letters, which names 10 codes: drawing every code is what makes ours the alphabet chosen, and the
+  first reviewer found that a probe drawing codes 2 to 96 instead still read back alike, which is why the test now
+  holds the program's bytes. A probe built with codes 1 and 2 swapped reads them back swapped, so the reading follows
+  the glyphs and not the statement.
+* **Every text of the two compiles with no activity whose table is in our order spells through it**:
+  `harvest_one_two_devices` and `harvest_one_families_1` hold section 427's sixteen sets in our order, the same face
+  heights set by set, so a font index in their description names the same set in ours; that rests on section 427,
+  since every set of ours holds every code and the spelling cannot tell which set it was given. Both hold no activity,
+  so no start up title or activity name is among their texts. Their 1059 and 1231 texts, read by
+  `describeTouchScreenTexts` with none carrying its codes, each spell through the probe in our codes; the 950 and 1185
+  whose every character is among the first 60 codes are spelled in Logitech's own codes, which is section 427's code
+  order met from Logitech's side, their character map resolved from Logitech's glyphs and ours from our letters. Of
+  the other 109 and 46, 106 and 46 are spelled otherwise, and 3 of the first compile's agree where our order and the
+  compile's happen to coincide past the 60th code.
+* **Every screen set builds through it**: given the description read off `harvest_one_two_devices`, the firmware
+  screens, the fixed screens, the status screens, the help screens, the clock header, the tour, the device pages, the
+  device lists and the activity menu each build through the probe and each refuses through the skeleton. That they
+  build is what is shown; their output is not compared with anything here, which is 7.1.7's, and the activity menu
+  was built for a compile with no activity.
+
+### All eighteen sets stay
+
+7.1.1 left this item to decide on the nine sets the composed setup selects in no reachable program, section 427's
+count, not measured again here. **They stay.** Five, sets 1, 4, 5, 6 and 8, because every select of them names a copy
+blended against a background: the copy is made from the set when blending runs, after the screens are drawn, and the
+set is what a select keeps where its texts sit on more than one colour, `blending.ts`, so a builder needs it before
+blending and it is the fallback after. Three, sets 9, 10 and 12, because only the welcome tour draws them, and the tour
+is a choice, `TouchChoices.welcomeTour`, off by default. One, set 14, which the composed device pages count in an added
+copy instead; Logitech's compiles count a device page and a device list of several pages in it, section 427. Leaving
+any set out renumbers every later one. **What it costs**: the nine are 90238 of base slot 7's 183518 bytes, 49182 for
+the five, 33278 for the three and 7778 for set 14, measured on `buildTouchFontTable`'s pieces, against a configuration
+region the Harmony One's writes allow up to `0x390000` bytes of. This is a choice and not a measurement.
+
+### Shared pieces moved rather than copied
+
+Two helpers the Harmony 650's empty build held in its own module serve both families now, moved so that neither is a
+second copy: `countedTable`, the counted table's encoder, to `frame.ts`, and `clockSpec`, the clock stamped from the
+moment of building by `edit.ts`' rule, to `statetables.ts`. The four slot module imports both and its tests pass
+unchanged, 27 of 27 with the lab and the infrared archive. Their refusals are now `LayoutError` and `StateTablesError`
+where both were `EmptyConfigurationError`; nothing caught the old class.
+
+### What would falsify it
+
+A Harmony One compile with another count width at one of these slots, raw slot 18 other than two zero bytes with
+nothing in front, or another key table; a code of the probe reading as another character than the table states it; a
+text of either compile among the first 60 codes spelled through the probe otherwise than Logitech spelled it; a screen
+set's builder that refuses through the probe, or builds through the skeleton.
+
+### Which architectures
+
+Arch 12 (Harmony One) alone, skin 54. The Harmony 600, 650 and 700 (arch 14) have their own skeleton,
+`families/four-slot/empty.ts`, which states its count widths inline and draws its probe the same way. The count
+widths, raw slot 18 and the key table were measured on the nineteen One compiles only.
+
+### What is not established
+
+Nothing here has been on a remote: the skeleton holds no screen and could show nothing. That the remote accepts empty
+tables where its compiles hold full ones is 7.2's to see, on the whole empty One.
+
+### The reviews
+
+Two reviewers read the change before it was committed. **The first, blind to this section**, reproduced every count:
+the widths and raw slot 18 on the nineteen, the skeleton's 183949 bytes and its one two byte gap, the 1059 and 1231
+texts with 950 and 1185 among the first 60 and 106 and 46 spelled otherwise, and the set costs. It found three tests
+checking less than their titles: the probe test did not hold what the probe draws (its control, a probe drawing codes 2
+to 96, passed), the widths control compared the statement with itself once the widths had matched, and the screen sets
+test shows that they build and nothing about what. The first two are fixed, the probe's program asserted and the space
+alone control added, the widths control replaced by the four byte reading; the third is now said in its section.
+**The second audited the sentences** and corrected: the key table's 52 lists, which are 55 and a constant on all
+nineteen; "every container check" where `takeApart` refuses the skeleton; "every word" of compiles that hold no
+activity; the font index's agreement, which rests on section 427 and not on the test; the four slot tests' skips and
+the moved helpers' error classes; the eighteen firmware records, which are variables, seven of them the clock; the log
+area, a placeholder no compile holds; a citation of section 415 for the client, which searched another thing; and three
+sentences stated as measured that were expected.
+
+### Where it lands
+
+* `packages/codec/src/families/touch/skeleton.ts`: `buildTouchSkeleton`, `layOutTouchSkeleton`, `TouchSkeletonParts`,
+  `touchSpellingContainer`, `touchProbeProgram`, `TOUCH_COUNT_WIDTHS`, `TOUCH_SKELETON_SKINS`.
+* `packages/codec/src/frame.ts`: `countedTable`; `packages/codec/src/statetables.ts`: `clockSpec`; both moved from
+  `families/four-slot/empty.ts`, whose probe's docstring says what the character map does with the drawn codes.
+* `packages/codec/test/touchskeleton.test.ts`: the skeleton's checks, claims, tables, font table and clock with no lab;
+  the refusals; the probe's program and read back with its two controls and the skeleton's refusal; the count widths,
+  raw slot 18 and the key table on the nineteen with the control; the spelling of the two compiles' texts; the nine
+  screen sets through the probe and not the skeleton.
+* `docs/config-format.md`, "What decides each byte of the frame on arch 14", the One's empty forms.

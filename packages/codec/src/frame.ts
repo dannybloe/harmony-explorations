@@ -226,6 +226,26 @@ export type PieceRef =
   | { at: number; to: ContainerPiece; offset: number }
   | { at: number; address: number };
 
+/**
+ * A table of a count and three byte addresses, the shape of base slots 5, 7, 9, 10, 11, 12, 14 and 15,
+ * whose count is one or two bytes, of base slot 6, whose count is three, and on the Harmony One of base
+ * slot 17, the touch hit map, whose count is one: the same widths on arch 12 (Harmony One) and arch 14
+ * (Harmony 600, 650 and 700), read off their compiles. Each entry names its piece's start, or `offsets[k]`
+ * bytes into it. Moved here out of `families/four-slot/empty.ts` with `todo-compile-one.md` 7.1.3, since
+ * both families build a configuration from nothing through it and nothing in it is either's.
+ */
+export function countedTable(
+  countWidth: number, targets: readonly ContainerPiece[], owner: string, offsets: readonly number[] = [],
+): ContainerPiece {
+  if (targets.length >= 1 << (8 * countWidth)) throw new LayoutError(`${targets.length} entries do not fit a ${countWidth} byte count`);
+  const bytes = new Uint8Array(countWidth + ADDRESS_WIDTH * targets.length);
+  for (let k = 0; k < countWidth; k += 1) bytes[k] = (targets.length >> (8 * k)) & 0xff;
+  return {
+    bytes, owner,
+    refs: targets.map((to, k): PieceRef => ({ at: countWidth + ADDRESS_WIDTH * k, to, offset: offsets[k] ?? 0 })),
+  };
+}
+
 /** One base slot: what Logitech parks in front of its table, then the table. */
 export interface SectionPlacement {
   before: ContainerPiece[];

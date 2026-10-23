@@ -66,7 +66,7 @@
  * Read only towards hardware, like everything in this package. The result is pieces in memory.
  */
 import { Writer } from './emit.ts';
-import { CLOCK_FIELD_COUNT, FRAME_COOKIE, FRAME_END, actionListBytes } from './gspm.ts';
+import { CLOCK_FIELD_COUNT, FRAME_COOKIE, FRAME_END, actionListBytes, clockRecordFields } from './gspm.ts';
 import { u16, u24, u8 } from './bytes.ts';
 import type { ContainerLayout, ContainerPiece, PieceRef } from './frame.ts';
 import { compilerCaseOrder } from './inventory.ts';
@@ -74,6 +74,7 @@ import { STATE_BAND } from './actions.ts';
 import { keyListCapacity, keyListHash } from './modezero.ts';
 import {
   ACTION_LIST_INDEX_OPCODE,
+  CLOCK_STATE_MAXIMA,
   FRAME_HEADER,
   NAME_LEVEL_STATE_VARIABLE,
   NAME_NODE_FIELDS,
@@ -375,6 +376,22 @@ export const CLOCK_WEEKDAY = 4;
  */
 export function hourListBytes(): Uint8Array {
   return actionListBytes([CLOCK_DAY, CLOCK_WEEKDAY].map((variable) => ({ opcode: STATE_BAND, operand: (INCREMENT << 8) | variable })));
+}
+
+/**
+ * The seven clock records stamped from the moment of building: each field its `first`, its maximum
+ * `CLOCK_STATE_MAXIMA`'s and the year's one above it, `edit.ts`' stamping rule for a configuration built
+ * from nothing. The same on every family a configuration is built from nothing for, the Harmony 600, 650
+ * and 700's and the Harmony One's, since the maxima are the same in every container, section 130; moved
+ * here out of `families/four-slot/empty.ts` when the Harmony One came to need it, `todo-compile-one.md`
+ * 7.1.3, so the two families stamp through one copy.
+ */
+export function clockSpec(builtAt: string): StateTablesSpec['clock'] {
+  const fields = clockRecordFields(builtAt);
+  if (fields === undefined) throw new StateTablesError(`${builtAt} is not a time base slot 3 can hold`);
+  return Array.from({ length: CLOCK_FIELD_COUNT }, (_, k) => ({
+    first: fields[k]!, max: CLOCK_STATE_MAXIMA[k] ?? fields[k]! + 1,
+  }));
 }
 
 /**

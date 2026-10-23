@@ -22,15 +22,13 @@
  * Arch 14 only, the Harmony 650. Read only towards hardware: the result is bytes in memory.
  */
 import type { Container } from '../../gspm.ts';
-import { CLOCK_FIELD_COUNT, clockRecordFields } from '../../gspm.ts';
 import type { ContainerPiece, PieceRef } from '../../frame.ts';
-import { layOutContainer } from '../../frame.ts';
+import { countedTable, layOutContainer } from '../../frame.ts';
 import { placePieces } from '../../placer.ts';
 import { encodeGlyph } from '../../font.ts';
-import { CLOCK_STATE_MAXIMA } from '../../sections.ts';
 import {
-  buildStateTables, menuMarkerVariable,
-  type BuiltStateTables, type PieceTarget, type StateTablesSpec, type StateVariableSpec, type ValueMapSpec,
+  buildStateTables, clockSpec, menuMarkerVariable,
+  type BuiltStateTables, type PieceTarget, type StateVariableSpec, type ValueMapSpec,
   hourListBytes,
 } from '../../statetables.ts';
 import {
@@ -137,32 +135,6 @@ export function emptyFontTable(
     return { bytes, refs, owner: 'slot-7-set' };
   });
   return { table: countedTable(2, sets, 'slot-7-table'), sets, glyphs: [...glyphPieces.values()], faces };
-}
-
-/**
- * A table of a count and three byte addresses, the shape of base slots 5, 7, 9, 10, 11, 12, 14 and 15,
- * whose count is one or two bytes, and of base slot 6, whose count is three. Each entry names its piece's
- * start, or `offsets[k]` bytes into it.
- */
-export function countedTable(
-  countWidth: number, targets: readonly ContainerPiece[], owner: string, offsets: readonly number[] = [],
-): ContainerPiece {
-  const bytes = new Uint8Array(countWidth + POINTER * targets.length);
-  for (let k = 0; k < countWidth; k += 1) bytes[k] = (targets.length >> (8 * k)) & 0xff;
-  if (targets.length >= 1 << (8 * countWidth)) throw new EmptyConfigurationError(`${targets.length} entries do not fit a ${countWidth} byte count`);
-  return {
-    bytes, owner,
-    refs: targets.map((to, k): PieceRef => ({ at: countWidth + POINTER * k, to, offset: offsets[k] ?? 0 })),
-  };
-}
-
-/** The seven clock records stamped from the moment of building: each field its `first`, the year's maximum one above it. */
-export function clockSpec(builtAt: string): StateTablesSpec['clock'] {
-  const fields = clockRecordFields(builtAt);
-  if (fields === undefined) throw new EmptyConfigurationError(`${builtAt} is not a time base slot 3 can hold`);
-  return Array.from({ length: CLOCK_FIELD_COUNT }, (_, k) => ({
-    first: fields[k]!, max: CLOCK_STATE_MAXIMA[k] ?? fields[k]! + 1,
-  }));
 }
 
 /**
@@ -632,9 +604,10 @@ function emptyPictureNames(model: EmptyModel): Set<OurPictureName> {
 
 /**
  * A container to spell from: the skeleton with one program that draws every character of ours once. The
- * screen builders spell through `characterMap`, which resolves a configuration's codes from the texts it
- * draws, and an empty configuration draws none until its screens exist. The program is not part of the
- * result.
+ * screen builders spell through `characterMap`, which names every glyph by the alphabet that explains the most
+ * codes the configuration draws, so a configuration that draws none, as an empty one does until its screens
+ * exist, has no map; drawing every code makes ours the alphabet chosen, which the Harmony One's probe measures,
+ * findings section 431. The program is not part of the result.
  */
 function spellingContainer(options: EmptyOptions): Container {
   const codes = LETTERING_CHARACTERS.map(emptyCodeOf);
