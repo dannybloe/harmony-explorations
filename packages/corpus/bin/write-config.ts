@@ -167,6 +167,7 @@ const SPARE_DUMPS = new Set([
   'one_spare_options_written',
   'one_spare_lists_written',
   'one_spare_devlistfix_written',
+  'one_spare_pictures2_written',
 ]);
 
 /**

@@ -57458,7 +57458,9 @@ only level 3, the sixteen places test failed on each.
 
 ### Still open
 
-**Not seen on a remote**: the gauges, the cross and the status strip in the rule's form, 7.2. **The circle's radius is
+**Seen on the remote, in part**: the composed setup with 4.3.3's fix, 982911 bytes, written to the spare Harmony One as 8
+erase blocks and read back byte for byte, and its charging screen looked right. **Not seen**: the gauge at more than
+the one level the battery held, and the cross, which shows only when charging fails. **The circle's radius is
 the icon font's**, 10 of 24 units as `close-circle-outline` draws it: another icon chosen for the cross keeps the same
 disc of paper, which is right for a round icon and would cut a square one's black at its corners.
 
