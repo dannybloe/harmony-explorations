@@ -272,10 +272,25 @@ const OPTIONS_KEY_MAP = named(MAP, 'options key map');
 const OPTIONS_SOUND_MAP = named(MAP, 'options sound map');
 const OPTIONS_DATE = owns(CLICK, named(ENTER, 'options date'));
 const OPTIONS_SENSITIVITY = owns(CLICK, named(ENTER, 'options sensitivity'));
+const OPTIONS_LIGHT_5_ON = named(LIST, 'options light 5 on');
+const OPTIONS_PAGE_KEYS_ON = named(LIST, 'options page keys on');
+const OPTIONS_LEAVE: Entry = [TAG_LEAVE, owns(TIMER_CANCEL, LIGHT_5_OFF, PAGE_KEYS_OFF, LIGHT_5_OFF)];
+/** Options' entering list, by name, since its form of one page holds fewer steps than the form it is numbered from. */
+const optionsEnter = (...steps: Step[]): Entry => [TAG_ENTER, named(owns(TIMER_START, ...steps), 'options enter')];
 const OPTIONS_OWN: readonly Entry[] = [
   // The wiring's on lists of channel 5, the page keys and channel 5 again, and the off lists in their order.
-  [TAG_ENTER, owns(TIMER_START, LIST, LIST, LIST)], [TAG_LEAVE, owns(TIMER_CANCEL, LIGHT_5_OFF, PAGE_KEYS_OFF, LIGHT_5_OFF)],
+  optionsEnter(OPTIONS_LIGHT_5_ON, OPTIONS_PAGE_KEYS_ON, OPTIONS_LIGHT_5_ON), OPTIONS_LEAVE,
   SCAN_38, [TAG_HEADER, HEADER],
+];
+/**
+ * Options of one page enters as Logitech's one page screens do, the timer and channel 5's on list and **not** the page
+ * keys' on list: Screen Sensitivity's and Time of Day's entering lists are exactly that on every compile read, where
+ * every screen of several pages calls the page keys' list as well. Calling it lit the page keys over a screen with
+ * nothing to turn to, which the spare Harmony One showed at the bench, `todo-compile-one.md` 4.10.2. Leaving still
+ * switches them off, as the one page screens' leaving lists do too.
+ */
+const OPTIONS_ONE_PAGE_OWN: readonly Entry[] = [
+  optionsEnter(OPTIONS_LIGHT_5_ON), OPTIONS_LEAVE, SCAN_38, [TAG_HEADER, HEADER],
 ];
 /** Screen sounds' row, which writes the button sound variable's other value through its value map. */
 const soundRow = (y: number): FixedPart => ({
@@ -297,7 +312,7 @@ function optionsScreen(tour: boolean): FixedScreen {
     const sounds = soundRow(92);
     return {
       name: 'Options',
-      own: [...ARROWS, ...OPTIONS_OWN],
+      own: [...ARROWS, ...OPTIONS_ONE_PAGE_OWN],
       chrome: chrome('Options', 1),
       pages: [{
         list: [[press(48), OPTIONS_DATE], [press(49), OPTIONS_SOUND_MAP], [press(50), OPTIONS_SENSITIVITY], [press(51), OPTIONS_KEY_MAP]],

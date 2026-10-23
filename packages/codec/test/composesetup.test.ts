@@ -139,7 +139,9 @@ test('the One test setup composed onto Logitech\'s compile of two devices comes 
   // their two entries in the font table are 6 more. Our letters blended for the settings screens' buttons, now one
   // orange where Logitech's were a gradient. Every other picture of ours is the size of Logitech's it replaces, with its mask, so encodes to
   // as many bytes.
-  assert.equal(c.blob.length, 1099602);
+  // 1099596 since 4.10.2: Options of one page enters without the page keys' on list, its entering list two steps,
+  // six bytes, shorter, which lit the page keys over a screen with nothing to turn to at the bench.
+  assert.equal(c.blob.length, 1099596);
 });
 
 // ---------------------------------------------------------------------------------------------------------
@@ -296,7 +298,8 @@ test('todo-compile-one 3.2.2, 4.3 and 4.10: the firmware screens, the fixed scre
   // out on the composed path by default, so their part builds nothing, where it built 4015 and described 719. The
   // fixed screens' 14332 came down to 14087 with Options on one page without the Remote Assistant's row and the
   // Tutorial's, and their 4038 described rose to 4156, the texts' form rule applied once more over what is left
-  // moving inline copies; the device pages' 16155 to 16139 and their 6269 described to 6273 the same way. With the
+  // moving inline copies; since 4.10.2 14081 and 4152, Options' entering list without the page keys' on list, two
+  // steps and its two numbers fewer. The device pages' 16155 to 16139 and their 6269 described to 6273 the same way. With the
   // tour kept the composed setup breaks that rule ("pages" drawn inline where the rule draws it by reference), and
   // without it the setup keeps it, `checkTouchScreenTexts`, the test below. The hit pages' 2010 to
   // 863, the twelve pages only the sixteen were touched through and their entries in the table; and the wiring's
@@ -312,7 +315,7 @@ test('todo-compile-one 3.2.2, 4.3 and 4.10: the firmware screens, the fixed scre
   // byte as before the builder joined the path, so nothing of the others moved. Its 1068 described are the names, the
   // label lines and the numbering, every command a pad sends and every picture among it.
   assert.deepEqual(a.generated, {
-    'firmware screens': 3237, 'fixed screens': 14087, 'tour and Remote Assistant': 0, 'status screens': 3872,
+    'firmware screens': 3237, 'fixed screens': 14081, 'tour and Remote Assistant': 0, 'status screens': 3872,
     'clock header': 3558, 'help screens': 6245, 'activity menu': 786, 'device pages': 16139, 'activity screens': 2888, 'case programs': 572, 'hit pages': 863, wiring: 4560, 'state tables': 2347,
     'raw slot 18': 2, 'number senders': 1, pictures: 294663,
   });
@@ -324,7 +327,7 @@ test('todo-compile-one 3.2.2, 4.3 and 4.10: the firmware screens, the fixed scre
   // 401, 3967, 680 and 1243 for the four before 6.5: what a list below reads is the numbers of the lists it calls
   // and of the variables it writes, and the tour's setting, one byte.
   assert.deepEqual(a.described, {
-    'firmware screens': 439, 'fixed screens': 4156, 'tour and Remote Assistant': 0, 'status screens': 699,
+    'firmware screens': 439, 'fixed screens': 4152, 'tour and Remote Assistant': 0, 'status screens': 699,
     'clock header': 337, 'help screens': 1994, 'activity menu': 204, 'device pages': 6273, 'activity screens': 1068, 'case programs': 33, 'hit pages': 0, wiring: 1250, 'state tables': 0,
     'raw slot 18': 0, 'number senders': 0, pictures: 0,
   });
@@ -393,7 +396,7 @@ test('todo-compile-one 3.2.2.4: the composed setup\'s power off help asks about 
   assert.equal(modeRecords(c)!.length, 112);
 });
 
-test('todo-compile-one 3.2: the One\'s composed test setup carries 145991 of its 1099602 bytes out of Logitech\'s donor, per kind as pinned here, a list that may only shrink',
+test('todo-compile-one 3.2: the One\'s composed test setup carries 145991 of its 1099596 bytes out of Logitech\'s donor, per kind as pinned here, a list that may only shrink',
      NEEDS, () => {
   const out = composed().container;
   const got = carried(out, parse(require_('harvest_one_two_devices')), builtBytes().owners);
@@ -456,7 +459,7 @@ test('todo-compile-one 3.2: the One\'s composed test setup carries 145991 of its
     'hit-page': 167, // 2444 before 3.2.2.3, 546 before 3.2.2.7, 485 before 3.2.2.8; `case-program` 341 before 3.2.2.3 and 10 before 4.10, and base slot 11's `table` 89
   });
   assert.equal(Object.values(got).reduce((sum, one) => sum + one, 0), 145991);
-  assert.equal(out.blob.length, 1099602);
+  assert.equal(out.blob.length, 1099596);
 });
 
 /** The 34 lists of the donor the composed setup carries and nothing can run, `todo-compile-one.md` 6.7. */

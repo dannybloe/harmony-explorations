@@ -609,6 +609,7 @@ export const IMAGES: Readonly<Record<string, string>> = {
   one_spare_noassistant_written: '20261017T1106Z-one-spare-noassistant-written-region.bin',
   one_spare_tourfree_base: '20261023T0704Z-one-spare-tourfree-base-region.bin',
   one_spare_tourfree_written: '20261023T0909Z-one-spare-tourfree-written-region.bin',
+  one_spare_pictures_written: '20261023T0947Z-one-spare-pictures-written-region.bin',
   // Two configs Logitech compiled to a specification we wrote, 13 August 2026: the corpus's only
   // known answer samples. Section 132. Not in the corpus wide lists, on purpose; see tests/lab.py.
   calibration_one: 'calibration-one-spare.bin',
@@ -761,7 +762,7 @@ export const PARSEABLE_EXCLUDED: readonly string[] =
     'one_spare_retarget_base', 'one_spare_paired_base', 'one_spare_screen_base',
     'one_spare_poweroff_base', 'one_spare_page4_base', 'one_spare_track_start', 'one_spare_look_base',
     'one_spare_look_written', 'one_spare_glow_written', 'one_spare_arrows_written', 'one_spare_bottom_written',
-    'one_spare_light60_written', 'one_spare_noassistant_written', 'one_spare_tourfree_base', 'one_spare_tourfree_written',
+    'one_spare_light60_written', 'one_spare_noassistant_written', 'one_spare_tourfree_base', 'one_spare_tourfree_written', 'one_spare_pictures_written',
     // The Harmony 525's erase block, added 6 September 2026, and it is the first entry here that is
     // not a Harmony One's. It parses because its first 51195 bytes are `h525_config_2` exactly, so
     // counting it would add a configuration that does not exist. Same reason as

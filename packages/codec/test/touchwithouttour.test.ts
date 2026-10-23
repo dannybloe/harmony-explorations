@@ -24,6 +24,8 @@ import { assertStateTableConsistent, modeRecords, taggedList } from '../src/sect
 import { touchPages } from '../src/tables.ts';
 import { assertQueueFits } from '../src/queue.ts';
 import { takeApart } from '../src/frame.ts';
+import { recordReading } from '../src/screenrecords.ts';
+import { blobReader } from '../src/shared/spelling.ts';
 import { reachablePrograms } from '../src/screen.ts';
 import { dropModes } from '../src/shared/dropmodes.ts';
 import { withoutTourAndAssistant } from '../src/families/touch/withouttour.ts';
@@ -159,19 +161,20 @@ test('todo-compile-one 4.10: of the 3094 three byte runs `lo hi 7F` naming a lis
 // The tour and the Remote Assistant left out
 
 /**
- * Per compile: the bytes the file came down by, the lists taken out and their bytes, of those the ones nothing
+ * Per compile: the bytes the file came down by (six more since `todo-compile-one.md` 4.10.2, Options of one page
+ * entering without the page keys' on list, as Logitech's one page screens enter), the lists taken out and their bytes, of those the ones nothing
  * reached before either, and the hit pages taken out. Every compile loses the sixteen modes and the eleven
  * pictures only they drew.
  */
 const LEFT_OUT: Readonly<Record<string, [number, number, number, number, number]>> = {
-  harvest_one_two_devices: [245513, 121, 970, 0, 12], one_spare_after_sync: [245340, 118, 940, 0, 12],
-  one_spare_myharmony: [245246, 118, 940, 0, 11], one_spare_20260830: [245323, 118, 940, 3, 12],
-  calibration_one: [245332, 118, 940, 0, 12], calibration_favchannels: [245332, 118, 940, 0, 12],
-  calibration_favzero: [245325, 118, 940, 3, 12], compiled_protocols: [245322, 118, 940, 3, 12],
-  compiled_protocols_2: [245323, 118, 940, 3, 12], compiled_protocols_3: [245323, 118, 940, 3, 12],
-  harvest_one_families_1: [245593, 121, 970, 0, 13], harvest_one_families_2: [245504, 121, 970, 0, 12],
-  harvest_one_families_3: [245583, 121, 970, 0, 13], one_friend_legacy_sync_config: [245325, 118, 940, 0, 12],
-  phase7_before: [245332, 118, 940, 0, 12], phase7_after: [245328, 118, 940, 0, 12],
+  harvest_one_two_devices: [245519, 121, 970, 0, 12], one_spare_after_sync: [245346, 118, 940, 0, 12],
+  one_spare_myharmony: [245252, 118, 940, 0, 11], one_spare_20260830: [245329, 118, 940, 3, 12],
+  calibration_one: [245338, 118, 940, 0, 12], calibration_favchannels: [245338, 118, 940, 0, 12],
+  calibration_favzero: [245331, 118, 940, 3, 12], compiled_protocols: [245328, 118, 940, 3, 12],
+  compiled_protocols_2: [245329, 118, 940, 3, 12], compiled_protocols_3: [245329, 118, 940, 3, 12],
+  harvest_one_families_1: [245599, 121, 970, 0, 13], harvest_one_families_2: [245510, 121, 970, 0, 12],
+  harvest_one_families_3: [245589, 121, 970, 0, 13], one_friend_legacy_sync_config: [245331, 118, 940, 0, 12],
+  phase7_before: [245338, 118, 940, 0, 12], phase7_after: [245334, 118, 940, 0, 12],
 };
 
 test('todo-compile-one 4.10: on the sixteen English compiles of skin 54 the tour\'s eleven screens and the Remote Assistant\'s five go with what only they reach, nothing left names any of it, every check holds, and every builder of the family rebuilds the result byte for byte',
@@ -283,6 +286,36 @@ test('todo-compile-one 4.10: Options comes out one page, its three rows Date and
   assert.deepEqual(after.lists, [['50 7f', '51 72', '48 7f', '49 72']]);
 });
 
+test('todo-compile-one 4.10.2: on the sixteen English compiles of skin 54 Options of one page enters as Screen Sensitivity, a screen of one page, does, its timer and the same light list, without the page keys\' on list that two page Options and Month call',
+     skipUnless(...SKIN_54), () => {
+  // Each entering list's steps as `opcode operand`, read through the record reader the builders use.
+  const entering = (c: Container, name: string): string[] => {
+    const record = modeRecords(c)![touchFixedScreenModes(c)[TOUCH_FIXED_SCREENS.indexOf(name)]!]!;
+    const enter = (taggedList(c, record.start)?.entries ?? []).find((one) => one.tag === 6)!;
+    const bytes = recordReading(c, takeApart(c), blobReader(c)).list(enter.operand, name).piece.bytes;
+    return Array.from({ length: bytes[0]! }, (_, k) => {
+      const at = 1 + 3 * k;
+      return `${bytes[at + 2]!.toString(16)} ${u16(bytes, at).toString(16)}`;
+    });
+  };
+  for (const name of SKIN_54) {
+    const c = containerOf(name);
+    const one = withoutTourAndAssistant(c).container;
+    const sensitivity = entering(one, 'Screen Sensitivity');
+    const options = entering(one, 'Options');
+    const [twoPage, month] = [entering(c, 'Options'), entering(c, 'Month')];
+    // Two page Options: the timer, the light list, the page keys' list and the light list again; Month, of two
+    // pages, calls the page keys' list too, and Screen Sensitivity, of one, does not.
+    assert.equal(twoPage.length, 4, name);
+    assert.equal(twoPage[1], twoPage[3], name);
+    assert.ok(month.includes(twoPage[2]!) && !sensitivity.includes(twoPage[2]!), name);
+    // Ours: a timer start of its own (the timers differ per screen) and the same light list as Screen Sensitivity.
+    assert.equal(options.length, 2, name);
+    assert.ok(options[0]!.startsWith('1f eb') && sensitivity[0]!.startsWith('1f eb'), name);
+    assert.deepEqual([options[0], options[1]], [twoPage[0], sensitivity[1]], name);
+  }
+});
+
 // ---------------------------------------------------------------------------------------------------------
 // The choice
 
@@ -296,5 +329,5 @@ test('todo-compile-one 4.10: the composed path leaves the tour and the Remote As
   assert.equal(Buffer.compare(kept.blob, c.blob), 0);
   const left = withTouchComposedBuilders(c, [], { ...TOUCH_CHOICES, welcomeTour: false, logitechPictures: true }).container;
   assert.equal(Buffer.compare(left.blob, withoutTourAndAssistant(c).container.blob), 0);
-  assert.equal(c.blob.length - left.blob.length, 245513);
+  assert.equal(c.blob.length - left.blob.length, 245519);
 });

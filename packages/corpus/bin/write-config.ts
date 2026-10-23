@@ -163,6 +163,7 @@ const SPARE_DUMPS = new Set([
   // The spare with composed rows clicking, read before the write without the tour, todo-compile-one.md 4.10.1.
   'one_spare_tourfree_base',
   'one_spare_tourfree_written',
+  'one_spare_pictures_written',
 ]);
 
 /**

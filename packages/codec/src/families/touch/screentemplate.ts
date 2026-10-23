@@ -95,7 +95,7 @@ export type Step =
   | { kind: 'constant'; opcode: number; operand: number }
   | { kind: 'number'; opcode: number; band?: number; what: NumberKind; role?: string }
   | { kind: 'write'; operand: number }
-  | { kind: 'owns'; steps: readonly Step[] };
+  | { kind: 'owns'; steps: readonly Step[]; role?: string };
 
 export const k = (opcode: number, operand: number): Step => ({ kind: 'constant', opcode, operand });
 export const n = (opcode: number, what: NumberKind): Step => ({ kind: 'number', opcode, what });
@@ -111,9 +111,13 @@ export const write = (value: number): Step => ({ kind: 'write', operand: value }
  * screens of a device a composer added, section 415 and `todo-compile-one.md` 3.2.2.4: `templateNumberSlots`
  * walks a screen in the order the builder takes its numbers, and a caller that knows the value of each role
  * (read off the screens the configuration does hold, by the same walk) can number a new screen from it.
+ *
+ * **An `owns` step takes one too**, since its list's own index is a number the builder takes: so a list that holds
+ * fewer steps in one form of a screen than in another is carried by name, `carriedNumbers`, where its contents would
+ * not match. Options' entering list of one page, `todo-compile-one.md` 4.10.2.
  */
 export const named = (step: Step, role: string): Step => {
-  if (step.kind !== 'number') throw new ScreenRecordError(`only a number step takes a role, not ${role}'s`);
+  if (step.kind !== 'number' && step.kind !== 'owns') throw new ScreenRecordError(`only a number or a list step takes a role, not ${role}'s`);
   return { ...step, role };
 };
 
@@ -1014,7 +1018,7 @@ function stepSignature(step: Step): string {
   if (step.kind === 'constant') return `k ${step.opcode} ${step.operand}`;
   if (step.kind === 'number') return step.role !== undefined ? `role ${step.role}` : `${step.what} ${step.opcode} ${step.band ?? ''}`;
   if (step.kind === 'write') return `write ${step.operand}`;
-  return `owns(${step.steps.map(stepSignature).join(', ')})`;
+  return step.role !== undefined ? `role ${step.role}` : `owns(${step.steps.map(stepSignature).join(', ')})`;
 }
 
 /**
@@ -1034,7 +1038,7 @@ export function carriedNumbers<F extends string>(
   const seen = new Map<string, number>();
   const keyOf = (step: Step): string => {
     const signature = stepSignature(step);
-    if (step.kind === 'number' && step.role !== undefined) return signature;
+    if ((step.kind === 'number' || step.kind === 'owns') && step.role !== undefined) return signature;
     const k = (seen.get(signature) ?? 0) + 1;
     seen.set(signature, k);
     return `${signature} #${k}`;

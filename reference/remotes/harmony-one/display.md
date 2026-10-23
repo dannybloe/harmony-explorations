@@ -146,7 +146,11 @@ Generated from `packages/codec`, `packages/usb` and the drawing by `make remote-
   one page without "Tutorial" and "Turn Remote Assistant", a form no compile read holds. Seen on a Harmony
   One with such a configuration written to it, section 421: it started on its ordinary screen with no welcome, no
   "Ensure all your devices are off" and no "Welcome!", and Options showed one page of three rows, Date and Time,
-  Screen Sounds and Screen Sensitivity, with no page counter.
+  Screen Sounds and Screen Sensitivity, with no page counter. **The page keys' lights follow the screen's entering
+  list, not its page count**: a screen of several pages enters through a list that lights them and a screen of one
+  page through one that does not, on every compile read, so a one page Options entering as the two page one does
+  shows the page keys lit with nothing to turn to, which the same remote showed until its entering list was made a
+  one page screen's, section 421.
 * **Help pressed with nothing on** runs the power off help, every screen titled "PowerOff": "Attemping to fix the
   problem..." (Logitech's spelling) while it sends some devices' power off again, then "Did that fix the problem?
   If not, the remote will ask you questions to help correct the problem.", and on No one question per device, "Is

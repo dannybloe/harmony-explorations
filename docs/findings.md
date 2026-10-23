@@ -56208,6 +56208,22 @@ with no page counter. That settles what this section left unconfirmed on a remot
 The start was seen, but the renderer could not show it, since it runs no condition. Not seen: a second Harmony One,
 and the `one_config` form of the wiring, which the step has never run on.
 
+**And one thing seen there that the section had wrong, `todo-compile-one.md` 4.10.2.** On a later write of the same
+setup with section 422's pictures, Options of one page showed the page keys lit, as if there were a page to turn
+to, where Logitech's two page Options shows "1/2". The cause is in the entering list: Options of two pages enters with
+the timer, the wiring's list that lights channel 5, the list that lights the page keys, and the channel 5 list
+again, and the one page form had kept all four. **Every screen of one page enters without the page keys' list** on
+the sixteen: Screen Sensitivity and Time of Day enter with the timer and the channel 5 list alone, where Month, of
+two pages, calls the page keys' list as well; and every one of them still switches the page keys off on leaving. So
+Options of one page enters as Screen Sensitivity does now, its own timer and the same channel 5 list, six bytes
+shorter, and its leaving list is unchanged. To carry the list's own number from the form a configuration holds to the
+shorter one, an owned list takes a role as a number does, `named`, which the reader and the builder ignore. The test
+asserts the two entering lists on each of the sixteen, and fails with the old one (the control). Which variable or
+firmware rule turns the light on is not read: the wiring's lists that light the page keys test `1F FB01` to `1F FB03`
+first, whose meaning is open. Arch 12 (Harmony One) alone. **Seen on the remote**: the setup with the change, 1099596
+bytes, written to the spare Harmony One as 17 erase blocks and read back byte for byte, started on its ordinary
+screen, and Options showed its one page with the page keys dark.
+
 ### Reconciling the list counts, and a correction
 
 A blind re-measure of the same question counted 111 lists, 888 bytes, that only the sixteen's screens reach on
@@ -56358,7 +56374,10 @@ through it; `withoutUndrawnPictures` is shared and has run on the Harmony One al
 
 ### Still open
 
-Written to the spare Harmony One and seen there. Whether the firmware clears the screen before a page, which a smaller
+**Seen on a remote**: the composed test setup with these pictures, 1099602 bytes, was written to the spare Harmony One
+as 13 erase blocks and read back byte for byte; it started clean on its ordinary screen and the settings screens'
+buttons showed in the orange of `TouchChoices.settingsBox`. Not looked at one by one there: the status strip, the
+firmware screens and the blank screens. Whether the firmware clears the screen before a page, which a smaller
 background needs. **A candidate for it, from a blind review and unconfirmed**: Logitech's own compiles hold 11 screen
 pages that cover the whole screen with one instruction of screen program opcode 1, operands x 0, y 0, width 176, height
 220 and colour 0, and draw no whole screen picture, only one smaller picture after it, on each of the sixteen; further
