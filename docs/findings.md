@@ -56348,7 +56348,7 @@ Where it lives:
 * `packages/codec/test/touchpictures.test.ts`: the census, the masks over the sixteen, the control, the places and
   the background; `composesetup.test.ts` and `touchbuilders.test.ts` for the path and the attribution.
 
-## 423. The Harmony One's activity screens are one shape each on every English compile, every activity's start up screen and working screen built whole from its name, its pads' label lines and what each pad runs and the configuration's numbering, byte for byte on the eighteen; on the composed path the composer's are laid out by the same template
+## 423. The Harmony One's activity screens are one shape each on every English compile, every activity's start up screen and working screen built whole from its name, its pads' label lines and what each pad runs and the configuration's numbering, byte for byte on the fourteen compiles that hold an activity; on the composed path the composer's are laid out by the same template
 
 **Todo `todo-compile-one.md` 4.3**: an activity's own screens, its start up screen and its working screen. Nothing of
 them was carried on the composed test setup: the activity composer has built both since 1.2.11 (sections 399 and 402),
@@ -56366,24 +56366,32 @@ pages, and the form comes from the compiles. The firmware was not read again.
 
 ### Two shapes
 
-**On all eighteen English compiles every activity's two screens are one template each**, `activityTemplateScreen` in
-`families/touch/activityscreens.ts`. 63 activities on fourteen compiles, the four of devices alone holding none. **They
-are not 63 independent samples**, section 402's caveat: 42 are six compiles of one account's seven activities.
+**On the fourteen of the eighteen English compiles that hold an activity, every activity's two screens are one template
+each**, `activityTemplateScreen` in `families/touch/activityscreens.ts`. 63 activities on the fourteen; the four compiles
+of devices alone hold none and contribute nothing to any figure here. **They are not 63 independent samples**, section
+402's caveat: 42 are six compiles of one account's seven activities, and the 63 carry 11 distinct names. Grouping the
+compiles by the activity names they share, which is an inference since nothing in a file names its account, there are
+six installations: the six compiles of one account, the four of `calibration_one`, `calibration_favchannels` and the two
+`phase7`, and the four singles `one_spare_after_sync`, `one_config_unprogrammed`, `one_friend_legacy_sync_config` and
+`one_config`, of which `one_config_unprogrammed` and `one_config` are skin 59 and the rest skin 54. Each special case
+below says how many of the six it rests on.
 
 | part | the shape |
 |---|---|
-| start up, own key map | 55 tags in one stored order on all 63, `STARTUP_TAGS`: the press of 52 keys, each a list of its own of three empty instructions, and three handlers, tag 6 bound straight to the start of the header timer, tag 7 straight to its cancel, tag `0x2D` a list of three `0x73`; the three handlers stored before the keys they share a bucket with, which head insertion with the keys first gives |
+| start up, own key map | 55 tags in one stored order on all 63, `STARTUP_TAGS`: the press of 52 keys, each a list of its own of three empty instructions, and three handlers, tag 6 bound straight to the start of the header timer, tag 7 straight to its cancel, tag `0x2D` a list of three `0x73`; the three handlers stored before the keys they share a bucket with, which head insertion with the keys first would give (inferred, as `config-format.md` says: the order is what is measured, not the insertion) |
 | start up, chrome | "Starting" and the name centred on row 124 in the start up title's font, joined by the title's own blank (63 of 63, section 406), the full screen picture, the queued header programs, the signal picture at (57, 33), the title again by reference |
 | start up, page | the chrome's call, the type's icon at (57, 67), "Keep the remote pointed at" and "your system." centred on rows 179 and 191, an empty page list, one hit page of one stated area and the two edges |
 | working, own key map | on one page the arrows' presses swallowed; tag 6 the timer started, light 5 on (with favourites), light 7 on, the page keys' pair on (several pages); tag 7 the timer cancelled and the matching off lists, the page keys' on one page too; tag `0x2D` the header list |
-| working, chrome | section 411's, titled with the name, the total and "pages" on several pages; on 22 of the 63 screen instruction 1 over the whole screen before the picture, unread and described as there or not |
+| working, chrome | section 411's, titled with the name, the total and "pages" on several pages; on 22 of the 63 screen instruction 1 over the whole screen before the picture, unread and described as there or not; it tracks the start up icon, below |
 | working, a page | the chrome's call; "Favorites" centred on the left half (with favourites) and "Devices" on the right, row 202; pad k's picture at `DEVICE_PAGE_SLOTS[k]`, a second picture there where the pad draws one instead of words, its label's lines centred on the 81 pixel pad; the pad font selected once a page, before the first label; on several pages the counter |
 | working, a page's list | Favorites the click and its screen entered, Devices the click and the activity's device list entered; a pad the click and then what it runs: a call of its command, or a sequence's calls and `0x7C` pauses inline (section 327), 8 pads of 4 compiles with 60 pauses |
 | the copy | lists of its own, the page list's instructions |
 | a hit page | by section 417's rules: the left key with favourites, the right key, the pads in reading order, the two edges |
 
-**The number of lists is a closure**, held by the test against each file: `58 * activities + 2 * (keys + pads) +
-off`, where the 58 are a start up screen's 52 key lists, its header list and its chrome's queued list and a working
+**The number of lists is a consistency check and not a closure**: `activities`, `keys` and `pads` come from the same
+description the lists are built from, so the two ends are not independent. The independent end is the byte comparison
+against the file, which holds every list. The formula is held by the test against each file, `58 * activities + 2 *
+(keys + pads) + off`, where the 58 are a start up screen's 52 key lists, its header list and its chrome's queued list and a working
 screen's entering, leaving, header and chrome lists; `keys` counts the keys below the screen on every page, one or
 two; and `off` the off lists every working screen's leaving calls, built once, two, or three where an activity has
 favourites.
@@ -56404,11 +56412,29 @@ favourites.
 | `one_config` | 8 | 15 | 55 | 606 | 7 | 2846 | 11181 |
 
 **Per activity, over the 63**: 8 with favourite channels, 22 with instruction 1, 63 titles joined by the title's
-blank, 0 selecting the pad font before every pad, the longest of 4 pages. `one_config` holds the corner cases: 14
-pads that draw a picture rather than words (its PlayStation 3's first two pages and its TV kijken's first page, and
-`one_config_unprogrammed`'s Watch TV's first page), its Chromecast's one page of no pad, and two pages short of six
-before the last (Bluetooth's first, TV kijken's second), so the description reads pads by their slots and does not
-assume six to a page.
+blank, 0 selecting the pad font before every pad, the longest of 4 pages. **None of these rests on 63, and each rests
+on fewer than the six installations**: the favourites are 2 activities in 2 installations, Watch TV in the three of the
+four compiles of the calibration group that have them and TV kijken in five of the six compiles of the one account; the
+sequences are 1 activity, TV kijken, 2 pads of it, in 4 compiles of that one account, 8 pads and 60 pauses in all; the
+picture pads are 14 pads on 3 activities in 2 installations, both skin 59 (below); instruction 1 is 22 activities of 4
+names in 5 installations (below).
+
+`one_config` holds the corner cases. **14 pads draw a second picture over their own, and they are two things**: 6 draw
+no words, its PlayStation 3's pads on its first two pages, and 8 are the colour pads, 4 in its TV kijken's first page
+and 4 in `one_config_unprogrammed`'s Watch TV's first page, which draw a coloured frame and still carry their label.
+The description keeps one flag for both, `icon`, and the label lines say which. Also its Chromecast's one page of no
+pad, and two pages short of six before the last (Bluetooth's first, TV kijken's second), so the description reads pads
+by their slots and does not assume six to a page.
+
+**Instruction 1 follows the start up icon**, measured after the first version of this section called it a free flag:
+found by the content of the picture the start up page draws as the type's icon, its third picture after the full screen
+picture and the signal, and never by an activity's name. Of the 64 activities of the fifteen compiles that hold one,
+the 63 and the Dutch compile's, 8 icons occur. One of them is on 23 activities and all 23 carry instruction 1, the 22
+here and the Dutch compile's; the other seven are on 41 and none does. The 23 are named Watch TV, LG WebOS, TV kijken
+and Chromecast (Chromecast, on `one_config`, has the TV icon too), across the five installations that have them, and
+the Dutch compile's. **A correlation over 8 icons in 6 or 7 installations, not a derivation**: the builder still takes
+the flag from the description, since deriving it would tie the builder to the identity of one of Logitech's pictures,
+and nothing says the rule holds for a type Logitech has not compiled here. The test asserts the tallies.
 
 ### What the description carries and what is generated
 
@@ -56421,9 +56447,12 @@ programs, the pictures (the full screen picture, the signal, the type icons and 
 screen, each page's hit page index and the homes of texts drawn by reference. **Generated**: every opcode and
 constant, the tags and their stored order, every list's instructions, the words "Starting", "Keep the remote pointed
 at", "your system.", "Favorites", "Devices", "pages" and the page numbers and where each goes, where every label line
-goes, which text is inline, the records, and the hit pages' areas and codes. **The blind control** overwrites every
-byte of the activity screens the description does not read, 69417 of 91037 over the eighteen, and every compile comes
-back byte for byte; the description reads 21620 bytes inside them and 1282 outside, the glyph codes of the homes.
+goes, which text is inline, the records, and the hit pages' areas and codes. **The blind control** overwrites every byte of the activity screens the description does not read: the screens are 91037
+bytes over the fourteen compiles with an activity, the description reads 21620 inside them and 1282 outside, the glyph
+codes of the homes, and the other 69417 are all changed in the blinded file, every compile coming back byte for byte.
+**Only 63603 of those 69417 reach the builder blinded**: 5814 sit in a piece's address fields, which `layOutContainer`
+derives again from the layout and not from the bytes put in, so the control shows 63603 bytes unread and says nothing
+either way of the other 5814, which the builder could not have taken from the file. The test asserts both counts.
 
 **The working screens are found by the touch family's `working` value map record**, the mode each activity's case
 enters, `touchValueMapRoles`, and not by `activityScreens`, which reads them through the activity menu's bindings
@@ -56462,24 +56491,31 @@ onto `harvest_one_two_devices` and onto `one_config`, both lettered in ours, reb
 eight beside it, its pages six and two, the title's blank a space and our select before every pad.
 
 **Measured on the composed test setup**, five activities of one page each (modes 82 to 91): the activity screens are
-built whole, 2888 bytes, 1068 of them described. **The file is the same byte for byte, 1512234, and carried stays
-876509**: the look, which centres every text in our letters, had already left the composer's screens as the template
-builds them, and nothing of them was carried. What the screens share with a set built earlier in
-`TOUCH_BUILT` order is credited there: the header list to the device pages, the light lists to the wiring and the
-firmware screens, the empty list a start up screen's keys run, the configuration's first, to the firmware screens.
+built whole, 2888 bytes, 1068 of them described. **This builder leaves the composed file unchanged, byte for byte, and
+its carried list too**: the look, which centres every text in our letters, had already left the composer's screens as
+the template builds them, and nothing of them was carried. Checked with and without the step at two points, the one
+this was written at and the head after section 422 had landed, with the same hash both times; the absolute sizes
+belong to sections 421 and 422 and moved between the two, 1512234 bytes and 876509 carried then, 1099602 and 145991
+now. What the screens share with a set built earlier in `TOUCH_BUILT` order is credited there: the header list to the
+device pages, the light lists to the wiring and the firmware screens, the empty list a start up screen's keys run, the
+configuration's first, to the firmware screens.
 
-**What changed on the screen**: nothing. The five activities' start up and working screens rendered before and after
-are identical.
+**What changed on the screen**: nothing is claimed beyond byte identity. The file is the same, so what it draws is the
+same; no rendering of the five activities before and after exists as an artifact, and none is asserted.
 
 **Still open**: an activity's own help screen and its own device list, section 402, the other two modes an activity
 enters, are not built here; the composed activity's lists are numbered from the next free index, as the menu's and
-the device pages' are.
+the device pages' are. **Unexplained**: no working screen of one page holds six pads. Of the 33 one page working screens
+of the 63, 19 hold five pads and none six, where 40 of the 100 pages of the screens of several pages hold six; whether the
+compiler keeps a slot free on a single page or these activities simply have at most five commands there is not read.
 
 ### Asserted
 
-`packages/codec/test/touchactivityscreens.test.ts`: the rebuild on the eighteen with every figure in the table above,
-the list closure, the per activity counts and the corner cases; the Dutch refusal; the working screens agreeing with
-`activityScreens`; the blind control's totals; the failing controls; and the composed path, an activity of eight pads
+`packages/codec/test/touchactivityscreens.test.ts`: the rebuild on the fourteen compiles with an activity (the four
+without add nothing) with every figure in the table above, the list formula, the per activity counts and the corner
+cases, the 6 pads with a picture and no words beside the 8 with a frame and a label; the Dutch refusal; the working
+screens agreeing with `activityScreens`; the blind control's totals, 63603 of 69417 landing; instruction 1 against the
+start up icon over 64 activities; the failing controls; and the composed path, an activity of eight pads
 on two compiles. `composesetup.test.ts` holds the attribution, 2888 and 1068, and the carried list unchanged;
 `touchbuilders.test.ts` the fifteen builders giving back Logitech's compile of two devices, the activity screens 0.
 
@@ -56497,4 +56533,26 @@ English; the Dutch compile refused.
 
 ### Reviewers
 
-The two reviewers of the `finding` skill were not run for this section; it is written for them to check.
+Both reviewers of the `finding` skill have been run since this section was first written: one re-measured the question
+blind, one audited the sentences against the numbers. What each found was checked before anything was changed, and the
+changes are recorded below.
+
+**Corrections to this section, recorded in place.** Eleven sentences overstated or went stale, and the two reviews found
+them. (1) The composed file's size, 1512234, and the carried 876509 were the figures before section 422 landed; at the
+head they are 1099602 and 145991. The substance, that this builder leaves the file unchanged, holds at both points and is
+restated without the absolute figures. (2) "69417 of 91037 bytes blinded" read as the control's reach. All 69417 change in
+the blinded file but 5814 are piece address fields that the layout derives again, so 63603 reach the builder blinded; the
+test asserts that count now. (3) The 63 activities were presented as a sample for every case, and they carry 11 names on
+six installations; favourites rest on 2 activities, the sequences on 1 activity in 4 compiles, the picture pads on 3
+activities in 2 installations, all skin 59. (4) "14 pads draw a picture instead of words" was wrong for 8 of them: only
+the 6 PlayStation 3 pads have no text, the 8 colour pads draw a frame and keep their label. (5) Instruction 1 was called
+a free flag; it is on exactly the activities whose start up icon is one picture, 23 of 23 and 0 of 41. The description
+keeps the flag and the correlation is recorded with its width. In the first four of these, the wrong sentence sat beside
+a right byte comparison: the builder was never wrong, the account of what the figures covered was. (6) "The number of
+lists is a closure" had both ends from the description, so it is a consistency check. (7) "Rendered before and after are
+identical" had no artifact behind it; byte identity is what supports it. (8) The stored tag order is inferred, not read,
+as `config-format.md` says. (9) "Byte for byte on the eighteen" holds on the 14 compiles with an activity; the four
+without contribute nothing. (10) The one page, six pad gap is recorded under open. (11) The sentence saying the
+reviewers were not run is replaced by this one. **Where the reviewers' counts differ from ours**: the blind review counted
+34 one page working screens with 19 of five pads, which includes the Dutch compile's; on this section's 63 it is 33 and
+19. Nothing else a reviewer reported was wrong on checking.

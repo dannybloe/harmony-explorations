@@ -11,12 +11,12 @@
  * the activity's name over its commands as pads, six to a page, a touch sending the command, with "Devices" on the
  * right key below the screen and, on an activity with favourite channels, "Favorites" on the left, section 154.
  *
- * **One shape each, measured on the eighteen English Harmony One compiles in the lab** (section 423):
+ * **One shape each, measured on the fourteen of the eighteen English Harmony One compiles in the lab that hold an activity** (section 423):
  *
  * * **a start up screen's own key map**: the press of 52 keys, `STARTUP_KEYS`, each bound to a list of its own of three
  *   empty instructions, and three handlers, entering the screen starting the header timer and leaving it cancelling
  *   it, both bound straight to the timer, and its header handler running the three header programs. The 55 tags stored
- *   in one order, `STARTUP_TAGS`, which head insertion of the keys and then the handlers gives;
+ *   in one order, `STARTUP_TAGS`, which head insertion of the keys and then the handlers would give (inferred, not read);
  * * **its chrome**: "Starting" and the name centred on row 124 in the start up title's font, the full screen picture,
  *   the two queued header programs, the picture of the remote's signal at (57, 33), and the title again; **its page**
  *   the chrome's call, the activity type's icon at (57, 67) and the two lines "Keep the remote pointed at" and "your
@@ -124,7 +124,11 @@ export const KEY_WORD_Y = 202;
 const COUNTER_Y = 18;
 const SLASH_X = 18;
 
-/** Screen instruction 1 as 23 of Logitech's 64 activities' chromes carry it, over the whole 176 by 220 screen, unread. */
+/**
+ * Screen instruction 1 as 23 of Logitech's 64 activities' chromes carry it, over the whole 176 by 220 screen, unread.
+ * It is on exactly the activities whose start up icon is one picture, 23 of 23 and 0 of 41, a correlation over 8 icons
+ * and not derived: the description states it.
+ */
 const WHOLE_SCREEN_OPCODE = 1;
 const WHOLE_SCREEN: Part<never> = { op: 'constant', opcode: WHOLE_SCREEN_OPCODE, operands: [0, 0, 176, 220, 0, 0] };
 

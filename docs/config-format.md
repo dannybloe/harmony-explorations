@@ -2912,20 +2912,20 @@ command order, which the description reads rather than generates.
 
 **The activity screens, built**, section 423: `families/touch/activityscreens.ts` through the same engine, arch 12
 (Harmony One) only. Every activity's start up screen and working screen, their own key maps, chromes, pages, the lists
-those run but a pad's command, the copies and the hit pages: one template each on the eighteen English compiles, whose
-input is the activity's name, its pads' label lines and what each pad runs. 63 activities of one to four pages
-rebuilt byte for byte; the Dutch compile refused by its words. `58 * activities + 2 * (keys + pads) + off` lists per
+those run but a pad's command, the copies and the hit pages: one template each on the fourteen of the eighteen English
+compiles that hold an activity, whose input is the activity's name, its pads' label lines and what each pad runs. 63
+activities of one to four pages, 11 distinct names, rebuilt byte for byte; the Dutch compile refused by its words. `58 * activities + 2 * (keys + pads) + off` lists per
 compile, `keys` the keys below the screen on every page and `off` two, or three with favourites. The working screens
 are the modes the touch family's `working` value map record enters; a start up screen is a mode whose own key map is
 the 55 tags.
 
-| what | rule, on the eighteen English compiles |
+| what | rule, on the fourteen English compiles that hold an activity |
 |---|---|
 | start up, own key map | 55 tags in one stored order, `STARTUP_TAGS`: 52 key presses each a list of its own of three empty instructions; tag 6 straight to the header timer's start, tag 7 straight to its cancel, tag `0x2D` the header list |
 | start up, chrome and page | "Starting", the title set's own blank and the name centred on row 124, the full screen picture, the queued lists, the signal picture at (57, 33), the title again; the page the type's icon at (57, 67) and "Keep the remote pointed at" and "your system." centred on rows 179 and 191, an empty page list, one hit page of one stated area |
 | working, own key map | arrows swallowed on one page; tag 6 the timer started, light 5 on with favourites, light 7 on, the page keys' pair on several pages; tag 7 the timer cancelled and the matching off lists, the page keys' always; tag `0x2D` the header list |
-| working, chrome | section 411's, titled with the name; screen instruction 1 before the picture on 22 of 63, described |
-| working, a page | "Favorites" on the left half with favourites and "Devices" on the right, row 202; pad k at `DEVICE_PAGE_SLOTS[k]`, a second picture where it draws one instead of words, its lines centred on the 81 pixel pad; the pad font selected once, before the first label; the counter on several pages |
+| working, chrome | section 411's, titled with the name; screen instruction 1 before the picture on 22 of 63, described; present exactly when the start up icon is one picture, 23 of 23 over 64 activities and 0 of 41, a correlation over 8 icons and not a derivation |
+| working, a page | "Favorites" on the left half with favourites and "Devices" on the right, row 202; pad k at `DEVICE_PAGE_SLOTS[k]`, a second picture over its own on 14 pads of 3 activities on skin 59 (6 with no words, 8 colour pads with a frame and their label), its lines centred on the 81 pixel pad; the pad font selected once, before the first label; the counter on several pages |
 | working, a page's list | each key the click and a mode entered; a pad the click and its command's call, or a sequence's calls and `0x7C` pauses inline |
 | the copy | lists of its own with the page list's instructions |
 | a hit page | section 417's rules: the left key with favourites, the right key, the pads, the edges |

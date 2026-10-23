@@ -19,7 +19,8 @@ import assert from 'node:assert/strict';
 
 import { require_, skipUnless } from '@harmony/lab';
 import {
-  type Container, type ContainerPiece, ScreenRecordError, activityScreens, layOutContainer, parse, takeApart,
+  type Container, type ContainerPiece, type ScreenInstruction, ScreenRecordError, activities, activityScreens, bitmapReference, layOutContainer, modeRecords,
+  parse, picturesByContent, screenProgram, takeApart, SCREEN_CALL, SCREEN_DRAW_IMAGE,
 } from '../src/index.ts';
 import { TOUCH_CHOICES } from '../src/families/touch/choices.ts';
 import { letterTouchDonor } from '../src/families/touch/look.ts';
@@ -69,11 +70,11 @@ const ENGLISH = Object.keys(ACTIVITIES);
 const SKIN_54 = ENGLISH.filter((name) => name !== 'one_config' && name !== 'one_config_unprogrammed');
 const DUTCH = 'one_friend_asfound_config';
 
-test('todo-compile-one 4.3: the activity screens of all eighteen English Harmony One compiles are rebuilt byte for byte from a description, 63 activities\' start up and working screens, and the Dutch compile is refused by its words',
+test('todo-compile-one 4.3: the activity screens of the fourteen English Harmony One compiles that hold an activity are rebuilt byte for byte from a description, 63 activities\' start up and working screens (the four compiles of devices alone hold none and contribute nothing), and the Dutch compile is refused by its words',
      skipUnless(...ENGLISH, DUTCH), () => {
   assert.equal(SKIN_54.length, 16);
   const tally = {
-    activities: 0, favourites: 0, wholeScreen: 0, sequencePads: 0, pauses: 0, picturePads: 0, joined: 0, selectEach: 0,
+    activities: 0, favourites: 0, wholeScreen: 0, sequencePads: 0, pauses: 0, picturePads: 0, pictureOnlyPads: 0, joined: 0, selectEach: 0,
     longest: 0, padless: [] as string[], shortBeforeLast: [] as string[],
   };
   for (const name of ENGLISH) {
@@ -94,12 +95,14 @@ test('todo-compile-one 4.3: the activity screens of all eighteen English Harmony
         if (p < one.pages.length - 1 && page.length < 6) tally.shortBeforeLast.push(`${name} ${one.name} ${p + 1}`);
         for (const pad of page) {
           if (pad.icon) tally.picturePads += 1;
+          if (pad.icon && pad.lines.length === 0) tally.pictureOnlyPads += 1;
           if (pad.runs.length !== 1 || pad.runs[0] !== 'call') tally.sequencePads += 1;
           tally.pauses += pad.runs.filter((run) => run === 'pause').length;
         }
       });
     }
-    // The lists, a closure held against each file rather than restated: a start up screen's 52 key lists, its header
+    // The lists, a consistency check held against each file rather than restated, its terms coming from the same
+    // description (the byte comparison above is the independent end): a start up screen's 52 key lists, its header
     // list and its chrome's queued list; a working screen's entering, leaving, header and chrome lists; on every page
     // a list and its copy's for each key below the screen and each pad; and the off lists every working screen's
     // leaving calls, light 7's and the page keys', and light 5's where an activity has favourites, each built once.
@@ -110,10 +113,12 @@ test('todo-compile-one 4.3: the activity screens of all eighteen English Harmony
   // Logitech draws "Starting" and the name with the title's own blank on every start up screen, section 406; selects
   // the pad font once a page on every working screen; and the rest are the corpus's own: the favourite channels of
   // section 402, screen instruction 1 on 22 of the 23 activities that carry it (the 23rd is the Dutch compile's), the
-  // sequences on a pad (`one_spare_20260830` and the three `compiled_protocols`, "TV kijken"), `one_config`'s pads
-  // drawing pictures and its two pages short of six before the last, and its one page of no pad.
+  // sequences on a pad (`one_spare_20260830` and the three `compiled_protocols`, "TV kijken"), the 14 pads with a second
+  // picture over their own and its two pages short of six before the last, and `one_config`'s one page of no pad. Of the
+  // 14, 6 draw no words, the PlayStation 3's of `one_config`, and 8 are the colour pads, 4 in `one_config`'s TV kijken and
+  // 4 in `one_config_unprogrammed`'s Watch TV, which draw a coloured frame and still carry their label.
   assert.deepEqual(tally, {
-    activities: 63, favourites: 8, wholeScreen: 22, sequencePads: 8, pauses: 60, picturePads: 14, joined: 63, selectEach: 0,
+    activities: 63, favourites: 8, wholeScreen: 22, sequencePads: 8, pauses: 60, picturePads: 14, pictureOnlyPads: 6, joined: 63, selectEach: 0,
     longest: 4, padless: ['one_config Chromecast'], shortBeforeLast: ['one_config Bluetooth 1', 'one_config TV kijken 2'],
   });
   // Refused by its words before any byte is compared: the template spells Logitech's English. No language branch.
@@ -134,9 +139,9 @@ test('todo-compile-one 4.3: the working screens the touch family\'s working reco
   assert.equal(compiles, 14);
 });
 
-test('todo-compile-one 4.3: a blinded input rebuilds the activity screens of all eighteen: no byte of them outside the description reaches the build',
+test('todo-compile-one 4.3: a blinded input rebuilds the activity screens of the fourteen compiles that hold an activity: no byte of them outside the description reaches the build, 63603 of the 69417 blinded landing in the layout the builder starts from',
      skipUnless(...ENGLISH), () => {
-  const totals = { structure: 0, inside: 0, outside: 0, blinded: 0 };
+  const totals = { structure: 0, inside: 0, outside: 0, blinded: 0, landed: 0 };
   for (const name of ENGLISH) {
     const c = parse(require_(name));
     const first = describeTouchActivityScreens(c, takeApart(c));
@@ -162,6 +167,10 @@ test('todo-compile-one 4.3: a blinded input rebuilds the activity screens of all
       const one = starts[k] as { piece: ContainerPiece; at: number };
       one.piece.bytes[at - one.at] = blinded[at] as number;
     }
+    // What the builder starts from: a piece's address fields are laid out again from the layout and not from the bytes
+    // put in, so a blinded byte inside one is replaced before the build and only the rest reaches it blinded.
+    const laidBlinded = layOutContainer(layout).bytes;
+    for (const at of first.structure) if (!first.described.has(at) && laidBlinded[at] === blinded[at]) totals.landed += 1;
     const out = layOutContainer(withTouchActivityScreenSet(layout, buildTouchActivityScreenSet(parse(blinded), d.spec), d.place)).bytes;
     assert.equal(firstDifference(out, c.blob), undefined, `${name} differs`);
   }
@@ -169,12 +178,15 @@ test('todo-compile-one 4.3: a blinded input rebuilds the activity screens of all
 });
 
 /**
- * The blind control's totals over the eighteen: 91037 bytes of activity screens, 69417 of them written by the builder
- * and every one blinded; the description reads 21620 bytes inside them, the names, the label lines and the numbering,
- * every command and sequence step a pad runs among it, and 1282 outside, the glyph codes of the homes where a text is
- * drawn by reference to a copy another program holds.
+ * The blind control's totals over the eighteen compiles, the four without an activity adding nothing: 91037 bytes of
+ * activity screens, 69417 of them written by the builder and every one changed in the blinded file; the description
+ * reads 21620 bytes inside them, the names, the label lines and the numbering, every command and sequence step a pad
+ * runs among it, and 1282 outside, the glyph codes of the homes where a text is drawn by reference to a copy another
+ * program holds. **Only 63603 of the 69417 reach the builder blinded**: the other 5814 sit in a piece's address fields,
+ * which the layout derives again, so the control covers 63603 bytes the builder cannot have read and the 5814 are
+ * outside what it can say, not proved unread.
  */
-const BLIND = { structure: 91037, inside: 21620, outside: 1282, blinded: 69417 };
+const BLIND = { structure: 91037, inside: 21620, outside: 1282, blinded: 69417, landed: 63603 };
 
 test('todo-compile-one 4.3: a description with two labels swapped, a pad dropped, the favourites taken away, instruction 1 taken away, the title\'s blank made a space, our select before every pad, or a page of other shape named to the start up screen\'s hit page is refused, by the builder or the byte comparison',
      skipUnless('calibration_favchannels'), () => {
@@ -212,6 +224,42 @@ test('todo-compile-one 4.3: a description with two labels swapped, a pad dropped
     const w = spec.screens.indexOf(watchTv(spec));
     spec.screen.screens[w]!.leads[0] = spec.screen.screens[s]!.leads[0]!;
   }), /two activity screen pages of other shapes are both hit page/);
+});
+
+test('todo-compile-one 4.3: screen instruction 1 is on an activity\'s working screen exactly when its start up icon is one picture, 23 of 23 and 0 of 41 on the 64 activities of the fifteen compiles with one, a correlation over 8 icons and not a derivation',
+     skipUnless(...ENGLISH, DUTCH), () => {
+  // Found by the picture's content and never by the activity's name: the start up page's third picture, after the full
+  // screen picture and the signal, is the type's icon. The 64th activity is the Dutch compile's.
+  const seen = new Map<string, { activities: number; whole: number }>();
+  for (const name of [...ENGLISH, DUTCH]) {
+    const c = parse(require_(name));
+    const records = modeRecords(c) ?? [];
+    const byAddress = new Map<number, string>();
+    for (const [key, addresses] of picturesByContent(c)) for (const address of addresses) byAddress.set(address, key);
+    const shown = (address: number | undefined): ScreenInstruction[] => (address === undefined ? [] : screenProgram(c, address) ?? []);
+    const screens = activityScreens(c);
+    for (const one of activities(c)) {
+      const images: number[] = [];
+      const walk = (program: ScreenInstruction[], depth: number): void => {
+        for (const instruction of program) {
+          if (instruction.opcode === SCREEN_CALL && depth < 4) walk(shown(instruction.targets[0]), depth + 1);
+          else if (instruction.opcode === SCREEN_DRAW_IMAGE) images.push(bitmapReference(instruction) as number);
+        }
+      };
+      walk(shown(records[one.modes[0] as number]?.pages[0]?.program), 0);
+      const key = byAddress.get(images[2] as number) ?? 'unknown';
+      const working = shown(records[screens?.screens.get(one.activity) as number]?.pages[0]?.program);
+      const whole = shown(working[0]?.targets[0]).some((instruction) => instruction.opcode === 1);
+      const tally = seen.get(key) ?? { activities: 0, whole: 0 };
+      tally.activities += 1;
+      if (whole) tally.whole += 1;
+      seen.set(key, tally);
+    }
+  }
+  // Eight icons; exactly one carries instruction 1, on all 23 of its activities, and the other seven on none of 41.
+  assert.equal(seen.size, 8);
+  assert.deepEqual([...seen.values()].filter((one) => one.whole > 0).map((one) => [one.whole, one.activities]), [[23, 23]]);
+  assert.equal([...seen.values()].filter((one) => one.whole === 0).reduce((sum, one) => sum + one.activities, 0), 41);
 });
 
 /** Pads to compose, with labels our letters spell, each calling one of the compile's lists. */
