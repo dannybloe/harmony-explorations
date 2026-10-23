@@ -272,10 +272,12 @@ test('todo-compile-one 3.2.2.3: the attribution counts each builder\'s bytes on 
   // The device pages' 8684 are `checkTouchDevicePages`' structure on this compile, section 420: two devices, 22 pages,
   // their lists and their three hit pages' areas, the hit pages' table staying the hit pages builder's.
   // The activity screens' 0 since `todo-compile-one.md` 4.3, section 423: the compile holds no activity.
-  // The pictures' 234897, since `todo-compile-one.md` 5.3, section 422, are Logitech's five all black pictures, which
-  // our rule draws byte for byte: the whole screen background's three copies, 77445 each, the sending mark off, 797,
+  // The pictures' 234897, since `todo-compile-one.md` 5.3, section 422, are, on this compile, Logitech's five all black
+  // pictures, which our rule draws byte for byte: the whole screen background's three copies, 77445 each, the sending mark off, 797,
   // and the clock face, 1765. The pictures are ours by choice on the composed path and not rebuilt on Logitech's
-  // compile, so these five are the only ones of its pictures any of ours reproduces.
+  // compile, so these five are the only ones of its pictures any of ours reproduces. This compile stores the background
+  // three times, as three others of the sixteen do; on the other twelve, which store it four times, the rule
+  // reproduces six, section 422.
   assert.deepEqual(a.generated, {
     'firmware screens': 3237, 'fixed screens': 14332, 'tour and Remote Assistant': 4015, 'status screens': 3872,
     'clock header': 3558, 'help screens': 2198, 'activity menu': 260, 'device pages': 8684, 'activity screens': 0, 'case programs': 497, 'hit pages': 1986, wiring: 4625, 'state tables': 962,

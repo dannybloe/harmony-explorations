@@ -43,9 +43,9 @@ export interface TouchChoices extends CommonChoices {
   readonly settingsBox: { readonly fill: string; readonly rim: string };
   /**
    * Whether the configuration keeps Logitech's fixed pictures, the status strip's, the firmware screens', the power
-   * off help's, the settings buttons' and the whole screen background with the charger's photographs, findings
+   * off help's, the settings buttons' and the whole screen background with the three photographs six blank screens draw, findings
    * section 422. Off by default: ours are drawn in their place, each Logitech's size and mask, as the sample of 18
-   * October 2026 drew them and as decided on it, and the background is one black picture the charger's screens draw
+   * October 2026 drew them and as decided on it, and the background is one black picture those six screens draw
    * too, `todo-compile-one.md` 5.3.1 and 5.3.3.
    */
   readonly logitechPictures: boolean;

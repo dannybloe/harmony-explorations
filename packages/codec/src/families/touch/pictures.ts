@@ -1,8 +1,9 @@
 /**
  * The Harmony One's fixed pictures drawn by us in place of Logitech's, `todo-compile-one.md` 5.3.1 and 5.3.3,
  * findings section 422: the status strip along the top of every screen, the pictures of the firmware screens and
- * the power off help, the settings screens' buttons, and the whole screen background behind 75 screens, as the
- * sample of 18 October 2026 drew them and as was decided on it the same day.
+ * the power off help, the settings screens' buttons, and the whole screen background, named by 66 to 314 draw
+ * instructions a compile over the sixteen (75 on the test setup's donor), as the sample of 18 October 2026 drew them and
+ * as was decided on it the same day.
  *
  * **What a picture of ours keeps of Logitech's: its size and its transparency mask, nothing else.** Each one is
  * drawn at exactly the size of the picture it replaces and is undrawn exactly where that one is undrawn, so it
@@ -28,8 +29,9 @@
  *   corners black, decided on the sample: smaller to store than undrawn ones and the same on a black screen.
  *   Logitech draws three images of each, one per place; ours draws one image and stores it in each of their places;
  * * **the whole screen background**, all black and stored three times by Logitech, 5.3.3: **one** picture of ours,
- *   and the three photographs of blurred lights the charger's six blank screens show, entered by timers, draw it
- *   too, so the charger shows nothing. The copies and the photographs are taken out of the bank and every draw of
+ *   and the three photographs of blurred lights six blank screens show, entered by timers, draw it too, so those
+ *   screens show nothing. What those six are for is open, section 408; a seventh blank screen draws the charging
+ *   screen's picture, which has its own entry. The copies and the photographs are taken out of the bank and every draw of
  *   theirs is pointed at the one. It stays a whole screen and drawn in every pixel, 77445 bytes: a picture is
  *   drawn at its own size, and a pixel left undrawn shows what was on the screen before unless the firmware clears
  *   the screen before a page, which is not read, so a smaller or a transparent one would rest on a guess.
@@ -100,7 +102,9 @@ const gauge = (name: string, keys: readonly string[], level: number): TouchPictu
  * its corner, and sized to the longer side of that box but no larger than the picture, section 373's rule; the
  * charging screen's at 0.8 of that, since Logitech's ink includes a reflection under the battery. The charging
  * problem's cross, whose corner is undrawn, takes every drawn pixel as its ink and the shorter side, so the circle
- * stays inside what Logitech's draws. `test/touchpictures.test.ts` measures every place again off Logitech's.
+ * stays inside what Logitech's draws. `test/touchpictures.test.ts` applies the rule again off Logitech's pictures, and
+ * it is a fitted rule: scored on the seven it was fitted to, with two special cases (the scale and the cross), and no
+ * outside sample.
  */
 export const TOUCH_PICTURES: readonly TouchPictureEntry[] = [
   // The status strip, drawn on every screen by the clock header's programs, base slot 11 entries 0 to 3, section 414:
@@ -138,11 +142,11 @@ export const TOUCH_PICTURES: readonly TouchPictureEntry[] = [
     name: 'settings row', keys: ['081687e888fd4bfb', '39c3ce30ae35d411', '4c71e54675cafa8d'], width: 164, height: 50,
     drawing: { kind: 'settings box' },
   },
-  // 5.3.3: the background behind 75 screens, the firmware and status screens among them, and the charger's three
-  // photographs, each drawn by two blank screens a timer enters.
+  // 5.3.3: the background, named by 66 to 314 draw instructions a compile, the firmware and status screens among them,
+  // and the three photographs, each drawn by two of the six blank screens a timer enters whose purpose is open.
   { name: 'whole screen background', keys: ['4cb48913f37bd3c2'], width: 176, height: 220, drawing: { kind: 'background' } },
   {
-    name: 'charger photographs', keys: ['a2eab2a5c8e07cc8', '8de220781ad6122f', '7827ee5ceb06103f'], width: 176, height: 220,
+    name: 'blank screen photographs', keys: ['a2eab2a5c8e07cc8', '8de220781ad6122f', '7827ee5ceb06103f'], width: 176, height: 220,
     drawing: { kind: 'background' },
   },
 ];
@@ -260,7 +264,7 @@ export function withTouchPictures(c: Container, choices: TouchChoices): TouchPic
   const backgrounds = pictures.filter((one) => one.entry?.drawing.kind === 'background');
   const one = backgrounds.find((picture) => picture.entry?.name === 'whole screen background');
   if (backgrounds.length > 0 && one === undefined) {
-    throw new PictureError('the configuration draws the charger\'s photographs and holds no whole screen background to draw instead');
+    throw new PictureError('the configuration draws the blank screens\' photographs and holds no whole screen background to draw instead');
   }
   for (const picture of pictures) {
     if (picture.entry === undefined) continue;
