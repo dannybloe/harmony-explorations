@@ -85,7 +85,11 @@ and the One's own wording, "Current Activity", are in [behaviour.md](behaviour.m
   else, measured on a unit, section 236.
 * **The delay between devices** also opens the one block copies a screen command sends, so a command
   touched on the screen goes out that delay later than the same command on a key, section 337;
-  [behaviour.md](behaviour.md).
+  [behaviour.md](behaviour.md). It opens every record a device's power transitions send too, so by the
+  file a device is switched on or off after that delay: 8 of 8 catalogue devices on three of Logitech's
+  compiles, at the catalogue's own delay between devices of 100, 500 or 1000 ms (six of them 500), read
+  from configurations, section 431. Not heard on a unit; whether a device misses a power code sent without
+  it is not tested.
 
 ## Sounds and Options
 
