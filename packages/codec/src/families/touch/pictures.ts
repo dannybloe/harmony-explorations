@@ -5,13 +5,17 @@
  * instructions a compile over the sixteen (75 on the test setup's donor), as the sample of 18 October 2026 drew them and
  * as was decided on it the same day.
  *
- * **What a picture of ours keeps of Logitech's: its size and its transparency mask, nothing else.** Each one is
- * drawn at exactly the size of the picture it replaces and is undrawn exactly where that one is undrawn, so it
- * covers what Logitech's covered and lets through what Logitech's let through; where our drawing leaves a pixel
- * inside the mask empty it is black, the colour of the screen behind on every screen that draws these. The size is
- * stated here, so a picture of another size is refused rather than drawn; the mask is read off the picture being
- * replaced, since it is a silhouette of Logitech's artwork, which this repository does not hold. Which picture is
- * which is read by its content key, `contentKey`, which names a picture without holding any of it.
+ * **What a picture of ours keeps of Logitech's: its size, nothing else**, `todo-compile-one.md` 7.1.2, findings
+ * section 428. Each one is drawn at exactly the size of the picture it replaces, stated here, so a picture of another
+ * size is refused rather than drawn, and **it is transparent where our own drawing leaves a pixel empty**,
+ * `touchPictureOwnRows`, which reads no configuration: a configuration built from nothing has every picture,
+ * `touchFixedPictures`. Which picture is which is read by its content key, `contentKey`, which names a picture without
+ * holding any of it. **The masked form of section 422 stays a choice**, `TouchChoices.logitechMasks`, while no remote
+ * has shown the rule's own: each of ours undrawn exactly where the picture it replaces is undrawn, a silhouette of
+ * Logitech's artwork read off that picture at build time, and black where our drawing leaves a pixel inside it empty.
+ * The two differ on the eleven pictures Logitech leaves partly undrawn, the ten gauges and the cross, and nowhere
+ * else, and the masked form cut our ink where Logitech's mask was undrawn: a corner pixel of the outline on seven
+ * gauges and 27 pixels of level 3's outline and tip.
  *
  * **The drawings**, each a rule:
  *
@@ -60,6 +64,9 @@ type Rows = (number | undefined)[][];
 
 const BLACK = 0x0000;
 const WHITE = rgbTo565(255, 255, 255);
+/** A circle icon's circle in the icon font, Material Design Icons: radius 10 of its 24 unit grid, as `close-circle-outline` draws it. */
+const CIRCLE_ICON_RADIUS = 10;
+const ICON_GRID = 24;
 /** The dotted interior of the gauge at level 0, the level not known. */
 const GREY = rgbTo565(128, 128, 128);
 
@@ -76,8 +83,11 @@ export type TouchPictureDrawing =
   /**
    * One white icon, `TouchChoices.pictureIcons[name]`, over black: its grid square `size` pixels wide with its top
    * left corner at `at`, which may lie outside the picture, the icon then cut at the edge as Logitech's ink is.
+   * `paper` is where the black under it is drawn: the whole picture, by default, or `'circle'`, a disc the size of a
+   * circle icon's own circle, radius 10 of the icon font's 24 units, centred on the grid square, every pixel outside it
+   * that the icon does not ink left empty, `todo-compile-one.md` 7.1.2, section 428.
    */
-  | { readonly kind: 'icon'; readonly at: readonly [number, number]; readonly size: number }
+  | { readonly kind: 'icon'; readonly at: readonly [number, number]; readonly size: number; readonly paper?: 'circle' }
   /** A flat box in `TouchChoices.settingsBox`, the pixels outside its rounded corners black. */
   | { readonly kind: 'settings box' }
   /** The one whole screen background, black, which every picture of this kind is taken out for and drawn as, 5.3.3. */
@@ -128,7 +138,12 @@ export const TOUCH_PICTURES: readonly TouchPictureEntry[] = [
   // The firmware screens, section 409, and the screens a timer enters, section 411.
   { name: 'Low Battery', keys: ['570b4c75e71d748e'], width: 61, height: 69, drawing: { kind: 'icon', at: [0, 4], size: 61 } },
   { name: 'USB Connected', keys: ['2643afb9a417f4ea'], width: 69, height: 91, drawing: { kind: 'icon', at: [0, 11], size: 69 } },
-  { name: 'charging problem', keys: ['a7a93475a4fc2216'], width: 87, height: 62, drawing: { kind: 'icon', at: [26, 22], size: 40 } },
+  // The cross's paper is its circle: the picture is drawn once over the black fill of a firmware screen, so black
+  // anywhere else draws nothing that shows and costs two bytes a pixel, section 428.
+  {
+    name: 'charging problem', keys: ['a7a93475a4fc2216'], width: 87, height: 62,
+    drawing: { kind: 'icon', at: [26, 22], size: 40, paper: 'circle' },
+  },
   { name: 'charging screen', keys: ['84b0eb05a60277bc'], width: 176, height: 220, drawing: { kind: 'icon', at: [55, 100], size: 70 } },
   // The power off help, section 415, its questions' symbol, and the attempt screen's large sending mark.
   { name: 'power', keys: ['d0538d4a44ffc9cd'], width: 62, height: 42, drawing: { kind: 'icon', at: [13, 3], size: 36 } },
@@ -152,10 +167,16 @@ export const TOUCH_PICTURES: readonly TouchPictureEntry[] = [
   },
 ];
 
-/** The battery gauge by rule, 20 by 11, before the mask: inside the mask Logitech's gauges leave, row 0 and column 0 undrawn. */
+/**
+ * The battery gauge by rule, 20 by 11. **Its own drawing is the box from x 1 and y 1 to the picture's far corner**, the
+ * box around everything any level inks, the outline and the tip, black wherever no ink falls, so a level drawn over
+ * another at the same place leaves none of the other's fill behind: the firmware draws over what the screen held,
+ * section 425. Row 0 and column 0 lie outside that box and are left empty, showing what is behind the gauge: a choice,
+ * as nine of Logitech's ten gauge pictures leave them undrawn, its level 0 drawing them.
+ */
 function gaugeRows(level: number): Rows {
   if (!Number.isInteger(level) || level < 0 || level > 7) throw new PictureError(`a battery gauge has levels 0 to 7, not ${level}`);
-  const rows: Rows = Array.from({ length: GAUGE.height }, () => new Array<number | undefined>(GAUGE.width).fill(BLACK));
+  const rows: Rows = Array.from({ length: GAUGE.height }, (_, y) => Array.from({ length: GAUGE.width }, (__, x) => (x === 0 || y === 0 ? undefined : BLACK)));
   // The body's outline from x 1 to 17 and y 1 to 10, and the tip at x 18 and 19 over y 4 to 7.
   for (let x = 1; x <= 17; x += 1) { rows[1]![x] = WHITE; rows[10]![x] = WHITE; }
   for (let y = 1; y <= 10; y += 1) { rows[y]![1] = WHITE; rows[y]![17] = WHITE; }
@@ -172,41 +193,94 @@ function gaugeRows(level: number): Rows {
 }
 
 /**
- * Ours of `entry` drawn inside `mask`, a picture's pixels where only whether each is drawn is read: undrawn where the
- * mask is, and black where the mask is drawn and our drawing is not. Refused where the mask is not the entry's size.
+ * Ours of `entry` by its rule alone, `todo-compile-one.md` 7.1.2: every pixel the drawing draws, and empty, undefined,
+ * where it draws none, which is the picture's transparency. It takes no configuration and reads no picture, so a
+ * configuration built from nothing has every fixed picture, and the composed path puts these in place of Logitech's
+ * unless `TouchChoices.logitechMasks` keeps the masked form, `touchPictureRows`.
+ *
+ * **What each drawing leaves empty**: the battery gauge, row 0 and column 0, outside the box its levels ink,
+ * `gaugeRows`, where the black is load bearing, since one level is drawn over another; the charging problem's cross,
+ * every pixel outside its circle that the icon does not ink, as Logitech's cross leaves its corners undrawn; every
+ * other drawing, nothing. The other icons are drawn over black paper the whole picture wide, as Logitech's six are
+ * drawn at every pixel. A settings box's pixels outside its rounded corners are black, decided on
+ * the sample of 18 October 2026, and the black pictures and the background are black throughout.
  */
-export function touchPictureRows(entry: TouchPictureEntry, mask: readonly (readonly (number | undefined)[])[], choices: TouchChoices): Rows {
+export function touchPictureOwnRows(entry: TouchPictureEntry, choices: TouchChoices): Rows {
   const { width, height, drawing } = entry;
-  if (mask.length !== height || mask.some((row) => row.length !== width)) {
-    throw new PictureError(`${entry.name} is ${width} by ${height}, and the picture it replaces is ${mask[0]?.length ?? 0} by ${mask.length}`);
-  }
   const black = (): Rows => Array.from({ length: height }, () => new Array<number | undefined>(width).fill(BLACK));
-  let rows: Rows;
   switch (drawing.kind) {
     case 'black':
     case 'background':
-      rows = black();
-      break;
+      return black();
     case 'gauge':
       if (width !== GAUGE.width || height !== GAUGE.height) throw new PictureError(`${entry.name}: a battery gauge is ${GAUGE.width} by ${GAUGE.height}`);
-      rows = gaugeRows(drawing.level);
-      break;
+      return gaugeRows(drawing.level);
     case 'icon': {
       const icon = choices.pictureIcons[entry.name as TouchIconPicture];
       if (icon === undefined) throw new PictureError(`${entry.name} has no icon among the choices`);
-      rows = iconOverRows(black(), drawing.at[0], drawing.at[1], drawing.size, drawing.size, icon, drawing.size, WHITE);
-      break;
+      const rows = iconOverRows(black(), drawing.at[0], drawing.at[1], drawing.size, drawing.size, icon, drawing.size, WHITE);
+      if (drawing.paper !== 'circle') return rows;
+      // The paper a disc: a pixel whose centre lies outside it and that the icon left black is empty.
+      const cx = drawing.at[0] + drawing.size / 2;
+      const cy = drawing.at[1] + drawing.size / 2;
+      const radius = (drawing.size * CIRCLE_ICON_RADIUS) / ICON_GRID;
+      return rows.map((line, y) => line.map((v, x) => (v === BLACK && Math.hypot(x + 0.5 - cx, y + 0.5 - cy) > radius ? undefined : v)));
     }
     case 'settings box':
-      rows = activityBoxRows(width, height, choices.settingsBox, BLACK);
-      break;
+      // `activityBoxRows` leaves the corners outside the rounding undrawn; ours are black there, as decided.
+      return activityBoxRows(width, height, choices.settingsBox, BLACK).map((line) => line.map((v) => v ?? BLACK));
   }
+}
+
+/** Ours of `entry` by its rule alone, encoded: `encodeBitmap` of `touchPictureOwnRows`. */
+export function touchPictureOwnBytes(entry: TouchPictureEntry, choices: TouchChoices): Uint8Array {
+  return encodeBitmap(touchPictureOwnRows(entry, choices));
+}
+
+/**
+ * Every fixed picture of ours by its rule alone, one per entry of `TOUCH_PICTURES` in its order, for a configuration
+ * that holds no picture of Logitech's to take a mask from, `todo-compile-one.md` 7.1. Nothing here takes a
+ * configuration. The background's entry is among them though the composed path draws it as a fill by default,
+ * `TouchChoices.backgroundFill`: whether it becomes one is the placing step's business, not the drawing's.
+ */
+export function touchFixedPictures(choices: TouchChoices): { entry: TouchPictureEntry; bytes: Uint8Array }[] {
+  return TOUCH_PICTURES.map((entry) => ({ entry, bytes: touchPictureOwnBytes(entry, choices) }));
+}
+
+/**
+ * Ours of `entry` drawn inside `mask`, a picture's pixels where only whether each is drawn is read: undrawn where the
+ * mask is, and black where the mask is drawn and our drawing is not. The form of section 422, which takes Logitech's
+ * transparency off the picture being replaced, kept behind `TouchChoices.logitechMasks` while no remote has shown the
+ * rule's own, `touchPictureOwnRows`. Refused where the mask is not the entry's size.
+ */
+export function touchPictureRows(entry: TouchPictureEntry, mask: readonly (readonly (number | undefined)[])[], choices: TouchChoices): Rows {
+  const { width, height } = entry;
+  if (mask.length !== height || mask.some((row) => row.length !== width)) {
+    throw new PictureError(`${entry.name} is ${width} by ${height}, and the picture it replaces is ${mask[0]?.length ?? 0} by ${mask.length}`);
+  }
+  const rows = touchPictureOwnRows(entry, choices);
   return mask.map((line, y) => line.map((v, x) => (v === undefined ? undefined : rows[y]![x] ?? BLACK)));
 }
 
 /** Ours of `entry` inside `mask`, encoded: `encodeBitmap` of `touchPictureRows`. */
 export function touchPictureBytes(entry: TouchPictureEntry, mask: readonly (readonly (number | undefined)[])[], choices: TouchChoices): Uint8Array {
   return encodeBitmap(touchPictureRows(entry, mask, choices));
+}
+
+/**
+ * Ours in place of `picture`, the form `choices` name: by the rule alone, `touchPictureOwnBytes`, which reads nothing
+ * of the picture, or inside its mask, `touchPictureBytes`, with `TouchChoices.logitechMasks`. Either way refused where
+ * the picture is not its entry's size, since ours is drawn at the place Logitech's was and a size it does not state
+ * would be drawn at a size nobody measured. Undefined where no entry names the picture.
+ */
+export function touchPictureFor(picture: Pick<TouchPictureRead, 'pixels' | 'entry'>, choices: TouchChoices): Uint8Array | undefined {
+  const { entry, pixels } = picture;
+  if (entry === undefined) return undefined;
+  if (choices.logitechMasks) return touchPictureBytes(entry, pixels, choices);
+  if (pixels.length !== entry.height || pixels.some((row) => row.length !== entry.width)) {
+    throw new PictureError(`${entry.name} is ${entry.width} by ${entry.height}, and the picture it replaces is ${pixels[0]?.length ?? 0} by ${pixels.length}`);
+  }
+  return touchPictureOwnBytes(entry, choices);
 }
 
 /** One picture of the bank as this module reads it: where it is, its pixels and the entry its content names, if any. */
@@ -275,7 +349,7 @@ export function withTouchPictures(c: Container, choices: TouchChoices): TouchPic
       onto.set(picture.piece, (one as TouchPictureRead).piece);
       continue;
     }
-    replace.set(picture.piece, touchPictureBytes(picture.entry, picture.pixels, choices));
+    replace.set(picture.piece, touchPictureFor(picture, choices) as Uint8Array);
     replaced.push(picture.entry.name);
   }
   if (replace.size === 0 && onto.size === 0) return { container: c, replaced, merged: 0, filled: 0 };
@@ -292,20 +366,22 @@ export function withTouchPictures(c: Container, choices: TouchChoices): TouchPic
 
 /**
  * Which pictures of `c` are ours, read off the finished file with no memory of how it was made: a picture is ours
- * where an entry of its size, drawn inside the picture's own mask, gives its bytes exactly. How `touchBuiltBytes`
- * counts this module's bytes; a picture of Logitech's that ours reproduces, the all black ones, counts as ours too,
- * since the rule makes every byte of it. Each picture once, by its blob offset and length.
+ * where an entry of its size gives its bytes exactly, in the form `choices` name, by the rule alone or, with
+ * `TouchChoices.logitechMasks`, drawn inside the picture's own mask. How `touchBuiltBytes` counts this module's bytes;
+ * a picture of Logitech's that ours reproduces, the all black ones, counts as ours too, since the rule makes every byte
+ * of it. Each picture once, by its blob offset and length.
  */
 export function touchOurPictures(c: Container, choices: TouchChoices): { offset: number; length: number; name: string }[] {
   const { pictures } = readTouchPictures(c);
   const out: { offset: number; length: number; name: string }[] = [];
+  const own = new Map(choices.logitechMasks ? [] : TOUCH_PICTURES.map((entry) => [entry, touchPictureOwnBytes(entry, choices)] as const));
   for (const picture of pictures) {
     const height = picture.pixels.length;
     const width = picture.pixels[0]?.length ?? 0;
     const offset = c.blobOffsetOf(picture.address) as number;
     for (const entry of TOUCH_PICTURES) {
       if (entry.width !== width || entry.height !== height) continue;
-      const ours = touchPictureBytes(entry, picture.pixels, choices);
+      const ours = own.get(entry) ?? touchPictureBytes(entry, picture.pixels, choices);
       if (ours.length === picture.piece.bytes.length && ours.every((byte, k) => byte === picture.piece.bytes[k])) {
         out.push({ offset, length: ours.length, name: entry.name });
         break;

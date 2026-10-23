@@ -171,10 +171,16 @@ test('the One test setup composed onto Logitech\'s compile of two devices comes 
   // one; and the four pictures only the list nothing enters drew, Logitech's two row pictures and two icons, 42612
   // bytes, out of the bank, since our look now draws every list.
   // 983644 with both, 5.3.4's fill and 4.3.3's lists: 77329 below 1060973, the picture's 77445 less a byte for each
-  // of the 116 draws, the seven lists' chromes five of them. 983694 since 4.3.3's fix at the bench: each activity's
-  // own copy of the scan 55 list its key map runs, entering its own device list, five lists of two instructions and
-  // their pointers, 50 bytes; the working screens' Devices keys repointed in place.
-  assert.equal(c.blob.length, 983694);
+  // of the 116 draws, the seven lists' chromes five of them. 4.3.3's fix at the bench added 50 bytes: each
+  // activity's own copy of the scan 55 list its key map runs, entering its own device list, five lists of two
+  // instructions and their pointers; the working screens' Devices keys repointed in place.
+  // 982911 since `todo-compile-one.md` 7.1.2, section 428, 783 bytes fewer than before it: the fixed pictures transparent where our
+  // own drawing leaves a pixel empty and no longer inside Logitech's masks. The charging problem's cross, its paper its
+  // circle, 2069 bytes where it was 2945, 876 fewer; the thirteen gauge copies a net 93 more, each 417 bytes now, level
+  // 0's 28 shorter, level 3's 70 longer and the other eleven 4 or 5 longer. 991585 at 7.1.2's first commit, the cross on
+  // black paper the picture wide and raw at 10793. 983694 with `TouchChoices.logitechMasks`, measured and not asserted
+  // here.
+  assert.equal(c.blob.length, 982911);
 });
 
 // ---------------------------------------------------------------------------------------------------------
@@ -366,7 +372,7 @@ test('todo-compile-one 3.2.2, 4.3, 4.3.3 and 4.10: the firmware screens, the fix
     'firmware screens': 3247, 'fixed screens': 14103, 'tour and Remote Assistant': 0, 'status screens': 3901,
     'clock header': 3558, 'help screens': 6442, 'activity menu': 787, 'device pages': 16146, 'device lists': 4978, 'activity screens': 2898,
     'case programs': 572, 'hit pages': 772, wiring: 4560, 'state tables': 2347,
-    'raw slot 18': 2, 'number senders': 1, pictures: 217218,
+    'raw slot 18': 2, 'number senders': 1, pictures: 216435,
   });
   // The pictures' 294663, since `todo-compile-one.md` 5.3.1 and 5.3.3, section 422, are the 32 of ours the path put in
   // place of Logitech's, each its picture of Logitech's size and mask: the status strip's sixteen, 8687, the gauge's
@@ -374,6 +380,9 @@ test('todo-compile-one 3.2.2, 4.3, 4.3.3 and 4.10: the firmware screens, the fix
   // and the power off help, 110686; the settings screens' nine buttons, six pads and three rows, 97845; and the one
   // whole screen background, 77445. None of their bytes is read as a value: a mask says only which pixels are drawn.
   // 217218 since 5.3.4, section 425: 31 pictures, the background a fill and no longer a picture of the bank.
+  // 216435 since 7.1.2, section 428: the same 31 drawn by their rule alone, transparent where it leaves a pixel empty
+  // and not inside Logitech's masks, the status strip's sixteen 8780 and the firmware screens' and the power off
+  // help's six 109810, the cross's paper only its circle.
   // 401, 3967, 680 and 1243 for the four before 6.5: what a list below reads is the numbers of the lists it calls
   // and of the variables it writes, and the tour's setting, one byte.
   // Since 5.3.4, section 425, each of the 109 fills is a byte more read as a value than the draw it replaced: its
@@ -521,7 +530,7 @@ test('todo-compile-one 4.3.3: each of the composed setup\'s five activities open
   });
 });
 
-test('todo-compile-one 3.2: the One\'s composed test setup carries 103164 of its 983694 bytes out of Logitech\'s donor, per kind as pinned here, a list that may only shrink',
+test('todo-compile-one 3.2: the One\'s composed test setup carries 103164 of its 982911 bytes out of Logitech\'s donor, per kind as pinned here, a list that may only shrink',
      NEEDS, () => {
   const out = composed().container;
   const got = carried(out, parse(require_('harvest_one_two_devices')), builtBytes().owners);
@@ -590,8 +599,9 @@ test('todo-compile-one 3.2: the One\'s composed test setup carries 103164 of its
     // `hit-page` 167 before 7.1.6, 2444 before 3.2.2.3, 546 before 3.2.2.7, 485 before 3.2.2.8; `case-program` 341 before 3.2.2.3 and 10 before 4.10, and base slot 11's `table` 89
   });
   assert.equal(Object.values(got).reduce((sum, one) => sum + one, 0), 103164);
-  assert.equal(out.blob.length, 983694);
-  // 1099596 until 5.3.4 made the background a fill, section 425, which moved no row above: what drew it is built, or
+  assert.equal(out.blob.length, 982911);
+  // 983644 until 7.1.2 drew the fixed pictures by their rule alone, section 428, which moved no row above: every
+  // picture it changed was already ours. 1099596 until 5.3.4 made the background a fill, section 425, which moved no row above: what drew it is built, or
   // is mode 70's and mode 50's chromes, which matched no donor unit before the fill either.
 });
 

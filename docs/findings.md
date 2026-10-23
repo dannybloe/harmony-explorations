@@ -56306,7 +56306,10 @@ the shorter side. The icons are a choice, `TouchChoices.pictureIcons`, the Harmo
 off the picture it replaces, so ours is drawn at exactly Logitech's pixels on all 604 and the comparison cannot fail.
 604 counts copies, 37 or 38 pictures a compile, of 29 distinct images. The control, Logitech's mask with one drawn
 pixel of the cross made undrawn, shows only that the comparison tells two masks apart. An earlier version of this
-section called the two ends independent, which was wrong: both ends were Logitech's mask.
+section called the two ends independent, which was wrong: both ends were Logitech's mask. **Since section 428** this
+masked form is a choice, `TouchChoices.logitechMasks`, and by default each picture is transparent where our own
+drawing leaves a pixel empty, reading no mask; that section found the mask had cut our ink on eight gauge pictures,
+27 pixels of level 3's outline and tip among them, which nothing here looked for.
 
 **Size, which has two ends**: ours encoded, `encodeBitmap` over our pixels, is as many bytes as the Logitech picture it
 replaces, whose length is what its own header states, on all 604 of the sixteen and on all 716 pictures of the nineteen
@@ -57303,6 +57306,170 @@ rather than through the census, which now calls one function, `misfits`.
 * `packages/codec/test/touchfontsets.test.ts`: the census over the sixteen with every count above, the code order, the
   byte for byte layout, the controls and the table from nothing; `composesetup.test.ts` the composed setup's 33 sets.
 * `docs/config-format.md`, after section 396's table; `reference/remotes/harmony-one/display.md`.
+
+## 428. The Harmony One's fixed pictures built by their rule alone, transparent where our own drawing leaves a pixel empty: they differ from section 422's masked form on the ten gauge pictures and the cross and nowhere else, and the masked form had cut our level 3 gauge's outline and tip
+
+**Status:** the differences confirmed by measurement on all nineteen Harmony One compiles and on the composed test
+setup, with failing controls; what each drawing leaves empty is a choice of ours, stated and tested as one. Nothing
+built this way has been written to a remote, which `todo-compile-one.md` 7.2 is for.
+**Todo `todo-compile-one.md` 7.1.2**, decided before the work: each picture's transparency is where our own drawing
+leaves a pixel empty, in place of Logitech's mask, so a configuration built from nothing, 7.1, which holds no picture
+of Logitech's, has every fixed picture.
+
+**The question.** Section 422 drew each of our fixed pictures inside the transparency mask of the Logitech picture it
+replaces, read off the configuration at build time, and kept nothing else of Logitech's. With no Logitech picture
+there is no mask. What does each drawing leave empty by its own rule, how far is that from the masked form, and what
+does it cost?
+
+**Sources checked**: sections 422, 425 and 373 of this document, the sample's notes of 18 October 2026, and
+`families/touch/pictures.ts`, `clockheader.ts` and `activitypictures.ts`. Logitech's client was not consulted: the
+drawings are ours by decision and what Logitech's pictures leave undrawn is read off the configurations. The
+firmware was not opened; that the Harmony One draws over what the screen held without clearing it is section 425's
+reading, made for a mode page.
+
+**Units**: the module names 23 drawings, `TOUCH_PICTURES`. Logitech holds them as 29 distinct images, since the
+settings pad, the settings row and the blank screens' photographs are three images each, stored as 37 or 38 pictures
+a compile with the copies. On the composed path the background's other copies and the photographs are merged onto one,
+so the step replaces 32 pictures a compile, here called its places.
+
+### What each drawing leaves empty
+
+`touchPictureOwnRows`, by kind, each at the size the module states. **What is left empty is a choice**, not a
+measurement:
+
+* **the battery gauge**, all ten drawings: row 0 and column 0, 30 pixels, and nothing else. Chosen because nine of
+  Logitech's ten gauge pictures leave those two undrawn and our outline was placed from x 1 and y 1 to match them;
+  Logitech's level 0, the grey question mark, draws them, and nothing here says why. The rest, the box from x 1 and
+  y 1 to the picture's far corner, the box around everything any level of ours inks, is drawn black wherever no ink
+  falls, so a level of ours drawn over another at the same place leaves none of the other's fill behind; and no level
+  of ours inks row 0 or column 0, so none leaves anything there for another to cover. Both follow from the
+  construction. Whether the firmware clears the strip before redrawing it is not read; what shows at the empty row and
+  column is whatever the page drew there;
+* **the charging problem's cross**: every pixel outside its circle that the icon does not ink, 4458. Its black paper
+  is a disc the size of the icon's own circle, radius 10 of the icon font's 24 units, centred on its grid square,
+  `paper: 'circle'`. The black elsewhere was not load bearing: the picture is drawn once on its firmware screen, over
+  the black fill, and nothing is drawn over it that it would have to cover; so it went, as Logitech's cross leaves its
+  corners undrawn too;
+* **every other drawing**: nothing. The other six icons are drawn over black paper the whole picture wide, a decision
+  kept from the sample, which Logitech's six agree with, being drawn at every pixel. A settings box's pixels outside its rounded corners are black, as decided on the sample,
+  where `activityBoxRows` leaves them undrawn and the masked form made them black; the sending mark off, the clock face
+  and the background are black throughout.
+
+`touchFixedPictures` builds all 23 from the choices alone, 296739 bytes encoded: the ten gauges 417 bytes each and the
+cross 2069, the only ones with an empty pixel and so the only encoded ones, and the other twelve raw, two bytes a pixel
+and five of header.
+
+### Against the masked form
+
+**Of the 29 images, eleven leave pixels undrawn**, the ten gauge drawings' and the cross, the same pixels on every
+stored copy of all nineteen Harmony One compiles; no other image leaves any. Every gauge picture leaves its row 0 and
+column 0 undrawn but the battery gauge's level 0, which is drawn at every pixel; eight of them three or four pixels more
+at the picture's corners, the charging animation's third frame a fifth inside its body; level 3 69 pixels, its bottom
+row and most of the right end of its body and tip among them. The cross leaves 4028 of its 5394 undrawn, everything
+outside its circle's silhouette, a roughly round blob of 1366 drawn pixels, 42 by 40. So the two forms differ on those
+eleven drawings and on no other, per drawing, as ours drawn where the mask was empty and ours empty where the mask was
+drawn:
+
+| drawing | ours drawn, mask empty | of them our ink | ours empty, mask drawn |
+|---|---|---|---|
+| battery gauge, level 0 | 0 | 0 | 30 |
+| levels 1, 6 and 7 | 4 each | 1 each | 0 |
+| level 2 | 4 | 0 | 0 |
+| level 3 | 39 | 27 | 0 |
+| levels 4 and 5 | 3 each | 1 each | 0 |
+| charging animation, third frame | 5 | 1 | 0 |
+| charging at level 0 | 3 | 1 | 0 |
+| the charging problem's cross | 0 | 0 | 430 |
+
+Where both forms draw a pixel it is the same pixel, by construction: the masked form is the rule's drawing with
+Logitech's empty pixels cut out of it and black where the drawing is empty, so the forms can differ only in what is
+empty.
+
+**The masked form had cut our ink, which section 422 did not notice.** Where a mask was undrawn our ink went with it:
+the outline's top left corner pixel on seven gauge pictures, where those of Logitech's leave the corner undrawn, and on
+level 3 27 pixels, the outline's top left corner, 17 of its bottom edge, 4 of the right end of the body and 5 of the
+tip's 8. Rendered over a page, the masked level 3 gauge is an outline open at the bottom and right; the rule's own is
+whole. Why Logitech's level 3 leaves those pixels undrawn, and how its own level 3 looks on a remote, is not known. The
+rest of the difference is black or empty: the gauges' corner pixels, black in ours, and the cross's 430, a ring between
+our circle's disc and the edge of Logitech's larger blob, black in the masked form and empty in ours, on the charging
+problem's screen over the black the background fill drew, so the screen renders identically.
+
+### On the composed path
+
+`TouchChoices.logitechMasks`, default false: `withTouchPictures` puts the rule's own picture in each place,
+`touchPictureFor`, unless the choice keeps the masked form, and `touchOurPictures`, which the attribution counts the
+pictures' bytes with, recognises a picture by the form the choices name. Both forms still refuse a picture of another
+size than its entry's.
+
+**On the composed test setup** the file goes from 983644 to 982861 bytes, 783 fewer, and the pictures' part of the
+attribution from 217218 to 216435, the same 783: the cross 876 fewer, 2069 bytes where the masked form's was 2945, and
+the thirteen gauge copies a net 93 more, 5421 where they were 5328, level 0's 28 shorter, level 3's 70 longer and the
+other eleven 4 or 5 longer each. No other part moved: the carried bytes stay 103331 and every builder's count is the
+same. The masked form's 983644 and 217218 are measured and no longer asserted; the 783 is asserted on Logitech's
+compile of two devices too. **A first version drew the cross over black paper the picture wide**, raw at 10793 bytes
+and the setup 991585, 7941 more than the masked form: the black round the circle was the decided rule followed to the
+letter, and it is not load bearing on a picture drawn once over a black fill, so the paper is the circle now. **All 190 mode pages render pixel for pixel alike** in the two forms, the
+charging problem's screen with the cross among them; the pages draw no gauge, which the clock header's programs draw
+over them. With the gauge program's eight variants drawn over the first page, variant k taken as level k, the two
+differ at no pixel on levels 0 and 2, at one, the outline's top left corner, on levels 1 and 4 to 7, and at 27 on level
+3; the charging gauge's program, its first 64 variants, at none or that one corner pixel.
+
+### The closures
+
+**Built with no configuration, and a test that can run without one**: the census of the 23 drawings has no lab skip,
+so it holds in a clone with no configuration to read; it is a census of our choices and measures nothing of Logitech's.
+**On each of the sixteen English compiles of skin 54** the step puts in each of its 32 places exactly the picture
+`touchFixedPictures` built with no configuration, and the control is the masked form, which would put a different
+picture in 14 of those places, the thirteen gauge copies and the cross, so a step that drew inside Logitech's mask,
+for every picture or for any one of them, fails it. **The direct control**, on the cross alone: with every pixel made
+undrawn it gives the rule's form the same bytes and the masked form different ones, and a picture of another size is
+refused in both forms. **The differences above** are asserted on every stored copy of the nineteen compiles.
+
+**What this does not show**: whether the remote shows ours as the renderer does, which 7.2 is for, and what shows on
+the remote at the gauge's empty row and column. Ours leaves them empty, as nine of Logitech's ten gauge pictures do;
+Logitech's level 0 draws them.
+
+### What would falsify it
+
+A Harmony One compile in which another of the 29 images leaves a pixel undrawn, which would make the two forms differ
+there too; a page of the composed setup that renders differently in the two forms; or, at the bench, a gauge level
+leaving a trace of another level's fill.
+
+### Which architectures
+
+Arch 12 (Harmony One) alone, on all nineteen of its compiles. The Harmony 600, 650 and 700 draw their pictures in the
+four slot family's own module, section 363, which this section did not examine.
+
+### The reviews
+
+Both reviewers of the `finding` skill ran. **The blind re-measure**, given the questions and not this section, found
+the same undrawn pixels per image and copy, the same differences per drawing, the same encoded sizes and the 305463
+total, both composed lengths, and all 190 pages alike, all on the first version with the cross over black paper; it raised the gauge's empty row and column showing what lies
+under them, answered in the first list above. **The sentence audit** found seven things, corrected in place: "23
+images" where the module names 23 drawings held as 29 images; "Both forms leave them empty, Logitech's too", false of
+level 0; the identity of the pixels both forms draw offered as a measurement where it is by construction; the gauge's
+empty row and column presented as the drawing's own rule where it is a choice copied from nine of Logitech's ten; "93
+more, each 417 bytes", a net over copies of both signs; the cross's undrawn pixels as everything outside a disc, where
+about 45 lie inside the disc round its blob; and the differences asserted on the first copy of each drawing only, now
+on every copy. It also found the masked level 3 written as a defect of the mask without saying that why Logitech leaves
+those pixels undrawn is unknown, and the gauges' corner pixels said to be at the body's corners where three are in the
+tip's column. The audit ran four mutated copies of the step: masking every picture, only the cross, only the gauges or
+only level 3, the sixteen places test failed on each.
+
+### Still open
+
+**Not seen on a remote**: the gauges, the cross and the status strip in the rule's form, 7.2. **The circle's radius is
+the icon font's**, 10 of 24 units as `close-circle-outline` draws it: another icon chosen for the cross keeps the same
+disc of paper, which is right for a round icon and would cut a square one's black at its corners.
+
+Where it lives:
+
+* `packages/codec/src/families/touch/pictures.ts`: `touchPictureOwnRows`, `touchPictureOwnBytes`,
+  `touchFixedPictures`, `touchPictureFor`, the masked `touchPictureRows` over the rule's own, and `touchOurPictures`.
+* `packages/codec/src/families/touch/choices.ts`: `TouchChoices.logitechMasks`.
+* `packages/codec/test/touchpictures.test.ts`: the census with no lab, the places on the sixteen with the masked
+  control, the direct control and the differences on every copy of the nineteen; `composesetup.test.ts` the sizes.
+* `docs/config-format.md`, after section 422's paragraph; `reference/remotes/harmony-one/display.md`, the status strip.
 
 ## 429. The Harmony One's device lists of no rows are the template with no row in it, one page as Logitech's own activity menu of no row is, inferred and unconfirmed; and the power off help's three hit pages are built with its screens, byte for byte on the sixteen English compiles of skin 54
 

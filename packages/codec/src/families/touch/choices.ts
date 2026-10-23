@@ -44,11 +44,20 @@ export interface TouchChoices extends CommonChoices {
   /**
    * Whether the configuration keeps Logitech's fixed pictures, the status strip's, the firmware screens', the power
    * off help's, the settings buttons' and the whole screen background with the three photographs six blank screens draw, findings
-   * section 422. Off by default: ours are drawn in their place, each Logitech's size and mask, as the sample of 18
+   * section 422. Off by default: ours are drawn in their place, each Logitech's size, its transparency by
+   * `logitechMasks`, as the sample of 18
    * October 2026 drew them and as decided on it, and the background is one black picture those six screens draw
    * too, `todo-compile-one.md` 5.3.1 and 5.3.3.
    */
   readonly logitechPictures: boolean;
+  /**
+   * Whether our fixed pictures take their transparency off the Logitech picture each replaces, its mask, as section 422
+   * drew them, `touchPictureRows`. Off by default, `todo-compile-one.md` 7.1.2, decided: a picture is transparent where
+   * our own drawing leaves a pixel empty, `touchPictureOwnRows`, which reads no picture of Logitech's and is what a
+   * configuration built from nothing has, findings section 428. The masked form stays on offer while no remote has
+   * shown the rule's own. Taken only where `logitechPictures` is off.
+   */
+  readonly logitechMasks: boolean;
   /**
    * Whether the whole screen background, all black, is drawn by one instruction that fills the screen, screen opcode
    * 1, in place of a 176 by 220 picture of 77445 bytes, `withPictureFilled`, findings section 425. On by default since
@@ -138,6 +147,7 @@ export const TOUCH_CHOICES: TouchChoices = {
   deviceBox: { fill: '#1c9c53', rim: '#e8cbb4' },
   settingsBox: { fill: '#f76100', rim: '#ffefde' },
   logitechPictures: false,
+  logitechMasks: false,
   backgroundFill: true,
   pictureIcons: {
     'sending mark on': 'wifi', 'Low Battery': 'battery-alert-variant-outline', 'USB Connected': 'usb',

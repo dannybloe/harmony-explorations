@@ -7,6 +7,10 @@
  * Every figure is exact. **What the closures here do and do not show**, findings section 422: the mask of every
  * picture of ours is Logitech's by construction, so a mask comparison cannot fail and only shows the comparison works;
  * the size of ours encoded against Logitech's is the closure with two ends, our encoder and Logitech's own bytes.
+ *
+ * **Since `todo-compile-one.md` 7.1.2, section 428, the masked form is a choice**, `TouchChoices.logitechMasks`, off by
+ * default: each picture is transparent where our own drawing leaves a pixel empty, built with no configuration at all,
+ * and the tests of the masked form above name it. The last tests here are the rule's own.
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -17,7 +21,8 @@ import { contentKey } from '../src/screencategories.ts';
 import { PictureError, withReplacedPictures } from '../src/pictures.ts';
 import { TOUCH_CHOICES } from '../src/families/touch/choices.ts';
 import {
-  TOUCH_PICTURES, type TouchPictureEntry, readTouchPictures, touchOurPictures, touchPictureRows, withTouchPictures,
+  TOUCH_PICTURES, type TouchPictureEntry, readTouchPictures, touchFixedPictures, touchOurPictures, touchPictureBytes,
+  touchPictureFor, touchPictureOwnBytes, touchPictureOwnRows, touchPictureRows, withTouchPictures,
 } from '../src/families/touch/pictures.ts';
 import { withTouchBuilders, withTouchComposedBuilders } from '../src/families/touch/builders.ts';
 import { withoutTourAndAssistant } from '../src/families/touch/withouttour.ts';
@@ -35,6 +40,11 @@ const THREE_BACKGROUNDS = new Set(['harvest_one_two_devices', 'harvest_one_famil
 const backgrounds = (name: string): number => (THREE_BACKGROUNDS.has(name) ? 3 : 4);
 /** The family's choices with the background left a picture, which is how 5.3.1 to 5.3.3 placed it; 5.3.4 makes it a fill. */
 const AS_PICTURE = { ...TOUCH_CHOICES, backgroundFill: false };
+/**
+ * The same with each picture inside the mask of Logitech's it replaces, `TouchChoices.logitechMasks`, which is how
+ * 5.3.1 drew them; 7.1.2 draws them by their rule alone, section 428, and these tests of the masked form keep it on.
+ */
+const MASKED = { ...AS_PICTURE, logitechMasks: true };
 
 type Rows = readonly (readonly (number | undefined)[])[];
 
@@ -63,14 +73,14 @@ test('todo-compile-one 5.3: every one of the 29 pictures of Logitech\'s the modu
   }
 });
 
-test('todo-compile-one 5.3.1: on each of the sixteen every picture of ours encodes to as many bytes as the Logitech picture it replaces and sits in that picture\'s place in the bank, with the mask taken from it',
+test('todo-compile-one 5.3.1: on each of the sixteen every picture of ours encodes to as many bytes as the Logitech picture it replaces and sits in that picture\'s place in the bank, with the mask taken from it, in the masked form',
      skipUnless(...SIXTEEN), () => {
   for (const name of SIXTEEN) {
     const c = parse(require_(name));
     const { pictures } = readTouchPictures(c);
     // The background kept a picture: this is the replacement and the merge, and the fill 5.3.4 makes of the
-    // background afterwards is `screenfill.test.ts`'s, section 425.
-    const placed = withTouchPictures(c, AS_PICTURE);
+    // background afterwards is `screenfill.test.ts`'s, section 425. The form of section 422, the masked one.
+    const placed = withTouchPictures(c, MASKED);
     const after = picturesByContent(placed.container);
     // The bank's pictures in order, as the placed file holds them: the replaced ones keep their order, and the
     // background's other copies and the photographs, merged onto the first copy, are the ones gone.
@@ -114,7 +124,7 @@ test('todo-compile-one 5.3.1: on each of the sixteen every picture of ours encod
 /** The sixteen and the three Harmony One compiles outside them: the everyday One's, its unprogrammed one and the Dutch one. */
 const NINETEEN = [...SIXTEEN, 'one_config', 'one_config_unprogrammed', 'one_friend_asfound_config'] as const;
 
-test('todo-compile-one 5.3.1: on all nineteen Harmony One compiles every named picture of ours encodes to as many bytes as Logitech\'s own, 716 of 716, the two ends being our encoder and the length Logitech\'s header states',
+test('todo-compile-one 5.3.1: on all nineteen Harmony One compiles every named picture of ours in the masked form encodes to as many bytes as Logitech\'s own, 716 of 716, the two ends being our encoder and the length Logitech\'s header states',
      skipUnless(...NINETEEN), () => {
   let total = 0;
   for (const name of NINETEEN) {
@@ -197,9 +207,12 @@ test('todo-compile-one 5.3.3: on Logitech\'s compile of two devices the whole sc
   // The references to the background's three copies, 75 on this compile (66 to 314 over the sixteen), and to each
   // photograph two: six blank screens a timer enters draw them, which is all this says of what they are for.
   assert.deepEqual(background.map((key) => before.get(key)), [75, 2, 2, 2]);
-  // The background kept a picture, as 5.3.3 left it; 5.3.4 makes it one fill, `screenfill.test.ts`, section 425.
-  const placed = withTouchPictures(c, AS_PICTURE).container;
+  // The background kept a picture, as 5.3.3 left it; 5.3.4 makes it one fill, `screenfill.test.ts`, section 425. In the
+  // masked form, where every other picture of ours is as long as Logitech's; by the rule alone, section 428, 783 bytes
+  // fewer: the cross 876 fewer, its paper only its circle, and the thirteen gauge copies a net 93 more.
+  const placed = withTouchPictures(c, MASKED).container;
   assert.equal(c.blob.length - placed.blob.length, 5 * 77445);
+  assert.equal(c.blob.length - withTouchPictures(c, AS_PICTURE).container.blob.length, 5 * 77445 + 783);
   const after = namings(placed);
   // One picture holds them all, all black and uncompressed, Logitech's own bytes.
   assert.deepEqual(background.map((key) => after.get(key)), [draws, undefined, undefined, undefined]);
@@ -238,4 +251,137 @@ test('todo-compile-one 5.3: on the composed path ours go in unless the choice ke
   ]);
   // And it lays out again into itself, every picture a piece of its own.
   assert.equal(layOutContainer(takeApart(ours.container)).bytes.length, ours.container.blob.length);
+});
+
+// ---------------------------------------------------------------------------------------------------------
+// `todo-compile-one.md` 7.1.2, section 428: the fixed pictures by their rule alone.
+
+/** The pixels a picture leaves empty, as `x,y`, row by row. */
+const emptyAt = (rows: Rows): string[] => rows.flatMap((row, y) => row.flatMap((v, x) => (v === undefined ? [`${x},${y}`] : [])));
+
+test('todo-compile-one 7.1.2: every one of the 23 fixed pictures is built by its rule with no configuration present, at its stated size, 296739 bytes, and only the battery gauges\' ten and the cross have an empty pixel, the gauges each at row 0 and column 0 and nowhere else, the cross 4458 pixels outside its circle',
+     () => {
+  // No lab and no configuration: this test runs in a clone with neither, so it cannot read a picture off one.
+  const built = touchFixedPictures(TOUCH_CHOICES);
+  assert.equal(built.length, 23);
+  assert.deepEqual(built.map((one) => one.entry), [...TOUCH_PICTURES]);
+  const gaugeEdge = [...Array.from({ length: 20 }, (_, x) => `${x},0`), ...Array.from({ length: 10 }, (_, k) => `0,${k + 1}`)];
+  let gauges = 0;
+  for (const { entry, bytes } of built) {
+    const rows = touchPictureOwnRows(entry, TOUCH_CHOICES);
+    assert.deepEqual([rows[0]!.length, rows.length], [entry.width, entry.height], entry.name);
+    assert.deepEqual(bytes, touchPictureOwnBytes(entry, TOUCH_CHOICES), entry.name);
+    if (entry.drawing.kind === 'gauge') {
+      gauges += 1;
+      assert.deepEqual(emptyAt(rows).sort(), [...gaugeEdge].sort(), entry.name);
+      // Encoded, since a pixel is empty: 417 bytes each, every one the same runs.
+      assert.equal(bytes.length, 417, entry.name);
+    } else if (entry.name === 'charging problem') {
+      // The cross's paper is its circle, section 428: every pixel outside it that the icon does not ink is empty, so it
+      // is encoded, 2069 bytes, where black paper the picture wide was raw at 10793. The circle is centred on the grid
+      // square at 26, 22 of 40 pixels, radius 10 of the icon font's 24 units.
+      const empty = emptyAt(rows);
+      assert.equal(empty.length, 4458);
+      const outside = ([x, y]: number[]): boolean => Math.hypot((x as number) + 0.5 - 46, (y as number) + 0.5 - 42) > (40 * 10) / 24;
+      assert.ok(empty.every((at) => outside(at.split(',').map(Number))));
+      assert.equal(bytes.length, 2069);
+    } else {
+      assert.deepEqual(emptyAt(rows), [], entry.name);
+      // Every pixel drawn, so raw: two bytes a pixel and the five of the header.
+      assert.equal(bytes.length, 5 + 2 * entry.width * entry.height, entry.name);
+    }
+  }
+  assert.equal(gauges, 10);
+  assert.equal(built.reduce((sum, one) => sum + one.bytes.length, 0), 296739);
+});
+
+test('todo-compile-one 7.1.2: on each of the sixteen the step puts in each of its 32 places exactly the picture the rule built with no configuration, and the masked form differs at 14 of those places, so a step that drew inside Logitech\'s mask would not pass',
+     skipUnless(...SIXTEEN), () => {
+  const fixed = new Map(touchFixedPictures(AS_PICTURE).map((one) => [one.entry, contentKey(one.bytes)]));
+  for (const name of SIXTEEN) {
+    const c = parse(require_(name));
+    const { pictures } = readTouchPictures(c);
+    const placed = withTouchPictures(c, AS_PICTURE);
+    const first = pictures.find((one) => one.entry?.name === 'whole screen background')!;
+    const kept = pictures.filter((one) => !(one.entry?.drawing.kind === 'background' && one !== first));
+    const bank = readTouchPictures(placed.container).pictures;
+    assert.equal(bank.length, kept.length, name);
+    let places = 0;
+    let maskedDiffers = 0;
+    kept.forEach((one, k) => {
+      if (one.entry === undefined) return;
+      assert.equal(contentKey(bank[k]!.piece.bytes), fixed.get(one.entry), `${name} ${one.entry.name}`);
+      places += 1;
+      // The control: what the masked form would have put in this place.
+      if (contentKey(touchPictureBytes(one.entry, one.pixels, AS_PICTURE)) !== fixed.get(one.entry)) maskedDiffers += 1;
+    });
+    assert.equal(places, 32, name);
+    // The thirteen gauge pictures (eight levels, the full gauge twice more and level 4 once more, two charging
+    // frames) and the charging problem's cross; every other picture is the same in both forms.
+    assert.equal(maskedDiffers, 14, name);
+    assert.ok(placed.container.allChecksPass, name);
+  }
+});
+
+test('todo-compile-one 7.1.2: the cross built by the rule\'s form is the same whatever the pixels of the picture it replaces, every pixel made undrawn giving the same bytes where the masked form changes, and either form refuses a picture of another size than its entry',
+     skipUnless(DONOR), () => {
+  const { pictures } = readTouchPictures(parse(require_(DONOR)));
+  const cross = pictures.find((one) => one.entry?.name === 'charging problem')!;
+  const blank = { entry: cross.entry, pixels: cross.pixels.map((row) => row.map(() => undefined)) };
+  assert.deepEqual(touchPictureFor(cross, AS_PICTURE), touchPictureFor(blank, AS_PICTURE));
+  assert.deepEqual(touchPictureFor(blank, AS_PICTURE), touchPictureOwnBytes(cross.entry!, AS_PICTURE));
+  // The control: the masked form reads the mask, so the same two give different bytes there.
+  assert.notDeepEqual(touchPictureFor(cross, MASKED), touchPictureFor(blank, MASKED));
+  const pad = pictures.find((one) => one.entry?.name === 'settings pad')!;
+  for (const choices of [AS_PICTURE, MASKED]) {
+    assert.throws(() => touchPictureFor({ entry: cross.entry, pixels: pad.pixels }, choices),
+      (error: unknown) => error instanceof PictureError && /^charging problem is 87 by 62, and the picture it replaces is 81 by 50$/.test(error.message));
+  }
+  assert.equal(touchPictureFor({ entry: undefined, pixels: pad.pixels }, AS_PICTURE), undefined);
+});
+
+/**
+ * Per stored copy of a named picture on one compile, how the rule's form differs from the masked form: pixels ours
+ * draws where Logitech's mask left them empty, of those how many are not black, which is our ink the mask had cut, and
+ * pixels ours leaves empty where the mask drew.
+ */
+function differences(name: string): { entry: string; counts: [number, number, number] }[] {
+  const out: { entry: string; counts: [number, number, number] }[] = [];
+  for (const one of readTouchPictures(parse(require_(name))).pictures) {
+    if (one.entry === undefined) continue;
+    const masked = touchPictureRows(one.entry, one.pixels, TOUCH_CHOICES);
+    const own = touchPictureOwnRows(one.entry, TOUCH_CHOICES);
+    const counts: [number, number, number] = [0, 0, 0];
+    masked.forEach((row, y) => row.forEach((v, x) => {
+      const o = own[y]![x];
+      if (v === undefined && o !== undefined) { counts[0] += 1; if (o !== 0) counts[1] += 1; }
+      if (v !== undefined && o === undefined) counts[2] += 1;
+    }));
+    out.push({ entry: one.entry.name, counts });
+  }
+  return out;
+}
+
+test('todo-compile-one 7.1.2: on every stored copy of all nineteen Harmony One compiles the rule\'s form differs from the masked form at three to five pixels of eight gauge drawings, 30 of level 0\'s and 39 of level 3\'s, of which the mask had cut 27 of our outline and tip, and at the 430 pixels between our cross\'s circle and the edge of Logitech\'s, empty in ours; on the other twelve drawings at none',
+     skipUnless(...NINETEEN), () => {
+  const expected = new Map<string, [number, number, number]>([
+    ['battery gauge 0', [0, 0, 30]], ['battery gauge 1', [4, 1, 0]], ['battery gauge 2', [4, 0, 0]],
+    ['battery gauge 3', [39, 27, 0]], ['battery gauge 4, charging frame 2', [3, 1, 0]], ['battery gauge 5', [3, 1, 0]],
+    ['battery gauge 6', [4, 1, 0]], ['battery gauge 7, charged, charging frame 1', [4, 1, 0]], ['charging frame 3', [5, 1, 0]],
+    ['charging at gauge level 0', [3, 1, 0]], ['charging problem', [0, 0, 430]],
+  ]);
+  let copies = 0;
+  let differing = 0;
+  for (const name of NINETEEN) {
+    const got = differences(name);
+    assert.equal(new Set(got.map((one) => one.entry)).size, 23, name);
+    for (const { entry, counts } of got) {
+      assert.deepEqual(counts, expected.get(entry) ?? [0, 0, 0], `${name} ${entry}`);
+      copies += 1;
+      if (counts.some((n) => n > 0)) differing += 1;
+    }
+  }
+  // 716 copies, as the census above; 266 of them differ, the thirteen gauge copies and the cross on each compile.
+  assert.equal(copies, 716);
+  assert.equal(differing, 19 * 14);
 });

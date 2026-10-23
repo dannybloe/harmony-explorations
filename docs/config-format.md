@@ -2172,6 +2172,20 @@ unless `TouchChoices.backgroundFill` keeps the picture. **A picture nothing name
 `takeApart`: its bytes are carried on the end of the piece before it, so taking one out is a cut by the extent its
 header states. [findings.md](findings.md) section 422.
 
+**Which of the Harmony One's fixed pictures leave pixels undrawn**, the same on every stored copy of all nineteen One
+compiles: of the 29 images behind the 23 drawings `families/touch/pictures.ts` names, the ten battery gauge pictures,
+20 by 11, and the charging problem's cross, 87 by 62, and no other. Every gauge picture leaves its row 0 and column 0
+undrawn, 30 pixels, but the battery gauge's level 0, Logitech's grey question mark, which is drawn at every pixel;
+eight leave three or four pixels more at the picture's corners, the charging animation's third frame a fifth inside
+its body; level 3 leaves 69, its bottom row and most of the right end of its body and tip among them. The cross leaves
+4028 of its 5394 undrawn, everything outside its circle's silhouette, a roughly round blob of 1366 drawn pixels.
+**Ours are transparent where our own drawing leaves a pixel empty** since section 428, by default, and what it leaves
+empty is a choice: the gauges at row 0 and column 0 alone, as nine of Logitech's ten do, the box from x 1 and y 1
+drawn black where no ink falls; the cross at every pixel outside its circle that the icon does not ink, 4458, its
+paper a disc of radius 10 of the icon font's 24 units, encoded at 2069 bytes; and every other picture at no pixel. Built with no configuration, `touchFixedPictures`; the
+masked form of section 422, Logitech's undrawn pixels taken off the picture replaced, is `TouchChoices.logitechMasks`.
+[findings.md](findings.md) section 428.
+
 **A config's interface is localised and no field says which language.** Every word a remote shows is
 in the file as a run of glyph codes, in the language of whoever generated it, and the language itself
 is a property of a few hundred strings and of nothing else. Twelve of the thirteen user configs here
