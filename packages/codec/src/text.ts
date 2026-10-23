@@ -33,6 +33,7 @@
  */
 import { Container } from './gspm.ts';
 import { decodedSet, fontSets } from './font.ts';
+import { type BytesMemo, memoOverBytes } from './memo.ts';
 import type { Glyph } from './font.ts';
 import {
   reachablePrograms,
@@ -329,8 +330,18 @@ export function usesAscii(c: Container): boolean {
  * Undefined when no alphabet explains anything, which is what a typeface with no seed looks like:
  * the three safe mode typefaces were each a separate seed for exactly this reason, and a container
  * drawn with a fourth would return undefined rather than nonsense.
+ *
+ * Worked out once per container and its bytes, `memo.ts`, since one container is asked many times: a
+ * screen item matcher asks once per item and name. The map handed back is shared between those
+ * callers, so it is read and never changed; `touchCharacterMap` copies before adding its joiner.
  */
 export function characterMap(c: Container): CharacterMap | undefined {
+  return memoOverBytes(CHARACTER_MAPS, c, readCharacterMap);
+}
+
+const CHARACTER_MAPS: BytesMemo<CharacterMap | undefined> = new WeakMap();
+
+function readCharacterMap(c: Container): CharacterMap | undefined {
   let best: CharacterMap | undefined;
   const context = resolveContext(c);
   for (const alphabet of [...ALPHABETS, oxaniumAlphabet()]) {

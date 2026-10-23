@@ -894,11 +894,21 @@ function rank(path: string): [number, number, string] {
   return [scratch, relative.split(sep).length, relative];
 }
 
-/** Every match for `filename` anywhere under LAB, best first. */
-function findAll(filename: string): string[] {
-  const cached = cache.get(filename);
-  if (cached !== undefined) return cached;
-  const found: string[] = [];
+/**
+ * Every file under LAB by its name, from one walk of the whole lab per process.
+ *
+ * **The walk used to run once per name**, a `statSync` on every entry each time, and the lab holds
+ * about 28000 entries, so each new name cost about 0.4 seconds whatever the file was. A test file
+ * declaring twenty names in `skipUnless` paid eight seconds before its first assertion, and every test
+ * file pays it again in its own process. Measured on 23 October 2026. The rules are the walk's as
+ * before: dot entries skipped, symlinks followed, a dangling one passed over, only a regular file
+ * matching, so a name finds exactly the paths the per name walk found, and `findAll` still sorts them.
+ */
+let byName: Map<string, string[]> | undefined;
+
+function labIndex(): Map<string, string[]> {
+  if (byName !== undefined) return byName;
+  byName = new Map();
   if (LAB && existsSync(LAB)) {
     const queue: string[] = [LAB];
     while (queue.length) {
@@ -923,11 +933,24 @@ function findAll(filename: string): string[] {
         } catch {
           continue;
         }
-        if (entry === filename && entryStat.isFile()) found.push(full);
-        else if (entryStat.isDirectory()) queue.push(full);
+        if (entryStat.isFile()) {
+          const same = byName.get(entry);
+          if (same === undefined) byName.set(entry, [full]);
+          else same.push(full);
+        } else if (entryStat.isDirectory()) {
+          queue.push(full);
+        }
       }
     }
   }
+  return byName;
+}
+
+/** Every match for `filename` anywhere under LAB, best first. */
+function findAll(filename: string): string[] {
+  const cached = cache.get(filename);
+  if (cached !== undefined) return cached;
+  const found = [...(labIndex().get(filename) ?? [])];
   found.sort((a, b) => {
     const [as, ad, ap] = rank(a);
     const [bs, bd, bp] = rank(b);

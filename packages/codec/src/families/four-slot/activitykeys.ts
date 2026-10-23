@@ -56,7 +56,7 @@ import { PUSH_MODE, STATE_WRITE_BASE } from '../../actions.ts';
 import { characterMap, screenStrings } from '../../text.ts';
 import { EditError } from '../../edit.ts';
 import type { Edit } from '../../edit.ts';
-import type { Container } from '../../gspm.ts';
+import type { Container, Instruction } from '../../gspm.ts';
 import type { ActivityKeyEditor } from '../family.ts';
 
 /**
@@ -181,9 +181,9 @@ export function placeholderMode(c: Container): number | undefined {
   return modes[0];
 }
 
-/** Whether a base slot 10 list is exactly `[07 FFFD, 7E mode]`. */
-function opensPlaceholder(c: Container, index: number, mode: number): boolean {
-  const list = c.actionLists()?.[index];
+/** Whether base slot 10 list `index` of `lists`, the file's `actionLists`, is exactly `[07 FFFD, 7E mode]`. */
+function opensPlaceholder(lists: readonly Instruction[][] | undefined, index: number, mode: number): boolean {
+  const list = lists?.[index];
   return list !== undefined && list.length === 2
     && list[0]!.opcode === PUSH_MODE.opcode && list[0]!.operand === PUSH_MODE.operand
     && list[1]!.opcode === ENTER_MODE && list[1]!.operand === mode;
@@ -200,19 +200,23 @@ function opensPlaceholder(c: Container, index: number, mode: number): boolean {
 export function placeholderList(c: Container): number | undefined {
   const mode = placeholderMode(c);
   if (mode === undefined) return undefined;
+  // Read once and handed down: `actionLists` decodes every list of the file, several thousand, and the scan
+  // below asked it again for each one, which made this the bulk of `activitykeys.test.ts`, measured on 23
+  // October 2026.
+  const lists = c.actionLists() ?? [];
   for (const key of Object.keys(ACTIVITY_KEYS) as ActivityKey[]) {
     const { list, index } = activityKeyEntry(c, key);
     const entry = list.entries[index]!;
-    if (entry.opcode === ACTION_LIST_INDEX_OPCODE && opensPlaceholder(c, entry.operand, mode)) return entry.operand;
+    if (entry.opcode === ACTION_LIST_INDEX_OPCODE && opensPlaceholder(lists, entry.operand, mode)) return entry.operand;
   }
-  const lists = c.actionLists() ?? [];
-  for (let k = 0; k < lists.length; k += 1) if (opensPlaceholder(c, k, mode)) return k;
+  for (let k = 0; k < lists.length; k += 1) if (opensPlaceholder(lists, k, mode)) return k;
   return undefined;
 }
 
 /** What each of the three activity keys does, in the order `ACTIVITY_KEYS` names them. */
 export function activityKeys(c: Container): ActivityKeyBinding[] {
   const mode = placeholderMode(c);
+  const lists = c.actionLists();
   return (Object.keys(ACTIVITY_KEYS) as ActivityKey[]).map((key) => {
     const { list, index, at } = activityKeyEntry(c, key);
     const entry = list.entries[index]!;
@@ -222,7 +226,7 @@ export function activityKeys(c: Container): ActivityKeyBinding[] {
       return { ...base, kind: 'activity' as const, set: entry.operand & 0xff };
     }
     if (entry.opcode === ACTION_LIST_INDEX_OPCODE) {
-      const placeholder = mode !== undefined && opensPlaceholder(c, entry.operand, mode);
+      const placeholder = mode !== undefined && opensPlaceholder(lists, entry.operand, mode);
       return { ...base, kind: placeholder ? 'placeholder' as const : 'other' as const, list: entry.operand };
     }
     return { ...base, kind: 'other' as const };

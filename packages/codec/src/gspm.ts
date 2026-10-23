@@ -1043,8 +1043,10 @@ export function timestampOf(
  */
 export function findClockRecords(blob: Uint8Array): number[] {
   const out: number[] = [];
-  for (let off = 0; off + 11 <= blob.length; off += 1) {
-    if (!matchesAt(blob, off, CLOCK_COOKIE)) continue;
+  // From cookie to cookie through `indexOf` rather than a comparison at every offset, which cost five
+  // milliseconds a configuration and ran on every `parse`. The same offsets: each one holding the cookie
+  // with a whole record after it.
+  for (let off = indexOf(blob, CLOCK_COOKIE); off >= 0 && off + 11 <= blob.length; off = indexOf(blob, CLOCK_COOKIE, off + 1)) {
     if (clockRecord(blob, off) !== undefined) out.push(off);
   }
   return out;

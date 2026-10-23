@@ -75,10 +75,14 @@ export function matchesAt(data: Uint8Array, offset: number, needle: Uint8Array):
 /** Offset of the first occurrence of `needle` at or after `from`, or -1. */
 export function indexOf(data: Uint8Array, needle: Uint8Array, from = 0): number {
   if (needle.length === 0) return from;
+  // The first byte is found by the typed array's own `indexOf`, which runs in native code, and only those offsets
+  // are compared whole. It was a byte by byte loop here, and `parse` runs five of these over a whole
+  // configuration, four of them for cookies the file does not hold, which made parsing most of what a composer's
+  // test costs. Node's `Buffer.indexOf` is faster still and is not used, so that the codec runs where there is
+  // no Node. The answer is the same: the first match at or after `from`.
   const last = data.length - needle.length;
   const first = needle[0] as number;
-  for (let off = Math.max(0, from); off <= last; off += 1) {
-    if (data[off] !== first) continue;
+  for (let off = data.indexOf(first, Math.max(0, from)); off >= 0 && off <= last; off = data.indexOf(first, off + 1)) {
     if (matchesAt(data, off, needle)) return off;
   }
   return -1;
