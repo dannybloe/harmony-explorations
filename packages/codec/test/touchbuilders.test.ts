@@ -180,8 +180,10 @@ test('todo-compile-one 3.2.2.4: a composed device with a power variable gets its
   assert.deepEqual(chain.firsts.map((one) => one.resend), [true, true, false]);
   // Its 32 lists appended to base slot 10, eight a question, and every screen read back and rebuilt byte for byte.
   assert.equal(out.actionLists()!.length - donor.actionLists()!.length, 32);
-  // The donor's 2198 bytes and 660 read grow by the four screens and their lists, 816 bytes, 270 of them read.
-  assert.deepEqual(checkTouchHelpScreens(out), { devices: 3, screens: 14, lists: 108, described: 930, structure: 3014 });
+  // The donor's 2198 bytes and 660 read grow by the four screens and their lists, 816 bytes, 270 of them read; and the
+  // two hit pages the chain is touched through, 167 bytes, the help screens' since `todo-compile-one.md` 7.1.6,
+  // section 429, which the new questions name too and so do not grow.
+  assert.deepEqual(checkTouchHelpScreens(out), { devices: 3, screens: 14, lists: 108, described: 930, structure: 3181 });
   // The new first question asks by the name it was given, one line; and the LG, the last of the chain's own, goes
   // on to it where it left help before, from its first question's Yes and its "Did that fix the problem?"'s No.
   assert.deepEqual(textsOf(out, modes).slice(0, 1).map((one) => one.replace(/ \d+,\d+$/, '')), ['Is the Television off?']);
@@ -263,10 +265,11 @@ const donorBuilt = (): Container => {
   return donorBuiltOnce;
 };
 
-test('todo-compile-one 3.2.2.3: the attribution counts each builder\'s bytes on Logitech\'s compile of two devices, the help screens\' 2198 and the case programs\' 497 being what their own checks span on that compile, and the hit pages\' 1910 their check\'s 1986 less the 76 of the page the device lists build first, sections 415, 416, 417 and 424',
+test('todo-compile-one 3.2.2.3: the attribution counts each builder\'s bytes on Logitech\'s compile of two devices, the help screens\' 2365 and the case programs\' 497 being what their own checks span on that compile, and the hit pages\' 1910 their check\'s 1986 less the 76 of the page the device lists build first, sections 415, 416, 417 and 424',
      skipUnless(DONOR), () => {
   const a = touchBuiltBytes(donorBuilt(), []);
-  // Each part's bytes, its description's included. The help screens' 2198 are their ten screens and 76 lists, the
+  // Each part's bytes, its description's included. The help screens' 2365 are their ten screens and 76 lists, 2198,
+  // and since `todo-compile-one.md` 7.1.6 the two hit pages those are touched through, 4 and 24, 167, section 429: the
   // structure `checkTouchHelpScreens` reports on this compile, section 415. The case programs' 497 are their 25 programs, seven lists and
   // the table of 29 entries, the structure `checkTouchCasePrograms` reports on this compile; the hit pages' 1986 the
   // 23 pages and the touch map's table of 29, `checkTouchHitPages`'. Two independent counts of one span: the module
@@ -289,7 +292,7 @@ test('todo-compile-one 3.2.2.3: the attribution counts each builder\'s bytes on 
   // reproduces six, section 422.
   assert.deepEqual(a.generated, {
     'firmware screens': 3237, 'fixed screens': 14332, 'tour and Remote Assistant': 4015, 'status screens': 3872,
-    'clock header': 3558, 'help screens': 2198, 'activity menu': 260, 'device pages': 8684, 'device lists': 632, 'activity screens': 0,
+    'clock header': 3558, 'help screens': 2365, 'activity menu': 260, 'device pages': 8684, 'device lists': 632, 'activity screens': 0,
     'case programs': 497, 'hit pages': 1910, wiring: 4625, 'state tables': 962,
     'raw slot 18': 2, 'number senders': 1, pictures: 234897,
   });

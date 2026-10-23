@@ -12,7 +12,8 @@
  * English compiles of skin 54, and they name 23 distinct hit pages, each page the same shape on all sixteen.
  * Section 405's census counts 25 hit pages in every one of the sixteen: the other two are named by setup screens
  * alone, a device page's six commands with both page keys (`todo-compile-one.md` 4.2) and the generic help
- * screen's, drawn "Attemping to fix the problem..." (4.6), and are not built here.
+ * screen's, drawn "Attemping to fix the problem..." (4.6), and are not built here: the device pages build the first,
+ * `devicepages.ts`, and the help screens the second with their other two, `HELP_HIT_PARTS` below, section 429.
  *
  * **What is generated, by rules measured on all nineteen Harmony One compiles** (section 417):
  *
@@ -170,11 +171,20 @@ const isTourShape = (shape: HitShape): boolean =>
  * The 23 hit pages the fixed screens name, in the order the sixteen's tables hold them. Each is named by the page
  * `namer` gives, which is one of the screen pages naming it on all sixteen; the others are in section 417.
  */
+/**
+ * Two rectangles drawn around a body of text that several screens' pages hold alike: the message over "OK", the
+ * whole width from y 1369, on Low Battery's page and on every power off help question's; and the message alone, the
+ * whole width from y 1127, on USB Connected's page and on the power off help's attempt screen's, findings section 429.
+ * One constant each, so a page that holds one holds the same numbers.
+ */
+const OK_MESSAGE = stated(1257, 2791, 1369, 1292);
+const MESSAGE = stated(1257, 2791, 1127, 969);
+
 const SHAPES: readonly HitShape[] = [
   // The firmware screens, the head's first three modes: a message over the right key's "OK" (Low Battery and the
   // charging problem), a message alone (USB Connected and five others, code 9's and every status screen), blank.
-  { name: 'message and OK', namer: { screen: 'lowBattery', page: 0 }, parts: [stated(1257, 2791, 1369, 1292), 'right'] },
-  { name: 'message', namer: { screen: 'usbConnected', page: 0 }, parts: [stated(1257, 2791, 1127, 969)] },
+  { name: 'message and OK', namer: { screen: 'lowBattery', page: 0 }, parts: [OK_MESSAGE, 'right'] },
+  { name: 'message', namer: { screen: 'usbConnected', page: 0 }, parts: [MESSAGE] },
   { name: 'blank', namer: { screen: 'blankA', page: 0 }, parts: [] },
   // A taller message over "OK": the five sensitivity confirmations and four of the Remote Assistant's screens.
   { name: 'confirmation', namer: { screen: 'Sensitivity Very Low', page: 0 }, parts: [stated(1257, 2791, 1240, 2584), 'right'] },
@@ -222,6 +232,25 @@ const SHAPES: readonly HitShape[] = [
     parts: [half(6, 38), half(89, 38), half(48, 92), half(6, 146), half(89, 146), 'left'] },
   { name: 'two buttons', namer: { screen: 'Time of Day', page: 0 }, parts: [...GRID.slice(0, 2), 'left'] },
 ];
+
+/**
+ * The hit pages the power off help's screens are touched through, `helpscreens.ts`, which builds them with its
+ * screens, `todo-compile-one.md` 7.1.6, findings section 429; each its parts in order, the edges after them as on
+ * every page. Stated rather than generated where a rectangle is drawn around text, as the tour's are, and the same on
+ * every English compile of skin 54 that holds the screen:
+ *
+ * * `attempt`, "Attemping to fix the problem...": three rectangles around its lines, codes 48 to 50, none bound;
+ * * `question`, every Yes or No question, the "If not" one and a device's four: the message over the keys, "Yes" on
+ *   the left key at code 49, "No" on the right at 50, and a taller rectangle over the question last, at 51;
+ * * `nothing`, "Nothing to do", a household with no device to turn off: the message, "OK" on the right key at 49, and
+ *   the taller rectangle. One compile shows it, `harvest_one_families_1`.
+ */
+const QUESTION_BODY = stated(1257, 2791, 885, 2470);
+export const HELP_HIT_PARTS: Readonly<Record<'attempt' | 'question' | 'nothing', readonly HitPart[]>> = {
+  attempt: [stated(1257, 2791, 3146, 969), MESSAGE, stated(1914, 983, 2370, 532)],
+  question: [OK_MESSAGE, 'left', 'right', QUESTION_BODY],
+  nothing: [OK_MESSAGE, 'right', QUESTION_BODY],
+};
 
 /** The 23 hit pages' names, in the order a description lists them. */
 export const TOUCH_HIT_PAGES: readonly string[] = SHAPES.map((one) => one.name);

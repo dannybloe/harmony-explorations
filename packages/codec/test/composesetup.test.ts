@@ -357,9 +357,12 @@ test('todo-compile-one 3.2.2, 4.3, 4.3.3 and 4.10: the firmware screens, the fix
   // with a set built before them is that set's, the off lists below the screens the device pages'. The hit pages'
   // 863 came down to 772 with it, the 91 bytes of the device lists' pages' areas. 4978 with 5.3.4's fill, a byte
   // longer in each of the seven lists' chromes.
+  // The help screens' 6275 came to 6442 with `todo-compile-one.md` 7.1.6, section 429: the two hit pages the chain is
+  // touched through, the donor's 4 and 24, 167 bytes, are built with the screens, and the composed devices' questions
+  // name the same page.
   assert.deepEqual(a.generated, {
     'firmware screens': 3247, 'fixed screens': 14103, 'tour and Remote Assistant': 0, 'status screens': 3901,
-    'clock header': 3558, 'help screens': 6275, 'activity menu': 787, 'device pages': 16146, 'device lists': 4978, 'activity screens': 2898,
+    'clock header': 3558, 'help screens': 6442, 'activity menu': 787, 'device pages': 16146, 'device lists': 4978, 'activity screens': 2898,
     'case programs': 572, 'hit pages': 772, wiring: 4560, 'state tables': 2347,
     'raw slot 18': 2, 'number senders': 1, pictures: 217218,
   });
@@ -502,7 +505,7 @@ test('todo-compile-one 4.3.3: each of the composed setup\'s five activities open
   });
 });
 
-test('todo-compile-one 3.2: the One\'s composed test setup carries 103331 of its 983644 bytes out of Logitech\'s donor, per kind as pinned here, a list that may only shrink',
+test('todo-compile-one 3.2: the One\'s composed test setup carries 103164 of its 983644 bytes out of Logitech\'s donor, per kind as pinned here, a list that may only shrink',
      NEEDS, () => {
   const out = composed().container;
   const got = carried(out, parse(require_('harvest_one_two_devices')), builtBytes().owners);
@@ -534,9 +537,10 @@ test('todo-compile-one 3.2: the One\'s composed test setup carries 103331 of its
   // so nothing of them was carried, and the two Devices key lists 3.2.2.7 found matching the donor's matched no more
   // once 4.10 renumbered the idle device list they enter.
   //
-  // **What is left of those two rows.** `hit-page` 167 is the two pages of the donor's no builder makes, both the help
-  // screens' (4.6): index 4, which their questions are touched through, and the generic help screen's, 24. 485 before
-  // 3.2.2.8, with the donor's three device page shapes, the six pad one among them. `case-program` 10 is not a part carried: it is two
+  // **What is left of those two rows.** `hit-page` went with `todo-compile-one.md` 7.1.6, section 429: its 167 were the
+  // two pages of the donor's no builder made, both the help screens' (4.6), index 4, which their questions are
+  // touched through, and the attempt screen's, 24, and the help screens build both now. 485 before 3.2.2.8, with the
+  // donor's three device page shapes, the six pad one among them. `case-program` 10 is not a part carried: it is two
   // of the ten cases the activity composer writes under Devices, `11 mode 7E 00` entering the idle device list, byte
   // for byte the donor's idle cases of the Devices record and its unread copy, which this match takes once the
   // builder's own, built and so left out, no longer take them. The composer writes them, `caseProgram`.
@@ -567,9 +571,9 @@ test('todo-compile-one 3.2: the One\'s composed test setup carries 103331 of its
     'slot-5-block': 96946, 'slot-5-header': 4116, 'slot-5-group': 594, // the donor's two devices' infrared, 8.1
     'slot-10-list': 1508, // per builder in the listing: 17609 before 3.2.2, 6649 before 3.2.2.2, 6114 before 3.2.2.3, 6054 before 3.2.2.4, 5351 before 3.2.2.5, 4004 before 3.2.2.7, 3960 before 3.2.2.8, 1820 before 4.10, 1556 before 4.3.3
     // `mode device` 4569 before 3.2.2.8, and `mode other` 11983 before 3.2.2 and 1495 before 3.2.2.4
-    'hit-page': 167, // 2444 before 3.2.2.3, 546 before 3.2.2.7, 485 before 3.2.2.8; `case-program` 341 before 3.2.2.3 and 10 before 4.10, and base slot 11's `table` 89
+    // `hit-page` 167 before 7.1.6, 2444 before 3.2.2.3, 546 before 3.2.2.7, 485 before 3.2.2.8; `case-program` 341 before 3.2.2.3 and 10 before 4.10, and base slot 11's `table` 89
   });
-  assert.equal(Object.values(got).reduce((sum, one) => sum + one, 0), 103331);
+  assert.equal(Object.values(got).reduce((sum, one) => sum + one, 0), 103164);
   assert.equal(out.blob.length, 983644);
   // 1099596 until 5.3.4 made the background a fill, section 425, which moved no row above: what drew it is built, or
   // is mode 70's and mode 50's chromes, which matched no donor unit before the fill either.
