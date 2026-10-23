@@ -70,7 +70,8 @@
  * 13. on the composed path only, and after every builder above, ours in place of Logitech's fixed pictures, the
  *    status strip's, the firmware screens', the power off help's, the settings buttons' and the one whole screen
  *    background the six blank screens drawing photographs draw too, `pictures.ts`, `todo-compile-one.md` 5.3.1 and 5.3.3, section 422,
- *    unless `TouchChoices.logitechPictures` keeps them. A choice and not a rebuild, as leaving the tour out is, so
+ *    unless `TouchChoices.logitechPictures` keeps them, each transparent where our own drawing leaves a pixel empty,
+ *    7.1.2, section 428, or inside the mask of Logitech's it replaces with `TouchChoices.logitechMasks`. A choice and not a rebuild, as leaving the tour out is, so
  *    `withTouchBuilders` does not run it and Logitech's compile still comes back byte for byte through the rest;
  *    last, since the screens' descriptions read a picture as a reference and not by its bytes, and the background's
  *    copies and photographs taken out make several references one; and the background then drawn by one fill a draw,
@@ -394,9 +395,10 @@ export interface TouchBuiltBytes {
  * letters, so a screen set's rebuild is centred the same way before it is compared, and the y of a word the look
  * moved is counted with the builder too, its value being the look's.
  *
- * **The pictures by what they are**: a picture is ours where one of `pictures.ts`' drawings, inside the picture's own
- * mask, gives its bytes exactly, in `choices`' colours and icons, `touchOurPictures`. No byte of one is read as a
- * value: the mask says only which pixels are drawn.
+ * **The pictures by what they are**: a picture is ours where one of `pictures.ts`' drawings gives its bytes exactly,
+ * in `choices`' colours and icons, by its rule alone or, with `TouchChoices.logitechMasks`, inside the picture's own
+ * mask, `touchOurPictures`, `todo-compile-one.md` 7.1.2, section 428. No byte of one is read as a value: the mask, where
+ * it is taken, says only which pixels are drawn.
  *
  * Refuses, with the builder's message, where a builder refuses the configuration or does not rebuild it.
  */

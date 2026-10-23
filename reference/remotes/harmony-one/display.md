@@ -227,6 +227,10 @@ otherwise an animation stepped by the second, three frames at levels 1 to 3 and 
 what it draws and unconfirmed; the sending mark, the infrared indicator, one picture or another at the top by the
 firmware's sending flag; and the clock at y 18, the day ending at x 138, the hour and its colon ending at x 156 and
 the minutes from x 158. On all seventeen compiles of skin 54 the hour is on a twelve hour clock, as the bench saw; on both compiles of the European skin 59 on a twenty four hour clock. The strip draws no AM or PM.
+Each gauge picture is 20 by 11, drawn at x 153 and y 4 (section 414), and every one but level 0 of the battery gauge,
+a grey question mark, leaves its top row and left column undrawn, so what shows there is what was behind it; level 3
+also leaves its bottom row and most of the right end of its body and tip undrawn. The undrawn pixels read from
+configurations on all nineteen Harmony One compiles, section 428.
 
 ## Not checked
 
