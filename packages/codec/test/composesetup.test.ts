@@ -24,6 +24,7 @@ import { dropLists, instructionSites, listCallSites } from '../src/assemble.ts';
 import { assertStateTableConsistent, handlerSets } from '../src/sections.ts';
 import { assertQueueFits } from '../src/queue.ts';
 import { touchTourScreenModes } from '../src/families/touch/tourscreens.ts';
+import { irBlockWords, irGroups, irHeaderPointers } from '../src/ir.ts';
 import { checkTouchWiring } from '../src/families/touch/wiring.ts';
 import { checkTouchScreenTexts } from '../src/families/touch/screentexts.ts';
 import { withoutTourAndAssistant } from '../src/families/touch/withouttour.ts';
@@ -37,6 +38,7 @@ import { deviceListMenus } from '../src/shared/menus.ts';
 import { startSwitchedOn } from '../src/shared/activities.ts';
 import { ENTER_MODE, activities, activityScreens, caseQueued, deviceListRowMode, devices } from '../src/inventory.ts';
 import { valueMaps } from '../src/valuemap.ts';
+import { type DonorDeviceRequest, catalogueInfraredBytes, composeDonorDeviceInfrared } from '../src/composecatalogue.ts';
 
 const recipe = () => readRecipe(JSON.parse(readFileSync(new URL('../../corpus/setups/one-test.json', import.meta.url), 'utf8')));
 
@@ -58,11 +60,12 @@ test('the One test setup composed onto Logitech\'s compile of two devices comes 
   // `todo-compile-one.md` 6.2, section 426, and the stamp last.
   const names = out.steps.map((one) => one.step);
   assert.deepEqual([names[0], names[1], names.at(-3), names.at(-2), names.at(-1)], ['donor', 'lettered', 'look', 'placed', 'stamped']);
-  // The composers' parked infrared blocks and headers and key maps went into the body first, 578 and 5, which the placer has no
-  // rule for. Then everything parked and the bank are in the placer's order: placing the file again changes no byte,
+  // The composers' parked infrared blocks and headers and key maps went into the body first, 1048 and 5, which the placer has no
+  // rule for: 578 infrared pieces until `todo-compile-one.md` 8.1.3, section 433, which composes the LG's and the Denon's
+  // records too, 185 headers and 285 blocks more. Then everything parked and the bank are in the placer's order: placing the file again changes no byte,
   // and the control, the file with its glyphs and font sets reversed in front of base slot 7, lays out differently
   // and comes back to the composed bytes when placed.
-  assert.equal(out.steps.find((one) => one.step === 'placed')?.detail, '583 composed pieces moved into the body first');
+  assert.equal(out.steps.find((one) => one.step === 'placed')?.detail, '1053 composed pieces moved into the body first');
   const placedAgain = layOutContainer(placePieces(loosen(takeApart(c))).layout).bytes;
   assert.ok(Buffer.from(placedAgain).equals(Buffer.from(c.blob)), 'placing the composed setup again moves something');
   const apart = takeApart(c);
@@ -180,7 +183,12 @@ test('the One test setup composed onto Logitech\'s compile of two devices comes 
   // 0's 28 shorter, level 3's 70 longer and the other eleven 4 or 5 longer. 991585 at 7.1.2's first commit, the cross on
   // black paper the picture wide and raw at 10793. 983694 with `TouchChoices.logitechMasks`, measured and not asserted
   // here.
-  assert.equal(c.blob.length, 982911);
+  // 980473 since `todo-compile-one.md` 8.1.3, section 433, 2438 bytes fewer: the LG's and the Denon's infrared the
+  // catalogue's, 99218 bytes where Logitech's were 101656. The LG's group 11367 where it was 13741, eleven records
+  // fewer, 231 bytes of header and 33 of array, and 2110 bytes of blocks fewer, its thirteen one block copies out and
+  // two power steps in; the Denon's 87851 where it was 87915, its two power copies' 500 ms of opening silence, sixteen
+  // words each, gone from our power steps, 64.
+  assert.equal(c.blob.length, 980473);
 });
 
 // ---------------------------------------------------------------------------------------------------------
@@ -276,6 +284,32 @@ function carried(out: Container, donor: Container, built?: Uint8Array): Record<s
   }
   return result;
 }
+
+/**
+ * The setup's seven devices as a configuration names them, each with its catalogue entry: by the setup's name, or by
+ * `<manufacturer>_<model>` for a device Logitech compiled, as `composeSetupParts` finds them.
+ */
+const catalogueDevices = (c: Container): DonorDeviceRequest[] => recipe().devices.map((one) => {
+  const [manufacturer, model] = one.device.split('/');
+  const label = devices(c).find((d) => d.name !== undefined
+    && (d.name.replaceAll('_', ' ') === one.name || d.name === one.device.replace('/', '_')))?.name;
+  assert.ok(label !== undefined && manufacturer !== undefined && model !== undefined, one.name);
+  return { label, manufacturer, model };
+});
+
+/** What the catalogue reproduces of the composed setup's infrared, every device's records composed whole, measured once. */
+let catalogueOnce: ReturnType<typeof catalogueInfraredBytes> | undefined;
+const catalogueBytes = (): ReturnType<typeof catalogueInfraredBytes> => {
+  catalogueOnce ??= catalogueInfraredBytes(composed().container, IR_ARCHIVE!, catalogueDevices(composed().container));
+  return catalogueOnce;
+};
+
+/** The bytes not carried because something on the path writes them: a builder's, or the catalogue's infrared. */
+const writtenBytes = (): Uint8Array => {
+  const built = builtBytes().owners;
+  const infrared = catalogueBytes().owners;
+  return built.map((one, k) => (one !== 0 || infrared[k] !== 0 ? 1 : 0));
+};
 
 /** What the builders on the composed path reproduce of the composed setup, measured on it once: about half a minute. */
 let builtOnce: TouchBuiltBytes | undefined;
@@ -442,8 +476,10 @@ test('todo-compile-one 4.10: with the tour kept the composed setup does not keep
   assert.equal(touchTourScreenModes(kept).modes.length, 16);
   // The program's address is where the placement of `todo-compile-one.md` 6.2 leaves it, 0x5b421 before, since a composer's
   // parked infrared records and key maps go into the body in front of it, section 426 (0x722cc then); and the fills of 5.3.4 before
-  // it are a byte longer a draw each, section 425.
-  assert.throws(() => checkTouchScreenTexts(kept), /the program at 0x722f8's text 'pages' at 35, 18 is drawn inline where it is built by reference/);
+  // it are a byte longer a draw each, section 425. 0x722f8 until 8.1.3, section 433: the body holds no infrared record
+  // of the donor's any more, so every composed one goes at the body's end, after the program, where they went after the
+  // donor's last, in front of it.
+  assert.throws(() => checkTouchScreenTexts(kept), /the program at 0x42987's text 'pages' at 35, 18 is drawn inline where it is built by reference/);
 });
 
 test('todo-compile-one 3.2.2.4: the composed setup\'s power off help asks about its seven devices, the donor\'s two and then the five composed in the order composed, each discrete one sent unasked and each toggle not',
@@ -530,10 +566,10 @@ test('todo-compile-one 4.3.3: each of the composed setup\'s five activities open
   });
 });
 
-test('todo-compile-one 3.2: the One\'s composed test setup carries 103164 of its 982911 bytes out of Logitech\'s donor, per kind as pinned here, a list that may only shrink',
+test('todo-compile-one 3.2: the One\'s composed test setup carries 1431 of its 980473 bytes out of Logitech\'s donor, per kind as pinned here, a list that may only shrink',
      NEEDS, () => {
   const out = composed().container;
-  const got = carried(out, parse(require_('harvest_one_two_devices')), builtBytes().owners);
+  const got = carried(out, parse(require_('harvest_one_two_devices')), writtenBytes());
   // Each kind with the item that builds it, `todo-compile-one.md` 3.2. A builder joining the composed path
   // lowers its row; a row that rises is a composer that started copying. 1162052 when 3.2.1 listed it; 3.2.2's
   // first step put the firmware screens, the fixed screens, the tour and Remote Assistant, the wiring and the state
@@ -590,19 +626,109 @@ test('todo-compile-one 3.2: the One\'s composed test setup carries 103164 of its
   // list nothing enters and its copy's, 14.
   //
   // `raw-18-table` 2 and `slot-16-table` 1 went with 6.7, generated on the path by `families/touch/smalltables.ts`.
-  // Of `slot-10-list`, 262 are the 34 lists nothing can run, kept with 6.7's reason, the test below.
+  //
+  // **8.1.3 gave the donor's LG and Denon the catalogue's infrared**, section 433: the three `slot-5` rows went, 101656,
+  // since every record of the seven devices is one the catalogue composes for that device whole and both groups are
+  // the composer's record for record, `catalogueInfraredBytes`, the attribution `writtenBytes` adds to the builders'.
+  // `slot-10-list` came down by 77, eleven of the donor's send lists: the LG's donor lists send the composed records,
+  // 65 where Logitech's group held 76, so eleven lists of the LG's now send a record another list sends too and match
+  // no donor list left.
+  //
+  // **What `slot-10-list` is**, measured on the result at 8.1.3: 185 send lists of seven bytes, 1295, a send and its
+  // quantity, the LG's 65 and the Denon's 120 that match a donor list byte for byte, 185 of the donor's 196 send lists
+  // for its two devices, now naming the composed records and still the donor's until 8.1.2 composes the two devices
+  // whole; and 19 lists of no send, 136, 18 of them among the 34 nothing can run, which 6.7 keeps, the test
+  // below. This said "262 are the 34 lists nothing can run" until 8.1.3, which no measurement here held: of the 34, the
+  // ones whose bytes another list of the result shares match a donor list through that list instead, and the 136 were
+  // the same before 8.1.3, which touched no list without a send.
   assert.deepEqual(got, {
     // `picture` 42612 before 4.3.3, mode 70's rows and icons; 773130 before 5.3.1 and 5.3.3, 1012839 before 4.10
-    'slot-5-block': 96946, 'slot-5-header': 4116, 'slot-5-group': 594, // the donor's two devices' infrared, 8.1
-    'slot-10-list': 1508, // per builder in the listing: 17609 before 3.2.2, 6649 before 3.2.2.2, 6114 before 3.2.2.3, 6054 before 3.2.2.4, 5351 before 3.2.2.5, 4004 before 3.2.2.7, 3960 before 3.2.2.8, 1820 before 4.10, 1556 before 4.3.3
+    // `slot-5-block` 96946, `slot-5-header` 4116 and `slot-5-group` 594 before 8.1.3, the donor's two devices' infrared
+    'slot-10-list': 1431, // per builder in the listing: 17609 before 3.2.2, 6649 before 3.2.2.2, 6114 before 3.2.2.3, 6054 before 3.2.2.4, 5351 before 3.2.2.5, 4004 before 3.2.2.7, 3960 before 3.2.2.8, 1820 before 4.10, 1556 before 4.3.3, 1508 before 8.1.3
     // `mode device` 4569 before 3.2.2.8, and `mode other` 11983 before 3.2.2 and 1495 before 3.2.2.4
     // `hit-page` 167 before 7.1.6, 2444 before 3.2.2.3, 546 before 3.2.2.7, 485 before 3.2.2.8; `case-program` 341 before 3.2.2.3 and 10 before 4.10, and base slot 11's `table` 89
   });
-  assert.equal(Object.values(got).reduce((sum, one) => sum + one, 0), 103164);
-  assert.equal(out.blob.length, 982911);
+  assert.equal(Object.values(got).reduce((sum, one) => sum + one, 0), 1431);
+  assert.equal(out.blob.length, 980473);
   // 983644 until 7.1.2 drew the fixed pictures by their rule alone, section 428, which moved no row above: every
   // picture it changed was already ours. 1099596 until 5.3.4 made the background a fill, section 425, which moved no row above: what drew it is built, or
   // is mode 70's and mode 50's chromes, which matched no donor unit before the fill either.
+});
+
+test('todo-compile-one 8.1.3: the donor\'s LG and Denon are given the infrared records the catalogue composes for them whole, every record of all seven devices is the catalogue\'s, and each donor record\'s code is sent by the composed record of that code, with its differences named',
+     NEEDS, () => {
+  const out = composed();
+  const c = out.container;
+  // On the path: after the donor is lettered and before anything reads a record, the five devices' composition and
+  // the donor inputs' matching among them.
+  const names = out.steps.map((one) => one.step);
+  assert.equal(out.steps.find((one) => one.step === 'donor infrared composed')?.detail, 'LG TV, Denon');
+  assert.ok(names.indexOf('lettered') < names.indexOf('donor infrared composed')
+    && names.indexOf('donor infrared composed') < names.indexOf('devices composed'));
+
+  // Each donor record and the composed record its sends name now. Word for word the same on all but fifteen: the
+  // one block copies section 337 found, thirteen of the LG's and two of the Denon's, which open with the device's
+  // delay between devices, 500 ms on both,
+  // and the composer makes none of. The LG's and the Denon's PowerOn and PowerOff copies, which the power
+  // transitions and the power pads send, are our power steps now, which open with no silence; the LG's ten digits
+  // and OK copies, which nothing sends, are the ordinary presses, which open with 50 ms and repeat while held.
+  const differing = out.donorInfrared.map((one) => ({
+    name: one.name, records: [one.donorRecords, one.names.length],
+    same: one.mapped.filter((m) => m.differs.length === 0).length,
+    differs: one.mapped.filter((m) => m.differs.length > 0).map((m) => `${m.from} ${m.name}: ${m.differs.join('; ')}`),
+  }));
+  const power = (name: string): string => `${name} as a power step: opens with 500000 us of silence where the composed record opens with 0 us`;
+  const digit = (name: string): string => `${name}: opens with 500000 us of silence where the composed record opens with 50000 us; `
+    + 'has no held block where the composed record has one';
+  assert.deepEqual(differing, [
+    { name: 'LG TV', records: [76, 65], same: 63, differs: [
+      `3 ${power('PowerOn')}`, `5 ${power('PowerOff')}`, `6 ${digit('4')}`, `14 ${digit('3')}`, `19 ${digit('9')}`,
+      `27 ${digit('0')}`, `29 ${digit('5')}`, `30 ${digit('6')}`, `32 ${digit('7')}`, `35 ${digit('2')}`,
+      `42 ${digit('8')}`, `53 ${digit('OK')}`, `57 ${digit('1')}`] },
+    { name: 'Denon', records: [120, 120], same: 118, differs: [`33 ${power('PowerOff')}`, `103 ${power('PowerOn')}`] },
+  ]);
+
+  // Every record of the seven devices is one the catalogue composes for that device whole, and every group is the
+  // composer's record for record, so no infrared byte is the donor's.
+  const reproduced = catalogueBytes().devices.map((one) => [one.label, one.records, one.reproduced, one.array]);
+  assert.deepEqual(reproduced, [
+    ['LG_OLED65G26LA', 65, 65, true], ['Plasma', 65, 65, true], ['Denon_AVR-X4800H', 120, 120, true],
+    ['KPN', 39, 39, true], ['Kodi', 60, 60, true], ['Switch', 12, 12, true], ['Sony_HT', 57, 57, true],
+  ]);
+  // **The control**: the same attribution on Logitech's compile, where the two groups are the donor's, finds the
+  // 63 and 118 records word for word the catalogue's and not the fifteen copies, and neither group in the
+  // composer's order. So the attribution says what the catalogue writes and is not blind to a Logitech record.
+  const donor = parse(require_('harvest_one_two_devices'));
+  assert.deepEqual(catalogueInfraredBytes(donor, IR_ARCHIVE!, [
+    { label: 'LG_OLED65G26LA', manufacturer: 'LG', model: 'OLED65G26LA' },
+    { label: 'Denon_AVR-X4800H', manufacturer: 'Denon', model: 'AVR-X4800H' },
+  ]).devices.map((one) => [one.records, one.reproduced, one.array]), [[76, 63, false], [120, 118, false]]);
+  // **And a refusal**: a device whose records carry codes its catalogue entry does not is refused rather than kept,
+  // here the LG's records against the Plasma's entry.
+  assert.throws(() => composeDonorDeviceInfrared(donor, IR_ARCHIVE!, { label: 'LG_OLED65G26LA', manufacturer: 'Panasonic', model: 'TX-P42GT30E' }),
+    /LG_OLED65G26LA's record 0 sends a code, at its carrier, that no command of Panasonic TX-P42GT30E in the catalogue composes/);
+
+  // **End to end, every send**: the step run on Logitech's compile alone, every site that sends one of the two devices'
+  // records read before and after, in the walk's order, by the code its record holds, the once block from its first
+  // pulse. The same code at every site; what changed is the held block on the LG's eleven copies, which the composed
+  // records of their code have, and nothing else.
+  const sendsOf = (x: Container, group: number) => {
+    const groups = irGroups(x)!;
+    return instructionSites(x, 0x7d).filter((one) => one.operand >> 8 === group).map((one) => {
+      const pointers = irHeaderPointers(x, groups[group]!.addresses[one.operand & 0xff]!);
+      const words = irBlockWords(x, pointers[0]!)!;
+      return { within: one.within, code: words.slice(words.findIndex((word) => (word & 0x8000) !== 0)).join(), held: pointers[1] !== 0 };
+    });
+  };
+  for (const [label, manufacturer, model, group, heldNow] of [
+    ['LG_OLED65G26LA', 'LG', 'OLED65G26LA', 0, 11], ['Denon_AVR-X4800H', 'Denon', 'AVR-X4800H', 1, 0],
+  ] as const) {
+    const before = sendsOf(donor, group);
+    const after = sendsOf(parse(composeDonorDeviceInfrared(donor, IR_ARCHIVE!, { label, manufacturer, model }).bytes), group);
+    assert.deepEqual(after.map((one) => [one.within, one.code]), before.map((one) => [one.within, one.code]), label);
+    assert.equal(after.filter((one, k) => one.held !== before[k]!.held).length, heldNow, label);
+    assert.equal(before.length, group === 0 ? 76 : 120);
+  }
 });
 
 /** The 34 lists of the donor the composed setup carries and nothing can run, `todo-compile-one.md` 6.7. */
@@ -632,9 +758,11 @@ test('todo-compile-one 6.7: the composed setup carries 34 lists of its donor, 26
     assert.ok(owners.subarray(at, at + bytesOf(index)).every((one) => one === 0), `list ${index}`);
   }
   // Every list nothing reaches, 71 of 2733, by what it is. The donor's at the same index byte for byte and no
-  // send: the 34 this item is about. The donor's at the same index and a send: its two devices' 11 commands no key
-  // binds, 4.2 and 8.1. The rest the composers wrote: 14 of the donor's own lists nothing reaches in it either,
-  // at the same indices but naming a state variable the composed devices renumbered, and 12 of their own past the
+  // send: the 34 this item is about. The donor's at the same index and a send: one list since 8.1.3, section 433, the LG's
+  // copy of 4, whose record was 6 in Logitech's group and is 6 in the composed one; until then 11, its two devices' 11 commands no key
+  // binds, 4.2 and 8.1. The rest the composers wrote: 24 of the donor's own lists nothing reaches in it either, 14
+  // at the same indices but naming a state variable the composed devices renumbered and, since 8.1.3, the LG's ten
+  // other copies of a digit or OK, which send the composed record of their code now, and 12 of their own past the
   // donor's 1939 (2060 with the tour), the composed devices' 7 commands no key binds and five lists selecting base slot 9 entries 8 to
   // 12, each one instruction, which nothing names.
   const group = (index: number): string => (!same(index) ? 'written'
@@ -646,9 +774,9 @@ test('todo-compile-one 6.7: the composed setup carries 34 lists of its donor, 26
     one[1] += bytesOf(index);
   }
   assert.equal(lists.length, 2847);
-  assert.deepEqual(tally, { carried: [34, 262], 'donor sends': [11, 77], written: [26, 215] });
+  assert.deepEqual(tally, { carried: [34, 262], 'donor sends': [1, 7], written: [36, 285] });
   assert.deepEqual(unreached.filter((index) => group(index) === 'carried'), UNRUN);
-  assert.equal(unreached.filter((index) => group(index) === 'written' && index < theirs.length).length, 14);
+  assert.equal(unreached.filter((index) => group(index) === 'written' && index < theirs.length).length, 24);
 
   // **That nothing can run them**, section 408 on the 3.4 image: base slot 10 is spooled only by an `0x7F`'s
   // operand, and an instruction is rebuilt at run time only by `0x7B` or an opcode `0x1F` to `0x3E` over `0xF7`.

@@ -27,11 +27,21 @@ import {
 import {
   activityFromRoles, activityKeysFromRoles, activityScreenRows, deviceKeypadLists, type ActivityDevice,
 } from '../activityroles.ts';
-import { composeCatalogueDevices, composeDonorDeviceInputs, type ComposedCatalogueDevice } from '../composecatalogue.ts';
+import {
+  composeCatalogueDevices, composeDonorDeviceInfrared, composeDonorDeviceInputs, type ComposedCatalogueDevice,
+  type ComposedDonorInfrared,
+} from '../composecatalogue.ts';
 import { inputPlan, inputTarget, type ComposedInputs } from '../inputs.ts';
 import { catalogueDriving } from '../driving.ts';
 import { catalogueDevice } from '../catalogue.ts';
 import { activityPauseGroups, composeSequence } from '../sequence.ts';
+
+/**
+ * A donor device whose infrared records were composed from the catalogue, `SetupParts.donorInfraredFromCatalogue`:
+ * the setup's name for it and what `composeDonorDeviceInfrared` reports, each donor record and the composed one
+ * its sends name now, with how the two differ.
+ */
+export type DonorInfrared = { readonly name: string } & Omit<ComposedDonorInfrared, 'bytes'>;
 
 /** A refusal, named so a caller can tell a setup the donor cannot serve from a bug. */
 export class AssemblyError extends Error {}
@@ -70,6 +80,13 @@ const spoken = (name: string | undefined): string => (name ?? '').replaceAll('_'
 export interface SetupParts {
   readonly family: Family<any>;
   readonly choices: CommonChoices;
+  /**
+   * True gives every device the donor holds the infrared records the catalogue composes for it, in place of the
+   * donor's own, `composeDonorDeviceInfrared`, `todo-compile-one.md` 8.1.3: what `composeSetup` asks, whose
+   * donor is Logitech's compile and whose result is to carry none of its infrared. The assembly does not ask it,
+   * since its pinned results are composed onto Logitech's compiles of the same devices as they are.
+   */
+  readonly donorInfraredFromCatalogue?: boolean;
 }
 
 /**
@@ -85,7 +102,7 @@ export function composeSetupParts(
   note: (step: string, detail?: string) => void,
 ): {
   container: Container; composed: { devices: string[]; activities: string[] }; keptOn: string[];
-  devicesComposed: ComposedDeviceNote[];
+  devicesComposed: ComposedDeviceNote[]; donorInfrared: DonorInfrared[];
 } {
   let c = donor;
   // 1. The donor holds nothing the setup does not, since no composer removes a device or an activity.
@@ -111,6 +128,31 @@ export function composeSetupParts(
   /** The donor's or a composed device's label for a setup device, once it is in the container. */
   const labelOf = (name: string): string | undefined =>
     devices(c).find((one) => setupDeviceOf(one.name)?.name === name)?.name;
+
+  // 1b. The donor's devices given the catalogue's infrared records, where the caller asks, `todo-compile-one.md`
+  //     8.1.3: before anything below reads a record, so the donor inputs' matching at 2b finds the composed ones.
+  const donorInfrared: DonorInfrared[] = [];
+  if (parts.donorInfraredFromCatalogue === true) {
+    for (const wanted of setup.devices) {
+      const label = labelOf(wanted.name);
+      if (label === undefined) continue;
+      if (options.archive === undefined) {
+        throw new AssemblyError(`the donor holds ${wanted.name}, and composing its infrared needs the catalogue's archive`);
+      }
+      const [manufacturer, model] = wanted.device.split('/');
+      let infrared: ComposedDonorInfrared;
+      try {
+        infrared = composeDonorDeviceInfrared(c, options.archive, { label, manufacturer: manufacturer ?? '', model: model ?? '' });
+      } catch (error) {
+        if (error instanceof ComposeError) throw new AssemblyError(`composing ${wanted.name}'s infrared: ${error.message}`);
+        throw error;
+      }
+      c = parse(infrared.bytes);
+      const { bytes: _, ...told } = infrared;
+      donorInfrared.push({ name: wanted.name, ...told });
+    }
+    if (donorInfrared.length > 0) note('donor infrared composed', donorInfrared.map((one) => one.name).join(', '));
+  }
 
   // 2. The setup's devices the donor lacks, from the catalogue, in the setup's order, section 331.
   const composed = { devices: [] as string[], activities: [] as string[] };
@@ -218,7 +260,7 @@ export function composeSetupParts(
     const power = composedDevices.get(name)?.power?.type;
     return { name, label, ...(power === undefined ? {} : { power }) };
   });
-  return { container: c, composed, keptOn, devicesComposed };
+  return { container: c, composed, keptOn, devicesComposed, donorInfrared };
 }
 
 /** The group of the device a setup names, through its label in the container. */
@@ -403,6 +445,11 @@ export interface ComposedSetup {
    * needs to point a blended select back at its set, `unblendedSelects`, as the Harmony One's attribution does.
    */
   blended: readonly BlendedSet[];
+  /**
+   * The donor's devices given the catalogue's infrared records, `todo-compile-one.md` 8.1.3, in the setup's order,
+   * each donor record with the composed record that took its place and how the two differ.
+   */
+  donorInfrared: readonly DonorInfrared[];
 }
 
 /**
@@ -437,7 +484,10 @@ export function composeSetup(setup: Recipe, options: AssembleOptions): ComposedS
     c = parse(lettered.bytes);
     note('lettered');
   }
-  const parts = composeSetupParts(c, setup, target, options, { family: target.family, choices: target.family.choices }, note);
+  // Every device the donor holds is given the catalogue's infrared records, `todo-compile-one.md` 8.1.3, so the
+  // result carries none of Logitech's: the five the donor lacks are composed from the catalogue anyway.
+  const parts = composeSetupParts(c, setup, target, options,
+    { family: target.family, choices: target.family.choices, donorInfraredFromCatalogue: true }, note);
   c = parts.container;
   // The parts the family's builders make, each from a description of the configuration composed so far, in place
   // of the donor's, `todo-compile-one.md` 3.2.2: before the look, whose blending gives one role of a screen several
@@ -472,5 +522,5 @@ export function composeSetup(setup: Recipe, options: AssembleOptions): ComposedS
     note('stamped', options.builtAt);
   }
   checkComposed(c);
-  return { bytes: c.blob, container: c, steps, keptOn: parts.keptOn, composed: parts.composed, blended };
+  return { bytes: c.blob, container: c, steps, keptOn: parts.keptOn, composed: parts.composed, blended, donorInfrared: parts.donorInfrared };
 }

@@ -119,26 +119,26 @@ export function callingList(lists: readonly number[]): Writer {
   return body;
 }
 
-export function composeDeviceFor(
-  c: Container, device: ComposeDevice, shape: SendShape, delayDefaults?: DelayDefaults,
-): ComposedDevice {
-  if (device.label === '' || device.label.includes('_')
-      || [...device.label].some((ch) => ch.charCodeAt(0) < 0x20 || ch.charCodeAt(0) > 0x7e)) {
-    throw new ComposeError('a label is printable ASCII with no underscore, per the name grammar');
-  }
-  const power = device.power ?? 0;
-  if (device.commands[power] === undefined) {
-    throw new ComposeError(`command ${power} cannot toggle the power: there is no such command`);
-  }
-  if (c.architecture === undefined) throw new ComposeError('the container states no architecture');
+/** A device's infrared records in the order its group holds them, `deviceRecords`. */
+export interface DeviceRecords {
+  /** The power actions, each an ordered list of steps, where the device states them. */
+  readonly onSteps?: readonly ComposePowerStep[];
+  readonly offSteps?: readonly ComposePowerStep[];
+  /** The distinct power steps, each a record after the commands. */
+  readonly steps: readonly ComposePowerStep[];
+  /** A step's record index in the group, which is also its send list's place after the commands'. */
+  readonly stepIndex: (step: ComposePowerStep) => number;
+  /** One per record, in group order: the commands, then the power steps. */
+  readonly sends: readonly ComposeCommand[];
+}
 
-  // The amount a power step's `0x7C` carries, the catalogue's inter key delay where the caller states
-  // it, section 320; an ordinary command's stays 1. One byte of the operand, the group the other.
-  const quantity = device.interKeyDelay ?? DEVICE_QUANTITY_DEFAULT;
-  if (!Number.isInteger(quantity) || quantity < 0 || quantity > 0xff) {
-    throw new ComposeError(`an inter key delay is 0 to 255 tenths of a second, not ${quantity}`);
-  }
-
+/**
+ * What a device's group holds and in which order: every command, then each distinct power step as a record of
+ * its own. `composeDeviceFor` composes the group from this, and `composeDonorDeviceInfrared` in
+ * `composecatalogue.ts` puts the same records in a donor device's place, `todo-compile-one.md` 8.1.3, so the
+ * order a composed device's records take is derived once.
+ */
+export function deviceRecords(device: ComposeDevice): DeviceRecords {
   // The power actions, each an ordered list of steps; a single step is an action of one.
   const onSteps = powerAction(device.powerOn, 'on');
   const offSteps = powerAction(device.powerOff, 'off');
@@ -164,6 +164,34 @@ export function composeDeviceFor(
       ...(step.toggled === undefined ? {} : { toggled: step.toggled }),
     })),
   ];
+  return {
+    ...(onSteps === undefined ? {} : { onSteps }),
+    ...(offSteps === undefined ? {} : { offSteps }),
+    steps, stepIndex, sends,
+  };
+}
+
+export function composeDeviceFor(
+  c: Container, device: ComposeDevice, shape: SendShape, delayDefaults?: DelayDefaults,
+): ComposedDevice {
+  if (device.label === '' || device.label.includes('_')
+      || [...device.label].some((ch) => ch.charCodeAt(0) < 0x20 || ch.charCodeAt(0) > 0x7e)) {
+    throw new ComposeError('a label is printable ASCII with no underscore, per the name grammar');
+  }
+  const power = device.power ?? 0;
+  if (device.commands[power] === undefined) {
+    throw new ComposeError(`command ${power} cannot toggle the power: there is no such command`);
+  }
+  if (c.architecture === undefined) throw new ComposeError('the container states no architecture');
+
+  // The amount a power step's `0x7C` carries, the catalogue's inter key delay where the caller states
+  // it, section 320; an ordinary command's stays 1. One byte of the operand, the group the other.
+  const quantity = device.interKeyDelay ?? DEVICE_QUANTITY_DEFAULT;
+  if (!Number.isInteger(quantity) || quantity < 0 || quantity > 0xff) {
+    throw new ComposeError(`an inter key delay is 0 to 255 tenths of a second, not ${quantity}`);
+  }
+
+  const { onSteps, offSteps, steps, stepIndex, sends } = deviceRecords(device);
 
   // The infrared half, then everything else on the reparsed result.
   const group = composeIrGroup(c, sends);

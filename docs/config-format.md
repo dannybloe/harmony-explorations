@@ -4511,7 +4511,13 @@ that wants byte identity with a compiled config follows them, and `compiledBlock
   ends in. 26 of 27 rebuilt word for word, arch 14 only; `longPressBlockOfStatedCode`, which
   assumes the press's frames are the code's walk in order.
 * **A power step without a hold is the ordinary press without its lead in**, the same words otherwise,
-  three devices of one compile for the Harmony 650.
+  three devices of one compile for the Harmony 650. **On arch 12 (Harmony One) the record a power
+  transition sends opens with the device's delay between devices instead**, the catalogue's
+  `interDeviceDelay`, 100, 500 or 1000 ms, on 8 of 8 catalogue devices of three compiles (six at 500), the inter key
+  delay naming it on 1, section 433, where arch 14 waits through section 287's delay step instead, section 337.
+  `composeDevice` gives a power step no lead in on both families, so a device composed for a Harmony One
+  sends its power codes without that silence in front. **Unconfirmed**: how the remote plays it, and whether a
+  device needs it.
 * **A duration too long for one word is spelt as maximal 32767 us words with the remainder balanced
   across the last two, smaller half first, and no word below half the maximum**: 50000 is
   `32767, 17233`; 40222 is `20111, 20111`; 500000 is fourteen maximals then `20631, 20631`.

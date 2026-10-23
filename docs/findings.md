@@ -58177,3 +58177,151 @@ is known only from the walks collected, so a numbering must collect all of a con
   passes with the same counts.
 * `packages/codec/test/touchnumbering.test.ts`; `docs/config-format.md`, base slot 13 and the lists below the screens;
   `packages/codec/src/statetables.ts`, `FIRST_WIDE_VARIABLE`; `reference/remotes/harmony-one/memory.md`.
+
+## 433. The composed Harmony One setup carries no infrared byte of its donor: the LG and the Denon get the records the catalogue composes for them, and the fifteen that differ from Logitech's are the one block copies, which open with the device's delay between devices
+
+**Todo `todo-compile-one.md` 8.1.3.** The Harmony One's test setup is composed onto Logitech's compile of two of its
+seven devices, `harvest_one_two_devices`, and until this step it kept those two devices' infrared as Logitech compiled
+it: 196 records, 296 blocks and two record arrays, 101656 bytes, the three `slot-5` rows of the carried list in
+`composesetup.test.ts`. The other five devices are composed from the catalogue. The item: give the LG and the Denon the
+catalogue's records too, and say where a code differs from the donor's.
+
+**Sources, checked before the work.** Sections 287, 309, 320, 337, 338 and 420; `composeDonorDeviceInputs` in
+`composecatalogue.ts`, which already finds a donor device's record by its code; `docs/config-format.md` on the record's
+three blocks and on how Logitech's generator spells a block. Logitech's client was not read: the question is what their
+compiler wrote and what ours writes, which the compiles answer.
+
+### What the step does
+
+`composeDonorDeviceInfrared` lays out the records the catalogue composes for the device whole with its inputs, the
+records `composeCatalogueDevice` gives a device composed whole and in its order (the plan and the record order are
+one derivation each, `catalogueDevicePlan` and `deviceRecords`, which both now use), appended as a new group. Each of
+the donor's records is then matched to the composed record of its code: word for word on all three blocks and the
+header where one is, and otherwise on the once block with its opening silence dropped, the code itself, preferring a
+record whose other blocks agree. Every send of the donor's group is told the composed record's index, the composed
+group takes the donor group's place in the table, and the donor's group, its records and every block nothing else names
+are taken out; the group count comes back, so no other device moves. A donor record whose code the catalogue does not
+compose is refused rather than kept. `composeSetup` runs it for every device the donor holds, before the five are
+composed and before the donor inputs' matching, which so finds the composed records; the Harmony 600 family's assembly
+does not ask for it.
+
+**Two composed records of one code**, two catalogue commands that send the same thing, each take the next donor record
+of that code: the LG's Home and SmartMenu. Taking the first for both left the LG's input composer two lists sending Home
+and refusing, which is how this was found.
+
+### Each record of Logitech's against the composed one
+
+| device | Logitech's records | composed | word for word | differ |
+|---|---|---|---|---|
+| LG TV, LG OLED65G26LA | 76 | 65 | 63 | 13 |
+| Denon, Denon AVR-X4800H | 120 | 120 | 118 | 2 |
+
+**The fifteen are section 337's one block copies**, which on the Harmony One open with the device's delay between
+devices, 500 ms on both:
+
+* **PowerOn and PowerOff of both**, which the power transitions and the device pages' power pads send. Logitech's
+  record and our power step carry the same code once with no held block; Logitech's opens with 500 ms of silence and
+  ours with none.
+* **The LG's ten digits and OK**, which nothing in this setup sends: Logitech's opens with 500 ms and has no held block,
+  the composed record of that code is the ordinary press, 50 ms first and the family's held block.
+
+Eleven composed records, three of the LG's and eight of the Denon's, hold another composed record's blocks word for
+word, a second catalogue command of one code: the LG's `.` (`-`), Return (Back) and SmartMenu (Home); the Denon's Play
+(Pause), PowerOff-MainZone and PowerOn-MainZone (PowerOff and PowerOn), PresetNext and PresetPrev (PageUp and PageDown),
+Return (Back), TuneDown and TuneUp (SkipBack and SkipForward). Logitech's groups hold a record for each of them too, so
+every composed record is the target of at least one of Logitech's, and **no code of Logitech's is missing from the
+catalogue**. The LG's 76 become 65 because eleven of its composed records, the ten digits and OK, are each the target of
+two of Logitech's, the ordinary press and its copy.
+
+### Logitech switches a device with its delay between devices first
+
+The four power records are the one difference a press can reach. Over every record either transition of a device's
+power variable sends, on the eight catalogue devices of the three harvest compiles, one record per transition: the
+silence the record opens with is the catalogue's `interDeviceDelay` on **8 of 8**, 100 ms on the Sony, 1000 on the
+Samsung and 500 on the six others. Six of eight at 500, the common value, would fit a constant as well; the Sony and the
+Samsung are the two that tell the rule from one. The control, the inter key delay, names it on 1 of 8, the Philips, whose
+two delays are both 500. Over the nineteen One configurations of the font table's census, 128 records a power
+transition sends, on 18 of them (one holds no power transition) and some 35 distinct device labels, many of them
+repeated between configurations, all open with 100, 500 or 1000 ms; measured by a scratch census and not asserted, and
+two of the nineteen are a friend's remote as found and after a legacy sync, whose generator is not established. On the Harmony 650 a power step opens with no silence, section 309's three devices,
+and the wait between devices is section 287's delay step, section 337. **Our composer gives a power step no silence on
+both families**, so by the file every device composed for a Harmony One, the five before this and the LG and the Denon
+now, sends its power codes without that silence in front; that the remote plays a record's opening silence as a wait
+before the code is section 337's reading of the files, and not heard on a unit here. Not changed here: it is the touch family's question, it would change the five
+composed devices as well, and whether a device misses a code sent without it is for the bench, `todo-compile-one.md`
+7.2 and 8.2.
+
+### What the bench will hear, against the configuration with Logitech's records
+
+* the LG and the Denon switched on or off, by an activity, All Off or a power pad: the same code, by the file half a
+  second sooner, not yet heard;
+* every other command of the two: the same records, word for word;
+* the LG's digit and OK copies: unsent before and after.
+
+### What the composed setup carries now
+
+`catalogueInfraredBytes` marks the bytes of a configuration's infrared the catalogue reproduces: a record whose header
+and blocks are one the catalogue composes for that device whole, with its blocks, and the group's record array where
+every record is the composed one at its place. In `composesetup.test.ts` it joins the builders' attribution. On the
+composed setup every record of the seven devices is the catalogue's and every group the composer's, 65, 65, 120, 39,
+60, 12 and 57 records. **The control**: on Logitech's compile it finds 63 of the LG's 76 and 118 of the Denon's 120, the
+fifteen copies not, and neither group in the composer's order. So **the carried list is 1431 bytes where it was 103164**:
+the three `slot-5` rows, 101656, gone, and `slot-10-list` down 77, from 1508: the LG's 76 donor lists send 65 composed
+records, so eleven send a record another list sends and match no donor list left.
+
+**What the 1431 is**, measured on the result: 185 lists of seven bytes, a send and its quantity, 1295, which are 185 of
+the donor's own 196 send lists for its two devices, naming the composed records now, the eleven left matching no donor
+list once their record is one another list sends, and 19 lists of no
+send, 136, 18 of them among the 34 nothing can run. The test's comment said "262 are the 34 lists nothing can run" of
+this row, which the measurement did not hold before this step either, since it touched no list without a send: of the
+34, those whose bytes another list of the result shares match a donor list through that one instead. The 185 lists, the
+devices' power variables and their place in the numbering stay the donor's until 8.1.2 composes the two devices whole
+on an empty One.
+
+The file is **980473 bytes**, 2438 fewer: the LG's infrared 11367 where Logitech's was 13741 (eleven records fewer, 231
+bytes of header and 33 of array; 2110 of blocks fewer, the thirteen copies out and two power steps in), the Denon's
+87851 where it was 87915, its two power copies' sixteen words of silence gone, 64. The body now holds no infrared record
+of the donor's, so `composedIntoBody` puts every composed record at the body's end, 1048 infrared pieces where it was
+578; a screen program in the setup composed with the tour kept moved from `0x722f8` to `0x42987` with them. Every check
+passes and every other test of the composed setup holds.
+
+### Scope, decision 16
+
+The step is generic, base slot 5 and the send opcode being the same on every architecture this codec composes for, and
+it is run on arch 12 (Harmony One) alone, on the two devices of one compile; the Harmony 600, 650 and 700's assembly
+does not take it. The power records' opening silence is measured on arch 12 alone; arch 14 (Harmony 600, 650 and 700)
+does otherwise, section 337; arch 9 (Harmony 525) was not checked.
+
+### Falsification
+
+A record of the LG's or the Denon's in the composed setup that is not one the catalogue composes for it whole; a send
+naming a record past the composed group's end; a Logitech One compile whose power transition sends a record opening
+with anything but the device's catalogue delay between devices.
+
+### The reviews
+
+Two reviewers read the change before it was committed. The first, given the question and not the answer, measured the
+same table, 76, 65, 63 and 13 and 120, 120, 118 and 2, and the same eight devices' silences against the two delays, one
+record per transition; it checked every send end to end, 196 of 196 keeping its code, and found the 8.1.3 test asserted
+the function's own report and no send in the result, which it now does: every send of the two devices read before and
+after the step, the same code at each, the held block changed on the LG's eleven copies alone. It also found the
+refusal's message misleading where only the carrier differs, now worded for both. The second audited the text and
+corrected four things now in it: that eleven composed records stood for no record of Logitech's, which was the reading
+of a first version of the mapping that gave two donor records of one code the same composed record, so every composed
+record now has one; that the 185 lists were "one per Logitech record", where Logitech's are 196; that six of the eight
+devices share the common 500 ms, so two carry the rule; and that the nineteen configurations' 128 records repeat devices
+and include a friend's two. It also asked that what a remote does be said as what the file says, as it is now.
+
+### Where it lands
+
+* `packages/codec/src/composecatalogue.ts`: `composeDonorDeviceInfrared`, `catalogueInfraredBytes`, and
+  `catalogueDevicePlan` cut out of `composeCatalogueDevice`; `packages/codec/src/shared/devices.ts`: `deviceRecords`
+  cut out of `composeDeviceFor`; `packages/codec/src/shared/setup.ts`: `SetupParts.donorInfraredFromCatalogue`, step
+  1b, and `ComposedSetup.donorInfrared`.
+* `packages/codec/test/composesetup.test.ts`: the 8.1.3 test (the step on the path, the fifteen differences named, the
+  seven devices the catalogue's, the control on Logitech's compile, the refusal of another device's catalogue entry,
+  every send of the two devices the same code before and after), the
+  carried list at 1431, the file at 980473, the placement and the 6.7 census moved.
+* `packages/codec/test/composecatalogue.test.ts`: the power records' opening silence on the eight devices, with its
+  control.
+* `docs/config-format.md`, how Logitech's generator spells a block; `reference/remotes/harmony-one/features.md`, delays.

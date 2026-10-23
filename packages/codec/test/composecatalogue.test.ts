@@ -615,6 +615,49 @@ test('on the Harmony One, Logitech switches a device on with its power steps and
   });
 });
 
+test('on the Harmony One, every record Logitech\'s power transitions send opens with the catalogue\'s delay between devices, on 8 of 8 catalogue devices',
+     needing(skipWithoutIrArchive(), skipUnless(...new Set(ONE_POWER.map(([config]) => config)))), () => {
+  // Section 433, extending section 337, which found the harvest compile's power copies opening with 500 ms: every
+  // record either transition of the device's power variable sends, through its calls, read by the silence its once
+  // block opens with, against the catalogue's `interDeviceDelay` and, as the control, its `interKeyDelay`. A power
+  // step the catalogue composer makes opens with none, which `composesetup.test.ts`' 8.1.3 test asserts for the LG and
+  // the Denon.
+  const read: Record<string, string> = {};
+  let keyDelayAgrees = 0;
+  for (const [config, label, slug, file] of ONE_POWER) {
+    const c = open(config);
+    const lists = c.actionLists() ?? [];
+    const groups = irGroups(c)!;
+    const sends = (list: number, seen: Set<number>): number[] => {
+      if (seen.has(list)) return [];
+      seen.add(list);
+      return (lists[list] ?? []).flatMap((one) => (one.opcode === 0x7d ? [one.operand] : one.opcode === 0x7f ? sends(one.operand, seen) : []));
+    };
+    const power = deviceVariables(c).find((one) => one.device === label && one.property === 'Power')!;
+    const transitions = stateVariables(c).find((one) => one.index === power.index)!.record!.values;
+    const openings = new Set(transitions.filter((t) => t.opcode === 0x7f).flatMap((t) => sends(t.operand, new Set())).map((operand) => {
+      const words = irBlockWords(c, irHeaderPointers(c, groups[operand >> 8]!.addresses[operand & 0xff]!)[0]!)!;
+      let silence = 0;
+      for (const word of words) {
+        if (word === 0 || (word & 0x8000) !== 0) break;
+        silence += word;
+      }
+      return silence / 1000;
+    }));
+    const timing = catalogueDriving(IR_ARCHIVE!, slug, file).timing;
+    read[label] = `${[...openings].join()}/${timing.interDeviceDelay}`;
+    if ([...openings].join() === `${timing.interKeyDelay}`) keyDelayAgrees += 1;
+  }
+  assert.deepEqual(read, {
+    'Denon_AVR-X4800H': '500/500', LG_OLED65G26LA: '500/500', 'Philips_70FA930/00S': '500/500',
+    Samsung_LNR408DX: '1000/1000', Gemini_TestQuhd: '500/500', 'Sony_RDR-GXD500': '100/100', 'Pioneer_VSX-90TXV': '500/500',
+    'Rosen_Aviation_0602-2XX-8': '500/500',
+  });
+  // The control: the inter key delay names the same silence on one device of eight, the Philips, whose two delays
+  // are both 500 ms.
+  assert.equal(keyDelayAgrees, 1);
+});
+
 test('a catalogue device composed onto a Harmony One switches on with its power steps and the catalogue\'s power on delay, or the one the request states',
      needing(skipWithoutIrArchive(), skipUnless('one_spare_myharmony')), () => {
   // The spare's own sync, whose row font spells a short label where the two device compile's cannot.
