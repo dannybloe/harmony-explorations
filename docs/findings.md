@@ -52712,12 +52712,19 @@ the same devices as the list the Devices key opens with no activity running, whi
 of the inventory on 15 of 15. Rows are taken in the order they stand on the screen, page by page and on a page
 by touch area. **Every such list is some devices and then the rest in the idle list's order**, 64 of 64. The
 head holds the activity's own devices, by infrared group, and on 32 of the 64 also a device the activity does not
-send to; its order is not read. The Harmony 600 family's rule, the activity's own devices first in group order
-and then the rest in the idle order, fits 12 of the 64, two of them on compiles with one device. Eight lists
-are in the idle order, six of them with several devices. **Ours enters the idle list**, so an activity we build
-shows every device in the idle order. Corrected per review: this said the 600 family's rule fits 4, a
-measurement that took the rows in the order the page's list stores them and an activity's devices as positions
-in the inventory rather than infrared groups.
+send to. The activity's devices first in infrared group order and then the rest in the idle order fits 12 of the
+64, two of them on compiles with one device. Eight lists are in the idle order, six of them with several devices.
+**Ours enters the idle list**, so an activity we build shows every device in the idle order, until section 424
+built each activity its own. Corrected per review:
+this said the 600 family's rule fits 4, a measurement that took the rows in the order the page's list stores them
+and an activity's devices as positions in the inventory rather than infrared groups.
+
+**Corrected by section 424**: this paragraph called the group order rule the Harmony 600 family's, said it fitted 12
+of the 64, and said the head's order was not read. The 600 family's rule, section 352, is another one: the devices
+the activity's start switches on, in the order its enter list switches them on. That rule fits 61 of the 64 and
+refuses the other three, and the device in the head the activity does not send to is one its start switches on.
+The 12 stand as the group order's figure. The two rules agree on which devices lead for 31 of the 61 activities
+the switched on order fits, and on their order for 12 of the 64, which is how one could be taken for the other.
 
 ### Asserted
 
@@ -52725,8 +52732,9 @@ in the inventory rather than infrared groups.
 the 52 carrying instruction 1; the two sets of the title's face on 15 of 15 compiles with an activity, one ink
 and the shadow only on the other, every start up title of the 64 drawn in the builder's choice and nothing at
 that height in the other set, and one shadowed set on each of the four compiles with none; the device lists, every device once on 64, the idle list complete on 15,
-some devices then the idle order on 64, another device in the head on 32, the 600 family's order on 12 and the
-idle order on 8; and instruction 1 on 23 working screens with one operand set and on no start up screen.
+some devices then the idle order on 64, another device in the head on 32, the group order on 12, the switched on
+order of section 424 on 61 and refusing 3, and the idle order on 8; and instruction 1 on 23 working screens with
+one operand set and on no start up screen.
 
 ### What would falsify it
 
@@ -56623,3 +56631,221 @@ without contribute nothing. (10) The one page, six pad gap is recorded under ope
 reviewers were not run is replaced by this one. **Where the reviewers' counts differ from ours**: the blind review counted
 34 one page working screens with 19 of five pads, which includes the Dutch compile's; on this section's 63 it is 33 and
 19. Nothing else a reviewer reported was wrong on checking.
+
+## 424. The Harmony One compiles a device list for no activity running, one for each activity and one nothing enters, one shape on every English compile, built whole from the rows' names and the configuration's numbering, byte for byte on the eighteen; an activity's own list puts the devices its start switches on first, the Harmony 600 family's rule, on 61 of 64
+
+**Todo `todo-compile-one.md` 4.3.3**: an activity's own device list, which section 402 found on every activity of
+Logitech's One compiles and which the composed path did not build: every composed activity's Devices item opened the
+list for no activity running. Folded in: the composed test setup's mode 70, the donor's mode 86, "a second list of
+every device" in section 422, which still drew Logitech's two row pictures and two icons, 42612 bytes carried.
+
+**Sources checked**: sections 69 (a page list's copy), 86 (a state variable's transition to 1 sends its device's
+code), 239 (a device list row), 275 (the page arrows swallowed on a screen of one page), 294 and 352 (the Harmony 600
+family's own device lists and their order), 326 (the two row device list nothing enters on the 600, 650 and 700, and
+the byte search for `lo hi 7E` used below), 400 (the key lights), 402 (each activity's own list on the One), 411 to
+423 (the template engine, the hit page rules, the menu, the device pages, the activity screens); the nineteen Harmony
+One compiles. Logitech's client was searched by name: what matches a device list is the account's list of devices
+fetched from the service, not a screen; no screen code for them was found, as sections 419, 420 and 423 found for
+the other screens, which is an absence and not a proof. The firmware was not read.
+
+**Scope.** The Harmony One alone for the lists' shape and the builder, the touch family's. The order rule is the
+Harmony 600 family's, read in section 352 on the 600, 650 and 700 and now one function for both families,
+`startSwitchedOn` in `shared/activities.ts`; on those three it was not measured again beyond the four slot family's
+existing test passing unchanged. Skin 54 and the European skin 59 in English; the Dutch compile refused by its words.
+
+### Three kinds of list
+
+**Every Harmony One compile holds one device list for no activity running, one for each activity and one nothing
+enters, 19 of 19.** A device list is a mode whose rows enter every device, `deviceListMenus`. What reaches it is read
+off the touch family's Devices record, `touchValueMapRoles`: its case for the idle value enters the idle list, its
+case for an activity that activity's own, and the list no case enters is the third kind, `touchDeviceLists`. 99 lists
+on the eighteen English compiles, 83 reached on the nineteen.
+
+**Nothing in the configuration names the third.** The three bytes an enter of its mode would be, `lo hi 7E`, are
+searched over the whole file as section 326 did, whatever holds them: **0** for the list nothing enters on all
+nineteen, and **83 of 83** lists a person reaches named so at least once, which is the control. Its mode differs per
+compile, 73 to 253, so no fixed number in the firmware can be it; whether the firmware reaches it some other way was
+not read, so whether the remote ever shows it is open. It is the One's counterpart of section 326's two row list in
+being compiled and entered by nothing; unlike that one it is laid out as the others are, three rows to a page. **Its
+rows are the idle list's, in the idle order**, 19 of 19, and its scan 55 press maps the Devices map once per other
+device list, which is the number of activities and one, 19 of 19: through a list of its own repeating it on the 15
+compiles with an activity, bound straight on the four without, where the count is one. That count is read and not
+explained.
+
+### An activity's own list
+
+**Its rows are the devices its start switches on, in the order its enter list switches them on, then the rest in the
+idle list's order**, on 61 of Logitech's 64 One activities over the fifteen compiles with an activity, and the rule
+refuses the other three. The rule is section 352's for the Harmony 600 family, which is why it is now one function:
+the enter list's own instructions and the lists it calls, one deep; a state write of a nonzero value to a device's
+power variable switches that device on; a placeholder instruction, opcode and operand zero, stands for the one listed
+device with no power variable.
+
+**Which device a power write switches on is read off the variable's own transition to 1**, section 86: on five One
+compiles, all of one account, the set top box's power variable is named by no device, `devices` pairing that one by
+its screen, so reading the devices' variables alone, as section 352's rule did, fits 44 of the 64, refuses 15 and
+gets 5 wrong. **So 61 is section 352's rule with a step added for the Harmony One**, not that rule carried over
+unchanged. On the 82 activities of the Harmony 600, 650 and 700 compiles the four slot test reads, the two routes
+give the same answer on 82 of 82 (measured by the review below). The three
+refused are all of `compiled_protocols_3`, Kodi kijken, HDMI Extra and Heos/Spotify: their starts hold the placeholder
+and two listed devices, Kodi and the Wii, have no power variable, so which one it stands for cannot be told, and the
+rule refuses rather than guess. In all three the device standing at the placeholder's place is Kodi, the one of the
+two the activity sends to; read off the three lists, not asserted.
+
+**The 64 are not 64 independent samples**, section 423's caveat: they carry 11 names on six installations. The 61
+span all six; the three refused are on one compile of the account that holds six.
+
+**Two figures section 402 gave are corrected there in place.** It called the group order rule, the activity's own
+devices by infrared group and then the rest, the Harmony 600 family's, said it fitted 12, and said the head's order
+was not read. That rule fits 12 and is not the 600 family's. The device in the head the activity does not send to, on
+32 of the 64, is one its start switches on. Eight lists are in the idle order itself, so a rule that left every list
+in the idle order would fit 8.
+
+### One shape
+
+**On the eighteen English compiles every list is one template**, `deviceListScreen` in `families/touch/devicelists.ts`,
+whose input is the list's kind, its rows' names as the lines they are drawn in and, on the list nothing enters, how
+many times scan 55 maps. Lists of one to fifteen devices, one to five pages.
+
+| part | the shape |
+|---|---|
+| own key map | on one page the arrows' presses swallowed; tag 6 the header timer started, the page keys' pair 2 and 0 on (several pages), key 4's light on; tag 7 the timer cancelled and the page keys' and key 4's off lists, on one page too; scan 55's press the Devices map, straight on the two kinds a person reaches, and on the list nothing enters once per other list, through a list of its own where that is more than once; tag `0x2D` three `0x73` |
+| chrome | section 411's, titled "Devices", the total and "pages" where there are several pages |
+| a page | the chrome's call; per row the row picture at (6, 38 + 54k), the device's icon at (11, 39 + 54k), the row font selected once after the first row's icon, the name's lines at x 63, centred on the row's label line 19 below its top, 12 apart; then the left key's word: on the two kinds a person reaches a switch on whether an activity runs, "Activities" or "Current" over "Activity", both arms joining the counter; on the list nothing enters "Activities" alone and the counter; the counter on several pages, the page's number ending at x 18 and "/" at 18, row 18 |
+| a page's list | a row the click, an enter of its device's mode and a write of 1 to the device mode marker, codes from 48; the left key at the code after the rows, the Devices map straight on the two kinds a person reaches, the click and the map in a list of its own on the list nothing enters; the right key no binding |
+| the copy | lists of its own with the page list's instructions |
+| a hit page | by section 417's rules: the rows as whole width buttons, the left key, the edges |
+
+**A row's name is broken at 101 pixels**, `wrapLines` at `DEVICE_LIST_NAME_WIDTH`: all 659 rows of the eighteen break
+into the lines drawn at any width from 101 to 103, and 650 at 100 and 648 at 104. **The 659 are 37 distinct names
+and the band is set by three of them in two compiles**: "JVC AV Receiver" closes it at 100, "LG OLED65G26LA" and
+"Pioneer Laserdisc Player" at 104; the other names wrap alike over a wider band. So 101 fits what the compiles hold
+and is not derived.
+One name runs to three lines, `harvest_one_families_1`'s, on both its lists.
+
+| compiles | lists | reached | nothing enters | pages | rows | lists built | hit pages | described | device list bytes |
+|---|---|---|---|---|---|---|---|---|---|
+| `harvest_one_two_devices` | 2 | 1 | 1 | 2 | 4 | 20 | 1 | 202 | 649 |
+| `harvest_one_families_1` | 2 | 1 | 1 | 2 | 2 | 16 | 1 | 168 | 542 |
+| `harvest_one_families_2` | 2 | 1 | 1 | 2 | 4 | 20 | 1 | 243 | 634 |
+| `harvest_one_families_3` | 2 | 1 | 1 | 4 | 8 | 30 | 2 | 433 | 1134 |
+| `one_spare_after_sync` | 3 | 2 | 1 | 3 | 3 | 23 | 1 | 272 | 725 |
+| `one_config_unprogrammed` | 3 | 2 | 1 | 3 | 3 | 23 | 1 | 267 | 695 |
+| `calibration_one`, `calibration_favchannels`, `phase7_before` | 4 | 3 | 1 | 4 | 12 | 45 | 1 | 452 | 1410 |
+| `phase7_after` | 4 | 3 | 1 | 8 | 16 | 55 | 2 | 669 | 2076 |
+| `one_friend_legacy_sync_config` | 5 | 4 | 1 | 10 | 20 | 67 | 2 | 906 | 2427 |
+| `one_spare_myharmony` | 9 | 8 | 1 | 18 | 45 | 133 | 2 | 1741 | 4693 |
+| `one_spare_20260830`, `calibration_favzero` | 9 | 8 | 1 | 18 | 54 | 151 | 1 | 1897 | 5041 |
+| `compiled_protocols` | 9 | 8 | 1 | 45 | 135 | 319 | 1 | 3149 | 11352 |
+| `compiled_protocols_2` | 9 | 8 | 1 | 45 | 135 | 319 | 1 | 3121 | 11116 |
+| `compiled_protocols_3` | 9 | 8 | 1 | 36 | 90 | 227 | 2 | 2250 | 8384 |
+| `one_config` | 10 | 9 | 1 | 20 | 50 | 147 | 2 | 1929 | 5198 |
+
+### What the description carries and what is generated
+
+**Read**: per list its kind, which is what reaches it and not a byte of it; its rows' names as their lines; on the
+list nothing enters the scan 55 count. And the numbering: the mode, every list index, the device mode each row enters,
+the timer, the light lists, the value maps, the marker and the variable the switch reads, the header and chrome
+programs, the pictures (the full screen background and each row's picture and icon), the four fonts, each page's hit
+page index and the homes of texts drawn by reference. **Generated**: every opcode and constant, the tags and their
+stored order, every list's instructions, the words "Devices", "pages", "Activities", "Current", "Activity" and the page
+numbers and where each goes, where every name line goes, which text is inline, the records, and the hit pages' areas
+and codes. **The blind control** overwrites every byte of the lists the description does not read: 63937 bytes of
+device lists over the eighteen, 20087 read inside them, 413 read outside, the glyph codes of texts drawn by reference
+to a copy another program holds, and the other 43850 blinded, every compile coming back byte for byte. **The controls
+fail where they should**: two rows swapped give a different file; the list nothing enters read as one a person
+reaches, scan 55 mapped once more, and the last page of a list of two named to the first page's hit page are refused
+by the builder.
+
+**The Dutch compile**, `one_friend_asfound_config`, is refused by its words before any byte is compared: its title
+font holds the letters of its own title and not of "Devices". No language branch. Its three lists are counted in the
+census above, which reads no word.
+
+### On the composed path
+
+**A device's row is put on every device list by building the lists again**, `withTouchDeviceListRow`, which the touch
+family's device composer calls in place of appending a row to each list's last page: every list described, the row
+added at its end with its name's lines, every number a list held kept by its role and every list of its own it did
+not hold taken from the next free index, its pages on the hit pages of their shapes, made room for and built. Until
+then the composer shared one row list among every list's rows, so the lists were in no shape of Logitech's.
+
+**An activity's own list is a new mode built by the same template from the idle list's description**,
+`withTouchActivityDeviceList`, the touch family's `Family.activityDeviceList`, which until now returned the
+configuration as it was: its rows the idle list's in the activity's order, every number the lists share taken from
+the idle list by role, its row pictures the idle list's at each place and each device's own icon, and both cases under
+Devices for the activity, the record's and its unread copy's, queuing the new mode. The device list builder joins
+`TOUCH_BUILT` after the device pages, sixteen parts.
+
+**Measured on the composed test setup**: seven lists, the idle list, the list nothing enters and the five activities'
+own, three pages each. Each activity's two cases under Devices enter its own list, and its rows are its start's
+devices first: TV kijken the LG, the KPN box and the Denon; Film kijken the Plasma, Kodi and the Denon; Muziek Kodi
+and the Sony; Kodi kijken the LG, Kodi and the Switch; Plasma kijken the Plasma and the KPN box. The device lists'
+builder reproduces 4971 bytes, 1531 of them read, measured as the attribution measures it, through the look's
+blending undone, since a description of the file as the look leaves it refuses two fonts for one title; the hit pages' 863 came down to 772, the device lists' pages'
+areas credited to the builder that built them first. The file is 1060973 bytes, 38623 fewer: five modes of three
+pages more, their records, page lists and copies 710 bytes, 109 lists more and their pointers 1390, 381 screen
+programs more 1889, and the four pictures of Logitech's only the list nothing enters drew, 42612, out of the bank.
+
+**Mode 70 is the list nothing enters**, the donor's mode 86, drawn in our look now: the look's device step,
+`withTouchDeviceLook`, recolours the rows, icons and header of every device list where it read the widest list alone,
+`deviceListRows`, so nothing draws Logitech's two row pictures and two icons and they go out of the bank. The carried
+list lost `picture` whole and 48 bytes of `slot-10-list`, the lists of the donor's two device lists that the built
+lists' own match: two header lists of three programs, two lists the chrome queues and the list nothing enters' left
+key list and its copy's. 103331 of the 1060973 bytes are carried.
+
+**What changed on the screen**, rendered before and after into the session's scratch and looked at, not tested:
+every row of every list wears our box and an icon of its device's type, where a composed device's row had no icon;
+the list nothing enters wore Logitech's orange rows and icons and wears ours. An activity's list opens with its
+devices. What the tests hold is the bytes: the four pictures out of the bank and the rows' lists.
+
+### Asserted
+
+`packages/codec/test/touchdevicelists.test.ts`: the rebuild on the eighteen with every figure in the table, 99 lists of
+659 rows, the longest fifteen; the Dutch refusal; the three kinds on all nineteen, one list nothing enters on each, 0
+three byte names for it against 83 of 83 for the others, its rows in the idle order and its scan 55 count on 19; the
+switched on order on 61 of 64 with the three refusals' compile; the name width band; the blind control's totals;
+the failing controls; and devices composed onto two compiles, each list gaining the row at its end and the lists of
+`calibration_one` a page each.
+`touchactivity.test.ts` holds section 402's tallies with the group order's 12 and the switched on order's 61 and 3.
+`composesetup.test.ts` holds the composed setup's seven lists, each activity's cases and heads, the attribution, the
+size and the carried list; `touchbuilders.test.ts` the sixteen builders giving back Logitech's compile of two devices,
+the device lists' 632 and the hit pages' 1910, and the four key words the device lists move in our letters.
+
+### What would falsify it
+
+An English Harmony One compile whose device lists are not three kinds, or whose list nothing enters is named by an
+enter or holds other rows; a list whose rows, keys or pages leave the shape above; a Logitech activity whose list's
+head is not the devices its start switches on, in that order.
+
+### Which architectures
+
+Arch 12 (Harmony One) for the lists and the builder. The order rule is shared with the Harmony 600, 650 and 700,
+section 352, and was not measured on them again here. The Harmony 525 holds no touch screen lists and was not checked.
+
+### Reviewers
+
+Both reviewers of the `finding` skill were run on the whole change: one re-measured the questions blind, one
+audited the sentences against the numbers. Each report was checked before anything was changed.
+
+**The blind re-measure agreed on every count it was asked for**: three kinds on 19 of 19 with one list nothing
+enters on each; 0 enters of that list against 5 to 11 for each of the other 83; its rows in the idle order on 19;
+its scan 55 count equal to the activities and one on 19; the group order on 12 and the idle order on 8; and the
+same name width counts at 99 to 105. **It fitted the switched on order on 64 of 64 where this section says 61**,
+and the difference is a choice and not a count: on `compiled_protocols_3` it broke the tie between Kodi and the Wii
+by the one the activity sends to, which this section observes on the three lists and the rule declines to adopt,
+since it would rest on three activities of one compile. It reached the set top box's power variable by matching the
+variable's label to the device's name, another route to the same five compiles' repair.
+
+**Corrections to this section, recorded in place**, from the audit. (1) The set top box's power variable named by no
+device was said to be on three compiles; it is five, all of one account. (2) 61 was presented as section 352's rule
+carried over; it is that rule with the transition step added for the Harmony One, without which it fits 44, and the
+audit measured the two routes alike on all 82 of the four slot activities. (3) The list nothing enters was said to
+map scan 55 through a list of its own on every compile; on the four compiles without an activity it is bound
+straight, the count being one. (4) The name width was presented over 659 rows; they are 37 names and three of them
+set the band. (5) The correction to section 402 explained the wrong name by both rules agreeing "for most
+activities"; they agree on the leading devices for 31 of 61, so the sentence now gives the counts. (6) Section 402's
+"ours enters the idle list" was left live; it now says until this section. (7) The client search's "so the lists
+are compiled by the service" overstated an absence. (8) Three test claims were tightened: the shortest list is now
+asserted, a page gained is now asserted, and the refused activities are named. (9) The rendering before and after is
+now labelled as looked at and not tested, the 4971 as measured through the look's blending undone, and the concept
+document's sentence as the configuration's and not the remote's.

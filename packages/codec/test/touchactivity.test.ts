@@ -24,6 +24,8 @@ import {
 } from '../src/inventory.ts';
 import { SCREEN_CALL, SCREEN_DRAW_IMAGE, SCREEN_JUMP, SCREEN_SELECT_FONT, SCREEN_SWITCH_NARROW, SCREEN_TEXT_AT, SCREEN_TEXT_INLINE, screenProgram } from '../src/screen.ts';
 import { deviceListMenus } from '../src/shared/menus.ts';
+import { startSwitchedOn } from '../src/shared/activities.ts';
+import { ComposeError } from '../src/shared/core.ts';
 import { textGlyphs } from '../src/shared/spelling.ts';
 import { characterMap, decode } from '../src/text.ts';
 import { fontSets } from '../src/font.ts';
@@ -228,9 +230,9 @@ test('section 402: every Logitech One compile with an activity holds two font se
   }
 });
 
-test('section 402: each activity of Logitech\'s One compiles has a device list of its own holding every device once, as some devices and then the rest in the idle list\'s order, which the 600 family\'s order fits on 12 of the 64',
+test('sections 402 and 424: each activity of Logitech\'s One compiles has a device list of its own holding every device once, as some devices and then the rest in the idle list\'s order; the devices its start switches on first, in that order, fits 61 of the 64 and refuses the other three, and its devices in infrared group order fits 12',
      skipUnless(...WITH_ACTIVITIES), () => {
-  const tally = { lists: 0, idleComplete: 0, everyDevice: 0, headThenIdle: 0, headWithAnother: 0, familyOrder: 0, idleOrder: 0 };
+  const tally = { lists: 0, idleComplete: 0, everyDevice: 0, headThenIdle: 0, headWithAnother: 0, switchedOn: 0, refused: 0, groupOrder: 0, idleOrder: 0 };
   for (const name of WITH_ACTIVITIES) {
     const c = parse(load(name) as Uint8Array);
     const actionLists = c.actionLists() ?? [];
@@ -265,7 +267,17 @@ test('section 402: each activity of Logitech\'s One compiles has a device list o
       if (actual.length === idle.length && new Set(actual).size === actual.length && actual.every((one) => idle.includes(one))) tally.everyDevice += 1;
       // The activity's devices, by infrared group.
       const mine = activity.devices.map((group) => modeOfGroup.get(group) as number);
-      if (same([...mine, ...idle.filter((one) => !mine.includes(one))])) tally.familyOrder += 1;
+      // The order section 402 called the 600 family's and which is not: the activity's devices by infrared group.
+      if (same([...mine, ...idle.filter((one) => !mine.includes(one))])) tally.groupOrder += 1;
+      // The 600 family's rule, section 352, shared since section 424: the devices the start switches on, in that
+      // order. Refused where the start switches on two devices with no power variable, whose places it cannot tell.
+      try {
+        const head = startSwitchedOn(c, activity.set, idle, activity.name ?? `activity ${activity.activity}`);
+        if (same([...head, ...idle.filter((one) => !head.includes(one))])) tally.switchedOn += 1;
+      } catch (error) {
+        if (!(error instanceof ComposeError)) throw error;
+        tally.refused += 1;
+      }
       if (same(idle)) tally.idleOrder += 1;
       // The shortest head holding the activity's devices after which the rest follow in the idle order.
       for (let k = 0; k <= actual.length; k += 1) {
@@ -277,7 +289,9 @@ test('section 402: each activity of Logitech\'s One compiles has a device list o
       }
     }
   }
-  assert.deepEqual(tally, { lists: 64, idleComplete: 15, everyDevice: 64, headThenIdle: 64, headWithAnother: 32, familyOrder: 12, idleOrder: 8 });
+  assert.deepEqual(tally, {
+    lists: 64, idleComplete: 15, everyDevice: 64, headThenIdle: 64, headWithAnother: 32, switchedOn: 61, refused: 3, groupOrder: 12, idleOrder: 8,
+  });
 });
 
 test('section 402: screen instruction 1 stands on the working screens of 23 of Logitech\'s 64 One activities, one call deep, naming the whole screen, and on no start up screen',
@@ -347,9 +361,9 @@ test('todo-compile-one 3.2.2.3: an activity our builder composes onto each Logit
     while (values.includes(fresh) || fresh === idle) fresh += 1;
     const built = buildTouchActivityScreens(c, fresh, 'Test', [], {});
     const b = parse(built.bytes);
-    // Ours: the same four records, the two under Devices entering the idle device list (ours enters that one where
-    // Logitech's enters a list of the activity's own, section 402), working its working screen, select its keypad
-    // map. On the four compiles with no activity the unread copy is the record the composer used to pass by.
+    // Ours: the same four records, the two under Devices entering the idle device list, which the touch family then
+    // points at a list of the activity's own, `withTouchActivityDeviceList`, section 424, working its working screen,
+    // select its keypad map. On the four compiles with no activity the unread copy is the record the composer used to pass by.
     const idleList = caseQueued(c, valueMaps(c)![records.get('devices')!]!.entries.find(([key]) => key === idle)![1])!;
     assert.deepEqual(casesAt(b, fresh).map((one) => [one.role, one.queued.opcode, one.queued.operand]), [
       ['devices', idleList.opcode, idleList.operand], ['devices unread', idleList.opcode, idleList.operand],

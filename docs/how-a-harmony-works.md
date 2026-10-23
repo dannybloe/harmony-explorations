@@ -75,6 +75,12 @@ it**: no key, no screen and no event names it, section 326. So an interface draw
 the corner list, whose second screen of devices appears at the fifth device. The Help key's "Select
 device" screen is a third list of devices, reached from Help.
 
+**A Harmony One's list is three devices to a screen, and which list opens depends on what runs**, as Logitech's
+configurations are written; the firmware was not read for it and it was not checked on a remote. With nothing
+running "Devices" opens a list of every device; while an activity runs it opens that activity's own list, the
+same devices with the ones the activity switched on first, section 424. Its compiles also hold one more list of every device that nothing in the configuration opens, as the
+600's do; whether the remote ever shows it was not read.
+
 **"Current Activity" is one model's wording**, the Harmony One's. The 600 writes "Activity", the 525
 uses its own Activities key, and on an 885 you press DEVICE again. So an interface must not print that
 phrase as though it were the product's vocabulary.

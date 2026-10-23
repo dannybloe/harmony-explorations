@@ -60,7 +60,8 @@
  *
  * English only, skin 54 and the European skin 59; the Dutch compile is refused by its words. The Harmony One alone,
  * the touch family's; the Harmony 600, 650 and 700 draw their activities' screens with `screenrecords.ts`. An
- * activity's help screen and its own device list, the other two modes an activity enters, are not built here. Read
+ * activity's help screen and its own device list, the other two modes an activity enters, are not built here; the
+ * device list is `devicelists.ts`', section 424. Read
  * only towards hardware: the result is pieces.
  */
 import { u24 } from '../../bytes.ts';

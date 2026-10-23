@@ -2430,8 +2430,8 @@ from the configuration's own device page, `deviceBottomKeys`.
 
 **An activity's device list and its start up title, the Harmony One**, section 402: each activity has a device
 list of its own holding every device once, 64 of 64 over the fifteen compiles with an activity, as some devices
-(the activity's own and on 32 another) and then the rest in the idle list's order, the head's order not read;
-the 600 family's order fits 12. A composer enters the idle list. A compile with an activity holds two font sets
+(the activity's own and on 32 another) and then the rest in the idle list's order; the head is the devices the
+activity's start switches on, in that order, on 61 and refused on 3, section 424. A compile with an activity holds two font sets
 of face One15 and draws every start up title in one of them, at y 124, found by that, `startupTitleSet`.
 Screen instruction 1, operands `0 0 176 220 0 0`, sits one call deep on every page of the working screen on 23
 of 64 activities and is unread.
@@ -2932,9 +2932,34 @@ the 55 tags.
 | read | the name off the start up title, whether its blank is the title set's or a space, the label lines and pictures off each pad, what each pad runs, favourites, instruction 1, whether every pad selects its font; the modes, every list index, the timers, the light lists, the header and chrome programs, the pictures, the fonts a role per screen, the hit page indices, the homes |
 
 **On the composed path** the activity composer ends by building every activity screen again through this template,
-`withTouchActivityScreensRebuilt`. **Unconfirmed**: an activity's own help screen and its own device list are not
-built; the insertion order behind the start up screen's stored order is inferred from the order, which is what is
-measured.
+`withTouchActivityScreensRebuilt`. **Unconfirmed**: an activity's own help screen is not built (its own device list
+is, section 424); the insertion order behind the start up screen's stored order is inferred from the order, which is
+what is measured.
+
+**The device lists, built**, section 424: `families/touch/devicelists.ts` through the same engine, arch 12 (Harmony
+One) only. A device list is a mode whose rows enter every device; three kinds by what reaches it, on 19 of 19
+compiles: the Devices record's case for the idle value enters the idle list, its case for an activity that activity's
+own, and one list no case enters, named by no three bytes `lo hi 7E` anywhere in the file (0 on 19, against 83 of 83
+lists a person reaches), its rows the idle list's in the idle order, its scan 55 list mapping once per other list. One
+template on the eighteen English compiles whose input is the kind, the rows' name lines and, on the list nothing
+enters, the scan 55 count; 99 lists of one to fifteen devices, one to five pages, rebuilt byte for byte; the Dutch
+compile refused by its words.
+
+| what | rule, on the eighteen English compiles |
+|---|---|
+| own key map | arrows swallowed on one page; tag 6 the timer started, the page keys' pair 2 and 0 on (several pages), key 4's light on; tag 7 the timer cancelled and the page keys' and key 4's off lists; scan 55 the Devices map, straight, or on the list nothing enters a list repeating it once per other list; tag `0x2D` three `0x73` |
+| chrome | section 411's, titled "Devices", the total and "pages" on several pages |
+| a page | three rows: the row picture at (6, 38 + 54k), the device's icon at (11, 39 + 54k), the row font once after the first icon, the name's lines at x 63 centred on row top + 19, 12 apart, `wrapLines` at 101 pixels (659 of 659 rows at 101 to 103); then on the two kinds a person reaches a switch on the running variable, "Activities" or "Current" over "Activity", joining the counter, and on the list nothing enters "Activities" and the counter; the counter the page's number ending at x 18 and "/" at 18, y 18 |
+| a page's list | a row the click, `0x7E` its device's mode and a write of 1 to the device mode marker, codes from 48; the left key at the next code the Devices map, straight or on the list nothing enters the click and the map in a list of its own; the right key nothing |
+| the copy | lists of its own with the page list's instructions |
+| a hit page | section 417's rules: the rows as whole width buttons, the left key, the edges |
+| an activity's rows | every idle list device once, the devices its start switches on first in the order its enter list switches them on (a nonzero write to a power variable, the variable's device read off its transition to 1, a placeholder `00 0000` the one listed device with no power variable), then the rest in the idle order: 61 of 64, refused on 3 where two listed devices have no power variable, `startSwitchedOn`, the Harmony 600 family's rule of section 352 |
+| read | the kind, the rows' name lines, the scan 55 count; the mode, every list index, each row's device mode, the timer, the light lists, the value maps, the marker and the switch's variable, the header and chrome programs, the pictures, four fonts, the hit page indices, the homes |
+
+**On the composed path** a device's row is put on every list by building them again, `withTouchDeviceListRow`, and an
+activity's own list is a new mode built from the idle list's description, `withTouchActivityDeviceList`, both cases
+under Devices for the activity queuing it. **Unconfirmed**: whether the firmware ever enters the list nothing in the
+configuration enters, which was not read; why its scan 55 list maps once per other list.
 
 **Which of the 78 the 3.4 firmware draws by number**: one. A mode becomes current only from an `0x7E` operand, the
 mode stack (a mode that was current) or base slot 4, and base slot 4 is walked only for status code 9, "LCD Module

@@ -137,6 +137,7 @@ import { buildTouchCasePrograms, buildTouchScreenTable, describeTouchCaseProgram
 import { buildTouchHitPages, describeTouchHitPages, withTouchHitPages } from './hitpages.ts';
 import { buildTouchActivityMenu, describeTouchActivityMenu, withTouchActivityMenu } from './activitymenu.ts';
 import { buildTouchDevicePages, describeTouchDevicePages, withTouchDevicePages } from './devicepages.ts';
+import { buildTouchDeviceLists, describeTouchDeviceLists, withTouchDeviceLists } from './devicelists.ts';
 import { buildTouchActivityScreenSet, describeTouchActivityScreens, withTouchActivityScreenSet } from './activityscreens.ts';
 import { buildTouchHelpScreens, describeTouchHelpScreens, withTouchHelpChain, withTouchHelpScreens } from './helpscreens.ts';
 import type { ComposedDeviceNote } from '../family.ts';
@@ -155,7 +156,8 @@ export class TouchBuildError extends Error {}
 /** The parts the builders make, in the order they run and the order `touchBuiltBytes` attributes a byte. */
 export const TOUCH_BUILT = [
   'firmware screens', 'fixed screens', 'tour and Remote Assistant', 'status screens', 'clock header', 'help screens',
-  'activity menu', 'device pages', 'activity screens', 'case programs', 'hit pages', 'wiring', 'state tables', 'raw slot 18',
+  'activity menu', 'device pages', 'device lists', 'activity screens', 'case programs', 'hit pages', 'wiring', 'state tables',
+  'raw slot 18',
   'number senders', 'pictures',
 ] as const;
 export type TouchBuilt = (typeof TOUCH_BUILT)[number];
@@ -185,7 +187,7 @@ const SMALL_TABLES: Readonly<Record<'raw slot 18' | 'number senders', (c: Contai
  */
 const SCREEN_BUILT = [
   'firmware screens', 'fixed screens', 'tour and Remote Assistant', 'status screens', 'clock header', 'help screens',
-  'activity menu', 'device pages', 'activity screens', 'case programs', 'hit pages',
+  'activity menu', 'device pages', 'device lists', 'activity screens', 'case programs', 'hit pages',
 ] as const;
 type ScreenBuilt = (typeof SCREEN_BUILT)[number];
 
@@ -247,6 +249,14 @@ const SCREENS: Readonly<Record<ScreenBuilt, (c: Container) => ScreenBuild>> = {
     const layout = takeApart(c);
     const d = describeTouchDevicePages(c, layout);
     return { ...d, layout: withTouchDevicePages(layout, buildTouchDevicePages(c, d.spec), d.place) };
+  },
+  // Every device list as the configuration holds it, `todo-compile-one.md` 4.3.3: on the composed path each was built
+  // by the same template, `withTouchDeviceListRow` and `withTouchActivityDeviceList`, so this rebuilds them and
+  // Logitech's alike.
+  'device lists': (c) => {
+    const layout = takeApart(c);
+    const d = describeTouchDeviceLists(c, layout);
+    return { ...d, layout: withTouchDeviceLists(layout, buildTouchDeviceLists(c, d.spec), d.place) };
   },
   // Every activity's two screens as the configuration holds them: on the composed path each composed activity's were
   // laid out by the same template, `withTouchActivityScreensRebuilt`, so this rebuilds them and Logitech's alike.

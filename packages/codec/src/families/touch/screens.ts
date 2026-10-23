@@ -9,8 +9,8 @@ import { STATE_WRITE_BASE } from '../../actions.ts';
 import { u24 } from '../../bytes.ts';
 import { Writer } from '../../emit.ts';
 import {
-  composeMenuPage, DEVICE_PAGE_SLOTS, DEVICE_ROW_FONT, MENU_EDGE_SCANS, MENU_ICON_OFFSET, MENU_LABEL_X, MENU_ROW1_BG,
-  MENU_ROW1_LABEL_Y, MENU_ROW_FONT, MENU_ROW_PITCH, menuRowCapacity, paginate, MENU_ROW_SCAN, pictureDrawnAt, withHitPage,
+  DEVICE_PAGE_SLOTS, DEVICE_ROW_FONT, MENU_EDGE_SCANS, MENU_ICON_OFFSET, MENU_LABEL_X, MENU_ROW1_BG,
+  MENU_ROW1_LABEL_Y, MENU_ROW_PITCH, paginate, pictureDrawnAt, withHitPage,
 } from '../../families/touch/menus.ts';
 import { type FontSet, fontSets } from '../../font.ts';
 import { archSlot, Container, type Instruction, parse, SCAN_MASK } from '../../gspm.ts';
@@ -21,7 +21,7 @@ import {
 import { relocate } from '../../relocate.ts';
 import {
   bitmapAt, SCREEN_CALL, SCREEN_DRAW_IMAGE, SCREEN_END, SCREEN_QUEUE_INSTRUCTION, SCREEN_RETURN, SCREEN_SELECT_FONT,
-  SCREEN_SWITCH_NARROW, SCREEN_TEXT_AT, SCREEN_TEXT_INLINE, screenProgram,
+  SCREEN_TEXT_AT, SCREEN_TEXT_INLINE, screenProgram,
 } from '../../screen.ts';
 import {
   ACTION_LIST_INDEX_OPCODE, HANDLER_TAG_ENTER, handlerSets, type ModePage, modePages, type ModeRecord, modeRecords,
@@ -42,6 +42,7 @@ import { characterMap } from '../../text.ts';
 import { EDGE_CODES, LIST_ROW_PITCH, PANEL_LEFT, touchOwner, touchPageOf } from '../../touch.ts';
 import { buildTouchActivityScreens } from './activityscreen.ts';
 import { withTouchDevicePage } from './devicepages.ts';
+import { withTouchDeviceListRow } from './devicelists.ts';
 import { activityPadBox } from './activitypictures.ts';
 import { activityPadBehind } from './activityscreen.ts';
 import { picturesByContent } from '../../pictures.ts';
@@ -57,8 +58,9 @@ import { contentKey } from '../../screencategories.ts';
  * the configuration's bar, copied the keys below the screen and their words off an existing device page, shared
  * that page's handler lists and named one hit page of six pads for every page, section 401 and 1.2.11.2.11.
  *
- * What stays here is the device list: the row a menu gains, its list (click, enter the mode, mark device mode),
- * and a new menu page where the last is full.
+ * **The device lists are built too**, since `todo-compile-one.md` 4.3.3: every list is described and built again
+ * with the device's row at its end, `withTouchDeviceListRow` in `devicelists.ts`, in place of a row appended to each
+ * list's last page, a list every row shared and a new page where the last was full, findings section 424.
  */
 export function composeTouchDeviceScreen(
   c: Container, label: string, rows: readonly ComposeRow[], options: WithChoices<ComposeScreenOptions, TouchChoices> = {},
@@ -86,9 +88,7 @@ export function composeTouchDeviceScreen(
   const padFont = padFontOf(c);
   if (padFont === undefined) throw new ComposeError('no device page shows which font a pad is drawn in');
   const rowSet = sets[padFont];
-  const menuSet = sets[MENU_ROW_FONT];
-  if (rowSet === undefined || menuSet === undefined) throw new ComposeError('the config does not carry the fonts the layout uses');
-  const menuCodes = codesFor(map, c, menuSet, label, MENU_ROW_FONT);
+  if (rowSet === undefined) throw new ComposeError('the config does not carry the fonts the layout uses');
   // Every label laid out now, against the container its font set was read from, section 242: the lines are the
   // content's, so no insertion below changes them, and the template places them by the same rule.
   const pads = rows.map((row, k) => {
@@ -105,186 +105,18 @@ export function composeTouchDeviceScreen(
   if (table === undefined) throw new ComposeError('base slot 6 states no table');
   const mode = table.addresses.length;
 
-  // 1. The menu row's action list: beep, enter the new mode, mark device mode. One list, shared
-  // by every menu, the way the corpus shares its bottom key list.
-  const actionSlot = archSlot(c.architecture as number, ACTION_TABLE_SLOT);
-  const actionTable = c.pointerArrayAt(actionSlot);
-  if (actionTable === undefined) throw new ComposeError('base slot 10 does not read as a table');
-  const rowList = actionTable.values.length;
-  const rowBytes = new Writer(1 + 3 * 3).u8(3)
-    .u16(SCREEN_ITEM_BEEP.operand).u8(SCREEN_ITEM_BEEP.opcode)
-    .u16(mode).u8(ENTER_MODE)
-    .u16(found.marker.operand).u8(found.marker.opcode);
-  const rowAt = actionTable.start;
-  const rowHole = relocate(c, rowAt, rowBytes.bytes.length);
-  rowHole.bytes.set(rowBytes.bytes, rowAt);
-  let current = parse(appendTableEntries(
-    parse(rowHole.bytes), actionSlot, [c.flashBase + rowAt]));
-
-  // 2. The mode, its pages, their lists, copies and hit pages, built by the device page template. The key map is
+  // 1. The mode, its pages, their lists, copies and hit pages, built by the device page template. The key map is
   // `compiled.keys`, a list per scan, every other key bound to nothing, section 271's device mode map.
-  current = withTouchDevicePage(current, mode, label, pads, options.compiled?.keys ?? new Map());
+  let current = withTouchDevicePage(c, mode, label, pads, options.compiled?.keys ?? new Map());
 
-  // 6. One row on each menu's last page: the bottom key moves from the two row layout's scan to
-  // the three row one's, the lead byte says which layout is in force, the list and its pool copy
-  // both grow by the row, and the program draws the label above the third row's background.
-  const pagesAdded: number[] = [];
-  for (const menu of found.menus) {
-    let record = modeRecords(current)?.[menu];
-    let page = record?.pages.at(-1);
-    if (record === undefined || page === undefined) throw new ComposeError('a menu lost its page');
-    let hits = touchPages(current)?.records ?? [];
-    const areas = hits[page.lead as number]?.areas.map((area) => area.code) ?? [];
-    const capacity = menuRowCapacity(areas);
-    if (capacity === undefined) {
-      throw new ComposeError(`menu ${menu}'s last page uses a hit page this does not know: `
-        + `[${areas.join(', ')}]`);
-    }
-    if (capacity === 3) {
-      // Full, so a new page rather than a new row: pages of three and the last page short is the
-      // one layout Logitech's compiler produces, section 239.
-      current = composeMenuPage(current, menu, rowList, label, options.iconLike);
-      pagesAdded.push(menu);
-      continue;
-    }
-    // A page of `capacity` rows grows by one: the new row is row `capacity`, counted from 0, on the scan the
-    // bottom key had, and the bottom key moves one scan up. This took a page of two rows alone until the
-    // test setup's third device landed on a page of one, `todo-compile-one.md` 1.2.9.
-    const k = capacity;
-    // The page it becomes: **this menu's own** page of one row more, taken from an earlier page of the
-    // same record rather than by searching the table. A config carries several hit pages offering
-    // the same set, so a search finds one of them and not the one the menu is drawn against.
-    let grown = record.pages
-      .map((one) => one.lead as number)
-      .find((lead) => menuRowCapacity(hits[lead]?.areas.map((area) => area.code) ?? []) === k + 1);
-    if (grown === undefined) {
-      // A menu that never held that many rows has no such page to take, and then the page is this one
-      // grown by a row: over Logitech's nineteen One compiles a device menu's hit page of one, two or three
-      // rows is one geometry each, held by 7, 5 and 13 of them, and each is the one before with a row added
-      // one step below its last, the bottom key and the edges unmoved, `test/menupage.test.ts`. The step is
-      // read off a page of this menu with two rows or more.
-      // `withHitPage` takes an identical page where the configuration already has one.
-      const now = new Map((hits[page.lead as number]?.areas ?? []).map((area) => [area.code, area]));
-      const rowsNow = Array.from({ length: k }, (_, r) => now.get(MENU_ROW_SCAN + r));
-      const [bottom, left, right] = [MENU_ROW_SCAN + k, ...MENU_EDGE_SCANS].map((code) => now.get(code));
-      const tall = record.pages.map((one) => hits[one.lead as number]?.areas ?? [])
-        .find((one) => (menuRowCapacity(one.map((area) => area.code)) ?? 0) >= 2);
-      const step = tall === undefined ? undefined
-        : (tall.find((area) => area.code === MENU_ROW_SCAN + 1)?.y ?? NaN) - (tall.find((area) => area.code === MENU_ROW_SCAN)?.y ?? NaN);
-      if (rowsNow.some((one) => one === undefined) || bottom === undefined || left === undefined || right === undefined
-          || step === undefined || Number.isNaN(step)) {
-        throw new ComposeError(`menu ${menu}'s ${k} row hit page is not a layout a row is added to`);
-      }
-      const last = rowsNow[k - 1] as TouchArea;
-      const wanted: [number, TouchArea][] = [
-        ...rowsNow.map((one, r): [number, TouchArea] => [MENU_ROW_SCAN + r, one as TouchArea]),
-        [MENU_ROW_SCAN + k, { ...last, y: last.y + step }],
-        [MENU_ROW_SCAN + k + 1, bottom], [MENU_EDGE_SCANS[0], left], [MENU_EDGE_SCANS[1], right],
-      ];
-      const made = withHitPage(current, wanted);
-      current = made.container;
-      grown = made.lead;
-      // The insertion may have moved the menu's page, so it is read again.
-      record = modeRecords(current)?.[menu];
-      page = record?.pages.at(-1);
-      if (record === undefined || page === undefined) throw new ComposeError('a menu lost its page');
-      hits = touchPages(current)?.records ?? [];
-    }
-    const list = taggedList(current, page.list);
-    if (list === undefined || list.entries.some((entry) => entry.flags !== undefined)) {
-      throw new ComposeError('a menu page list is not the narrow form the corpus uses');
-    }
-    // The list and its copy, the same edit twice: retag the bottom key one scan up, append the row on
-    // the scan it had, bump the count. The copy grows first, because it sits below the original and
-    // growing it moves the original.
-    // **Why the scan moves at all**: a code is an area's position in its hit page, section 275, so
-    // a two row page stores row, row, bottom key and numbers them 48, 49, 50, and the three row
-    // page it becomes numbers the same bottom key 51. Nothing about the key changes.
-    // It is the one entry on the bottom key's scan, whatever it runs: nine menus bind opcode `0x72` bare
-    // there and one wraps it in a beeping action list, so the retag keys on the scan and not on the
-    // opcode, and a page with no single entry there is refused as a layout this does not know.
-    // This said "the flip" until 7 September 2026 and that was wrong twice: the key is the left of
-    // the two below the display, and `0x72` maps a state variable's value, `actions.ts`.
-    const bottomScan = MENU_ROW_SCAN + k;
-    const flips = list.entries.filter((entry) => entry.tag === (0x80 | bottomScan)).length;
-    if (flips !== 1) {
-      throw new ComposeError(`a menu page binds scan ${bottomScan} ${flips} times, not the one bottom key expected`);
-    }
-    const entries = list.entries.length;
-    const grow = (listStart: number): void => {
-      const at = listStart + 1 + 4 * entries;
-      const hole = relocate(current, at, 4);
-      hole.bytes.set(new Writer(4).u8(0x80 | bottomScan).u16(rowList).u8(ACTION_LIST_INDEX_OPCODE).bytes, at);
-      hole.bytes[listStart] = entries + 1;
-      for (let e = 0; e < entries; e += 1) {
-        const entryAt = listStart + 1 + 4 * e;
-        if (hole.bytes[entryAt] === (0x80 | bottomScan)) hole.bytes[entryAt] = 0x80 | (bottomScan + 1);
-      }
-      current = parse(hole.bytes);
-    };
-    const pageAddress = page.address;
-    const pageIndex = modePages(current).findIndex((one) => one.address === pageAddress);
-    const copyOff = pageListCopies(current)[pageIndex];
-    if (copyOff === undefined) throw new ComposeError('a menu page has no pool copy');
-    grow(copyOff);
-    const moved = modeRecords(current)?.[menu]?.pages.at(-1);
-    const listOff = moved === undefined ? undefined : current.blobOffsetOf(moved.list);
-    if (listOff === undefined) throw new ComposeError('a menu page list moved out of reach');
-    grow(listOff);
-
-    // The lead byte, in place, after the relocations so nothing moves it again.
-    const after = modeRecords(current)?.[menu]?.pages.at(-1);
-    const afterOff = after === undefined ? undefined : current.blobOffsetOf(after.address);
-    if (afterOff === undefined) throw new ComposeError('a menu page moved out of reach');
-    current.blob[afterOff] = grown;
-    current = parse(current.blob);
-
-    // The program: the new row's background and the device's label, inserted where the closing
-    // switch begins, so the switch and its arms slide up and every stated target is restamped by
-    // the census like any other address. Row `k` sits `k` row pitches below the first.
-    const grownRecord = modeRecords(current)?.[menu];
-    const target = grownRecord?.pages.at(-1);
-    if (grownRecord === undefined || target === undefined) {
-      throw new ComposeError('a menu page moved out of reach');
-    }
-    const rowBg: readonly [number, number] = [MENU_ROW1_BG[0], MENU_ROW1_BG[1] + k * MENU_ROW_PITCH];
-    const rowLabelY = MENU_ROW1_LABEL_Y + k * MENU_ROW_PITCH;
-    // The background is read here, after the grows above moved it, and not at the top of the
-    // loop: a picture address read before an insertion below it is stale by that insertion. It is the one
-    // the first page draws at that row, which is Logitech's: on its nineteen One compiles a row draws one
-    // picture on every page of its menu, and the three rows of a page three different ones, section 397.
-    // Where the first page has no such row, its second row's is taken, which is a choice of ours.
-    // Corrected per review: this said rows two and three drew one picture.
-    const firstProgram = grownRecord.pages[0]?.program ?? 0;
-    const bg = pictureDrawnAt(current, firstProgram, ...rowBg)
-      ?? pictureDrawnAt(current, firstProgram, MENU_ROW1_BG[0], MENU_ROW1_BG[1] + MENU_ROW_PITCH);
-    if (bg === undefined) {
-      throw new ComposeError('a menu has no first page to take the row background from');
-    }
-    // Nine of the ten menus close with a switch drawing the bottom bar and one closes plain, so
-    // the insertion point is the final instruction either way: the rows sit above whatever the
-    // tail draws, and the switch's arms slide up with their targets restamped by the census.
-    const program = screenProgram(current, target.program);
-    const closing = program?.at(-1);
-    if (program === undefined || closing === undefined
-        || (closing.opcode !== SCREEN_SWITCH_NARROW && closing.opcode !== SCREEN_END)) {
-      throw new ComposeError('a menu page program does not end the way the corpus ends one');
-    }
-    const drawn = new Writer(6 + 2 + 1 + 2 + menuCodes.length + 1);
-    // The background sits above the insertion and moves with it, and these bytes are written
-    // after the hole opens, so the shift is applied here like the block's, not by the census.
-    const grownBg = bg + (bg >= current.flashBase + closing.start ? drawn.bytes.length : 0);
-    drawn.u8(SCREEN_DRAW_IMAGE).u8(rowBg[0]).u8(rowBg[1]).u24(grownBg);
-    // The font is selected here rather than inherited: nine menus still hold the row font where
-    // the insertion lands and the tenth has moved on to the page indicator's font by its end.
-    drawn.u8(SCREEN_SELECT_FONT).u8(MENU_ROW_FONT);
-    drawn.u8(SCREEN_TEXT_INLINE).u8(MENU_LABEL_X).u8(rowLabelY);
-    menuCodes.forEach((code) => drawn.u8(code));
-    drawn.u8(0);
-    const programHole = relocate(current, closing.start, drawn.bytes.length);
-    programHole.bytes.set(drawn.bytes, closing.start);
-    current = parse(programHole.bytes);
-  }
+  // 2. A row on every device list, by building the lists again, `withTouchDeviceListRow`, `todo-compile-one.md`
+  // 4.3.3: each row runs a list of its own, click, enter the mode, mark device mode, as on Logitech's lists, section
+  // 424, and a list whose last page was full gains a page. Until then this step appended a row to each list's last
+  // page and one list every row shared, which left the lists in a shape no compile of Logitech's has.
+  const pagesBefore = found.menus.map((menu) => modeRecords(current)?.[menu]?.pages.length ?? 0);
+  const rowList = (current.actionLists() ?? []).length;
+  current = withTouchDeviceListRow(current, mode, label, options.iconLike);
+  const pagesAdded = found.menus.filter((menu, k) => (modeRecords(current)?.[menu]?.pages.length ?? 0) > (pagesBefore[k] as number));
 
   return { bytes: restamped(current.blob), mode, menus: found.menus, rowList, pagesAdded };
 }

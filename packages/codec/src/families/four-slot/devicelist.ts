@@ -2,13 +2,13 @@
  * An activity's own device list on the Harmony 600, 650 and 700, built from the activity and the idle
  * list, composed and checked. Plan 007's four slot family, cut out of `compose.ts` unchanged.
  */
-import { STATE_WRITE_BASE } from '../../actions.ts';
 import { Writer } from '../../emit.ts';
 import { activityMaps } from '../../families/four-slot/activityscreen.ts';
 import {
   DEVICE_MODE_PROGRAM_TAG, DEVICES_KEY_TAG, inlineHomes, type KeyMapEntry,
 } from '../../families/four-slot/chrome.ts';
 import { appendMode } from '../../shared/modes.ts';
+import { startSwitchedOn } from '../../shared/activities.ts';
 import {
   fourSlotMenuChrome, type FourSlotMenuChrome, type FourSlotMenuLabel, type FourSlotMenuPageContent,
   fourSlotPageList, idleDeviceList, menuPageBytes, menuPageContent, menuPageParts, pageRecordDifference,
@@ -16,14 +16,14 @@ import {
 } from '../../families/four-slot/menus.ts';
 import { archSlot, Container, type Instruction, parse, SCAN_MASK } from '../../gspm.ts';
 import {
-  caseQueued, compilerTagOrder, devices as deviceInventory, deviceListRowMode, deviceModeMarker, deviceVariables,
-  ENTER_MODE, KEY_EVENT_PRESS, KEY_EVENT_SHIFT, MAP_VALUE_OPCODE, POWER_PROPERTY,
+  caseQueued, compilerTagOrder, deviceListRowMode, deviceModeMarker,
+  ENTER_MODE, KEY_EVENT_PRESS, KEY_EVENT_SHIFT, MAP_VALUE_OPCODE,
   RUN_SCREEN_PROGRAM, SELECT_BINDING_SET, SELECT_BINDING_SET_MASK, stateVariables,
 } from '../../inventory.ts';
 import { relocate } from '../../relocate.ts';
 import { screenProgram } from '../../screen.ts';
 import {
-  ACTION_LIST_INDEX_OPCODE, HANDLER_TAG_ENTER, handlerSets, modePages, modeRecords, modeTable, pageListCopies,
+  ACTION_LIST_INDEX_OPCODE, modePages, modeRecords, modeTable, pageListCopies,
   type TaggedEntry, taggedList,
 } from '../../sections.ts';
 import { arch14Starts, type Arch14Starts, LOCATION_STATE_NAME } from './start.ts';
@@ -47,63 +47,15 @@ export interface ComposedActivityDeviceList {
 }
 
 /**
- * The devices an activity switches on, as the device modes the device list enters for them, in the
- * order its enter list switches them on.
- *
- * **The enter list's own instructions and the lists it calls, and no deeper**: a real one groups its
- * power writes into a called list on 12 of 13, `h600_config`'s `[KPN_Power=1 TV_Power=1]`, and writes
- * them inline on the one activity with a single device, as a composed one always does, and both are
- * found at that depth. Deeper is the Remote Assistant's branch, whose
- * lists this has no business reading a device out of.
- *
- * **A device with no power variable is a placeholder in that group**, an instruction of opcode and
- * operand zero where its power write would be: Kodi on the Harmony 650, the Chromecast on the Harmony
- * 600 and the Roku on the Harmony 700, first in its group on all three. Nothing in the enter list says
- * which device it stands for, and on each of those configurations exactly one device on the list has
- * no power variable, so it is that one, by elimination, and two such devices are refused rather than
- * guessed between, a case no configuration here has. `composeActivity` never
- * writes one, since a device without a power variable cannot be one of its targets.
+ * The devices an activity switches on, as the device modes the device list enters for them, in the order its enter
+ * list switches them on: `startSwitchedOn`, the rule both families' activity device lists share since
+ * `todo-compile-one.md` 4.3.3, whose docstring holds the measurements, with the activity's base slot 9 entry found
+ * through the four slot start reader.
  */
 function activitySwitchedOn(c: Container, activity: number, starts: Arch14Starts, listed: readonly number[]): number[] {
-  const lists = c.actionLists() ?? [];
   const set = starts.sets.get(activity);
-  const address = set === undefined ? undefined : handlerSets(c)?.addresses[set];
-  const enter = address === undefined ? undefined
-    : taggedList(c, address)?.entries.find((one) => one.tag === HANDLER_TAG_ENTER);
-  const enterList = enter === undefined ? undefined : lists[enter.operand];
-  if (enterList === undefined) throw new ComposeError(`activity ${activity} has no enter list to read its devices from`);
-
-  const power = new Map(deviceVariables(c).filter((one) => one.property === POWER_PROPERTY)
-    .map((one) => [one.index, one.device]));
-  const modeOf = new Map<number, number>();
-  const unpowered: number[] = [];
-  for (const device of deviceInventory(c)) {
-    if (device.mode === undefined || !listed.includes(device.mode)) continue;
-    const own = device.variables.filter((one) => power.has(one));
-    if (own.length === 0) unpowered.push(device.mode);
-    for (const variable of own) modeOf.set(variable, device.mode);
-  }
-
-  const out: number[] = [];
-  const add = (mode: number): void => { if (!out.includes(mode)) out.push(mode); };
-  const read = (instructions: readonly Instruction[], depth: number): void => {
-    for (const one of instructions) {
-      if (one.opcode === ACTION_LIST_INDEX_OPCODE && depth === 0) {
-        read(lists[one.operand] ?? [], depth + 1);
-      } else if (one.opcode === 0 && one.operand === 0) {
-        if (unpowered.length !== 1) {
-          throw new ComposeError(`activity ${activity} switches on a device with no power variable and `
-            + `${unpowered.length} devices on the list have none, so which one it is cannot be told`);
-        }
-        add(unpowered[0] as number);
-      } else if (one.opcode >= STATE_WRITE_BASE && one.operand !== 0) {
-        const mode = modeOf.get(one.opcode - STATE_WRITE_BASE);
-        if (mode !== undefined) add(mode);
-      }
-    }
-  };
-  read(enterList, 0);
-  return out;
+  if (set === undefined) throw new ComposeError(`activity ${activity} has no enter list to read its devices from`);
+  return startSwitchedOn(c, set, listed, `activity ${activity}`);
 }
 
 /**

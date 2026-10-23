@@ -12,16 +12,16 @@ import { STATE_WRITE_BASE } from '../actions.ts';
 import { u24 } from '../bytes.ts';
 import { applyEdits } from '../edit.ts';
 import { Writer } from '../emit.ts';
-import { archSlot, Container, parse, SCAN_MASK } from '../gspm.ts';
+import { archSlot, Container, type Instruction, parse, SCAN_MASK } from '../gspm.ts';
 import {
-  activities, ACTIVITY_STATE_NAME, caseQueued, deviceVariables, ENTER_MODE, firmwareStateVariableMax,
-  INPUT_PROPERTY, KEY_EVENT_PRESS, KEY_EVENT_SHIFT, MAP_VALUE_OPCODE, SELECT_BINDING_SET,
-  SELECT_BINDING_SET_MASK, stateVariables,
+  activities, ACTIVITY_STATE_NAME, caseQueued, devices, deviceVariables, ENTER_MODE, firmwareStateVariableMax,
+  infraredGroupsPerList, INPUT_PROPERTY, KEY_EVENT_PRESS, KEY_EVENT_SHIFT, MAP_VALUE_OPCODE, POWER_PROPERTY,
+  SELECT_BINDING_SET, SELECT_BINDING_SET_MASK, stateVariables,
 } from '../inventory.ts';
 import { relocate } from '../relocate.ts';
 import {
   ACTION_LIST_INDEX_OPCODE, HANDLER_TAG_ENTER, HANDLER_TAG_LEAVE, handlerSets, NAME_NODE_HEADER, type NameNode,
-  modeRecords, nameNodes, stateTable,
+  modeRecords, nameNodes, stateTable, taggedList,
 } from '../sections.ts';
 import {
   ACTION_TABLE_SLOT, ComposeError, HANDLER_TAG_RESUME, restamped, STATE_WRITE_LIMIT,
@@ -634,4 +634,83 @@ export function activityKeyedMaps(
       + `${devices.length} Devices key and ${select.length} keypad map records, not 1, some and at most 1`);
   }
   return { working: working[0] as number, devices, select: select[0] };
+}
+
+/**
+ * The devices an activity's start switches on, as the device modes a device list enters for them, in the order its
+ * enter list switches them on: the head of the activity's own device list, whose rows are those devices first and
+ * then the rest in the idle list's order. **One rule for both families**, measured on each: the Harmony 600, 650
+ * and 700's lists, 78 of 82, findings section 352, and the Harmony One's on 61 of Logitech's 64 activities, section
+ * 424, the other three refused below. The transition route below was added for the Harmony One, where the devices'
+ * variables alone fit 44 of the 64; on the 82 four slot activities the two routes give the same answer on all 82. It was the four slot family's own, `devicelist.ts`, until
+ * `todo-compile-one.md` 4.3.3 took it for the Harmony One too.
+ *
+ * **The enter list's own instructions and the lists it calls, and no deeper**: a real one groups its power writes
+ * into a called list on 12 of 13 four slot activities, every Harmony One one calls a list (nine of the 64 also hold a
+ * power write inline), and a composed one writes them inline, and all are found at that depth. Deeper is the Remote Assistant's branch, whose lists this has no
+ * business reading a device out of.
+ *
+ * **Which device a power write switches on** is read off the variable's own transition to 1, which sends that
+ * device's code and no other's, section 86, and then off the device's variables where the transition sends nothing:
+ * on five Harmony One compiles, all of one account, the set top box's power variable is named by no device, `devices` pairing that one
+ * by its screen, so the device's variables alone miss it, which `activityPauseGroups` met first, section 327.
+ *
+ * **A device with no power variable is a placeholder in that group**, an instruction of opcode and operand zero
+ * where its power write would be: Kodi on the Harmony 650, the Chromecast on the Harmony 600, the Roku on the
+ * Harmony 700 and Kodi on the Harmony One, first in its group on all four. Nothing in the enter list says which
+ * device it stands for, so it is the one device on the list with no power variable, by elimination, and two such
+ * devices are refused rather than guessed between: one Harmony One compile, `compiled_protocols_3`, holds two, and
+ * its three activities with a placeholder are the three refused. `composeActivity` never writes one, since a device
+ * without a power variable cannot be one of its targets.
+ *
+ * `set` is the activity's base slot 9 entry, whose enter handler is the start; `listed` the device modes the list
+ * holds, its rows.
+ */
+export function startSwitchedOn(c: Container, set: number, listed: readonly number[], what: string): number[] {
+  const lists = c.actionLists() ?? [];
+  const address = handlerSets(c)?.addresses[set];
+  const enter = address === undefined ? undefined
+    : taggedList(c, address)?.entries.find((one) => one.tag === HANDLER_TAG_ENTER);
+  const enterList = enter === undefined ? undefined : lists[enter.operand];
+  if (enterList === undefined) throw new ComposeError(`${what} has no enter list to read its devices from`);
+
+  const inventory = devices(c);
+  const byGroup = new Map(inventory.flatMap((one) => (one.group === undefined || one.mode === undefined ? [] : [[one.group, one.mode] as const])));
+  const sends = infraredGroupsPerList(c);
+  const records = new Map(stateVariables(c).map((one) => [one.index, one.record]));
+  const modeOf = new Map<number, number>();
+  for (const variable of deviceVariables(c)) {
+    if (variable.property !== POWER_PROPERTY) continue;
+    const reached = new Set<number>();
+    for (const value of records.get(variable.index)?.values ?? []) {
+      if (value.to !== 1 || value.opcode !== ACTION_LIST_INDEX_OPCODE) continue;
+      for (const group of sends.get(value.operand) ?? []) reached.add(group);
+    }
+    const mode = reached.size === 1 ? byGroup.get([...reached][0] as number)
+      : inventory.find((one) => one.variables.includes(variable.index))?.mode;
+    if (mode !== undefined && listed.includes(mode)) modeOf.set(variable.index, mode);
+  }
+  const powered = new Set(modeOf.values());
+  const unpowered = listed.filter((mode) => !powered.has(mode));
+
+  const out: number[] = [];
+  const add = (mode: number): void => { if (!out.includes(mode)) out.push(mode); };
+  const read = (instructions: readonly Instruction[], depth: number): void => {
+    for (const one of instructions) {
+      if (one.opcode === ACTION_LIST_INDEX_OPCODE && depth === 0) {
+        read(lists[one.operand] ?? [], depth + 1);
+      } else if (one.opcode === 0 && one.operand === 0) {
+        if (unpowered.length !== 1) {
+          throw new ComposeError(`${what} switches on a device with no power variable and `
+            + `${unpowered.length} devices on the list have none, so which one it is cannot be told`);
+        }
+        add(unpowered[0] as number);
+      } else if (one.opcode >= STATE_WRITE_BASE && one.operand !== 0) {
+        const mode = modeOf.get(one.opcode - STATE_WRITE_BASE);
+        if (mode !== undefined) add(mode);
+      }
+    }
+  };
+  read(enterList, 0);
+  return out;
 }

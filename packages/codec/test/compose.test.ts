@@ -418,7 +418,9 @@ test('one_config takes the television onto its screen and every check holds', sk
               `label ${k} is centred on its pad`);
   });
 
-  // Every menu's grown page: the row on scan 50 runs the shared entering list, the bottom key moved
+  // Every menu's grown page: the row on scan 50 runs a list of its own entering the mode (one list every menu's row
+  // shared until `todo-compile-one.md` 4.3.3 built the lists whole, section 424, as Logitech's rows each run their
+  // own), the bottom key moved
   // scan 51 whatever spelling it had, the lead byte declares the three row layout, and the page
   // still renders whole in every variant. Menu 233 is why the bottom key is asserted by scan and not
   // by opcode: nine menus bind bare `0x72` and it wraps its own in a beeping action list.
@@ -428,7 +430,9 @@ test('one_config takes the television onto its screen and every check holds', sk
     const list = taggedList(after, grown.list)!;
     const row = list.entries.filter((one) => one.tag === (0x80 | 50));
     assert.equal(row.length, 1, `menu ${menu} binds scan 50 once`);
-    assert.deepEqual([row[0]!.opcode, row[0]!.operand], [0x7f, composed.rowList]);
+    assert.equal(row[0]!.opcode, 0x7f);
+    assert.deepEqual(after.actionLists()![row[0]!.operand]!.map((one) => [one.opcode, one.operand]),
+                     [[0x75, 0x0fca], [0x7e, composed.mode], [0x98, 1]], `menu ${menu}'s row enters the mode`);
     assert.equal(list.entries.filter((one) => one.tag === (0x80 | 51)).length, 1,
                  `menu ${menu} kept its flip, on the bottom key`);
     for (const variant of renderVariants(after, grown.program).variants) {
@@ -440,9 +444,6 @@ test('one_config takes the television onto its screen and every check holds', sk
   // The reachability half, the checklist's own wording: the device list page's bindings reach the
   // new page, and the new page's bindings reach the new commands, walked off the container.
   const lists = after.actionLists()!;
-  assert.deepEqual(lists[composed.rowList]!.map((one) => [one.opcode, one.operand]),
-                   [[0x75, 0x0fca], [0x7e, composed.mode], [0x98, 1]],
-                   'the row beeps, enters the mode and marks device mode, as every corpus row does');
   ROWS.forEach((row) => {
     const bound = bindings.entries.find((one) => (one.tag & 0x3f) === 48 + row.k)!;
     // Through its click list, section 404.
@@ -1921,8 +1922,9 @@ test('the spare Harmony One config gets a third device list page on every menu, 
   assert.ok(added.areas.every((area) => area.self === area.address), 'each area ends in its own address');
 
   // Every menu: three pages of three, three and one row, the new page on the new hit page, its row
-  // on the top scan running the shared entering list, its bottom key bound the way the page before
-  // it binds its own, and the page drawing whole in every variant of its bottom key.
+  // on the top scan running a list of its own entering the mode (a list every menu shared until
+  // `todo-compile-one.md` 4.3.3, section 424), its bottom key bound the way the page before it binds
+  // its own, and the page drawing whole in every variant of its bottom key.
   const lists = after.actionLists()!;
   for (const menu of composed.menus) {
     const record = modeRecords(after)![menu]!;
@@ -1933,13 +1935,19 @@ test('the spare Harmony One config gets a third device list page on every menu, 
     assert.equal(added3.lead, hitsBefore, `menu ${menu}'s new page uses the new hit page`);
     const list = taggedList(after, added3.list)!;
     const previous = taggedList(after, record.pages[1]!.list)!.entries.find((one) => one.tag === (0x80 | 51))!;
-    assert.deepEqual(list.entries.map((one) => [one.tag & 0x3f, one.opcode, one.operand]),
-                     [[48, 0x7f, composed.rowList], [49, previous.opcode, previous.operand]]);
-    assert.deepEqual(lists[composed.rowList]!.map((one) => [one.opcode, one.operand]),
+    const rowAt = list.entries[0]!;
+    // The bottom key as the page before binds it: straight to the same value map, or, on the list nothing enters,
+    // to a list of its own of the same instructions, each page its own as on Logitech's, section 424.
+    const body = (one: { opcode: number; operand: number }): unknown =>
+      (one.opcode === 0x7f ? lists[one.operand]!.map((item) => [item.opcode, item.operand]) : one.operand);
+    assert.deepEqual(list.entries.map((one) => [one.tag & 0x3f, one.opcode, one === rowAt ? one.operand : body(one)]),
+                     [[48, 0x7f, rowAt.operand], [49, previous.opcode, body(previous)]]);
+    assert.deepEqual(lists[rowAt.operand]!.map((one) => [one.opcode, one.operand]),
                      [[0x75, 0x0fca], [0x7e, composed.mode], [0x99, 1]],
                      'the row beeps, enters the mode and marks device mode with this config\'s own variable');
     // Eight menus close on the bottom key switch and render twice, `Activities` and `Current
-    // Activity`; menu 253, the list shown while an activity runs, draws its key plain and renders once.
+    // Activity`; menu 253, the list nothing enters (section 424, which corrects "the list shown while an
+    // activity runs" here), draws its key plain and renders once.
     const rendered = renderVariants(after, added3.program);
     assert.equal(rendered.variants.length, menu === 253 ? 1 : 2, `menu ${menu}'s bottom key states`);
     // And it pages. Section 293: the header said "2 pages" on all nine until `paginate` restated it,
@@ -1953,8 +1961,12 @@ test('the spare Harmony One config gets a third device list page on every menu, 
     }
   }
 
-  // Section 69's rail, for the nine new pages and the device's own: a pool copy each, agreeing.
+  // Section 69's rail, for the nine new pages and the device's own: a pool copy each, agreeing. Since
+  // `todo-compile-one.md` 4.3.3 a list page's copy runs lists of its own with the same instructions, as Logitech's
+  // copies do, section 424, so a list is compared by what it runs.
   const pages = modePages(after);
+  const runs = (one: { opcode: number; operand: number }): unknown =>
+    (one.opcode === 0x7f ? lists[one.operand]!.map((item) => [item.opcode, item.operand]) : one.operand);
   const copies = pageListCopies(after);
   assert.equal(pages.length, pagesBefore + 1 + composed.menus.length);
   assert.equal(copies.length, pages.length, 'one copy per page');
@@ -1963,8 +1975,8 @@ test('the spare Harmony One config gets a third device list page on every menu, 
     const index = pages.findIndex((one) => one.address === page.address);
     const mine = taggedList(after, page.list)!;
     const copy = taggedList(after, copies[index]! + after.flashBase)!;
-    assert.deepEqual(copy.entries.map((one) => [one.tag, one.opcode, one.operand]),
-                     mine.entries.map((one) => [one.tag, one.opcode, one.operand]));
+    assert.deepEqual(copy.entries.map((one) => [one.tag, one.opcode, runs(one)]),
+                     mine.entries.map((one) => [one.tag, one.opcode, runs(one)]));
   }
 
   // And the inventory reads the seventh device off the list, as section 240 reads the Wii.
@@ -2009,7 +2021,10 @@ test('a menu whose last page holds one row grows to two: the second row on the n
   for (const menu of grown.menus) {
     assert.equal(boundOn(before, menu, 49).length, 1, `menu ${menu}: one bottom key before`);
     assert.deepEqual(boundOn(after, menu, 50), boundOn(before, menu, 49), `menu ${menu}: the bottom key, one scan up`);
-    assert.deepEqual(boundOn(after, menu, 49), [`${ACTION_LIST_INDEX_OPCODE}:${grown.rowList}`], `menu ${menu}: the new row`);
+    const [row] = taggedList(after, modeRecords(after)![menu]!.pages.at(-1)!.list)!.entries.filter((entry) => entry.tag === (0x80 | 49));
+    assert.equal(row?.opcode, ACTION_LIST_INDEX_OPCODE, `menu ${menu}: the new row`);
+    assert.deepEqual(after.actionLists()![row!.operand]!.map((one) => [one.opcode, one.operand]),
+                     [[0x75, 0x0fca], [0x7e, grown.mode], [0x99, 1]], `menu ${menu}: the new row enters the mode`);
   }
 });
 
