@@ -56234,15 +56234,16 @@ it is refused and has never run. In none of the four did a wrong rule produce a 
 sentences did not say. Two smaller points: "the step is a fixed point" was an early return, and the scope sentence
 named arch 14 only.
 
-## 422. The Harmony One's fixed pictures are drawn by us inside Logitech's masks, and its whole screen background is one black picture the charger's blank screens draw too
+## 422. The Harmony One's fixed pictures are drawn by us inside Logitech's masks, and its whole screen background is one black picture the six photograph blank screens draw too
 
 `todo-compile-one.md` 5.3.1 and 5.3.3. **Decided on the sample of 18 October 2026**: every fixed picture past the
 setup's gets ours, each the size of Logitech's with Logitech's transparency mask, black inside the mask where our
 drawing leaves a pixel empty; flat boxes in `TouchChoices.settingsBox` for the settings screens' buttons, their corners
 outside the rounding black; white icons of the icon font placed by section 373's rule; the battery gauge by rule with
-no charging difference; the sending mark off and the clock face all black. The whole screen background behind 75
-screens is all black: ours is one picture, and the six blank screens a timer shows on the charger draw it in place of
-Logitech's three photographs. The tour's illustrations are not drawn, since the tour is left out, section 421.
+no charging difference; the sending mark off and the clock face all black. The whole screen background, drawn by 66 to
+314 instructions a compile over the sixteen and 75 on the test setup's donor, is all black: ours is one picture, and the
+six blank screens a timer enters, whose purpose is still open, section 408, draw it in place of Logitech's three
+photographs. The tour's illustrations are not drawn, since the tour is left out, section 421.
 **Sources checked first**: the sample's notes and its drawing code, sections 363, 366 and 373 for the Harmony 650's
 pictures, section 405 for the census of the One's fixed pictures, section 414 for the clock header that draws the
 status strip, and section 421 for what the tour takes with it. Logitech's client was not consulted: the drawings are
@@ -56272,17 +56273,34 @@ the shorter side. The icons are a choice, `TouchChoices.pictureIcons`, the Harmo
 
 ### The closures
 
-**Size and mask, on every picture of the sixteen**: ours drawn for each of the 37 or 38, `touchPictureRows`, is the
-size of Logitech's and drawn at exactly its pixels, 604 of 604, and the configuration built holds each one's bytes.
-The control: Logitech's mask with one drawn pixel of the cross made undrawn is told apart from ours. The two ends are
-independent: Logitech's mask is read off its own bytes, ours off the pixels our drawing and the mask give.
+**Mask, on every picture of the sixteen: by construction, so no closure.** `touchPictureRows` takes Logitech's mask
+off the picture it replaces, so ours is drawn at exactly Logitech's pixels on all 604 and the comparison cannot fail.
+604 counts copies, 37 or 38 pictures a compile, of 29 distinct images. The control, Logitech's mask with one drawn
+pixel of the cross made undrawn, shows only that the comparison tells two masks apart. An earlier version of this
+section called the two ends independent, which was wrong: both ends were Logitech's mask.
 
-**The places, measured again**: the seven icons' squares, re-derived in the test from Logitech's pictures by the rule
-above, are the numbers the module states, 7 of 7.
+**Size, which has two ends**: ours encoded, `encodeBitmap` over our pixels, is as many bytes as the Logitech picture it
+replaces, whose length is what its own header states, on all 604 of the sixteen and on all 716 pictures of the nineteen
+Harmony One compiles (the three outside the sixteen are the everyday One's, its unprogrammed one and the Dutch one).
+**What that shows and what it does not**: our encoder picks the same form and the same runs Logitech's does over the
+same mask, so a drawing that left a pixel inside the mask empty and made it black costs nothing extra. It says nothing
+of the pixels, which are ours by decision, and it is no check on the drawing. The configuration built holds each
+picture's bytes and holds them in the place of the one replaced: the bank's pictures in order, less the background's
+other copies and the photographs, are ours where Logitech's were, 32 of 32 on every one of the sixteen. Test 2 used to
+assert only that the bytes exist somewhere in the bank, under a title that said "in its place".
+
+**The places, applied again**: the seven icons' squares, computed in the test from Logitech's pictures by the rule
+above, are the numbers the module states, 7 of 7. **This is a fitted rule with no outside sample**: it was fitted to
+these seven images, with two special cases, the charging screen's 0.8 and the cross's undrawn corner, and then scored
+on them. It shows the stated numbers follow from the rule, not that the rule holds for another picture.
 
 **The background, by its references**: on the donor 75 references name the background's three copies and two name
-each photograph. After the step one black picture is named by all 81, Logitech's bytes exactly, all 38720 pixels
-`0x0000`, and the file is five pictures shorter, 387225 bytes.
+each photograph. Over the sixteen the references to the background's copies count from 66 (`harvest_one_families_1`) to
+314 (`compiled_protocols`), by how many devices and activities a compile holds, and each photograph is named twice on
+every one. After the step one black picture is named by all 81 on the donor, Logitech's bytes exactly, all 38720 pixels
+`0x0000`, and the file is five pictures shorter, 387225 bytes. **The seven blank screens each draw one picture, the
+same on all sixteen**: six draw the three photographs, two each, and the fourth in mode order draws the charging
+screen's picture, which has an entry of its own. Nothing here says what the six are for.
 
 ### Why the background stays a whole screen
 
@@ -56310,20 +56328,24 @@ does not find, draws them.
 the choice keeps Logitech's, and the pictures join `TOUCH_BUILT` for the attribution, `touchBuiltBytes`, which finds a
 picture of ours by what it is: an entry of its size, drawn inside its own mask, giving its bytes exactly. Not in
 `withTouchBuilders`, which rebuilds a configuration as it holds it, so Logitech's compile still comes back byte for
-byte through the fourteen; on that compile the attribution credits the pictures with 234897 bytes, Logitech's five
-all black pictures that the rule reproduces.
+byte through the fourteen; on that compile, with the background stored three times, the attribution credits the pictures with 234897 bytes,
+Logitech's five all black pictures that the rule reproduces. **It finds a picture by reproducing it with the drawing
+rule**, so it counts what the rule reproduces and tests nothing about who drew a picture. On the twelve of the sixteen
+that store the background four times it finds six, the four compiles with three copies five.
 
 **On the composed test setup** the file goes from 1512234 to 1099602 bytes, 412632 fewer: the background's two other
 copies and the three photographs, 387225; the six pads of Logitech's, 48630; and two font sets more, 23223, since the
 look blends our letters against the colour under them and the settings buttons are now one orange, fifteen blended
-sets where there were thirteen. Every other picture of ours encodes to as many bytes as Logitech's, its mask being the
+sets where there were thirteen. **That figure was the remainder of the other two and has now been measured**: the two sets
+blended against the orange are 10930 and 12287 bytes in the finished file, 23217, and their two entries in the font
+table are 6 more, 23223. Every other picture of ours encodes to as many bytes as Logitech's, its mask being the
 same. The labels on a settings box take `labelWeight`, as an activity's and a device's do. The pictures' part is 32
 pictures, 294663 bytes: the status strip's sixteen, 8687, the firmware screens' and the power off help's six, 110686,
 the nine buttons, 97845, and the background, 77445. **Carried** 876509 to 145991: `picture` 773130 to 42612, which is
 mode 70's two rows and two icons.
 
 **Rendered, before and after**: the three firmware screens with a picture, the charging screen, a power off help
-screen and the attempt screen, a clock picker, the Year picker, Options, a charger blank screen, a device page and the
+screen and the attempt screen, a clock picker, the Year picker, Options, a blank screen, a device page and the
 activity menu, each with the status strip drawn over it, the gauge at level 5 and the sending mark on. One thing to
 look at on the remote: Low Battery's text crosses the icon, as it crosses Logitech's picture, the icon taking the
 place of Logitech's ink.
@@ -56337,8 +56359,34 @@ through it; `withoutUndrawnPictures` is shared and has run on the Harmony One al
 ### Still open
 
 Written to the spare Harmony One and seen there. Whether the firmware clears the screen before a page, which a smaller
-background needs. Mode 70's rows and icons, Logitech's still. The two European compiles and the Dutch one, refused
+background needs. **A candidate for it, from a blind review and unconfirmed**: Logitech's own compiles hold 11 screen
+pages that cover the whole screen with one instruction of screen program opcode 1, operands x 0, y 0, width 176, height
+220 and colour 0, and draw no whole screen picture, only one smaller picture after it, on each of the sixteen; further
+compiles hold up to five more pages with the same instruction and a whole screen picture too, 11 to 16 pages a
+compile in all, counted on each page's default path with calls followed. If opcode 1 is a fill, our background could
+be one instruction and not a 77445 byte picture. That reading is the reviewer's inference: `render.ts` ignores the
+opcode and the firmware's handler is not read. **And one further structure from the same review**: on every compile
+many pages draw text before a whole screen picture, 100 to 458 pages a compile, 105 of 127 whole screen pages on the
+donor, same default path, and the picture, which has no undrawn pixel, then covers the text completely. Mode 70's rows and icons, Logitech's still. The two European compiles and the Dutch one, refused
 before this step by the builders before it.
+
+**Corrections to this section, recorded in place.** Two reviewers found seven overstatements and each was checked
+before it was changed. (1) The figure 75, said of the screens the background sits behind, is the donor's count, `harvest_one_two_devices`, of draw instructions and
+not of screens, stated as if it were the Harmony One's; over the sixteen it is 66 to 314, the reviewer's range
+reproduced. (2) "604 of 604, the two ends are independent" overclaimed: the mask is Logitech's by construction, so that
+comparison cannot fail, and 604 counts copies of 29 images. What is independent is the encoded size, which holds on
+all 716 pictures of the nineteen compiles. Test 2's title said "in its place" while it asserted only that the bytes
+exist somewhere in the bank; it asserts the place now. (3) The icon places are a fitted rule scored on the seven it
+was fitted to. (4) Calling the six photograph screens the charger's had no source: what is measured is that a timer enters them and
+that they draw the photographs, and section 408 leaves their purpose open. The charger state variable's reading is
+unconfirmed, section 414. The seventh blank screen draws the charging screen's picture, and not the background, which
+reconciles `display.md`'s seven with the six of this section. (5) "Two font sets more, 23223" was the remainder of the
+other two figures; it is 23217 measured plus 6 for two font table entries. (6) "Five all black pictures" holds on the
+four compiles with three background copies and the attribution finds six on the other twelve. (7) Test 4 named the
+donor where it meant Logitech's compile and test 5's "finds every one of ours" is circular, since it recognises a
+picture by reproducing it with the drawing rule. **One reviewer point was slightly off**: the 11 fill pages are not
+"without a picture", each draws one smaller picture after the fill; they lack a whole screen picture. In none of these
+did a wrong rule produce a right answer: the code did what the sentences did not say.
 
 Where it lives:
 

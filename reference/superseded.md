@@ -623,3 +623,6 @@ it reachable in the same commit and the test comparing the two tables is what ca
 | `Channel Up sends SkipForward on the Denon` | section 397, corrected per review | as above |
 | `All 90 device modes` | section 397, corrected by section 420's review | 91 device modes, 85 of several pages and 6 of one page; `harvest_one_families_1`'s mode 73 is a device page the device reader misses |
 | `indexing a font table at` | section 40, corrected | the font pointer is in RAM at `0x398` on the Harmony 700 and at `0x2EC` on the Harmony One; the 600's is not read |
+| `behind 75 screens` | section 422, corrected per review | 75 is the donor's count of draw instructions naming the background, not screens and not the Harmony One's; over the sixteen it is 66 to 314 |
+| `the charger's six blank screens` | section 422, corrected per review | six of the seven blank screens a timer enters draw the three photographs, their purpose is open, section 408; the seventh draws the charging screen's picture |
+| `The two ends are independent: Logitech's mask is read off its own bytes` | section 422, corrected per review | the mask is Logitech's by construction; only the encoded size has two ends |

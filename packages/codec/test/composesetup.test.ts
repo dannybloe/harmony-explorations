@@ -133,10 +133,11 @@ test('the One test setup composed onto Logitech\'s compile of two devices comes 
   // they drew, Options on one page without the two rows that led there, and every text drawn inline once and by
   // reference after, in address order, over what is left. 1099602 since `todo-compile-one.md` 5.3.1 and 5.3.3, 412632
   // bytes fewer, section 422: the whole screen background one picture where Logitech's compile stores three, and the
-  // charger's three photographs drawn as it, five pictures of 77445 bytes out, 387225; the device pages' six pads of
+  // three photographs the six blank screens draw drawn as it, five pictures of 77445 bytes out, 387225; the device pages' six pads of
   // Logitech's out of the bank, 48630, which the look had pointed every draw away from and left drawn by nothing; and
-  // two font sets more, 23223, our letters blended for the settings screens' buttons, now one orange where Logitech's
-  // were a gradient. Every other picture of ours is the size of Logitech's it replaces, with its mask, so encodes to
+  // two font sets more, 23223: measured, the two sets blended against the orange are 10930 and 12287 bytes, 23217, and
+  // their two entries in the font table are 6 more. Our letters blended for the settings screens' buttons, now one
+  // orange where Logitech's were a gradient. Every other picture of ours is the size of Logitech's it replaces, with its mask, so encodes to
   // as many bytes.
   assert.equal(c.blob.length, 1099602);
 });

@@ -69,7 +69,7 @@
  *    one refusing a raw slot 18 holding anything else, the other keeping a donor's records as they are;
  * 13. on the composed path only, and after every builder above, ours in place of Logitech's fixed pictures, the
  *    status strip's, the firmware screens', the power off help's, the settings buttons' and the one whole screen
- *    background the charger's screens draw too, `pictures.ts`, `todo-compile-one.md` 5.3.1 and 5.3.3, section 422,
+ *    background the six blank screens drawing photographs draw too, `pictures.ts`, `todo-compile-one.md` 5.3.1 and 5.3.3, section 422,
  *    unless `TouchChoices.logitechPictures` keeps them. A choice and not a rebuild, as leaving the tour out is, so
  *    `withTouchBuilders` does not run it and Logitech's compile still comes back byte for byte through the rest;
  *    last, since the screens' descriptions read a picture as a reference and not by its bytes, and the background's

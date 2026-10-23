@@ -2059,8 +2059,8 @@ Why is unread and it costs nothing either way, since the copy is idempotent.
 
 **On the Harmony One the whole screen background is all black and stored more than once**: raw, 176 by 220, every
 pixel `0x0000`, 77445 bytes, three times on four of the sixteen English compiles of skin 54 and four times on the
-other twelve, each copy byte identical. The charger's six blank screens draw three photographs of the same size
-instead, two screens each. A configuration of ours holds the background once and those screens draw it too, every
+other twelve, each copy byte identical. Six of the seven blank screens a timer enters draw three photographs of the same size
+instead, two screens each, and the seventh draws the charging screen's picture. A configuration of ours holds the background once and those screens draw it too, every
 reference to a copy or a photograph pointed at the one. **A picture nothing names is not a piece of its own** to
 `takeApart`: its bytes are carried on the end of the piece before it, so taking one out is a cut by the extent its
 header states. [findings.md](findings.md) section 422.

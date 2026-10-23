@@ -1,10 +1,12 @@
 /**
  * The Harmony One's fixed pictures drawn by us, `todo-compile-one.md` 5.3.1 and 5.3.3, findings section 422,
  * `families/touch/pictures.ts`: every picture of ours Logitech's size with Logitech's transparency mask, each icon
- * where Logitech's ink sits, and the whole screen background one black picture that the charger's blank screens
- * draw too. Logitech's pictures are read off the lab's compiles here and never written into the repository.
+ * where Logitech's ink sits, and the whole screen background one black picture that the six blank screens drawing
+ * photographs draw too. Logitech's pictures are read off the lab's compiles here and never written into the repository.
  *
- * Every figure is exact.
+ * Every figure is exact. **What the closures here do and do not show**, findings section 422: the mask of every
+ * picture of ours is Logitech's by construction, so a mask comparison cannot fail and only shows the comparison works;
+ * the size of ours encoded against Logitech's is the closure with two ends, our encoder and Logitech's own bytes.
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -59,34 +61,69 @@ test('todo-compile-one 5.3: every one of the 29 pictures of Logitech\'s the modu
   }
 });
 
-test('todo-compile-one 5.3.1: on each of the sixteen every picture of ours is the size of Logitech\'s it replaces and drawn at exactly its pixels, and the file holds it in its place',
+test('todo-compile-one 5.3.1: on each of the sixteen every picture of ours encodes to as many bytes as the Logitech picture it replaces and sits in that picture\'s place in the bank, with the mask taken from it',
      skipUnless(...SIXTEEN), () => {
   for (const name of SIXTEEN) {
     const c = parse(require_(name));
     const { pictures } = readTouchPictures(c);
     const placed = withTouchPictures(c, TOUCH_CHOICES);
     const after = picturesByContent(placed.container);
+    // The bank's pictures in order, as the placed file holds them: the replaced ones keep their order, and the
+    // background's other copies and the photographs, merged onto the first copy, are the ones gone.
+    const first = pictures.find((one) => one.entry?.name === 'whole screen background')!;
+    const merged = (one: typeof first): boolean => one.entry?.drawing.kind === 'background' && one !== first;
+    const kept = pictures.filter((one) => !merged(one));
+    const bank = readTouchPictures(placed.container).pictures;
+    assert.equal(bank.length, kept.length, name);
     let checked = 0;
-    for (const one of pictures) {
-      if (one.entry === undefined) continue;
+    let atPlace = 0;
+    pictures.forEach((one) => {
+      if (one.entry === undefined) return;
       const ours = touchPictureRows(one.entry, one.pixels, TOUCH_CHOICES);
+      // The mask is Logitech's by construction, so this cannot fail: `sameMask` is held to it, not the drawing.
       assert.ok(sameMask(ours, one.pixels), `${name} ${one.entry.name}`);
-      assert.ok(after.has(contentKey(encodeBitmap(ours))), `${name} ${one.entry.name} is not in the file`);
+      const bytes = encodeBitmap(ours);
+      // Where the two ends are independent: Logitech's own byte count off its own header, ours off our encoder. It
+      // shows the encoder picks the form and the runs Logitech's does over the same mask, and nothing of the pixels.
+      assert.equal(bytes.length, one.piece.bytes.length, `${name} ${one.entry.name}`);
+      assert.ok(after.has(contentKey(bytes)), `${name} ${one.entry.name} is not in the file`);
       checked += 1;
-    }
+      if (merged(one)) return;
+      // And in its place: the k-th picture of the placed bank is ours where the k-th kept one was Logitech's.
+      const at = kept.indexOf(one);
+      assert.equal(contentKey(bank[at]!.piece.bytes), contentKey(bytes), `${name} ${one.entry.name} is not at its place`);
+      atPlace += 1;
+    });
     assert.equal(checked, 34 + backgrounds(name), name);
+    assert.equal(atPlace, 32, name);
     // 32 pictures replaced in place: all of them but the background's other copies and the three photographs.
     assert.equal(placed.replaced.length, 32, name);
     assert.equal(placed.merged, backgrounds(name) - 1 + 3, name);
-    // No picture of Logitech's the module names is left but the five all black ones, which ours are byte for byte:
-    // the background, the sending mark off and the clock face.
+    // Of Logitech's named pictures only the all black ones are left, which ours reproduces byte for byte: the
+    // background, the sending mark off and the clock face.
     const left = TOUCH_PICTURES.flatMap((entry) => entry.keys).filter((key) => after.has(key));
     assert.deepEqual(left.sort(), ['4cb48913f37bd3c2', '799a9c1db81fb76c', '94b07bfb8f5b95d2'], name);
     assert.ok(placed.container.allChecksPass, name);
   }
 });
 
-test('todo-compile-one 5.3.1: a mask one pixel off is told apart, and an entry of another size is refused rather than drawn',
+/** The sixteen and the three Harmony One compiles outside them: the everyday One's, its unprogrammed one and the Dutch one. */
+const NINETEEN = [...SIXTEEN, 'one_config', 'one_config_unprogrammed', 'one_friend_asfound_config'] as const;
+
+test('todo-compile-one 5.3.1: on all nineteen Harmony One compiles every named picture of ours encodes to as many bytes as Logitech\'s own, 716 of 716, the two ends being our encoder and the length Logitech\'s header states',
+     skipUnless(...NINETEEN), () => {
+  let total = 0;
+  for (const name of NINETEEN) {
+    for (const one of readTouchPictures(parse(require_(name))).pictures) {
+      if (one.entry === undefined) continue;
+      assert.equal(encodeBitmap(touchPictureRows(one.entry, one.pixels, TOUCH_CHOICES)).length, one.piece.bytes.length, `${name} ${one.entry.name}`);
+      total += 1;
+    }
+  }
+  assert.equal(total, 716);
+});
+
+test('todo-compile-one 5.3.1: the mask comparison used here tells a mask one pixel off apart, and an entry of another size is refused rather than drawn',
      skipUnless(DONOR), () => {
   const { pictures } = readTouchPictures(parse(require_(DONOR)));
   const cross = pictures.find((one) => one.entry?.name === 'charging problem')!;
@@ -122,7 +159,7 @@ function placeOf(pixels: Rows, scale: number): { at: [number, number]; size: num
   return { at: [Math.round(x0 + w / 2 - size / 2), Math.round(y0 + h / 2 - size / 2)], size };
 }
 
-test('todo-compile-one 5.3.1: each of the seven icons sits where Logitech\'s ink sits, sized to it, by section 373\'s rule measured again off Logitech\'s pictures',
+test('todo-compile-one 5.3.1: each of the seven icons sits where section 373\'s rule puts it when measured off Logitech\'s picture, the rule being fitted to these same seven and no outside sample',
      skipUnless(DONOR), () => {
   const { pictures } = readTouchPictures(parse(require_(DONOR)));
   const icons = TOUCH_PICTURES.filter((entry) => entry.drawing.kind === 'icon');
@@ -147,13 +184,14 @@ function namings(c: Container): Map<string, number> {
   return out;
 }
 
-test('todo-compile-one 5.3.3: on the test setup\'s donor the whole screen background is one black picture, 77445 bytes where Logitech\'s three copies and the three photographs took six times that, and every draw of any of the six draws it',
+test('todo-compile-one 5.3.3: on Logitech\'s compile of two devices the whole screen background is one black picture, 77445 bytes where its three copies and the three photographs took six times that, and every draw of any of the four draws it',
      skipUnless(DONOR), () => {
   const c = parse(require_(DONOR));
   const before = namings(c);
   const background = TOUCH_PICTURES.filter((entry) => entry.drawing.kind === 'background').flatMap((entry) => entry.keys);
   const draws = background.reduce((n, key) => n + (before.get(key) ?? 0), 0);
-  // The references to the background's three copies, 75, and to each photograph two, the six blank screens'.
+  // The references to the background's three copies, 75 on this compile (66 to 314 over the sixteen), and to each
+  // photograph two: six blank screens a timer enters draw them, which is all this says of what they are for.
   assert.deepEqual(background.map((key) => before.get(key)), [75, 2, 2, 2]);
   const placed = withTouchPictures(c, TOUCH_CHOICES).container;
   assert.equal(c.blob.length - placed.blob.length, 5 * 77445);
@@ -171,7 +209,7 @@ test('todo-compile-one 5.3.3: on the test setup\'s donor the whole screen backgr
     (error: unknown) => error instanceof PictureError && /merged onto one that is merged itself/.test(error.message));
 });
 
-test('todo-compile-one 5.3: on the composed path ours go in unless the choice keeps Logitech\'s, and on the finished file the attribution finds every one of ours and on Logitech\'s compile the five all black ones its rule reproduces',
+test('todo-compile-one 5.3: on the composed path ours go in unless the choice keeps Logitech\'s, and the attribution, which recognises a picture by reproducing it with the drawing rule, counts 32 on the finished file and on Logitech\'s compile of two devices, with three background copies, the five all black ones the rule reproduces',
      skipUnless(DONOR), () => {
   assert.equal(TOUCH_CHOICES.logitechPictures, false);
   const c = parse(require_(DONOR));
@@ -182,8 +220,11 @@ test('todo-compile-one 5.3: on the composed path ours go in unless the choice ke
   const ours = withTouchComposedBuilders(c, [], TOUCH_CHOICES);
   assert.equal(ours.built.at(-1), 'pictures');
   assert.equal(Buffer.compare(ours.container.blob, withTouchPictures(kept.container, TOUCH_CHOICES).container.blob), 0);
-  // Ours found by what they are, 32 pictures: the 37 less the five taken out for the one background.
+  // Ours found by reproducing each with the drawing rule, which is what the attribution does and so cannot miss one of
+  // ours: 32 pictures, the 37 less the five taken out for the one background.
   assert.equal(touchOurPictures(ours.container, TOUCH_CHOICES).length, 32);
+  // On Logitech's compile, with the background stored three times here: five all black pictures. On the twelve of
+  // the sixteen that store it four times the rule reproduces six, measured in section 422.
   assert.deepEqual(touchOurPictures(c, TOUCH_CHOICES).map((one) => one.name).sort(), [
     'clock face', 'sending mark off', 'whole screen background', 'whole screen background', 'whole screen background',
   ]);
