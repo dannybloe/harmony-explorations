@@ -64,7 +64,7 @@ import {
 } from '../../screenrecords.ts';
 import { type ValueReader, blobReader, speller } from '../../shared/spelling.ts';
 import {
-  CLICK, LIGHT_7_OFF, LIST, MAP, PAGE_KEYS_OFF, SET, SWALLOW, type Step as TemplateStep, TEST, k, owns, readStep, stepKinds, write,
+  CLICK, LIGHT_7_OFF, LIST, MAP, PAGE_KEYS_OFF, SET, SWALLOW, type Step as TemplateStep, TEST, k, named, owns, readStep, stepKinds, write,
   writeStep,
 } from './screentemplate.ts';
 
@@ -98,13 +98,23 @@ export const TOUCH_FIRMWARE_KEYPAD: readonly number[] = Array.from({ length: 55 
  * `screentemplate.ts`' language, section 418.
  */
 type Operand = number | 'list' | 'timer' | 'program';
-interface Plain { opcode: number; operand: Operand; band?: number }
+/**
+ * `role` says which number of the configuration's a list or a program is, as `screentemplate.ts`' `named` does, so a
+ * configuration built from nothing can number the screens, `numbering.ts`, `todo-compile-one.md` 7.1.4. A timer takes
+ * none: it is the screen's own, the one its enter handler starts. The reader and the builder ignore roles.
+ */
+interface Plain { opcode: number; operand: Operand; band?: number; role?: string }
 type Step = Plain | { below: TemplateStep };
 const nop: Step = { opcode: 0, operand: 0 };
 /** A call of a list below the screens, built from its template step, section 418. */
 const below = (step: TemplateStep): Step => ({ below: step });
-const call: Step = { opcode: CALL, operand: 'list' };
-const run: Step = { opcode: RUN_PROGRAM, operand: 'program' };
+/** A call of one of the wiring's lists, by its role. */
+const call = (role: string): Step => ({ opcode: CALL, operand: 'list', role });
+/** A run of a base slot 11 program, by its role: the header's three and the chrome's, `screentemplate.ts`' names. */
+const run = (role: string): Step => ({ opcode: RUN_PROGRAM, operand: 'program', role });
+const HEADER_RUNS = [run('header 1'), run('header 2'), run('header 3')] as const;
+/** What the chrome's own list queues after the chrome's own program, `chrome 1`. */
+const QUEUED_RUNS = [run('chrome 2'), run('chrome 3')] as const;
 const timerStart: Step = { opcode: BAND, band: TIMER_START, operand: 'timer' };
 const timerCancel: Step = { opcode: BAND, band: TIMER_CANCEL, operand: 'timer' };
 const fixed = (opcode: number, operand: number): Step => ({ opcode, operand });
@@ -151,12 +161,13 @@ interface TouchFirmwareScreen {
 // a number: the key lights' on lists, `lights`, `events`, `boot.3`, `boot.4` and `settle.1`.
 
 /** USB Connected's variable written: 1 on entering and on most keys, 2 and 3 by the keys below, `07 FFFF` first. */
-const usbState = (value: number): TemplateStep => owns(SET, write(value));
+const usbState = (value: number): TemplateStep => owns(SET, named(write(value), 'usb variable'));
 /**
  * What USB Connected's scans 2, 28 and 46 run below their own lists: `1F FB0n`, then a comparison of the
  * variable written above whose arms write it again or `07 FFFC` and then 1.
  */
-const usbKey = (byte: number, ...arm: readonly TemplateStep[]): TemplateStep => owns(k(BAND, 0xfb00 | byte), owns(TEST(0x80), ...arm));
+const usbKey = (byte: number, ...arm: readonly TemplateStep[]): TemplateStep =>
+  owns(k(BAND, 0xfb00 | byte), owns(named(TEST(0x80), 'usb variable'), ...arm));
 
 /** The ten screens, in mode order, on the sixteen English compiles of skin 54. */
 const SCREENS: readonly TouchFirmwareScreen[] = [
@@ -164,10 +175,11 @@ const SCREENS: readonly TouchFirmwareScreen[] = [
     // Entering writes 1 to a variable of the configuration's below the screen and lights channel 7 through the
     // wiring's list; leaving runs the wiring's `boot.3`, which writes it 0, and channel 7's off list.
     id: 'lowBattery', name: 'Low Battery', keys: own(nop, nop, nop),
-    tags: [[ENTER, own(below(owns(SET, write(1))), timerStart, call)], [LEAVE, own(call, timerCancel, below(LIGHT_7_OFF))], 'keys',
-      [HEADER, own(run, run, run)]],
+    tags: [[ENTER, own(below(owns(SET, named(write(1), 'low battery variable'))), timerStart, call('light 7 on'))],
+      [LEAVE, own(call('boot 3'), timerCancel, below(LIGHT_7_OFF))], 'keys', [HEADER, own(...HEADER_RUNS)]],
     // Its OK: the click and the wiring's `settle.1`, on the page list and on its copy.
-    queued: [run, run], second: [58, 103], lines: [['The battery level is low!', 143]], ok: true, scan49: owns(CLICK, LIST),
+    queued: QUEUED_RUNS, second: [58, 103], lines: [['The battery level is low!', 143]], ok: true,
+    scan49: owns(CLICK, named(LIST, 'settle 1')),
   },
   {
     // Every key and entering write 1 below the screen; scan 46 and the two the keys override, 2 and 28, go
@@ -175,7 +187,8 @@ const SCREENS: readonly TouchFirmwareScreen[] = [
     // configuration's that looks the location's value map up.
     id: 'usbConnected', name: 'USB Connected', keys: own(below(usbState(1)), nop),
     tags: [[ENTER, { kind: 'below', step: usbState(1) }],
-      [LEAVE, own(call, below(owns(k(BAND, 0xfb00), owns(TEST(0x00), MAP))))], 'keys',
+      [LEAVE, own(call('boot 4'), below(owns(k(BAND, 0xfb00), owns(named(TEST(0x00), 'assistant variable'), named(MAP, 'select route map')))))],
+      'keys',
       [PRESS | 2, { kind: 'below', step: usbKey(2, usbState(3), usbState(1)) }],
       [PRESS | 28, { kind: 'below', step: usbKey(3, k(0x07, 0xfffc), usbState(1)) }],
       [PRESS | 46, own(below(usbKey(1, usbState(2), usbState(1))), nop)]],
@@ -185,32 +198,32 @@ const SCREENS: readonly TouchFirmwareScreen[] = [
     // Leaving runs the wiring's `events` and the page keys' off list.
     id: 'blankA', name: 'blank, one', tags: [[PRESS | 47, swallow], [PRESS | 46, swallow],
       [ENTER, own(fixed(0x07, 0xfffb), fixed(BAND, 0xfe02), fixed(BAND, 0xe805))],
-      [LEAVE, own(fixed(0x07, 0xfffb), fixed(BAND, 0xfd02), call, below(PAGE_KEYS_OFF))]],
+      [LEAVE, own(fixed(0x07, 0xfffb), fixed(BAND, 0xfd02), call('events'), below(PAGE_KEYS_OFF))]],
     lines: [],
   },
   {
     id: 'blankB', name: 'blank, two', tags: [[PRESS | 47, swallow], [PRESS | 46, swallow],
       [ENTER, own(fixed(0x07, 0xfffb), fixed(BAND, 0xfe03))],
-      [LEAVE, own(fixed(BAND, 0xfd03), call, below(PAGE_KEYS_OFF))]],
+      [LEAVE, own(fixed(BAND, 0xfd03), call('events'), below(PAGE_KEYS_OFF))]],
     lines: [],
   },
   ...([['updateSuccessful', 'Update Successful', 168], ['upgradeSuccess', 'Upgrade Success', 168],
     ['updateInProgress', 'Update in progress', 168], ['learning', 'Learning...', 168],
     ['firmwareUpgrade', 'Firmware upgrade in progress', 168]] as const).map(([id, line, y]): TouchFirmwareScreen => ({
     id, name: line, tags: [[PRESS | 47, swallow], [PRESS | 46, swallow], [ENTER, { kind: 'direct', step: timerStart }],
-      [LEAVE, { kind: 'direct', step: timerCancel }], [HEADER, own(run, run, run)]],
-    queued: [run, run], lines: [[line, y]],
+      [LEAVE, { kind: 'direct', step: timerCancel }], [HEADER, own(...HEADER_RUNS)]],
+    queued: QUEUED_RUNS, lines: [[line, y]],
   })),
   {
     // Every key and tag 0x30 run the wiring's `lights`; leaving, channel 7's off list; its OK, the click and the
     // location's value map, on the page list and on its copy.
-    id: 'chargingProblem', name: 'Charging problem', keys: own(call, nop, nop),
-    tags: ['keys', [ENTER, own(timerStart, call)], [LEAVE, own(timerCancel, below(LIGHT_7_OFF))], [HEADER, own(run, run, run)],
-      [TAG_0X30, own(call, nop, nop)]],
-    queued: [run, run], second: [43, 34],
+    id: 'chargingProblem', name: 'Charging problem', keys: own(call('lights'), nop, nop),
+    tags: ['keys', [ENTER, own(timerStart, call('light 7 on'))], [LEAVE, own(timerCancel, below(LIGHT_7_OFF))], [HEADER, own(...HEADER_RUNS)],
+      [TAG_0X30, own(call('lights'), nop, nop)]],
+    queued: QUEUED_RUNS, second: [43, 34],
     lines: [['Charging problem.', 125], ['Contact customer support:', 137], ['http://supportinfo.', 149],
       ['harmonyremote.com', 161]],
-    ok: true, scan49: owns(CLICK, MAP),
+    ok: true, scan49: owns(CLICK, named(MAP, 'working route map')),
   },
 ];
 
@@ -265,6 +278,74 @@ function slotsOf(screen: TouchFirmwareScreen): string[] {
   if (screen.scan49 !== undefined) out.push(...stepKinds(screen.scan49), ...stepKinds(screen.scan49));
   return out;
 }
+
+/**
+ * A number a firmware screen takes, in `slotsOf`' walk order, for a configuration numbered from nothing,
+ * `todo-compile-one.md` 7.1.4: one instruction's operand, by its role (a timer has none, being the screen's own), or a
+ * list below the screens with every number in it, its template step, and whether a list of the screens' own calls it
+ * (`called`) or a tag or a page list binds it straight.
+ */
+export type TouchFirmwareSlot =
+  | { kind: 'plain'; what: 'list' | 'timer' | 'program'; role?: string }
+  | { kind: 'below'; step: TemplateStep; called: boolean };
+
+/** Every number screen `mode` of the ten takes, `slotsOf`' walk with what each is, `stepKinds` covering a list below. */
+export function touchFirmwareSlots(mode: number): TouchFirmwareSlot[] {
+  const screen = SCREENS[mode];
+  if (screen === undefined) throw new ScreenRecordError(`there is no firmware screen ${mode}`);
+  const out: TouchFirmwareSlot[] = [];
+  const { inserted, binding } = bindings(screen);
+  const steps = (body: readonly Step[], called: boolean): void => body.forEach((one) => {
+    if ('below' in one) out.push({ kind: 'below', step: one.below, called });
+    else if (typeof one.operand === 'string') out.push({ kind: 'plain', what: one.operand, ...(one.role === undefined ? {} : { role: one.role }) });
+  });
+  for (const tag of keyListOrderInserted(inserted)) {
+    const bound = binding.get(tag) as Binding;
+    // A list of the screen's own is the builder's, so what it calls is called; a list below bound straight is not.
+    if (bound.kind === 'own') steps(bound.steps, true);
+    else if (bound.kind === 'below') out.push({ kind: 'below', step: bound.step, called: false });
+    else if (bound.kind === 'direct') steps([bound.step], false);
+  }
+  if (screen.queued !== undefined) {
+    steps(screen.queued, true);
+    out.push({ kind: 'plain', what: 'program', role: 'chrome 1' });
+  }
+  if (screen.scan49 !== undefined) out.push({ kind: 'below', step: screen.scan49, called: false }, { kind: 'below', step: screen.scan49, called: false });
+  // The same walk as the reader's and the builder's, so the two must agree in length and kind.
+  const kinds = out.flatMap((one) => (one.kind === 'plain' ? [one.what] : stepKinds(one.step)));
+  if (kinds.join() !== slotsOf(screen).join()) throw new ScreenRecordError(`${screen.name}'s slots do not walk as the builder takes them`);
+  return out;
+}
+
+/**
+ * Where screen `mode` of the ten draws the pictures its description supplies, in order: the full screen picture at the
+ * origin, and the second where the screen draws one. For a configuration numbered from nothing, whose pictures are
+ * supplied by place, `todo-compile-one.md` 7.1.4.
+ */
+export function touchFirmwarePicturePlaces(mode: number): { x: number; y: number }[] {
+  const screen = SCREENS[mode];
+  if (screen === undefined) throw new ScreenRecordError(`there is no firmware screen ${mode}`);
+  return [{ x: 0, y: 0 }, ...(screen.second === undefined ? [] : [{ x: screen.second[0], y: screen.second[1] }])];
+}
+
+/**
+ * The hit page each of the ten is touched through, by its name in `hitpages.ts`' table, in mode order: a message over
+ * OK where the screen draws OK, the page of no area on the two blanks, and the message alone on the rest, as that
+ * table's namers and section 417 have them; on all sixteen English compiles, `test/touchnumbering.test.ts`.
+ */
+export const TOUCH_FIRMWARE_HIT_PAGES: readonly string[] = SCREENS.map((screen) => {
+  if (screen.ok === true) return 'message and OK';
+  return screen.lines.length === 0 ? 'blank' : 'message';
+});
+
+/**
+ * How many lists of their own the ten build, at base slot 10 indices 0 upward, which the builder generates rather than
+ * takes from a description: one per tag a screen binds to a list of its own, and one per chrome that queues one.
+ */
+export const TOUCH_FIRMWARE_OWN_LISTS: number = SCREENS.reduce((sum, screen) => {
+  const { binding } = bindings(screen);
+  return sum + [...binding.values()].filter((one) => one.kind === 'own').length + (screen.queued === undefined ? 0 : 1);
+}, 0);
 
 export interface TouchFirmwareScreensSpec {
   fonts: { body: number; ok: number };

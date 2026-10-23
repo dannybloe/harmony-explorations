@@ -127,7 +127,10 @@ export interface StateTableFacts {
 /**
  * The variable the compiler emits straight after the firmware's block: index `narrow`, the first two
  * byte index, holding 0 with a maximum of 65277 and no transitions, unnamed, on all thirteen arch 14
- * compiles and on all 19 of the Harmony One's, `todo-compile-one.md` 6.4.
+ * compiles and on all 19 of the Harmony One's, `todo-compile-one.md` 6.4. On the Harmony One it is the
+ * clock pickers' variable, the one their tag `0x29` handlers and the `grid` and `column` value maps read,
+ * on the sixteen English compiles of skin 54, section 431; what reads it on the Harmony 600, 650 and 700
+ * is not read.
  */
 export const FIRST_WIDE_VARIABLE = { first: 0, max: 65277 } as const;
 

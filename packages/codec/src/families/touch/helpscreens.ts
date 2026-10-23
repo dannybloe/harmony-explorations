@@ -244,9 +244,11 @@ export function helpScreens(devices: readonly HelpDevice[]): HelpScreen[] {
   // timers enters after three seconds through a list of the configuration's (`07 FFFB`, one of the remote's
   // lists, the enter), neither built here. `harvest_one_families_1` alone, one compile.
   if (devices.length === 0) {
-    return [attempt(owns(TIMER_START, TIMER_START), TIMER_CANCEL), {
+    // The roles, `todo-compile-one.md` 7.1.4: the three second timer first, then the attempt screen's own; "Nothing to do"
+    // starts the questions' timer and lights channel 7, and switches it off through the off list the other screens build.
+    return [attempt(owns(named(TIMER_START, 'three second timer'), ATTEMPT_START), ATTEMPT_CANCEL), {
       name: NOTHING_SCREEN,
-      own: questionOwn(owns(TIMER_START, LIST), owns(TIMER_CANCEL, LIST)),
+      own: questionOwn(owns(QUESTION_START, named(LIST, 'light 7 on')), owns(QUESTION_CANCEL, named(LIST, 'light 7 off'))),
       chrome: chrome<HelpScreenFont>(HELP_TITLE, 1, { title: 'title', count: 'title' }),
       pages: [{
         list: [[YES, LEAVE_HELP]],
