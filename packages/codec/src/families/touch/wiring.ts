@@ -92,8 +92,9 @@ export interface TouchWiringSettings {
  * The thirteen timers every one of the 19 holds once each, and what each queues. `second0` to `second5` are
  * the six one second timers that enter a screen, numbered in the table's order; `second4`'s screen is the one
  * the `ready` list enters, on 19 of 19, so it is that symbol and not one of its own. The redraw timers,
- * `redraw0` upward in table order, are 13 to 20, started from lists outside the wiring; what sets their
- * number is not established.
+ * `redraw0` upward in table order, are 13 to 20, started from the enter handlers of the screens outside the wiring:
+ * one per class of screen, every screen of a class starting the same one, section 430, so their number is how many
+ * classes the configuration's screens fall in, thirteen with no activity. `emptywiring.ts` states the classes.
  */
 const FIXED_TIMERS: readonly { name: string; duration: number | keyof TouchWiringSettings; instruction: WiringInstruction }[] = [
   { name: 'screenLight', duration: 'screenLight', instruction: { call: 'screenLight' } },
@@ -109,8 +110,10 @@ const FIXED_TIMERS: readonly { name: string; duration: number | keyof TouchWirin
 ];
 /**
  * A timer two of the 19 hold besides those, `harvest_one_families_1` and `one_friend_asfound_config`: three
- * seconds, queueing a list that relights the screen and enters a screen of the configuration's. What puts it
- * in a compile is not read, so it is the description's to name, as a device's timer is.
+ * seconds, queueing a list that relights the screen and enters a screen of the configuration's. On both the help
+ * screen the power off value map enters starts it on entering, and on `harvest_one_families_1`, whose all off
+ * writes no power variable, the screen it enters is the help chain's "Nothing to do", section 430 (section 415's
+ * chain of a household with no device). Still the description's to name, as a device's timer is.
  */
 const OPTIONAL_TIMERS: readonly { name: string; duration: number; instruction: WiringInstruction }[] = [
   { name: 'show3', duration: 3, instruction: { call: 'show3' } },

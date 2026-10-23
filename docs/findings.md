@@ -57287,3 +57287,202 @@ rather than through the census, which now calls one function, `misfits`.
 * `packages/codec/test/touchfontsets.test.ts`: the census over the sixteen with every count above, the code order, the
   byte for byte layout, the controls and the table from nothing; `composesetup.test.ts` the composed setup's 33 sets.
 * `docs/config-format.md`, after section 396's table; `reference/remotes/harmony-one/display.md`.
+
+## 430. The Harmony One's redraw timers are one per class of screen, thirteen classes with no activity, and the wiring, timers, fixed cases and hour list of an empty One are numbered from nothing
+
+**Todo `todo-compile-one.md` 7.1.5**: the wiring and the timers of a Harmony One with no device and no activity, the
+redraw timers among them, whose number section 410 measured at 13 to 20 and did not explain, the fixed cases of
+section 416 and the clock's hour list, numbered by an allocator as the Harmony 650's `emptyWiring` numbers its own.
+
+**Sources checked**: sections 43 (the timer subsystem, read on four images, the Harmony One's among them), 73 (the
+`1F EB` and `1F EA` bands), 403 and 421 (the Remote Assistant at start and left out), 410 (the wiring, its timer
+census and `touchWiringNeeds`), 411 (the seven blank screens and the fixed screens' enter handlers), 414 (the clock
+header), 415 (the help chain of a household with no device), 416 (the value maps' roles) and 418 (the transitions'
+lists); `families/four-slot/empty.ts` and the sections it cites, 324 and 347; the nineteen Harmony One compiles.
+Logitech's client was searched for timers, and the files that name one are its own interface's and its USB
+operations': the configuration is compiled on Logitech's side, section 415, so the compiles are what answer this. **The firmware was not read for this**: the
+question is how many timers the compiler emits, which the compiles answer, and section 43 read the subsystem as a
+start, a cancel and a poll, each reaching a record by the index a start names; nothing read there depends on how
+many records the table holds.
+
+### What a redraw timer is, for a person
+
+The strip along the top of the Harmony One's screen shows the time and the battery gauge, section 414. Every screen
+that starts a four second timer when it is entered cancels the same timer when it is left, 3195 of 3195 over the
+nineteen; each time the timer runs out it draws the clock and the charging gauge again and starts itself once more.
+The clock header's two programs, the clock and then the charging gauge, are what every redraw timer queues, 318
+timers over the nineteen.
+
+### The census
+
+For each mode of a compile, its enter handler (tag 6 of its own key map) is read: the instruction it binds, or the
+list it calls (the reader follows one call further, which no mode needs). A start (`1F EBxx`) of a four second timer
+calling a list is a start of a redraw timer. The blind reviewer counted 729 of the starting modes binding the start
+directly, 35 to 43 a compile, and the rest in the list; this section's tests do not count the split.
+
+| | |
+|---|---|
+| redraw timers over the nineteen | 13, 15, 19, 20, 16, 17, 20, 20, 20, 20, 13, 13, 13, 18, 17, 17, 17, 15, 15 |
+| modes whose enter handler starts one | 3195 |
+| modes starting two | 0 |
+| redraw timers started by no mode | 0 |
+
+So the timers partition the screens that start one, and each part is a **class**. Section 410 said one redraw timer
+was started by no list; it is the progress and status screens', whose enter handlers bind the start directly rather
+than through a list, `firmwarescreens.ts`' and `statusscreens.ts`' shape, so "by no list" was true and "by no screen"
+is not.
+
+Naming the screens by the finders of the screen sets (the ten firmware screens, the 29 status screens, the 23 fixed
+screens, the tour and the Remote Assistant, the help chain, the device pages, the device lists and the activity menu),
+**the same screens share a timer on all sixteen English compiles of skin 54**:
+
+| class | its named screens |
+|---|---|
+| low battery | firmware `lowBattery` |
+| progress and status | the five firmware progress screens, the 29 status screens, "LCD Module Failed" |
+| charging problem | firmware `chargingProblem` |
+| activity menu | the activity menu |
+| help after the attempt | every help screen after the first: "If not" and the questions, or "Nothing to do" |
+| device lists | every device list |
+| sensitivity confirmations | the five, and four of the Remote Assistant's screens |
+| Year and Options | the Year picker and Options |
+| Screen Sensitivity | Screen Sensitivity |
+| clock pickers | Month, the three Day pickers, Hour, Minute and Time of Day |
+| help attempt | the help chain's first screen |
+| device pages | every device's mode, on the 15 compiles where the finder names them |
+| Hide Question | the Remote Assistant's "Hide" question |
+
+Each class's named screens start one timer and no named screen outside the class starts it, 16 of 16; the welcome
+tour's eleven start none. **On the four compiles with no activity there are exactly these thirteen**, 4 of 4, every
+screen starting one named but on `harvest_one_families_1`, where one class holds no named screen; that it is the
+device pages' class is by elimination, since it is the one class of the thirteen that compile's finders name nothing
+in, and its one mode of 44 pages is the device's. **With activities the count rises by the classes their screens bring**: the compiles hold 0, 2, 6, 7,
+3, 4, 7, 7, 7, 7, 1, 0, 0, 5, 4 and 4 classes no named screen starts (the 1 being `harvest_one_families_1`'s device
+page), and for every one of the sixteen the count is 13 less that unnamed device page plus those. Four of the
+thirteen also take screens no finder names: the sensitivity confirmations four per activity (4, 8, 12 and 28 for 1, 2,
+3 and 7 activities), the help attempt and the Hide Question one per activity each, and the help after the attempt 9
+to 111; the other nine hold named screens alone. The count is not monotone in the activities: the compile with eight holds 17, fewer than several with fewer.
+What makes a class is **not read**: no byte of the screens states it. The blind reviewer found the working screens in
+one to four classes, a page of two or three pages taking its own timer and one page screens grouped up to four to a
+timer, with one exception on `one_friend_legacy_sync_config`; that grouping is its measurement and no test here holds it,
+and the reason for it is not read.
+
+**The control**: the class list with Options moved from Year's class to Screen Sensitivity's is refused on 16 of 16.
+
+### The three second timer
+
+Section 410 left unread where it comes from. On both compiles that hold it the help screen the power off value map
+enters starts it on entering together with its redraw timer, and it enters a screen of one page. On
+`harvest_one_families_1`, the one compile whose all off writes no power variable, that starting screen is the help
+chain's first, the attempt, and the screen the timer enters is the chain's second, "Nothing to do", which section 415
+had found by its look. `one_friend_asfound_config` is the Dutch
+compile, its all off writes two power variables, and the blind reviewer read the screen its three second timer enters
+as the first device question, "Staat uw Tv Philips uit?"; on `harvest_one_two_devices` the attempt screen's enter list
+enters the next screen itself, `7E` in the list, with no timer. The Dutch compile's starting screen is identified
+here only as the screen its power off value map enters; the help finder does not name it. So the timer is the help
+chain's way on from its entry screen on those two, and why those two take that way is not read.
+
+### What the allocator numbers
+
+`emptyTouchWiring` in `families/touch/emptywiring.ts`. The caller gives the modes, which are the empty One's
+numbering, `todo-compile-one.md` 7.1.4: the seven blank screens, the activity menu, the idle device list and the
+help chain's two. Which timer enters which blank screen is the same on all sixteen, `BLANK_SCREEN_SYMBOLS`, and the
+Devices key's screen is the idle device list, 16 of 16. Everything else is the allocator's:
+
+| | the empty One | how it is decided |
+|---|---|---|
+| redraw timers | 11 | the thirteen classes less the device pages (no device) and the Hide Question (no Remote Assistant, `todo-compile-one.md` 4.10) |
+| timers | 25 | the thirteen firmware timers, the three second one (its help chain is the attempt and "Nothing to do"), the eleven; in `harvest_one_two_devices`' order, its device timer's place the three second one's |
+| lists | 346 | the front's 168 from the given index, the hour list (`hourListBytes`), the wiring's 173 in `touchWiringNeeds`' order, the fixed cases' four (the page and button sound toggles') |
+| base slot 9 | 8 | entries 0 to 6 and the leftover entry at 7, as on `harvest_one_families_1` |
+| variables | 18 | after the firmware's 18, the wiring's 17 in `touchWiringNeeds`' order and the activity counter |
+| value maps | 15 | every role of section 416 but the start up toggle, in `TOUCH_VALUE_MAP_ROLES`' order |
+| programs | 2 | the clock header's clock and charging gauge, entries 3 and 1 unless told otherwise, as on 12 of the 19 |
+
+**Two closures hold the numbering together.** The wiring's five value maps are five of the fixed cases' roles,
+`readyMap` the menu record, `menuMap` the working route, `idleA6Map` help, `idleEnterMap` idle and `idleMap` the all
+off, and the wiring's `location` and `buttonSound` are the cases' location and toggle variable, on 19 of 19: two
+readers that find them by different routes, the wiring's description by the lists that look them up and
+`touchValueMapRoles` by what each case does. And the variables' ranges and transitions: every one of the wiring's
+seventeen holds the same first value, maximum, name and transitions on 19 of 19, `relightVar` reaching 121 and its
+two transitions and the others' one calling the lists section 418 named; the activity counter is 0 to 0 with the
+idle value 0 on the four with no activity, its maximum the activity count on all nineteen. The state tables built
+from the allocator's variables and value maps give each variable the index the wiring numbered it by.
+
+### Against Logitech's compile with the fewest devices
+
+`harvest_one_two_devices`, two devices and no activity, one of the three with two devices and none with fewer and no
+activity (the two with one device hold an activity). Its wiring is built from its own description with the Remote
+Assistant off, and ours with the front where its front is, so that the lists the generator numbers from the front are
+numbered alike; every piece is then compared with what the description put in it zeroed. **So this is builder output
+against builder output from Logitech's description, with the numbers zeroed, and not ours against Logitech's bytes**;
+that the builder reproduces the compile's own bytes from its description is section 410's closure, and this section
+leans on it.
+
+* **340 lists the two share are generated alike**, as are entries 0 to 6 and the leftover entry, the event map, the
+  leading list, the log area and the parameter table, and every timer record but the three second one;
+* ours alone: the three second timer's list. Theirs alone: two redraw lists, by name its last two, `redraw11` and
+  `redraw12`, since the generator names the redraw lists in table order. The two classes the empty One lacks, the
+  device pages' and the Hide Question's, hold its 7th and 11th redraw timers, and our eleven classes take the first
+  eleven names in the relative order theirs holds them;
+* the timer table, by name, is theirs with its device timer's place the three second timer's and its last two redraw
+  names dropped. The class order is that compile's and not a rule: the sixteen hold their classes in 14 different
+  orders, and this one's on 1 of 16;
+* the setting: theirs keeps the Remote Assistant at start, ours does not.
+
+The fixed cases against `harvest_one_families_1`, the compile with nothing to switch off: every role's cases have the
+same values and lengths, and the clock pickers' frames and the all off's lone end are the same bytes. Against
+`harvest_one_two_devices` the all off differs, since it writes two power variables through a list. Both hold the
+start up toggle's two cases, which ours leaves out. **The control**: two lists of the wiring of the same length
+differing in one generated byte, `menu.1.1` and `ready.0.1`, are told apart by the same comparison.
+
+### What is not known
+
+No compile of Logitech's holds no device or no Remote Assistant screen, so that an empty One holds eleven redraw
+timers is this derivation, from the classes and from no redraw timer being started by no screen, and **unconfirmed
+until it runs on the spare Harmony One**, `todo-compile-one.md` 7.2. Its 25 timers are one fewer than the fewest any
+compile holds, 26. That the empty One's attempt screen reaches the next help screen by the three second timer rests on
+one compile, `harvest_one_families_1`, the only one with nothing to switch off; if it does not, the count is 24. The
+screens that start each timer are built by the screen sets' builders, which take a timer per
+screen as a number; `redrawTimers` gives it per screen, and nothing yet passes it on, 7.1.7.
+
+### What would falsify it
+
+A Harmony One compile with a redraw timer no screen starts or a screen starting two; an English compile of skin 54
+where a class's named screens start two timers or share theirs with a named screen of another class; a compile with no
+activity holding other than thirteen; a redraw timer queuing other than the clock and the charging gauge.
+
+### Which architectures
+
+Arch 12 (Harmony One) alone. The Harmony 600, 650 and 700 (arch 14) show no clock and hold no redraw timer: every
+arch 14 timer but a device's is the firmware's, section 347 and `docs/config-format.md`; their empty configuration's
+wiring is `families/four-slot/empty.ts`. The class census is over the sixteen English compiles of skin 54; the other
+three, `one_config` and `one_config_unprogrammed` (the European skin 59) and `one_friend_asfound_config` (Dutch), hold
+redraw timers by the same census (every timer started, none twice) but their fixed screens are not named by the
+finders, so their classes are not compared. Four second timers calling a list exist on arch 8 (Harmony 880 and 885,
+six to eight a file) and arch 10 (Harmony 890 and 895, six to seven), counted by the blind reviewer and not examined
+here.
+
+### The reviews
+
+Two reviewers read this section before it was committed. The first, blind to it, rederived the counts from the corpus
+and agreed on every one; it added the 318 timers, the 729 starting modes that bind the start directly, the working
+screens' grouping above and that the Dutch compile's three second timer enters its first device question, all four
+now in the text. The second audited it sentence by sentence and corrected: that the cancels were asserted and not
+measured (now measured, 3195 of 3195), that "fewest devices of the four" was wrong (three hold two), that the
+comparison is builder against builder, that the two redraw lists only theirs holds are its last two by name and not
+the two classes' by position, the class order being one compile's, that the three second timer's starter on the Dutch
+compile is identified only by the value map, that the empty One's 25 timers rest on one compile, that the count is not
+monotone in the activities, and that "the other ten hold named screens alone" was nine, the Hide Question taking one
+per activity. The test changes it asked for are in the test file.
+
+### Where it lands
+
+* `packages/codec/src/families/touch/emptywiring.ts`: `emptyTouchWiring`, `EMPTY_TOUCH_REDRAW_CLASSES`,
+  `BLANK_SCREEN_SYMBOLS`, `WIRING_MAP_ROLES`, `EMPTY_TOUCH_VALUE_MAPS`, `touchRedrawStarters`.
+* `packages/codec/test/touchemptywiring.test.ts`: the census on the nineteen, the classes on the sixteen and the four,
+  the activities' classes, the clock and gauge, the two closures, the blank screens, the three second timer, the
+  allocator with no lab, the comparison and its control, the variables and their control, the fixed cases.
+* `packages/codec/src/families/touch/wiring.ts`, the redraw and three second timers' docstrings;
+  `docs/config-format.md`, "The firmware's own wiring on the Harmony One" and base slot 12;
+  `reference/remotes/harmony-one/behaviour.md`.

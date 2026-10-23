@@ -628,8 +628,8 @@ lights out                  1 s     call
 two of 5 s                  5 s     call, one of them started by entry 1's 0x26 list
 enter                       5 s     7E a screen of the configuration's
 six of 1 s                  1 s     7E a screen each, the fifth the ready list's
-three second                3 s     call [07 FFFB, call lights, enter a screen], on 2 of 19
-redraw k                    4 s     call [73 P, 73 Q, 1F EB00|k], 13 to 20 per compile, one P and Q per compile
+three second                3 s     call [07 FFFB, call lights, enter a screen], on 2 of 19, started by the screen the power off value map enters (the attempt screen on `harvest_one_families_1`)
+redraw k                    4 s     call [73 clock, 73 charging gauge, 1F EB00|k], 13 to 20 per compile, one per class of screen
 a device's                  carried whole, on 12 of 19
 ```
 
@@ -639,7 +639,47 @@ timer by its duration and opcode, and the two pairs those cannot tell apart by t
 screen light of 1 to 5 seconds would share a length with another timer and is not read.
 
 *Not established*: what `07 FFFA`, the `3F C1xx`, `3F F0xx` and `1F FExx` steps do on this remote; what the five
-one second timers' screens other than the ready list's are for; what decides the ladder's `07 FFFB`, the number of redraw timers and the three second timer.
+one second timers' screens other than the ready list's are for; what decides the ladder's `07 FFFB`.
+
+**The redraw timers are one per class of screen**, section 430. Every redraw timer is started by the enter
+handler (tag 6) of at least one mode, bound directly or in the list it calls, and no mode starts two: 3195
+modes over the 19 start one, none starts two and no redraw timer is started by none. P and Q are the clock header's
+clock and then its charging gauge on 19 of 19. The screens starting one timer, named by the screen sets' finders on
+the sixteen English compiles of skin 54:
+
+| class | its screens |
+|---|---|
+| low battery | firmware screen `lowBattery` |
+| progress and status | the five firmware progress screens, the 29 status screens, "LCD Module Failed" |
+| charging problem | firmware screen `chargingProblem` |
+| activity menu | the activity menu |
+| help after the attempt | the power off help's screens after the attempt ("If not" and the questions, or "Nothing to do"), and screens the activities bring |
+| device lists | every device list |
+| sensitivity confirmations | the five, four of the Remote Assistant's screens, and four screens per activity |
+| Year and Options | the Year picker and Options |
+| Screen Sensitivity | Screen Sensitivity |
+| clock pickers | Month, the three Day pickers, Hour, Minute, Time of Day |
+| help attempt | the attempt screen, and one screen per activity |
+| device pages | every device's mode, where the finder names them (15 of the 16) |
+| Hide Question | the Remote Assistant's "Hide" question, and one screen per activity |
+
+So a configuration with no activity holds thirteen, 4 of 4, and the activities' start up, working and other screens
+add classes of their own, 0 to 7 over the sixteen. The welcome tour's eleven screens start none. The classes' order
+in the table is one compile's, `harvest_one_two_devices`', and not a rule: the sixteen hold 14 orders. *Not
+established*: what makes a class, which no byte of the screens states, and how the working screens are grouped (one
+to four classes, a review's measurement and not tested).
+
+**The empty One**, `families/touch/emptywiring.ts`, `emptyTouchWiring`, `todo-compile-one.md` 7.1.5: eleven redraw
+timers, the classes above less the device pages and the Hide Question, which an empty One of ours does not hold; the
+three second timer, since its help chain is the attempt screen and "Nothing to do" (one compile shows it, so 24 if
+not); and the thirteen: 25 timers in
+`harvest_one_two_devices`' order, its device timer's place the three second one's. 346 lists numbered from a given
+index: the front's 168, the hour list, the wiring's 173 and the fixed cases' four (the page and button sound
+toggles'). 18 variables after the firmware's, each with the range and transitions it has on all 19 (the activity
+counter 0 to 0, as on the 4 with no activity), and 15 value maps, every role but the start up toggle; the wiring's
+five are `readyMap` the menu record, `menuMap` the working route, `idleA6Map` help, `idleEnterMap` idle and
+`idleMap` the all off, on 19 of 19. *Unconfirmed on a remote*: no Logitech compile holds no device, and 25 timers is
+one fewer than the fewest any compile holds.
 
 ## Sections
 
@@ -3211,8 +3251,8 @@ USB Connected, "The firmware's own wiring on arch 14" above. A device's own time
 its place is *not established*. [findings.md](findings.md) section 347.
 
 **On the Harmony One every timer but a device's is one of thirteen on every compile, a three second one on 2
-of 19, or a four second redraw timer**, 13 to 20 of those, 19 of 19; the thirteen come in
-three orders over the 19. "The firmware's own wiring on the Harmony One" above. [findings.md](findings.md)
+of 19, or a four second redraw timer**, 13 to 20 of those, 19 of 19, one per class of screen (section 430); the
+thirteen come in three orders over the 19. "The firmware's own wiring on the Harmony One" above. [findings.md](findings.md)
 section 410.
 
 ### Base slot 16: the number sender
