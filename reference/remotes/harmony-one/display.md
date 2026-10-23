@@ -63,7 +63,10 @@ Generated from `packages/codec`, `packages/usb` and the drawing by `make remote-
   in the order of the list with nothing running, on 61 of the 64 activities of Logitech's compiles, the other
   three not decidable from the file, read from configurations, section 424. **And one list nothing in the configuration opens**, the
   same rows in the same order, on 19 of 19 compiles; whether the remote ever shows it was not read. Each row the row
-  picture, the device's icon and its name left aligned in one to three lines.
+  picture, the device's icon and its name left aligned in one to three lines. **With no device** the list would be one
+  page of "Devices" and "Activities" with no row, inferred and not seen: no compile of Logitech's holds no device, and
+  their activity menu with no activity is one page of its title and key words alone, though the power off help with
+  no device is a screen of its own rather than its usual one with nothing in it, section 429.
 * **A page counter** in three places on a list of several pages: "2 pages" at the top and "1/", "2/" on
   each page, read from configurations, section 293; the arrows beside the screen "illuminate only if there
   are multiple pages", Logitech's manual. **The firmware does not decide that, the configuration does**: a
@@ -169,7 +172,8 @@ Generated from `packages/codec`, `packages/usb` and the drawing by `make remote-
   the TV off?", whose No sends that device's power off again and asks "Now is the TV off?", until Yes; where it was
   sent again, "Did that fix the problem?" comes before the next device. A device name too long for a line breaks at a space or after a hyphen.
   With no device to turn off it shows "Nothing to do". Read from configurations on the sixteen English compiles of
-  skin 54 and both European ones, not watched on a remote, section 415.
+  skin 54 and both European ones, not watched on a remote, section 415. Every question is touched through one hit
+  page, "Yes" the left key below the screen and "No" the right, read from configurations, section 429.
 * **USB**: "USB Connected" on the cable, seen at the bench, section 155.
 * **Safe mode** lists five images, each with a checksum and a version, seen at the bench and matched to
   the images read off the unit, section 190; [firmware.md](firmware.md).

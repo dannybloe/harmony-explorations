@@ -2704,7 +2704,7 @@ Read with `gspm.touch_pages` and `gspm.Container.touch_hit`, or in TypeScript wi
 **The hit pages the fixed screens name, built**, section 417: `families/touch/hitpages.ts`. The 103 pages of the
 firmware, status, fixed, tour and Remote Assistant screens name 23 hit pages on each of the sixteen English compiles
 of skin 54, each screen page the same one on all sixteen; section 405's 25 hit pages in every compile are those 23
-and two named by setup screens alone, a device page's six commands with both page keys and the generic help screen's, mode 69 on `harvest_one_two_devices`.
+and two named by setup screens alone, a device page's six commands with both page keys and the generic help screen's, mode 69 on `harvest_one_two_devices`, which the device pages (section 420) and the help screens (section 429) build.
 Rebuilt byte for byte with the table on the sixteen; 1898 bytes of pages and the
 table's `1 + 3 * pages`, 1986 on `harvest_one_two_devices`.
 
@@ -2922,6 +2922,7 @@ shape) is refused. 75 devices, 332 screens and 2589 lists over the sixteen.
 | the attempt screen's lines | "Attemping to fix the problem..." (sic) centred at y 43; two lines centred on y 168 |
 | "Yes", "No", "OK" | centred on the left or right half at y 201; then the picture at 57, 67, or 57, 95 on the attempt screen |
 | inline or by reference | section 411's rule in mode order |
+| a hit page | one per kind, section 429, built with the screens: the attempt screen three stated rectangles, codes 48 to 50; every question the message (1257, 2791, 1369, 1292), the left key (Yes, 49), the right key (No, 50) and the question (1257, 2791, 885, 2470, 51); "Nothing to do" the message, the right key (OK, 49) and the question's rectangle; then the edges. 32 pages, 2657 bytes, over the sixteen; also named by the activities' own help screens |
 
 **Unconfirmed**: why the PS3, whose power is discrete, is not sent unasked. The chain's order, for which no rule is
 known: not the infrared group, the power variable, the All Off list or the Devices list.
@@ -3027,6 +3028,16 @@ compile refused by its words.
 activity's own list is a new mode built from the idle list's description, `withTouchActivityDeviceList`, both cases
 under Devices for the activity queuing it. **Unconfirmed**: whether the firmware ever enters the list nothing in the
 configuration enters, which was not read; why its scan 55 list maps once per other list.
+
+**A list of no rows**, section 429, for a configuration with no device: the idle list and the list nothing enters, in
+that order, each the template with no row, `EMPTY_DEVICE_LISTS`: one page, the chrome titled "Devices" and the left
+key's words, no row font selected, the page list the left key alone at code 48, the hit page the left key and the
+edges; own key map 25 bytes, record 7, page list and copy 5, hit page 46, the zero of steps measured on 24 one page
+lists on ten compiles (`5 + 4n`, `5 + 4n`, `46 + 15n`). The list nothing enters maps scan 55 once, bound straight, as on the four
+compiles with no activity. **Unconfirmed**, inferred: no Logitech compile holds no device; Logitech's activity menu of no
+row, on the four compiles with no activity (one test account), is one page of the chrome and the key words alone, and no
+mode of the nineteen holds no page; but the power off help at zero devices is not its template at zero, section 415,
+so the compiler does special case zero elsewhere.
 
 **Which of the 78 the 3.4 firmware draws by number**: one. A mode becomes current only from an `0x7E` operand, the
 mode stack (a mode that was current) or base slot 4, and base slot 4 is walked only for status code 9, "LCD Module

@@ -56870,7 +56870,9 @@ give each activity a scan 55 list of its own entering that activity's list, thre
 each activity's key map a copy of the scan 55 list entering its own, five lists and 50 bytes on the test setup,
 983694 in all; each activity's chain now enters its start up screen, its working screen and its own list, the shape
 `activities` reads off Logitech's. The test asserts both ways on each of the five, and the trace taken before the fix
-is its control: both entered mode 50, the idle list. Arch 12 (Harmony One) alone.
+is its control: both entered mode 50, the idle list. Arch 12 (Harmony One) alone. **Seen on the remote after the fix**: the
+setup, 983694 bytes, written to the spare Harmony One as 9 erase blocks and read back byte for byte; Devices inside
+TV kijken opened the LG, the KPN and the Denon first.
 
 ## 425. Screen opcode 1 is a filled rectangle, x, y, width, height and a colour, read in full on the Harmony One and the Harmony 650 and to its row loop on the Harmony 600 and 700; the Harmony One draws a mode page over what the screen held, and our black background is one fill a draw
 
@@ -57301,3 +57303,178 @@ rather than through the census, which now calls one function, `misfits`.
 * `packages/codec/test/touchfontsets.test.ts`: the census over the sixteen with every count above, the code order, the
   byte for byte layout, the controls and the table from nothing; `composesetup.test.ts` the composed setup's 33 sets.
 * `docs/config-format.md`, after section 396's table; `reference/remotes/harmony-one/display.md`.
+
+## 429. The Harmony One's device lists of no rows are the template with no row in it, one page as Logitech's own activity menu of no row is, inferred and unconfirmed; and the power off help's three hit pages are built with its screens, byte for byte on the sixteen English compiles of skin 54
+
+**Todo `todo-compile-one.md` 7.1.6**: two pieces a Harmony One configuration with no device needs that no builder made.
+The device list Devices opens with nothing running, and the list nothing enters (section 424), with no rows; and the
+two hit pages the power off help is touched through, which the composed test setup still carried out of Logitech's
+donor, index 4 and index 24 there, 91 and 76 bytes.
+
+**Sources checked**: sections 45 and 125 (the touch map), 69 (a page list's copy), 275 (a page of one swallowing the
+arrows), 374 and 375 (the Harmony 650's empty configuration and its device list with no row, seen on the bench),
+405 (the hit page census), 411 and 417 (the template engine and the hit page rules), 415 (the power off help), 419
+(the activity menu), 424 (the device lists); the nineteen Harmony One compiles. Logitech's client was not searched
+again: sections 419, 420, 423 and 424 searched it for the screens and found no screen code, which is an absence and not
+a proof. The firmware was not read: how it handles a page with no row to touch is open.
+
+**Scope.** Arch 12 (Harmony One) alone, the touch family's: the help screens and their hit pages on skin 54 and the
+European skin 59 in English, the device lists' measurements on the eighteen English compiles. The Harmony 600, 650 and
+700 have no touch map, and their device list of no row is the four slot family's, sections 374 and 375, built in
+their own layout and seen on the bench Harmony 650. The Harmony 525 holds no touch screen lists and was not checked.
+
+### The device lists of no rows: what is measured and what is inferred
+
+**No Logitech compile of the Harmony One holds no device**, so no list of no rows has been seen. The smallest lists hold
+one device, `harvest_one_families_1`, and the four compiles with no activity hold one, two, two and four. What the
+template of section 424 does at no rows is therefore an inference, which two measurements support and a third only
+does not contradict.
+
+**1. How a list shrinks.** On every one page device list of the eighteen English compiles the own key map is 25 bytes
+and the page's record 7, whatever the rows; the page list and its copy are `5 + 4n` bytes and the hit page `46 + 15n`
+for `n` rows: one entry of four bytes a row before the left key's, one area of fifteen bytes (twelve and a pointer in
+the header) a row before the left key's and the edges. 24 lists hold to it: eight of one row on three compiles, four of
+two rows on two compiles, twelve of three rows on three compiles. **Ten compiles, and less independent than that**: the
+two row point is two compiles of one test account, the three row point one household's three syncs, and only the one row
+point spans three sources (the test account, the spare after a sync, the factory file). **At no rows the template gives
+the steps' zero**, which is what the builder makes and not a measurement: 25, 7, 5, 5 and 46 bytes,
+the page list the left key alone at code 48, the next code after no rows, by section 417's rule of codes by place.
+
+**2. Logitech's own list of no row.** The activity menu is the device list's sibling, three rows to a page, its chrome
+section 411's and its key words in the same places below the screen, though it draws two, "Options" and "Devices",
+where the device list draws "Activities" alone; and on the four compiles with no activity Logitech compiles it with no
+row: **one page**, whose program is the chrome's call and the two key words alone (`16 10 05 10 05 00`: call, font,
+text, font, text, end), the two fonts the key words', no row font and no placeholder text, touched through the two keys
+and the edges, codes 48, 49, 46 and 47, on 4 of 4; and rebuilt by its template the same way, section 419. Its hit page
+at no rows, four areas, is also the zero of its own steps at one to three rows, five to seven. **The four are one test
+account's compiles**, so this is one sample of Logitech's compiler at no rows on this remote, for the list most like this
+one.
+
+**3. A mode has a page.** None of the 3594 modes of the nineteen compiles holds no page. That adds little: they are
+mostly the same screens on every compile, and the activity menu is the only one that ever has no row, so that a list of
+no rows keeps one page, the chrome titled "Devices" and the left key's word, "Activities", the only way back by touch,
+rests on point 2; this only says no compile shows a mode without one.
+
+**And a counterexample of the other kind.** Logitech's compiler does special case zero on this remote: the power off
+help with no device to ask about is not its 4n + 2 template at n = 0, its "If not" question with Yes and No replaced by
+"Nothing to do" with OK, section 415, on `harvest_one_families_1`, the one compile that shows it. So the general
+behaviour of the compiler does not guarantee that a device list of no rows is the template with no row in it; the
+sibling list says it is, the help chain says zero can be other.
+
+**Where Devices goes with no activity.** On the four compiles with no activity the activity menu's Devices key
+enters the idle list directly, and the Devices record and its unread copy each hold one case, the idle value, entering
+it, 4 of 4. So on a configuration with no device the same key opens the list of no rows; leaving Devices out would be
+a form no compile shows, and the Harmony 650's empty configuration keeps it too, section 374.
+
+**What the inference is**: the idle list and the list nothing enters, in that mode order (as on all eighteen), each
+`deviceListScreen` with no row: one page, the arrows swallowed, the chrome titled "Devices", the left key's words (the
+switch on the running variable on the idle list, "Activities" alone on the other), no row picture, icon, name or row
+font, the left key at 48 and nothing else bound on the page, the hit page the left key and the edges. **The list nothing
+enters maps scan 55 once, bound straight**: once per other device list is measured on all nineteen and is one on the
+four compiles with no activity, so this part is measured and not inferred. `EMPTY_DEVICE_LISTS` states the two shapes,
+and `emptyTouchDeviceListsSpec` makes their description from a numbering by role, the way `four-slot/empty.ts` makes
+the Harmony 650's, for 7.1.7 to build with no file read. **Unconfirmed until a remote shows it**, 7.2.
+
+**Put into a file and read back.** `withTouchEmptyDeviceLists` puts the two lists of no rows into a Logitech compile with
+no activity as two new modes, numbered from the compile's own lists by role, so the form can be laid out, read and drawn
+before a configuration with no device exists (7.1.7). On `harvest_one_families_1` and `harvest_one_two_devices` the file
+grows by 389 bytes, the two lists read back as the two shapes, `describeTouchDeviceLists` given them by mode, and
+rebuild byte for byte; each is one page whose list binds code 48 alone and whose hit page holds the left key and the
+edges, codes 48, 46 and 47, a page appended, since neither compile holds a page of those rectangles (each holds one of
+those codes, the message page, whose code 48 is the message's rectangle); the description's fonts are the title's and the
+left key's only; and the description `emptyTouchDeviceListsSpec` makes from their numbering is the one read. Rendered, looked at and
+not tested: both lists draw "Devices" over an empty black page with "Activities" at the bottom left, beside the compile's
+own list of its one device.
+
+**Not done here**: `touchDeviceLists` finds a device list by rows entering every device, `deviceListMenus`, so it finds
+none in a file with no device, and the probe hands the reader the modes. Reading the lists of no rows off an empty
+configuration is 7.1.4's, which splits each `describeTouch*` into reading a file and making a spec. The left key's value
+map and its case with no activity are the value maps' numbering, 7.1.4 and 7.1.5.
+
+### The power off help's hit pages
+
+**Three hit pages, one per kind of screen**, each kind naming one index on every compile, the same page wherever the
+kind is named:
+
+| kind | parts, then the two edges | codes | bytes | compiles |
+|---|---|---|---|---|
+| the attempt screen, "Attemping to fix the problem..." | three rectangles around its lines: 1257, 2791, 3146, 969; 1257, 2791, 1127, 969; 1914, 983, 2370, 532 | 48 to 50, none bound | 76 | 16 of 16 |
+| every question, "If not" and a device's four | the message 1257, 2791, 1369, 1292; the left key, "Yes"; the right key, "No"; the question 1257, 2791, 885, 2470 | 48 to 51, Yes 49 and No 50 | 91 | 15 of 16 |
+| "Nothing to do" | the message; the right key, "OK"; the question's rectangle | 48 to 50, OK 49 | 76 | 1 of 16 |
+
+The keys are section 417's rules; the other rectangles are stated in `HELP_HIT_PARTS`, as the tour's are, being drawn
+around text. **Two of them are rectangles the 23 pages already hold**: the message over "OK" is Low Battery's page's,
+and the attempt screen's middle rectangle the message page's, so `hitpages.ts` names each once. The codes agree with the
+screens' lists, which bind Yes at 49 and No at 50, section 415. **32 pages, 2657 bytes, over the sixteen**: the attempt
+screen's on all sixteen, the questions' on the fifteen with a device to ask about, "Nothing to do"'s on the one without.
+**They are not the help's alone**: 928 page records outside the chain name the same two pages, on exactly the twelve
+compiles with an activity and on none of the four without, which fits the activities' own help screens (section 415,
+not built), read by where they occur and not by their look; those pages are rebuilt the same, so nothing they name
+changes.
+
+**Built with the screens, by `helpscreens.ts`**: the description reads the index each screen's page record leads with,
+which it read before, and spans the pages it names; the builder makes each page by its kind, `helpHitPages`, and puts it
+back with the screens, as the device lists put theirs, section 424; the hit pages builder keeps the table over every
+page. **Byte for byte** on the sixteen and both European compiles. **The blind control** of section 415 now spans them:
+70790 bytes of structure over the sixteen against 68133, 2657 more blinded, the 23702 read inside and 2031 outside
+unchanged, every compile back byte for byte. **The controls fail where they should**: on `harvest_one_two_devices`, the
+attempt screen's index (24) and the questions' (4) swapped in the description give a different file, so the pages are
+built by kind and not copied back, page 24 then holding the questions' six areas and page 4 the attempt screen's five;
+and the attempt screen named to the questions' page is refused by the builder. **"Nothing to do"'s page is one sample**,
+one compile.
+
+**On the composed path**: the help screens' builder is on it since section 415, so its hit pages come with it, the
+composed devices' questions naming the page the chain's own do. The composed test setup's `hit-page` row leaves the
+carried list: **103164 of its 983644 bytes are carried**, 167 fewer, and the attribution gives the help screens 6442
+bytes for 6275; on Logitech's compile of two devices 2365 for 2198. The file keeps its length, 983644 bytes.
+
+### Asserted
+
+`packages/codec/test/touchdevicelists.test.ts`: the steps on the 24 one page lists with their counts, and the zero
+point; Logitech's activity menu of no row on the four compiles, where Devices goes there, and the 3594 modes with a
+page; the lists of no rows put into two compiles, read back, rebuilt, their list, hit page and fonts, the description
+from the numbering, and the refusals of a compile with an activity and of a numbering missing a role.
+`touchhelpscreens.test.ts`: the three kinds on the sixteen, one index each, every page the rules' page, 32 pages of 2657
+bytes; the swap and the refusal; the structure and blind totals moved by the pages. `composesetup.test.ts` and
+`touchbuilders.test.ts`: the carried list without `hit-page` and the help screens' attribution.
+
+### What would falsify it
+
+For the lists of no rows, only a remote: a Harmony One showing a configuration with no device whose Devices screen is
+not the chrome and "Activities", or that refuses a page binding the left key alone; or a Logitech compile with no device
+that draws something on the list. For the hit pages: an English compile of skin 54 whose help screens of one kind name
+two pages, or a page of other rectangles or codes.
+
+### Which architectures
+
+Arch 12 (Harmony One) for both. The Harmony 600, 650 and 700 have no touch map; their device list of no row is built
+and was seen on the bench Harmony 650, sections 374 and 375, in their own layout, and says nothing about this one. The
+Harmony 525 was not checked.
+
+### Reviewers
+
+Both reviewers of the `finding` skill ran on the whole change. **The blind re-measure**, given the questions and not
+this section, found every count above: the three kinds of help hit page on 16, 15 and 1 compiles, each one index per
+compile and the same page wherever named, 32 pages of 2657 bytes, 928 records outside the chain on the twelve compiles
+with an activity; the 24 one page lists by rows, 8 on three compiles, 4 on two, 12 on three, with `5 + 4n` and `n + 3`
+areas; the four activity menus of no row as above, Devices entering the idle list; and 3594 modes with none of no page.
+
+**The sentence audit's corrections, made in place.** (1) The compiles with no activity were said to hold one or two
+devices; `harvest_one_families_3` holds four, and the heading "with the fewest devices" became "with no activity". (2)
+The finding left out the counterexample in its own table: the power off help at zero devices is not its template at
+n = 0, which is now stated beside the inference. (3) The evidence's width: the activity menu's 4 of 4 and the two row
+point are each one test account's compiles, the 24 lists ten compiles, and "a mode has a page" was counted as a third
+support where it adds little. (4) The activity menu was said to share the device list's key words; it shares their
+places, drawing "Options" and "Devices" where the list draws "Activities" alone. (5) The appended hit page was said to
+be of a shape neither compile holds, which read as its codes; each holds a page of those codes, the message page. Two
+tests claimed more than their bodies: the swap test now asserts which page sits at 24 and 4, and the steps test measures
+the hit page from where the file places its first area, the header's length still the reader's `1 + 3n`; two titles about fonts were narrowed to what the bodies check.
+
+### Where it lands
+
+* `packages/codec/src/families/touch/devicelists.ts`: `EMPTY_DEVICE_LISTS`, `EmptyDeviceListsNumbering`,
+  `emptyTouchDeviceListsSpec`, `deviceListNumbers`, `withTouchEmptyDeviceLists`.
+* `packages/codec/src/families/touch/hitpages.ts`: `HELP_HIT_PARTS`, and the two rectangles the 23 share with it.
+* `packages/codec/src/families/touch/helpscreens.ts`: the hit pages in the description, `helpHitPages`, the builder and
+  `withTouchHelpScreens`, and on the composed path in `withTouchHelpChain`.
+* `docs/config-format.md`, the help screens' and the device lists' tables; `reference/remotes/harmony-one/display.md`.

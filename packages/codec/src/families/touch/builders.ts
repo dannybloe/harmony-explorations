@@ -52,9 +52,9 @@
  * 9. the 23 hit pages the fixed screens name and the touch map's table over every page, section 417, `hitpages.ts`,
  *    at any point after the composers, since it reads only the leads of the screen pages naming them and writes
  *    nothing a screen builder reads; each page keeps the index the configuration gave it, so the screens' builders,
- *    which read the same leads, agree with it. The touch map's other pages are the activity menu's, built above, and
- *    the configuration's: a device page's six commands with both page keys and the generic help screen's, named only
- *    by setup screens (`todo-compile-one.md` 4.2 and 4.6), and the donor's pages of its device screens (4.2). The
+ *    which read the same leads, agree with it. The touch map's other pages are the screen sets' that name them, built
+ *    above: the activity menu's, the device pages' and lists', the activity screens', and the power off help's three
+ *    since `todo-compile-one.md` 7.1.6, section 429, the generic help screen's among them. The
  *    composed table is not in Logitech's first use order, the composers appending their pages at the end,
  *    `withHitPage`, which is not this builder's to change, since it keeps the numbering it reads. Every page is named
  *    by a mode page since the activity menu is built, section 419: the two named by nothing, section 417, were the

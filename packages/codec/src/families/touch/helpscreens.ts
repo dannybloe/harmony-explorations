@@ -33,7 +33,9 @@
  * remote's own lists they call), the timers, the value map Help and Yes run, the base slot 11 programs, the
  * modes the lists enter, and the three fonts. **What is generated**: every opcode and constant operand, the tags
  * and their order, every list of the screens' own, every word (the questions from the device names), how a
- * question breaks into lines (`wrapLines` at 171 pixels), every place, which text is inline, and the records.
+ * question breaks into lines (`wrapLines` at 171 pixels), every place, which text is inline, the records, and since
+ * `todo-compile-one.md` 7.1.6 the hit page each kind of screen is touched through, the attempt screen's, every
+ * question's and "Nothing to do"'s, `HELP_HIT_PARTS`, at the index the description reads, section 429.
  *
  * **Where text goes**, every text of the 4n + 2 on the eighteen: the title "PowerOff" at 6, 4 (section 411's
  * chrome); the questions centred on the screen, `floor((176 - w) / 2)`, twelve apart in a block centred on y 143
@@ -68,10 +70,14 @@ import {
 import { characterMap, decode } from '../../text.ts';
 import { type BuiltScreen, type ModeRecordsPlace, ScreenRecordError, assertRebuilt, recordReading, withModeRecords } from '../../screenrecords.ts';
 import { type ValueReader, blobReader, textGlyphs } from '../../shared/spelling.ts';
+import { TOUCH_AREA_LENGTH, touchPages } from '../../tables.ts';
 import { deviceVariables } from '../../inventory.ts';
 import { appendActionLists } from '../../shared/core.ts';
 import { appendMode } from '../../shared/modes.ts';
 import type { ComposedDeviceNote } from '../family.ts';
+import {
+  HELP_HIT_PARTS, type HitPart, type TouchHitPagesPlace, hitPageAreasOf, hitPageRunOf, touchHitPagesPlace, withTouchHitPages,
+} from './hitpages.ts';
 import {
   ARROWS, type BuiltTemplateScreens, CLICK, ENTER, type Entry, HEADER, LIST, MAP, type Part, type Step, TAG_ENTER,
   TAG_HEADER, TAG_LEAVE, TIMER_CANCEL, TIMER_START, TITLE_AT, type TemplateScreen, type TemplateScreensDescribed,
@@ -228,7 +234,7 @@ export function helpScreens(devices: readonly HelpDevice[]): HelpScreen[] {
   const attemptParts: HelpPart[] = [{ op: 'chrome' }, font('body'), block([ATTEMPT_LINE], ATTEMPT_Y),
     block([ATTEMPT_TEXT], ATTEMPT_CENTRE), picture(...ATTEMPT_PICTURE)];
   const attempt = (enter: Step, leave: Step): HelpScreen => ({
-    name: 'Help Attempt',
+    name: ATTEMPT_SCREEN,
     own: [...ARROWS, [TAG_ENTER, enter], [TAG_LEAVE, leave], [TAG_HEADER, HEADER]],
     chrome: chrome<HelpScreenFont>(HELP_TITLE, 1, { title: 'title', count: 'title' }),
     pages: [{ list: [], parts: attemptParts }],
@@ -239,7 +245,7 @@ export function helpScreens(devices: readonly HelpDevice[]): HelpScreen[] {
   // lists, the enter), neither built here. `harvest_one_families_1` alone, one compile.
   if (devices.length === 0) {
     return [attempt(owns(TIMER_START, TIMER_START), TIMER_CANCEL), {
-      name: 'Help Nothing To Do',
+      name: NOTHING_SCREEN,
       own: questionOwn(owns(TIMER_START, LIST), owns(TIMER_CANCEL, LIST)),
       chrome: chrome<HelpScreenFont>(HELP_TITLE, 1, { title: 'title', count: 'title' }),
       pages: [{
@@ -284,6 +290,9 @@ export function helpScreens(devices: readonly HelpDevice[]): HelpScreen[] {
 
 /** The "If not" question's name, which its mode's role is named by. */
 const IF_NOT_SCREEN = 'Help If Not';
+/** The attempt screen's and "Nothing to do"'s names, which also say which hit page each is touched through. */
+const ATTEMPT_SCREEN = 'Help Attempt';
+const NOTHING_SCREEN = 'Help Nothing To Do';
 
 /** A device's four screens' names, in the order `helpScreens` lists them, by its place in the chain. */
 interface HelpScreenNames { first: string; now: string; again: string; fixed: string }
@@ -467,15 +476,30 @@ export interface TouchHelpScreensSpec extends TemplateScreensSpec<HelpScreenFont
   devices: HelpDevice[];
 }
 
-export interface TouchHelpScreensDescribed extends Omit<TemplateScreensDescribed<HelpScreenFont>, 'spec'> {
+/** Where the screens and the hit pages they name sat: the template engine's place, and the touch map's pages. */
+export type TouchHelpScreensPlace = ModeRecordsPlace & { hits: TouchHitPagesPlace };
+
+export interface TouchHelpScreensDescribed extends Omit<TemplateScreensDescribed<HelpScreenFont>, 'spec' | 'place'> {
   spec: TouchHelpScreensSpec;
+  place: TouchHelpScreensPlace;
+}
+
+/**
+ * The hit page a screen of the chain is touched through, `HELP_HIT_PARTS`, by what the screen is: the attempt
+ * screen, "Nothing to do", or a question, every other one. `todo-compile-one.md` 7.1.6, findings section 429.
+ */
+function helpHitParts(screen: HelpScreen): readonly HitPart[] {
+  if (screen.name === ATTEMPT_SCREEN) return HELP_HIT_PARTS.attempt;
+  if (screen.name === NOTHING_SCREEN) return HELP_HIT_PARTS.nothing;
+  return HELP_HIT_PARTS.question;
 }
 
 /**
  * Read off a configuration what a composer would supply for the power off help: the devices' names off their
  * first questions, then `describeTemplateScreens` at the modes `touchHelpScreenModes` finds, against the template
- * those names make. `layout` is `takeApart(c)`; `read` is where every value is taken from, so a caller can blind
- * every byte the description does not read, the names' glyph codes among what it reads.
+ * those names make, and the hit pages the screens name, whose index each screen's page record leads with, the one
+ * value of them the description reads. `layout` is `takeApart(c)`; `read` is where every value is taken from, so a
+ * caller can blind every byte the description does not read, the names' glyph codes among what it reads.
  */
 export function describeTouchHelpScreens(c: Container, layout: ContainerLayout, read: ValueReader = blobReader(c)): TouchHelpScreensDescribed {
   const { modes, firsts } = touchHelpScreenModes(c);
@@ -483,21 +507,54 @@ export function describeTouchHelpScreens(c: Container, layout: ContainerLayout, 
   const devices = firsts.map(({ mode, resend, offLists }): HelpDevice => ({ name: nameOf(c, mode, read, named), resend, offLists }));
   const d = describeTemplateScreens(c, layout, helpScreens(devices), modes, HELP_SCREEN_FONTS, read);
   for (const at of named) d.described.add(at);
-  return { ...d, spec: { ...d.spec, devices } };
+  // The hit pages the screens name, by the index each page's record leads with: their areas and headers are this
+  // builder's, the table the hit pages builder's, `hitpages.ts`, which builds it over every page.
+  const table = touchPages(c);
+  if (table === undefined) throw new ScreenRecordError('the configuration has no touch map');
+  new Set(d.spec.screens.flatMap((one) => one.leads)).forEach((index) => {
+    const page = table.records[index];
+    if (page === undefined) throw new ScreenRecordError(`a help screen names hit page ${index} of a table of ${table.records.length}`);
+    const from = page.start - TOUCH_AREA_LENGTH * page.areas.length;
+    for (let k = from; k < page.start + page.length; k += 1) d.structure.add(k);
+    d.regions.push({ from, to: page.start + page.length, what: `a help screen's hit page ${index}` });
+  });
+  return { ...d, spec: { ...d.spec, devices }, place: { ...d.place, hits: touchHitPagesPlace(c, layout) } };
 }
 
-export type BuiltTouchHelpScreens = BuiltTemplateScreens;
+/** The screens built, and each hit page they name as its run, by the index its pages lead with. */
+export type BuiltTouchHelpScreens = BuiltTemplateScreens & { hits: Map<number, ContainerPiece[]> };
 
-/** The screens built from a description, in mode order; everything but the description's numbers and names is generated. */
+/**
+ * Each hit page `screens` name, built by `HELP_HIT_PARTS` at the index `leads` gives each screen's page. Refuses two
+ * screens of other kinds naming one hit page, which would be one page holding two shapes.
+ */
+function helpHitPages(screens: readonly HelpScreen[], leads: readonly (readonly number[])[]): Map<number, ContainerPiece[]> {
+  const hits = new Map<number, ContainerPiece[]>();
+  const shapes = new Map<number, readonly HitPart[]>();
+  screens.forEach((screen, s) => (leads[s] ?? []).forEach((index) => {
+    const parts = helpHitParts(screen);
+    const was = shapes.get(index);
+    if (was !== undefined && was !== parts) throw new ScreenRecordError(`two help screens of other kinds are both hit page ${index}`);
+    if (was !== undefined) return;
+    shapes.set(index, parts);
+    hits.set(index, hitPageRunOf(hitPageAreasOf(parts, `${screen.name}'s hit page`)));
+  }));
+  return hits;
+}
+
+/** The screens built from a description, in mode order, and their hit pages; everything but the description's numbers and names is generated. */
 export function buildTouchHelpScreens(c: Container, spec: TouchHelpScreensSpec): BuiltTouchHelpScreens {
-  return buildTemplateScreens(c, spec, helpScreens(spec.devices));
+  const screens = helpScreens(spec.devices);
+  return { ...buildTemplateScreens(c, spec, screens), hits: helpHitPages(screens, spec.screens.map((one) => one.leads)) };
 }
 
-/** A layout with these screens swapped for the built ones, where the configuration's sat. */
+/** A layout with these screens and their hit pages swapped for the built ones, where the configuration's sat. */
 export function withTouchHelpScreens(
-  layout: ContainerLayout, built: BuiltTouchHelpScreens, place: TouchHelpScreensDescribed['place'],
+  layout: ContainerLayout, built: BuiltTouchHelpScreens, place: TouchHelpScreensPlace,
 ): ContainerLayout {
-  return withModeRecords(layout, built, place);
+  // The hit pages first: `withModeRecords` makes every piece afresh, so the hit pages' place, read off `layout`,
+  // names pieces only `layout` holds, as `withTouchDeviceLists` does.
+  return withModeRecords(withTouchHitPages(layout, { runs: built.hits }, place.hits), built, place);
 }
 
 /** Describe, build and put back, and compare every byte with the configuration's. */
@@ -730,5 +787,7 @@ export function withTouchHelpChain(c: Container, composed: readonly ComposedDevi
     lengths: new Map([...again.place.lengths, ...reading.lengths]),
     inline: new Map([...again.place.inline, ...reading.inline]),
   };
-  return layOutContainer(withModeRecords(grownLayout, built, place)).container;
+  // The hit pages the whole chain names, the new screens on their reference screens' pages, built as the chain's own.
+  const hits = helpHitPages(template, specOf(again).screens.map((one) => one.leads));
+  return layOutContainer(withTouchHelpScreens(grownLayout, { ...built, hits }, { ...place, hits: again.place.hits })).container;
 }

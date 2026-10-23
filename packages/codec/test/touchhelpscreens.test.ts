@@ -18,8 +18,9 @@ import assert from 'node:assert/strict';
 import { require_, skipUnless } from '@harmony/lab';
 import {
   type Container, type ContainerPiece, SCREEN_CALL, SCREEN_SELECT_FONT, SCREEN_TEXT_AT, SCREEN_TEXT_INLINE, ScreenRecordError,
-  characterMap, decode, layOutContainer, modeRecords, parse, screenProgram, stateVariables, taggedList, takeApart, timers,
+  characterMap, decode, layOutContainer, modeRecords, parse, screenProgram, stateVariables, taggedList, takeApart, timers, touchPages,
 } from '../src/index.ts';
+import { HELP_HIT_PARTS, hitPageAreasOf } from '../src/families/touch/hitpages.ts';
 import { buildTemplateScreens, centred, font, wrapLines } from '../src/families/touch/screentemplate.ts';
 import {
   ATTEMPT_LINE, HELP_FIXED_ROWS, HELP_TITLE, NO, QUESTION_WIDTH, YES, buildTouchHelpScreens, checkTouchHelpScreens, describeTouchHelpScreens,
@@ -48,7 +49,7 @@ test('todo-compile-one 3.2.2.4: on the test setup\'s donor lettered in ours the 
     'Attemping to fix the 29,37', 'problem... 59,49', 'Keep the remote pointed to 9,162', 'your system. 50,174',
   ]);
   assert.deepEqual(drawn(ifNot).slice(0, 4), IF_NOT_DRAWN);
-  assert.deepEqual(checkTouchHelpScreens(out), { devices: 2, screens: 10, lists: 76, described: 660, structure: 2201 });
+  assert.deepEqual(checkTouchHelpScreens(out), { devices: 2, screens: 10, lists: 76, described: 660, structure: 2368 });
   // The engine still refuses a text that would start off the screen, for every builder through it: a line centred
   // on the screen and wider than it, which the help screens no longer draw unwrapped.
   const screen = { name: 'Too Wide', own: [], chrome: [], pages: [{ list: [], parts: [font('body'), centred(`${ATTEMPT_LINE} and more`, 100)] }] };
@@ -73,28 +74,28 @@ function firstDifference(a: Uint8Array, b: Uint8Array): number | undefined {
  * description reads and the screens' bytes.
  */
 const SKIN_54: Readonly<Record<string, { devices: number; screens: number; lists: number; described: number; structure: number }>> = {
-  harvest_one_two_devices: { devices: 2, screens: 10, lists: 76, described: 660, structure: 2198 },
-  one_spare_after_sync: { devices: 1, screens: 6, lists: 44, described: 569, structure: 1220 },
-  one_spare_myharmony: { devices: 4, screens: 18, lists: 140, described: 1466, structure: 3593 },
-  one_spare_20260830: { devices: 5, screens: 22, lists: 172, described: 1765, structure: 4413 },
-  calibration_one: { devices: 3, screens: 14, lists: 108, described: 1218, structure: 2860 },
-  calibration_favchannels: { devices: 3, screens: 14, lists: 108, described: 1218, structure: 2860 },
-  calibration_favzero: { devices: 5, screens: 22, lists: 172, described: 1765, structure: 4413 },
-  compiled_protocols: { devices: 14, screens: 58, lists: 460, described: 4068, structure: 11925 },
-  compiled_protocols_2: { devices: 14, screens: 58, lists: 460, described: 4145, structure: 11870 },
-  compiled_protocols_3: { devices: 8, screens: 34, lists: 268, described: 2680, structure: 6940 },
-  harvest_one_families_1: { devices: 0, screens: 2, lists: 9, described: 81, structure: 359 },
-  harvest_one_families_2: { devices: 2, screens: 10, lists: 76, described: 715, structure: 2209 },
-  harvest_one_families_3: { devices: 4, screens: 18, lists: 140, described: 1440, structure: 3891 },
-  one_friend_legacy_sync_config: { devices: 3, screens: 14, lists: 108, described: 1205, structure: 2838 },
-  phase7_before: { devices: 3, screens: 14, lists: 108, described: 1218, structure: 2860 },
-  phase7_after: { devices: 4, screens: 18, lists: 140, described: 1520, structure: 3684 },
+  harvest_one_two_devices: { devices: 2, screens: 10, lists: 76, described: 660, structure: 2365 },
+  one_spare_after_sync: { devices: 1, screens: 6, lists: 44, described: 569, structure: 1387 },
+  one_spare_myharmony: { devices: 4, screens: 18, lists: 140, described: 1466, structure: 3760 },
+  one_spare_20260830: { devices: 5, screens: 22, lists: 172, described: 1765, structure: 4580 },
+  calibration_one: { devices: 3, screens: 14, lists: 108, described: 1218, structure: 3027 },
+  calibration_favchannels: { devices: 3, screens: 14, lists: 108, described: 1218, structure: 3027 },
+  calibration_favzero: { devices: 5, screens: 22, lists: 172, described: 1765, structure: 4580 },
+  compiled_protocols: { devices: 14, screens: 58, lists: 460, described: 4068, structure: 12092 },
+  compiled_protocols_2: { devices: 14, screens: 58, lists: 460, described: 4145, structure: 12037 },
+  compiled_protocols_3: { devices: 8, screens: 34, lists: 268, described: 2680, structure: 7107 },
+  harvest_one_families_1: { devices: 0, screens: 2, lists: 9, described: 81, structure: 511 },
+  harvest_one_families_2: { devices: 2, screens: 10, lists: 76, described: 715, structure: 2376 },
+  harvest_one_families_3: { devices: 4, screens: 18, lists: 140, described: 1440, structure: 4058 },
+  one_friend_legacy_sync_config: { devices: 3, screens: 14, lists: 108, described: 1205, structure: 3005 },
+  phase7_before: { devices: 3, screens: 14, lists: 108, described: 1218, structure: 3027 },
+  phase7_after: { devices: 4, screens: 18, lists: 140, described: 1520, structure: 3851 },
 };
 const SIXTEEN = Object.keys(SKIN_54);
 /** The two European compiles of skin 59, the factory file and the everyday One's, and the Dutch one. */
 const EUROPEAN: Readonly<Record<string, { devices: number; screens: number; lists: number; described: number; structure: number }>> = {
-  one_config: { devices: 4, screens: 18, lists: 140, described: 1466, structure: 3593 },
-  one_config_unprogrammed: { devices: 1, screens: 6, lists: 44, described: 590, structure: 1177 },
+  one_config: { devices: 4, screens: 18, lists: 140, described: 1466, structure: 3760 },
+  one_config_unprogrammed: { devices: 1, screens: 6, lists: 44, described: 590, structure: 1344 },
 };
 const DUTCH = 'one_friend_asfound_config';
 
@@ -397,7 +398,7 @@ test('todo-compile-one 4.6: a blinded input rebuilds all sixteen: no byte of the
     const out = layOutContainer(withTouchHelpScreens(layout, buildTouchHelpScreens(parse(blinded), d.spec), d.place)).bytes;
     assert.equal(firstDifference(out, c.blob), undefined, `${name} differs`);
   }
-  assert.deepEqual(totals, { structure: 68133, inside: 23702, outside: 2031, blinded: 44431 });
+  assert.deepEqual(totals, { structure: 70790, inside: 23702, outside: 2031, blinded: 47088 });
 });
 
 test('todo-compile-one 4.6: a description with a name changed, two devices swapped, a device\'s resend or list count changed, no device sent unasked, a timer moved, a list moved, the two fonts swapped or two screens\' modes swapped is refused, by the builder or the byte comparison',
@@ -449,4 +450,67 @@ test('todo-compile-one 4.6: the lists built are named by nothing outside the hel
     totals.shared += got.shared;
   }
   assert.deepEqual(totals, { below: 916, shared: 287 });
+});
+
+/** A hit page's areas as their rectangles and codes, for comparing a page by what it holds. */
+const areaForm = (areas: readonly { x: number; width: number; y: number; height: number; code: number }[]): string =>
+  areas.map((a) => `${a.x},${a.width},${a.y},${a.height}:${a.code}`).join(' ');
+
+test('todo-compile-one 7.1.6: the power off help is touched through three hit pages, the attempt screen\'s, every question\'s and "Nothing to do"\'s, each one page wherever it is named on the sixteen English compiles of skin 54, and built from HELP_HIT_PARTS byte for byte with the screens: 32 pages of 2657 bytes',
+     skipUnless(...SIXTEEN), () => {
+  const kinds = new Map<string, Set<string>>();
+  let pages = 0;
+  let bytes = 0;
+  for (const name of SIXTEEN) {
+    const c = parse(require_(name));
+    const d = describeTouchHelpScreens(c, takeApart(c));
+    const map = touchPages(c)!;
+    const { modes } = touchHelpScreenModes(c);
+    // Each kind of screen names one index, the same for every screen of the kind.
+    const byKind = new Map<string, Set<number>>();
+    d.spec.screens.forEach((one, s) => {
+      const kind = s === 0 ? 'attempt' : d.spec.devices.length === 0 ? 'nothing' : 'question';
+      byKind.set(kind, new Set([...(byKind.get(kind) ?? []), ...one.leads]));
+    });
+    assert.equal(modes.length, d.spec.screens.length, name);
+    for (const [kind, indices] of byKind) {
+      assert.equal(indices.size, 1, `${name} ${kind}`);
+      const index = [...indices][0]!;
+      const page = map.records[index]!;
+      // The configuration's page is the rules' page for the kind, rectangle for rectangle and code for code.
+      const want = areaForm(hitPageAreasOf(HELP_HIT_PARTS[kind as keyof typeof HELP_HIT_PARTS], kind).map(({ area, code }) => ({ ...area, code })));
+      assert.equal(areaForm(page.areas), want, `${name} ${kind}`);
+      kinds.set(kind, new Set([...(kinds.get(kind) ?? []), name]));
+      pages += 1;
+      bytes += 15 * page.areas.length + 1;
+    }
+    assert.equal(buildTouchHelpScreens(c, d.spec).hits.size, byKind.size, name);
+  }
+  // The attempt screen's on all sixteen, the questions' on the fifteen with a device to ask about, "Nothing to do"'s on the one without.
+  assert.deepEqual([...kinds].map(([kind, set]) => [kind, set.size]).sort(), [['attempt', 16], ['nothing', 1], ['question', 15]]);
+  assert.deepEqual({ pages, bytes }, { pages: 32, bytes: 2657 });
+});
+
+test('todo-compile-one 7.1.6: the attempt screen\'s and the questions\' hit pages swapped in a description are not copied back: the builder puts each kind\'s page at the index it is given and the file differs; and two kinds named to one index are refused',
+     skipUnless('harvest_one_two_devices'), () => {
+  const c = parse(require_('harvest_one_two_devices'));
+  const rebuilt = (change: (spec: ReturnType<typeof describeTouchHelpScreens>['spec']) => void): Uint8Array => {
+    const layout = takeApart(c);
+    const d = describeTouchHelpScreens(c, layout);
+    change(d.spec);
+    return layOutContainer(withTouchHelpScreens(layout, buildTouchHelpScreens(c, d.spec), d.place)).bytes;
+  };
+  assert.equal(firstDifference(rebuilt(() => undefined), c.blob), undefined);
+  // On this compile the attempt screen is touched through hit page 24 and every question through 4, the composed
+  // test setup's donor indices.
+  const d = describeTouchHelpScreens(c, takeApart(c));
+  assert.deepEqual([...new Set(d.spec.screens.map((one) => one.leads[0]))], [24, 4]);
+  const swapped = rebuilt((spec) => spec.screens.forEach((one) => { one.leads = [one.leads[0] === 24 ? 4 : 24]; }));
+  assert.notEqual(firstDifference(swapped, c.blob), undefined);
+  // And the pages themselves moved with their kinds: 24 holds the questions' six areas, 4 the attempt screen's five.
+  const map = touchPages(parse(swapped))!;
+  const form = (kind: keyof typeof HELP_HIT_PARTS): string => areaForm(hitPageAreasOf(HELP_HIT_PARTS[kind], kind).map(({ area, code }) => ({ ...area, code })));
+  assert.equal(areaForm(map.records[24]!.areas), form('question'));
+  assert.equal(areaForm(map.records[4]!.areas), form('attempt'));
+  assert.throws(() => rebuilt((spec) => { spec.screens[0]!.leads = [4]; }), /two help screens of other kinds are both hit page 4/);
 });

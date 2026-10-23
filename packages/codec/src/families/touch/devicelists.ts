@@ -533,6 +533,17 @@ function numberedList(shape: DeviceListShape, roles: ReadonlyMap<string, number>
   });
 }
 
+/**
+ * The numbers a list of `shape` takes, in its walk's order, every one from `roles`: `numberedList` with no fresh index
+ * to hand out, for a list whose every number the caller chose, a list of no rows among them, `todo-compile-one.md`
+ * 7.1.6. Refuses a role `roles` does not hold.
+ */
+export function deviceListNumbers(shape: DeviceListShape, roles: ReadonlyMap<string, number>): number[] {
+  return numberedList(shape, roles, () => {
+    throw new ScreenRecordError('a device list takes a list of its own the numbering does not say');
+  });
+}
+
 // ---------------------------------------------------------------------------------------------------------
 // The composed path: a row on every list, and an activity's own list, `todo-compile-one.md` 4.3.3.
 
@@ -989,4 +1000,105 @@ export function withTouchActivityDeviceList(start: Container, activity: number):
     current.blob.set(new Writer(2).u16(appended.first).bytes, (list.wide ? list.start + 2 : list.start + 1) + stride * k + stride - 3);
   }
   return restamped(parse(current.blob).blob);
+}
+
+// ---------------------------------------------------------------------------------------------------------
+// A configuration with no device: the two lists of no rows, `todo-compile-one.md` 7.1.6.
+
+/**
+ * The device lists of a configuration with no device and no activity, in mode order, findings section 429: the idle
+ * list, which Devices opens, and the list nothing enters, each of no rows. Logitech's compiles hold the idle list
+ * before the list nothing enters on all eighteen English compiles, section 424.
+ *
+ * **What is measured and what is inferred.** No Harmony One compile of Logitech's holds no device, so no list of no
+ * rows has been seen; the smallest lists hold one device (`harvest_one_families_1`), and lists of one, two and three
+ * rows, one page each, are rebuilt byte for byte by `deviceListScreen`. **The form at no rows is that template with no
+ * row in it**, which is an inference: one page, the chrome titled "Devices" and the left key's word, the page list
+ * holding the left key alone at code 48, the next code after no rows, the row font never selected, and the hit page
+ * the left key and the edges. What makes it more than a guess is the sibling list: **Logitech's own activity menu of
+ * no row**, three rows to a page like this one, on the four compiles with no activity, is one page drawing the chrome
+ * and its key words alone, selecting no row font, touched through its keys and the edges, and rebuilt by its template
+ * the same way, section 419, though on four compiles of one test account. Against it, Logitech's compiler does special
+ * case zero on this remote: the power off help with no device to ask about is "Nothing to do" and not its template with
+ * no device in it, section 415. Unconfirmed until a remote shows it, `todo-compile-one.md` 7.2.
+ *
+ * **The list nothing enters maps scan 55 once, bound straight**: once per other device list, which is the idle list
+ * alone here, the form measured on the four compiles with no activity, section 424. Measured, not inferred.
+ */
+export const EMPTY_DEVICE_LISTS: readonly DeviceListShape[] = [
+  { kind: 'reached', rows: [], scan55: 1 },
+  { kind: 'unreached', rows: [], scan55: 1 },
+];
+
+/**
+ * What a configuration built from nothing gives its two lists of no rows, `EMPTY_DEVICE_LISTS`, which is its numbering
+ * and nothing that is words: per list, in that order, its mode, its page's hit page and every number by its role,
+ * `deviceListSlotRoles`; the two fonts a list of no rows selects, the title's and the left key's; the full screen
+ * background the chrome draws; and the homes of texts drawn by reference, none by default.
+ */
+export interface EmptyDeviceListsNumbering {
+  lists: readonly { mode: number; lead: number; roles: ReadonlyMap<string, number> }[];
+  fonts: Pick<Record<DeviceListFont, number>, 'title' | 'left'>;
+  background: PieceTarget;
+  homes?: Map<string, PieceTarget>;
+}
+
+/**
+ * The description of a configuration's two lists of no rows, made from its numbering rather than read off a file, the
+ * way `four-slot/empty.ts` makes the Harmony 650's: what `buildTouchDeviceLists` builds them from. Refuses a numbering
+ * of another number of lists and one missing a role.
+ */
+export function emptyTouchDeviceListsSpec(numbering: EmptyDeviceListsNumbering): TouchDeviceListsSpec {
+  if (numbering.lists.length !== EMPTY_DEVICE_LISTS.length) {
+    throw new ScreenRecordError(`a configuration with no device holds ${EMPTY_DEVICE_LISTS.length} device lists, not ${numbering.lists.length}`);
+  }
+  return {
+    lists: EMPTY_DEVICE_LISTS.map((one) => ({ ...one, rows: [] })),
+    screen: {
+      // Only the two roles a list of no rows selects; the template asks for no other.
+      fonts: { ...numbering.fonts } as Record<DeviceListFont, number>,
+      homes: numbering.homes ?? new Map(),
+      screens: numbering.lists.map((one, s) => ({
+        mode: one.mode, leads: [one.lead], pictures: [numbering.background],
+        numbers: deviceListNumbers(EMPTY_DEVICE_LISTS[s] as DeviceListShape, one.roles),
+      })),
+    },
+  };
+}
+
+/**
+ * The two lists of no rows put into a Logitech compile with no activity, after its modes, `todo-compile-one.md` 7.1.6:
+ * a file the zero row form can be laid out in, read back and drawn before a configuration with no device exists to
+ * hold it (7.1.7). Nothing enters the two new modes; the compile's own lists stay as they were.
+ *
+ * Numbered as an activity's own list is, `withTouchActivityDeviceList`: every number the lists share from the
+ * configuration's list of the same kind, by role, and every list of their own the next free base slot 10 index;
+ * the background the configuration's lists draw; each page on the hit page of its shape, appended where the table
+ * holds none, `assignHitPages`. Returns the file and the two modes. Refuses a configuration whose device lists are not
+ * the idle list and the list nothing enters alone, which is one holding an activity.
+ */
+export function withTouchEmptyDeviceLists(start: Container): { container: Container; modes: number[] } {
+  const lists = touchDeviceLists(start);
+  if (lists.length !== 2 || lists[0]?.idle !== true || lists[1]?.kind !== 'unreached') {
+    throw new ComposeError('the configuration\'s device lists are not the idle list and the list nothing enters alone, so it holds an activity');
+  }
+  const held = describeTouchDeviceLists(start, takeApart(start), blobReader(start), lists);
+  const { plans, roles } = heldPlans(start, held, lists);
+  const first = modeTable(start)?.addresses.length;
+  if (first === undefined) throw new ComposeError('base slot 6 states no table');
+  const firstList = (start.actionLists() ?? []).length;
+  let nextList = firstList;
+  const added = EMPTY_DEVICE_LISTS.map((shape, s): ListPlan => {
+    const role = new Map([...(roles[s] as Map<string, number>)].filter(([name]) => SHARED_ROLES.has(name)));
+    const zero: DeviceListShape = { ...shape, rows: [] };
+    return {
+      mode: first + s, shape: zero, numbers: numberedList(zero, role, () => nextList++), leads: [],
+      pictures: [(plans[s] as ListPlan).pictures[0] as string], held: 0,
+    };
+  });
+  const all = [...plans, ...added];
+  const fonts = listFonts(start, held.spec.screen.fonts, all);
+  const hit = assignHitPages(start, all, new Map(plans.map((one) => [one.mode, [...one.leads]])));
+  const container = withDeviceListPlans(hit.container, all, fonts, hit.inPlace, firstList, nextList, roles[0]?.get('running'));
+  return { container, modes: added.map((one) => one.mode) };
 }
