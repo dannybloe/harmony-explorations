@@ -43,10 +43,14 @@
  * The Harmony One alone, the touch family's, arch 12: the Harmony 600, 650 and 700's is `families/four-slot/empty.ts`.
  * Read only towards hardware: the result is pieces.
  */
-import type { Container } from '../../gspm.ts';
+import { archSlot, type Container, parse } from '../../gspm.ts';
 import type { ContainerPiece } from '../../frame.ts';
 import { modeRecords } from '../../sections.ts';
-import { timers } from '../../tables.ts';
+import { TIMER_RECORD_LENGTH, TIMER_SLOT, timers } from '../../tables.ts';
+import { Writer } from '../../emit.ts';
+import { relocate } from '../../relocate.ts';
+import { appendActionLists } from '../../shared/core.ts';
+import { appendTableEntries } from '../../shared/infrared.ts';
 import { type StateVariableSpec, type ValueMapSpec, hourListBytes } from '../../statetables.ts';
 import { type BuiltWiring, WiringError } from '../../wiringparts.ts';
 import { TOUCH_STATE_TABLES } from './statetables.ts';
@@ -54,7 +58,7 @@ import { buildTouchWiring, touchWiringNeeds, type TouchWiringSettings, type Touc
 import {
   type BuiltTouchCasePrograms, TOUCH_VALUE_MAP_ROLES, type TouchCaseProgramsSpec, type TouchValueMapRole, buildTouchCasePrograms,
 } from './caseprograms.ts';
-import { CLOCK_HEADER_PROGRAMS, type ClockHeaderProgram } from './clockheader.ts';
+import { CLOCK_HEADER_PROGRAMS, type ClockHeaderProgram, touchClockHeaderEntries } from './clockheader.ts';
 
 // ---------------------------------------------------------------------------------------------------------
 // The redraw timers.
@@ -145,6 +149,50 @@ export function touchRedrawStarters(c: Container): Map<number, number[]> {
     for (const timer of new Set(found)) (out.get(timer) as number[]).push(mode);
   });
   return out;
+}
+
+/** The `0x73` that queues a base slot 11 program, which a redraw list does twice. */
+const QUEUE_PROGRAM = 0x73;
+/** A scheduled timer's kind byte, every timer of the nineteen compiles. */
+const SCHEDULED = 0x01;
+
+/**
+ * A redraw timer for a class of screen the configuration does not hold yet, appended: a four second timer at the
+ * table's end, calling a list of its own that queues the clock and then the charging gauge and starts the timer
+ * again, the shape every redraw timer of the nineteen compiles has, section 430 (`[73 clock, 73 charging, 1F EBnn]`,
+ * the timer record `01 000004 list 7F`). The programs are the configuration's own, `touchClockHeaderEntries`.
+ *
+ * **For the first device page on a configuration with none**, `todo-compile-one.md` 8.1.1: the device pages are a
+ * class of their own, section 430, so an empty One, which holds no device and no timer started by no screen, holds no
+ * timer for them, and the first device composed onto it has to bring one, as a class with a screen has a timer. The
+ * list goes at the action table's end, the record after the last record and the pointer at the table's end; where a
+ * Logitech compile puts its device pages' timer among the others is its own order, section 410, and the placer and the
+ * wiring's description read the table in whatever order it holds, the redraw timers named in table order.
+ */
+export function appendTouchRedrawTimer(c: Container): { container: Container; timer: number; list: number } {
+  if (c.architecture === undefined) throw new WiringError('the configuration states no architecture');
+  const table = timers(c);
+  const last = table?.records.at(-1);
+  const lastAt = last === undefined ? undefined : c.blobOffsetOf(last.address);
+  if (table === undefined || lastAt === undefined) throw new WiringError('the timer table does not read, or holds no timer to append after');
+  const timer = table.records.length;
+  if (timer > 0xff) throw new WiringError(`a timer is started by its index in a byte, and this would be timer ${timer}`);
+  const { entries } = touchClockHeaderEntries(c);
+  const clock = entries[CLOCK_HEADER_PROGRAMS.indexOf('clock')] as number;
+  const charging = entries[CLOCK_HEADER_PROGRAMS.indexOf('charging')] as number;
+  const listed = appendActionLists(c, [[[clock, QUEUE_PROGRAM], [charging, QUEUE_PROGRAM], [START_TIMER | timer, STATE_BAND]]]);
+  let out = parse(listed.bytes);
+  // The record after the last one, read again since the list moved what lay above the action table.
+  const moved = timers(out)?.records.at(-1);
+  const at = moved === undefined ? undefined : out.blobOffsetOf(moved.address);
+  if (at === undefined) throw new WiringError('the last timer stopped reading');
+  const record = new Writer(TIMER_RECORD_LENGTH).u8(SCHEDULED).u24(REDRAW_SECONDS).u16(listed.first).u8(CALL).bytes;
+  const hole = relocate(out, at + TIMER_RECORD_LENGTH, record.length);
+  hole.bytes.set(record, at + TIMER_RECORD_LENGTH);
+  out = parse(hole.bytes);
+  out = parse(appendTableEntries(out, archSlot(out.architecture as number, TIMER_SLOT), [out.flashBase + at + TIMER_RECORD_LENGTH]));
+  if (timers(out)?.records[timer]?.instruction.operand !== listed.first) throw new WiringError('the appended timer does not read back');
+  return { container: out, timer, list: listed.first };
 }
 
 // ---------------------------------------------------------------------------------------------------------

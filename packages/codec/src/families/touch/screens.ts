@@ -41,8 +41,8 @@ import { type TouchArea, type TouchPage, touchPages } from '../../tables.ts';
 import { characterMap } from '../../text.ts';
 import { EDGE_CODES, LIST_ROW_PITCH, PANEL_LEFT, touchOwner, touchPageOf } from '../../touch.ts';
 import { buildTouchActivityScreens } from './activityscreen.ts';
-import { withTouchDevicePage } from './devicepages.ts';
-import { withTouchDeviceListRow } from './devicelists.ts';
+import { firstDevicePageFonts, touchDeviceModes, withTouchDevicePage } from './devicepages.ts';
+import { touchDeviceLists, withTouchDeviceListRow } from './devicelists.ts';
 import { activityPadBox } from './activitypictures.ts';
 import { activityPadBehind } from './activityscreen.ts';
 import { picturesByContent } from '../../pictures.ts';
@@ -85,7 +85,10 @@ export function composeTouchDeviceScreen(
   // device page is found there is nothing to read it off, and a guess is refused: on Logitech's compile of a
   // Samsung test device, whose keys send nothing `deviceModeMaps` counts, font 9 is another subset of
   // letters than the font 7 its pads are drawn in, and cannot spell `Mode`.
-  const padFont = padFontOf(c);
+  // On a configuration holding no device page at all, the empty One, the first device's pads are drawn in the font
+  // the fixed screens draw their items in, which is the device pages' pad font on every compile holding both,
+  // `firstDevicePageFonts`, `todo-compile-one.md` 8.1.1.
+  const padFont = padFontOf(c) ?? (touchDeviceModes(c).length === 0 ? firstDevicePageFonts(c).row : undefined);
   if (padFont === undefined) throw new ComposeError('no device page shows which font a pad is drawn in');
   const rowSet = sets[padFont];
   if (rowSet === undefined) throw new ComposeError('the config does not carry the fonts the layout uses');
@@ -97,8 +100,12 @@ export function composeTouchDeviceScreen(
   });
 
   // The menus and the new mode's index, refused before anything moves.
+  // The device lists are found by their rows, `deviceListMenus`; a configuration with no device has no row to find
+  // them by, and its lists are found by their title, `touchDeviceLists`, as the empty One's are, `todo-compile-one.md`
+  // 8.1.1. The rows' marker is read only where there are rows, since the lists are built again with the device's row.
   const found = deviceListMenus(c);
-  if (found.menus.length === 0 || found.marker === undefined) {
+  const menus = found.menus.length > 0 ? found.menus : touchDeviceLists(c).map((one) => one.mode);
+  if (menus.length === 0 || (found.menus.length > 0 && found.marker === undefined)) {
     throw new ComposeError('no device list menu found to grow');
   }
   const table = modeTable(c);
@@ -107,18 +114,18 @@ export function composeTouchDeviceScreen(
 
   // 1. The mode, its pages, their lists, copies and hit pages, built by the device page template. The key map is
   // `compiled.keys`, a list per scan, every other key bound to nothing, section 271's device mode map.
-  let current = withTouchDevicePage(c, mode, label, pads, options.compiled?.keys ?? new Map());
+  let current = withTouchDevicePage(c, mode, label, pads, options.compiled?.keys ?? new Map(), options.choices ?? TOUCH_CHOICES);
 
   // 2. A row on every device list, by building the lists again, `withTouchDeviceListRow`, `todo-compile-one.md`
   // 4.3.3: each row runs a list of its own, click, enter the mode, mark device mode, as on Logitech's lists, section
   // 424, and a list whose last page was full gains a page. Until then this step appended a row to each list's last
   // page and one list every row shared, which left the lists in a shape no compile of Logitech's has.
-  const pagesBefore = found.menus.map((menu) => modeRecords(current)?.[menu]?.pages.length ?? 0);
+  const pagesBefore = menus.map((menu) => modeRecords(current)?.[menu]?.pages.length ?? 0);
   const rowList = (current.actionLists() ?? []).length;
-  current = withTouchDeviceListRow(current, mode, label, options.iconLike);
-  const pagesAdded = found.menus.filter((menu, k) => (modeRecords(current)?.[menu]?.pages.length ?? 0) > (pagesBefore[k] as number));
+  current = withTouchDeviceListRow(current, mode, label, options.iconLike, options.choices ?? TOUCH_CHOICES);
+  const pagesAdded = menus.filter((menu, k) => (modeRecords(current)?.[menu]?.pages.length ?? 0) > (pagesBefore[k] as number));
 
-  return { bytes: restamped(current.blob), mode, menus: found.menus, rowList, pagesAdded };
+  return { bytes: restamped(current.blob), mode, menus, rowList, pagesAdded };
 }
 
 /**

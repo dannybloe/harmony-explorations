@@ -8,7 +8,10 @@
  * runs on the composed file, the blending last, since it smooths each label against what ends up behind it.
  */
 import { type BlendedSet, checkBlendedLetters, withBlendedLetters } from '../../blending.ts';
+import { type FontSet, IMAGE_SET_HEADER, fontSets, glyphOf } from '../../font.ts';
 import { type SetFace, withOxaniumFonts } from '../../fonttable.ts';
+import { ComposeError } from '../../shared/core.ts';
+import { buildTouchFontTable } from './fontsets.ts';
 import { layOutContainer, takeApart } from '../../frame.ts';
 import type { Container } from '../../gspm.ts';
 import { touchLabelWeight } from './activitypictures.ts';
@@ -34,6 +37,39 @@ export interface LetteredDonor {
 export function letterTouchDonor(c: Container, choices: TouchChoices): LetteredDonor {
   const fonts = withOxaniumFonts(takeApart(c), 'own', {}, touchActivityFonts(c, choices));
   return { bytes: layOutContainer(fonts.layout).bytes, faces: fonts.faces };
+}
+
+/**
+ * The faces of a donor of ours, `todo-compile-one.md` 8.1.2: the empty One, section 434, unblended, which a setup is
+ * composed onto in place of a Logitech compile. A donor is ours where its font table is the stated one,
+ * `buildTouchFontTable` in `choices`' weights, set for set and glyph for glyph, as the Harmony 650's `donorFaces` holds
+ * an empty configuration to its stated table, findings section 377; its faces are then the stated table's, which the
+ * look's blending letters. Undefined for any other donor, a Logitech compile, which `letterTouchDonor` letters.
+ * Refuses a donor whose stated sets are ours and which holds more, a donor of ours already blended: the blending runs
+ * once, last, over every text the composers add, and a screen's description knows a role by one font.
+ */
+export function touchDonorFaces(c: Container, choices: TouchChoices): readonly SetFace[] | undefined {
+  const stated = buildTouchFontTable(choices);
+  const sets = fontSets(c) ?? [];
+  if (sets.length < stated.sets.length) return undefined;
+  const same = stated.sets.every((piece, k) => {
+    const theirs = sets[k] as FontSet;
+    const head = c.blobOffsetOf(theirs.address);
+    if (head === undefined || piece.bytes.subarray(0, IMAGE_SET_HEADER).some((one, n) => c.blob[head + n] !== one)) return false;
+    for (let code = theirs.first; code < theirs.first + theirs.count; code += 1) {
+      const ref = piece.refs.find((one) => one.at === IMAGE_SET_HEADER + 3 * (code - 1));
+      const want = ref !== undefined && 'to' in ref ? ref.to.bytes : undefined;
+      const glyph = glyphOf(c, theirs, code);
+      const at = glyph === undefined ? undefined : c.blobOffsetOf(glyph.address);
+      if (want === undefined || at === undefined || want.some((one, n) => c.blob[at + n] !== one)) return false;
+    }
+    return true;
+  });
+  if (!same) return undefined;
+  if (sets.length > stated.sets.length) {
+    throw new ComposeError(`a donor of ours holds ${sets.length} font sets where the stated table holds ${stated.sets.length}, so it is blended`);
+  }
+  return stated.faces;
 }
 
 /**

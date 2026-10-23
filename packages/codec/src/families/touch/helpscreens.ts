@@ -63,16 +63,24 @@ import type { Container } from '../../gspm.ts';
 import type { ContainerLayout, ContainerPiece } from '../../frame.ts';
 import { layOutContainer, takeApart } from '../../frame.ts';
 import { parse } from '../../gspm.ts';
-import { modeRecords, stateRecords, taggedList } from '../../sections.ts';
+import { modePages, modeRecords, pageListCopies, stateRecords, taggedList } from '../../sections.ts';
 import {
-  SCREEN_CALL, SCREEN_END, SCREEN_RETURN, SCREEN_SELECT_FONT, SCREEN_TEXT_AT, SCREEN_TEXT_INLINE, type ScreenInstruction, screenProgram,
+  SCREEN_CALL, SCREEN_DRAW_IMAGE, SCREEN_END, SCREEN_FILL, SCREEN_RETURN, SCREEN_SELECT_FONT, SCREEN_TEXT_AT, SCREEN_TEXT_INLINE,
+  type ScreenInstruction, screenProgram,
 } from '../../screen.ts';
+import { u24 } from '../../bytes.ts';
+import { fillTarget } from '../../pictures.ts';
+import type { PieceTarget } from '../../statetables.ts';
 import { characterMap, decode } from '../../text.ts';
 import { type BuiltScreen, type ModeRecordsPlace, ScreenRecordError, assertRebuilt, recordReading, withModeRecords } from '../../screenrecords.ts';
 import { type ValueReader, blobReader, textGlyphs } from '../../shared/spelling.ts';
 import { TOUCH_AREA_LENGTH, touchPages } from '../../tables.ts';
 import { deviceVariables } from '../../inventory.ts';
 import { appendActionLists } from '../../shared/core.ts';
+import { STATE_WRITE_BASE } from '../../actions.ts';
+import { describeTouchWiring } from './wiring.ts';
+import { withHitPage } from './menus.ts';
+import { grownList } from './menupages.ts';
 import { appendMode } from '../../shared/modes.ts';
 import type { ComposedDeviceNote } from '../family.ts';
 import {
@@ -590,6 +598,11 @@ export interface HelpNumbering {
 
 export function helpNumbering(d: TouchHelpScreensDescribed): HelpNumbering {
   if (d.spec.devices.length === 0) throw new ScreenRecordError('the power off help asks about no device, so it holds no question a device\'s could be numbered by');
+  return chainNumbering(d);
+}
+
+/** `helpNumbering` without its refusal: a chain of no device read too, the attempt screen and "Nothing to do". */
+function chainNumbering(d: TouchHelpScreensDescribed): HelpNumbering {
   const roles = new Map<string, number>();
   const own = helpScreens(d.spec.devices).map((screen, s) => {
     const numbers = (d.spec.screens[s] as TouchHelpScreensSpec['screens'][number]).numbers;
@@ -639,6 +652,66 @@ export function numberedHelpScreens(
     if (lists.length !== 0) throw new ScreenRecordError(`${screen.name} runs fewer lists of its own than it is given`);
     return numbers;
   });
+}
+
+/**
+ * The roles a chain asking about devices takes that a chain of no device does not hold, by where every English compile
+ * holding a device has them, findings section 435: the first list each question's enter handler runs, the wiring's
+ * `keyLights.4.1.1`, lighting channel 5; the second, the light 7 on list "Nothing to do" runs too; the list after
+ * `07 FFFB`, the wiring's `lights`; and the two each question's leave handler runs, the lists switching channels 5 and
+ * 7 off, section 400's form, the second the one "Nothing to do" runs.
+ */
+export const FIRST_DEVICE_HELP_LISTS: Readonly<Record<string, string>> = { 'enter list 1': 'keyLights.4.1.1', 'seven list': 'lights' };
+
+/**
+ * A chain of no device numbered for the first devices it asks about, `todo-compile-one.md` 8.1.1: the empty One's,
+ * section 434, where until now a composed device's questions were numbered from a device's the chain held. The roles
+ * the two screens hold, `chainNumbering`, with those a question takes that they do not, `FIRST_DEVICE_HELP_LISTS`: the
+ * wiring's two lists by their catalogue names, the light 7 lists "Nothing to do" runs, and the list switching channel
+ * 5 off, found by its instructions among the configuration's lists. Refuses where any is not found.
+ */
+function firstHelpNumbering(c: Container, d: TouchHelpScreensDescribed): HelpNumbering {
+  const numbered = chainNumbering(d);
+  const wiring = describeTouchWiring(takeApart(c));
+  for (const [role, name] of Object.entries(FIRST_DEVICE_HELP_LISTS)) {
+    const index = wiring.lists[name];
+    if (index === undefined) throw new ScreenRecordError(`the configuration holds no list ${name}, a question's ${role}`);
+    numbered.roles.set(role, index);
+  }
+  const on = numbered.roles.get('light 7 on');
+  const off = numbered.roles.get('light 7 off');
+  if (on === undefined || off === undefined) throw new ScreenRecordError('the chain of no device runs no light 7 lists to number a question\'s by');
+  numbered.roles.set('enter list 2', on);
+  numbered.roles.set('leave list 2', off);
+  const variable = wiring.variables.keyLight4;
+  if (variable === undefined) throw new ScreenRecordError('the configuration holds no variable keyLight4, which channel 5\'s off list writes');
+  const wanted = [{ opcode: 0x3f, operand: 0xc000 | (5 << 4) }, { opcode: STATE_WRITE_BASE + variable, operand: 0 }];
+  const found = (c.actionLists() ?? []).findIndex((list) => list.length === wanted.length
+    && list.every((one, k) => one.opcode === wanted[k]?.opcode && one.operand === wanted[k]?.operand));
+  if (found < 0) throw new ScreenRecordError('the configuration holds no list switching channel 5 off, a question\'s leave list 1');
+  numbered.roles.set('leave list 1', found);
+  return numbered;
+}
+
+/** A hit page's areas and codes as one string, for telling two pages apart by what they hold. */
+const hitShape = (areas: readonly { x: number; width: number; y: number; height: number; code: number }[]): string =>
+  areas.map((a) => `${a.x},${a.width},${a.y},${a.height}:${a.code}`).join(' ');
+
+/**
+ * The hit page the first questions are touched through, on a chain of no device: a page of the question's shape the
+ * table holds, else "Nothing to do"'s, rebuilt in place as a question's by the build where no other screen names it,
+ * since the "If not" question takes that screen's mode, else one appended, `withHitPage`.
+ */
+function firstQuestionPage(c: Container, nothing: number): { container: Container; lead: number } {
+  const table = touchPages(c);
+  if (table === undefined) throw new ScreenRecordError('the configuration has no touch map');
+  const wanted = hitPageAreasOf(HELP_HIT_PARTS.question, 'a help question\'s hit page');
+  const shape = hitShape(wanted.map(({ area, code }) => ({ ...area, code })));
+  const same = table.records.findIndex((one) => hitShape(one.areas) === shape);
+  if (same >= 0) return { container: c, lead: same };
+  const namers = (modeRecords(c) ?? []).flatMap((record) => record?.pages ?? []).filter((one) => one.lead === nothing).length;
+  if (namers === 1) return { container: c, lead: nothing };
+  return withHitPage(c, wanted.map(({ area, code }) => [code, { ...area, code, self: 0, address: 0 }] as const));
 }
 
 /** A device a composer added, as its help asks about it: `HelpDevice`, and the power off lists it resends. */
@@ -708,19 +781,26 @@ export function composedHelpDevice(c: Container, note: ComposedDeviceNote): Comp
  * screen keeps its mode. Refused: a chain with no device, a composed device already asked about by name, and
  * whatever the description, the numbering or the builder refuses.
  */
-export function withTouchHelpChain(c: Container, composed: readonly ComposedDeviceNote[] = []): Container {
+export function withTouchHelpChain(start: Container, composed: readonly ComposedDeviceNote[] = []): Container {
   const added = composed.flatMap((note) => {
-    const one = composedHelpDevice(c, note);
+    const one = composedHelpDevice(start, note);
     return one === undefined ? [] : [one];
   });
-  const layout = takeApart(c);
-  const d = describeTouchHelpScreens(c, layout);
-  if (added.length === 0) return layOutContainer(withTouchHelpScreens(layout, buildTouchHelpScreens(c, d.spec), d.place)).container;
+  const layout0 = takeApart(start);
+  const d0 = describeTouchHelpScreens(start, layout0);
+  if (added.length === 0) return layOutContainer(withTouchHelpScreens(layout0, buildTouchHelpScreens(start, d0.spec), d0.place)).container;
 
-  const asked = new Set(d.spec.devices.map((one) => one.name));
+  const asked = new Set(d0.spec.devices.map((one) => one.name));
   const twice = added.find((one) => asked.has(one.name));
   if (twice !== undefined) throw new ScreenRecordError(`the power off help already asks about ${twice.name}`);
-  const { roles, own } = helpNumbering(d);
+  // A chain of no device, the empty One's, `todo-compile-one.md` 8.1.1: its two screens become the attempt screen
+  // and the "If not" question, which takes "Nothing to do"'s mode, its lists of their own reused and more appended,
+  // and every question is touched through the question's hit page, `firstQuestionPage`.
+  const noDevice = d0.spec.devices.length === 0;
+  const questionPage = noDevice ? firstQuestionPage(start, (d0.spec.screens[1] as TouchHelpScreensSpec['screens'][number]).leads[0] as number) : undefined;
+  const c = questionPage?.container ?? start;
+  const d = questionPage === undefined || questionPage.container === start ? d0 : describeTouchHelpScreens(c, takeApart(c));
+  const { roles, own } = noDevice ? firstHelpNumbering(c, d) : helpNumbering(d);
   const devices: HelpDevice[] = [...d.spec.devices, ...added.map(({ name, resend, offLists }) => ({ name, resend, offLists }))];
   const template = helpScreens(devices);
   // The screens the configuration holds are the template's first ones, the attempt, "If not" and its devices'.
@@ -731,17 +811,28 @@ export function withTouchHelpChain(c: Container, composed: readonly ComposedDevi
   template.forEach((screen, s) => roles.set(`mode ${screen.name}`, modeOf(s)));
   added.forEach((one, j) => one.lists.forEach((list, k) => roles.set(`off ${d.spec.devices.length + j} ${k}`, list)));
   let nextList = firstList;
-  const owned = template.map((screen, s) => (s < held ? own[s] as number[]
-    : templateNumberSlots(screen).filter((slot) => slot.kind === 'owns').map(() => nextList++)));
+  // A held screen's lists of its own are its own still; where the template takes more, a chain of no device's two
+  // screens becoming the attempt screen and "If not", the rest are the next free indices.
+  const owned = template.map((screen, s) => {
+    const wanted = templateNumberSlots(screen).filter((slot) => slot.kind === 'owns').length;
+    const kept = s < held ? (own[s] as number[]).slice(0, wanted) : [];
+    // A consistency check on a held screen, on either donor: the template never takes fewer lists than the screen it
+    // replaces runs, which no compile read breaks; refused rather than leaving a held list unnumbered.
+    if (s < held && kept.length < (own[s] as number[]).length) throw new ScreenRecordError(`${screen.name} runs fewer lists of its own than the screen it replaces`);
+    return [...kept, ...Array.from({ length: wanted - kept.length }, () => nextList++)];
+  });
   const numbers = numberedHelpScreens(template, roles, owned);
   // A new screen's hit page and pictures are the same screen's of the chain's last device: the four kinds of
   // question each take one, the same on every device of a chain.
-  const referenceOf = (s: number): number => held - 4 + ((s - held) % 4);
+  // On a chain of no device every question draws what "Nothing to do" draws, the background and the power picture
+  // where a question draws its picture, and is touched through the question's page.
+  const referenceOf = (s: number): number => (noDevice ? 1 : held - 4 + ((s - held) % 4));
   const specOf = (one: TouchHelpScreensDescribed): TouchHelpScreensSpec => ({
     ...one.spec, devices,
     screens: template.map((_, s) => {
       const from = one.spec.screens[s < held ? s : referenceOf(s)] as TouchHelpScreensSpec['screens'][number];
-      return { mode: modeOf(s), leads: [...from.leads], pictures: [...from.pictures], numbers: numbers[s] as number[] };
+      const leads = noDevice && s > 0 ? [questionPage?.lead as number] : [...from.leads];
+      return { mode: modeOf(s), leads, pictures: [...from.pictures], numbers: numbers[s] as number[] };
     }),
   });
 
@@ -758,6 +849,34 @@ export function withTouchHelpChain(c: Container, composed: readonly ComposedDevi
   }));
   if (appended.first !== firstList) throw new ScreenRecordError(`the new lists start at ${appended.first}, not ${firstList}`);
   let grown = parse(appended.bytes);
+  // A chain of no device's two screens become the attempt screen and "If not", whose page binds No as well as Yes:
+  // each held page's list and its copy grown to the built ones first, the copy before the list since the pool sits
+  // below the page lists, and its lead pointed at the page it is touched through, as the activity menu grows a page.
+  if (noDevice) {
+    for (let s = 0; s < held; s += 1) {
+      const screen = first.screens[s] as BuiltScreen;
+      const what = `${(template[s] as HelpScreen).name}'s page`;
+      const pageOf = () => {
+        const one = modeRecords(grown)?.[modeOf(s)]?.pages[0];
+        if (one === undefined) throw new ScreenRecordError(`${what} does not read`);
+        return one;
+      };
+      const rank = modePages(grown).findIndex((one) => one.address === pageOf().address);
+      const copyOff = pageListCopies(grown)[rank];
+      if (copyOff === undefined) throw new ScreenRecordError(`${what} has no copy`);
+      // A list the build leaves as it is stays where it is: `grownList` reads the narrow form alone, and the attempt
+      // screen's page list, which binds nothing, is the two byte empty form on both chains.
+      // A list's first byte is its count, so a held list matching every built byte is the same length too.
+      const holds = (at: number, bytes: Uint8Array): boolean => bytes.every((one, k) => grown.blob[at + k] === one);
+      const copy = screen.copies[0] as Uint8Array;
+      if (!holds(copyOff, copy)) grown = grownList(grown, copyOff, copy, what);
+      const list = (screen.lists[0] as ContainerPiece).bytes;
+      const listOff = grown.blobOffsetOf(pageOf().list) as number;
+      if (!holds(listOff, list)) grown = grownList(grown, listOff, list, what);
+      grown.blob[grown.blobOffsetOf(pageOf().address) as number] = (specOf(d).screens[s] as TouchHelpScreensSpec['screens'][number]).leads[0] as number;
+      grown = parse(grown.blob);
+    }
+  }
   for (let s = held; s < template.length; s += 1) {
     const screen = first.screens[s] as BuiltScreen;
     const ownBytes = screen.own.bytes;
@@ -778,6 +897,7 @@ export function withTouchHelpChain(c: Container, composed: readonly ComposedDevi
   // 3. Built over the grown configuration and put in place: the chain's own screens where the description of the
   // chain as it was finds them, the stand ins where `recordReading` reads them.
   const grownLayout = takeApart(grown);
+  if (noDevice) return firstChainBuilt(grown, grownLayout, template, modeOf, numbers, owned.flat(), devices, d.spec.fonts, questionPage?.lead as number);
   const again = describeTouchHelpScreens(grown, grownLayout);
   const built = buildTemplateScreens(grown, specOf(again), template);
   const reading = recordReading(grown, grownLayout, blobReader(grown));
@@ -792,4 +912,43 @@ export function withTouchHelpChain(c: Container, composed: readonly ComposedDevi
   // The hit pages the whole chain names, the new screens on their reference screens' pages, built as the chain's own.
   const hits = helpHitPages(template, specOf(again).screens.map((one) => one.leads));
   return layOutContainer(withTouchHelpScreens(grownLayout, { ...built, hits }, { ...place, hits: again.place.hits })).container;
+}
+
+/**
+ * `withTouchHelpChain`'s last step on a chain of no device, `todo-compile-one.md` 8.1.1: the two screens it held no
+ * longer read as the template they were described by, "Nothing to do"'s page list holding the "If not" question's two
+ * bindings now, so every screen of the chain is read where it sits by `recordReading`, as the stand ins are, and its
+ * pictures off the programs the configuration holds: the attempt screen's its own, and every question's those of
+ * "Nothing to do", the background and the power picture at a question's place. The attempt screen keeps its hit page
+ * and every question takes `questionLead`. Then built and put in place, and the hit pages the chain names built.
+ */
+function firstChainBuilt(
+  c: Container, layout: ContainerLayout, template: readonly HelpScreen[], modeOf: (s: number) => number,
+  numbers: readonly (readonly number[])[], lists: readonly number[], devices: readonly HelpDevice[],
+  fonts: Record<HelpScreenFont, number>, questionLead: number,
+): Container {
+  const reading = recordReading(c, layout, blobReader(c));
+  const frames = template.map((screen, s) => reading.frame(screen.name, modeOf(s)));
+  const places = template.map((screen, s) => reading.placeOf(screen.name, frames[s] as ReturnType<typeof reading.frame>));
+  for (const index of lists) reading.list(index, 'the power off help');
+  const drawn = (program: readonly ScreenInstruction[]): PieceTarget[] => program
+    .filter((one) => (one.opcode === SCREEN_DRAW_IMAGE || one.opcode === SCREEN_FILL)).map((one) => (one.opcode === SCREEN_FILL
+      ? fillTarget(one.operands[2] as number, one.operands[3] as number, ((one.operands[4] as number) << 8) | (one.operands[5] as number))
+      : reading.targetOf(u24(one.operands, 2))));
+  const picturesOf = (s: number): PieceTarget[] => {
+    const page = (frames[s] as ReturnType<typeof reading.frame>).pages[0];
+    return [...drawn(page?.chrome?.program ?? []), ...drawn(page?.program ?? [])];
+  };
+  const attemptLead = modeRecords(c)?.[modeOf(0)]?.pages[0]?.lead;
+  if (attemptLead === undefined) throw new ScreenRecordError('the attempt screen names no hit page');
+  const spec: TouchHelpScreensSpec = {
+    fonts, homes: reading.homes(), devices: [...devices],
+    screens: template.map((_, s) => ({
+      mode: modeOf(s), leads: [s === 0 ? attemptLead : questionLead], pictures: picturesOf(s === 0 ? 0 : 1), numbers: [...(numbers[s] as number[])],
+    })),
+  };
+  const built = buildTemplateScreens(c, spec, template);
+  const place: ModeRecordsPlace = { screens: places, lists: reading.lists, lengths: reading.lengths, inline: reading.inline };
+  const hits = helpHitPages(template, spec.screens.map((one) => one.leads));
+  return layOutContainer(withTouchHelpScreens(layout, { ...built, hits }, { ...place, hits: touchHitPagesPlace(c, layout) })).container;
 }

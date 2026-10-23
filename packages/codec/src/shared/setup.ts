@@ -477,13 +477,18 @@ export function composeSetup(setup: Recipe, options: AssembleOptions): ComposedS
   };
   note('donor');
   // The family's look, where it has one: the donor lettered first, so every name a composer spells finds its
-  // letters, and the rest over the composed file below.
+  // letters, and the rest over the composed file below. A donor of ours, the family's empty configuration, is in our
+  // letters already and draws our pictures, so it is not lettered and no step turning Logitech's pictures into ours
+  // runs on it, `todo-compile-one.md` 8.1.2; its faces are its stated table's, which the look's blending letters.
   const look = target.family.composedLook;
-  const lettered = look?.letterDonor(c, target.family.choices);
+  const ours = look?.donorOfOurs?.(c, target.family.choices);
+  if (ours !== undefined) note('a donor of ours', `${ours.length} sets of our letters`);
+  const lettered = ours !== undefined ? undefined : look?.letterDonor(c, target.family.choices);
   if (lettered !== undefined) {
     c = parse(lettered.bytes);
     note('lettered');
   }
+  const faces = ours ?? lettered?.faces;
   // Every device the donor holds is given the catalogue's infrared records, `todo-compile-one.md` 8.1.3, so the
   // result carries none of Logitech's: the five the donor lacks are composed from the catalogue anyway.
   const parts = composeSetupParts(c, setup, target, options,
@@ -495,13 +500,13 @@ export function composeSetup(setup: Recipe, options: AssembleOptions): ComposedS
   // the donor's part.
   const builders = target.family.composedBuilders;
   if (builders !== undefined) {
-    const built = builders(c, parts.devicesComposed, target.family.choices);
+    const built = builders(c, parts.devicesComposed, target.family.choices, { donorOfOurs: ours !== undefined });
     c = built.container;
     note('built', built.built.join(', '));
   }
   let blended: readonly BlendedSet[] = [];
-  if (look !== undefined && lettered !== undefined) {
-    const looked = look.look(c, lettered.faces, target.family.choices, catalogueTypes(setup, options.archive));
+  if (look !== undefined && faces !== undefined) {
+    const looked = look.look(c, faces, target.family.choices, catalogueTypes(setup, options.archive));
     c = looked.container;
     blended = looked.blended;
     note('look');

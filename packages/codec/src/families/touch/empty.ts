@@ -141,6 +141,13 @@ export interface EmptyTouchOptions {
   builtAt: string;
   /** The family's choices, `TOUCH_CHOICES` unless given. */
   choices?: TouchChoices;
+  /**
+   * Whether our letters are blended into the colour under each text, the look's last step; true unless given. False
+   * gives a donor of ours, which a setup is composed onto, `todo-compile-one.md` 8.1.2: the blending runs once, last,
+   * over every text the composers add, as on the Harmony 650's empty configuration, findings section 377, and a
+   * screen's description knows a role by one font, which the blending splits by background.
+   */
+  blend?: boolean;
 }
 
 export interface EmptyTouchConfiguration {
@@ -308,12 +315,27 @@ export function buildEmptyTouchConfiguration(options: EmptyTouchOptions): EmptyT
     at += one.length;
   }
   const entries = modes.map((one) => (one === last ? { ...one.entry, bytes: tail } : one.entry));
-  const modeBody = modes.flatMap((one, k) => [
-    ...(k === 0 ? [] : [one.own]),
-    ...one.programs.flatMap((program, p) => [program, one.records[p] as ContainerPiece]),
-    ...(one.chromes ?? []), ...(one.extras ?? []),
-    entries[k] as ContainerPiece,
-  ]);
+  // In Logitech's order within a mode, findings section 435: the chrome, then per page its program, the pieces it reaches
+  // by a switch, its join and its arms, and its page record, then the mode entry. Until then the chrome and those pieces
+  // came after the page records, so a device list's last arm, which ends on a jump, sat right before its mode entry,
+  // whose first byte is zero, and the byte accounting read that zero as the arm's terminator as well. A screen's
+  // pieces reached by a switch are an equal number per page, the template's walk; any other count goes after the
+  // last page's program, as it went before.
+  const modeBody = modes.flatMap((one, k) => {
+    const extras = one.extras ?? [];
+    const pages = one.programs.length;
+    const perPage = pages > 0 && extras.length % pages === 0 ? extras.length / pages : undefined;
+    return [
+      ...(k === 0 ? [] : [one.own]),
+      ...(one.chromes ?? []),
+      ...one.programs.flatMap((program, p) => [
+        program,
+        ...(perPage !== undefined ? extras.slice(p * perPage, (p + 1) * perPage) : p === pages - 1 ? extras : []),
+        one.records[p] as ContainerPiece,
+      ]),
+      entries[k] as ContainerPiece,
+    ];
+  });
   const sets = dense('base slot 9 entry', wiring.wiring.entries, wiring.wiring.entries.size);
   const programs = clock.programs.flat();
 
@@ -343,6 +365,10 @@ export function buildEmptyTouchConfiguration(options: EmptyTouchOptions): EmptyT
     container = withPictureFilled(container, address).container;
   }
   container = withCentredPadLabels(container);
+  if (options.blend === false) {
+    const unblended = layOutContainer(takeApart(container));
+    return { bytes: unblended.bytes, container: unblended.container, numbering, faces: laid.faces, blended: [], lists };
+  }
   const blending = withBlendedLetters(takeApart(container), laid.faces, touchLabelWeight(choices));
   const blended = layOutContainer(blending.layout);
   checkBlendedLetters(blended.container, laid.faces, blending.blended);

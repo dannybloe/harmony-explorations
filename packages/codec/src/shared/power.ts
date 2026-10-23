@@ -11,6 +11,8 @@ import {
 import { valueMaps } from '../valuemap.ts';
 import { appendValueMapCase, caseProgram } from './menus.ts';
 import { excise, relocate } from '../relocate.ts';
+import { pointers } from '../growth.ts';
+import { SCREEN_END, screenProgram } from '../screen.ts';
 import { ACTION_LIST_INDEX_OPCODE, HANDLER_TAG_ENTER, handlerSets, taggedList } from '../sections.ts';
 import { ACTION_TABLE_SLOT, appendActionLists, ComposeError, restamped } from '../shared/core.ts';
 
@@ -124,16 +126,27 @@ export function joinPowerOff(c: Container, variable: number): JoinedPowerOff {
 interface IdleOffRecord {
   map: number;
   target: number | undefined;
+  /** True where the case's program ends at once, switching nothing off: a configuration with no power variable. */
+  nothing?: boolean;
 }
 
 /**
  * The base slot 14 record the idle key map's enter list maps through to switch every device off, found by
  * shape, section 376: of the records that enter list maps through, the one with no case at all, or whose
- * one case, for 0, queues a write of 0 into a `Power` variable, or a call to the all off list. On the
- * Harmony One, the 525 and the 650 compiles the enter list maps through two records and the other's case
- * writes something else. Refused unless exactly one fits.
+ * one case, for 0, queues a write of 0 into a `Power` variable, or a call to the all off list, or, where no
+ * device has a power variable, ends at once. On the Harmony One, the 525 and the 650 compiles the enter list
+ * maps through two records and the other's case writes something else. Refused unless exactly one fits.
+ *
+ * **The case that ends at once** is the Harmony One's all off with nothing to switch off: Logitech's compile
+ * `harvest_one_families_1`, whose devices have no power variable, holds it, section 430, and the empty Harmony One
+ * is built with it, section 434, so composing a first device onto the empty One finds it here,
+ * `todo-compile-one.md` 8.1.1. Read only where no device but the one being joined, `variable`, has a power variable,
+ * since a case that ends with another present would leave that one on; the Harmony 650 family's form with none is
+ * the record with no case. Measured on the Harmony One alone, the touch family's compiles and its empty
+ * configuration; the Harmony 600, 650 and 700 family composes onto its empty configuration through the record with
+ * no case, section 377, and a case that ends at once is not measured there.
  */
-function idleOffRecord(c: Container): IdleOffRecord {
+function idleOffRecord(c: Container, variable: number): IdleOffRecord {
   const sets = handlerSets(c);
   const roles = handlerSetRoles(c);
   const lists = c.actionLists() ?? [];
@@ -156,6 +169,11 @@ function idleOffRecord(c: Container): IdleOffRecord {
       }
       const [first] = record.entries;
       if (record.entries.length !== 1 || record.ranges.length !== 0 || first === undefined || first[0] !== 0) continue;
+      const program = screenProgram(c, first[1]);
+      if ([...power].every((one) => one === variable) && program?.length === 1 && program[0]?.opcode === SCREEN_END) {
+        found.push({ map, target: first[1], nothing: true });
+        continue;
+      }
       const queued = caseQueued(c, first[1]);
       const offWrite = queued !== undefined && queued.opcode >= STATE_WRITE_BASE && queued.operand === 0
         && power.has(queued.opcode - STATE_WRITE_BASE);
@@ -175,13 +193,32 @@ function idleOffRecord(c: Container): IdleOffRecord {
  * a call to a new list of that write and this one, in place, since a call is the same five bytes.
  */
 function firstPowerOffs(c: Container, variable: number): Uint8Array {
-  const record = idleOffRecord(c);
+  const record = idleOffRecord(c, variable);
   const write = (one: number): [number, number] => [0, STATE_WRITE_BASE + one];
   // Every other device has to be the one the case already switches off, or none, else one is left on.
   const others = deviceVariables(c).filter((one) => one.property === 'Power' && one.index !== variable).map((one) => one.index);
   if (record.target === undefined) {
     if (others.length > 0) throw new ComposeError(`devices ${others.join(', ')} have a power variable and nothing switches them off`);
     return restamped(appendValueMapCase(c, record.map, 0, caseProgram(STATE_WRITE_BASE + variable, 0)).blob);
+  }
+  if (record.nothing === true) {
+    // The case's program, a lone end, becomes the queued write of 0 in place: four bytes made after the end byte,
+    // so every pointer to the program, the case's and base slot 11's entry, still names its first byte, and the
+    // five bytes written over it. Refused where anything else names the program, another case or a program calling
+    // it, by the pointer census, since that would change too: on the empty Harmony One the case and its table entry
+    // are its only two namers.
+    const namers = pointers(c).filter((one) => one.target === record.target);
+    const cases = namers.filter((one) => one.holder === 'slot-14-record').length;
+    const others = namers.filter((one) => one.holder !== 'slot-14-record' && one.holder !== 'slot-11-table').map((one) => one.holder);
+    if (cases !== 1 || others.length > 0) {
+      throw new ComposeError(`record ${record.map}'s case program is named by ${cases} cases and ${others.join(', ') || 'nothing else'}, so growing it changes them all`);
+    }
+    const at = c.blobOffsetOf(record.target);
+    if (at === undefined) throw new ComposeError(`record ${record.map}'s case is outside the container`);
+    const program = caseProgram(STATE_WRITE_BASE + variable, 0);
+    const grown = relocate(c, at + 1, program.length - 1);
+    grown.bytes.set(program, at);
+    return restamped(grown.bytes);
   }
   const queued = caseQueued(c, record.target);
   if (queued === undefined || queued.opcode < STATE_WRITE_BASE || queued.operand !== 0) {

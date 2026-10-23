@@ -9,7 +9,7 @@ import { composeTouchActivityRow, composeTouchActivityScreen, composeTouchDevice
 import { TOUCH_CHOICES, type TouchChoices } from './choices.ts';
 import { TOUCH_HARD_KEYS } from './devicekeys.ts';
 import { touchActivityMenu } from './activityscreen.ts';
-import { letterTouchDonor, withTouchLook } from './look.ts';
+import { letterTouchDonor, touchDonorFaces, withTouchLook } from './look.ts';
 import { TOUCH_STATE_TABLES } from './statetables.ts';
 import { TOUCH_FONTS } from './fonts.ts';
 import { checkTouchWiring } from './wiring.ts';
@@ -18,6 +18,7 @@ import { TOUCH_START } from './start.ts';
 import { withTouchComposedBuilders } from './builders.ts';
 import { withTouchActivityMenuRow } from './activitymenu.ts';
 import { withTouchActivityDeviceList } from './devicelists.ts';
+import { touchMenuMarkerWriter } from './menus.ts';
 
 export const TOUCH: Family<TouchChoices> = {
   name: 'the Harmony One',
@@ -34,8 +35,9 @@ export const TOUCH: Family<TouchChoices> = {
   wiring: { check: checkTouchWiring },
   composeDeviceScreen: composeTouchDeviceScreen,
   activityMenu: touchActivityMenu,
-  // The Harmony One writes the marker outside its rows 2 to 9 times, none read as its own: section 329.
-  menuMarkerWriter: () => undefined,
+  // The Harmony One writes the marker outside its rows 2 to 9 times, section 329; the leftover entry's Devices key list
+  // writes it 1 on all nineteen compiles, which names it on a configuration with no row, `todo-compile-one.md` 8.1.1.
+  menuMarkerWriter: touchMenuMarkerWriter,
   // A row in our pictures, which the activity's type gives, the composed path's, is put on by building the whole menu
   // again, `todo-compile-one.md` 4.1; without a type the copying composer adds one to a menu of Logitech's in its look.
   composeActivityRow: (c, label, set, menu, marker, options) => (options.type === undefined
@@ -45,7 +47,7 @@ export const TOUCH: Family<TouchChoices> = {
   // The Devices item opens a list of the activity's own, every device with those its start switches on first, as on
   // Logitech's compiles, `todo-compile-one.md` 4.3.3, findings section 424; until then it opened the idle list.
   activityDeviceList: withTouchActivityDeviceList,
-  composedLook: { letterDonor: letterTouchDonor, look: withTouchLook },
+  composedLook: { letterDonor: letterTouchDonor, look: withTouchLook, donorOfOurs: touchDonorFaces },
   // The parts the donor carried that a builder of the family's makes from a description, `todo-compile-one.md` 3.2.2,
   // after the welcome tour and the Remote Assistant are left out unless chosen, 4.10.
   composedBuilders: withTouchComposedBuilders,

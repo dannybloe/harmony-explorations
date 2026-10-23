@@ -58361,8 +58361,13 @@ centred, and our letters blended into the colour under each text, decision 22; `
 
 **What the assembly decides itself**, each a choice and none a measurement:
 
-* **where each piece sits**, a mode's own key map, then per page its program and page record, then the chrome and the
-  pieces its switches reach, then its entry, as the Harmony 650's assembly lays one; the page lists' second copies
+* **where each piece sits**, a mode's own key map, then its chrome, then per page its program, the pieces its switch
+  reaches and its page record, then its entry, which is Logitech's order for all 102 device lists of the nineteen
+  compiles, section 435, the other modes taking it with the chrome's place unread
+  (**corrected by section 435**: this said the chrome and the switches' pieces came after the page records, as the
+  Harmony 650's assembly lays a mode, and that order put a device list's last arm, which ends on a jump, right before
+  its mode entry, whose first byte is zero, so `coverage.ts` claimed that zero twice, two bytes, which the composed
+  path's own check, `checkComposed`, refuses; the file's length and its attribution did not change); the page lists' second copies
   after the last entry, then base slot 9's sets, then base slot 11's programs, the hit pages and the timers;
 * **one stored copy of each picture of ours**, named by every draw of it, where Logitech stores the full gauge at three
   of the clock header's slots and a settings button once per place; the six blank screens that draw photographs draw
@@ -58581,3 +58586,179 @@ two and four where `devices` counts two, two, four and two; that is section 429'
   `touchnumbering.test.ts`, the refusal's tests rewritten.
 * `docs/config-format.md`, the empty One's table, the Year picker's row and the assistant variable's;
   `reference/superseded.md`, the refusal's two phrasings.
+
+## 435. The test setup composed onto the empty Harmony One: no lettering and no picture step, no byte carried of its donor, 905173 bytes; what the composers needed that a configuration with no device does not hold, read off Logitech's compiles; and section 434's mode piece order corrected
+
+**Todo `todo-compile-one.md` 8.1.1, 8.1.2 and 8.1.4.** The Harmony One test setup, seven devices and five activities,
+`packages/corpus/setups/one-test.json`, was composed onto Logitech's compile of two devices,
+`harvest_one_two_devices`, and carried 1431 bytes of it, section 433: 185 of its send lists for the LG and the Denon and
+19 lists that send nothing, 18 of them among the 34 nothing can run. The items: compose the same setup onto the empty
+One, section 434, so the donor holds no byte of Logitech's; let `composeSetup` take that donor as ours, with no
+lettering step and no step drawing our pictures over Logitech's; make every composer that read something off the donor
+which the empty One does not hold build it or state it; and pin what is carried at zero. The Harmony 650's track did
+the same on its own empty configuration, section 377, `families/four-slot/empty.ts`, which is the pattern.
+
+**Sources, checked before the work.** Sections 377, 410, 415, 420, 424, 429, 430, 432, 433 and 434; `composeSetup`
+and the composers it calls; the nineteen Harmony One compiles of Logitech's, and of them the sixteen English ones of
+skin 54. Logitech's client was not read: every question here is about what their compiler wrote, which the compiles
+answer.
+
+### The path
+
+**A donor of ours.** `Family.composedLook.donorOfOurs`, the touch family's `touchDonorFaces`, answers whether a donor's
+font table is the stated one, `buildTouchFontTable`, set for set and glyph for glyph; where it is, `composeSetup` notes
+"a donor of ours" with its 18 sets, does not letter the donor, and passes the stated faces to the look, which blends
+once, last, over every text the composers add. A Logitech compile is not ours and is lettered as before. The empty One
+built by default is blended, 29 sets, and is refused as a donor, since a screen's description knows a role by one
+font and the blending splits a role by its background; `buildEmptyTouchConfiguration({ blend: false })` gives the
+unblended file, 362248 bytes, every byte attributed and none carried, as the blended one, `touchAttributedBytes`.
+
+**No tour step and no picture step on it.** `withTouchComposedBuilders` takes `donorOfOurs` and then runs neither
+`withoutTourAndAssistant`, since the empty One holds no tour and no Remote Assistant, nor `withTouchPictures`, since the
+empty One draws ours. The steps of the composition are donor, a donor of ours, devices composed, five activities
+composed, built, look, placed, stamped; the builders are the same sixteen as on Logitech's donor, and the step drawing
+our pictures over Logitech's does not run.
+
+### What the composers read that the empty One does not hold
+
+Each with what Logitech's compiles show and what is ours. All on arch 12 (Harmony One) alone; the Harmony 600, 650 and
+700 compose onto their empty configuration through their own family, section 377, and arch 9 (Harmony 525) has no
+composer.
+
+| what a composer read | on the empty One | what Logitech's compiles show | ours |
+|---|---|---|---|
+| the menu marker a device list row writes, read off the rows | no row | the marker every row writes is the variable the idle handler set's Devices key list writes 1 last, the wiring's `idleB7Var`, on 19 of 19, nine different variables over them | read there where no row is, `touchMenuMarkerWriter`, `Family.menuMarkerWriter` |
+| the device lists, found by their rows | no row | | found by their title, section 434's fallback |
+| a device list's first row: its row font, box and icon, read off a held row | no row | the row font is the fixed screens' `wide` font on 16 of 16, and never their `item` font | the font so; the box and the icon ours from the family's choices, `activityRowBox` and `activityRowIcon`, which the look draws again |
+| a device list's background, a picture | a fill, section 425 | | read and written as a fill, the device lists, the activity menu row and the activity screens |
+| the first device page's shared numbers: the key lights' lists and variables, the running activity, the header's and chrome's programs, the two value maps the keys below the screen look up | no device page | each the configuration's number under one name, `FIRST_DEVICE_KEYS`: 3691 numbers compared on every device page of the fifteen English compiles holding one, fourteen different sets of numbers over the fifteen | read under those names, `firstDeviceRoles` |
+| its fonts | | the title and the left key word in the device lists' fonts, the right key word in the activity menu's, the pads in the fixed screens' `item` font, the page counter in the One11 set drawn in the title's colours, on 15 of 15 | read so, `firstDevicePageFonts`; the pad font of `composeTouchDeviceScreen` too |
+| its three off lists, light 4, light 6 and the page keys | light 4's and the page keys' held, light 6's not | each the only list of its content on 15 of 15 | found by content; light 6's made as a list of its own, as the device page template makes it where none is held |
+| its redraw timer | none, no class of screen starts it | the device pages are a class of their own with a timer of their own, section 430, its shape `[73 clock, 73 charging, 1F EBnn]` and a four second record | appended at the timer table's end, `appendTouchRedrawTimer`; where Logitech puts it among the others is their order, not read |
+| its pad picture and background | | | our pad box over the background the idle device list's chrome draws |
+| the unread copy of the Devices record | held, section 432 | | nothing to do: each activity's case went into it as into the Devices record, six cases each |
+| the first device's All Off case | the case of no device, a program that ends at once, the form `harvest_one_families_1` holds, section 430 | | grown in place into the queued write of 0 to the device's power variable, the case program the composer writes where a record holds no case, `firstPowerOffs` |
+| the power off help's question numbers, read off a held question | a chain of no device, the attempt and "Nothing to do" | on 15 of 15 compiles with a device, a question's two enter lists are the wiring's `keyLights.4.1.1` and `keyLights.5.1.1`, the list after `07 FFFB` the wiring's `lights`, and its two leave lists each the only list switching channel 5, or 7, off | read so, `firstHelpNumbering`; the question's hit page one of the table's of that shape, else "Nothing to do"'s rebuilt where nothing else names it |
+| the power off help's show timer | held, started by "Nothing to do" | of the sixteen English compiles only `harvest_one_families_1`, the one whose help asks about no device, holds it; the other three skins not checked | **a difference**: it stays, and nothing starts it once the chain asks about devices; its list is the timer table's and reached by the census for that reason |
+
+**A hit page named by nothing.** The idle device list and the list nothing enters shared the empty One's hit page of no
+row; growing them a row at a time rebuilt it for a shape a later row outgrew, and the lists of three pages then took
+shapes the table already held, so the composed file held a page of two rows named by nothing, 76 bytes and its three
+byte entry, and the same bytes as a page of Logitech's two device compile. None of the nineteen compiles holds a hit
+page named by nothing. The device lists now drop a page they freed that nothing names at the end of their build,
+`withoutHitPages`. The test setup composed onto Logitech's two device compile is unchanged by it, 980473 bytes and
+every figure its test pins, and its test now asserts every hit page named. The device screen composed onto
+`one_config`, `compose.test.ts`, is not: its ten device lists' last page held two rows, hit page 13, and with the LG's
+row holds three and takes the table's page of that shape, so page 13 was left named by nothing and is dropped now, the
+new page's hit page 38 where it was 39.
+
+### The empty One's mode pieces in Logitech's order, correcting section 434
+
+`checkComposed` refused the first composition onto the empty One with two bytes claimed twice, and the two were in the
+empty One itself: `coverage.ts` claims the zero after a program that ends on a jump as its terminator, and section 434
+laid a device list's chrome and switch arms after its page records, so the last arm sat right before the mode's entry,
+whose first byte is zero. Logitech's order, on all 102 device lists of the nineteen compiles: the chrome, then per
+page its program, its switch's arms and its page record, then the entry. The second reviewer measured that a page's
+program comes before its record on every page of every other mode too; where the chrome of other modes sits was not
+measured.
+The empty One is laid out so now, an equal share of the switch's pieces per page; its length, 486460 with a 2026
+stamp, and every byte attributed and none carried, `touchempty.test.ts`, are unchanged. Changing the accounting instead, claiming a terminator only where nothing else does,
+broke the emitter's round trip, which rebuilds each claim, and was reverted.
+
+### The result
+
+| | onto Logitech's compile, section 433 | onto the empty One |
+|---|---|---|
+| size | 980473 | 905173 |
+| lists, modes, hit pages | 2847, 117, 24 | 2787, 117, 24 |
+| lists nothing reaches | 71, 35 of them the donor's byte for byte at the same index | 16, none the donor's |
+| carried of the donor, the census of `test/carried.ts` | 1431 bytes, send lists | none |
+| the builders' parts, bytes | 280749 | 206124 |
+
+Of the 75300 bytes fewer, 74586 are the builders' pictures part, 216435 bytes on Logitech's donor and 141849 here;
+section 434's account is that the empty One stores each picture of ours once where Logitech's compile stores some
+several times, which was not measured again here. The other builders' parts are 39 bytes fewer net: the device pages
+210 more, the activity screens 72 and the fixed screens 24 more, the state tables 121 fewer, the device lists 119, the
+help screens 54, the case programs 36, the wiring 10 and the activity menu 5 fewer. The remaining 675 are bytes no
+builder makes on either path, the composers', the look's and the tables', and were not split further. There are 60
+lists fewer. A comparison of what each draws, binds and reaches is `todo-compile-one.md` 8.1.5, not done here.
+
+**Carried, 8.1.4.** The census of `composesetup.test.ts`, moved unchanged into `test/carried.ts` so both tests count with
+it, finds no unit of the composed file the empty One holds that no builder and no catalogue record wrote. Its control:
+the same census with nothing credited finds 172767 bytes of the empty One's units in the composed file, so the zero
+is the attribution's and not a census that matches nothing. The control does not show the attribution is not too
+generous; that rests on `touchBuiltBytes` crediting a part only where its rebuild is the file byte for byte.
+
+Of the bytes nothing on the path wrote, the composed file shares with Logitech's compile of two devices 130 lists, 910
+bytes, each a send of a record to device 0 or device 1, 65 each; what a builder or the catalogue wrote shares far more
+with it, the wiring whole, section 418, and is not counted. The device composer writes a send as their compiler does,
+a record's number and the device's index, so a send matches theirs wherever both numbers agree: device 0 is an LG
+television in both files, of another model, `LG_TV` here and `LG_OLED65G26LA` there, and device 1 is the Plasma here
+and the Denon there. A coincidence of form, then, and not a byte taken, since nothing on this path reads that compile.
+
+**Not carried is not built.** `touchAttributedBytes`, the empty One's attribution, run on the composed file reports
+335964 bytes under its own word "carried", meaning no builder makes them: in coverage's terms 183746 of infrared blocks,
+8778 of infrared headers and 1275 of groups, 137467 of the picture bank, 3841 of lists, 757 of key maps and 100 of
+programs. They are the composers' and the look's, made on the path from the setup and the catalogue; what each of those
+parts is was not split further, and that the whole picture bank's share is the look's is not measured.
+
+**The lists nothing reaches** are the composers' sixteen: eleven sends of commands no key, page or activity binds, two
+each for the LG, the Denon, the Plasma and the Switch and one each for the KPN, Kodi and the Sony, and five lists of one
+`1F FF0n`, base slot 9 entries 8 to 12, which the activity composer writes and nothing names, both kinds as on the
+donor path. All sixteen are past the empty One's 1314 lists, every one of which is reached on it.
+
+The screens before a write, rendered by `packages/codec/bin/empty-one.ts --setup`: the start, the activity menu, the
+first activity's working screen, the idle device list and the LG's device page, none missing a picture or a glyph.
+
+### What is not settled
+
+Everything above is the file; none of it has been on a remote. Unconfirmed until the spare Harmony One runs it,
+`todo-compile-one.md` 8.2: that the redraw timer appended at the table's end redraws the device pages' clock as one of
+Logitech's in its own place does; that the show timer nothing starts is harmless; that the first All Off case grown in
+place switches the LG off as the case of a compile holding one device does; and that the light 6 off list made as its
+own behaves as the one Logitech's compiles hold.
+
+Arch 12 (Harmony One) only, skin 54 only.
+
+### The reviews
+
+Two reviewers read the change before it was committed, one the code and tests and one this text against the code and
+the compiles. The first found no wrong result and these gaps, now closed or said: the All Off case of no device is a
+Harmony One shape in a shared module, its docstring now naming the family it was measured on, and its refusal counted
+only the value map cases naming the program where a program calling it would change too, now the pointer census; a new
+refusal on Logitech's path when a held help screen runs more lists of its own than the template, commented as the
+consistency check it is; no assertion that the composition onto Logitech's donor leaves every hit page named, now
+asserted; a control on the off lists that could not fail, replaced by one showing the roles' lists differ; a test title
+naming the blended empty One where only the unblended is checked, renamed; and the measured constants declared after
+their tests, moved. It also asked whether a held list matching the built bytes could be longer; it cannot, a list's first
+byte being its count. Running the related test files then found the `one_config` composition's dropped hit page, above.
+
+The second re-measured the figures and corrected four sentences, now in the text: the 130 shared lists said "shares"
+where the census counts only bytes nothing on the path wrote; device 0 was called the LG in both files where they are
+two models; the 335964 bytes no builder makes were reported beside "no byte carried" without saying the two words
+measure different things; and the mode piece order was stated on three compiles where it holds on all 102 device lists
+of the nineteen, which a test now asserts, as it now asserts that no compile holds a hit page named by nothing and that
+only the compile asking about no device holds the show timer, both prose until then. It also noted that the donor
+path's unreached lists are 35 of the donor's byte for byte, not 34. Its count of the device lists, 112, was
+measured again as 102, the lists `touchDeviceLists` finds on the nineteen, and the test pins 102.
+
+### Falsification
+
+A Harmony One compile whose rows write a marker other than the variable the idle Devices key's list writes; one whose
+device pages take a shared number other than the one its name gives, or draw in another font; one whose device list
+rows are not in the fixed screens' wide font; a hit page of Logitech's named by nothing; the composed file showing a
+status screen on the spare, or a device page whose clock stops.
+
+### Where it lands
+
+* `packages/codec/src/shared/setup.ts` and `families/family.ts`: `donorOfOurs`, `ComposedBuildersOptions`;
+  `families/touch/look.ts`: `touchDonorFaces`; `builders.ts`: the two steps skipped on a donor of ours; `empty.ts`:
+  `blend`, the mode piece order.
+* `families/touch/menus.ts`: `touchMenuMarkerWriter`; `devicepages.ts`: `FIRST_DEVICE_KEYS`, `firstDeviceRoles`,
+  `firstDevicePageFonts`, the first device page; `devicelists.ts`: a first row, fills, the hit page drop;
+  `helpscreens.ts`: `FIRST_DEVICE_HELP_LISTS`, the chain of no device numbered for its first devices; `emptywiring.ts`:
+  `appendTouchRedrawTimer`; `activityscreen.ts` and `activitymenu.ts`: fills; `screens.ts`: the pad font and the lists by
+  title; `shared/power.ts`: the All Off case of no device.
+* `packages/codec/test/composeempty.test.ts`, new; `test/carried.ts`, the census moved out of `composesetup.test.ts`;
+  `compose.test.ts`, the dropped hit page; `composesetup.test.ts`, every hit page named; `packages/codec/bin/empty-one.ts`,
+  `--setup`.
