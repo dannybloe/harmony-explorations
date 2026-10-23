@@ -72,31 +72,30 @@ test('todo-compile-one 4.4.4.1 and 6.5: the 23 fixed screens past the firmware\'
   }
 });
 
-test('todo-compile-one 4.4.4.1: beyond the sixteen, the European and Dutch compiles are refused for a Year picker offering a leap year, and their screens for a second Month picker and for their words; a build year of 2027 is refused for its leap year, and 2030 for a digit the compile\'s font set does not hold',
+test('todo-compile-one 4.4.4.1, rewritten by section 434: beyond the sixteen, the European compiles are refused for the Time of Day picker skin 59 does not hold and the Dutch one for its words, no longer for a Year picker offering a leap year; a build year of 2027 asks for the two screens a leap year brings, and 2030 is refused for a digit the compile\'s font set does not hold',
      skipUnless('one_config', 'one_config_unprogrammed', 'one_friend_asfound_config', 'harvest_one_two_devices'), () => {
-  // Built in 2023 and in 2013, their Year pickers offer 2024 and 2012, and with them a Day 29 picker and a
-  // second Month picker leading February to it, which is not built.
-  for (const [name, leap] of [['one_config', 2024], ['one_config_unprogrammed', 2024], ['one_friend_asfound_config', 2012]] as const) {
-    assert.throws(() => checkTouchFixedScreens(parse(require_(name))),
-      (error: Error) => error instanceof ScreenRecordError && new RegExp(`offers ${leap}, a leap year`).test(error.message), name);
-  }
-  // Their screens, looked for by what they draw: the European two hold that second Month picker; the Dutch
-  // one draws no English title.
+  // Built in 2023 and in 2013, their Year pickers offer 2024 and 2012, with a Day 29 picker and a second Month
+  // picker leading February to it. Section 434 builds those two, so the leap year no longer refuses them: the
+  // European two hold no Time of Day picker, section 405, and the Dutch one draws no English title.
   for (const name of ['one_config', 'one_config_unprogrammed']) {
-    assert.throws(() => touchFixedScreenModes(parse(require_(name))),
-      (error: Error) => error instanceof ScreenRecordError && /holds 2 screens of the look of Month, not one/.test(error.message), name);
+    for (const reading of [checkTouchFixedScreens, touchFixedScreenModes]) {
+      assert.throws(() => reading(parse(require_(name))),
+        (error: Error) => error instanceof ScreenRecordError && /holds 0 screens of the look of Time of Day, not one/.test(error.message), name);
+    }
   }
   assert.throws(() => touchFixedScreenModes(parse(require_('one_friend_asfound_config'))),
     (error: Error) => error instanceof ScreenRecordError && /holds 0 screens of the look of Options, not one/.test(error.message));
   const c = parse(require_('harvest_one_two_devices'));
   const d = describeTouchFixedScreens(c, takeApart(c));
   assert.equal(d.spec.year, 2026);
+  // 2027 offers 2028, so the build wants the leap year's Month picker and the Day 29 picker, which a description
+  // read off a 2026 compile does not number.
   assert.throws(() => buildTouchFixedScreens(c, { ...d.spec, year: 2027 }),
-    (error: Error) => error instanceof ScreenRecordError && /offers 2028, a leap year/.test(error.message));
-  // One build year in four offers no leap year, 2030 the next after 2026; it passes the year's check and is
-  // then refused by the font set, which holds only the digits the compile drew: no 9 in font 11 here.
+    (error: Error) => error instanceof ScreenRecordError && /the description holds 23 screens, not 25/.test(error.message));
+  // 2030 offers no leap year and keeps the 23; it is refused by the font set, which holds only the digits the
+  // compile drew: no 9 in font 11 here.
   assert.throws(() => buildTouchFixedScreens(c, { ...d.spec, year: 2030 }),
-    (error: Error) => !/leap year/.test(error.message) && /has no glyph for '9'/.test(error.message));
+    (error: Error) => !/screens, not/.test(error.message) && /has no glyph for '9'/.test(error.message));
 });
 
 /**

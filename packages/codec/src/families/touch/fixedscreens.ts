@@ -54,7 +54,7 @@
  * page; the pictures, in walk order; the fonts, one per role; the build year, since the Year picker offers the
  * build year and the two either side of it, measured on all nineteen compiles (2025 to 2027 on the sixteen,
  * 2022 to 2024 on the two of 2023, 2012 to 2014 on the Dutch one of 2013), a year whose range holds a leap
- * year being refused, `assertFixedScreensYear`, and a year other than the compile's own needing digits its font
+ * year bringing two screens more, `touchFixedScreenNames`, and a year other than the compile's own needing digits its font
  * sets may not hold, refused by the speller; and every other number the
  * configuration chose, in one walk order. **What is generated**: every opcode, every constant operand, the tags
  * and their order, every list's instructions, the switches' cases, every word and where it is drawn, the page
@@ -67,7 +67,10 @@
  * by index and built none. A list another screen set reaches as well is built by each, identically, and
  * `touchBuiltBytes` gives its bytes to the first in `TOUCH_BUILT` order.
  *
- * **What is not built**: the two screens a leap year in the Year picker's range brings.
+ * **A leap year in the Year picker's range** brings two screens more, the leap year's Month picker and the Day 29
+ * picker, after the twenty three, `touchFixedScreenNames`, since `todo-compile-one.md` 7.1.7, section 434: until then
+ * such a build year was refused. Their shape is the other pickers', read on Logitech's two European compiles, which
+ * hold them in English.
  *
  * **The template language, the description reader and the builder are `screentemplate.ts`'**, moved there when
  * 4.4.4.2's tour and Remote Assistant needed them a second time (section 412); this module keeps the twenty three
@@ -78,7 +81,8 @@
 import type { Container } from '../../gspm.ts';
 import type { ContainerLayout, ContainerPiece } from '../../frame.ts';
 import { layOutContainer, takeApart } from '../../frame.ts';
-import { eventMap, modeRecords } from '../../sections.ts';
+import { ACTION_LIST_INDEX_OPCODE, eventMap, modeRecords, taggedList } from '../../sections.ts';
+import { ENTER_MODE as ENTER_OPCODE } from '../../inventory.ts';
 import { SCREEN_CALL, SCREEN_DRAW_IMAGE, SCREEN_FILL, SCREEN_TEXT_AT, SCREEN_TEXT_INLINE, screenProgram } from '../../screen.ts';
 import { characterMap, decode } from '../../text.ts';
 import { ScreenRecordError, assertRebuilt, recordReading, withModeRecords } from '../../screenrecords.ts';
@@ -259,12 +263,29 @@ function clockOwn(enter: readonly Step[], field: number, single = false): Entry[
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October',
   'November', 'December'];
 
-/** A day picker of `days` days: each day writes the day and goes on to the Hour picker. */
-function dayPicker(days: number): FixedScreen {
+/**
+ * A day picker of `days` days: each day writes the day and goes on to the Hour picker, and Back enters `back`, the
+ * Month picker, or where the Year picker offers a leap year the one whose February enters the Day 29 picker for
+ * every Day picker but Day 28's, `LEAP_MONTH`.
+ */
+function dayPicker(days: number, back = 'Month'): FixedScreen {
   const items = Array.from({ length: days }, (_, d): Item => ({
     word: String(d + 1), step: owns(CLICK, setField(FIELD.day, d), k(0x07, 0xfff8), to('Hour')),
   }));
-  return picker(`Day ${days}`, 'Day', clockOwn([fieldEnter(FIELD.day), ...ENTER_LIGHTS], FIELD.day), items, GRID, 'item', 'Month');
+  return picker(`Day ${days}`, 'Day', clockOwn([fieldEnter(FIELD.day), ...ENTER_LIGHTS], FIELD.day), items, GRID, 'item', back);
+}
+
+/**
+ * The name of the second Month picker a Year picker offering a leap year brings, titled "Month" as the first is, whose
+ * February enters the Day 29 picker: the leap year's button enters it, the other two years' the first, section 434.
+ */
+export const LEAP_MONTH = 'Month in a leap year';
+/** The two screens a Year picker offering a leap year brings, after the twenty three in the order a description lists them. */
+export const LEAP_SCREENS: readonly string[] = [LEAP_MONTH, 'Day 29'];
+
+/** The leap year among the three a Year picker of `year` offers, the year and the one either side, or undefined. */
+export function leapYearOffered(year: number): number | undefined {
+  return [year - 1, year, year + 1].find((one) => (one % 4 === 0 && one % 100 !== 0) || one % 400 === 0);
 }
 
 /** The five screen sensitivity levels in the order the picker shows them, and what each writes. */
@@ -386,7 +407,7 @@ function optionsScreen(tour: boolean): FixedScreen {
  * is centred on, and `tour` whether Options holds the Remote Assistant's and the Tutorial's rows.
  */
 function fixedScreens(year: number, tour = true): FixedScreen[] {
-  assertFixedScreensYear(year);
+  const leap = leapYearOffered(year);
   const confirmation = (level: string): FixedScreen => ({
     name: `Sensitivity ${level}`,
     own: [...ARROWS, [TAG_ENTER, owns(TIMER_START, LIGHT_7_ON)], [TAG_LEAVE, owns(TIMER_CANCEL, LIGHT_7_OFF)], SCAN_38, [TAG_HEADER, HEADER]],
@@ -405,8 +426,16 @@ function fixedScreens(year: number, tour = true): FixedScreen[] {
   const yearOffset = (2001 - year) & 0xffff;
   // What the Year picker's entering list and its `0x29` handler open with: the year field and that offset.
   const yearHead = [k(BAND, 0xef00 | FIELD.year), k(0x79, yearOffset)];
-  // Each month's button enters the Day picker of its length; February's is 28, a leap year being refused.
+  // Each month's button enters the Day picker of its length; February's is 28, and 29 on the Month picker the leap
+  // year's button enters, where the Year picker offers one.
   const monthDays = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  const month = (name: string, february: number): FixedScreen => picker(name, 'Month', clockOwn([fieldEnter(FIELD.month), ...ENTER_LIGHTS], FIELD.month),
+    MONTHS.map((word, m) => ({ word, step: owns(CLICK, setField(FIELD.month, m), to(`Day ${m === 1 ? february : monthDays[m] as number}`)) })), GRID, 'item',
+    'Year');
+  // On Logitech's two European compiles, whose Year picker offers a leap year, the Day 29, 30 and 31 pickers' Back
+  // enters the leap year's Month picker and Day 28's the other, read back through these templates, section 434; the
+  // Dutch one, the third holding the two screens, was read so by a scratch script only, its words not being ours.
+  const longBack = leap === undefined ? 'Month' : LEAP_MONTH;
   return [
     { ...statusScreen<FixedScreenFont>(DISPLAY_TEST_CODE, { title: 'title', body: 'body' }), name: 'LCD Module Failed' },
     optionsScreen(tour),
@@ -421,12 +450,10 @@ function fixedScreens(year: number, tour = true): FixedScreen[] {
         [TAG_LEAVE, owns(TIMER_CANCEL, ...LEAVE_LIGHTS)],
         [TAG_CLOCK, clockHandler({ head: yearHead, w: 3, map: 'clock column map' })],
         SCAN_38, [TAG_HEADER, HEADER]],
-      [year - 1, year, year + 1].map((one) => ({ word: String(one), step: owns(CLICK, setField(FIELD.year, one - 2000), to('Month')) })),
+      [year - 1, year, year + 1].map((one) => ({ word: String(one), step: owns(CLICK, setField(FIELD.year, one - 2000), to(one === leap ? LEAP_MONTH : 'Month')) })),
       [whole(38), whole(92), whole(146)], 'wide', 'Options'),
-    picker('Month', 'Month', clockOwn([fieldEnter(FIELD.month), ...ENTER_LIGHTS], FIELD.month),
-      MONTHS.map((word, m) => ({ word, step: owns(CLICK, setField(FIELD.month, m), to(`Day ${monthDays[m] as number}`)) })), GRID, 'item',
-      'Year'),
-    dayPicker(28), dayPicker(30), dayPicker(31),
+    month('Month', 28),
+    dayPicker(28), dayPicker(30, longBack), dayPicker(31, longBack),
     picker('Hour', 'Hour', clockOwn([twelve(3, 0xf4), fieldEnter(FIELD.hour), ...ENTER_LIGHTS], FIELD.hour),
       hours.map((word, h) => ({ word, step: owns(CLICK, setField(FIELD.hour, h), to('Minute')) })), GRID, 'item', 'Day 31'),
     picker('Minute', 'Minute', clockOwn([fieldEnter(FIELD.minute), ...ENTER_LIGHTS], FIELD.minute),
@@ -440,31 +467,32 @@ function fixedScreens(year: number, tour = true): FixedScreen[] {
       [half(6, 38), half(89, 38)], 'item', 'Minute'),
     blank(1, 'three', false), blank(2, 'three', false), blank(3, 'three', true),
     blank(4, 'two', false), blank(5, 'two', false), blank(6, 'two', false), blank(7, 'two', true),
+    // A leap year's two last, so the twenty three keep their places in a description whatever the year.
+    ...(leap === undefined ? [] : [month(LEAP_MONTH, 29), dayPicker(29, LEAP_MONTH)]),
   ];
 }
 
 /**
- * A build year these screens are built for: one whose Year picker offers no leap year. Where it offers one,
- * Logitech's compiles hold two more screens, a Day picker of 29 days and a second Month picker leading
- * February there, which the leap year's button enters: seen on the two European compiles of 2023 (2024 in
- * their range) and the Dutch one of 2013 (2012), each in another look or language, and on no compile of skin
- * 54 in English, so they are not built here and such a year is refused. Of the build years, only one in four
- * offers no leap year: 2026 does, 2027 does not.
+ * The screens' names, in the order a description lists them, for a build year whose Year picker offers no leap year:
+ * the twenty three every compile of skin 54 in English holds. Where it offers one, `LEAP_SCREENS` follow them,
+ * `touchFixedScreenNames`.
  */
-export function assertFixedScreensYear(year: number): void {
-  const leap = [year - 1, year, year + 1].find((one) => (one % 4 === 0 && one % 100 !== 0) || one % 400 === 0);
-  if (leap !== undefined) {
-    throw new ScreenRecordError(`the Year picker of ${year} offers ${leap}, a leap year, and the Day 29 picker and second Month `
-      + 'picker that brings are not built');
-  }
-}
-
-/** The screens' names, in the order a description lists them. */
 export const TOUCH_FIXED_SCREENS: readonly string[] = fixedScreens(2026).map((one) => one.name);
 
 /**
+ * The screens' names for a build year, in the order a description lists them: the twenty three, and where the Year
+ * picker offers a leap year the leap year's Month picker and the Day 29 picker after them. Logitech's compiles hold
+ * those two exactly where the Year picker offers a leap year, 19 of 19 both ways, seen on the two European compiles of
+ * 2023 (2024 in range) and the Dutch one of 2013 (2012), each in another look or language; section 411, and section 434
+ * for the two built.
+ */
+export function touchFixedScreenNames(year: number): readonly string[] {
+  return leapYearOffered(year) === undefined ? TOUCH_FIXED_SCREENS : [...TOUCH_FIXED_SCREENS, ...LEAP_SCREENS];
+}
+
+/**
  * The twenty three as templates for a build year and a form of Options, in the order a description lists them, for a
- * configuration numbered from nothing, `numbering.ts`. Refuses a year whose Year picker offers a leap year.
+ * configuration numbered from nothing, `numbering.ts`: twenty five where the Year picker offers a leap year, `touchFixedScreenNames`.
  */
 export function touchFixedScreenTemplates(year: number, tour: boolean): TemplateScreen<FixedScreenFont>[] {
   return fixedScreens(year, tour);
@@ -479,7 +507,7 @@ export function touchFixedScreenTemplates(year: number, tour: boolean): Template
  * compiles of skin 54, `test/touchnumbering.test.ts`, section 432.
  */
 export function touchFixedHitPages(year: number, tour: boolean): string[][] {
-  const filled: Readonly<Record<number, string>> = { 6: 'six buttons', 4: 'four buttons', 2: 'two buttons', 1: 'one button' };
+  const filled: Readonly<Record<number, string>> = { 6: 'six buttons', 5: 'five buttons', 4: 'four buttons', 2: 'two buttons', 1: 'one button' };
   return fixedScreens(year, tour).map((screen) => {
     if (screen.name === 'LCD Module Failed') return ['message'];
     if (screen.name === 'Options') return tour ? ['three rows', 'two rows'] : ['three rows'];
@@ -503,7 +531,9 @@ export function touchFixedHitPages(year: number, tour: boolean): string[][] {
  * The mode each of the twenty three screens is, found by its look: code 9's screen by the event map, the
  * others by what they draw, the title at 6, 4 their chrome draws, the confirmations by their level, the Day
  * pickers by how many days they offer, and the blank screens as the seven modes of one page whose chrome draws
- * only a picture and whose own key map binds the arrows, the two handlers and scan 38, in mode order. Refuses a
+ * only a picture and whose own key map binds the arrows, the two handlers and scan 38, in mode order. Where the
+ * configuration's build year offers a leap year, `touchFixedScreenNames`, the two it brings after them: the Day 29
+ * picker by its days, and of the two Month pickers the one whose page lists enter the Day 29 picker. Refuses a
  * configuration holding one of them other than once.
  */
 export function touchFixedScreenModes(c: Container): number[] {
@@ -543,7 +573,7 @@ export function touchFixedScreenModes(c: Container): number[] {
     }
     if (title === 'Day') {
       const last = words((record.pages[record.pages.length - 1] as { program: number }).program);
-      const days = [28, 30, 31].find((d) => last.includes(String(d)) && !last.includes(String(d + 1)));
+      const days = [28, 29, 30, 31].find((d) => last.includes(String(d)) && !last.includes(String(d + 1)));
       if (days !== undefined) add(`Day ${days}`, mode);
       return;
     }
@@ -552,11 +582,30 @@ export function touchFixedScreenModes(c: Container): number[] {
   const blanks = found.get('blank') ?? [];
   if (blanks.length !== 7) throw new ScreenRecordError(`the configuration holds ${blanks.length} blank screens of this look, not 7`);
   blanks.forEach((mode, i) => found.set(`Blank ${i + 1}`, [mode]));
-  return TOUCH_FIXED_SCREENS.map((name) => {
+  const year = Number(c.builtAt?.slice(0, 4));
+  const names = Number.isInteger(year) ? touchFixedScreenNames(year) : TOUCH_FIXED_SCREENS;
+  if (names.includes(LEAP_MONTH)) {
+    // The two Month pickers told apart by where February goes: the leap year's enters the Day 29 picker.
+    const day29 = found.get('Day 29') ?? [];
+    const months = found.get('Month') ?? [];
+    const leap = months.filter((mode) => day29.length === 1 && entersMode(c, all[mode] as (typeof all)[number], day29[0] as number));
+    found.set(LEAP_MONTH, leap);
+    found.set('Month', months.filter((mode) => !leap.includes(mode)));
+  }
+  return names.map((name) => {
     const modes = found.get(name) ?? [];
     if (modes.length !== 1) throw new ScreenRecordError(`the configuration holds ${modes.length} screens of the look of ${name}, not one`);
     return modes[0] as number;
   });
+}
+
+/** Whether a press on some page of `record` enters `mode`, straight or through the list it calls. */
+function entersMode(c: Container, record: { pages: readonly { list: number }[] }, mode: number): boolean {
+  const lists = c.actionLists() ?? [];
+  return record.pages.some((page) => (taggedList(c, page.list)?.entries ?? []).some((entry) => {
+    const body = entry.opcode === ACTION_LIST_INDEX_OPCODE ? lists[entry.operand] ?? [] : [entry];
+    return body.some((one) => one.opcode === ENTER_OPCODE && one.operand === mode);
+  }));
 }
 
 // ---------------------------------------------------------------------------------------------------------
@@ -588,9 +637,6 @@ export function describeTouchFixedScreens(
 ): TouchFixedScreensDescribed {
   const year = Number(c.builtAt?.slice(0, 4));
   if (!Number.isInteger(year)) throw new ScreenRecordError('the configuration states no build year');
-  // The year first, as before Options' form was read: a year these screens are not built for is the first
-  // refusal, ahead of what the screens look like.
-  assertFixedScreensYear(year);
   const modes = touchFixedScreenModes(c);
   const tour = optionsForm(c, modes);
   const d = describeTemplateScreens(c, layout, fixedScreens(year, tour), modes, FIXED_SCREEN_FONTS, read);

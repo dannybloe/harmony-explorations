@@ -53917,8 +53917,11 @@ picker, whose February enters Day 29, and the other two years' buttons the first
 the rule holds 19 of 19 both ways: the three with a leap year in range carry the two screens, the sixteen without
 carry neither, and no compile of skin 54 in English has one, since 2026 is the one build year of the sixteen and its
 range holds none. It is confounded with look and language, and the wiring is what carries it. Those two screens are
-not built here, and a build year whose range holds a leap year is refused. Only one build year in four escapes it:
+not built here, and a build year whose range holds a leap year is refused<!--superseded-->. Only one build year in four escapes it:
 2026 and 2030 do, 2027 does not.
+
+> **Since section 434 both screens are built**, the leap year's Month picker and the Day 29 picker, after the 23, so a
+> build year whose Year picker offers a leap year builds 25 fixed screens; the refusal above held until then.
 
 **The year is data in two more places.** The Year picker's enter and `0x29` lists each hold a `0x79` whose operand
 is minus the first year offered less 2000: `FFE7`, -25, on the sixteen, `FFEA`, -22, on the two compiles of 2023,
@@ -58325,3 +58328,254 @@ and include a friend's two. It also asked that what a remote does be said as wha
 * `packages/codec/test/composecatalogue.test.ts`: the power records' opening silence on the eight devices, with its
   control.
 * `docs/config-format.md`, how Logitech's generator spells a block; `reference/remotes/harmony-one/features.md`, delays.
+
+## 434. The empty Harmony One assembled from nothing: every byte made by a generator and none carried, a build year offering a leap year built with the two screens Logitech's compiles add, and what no compile of Logitech's shows, inferred and unconfirmed until the bench
+
+**Todo `todo-compile-one.md` 7.1.7, 7.1.8 and 7.1.9.** Sections 427 to 432 each built a part of a Harmony One
+configuration from nothing: the font table, the fixed pictures, the skeleton and its probe, the numbering, the wiring,
+the device lists and the help screens' hit pages. The items: put them together into one file for the skin the spare
+reports, 54, decision 23; attribute every byte of it to a generator with none carried; build the fixed screens for the
+year it is built in, which section 411 refused where the Year picker offers a leap year; and say what the file holds
+that no compile of Logitech's shows. The Harmony 650's assembly, sections 374 and 375 and `families/four-slot/empty.ts`,
+is the pattern.
+
+**Sources, checked before the work.** Sections 374, 375, 411, 416, 421, 422, 425, 427 to 433, and section 403 for the
+assistant variable; `docs/config-format.md`'s skeleton and numbering tables; the three compiles of Logitech's whose Year
+picker offers a leap year, `one_config`, `one_config_unprogrammed` and `one_friend_asfound_config`. Logitech's client was
+not read: what is assembled is what their compiler wrote, which the compiles answer, and the client holds no
+configuration of no device to compare with.
+
+### The assembly
+
+`buildEmptyTouchConfiguration` in `families/touch/empty.ts` takes the skin, the stamp and the touch family's choices.
+The year of the stamp gives the Year picker's three years, and section 432's numbering gives every mode, variable, value
+map, list, timer, entry, program and hit page by role. Each set's builder makes its part from the description that
+numbering gives, spelling through the skeleton's probe, `touchSpellingContainer`, which the result does not hold. The
+sets are built in the composed path's order, `TOUCH_BUILT`, and each is handed as its homes every text the sets before
+it drew inline, so the file holds one inline copy of a text, section 334, as Logitech's do. The skeleton,
+`layOutTouchSkeleton`, takes the pieces, the tables, the state tables and the body, and lays them out through the
+placer. Then the composed path's look, in its order: the background drawn as a fill, section 425, every pad label
+centred, and our letters blended into the colour under each text, decision 22; `checkBlendedLetters` holds the result.
+
+**What the assembly decides itself**, each a choice and none a measurement:
+
+* **where each piece sits**, a mode's own key map, then per page its program and page record, then the chrome and the
+  pieces its switches reach, then its entry, as the Harmony 650's assembly lays one; the page lists' second copies
+  after the last entry, then base slot 9's sets, then base slot 11's programs, the hit pages and the timers;
+* **one stored copy of each picture of ours**, named by every draw of it, where Logitech stores the full gauge at three
+  of the clock header's slots and a settings button once per place; the six blank screens that draw photographs draw
+  the whole screen background, as the composed path makes them, section 422, and the fourth the charging screen;
+* **the assistant variable starts at 3**, `ASSISTANT_HIDDEN`, which section 432 left open between 0 and 3. 3 is what
+  the composed path starts it at, the value the assistant's own "hide" answer writes, section 403, and the composed
+  path without the Remote Assistant was written to the spare Harmony One and started on its ordinary screen, section 421.
+  The empty One holds no assistant screen and no start ladder, so the only reader left is USB Connected's leaving
+  list, section 432, and what that list does with 3 rather than Logitech's 0 is not read.
+
+### The file
+
+| what | the empty One's, built in 2026 |
+|---|---|
+| size | 486460 bytes, 3249092 below the Harmony One's writable ceiling (`rails.ts`: `0x040000` to `0x3D0000`) |
+| modes | 67, section 432's order |
+| lists | 1314, base slot 10 from 0 with no gap |
+| hit pages | 14 |
+| state variables | the firmware's 18, then 20 one byte ones, the assistant variable's `first` 3 and `max` 3, then the clock pickers' |
+| font sets | 29: section 427's 18 and 11 blended copies |
+| the start | the activity menu: the start's ready map takes, for location 0, a case that enters it |
+
+It parses, passes every container check, takes apart and lays out again into itself, and every screen set reads back at
+the modes the numbering gave it, the device lists two lists of no row and the activity menu a menu of no row. The screens
+to look at before a write render with no picture or glyph missing: the activity menu, which is also the start (4
+texts), the idle device list (3), Options (6 texts and its three rows' buttons). Mode 0's own key map is the key table all sixteen English
+compiles of skin 54 hold, the same bytes. **Each picture compared is the one Logitech's sixteen draw at that place**, by
+the entry of `TOUCH_PICTURES` whose image it replaces: every place of the firmware, fixed and status screens, the help
+attempt screen and the activity menu's first page, and each device list's first place, its background, 257 places a
+compile and 4112 over the sixteen, and the clock header's sixteen slots; "Nothing to do" is held by one compile alone,
+`harvest_one_families_1`, and draws its three.
+
+**Device lists found by their title.** `touchDeviceLists` found a list by its rows, so it found none on a file with no
+device. It now falls back, where no row finds one, to the modes whose first page's chrome draws "Devices" at the
+title's place, `titledDeviceLists`; on a compile of Logitech's the rows find the lists and the fallback is not asked, by
+the code rather than by a test, and that "Devices" at the title's place marks the two lists alone is shown on the empty
+One only.
+
+### Every byte attributed, 7.1.8
+
+`touchAttributedBytes` measures the finished file with no memory of how it was made beyond the choices and the blended
+copies, as `touchBuiltBytes` takes them:
+
+* **the builders**, `touchBuiltBytes`, each describing the file and counted only where its rebuild is the file byte for
+  byte;
+* **the frame**: the header, the section table, its marker, base slots 1 and 3 and the trailer, once taking the file
+  apart and laying it out again gives the file back, checked before anything is credited. That says the frame is
+  consistent with the file, which any parsed file of Logitech's is too, and not that it states the skin and stamp the
+  file was built for: the test compares those, skin 54, arch 12 and the stamp;
+* **the letters**: each glyph that is byte for byte the one the stated font table, `buildTouchFontTable`, holds for its
+  set and code, or for a blended copy the one `letterRows` draws for that code's character blended for the copy's
+  colour; and a set's header and addresses where every glyph of it is ours and the header is the stated set's;
+* **the table headers**: a counted table's count and addresses, where its claim is exactly the count and as many three
+  byte addresses as it states, section 375's reading: consistent with itself, the addresses not compared with what
+  they name, which the builders' attributions of the entries cover.
+
+| generator | bytes |
+|---|---|
+| letters | 307641 |
+| pictures | 141849 |
+| fixed screens | 14127 |
+| wiring | 4530 |
+| table headers | 4263 |
+| status screens | 3901 |
+| clock header | 3558 |
+| firmware screens | 3247 |
+| hit pages | 833 |
+| state tables | 787 |
+| help screens | 516 |
+| case programs | 450 |
+| device lists | 369 |
+| activity menu | 256 |
+| frame | 130 |
+| raw slot 18 | 2 |
+| number senders | 1 |
+| tour and Remote Assistant, device pages, activity screens | 0 |
+| **carried** | **0** |
+
+The sum is the file, 486460. **The controls**: one bit of a glyph of ours flipped, in the last code of the first set,
+which no screen spells, leaves the glyph's 73 bytes and its set's header and 95 addresses, 288, carried, the glyph's
+bytes reported unclaimed since the glyph reader no longer settles on them as one; Logitech's own picture of battery
+gauge 3, read off `harvest_one_two_devices`, planted in place of ours, is carried by its owner, every byte of it; and a
+flipped trailer byte is refused as a file that does not lay out again into itself. Those cover the letters, the
+pictures and the frame, 449620 of the 486460 bytes; the builders' 32577 others have their controls in their own
+sections and none here. A glyph a screen spells was not usable as a control: in a first version of the test, changing
+one made the builder spelling it refuse, observed and not asserted.
+
+### A build year offering a leap year, 7.1.7
+
+Section 411 read the rule off Logitech's three compiles whose Year picker offers a leap year and refused to build it.
+It is built now, from those three, and the refusal is gone:
+
+* **two more fixed screens after the 23**: "Month in a leap year", the Month picker whose February enters Day 29, and
+  the Day 29 picker, a Day picker of 29 days;
+* **the leap year's button on the Year picker enters the second Month picker**, the other two years' the first; Day 29's,
+  Day 30's and Day 31's Back enter the second, Day 28's the first; the first Month picker's February enters Day 28;
+* **Day 29's fifth page**, 25 to 29, is touched through a hit page of five buttons and the left key by the rules every
+  picker page takes, `five buttons`, held after the 23 in a description that holds the Day 29 picker;
+* **both start the redraw timer the other Month and Day pickers start**, and join the clock pickers' class.
+
+On the two European compiles, built in 2023 with English clock pickers, all seven of the Year, Month and Day pickers,
+the leap year's two among them, **rebuild byte for byte through our templates**, and every name read off all seven
+gives one number, the leap year's Month picker's being the mode the Year's 2024 and Day 29's, 30's and 31's Back lead
+to. The controls: a reading that has Day 28's Back lead to the leap year's Month picker too is refused, and the Day 29
+template does not read Day 28's screen. On those two and the Dutch compile the Day 29 picker's last page is touched
+through exactly the `five buttons` page, and the two screens start the same timer as the other Month and Day pickers
+and not the Year picker's. **The Back and year routing is asserted on the two European compiles only**: the Dutch one,
+whose words our templates do not draw, was read so by a scratch script, and its mode numbers in the timer test come
+from that script. All three offer the leap year last or first in their range (2024 of 2022 to 2024, 2012 of 2012 to
+2014); a build year that is itself a leap year, offering it in the middle, is built by the same rule and matched against
+no compile.
+
+**What it gives**: a build year of 2027, whose picker offers 2028, builds 489507 bytes, 69 modes, 15 hit pages and 25
+fixed screens; the two new screens are modes 65 and 66 and every mode before them keeps its number, the help screens
+moving to 67 and 68. Every byte attributed, none carried, the fixed screens 16708 bytes and the hit pages 957.
+
+**The tests that asserted the refusal are rewritten, none deleted**: the fixed screens' test of the three compiles
+beyond the sixteen now finds the European two refused for the Time of Day picker skin 59 does not hold, section 405,
+the Dutch one for its words, as before, and 2027 on a 2026 compile refused because a description read off that compile
+numbers 23 screens and the year wants 25; the hit pages' and the tour's tests the same for the European two; the
+numbering's control that 2027 is refused is now a test that 2027 numbers 69 modes with the two at 65 and 66; and the
+composed path's, which restamps Logitech's 2026 compile to 2027, now finds it refused because the stamp promises the
+leap year's Month picker and the file holds none: the disagreement of build year and stamp described under what the bench will see, met on
+Logitech's file.
+
+### What no compile of Logitech's shows, 7.1.9
+
+**Every one of the nineteen distinct Harmony One compiles holds at least one device**, the fewest one, on
+`one_spare_after_sync` and `one_config_unprogrammed`. So these are inferred, and **unconfirmed until the spare Harmony
+One runs the file**, `todo-compile-one.md` 7.2:
+
+* **no device at all**, and with it **base slot 5 holding no infrared group**, the count 0; every compile holds at least
+  one group;
+* **the two device lists with no row**, section 429's template with no row in it, and found by their title;
+* **fewer modes, lists, entries and timers than any compile**: 67 modes against the fewest 84, 1314 lists against
+  1955, 27 base slot 11 entries against 29, and section 430's 25 timers against 26 and 11 redraw timers against the 13
+  of the four compiles with no activity; the 20 one byte state variables equal `harvest_one_families_1`'s, the fewest;
+* **more font sets than any compile**, 29 against 16 to 18, section 427's 18 and the look's 11 blended copies, as the
+  composed path holds its own;
+* **the assistant variable started at 3 with no Remote Assistant and no tour**: Logitech's compiles start it at 0, the
+  eighteen that hold it, section 403; ours without both ran on the spare on the composed path, section 421, never with
+  no device;
+* **the attempt screen reaching "Nothing to do" by the three second timer**, which rests on one compile,
+  `harvest_one_families_1`, section 430;
+* **the mode order past 39**, ours, section 432, and one stored copy of a picture several places draw;
+* **the leap year's two screens in English on skin 54**: held by three compiles, the two European ones on skin 59 and
+  the Dutch one on skin 54, so a 2027 build is the first English skin 54 file with them.
+
+**What a compile of Logitech's does show, and so is not inference**: an activity menu of no row, on the four compiles
+with no activity, section 429; an all off case with nothing to switch off, `harvest_one_families_1`'s, section 430; no
+number sender, base slot 16 empty on eleven of the nineteen.
+
+### What the bench will see, 7.2
+
+By the file: the remote starts on the activity menu, "My Activities", with Options and Devices on the keys below; the
+Devices key enters the idle device list, "Devices", with Activities on its key; Options holds three rows, "Date and
+Time", "Turn Screen Sounds Off" and "Screen Sensitivity"; the strip across the top shows the day, the time and the
+gauge. Drawn to PNG from the file by `packages/codec/bin/empty-one.ts --screens`. Not yet seen on a remote: whether it
+starts, whether the clock runs from the stamp, whether the device lists' Activities key and Options' pickers behave, and
+what USB Connected's leaving list does with the assistant variable at 3.
+
+**The build year and the stamp have to agree.** The Year picker's years, and whether the two leap screens are there,
+come from the year the file is built for, and our readers find those screens from the year of the stamp the file holds.
+The writer stamps the file again when it writes it, so a file built in one year and written in another, across a new
+year whose range differs in holding a leap year, would hold screens its stamp does not predict, and reading it back
+would refuse with a count of screens rather than a plain message. Not met by a build and a write in the same year.
+
+**To produce the file for the bench**: `node packages/codec/bin/empty-one.ts --out <file.bin> --screens <directory>`
+from the repository root, optionally `--built-at YYYY-MM-DDTHH:MM:SS`; it refuses unless every container check passes,
+no byte is carried and the file fits the writable region, and writes nowhere else. Writing it is the `harmony-one`
+skill's procedure.
+
+### Scope, decision 16
+
+Arch 12 (Harmony One) only, skin 54 only, the touch family's. The assembly's shape is the Harmony 650's, arch 14,
+section 374; the leap year's two screens are the Harmony One's alone, since the Harmony 600, 650 and 700 have no clock
+picker, section 432; arch 9 (Harmony 525) was not checked and has no image of such screens.
+
+### Falsification
+
+A Harmony One compile with no device; a compile whose Year picker offers a leap year and whose Day 28's Back enters the
+second Month picker, or whose Day 29's last page is touched through another page; the spare Harmony One refusing the
+file, showing a status screen after it, or starting anywhere but the activity menu.
+
+### The reviews
+
+Two reviewers read the change before it was committed, one the code and tests and one this text against the code and
+the compiles. The first found no wrong result and four gaps, now closed or said: a test title naming four screens where
+it rendered three, the start being the activity menu, renamed; no control for the frame, which now has one, the trailer
+byte, with the layout check moved ahead of the builders so the refusal is the frame's and not a builder's; the frame and
+table header credits overstated as generated where they are consistent with the file, now said so in the code and
+above; and the build year read from the stamp, which the writer changes, now under what the bench will see. It also
+noted that the leap form is checked against Logitech's compiles screen by screen and never through the whole fixed
+screens' reader, since those compiles stop at a screen they lack.
+
+The second re-measured the census, the arithmetic, the 2027 figures and every cross reference and found them right, and
+corrected six sentences now in the text: "fewer of everything than any compile", where the one byte variables equal the
+fewest and the font sets are more than any; that none of the three leap compiles is skin 54, where the Dutch one is;
+that every picture each screen draws was compared, where the activity menu's first page, the device lists' background
+and the attempt screen are; that Logitech's compiles start the assistant variable at 0, eighteen of nineteen holding
+it; that the controls cover every generator, where the builders' bytes have none here; and that the Back routing holds
+on three compiles, where two are asserted. It also asked that the timer test's title, which named the class list it did
+not read, assert it, which it now does. It noted that section 429's devices per compile with no activity read one, two,
+two and four where `devices` counts two, two, four and two; that is section 429's sentence and is left for its owner.
+
+### Where it lands
+
+* `packages/codec/src/families/touch/empty.ts`: `buildEmptyTouchConfiguration`, `emptyTouchPictureAt`,
+  `EMPTY_TOUCH_CLOCK_SLOTS`, `touchAttributedBytes` and `TOUCH_ATTRIBUTIONS`; `packages/codec/bin/empty-one.ts`, the
+  file and its screens for the bench.
+* `packages/codec/src/families/touch/fixedscreens.ts`: `LEAP_MONTH`, `touchFixedScreenNames(year)`, the two screens and
+  their keys, the refusal removed; `hitpages.ts`: `TOUCH_LEAP_HIT_PAGES`, `five buttons`; `emptynumbering.ts`:
+  `emptyTouchScreens(year)`; `emptywiring.ts`: the two in the clock pickers' class; `devicelists.ts`:
+  `titledDeviceLists`.
+* `packages/codec/test/touchempty.test.ts`, new; `touchfixedscreens.test.ts`, `touchhitpages.test.ts`, `touchwithouttour.test.ts`, `touchbuilders.test.ts` and
+  `touchnumbering.test.ts`, the refusal's tests rewritten.
+* `docs/config-format.md`, the empty One's table, the Year picker's row and the assistant variable's;
+  `reference/superseded.md`, the refusal's two phrasings.

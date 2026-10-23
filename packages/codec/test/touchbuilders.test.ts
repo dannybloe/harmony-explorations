@@ -201,13 +201,14 @@ test('todo-compile-one 3.2.2.4: a composed device with a power variable gets its
     (error: unknown) => error instanceof TouchBuildError && /^building the Harmony One's help screens: the catalogue states no power type for Television/.test(error.message));
 });
 
-test('todo-compile-one 3.2.2: a builder\'s refusal is the composed path\'s, never the donor\'s part kept: a build year offering a leap year, the Dutch compile, the everyday One\'s, an event map naming one status screen for two codes, a clock header with two gauges, an idle write of another value and two hit pages at one index',
+test('todo-compile-one 3.2.2: a builder\'s refusal is the composed path\'s, never the donor\'s part kept: a stamp offering a leap year the file holds no screens for, the Dutch compile, the everyday One\'s, an event map naming one status screen for two codes, a clock header with two gauges, an idle write of another value and two hit pages at one index',
      skipUnless(DONOR, 'one_friend_asfound_config', 'one_config'), () => {
-  // Logitech's compile stamped a year later: its Year picker would offer 2028, whose Day 29 and second Month
-  // pickers are not built, section 411.
+  // Logitech's compile stamped a year later: its Year picker would offer 2028, and the stamp then says the file holds
+  // the leap year's Month picker and the Day 29 picker, which a compile of 2026 does not. Refused for building them
+  // until section 434, and since then for the screens the stamp promises and the file lacks.
   const leap = parse(saveEdits(parse(require_(DONOR)), [], '2027-03-01T12:00:00').bytes);
   assert.throws(() => withTouchBuilders(leap),
-    (error: unknown) => error instanceof TouchBuildError && /^building the Harmony One's fixed screens: the Year picker of 2027 offers 2028, a leap year/.test(error.message));
+    (error: unknown) => error instanceof TouchBuildError && /^building the Harmony One's fixed screens: the configuration holds 0 screens of the look of Month in a leap year, not one/.test(error.message));
   // The Dutch compile, whose words the English screens would replace, and the everyday One's, whose USB Connected
   // screen leaves through a list of its own, section 409: both refused at the firmware screens.
   assert.throws(() => withTouchBuilders(parse(require_('one_friend_asfound_config'))),

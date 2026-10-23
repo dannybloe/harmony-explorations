@@ -452,6 +452,13 @@ test('control: a walk collected twice is refused, and so is one numbered without
   assert.throws(() => numbering.numbers(walks.status[1] as ScreenWalk), ScreenRecordError);
 });
 
-test('control: a build year offering a leap year is refused', () => {
-  assert.throws(() => emptyTouchNumbering({ year: 2027 }), ScreenRecordError);
+test('a build year offering a leap year, refused until section 434, numbers the leap year\'s Month picker and the Day 29 picker after the other fixed screens, 69 modes', () => {
+  const n = emptyTouchNumbering({ year: 2027 });
+  assert.equal(n.modes.size, 69);
+  assert.equal(n.screens.fixed.length, 25);
+  assert.equal(n.modes.get('fixed:Month in a leap year'), 65);
+  assert.equal(n.modes.get('fixed:Day 29'), 66);
+  // Every mode a year with no leap year numbers below them keeps its number.
+  const plain = emptyTouchNumbering({ year: 2026 });
+  for (const [key, mode] of plain.modes) if (mode < 65) assert.equal(n.modes.get(key), mode, key);
 });

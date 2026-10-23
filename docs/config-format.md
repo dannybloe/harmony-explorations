@@ -2899,7 +2899,7 @@ The other 53 below them are the wiring's.
 | a body line | `floor((176 - w) / 2)`; 12 |
 | constants | title at 6, 4; "/" at 18, 18; the page count at 23, 18 and "pages" at 35, 18; every y |
 | inline or by reference | inline in the first program to draw it unless a program outside holds it; programs are laid out in mode order, chrome first, then each page's main line, the pieces its switches join at, and the switches' arms |
-| the Year picker | the build year and the year either side, nineteen of nineteen compiles; a range holding a leap year brings a Day 29 picker and a second Month picker, not built, so such a year is refused; its `0x79` is minus the first year offered less 2000, generated; the font sets hold only the compile's own digits, so another year is refused by the speller |
+| the Year picker | the build year and the year either side, nineteen of nineteen compiles; a range holding a leap year brings a Day 29 picker and a second Month picker, built after the 23 since section 434: the leap year's button and the Back of Day 29, 30 and 31 enter the second Month picker, whose February enters Day 29, Day 28's Back the first; Day 29's last page is touched through a page of five buttons and the left key; both start the clock pickers' redraw timer (three of three compiles holding them, none of skin 54 in English); its `0x79` is minus the first year offered less 2000, generated; the font sets hold only the compile's own digits, so another year is refused by the speller |
 
 **The welcome tour and the Remote Assistant, built**, section 412: `families/touch/tourscreens.ts` through the same
 template engine, `families/touch/screentemplate.ts`, which section 411's module now shares. The tour's eleven
@@ -2954,6 +2954,22 @@ its own unless a list of that content is called on the same screen. Two screens'
 lists: the three Day pickers' entering list and the middle list below their `0x29` handler, the "shared or copied"
 row above. Every number of every set made again from the names alone is the compile's own on all sixteen, lists up
 to a renaming in both directions.
+
+**The empty One, assembled**, section 434, arch 12 (Harmony One) only, skin 54, `families/touch/empty.ts`,
+`buildEmptyTouchConfiguration`: every part by its generator from the numbering above, laid out through section 431's
+skeleton, no byte read off a compile. Unconfirmed on a remote until `todo-compile-one.md` 7.2.
+
+| what | the empty One's |
+|---|---|
+| size | 486460 bytes built in 2026; 489507 in a build year whose Year picker offers a leap year (69 modes, 15 hit pages) |
+| modes, lists, hit pages | 67, 1314, 14; the fewest modes and lists any of the nineteen One compiles holds are 84 and 1955 |
+| devices, activities | none; every One compile read holds at least one device, so no device and base slot 5 with no infrared group (`00`) are ours alone |
+| base slot 7 | 29 font sets, section 427's 18 and 11 blended copies |
+| base slot 11 | 27 entries, the clock header's four first; the fewest on the nineteen is 29 |
+| the start | the activity menu, the case the start's ready map takes for location 0 |
+| the assistant variable | `first` 3, as the composed path starts it, section 403 |
+| a picture | stored once and named by every draw of it, where Logitech stores some several times |
+| attribution | every byte to a generator: the builders, the frame (header, section table, marker, base slots 1 and 3, trailer), the letters (each glyph equal to the stated table's or its blended copy's) and the counted tables' counts and addresses; none carried, `touchAttributedBytes` |
 
 **The clock header, built**, section 414: base slot 11's four programs no mode calls and the six lists the clock's
 minute and hour call, `families/touch/clockheader.ts`, through the same engine as programs of their own. 249 pieces
@@ -3800,7 +3816,7 @@ the firmware's eleven and the first two byte variable among them. What is the Ha
 | a variable's width | one byte for a maximum up to 121; no two byte variable but index `narrow` on any of the 19, so a maximum past 121 is refused |
 | a value map's case count | one byte, `VALUE_MAP_COUNT_WIDTH` |
 | index `narrow`, the first two byte variable | the clock pickers' variable: the one the seven pickers' tag `0x29` handlers read and write and the `grid` and `column` value maps are looked up on, on all sixteen English compiles of skin 54, section 432 |
-| the assistant variable USB Connected's leaving list tests | 0 to 3, `first` 0, unnamed, on the sixteen, whose wiring holds the Remote Assistant's ladder, and on `one_config_unprogrammed` and `one_friend_asfound_config` read by hand; an empty One holds it with no ladder, so what its leaving list does with it there is unconfirmed |
+| the assistant variable USB Connected's leaving list tests | 0 to 3, `first` 0, unnamed, on the sixteen, whose wiring holds the Remote Assistant's ladder, and on `one_config_unprogrammed` and `one_friend_asfound_config` read by hand; an empty One holds it with no ladder, `first` 3 as the composed path starts it (section 434), so what its leaving list does with it there is unconfirmed |
 | Time of Day's variable | 0 to 1, `first` 0, unnamed, written 0 by AM and 1 by PM, on the sixteen |
 | the minute's second transition | `{-2 to -2, 0x7F list}` after its increment of the hour, on all 19: since both ends are the sentinel it fires on every write of the minute that is not silent, and the list it calls is the clock's screen side, calling two short lists (`todo-compile-one.md` 2.2), its index the configuration's (`minuteList`); on all 19 that list sits straight before the hour's |
 

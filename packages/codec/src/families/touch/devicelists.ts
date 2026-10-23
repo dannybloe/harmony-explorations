@@ -95,7 +95,7 @@ import { pageKeysOn } from './activitymenu.ts';
 import { CHROME_AND_END, type StandIn, grownList, withMenuPage } from './menupages.ts';
 import {
   ARROWS, CALL, CLICK, ENTER, type Entry, HEADER, LIST, MAP, lightOff,
-  type Part, type Step, TAG_ENTER, TAG_HEADER, TAG_LEAVE, TIMER_CANCEL, TIMER_START, type TemplateScreen,
+  type Part, type Step, TAG_ENTER, TAG_HEADER, TAG_LEAVE, TIMER_CANCEL, TIMER_START, TITLE_AT, type TemplateScreen,
   type BuiltTemplateScreens, type TemplateScreensDescribed, type TemplateScreensSpec, buildTemplateScreens, chrome, describeTemplateScreens,
   font, joinLines, leftHalf, named, owns, picture, press, templateNumberSlots, text, wrapLines, write,
 } from './screentemplate.ts';
@@ -290,7 +290,10 @@ export interface TouchDeviceList {
  * activities' cases entering one list other than the idle one.
  */
 export function touchDeviceLists(c: Container): TouchDeviceList[] {
-  const { menus } = deviceListMenus(c);
+  const { menus: rowed } = deviceListMenus(c);
+  // A configuration with no device has no row to find a list by, so its lists are found by their title: the empty One,
+  // `todo-compile-one.md` 7.1.7. Every compile of Logitech's has a device, so this reads none of theirs.
+  const menus = rowed.length > 0 ? rowed : titledDeviceLists(c);
   if (menus.length === 0) return [];
   const roles = touchValueMapRoles(c);
   const record = roles.records.get('devices');
@@ -315,6 +318,29 @@ export function touchDeviceLists(c: Container): TouchDeviceList[] {
     if (key === undefined) return { mode, kind: 'unreached' };
     return key === roles.idle ? { mode, kind: 'reached', idle: true } : { mode, kind: 'reached', activity: key };
   });
+}
+
+/**
+ * The device lists of a configuration with no device, by their look: every mode whose first page calls a chrome
+ * drawing the list's title, "Devices", at the title's place, `TITLE_AT`. On a configuration with a device the rows
+ * find the lists, `deviceListMenus`, and this is not asked; a device page is titled by its device's name and the
+ * activity menu "My Activities", so on the empty One, `todo-compile-one.md` 7.1.7, the two lists of no row are the only
+ * modes titled so.
+ */
+function titledDeviceLists(c: Container): number[] {
+  const map = characterMap(c);
+  if (map === undefined) return [];
+  const out: number[] = [];
+  (modeRecords(c) ?? []).forEach((record, mode) => {
+    const first = record.pages[0];
+    if (first === undefined) return;
+    const call = (screenProgram(c, first.program) ?? []).find((one) => one.opcode === SCREEN_CALL);
+    const titled = (call === undefined ? [] : screenProgram(c, call.targets[0] as number) ?? [])
+      .find((one) => (one.opcode === SCREEN_TEXT_AT || one.opcode === SCREEN_TEXT_INLINE) && one.operands[0] === TITLE_AT[0] && one.operands[1] === TITLE_AT[1]);
+    const glyphs = titled === undefined ? undefined : textGlyphs(c, titled);
+    if (glyphs !== undefined && decode(glyphs, map) === TITLE) out.push(mode);
+  });
+  return out;
 }
 
 // ---------------------------------------------------------------------------------------------------------

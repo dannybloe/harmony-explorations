@@ -13,7 +13,7 @@
  *   at 0 to 9 and the status screens at 10 to 39, code `n` at `10 + n` with code 9's at 19 being the fixed screens'
  *   "LCD Module Failed", which the event map names on all nineteen compiles, `wiring.ts`; then the activity menu, the
  *   idle device list and the list nothing enters, the other twenty two fixed screens in their builder's order, and the
- *   power off help's attempt screen and "Nothing to do", `EMPTY_TOUCH_SCREENS`. Logitech's compiles put the screens
+ *   power off help's attempt screen and "Nothing to do", `emptyTouchScreens`. Logitech's compiles put the screens
  *   past 39 in other orders.
  * * **The variables**: the firmware's eighteen, the wiring's eighteen, `emptywiring.ts`, then two more the screens
  *   name and the wiring does not. The assistant variable, which USB Connected's leaving list tests whether or not
@@ -45,7 +45,7 @@ import {
   TOUCH_FIRMWARE_HIT_PAGES, TOUCH_FIRMWARE_OWN_LISTS, TOUCH_FIRMWARE_SCREENS, type TouchFirmwareScreensSpec,
   touchFirmwarePicturePlaces,
 } from './firmwarescreens.ts';
-import { TOUCH_FIXED_SCREENS, type TouchFixedScreensSpec, touchFixedHitPages, touchFixedScreenTemplates } from './fixedscreens.ts';
+import { type TouchFixedScreensSpec, touchFixedHitPages, touchFixedScreenNames, touchFixedScreenTemplates } from './fixedscreens.ts';
 import { DISPLAY_TEST_CODE, STATUS_CODES, TOUCH_STATUS_TEMPLATES, type TouchStatusScreensSpec } from './statusscreens.ts';
 import { type TouchHelpScreensSpec, helpScreens } from './helpscreens.ts';
 import { type TouchActivityMenuSpec, activityMenuScreen } from './activitymenu.ts';
@@ -53,7 +53,7 @@ import {
   type DeviceListShape, EMPTY_DEVICE_LISTS, type TouchDeviceListsSpec, deviceListRoles, deviceListScreen, emptyTouchDeviceListsSpec,
 } from './devicelists.ts';
 import { CLOCK_HEADER_PROGRAMS, type ClockHeaderProgram, type TouchClockHeaderSpec } from './clockheader.ts';
-import { TOUCH_HIT_PAGES, type TouchHitPagesSpec } from './hitpages.ts';
+import { TOUCH_HIT_PAGES, TOUCH_LEAP_HIT_PAGES, type TouchHitPagesSpec } from './hitpages.ts';
 import { EMPTY_TOUCH_VALUE_MAPS, type EmptyTouchMode, type EmptyTouchWiring, type EmptyTouchWiringOptions, emptyTouchWiring } from './emptywiring.ts';
 import { type ScreenSetForms, type ScreenWalk, type TouchScreenSet, TouchNumbering, screenSetWalks } from './numbering.ts';
 import { TOUCH_STATE_TABLES } from './statetables.ts';
@@ -63,17 +63,24 @@ import { templatePicturePlaces, type TemplateScreen } from './screentemplate.ts'
 // The modes.
 
 /**
- * Every screen of an empty One in mode order, by the keys `emptywiring.ts`' redraw classes use: `firmware:` and the
- * firmware screen's id, `status:` and the code, `fixed:` and the fixed screen's name, the activity menu, the two
- * device lists, and the power off help's two screens.
+ * Every screen of an empty One built in `year` in mode order, by the keys `emptywiring.ts`' redraw classes use:
+ * `firmware:` and the firmware screen's id, `status:` and the code, `fixed:` and the fixed screen's name, the activity
+ * menu, the two device lists, and the power off help's two screens. Where the Year picker offers a leap year the two
+ * screens it brings come after the other fixed screens, `touchFixedScreenNames`, so every mode before them keeps its
+ * number.
  */
-export const EMPTY_TOUCH_SCREENS: readonly string[] = [
-  ...TOUCH_FIRMWARE_SCREENS.map((id) => `firmware:${id}`),
-  ...STATUS_CODES.map((code) => (code === DISPLAY_TEST_CODE ? 'fixed:LCD Module Failed' : `status:${code}`)),
-  'activity menu', 'idle device list', 'device list',
-  ...TOUCH_FIXED_SCREENS.filter((name) => name !== 'LCD Module Failed').map((name) => `fixed:${name}`),
-  'help:attempt', 'help:after',
-];
+export function emptyTouchScreens(year: number): readonly string[] {
+  return [
+    ...TOUCH_FIRMWARE_SCREENS.map((id) => `firmware:${id}`),
+    ...STATUS_CODES.map((code) => (code === DISPLAY_TEST_CODE ? 'fixed:LCD Module Failed' : `status:${code}`)),
+    'activity menu', 'idle device list', 'device list',
+    ...touchFixedScreenNames(year).filter((name) => name !== 'LCD Module Failed').map((name) => `fixed:${name}`),
+    'help:attempt', 'help:after',
+  ];
+}
+
+/** The sixty seven of a build year whose Year picker offers no leap year, `emptyTouchScreens`. */
+export const EMPTY_TOUCH_SCREENS: readonly string[] = emptyTouchScreens(2026);
 
 /** The modes `emptyTouchWiring` takes, by its names for them, as screen keys here. */
 const WIRING_MODES: Readonly<Record<EmptyTouchMode, string>> = {
@@ -122,7 +129,7 @@ export interface EmptyTouchNumberingOptions extends Omit<EmptyTouchWiringOptions
 
 /** One screen of an empty One as its set's builder takes it, every number but its pictures'. */
 export interface EmptyTouchScreen {
-  /** The key `EMPTY_TOUCH_SCREENS` gives it. */
+  /** The key `emptyTouchScreens` gives it. */
   key: string;
   mode: number;
   /** Each page's hit page. */
@@ -134,7 +141,7 @@ export interface EmptyTouchScreen {
 }
 
 export interface EmptyTouchNumbering {
-  /** Each screen's mode by its key, `EMPTY_TOUCH_SCREENS`' order. */
+  /** Each screen's mode by its key, `emptyTouchScreens`' order. */
   modes: ReadonlyMap<string, number>;
   /** The wiring, timers, fixed cases and hour list, `emptyTouchWiring`'s. */
   wiring: EmptyTouchWiring;
@@ -168,13 +175,14 @@ const OWN_HIT_PAGES: Readonly<Record<string, string>> = {
 };
 
 /**
- * The empty One numbered. Refuses a build year whose Year picker offers a leap year, `assertFixedScreensYear`, and
- * anything `emptyTouchWiring` refuses.
+ * The empty One numbered: sixty seven modes, and sixty nine where the Year picker offers a leap year,
+ * `emptyTouchScreens`. Refuses anything `emptyTouchWiring` refuses.
  */
 export function emptyTouchNumbering(options: EmptyTouchNumberingOptions): EmptyTouchNumbering {
   const hours = options.hours ?? 12;
   const forms: ScreenSetForms = { year: options.year, tour: false, helpDevices: [], activities: [], deviceLists: EMPTY_DEVICE_LISTS, hours };
-  const modes = new Map(EMPTY_TOUCH_SCREENS.map((key, mode) => [key, mode]));
+  const screensInOrder = emptyTouchScreens(options.year);
+  const modes = new Map(screensInOrder.map((key, mode) => [key, mode]));
   const modeOf = (key: string): number => {
     const mode = modes.get(key);
     if (mode === undefined) throw new ScreenRecordError(`an empty One holds no screen ${key}`);
@@ -199,7 +207,7 @@ export function emptyTouchNumbering(options: EmptyTouchNumberingOptions): EmptyT
 
   // Every name's value.
   const keys = new Map<string, number>();
-  for (const key of EMPTY_TOUCH_SCREENS) if (key.startsWith('fixed:')) keys.set(`mode ${key.slice(6)}`, modeOf(key));
+  for (const key of screensInOrder) if (key.startsWith('fixed:')) keys.set(`mode ${key.slice(6)}`, modeOf(key));
   keys.set('mode idle device list', modeOf('idle device list'));
   for (const [index, name] of wiring.wiring.listNames) keys.set(`list ${name}`, index);
   keys.set('list hour', wiring.hourList.index);
@@ -218,7 +226,7 @@ export function emptyTouchNumbering(options: EmptyTouchNumberingOptions): EmptyT
   const all = (Object.entries(walks) as [TouchScreenSet, ScreenWalk[]][])
     .flatMap(([set, list]) => list.map((walk, k) => ({ set, walk, key: walkKey(set, walk, k) })));
   // In mode order, the clock header's calls last, so the lists come out in the order the screens are built.
-  const order = (one: { set: TouchScreenSet; key: string }): number => (one.set === 'clock' ? EMPTY_TOUCH_SCREENS.length : modeOf(one.key));
+  const order = (one: { set: TouchScreenSet; key: string }): number => (one.set === 'clock' ? screensInOrder.length : modeOf(one.key));
   all.sort((a, b) => order(a) - order(b));
   for (const one of all) numbering.collect(one.walk);
   const numbers = new Map(all.map((one) => [one.walk, numbering.numbers(one.walk)]));
@@ -228,10 +236,10 @@ export function emptyTouchNumbering(options: EmptyTouchNumberingOptions): EmptyT
   TOUCH_FIRMWARE_SCREENS.forEach((id, mode) => shapes.set(`firmware:${id}`, [TOUCH_FIRMWARE_HIT_PAGES[mode] as string]));
   for (const code of STATUS_CODES) if (code !== DISPLAY_TEST_CODE) shapes.set(`status:${code}`, ['message']);
   const fixedPages = touchFixedHitPages(options.year, false);
-  TOUCH_FIXED_SCREENS.forEach((name, k) => shapes.set(`fixed:${name}`, fixedPages[k] as string[]));
+  touchFixedScreenNames(options.year).forEach((name, k) => shapes.set(`fixed:${name}`, fixedPages[k] as string[]));
   for (const [key, shape] of Object.entries(OWN_HIT_PAGES)) shapes.set(key, [shape]);
   const hitPages = new Map<string, number>();
-  for (const key of EMPTY_TOUCH_SCREENS) {
+  for (const key of screensInOrder) {
     const pages = shapes.get(key);
     if (pages === undefined) throw new ScreenRecordError(`no hit page is stated for ${key}`);
     for (const shape of pages) if (!hitPages.has(shape)) hitPages.set(shape, hitPages.size);
@@ -280,7 +288,7 @@ function deviceListsSpec(
   return spec;
 }
 
-/** The key of walk `k` of a set, `EMPTY_TOUCH_SCREENS`' for every set but the clock header's calls. */
+/** The key of walk `k` of a set, `emptyTouchScreens`' for every set but the clock header's calls. */
 function walkKey(set: TouchScreenSet, walk: ScreenWalk, k: number): string {
   if (set === 'firmware') return `firmware:${walk.name}`;
   if (set === 'fixed') return `fixed:${walk.name}`;
@@ -329,8 +337,9 @@ export function emptyTouchSpecs(numbering: EmptyTouchNumbering, look: EmptyTouch
   const templated = (list: readonly EmptyTouchScreen[]): { mode: number; leads: number[]; pictures: PieceTarget[]; numbers: number[] }[] =>
     list.map((one) => ({ mode: one.mode, leads: one.leads, pictures: pictures(one), numbers: one.numbers }));
   const s = numbering.screens;
-  // The table's pages, every one `TOUCH_HIT_PAGES` names that the screens name, in that table's order.
-  const names = TOUCH_HIT_PAGES.filter((name) => numbering.hitPages.has(name));
+  // The table's pages, every one `TOUCH_HIT_PAGES` names that the screens name, in that table's order, and a leap
+  // year's after them.
+  const names = [...TOUCH_HIT_PAGES, ...TOUCH_LEAP_HIT_PAGES].filter((name) => numbering.hitPages.has(name));
   if (look.clock.programs.length !== CLOCK_HEADER_PROGRAMS.length) {
     throw new ScreenRecordError(`the clock header has ${CLOCK_HEADER_PROGRAMS.length} programs and ${look.clock.programs.length} are drawn`);
   }

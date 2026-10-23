@@ -101,9 +101,12 @@ export const EMPTY_TOUCH_REDRAW_CLASSES: readonly { name: string; screens: reado
   },
   { name: 'Year and Options', screens: ['fixed:Year', 'fixed:Options'] },
   { name: 'Screen Sensitivity', screens: ['fixed:Screen Sensitivity'] },
+  // With the two a leap year in the Year picker's range brings, which start the other clock pickers' timer on the
+  // three compiles of Logitech's that hold them, section 434; a year with none holds neither, and the class is the rest.
   {
     name: 'clock pickers',
-    screens: ['fixed:Month', 'fixed:Day 28', 'fixed:Day 30', 'fixed:Day 31', 'fixed:Hour', 'fixed:Minute', 'fixed:Time of Day'],
+    screens: ['fixed:Month', 'fixed:Day 28', 'fixed:Day 30', 'fixed:Day 31', 'fixed:Hour', 'fixed:Minute', 'fixed:Time of Day',
+      'fixed:Month in a leap year', 'fixed:Day 29'],
   },
   { name: 'help attempt', screens: ['help:attempt'] },
 ];
