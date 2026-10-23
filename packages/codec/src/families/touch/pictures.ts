@@ -64,6 +64,9 @@ type Rows = (number | undefined)[][];
 
 const BLACK = 0x0000;
 const WHITE = rgbTo565(255, 255, 255);
+/** A circle icon's circle in the icon font, Material Design Icons: radius 10 of its 24 unit grid, as `close-circle-outline` draws it. */
+const CIRCLE_ICON_RADIUS = 10;
+const ICON_GRID = 24;
 /** The dotted interior of the gauge at level 0, the level not known. */
 const GREY = rgbTo565(128, 128, 128);
 
@@ -80,8 +83,11 @@ export type TouchPictureDrawing =
   /**
    * One white icon, `TouchChoices.pictureIcons[name]`, over black: its grid square `size` pixels wide with its top
    * left corner at `at`, which may lie outside the picture, the icon then cut at the edge as Logitech's ink is.
+   * `paper` is where the black under it is drawn: the whole picture, by default, or `'circle'`, a disc the size of a
+   * circle icon's own circle, radius 10 of the icon font's 24 units, centred on the grid square, every pixel outside it
+   * that the icon does not ink left empty, `todo-compile-one.md` 7.1.2, section 428.
    */
-  | { readonly kind: 'icon'; readonly at: readonly [number, number]; readonly size: number }
+  | { readonly kind: 'icon'; readonly at: readonly [number, number]; readonly size: number; readonly paper?: 'circle' }
   /** A flat box in `TouchChoices.settingsBox`, the pixels outside its rounded corners black. */
   | { readonly kind: 'settings box' }
   /** The one whole screen background, black, which every picture of this kind is taken out for and drawn as, 5.3.3. */
@@ -132,7 +138,12 @@ export const TOUCH_PICTURES: readonly TouchPictureEntry[] = [
   // The firmware screens, section 409, and the screens a timer enters, section 411.
   { name: 'Low Battery', keys: ['570b4c75e71d748e'], width: 61, height: 69, drawing: { kind: 'icon', at: [0, 4], size: 61 } },
   { name: 'USB Connected', keys: ['2643afb9a417f4ea'], width: 69, height: 91, drawing: { kind: 'icon', at: [0, 11], size: 69 } },
-  { name: 'charging problem', keys: ['a7a93475a4fc2216'], width: 87, height: 62, drawing: { kind: 'icon', at: [26, 22], size: 40 } },
+  // The cross's paper is its circle: the picture is drawn once over the black fill of a firmware screen, so black
+  // anywhere else draws nothing that shows and costs two bytes a pixel, section 428.
+  {
+    name: 'charging problem', keys: ['a7a93475a4fc2216'], width: 87, height: 62,
+    drawing: { kind: 'icon', at: [26, 22], size: 40, paper: 'circle' },
+  },
   { name: 'charging screen', keys: ['84b0eb05a60277bc'], width: 176, height: 220, drawing: { kind: 'icon', at: [55, 100], size: 70 } },
   // The power off help, section 415, its questions' symbol, and the attempt screen's large sending mark.
   { name: 'power', keys: ['d0538d4a44ffc9cd'], width: 62, height: 42, drawing: { kind: 'icon', at: [13, 3], size: 36 } },
@@ -188,9 +199,10 @@ function gaugeRows(level: number): Rows {
  * unless `TouchChoices.logitechMasks` keeps the masked form, `touchPictureRows`.
  *
  * **What each drawing leaves empty**: the battery gauge, row 0 and column 0, outside the box its levels ink,
- * `gaugeRows`; every other drawing, nothing. An icon is drawn over black paper the whole picture wide, as six of
- * Logitech's seven icon pictures are drawn at every pixel; the charging problem's cross is the seventh, whose corners
- * Logitech leaves undrawn and ours draws black. A settings box's pixels outside its rounded corners are black, decided on
+ * `gaugeRows`, where the black is load bearing, since one level is drawn over another; the charging problem's cross,
+ * every pixel outside its circle that the icon does not ink, as Logitech's cross leaves its corners undrawn; every
+ * other drawing, nothing. The other icons are drawn over black paper the whole picture wide, as Logitech's six are
+ * drawn at every pixel. A settings box's pixels outside its rounded corners are black, decided on
  * the sample of 18 October 2026, and the black pictures and the background are black throughout.
  */
 export function touchPictureOwnRows(entry: TouchPictureEntry, choices: TouchChoices): Rows {
@@ -206,7 +218,13 @@ export function touchPictureOwnRows(entry: TouchPictureEntry, choices: TouchChoi
     case 'icon': {
       const icon = choices.pictureIcons[entry.name as TouchIconPicture];
       if (icon === undefined) throw new PictureError(`${entry.name} has no icon among the choices`);
-      return iconOverRows(black(), drawing.at[0], drawing.at[1], drawing.size, drawing.size, icon, drawing.size, WHITE);
+      const rows = iconOverRows(black(), drawing.at[0], drawing.at[1], drawing.size, drawing.size, icon, drawing.size, WHITE);
+      if (drawing.paper !== 'circle') return rows;
+      // The paper a disc: a pixel whose centre lies outside it and that the icon left black is empty.
+      const cx = drawing.at[0] + drawing.size / 2;
+      const cy = drawing.at[1] + drawing.size / 2;
+      const radius = (drawing.size * CIRCLE_ICON_RADIUS) / ICON_GRID;
+      return rows.map((line, y) => line.map((v, x) => (v === BLACK && Math.hypot(x + 0.5 - cx, y + 0.5 - cy) > radius ? undefined : v)));
     }
     case 'settings box':
       // `activityBoxRows` leaves the corners outside the rounding undrawn; ours are black there, as decided.

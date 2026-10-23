@@ -208,11 +208,11 @@ test('todo-compile-one 5.3.3: on Logitech\'s compile of two devices the whole sc
   // photograph two: six blank screens a timer enters draw them, which is all this says of what they are for.
   assert.deepEqual(background.map((key) => before.get(key)), [75, 2, 2, 2]);
   // The background kept a picture, as 5.3.3 left it; 5.3.4 makes it one fill, `screenfill.test.ts`, section 425. In the
-  // masked form, where every other picture of ours is as long as Logitech's; by the rule alone, section 428, the gauges
-  // and the cross are 7941 bytes more.
+  // masked form, where every other picture of ours is as long as Logitech's; by the rule alone, section 428, 783 bytes
+  // fewer: the cross 876 fewer, its paper only its circle, and the thirteen gauge copies a net 93 more.
   const placed = withTouchPictures(c, MASKED).container;
   assert.equal(c.blob.length - placed.blob.length, 5 * 77445);
-  assert.equal(c.blob.length - withTouchPictures(c, AS_PICTURE).container.blob.length, 5 * 77445 - 7941);
+  assert.equal(c.blob.length - withTouchPictures(c, AS_PICTURE).container.blob.length, 5 * 77445 + 783);
   const after = namings(placed);
   // One picture holds them all, all black and uncompressed, Logitech's own bytes.
   assert.deepEqual(background.map((key) => after.get(key)), [draws, undefined, undefined, undefined]);
@@ -259,7 +259,7 @@ test('todo-compile-one 5.3: on the composed path ours go in unless the choice ke
 /** The pixels a picture leaves empty, as `x,y`, row by row. */
 const emptyAt = (rows: Rows): string[] => rows.flatMap((row, y) => row.flatMap((v, x) => (v === undefined ? [`${x},${y}`] : [])));
 
-test('todo-compile-one 7.1.2: every one of the 23 fixed pictures is built by its rule with no configuration present, at its stated size, 305463 bytes, and the battery gauges\' ten are the only ones with an empty pixel, each at row 0 and column 0 and nowhere else',
+test('todo-compile-one 7.1.2: every one of the 23 fixed pictures is built by its rule with no configuration present, at its stated size, 296739 bytes, and only the battery gauges\' ten and the cross have an empty pixel, the gauges each at row 0 and column 0 and nowhere else, the cross 4458 pixels outside its circle',
      () => {
   // No lab and no configuration: this test runs in a clone with neither, so it cannot read a picture off one.
   const built = touchFixedPictures(TOUCH_CHOICES);
@@ -276,6 +276,15 @@ test('todo-compile-one 7.1.2: every one of the 23 fixed pictures is built by its
       assert.deepEqual(emptyAt(rows).sort(), [...gaugeEdge].sort(), entry.name);
       // Encoded, since a pixel is empty: 417 bytes each, every one the same runs.
       assert.equal(bytes.length, 417, entry.name);
+    } else if (entry.name === 'charging problem') {
+      // The cross's paper is its circle, section 428: every pixel outside it that the icon does not ink is empty, so it
+      // is encoded, 2069 bytes, where black paper the picture wide was raw at 10793. The circle is centred on the grid
+      // square at 26, 22 of 40 pixels, radius 10 of the icon font's 24 units.
+      const empty = emptyAt(rows);
+      assert.equal(empty.length, 4458);
+      const outside = ([x, y]: number[]): boolean => Math.hypot((x as number) + 0.5 - 46, (y as number) + 0.5 - 42) > (40 * 10) / 24;
+      assert.ok(empty.every((at) => outside(at.split(',').map(Number))));
+      assert.equal(bytes.length, 2069);
     } else {
       assert.deepEqual(emptyAt(rows), [], entry.name);
       // Every pixel drawn, so raw: two bytes a pixel and the five of the header.
@@ -283,7 +292,7 @@ test('todo-compile-one 7.1.2: every one of the 23 fixed pictures is built by its
     }
   }
   assert.equal(gauges, 10);
-  assert.equal(built.reduce((sum, one) => sum + one.bytes.length, 0), 305463);
+  assert.equal(built.reduce((sum, one) => sum + one.bytes.length, 0), 296739);
 });
 
 test('todo-compile-one 7.1.2: on each of the sixteen the step puts in each of its 32 places exactly the picture the rule built with no configuration, and the masked form differs at 14 of those places, so a step that drew inside Logitech\'s mask would not pass',
@@ -353,13 +362,13 @@ function differences(name: string): { entry: string; counts: [number, number, nu
   return out;
 }
 
-test('todo-compile-one 7.1.2: on every stored copy of all nineteen Harmony One compiles the rule\'s form differs from the masked form at three to five pixels of eight gauge drawings, 30 of level 0\'s and 39 of level 3\'s, of which the mask had cut 27 of our outline and tip, and at the 4028 pixels around the cross, drawn black; on the other twelve drawings at none',
+test('todo-compile-one 7.1.2: on every stored copy of all nineteen Harmony One compiles the rule\'s form differs from the masked form at three to five pixels of eight gauge drawings, 30 of level 0\'s and 39 of level 3\'s, of which the mask had cut 27 of our outline and tip, and at the 430 pixels between our cross\'s circle and the edge of Logitech\'s, empty in ours; on the other twelve drawings at none',
      skipUnless(...NINETEEN), () => {
   const expected = new Map<string, [number, number, number]>([
     ['battery gauge 0', [0, 0, 30]], ['battery gauge 1', [4, 1, 0]], ['battery gauge 2', [4, 0, 0]],
     ['battery gauge 3', [39, 27, 0]], ['battery gauge 4, charging frame 2', [3, 1, 0]], ['battery gauge 5', [3, 1, 0]],
     ['battery gauge 6', [4, 1, 0]], ['battery gauge 7, charged, charging frame 1', [4, 1, 0]], ['charging frame 3', [5, 1, 0]],
-    ['charging at gauge level 0', [3, 1, 0]], ['charging problem', [4028, 0, 0]],
+    ['charging at gauge level 0', [3, 1, 0]], ['charging problem', [0, 0, 430]],
   ]);
   let copies = 0;
   let differing = 0;

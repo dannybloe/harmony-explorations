@@ -57329,15 +57329,19 @@ measurement:
   of ours inks row 0 or column 0, so none leaves anything there for another to cover. Both follow from the
   construction. Whether the firmware clears the strip before redrawing it is not read; what shows at the empty row and
   column is whatever the page drew there;
-* **every other drawing**: nothing. An icon is drawn over black paper the whole picture wide, a decision kept from the
-  sample, which six of Logitech's seven icon pictures agree with, being drawn at every pixel; the seventh is the
-  charging problem's cross. A settings box's pixels outside its rounded corners are black, as decided on the sample,
+* **the charging problem's cross**: every pixel outside its circle that the icon does not ink, 4458. Its black paper
+  is a disc the size of the icon's own circle, radius 10 of the icon font's 24 units, centred on its grid square,
+  `paper: 'circle'`. The black elsewhere was not load bearing: the picture is drawn once on its firmware screen, over
+  the black fill, and nothing is drawn over it that it would have to cover; so it went, as Logitech's cross leaves its
+  corners undrawn too;
+* **every other drawing**: nothing. The other six icons are drawn over black paper the whole picture wide, a decision
+  kept from the sample, which Logitech's six agree with, being drawn at every pixel. A settings box's pixels outside its rounded corners are black, as decided on the sample,
   where `activityBoxRows` leaves them undrawn and the masked form made them black; the sending mark off, the clock face
   and the background are black throughout.
 
-`touchFixedPictures` builds all 23 from the choices alone, 305463 bytes encoded: the ten gauges 417 bytes each, the
-only ones with an empty pixel and so the only encoded ones, and the other thirteen raw, two bytes a pixel and five of
-header.
+`touchFixedPictures` builds all 23 from the choices alone, 296739 bytes encoded: the ten gauges 417 bytes each and the
+cross 2069, the only ones with an empty pixel and so the only encoded ones, and the other twelve raw, two bytes a pixel
+and five of header.
 
 ### Against the masked form
 
@@ -57359,7 +57363,7 @@ drawn:
 | levels 4 and 5 | 3 each | 1 each | 0 |
 | charging animation, third frame | 5 | 1 | 0 |
 | charging at level 0 | 3 | 1 | 0 |
-| the charging problem's cross | 4028 | 0 | 0 |
+| the charging problem's cross | 0 | 0 | 430 |
 
 Where both forms draw a pixel it is the same pixel, by construction: the masked form is the rule's drawing with
 Logitech's empty pixels cut out of it and black where the drawing is empty, so the forms can differ only in what is
@@ -57370,8 +57374,9 @@ the outline's top left corner pixel on seven gauge pictures, where those of Logi
 level 3 27 pixels, the outline's top left corner, 17 of its bottom edge, 4 of the right end of the body and 5 of the
 tip's 8. Rendered over a page, the masked level 3 gauge is an outline open at the bottom and right; the rule's own is
 whole. Why Logitech's level 3 leaves those pixels undrawn, and how its own level 3 looks on a remote, is not known. The
-rest of the difference is black: the gauges' corner pixels, and the 4028 pixels round the cross, which on the charging
-problem's screen lie on the black the background fill drew, so the screen renders identically.
+rest of the difference is black or empty: the gauges' corner pixels, black in ours, and the cross's 430, a ring between
+our circle's disc and the edge of Logitech's larger blob, black in the masked form and empty in ours, on the charging
+problem's screen over the black the background fill drew, so the screen renders identically.
 
 ### On the composed path
 
@@ -57380,12 +57385,14 @@ problem's screen lie on the black the background fill drew, so the screen render
 pictures' bytes with, recognises a picture by the form the choices name. Both forms still refuse a picture of another
 size than its entry's.
 
-**On the composed test setup** the file goes from 983644 to 991585 bytes, 7941 more, and the pictures' part of the
-attribution from 217218 to 225159, the same 7941: the cross 7848, raw at 10793 bytes where the masked form left it
-encoded at 2945, and the thirteen gauge copies a net 93, 5421 where they were 5328, level 0's 28 shorter, level 3's 70
-longer and the other eleven 4 or 5 longer each. No other part moved: the carried bytes stay 103331 and every builder's
-count is the same. The masked form's 983644 and 217218 are measured and no longer asserted; the 7941 is asserted on
-Logitech's compile of two devices too. **All 190 mode pages render pixel for pixel alike** in the two forms, the
+**On the composed test setup** the file goes from 983644 to 982861 bytes, 783 fewer, and the pictures' part of the
+attribution from 217218 to 216435, the same 783: the cross 876 fewer, 2069 bytes where the masked form's was 2945, and
+the thirteen gauge copies a net 93 more, 5421 where they were 5328, level 0's 28 shorter, level 3's 70 longer and the
+other eleven 4 or 5 longer each. No other part moved: the carried bytes stay 103331 and every builder's count is the
+same. The masked form's 983644 and 217218 are measured and no longer asserted; the 783 is asserted on Logitech's
+compile of two devices too. **A first version drew the cross over black paper the picture wide**, raw at 10793 bytes
+and the setup 991585, 7941 more than the masked form: the black round the circle was the decided rule followed to the
+letter, and it is not load bearing on a picture drawn once over a black fill, so the paper is the circle now. **All 190 mode pages render pixel for pixel alike** in the two forms, the
 charging problem's screen with the cross among them; the pages draw no gauge, which the clock header's programs draw
 over them. With the gauge program's eight variants drawn over the first page, variant k taken as level k, the two
 differ at no pixel on levels 0 and 2, at one, the outline's top left corner, on levels 1 and 4 to 7, and at 27 on level
@@ -57421,7 +57428,7 @@ four slot family's own module, section 363, which this section did not examine.
 
 Both reviewers of the `finding` skill ran. **The blind re-measure**, given the questions and not this section, found
 the same undrawn pixels per image and copy, the same differences per drawing, the same encoded sizes and the 305463
-total, both composed lengths, and all 190 pages alike; it raised the gauge's empty row and column showing what lies
+total, both composed lengths, and all 190 pages alike, all on the first version with the cross over black paper; it raised the gauge's empty row and column showing what lies
 under them, answered in the first list above. **The sentence audit** found seven things, corrected in place: "23
 images" where the module names 23 drawings held as 29 images; "Both forms leave them empty, Logitech's too", false of
 level 0; the identity of the pixels both forms draw offered as a measurement where it is by construction; the gauge's
@@ -57435,10 +57442,9 @@ only level 3, the sixteen places test failed on each.
 
 ### Still open
 
-**Not seen on a remote**: the gauges, the cross and the status strip in the rule's form, 7.2. **The cross's cost**:
-7848 bytes for black pixels round a circle on a black screen. A drawing that left the cross's paper empty outside its
-circle would be encoded again, at about the masked form's size; that is a choice about a drawing, and the decided rule,
-an icon over black paper, was kept.
+**Not seen on a remote**: the gauges, the cross and the status strip in the rule's form, 7.2. **The circle's radius is
+the icon font's**, 10 of 24 units as `close-circle-outline` draws it: another icon chosen for the cross keeps the same
+disc of paper, which is right for a round icon and would cut a square one's black at its corners.
 
 Where it lives:
 

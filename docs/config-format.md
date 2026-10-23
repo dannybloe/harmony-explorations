@@ -2141,8 +2141,8 @@ its body; level 3 leaves 69, its bottom row and most of the right end of its bod
 4028 of its 5394 undrawn, everything outside its circle's silhouette, a roughly round blob of 1366 drawn pixels.
 **Ours are transparent where our own drawing leaves a pixel empty** since section 428, by default, and what it leaves
 empty is a choice: the gauges at row 0 and column 0 alone, as nine of Logitech's ten do, the box from x 1 and y 1
-drawn black where no ink falls, and every other picture at no pixel, the cross
-drawn black round its circle and so stored raw, 10793 bytes. Built with no configuration, `touchFixedPictures`; the
+drawn black where no ink falls; the cross at every pixel outside its circle that the icon does not ink, 4458, its
+paper a disc of radius 10 of the icon font's 24 units, encoded at 2069 bytes; and every other picture at no pixel. Built with no configuration, `touchFixedPictures`; the
 masked form of section 422, Logitech's undrawn pixels taken off the picture replaced, is `TouchChoices.logitechMasks`.
 [findings.md](findings.md) section 428.
 
