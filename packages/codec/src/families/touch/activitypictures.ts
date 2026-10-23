@@ -161,11 +161,12 @@ export const ACTIVITY_ROW_FACE = 'One15';
 
 /**
  * The weight a text on one of our boxes is lettered in when the blending step smooths it, `WeightFor`: the
- * labels on the activity and the device boxes in `labelWeight`, lighter than their face's own, and every other
- * text in its set's weight. Read off the colour under the text, which on a box of ours is its fill.
+ * labels on the activity, the device and, since `todo-compile-one.md` 5.3.1 draws the settings screens' buttons,
+ * the settings boxes in `labelWeight`, lighter than their face's own, and every other text in its set's weight.
+ * Read off the colour under the text, which on a box of ours is its fill.
  */
 export function touchLabelWeight(choices: TouchChoices): WeightFor {
-  const fills = new Set([colour565(choices.activityBox.fill), colour565(choices.deviceBox.fill)]);
+  const fills = new Set([colour565(choices.activityBox.fill), colour565(choices.deviceBox.fill), colour565(choices.settingsBox.fill)]);
   return (_face, background) => (fills.has(background) ? choices.labelWeight : undefined);
 }
 

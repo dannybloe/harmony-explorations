@@ -56180,3 +56180,117 @@ tour is skipped another way, section 357.
 
 `todo-compile-one.md` 4.10.1: the result written to the spare Harmony One and seen to start. The assistant's value map
 and its programs left out. Options of one page is a form no compile holds and no remote here has shown.
+
+## 422. The Harmony One's fixed pictures are drawn by us inside Logitech's masks, and its whole screen background is one black picture the charger's blank screens draw too
+
+`todo-compile-one.md` 5.3.1 and 5.3.3. **Decided on the sample of 18 October 2026**: every fixed picture past the
+setup's gets ours, each the size of Logitech's with Logitech's transparency mask, black inside the mask where our
+drawing leaves a pixel empty; flat boxes in `TouchChoices.settingsBox` for the settings screens' buttons, their corners
+outside the rounding black; white icons of the icon font placed by section 373's rule; the battery gauge by rule with
+no charging difference; the sending mark off and the clock face all black. The whole screen background behind 75
+screens is all black: ours is one picture, and the six blank screens a timer shows on the charger draw it in place of
+Logitech's three photographs. The tour's illustrations are not drawn, since the tour is left out, section 421.
+**Sources checked first**: the sample's notes and its drawing code, sections 363, 366 and 373 for the Harmony 650's
+pictures, section 405 for the census of the One's fixed pictures, section 414 for the clock header that draws the
+status strip, and section 421 for what the tour takes with it. Logitech's client was not consulted: the drawings are
+choices of ours and which picture is which is read off the configurations. Arch 12 (Harmony One) alone; the module is
+the touch family's, `families/touch/pictures.ts`, and the Harmony 600, 650 and 700 keep their own, section 363.
+
+### Which pictures, and how each is known
+
+29 images of Logitech's, named by content key, `contentKey`, which names a picture without holding any of it: the
+status strip's thirteen (the gauge's eight levels, two more frames of the charging gauge, the sending mark on and
+off, the clock face), the six of the firmware screens and the power off help (Low Battery, USB Connected, the charging
+problem's cross, the charging screen, the power symbol, the large sending mark), the settings screens' six buttons
+(three pads, three rows, Logitech drawing one image per place) and four whole screen pictures, the black background
+and the three photographs. **On each of the sixteen English compiles of skin 54 every one of the 29 is held**, at the
+size the module states, 37 pictures on four compiles and 38 on the other twelve: the settings pads are stored twice
+each, the full gauge three times, level 4 twice, and **the background three times on the test setup's donor and the
+three `harvest_one_families` compiles and four times on the other twelve**. `todo-compile-one.md` 5.3.3 said three
+times, which is the donor's count.
+
+**What ours keeps of Logitech's is its size and its mask and nothing else.** The size is stated in the module, so a
+picture of another size is refused rather than drawn. The mask is read off the picture being replaced, at build time,
+since it is a silhouette of Logitech's artwork and this repository holds none of it. The icons' places are measured
+numbers stated in the module, the grid square centred on the box around every pixel drawn and not the corner's
+colour, sized to its longer side but no larger than the picture; the charging screen's at 0.8 of that, since
+Logitech's ink includes a reflection; the charging problem's cross, whose corner is undrawn, on every drawn pixel and
+the shorter side. The icons are a choice, `TouchChoices.pictureIcons`, the Harmony 650's where it has the same screen.
+
+### The closures
+
+**Size and mask, on every picture of the sixteen**: ours drawn for each of the 37 or 38, `touchPictureRows`, is the
+size of Logitech's and drawn at exactly its pixels, 604 of 604, and the configuration built holds each one's bytes.
+The control: Logitech's mask with one drawn pixel of the cross made undrawn is told apart from ours. The two ends are
+independent: Logitech's mask is read off its own bytes, ours off the pixels our drawing and the mask give.
+
+**The places, measured again**: the seven icons' squares, re-derived in the test from Logitech's pictures by the rule
+above, are the numbers the module states, 7 of 7.
+
+**The background, by its references**: on the donor 75 references name the background's three copies and two name
+each photograph. After the step one black picture is named by all 81, Logitech's bytes exactly, all 38720 pixels
+`0x0000`, and the file is five pictures shorter, 387225 bytes.
+
+### Why the background stays a whole screen
+
+The plan said one small black picture. **It is one picture and not a small one**: 176 by 220, every pixel drawn,
+77445 bytes, which is the smallest form that covers the screen. A picture is drawn at its own size, opcode 2 at an
+origin, and a raw picture costs two bytes a pixel; the encoded kind saves bytes only on undrawn pixels, and a pixel
+left undrawn shows whatever the screen held before **unless the firmware clears the screen before a page, which is not
+read**. A smaller or transparent background waits for that reading, or for a remote to show it.
+
+### Device mode's pictures, and a piece the frame did not see
+
+The device pages' pads, the device list's rows and their icons are not this module's: the look draws them in
+`TouchChoices.deviceBox`, `devicelook.ts`, by pointing every draw at a picture of its own. **It left Logitech's in the
+bank, drawn by nothing**, and since this section it takes them out, `withoutUndrawnPictures` in `shared/dropmodes.ts`.
+The first attempt dropped nothing, and why is worth recording: once nothing names a picture, `takeApart` does not read
+it as a piece of its own and carries its bytes on the end of the piece before it, as any unnamed run is carried. So it
+is cut out as a run of bytes by the extent its own header states, `withoutRanges`, and the touch module refuses a bank
+piece longer than its picture rather than replace it whole. On the test setup the six pads go, 48630 bytes; the rows
+and the icons stay, because mode 70, the donor's mode 86, a second list of every device that the look's device step
+does not find, draws them.
+
+### On the composed path
+
+`TouchChoices.logitechPictures`, default false: `withTouchComposedBuilders` runs the step after every builder unless
+the choice keeps Logitech's, and the pictures join `TOUCH_BUILT` for the attribution, `touchBuiltBytes`, which finds a
+picture of ours by what it is: an entry of its size, drawn inside its own mask, giving its bytes exactly. Not in
+`withTouchBuilders`, which rebuilds a configuration as it holds it, so Logitech's compile still comes back byte for
+byte through the fourteen; on that compile the attribution credits the pictures with 234897 bytes, Logitech's five
+all black pictures that the rule reproduces.
+
+**On the composed test setup** the file goes from 1512234 to 1099602 bytes, 412632 fewer: the background's two other
+copies and the three photographs, 387225; the six pads of Logitech's, 48630; and two font sets more, 23223, since the
+look blends our letters against the colour under them and the settings buttons are now one orange, fifteen blended
+sets where there were thirteen. Every other picture of ours encodes to as many bytes as Logitech's, its mask being the
+same. The labels on a settings box take `labelWeight`, as an activity's and a device's do. The pictures' part is 32
+pictures, 294663 bytes: the status strip's sixteen, 8687, the firmware screens' and the power off help's six, 110686,
+the nine buttons, 97845, and the background, 77445. **Carried** 876509 to 145991: `picture` 773130 to 42612, which is
+mode 70's two rows and two icons.
+
+**Rendered, before and after**: the three firmware screens with a picture, the charging screen, a power off help
+screen and the attempt screen, a clock picker, the Year picker, Options, a charger blank screen, a device page and the
+activity menu, each with the status strip drawn over it, the gauge at level 5 and the sending mark on. One thing to
+look at on the remote: Low Battery's text crosses the icon, as it crosses Logitech's picture, the icon taking the
+place of Logitech's ink.
+
+### Which architectures
+
+Arch 12 (Harmony One) alone, on the sixteen English compiles of skin 54. `withReplacedPictures`, which puts a
+picture's bytes in place and merges one picture onto another, is shared now and the Harmony 650's `withPictures` runs
+through it; `withoutUndrawnPictures` is shared and has run on the Harmony One alone.
+
+### Still open
+
+Written to the spare Harmony One and seen there. Whether the firmware clears the screen before a page, which a smaller
+background needs. Mode 70's rows and icons, Logitech's still. The two European compiles and the Dutch one, refused
+before this step by the builders before it.
+
+Where it lives:
+
+* `packages/codec/src/families/touch/pictures.ts`: `TOUCH_PICTURES`, `withTouchPictures`, `touchOurPictures`.
+* `packages/codec/src/pictures.ts`: `withReplacedPictures`; `packages/codec/src/shared/dropmodes.ts`:
+  `withoutUndrawnPictures`.
+* `packages/codec/test/touchpictures.test.ts`: the census, the masks over the sixteen, the control, the places and
+  the background; `composesetup.test.ts` and `touchbuilders.test.ts` for the path and the attribution.

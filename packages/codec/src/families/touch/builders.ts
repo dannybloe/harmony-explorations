@@ -18,8 +18,8 @@
  *    holds: described off the configuration with that screen already built, the home it carries is the built copy;
  * 5. the clock header, base slot 11's four header programs and the six lists the clock calls, section 414,
  *    `clockheader.ts`, after the fixed screens because the clock's sixty minutes are drawn by reference to the
- *    copies the clock pickers hold, the same argument; its sixteen pictures stay the configuration's (5.3), the
- *    description carrying where each sits;
+ *    copies the clock pickers hold, the same argument; its sixteen pictures are not its own, the description carrying
+ *    where each sits, and on the composed path ours take their place last, step 13;
  * 6. the power off help, section 415, `helpscreens.ts`, after the screens whose texts it may draw by reference
  *    ("Yes", "No", the title), as the status screens follow the firmware screens: the chain the configuration
  *    holds, and since `todo-compile-one.md` 3.2.2.4 four questions for every composed device with a power
@@ -60,7 +60,14 @@
  *    index: the clock header keeps the indices its description read, so the records' calls stay right;
  * 12. raw slot 18, two zero bytes generated as the constant every One container holds, and base slot 16's
  *    table generated from the number sender records it names, `smalltables.ts`, `todo-compile-one.md` 6.7: the
- *    one refusing a raw slot 18 holding anything else, the other keeping a donor's records as they are.
+ *    one refusing a raw slot 18 holding anything else, the other keeping a donor's records as they are;
+ * 13. on the composed path only, and after every builder above, ours in place of Logitech's fixed pictures, the
+ *    status strip's, the firmware screens', the power off help's, the settings buttons' and the one whole screen
+ *    background the charger's screens draw too, `pictures.ts`, `todo-compile-one.md` 5.3.1 and 5.3.3, section 422,
+ *    unless `TouchChoices.logitechPictures` keeps them. A choice and not a rebuild, as leaving the tour out is, so
+ *    `withTouchBuilders` does not run it and Logitech's compile still comes back byte for byte through the rest;
+ *    last, since the screens' descriptions read a picture as a reference and not by its bytes, and the background's
+ *    copies and photographs taken out make several references one.
  *
  * **The lists below the screens are the screen sets' and the wiring's**, `todo-compile-one.md` 3.2.2.5, section
  * 418: every list a set's own lists call, through every level, is built either by that set or by the wiring, never
@@ -130,8 +137,10 @@ import { buildTouchWiring, describeTouchWiring } from './wiring.ts';
 import { TOUCH_STATE_TABLES } from './statetables.ts';
 import { withCentredPadLabels } from './centring.ts';
 import { type WithGenerated, withNumberSenderTable, withTouchInsertedSection } from './smalltables.ts';
-import type { TouchChoices } from './choices.ts';
+import { TOUCH_CHOICES, type TouchChoices } from './choices.ts';
 import { withoutTourAndAssistant } from './withouttour.ts';
+import { touchOurPictures, withTouchPictures } from './pictures.ts';
+import { PictureError } from '../../pictures.ts';
 
 /** A builder on the composed path refusing the configuration, with the part it was building. */
 export class TouchBuildError extends Error {}
@@ -140,8 +149,15 @@ export class TouchBuildError extends Error {}
 export const TOUCH_BUILT = [
   'firmware screens', 'fixed screens', 'tour and Remote Assistant', 'status screens', 'clock header', 'help screens',
   'activity menu', 'device pages', 'case programs', 'hit pages', 'wiring', 'state tables', 'raw slot 18', 'number senders',
+  'pictures',
 ] as const;
 export type TouchBuilt = (typeof TOUCH_BUILT)[number];
+
+/**
+ * The parts `withTouchBuilders` rebuilds, every one but the pictures: those are ours in place of Logitech's, a choice
+ * the composed path makes, `withTouchComposedBuilders`, and not a part rebuilt as the configuration holds it.
+ */
+export const TOUCH_REBUILT: readonly TouchBuilt[] = TOUCH_BUILT.filter((what) => what !== 'pictures');
 
 /**
  * The two small tables, `smalltables.ts`, `todo-compile-one.md` 6.7: each a configuration taken apart and
@@ -255,7 +271,8 @@ function stateTablesOf(c: Container): { layout: ContainerLayout; built: ReturnTy
 
 /** A builder's own refusal, as against a fault in the code, which is left to propagate as it is. */
 const isRefusal = (error: unknown): error is Error => error instanceof ScreenRecordError || error instanceof WiringError
-  || error instanceof StateTablesError || error instanceof FirmwareSectionsError || error instanceof ComposeError;
+  || error instanceof StateTablesError || error instanceof FirmwareSectionsError || error instanceof ComposeError
+  || error instanceof PictureError;
 
 /** Run one builder, its refusal named with the part it was building. */
 function building<T>(what: TouchBuilt, run: () => T): T {
@@ -273,10 +290,10 @@ function building<T>(what: TouchBuilt, run: () => T): T {
  * family; refuses with `TouchBuildError` where a builder refuses. `composed` is the devices the composers added,
  * which the help screens ask about too; `parts` runs only those named, in the same order, for a caller measuring
  * what one part changes (`test/touchbuilders.test.ts` holds the help screens apart, since they change the file's
- * length in our letters).
+ * length in our letters). The pictures are not among them, `TOUCH_REBUILT`: named, they are passed over.
  */
 export function withTouchBuilders(
-  c: Container, composed: readonly ComposedDeviceNote[] = [], parts: readonly TouchBuilt[] = TOUCH_BUILT,
+  c: Container, composed: readonly ComposedDeviceNote[] = [], parts: readonly TouchBuilt[] = TOUCH_REBUILT,
 ): { container: Container; built: TouchBuilt[] } {
   let out = c;
   for (const what of SCREEN_BUILT) {
@@ -303,20 +320,25 @@ export function withTouchBuilders(
   for (const what of ['raw slot 18', 'number senders'] as const) {
     if (parts.includes(what)) out = building(what, () => layOutContainer(SMALL_TABLES[what](out).layout).container);
   }
-  return { container: out, built: TOUCH_BUILT.filter((what) => parts.includes(what)) };
+  return { container: out, built: TOUCH_REBUILT.filter((what) => parts.includes(what)) };
 }
 
 /**
  * `Family.composedBuilders` for the touch family: the welcome tour and the Remote Assistant left out first unless the
  * choice keeps them, `withoutTourAndAssistant`, `todo-compile-one.md` 4.10, and then every builder, `withTouchBuilders`,
  * so each describes the configuration as it will be: Options in its one page, no tour for the tour's builder to read
- * and the hit pages without theirs. A refusal of the step is the composition's, named as the builders' are.
+ * and the hit pages without theirs; and last ours in place of Logitech's fixed pictures unless the choice keeps
+ * theirs, `withTouchPictures`, `todo-compile-one.md` 5.3. A refusal of either step is the composition's, named as the
+ * builders' are.
  */
 export function withTouchComposedBuilders(
-  c: Container, composed: readonly ComposedDeviceNote[], choices: Pick<TouchChoices, 'welcomeTour'>,
+  c: Container, composed: readonly ComposedDeviceNote[], choices: TouchChoices,
 ): { container: Container; built: TouchBuilt[] } {
   const start = choices.welcomeTour ? c : building('tour and Remote Assistant', () => withoutTourAndAssistant(c).container);
-  return withTouchBuilders(start, composed);
+  const built = withTouchBuilders(start, composed);
+  if (choices.logitechPictures) return built;
+  const container = building('pictures', () => withTouchPictures(built.container, choices).container);
+  return { container, built: [...built.built, 'pictures'] };
 }
 
 // ---------------------------------------------------------------------------------------------------------
@@ -347,9 +369,13 @@ export interface TouchBuiltBytes {
  * letters, so a screen set's rebuild is centred the same way before it is compared, and the y of a word the look
  * moved is counted with the builder too, its value being the look's.
  *
+ * **The pictures by what they are**: a picture is ours where one of `pictures.ts`' drawings, inside the picture's own
+ * mask, gives its bytes exactly, in `choices`' colours and icons, `touchOurPictures`. No byte of one is read as a
+ * value: the mask says only which pixels are drawn.
+ *
  * Refuses, with the builder's message, where a builder refuses the configuration or does not rebuild it.
  */
-export function touchBuiltBytes(c: Container, blended: readonly BlendedSet[]): TouchBuiltBytes {
+export function touchBuiltBytes(c: Container, blended: readonly BlendedSet[], choices: TouchChoices = TOUCH_CHOICES): TouchBuiltBytes {
   const owners = new Uint8Array(c.blob.length);
   const isDescribed = new Uint8Array(c.blob.length);
   const mark = (from: number, length: number, who: TouchBuilt, described: (k: number) => boolean): void => {
@@ -445,6 +471,9 @@ export function touchBuiltBytes(c: Container, blended: readonly BlendedSet[]): T
       if (at !== undefined) mark(at, piece.bytes.length, what, () => false);
     });
   }
+  building('pictures', () => {
+    for (const one of touchOurPictures(c, choices)) mark(one.offset, one.length, 'pictures', () => false);
+  });
 
   const generated = Object.fromEntries(TOUCH_BUILT.map((who) => [who, 0])) as Record<TouchBuilt, number>;
   const described = Object.fromEntries(TOUCH_BUILT.map((who) => [who, 0])) as Record<TouchBuilt, number>;

@@ -37,11 +37,11 @@
  * Arch 14 only, the Harmony 650's colour look of 2026, which the 2026 Harmony 700 compiles share. Read
  * only towards hardware: the result is pieces.
  */
-import { type ContainerLayout, type ContainerPiece, type PieceRef, layOutContainer, takeApart } from '../../frame.ts';
+import { type ContainerLayout, type ContainerPiece, layOutContainer, takeApart } from '../../frame.ts';
 import { type Container } from '../../gspm.ts';
 import { encodeBitmap } from '../../screen.ts';
 import { contentKey } from '../../screencategories.ts';
-import { PictureError, type BandRow, type IconDrawing, type PictureEntry, pictureRows } from '../../pictures.ts';
+import { PictureError, type BandRow, type IconDrawing, type PictureEntry, pictureRows, withReplacedPictures } from '../../pictures.ts';
 
 /** Full width rows of one colour each, the top bar's shape. */
 const solidRows = (colours: readonly number[]): BandRow[] => colours.map((colour) => ({ inset: 0, end: colour, fill: colour }));
@@ -239,38 +239,18 @@ export function describePictures(layout: ContainerLayout, entries: readonly Pict
  */
 export function withPictures(layout: ContainerLayout, described: readonly DescribedPicture[],
   built: ReadonlyMap<string, Uint8Array> = buildPictures()): ContainerLayout {
-  const replace = new Map<ContainerPiece, ContainerPiece>();
+  const replace = new Map<ContainerPiece, Uint8Array>();
   for (const { piece, entry } of described) {
     if (entry === undefined) continue;
     const bytes = built.get(entry.name);
     // A rule picture is always built; an artwork one only where `built` brings our own, `buildOurPictures`.
     if (bytes === undefined && entry.source === 'rule') throw new PictureError(`${entry.name} was not built`);
     if (bytes === undefined) continue;
-    replace.set(piece, { bytes, refs: [], ...(piece.owner === undefined ? {} : { owner: piece.owner }) });
+    replace.set(piece, bytes);
   }
-  const all = [layout.keyTable, ...layout.body,
-    ...layout.sections.flatMap((s) => (s === undefined ? [] : [...s.before, ...s.head])), ...layout.pictures];
-  // Every piece fresh, so the input layout keeps its own, and a reference into a replaced picture lands on
-  // its replacement.
-  const fresh = new Map<ContainerPiece, ContainerPiece>();
-  for (const old of all) fresh.set(old, replace.get(old) ?? { ...old, refs: [] });
-  for (const old of all) {
-    const made = fresh.get(old) as ContainerPiece;
-    if (replace.has(old)) continue;
-    made.refs = old.refs.map((ref): PieceRef => {
-      if (!('to' in ref)) return ref;
-      if (replace.has(ref.to) && ref.offset !== 0) throw new PictureError('a reference names the inside of a picture built here');
-      return { ...ref, to: fresh.get(ref.to) ?? ref.to };
-    });
-  }
-  const rewrite = (run: ContainerPiece[]): ContainerPiece[] => run.map((piece) => fresh.get(piece) as ContainerPiece);
-  return {
-    ...layout,
-    keyTable: fresh.get(layout.keyTable) as ContainerPiece,
-    body: rewrite(layout.body),
-    sections: layout.sections.map((s) => (s === undefined ? s : { before: rewrite(s.before), head: rewrite(s.head) })),
-    pictures: rewrite(layout.pictures),
-  };
+  // Every piece fresh, so the input layout keeps its own, and a reference into a replaced picture lands on its
+  // replacement: the shared step, `withReplacedPictures`, since `todo-compile-one.md` 5.3 needed it for the Harmony One.
+  return withReplacedPictures(layout, replace);
 }
 
 /** What `checkPictures` compared. */
