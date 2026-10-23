@@ -1,5 +1,6 @@
 /**
- * Where everything outside the body goes, decided from the pieces: `todo-compile-650.md` 10.5.
+ * Where everything outside the body goes, decided from the pieces: `todo-compile-650.md` 10.5 for the
+ * Harmony 600, 650 and 700, and `todo-compile-one.md` 6.2 for the Harmony One.
  *
  * `frame.ts` lays a container out once it is told where every piece goes. Of its four regions, the
  * key table and the body are given by whoever composed the content, and the tables are given by the
@@ -9,8 +10,18 @@
  * This module decides those from the content, with no offset of Logitech's as input: the caller hands
  * over the parked pieces and the pictures as a bag, in any order, and gets a `ContainerLayout` back.
  *
+ * **One placer for both screen families, and nothing in it is either family's**, `docs/findings.md`
+ * section 426: every rule below was measured on the thirteen arch 14 (Harmony 600, 650 and 700)
+ * compiles of section 312, section 328, and again on the nineteen distinct arch 12 (Harmony One)
+ * compiles of section 395, twenty fixtures, where every rule holds as it does on arch 14 and no rule
+ * needed a second answer. What the Harmony One's container has and arch 14's does not, its own raw
+ * slot 18, is the frame's data, `FRAME_ARCHITECTURES`: the placer carries its table through and parks
+ * nothing in front of it, which is what all 36 distinct One containers in the lab do. So there is no
+ * `Family` member here; a family whose compiles park differently would need one, and none measured does.
+ *
  * **The rule is that the compiler emits a structure after everything it names**, and it is measured
- * on the thirteen arch 14 compiles of section 312, `docs/findings.md` section 328. Each table that has
+ * on the thirteen arch 14 compiles of section 312, `docs/findings.md` section 328, and on the nineteen
+ * Harmony One compiles, section 426. Each table that has
  * something parked in front of it is a root, and what is parked is its descendants, in the table's
  * own field order:
  *
@@ -22,7 +33,8 @@
  * | 10 | the action lists the body does not hold | the order base slot 10's table numbers them |
  * | 15 | the parameter groups | the order base slot 15's table names them |
  *
- * and the picture bank after base slot 17. Exact on 13 of 13 for slots 5, 7, 10 and 15.
+ * and the picture bank after base slot 17. Exact on 13 of 13 arch 14 compiles and on 19 of 19 Harmony
+ * One compiles for slots 5, 7, 10 and 15.
  *
  * **Two orders are not in the content, and the placer chooses them.** The mode pages' lists and the
  * pictures come out of Logitech's compiler in an order that is not fixed by the pictures, the pages
@@ -31,18 +43,26 @@
  * the pictures first in the same order in both, and their banks are two permutations with 1 of the 24
  * at the same place, their page lists likewise with 1 of 426. The pair differs in 14 body pieces and
  * its build time, so a dependence on those is not excluded. Over the thirteen, 17 pairs hold the same
- * pictures and none puts more than 3 of them at the same place. That is what iterating a hash table keyed by object identity
+ * pictures and none puts more than 3 of them at the same place. **The Harmony One's compiles say the
+ * same**, section 426: `calibration_favchannels` and `phase7_before` hold the same 75 pictures and a
+ * body of 4509 pieces of which 4504 are identical at the same place, the five that differ being clock
+ * records, and their banks put 3 of the 75 pictures and their page lists 1 of 198 at the same place.
+ * Whether the order follows the build time, the clock it seeds or a hash order is open, since no two
+ * One compiles share a build time.
+ * That is what iterating a hash table keyed by object identity
  * looks like, which section 315's reading of Logitech's compiler as Java makes the natural guess, and
  * it is a guess. So no placer here reproduces it, and none needs to, since nothing on the remote that
  * has been found reads an order (below). What the placer does instead:
  *
- * * **The page lists keep the one constraint the content does state.** On the thirteen compiles every
+ * * **The page lists keep the one constraint the content does state.** On the thirteen arch 14
+ *   compiles and the nineteen Harmony One ones every
  *   action list parked in front of base slot 10 is called by exactly one page list, through
  *   instruction `0x7F` and the list's number, and the page lists call them in ascending number. That
  *   order is fixed by the action list numbers the page lists carry, and the reading is that the
  *   compiler assigned those numbers in the order it emitted the page lists. So the page lists that
  *   call one are placed in the order of the numbers they call, which is Logitech's relative order on
- *   13 of 13, and the ones that call none, about half, take the order of their pages in the body,
+ *   13 of 13 and 19 of 19, and the ones that call none, about half on arch 14 and 12 to 35 percent on the
+ *   One, take the order of their pages in the body,
  *   which is our choice. It is a property of Logitech's compiles and not of a configuration that
  *   runs: our two that ran, sections 285 and 291, call 271 of 277 and 274 of 649 parked lists, and
  *   not in ascending order.
@@ -56,7 +76,12 @@
  * the header, the cookie at 0 and `end_addr` at 4, the container validator's only fixed offset is the
  * marker at `0x5B`, and no literal instruction in any of the four loads the key table's `0x5F`.
  * And two configurations of ours that parked differently ran on the Harmony 650, sections 285 and
- * 291. So the rule above is Logitech's habit, reproduced so that a
+ * 291, and one with every picture and page list moved, section 328. **On the Harmony One that firmware
+ * half is not read**, section 426: its bank is stated nowhere in the container, section 62, every reader
+ * here finds it by a search, and it starts on the byte after base slot 17's table, which the placer keeps;
+ * fifteen configurations of ours that park differently were written to the spare Harmony One and read
+ * back, section 395, the device of section 242 among them ran, and none had its bank or page lists
+ * reordered. So the rule above is Logitech's habit, reproduced so that a
  * configuration of ours reads like one of theirs. What has not been done is writing a container
  * with the key table or the bank somewhere else, and this codec's own readers find both by position.
  *
@@ -104,6 +129,13 @@ export interface UnplacedContainer {
    * frame generates, 1 and 3, and for 18 and 19, which are NULL.
    */
   tables: (ContainerPiece | undefined)[];
+  /**
+   * The table of each section the architecture inserts, by **raw** slot, as `ContainerLayout.inserted`
+   * holds them: the Harmony One's raw slot 18, absent on arch 14. Nothing is parked in front of one,
+   * which is what all 36 distinct One containers in the lab do, Logitech's and ours, section 395, so the
+   * placer has no rule that puts anything there.
+   */
+  inserted?: Readonly<Record<number, ContainerPiece>>;
   /** Everything else, in any order: the placer decides where each goes. */
   loose: Iterable<ContainerPiece>;
 }
@@ -229,7 +261,7 @@ export function placePieces(input: UnplacedContainer): Placement {
   const sections: (SectionPlacement | undefined)[] = [];
   for (let slot = 0; slot < BASE_SLOT_COUNT; slot += 1) {
     if (slot >= FIRST_NULL_SLOT) {
-      if (input.tables[slot] !== undefined) throw new LayoutError(`base slot ${slot} is NULL on arch 14`);
+      if (input.tables[slot] !== undefined) throw new LayoutError(`base slot ${slot} is NULL on every architecture`);
       sections.push(undefined);
       continue;
     }
@@ -239,13 +271,21 @@ export function placePieces(input: UnplacedContainer): Placement {
     }
     sections.push({ before: before.get(slot) ?? [], head: generated ? [] : [table(slot)] });
   }
+  // The sections the architecture inserts, the Harmony One's raw slot 18, carried with nothing in front:
+  // whether the architecture has the slot is the frame's to check, `layOutContainer`, which refuses one it
+  // does not have, so the placer states no architecture's slots of its own.
+  const inserted: Record<number, SectionPlacement> = {};
+  for (const [raw, piece] of Object.entries(input.inserted ?? {})) inserted[Number(raw)] = { before: [], head: [piece] };
 
   // The pictures, in the order a screen program first names them, walking the key table and the
-  // body and then the tables in the order they will sit. Every picture of the thirteen is named by a
-  // program in the body, section 146; a picture nothing names is refused rather than appended.
+  // body and then the tables in base slot order, with an inserted section's table last. Every picture
+  // of the thirteen arch 14 compiles is named by a program in the body, section 146, and so is every
+  // picture of the nineteen Harmony One compiles, 1506 over the twenty fixtures, section 426, so the
+  // walk past the body names none of Logitech's; a picture nothing names is refused rather than appended.
   const pictures: ContainerPiece[] = [];
   const walk = [input.keyTable, ...input.body];
   for (const placement of sections) if (placement !== undefined) walk.push(...placement.before, ...placement.head);
+  for (const placement of Object.values(inserted)) walk.push(...placement.head);
   for (const piece of walk) for (const target of named(piece)) if (take(target, 'picture-bank')) pictures.push(target);
 
   const left = [...loose].filter((piece) => !placed.has(piece));
@@ -263,6 +303,7 @@ export function placePieces(input: UnplacedContainer): Placement {
       keyTable: input.keyTable,
       body: input.body,
       sections,
+      ...(Object.keys(inserted).length === 0 ? {} : { inserted }),
       pictures,
     },
     pageListsStated: stated,
@@ -284,6 +325,14 @@ export function loosen(layout: ContainerLayout,
   const bag: ContainerPiece[] = [];
   for (const placement of layout.sections) if (placement !== undefined) bag.push(...placement.before);
   bag.push(...layout.pictures);
+  // An inserted section's table, kept by its raw slot. Something parked in front of one has no rule in
+  // the placer to put it back, so it is refused here rather than dropped.
+  const inserted: Record<number, ContainerPiece> = {};
+  for (const [raw, placement] of Object.entries(layout.inserted ?? {})) {
+    if (placement.before.length > 0) throw new LayoutError(`something is parked in front of raw slot ${raw}, and the placer has no rule for it`);
+    if (placement.head.length !== 1) throw new LayoutError(`raw slot ${raw}'s table is not one piece`);
+    inserted[Number(raw)] = placement.head[0]!;
+  }
   return {
     architecture: layout.architecture,
     skin: layout.skin,
@@ -292,6 +341,48 @@ export function loosen(layout: ContainerLayout,
     keyTable: layout.keyTable,
     body: layout.body,
     tables,
+    ...(Object.keys(inserted).length === 0 ? {} : { inserted }),
     loose: shuffle(bag),
+  };
+}
+
+/**
+ * Every parked piece of a kind the placer has no rule for, into the body. A composer parks what it adds
+ * in front of a table: a composed activity's key map in front of base slot 9's, a composed device's
+ * infrared records in front of base slot 5's. Logitech's compiler parks only the kinds `LOOSE_KINDS`
+ * names, exact on the thirteen arch 14 compiles of section 328 and on the nineteen Harmony One compiles
+ * of section 395, so everything else is a body piece in its compiles: on `h650_test_config_clean`,
+ * `h650_start_config`, `h700_config` and `h600_config` every key map is in the body, the activities' in
+ * one run that ends with the last. So each piece goes after the body's last piece of its own kind, which
+ * is our choice, as the page lists' order is, section 328, and at the end of the body where it holds none
+ * of that kind, section 378. Generic: the configurations this project wrote to the spare Harmony One park
+ * the same two kinds the Harmony 650's do, section 395, and this takes both families' alike, section 426.
+ * Moved here from the Harmony 600 family's assembly for `todo-compile-one.md` 6.2, which places a setup
+ * composed onto a Harmony One compile through it; that module re-exports it for the todo-compile-650 10.5
+ * bench file, which takes this step rather than a copy of it.
+ */
+export function composedIntoBody(layout: ContainerLayout): { layout: ContainerLayout; moved: number } {
+  const ruled = new Set<string | undefined>(LOOSE_KINDS);
+  const moving = layout.sections.flatMap((s) => s?.before.filter((piece) => !ruled.has(piece.owner)) ?? []);
+  if (moving.length === 0) return { layout, moved: 0 };
+  const body = [...layout.body];
+  for (const piece of moving) {
+    let last = -1;
+    body.forEach((one, k) => {
+      if (one.owner === piece.owner) last = k;
+    });
+    // A body with none of its kind, an empty configuration's first device's infrared records, takes it last:
+    // where it goes is our choice either way, and Logitech's compiles interleave those records with the
+    // state records, 73 of 73 arch 14 compiles, so no one kind marks where the first would go. Section 378.
+    body.splice(last < 0 ? body.length : last + 1, 0, piece);
+  }
+  const gone = new Set(moving);
+  return {
+    layout: {
+      ...layout,
+      body,
+      sections: layout.sections.map((s) => (s === undefined ? s : { ...s, before: s.before.filter((piece) => !gone.has(piece)) })),
+    },
+    moved: moving.length,
   };
 }

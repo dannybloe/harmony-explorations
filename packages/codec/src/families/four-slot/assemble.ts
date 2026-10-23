@@ -87,7 +87,7 @@ import { SCREEN_TABLE_SLOT, SCREEN_TEXT_INLINE, screenProgram } from '../../scre
 import { characterMap, decode, glyphsReferencedBy, oxaniumAlphabet } from '../../text.ts';
 import type { ContainerLayout } from '../../frame.ts';
 import { layOutContainer, takeApart } from '../../frame.ts';
-import { LOOSE_KINDS, loosen, placePieces } from '../../placer.ts';
+import { composedIntoBody, loosen, placePieces } from '../../placer.ts';
 import { buildStateTables, describeStateTables, hourListBytes, type StateTableFacts, withStateTables } from '../../statetables.ts';
 
 import { checkOxaniumFonts, withOxaniumFonts, type SetFace } from '../../fonttable.ts';
@@ -363,42 +363,11 @@ function donorFaces(c: Container, choices: FourSlotChoices): SetFace[] {
 }
 
 /**
- * Every parked piece of a kind the placer has no rule for, into the body. A composer parks what it adds
- * in front of a table: a composed activity's key map in front of base slot 9's, a composed device's
- * infrared records in front of base slot 5's. Logitech's compiler parks only the kinds `LOOSE_KINDS`
- * names, exact on the thirteen compiles of section 328, so everything else is a body piece in its
- * compiles: on `h650_test_config_clean`, `h650_start_config`, `h700_config` and `h600_config` every key
- * map is in the body, the activities' in one run that ends with the last. So each piece goes after the
- * body's last piece of its own kind, which is our choice, as the page lists' order is, section 328, and at
- * the end of the body where it holds none of that kind, section 378.
- * Exported for a caller that places a composed file itself rather than through `assembleSetup`, the
- * todo-compile-650 10.5 bench file, so that file takes this step rather than a copy of it.
+ * Every parked piece of a kind the placer has no rule for, into the body: `placer.ts`' since `todo-compile-one.md`
+ * 6.2, where the Harmony One's composed path takes it too, and re-exported here for the todo-compile-650 10.5 bench
+ * file, which imports it from this module.
  */
-export function composedIntoBody(layout: ContainerLayout): { layout: ContainerLayout; moved: number } {
-  const ruled = new Set<string | undefined>(LOOSE_KINDS);
-  const moving = layout.sections.flatMap((s) => s?.before.filter((piece) => !ruled.has(piece.owner)) ?? []);
-  if (moving.length === 0) return { layout, moved: 0 };
-  const body = [...layout.body];
-  for (const piece of moving) {
-    let last = -1;
-    body.forEach((one, k) => {
-      if (one.owner === piece.owner) last = k;
-    });
-    // A body with none of its kind, an empty configuration's first device's infrared records, takes it last:
-    // where it goes is our choice either way, and Logitech's compiles interleave those records with the
-    // state records, 73 of 73 arch 14 compiles, so no one kind marks where the first would go. Section 378.
-    body.splice(last < 0 ? body.length : last + 1, 0, piece);
-  }
-  const gone = new Set(moving);
-  return {
-    layout: {
-      ...layout,
-      body,
-      sections: layout.sections.map((s) => (s === undefined ? s : { ...s, before: s.before.filter((piece) => !gone.has(piece)) })),
-    },
-    moved: moving.length,
-  };
-}
+export { composedIntoBody };
 
 /**
  * Every check the assembly's result has to pass: the container's own and both checksums' agreement,

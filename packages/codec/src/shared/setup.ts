@@ -17,6 +17,8 @@ import type { BlendedSet } from '../blending.ts';
 import { assertStateTableConsistent } from '../sections.ts';
 import type { CommonChoices, ComposedDeviceNote, Family } from '../families/family.ts';
 import { parse, type Container } from '../gspm.ts';
+import { layOutContainer, takeApart } from '../frame.ts';
+import { composedIntoBody, loosen, placePieces } from '../placer.ts';
 import { activities, devices, deviceVariables, SEND_INFRARED, DEVICE_QUANTITY } from '../inventory.ts';
 import {
   ComposeError, type ComposeRow, composeActivity, composeActivityMenuRow, keepDeviceOn,
@@ -453,6 +455,17 @@ export function composeSetup(setup: Recipe, options: AssembleOptions): ComposedS
     c = looked.container;
     blended = looked.blended;
     note('look');
+  }
+  // Placement, `todo-compile-one.md` 6.2: what is parked in front of a table and the picture bank put where the placer
+  // puts them rather than where the donor, a composer or the look left them, as the assembly places its result,
+  // after the look so that the sets its blending adds and the pictures it draws are placed by the same rule. The
+  // placer is the same for every family, section 426. A composer's parked pieces of a kind the placer has no rule
+  // for, a composed device's infrared records and an activity's key map, go into the body first. The order of the
+  // font sets is the font table's, so a blended set's index, which `blended` names, is unchanged.
+  if (options.place !== false) {
+    const into = composedIntoBody(takeApart(c));
+    c = parse(layOutContainer(placePieces(loosen(into.layout)).layout).bytes);
+    note('placed', into.moved === 0 ? undefined : `${into.moved} composed pieces moved into the body first`);
   }
   if (options.builtAt !== undefined) {
     c = parse(saveEdits(c, [], options.builtAt).bytes);

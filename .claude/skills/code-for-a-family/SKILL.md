@@ -100,6 +100,7 @@ and fails when a module joins the list or a count on it rises. The list is the d
 
 | a list below a family's screens that several of its screen sets reach, and whose bytes it is | stated in each set's template and built alike by each, the touch family's `screentemplate.ts` steps (`PAGE_KEYS_OFF`, `LIGHT_5_OFF`, `LIGHT_7_OFF`, `ASSISTANT_ON`); the family's attribution credits the first in its build order, `touchBuiltBytes`, `todo-compile-one.md` 6.5; not an owner table outside the family |
 | how a family puts an activity's row on its activity menu, copied or built | `Family.composeActivityRow`: the Harmony One builds its whole menu again from a description, `withTouchActivityMenuRow` in `families/touch/activitymenu.ts`, wherever the activity's type is given, and keeps the copying composer where it is not; not a menu step skipped in the shared activity composer, whose later steps read the row, `todo-compile-one.md` 4.1 |
+| where Logitech parks what a table names, and the picture bank's order, measured the same on both families | nowhere in a family: `placer.ts`, shared, with the Harmony One's raw slot 18 the frame's data, `FRAME_ARCHITECTURES`; `todo-compile-one.md` 6.2 found no difference to record, section 426. A fact measured alike on every family a module serves is the case where no family member is the right answer |
 
 Add a row when a new kind of difference lands.
 
