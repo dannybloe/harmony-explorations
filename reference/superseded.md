@@ -33,6 +33,9 @@ and leave this table alone.
 | phrase | superseded by | what is true instead |
 |---|---|---|
 | `The tour is always built` | section 421, correcting section 412 | the Harmony One's tour and Remote Assistant are built wherever a configuration holds them; the composed path leaves both out unless `TouchChoices.welcomeTour` keeps them |
+| `are coincidences, in tables, infrared, glyphs or across instructions` | section 421, corrected in place | the 27 runs of `lo hi 7F` the Harmony One census does not hold sit in no action list; which kind of bytes each is was not classified |
+| `the same steps without first drawing the texts away are refused` | section 421, corrected in place | the control is per compile: the drop refuses on eleven compiles, the Options step on three, and nothing on two |
+| `is taken the same way, its ladder already the last rung` | section 421, corrected in place | the everyday One's `one_config` is refused by `withoutTourAndAssistant` and has never run through it |
 | `reads raw slots 10 and 8` | section 421 | `listCallSites` reads base slots 10 and 8 through `archSlot`, so on the Harmony One it finds every call, 3067 on `harvest_one_two_devices` |
 | `thirteen of the lists they reach are still the configuration's` | section 418 | the Harmony One's firmware screens build every list they reach that the wiring does not, 18 on the sixteen English compiles of skin 54 |
 | `207 lists on each of the sixteen that stay the configuration's` | section 418 | of the 207 lists below the Harmony One's fixed screens, they build the 154 the wiring does not and the other 53 are the wiring's |

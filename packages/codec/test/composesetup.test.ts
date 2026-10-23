@@ -333,6 +333,22 @@ test('todo-compile-one 4.10: the composed setup holds no tour and no Remote Assi
   assert.deepEqual([texts.inline, texts.references], [471, 878]);
 });
 
+test('todo-compile-one 4.10: with the tour kept the composed setup does not keep the texts\' form rule, "pages" at 35, 18 drawn inline where the rule draws it by reference',
+     NEEDS, () => {
+  // The other half of the sentence in section 421: the path as it stood before the step. It composes a second time,
+  // with the family's choice flipped for the length of the composition and put back whatever happens.
+  const choices = TOUCH_CHOICES as { welcomeTour: boolean };
+  choices.welcomeTour = true;
+  let kept: Container;
+  try {
+    kept = composeSetup(recipe(), { donor: require_('harvest_one_two_devices'), archive: IR_ARCHIVE!, builtAt: '2026-10-15T12:00:00' }).container;
+  } finally {
+    choices.welcomeTour = false;
+  }
+  assert.equal(touchTourScreenModes(kept).modes.length, 16);
+  assert.throws(() => checkTouchScreenTexts(kept), /the program at 0x5b421's text 'pages' at 35, 18 is drawn inline where it is built by reference/);
+});
+
 test('todo-compile-one 3.2.2.4: the composed setup\'s power off help asks about its seven devices, the donor\'s two and then the five composed in the order composed, each discrete one sent unasked and each toggle not',
      NEEDS, () => {
   const out = composed();

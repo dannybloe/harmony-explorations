@@ -137,8 +137,10 @@ Generated from `packages/codec`, `packages/usb` and the drawing by `make remote-
   the assistant's ladder, every compile read but the everyday One's, section 412; starting the remote past it leaves
   them in the configuration, which holds a path back to them through Options' "Turn Remote Assistant On", not seen
   on a remote, sections 403 and 412. Leaving the tour and these five out of a configuration takes Options down to
-  one page without "Tutorial" and "Turn Remote Assistant", a form no compile read holds; how a remote starts with
-  it is not yet seen, section 421.
+  one page without "Tutorial" and "Turn Remote Assistant", a form no compile read holds. Seen on a Harmony
+  One with such a configuration written to it, section 421: it started on its ordinary screen with no welcome, no
+  "Ensure all your devices are off" and no "Welcome!", and Options showed one page of three rows, Date and Time,
+  Screen Sounds and Screen Sensitivity, with no page counter.
 * **Help pressed with nothing on** runs the power off help, every screen titled "PowerOff": "Attemping to fix the
   problem..." (Logitech's spelling) while it sends some devices' power off again, then "Did that fix the problem?
   If not, the remote will ask you questions to help correct the problem.", and on No one question per device, "Is

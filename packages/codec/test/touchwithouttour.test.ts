@@ -72,7 +72,7 @@ const CENSUS: Readonly<Record<string, [number, number, number]>> = {
   one_friend_asfound_config: [3281, 90, 774],
 };
 
-test('todo-compile-one 4.10: on all nineteen Harmony One compiles every list nothing reaches drops out, none below the start list, with every check passing, the wiring still read where it was, and every list reached after',
+test('todo-compile-one 4.10: on all nineteen Harmony One compiles every list nothing reaches drops out, none below the start list, with every check passing, the wiring still read, and every list reached after',
      skipUnless(...SKIN_54, ...BEYOND), () => {
   const got: Record<string, [number, number, number]> = {};
   for (const name of [...SKIN_54, ...BEYOND]) {
@@ -81,17 +81,13 @@ test('todo-compile-one 4.10: on all nineteen Harmony One compiles every list not
     const gone = unreached(c);
     const floor = startList(c);
     assert.equal(gone.filter((k) => k < floor).length, 0, `${name}: a list below the start reached by nothing`);
-    let wiring = true;
-    try {
-      checkTouchWiring(c);
-    } catch {
-      wiring = false;
-    }
+    // The wiring reads on every one of the nineteen, so the drop has to leave it reading.
+    checkTouchWiring(c);
     const d = dropLists(c, gone, floor, census);
     const e = parse(d.bytes);
     assert.ok(e.allChecksPass, name);
     assert.equal(namedLists(e).size, e.actionLists()!.length, `${name}: a list is reached by nothing after`);
-    if (wiring) checkTouchWiring(e);
+    checkTouchWiring(e);
     got[name] = [census.length, d.dropped.length, d.length];
   }
   assert.deepEqual(got, CENSUS);
@@ -130,6 +126,33 @@ test('todo-compile-one 4.10: on the test setup\'s donor every holder of the cens
   });
   // The action lists' 1513 are what reading raw slot 10 missed: on the Harmony One that is base slot 9.
   assert.equal(census.length, 3067);
+});
+
+test('todo-compile-one 4.10: of the 3094 three byte runs `lo hi 7F` naming a list in the donor\'s file the census holds 3067, and the 27 it does not hold sit in no action list: 11 before the first section, 12 in base slot 10\'s address array, 4 in raw slots 4, 6 and 13',
+     skipUnless('harvest_one_two_devices'), () => {
+  const c = containerOf('harvest_one_two_devices');
+  const lists = c.actionLists()!;
+  const blob = c.blob;
+  const at = new Set(listCallSites(c).map((one) => one.at));
+  const runs: number[] = [];
+  for (let i = 0; i + 2 < blob.length; i += 1) if (blob[i + 2] === 0x7f && u16(blob, i) < lists.length) runs.push(i);
+  const left = runs.filter((i) => !at.has(i));
+  assert.deepEqual([runs.length, at.size, left.length], [3094, 3067, 27]);
+  // Every site is one of the runs, so the leftovers are the runs alone.
+  assert.equal([...at].filter((one) => !runs.includes(one)).length, 0);
+  // Where each sits: inside an action list's own bytes (count byte and instructions), or in which raw slot.
+  const addresses = c.pointerArray(archSlot(c.architecture!, 10))!;
+  const extents = addresses.map((a, k) => [c.blobOffsetOf(a)!, c.blobOffsetOf(a)! + 1 + 3 * lists[k]!.length] as const);
+  const starts = c.sections.flatMap((s, slot) => (s.isNull || c.blobOffsetOf(s.address) === undefined ? [] : [{ slot, at: c.blobOffsetOf(s.address)! }]))
+    .sort((a, b) => a.at - b.at);
+  const where = (o: number): number => starts.filter((s) => s.at <= o).at(-1)?.slot ?? -1;
+  const tally: Record<string, number> = {};
+  for (const i of left) {
+    const inside = extents.some(([from, to]) => i + 3 > from && i < to);
+    const key = inside ? 'inside an action list' : where(i) === -1 ? 'before the first section' : `raw slot ${where(i)}`;
+    tally[key] = (tally[key] ?? 0) + 1;
+  }
+  assert.deepEqual(tally, { 'before the first section': 11, 'raw slot 4': 1, 'raw slot 6': 2, 'raw slot 11': 12, 'raw slot 13': 1 });
 });
 
 // ---------------------------------------------------------------------------------------------------------
@@ -177,7 +200,8 @@ test('todo-compile-one 4.10: on the sixteen English compiles of skin 54 the tour
     assert.equal(unreached(e).length, unreached(c).length - w.unreachedBefore, name);
     // Every builder rebuilds the result as it is: it is in the form Logitech's compiles hold, fourteen parts.
     assert.equal(Buffer.compare(withTouchBuilders(e).container.blob, e.blob), 0, `${name}: a builder changes the result`);
-    // And it is a fixed point: a configuration without the sixteen comes back as it is.
+    // A configuration without the sixteen comes back as it is: the step returns its input at once when the tour
+    // finder reads nothing. That is an early return and not a second run of the step, which this asserts.
     assert.equal(withoutTourAndAssistant(e).container, e);
     got[name] = [c.blob.length - e.blob.length, w.lists.length, w.listBytes, w.unreachedBefore, w.hitPages.length];
   }
@@ -192,15 +216,39 @@ test('todo-compile-one 4.10: the three compiles beyond the sixteen are refused, 
   assert.throws(() => withoutTourAndAssistant(containerOf('one_friend_asfound_config')), /holds 0 screens of the look of Tour Another Activity, not one/);
 });
 
-test('todo-compile-one 4.10: where a screen that stays draws text by reference into what goes, the same steps without first drawing the texts away are refused',
-     skipUnless('one_spare_after_sync'), () => {
-  // The control on `withTextsSharedAway`: the same steps without it. An activity's own Remote Assistant screens
-  // here draw the start's words by reference into a screen of the five, and taking what is drawn into out is
-  // refused rather than leaving the reference naming nothing.
-  const c = containerOf('one_spare_after_sync');
-  const modes = touchTourScreenModes(c).modes;
-  assert.throws(() => dropModes(withTouchOptionsWithoutTour(withoutTouchStartupLadder(c)), modes),
-    /that stays names a slot-11-program being taken out/);
+test('todo-compile-one 4.10: where a screen that stays draws text by reference into the sixteen, dropping them without first drawing the texts away is refused by the drop on eleven compiles and by the Options step on three, and the real sequence goes through on every one',
+     skipUnless(...SKIN_54), () => {
+  // The control on `withTextsSharedAway`, per compile, with the step that refuses named. The ladder and Options steps
+  // run first as the real sequence runs them and the drop follows: the same steps without the texts drawn away. On
+  // three compiles a text that stays points into Options' own page, which the Options step refuses before the drop
+  // is reached; on the donor and `harvest_one_families_1` no text of the kind exists and nothing is refused; on the
+  // other eleven the Options step passes and the drop is what refuses, so those are the clean control.
+  const got: Record<string, string> = {};
+  for (const name of SKIN_54) {
+    const c = containerOf(name);
+    let options: Container;
+    try {
+      options = withTouchOptionsWithoutTour(withoutTouchStartupLadder(c));
+    } catch {
+      got[name] = 'options step refuses';
+      continue;
+    }
+    try {
+      dropModes(options, touchTourScreenModes(c).modes);
+      got[name] = 'nothing to refuse';
+    } catch (error) {
+      assert.match((error as Error).message, /that stays names a slot-11-program being taken out/, name);
+      got[name] = 'drop refuses';
+    }
+  }
+  assert.deepEqual(Object.entries(got).filter(([, how]) => how !== 'drop refuses'), [
+    ['harvest_one_two_devices', 'nothing to refuse'], ['one_spare_after_sync', 'options step refuses'],
+    ['compiled_protocols', 'options step refuses'], ['harvest_one_families_1', 'nothing to refuse'],
+    ['harvest_one_families_2', 'options step refuses'],
+  ]);
+  assert.equal(got['one_spare_myharmony'], 'drop refuses');
+  // With the texts drawn away the whole step goes through on each of them.
+  for (const name of SKIN_54) assert.ok(withoutTourAndAssistant(containerOf(name)).container.allChecksPass, name);
 });
 
 test('todo-compile-one 4.10: Options comes out one page, its three rows Date and Time, Sounds and Screen Sensitivity, without Tutorial or Turn Remote Assistant, its page turn keys swallowed and no page count or number drawn',
