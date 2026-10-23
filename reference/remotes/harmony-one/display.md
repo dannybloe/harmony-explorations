@@ -174,6 +174,11 @@ Generated from `packages/codec`, `packages/usb` and the drawing by `make remote-
   one byte and nothing in its handler bounds it, read in the 3.4 firmware, section 399; and a set past the
   eighteenth draws: a configuration carrying 31 showed its screens in sets 21 to 28 on the spare One, seen at
   the bench, section 399.
+* **Which sets an English compile of skin 54 holds**: sixteen on every one, in the same faces and colours, of which
+  three only the welcome tour draws, and two more the setup brings, the start up titles' with an activity and the
+  activity page count's where the menu or a working screen has several pages; the sixteen sit in eight orders
+  relative to each other over sixteen compiles. The first 60 glyph codes are numbered in one order on all sixteen,
+  and not on the two English compiles of the European skin 59. Read from configurations, section 427.
 * **A pad** is a box 81 pixels wide and 50 tall at one of six places, two per row, read from configurations,
   section 394. On a device page Logitech puts a label's lines 20 pixels into the pad, or at 15 and 26, or 9,
   20 and 31, in a 14 pixel set, which leaves a one line label's capitals 2 pixels below the middle;

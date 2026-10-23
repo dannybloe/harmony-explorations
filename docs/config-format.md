@@ -1332,6 +1332,45 @@ may not point at one. Eighteen of Logitech's nineteen One compiles lettered so p
 text as before; the nineteenth, Dutch, is refused for its `ë` and `é`. Unconfirmed: the result drawn on a
 remote.
 
+**The Harmony One's table stated, for a configuration built from nothing**, section 427, on the sixteen
+English compiles of skin 54. Sixteen sets every compile holds, each found by the font role a builder's
+description reads, in this face and these colours (RGB565 ink over shadow); the order is the two device
+compile's; the sixteen compiles hold them in 8 orders relative to each other, 9 with the places the two
+content sets below take:
+
+| set | face | ink / shadow | drawn by, on Logitech's compiles |
+|---|---|---|---|
+| 0 | OneR15 | `ffff` / `0000` | the firmware, fixed, status, help and tour screens' body; a start up screen's lines |
+| 1 | One14 | `ffff` / `31a6` | the OK of the firmware, fixed, help and tour screens |
+| 2 | One14 | `9663` / `0060` | the fixed, status, help and tour screens' titles |
+| 3 | One14 | `973e` / `10e4` | the activity menu's title and an activity's |
+| 4 | One14 | `9663` / `31a6` | the activity menu's left key |
+| 5 | One14 | `dbc3` / `31a6` | the right key of the menu and the device pages; "Devices" on a working screen |
+| 6 | One11 | `9663` / `0060` | the fixed screens' page count |
+| 7 | One14 | `ffff` / `31a6` | the fixed screens' items, the tour's labels, the device pages' and working screens' rows |
+| 8 | One14 | `973e` / `31a6` | the fixed screens' keys, the device pages' left key, the device list's headings, favourites |
+| 9 | One14 | `ffff` / `0000` | the tour's text |
+| 10 | One14 | `ffff` / none | the tour's exit |
+| 11 | One15 | `ffff` / `31a6` | the fixed screens' wide buttons, the tour's buttons, the activity menu's and device list's rows |
+| 12 | One16 | `ffff` / `0000` | the tour's title |
+| 13 | One14 | `dbc3` / `0820` | a device page's title and the device list's |
+| 14 | One11 | `dbc3` / `0820` | the page count of a device page and of the device list |
+| 15 | One11 | `ce79` / `0020` | the clock |
+
+Two more only where the setup draws them: One15 `ffff` over `0000`, the start up titles, on the 12 compiles
+with an activity and none of the 4 without; One11 `973e` over `10e4`, the page count of the activity menu and
+the working screens, on the 11 where one of those has more than one page and none of the 5 where none has. A
+table of ours holds neither and adds two copies after the sixteen: set 11 in `startTitleWeight` and set 6 in
+set 3's colours, both smoothed against black, 18 sets. Every set's header is the count at +1 and a zero at +2,
+first code 1. Codes: the first 60 are handed out in one order on all sixteen (not on the European skin 59, whose
+English compiles number codes 18 to 29 `0:123456789/`),
+`HySunMoTeWdhFriat12:34567890/` then the space and `blvsw!OKUBCcpfgL.mGIzkREDPAq\N`, and the 61st follows the
+setup's names (`,`, `?`, `V` or `x`); ours keeps those 60 and gives the other 35 printable characters the next
+codes in ASCII order, and no code to a start up title joiner. Built so, `buildTouchFontTable` lays out to the
+lettered donor's bytes when given the donor's code order. Blended copies are not stated: the look adds them
+from the rendering, 15 on the composed test setup, 33 sets and 354176 bytes in all. Unconfirmed: a table in
+our code order drawn on a remote.
+
 **The welcome tour is not built, and a configuration can leave its ten screens out**, section 357: in
 Logitech's skipped form, 19 of the 22, no instruction anywhere enters any of them. Its start list, the
 wiring's `tour`, `[mark := 1, 7F quiet]` in that form, is called by `startTour` and, with the Remote

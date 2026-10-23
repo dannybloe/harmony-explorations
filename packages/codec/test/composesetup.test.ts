@@ -27,6 +27,9 @@ import { checkTouchWiring } from '../src/families/touch/wiring.ts';
 import { checkTouchScreenTexts } from '../src/families/touch/screentexts.ts';
 import { withoutTourAndAssistant } from '../src/families/touch/withouttour.ts';
 import { listsReached } from './screenlists.ts';
+import { IMAGE_TABLE_SLOT, fontSets } from '../src/font.ts';
+import { buildTouchFontTable, donorGlyphOrder } from '../src/families/touch/fontsets.ts';
+import { colour565 } from '../src/families/touch/activitypictures.ts';
 
 const recipe = () => readRecipe(JSON.parse(readFileSync(new URL('../../corpus/setups/one-test.json', import.meta.url), 'utf8')));
 
@@ -542,4 +545,36 @@ test('todo-compile-one 6.7: the composed setup carries 34 lists of its donor, 26
   const without = dropLists(c, UNRUN);
   assert.deepEqual([without.dropped.length, without.length, c.blob.length - without.bytes.length], [34, 262, 364]);
   assert.ok(parse(without.bytes).allChecksPass);
+});
+
+test('todo-compile-one 7.1.1: the composed setup\'s font table is 33 sets of 95 codes and 354176 bytes, the stated table\'s 18 glyph for glyph and the look\'s 15 blended copies',
+     NEEDS, () => {
+  const out = composed();
+  const c = out.container;
+  const sets = fontSets(c)!;
+  assert.deepEqual([sets.length, ...new Set(sets.map((set) => set.count))], [33, 95]);
+  const section = takeApart(c).sections[IMAGE_TABLE_SLOT]!;
+  assert.equal([...section.before, ...section.head].reduce((sum, one) => sum + one.bytes.length, 0), 354176);
+  // The first 18 are the statement, built in the donor's code order: every glyph the bytes `buildTouchFontTable`
+  // draws. The donor's order is read off Logitech's compile, since its codes past the first 60 follow its names.
+  const donor = parse(require_('harvest_one_two_devices'));
+  const highest = Math.max(...fontSets(donor)!.map((set) => set.first + set.count - 1));
+  const stated = buildTouchFontTable(TOUCH_CHOICES, { characters: donorGlyphOrder(characterMap(donor)!, highest) });
+  let glyphs = 0;
+  stated.sets.forEach((set, k) => set.refs.forEach((ref, n) => {
+    const at = c.blobOffsetOf(sets[k]!.glyphs[n]!)!;
+    assert.ok('to' in ref && Buffer.from(c.blob.subarray(at, at + ref.to.bytes.length)).equals(Buffer.from(ref.to.bytes)), `set ${k} code ${n + 1}`);
+    glyphs += 1;
+  }));
+  assert.equal(glyphs, 18 * 95);
+  // The other 15 are the copies the look blended against a colour they are drawn on, in table order: nine on black,
+  // and the rows' and the wide buttons' sets on each of the three box colours, in the labels' lighter weight.
+  assert.deepEqual(out.blended.map((one) => one.set), Array.from({ length: 15 }, (_, k) => 18 + k));
+  const on = (background: number): number[] => out.blended.filter((one) => one.background === background).map((one) => one.source).sort((a, b) => a - b);
+  assert.deepEqual(on(0x0000), [0, 1, 2, 3, 4, 5, 6, 8, 13]);
+  for (const box of [TOUCH_CHOICES.activityBox, TOUCH_CHOICES.deviceBox, TOUCH_CHOICES.settingsBox]) {
+    const colour = colour565(box.fill);
+    assert.deepEqual(on(colour), [7, 11], box.fill);
+    assert.ok(out.blended.filter((one) => one.background === colour).every((one) => one.weight === TOUCH_CHOICES.labelWeight));
+  }
 });

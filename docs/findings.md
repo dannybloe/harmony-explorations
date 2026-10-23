@@ -56623,3 +56623,141 @@ without contribute nothing. (10) The one page, six pad gap is recorded under ope
 reviewers were not run is replaced by this one. **Where the reviewers' counts differ from ours**: the blind review counted
 34 one page working screens with 19 of five pads, which includes the Dutch compile's; on this section's 63 it is 33 and
 19. Nothing else a reviewer reported was wrong on checking.
+
+## 427. The Harmony One's font table stated rather than read off a donor: sixteen sets every English compile holds, two the setup brings, and a code order whose first 60 are Logitech's
+
+**Status:** confirmed by measurement on the sixteen English Harmony One compiles of skin 54 and by construction on
+the lettered donor, with failing controls; nothing built this way has been written to a remote.
+**Todo `todo-compile-one.md` 7.1.1**, the touch family's half of what `EMPTY_FONT_SETS` does for the Harmony 650.
+
+**The question.** The touch family letters a configuration only by re-lettering a Logitech compile's sets,
+`letterTouchDonor`: which sets exist, their order, height and colours are read off the donor. A Harmony One built from
+nothing, 7.1, has no donor, so the table has to be stated: which sets, in what order and colours, which of them the
+setup decides, the code order, and the start up title's joiner.
+
+**Sources checked**: this document, sections 396, 402, 406 and 423, and the Harmony 650's empty table in
+`four-slot/empty.ts`; `fonttable.ts`, `lettering.ts`, `blending.ts` and the touch family's `look.ts` and
+`activityscreen.ts`. MyHarmony's client was searched for a glyph or a font set and holds none: the table is what
+Logitech's compiler writes on their server. The firmware was not opened; what a set's index and a code mean is the
+screen language's reading, section 396.
+
+### Sixteen sets every compile holds, found by their roles
+
+Each set was found by the font role a builder's description reads on that compile: the firmware screens' body, the
+fixed screens' title, count, item, key, wide and OK, the activity menu's title and its two keys, the tour's text, exit
+and title, the device pages' title and count, and the clock header's. The device pages' count set is the device
+list's count too where that list has several pages, read by the sentence audit on 10 of the 19 compiles and on none
+of the 9 where it has one. **The sixteen roles sit in sixteen different
+sets on every compile, and each set measures, `measureSet`, as one face in one pair of colours, the same on all
+sixteen compiles.** That is `TOUCH_FONT_SETS`, with the table in `docs/config-format.md`. On one compile,
+`harvest_one_families_1`, the inventory reads no name or mode for its two devices, so the device pages' description
+names no font there and its title and count sets are the one set left in their face and colours.
+
+Two of the sixteen are the same face in the same colours, bold 14 white over the dark grey: the OK of the fixed
+screens, which holds ten glyphs, and the rows' set. They stay two, since screens select them apart; lettered in ours
+they are identical, so only the census tells them apart.
+
+**Two more sets, and only where the setup draws them**, `TOUCH_CONTENT_FONT_SETS`: One15 white over black, the start
+up titles, held on the 12 compiles with an activity and on none of the 4 without; and One11 in the activity title's
+blue, the page count of the activity menu and the working screens, held on the 11 where the menu or a working screen
+has more than one page and on none of the 5 where neither has. **That second rule rests on one informative negative**:
+four of the five are the compiles with no activity, which have no working screen and a one page menu, so only
+`one_spare_after_sync`, one activity on one page, tells it from "has an activity"; and the menu has several pages only
+where a working screen does too, so the menu half is not separated. "Two or more activities" fits the sixteen as well,
+the blind re-measure found. The rule kept is the one the set's roles give, since the set draws exactly those page
+counts. Outside the sixteen both content rules hold on the three further One compiles, 19 of 19 each way. 279 sets
+over the sixteen compiles, 256 of them the sixteen.
+
+**Their order moves, and the content does not explain it.** The sixteen sit in 8 orders relative to each other over
+the sixteen compiles, and with the places the two content sets take the tables are in 9. The four compiles with no
+activity, which hold no content set, are in three of them. No rule for the order is offered. The statement takes the
+order of the compile of two devices, `harvest_one_two_devices`, as the Harmony 650's empty table takes its own model's
+two device compile; only it and `harvest_one_families_1` hold that order.
+
+**Every set's header is the count at +1 and a zero at +2**, which reads as first code 1, on all 279.
+
+### The code order and the joiner
+
+The first 60 codes are handed out in one order on all sixteen compiles: `HySunMoTeWdhFriat12:34567890/`, the space as
+code 30, and `blvsw!OKUBCcpfgL.mGIzkREDPAq\N`. The 61st differs between compiles, a `,`, `?`, `V` or `x`, which fits
+section 112's reading that a code is given in the order a character first appears in the compiler's strings; that is a
+fit, not a measurement. **It is skin 54's order and no wider**: the two English compiles of the European skin 59,
+`one_config` and its programmed copy, share the first 17 codes and the space at 30 and codes 31 to 60, and number 18
+to 29 `0:123456789/`; the Dutch one shares two. **Our order, `TOUCH_GLYPH_ORDER`, keeps those 60 and gives the other 35 printable characters
+the codes after them in ASCII order**, 95 in all, so every set spells every printable character, and a fixed screen's
+text whose characters are all among the 60 is spelled in Logitech's codes.
+
+**No joiner.** Logitech joins a start up title's "Starting" and name with a blank only the title's set holds, section
+406; in our letters the two blanks draw alike and our start up titles are spelled with the space, section 423, so no
+code stands for a second blank. A start up title of ours is drawn in the added copy below, not in Logitech's start up
+title set, which a table of ours does not hold.
+
+### What a table of ours holds, and what the donor's lettering gave
+
+`buildTouchFontTable` builds base slot 7 from the statement and the family's choices: the sixteen sets, then the two
+copies `letterTouchDonor` adds, `TOUCH_ADDED_SETS`, set 11 (the only bold 15 every compile holds) in
+`startTitleWeight` and set 6 (the fixed screens' count) in set 3's colours, both smoothed against black, the colour our
+screens draw under them since `todo-compile-one.md` 5.3.3. The second is Logitech's page count set in face and colours,
+smoothed; the first is not Logitech's start up title set, whose shadow is black where set 11's is grey: on a donor with
+no activity, which the test setup's is, the title's face has one set, and `startupTitleSet` takes it.
+
+**Given the donor's code order, the stated table lays out to the lettered donor byte for byte**: Logitech's compile of
+two devices with base slot 7 replaced by ours is the same file `letterTouchDonor` makes of it, and the faces it reports
+are the same, 18 sets of 95 codes, 183518 bytes of base slot 7. The donor's order is read off the donor through
+`letteredCodes`, the numbering `withOxaniumFonts` uses, moved out of it into one function both call; the codes past the
+first 60 follow the donor's names, so the order is the donor's content and not the statement. In our order, the table
+built from nothing draws every character of every set in the same bytes as the lettered donor does, 1710 glyphs, and
+is 183518 bytes too.
+
+**On the composed test setup** the table is 33 sets of 95 codes and 354176 bytes, as reported: those 18, glyph for
+glyph, and 15 copies the look blends against the colour they are drawn on, `withBlendedLetters`, read off the
+rendering: nine on black, of sets 0 to 6, 8 and 13, and the rows' and the wide buttons' sets on each of the three box
+colours of `TouchChoices` in `labelWeight`. **The blended copies are not stated**: they follow the screens, which an
+empty One does not have yet, and the four slot family's empty build blends after placing too.
+
+**What the empty One may not need**: on the composed setup nine of the eighteen are selected by no reachable program,
+sets 1, 4, 5, 6 and 8 because every select of them now names a blended copy, sets 9, 10 and 12 because only the tour
+drew them and the tour is left out, and set 14 because the device pages count in the added copy. They are kept here,
+since leaving a set out renumbers every later one and that is the skeleton's to decide, 7.1.3.
+
+### The controls
+
+Two sets swapped (3 and 8, one blue over two shadows) and one shadow changed (set 13's) each give a different file. Sets
+1 and 7 swapped give the same file, which is why the census holds their order by role. A code order with a character
+twice is refused. The census refuses set 13 stated with the grey shadow, at the device titles' role and no other.
+
+### Which architectures
+
+Arch 12 (Harmony One) alone, skin 54 in English. The European skin 59's two compiles and the Dutch one are outside the
+census; checked by the sentence audit, they hold the sixteen sets by face and colours and follow both content rules,
+but not the code order, and their fixed screens' descriptions refuse them, so their roles were not mapped. The Dutch
+one is refused by our letters anyway, section 396. The Harmony 600, 650 and 700 state their own table in
+`four-slot/empty.ts`.
+
+### What would falsify it
+
+An English Harmony One compile of skin 54 with a role in a set of another face or colours, a seventeenth set the
+setup does not explain, a start up title set without an activity or a page count set with no screen of several pages,
+or first 60 codes in another order. Skin 59 numbers its first 60 otherwise, which is a limit of the scope and not a
+falsification.
+
+### The reviews
+
+Both reviewers of the `finding` skill ran. **The blind re-measure**, given the question and not this section, found the
+same set counts per compile, the same seventeen combinations with the bold 14 white over grey held twice on every
+compile, the same two content sets and where they are held, nine orders of the whole table, every header in the one
+form, and the same 60 code prefix with the same 61st codes; it offered "two or more activities" for the page count set,
+recorded above. **The sentence audit** found five things, corrected in place: the order count was the whole table's, 9,
+written as the sixteen's, which are in 8; "the first 60 codes in one order" was said of English compiles where it holds
+on skin 54 and not on skin 59; set 14 was a device page's count only, where the device list draws its count in it too;
+the page count rule's negatives are mostly the compiles with no activity; and the census control compared inline
+rather than through the census, which now calls one function, `misfits`.
+
+### Where it lands
+
+* `packages/codec/src/families/touch/fontsets.ts`: `TOUCH_FONT_SETS`, `TOUCH_CONTENT_FONT_SETS`, `TOUCH_ADDED_SETS`,
+  `TOUCH_GLYPH_ORDER`, `buildTouchFontTable`, `donorGlyphOrder`.
+* `packages/codec/src/fonttable.ts`: `letteredCodes`, `withOxaniumFonts`' code numbering as a function of its own.
+* `packages/codec/test/touchfontsets.test.ts`: the census over the sixteen with every count above, the code order, the
+  byte for byte layout, the controls and the table from nothing; `composesetup.test.ts` the composed setup's 33 sets.
+* `docs/config-format.md`, after section 396's table; `reference/remotes/harmony-one/display.md`.

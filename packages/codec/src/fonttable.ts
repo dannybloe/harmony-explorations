@@ -203,6 +203,33 @@ export function measureSet(c: Container, set: FontSet, map: CharacterMap): SetFa
   return { height: set.height, shadow, ink, stroke, capitalTop, face, lettering: shadow === undefined ? 'plain' : 'shadowed' };
 }
 
+/**
+ * The character each code of a configuration lettered in ours stands for, `withOxaniumFonts`' numbering: every
+ * code the configuration's character map reads keeps its character, and every printable character it has no
+ * code for takes the next code after the highest one in use, the map's or a set's (`highestSet`), in
+ * `LETTERING_CHARACTERS` order. A family that states its table for a configuration built from nothing reads
+ * a donor's numbering through this, so the two cannot drift, `families/touch/fontsets.ts`. Refuses a
+ * character past the seven bits a code has.
+ */
+export function letteredCodes(
+  map: CharacterMap, highestSet: number,
+): { characters: Map<number, string>; added: [string, number][]; last: number } {
+  const characters = new Map<number, string>();
+  for (const [code, ch] of map.codes) characters.set(code, ch);
+  const highest = Math.max(highestSet, ...characters.keys());
+  const have = new Set(characters.values());
+  const added: [string, number][] = [];
+  let next = highest + 1;
+  for (const ch of LETTERING_CHARACTERS) {
+    if (have.has(ch)) continue;
+    if (next >= FONT_CODE_CEILING) throw new FontTableError(`no seven bit code is left for '${ch}'`);
+    characters.set(next, ch);
+    added.push([ch, next]);
+    next += 1;
+  }
+  return { characters, added, last: next - 1 };
+}
+
 export interface FontTableBuilt {
   layout: ContainerLayout;
   /** Per set, in table order, what it was measured to be and given. */
@@ -261,20 +288,7 @@ export function withOxaniumFonts(
   }
 
   // Every character a code stands for, which every set will now draw, and a code for those with none.
-  const characters = new Map<number, string>();
-  for (const [code, ch] of map.codes) characters.set(code, ch);
-  const highest = Math.max(...sets.map((set) => set.first + set.count - 1), ...characters.keys());
-  const have = new Set(characters.values());
-  const added: [string, number][] = [];
-  let next = highest + 1;
-  for (const ch of LETTERING_CHARACTERS) {
-    if (have.has(ch)) continue;
-    if (next >= FONT_CODE_CEILING) throw new FontTableError(`no seven bit code is left for '${ch}'`);
-    characters.set(next, ch);
-    added.push([ch, next]);
-    next += 1;
-  }
-  const last = next - 1;
+  const { characters, added, last } = letteredCodes(map, Math.max(...sets.map((set) => set.first + set.count - 1)));
 
   const faces = sets.map((set): SetFace => {
     const measured = measureSet(c, set, map);
