@@ -43746,7 +43746,9 @@ was not consulted, on section 293's reasoned exemption that section 318 used too
 compiler's, and the compiler ran on Logitech's server, section 202.
 
 **Scope, decision 16.** Arch 14 (Harmony 600, 650 and 700). Arch 12 (Harmony One) has a different slot
-count and this codec finds its bank by search, section 62; arch 8, 9 and 10 are not checked.
+count and this codec finds its bank by search, section 62; arch 8, 9 and 10 are not checked. **Widened by
+section 426**: the same rule, unchanged, places the nineteen Harmony One compiles, and the One's bank and
+page lists are not fixed by its pictures and pages either; the firmware half below stays arch 14's.
 
 ### The rule: a parked structure follows everything it names, in its table's field order
 
@@ -51986,7 +51988,10 @@ left out of the population; both rebuild byte for byte, and the counts above inc
 
 Arch 12 (Harmony One) and arch 14 (Harmony 600, 650 and 700); arch 8, 9 and 10 are refused, not checked.
 Neither firmware nor client was opened: whether the One demands the bank behind the touch table is unread, as
-it is on arch 14, section 328. `placer.ts`, the wiring and the screen builders still take arch 14 alone.
+it is on arch 14, section 328. `placer.ts`, the wiring and the screen builders still take arch 14 alone<!--superseded-->.
+**Since superseded in part**: the wiring is the One's too since section 410 and the placer since section 426,
+which carries raw slot 18 through `loosen` and `placePieces` and places all nineteen compiles by section 328's
+rule.
 
 ### Falsification
 
@@ -56623,3 +56628,142 @@ without contribute nothing. (10) The one page, six pad gap is recorded under ope
 reviewers were not run is replaced by this one. **Where the reviewers' counts differ from ours**: the blind review counted
 34 one page working screens with 19 of five pads, which includes the Dutch compile's; on this section's 63 it is 33 and
 19. Nothing else a reviewer reported was wrong on checking.
+
+## 426. The Harmony One's pictures and glyph sets are placed by section 328's rule unchanged, on all nineteen of Logitech's One compiles, and the composed path places what it builds the same way
+
+**Date:** 23 October 2026. **Status:** confirmed by construction over the nineteen distinct Harmony One compiles of
+section 395, twenty fixtures, with controls; the firmware half is not read on the One; nothing placed this way has been
+written to a remote.
+
+**Todo `todo-compile-one.md` 6.2.** The Harmony 650 track placed everything Logitech parks in front of a table, and the
+picture bank, from the content, `placePieces`, section 328, measured on the thirteen arch 14 (Harmony 600, 650 and 700)
+compiles. The One's composed path did not place at all: what its composers, builders and look added stayed where each
+left it, and what the donor had stayed where Logitech put it. 7.1, a configuration built from nothing, has no donor to
+take a position from, so it needs the placer on the One. Item 2.3 had already run `loosen` and `placePieces` over the
+nineteen in a scratch copy and found the order held once raw slot 18 was passed through; nothing asserted it.
+
+**Reviewed** by a blind re-measure, which reproduced every count here from its own scripts, and by a prose audit,
+which corrected six sentences before this landed: the pair's files differ in the numbering of their parked lists as
+well as in their bodies' clock, and the clock had been stated as the order's only remaining dependence where no pair can
+test it; the placer's agreement with Logitech's bank was counted by piece where the pairs are counted by bytes, 0 to 4
+against 0 to 5; the 8 pairs are three groups; the 578 composed pieces are infrared blocks and headers; fifteen
+configurations of ours were written and read back, of which one is known here to have run; and the totals over twenty
+fixtures count one container twice.
+
+**Sources.** The nineteen compiles; sections 62, 146, 174, 242, 293, 312, 318, 328, 395 and 421 of this document; item
+2.3's scratch result. Neither firmware nor client was opened: the order is the compiler's, and the compiler ran on
+Logitech's server, section 293's reasoned exemption as section 328 used it. The measurements are asserted in
+`packages/codec/test/placer.test.ts`; the comparison on the composed path was a scratch script.
+
+**Scope, decision 16.** Arch 12 (Harmony One) here, beside section 328's arch 14 (Harmony 600, 650 and 700). Arch 8, 9
+and 10 (Harmony 880 and 885, 525, 890 and 895) are not checked, and the frame refuses them.
+
+### The rule is section 328's, with nothing of the One's own
+
+Every row of section 328's rule was run on the twenty fixtures, the bag shuffled:
+
+| what | on the Harmony One |
+|---|---|
+| base slots 5, 7, 10 and 15 placed exactly as Logitech parks them | 20 of 20 fixtures, 80 of 80 regions |
+| a font set after its own glyphs, the sets in the table's order | 20 of 20; the set before its glyphs and every glyph before every set fail on 20 of 20 |
+| a glyph named by two sets | none, over the 350 sets |
+| the parked action lists are base slot 10's tail | 20 of 20, 385 to 1562 lists a compile |
+| every parked list called once by a page list, in ascending number, in Logitech's stored order | 20 of 20 |
+| the stated page lists in their own pages' body order instead | out of Logitech's order on 20 of 20 |
+| raw slot 18 | two zero bytes with nothing parked in front, 20 of 20 |
+
+So 3912 of the 4962 page lists over the twenty have their place stated by the list they call, 87 to 431 a compile, and
+1050 are the placer's choice, 46 to 62 a compile, 12 to 35 percent per compile where arch 14 leaves 47 to 54. Totals over
+the twenty count the one container read twice, `one_config_unprogrammed` and `one_spare_before_sync`, twice; over the
+nineteen distinct they are 3808 and 1002. **No difference
+from the Harmony 650 was found, so nothing is recorded in the touch family**: `placer.ts` stays one module for both
+families with no `Family` member, which is what `code-for-a-family` asks of a fact measured the same on every family a
+module serves. The One's raw slot 18 is the frame's data already, `FRAME_ARCHITECTURES`, section 395; the placer carries
+its table through and checks nothing about which architecture has it, leaving that to `layOutContainer`.
+
+**What the placer missed before**: `loosen` dropped `ContainerLayout.inserted` and `placePieces` returned no such
+field, so a One layout placed through them lacked raw slot 18 and the frame refused it, `raw slot 18 of arch 12 has no
+table`. Both now carry it, and `loosen` refuses a piece parked in front of an inserted slot, since the placer has no
+rule to put one back. The control in the test removes the carried table and gets the frame's refusal.
+
+### The bank and the page lists are not fixed on the One either
+
+**`calibration_favchannels` and `phase7_before` hold the same 75 pictures byte for byte and a body of 4509 pieces, 4504
+of them identical at the same place; the five that differ are clock records 0 to 4**, which the build stamp seeds, and
+the stamps differ. The key table and every table are identical too. The body names the pictures first in the same order
+in both. Their banks put **3 of the 75** at the same place and their page lists **1 of 198**, compared by the page each
+belongs to. The files differ in one more way, which moves with the order rather than fixing it: the numbering their
+parked action lists carry, so 147 of the 198 page lists differ in their bytes and the 541 parked action lists stand in
+another order. By the body that is a closer pair than section 328's Harmony 700 pair, whose bodies differ in 14
+pieces; **what fixes the order is still open**: the build time, the clock it seeds, or a hash order, and no two of the
+nineteen share a build time, so the One's compiles cannot tell them apart. Over the nineteen distinct compiles, 8 pairs
+hold the same pictures, from three groups of compiles that share them (six of the pairs from the four of the calibration
+and `phase7` group), and none puts more than **5** at the same place, `phase7_before` and `phase7_after`. The 75 are 57
+distinct pictures, the rest stored again, so the pair's first named order lists 57. The placer's own order, the order a
+screen program first names them, agrees with Logitech's, by bytes, at 0 to 5 places of 56 to 98 per compile, as two of
+Logitech's own compiles of the same pictures agree with each other.
+
+### Calibration, and every difference named
+
+With Logitech's two permutations substituted for the placer's, **the twenty fixtures come back byte for byte**. As
+placed, every byte that differs from the compile is in the run of page lists, the bank, an address field naming a
+moved page list or picture, or the trailer checksum, on 20 of 20. Read back, each has the compile's inventory, round
+trips through the emitter, its bank is found again by the search every One reader uses, section 62, in the order the
+placer put it, and **every one of the 4962 mode pages draws pixel for pixel as Logitech's file draws it**, `renderPages`.
+Placing from two shuffles and from the bag reversed gives the same bytes on all twenty. The page count equals the page
+list count, 3912 and 1050, since every mode page names one list: two readers that count differently agree.
+
+### On the composed path
+
+`composeSetup`, the shared path that composes a setup onto a Logitech compile, now places its result after the
+family's look and before the stamp, as `assembleSetup` places the 600 family's, and `AssembleOptions.place` false keeps
+the old behaviour. First, every parked piece of a kind the placer has no rule for goes into the body, `composedIntoBody`,
+moved from the Harmony 600 family's assembly into `placer.ts` since both families take it now and nothing in it is
+either's: the One's composers park infrared blocks and their headers in front of base slot 5 and key maps in front of
+base slot 9 as the 650's do, section 395. On the One test setup that is 583 pieces, 345 blocks, 233 headers and 5 key
+maps. The placement comes after the look, so the
+two font sets its blending adds and the pictures it draws are placed by the same rule; a blended set is named by its
+index in the font table, which the placer keeps.
+
+Measured on the One test setup composed onto `harvest_one_two_devices`, placed against the same composition with
+`place: false`, a scratch comparison: the same 1099596 bytes long, both passing every check, the same inventory, round
+tripping, 833832 bytes differing at the same offset, the same 55 pictures with none at the same place, of the 3168
+glyphs and sets in front of base slot 7 192 holding the same bytes as the unplaced file at their place, and **all 175 mode pages drawn pixel for pixel alike**. The
+composed setup's tests pass unchanged but for two lines: the steps now end `look, placed, stamped`, and the tour kept
+control finds "pages" in the program at `0x722cc` where it was `0x5b421`, since 583 pieces now sit in the body in front
+of it. What it carries out of its donor is unchanged, 145991 bytes, since that count is by content and not by place.
+The test asserts that placing the composed file again changes no byte, and that the same file with base slot 7's run
+reversed lays out differently and is placed back to the composed bytes.
+
+**For 7.1** the placer takes the tables, the inserted ones by raw slot, the key table, the body and a bag, which is what
+a One configuration built from nothing will hand it, as `families/four-slot/empty.ts` hands it the 600 family's.
+
+### What is not established
+
+* **The firmware.** Section 328 read four arch 14 images for any fixed position; the Harmony One's 3.4 image was not
+  read for this. The One's bank is stated nowhere in its container, section 62, so its firmware reaches pictures only
+  through the addresses screen programs state, section 146, or by a search of its own, which is unread.
+* **The remote.** Fifteen configurations of ours that park differently from Logitech were written to the spare Harmony
+  One and read back, section 395, and the device of section 242 ran; none had its bank or page lists reordered. The Harmony 650 ran one,
+  section 328. A bench write of the placed composed setup would settle it for the One.
+
+### Falsification
+
+A Harmony One compile whose parked pieces in front of base slots 5, 7, 10 or 15 are not in the order the table states,
+a parked action list called by no page list, by two or out of order, or a piece parked in front of raw slot 18. On the
+open question: two One compiles with the same pictures and body and the same build time whose banks differ would rule
+out the clock; two with different build times whose banks agree would point at a rule after all. No glyph is shared
+between sets on any One compile, so the placer's choice for a shared glyph, the first set, is untested here as on arch
+14.
+
+### Where it lands
+
+* `packages/codec/src/placer.ts`: `UnplacedContainer.inserted`, carried by `loosen` and `placePieces`; `composedIntoBody`,
+  moved from `families/four-slot/assemble.ts`, which re-exports it; the header scoped to both families.
+* `packages/codec/src/shared/setup.ts`: `composeSetup`'s placement step.
+* `packages/codec/test/placer.test.ts`: the twenty fixtures' exact regions and raw slot 18, the glyph controls and the
+  350 sets, the tail and the ascending calls with the page order control and the 3912 and 1050, the substitution with
+  the named differences, inventory, round trip, bank read back and the 4962 pages drawn, the shuffle invariance, the
+  `calibration_favchannels` and `phase7_before` pair, the 8 pairs with at most 5 in place, and the raw slot 18 controls.
+* `packages/codec/test/composesetup.test.ts`: the step, the 583 moved, the fixed point and its reversed control.
+* `docs/config-format.md`, "What decides each byte of the frame on arch 14"; sections 328 and 395 scoped in place.

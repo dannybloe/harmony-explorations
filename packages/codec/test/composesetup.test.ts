@@ -18,7 +18,8 @@ import { touchScreenLightTimer } from '../src/families/touch/screenlight.ts';
 import { TOUCH_CHOICES } from '../src/families/touch/choices.ts';
 import { TOUCH_BUILT, type TouchBuiltBytes, touchBuiltBytes } from '../src/families/touch/builders.ts';
 import { describeTouchHelpScreens, touchHelpScreenModes } from '../src/families/touch/helpscreens.ts';
-import { takeApart } from '../src/frame.ts';
+import { layOutContainer, takeApart } from '../src/frame.ts';
+import { loosen, placePieces } from '../src/placer.ts';
 import { dropLists, instructionSites, listCallSites } from '../src/assemble.ts';
 import { assertStateTableConsistent } from '../src/sections.ts';
 import { assertQueueFits } from '../src/queue.ts';
@@ -40,13 +41,25 @@ const composed = (): ComposedSetup => {
   return composedOnce;
 };
 
-test('the One test setup composed onto Logitech\'s compile of two devices comes out lettered in ours, in the family\'s look, with every check passing',
+test('the One test setup composed onto Logitech\'s compile of two devices comes out lettered in ours, in the family\'s look, placed by the placer, with every check passing',
      NEEDS, () => {
   const out = composed();
   const c = out.container;
-  // The look's two halves, in place: lettered before anything is composed, the look after, the stamp last.
+  // The look's two halves, in place: lettered before anything is composed, the look after, then the placement of
+  // `todo-compile-one.md` 6.2, section 426, and the stamp last.
   const names = out.steps.map((one) => one.step);
-  assert.deepEqual([names[0], names[1], names.at(-2), names.at(-1)], ['donor', 'lettered', 'look', 'stamped']);
+  assert.deepEqual([names[0], names[1], names.at(-3), names.at(-2), names.at(-1)], ['donor', 'lettered', 'look', 'placed', 'stamped']);
+  // The composers' parked infrared blocks and headers and key maps went into the body first, 578 and 5, which the placer has no
+  // rule for. Then everything parked and the bank are in the placer's order: placing the file again changes no byte,
+  // and the control, the file with its glyphs and font sets reversed in front of base slot 7, lays out differently
+  // and comes back to the composed bytes when placed.
+  assert.equal(out.steps.find((one) => one.step === 'placed')?.detail, '583 composed pieces moved into the body first');
+  const placedAgain = layOutContainer(placePieces(loosen(takeApart(c))).layout).bytes;
+  assert.ok(Buffer.from(placedAgain).equals(Buffer.from(c.blob)), 'placing the composed setup again moves something');
+  const apart = takeApart(c);
+  const reversed = { ...apart, sections: apart.sections.map((one, slot) => (slot === 7 && one !== undefined ? { ...one, before: [...one.before].reverse() } : one)) };
+  assert.ok(!Buffer.from(layOutContainer(reversed).bytes).equals(Buffer.from(c.blob)), 'the control does not move anything');
+  assert.ok(Buffer.from(layOutContainer(placePieces(loosen(reversed)).layout).bytes).equals(Buffer.from(c.blob)), 'the control is not placed back');
   assert.ok(c.allChecksPass);
   assert.equal(characterMap(c)?.alphabet, 'oxanium');
   // The screen light at the family's default.
@@ -372,7 +385,9 @@ test('todo-compile-one 4.10: with the tour kept the composed setup does not keep
     choices.welcomeTour = false;
   }
   assert.equal(touchTourScreenModes(kept).modes.length, 16);
-  assert.throws(() => checkTouchScreenTexts(kept), /the program at 0x5b421's text 'pages' at 35, 18 is drawn inline where it is built by reference/);
+  // The program's address is where the placement of `todo-compile-one.md` 6.2 leaves it, 0x5b421 before, since a composer's
+  // parked infrared records and key maps go into the body in front of it, section 426.
+  assert.throws(() => checkTouchScreenTexts(kept), /the program at 0x722cc's text 'pages' at 35, 18 is drawn inline where it is built by reference/);
 });
 
 test('todo-compile-one 3.2.2.4: the composed setup\'s power off help asks about its seven devices, the donor\'s two and then the five composed in the order composed, each discrete one sent unasked and each toggle not',

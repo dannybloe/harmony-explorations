@@ -81,7 +81,7 @@ Plan: [003-how-an-activity-is-built.md](docs/plans/003-how-an-activity-is-built.
 ## 3. The compiler
 
 - [x] 3.1 Lay out a container from nothing: the section table and every address; done as todo-compile-650 10.1 (section 318): `layOutContainer`, all 13 arch 14 compiles byte for byte; arch 14 only, the Harmony One's 22 slots not done
-- [x] 3.2 Place the reused pictures and glyph sets; done as todo-compile-650 10.5 (section 328): `placer.ts`, 13 of 13, and a file placed our way run on the Harmony 650; arch 14 only
+- [x] 3.2 Place the reused pictures and glyph sets; done as todo-compile-650 10.5 (section 328): `placer.ts`, 13 of 13, and a file placed our way run on the Harmony 650; the Harmony One by the same rule since todo-compile-one 6.2 (section 426), 19 of 19, not yet run on a One
 - [x] 3.3 A document in, a whole container out; done as todo-compile-650 10.6 and 11.1 (sections 364, 380): a setup file in, a whole configuration out, run on the Harmony 650, 700 and 600 (sections 381, 386, 389)
 - [x] 3.4 Generate the text inside a screen program rather than carrying it; done as todo-compile-650 8.1 (section 358): every text spelled from its word, 22 Logitech compiles rebuilt byte for byte; arch 14 only
 - [ ] 3.5 Write a fully built configuration to the spare Harmony One and use it: its own track since 15 October 2026, [todo-compile-one.md](todo-compile-one.md)

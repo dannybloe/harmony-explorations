@@ -426,6 +426,17 @@ demand. `placePieces` keeps that order and puts the rest of the page lists in th
 body order and the pictures in the order a screen program first names them; with Logitech's two
 permutations substituted, all thirteen come back byte for byte.
 
+**The Harmony One is placed by the same rule, with nothing of its own**, [findings.md](findings.md)
+section 426: on all nineteen distinct One compiles, twenty fixtures, base slots 5, 7, 10 and 15 come
+back exactly from a shuffled bag, the parked action lists are base slot 10's tail and are called once
+each in ascending number by the page lists, no glyph is shared between sets, and with Logitech's two
+permutations substituted every compile comes back byte for byte; as placed, every mode page draws
+pixel for pixel as Logitech's. Its raw slot 18 is carried with nothing parked in front of it. The bank
+and the page lists are not fixed on the One either: `calibration_favchannels` and `phase7_before`,
+whose bodies differ in five clock records, put 3 of 75 pictures and 1 of 198 page lists at the same
+place; what fixes the order is open, and no two One compiles share a build time. The firmware half is unread on the One, whose bank the container states nowhere. On the
+composed path `composeSetup` places the result the same way, after the look and before the stamp.
+
 The order of the body is carried, not derived. **Nothing on the remote reads any of these orders or
 positions that has been found**: on the Harmony 600 and 650 0.2, 650 0.4 and 700 2.8 images, base slot
 17 is fetched at two call sites, both indexing it as the hit map's `count, u24[]` and neither adding
