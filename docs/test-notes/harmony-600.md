@@ -26,9 +26,9 @@ folder said about the bench before plan 009 step 3.1 moved it here.
 
 The 600's scan codes were named from a configuration generated for this model through an account this
 project controls, `calibration_h600`, the calibration sample of section 133, which is why the 600 and not
-the 650 is the model the button map was measured on. `reference/button-maps.md` is the derivation, and
-section 323 decided the four up and down keys from the same configuration's device maps. This belongs
-with the other accounts in `docs/test-notes/accounts.md` once that file exists (plan 009's move table).
+the 650 is the model the button map was measured on. Section 133 is the derivation, and section 323
+decided the four up and down keys from the same configuration's device maps. The account and where its
+results went are [accounts.md](accounts.md).
 
 ## Firmware: the version list
 

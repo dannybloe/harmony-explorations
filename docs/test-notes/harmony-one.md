@@ -135,8 +135,7 @@ observation is argued.
 * **The spare Harmony One was the first remote this project wrote to**, section 222, and every write to a
   One since went to it. The everyday One is never written.
 * **The calibration configuration** that names 32 keys against a scan, and decides the two arrow pairs, was
-  compiled through an account this project controls, sections 133 and 398. The account's contents belong in
-  `docs/test-notes/accounts.md` when it exists.
+  compiled through an account this project controls, sections 133 and 398, [accounts.md](accounts.md).
 * **The clock on screen**, `Sun 3:42` after a battery pull, was seen on the spare, section 242. On the
   everyday One, in its owner's account, it "runs badly wrong after a while" and has never been used, section
   111; its rate was deliberately not measured.

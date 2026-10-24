@@ -10,86 +10,109 @@
  * `make silhouettes SILHOUETTE_ARGS=--preview` is for, and it is a person's job.
  */
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
 import { test } from 'node:test';
-import { fileURLToPath } from 'node:url';
 
-import { MODELS, keyOf, keyOfScan, pathBounds, pathPolygon, transformPath } from '../src/index.ts';
-import type { Model } from '../src/types.ts';
-
-const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
+import { MODELS, SCAN_SOURCES, keyOf, keyOfScan, pathBounds, pathPolygon, transformPath } from '../src/index.ts';
+import type { Model, ScanSource } from '../src/types.ts';
 
 /**
- * What each model's button count is, and where the number comes from.
+ * What each model's button count is, where the number comes from, and how many scan codes each source
+ * gave it.
  *
  * An exact count, never a floor. `CLAUDE.md` records a sweep that found ninety three lower bounds
  * standing in for figures, whose median sat forty per cent under the value they guarded, and the two
  * things a floor cannot do at all are notice a total moving up and say how strong a control is.
+ *
+ * `scans` counts the keys whose code came from each source, `SCAN_SOURCES` in `src/types.ts`, and
+ * `decided` names every key whose code came from anywhere **but** section 133's button maps, scan by
+ * scan. Those are the codes a frame cannot check, so each is a claim of its own archive section and is
+ * stated here as one. The 133 codes are checked against the frames they send in the calibration
+ * configurations, `packages/codec/test/irframe.test.ts`, which needs the lab.
+ *
+ * Until plan 009's step 3.3 these codes were checked against `reference/button-maps.md`, a Markdown table
+ * this test parsed. The drawings hold the codes now, so there is no second copy to compare with, and
+ * what is left to assert without the lab is that each code says where it came from and that the counts
+ * are exact.
  */
-const EXPECTED: Readonly<Record<string, { buttons: number; scans: number;
-  fromTheHitMap?: Readonly<Record<number, string>>; why: string }>> = {
+const EXPECTED: Readonly<Record<string, {
+  buttons: number;
+  scans: Readonly<Partial<Record<ScanSource, number>>>;
+  decided?: Readonly<Record<number, string>>;
+  why: string;
+}>> = {
+  /**
+   * The Harmony 350's moulding with the 300's printing, so its count is the 350's drawing's, which a
+   * statement made holding both remotes confirms; `h300.ts` takes every shape from `H350`.
+   */
+  h300: {
+    buttons: 55,
+    scans: {},
+    why: "the Harmony 350's drawing, the same moulding per a statement made holding both, and the 300 "
+      + "setup guide's cover photograph shows the same 55 keys",
+  },
   /**
    * The weakest count here and stated as such: there is no firmware derived figure for this
    * architecture's keypad and no bench census, so the number is the drawing's. Two of Logitech's own
    * drawings in the setup guide agree on it, the button page and the box contents page, and the cover
    * photograph agrees for the 35 keys above the transport block that it shows.
    */
-  /**
-   * The Harmony 350's moulding with the 300's printing, so its count is the 350's drawing's, which Danny
-   * confirms holding both remotes; `h300.ts` takes every shape from `H350`.
-   */
-  h300: {
-    buttons: 55,
-    scans: 0,
-    why: "the Harmony 350's drawing, the same moulding per Danny's statement holding both, and the 300 "
-      + "setup guide's cover photograph shows the same 55 keys",
-  },
   h350: {
     buttons: 55,
-    scans: 0,
+    scans: {},
     why: "Logitech's own button drawing in the Harmony 350 setup guide, counted shape by shape, "
       + 'which its box contents drawing and the cover photograph agree with where they reach',
   },
+  // No code at all: section 133's calibration configurations were compiled for a Harmony One and a
+  // Harmony 600, so nothing names a key of this architecture against its code. Its four soft keys carry
+  // candidates from the firmware's matrix instead, the test further down.
   h525: {
     buttons: 50,
-    scans: 0,
+    scans: {},
     why: "the 8 by 8 matrix in the firmware, both of its configs binding the same 50 codes, a bench "
       + 'census on the remote, and a count off a product photograph, which is four routes agreeing',
   },
+  /**
+   * 36 codes from the button maps, the four arrow keys from the devices' own maps, section 323, and Help
+   * from every activity Logitech compiles for this architecture, section 333. Not yet carried, though
+   * measured: the screen corners and the centre key, sections 285 and 311, and the activity keys, 314.
+   */
   h600: {
     buttons: 54,
-    scans: 36,
+    scans: { 133: 36, 323: 4, 333: 1 },
+    decided: { 26: 'UpArrow', 27: 'DownArrow', 50: 'DirectionUp', 42: 'DirectionDown', 3: 'Help' },
     why: 'six bits of a key event byte, a bench census of 14 14 13 13 per column, counting the '
       + "photograph, and Logitech's own manual listing 54 buttons in its own table",
   },
-  // The 600's face with another model number, per Danny holding all three; `h650.ts` and `h700.ts`
-  // take every shape and scan code from `H600`, so the counts and their grounds are the 600's.
+  // The 600's face with another model number, per a statement made holding all three; `h650.ts` and
+  // `h700.ts` take every shape and scan code from `H600`, so the counts and their grounds are the 600's.
   h650: {
     buttons: 54,
-    scans: 36,
-    why: "the Harmony 600's drawing and measurements, the same face per Danny's statement holding both",
+    scans: { 133: 36, 323: 4, 333: 1 },
+    decided: { 26: 'UpArrow', 27: 'DownArrow', 50: 'DirectionUp', 42: 'DirectionDown', 3: 'Help' },
+    why: "the Harmony 600's drawing and measurements, the same face per a statement made holding both",
   },
   h700: {
     buttons: 54,
-    scans: 36,
-    why: "the Harmony 600's drawing and measurements, the same face per Danny's statement holding both",
+    scans: { 133: 36, 323: 4, 333: 1 },
+    decided: { 26: 'UpArrow', 27: 'DownArrow', 50: 'DirectionUp', 42: 'DirectionDown', 3: 'Help' },
+    why: "the Harmony 600's drawing and measurements, the same face per a statement made holding both",
   },
   one: {
     buttons: 44,
-    scans: 32,
     /**
-     * Two codes come from somewhere else, and naming them here is what stops the exception being an
-     * exemption.
+     * Two codes come from the touch panel rather than the keypad, and naming them is what stops the
+     * exception being an exemption.
      *
-     * `reference/button-maps.md` reaches 32 of the 44, and it has nothing for the touch panel because
-     * a touch region is not a keypad scan. Base slot 17's hit map does: codes 46 and 47 hold the same
-     * rectangle in all 74 hit pages of the two Harmony One configs, `docs/findings.md` section 125. So
-     * the drawing may carry those two and nothing else, and the check below also demands they are
-     * **absent** from the reference table, so this cannot quietly cover a code the table does name.
+     * The button maps reach 32 of the 44, and nothing for the touch panel, because a touch region is not
+     * a keypad scan. Base slot 17's hit map does: codes 46 and 47 hold the same rectangle in all 74 hit
+     * pages of the two Harmony One configs, `docs/findings.md` section 125. The four arrow keys are the
+     * devices' own maps' decision, section 398.
      */
-    fromTheHitMap: { 46: 'ScreenPrev', 47: 'ScreenNext' },
-    why: 'ten keys on the keypad plus the twelve the tables do not reach, counted off the '
+    scans: { 133: 32, 398: 4, 125: 2 },
+    decided: {
+      27: 'DirectionUp', 29: 'DirectionDown', 36: 'UpArrow', 26: 'DownArrow', 46: 'ScreenPrev', 47: 'ScreenNext',
+    },
+    why: 'ten keys on the keypad plus the twelve the maps do not reach, counted off the '
       + 'photograph, with the four touch regions the hit map states',
   },
   /**
@@ -99,43 +122,18 @@ const EXPECTED: Readonly<Record<string, { buttons: number; scans: number;
    */
   touch: {
     buttons: 29,
-    scans: 0,
+    scans: {},
     why: "Logitech's own drawing in the Harmony Touch setup guide counted shape by shape, its legend's "
       + 'seventeen callouts, and the product photograph, which shows the same 29',
   },
 };
 
-/** The scan to button tables, read out of the reference document rather than copied here. */
-function referenceTables(): Record<string, Map<number, string>> {
-  const text = readFileSync(join(REPO, 'reference', 'button-maps.md'), 'utf8');
-  const out: Record<string, Map<number, string>> = {};
-  for (const section of text.split(/^## /m).slice(1)) {
-    const heading = section.split('\n')[0]!.trim();
-    const rows = new Map<number, string>();
-    for (const m of section.matchAll(/^\| (\d+) \| `(\w+)` \| `([^`]*)` \|$/gm)) {
-      rows.set(Number(m[1]), m[2]!);
-    }
-    if (rows.size) out[heading] = rows;
-  }
-  return out;
-}
-
-/** Which reference heading belongs to which drawing. */
 /**
- * Which reference heading belongs to which drawing.
- *
- * A model with no entry has **no measured codes at all**, which is the Harmony 525's case: the two
- * calibration configs were compiled for the bench remotes, so `reference/button-maps.md` has no arch 9
- * table. That is asserted rather than skipped, below.
+ * The sources whose codes Logitech's own maps name: the button maps, and the device maps that decided the
+ * arrow pairs. A key named in Logitech's vocabulary, `src: 'catalogue'`, has a code from one of these, and
+ * a key whose name is ours has a code from none of them.
  */
-const HEADING: Readonly<Record<string, string>> = {
-  h600: 'Harmony 600, skin 71, architecture 14',
-  // The 650 and 700 carry the 600's codes, by reference, on the strength of one face and one
-  // architecture 14 key table, section 17; neither has a table of its own in button-maps.md.
-  h650: 'Harmony 600, skin 71, architecture 14',
-  h700: 'Harmony 600, skin 71, architecture 14',
-  one: 'Harmony One, skin 54, architecture 12',
-};
+const NAMED_BY_LOGITECH: ReadonlySet<ScanSource> = new Set([133, 323, 398]);
 
 const drawn = Object.entries(MODELS);
 
@@ -159,70 +157,46 @@ test('a name identifies one key, and every key has one', () => {
   }
 });
 
-test('a scan code is present exactly where the reference tables name it', () => {
-  const tables = referenceTables();
+test('a scan code says where it came from, and each source gives exactly its count', () => {
   for (const [id, model] of drawn) {
-    const heading = HEADING[id];
-    if (heading === undefined) {
-      // No table means no code may appear, which is a claim and not an exemption.
-      assert.equal(EXPECTED[id]!.scans, 0, `${id}: no reference table, so it can have no scans`);
-      assert.deepEqual(model.keys.filter((k) => k.scan !== undefined).map((k) => k.name), [],
-        `${id}: a scan code with nothing behind it`);
-      // Candidates may still be present, because they can come from somewhere else: the Harmony 525's
-      // four soft keys are narrowed to a block of four by the firmware's own matrix arithmetic,
-      // `docs/findings.md` section 89, with no measured code anywhere on the model. The first version
-      // of this test forbade that, which would have made the honest answer untellable.
-      continue;
+    const want = EXPECTED[id]!;
+    const counts: Partial<Record<ScanSource, number>> = {};
+    const seen = new Set<number>();
+    for (const key of model.keys) {
+      // `scanFrom` is present exactly when `scan` is: a code with no source is a code nobody can check,
+      // and a source with no code is a claim about nothing.
+      assert.equal(key.scan === undefined, key.scanFrom === undefined,
+        `${id}: ${key.name} has ${key.scan === undefined ? 'a source and no code' : 'a code and no source'}`);
+      if (key.scan === undefined) continue;
+      assert.ok(key.scanFrom! in SCAN_SOURCES, `${id}: ${key.name} names an unknown source ${key.scanFrom}`);
+      // A code names one key. A wrong scan code is invisible, because the interface would show the wrong
+      // assignment beside a key with complete confidence, and a duplicated one is the cheapest way to get one.
+      assert.ok(!seen.has(key.scan), `${id}: scan ${key.scan} is claimed twice`);
+      seen.add(key.scan);
+      assert.equal(keyOfScan(model, key.scan)?.name, key.name);
+      counts[key.scanFrom!] = (counts[key.scanFrom!] ?? 0) + 1;
     }
-    const table = tables[heading]!;
-    assert.ok(table, `${id}: no table under ${heading}`);
-    const elsewhere = EXPECTED[id]!.fromTheHitMap ?? {};
-    const fromElsewhere = model.keys.filter((k) => k.scan !== undefined && k.scan in elsewhere);
-    for (const key of fromElsewhere) {
-      assert.equal(elsewhere[key.scan!], key.name,
-        `${id}: scan ${key.scan} is declared as ${elsewhere[key.scan!]}, not ${key.name}`);
-      // A second source may only cover what the first does not reach.
-      assert.equal(table.get(key.scan!), undefined,
-        `${id}: scan ${key.scan} is in the reference table, so it is not the hit map's to claim`);
-    }
-    assert.equal(fromElsewhere.length, Object.keys(elsewhere).length,
-      `${id}: a declared hit map code has no key`);
-    const withScan = model.keys.filter((k) => k.scan !== undefined && !(k.scan in elsewhere));
-    assert.equal(withScan.length, EXPECTED[id]!.scans);
-    for (const key of withScan) {
-      // The drawing may not invent one. A wrong scan code is invisible: the interface would show the
-      // wrong assignment beside a key with complete confidence.
-      assert.equal(table.get(key.scan!), key.name,
-        `${id}: scan ${key.scan} is ${table.get(key.scan!)} in the reference, not ${key.name}`);
-      assert.equal(keyOfScan(model, key.scan!)?.name, key.name);
-    }
-    // And every scan the reference names has a key here, so the drawing cannot silently lose one.
-    for (const [scan, name] of table) {
-      assert.equal(keyOfScan(model, scan)?.name, name, `${id}: scan ${scan} (${name}) has no key`);
-    }
+    assert.deepEqual(counts, want.scans, `${id}: codes per source`);
+    // Every code from a source other than the button maps, named here one by one, in both directions.
+    const decided = Object.fromEntries(model.keys
+      .filter((k) => k.scanFrom !== undefined && k.scanFrom !== 133)
+      .map((k) => [String(k.scan), k.name]));
+    assert.deepEqual(decided, { ...want.decided },
+      `${id}: the codes the button maps did not give`);
   }
 });
 
-test('a catalogue name is in the reference tables and a printed one is not', () => {
-  const tables = referenceTables();
+test('a catalogue name carries a code Logitech\'s maps name, and a printed one does not', () => {
   for (const [id, model] of drawn) {
-    const heading = HEADING[id];
-    if (heading === undefined) {
-      // No table, so no name can be sourced from one. That is the claim, and it can fail.
-      assert.deepEqual(model.keys.filter((k) => k.src === 'catalogue').map((k) => k.name), [],
-        `${id}: a catalogue name with no table behind it`);
-      continue;
-    }
-    const named = new Set(tables[heading]!.values());
-    // The two undecided pairs are catalogue names with no scan of their own, so they are expected in
-    // neither direction and are checked by the test below instead.
-    const undecided = new Set(model.keys.filter((k) => k.scanCandidates !== undefined).map((k) => k.name));
     for (const key of model.keys) {
-      if (undecided.has(key.name)) continue;
       if (key.src === 'catalogue') {
-        assert.ok(named.has(key.name), `${id}: ${key.name} claims to be measured and is not listed`);
+        // Every key named in Logitech's vocabulary was named against its code, since the arrow pairs were
+        // decided; a model with no calibration configuration, the Harmony 525 say, therefore has none.
+        assert.ok(key.scanFrom !== undefined && NAMED_BY_LOGITECH.has(key.scanFrom),
+          `${id}: ${key.name} claims Logitech's name and carries no code their maps name`);
       } else {
-        assert.ok(!named.has(key.name), `${id}: ${key.name} is listed, so it is not ours to name`);
+        assert.ok(key.scanFrom === undefined || !NAMED_BY_LOGITECH.has(key.scanFrom),
+          `${id}: ${key.name} has a code Logitech's maps name, so its name is not ours to choose`);
       }
     }
   }
@@ -232,24 +206,24 @@ test('a key whose code is undecided carries candidates and no scan', () => {
   for (const [id, model] of drawn) {
     const undecided = model.keys.filter((k) => k.scanCandidates !== undefined);
     /**
-     * Four keys per model, and the **shape of the ambiguity differs**, which is the thing to keep.
+     * Only the Harmony 525 has any now, one block of four from the firmware's own matrix rather than
+     * from any measured code, because nothing says which of two columns is the left one.
      *
-     * On a Harmony 600 it is two symmetric pairs: the two up keys send one command and so do the two
-     * down keys, so elimination cannot split them and no amount of decoding will. On a Harmony 525 it is
-     * one block of four, from the firmware's own matrix rather than from any measured code, because
-     * nothing says which of two columns is the left one. So the count is the same and the grouping is
-     * not, and a test that asserted pairs everywhere would have forced a wrong answer on the 525.
+     * The Harmony One and the Harmony 600 had two symmetric pairs each until plan 009's step 3.3: the two
+     * up keys send one command and so do the two down keys, so neither elimination nor decoding could
+     * split them, and the devices' own maps did, sections 398 and 323. The count stays stated per model,
+     * since the shape of an ambiguity differs between models and a test asserting pairs everywhere would
+     * have forced a wrong answer on the 525.
      */
     /**
      * The Harmony 350 has **none**, and that is the claim rather than a gap in the table: nothing
      * narrows any of its codes to a set, because nobody has read its keypad scanner, so a candidate
-     * list there could only be a guess. The count is stated per model for that reason; it was a flat
-     * four while every drawn model happened to have four.
+     * list there could only be a guess.
      */
     const SETS: Readonly<Record<string, { sets: number; each: number }>> = {
       h300: { sets: 0, each: 0 }, h350: { sets: 0, each: 0 },
-      h525: { sets: 1, each: 4 }, h600: { sets: 2, each: 2 }, h650: { sets: 2, each: 2 }, h700: { sets: 2, each: 2 }, one: { sets: 2, each: 2 },
-      touch: { sets: 0, each: 0 },
+      h525: { sets: 1, each: 4 }, h600: { sets: 0, each: 0 }, h650: { sets: 0, each: 0 }, h700: { sets: 0, each: 0 },
+      one: { sets: 0, each: 0 }, touch: { sets: 0, each: 0 },
     };
     const want = SETS[id]!;
     assert.equal(undecided.length, want.sets * want.each,

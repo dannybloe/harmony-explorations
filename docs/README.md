@@ -181,9 +181,6 @@ reference/silhouettes/          the front face of a model, one SVG per model, **
                                 the objection and the measurement that outweighed it. A key whose
                                 scan code is measured carries it as data-scan and the rest carry
                                 none rather than a guess
-reference/button-maps.md        which button a scan code is, per model, measured through the account
-                                that generated the calibration configs. Partial and honest about it:
-                                the scans two buttons share are listed as sets, not assigned
 docs/lab-register.md            the lab, artefact by artefact: what each thing is, how deep anybody
                                 has been, and which of the excavation's seventeen want list tags it
                                 might answer. **A catalogue and not a set of claims**, so it carries

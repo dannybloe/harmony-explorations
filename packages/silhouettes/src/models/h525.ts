@@ -5,7 +5,7 @@
  * documentation and lives in the lab; `bin/extract.ts` moves it into this package's coordinates. Only
  * the **shapes and the contours** come from it. The symbols and the words are ours, drawn from
  * `src/icons.ts` and typeset here, and they are read off the **photograph** rather than off the
- * document, which is Danny's decision of 21 August 2026: the document printed text on the two central
+ * document, which is the decision of 21 August 2026: the document printed text on the two central
  * bars that the product does not have.
  *
  * Two consequences of reading the photograph, worth stating because they are silent losses otherwise.
@@ -13,8 +13,9 @@
  * here. And the four teletext keys carry a coloured **dot** on this model where a Harmony 600 carries a
  * bar, which is why `icons.ts` grew a `dot`.
  *
- * **No scan code appears anywhere in here, and that is not an omission**: `reference/button-maps.md` has
- * no arch 9 table at all, because the calibration configs were compiled for the two bench remotes. A
+ * **No scan code appears anywhere in here, and that is not an omission**: section 133's
+ * calibration configs were compiled for a Harmony One and a Harmony 600, so nothing names a key of this
+ * architecture against its code. A
  * test refuses a `data-scan` in this file.
  *
  * **The four soft keys do carry candidates, from a different source.** `docs/findings.md` section 89

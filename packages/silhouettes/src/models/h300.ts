@@ -2,7 +2,7 @@
  * The Harmony 300, the Harmony 350's sibling: the same case, the same 55 keys in the same places, and
  * different printing on some of them.
  *
- * **The geometry is the Harmony 350's and is not copied.** Danny's statement, holding both remotes:
+ * **The geometry is the Harmony 350's and is not copied.** A statement made holding both remotes:
  * the two are exactly the same moulding with the labels different here and there. The Harmony 300 setup
  * guide's own button drawing is a raster image, so it could not be read the way the 350's vector page
  * was, and tracing it by hand would only have produced a second, worse copy of shapes that are the same
@@ -24,8 +24,8 @@
  *   the bottom. The logo's mark is not drawn; the word `Logitech` stands for it.
  *
  * The photograph also suggests the pause half of the play key is a separately moulded inset, as on a
- * Harmony 600. Danny's statement is that the shape is the same as the 350's, and his remote outranks a
- * product photograph, so the 350's single part with two halves stands.
+ * Harmony 600. The statement made holding both is that the shape is the same as the 350's, and a remote
+ * in the hand outranks a product photograph, so the 350's single part with two halves stands.
  *
  * **No scan code**, for the reason `h350.ts` gives: nothing measured ties a key on this architecture to
  * a code.

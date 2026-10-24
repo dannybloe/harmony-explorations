@@ -756,7 +756,7 @@ customised configurations. On two Harmony 650 configurations set up by other own
 on 4 of 6 activities and 223 of 226 keys, the three others on the one activity each that a user may
 have edited, [findings.md](../../../docs/findings.md) section 323. A display device that neither changes channels nor plays contributes no
 key. Scans 26 and 27 are `UpArrow` and `DownArrow` and 50 and 42 the pad's, decided from the device
-maps, `reference/button-maps.md`. `activityKeysFromRoles` in
+maps, [the 600's keys](../../remotes/harmony-600/keys.md). `activityKeysFromRoles` in
 `packages/codec/src/activityroles.ts`. Help (scan 3, release and repeat) is not built, deliberately:
 no device mode binds scan 3, so a map built from roles never holds it, and Help then does nothing in
 that activity, [findings.md](../../../docs/findings.md) section 333.

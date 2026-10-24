@@ -60,7 +60,8 @@ import {
 } from '@harmony/usb';
 
 import { MODELS } from '../src/index.ts';
-import type { Key, Model as Drawing } from '../src/types.ts';
+import { SCAN_SOURCES } from '../src/types.ts';
+import type { Key, Model as Drawing, ScanSource } from '../src/types.ts';
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 
@@ -136,7 +137,8 @@ interface ArchitectureFolder {
 
 /**
  * The model folders that exist. The Harmony 650 uses the Harmony 600's drawing, because the 600, 650 and
- * 700 share one face, Danny's statement; `reference/remotes/harmony-650/keys.md` says so beside the table.
+ * 700 share one face, a statement made holding the three; `reference/remotes/harmony-650/keys.md` says so
+ * beside the table.
  */
 export const REMOTES: readonly RemoteFolder[] = [
   { folder: 'harmony-one', skins: [54, 59], drawing: 'one', architecture: 12 },
@@ -311,10 +313,40 @@ function featureTable(skins: readonly number[]): string {
   ].join('\n');
 }
 
+/**
+ * A scan code's cell, with the footnote of the archive section that established it.
+ *
+ * **The footnote is the drawing's `scanFrom`, printed as plan 009 section 4's label `[^sN]`**, so the page
+ * this block lands in must define that label, and `tests/test_reference.py` fails a page that references
+ * one it does not define. That coupling is the point: a scan code is a fact in the reference like any
+ * other and carries its evidence, and the evidence words belong to the page, which knows whether its
+ * model is the one the code was measured on or one that shares the face.
+ */
 function scanCell(k: Key): string {
-  if (k.scan !== undefined) return `${k.scan} (${hex(k.scan, 2)})`;
+  if (k.scan !== undefined) {
+    if (k.scanFrom === undefined) throw new Error(`${k.name} carries scan ${k.scan} and no scanFrom`);
+    return `${k.scan} (${hex(k.scan, 2)})[^s${k.scanFrom}]`;
+  }
   if (k.scanCandidates !== undefined) return `one of ${k.scanCandidates.join(' or ')}`;
   return 'not measured';
+}
+
+/**
+ * How many scan codes each source gave, as a clause: "32 named through ...[^s133], 4 decided ...[^s398]".
+ *
+ * This is what settled the Harmony One's count: the block said 34 carried a measured code while the page
+ * said 32, because the two strips beside the screen come from the touch hit map and not from the button
+ * maps, and nothing in the sentence said so. Counting per source makes every number in it name its own.
+ */
+function scanSources(drawing: Drawing): string {
+  const counts = new Map<ScanSource, number>();
+  for (const k of drawing.keys) {
+    if (k.scanFrom !== undefined) counts.set(k.scanFrom, (counts.get(k.scanFrom) ?? 0) + 1);
+  }
+  // The largest source first, which is the button maps wherever there are any, and by section after that.
+  const sources = (Object.keys(SCAN_SOURCES).map(Number) as ScanSource[]).filter((s) => counts.has(s))
+    .sort((a, b) => (counts.get(b)! - counts.get(a)!) || a - b);
+  return sources.map((s) => `${counts.get(s)} ${SCAN_SOURCES[s]}[^s${s}]`).join('; ');
 }
 
 function keyTable(drawing: Drawing): string {
@@ -328,15 +360,20 @@ function keyTable(drawing: Drawing): string {
     return `| \`${k.name}\` | ${k.kind} | ${k.src} | ${scanCell(k)} | ${k.zone ?? ''} | ${printed} |`;
   });
   const scanned = drawing.keys.filter((k) => k.scan !== undefined).length;
-  const paired = drawing.keys.filter((k) => k.scanCandidates !== undefined).length;
+  const narrowed = drawing.keys.filter((k) => k.scanCandidates !== undefined).length;
   const kinds = (kind: Key['kind']): number => drawing.keys.filter((k) => k.kind === kind).length;
+  // Each clause appears only where it has something to count, so a drawing with no scan code at all
+  // reads as one sentence about its keys and nothing about codes it does not have.
+  const codes = scanned === 0
+    ? ' None carries a scan code.'
+    : ` ${scanned} carry a scan code: ${scanSources(drawing)}.`;
+  const candidates = narrowed === 0 ? '' : ` ${narrowed} are narrowed to a set of candidate codes and not decided.`;
   return [
     // A touch key is counted only where a drawing has one, the Harmony One's, so the sentence on
     // every other model reads as it did before the One's folder existed.
     `${drawing.keys.length} keys on the drawing \`${drawing.id}\`, ${kinds('keypad')} on the keypad`
       + `${kinds('touch') > 0 ? `, ${kinds('touch')} on the touch panel` : ''} and `
-      + `${kinds('screen')} that the screen speaks for. ${scanned} carry a measured scan code and ${paired} `
-      + 'are left between two candidates by the drawing.',
+      + `${kinds('screen')} that the screen speaks for.${codes}${candidates}`,
     '',
     '| key | kind | name from | scan code | screen zone | printed on or beside it |',
     '|---|---|---|---|---|---|',

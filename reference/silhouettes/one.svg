@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="-2 -2 259.791 1004"
      role="img" aria-labelledby="title desc" class="silhouette silhouette-one">
   <title id="title">Harmony One, front face</title>
-  <desc id="desc">Outline drawing of the Harmony One front face, one shape per button. Its shapes are traced from the product documentation and its lettering and symbols are drawn from a photograph. 44 buttons, of which 34 carry a measured scan code. Its screen is a touch surface, so a press there goes through the hit map rather than the keypad. Every fill and stroke reads a custom property, so the interface decides the colours; nothing here is coloured in.</desc>
+  <desc id="desc">Outline drawing of the Harmony One front face, one shape per button. Its shapes are traced from the product documentation and its lettering and symbols are drawn from a photograph. 44 buttons, of which 38 carry a measured scan code. Its screen is a touch surface, so a press there goes through the hit map rather than the keypad. Every fill and stroke reads a custom property, so the interface decides the colours; nothing here is coloured in.</desc>
 
   <!--
     GENERATED FILE. Do not edit.
@@ -103,11 +103,11 @@
       <path class="key" d="M 232.217 415.354 L 164.405 414.7 L 164.405 438.535 L 228.277 437.217 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
       <text class="lbl layer-text" x="198.311" y="431.868" font-size="15" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">Guide</text>
     </g>
-    <g class="key-group" id="k-up-arrow" data-name="UpArrow" data-kind="keypad" data-src="catalogue" data-scan-candidates="27 36">
+    <g class="key-group" id="k-up-arrow" data-name="UpArrow" data-kind="keypad" data-src="catalogue" data-scan="36">
       <path class="key key-segment" d="M 145.558 403.048 L 145.558 431.888 C 144.837 435.768 138.131 438.948 130.667 438.948 L 123.683 438.948 C 116.219 438.948 109.522 434.836 108.802 429.812 L 108.802 375.104 C 109.522 372.509 116.219 370.397 123.683 370.397 L 130.667 370.397 C 138.131 370.397 144.837 372.106 145.558 374.208 L 145.558 403.048 Z" clip-path="url(#seg-k-up-arrow)" fill="#fff" stroke="none" />
       <g class="layer-icons"><g transform="translate(127.2 385) scale(8.125)"><path class="mark mark-stroke" d="M -0.8 0.35 L 0 -0.4 L 0.8 0.35" fill="none" stroke="#222" stroke-width="0.16" stroke-linecap="round" stroke-linejoin="round" /></g></g>
     </g>
-    <g class="key-group" id="k-down-arrow" data-name="DownArrow" data-kind="keypad" data-src="catalogue" data-scan-candidates="26 29">
+    <g class="key-group" id="k-down-arrow" data-name="DownArrow" data-kind="keypad" data-src="catalogue" data-scan="26">
       <path class="key key-segment" d="M 145.558 403.048 L 145.558 431.888 C 144.837 435.768 138.131 438.948 130.667 438.948 L 123.683 438.948 C 116.219 438.948 109.522 434.836 108.802 429.812 L 108.802 375.104 C 109.522 372.509 116.219 370.397 123.683 370.397 L 130.667 370.397 C 138.131 370.397 144.837 372.106 145.558 374.208 L 145.558 403.048 Z" clip-path="url(#seg-k-down-arrow)" fill="#fff" stroke="none" />
       <g class="layer-icons"><g transform="translate(127.2 424) scale(8.125)"><path class="mark mark-stroke" d="M -0.8 -0.4 L 0 0.35 L 0.8 -0.4" fill="none" stroke="#222" stroke-width="0.16" stroke-linecap="round" stroke-linejoin="round" /></g></g>
     </g>
@@ -127,7 +127,7 @@
       <path class="key key-segment" d="M 225.368 474.846 C 225.857 467.401 220.159 461.042 212.715 460.705 L 199.814 460.139 C 192.36 459.812 186.258 463.703 186.258 468.803 C 186.258 473.904 188.575 481.975 191.398 486.748 C 194.231 491.532 196.604 501.543 196.673 509.007 L 196.73 516.001 C 196.796 523.455 194.261 533.263 191.11 537.797 C 187.95 542.332 185.038 550.276 184.635 555.445 C 184.232 560.641 190.006 565.176 197.46 565.55 L 205.654 565.953 C 213.108 566.327 219.613 560.536 220.122 553.091 L 225.368 474.846 Z" clip-path="url(#seg-k-channel-down)" fill="#fff" stroke="none" />
       <g class="layer-icons"><g transform="translate(203.8 546) scale(5)"><path class="mark mark-fill" d="M -1 -0.132 H 1 V 0.132 H -1 Z" fill="#222" stroke="none" /></g></g>
     </g>
-    <g class="key-group" id="k-direction-up" data-name="DirectionUp" data-kind="keypad" data-src="catalogue" data-scan-candidates="27 36">
+    <g class="key-group" id="k-direction-up" data-name="DirectionUp" data-kind="keypad" data-src="catalogue" data-scan="27">
       <path class="key key-segment" d="M 136.316 464.836 C 138.101 464.876 139.82 466.354 140.128 468.112 L 144.193 491.234 C 144.51 492.992 146.19 494.721 147.958 495.048 L 172.484 499.669 C 174.25 500.006 175.76 501.745 175.846 503.53 L 176.709 522.034 C 176.788 523.819 175.423 525.607 173.674 526.01 L 149.102 531.553 C 147.343 531.957 145.72 533.735 145.479 535.51 L 141.992 561.342 C 141.763 563.12 140.091 564.561 138.303 564.561 L 113.932 564.436 C 112.137 564.426 110.521 562.955 110.349 561.16 L 107.939 535.992 C 107.764 534.195 106.19 532.485 104.422 532.168 L 78.868 527.614 C 77.102 527.306 75.651 525.577 75.651 523.782 L 75.651 505.011 C 75.651 503.213 77.11 501.514 78.878 501.236 L 105.162 497.038 C 106.938 496.757 108.61 495.078 108.888 493.31 L 112.904 467.613 C 113.182 465.835 114.874 464.414 116.669 464.443 L 136.316 464.836 Z" clip-path="url(#seg-k-direction-up)" fill="#fff" stroke="none" />
       <g class="layer-icons"><g transform="translate(126.19 476) scale(7.647)"><path class="mark mark-fill" d="M -0.8 0.85 L 0.8 0.85 L 0 -0.85 Z" fill="#222" stroke="none" /></g></g>
     </g>
@@ -135,7 +135,7 @@
       <path class="key key-segment" d="M 136.316 464.836 C 138.101 464.876 139.82 466.354 140.128 468.112 L 144.193 491.234 C 144.51 492.992 146.19 494.721 147.958 495.048 L 172.484 499.669 C 174.25 500.006 175.76 501.745 175.846 503.53 L 176.709 522.034 C 176.788 523.819 175.423 525.607 173.674 526.01 L 149.102 531.553 C 147.343 531.957 145.72 533.735 145.479 535.51 L 141.992 561.342 C 141.763 563.12 140.091 564.561 138.303 564.561 L 113.932 564.436 C 112.137 564.426 110.521 562.955 110.349 561.16 L 107.939 535.992 C 107.764 534.195 106.19 532.485 104.422 532.168 L 78.868 527.614 C 77.102 527.306 75.651 525.577 75.651 523.782 L 75.651 505.011 C 75.651 503.213 77.11 501.514 78.878 501.236 L 105.162 497.038 C 106.938 496.757 108.61 495.078 108.888 493.31 L 112.904 467.613 C 113.182 465.835 114.874 464.414 116.669 464.443 L 136.316 464.836 Z" clip-path="url(#seg-k-direction-right)" fill="#fff" stroke="none" />
       <g class="layer-icons"><g transform="translate(163.9 514.37) scale(7.647)"><path class="mark mark-fill" d="M -0.85 -0.85 L -0.85 0.85 L 0.85 0 Z" fill="#222" stroke="none" /></g></g>
     </g>
-    <g class="key-group" id="k-direction-down" data-name="DirectionDown" data-kind="keypad" data-src="catalogue" data-scan-candidates="26 29">
+    <g class="key-group" id="k-direction-down" data-name="DirectionDown" data-kind="keypad" data-src="catalogue" data-scan="29">
       <path class="key key-segment" d="M 136.316 464.836 C 138.101 464.876 139.82 466.354 140.128 468.112 L 144.193 491.234 C 144.51 492.992 146.19 494.721 147.958 495.048 L 172.484 499.669 C 174.25 500.006 175.76 501.745 175.846 503.53 L 176.709 522.034 C 176.788 523.819 175.423 525.607 173.674 526.01 L 149.102 531.553 C 147.343 531.957 145.72 533.735 145.479 535.51 L 141.992 561.342 C 141.763 563.12 140.091 564.561 138.303 564.561 L 113.932 564.436 C 112.137 564.426 110.521 562.955 110.349 561.16 L 107.939 535.992 C 107.764 534.195 106.19 532.485 104.422 532.168 L 78.868 527.614 C 77.102 527.306 75.651 525.577 75.651 523.782 L 75.651 505.011 C 75.651 503.213 77.11 501.514 78.878 501.236 L 105.162 497.038 C 106.938 496.757 108.61 495.078 108.888 493.31 L 112.904 467.613 C 113.182 465.835 114.874 464.414 116.669 464.443 L 136.316 464.836 Z" clip-path="url(#seg-k-direction-down)" fill="#fff" stroke="none" />
       <g class="layer-icons"><g transform="translate(126.19 552.5) scale(7.647)"><path class="mark mark-fill" d="M -0.8 -0.85 L 0.8 -0.85 L 0 0.85 Z" fill="#222" stroke="none" /></g></g>
     </g>

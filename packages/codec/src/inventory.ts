@@ -2000,7 +2000,8 @@ export interface KeyCode {
  * end "and from nowhere for a hard key"<!--superseded-->, and section 133 is where that stopped being
  * true: the durations decode back into the bit frame the device sees, `irframe.ts`, and a frame can be
  * matched against a catalogue of named commands. Thirty two buttons of a Harmony One and thirty six of
- * a Harmony 600 are named in `reference/button-maps.md` that way, with nothing written anywhere.
+ * a Harmony 600 are named that way, section 133, with nothing written anywhere; the drawings in
+ * `packages/silhouettes` carry them.
  *
  * **That route is not available from inside this function**, which is why the return value still has a
  * number and no name: it needs the catalogue and the button maps of the account that generated the

@@ -97,7 +97,7 @@ they apply unchanged. The 600's runs are in `packages/bench/irtests/done/`, thos
 | the firmware image to read | `600-0.2-code-base0x9000-COMPLETE.bin` in the lab's `firmware/derived/` |
 | the unit record | the lab's `units/h600.txt`, never copied into this repository |
 | region reads and compiles | the lab's `reads/`, named in `packages/lab` and `tests/lab.py` with the prefix `h600_` |
-| the button map's calibration | `reference/button-maps.md`, the configuration `calibration_h600` |
+| the button map's calibration | `docs/test-notes/accounts.md`, the configuration `calibration_h600`; the scan codes are `packages/silhouettes/src/models/h600.ts` |
 
 ## Related
 

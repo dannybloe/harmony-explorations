@@ -28,7 +28,7 @@ All from `h300.ts`, read off Logitech's setup guide[^t-printing].
 ## Every key on the drawing
 
 <!-- generated:keys -->
-55 keys on the drawing `h300`, 55 on the keypad and 0 that the screen speaks for. 0 carry a measured scan code and 0 are left between two candidates by the drawing.
+55 keys on the drawing `h300`, 55 on the keypad and 0 that the screen speaks for. None carries a scan code.
 
 | key | kind | name from | scan code | screen zone | printed on or beside it |
 |---|---|---|---|---|---|

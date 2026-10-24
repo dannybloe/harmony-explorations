@@ -16,7 +16,7 @@ alone.[^x-forum]
 ## Every key on the drawing
 
 <!-- generated:keys -->
-50 keys on the drawing `h525`, 44 on the keypad and 6 that the screen speaks for. 0 carry a measured scan code and 4 are left between two candidates by the drawing.
+50 keys on the drawing `h525`, 44 on the keypad and 6 that the screen speaks for. None carries a scan code. 4 are narrowed to a set of candidate codes and not decided.
 
 | key | kind | name from | scan code | screen zone | printed on or beside it |
 |---|---|---|---|---|---|

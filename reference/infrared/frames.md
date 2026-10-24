@@ -34,8 +34,8 @@ back. What the bits genuinely do not carry is everything after the frame.
 
 What that buys is comparison against a number stated outside the config. Matching a frame against the
 command catalogue of the account that generated a config, and that account's button maps, names the
-**button** a scan code belongs to: `reference/button-maps.md` has 32 buttons of a Harmony One and 36 of
-a Harmony 600. That needs the generating account, so it is a per model calibration and not a reader,
+**button** a scan code belongs to: 32 buttons of a Harmony One and 36 of a Harmony 600, which the
+[One's](../remotes/harmony-one/keys.md) and [600's](../remotes/harmony-600/keys.md) keys pages carry. That needs the generating account, so it is a per model calibration and not a reader,
 and a scan code's **position** does not follow from it at all, section 133.
 
 #### And the frame is rebuilt from five durations the record itself states

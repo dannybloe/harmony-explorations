@@ -39,6 +39,7 @@ import { biphaseFrames, blockCopies, frameKey, frameSegments, framesOfPulses, fr
 import { pulsesOfWords } from '../src/irda.ts';
 import { compiledBlockWords } from '../src/compose.ts';
 import { keyCodes } from '../src/inventory.ts';
+import { CALIBRATION_DRAWINGS, NAMED_BY_LOGITECH, drawnKeys, drawnScans } from '../bin/drawings.ts';
 import { longPressBlockOfStatedCode, longPressFramesOfStatedCode, pulsesOfStatedCode, statedProtocol, timingsOf } from '../src/stated.ts';
 
 const REPO = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
@@ -453,106 +454,143 @@ test('those records read as RC6 mode 6', skipUnless('arch8_config_a'), () => {
 });
 
 /**
- * Section 133: the scan code to button name tables, checked against the containers they came from.
+ * Section 133: the scan code each drawing names, checked against the configurations it came from.
  *
- * The tables live in `reference/button-maps.md` and are parsed out of it rather than copied here. One
- * copy of a derivation, which is `CLAUDE.md`'s oldest rule, and the reason it matters for a table of
- * sixty numbers rather than for a function: a second copy is right until one of them moves.
+ * **Three tables, each held once, and the test is that they close.** The drawings in
+ * `packages/silhouettes` say which scan code each key is, `drawnScans`. `FRAMES` below says which frames
+ * each button sends in the two calibration configurations, which is what Logitech's catalogue and button
+ * maps for that setup gave section 133, through an instrument kept outside this repository with the
+ * account data it reads. And the configuration itself says which frames each scan code sends, by decoding
+ * the records it reaches. A key named wrongly on a drawing makes the third disagree with the other two.
+ *
+ * Until plan 009's step 3.3 the scan codes and the frames were one table, `reference/button-maps.md`,
+ * parsed back out of Markdown here and in four other readers. The frames are a fact about the calibration
+ * setup's devices and not about any remote, so they are this test's data; the scan codes are a fact about
+ * the remote and are the drawings'. **Keyed by button rather than by scan**, which is what lets one table
+ * serve both remotes: the two configurations drive the same three devices, so a button sends the same
+ * frames on either, and the test below says so.
  */
-function tablesFromReference(): Record<string, Map<number, { button: string; frames: string[] }>> {
-  const text = readFileSync(join(REPO, 'reference', 'button-maps.md'), 'utf8');
-  const out: Record<string, Map<number, { button: string; frames: string[] }>> = {};
-  // Each model is a `## ` heading; a row is scan, button and the frames, and the unresolved tables
-  // below have a different shape so they do not match.
-  for (const section of text.split(/^## /m).slice(1)) {
-    const model = section.split('\n')[0]!.trim();
-    const rows = new Map<number, { button: string; frames: string[] }>();
-    for (const m of section.matchAll(/^\| (\d+) \| `(\w+)` \| `([^`]*)` \|$/gm)) {
-      rows.set(Number(m[1]), { button: m[2]!, frames: m[3]!.split(' ').filter(Boolean) });
-    }
-    if (rows.size) out[model] = rows;
-  }
-  return out;
-}
+const FRAMES: Readonly<Record<string, readonly string[]>> = {
+  Number0: ['12:910', '48:40040d009895'],
+  Number1: ['12:10', '48:40040d000805'],
+  Number2: ['12:810', '48:40040d008885'],
+  Number3: ['12:410', '48:40040d004845'],
+  Number4: ['12:c10', '48:40040d00c8c5'],
+  Number5: ['12:210', '48:40040d002825'],
+  Number6: ['12:a10', '48:40040d00a8a5'],
+  Number7: ['12:610', '48:40040d006865'],
+  Number8: ['12:e10', '48:40040d00e8e5'],
+  Number9: ['12:110', '48:40040d001815'],
+  NumberPlus: ['48:40040d00c1cc'],
+  PrevChannel: ['12:dd0', '48:40040d00c1cc'],
+  Menu: ['12:70', '48:40040d00d9d4'],
+  Exit: ['12:c70', '48:40040d808a07'],
+  Info: ['12:5d0', '48:40040d004944'],
+  Guide: ['15:6d25', '48:40040d00414c'],
+  Select: ['12:a70', '48:40040d00414c'],
+  VolumeUp: ['48:2a4c0280e86a'],
+  VolumeDown: ['48:2a4c0288e862'],
+  VolumeMute: ['48:2a4c0284e86e'],
+  ChannelUp: ['12:90', '48:40040d00525f'],
+  ChannelDown: ['12:890', '48:40040d00929f'],
+  DirectionLeft: ['12:2d0', '48:40040d00e1ec'],
+  DirectionRight: ['12:cd0', '48:40040d00111c'],
+  // The two up keys send one command and so do the two down keys, in every activity of both
+  // configurations, which is why these four were left as candidates until the devices' own maps decided
+  // them, sections 323 and 398. The frames cannot tell them apart and the last test here says so.
+  DirectionUp: ['12:2f0', '48:40040d00a1ac'],
+  UpArrow: ['12:2f0', '48:40040d00a1ac'],
+  DirectionDown: ['12:af0', '48:40040d00616c'],
+  DownArrow: ['12:af0', '48:40040d00616c'],
+  Play: ['15:2ce9', '48:40040d00505d'],
+  Pause: ['15:4ce9', '48:40040d00606d'],
+  Stop: ['15:ce9', '48:40040d00000d'],
+  Record: ['15:2e9'],
+  Rewind: ['15:6ce9', '48:40040d00202d'],
+  FastForward: ['15:1ce9', '48:40040d00a0ad'],
+  SkipBack: ['15:1ee9', '48:40040d00929f'],
+  SkipForward: ['15:5ee9', '48:40040d00525f'],
+  // The teletext colour keys, on the Harmony 600 and not on the Harmony One.
+  Red: ['15:52e9', '48:40040d80820f'],
+  Green: ['15:32e9', '48:40040d8042cf'],
+  Yellow: ['15:72e9', '48:40040d80c24f'],
+  Blue: ['15:12e9', '48:40040d80028f'],
+};
 
-const MODELS: readonly [string, string, number][] = [
-  // the heading in the reference document, the container, how many buttons the model has
-  ['Harmony One, skin 54, architecture 12', 'calibration_one', 44],
-  ['Harmony 600, skin 71, architecture 14', 'calibration_h600', 54],
+const CALIBRATIONS: readonly [string, string, number, number][] = [
+  // the configuration, its model's drawing, how many keys the model has, how many Logitech's maps name
+  ['calibration_one', 'one', 44, 36],
+  ['calibration_h600', 'h600', 54, 40],
 ];
 
-test('the reference tables describe both models and nothing else', () => {
-  // Runs without a lab, because a fresh clone should still be told if the document loses a table.
-  const tables = tablesFromReference();
-  assert.deepEqual(Object.keys(tables).sort(), MODELS.map(([m]) => m).sort());
-  assert.equal(tables[MODELS[0]![0]]!.size, 32);
-  assert.equal(tables[MODELS[1]![0]]!.size, 36);
+/** What a configuration's own bytes say each scan sends: the frames of every record its press reaches. */
+function sendsPerScan(c: ReturnType<typeof parse>): Map<number, Set<string>> {
+  const sends = new Map<number, Set<string>>();
+  for (const binding of keyCodes(c)) {
+    if (binding.where !== 'set' || binding.event !== 2) continue;
+    for (const code of binding.codes) {
+      const record = irGroups(c)![code.group]!.addresses[code.code];
+      if (record === undefined) continue;
+      const f = irFrame(c, record);
+      if (!f) continue;
+      if (!sends.has(binding.scan)) sends.set(binding.scan, new Set());
+      sends.get(binding.scan)!.add(frameKey(f));
+    }
+  }
+  return sends;
+}
+
+test('the drawings name every button Logitech\'s maps name, and the frame table holds each once', () => {
+  // Runs without a lab, because a fresh clone should still be told if a drawing loses a code. 36 and 40
+  // is section 145's completeness closure: Logitech's maps for the calibration setup name exactly these,
+  // with none left over in either direction, `tests/test_host_client.py`.
+  for (const [, drawing, , named] of CALIBRATIONS) {
+    const scans = drawnScans(drawing, NAMED_BY_LOGITECH);
+    assert.equal(scans.size, named, drawing);
+    for (const button of scans.values()) assert.ok(FRAMES[button], `${drawing}: ${button} has no frames`);
+  }
+  // Every row of the frame table is some drawing's, so the table cannot carry a button nothing names.
+  const used = new Set(CALIBRATIONS.flatMap(([, d]) => [...drawnScans(d, NAMED_BY_LOGITECH).values()]));
+  assert.deepEqual(Object.keys(FRAMES).filter((b) => !used.has(b)), []);
 });
 
 test(
-  'every scan in the reference tables sends the frames it is listed with',
+  'every scan a drawing names through Logitech\'s maps sends the frames its button sends',
   skipUnless('calibration_one', 'calibration_h600'),
   () => {
-    const tables = tablesFromReference();
-    for (const [model, name, buttons] of MODELS) {
+    for (const [name, drawing, buttons] of CALIBRATIONS) {
       const c = load(name)!;
-      const rows = tables[model]!;
-      assert.ok(rows.size < buttons, 'the tables are partial and must not claim otherwise');
-      // What the container itself says each scan sends, by decoding the records it reaches.
-      const sends = new Map<number, Set<string>>();
-      for (const binding of keyCodes(c)) {
-        if (binding.where !== 'set' || binding.event !== 2) continue;
-        for (const code of binding.codes) {
-          const record = irGroups(c)![code.group]!.addresses[code.code];
-          if (record === undefined) continue;
-          const f = irFrame(c, record);
-          if (!f) continue;
-          if (!sends.has(binding.scan)) sends.set(binding.scan, new Set());
-          sends.get(binding.scan)!.add(frameKey(f));
-        }
-      }
-      for (const [scan, row] of rows) {
+      const scans = drawnScans(drawing, NAMED_BY_LOGITECH);
+      assert.ok(scans.size < buttons, 'the drawings are partial and must not claim otherwise');
+      const sends = sendsPerScan(c);
+      for (const [scan, button] of scans) {
         const actual = sends.get(scan);
-        assert.ok(actual, `${model} scan ${scan} sends nothing in ${name}`);
-        assert.deepEqual(
-          [...actual].sort(),
-          [...row.frames].sort(),
-          `${model} scan ${scan} (${row.button})`,
-        );
+        assert.ok(actual, `${drawing} scan ${scan} sends nothing in ${name}`);
+        assert.deepEqual([...actual].sort(), [...FRAMES[button]!].sort(), `${drawing} scan ${scan} (${button})`);
       }
     }
   },
 );
 
-test('the two models agree about every button they share', skipUnless('calibration_one', 'calibration_h600'), () => {
-  // Two containers, two architectures, one specification: the same command is stored by two different
-  // generators runs and decodes to the same frame. Nothing else here checks that, since every other
-  // reader test compares a container with itself.
-  const tables = tablesFromReference();
-  const one = tables[MODELS[0]![0]]!;
-  const h600 = tables[MODELS[1]![0]]!;
-  const byButton = (rows: typeof one) =>
-    new Map([...rows.values()].map((r) => [r.button, r.frames.join(' ')]));
-  const a = byButton(one);
-  const b = byButton(h600);
-  const shared = [...a.keys()].filter((k) => b.has(k));
-  assert.equal(shared.length, 32, 'the One\'s buttons are all named on the 600 too');
-  for (const button of shared) assert.equal(a.get(button), b.get(button), button);
-  // And the difference is hardware: the 600 has the four teletext colour keys and the One does not.
-  assert.deepEqual([...b.keys()].filter((k) => !a.has(k)).sort(), ['Blue', 'Green', 'Red', 'Yellow']);
-  assert.deepEqual([...a.keys()].filter((k) => !b.has(k)), []);
+test('one frame table serves both models, and they differ by the four teletext keys', () => {
+  // Two configurations, two architectures, one specification: the same command is stored by two different
+  // generator runs and decodes to the same frame, which the test above checks against one table for both.
+  // What is left to say is which buttons each has, and the difference is hardware.
+  const one = new Set(drawnScans('one', NAMED_BY_LOGITECH).values());
+  const h600 = new Set(drawnScans('h600', NAMED_BY_LOGITECH).values());
+  assert.deepEqual([...one].filter((k) => !h600.has(k)), []);
+  assert.deepEqual([...h600].filter((k) => !one.has(k)).sort(), ['Blue', 'Green', 'Red', 'Yellow']);
 });
 
-test('no arithmetic on a scan code gives the keypad geometry', skipUnless('calibration_h600'), () => {
+test('no arithmetic on a scan code gives the keypad geometry', () => {
   // The negative that keeps `reference/silhouettes/` honest. Section 48 derived the electrical column
   // on arch 14 as `(scan - 1) mod 4`; if a matrix row were a row of keys, the three digits of a row
   // would share one. They do not, under any divisor, in either direction, so a scan code carries no
-  // position and the tables above are the only route to a name.
-  const tables = tablesFromReference();
-  const rows = tables[MODELS[1]![0]]!;
+  // position and the drawings are the only route from a code to a place on the face. It reads the
+  // Harmony 600's digits off its drawing, so it needs no lab.
   const digit = new Map<number, number>();
-  for (const [scan, row] of rows) {
-    const m = /^Number(\d)$/.exec(row.button);
+  for (const [scan, button] of drawnScans('h600', NAMED_BY_LOGITECH)) {
+    const m = /^Number(\d)$/.exec(button);
     if (m) digit.set(Number(m[1]), scan);
   }
   assert.equal(digit.size, 10, 'all ten digits are named');
@@ -574,38 +612,31 @@ test('no arithmetic on a scan code gives the keypad geometry', skipUnless('calib
 });
 
 test(
-  'the four undecided scans per remote are bound, not merely unnamed',
+  'the four arrow keys per remote send one command per pair, so only the device maps could decide them',
   skipUnless('calibration_one', 'calibration_h600'),
   () => {
-    // `reference/button-maps.md` distinguishes two kinds of unnamed key and the distinction is the whole
-    // honesty of that document: a key the configs never bind is unreachable, and these four are bound and
-    // still not assignable, because two scans face two buttons carrying one command. An earlier revision
-    // said everything unnamed was unbound, which was false for exactly these.
-    const text = readFileSync(join(REPO, 'reference', 'button-maps.md'), 'utf8');
-    const listed = new Map<string, number[]>();
-    for (const section of text.split(/^### /m).slice(1)) {
-      const model = section.split('\n')[0]!.trim();
-      const scans: number[] = [];
-      for (const m of section.matchAll(/^\| ([\d, ]+) \| `\w+` and `\w+` \|/gm)) {
-        scans.push(...m[1]!.split(',').map((s) => Number(s.trim())));
-      }
-      if (scans.length) listed.set(model, scans);
-    }
-    assert.deepEqual([...listed.keys()].sort(), ['Harmony 600', 'Harmony One']);
-    const tables = tablesFromReference();
-    for (const [model, container] of [['Harmony One', 'calibration_one'], ['Harmony 600', 'calibration_h600']] as const) {
-      const scans = listed.get(model)!;
-      assert.equal(scans.length, 4, `${model} lists four undecided scans`);
-      const c = load(container)!;
-      const named = tables[MODELS.find(([m]) => m.startsWith(model))![0]]!;
-      const bound = new Set(
-        keyCodes(c)
-          .filter((b) => b.where === 'set' && b.event === 2 && b.codes.length)
-          .map((b) => b.scan),
-      );
-      for (const scan of scans) {
-        assert.ok(bound.has(scan), `${model} scan ${scan} is listed as undecided but sends nothing`);
-        assert.ok(!named.has(scan), `${model} scan ${scan} is both named and undecided`);
+    // The two kinds of unnamed key this used to tell apart: a key the configurations never bind is
+    // unreachable, and these four were bound and still not assignable, because two scans faced two buttons
+    // carrying one command. An earlier revision said everything unnamed was unbound, which was false for
+    // exactly these. The devices' own maps decided them since, section 323 on the Harmony 600 and section
+    // 398 on the Harmony One, and this is the record of why that route was needed: each pair is bound,
+    // and its two members send exactly the same frames in the configuration.
+    const PAIRS: readonly [string, readonly [string, string][]][] = [
+      ['calibration_one', [['DirectionUp', 'UpArrow'], ['DirectionDown', 'DownArrow']]],
+      ['calibration_h600', [['DirectionUp', 'UpArrow'], ['DirectionDown', 'DownArrow']]],
+    ];
+    for (const [name, pairs] of PAIRS) {
+      const drawing = CALIBRATION_DRAWINGS[name]!;
+      const scanOf = new Map(drawnKeys(drawing).filter((k) => k.scan !== undefined).map((k) => [k.name, k]));
+      const sends = sendsPerScan(load(name)!);
+      for (const pair of pairs) {
+        const [a, b] = pair.map((n) => scanOf.get(n)!);
+        for (const key of [a!, b!]) {
+          assert.ok(key.scanFrom === 323 || key.scanFrom === 398, `${drawing} ${key.name} is a device map decision`);
+          assert.ok(sends.has(key.scan!), `${drawing} ${key.name}, scan ${key.scan}, sends nothing`);
+        }
+        assert.deepEqual([...sends.get(a!.scan!)!].sort(), [...sends.get(b!.scan!)!].sort(),
+          `${drawing} ${pair.join(' and ')} send different frames, so the activities alone could tell them apart`);
       }
     }
   },

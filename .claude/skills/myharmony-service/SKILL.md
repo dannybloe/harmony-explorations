@@ -242,8 +242,8 @@ reasoning instead of querying.
   input type and named inputs. `DeviceManager/GetGlobalDevices` with plain ids answers an internal
   error. Replies in `responses/20261001-catalogue-reads/`.
 * **Button maps**: `RemoteManager/GetButtonMaps` and the `ActivityButtonMap` records, which is
-  where `reference/button-maps.md` came from, via the account that generated the calibration
-  configs.
+  where the drawings' scan codes came from, via the account that generated the calibration
+  configs, `docs/test-notes/accounts.md`.
 
 ## There is a second service, and it serves firmware
 
