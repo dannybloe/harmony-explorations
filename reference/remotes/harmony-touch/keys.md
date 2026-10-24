@@ -10,7 +10,7 @@ are read off a photograph of the whole face, and drawing and photograph agree ma
 ## Every key on the drawing
 
 <!-- generated:keys -->
-29 keys on the drawing `touch`, 27 on the keypad, 2 on the touch panel and 0 that the screen speaks for. 0 carry a measured scan code and 0 are left between two candidates by the drawing.
+29 keys on the drawing `touch`, 27 on the keypad, 2 on the touch panel and 0 that the screen speaks for. None carries a scan code.
 
 | key | kind | name from | scan code | screen zone | printed on or beside it |
 |---|---|---|---|---|---|

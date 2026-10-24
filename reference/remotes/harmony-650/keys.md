@@ -32,60 +32,62 @@ return to the devices list."[^x-manual]
 
 ## Every key on the drawing
 
-The drawing's own list, generated. A scan code appears only where the drawing names it, and the drawing
-took them from the **Harmony 600's** calibration configuration, where each was decoded from the code it
-sends[^s133]. On the 650 the same codes are carried over on the strength of the shared face; the 650's
-own button map has **not** been measured[^unchecked]. What does hold on the 650 is that its mode 0 lists
+The drawing's own list, generated. A scan code appears only where the drawing names it, footnoted with
+where it came from: most from the **Harmony 600's** calibration configuration, where each was decoded from
+the code it sends[^s133], the four up and down keys from the devices' own maps of that configuration[^s323],
+and Help from every activity Logitech compiles for this architecture, the 650's among them[^s333]. On the
+650 the 600's codes are carried over on the strength of the shared face; the 650's own button map has
+**not** been measured[^unchecked]. What does hold on the 650 is that its mode 0 lists
 every scan from 1 to 54, so it has the same 54 codes[^s311].
 
 <!-- generated:keys -->
-54 keys on the drawing `h650`, 42 on the keypad and 12 that the screen speaks for. 36 carry a measured scan code and 4 are left between two candidates by the drawing.
+54 keys on the drawing `h650`, 42 on the keypad and 12 that the screen speaks for. 41 carry a scan code: 36 named through Logitech's button maps for a configuration compiled to a known setup[^s133]; 4 decided by the devices' own maps, since every activity gives both keys of a pair one command[^s323]; 1 bound by every activity Logitech compiles to that activity's own help[^s333].
 
 | key | kind | name from | scan code | screen zone | printed on or beside it |
 |---|---|---|---|---|---|
-| `Menu` | keypad | catalogue | 10 (0x0A) |  | Menu |
-| `Exit` | keypad | catalogue | 12 (0x0C) |  | Exit |
-| `Red` | keypad | catalogue | 13 (0x0D) |  |  |
-| `VolumeUp` | keypad | catalogue | 14 (0x0E) |  |  |
-| `VolumeDown` | keypad | catalogue | 15 (0x0F) |  |  |
-| `VolumeMute` | keypad | catalogue | 16 (0x10) |  |  |
-| `Number4` | keypad | catalogue | 17 (0x11) |  | 4, ghi |
-| `Number7` | keypad | catalogue | 18 (0x12) |  | 7, pqrs |
-| `NumberPlus` | keypad | catalogue | 19 (0x13) |  | clear |
-| `Number0` | keypad | catalogue | 20 (0x14) |  | 0 |
-| `SkipBack` | keypad | catalogue | 21 (0x15) |  | Replay |
-| `Rewind` | keypad | catalogue | 22 (0x16) |  |  |
-| `Record` | keypad | catalogue | 23 (0x17) |  |  |
-| `Number1` | keypad | catalogue | 24 (0x18) |  | 1 |
-| `Yellow` | keypad | catalogue | 28 (0x1C) |  |  |
-| `Blue` | keypad | catalogue | 29 (0x1D) |  |  |
-| `FastForward` | keypad | catalogue | 30 (0x1E) |  |  |
-| `ChannelUp` | keypad | catalogue | 31 (0x1F) |  |  |
-| `ChannelDown` | keypad | catalogue | 32 (0x20) |  |  |
-| `Guide` | keypad | catalogue | 33 (0x21) |  | Guide |
-| `Info` | keypad | catalogue | 36 (0x24) |  | Info |
-| `Number6` | keypad | catalogue | 37 (0x25) |  | 6, mno |
-| `SkipForward` | keypad | catalogue | 38 (0x26) |  | Skip |
-| `Number3` | keypad | catalogue | 39 (0x27) |  | 3, def |
-| `Stop` | keypad | catalogue | 40 (0x28) |  |  |
-| `DirectionRight` | keypad | catalogue | 41 (0x29) |  |  |
-| `PrevChannel` | keypad | catalogue | 43 (0x2B) |  |  |
-| `Play` | keypad | catalogue | 44 (0x2C) |  |  |
-| `Number9` | keypad | catalogue | 45 (0x2D) |  | 9, wxyz |
-| `Pause` | keypad | catalogue | 46 (0x2E) |  |  |
-| `Number2` | keypad | catalogue | 47 (0x2F) |  | 2, abc |
-| `Number5` | keypad | catalogue | 48 (0x30) |  | 5, jkl |
-| `Green` | keypad | catalogue | 49 (0x31) |  |  |
-| `Select` | keypad | catalogue | 51 (0x33) |  | OK |
-| `DirectionLeft` | keypad | catalogue | 52 (0x34) |  |  |
-| `Number8` | keypad | catalogue | 53 (0x35) |  | 8, tuv |
+| `Menu` | keypad | catalogue | 10 (0x0A)[^s133] |  | Menu |
+| `Exit` | keypad | catalogue | 12 (0x0C)[^s133] |  | Exit |
+| `Red` | keypad | catalogue | 13 (0x0D)[^s133] |  |  |
+| `VolumeUp` | keypad | catalogue | 14 (0x0E)[^s133] |  |  |
+| `VolumeDown` | keypad | catalogue | 15 (0x0F)[^s133] |  |  |
+| `VolumeMute` | keypad | catalogue | 16 (0x10)[^s133] |  |  |
+| `Number4` | keypad | catalogue | 17 (0x11)[^s133] |  | 4, ghi |
+| `Number7` | keypad | catalogue | 18 (0x12)[^s133] |  | 7, pqrs |
+| `NumberPlus` | keypad | catalogue | 19 (0x13)[^s133] |  | clear |
+| `Number0` | keypad | catalogue | 20 (0x14)[^s133] |  | 0 |
+| `SkipBack` | keypad | catalogue | 21 (0x15)[^s133] |  | Replay |
+| `Rewind` | keypad | catalogue | 22 (0x16)[^s133] |  |  |
+| `Record` | keypad | catalogue | 23 (0x17)[^s133] |  |  |
+| `Number1` | keypad | catalogue | 24 (0x18)[^s133] |  | 1 |
+| `UpArrow` | keypad | catalogue | 26 (0x1A)[^s323] |  |  |
+| `DownArrow` | keypad | catalogue | 27 (0x1B)[^s323] |  |  |
+| `Yellow` | keypad | catalogue | 28 (0x1C)[^s133] |  |  |
+| `Blue` | keypad | catalogue | 29 (0x1D)[^s133] |  |  |
+| `FastForward` | keypad | catalogue | 30 (0x1E)[^s133] |  |  |
+| `ChannelUp` | keypad | catalogue | 31 (0x1F)[^s133] |  |  |
+| `ChannelDown` | keypad | catalogue | 32 (0x20)[^s133] |  |  |
+| `Guide` | keypad | catalogue | 33 (0x21)[^s133] |  | Guide |
+| `Info` | keypad | catalogue | 36 (0x24)[^s133] |  | Info |
+| `Number6` | keypad | catalogue | 37 (0x25)[^s133] |  | 6, mno |
+| `SkipForward` | keypad | catalogue | 38 (0x26)[^s133] |  | Skip |
+| `Number3` | keypad | catalogue | 39 (0x27)[^s133] |  | 3, def |
+| `Stop` | keypad | catalogue | 40 (0x28)[^s133] |  |  |
+| `DirectionRight` | keypad | catalogue | 41 (0x29)[^s133] |  |  |
+| `DirectionDown` | keypad | catalogue | 42 (0x2A)[^s323] |  |  |
+| `PrevChannel` | keypad | catalogue | 43 (0x2B)[^s133] |  |  |
+| `Play` | keypad | catalogue | 44 (0x2C)[^s133] |  |  |
+| `Number9` | keypad | catalogue | 45 (0x2D)[^s133] |  | 9, wxyz |
+| `Pause` | keypad | catalogue | 46 (0x2E)[^s133] |  |  |
+| `Number2` | keypad | catalogue | 47 (0x2F)[^s133] |  | 2, abc |
+| `Number5` | keypad | catalogue | 48 (0x30)[^s133] |  | 5, jkl |
+| `Green` | keypad | catalogue | 49 (0x31)[^s133] |  |  |
+| `DirectionUp` | keypad | catalogue | 50 (0x32)[^s323] |  |  |
+| `Select` | keypad | catalogue | 51 (0x33)[^s133] |  | OK |
+| `DirectionLeft` | keypad | catalogue | 52 (0x34)[^s133] |  |  |
+| `Number8` | keypad | catalogue | 53 (0x35)[^s133] |  | 8, tuv |
 | `AllOff` | keypad | printed | not measured |  | All Off |
-| `DirectionDown` | keypad | catalogue | one of 27 or 42 |  |  |
-| `DirectionUp` | keypad | catalogue | one of 26 or 50 |  |  |
-| `DownArrow` | keypad | catalogue | one of 27 or 42 |  |  |
 | `Enter` | keypad | printed | not measured |  | E, enter |
-| `UpArrow` | keypad | catalogue | one of 26 or 50 |  |  |
-| `Help` | screen | printed | not measured |  | Help |
+| `Help` | screen | printed | 3 (0x03)[^s333] |  | Help |
 | `ListenToMusic` | screen | printed | not measured |  | Listen to Music |
 | `MoreActivities` | screen | printed | not measured |  | More Activities |
 | `ScreenLowerLeft` | screen | printed | not measured | 3 |  |
@@ -108,9 +110,7 @@ above, so the fix belongs there and not in this file.
 
 | key | the measurement | evidence |
 |---|---|---|
-| the four up and down keys | 26 is `UpArrow`, 27 `DownArrow`, 50 `DirectionUp`, 42 `DirectionDown`, from the device maps of the Harmony 600's calibration configuration. The drawing still leaves each between two candidates | [^s323] |
 | the four screen corners and the centre key | 8, 2, 9, 34 and 25, above | [^s285], [^s311] |
-| Help | 3: every activity Logitech compiles binds Help's release on scan 3, and the firmware gives scan 3 a repeat timer of its own, below | [^s333], [^s340] |
 | Watch TV, Watch a Movie, Listen to Music | 5, 1 and 7, read from thirteen Logitech compiles including two of the 650's; Listen to Music by elimination | [^s314] |
 | More Activities | 4, **not measured on the 650**. On the Harmony 700, which has this face, pressing More Activities ran what the activity menu binds to scan 4; on a 650 the press did nothing on a file binding scan 4 back to the menu, as that file predicts | [^s314]; the 700 [^s383]; the 650 [^s374] |
 

@@ -17,53 +17,53 @@ and 700 drawings take every shape and every scan code from this one and change o
 ## Every key on the drawing
 
 <!-- generated:keys -->
-54 keys on the drawing `h600`, 42 on the keypad and 12 that the screen speaks for. 36 carry a measured scan code and 4 are left between two candidates by the drawing.
+54 keys on the drawing `h600`, 42 on the keypad and 12 that the screen speaks for. 41 carry a scan code: 36 named through Logitech's button maps for a configuration compiled to a known setup[^s133]; 4 decided by the devices' own maps, since every activity gives both keys of a pair one command[^s323]; 1 bound by every activity Logitech compiles to that activity's own help[^s333].
 
 | key | kind | name from | scan code | screen zone | printed on or beside it |
 |---|---|---|---|---|---|
-| `Menu` | keypad | catalogue | 10 (0x0A) |  | Menu |
-| `Exit` | keypad | catalogue | 12 (0x0C) |  | Exit |
-| `Red` | keypad | catalogue | 13 (0x0D) |  |  |
-| `VolumeUp` | keypad | catalogue | 14 (0x0E) |  |  |
-| `VolumeDown` | keypad | catalogue | 15 (0x0F) |  |  |
-| `VolumeMute` | keypad | catalogue | 16 (0x10) |  |  |
-| `Number4` | keypad | catalogue | 17 (0x11) |  | 4, ghi |
-| `Number7` | keypad | catalogue | 18 (0x12) |  | 7, pqrs |
-| `NumberPlus` | keypad | catalogue | 19 (0x13) |  | clear |
-| `Number0` | keypad | catalogue | 20 (0x14) |  | 0 |
-| `SkipBack` | keypad | catalogue | 21 (0x15) |  | Replay |
-| `Rewind` | keypad | catalogue | 22 (0x16) |  |  |
-| `Record` | keypad | catalogue | 23 (0x17) |  |  |
-| `Number1` | keypad | catalogue | 24 (0x18) |  | 1 |
-| `Yellow` | keypad | catalogue | 28 (0x1C) |  |  |
-| `Blue` | keypad | catalogue | 29 (0x1D) |  |  |
-| `FastForward` | keypad | catalogue | 30 (0x1E) |  |  |
-| `ChannelUp` | keypad | catalogue | 31 (0x1F) |  |  |
-| `ChannelDown` | keypad | catalogue | 32 (0x20) |  |  |
-| `Guide` | keypad | catalogue | 33 (0x21) |  | Guide |
-| `Info` | keypad | catalogue | 36 (0x24) |  | Info |
-| `Number6` | keypad | catalogue | 37 (0x25) |  | 6, mno |
-| `SkipForward` | keypad | catalogue | 38 (0x26) |  | Skip |
-| `Number3` | keypad | catalogue | 39 (0x27) |  | 3, def |
-| `Stop` | keypad | catalogue | 40 (0x28) |  |  |
-| `DirectionRight` | keypad | catalogue | 41 (0x29) |  |  |
-| `PrevChannel` | keypad | catalogue | 43 (0x2B) |  |  |
-| `Play` | keypad | catalogue | 44 (0x2C) |  |  |
-| `Number9` | keypad | catalogue | 45 (0x2D) |  | 9, wxyz |
-| `Pause` | keypad | catalogue | 46 (0x2E) |  |  |
-| `Number2` | keypad | catalogue | 47 (0x2F) |  | 2, abc |
-| `Number5` | keypad | catalogue | 48 (0x30) |  | 5, jkl |
-| `Green` | keypad | catalogue | 49 (0x31) |  |  |
-| `Select` | keypad | catalogue | 51 (0x33) |  | OK |
-| `DirectionLeft` | keypad | catalogue | 52 (0x34) |  |  |
-| `Number8` | keypad | catalogue | 53 (0x35) |  | 8, tuv |
+| `Menu` | keypad | catalogue | 10 (0x0A)[^s133] |  | Menu |
+| `Exit` | keypad | catalogue | 12 (0x0C)[^s133] |  | Exit |
+| `Red` | keypad | catalogue | 13 (0x0D)[^s133] |  |  |
+| `VolumeUp` | keypad | catalogue | 14 (0x0E)[^s133] |  |  |
+| `VolumeDown` | keypad | catalogue | 15 (0x0F)[^s133] |  |  |
+| `VolumeMute` | keypad | catalogue | 16 (0x10)[^s133] |  |  |
+| `Number4` | keypad | catalogue | 17 (0x11)[^s133] |  | 4, ghi |
+| `Number7` | keypad | catalogue | 18 (0x12)[^s133] |  | 7, pqrs |
+| `NumberPlus` | keypad | catalogue | 19 (0x13)[^s133] |  | clear |
+| `Number0` | keypad | catalogue | 20 (0x14)[^s133] |  | 0 |
+| `SkipBack` | keypad | catalogue | 21 (0x15)[^s133] |  | Replay |
+| `Rewind` | keypad | catalogue | 22 (0x16)[^s133] |  |  |
+| `Record` | keypad | catalogue | 23 (0x17)[^s133] |  |  |
+| `Number1` | keypad | catalogue | 24 (0x18)[^s133] |  | 1 |
+| `UpArrow` | keypad | catalogue | 26 (0x1A)[^s323] |  |  |
+| `DownArrow` | keypad | catalogue | 27 (0x1B)[^s323] |  |  |
+| `Yellow` | keypad | catalogue | 28 (0x1C)[^s133] |  |  |
+| `Blue` | keypad | catalogue | 29 (0x1D)[^s133] |  |  |
+| `FastForward` | keypad | catalogue | 30 (0x1E)[^s133] |  |  |
+| `ChannelUp` | keypad | catalogue | 31 (0x1F)[^s133] |  |  |
+| `ChannelDown` | keypad | catalogue | 32 (0x20)[^s133] |  |  |
+| `Guide` | keypad | catalogue | 33 (0x21)[^s133] |  | Guide |
+| `Info` | keypad | catalogue | 36 (0x24)[^s133] |  | Info |
+| `Number6` | keypad | catalogue | 37 (0x25)[^s133] |  | 6, mno |
+| `SkipForward` | keypad | catalogue | 38 (0x26)[^s133] |  | Skip |
+| `Number3` | keypad | catalogue | 39 (0x27)[^s133] |  | 3, def |
+| `Stop` | keypad | catalogue | 40 (0x28)[^s133] |  |  |
+| `DirectionRight` | keypad | catalogue | 41 (0x29)[^s133] |  |  |
+| `DirectionDown` | keypad | catalogue | 42 (0x2A)[^s323] |  |  |
+| `PrevChannel` | keypad | catalogue | 43 (0x2B)[^s133] |  |  |
+| `Play` | keypad | catalogue | 44 (0x2C)[^s133] |  |  |
+| `Number9` | keypad | catalogue | 45 (0x2D)[^s133] |  | 9, wxyz |
+| `Pause` | keypad | catalogue | 46 (0x2E)[^s133] |  |  |
+| `Number2` | keypad | catalogue | 47 (0x2F)[^s133] |  | 2, abc |
+| `Number5` | keypad | catalogue | 48 (0x30)[^s133] |  | 5, jkl |
+| `Green` | keypad | catalogue | 49 (0x31)[^s133] |  |  |
+| `DirectionUp` | keypad | catalogue | 50 (0x32)[^s323] |  |  |
+| `Select` | keypad | catalogue | 51 (0x33)[^s133] |  | OK |
+| `DirectionLeft` | keypad | catalogue | 52 (0x34)[^s133] |  |  |
+| `Number8` | keypad | catalogue | 53 (0x35)[^s133] |  | 8, tuv |
 | `AllOff` | keypad | printed | not measured |  | All Off |
-| `DirectionDown` | keypad | catalogue | one of 27 or 42 |  |  |
-| `DirectionUp` | keypad | catalogue | one of 26 or 50 |  |  |
-| `DownArrow` | keypad | catalogue | one of 27 or 42 |  |  |
 | `Enter` | keypad | printed | not measured |  | E, enter |
-| `UpArrow` | keypad | catalogue | one of 26 or 50 |  |  |
-| `Help` | screen | printed | not measured |  | Help |
+| `Help` | screen | printed | 3 (0x03)[^s333] |  | Help |
 | `ListenToMusic` | screen | printed | not measured |  | Listen to Music |
 | `MoreActivities` | screen | printed | not measured |  | More Activities |
 | `ScreenLowerLeft` | screen | printed | not measured | 3 |  |
@@ -82,9 +82,22 @@ Generated from `packages/silhouettes/src/models/h600.ts` by `make remote-referen
 ## Where the scan codes come from
 
 A scan code is the number the remote gives a key internally; a configuration binds commands to scan codes.
-**The scan codes on the drawing were measured on the 600**: a configuration was generated for this model
-by Logitech's own service, each code a key sends was decoded and looked up in that service's named
-commands and button maps for the same configuration[^s133]. So the 650 and 700 carry the 600's numbers.
+**The scan codes on the drawing were measured on the 600**, and the table above footnotes each with where
+it came from. 36 were named through a configuration generated for this model by Logitech's own service:
+each code a key sends was decoded and looked up in that service's named commands and button maps for the
+same configuration[^s133]. Logitech's maps name 40 buttons, those 36 and the four up and down keys, with
+none left over in either direction[^s145].
+
+**The four up and down keys are decided by the devices' own maps.** Every activity gives the two up keys
+one command and the two down keys another, so no activity tells them apart[^s133]. The devices' own maps
+state `DirectionUp` and `DirectionDown` and no arrows, and each device's own record binds 50 and 42 and
+leaves 26 and 27 unbound, so 26 is `UpArrow`, 27 `DownArrow`, 50 `DirectionUp` and 42
+`DirectionDown`[^s323].
+
+**Help is scan 3**: every activity Logitech compiles for this architecture binds Help's release there, to
+that activity's own help, and no device's map binds it[^s333].
+
+So the 650 and 700 carry the 600's numbers.
 
 **There are 54**, and three routes agree: the key table's split of a key code into an event and a
 scan[^s17]; the keys pressed one by one on a unit, which fall into the four columns of the keypad matrix
@@ -103,7 +116,6 @@ remote screen and the side buttons beside the screen let you choose those option
 
 | key | the measurement | evidence |
 |---|---|---|
-| the four up and down keys | 26 is `UpArrow`, 27 `DownArrow`, 50 `DirectionUp`, 42 `DirectionDown`, from the device maps of the configuration the scan codes were measured on; the drawing still leaves each between two candidates | [^s323] |
 | the four screen corners and the centre key below the screen | 8, 2, 9 and 34 for the corners, 25 for the centre key | [^s285], [^s311] |
 | Watch TV, Watch a Movie, Listen to Music | 5, 1 and 7; Listen to Music by elimination | [^s314] |
 | More Activities | 4, **not measured** | [^s314] |
@@ -123,19 +135,21 @@ swallows all but the centre key, which returns[^s311].
 
 ## Not checked
 
-* The scan codes of the two arrows below the screen, Help, All Off, Enter and More Activities[^unchecked].
+* The scan codes of the two arrows below the screen, All Off, Enter and More Activities[^unchecked].
 * The key handler on the 600's own 0.2 build[^unchecked].
 * Whether a skin 73 unit's keypad differs in its printing. The 600's and 700's safe mode configurations
   differ in 83 bytes, almost all in the key table, and nothing has read why[^s24].
 
 [^x-manual]: Stated by Logitech, in the manual. [The Harmony 600 user manual](https://support.myharmony.com/harmony-600-user-manual)
 [^s133]: Measured in configurations. [Section 133](../../../docs/findings.md#s133)
+[^s145]: Stated by Logitech, by their service. [Section 145](../../../docs/findings.md#s145)
 [^s17]: Measured in configurations. [Section 17](../../../docs/findings.md#s17)
 [^t-keypad]: Measured on a unit. [The test](../../../tests/test_keypad.py)
 [^s13]: Read in the firmware. [Section 13](../../../docs/findings.md#s13)
 [^unchecked]: Not checked.
 [^s128]: Measured in configurations. [Section 128](../../../docs/findings.md#s128)
 [^s323]: Measured in configurations. [Section 323](../../../docs/findings.md#s323)
+[^s333]: Measured in configurations. [Section 333](../../../docs/findings.md#s333)
 [^s285]: Measured in configurations. [Section 285](../../../docs/findings.md#s285)
 [^s311]: Measured in configurations. [Section 311](../../../docs/findings.md#s311)
 [^s314]: Measured in configurations. [Section 314](../../../docs/findings.md#s314)

@@ -28,10 +28,20 @@ import re
 import unittest
 import xml.etree.ElementTree as ET
 
+from reference_keys import generated_keys
+
 _HERE = os.path.dirname(os.path.abspath(__file__))
 SILHOUETTES = os.path.normpath(os.path.join(_HERE, '..', 'reference', 'silhouettes'))
 
 SVG = '{http://www.w3.org/2000/svg}'
+
+# The model folder whose keys page states each drawing's scan codes. The Harmony 650's and 700's drawings
+# take the 600's codes and their own pages carry the same generated block.
+KEYS_PAGE = {
+    'h300.svg': 'harmony-300', 'h350.svg': 'harmony-350', 'h525.svg': 'harmony-525',
+    'h600.svg': 'harmony-600', 'h650.svg': 'harmony-650', 'h700.svg': 'harmony-700',
+    'one.svg': 'harmony-one', 'touch.svg': 'harmony-touch',
+}
 
 # The one palette, and the only fills any drawing may declare. A teletext key is the single case where
 # the colour is the button's identity rather than decoration: four identical outlined shapes would
@@ -112,32 +122,36 @@ class _SilhouetteConventions:
         raw = re.findall(r'id="(k-[^"]+)"', _text(self.NAME))
         self.assertEqual(len(raw), len(set(raw)))
 
-    def test_a_scan_code_appears_only_where_it_has_been_measured(self):
+    def test_a_scan_code_appears_only_where_the_reference_states_it(self):
         """
         This said **nothing** may claim a scan code, and that was true when it was written and is not
         now. Section 133 named 32 of a Harmony One's 44 keys and 36 of a Harmony 600's 54, by decoding
         what each scan sends and looking the frame up in the command catalogue of the account that
-        generated the config, and `reference/button-maps.md` records the result.
+        generated the config; the devices' own maps decided the four arrow keys of each, sections 323 and
+        398; and the Harmony One's touch hit map and the Harmony 600's Help give three more, sections 125
+        and 333.
 
-        So the claim becomes the one that still bites: a code is here **only** if that document names
-        it. The document is parsed rather than copied, so a drawing cannot drift away from it, and a
-        drawing that names none still passes, which is right for the Harmony 525, where the route
-        needs a config Logitech compiled for us and no such config exists for that model.
+        So the claim becomes the one that still bites: a code is here **only** if the model's keys page
+        states it, with the archive section behind it as a footnote, and every code the page states is
+        here. Both come from the drawing's data, the page through `make remote-reference` and this file
+        through `make silhouettes`, so the test catches either one left behind. It read
+        `reference/button-maps.md` until plan 009's step 3.3 moved those codes into the drawings. A drawing
+        that names none still passes, which is right for the Harmony 525, where the route needs a config
+        Logitech compiled for us and no such config exists for that model.
 
         Section 48 is still why this cannot be finished from hardware: a remote on USB never runs its
         keypad handler, and arch 12 (Harmony One) would not give up a column even if it did.
         """
         buttons = _buttons(_tree(self.NAME).getroot())
-        claimed = {k: int(e.get('data-scan')) for k, e in buttons.items() if e.get('data-scan')}
-        measured = set()
-        with open(os.path.join(SILHOUETTES, '..', 'button-maps.md')) as handle:
-            text = handle.read()
-        for row in re.finditer(r'^\| (\d+) \| `(\w+)` \| `[^`]*` \|$', text, re.M):
-            measured.add(int(row.group(1)))
-        for ident, scan in claimed.items():
-            with self.subTest(button=ident):
-                self.assertIn(scan, measured,
-                              f'{ident} claims scan {scan}, which nothing has measured')
+        claimed = {e.get('data-name'): int(e.get('data-scan'))
+                   for e in buttons.values() if e.get('data-scan')}
+        stated = {name: row[2] for name, row in generated_keys(KEYS_PAGE[self.NAME]).items()
+                  if row[2] is not None}
+        self.assertEqual(claimed, stated)
+        for name, (_, _, scan, section) in generated_keys(KEYS_PAGE[self.NAME]).items():
+            if scan is not None:
+                with self.subTest(button=name):
+                    self.assertIsNotNone(section, f'{name} states scan {scan} with no section behind it')
         # And no code is claimed twice, which would make one key unreachable by code.
         self.assertEqual(len(set(claimed.values())), len(claimed))
 
@@ -453,7 +467,7 @@ class TestTheHarmony350Silhouette(_SilhouetteConventions, unittest.TestCase):
     def test_no_key_claims_a_code_or_a_candidate(self):
         """
         Nothing ties a key on this remote to a scan code: the architecture has never been opened over
-        USB by this library and `reference/button-maps.md` has no table for it. Unlike the 525, there
+        USB by this library and no calibration configuration exists for it, section 133. Unlike the 525, there
         is not even a block to narrow to, since that came from reading the firmware's matrix
         arithmetic. So the claim is total: no code and no candidate list on any key.
         """
@@ -547,7 +561,8 @@ class TestTheHarmonyTouchSilhouette(_SilhouetteConventions, unittest.TestCase):
         """
         This library has never read a key off a Harmony Touch: its file based protocol is used only to
         read identity files, its configuration is reachable neither as a file nor as a compile, and
-        `reference/button-maps.md` has no table for it. So no key carries a code or a candidate list.
+        no calibration configuration exists for it, section 133. So no key carries a code or a candidate
+        list.
         """
         buttons = _buttons(_tree(self.NAME).getroot())
         for ident, element in buttons.items():

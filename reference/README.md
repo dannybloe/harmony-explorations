@@ -109,5 +109,4 @@ remotes attached to this machine.
 * `reference/capabilities.md` covers every skin, not only the bench models, and carries the argument
   about the forum table's standing. It stays until every bench model has a folder here, and is then to
   be absorbed into them.
-* `reference/models.md` keeps the skin and architecture table for every model Logitech made, and
-  `reference/button-maps.md` the per model scan code derivation.
+* `reference/models.md` keeps the skin and architecture table for every model Logitech made.

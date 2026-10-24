@@ -27,6 +27,7 @@ import { devices, keyCodes } from '../src/inventory.ts';
 import { metadataArchive } from '../src/metadata.ts';
 import { archiveProtocols } from '../src/archive.ts';
 import { CONTAINERS as CATALOGUE_CORPUS } from '../bin/corpus.ts';
+import { CALIBRATION_DRAWINGS, NAMED_BY_LOGITECH, drawnScans } from '../bin/drawings.ts';
 import { irHeaderPointers, irBlockWords, irCarrier } from '../src/ir.ts';
 import { biphaseFrames } from '../src/irframe.ts';
 import { pulsesOfWords } from '../src/irda.ts';
@@ -179,24 +180,18 @@ test('every button of the calibration configurations gets a command name',
 test('the archive names commands where our button map names keys, and the difference is not an error',
   needing(skipWithoutIrArchive(), skipUnless('calibration_one', 'calibration_h600')), () => {
   // **Two tables built by routes with nothing in common, and they are answering different questions.**
-  // `reference/button-maps.md` says which **physical key** a scan code is, read out of Logitech's button
-  // map service through the account that generated these configurations, section 133. The archive says
-  // which **command** a code is. A key called `Number4` sending a command called `4` is two right
-  // answers, so an agreement rate would be the wrong measurement; what is worth pinning is the exact set
-  // of pairs where they differ, since a genuine error would appear as a new pair in it.
-  const text = readFileSync(join(REPO, 'reference', 'button-maps.md'), 'utf8');
+  // The drawings in `packages/silhouettes` say which **physical key** a scan code is, read out of
+  // Logitech's button map service through the account that generated these configurations, section 133,
+  // with the arrow pairs decided by the devices' own maps, sections 323 and 398. The archive says which
+  // **command** a code is. A key called `Number4` sending a command called `4` is two right answers, so an
+  // agreement rate would be the wrong measurement; what is worth pinning is the exact set of pairs where
+  // they differ, since a genuine error would appear as a new pair in it. Until plan 009's step 3.3 the
+  // keys came from `reference/button-maps.md`, which left the four arrow keys out.
   const pairs = new Set<string>();
   const identical: number[] = [];
   for (const [name, groups] of Object.entries(PINNED)) {
-    const heading = name === 'calibration_one' ? 'Harmony One, skin 54' : 'Harmony 600, skin 71';
-    const buttons = new Map<number, string>();
-    for (const section of text.split(/^## /m).slice(1)) {
-      if (!section.startsWith(heading)) continue;
-      for (const row of section.matchAll(/^\| (\d+) \| `(\w+)` \| `([^`]*)` \|$/gm)) {
-        buttons.set(Number(row[1]), row[2]!);
-      }
-    }
-    assert.ok(buttons.size > 0, `${name} has a table in reference/button-maps.md`);
+    const buttons = drawnScans(CALIBRATION_DRAWINGS[name]!, NAMED_BY_LOGITECH);
+    assert.ok(buttons.size > 0, `${name} has a drawing naming its scan codes`);
     const container = parse(payloadOf(load(name)!));
     const tables = new Map(Object.entries(groups)
       .map(([group, [, codeset]]) => [Number(group), namesOf(codeset)] as const));
@@ -217,18 +212,23 @@ test('the archive names commands where our button map names keys, and the differ
     }
     identical.push(same);
   }
-  assert.deepEqual(identical, [31, 39]);
-  // Twenty distinct pairs, and every one of them is one of three kinds. A digit key against its digit
+  // 35 and 43 sends named identically, which was 31 and 39 until the four arrow keys joined, plan 009's step
+  // 3.3: the two direction keys of each pair send commands the archive calls `DirectionUp` and
+  // `DirectionDown`, two scans and two devices each.
+  assert.deepEqual(identical, [35, 43]);
+  // Twenty two distinct pairs, and every one of them is one of three kinds. A digit key against its digit
   // command, ten of them. A synonym for the same function, six: `VolumeMute`/`Mute`, `Menu`/`Home`,
-  // `PrevChannel`/`ChannelPrev`, `Select`/`OK`, `Info`/`Display`, `NumberPlus`/`*`. And four where the
+  // `PrevChannel`/`ChannelPrev`, `Select`/`OK`, `Info`/`Display`, `NumberPlus`/`*`. And six where the
   // configuration binds a key to a command of a genuinely different function, which is what an activity
   // map is for: `Guide` sends the Blu-ray player's `OK`, `ChannelUp` and `ChannelDown` send its
-  // `SkipForward` and `SkipBack`, and `PrevChannel` sends its `*`.
+  // `SkipForward` and `SkipBack`, `PrevChannel` sends its `*`, and the two arrow keys above the direction
+  // pad send the device's `DirectionUp` and `DirectionDown`, which is the fallback of section 323's
+  // activity key rule and the reason the two keys of a pair could not be told apart from the activities.
   assert.deepEqual([...pairs].sort(), [
-    'ChannelDown/SkipBack', 'ChannelUp/SkipForward', 'Guide/OK', 'Info/Display', 'Menu/Home',
-    'Number0/0', 'Number1/1', 'Number2/2', 'Number3/3', 'Number4/4', 'Number5/5', 'Number6/6',
+    'ChannelDown/SkipBack', 'ChannelUp/SkipForward', 'DownArrow/DirectionDown', 'Guide/OK', 'Info/Display',
+    'Menu/Home', 'Number0/0', 'Number1/1', 'Number2/2', 'Number3/3', 'Number4/4', 'Number5/5', 'Number6/6',
     'Number7/7', 'Number8/8', 'Number9/9', 'NumberPlus/*', 'PrevChannel/*', 'PrevChannel/ChannelPrev',
-    'Select/OK', 'VolumeMute/Mute',
+    'Select/OK', 'UpArrow/DirectionUp', 'VolumeMute/Mute',
   ]);
 });
 

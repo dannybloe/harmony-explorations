@@ -91,8 +91,6 @@ PINNED = {
         ('reference/architectures/harmony-one/compiler.md', 'test account'): 1,
         ('reference/architectures/harmony-one/compiler.md', 'the spare'): 3,
         ('reference/architectures/harmony-one/compiler.md', 'todo'): 5,
-        ('reference/button-maps.md', 'fixture calibration_h600'): 1,
-        ('reference/button-maps.md', 'lab'): 2,
         ('reference/capabilities.md', 'bench'): 8,
         ('reference/capabilities.md', 'dump'): 2,
         ('reference/capabilities.md', 'lab'): 6,

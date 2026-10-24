@@ -127,7 +127,7 @@ test('an activity\'s keypad built from its roles is Logitech\'s on 20 of the 40 
   assert.equal(activityCount, 40);
   assert.equal(Object.keys(differing).length, 20);
   assert.deepEqual(total, { match: 1241, differ: 53, missing: 34, extra: 70 });
-  // Every activity that differs, and how. Scans per reference/button-maps.md: 51 Select, 36 Info,
+  // Every activity that differs, and how. Scans per the Harmony 600's drawing: 51 Select, 36 Info,
   // 26 and 27 the arrows above the direction pad, 12 Exit, 43 PrevChannel, 13 28 29 49 the colours.
   //
   // 1. "TV kijken" on the test account's Harmony 650 and 700 records, nine compiles of one activity:

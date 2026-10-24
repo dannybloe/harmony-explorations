@@ -19,7 +19,7 @@
  * seventeen numbered leader lines; the three square brackets; and the two leader lines that run into
  * the direction pad and onto the OK key. None of them is a key and none appears below.
  *
- * **The symbols and the words are ours**, per Danny's decision of 21 August 2026, drawn from
+ * **The symbols and the words are ours**, per the decision of 21 August 2026, drawn from
  * `src/icons.ts` and typeset here, and read off the photograph in the lab at
  * `reference/forum-images/touch-full.jpg`, which shows the whole face. Drawing and photograph agree
  * mark for mark: the direction pad and both rockers print nothing but `Vol` and `Ch`, the colour keys
@@ -30,7 +30,7 @@
  * **No scan code appears anywhere in here.** This library has never read a key off a Harmony Touch:
  * the file based family is opened only to read its identity files, sections 198 to 201, its
  * configuration is not reachable as a file and Logitech's service will not compile one, section 202, and
- * `reference/button-maps.md` has no table for it. So every key is `printed` and none carries a code or
+ * no calibration configuration exists for it, section 133. So every key is `printed` and none carries a code or
  * a candidate list.
  *
  * **The screen is a touch screen**, Logitech's own words in the legend: "LCD touch screen. View,

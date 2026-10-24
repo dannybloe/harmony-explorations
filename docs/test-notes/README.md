@@ -8,6 +8,7 @@ Harmony and never our bench.
 * [Harmony 700](harmony-700.md)
 * [Harmony One](harmony-one.md)
 * [The corpus](corpus.md): which configurations the work was measured on
+* [Test accounts](accounts.md): the Logitech accounts and what each gave
 
 ## The units
 

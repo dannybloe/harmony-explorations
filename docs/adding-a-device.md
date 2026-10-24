@@ -11,7 +11,7 @@ device page full of commands is what device mode is mostly used for anyway.
 **A physical key is available too, and this paragraph got it wrong twice before it got it right.** It
 first claimed nothing here can name the keypad, then that 12 keys were unnamed and learnable. Both are
 wrong, and the second was arithmetic: 44 keys drawn minus 32 named is 12, and that difference is not one
-population. The measured breakdown of the Harmony One's 44 keys, `reference/button-maps.md` against
+population. The measured breakdown of the Harmony One's 44 keys, the scan codes section 133 named against
 `reference/silhouettes/one.svg`:
 
 | | keys | |
@@ -513,7 +513,7 @@ A device is not a list of codes. Seven pieces, and each one is an insertion that
       every page list lives, section 83, and its section 69 pool copy extends the last pool, since the
       pool walk only accepts a run holding a base slot 9 set
 - [ ] base slot 9: the keypad, **optional and only for a named scan.** Not needed for this goal, and a
-      scan `reference/button-maps.md` does not name must not be bound on a guess. Not taken, by its own
+      scan the drawing does not name must not be bound on a guess. Not taken, by its own
       terms: the composed record list is the empty wide form
 - [x] **check**: take a real config, add a television from the catalogue, and our own readers report one
       more device with the right name, its commands decode back to the exact numbers the catalogue states,

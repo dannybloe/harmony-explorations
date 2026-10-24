@@ -12,52 +12,52 @@ words read off a photograph.
 ## Every key on the drawing
 
 <!-- generated:keys -->
-44 keys on the drawing `one`, 40 on the keypad, 4 on the touch panel and 0 that the screen speaks for. 34 carry a measured scan code and 4 are left between two candidates by the drawing.
+44 keys on the drawing `one`, 40 on the keypad, 4 on the touch panel and 0 that the screen speaks for. 38 carry a scan code: 32 named through Logitech's button maps for a configuration compiled to a known setup[^s133]; 4 decided by the devices' own maps, since every activity gives both keys of a pair one command[^s398]; 2 from the touch hit map, which holds one rectangle for each of these codes on every page[^s125].
 
 | key | kind | name from | scan code | screen zone | printed on or beside it |
 |---|---|---|---|---|---|
-| `Number4` | keypad | catalogue | 1 (0x01) |  | 4, ghi |
-| `Exit` | keypad | catalogue | 2 (0x02) |  | Exit |
-| `VolumeUp` | keypad | catalogue | 3 (0x03) |  |  |
-| `VolumeDown` | keypad | catalogue | 4 (0x04) |  |  |
-| `Rewind` | keypad | catalogue | 5 (0x05) |  |  |
-| `SkipBack` | keypad | catalogue | 6 (0x06) |  | Replay |
-| `Record` | keypad | catalogue | 7 (0x07) |  |  |
-| `Number1` | keypad | catalogue | 8 (0x08) |  | 1 |
-| `VolumeMute` | keypad | catalogue | 9 (0x09) |  |  |
-| `Info` | keypad | catalogue | 10 (0x0A) |  | Info |
-| `DirectionLeft` | keypad | catalogue | 11 (0x0B) |  |  |
-| `NumberPlus` | keypad | catalogue | 12 (0x0C) |  | clear |
-| `Number0` | keypad | catalogue | 14 (0x0E) |  | 0 |
-| `Number9` | keypad | catalogue | 15 (0x0F) |  | 9, wxyz |
-| `Number8` | keypad | catalogue | 16 (0x10) |  | 8, tuv |
-| `Number6` | keypad | catalogue | 17 (0x11) |  | 6, mno |
-| `Guide` | keypad | catalogue | 18 (0x12) |  | Guide |
-| `ChannelUp` | keypad | catalogue | 19 (0x13) |  |  |
-| `ChannelDown` | keypad | catalogue | 20 (0x14) |  |  |
-| `FastForward` | keypad | catalogue | 21 (0x15) |  |  |
-| `SkipForward` | keypad | catalogue | 22 (0x16) |  | Skip |
-| `Stop` | keypad | catalogue | 23 (0x17) |  |  |
-| `Number3` | keypad | catalogue | 24 (0x18) |  | 3, def |
-| `Number5` | keypad | catalogue | 25 (0x19) |  | 5, jkl |
-| `Select` | keypad | catalogue | 28 (0x1C) |  | OK |
-| `Play` | keypad | catalogue | 30 (0x1E) |  |  |
-| `Pause` | keypad | catalogue | 31 (0x1F) |  |  |
-| `Number2` | keypad | catalogue | 32 (0x20) |  | 2, abc |
-| `DirectionRight` | keypad | catalogue | 33 (0x21) |  |  |
-| `PrevChannel` | keypad | catalogue | 35 (0x23) |  |  |
-| `Number7` | keypad | catalogue | 39 (0x27) |  | 7, pqrs |
-| `Menu` | keypad | catalogue | 40 (0x28) |  | Menu |
+| `Number4` | keypad | catalogue | 1 (0x01)[^s133] |  | 4, ghi |
+| `Exit` | keypad | catalogue | 2 (0x02)[^s133] |  | Exit |
+| `VolumeUp` | keypad | catalogue | 3 (0x03)[^s133] |  |  |
+| `VolumeDown` | keypad | catalogue | 4 (0x04)[^s133] |  |  |
+| `Rewind` | keypad | catalogue | 5 (0x05)[^s133] |  |  |
+| `SkipBack` | keypad | catalogue | 6 (0x06)[^s133] |  | Replay |
+| `Record` | keypad | catalogue | 7 (0x07)[^s133] |  |  |
+| `Number1` | keypad | catalogue | 8 (0x08)[^s133] |  | 1 |
+| `VolumeMute` | keypad | catalogue | 9 (0x09)[^s133] |  |  |
+| `Info` | keypad | catalogue | 10 (0x0A)[^s133] |  | Info |
+| `DirectionLeft` | keypad | catalogue | 11 (0x0B)[^s133] |  |  |
+| `NumberPlus` | keypad | catalogue | 12 (0x0C)[^s133] |  | clear |
+| `Number0` | keypad | catalogue | 14 (0x0E)[^s133] |  | 0 |
+| `Number9` | keypad | catalogue | 15 (0x0F)[^s133] |  | 9, wxyz |
+| `Number8` | keypad | catalogue | 16 (0x10)[^s133] |  | 8, tuv |
+| `Number6` | keypad | catalogue | 17 (0x11)[^s133] |  | 6, mno |
+| `Guide` | keypad | catalogue | 18 (0x12)[^s133] |  | Guide |
+| `ChannelUp` | keypad | catalogue | 19 (0x13)[^s133] |  |  |
+| `ChannelDown` | keypad | catalogue | 20 (0x14)[^s133] |  |  |
+| `FastForward` | keypad | catalogue | 21 (0x15)[^s133] |  |  |
+| `SkipForward` | keypad | catalogue | 22 (0x16)[^s133] |  | Skip |
+| `Stop` | keypad | catalogue | 23 (0x17)[^s133] |  |  |
+| `Number3` | keypad | catalogue | 24 (0x18)[^s133] |  | 3, def |
+| `Number5` | keypad | catalogue | 25 (0x19)[^s133] |  | 5, jkl |
+| `DownArrow` | keypad | catalogue | 26 (0x1A)[^s398] |  |  |
+| `DirectionUp` | keypad | catalogue | 27 (0x1B)[^s398] |  |  |
+| `Select` | keypad | catalogue | 28 (0x1C)[^s133] |  | OK |
+| `DirectionDown` | keypad | catalogue | 29 (0x1D)[^s398] |  |  |
+| `Play` | keypad | catalogue | 30 (0x1E)[^s133] |  |  |
+| `Pause` | keypad | catalogue | 31 (0x1F)[^s133] |  |  |
+| `Number2` | keypad | catalogue | 32 (0x20)[^s133] |  | 2, abc |
+| `DirectionRight` | keypad | catalogue | 33 (0x21)[^s133] |  |  |
+| `PrevChannel` | keypad | catalogue | 35 (0x23)[^s133] |  |  |
+| `UpArrow` | keypad | catalogue | 36 (0x24)[^s398] |  |  |
+| `Number7` | keypad | catalogue | 39 (0x27)[^s133] |  | 7, pqrs |
+| `Menu` | keypad | catalogue | 40 (0x28)[^s133] |  | Menu |
 | `Activities` | keypad | printed | not measured |  | Activities |
-| `DirectionDown` | keypad | catalogue | one of 26 or 29 |  |  |
-| `DirectionUp` | keypad | catalogue | one of 27 or 36 |  |  |
-| `DownArrow` | keypad | catalogue | one of 26 or 29 |  |  |
 | `Enter` | keypad | printed | not measured |  | E, enter |
 | `Help` | keypad | printed | not measured |  | Help |
 | `Off` | keypad | printed | not measured |  | Off |
-| `UpArrow` | keypad | catalogue | one of 27 or 36 |  |  |
-| `ScreenPrev` | touch | printed | 46 (0x2E) |  |  |
-| `ScreenNext` | touch | printed | 47 (0x2F) |  |  |
+| `ScreenPrev` | touch | printed | 46 (0x2E)[^s125] |  |  |
+| `ScreenNext` | touch | printed | 47 (0x2F)[^s125] |  |  |
 | `SoftLeft` | touch | printed | not measured | 1 |  |
 | `SoftRight` | touch | printed | not measured | 2 |  |
 
@@ -89,18 +89,25 @@ screen of several pages leaves them live[^s275][^s293].
 A key is known to the configuration by a **scan code**, a number the keypad reports; the name a person
 reads on the key is not in the configuration at all.
 
-32 keys are named against a scan from a calibration configuration Logitech's service compiled to a known
-setup: the code each scan sends was decoded and looked up in the named commands and button maps the same
-service states for that setup[^s133]. Logitech's maps name 36 buttons, those 32 plus the four of the two
-pairs below, with none left over[^s133].
+38 keys carry a scan code, and the table above footnotes each with where it came from.
 
-**Two pairs were left open by the activities and are decided by device maps**: scans 27 and 36 are
-`DirectionUp` and `UpArrow`, and 26 and 29 are `DirectionDown` and `DownArrow`, and every activity gives both
-members of a pair the same command[^s133]. The device maps decide them, as they did the Harmony
-600's[^s323]. The calibration setup's three devices state `DirectionUp` and `DirectionDown` and no arrows,
-and their own records bind 27 and 29 and leave 36 and 26 unbound, so 27 is `DirectionUp`, 29
-`DirectionDown`, 36 `UpArrow` and 26 `DownArrow`[^s398]. Read on those three devices only. The drawing
-still carries the four as candidates, so the table above says "one of".
+**32 are named against a scan from a calibration configuration** Logitech's service compiled to a known
+setup: the code each scan sends was decoded and looked up in the named commands and button maps the same
+service states for that setup. Three rules made that decidable, none of them visible in the data: a
+scan's command is per activity while its key is not, so a vote is scoped to one activity's map; only an
+activity's button map may name an activity's keys; and the assignment is one to one across every
+activity, since a key has one scan[^s133]. **Logitech's maps name 36 buttons**, those 32 plus the four
+arrow keys below, with none left over in either direction[^s145].
+
+**The four arrow keys are decided by the devices' own maps.** Scans 27 and 36 are `DirectionUp` and
+`UpArrow`, and 26 and 29 are `DirectionDown` and `DownArrow`, and every activity gives both members of a
+pair the same command, so no activity tells them apart[^s133]. The calibration setup's three devices
+state `DirectionUp` and `DirectionDown` and no arrows, and their own records bind 27 and 29 and leave 36
+and 26 unbound, so 27 is `DirectionUp`, 29 `DirectionDown`, 36 `UpArrow` and 26 `DownArrow`[^s398], as
+the device maps decided the Harmony 600's[^s323].
+
+**The two page strips beside the screen are 46 and 47**, from the touch hit map, the only route to a code
+for a touch on the panel[^s125].
 
 Off, Activities, Help and Enter carry no scan because no configuration read binds them[^s133].
 
@@ -136,8 +143,7 @@ on the screen is [display.md](display.md#where-a-touch-lands-the-hit-map).
 
 ## Not checked
 
-* The arrow pairs beyond the calibration setup's three devices, and the drawing, which still carries them
-  as candidates[^unchecked].
+* The arrow pairs beyond the calibration setup's three devices[^unchecked].
 * The physical key matrix, which no read over USB can reach on this model[^unchecked].
 * Which keys give the bootloader's two key codes, `0x0E` and `0x1E`, read in the firmware[^s189].
 
@@ -151,6 +157,7 @@ on the screen is [display.md](display.md#where-a-touch-lands-the-hit-map).
 [^x-one-manual]: Stated by Logitech, in the manual. [The Harmony One user guide](https://secure.logitech.com/assets/44645/13/harmonyone-user-guide.pdf)
 [^s293]: Measured in configurations. [Section 293](../../../docs/findings.md#s293)
 [^s133]: Stated by Logitech, by their service. [Section 133](../../../docs/findings.md#s133)
+[^s145]: Stated by Logitech, by their service. [Section 145](../../../docs/findings.md#s145)
 [^s323]: Stated by Logitech, by their service. [Section 323](../../../docs/findings.md#s323)
 [^s398]: Measured in configurations. [Section 398](../../../docs/findings.md#s398)
 [^s48]: Measured on a unit. [Section 48](../../../docs/findings.md#s48)

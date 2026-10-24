@@ -20,15 +20,48 @@ export const CASE_HEIGHT = 1000;
 /**
  * Where a button's name came from.
  *
- * `catalogue` means the name is in `reference/button-maps.md`, recovered from a config Logitech
- * compiled for this project by decoding what each scan code sends and looking the frame up in that
- * account's own command catalogue. Those are Logitech's own words for these keys.
+ * `catalogue` means the name is one Logitech's own button maps give this key, recovered from a config
+ * Logitech compiled to a known setup by decoding what each scan code sends and looking the frame up in
+ * the command catalogue and button maps its service states for that setup, `docs/findings.md` section
+ * 133. Those are Logitech's own words for these keys, and every key named that way carries the scan code
+ * it was named against, `scanFrom` saying how.
  *
  * `printed` means we chose the name because the key says it: `Help`, `Activities`, `Glow`. Sound,
  * and not a measurement, which is why the two are told apart rather than merged. A test asserts the
  * split in both directions.
  */
 export type Provenance = 'catalogue' | 'printed';
+
+/**
+ * Where a scan code on a drawing came from, as the archive section that holds the argument, with the
+ * words the generated keys pages print for it.
+ *
+ * **These were one document until plan 009's step 3.3**, `reference/button-maps.md`, whose two tables a
+ * test parsed back out of Markdown into five readers in two languages. The scan codes are this
+ * package's data now and the tables' other columns went where they belong: the frames each button sends
+ * in the calibration configurations to the test that checks them, `packages/codec/test/irframe.test.ts`,
+ * and the derivation to section 133 itself. So a scan code states its source here, once, and the keys
+ * page of every model the drawing serves prints it as a footnote.
+ *
+ * A source is a section number rather than a word, because a footnote names a section and a word would
+ * be one more thing to keep in step with it. Adding a source is adding a row here, which the type then
+ * demands of every key that uses it.
+ */
+export const SCAN_SOURCES = {
+  // The 32 keys of a Harmony One and 36 of a Harmony 600 whose code was decoded from a calibration
+  // configuration and named by Logitech's button maps for it.
+  133: "named through Logitech's button maps for a configuration compiled to a known setup",
+  // The two arrow pairs of the Harmony 600, which every activity gives one command per pair, so only the
+  // devices' own maps separate them.
+  323: "decided by the devices' own maps, since every activity gives both keys of a pair one command",
+  // The same pairs on the Harmony One, decided the same way on the calibration setup's three devices.
+  398: "decided by the devices' own maps, since every activity gives both keys of a pair one command",
+  // The Harmony One's two page strips beside the screen, which hold one rectangle in every hit page.
+  125: "from the touch hit map, which holds one rectangle for each of these codes on every page",
+  // Help on the Harmony 600, 650 and 700: every activity Logitech compiles binds its release on scan 3.
+  333: "bound by every activity Logitech compiles to that activity's own help",
+} as const;
+export type ScanSource = keyof typeof SCAN_SOURCES;
 
 /**
  * Which population a key belongs to, which is a real division and not a label.
@@ -159,17 +192,20 @@ export interface Key {
    */
   readonly accent?: string;
   /**
-   * The scan code, present **only** where `reference/button-maps.md` names it: 32 of 44 keys on a
-   * Harmony One, 36 of 54 on a Harmony 600, none of the 50 on a Harmony 525, none of the 55 on a
-   * Harmony 350 and none of the 29 on a Harmony Touch. Never filled in by
-   * hand. A wrong scan code is invisible, because the interface would then show the wrong
-   * assignment beside a key with complete confidence.
+   * The scan code, present **only** where something established it, and `scanFrom` says what: 38 of 44
+   * keys on a Harmony One, 41 of 54 on a Harmony 600, none of the 50 on a Harmony 525, none of the 55
+   * on a Harmony 350 and none of the 29 on a Harmony Touch. Never filled in on a guess. A wrong scan
+   * code is invisible, because the interface would then show the wrong assignment beside a key with
+   * complete confidence.
    */
   readonly scan?: number;
+  /** The archive section that established `scan`, present exactly when `scan` is. */
+  readonly scanFrom?: ScanSource;
   /**
-   * Where the name is settled and the code is not. The four arrow keys of a Harmony One are the
-   * case: the shape says which is `DirectionUp` and which is `UpArrow`, and nothing says which scan
-   * belongs to which, because both send the same command in every activity of both configs.
+   * Where the name is settled and the code is narrowed to a set but not decided. The Harmony 525's four
+   * soft keys are the case: the firmware's own matrix arithmetic puts them in one block of four codes and
+   * nothing says which column is the left one, section 89. The four arrow keys of a Harmony One and a
+   * Harmony 600 were the other case until the devices' own maps decided them, sections 398 and 323.
    */
   readonly scanCandidates?: readonly number[];
   /** The screen zone this key answers for, where the model has keys flanking its display. */

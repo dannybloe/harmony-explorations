@@ -1,7 +1,7 @@
 /**
  * The Harmony 700, the Harmony 600's face with its own model number printed at the bottom.
  *
- * **Every shape is the Harmony 600's and is taken by reference, not copied.** Danny's statement,
+ * **Every shape is the Harmony 600's and is taken by reference, not copied.** A statement made
  * holding the three remotes: the Harmony 600, 650 and 700 have exactly the same layout and form factor,
  * and the only difference on the face is the model number printed near the bottom. So this file takes
  * `H600` whole and changes the identity and the nameplate; a correction to a 600 shape or scan code

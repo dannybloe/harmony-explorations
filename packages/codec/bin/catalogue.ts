@@ -16,18 +16,14 @@
  *    identified for that button's own device. This is the number the product wants: a configuration
  *    numbers its codes and names none of them.
  * 3. **The independent comparison**, for the two calibration configurations only, since they are the
- *    only ones whose scan to button table exists: `reference/button-maps.md` names the **key** a scan is,
- *    read out of Logitech's button map service through the account that generated those configs, and the
- *    archive names the **command** a code is. Those are two different questions, so the interesting
+ *    only ones whose scan to button table exists: the drawings in `packages/silhouettes` name the **key** a
+ *    scan is, read out of Logitech's button map service through the account that generated those configs,
+ *    and the archive names the **command** a code is. Those are two different questions, so the interesting
  *    output is the taxonomy of the differences rather than an agreement rate.
  *
  * Usage: `make catalogue`, or with `CATALOGUE_ARGS=--detail` for a line per device group. Needs the
  * archive checkout and the lab; no network.
  */
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { dirname } from 'node:path';
 import { IR_ARCHIVE, load } from '@harmony/lab';
 import { parse, payloadOf } from '../src/index.ts';
 import { irGroups } from '../src/ir.ts';
@@ -39,9 +35,9 @@ import {
   DEVICE_TYPE_NAMES, type Identification,
 } from '../src/catalogue.ts';
 import { CONTAINERS } from './corpus.ts';
+import { CALIBRATION_DRAWINGS, NAMED_BY_LOGITECH, drawnScans } from './drawings.ts';
 
 const detail = process.argv.includes('--detail');
-const REPO = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 
 if (IR_ARCHIVE === undefined) {
   console.error('no infrared archive: clone logitech-harmony-ir-archive beside this repository, '
@@ -139,24 +135,16 @@ console.log(`${namedTotal} of ${sendsTotal} button sends got a command name\n`);
 /**
  * The independent comparison, and its output is a taxonomy rather than a rate.
  *
- * `reference/button-maps.md` names the physical key a scan code is; the archive names the command a code
- * is. A key called `Number4` sending a command called `4` is two right answers, and a key called
+ * The drawings in `packages/silhouettes` name the physical key a scan code is, `bin/drawings.ts`; the
+ * archive names the command a code is. A key called `Number4` sending a command called `4` is two right answers, and a key called
  * `ChannelUp` sending a Blu-ray player's `SkipForward` is the configuration's own binding rather than
  * anybody's mistake. So the rows are grouped by which of the three kinds of difference they are.
  */
-const text = readFileSync(join(REPO, 'reference', 'button-maps.md'), 'utf8');
-for (const [name, heading] of [['calibration_one', 'Harmony One, skin 54'],
-                               ['calibration_h600', 'Harmony 600, skin 71']] as const) {
+for (const [name, drawing] of Object.entries(CALIBRATION_DRAWINGS)) {
   const data = load(name);
   if (data === undefined) { console.log(`${name}: absent from the lab`); continue; }
   const container = parse(payloadOf(data));
-  const buttons = new Map<number, string>();
-  for (const section of text.split(/^## /m).slice(1)) {
-    if (!section.startsWith(heading)) continue;
-    for (const row of section.matchAll(/^\| (\d+) \| `(\w+)` \| `([^`]*)` \|$/gm)) {
-      buttons.set(Number(row[1]), row[2]!);
-    }
-  }
+  const buttons = drawnScans(drawing, NAMED_BY_LOGITECH);
   const chosen = new Map<number, Map<string, string>>();
   const models = new Map<number, string>();
   for (const [at] of (irGroups(container) ?? []).entries()) {

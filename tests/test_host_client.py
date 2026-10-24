@@ -27,6 +27,7 @@ import re
 import unittest
 
 import lab
+from reference_keys import generated_keys
 from harmony import gspm
 
 #: Every service the client binds a URL for, with how many operations it declares on each. Both halves
@@ -261,42 +262,32 @@ def button_names(reply):
 
 
 class ButtonMapCompleteness(unittest.TestCase):
-    """Whether `reference/button-maps.md` used every name the vendor offered, and invented none.
+    """Whether the drawings used every name the vendor offered, and invented none.
 
-    Section 133 derived that document by decoding a scan code's infrared record into the bit frame a
-    device sees and looking the frame up in the catalogue and button maps of the account that generated
-    the config. What it never checked is the **other** direction: that the vendor's own maps hold no
-    button the document failed to place, and that the document holds no button the maps do not name.
+    Section 133 named a scan code by decoding its infrared record into the bit frame a device sees and
+    looking the frame up in the catalogue and button maps of the account that generated the config.
+    What it never checked is the **other** direction, section 145: that the vendor's own maps hold no
+    button left unplaced, and that nothing placed is a button the maps do not name.
 
-    Both sides come out exact on both remotes, which is a completeness closure rather than a new name:
-    the document places 32 of the Harmony One's buttons and leaves 4 in two symmetric pairs, and the
-    vendor names exactly 36. The Harmony 600 is 36 placed plus 4 undecided against 40 named. Nothing
-    left over either way, on either remote.
+    Both sides come out exact on both remotes, which is a completeness closure rather than a new name.
+    The vendor names 36 buttons for the Harmony One and 40 for the Harmony 600. Section 145 found 32 and
+    36 of them placed and the four arrow keys of each left in two symmetric pairs; the devices' own maps
+    decided those pairs since, sections 398 and 323, so every name is placed now and nothing is left over
+    either way, on either remote.
+
+    **Where the placed names come from.** Until plan 009's step 3.3 this read `reference/button-maps.md`,
+    a hand kept table. The scan codes are the drawings' data now, and this reads them from the keys page
+    each drawing generates, `reference_keys.py`: a key whose name is Logitech's, `catalogue`, is a key
+    placed against a code.
     """
 
     def setUp(self):
         lab.require_responses(*BUTTON_MAP_REPLIES)
-        here = os.path.dirname(os.path.abspath(__file__))
-        with open(os.path.join(here, '..', 'reference', 'button-maps.md'), encoding='utf-8') as fh:
-            self.document = fh.read()
-
-    def placed(self, heading):
-        """The buttons the document gives a scan code, from its own table."""
-        block = self.document.split(heading)[1].split('\n## ')[0]
-        return set(re.findall(r'^\| \d+ \| `([A-Za-z0-9]+)`', block, re.M))
-
-    def undecided(self, heading):
-        """The buttons it names in pairs it deliberately refuses to split."""
-        block = self.document.split(heading)[1].split('\n## ')[0]
-        found = set()
-        for pair in re.findall(r'`([A-Za-z0-9]+)` and `([A-Za-z0-9]+)`', block):
-            found.update(pair)
-        return found
 
     def test_every_name_the_vendor_offers_is_accounted_for(self):
-        for reply, table, pairs, placed_count in (
-            ('GET_MapList_skin54.json', '## Harmony One, skin 54', '### Harmony One', 32),
-            ('GET_MapList_skin71.json', '## Harmony 600, skin 71', '### Harmony 600', 36),
+        for reply, folder, placed_count in (
+            ('GET_MapList_skin54.json', 'harmony-one', 36),
+            ('GET_MapList_skin71.json', 'harmony-600', 40),
         ):
             with self.subTest(reply=reply):
                 kinds = button_names(lab.response(reply))
@@ -305,19 +296,22 @@ class ButtonMapCompleteness(unittest.TestCase):
                 # named by section 120's chain instead. So the population to compare against is the
                 # activity and device maps, and the root map is asserted separately below.
                 offered = kinds.get('ActivityButtonMap', set()) | kinds.get('DeviceButtonMap', set())
-                placed = self.placed(table)
+                keys = generated_keys(folder)
+                placed = {name for name, (_, source, scan, _) in keys.items() if source == 'catalogue'}
                 self.assertEqual(len(placed), placed_count)
-                accounted = placed | self.undecided(pairs)
-                self.assertEqual(offered - accounted, set(), 'a name the document never placed')
-                self.assertEqual(accounted - offered, set(), 'a name the vendor never offered')
+                # Every one of them against a code: a name of Logitech's with no code would be a
+                # catalogue name nothing measured.
+                self.assertEqual({name for name in placed if keys[name][2] is None}, set())
+                self.assertEqual(offered - placed, set(), 'a name the drawing never placed')
+                self.assertEqual(placed - offered, set(), 'a name the vendor never offered')
 
     def test_the_root_map_holds_the_keys_that_send_nothing(self):
-        """The exception, named, because `button-maps.md` already claims it in prose.
+        """The exception, named, because section 145 claims it in prose.
 
-        Its "what is deliberately not here" section says the Harmony 600's activity keys are hard
-        buttons in its maps and never appear in the table, because an activity key selects a handler set
-        and sends nothing itself. This is that claim as a measurement: they are the whole content of the
-        root map, and they are in no other map.
+        The Harmony 600's activity keys are hard buttons in its maps and are never placed against a code
+        through a frame, because an activity key selects a handler set and sends nothing itself. This is
+        that claim as a measurement: they are the whole content of the root map, and they are in no other
+        map.
         """
         kinds = button_names(lab.response('GET_MapList_skin71.json'))
         self.assertEqual(kinds.get('RootButtonMap'), {'MovieActivity', 'WatchTVActivity'})

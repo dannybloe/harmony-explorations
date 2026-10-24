@@ -111,7 +111,7 @@ the rest of its application, section 111. The broader claim stood here for three
 closes: the measured census is 14, 14, 13, 13 buttons per column, a column holds at most 14, and
 the unit's own config carries scan codes contiguous 1 to 54, whose two absentees fall in exactly
 the two columns that are short. Which button carries which of the 54 codes is named for 36 of them, through the account that
-compiled the calibration configs, section 133 and `reference/button-maps.md`; the rest, and every
+compiled the calibration configs, section 133 and the drawing's keys page; the rest, and every
 contributed config, stay open. **The
 Harmony One gives nothing at all**: sixteen buttons from every region of it pull one shared sense
 line, so arch 12 wakes differently from arch 14 and USB yields no part of its mapping.
@@ -472,7 +472,8 @@ the screen. The durations a record stores decode back into the **bit frame** the
 is a number that can be matched against a catalogue of named commands, where a duration stream could only
 ever be compared to another duration stream. Matching against the catalogue and button maps of the
 account that generated a config names the button a scan code belongs to: 32 buttons of a Harmony One and
-36 of a Harmony 600, in [reference/button-maps.md](../reference/button-maps.md), read only and with
+36 of a Harmony 600, in [the One's](../reference/remotes/harmony-one/keys.md) and
+[the 600's](../reference/remotes/harmony-600/keys.md) keys pages, read only and with
 nothing written to either remote, which is what section 48 said needed a write into a running remote's
 memory. It is a calibration instrument rather than a reader, since it needs the generating account. And
 the **position** of a key still does not follow: under the electrical column formula the digits 1, 2 and 3
@@ -725,7 +726,7 @@ this project's oldest rule is about. Two right copies are what precede two diver
   **A scan code has a name now, read only, and it still has no place**, section 133: the code a scan
   sends decodes back into the **bit frame** the device sees, `packages/codec/src/irframe.ts`, and a frame
   matched against the command catalogue and button maps of the account that generated a config names the
-  button. 32 buttons of a Harmony One and 36 of a Harmony 600, `reference/button-maps.md`, with nothing
+  button. 32 buttons of a Harmony One and 36 of a Harmony 600, the drawings' keys pages, with nothing
   written to anything. **It is a calibration instrument and not a reader**: it needs the generating
   account, so it works on the two configs Logitech compiled to our specification and cannot name a key in
   a contributed config. Three things to carry. The ambiguity was mostly a **scope** error, eight scans a

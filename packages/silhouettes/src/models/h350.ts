@@ -13,7 +13,7 @@
  * manual's callouts, two of which cross the case's left edge. None of them is a key and none of them
  * appears below.
  *
- * **The symbols and the words are ours**, per Danny's decision of 21 August 2026, drawn from
+ * **The symbols and the words are ours**, per the decision of 21 August 2026, drawn from
  * `src/icons.ts` and typeset here. They are read off the **photograph** on the guide's cover where it
  * reaches, which is down to the DVR and Live row, and off the drawing below that, since the cover
  * photograph is cropped there and no other photograph of this model is in the lab. Where both exist they
@@ -23,7 +23,7 @@
  * **No scan code appears anywhere in here, and that is not an omission.** `openHarmony` refuses this
  * architecture, and the one path that reads it, `openFileBasedRemote`, reads its configuration as a
  * file and sees no key press, section 262. This said the architecture had never been opened over USB
- * by this library until 9 October 2026. `reference/button-maps.md` has no table for it, and nothing in
+ * by this library until 9 October 2026. No calibration configuration was compiled for it, section 133, and nothing in
  * the repository or the lab ties a key on this remote to a code. The configuration does state a key
  * table, `docs/findings.md` section 259, so the codes exist; which physical key each one belongs to has
  * not been measured. Nor are there candidates: the Harmony 525's four come from its firmware's matrix

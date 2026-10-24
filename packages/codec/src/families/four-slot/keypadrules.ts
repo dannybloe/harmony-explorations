@@ -1,6 +1,7 @@
 /**
  * The keys of section 323's activity keypad rule on the Harmony 600, 650 and 700, the four slot family's
- * `activityKeyRules`, `reference/button-maps.md`. Moved here from `activityroles.ts`, plan 007.
+ * `activityKeyRules`. The scans are the Harmony 600 drawing's, `packages/silhouettes/src/models/h600.ts`,
+ * where the arrow pairs are settled by section 323. Moved here from `activityroles.ts`, plan 007.
  */
 import type { ActivityKeyRules } from '../../activityroles.ts';
 

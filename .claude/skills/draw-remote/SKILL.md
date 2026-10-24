@@ -198,10 +198,10 @@ either way, and it is obvious the instant a key is filled: the fill stops on a d
 following the strip. So a segmented moulding gets a tinted render before it is believed, not just an
 outline one.
 
-## Step 4: names, and where a name came from
+## Step 4: names, scan codes, and where each came from
 
 A key's identity is a name from **Logitech's own vocabulary**, so that "which key is the mute key"
-is one lookup on every model. The measured names are in `reference/button-maps.md`: `VolumeMute`,
+is one lookup on every model. The names Logitech's button maps gave, section 133: `VolumeMute`,
 `Play`, `Pause`, `Rewind`, `SkipBack`, `SkipForward`, `FastForward`, `Stop`, `Record`, `Select`,
 `Menu`, `Exit`, `Info`, `Guide`, `ChannelUp`, `ChannelDown`, `VolumeUp`, `VolumeDown`,
 `PrevChannel`, `NumberPlus`, `Number0` to `Number9`, `DirectionLeft`, `DirectionRight`,
@@ -209,19 +209,42 @@ is one lookup on every model. The measured names are in `reference/button-maps.m
 
 Every key carries where its name came from:
 
-* `src: 'catalogue'`, the name is in those tables, measured from a config Logitech compiled for us.
+* `src: 'catalogue'`, Logitech's maps give the key this name, measured through a config Logitech compiled
+  to a known setup; such a key always carries the scan code it was named against.
 * `src: 'printed'`, we chose the name because the marking on the key says it, `Help` or `Activities`.
 
-A test reads `reference/button-maps.md` and checks both directions, so a `catalogue` name that is
-not in the tables fails and so does a `printed` name that is.
+**The scan codes are the drawing's data, and nowhere else.** Until plan 009's step 3.3 they were also a
+table in `reference/button-maps.md`, which tests parsed back out of Markdown; that file is gone and the
+drawing is the one copy. `scan` carries a code and `scanFrom` the archive section that established it, one
+of `SCAN_SOURCES` in `src/types.ts`: 133 for the button maps, 323 and 398 for the arrow pairs the devices'
+own maps decided on the Harmony 600 and the Harmony One, 125 for the One's touch hit map, 333 for Help on
+the 600. `make remote-reference` prints each as a footnote on the model's keys page, so a keys page must
+define that section's footnote, and a new source is a new row in `SCAN_SOURCES` with its own sentence.
 
-**Never invent a scan code.** `scan` is present only where those tables name it, which is 32 of 44
-keys on a Harmony One, 36 of 54 on a Harmony 600, none of the 50 on a Harmony 525 and none of the 55
-on a Harmony 350. A wrong scan
-code is invisible: the interface then shows the wrong assignment beside a key with complete
-confidence. Where the name is settled and the code is not, use `scanCandidates`. That is the case
-for the four arrow keys of a Harmony One, where the shape says which is `DirectionUp` and which is
-`UpArrow` while nothing says which scan belongs to which, because both send the same command.
+**Never invent a scan code.** `scan` is present only where an archive section established it, which is
+38 of 44 keys on a Harmony One, 41 of 54 on a Harmony 600, none of the 50 on a Harmony 525 and none of
+the 55 on a Harmony 350. A wrong scan code is invisible: the interface then shows the wrong assignment
+beside a key with complete confidence. `test/models.test.ts` pins the count per source and names every
+code that did not come from the button maps; `packages/codec/test/irframe.test.ts` checks every button
+map code against the frames it sends in the calibration configurations. Where the name is settled and the
+code is only narrowed, use `scanCandidates`: the Harmony 525's four soft keys, a block of four from the
+firmware's matrix, section 89. The four arrow keys of a Harmony One and a Harmony 600 were candidates
+until the devices' own maps decided them.
+
+**What a scan code does not tell you, so do not try.**
+
+* **Where the key is.** Section 48 derived the electrical column on the Harmony 600 as `(scan - 1) mod 4`,
+  and under it the digits 1, 2 and 3 sit in columns 3, 2 and 2; no modulus and no offset makes a row of
+  three digits one line, checked over every divisor up to 19 both ways, and a test in
+  `packages/codec/test/irframe.test.ts` keeps it checked. A matrix position is a wiring decision, so a
+  key's place comes from the traced drawing and never from its code.
+* **That a key is unknown when it has none.** Leaving `scan` off is exactly what says a code is not
+  established, so a drawing carries a code on the keys an archive section names and no attribute on the
+  rest. Filling in the other keys would be the guess this step forbids.
+* **A key that sends no code.** The Harmony 600's activity keys are hard keys in Logitech's maps and are
+  never named through a frame, because an activity key selects a handler set and sends nothing itself.
+  They are named by section 120's chain, the other population of section 128, and Logitech keeps them in
+  a `RootButtonMap` of their own, section 145.
 
 `kind` records which population a key is in, and the two do not overlap: a key bound by a screen
 page is one the screen speaks for, and a key bound by a keypad set is one on the keypad. On a
@@ -317,8 +340,8 @@ drawing coordinates, so anything expressed in screen pixels lands in the right p
 * a class in `tests/test_silhouettes.py` naming the file and its button count, and an entry in
   `DRAWN`, since a drawing nobody wrote a class for sits there with its count unasserted
 * the checked in SVG regenerated, so the byte for byte test passes
-* every name unique within the model, and every `catalogue` name present in
-  `reference/button-maps.md`
+* every name unique within the model, every `catalogue` name carrying a scan code its `scanFrom`
+  names, and the counts per source in `test/models.test.ts`
 * at least one key row genuinely at an angle, so a drawing that forgot this step fails rather than
   passes
 

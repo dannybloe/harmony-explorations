@@ -6,8 +6,9 @@
  * is the point: a button list that lived only in the XML would have to be parsed back or copied into
  * a second table, and two copies of a derivation is this repository's oldest rule.
  */
-export { CASE_HEIGHT, LAYERS } from './types.ts';
-export type { Key, KeyKind, Label, LabelPlace, LayerName, Model, Provenance, Region, Screen, Shape } from './types.ts';
+export { CASE_HEIGHT, LAYERS, SCAN_SOURCES } from './types.ts';
+export type { Key, KeyKind, Label, LabelPlace, LayerName, Model, Provenance, Region, ScanSource, Screen, Shape }
+  from './types.ts';
 export { ICONS, extentOf } from './icons.ts';
 export { pathBounds, transformPath, parseTransform, compose, pathPolygon, pointInPath, IDENTITY,
   type Bounds, type Matrix } from './path.ts';

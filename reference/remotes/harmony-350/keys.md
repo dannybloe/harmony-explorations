@@ -30,7 +30,7 @@ digits, clear and enter[^t-silhouette].
 ## Every key on the drawing
 
 <!-- generated:keys -->
-55 keys on the drawing `h350`, 55 on the keypad and 0 that the screen speaks for. 0 carry a measured scan code and 0 are left between two candidates by the drawing.
+55 keys on the drawing `h350`, 55 on the keypad and 0 that the screen speaks for. None carries a scan code.
 
 | key | kind | name from | scan code | screen zone | printed on or beside it |
 |---|---|---|---|---|---|

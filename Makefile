@@ -303,8 +303,8 @@ composecensus:
 
 # What Logitech's device catalogue says about the devices our own configurations drive, section 229:
 # identify every corpus device group from the numbers it sends, then name every button send out of that
-# device's own codeset. Also compares the archive's command names against `reference/button-maps.md`,
-# which names keys rather than commands, so the output there is a taxonomy of differences. Needs the
+# device's own codeset. Also compares the archive's command names against the keys the drawings in
+# `packages/silhouettes` name for the calibration configurations, which name keys rather than commands, so the output there is a taxonomy of differences. Needs the
 # archive checkout and the lab, no network. Not in `make all`: it is a thirty second full pass over
 # 54118 files, and the claims it produced are pinned by `packages/codec/test/catalogue.test.ts`.
 catalogue:
