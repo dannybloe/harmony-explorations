@@ -14,7 +14,7 @@ does not restate it.
 
 The 525 has a key of its own for each direction, where the Harmony 600, 650 and 700 use the centre key
 below the screen for both and the Harmony One uses its touch keys; [how a Harmony
-works](../../how-a-harmony-works.md) compares the models.
+works](../../how-a-harmony-works.md#getting-into-device-mode-and-back) links each model's way in and out.
 
 ## Light and sleep
 
