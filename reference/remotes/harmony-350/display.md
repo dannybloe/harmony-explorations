@@ -1,8 +1,9 @@
 # Harmony 350: display
 
-**The Harmony 350 has no screen.** Logitech's service states its display as none,
-`reference/capabilities.md`, and its manual draws none. It is one of the three screenless models, with the
-Harmony 300 and 200, `reference/how-a-harmony-works.md`.
+**The Harmony 350 has no screen.** Its setup guide draws and describes none[^x-manual], and the drawing
+here has none[^t-silhouette]. It is one of the three models without one, with the Harmony 300 and 200,
+and a remote without a screen holds a single activity,
+[how a Harmony works](../../how-a-harmony-works.md#a-remote-with-no-screen-holds-exactly-one-activity).
 
 <!-- generated:display -->
 | field | value | from |
@@ -16,12 +17,14 @@ Generated from `packages/codec`, `packages/usb` and the drawing by `make remote-
 <!-- /generated -->
 
 What it shows instead: **the device keys light** while an infrared command is being sent, and after Watch
-TV is pressed the remote should be kept pointed at the devices "until the Device buttons turn off",
-Logitech's manual.
+TV is pressed the remote should be kept pointed at the devices "until the Device buttons turn off"[^x-manual].
 
-A configuration still carries a clock record and the firmware a month end routine, section 322; whether
-the remote keeps a running clock is **not checked**, and nothing could show one.
+Whether the remote keeps a running clock is open for the whole family, and nothing on a 350 could show one;
+[the architecture's memory.md](../../architectures/harmony-300-350/memory.md#not-checked) has what is known.
 
 ## Not checked
 
 * Any light other than the device keys.
+
+[^x-manual]: Stated by Logitech, in the manual. [The Harmony 350 setup guide](https://www.logitech.com/assets/51207/harmony-350-qsg-and-iid.pdf)
+[^t-silhouette]: Stated by Logitech, in the manual. [The test](../../../tests/test_silhouettes.py)
