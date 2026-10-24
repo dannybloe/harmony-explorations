@@ -84,7 +84,7 @@ re-implementing a PIC18 decoder is not the exercise. The line runs between tools
 - `tools/pic18_disasm.py`, `tools/pic18_trace.py`, `tools/pic18_xref.py`, `tools/usbdesc.py`
 - `src/harmony/pic18/`, the opcode table, the disassembler, the tracer, the switch chain decoder
 - `src/harmony/firmware.py`, `src/harmony/usbdesc.py`
-- `docs/memory-map.md`, `docs/memory-map-one.md`, `docs/memory-map-600.md`, `docs/memory-map-700.md`, and `docs/checksums.md`. **The five memory maps were named here by a glob until 5 September 2026** and the 525's came off the list, per the row for it in the withhold table below. They are spelled out one by one now, because a glob quietly re-admits whatever is written next
+- `docs/memory-map.md`, `docs/memory-map-one.md`, `reference/architectures/harmony-600-650-700/memory.md`, `reference/remotes/harmony-600/memory.md`, `reference/remotes/harmony-700/memory.md`, and `docs/checksums.md`. The Harmony 600's and 700's maps were named here until plan 009 step 3.2 folded them into the three reference pages after them. **The five memory maps were named here by a glob until 5 September 2026** and the 525's came off the list, per the row for it in the withhold table below. They are spelled out one by one now, because a glob quietly re-admits whatever is written next
 - the Microchip headers the project already relies on, `p18f87j50.inc` and `p18f67j50.inc`
 
 **Must not be read.** This list was built by inventorying the tree rather than from memory, and that

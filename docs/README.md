@@ -82,8 +82,6 @@ reference/logitech/data-model/  everything about the vendor platform, one subjec
   model.pdf                     model.md typeset, `make model-pdf`. Also a build product
 docs/memory-map.md              memory maps: the addressing rules and the architecture comparison
 docs/memory-map-one.md          where everything lives on a Harmony One, derived, one page
-docs/memory-map-600.md          the same for the Harmony 600
-docs/memory-map-700.md          the same for the 700, measured on the bench unit since section 295
 docs/memory-map-525.md          arch 9, predictions written down before the remote arrives
 docs/recipe.md                  the recipe a configuration of ours is built from, preliminary:
                                 its fields, what it holds and what the model's definition holds
@@ -172,8 +170,9 @@ reference/remotes/              the per remote technical reference, one folder p
 reference/architectures/        what one architecture's models share, stated once and linked from
                                 each model folder: harmony-600-650-700/ for arch 14, harmony-one/
                                 for arch 12. It carries the
-                                architecture's memory layout now, and docs/memory-map-600.md and
-                                -700.md keep what is one unit's
+                                architecture's memory layout now; the Harmony 600's and 700's own
+                                rows are in their model folders' memory.md and what is one unit's is
+                                in docs/test-notes/
 reference/silhouettes/          the front face of a model, one SVG per model, **generated** from
                                 packages/silhouettes/src/models/<id>.ts and never edited by hand.
                                 The geometry is traced from Logitech's own documentation, by hand,

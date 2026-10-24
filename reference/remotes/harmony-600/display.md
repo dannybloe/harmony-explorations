@@ -71,7 +71,7 @@ showing shades between black and white, section 387.
 
 **No clock.** The ordinary screen of the Harmony 600, 650 and 700 has no time on it, seen at the bench
 on 4 October 2026, `reference/how-a-harmony-works.md`. The 0.2 build keeps the clock in the first seven state
-variables, read in the firmware, `docs/memory-map-600.md`, so a clock on this model is checked by
+variables, read in the firmware, [memory.md](memory.md), so a clock on this model is checked by
 reading memory over USB, never by looking.
 
 ## Not checked

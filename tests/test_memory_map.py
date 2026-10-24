@@ -51,6 +51,24 @@ def _doc(name):
         return fh.read()
 
 
+_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
+
+#: Where the Harmony 600's and 700's memory maps went, plan 009 step 3.2: the architecture's rows to its
+#: folder, each model's own rows to its folder, and what is one unit's to the test notes. The figures
+#: these tests pin did not change; only the page that states them did.
+_A14 = 'reference/architectures/harmony-600-650-700/memory.md'
+_R600 = 'reference/remotes/harmony-600/memory.md'
+_R700 = 'reference/remotes/harmony-700/memory.md'
+_TN600 = 'docs/test-notes/harmony-600.md'
+_TN700 = 'docs/test-notes/harmony-700.md'
+
+
+def _page(path):
+    """A file by its path from the repository root, for the pages outside `docs/`."""
+    with open(os.path.join(_ROOT, path), encoding='utf-8') as fh:
+        return fh.read()
+
+
 class TestArch12Map(unittest.TestCase):
     """docs/memory-map-one.md"""
 
@@ -124,7 +142,9 @@ class TestArch12Map(unittest.TestCase):
 
 
 class TestArch14Map(unittest.TestCase):
-    """docs/memory-map-600.md"""
+    """The Harmony 600's map: `reference/remotes/harmony-600/memory.md` for its own rows and
+    `reference/architectures/harmony-600-650-700/memory.md` for the architecture's, since plan 009 step
+    3.2 removed `docs/memory-map-600.md`, which held both."""
 
     def test_application_firmware_length_and_version(self):
         code = lab.load('h600_code_complete')
@@ -186,17 +206,20 @@ class TestArch14Map(unittest.TestCase):
         # the dead one, so a reworded restatement fails too.
         shared = _doc('memory-map.md')
         self.assertIn('0x200000', shared, 'the shared map states the arch 14 ceiling')
-        six = _doc('memory-map-600.md')
-        self.assertIn('3904 KiB is wrong', six, 'the 600 map still carries the refutation')
-        self.assertIn('0x030000` to `0x200000', six, 'and the measured region')
 
-        # The 700's map states the region from the architecture's bound, not from the refuted
-        # number. Assert the live claim rather than the absence of the dead phrase: this document
-        # records its own correction in place, so the dead words are present on purpose and an
-        # absence test fires on the correction itself. It was a guess on that bound until 9 October
-        # 2026, when the bench unit's 2 MiB part made it the region.
-        seven = _doc('memory-map-700.md')
-        self.assertIn("runs from `0x030000` to `0x200000`", seven,
+        # The 600's map argued the refutation out at length, four routes to 2 MiB and concordance's
+        # 3904 KiB taken apart. Plan 009 step 3.2 dropped the argument for a footnote to section 88,
+        # where it is made, so what is asserted now is that the architecture's page states the
+        # region and the ceiling **with that footnote**, rather than that it repeats the argument.
+        arch = _page(_A14)
+        self.assertIn('2 MiB and not 4', arch, 'the architecture page states the part size')
+        self.assertIn('`0x200000`[^s88]', arch, 'and rests the ceiling on section 88')
+        self.assertIn('`0x030000` to `0x200000`', arch, 'and the measured region')
+
+        # The 700's page states the region from the architecture's bound, not from the refuted
+        # number. It was a guess on that bound until 9 October 2026, when the bench unit's 2 MiB
+        # part made it the region.
+        self.assertIn('`0x030000` to `0x200000`', _page(_R700),
                       'the 700 region rests on the architecture bound, not on concordance')
 
     def test_the_config_sample_sits_at_the_documented_base(self):
@@ -246,15 +269,108 @@ class TestArch14Map(unittest.TestCase):
         self.assertGreater(len(below), len(differing) // 2,
                            'the differences moved out of the key table region')
 
+    def test_the_bootloader_uses_3880_of_its_4096_bytes(self):
+        """The 600's page states the bootloader's extent, and nothing but this test measures it.
+
+        It was a row of `docs/memory-map-600.md` with no section behind it, so when the row moved to
+        the reference it needed a source a footnote could name. The count is to the last written
+        byte, not of written bytes: 3785 of the 3880 are not `0xFF`, and the gaps are inside code.
+        """
+        page = lab.load('h600_internal_fe')
+        used = max(i for i, b in enumerate(page[:0x1000]) if b != 0xFF) + 1
+        self.assertEqual(used, 3880)
+        self.assertEqual(used - 1, 0x0F27, 'the last written byte the page names')
+        text = _page(_R600)
+        self.assertIn('3880', text)
+        self.assertIn('`+0x0F27`', text)
+
     def test_the_document_still_carries_these_addresses(self):
-        text = _doc('memory-map-600.md')
+        """The tokens the 600's map carried, now across the two pages that hold its rows. `3904 KiB`
+        left with the argument plan 009 dropped for a footnote, see the test above."""
+        text = _page(_R600) + _page(_A14)
         for token in ('+0x1000', '+0x9000', '+0xA2C0', '0x030000', '0x020000', '0x021BCB',
-                      '70336', '24320', '7115', '3904 KiB'):
-            self.assertIn(token, text, 'missing from docs/memory-map-600.md: %s' % token)
+                      '70336', '24320', '7115'):
+            self.assertIn(token, text, 'missing from the 600 and architecture pages: %s' % token)
+
+
+class TheRecordsAfterTheIdentityBlock(unittest.TestCase):
+    """The four "unidentified" records of the Harmony 600's map, settled against the client's names.
+
+    `docs/memory-map-600.md` listed four short runs after the identity block, at `+0xF580`, `+0xF640`,
+    `+0xF6C0` and `+0xF735`, each "unidentified", while the architecture page beside it carried
+    Logitech's client's names for the records in that region. Plan 009's inventory named the two as a
+    contradiction for step 3.2. Laid over each other they settle it: the first two runs sit inside
+    records the client names, battery calibration and a manufacturing identifier, and the other two lie
+    past the last record it names, in a stretch it says nothing about. One of those, `+0xF6C0`, is the
+    flag word section 304 read the firmware's `0xBD` state clearing.
+
+    The architecture page also said the client names **twelve** records. Its own table listed ten, and
+    the client's table, counted here rather than restated, holds ten: `0x01F400` to `0x01F640` in steps
+    of `0x40`, then a 1024 byte block at `0x01F800`. Asserted on values alone, so no name of the
+    client's travels into this file.
+    """
+
+    #: The client's records start here and step by a record each.
+    FIRST, STEP, COUNT = 0x01F400, 0x40, 10
+    #: The 1024 byte block after them, and the end of the region the records occupy.
+    TAIL = 0x01F800
+    #: Index of the battery calibration and the manufacturing identifier in the client's order, which
+    #: is the order `tests/test_unit_settings.py` gives their names in.
+    BATTERY, IDENTIFIER = 6, 9
+    #: What the 600's page lists after the identity block: offset in page `0xFF`, run length.
+    RUNS = [(0xF400, 48), (0xF580, 4), (0xF640, 12), (0xF6C0, 4), (0xF735, 3)]
+
+    def test_the_client_names_ten_records_and_nothing_between_them_and_its_test_block(self):
+        import test_host_client
+        table = test_host_client.protocol_constants(14)
+        if table is None:
+            self.skipTest('no decompiled classic client in the lab')
+        named = sorted(v for v in set(table.values()) if self.FIRST <= v <= self.TAIL)
+        records = [self.FIRST + i * self.STEP for i in range(self.COUNT)]
+        self.assertEqual(named, records + [self.TAIL], 'ten records, then the 1024 byte block')
+        self.assertIn('ten records of 64 bytes', _page(_A14))
+
+    def test_the_600s_runs_fall_where_the_page_says(self):
+        """Counted as section 23 counted them: runs of non `0xFF` bytes, merged when closer than 64."""
+        page = lab.load('h600_page_ff')
+        runs, start, last = [], None, None
+        for at in range(0xF400, 0xF800):
+            if page[at] != 0xFF:
+                if start is None:
+                    start = at
+                last = at
+            elif start is not None and at - last >= 64:
+                runs.append((start, last - start + 1))
+                start = None
+        if start is not None:
+            runs.append((start, last - start + 1))
+        self.assertEqual(runs, self.RUNS)
+
+        def record(offset):
+            index = (0x10000 + offset - self.FIRST) // self.STEP
+            return index if index < self.COUNT else None
+
+        self.assertEqual(record(0xF580), self.BATTERY)
+        self.assertEqual(record(0xF580 + 3), self.BATTERY, 'the whole run inside the record')
+        self.assertEqual(record(0xF640), self.IDENTIFIER)
+        self.assertEqual(record(0xF640 + 11), self.IDENTIFIER)
+        self.assertIsNone(record(0xF6C0), 'past every record the client names')
+        self.assertIsNone(record(0xF735))
+        # Section 304: the `0xBD` state programs `0xFFFE` there while bit 0 is set. It reads `fe ff`
+        # on this unit, so bit 0 is clear and the word is already cleared.
+        word = int.from_bytes(page[0xF6C0:0xF6C2], 'little')
+        self.assertEqual(word, 0xFFFE)
+
+        text = _page(_R600)
+        for offset, length in self.RUNS[1:]:
+            self.assertIn('| `+0x%04X` | %d |' % (offset, length), text)
+        self.assertNotIn('unidentified', text.lower(), 'the settled records named as unsettled again')
 
 
 class TestArch14MapFor700(unittest.TestCase):
-    """docs/memory-map-700.md, which had no device behind it until the bench unit of section 295."""
+    """The Harmony 700's map, which had no device behind it until the bench unit of section 295: its
+    model rows in `reference/remotes/harmony-700/memory.md` and the unit's history in
+    `docs/test-notes/harmony-700.md`, since plan 009 step 3.2 removed `docs/memory-map-700.md`."""
 
     def test_application_firmware_length_and_entry_point(self):
         code = lab.load('h700_code')
@@ -283,22 +399,27 @@ class TestArch14MapFor700(unittest.TestCase):
                 self.assertEqual(c.architecture, 14)
 
     def test_the_document_rests_on_the_bench_unit(self):
-        """Rewritten on 9 October 2026. This asserted the map said no 700 had been read and kept
-        its rows presumed, which section 295 made untrue: a 700 has been on the bench since, and
-        its internal pages, staging region and configuration region were read. So the map has to
-        say the unit is there, and no row of its tables may stand on presumption."""
-        text = _doc('memory-map-700.md')
-        self.assertIn('A Harmony 700 has been on the bench since 29 September 2026', text)
-        rows = [line for line in text.splitlines() if line.startswith('| `')]
-        self.assertEqual(len(rows), 8, 'five internal rows and three external ones')
-        presumed = [row for row in rows if 'presumed' in row]
-        self.assertEqual(presumed, [], 'a row still standing on presumption')
+        """Rewritten on 9 October 2026, and again for plan 009 step 3.2. This asserted the map said
+        no 700 had been read and kept its rows presumed, which section 295 made untrue: a 700 has been
+        on the bench since, and its internal pages, staging region and configuration region were read.
+        So the unit's notes have to say it is there, and every row of the model page's table has to
+        name its evidence in a footnote, none standing on presumption."""
+        self.assertIn('A Harmony 700 has been on the bench since 29 September 2026', _page(_TN700))
+        text = _page(_R700)
+        table = text[text.index('## Where the 700 differs'):text.index('## The settings store')]
+        rows = [line for line in table.splitlines() if line.startswith('| ') and '---' not in line][1:]
+        self.assertEqual(len(rows), 8, 'the part, three external regions and four internal ones')
+        self.assertEqual([row for row in rows if '[^' not in row], [], 'a row without its evidence')
+        self.assertEqual([row for row in rows if 'presumed' in row], [],
+                         'a row still standing on presumption')
 
     def test_the_document_still_carries_these_addresses(self):
-        text = _doc('memory-map-700.md')
-        for token in ('+0x9000', '+0xBB80', '0x012B80', '0x021BCB', '0x030000',
-                      '76672', '7115', '0x01BB38'):
-            self.assertIn(token, text, 'missing from docs/memory-map-700.md: %s' % token)
+        """The 700 map's tokens, the model's in its page and the staged image's end in the unit's
+        notes, since what is staged is one remote's state rather than the model's."""
+        text = _page(_R700)
+        for token in ('+0x9000', '+0xBB80', '0x021BCB', '0x030000', '76672', '7115', '0x1BB38'):
+            self.assertIn(token, text, 'missing from %s: %s' % (_R700, token))
+        self.assertIn('0x012B80', _page(_TN700))
 
 
 class TestTheHarmony650IsArch14(unittest.TestCase):
@@ -427,9 +548,10 @@ class TestTheConfigurationWords(unittest.TestCase):
             self.assertGreater(lost, self.CONFIG_END, 'past the configuration region')
 
     def test_the_documents_name_them(self):
-        for name in ('memory-map.md', 'memory-map-one.md', 'memory-map-600.md'):
+        # The 600's map named them until plan 009 step 3.2; the architecture's page holds the row now.
+        for name in ('docs/memory-map.md', 'docs/memory-map-one.md', _A14):
             with self.subTest(document=name):
-                text = _doc(name)
+                text = _page(name)
                 self.assertIn('configuration words', text)
                 self.assertIn('0x1FFF8', text)
         findings = _doc('findings.md')
@@ -575,11 +697,17 @@ class TestEveryMap(unittest.TestCase):
         byte run's length. It also asserts that it examined every document, because the failure it is
         replacing was silence.
         """
-        self.assertEqual(len(_MAPS), 5, 'the memory map glob stopped matching')
+        # Three since plan 009 step 3.2 removed the Harmony 600's and 700's maps. Their rows went to
+        # the pages below, and those carry the same identity block rows, so the guard goes with them
+        # rather than staying behind on the maps that are left. The 600's test notes are not among
+        # them: they quote its USB descriptors byte for byte, which is published on purpose, and
+        # widening the permitted runs for that is a decision for whoever moves those notes.
+        self.assertEqual(len(_MAPS), 3, 'the memory map glob stopped matching')
+        documents = [os.path.join('docs', name) for name in _MAPS] + [_A14, _R600, _R700, _TN700]
         examined = 0
-        for name in _MAPS:
+        for name in documents:
             with self.subTest(document=name):
-                text = _doc(name)
+                text = _page(name)
                 examined += 1
                 for run in _BYTE_RUN.findall(text):
                     self.assertIn(' '.join(run.replace(',', ' ').split()),
@@ -587,7 +715,7 @@ class TestEveryMap(unittest.TestCase):
                                   'an unexplained byte run in %s' % name)
                 self.assertEqual(_GUID.findall(text), [],
                                  'something shaped like an account GUID in %s' % name)
-        self.assertEqual(examined, len(_MAPS), 'a document went unread')
+        self.assertEqual(examined, len(documents), 'a document went unread')
 
 
 if __name__ == '__main__':

@@ -6,11 +6,11 @@ rules and the architecture comparison are written once rather than once per remo
 | Document | Remote | Architecture | Read off a device |
 |---|---|---|---|
 | [memory-map-one.md](memory-map-one.md) | Harmony One | 12 | yes, three units |
-| [memory-map-600.md](memory-map-600.md) | Harmony 600 | 14 | yes, one unit |
-| [memory-map-700.md](memory-map-700.md) | Harmony 700 | 14 | yes, one unit, since section 295; it said package only until 9 October 2026 |
 | [memory-map-525.md](memory-map-525.md) | Harmony 525 | 9 | yes, one unit |
 
-These five documents derive nothing. Every figure in them is measured elsewhere and each row names
+These documents derive nothing. The Harmony 600's and 700's maps are folded into
+`reference/architectures/harmony-600-650-700/memory.md` and the two models' `memory.md` since plan 009
+step 3.2. Every figure in them is measured elsewhere and each row names
 its source, so where one disagrees with `docs/findings.md` or `reference/usb-protocol/README.md`, those two are
 right and the map is stale. `tests/test_memory_map.py` pins the figures a lab image can check.
 
@@ -76,8 +76,8 @@ Both architectures reserve a 128 KiB firmware area in external flash and put it 
 The user config region does **not** end in the same place on both, and this paragraph said it did
 until 29 August 2026. On architecture 12 it runs to `0x400000`, which is `0x040000` plus the 3840 KiB
 concordance reports. On architecture 14 it ends at `0x200000`: the firmware refuses every flash
-address at or above that, four independent routes agree on a 2 MiB part, and `docs/memory-map-600.md`
-has said so since section 88.
+address at or above that, four independent routes agree on a 2 MiB part, and
+`reference/architectures/harmony-600-650-700/memory.md` states it, section 88.
 
 **The dead reading was `0x030000` plus concordance's 3904 KiB, landing on `0x400000`.** That figure
 needs a 4 MiB part, so most of the region it describes is not addressable at all, and this document

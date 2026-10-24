@@ -16,7 +16,7 @@ and links there for the rest.
 Generated from `packages/corpus` and `packages/usb` by `make remote-reference-write`. Change the source, not this block.
 <!-- /generated -->
 
-* **One product id for three models**, measured on all three bench units. Nothing on the bus separates
+* **One product id for three models**, measured on all three. Nothing on the bus separates
   them but the skin in the version block and, per unit, the identity block, section 281.
 * `bcdDevice` is BCD of 1000 plus the skin, measured on the 600 as `0x1071`, `reference/usb-protocol/transport.md`.
   The 650's 0.2 build carries `0x1072` in its device descriptor, read in the firmware, section
@@ -71,10 +71,8 @@ Every row also needs `HARMONY_ENABLE_WRITES=1`, its own named door where it has 
 Generated from `packages/usb/src/rails.ts` by `make remote-reference-write`. Change the source, not this block.
 <!-- /generated -->
 
-**Units**: all three bench units of this architecture are write targets, the 650 since 27 September
-2026 and the 600 and 700 since 29 September, the project owner's decisions, `CLAUDE.md`. The configuration writer
-further refuses a commit on a build whose cache drop and restart have not been read: 0.2 on the 600 and
-650, 2.8 on the 700, `packages/corpus/bin/write-config.ts`.
+**Builds**: the configuration writer refuses a commit on a build whose cache drop and restart have not
+been read: 0.2 on the 600 and 650, 2.8 on the 700, `packages/corpus/bin/write-config.ts`.
 
 **What a write does here that it does not do on the Harmony One**: the cache drop arms the next erase,
 and an erase at exactly `0x030000` then may update setting `0x80` in the settings store, which on both
@@ -106,7 +104,7 @@ have an argument parser and 54 an executor. Read so far:
 
 `hi` must be 0 for `0xB2` and `0xB3`: both store routines refuse a setting of `0xFF` or more. A
 settings read answers seven bytes, `0xF0 0x11 0xB2 0x01 0x01 0x01 value`, **measured on the Harmony
-600** with all 41 delay settings agreeing with a dump of its store; the fourth byte is 4 for a command
+600** with all 41 delay settings agreeing with a whole read of its store; the fourth byte is 4 for a command
 that clears the firmware's flag, and `0xF0 0x0E` answers a byte outside the ranges. **A settings write
 answers `0xF0 0x11 0xB3 0x01 0x01 0x01 0x00` on success**, section 305, measured on the Harmony 600
 with four writes; a failure answers 4 in the fourth byte and the append's code in the seventh, 5 for a
