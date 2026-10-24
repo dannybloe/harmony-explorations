@@ -174,7 +174,7 @@ class TestContainerAcrossSamples(unittest.TestCase):
         self.assertEqual(counts, {'samples': 17, 'architectures': 4, 'bases': 5, 'lengths': 3})
 
         path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                            'reference', 'config-format', 'README.md')
+                            'reference', 'config-format', 'container.md')
         with open(path, encoding='utf-8') as fh:
             text = fh.read()
         self.assertIn('**seventeen samples across four architectures**, five base addresses', text)

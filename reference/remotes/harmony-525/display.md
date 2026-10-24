@@ -67,3 +67,38 @@ Generated from `packages/codec`, `packages/usb` and the drawing by `make remote-
 * Whether the screen shows a clock. The firmware keeps one in its first state variables, section 284,
   and nothing reads it off a running 525 here, section 137.
 * The display controller, and the backlight's colour.
+
+#### Arch 9 packs the glyph itself a second way
+
+The set header above is unchanged, and so is the terminator. What differs is inside a glyph, and
+the reason is the same one section 62 found in the picture bank: the 5xx panel is monochrome, so a
+pixel is two bits rather than two bytes.
+
+```
++0x00  u8   width in pixels
+       one row per pixel row, until a 0x00 appears in the leader position:
+         +0x00  u8   0x20 | n, n being how many bytes of commands the row occupies
+         n bytes of commands, each  kind << 4 | (count - 1):
+           0x5   count literal pixels, two bits each, big endian, ceil(2 * count / 8) bytes follow
+           0x6   a run of count background pixels, no data
+           0xA   a run of count ink pixels, no data
+```
+
+The leader's byte count and the commands' pixel count are two independent statements of the row's
+length and both have to come out exactly. **Pixel value 2 is the paper and 1 is the ink**; no other
+value occurs. Which is which is derived from the encoder rather than from the render: a run is
+maximal, so 80 of 80 adjacent run pairs alternate the kinds and 50 of 50 literal pixels beside a
+kind `6` run read 1, and 160 of 160 glyph cells open with a full width kind `6` run.
+
+*Unconfirmed for want of a second sample*: the leader's high nibble is `0x20` in all 1730 rows, so
+whether it is a tag or part of a longer length field is open, and values 0 and 3 never appear, so
+whether the panel has four levels is open too.
+
+**Corrected.** This said the one arch 9 config has no inline string codes at all<!--superseded-->, so
+section 46's third check was unavailable here. It draws **1435 codes in 179 strings and selects a font
+244 times**, and all 1435 land on a non-NULL glyph, so the check runs on arch 9 and passes. The claim
+was true of the decoder rather than of the config: when it was written `gspm` refused to decode an
+arch 9 glyph at all, section 46, and section 85 then read the packing above without anyone revisiting
+the sentence. Found by section 112, which needed those strings.
+
+160 glyphs on this encoding, which takes the corpus total to **4093**.

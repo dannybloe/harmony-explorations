@@ -1649,7 +1649,9 @@ class TheWriteReviewWithholdListIsComplete(unittest.TestCase):
         # selects on that model and are withheld on `docs/memory-map-525.md`'s ground.
         # 29 since 24 October 2026: `docs/plans/009-the-reference.md`, the plan of the reference,
         # which names `rehearse-block.ts` and the interlock among the readers it moves.
-        self.assertEqual(len(must), 29, 'the withhold list should resolve to 29 paths, got %s'
+        # 30 since plan 009's step 2.1 cut the USB protocol and the host client document: the USB
+        # row names its folder whole, and the client row names both files the transfer now sits in.
+        self.assertEqual(len(must), 30, 'the withhold list should resolve to 30 paths, got %s'
                          % sorted(must))
 
     def test_every_may_read_path_is_clean_of_the_write_path(self):
@@ -1757,6 +1759,9 @@ class TheWriteReviewWithholdListIsComplete(unittest.TestCase):
         # script. It went on the withhold list in the same commit; the list was re-read first.
         # 41 with `docs/plans/009-the-reference.md`, which names the rehearsal script and the
         # interlock among the readers it moves. It went on the withhold list; the list was re-read.
+        # Still 41 after plan 009's step 2.1 cut the USB protocol and the host client document: the
+        # two files that stated the path stopped and `reference/usb-protocol/commands.md` and
+        # `reference/logitech/classic-client.md` started. Both are withheld; the list was re-read.
         self.assertEqual(len(stating), 41,
                          'the number of files stating the write path moved, so re-read the withhold '
                          'list before restamping this: %s' % stating)

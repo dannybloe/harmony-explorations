@@ -86,3 +86,38 @@ the 650's first write, an erase and a write with no restart sent, left it on the
 * `bcdDevice` as the bus reports it on the 650 and 700.
 * The settings read and write on the 650 and 700.
 * The data memory, program memory and action queue members of the `0x1N` family, read and never sent.
+
+### `0x10` with a payload is a second command family, arch 14 only
+
+**`GET_VERSION` is the bare `0x10`.** On the Harmony 600, 650 and 700 a nonzero length nibble turns it
+into something else, section 304: the first payload byte becomes the command state when it lies in
+`0x10` to `0x35` or `0xA0` to `0xC5`, and on the 700's 2.8 also `0xD0` to `0xD6`. Twenty of those states
+have an argument parser and 54 an executor. Read so far:
+
+| request | what it does |
+|---|---|
+| `0x13 0xB2 hi lo` | read setting `lo` of the settings store, the latest record winning |
+| `0x14 0xB3 hi lo value` | write it, appending a record to the two 1 KiB blocks from internal `0x01EC00` |
+| `0x14 0xB1 hi lo byte` | write a byte anywhere in data memory, twelve bits of address, at parse time and unchecked |
+| `0x13 0xB0 hi lo` | read a byte of data memory |
+| `0x12 0xB9 byte` | write the byte to data memory `0x200` |
+| `0x11 0xBD` | program `0xFFFE` into internal `0x01F6C0` when that word's bit 0 is set |
+| `0x14 0x34 opcode hi lo` | push the action instruction `opcode` with operand `hi lo` onto the forty slot action queue, at parse time, through the push the configuration's own instructions take; on the 600 and 650 0.2, the 650 0.4 and the 700 2.5 and 2.8. Section 326, read and never sent |
+
+`hi` must be 0 for `0xB2` and `0xB3`: both store routines refuse a setting of `0xFF` or more. A
+settings read answers seven bytes, `0xF0 0x11 0xB2 0x01 0x01 0x01 value`, **measured on the Harmony
+600** with all 41 delay settings agreeing with a dump of its store; the fourth byte is 4 for a command
+that clears the firmware's flag, and `0xF0 0x0E` answers a byte outside the ranges. **A settings write
+answers `0xF0 0x11 0xB3 0x01 0x01 0x01 0x00` on success**, section 305, measured on the Harmony 600
+with four writes; a failure answers 4 in the fourth byte and the append's code in the seventh, 5 for a
+setting of `0xFF` or more, 6 for no active block, 7 for a read back mismatch, and 4 for a full store only
+after the firmware has copied it, then erased and formatted both blocks, and still found no room. A write
+carrying the value the setting holds writes nothing and answers success, and so does a write onto the
+block's last record, which the firmware follows with a copy and an erase. It
+reaches a remote only through `HarmonyRemote.writeSettings`, behind `HARMONY_ENABLE_WRITES=1` and
+`HARMONY_SETTINGS_WRITE=1`.
+
+The Harmony One's handler reads no payload. **The
+transport's allow list passes `0x10` bare and the settings read `0x13 0xB2`, and nothing else in the
+family,** since section 304, because keying on the high nibble
+had let `0xB3`, `0xB1` and `0xBD` through as reads. Most of the other states are unread.

@@ -98,3 +98,29 @@ Sunday, section 322.
 * The touch timing of section 337.
 * Why an oversized sequence hangs the remote, and why it strands after idling on USB.
 * Whether the restart after a write reseeds the clock.
+
+### The Harmony One drops its first command, sometimes
+
+Observed twice on 6 August 2026, both times on a Harmony One, both times the first command after the
+device was opened:
+
+| Command | Symptom | Immediately afterwards |
+|---|---|---|
+| `READ_FLASH`, 256 bytes at `0x040000` | `flash read returned 0 of 256 bytes` | the same test passed, and a 60050 byte firmware read passed in the same run |
+| `GET_VERSION` | `no reply to command 0x10 within 3 polls of 2000 ms` | a rerun read the whole 1232237 byte config without a hiccup |
+
+**The Harmony 600 has not done it**, on either occasion, including runs where its first command came
+before the One's. So the honest statement is about the One, not about remotes in general.
+
+What can be said: the failure is **silence, never a wrong answer**. No case has produced bytes that
+turned out to be incorrect. What cannot be said is why. Candidates nobody here has separated: a wake
+from sleep, since the One has a rechargeable cell and a screen where the 600 runs on AA cells; a
+first-read-after-open effect in the host stack; or an idle timeout rather than anything to do with
+opening at all. Two observations do not distinguish them, and the experiment that would, opening the
+device repeatedly at measured intervals, has not been run.
+
+The workaround is one retry of the **first** command only, and only on silence, in
+`packages/corpus`. Everything after the first command stays strict: widening the retry would be more
+than the evidence supports and would turn a genuinely failing transfer into an intermittent success,
+which is the worst property for the code that files backups. The same rule, with the same two
+message shapes, is in `packages/usb/test/hardware.test.ts`.

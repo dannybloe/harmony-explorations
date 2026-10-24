@@ -104,16 +104,6 @@ fails the check before that.
 The names are `remote-reference` rather than `remotes` because `make remotes` already lists the
 remotes attached to this machine.
 
-## Adding a model
-
-1. Make `reference/remotes/harmony-<model>/` with the same ten files, copying the headings of an
-   existing folder.
-2. Add the model to `REMOTES` in `packages/silhouettes/bin/remotes.ts`: its skins, the drawing it
-   uses and its architecture. A model with no drawing of its own uses its sibling's where the project owner or the
-   manual says the face is shared, and says so in `keys.md`.
-3. Put the markers where the generator expects them and run `make remote-reference-write`.
-4. If its architecture has no folder yet, add one and a row in `ARCHITECTURES`.
-
 ## What this does not replace yet
 
 * `reference/capabilities.md` covers every skin, not only the bench models, and carries the argument

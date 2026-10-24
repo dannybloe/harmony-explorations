@@ -789,6 +789,28 @@ this project's oldest rule is about. Two right copies are what precede two diver
 * **`MCU_ID` is unreachable by construction**, not a task: a PIC18 keeps its device id at `0x3FFFFE`
   and the internal read window is two 64 KiB pages. The arch 12 part number stays inferred.
 
+### The configuration format's open questions
+
+1. ~~What are the 19, 20 or 21 section slots?~~ **Answered.** All twenty base slots are accounted
+   for: two header records, sixteen named sections, and 18 and 19 NULL in all 21 containers.
+   Section 47 closed the last one. What is open is now one level down, inside the sections, and
+   each entry above says which part of itself is not established.
+2. Three of the four IR encoding classes. The dispatcher routes four selectors and only one is
+   traced. **Corrected here:** this entry used to say arch 8's second population with headers near
+   303 / 310 was one of the other classes. It is not. Every record's first byte is its class, and
+   all 2858 records on arch 8, 12 and 14 are class 1, so the records the framer cannot read are
+   class 1 too. The other three classes are used by no config in the corpus at all, which makes
+   them a firmware-only problem rather than a decoding one. `docs/findings.md` section 42.
+   Arch 9 reads a fifth value, 5, which is not one of the four the firmware dispatches over; its
+   header is read and its blocks are not, `docs/findings.md` section 65.
+3. The key table's semantic difference between architectures, and the meaning of `flags`
+   (`0x00`, `0x07`, `0x73`, `0x7F` observed) and of `index` (sequential on the One, all zero on
+   the 600, small values plus an outlier on arch 8).
+4. The 288-byte table at arch 12 flash `0x000000-0x00011F`, in which every nibble is one of
+   {6, 7, E, F}. On NOR flash that is the signature of a counter advanced by clearing one bit
+   at a time. Boot counter, config generation counter and wear map are all plausible. Diffing
+   that range across two dumps of the same remote taken at different times would settle it.
+
 ## Known unknowns
 
 *Moved out of `docs/plans/002-the-roadmap.md` on 6 September 2026. It sat there as a second list of open questions
