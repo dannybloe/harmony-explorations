@@ -18,6 +18,9 @@ folder said about the bench before plan 009 step 3.1 moved it here.
 * **The 600's panel is the one this project confirmed as monochrome by looking**, on the bench unit,
   which is what `reference/capabilities.md` recorded as "seen at the bench"; section 387 measured what a
   colour becomes on it.
+* **A write target since 29 September 2026**, `CLAUDE.md` "Never write to a remote"; it runs build 0.2,
+  and the architecture's README carried both in a "bench unit" column until plan 009 step 3.1 moved them
+  here.
 * **No clock on its screen**, seen on the bench unit on 4 October 2026, which is the observation
   `reference/how-a-harmony-works.md` states for the Harmony 600, 650 and 700. A clock on this unit is
   checked by reading memory over USB, never by looking.

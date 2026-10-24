@@ -13,9 +13,9 @@ matter to the drawing and is not checked[^unchecked].
 
 ## The two populations
 
-A key is either on the **keypad**, bound by the activity and device maps, or one **the screen speaks
-for**, whose meaning is whatever the current page draws beside it. On this architecture the two share
-no scan code at all[^s128]. The screen keys are the four flanking the display and the three below it:
+A key is either on the **keypad** or one **the screen speaks for**, and on this architecture the two
+share no scan code, [the architecture's README](../../architectures/harmony-600-650-700/README.md#keys).
+The screen keys are the four flanking the display and the three below it:
 
 | screen key | scan | what it does | evidence |
 |---|---|---|---|
@@ -126,24 +126,10 @@ this architecture[^s340c].
 
 ## What pressing a key raises
 
-A key raises three events and no others, read in the 650's 0.2 firmware[^s340]:
-
-| event | when |
-|---|---|
-| press | the key goes down |
-| repeat | the key is still down when a timer started at the press runs out |
-| release | the key is let go |
-
-**There is no long press.** Nothing in the firmware tells a short press from a long one, so a long press
-action could only be imitated by a configuration binding a key's repeat, and Logitech's compiler binds the
-activity keys' press alone[^s340]. Logitech's service agrees and declares no long press for this model,
-[the architecture's README](../../architectures/harmony-600-650-700/README.md). MyHarmony's client offers
-a long press activity per activity key, which belongs to later models[^s340b].
-
-**Help waits longer.** The repeat timer is one value for every key and another for Help, starting at 10
-and 50, each multiplied by 100 before the timer starts, so Help waits five times longer before its
-repeat[^s340]. The timer's unit and whether the repeat keeps firing while the key is held are not
-read[^unchecked].
+A press, a repeat and a release, and no long press; Help waits five times longer than any other key
+before its repeat. Both were read in the 650's own 0.2 build and are stated for the architecture, with
+the scope of that reading, in [the architecture's README](../../architectures/harmony-600-650-700/README.md#keys).
+MyHarmony's client offers a long press activity per activity key, which belongs to later models[^s340b].
 
 ## Keys on the firmware's own screens
 
@@ -169,7 +155,6 @@ drawing the keys "USB Connected" waits for, scans 11, 12 and 51, are an unnamed 
 
 [^unchecked]: Not checked.
 [^x-manual]: Stated by Logitech, in the manual. [The Harmony 650 user manual](https://www.logitech.com/assets/44635/3/harmony650-user-guide.pdf)
-[^s128]: Measured in configurations. [Section 128](../../../docs/findings.md#s128)
 [^s285]: Measured in configurations. [Section 285](../../../docs/findings.md#s285)
 [^s290]: Measured in configurations. [Section 290](../../../docs/findings.md#s290)
 [^s294]: Measured in configurations. [Section 294](../../../docs/findings.md#s294)

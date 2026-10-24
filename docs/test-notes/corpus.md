@@ -23,3 +23,11 @@ order the pair the opposite way round from the contributor's stated direction of
 Until that is settled a timestamp is not used to order two configurations of the same remote; the
 warning itself is in the reference, `reference/remotes/harmony-700/misc.md`, which plan 009 moves to
 `reference/config-format/header-records.md` with the timestamp's description.
+
+## Harmony 300 and 350
+
+Five configurations of this architecture are lab fixtures, three of the bench Harmony 350 and two of the
+bench Harmony 300, named in `tests/lab.py` and `packages/lab`, and they sit outside the corpus wide totals
+by decision, section 194. Which read each one is, and what was predicted before it, is in
+[the 350's notes](harmony-350.md) and [the 300's notes](harmony-300.md). This paragraph sat in the
+architecture folder's `misc.md` until plan 009's cleaning of the architecture folders.

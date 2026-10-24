@@ -73,13 +73,11 @@ Selector 1 returns a parameter by index. The reply is `C2`, the selector, the **
 low byte. Below index `0x1A0` the parameter is one byte fetched through `INDF0` and the high byte is
 always zero; at `0x1A0` and above it is two bytes, with a real high half.[^s90]
 
-**Selector 1 has been sent to a unit, and its answer was misread.** A sweep of nine selectors, 0, 1, 2, 4,
-5, 6, 7, 8 and 12, read zero for every one, and for selector 1 that zero was the decoder taking the high
-byte, which is zero for every byte sized parameter, as the value. So the sweep says nothing about what
-selector 1 answers, and the decoder now exposes both bytes.[^s90b] **What selector 1 answers on a running
-remote has not been read with the corrected decoder**; a third party's report, recorded in the
-findings archive, has index 0 moving with the clock and the first seven words decoding to a date and
-time.[^unchecked]
+**A decoder that takes the first byte after the selector as the value reads zero for every byte sized
+parameter**, since that byte is the high half. Selectors 0, 1, 2, 4, 5, 6, 7, 8 and 12 all answer zero
+read that way, which says nothing about selector 1.[^s90b] **What selector 1 answers on a running remote,
+decoded high byte first, has not been read**; a third party has reported index 0 moving with the clock
+and the first seven words decoding to a date and time.[^unchecked]
 
 So the data memory read and the battery reading the later remotes serve do not exist here, and with the
 data memory window answering zeros too, no read path to this platform's working memory is known. Whether
@@ -102,15 +100,11 @@ Every row also needs `HARMONY_ENABLE_WRITES=1`, its own named door where it has 
 Generated from `packages/usb/src/rails.ts` by `make remote-reference-write`. Change the source, not this block.
 <!-- /generated -->
 
-**Which units may be written** is not this reference's to say: `CLAUDE.md`'s "Never write to a remote"
-names them, and the unit check compares the identity block read off the remote with a record of a
-permitted unit.
-
 **Why this library's rail is the whole protection here**: the configuration begins at `0x820000`, the
 stored application sits in the block below it at `0x810000`, the safe mode image below that, and the
 firmware refuses none of them.[^s267] So `assertEraseAllowed` requires a block aligned address and a whole
 block between `CONFIG_REGION_BASE` and `WRITABLE_CEILING`, and the ceiling stops below the log area at
-`0x870000` rather than at the part's end, `packages/usb/src/rails.ts`.
+`0x870000` rather than at the part's end,[^s47] `packages/usb/src/rails.ts`.
 
 **What a write does here that it does not do on the Harmony One**: nothing restarts, since the
 configuration is not executed in place, and nothing needs re-checking, since this platform re-validates
@@ -119,7 +113,7 @@ checksum, so reading a written block back covers the whole configuration.[^s269]
 
 **What is refused on this architecture and why**: the restart, because the escape dispatcher has not been
 read; the data memory write, because its executor has not been read and the part's register page sits
-where the bound would pass an address that is neither memory nor a register;[^unchecked] the settings
+where the bound would pass an address that is neither memory nor a register;[^s269b] the settings
 store and the firmware reinstall, which are read on the Harmony 600, 650 and 700 only.[^s295]
 
 ## Not checked
@@ -140,6 +134,8 @@ store and the firmware reinstall, which are read on the Harmony 600, 650 and 700
 [^s137]: Measured on a unit. [Section 137](../../../docs/findings.md#s137)
 [^s90]: Read in the firmware. [Section 90](../../../docs/findings.md#s90)
 [^s90b]: Measured on a unit. [Section 90](../../../docs/findings.md#s90)
+[^s47]: Measured in configurations. [Section 47](../../../docs/findings.md#s47)
 [^s253]: Read in the firmware. [Section 253](../../../docs/findings.md#s253)
 [^s269]: Measured on a unit. [Section 269](../../../docs/findings.md#s269)
+[^s269b]: Read in the firmware. [Section 269](../../../docs/findings.md#s269)
 [^s295]: Read in the firmware. [Section 295](../../../docs/findings.md#s295)

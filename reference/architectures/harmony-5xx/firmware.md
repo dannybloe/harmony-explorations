@@ -70,17 +70,17 @@ mode rather than nowhere.[^s119]
 
 ## Safe mode is a one way door
 
-* **Entered by holding Off while the batteries go in**, a repair shop's procedure that was followed on a
-  unit.[^s118]
+* **Entered by holding Off while the batteries go in**, a repair shop's procedure for other
+  models[^x-safe-mode] that holds on a Harmony 525.[^s118]
 * **Entering it destroys the application in internal flash.** The part's 32 KiB hold the bootloader and
   one image, so the bootloader copies the safe mode image over the application. Measured by reading
   internal flash before and after; the stored copy at `0x810000` survives.[^s118]
 * **A power cycle does not leave it**: the safe mode image is what is resident and byte 0 asks for
   nothing.[^s119]
 * **Leaving it needs the application copied back**, which is byte 0 set to 2 and a restart. Done once on a
-  unit, which came back with its application and its configuration intact.[^s119b] **This project's
-  write path does not perform it**: the EEPROM is outside the writable range, and installing firmware is
-  not what a configuration write path should do, the `recovering-a-remote` skill.
+  unit, which came back with its application and its configuration intact.[^s119b] **This library's
+  write path does not perform it**: the EEPROM is outside the range `packages/usb/src/rails.ts` lets a
+  write reach.
 
 **So safe mode must never be entered on this model as an experiment.** The Harmony One and the Harmony
 600, 650 and 700 keep their safe mode image resident beside the application and lose nothing by entering
@@ -105,7 +105,7 @@ the copy at `0x810000` is what puts it back. An erase that took both `0x800000` 
 a remote with no route to either image.[^s118][^s267]
 
 **And no configuration can be rebuilt for this model.** It belongs to Logitech's classic platform, whose
-site now serves a discontinuation notice, and Logitech's live service has skin 22 switched off, so nothing
+software Logitech has discontinued,[^s56] and Logitech's live service has skin 22 switched off, so nothing
 compiles a configuration for a 525 and there is no vendor built file to put back after a bad
 write.[^s135][^s145]
 
@@ -134,8 +134,10 @@ write.[^s135][^s145]
 [^s284]: Read in the firmware. [Section 284](../../../docs/findings.md#s284)
 [^s87]: Read in the firmware. [Section 87](../../../docs/findings.md#s87)
 [^s137b]: Read in the firmware. [Section 137](../../../docs/findings.md#s137)
+[^x-safe-mode]: Stated by a third party. [A repair shop's safe mode procedure](https://www.harmonyremoterepair.com/files/theme/Documents/Safe_Mode_Instructions.pdf)
 [^s119b]: Measured on a unit. [Section 119](../../../docs/findings.md#s119)
 [^s189]: Read in the firmware. [Section 189](../../../docs/findings.md#s189)
 [^s192]: Read in the firmware. [Section 192](../../../docs/findings.md#s192)
+[^s56]: Stated by Logitech. [Section 56](../../../docs/findings.md#s56)
 [^s135]: Stated by Logitech, by their service. [Section 135](../../../docs/findings.md#s135)
 [^s145]: Stated by Logitech, by their service. [Section 145](../../../docs/findings.md#s145)

@@ -113,7 +113,9 @@ in an archive section, so the reference states them only as far as a section car
   `todo-compile-650.md` 1.6 (`h650_start_config`, section 364). **The remote runs eight**: the TX-29AK40F
   and the Knoll composed in one run onto the six device configuration each sent their codes from their
   own pages, `todo-compile-650.md` 2.7; section 331 composed them and says nothing composed that way had
-  been written when it was written.
+  been written when it was written. The architecture's README carried this as "8, `todo-compile-650.md`
+  2.7" in a "bench unit" row until plan 009 step 3.1; it now gives six, from section 305, and marks the
+  rest as held by no archive section.
 * **A fifth device opens a second device list page** on a list a person reaches: the Sony DAV-C540
   composed onto a four device configuration opened a second page on the idle list and on both
   activities' own lists, `todo-compile-650.md` 2.3,

@@ -103,7 +103,12 @@ EVIDENCE = {
 }
 ALL_EVIDENCE = tuple(sorted({w for words in EVIDENCE.values() for w in words}, key=len, reverse=True))
 
-FOOTNOTE_REFERENCE = re.compile(r'\[\^([^\]\s]+)\](?!:)')
+# A reference is any `[^label]` in running text, a colon after it included: "as stated[^s1]: ..." is a
+# reference. A definition is told apart by where it stands, at the start of a line, which
+# `footnote_problems` cuts off before counting references, rather than by the colon after it. The
+# colon test this replaced left a reference directly followed by a colon uncounted, so a footnote
+# used only that way read as defined and never referenced.
+FOOTNOTE_REFERENCE = re.compile(r'\[\^([^\]\s]+)\]')
 FOOTNOTE_DEFINITION = re.compile(r'^\[\^([^\]\s]+)\]:\s*(.*)$')
 
 # Links: inline and image links, reference definitions, and the two HTML attributes that carry a path.

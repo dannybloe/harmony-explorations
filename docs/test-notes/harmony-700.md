@@ -18,7 +18,14 @@ before and after each step, and the reads are in the lab.
 * **The configuration** at `0x030000` was the previous owner's, 974009 bytes, every structural check
   passing; after a Harmony Desktop sync it was 1070416 bytes, section 295.
 * **The settings store** held twelve setting `0x80` records as found, and the sync appended two more,
-  `0xFE` and `0xFF`, section 296.
+  `0xFE` and `0xFF`, section 296. The model page states the model's half of this, that a 700's store
+  holds only setting `0x80` records and that a sync appends two; the counts are this unit's.
+* **A write target since 29 September 2026**, `CLAUDE.md` "Never write to a remote", running the 2.8
+  build this project staged. The architecture's README carried both in a "bench unit" column until plan
+  009 step 3.1 moved them here.
+* **No clock on its screen**, the observation at the bench on 4 October 2026 that
+  `reference/how-a-harmony-works.md` states for the Harmony 600, 650 and 700; the reference rests it on
+  section 430. A clock on this unit is checked by reading memory over USB, never by looking.
 
 ## What the unit settled
 

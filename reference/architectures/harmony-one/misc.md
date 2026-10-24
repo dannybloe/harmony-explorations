@@ -13,11 +13,18 @@ folder.
 
 ## The configuration is the Harmony 600, 650 and 700's, with two more slots
 
-The container is the same family as the Harmony 600, 650 and 700's, `GSPM` and `PTYY` with the marker
-`LWJL`, at format `0x1600` where theirs is `0x1400`[^s7]. Its pointer table is the same table with two
-slots inserted, one empty and one holding a section of its own, which makes 22 where theirs has 20, so a section labelled on one transfers to the other by its base slot index[^s115]. Two base slots
-are read by this firmware and not by theirs: base slot 17, which here is the touch screen's hit map, and
-base slot 2, the log area[^s45][^s47].
+A Harmony One's configuration is built like a Harmony 600's, with two more entries in its table of
+contents, so what is learned about a section on one model carries over to the other. The container is
+the same family, `GSPM` and `PTYY` with the marker `LWJL`, at format `0x1600` where theirs is
+`0x1400`[^s7]. Its pointer table is the same table with two slots inserted, one empty and one holding a
+section of its own, which makes 22 where theirs has 20, so a section labelled on one transfers to the other
+by its base slot index[^s115]; the table for every architecture is
+[the container's pointer table](../../config-format/container.md#one-table-four-architectures).
+
+What does not carry over: two base slots are read by this firmware and not by the Harmony 700's 2.8, the
+image of that family whose section seeker was counted, base slot 17, which here is the touch screen's hit
+map, and base slot 2, the log area[^s45][^s47]. A slot that looks unused on a Harmony 600, 650 or 700 may be
+in use here.
 
 ## Not checked
 

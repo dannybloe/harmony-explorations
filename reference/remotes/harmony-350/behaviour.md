@@ -20,9 +20,8 @@ than pressing Watch TV or another device key. What device mode is on every Harmo
 
 ## What the configurations say
 
-* **Every send is paired with a `0x7C`**, 602 of 602 lists over the five configurations of this
-  architecture, and some of them as a third shape, `{0x07, 0x7D, 0x7C}`, beside the plain pair[^s278].
-  The rule is every architecture's, [the action language](../../config-format/actions.md).
+* How a send is spelled, every send paired with a `0x7C` naming the same device, is the family's,
+  [the family's memory.md](../../architectures/harmony-300-350/memory.md#the-configuration-container).
 * One configuration compiled for a 350 sends each code three times a press: 106 of its 130 records state
   a count, and every one of them states 3[^s259].
 
@@ -32,5 +31,4 @@ than pressing Watch TV or another device key. What device mode is on every Harmo
 * What a long press on a device key does when that key holds only one device.
 
 [^x-manual]: Stated by Logitech, in the manual. [The Harmony 350 setup guide](https://www.logitech.com/assets/51207/harmony-350-qsg-and-iid.pdf)
-[^s278]: Measured in configurations. [Section 278](../../../docs/findings.md#s278)
 [^s259]: Measured in configurations. [Section 259](../../../docs/findings.md#s259)

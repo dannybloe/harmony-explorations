@@ -213,8 +213,10 @@ export function isSilence(err: unknown): boolean {
  * that returned 0 of 256 bytes, and a `GET_VERSION` that got no reply at all, each on the first
  * command after the device was opened, each followed immediately by a run that worked from end to
  * end including a 1232237 byte config read. The Harmony 600 has not done it. So the honest
- * description is "the One sometimes drops the first command", not a general rule, and the cause is
- * unknown; see `reference/remotes/harmony-one/behaviour.md`.
+ * description is "the One sometimes drops the first command", not a general rule. A third
+ * occurrence, `docs/findings.md` section 155, narrowed what the cases share to **idleness**: no
+ * restart, nothing unplugged and no command sent before it. Why idleness does it is still open. The
+ * occurrences are in `docs/test-notes/harmony-one.md`, "The first command dropped after idling".
  *
  * Everything after the first command stays strict. Retrying the bulk reads too would be a wider
  * workaround than the evidence supports, and it would turn a genuinely failing transfer into an

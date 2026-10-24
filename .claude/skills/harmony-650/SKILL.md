@@ -17,9 +17,9 @@ missing; nobody had read it. So the first section below is not optional.
 
 In this order, every time, including in an agent:
 
-1. `reference/remotes/harmony-650/README.md`: the key numbers, the unit on the bench, and the map of
-   its nine topic files. Then open the topic file the task touches: `keys.md`, `display.md`,
-   `features.md`, `behaviour.md`, `memory.md`, `firmware.md`, `usb.md`, `hardware.md`, `misc.md`.
+1. `reference/remotes/harmony-650/README.md`: the key numbers and the map of its nine topic files; the
+   unit on the bench is in `docs/test-notes/harmony-650.md`. Then open the topic file the task
+   touches: `keys.md`, `display.md`, `features.md`, `behaviour.md`, `memory.md`, `firmware.md`, `usb.md`, `hardware.md`, `misc.md`.
 2. `reference/architectures/harmony-600-650-700/README.md`: what the 650 shares with the 600 and 700,
    architecture 14, including its memory layout. In conversation say "the Harmony 650", never the bare
    architecture number.
