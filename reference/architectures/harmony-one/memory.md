@@ -73,3 +73,18 @@ The unit's own identity block is named separately, 64 bytes at `0xFFF400`, read 
 `READ_FLASH`. That is the region this repository's policy keeps out of any published dump.
 
 The last two were called unexplained here until 29 August 2026. Both are placed now, and by two routes: section 206 found bytes at each address on both Harmony Ones, and section 212 found the client naming each one's **version byte**, which lands on version block fields 8 and 9. Field 9's placement rested on a pairing that `tests/test_usb_firmware.py` flags as its weak leg, so this is the independent confirmation that comment asks for.
+
+### Still open
+
+* **The rate the arch 12 clock loses time**, section 111. Two mechanisms are read and both only lose, so
+  5.6 minutes a day is an upper bound rather than a figure. **Deliberately not measured**, decided on 10 August 2026, since
+  it would need the One left alone for a day and read at both ends, and no
+  document or code anywhere wants the number. Recorded so that the bound is never quoted as a
+  measurement.
+* **The arch 12 calibration words at `0x01F5C0` and `0x01F5C2`**, section 105: 94 and `0xFFFF` on
+  both units, fetched by the same helper as the battery scale, consumer not traced. The scale itself
+  is read, `4 + trim/65536` millivolts a converter count, and **section 44's battery conjecture is a
+  finding now**. Two hazards worth carrying: `0x01F580` is **on chip**, so a firmware `TBLRD` there
+  and a `READ_FLASH` over USB at the same number read different memories; and the words had been in
+  the lab for a day, filed as "unidentified" in `docs/memory-map-one.md` two rows above the note that
+  says two remotes differ at `+0xF582`.

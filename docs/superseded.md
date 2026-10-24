@@ -11,7 +11,7 @@ remembering to sweep is not a mechanism.
 
 **How to use it.** When a finding overturns something, add the dead phrasing here in the same
 commit that lands the finding. That is the fourth place a confirmed fact goes, after
-`config-format.md`, `findings.md` and a regression test; the `finding` skill says so too.
+`reference/config-format/`, `findings.md` and a regression test; the `finding` skill says so too.
 
 **A phrase may still appear inside a correction**, because recording corrections in place is the
 whole point of the convention. The checker allows a line that starts with a blockquote `>`, a
@@ -545,7 +545,7 @@ it reachable in the same commit and the test comparing the two tables is what ca
 | `0 to 100 and never more` | section 327, 4 October 2026 | true of the twelve containers section 70 counted; Logitech's compiler writes a sequence's 20 second wait on the spare Harmony One as one `0x7C` of 200 per device, twelve in one configuration, and whether the remote waits all of it is unmeasured |
 | `copies the last page's chrome` | section 334, 4 October 2026 | said of a page added to a full arch 14 menu, the Harmony 600, 650 and 700's. The page is built per kind of menu, `fourSlotMenuChrome`, and every page of the menu is checked against what is built |
 | `acts only inside an activity's start` | section 335, 7 October 2026 | said of the arch 14 inter device delay. The variable its step tests is raised by an activity's handlers, by the Off key map, which is All Off, and by the Help screens, and the bench Harmony 650 waits the delay in All Off |
-| `applies inside a start sequence and not on a device mode key press` | section 335, 7 October 2026 | the same claim in `config-format.md`'s words; the device mode half stands, the start sequence half left out All Off and Help |
+| `applies inside a start sequence and not on a device mode key press` | section 335, 7 October 2026 | the same claim in `reference/config-format/`'s words; the device mode half stands, the start sequence half left out All Off and Help |
 | `acts only inside a start sequence` | section 335, 7 October 2026 | the same claim in `todo.md`'s words |
 | `felt only inside a start sequence` | section 335, 7 October 2026 | the same claim in section 287's scope |
 | `it only acts while an activity starts` | section 335, 7 October 2026 | the same claim in `docs/status.md`'s words |

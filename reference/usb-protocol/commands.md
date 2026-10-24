@@ -1189,3 +1189,22 @@ on arch 12 and arch 14, measured on both.
 **Tested and refused on arch 9.** Since selector 7 answers zero for every address on a Harmony 525,
 the client's naming made 6 the obvious thing to try. All nine selectors return zero on a window that
 is demonstrably live on a 600. `docs/findings.md` section 90.
+
+### Where a learn session's samples leave the remote
+
+* **Where a learn session's samples leave the remote is read**, section 98, and the two searches
+  that failed did so because both assumed the bytes are **sent**. They are not. `START_IRCAP` clears
+  two 66 byte buffers at `0x0600` and `0x0642` and a toggle at `0x0684`, the capture path fills
+  whichever is open, and the transport points the **endpoint 1 IN buffer descriptor** straight at it,
+  `0x40E` and `0x40F`, with the count at `0x40D`. So no routine ever emits `0x90`: it is stored into
+  the buffer at `0x602`. On arch 12 a report is 64 bytes, `0x90`, a sequence byte advancing by
+  `0x10`, then samples as **big endian `u16` durations** differenced from CCP2, with the payload
+  length repeated in the last byte. That encoding is the config's own, bit 15 marking a pulse, so
+  what comes off the remote is already the shape a record wants. **Arch 14 has the same header**,
+  written through `INDF` because it reaches the buffers by `FSR`, which is why a scan keyed on the
+  buffer offsets missed it; what stays arch 12 only is the differencing that makes a sample a
+  duration. **The reports are unsolicited**, so a
+  host must keep reading during the session; that settles section 91's disagreement between the two
+  clients in the classic one's favour.
+  **Do not argue this from a literal scan**: a data response code carries a computed length nibble
+  and never appears as a literal, which cost one wrong negative here, `docs/superseded.md`.

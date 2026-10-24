@@ -18,25 +18,8 @@ section. For the format as a specification, [reference/config-format/](../refere
 
 ## Status
 
-The work targets three architectures. **Nine remotes are on the bench**, and this list is the
-hardware, not the model families: two Harmony Ones, a Harmony 600, a Harmony 525, since 27 August
-2026 a Harmony Touch, a Harmony 350 and a Harmony 300, since 27 September 2026 a Harmony 650, and since
-29 September 2026 a Harmony 700. This said seven until 9 October 2026, two units short, the same count
-`CLAUDE.md` had corrected for itself. The last three are the file based family and
-are **not targets** for the config work: `openHarmony` refuses them by product id
-rather than by accident, section 193. What they have bought so far is the reading of the descriptor
-field that names a model, section 195, the route to their firmware, section 196, and their whole
-protocol as Logitech specifies it, section 198. **There is an implementation now and it has read a
-remote**, sections 200 and 201: `packages/usb/src/filepipe.ts`, and a Harmony Touch's `/sys/sysinfo`
-opened, read and closed on the bench, 234 bytes in fourteen fields including the architecture the
-remote states for itself. This paragraph called it a specification and not an implementation until
-29 August 2026. Reading that identity is four commands, ping, open, read and close, and none of them
-writes, so `openHarmony`'s refusal is about what has been built for the **config** path rather than
-about what is reachable at all. Other models
-appear throughout this page as firmware images or contributed configurations, and the Harmony 700 is
-the one that gets mistaken for hardware, because it is the best mapped arch 14 image and is quoted
-constantly. **A Harmony 700 unit has been on the bench since 29 September 2026**, and this said there
-had never been one until 9 October 2026.
+The work targets three architectures. The units on the bench are listed in
+[test-notes/README.md](test-notes/README.md).
 
 * **arch 12** ("Gin"), the Harmony One, and the spare Harmony One, one of the **three** units anything
   may be written to. This said it was "the only unit anything may ever be written
@@ -644,18 +627,6 @@ this project's oldest rule is about. Two right copies are what precede two diver
   `trace-section` names first and it was the right dead end for the wrong reason. What is left is which
   caller passes index 1, and **nothing depends on it**: the field is named from the firmware's own
   subtraction against base slot 3's record and its behaviour is measured twice.
-* **The rate the arch 12 clock loses time**, section 111. Two mechanisms are read and both only lose, so
-  5.6 minutes a day is an upper bound rather than a figure. **Deliberately not measured**, decided on 10 August 2026, since
-  it would need the One left alone for a day and read at both ends, and no
-  document or code anywhere wants the number. Recorded so that the bound is never quoted as a
-  measurement.
-* **The arch 12 calibration words at `0x01F5C0` and `0x01F5C2`**, section 105: 94 and `0xFFFF` on
-  both units, fetched by the same helper as the battery scale, consumer not traced. The scale itself
-  is read, `4 + trim/65536` millivolts a converter count, and **section 44's battery conjecture is a
-  finding now**. Two hazards worth carrying: `0x01F580` is **on chip**, so a firmware `TBLRD` there
-  and a `READ_FLASH` over USB at the same number read different memories; and the words had been in
-  the lab for a day, filed as "unidentified" in `docs/memory-map-one.md` two rows above the note that
-  says two remotes differ at `+0xF582`.
 * **Which I2C device sits at address 0x60 on the Harmony One**, section 106. Thirteen channels of
   three states, two eight bit level registers, an enable on `LATC` bit 5 and no readback, which is the
   shape of an LED driver and most plausibly the keypad backlight, dimmed by the same band that dims
@@ -697,22 +668,6 @@ this project's oldest rule is about. Two right copies are what precede two diver
   that service never emitted for these devices. A miss was "stored as-is in its original format",
   which predicts a raw class. That matters for FreeHarmony: the service that made the choice is the
   discontinued one, so learning a code without it means making that choice locally.
-* **Where a learn session's samples leave the remote is read**, section 98, and the two searches
-  that failed did so because both assumed the bytes are **sent**. They are not. `START_IRCAP` clears
-  two 66 byte buffers at `0x0600` and `0x0642` and a toggle at `0x0684`, the capture path fills
-  whichever is open, and the transport points the **endpoint 1 IN buffer descriptor** straight at it,
-  `0x40E` and `0x40F`, with the count at `0x40D`. So no routine ever emits `0x90`: it is stored into
-  the buffer at `0x602`. On arch 12 a report is 64 bytes, `0x90`, a sequence byte advancing by
-  `0x10`, then samples as **big endian `u16` durations** differenced from CCP2, with the payload
-  length repeated in the last byte. That encoding is the config's own, bit 15 marking a pulse, so
-  what comes off the remote is already the shape a record wants. **Arch 14 has the same header**,
-  written through `INDF` because it reaches the buffers by `FSR`, which is why a scan keyed on the
-  buffer offsets missed it; what stays arch 12 only is the differencing that makes a sample a
-  duration. **The reports are unsolicited**, so a
-  host must keep reading during the session; that settles section 91's disagreement between the two
-  clients in the classic one's favour.
-  **Do not argue this from a literal scan**: a data response code carries a computed length nibble
-  and never appears as a literal, which cost one wrong negative here, `docs/superseded.md`.
 * **The physical button map**, meaning the matrix keypad. **The Harmony One's touch panel is mapped**,
   section 125, and out of the config rather than the hardware: base slot 17's rectangles, the mode page
   byte saying which page is in force, and a transform onto the display. That leaves the 40 keys around

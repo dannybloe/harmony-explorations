@@ -34,13 +34,19 @@ docs/plans/                     one worked out plan per planning session, NNN-sl
                                 reasoning behind every step taken, and 003 the live plan for
                                 chapter 1
 docs/findings.md                authoritative technical reference, narrative
-reference/config-format/README.md           the config format spec, structured, for tools to track, ending
-                                with the per base slot summary that used to sit in this file
-reference/glossary.md                the vocabulary: which terms are Logitech's, which are ours
-reference/usb-protocol/README.md            the USB protocol spec, step 3, transport done, commands open
-reference/logitech/clients.md             Logitech's own client as a source: the rule, and the ledger of
-                                what is believed on its word alone, all of it unconfirmed
-reference/logitech/data-model/             everything about the vendor platform, one subject in one folder since
+reference/config-format/        the config format spec, structured, for tools to track, one file per
+                                subject; its README ends with the per base slot summary that used to
+                                sit in this file
+reference/glossary.md           the vocabulary: which terms are Logitech's, which are standard
+docs/glossary.md                this project's own words: the corpus, the tooling and the process
+reference/usb-protocol/         the USB protocol spec: transport, commands, the version block, the
+                                bootloader and the file based protocol
+reference/infrared/             how a code becomes light: frames, families, sending
+reference/logitech/             Logitech's world. clients.md is their software as a source: the rule,
+                                and the ledger of what is believed on its word alone, all of it
+                                unconfirmed. Beside it the classic client on the wire, the
+                                configuration service, the update service and the device catalogue
+reference/logitech/data-model/  everything about the vendor platform, one subject in one folder since
                                 30 August 2026. It was split across docs/ and reference/ before that,
                                 which is how half of it went stale without the other half noticing:
                                 the listing named types the reading never explained. Danny decided
@@ -83,7 +89,8 @@ docs/recipe.md                  the recipe a configuration of ours is built from
                                 its fields, what it holds and what the model's definition holds
                                 instead, and each field against FreeHarmony's data model with the
                                 gaps FreeHarmony would fill to produce one
-reference/config-format/relocation.md        what a length change would move, counted: the stated addresses, the
+reference/config-format/relocation.md
+                                what a length change would move, counted: the stated addresses, the
                                 implied positions and the three restamped fields. The survey behind
                                 edit.ts's refusal to change a length, and since section 172 also the
                                 spec of relocate.ts, the separate entry point that performs it
@@ -104,7 +111,8 @@ docs/lab-excavation.md          the method for step 9: the seventeen things wort
                                 load bearing rule is that **a catalogue is not a claim and only a
                                 claim needs a test**, taken by Danny on 28 August 2026, because
                                 demanding a test per row is what keeps the site unexcavated
-reference/how-a-harmony-works.md     the operating concept: activities, device mode, the Devices key, what
+reference/how-a-harmony-works.md
+                                the operating concept: activities, device mode, the Devices key, what
                                 the keypad and the screen each do. Read before designing anything about
                                 behaviour, since every other document here is about bytes
 docs/review-before-first-write.md
@@ -141,8 +149,11 @@ src/harmony/                    the research library, see below
 tools/                          thin command line wrappers, no logic of their own
 tools/ghidra/                   headless script plus extracted branch target seeds
 tests/                          one regression test per documented finding
-docs/checksums.md          provenance, load addresses, public sample checksums
-docs/superseded.md         claims a finding killed, which no document may restate
+docs/checksums.md               provenance, load addresses, public sample checksums
+docs/superseded.md              claims a finding killed, which no document may restate
+docs/test-notes/                this project's own units, accounts and configurations, kept out of
+                                the reference
+docs/predictions/               predictions written down before a measurement, then scored
 reference/models.md             the 40 models Logitech retired in 2025, mapped to architectures
 reference/capabilities.md       what each model's hardware can do, per skin, with a verification
                                 column. Third party and unconfirmed except where that column says
@@ -156,9 +167,11 @@ reference/remotes/              the per remote technical reference, one folder p
                                 the Harmony 600, 650 and 700 show a clock, which none of them does.
                                 Facts that live in code are **generated** blocks, between
                                 `<!-- generated:name -->` markers, by packages/silhouettes/bin/remotes.ts;
-                                `make remote-reference` fails on drift. Its README holds the convention
+                                `make remote-reference` fails on drift. reference/README.md holds
+                                the convention
 reference/architectures/        what one architecture's models share, stated once and linked from
-                                each model folder: harmony-600-650-700/ for arch 14. It carries the
+                                each model folder: harmony-600-650-700/ for arch 14, harmony-one/
+                                for arch 12. It carries the
                                 architecture's memory layout now, and docs/memory-map-600.md and
                                 -700.md keep what is one unit's
 reference/silhouettes/          the front face of a model, one SVG per model, **generated** from
@@ -172,15 +185,14 @@ reference/silhouettes/          the front face of a model, one SVG per model, **
 reference/button-maps.md        which button a scan code is, per model, measured through the account
                                 that generated the calibration configs. Partial and honest about it:
                                 the scans two buttons share are listed as sets, not assigned
-docs/lab-register.md       the lab, artefact by artefact: what each thing is, how deep anybody
+docs/lab-register.md            the lab, artefact by artefact: what each thing is, how deep anybody
                                 has been, and which of the excavation's seventeen want list tags it
                                 might answer. **A catalogue and not a set of claims**, so it carries
                                 no tests of its own, per the rule in docs/lab-excavation.md. Two
                                 things about its frame are tested, that every path it names exists
                                 and that every artefact in the lab has a row, which is the check the
                                 directory level one could not make
-docs/concordance-notes.md  the two concordance defects, with patches
-reference/ghidra_functions.txt  derived metadata: 521 functions by reference count
+docs/concordance-notes.md       the two concordance defects, with patches
 bin/setup-ghidra.sh             build or refresh the Ghidra project
 bin/lab-register-hook.py        prints the lab register's rows for a path at the moment that path is
                                 opened, and interrupts the first touch of each directory so it cannot
