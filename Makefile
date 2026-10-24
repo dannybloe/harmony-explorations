@@ -36,7 +36,7 @@ JAVA_21 ?= /opt/homebrew/opt/openjdk@21
 
 export PYTHONPATH := $(SRC):$(TESTS)
 
-.PHONY: help test test-nolab test-partial test-verbose lint pyright prose facts facts-write corpus lab-check lab-progress ghidra ts ts-test ts-typecheck audit hooks golden golden-write bench probe remotes watch-keys watch-columns coverage emit reading growth text render page activities devices alphabets silhouettes remote-reference remote-reference-write all clean protocols segmentlengths prontocheck composecensus catalogue catalogue-raw emitcheck myharmony-model model-pdf model-diagram model-activity model-cluster
+.PHONY: help site test test-nolab test-partial test-verbose lint pyright prose facts facts-write corpus lab-check lab-progress ghidra ts ts-test ts-typecheck audit hooks golden golden-write bench probe remotes watch-keys watch-columns coverage emit reading growth text render page activities devices alphabets silhouettes remote-reference remote-reference-write all clean protocols segmentlengths prontocheck composecensus catalogue catalogue-raw emitcheck myharmony-model model-pdf model-diagram model-activity model-cluster
 
 BENCH_PORT ?= 8731
 
@@ -66,6 +66,7 @@ help:
 	@echo "silhouettes  regenerate the remote face drawings; SILHOUETTE_ARGS=--preview"
 	@echo "remote-reference  check the generated blocks of reference/remotes and reference/architectures"
 	@echo "remote-reference-write  rewrite those blocks from the code"
+	@echo "site         build the reference website into site/, strict; SITE_STRICT=false while chapters 3 and 4 run"
 	@echo "page         drive the bench page in Chrome, which is what checks the page itself"
 	@echo "activities   which activity each key starts, and which label is its name"
 	@echo "catalogue    what Logitech's device catalogue says about our own configs' devices"
@@ -77,7 +78,7 @@ help:
 	@echo "facts        check the numbers and the dead claims in the documents; facts-write fixes numbers"
 	@echo "test-nolab   the suite against a nonexistent lab: it must skip, not assert"
 	@echo "test-partial the suite against a lab holding one sample: no test may pass partially"
-	@echo "all          everything above except ghidra, bench and probe"
+	@echo "all          everything above except ghidra, bench, probe and site"
 
 test:
 	@$(PYTHON) -m unittest discover -s $(TESTS)
@@ -350,6 +351,35 @@ remote-reference:
 
 remote-reference-write:
 	@node packages/silhouettes/bin/remotes.ts --write
+
+# The reference website, todo-reference.md 7.1: MkDocs with the Material theme builds `reference/` into
+# `site/`, which is ignored and never committed; `mkdocs.yml` and `tools/site/hooks.py` say what is built
+# and how the links that leave `reference/` are handled.
+#
+# **Strict unless told otherwise.** `make site` fails on any broken link, broken anchor, page left out of
+# the navigation or page the navigation names that is missing. Until todo-reference.md chapters 3 and 4
+# have made that pass, `make site SITE_STRICT=false` builds the site and prints the same warnings.
+#
+# **The environment lives outside the repository**, under `~/.cache`, and that is not a matter of taste:
+# `tools/facts.py` and `tests/test_toolchain.py` walk every `.py`, `.md` and `.txt` file in the checkout
+# that git does not report as untracked, and an ignored virtual environment is not reported, so one in
+# here would put a few thousand files of other people's code into both sweeps. It is made once, from
+# `tools/site/requirements.txt` with every hash checked and wheels only, and remade whenever that file
+# changes. Python 3.12 because Material needs 3.11 or newer and watchdog has no macOS wheel for 3.14;
+# override with SITE_PYTHON. NO_MKDOCS_2_WARNING silences a banner Material prints on every run about
+# MkDocs 2.0, which this build excludes by its pins; the requirements file says why.
+SITE_PYTHON ?= python3.12
+SITE_VENV   ?= $(HOME)/.cache/harmony-explorations/site-venv
+SITE_STRICT ?= true
+
+site: $(SITE_VENV)/.installed
+	@SITE_STRICT=$(SITE_STRICT) NO_MKDOCS_2_WARNING=1 $(SITE_VENV)/bin/mkdocs build
+
+$(SITE_VENV)/.installed: tools/site/requirements.txt
+	@rm -rf $(SITE_VENV)
+	@$(SITE_PYTHON) -m venv $(SITE_VENV)
+	@$(SITE_VENV)/bin/pip install --quiet --disable-pip-version-check --require-hashes --only-binary :all: -r tools/site/requirements.txt
+	@touch $@
 
 render:
 	@node packages/codec/bin/render.ts $(RENDER_ARGS)

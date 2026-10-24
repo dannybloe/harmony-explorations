@@ -73,3 +73,8 @@ reference/logitech/data-model/catalogue-model.pdf
 # Written by Claude Code into a plugin folder when it loads the plugin: the API typings, about
 # 14000 lines, regenerated on every load.
 .claude/skills/harmony-remote/.claude-plugin/types/
+
+# The reference website built by `make site` (todo-reference.md 7.1). Built from reference/ and never
+# committed; a GitHub Action publishes it. Anchored with a leading slash, since a bare `site/` would also
+# ignore `tools/site/`, which holds the build itself.
+/site/

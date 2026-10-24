@@ -1,0 +1,281 @@
+# The reference website, todo-reference.md 7.1 and plan 009 sections 1 and 3. Built from `reference/`
+# alone; the archive, `docs/findings.md`, is published beside it one page per section by
+# `tools/site/hooks.py`, which also rewrites every link that leaves `reference/`. The built site is never
+# committed (`site/` is in `.gitignore`); `make site` builds it locally and a GitHub Action will publish it
+# (todo-reference.md 7.2).
+#
+# **Strict by default, switchable.** Every check below is at warning level, and in strict mode a single
+# warning fails the build: a broken link, a broken anchor, a page in `reference/` the navigation leaves
+# out, a page the navigation names that does not exist, and anything the hook could not place. That is
+# what makes the build a guard on every link from chapter 3 of todo-reference.md on. The reference is not
+# finished yet, so the same build with `SITE_STRICT=false` (`make site SITE_STRICT=false`) reports the same
+# warnings and still writes the site. Use that until todo-reference.md chapters 3 and 4 have made the
+# strict build pass, then never again.
+
+site_name: How a Harmony works
+site_description: >-
+  A reference to the Logitech Harmony remotes: what they do, how their configuration files and their USB
+  protocol work, and what is known about each model, with the evidence for every fact.
+site_url: https://dannybloe.github.io/harmony-explorations/
+repo_url: https://github.com/dannybloe/harmony-explorations
+repo_name: harmony-explorations
+edit_uri: edit/main/reference/
+
+docs_dir: reference
+site_dir: site
+
+strict: !ENV [SITE_STRICT, true]
+
+validation:
+  nav:
+    omitted_files: warn
+    not_found: warn
+    absolute_links: warn
+  links:
+    not_found: warn
+    anchors: warn
+    absolute_links: warn
+    unrecognized_links: warn
+
+hooks:
+  - tools/site/hooks.py
+
+theme:
+  name: material
+  features:
+    # The top level of the navigation as tabs, the reader's order of plan 009 section 1.
+    - navigation.tabs
+    - navigation.sections
+    # A folder's README is that section's own page rather than a child of it.
+    - navigation.indexes
+    - navigation.top
+    - search.highlight
+    - content.code.copy
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/weather-night
+        name: Dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/weather-sunny
+        name: Light mode
+
+# Material's built in search, and nothing that reaches the network at build time: the social cards and
+# the privacy plugin would fetch, and none is wanted (tools/site/requirements.txt).
+plugins:
+  - search
+
+markdown_extensions:
+  # The evidence form of plan 009 section 4 is a named footnote.
+  - footnotes
+  - tables
+  - admonition
+  - attr_list
+  - md_in_html
+  - toc:
+      permalink: true
+  - pymdownx.superfences
+  - pymdownx.details
+
+# The order a reader meets, plan 009 section 1, "The website's navigation". Pages the plan names that do
+# not exist yet are listed all the same, so the strict build reports each until its step writes it.
+nav:
+  - Introduction: README.md
+  - How a Harmony works: how-a-harmony-works.md
+  - Remotes:
+      - remotes/README.md
+      - Harmony 300:
+          - remotes/harmony-300/README.md
+          - Keys: remotes/harmony-300/keys.md
+          - Display: remotes/harmony-300/display.md
+          - Features: remotes/harmony-300/features.md
+          - Behaviour: remotes/harmony-300/behaviour.md
+          - Hardware: remotes/harmony-300/hardware.md
+          - Memory: remotes/harmony-300/memory.md
+          - Firmware: remotes/harmony-300/firmware.md
+          - USB: remotes/harmony-300/usb.md
+          - Other: remotes/harmony-300/misc.md
+      - Harmony 350:
+          - remotes/harmony-350/README.md
+          - Keys: remotes/harmony-350/keys.md
+          - Display: remotes/harmony-350/display.md
+          - Features: remotes/harmony-350/features.md
+          - Behaviour: remotes/harmony-350/behaviour.md
+          - Hardware: remotes/harmony-350/hardware.md
+          - Memory: remotes/harmony-350/memory.md
+          - Firmware: remotes/harmony-350/firmware.md
+          - USB: remotes/harmony-350/usb.md
+          - Other: remotes/harmony-350/misc.md
+      - Harmony 525:
+          - remotes/harmony-525/README.md
+          - Keys: remotes/harmony-525/keys.md
+          - Display: remotes/harmony-525/display.md
+          - Features: remotes/harmony-525/features.md
+          - Behaviour: remotes/harmony-525/behaviour.md
+          - Hardware: remotes/harmony-525/hardware.md
+          - Memory: remotes/harmony-525/memory.md
+          - Firmware: remotes/harmony-525/firmware.md
+          - USB: remotes/harmony-525/usb.md
+          - Other: remotes/harmony-525/misc.md
+      - Harmony 600:
+          - remotes/harmony-600/README.md
+          - Keys: remotes/harmony-600/keys.md
+          - Display: remotes/harmony-600/display.md
+          - Features: remotes/harmony-600/features.md
+          - Behaviour: remotes/harmony-600/behaviour.md
+          - Hardware: remotes/harmony-600/hardware.md
+          - Memory: remotes/harmony-600/memory.md
+          - Firmware: remotes/harmony-600/firmware.md
+          - USB: remotes/harmony-600/usb.md
+          - Other: remotes/harmony-600/misc.md
+      - Harmony 650:
+          - remotes/harmony-650/README.md
+          - Keys: remotes/harmony-650/keys.md
+          - Display: remotes/harmony-650/display.md
+          - Features: remotes/harmony-650/features.md
+          - Behaviour: remotes/harmony-650/behaviour.md
+          - Hardware: remotes/harmony-650/hardware.md
+          - Memory: remotes/harmony-650/memory.md
+          - Firmware: remotes/harmony-650/firmware.md
+          - USB: remotes/harmony-650/usb.md
+          - Other: remotes/harmony-650/misc.md
+      - Harmony 700:
+          - remotes/harmony-700/README.md
+          - Keys: remotes/harmony-700/keys.md
+          - Display: remotes/harmony-700/display.md
+          - Features: remotes/harmony-700/features.md
+          - Behaviour: remotes/harmony-700/behaviour.md
+          - Hardware: remotes/harmony-700/hardware.md
+          - Memory: remotes/harmony-700/memory.md
+          - Firmware: remotes/harmony-700/firmware.md
+          - USB: remotes/harmony-700/usb.md
+          - Other: remotes/harmony-700/misc.md
+      - Harmony 880 and 885:
+          - remotes/harmony-885/README.md
+          - Keys: remotes/harmony-885/keys.md
+          - Display: remotes/harmony-885/display.md
+          - Features: remotes/harmony-885/features.md
+          - Behaviour: remotes/harmony-885/behaviour.md
+          - Hardware: remotes/harmony-885/hardware.md
+          - Memory: remotes/harmony-885/memory.md
+          - Firmware: remotes/harmony-885/firmware.md
+          - USB: remotes/harmony-885/usb.md
+          - Other: remotes/harmony-885/misc.md
+      - Harmony 890 and 895:
+          - remotes/harmony-890/README.md
+          - Keys: remotes/harmony-890/keys.md
+          - Display: remotes/harmony-890/display.md
+          - Features: remotes/harmony-890/features.md
+          - Behaviour: remotes/harmony-890/behaviour.md
+          - Hardware: remotes/harmony-890/hardware.md
+          - Memory: remotes/harmony-890/memory.md
+          - Firmware: remotes/harmony-890/firmware.md
+          - USB: remotes/harmony-890/usb.md
+          - Other: remotes/harmony-890/misc.md
+      - Harmony One:
+          - remotes/harmony-one/README.md
+          - Keys: remotes/harmony-one/keys.md
+          - Display: remotes/harmony-one/display.md
+          - Features: remotes/harmony-one/features.md
+          - Behaviour: remotes/harmony-one/behaviour.md
+          - Hardware: remotes/harmony-one/hardware.md
+          - Memory: remotes/harmony-one/memory.md
+          - Firmware: remotes/harmony-one/firmware.md
+          - USB: remotes/harmony-one/usb.md
+          - Other: remotes/harmony-one/misc.md
+      - Harmony Touch:
+          - remotes/harmony-touch/README.md
+          - Keys: remotes/harmony-touch/keys.md
+          - Display: remotes/harmony-touch/display.md
+          - Features: remotes/harmony-touch/features.md
+          - Behaviour: remotes/harmony-touch/behaviour.md
+          - Hardware: remotes/harmony-touch/hardware.md
+          - Memory: remotes/harmony-touch/memory.md
+          - Firmware: remotes/harmony-touch/firmware.md
+          - USB: remotes/harmony-touch/usb.md
+          - Other: remotes/harmony-touch/misc.md
+  - Architectures:
+      - architectures/README.md
+      - Harmony 300 and 350:
+          - architectures/harmony-300-350/README.md
+          - Memory: architectures/harmony-300-350/memory.md
+          - Firmware: architectures/harmony-300-350/firmware.md
+          - USB: architectures/harmony-300-350/usb.md
+          - Other: architectures/harmony-300-350/misc.md
+      - Harmony 5xx:
+          - architectures/harmony-5xx/README.md
+          - Memory: architectures/harmony-5xx/memory.md
+          - Firmware: architectures/harmony-5xx/firmware.md
+          - USB: architectures/harmony-5xx/usb.md
+          - Other: architectures/harmony-5xx/misc.md
+      - Harmony 600, 650 and 700:
+          - architectures/harmony-600-650-700/README.md
+          - Compiler: architectures/harmony-600-650-700/compiler.md
+          - Memory: architectures/harmony-600-650-700/memory.md
+          - Firmware: architectures/harmony-600-650-700/firmware.md
+          - USB: architectures/harmony-600-650-700/usb.md
+          - Other: architectures/harmony-600-650-700/misc.md
+      - Harmony 880 and 885:
+          - architectures/harmony-880-885/README.md
+          - Memory: architectures/harmony-880-885/memory.md
+          - Firmware: architectures/harmony-880-885/firmware.md
+          - USB: architectures/harmony-880-885/usb.md
+          - Other: architectures/harmony-880-885/misc.md
+      - Harmony 890 and 895:
+          - architectures/harmony-890-895/README.md
+          - Memory: architectures/harmony-890-895/memory.md
+          - Firmware: architectures/harmony-890-895/firmware.md
+          - USB: architectures/harmony-890-895/usb.md
+          - Other: architectures/harmony-890-895/misc.md
+      - Harmony One:
+          - architectures/harmony-one/README.md
+          - Compiler: architectures/harmony-one/compiler.md
+          - Memory: architectures/harmony-one/memory.md
+          - Firmware: architectures/harmony-one/firmware.md
+          - USB: architectures/harmony-one/usb.md
+          - Other: architectures/harmony-one/misc.md
+      - Harmony Touch:
+          - architectures/harmony-touch/README.md
+          - Firmware: architectures/harmony-touch/firmware.md
+          - USB: architectures/harmony-touch/usb.md
+  - The formats:
+      - The configuration file:
+          - config-format/README.md
+          - The container: config-format/container.md
+          - Header records: config-format/header-records.md
+          - Modes and keys: config-format/modes-and-keys.md
+          - Activities and devices: config-format/activities-and-devices.md
+          - Actions: config-format/actions.md
+          - State: config-format/state.md
+          - Screens: config-format/screens.md
+          - Infrared records: config-format/infrared-records.md
+          - Layout: config-format/layout.md
+          - Relocation: config-format/relocation.md
+          - The EZHex wrapper: config-format/ezhex.md
+      - Talking to a remote:
+          - usb-protocol/README.md
+          - Transport: usb-protocol/transport.md
+          - Commands: usb-protocol/commands.md
+          - The version block: usb-protocol/version-block.md
+          - The bootloader: usb-protocol/bootloader.md
+          - The file protocol: usb-protocol/file-protocol.md
+      - Infrared:
+          - infrared/README.md
+          - Frames: infrared/frames.md
+          - Families: infrared/families.md
+          - Sending: infrared/sending.md
+  - Logitech's world:
+      - logitech/README.md
+      - Product line: logitech/product-line.md
+      - Clients: logitech/clients.md
+      - The classic client: logitech/classic-client.md
+      - The configuration service: logitech/service.md
+      - The update service: logitech/update-service.md
+      - The device catalogue: logitech/device-catalogue.md
+      - The data model:
+          - logitech/data-model/model.md
+          - Entities: logitech/data-model/entities.md
+  - Glossary: glossary.md
