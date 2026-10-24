@@ -63,7 +63,7 @@ Two properties make this a tree rather than a list of strings:[^s77]
 
 Level 2 appears on the Harmony 880 and 885 and the Harmony 525 only, holding a small menu under
 `HarmonyAssistant`.[^s77] The order Logitech's compiler stores the nodes in, a hash order of the variable
-index, is in [the layout](layout.md).[^s324]
+index, is in [the layout](layout.md#the-order-is-a-hash-tables-bucket-order).[^s324]
 
 A level 1 name is three parts, `<label>_<qualifier>_<values>`:
 

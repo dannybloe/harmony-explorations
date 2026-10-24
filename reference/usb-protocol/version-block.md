@@ -49,7 +49,7 @@ follow; what its low nibble means, if anything, is not checked[^unchecked]. A ho
 fields refuses a 525's correct answer, which is why `readVersion` takes any block of seven bytes or more
 and refuses a shorter one, which carries neither the architecture nor the skin[^s76].
 
-## GET_VERSION's twelve bytes, six identified by prediction
+## GET_VERSION's twelve bytes
 
 Eleven of the twelve fields have a reading, from the accessors that fill them and from replies of remotes
 that differ in every one of the values. Six were first read off a Harmony 600 beside concordance's report
@@ -174,7 +174,7 @@ logic image, which agrees with the readings above, [the Harmony One's firmware](
 **One agreement and one contradiction.** The client's file for the Harmony 525's skin declares a flash
 device id of `0x12` and a manufacturer of `0xFF`, and its file for the Harmony One declares `0xF9` and
 `0x01`; no archive section holds those two statements[^unchecked]. A Harmony 525 reports exactly the first
-pair[^s76], and a Harmony One reports `0xC8` and `0x1F`, not the second[^s57]. Either the One shipped with
+pair[^s76], and a Harmony One reports `0xC8` and `0x1F`, not the second[^s57b]. Either the One shipped with
 more than one flash part or the file is wrong; either way **a writer takes the flash id from the remote and
 never from the client's table**, and the write rails in `packages/usb/src/rails.ts` compare a
 configuration's declared version against the version block the remote returns rather than against a
@@ -210,3 +210,4 @@ binary[^s113][^s392]. Neither has been read off a remote's bus[^unchecked].
 [^s295]: Measured on a unit. [Section 295](../../docs/findings.md#s295)
 [^s212]: Stated by Logitech, in their client. [Section 212](../../docs/findings.md#s212)
 [^s392]: Read in the firmware. [Section 392](../../docs/findings.md#s392)
+[^s57b]: Measured on a unit. [Section 57](../../docs/findings.md#s57)

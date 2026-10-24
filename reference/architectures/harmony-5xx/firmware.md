@@ -109,6 +109,35 @@ software Logitech has discontinued,[^s56] and Logitech's live service has skin 2
 compiles a configuration for a 525 and there is no vendor built file to put back after a bad
 write.[^s135][^s145]
 
+## Re-validation from an action list
+
+**An action list instruction can make this remote check its configuration again**, which no other architecture
+allows, [the action language](../../config-format/actions.md#arch-9-re-validates-the-configuration-on-0x1f-with-operand-high-byte-0xc0-to-0xcf).
+The opcodes that reach the dispatch chain are `0x1F` to `0x3E`, and `0xC0` to `0xCF` is a band of the
+**operand's high byte**. The handler takes that high byte's **low nibble** as an order selector and calls the
+container re-validation, which validates a container and writes the verdict bit the status screens are chosen
+by; nibble values 2 and 3 choose which container goes first[^s255]. The same byte has more bands: `0xD0`,
+`0xE0` and `0xF0` are three further groups, unread, and `0xFC` is special cased in the interpreter's loop head
+before the dispatch begins[^s254].
+
+**An instruction is staged in the format's own field order**, operand low, operand high, opcode: the chain
+switches on `0x3D8`, so `0x3D7` is the operand's low byte, `0x3D8` its high byte and `0x3D9` the opcode, and the
+loop head compares the **third** byte against opcode `0x1F` and the **second** against a sub-command value. The
+bank is established by the last explicit `MOVLB` before the branch into the chain and the absence of any other on
+the path[^s255].
+
+## The display driver
+
+**The 525's panel is driven by a page addressed display controller**[^s101]. Screen opcode 22 calls the routine
+at `0x038EC`, which keeps the page index at `0xC0` and derives `row * 8` and `row * 8 + 7` beside it, and the
+transfer at `0x03898` sends `0xB0 | row`, the page address command. Opcode 23 then sends 96 pixels, preceded
+by a column address in two nibbles where **the panel's column 0 is the controller's column 3**[^s101]. What the
+two opcodes mean in a configuration is [screens](../../config-format/screens.md#opcodes-22-and-23-per-architecture).
+
+**The controller is ST7565 class and not an SSD1306**: six ST7565 only commands appear in the driver's
+initialisation, in the order that family documents, and none of the ten SSD1306 only ones do[^s101]. The exact
+part is not established[^unchecked].
+
 ## Not checked
 
 * Any firmware for this architecture other than the 525's 3.0 and 2.0.[^unchecked]
@@ -138,6 +167,8 @@ write.[^s135][^s145]
 [^s119b]: Measured on a unit. [Section 119](../../../docs/findings.md#s119)
 [^s189]: Read in the firmware. [Section 189](../../../docs/findings.md#s189)
 [^s192]: Read in the firmware. [Section 192](../../../docs/findings.md#s192)
+[^s101]: Read in the firmware. [Section 101](../../../docs/findings.md#s101)
 [^s56]: Stated by Logitech. [Section 56](../../../docs/findings.md#s56)
 [^s135]: Stated by Logitech, by their service. [Section 135](../../../docs/findings.md#s135)
 [^s145]: Stated by Logitech, by their service. [Section 145](../../../docs/findings.md#s145)
+[^s255]: Read in the firmware. [Section 255](../../../docs/findings.md#s255)

@@ -144,12 +144,14 @@ So every address here is read in the firmware and none is measured: the bare sca
 * The `0x30` window's purpose.[^unchecked]
 * What Logitech's client means by its layout for this architecture. It places the safe mode image at
   `0x800000`, the application firmware at `0x810000` and a 32 KiB embedded configuration at `0x820000`,
-  and states no user configuration base. The first two agree with the table above; at `0x820000` a unit
-  holds its user configuration, longer than 32 KiB, and the safe mode configuration sits at `0x818000`,
-  inside the block the client calls application firmware.[^unchecked]
+  and states no user configuration base[^t-host-client]. The first two agree with the table above; at
+  `0x820000` a unit holds its user configuration, longer than 32 KiB, and the safe mode configuration sits
+  at `0x818000`, inside the block the client calls application firmware. What the client means by it is
+  not checked[^unchecked].
 * Every model here but the Harmony 525.[^unchecked]
 
 [^unchecked]: Not checked.
+[^t-host-client]: Stated by Logitech, in their client. [The test](../../../tests/test_host_client.py)
 [^s76]: Measured on a unit. [Section 76](../../../docs/findings.md#s76)
 [^s119]: Read in the firmware. [Section 119](../../../docs/findings.md#s119)
 [^s267]: Read in the firmware. [Section 267](../../../docs/findings.md#s267)

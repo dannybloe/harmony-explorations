@@ -26,7 +26,7 @@ Generated from `packages/corpus` and `packages/usb` by `make remote-reference-wr
 * The model number in the version reply is the build's own constant: 71 in the 600's 0.2 and 72 in the
   650's[^s392].
 * The version block's twelve bytes: firmware, hardware, flash id, architecture in field 4's high nibble,
-  skin and platform, [the version block](../../usb-protocol/version-block.md#get_versions-twelve-bytes-six-identified-by-prediction)[^s57].
+  skin and platform, [the version block](../../usb-protocol/version-block.md#get_versions-twelve-bytes)[^s57].
 * Safe mode answers as software type 4, the application as 0[^s87].
 
 ## Commands

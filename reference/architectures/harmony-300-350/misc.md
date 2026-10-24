@@ -18,7 +18,8 @@ byte, which is the same property the other architectures' configurations have[^s
 ## A configuration names its devices
 
 Raw slot 13 holds a metadata archive naming the devices and their commands and stating the log area's
-record layout, [the container](../../config-format/container.md), under its arch 16 slots.
+record layout, [the metadata archive](../../config-format/container.md#the-metadata-archive), with
+[the container's slots for this family](../../config-format/container.md#the-harmony-300-and-350s-slots).
 Its compiler's class path says `binarizer.pepsi`, Pepsi being Logitech's name for skin 78[^s260][^s197].
 
 ## Not checked

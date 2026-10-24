@@ -229,8 +229,9 @@ the tag is `kind << 4 | group`; `0x7C` sets bit 6 of the group byte, which marks
 rather than a send, and asks for priority 1 where `0x7D` asks for 2[^s70]. A quantity folds into the last entry
 of the queue when the tag matches: the larger value wins and the smaller is dropped. **The fold is refused
 when the queued value is already 100**, which pushes a second entry instead, and that is what makes a quantity
-above 100 expressible at all[^s70]. The fold stops at 100 and does not cap a single instruction; whether the
-remote waits the full value of one instruction above 100 is not measured[^unchecked].
+above 100 expressible at all[^s70]. The fold stops at 100 and does not cap a single instruction, and one instruction above 100 is waited in
+full: a pause of one `0x7C` of 200 per device held a Harmony 650 for its 20 seconds, [above](#a-sequence-is-one-action-list-of-calls-and-per-device-pauses)[^s342].
+Arch 12 (Harmony One) is not measured for this[^unchecked].
 
 Two rules follow for a writer. No inline power on delay on arch 8, 9 or 12 exceeds 100 and arch 14 spells its
 larger ones out, so a delay above 100 is spelled out as the configurations do, while a sequence's pause is
@@ -271,8 +272,8 @@ consequences:
 Measured on a Harmony One both ways round: raising a television's delay to ten seconds in an activity that sends
 it one command changed nothing observable, and raising the receiver's in the same activity, where an input
 change follows, moved its gap from about six seconds to about ten[^s236c]. Changing a delay is a same length
-edit and still erases two 64 KiB blocks, because the trailer checksum at the far end of the container moves
-with it: on a Harmony One configuration the operand and the checksum sat 1.3 MiB apart[^s237].
+edit and still erases two 64 KiB blocks, because the trailer checksum moves with it,
+[the container](container.md#the-trailer-checksum)[^s237].
 
 Arch 12 masks the kind with three bits and the device with four, so bit 4 of a tag belongs to neither field,
 where arch 14 gives it to the kind. What it is for is not established, and no configuration can say: the group
@@ -377,47 +378,21 @@ instead. No configuration emits one[^s104].
 
 ### Arch 9 re-validates the configuration on `0x1F` with operand high byte `0xC0` to `0xCF`
 
-**Read on arch 9 (Harmony 525) only.** The opcodes that reach the chain are `0x1F` to `0x3E`, and `0xC0` to `0xCF`
-is a band of the **operand's high byte**. The handler takes that high byte's **low nibble** as an order selector
-and calls the container re-validation, which validates a container and writes the verdict bit the status screens
-are chosen by; nibble values 2 and 3 choose which container goes first[^s255]. Arch 9 has more bands of that byte:
-`0xD0`, `0xE0` and `0xF0` are three further groups, unread, and `0xFC` is special cased in the interpreter's loop
-head before the dispatch begins[^s254].
-
-**Neither other architecture has it.** On arch 12 (Harmony One) the re-validation runs from a cable transition
-and on arch 14 (Harmony 600, 650 and 700) from a poll, both the firmware's decision rather than the
+**Read on arch 9 (Harmony 525) only.** An instruction of opcode `0x1F` whose operand's high byte is `0xC0` to
+`0xCF` makes the remote validate its containers again and write the verdict the status screens are chosen
+by[^s255]. **Neither other architecture has it**: on arch 12 (Harmony One) the re-validation runs from a cable
+transition and on arch 14 (Harmony 600, 650 and 700) from a poll, both the firmware's decision rather than the
 configuration's[^s251][^s252]. So this is the only place in the format where a configuration can ask a remote to
-re-check itself. **No configuration emits one**, and a writer has no reason to; it is recorded so that a
-disassembly of an arch 9 action list has a name for it[^s254].
-
-**An arch 9 instruction is staged in the format's own field order**, operand low, operand high, opcode: the chain
-switches on `0x3D8`, so `0x3D7` is the operand's low byte, `0x3D8` its high byte and `0x3D9` the opcode, and the
-loop head compares the **third** byte against opcode `0x1F` and the **second** against a sub-command value. The
-bank is established by the last explicit `MOVLB` before the branch into the chain and the absence of any other on
-the path[^s255].
+re-check itself. **No configuration emits one**, and a writer has no reason to[^s254]. How the firmware decodes
+it is [the Harmony 525's firmware](../architectures/harmony-5xx/firmware.md#re-validation-from-an-action-list).
 
 ### Arch 12's `0x3F` band `0xC0` resolves by selector
 
-Confirmed on two arch 12 (Harmony One) configurations and two images, 106 uses each. The operand carries three
-fields, `{ bit 0; bits 1 to 3; bits 4 to 8 }`, and the third is a five bit selector, so selectors 0 to 15 arrive
-with high byte `0xC0` and 16 to 31 with `0xC1`. The handler accepts fifteen values and drops the other seventeen,
-and the configurations use exactly the fifteen[^s102]:
-
-| selector | what it does | uses per configuration |
-|---|---|---|
-| 17 | sets the **display's light level**: bits 1 to 3 choose one of eight states, bit 0 fades rather than snapping. States 2 to 5 take a level from base slot 15 group 1 and a pair of device levels from group 9, state 6 chooses the state from the measured band, states 0 and 1 turn it off[^s103] | 68 |
-| 0 to 12 | sets channel `selector` of the I2C device at address `0x60` to the two bit value the byte table past base slot 15 group 9 states, for bits 1 to 3 being nonzero[^s106] | 36 |
-| 16 | enables that device, `LATC` bit 5, set when bits 1 to 3 are nonzero[^s106] | 2 |
-| 13 to 15, 18 to 31 | nothing: the handler falls to its exit | 0 |
-
-64 of the 68 are selector 17 state 6 without a fade. **The band's uses are identical in both configurations**, one
-of which has five devices and eight activities where the other has one and one, so nothing here varies with what
-the remote is set up to control. **They are the compiler's fixed initialisation of the device at `0x60`**, one pass
-setting each channel off and one setting each on, and the firmware itself never enables that device: it only
-switches it off at shutdown. So a configuration that omits them leaves the device disabled[^s106]. What the device
-is, is on [the Harmony One's hardware page](../remotes/harmony-one/hardware.md); the base slot 15 groups are
-[state.md](state.md#base-slot-15-the-parameter-block).
-
+On arch 12 (Harmony One) the operand of a `0x3F` instruction in band `0xC0` carries a five bit selector, and the
+fifteen values the handler accepts set the display's light level and initialise a device on the remote's I2C bus.
+Every configuration carries the same 106 of them, the compiler's fixed initialisation[^s102]. The selectors,
+what each does and why a configuration that omits them leaves that device disabled are
+[the Harmony One's firmware](../architectures/harmony-one/firmware.md#the-0x3f-band-0xc0).
 `actions.BAND_3F_C0_SELECTOR` extracts the selector and `actions.reading` resolves the instruction.
 
 ## State variables
@@ -514,22 +489,11 @@ The configurations use those four and nothing else. Counting the loop's own over
 8% and the lowest by under 1%. **`0x3F` with high byte `0xF3` gates it**: the generator returns without playing
 when that byte is zero[^s74].
 
-**On arch 12 (Harmony One) Logitech's compiler clicks before every screen send.** Every screen binding that sends
-runs `0x75 0x0FCA`, then its calls, then its `0x7D`, and no key binding that sends runs it, on four of Logitech's
-compiles; a configuration that omits it still sends, so it is a convention[^s337]. The generator returns only when
-the 26 ms tone has played, and the send follows two main loop turns later. A screen binding's send is also more
-often a **one block copy**, whose once block opens with its device's delay between devices, 500 or 1000 ms on the
-Harmony One, where a two block record opens with 50 ms: 148 of one configuration's 241 screen sends against 23 of
-its 377 key sends. A touch reaches the same event poster as a key, and the touch code `0x202` sets the streamer's
-hold flag as a held key does[^s337].
-
-**A device page's row, a `0x7F` binding, runs a list that opens with the click**, on 3545 of 3545 rows over
-nineteen of Logitech's Harmony One compiles: `{0x75 0x0FCA, 0x7F list}` on 3495, the click and a `0x72` on 50. The
-touch family's device page wraps every row whose list does not already open with a click that way, and an activity
-screen's pad, which clicks itself, calls the command under the device page's click, so no binding reaches two
-clicks, as none in Logitech's compiles does. The Harmony 600, 650 and 700 compiles' device page rows open with a
-call instead[^s404]. How the compiler lays out the Harmony One's pages is
-[its compiler page](../architectures/harmony-one/compiler.md).
+**On arch 12 (Harmony One) Logitech's compiler clicks before every screen send**, `0x75 0x0FCA` ahead of the
+send, a convention a configuration may leave out, [its compiler page](../architectures/harmony-one/compiler.md#the-click-before-a-screen-send)[^s337].
+The generator returns only when the 26 ms tone has played, and the send follows two main loop turns later. A
+touch reaches the same event poster as a key, and the touch code `0x202` sets the streamer's hold flag as a held
+key does[^s337].
 
 ## The introduction tour, arch 14
 
@@ -644,14 +608,11 @@ iterations whatever it is given, so a divisor of zero returns `0xFFFF` from `0x7
 [^s251]: Measured on a unit. [Section 251](../../docs/findings.md#s251)
 [^s252]: Read in the firmware. [Section 252](../../docs/findings.md#s252)
 [^s102]: Measured in configurations. [Section 102](../../docs/findings.md#s102)
-[^s103]: Read in the firmware. [Section 103](../../docs/findings.md#s103)
-[^s106]: Read in the firmware. [Section 106](../../docs/findings.md#s106)
 [^s34]: Read in the firmware. [Section 34](../../docs/findings.md#s34)
 [^s140b]: Measured in configurations. [Section 140](../../docs/findings.md#s140)
 [^s74]: Read in the firmware. [Section 74](../../docs/findings.md#s74)
 [^s369]: Read in the firmware. [Section 369](../../docs/findings.md#s369)
 [^s73b]: Measured in configurations. [Section 73](../../docs/findings.md#s73)
-[^s404]: Measured in configurations. [Section 404](../../docs/findings.md#s404)
 [^s286]: Measured in configurations. [Section 286](../../docs/findings.md#s286)
 [^s286b]: Measured on a unit. [Section 286](../../docs/findings.md#s286)
 [^s37]: Measured in configurations. [Section 37](../../docs/findings.md#s37)

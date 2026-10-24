@@ -46,34 +46,7 @@ firmware writes there is not read.[^unchecked]
 | pointer table | the base layout of 20 slots with a NULL inserted at slot 8, so everything from base slot 8 up sits one raw slot higher[^s20][^s194] |
 | architecture record | raw slot 1, seven bytes: `08 08`, the skin, `0d`, then three zero bytes. `08 08 0f 0d` on an 880 and `08 08 11 0d` on an 885[^s182] |
 
-<!-- generated:slot-map -->
-21 raw slots. 20 of the 20 base slots are present; absent: none. Raw slots no base slot names: 8.
-
-| base slot | raw slot |
-|---|---|
-| 0 | 0 |
-| 1 | 1 |
-| 2 | 2 |
-| 3 | 3 |
-| 4 | 4 |
-| 5 | 5 |
-| 6 | 6 |
-| 7 | 7 |
-| 8 | 9 |
-| 9 | 10 |
-| 10 | 11 |
-| 11 | 12 |
-| 12 | 13 |
-| 13 | 14 |
-| 14 | 15 |
-| 15 | 16 |
-| 16 | 17 |
-| 17 | 18 |
-| 18 | 19 |
-| 19 | 20 |
-
-Generated from `SLOT_MAPS` in `packages/codec/src/gspm.ts` by `make remote-reference-write`. Change the source, not this block.
-<!-- /generated -->
+Where each base slot sits is [the container's table of every architecture](../../config-format/container.md#one-table-four-architectures).[^s194]
 
 **Logitech's classic client states this architecture's container wrongly.** Its constants for
 architecture 8 declare 20 pointer slots and a trailer at offset 91[^s206], where four configurations put

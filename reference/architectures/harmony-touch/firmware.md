@@ -19,12 +19,8 @@ for skin 99, the Touch, and the file served for skin 112, the 950, are byte iden
 for skins 97 and 106. Only the download's name differs per skin[^s196]. A Harmony Touch reports 4.15.330
 for itself, the production build exactly[^s200].
 
-**Two channels exist, production and preview, and no others.** Nine invented channel names, among them
-`xmpp` and `xmppupdate`, all return the production build without an error, so a wrong channel name is a
-wrong answer rather than a refusal[^s196].
-
-Eight skins have no image on either channel: 98, 101, 107, 109, 113 and 114 of this generation, and 78 and
-104, the Harmony 300 and 350, by this route[^s196].
+The service has two channels, production and preview, and six skins of this generation, 98, 101, 107, 109,
+113 and 114, have no image on either; both are [the update service](../../logitech/update-service.md#the-service)[^s196].
 
 ### What is in a package
 
@@ -43,9 +39,8 @@ The remotes' package has not been opened, and its processor is **not checked**[^
 
 ## The factory images
 
-**Logitech publishes two factory images with no key at all**, on its content network at
-`Firmware/<skin>/firmware_factory.hfw2`: one for skin 99, the Touch, and one for skin 106, a hub. Every
-other skin answers 403 there[^s196].
+**Logitech publishes two factory images with no key at all**, one for skin 99, the Touch, and one for skin
+106, a hub; where, and what every other skin answers, is [the update service](../../logitech/update-service.md#what-it-serves)[^s196].
 
 ## A factory reset is a firmware install
 
@@ -55,9 +50,7 @@ a whole factory firmware image fetched over the network[^s196]. That is why a se
 protocol could never have found one, [the commands](../../usb-protocol/commands.md). A Touch reset this way
 holds a configuration of zero bytes[^s195].
 
-The tool's product list is this generation and nothing older: Touch, Ultimate, Ultimate One, Ultimate Home,
-Elite, 950, Pro, Home Control, Smart Control and Smart Keyboard, each with a factory and a latest firmware
-button[^s196].
+The tool offers this generation and nothing older, [the recovery tool](../../logitech/update-service.md#the-recovery-tool-that-names-it)[^s196].
 
 **Two paths on a Touch act when they are opened**, `/sys/factoryreset` and `/sys/reboot`[^s200]. They are
 the remote's own reset and restart, not Logitech's recovery route, and why opening them is refused is
@@ -65,11 +58,9 @@ the remote's own reset and restart, not Logitech's recovery route, and why openi
 
 ## The XMPP update
 
-The older recovery page carries a mode with no product attached, `xmppupdate`[^s196]. It is aimed at the
-hubs: a hub's local control interface is the subject, and a Touch has no network interface for one to
-listen on[^s196]. **What it installs is not settled.** The hubs' preview build is pinned at 4.15.250 while
-production is at 4.15.600, which fits a firmware kept for its old behaviour and does not show it; the
-preview parameter appears in every recovery mode, so it does not single this one out[^s196].
+The older recovery page carries a mode with no product attached, `xmppupdate`, aimed at the hubs: a hub's
+local control interface is the subject, and a Touch has no network interface for one to listen on. What it
+installs is not settled, [the recovery tool](../../logitech/update-service.md#the-recovery-tool-that-names-it)[^s196].
 
 ## Not checked
 

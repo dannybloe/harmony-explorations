@@ -335,7 +335,7 @@ rebuilt byte for byte on the sixteen and both European compiles, the Dutch one r
 
 | what | rule, on the sixteen |
 |---|---|
-| the four | the gauge (a switch on firmware variable 9, eight pictures at 153, 4); the gauge while charging (variable 15: 0 the gauge again, 3 a picture, 1 to 2 a switch on the gauge, its level 0 a picture and levels 1 to 3 and 4 to 7 a switch on the second stepping three pictures, second modulo 3, or the first and third, second modulo 2); the sending mark (variable 17: 0 and 1 to 3 a picture each at 128, 0, then a queued `07 FFFA`; the Harmony 600 family's corner program at another place, [the screens reference](../../config-format/screens.md#base-slot-11-the-screen-program-table)); the clock (its face at 88, 19, then switches on the weekday, the hour in its join and the minute in its join) |
+| the four | the gauge (a switch on firmware variable 9, eight pictures at 153, 4); the gauge while charging (variable 15: 0 the gauge again, 3 a picture, 1 to 2 a switch on the gauge, its level 0 a picture and levels 1 to 3 and 4 to 7 a switch on the second stepping three pictures, second modulo 3, or the first and third, second modulo 2); the sending mark (variable 17: 0 and 1 to 3 a picture each at 128, 0, then a queued `07 FFFA`; the Harmony 600 family's corner program at another place, [its compiler page](../harmony-600-650-700/compiler.md#a-corner-pages-chrome)); the clock (its face at 88, 19, then switches on the weekday, the hour in its join and the minute in its join) |
 | which entry each is | the description's: entries 0 to 3 on all nineteen, in three orders |
 | the switches' variables | the firmware's, 0, 1, 2, 4, 9, 15 and 17, constants of the template |
 | a switch inside an arm | its join closes as the arm would, a jump to the outer join |
@@ -557,16 +557,15 @@ all nineteen[^s416].
 **Logitech's compiler clicks before every screen send on the Harmony One.** Every screen binding that sends runs
 `0x75 0x0FCA`, then its calls, then its `0x7D`, and no key binding that sends runs it, on four of Logitech's
 compiles[^s337]; a configuration that omits it still sends, so it is a convention and not the remote's
-demand[^s337b]. The generator returns only when the 26 ms tone has played, and the send follows two main loop
-turns later. A screen binding's send is also more often a **one block copy**, whose once block opens with its
+demand[^s337b]. What the tone costs a send is [the action language](../../config-format/actions.md#0x75-sounds-a-tone).
+A screen binding's send is also more often a **one block copy**, whose once block opens with its
 device's delay between devices, 500 or 1000 ms on the One, where a two block record opens with 50 ms: 148 of one
 compile's 241 screen sends against 23 of its 377 key sends[^s337]. **A device page's row, a `0x7F` binding, runs
 a list that opens with the click**, on 3545 of 3545 rows over the nineteen: `{0x75 0x0FCA, 0x7F list}` on 3495,
 the click and a `0x72` on 50. The touch family's device page wraps every row whose list does not already open
 with a click that way, and an activity screen's pad, which clicks itself, calls the command under the device
 page's click, so no binding reaches two clicks, as none in Logitech's compiles does. The Harmony 600, 650 and 700
-compiles' device page rows open with a call instead[^s404]. What a touch is to the firmware is
-[the actions reference](../../config-format/actions.md).
+compiles' device page rows open with a call instead[^s404].
 
 ## Texts and letters
 
@@ -666,6 +665,12 @@ level 3 leaves 69, its bottom row and most of the right end of its body and tip 
 4028 of its 5394 undrawn, everything outside its circle's silhouette, a roughly round blob of 1366 drawn
 pixels[^s428]. What that shows on a screen is [the One's display page](../../remotes/harmony-one/display.md#how-the-screen-is-drawn).
 
+**A filled rectangle has three uses on Logitech's compiles**: over the sixteen English compiles of skin 54
+Logitech uses [opcode 1](../../config-format/screens.md#filling-a-rectangle) for the welcome tour's black
+background, 11 a compile, for a black fill before a full screen picture, 18 in all, and for the four lines two
+pixels wide that frame a picker's button, 9 frames a compile, each closing exactly round a button picture drawn
+there, 144 of 144[^s425b].
+
 The Harmony One gets this project's own pictures in place of Logitech's[^d24]; how they are drawn is described
 in `pictures.ts`.
 
@@ -705,6 +710,11 @@ compile holds are 84 and 1955, the fewest base slot 11 entries 29, and the fewes
 the compiles do show near zero: an activity menu of no row and the thirteen redraw classes of a configuration with
 no activity, on the four compiles with none[^s429][^s430]; and an all off with nothing to switch off, with its
 help chain of the attempt screen and "Nothing to do", on one compile[^s415][^s430].
+
+**How wide each table's count is**, on 19 of 19 compiles, read as each table's length less three bytes per entry
+it names: one byte for base slots 5, 9, 12, 15, 16 and 17, two for 10 and 11, and three for 6. Reading the same
+tables at four bytes an entry disagrees with the widths on 19 of 19, which is the control. Raw slot 18 is two zero
+bytes with nothing parked in front on all nineteen[^s431]. `TOUCH_COUNT_WIDTHS` holds the widths.
 
 **Within a mode, Logitech's order** is the own key map, the chrome, then per page its program, its switch's pieces
 and its page record, then the entry, on all 102 device lists of the nineteen compiles[^s435].
@@ -798,6 +808,7 @@ described there.
 [^s399]: Measured in configurations. [Section 399](../../../docs/findings.md#s399)
 [^s423]: Measured in configurations. [Section 423](../../../docs/findings.md#s423)
 [^s425]: Read in the firmware. [Section 425](../../../docs/findings.md#s425)
+[^s425b]: Measured in configurations. [Section 425](../../../docs/findings.md#s425)
 [^s279]: Measured in configurations. [Section 279](../../../docs/findings.md#s279)
 [^s416]: Measured in configurations. [Section 416](../../../docs/findings.md#s416)
 [^s337]: Measured in configurations. [Section 337](../../../docs/findings.md#s337)
@@ -814,3 +825,4 @@ described there.
 [^s393]: Measured in configurations. [Section 393](../../../docs/findings.md#s393)
 [^s435]: Measured in configurations. [Section 435](../../../docs/findings.md#s435)
 [^unchecked]: Not checked.
+[^s431]: Measured in configurations. [Section 431](../../../docs/findings.md#s431)

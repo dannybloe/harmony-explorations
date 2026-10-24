@@ -19,10 +19,10 @@ What Logitech's compiler draws with them is on the compiler pages of
 
 A second interpreter, separate from [the action lists](actions.md), with one byte opcodes of its own. It
 draws the display.[^s40] A program is reached three ways: from base slot 11, [the screen program
-table](#base-slot-11-the-screen-program-table); from a base slot 14 lookup, [state](state.md); and on every
-architecture from a mode record, whose own program sits immediately after its tagged list,
-[modes and keys](modes-and-keys.md). That third way is 2119 roots, and it is where the full screen pictures
-are named.[^s53][^s54]
+table](#base-slot-11-the-screen-program-table); from a base slot 14 lookup, [state](state.md); and from a
+mode record, whose own program sits immediately after its tagged list, [modes and keys](modes-and-keys.md).
+That third way is where the full screen pictures are named. It is measured on arch 8 and 14[^s53], on arch
+12[^s54], and on arch 9, where every mode record's program is also a page's program[^s118].
 
 | opcode | operands | meaning |
 |---|---|---|
@@ -60,9 +60,9 @@ columns right of `x`, and a row or a column past the screen is drawn nowhere. A 
 
 Read in full on the Harmony One 3.4, and on the Harmony 600 and 650 0.2 and the Harmony 700 2.8 as far as the
 row loop and the row routine's clip at 128 by 128[^s425]. The Harmony 650 0.4 image and arch 8, 9 and 10 are
-not checked[^unchecked]. What Logitech uses it for on the Harmony One is on [its display
-page](../remotes/harmony-one/display.md#how-the-screen-is-drawn), which also says that the Harmony One draws a
-page over what the screen held. Whether the Harmony 600, 650 and 700 clear the screen before a page is not
+not checked[^unchecked]. What Logitech uses it for on the Harmony One is on [its compiler
+page](../architectures/harmony-one/compiler.md#pictures), and that the Harmony One draws a page over what the
+screen held is on [its display page](../remotes/harmony-one/display.md#how-the-screen-is-drawn). Whether the Harmony 600, 650 and 700 clear the screen before a page is not
 read[^unchecked].
 
 ### Text, opcodes 4 and 5
@@ -114,8 +114,8 @@ architecture before it can walk past one.
   opcode 3 drawing a 96 by 8 strip at `y = 8 * index`. Every mode page's program issues the eight once each,
   and every strip on a page comes from the same 96 by 64 picture, the whole panel.[^s85] The index is sent to
   the display controller as a page address, and **opcode 23 transfers 96 pixels into that page**: the 525's
-  panel is addressed as eight pages of eight pixel rows.[^s101] How its display is driven is on [the
-  525's display page](../remotes/harmony-525/display.md).
+  panel is addressed as eight pages of eight pixel rows.[^s101] How its display controller is driven is on [the
+  525's firmware page](../architectures/harmony-5xx/firmware.md#the-display-driver).
 * **Arch 8 and arch 14**: whether either opcode exists there is not read[^unchecked].
 
 ### Where a program ends
@@ -287,8 +287,8 @@ images the table is sought at that one site and no other. So an operand of 256 o
 `operand & 0xff`.[^s369]
 
 What Logitech's compiler keeps in the table differs by platform: the program in the screen's corner that
-draws the sending mark on [the Harmony 600, 650 and 700](../architectures/harmony-600-650-700/compiler.md),
-and on [the Harmony One](../architectures/harmony-one/compiler.md) a table generated from the clock's
+draws the sending mark on [the Harmony 600, 650 and 700](../architectures/harmony-600-650-700/compiler.md#a-corner-pages-chrome),
+and on [the Harmony One](../architectures/harmony-one/compiler.md#the-screen-program-table-and-the-value-maps) a table generated from the clock's
 programs and every base slot 14 case's program.
 
 ## Status screens

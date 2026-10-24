@@ -82,6 +82,79 @@ sixteen compiles of skin 54 all 38 others are entered by the configuration, 30 f
 Assistant screens from the start and six blank screens by timers. Above the head one device list per compile is
 named by no enter at all. Harmony One 3.4 only; computed jumps, `FSR` writes and a computed `0x7E` not excluded[^s408].
 
+## The command handlers
+
+What each command of [the command table](../../usb-protocol/commands.md#the-command-table) runs in the 3.4
+application. A handler sets the state variable and parses its arguments, and the main loop does the work
+later[^s19][^t-usb-firmware].
+
+| command | name | state | handler |
+|---|---|---|---|
+| `0x10` | GET_VERSION | 1 | `0x264B4` |
+| `0x30` | WRITE_FLASH | 2 | `0x264C2` |
+| `0x50` | READ_FLASH | 4 | `0x2650C` |
+| `0x70` | START_IRCAP | 5 | `0x26556` |
+| `0xD0` | ERASE_FLASH | 8 | `0x2657A` |
+| `0xA0` | WRITE_MISC | 9 | `0x26626` |
+| `0xB0` | READ_MISC | 10 | `0x2671E` |
+
+**There is no `0x05` case**, the escape's internal continuation the Harmony 600, 650 and 700 dispatch. The
+state variable is at `0x284`, and while a flash write is in progress the dispatch goes to a two entry chain
+accepting `0x40` and `0xF0`, at `0x26752`[^s19][^t-usb-firmware].
+
+## The configuration's constants
+
+What the firmware does with two things a configuration states as numbers: the `0x3F` instructions of band `0xC0`
+and the groups of the parameter block, base slot 15. The format of both is the configuration format's,
+[the action language](../../config-format/actions.md) and [state](../../config-format/state.md#base-slot-15-the-parameter-block).
+
+### The `0x3F` band `0xC0`
+
+Confirmed on two configurations and two images, 106 uses each. The operand carries three
+fields, `{ bit 0; bits 1 to 3; bits 4 to 8 }`, and the third is a five bit selector, so selectors 0 to 15 arrive
+with high byte `0xC0` and 16 to 31 with `0xC1`. The handler accepts fifteen values and drops the other seventeen,
+and the configurations use exactly the fifteen[^s102]:
+
+| selector | what it does | uses per configuration |
+|---|---|---|
+| 17 | sets the **display's light level**: bits 1 to 3 choose one of eight states, bit 0 fades rather than snapping. States 2 to 5 take a level from base slot 15 group 1 and a pair of device levels from group 9, state 6 chooses the state from the measured band, states 0 and 1 turn it off[^s103] | 68 |
+| 0 to 12 | sets channel `selector` of the I2C device at address `0x60` to the two bit value the byte table past base slot 15 group 9 states, for bits 1 to 3 being nonzero[^s106] | 36 |
+| 16 | enables that device, `LATC` bit 5, set when bits 1 to 3 are nonzero[^s106] | 2 |
+| 13 to 15, 18 to 31 | nothing: the handler falls to its exit | 0 |
+
+64 of the 68 are selector 17 state 6 without a fade. **The band's uses are identical in both configurations**, one
+of which has five devices and eight activities where the other has one and one, so nothing here varies with what
+the remote is set up to control. **They are the compiler's fixed initialisation of the device at `0x60`**, one pass
+setting each channel off and one setting each on, and the firmware itself never enables that device: it only
+switches it off at shutdown. So a configuration that omits them leaves the device disabled[^s106]. What the device
+is, is on [the Harmony One's hardware page](../../remotes/harmony-one/hardware.md); the base slot 15 groups are
+[below](#base-slot-15s-groups).
+
+### Base slot 15's groups
+
+From the routines that read them. Every default is a literal in the firmware, used when a group's length does
+not match, [state](../../config-format/state.md#the-firmware-demands-the-lengths)[^s44][^s103]:
+
+| group | what it is | the Harmony One's values | default |
+|---|---|---|---|
+| 0 | the display light fade's per step delay | 44 | 50 |
+| 1 | entries 2 to 5 are four display light levels, 0 to 27; entries 0 and 1 are read and discarded | 38, 38, 20, 20, 26, 26 | 9, 16, 24, 27 |
+| 4 | three threshold pairs, two apart, turning the four sample sum of analogue channel 1 into a band 0 to 3 with hysteresis | 96, 98, 308, 310, 768, 770 | none |
+| 5, 6 | two measurement to level curves over analogue channel 0, eight levels, chosen by the charger input on `PORTB` bit 1: group 6 when it is clear | 3000 to 4051, and 3000 to 4170 | none |
+| 7 | a timeout in seconds, handed to the one second scheduler | 0 | 10 |
+| 9 | four pairs at four bytes a band, both halves sent to the I2C device at address `0x60` as its registers 2/3 and 4/5; band 3's pair is past the declared entries | 16, 16, 64, 64, 128, 128, then 255, 255 | 64 |
+
+A level above 27 is **silently refused** by the setter, which a writer has to respect: 27 is the number of
+distinct `CVREF` voltages the part can produce, and the ladder that maps a level to one is in the
+firmware[^s103].
+
+**Groups 5 and 6 are battery millivolts.** The value walked against them is
+`mean * A + ((mean * B) >> 16)` where the mean is eight samples of analogue channel 0 and `A` and `B` are two
+`u16` in the remote's own internal page `0xFF`, giving 4.284 mV a converter count, and the firmware compares
+the result against the literal 3400[^s105]. The thirteen two bit fields are channels of the I2C device at
+`0x60`, whose part is not identified: thirteen channels of three states, two eight bit level registers, an
+enable pin and no readback[^s106], [the hardware page](../../remotes/harmony-one/hardware.md).
+
 ## Not checked
 
 * **A restore of a configuration through safe mode.** The code for it is read, and it has never been
@@ -104,4 +177,11 @@ named by no enter at all. Harmony One 3.4 only; computed jumps, `FSR` writes and
 [^s192]: Read in the firmware. [Section 192](../../../docs/findings.md#s192)
 [^s243]: Read in the firmware. [Section 243](../../../docs/findings.md#s243)
 [^s408]: Read in the firmware. [Section 408](../../../docs/findings.md#s408)
+[^s19]: Read in the firmware. [Section 19](../../../docs/findings.md#s19)
+[^t-usb-firmware]: Read in the firmware. [The test](../../../tests/test_usb_firmware.py)
 [^unchecked]: Not checked.
+[^s106]: Read in the firmware. [Section 106](../../../docs/findings.md#s106)
+[^s44]: Read in the firmware. [Section 44](../../../docs/findings.md#s44)
+[^s105]: Read in the firmware. [Section 105](../../../docs/findings.md#s105)
+[^s102]: Measured in configurations. [Section 102](../../../docs/findings.md#s102)
+[^s103]: Read in the firmware. [Section 103](../../../docs/findings.md#s103)

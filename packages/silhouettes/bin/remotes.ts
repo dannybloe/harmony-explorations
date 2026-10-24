@@ -122,12 +122,10 @@ export const MODEL_FILES: readonly string[] = ['README.md', 'behaviour.md', 'dis
   'firmware.md', 'hardware.md', 'keys.md', 'memory.md', 'misc.md', 'usb.md'];
 
 /**
- * The blocks an architecture folder can carry. `slot-map` is the pointer table's alignment from
- * `SLOT_MAPS`, which the two architectures known only from configurations carry because their
- * `memory.md` is where plan 009 puts it; the other folders state theirs in prose and could take the
- * block too.
+ * The blocks an architecture folder can carry. The pointer table's alignment is not among them: it is one
+ * table across every architecture, in `reference/config-format/container.md`, and each folder links there.
  */
-type ArchitectureBlock = 'skins' | 'memory-constants' | 'usb-identity' | 'write-rails' | 'slot-map';
+type ArchitectureBlock = 'skins' | 'memory-constants' | 'usb-identity' | 'write-rails';
 
 /** One architecture folder under `reference/architectures/`. */
 interface ArchitectureFolder {
@@ -212,10 +210,10 @@ export const ARCHITECTURES: readonly ArchitectureFolder[] = [
   // firmware images, plan 009's step 3.5. **Neither carries the memory constants, the USB identity or
   // the write rails**, for the reason the Harmony 300 and 350's folder gives: this library opens no
   // remote of either, so every row would read `none` or `no`, which says less than the folder's prose
-  // and looks like a measurement. What both do carry is the pointer table's alignment, which is code
-  // and is exactly what a reader of these configurations depends on.
-  { folder: 'harmony-880-885', architecture: 8, files: ARCHITECTURE_FILES, blocks: ['skins', 'slot-map'] },
-  { folder: 'harmony-890-895', architecture: 10, files: ARCHITECTURE_FILES, blocks: ['skins', 'slot-map'] },
+  // and looks like a measurement. The pointer table's alignment, which is what a reader of these
+  // configurations depends on most, is the container page's one table for every architecture.
+  { folder: 'harmony-880-885', architecture: 8, files: ARCHITECTURE_FILES, blocks: ['skins'] },
+  { folder: 'harmony-890-895', architecture: 10, files: ARCHITECTURE_FILES, blocks: ['skins'] },
   // The Harmony Touch's generation, plan 009's thin folder of three files: no memory page, because no
   // address on it has been read, and no misc page, because nothing is left over. 17 is the remote's own
   // number and Logitech's templates say 18, section 197, so this row takes the remote's word the way the
@@ -475,31 +473,60 @@ function undrawnDisplayTable(remote: RemoteFolder): string {
 }
 
 /**
- * Where each base slot sits on an architecture, from `SLOT_MAPS`, and which raw slots no base slot names.
+ * Where each base slot sits on every architecture `SLOT_MAPS` holds, one table in
+ * `reference/config-format/container.md`, which the architecture folders link to rather than carrying a
+ * copy each: plan 009's one home per fact, applied to a generated fact as much as to a written one.
  *
- * The pointer count is not in `SLOT_MAPS` and does not need to be: base slots 18 and 19, the two
- * trailing NULLs, are present on every architecture the table holds, so the highest raw slot it names is
- * the last one the container carries. That is 20 on arch 8, a 21 slot table, and 22 on arch 10, a 23
- * slot one, which is what each container's own format word states, section 194.
+ * **What an empty cell means depends on whether the map is complete, and the table says which.** On
+ * arch 10 (Harmony 890 and 895) `undefined` is a base slot the architecture does not have; on arch 16
+ * (Harmony 300 and 350) it is one not yet identified, and `gspm.ts` documents the two the other way up on
+ * purpose. The test told apart here is the map's own: a complete map places base slots 18 and 19, the
+ * two NULLs every container of the base layout ends in, and a partial one leaves them unplaced, so
+ * no architecture number is written into this function.
+ *
+ * **The raw slot count is derived for a complete map only.** Base slots 18 and 19 being placed, the
+ * highest raw slot named is the last the container carries: 20 on arch 8, a 21 slot table, and 22 on
+ * arch 10, a 23 slot one, which is what each container's own format word states, section 194. A partial
+ * map says nothing about the slots it leaves unread, so its count is the container page's table, which
+ * reads it off the marker.
  */
-function slotMapTable(architecture: number): string {
-  const map = SLOT_MAPS[architecture];
-  if (map === undefined) throw new Error(`no slot map for architecture ${architecture}`);
-  const present = map.filter((raw): raw is number => raw !== undefined);
-  const slots = Math.max(...present) + 1;
-  const absent = map.map((raw, base) => (raw === undefined ? base : -1)).filter((base) => base >= 0);
-  const unnamed = Array.from({ length: slots }, (_unused, raw) => raw).filter((raw) => !present.includes(raw));
+function slotMapsTable(): string {
+  const architectures = Object.keys(SLOT_MAPS).map(Number).sort((x, y) => x - y);
+  const complete = (map: readonly (number | undefined)[]): boolean =>
+    map[BASE_SLOT_COUNT - 1] !== undefined && map[BASE_SLOT_COUNT - 2] !== undefined;
   const list = (ns: readonly number[]): string => (ns.length === 0 ? 'none' : ns.join(', '));
-  const rows = Array.from({ length: BASE_SLOT_COUNT }, (_unused, base) => {
-    const raw = map[base];
-    return `| ${base} | ${raw === undefined ? 'absent' : raw} |`;
+  const heading = architectures.map((architecture) => {
+    const folder = ARCHITECTURES.find((f) => f.architecture === architecture)?.folder;
+    if (folder === undefined) throw new Error(`no architecture folder for ${architecture}`);
+    return `[${architecture}](../architectures/${folder}/memory.md)`;
   });
+  const mapOf = (architecture: number): readonly (number | undefined)[] => {
+    const map = SLOT_MAPS[architecture];
+    if (map === undefined) throw new Error(`no slot map for architecture ${architecture}`);
+    return map;
+  };
+  const summary = architectures.map((architecture, i) => {
+    const map = mapOf(architecture);
+    const present = map.filter((raw): raw is number => raw !== undefined);
+    const empty = map.map((raw, base) => (raw === undefined ? base : -1)).filter((base) => base >= 0);
+    if (!complete(map)) {
+      return `| ${heading[i]} | partial | ${present.length} | unread: ${list(empty)} | not derived |`;
+    }
+    const slots = Math.max(...present) + 1;
+    const unnamed = Array.from({ length: slots }, (_unused, raw) => raw).filter((raw) => !present.includes(raw));
+    return `| ${heading[i]} | complete, ${slots} raw slots | ${present.length} | absent: ${list(empty)} | ${list(unnamed)} |`;
+  });
+  const rows = Array.from({ length: BASE_SLOT_COUNT }, (_unused, base) =>
+    `| ${base} | ${architectures.map((architecture) => mapOf(architecture)[base] ?? '').join(' | ')} |`);
   return [
-    `${slots} raw slots. ${present.length} of the ${BASE_SLOT_COUNT} base slots are present; absent: ${list(absent)}. `
-      + `Raw slots no base slot names: ${list(unnamed)}.`,
+    '| architecture | map | base slots placed | the others | raw slots no base slot names |',
+    '|---|---|---|---|---|',
+    ...summary,
     '',
-    '| base slot | raw slot |',
-    '|---|---|',
+    'Each base slot\'s raw slot, by architecture; an empty cell is one the row above names absent or unread:',
+    '',
+    `| base slot | ${heading.join(' | ')} |`,
+    `|---|${architectures.map(() => '---').join('|')}|`,
     ...rows,
     '',
     provenance('`SLOT_MAPS` in `packages/codec/src/gspm.ts`'),
@@ -740,8 +767,9 @@ export function expectedBlocks(): Map<string, Map<string, string>> {
     }
     if (a.blocks.includes('usb-identity')) put(join(dir, 'usb.md'), 'usb-identity', usbIdentity(a.architecture));
     if (a.blocks.includes('write-rails')) put(join(dir, 'usb.md'), 'write-rails', writeRails(a.architecture));
-    if (a.blocks.includes('slot-map')) put(join(dir, 'memory.md'), 'slot-map', slotMapTable(a.architecture));
   }
+  // The pointer table's alignment on every architecture, one block in the configuration format's page.
+  put(join('reference', 'config-format', 'container.md'), 'slot-maps', slotMapsTable());
   return files;
 }
 

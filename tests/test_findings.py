@@ -2307,8 +2307,10 @@ class TestTheFlashAddressIsClassifiedBeforeItIsUsed(unittest.TestCase):
         # anchor arithmetic checkable rather than assumed. It was four bytes out at first.
         found, _c, _r = self.classifier(lab.load('one_internal_fe'), 0x0000)
         self.assertEqual(found, 0x07CAC)
-        # Which command each caller belongs to, against handler bounds taken from the command table
-        # in reference/usb-protocol/commands.md. That table is derived from the XORLW dispatch chain and so shares
+        # Which command each caller belongs to, against handler bounds taken from the Harmony One's
+        # command handlers in reference/architectures/harmony-one/firmware.md, which moved there out of
+        # the command table in reference/usb-protocol/commands.md. That table is derived from the XORLW
+        # dispatch chain and so shares
         # no reasoning with this routine, which is what makes the attribution a check rather than a
         # restatement: three callers, three commands, and the fourth command in between untouched.
         for handlers, callers, expected in (
