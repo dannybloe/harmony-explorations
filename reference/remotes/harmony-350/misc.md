@@ -4,17 +4,6 @@
 kind of note would appear in the `misc.md` of several models, it deserves a file of its own in every
 model folder instead, and `reference/README.md` and the generator's test get updated with it.
 
-## The infrared families of its factory configuration
-
-The factory configuration's three device groups are all biphase codes: one is Logitech's `Microsoft 30
-Bit` family and two are unidentified biphase families, section 261; every one of its 130 records decodes
-since section 266.
-
-## Predictions before each read
-
-Each read of this family was predicted in writing before it was taken, `docs/predictions/harmony-3*.md`, and
-the findings sections record which predictions held.
-
-## Not checked
-
-* Nothing in this file is a claim about the remote beyond the cited sources.
+Nothing about the 350 fits none of the other files at present. What its platform holds beyond them, the
+metadata archive that names a configuration's devices among it, is in
+[the architecture's misc.md](../../architectures/harmony-300-350/misc.md).

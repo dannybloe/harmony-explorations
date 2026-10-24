@@ -1,21 +1,21 @@
 # Harmony 350: hardware
 
-What is inside, as far as anything here can say, which is little. No 350 has been opened and the library
-reads no memory off one. What the firmware's file table states about storage is the architecture's,
-[the architecture's memory.md](../../architectures/harmony-300-350/memory.md).
+What the outside of a 350 is, from Logitech's setup guide. What is inside is the architecture's and little
+of it is known: the processor, the internal flash and the external storage are in
+[the architecture's README](../../architectures/harmony-300-350/README.md#shared-in-one-table) and
+[memory.md](../../architectures/harmony-300-350/memory.md), and the case is the Harmony 300's, key for
+key, with different printing, stated there too.
 
-| | value | standing and source |
-|---|---|---|
-| processor | a PIC18, by its firmware image; the part is **not checked** | read in the firmware, section 196 |
-| internal flash | 128 KiB, by the firmware's file table | read in the firmware, section 199 |
-| external storage | 512 KiB, 119 KiB in use, as concordance reported it | third party, section 194; the part is **not checked** |
-| power | "Insert the two AA batteries (included)" | Logitech's manual |
-| USB socket | a cable to a computer for setup and sync | Logitech's manual |
-| device keys | each lights while an infrared command is sent | Logitech's manual: "Each Device button will light up when an IR command is being sent" |
-| face | the Harmony 300's moulding, key for key, with different printing | a statement from the bench holding both, `packages/silhouettes/src/models/h300.ts` |
+| | value |
+|---|---|
+| power | "Insert the two AA batteries (included)"[^x-manual] |
+| USB socket | a cable to a computer for setup and sync[^x-manual] |
+| device keys | "Each Device button will light up when an IR command is being sent"[^x-manual] |
 
 ## Not checked
 
 * The processor and storage parts, the RAM size.
-* Infrared transmitters, range, learning, backlight, size and weight: the manual is a setup guide and
+* Infrared transmitters, range, learning, backlight, size and weight: the guide is a setup guide and
   states none of them.
+
+[^x-manual]: Stated by Logitech, in the manual. [The Harmony 350 setup guide](https://www.logitech.com/assets/51207/harmony-350-qsg-and-iid.pdf)

@@ -1,8 +1,10 @@
 # Harmony 350: USB
 
-The protocol and the rails are the architecture's,
-[the architecture's usb.md](../../architectures/harmony-300-350/usb.md); this page states what is the 350's
-own.
+A 350 plugged into a computer announces itself as a Harmony and says which model it is, and then speaks
+a file protocol: a computer asks for a file by its path and gets its bytes. That protocol, what this
+library allows over it and the rails are the family's,
+[the architecture's usb.md](../../architectures/harmony-300-350/usb.md); this page states what is the
+350's own.
 
 ## Identity on the bus
 
@@ -16,24 +18,25 @@ own.
 Generated from `packages/corpus` and `packages/usb` by `make remote-reference-write`. Change the source, not this block.
 <!-- /generated -->
 
-| field | value | standing and source |
-|---|---|---|
-| vendor and product id | `046D:C124`, shared with the Harmony 300 | measured, sections 193 and 195 |
-| `bcdDevice` | `0x1104`, BCD of 1000 plus skin 104 | measured, section 195 |
-| product string | `Harmony Remote 0-1.4.0` | measured, section 193 |
-| `/sys/sysinfo` | `arch 0x10`, `skin 0x68` | measured, section 262 |
+The block lists the command protocol's profiles, which this family does not speak, so it names no product
+id; the family's id is in `FILE_BASED_PRODUCTS`,
+[the architecture's usb.md](../../architectures/harmony-300-350/usb.md#identity), and below.
 
-The 350 is the only skin of its kind, so here `bcdDevice` and the remote's own skin agree, section 195; on a
-Harmony 300 they do not.
-
-## What has been read
-
-| | standing and source |
+| field | value |
 |---|---|
-| the factory configuration, by concordance's file family support | measured, section 194 |
-| `/sys/sysinfo` and `/cfg/usercfg`, by this library's `openFileBasedRemote`, read only | measured, sections 262 and 263 |
-| anything written | **nothing, ever** |
+| vendor and product id | `046D:C124`, shared with the Harmony 300[^s193][^s195] |
+| `bcdDevice` | `0x1104`, BCD of 1000 plus skin 104[^s195] |
+| product string | `Harmony Remote 0-1.4.0`[^s193] |
+| `/sys/sysinfo` | `arch 0x10`, `skin 0x68`[^s262] |
+
+The 350 is the only skin of its kind, so here `bcdDevice` and the remote's own skin agree; on a Harmony 300
+they do not, the descriptor naming the family's base skin and the remote its regional one[^s264].
 
 ## Not checked
 
 * The other files on `INERT_PATHS`, `/sys/battery` and `/cfg/log` among them.
+
+[^s193]: Measured on a unit. [Section 193](../../../docs/findings.md#s193)
+[^s195]: Measured on a unit. [Section 195](../../../docs/findings.md#s195)
+[^s262]: Measured on a unit. [Section 262](../../../docs/findings.md#s262)
+[^s264]: Measured on a unit. [Section 264](../../../docs/findings.md#s264)
