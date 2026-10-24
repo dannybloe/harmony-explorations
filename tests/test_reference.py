@@ -66,11 +66,6 @@ PINNED = {
         ('reference/config-format/README.md', 'bench'): 2,
         ('reference/config-format/README.md', 'lab'): 2,
         ('reference/config-format/README.md', 'todo'): 2,
-        ('reference/config-format/actions.md', 'fixture calibration_h600'): 2,
-        ('reference/config-format/actions.md', 'fixture h600_config'): 1,
-        ('reference/config-format/actions.md', 'fixture h650_test_config_clean'): 1,
-        ('reference/config-format/actions.md', 'fixture one_config'): 1,
-        ('reference/config-format/actions.md', 'the spare'): 1,
         ('reference/config-format/container.md', 'bench'): 1,
         ('reference/config-format/container.md', 'fixture h525_safemode_ahcm'): 1,
         ('reference/config-format/header-records.md', 'bench'): 1,
@@ -92,13 +87,6 @@ PINNED = {
         ('reference/config-format/screens.md', 'dump'): 1,
         ('reference/config-format/screens.md', 'everyday'): 1,
         ('reference/config-format/screens.md', 'fixture h525_config'): 1,
-        ('reference/config-format/state.md', 'bench'): 2,
-        ('reference/config-format/state.md', 'fixture calibration_h600'): 1,
-        ('reference/config-format/state.md', 'fixture h600_config'): 2,
-        ('reference/config-format/state.md', 'fixture h700_config'): 1,
-        ('reference/config-format/state.md', 'friend'): 1,
-        ('reference/config-format/state.md', 'lab'): 3,
-        ('reference/config-format/state.md', 'todo'): 2,
         ('reference/glossary.md', 'dump'): 2,
         ('reference/how-a-harmony-works.md', 'bench'): 7,
         ('reference/how-a-harmony-works.md', 'lab'): 4,
@@ -119,8 +107,6 @@ PINNED = {
         ('reference/logitech/update-service.md', 'lab'): 1,
     },
     'names': {
-        ('reference/config-format/actions.md', 'a person'): 1,
-        ('reference/config-format/state.md', 'a person'): 1,
         ('reference/glossary.md', 'a person'): 2,
         ('reference/how-a-harmony-works.md', 'a person'): 15,
         ('reference/logitech/clients.md', 'a person'): 2,
@@ -128,13 +114,15 @@ PINNED = {
         ('reference/logitech/service.md', 'a person'): 2,
     },
     'copy': {
-        ('reference/config-format/state.md', 'the archive, meaning the copy'): 2,
         ('reference/infrared/frames.md', 'the archive, meaning the copy'): 1,
         ('reference/infrared/sending.md', 'the archive, meaning the copy'): 3,
     },
     'footnotes': {
     },
     'links': {
+        ('reference/config-format/actions.md', 'missing anchor: modes-and-keys.md#base-slot-8-key-press-bindings'): 1,
+        ('reference/config-format/activities-and-devices.md', 'missing anchor: actions.md#0x7c-is-a-per-device-delay-in-tenths-of-a-second-folded-no-further-than-100'): 1,
+        ('reference/config-format/modes-and-keys.md', 'missing anchor: actions.md#the-final-run-belongs-to-base-slot-8'): 1,
     },
 }
 # END PINNED
