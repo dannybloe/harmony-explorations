@@ -8,9 +8,10 @@ Logitech's own client calls architecture 14. What the three share is stated once
 the 700's own.
 
 The 700 is the **charging** sibling of the Harmony 650 and the colour sibling of the Harmony 600: the
-same face, the same 128 by 128 raster, and NiMH cells charged through the USB socket. It is also the
-model whose firmware this project read first, the 2.8 package, before any architecture 14 image had been
-read off a remote, section 13. Standing words and their meaning are in [the reference's README](../../README.md).
+same face, the same 128 by 128 raster, and NiMH cells charged through the USB socket. Like the other two
+it **shows no clock**, [how a Harmony works](../../how-a-harmony-works.md). It is also the model whose
+firmware this project read first, the 2.8 package, before any image of the architecture had been read
+off a remote[^s13]. How evidence is marked is in [the reference's README](../../README.md).
 
 ## Skins
 
@@ -23,28 +24,26 @@ read off a remote, section 13. Standing words and their meaning are in [the refe
 Generated from `MODELS_BY_SKIN` in `packages/usb/src/models.ts` by `make remote-reference-write`. Change the source, not this block.
 <!-- /generated -->
 
-Skin 66 is **confirmed** from two configurations a 700 owner published, `reference/models.md`, and from a
-unit's version block, measured, section 295. Skin 69 is **Logitech's service**,
-`ProductsManager/GetAllProducts`, the European model, section 131; no skin 69 unit or compile has been
-read.
+Skin 66 is carried by two configurations a 700's owner published[^s16] and reported in a unit's version
+block[^s295]. Skin 69 is the European model in Logitech's product list[^s131]; no skin 69 remote or
+compile has been read[^unchecked].
 
 ## Key numbers
 
-| | value | standing and source |
+| | value | evidence |
 |---|---|---|
-| architecture | 14 | measured, version block, section 295; read in the firmware, section 13 |
-| USB product id | `0xC122`, shared with the 600 and 650 | measured, section 281; [usb.md](usb.md) |
-| `bcdDevice` | `0x1066` in the 2.8 image's descriptor | read in the firmware, `reference/usb-protocol/transport.md`; on a unit **not checked** |
-| firmware | 2.8, application 76672 bytes, entry `0x1BB38`, Logitech's package; 2.5 and a 2.3 safe mode image also seen on a unit | read in the firmware and measured, sections 295 and 297; [firmware.md](firmware.md) |
-| screen | 1.5 inch, 128 by 128, "65,000 Color" | Logitech's manual, Product Specification; raster also measured from configurations, section 129 |
-| keys | 54 scan codes, the 600's face | read from configurations, section 17; a statement from the bench for the face |
-| devices | 8 per Logitech's service, **6 per Logitech's manual** | open disagreement, [features.md](features.md); the remote **runs a seventh**, measured, section 386 |
-| state variables on the cable | **live**, variable `n` at `0x900 + n` on build 2.8, the clock in variables 0 to 6 | read in the firmware, section 384; measured over USB, section 386 |
-| power | rechargeable NiMH AA, charged through the USB socket with an AC adaptor | Logitech's manual |
-| external flash | 2 MiB SPI, EON F16, id `15:1C` on a unit; the 2.8 package's header names `0x14:0x1C`, 1 MiB | measured, section 297; read in the package, section 295 |
-| user configuration | external `0x030000` | measured, section 300 |
-| clock on screen | **none** | seen at the bench, 4 October 2026, `reference/how-a-harmony-works.md` |
-| long press | none | Logitech's service, `reference/capabilities.md` |
+| architecture | 14 | [^s295], [^s13] |
+| USB product id | `0xC122`, shared with the 600 and 650; [usb.md](usb.md) | [^s281] |
+| `bcdDevice` | `0x1066` in the 2.8 image's descriptor, [the transport](../../usb-protocol/transport.md); on a remote not read | [^s19], [^unchecked] |
+| firmware | 2.8, application 76672 bytes, entry `0x1BB38`, Logitech's package; 2.5 and a 2.3 safe mode image also seen; [firmware.md](firmware.md) | [^s297], [^s295] |
+| screen | 1.5 inch, 128 by 128, "65,000 Color"; [display.md](display.md) | [^x-manual], [^s129] |
+| keys | 54 scan codes, on the 600's face; [keys.md](keys.md) | [^s17] |
+| devices | 8 by Logitech's service and the 2010 manual, 6 by the 2009 manual; the remote ran a seventh; [features.md](features.md) | [^t-product-table], [^x-manual-2010], [^x-manual], [^s386] |
+| state variables over USB | live, variable `n` at data memory `0x900 + n` on build 2.8, the clock in variables 0 to 6 | [^s384], [^s386] |
+| power | rechargeable NiMH AA, charged through the USB socket with an AC adaptor; [hardware.md](hardware.md) | [^x-manual] |
+| external flash | 2 MiB SPI, EON F16, id `15:1C`; the 2.8 package's header names `0x14:0x1C`, 1 MiB | [^s297], [^s295b] |
+| user configuration | external `0x030000` | [^s300] |
+| long press | none | [^t-long-press] |
 
 ## The files
 
@@ -52,19 +51,38 @@ read.
 |---|---|
 | [hardware.md](hardware.md) | processor, flash, the rechargeable cells and the charger, backlight, size |
 | [keys.md](keys.md) | every key, the 600's scan codes carried over, the drawing |
-| [display.md](display.md) | the colour panel, the raster, mode 0's charging battery |
+| [display.md](display.md) | the colour panel, the raster, the charging battery screens |
 | [features.md](features.md) | device limit, activities, favourites, help, delays, settings |
-| [behaviour.md](behaviour.md) | device mode, what a Harmony Desktop sync and a write do, the Off screen, seven devices |
+| [behaviour.md](behaviour.md) | device mode, what a sync, a write and a firmware install do, the Off screen |
 | [memory.md](memory.md) | where the 700 differs from the architecture's map, the staging region |
 | [firmware.md](firmware.md) | 2.3, 2.5 and 2.8, the install from a staged image, recovery |
-| [usb.md](usb.md) | product id, version block, commands answered, write standing |
-| [misc.md](misc.md) | the published pair of configurations, and the rest |
+| [usb.md](usb.md) | product id, version block, what a 700 answers, write standing |
+| [misc.md](misc.md) | the published pair's timestamps, and the rest |
 
 The architecture folder: [harmony-600-650-700](../../architectures/harmony-600-650-700/README.md).
 
 ## Not checked
 
-* Whether a skin 69 unit differs from skin 66 in anything but the region.
-* Which of the two device limits the remote or Logitech's software enforces; it ran seven, section 386, and
-  an eighth is not measured.
-* The hardware version a 700 reports.
+* Whether a skin 69 remote differs from skin 66 in anything but the region[^unchecked].
+* Which device limit the remote or Logitech's software enforces: a 700 ran seven devices[^s386], and an
+  eighth has not been tried[^unchecked].
+* The hardware version a 700 reports[^unchecked].
+
+[^s13]: Read in the firmware. [Section 13](../../../docs/findings.md#s13)
+[^s16]: Measured in configurations. [Section 16](../../../docs/findings.md#s16)
+[^s295]: Measured on a unit. [Section 295](../../../docs/findings.md#s295)
+[^s131]: Stated by Logitech, by their service. [Section 131](../../../docs/findings.md#s131)
+[^unchecked]: Not checked.
+[^s281]: Measured on a unit. [Section 281](../../../docs/findings.md#s281)
+[^s19]: Read in the firmware. [Section 19](../../../docs/findings.md#s19)
+[^s297]: Measured on a unit. [Section 297](../../../docs/findings.md#s297)
+[^x-manual]: Stated by Logitech, in the manual. [The Harmony 700 user manual](https://support.myharmony.com/harmony-700-user-manual)
+[^s129]: Measured in configurations. [Section 129](../../../docs/findings.md#s129)
+[^s17]: Measured in configurations. [Section 17](../../../docs/findings.md#s17)
+[^t-product-table]: Stated by Logitech, by their service. [The test](../../../tests/test_host_client.py)
+[^x-manual-2010]: Stated by Logitech, in the manual. [The 2010 edition, in Danish](https://www.logitech.com/assets/44637/harmony700-user-guide.pdf)
+[^s386]: Measured on a unit. [Section 386](../../../docs/findings.md#s386)
+[^s384]: Read in the firmware. [Section 384](../../../docs/findings.md#s384)
+[^s295b]: Read in the firmware. [Section 295](../../../docs/findings.md#s295)
+[^s300]: Measured on a unit. [Section 300](../../../docs/findings.md#s300)
+[^t-long-press]: Stated by Logitech, by their service. [The test](../../../packages/usb/test/models.test.ts)

@@ -1,9 +1,8 @@
 # Harmony 700: features
 
-What the 700 offers a person and what Logitech's software lets them set. Most of this comes from
-Logitech, not from the remote, so the standing column matters more here than in any other file. The
-starting point is Logitech's own statement, `UserAccountDirector/GetProductCapabilities2` for a skin 66
-entry, read 7 October 2026, in `reference/capabilities.md` under "The six bench models".
+What the 700 offers a person and what Logitech's software lets them set: how many devices, the activity
+keys, favourite channels, help, delays and the remote's own settings. Most of this comes from Logitech
+rather than from the remote, so the evidence matters more here than in any other file.
 
 ## The capability fields
 
@@ -16,12 +15,15 @@ entry, read 7 October 2026, in `reference/capabilities.md` under "The six bench 
 Generated from `MODELS_BY_SKIN` and `hasLongPress` in `packages/usb/src/models.ts` by `make remote-reference-write`. Change the source, not this block.
 <!-- /generated -->
 
-Standing of each column, per `reference/capabilities.md`: **max devices** is Logitech's service,
-`MaxDevicesPerAccount`, adopted in section 136; **long press** is Logitech's service,
-`ProductsManager/GetAllProducts`, which declares none for this model; every other column is the forum
-table's, **third party**. The favourite channel figure is also Logitech's service now, below.
+**Max devices** and **favourite channel buttons** are Logitech's service, `MaxDevicesPerAccount` and
+`MaxFavoriteChannels`[^t-product-table], the device counts adopted from it[^s136]; **long press** is
+Logitech's service too, which declares none for this model[^t-long-press]. The other three columns are a
+forum table's[^x-forum].
 
 ## What Logitech's service states
+
+Logitech's service, asked for the capabilities of a skin 66 product, states what follows; no archive
+section or test holds the answer yet[^unchecked].
 
 | | value |
 |---|---|
@@ -33,67 +35,84 @@ table's, **third party**. The favourite channel figure is also Logitech's servic
 | settings and defaults | screen lit 20, tilt sensor on, Remote Assistant on |
 | capabilities stated | the Harmony 650's list exactly: Activities, FavoriteChannels, RemoteSettings, ColourDisplay, ActivityCompiledRemoteButtonMapping, PartiallySetupActivities, LocaleEnabled, DeviceDelay, ActivityMapping, SupportActivitySequence and ButtonSequences, LeaveDevicesPoweredOn, SupportsMHAssist, the SmartTV, Apple TV and Roku activities, FavoriteChannelImageScaling |
 
-All of it **Logitech's service**, `reference/capabilities.md`.
+## Devices: Logitech's figures, and what the remote runs
 
-## Devices: two vendor figures that disagree
-
-| figure | standing and source |
+| figure | evidence |
 |---|---|
-| **8** | Logitech's service, `MaxDevicesPerAccount`, and the classic client's table, section 136. What `models.ts` holds |
-| **6** | **Logitech's manual**: "configure the Harmony 700 to control up to 6 devices", page 4, and Product Specification, "Maximum number of devices per account 6" |
+| **8**: Logitech's service, `MaxDevicesPerAccount`, and the classic client's table; what `models.ts` holds | [^t-product-table], [^s136] |
+| **8**: the manual's 2010 edition, "op til 8 komponenter" in the Danish and "8 Geräte" in the German, and 8 in both specification tables | [^x-manual-2010] |
+| **6**: the manual's 2009 edition in English, "configure the Harmony 700 to control up to 6 devices", page 4, and its Product Specification, "Maximum number of devices per account 6" | [^x-manual] |
 
-The manual is the 2009 edition, and the same kind of disagreement exists for the Harmony 650, 5 against 8.
-**This table once held 6 for the 700 on the strength of a configuration holding six devices**, which
-bounds the maximum below and forbids no seventh; that was withdrawn in section 136 and is the worked
-example of a circular claim, `reference/capabilities.md`. **The remote does not hold to six**: a
-configuration of seven devices ran on a unit, the seventh switched on, set three times and switched off by
-the activities that use it, measured with an infrared receiver, section 386. Whether it takes an eighth,
-and whether anything on the remote counts devices at all, is **not checked**.
+So **the two vendor figures are two editions**: the 2009 manual says 6, and Logitech's own 2010 manual
+agrees with the service on 8. This said the figures disagreed as an open question<!--superseded--> until
+the 2010 edition was read. The Harmony 650 has the same kind of disagreement, 5 against 8.
+
+**A configuration holding six devices bounds the maximum below and forbids no seventh**: this table once
+held 6 for the 700 on that ground, which was withdrawn as the worked example of a circular claim[^s136].
+**The remote does not hold to six**: a configuration of seven devices ran on a 700, the seventh switched on,
+set three times and switched off by the activities that use it, measured with an infrared
+receiver[^s386]. Whether it takes an eighth, and whether anything on the remote counts devices at all, is
+not checked[^unchecked].
 
 ## Activities
 
-| | standing and source |
+| | evidence |
 |---|---|
-| three activity keys, Watch TV, Watch a Movie, Listen to Music, plus More Activities | Logitech's manual page 5 |
-| how many activities a 700 may hold | **not stated** by the service or the manual. Whether a 700 record was among the seventeen of the fill test in `reference/how-a-harmony-works.md` is not recorded there, so **not checked** |
-| an activity key with no activity enters mode 4, the "add an Activity" placeholder | read from Logitech's compiles, section 314 |
+| three activity keys, Watch TV, Watch a Movie, Listen to Music, plus More Activities | [^x-manual] |
+| how many activities a 700 may hold: **not stated** by the service or the manual | [^unchecked] |
+| an activity key with no activity enters mode 4, the "add an Activity" placeholder | [^s314] |
 
 ## Favourite channels
 
-* Set up in Logitech's software and shown on the Watch TV activity's screen, Logitech's manual page 9.
-* **23**, Logitech's service, `MaxFavoriteChannels`, read 7 October 2026, `reference/capabilities.md`.
-* How a favourite is built on the 700 is **not read**; the Harmony 650's is section 344.
+* Set up in Logitech's software and shown on the Watch TV activity's screen, manual page 9[^x-manual].
+* **23**, Logitech's service, `MaxFavoriteChannels`[^t-product-table].
+* How a favourite is built on the 700 is not read[^unchecked]; the Harmony 650's is read[^s344].
 
 ## Help and delays
 
 * Help, and advanced help after holding it for five seconds, where the **Inter-Device Delay** is changed on
-  the remote: Logitech's manual, the same text as the 600's, pages 8 and 21.
+  the remote: the same text as the 600's manual, pages 8 and 21[^x-manual].
 * The **power on delay** in the configuration is in force straight after a write: raised from 60 tenths to
-  90 and put back on a unit, and **both heard** with an infrared receiver, section 301.
-* A delay saved on the remote would win over the configuration's at start, as measured on the Harmony 600,
-  section 303; the 700's store held no saved delay, and the 2.8 build's restore path is **not read**,
-  section 303's scope. On Logitech's 700 configurations every delay variable, 10 of 10, is saved and has a
+  90 and put back on a 700, and **both heard** with an infrared receiver[^s301].
+* A delay saved on the remote would win over the configuration's at start, as measured on the Harmony
+  600[^s303]; [the architecture's memory page](../../architectures/harmony-600-650-700/memory.md) has the
+  settings store. On Logitech's 700 configurations every delay variable, 10 of 10, is saved and has a
   restore list, as on the 600, but the restore hangs off list 2, whose shape is the 600's list 1, while the
-  700's list 1 is another list; which list the 2.8 build runs at start is **open**, read from
-  configurations, section 303.
+  700's list 1 is another list[^s303b]. Which list the 2.8 build runs at start, and its restore path, are
+  not read[^unchecked].
 
 ## Settings
 
-| setting | standing and source |
+| setting | evidence |
 |---|---|
-| how long the screen stays lit, "Glow Timing" | Logitech's manual page 10; Logitech's service, default 20 |
-| tilt sensor | Logitech's service, default on; the manual: the remote "senses when you pick it up" |
-| Remote Assistant | Logitech's service, default on. No Logitech compile for the 700 with it off has been read: on every one, the Assistant's "Turn off Assistant" key writes a variable to 1, and leaving "USB Connected" restores the running activity's keys only while that variable is 0, read from configurations, section 382 |
-| leave devices on when switching activities | Logitech's service states `LeaveDevicesPoweredOn`; how it compiles is read on the Harmony 650, section 340 |
+| how long the screen stays lit, "Glow Timing"; Logitech's service gives a default of 20 | [^x-manual], [^unchecked] |
+| tilt sensor: the remote "senses when you pick it up"; Logitech's service gives it on by default | [^x-manual], [^unchecked] |
+| Remote Assistant, on by default by Logitech's service. On every Logitech compile for the 700 the Assistant's "Turn off Assistant" key writes a variable to 1, and leaving "USB Connected" restores the running activity's keys only while that variable is 0; none with the Assistant off has been read | [^s382] |
+| leave devices on when switching activities: Logitech's service states `LeaveDevicesPoweredOn`; how it compiles is read on the Harmony 650 | [^s340] |
 
 ## Learning
 
-"IR Learning Yes (Up to 200 Khz)", through the "Learn IR" feature of Logitech's software, Logitech's
-manual and Product Specification. Learning on a 700 is **not checked**.
+"IR Learning Yes (Up to 200 Khz)", through the "Learn IR" feature of Logitech's software, in the manual and
+its Product Specification[^x-manual]. Learning on a 700 is not checked[^unchecked].
 
 ## Not checked
 
-* The device limit the remote or today's software actually enforces, past the seven the remote ran,
-  section 386.
-* How many activities a 700 holds.
-* How favourites and sequences are built on the 700's own compiles.
+* The device limit the remote or today's software actually enforces, past the seven a 700 ran[^s386].
+* How many activities a 700 holds[^unchecked].
+* How favourites and sequences are built on the 700's own compiles[^unchecked].
+
+[^t-product-table]: Stated by Logitech, by their service. [The test](../../../tests/test_host_client.py)
+[^s136]: Stated by Logitech, by their service. [Section 136](../../../docs/findings.md#s136)
+[^t-long-press]: Stated by Logitech, by their service. [The test](../../../packages/usb/test/models.test.ts)
+[^x-forum]: Stated by a third party. [The forum comparison table](https://harmony-remote-forum.de/harmony_compare.php)
+[^unchecked]: Not checked.
+[^x-manual-2010]: Stated by Logitech, in the manual. [The 2010 edition, in Danish](https://www.logitech.com/assets/44637/harmony700-user-guide.pdf)
+[^x-manual]: Stated by Logitech, in the manual. [The Harmony 700 user manual](https://support.myharmony.com/harmony-700-user-manual)
+[^s386]: Measured on a unit. [Section 386](../../../docs/findings.md#s386)
+[^s314]: Measured in configurations. [Section 314](../../../docs/findings.md#s314)
+[^s344]: Measured in configurations. [Section 344](../../../docs/findings.md#s344)
+[^s301]: Measured on a unit. [Section 301](../../../docs/findings.md#s301)
+[^s303]: Measured on a unit. [Section 303](../../../docs/findings.md#s303)
+[^s303b]: Measured in configurations. [Section 303](../../../docs/findings.md#s303)
+[^s382]: Measured in configurations. [Section 382](../../../docs/findings.md#s382)
+[^s340]: Measured in configurations. [Section 340](../../../docs/findings.md#s340)

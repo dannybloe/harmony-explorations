@@ -1,26 +1,26 @@
 # Harmony 700: keys
 
 **The Harmony 700 has the Harmony 600's face**, key for key: the 600, 650 and 700 share one layout and
-one form factor, and the only difference on the face is the model number at the bottom, a statement from
-the bench holding all three. So its drawing, [`reference/silhouettes/h700.svg`](../../silhouettes/h700.svg),
-is generated from `packages/silhouettes/src/models/h700.ts`, which takes every shape and scan code from
-the 600's model by reference and changes only the nameplate. The 700's manual draws the same keys, "The
-buttons on your Harmony 700", Logitech's manual page 5.
+one form factor, and the only difference on the face is the model number at the bottom. The 700's manual
+draws the same keys under "The buttons on your Harmony 700", page 5[^x-manual]. So its drawing,
+[`reference/silhouettes/h700.svg`](../../silhouettes/h700.svg), is generated from
+`packages/silhouettes/src/models/h700.ts`, which takes every shape and scan code from the 600's model by
+reference and changes only the nameplate.
 
 ![The Harmony 700's face](../../silhouettes/h700.svg)
 
 ## Where the scan codes come from
 
-Every scan code on the drawing was **measured on the Harmony 600**, section 133 and
-`reference/button-maps.md`, and is carried over on the strength of the shared face; the 700's own button
-map has **not** been measured. What holds on the 700 itself: its mode 0 lists the 600's 162 key events in
-the 600's order, section 311, so it has the same 54 scans; and the keypad scanner, a 14 by 4 matrix
-returning `row * 4 + column`, was first read in the 700's 2.8 image, section 13.
+Every scan code on the drawing was **measured on the Harmony 600**[^s133], and is carried over on the
+strength of the shared face; the 700's own button map has **not** been measured[^unchecked]. What holds
+on the 700 itself: its mode 0 lists the 600's 162 key events in the 600's order, so it has the same 54
+scans[^s311]; and the keypad scanner, a 14 by 4 matrix returning `row * 4 + column`, was first read in
+the 700's 2.8 image[^s13].
 
 The screen keys, 8, 2, 9 and 34 for the corners and 25 for the centre key, are read from configurations
-including the 700's, sections 285 and 311; the Harmony 650's [keys.md](../harmony-650/keys.md) has the
-table. The activity keys, scans 5, 1 and 7, are one entry each in a key map that is always installed, read
-from Logitech's compiles including four of the 700's, section 314.
+including the 700's[^s285][^s311]; the Harmony 650's [keys.md](../harmony-650/keys.md) has the table. The
+activity keys, scans 5, 1 and 7, are one entry each in a key map that is always installed, read from
+Logitech's compiles including four of the 700's[^s314].
 
 ## Every key on the drawing
 
@@ -89,20 +89,30 @@ Generated from `packages/silhouettes/src/models/h700.ts` by `make remote-referen
 
 ## What the drawing does not yet carry
 
-The same as the 600's, [keys.md](../harmony-600/keys.md): the four up and down keys are decided since
-section 323 and the drawing still leaves them between two candidates, and More Activities' scan 4 is not
-measured. One difference: on the 700 the activity key with no activity enters **mode 4**, the "add an
-Activity" placeholder, where the 600 and 650 enter mode 0, section 314.
+The same as the 600's, [keys.md](../harmony-600/keys.md): the four up and down keys are decided[^s323]
+and the drawing still leaves them between two candidates, and More Activities' scan 4 is not
+measured[^unchecked]. One difference: on the 700 the activity key with no activity enters **mode 4**, the
+"add an Activity" placeholder, where the 600 and 650 enter mode 0[^s314].
 
-**More Activities on the 700**: it did nothing on a configuration whose activity menu bound the press of scan
-4 back to the running activity, with none running, and showed "add Activities" once scan 4 called that
-screen's list instead, seen at the bench, section 383. That is consistent with More Activities being scan 4
-and is **not** a measurement of the key, which no section claims. The activity keys, scans 5, 1 and 7, read
-alike on seven of the 700's compiles, and a configuration of this project's binds them as the Harmony 650's
-does, section 385.
+**More Activities on the 700**: on a configuration whose activity menu bound the press of scan 4 back to
+the running activity, with none running, the key did nothing, and once scan 4 called that screen's list
+instead it showed "add Activities"[^s383]. That is consistent with More Activities being scan 4 and is
+**not** a measurement of the key. The activity keys, scans 5, 1 and 7, read alike on seven of the 700's
+compiles[^s385].
 
 ## Not checked
 
-* The 700's own button map: every scan code above is the 600's.
-* The scan codes of the two arrows below the display, Help, All Off, Enter and More Activities.
-* The key handler on the 2.8 build beyond the scanner, section 13.
+* The 700's own button map: every scan code above is the 600's[^unchecked].
+* The scan codes of the two arrows below the display, Help, All Off, Enter and More Activities[^unchecked].
+* The key handler on the 2.8 build beyond the scanner[^unchecked].
+
+[^x-manual]: Stated by Logitech, in the manual. [The Harmony 700 user manual](https://support.myharmony.com/harmony-700-user-manual)
+[^s133]: Measured in configurations. [Section 133](../../../docs/findings.md#s133)
+[^unchecked]: Not checked.
+[^s311]: Measured in configurations. [Section 311](../../../docs/findings.md#s311)
+[^s13]: Read in the firmware. [Section 13](../../../docs/findings.md#s13)
+[^s285]: Measured in configurations. [Section 285](../../../docs/findings.md#s285)
+[^s314]: Measured in configurations. [Section 314](../../../docs/findings.md#s314)
+[^s323]: Measured in configurations. [Section 323](../../../docs/findings.md#s323)
+[^s383]: Measured on a unit. [Section 383](../../../docs/findings.md#s383)
+[^s385]: Measured in configurations. [Section 385](../../../docs/findings.md#s385)
