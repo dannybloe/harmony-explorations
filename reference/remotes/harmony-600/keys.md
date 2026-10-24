@@ -1,38 +1,18 @@
 # Harmony 600: keys
 
-**The Harmony 600's drawing is the architecture's drawing.**
+The 600 has 54 keys. Most sit on the **keypad** and do what the running activity, or the device chosen in
+device mode, says they do. The rest are keys **the screen speaks for**: the four beside the screen, the
+three below it and the activity keys, whose meaning is whatever the current screen draws next to them.
+The manual's button page names every key with the words printed on the remote, "The buttons on your
+Harmony 600" on page 5[^x-manual].
+
+**The 600's drawing is also the Harmony 650's and 700's.** The three share one face, one layout and one
+form factor, [the architecture's README](../../architectures/harmony-600-650-700/README.md), so the 650
+and 700 drawings take every shape and every scan code from this one and change only the nameplate.
 [`reference/silhouettes/h600.svg`](../../silhouettes/h600.svg) is generated from
-`packages/silhouettes/src/models/h600.ts`, traced from Logitech's own documentation of this model, and
-the Harmony 650 and 700 drawings take every shape and scan code from it by reference, changing only the
-nameplate: the three share one layout and one form factor, a statement from the bench holding all three.
-The manual's button page names the same keys with the same printed words, "The buttons on your Harmony
-600", Logitech's manual page 5.
+`packages/silhouettes/src/models/h600.ts`, traced from Logitech's own documentation of this model.
 
 ![The Harmony 600's face](../../silhouettes/h600.svg)
-
-## Where the scan codes come from
-
-**The scan codes on this drawing are measured on the 600**, from a calibration configuration generated
-for this model through an account this project controls, by decoding each code a scan sends and looking
-it up in that account's named commands and button maps, section 133 and `reference/button-maps.md`. So
-the 650 and 700 carry the 600's numbers, and this is the model they were measured on.
-
-The count is 54, three routes agreeing: the key table's field split, section 17; a hardware census per
-matrix column of 14, 14, 13 and 13, measured on a unit, section 48 and `tests/test_keypad.py`; and the drawing, `reference/capabilities.md`. The
-keypad scanner is a 14 by 4 matrix returning `row * 4 + column`, read in the Harmony 700's 2.8 image,
-section 13; no 600 has been opened to check the board.
-
-## The two populations
-
-A key is either on the **keypad**, bound by the activity and device maps, or one **the screen speaks
-for**, whose meaning is whatever the current page draws beside it. On this architecture the two share no
-scan code, section 128. The screen keys' scans are the architecture's and are listed in the Harmony 650's
-[keys.md](../harmony-650/keys.md): 8, 2, 9 and 34 for the four corners and 25 for the centre key below
-the display, read from configurations including the 600's own, sections 285 and 311.
-
-The 600's manual: "The arrow buttons below the screen allow you to move through various options on the
-remote screen. The center button below the remote screen and the side buttons beside the screen let you
-choose those options." Logitech's manual page 5.
 
 ## Every key on the drawing
 
@@ -99,31 +79,65 @@ choose those options." Logitech's manual page 5.
 Generated from `packages/silhouettes/src/models/h600.ts` by `make remote-reference-write`. Change the source, not this block.
 <!-- /generated -->
 
+## Where the scan codes come from
+
+A scan code is the number the remote gives a key internally; a configuration binds commands to scan codes.
+**The scan codes on the drawing were measured on the 600**: a configuration was generated for this model
+by Logitech's own service, each code a key sends was decoded and looked up in that service's named
+commands and button maps for the same configuration[^s133]. So the 650 and 700 carry the 600's numbers.
+
+**There are 54**, and three routes agree: the key table's split of a key code into an event and a
+scan[^s17]; the keys pressed one by one on a unit, which fall into the four columns of the keypad matrix
+as 14, 14, 13 and 13[^t-keypad]; and the drawing. The keypad scanner is a matrix of 14 rows by 4 columns
+returning `row * 4 + column`, read in the Harmony 700's 2.8 image[^s13], the same architecture; no 600 has
+been opened to check the board[^unchecked].
+
+## The two populations
+
+A key is either on the **keypad**, bound by the activity and device maps, or one **the screen speaks
+for**. On this architecture the two share no scan code[^s128]. The manual: "The arrow buttons below the
+screen allow you to move through various options on the remote screen. The center button below the
+remote screen and the side buttons beside the screen let you choose those options."[^x-manual]
+
 ## What the drawing does not yet carry
 
-| key | the measurement | standing and source |
+| key | the measurement | evidence |
 |---|---|---|
-| the four up and down keys | **decided** since section 323: 26 is `UpArrow`, 27 `DownArrow`, 50 `DirectionUp`, 42 `DirectionDown` | from the device maps of the 600's calibration configuration, `reference/button-maps.md`. The drawing still leaves each between two candidates |
-| the four screen corners and the centre key | 8, 2, 9, 34 and 25 | read from configurations, sections 285 and 311 |
-| Watch TV, Watch a Movie, Listen to Music | 5, 1 and 7 | read from Logitech's compiles of this architecture, section 314; Listen to Music by elimination |
-| More Activities | 4 | **not measured**, section 314 |
+| the four up and down keys | 26 is `UpArrow`, 27 `DownArrow`, 50 `DirectionUp`, 42 `DirectionDown`, from the device maps of the configuration the scan codes were measured on; the drawing still leaves each between two candidates | [^s323] |
+| the four screen corners and the centre key below the screen | 8, 2, 9 and 34 for the corners, 25 for the centre key | [^s285], [^s311] |
+| Watch TV, Watch a Movie, Listen to Music | 5, 1 and 7; Listen to Music by elimination | [^s314] |
+| More Activities | 4, **not measured** | [^s314] |
 
 The drawing calls the activity keys and Help `screen` keys, which is a statement about the drawing's
-layers; in the configuration they are hard keys bound by the always installed key map, section 314.
+layers; in the configuration they are hard keys bound by the key map that is always installed[^s314].
 
 ## What pressing a key raises
 
-Three events per key, press, release and repeat, the event type in the top two bits of a key code and the
-scan in the low six, section 17. The firmware's own reading of them, and that it tells no long press from
-a short one, was done on the Harmony 650's 0.2 build, section 340; the 600's 0.2 build is the same program
-in another build, and the key handler on it is **not read** separately.
+Three events per key, press, release and repeat: the event in the top two bits of a key code and the
+scan code in the low six[^s17]. The firmware's own reading of them, and that it tells no long press from
+a short one, was read on the Harmony 650's 0.2 build[^s340]; the 600's 0.2 build is the same program in
+another build, [firmware.md](firmware.md), and its key handler is **not read** separately[^unchecked].
 
-**Mode 0**, the screen an activity key with no activity opens, binds every scan from 1 to 54 and swallows
-all but the centre key, which returns, section 311.
+**Mode 0**, the screen an activity key with no activity opens, binds every scan code from 1 to 54 and
+swallows all but the centre key, which returns[^s311].
 
 ## Not checked
 
-* The scan codes of the two arrows below the display, Help, All Off, Enter and More Activities.
-* The key handler on the 600's own 0.2 build.
-* Whether a skin 73 unit's keypad differs in its printing: section 24 found the 600's and 700's safe mode
-  configurations differing in 83 bytes, almost all in the key table, and nothing has read why.
+* The scan codes of the two arrows below the screen, Help, All Off, Enter and More Activities[^unchecked].
+* The key handler on the 600's own 0.2 build[^unchecked].
+* Whether a skin 73 unit's keypad differs in its printing. The 600's and 700's safe mode configurations
+  differ in 83 bytes, almost all in the key table, and nothing has read why[^s24].
+
+[^x-manual]: Stated by Logitech, in the manual. [The Harmony 600 user manual](https://support.myharmony.com/harmony-600-user-manual)
+[^s133]: Measured in configurations. [Section 133](../../../docs/findings.md#s133)
+[^s17]: Measured in configurations. [Section 17](../../../docs/findings.md#s17)
+[^t-keypad]: Measured on a unit. [The test](../../../tests/test_keypad.py)
+[^s13]: Read in the firmware. [Section 13](../../../docs/findings.md#s13)
+[^unchecked]: Not checked.
+[^s128]: Measured in configurations. [Section 128](../../../docs/findings.md#s128)
+[^s323]: Measured in configurations. [Section 323](../../../docs/findings.md#s323)
+[^s285]: Measured in configurations. [Section 285](../../../docs/findings.md#s285)
+[^s311]: Measured in configurations. [Section 311](../../../docs/findings.md#s311)
+[^s314]: Measured in configurations. [Section 314](../../../docs/findings.md#s314)
+[^s340]: Read in the firmware. [Section 340](../../../docs/findings.md#s340)
+[^s24]: Measured on a unit. [Section 24](../../../docs/findings.md#s24)

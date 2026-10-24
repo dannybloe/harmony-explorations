@@ -7,16 +7,8 @@ model folder instead, and `reference/README.md` and the generator's test get upd
 ## The software the manual names
 
 The 600's manual describes Logitech's older desktop software, the **Harmony Remote Software**, with its
-Activities, Devices and Remote Settings tabs, Logitech's manual. Today's client for this model is
-MyHarmony, whose settings for the 600 are in [features.md](features.md); where a manual step and
-MyHarmony disagree, the manual is the older software generation.
+Activities, Devices and Remote Settings tabs[^x-manual]. Today's client for this model is MyHarmony, whose
+settings for the 600 are in [features.md](features.md); where a step in the manual and MyHarmony
+disagree, the manual describes the older generation of the software.
 
-## The calibration configuration
-
-The 600's scan codes were named from a configuration generated for this model through an account this
-project controls, the calibration sample of section 133, which is why the 600 and not the 650 is the
-model the button map was measured on. `reference/button-maps.md` is the derivation.
-
-## Not checked
-
-* Nothing in this file is a claim about the remote beyond the cited sources.
+[^x-manual]: Stated by Logitech, in the manual. [The Harmony 600 user manual](https://support.myharmony.com/harmony-600-user-manual)

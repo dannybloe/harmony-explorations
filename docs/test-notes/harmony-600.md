@@ -1,5 +1,71 @@
 # Harmony 600 test notes
 
+The bench Harmony 600: what was done to it, what was read off it, and how the work on the model used it.
+What it showed about the model is in `reference/remotes/harmony-600/` and about the architecture in
+`reference/architectures/harmony-600-650-700/`; this file keeps what is one unit's, and what the model
+folder said about the bench before plan 009 step 3.1 moved it here.
+
+## Its place in the work
+
+* **The first architecture 14 remote read whole.** The 600 was the model architecture 14 was read on
+  first: its firmware was the first of the architecture read whole off a remote, section 23, and its
+  button map is the measured one the 650 and 700 carry over.
+* **The 600's 0.2 image is the reference image for the architecture's bench work**, `CLAUDE.md` key
+  facts: `600-0.2-code-base0x9000-COMPLETE.bin` in the lab's `firmware/derived/` was read off this remote
+  and verifies over all 70336 bytes, where earlier work used the Harmony 700's 2.8 package as a stand in,
+  section 23. The four 600 images in the lab and their checksums are `docs/checksums.md`; the `0xFF` page
+  holds this unit's identity block, so its checksum is not listed.
+* **The 600's panel is the one this project confirmed as monochrome by looking**, on the bench unit,
+  which is what `reference/capabilities.md` recorded as "seen at the bench"; section 387 measured what a
+  colour becomes on it.
+* **No clock on its screen**, seen on the bench unit on 4 October 2026, which is the observation
+  `reference/how-a-harmony-works.md` states for the Harmony 600, 650 and 700. A clock on this unit is
+  checked by reading memory over USB, never by looking.
+
+## The calibration configuration
+
+The 600's scan codes were named from a configuration generated for this model through an account this
+project controls, `calibration_h600`, the calibration sample of section 133, which is why the 600 and not
+the 650 is the model the button map was measured on. `reference/button-maps.md` is the derivation, and
+section 323 decided the four up and down keys from the same configuration's device maps. This belongs
+with the other accounts in `docs/test-notes/accounts.md` once that file exists (plan 009's move table).
+
+## Firmware: the version list
+
+MyHarmony's own version list, `VersionDbDefaults2.xml`, filed in the lab's `firmware/packages/versiondb/`
+for `todo-secure-logitech.md` 4.1, names 0.3 for skin 71 and no entry for skin 73; the image it names
+answers 404, as every image on that list does. The model folder said "no other version of the 600's
+firmware is known here"<!--superseded--> until 15 October 2026, while the version list had been filed
+with 0.3 in it. No archive section or test holds the list.
+
+## What has been sent to this unit
+
+| command | what was done |
+|---|---|
+| `GET_VERSION`, `READ_FLASH` external and both internal pages | read only, sections 23, 24 and 88 |
+| `READ_MISC` selector 7, live data memory | the state variables from `0xE10`, the clock ticking, and the panel's identity byte at `0x384`, section 387; the flash id at `0x686`, section 110. The model folder said "the configuration's journal variables read zero, so it was not loaded"<!--superseded--> until section 387 found those five variables to be of another kind |
+| `ERASE_FLASH` and `WRITE_FLASH`, configuration blocks | a block written back unchanged, section 302; then a delay changed and put back with the whole write sequence, section 303; then configurations built by this project, up to eleven 64 KiB blocks at a time, each read back byte for byte, sections 387, 389 and 390 |
+| the cache drop, `WRITE_MISC` selector `0x02`, and the restart | sent as part of that write sequence, section 303 |
+| the settings read, `0x13 0xB2` | its reply measured, section 304; used again before predicting a configuration's timing, sections 387 and 391 |
+| the settings write, `0x14 0xB3` | sent once, the only arch 14 unit to receive it: the KPN box's saved power on delay cleared, section 305 |
+| the battery voltage, `READ_MISC` selector `0x0C` | never sent |
+| the reinstall, the staging write | never sent |
+
+## Runs of this project's configurations
+
+* **The six device run**, section 390: the configuration was built by this project's code with the
+  library's device limit raised for that one build; the library still refuses a sixth device for a 600.
+* **The screen light**: 20 s was noted at the bench for the screen going dark under a configuration of
+  this project's, sections 387, 389 and 391.
+* **"Turning system off"**: not seen on any run of a file stating 73; seen once, very briefly after a
+  boot, with the six device file built for skin 71, with All Off not reported on, section 392.
+* **The saved delays on this unit** when the runs were made: the PS3's inter device delay at 15 tenths,
+  still in the store after this project's configuration writes, sections 387 and 391.
+* **The Devices key**: the model folder's predecessors claimed a Devices key on the 600 for a day; there
+  is none, `reference/how-a-harmony-works.md`.
+
+## Enumeration, read only
+
 ### Confirmed against the bench remote
 
 The Harmony 600 was plugged into a Mac and enumerated read only, with `ioreg`. No command was
@@ -45,7 +111,8 @@ item flag difference described below really does track the architecture rather t
 individual model or firmware version: the live arch 14 remote matches the other arch 14
 image, not the arch 12 one. The measured bytes are pinned in `tests/test_usbdesc.py`, which
 turns the measurement into a regression test.
-## 4. Measured against two bench remotes
+
+## Measured against two bench remotes
 
 Everything above was derived from firmware images. This section is what a host actually observed on
 the wire, from `packages/usb`, on **both architectures**:
