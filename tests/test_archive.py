@@ -31,6 +31,10 @@ _spec = importlib.util.spec_from_file_location(
     "archive_digest", os.path.join(ROOT, "tools", "archive_digest.py"))
 archive_digest = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(archive_digest)
+_spec = importlib.util.spec_from_file_location(
+    "reference_guards", os.path.join(ROOT, "tools", "reference_guards.py"))
+reference_guards = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(reference_guards)
 
 # Taken over the archive as it was before any anchor was added or any link target corrected.
 FINDINGS_DIGEST = "c4bc62336900cb13eee50b2c375c7a11ca399e67ad9183a44830b8799aa74fc7"
@@ -38,8 +42,6 @@ DECISIONS_DIGEST = "d6d9727e38c9879a64598e6f49d6c7870e99dde41f373f3ce603939c3dc8
 
 SECTIONS = 436
 DECISIONS = 25
-
-LINK = re.compile(r'\]\(([^)\s]*)\)')
 
 
 def anchor_problems(findings, decisions):
@@ -65,40 +67,15 @@ def anchor_problems(findings, decisions):
     return problems
 
 
-def _slugs(text):
-    """The fragments a Markdown file offers: explicit anchors and GitHub style heading slugs."""
-    out = set(re.findall(r'<a id="([^"]+)"', text))
-    for m in re.finditer(r'^#+ +(.*?)\s*$', text, re.M):
-        s = re.sub(r'[^\w\- ]', '', m.group(1).lower()).replace(" ", "-")
-        out.add(s)
-    return out
-
-
 def link_problems(path, text):
-    """Relative links of one archive file that do not resolve."""
-    problems = []
-    fenced = False
-    base = os.path.dirname(path)
-    for n, line in enumerate(text.split("\n"), 1):
-        if line.startswith("```"):
-            fenced = not fenced
-            continue
-        if fenced:
-            continue
-        for m in LINK.finditer(line):
-            target = m.group(1)
-            if not target or re.match(r'[a-zA-Z][a-zA-Z0-9+.-]*:', target):
-                continue
-            file_part, _, frag = target.partition("#")
-            dest = path if not file_part else os.path.normpath(os.path.join(base, file_part))
-            if not os.path.exists(dest):
-                problems.append("%s:%d: %s does not exist" % (os.path.basename(path), n, target))
-            elif frag and dest.endswith(".md"):
-                with open(dest, encoding="utf-8") as fh:
-                    if frag not in _slugs(fh.read()):
-                        problems.append("%s:%d: no anchor %s in %s" % (
-                            os.path.basename(path), n, frag, file_part or "the file itself"))
-    return problems
+    """Relative links of one archive file that do not resolve.
+
+    The resolver is `tools/reference_guards.py`'s, the one that also checks every other document's
+    links (`tests/test_reference.py`), so the two link checks cannot come to disagree about what an
+    anchor is. Links inside fenced code are examples and are not read.
+    """
+    return ["%s:%d: %s %s" % (os.path.basename(path), n, target, reason)
+            for n, target, reason in reference_guards.broken_links(path, text)]
 
 
 class ArchiveTest(unittest.TestCase):
