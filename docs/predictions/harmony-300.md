@@ -63,7 +63,10 @@ Harmony 300, 78 for one region and 79 for the other. Its `bcdDevice` says 78, wh
 195 read it, so the descriptor names the family's base skin and the remote names its own variant.
 
 P5 was wrong and is the useful failure: raw slot 8 holds **nothing** where devices times two predicted
-four, so that arithmetic was an artefact of the one model it was measured on.
+four, so that arithmetic was an artefact of the one model it was measured on<!--superseded-->.
+**Section 265 corrected that reading**: the same remote, programmed by Logitech's current service, holds
+eight for four devices, so the rule holds on both models and the empty slot belongs to the 2011
+compiler that built this configuration, not to the model.
 
 P4 held, so devices plus one is structural. What this document hoped it might settle, whether the spare
 entry is the activity, it does not: the answer would have been informative only if the arithmetic had

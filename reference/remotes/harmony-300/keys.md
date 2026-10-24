@@ -1,9 +1,13 @@
 # Harmony 300: keys
 
+Fifty five keys, the same keys in the same places as on a Harmony 350, with different words printed on
+some of them. The four device keys each pick one device, and nothing yet says which electrical code each
+key sends to the remote's processor.
+
 The drawing, [`reference/silhouettes/h300.svg`](../../silhouettes/h300.svg), is generated from
 `packages/silhouettes/src/models/h300.ts`, which **takes every shape from the Harmony 350's drawing** and
-states only what is printed differently: the two are one moulding, a statement from the bench holding
-both. The printing is read off the cover photograph of Logitech's setup guide, PDF page 2.
+states only what is printed differently, because the two are one moulding[^t-moulding]. The printing is
+read off the cover photograph of Logitech's setup guide, PDF page 2[^t-printing].
 
 ![The Harmony 300's face](../../silhouettes/h300.svg)
 
@@ -19,7 +23,7 @@ both. The printing is read off the cover photograph of Logitech's setup guide, P
 | the four keys beside play | Replay, Skip, Record and Stop printed under them | |
 | the top and bottom of the face | Logitech's logo, and "Harmony 300" | "Harmony" |
 
-All from `h300.ts`, read off Logitech's setup guide.
+All from `h300.ts`, read off Logitech's setup guide[^t-printing].
 
 ## Every key on the drawing
 
@@ -90,17 +94,24 @@ Generated from `packages/silhouettes/src/models/h300.ts` by `make remote-referen
 ## A device key is a slot in the configuration
 
 **The infrared group index is the device key**: TV is group 0, Cable/Sat 1, DVD 2 and VCR/Aux 3, each group
-identified in Logitech's catalogue on a configuration given one device per key, measured, section 265 and
-`reference/config-format/state.md`.
+identified in Logitech's catalogue on a configuration given one device per key[^s265]. What an infrared
+group is, is [the configuration format's](../../config-format/infrared-records.md).
 
 ## No scan codes
 
-Nothing measured ties a key on this architecture to a scan code, `h350.ts`, and the drawing's test asserts
-none is claimed, `packages/silhouettes/test/models.test.ts`. The keypad scanner of this generation has not
-been read.
+Nothing measured ties a key on this family to a scan code, and the keypad scanner of this generation has
+not been read[^unchecked], [the family's README](../../architectures/harmony-300-350/README.md). So the
+drawing claims no code and no candidate on any key, and its test asserts exactly that,
+`tests/test_silhouettes.py`.
 
 ## Not checked
 
 * Every key's scan code.
-* Whether the pause half of the play key is a separate part: the setup guide's photograph suggests one, and
-  the statement from the bench that the shape is the 350's is what the drawing follows, `h300.ts`.
+* Whether the pause half of the play key is a separate part: the setup guide's photograph suggests one,
+  and the drawing follows the 350's single part with two halves, since the moulding is the
+  350's[^t-moulding].
+
+[^t-moulding]: Measured on a unit. [The test](../../../packages/silhouettes/test/models.test.ts)
+[^t-printing]: Stated by Logitech, in the manual. [The test](../../../tests/test_silhouettes.py)
+[^s265]: Measured in configurations. [Section 265](../../../docs/findings.md#s265)
+[^unchecked]: Not checked.
