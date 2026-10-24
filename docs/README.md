@@ -40,7 +40,7 @@ docs/glossary.md                the vocabulary: which terms are Logitech's, whic
 docs/usb-protocol.md            the USB protocol spec, step 3, transport done, commands open
 docs/host-client.md             Logitech's own client as a source: the rule, and the ledger of
                                 what is believed on its word alone, all of it unconfirmed
-docs/myharmony/             everything about the vendor platform, one subject in one folder since
+reference/logitech/data-model/             everything about the vendor platform, one subject in one folder since
                                 30 August 2026. It was split across docs/ and reference/ before that,
                                 which is how half of it went stale without the other half noticing:
                                 the listing named types the reading never explained. Danny decided
@@ -695,9 +695,9 @@ make emitcheck     build a code from a name and a number out of Logitech's catal
                    `--only <family>` plus `--per-family N`, because without a filter the budget goes on
                    families settled weeks ago in whatever order the census happened to walk them
 make myharmony-model
-                   check the drawn model against docs/myharmony/model.json, the diagram and the
+                   check the drawn model against reference/logitech/data-model/model.json, the diagram and the
                    entity listing both. MYHARMONY_ARGS=--write regenerates them. No lab, no network
-make model-pdf     docs/myharmony/model.md as a PDF, diagram drawn in, for reading outside a
+make model-pdf     reference/logitech/data-model/model.md as a PDF, diagram drawn in, for reading outside a
                    terminal. Graphviz lays the diagram out, Chrome sets the document. A build
                    product, gitignored
 make model-diagram the entity diagram alone as a one page PDF beside the .mmd, laid out by

@@ -1,6 +1,6 @@
 ---
 name: draw-a-diagram
-description: "Draw a diagram this project generates from data, such as an entity model, a call graph, a state machine or a section map: emit DOT source and let graphviz lay it out, never a layout engine of our own. Use before writing or changing anything that renders a diagram, including make model-diagram and the drawings under docs/myharmony. Not for the remote silhouettes, which have draw-remote."
+description: "Draw a diagram this project generates from data, such as an entity model, a call graph, a state machine or a section map: emit DOT source and let graphviz lay it out, never a layout engine of our own. Use before writing or changing anything that renders a diagram, including make model-diagram and the drawings under reference/logitech/data-model. Not for the remote silhouettes, which have draw-remote."
 ---
 
 # Drawing a generated diagram
@@ -85,7 +85,7 @@ scaling. Keep the `viewBox`.
   copies of the same derivation, which this repository refuses everywhere else, and the copy nobody
   looks at is the one that rots. Missing graphviz is reported as missing graphviz.
 * **One source of truth for the content.** Where a machine readable form already exists, such as
-  `docs/myharmony/core-model.mmd`, the DOT generator reads the same data the Mermaid file is
+  `reference/logitech/data-model/core-model.mmd`, the DOT generator reads the same data the Mermaid file is
   generated from. It does not read the Mermaid file and it does not become a second description of
   the model.
 * **Generated, never hand edited**, like `reference/silhouettes/`. Say so in the file's own header.

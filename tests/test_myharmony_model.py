@@ -1,6 +1,6 @@
 """The MyHarmony data model: the document against the data it reads.
 
-`docs/myharmony/model.json` is the recovered model and `docs/myharmony/model.md` is the
+`reference/logitech/data-model/model.json` is the recovered model and `reference/logitech/data-model/model.md` is the
 reading of it. That is the two copies state this project's oldest rule warns about, and it is
 allowed here for the same reason `docs/config-format.md` restates bytes: one is for a tool and one
 is for a person. What makes it safe is this file, which compares every number and every field name
@@ -21,11 +21,11 @@ sys.path.insert(0, str(ROOT / 'tools'))
 import myharmony_model  # noqa: E402  `all_fields`, so the test and the generators agree on what a
                         # field list is. Reimplementing inheritance here is the two copies state.
 
-DOC = ROOT / 'docs' / 'myharmony' / 'model.md'
-DATA = ROOT / 'docs' / 'myharmony' / 'model.json'
+DOC = ROOT / 'reference' / 'logitech' / 'data-model' / 'model.md'
+DATA = ROOT / 'reference' / 'logitech' / 'data-model' / 'model.json'
 
 
-OPERATIONS = ROOT / 'docs' / 'myharmony' / 'operations.json'
+OPERATIONS = ROOT / 'reference' / 'logitech' / 'data-model' / 'operations.json'
 
 
 def model():
@@ -545,15 +545,15 @@ class TheDrawnModelIsGeneratedAndCurrent(unittest.TestCase):
         Section 218's correction. If the override is ever dropped the diagram silently goes back to
         saying an account may hold any number of remotes, which is what nobody noticed for a day.
         """
-        drawn = (ROOT / 'docs' / 'myharmony' / 'core-model.mmd').read_text(encoding='utf-8')
+        drawn = (ROOT / 'reference' / 'logitech' / 'data-model' / 'core-model.mmd').read_text(encoding='utf-8')
         self.assertIn('Account ||--|| Remote', drawn)
         self.assertNotIn('Account ||--o{ Remote', drawn)
 
     def listing(self):
-        return (ROOT / 'docs' / 'myharmony' / 'entities.md').read_text(encoding='utf-8')
+        return (ROOT / 'reference' / 'logitech' / 'data-model' / 'entities.md').read_text(encoding='utf-8')
 
     def test_the_diagram_starts_at_the_household(self):
-        drawn = (ROOT / 'docs' / 'myharmony' / 'core-model.mmd').read_text(encoding='utf-8')
+        drawn = (ROOT / 'reference' / 'logitech' / 'data-model' / 'core-model.mmd').read_text(encoding='utf-8')
         self.assertIn('Household ||--o{ Account', drawn)
 
     def test_the_listing_covers_every_service_contract(self):
@@ -644,7 +644,7 @@ class EveryTypeTheCoreReachesIsAccountedFor(unittest.TestCase):
 
     def test_every_reachable_type_is_listed_in_full(self):
         _entities, _core, seen = self.reachable()
-        listing = (ROOT / 'docs' / 'myharmony' / 'entities.md').read_text(encoding='utf-8')
+        listing = (ROOT / 'reference' / 'logitech' / 'data-model' / 'entities.md').read_text(encoding='utf-8')
         headings = set(re.findall(r'^### `([A-Za-z0-9_]+)`$', listing, re.M))
         self.assertEqual(sorted(seen - headings), [], 'reachable but absent from the listing')
 

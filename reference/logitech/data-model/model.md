@@ -2,10 +2,10 @@
 
 **What the platform behind a Harmony remote actually stores**: its entities, their fields, and how they
 refer to each other. Recovered on 30 August 2026 and checked against replies the service itself
-returned. `docs/myharmony/model.json` is the data, this is the reading, and section 218 is the
+returned. `reference/logitech/data-model/model.json` is the data, this is the reading, and section 218 is the
 argument. Two more views are generated from that data by `tools/myharmony_model.py` and never edited
-by hand: `docs/myharmony/core-model.mmd` draws the entities an account holds, and
-`docs/myharmony/entities.md` indexes all 470 service contracts by area. `make myharmony-model`
+by hand: `reference/logitech/data-model/core-model.mmd` draws the entities an account holds, and
+`reference/logitech/data-model/entities.md` indexes all 470 service contracts by area. `make myharmony-model`
 checks they still agree with the model.
 
 **Consult this before designing anything about devices, activities or remotes, and before naming a
@@ -440,7 +440,7 @@ where a named group states no transport and the catch all states infrared.
 
 **The third cluster, 75 types, and about half of it is search criteria**, one class per way of
 asking the catalogue a question, which says nothing about hardware and is listed in
-`docs/myharmony/entities.md` rather than described here. What the other half describes is a
+`reference/logitech/data-model/entities.md` rather than described here. What the other half describes is a
 **code**, and it is worth more to this project than the rest of the model put together, because
 sections 159 to 171 derived the same structure out of bytes without ever seeing this.
 
@@ -518,7 +518,7 @@ the largest in the model.
 * **`KeyboardLayoutType`**, 4: `Undefined`, `QWERTY`, `QWERTZ`, `AZERTY`
 * **`Region`**, 5: `Unknown`, `Amr`, `Emea`, `Global`, `Apac`
 
-Three are too long to quote whole and are listed in full in `docs/myharmony/entities.md`:
+Three are too long to quote whole and are listed in full in `reference/logitech/data-model/entities.md`:
 
 * **`DeviceCapabilityType`**, 81 values, what a device declares it can do. It is the list the
   activity roles above partly correspond to, and it reaches well beyond this era of remote:
@@ -634,7 +634,7 @@ islands and a long tail of request and response types that reference nothing.
 | button and function maps | 31 | all of it |
 
 150 types are reachable from the roots those clusters start at, following both fields and
-inheritance. Every one of them is listed with all of its fields in `docs/myharmony/entities.md`,
+inheritance. Every one of them is listed with all of its fields in `reference/logitech/data-model/entities.md`,
 and a test fails if that stops being true.
 
 **Three honest limits.** The rail walks from named roots, so a fourth subsystem connected to none of
@@ -653,7 +653,7 @@ gap.
 ## What can be asked of it
 
 The entity half above says what the platform **holds**. This says what it can be **asked**, which is
-the other thing a schema is good for and the part an importer needs. `docs/myharmony/operations.json`
+the other thing a schema is good for and the part an importer needs. `reference/logitech/data-model/operations.json`
 is the data.
 
 The proxy declares each operation twice, once as the request carrying the wire action and its typed

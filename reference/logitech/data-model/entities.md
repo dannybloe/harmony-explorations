@@ -1,7 +1,7 @@
 # MyHarmony: every service contract, by area
 
-**Generated** by `tools/myharmony_model.py` from `docs/myharmony/model.json`, so it
-is never edited by hand. `docs/myharmony/model.md` is the reading; this is the
+**Generated** by `tools/myharmony_model.py` from `reference/logitech/data-model/model.json`, so it
+is never edited by hand. `reference/logitech/data-model/model.md` is the reading; this is the
 reference, and it is complete: 470 contracts, 1364 fields and 1084 enum values, every one
 of them listed.
 

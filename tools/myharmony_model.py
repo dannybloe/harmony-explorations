@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
 """Draw the recovered MyHarmony model: the core entity diagram and the full entity listing.
 
-Both outputs are **generated** from `docs/myharmony/model.json` and never edited by hand, the
+Both outputs are **generated** from `reference/logitech/data-model/model.json` and never edited by hand, the
 same arrangement as `reference/silhouettes/`. That is the point of them living here rather than in
 the lab: a picture of the model that somebody maintains by hand is a second copy of a derivation, and
 this repository's oldest rule is that two copies are two copies until one of them moves.
 
 Two outputs, because 1352 types in one diagram is a picture nobody can read:
 
-* `docs/myharmony/core-model.mmd`, the cluster an account actually holds, reached by following
+* `reference/logitech/data-model/core-model.mmd`, the cluster an account actually holds, reached by following
   references out from `Household`, with the identifier wrapper types left out. Those wrappers,
   `DeviceId` and `AccountId` and the rest, are the most connected nodes in the whole graph and carry
   no fields at all, so drawing them buries the shape rather than showing it;
-* `docs/myharmony/entities.md`, every service contract grouped by the area its own namespace
+* `reference/logitech/data-model/entities.md`, every service contract grouped by the area its own namespace
   declares, with a field count each. That is what 470 contracts can usefully be on a page.
 
 `--write` regenerates both; without it the files are checked and any difference is reported, which is
@@ -26,9 +26,9 @@ import re
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-MODEL = os.path.join(ROOT, 'docs', 'myharmony', 'model.json')
-DIAGRAM = os.path.join(ROOT, 'docs', 'myharmony', 'core-model.mmd')
-LISTING = os.path.join(ROOT, 'docs', 'myharmony', 'entities.md')
+MODEL = os.path.join(ROOT, 'reference', 'logitech', 'data-model', 'model.json')
+DIAGRAM = os.path.join(ROOT, 'reference', 'logitech', 'data-model', 'core-model.mmd')
+LISTING = os.path.join(ROOT, 'reference', 'logitech', 'data-model', 'entities.md')
 
 #: The cluster worth drawing. `Household` is the root and was missing from the first version of this
 #: diagram, which started at `Account` and so drew the shape one level short.
@@ -128,8 +128,8 @@ def listing(entities):
 
     out = ['# MyHarmony: every service contract, by area',
            '',
-           '**Generated** by `tools/myharmony_model.py` from `docs/myharmony/model.json`, so it',
-           'is never edited by hand. `docs/myharmony/model.md` is the reading; this is the',
+           '**Generated** by `tools/myharmony_model.py` from `reference/logitech/data-model/model.json`, so it',
+           'is never edited by hand. `reference/logitech/data-model/model.md` is the reading; this is the',
            'reference, and it is complete: %d contracts, %d fields and %d enum values, every one'
            % (contracts, fields, values),
            'of them listed.',
@@ -209,7 +209,7 @@ def main(argv=None):
         print('stale, run `make myharmony-model`: %s' % ', '.join(stale))
         return 1
     if not args.write:
-        print('myharmony model: both generated files agree with docs/myharmony/model.json')
+        print('myharmony model: both generated files agree with reference/logitech/data-model/model.json')
     return 0
 
 

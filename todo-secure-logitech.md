@@ -90,5 +90,5 @@ learned code is played back as it was captured and needs no name, whatever remot
 
 ## 5. What lands in this repository
 
-- [ ] 5.1 How the service is used: which calls, in which order, to put devices on an account, compile and fetch the file, in `docs/myharmony/`
+- [ ] 5.1 How the service is used: which calls, in which order, to put devices on an account, compile and fetch the file, in `reference/logitech/data-model/`
 - [ ] 5.2 An index of the harvest: per family and per feature, which lab compile holds the answer and for which model, names and numbers only, so nothing gathered is findable only in the lab

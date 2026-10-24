@@ -1271,6 +1271,11 @@ class TheLabRegisterCoversTheSiteAtArtefactLevel(unittest.TestCase):
             path = match.group(1)
             if not path[:1].isalpha() or path.startswith(('docs/', 'packages/')):
                 continue  # a repository path, cited for context
+            # `reference/` is both: the lab keeps `reference/logitech-icons`, and since plan 009 the
+            # repository's own `reference/` holds documents a row cites for context, such as
+            # Logitech's data model. A path that exists in the repository is the second kind.
+            if path.startswith('reference/') and os.path.exists(os.path.join(ROOT, path)):
+                continue
             found.add(path)
         return found
 
