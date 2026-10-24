@@ -204,6 +204,14 @@ bin/finding-gate-hook.py       the same shape for the `finding` skill: interrupt
                                 a session knows it is making and not the sentences beside it, which
                                 is how section 271 landed a wrong one. Fails open by design
 pyrightconfig.json              what pyright checks and, at length, what it deliberately does not
+mkdocs.yml                      the reference website, todo-reference.md 7.1: built from reference/
+                                alone, the navigation of plan 009 section 1, every link check at
+                                warning level and strict unless SITE_STRICT=false. The built site/
+                                is never committed
+tools/site/                     what that build needs: hooks.py publishes docs/findings.md one page
+                                per section under archive/ and sends every other link that leaves
+                                reference/ to the file on GitHub; requirements.txt pins MkDocs,
+                                Material and all they pull in, by hash, with the check of each
 .agents/skills/                 the project skills, as relative symlinks into .claude/skills/, so a
                                 second agent runs the same rituals rather than a copy of them. All
                                 eleven skills are there. `py-lsp` and `ts-lsp` are there too, as real
@@ -789,6 +797,10 @@ make bench         start the bench instrument on 127.0.0.1:8731, Ctrl-C to stop.
                    long Denon codes without a trace and 4.10.7 reports them, so check its version
                    before blaming a remote for a silent step
 make probe         structural report about an attached remote; PROBE_ARGS=--file <config>
+make site          build the reference website into site/, strict: any broken link, anchor or page
+                   missing from the navigation fails it. SITE_STRICT=false prints the same warnings
+                   and builds anyway, for as long as todo-reference.md chapters 3 and 4 run. Its
+                   environment is made once under ~/.cache, never inside the checkout
 make all           everything except ghidra and bench
 ```
 
