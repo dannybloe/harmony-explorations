@@ -36,7 +36,9 @@
  * and every builder of the family rebuilds it byte for byte, and on the composed test setup; the two European
  * compiles and the Dutch one are refused, as the fixed screens' and the tour's finders refuse them. Logitech's
  * compiles keep the screens and every builder still rebuilds them, the choice `TouchChoices.welcomeTour` keeping
- * them in ours.
+ * them in ours. Written to the spare Harmony One with the composed test setup, it started straight on its ordinary
+ * screen and Options showed one page of three rows, section 421; whether the everyday One's own compile, which already
+ * holds no Remote Assistant, starts alike after this step has not been tried.
  */
 import type { Container } from '../../gspm.ts';
 import { u16 } from '../../bytes.ts';

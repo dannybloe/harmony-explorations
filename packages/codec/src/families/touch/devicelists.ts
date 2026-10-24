@@ -1127,7 +1127,9 @@ export function withTouchActivityDeviceList(start: Container, activity: number):
  * and its key words alone, selecting no row font, touched through its keys and the edges, and rebuilt by its template
  * the same way, section 419, though on four compiles of one test account. Against it, Logitech's compiler does special
  * case zero on this remote: the power off help with no device to ask about is "Nothing to do" and not its template with
- * no device in it, section 415. Unconfirmed until a remote shows it, `todo-compile-one.md` 7.2.
+ * no device in it, section 415. Seen on a remote since `todo-compile-one.md` 7.2: the empty One written to the spare
+ * Harmony One started on My Activities and its device list opened with no row; that run is recorded in the todo item
+ * and in no findings section, since the archive was frozen at section 436 by then.
  *
  * **The list nothing enters maps scan 55 once, bound straight**: once per other device list, which is the idle list
  * alone here, the form measured on the four compiles with no activity, section 424. Measured, not inferred.
