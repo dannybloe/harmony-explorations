@@ -51,7 +51,7 @@ takes over `todo-later.md` chapter 8, plan 005's steps, which now live here.
 - [x] 4.3 Infrared, gathered from the code and the findings
 - [x] 4.4 How a Harmony works for a person
 - [x] 4.5 Logitech's world: their data model, their host software, their device catalogue
-- [ ] 4.6 The glossary
+- [x] 4.6 The glossary
 
 ## 5. The findings archive
 
