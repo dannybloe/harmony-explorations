@@ -24,7 +24,7 @@ an architecture's own container layout, [the classic client](classic-client.md).
 **It is the software that drove these remotes for a decade, and it executes rather than builds.** It
 carries no container cookie anywhere and models no activity and no codeset: a configuration reaches it
 from the service as finished bytes, and every class named for a device is transport or an
-exception[^t-host-client]. What it does to a remote is [its own page](classic-client.md).
+exception[^t-host-client][^s204]. What it does to a remote is [its own page](classic-client.md).
 
 **It has three transports, chosen from the product id**: one for the remotes this reference reads over
 USB, and two more for platforms that speak something else[^s207]. Its tables of platforms and skins are
@@ -34,7 +34,7 @@ USB, and two more for platforms that speak something else[^s207]. Its tables of 
 **A learned code is measured on the host and judged on the server.** The client measures the carrier
 from the remote's own cycle count, adds adjacent durations of one kind together rather than appending
 them, and accepts a capture only by a window on its duration; whether a capture is usable comes back from
-the server, and nothing on the host classifies it[^t-host-client]. The service that does it is
+the server, and nothing on the host classifies it[^t-host-client][^s205]. The service that does it is
 [the analysis service](service.md#the-analysis-service).
 
 **Teaching is driven by the server in both eras.** The classic client fetches a list of commands to
@@ -96,6 +96,8 @@ quotes them. The models they cover are [the product line](product-line.md).
 [^x-versiondb]: Stated by Logitech. [MyHarmony's firmware version list](https://files.myharmony.com/Assets/Firmware/VersionDbDefaults2.xml)
 [^s296]: Measured on a unit. [Section 296](../../docs/findings.md#s296)
 [^t-host-client]: Stated by Logitech, in their client. [The test](../../tests/test_host_client.py)
+[^s204]: Stated by Logitech, in their client. [Section 204](../../docs/findings.md#s204)
+[^s205]: Stated by Logitech, in their client. [Section 205](../../docs/findings.md#s205)
 [^unchecked]: Not checked.
 [^s197]: Stated by Logitech, in their client. [Section 197](../../docs/findings.md#s197)
 [^s42]: Stated by Logitech, in the manual. [Section 42](../../docs/findings.md#s42)

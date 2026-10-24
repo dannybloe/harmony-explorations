@@ -71,6 +71,16 @@ the whole catalogue there are fourteen of them, each naming a segment its own fa
 position and nothing further: in order the digits form exactly four runs, `0`, `00`, `01` and `012`, and
 what they index is unread.[^s159]
 
+**`Start` tells two codes of one value apart.** A device can state the same number twice, under two families
+whose rhythms differ: one JVC device in the catalogue states 0xC508 as a `JVC 16 Bit` code and its complement,
+0x3AF7, as a `Panasonic 16 Bit` code, and both read as 0xC508 off their records, so a match on the value alone
+hands the Panasonic record to JVC. JVC's code states `Start` and Panasonic's does not, and the JVC record opens
+with a lead in where the Panasonic record opens on its first bit, so **a code stating `Start` is matched only
+by a record that opens with a lead in**.[^s170] Two families state the word, `JVC 16 Bit` on all 457 of its
+commands and `MitsubishiO1 Dual 8 16 Bit` on all 28, and every record of both opens with a lead in. The
+converse does not hold: `Sony 12 Bit` states no word and opens with a lead in, so a code without the word says
+nothing about one.[^s170]
+
 **A value is read at the widths and in the bases its family's definition states, never its name's.**[^s359]
 A family's name states one width per value, `Samsung 16 and 20 Bit` a 16 and a 20,[^s159] but the name's
 number is the digit count on some families, neither the digit nor the bit count on as many, absent on
@@ -98,6 +108,26 @@ device.[^s361] The 684 definitions fold to 684 spellings, so a folded spelling n
 `Repeat` and `Finish`, each naming segments by name and by kind, an infrared segment carrying a payload
 or a code segment of literal durations. `Repeat` is one repetition in order, `Start` precedes the first
 one, and `Finish` is what a key release sends.
+
+**A command can state more than its family's definition does, and where the two differ the command
+wins.** Five shapes occur in the catalogue:[^s230]
+
+* **A command's keycode states its own cycles**, and the definition's `KeyCode` is only the family's
+  default: `RCAV1 24 Bit 2`'s definition repeats its second segment, whose lead in is 4000 us, while every
+  one of its 815 commands names segment 0 in both groups, whose lead in is 19800.
+* **How many frames a code sends is the greater of the fields its definition declares and the values the
+  code states**: `Revox 11 Bit` declares one field and every one of its codes states two values, and 79
+  commands over six families have that shape.
+* **A frame's width is its field's, and the name may state the total instead**: on 23 of the 202 families
+  whose codes state several values, so `Daewoo 16 Bit` sends two frames of eight bits.
+* **A second segment states its own header**, which need not be the frame's: `Samsung 16 and 20 Bit`'s
+  second frame has none and opens on a bit cell, and `BelCanto 16 Bit`'s is 525 and 4200 where the frame's
+  is 8400 and 4200. A repeated segment's period likewise runs from the start of its own segment, its own
+  lead in included: `Daewoo 40 Bit` repeats a segment leading in with 9000 and 2260 where the frame's is
+  9000 and 4500.
+* **A toggle bit's position counts from the top of the field**: `Thomson 12 Bit Toggle` states `toggleBit`
+  4 over 12 bits and its protocol string writes `Code0A:4, T:1, Code0B:7`, so the toggle is the fifth bit
+  sent.
 
 ## The rhythm table
 
@@ -209,6 +239,7 @@ read it.[^d11]
 [^s160]: Measured in configurations. [Section 160](../../docs/findings.md#s160)
 [^s162]: Measured in configurations. [Section 162](../../docs/findings.md#s162)
 [^s159]: Stated by Logitech, by their service. [Section 159](../../docs/findings.md#s159)
+[^s170]: Measured in configurations. [Section 170](../../docs/findings.md#s170)
 [^s233]: Stated by Logitech, in their catalogue. [Section 233](../../docs/findings.md#s233)
 [^s359]: Stated by Logitech, in their catalogue. [Section 359](../../docs/findings.md#s359)
 [^s231]: Stated by Logitech, in their catalogue. [Section 231](../../docs/findings.md#s231)

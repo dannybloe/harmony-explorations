@@ -47,7 +47,7 @@ Counted over the configurations, or stated by Logitech, as each footnote says.
 | | value |
 |---|---|
 | container | `TPTP` and `DKDK`, marker `WLWL`, as the Harmony 880 and 885; format `0x1700`, 23 pointer slots[^s115][^s194] |
-| pointer table | **not** the base layout with insertions: base slot 0 is absent, among five, and eight raw slots are no base slot, [memory.md](memory.md)[^s182][^s184] |
+| pointer table | **not** the base layout with insertions: base slot 0 is absent, among five, and eight raw slots are no base slot, [memory.md](memory.md)[^s178][^s182][^s184] |
 | architecture record | raw slot 0, not raw slot 1, because base slot 0 does not exist here[^s182] |
 | user configuration | its pointers count from flash `0x030000`[^s115][^s117] |
 | screen raster | 128 by 160, with the same ten picture sizes as the Harmony 880 and 885[^s179] |
@@ -88,6 +88,7 @@ those sizes.[^s177][^s179]
 [^s131]: Stated by Logitech, by their service. [Section 131](../../../docs/findings.md#s131)
 [^s194]: Measured in configurations. [Section 194](../../../docs/findings.md#s194)
 [^s184]: Measured in configurations. [Section 184](../../../docs/findings.md#s184)
+[^s178]: Measured in configurations. [Section 178](../../../docs/findings.md#s178)
 [^s117]: Measured in configurations. [Section 117](../../../docs/findings.md#s117)
 [^s180]: Measured in configurations. [Section 180](../../../docs/findings.md#s180)
 [^s136]: Stated by Logitech, by their service. [Section 136](../../../docs/findings.md#s136)

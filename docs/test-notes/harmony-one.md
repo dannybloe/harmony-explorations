@@ -202,7 +202,7 @@ an archive section:
   one of the 16 codes heard was the file's own and nothing else was sent, the Denon and the LG went to the
   inputs asked for, the television and the Denon switched on with no wait before their power codes, and a
   device page's clock updated. The KPN box on the bench answered none of the catalogue's KPN TV6000COK
-  codes, which is the setup's choice of model and not the codec's.
+  codes, which is the setup's choice of model and not the codec's. Findings section 435.
 * **The charging screen** was seen on the spare during 7.1.2's work, the gauge at one level only and the
   cross not shown.
 
@@ -249,5 +249,6 @@ safe mode configuration, and the internal `0xFE` page, read off two units and by
 
 `packages/bench/irtests/done/one-spare-activities.json` records what four activities and Off send on the spare
 One, with no prediction attached. The others in the same folder carry one: `one-1-3-composed-setup.json`,
-the test setup composed onto Logitech's compile, section 403; `one-1-3b-row-click.json`, the click on
+the test setup composed onto Logitech's compile, section 403, whose run heard the Denon's and the LG's
+inputs as other commands, the Denon's CBL/SAT as Mode Pure, which section 436 traced to the composed file; `one-1-3b-row-click.json`, the click on
 composed screen rows, section 404; and `one-setup-on-empty.json`, the 8.2 run above.

@@ -19,7 +19,7 @@ Every container has one[^t-gspm], and in the Harmony One's factory safe mode con
 
 ```
 +0x00  u16      0xFEED        stored little endian, so `ed fe` in the bytes
-+0x02  u24      length        counted from the cookie, stops short of the terminator
++0x02  u24      length        counted from the tag, stops short of the terminator
 +0x05  ...      nodes         packed end to end, up to +length
 +len   u16      0xBEEF
 ```
@@ -151,7 +151,7 @@ are host side records. That is why a wrong value here has no effect on the remot
 An eleven byte framed record:[^s21]
 
 ```
-+0x00  u16      0xADDF         cookie
++0x00  u16      0xADDF         tag
 +0x02  u8       second         0 to 59
 +0x03  u8       minute
 +0x04  u8       hour           24 hour
@@ -171,7 +171,7 @@ against one less than each month's length on every image read, arch 8, 9, 12, 14
 stamps with a date known from outside decode to it.[^s322] A record whose weekday disagrees with its date,
 or whose day is past its month's last index, is refused rather than reported, by both readers.[^t-gspm]
 
-The cookie pair occurs **exactly once in every container**, unlike base slot 0's `0xFEED`, which occurs
+The tag pair, `0xADDF` and `0xEFBF`, occurs **exactly once in every container**, unlike base slot 0's `0xFEED`, which occurs
 about once per 64 KiB by chance, so this record can be found without a pointer.[^t-gspm] That is what
 [the container's base address](container.md#finding-the-base-address) is anchored on.
 

@@ -150,7 +150,7 @@ exists and throws[^s213].
 
 **Every single byte write is read back, with no unverified variant.** RAM, on chip EEPROM and internal
 program memory each have one read and one write, and the write writes, reads the same address back and
-throws on a mismatch[^t-host-client].
+throws on a mismatch[^t-host-client][^s211].
 
 ### Its address bounds, which are only assertions
 
@@ -162,7 +162,7 @@ throws on a mismatch[^t-host-client].
 
 **All three are Java assertions, which run only when the virtual machine is started with them enabled**,
 and the client's launcher does not enable them, so they say where Logitech expected these commands to be
-used and nothing about what the firmware accepts[^t-host-client]. The value widths disagree with each
+used and nothing about what the firmware accepts[^t-host-client][^s211]. The value widths disagree with each
 other: a byte wide on chip EEPROM has no use for 16383, and nothing available decides whether that
 assertion was copied from the program memory service or the field is wider than the storage[^t-host-client].
 
@@ -253,6 +253,7 @@ table's address, with nothing on the wire that says region[^t-host-client].
 [^t-gspm]: Measured in configurations. [The test](../../tests/test_gspm.py)
 [^s206]: Stated by Logitech, in their client. [Section 206](../../docs/findings.md#s206)
 [^t-host-client]: Stated by Logitech, in their client. [The test](../../tests/test_host_client.py)
+[^s211]: Stated by Logitech, in their client. [Section 211](../../docs/findings.md#s211)
 [^t-capture]: Stated by Logitech, in their client. [The test](../../packages/usb/test/classic-capture.test.ts)
 [^s214]: Stated by Logitech, in their client. [Section 214](../../docs/findings.md#s214)
 [^s210]: Measured on a unit. [Section 210](../../docs/findings.md#s210)

@@ -37,7 +37,7 @@ every address field zeroed first[^s318].
 | `end - 4` | `PTYY` | constant |
 
 **The Harmony One's frame is laid out by the same rule**, with what differs held as data rather than in a
-second linker: the format word `0x1600` and twenty two slots, raw slot 8 NULL, raw slot 18 two zero bytes with
+second linker: the word `0x1600` at `0x08`, which is the pointer count and so twenty two slots, raw slot 8 NULL, raw slot 18 two zero bytes with
 nothing parked in front of it, base slot 17 the touch hit map's own table, with the picture bank on the byte
 after it, and the configuration at flash `0x040000`[^s395]. All nineteen distinct compiles Logitech made for
 the One rebuild byte for byte, and so do fifteen configurations this project composed[^s395]. The One's safe

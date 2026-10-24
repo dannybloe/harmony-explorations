@@ -17,7 +17,7 @@ difference between them is a difference in the question:
   and the same remote's after one are two containers, because the bytes differ, and a total over
   containers is not a headcount of remotes. The configuration format's front page said 15 and gave
   excluding that pair as the reason until 29 August 2026, a paraphrase of a claim `docs/superseded.md`
-  already carried; both halves were wrong.
+  already carried; both halves were wrong. Decided in section 142.
 * `USER_CONFIGS`, 15<!--fact:user_configs-->, every configuration a remote was actually programmed with.
 
 **A count in prose drifts, which is why each carries a marker `make facts` recomputes.** The same

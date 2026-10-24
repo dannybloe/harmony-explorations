@@ -47,7 +47,7 @@ one of its 1312 requests is byte for byte what `packages/usb` builds, [the class
 this repository is MIT, so its code is not read for structure or copied, and it has documented defects on
 exactly the Harmony One and Harmony 600, 650 and 700 architectures. Its hidapi backend's packet length of
 64 agrees with the 64 byte reports. It matches Harmony remotes by vendor `0x046D` and a product id **range**,
-`0xC110` to `0xC14F`, rather than by exact id, so it cannot speak to the Harmony 600 and 700 sharing
+`0xC110` to `0xC14F`, rather than by exact id, so it cannot speak to the Harmony 600, 650 and 700 sharing
 `0xC122`; the remotes' own descriptors are the better evidence there[^x-concordance]. Three of the names
 its header gives the small item selectors are wrong for these remotes, [the commands](commands.md#read_misc-and-live-ram-over-usb)[^s19][^s246].
 

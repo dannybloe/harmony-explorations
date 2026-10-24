@@ -47,6 +47,11 @@ Read on each build named. Where a build is missing it is not read.
 | queued screen program: base slot 11 entry `operand & 0xff` | 600 and 650 0.2, 650 0.4, 700 2.8 | [^s369] |
 | picture and page list placement: nothing found reads a position | 600 and 650 0.2, 650 0.4, 700 2.8 | [^s328] |
 | parameter group 3, a light's levels | 600 0.2, 700 2.8 | [^s392] |
+| every configuration byte read: one SPI read primitive at `0x1B9AC`, with its output twin at `0x1B984`, reached through two accessors, so the configuration is read a few bytes at a time and is never mapped | 700 2.8 | [^s13] |
+| a reset key combination: before the keypad scan three key intersections are probed, and one executes the processor's `RESET` while its key is held, at `0x19120`, independent of any configuration; the other two gate whether that check runs | 700 2.8 | [^s13] |
+| a cycle exact delay, a computed jump into a run of `NOP`s, at `0x10D00`, the infrared carrier's timing and the most called primitive | 700 2.8; at the same address on 600 0.2 | [^s13] |
+| the infrared receive timebase, `TMR0` started and stopped around a learned edge, `0x19486` | 700 2.8 | [^s13] |
+| port initialisation, every port's direction and level set in one block near the entry, `0x1B8CE` | 700 2.8 | [^s13] |
 
 ## The state variable seeder
 
@@ -248,6 +253,7 @@ and `0x0C4C0` on the 600[^s19][^t-usb-firmware].
 [^s368]: Read in the firmware. [Section 368](../../../docs/findings.md#s368)
 [^s369]: Read in the firmware. [Section 369](../../../docs/findings.md#s369)
 [^s328]: Read in the firmware. [Section 328](../../../docs/findings.md#s328)
+[^s13]: Read in the firmware. [Section 13](../../../docs/findings.md#s13)
 [^s87]: Read in the firmware. [Section 87](../../../docs/findings.md#s87)
 [^s244]: Measured in configurations. [Section 244](../../../docs/findings.md#s244)
 [^s253]: Read in the firmware. [Section 253](../../../docs/findings.md#s253)

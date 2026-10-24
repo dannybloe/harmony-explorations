@@ -5,9 +5,8 @@ Every Harmony model Logitech made, and what each one's hardware can do.
 A remote says which model it is by a number, its **skin**. Logitech gave every model a skin, and a model
 sold under two regional names has two: the Harmony One is skin 54 and its European version skin 59. The
 remote reports its skin when a host asks for its version, and the skin names the model[^s57][^s131].
-**A configuration cannot say which model it is for.** It states its architecture, the platform it was
-built for[^s182], and one architecture covers models that differ in what a person sees: the Harmony 600
-and the Harmony 650 are both architecture 14, one with a monochrome screen and one with a colour
+**A configuration cannot say which model it is for.** It states its architecture[^s182], and one architecture covers
+models that differ in what a person sees: the Harmony 600 and the Harmony 650 are both architecture 14, one with a monochrome screen and one with a colour
 screen[^s387]. So anything that draws a screen or limits a setup needs the model, and this page is the
 table that turns a skin into one.
 

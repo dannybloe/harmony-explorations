@@ -74,7 +74,13 @@ filled[^s317]. Which typefaces they are is not named anywhere. **By measurement 
 faces**: 15 pixels high with a stroke of one pixel or two; 14 with one, or with two and the capitals
 starting on row 1 or lower; 13 with two or one; 11; and 10. A compile holds 17 to 19 sets, every one
 starting at code 1[^s368]. Logitech's letters are one bit: each set holds one ink and at most one shadow
-colour, four pairs in all, and the bars' letters are `0x2104` with no shadow[^s368][^s370].
+colour, four pairs in all, `0xFFFF` over `0x3186`, `0xFFFF` over `0x0000`, `0xD6BB` over `0x3186` and the bars'
+`0x2104` with no shadow, so no letter is blended into what is under it[^s368][^s370].
+Four measurements tell the faces apart: the height, whether the glyphs carry a shadow, the stroke as the
+median run of ink along a row, 85 to 87 percent of runs being one pixel in a one pixel set against 1 to 9
+percent in a two pixel set, and on the 14 pixel bold sets the row a capital starts on. The 13 pixel face
+with a one pixel stroke is Help's: its texts are all Help's. And a set never shares a glyph with another:
+Logitech carries a copy per set, 729 glyphs on one compile[^s368].
 
 **How the firmware draws a letter**, read in the 650's 0.2 build: the font select keeps only the chosen
 set's address, and each character is found by the pointer at `3 + 3 * (code - 1)` and decoded by the

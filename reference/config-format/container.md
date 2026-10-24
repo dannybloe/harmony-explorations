@@ -223,21 +223,21 @@ in all fifteen user configurations on four architectures. Base slots 10, 11 and 
 ## Finding the base address
 
 The pointers are flash addresses, so turning them into file offsets needs the address the container
-starts at, and the container does not state it. It is derived from the content, **anchored on the clock
-record** in base slot 3:[^s117]
+starts at, and the container does not state it. It is derived from the content, **anchored on the build
+timestamp** in base slot 3:[^s117]
 
 ```
-candidates = { address_of_slot - offset_of_the_clock_record : slot in table, slot not NULL }
+candidates = { address_of_slot - offset_of_the_timestamp_record : slot in table, slot not NULL }
 base       = the single candidate that is a multiple of 0x1000 and leaves every
              non-NULL pointer inside the blob
 ```
 
-The anchor is a closure rather than a cookie match: a clock record is accepted only when its stored day of
+The anchor is a closure rather than a cookie match: a timestamp record is accepted only when its stored day of
 week agrees with its stored date, and there is exactly one accepted record per container. Exactly one
 candidate survives on 26 of 27 containers, over five architectures and six bases from `0x002000` to
 `0x040000`.[^s117]
 
-On the 27th, a damaged read of a Harmony 890, the clock record sits 54 bytes off the pointer that names it
+On the 27th, a damaged read of a Harmony 890, the timestamp record sits 54 bytes off the pointer that names it
 and no candidate is aligned, so the derivation **returns nothing** and the caller falls back to
 `end_addr` minus the end marker's offset, which gives an unaligned answer on it.[^s122] **A refusal is a
 result and must not be repaired by relaxing the filter.** The end marker subtraction is right on every
@@ -301,6 +301,11 @@ Neither check is a validity test. A configuration can pass both and be wrong in 
 a device cloned into a Harmony 525 configuration by inserting bytes passed both checksums, drew every screen
 identically and addressed every infrared command wrongly.[^s117]
 
+**Erased bytes do not mark where a configuration ends.** Flash is erased only where a write needs the room,
+so past the end marker a region can still hold an earlier, longer configuration: on one Harmony One 408034 of
+the 2699923 bytes after it were not erased. A reader that looks for the end by scanning for `0xFF` works on
+some remotes and over reads on others; the end is the end marker at `end_addr`.[^s215]
+
 ## The metadata archive
 
 **Two architectures carry a metadata archive inside the container**: a `u32` length, then a ZIP holding
@@ -327,7 +332,7 @@ slots are placed and the rest refused:[^s259b]
 | 0 | 0 | the `0xFEED` name tree, 131 bytes |
 | 1 | 1 | seven bytes stating architecture 16 twice, skin 104, then `0x0d` |
 | 2 | 2 | the log area, its eight bytes byte for byte the Harmony 525's[^s260] |
-| 3 | 3 | the `0xADDF` framed clock record |
+| 3 | 3 | the `0xADDF` framed build timestamp |
 | 4 | 5 | the infrared database: groups of `u8 spare; u16 count; u24 record[]`, records in the base layout exactly |
 | 7 | 10 | the action list table: a `u16` count, each list a `u8` length then three byte instructions |
 | 10 | 15 | the parameter block: a `u8` count, each group a `u8` length then its bytes |
@@ -371,3 +376,4 @@ makes it a candidate rather than an entry.[^s259b] What the model's own configur
 [^s262]: Measured in configurations. [Section 262](../../docs/findings.md#s262)
 [^s237]: Measured on a unit. [Section 237](../../docs/findings.md#s237)
 [^s187]: Measured in configurations. [Section 187](../../docs/findings.md#s187)
+[^s215]: Measured on a unit. [Section 215](../../docs/findings.md#s215)

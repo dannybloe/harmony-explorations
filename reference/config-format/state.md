@@ -334,6 +334,8 @@ row and its action list copies `DefaultPowerOnDelay_<identifier>` into `PowerOnD
 identifiers anybody would guess[^s234]. Two details it needs: a drawn title is truncated to fit,
 `Panasonic Blu-ray Pl..`, so it matches a label it is a prefix of when exactly one label matches; and an
 underscore in a label is a space on the screen, because the underscore is base slot 0's own separator.
+No name Logitech's compilers wrote holds a space: none of 5397 names over 128 configurations of five
+architectures[^s380].
 Every container examined was generated in English, so what another language's build draws there is not
 checked[^unchecked], and a configuration whose screen says something else loses the join and keeps every
 delay.
@@ -408,9 +410,9 @@ bounds hold in all fifteen user configs and neither is ever overrun[^s39b].
 
 **The payload is a flash address, not an instruction.** All 15594<!--fact:value_map_targets--> targets
 across 15<!--fact:user_configs--> configs land inside their own container. The firmware follows one and
-hands it to a **second interpreter**, a one byte opcode language with ten opcodes and a terminator, which is
-not the action list language and is not decoded. Base slot 6's mode switch reaches the same
-interpreter[^s39].
+hands it to a **second interpreter**, which is not the action list language: it is the screen language,
+[screens](screens.md#the-screen-language), so a value map picks what to draw from a variable's value. Base slot
+6's mode switch reaches the same interpreter[^s39][^s40].
 
 Records share their tails: a few addresses point into the middle of a longer record rather than to a record
 of their own, so two records can overlap by design. The range table is empty in eleven of the fifteen
@@ -759,6 +761,13 @@ except arch 8, which stops 8 KiB short of 2 MiB at `0x1FE000`[^s47].
 
 On arch 14 every user configuration states `16384, 0x1E0000, 0x200000`, 13 of 13[^s347].
 
+**A safe mode container does not name its remote's flash size.** The Harmony 525's safe mode container ends
+its region at `0x100000` where the remote's own configuration says `0x080000`, and the three arch 14 safe mode
+containers say `0x100000` against their configurations' `0x200000`; only the Harmony One's pair agrees, and its
+region is sixteen bytes of stride 1 and looks nothing like the others. A safe mode configuration ships inside a
+firmware package rather than being built for one remote, so the limit it states is the family's nominal one,
+1 MiB on both of those architectures[^s79].
+
 **Logitech's own client declares the arch 14 region and it is the safe mode row exactly**: its per
 architecture constants give a user logging base of `0x0E0000` and a size of `0x20000`[^s206]. So that row is
 corroborated by a route with nothing in common with the configurations. It says nothing about the user
@@ -861,12 +870,15 @@ Read with `gspm.log_area`; `gspm.log_reference` names the append case an instruc
 [^s43b]: Read in the firmware. [Section 43](../../docs/findings.md#s43)
 [^s292]: Measured on a unit. [Section 292](../../docs/findings.md#s292)
 [^s347]: Measured in configurations. [Section 347](../../docs/findings.md#s347)
+[^s79]: Measured in configurations. [Section 79](../../docs/findings.md#s79)
+[^s380]: Measured in configurations. [Section 380](../../docs/findings.md#s380)
 [^s410]: Measured in configurations. [Section 410](../../docs/findings.md#s410)
 [^s430]: Measured in configurations. [Section 430](../../docs/findings.md#s430)
 [^s154]: Measured in configurations. [Section 154](../../docs/findings.md#s154)
 [^s156]: Measured in configurations. [Section 156](../../docs/findings.md#s156)
 [^s262]: Measured in configurations. [Section 262](../../docs/findings.md#s262)
 [^s39]: Read in the firmware. [Section 39](../../docs/findings.md#s39)
+[^s40]: Read in the firmware. [Section 40](../../docs/findings.md#s40)
 [^s262b]: Measured on a unit. [Section 262](../../docs/findings.md#s262)
 [^s44]: Read in the firmware. [Section 44](../../docs/findings.md#s44)
 [^s84]: Measured in configurations. [Section 84](../../docs/findings.md#s84)

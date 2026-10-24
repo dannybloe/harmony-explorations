@@ -34,7 +34,11 @@ Three boundary rules, each of which once cost a decoder that matched nothing:
 * adjacent durations of one kind are one interval and are merged before any of this.[^s164]
 
 The reader recovers bits and nothing else: it does not name the protocol, split an address from a
-command, or check a parity bit. `irframe.ts` in `packages/codec/src`.
+command, or check a parity bit. `irframe.ts` in `packages/codec/src`. **So it can read past a family's own
+field**: of 180 records it and Logitech's analysis service both read, 177 give the same number and the other
+three are all `Makita 10 Bit`, where the reader takes fourteen cells against the family's ten and its number
+is the service's shifted left by four, which is what a fixed tail or a checksum after the value looks
+like.[^s153]
 
 **Matching a frame against a command list names the button a scan code belongs to.** A frame can be
 compared with a number written down elsewhere, which a duration list cannot. Matched against the command
@@ -101,6 +105,23 @@ ratio.[^s165] A frame ending on a carried duration above a constant cannot stand
 carry a mid frame **gap** of 4480, so no constant separates the two and the shape rule does.[^s161] With
 the rule in place the terminator is 8000, inside a window between 3480, the longest duration consumed as a
 bit, and 15300, the smallest that ends a frame.[^s161]
+
+**A frame's flat half can ride with the bit.** In `Panasonic 16 Bit` a clear bit is a 521 mark and a 1575
+space and a set bit a 525 mark and a 527 space; `MemorexV2 32 Bit Dual` sends 594 with 1725 against 560 with
+594, and `Sharp 48 Bit` 409 with 1304 against 410 with 434. In every record of all three the mark's length is
+fixed by its own cell's space: two pairs, no third and no exception.[^s170] So the reader admits a second flat
+length **only on perfect correlation**, every long spaced cell carrying one mark and every short spaced cell
+the other, and the rhythm table states the set cell's mark as `oneMark`; a second mark that does not follow
+the space is still a wobbling flat half and is refused.[^s170][^t-irframe]
+
+**A segment is read at its own scale, because the 8000 terminator cannot rise.** `Short 11 Bit 2` and
+`Videocrypt 11 Bit Toggle` spell their bits as spaces of 5282 to 8310 us, while the only population between
+8310 and the unambiguous gaps is 8460, the silence between the frames of `RCAV1 LF 24 Bit`, 1.8% away. Any
+constant that reads the first family breaks the second.[^s167] What separates them is scale: a train is first
+cut into segments at a space four times its median space, so no space that large can occur inside a segment,
+and each segment is read with a terminator of the greater of 8000 and four times its own median space. An
+ordinary segment's median is a few hundred microseconds, so it keeps 8000, and both families read whole, 42 of
+42 and 32 of 32 records.[^s167]
 
 **Adjacent durations of one kind are merged before the frame is read.**[^s164] A stored duration is
 fifteen bits, so a longer interval is spelt as several words in a row and nothing in the train marks the
@@ -223,11 +244,14 @@ off a stored train instead of off a definition.[^s231]
 [^t-irframe]: Measured in configurations. [The test](../../packages/codec/test/irframe.test.ts)
 [^s161]: Measured in configurations. [Section 161](../../docs/findings.md#s161)
 [^s133b]: Stated by Logitech, by their service. [Section 133](../../docs/findings.md#s133)
+[^s153]: Stated by Logitech, by their service. [Section 153](../../docs/findings.md#s153)
 [^s152]: Measured in configurations. [Section 152](../../docs/findings.md#s152)
 [^s160]: Measured in configurations. [Section 160](../../docs/findings.md#s160)
 [^t-stated]: Measured in configurations. [The test](../../packages/codec/test/stated.test.ts)
 [^s227]: Stated by Logitech, in their catalogue. [Section 227](../../docs/findings.md#s227)
 [^s165]: Measured in configurations. [Section 165](../../docs/findings.md#s165)
+[^s170]: Measured in configurations. [Section 170](../../docs/findings.md#s170)
+[^s167]: Measured in configurations. [Section 167](../../docs/findings.md#s167)
 [^s162]: Measured in configurations. [Section 162](../../docs/findings.md#s162)
 [^s166]: Measured in configurations. [Section 166](../../docs/findings.md#s166)
 [^s168]: Measured in configurations. [Section 168](../../docs/findings.md#s168)

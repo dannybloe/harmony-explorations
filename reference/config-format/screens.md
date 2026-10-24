@@ -341,6 +341,11 @@ The count is the same for every set in every **generated** configuration, 46 to 
 size chosen per configuration; the arch 9 safe mode container declares 91, 90, 50 and 90 in one container, so
 the field is per set and a generator happens to choose once.[^s46b]
 
+**A set holds the glyphs its own strings draw and no others**, so a code the configuration draws in one font
+can be NULL in another. On one Harmony One configuration the font that titles every device page cannot spell
+`LG`, while the row font of the same height carries the whole drawn alphabet, so whether a text can be
+drawn is a question per character per font.[^s173]
+
 **A glyph code is one based** in every generated configuration, because zero ends an inline string and
 nothing can name a glyph by the code zero. It is the header that says so, not the format: the arch 9 safe
 mode container's sets start at 32 and its codes are ASCII.[^s78]
@@ -488,3 +493,4 @@ with the owner's own device names in it.[^s149] `configLanguage`, `LANGUAGE_MARK
 [^s124]: Measured in configurations. [Section 124](../../docs/findings.md#s124)
 [^s149]: Measured in configurations. [Section 149](../../docs/findings.md#s149)
 [^unchecked]: Not checked.
+[^s173]: Measured in configurations. [Section 173](../../docs/findings.md#s173)

@@ -144,7 +144,7 @@ below. Read with `deviceModeMaps` in `packages/codec/src/inventory.ts`.
 
 ### The key table is the first mode record
 
-**The container's key table, the table after the end marker, is the first mode record**, byte for
+**The container's key table, the table after the marker that closes the section table (`LWJL` or `WLWL`), is the first mode record**, byte for
 byte: same offset, same count, same four byte entries[^s52]. The tagged list encoding and the key table
 encoding are one encoding.
 

@@ -20,7 +20,7 @@ same.[^s14][^s194] Where a fact holds for fewer architectures than that, the pag
 EZHex header                   XML, read by the host software and never written to the remote
 container header               cookie, end address, pointer count, the section table
   base slot 0                  the name tree, the one 0xFEED ... 0xBEEF frame in the container
-  base slot 1                  seven bytes stating the architecture
+  base slot 1                  up to seven bytes stating the architecture
   ...                          the other sections, unframed, each reached through the table
 checksum and end marker
 ```
@@ -70,15 +70,15 @@ located consumer on the Harmony 700, the 600 and the One.[^s35][^s38]
 | slot | what it is | page | evidence |
 |---|---|---|---|
 | 0 | the **name tree**: a `0xFEED` framed tree of names, which say what each state variable is for and which device it belongs to | [header records](header-records.md) | [^s77] |
-| 1 | the **architecture record**: seven bytes stating the architecture and the model, the only place a configuration states either | [header records](header-records.md) | [^s15] |
+| 1 | the **architecture record**: up to seven bytes stating the architecture and the model, the only place a configuration states either | [header records](header-records.md) | [^s15] |
 | 2 | the **log area**: three numbers reserving a region of flash above the configuration that the firmware appends to and never erases | [state](state.md) | [^s47] |
 | 3 | the **build timestamp**, which the firmware measures the configuration's age from | [header records](header-records.md) | [^s21], [^s138] |
 | 4 | the **firmware event map**: thirty events, each naming a mode | [state](state.md) | [^s36] |
 | 5 | the **infrared database**: one group per device, then records | [infrared records](infrared-records.md) | [^s32] |
 | 6 | the **mode table**: a mode carries a screen program and an array of pages, each with a tagged list | [modes and keys](modes-and-keys.md) | [^s37] |
 | 7 | the **font table**, indexed by opcode 16 of the screen language | [screens](screens.md) | [^s40], [^s46] |
-| 8 | **key press bindings**: one leading action list, then every mode page's list | [modes and keys](modes-and-keys.md) | [^s27] |
-| 9 | the **binding table**: lists of button bindings, pushed onto a key lookup stack when a mode is entered and removed when it is left | [modes and keys](modes-and-keys.md) | [^s39], [^s176] |
+| 8 | **the screen keys' bindings**: one leading action list, then every mode page's list | [modes and keys](modes-and-keys.md) | [^s27] |
+| 9 | the **key map table**: lists of button bindings, pushed onto a key lookup stack when a mode is entered and removed when it is left | [modes and keys](modes-and-keys.md) | [^s39], [^s176] |
 | 10 | the **action list table** | [actions](actions.md) | [^s17], [^s34] |
 | 11 | the **screen program table**: programs in the screen language | [screens](screens.md) | [^s40] |
 | 12 | the **timer table**: wait, then queue one instruction | [state](state.md) | [^s43] |
@@ -86,12 +86,18 @@ located consumer on the Harmony 700, the 600 and the One.[^s35][^s38]
 | 14 | the **state value map**: what a state variable's value means, indexed by opcode `0x72` | [state](state.md) | [^s39] |
 | 15 | the **parameter block**: numbered groups of 16 bit constants, every length checked by the firmware | [state](state.md) | [^s44] |
 | 16 | the **number sender**: how a device is sent a number one digit at a time, for favourite channels | [state](state.md) | [^s39], [^s154] |
-| 17 | the **touch screen hit map** on the Harmony One, indexed by a mode page's spare byte; elsewhere it names where the picture bank starts | [modes and keys](modes-and-keys.md) | [^s45], [^s62] |
+| 17 | the **touch screen hit map** on the Harmony One, indexed by a mode page's `lead` byte; elsewhere it names where the picture bank starts | [modes and keys](modes-and-keys.md) | [^s45], [^s62] |
 | 18, 19 | NULL | [the container](container.md) | [^s20] |
 
 **Most of a configuration's bytes are pictures**, in one array from the end of the named sections to the
 checksum, with no table and no count of its own: [screens](screens.md).[^s55] And six of the sections
 above are arrays of three byte pointers into the rest, [the container](container.md).[^s16]
+
+**Every byte of a configuration belongs to a known structure.** On eighteen of the nineteen containers of the
+corpus no byte is left unclaimed and none is claimed twice; the nineteenth, the Harmony 525's safe mode
+container, has structures left rather than stray bytes.[^s84] The last bytes to be placed were a screen
+program's terminator, a section's zero tail and an empty mode record's wide form, each on the page of its
+structure.[^s84]
 
 [^s34]: Read in the firmware. [Section 34](../../docs/findings.md#s34)
 [^s40]: Read in the firmware. [Section 40](../../docs/findings.md#s40)
@@ -121,3 +127,4 @@ above are arrays of three byte pointers into the rest, [the container](container
 [^s62]: Measured in configurations. [Section 62](../../docs/findings.md#s62)
 [^s55]: Measured in configurations. [Section 55](../../docs/findings.md#s55)
 [^s16]: Measured in configurations. [Section 16](../../docs/findings.md#s16)
+[^s84]: Measured in configurations. [Section 84](../../docs/findings.md#s84)
