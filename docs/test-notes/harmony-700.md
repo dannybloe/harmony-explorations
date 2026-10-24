@@ -43,3 +43,51 @@ with each outcome:
 **The flash part**: the 2.8 package's upgrade header states `0x14:0x1C`, which the map once read as a
 half sized part the model might carry; the unit reports `15:1C`, EON's 2 MiB part, and the
 package's `Data.xml` states the same for skin 66, sections 295 and 297.
+
+## What was sent to the unit
+
+The reference's [usb.md](../../reference/remotes/harmony-700/usb.md) states what a Harmony 700 answers;
+this is the record of what was sent to this one to learn it.
+
+* **Reads**: `GET_VERSION`, external flash from `0x000000` and both internal pages, before and after each
+  step below, section 295.
+* **The reinstall**, `WRITE_MISC` selector 6 and the restart, sent once to repair the unit in safe mode,
+  section 295.
+* **The staging region**, erased and written once with Logitech's 2.8 image under decision 18, section 297.
+* **Configuration blocks**: one written back unchanged, section 300; a power on delay raised from 60 tenths
+  to 90 and put back, both heard with an infrared receiver, section 301; then the configurations of
+  `todo-compile-700.md`, nine 64 KiB blocks for the first, each read back byte for byte, sections 383 and 386.
+* **Live data memory**, `READ_MISC` selector 7, from `0x900` on build 2.8, section 386.
+* **Never sent**: the settings read and write, the charger commands `0x18` to `0x1E`, and the battery
+  voltage, `READ_MISC` selector `0x0C`.
+
+## The configurations run on it
+
+The reference states what a 700 does with a configuration; these are the runs it rests on.
+
+* **The empty configuration**, section 383: no device, so nothing sent; "USB Connected" on the cable, Devices
+  and Activities leading to each other, each empty activity key showing "add an Activity on this button",
+  and the screen dark about 20 seconds after the last key, judged by eye. More Activities did nothing while
+  the activity menu bound the press of scan 4 back to the running activity, and showed "add Activities" once
+  it called that screen's list.
+* **The test setup**, sections 385 and 386: six devices and then seven, every frame the receiver decoded the
+  one the file sends. Its activity keys, scans 5, 1 and 7, are bound as the Harmony 650's setup binds them,
+  section 385. With the Off screen's mark starting at 0 All Off showed no Off screen, and with it starting at
+  1 it did; with no activity the Off screen showed on All Off and on leaving the cable, section 383.
+* **The charging screens**, sections 383 and 384: on a cheap USB charger the empty configuration showed the
+  charging sequence instead of "USB Connected"; on a phone charger it showed none. Logitech's own
+  configuration showed no charging screen either, on the phone charger with charged cells, with defective
+  ones, with none, with one flat and one full, and with the cable put in while the screen was dark; it was
+  not run on the cheap charger. Neither charger's data lines were measured.
+
+## Other records
+
+* **Firmware images**: the 2.8 package and the two files decoded from it are in the lab's `firmware/`, with
+  their checksums in `docs/checksums.md`. The 2.5 application exists only as cut out of the unit's first
+  staging read, 71552 bytes, section 298. MyHarmony's version list naming 2.8 is filed in the lab's
+  `firmware/packages/versiondb/`, `todo-secure-logitech.md` 4.1.
+* **Logitech's service statement** for skin 66, `GetProductCapabilities2`, was asked through one account
+  entry; the answers are filed in the lab's `work/myharmony/responses-per-model/`, and no archive section or
+  test holds them, so the reference marks the capability list not checked.
+* **The activity fill test** of `reference/how-a-harmony-works.md`, seventeen model records: whether a 700
+  record was among them is not recorded.
