@@ -139,7 +139,6 @@ PINNED = {
         ('reference/glossary.md', 'dump'): 2,
         ('reference/how-a-harmony-works.md', 'bench'): 7,
         ('reference/how-a-harmony-works.md', 'lab'): 4,
-        ('reference/infrared/sending.md', 'lab'): 2,
         ('reference/logitech/classic-client.md', 'bench'): 2,
         ('reference/logitech/classic-client.md', 'lab'): 3,
         ('reference/logitech/clients.md', 'bench'): 5,
@@ -181,8 +180,6 @@ PINNED = {
     'copy': {
         ('reference/architectures/harmony-600-650-700/compiler.md', 'the archive, meaning the copy'): 1,
         ('reference/config-format/state.md', 'the archive, meaning the copy'): 2,
-        ('reference/infrared/frames.md', 'the archive, meaning the copy'): 1,
-        ('reference/infrared/sending.md', 'the archive, meaning the copy'): 3,
     },
     'footnotes': {
     },
