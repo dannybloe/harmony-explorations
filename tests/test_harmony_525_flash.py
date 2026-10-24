@@ -101,7 +101,7 @@ class TheAcceptedAddressesAreTheWholePart(unittest.TestCase):
 
     The classifier at 0x02E14 tests the top byte against 0x80 and 0x88 and subtracts 0x80 out of it,
     so tags 0x80 to 0x87 become chip addresses 0x000000 to 0x07FFFF. That is eight 64 KiB blocks and
-    a 512 KiB part, which closes against `docs/memory-map-525.md`'s figure from an unrelated route.
+    a 512 KiB part, which closes against the architecture's memory page, from an unrelated route.
     """
 
     def setUp(self):
@@ -199,11 +199,14 @@ class TheBlockBelowTheConfigurationIsTheFirmware(unittest.TestCase):
         # experiment because entering safe mode on arch 9 destroys the application, section 118.
         self.assertEqual(self.CONFIG_BASE - 2 * self.BLOCK, self.SAFE_MODE)
 
-    def test_the_memory_map_agrees_about_what_that_block_holds(self):
-        # A second source for the row above, from a document written before any of this: the map was
-        # derived by loadaddr.find_base and confirmed against the internal copy byte for byte.
-        text = (ROOT / 'docs' / 'memory-map-525.md').read_text()
+    def test_the_reference_agrees_about_what_that_block_holds(self):
+        # A second source for the row above, from a measurement older than any of this: the block was
+        # placed by loadaddr.find_base and confirmed against the internal copy byte for byte, section
+        # 76. It lived in the Harmony 525's memory map until plan 009 moved that map into the
+        # architecture's memory page, so that page is where the row is read now.
+        text = (ROOT / 'reference' / 'architectures' / 'harmony-5xx' / 'memory.md').read_text()
         self.assertIn('| `0x810000` | 65536 | the **application firmware**', text)
+        self.assertIn('| `0x800000` | 65536 | the **safe mode image**', text)
 
     def test_the_firmware_is_below_the_config_region_floor_and_so_is_refused(self):
         # The rail that does the work, stated as the comparison rather than as a constant: the floor

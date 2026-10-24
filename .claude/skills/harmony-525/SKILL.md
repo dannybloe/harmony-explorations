@@ -25,8 +25,8 @@ In this order, every time, including in an agent:
 2. `reference/architectures/harmony-5xx/README.md`: what is the architecture's, measured on this model,
    above all its `memory.md`, `firmware.md` and `usb.md`. In conversation say "the Harmony 525", never
    the bare architecture number.
-3. `docs/memory-map-525.md`: the long form of its memory, with the predictions made before the remote
-   arrived kept beside what was measured.
+3. `docs/predictions/harmony-525.md` and `docs/test-notes/harmony-525.md`: what was predicted before the
+   remote arrived and how it scored, and what has been done to the bench unit, in order.
 4. The `recovering-a-remote` skill **before anything that touches safe mode, the bootloader or the
    EEPROM**, including a plan that only mentions them.
 5. `reference/how-a-harmony-works.md` when the task touches what the remote does for a person.
@@ -117,7 +117,7 @@ corner of the screen.
 | what | where |
 |---|---|
 | the public reference | `reference/remotes/harmony-525/`, `reference/architectures/harmony-5xx/` |
-| the long form of the memory | `docs/memory-map-525.md` |
+| the predictions and the bench unit's record | `docs/predictions/harmony-525.md`, `docs/test-notes/harmony-525.md` |
 | the drawing | `packages/silhouettes/src/models/h525.ts`, rendered into `reference/silhouettes/h525.svg` |
 | the writer | `packages/usb/bin/rehearse-block.ts`, with `H525_DUMPS` |
 | the rails | `packages/usb/src/rails.ts`: `CONFIG_REGION_BASE`, `WRITABLE_CEILING`, `ERASE_BLOCK_SIZE` and the per path lists |

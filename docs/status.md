@@ -2288,5 +2288,5 @@ the condition that hid the first glyph code, and section 85 is the same lesson t
 the only picture whose width is not a multiple of eight and the only opcode 22 that is not followed
 by an opcode 3, and each of those broke a rule every other container had confirmed. Three arch 12 assumptions came out of `packages/usb`
 on the way: the version reply was matched as a whole byte, its length was fixed at twelve, and the
-region validator was hard coded. `docs/memory-map-525.md` holds the predictions against the
+region validator was hard coded. `docs/predictions/harmony-525.md` holds the predictions against the
 measurements.

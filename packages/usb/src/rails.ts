@@ -52,7 +52,7 @@ export const CONFIG_REGION_BASE: Readonly<Record<number, number>> = {
   // sentence asked for.
   //
   // **A Harmony 525 keeps its configuration at `0x820000`** with the application firmware at
-  // `0x810000` and the safe mode image at `0x800000` directly below it, `docs/memory-map-525.md`.
+  // `0x810000` and the safe mode image at `0x800000` directly below it, `reference/architectures/harmony-5xx/memory.md`.
   // Those neighbours are the reason the arch 9 rail matters more than arch 12's rather than the
   // same: section 267 read the erase and write handlers and **the firmware bounds them to the flash
   // part and nowhere finer**, so every one of the eight blocks is reachable, including both firmware
@@ -212,7 +212,7 @@ export const ARCHITECTURES_WITH_A_RAM_WRITE_TARGET: readonly number[] = [12];
  */
 export const WRITABLE_CEILING: Readonly<Record<number, number>> = {
   // **The log area is the ceiling on arch 9 (Harmony 525)**, not the top of the part. The
-  // configuration starts at `0x820000` and `docs/memory-map-525.md` puts the log area at
+  // configuration starts at `0x820000` and `reference/architectures/harmony-5xx/memory.md` puts the log area at
   // `0x870000`, so this stops one block below it. The part itself ends at `0x880000` and the
   // contributor's own "384 KiB" figure counts that whole span; taking the larger number would put
   // the log inside the writable range for no gain, since no configuration here comes near it.

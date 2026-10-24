@@ -22,11 +22,23 @@ from harmony.pic18 import isa, loadaddr
 _DOCS = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'docs')
 
 #: The shared document first, then every per device map. **Globbed rather than listed**, because it
-#: was listed and `docs/memory-map-525.md` was never added: the arch 9 map had not been seen by the
+#: was listed and the Harmony 525's map was never added: the arch 9 map had not been seen by the
 #: identity byte guard below at all, from the day it was written. A publication check that has to be
 #: extended by hand is a publication check that covers whatever somebody remembered.
 _MAPS = ('memory-map.md',) + tuple(
     sorted(os.path.basename(p) for p in glob.glob(os.path.join(_DOCS, 'memory-map-*.md'))))
+
+#: Where the Harmony 525's memory map went when plan 009's step 3.2 removed it: the long form into its
+#: architecture folder, the predictions and the bench unit's record into `docs/`. **Listed rather than
+#: globbed**, and that is not the mistake the comment above records: these are the exact files the map's
+#: text landed in, so the byte runs it published travelled with it and the identity guard below keeps
+#: reading them. Paths are relative to `docs/`, like the maps. The folder's `misc.md` took none of the
+#: map's text and lists skin numbers, which read as a byte run, so it is not one of them.
+_MOVED_FROM_MAPS = (
+    'predictions/harmony-525.md',
+    'test-notes/harmony-525.md',
+) + tuple('../reference/architectures/harmony-5xx/%s.md' % name
+          for name in ('README', 'firmware', 'memory', 'usb'))
 
 
 # concordance's own architecture table, read out of the sibling checkout. Imported rather than
@@ -544,6 +556,9 @@ class TestTheSharedMap(unittest.TestCase):
 _PUBLISHABLE_BYTE_RUNS = {
     '09 00 20 11 02 18 e0 3c 00 67 01',      # the Harmony 600's descriptor bytes
     '27 30 25 12 ff 90 16 09',               # the Harmony 525's GET_VERSION reply
+    # The same reply in safe mode, the version of the safe mode image, which the architecture's
+    # `usb.md` publishes beside the first. A model's state, the same in every unit's safe mode.
+    '20 25 12 ff 94 16 00',
     # Base slot 3's clock record on the bench Harmony 525: a build timestamp of 2 October 2013, the
     # unit on our own bench, and the document spells out what each byte means two lines above it.
     '2c 28 12 01 03 09 0d',
@@ -566,8 +581,9 @@ class TestEveryMap(unittest.TestCase):
         and seven long, which matched in **one** of the four documents, so for three of them the loop
         body never ran. Its assertion was `assertIn(run, whitelist)`, a **substring** test, so any
         window of the permitted run passed and so did any run that happened to sit inside it. And
-        `_MAPS` was a hand written tuple that never gained `docs/memory-map-525.md`, so the arch 9 map
-        had never been examined at all.
+        `_MAPS` was a hand written tuple that never gained the Harmony 525's map, so the arch 9 map
+        had never been examined at all. That map is gone since plan 009's step 3.2, and its text is
+        examined where it landed, `_MOVED_FROM_MAPS`.
 
         A publication guard is the one kind of test where a vacuous pass is not merely useless. This
         one now globs the documents, matches either case and both separators, compares a run whole
@@ -575,9 +591,12 @@ class TestEveryMap(unittest.TestCase):
         byte run's length. It also asserts that it examined every document, because the failure it is
         replacing was silence.
         """
-        self.assertEqual(len(_MAPS), 5, 'the memory map glob stopped matching')
+        # 4 since plan 009's step 3.2 removed the Harmony 525's map; its text is in _MOVED_FROM_MAPS.
+        self.assertEqual(len(_MAPS), 4, 'the memory map glob stopped matching')
+        self.assertEqual(len(_MOVED_FROM_MAPS), 6, 'the 525 map\'s new homes changed')
         examined = 0
-        for name in _MAPS:
+        documents = _MAPS + _MOVED_FROM_MAPS
+        for name in documents:
             with self.subTest(document=name):
                 text = _doc(name)
                 examined += 1
@@ -587,7 +606,7 @@ class TestEveryMap(unittest.TestCase):
                                   'an unexplained byte run in %s' % name)
                 self.assertEqual(_GUID.findall(text), [],
                                  'something shaped like an account GUID in %s' % name)
-        self.assertEqual(examined, len(_MAPS), 'a document went unread')
+        self.assertEqual(examined, len(documents), 'a document went unread')
 
 
 if __name__ == '__main__':

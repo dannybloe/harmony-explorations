@@ -6,7 +6,7 @@ model folder instead, and `reference/README.md` and the generator's test get upd
 
 ## Predictions before the first read
 
-Every number about this model was written down before a unit was connected, `docs/memory-map-525.md`, and
+Every number about this model was written down before a unit was connected, `docs/predictions/harmony-525.md`, and
 eight of nine identity predictions held; the miss was the version block's last field, and the blocker
 nobody predicted was the read address, section 76. That document keeps the predictions beside what was
 measured.

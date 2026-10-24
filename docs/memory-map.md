@@ -8,7 +8,7 @@ rules and the architecture comparison are written once rather than once per remo
 | [memory-map-one.md](memory-map-one.md) | Harmony One | 12 | yes, three units |
 | [memory-map-600.md](memory-map-600.md) | Harmony 600 | 14 | yes, one unit |
 | [memory-map-700.md](memory-map-700.md) | Harmony 700 | 14 | yes, one unit, since section 295; it said package only until 9 October 2026 |
-| [memory-map-525.md](memory-map-525.md) | Harmony 525 | 9 | yes, one unit |
+| [the Harmony 5xx memory page](../reference/architectures/harmony-5xx/memory.md) | Harmony 525 | 9 | yes, one unit; the map moved there in plan 009's step 3.2 |
 
 These five documents derive nothing. Every figure in them is measured elsewhere and each row names
 its source, so where one disagrees with `docs/findings.md` or `reference/usb-protocol/README.md`, those two are

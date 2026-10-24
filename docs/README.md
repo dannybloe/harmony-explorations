@@ -84,7 +84,9 @@ docs/memory-map.md              memory maps: the addressing rules and the archit
 docs/memory-map-one.md          where everything lives on a Harmony One, derived, one page
 docs/memory-map-600.md          the same for the Harmony 600
 docs/memory-map-700.md          the same for the 700, measured on the bench unit since section 295
-docs/memory-map-525.md          arch 9, predictions written down before the remote arrives
+docs/predictions/harmony-525.md
+                                predictions about a Harmony 525, its identity before it was first
+                                connected and its clock before that was read, each scored beside it
 docs/recipe.md                  the recipe a configuration of ours is built from, preliminary:
                                 its fields, what it holds and what the model's definition holds
                                 instead, and each field against FreeHarmony's data model with the

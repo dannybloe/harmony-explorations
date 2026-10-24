@@ -144,17 +144,18 @@ and 103 of arch 9's blocks were not seen at all. The old reading was 3490 blocks
 remainder with an explanation attached is a remainder nobody counts again.
 #### Class 5 shares the header, and behind it spells a code from a dictionary
 
-Arch 9's 200 records all read class 5, and every structural property of the header above holds on
-every one of them: the class byte at +7, the record's own start at +8 seven bytes back, both `u24`
+Class 5 is the infrared encoding of [the Harmony 5xx platform](../architectures/harmony-5xx/README.md):
+every record of both arch 9 configurations is class 5, 200 in one and 107 in the other.[^s82] Arch 9's 200 records
+all read class 5, and every structural property of the header above holds on every one of them: the class byte at +7, the record's own start at +8 seven bytes back, both `u24`
 pointing backwards and staying inside the area, the third `u24` NULL, and no two headers
 overlapping. So **the header is one structure across both classes** and a reader can claim it,
 though 61 of those 200 carry two pointer groups, and 107 of 107 in the second 525 config do, so its
-length is read rather than assumed, section 75. `gspm.ir_region` gives the whole area, from the lowest backward pointer to the end of the
+length is read rather than assumed.[^s75] `gspm.ir_region` gives the whole area, from the lowest backward pointer to the end of the
 highest header, and on the 525 those two ends land exactly on the boundaries of the largest region
-the byte accounting could not attribute.
+the byte accounting could not attribute.[^s65]
 
 **Confirmed on both arch 9 configs, and every field width is a literal in the firmware that reads
-it**, section 82. Where a class 1 pointer names a run of durations, a class 5 pointer names a body
+it**.[^s82b] Where a class 1 pointer names a run of durations, a class 5 pointer names a body
 that spells the code as indices into a shared table of short pulse blocks:
 
 ```
@@ -177,13 +178,13 @@ repeat frame. A gap longer than 32767 microseconds is split across words, since 
 bits can say.
 
 ~~the record body opens with a `u24` naming one of 66 shared descriptors~~<!--superseded--> That
-`u24` is the symbol table pointer and there are 5 of them in `h525_config`, not 66; the count came
-from reading at each block area's start rather than at a pointer target, which is a body start only
-135 times in 199. [findings.md](../../docs/findings.md) sections 65 and 82.
+`u24` is the symbol table pointer and there are 5 of them in the configuration of 200 records, not 66;
+the count came from reading at each block area's start rather than at a pointer target, which is a body
+start only 135 times in 199.[^s65][^s82]
 
 **All three levels are shared, harder than anywhere else in the format.** Two records name one body,
 up to 206 bodies name one symbol table, and a symbol block is reused by every code with that pulse
-pair in it. Nothing here can be edited in place.
+pair in it. Nothing here can be edited in place.[^s82]
 
 **Blocks are shared.** A record may carry a bare header whose pointers name a block another record
 also names, so one duration stream can serve several codes. A writer cannot edit a block in place
@@ -267,3 +268,8 @@ whose length varies.
 *A group is a device*: base slot 0's names tie a device label to exactly one group through base
 slot 13's transitions, sections 86 and 126. *What the 14 byte header holds is not established.*
 [findings.md](../../docs/findings.md) section 32.
+
+[^s82]: Measured in configurations. [Section 82](../../docs/findings.md#s82)
+[^s75]: Measured in configurations. [Section 75](../../docs/findings.md#s75)
+[^s65]: Measured in configurations. [Section 65](../../docs/findings.md#s65)
+[^s82b]: Read in the firmware. [Section 82](../../docs/findings.md#s82)
