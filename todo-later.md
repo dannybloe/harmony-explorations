@@ -110,22 +110,7 @@ The Harmony One is a different type, with a touch screen and its own screens, so
 
 ## 8. The specification and the code are the product ([plan 005](docs/plans/005-specs-and-code.md))
 
-Brought forward: `todo.md` 3.6 starts it straight after the Harmony One's track, decided on 18 October 2026.
-
-- [x] 8.1 The decision: three deliverables, the `docs/spec/` layout, `findings.md` frozen as an archive, evidence per fact; done, decision 25
-- [ ] 8.2 Move the files into the layout and rewrite every path that names them
-- [ ] 8.3 One folder per model in `docs/spec/remotes/`, ten files each, every fact with its standing, generated where the code already knows, nothing about our own units
-  - [ ] 8.3.1 The Harmony 650 as the sample, with the shared Harmony 600, 650 and 700 architecture folder: built, generated blocks tested by `make remote-reference`; still to move our own units into `docs/test-notes/650-test-notes.md` with a test guarding the line
-  - [ ] 8.3.2 The other bench models: One, 525, 600, 700, 300/350, Touch; thinner folders for the 880/885 and 890
-  - [ ] 8.3.3 Absorb `reference/capabilities.md`
-- [ ] 8.4 The specification is the first place to read and write: `CLAUDE.md` and the skills route to it
-- [x] 8.5 A drawing for every bench model
-  - [x] 8.5.1 Harmony 350: drawn from the manual's vector page, 55 keys, no scan code measured yet
-  - [x] 8.5.2 Harmony 300: the 350's shapes with the 300's printing, read off its guide's cover photograph
-  - [x] 8.5.3 Harmony 650 and 700: the 600's face with their own model number
-  - [x] 8.5.4 Harmony Touch: from the manual's vector page, 29 keys and the touch screen
-- [ ] 8.6 `docs/spec/infrared.md`, gathered from the code and the findings
-- [ ] 8.7 A static HTML site built from `docs/spec/` and the drawings, committed, browsing models and their sections
+Moved to [todo-reference.md](todo-reference.md) on 24 October 2026, with what was done here: the decision (8.1, decision 25) and a drawing for every bench model (8.5).
 
 ## 7. Done, carried over from todo.md
 

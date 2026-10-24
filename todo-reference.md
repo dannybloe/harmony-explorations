@@ -1,0 +1,68 @@
+# Todo: the reference
+
+**The finish line**: everything this project knows about how a Harmony works, in `reference/`, once, in a
+clear structure a stranger can read, and published as a website from it. This is `todo.md` 3.6, and it
+takes over `todo-later.md` chapter 8, plan 005's steps, which now live here.
+
+**What was agreed before starting**, 24 October 2026:
+
+* **All knowledge in `reference/`**: per model in `reference/remotes/<model>/`, per architecture in
+  `reference/architectures/<family>/`, and the subjects that cross models (the configuration file, the USB
+  protocol, infrared, how a remote behaves for a person, Logitech's data model and software, the glossary)
+  in their own homes in `reference/`. Plan 005 and decision 25 named the folder `docs/spec/`; that changes
+  to `reference/`, and decision 25 is corrected in place.
+* **`docs/` holds only the project's bookkeeping**: status, decisions, plans, the findings archive, test
+  notes and the lab method. The internal lookup lists now in `reference/` move there.
+* **One home per fact.** A second place links to it. Facts the code holds are generated into the text and a
+  test fails when they differ. The website is built from `reference/` on publishing and never committed.
+* **The reference is a real reference**: nothing about our units, the bench, accounts, the lab, dumps, our
+  test setup or todo items. Those go to `docs/test-notes/`. A test guards the line.
+* **Evidence as footnotes**: a fact carries a named footnote, `[^s424]`, saying what kind of evidence it is
+  (read in the firmware, measured on a unit, stated by Logitech, a choice of this project, not checked) and
+  linking to the findings section that holds the argument. Each findings heading gets a short fixed anchor,
+  `#s424`, so the links stay valid.
+* **`docs/findings.md` is a frozen archive**: nothing new is added, its sections stay where they are.
+
+## 1. Inventory and plan
+
+- [ ] 1.1 An inventory of every document and every section of the large ones: knowledge or bookkeeping, which model or subject, where it belongs, what it duplicates (two agents, reading only, running)
+- [ ] 1.2 The website's structure: the sections a reader meets, in order, and the folder layout under `reference/` that follows it
+- [ ] 1.3 A plan, `docs/plans/009-the-reference.md`: the target layout, a move table per file and section, and the order; shown before anything moves
+- [ ] 1.4 Decision 25 corrected in place: `reference/` instead of `docs/spec/`, footnotes as the evidence form, the website built and not committed
+
+## 2. The skeleton
+
+- [ ] 2.1 Files moved into the layout with `git mv`, every path that names them rewritten: `CLAUDE.md`, skills, code, tests, generators, links
+- [ ] 2.2 A short fixed anchor on every findings heading, with no other change to the archive
+- [ ] 2.3 The tests that guard the layout: no bench, lab, account, dump or todo in `reference/`, every link and footnote resolves, no em or en dashes
+
+## 3. Models and architectures
+
+- [ ] 3.1 Each model folder cleaned: our own units out to `docs/test-notes/<model>.md`, the evidence as footnotes, duplicates replaced by links (one agent per model)
+- [ ] 3.2 The memory maps into their architecture folders
+- [ ] 3.3 The button maps into each model's keys, the tables as data the drawings already hold, the derivation to the archive
+- [ ] 3.4 `reference/capabilities.md` and `reference/models.md` absorbed into the model and architecture folders
+- [ ] 3.5 Thinner folders for the Harmony 880/885 and 890, which only contributed configurations
+
+## 4. Subjects across models
+
+- [ ] 4.1 The configuration file format, one home, its per model facts linked to the model folders
+- [ ] 4.2 The USB protocol
+- [ ] 4.3 Infrared, gathered from the code and the findings
+- [ ] 4.4 How a Harmony works for a person
+- [ ] 4.5 Logitech's world: their data model, their host software, their device database
+- [ ] 4.6 The glossary
+
+## 5. The findings archive
+
+- [ ] 5.1 Every section's conclusion checked against `reference/`: present, added, or marked as disproved in `reference/superseded.md`'s successor (agents by section range)
+
+## 6. The rules
+
+- [ ] 6.1 `CLAUDE.md` keeps the instructions and points to `reference/` for the facts it now repeats
+- [ ] 6.2 The skills and the `finding` procedure send a new fact to its home in `reference/` with its footnote
+
+## 7. The website
+
+- [ ] 7.1 MkDocs with the Material theme, pinned, the contents from 1.2, built from `reference/`
+- [ ] 7.2 Published by GitHub Pages through a build on every push; the built site is not committed
