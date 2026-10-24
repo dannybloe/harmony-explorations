@@ -62,7 +62,7 @@ export interface CatalogueDevice {
   readonly model: string | null;
   /**
    * Logitech's own numeric device type. **Not an index into the `DeviceType` enum** in
-   * `docs/myharmony/model.json`, which is serialised alphabetically, so its index 1 is `Default` and
+   * `reference/logitech/data-model/model.json`, which is serialised alphabetically, so its index 1 is `Default` and
    * its 4 is `CableBox`. See `DEVICE_TYPE_NAMES` for the values that are named and how.
    */
   readonly deviceType: number;

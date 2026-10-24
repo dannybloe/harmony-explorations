@@ -5,7 +5,7 @@ DVD and VCR/Aux, a power key, four favourite channel keys and an ordinary keypad
 Logitech's file based platform, architecture 16, with the Harmony 350; what the two share is stated once in
 [the architecture folder](../../architectures/harmony-300-350/README.md), and this folder states what is
 the 300's own. **This library never opens it with `openHarmony` and never writes to it**; its configuration
-is read as a file, read only. Standing words and their meaning are in [the reference's README](../README.md).
+is read as a file, read only. Standing words and their meaning are in [the reference's README](../../README.md).
 
 The 300 is the 350 with **half the devices and no long press**: the same moulding, the same firmware, four
 device keys that each hold one device rather than two.
@@ -39,8 +39,8 @@ family's base skin and the remote its own regional variant, measured, sections 1
 | screen | **none** | Logitech's service |
 | keys | 55, the 350's moulding with different printing; **no scan code known** | `packages/silhouettes/src/models/h300.ts` and its test |
 | devices | **4**, one per device key | Logitech's service; every configuration holds four infrared groups, measured, section 264 |
-| activities | no `Activities` capability; at most one, a power on shortcut | Logitech's service; a fill test, `docs/how-a-harmony-works.md`; [features.md](features.md) |
-| favourite channels | 5 for skin 78, 4 for skin 79 | Logitech's service, `docs/predictions-arch16-harmony-300.md` and section 265 |
+| activities | no `Activities` capability; at most one, a power on shortcut | Logitech's service; a fill test, `reference/how-a-harmony-works.md`; [features.md](features.md) |
+| favourite channels | 5 for skin 78, 4 for skin 79 | Logitech's service, `docs/predictions/harmony-300.md` and section 265 |
 | long press | **none** | Logitech's service |
 | power | two AA batteries | Logitech's manual |
 

@@ -26,7 +26,7 @@ PROJECT_NAME=harmony
 
 if [ ! -f "$IMAGE" ]; then
     echo "image not found: $IMAGE" >&2
-    echo "set HARMONY_LAB, or pass a path. See reference/checksums.md." >&2
+    echo "set HARMONY_LAB, or pass a path. See docs/checksums.md." >&2
     exit 1
 fi
 if [ ! -x "$GHIDRA_HOME/support/analyzeHeadless" ]; then

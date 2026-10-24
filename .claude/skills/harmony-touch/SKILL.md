@@ -23,7 +23,7 @@ In this order, every time, including in an agent:
    why it has no architecture folder.
 2. `reference/architectures/harmony-300-350/usb.md`: the file based family's transport rails are argued
    there, for the Harmony 300 and 350, and they are the same transport.
-3. `docs/how-a-harmony-works.md` when the task touches what the remote does for a person.
+3. `reference/how-a-harmony-works.md` when the task touches what the remote does for a person.
 
 **Its architecture is disputed and stays disputed.** Logitech's templates say 18 and the remote reports 17;
 findings section 197 holds both and settles neither. In conversation say "the Harmony Touch" and, where a
@@ -66,8 +66,8 @@ test; the read itself goes into the lab.
 | the drawing | `packages/silhouettes/src/models/touch.ts`, rendered into `reference/silhouettes/touch.svg` |
 | the transport | `packages/usb/src/filepipe.ts`, with `INERT_PATHS`; the refusal in `packages/usb/src/transport.ts`, `FILE_BASED_PRODUCTS` |
 | the read script | `packages/usb/bin/read-file-identity.ts` |
-| the protocol | `docs/usb-protocol.md` section 6 |
-| what Logitech's client does for it | `docs/host-client.md` and findings sections 202 and 203 |
+| the protocol | `reference/usb-protocol/file-protocol.md` |
+| what Logitech's client does for it | `reference/logitech/clients.md` and findings sections 202 and 203 |
 
 ## Related
 

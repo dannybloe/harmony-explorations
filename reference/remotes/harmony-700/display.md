@@ -65,7 +65,7 @@ and not with it at 0, seen at the bench, section 386; [behaviour.md](behaviour.m
 ## What the screen does not show
 
 **No clock.** The ordinary screen of the Harmony 600, 650 and 700 has no time on it, seen at the bench on
-4 October 2026, `docs/how-a-harmony-works.md`. The 2.8 build keeps the clock where the 0.2 builds do, in
+4 October 2026, `reference/how-a-harmony-works.md`. The 2.8 build keeps the clock where the 0.2 builds do, in
 the first seven state variables, which sit at `0x900 + n` on this build: a read of data memory over USB
 found the clock there, measured, section 386, and the state variables' place is read in the firmware,
 section 384. So a clock on this model is checked by reading memory over USB, never by looking. This said

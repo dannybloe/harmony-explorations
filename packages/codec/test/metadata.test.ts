@@ -298,7 +298,7 @@ test('the Harmony 350 states a number sender, and only the programmed one does',
   const programmed = parse(require_('h350_programmed_config'));
 
   // Base slot 16 is raw slot 11 here, and **both** containers declare it. The factory one gives it a
-  // single byte holding a count of zero, which `docs/config-format.md` is explicit is not the same
+  // single byte holding a count of zero, which `reference/config-format/state.md` is explicit is not the same
   // answer as a NULL slot, and that is what makes this a differential rather than a slot appearing.
   assert.equal(archSlot(16, 16), 11);
   assert.equal(factory.sectionLength(11), 1, 'the factory configuration does not declare the slot');

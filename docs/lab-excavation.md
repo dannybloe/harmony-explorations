@@ -42,7 +42,7 @@ the register, which means nobody could answer it by reading. It also has no step
 per square loop below.
 
 **The numbers are a command rather than a paragraph**, `make lab-progress`, which recomputes them from
-`reference/lab-register.md`. That is deliberate and it is not caution: `CLAUDE.md` carried "58
+`docs/lab-register.md`. That is deliberate and it is not caution: `CLAUDE.md` carried "58
 artefacts" for a day where the register holds 44, because a count in prose has nothing recomputing it.
 The command prints the depth of every artefact, a tick per want list tag when all of its artefacts have
 landed here, and the list of what is still shut.
@@ -103,7 +103,7 @@ their fields is a semantic key for the format as well as a specification of the 
 |---|---|
 | `fh-data-model` | their entity graph as the service states it: household, account, remote, device, activity, command, button map. What an import has to consume, and the only outside opinion on how these relate |
 | `fh-screens` | which screens each client has, what each shows, and what each lets a person change. Three clients of different eras, so where they agree it is the domain talking rather than one designer |
-| `fh-wizard` | add a device, add an activity, the guided setup and the order of its questions. Listed as unread in `docs/host-client.md` |
+| `fh-wizard` | add a device, add an activity, the guided setup and the order of its questions. Listed as unread in `reference/logitech/clients.md` |
 | `fh-settings` | every setting and its type, per device, per activity and per remote: power on delay, inter key delay, input method, repeat rate. Most of these are bytes already read without a name |
 | `fh-limits` | name lengths, allowed characters, maximum devices, maximum activities, the sequence step cap. What an interface needs before it can refuse anything |
 | `fh-failures` | what their client says when a sync goes wrong, which is what the application has to handle rather than crash on. **No artefact on the site carries this tag now**, since 29 August 2026: `software/classic/reports/` was the only one and section 210 found its failures are ours, a missing server and a toolkit that will not start, rather than a user's account of a remote. The tag stays on the want list because the want is real; what it has lost is its one candidate |
@@ -133,7 +133,7 @@ Two layers, because they do different jobs.
 
 ### The register, which guarantees coverage
 
-`reference/lab-register.md`, one row per **artefact**. That unit was chosen deliberately on 28 August
+`docs/lab-register.md`, one row per **artefact**. That unit was chosen deliberately on 28 August
 2026 and both alternatives were rejected by measurement: one row per file is 12506 rows and
 unfinishable, and one row per top level directory is nine rows, which is what step 9 shipped first and
 it is useless, since section 197's own square was already named in it. An artefact is one mirrored
@@ -150,7 +150,7 @@ is not going to grow into the old estimate.
 | path | relative to the lab root, with a trailing slash where it is a tree |
 | what it is | one line, plain |
 | files | how many, because a count is what tells the next person the size of the job |
-| origin | where it came from and when, in the manner of `reference/checksums.md` |
+| origin | where it came from and when, in the manner of `docs/checksums.md` |
 | status | `unseen`, `surveyed`, `read`, `catalogued`, or `mined`. See below |
 | tags | from the list above, space separated, or empty |
 | holds | one line on what is inside, with a marked confidence where it is a guess |
@@ -265,13 +265,13 @@ see. The three clients agreeing about a screen is the example: no worker holding
 it. So the relating passes stay single threaded, by choice rather than by oversight.
 
 **And landing a claim is serial, whatever else is running.** Every claim touches `docs/findings.md`,
-`reference/superseded.md` and usually `CLAUDE.md`, so those files are serialisation points by nature.
+`docs/superseded.md` and usually `CLAUDE.md`, so those files are serialisation points by nature.
 Parallel workers survey and catalogue; anything that becomes a fact this project depends on comes back
 to one thread and takes the four places there.
 
 ### The rail that does not move
 
-Reading Logitech's code and firmware is governed by `docs/host-client.md`'s rule already. A fact from
+Reading Logitech's code and firmware is governed by `reference/logitech/clients.md`'s rule already. A fact from
 it is marked client sourced, the firmware stays the authority wherever it can settle something, and
 nothing from the site is ever committed except our own description of it.
 
@@ -331,7 +331,7 @@ The grid, with the two squares that matter marked. File counts are what to plan 
 | `software/LogitechHarmonyRemoteSoftware.app/` | 202M | 208 | catalogued 29 August 2026, section 214: the **pristine vendor build**, and the copy to compare it against is our repack rather than the unpacked original, which is what its register row had guessed |
 | `software/desktop-webapp/` | 21M | 370 | **section 197's square**, and the one that proves the point |
 | `reference/logitech-icons/` | 20M | 1560 | opened 30 August 2026, section 216, and it was **ours**: an extraction of every graphic resource in Logitech's software. It was a third complete and is finished now, 1554 distinct images. The artwork stays in the lab; the category names crossed |
-| `Docs/` | 20M | 7 | user manuals, the source `docs/how-a-harmony-works.md` rests on |
+| `Docs/` | 20M | 7 | user manuals, the source `reference/how-a-harmony-works.md` rests on |
 | `fonts/` | 532K | 11 | the Oxanium typeface for the letters our configurations draw, decision 19, added 10 October 2026; catalogued, nothing to dig |
 | `dumps/`, `firmware/`, `reads/`, `golden/`, `ghidra/`, `reviews/`, `units/`, `bin/` | 172M | 258 | the well worked areas, and still to be registered rather than assumed. `units/` is the newest and the smallest, one hex line per bench remote: which unit is on the cable, which is what the write rails compare against and what may not be in a public repository, section 226 |
 
@@ -355,11 +355,11 @@ What is unchanged is that a claim this project **depends on** still takes the fo
 inspiration: their interface is a labelled view of the config format, so an inventory of their
 settings is a semantic key for bytes already read and not yet named.
 
-**The deliverable is a register in this repository**, `reference/lab-register.md`, one row per
+**The deliverable is a register in this repository**, `docs/lab-register.md`, one row per
 artefact: what it is, where it came from, what is inside, and a status. **It exists**, 44 rows, with
 `TheLabRegisterCoversTheSiteAtArtefactLevel` asserting that every artefact in the lab has one. This
 sentence said it did not exist for as long as the paragraph eleven lines below said it did.
-`reference/checksums.md` is the model for the tone and `tools/corpus.py` for the idea, since it
+`docs/checksums.md` is the model for the tone and `tools/corpus.py` for the idea, since it
 already reports which dumps have no description recorded. The register covers the whole site, not
 the binaries, and the catalogue pages beside it hold the substance.
 
@@ -369,7 +369,7 @@ cleanly where there is no lab, exactly as every other lab backed test does. That
 the mechanism survive the session that builds it, and it is the half that would have caught section
 197 nineteen days earlier.
 
-**The survey pass is done, 28 August 2026**, and `reference/lab-register.md` is the register: 44
+**The survey pass is done, 28 August 2026**, and `docs/lab-register.md` is the register: 44
 artefacts across the eleven squares, each with a status and the want list tags it might answer, and
 `TheLabRegisterCoversTheSiteAtArtefactLevel` is the test, controlled by creating an unregistered
 directory and watching exactly one test name it.
@@ -408,7 +408,7 @@ and firmware update are all local and work today, and the device database, the i
 
 **Three squares dug on 28 August 2026, and the third is a warning.** Section 206 went into the same
 client's HID layer, extracted its seven per architecture constant tables, and found that all of them
-had been extracted on 9 August and that `docs/host-client.md` is built on them. The register said so,
+had been extracted on 9 August and that `reference/logitech/clients.md` is built on them. The register said so,
 on its own row, and was not read. So the excavation's own instrument works and the discipline of using
 it does not yet, which is the **fifth** time this project has re-derived something the lab already
 held: decision 12 was itself taken after the fourth, and section 209 later made a sixth. This said
@@ -497,7 +497,7 @@ question currently listed as open, which is the outcome the decision was taken f
 answer takes the ordinary route, a hypothesis under decision 7 and then the four places, where a
 catalogue row does not.
 
-**One rail is unchanged.** Reading Logitech's code and firmware is what `docs/host-client.md`'s rule
+**One rail is unchanged.** Reading Logitech's code and firmware is what `reference/logitech/clients.md`'s rule
 already governs: a fact from it is marked as client sourced, the firmware stays the authority where
 it can settle something, and nothing from the site is committed but our own description of it.
 
@@ -518,7 +518,7 @@ surveyed with the HID command layer mined and three resource files with it. `mak
 answer to how far anything has been dug, and a count in this file is exactly the kind of thing it
 exists to replace.
 
-**The survey is done since 28 August 2026** and `reference/lab-register.md` is the register: one row
+**The survey is done since 28 August 2026** and `docs/lab-register.md` is the register: one row
 per artefact, each with a status and its tags, with a test that fails when the lab gains one the
 register does not name. **The row count deliberately no longer appears here**, and that is the third
 correction of the same defect rather than a style change. It said 58 for a day, which was a count
@@ -534,8 +534,8 @@ sixth paragraph about remembering. What is left of step 9 is the digging, in tag
 
 **Grepping it is not the same as reading it, and section 206 is the fifth occurrence.** That afternoon
 re-extracted all seven of the classic client's per architecture constant tables and got numbers
-`docs/host-client.md` had carried since 9 August, from a lab file the register names on its own row
-with the words "`docs/host-client.md` is built on it". **So the instrument works and using it is the
+`reference/logitech/clients.md` had carried since 9 August, from a lab file the register names on its own row
+with the words "`reference/logitech/clients.md` is built on it". **So the instrument works and using it is the
 part that fails**, every time under momentum.
 
 **Section 209 is the sixth occurrence and it corrects the trigger this paragraph used to give**, which
@@ -575,7 +575,7 @@ can carry would have warned about that, because a register describes artefacts a
 are inside them.
 
 **So the standing rule gains a second half**: this project's own claims are scattered across the lab in
-places catalogued as somebody else's, where `reference/superseded.md`, `make facts` and the four places
+places catalogued as somebody else's, where `docs/superseded.md`, `make facts` and the four places
 cannot reach them. A claim of ours in a lab docstring is worse than the same claim in a lab note, since
 a note announces itself as ours and a package name announces the opposite. When a lab file states
 something about a remote, check who wrote it before believing it **and** before re-deriving it.
@@ -591,7 +591,7 @@ firmware update are local and still work, while the device database, the interfa
 holds, it closes it as a recovery target.
 
 The mechanism is the thing to understand, because it is not carelessness. Every rule here for keeping
-facts straight, `make facts`, `reference/superseded.md`, the four places, a regression test per claim,
+facts straight, `make facts`, `docs/superseded.md`, the four places, a regression test per claim,
 operates on **this repository**. The lab is deliberately outside all of it, since it holds unlicensed
 firmware, contributors' configs and Logitech's own client code. So **a fact recorded only in a lab
 `META.md` is invisible to every check this project has**, and no amount of care in here can see it.

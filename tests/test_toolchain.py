@@ -1190,7 +1190,7 @@ class TheLabExcavationGridCoversTheWholeSite(unittest.TestCase):
 
     Skips without a lab, like every other lab backed test.
 
-    **Superseded in scope on 28 August 2026 and kept deliberately.** `reference/lab-register.md`
+    **Superseded in scope on 28 August 2026 and kept deliberately.** `docs/lab-register.md`
     exists now and `TheLabRegisterCoversTheSiteAtArtefactLevel` is the check that actually covers the
     site, at artefact granularity. This one is narrower and still has its own claim: the roadmap's
     grid is a **summary**, and a summary is exactly what step 4 of the four places rule says drifts,
@@ -1230,7 +1230,7 @@ class TheLabExcavationGridCoversTheWholeSite(unittest.TestCase):
 
 
 class TheLabRegisterCoversTheSiteAtArtefactLevel(unittest.TestCase):
-    """`reference/lab-register.md` is step 9's deliverable, and this is the check the plan promises.
+    """`docs/lab-register.md` is step 9's deliverable, and this is the check the plan promises.
 
     Two claims, and the second is the one the directory level guard above cannot make.
 
@@ -1245,7 +1245,7 @@ class TheLabRegisterCoversTheSiteAtArtefactLevel(unittest.TestCase):
     catalogue's own frame still matches the site. Nothing here asserts a description is right.
     """
 
-    REGISTER = ('reference', 'lab-register.md')
+    REGISTER = ('docs', 'lab-register.md')
     #: Directories whose children are not artefacts in their own right: build products, a virtual
     #: environment, a cache. Each is named by a row already, and expanding it would add hundreds of
     #: rows that say nothing. Stated so the exclusion is visible rather than silent.
@@ -1271,6 +1271,11 @@ class TheLabRegisterCoversTheSiteAtArtefactLevel(unittest.TestCase):
             path = match.group(1)
             if not path[:1].isalpha() or path.startswith(('docs/', 'packages/')):
                 continue  # a repository path, cited for context
+            # `reference/` is both: the lab keeps `reference/logitech-icons`, and since plan 009 the
+            # repository's own `reference/` holds documents a row cites for context, such as
+            # Logitech's data model. A path that exists in the repository is the second kind.
+            if path.startswith('reference/') and os.path.exists(os.path.join(ROOT, path)):
+                continue
             found.add(path)
         return found
 
@@ -1379,7 +1384,7 @@ class TheRegisterQueryAnswersForThePathThatWasOpened(unittest.TestCase):
 
     def rows(self):
         module = self.module()
-        with io.open(os.path.join(ROOT, 'reference', 'lab-register.md'), encoding='utf-8') as fh:
+        with io.open(os.path.join(ROOT, 'docs', 'lab-register.md'), encoding='utf-8') as fh:
             return module, module['rows'](fh.read())
 
     def test_the_register_parses_into_the_rows_the_document_states(self):
@@ -1642,7 +1647,11 @@ class TheWriteReviewWithholdListIsComplete(unittest.TestCase):
         # 28 since 10 October 2026: the Harmony 525's skill, whose write procedure names
         # `rehearse-block.ts`, and its two reference folders, which state what an erase address
         # selects on that model and are withheld on `docs/memory-map-525.md`'s ground.
-        self.assertEqual(len(must), 28, 'the withhold list should resolve to 28 paths, got %s'
+        # 29 since 24 October 2026: `docs/plans/009-the-reference.md`, the plan of the reference,
+        # which names `rehearse-block.ts` and the interlock among the readers it moves.
+        # 30 since plan 009's step 2.1 cut the USB protocol and the host client document: the USB
+        # row names its folder whole, and the client row names both files the transfer now sits in.
+        self.assertEqual(len(must), 30, 'the withhold list should resolve to 30 paths, got %s'
                          % sorted(must))
 
     def test_every_may_read_path_is_clean_of_the_write_path(self):
@@ -1748,7 +1757,12 @@ class TheWriteReviewWithholdListIsComplete(unittest.TestCase):
         # 39 since docs/README.md, the document map moved out of CLAUDE.md, which names the write path.
         # 40 with `.claude/skills/harmony-525/SKILL.md`, whose write procedure names the rehearsal
         # script. It went on the withhold list in the same commit; the list was re-read first.
-        self.assertEqual(len(stating), 40,
+        # 41 with `docs/plans/009-the-reference.md`, which names the rehearsal script and the
+        # interlock among the readers it moves. It went on the withhold list; the list was re-read.
+        # Still 41 after plan 009's step 2.1 cut the USB protocol and the host client document: the
+        # two files that stated the path stopped and `reference/usb-protocol/commands.md` and
+        # `reference/logitech/classic-client.md` started. Both are withheld; the list was re-read.
+        self.assertEqual(len(stating), 41,
                          'the number of files stating the write path moved, so re-read the withhold '
                          'list before restamping this: %s' % stating)
 

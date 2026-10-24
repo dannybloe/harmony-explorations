@@ -6,7 +6,7 @@
  * see distinguished the spare from the programmed unit whose configuration is this project's most
  * used sample, and section 188 recorded that as a caller assertion the library cannot check. It can.
  *
- * The route was already read and needs no new protocol: `docs/usb-protocol.md` found a 64 byte
+ * The route was already read and needs no new protocol: `reference/usb-protocol/commands.md` found a 64 byte
  * identity block at internal page `0xFF` offset `0xF400`, confirmed on three remotes across two
  * architectures, and the closure is strong. `concordance -i` prints three GUIDs for a connected
  * remote, the lab holds that output for one exact unit from months earlier, and all three appear in
@@ -38,7 +38,7 @@
  * ## The trap this module is mostly about
  *
  * **The field called the serial is `0xEE` filled on every remote read here**, all three of them,
- * `docs/usb-protocol.md`: it is a field nobody writes, and `concordance -i` agrees it is unset. So a
+ * `reference/usb-protocol/commands.md`: it is a field nobody writes, and `concordance -i` agrees it is unset. So a
  * comparison of that field alone matches every unit against every other, which is the whole failure
  * this code is supposed to prevent, arrived at by doing the obvious thing. The per unit values are
  * the two GUIDs after it. `identifiesAUnit` is the refusal: a block whose GUID fields are uniform
@@ -121,7 +121,7 @@ export function identityAddress(architecture: number | undefined): number {
  */
 export const IDENTITY_BYTES = 64;
 
-/** Where each field starts, from `docs/usb-protocol.md`'s reading of the block. */
+/** Where each field starts, from `reference/usb-protocol/commands.md`'s reading of the block. */
 export const IDENTITY_FIELDS = {
   /** All `0xEE` on every unit read here. Present, and useless for telling units apart. */
   serial: 0x00,

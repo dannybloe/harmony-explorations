@@ -1,5 +1,5 @@
 /**
- * What a length change would move, over the corpus. The tests behind `docs/growing-a-config.md`.
+ * What a length change would move, over the corpus. The tests behind `reference/config-format/relocation.md`.
  *
  * The numbers here are exact, per the standard: a floor would absorb a whole sample dropping out of
  * a loop, and the population is a literal in this file, so an exact count moves only when somebody

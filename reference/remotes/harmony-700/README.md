@@ -10,7 +10,7 @@ the 700's own.
 The 700 is the **charging** sibling of the Harmony 650 and the colour sibling of the Harmony 600: the
 same face, the same 128 by 128 raster, and NiMH cells charged through the USB socket. It is also the
 model whose firmware this project read first, the 2.8 package, before any architecture 14 image had been
-read off a remote, section 13. Standing words and their meaning are in [the reference's README](../README.md).
+read off a remote, section 13. Standing words and their meaning are in [the reference's README](../../README.md).
 
 ## Skins
 
@@ -34,7 +34,7 @@ read.
 |---|---|---|
 | architecture | 14 | measured, version block, section 295; read in the firmware, section 13 |
 | USB product id | `0xC122`, shared with the 600 and 650 | measured, section 281; [usb.md](usb.md) |
-| `bcdDevice` | `0x1066` in the 2.8 image's descriptor | read in the firmware, `docs/usb-protocol.md` section 1; on a unit **not checked** |
+| `bcdDevice` | `0x1066` in the 2.8 image's descriptor | read in the firmware, `reference/usb-protocol/transport.md`; on a unit **not checked** |
 | firmware | 2.8, application 76672 bytes, entry `0x1BB38`, Logitech's package; 2.5 and a 2.3 safe mode image also seen on a unit | read in the firmware and measured, sections 295 and 297; [firmware.md](firmware.md) |
 | screen | 1.5 inch, 128 by 128, "65,000 Color" | Logitech's manual, Product Specification; raster also measured from configurations, section 129 |
 | keys | 54 scan codes, the 600's face | read from configurations, section 17; a statement from the bench for the face |
@@ -43,7 +43,7 @@ read.
 | power | rechargeable NiMH AA, charged through the USB socket with an AC adaptor | Logitech's manual |
 | external flash | 2 MiB SPI, EON F16, id `15:1C` on a unit; the 2.8 package's header names `0x14:0x1C`, 1 MiB | measured, section 297; read in the package, section 295 |
 | user configuration | external `0x030000` | measured, section 300 |
-| clock on screen | **none** | seen at the bench, 4 October 2026, `docs/how-a-harmony-works.md` |
+| clock on screen | **none** | seen at the bench, 4 October 2026, `reference/how-a-harmony-works.md` |
 | long press | none | Logitech's service, `reference/capabilities.md` |
 
 ## The files

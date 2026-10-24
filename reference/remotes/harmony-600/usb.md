@@ -18,10 +18,10 @@ Generated from `packages/corpus` and `packages/usb` by `make remote-reference-wr
 
 | field | value | standing and source |
 |---|---|---|
-| vendor and product id | `046D:C122`, the same as the Harmony 650 and 700 | measured, `docs/usb-protocol.md` section 1 |
-| `bcdDevice` | `0x1071`, BCD of 1000 plus the skin | measured, predicted before the read, section 19 and `docs/usb-protocol.md` section 1. The rule's only measurement on this architecture |
-| product string | `Harmony Remote 0-0.2.0` | measured, `docs/usb-protocol.md` section 1 |
-| report descriptor | 33 bytes, identical to the 700 image's | measured, `docs/usb-protocol.md` section 1 |
+| vendor and product id | `046D:C122`, the same as the Harmony 650 and 700 | measured, `reference/usb-protocol/transport.md` |
+| `bcdDevice` | `0x1071`, BCD of 1000 plus the skin | measured, predicted before the read, section 19 and `reference/usb-protocol/transport.md`. The rule's only measurement on this architecture |
+| product string | `Harmony Remote 0-0.2.0` | measured, `reference/usb-protocol/transport.md` |
+| report descriptor | 33 bytes, identical to the 700 image's | measured, `reference/usb-protocol/transport.md` |
 | firmware | 0.2 | measured, version block |
 | hardware | 1.1 | measured, version block, section 302 |
 | flash id | `15:1C`, EON F16, 2 MiB | measured, version block and section 110 |
@@ -52,7 +52,7 @@ section 392. A configuration on the remote may state 73 and the remote still rep
 | the reinstall, the staging write | **never sent** to a 600 |
 | `WRITE_MISC` selector `0x07`, a RAM write | **refused** on this architecture by the rails |
 
-The command table's handler addresses in `docs/usb-protocol.md` are given for the 600's 0.2 image and the
+The command table's handler addresses in `reference/usb-protocol/commands.md` are given for the 600's 0.2 image and the
 Harmony 700's 2.8.
 
 ## A tension, now resolved

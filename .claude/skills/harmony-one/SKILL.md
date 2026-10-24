@@ -25,7 +25,7 @@ In this order, every time, including in an agent:
    One is the only model on its platform, and in conversation it is "the Harmony One", never the bare
    architecture number.
 2. `docs/memory-map-one.md`: the long form of its memory, which the reference summarises.
-3. `docs/how-a-harmony-works.md` when the task touches what the remote does for a person, and in
+3. `reference/how-a-harmony-works.md` when the task touches what the remote does for a person, and in
    particular its sections on the four keys around the One's screen and on the click before a screen
    command.
 
@@ -97,7 +97,7 @@ run so far is `packages/bench/irtests/done/one-spare-activities.json`.
 |---|---|
 | the public reference | `reference/remotes/harmony-one/` |
 | the long form of the memory | `docs/memory-map-one.md` |
-| the firmware images | the 3.4 package and its derived files in the lab's `firmware/`, `reference/checksums.md` |
+| the firmware images | the 3.4 package and its derived files in the lab's `firmware/`, `docs/checksums.md` |
 | the spare's unit record | the lab's `units/one_spare.txt`, never copied into this repository |
 | region reads and configurations | the lab's `reads/` and `dumps/`, named in `packages/lab` and `tests/lab.py` with the prefixes `one_` and `one_spare_` |
 | the plan for composing on a One | `docs/adding-a-device.md` |

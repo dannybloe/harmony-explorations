@@ -2,7 +2,7 @@
 
 **The rule for this file**: a note goes here only when it fits none of the other nine files. If the same
 kind of note would appear in the `misc.md` of several models, it deserves a file of its own in every
-model folder instead, and `reference/remotes/README.md` and the generator's test get updated with it.
+model folder instead, and `reference/README.md` and the generator's test get updated with it.
 
 ## The infrared families of its factory configuration
 
@@ -12,7 +12,7 @@ since section 266.
 
 ## Predictions before each read
 
-Each read of this family was predicted in writing before it was taken, `docs/predictions-arch16-*.md`, and
+Each read of this family was predicted in writing before it was taken, `docs/predictions/harmony-3*.md`, and
 the findings sections record which predictions held.
 
 ## Not checked

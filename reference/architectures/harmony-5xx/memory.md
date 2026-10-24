@@ -98,3 +98,16 @@ variable seeder's guard at `0x1A2`, section 274.
   the `writing-a-config` skill. `todo-later.md` carries it.
 * The `0x30` window's purpose.
 * Every model here but the Harmony 525.
+
+### The arch 9 map disagrees with our measurements
+
+The client places the safe mode image at `0x800000`, the application firmware at `0x810000` and
+a 32 KiB embedded config at `0x820000`, and states no user configuration base at all.
+
+This project measured a Harmony 525 answering at `0x800000`, `0x810000`, `0x820000` and
+`0x870000`, section 76, read the user config at `0x820000` and found the safe mode container at
+`0x818000`, inside what the client calls application firmware.
+
+One of the two is wrong about arch 9. Ours is a live measurement of a real remote and the
+client's is a constant, so the burden is on the client, but the disagreement is worth keeping
+because arch 9 is the architecture this project understands least.

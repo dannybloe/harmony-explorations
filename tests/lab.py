@@ -12,7 +12,7 @@ alongside the repository is used when one exists:
     make test
 
 Files are located by name anywhere beneath that directory, so the corpus can be arranged
-however suits it. See reference/checksums.md for what the names refer to.
+however suits it. See docs/checksums.md for what the names refer to.
 """
 import glob
 import json
@@ -31,7 +31,7 @@ def _default_lab():
 
 LAB = os.environ.get('HARMONY_LAB') or _default_lab()
 
-# Logical name -> filename, as named in reference/checksums.md.
+# Logical name -> filename, as named in docs/checksums.md.
 IMAGES = {
     'one34_code': 'one-3.4-code-base0x20000.bin',
     # The 525's whole internal program flash, read over USB on 8 August 2026: the bootloader at
@@ -101,7 +101,7 @@ IMAGES = {
     # on the model it is claimed for. 8192 bytes as read; the container is the first 7115.
     'h600_safemode_gspm': '600-0.2-safemode-gspm-base0x20000.bin',
     # The Harmony 650 update package, the third and last published Harmony firmware. It sat in
-    # reference/checksums.md as "not yet analysed, arch 15" until the package was opened; it is
+    # docs/checksums.md as "not yet analysed, arch 15" until the package was opened; it is
     # arch 14, so arch 14 had three firmware images and three safe mode configs where arch 12 has
     # one of each. Four images since section 281, with the bench Harmony 650's own 0.2 below.
     'h650_code': '650-0.4-Region_2-code-base0x9000.bin',
@@ -621,7 +621,7 @@ IMAGES = {
     'account_commands': 'GetCommands_mine.json',
     # Not an image and not a config: Harmony Desktop's whole hosted client, mirrored from Logitech's
     # content network on 9 August 2026 and unauthenticated. It is here because the service API surface
-    # documented in `docs/host-client.md` is extracted from it, and a claim about that surface has to
+    # documented in `reference/logitech/service.md` is extracted from it, and a claim about that surface has to
     # be recomputable rather than transcribed. Logitech's expression, so it stays in the lab: what
     # travels is the list of operation names, which is functional fact. `software/desktop-webapp`.
     'desktop_webapp_main': 'en.desktop-app-main.js',
@@ -856,7 +856,7 @@ CONTAINERS = (
 # not a corpus wide total that double counting could distort.
 #
 # **It exists because eight test classes each carried their own literal** of seven, nine or ten
-# names, while `docs/config-format.md` said "ten configs across four architectures" throughout and
+# names, while `reference/config-format/README.md` said "ten configs across four architectures" throughout and
 # the lab holds fifteen. Two of them, `arch8_config_880` and `arch8_config_885`, were read by the
 # TypeScript suite and by the golden vectors and by no assertion on this side at all. A population
 # nobody compares is a population that drifts, which `TheCorpusWidePopulationsAgree` already says of

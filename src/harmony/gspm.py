@@ -1,7 +1,7 @@
 """
 Parser for the Harmony config container: `GSPM` and its relatives.
 
-The format is specified in `docs/config-format.md`. It is one container with a per
+The format is specified in `reference/config-format/README.md`. It is one container with a per
 architecture four letter cookie rather than one format per architecture, which is why this
 module is written against the shape and not against a model table:
 
@@ -2933,7 +2933,7 @@ def frame_length(blob: bytes, off: int) -> Optional[int]:
 
     **The length is 24 bits and not 16.** This read a `u16` with the byte at +0x04 described
     as "zero in every sample", which it is, because no name tree in the corpus reaches 64 KiB.
-    Logitech's own client reads three bytes here, `docs/host-client.md`, and that is client
+    Logitech's own client reads three bytes here, `reference/logitech/clients.md`, and that is client
     sourced and unconfirmed. Adopted anyway because the two readings cannot disagree on any
     sample this project has and the wider one survives a config the corpus does not contain.
     Same family as the font header's spare byte<!--superseded-->, which was the first glyph code,
@@ -3427,7 +3427,7 @@ def report(c: Container):
                     base = None
             yield '   [%2d] NULL%s' % (s.slot, '' if base is None else '   base slot %s' % base)
             continue
-        # The base slot is what a section is called in `docs/config-format.md`, and the pointer
+        # The base slot is what a section is called in `reference/config-format/README.md`, and the pointer
         # array reading is the most useful orientation there is on an unfamiliar config.
         try:
             base = '' if c.architecture is None else '  base %-2s' % base_slot(

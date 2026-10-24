@@ -1,7 +1,7 @@
 # Harmony 700: behaviour
 
 What the remote does in use, as a person holding it sees it. The operating concept, activities and
-device mode, is `docs/how-a-harmony-works.md`, and this page does not restate it. Most of what has been
+device mode, is `reference/how-a-harmony-works.md`, and this page does not restate it. Most of what has been
 seen at the bench on this architecture was seen on the Harmony 650, whose
 [behaviour.md](../harmony-650/behaviour.md) carries it; a row here is the 700's own or names its source.
 

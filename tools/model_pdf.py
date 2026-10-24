@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Render `docs/myharmony/model.md` to a PDF, with the entity diagram drawn into it.
+"""Render `reference/logitech/data-model/model.md` to a PDF, with the entity diagram drawn into it.
 
 **Graphviz lays the diagram out and Chrome sets the document.** Neither is an npm dependency and
 neither touches the network; `dot` is a system tool and Chrome is the one already on the machine,
@@ -16,7 +16,7 @@ ranking and spacing are not. All of it is gone. `dot` does the ranking, the spac
 
 What we still own is what the picture **says**: which entities are drawn, which fields carry a
 relation, and what the cardinality on each one is. That is `diagram_dot`, and it is generated from
-`docs/myharmony/model.json`, the same source as `docs/myharmony/core-model.mmd`. Where the
+`reference/logitech/data-model/model.json`, the same source as `reference/logitech/data-model/core-model.mmd`. Where the
 Mermaid file is for a tool to read, this is for a person to look at, with every field listed and each
 line leaving the exact attribute that defines the relation.
 
@@ -37,8 +37,8 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, 'tools'))
 import myharmony_model  # noqa: E402  the model, the core cluster and the measured cardinality
 
-DOCUMENT = os.path.join(ROOT, 'docs', 'myharmony', 'model.md')
-OUTPUT = os.path.join(ROOT, 'docs', 'myharmony', 'model.pdf')
+DOCUMENT = os.path.join(ROOT, 'reference', 'logitech', 'data-model', 'model.md')
+OUTPUT = os.path.join(ROOT, 'reference', 'logitech', 'data-model', 'model.pdf')
 CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
 
 #: Graphviz decides the ranking, the spacing and the routing, so what is left here is the palette
@@ -420,7 +420,7 @@ def build_html(entities):
 
     body = markdown(text)
     figure = ('<figure>%s<figcaption>The entity cluster an account holds, generated from '
-              'docs/myharmony/model.json. A heavy edge is a cardinality measured from captures '
+              'reference/logitech/data-model/model.json. A heavy edge is a cardinality measured from captures '
               'rather than read from the schema.</figcaption></figure>' % diagram_svg(entities))
     if PLACEHOLDER not in body:
         raise SystemExit('the placeholder did not survive conversion, so the diagram would be lost')
@@ -443,7 +443,7 @@ def main(argv=None):
     args = parser.parse_args(argv)
     cluster = args.cluster or ('core' if args.diagram else None)
     if args.out is None:
-        args.out = (os.path.join(ROOT, 'docs', 'myharmony', CLUSTERS[cluster][4])
+        args.out = (os.path.join(ROOT, 'reference', 'logitech', 'data-model', CLUSTERS[cluster][4])
                     if cluster else OUTPUT)
 
     entities = myharmony_model.model()['entities']
@@ -461,7 +461,7 @@ def main(argv=None):
 
     chrome = CHROME if os.path.exists(CHROME) else shutil.which('google-chrome') or shutil.which('chromium')
     if not chrome:
-        print('no Chrome found, so no PDF. The document is docs/myharmony/model.md.')
+        print('no Chrome found, so no PDF. The document is reference/logitech/data-model/model.md.')
         return 1
     page = build_html(entities)
     if args.html:

@@ -2,7 +2,7 @@
  * An activity's keypad map and screen commands, built from its **roles** rather than copied from
  * another activity. Harmony 600, 650 and 700, section 323.
  *
- * Logitech's platform states an activity as roles, `docs/myharmony/model.md`: a device that shows the
+ * Logitech's platform states an activity as roles, `reference/logitech/data-model/model.md`: a device that shows the
  * picture, one that takes the volume, one that changes channels or plays the film. Its compiler turns
  * those into the two things this file builds:
  *
@@ -257,7 +257,7 @@ export function activityRolesFromSends(c: Container, activity: number): Activity
 
 /**
  * The jobs a device can do in an activity, by the names Logitech's contract gives their role types,
- * `docs/myharmony/model.md`. A device listed with **none** of them is a pass through device, the
+ * `reference/logitech/data-model/model.md`. A device listed with **none** of them is a pass through device, the
  * contract's `PassThroughActivityRole`: one the signal passes through unaltered, an HDMI switch or an
  * amplifier that only routes the picture. MyHarmony states it as a role of its own; here it is the
  * empty list, because it does none of the jobs and the compile gives it nothing a job would.

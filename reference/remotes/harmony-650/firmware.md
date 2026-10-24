@@ -40,13 +40,13 @@ group a send plays, section 365. What each routine does is in
 
 ## Images in the lab
 
-Never in this repository. Checksums, where published, are in `reference/checksums.md`.
+Never in this repository. Checksums, where published, are in `docs/checksums.md`.
 
 | file in `lab/firmware/` | what | checksum |
 |---|---|---|
-| `packages/harmony_650_firmware_0_4.hfw` | Logitech's 0.4 package, from the repair site | SHA-256 in `reference/checksums.md` |
-| `derived/650-0.4-Region_2-code-base0x9000.bin` | its application | in `reference/checksums.md` |
-| `derived/650-0.4-Region_3-gspm-base0x20000.bin` | its safe mode configuration, 7115 bytes | in `reference/checksums.md` |
+| `packages/harmony_650_firmware_0_4.hfw` | Logitech's 0.4 package, from the repair site | SHA-256 in `docs/checksums.md` |
+| `derived/650-0.4-Region_2-code-base0x9000.bin` | its application | in `docs/checksums.md` |
+| `derived/650-0.4-Region_3-gspm-base0x20000.bin` | its safe mode configuration, 7115 bytes | in `docs/checksums.md` |
 | `derived/650-0.2-code-base0x9000-bench.bin` | the bench unit's own 0.2 application, read off it | not listed, being one unit's |
 
 The bench unit's two internal pages are in the lab's `reads/` as region reads; `tests/lab.py` names

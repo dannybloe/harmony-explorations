@@ -46,7 +46,7 @@ it was read off a remote and verifies over all 70336 bytes, where earlier work u
 
 ## Images in the lab
 
-Never in this repository. Checksums are in `reference/checksums.md`.
+Never in this repository. Checksums are in `docs/checksums.md`.
 
 | file in `lab/firmware/derived/` | what |
 |---|---|

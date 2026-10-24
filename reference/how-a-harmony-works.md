@@ -123,7 +123,7 @@ agreements across fifteen configurations, and now stated by them.
 Read it for what it is. It is a schema for a later generation of hardware than the remotes on this
 desk, so it is evidence about **the product's design** and not about what a Harmony One's flash
 contains. What it settles is the thing that cost a screen in FreeHarmony: a device's map and an
-activity's map are different objects, not two views of one. `docs/myharmony/model.md` has the
+activity's map are different objects, not two views of one. `reference/logitech/data-model/model.md` has the
 detail, and two of its findings bear on this document directly. A button carries **three** actions,
 a press, a long press and a double press, which is the mechanism the section on holding a key
 describes from the byte side. And the button kinds are named per surface, a hard key, a drawn

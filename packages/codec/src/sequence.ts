@@ -6,7 +6,7 @@
  * wait of some seconds, and a key or a button on the screen can run it: "Netflix" might be the set top
  * box's 2, 0, 0, Red, Red and then five seconds. Their schema states it whole, `Sequence` holding
  * `Actions`, `Name` and `SequenceId`, the actions being `ButtonCommandAction` and `ButtonDelayAction`,
- * `docs/myharmony/model.md`.
+ * `reference/logitech/data-model/model.md`.
  *
  * **What it compiles to, read off the four compiles that hold one**, the spare Harmony One's account after
  * Danny authored two on 23 August 2026, `one_spare_20260830` and the three protocol campaign compiles,

@@ -6,7 +6,7 @@ point is that the parser derives the base address, the pointer count and the mar
 from the data rather than from a per-model table, so these assertions check that derivation
 rather than a hardcoded lookup.
 
-The two non-GSPM architectures are here on purpose. `docs/config-format.md` claims this is
+The two non-GSPM architectures are here on purpose. `reference/config-format/container.md` claims this is
 one container with a per-architecture cookie rather than a family resemblance, and arch 8 and
 arch 9 are the samples that can falsify that claim. They currently confirm it.
 """
@@ -26,7 +26,7 @@ EXPECTED = {
     'one34_region2': (b'GSPM', 0x002000, '1.6', 22, b'LWJL', 2),
     'h700_gspm': (b'GSPM', 0x020000, '1.4', 20, b'LWJL', 0),
     # The other two arch 14 safe mode configs. Both were in the corpus without being in this
-    # table, which is how docs/config-format.md came to say thirteen samples while fifteen
+    # table, which is how reference/config-format/container.md came to say thirteen samples while fifteen
     # containers were being parsed elsewhere.
     'h600_safemode_gspm': (b'GSPM', 0x020000, '1.4', 20, b'LWJL', 0),
     'h650_safemode_gspm': (b'GSPM', 0x020000, '1.4', 20, b'LWJL', 0),
@@ -156,7 +156,7 @@ class TestContainerAcrossSamples(unittest.TestCase):
         self.assertEqual(len({c.architecture for c in seen}), 4, 'architectures')
 
     def test_the_document_quotes_the_spread_this_table_actually_has(self):
-        """The header of docs/config-format.md states the corpus in numbers, and it drifted.
+        """The header of reference/config-format/container.md states the corpus in numbers, and it drifted.
 
         It said thirteen samples after two more had been added, five base addresses beside a list
         of four, and four pointer table lengths where there are three. Counting the table here and
@@ -174,7 +174,7 @@ class TestContainerAcrossSamples(unittest.TestCase):
         self.assertEqual(counts, {'samples': 17, 'architectures': 4, 'bases': 5, 'lengths': 3})
 
         path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                            'docs', 'config-format.md')
+                            'reference', 'config-format', 'container.md')
         with open(path, encoding='utf-8') as fh:
             text = fh.read()
         self.assertIn('**seventeen samples across four architectures**, five base addresses', text)
@@ -186,7 +186,7 @@ class TestContainerAcrossSamples(unittest.TestCase):
         self.assertIn('three pointer table lengths\n(20, 21, 22)', text)
         self.assertIn('the same property the word at `0x08` states', text)
         # No assertion that the old wording is gone here: `make facts` owns that, since the phrase is
-        # in reference/superseded.md, and the correction notes quote it on purpose.
+        # in docs/superseded.md, and the correction notes quote it on purpose.
 
         # Every base address the document names is one the corpus actually has, and vice versa.
         # Scoped to the sentence that names them, not the whole file, which quotes addresses for
@@ -227,7 +227,7 @@ class TestPointerTableLength(unittest.TestCase):
     def test_arch8_carries_21_slots_where_the_vendor_client_declares_20(self):
         """The measurement that makes Logitech's own client a source of hypotheses, not truth.
 
-        `docs/host-client.md` records the client's per architecture container constants, which
+        `reference/logitech/classic-client.md` records the client's per architecture container constants, which
         reproduce this project's reading exactly on arch 9 (marker at 91) and arch 12 (99) and
         state 20 slots with a marker at 91 for arch 8. Four real arch 8 configs put it at 95.
 
@@ -617,7 +617,7 @@ class TestTheConfigStatesItsOwnArchitecture(unittest.TestCase):
 
         The classic client table in `reference/models.md` holds 46 skins and lacks 59 and 73, the
         two numbers containers here carry where the remote reports 54 and 71. Two rules were
-        derived from that absence and both are dead, `reference/superseded.md`; the second one
+        derived from that absence and both are dead, `docs/superseded.md`; the second one
         said each was the first free number above the run containing the remote's own skin, and
         it was asserted here, exactly, computed from the table.
 
@@ -697,7 +697,7 @@ class TestSlotZeroIsTheOnlyFeedFrame(unittest.TestCase):
                 self.assertIsNotNone(gspm.parse(lab.load(name)).frame_length)
 
     def test_the_length_is_three_bytes_and_no_sample_can_tell(self):
-        """Why the width was widened on a claim this corpus cannot check. `docs/host-client.md`.
+        """Why the width was widened on a claim this corpus cannot check. `reference/logitech/clients.md`.
 
         The reader took a `u16` at +0x02 and called the byte at +0x04 "zero in every sample".
         Logitech's own client reads three bytes there, which is client sourced and unconfirmed,
@@ -2205,7 +2205,7 @@ class TestSlotAlignmentAcrossArchitectures(unittest.TestCase):
         """A third anchor, and it is free: base slot 18 is NULL in every container.
 
         Four names stood here, one per architecture, which is what "on every architecture" asks for
-        and is not what `docs/config-format.md` says: that document claims base slots 18 and 19 are
+        and is not what `reference/config-format/README.md` says: that document claims base slots 18 and 19 are
         NULL in every container. Section 141.
         """
         lab.require(*lab.ALL_CONTAINERS)

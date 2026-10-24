@@ -105,7 +105,7 @@ read it back). Both refuse without credentials and are **never in `make all`**.
 * The catalogue advertises **308 operations over 50 services** (section 132); the machine readable
   list is `responses/Discovery_GetJsonOperations.json`. **It is not the whole surface**, section 219:
   MyHarmony's own proxy declares 298 operations over 19 interfaces, with parameters and reply types,
-  in `docs/myharmony/operations.json` in the repository, and on the eleven services both describe
+  in `reference/logitech/data-model/operations.json` in the repository, and on the eleven services both describe
   each names operations the other does not. Look in both before concluding a call does not exist.
 * **The account scoped addresses want a GET**, and that is the exception to the rule above:
   `.../json/Account/<accountId>/<Name>` answers **405** to a POST. `probe.call` takes a `method`
@@ -316,7 +316,7 @@ Harmony 650 at 0.2 having been programmed with MyHarmony while the list names 0.
 ### What is already downloaded, so nobody fetches it twice
 
 Eleven images sit in `../lab/firmware/packages/sus/` with a `META.md` and a `MANIFEST.json` of sizes,
-digests and source URLs; the digests are also published in `reference/checksums.md`. **One image
+digests and source URLs; the digests are also published in `docs/checksums.md`. **One image
 serves a whole family**: skins 99 and 112 are byte identical, as are 97 and 106.
 
 The one that matters to this project is **skin 104, the Harmony 300 and Harmony 350 firmware**: an

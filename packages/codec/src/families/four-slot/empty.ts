@@ -343,7 +343,7 @@ export interface EmptyWiring {
 /**
  * The wiring with the family's settings, numbered from nothing: the front where the wiring puts it, the
  * clock's hour list right after it, `[0x1F 0xF203, 0x1F 0xF204]`, which increments the day and the weekday
- * (docs/config-format.md, the clock's transitions), then every list the wiring names in `wiringNeeds`'
+ * (reference/config-format/state.md, the clock's transitions), then every list the wiring names in `wiringNeeds`'
  * order. No activity, so every activity key enters the "add an Activity" screen and the leftover entry is
  * the idle one. The value maps hold the idle cases only, `EMPTY_MAPS`, and the wiring's three:
  *

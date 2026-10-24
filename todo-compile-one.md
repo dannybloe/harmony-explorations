@@ -31,7 +31,7 @@ fonts and the assembly all refuse anything but the Harmony 600, 650 and 700 toda
 * it takes **15 devices**;
 * a status screen **latches** until the battery comes out, where the 600 family's re-arms (sections 250
   to 253);
-* the parameter block holds **11 groups**, not 9, with lengths of its own (`docs/config-format.md`).
+* the parameter block holds **11 groups**, not 9, with lengths of its own (`reference/config-format/state.md`).
 
 **The route**: the composers we have, run on a Logitech One configuration, give the first file on the
 spare; then every part the composers still borrow is built by us, as the 650's chapters 6 to 10 did; then

@@ -9,7 +9,7 @@ Every confirmed fact lands in four places at once. Not three, and the fourth was
 hard way. The rule exists because the analysis here is AI-produced and published as such, so a
 claim that is not executable is only an assertion.
 
-1. **The structured fact** in `docs/config-format.md`, which is what other tools consume.
+1. **The structured fact** in `reference/config-format/README.md`, which is what other tools consume.
 2. **The reasoning and the evidence** in `docs/findings.md`, which is why anyone should believe
    it.
 3. **A regression test** in `tests/`, which is what stops it silently rotting.
@@ -68,7 +68,7 @@ the honest move is to write it up as unconfirmed, using that word.
 
 ## Writing it
 
-`docs/config-format.md` is a specification: offsets, widths, endianness, what is derived versus
+`reference/config-format/README.md` is a specification: offsets, widths, endianness, what is derived versus
 what is tabulated, and an explicit "unconfirmed" on anything that has not passed the gate. No
 narrative.
 
@@ -168,13 +168,13 @@ Say when that happened.
 
 **Then kill the old phrasing everywhere else**, which is step 4 and is not optional:
 
-* Add the dead wording to the table in `reference/superseded.md`, in the same commit. `make facts`
+* Add the dead wording to the table in `docs/superseded.md`, in the same commit. `make facts`
   then fails for anyone who restates it, including you in six weeks.
 * Choose a phrase that is dead in **every** context, not just the one that prompted it. A figure
   that stays correct under a narrower scope does not belong in that table; mark the live value
   with a `fact:` marker instead.
 * Grep the summaries yourself as well: `README.md`, `CLAUDE.md`, `docs/status.md`, `todo.md`,
-  `docs/config-format.md` and the memory maps. **`docs/plans/` is deliberately not on that list**:
+  `reference/config-format/README.md` and the memory maps. **`docs/plans/` is deliberately not on that list**:
   a plan is a record of what was decided at the time, so a dead claim inside one stays as written
   and the correction goes in the live document. A superseded phrase in a plan is not drift. The table only catches the exact wording you
   thought to record.
@@ -197,7 +197,7 @@ sentence beside the number and the heading above it.
 * So after a rewrite, **re-read the prose around every number it touched**, not the number. Phrases
   like "nothing else moved", "at the ceiling", "about a third" are summaries of a figure with no
   figure in them, so nothing mechanical will ever catch them. Kill them through
-  `reference/superseded.md` like any other dead claim.
+  `docs/superseded.md` like any other dead claim.
 
 ## Two reviewers, before the commit and after the diff exists
 

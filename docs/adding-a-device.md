@@ -80,7 +80,7 @@ Named so that nobody adds them to the critical path.
   Harmony 600 stays read only. Phases 1 to 7 are architecture neutral and 7 and 8 are the One alone.
 * **The application's interface.** Phase 1 touches FreeHarmony's main process and no screen. The rest of
   this repository owes FreeHarmony an API, not a page.
-* **An activity.** A device added in device mode is reachable without one, `docs/how-a-harmony-works.md`,
+* **An activity.** A device added in device mode is reachable without one, `reference/how-a-harmony-works.md`,
   and an activity would add a second keypad map to author for no gain here. Adding a device **to** an
   existing activity is the natural next goal and is not this one.
 * **Logitech's device search in the application.** It exists already, `src/main/logitech/client.ts` in
@@ -369,7 +369,7 @@ for.
       phase 2's appliances by hand: their client asked whether the television is used with a SCART cable,
       and an account's appliance record carries `IsScartCableSupported` beside four more flags of that
       kind. The catalogue lists `InputScart1` among that appliance's commands, so the answer plausibly
-      decides which input command an activity uses. Untested, `docs/host-client.md`. The item is to decide
+      decides which input command an activity uses. Untested, `reference/logitech/service.md`. The item is to decide
       whether a definition carries such an answer or refuses to hold one, since an importer that silently
       drops it produces a device whose inputs are wrong in a way nobody can see. Decided carry, 25
       August 2026: `DeviceDefinition.options` keeps the flags verbatim under Logitech's own spelling,
@@ -431,7 +431,7 @@ Five gaps, one a field and four of them rules to write down rather than fields t
 
 The wall. A Harmony One config states **12045** addresses inside itself and another **5884** positions are
 implied by what precedes them, `make growth`. Adding anything moves everything above it.
-`docs/growing-a-config.md` is the survey behind `edit.ts` refusing to change a length; this phase is what
+`reference/config-format/relocation.md` is the survey behind `edit.ts` refusing to change a length; this phase is what
 lifts that refusal.
 
 - [x] `relocate(container, at, delta)`: shift the bytes, then rewrite every **stated** address at or above
@@ -603,7 +603,7 @@ What is genuinely left is the **silicon half of pacing**: whether the USB periph
 second report before the first is serviced, which is the endpoint's buffer descriptor and its
 ownership bit, and which nothing here has read. The firmware half is derived and blind confirmed, the
 dispatcher drains the staging buffer in the same service call. **Do not merge the two halves**, which
-`reference/superseded.md` exists to prevent.
+`docs/superseded.md` exists to prevent.
 
 Erase before program is closed on both bench architectures: section 186 read the Harmony 600's SPI
 path and section 191 the Harmony One's resident flash library, where erase and program are separate

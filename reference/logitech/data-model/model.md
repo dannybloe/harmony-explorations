@@ -2,14 +2,14 @@
 
 **What the platform behind a Harmony remote actually stores**: its entities, their fields, and how they
 refer to each other. Recovered on 30 August 2026 and checked against replies the service itself
-returned. `docs/myharmony/model.json` is the data, this is the reading, and section 218 is the
+returned. `reference/logitech/data-model/model.json` is the data, this is the reading, and section 218 is the
 argument. Two more views are generated from that data by `tools/myharmony_model.py` and never edited
-by hand: `docs/myharmony/core-model.mmd` draws the entities an account holds, and
-`docs/myharmony/entities.md` indexes all 470 service contracts by area. `make myharmony-model`
+by hand: `reference/logitech/data-model/core-model.mmd` draws the entities an account holds, and
+`reference/logitech/data-model/entities.md` indexes all 470 service contracts by area. `make myharmony-model`
 checks they still agree with the model.
 
 **Consult this before designing anything about devices, activities or remotes, and before naming a
-field.** It is a labelled view of bytes this project already reads: where `docs/config-format.md` says
+field.** It is a labelled view of bytes this project already reads: where `reference/config-format/README.md` says
 what a byte is, this says what the vendor **called** it and what else travelled beside it. Sections 159
 to 171 derived an infrared rhythm table the hard way, and the vocabulary for the same thing is in here.
 
@@ -28,7 +28,7 @@ Three independent sources, which is what makes this a measurement rather than a 
 * and **the live service**, which can be asked about anything the other two do not exercise.
 
 Against the captures, **nothing in the schema is missing from live data**. The captures come from
-this project's own test accounts on dates recorded in `reference/lab-register.md`, and those accounts
+this project's own test accounts on dates recorded in `docs/lab-register.md`, and those accounts
 change, so the table is a statement about what was captured. It is evidence that the schema is
 faithful, which is what it is for, and not a description of an account:
 
@@ -72,7 +72,7 @@ so nothing in the schema bounds how many of anything there may be. Two things na
   field;
 * an account record takes **one** remote, and that is the service's own rule rather than a count of
   ours: `UserAccountDirector/AddRemoteToAccount` **refuses** a record that already has one, with
-  `ErrorCode 5`, measured on 13 August 2026 and written up in `docs/host-client.md`. The captures
+  `ErrorCode 5`, measured on 13 August 2026 and written up in `reference/logitech/service.md`. The captures
   agree, 21 account records with exactly one remote each and 3 to 10 devices, but the refusal is the
   stronger statement and it was already in this repository.
 
@@ -91,7 +91,7 @@ Then the replacement led with the wrong entity. It made **the account** the head
 reader needs is that **a household has zero or more remotes**, the account layer being the mechanism
 by which it holds them rather than the shape itself. Caught by Danny reading the diagram.
 
-Neither correction needed a new measurement, and that is the part to carry: `docs/host-client.md` has
+Neither correction needed a new measurement, and that is the part to carry: `reference/logitech/service.md` has
 said since 13 August 2026 that a household holds one record per remote, that devices and activities
 hang off the account record rather than the household, and that the service refuses a second remote on
 a record. All three were re-derived here from captures instead of read from the document next door.
@@ -364,7 +364,7 @@ and it has exactly three subclasses:
 | `RootButtonMap` | nothing: it adds no field at all |
 
 **This is Logitech stating the operating concept in their own schema**, and it is the first
-independent source for it. `docs/how-a-harmony-works.md` argues that a device's map and an
+independent source for it. `reference/how-a-harmony-works.md` argues that a device's map and an
 activity's map are two maps of the same keypad, authored separately, and it was written from
 their help pages and from measurements over the corpus. Here the two are separate types with a
 shared base, keyed by the two different things.
@@ -440,7 +440,7 @@ where a named group states no transport and the catch all states infrared.
 
 **The third cluster, 75 types, and about half of it is search criteria**, one class per way of
 asking the catalogue a question, which says nothing about hardware and is listed in
-`docs/myharmony/entities.md` rather than described here. What the other half describes is a
+`reference/logitech/data-model/entities.md` rather than described here. What the other half describes is a
 **code**, and it is worth more to this project than the rest of the model put together, because
 sections 159 to 171 derived the same structure out of bytes without ever seeing this.
 
@@ -518,7 +518,7 @@ the largest in the model.
 * **`KeyboardLayoutType`**, 4: `Undefined`, `QWERTY`, `QWERTZ`, `AZERTY`
 * **`Region`**, 5: `Unknown`, `Amr`, `Emea`, `Global`, `Apac`
 
-Three are too long to quote whole and are listed in full in `docs/myharmony/entities.md`:
+Three are too long to quote whole and are listed in full in `reference/logitech/data-model/entities.md`:
 
 * **`DeviceCapabilityType`**, 81 values, what a device declares it can do. It is the list the
   activity roles above partly correspond to, and it reaches well beyond this era of remote:
@@ -634,7 +634,7 @@ islands and a long tail of request and response types that reference nothing.
 | button and function maps | 31 | all of it |
 
 150 types are reachable from the roots those clusters start at, following both fields and
-inheritance. Every one of them is listed with all of its fields in `docs/myharmony/entities.md`,
+inheritance. Every one of them is listed with all of its fields in `reference/logitech/data-model/entities.md`,
 and a test fails if that stops being true.
 
 **Three honest limits.** The rail walks from named roots, so a fourth subsystem connected to none of
@@ -653,7 +653,7 @@ gap.
 ## What can be asked of it
 
 The entity half above says what the platform **holds**. This says what it can be **asked**, which is
-the other thing a schema is good for and the part an importer needs. `docs/myharmony/operations.json`
+the other thing a schema is good for and the part an importer needs. `reference/logitech/data-model/operations.json`
 is the data.
 
 The proxy declares each operation twice, once as the request carrying the wire action and its typed
@@ -737,7 +737,7 @@ person to read, and an identifier.
 
 Both kinds of map are the same shape in the schema, `DeviceFunctionMap` and `ActivityFunctionMap`
 extending one `AbstractFunctionMap` that holds the groups. That is the operating concept in
-`docs/how-a-harmony-works.md` stated by the vendor: a device's map and an activity's map are two maps
+`reference/how-a-harmony-works.md` stated by the vendor: a device's map and an activity's map are two maps
 of the same keypad. A device map names the default mode, an activity map names its own activity.
 
 ### A named group against the catch all beside it
@@ -804,7 +804,7 @@ all for another, and being device specific is a property of a device's entry rat
   that the reading looked at a device's own field list and not at what it inherits. Nine timing
   fields sit on that base: `DefaultInterKeyDelay`, `InterKeyDelay`, `HoldInterKeyDelay`,
   `DefaultInterDeviceDelay`, `InterDeviceDelay`, `HoldInterDeviceDelay`, `DefaultPressMinRepeats`,
-  `PressMinRepeats` and `HoldMinRepeats`. `docs/predictions-sequence-delay.md` is about exactly
+  `PressMinRepeats` and `HoldMinRepeats`. `docs/predictions/sequence-delay.md` is about exactly
   these quantities, scored against a config; here the platform names them, and it distinguishes a
   default from a current value and a press from a hold, which that prediction did not.
 * **`DelayActivityAction.Duration` and `AbstractActivityRole.NextDevicePowerOnDelay`** are the two
@@ -820,4 +820,40 @@ all for another, and being device specific is a property of a device's entry rat
 * **`DefaultChannel`, `DefaultStation` and `DefaultStationName`** sit on an activity, next to the
   favourite channel work of sections 154 and 156.
 * **`DeviceCategory` has six values** where the hub generation's icon set had 95 names,
-  `reference/device-categories.md`. The categories a Harmony One era account can hold are the six.
+  `reference/logitech/device-catalogue.md`. The categories a Harmony One era account can hold are the six.
+
+#### What the clients offer around a learned code, and one of them names an unread section
+
+Asked on 23 August 2026, because a stored code may be one somebody taught their remote and a taught
+command may be several presses. What the two clients offer, from their own vocabulary:
+
+* **The teaching flow is server driven in both eras.** The classic client has `EZTutor`, which fetches a
+  list of commands to teach by name, walks it, captures each and uploads it, and uploads an **empty**
+  capture for one the user skipped. Its default when the list is empty is a single `PowerToggle`. That is
+  the same shape as `DetectLanguage` above, twelve years earlier.
+* **The classic client uploads XML where the desktop one uploads a string**: `PULSESEQUENCES` holding an
+  `IRSEQUENCE` with a `FREQUENCY` and a `PULSESEQUENCE` of `PULSE` and space elements in microseconds.
+  Different transport, and behind it the **same class names**, `CarrierRecorder` and an `Interval` with
+  `isCarrier` and a time in microseconds. So the merge rule is one derivation in two eras rather than a
+  detail of the newer client.
+* **A button map carries `Sequences` beside `Buttons`**, and a step is a `ButtonSequenceAction`. So a
+  command made of several presses is a property of the map, not of the infrared record, which agrees
+  with what the configs show: an action list sends several codes in order.
+* **An activity's actions are a typed list**: `CommandActivityAction`, `DelayActivityAction` with a
+  duration, and `ChannelActivityAction`, each with an `ActionOrder`.
+
+**And the feature list is per product, which is the find.** A product record carries a numbered
+capability set, over a hundred flags, and four of them are this mechanism: `FavoriteChannels` is 1,
+`SupportActivitySequence` 21, `ButtonSequences` 22 and `ActivityStartUpChannel` 63. Others worth noting
+are `ModeMap` 2, `FunctionMapping` 6, `DeviceDelay` 14 and `LongPressAction` 29. It is reachable live,
+since `productsManager` carries `GetProduct` and `GetProductButtonList`, so `reference/capabilities.md`
+has a vendor source for its verification column beyond the device count section 136 adopted.
+
+**A channel is a number, and base slot 16 is the number sender.** Section 39 read that section out of
+three firmware images down to the decimal conversion, and it is empty in all 21 containers, so what its
+`flags` bits above 2 do and what its `base` field is could not be read from anything. The client says
+what would fill it: a favourite channel or an activity's start up channel is a **number** the remote has
+to spell out one digit at a time, which is exactly what that section does. Not proven, and cheap to
+prove: setting a favourite channel on an account with a bench remote and compiling would produce the
+first config anywhere with base slot 16 populated, with the number known in advance. That is the same
+known answer trick that produced the two calibration configs.

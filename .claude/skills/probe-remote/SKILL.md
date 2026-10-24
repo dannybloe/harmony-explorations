@@ -30,10 +30,10 @@ them in, not a ranking of what to believe:
 1. **Logitech's own client**, mirrored in the lab. It **builds** the packets, so the framing is code
    rather than inference. **MyHarmony is the reference client**, `work/myharmony/xap/`, and for how a
    remote is driven or which service call to make it is the only one to read, per Danny's instruction of
-   28 August 2026 and the rule in `docs/host-client.md`. Harmony Desktop's mirror is the source for
+   28 August 2026 and the rule in `reference/logitech/clients.md`. Harmony Desktop's mirror is the source for
    exactly two things and they are the ones nothing else holds: the file family's per skin templates
    under `software/desktop-webapp/mirror/*/opt/desktop-app-scripts/libs/ds/templates/SKIN<n>/`, and the
-   parameter encoders in `en.desktop-app-main.js`. `docs/host-client.md` is the ledger and decision 2
+   parameter encoders in `en.desktop-app-main.js`. `reference/logitech/clients.md` is the ledger and decision 2
    the standing.
 2. **The firmware**, which is the authority when the two disagree, and `docs/memory-map-*.md` for where
    to look per architecture.
@@ -232,7 +232,7 @@ Follow the `finding` skill for the write-up, plus three things specific to hardw
   silently. `tests/test_usbdesc.py` holds the Harmony 600's live report descriptor this way.
   A hardware measurement that is not executable is just a note.
 * **Say it was hardware.** Mark the source of every hardware-derived number in the document.
-  `docs/usb-protocol.md` has a "Source" row saying image or live device per column.
+  `reference/usb-protocol/transport.md` has a "Source" row saying image or live device per column.
 * **Check the provenance claim in `docs/findings.md`.** Its introduction states what kind of
   analysis produced the document, and it said "no hardware probing" until the first
   measurement made that false. If a measurement makes that paragraph wrong, correct it in the

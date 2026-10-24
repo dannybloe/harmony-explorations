@@ -1,7 +1,7 @@
 # Harmony Touch: behaviour
 
 What the remote does in use, from Logitech's manual, and what it did on the cable. The operating concept is
-`docs/how-a-harmony-works.md`. **Nothing about the Touch in use has been seen at the bench** and recorded:
+`reference/how-a-harmony-works.md`. **Nothing about the Touch in use has been seen at the bench** and recorded:
 no infrared run exists for it.
 
 ## Device mode, in and out
@@ -39,7 +39,7 @@ and write distinction every rail here rests on does not survive a filesystem who
 
 Logitech's hidden recovery tool in both MyHarmony clients offers a factory reset per model, and it worked on
 a Harmony Touch: it is not a command but **a whole factory firmware image fetched over the network and
-installed**, `docs/host-client.md` and section 196. A factory reset Touch holds a configuration of zero
+installed**, `reference/usb-protocol/commands.md` and section 196. A factory reset Touch holds a configuration of zero
 bytes, section 195.
 
 ## Not checked

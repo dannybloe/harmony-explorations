@@ -25,7 +25,7 @@ In this order, every time, including in an agent:
    architecture number.
 3. `docs/memory-map-600.md`: the 600's measured map row by row, which the reference links rather than
    restates.
-4. `docs/how-a-harmony-works.md` when the task touches what the remote does for a person: activities,
+4. `reference/how-a-harmony-works.md` when the task touches what the remote does for a person: activities,
    device mode, Help, the device list.
 
 **When the reference does not answer a question about the remote, ask** before designing around the gap,

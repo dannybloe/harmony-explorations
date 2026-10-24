@@ -1,7 +1,7 @@
 """Which of a record's two pointer groups a send plays, read in the firmware: findings section 365.
 
 A record of a toggling code carries two pointer groups, the code as stated and the same code with its
-toggle bit flipped, `docs/config-format.md` "Which group a send plays". Section 134 left which group a press
+toggle bit flipped, `reference/config-format/infrared-records.md` "Which group a send plays". Section 134 left which group a press
 uses unconfirmed, because the firmware side had not been traced. It is traced here on two images:
 
 * the bench Harmony 650's own 0.2 application (arch 14), and

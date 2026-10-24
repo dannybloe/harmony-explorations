@@ -74,7 +74,7 @@ image is a second sample rather than a stand in. Other models are iterated on la
 4. **Spec and libraries together, product apart.** *Revised. This decision originally read
    "monorepo" and put the application here as well.* The documents, the research tooling, the
    TypeScript libraries and the tests stay in one repository, because a codec in a second one drifts
-   away from `docs/config-format.md`, and the rule that a confirmed fact must land as a regression
+   away from `reference/config-format/README.md`, and the rule that a confirmed fact must land as a regression
    test only bites while the code sits next to the documents. The **application** is a separate
    repository, [FreeHarmony](https://github.com/dannybloe/FreeHarmony), GPLv3, consuming these
    libraries. The line runs between library and product, not between documents and code. See "The two
@@ -162,7 +162,7 @@ image is a second sample rather than a stand in. Other models are iterated on la
    is **the silicon half of pacing**: whether the USB peripheral can accept a second report before
    the first is serviced, which is the endpoint's buffer descriptor and its ownership bit, and which
    nothing here has read. The **firmware** half was answered by reading the same day, and the two
-   halves must not be collapsed, which is what `reference/superseded.md` records and what this
+   halves must not be collapsed, which is what `docs/superseded.md` records and what this
    paragraph did by saying "one thing rather than two"<!--superseded--> until 29 August 2026. Erase
    before program is closed on both bench architectures since sections 186 and 191, and it was moot
    anyway for a caller that erases first.
@@ -191,7 +191,7 @@ image is a second sample rather than a stand in. Other models are iterated on la
    lever**: copying unlicensed proprietary code infringes whatever licence the result carries, so
    MIT is not the obstacle and moving to GPL would not create a permission. The rule, the legal
    argument and the ledger of everything currently believed on the client's word alone are in
-   `docs/host-client.md`.
+   `reference/logitech/clients.md`.
 
 10. **The application comes before a wider corpus.** *Taken 12 August 2026, and it reverses the
    posture the front page had carried.* No general call for dumps goes out, and the eight unseen models
@@ -233,12 +233,12 @@ image is a second sample rather than a stand in. Other models are iterated on la
    Logitech: fourteen services, 78 operations, JSON over HTTP rather than SOAP, and **the device
    database is its own call**, `deviceManager.SearchGlobalDevices` with `GetCommands` beside it and a
    REST form of the search on another service. So the expensive route is real rather than hypothetical.
-   `docs/host-client.md` has the map and `tests/test_host_client.py` recomputes it.
+   `reference/logitech/service.md` has the map and `tests/test_host_client.py` recomputes it.
 
    **One operation on that list is worth more to this repository than to the application**:
    `downloadManager.RemoteConfigurationInJson`, a configuration described in JSON by the people who
    wrote the format, for a remote whose bytes we already read to the last one. A vendor authored second
-   view of the same object would confirm `docs/config-format.md` or name the field that is wrong, which
+   view of the same object would confirm `reference/config-format/README.md` or name the field that is wrong, which
    is a stronger check than anything available here.
 
    **The requests were made on 13 August 2026, with authorisation and a throwaway account,
@@ -301,7 +301,7 @@ image is a second sample rather than a stand in. Other models are iterated on la
 
    **The failure is structural, not carelessness.** Every rule this project has for keeping facts
    straight operates on the repository: `make facts` recomputes marked numbers and refuses dead
-   phrasings, `reference/superseded.md` kills old wording, a finding needs a regression test, and
+   phrasings, `docs/superseded.md` kills old wording, a finding needs a regression test, and
    the four places rule makes a fact land in all of them or none. The lab is **deliberately outside
    all of it**, because it holds unlicensed firmware, contributors' configs and Logitech's own
    client code, and that is the right decision for what may be published. The consequence is that a
@@ -343,8 +343,8 @@ image is a second sample rather than a stand in. Other models are iterated on la
    path stay correct.
 14. **The vendor's data model moves into this repository whole.** *Taken by Danny on 30 August 2026,
    overruling a narrower reading of decision 9 that this assistant had raised.* The platform's schema,
-   what an account holds and what every field is called, is recovered in `docs/myharmony/model.json`
-   with `docs/myharmony/model.md` as its reading, and **it is to be consulted before naming a field or
+   what an account holds and what every field is called, is recovered in `reference/logitech/data-model/model.json`
+   with `reference/logitech/data-model/model.md` as its reading, and **it is to be consulted before naming a field or
    designing anything about devices, activities or remotes**, in this repository and in FreeHarmony
    both. The concern raised was decision 9's boundary, that Logitech's code stays in the lab. It does:
    what crosses is a **schema**, names of types and fields and the references between them, which is
@@ -733,7 +733,7 @@ remote and 2 in the second, which is what section 117 measured as a generator er
    reference is published as a website, built from `reference/` on every push and never committed.
    `docs/findings.md` is frozen where it is: nothing new is added; its headings get short fixed anchors and
    its links to moved files are corrected, its content otherwise unchanged. Why: knowledge had spread over
-   the journal, `docs/config-format.md`, `reference/remotes/`, the status page, `CLAUDE.md` and the skills,
+   the journal, `reference/config-format/README.md`, `reference/remotes/`, the status page, `CLAUDE.md` and the skills,
    so finding the current answer meant reading several of them, and a summary in one drifted from another.
    This changes decision 13: `findings.md` is not split, and it is no longer where a finding is written.
    Plan 005 named the knowledge folder `docs/spec/`; it is `reference/` since 24 October 2026, which also

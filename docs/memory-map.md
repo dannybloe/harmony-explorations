@@ -11,7 +11,7 @@ rules and the architecture comparison are written once rather than once per remo
 | [memory-map-525.md](memory-map-525.md) | Harmony 525 | 9 | yes, one unit |
 
 These five documents derive nothing. Every figure in them is measured elsewhere and each row names
-its source, so where one disagrees with `docs/findings.md` or `docs/usb-protocol.md`, those two are
+its source, so where one disagrees with `docs/findings.md` or `reference/usb-protocol/README.md`, those two are
 right and the map is stale. `tests/test_memory_map.py` pins the figures a lab image can check.
 
 ## Addressing
@@ -40,7 +40,7 @@ In every table, "erased" means `0xFF` bytes, and a region with no row is erased.
 **Reading internal memory is the one place where read only is not the same as harmless.** A
 `READ_FLASH` with top byte `0xFE` or `0xFF` restarts the remote when the transfer ends in a one byte
 chunk. `packages/usb` caps an internal read at a single chunk, which is a workaround rather than an
-explanation. See `docs/usb-protocol.md`.
+explanation. See `reference/usb-protocol/commands.md`.
 
 ## Two execution models
 
@@ -112,6 +112,6 @@ inferred rather than measured. The configuration words being where they are is c
 ## Where the detail is
 
 * `docs/findings.md` sections 1 to 5 for the images and their headers, 20 to 23 for the sweeps.
-* `docs/usb-protocol.md` section 4 for `READ_FLASH`, the region validator and the version block.
-* `docs/config-format.md` for what is inside a `GSPM` container.
-* `reference/checksums.md` for the provenance of every file the figures came from.
+* `reference/usb-protocol/commands.md` and `reference/usb-protocol/version-block.md` for `READ_FLASH`, the region validator and the version block.
+* `reference/config-format/README.md` for what is inside a `GSPM` container.
+* `docs/checksums.md` for the provenance of every file the figures came from.

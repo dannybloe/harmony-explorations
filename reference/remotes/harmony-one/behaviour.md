@@ -1,18 +1,18 @@
 # Harmony One: behaviour
 
 What the remote does in use, as a person holding it sees it. The operating concept, activities and
-device mode, is `docs/how-a-harmony-works.md`, and this page does not restate it; it says how the One does
+device mode, is `reference/how-a-harmony-works.md`, and this page does not restate it; it says how the One does
 it and what has been seen and measured on this model.
 
 ## Device mode, in and out
 
 | | how | standing and source |
 |---|---|---|
-| in | **"Devices"**, the touch key below the screen on the right, which the activity menu labels | Logitech's manual, "When you press the Devices button, the Harmony One's screen displays a list of your devices"; `docs/how-a-harmony-works.md`; section 275 |
+| in | **"Devices"**, the touch key below the screen on the right, which the activity menu labels | Logitech's manual, "When you press the Devices button, the Harmony One's screen displays a list of your devices"; `reference/how-a-harmony-works.md`; section 275 |
 | on a device | "the Harmony One controls only that device", every key and the screen | Logitech's manual, "Controlling your devices individually"; the device's own screen record, section 271 |
-| out | the key below the screen on the left, which the device list labels "Activities"; the right one is **not enabled** there, the configuration giving it no touch rectangle on 29 of 29 device list pages | read from configurations and an account from the bench, section 275 and `docs/how-a-harmony-works.md` |
+| out | the key below the screen on the left, which the device list labels "Activities"; the right one is **not enabled** there, the configuration giving it no touch rectangle on 29 of 29 device list pages | read from configurations and an account from the bench, section 275 and `reference/how-a-harmony-works.md` |
 
-`docs/how-a-harmony-works.md` also names the way back "Current Activity", as the One's own wording rather
+`reference/how-a-harmony-works.md` also names the way back "Current Activity", as the One's own wording rather
 than the product's. The device list measured in section 275 writes "Activities". Where on the remote each
 word appears is **not checked** here.
 
@@ -38,7 +38,7 @@ later than the same command on a key:
   hold flag, read in the firmware, section 337, which corrects section 127.
 * **Unconfirmed** in section 337: that a touch is posted while the finger is down, how long it settles,
   and that sliding onto another item gives a release and a new press. Whether a long press on the screen
-  would take as long as on a key is not established, `docs/how-a-harmony-works.md`.
+  would take as long as on a key is not established, `reference/how-a-harmony-works.md`.
 
 None of this applies to the Harmony 600, 650 and 700: no touch panel, no click, and their wait between
 devices is a separate step, section 337.
@@ -98,3 +98,29 @@ Sunday, section 322.
 * The touch timing of section 337.
 * Why an oversized sequence hangs the remote, and why it strands after idling on USB.
 * Whether the restart after a write reseeds the clock.
+
+### The Harmony One drops its first command, sometimes
+
+Observed twice on 6 August 2026, both times on a Harmony One, both times the first command after the
+device was opened:
+
+| Command | Symptom | Immediately afterwards |
+|---|---|---|
+| `READ_FLASH`, 256 bytes at `0x040000` | `flash read returned 0 of 256 bytes` | the same test passed, and a 60050 byte firmware read passed in the same run |
+| `GET_VERSION` | `no reply to command 0x10 within 3 polls of 2000 ms` | a rerun read the whole 1232237 byte config without a hiccup |
+
+**The Harmony 600 has not done it**, on either occasion, including runs where its first command came
+before the One's. So the honest statement is about the One, not about remotes in general.
+
+What can be said: the failure is **silence, never a wrong answer**. No case has produced bytes that
+turned out to be incorrect. What cannot be said is why. Candidates nobody here has separated: a wake
+from sleep, since the One has a rechargeable cell and a screen where the 600 runs on AA cells; a
+first-read-after-open effect in the host stack; or an idle timeout rather than anything to do with
+opening at all. Two observations do not distinguish them, and the experiment that would, opening the
+device repeatedly at measured intervals, has not been run.
+
+The workaround is one retry of the **first** command only, and only on silence, in
+`packages/corpus`. Everything after the first command stays strict: widening the retry would be more
+than the evidence supports and would turn a genuinely failing transfer into an intermittent success,
+which is the worst property for the code that files backups. The same rule, with the same two
+message shapes, is in `packages/usb/test/hardware.test.ts`.

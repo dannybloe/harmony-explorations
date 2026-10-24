@@ -977,7 +977,7 @@ class TestInfraredLearningIsABracket(unittest.TestCase):
 
     Two arch 14 images rather than one, because the addresses differ per build and the shape is
     what is being claimed. The client dig said where to look; everything asserted here is read out
-    of the firmware, and the parts only the client knows are in `docs/host-client.md` instead,
+    of the firmware, and the parts only the client knows are in `reference/logitech/clients.md` instead,
     unconfirmed, with no test asserting them as true.
     """
 
@@ -1140,7 +1140,7 @@ class TestReadFlash(unittest.TestCase):
 
     Scope note, after a correction. Everything here is about the **request**: the parser, the
     validator it calls, and the proof that the address triple is an address. The response side
-    was published as located and is not: see the correction in docs/usb-protocol.md. The two
+    was published as located and is not: see the correction in reference/usb-protocol/commands.md. The two
     tests below that touch 0x13E90 and 0x0C9B2 assert what that code does, not which command
     it serves.
     """
@@ -2008,7 +2008,7 @@ class TestArch12Band0xC0(unittest.TestCase):
 
 class TestReadMiscSelectorTwelve(unittest.TestCase):
     """
-    Section 212. `READ_MISC` selector `0x0C`, which `docs/usb-protocol.md` carried as "not read
+    Section 212. `READ_MISC` selector `0x0C`, which `reference/usb-protocol/commands.md` carried as "not read
     yet" from the day the selector chain was decoded.
 
     Logitech's classic client is what said where to look: it calls this selector a hardware feature

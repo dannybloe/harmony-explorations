@@ -269,12 +269,12 @@ test('a numeric device type is named from Logitech\'s own reply, and it is not o
   // hypothesis our own corpus agrees with.
   assert.deepEqual([...DEVICE_TYPE_NAMES.entries()].sort((a, b) => a[0] - b[0]),
                    [[1, 'Television'], [2, 'VCR'], [4, 'DVD'], [5, 'StereoReceiver']]);
-  // **The control, and the trap it guards.** `docs/myharmony/model.json` holds a `DeviceType` enum of 61
+  // **The control, and the trap it guards.** `reference/logitech/data-model/model.json` holds a `DeviceType` enum of 61
   // values, and reading the wire number as an index into it is the obvious mistake: index 1 there is
   // `Default` and index 4 is `CableBox`, because a WCF enum is serialised in alphabetical order. So the
   // two orderings are different and neither can be derived from the other.
   const model = JSON.parse(
-    readFileSync(join(REPO, 'docs', 'myharmony', 'model.json'), 'utf8'),
+    readFileSync(join(REPO, 'reference', 'logitech', 'data-model', 'model.json'), 'utf8'),
   ) as { entities: Record<string, { values: string[] }> };
   const values = model.entities['DeviceType']!.values;
   assert.equal(values.length, 61);

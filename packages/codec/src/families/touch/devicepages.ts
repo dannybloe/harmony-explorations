@@ -3,7 +3,7 @@
  * through the template engine of sections 411 to 415, `screentemplate.ts`, and the hit page rules of section 417,
  * `hitpages.ts`, as the activity menu is built, `activitymenu.ts`, section 419.
  *
- * **What it is.** Device mode, `docs/how-a-harmony-works.md`: picking a device off the Devices list points every
+ * **What it is.** Device mode, `reference/how-a-harmony-works.md`: picking a device off the Devices list points every
  * key at that device, and the screen shows its commands as pads, six to a page, a touch sending the command. One
  * mode per device, its **own key map** being the device's map of the hard keys, section 271, and its pages the
  * screen half. The modes are found the way the inventory finds a device's mode, `devices`, which names none for

@@ -304,7 +304,7 @@ class TestArch14MapFor700(unittest.TestCase):
 class TestTheHarmony650IsArch14(unittest.TestCase):
     """The third published firmware package, and the one nobody here had opened.
 
-    `reference/checksums.md` listed it as arch 15 for as long as it went unexamined, which would
+    `docs/checksums.md` listed it as arch 15 for as long as it went unexamined, which would
     have put it in the network-transport family alongside the 900 and the 1100. It is arch 14, the
     same as the 600 on the bench, and that matters twice: it is a third independent arch 14 sample,
     and it makes the 650 a model whose firmware can be checked against a published image if one is
@@ -537,7 +537,7 @@ class TestTheSharedMap(unittest.TestCase):
 #: window of one pass, and would let an unrelated run through for sitting inside one of these.
 #:
 #: Both are properties of a model rather than of a unit, and both are published in
-#: `docs/usb-protocol.md` already. The second was found by widening this check: it is the Harmony
+#: `reference/usb-protocol/version-block.md` already. The second was found by widening this check: it is the Harmony
 #: 525's `GET_VERSION` reply, seven fields naming its protocol, skin, board and flash id, with no
 #: serial in it. A unit's serial GUIDs are what this test exists to keep out, and they appear in
 #: `concordance -i` output rather than in a version reply.

@@ -44,7 +44,7 @@ section 297; the store is read in the firmware and measured on the 600 and 650, 
 | `0x000000` to `0x020000` | the application as stored, or the staging region for an update. **Differs by unit**: an application copy on the 600, erased but for an identity copy on the 650, a staged image on the 700 | measured per unit, sections 281 and 297 |
 | `0x020000` | the safe mode configuration, 7115 bytes, format 1.4; its section table byte identical on all three models. It is the **status screen library**: no devices, no activities, 35 status screens, linked for this address and ending at `0x021BC7`, declaring a log area of `0x0E0000` to `0x100000`; the 650's differs from the 700's in 50 bytes | measured on the 600, read out of the 650's and 700's packages, section 30; sections 353 and 244 |
 | `0x030000` to `0x200000` | the user configuration, 1856 KiB of room | measured on all three |
-| `0x1E0000` to `0x200000` | declared as a log area by user configurations, every Harmony 650 configuration in the lab among them | read from configurations, `docs/host-client.md` and section 353; nothing on arch 14 is known to write it, the log area's writer being the Harmony One's alone, `todo-compile-650.md` 10.2 |
+| `0x1E0000` to `0x200000` | declared as a log area by user configurations, every Harmony 650 configuration in the lab among them | read from configurations, `reference/config-format/state.md` and section 353; nothing on arch 14 is known to write it, the log area's writer being the Harmony One's alone, `todo-compile-650.md` 10.2 |
 
 ## Internal flash, two 64 KiB pages
 
@@ -73,3 +73,75 @@ verdict, bit 2, section 354.
 * What setting `0x80`'s bits other than bit 0 mean.
 * The four small unidentified records after the identity block.
 * Whether anything on this architecture writes the declared log area.
+
+### Arch 14 keeps per model settings in internal program memory
+
+A run of twelve 64 byte records above the application firmware, at `0x01F400` and every `0x40`
+after it, ending at `0x01F640`, followed by a 1024 byte block at `0x01F800`. What the client
+believes each holds, restated:
+
+| address | what it holds |
+|---|---|
+| `0x01F400` | the unit's serial identifier |
+| `0x01F440` | key timing |
+| `0x01F480` | infrared capture silence timing |
+| `0x01F4C0` | unit settings |
+| `0x01F500` | keypad settings |
+| `0x01F540` | display settings |
+| `0x01F580` | battery calibration |
+| `0x01F5C0` | power settings |
+| `0x01F600` | other settings |
+| `0x01F640` | a manufacturing identifier |
+| `0x01F800` | test flags, 1024 bytes |
+
+The first address is also declared as the start of a 1024 byte system parameter block, so the
+twelve records are probably subdivisions of one block rather than twelve unrelated ones.
+
+**This was read as the answer to a question already asked here**, which settings a remote has that
+its config does not carry, and **the answer turns out to be none**, section 150. Six of the seven
+settings records are erased flash on all three bench remotes: key timing, infrared capture silence,
+unit, keypad, display and other settings have never been written. Only `power settings` holds
+anything, one byte, 94, on the two Harmony Ones and not on the Harmony 600, and that is the value
+section 105 read at `0x01F5C0` and could not attribute.
+
+It said "confirming it needs a remote rather than a disassembler", and it needed **neither**: the<!--superseded-->
+internal pages of every bench remote were read over USB months ago and verified against their
+backups, so the bytes were already in the lab. `tests/test_unit_settings.py`. The record names stay
+here as client sourced labels, since a name is what the client gave and the emptiness is what we
+measured.
+
+Arch 12 has the same idea at different addresses: an identifier block at `0xFFF400` and a
+manufacturing identifier at `0xFFF640`, both 64 bytes, with a 1024 byte granularity stated for
+the first.
+### Smaller leads
+
+* Arch 14 declares a user logging region at `0x0E0000` of 128 KiB, which is where a log area
+  pointer on arch 14 would have to point. Section 47 found the writer is arch 12 only, so this
+  said the region exists on arch 14 even though nothing writes it. **It is off this list since
+  section 206**: every arch 14 safe mode container in the corpus declares exactly `0x0E0000` to
+  `0x100000` in base slot 2. The arch 14 user configurations declare `0x1E0000` to `0x200000`
+  instead, the same 128 KiB at the top of the 2 MiB part rather than of one half the size, and
+  which a remote wants is open.
+* **The pointer table starts at `0x08` on arch 7**, not `0x0B`. The client's three per
+  architecture offsets are all `table_start + 1 + 4 * slot`, exactly, for slots 0, 2 and 3, which
+  gives 11 on arch 8, 9, 12 and 14 and 8 on arch 7. There is no arch 7 sample here, so this is a
+  prediction for whenever one arrives rather than something to act on.
+* Arch 12 and arch 14 each declare an embedded configuration region, `0x1E000` and `0x4000`,
+  distinct from the safe mode image and from the user config.
+* Read selector 12 is `reference/usb-protocol/commands.md`'s "not read yet" selector `0x0C`. The client uses
+  it to ask what hardware features the remote has.
+* **Flash `0x200000` on arch 9 has left this ledger**, section 119, and it is the first entry to do so
+  by being confirmed rather than refuted. It was here as concordance's claim that the address is a
+  firmware update state cell, `0x00` while staging and `0x02` to install, with `0x200010` holding the
+  serial, and with the awkward note that section 88 read the 525's validator as refusing every top
+  byte outside `0x80` to `0x87`. Both halves are now read out of the 525's own firmware. The
+  validator's chain has four windows above its flash range test and `0x20` is the **on chip EEPROM**,
+  bounded to 256 bytes, which is why `0x200010` is the serial and why section 88's rule described only
+  the default arm. The bootloader reads EEPROM byte 0 at every boot and `0x02` is the value that makes
+  it install the application. So the client was right, and it was right about something it had no way
+  to explain. What has **not** changed is the action: this project does not perform that write. The reason is no
+  longer that "arch 9 has no write target"<!--superseded-->, since section 269 gave it one; it is that
+  the EEPROM sits outside the writable range, which covers the configuration alone, and that
+  **no concordance command line reaches that step alone**, section 118, so it
+  is reachable only as four library calls that belong in the private lab and never in this MIT
+  repository since they call into GPLv3 code.

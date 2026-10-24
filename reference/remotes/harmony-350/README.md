@@ -7,7 +7,7 @@ platform, architecture 16, with the Harmony 300; what the two share is stated on
 [the architecture folder](../../architectures/harmony-300-350/README.md), and this folder states what is
 the 350's own. **This library never opens it with `openHarmony` and never writes to it**; its
 configuration is read as a file, read only. Standing words and their meaning are in
-[the reference's README](../README.md).
+[the reference's README](../../README.md).
 
 ## Skins
 

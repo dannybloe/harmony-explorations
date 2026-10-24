@@ -63,11 +63,11 @@ architecture as the Harmony 600 on this bench, and they stayed on MyHarmony. So 
 covers both arch 7 and arch 14, and the split is by platform generation rather than by number.
 
 Do not infer an architecture from a model number. Read it out of the config, per
-`docs/config-format.md`: section slot 1 states it.
+`reference/config-format/header-records.md`: section slot 1 states it.
 
 ## The platform codenames, and the skin number of every model
 
-*Source: Logitech's own classic desktop software, per `docs/host-client.md`. Client-sourced and
+*Source: Logitech's own classic desktop software, per `reference/logitech/clients.md`. Client-sourced and
 therefore unconfirmed except where this project has measured the same number, which is marked.
 The tables are restated here rather than copied; the extraction is in the private lab.*
 
@@ -98,7 +98,7 @@ The last row is worth noticing: those remotes do not enumerate under Logitech's 
 Anything that finds remotes by scanning for `0x046D` will never see one.
 
 `Gin` is the name this project already used for arch 12, taken from the same source in section 81
-before the rule in `docs/host-client.md` existed. It is recorded properly here.
+before the rule in `reference/logitech/clients.md` existed. It is recorded properly here.
 
 **Six of these names are corroborated by a file Logitech shipped rather than by the client**, which
 matters because the client is the weaker source. The firmware packages in the lab carry a
@@ -218,7 +218,7 @@ product range suggests.
 **This table is incomplete, and the two numbers it lacks are the two that cost the most time.**
 Section 81 found that two containers carry a skin the remote does not report, 59 on a Harmony One and
 73 on a Harmony 600, and both are absent here. Two rules were derived from that absence and both are
-dead, `reference/superseded.md`: the second and better one said each was "the first free number above<!--superseded-->
+dead, `docs/superseded.md`: the second and better one said each was "the first free number above<!--superseded-->
 the run containing that remote's own skin", which is exact on both cases and predicts nothing.
 
 **59 is the Harmony One EMEA and 73 is the Harmony 600 EMEA.** Section 131, from

@@ -1,7 +1,7 @@
 # Harmony Touch: USB
 
 The Touch speaks the **file protocol**, not the command protocol of the Harmony One, 525, 600, 650 and 700.
-The protocol is `docs/usb-protocol.md` section 6, from Logitech's own specification, and the read only
+The protocol is `reference/usb-protocol/file-protocol.md`, from Logitech's own specification, and the read only
 transport is `packages/usb/src/filepipe.ts`. The Harmony 300 and 350 speak the same family's protocol,
 [their architecture's usb.md](../../architectures/harmony-300-350/usb.md), which is where the transport's
 rails are argued.

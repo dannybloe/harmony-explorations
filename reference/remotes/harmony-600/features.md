@@ -59,7 +59,7 @@ state variables.
 | | standing and source |
 |---|---|
 | three activity keys, Watch TV, Watch a Movie, Listen to Music, plus More Activities, which "opens a list of all Activities on the remote screen" | Logitech's manual, page 5 |
-| how many activities a 600 may hold | **not stated** by the service or the manual. The fill test of seventeen model records found every model with a screen taking seven, `docs/how-a-harmony-works.md`; whether a 600 record was among them is not recorded there, so **not checked** |
+| how many activities a 600 may hold | **not stated** by the service or the manual. The fill test of seventeen model records found every model with a screen taking seven, `reference/how-a-harmony-works.md`; whether a 600 record was among them is not recorded there, so **not checked** |
 | which activity each activity key starts: one entry in a key map that is always installed, scans 5, 1 and 7 | read from Logitech's compiles of this architecture, the 600's among them, section 314 |
 | an activity key with no activity opens mode 0, "add an Activity on this button" | read from configurations, section 311 |
 
@@ -77,7 +77,7 @@ state variables.
   advanced help, where the **Inter-Device Delay** is changed on the remote itself, Logitech's manual
   pages 8 and 22.
 * Help belongs to what is running and not to a device, read in Logitech's compiles of this architecture,
-  section 333 and `docs/how-a-harmony-works.md`.
+  section 333 and `reference/how-a-harmony-works.md`.
 
 ## Delays
 

@@ -336,3 +336,13 @@ keys so the theming hooks are visibly working.
 symbol on the wrong key.** So this is the check that counts, and it is the one a person has to do.
 Show one model before drawing the rest: a fault in the method costs one drawing that way and three
 otherwise.
+
+## Adding a model
+
+1. Make `reference/remotes/harmony-<model>/` with the same ten files, copying the headings of an
+   existing folder.
+2. Add the model to `REMOTES` in `packages/silhouettes/bin/remotes.ts`: its skins, the drawing it
+   uses and its architecture. A model with no drawing of its own uses its sibling's where the project owner or the
+   manual says the face is shared, and says so in `keys.md`.
+3. Put the markers where the generator expects them and run `make remote-reference-write`.
+4. If its architecture has no folder yet, add one and a row in `ARCHITECTURES`.

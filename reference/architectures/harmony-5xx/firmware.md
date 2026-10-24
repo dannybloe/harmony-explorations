@@ -9,16 +9,16 @@ most here is at the end: **safe mode is a one way door on this model**.
 | image | where | standing and source |
 |---|---|---|
 | bootloader | internal `0x0000` to `0x0FFF`, in no external image, so only the device has it | measured, section 76 |
-| **application 3.0** | runs from internal `0x1000`; stored at external `0x810000`, `HG` framed at `+4` and `GH` at `0x6FFE`, entry `GOTO 0x07FB4` | measured: internal and external byte identical over 28672 bytes, section 76; `reference/checksums.md` |
+| **application 3.0** | runs from internal `0x1000`; stored at external `0x810000`, `HG` framed at `+4` and `GH` at `0x6FFE`, entry `GOTO 0x07FB4` | measured: internal and external byte identical over 28672 bytes, section 76; `docs/checksums.md` |
 | **safe mode image 2.0** | stored at external `0x800000`, loading at `0x1000` too; it reports software type 4 | measured, sections 76 and 118 |
 
-There is **no Logitech package** of this firmware here: the images came off a unit, `reference/checksums.md`,
+There is **no Logitech package** of this firmware here: the images came off a unit, `docs/checksums.md`,
 and Logitech's current software update service serves the file based and Linux generations, section 196.
 The model's manual has its owner update firmware through the classic Harmony Remote Software, Logitech's
 manual, "Upgrading your Harmony 525 firmware".
 
 The application's USB descriptor block has a second, Microchip stock descriptor left in beside it,
-claiming `04D8:000B`, which validates as well as the real one, section 113 and `docs/usb-protocol.md`.
+claiming `04D8:000B`, which validates as well as the real one, section 113 and `reference/usb-protocol/transport.md`.
 
 ## Routines read on the application image
 

@@ -3,7 +3,7 @@
  *
  * A port of `src/harmony/gspm.py`, and for now a deliberately close one: the two are held
  * equivalent by golden vectors, so a difference in behaviour has to show up as a diff rather
- * than as a judgement call. The format is specified in `docs/config-format.md`.
+ * than as a judgement call. The format is specified in `reference/config-format/README.md`.
  *
  * It is one container with a per architecture four letter cookie rather than one format per
  * architecture, which is why this is written against the shape and not against a model table:
@@ -956,7 +956,7 @@ export function findMarker(blob: Uint8Array): number {
  *
  * **The length is 24 bits and not 16.** This read a `u16` with the byte at `+0x04` described as
  * "zero in every sample", which it is, because no name tree in the corpus reaches 64 KiB. Logitech
- * 's own client reads three bytes here, `docs/host-client.md`, and that is client sourced and
+ * 's own client reads three bytes here, `reference/logitech/clients.md`, and that is client sourced and
  * unconfirmed. It is adopted anyway because the two readings cannot disagree on any sample this
  * project has, `test/gspm.test.ts` says so, and the wider one is the one that survives a config
  * the corpus does not contain. Same family as the font header's spare byte<!--superseded-->, which was

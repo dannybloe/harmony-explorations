@@ -19,7 +19,7 @@ was truncated in transit. concordance's firmware dump truncates architecture 14 
 The checksum differs from concordance's model. concordance starts the sum at
 `firmware_4847_offset` and always runs to `FIRMWARE_MAX_SIZE`; the observed format uses two
 independent constants and stops at the real end of the image. See
-`reference/concordance-notes.md`.
+`docs/concordance-notes.md`.
 """
 
 from __future__ import annotations

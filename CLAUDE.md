@@ -2,7 +2,7 @@
 
 Reverse engineering the Logitech Harmony config format so configs can be generated again.
 Read `README.md` first for orientation, then `docs/status.md` for where the work stands,
-`todo.md` for the sequence and `docs/findings.md` for the technical detail. `docs/glossary.md`
+`todo.md` for the sequence and `docs/findings.md` for the technical detail. `reference/glossary.md`
 defines the vocabulary all three use, and says per term whether it is Logitech's word, this
 project's invention or a standard one, which is a distinction the other documents assume rather
 than state.
@@ -69,7 +69,7 @@ outside our own reading: their platform has one abstract button map with three s
 device, by an activity, and by neither. It also says a button holds **three** actions, a press, a long
 press and a double press, and it names the button kinds per surface. That schema is for a later
 generation of hardware, so it is evidence about the product's design and not about what these remotes
-hold. `docs/myharmony/model.md` and `docs/how-a-harmony-works.md` carry it.
+hold. `reference/logitech/data-model/model.md` and `reference/how-a-harmony-works.md` carry it.
 
 **The Harmony 600, 650 and 700 show no clock. There is no time anywhere on their screen**, Danny's
 observation at the bench, said many times and got wrong by sessions anyway, because until 7 October
@@ -109,7 +109,7 @@ the main one. **So a device page reads the stated map and never reconstructs one
 what the activities agree on: that rule is wrong on 136 of the 1032 pairs where they do agree, and blind
 to 568 keys no activity binds.
 
-`docs/how-a-harmony-works.md` is the long form and `.claude/skills/how-a-harmony-works/SKILL.md` is the
+`reference/how-a-harmony-works.md` is the long form and `.claude/skills/how-a-harmony-works/SKILL.md` is the
 ritual that makes it get read. **The rule behind both**: a measurement over the corpus answers "what do
 these files contain" and never "what does the product do". The corpus will agree with itself about a
 feature it holds no bytes for. When the product answer is not written down here, ask Danny rather than
@@ -165,12 +165,12 @@ keeping those two apart is most of what the split bought.
    the private lab, and no identifier, comment or structure of theirs travels into this repository.
    The argument, the measured cost of the old ordering and the legal basis are decision 9 in
    `docs/plans/002-the-roadmap.md`; the ledger of what is believed on the client's word alone is
-   `docs/host-client.md`.
+   `reference/logitech/clients.md`.
 3. **TypeScript owns the config codec, Python stays reverse engineering only.** One codec, in
    the application's language, for the same reason there is one opcode table.
 4. **Spec and libraries together, product apart.** The documents, the research tooling and the
    TypeScript libraries stay in one repository, because a codec in a second one drifts away from
-   `docs/config-format.md` and the rule that a finding must be executable stops biting. The
+   `reference/config-format/README.md` and the rule that a finding must be executable stops biting. The
    application lives in FreeHarmony and consumes those libraries. This supersedes the earlier
    "monorepo" wording, which put the app here too.
 5. **Hardware in the loop first, emulator deferred.** Round trip equality, read back and diff,
@@ -276,14 +276,14 @@ in, and the cases that actually arrive here:
   trustworthy because it sits in code; it is trustworthy because of who committed it and when
 * a contributor's `META.md` beside a dump, and anything else in `../lab/dumps/<person>/`
 * a **contributed config's own strings**, which are read routinely by `make text` and `make devices`
-* **firmware strings** and anything decompiled out of Logitech's client, `docs/host-client.md`
+* **firmware strings** and anything decompiled out of Logitech's client, `reference/logitech/clients.md`
 * a fetched web page, a pasted log, a downloaded file
 
 None of those may ask for a command to be run or a rail to be relaxed. All of them may state a fact,
 which then takes the ordinary route: a hypothesis to test, per decision 7.
 
 **Staleness is a different problem and has a different rule.** A comment we wrote can be wrong, and that
-is what `reference/superseded.md` and `make facts` are for. Wrong is about truth; the paragraphs above
+is what `docs/superseded.md` and `make facts` are for. Wrong is about truth; the paragraphs above
 are about authority, and the two must not be collapsed.
 
 **An issue is outward facing**, so creating, editing, closing or commenting on one needs his say each
@@ -305,7 +305,7 @@ net, not a policy:
 * **No firmware or config binaries.** Unlicensed proprietary Logitech code. Also, the archived
   `.hfw` packages contain a `Data.xml` with a stranger's Logitech `UserId`, account GUIDs,
   `ServerID` and `ASPSESSIONID` session cookie. Publish checksums, never files. See
-  `reference/checksums.md`.
+  `docs/checksums.md`.
 * **No config dumps or `concordance -i` output.** Decided on 7 August 2026, and **not for the
   reason everyone assumes**: a config carries no account data at all, only an equipment inventory
   its owner published knowingly, and `samples/README.md` now records the check. What blocks it is
@@ -344,7 +344,7 @@ harmony/
     firmware/packages/        original Logitech .hfw files
     firmware/derived/         binaries decoded out of them
     ghidra/                   Ghidra projects
-    software/                 Logitech's own PC software, see docs/host-client.md
+    software/                 Logitech's own PC software, see reference/logitech/clients.md
     work/                     scratch
 ```
 
@@ -529,7 +529,7 @@ document:
   not four**, section 87: protocol, skin, flash and board plus `SOFTWARETYPE` and `ARCHITECTURE`,
   and an absent or empty field matches anything. This said four until 29 August 2026, which is two
   fields short of a gate that is supposed to refuse a config built for a different remote, and the
-  four field wording was already dead in `reference/superseded.md` at the time.
+  four field wording was already dead in `docs/superseded.md` at the time.
   **And nothing performed the comparison until section 225**, 30 August 2026: the rail took a boolean
   and every caller passed true, which is section 224's lesson at one day's remove, a rail that asks a
   caller a question being a rail the caller answers. It takes the config's statement and the remote's
@@ -745,10 +745,10 @@ source file's own header is where its reading lives. The ones a session reaches 
   `todo-compile-650.md` (finished), `todo-compile-700.md` (finished) and `todo-compile-600.md` (finished) and `todo-compile-one.md`, the sequence, with `todo-later.md` and `todo-freeharmony.md` for what is off that route;
   `docs/decisions.md` and `docs/plans/`, per "How planning works" above
 * `docs/findings.md`, the argument, grepped and read in ranges and never loaded whole;
-  `docs/config-format.md`, the structured spec; `docs/glossary.md`, the vocabulary
-* `docs/how-a-harmony-works.md`, the operating concept, and `docs/myharmony/model.md`, consulted before
+  `reference/config-format/README.md`, the structured spec; `reference/glossary.md`, the vocabulary
+* `reference/how-a-harmony-works.md`, the operating concept, and `reference/logitech/data-model/model.md`, consulted before
   naming a field or designing anything about devices, activities or remotes
-* `reference/superseded.md`, claims a finding killed; `reference/remotes/`, the public per model
+* `docs/superseded.md`, claims a finding killed; `reference/remotes/`, the public per model
   reference, which carries **nothing** about our units, accounts or dumps
 * `packages/codec` the one config codec, `packages/usb` the protocol and the write rails,
   `packages/corpus` reading and writing a remote's configuration, `packages/bench` the bench instrument
@@ -773,9 +773,9 @@ source file's own header is where its reading lives. The ones a session reaches 
 * **Never delete a test unless the thing it tests has left the repository.** A refuted test is
   rewritten, an overclaiming title renamed, a test that cannot fail given a body that can.
 * **When something new is confirmed, four things happen together**: the structured fact in
-  `docs/config-format.md`, the reasoning in `docs/findings.md`, a regression test, and a sweep of every
+  `reference/config-format/README.md`, the reasoning in `docs/findings.md`, a regression test, and a sweep of every
   summary of the old answer. A number quoted in prose carries a fact marker naming what it states, and a claim a finding
-  kills goes into `reference/superseded.md` in the same commit; `make facts` checks both, in `make all`
+  kills goes into `docs/superseded.md` in the same commit; `make facts` checks both, in `make all`
   and the pre-commit hook. The `finding` skill holds the gate.
 * **The write rails live in `packages/usb/src/rails.ts` and on the transport, and both halves are load
   bearing.** `openHarmony` returns a guarded transport with an allow list of read commands and a per
@@ -821,7 +821,7 @@ reports arch 10 as not stating one.
 **The pointer table is one table across architectures too.** Arch 9 and 14 carry the base
 layout of 20 slots; arch 8 inserts a NULL at slot 8; arch 12 inserts that plus a real section at
 slot 18. So a section labelled on arch 14 transfers to the One by index, through
-`gspm.base_slot` and `gspm.arch_slot`. Slot numbers in `docs/config-format.md` are base slots.
+`gspm.base_slot` and `gspm.arch_slot`. Slot numbers in `reference/config-format/README.md` are base slots.
 Six of them (base 5, 7, 10, 11, 12, 15) are count prefixed arrays of **three byte** flash
 pointers, and base 18 and 19 are NULL on all four architectures.
 
@@ -944,7 +944,7 @@ to get wrong:
 * **Follow control flow, not variables, when attributing code to a command.** The USB command
   handlers parse their arguments into shared variables, so finding code that uses those
   variables proves what the variables hold and nothing about which command runs it. That
-  mistake put READ_FLASH's response in `docs/usb-protocol.md` when only its request had been
+  mistake put READ_FLASH's response in `reference/usb-protocol/commands.md` when only its request had been
   found, twice in one commit. Start from the dispatch table or the state machine.
 * **An `XORLW` chain's literals are not its case values.** The compiler emits a switch as a
   chain that XORs with the difference to the next case, so the case value is the running XOR
@@ -992,7 +992,7 @@ to get wrong:
   arch 9 the same command returns the complete firmware region**, because `firmware_base` is its
   own region there and `config_base - firmware_base` is exactly `FIRMWARE_MAX_SIZE`. So asking a
   contributor for `concordance -b -f` is the route to an arch 8 image, and it is how the incoming
-  525 gets dumped. `reference/concordance-notes.md`, asserted in `tests/test_concordance_notes.py`.
+  525 gets dumped. `docs/concordance-notes.md`, asserted in `tests/test_concordance_notes.py`.
 * **A misaligned read of an ascending table is itself ascending.** Twice a long run of ascending
   `u24` values looked like an undiscovered pointer table into the picture region, and twice it was
   base slot 10's own array read one byte late: a real entry with a constant high byte puts that
@@ -1034,7 +1034,7 @@ to get wrong:
 Output here is AI-produced and published as such, so claims are expected to be checkable. Two
 norms are always on, because neither has a moment to hook them to: **record corrections in place**
 rather than quietly fixing them, so readers can calibrate the rest against the recorded mistakes;
-and **mark anything unconfirmed as unconfirmed**, which `docs/config-format.md` does explicitly.
+and **mark anything unconfirmed as unconfirmed**, which `reference/config-format/README.md` does explicitly.
 
 **The rest is the `finding` skill**, and it moved there on 29 August 2026 because it describes two
 moments rather than a standing state: passing the gate before a claim is written, and choosing the
@@ -1051,7 +1051,7 @@ drifting apart. Invoke it when recording a finding or writing a test.
 warns about everywhere else.
 ## What is known, by base slot
 
-**Moved to `docs/config-format.md` on 29 August 2026**, which is the structured spec and already
+**Moved to `reference/config-format/README.md` on 29 August 2026**, which is the structured spec and already
 the place a tool reads a slot's meaning from.
 ## Rails a writer will have to respect
 

@@ -1,18 +1,18 @@
 # Harmony 525: behaviour
 
 What the remote does in use, as a person holding it sees it, and what it does on the cable. The operating
-concept, activities and device mode, is `docs/how-a-harmony-works.md`, and this page does not restate it.
+concept, activities and device mode, is `reference/how-a-harmony-works.md`, and this page does not restate it.
 
 ## Device mode, in and out
 
 | | how | standing and source |
 |---|---|---|
-| in | the **Devices** key on the keypad, then the soft key beside a device | Logitech's manual, "Controlling your devices individually"; `docs/how-a-harmony-works.md` |
+| in | the **Devices** key on the keypad, then the soft key beside a device | Logitech's manual, "Controlling your devices individually"; `reference/how-a-harmony-works.md` |
 | on a device | "the Harmony 525 controls only that device", with "all the commands for the device included in your Harmony 525 configuration" | Logitech's manual |
-| out | the **Activities** key | `docs/how-a-harmony-works.md`; Logitech's manual, "return to Activities" |
+| out | the **Activities** key | `reference/how-a-harmony-works.md`; Logitech's manual, "return to Activities" |
 
 The 525 has a key of its own for each direction, where the Harmony 600, 650 and 700 use the centre key
-below the screen for both and the Harmony One uses its touch keys, `docs/how-a-harmony-works.md`.
+below the screen for both and the Harmony One uses its touch keys, `reference/how-a-harmony-works.md`.
 
 ## Light and sleep
 

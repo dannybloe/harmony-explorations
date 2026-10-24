@@ -1,5 +1,5 @@
 """
-Regression tests for `reference/concordance-notes.md`.
+Regression tests for `docs/concordance-notes.md`.
 
 The note describes a defect in someone else's source tree, which makes it the claim in this
 repository least able to defend itself: nothing here fails when concordance changes, and nothing

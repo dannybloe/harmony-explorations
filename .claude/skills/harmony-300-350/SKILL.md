@@ -23,7 +23,7 @@ In this order, every time, including in an agent:
    conversation say "the Harmony 300" or "the Harmony 350", never the bare architecture number.
 2. `reference/remotes/harmony-300/README.md` or `reference/remotes/harmony-350/README.md`, or both: the
    key numbers and the map of each model's nine topic files.
-3. `docs/how-a-harmony-works.md` when the task touches what the remote does for a person: on these two a
+3. `reference/how-a-harmony-works.md` when the task touches what the remote does for a person: on these two a
    device key **is** device mode, and neither has a screen.
 
 **When the reference does not answer a question about the remote, ask** before designing around the gap,
@@ -46,7 +46,7 @@ silence about favourite channels was read as their absence.
 ## 3. Reading a configuration off one
 
 1. **Write the predictions down and commit them before the read**, as the earlier reads of this
-   family were, `docs/predictions-arch16-*.md`. A read whose expectation was written afterwards cannot refute
+   family were, `docs/predictions/harmony-3*.md`. A read whose expectation was written afterwards cannot refute
    anything.
 2. **Identify the unit first**, read only:
 
@@ -80,7 +80,7 @@ and should say so in its own header, since there is no screen to confirm a step 
 | the drawings | `packages/silhouettes/src/models/h300.ts` and `h350.ts`, rendered into `reference/silhouettes/` |
 | the transport | `packages/usb/src/filepipe.ts`, with `INERT_PATHS` |
 | the read scripts | `packages/usb/bin/read-file.ts` and `read-file-identity.ts` |
-| the predictions | `docs/predictions-arch16-*.md` |
+| the predictions | `docs/predictions/harmony-3*.md` |
 | the configurations read so far | the lab's `reads/` and `dumps/`, named in `packages/lab` and `tests/lab.py` as `h350_config`, `h350_programmed_config`, `h350_three_devices_config`, `h300_config` and `h300_programmed_config` |
 | the firmware image | the lab's `firmware/`, named `h350_code` and `h350_package` in `packages/lab` |
 

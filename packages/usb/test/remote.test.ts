@@ -202,7 +202,7 @@ const FLASH_DONE = report(0xf0, READ_FLASH);
 test('a flash read assembles its chunks and encodes its request', async () => {
   // **This used to script a full final chunk and assert the surplus was dropped**, on the comment
   // "the remote sends 63 byte chunks, the last one overshoots the request". The device does not:
-  // `docs/usb-protocol.md` records 256 requested and 256 delivered as 62+62+62+62+6+2, measured on
+  // `reference/usb-protocol/commands.md` records 256 requested and 256 delivered as 62+62+62+62+6+2, measured on
   // hardware, so the final chunk is short and its length nibble says so. The fixture was an
   // assumption written as evidence, contradicted by a measurement already in the repository, and it
   // is what let `Math.min` discard a surplus in silence. Section 139.

@@ -39,7 +39,7 @@ The `finding` skill says the same thing at the point where it bites.
 
 **Superseded claims.** The other five were assertions a later finding falsified, corrected in
 `findings.md` in place but left standing in the summaries: that `MCU_ID` was reachable, that arch 9
-had no picture region, that no further reader would move the coverage. `reference/superseded.md`
+had no picture region, that no further reader would move the coverage. `docs/superseded.md`
 lists the dead phrasings; this fails if one appears in a document without a correction marker
 beside it, which is what the house convention already asks a correction to carry.
 
@@ -59,7 +59,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.abspath(os.path.join(HERE, '..'))
-SUPERSEDED = os.path.join(ROOT, 'reference', 'superseded.md')
+SUPERSEDED = os.path.join(ROOT, 'docs', 'superseded.md')
 
 # A marked value: the number, then the comment naming what it states.
 MARKER = re.compile(r'([0-9][0-9,.]*%?)<!--fact:([a-z0-9_]+)-->')
@@ -200,7 +200,7 @@ def emit_facts():
 
 
 def growth_facts():
-    """What a length change would move, corpus wide. `docs/growing-a-config.md` quotes these.
+    """What a length change would move, corpus wide. `reference/config-format/relocation.md` quotes these.
 
     Shelled out for the reason the two above are: `packages/codec/src/growth.ts` is the one census
     of a container's addresses, and a second count here would be free to disagree with it.
@@ -421,7 +421,7 @@ def corpus_facts():
 
 
 def parseable_facts():
-    """The population `docs/config-format.md` quotes about odd bodies, and why it is its own fact.
+    """The population `reference/config-format/container.md` quotes about odd bodies, and why it is its own fact.
 
     The odd body sentence said "19 of the 33 parseable containers" while the test said 21 of 39 and
     then 22 of 41: it had drifted through two sample additions because it carried no marker, found on
@@ -522,7 +522,7 @@ def protocol_facts():
 
 
 def user_config_facts():
-    """The totals `docs/config-format.md` quotes over `lab.USER_CONFIGS`, the fifteen user configs.
+    """The totals `reference/config-format/` quotes over `lab.USER_CONFIGS`, the fifteen user configs.
 
     **Every one of these had drifted**, and section 140 is the write up. The document said "ten
     configs across four architectures" in 23 places while the lab held fifteen, because eight test
@@ -576,7 +576,7 @@ def user_config_facts():
 
 
 def superseded_phrases():
-    """The dead phrasings, read from the table in `reference/superseded.md`."""
+    """The dead phrasings, read from the table in `docs/superseded.md`."""
     if not os.path.exists(SUPERSEDED):
         return []
     out = []

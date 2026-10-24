@@ -7,7 +7,7 @@ bench. Every fact that bore on the question was already somewhere in this reposi
 document each time.
 
 **This is a reference and not a derivation.** The arguments live where they always have, in
-`docs/findings.md`, the memory maps, `docs/usb-protocol.md` and the code, and a folder here links to
+`docs/findings.md`, the memory maps, `reference/usb-protocol/README.md` and the code, and a folder here links to
 them with one sentence of what they say. Where a fact is long, the link is the fact and the sentence is
 a summary of it. Two copies of a derivation is the state this repository refuses everywhere else, and a
 reference that restated the findings would be the largest such copy it had.
@@ -59,7 +59,7 @@ A row or a sentence says where the fact came from and how strong it is, in one o
 | **read in the firmware** | from the disassembled image, with the image named. What the code does, not proof the hardware does it |
 | **Logitech's manual** | the user manual for that model, in the lab's `Docs/`. The vendor's word, sometimes about a different software generation |
 | **Logitech's service** | stated by their live service, usually a product record. The vendor's word, current |
-| **Logitech's client** | from their decompiled desktop client, `docs/host-client.md` |
+| **Logitech's client** | from their decompiled desktop client, `reference/logitech/clients.md` |
 | **third party** | the comparison table at harmony-remote-forum.de, `reference/capabilities.md`, or another outside source. A hypothesis |
 | **not checked** | nobody has established it. Written out on purpose |
 
@@ -103,16 +103,6 @@ fails the check before that.
 
 The names are `remote-reference` rather than `remotes` because `make remotes` already lists the
 remotes attached to this machine.
-
-## Adding a model
-
-1. Make `reference/remotes/harmony-<model>/` with the same ten files, copying the headings of an
-   existing folder.
-2. Add the model to `REMOTES` in `packages/silhouettes/bin/remotes.ts`: its skins, the drawing it
-   uses and its architecture. A model with no drawing of its own uses its sibling's where the project owner or the
-   manual says the face is shared, and says so in `keys.md`.
-3. Put the markers where the generator expects them and run `make remote-reference-write`.
-4. If its architecture has no folder yet, add one and a row in `ARCHITECTURES`.
 
 ## What this does not replace yet
 

@@ -25,7 +25,7 @@ function defaultLab(): string | undefined {
 export const LAB: string | undefined = process.env['HARMONY_LAB'] || defaultLab();
 
 /**
- * Logical name to filename, as named in `reference/checksums.md`.
+ * Logical name to filename, as named in `docs/checksums.md`.
  *
  * Kept in step with `IMAGES` in `tests/lab.py`; `packages/lab/test/parity.test.ts` fails if the
  * two drift apart, which is cheaper than discovering a missing golden vector months later.
@@ -694,7 +694,7 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // container reader and a frame decoder, and only TypeScript has the second.
   account_commands: 'GetCommands_mine.json',
   // Not an image and not a config: Harmony Desktop's whole hosted client, mirrored on 9 August 2026.
-  // The service API surface in `docs/host-client.md` is extracted from it by
+  // The service API surface in `reference/logitech/service.md` is extracted from it by
   // `tests/test_host_client.py`. Nothing in TypeScript reads it, and it is here because the two
   // tables are asserted equal: a fixture on one side only is the drift this parity test exists for,
   // and it caught exactly that on the day this entry was added.
@@ -886,7 +886,7 @@ const SCRATCH = 'work';
  * resolve twice today, `h600_code_complete` to `firmware/derived/` and to `work/`, and
  * `desktop_webapp_main` to its own directory and to a mirror seven levels down, and in both cases the
  * traversal order handed back the copy. The bytes are identical in both pairs, measured, so nothing
- * was wrong and nothing would have said so if a `work/` copy were edited: `reference/checksums.md`
+ * was wrong and nothing would have said so if a `work/` copy were edited: `docs/checksums.md`
  * claims provenance for a file that was not the one read. Section 139.
  */
 function rank(path: string): [number, number, string] {

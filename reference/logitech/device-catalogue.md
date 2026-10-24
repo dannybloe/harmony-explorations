@@ -3,7 +3,7 @@
 What a product offered its users is a fact about that product, so the **names** are here. The drawings
 are not and never will be: they are Logitech's artwork, pure expression, in the same class as firmware
 and configuration binaries, and several of them are third party logos. They stay in the lab, catalogued
-in `reference/lab-register.md`. Section 216.
+in `docs/lab-register.md`. Section 216.
 
 ## The finding that matters to FreeHarmony
 

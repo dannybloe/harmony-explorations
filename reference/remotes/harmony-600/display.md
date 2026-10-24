@@ -36,7 +36,7 @@ From Logitech's manual, pages 6 and 7, "What's on the Harmony 600's screen":
 
 * **An activity's commands**, beside the side keys, paged with the arrows below the screen.
 * **A device list** under the centre key's "Devices", four devices to a page, one in each corner,
-  `docs/how-a-harmony-works.md`. The manual's own picture shows the list with "Activity" written at the
+  `reference/how-a-harmony-works.md`. The manual's own picture shows the list with "Activity" written at the
   bottom. A second, two row device list is compiled into every configuration of this architecture and
   nothing on the remote opens it; on the 600 its pages draw a single dashed line where the 650 and 700
   draw a cross, section 285 and section 326.
@@ -70,7 +70,7 @@ showing shades between black and white, section 387.
 ## What the screen does not show
 
 **No clock.** The ordinary screen of the Harmony 600, 650 and 700 has no time on it, seen at the bench
-on 4 October 2026, `docs/how-a-harmony-works.md`. The 0.2 build keeps the clock in the first seven state
+on 4 October 2026, `reference/how-a-harmony-works.md`. The 0.2 build keeps the clock in the first seven state
 variables, read in the firmware, `docs/memory-map-600.md`, so a clock on this model is checked by
 reading memory over USB, never by looking.
 

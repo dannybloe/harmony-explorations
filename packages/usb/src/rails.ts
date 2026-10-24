@@ -249,7 +249,7 @@ export const WRITABLE_CEILING: Readonly<Record<number, number>> = {
  *
  * **Provenance is not the same as `WRITABLE_CEILING`'s, and this said it was.** That one was adopted
  * from the client and then **measured on two Harmony Ones**, section 88. This one is still the
- * client's word alone: `docs/host-client.md` says so, and the firmware argument sometimes offered
+ * client's word alone: `reference/logitech/clients.md` says so, and the firmware argument sometimes offered
  * for it establishes a 64 KiB **addressing window** rather than the chip's erase sector, which are
  * different quantities. The direction is still safe, since a rail built on a block size only ever
  * refuses more addresses than a smaller true block would require. What it did **not** protect was

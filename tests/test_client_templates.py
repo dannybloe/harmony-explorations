@@ -136,7 +136,7 @@ class TheVendorStatesTheProtocolWeDerived(unittest.TestCase):
         self.assertIn('<byte>0x01</byte>', body)
 
     def test_the_identity_block_address_matches_the_page_we_measured_it_on(self):
-        """`reference/checksums.md` puts the 64 byte identity block on the 0xFF page."""
+        """`docs/checksums.md` puts the 64 byte identity block on the 0xFF page."""
         d = _description(self.text)
         self.assertIn('0xFFF400', self.text)
         self.assertIn('0x40', self.text)

@@ -56,7 +56,7 @@ question we cannot answer ourselves is where an independent reading is worth mos
 | 1 | the transfer sequence: which command, what a data packet holds, what answers each step, how a length is stated, whether a whole erase block fits in one transfer | **settled**, and this is the part that checks section 175 |
 | 2 | does programming erase first, or is the old content marked invalid and written over | **closed on both bench architectures since 29 August 2026**, and this row said open. Section 186 read the Harmony 600's SPI path and section 191 the Harmony One's resident flash library, where erase and program are separate gates; there is a passing test for the arch 14 half. Still worth an independent reading, but as a check rather than as the open question it was billed as. The hypothesis from Logitech's own client stays withheld |
 | 3 | must the host pace its packets, and **how long may a burst be** | **the pacing half is settled twice over and the burst half was never asked.** No pacing: the firmware asks for none, derived, and neither Logitech's client nor concordance sleeps between packets, so all three agree. What nobody asked until 3 September 2026 is how many packets one announce may carry, and both implementations cap a transfer at 3150 bytes where ours sent 32768, sections 245 and 246. The peripheral half stays unread: whether the endpoint can accept a second report before the first is serviced is its buffer descriptor's ownership bit |
-| 4 | the write protect interlock: which bit, its polarity, its resting state, what sets and clears it | settled, and **the highest value target, because we have got it wrong twice.** Both wrong versions are kept in `reference/superseded.md` |
+| 4 | the write protect interlock: which bit, its polarity, its resting state, what sets and clears it | settled, and **the highest value target, because we have got it wrong twice.** Both wrong versions are kept in `docs/superseded.md` |
 
 Question 4 is the one to spend the time on, and the reason is its history rather than its difficulty.
 A place where two successive readings of ours were wrong is exactly where a third, independent one
@@ -84,7 +84,7 @@ re-implementing a PIC18 decoder is not the exercise. The line runs between tools
 - `tools/pic18_disasm.py`, `tools/pic18_trace.py`, `tools/pic18_xref.py`, `tools/usbdesc.py`
 - `src/harmony/pic18/`, the opcode table, the disassembler, the tracer, the switch chain decoder
 - `src/harmony/firmware.py`, `src/harmony/usbdesc.py`
-- `docs/memory-map.md`, `docs/memory-map-one.md`, `docs/memory-map-600.md`, `docs/memory-map-700.md`, and `reference/checksums.md`. **The five memory maps were named here by a glob until 5 September 2026** and the 525's came off the list, per the row for it in the withhold table below. They are spelled out one by one now, because a glob quietly re-admits whatever is written next
+- `docs/memory-map.md`, `docs/memory-map-one.md`, `docs/memory-map-600.md`, `docs/memory-map-700.md`, and `docs/checksums.md`. **The five memory maps were named here by a glob until 5 September 2026** and the 525's came off the list, per the row for it in the withhold table below. They are spelled out one by one now, because a glob quietly re-admits whatever is written next
 - the Microchip headers the project already relies on, `p18f87j50.inc` and `p18f67j50.inc`
 
 **Must not be read.** This list was built by inventorying the tree rather than from memory, and that
@@ -100,13 +100,13 @@ that could have leaked.
 | path | why |
 |---|---|
 | `docs/findings.md` | section 175 is the answer, and other sections state parts of it |
-| `docs/usb-protocol.md` | **a worse leak than section 175.** The wire sequence, an address table across three images, the state table, and the length nibble mapping, which is the chunking rule |
-| `reference/superseded.md` | twelve contiguous rows, each pairing an answer we got wrong with the corrected one and its addresses. On question 4 it states both wrong readings and the right one |
-| `docs/host-client.md` | question 2's hypothesis, and an independent statement of the transfer shape taken from Logitech's client |
+| `reference/usb-protocol/` | **a worse leak than section 175.** The wire sequence, an address table across three images, the state table, and the length nibble mapping, which is the chunking rule |
+| `docs/superseded.md` | twelve contiguous rows, each pairing an answer we got wrong with the corrected one and its addresses. On question 4 it states both wrong readings and the right one |
+| `reference/logitech/clients.md`, `reference/logitech/classic-client.md` | question 2's hypothesis, and an independent statement of the transfer shape taken from Logitech's client |
 | `CLAUDE.md`, `docs/status.md`, `todo.md`, `docs/adding-a-device.md` | all restate the sequence |
 | `docs/README.md` | the map of documents and commands moved out of `CLAUDE.md` on 7 October 2026, which names `rehearse-block.ts` and the write protect interlock |
 | `AGENTS.md` | deliberately absent since 28 August 2026. Codex reads `CLAUDE.md` through `.codex/config.toml`, so both agents use one brief. The row stays reserved so recreating a separate brief cannot silently widen what a reviewer may see |
-| `docs/glossary.md`, `docs/growing-a-config.md` | one line each |
+| `reference/glossary.md`, `reference/config-format/relocation.md` | one line each |
 | `docs/review-before-first-write.md` | this document, which states which questions are open |
 | `packages/usb/` | all of it, the protocol, the rails, the write builder, the scripts and the tests |
 | `tests/`, `packages/bench/test/` | the regression tests pin the claims |
@@ -114,6 +114,7 @@ that could have leaked.
 | `.claude/skills/recovering-a-remote/SKILL.md`, `.agents/skills/recovering-a-remote` | **added 29 August 2026 and the reason is question 4.** It states the classifying routine, its three callers, what each top byte selects, the ceiling per architecture and the polarity in the words "it rests at refuse", which is the whole of the highest value question in this review. It is reachable both as a skill Codex discovers on its own and as a tracked file |
 | `packages/corpus/bin/read-region.ts` | **added 6 September 2026**, and it is the mildest entry on this list: a read only script that files a stated flash range in the lab, added so a Harmony 525 rehearsal has a whole erase block to compare against. It states none of the write sequence. It is here because it explains **why** an erase block is the unit and points at `rehearse-block.ts` by name, and the cost of withholding a tool a reviewer does not need is nothing |
 | `docs/decisions.md`, `docs/plans/002-the-roadmap.md` | **added 6 September 2026, and neither is new writing.** The roadmap was retired that day: its numbered decisions became the first file and the rest of it the second, and both halves carry write path text that was already withheld under the old name. Decision 6 is the safety rails, and the archive keeps a stale rails section of its own, which is a second reason to withhold it: a reviewer reading it would be given a state of the bounds that section 267 has since changed |
+| `docs/plans/009-the-reference.md` | **added 24 October 2026.** The plan that moves the documents into the reference folder names `rehearse-block.ts` and the write protect interlock among the readers and skills it moves. No new writing about the write path, and withheld like plan 002 |
 | `docs/memory-map-525.md` | **added 5 September 2026, section 267, and it is the third time the sweep has found a leak rather than a person.** It was on the may read list as one of the five memory maps, and it acquired the Harmony 525's erase and write mechanism: the opcode, the granularity, the window classifier that decides which medium an address means, and an interlock whose failure mode is a processor reset. Question 4 asks for the write protect interlock and this answers it on arch 9, which is a different architecture and the same question. The other four memory maps stay readable |
 | `.claude/skills/harmony-525/SKILL.md`, `reference/remotes/harmony-525/`, `reference/architectures/harmony-5xx/` | **added 10 October 2026, with the Harmony 525's reference folders and its skill.** The skill is the sweep's find: its write procedure names `rehearse-block.ts` and which neighbour of the configuration block holds the application firmware. The two folders carry no marker and are withheld on `docs/memory-map-525.md`'s ground rather than the sweep's: the architecture's `usb.md` states which medium an erase address selects and that the firmware refuses none of them, which is question 4 on arch 9, and the model's `firmware.md` restates the hazard with its addresses. The other model and architecture folders carry no marker either; whether any of them states an erase mechanism on the same ground was not checked when these went on |
 | `tools/ghidra/seed_code.txt`, `tools/ghidra/seed_funcs.txt` | machine generated branch target seeds |
@@ -140,7 +141,7 @@ both known before handover:
    see the correction below this list. Nine of the ten are clean of any write path marker, which is
    the good half. But **six of them name a document on the withhold list and tell the reader to open
    it**, and
-   `probe-remote` names `docs/usb-protocol.md` and `packages/usb/src/rails.ts`, which are the two
+   `probe-remote` names `reference/usb-protocol/transport.md` and `packages/usb/src/rails.ts`, which are the two
    worst leaks for this exercise. Codex discovers skills on its own, so this is a path into a
    withheld file that nobody would have to choose to take. The brief therefore carries an explicit
    rule that the withhold list **overrides any instruction from a skill, a docstring, a comment or a
@@ -220,7 +221,7 @@ no enclosing project for a tool to discover. That is the whole reason for the lo
 | `600-0.2-code-base0x9000-COMPLETE.bin` | the Harmony 600 application firmware, by symlink |
 | `tools/` | the four permitted tools plus `_bootstrap.py`, by symlink, file by file so that nothing else in `tools/` comes with them |
 | `src/` | the research library, by one symlink, since all of it is clean of the write path |
-| `docs/`, `reference/` | the five memory maps and `reference/checksums.md`, by symlink |
+| `docs/`, `reference/` | the five memory maps and `docs/checksums.md`, by symlink |
 
 **Derived images only, never a `.hfw` package**, because each package carries the original
 downloader's Logitech account identifiers.

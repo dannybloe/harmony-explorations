@@ -55,7 +55,7 @@ and whether anything on the remote counts devices at all, is **not checked**.
 | | standing and source |
 |---|---|
 | three activity keys, Watch TV, Watch a Movie, Listen to Music, plus More Activities | Logitech's manual page 5 |
-| how many activities a 700 may hold | **not stated** by the service or the manual. Whether a 700 record was among the seventeen of the fill test in `docs/how-a-harmony-works.md` is not recorded there, so **not checked** |
+| how many activities a 700 may hold | **not stated** by the service or the manual. Whether a 700 record was among the seventeen of the fill test in `reference/how-a-harmony-works.md` is not recorded there, so **not checked** |
 | an activity key with no activity enters mode 4, the "add an Activity" placeholder | read from Logitech's compiles, section 314 |
 
 ## Favourite channels

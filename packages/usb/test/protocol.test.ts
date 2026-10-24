@@ -345,7 +345,7 @@ test('the command states are the ones the firmware sets', () => {
 });
 
 /**
- * Consistency with a client sourced account of the learn session, `docs/host-client.md`.
+ * Consistency with a client sourced account of the learn session, `reference/usb-protocol/commands.md`.
  *
  * These do **not** assert the client is right, which rule 2 of that document forbids. They assert
  * that what this project derived from firmware is consistent with it, which is a different claim
@@ -383,7 +383,7 @@ test('nothing in the library can send a misc write with any selector but RAM', (
 });
 
 /**
- * More consistency checks against the same client, `docs/host-client.md`. Again these assert what
+ * More consistency checks against the same client, `reference/usb-protocol/version-block.md`. Again these assert what
  * this project derived, not what the client says, and the interesting one is the disagreement.
  */
 test('the version fields we derived are the ones the client reads, in order', () => {
@@ -406,7 +406,7 @@ test('the version fields we derived are the ones the client reads, in order', ()
 
 test('the whole block reads back as the three bench remotes reported it', () => {
   /**
-   * The reading of `docs/usb-protocol.md` section 4, as one assertion per architecture.
+   * The reading of `reference/usb-protocol/version-block.md`, as one assertion per architecture.
    *
    * Three literals, and each is a **measurement**: the Harmony 600 was read live, the Harmony One's
    * first six bytes were written down as a prediction from it and then confirmed, and the Harmony 525
@@ -480,7 +480,7 @@ test('the whole block reads back as the three bench remotes reported it', () => 
 });
 
 test('safe mode is the one software type a remote here has ever reported besides application', () => {
-  // Predicted in `docs/usb-protocol.md` before anyone tried it, `0xC4` for a Harmony One and `0xE4`
+  // Predicted in `reference/usb-protocol/version-block.md` before anyone tried it, `0xC4` for a Harmony One and `0xE4`
   // for a Harmony 600, and then met on a stranded Harmony 525, section 118. The names are Logitech's
   // own, from their firmware packages and their client, which agree on all five.
   const stranded = Uint8Array.from([0x30, 0x25, 0x12, 0xff, 0x94, 0x16, 0x00]);
@@ -492,7 +492,7 @@ test('safe mode is the one software type a remote here has ever reported besides
   // platform cannot be used to tell what is running.
   assert.equal(reading.platform, 0);
 
-  // All five of Logitech's own values are named, which is the claim `docs/usb-protocol.md` makes:
+  // All five of Logitech's own values are named, which is the claim `reference/usb-protocol/version-block.md` makes:
   // their firmware packages and their client name the same five and agree on every one. Two of the
   // five have been seen on a remote here and the other three are their word alone, which is why they
   // are a table of names and nothing here branches on them.
@@ -516,7 +516,7 @@ test('every named field has a name and every unnamed one does not, which is the 
   // The table moved here from `packages/bench` on 21 August 2026, where it was the only place the
   // block was labelled and had carried a wrong claim about field 6 for a month. Exact counts, not a
   // floor: nine named and three not, out of twelve. The three are fields 7, 10 and 11, which
-  // `docs/usb-protocol.md` places and this table deliberately does not label, because a value that
+  // `reference/usb-protocol/version-block.md` places and this table deliberately does not label, because a value that
   // names an **image inside a remote** is not a fact about the remote and a screen would read it as
   // one. Nine was measured rather than counted by eye, which is the house rule and the reason this
   // said seven for a minute.

@@ -56,7 +56,7 @@ checked**.
   devices ... After you select a device, the Harmony 525 controls only that device. You have access to all
   the commands for the device included in your Harmony 525 configuration", Logitech's manual,
   "Controlling your devices individually". The way back is the Activities key,
-  `docs/how-a-harmony-works.md`.
+  `reference/how-a-harmony-works.md`.
 * **How many activities a 525 holds** is **not stated** by the manual and not checked.
 * **Smart State Technology**: the remote tracks which devices are on, and the Help key's questions put it
   back in step, Logitech's manual.

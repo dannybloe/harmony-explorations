@@ -14,29 +14,12 @@ page says what is true today, and neither restates the other. Where a number app
 the twelfth.
 
 For the argument behind any claim here, [findings.md](findings.md) is authoritative and numbered by
-section. For the format as a specification, [config-format.md](config-format.md).
+section. For the format as a specification, [reference/config-format/](../reference/config-format/README.md).
 
 ## Status
 
-The work targets three architectures. **Nine remotes are on the bench**, and this list is the
-hardware, not the model families: two Harmony Ones, a Harmony 600, a Harmony 525, since 27 August
-2026 a Harmony Touch, a Harmony 350 and a Harmony 300, since 27 September 2026 a Harmony 650, and since
-29 September 2026 a Harmony 700. This said seven until 9 October 2026, two units short, the same count
-`CLAUDE.md` had corrected for itself. The last three are the file based family and
-are **not targets** for the config work: `openHarmony` refuses them by product id
-rather than by accident, section 193. What they have bought so far is the reading of the descriptor
-field that names a model, section 195, the route to their firmware, section 196, and their whole
-protocol as Logitech specifies it, section 198. **There is an implementation now and it has read a
-remote**, sections 200 and 201: `packages/usb/src/filepipe.ts`, and a Harmony Touch's `/sys/sysinfo`
-opened, read and closed on the bench, 234 bytes in fourteen fields including the architecture the
-remote states for itself. This paragraph called it a specification and not an implementation until
-29 August 2026. Reading that identity is four commands, ping, open, read and close, and none of them
-writes, so `openHarmony`'s refusal is about what has been built for the **config** path rather than
-about what is reachable at all. Other models
-appear throughout this page as firmware images or contributed configurations, and the Harmony 700 is
-the one that gets mistaken for hardware, because it is the best mapped arch 14 image and is quoted
-constantly. **A Harmony 700 unit has been on the bench since 29 September 2026**, and this said there
-had never been one until 9 October 2026.
+The work targets three architectures. The units on the bench are listed in
+[test-notes/README.md](test-notes/README.md).
 
 * **arch 12** ("Gin"), the Harmony One, and the spare Harmony One, one of the **three** units anything
   may be written to. This said it was "the only unit anything may ever be written
@@ -269,7 +252,7 @@ which is a buffer descriptor nobody here has read. The firmware's own answer on 
 asks for none. What keeps a write from happening is the rails and the unopened door, not an open
 question. See
 [findings.md](findings.md) for detail and
-[config-format.md](config-format.md) for the spec as it firms up.
+[reference/config-format/](../reference/config-format/README.md) for the spec as it firms up.
 
 ## Coverage, and why it is a problem
 
@@ -404,7 +387,7 @@ the wrong flash region. On arch 14 it returns real code, silently truncated to 6
 image is larger. Both read `flash_base` = 0. It is an architecture table entry rather than the
 tool, though, and on **arch 8 and arch 9 the same command returns the whole firmware region**, so
 it stays the way to obtain an image for a model nobody here owns. See
-[../reference/concordance-notes.md](../reference/concordance-notes.md).
+[concordance-notes.md](concordance-notes.md).
 
 **It is a Microchip PIC18, and it disassembles cleanly** once you have the right file at the
 right load address. 87% of the Harmony 700 image resolves into 521 functions.
@@ -571,7 +554,7 @@ finding.
 
 `todo.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 436<!--fact:findings_sections--> sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 436<!--fact:findings_sections--> sections, and `reference/config-format/README.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works, and flash has been written on five units**, the first in section 222:
@@ -644,18 +627,6 @@ this project's oldest rule is about. Two right copies are what precede two diver
   `trace-section` names first and it was the right dead end for the wrong reason. What is left is which
   caller passes index 1, and **nothing depends on it**: the field is named from the firmware's own
   subtraction against base slot 3's record and its behaviour is measured twice.
-* **The rate the arch 12 clock loses time**, section 111. Two mechanisms are read and both only lose, so
-  5.6 minutes a day is an upper bound rather than a figure. **Deliberately not measured**, decided on 10 August 2026, since
-  it would need the One left alone for a day and read at both ends, and no
-  document or code anywhere wants the number. Recorded so that the bound is never quoted as a
-  measurement.
-* **The arch 12 calibration words at `0x01F5C0` and `0x01F5C2`**, section 105: 94 and `0xFFFF` on
-  both units, fetched by the same helper as the battery scale, consumer not traced. The scale itself
-  is read, `4 + trim/65536` millivolts a converter count, and **section 44's battery conjecture is a
-  finding now**. Two hazards worth carrying: `0x01F580` is **on chip**, so a firmware `TBLRD` there
-  and a `READ_FLASH` over USB at the same number read different memories; and the words had been in
-  the lab for a day, filed as "unidentified" in `docs/memory-map-one.md` two rows above the note that
-  says two remotes differ at `+0xF582`.
 * **Which I2C device sits at address 0x60 on the Harmony One**, section 106. Thirteen channels of
   three states, two eight bit level registers, an enable on `LATC` bit 5 and no readback, which is the
   shape of an LED driver and most plausibly the keypad backlight, dimmed by the same band that dims
@@ -697,22 +668,6 @@ this project's oldest rule is about. Two right copies are what precede two diver
   that service never emitted for these devices. A miss was "stored as-is in its original format",
   which predicts a raw class. That matters for FreeHarmony: the service that made the choice is the
   discontinued one, so learning a code without it means making that choice locally.
-* **Where a learn session's samples leave the remote is read**, section 98, and the two searches
-  that failed did so because both assumed the bytes are **sent**. They are not. `START_IRCAP` clears
-  two 66 byte buffers at `0x0600` and `0x0642` and a toggle at `0x0684`, the capture path fills
-  whichever is open, and the transport points the **endpoint 1 IN buffer descriptor** straight at it,
-  `0x40E` and `0x40F`, with the count at `0x40D`. So no routine ever emits `0x90`: it is stored into
-  the buffer at `0x602`. On arch 12 a report is 64 bytes, `0x90`, a sequence byte advancing by
-  `0x10`, then samples as **big endian `u16` durations** differenced from CCP2, with the payload
-  length repeated in the last byte. That encoding is the config's own, bit 15 marking a pulse, so
-  what comes off the remote is already the shape a record wants. **Arch 14 has the same header**,
-  written through `INDF` because it reaches the buffers by `FSR`, which is why a scan keyed on the
-  buffer offsets missed it; what stays arch 12 only is the differencing that makes a sample a
-  duration. **The reports are unsolicited**, so a
-  host must keep reading during the session; that settles section 91's disagreement between the two
-  clients in the classic one's favour.
-  **Do not argue this from a literal scan**: a data response code carries a computed length nibble
-  and never appears as a literal, which cost one wrong negative here, `reference/superseded.md`.
 * **The physical button map**, meaning the matrix keypad. **The Harmony One's touch panel is mapped**,
   section 125, and out of the config rather than the hardware: base slot 17's rectangles, the mode page
   byte saying which page is in force, and a transform onto the display. That leaves the 40 keys around
@@ -742,7 +697,7 @@ this project's oldest rule is about. Two right copies are what precede two diver
   the config already binds a scan code to it. `0x70` is still a command that changes a remote's
   state rather than reading it, so `READ_ONLY_COMMANDS` refuses it and nothing here has sent one. **The refusal is that allow list and not the write flag**, which this said until 29 August 2026: no method sends `0x70`, no rail mentions it, and `HARMONY_ENABLE_WRITES=1` would enable nothing, so whoever implements learning has to add the command, its classification and a rail rather than lift a switch. Neither of Logitech's own applications has
   it either, checked on 9 August 2026: a host names buttons and the firmware resolves the name to
-  hardware, so no host ever held the map. `docs/host-client.md`.
+  hardware, so no host ever held the map. `reference/logitech/service.md`.
   **Arch 9 sits below both and needs no census**, section 89: the 525 senses on a single line like
   the One, so a press is not even worth a column, and its matrix falls out of the firmware instead.
   8 by 8, scan code `group * 8 + column` running 1 to 64, and both its configs bind the same 50
@@ -788,6 +743,28 @@ this project's oldest rule is about. Two right copies are what precede two diver
   a wiring decision and a test asserts it cannot be recovered.
 * **`MCU_ID` is unreachable by construction**, not a task: a PIC18 keeps its device id at `0x3FFFFE`
   and the internal read window is two 64 KiB pages. The arch 12 part number stays inferred.
+
+### The configuration format's open questions
+
+1. ~~What are the 19, 20 or 21 section slots?~~ **Answered.** All twenty base slots are accounted
+   for: two header records, sixteen named sections, and 18 and 19 NULL in all 21 containers.
+   Section 47 closed the last one. What is open is now one level down, inside the sections, and
+   each entry above says which part of itself is not established.
+2. Three of the four IR encoding classes. The dispatcher routes four selectors and only one is
+   traced. **Corrected here:** this entry used to say arch 8's second population with headers near
+   303 / 310 was one of the other classes. It is not. Every record's first byte is its class, and
+   all 2858 records on arch 8, 12 and 14 are class 1, so the records the framer cannot read are
+   class 1 too. The other three classes are used by no config in the corpus at all, which makes
+   them a firmware-only problem rather than a decoding one. `docs/findings.md` section 42.
+   Arch 9 reads a fifth value, 5, which is not one of the four the firmware dispatches over; its
+   header is read and its blocks are not, `docs/findings.md` section 65.
+3. The key table's semantic difference between architectures, and the meaning of `flags`
+   (`0x00`, `0x07`, `0x73`, `0x7F` observed) and of `index` (sequential on the One, all zero on
+   the 600, small values plus an outlier on arch 8).
+4. The 288-byte table at arch 12 flash `0x000000-0x00011F`, in which every nibble is one of
+   {6, 7, E, F}. On NOR flash that is the signature of a counter advanced by clearing one bit
+   at a time. Boot counter, config generation counter and wear map are all plausible. Diffing
+   that range across two dumps of the same remote taken at different times would settle it.
 
 ## Known unknowns
 
@@ -1936,8 +1913,8 @@ schema the server declared rather than a client's internal model, and it is chec
 live service actually sent: on Account, Activity, Device and Remote every field in the schema appears in
 a live reply, 21 of 21, 25 of 25 and 32 of 32 twice. The check also runs the other way and that is a
 finding of its own, **the service is ahead of the client build**, returning ten fields on a device that
-the proxy has never heard of, three of which name the delays `docs/predictions-sequence-delay.md`
-predicted from a config. `docs/myharmony/model.md` is the reading and it is to be consulted before
+the proxy has never heard of, three of which name the delays `docs/predictions/sequence-delay.md`
+predicted from a config. `reference/logitech/data-model/model.md` is the reading and it is to be consulted before
 naming a field. What crossed is schema only, asserted rather than assumed, so no reply, account or
 identifier came with it.
 

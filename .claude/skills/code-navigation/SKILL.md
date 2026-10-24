@@ -91,7 +91,7 @@ invisible. Do not read its absence as "nothing re-exports this".
   skill is the method around it, including the dead end that matters: it cannot see indirect access
   through `FSR`, so an empty trace means "look for the `LFSR`", not "nothing uses this".
 * **The documents.** `docs/findings.md` is 15000 lines of prose and grep is the right tool for it. The
-  same goes for `reference/superseded.md` and the `fact:` markers, which `make facts` checks anyway.
+  same goes for `docs/superseded.md` and the `fact:` markers, which `make facts` checks anyway.
 * **Bytes.** A config or an image is not source. That is `tools/gspm_parse.py`, `make coverage` and the
   codec's own readers.
 * **"Where is this number from"**, which is the question this project asks most. No index answers it.

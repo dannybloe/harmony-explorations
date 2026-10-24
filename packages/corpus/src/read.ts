@@ -214,7 +214,7 @@ export function isSilence(err: unknown): boolean {
  * command after the device was opened, each followed immediately by a run that worked from end to
  * end including a 1232237 byte config read. The Harmony 600 has not done it. So the honest
  * description is "the One sometimes drops the first command", not a general rule, and the cause is
- * unknown; see `docs/usb-protocol.md`.
+ * unknown; see `reference/remotes/harmony-one/behaviour.md`.
  *
  * Everything after the first command stays strict. Retrying the bulk reads too would be a wider
  * workaround than the evidence supports, and it would turn a genuinely failing transfer into an

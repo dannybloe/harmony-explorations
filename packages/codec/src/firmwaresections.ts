@@ -15,7 +15,7 @@
  *   and the twelve bytes the Harmony One's firmware reads past group 9's declared entries are the
  *   readers' `LIGHT_BAND_ARCHITECTURES` and offsets, section 103.
  *
- * **The parameter block's values are the model's**, not the architecture's, `docs/config-format.md` under
+ * **The parameter block's values are the model's**, not the architecture's, `reference/config-format/state.md` under
  * base slot 15: one set per model on the thirteen arch 14 compiles, the Harmony 600 and the 650 differing
  * in group 3, and one set on the Harmony One's 19. So a caller supplies them, from its family: the
  * Harmony 600, 650 and 700's are `families/four-slot/wiring.ts`' `PARAMETER_VALUES`, the Harmony One's

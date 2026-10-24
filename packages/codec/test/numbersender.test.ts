@@ -8,7 +8,7 @@
  *
  * The sample was **made** rather than found: three favourite channels on a Harmony One, authored in
  * Logitech's own software and compiled by their service, with the numbers chosen in advance and the
- * predictions committed to `docs/predictions-number-sender.md` before the file was fetched. Section 154.
+ * predictions committed to `docs/predictions/number-sender.md` before the file was fetched. Section 154.
  *
  * `calibration_one` is the control and it is the same account and the same remote **without** the
  * channels, so every claim here has a companion that must come back empty.

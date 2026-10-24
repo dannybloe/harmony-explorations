@@ -71,7 +71,7 @@ DATE_DIFFERENCE = 0x27DFA       # day, month, year against the record, weekday s
 CLOCK_RECORD_SLOT = 3
 COOKIE_BYTES = 2                # 0xADDF, which the cursor steps past before the first field
 
-# Base slot 3's record, from `docs/config-format.md`. Offsets within the eleven byte record.
+# Base slot 3's record, from `reference/config-format/header-records.md`. Offsets within the eleven byte record.
 RECORD_FIELDS = {
     'second': 0x02,
     'minute': 0x03,

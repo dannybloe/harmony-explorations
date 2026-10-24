@@ -1,7 +1,7 @@
 # Predictions: how a sequence's pause is stored
 
 Written on 23 August 2026 **before** the config containing it was compiled, for the same reason
-`docs/predictions-number-sender.md` was: a delay has no reading anywhere in this project, so whatever
+`docs/predictions/number-sender.md` was: a delay has no reading anywhere in this project, so whatever
 turns up will look obvious afterwards, and a prediction written first is the only way to tell a real
 result from a fitted one. Scored at the bottom, with nothing above the line edited.
 

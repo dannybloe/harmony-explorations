@@ -16,7 +16,7 @@
  * Two deliberate omissions from the USB half. The device's **serial number string** is not read,
  * although `node-hid` offers it, because it identifies a unit. The version block **is** included:
  * twelve bytes measured to be identical on two different Harmony Ones, so it describes the model
- * and its images rather than the unit. `docs/usb-protocol.md` section 4.
+ * and its images rather than the unit. `reference/usb-protocol/version-block.md`.
  *
  * **That argument is per architecture and the probe exists for the ones it does not cover**, which
  * this said as if it were general. The measurement is two Harmony Ones, arch 12; fields 7, 10 and

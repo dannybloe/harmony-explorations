@@ -92,7 +92,7 @@ interface Segment {
   readonly TotalLength: number | null;
 }
 
-/** Logitech's `IrProtocol`, the same contract `docs/myharmony/model.md` records from their schema. */
+/** Logitech's `IrProtocol`, the same contract `reference/logitech/data-model/model.md` records from their schema. */
 interface Definition {
   readonly CarrierFrequency: number | null;
   readonly IRSegments: readonly Segment[] | null;

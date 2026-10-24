@@ -28,8 +28,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import lab  # noqa: E402
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-DOC = ROOT / 'docs' / 'myharmony' / 'model.md'
-MODEL = json.loads((ROOT / 'docs' / 'myharmony' / 'model.json').read_text(encoding='utf-8'))
+DOC = ROOT / 'reference' / 'logitech' / 'data-model' / 'model.md'
+MODEL = json.loads((ROOT / 'reference' / 'logitech' / 'data-model' / 'model.json').read_text(encoding='utf-8'))
 
 #: The dated captures, as (label, filename, account selector).
 #:
@@ -87,7 +87,7 @@ class TheCapturesAreEvidenceRatherThanTheProbesLatestOutput(RequireCaptures):
 class AFunctionMapIsPerDeviceOrPerActivity(RequireCaptures):
     """The vendor's own data says the two maps are the same shape, which is the operating concept.
 
-    `docs/how-a-harmony-works.md` states that a device's map and an activity's map are two maps of
+    `reference/how-a-harmony-works.md` states that a device's map and an activity's map are two maps of
     the same keypad, authored separately. Here that is Logitech's schema: both contracts extend one
     `AbstractFunctionMap` carrying the groups, and each adds only the identifier of what it belongs
     to. **A claim about the platform**, so it holds whatever these accounts happen to contain.
@@ -229,7 +229,7 @@ class WhatTheThirtiethOfAugustCapturesHeld(RequireCaptures):
 
 
 class TheDocumentedCommandVocabularyIsWhatTheCapturesHeld(RequireCaptures):
-    """The group table in `docs/myharmony/model.md`, against the captures it was built from.
+    """The group table in `reference/logitech/data-model/model.md`, against the captures it was built from.
 
     **The table is a sample and the document has to say so.** It is the union of the groups two test
     accounts' devices happened to use on one day, so it is a floor on the platform's vocabulary and

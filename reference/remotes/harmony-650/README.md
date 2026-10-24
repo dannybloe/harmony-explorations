@@ -9,7 +9,7 @@ folder states what is the 650's own.
 
 The 650 is the **colour** sibling of the Harmony 600 and the **battery** sibling of the Harmony 700:
 same face (the project owner's statement), same 128 by 128 raster, the 700's colour, and AA cells where the 700
-charges. Standing words and their meaning are in [the reference's README](../README.md).
+charges. Standing words and their meaning are in [the reference's README](../../README.md).
 
 ## Skins
 
@@ -53,7 +53,7 @@ activities onto it. What it holds at any moment is in the lab's
 | power | AA alkaline cells, no charger | Logitech's manual |
 | external flash | 2 MiB SPI, EON F16, id `15:1C` | measured, section 281 |
 | user configuration | external `0x030000`, 907660 bytes as found | measured, section 281 |
-| clock on screen | **none** | seen at the bench, 4 October 2026, `docs/how-a-harmony-works.md` |
+| clock on screen | **none** | seen at the bench, 4 October 2026, `reference/how-a-harmony-works.md` |
 | long press | none | Logitech's service, `reference/capabilities.md` |
 
 ## The files

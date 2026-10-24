@@ -1392,7 +1392,7 @@ test('a button map belongs to a device, and an activity map is that plus its ove
   // to show a keypad per activity, on the strength of every keypad binding here sitting in an activity's
   // map. The measurement was right and the question was wrong: a Harmony has a **device mode**, where
   // the Devices key points the whole keypad at one chosen device, and that is what a page about a device
-  // is for. `docs/how-a-harmony-works.md` is the context that was missing.
+  // is for. `reference/how-a-harmony-works.md` is the context that was missing.
   //
   // What the corpus does say, once asked properly: for each pair of a device and a scan code, the
   // command that pair sends is the **same in every activity that binds it**, 1096 of 1105 times. So the
@@ -1842,7 +1842,7 @@ test('reconstructing a device map from the activity maps is wrong and blind',
 
 test('an activity states the room it wants and the codes come out of the transitions',
      skipUnless(...USER_CONFIGS), () => {
-  // **The load bearing claim of `docs/how-an-activity-is-built.md`**, and it is the opposite of the
+  // **The load bearing claim of `reference/config-format/activities-and-devices.md`**, and it is the opposite of the
   // obvious design: an activity's enter list does not name the codes it sends. It writes the DEVICE's
   // state variables, and the code goes out because that variable's transition runs a list that sends
   // it. A composer therefore states a target state and emits no send instruction of its own.
@@ -1898,7 +1898,7 @@ test('every activity binding reaches all three lifecycle handlers, and a release
   // each activity twice. The claim about activities is the test above, which walks base slot 9's
   // entries and counts 50 of 50. Both are worth having, since this one also proves that every route
   // in reaches the handlers and that one is not a stray.
-  // P3 of `docs/how-an-activity-is-built.md`, with the correction its scoring produced. The document
+  // P3 of `reference/config-format/activities-and-devices.md`, with the correction its scoring produced. The document
   // said a tag below 0x80 is not a key, which is false: a tag is an event type plus a scan code, so a
   // **release** of scan 3 is 0x43 and sits below 0x80 looking exactly like a handler. Every activity
   // on arch 14 carries one. What separates them is the event type.
@@ -1927,7 +1927,7 @@ test('every activity binding reaches all three lifecycle handlers, and a release
 
 test('an activity menu is several pages, which one specimen could not have shown',
      skipUnless(...USER_CONFIGS), () => {
-  // P7 of `docs/how-an-activity-is-built.md` was **wrong** and this is what it should have said. The
+  // P7 of `reference/config-format/activities-and-devices.md` was **wrong** and this is what it should have said. The
   // factory configuration has one activity and therefore one menu page, and the prediction took that
   // for the structure. Adding an activity may mean adding a page, which is the problem section 239
   // hit from the other side with a seventh device needing a third row of the device list.
@@ -2370,7 +2370,7 @@ const UNSELECTED_PREFIX: Readonly<Record<number, number>> = { 8: 7, 9: 4, 12: 7,
 
 test('base slot 9 is a per model prefix, one entry per activity, and exactly one more',
      skipUnless(...USER_CONFIGS), () => {
-  // Section 272, and it replaces "devices and activities together", which `docs/config-format.md`
+  // Section 272, and it replaces "devices and activities together", which `reference/config-format/modes-and-keys.md`
   // recorded as the reading the counts support. A device never has an entry.
   let contiguous = 0;
   let matchingActivities = 0;

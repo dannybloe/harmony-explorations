@@ -102,7 +102,7 @@ The arch 9 sample's header reads `PROTOCOL 9`, `SKIN 22`, `FLASH 0xFF:0x12`, `BO
 **The USB identity is reported rather than predicted**, and it breaks a rule. The owner of the
 sample published `046D:C111`, `bcdDevice` **`0x0916`**. That does not follow the pattern the two
 bench remotes set: the Harmony One enumerates `0x1054` and the 600 `0x1071`, a constant `0x10`
-followed by the skin in BCD, which is how `docs/usb-protocol.md` corroborates field 5. Read the same
+followed by the skin in BCD, which is how `reference/usb-protocol/version-block.md` corroborates field 5. Read the same
 way the 525 would be `0x1022`, and it is not. Read as plain hex it is protocol 9 and skin 22, both
 exact, which the One and 600 do not satisfy either way.
 

@@ -58,7 +58,7 @@ and the One's own wording, "Current Activity", are in [behaviour.md](behaviour.m
 | | standing and source |
 |---|---|
 | activities are started by touching them on the "My Activities" screen | Logitech's manual, "Selecting an Activity" |
-| how many a One may hold | **not stated** by the service or the manual. Every model with a screen took seven in the fill test of `docs/how-a-harmony-works.md`; whether a One record was among the seventeen is not recorded there, so **not checked** |
+| how many a One may hold | **not stated** by the service or the manual. Every model with a screen took seven in the fill test of `reference/how-a-harmony-works.md`; whether a One record was among the seventeen is not recorded there, so **not checked** |
 | the activity menu shows three activities a page and opens a page at the fourth; a composed menu of ten activities paged over four pages on a unit | read from configurations and seen, section 293 |
 
 ## Favourite channels
@@ -101,7 +101,7 @@ erased on both units read, section 150.
 ## Learning
 
 "IR Learning Yes (Up to 200 Khz)", Logitech's manual. The learn commands are Logitech's desktop client's,
-`docs/host-client.md`; nothing here has sent one, and learning on a One is **not checked**.
+`reference/usb-protocol/commands.md`; nothing here has sent one, and learning on a One is **not checked**.
 
 ## Not checked
 

@@ -105,8 +105,8 @@ other route, section 123, and has not been tried.
 
 | key | what it does | standing and source |
 |---|---|---|
-| Activities | returns to the Activities screen, and leaves device mode | Logitech's manual; `docs/how-a-harmony-works.md` |
-| Devices | lists the devices, the way into device mode | Logitech's manual; `docs/how-a-harmony-works.md` |
+| Activities | returns to the Activities screen, and leaves device mode | Logitech's manual; `reference/how-a-harmony-works.md` |
+| Devices | lists the devices, the way into device mode | Logitech's manual; `reference/how-a-harmony-works.md` |
 | Help | starts the on remote help | Logitech's manual |
 | Glow | lights or turns off the display backlight | Logitech's manual |
 | Off | turns off the devices of the current activity | Logitech's manual. The document prints `Off` under it and the product prints nothing, `h525.ts` |

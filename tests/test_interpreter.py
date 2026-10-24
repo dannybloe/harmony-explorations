@@ -309,7 +309,7 @@ class TestTheComparisonSelector(unittest.TestCase):
         review sweep on 13 August 2026 asking which tests state more than they check.
 
         64 is not a firmware constant either. It is one config's own boundary showing through: the
-        real rule is base slot 13's `narrow` count, per config, which `docs/config-format.md` states
+        real rule is base slot 13's `narrow` count, per config, which `reference/config-format/state.md` states
         and `test_0x71_reads_the_narrow_half_and_0x70_the_wide_half` asserts. This test is therefore
         about the number rather than the rule, and its job is to keep the contrast that explains why
         the old wording looked right for so long: the opcode that compares a **byte** cannot leave the

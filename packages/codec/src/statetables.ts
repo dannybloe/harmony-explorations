@@ -374,7 +374,7 @@ export const CLOCK_WEEKDAY = 4;
 
 /**
  * The clock's hour list, the action list the hour's rollover calls: increment the day, then the weekday,
- * `[0x1F 0xF203, 0x1F 0xF204]`, `docs/config-format.md` under the clock's transitions. Its index is the
+ * `[0x1F 0xF203, 0x1F 0xF204]`, `reference/config-format/state.md` under the clock's transitions. Its index is the
  * configuration's, `StateTablesSpec.hourList`.
  */
 export function hourListBytes(): Uint8Array {

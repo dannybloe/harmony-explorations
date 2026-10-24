@@ -176,7 +176,7 @@ harmony-decompiler. The **first arch 8 firmware and the first arch 10 configs** 
 project. `docs/findings.md` sections 113, 114 and 115.
 
 The firmware was dumped with `concordance -b -f`, which returns the complete firmware region on arch
-8 and nothing usable on arch 12 or arch 14; `reference/concordance-notes.md` has why. Two images of
+8 and nothing usable on arch 12 or arch 14; `docs/concordance-notes.md` has why. Two images of
 one build, 65536 bytes each, load base `0x010000`, differing at exactly two offsets which are both
 the skin byte.
 
@@ -295,7 +295,7 @@ Not a binary and not firmware, but the same rule applies: the files stay in the 
 provenance is published. Logitech's `Harmony Desktop.app` is a shell around a hosted web
 application, so the application itself is fetchable from their content network without an account.
 Everything its own cache manifest lists was mirrored the day it was found, because a live service
-can be withdrawn without notice. `docs/host-client.md` has the rule that governs using it.
+can be withdrawn without notice. `reference/logitech/clients.md` has the rule that governs using it.
 
 | what | value |
 |---|---|
