@@ -13,7 +13,7 @@ the 350's own. Over USB it speaks a file protocol rather than the command protoc
 the Harmony 600, 650 and 700, so this library reads its configuration as a file, read only, and has no
 way to write to it; [the architecture's usb.md](../../architectures/harmony-300-350/usb.md) has the
 rails. How every fact below marks its evidence is in
-[the reference's README](../../README.md#every-fact-carries-its-source-and-its-standing).
+[the reference's README](../../README.md#how-to-read-a-footnote).
 
 ## Skins
 

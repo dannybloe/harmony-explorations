@@ -98,8 +98,13 @@ for it.[^s135] Learning is the other route, since the firmware implements the ca
 * **Four soft keys**, one at each corner of the screen, which select the row beside them: "Select the
   device you wish to control by pressing the side LCD button closest to your selection".[^x-manual]
   Their codes are the set 30, 31, 38 and 39, the codes a screen page binds and no activity
-  does;[^s27][^s128] which is which is not known, because nothing establishes which of two columns is the
-  left one.[^s89] The drawing gives all four the same four candidates rather than pick, `h525.ts`.
+  does;[^s27][^s128] which of two columns is the left one the firmware does not establish,[^s89] and the
+  labels the configurations draw answer it, below. The drawing gives all four the same four candidates
+  rather than pick, `h525.ts`.
+* **Their labels sit in two rows**, at pixel rows 13 and 35 with a line pitch of 11: the top row belongs
+  to keys 39 and 38, the bottom row to 31 and 30.[^s128] **The larger scan of each pair is the left
+  key**: the three activities whose names are known without the geometry are drawn beside the key that
+  starts them, and each time that is the larger of its pair, so the left column is 39 and 31.[^s128]
 * **Paging is a soft key binding**: the four soft keys carry opcode `0x7E`, enter a mode by index, in both
   user configurations, and the 5xx has no page button.[^unchecked][^x-forum] The two keys the drawing
   calls `ScreenPrev` and `ScreenNext` are the arrow keys "that help you page through items", in a sentence

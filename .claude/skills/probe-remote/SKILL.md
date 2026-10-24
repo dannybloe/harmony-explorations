@@ -231,8 +231,9 @@ Follow the `finding` skill for the write-up, plus three things specific to hardw
 * **Pin the measured bytes in a test**, so the image and the device cannot drift apart
   silently. `tests/test_usbdesc.py` holds the Harmony 600's live report descriptor this way.
   A hardware measurement that is not executable is just a note.
-* **Say it was hardware.** Mark the source of every hardware-derived number in the document.
-  `reference/usb-protocol/transport.md` has a "Source" row saying image or live device per column.
+* **Say it was hardware.** Every hardware-derived number in `reference/` carries a footnote whose
+  evidence words are "Measured on a unit.", per the footnote convention in `reference/README.md`,
+  and a number read off the image says "Read in the firmware." instead.
 * **Check the provenance claim in `docs/findings.md`.** Its introduction states what kind of
   analysis produced the document, and it said "no hardware probing" until the first
   measurement made that false. If a measurement makes that paragraph wrong, correct it in the

@@ -119,14 +119,40 @@ AM or PM[^s414].
 ## Where a touch lands: the hit map
 
 * **The screen grid** is three 50 pixel blocks at a 54 pixel pitch, one or two per row, never three[^s125][^s125b].
-  The panel's touch area reaches below the 220 pixel picture.
+  In pixels the blocks sit at rows 33 to 83, 87 to 137 and 141 to 191, and a bar runs from 191 to 253,
+  past the bottom of the 220 pixel picture, so the panel's touch area reaches below what is drawn[^s125].
+  Codes 48 to 53 are the up to six blocks on the screen, 43 and 44 the two places below it, and 46 and 47
+  the two strips at its sides[^s125b]. **Which code lands where is per page**, in the order the
+  configuration stores the rectangles: one activity page has the bar on 48 and 49 and the blocks on 50 to
+  52, and the next has the blocks on 48 to 50 and the bar on 51 and 52[^s125].
+* **The two strips at the sides turn the page** and lie outside the drawn area, at panel `x` 765 and 3556
+  against a display spanning 1257 to 3556. No page binds them, so paging is a default the firmware
+  supplies[^s275].
+* **The two keys below the display** are the rectangles at panel `y` 271, and which of them a page
+  enables is the difference between the two list menus[^s275]:
+
+  | | a device list page | an activity menu page |
+  |---|---|---|
+  | rows | 3 | up to 3 |
+  | left key, `x` 1257, width 1395 | on 29 of 29 pages | on 6 of 6 |
+  | right key, `x` 2406, width 1150 | on none of the 29 | on 6 of 6 |
+  | what they bind | opcode `0x72`, all 29 | enter a mode, all 12 |
+
+  A key with no rectangle is not enabled, which is what the right key is in device mode. The left key is
+  labelled "Activities" there and "Options" in an activity, with "Devices" on the right[^s275].
+* **An activity menu's rows** are 2600 panel units wide and 807 tall, start at the panel's left edge of
+  1257 and step down by 872, on 11 of 11 rows[^s275].
 * **Base slot 17** holds the screen's touch rectangles: up to eight items and the two side strips per page,
   the page chosen by the mode page's lead byte, and the hit test returns the first rectangle that
   matches[^s45][^s125].
 * The geometry is fixed for the model: two remotes' configurations share every hit record and every
   rectangle size[^s125].
-* Panel to pixel, vertically: `panel_y = 4356 - (872/54) * pixel_y`[^s125b]; the horizontal half rests on
-  one reading. `packages/codec/src/touch.ts` is the executable form.
+* **Panel to pixel, vertically**, `panel_y = 4356 - (872/54) * pixel_y`: 872 panel units is one list row
+  and 54 pixels one text row, so the scale is their ratio and only the offset is fitted, with 233 of 235
+  paired rows within five pixels[^s125]. **Horizontally**, `panel_x = 1257 + ((3556 - 1257) / 176) *
+  pixel_x` takes the display to span the gap between the inner edges of the two side strips; almost every
+  rectangle is full width and barely constrains it, and no activity name depends on it[^unchecked].
+  `packages/codec/src/touch.ts` is the executable form.
 * **A rectangle follows from what the screen draws** where it is a button or a key: a 50 pixel button
   picture on the grid has a rectangle of its own place and column, and a word drawn below the screen on the
   right half has the right key's rectangle. Rectangles drawn around text or pictures follow no such rule. How
@@ -149,19 +175,20 @@ What Logitech's compiler puts on every configuration whatever the setup, 78 scre
   three of its own screens, and the routine that draws a page clears nothing before it, so a pixel a page
   leaves undrawn shows the screen before, and every screen has to draw its whole background. Read by its
   direct calls; not seen on a remote[^s425].
-* **A screen can be filled with one instruction**: screen instruction 1 fills a rectangle, `x`, `y`, width
-  and height and a colour, clipped to the screen, its rows counted to `y` plus the height in eight bits.
-  Logitech uses it for the welcome tour's black background and for the frames round a picker's
-  button[^s425].
-* **The screens' background is black**: one whole screen picture, every pixel black, drawn by 66 to 314
-  instructions a compile depending on how many devices and activities it holds, and stored three or four
-  times by Logitech's compiles. Of the seven blank screens the timers enter, six show three photographs of
-  blurred lights instead, two screens each, and the seventh the charging screen's picture; what the six are
-  for is not read[^s422].
+* **A screen can be filled with one instruction**, a rectangle in one colour,
+  [the screen language](../../config-format/screens.md#filling-a-rectangle). Logitech uses it for the
+  welcome tour's black background and for the frames round a picker's button[^s425].
+* **The screens' background is black**: one whole screen picture, every pixel black, which Logitech's
+  compiles store three or four times over. Of the seven blank screens the timers enter, six show three
+  photographs of blurred lights instead, two screens each, and the seventh the charging screen's picture;
+  what the six are for is not read[^s422]. The sizes and counts are
+  [the platform's compiler page](../../architectures/harmony-one/compiler.md#pictures).
 * **The gauges leave pixels undrawn**: each gauge picture is 20 by 11, drawn at x 153 and y 4, and every one
   but level 0 of the battery gauge, a grey question mark, leaves its top row and left column undrawn, so what
   shows there is what was behind it; level 3 also leaves its bottom row and most of the right end of its body
   and tip undrawn. On all nineteen compiles[^s414][^s428].
+* **So does the charging problem's cross**, 87 by 62: it draws only a roughly round blob and leaves 4028 of
+  its 5394 pixels undrawn, everything outside the circle, so the screen behind shows round it[^s428].
 
 ## Letters and pads
 
@@ -173,10 +200,8 @@ What Logitech's compiler puts on every configuration whatever the setup, 78 scre
 * **How many font sets**: Logitech's compiles carry 16 to 18. The font select instruction takes its index as
   one byte and nothing in its handler bounds it[^s399], and a set past the eighteenth draws: a configuration
   carrying 31 showed its screens in sets 21 to 28 on a remote[^s399b].
-* **Which sets an English compile of skin 54 holds**: sixteen on every one, in the same faces and colours, of
-  which three only the welcome tour draws, and two more the setup brings; the sixteen sit in eight orders
-  relative to each other over sixteen compiles. The first 60 glyph codes are numbered in one order on all
-  sixteen, and not on the two English compiles of the European skin 59[^s427].
+* **Which sets an English compile of skin 54 holds**: sixteen on every one, in the same faces and colours,
+  and two more the setup brings, [the platform's compiler page](../../architectures/harmony-one/compiler.md#the-font-sets-logitechs-compiles-hold)[^s427].
 * **A pad** is a box 81 pixels wide and 50 tall at one of six places, two per row[^s394]. On a device page a
   label's lines sit 20 pixels into the pad, or at 15 and 26, or 9, 20 and 31, in a 14 pixel set, which leaves
   a one line label's capitals 2 pixels below the middle; activity screens place them alike[^s399c].

@@ -10,7 +10,7 @@ the 650's own.
 The 650 is the **colour** sibling of the Harmony 600 and the **battery** sibling of the Harmony 700:
 the 600's face[^unchecked], the same 128 by 128 raster[^s129], the 700's colour, and AA cells where the
 700 charges[^x-manual]. How a fact's footnote names its evidence is in
-[the reference's README](../../README.md#every-fact-carries-its-source-and-its-standing).
+[the reference's README](../../README.md#how-to-read-a-footnote).
 
 ## Skins
 

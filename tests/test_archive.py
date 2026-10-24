@@ -38,7 +38,10 @@ _spec.loader.exec_module(reference_guards)
 
 # Taken over the archive as it was before any anchor was added or any link target corrected.
 FINDINGS_DIGEST = "c4bc62336900cb13eee50b2c375c7a11ca399e67ad9183a44830b8799aa74fc7"
-DECISIONS_DIGEST = "d6d9727e38c9879a64598e6f49d6c7870e99dde41f373f3ce603939c3dc875c8"
+# Repinned for one recorded correction in place: decision 9's last sentence put its rule, its argument and
+# its ledger in `reference/logitech/clients.md`, which holds none of the three since plan 009, and now says
+# where each is (todo-reference chapter 4's follow-ups, item 125). The digest before it was d6d9727e.
+DECISIONS_DIGEST = "39af6d8ede740b46e4873eb421c5edd5133c7cda701e313bcf76aaab1cfe7e5a"
 
 SECTIONS = 436
 DECISIONS = 25

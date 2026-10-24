@@ -50,6 +50,12 @@ Your Remote" dialog offers English, Français, Español, Deutsch, Nederlands, It
 MyHarmony's screens as seen, with no archive section, which is why the 650's features page marks the
 slider's range not checked. This sat in `harmony-650.md` until plan 009's step 3.4.
 
+**The account's 650 and 700 records hold nine copies of one activity**, four keys each, section 323. That
+matters to one count the reference states: an activity's key map is Logitech's set key for key on 20 of
+the 40 activities measured, and the other 20 are those nine copies and 11 activities of the three hand
+customised configurations. The reference counts the activities without saying that nine are copies on a
+test account; this paragraph sat in the architecture's compiler page until plan 009's step 4.1.
+
 ## The per model capability answers
 
 `UserAccountDirector/GetProductCapabilities2`, and the plain `GetProductCapabilities` beside it, were asked

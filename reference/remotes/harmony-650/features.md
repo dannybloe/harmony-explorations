@@ -105,9 +105,12 @@ action queue, [the action language](../../config-format/actions.md)[^s332].
 
 * **Power on delay** per device, 0 to 45 seconds in tenths[^s288].
 * **Inter device delay** per device, 0 to 2 seconds in tenths[^s287]. It holds back that device's own
-  command, a tenth of a second per unit, in an activity's start and in All Off[^s335]; on a device's own
-  command pressed in device mode it does not act by the configuration's reading, which is **not
-  checked** on the remote[^unchecked].
+  command, a tenth of a second per unit, in an activity's start and in All Off[^s335]. **It acts only
+  there and in Help**, which a Help key pressed in device mode reaches too: a device's own command
+  pressed in device mode never waits for it, because only an activity's start, All Off and Help raise
+  the variable it waits on[^s335b]. That last half is the configuration's reading, **not checked** on
+  the remote[^unchecked], and [the compiler page](../../architectures/harmony-600-650-700/compiler.md#the-delay-step-before-every-command)
+  has the measurement.
 * **A delay saved on the remote wins** over the configuration's at start, measured on the Harmony
   600[^s303], [the architecture's memory page](../../architectures/harmony-600-650-700/memory.md#the-settings-store).
   A 650 read as found had **none saved**: its settings store held only setting `0x80`
@@ -172,6 +175,7 @@ configuration is **not checked**[^unchecked].
 [^s288]: Measured in configurations. [Section 288](../../../docs/findings.md#s288)
 [^s287]: Measured in configurations. [Section 287](../../../docs/findings.md#s287)
 [^s335]: Measured on a unit. [Section 335](../../../docs/findings.md#s335)
+[^s335b]: Measured in configurations. [Section 335](../../../docs/findings.md#s335)
 [^s303]: Measured on a unit. [Section 303](../../../docs/findings.md#s303)
 [^s282]: Measured on a unit. [Section 282](../../../docs/findings.md#s282)
 [^s283]: Measured on a unit. [Section 283](../../../docs/findings.md#s283)

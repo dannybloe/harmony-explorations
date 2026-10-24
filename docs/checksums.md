@@ -346,8 +346,11 @@ second, keyless route, `Firmware/<skin>/firmware_factory.hfw2` on the content ne
 skin 99 and skin 106 and answers 403 for every other skin. The Harmony Touch factory image from that
 route was fetched a day earlier and is recorded in the lab's own notes.
 
-The nine `.hfw2` and `.pkg` files are the Linux generation, ARM with a squashfs root, and nothing
-here reads them yet. The one that matters is the small one.
+The nine `.hfw2` and `.pkg` files are the Linux generation. Only the hubs' packages have been opened,
+below: a squashfs root filesystem and an updater for a 32 bit big endian MIPS processor. The remotes'
+package has not been opened, so what processor it targets is not checked. This paragraph called the
+whole generation ARM with a squashfs root until plan 009's step 4.5, a statement nothing here had
+measured. The one that matters is the small one.
 
 ### The Harmony 300 and 350 package
 
