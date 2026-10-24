@@ -367,7 +367,7 @@ section's own and is `1 + 3 * count` bytes, 4 on arch 8 and arch 12 and 34 on ar
 On the Harmony 600, 650 and 700 it is the eleven start up entry points the firmware queues by index,
 [the firmware's own wiring](../architectures/harmony-600-650-700/compiler.md#the-firmwares-own-wiring-on-arch-14)[^s347].
 Slot 8's `0x7F` instructions also call **every** action list in the final packed run, exactly once each,
-which is the only thing that reaches those lists, [Actions](actions.md#the-final-run-belongs-to-base-slot-8)[^s83].
+which is the only thing that reaches those lists, [Actions](actions.md#0x7f-calls-a-list-by-its-index)[^s83].
 
 **A tag is a key press.** Under the event and scan split, every tag in every sample is a press, `0x80`,
 and the scan codes are model specific: 2, 8, 9 and 34 on the Harmony 600, 650 and 700; 43, 44 and 48 to

@@ -63,7 +63,7 @@ format reads `0x7F` the same way on arch 9 (Harmony 525)[^s26].
 **The final run is the mode pages' lists**, which base slot 8 holds. Base slot 8 holds a `u16` reference to
 **every** list in the final run and to no list outside it: 381 references covering 7656 to 8036 on the
 Harmony 700, and 199 covering 4756 to 4954 on the Harmony 600, a bijection[^s26]. Base slot 8's layout is
-read, a leading list and then the mode pages' tagged lists, [Base slot 8](modes-and-keys.md#base-slot-8-key-press-bindings).
+read, a leading list and then the mode pages' tagged lists, [Base slot 8](modes-and-keys.md#base-slot-8-the-screen-keys-bindings).
 
 ### Every place that names a list, and the lists nothing reaches
 

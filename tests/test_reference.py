@@ -68,10 +68,6 @@ PINNED = {
     'footnotes': {
     },
     'links': {
-        ('reference/config-format/actions.md', 'missing anchor: modes-and-keys.md#base-slot-8-key-press-bindings'): 1,
-        ('reference/config-format/activities-and-devices.md', 'missing anchor: actions.md#0x7c-is-a-per-device-delay-in-tenths-of-a-second-folded-no-further-than-100'): 1,
-        ('reference/config-format/modes-and-keys.md', 'missing anchor: actions.md#the-final-run-belongs-to-base-slot-8'): 1,
-        ('reference/logitech/classic-client.md', 'missing anchor: ../usb-protocol/commands.md#where-a-learn-sessions-samples-leave-the-remote'): 1,
     },
 }
 # END PINNED

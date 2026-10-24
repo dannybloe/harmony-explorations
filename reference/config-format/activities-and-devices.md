@@ -268,7 +268,7 @@ pairs of an activity and a device it switches on cannot[^t-inventory].
 the Harmony One it is a `0x7C` inline in the list that switches the device on, so the activity inherits
 it from the device's list. On the Harmony 600, 650 and 700 it is a **state variable** of the device, so
 there is no inline delay to inherit and `powerOnDelayReach` reports no pairs there[^t-inventory]. The
-encoding is [Actions](actions.md#0x7c-is-a-per-device-delay-in-tenths-of-a-second-folded-no-further-than-100).
+encoding is [Actions](actions.md#0x7c-is-a-per-device-delay-in-tenths-of-a-second).
 
 The factory activity has one device with a ten second delay and sends it three further commands, so the
 delay is felt[^unchecked].

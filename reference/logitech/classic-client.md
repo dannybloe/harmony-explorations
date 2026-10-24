@@ -101,7 +101,7 @@ commands[^s91]:
 Desktop reads them as a command's reply stream after the stop, while the classic client takes reports
 its reader thread collected during the session. The remote pushes them unsolicited, so a host keeps
 reading for the whole session[^s98]. Where they leave the remote is
-[the commands](../usb-protocol/commands.md#where-a-learn-sessions-samples-leave-the-remote).
+[the commands](../usb-protocol/commands.md#learning-infrared).
 
 **The restart command is `WRITE_MISC` selector `0x0A`, and the client's list of entry points is wider
 than learning**: terminate, default, before and after a configuration update, after a firmware update,
