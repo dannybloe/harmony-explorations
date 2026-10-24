@@ -9,7 +9,7 @@ folder states what is the 650's own.
 
 The 650 is the **colour** sibling of the Harmony 600 and the **battery** sibling of the Harmony 700:
 same face (the project owner's statement), same 128 by 128 raster, the 700's colour, and AA cells where the 700
-charges. Standing words and their meaning are in [the reference's README](../README.md).
+charges. Standing words and their meaning are in [the reference's README](../../README.md).
 
 ## Skins
 

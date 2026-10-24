@@ -12,7 +12,7 @@ matter most to a reader of the files: it runs its application and its configurat
 memory mapped parallel flash, where those three copy from serial flash; its screen is touch, so screen
 commands are reached through a hit map rather than through keys; it **shows a clock**; and it clicks
 before every command touched on the screen. Standing words and their meaning are in
-[the reference's README](../README.md).
+[the reference's README](../../README.md).
 
 ## Skins
 

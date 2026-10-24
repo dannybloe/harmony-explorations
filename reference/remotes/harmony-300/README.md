@@ -5,7 +5,7 @@ DVD and VCR/Aux, a power key, four favourite channel keys and an ordinary keypad
 Logitech's file based platform, architecture 16, with the Harmony 350; what the two share is stated once in
 [the architecture folder](../../architectures/harmony-300-350/README.md), and this folder states what is
 the 300's own. **This library never opens it with `openHarmony` and never writes to it**; its configuration
-is read as a file, read only. Standing words and their meaning are in [the reference's README](../README.md).
+is read as a file, read only. Standing words and their meaning are in [the reference's README](../../README.md).
 
 The 300 is the 350 with **half the devices and no long press**: the same moulding, the same firmware, four
 device keys that each hold one device rather than two.

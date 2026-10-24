@@ -11,7 +11,7 @@ The 600 is the **monochrome** sibling of the Harmony 650 and 700. The three shar
 drawing is the one the other two take by reference. It is also the model this project read architecture 14 on first: its firmware was the
 first of the architecture read whole off a remote, section 23, and its button map is the measured one the
 other two carry over, `reference/button-maps.md`. Standing words and their meaning are in
-[the reference's README](../README.md).
+[the reference's README](../../README.md).
 
 ## Skins
 

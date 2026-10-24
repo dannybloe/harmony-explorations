@@ -5,7 +5,7 @@ of 96 by 64 pixels, four keys beside the screen that the screen labels, a Glow k
 four AAA cells. It is from Logitech's classic platform, programmed by the old Harmony Remote Software,
 and it is architecture 9, which this project reads and writes. What the architecture's models share is
 stated once in [the architecture folder](../../architectures/harmony-5xx/README.md); this folder states
-what is the 525's own. Standing words and their meaning are in [the reference's README](../README.md).
+what is the 525's own. Standing words and their meaning are in [the reference's README](../../README.md).
 
 The 525 differs from every other remote this project writes to in the way that matters most to a writer:
 **its application firmware sits in the 64 KiB erase block directly below its configuration, and the

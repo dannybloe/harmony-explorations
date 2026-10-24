@@ -10,7 +10,7 @@ the 700's own.
 The 700 is the **charging** sibling of the Harmony 650 and the colour sibling of the Harmony 600: the
 same face, the same 128 by 128 raster, and NiMH cells charged through the USB socket. It is also the
 model whose firmware this project read first, the 2.8 package, before any architecture 14 image had been
-read off a remote, section 13. Standing words and their meaning are in [the reference's README](../README.md).
+read off a remote, section 13. Standing words and their meaning are in [the reference's README](../../README.md).
 
 ## Skins
 

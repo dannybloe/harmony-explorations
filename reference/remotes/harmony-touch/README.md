@@ -4,7 +4,7 @@ An activity based infrared universal remote, its manual dated 2012, with a touch
 the face, a keypad below it, a rechargeable lithium ion cell and a charging dock. It belongs to
 Logitech's later generation: its firmware is a Linux image, it is programmed through MyHarmony, and it
 **fetches its own configuration** through the desktop client rather than having one compiled and written to
-it, section 203. Standing words and their meaning are in [the reference's README](../README.md).
+it, section 203. Standing words and their meaning are in [the reference's README](../../README.md).
 
 **This library reads almost nothing of it and writes nothing to it.** `openHarmony` refuses it, because it
 speaks the file protocol rather than the command protocol, section 193. The read only file transport has
