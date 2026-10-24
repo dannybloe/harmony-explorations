@@ -269,6 +269,8 @@ const CONTAINERS = [
   'one_spare_track_start', 'one_spare_look_base', 'one_spare_look_written',
   'one_spare_glow_written', 'one_spare_arrows_written', 'one_spare_bottom_written',
   'one_spare_light60_written', 'one_spare_noassistant_written',
+  'one_spare_tourfree_base', 'one_spare_tourfree_written', 'one_spare_pictures_written', 'one_spare_options_written',
+  'one_spare_lists_written', 'one_spare_devlistfix_written', 'one_spare_pictures2_written', 'one_spare_empty_written',
 ];
 
 for (const name of CONTAINERS) {
@@ -379,7 +381,8 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // 112 with the 650's eight bench compare bases after the seventh device and section 335's third
   // bench configuration, which had been registered without a vector.
   // 180 with the 68 other samples registered without one, listed at the end of `CONTAINERS`.
-  assert.equal(present.length, 180, 'every vector, which is what `make golden` compares');
+  // 188 with the spare Harmony One's eight region reads of todo-compile-one's last writes.
+  assert.equal(present.length, 188, 'every vector, which is what `make golden` compares');
   // 38 since the Harmony 895 landed: its key table reads with the existing reader even though
   // every other arch 10 reader is gated, which is what made section 177's keypad closure possible
   // without any arch 10 progress at all.
@@ -427,7 +430,8 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // 107 with the 650's eight bench compare bases and section 335's third bench configuration.
   // 174 with the 68 registered without a vector: 67 have one, and the friend's Harmony 525 is the one
   // that does not, an arch 9 container like the other Harmony 525 samples here.
-  assert.equal(complete, 174, 'the vectors whose container has a key table at all');
+  // 182 with the spare Harmony One's eight region reads of todo-compile-one's last writes, every one with a key table.
+  assert.equal(complete, 182, 'the vectors whose container has a key table at all');
 
   // **The number sender field, and why it needs its own guard.** It is an empty array on 30 vectors
   // and null on 8, with eight carrying a record since 30 August 2026, and this comment said 25 and 9
@@ -480,7 +484,8 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // 75 with the 650's eight bench compare bases and section 335's third bench configuration, none of
   // which declares one.
   // 136 with the 68 registered without a vector: 61 of them declare none, and none of the 68 is null.
-  assert.equal(senders.filter((one) => Array.isArray(one) && one.length === 0).length, 136);
+  // 144 with the spare Harmony One's eight region reads of todo-compile-one's last writes, none declaring one.
+  assert.equal(senders.filter((one) => Array.isArray(one) && one.length === 0).length, 144);
   // **Four since the second compiled sample**, and the reason is the account rather than the request:
   // every configuration compiled from the account that carries favourite channels carries the sender
   // record too, whichever appliances are on it that day. Three of them were made deliberately for base
@@ -561,7 +566,8 @@ test('the list above covers exactly what the Python side writes a vector for', (
   // the 650's region before section 309's test device, 103 since its region after it.
   // 112 with the 650's eight bench compare bases and section 335's third bench configuration.
   // 180 with the 68 other samples registered without a vector.
-  assert.equal(python.length, 180, 'the golden vectors, which is what `make golden` prints');
+  // 188 with the spare Harmony One's eight region reads of todo-compile-one's last writes.
+  assert.equal(python.length, 188, 'the golden vectors, which is what `make golden` prints');
   assert.deepEqual([...CONTAINERS].sort(), python.sort());
 });
 
