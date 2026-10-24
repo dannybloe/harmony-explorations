@@ -30,7 +30,7 @@ compiles for or the service's own generation decides it is not established[^unch
 
 [^s16]: Measured in configurations. [Section 16](../../../docs/findings.md#s16)
 [^s21]: Measured in configurations. [Section 21](../../../docs/findings.md#s21)
-[^x-manual]: Stated by Logitech, in the manual. [The Harmony 700 user manual](https://support.myharmony.com/harmony-700-user-manual)
+[^x-manual]: Stated by Logitech, in the manual. [The Harmony 700 user manual, the 2009 edition](https://www.manualslib.com/manual/96454/Logitech-Harmony-700.html)
 [^s295]: Measured on a unit. [Section 295](../../../docs/findings.md#s295)
 [^s347]: Measured in configurations. [Section 347](../../../docs/findings.md#s347)
 [^unchecked]: Not checked.

@@ -615,7 +615,7 @@ class TestTheConfigStatesItsOwnArchitecture(unittest.TestCase):
     def test_the_two_skins_no_config_explained_are_the_european_models(self):
         """Section 131, and it replaces a test that asserted the opposite for four days.
 
-        The classic client table in `reference/models.md` holds 46 skins and lacks 59 and 73, the
+        The classic client table, `reference/remotes/README.md`, holds 46 skins and lacks 59 and 73, the
         two numbers containers here carry where the remote reports 54 and 71. Two rules were
         derived from that absence and both are dead, `docs/superseded.md`; the second one
         said each was the first free number above the run containing the remote's own skin, and

@@ -24,17 +24,18 @@ table's[^x-forum-table], and sequences are consistent with what the firmware run
 
 | | value |
 |---|---|
-| product family | HarmonyOne, compiler architecture 12[^unchecked] |
+| product family | HarmonyOne, compiler architecture 12[^t-capabilities] |
 | max devices | 15[^s136] |
-| max favourite channels | 24[^t-product-table] |
+| max favourite channels | 24[^t-product-table][^t-capabilities] |
 | max activities | not stated[^s145] |
-| display | colour, 2 by 3[^unchecked] |
-| settings and defaults | **none listed**: no `RemoteSettings` capability, so no screen light, tilt or Remote Assistant setting[^unchecked] |
-| capabilities stated | Activities, FavoriteChannels, ColourDisplay, ActivityCompiledRemoteButtonMapping, PartiallySetupActivities, **ActivityReorder**, LocaleEnabled, DeviceDelay, SupportActivitySequence and ButtonSequences, LeaveDevicesPoweredOn, FavoriteChannelImageScaling, the SmartTV, Apple TV and Roku activities[^unchecked] |
-| capabilities the 600, 650 and 700 state and the One does not | RemoteSettings, ActivityMapping, SupportsMHAssist[^unchecked] |
+| display | colour, 2 by 3[^t-capabilities] |
+| settings and defaults | **none listed**: no `RemoteSettings` capability, so no screen light, tilt or Remote Assistant setting[^t-capabilities] |
+| capabilities stated | Activities, FavoriteChannels, ColourDisplay, ActivityCompiledRemoteButtonMapping, PartiallySetupActivities, **ActivityReorder**, LocaleEnabled, DeviceDelay, SupportActivitySequence and ButtonSequences, LeaveDevicesPoweredOn, `FavoriteChannelImageScaller` (spelt so by the service), the SmartTV, Apple TV and Roku activities, video calling and the watch app[^t-capabilities] |
+| capabilities the 600, 650 and 700 state and the One does not | RemoteSettings, ActivityMapping, SupportsMHAssist[^t-capabilities] |
 
-The rows marked not checked are Logitech's service's answer to `UserAccountDirector/GetProductCapabilities2`
-for a skin 54 product; no archive section or test holds that reply, so they stand on it alone.
+The table is Logitech's service's answer to `UserAccountDirector/GetProductCapabilities2` for a skin 54
+product. The service names that product "Harmony One" and displays it as "Harmony One+", in this answer
+and in its product list alike[^t-capabilities].
 **ActivityReorder** is checked: MyHarmony lets a One owner order the activity menu, and the Harmony 600,
 650 and 700 carry no such capability[^s351].
 
@@ -110,11 +111,12 @@ are erased on both remotes read[^s150b].
 [^t-long-press]: Stated by Logitech, by their service. [The test](../../../packages/usb/test/models.test.ts)
 [^x-forum-table]: Stated by a third party. [The comparison table](https://harmony-remote-forum.de/harmony_compare.php)
 [^s34]: Read in the firmware. [Section 34](../../../docs/findings.md#s34)
-[^unchecked]: Not checked.
+[^t-capabilities]: Stated by Logitech, by their service. [The test](../../../tests/test_product_capabilities.py)
 [^t-product-table]: Stated by Logitech, by their service. [The test](../../../tests/test_host_client.py)
 [^s145]: Stated by Logitech, by their service. [Section 145](../../../docs/findings.md#s145)
 [^s351]: Stated by Logitech, in their client. [Section 351](../../../docs/findings.md#s351)
 [^x-one-manual]: Stated by Logitech, in the manual. [The Harmony One user guide](https://secure.logitech.com/assets/44645/13/harmonyone-user-guide.pdf)
+[^unchecked]: Not checked.
 [^s271]: Measured in configurations. [Section 271](../../../docs/findings.md#s271)
 [^s293]: Measured in configurations. [Section 293](../../../docs/findings.md#s293)
 [^s293b]: Measured on a unit. [Section 293](../../../docs/findings.md#s293)

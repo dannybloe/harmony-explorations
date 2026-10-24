@@ -58,11 +58,12 @@ the facts resting on them are marked not checked in the reference until one exis
   read off its cover photograph, PDF page 2, and its quotes about device keys, Watch TV and favourite
   channels are in the model's `behaviour.md` and `features.md`. No public copy of the English guide with
   those sentences was found.
-* **Logitech's service's capability answer for a skin 79 entry**,
-  `UserAccountDirector/GetProductCapabilities2`, asked on 7 October 2026 and filed in the lab's
-  `work/myharmony/responses-per-model/`. Sections 264 and 265 hold its device and favourite maxima and its
-  activity capability; the rest of the list (product family, display, settings, the other capability
-  flags) and skin 78's favourite maximum of 5 are in no section or test.
+
+Logitech's service's capability answer for a skin 79 entry, `UserAccountDirector/GetProductCapabilities2`,
+asked on 7 October 2026 ([accounts.md](accounts.md)), was on this list until plan 009's step 3.4: sections
+264 and 265 held only its device and favourite maxima and its activity capability, and now
+`tests/test_product_capabilities.py` holds the whole answer and `tests/test_host_client.py` skin 78's
+favourite maximum of 5.
 
 ## Not done
 

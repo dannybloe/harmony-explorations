@@ -152,11 +152,14 @@ docs/superseded.md              claims a finding killed, which no document may r
 docs/test-notes/                this project's own units, accounts and configurations, kept out of
                                 the reference
 docs/predictions/               predictions written down before a measurement, then scored
-reference/models.md             the 40 models Logitech retired in 2025, mapped to architectures
-reference/capabilities.md       what each model's hardware can do, per skin, with a verification
-                                column. Third party and unconfirmed except where that column says
-                                otherwise, and `packages/usb/src/models.ts` is the executable form.
-                                To be absorbed into reference/remotes/ model by model
+reference/remotes/README.md     every model: a generated index of every skin with its record from
+                                `packages/usb/src/models.ts`, where each column comes from and what
+                                it is worth, the skins without a record, and the long press list.
+                                With reference/logitech/product-line.md (the models Logitech retired
+                                in 2025, and its catalogue) and reference/architectures/README.md
+                                (which model sits on which architecture, platforms, product ids) it
+                                replaced reference/models.md and reference/capabilities.md in plan
+                                009's step 3.4
 reference/remotes/              the per remote technical reference, one folder per model and ten
                                 files each: hardware, keys, display, features, behaviour, memory,
                                 firmware, usb and misc beside a README. Every fact carries its source

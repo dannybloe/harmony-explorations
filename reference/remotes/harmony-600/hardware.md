@@ -18,7 +18,7 @@ which the 600 shares key for key with the 650 and 700. This page states what the
 | internal flash | 128 KiB in two pages, both read whole off a unit, [memory.md](memory.md) | [^s23] |
 | external flash | 2 MiB: a unit answers at `0x1F0000` and refuses at `0x230000`, and the firmware's address classifier refuses at `0x200000`. The manual: "Memory Amount 2MB", "Memory Type Flash" | [^s88], [^s88b], [^x-manual] |
 | flash parts the firmware accepts | six pairs of capacity and manufacturer, where the 650's and 700's builds accept seven: the 600's drops EON at 1 MiB | [^s108] |
-| hardware version | 1.1, where the Harmony 650 reports 1.2 | [^s302], [^s281] |
+| hardware version | 1.1; a Harmony 650 reports a different one, whose value is not checked | [^s302], [^s281], [^unchecked] |
 
 ## Power
 

@@ -13,16 +13,14 @@ the transport's rails are argued.
 <!-- generated:usb-identity -->
 | field | value | from |
 |---|---|---|
-| USB product id | none | `PROFILES` in `packages/corpus/src/read.ts` |
-| first refused flash top byte | none read | `FLASH_TOP_BYTE_BOUND` in `packages/usb/src/protocol.ts` |
-| escape sub commands dispatched | none read | `ESCAPE_SUB_COMMANDS` in `packages/usb/src/protocol.ts` |
+| USB product id | 0xC12B, file based | `FILE_BASED_PRODUCTS` in `packages/usb/src/transport.ts`, and the model's row in `REMOTES` |
+| flash addresses and escape sub commands | none: a file based remote is read by file name, and `openHarmony` refuses it | `isFileBasedRemote` in `packages/usb/src/transport.ts` |
 
-Generated from `packages/corpus` and `packages/usb` by `make remote-reference-write`. Change the source, not this block.
+Generated from `packages/usb` and `REMOTES` in `packages/silhouettes/bin/remotes.ts` by `make remote-reference-write`. Change the source, not this block.
 <!-- /generated -->
 
-The block above is empty by construction: `PROFILES` lists the command protocol's remotes, and the Touch is
-in `FILE_BASED_PRODUCTS` in `packages/usb/src/transport.ts` instead, as "Harmony Touch, and the Harmony
-Ultimate".
+The product id comes from `FILE_BASED_PRODUCTS` in `packages/usb/src/transport.ts`, which lists it as
+"Harmony Touch, and the Harmony Ultimate", and the command protocol's profiles hold no entry for it.
 
 | field | value | evidence |
 |---|---|---|

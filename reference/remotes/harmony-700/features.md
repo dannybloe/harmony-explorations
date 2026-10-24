@@ -22,8 +22,8 @@ forum table's[^x-forum].
 
 ## What Logitech's service states
 
-Logitech's service, asked for the capabilities of a skin 66 product, states what follows; no archive
-section or test holds the answer yet[^unchecked].
+Logitech's service, asked for the capabilities of a skin 66 product through
+`UserAccountDirector/GetProductCapabilities2`, states what follows[^t-capabilities].
 
 | | value |
 |---|---|
@@ -33,14 +33,14 @@ section or test holds the answer yet[^unchecked].
 | max activities | not stated |
 | display | colour, 2 by 2 |
 | settings and defaults | screen lit 20, tilt sensor on, Remote Assistant on |
-| capabilities stated | the Harmony 650's list exactly: Activities, FavoriteChannels, RemoteSettings, ColourDisplay, ActivityCompiledRemoteButtonMapping, PartiallySetupActivities, LocaleEnabled, DeviceDelay, ActivityMapping, SupportActivitySequence and ButtonSequences, LeaveDevicesPoweredOn, SupportsMHAssist, the SmartTV, Apple TV and Roku activities, FavoriteChannelImageScaling |
+| capabilities stated | the Harmony 650's list exactly: Activities, FavoriteChannels, RemoteSettings, ColourDisplay, ActivityCompiledRemoteButtonMapping, PartiallySetupActivities, LocaleEnabled, DeviceDelay, ActivityMapping, SupportActivitySequence and ButtonSequences, LeaveDevicesPoweredOn, SupportsMHAssist, the SmartTV, Apple TV and Roku activities, video calling and the watch app, and `FavoriteChannelImageScaller`, spelt so by the service |
 
 ## Devices: Logitech's figures, and what the remote runs
 
 | figure | evidence |
 |---|---|
 | **8**: Logitech's service, `MaxDevicesPerAccount`, and the classic client's table; what `models.ts` holds | [^t-product-table], [^s136] |
-| **8**: the manual's 2010 edition, "op til 8 komponenter" in the Danish and "8 Geräte" in the German, and 8 in both specification tables | [^x-manual-2010] |
+| **8**: the manual's 2010 edition, "you can set up the Harmony 700 to control up to 8 devices" and "If you have already set up 8 devices (the maximum number of devices for the Harmony 700), the option for adding devices will not be available" | [^x-manual-2010] |
 | **6**: the manual's 2009 edition in English, "configure the Harmony 700 to control up to 6 devices", page 4, and its Product Specification, "Maximum number of devices per account 6" | [^x-manual] |
 
 So **the two vendor figures are two editions**: the 2009 manual says 6, and Logitech's own 2010 manual
@@ -85,10 +85,10 @@ not checked[^unchecked].
 
 | setting | evidence |
 |---|---|
-| how long the screen stays lit, "Glow Timing"; Logitech's service gives a default of 20 | [^x-manual], [^unchecked] |
-| tilt sensor: the remote "senses when you pick it up"; Logitech's service gives it on by default | [^x-manual], [^unchecked] |
-| Remote Assistant, on by default by Logitech's service. On every Logitech compile for the 700 the Assistant's "Turn off Assistant" key writes a variable to 1, and leaving "USB Connected" restores the running activity's keys only while that variable is 0; none with the Assistant off has been read | [^s382] |
-| leave devices on when switching activities: Logitech's service states `LeaveDevicesPoweredOn`; how it compiles is read on the Harmony 650 | [^s340] |
+| how long the screen stays lit, "Glow Timing"; Logitech's service gives a default of 20 | [^x-manual], [^t-capabilities] |
+| tilt sensor: the remote "senses when you pick it up"; Logitech's service gives it on by default | [^x-manual], [^t-capabilities] |
+| Remote Assistant, on by default by Logitech's service[^t-capabilities]. On every Logitech compile for the 700 the Assistant's "Turn off Assistant" key writes a variable to 1, and leaving "USB Connected" restores the running activity's keys only while that variable is 0; none with the Assistant off has been read | [^s382] |
+| leave devices on when switching activities: Logitech's service states `LeaveDevicesPoweredOn`; how it compiles is read on the Harmony 650 | [^t-capabilities], [^s340] |
 
 ## Learning
 
@@ -105,10 +105,11 @@ its Product Specification[^x-manual]. Learning on a 700 is not checked[^unchecke
 [^s136]: Stated by Logitech, by their service. [Section 136](../../../docs/findings.md#s136)
 [^t-long-press]: Stated by Logitech, by their service. [The test](../../../packages/usb/test/models.test.ts)
 [^x-forum]: Stated by a third party. [The forum comparison table](https://harmony-remote-forum.de/harmony_compare.php)
-[^unchecked]: Not checked.
-[^x-manual-2010]: Stated by Logitech, in the manual. [The 2010 edition, in Danish](https://www.logitech.com/assets/44637/harmony700-user-guide.pdf)
-[^x-manual]: Stated by Logitech, in the manual. [The Harmony 700 user manual](https://support.myharmony.com/harmony-700-user-manual)
+[^t-capabilities]: Stated by Logitech, by their service. [The test](../../../tests/test_product_capabilities.py)
+[^x-manual-2010]: Stated by Logitech, in the manual. [The 2010 edition, in English](https://cdn-cx-images.dynamite.myharmony.com/usermanuals/harmony700-usermanual-en.pdf)
+[^x-manual]: Stated by Logitech, in the manual. [The Harmony 700 user manual, the 2009 edition](https://www.manualslib.com/manual/96454/Logitech-Harmony-700.html)
 [^s386]: Measured on a unit. [Section 386](../../../docs/findings.md#s386)
+[^unchecked]: Not checked.
 [^s314]: Measured in configurations. [Section 314](../../../docs/findings.md#s314)
 [^s344]: Measured in configurations. [Section 344](../../../docs/findings.md#s344)
 [^s301]: Measured on a unit. [Section 301](../../../docs/findings.md#s301)

@@ -34,7 +34,7 @@ index, 57 and 18 times across the two, which is the measurement behind the refer
 key binding"; and the 160 glyphs of the two bit packing took the corpus glyph total from 3933 to 4093,
 section 63. One is English and the other Dutch, which a reader of on screen text has to allow for, section
 149. Neither the device count nor the `0x7E` count has an archive section of its own: both were counted
-for the capability table that `reference/capabilities.md` held.
+for the capability table the reference held before plan 009's step 3.4.
 
 All 14<!--fact:container_checks_arch9--> container checks pass on the contributed sample. Fourteen and not
 fifteen because the `AHCM` family carries no key table after the marker, so `key_table_is_complete` does

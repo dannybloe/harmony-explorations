@@ -70,7 +70,7 @@ checked[^unchecked].
 [^s88]: Read in the firmware. [Section 88](../../../docs/findings.md#s88)
 [^s295b]: Read in the firmware. [Section 295](../../../docs/findings.md#s295)
 [^s297]: Measured on a unit. [Section 297](../../../docs/findings.md#s297)
-[^x-manual]: Stated by Logitech, in the manual. [The Harmony 700 user manual](https://support.myharmony.com/harmony-700-user-manual)
+[^x-manual]: Stated by Logitech, in the manual. [The Harmony 700 user manual, the 2009 edition](https://www.manualslib.com/manual/96454/Logitech-Harmony-700.html)
 [^s108]: Read in the firmware. [Section 108](../../../docs/findings.md#s108)
 [^s311]: Measured in configurations. [Section 311](../../../docs/findings.md#s311)
 [^s383]: Measured in configurations. [Section 383](../../../docs/findings.md#s383)

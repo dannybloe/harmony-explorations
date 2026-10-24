@@ -292,7 +292,8 @@ reach them at all, never mind parse them.
 There is a sharper version of the same point. Logitech's own discontinuation notice of 28 May 2025
 names forty models whose accounts it closed, and **not one of them is arch 12 or arch 14**; they
 are the older EasyZapper platform, spanning at least six architectures, while the bench holds two
-remotes from the platform that came after. `reference/models.md` has the list and the mapping.
+remotes from the platform that came after. [The product line](../reference/logitech/product-line.md) has the
+list and [the architectures](../reference/architectures/README.md) the mapping.
 
 That gap is what step 8 exists for, and **as of 12 August 2026 it is not what the project spends its
 time on**: decision 10 below puts the application first and stops soliciting dumps. The gap is real, the

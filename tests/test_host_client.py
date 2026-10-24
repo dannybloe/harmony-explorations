@@ -158,10 +158,22 @@ PRODUCT_REPLIES = ('GetAllProducts.json', 'GetHarmonyProducts.json')
 #: model anybody here could use, so the standing claim that no source states an activity limit is not
 #: merely unrefuted, it is confirmed with the field named. A future reader who finds `MaxActivities`
 #: in this reply and thinks the question is answered can read this instead of measuring again.
+#:
+#: `name` is the record's `DisplayName`. Skin 54's is "Harmony One+" where its `Name` is "Harmony One",
+#: and the per model capability answer says the same, `tests/test_product_capabilities.py`: the plus is
+#: the service's display name for the Harmony One's skin, not another product. Skins 72, 78 and 79 joined
+#: in `todo-reference.md` 3.4, so that every bench model's maxima rest on this reply: the Harmony 650's,
+#: and the Harmony 300's two regional skins, which differ in their favourite maximum, 5 against 4.
 PRODUCTS = {
     22: {'name': 'Harmony 525', 'enabled': False, 'max_devices': 12, 'favourites': 0,
          'max_activities': 255},
     54: {'name': 'Harmony One+', 'enabled': True, 'max_devices': 15, 'favourites': 24,
+         'max_activities': None},
+    72: {'name': 'Harmony 650', 'enabled': True, 'max_devices': 8, 'favourites': 23,
+         'max_activities': None},
+    78: {'name': 'Harmony 300', 'enabled': True, 'max_devices': 4, 'favourites': 5,
+         'max_activities': None},
+    79: {'name': 'Harmony 300', 'enabled': True, 'max_devices': 4, 'favourites': 4,
          'max_activities': None},
     59: {'name': 'Harmony One EMEA', 'enabled': False, 'max_devices': 15, 'favourites': 0,
          'max_activities': 255},
@@ -1199,8 +1211,8 @@ class TheClientPicksATransportFromTheProductId(unittest.TestCase):
     def test_the_join_with_the_model_names_has_the_shape_the_reference_states(self):
         """35 of 46 named skins placed, 11 not, and 17 placed that no name covers.
 
-        `reference/models.md` publishes the join, so the counts are asserted here rather than left to
-        a reader to recount. The nine unplaced 6xx and 7xx models are unplaceable for a stated reason
+        `reference/architectures/README.md` publishes the join, so the counts are asserted here rather
+        than left to a reader to recount. The nine unplaced 6xx and 7xx models are unplaceable for a stated reason
         and the check for that is the next assertion: their platform key holds a product id and no
         skin list, which is why they fall out of a skin keyed join at all.
         """
@@ -1236,7 +1248,7 @@ class TheClientPicksATransportFromTheProductId(unittest.TestCase):
     def test_the_platform_groups_are_transports_and_not_architectures(self):
         """The Harmony 700, 600 and 650 sit in the group whose other members are Harmony 525s.
 
-        This is the assertion that stops the table in `reference/models.md` being read as an
+        This is the assertion that stops the table in `reference/architectures/README.md` being read as an
         architecture map. Skins 66, 71 and 72 are architecture 14 and skin 22 is architecture 9, and
         all four are in Mocha, because what the group decides is which driver speaks to the remote.
         """
@@ -1263,16 +1275,17 @@ class TheTeachingPicturesNameAnArchitecturePerSkin(unittest.TestCase):
     has never seen these files. This test recomputes both halves and joins them.
 
     Names and numbers travel, per the interoperability rule the rest of this file works under.
-    Nothing is adopted: `reference/models.md`'s architecture column is concordance's either way.
+    Nothing is adopted: `reference/architectures/README.md`'s architecture column is concordance's
+    either way.
     """
 
     IMAGES = ('software', 'classic', 'res', 'client', 'skins', 'logitech', 'intl', 'images')
     REMOTE = ('software', 'classic', 'res', 'client', 'skins', 'logitech', 'intl', 'remote',
               'remote.properties')
 
-    #: Concordance's `SupportedModels.md` table, as `reference/models.md` records it. Only the four
-    #: architectures the picture bundle names are needed, and the point of holding all of each row is
-    #: the control below: a model that appeared twice would make a mismatch invisible.
+    #: Concordance's `SupportedModels.md` table, as `reference/architectures/README.md` records it. Only
+    #: the four architectures the picture bundle names are needed, and the point of holding all of
+    #: each row is the control below: a model that appeared twice would make a mismatch invisible.
     CONCORDANCE = {
         2: ('745',),
         3: ('748', '768'),
@@ -1334,7 +1347,7 @@ class TheTeachingPicturesNameAnArchitecturePerSkin(unittest.TestCase):
 
         The tenth pair is architecture 2 and skin 2, which the client gives no model name, so it is
         asserted as unnamed rather than quietly dropped: an elimination against concordance's single
-        arch 2 model is what `reference/models.md` records and it is not a reading.
+        arch 2 model is what `reference/architectures/README.md` records and it is not a reading.
         """
         names = self.models()
         self.assertEqual(len(names), 46, 'skins the client has a model name for')

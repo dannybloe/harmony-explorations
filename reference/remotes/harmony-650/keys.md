@@ -164,7 +164,6 @@ drawing the keys "USB Connected" waits for, scans 11, 12 and 51, are an unnamed 
 [^s133]: Measured in configurations. [Section 133](../../../docs/findings.md#s133)
 [^s323]: Measured in configurations. [Section 323](../../../docs/findings.md#s323)
 [^s333]: Measured in configurations. [Section 333](../../../docs/findings.md#s333)
-[^s340]: Read in the firmware. [Section 340](../../../docs/findings.md#s340)
 [^s314]: Measured in configurations. [Section 314](../../../docs/findings.md#s314)
 [^s383]: Measured on a unit. [Section 383](../../../docs/findings.md#s383)
 [^s374]: Measured on a unit. [Section 374](../../../docs/findings.md#s374)

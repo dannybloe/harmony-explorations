@@ -108,7 +108,7 @@ compiles[^s385].
 * The scan codes of the two arrows below the display, All Off, Enter and More Activities[^unchecked].
 * The key handler on the 2.8 build beyond the scanner[^unchecked].
 
-[^x-manual]: Stated by Logitech, in the manual. [The Harmony 700 user manual](https://support.myharmony.com/harmony-700-user-manual)
+[^x-manual]: Stated by Logitech, in the manual. [The Harmony 700 user manual, the 2009 edition](https://www.manualslib.com/manual/96454/Logitech-Harmony-700.html)
 [^s133]: Measured in configurations. [Section 133](../../../docs/findings.md#s133)
 [^unchecked]: Not checked.
 [^s311]: Measured in configurations. [Section 311](../../../docs/findings.md#s311)

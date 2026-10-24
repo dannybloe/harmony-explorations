@@ -96,7 +96,7 @@ export const HARMONY_PRODUCT_LAST = 0xc14f;
  * These remotes hold their configuration in a named file rather than at a flash address, so
  * `READ_FLASH`, `READ_MISC` and the whole command layer this package implements do not apply to
  * them: there is no address to read, no firmware to read and no RAM to poll.
- * `reference/models.md` carries the argument.
+ * `reference/architectures/README.md`, "Three ways a host talks to a remote", carries the argument.
  *
  * **The set is concordance's**, its `is_mh_pid`, so it has the ordinary standing of an upstream
  * claim: a hypothesis, not a fact. It is adopted anyway because it can only **refuse** more, which

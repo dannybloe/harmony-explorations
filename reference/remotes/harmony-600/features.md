@@ -23,20 +23,21 @@ declares none for this model[^t-long-press]. The other columns are the forum tab
 
 ## What Logitech's service states
 
-Asked for a skin 71 entry through `UserAccountDirector/GetProductCapabilities2`:
+Asked for a skin 71 product through `UserAccountDirector/GetProductCapabilities2`:
 
 | | value |
 |---|---|
-| max devices | 5[^t-product-table] |
-| max favourite channels | 23[^t-product-table] |
+| product family | Molson, compiler architecture 14[^t-capabilities] |
+| max devices | 5[^t-product-table][^t-capabilities] |
+| max favourite channels | 23[^t-product-table][^t-capabilities] |
 | max activities | not stated[^t-product-table] |
-| display | monochrome, 2 by 2[^unchecked] |
-| settings and their defaults | screen lit 20, tilt sensor on, Remote Assistant on[^s292] |
-| capabilities stated | Activities, FavoriteChannels, RemoteSettings, ActivityCompiledRemoteButtonMapping, PartiallySetupActivities, LocaleEnabled, DeviceDelay, ActivityMapping, SupportActivitySequence and ButtonSequences, LeaveDevicesPoweredOn, SupportsMHAssist, the SmartTV, Apple TV and Roku activities[^unchecked] |
-| capabilities the 650 and 700 state and the 600 does not | ColourDisplay, FavoriteChannelImageScaling[^unchecked] |
+| display | monochrome, 2 by 2[^t-capabilities] |
+| settings and their defaults | screen lit 20, tilt sensor on, Remote Assistant on[^s292][^t-capabilities] |
+| capabilities stated | Activities, FavoriteChannels, RemoteSettings, ActivityCompiledRemoteButtonMapping, PartiallySetupActivities, LocaleEnabled, DeviceDelay, ActivityMapping, SupportActivitySequence and ButtonSequences, LeaveDevicesPoweredOn, SupportsMHAssist, the SmartTV, Apple TV and Roku activities, video calling and the watch app[^t-capabilities] |
+| capabilities the 650 and 700 state and the 600 does not | ColourDisplay and `FavoriteChannelImageScaller`, spelt so by the service[^t-capabilities] |
 
-The display and capability rows are the service's answer as it was read, and no archive section or test
-holds that answer, so they are marked not checked.
+The display row is Logitech's word for what the remote shows: a monochrome screen, where the Harmony 650 and
+700 state colour.
 
 ## Devices
 
@@ -97,7 +98,7 @@ variables[^s331].
 
 ## Sequences
 
-Logitech's service states `SupportActivitySequence` and `ButtonSequences`[^unchecked]. A sequence as
+Logitech's service states `SupportActivitySequence` and `ButtonSequences`[^t-capabilities]. A sequence as
 Logitech compiles it on this architecture is read on the Harmony 650[^s343]; on a 600 it is not
 checked[^unchecked].
 
@@ -108,7 +109,7 @@ checked[^unchecked].
 | how long the screen stays lit, "Glow Timing"; the service's default is 20 | [^x-manual], [^s292] |
 | tilt sensor, default on; the manual: the remote "senses when you pick it up" | [^s292], [^x-manual] |
 | Remote Assistant, default on. One of Logitech's 600 compiles has none of the Assistant's screens, branch or variable, which fits its being compiled with the setting off and is not established, since its settings at compile time were not saved | [^s292], [^s333], [^s347] |
-| leave devices on when switching activities, `LeaveDevicesPoweredOn`; how it compiles is read on the Harmony 650 | [^unchecked], [^s340] |
+| leave devices on when switching activities, `LeaveDevicesPoweredOn`, stated by Logitech's service; how it compiles is read on the Harmony 650 | [^t-capabilities], [^s340] |
 
 ## Learning
 
@@ -126,10 +127,11 @@ and Product Specification[^x-manual]. Learning on a 600 is not checked[^unchecke
 [^t-product-table]: Stated by Logitech, by their service. [The test](../../../tests/test_host_client.py)
 [^t-long-press]: Stated by Logitech, by their service. [The test](../../../packages/usb/test/models.test.ts)
 [^x-forum]: Stated by a third party. [The comparison table of harmony-remote-forum.de](https://www.harmony-remote-forum.de/harmony_compare.php)
-[^unchecked]: Not checked.
+[^t-capabilities]: Stated by Logitech, by their service. [The test](../../../tests/test_product_capabilities.py)
 [^s292]: Stated by Logitech, by their service. [Section 292](../../../docs/findings.md#s292)
 [^x-manual]: Stated by Logitech, in the manual. [The Harmony 600 user manual](https://support.myharmony.com/harmony-600-user-manual)
 [^s390]: Measured on a unit. [Section 390](../../../docs/findings.md#s390)
+[^unchecked]: Not checked.
 [^s331]: Measured in configurations. [Section 331](../../../docs/findings.md#s331)
 [^s314]: Measured in configurations. [Section 314](../../../docs/findings.md#s314)
 [^s311]: Measured in configurations. [Section 311](../../../docs/findings.md#s311)

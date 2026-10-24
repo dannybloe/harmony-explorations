@@ -1,8 +1,8 @@
 /**
  * The generated blocks of the per remote reference, `reference/remotes/` and `reference/architectures/`.
  *
- * Those documents are hand written, one folder per model and one per architecture, and a few of their
- * facts already live in code: the skin table in `packages/usb/src/models.ts`, the key list and the
+ * Those documents are hand written, one folder per model and one per architecture plus the model index
+ * in `reference/remotes/README.md`, and a few of their facts already live in code: the skin table in `packages/usb/src/models.ts`, the key list and the
  * measured scan codes in this package's own drawings, the screen raster in `packages/codec`, the
  * product id in `packages/corpus` and every write list in `packages/usb/src/rails.ts`. Typing those
  * into a document a second time is the two copies state this repository refuses everywhere else, and
@@ -46,10 +46,12 @@ import {
   CONFIG_REGION_BASE,
   ERASE_BLOCK_SIZE,
   ESCAPE_SUB_COMMANDS,
+  FILE_BASED_PRODUCTS,
   FLASH_TOP_BYTE_BOUND,
   MODELS_BY_SKIN,
   REINSTALL_MAX_IMAGE,
   SKINS_WITHOUT_A_MODEL_RECORD,
+  SKINS_WITH_A_LONG_PRESS,
   SETTINGS_WRITE_READ_ON,
   STAGING_REGION,
   STATUS_BYTE_READ_ON_APPLICATION,
@@ -99,6 +101,17 @@ interface RemoteFolder {
    * without its row saying so fails, and a row is where a folder with a different shape says it has one.
    */
   readonly files?: readonly string[];
+  /**
+   * The USB product id of a model in the **file based** family, which `PROFILES` does not list because
+   * the command protocol never reads it.
+   *
+   * `FILE_BASED_PRODUCTS` in `packages/usb/src/transport.ts` holds the ids and deliberately maps none to
+   * a model, since one id covers two models. So the row says which id its model enumerates as, measured
+   * on a unit (sections 193 and 195), and the generator refuses an id that list does not hold. Until
+   * plan 009's step 3.4 the usb identity block of these folders printed `none` for the product id, which
+   * read as a measurement of nothing.
+   */
+  readonly fileBasedProduct?: number;
 }
 
 /**
@@ -145,20 +158,21 @@ export const REMOTES: readonly RemoteFolder[] = [
   // Neither model has a record in `MODELS_BY_SKIN`, so their skin and capability rows say so rather
   // than failing: 78 and 79 are named by `SKINS_WITHOUT_A_MODEL_RECORD`, and 104 by nothing in
   // models.ts but `SKINS_WITH_A_LONG_PRESS`. The 300 uses its own drawing, which takes the 350's shapes.
-  { folder: 'harmony-300', skins: [78, 79], drawing: 'h300', architecture: 16 },
-  { folder: 'harmony-350', skins: [104], drawing: 'h350', architecture: 16 },
+  { folder: 'harmony-300', skins: [78, 79], drawing: 'h300', architecture: 16, fileBasedProduct: 0xc124 },
+  { folder: 'harmony-350', skins: [104], drawing: 'h350', architecture: 16, fileBasedProduct: 0xc124 },
   { folder: 'harmony-600', skins: [71, 73], drawing: 'h600', architecture: 14 },
   { folder: 'harmony-650', skins: [72, 74], drawing: 'h650', architecture: 14 },
   { folder: 'harmony-700', skins: [66, 69], drawing: 'h700', architecture: 14 },
   // Skin 22 alone, as the drawing serves it. Skin 18, the Harmony 520, is the same remote under its
   // other regional name in `MODELS_BY_SKIN`, but its face lacks the four teletext keys this drawing
-  // carries, `reference/capabilities.md`, so it is not this drawing's skin and not this folder's.
+  // carries, `reference/remotes/harmony-525/README.md`, so it is not this drawing's skin and not this
+  // folder's.
   { folder: 'harmony-525', skins: [22], drawing: 'h525', architecture: 9 },
   // **Architecture 17 is what the remote reports**, `/sys/sysinfo` read off a unit, section 200, and
   // Logitech's own specification says 18, section 197. The drawing takes the remote's word and so
   // does this row; the folder states both.
   {
-    folder: 'harmony-touch', skins: [99], drawing: 'touch', architecture: 17,
+    folder: 'harmony-touch', skins: [99], drawing: 'touch', architecture: 17, fileBasedProduct: 0xc12b,
     rasterFromDrawing: '`touch.ts`, the size of every screen capture in Logitech\'s user guide; no configuration of this model has been read',
   },
   // The two models known only from contributed configurations and firmware images, plan 009's step 3.5.
@@ -492,8 +506,35 @@ function slotMapTable(architecture: number): string {
   ].join('\n');
 }
 
+/**
+ * The identity block of the file based family: the product id its models enumerate as, and nothing about
+ * flash or the escape, which this family does not have.
+ *
+ * The id comes from the folders' rows, checked against `FILE_BASED_PRODUCTS`, so a row naming an id
+ * that list does not hold fails here rather than printing a number the transport would not recognise.
+ */
+function fileBasedIdentity(architecture: number): string {
+  const ids = [...new Set(REMOTES.filter((r) => r.architecture === architecture)
+    .map((r) => r.fileBasedProduct).filter((id): id is number => id !== undefined))].sort((a, b) => a - b);
+  for (const id of ids) {
+    if (!FILE_BASED_PRODUCTS.includes(id)) throw new Error(`${hex(id, 4)} is not in FILE_BASED_PRODUCTS`);
+  }
+  return [
+    '| field | value | from |',
+    '|---|---|---|',
+    `| USB product id | ${ids.map((id) => hex(id, 4)).join(', ')}, file based | \`FILE_BASED_PRODUCTS\` in \`packages/usb/src/transport.ts\`, and the model's row in \`REMOTES\` |`,
+    '| flash addresses and escape sub commands | none: a file based remote is read by file name, and `openHarmony` refuses it | `isFileBasedRemote` in `packages/usb/src/transport.ts` |',
+    '',
+    provenance('`packages/usb` and `REMOTES` in `packages/silhouettes/bin/remotes.ts`'),
+  ].join('\n');
+}
+
 function usbIdentity(architecture: number): string {
   const profiles = PROFILES.filter((p) => p.architecture === architecture);
+  // The file based family has no profile; its rows name the product id instead.
+  if (profiles.length === 0 && REMOTES.some((r) => r.architecture === architecture && r.fileBasedProduct !== undefined)) {
+    return fileBasedIdentity(architecture);
+  }
   const bound = FLASH_TOP_BYTE_BOUND[architecture];
   const escapes = ESCAPE_SUB_COMMANDS[architecture] ?? [];
   const span = flashSpan(architecture);
@@ -604,6 +645,71 @@ function writeRails(architecture: number): string {
   ].join('\n');
 }
 
+/** The folder a skin belongs to, as a link from `reference/remotes/README.md`, or empty. */
+function folderLink(skin: number): string {
+  const r = REMOTES.find((row) => row.skins.includes(skin));
+  return r === undefined ? '' : `[${r.folder}](${r.folder}/README.md)`;
+}
+
+/**
+ * The index of every model, `reference/remotes/README.md`: every skin `MODELS_BY_SKIN` holds, with every
+ * field of its record and the folder that describes it.
+ *
+ * This is what `reference/capabilities.md` held as a hand table of 22 rows until plan 009's step 3.4,
+ * which drifted from `models.ts` in the way every hand copy here has: it had 22 rows when the record had
+ * 35. The standing of each column is the page's prose, since a column's source is not in the record.
+ */
+function modelIndex(): string {
+  const skins = Object.keys(MODELS_BY_SKIN).map(Number).sort((a, b) => a - b);
+  const rows = skins.map((skin) => {
+    const m = MODELS_BY_SKIN[skin]!;
+    return `| ${skin} | ${modelName(skin)} | ${m.alias === undefined ? '' : `Harmony ${m.alias}`} | ${m.architecture} `
+      + `| ${m.panel} | ${yes(m.touch)} | ${m.maxDevices} | ${m.favourites ?? 'none'} | ${m.rfChannels ?? ''} `
+      + `| ${yes(m.macros)} | ${yes(m.pageButton)} | ${yes(m.soundPictureButtons)} | ${m.firmwareSeen ?? ''} `
+      + `| ${folderLink(skin)} |`;
+  });
+  return [
+    `${skins.length} skins have a record.`,
+    '',
+    '| skin | model | regional twin | architecture | panel | touch | max devices | favourite channel buttons '
+      + '| radio channels | sequences | page button | sound and picture keys | newest firmware the forum table knows | folder |',
+    '|---|---|---|---|---|---|---|---|---|---|---|---|---|---|',
+    ...rows,
+    '',
+    provenance('`MODELS_BY_SKIN` in `packages/usb/src/models.ts` and the folders\' rows in `REMOTES`'),
+  ].join('\n');
+}
+
+/**
+ * The skins Logitech names that have no record, `reference/remotes/README.md`: the catalogue names
+ * `SKINS_WITHOUT_A_MODEL_RECORD` keeps, the long press list, and any skin a folder names, so that a model
+ * with a folder and no record, the Harmony 350's skin 104 say, is listed rather than missing.
+ */
+function unrecordedSkins(): string {
+  const skins = [...new Set([
+    ...Object.keys(SKINS_WITHOUT_A_MODEL_RECORD).map(Number),
+    ...SKINS_WITH_A_LONG_PRESS,
+    ...REMOTES.flatMap((r) => r.skins),
+  ])].filter((s) => MODELS_BY_SKIN[s] === undefined).sort((a, b) => a - b);
+  const rows = skins.map((skin) => {
+    const named = SKINS_WITHOUT_A_MODEL_RECORD[skin];
+    // "Harmony" goes before a model number only: a rebadge, "Monster AVL 300", is somebody else's name.
+    const name = named === undefined ? 'not named in models.ts' : /^\d/.test(named) ? `Harmony ${named}` : named;
+    return `| ${skin} | ${name} `
+      + `| ${yes(hasLongPress(skin))} | ${folderLink(skin)} |`;
+  });
+  return [
+    `${skins.length} skins without a record.`,
+    '',
+    '| skin | Logitech\'s name | long press | folder |',
+    '|---|---|---|---|',
+    ...rows,
+    '',
+    provenance('`SKINS_WITHOUT_A_MODEL_RECORD` and `SKINS_WITH_A_LONG_PRESS` in `packages/usb/src/models.ts`, '
+      + 'and the folders\' rows in `REMOTES`'),
+  ].join('\n');
+}
+
 /** Every block, keyed by the file it lives in and then by its name. */
 export function expectedBlocks(): Map<string, Map<string, string>> {
   const files = new Map<string, Map<string, string>>();
@@ -623,6 +729,9 @@ export function expectedBlocks(): Map<string, Map<string, string>> {
     put(join(dir, 'display.md'), 'display', displayTable(r, drawing));
     put(join(dir, 'usb.md'), 'usb-identity', usbIdentity(r.architecture));
   }
+  // The model index, plan 009's generated table in `reference/remotes/README.md`.
+  put(join('reference', 'remotes', 'README.md'), 'model-index', modelIndex());
+  put(join('reference', 'remotes', 'README.md'), 'skins-without-a-record', unrecordedSkins());
   for (const a of ARCHITECTURES) {
     const dir = join('reference', 'architectures', a.folder);
     if (a.blocks.includes('skins')) put(join(dir, 'README.md'), 'skins', architectureSkins(a.architecture));

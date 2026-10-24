@@ -76,7 +76,7 @@ clock on this model is checked by reading memory over USB, since there is nothin
 * The colour of a 700's panel, as seen[^unchecked].
 * Whether the IR status indicator appears, and where[^unchecked].
 
-[^x-manual]: Stated by Logitech, in the manual. [The Harmony 700 user manual](https://support.myharmony.com/harmony-700-user-manual)
+[^x-manual]: Stated by Logitech, in the manual. [The Harmony 700 user manual, the 2009 edition](https://www.manualslib.com/manual/96454/Logitech-Harmony-700.html)
 [^s129]: Measured in configurations. [Section 129](../../../docs/findings.md#s129)
 [^s51]: Measured in configurations. [Section 51](../../../docs/findings.md#s51)
 [^s330]: Measured in configurations. [Section 330](../../../docs/findings.md#s330)

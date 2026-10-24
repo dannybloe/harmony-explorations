@@ -1,8 +1,9 @@
 # Test accounts
 
 The Logitech accounts this project holds, and what was taken from each. Plan 009's move table sends every
-account statement here; this file starts with the one plan 009's step 3.3 moved, and the others join it as
-their steps reach them (the test notes of the Harmony One, 600 and 650 say which).
+account statement here: the calibration account came with step 3.3, and the second account and the per
+model capability answers with step 3.4. An account's contents change and are never asserted, since test
+accounts are not a population; what is asserted is a reply filed on a known day.
 
 ## The calibration account, and the button maps it gave
 
@@ -35,3 +36,32 @@ directions, section 145: Logitech names 36 buttons for the One and 40 for the 60
 **What it cannot do.** It is a calibration and not a reader: it names keys for a configuration generated
 through an account we hold, and cannot name a key in a contributed configuration, whose devices' catalogue
 and maps are not ours to have. What it produced is a fact about each model, recorded once.
+The Harmony 600 is the model the button map was measured on, rather than the 650, because the calibration
+configuration was compiled for a 600; the four up and down keys were decided from the same configuration's
+device maps, section 323.
+
+## The second account, and the Harmony 650 on it
+
+The bench Harmony 650 is registered on the second MyHarmony test account, the one `MYHARMONY_EMAIL`
+selects; the lab note `reads/20260927T0840Z-h650-programmed-NOTES.md` and the `myharmony-service` skill hold
+how it was set up. It arrived programmed through MyHarmony on that account. MyHarmony's "Remote Backlight
+Settings" dialog for it sets the glow time with a slider from 5 to 30 seconds, and its "Select Language For
+Your Remote" dialog offers English, Français, Español, Deutsch, Nederlands, Italiano and more; both are
+MyHarmony's screens as seen, with no archive section, which is why the 650's features page marks the
+slider's range not checked. This sat in `harmony-650.md` until plan 009's step 3.4.
+
+## The per model capability answers
+
+`UserAccountDirector/GetProductCapabilities2`, and the plain `GetProductCapabilities` beside it, were asked
+on 7 October 2026 through one account entry of each of six models, the Harmony One (skin 54), 600 (71),
+650 (72), 700 (66), 300 (79) and 350 (104), with `GetProductButtonList` for each as well. The answers are
+filed in the lab's `work/myharmony/responses-per-model/`, one file per model and operation, and
+`tests/test_product_capabilities.py` reads the capability answers and asserts every field each model's
+features page states, so those rows carry that test as their footnote. Until plan 009's step 3.4 the
+answers were transcribed in `reference/capabilities.md` and held by no test, and the six features pages
+marked the rows resting on them not checked.
+
+**`NumOfAddDevice` is 100 on every model**, and nothing in MyHarmony's source reads it, so whatever enforces
+it is on the server. It may be a lifetime budget of device adds per remote, which would explain the two
+serials the service blocked on 7 October 2026; that is not established, and the `myharmony-service` skill
+holds the incident.

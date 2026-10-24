@@ -11,16 +11,15 @@ specification; this file states what holds for both models and what this library
 <!-- generated:usb-identity -->
 | field | value | from |
 |---|---|---|
-| USB product id | none | `PROFILES` in `packages/corpus/src/read.ts` |
-| first refused flash top byte | none read | `FLASH_TOP_BYTE_BOUND` in `packages/usb/src/protocol.ts` |
-| escape sub commands dispatched | none read | `ESCAPE_SUB_COMMANDS` in `packages/usb/src/protocol.ts` |
+| USB product id | 0xC124, file based | `FILE_BASED_PRODUCTS` in `packages/usb/src/transport.ts`, and the model's row in `REMOTES` |
+| flash addresses and escape sub commands | none: a file based remote is read by file name, and `openHarmony` refuses it | `isFileBasedRemote` in `packages/usb/src/transport.ts` |
 
-Generated from `packages/corpus` and `packages/usb` by `make remote-reference-write`. Change the source, not this block.
+Generated from `packages/usb` and `REMOTES` in `packages/silhouettes/bin/remotes.ts` by `make remote-reference-write`. Change the source, not this block.
 <!-- /generated -->
 
-The block above is empty by construction: `PROFILES` lists the architectures the command protocol reads,
-and the file based family is listed instead in `FILE_BASED_PRODUCTS` in `packages/usb/src/transport.ts`,
-with `0xC124` "Harmony 300, and measured here on a Harmony 350".
+The product id comes from `FILE_BASED_PRODUCTS` in `packages/usb/src/transport.ts`, which lists `0xC124` as
+"Harmony 300, and measured here on a Harmony 350"; the command protocol's profiles hold no entry for this
+family.
 
 * **One product id for both models**, `046D:C124`[^s193][^s195].
 * **`bcdDevice` is BCD of 1000 plus a skin**, `0x1104` on a 350[^s195], so the skin can be read from a

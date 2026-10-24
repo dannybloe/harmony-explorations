@@ -21,18 +21,18 @@ from Logitech's service's product records[^t-models].
 
 | | value |
 |---|---|
-| product family | Harmony350[^unchecked] |
-| compiler architecture | 16[^unchecked] |
+| product family | Harmony350[^t-capabilities] |
+| compiler architecture | 16[^t-capabilities] |
 | max devices | 8[^s263] |
 | max favourite channels | 5[^s263] |
 | max activities | **1**[^s145] |
-| display | none[^unchecked] |
-| settings | none listed[^unchecked] |
-| capabilities stated | `Activities`[^s264], `LongPressAction`[^s264], and `FavoriteChannels`, `CompiledRemoteButtonMapping`, `DeviceDelay` and `SupportsMHAssist`[^unchecked] |
-| not stated | `RemoteSettings`, `ColourDisplay`, `ActivityCompiledRemoteButtonMapping`, `SupportActivitySequence`, `ButtonSequences`, `LeaveDevicesPoweredOn`, `LocaleEnabled`[^unchecked] |
+| display | none[^t-capabilities] |
+| settings | none listed[^t-capabilities] |
+| capabilities stated | `Activities`[^s264], `LongPressAction`[^s264], and `FavoriteChannels`, `CompiledRemoteButtonMapping`, `DeviceDelay` and `SupportsMHAssist`[^t-capabilities] |
+| not stated | `RemoteSettings`, `ColourDisplay`, `ActivityCompiledRemoteButtonMapping`, `SupportActivitySequence`, `ButtonSequences`, `LeaveDevicesPoweredOn`, `LocaleEnabled`, and `PartiallySetupActivities`, which the Harmony 300 states[^t-capabilities] |
 
-So no sequences and no remote settings. The rows marked not checked are one answer of the service's
-product capability call, which no archive section or test holds yet.
+So no sequences and no remote settings. The table is the service's answer to
+`UserAccountDirector/GetProductCapabilities2` for a skin 104 product[^t-capabilities].
 
 ## Devices: eight, and the long press is why
 
@@ -70,7 +70,7 @@ on transition[^s327]; how this architecture interprets it is **not read**.
 * Learning, and any setting beyond those Logitech's service lists.
 
 [^t-models]: Stated by Logitech, by their service. [The test](../../../packages/usb/test/models.test.ts)
-[^unchecked]: Not checked.
+[^t-capabilities]: Stated by Logitech, by their service. [The test](../../../tests/test_product_capabilities.py)
 [^s263]: Stated by Logitech, by their service. [Section 263](../../../docs/findings.md#s263)
 [^s145]: Stated by Logitech, by their service. [Section 145](../../../docs/findings.md#s145)
 [^s264]: Stated by Logitech, by their service. [Section 264](../../../docs/findings.md#s264)
