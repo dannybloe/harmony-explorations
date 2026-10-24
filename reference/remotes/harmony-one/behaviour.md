@@ -1,126 +1,144 @@
 # Harmony One: behaviour
 
 What the remote does in use, as a person holding it sees it. The operating concept, activities and
-device mode, is `reference/how-a-harmony-works.md`, and this page does not restate it; it says how the One does
-it and what has been seen and measured on this model.
+device mode, is [how a Harmony works](../../how-a-harmony-works.md), and this page does not restate it;
+it says how the One does it: how device mode is entered and left, the click and the wait before a command
+touched on the screen, what happens on the USB cable and after a configuration is written, and where its
+clock comes from.
 
 ## Device mode, in and out
 
-| | how | standing and source |
-|---|---|---|
-| in | **"Devices"**, the touch key below the screen on the right, which the activity menu labels | Logitech's manual, "When you press the Devices button, the Harmony One's screen displays a list of your devices"; `reference/how-a-harmony-works.md`; section 275 |
-| on a device | "the Harmony One controls only that device", every key and the screen | Logitech's manual, "Controlling your devices individually"; the device's own screen record, section 271 |
-| out | the key below the screen on the left, which the device list labels "Activities"; the right one is **not enabled** there, the configuration giving it no touch rectangle on 29 of 29 device list pages | read from configurations and an account from the bench, section 275 and `reference/how-a-harmony-works.md` |
+| | how |
+|---|---|
+| in | **"Devices"**, the touch key below the screen on the right, which the activity menu labels; Logitech's manual calls it the Device button, "When you press the Device button, the Harmony One's screen displays a list of your devices"[^x-one-manual][^s275] |
+| on a device | "the Harmony One controls only that device"[^x-one-manual], every key and the screen, through the device's own screen record[^s271] |
+| out | the key below the screen on the left, which the device list labels "Activities"; the right one is **not enabled** there, the configuration giving it no touch rectangle on 29 of 29 device list pages[^s275] |
 
-`reference/how-a-harmony-works.md` also names the way back "Current Activity", as the One's own wording rather
-than the product's. The device list measured in section 275 writes "Activities". Where on the remote each
-word appears is **not checked** here.
+**Which word the way back carries depends on the screen**: the device list writes "Activities"[^s275]; a
+device page and Options write "Activities", or "Current Activity" while an activity runs[^s401][^s411]. That
+is read from configurations and not watched on a remote.
 
 ## Screen commands click and wait, and a held touch repeats
 
-**Section 337**, from a bench observation that a command touched on the screen seems to go out a moment
-later than the same command on a key:
+A command touched on the screen seems to go out a moment later than the same command on a key, and that is
+in the configuration rather than in the touch[^s337]:
 
 * **Most screen commands wait before the code starts.** A screen command usually sends a one block copy
   of the code that opens with **the device's delay between devices**, half a second or a second, where a
   key sends the ordinary record, which opens with about 50 ms. On one configuration 148 of 241 screen
-  commands do this and 23 of 377 key commands. Read from configurations, section 337. Whether Logitech
-  meant it for aiming is not something a file can say.
+  commands do this and 23 of 377 key commands[^s337]. Whether Logitech meant it for aiming is not something
+  a file can say.
 * **Every screen command plays a click first**, the button sound, 582 Hz for about 26 ms, and no key
   command does: 241 of 241 screen sends and none of 377 key sends on that configuration, and the same on
-  three more of Logitech's compiles. Read in the firmware and configurations, section 337. It is
-  Logitech's convention and not a requirement: screen sends this project wrote without it still went out,
-  section 242. With the button sound off the click is skipped. Without it a touched row sends with no
-  sound at all, which at the bench read as a touch that did not register, seen on one composed device page;
-  every row of Logitech's device pages opens with the click, 3545 of 3545 over nineteen compiles, and ours
-  with it clicked once on every touch, seen on the spare, section 404.
-* **Holding a command on the screen repeats it, as holding a key does**: the touch code sets the same
-  hold flag, read in the firmware, section 337, which corrects section 127.
-* **Unconfirmed** in section 337: that a touch is posted while the finger is down, how long it settles,
-  and that sliding onto another item gives a release and a new press. Whether a long press on the screen
-  would take as long as on a key is not established, `reference/how-a-harmony-works.md`.
+  three more of Logitech's compiles[^s337b][^s337]. Every row of Logitech's device pages opens with the click,
+  3545 of 3545 over nineteen compiles[^s404]. With the button sound off the click is skipped.
+* **The click is Logitech's convention and not a requirement**: screen sends written without it still go
+  out[^s242], but a touched row then makes no sound at all, which reads as a touch that did not
+  register[^s404b].
+* **Holding a command on the screen repeats it, as holding a key does**: the touch code sets the same hold
+  flag[^s337b], which corrects an earlier reading[^s127].
+* **Unconfirmed**: that a touch is posted while the finger is down, how long it settles, and that sliding
+  onto another item gives a release and a new press[^s337b]. Whether a long press on the screen would take as
+  long as on a key is not established, [how a Harmony works](../../how-a-harmony-works.md).
 
 None of this applies to the Harmony 600, 650 and 700: no touch panel, no click, and their wait between
-devices is a separate step, section 337.
+devices is a separate step[^s337b].
 
 ## Activities and sends
 
 * Every send is paired with a `0x7C` naming the same device. A bare send goes out from a key press and
-  sends **nothing** from an activity's transition, measured on a unit, section 278.
-* An activity's power on delay holds back only that device's next command, measured on a unit, section 236.
-* **An oversized sequence can hang the remote for good**, three times out of three, the batteries coming
-  out each time, seen at the bench, section 238; [features.md](features.md).
+  sends **nothing** from an activity's transition[^s278].
+* An activity's power on delay holds back only that device's next command[^s236].
+* **An oversized sequence can hang the remote for good**, three times out of three, the battery coming out
+  each time[^s238]; [features.md](features.md#sequences).
+* What Logitech's compiler wires into every configuration, the lists, timers and value maps that connect
+  the firmware's events to the screens, is [the platform's compiler page](../../architectures/harmony-one/compiler.md).
 
 ## On the cable
 
-| what happens | standing and source |
-|---|---|
-| **the application keeps running in USB mode**: the clock ticks and Timer 1 runs; the keypad handler and the light sampler stop. The configuration runs in place, so it is in use on the cable, the opposite of the Harmony 600 | measured on a unit, section 111 |
-| USB mode is left on the cable's removal when the command state is 0 | read in the firmware, section 99 |
-| twice, after a session holding a deliberate odd count hang, the remote stayed in USB mode off the cable until the batteries came out; clean sessions left it normally | measured on a unit, sections 95 and 99 |
-| an odd count internal read hangs the remote, and it restarts by itself in about 3 seconds with its configuration intact | measured on a unit, sections 94 and 96 |
-| after idling in USB mode the remote drops its first command, and a retry clears it | measured on a unit, section 155 |
-| a Harmony One occasionally strands after sitting idle on USB, which a battery pull clears and nothing here explains | `CLAUDE.md` |
+| what happens |
+|---|
+| **the remote keeps running in USB mode**: the clock ticks and Timer 1 runs; the keypad handler and the light sampler stop. The configuration runs in place, so it is in use on the cable, the opposite of the Harmony 600[^s111] |
+| the screen says "USB Connected"[^s155] |
+| USB mode is left on the cable's removal when the command state is 0[^s99] |
+| twice, after a session holding a deliberate odd count hang, the remote stayed in USB mode off the cable until the battery came out; clean sessions left it normally[^s95][^s99b] |
+| an odd count read of internal memory hangs the remote, and it restarts by itself in about 3 seconds with its configuration intact[^s94][^s96] |
+| **after sitting idle in USB mode the remote drops its first command, and a retry clears it**; see below[^s155] |
+
+### The first command after idling
+
+A Harmony One left in USB mode, unaddressed, can meet the first command it is sent with silence: no reply
+to a version request, or a flash read that returns nothing. A retry answers in full, and the failure is
+silence and never a wrong answer[^s155].
+
+**What causes it is idleness, and nothing else the cases share.** The remote's own clock, read after the
+retry that worked, was continuous with the boot before, so no restart happened between the failed command
+and the good one; nothing had been unplugged; and the remote had sent no command before, so a busy session
+is not the trigger. What is left is a long stretch in USB mode with nothing addressed to it[^s155]. Why idleness does it is not read[^unchecked].
 
 ## After a write
 
-| what happens | standing and source |
-|---|---|
-| **after the full write sequence the remote restarts itself**, off the bus and back in about 13 seconds, on its ordinary screen, not asking for a sync. The restart is the write's, because the One runs its configuration out of the flash an erase clears | measured on a unit, sections 247 and 251 |
-| **after a write's restart it shows the Remote Assistant, and after it a "Welcome!" screen**, while a state variable of the configuration stands at its starting value 0, which Logitech's compiles give it; started at 3 it goes straight to its ordinary screen | read from configurations and seen on a unit, section 403 |
-| a write without the cache drop leaves the remote keeping a verdict earned against other bytes; with a failed validation the status screen **latches until a power cycle**, a latch this model has and the 600, 650, 700 and 525 do not | read in the firmware and measured, sections 248, 250, 252 and 253 |
-| the re-check of the configuration runs on the cable's removal and not while it is in | measured on a unit, section 251 |
-| after an incomplete write the screen said "USB CONNECTED" on the cable and "Go to Website to update settings" off it | seen at the bench, sections 242 and 244 |
-| safe mode does not stick: a plain power cycle boots normally | seen at the bench, section 190 |
+| what happens |
+|---|
+| **after the full write sequence the remote restarts itself**, off the bus and back in about 13 seconds, on its ordinary screen, not asking for a sync. The restart is the write's, because the One runs its configuration out of the flash an erase clears[^s247][^s251] |
+| **after a write's restart it shows the Remote Assistant, and after it a "Welcome!" screen**, while a state variable of the configuration stands at its starting value 0, which Logitech's compiles give it; started at 3 it goes straight to its ordinary screen[^s403][^s403b] |
+| a write without the cache drop leaves the remote keeping a verdict earned against other bytes; with a failed validation the status screen **latches until a power cycle**, a latch this model has and the 600, 650, 700 and 525 do not[^s250][^s252][^s253][^s248] |
+| the re-check of the configuration runs on the cable's removal and not while it is in[^s251] |
+| after an incomplete write the screen said "USB CONNECTED" on the cable and "Go to Website to update settings" off it[^s242][^s244] |
+| safe mode does not stick: a plain power cycle boots normally[^s190] |
 
-## What every configuration wires
-
-| what | standing and source |
-|---|---|
-| **the lists, entries and timers that connect the firmware's events to a configuration are one catalogue on every compile**, the same on all 19 of Logitech's but for the numbering, how many timers of two kinds below there are, and three settings: the Remote Assistant at start, a `07 FFFB` opening its ladder on two, and the screen light's two timers, 10 and 20 seconds on all 19 | read from configurations, section 410 |
-| thirteen of the timers are on every compile once each: the screen light pair, a 2 second tick, a 1 second lights out, three of 5 seconds and six of 1 second each entering a screen, one of those the screen the ordinary start enters; beside them 13 to 20 timers of 4 seconds, each redrawing the clock and the charging gauge along the top of the screen and starting itself again, and on two compiles a 3 second one | read from configurations, section 410. What the other five one second screens are for is **not read** |
-| **the 4 second timers are one per class of screen**: every screen that keeps the clock current starts its class's timer when it is entered, and screens alike in kind share one, the clock pickers one, the status and progress screens one, the device lists one, and so on; thirteen on a compile with no activity, more with activities, whose start up and working screens bring classes of their own. The 3 second one is started by the screen the power off help's value map enters, on both compiles holding one; on the one compile with nothing to switch off that is the attempt screen and the timer enters "Nothing to do" | read from configurations, section 430. What makes a class is **not read** |
-| the status codes 0 to 29 map to modes 10 to 39, behind the ten firmware screens | read from configurations, sections 408 and 410 |
-| **what a configuration maps by a state variable's value is one catalogue of sixteen value maps on every compile, fifteen of which something looks up**: where the location and the running activity lead (the activity menu, the device lists, an activity's screen and keys), switching off every device that has a power state, the button sound and Remote Assistant toggles of Options, a page toggle the device pages, Options and the device lists use, and the clock pickers' frames; fifteen value maps on the everyday One's compile, which has no Remote Assistant. They differ between compiles in order and numbering, by one case per activity in four of them, and in the all off's writes, one per power variable | read from configurations, section 416 |
+The write sequence itself is [the command reference](../../usb-protocol/commands.md) and
+[the platform's USB page](../../architectures/harmony-one/usb.md).
 
 ## The clock
 
-The clock is state variables 0 to 6, at data memory `0x108` to `0x10E`, seeded from the configuration's
-clock records, read in the firmware, section 138; a power cycled unit read its configuration's stamp plus
-its uptime, measured, section 111, and once seeded it ticks at real rate on the cable, section 251. It is
-reseeded on a cold boot and a warm start keeps the running clock, behind a checksum, sections 138 and 274. Whether the restart
-after a write is warm or cold is **not checked**. The day of the month counts from 0 and the weekday from
-Sunday, section 322.
+The clock is the first seven state variables, seeded from the configuration's clock records[^s138]; where
+they sit in memory is [the platform's memory page](../../architectures/harmony-one/memory.md#data-memory).
+A remote whose battery was taken out read its configuration's stamp plus its uptime[^s111], and once seeded
+the clock ticks at real rate on the cable[^s251]. It is reseeded on a cold boot, and a warm start keeps the
+running clock, behind a checksum[^s138][^s274]. Whether the restart after a write is warm or cold is not
+checked[^unchecked]. The day of the month counts from 0 and the weekday from Sunday[^s322]. What the screen
+shows of it is [display.md](display.md#the-clock-and-the-strip-along-the-top).
 
 ## Not checked
 
-* Where "Current Activity" and "Activities" each appear.
-* The touch timing of section 337.
-* Why an oversized sequence hangs the remote, and why it strands after idling on USB.
-* Whether the restart after a write reseeds the clock.
+* The touch timing above[^s337b].
+* Why an oversized sequence hangs the remote[^unchecked].
+* Why idling in USB mode drops the first command[^unchecked].
+* Whether the restart after a write reseeds the clock[^unchecked].
 
-### The Harmony One drops its first command, sometimes
-
-Observed twice on 6 August 2026, both times on a Harmony One, both times the first command after the
-device was opened:
-
-| Command | Symptom | Immediately afterwards |
-|---|---|---|
-| `READ_FLASH`, 256 bytes at `0x040000` | `flash read returned 0 of 256 bytes` | the same test passed, and a 60050 byte firmware read passed in the same run |
-| `GET_VERSION` | `no reply to command 0x10 within 3 polls of 2000 ms` | a rerun read the whole 1232237 byte config without a hiccup |
-
-**The Harmony 600 has not done it**, on either occasion, including runs where its first command came
-before the One's. So the honest statement is about the One, not about remotes in general.
-
-What can be said: the failure is **silence, never a wrong answer**. No case has produced bytes that
-turned out to be incorrect. What cannot be said is why. Candidates nobody here has separated: a wake
-from sleep, since the One has a rechargeable cell and a screen where the 600 runs on AA cells; a
-first-read-after-open effect in the host stack; or an idle timeout rather than anything to do with
-opening at all. Two observations do not distinguish them, and the experiment that would, opening the
-device repeatedly at measured intervals, has not been run.
-
-The workaround is one retry of the **first** command only, and only on silence, in
-`packages/corpus`. Everything after the first command stays strict: widening the retry would be more
-than the evidence supports and would turn a genuinely failing transfer into an intermittent success,
-which is the worst property for the code that files backups. The same rule, with the same two
-message shapes, is in `packages/usb/test/hardware.test.ts`.
+[^x-one-manual]: Stated by Logitech, in the manual. [The Harmony One user guide](https://secure.logitech.com/assets/44645/13/harmonyone-user-guide.pdf)
+[^s275]: Measured in configurations. [Section 275](../../../docs/findings.md#s275)
+[^s271]: Measured in configurations. [Section 271](../../../docs/findings.md#s271)
+[^s401]: Measured in configurations. [Section 401](../../../docs/findings.md#s401)
+[^s411]: Measured in configurations. [Section 411](../../../docs/findings.md#s411)
+[^s337]: Measured in configurations. [Section 337](../../../docs/findings.md#s337)
+[^s337b]: Read in the firmware. [Section 337](../../../docs/findings.md#s337)
+[^s404]: Measured in configurations. [Section 404](../../../docs/findings.md#s404)
+[^s242]: Measured on a unit. [Section 242](../../../docs/findings.md#s242)
+[^s404b]: Measured on a unit. [Section 404](../../../docs/findings.md#s404)
+[^s127]: Read in the firmware. [Section 127](../../../docs/findings.md#s127)
+[^s278]: Measured on a unit. [Section 278](../../../docs/findings.md#s278)
+[^s236]: Measured on a unit. [Section 236](../../../docs/findings.md#s236)
+[^s238]: Measured on a unit. [Section 238](../../../docs/findings.md#s238)
+[^s111]: Measured on a unit. [Section 111](../../../docs/findings.md#s111)
+[^s155]: Measured on a unit. [Section 155](../../../docs/findings.md#s155)
+[^s99]: Read in the firmware. [Section 99](../../../docs/findings.md#s99)
+[^s95]: Measured on a unit. [Section 95](../../../docs/findings.md#s95)
+[^s99b]: Measured on a unit. [Section 99](../../../docs/findings.md#s99)
+[^s94]: Measured on a unit. [Section 94](../../../docs/findings.md#s94)
+[^s96]: Measured on a unit. [Section 96](../../../docs/findings.md#s96)
+[^unchecked]: Not checked.
+[^s247]: Measured on a unit. [Section 247](../../../docs/findings.md#s247)
+[^s251]: Measured on a unit. [Section 251](../../../docs/findings.md#s251)
+[^s403]: Measured in configurations. [Section 403](../../../docs/findings.md#s403)
+[^s403b]: Measured on a unit. [Section 403](../../../docs/findings.md#s403)
+[^s250]: Read in the firmware. [Section 250](../../../docs/findings.md#s250)
+[^s252]: Read in the firmware. [Section 252](../../../docs/findings.md#s252)
+[^s253]: Read in the firmware. [Section 253](../../../docs/findings.md#s253)
+[^s248]: Measured on a unit. [Section 248](../../../docs/findings.md#s248)
+[^s244]: Measured on a unit. [Section 244](../../../docs/findings.md#s244)
+[^s190]: Measured on a unit. [Section 190](../../../docs/findings.md#s190)
+[^s138]: Read in the firmware. [Section 138](../../../docs/findings.md#s138)
+[^s274]: Read in the firmware. [Section 274](../../../docs/findings.md#s274)
+[^s322]: Read in the firmware. [Section 322](../../../docs/findings.md#s322)
