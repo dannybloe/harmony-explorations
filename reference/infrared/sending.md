@@ -111,7 +111,7 @@ that the Panasonic codes are not simply counted as whole copies with a floor, wh
 record. **Unmeasured**: families with several repeat segments or more than two cells, and whether a hold
 shorter than an ordinary press can send fewer frames, which no record needs.[^s308]
 
-**The held record, the long press version, is the ordinary press's frames cycled to the count**:[^s309] no
+**The long press version is the ordinary press's frames cycled to the count**:[^s309] no
 lead in, the frames carrying the code's first slot once and the second slot's cycled to the count, each
 followed by the gap the press gives it, the last gap getting back the microsecond the press ends in. 26 of
 27 rebuild word for word, on the Harmony 650 and 700 only; `longPressBlockOfStatedCode` assumes the

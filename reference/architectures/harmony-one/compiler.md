@@ -402,6 +402,12 @@ order[^s402]. On the composed path a device's row is put on every list by buildi
 `withTouchDeviceListRow`, and an activity's own list is a new mode built from the idle list's description,
 `withTouchActivityDeviceList`, both cases under Devices for the activity queuing it[^s424].
 
+**A device menu's hit page of one, two or three rows is one geometry each**, held by 7, 5 and 13 of the
+nineteen compiles, and each is the one before with a row 872 panel units below its last, the bottom key moved
+one scan up and the edges unmoved[^s397]. A row draws one picture on every page of its menu that has it, on
+all 102 device menus, and the three rows of a three row page draw three different pictures, 195 of 195
+pages[^s397].
+
 **A device list of no rows** is in no compile, since every one holds a device. The template's steps, measured on
 24 one page lists of one to three rows on ten compiles, are `5 + 4n` bytes for the page list and its copy and
 `46 + 15n` for the hit page; at zero that is one page, the chrome titled "Devices" and the left key's words, no
@@ -449,6 +455,19 @@ those labels use it puts a one line label's capitals 2 pixels below the pad's mi
 
 On the composed path a device's pages are built by the template, `withTouchDevicePage`, numbered from the
 configuration's device modes by role, all device modes built together so a text is drawn inline once[^s420].
+
+**Which command a hard key takes in device mode is the Harmony One's own, not the Harmony 650's.** On
+Logitech's One compiles Channel Up sends `PresetNext` on two devices where the 650's order gives `DirectionUp`,
+and `DirectionUp` on one where it gives `NextDisc`, and `OK` comes before `Select` on the Select, Play and Pause
+keys, which rests on one device, the only one offering both[^s397]. A table of preference lists per key, the
+first command the device has being bound, was fitted to 33 device modes of seven compiles, and gives 1521 of
+their 1526 key entries, all five misses on one receiver that holds iPod commands and no plain transport
+ones[^s397]. Three things in it no plain list says: scan 13, which the drawing of the face does not show, takes
+`NumberEnter`, and `Enter` only where no other key of the device is bound to a command of that name; scan 36 takes `PageUp`, on
+the 2 of the 33 that bind it, and scan 26 nothing on all 33; scans 27 and 29 take `DirectionUp` and
+`DirectionDown`[^s397]. `TOUCH_HARD_KEYS`. It is a fit to that population and not confirmed beyond it: on the
+43 device modes outside it, set up through accounts where a map may hold an edit, it gives 1223 of 1330 bound
+keys[^unchecked].
 
 ### The activity screens
 
@@ -802,6 +821,7 @@ described there.
 [^s402]: Measured in configurations. [Section 402](../../../docs/findings.md#s402)
 [^s415]: Measured in configurations. [Section 415](../../../docs/findings.md#s415)
 [^s420]: Measured in configurations. [Section 420](../../../docs/findings.md#s420)
+[^s397]: Measured in configurations. [Section 397](../../../docs/findings.md#s397)
 [^s271]: Measured in configurations. [Section 271](../../../docs/findings.md#s271)
 [^s401]: Measured in configurations. [Section 401](../../../docs/findings.md#s401)
 [^s394]: Measured in configurations. [Section 394](../../../docs/findings.md#s394)

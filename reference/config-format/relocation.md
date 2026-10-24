@@ -45,9 +45,9 @@ Over the nineteen containers of the corpus, 10242346 bytes[^s147]:
 
 The implied positions are of three kinds, because they cost different things[^s147]:
 
-* **Frame**, 76, four per container: the header at zero, the section table at `0x0B`, the end marker after the
+* **Frame**, 76, four per container: the header at zero, the section table at `0x0B`, the marker after the
   pointer table and the trailer at the end. The container's own arithmetic decides all four. The key table looks
-  like a fifth and is not: nothing points at the bytes after the end marker, but the key table **is** base slot
+  like a fifth and is not: nothing points at the bytes after that marker, but the key table **is** base slot
   6's first mode record, so the mode table names it like any other mode, [modes and keys](modes-and-keys.md).
 * **Packed**, 3017<!--fact:growth_packed-->: a structure sitting immediately after a structure of another kind.
   3005 of them are the second copy of a mode page's tagged list, which nothing on the remote reads; the other
@@ -88,7 +88,7 @@ Two fields are wrong after any growth, before anything else is considered[^s147]
   exactly, on all nineteen containers. It is the only header field that moves with a section's growth.
 * **The trailer checksum**, which any change voids, [the container](container.md).
 
-The end marker after the pointer table does not move, since its offset depends on the slot count alone. Base slot
+The marker after the pointer table does not move, since its offset depends on the slot count alone. Base slot
 3's timestamp and base slot 13's clock records are stale for another reason, the time of writing, and are
 [header records](header-records.md) and [state](state.md)[^s147].
 
@@ -133,7 +133,7 @@ land seven bytes into their record[^s147].
 **The format cannot tell you when you got it wrong.** Move one action list pointer by three bytes, restamp the
 trailer the way a writer would, and the container parses, passes every check it makes about itself, and reads a
 different action list[^s147]. A wrong address does not raise an error; it reads the neighbouring bytes. The remote's
-container validator compares the cookie, the end marker, the trailer marker at `end_addr` and the trailer checksum,
+container validator compares the cookie, the marker after the pointer table, the end marker at `end_addr` and the trailer checksum,
 the checksum on the Harmony 600, 650 and 700 only while one setting is on[^s354]; the checksum is a sixteen bit XOR,
 [the container](container.md), so passing it means the file will be accepted, never that it is right.
 

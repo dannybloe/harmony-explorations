@@ -569,6 +569,24 @@ and ignored[^s107].
 iterations whatever it is given, so a divisor of zero returns `0xFFFF` from `0x77` and the dividend itself from
 `0x6E`. Nothing traps and nothing hangs[^s107].
 
+### A configuration cannot choose where the remote writes
+
+`0x65` and `0x66` make the remote write to flash, so an action list can cause a write. **What it cannot do is
+choose the address**: the bounds are in the firmware and the configuration is not asked[^s118].
+
+* The append routine reads five values and returns without writing if any of them is zero[^s118].
+* It compares the region's limit against the write cursor and against the cursor plus the length, and out of
+  range it updates a variable and returns, again without writing[^s118].
+* The region itself is computed from the detected chip size and the configuration's own end, not from base
+  slot 2's declared reservation[^s108][^s118].
+
+So on arch 14 the reachable target is an append region at the top of the serial flash, and the firmware is
+not on that chip at all: it is in the processor's own program memory[^s118]. The architectures whose firmware
+shares a flash with the configuration do not implement either opcode, the Harmony One and the Harmony 525
+testing both in their ladder and doing nothing[^s107]. No configuration Logitech compiled uses either[^s118b].
+This covers the action list language and the screen language, which reaches it only by queuing action list
+instructions; that no other route exists is not established[^unchecked].
+
 [^s17]: Measured in configurations. [Section 17](../../docs/findings.md#s17)
 [^s26]: Measured in configurations. [Section 26](../../docs/findings.md#s26)
 [^s362]: Measured in configurations. [Section 362](../../docs/findings.md#s362)
@@ -618,3 +636,5 @@ iterations whatever it is given, so a divisor of zero returns `0xFFFF` from `0x7
 [^s37]: Measured in configurations. [Section 37](../../docs/findings.md#s37)
 [^s332]: Read in the firmware. [Section 332](../../docs/findings.md#s332)
 [^s39]: Read in the firmware. [Section 39](../../docs/findings.md#s39)
+[^s118]: Read in the firmware. [Section 118](../../docs/findings.md#s118)
+[^s118b]: Measured in configurations. [Section 118](../../docs/findings.md#s118)

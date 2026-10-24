@@ -27,6 +27,12 @@ version in BCD, the magic `48 47` at offset 8, and a `GOTO` to the entry point. 
 bytes into one seed and the odd bytes into another, `0x21` and `0x43`, over the image from offset 4 to its
 end, so an image can be checked without anything to compare it with[^s4].
 
+**The size is three bytes, offsets 4 to 6**, which is how the safe mode image that installs an application
+reads it, so the byte at offset 6 is the size's top byte and never a family byte. On seven application
+images, of the Harmony One, 350, 600, 650 and 700, those three bytes plus eight are the length whose checksum
+verifies; the byte is 1 on the six over 64 KiB, the Harmony 350's among them, and 0 on the One's 60050 and on
+the Harmony 600, 650 and 700's safe mode images[^s295].
+
 ## Logitech's package, and where its parts load
 
 Logitech's 3.4 package carries the application in one region file, `Region_2.EZUpgrade`, whose data
@@ -185,3 +191,4 @@ enable pin and no readback[^s106], [the hardware page](../../remotes/harmony-one
 [^s105]: Read in the firmware. [Section 105](../../../docs/findings.md#s105)
 [^s102]: Measured in configurations. [Section 102](../../../docs/findings.md#s102)
 [^s103]: Read in the firmware. [Section 103](../../../docs/findings.md#s103)
+[^s295]: Read in the firmware. [Section 295](../../../docs/findings.md#s295)

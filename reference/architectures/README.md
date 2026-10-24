@@ -178,6 +178,25 @@ The configuration words are read as the six byte run at internal `0xFF` `+0xFFF8
 a Harmony 600[^s25]. The Harmony 525's part is a different one, a `PIC18F4550` with 32 KiB of program
 flash, and this table is not about it[^s119].
 
+## The register map
+
+A processor's peripherals are reached through special function registers at fixed data addresses, and the two
+parts above have a map of their own, not the generic PIC18 one a disassembler assumes[^s18]:
+
+* **The capture, compare and analogue block sits elsewhere**: `CCP1CON` is `0xFBB` and `WDTCON` `0xFC0`, so
+  eight of the 93 register names these images use differ from the generic map[^s18].
+* **The USB registers occupy `0xF4C` to `0xF65`**, where a classic part has its parallel port and its capture
+  registers; `UCON` is `0xF65`[^s18].
+* **The 80 pin part adds six registers and no others**, its extra ports' `PORTH`, `PORTJ`, `LATH`, `LATJ`,
+  `TRISH` and `TRISJ`[^s18].
+* **`WDTCON` bit 4, `ADSHR`, swaps a second register in at ten shared addresses**, so one address is `ADCON1`
+  or `ANCON0` depending on a bit set a few instructions earlier. The Harmony 700's 2.8 port initialisation writes
+  both of a pair, once on each side of the bit, which confirms the mechanism and two of the pairs from the image
+  alone; the other eight pairs are unexercised by anything read[^s18].
+
+The Harmony 525's `PIC18F4550` has the classic map, and it disagrees with this one about 65 of 139 shared
+addresses[^s80].
+
 ## What no read can show
 
 **The device id.** A PIC18 keeps it at `0x3FFFFE`, and a host can read only the two internal pages of 64
@@ -209,4 +228,6 @@ part and is not a confirmation, since every sibling with that flash size would a
 [^s115]: Measured in configurations. [Section 115](../../docs/findings.md#s115)
 [^s25]: Measured on a unit. [Section 25](../../docs/findings.md#s25)
 [^s119]: Read in the firmware. [Section 119](../../docs/findings.md#s119)
+[^s18]: Read in the firmware. [Section 18](../../docs/findings.md#s18)
+[^s80]: Read in the firmware. [Section 80](../../docs/findings.md#s80)
 [^s22]: Measured on a unit. [Section 22](../../docs/findings.md#s22)

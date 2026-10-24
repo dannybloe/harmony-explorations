@@ -47,6 +47,15 @@ endpoint descriptor set with no endpoint 1 OUT requires, [the firmware's USB sta
   each way, so reading the Harmony One's 1.6 MiB configuration cannot beat about 26 seconds however
   efficient the command layer is[^s19].
 * **The remote draws bus power while charging** whatever its configuration descriptor reports[^unchecked].
+* **A long read outruns a host that pauses.** A `READ_FLASH` answer streams back as fast as the remote can
+  send, about 487 reports a second over a whole configuration, and hidapi's macOS backend keeps at most about
+  thirty unread reports, silently discarding the oldest beyond that. So a consumer stalled for 100 ms loses
+  some 17 chunks and one stalled for 50 ms loses none. The loss shows as a gap in the sequence byte, which
+  advances by `0x11` per report, so the gap times 241, the inverse of 17 modulo 256, is the number of chunks
+  lost: expecting `0xBF` and getting `0x14` is five[^s223].
+* **A failed read leaves the remote streaming**, and the next command reads the rest of the old answer
+  first, so one dropped report fails every read after it unless the host drains the answer up to its
+  acknowledgement before sending anything else[^s223].
 
 ## Finding the descriptors in an image
 
@@ -126,6 +135,7 @@ differs between its application and its safe mode in one input flag, a different
 [^s19]: Read in the firmware. [Section 19](../../docs/findings.md#s19)
 [^t-usbdesc]: Read in the firmware. [The test](../../tests/test_usbdesc.py)
 [^s19b]: Measured on a unit. [Section 19](../../docs/findings.md#s19)
+[^s223]: Measured on a unit. [Section 223](../../docs/findings.md#s223)
 [^unchecked]: Not checked.
 [^s113]: Read in the firmware. [Section 113](../../docs/findings.md#s113)
 [^s195]: Measured on a unit. [Section 195](../../docs/findings.md#s195)

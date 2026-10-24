@@ -258,6 +258,26 @@ page gains the counter right after its title[^s312][^s334].
 
 What `0x07 0xFFFA` does is not read[^unchecked].
 
+**Which corner program a mode queues follows what is running**, measured on the Harmony 650's thirteen
+compiles[^s366]. Three programs, differing in the patch they draw:
+
+| program's patch | queued by | modes over the thirteen |
+|---|---|---|
+| grey | every device mode, every device list but the two row one, the idle device list | 87, 53 and 13 |
+| red | the activity menu and every screen of an activity | 13 and 58 |
+| plain | every other screen: Help's, the Remote Assistant's, the delay settings, the setup prompts | 2828 |
+| none | the two row device list, from neither its key map nor its pages | 13, one per compile |
+
+A page's own program queues its mode's corner program again, so the program is named on every page and not
+only in the mode's key map[^s366].
+
+**Logitech's background pictures do not follow those states.** Three of the five designed backgrounds are
+shared across them: the idle device list draws the device pages' crossed picture and their one item picture,
+and the activity menu's page of one row draws the same picture as an activity's page of one command. Of the
+934 pages drawing a background, the 813 device pages are on the grey look and the 67 activity pages on the
+red, while the 54 idle pages are split, 25 grey and 29 red, so nothing in Logitech's pictures marks the idle
+state[^s366].
+
 ### What a compiled catalogue device puts where
 
 **On twenty devices Logitech compiled from its catalogue**, in seven of the thirteen configurations, plus
@@ -279,6 +299,18 @@ and the title limit is a fit of two measured limits, so neither is confirmed bey
 layout was measured the character map named no code for `J` or `#`, so a label holding one was not laid
 out[^s325]. The `J` has a code and a width since, with the colon, and every drawn code of the thirteen
 compiles resolves[^s368]; whether `#` has one now is not checked[^unchecked].
+
+**Several devices added in one compile**, read on five of Logitech's compiles that each added two or three
+catalogue devices to a Harmony 650 or 700 configuration, fourteen devices in all[^s331]:
+
+* The added devices' identifiers are consecutive, each one past the one before, and in the order of their
+  rows on the device lists, 5 compiles of 5[^s331].
+* A device mode's power key sends the plain command, never the records the device's power transition sends,
+  0 of 13 devices[^s331].
+* Of the eleven devices whose catalogue entry gives an input plan, five got an input variable and six did
+  not. Whether one was given matches whether the catalogue's power on resets input states on ten of the
+  eleven; the eleventh got an `InputType` state of nine values, which its power on resets, and no input
+  variable[^s331]. What decides it is not read[^unchecked].
 
 ### A device mode's key map
 
@@ -484,6 +516,12 @@ the idle value at the maximum, and each of the four is stored in `compilerCaseOr
 having two records on every compile. Every key there is below 16, where that order is ascending, so this
 pins nothing beyond ascending. Which record is which is still read off what its cases do.
 `activityKeyedRecords`.
+
+**The keypad map record exists exactly where an activity does**: it is in every Harmony 600, 650 and 700
+compile holding an activity, and Logitech's one compile with no activity has none[^s379]. It is named once per file, by the case 0 program of a record of one case, and nothing found maps
+through that record, so what runs the keypad map record is open[^s379][^unchecked]. Starting an activity
+installs its keypad map without it, since the activity menu's row and the activity key both select the set
+themselves[^s379].
 
 Every device list's scan 25 evaluates a record keyed by `CurrentLocation` whose one case, for 0, queues the
 working screen record: the 17 those records enter and one more per configuration, 21 of 21[^s290].
@@ -924,10 +962,13 @@ Read with `gspm.state_table`, `gspm.state_records` and `gspm.state_index`; `stat
 [^s330]: Measured in configurations. [Section 330](../../../docs/findings.md#s330)
 [^s369]: Read in the firmware. [Section 369](../../../docs/findings.md#s369)
 [^s374]: Measured in configurations. [Section 374](../../../docs/findings.md#s374)
+[^s366]: Measured in configurations. [Section 366](../../../docs/findings.md#s366)
 [^s325]: Measured in configurations. [Section 325](../../../docs/findings.md#s325)
+[^s331]: Measured in configurations. [Section 331](../../../docs/findings.md#s331)
 [^s326]: Measured in configurations. [Section 326](../../../docs/findings.md#s326)
 [^s326b]: Read in the firmware. [Section 326](../../../docs/findings.md#s326)
 [^s375]: Measured in configurations. [Section 375](../../../docs/findings.md#s375)
+[^s379]: Measured in configurations. [Section 379](../../../docs/findings.md#s379)
 [^s329]: Measured in configurations. [Section 329](../../../docs/findings.md#s329)
 [^s239]: Measured in configurations. [Section 239](../../../docs/findings.md#s239)
 [^s316]: Measured in configurations. [Section 316](../../../docs/findings.md#s316)

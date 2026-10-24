@@ -640,3 +640,7 @@ it reachable in the same commit and the test comparing the two tables is what ca
 | `3 is what the composed path starts it at` | section 436, correcting section 434 | the composed path onto Logitech's compile starts the assistant's variable at 0 since section 421; 3 is the empty One's choice, its effect unconfirmed |
 | `as the composed path starts it` | section 436, correcting section 434 | the same: the composed path starts it at 0 since section 421 |
 | `every code heard as predicted` | section 436, correcting `todo-compile-one.md` 1.3 and section 404 | the 1.3 run heard the Denon's and the LG's inputs as other commands, the composed file's defect |
+| `key code is a matrix address` | section 17, correcting section 8 | a key code is an event type in its top two bits and the keypad scanner's own scan code in the rest, mask `0xC0` and `0x3F`; arch 14's 162 codes are its 54 scan codes three times, press, release and repeat, not 108 matrix codes and 54 others |
+| `key codes are matrix addresses` | section 17, correcting section 8 | as above |
+| `0x6C writes a device record` | section 303, correcting section 71 | `0x7A key; 0x6C value` saves a value under that key in the remote's settings store in its internal program memory, arch 14 only; the key is a device, which is what section 71 measured, and what is saved is a delay |
+| `writes into a device record` | section 303, correcting section 71 | as above |

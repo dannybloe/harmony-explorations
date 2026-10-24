@@ -39,7 +39,10 @@ chain walk cannot tell them apart, so the block naming Logitech's vendor id is t
 | the address validator and its windows, [memory.md](memory.md) | [^s119] |
 | the external flash eraser and writer, the SPI driver | [^s267] |
 | `READ_MISC`, whose executor has a body for selector 1 alone | [^s90] |
-| the infrared capture | [^s123] |
+| the infrared capture: `0x70` at `0x02F56` sets state 5, clears the headers of two buffers at `0x0500` and `0x0542` and sets a toggle at `0x0584`; `0x80` at `0x030F8` sets state 6; the producer at `0x060BE` runs on its own while the state is 5 and fills the buffer the toggle picks. The Harmony One's arrangement with other addresses and the same 66 byte spacing; the `0x90` header and the sequence step inside the producer are not located | [^s123] |
+| every configuration byte read, through one SPI primitive: `0x07F7A` writes a byte and `0x07F8E` reads one, under an ordinary serial flash driver, read at `0x0756A`, chip select at `0x07524` and `0x07530`. The Harmony 600, 650 and 700 have the same single point; the Harmony One has none | [^s80] |
+| the infrared player at `0x076CE`: a pulse is a `u16` whose bit 15 turns the carrier on and whose low fifteen bits are a timer count, less six for the loop's own cost; `0x07680` starts the carrier and `0x076C0` stops it | [^s80] |
+| the infrared record's class switch at `0x05108`: class 1 and class 5 have arms of their own and anything else a third; class 5's arm pushes a count and then that many pulse words, reached through a table of three byte entries the record header does not give | [^s80] |
 | the keypad scanner | [^s89] |
 | the configuration validator and the status screen choice | [^s253] |
 | the action queue ring | [^s254] |
@@ -156,6 +159,7 @@ part is not established[^unchecked].
 [^s119]: Read in the firmware. [Section 119](../../../docs/findings.md#s119)
 [^s90]: Read in the firmware. [Section 90](../../../docs/findings.md#s90)
 [^s123]: Read in the firmware. [Section 123](../../../docs/findings.md#s123)
+[^s80]: Read in the firmware. [Section 80](../../../docs/findings.md#s80)
 [^s89]: Read in the firmware. [Section 89](../../../docs/findings.md#s89)
 [^s253]: Read in the firmware. [Section 253](../../../docs/findings.md#s253)
 [^s254]: Read in the firmware. [Section 254](../../../docs/findings.md#s254)
