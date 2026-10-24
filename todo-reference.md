@@ -38,9 +38,9 @@ takes over `todo-later.md` chapter 8, plan 005's steps, which now live here.
 
 ## 3. Models and architectures
 
-- [ ] 3.1 Each model folder cleaned: our own units out to `docs/test-notes/<model>.md`, the evidence as footnotes, duplicates replaced by links (one agent per model)
+- [x] 3.1 Each model folder cleaned: our own units out to `docs/test-notes/<model>.md`, the evidence as footnotes, duplicates replaced by links (one agent per model); then the architecture folders the same way, except the two compiler pages left for 4.1, and the items the model agents reported applied
 - [x] 3.2 The memory maps into their architecture folders: all five maps removed, their content in the Harmony One, 5xx and 600-650-700 folders with the first footnotes, the units' records in `docs/test-notes/`, the three contradictions settled
-- [ ] 3.3 The button maps into each model's keys, the tables as data the drawings already hold, the derivation to the archive
+- [x] 3.3 The button maps into each model's keys, the tables as data the drawings already hold, the derivation to the archive; every scan code names its source, the arrow pairs and Help settled, `button-maps.md` removed
 - [ ] 3.4 `reference/capabilities.md` and `reference/models.md` absorbed into the model and architecture folders
 - [x] 3.5 Thinner folders for the Harmony 880/885 and 890, which only contributed configurations: `harmony-880-885/` and `harmony-890-895/` (five files each, a generated slot map from `SLOT_MAPS`), `remotes/harmony-885/` and `harmony-890/` (ten each, no drawing yet, so `drawing` is optional and the test names the two folders allowed without one), every fact footnoted; the load address table of `docs/checksums.md` folded into the five architectures' firmware pages
 
