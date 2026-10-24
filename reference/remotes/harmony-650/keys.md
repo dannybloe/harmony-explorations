@@ -167,6 +167,7 @@ drawing the keys "USB Connected" waits for, scans 11, 12 and 51, are an unnamed 
 [^s314]: Measured in configurations. [Section 314](../../../docs/findings.md#s314)
 [^s383]: Measured on a unit. [Section 383](../../../docs/findings.md#s383)
 [^s374]: Measured on a unit. [Section 374](../../../docs/findings.md#s374)
+[^s340]: Read in the firmware. [Section 340](../../../docs/findings.md#s340)
 [^s340b]: Stated by Logitech, in their client. [Section 340](../../../docs/findings.md#s340)
 [^s340c]: Measured in configurations. [Section 340](../../../docs/findings.md#s340)
 [^s357]: Measured in configurations. [Section 357](../../../docs/findings.md#s357)
