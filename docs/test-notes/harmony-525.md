@@ -28,6 +28,14 @@ Dutch, section 149, and one published by another owner before the unit arrived, 
 region at flash `0x818000`, and its configuration region in five 64 KiB blocks. The names are in
 `tests/lab.py` and `packages/lab`, and the corpus totals in `docs/status.md`.
 
+What the two user configurations hold that the reference states without naming them: this unit's holds
+four devices, below both stated device limits; the four soft keys carry opcode `0x7E`, enter a mode by
+index, 57 and 18 times across the two, which is the measurement behind the reference's "paging is a soft
+key binding"; and the 160 glyphs of the two bit packing took the corpus glyph total from 3933 to 4093,
+section 63. One is English and the other Dutch, which a reader of on screen text has to allow for, section
+149. Neither the device count nor the `0x7E` count has an archive section of its own: both were counted
+for the capability table that `reference/capabilities.md` held.
+
 All 14<!--fact:container_checks_arch9--> container checks pass on the contributed sample. Fourteen and not
 fifteen because the `AHCM` family carries no key table after the marker, so `key_table_is_complete` does
 not apply here.
@@ -104,3 +112,17 @@ One block at `0x820000`, the unit's own bytes put back unchanged, with both neig
 the erase and after it and found byte identical, and the whole configuration read back through a different
 reader with the SHA-256 of the August read, section 269. The remote did not restart. No edit has been
 written to this unit.
+
+## What has been done over USB, in sum
+
+Moved here from the reference's `usb.md` by plan 009 step 3.1, since it is this unit's history rather
+than the model's.
+
+| | outcome |
+|---|---|
+| identity, configuration, whole internal flash, both external firmware images, EEPROM and the configuration region | all read, sections 76, 119, 268 and 270. The firmware images came off this unit, so they exist nowhere else; their checksums are in `docs/checksums.md` |
+| `READ_MISC` selector 7 and the data memory window | zeros, sections 90 and 137 |
+| `READ_MISC` selector 1 | sent once, in the sweep of nine selectors, and misread; not sent since the decoder was corrected, section 90 |
+| one block of the configuration erased and written back unchanged, verified by reading | done, section 269 |
+| the restart, the cache drop, a learn capture, a data memory write | never sent |
+| safe mode | entered once by the published key procedure and left once by hand, sections 118 and 119; the screen then reported "upgrade voltooid", the unit's configuration being Dutch, until the batteries came out |

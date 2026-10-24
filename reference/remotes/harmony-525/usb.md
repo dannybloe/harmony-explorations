@@ -1,8 +1,9 @@
 # Harmony 525: USB
 
-The protocol, the command set and the write rails are the architecture's,
-[the architecture's usb.md](../../architectures/harmony-5xx/usb.md); this page states what is the 525's
-own.
+A 525 plugs into a computer as a USB device of Logitech's with a product id of its own, and a host reads
+and writes it with the same short commands as the later remotes, fewer of them implemented. The
+protocol, the command set and the write rails are the architecture's, [the architecture's
+usb.md](../../architectures/harmony-5xx/usb.md); this page states what is the 525's own.
 
 ## Identity on the bus
 
@@ -17,28 +18,47 @@ own.
 Generated from `packages/corpus` and `packages/usb` by `make remote-reference-write`. Change the source, not this block.
 <!-- /generated -->
 
-| field | value | standing and source |
-|---|---|---|
-| vendor and product id | `046D:C111`, its own | measured, section 76 |
-| `bcdDevice` | `0x0916`: protocol 9 and skin 22 in plain hex | measured, sections 76 and 195 |
-| product string | `Harmony Remote 0-3.0.0`, and `Harmony Safe Mode!` in safe mode | measured, sections 76 and 118 |
-| version block | `27 30 25 12 ff 90 16 09`: seven fields | measured, section 76 |
-| identity block | EEPROM, protocol address `0x200010` | measured, section 268. The values are a unit's and never appear here |
-
-**The skin is readable without opening the device**, from `bcdDevice`'s low byte, section 195. Whether
-the other models of this architecture share the product id is **not checked**. Enumeration does not tell
-safe mode from the application: only the product string does, section 118.
-
-## What has been done over USB
-
-| | standing and source |
+| field | value |
 |---|---|
-| identity, configuration, whole internal flash, both external firmware images, EEPROM and the configuration region, all read | measured, sections 76, 119, 268 and 270 |
-| data memory, through `READ_MISC` and through the data memory window: answers zeros | measured, sections 90 and 137 |
-| one block of the configuration erased and written back unchanged, verified by reading | measured, section 269 |
-| the restart, the cache drop, a learn capture, a data memory write | **never sent** |
+| vendor and product id | `046D:C111`, its own[^s76] |
+| `bcdDevice` | `0x0916`: protocol 9 and skin 22 in plain hex[^s76][^s195] |
+| product string | `Harmony Remote 0-3.0.0`,[^s76] and `Harmony Safe Mode!` in safe mode[^s118] |
+| version block | `27 30 25 12 ff 90 16 09`: seven fields[^s76] |
+| identity block | EEPROM, protocol address `0x200010`. The values are one remote's and never appear here[^s268] |
+
+**The skin is readable without opening the device**, from `bcdDevice`'s low byte.[^s195] Whether the other
+models of this architecture share the product id is not checked.[^unchecked] Enumeration does not tell
+safe mode from the application: only the product string does.[^s118]
+
+## What a host can read and what it cannot
+
+* **Content answers in every window but one**: internal flash, the EEPROM and the external flash, with
+  the configuration, both stored firmware images and the configuration region above the
+  configuration.[^s76][^s119b][^s268][^s270]
+* **The data memory window answers zeros**, whatever the memory holds.[^s137]
+* **`READ_MISC` serves selector 1 alone.** Every other selector, the data memory read selector 7 among
+  them, sends back two bytes the firmware has just cleared, so it answers zeros.[^s90] Selector 1 returns
+  a parameter by index, and what it answers on a running remote has not been read with a decoder that
+  takes the right byte of its reply, [the architecture's
+  usb.md](../../architectures/harmony-5xx/usb.md#read_misc-and-why-there-is-no-live-memory-read).[^s90b]
+* **A configuration block can be erased and written back**, verified by reading it again, and the
+  blocks either side are untouched.[^s269] The restart and the data memory write are refused on this
+  architecture; the architecture's usb.md has the write standing and the reasons.
 
 ## Not checked
 
-* `READ_MISC` selector 1 on this model, which a third party reads the clock through, section 90.
-* A learn capture.
+* What `READ_MISC` selector 1 answers on a running 525, decoded correctly; a third party reports
+  parameter 0 moving with the clock.[^unchecked]
+* A learn capture.[^unchecked]
+
+[^s76]: Measured on a unit. [Section 76](../../../docs/findings.md#s76)
+[^s195]: Measured on a unit. [Section 195](../../../docs/findings.md#s195)
+[^s118]: Measured on a unit. [Section 118](../../../docs/findings.md#s118)
+[^s268]: Measured on a unit. [Section 268](../../../docs/findings.md#s268)
+[^unchecked]: Not checked.
+[^s119b]: Measured on a unit. [Section 119](../../../docs/findings.md#s119)
+[^s270]: Measured on a unit. [Section 270](../../../docs/findings.md#s270)
+[^s137]: Measured on a unit. [Section 137](../../../docs/findings.md#s137)
+[^s90]: Read in the firmware. [Section 90](../../../docs/findings.md#s90)
+[^s90b]: Measured on a unit. [Section 90](../../../docs/findings.md#s90)
+[^s269]: Measured on a unit. [Section 269](../../../docs/findings.md#s269)
