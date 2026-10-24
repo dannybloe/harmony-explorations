@@ -14,7 +14,7 @@ page says what is true today, and neither restates the other. Where a number app
 the twelfth.
 
 For the argument behind any claim here, [findings.md](findings.md) is authoritative and numbered by
-section. For the format as a specification, [../reference/config-format/README.md](../reference/config-format/README.md).
+section. For the format as a specification, [reference/config-format/](../reference/config-format/README.md).
 
 ## Status
 
@@ -269,7 +269,7 @@ which is a buffer descriptor nobody here has read. The firmware's own answer on 
 asks for none. What keeps a write from happening is the rails and the unopened door, not an open
 question. See
 [findings.md](findings.md) for detail and
-[../reference/config-format/README.md](../reference/config-format/README.md) for the spec as it firms up.
+[reference/config-format/](../reference/config-format/README.md) for the spec as it firms up.
 
 ## Coverage, and why it is a problem
 
