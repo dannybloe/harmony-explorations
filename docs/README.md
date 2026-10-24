@@ -36,7 +36,7 @@ docs/plans/                     one worked out plan per planning session, NNN-sl
 docs/findings.md                authoritative technical reference, narrative
 docs/config-format.md           the config format spec, structured, for tools to track, ending
                                 with the per base slot summary that used to sit in this file
-docs/glossary.md                the vocabulary: which terms are Logitech's, which are ours
+reference/glossary.md                the vocabulary: which terms are Logitech's, which are ours
 docs/usb-protocol.md            the USB protocol spec, step 3, transport done, commands open
 docs/host-client.md             Logitech's own client as a source: the rule, and the ledger of
                                 what is believed on its word alone, all of it unconfirmed

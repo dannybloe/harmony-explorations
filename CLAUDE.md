@@ -2,7 +2,7 @@
 
 Reverse engineering the Logitech Harmony config format so configs can be generated again.
 Read `README.md` first for orientation, then `docs/status.md` for where the work stands,
-`todo.md` for the sequence and `docs/findings.md` for the technical detail. `docs/glossary.md`
+`todo.md` for the sequence and `docs/findings.md` for the technical detail. `reference/glossary.md`
 defines the vocabulary all three use, and says per term whether it is Logitech's word, this
 project's invention or a standard one, which is a distinction the other documents assume rather
 than state.
@@ -745,7 +745,7 @@ source file's own header is where its reading lives. The ones a session reaches 
   `todo-compile-650.md` (finished), `todo-compile-700.md` (finished) and `todo-compile-600.md` (finished) and `todo-compile-one.md`, the sequence, with `todo-later.md` and `todo-freeharmony.md` for what is off that route;
   `docs/decisions.md` and `docs/plans/`, per "How planning works" above
 * `docs/findings.md`, the argument, grepped and read in ranges and never loaded whole;
-  `docs/config-format.md`, the structured spec; `docs/glossary.md`, the vocabulary
+  `docs/config-format.md`, the structured spec; `reference/glossary.md`, the vocabulary
 * `reference/how-a-harmony-works.md`, the operating concept, and `reference/logitech/data-model/model.md`, consulted before
   naming a field or designing anything about devices, activities or remotes
 * `docs/superseded.md`, claims a finding killed; `reference/remotes/`, the public per model
