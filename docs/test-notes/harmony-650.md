@@ -29,19 +29,8 @@ activities onto it. What it holds at any moment is in the lab's `reads/` and not
 
 ## The test account
 
-The unit is registered on the second MyHarmony test account, the one `MYHARMONY_EMAIL` selects, lab
-`reads/20260927T0840Z-h650-programmed-NOTES.md` and the `myharmony-service` skill. The account's contents
-change and are never asserted, per the project's rule that test accounts are not a population. This
-paragraph belongs in `docs/test-notes/accounts.md` once that file exists (plan 009's move table).
-
-Logitech's service answers for this unit's account entry, read 7 October 2026 and filed in the lab's
-`work/myharmony/responses-per-model/`: `GetProductCapabilities2` states `MaxFavoriteChannels` 23 and
-`LeaveDevicesPoweredOn`; `GetRemoteSettings` lists `GlowTime` at a default of 20 and `TiltSensor` and
-`RemoteAssistant` on, and no other setting. No archive section or test holds these answers for the 650,
-so the reference marks them not checked; `reference/capabilities.md` carries the table until step 3.4.
-MyHarmony's "Remote Backlight Settings" dialog sets the glow time with a slider from 5 to 30 seconds, and
-its "Select Language For Your Remote" dialog offers English, Français, Español, Deutsch, Nederlands,
-Italiano and more; both are MyHarmony's screens as seen, with no archive section.
+The unit's account, what MyHarmony showed for it, and Logitech's capability answer for its entry are in
+[accounts.md](accounts.md); the answer is held by `tests/test_product_capabilities.py`.
 
 ## Memory, as read
 

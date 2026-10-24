@@ -70,7 +70,7 @@ asking the remote to reinstall its staged copy does[^s295], [firmware.md](firmwa
 * The IR status indicator, the introduction tour and the Remote Assistant on a 700[^unchecked].
 * Advanced help's screens on a 700[^unchecked].
 
-[^x-manual]: Stated by Logitech, in the manual. [The Harmony 700 user manual](https://support.myharmony.com/harmony-700-user-manual)
+[^x-manual]: Stated by Logitech, in the manual. [The Harmony 700 user manual, the 2009 edition](https://www.manualslib.com/manual/96454/Logitech-Harmony-700.html)
 [^s74]: Read in the firmware. [Section 74](../../../docs/findings.md#s74)
 [^s301]: Measured on a unit. [Section 301](../../../docs/findings.md#s301)
 [^s386]: Measured on a unit. [Section 386](../../../docs/findings.md#s386)

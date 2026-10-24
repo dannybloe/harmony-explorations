@@ -951,7 +951,8 @@ class TestTheBindingTable(unittest.TestCase):
     # architecture.** It held while every arch 8 sample was one skin: `arch8_config_885` states
     # version word 3345, skin 17, where the five 880 samples state 3343, skin 15, and it binds scans
     # 19 and 60 which none of them ever does. So the 53 was a property of one model. Consistent with
-    # `reference/capabilities.md`'s reading that the 880 and 885 differ by teletext colour keys, and
+    # `reference/remotes/harmony-885/README.md`'s reading that the 880 and 885 differ by teletext colour
+    # keys, and
     # **not evidence for it**: two extra bound codes against four extra keys, from one config, where
     # an unbound key proves nothing at all. Section 139.
     SCANS_PER_CONFIG = {

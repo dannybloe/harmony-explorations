@@ -53,8 +53,8 @@ import reference_guards as guards  # noqa: E402
 # BEGIN PINNED: written by tools/reference_guards.py --pin, never by hand
 PINNED = {
     'bench': {
-        ('reference/README.md', 'bench'): 6,
-        ('reference/README.md', 'lab'): 2,
+        ('reference/README.md', 'bench'): 4,
+        ('reference/README.md', 'lab'): 1,
         ('reference/architectures/harmony-600-650-700/compiler.md', 'bench'): 2,
         ('reference/architectures/harmony-600-650-700/compiler.md', 'fixture calibration_h600'): 3,
         ('reference/architectures/harmony-600-650-700/compiler.md', 'fixture h600_config'): 5,
@@ -84,9 +84,6 @@ PINNED = {
         ('reference/architectures/harmony-one/compiler.md', 'test account'): 1,
         ('reference/architectures/harmony-one/compiler.md', 'the spare'): 3,
         ('reference/architectures/harmony-one/compiler.md', 'todo'): 5,
-        ('reference/capabilities.md', 'bench'): 8,
-        ('reference/capabilities.md', 'dump'): 2,
-        ('reference/capabilities.md', 'lab'): 6,
         ('reference/config-format/README.md', 'bench'): 2,
         ('reference/config-format/README.md', 'lab'): 2,
         ('reference/config-format/README.md', 'todo'): 2,
@@ -157,8 +154,6 @@ PINNED = {
         ('reference/logitech/service.md', 'lab'): 2,
         ('reference/logitech/service.md', 'the spare'): 1,
         ('reference/logitech/update-service.md', 'lab'): 1,
-        ('reference/models.md', 'bench'): 9,
-        ('reference/models.md', 'lab'): 3,
         ('reference/usb-protocol/README.md', 'dump'): 2,
         ('reference/usb-protocol/README.md', 'the spare'): 1,
         ('reference/usb-protocol/bootloader.md', 'bench'): 2,
@@ -175,7 +170,6 @@ PINNED = {
         ('reference/usb-protocol/version-block.md', 'bench'): 8,
     },
     'names': {
-        ('reference/capabilities.md', 'a person'): 2,
         ('reference/config-format/actions.md', 'a person'): 1,
         ('reference/config-format/state.md', 'a person'): 1,
         ('reference/glossary.md', 'a person'): 2,

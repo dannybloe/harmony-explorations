@@ -592,7 +592,8 @@ IMAGES = {
     'phase7_after': 'phase7-after-gspm.bin',
     # A Harmony 350, read off the remote on 27 August 2026 with concordance, since this project's own
     # transport does not reach the file based family at all: its config is a named file rather than a
-    # flash address, `reference/models.md`. **Architecture 16, and the first container here from it.**
+    # flash address, `reference/architectures/README.md`. **Architecture 16, and the first container
+    # here from it.**
     # It parses with every framing check passing, which is what section 194 came out of.
     #
     # **Deliberately outside CONTAINERS, ALL_CONTAINERS and USER_CONFIGS**, on the precedent the
@@ -912,6 +913,12 @@ SERVICE_RESPONSES_ACCOUNT2 = ('work', 'myharmony', 'responses-account2')
 #: than knowing the layout.
 SERVICE_RESPONSE_DIRS = {1: SERVICE_RESPONSES, 2: SERVICE_RESPONSES_ACCOUNT2}
 
+#: The service's per model answers, one product capability call per bench model asked through one
+#: account entry of each, filed as `harmony-<model>-<Operation>.json`. A directory of its own for the
+#: reason the two above have one: the model is in the filename and nowhere else, so the file is reached
+#: by naming the model and the operation, never by a walk. `tests/test_product_capabilities.py` reads it.
+SERVICE_RESPONSES_PER_MODEL = ('work', 'myharmony', 'responses-per-model')
+
 #: Logitech's own per skin protocol templates, inside the mirrored desktop client. Section 197.
 #:
 #: **Addressed by path for the same measured reason as the replies above**, and more sharply:
@@ -1008,6 +1015,41 @@ def response(filename, account=1):
             % (filename, account, LAB or 'nothing, HARMONY_LAB unset'))
     with open(p, encoding='utf-8-sig') as fh:
         return json.load(fh)
+
+
+def model_response_path(model, operation):
+    """Absolute path to one per model service answer, or None when the lab has not got it.
+
+    `model` is the name the file carries, `one`, `600`, `650`, `700`, `300` or `350`, and `operation`
+    the service operation, `GetProductCapabilities2` say.
+    """
+    if not LAB:
+        return None
+    p = os.path.join(LAB, *SERVICE_RESPONSES_PER_MODEL, 'harmony-%s-%s.json' % (model, operation))
+    return p if os.path.isfile(p) else None
+
+
+def model_response(model, operation):
+    """One per model service answer, parsed, or raise SkipTest when the lab has not got it.
+
+    The same byte order mark tolerance as `response`, since these were filed by the same probe.
+    """
+    p = model_response_path(model, operation)
+    if not p:
+        raise unittest.SkipTest(
+            'no %s answer for the Harmony %s; set HARMONY_LAB (searched: %s)'
+            % (operation, model, LAB or 'nothing, HARMONY_LAB unset'))
+    with open(p, encoding='utf-8-sig') as fh:
+        return json.load(fh)
+
+
+def require_model_responses(operation, *models):
+    """Skip the whole test unless every named model's answer is present, per `require`'s argument."""
+    missing = [m for m in models if not model_response_path(m, operation)]
+    if missing:
+        raise unittest.SkipTest(
+            'no %s answer for %s; set HARMONY_LAB (searched: %s)'
+            % (operation, ', '.join(missing), LAB or 'nothing, HARMONY_LAB unset'))
 
 
 def require_responses(*filenames, account=1):

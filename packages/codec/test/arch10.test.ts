@@ -763,7 +763,7 @@ test('every container states its architecture twice and its skin, arch 10 at raw
   skipUnless(...ARCHITECTURE_RECORDS.map(([n]) => n)), () => {
     // Section 182. Six containers whose architecture is already known fix the record's shape, and the
     // two arch 10 ones then read as architecture 10 with skins 19 and 23. Those are the Harmony 890's
-    // and 895's own skins in `reference/capabilities.md`, established there by a route with nothing in
+    // and 895's own skins in `reference/remotes/README.md`, established there by a route with nothing in
     // common with this one, which is what makes this a reading rather than a pattern.
     for (const [name, slot, architecture, skin] of ARCHITECTURE_RECORDS) {
       const c = parse(require_(name));

@@ -9,10 +9,11 @@
  * **The capability fields are third party and unconfirmed**, from the comparison table at
  * harmony-remote-forum.de, which is a community site and not Logitech. They have the same standing as
  * an upstream finding: hypotheses to test, useful for deciding what to build, never the basis of a
- * rail. `reference/capabilities.md` holds the argument, the per field confirmation status and the
- * three places our own measurements agree with them. What is **not** third party is `skin` and
- * `architecture`: those come from `reference/models.md`, out of Logitech's own client, with five
- * skins confirmed against firmware literals and live remotes.
+ * rail. `reference/remotes/README.md` holds the argument, where each column comes from and what each
+ * field is worth, and its model index is generated from this table. What is **not** third party is
+ * `skin` and `architecture`: those come out of Logitech's own client and service, with six skins
+ * confirmed against firmware literals and live remotes, and the architectures and platforms are
+ * `reference/architectures/README.md`.
  *
  * Only architectures `packages/usb` can **enumerate** are here. Arch 15, the 900, 1000, 1000i, 1100
  * and 1100i, enumerates as a network class rather than HID, so the transport cannot reach it and a
@@ -51,7 +52,7 @@ export interface Model {
    * than to a model.
    */
   readonly alias?: string;
-  /** Which config format and USB rules apply. `reference/models.md`, from Logitech's own client. */
+  /** Which config format and USB rules apply. `reference/architectures/README.md`, from Logitech's own client. */
   readonly architecture: number;
   /** Devices the host software would let a config hold. An upper bound, not a promise. */
   readonly maxDevices: number;
@@ -95,8 +96,8 @@ export interface Model {
 /**
  * Skin number to model. The key is what a remote reports, so this is the lookup a session makes.
  *
- * Bold entries in `reference/models.md` are the six confirmed independently: 15, 22, 54, 66, 71 and
- * 72. The rest are the client's table, which those five calibrate.
+ * Six skins are confirmed independently, `reference/remotes/README.md`: 15, 22, 54, 66, 71 and 72. The
+ * rest are Logitech's client's and service's tables, which those six calibrate.
  */
 export const MODELS_BY_SKIN: Readonly<Record<number, Model>> = {
   2: { name: '745', architecture: 2, maxDevices: 15, panel: 'monochrome', touch: false, macros: true, pageButton: false, soundPictureButtons: false },
@@ -162,8 +163,8 @@ export const MODELS_BY_SKIN: Readonly<Record<number, Model>> = {
  * `SKINS_WITHOUT_A_MODEL_RECORD`, which is the better place for it, because that list is measured
  * against a vendor source rather than being the residue of what nobody had looked up.
  *
- * The export stays because the gap it names can reopen: a model turning up in `reference/models.md`
- * that the catalogue does not list would belong here, and deleting the export would make that a new
+ * The export stays because the gap it names can reopen: a model turning up in Logitech's lists,
+ * `reference/logitech/product-line.md`, that the catalogue gives no skin would belong here, and deleting the export would make that a new
  * design decision instead of an addition.
  */
 export const MODELS_WITHOUT_A_SKIN: readonly Model[] = [];

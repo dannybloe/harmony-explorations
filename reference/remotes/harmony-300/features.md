@@ -25,17 +25,16 @@ For a skin 79 entry, `UserAccountDirector/GetProductCapabilities2`:
 
 | | value | evidence |
 |---|---|---|
-| product family | Harmony300, compiler architecture 16 | [^unchecked] |
-| max devices | 4 | [^s264] |
-| max favourite channels | 4 for the skin 79 entry; the product table gives skin 78 5 | [^s265] for 79; [^unchecked] for 78 |
-| max activities | not stated | [^unchecked] |
-| display | none | [^unchecked] |
-| settings | none listed | [^unchecked] |
-| capabilities stated | FavoriteChannels, CompiledRemoteButtonMapping, PartiallySetupActivities, DeviceDelay, and `Harmony300EMEA` naming the model | [^s265] for `PartiallySetupActivities`; [^unchecked] for the rest |
-| not stated | **Activities**, LongPressAction, SupportsMHAssist, RemoteSettings, ColourDisplay, sequences, LeaveDevicesPoweredOn, LocaleEnabled | [^s265] for `Activities`; [^t-long-press] for `LongPressAction`; [^unchecked] for the rest |
+| product family | Harmony300, compiler architecture 16 | [^t-capabilities] |
+| max devices | 4 | [^s264], [^t-capabilities] |
+| max favourite channels | 4 for the skin 79 entry; the product table gives skin 78 5 | [^s265], [^t-capabilities] for 79; [^t-product-table] for 78 |
+| max activities | not stated | [^t-capabilities] |
+| display | none | [^t-capabilities] |
+| settings | none listed | [^t-capabilities] |
+| capabilities stated | FavoriteChannels, CompiledRemoteButtonMapping, PartiallySetupActivities, DeviceDelay, and `Harmony300EMEA` naming the model | [^s265] for `PartiallySetupActivities`; [^t-capabilities] for the whole list |
+| not stated | **Activities**, LongPressAction, SupportsMHAssist, RemoteSettings, ColourDisplay, sequences, LeaveDevicesPoweredOn, LocaleEnabled | [^s265] for `Activities`; [^t-long-press] for `LongPressAction`; [^t-capabilities] for the whole list |
 
-The rows marked not checked are Logitech's service's answer as it was read, which no archive section or
-test holds yet.
+The skin 79 product is named "Harmony 300 EMEA" and displayed as "Harmony 300"[^t-capabilities].
 
 ## Devices: four, one per key
 
@@ -73,9 +72,11 @@ integers[^s265d]; how the number sender works is
 * Learning, and any setting.
 
 [^t-long-press]: Stated by Logitech, by their service. [The test](../../../packages/usb/test/models.test.ts)
-[^unchecked]: Not checked.
+[^t-capabilities]: Stated by Logitech, by their service. [The test](../../../tests/test_product_capabilities.py)
 [^s264]: Stated by Logitech, by their service. [Section 264](../../../docs/findings.md#s264)
 [^s265]: Stated by Logitech, by their service. [Section 265](../../../docs/findings.md#s265)
+[^t-product-table]: Stated by Logitech, by their service. [The test](../../../tests/test_host_client.py)
 [^s264b]: Measured in configurations. [Section 264](../../../docs/findings.md#s264)
+[^unchecked]: Not checked.
 [^s265c]: Measured on a unit. [Section 265](../../../docs/findings.md#s265)
 [^s265d]: Measured in configurations. [Section 265](../../../docs/findings.md#s265)

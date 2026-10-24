@@ -15,7 +15,7 @@ remote validates it, which is why its width varies between containers.
 Confirmed on eight containers over five architectures: `0c 0c 3b 0d` on a Harmony One, `0e 0e 49 0d`
 and `0e 0e 42 0d` on a Harmony 600 and 700, `09 09 16 0d` on a Harmony 525, `08 08 0f 0d` and
 `08 08 11 0d` on a Harmony 880 and 885. The skins are the model numbers in
-[capabilities.md](../capabilities.md), established there from Logitech's own product table.
+[the remotes index](../remotes/README.md), from Logitech's own product tables.
 
 **On arch 10 it is at raw slot 0, not raw slot 1, because arch 10 has no base slot 0.** So an arch 10
 config **does** state its architecture, `0a 0a 13 0d` on a Harmony 890 and `0a 0a 17 0d` on a Harmony

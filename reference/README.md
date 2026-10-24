@@ -17,7 +17,7 @@ reference that restated the findings would be the largest such copy it had.
 ```
 reference/
   remotes/
-    README.md                 this file
+    README.md                 every model: its skins, its record, its folder
     harmony-650/              one folder per model, named harmony-<model>
       README.md               one screen: what it is, architecture and skins, bench units, key numbers
       hardware.md             processor, memory, battery, charging, what is inside
@@ -57,10 +57,10 @@ A row or a sentence says where the fact came from and how strong it is, in one o
 | **measured** | read off one of our own units, over USB or with an instrument such as the infrared receiver. Names the unit and the findings section |
 | **seen at the bench** | The project owner looked at the remote and said so. Strong for what a person can see, silent on why |
 | **read in the firmware** | from the disassembled image, with the image named. What the code does, not proof the hardware does it |
-| **Logitech's manual** | the user manual for that model, in the lab's `Docs/`. The vendor's word, sometimes about a different software generation |
+| **Logitech's manual** | the user manual for that model, named in the footnote with a public address. The vendor's word, sometimes about a different software generation, and an edition can differ from another |
 | **Logitech's service** | stated by their live service, usually a product record. The vendor's word, current |
 | **Logitech's client** | from their decompiled desktop client, `reference/logitech/clients.md` |
-| **third party** | the comparison table at harmony-remote-forum.de, `reference/capabilities.md`, or another outside source. A hypothesis |
+| **third party** | the comparison table at harmony-remote-forum.de, [the remotes index](remotes/README.md), or another outside source. A hypothesis |
 | **not checked** | nobody has established it. Written out on purpose |
 
 **"Not checked" is the row that matters most.** Each section ends with the questions nobody has
@@ -103,10 +103,3 @@ fails the check before that.
 
 The names are `remote-reference` rather than `remotes` because `make remotes` already lists the
 remotes attached to this machine.
-
-## What this does not replace yet
-
-* `reference/capabilities.md` covers every skin, not only the bench models, and carries the argument
-  about the forum table's standing. It stays until every bench model has a folder here, and is then to
-  be absorbed into them.
-* `reference/models.md` keeps the skin and architecture table for every model Logitech made.

@@ -94,7 +94,6 @@ The reference states what a 700 does with a configuration; these are the runs it
   staging read, 71552 bytes, section 298. MyHarmony's version list naming 2.8 is filed in the lab's
   `firmware/packages/versiondb/`, `todo-secure-logitech.md` 4.1.
 * **Logitech's service statement** for skin 66, `GetProductCapabilities2`, was asked through one account
-  entry; the answers are filed in the lab's `work/myharmony/responses-per-model/`, and no archive section or
-  test holds them, so the reference marks the capability list not checked.
+  entry, [accounts.md](accounts.md); `tests/test_product_capabilities.py` holds it since plan 009's step 3.4.
 * **The activity fill test** of `reference/how-a-harmony-works.md`, seventeen model records: whether a 700
   record was among them is not recorded.

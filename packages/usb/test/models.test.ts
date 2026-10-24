@@ -1,5 +1,6 @@
 /**
- * `reference/capabilities.md` in executable form.
+ * The model index of `reference/remotes/README.md` in executable form; that page's generated table is
+ * `MODELS_BY_SKIN`, and its prose says where each column comes from and what it is worth.
  *
  * The capability data is third party and unconfirmed, so what these tests pin is not that the data is
  * right. It is the three things this project has checked independently, plus the internal consistency
@@ -23,7 +24,8 @@ import {
 
 test('the six confirmed skins name the models they were confirmed as', () => {
   // From firmware literals and live remotes, none of which consulted Logitech's client table.
-  // `reference/models.md`. These are the calibration for every other row.
+  // `reference/remotes/README.md`, "What each field is worth". These are the calibration for every
+  // other row.
   assert.equal(modelForSkin(54)?.name, 'One');
   assert.equal(modelForSkin(71)?.name, '600');
   assert.equal(modelForSkin(72)?.name, '650');

@@ -11,16 +11,14 @@ library allows over it and the rails are the family's,
 <!-- generated:usb-identity -->
 | field | value | from |
 |---|---|---|
-| USB product id | none | `PROFILES` in `packages/corpus/src/read.ts` |
-| first refused flash top byte | none read | `FLASH_TOP_BYTE_BOUND` in `packages/usb/src/protocol.ts` |
-| escape sub commands dispatched | none read | `ESCAPE_SUB_COMMANDS` in `packages/usb/src/protocol.ts` |
+| USB product id | 0xC124, file based | `FILE_BASED_PRODUCTS` in `packages/usb/src/transport.ts`, and the model's row in `REMOTES` |
+| flash addresses and escape sub commands | none: a file based remote is read by file name, and `openHarmony` refuses it | `isFileBasedRemote` in `packages/usb/src/transport.ts` |
 
-Generated from `packages/corpus` and `packages/usb` by `make remote-reference-write`. Change the source, not this block.
+Generated from `packages/usb` and `REMOTES` in `packages/silhouettes/bin/remotes.ts` by `make remote-reference-write`. Change the source, not this block.
 <!-- /generated -->
 
-The block lists the command protocol's profiles, which this family does not speak, so it names no product
-id; the family's id is in `FILE_BASED_PRODUCTS`,
-[the architecture's usb.md](../../architectures/harmony-300-350/usb.md#identity), and below.
+The product id is the family's, [the architecture's usb.md](../../architectures/harmony-300-350/usb.md#identity), and the rest
+of what the remote states on the bus is below.
 
 | field | value |
 |---|---|

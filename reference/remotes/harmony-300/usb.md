@@ -10,15 +10,13 @@ as files. How that works, which files are read and why nothing here writes to on
 <!-- generated:usb-identity -->
 | field | value | from |
 |---|---|---|
-| USB product id | none | `PROFILES` in `packages/corpus/src/read.ts` |
-| first refused flash top byte | none read | `FLASH_TOP_BYTE_BOUND` in `packages/usb/src/protocol.ts` |
-| escape sub commands dispatched | none read | `ESCAPE_SUB_COMMANDS` in `packages/usb/src/protocol.ts` |
+| USB product id | 0xC124, file based | `FILE_BASED_PRODUCTS` in `packages/usb/src/transport.ts`, and the model's row in `REMOTES` |
+| flash addresses and escape sub commands | none: a file based remote is read by file name, and `openHarmony` refuses it | `isFileBasedRemote` in `packages/usb/src/transport.ts` |
 
-Generated from `packages/corpus` and `packages/usb` by `make remote-reference-write`. Change the source, not this block.
+Generated from `packages/usb` and `REMOTES` in `packages/silhouettes/bin/remotes.ts` by `make remote-reference-write`. Change the source, not this block.
 <!-- /generated -->
 
-The block above says "none" because it reads the command protocol's profiles, which this family is not on;
-the product id is `046D:C124`, shared with the Harmony 350, [the family's usb.md](../../architectures/harmony-300-350/usb.md).
+The product id is shared with the Harmony 350, [the family's usb.md](../../architectures/harmony-300-350/usb.md).
 
 | field | value | evidence |
 |---|---|---|

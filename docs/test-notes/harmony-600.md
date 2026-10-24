@@ -16,8 +16,9 @@ folder said about the bench before plan 009 step 3.1 moved it here.
   section 23. The four 600 images in the lab and their checksums are `docs/checksums.md`; the `0xFF` page
   holds this unit's identity block, so its checksum is not listed.
 * **The 600's panel is the one this project confirmed as monochrome by looking**, on the bench unit,
-  which is what `reference/capabilities.md` recorded as "seen at the bench"; section 387 measured what a
-  colour becomes on it.
+  which `reference/capabilities.md` recorded as "seen at the bench" until plan 009's step 3.4; section 387
+  measured what a colour becomes on it, and Logitech's service states it monochrome,
+  `tests/test_product_capabilities.py`.
 * **A write target since 29 September 2026**, `CLAUDE.md` "Never write to a remote"; it runs build 0.2,
   and the architecture's README carried both in a "bench unit" column until plan 009 step 3.1 moved them
   here.
@@ -27,11 +28,9 @@ folder said about the bench before plan 009 step 3.1 moved it here.
 
 ## The calibration configuration
 
-The 600's scan codes were named from a configuration generated for this model through an account this
-project controls, `calibration_h600`, the calibration sample of section 133, which is why the 600 and not
-the 650 is the model the button map was measured on. Section 133 is the derivation, and section 323
-decided the four up and down keys from the same configuration's device maps. The account and where its
-results went are [accounts.md](accounts.md).
+The 600's scan codes were named from `calibration_h600`, compiled through the calibration account, and
+Logitech's capability answer for a skin 71 product was asked through an account entry too; both are
+[accounts.md](accounts.md).
 
 ## Firmware: the version list
 

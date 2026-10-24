@@ -33,7 +33,8 @@ const found = await listHarmony();
 // to report as nothing at all. `docs/findings.md` section 189.
 const inRecovery = await listMicrochipBootloaders();
 // And separately again, for the opposite reason: these *are* Harmonys and sit inside the product
-// range, so they used to be reported as remotes this library could open. `reference/models.md`.
+// range, so they used to be reported as remotes this library could open. `reference/architectures/README.md`,
+// "Three ways a host talks to a remote".
 const fileBased = await listFileBasedRemotes();
 // And once more, for a family that was reported as openable until section 207: these speak a
 // datagram protocol tunnelled over USB rather than the command protocol, so listing them is honest

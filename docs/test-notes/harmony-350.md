@@ -49,11 +49,10 @@ compiled configuration holds.
 ## Logitech's service, about this unit's model
 
 `UserAccountDirector/GetProductCapabilities2` was asked for the account entry of this unit, skin 104, on 7
-October 2026, with the five other bench models. The answer is filed in the lab's
-`work/myharmony/responses-per-model/` and is what `reference/remotes/harmony-350/features.md` restates in
-"What Logitech's service states". **No archive section or test holds that answer**, which is why the rows
-resting on it alone are marked not checked there; a test reading the filed answer would turn them into
-evidence.
+October 2026, with the five other bench models, [accounts.md](accounts.md). It is what
+`reference/remotes/harmony-350/features.md` restates in "What Logitech's service states", and
+`tests/test_product_capabilities.py` holds it since plan 009's step 3.4, so those rows carry that test as
+their footnote rather than being marked not checked.
 
 ## The case
 

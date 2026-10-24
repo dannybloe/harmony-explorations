@@ -25,7 +25,8 @@ Logitech's software update service" below and section 196.
 
 What has no firmware anywhere is arch 2, 3, 7, 10 and 15. Arch 9 has it off our own remote rather
 than from anybody's publication. For an architecture with neither, the only route is `READ_FLASH`
-off a physical remote, which is the argument for owning one. See `reference/models.md` for which
+off a physical remote, which is the argument for owning one. See
+[the architectures](../reference/architectures/README.md#which-models-sit-on-which-architecture) for which
 models are which architecture.
 
 That repair site is still the only surviving third party source anyone has found, and archiving it

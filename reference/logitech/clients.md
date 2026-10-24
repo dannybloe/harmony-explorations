@@ -94,8 +94,8 @@ that a match is converted to a compact form while a miss is stored in its origin
 why three of the four infrared encoding classes appear in no config in this corpus, section 42, and
 no amount of firmware reading would have said so.
 
-Worth checking a manual before assuming a behaviour is undocumented. `reference/models.md` lists the
-forty retired models, and the manuals are indexed under Logitech's support assets.
+Worth checking a manual before assuming a behaviour is undocumented. [The product line](product-line.md)
+lists the forty retired models, and the manuals are indexed under Logitech's support assets.
 
 ## Harmony Desktop is a fourth source, and MyHarmony is the reference client
 
@@ -177,8 +177,9 @@ path, and it is cheap to confirm: read what selector 2's body at the selector ch
 USB vendor and product pairs against Logitech's internal platform names, and 46 skin numbers
 against models. Five skins this project had already measured, from firmware literals and from live
 remotes, all agree exactly, and the full table sharpened section 81's rule for the two containers
-that carry a skin their remote does not have. It is in `reference/models.md` with its provenance,
-and `tests/test_gspm.py` asserts the corpus against it rather than asserting the table.
+that carry a skin their remote does not have. The platforms are in [the architectures](../architectures/README.md#platforms-and-product-ids)
+and the skins in [the remotes index](../remotes/README.md#where-the-skin-numbers-come-from), and
+`tests/test_gspm.py` asserts the corpus against the skins rather than asserting the table.
 
 That one had already been used as a lead in section 81, before this document existed, which is
 part of why the rule needed writing down.

@@ -3,6 +3,7 @@
 What Logitech made around these remotes, as far as this project has read it: their software, their
 services and their data model.
 
+* [The product line](product-line.md): the models Logitech sold, the ones it retired, and its catalogue.
 * [Clients](clients.md): the classic client, MyHarmony, Harmony Desktop and the manuals as sources.
 * [The classic client on the wire](classic-client.md).
 * [The configuration service](service.md).
