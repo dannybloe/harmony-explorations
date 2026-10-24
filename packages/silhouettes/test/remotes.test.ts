@@ -46,10 +46,24 @@ test('a model folder and its drawing serve the same skins', () => {
   // bench unit states about itself, 79, section 264, found nothing. A folder whose drawing is a
   // sibling's, the 650's taking the 600's shapes, still has a drawing of its own with its own skins.
   for (const r of REMOTES) {
+    if (r.drawing === undefined) continue; // the next test holds which folders may have none
     const drawing = MODELS[r.drawing] ?? assert.fail(`${r.folder}: no drawing ${r.drawing}`);
     assert.deepEqual([...drawing.skins].sort((a, b) => a - b), [...r.skins].sort((a, b) => a - b), r.folder);
   }
   assert.deepEqual(MODELS.h300!.skins, [78, 79], 'the Harmony 300 drawing serves both regional skins');
+});
+
+test('only the Harmony 885 and 890 folders are without a drawing, so a drawn model cannot lose its drawing', () => {
+  // Plan 009 step 3.5 made `drawing` optional so that the two models known only from contributed
+  // configurations could have their full folders before anybody draws them. An optional field is also a
+  // way for every other row to drop its drawing without a failure anywhere, since the keys and display
+  // blocks would simply say none exists. So the folders allowed to lack one are named here, exactly: a
+  // drawing added for either shrinks this list, and any other row losing its drawing fails.
+  const undrawn = REMOTES.filter((r) => r.drawing === undefined).map((r) => r.folder).sort();
+  assert.deepEqual(undrawn, ['harmony-885', 'harmony-890']);
+  for (const r of REMOTES) {
+    if (r.drawing !== undefined) assert.ok(MODELS[r.drawing] !== undefined, `${r.folder}: no drawing ${r.drawing}`);
+  }
 });
 
 test('every model and architecture folder holds exactly the files its row declares', () => {

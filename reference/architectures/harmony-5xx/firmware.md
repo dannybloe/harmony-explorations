@@ -17,7 +17,7 @@ checked.[^unchecked] What the 525's own versions and product strings are is the 
 |---|---|---|
 | bootloader | internal `0x0000` to `0x0FFF`, in no external image, so only the device has it[^s76] | base `0x0000`; reset `GOTO 0x0EF6`, inside itself; the high priority interrupt vector `GOTO 0x1400`, inside the application[^s76] |
 | **application 3.0** | runs from internal `0x1000`; stored at external `0x810000`, `HG` framed at `+4` and `GH` at `0x6FFE`[^s76] | base `0x1000`, `GOTO 0x07FB4` at `0x1008`. Derived at 717 branch targets on an instruction boundary against 326 for the runner up, then confirmed against the internal copy, byte identical over all 28672 bytes[^s76] |
-| **safe mode image 2.0** | stored at external `0x800000`; it reports software type 4[^s76][^s118] | base `0x1000` too, 182 boundary hits of 183; a different firmware and not a copy, 27994 of its 28672 bytes differing from the application's[^s76] |
+| **safe mode image 2.0** | stored at external `0x800000`; it reports software type 4[^s76][^s118] | base `0x1000` too, 182 boundary hits of 183, `GOTO 0x017EA` at `0x1008`[^s118]; a different firmware and not a copy, 27994 of its 28672 bytes differing from the application's[^s76] |
 
 The application's entry fits 32 KiB of program flash and its reset vector lands below `0x1000`, which is
 what placed a bootloader under the application before the internal flash was read.[^s76]

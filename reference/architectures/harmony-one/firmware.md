@@ -11,7 +11,7 @@ application is laid out, and what safe mode can and cannot do. Where each sits i
 
 | image | version | where it is stored | where it runs |
 |---|---|---|---|
-| application | 3.4 | external `0x020000` to `0x02EA92`, 60050 bytes, and a stored copy at `0x3D0000` | in place at `0x020000`, entry point `0x02EA38`[^s3][^s1] |
+| application | 3.4 | external `0x020000` to `0x02EA92`, 60050 bytes, and a stored copy at `0x3D0000` | in place at `0x020000`, entry point `0x02EA38`[^s3][^s1]; `0x020000` to `0x02002F` is data, the header and a `DEADDEAD` fill, which a disassembler must be told, since `48 47` decodes as a valid instruction[^s10] |
 | safe mode | 3.4 | internal `0xFE` `+0x1000` | internal flash[^s189] |
 | bootloader | none, it has no header | internal `0xFE` `+0x0000` | internal flash, from the reset vector[^s189] |
 | programmable logic image | 1.6 | internal `0xFF` `+0x0000` | not known[^s206] |
@@ -84,6 +84,7 @@ named by no enter at all. Harmony One 3.4 only; computed jumps, `FSR` writes and
 
 [^s3]: Read in the firmware. [Section 3](../../../docs/findings.md#s3)
 [^s1]: Read in the firmware. [Section 1](../../../docs/findings.md#s1)
+[^s10]: Read in the firmware. [Section 10](../../../docs/findings.md#s10)
 [^s189]: Read in the firmware. [Section 189](../../../docs/findings.md#s189)
 [^s206]: Measured on a unit. [Section 206](../../../docs/findings.md#s206)
 [^s191]: Read in the firmware. [Section 191](../../../docs/findings.md#s191)
