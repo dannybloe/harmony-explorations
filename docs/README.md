@@ -115,22 +115,22 @@ docs/review-before-first-write.md
                                 TheWriteReviewWithholdListIsComplete, so a new document quoting the
                                 transfer fails a test rather than quietly widening what a reviewer
                                 may see
-docs/predictions-number-sender.md
+docs/predictions/number-sender.md
                                 predictions written down before base slot 16 was read, then scored
-docs/predictions-arch16-programmed.md
+docs/predictions/harmony-350-programmed.md
                                 eight predictions about a Harmony 350 written before Danny programmed
                                 it and it was read, then scored in the same document. Five right or
                                 partly so, and the two most useful were wrong: a real configuration is
                                 **smaller** than the factory one, and the exact record cover holds on
                                 a programmed remote rather than breaking
-docs/predictions-sequence-delay.md
+docs/predictions/sequence-delay.md
                                 the same for how a sequence states its delays. **Scored on
                                 29 August 2026 and its headline prediction was wrong**: the pause is
                                 an opcode inline in the action list rather than something that
                                 compiles away, and the unit is tenths of a second. Neither document
                                 was named in this map until then, which is how one of them sat
                                 unscored for six days after the measurement
-docs/predictions-power-hold.md
+docs/predictions/power-hold.md
                                 how Logitech's compiler turns a catalogue power press held for a
                                 stated time into copies of the code, six compiles in four rounds on the test
                                 account's Harmony 650 and 700 records, each predicted before it ran

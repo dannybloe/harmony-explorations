@@ -30,7 +30,7 @@ holds exactly one device and exactly one activity. That is one specimen of every
 needs, in the smallest form that exists.
 
 **Every numbered claim below is a prediction until it is scored.** The plan asks for this shape, the
-one `docs/predictions-arch16-programmed.md` uses: write it from one specimen, then score it against a
+one `docs/predictions/harmony-350-programmed.md` uses: write it from one specimen, then score it against a
 second and a third, and record what it got wrong in the same document. The scoring section at the
 bottom says which specimens and what happened.
 

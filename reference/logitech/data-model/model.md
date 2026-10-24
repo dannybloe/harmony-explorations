@@ -804,7 +804,7 @@ all for another, and being device specific is a property of a device's entry rat
   that the reading looked at a device's own field list and not at what it inherits. Nine timing
   fields sit on that base: `DefaultInterKeyDelay`, `InterKeyDelay`, `HoldInterKeyDelay`,
   `DefaultInterDeviceDelay`, `InterDeviceDelay`, `HoldInterDeviceDelay`, `DefaultPressMinRepeats`,
-  `PressMinRepeats` and `HoldMinRepeats`. `docs/predictions-sequence-delay.md` is about exactly
+  `PressMinRepeats` and `HoldMinRepeats`. `docs/predictions/sequence-delay.md` is about exactly
   these quantities, scored against a config; here the platform names them, and it distinguishes a
   default from a current value and a press from a hold, which that prediction did not.
 * **`DelayActivityAction.Duration` and `AbstractActivityRole.NextDevicePowerOnDelay`** are the two

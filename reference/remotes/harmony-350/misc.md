@@ -12,7 +12,7 @@ since section 266.
 
 ## Predictions before each read
 
-Each read of this family was predicted in writing before it was taken, `docs/predictions-arch16-*.md`, and
+Each read of this family was predicted in writing before it was taken, `docs/predictions/harmony-3*.md`, and
 the findings sections record which predictions held.
 
 ## Not checked

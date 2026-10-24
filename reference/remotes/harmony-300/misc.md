@@ -12,7 +12,7 @@ project learned that the service validates a serial, Logitech's service, section
 ## Predictions before each read
 
 Both reads of a 300 were predicted in writing before they were taken,
-`docs/predictions-arch16-harmony-300.md` and `docs/predictions-arch16-harmony-300-programmed.md`, and
+`docs/predictions/harmony-300.md` and `docs/predictions/harmony-300-programmed.md`, and
 sections 264 and 265 record which held.
 
 ## Not checked

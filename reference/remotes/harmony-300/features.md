@@ -31,7 +31,7 @@ Logitech's service, `SKINS_WITH_A_LONG_PRESS`, which names neither.
 | capabilities stated | FavoriteChannels, CompiledRemoteButtonMapping, PartiallySetupActivities, DeviceDelay, and `Harmony300EMEA` naming the model |
 | not stated | **Activities**, LongPressAction, SupportsMHAssist, RemoteSettings, ColourDisplay, sequences, LeaveDevicesPoweredOn, LocaleEnabled |
 
-All of it **Logitech's service**, `reference/capabilities.md` and `docs/predictions-arch16-harmony-300.md`;
+All of it **Logitech's service**, `reference/capabilities.md` and `docs/predictions/harmony-300.md`;
 the 78 against 79 favourite figures are section 265.
 
 ## Devices: four, one per key

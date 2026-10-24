@@ -40,7 +40,7 @@ family's base skin and the remote its own regional variant, measured, sections 1
 | keys | 55, the 350's moulding with different printing; **no scan code known** | `packages/silhouettes/src/models/h300.ts` and its test |
 | devices | **4**, one per device key | Logitech's service; every configuration holds four infrared groups, measured, section 264 |
 | activities | no `Activities` capability; at most one, a power on shortcut | Logitech's service; a fill test, `docs/how-a-harmony-works.md`; [features.md](features.md) |
-| favourite channels | 5 for skin 78, 4 for skin 79 | Logitech's service, `docs/predictions-arch16-harmony-300.md` and section 265 |
+| favourite channels | 5 for skin 78, 4 for skin 79 | Logitech's service, `docs/predictions/harmony-300.md` and section 265 |
 | long press | **none** | Logitech's service |
 | power | two AA batteries | Logitech's manual |
 
