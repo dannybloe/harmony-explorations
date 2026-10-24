@@ -1,5 +1,5 @@
 /**
- * What a length change would move, per sample: the survey behind `docs/growing-a-config.md`.
+ * What a length change would move, per sample: the survey behind `reference/config-format/relocation.md`.
  *
  *   node packages/codec/bin/growth.ts                 every container in the corpus
  *   node packages/codec/bin/growth.ts --file <config> one file, no lab needed

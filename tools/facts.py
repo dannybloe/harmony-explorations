@@ -200,7 +200,7 @@ def emit_facts():
 
 
 def growth_facts():
-    """What a length change would move, corpus wide. `docs/growing-a-config.md` quotes these.
+    """What a length change would move, corpus wide. `reference/config-format/relocation.md` quotes these.
 
     Shelled out for the reason the two above are: `packages/codec/src/growth.ts` is the one census
     of a container's addresses, and a second count here would be free to disagree with it.

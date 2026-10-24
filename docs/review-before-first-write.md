@@ -106,7 +106,7 @@ that could have leaked.
 | `CLAUDE.md`, `docs/status.md`, `todo.md`, `docs/adding-a-device.md` | all restate the sequence |
 | `docs/README.md` | the map of documents and commands moved out of `CLAUDE.md` on 7 October 2026, which names `rehearse-block.ts` and the write protect interlock |
 | `AGENTS.md` | deliberately absent since 28 August 2026. Codex reads `CLAUDE.md` through `.codex/config.toml`, so both agents use one brief. The row stays reserved so recreating a separate brief cannot silently widen what a reviewer may see |
-| `reference/glossary.md`, `docs/growing-a-config.md` | one line each |
+| `reference/glossary.md`, `reference/config-format/relocation.md` | one line each |
 | `docs/review-before-first-write.md` | this document, which states which questions are open |
 | `packages/usb/` | all of it, the protocol, the rails, the write builder, the scripts and the tests |
 | `tests/`, `packages/bench/test/` | the regression tests pin the claims |

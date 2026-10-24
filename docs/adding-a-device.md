@@ -431,7 +431,7 @@ Five gaps, one a field and four of them rules to write down rather than fields t
 
 The wall. A Harmony One config states **12045** addresses inside itself and another **5884** positions are
 implied by what precedes them, `make growth`. Adding anything moves everything above it.
-`docs/growing-a-config.md` is the survey behind `edit.ts` refusing to change a length; this phase is what
+`reference/config-format/relocation.md` is the survey behind `edit.ts` refusing to change a length; this phase is what
 lifts that refusal.
 
 - [x] `relocate(container, at, delta)`: shift the bytes, then rewrite every **stated** address at or above

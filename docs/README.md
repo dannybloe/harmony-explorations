@@ -83,7 +83,7 @@ docs/recipe.md                  the recipe a configuration of ours is built from
                                 its fields, what it holds and what the model's definition holds
                                 instead, and each field against FreeHarmony's data model with the
                                 gaps FreeHarmony would fill to produce one
-docs/growing-a-config.md        what a length change would move, counted: the stated addresses, the
+reference/config-format/relocation.md        what a length change would move, counted: the stated addresses, the
                                 implied positions and the three restamped fields. The survey behind
                                 edit.ts's refusal to change a length, and since section 172 also the
                                 spec of relocate.ts, the separate entry point that performs it
