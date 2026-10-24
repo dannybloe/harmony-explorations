@@ -820,4 +820,4 @@ all for another, and being device specific is a property of a device's entry rat
 * **`DefaultChannel`, `DefaultStation` and `DefaultStationName`** sit on an activity, next to the
   favourite channel work of sections 154 and 156.
 * **`DeviceCategory` has six values** where the hub generation's icon set had 95 names,
-  `reference/device-categories.md`. The categories a Harmony One era account can hold are the six.
+  `reference/logitech/device-catalogue.md`. The categories a Harmony One era account can hold are the six.
