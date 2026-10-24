@@ -21,10 +21,10 @@ In this order, every time, including in an agent:
 
 1. `reference/remotes/harmony-one/README.md`: the key numbers and the map of its nine topic files. Then
    open the topic file the task touches: `keys.md`, `display.md`, `features.md`, `behaviour.md`,
-   `memory.md`, `firmware.md`, `usb.md`, `hardware.md`, `misc.md`. There is no architecture folder: the
-   One is the only model on its platform, and in conversation it is "the Harmony One", never the bare
-   architecture number.
-2. `docs/memory-map-one.md`: the long form of its memory, which the reference summarises.
+   `memory.md`, `firmware.md`, `usb.md`, `hardware.md`, `misc.md`. In conversation it is "the Harmony
+   One", never the bare architecture number.
+2. `reference/architectures/harmony-one/`: its platform, the memory, firmware and USB commands, since the
+   One is the only model on it; `memory.md` there is the long form of its memory.
 3. `reference/how-a-harmony-works.md` when the task touches what the remote does for a person, and in
    particular its sections on the four keys around the One's screen and on the click before a screen
    command.
@@ -96,7 +96,7 @@ run so far is `packages/bench/irtests/done/one-spare-activities.json`.
 | what | where |
 |---|---|
 | the public reference | `reference/remotes/harmony-one/` |
-| the long form of the memory | `docs/memory-map-one.md` |
+| the long form of the memory | `reference/architectures/harmony-one/memory.md` |
 | the firmware images | the 3.4 package and its derived files in the lab's `firmware/`, `docs/checksums.md` |
 | the spare's unit record | the lab's `units/one_spare.txt`, never copied into this repository |
 | region reads and configurations | the lab's `reads/` and `dumps/`, named in `packages/lab` and `tests/lab.py` with the prefixes `one_` and `one_spare_` |

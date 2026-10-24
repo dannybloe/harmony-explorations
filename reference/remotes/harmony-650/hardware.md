@@ -10,7 +10,7 @@ again only where the 650 adds something.
 
 | | value | standing and source |
 |---|---|---|
-| processor | `PIC18F67J50`, the architecture's part | read in the firmware: 64 pins, no external memory bus, application copied into internal flash. The device id at `0x3FFFFE` is outside the read window, so the part is **not measured** on any unit, `docs/memory-map.md` |
+| processor | `PIC18F67J50`, the architecture's part | read in the firmware: 64 pins, no external memory bus, application copied into internal flash. The device id at `0x3FFFFE` is outside the read window, so the part is **not measured** on any unit, [the comparison of architectures](../../architectures/README.md#what-no-read-can-show) |
 | internal flash | 128 KiB in two pages | measured, the 650's own pages `0xFE` and `0xFF` read whole, section 281 |
 | external flash | 2 MiB SPI, EON F16, id `15:1C` | measured, version block, section 281; the address classifier of both the 0.2 build and the 0.4 package refuses at `0x200000`, read in the firmware |
 | "Memory capacity 2MB, Flash" | | Logitech's manual, Product Specification. Agrees with the measurement |

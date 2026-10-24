@@ -2,13 +2,13 @@
 
 What is inside, as far as anything here can say. No One has been opened: every part below is known from
 what the remote reports over USB, from its firmware, or from Logitech's manual. The long form of the
-memory is `docs/memory-map-one.md`.
+memory is [the platform's memory page](../../architectures/harmony-one/memory.md).
 
 ## Processor and memory
 
 | | value | standing and source |
 |---|---|---|
-| processor | most likely a `PIC18F87J50`: 80 pins and an external memory bus, which a part running its application in place out of external flash needs | **inferred**, section 3 and `docs/memory-map.md`. The device id at `0x3FFFFE` is outside the USB read window, section 22 |
+| processor | most likely a `PIC18F87J50`: 80 pins and an external memory bus, which a part running its application in place out of external flash needs | **inferred**, section 3 and [the comparison of architectures](../../architectures/README.md). The device id at `0x3FFFFE` is outside the USB read window, section 22 |
 | internal flash | 128 KiB in two 64 KiB pages | measured, section 22 |
 | external flash | 4 MiB parallel NOR, Atmel `AT49BV322A`, reported as `1F:C8`, memory mapped and executed in place | measured on two units, section 221; the part named by Logitech's client's constants for that id |
 | "Memory Amount 4MB", "Memory Type Flash" | | Logitech's manual, Product Specification. Agrees with the part |

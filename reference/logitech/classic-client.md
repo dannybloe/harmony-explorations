@@ -212,8 +212,8 @@ is written down rather than left in a note.
 | 7 and 8 | writes a **bootloader unlock** value first, then reads 64 KiB, blanks 48 bytes of it and writes it back |
 
 Three things follow. The block is **64** bytes when it is being erased and **48** when it is being
-read, which is the same boundary `docs/memory-map-one.md` describes as 64 bytes with its fourth field
-erased. The arch 7 and 8 arm is the only place in this whole client where anything is unlocked before
+read, which is the same boundary [the Harmony One's memory page](../architectures/harmony-one/memory.md)
+describes as 64 bytes ending in sixteen zero bytes. The arch 7 and 8 arm is the only place in this whole client where anything is unlocked before
 a write, so if a write protect interlock exists on those architectures, that constant pair is where it
 is named; this repository has no arch 7 or 8 write target and does not need it, and it is recorded
 because `docs/review-before-first-write.md` calls the interlock the highest value target it has.

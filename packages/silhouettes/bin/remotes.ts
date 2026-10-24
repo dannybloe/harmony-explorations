@@ -23,8 +23,8 @@
  * any dependency, which is what FreeHarmony consumes.
  *
  * Adding a model is two lines: a row in `REMOTES` and the folder with its ten files, whose blocks
- * this then fills. Adding an architecture is a row in `ARCHITECTURES` the same way, naming the blocks
- * its folder carries. A model whose skins have no record in `MODELS_BY_SKIN`, or that has no screen,
+ * this then fills. Adding an architecture is a row in `ARCHITECTURES` the same way, naming the files its
+ * folder holds and the blocks it carries. A model whose skins have no record in `MODELS_BY_SKIN`, or that has no screen,
  * gets rows that say so rather than a failure, which is what the Harmony 300 and 350 need.
  */
 import { readFileSync, writeFileSync } from 'node:fs';
@@ -84,7 +84,20 @@ interface RemoteFolder {
    * refusal, and every other model keeps the refusal.
    */
   readonly rasterFromDrawing?: string;
+  /**
+   * The files the folder holds, when they are not the ten every model folder has. Plan 009 section 5:
+   * `test/remotes.test.ts` compares each folder with its row, so a folder that gains or loses a file
+   * without its row saying so fails, and a row is where a folder with a different shape says it has one.
+   */
+  readonly files?: readonly string[];
 }
+
+/**
+ * The ten files of a model folder, `reference/README.md`'s shape: a missing file reads as "nothing known",
+ * where a file whose section says "not checked" reads as what it is.
+ */
+export const MODEL_FILES: readonly string[] = ['README.md', 'behaviour.md', 'display.md', 'features.md',
+  'firmware.md', 'hardware.md', 'keys.md', 'memory.md', 'misc.md', 'usb.md'];
 
 /** The blocks an architecture folder can carry. */
 type ArchitectureBlock = 'skins' | 'memory-constants' | 'usb-identity' | 'write-rails';
@@ -100,6 +113,12 @@ interface ArchitectureFolder {
    * `none` and `no` would say less than its folder's prose and look like a measurement.
    */
   readonly blocks: readonly ArchitectureBlock[];
+  /**
+   * The files the folder holds. Unlike a model folder an architecture folder has no fixed shape: the
+   * file based family has no compiler page because nothing compiles for it here, and a thin folder may
+   * hold three files. So every row names its own, and the test holds the folder to the row.
+   */
+  readonly files: readonly string[];
 }
 
 /**
@@ -129,13 +148,31 @@ export const REMOTES: readonly RemoteFolder[] = [
   },
 ];
 
+/** The five files of a full architecture folder, and the same with the page on what Logitech's compiler writes. */
+const ARCHITECTURE_FILES: readonly string[] = ['README.md', 'firmware.md', 'memory.md', 'misc.md', 'usb.md'];
+const WITH_A_COMPILER: readonly string[] = [...ARCHITECTURE_FILES, 'compiler.md'];
+
 export const ARCHITECTURES: readonly ArchitectureFolder[] = [
-  { folder: 'harmony-600-650-700', architecture: 14, blocks: ['skins', 'memory-constants', 'usb-identity', 'write-rails'] },
-  { folder: 'harmony-300-350', architecture: 16, blocks: ['skins', 'usb-identity'] },
+  {
+    folder: 'harmony-600-650-700', architecture: 14, files: WITH_A_COMPILER,
+    blocks: ['skins', 'memory-constants', 'usb-identity', 'write-rails'],
+  },
+  { folder: 'harmony-300-350', architecture: 16, files: ARCHITECTURE_FILES, blocks: ['skins', 'usb-identity'] },
   // Named for the 5xx series rather than for the one bench model, because the skins it lists are every
   // model `MODELS_BY_SKIN` places on architecture 9, the Harmony 510, 515, 520 and the Xbox 360 remote
   // among them, the way the arch 14 folder lists the Harmony 665 it holds nothing of.
-  { folder: 'harmony-5xx', architecture: 9, blocks: ['skins', 'memory-constants', 'usb-identity', 'write-rails'] },
+  {
+    folder: 'harmony-5xx', architecture: 9, files: ARCHITECTURE_FILES,
+    blocks: ['skins', 'memory-constants', 'usb-identity', 'write-rails'],
+  },
+  // The Harmony One alone, plan 009's architecture folder for it: until step 3.2 its platform was stated
+  // in the model's folder, on the ground that one model needs no folder to share with. It carries every
+  // block the Harmony 600, 650 and 700's folder does, since this library writes to both architectures,
+  // and its compiler page is the Harmony 600's counterpart.
+  {
+    folder: 'harmony-one', architecture: 12, files: WITH_A_COMPILER,
+    blocks: ['skins', 'memory-constants', 'usb-identity', 'write-rails'],
+  },
 ];
 
 /**
@@ -409,7 +446,10 @@ function writeRails(architecture: number): string {
     '',
     // This named "three units of this architecture" until the Harmony 525's folder took the block,
     // which is one architecture's count stated in a sentence every architecture's folder now carries.
-    'Every row also needs `HARMONY_ENABLE_WRITES=1`, its own named door where it has one, and the unit check on the identity block. Which **unit** may be written is not in this table and cannot be: an architecture names a kind of remote, and the unit check compares the identity block read off the remote with the lab\'s record of a permitted unit.',
+    // "a record kept outside this repository" said "the lab's record" until plan 009's step 3.2: the
+    // reference describes no bench, `tools/reference_guards.py`, and this sentence lands in every
+    // architecture folder that carries the block.
+    'Every row also needs `HARMONY_ENABLE_WRITES=1`, its own named door where it has one, and the unit check on the identity block. Which **unit** may be written is not in this table and cannot be: an architecture names a kind of remote, and the unit check compares the identity block read off the remote with a record of a permitted unit kept outside this repository.',
     '',
     provenance('`packages/usb/src/rails.ts`'),
   ].join('\n');

@@ -2,7 +2,8 @@
 
 Where things live, measured on a Harmony 525 and read in its firmware. The long form, with the predictions
 written before the remote arrived kept beside what was measured, is `docs/memory-map-525.md`; the
-addressing rules shared with the other architectures are `docs/memory-map.md`. Where either disagrees with
+addressing rules shared with the other architectures are
+[the command reference's](../../usb-protocol/commands.md#addressing-in-short). Where either disagrees with
 `docs/findings.md`, the findings are right.
 
 ## Constants in the code

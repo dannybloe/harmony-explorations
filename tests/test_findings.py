@@ -1847,7 +1847,8 @@ class TestTheSafeModeScreenListsTheRemotesImages(unittest.TestCase):
 
     def test_the_application_images_checksum_is_the_row_the_screen_calls_a(self):
         """
-        The one row whose checksum is not already in `docs/memory-map-one.md`, and the only one this
+        The one row whose checksum is not already in `reference/architectures/harmony-one/memory.md`,
+        and the only one this
         test can compute from a file: the external application's own header.
         """
         lab.require('one34_code')

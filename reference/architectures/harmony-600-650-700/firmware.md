@@ -50,7 +50,7 @@ Read on each build named, sections cited. Where a build is missing it is not rea
 ## Safe mode
 
 * The safe mode **image** is in internal flash at `0xFE` `+0x1000`; the safe mode **configuration** is in
-  external flash at `0x020000`. On the Harmony One the arrangement is different, `docs/memory-map.md`.
+  external flash at `0x020000`. On the Harmony One the arrangement is different, [the comparison of architectures](../README.md).
 * **The `-safe.bin` trap**: on this architecture the `*-safe.bin` file concordance's `--dump-safemode`
   writes holds the **application** truncated at 64 KiB, not a safe mode image; the lab keeps the 600's
   as `600-0.2-code-base0x9000-TRUNCATED64k.bin`, `docs/checksums.md` and `CLAUDE.md`.

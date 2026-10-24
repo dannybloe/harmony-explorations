@@ -704,6 +704,38 @@ settled on both images now, `0x18D98` on the 700 and `0x17434` on the Harmony 60
 firmware erases before it programs is also unread**, and it is moot for any caller that erases first,
 since erasing an erased block changes nothing.
 
+### Addressing, in short
+
+Every page of this reference writes a memory address the way a host sends it in `READ_FLASH`: 24 bits,
+whose top byte picks the memory before the rest is used as an offset[^s192].
+
+| top byte | reaches |
+|---|---|
+| below the architecture's ceiling, `0x40` on the Harmony One and `0x20` on the Harmony 600, 650 and 700 | the external flash |
+| `0xFE` | internal program memory, from program address zero |
+| `0xFF` | internal program memory, from program address `0x10000` |
+| anything else | nothing: the request is refused in silence |
+
+The Harmony 525's address space is a set of tagged windows instead, set out under
+[`READ_FLASH`](#read_flash) above[^s119].
+
+So the two internal pages are 64 KiB each, 128 KiB in all, and an address in them is written `0xFE`
+`+0x1000`: `0xFE` maps one to one from program address zero, so `0xFF` `+0x1234` is program address
+`0x11234` and the top of the `0xFF` page is the top of program memory[^s22]. In every memory table, erased
+means `0xFF` bytes, and a range with no row is erased.
+
+**An internal read must ask for an even number of bytes.** The fetch loop reads a word at a time,
+subtracts two from the count and stops only on zero, so an odd count never terminates: the loop walks on
+through the remote's working memory, writing what it reads, and the remote restarts or hangs[^s94][^s96].
+`packages/usb` refuses an odd internal count for that reason, and only the named door
+`HARMONY_ODD_READ_EXPERIMENT` opens it.
+
+**The offset within a page is bounded by the firmware**, at `0xFFC0` on the Harmony 600 and 700 and at
+`0xFFF8` on the Harmony One, and `packages/usb` applies `0xFFC0` to both[^s175]. The two bytes above the
+configuration words, program `0x1FFFE` and `0x1FFFF`, are neither program memory nor configuration words,
+so nothing is lost where a read stops short of them[^s25]. Whether any read reaches them is not
+checked[^unchecked].
+
 ### The address a host sends is classified before it is used
 
 **Structured form of `docs/findings.md` section 192.** A request's 24 bit flash address is not used as
@@ -1208,3 +1240,12 @@ is demonstrably live on a 600. `docs/findings.md` section 90.
   clients in the classic one's favour.
   **Do not argue this from a literal scan**: a data response code carries a computed length nibble
   and never appears as a literal, which cost one wrong negative here, `docs/superseded.md`.
+
+[^s192]: Read in the firmware. [Section 192](../../docs/findings.md#s192)
+[^s119]: Read in the firmware. [Section 119](../../docs/findings.md#s119)
+[^s22]: Measured on a unit. [Section 22](../../docs/findings.md#s22)
+[^s94]: Read in the firmware. [Section 94](../../docs/findings.md#s94)
+[^s96]: Read in the firmware. [Section 96](../../docs/findings.md#s96)
+[^s175]: Read in the firmware. [Section 175](../../docs/findings.md#s175)
+[^s25]: Measured on a unit. [Section 25](../../docs/findings.md#s25)
+[^unchecked]: Not checked.

@@ -84,7 +84,7 @@ re-implementing a PIC18 decoder is not the exercise. The line runs between tools
 - `tools/pic18_disasm.py`, `tools/pic18_trace.py`, `tools/pic18_xref.py`, `tools/usbdesc.py`
 - `src/harmony/pic18/`, the opcode table, the disassembler, the tracer, the switch chain decoder
 - `src/harmony/firmware.py`, `src/harmony/usbdesc.py`
-- `docs/memory-map.md`, `docs/memory-map-one.md`, `docs/memory-map-600.md`, `docs/memory-map-700.md`, and `docs/checksums.md`. **The five memory maps were named here by a glob until 5 September 2026** and the 525's came off the list, per the row for it in the withhold table below. They are spelled out one by one now, because a glob quietly re-admits whatever is written next
+- `reference/architectures/README.md`, `reference/architectures/harmony-one/memory.md`, `docs/memory-map-600.md`, `docs/memory-map-700.md`, and `docs/checksums.md`. The first two took the place of the shared memory map and the Harmony One's in plan 009's step 3.2, and were checked against the markers when they went on. **The five memory maps were named here by a glob until 5 September 2026** and the 525's came off the list, per the row for it in the withhold table below. They are spelled out one by one now, because a glob quietly re-admits whatever is written next
 - the Microchip headers the project already relies on, `p18f87j50.inc` and `p18f67j50.inc`
 
 **Must not be read.** This list was built by inventorying the tree rather than from memory, and that
@@ -133,7 +133,7 @@ both known before handover:
 1. `src/harmony/pic18/chains.py`'s docstring names a state dispatch chain and its address in the
    Harmony 700 reference image. That is the location of machinery rather than an answer, and it is
    **moot in this packet, because the 700 image is not in it.**
-2. `docs/memory-map-one.md` says that a stored copy of the firmware sits inside the nominally
+2. `reference/architectures/harmony-one/memory.md` says that a stored copy of the firmware sits inside the nominally
    writable region and that our own ceiling protects it. That is a fact about the memory map and
    about a rail of ours, not about the firmware's interlock, and it does not answer question 4.
 3. **The shared skills point at withheld documents, and this one is live rather than moot.** There

@@ -4,13 +4,6 @@
 kind of note would appear in the `misc.md` of several models, it deserves a file of its own in every
 model folder instead, and `reference/README.md` and the generator's test get updated with it.
 
-## Why there is no architecture folder
-
-Architecture 12 has one model, the Harmony One, in Logitech's own client and in `reference/models.md`, so
-what an architecture folder would share is stated in this folder, and `docs/memory-map-one.md` keeps the
-long form of the memory. The configuration container is the 600's family's, `GSPM` and `PTYY`, at format
-1.6 with 22 pointer slots, so a section transfers between the two by base slot index, `CLAUDE.md` key facts.
-
 ## Why format work prefers the other architecture
 
 On this model a configuration is memory mapped and its reads are scattered through the firmware; on the

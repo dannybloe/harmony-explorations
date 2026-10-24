@@ -8,7 +8,7 @@ Eight of the nine identity predictions hold exactly. The one that failed was not
 all, and it is the one that blocked the config read: the address a `READ_FLASH` must name. Full
 argument in [findings.md](findings.md) section 76.
 
-Read [memory-map.md](memory-map.md) first for the addressing rules and the `0xFE` and `0xFF`
+Read [the addressing rules](../reference/usb-protocol/commands.md#addressing-in-short) first, which carry the `0xFE` and `0xFF`
 notation. [memory-map-700.md](memory-map-700.md) was the same kind of document for a model nobody
 here owned, until a Harmony 700 arrived, section 295; this one differs in that the gap is about to close.
 

@@ -73,7 +73,7 @@ Seven in the application's dispatch, decoded from its chain, section 267:
 | append to the settings store | no | `ARCHITECTURES_WITH_A_SETTINGS_WRITE_TARGET`, `SETTINGS_WRITE_READ_ON` |
 | ask safe mode to install the staged firmware | no | `ARCHITECTURES_WITH_A_REINSTALL_TARGET`, `REINSTALL_MAX_IMAGE`, `STATUS_BYTE_READ_ON_APPLICATION` |
 
-Every row also needs `HARMONY_ENABLE_WRITES=1`, its own named door where it has one, and the unit check on the identity block. Which **unit** may be written is not in this table and cannot be: an architecture names a kind of remote, and the unit check compares the identity block read off the remote with the lab's record of a permitted unit.
+Every row also needs `HARMONY_ENABLE_WRITES=1`, its own named door where it has one, and the unit check on the identity block. Which **unit** may be written is not in this table and cannot be: an architecture names a kind of remote, and the unit check compares the identity block read off the remote with a record of a permitted unit kept outside this repository.
 
 Generated from `packages/usb/src/rails.ts` by `make remote-reference-write`. Change the source, not this block.
 <!-- /generated -->
