@@ -15,7 +15,7 @@ The capability columns come from the comparison table at
 private non commercial project by one person per its own Impressum, and its disclaimer says plainly
 that no warranty of currency, correctness or completeness is given. So it has the standing of an
 upstream finding: a generator of hypotheses, good enough to decide what to build, never the basis of a
-rail. That is the same rule `docs/host-client.md` applies to Logitech's own client, and it is why every
+rail. That is the same rule `reference/logitech/clients.md` applies to Logitech's own client, and it is why every
 row below carries a verification column.
 
 **Parsed rather than summarised, and that mattered.** A first pass asked a summarising reader for the
@@ -253,7 +253,7 @@ feature arrives with the Touch generation and no earlier model declares it.
 **Same standing as `maxDevices`, which is the vendor's word.** Nothing here confirms it. Of the models
 on that list only the Harmony 350 is reachable by `packages/usb`, as a file read through
 `openFileBasedRemote`, section 262, and how its configuration states a long press is not read;
-`openHarmony` reaches none of them, `docs/host-client.md`. This said no model on that list was
+`openHarmony` reaches none of them, `reference/logitech/clients.md`. This said no model on that list was
 addressable by `packages/usb` at all until 9 October 2026.
 
 **Why it is a list rather than a column.** A `longPress` field on `Model` would be 35 copies of `false`,

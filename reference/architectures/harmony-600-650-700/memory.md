@@ -44,7 +44,7 @@ section 297; the store is read in the firmware and measured on the 600 and 650, 
 | `0x000000` to `0x020000` | the application as stored, or the staging region for an update. **Differs by unit**: an application copy on the 600, erased but for an identity copy on the 650, a staged image on the 700 | measured per unit, sections 281 and 297 |
 | `0x020000` | the safe mode configuration, 7115 bytes, format 1.4; its section table byte identical on all three models. It is the **status screen library**: no devices, no activities, 35 status screens, linked for this address and ending at `0x021BC7`, declaring a log area of `0x0E0000` to `0x100000`; the 650's differs from the 700's in 50 bytes | measured on the 600, read out of the 650's and 700's packages, section 30; sections 353 and 244 |
 | `0x030000` to `0x200000` | the user configuration, 1856 KiB of room | measured on all three |
-| `0x1E0000` to `0x200000` | declared as a log area by user configurations, every Harmony 650 configuration in the lab among them | read from configurations, `docs/host-client.md` and section 353; nothing on arch 14 is known to write it, the log area's writer being the Harmony One's alone, `todo-compile-650.md` 10.2 |
+| `0x1E0000` to `0x200000` | declared as a log area by user configurations, every Harmony 650 configuration in the lab among them | read from configurations, `reference/logitech/clients.md` and section 353; nothing on arch 14 is known to write it, the log area's writer being the Harmony One's alone, `todo-compile-650.md` 10.2 |
 
 ## Internal flash, two 64 KiB pages
 

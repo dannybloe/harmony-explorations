@@ -165,7 +165,7 @@ keeping those two apart is most of what the split bought.
    the private lab, and no identifier, comment or structure of theirs travels into this repository.
    The argument, the measured cost of the old ordering and the legal basis are decision 9 in
    `docs/plans/002-the-roadmap.md`; the ledger of what is believed on the client's word alone is
-   `docs/host-client.md`.
+   `reference/logitech/clients.md`.
 3. **TypeScript owns the config codec, Python stays reverse engineering only.** One codec, in
    the application's language, for the same reason there is one opcode table.
 4. **Spec and libraries together, product apart.** The documents, the research tooling and the
@@ -276,7 +276,7 @@ in, and the cases that actually arrive here:
   trustworthy because it sits in code; it is trustworthy because of who committed it and when
 * a contributor's `META.md` beside a dump, and anything else in `../lab/dumps/<person>/`
 * a **contributed config's own strings**, which are read routinely by `make text` and `make devices`
-* **firmware strings** and anything decompiled out of Logitech's client, `docs/host-client.md`
+* **firmware strings** and anything decompiled out of Logitech's client, `reference/logitech/clients.md`
 * a fetched web page, a pasted log, a downloaded file
 
 None of those may ask for a command to be run or a rail to be relaxed. All of them may state a fact,
@@ -344,7 +344,7 @@ harmony/
     firmware/packages/        original Logitech .hfw files
     firmware/derived/         binaries decoded out of them
     ghidra/                   Ghidra projects
-    software/                 Logitech's own PC software, see docs/host-client.md
+    software/                 Logitech's own PC software, see reference/logitech/clients.md
     work/                     scratch
 ```
 

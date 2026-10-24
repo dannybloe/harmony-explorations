@@ -345,7 +345,7 @@ test('the command states are the ones the firmware sets', () => {
 });
 
 /**
- * Consistency with a client sourced account of the learn session, `docs/host-client.md`.
+ * Consistency with a client sourced account of the learn session, `reference/logitech/clients.md`.
  *
  * These do **not** assert the client is right, which rule 2 of that document forbids. They assert
  * that what this project derived from firmware is consistent with it, which is a different claim
@@ -383,7 +383,7 @@ test('nothing in the library can send a misc write with any selector but RAM', (
 });
 
 /**
- * More consistency checks against the same client, `docs/host-client.md`. Again these assert what
+ * More consistency checks against the same client, `reference/logitech/clients.md`. Again these assert what
  * this project derived, not what the client says, and the interesting one is the disagreement.
  */
 test('the version fields we derived are the ones the client reads, in order', () => {

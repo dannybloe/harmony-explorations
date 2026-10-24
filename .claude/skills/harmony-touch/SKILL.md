@@ -67,7 +67,7 @@ test; the read itself goes into the lab.
 | the transport | `packages/usb/src/filepipe.ts`, with `INERT_PATHS`; the refusal in `packages/usb/src/transport.ts`, `FILE_BASED_PRODUCTS` |
 | the read script | `packages/usb/bin/read-file-identity.ts` |
 | the protocol | `reference/usb-protocol/README.md` section 6 |
-| what Logitech's client does for it | `docs/host-client.md` and findings sections 202 and 203 |
+| what Logitech's client does for it | `reference/logitech/clients.md` and findings sections 202 and 203 |
 
 ## Related
 

@@ -61,6 +61,6 @@ paths have been sent to a unit, sections 222, 247 and 251.
 ## Not checked
 
 * `WRITE_MISC` selector `0x0A`, the learn and restart command of other models, does nothing here by the
-  firmware's reading, section 246; learning over USB is Logitech's desktop client's, `docs/host-client.md`.
+  firmware's reading, section 246; learning over USB is Logitech's desktop client's, `reference/logitech/clients.md`.
 * The internal read window's own bound on this architecture against the one `packages/usb` applies,
   section 175.

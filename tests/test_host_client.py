@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """The service API surface of Logitech's own client, recomputed rather than transcribed.
 
-`docs/host-client.md` documents which services Harmony Desktop talks to and which operations it
+`reference/logitech/clients.md` documents which services Harmony Desktop talks to and which operations it
 declares on each. That is the answer to a product question, decision 11 in `docs/decisions.md`: whether
 Logitech's device database is reachable as its own call or only as a side effect of compiling a config.
 It is reachable as its own call, and the list below is why we believe that.
@@ -13,7 +13,7 @@ the document's figures, which also means that if the client is ever re-mirrored 
 moved, the document fails rather than quietly ages.
 
 What travels is operation names and counts, which is functional fact of the kind the interoperability
-rule in `docs/host-client.md` covers. Logitech's code stays in the lab, nothing is quoted, and the API
+rule in `reference/logitech/clients.md` covers. Logitech's code stays in the lab, nothing is quoted, and the API
 keys the client carries in plain text are deliberately neither extracted nor asserted here.
 
 **None of this says the service answers.** It says what one client asks for. Section 56 measured
@@ -133,7 +133,7 @@ class ServiceSurface(unittest.TestCase):
         `CLAUDE.md` lists as open. They are not: they belong to the user's button **mapping** service,
         alongside save and restore-to-default operations, so they map a named button to a command. That
         agrees with what section 48 concluded from the firmware and with the reading in
-        `docs/host-client.md` that a host names buttons and the firmware resolves the name. Pinned so
+        `reference/logitech/clients.md` that a host names buttons and the firmware resolves the name. Pinned so
         that nobody reads the name and reopens a closed question.
         """
         mapping = self.table['userButtonMappingManager']
@@ -450,7 +450,7 @@ class ASyncIsRecordedWhenTheClientSaysSo(unittest.TestCase):
     been synced existed at the same moment.
 
     What the pair cannot establish is the mechanism, since it is one occurrence. See
-    `docs/host-client.md` for the reading and for why the deliberate repeat is not worth doing.
+    `reference/logitech/clients.md` for the reading and for why the deliberate repeat is not worth doing.
     """
 
     def setUp(self):
@@ -760,7 +760,7 @@ def protocol_constants(architecture):
 class TheClassicClientCarriesAPerArchitectureConstantTable(unittest.TestCase):
     """The seven per architecture tables, recomputed and checked against our own derivations.
 
-    **These tables are not a new find.** They were extracted on 9 August 2026 and `docs/host-client.md`
+    **These tables are not a new find.** They were extracted on 9 August 2026 and `reference/logitech/clients.md`
     is built on them; section 206 is the day a later session dug them up again from the same source
     and had to be told so by its own register. What that session did leave behind is this class, which
     is the thing the ledger never had: an executable check. Every number below is one this project
@@ -935,7 +935,7 @@ class TheClassicClientCarriesAPerArchitectureConstantTable(unittest.TestCase):
 class TheThreeRegionsTheLedgerCouldNotExplain(unittest.TestCase):
     """Section 206: two of the client's unexplained arch 12 regions, and its arch 14 logging region.
 
-    All three sat in `docs/host-client.md` as client sourced and unconfirmed for nineteen days while
+    All three sat in `reference/logitech/clients.md` as client sourced and unconfirmed for nineteen days while
     the bytes that settle them were already in the lab. None of this needed a remote, a disassembler
     or a service call, which is the whole point of recording it.
     """
@@ -1041,7 +1041,7 @@ class TheThreeRegionsTheLedgerCouldNotExplain(unittest.TestCase):
 class TheArch14LoggingRegionIsWhatItsSafeModeConfigsDeclare(unittest.TestCase):
     """Section 206: a client sourced number the corpus turns out to state, exactly.
 
-    `docs/host-client.md` listed `USERLOGGING_BASE` as a smaller lead: arch 14 declares a 128 KiB
+    `reference/logitech/clients.md` listed `USERLOGGING_BASE` as a smaller lead: arch 14 declares a 128 KiB
     logging region at `0x0E0000`, and since section 47 found the log area's writer is arch 12 only,
     all that could be said was that the region exists on paper. Every arch 14 safe mode container in
     the corpus declares exactly that range in base slot 2, so it comes off the unconfirmed ledger.
@@ -1553,7 +1553,7 @@ class EverySingleByteWriteIsReadBack(unittest.TestCase):
     """Section 211: the client has no unverified single byte write, and its own bounds.
 
     These are claims about Logitech's code, so they are recomputed from the source rather than
-    transcribed, per rule 2 in `docs/host-client.md`. What is asserted is what the client does, not
+    transcribed, per rule 2 in `reference/logitech/clients.md`. What is asserted is what the client does, not
     that the client is right about the hardware.
     """
 
@@ -1617,7 +1617,7 @@ class TheClientsWriteTransferAndItsMacWorkaround(unittest.TestCase):
     """Section 213: the rest of the same client's HID services.
 
     Claims about Logitech's code, recomputed from the source rather than transcribed, per rule 2 in
-    `docs/host-client.md`. What is asserted is what their client does. Whether the firmware requires
+    `reference/logitech/clients.md`. What is asserted is what their client does. Whether the firmware requires
     any of it is a separate question and mostly still open.
     """
 
@@ -1868,7 +1868,7 @@ class TheClientsRegionTableNamesOneArchitectureAndTwoRegions(unittest.TestCase):
 
 
 #: The JEDEC pair the two bench Harmony Ones report in their version block, manufacturer then
-#: device. Recorded in `docs/host-client.md` since 9 August 2026 and re-read off the spare on
+#: device. Recorded in `reference/logitech/clients.md` since 9 August 2026 and re-read off the spare on
 #: 30 August 2026 by `packages/usb/bin/rehearse-block.ts`, which now prints it for this reason.
 BENCH_ONE_FLASH = (0x1f, 0xc8)
 
@@ -1990,7 +1990,7 @@ class TheEraseBlockAtTheRehearsalAddressIsSixtyFourKiB(unittest.TestCase):
     def test_the_fine_layout_is_per_chip_and_ours_is_not_the_one_the_documents_quoted(self):
         """The correction this dig produced, and the control that the reader tells rows apart.
 
-        `docs/host-client.md` said the arch 12 layout was `16K, 8K, 8K, 32K` then uniform 64 KiB
+        `reference/logitech/clients.md` said the arch 12 layout was `16K, 8K, 8K, 32K` then uniform 64 KiB
         **for every chip the client lists**. Two of the three arch 12 rows begin with eight 8 KiB
         blocks instead, and the bench part is one of those, so the quoted bottom belongs to a chip
         neither Harmony One here carries. What survives is the half the rails use: every arch 12 row

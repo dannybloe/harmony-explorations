@@ -387,7 +387,7 @@ states on the One and 70 on the 700; the byte at a time sender's 32 callers all 
 response region; and the response buffer's pointer and counter are touched only inside the USB
 transport layer. The capture driver touches none of it. So an assumption in that search is wrong,
 and section 91 lists the candidates. The report layout the client expects is in
-`docs/host-client.md`, marked unconfirmed.
+`reference/logitech/clients.md`, marked unconfirmed.
 
 **This is why `0x40` WRITE_FLASH_DATA is absent from the main table.** WRITE_FLASH sets state
 2 as its first instruction, and state 2 is the only state in which the `0x40` chain runs, so
@@ -434,7 +434,7 @@ operand then opcode, at `0x1AD` through `0x1AF`:
 | first | the entry point, high byte `0xB0 \| (configuration type & 0x0F)` | `0x3F` |
 | second | `0xFFF4` | `0x07` |
 
-Every other entry point, including terminate, is acknowledged and ignored. `docs/host-client.md`
+Every other entry point, including terminate, is acknowledged and ignored. `reference/logitech/clients.md`
 carries the client's entry point names, whose order the firmware confirms.
 
 ### Every command's response, in one table
@@ -1915,7 +1915,7 @@ implements none of it.
 states what Logitech's host sends and, where it says so explicitly, what a remote did. The header said
 "unconfirmed on hardware ... never what a remote does"<!--superseded--> until 29 August 2026 while the
 body already cited a hardware measurement, because the hardware sentences were added and the frame was
-left. It is here rather than only in `docs/host-client.md` because
+left. It is here rather than only in `reference/logitech/clients.md` because
 it is a protocol description of the same kind as the rest of this document, and section 198 is the
 argument for it.
 

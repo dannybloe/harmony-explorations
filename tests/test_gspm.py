@@ -227,7 +227,7 @@ class TestPointerTableLength(unittest.TestCase):
     def test_arch8_carries_21_slots_where_the_vendor_client_declares_20(self):
         """The measurement that makes Logitech's own client a source of hypotheses, not truth.
 
-        `docs/host-client.md` records the client's per architecture container constants, which
+        `reference/logitech/clients.md` records the client's per architecture container constants, which
         reproduce this project's reading exactly on arch 9 (marker at 91) and arch 12 (99) and
         state 20 slots with a marker at 91 for arch 8. Four real arch 8 configs put it at 95.
 
@@ -697,7 +697,7 @@ class TestSlotZeroIsTheOnlyFeedFrame(unittest.TestCase):
                 self.assertIsNotNone(gspm.parse(lab.load(name)).frame_length)
 
     def test_the_length_is_three_bytes_and_no_sample_can_tell(self):
-        """Why the width was widened on a claim this corpus cannot check. `docs/host-client.md`.
+        """Why the width was widened on a claim this corpus cannot check. `reference/logitech/clients.md`.
 
         The reader took a `u16` at +0x02 and called the byte at +0x04 "zero in every sample".
         Logitech's own client reads three bytes there, which is client sourced and unconfirmed,

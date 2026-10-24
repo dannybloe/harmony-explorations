@@ -267,7 +267,7 @@ export const OUT_OF_TRANSPORT_REACH: readonly string[] = ['900', '1000', '1000i'
  * **It is the vendor's word and nothing here confirms it**, the same standing as `maxDevices`. Of the
  * models on this list only the Harmony 350, skin 104, is reachable, and only as a file read through
  * `openFileBasedRemote`, section 262; how its configuration states a long press is not read.
- * `openHarmony` reaches none of them, `docs/host-client.md`. This said no model on this list was
+ * `openHarmony` reaches none of them, `reference/logitech/clients.md`. This said no model on this list was
  * addressable by this library at all until 9 October 2026.
  *
  * Two names in it are worth spelling out, because the marketing name and the record's name differ and

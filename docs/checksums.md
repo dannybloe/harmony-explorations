@@ -295,7 +295,7 @@ Not a binary and not firmware, but the same rule applies: the files stay in the 
 provenance is published. Logitech's `Harmony Desktop.app` is a shell around a hosted web
 application, so the application itself is fetchable from their content network without an account.
 Everything its own cache manifest lists was mirrored the day it was found, because a live service
-can be withdrawn without notice. `docs/host-client.md` has the rule that governs using it.
+can be withdrawn without notice. `reference/logitech/clients.md` has the rule that governs using it.
 
 | what | value |
 |---|---|

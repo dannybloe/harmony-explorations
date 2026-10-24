@@ -977,7 +977,7 @@ class TestInfraredLearningIsABracket(unittest.TestCase):
 
     Two arch 14 images rather than one, because the addresses differ per build and the shape is
     what is being claimed. The client dig said where to look; everything asserted here is read out
-    of the firmware, and the parts only the client knows are in `docs/host-client.md` instead,
+    of the firmware, and the parts only the client knows are in `reference/logitech/clients.md` instead,
     unconfirmed, with no test asserting them as true.
     """
 

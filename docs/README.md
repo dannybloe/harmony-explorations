@@ -38,7 +38,7 @@ reference/config-format/README.md           the config format spec, structured, 
                                 with the per base slot summary that used to sit in this file
 reference/glossary.md                the vocabulary: which terms are Logitech's, which are ours
 reference/usb-protocol/README.md            the USB protocol spec, step 3, transport done, commands open
-docs/host-client.md             Logitech's own client as a source: the rule, and the ledger of
+reference/logitech/clients.md             Logitech's own client as a source: the rule, and the ledger of
                                 what is believed on its word alone, all of it unconfirmed
 reference/logitech/data-model/             everything about the vendor platform, one subject in one folder since
                                 30 August 2026. It was split across docs/ and reference/ before that,

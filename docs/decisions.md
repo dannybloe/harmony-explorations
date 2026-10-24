@@ -191,7 +191,7 @@ image is a second sample rather than a stand in. Other models are iterated on la
    lever**: copying unlicensed proprietary code infringes whatever licence the result carries, so
    MIT is not the obstacle and moving to GPL would not create a permission. The rule, the legal
    argument and the ledger of everything currently believed on the client's word alone are in
-   `docs/host-client.md`.
+   `reference/logitech/clients.md`.
 
 10. **The application comes before a wider corpus.** *Taken 12 August 2026, and it reverses the
    posture the front page had carried.* No general call for dumps goes out, and the eight unseen models
@@ -233,7 +233,7 @@ image is a second sample rather than a stand in. Other models are iterated on la
    Logitech: fourteen services, 78 operations, JSON over HTTP rather than SOAP, and **the device
    database is its own call**, `deviceManager.SearchGlobalDevices` with `GetCommands` beside it and a
    REST form of the search on another service. So the expensive route is real rather than hypothetical.
-   `docs/host-client.md` has the map and `tests/test_host_client.py` recomputes it.
+   `reference/logitech/clients.md` has the map and `tests/test_host_client.py` recomputes it.
 
    **One operation on that list is worth more to this repository than to the application**:
    `downloadManager.RemoteConfigurationInJson`, a configuration described in JSON by the people who

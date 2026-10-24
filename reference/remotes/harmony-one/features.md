@@ -101,7 +101,7 @@ erased on both units read, section 150.
 ## Learning
 
 "IR Learning Yes (Up to 200 Khz)", Logitech's manual. The learn commands are Logitech's desktop client's,
-`docs/host-client.md`; nothing here has sent one, and learning on a One is **not checked**.
+`reference/logitech/clients.md`; nothing here has sent one, and learning on a One is **not checked**.
 
 ## Not checked
 

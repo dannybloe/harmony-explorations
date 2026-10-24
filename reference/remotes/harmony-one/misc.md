@@ -21,7 +21,7 @@ is: two base slots, the touch hit map and the log area's writer, exist on this a
 ## The software the manual names
 
 The One's manual describes Logitech's older desktop software, the **Harmony Remote Software**, Logitech's
-manual. Logitech's Harmony Desktop still programs this model, `docs/host-client.md`.
+manual. Logitech's Harmony Desktop still programs this model, `reference/logitech/clients.md`.
 
 ## Infrared bench runs
 

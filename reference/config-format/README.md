@@ -4694,7 +4694,7 @@ container: no other one closes.
 the byte at `+0x04` listed as a spare that is zero in every sample. It is zero because the largest
 name tree in the corpus is 2326 bytes, so **no sample here separates the two readings**; both
 codecs take the wider one because it is the one that survives a bigger tree. See
-`docs/host-client.md` for the provenance rule and `tests/test_gspm.py` for the corpus statement.
+`reference/logitech/clients.md` for the provenance rule and `tests/test_gspm.py` for the corpus statement.
 
 **The section is `length + 2` bytes**, since the terminator sits outside the field, and an empty
 frame states a length of zero and is the seven fixed bytes above with no node. Both arch 12 safe

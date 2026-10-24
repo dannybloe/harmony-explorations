@@ -67,7 +67,7 @@ Do not infer an architecture from a model number. Read it out of the config, per
 
 ## The platform codenames, and the skin number of every model
 
-*Source: Logitech's own classic desktop software, per `docs/host-client.md`. Client-sourced and
+*Source: Logitech's own classic desktop software, per `reference/logitech/clients.md`. Client-sourced and
 therefore unconfirmed except where this project has measured the same number, which is marked.
 The tables are restated here rather than copied; the extraction is in the private lab.*
 
@@ -98,7 +98,7 @@ The last row is worth noticing: those remotes do not enumerate under Logitech's 
 Anything that finds remotes by scanning for `0x046D` will never see one.
 
 `Gin` is the name this project already used for arch 12, taken from the same source in section 81
-before the rule in `docs/host-client.md` existed. It is recorded properly here.
+before the rule in `reference/logitech/clients.md` existed. It is recorded properly here.
 
 **Six of these names are corroborated by a file Logitech shipped rather than by the client**, which
 matters because the client is the weaker source. The firmware packages in the lab carry a

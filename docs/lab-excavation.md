@@ -103,7 +103,7 @@ their fields is a semantic key for the format as well as a specification of the 
 |---|---|
 | `fh-data-model` | their entity graph as the service states it: household, account, remote, device, activity, command, button map. What an import has to consume, and the only outside opinion on how these relate |
 | `fh-screens` | which screens each client has, what each shows, and what each lets a person change. Three clients of different eras, so where they agree it is the domain talking rather than one designer |
-| `fh-wizard` | add a device, add an activity, the guided setup and the order of its questions. Listed as unread in `docs/host-client.md` |
+| `fh-wizard` | add a device, add an activity, the guided setup and the order of its questions. Listed as unread in `reference/logitech/clients.md` |
 | `fh-settings` | every setting and its type, per device, per activity and per remote: power on delay, inter key delay, input method, repeat rate. Most of these are bytes already read without a name |
 | `fh-limits` | name lengths, allowed characters, maximum devices, maximum activities, the sequence step cap. What an interface needs before it can refuse anything |
 | `fh-failures` | what their client says when a sync goes wrong, which is what the application has to handle rather than crash on. **No artefact on the site carries this tag now**, since 29 August 2026: `software/classic/reports/` was the only one and section 210 found its failures are ours, a missing server and a toolkit that will not start, rather than a user's account of a remote. The tag stays on the want list because the want is real; what it has lost is its one candidate |
@@ -271,7 +271,7 @@ to one thread and takes the four places there.
 
 ### The rail that does not move
 
-Reading Logitech's code and firmware is governed by `docs/host-client.md`'s rule already. A fact from
+Reading Logitech's code and firmware is governed by `reference/logitech/clients.md`'s rule already. A fact from
 it is marked client sourced, the firmware stays the authority wherever it can settle something, and
 nothing from the site is ever committed except our own description of it.
 
@@ -408,7 +408,7 @@ and firmware update are all local and work today, and the device database, the i
 
 **Three squares dug on 28 August 2026, and the third is a warning.** Section 206 went into the same
 client's HID layer, extracted its seven per architecture constant tables, and found that all of them
-had been extracted on 9 August and that `docs/host-client.md` is built on them. The register said so,
+had been extracted on 9 August and that `reference/logitech/clients.md` is built on them. The register said so,
 on its own row, and was not read. So the excavation's own instrument works and the discipline of using
 it does not yet, which is the **fifth** time this project has re-derived something the lab already
 held: decision 12 was itself taken after the fourth, and section 209 later made a sixth. This said
@@ -497,7 +497,7 @@ question currently listed as open, which is the outcome the decision was taken f
 answer takes the ordinary route, a hypothesis under decision 7 and then the four places, where a
 catalogue row does not.
 
-**One rail is unchanged.** Reading Logitech's code and firmware is what `docs/host-client.md`'s rule
+**One rail is unchanged.** Reading Logitech's code and firmware is what `reference/logitech/clients.md`'s rule
 already governs: a fact from it is marked as client sourced, the firmware stays the authority where
 it can settle something, and nothing from the site is committed but our own description of it.
 
@@ -534,8 +534,8 @@ sixth paragraph about remembering. What is left of step 9 is the digging, in tag
 
 **Grepping it is not the same as reading it, and section 206 is the fifth occurrence.** That afternoon
 re-extracted all seven of the classic client's per architecture constant tables and got numbers
-`docs/host-client.md` had carried since 9 August, from a lab file the register names on its own row
-with the words "`docs/host-client.md` is built on it". **So the instrument works and using it is the
+`reference/logitech/clients.md` had carried since 9 August, from a lab file the register names on its own row
+with the words "`reference/logitech/clients.md` is built on it". **So the instrument works and using it is the
 part that fails**, every time under momentum.
 
 **Section 209 is the sixth occurrence and it corrects the trigger this paragraph used to give**, which

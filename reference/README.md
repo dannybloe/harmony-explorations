@@ -59,7 +59,7 @@ A row or a sentence says where the fact came from and how strong it is, in one o
 | **read in the firmware** | from the disassembled image, with the image named. What the code does, not proof the hardware does it |
 | **Logitech's manual** | the user manual for that model, in the lab's `Docs/`. The vendor's word, sometimes about a different software generation |
 | **Logitech's service** | stated by their live service, usually a product record. The vendor's word, current |
-| **Logitech's client** | from their decompiled desktop client, `docs/host-client.md` |
+| **Logitech's client** | from their decompiled desktop client, `reference/logitech/clients.md` |
 | **third party** | the comparison table at harmony-remote-forum.de, `reference/capabilities.md`, or another outside source. A hypothesis |
 | **not checked** | nobody has established it. Written out on purpose |
 

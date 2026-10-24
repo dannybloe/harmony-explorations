@@ -694,7 +694,7 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // container reader and a frame decoder, and only TypeScript has the second.
   account_commands: 'GetCommands_mine.json',
   // Not an image and not a config: Harmony Desktop's whole hosted client, mirrored on 9 August 2026.
-  // The service API surface in `docs/host-client.md` is extracted from it by
+  // The service API surface in `reference/logitech/clients.md` is extracted from it by
   // `tests/test_host_client.py`. Nothing in TypeScript reads it, and it is here because the two
   // tables are asserted equal: a fixture on one side only is the drift this parity test exists for,
   // and it caught exactly that on the day this entry was added.

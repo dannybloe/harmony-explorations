@@ -1,5 +1,5 @@
 /**
- * A code in the shape Logitech's own analysis service takes, `docs/host-client.md`.
+ * A code in the shape Logitech's own analysis service takes, `reference/logitech/clients.md`.
  *
  * The claim with teeth is the merging: a stored duration is fifteen bits, so a long silence is several
  * words in a row, and the client's recorder sees one interval where the block holds four. A builder
