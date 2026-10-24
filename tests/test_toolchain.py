@@ -1780,7 +1780,12 @@ class TheWriteReviewWithholdListIsComplete(unittest.TestCase):
         # Still 41 after plan 009's step 3.2 removed the Harmony 525's memory map, which stated the
         # interlock: `reference/architectures/harmony-5xx/firmware.md` took that text and started
         # stating it, inside a folder already withheld. The list was re-read.
-        self.assertEqual(len(stating), 41,
+        # 40 with plan 009's step 4.5: `reference/logitech/classic-client.md` no longer names the
+        # interlock, since its paragraph on the identity block erase states the unlock the client sends
+        # and leaves the reasoning about an interlock to the documents that own it. It stays withheld,
+        # since it still states the client's write transfer; nothing started stating the path, and the
+        # list was re-read.
+        self.assertEqual(len(stating), 40,
                          'the number of files stating the write path moved, so re-read the withhold '
                          'list before restamping this: %s' % stating)
 

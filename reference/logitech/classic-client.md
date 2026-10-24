@@ -1,16 +1,21 @@
 # Logitech's classic client on the wire
 
-## 7. Measured against Logitech's own client, on the wire
+The classic client is the desktop software Logitech shipped before MyHarmony, the one the Harmony One
+came with. It is written in Java and not obfuscated, so what it does to a remote can be read, and its
+read of a Harmony One has been captured packet by packet. This page is what that software sends and what
+it believes: the commands of a read, how it writes, how it reads the clock, and the memory regions it
+names for each architecture.
 
-Everything in sections 1 to 5 was derived from the firmware and then checked against this project's
-own implementation. This section is different in kind: it is a packet log of **Logitech's classic
-client** reading a Harmony One end to end, so the bytes were produced by an implementation that has
-never seen ours. `docs/findings.md` section 210 is the argument and
-`packages/usb/test/classic-capture.test.ts` is the check.
+**A client says what it sends, never what the remote does with it.** Where the firmware has been read,
+[the commands](../usb-protocol/commands.md) is the authority and wins any disagreement[^d9]; a fact on
+this page that nothing else confirms is marked as stated in their client. One demonstration of why: the
+client's own container constants for the Harmony 880 and 885 declare 20 pointer slots and a trailer at
+offset 91, while every configuration of that architecture puts its marker at 95, which is
+`0x0B + 4 * 21`, so they carry 21 slots[^t-gspm][^s206]. The same convention reproduces the Harmony 525's
+and the Harmony One's tables exactly, so this is the client being wrong rather than a misreading of
+it[^t-host-client].
 
-The capture is a lab fixture, not a device, so nothing here needs hardware.
-
-### The whole read is three commands
+## A whole read of a Harmony One is three commands
 
 | command | times | note |
 |---|---|---|
@@ -18,20 +23,17 @@ The capture is a lab fixture, not a device, so nothing here needs hardware.
 | `GET_VERSION` | 1 | |
 | `READ_FLASH` | 1310 | each acknowledged once by `0xF0 0x50` |
 
-Nothing else is sent. `READ_ONLY_COMMANDS` holds exactly these three, chosen by reading the
-firmware, and the vendor uses precisely them to read a remote.
+Nothing else is sent[^t-capture]. The three are the commands a read only host needs, and the firmware's
+own dispatch says the same, [the command table](../usb-protocol/commands.md#the-command-table).
 
-### Every request is byte identical to what this project builds
+**Every request is byte identical to one built from the firmware reading**, 1312 of 1312, with the
+address as three bytes, most significant first, and the count as two[^t-capture]. The requests use length
+nibbles 0, 1 and 5 only, so they confirm the linear part of the mapping from nibble to length.
 
-1312 of 1312, with the address as three bytes most significant first and the count as two. The
-requests exercise length nibbles 0, 1 and 5 only, so they confirm the linear part of the mapping.
-
-### The replies confirm the non-linear part, arithmetically
-
-For each of the 1310 flash reads, the reply chunks' length nibbles decoded through
-`payloadLengthForNibble`, less one sequence byte each, sum to exactly the byte count requested.
-1310 of 1310. A linear reading of the nibble would account for 500 bytes of a 3100 byte read, so
-this is a real constraint rather than a restatement.
+**The replies confirm the rest of it, arithmetically.** For each of the 1310 flash reads, the reply
+chunks' payload lengths, each less its sequence byte, sum to exactly the byte count requested, 1310 of
+1310[^t-capture]. A linear reading of the nibble would account for 500 bytes of a 3100 byte read, so the
+closure constrains the mapping rather than restating it.
 
 | nibble | payload bytes | times seen |
 |---|---|---|
@@ -40,326 +42,228 @@ this is a real constraint rather than a restatement.
 | `0x9` | 31 | 3 |
 | `0x5` | 5 | 1 |
 
-The short nibbles occur only as the tail of a transfer that is not a whole number of full chunks.
+The short nibbles occur only as the tail of a transfer that is not a whole number of full
+chunks[^t-capture].
 
-### What it reads on a Harmony One
+### What it reads
 
 | extent | bytes | reads |
 |---|---|---|
-| `0xFF` `+0xF400`, the identity block | 48 | 1 |
-| `0x002000` to `0x020000` | 122880 | 40 |
-| `0x040000` to `0x400000` | 3932160 | 1269 |
+| internal page `0xFF` `+0xF400`, the identity block | 48 | 1 |
+| flash `0x002000` to `0x020000`, the embedded configuration | 122880 | 40 |
+| flash `0x040000` to `0x400000`, the user configuration | 3932160 | 1269 |
 
-The application firmware between `0x020000` and `0x040000` is never requested. The two config
-extents sum to the byte total the client itself reported.
+**The application firmware between `0x020000` and `0x040000` is never requested**, and the two
+configuration extents sum to the byte total the client itself reports[^t-capture].
 
-**Sixteen regions is the client's own loop bound, not the remote's.** Its log warns that fourteen
-regions could not be read, and no command is sent for any of them: it looks the region up in a table
-keyed on architecture and index, and this build has entries only for architecture 12, regions 3 and
-4, which are the second and third extents above. The remote is never asked.
+**Sixteen regions is the client's own loop bound, not the remote's.** Its log warns that fourteen regions
+could not be read, and no command is sent for any of them: it looks each region up in a table keyed on
+architecture and index, and that table has entries only for the Harmony One's regions 3 and 4, the
+second and third extents above[^t-capture][^s214]. The region table is below.
 
-### Its transfer unit is 3100 bytes
+**Its transfer unit is 3100 bytes**, 1307 of the 1310 reads, the rest being the identity block and one
+short tail per extent. 3100 is 50 times the 62 data bytes a full chunk carries, so a transfer is sized in
+whole packets[^t-capture]. A Harmony One answers larger reads as well, so the figure is the client's
+choice rather than a limit[^s210].
 
-1307 of the 1310 reads, the rest being the identity block and one short tail per extent. 3100 is 50
-times the 62 data bytes a full chunk carries, so a transfer is sized in whole packets. This project
-uses 16384 and works, so the figure is a choice rather than a limit.
-## Why the client is not an authority, demonstrated
+## What its constants agree with
 
-Its own container constants for arch 8 do not describe any arch 8 config in this corpus. It
-declares 20 pointer slots and a trailer at offset 91. Four real arch 8 configs put the marker at
-95, which is `0x0B + 4 * 21`, so they carry 21 slots.
+None of this is new, and it is recorded because a confirmation from an implementation that never saw the
+firmware readings is worth having[^t-host-client].
 
-This is not a misreading of its convention, because the same convention reproduces arch 9 and
-arch 12 exactly. It is the client being wrong, or describing a variant nobody here has, and
-either way it is the reason rule 1 exists.
-
-## What it confirms that we already derived
-
-None of this is new knowledge and none of it changes a document. It is recorded because a
-confirmation from an independent implementation is worth having, and because it calibrates how
-far the rest can be trusted.
-
-| what this project derived | the client agrees |
+| what the firmware or the configurations show | the client states |
 |---|---|
-| the pointer table starts at `0x0B`, an item is 4 bytes and an address 3, section 20 | its three constants are 11, 4 and 3 |
-| the marker sits at `0x0B + 4 * N` | its trailer offsets are 91 on arch 9 and 99 on arch 12 |
-| 22 pointer slots on arch 12, 20 on arch 9 and 14 | the same three numbers |
-| the arch 12 user config is at `0x040000` | the same |
-| the arch 12 log area writer refuses outside `[0x040000, 0x400000)`, section 47 | it declares the user config region as exactly that range |
-| the arch 12 safe mode container is at flash `0x002000` | the same |
-| the arch 14 user config is at `0x030000` | the same |
-| the arch 14 safe mode image is at internal `0x1000`, not where the file named `-safe.bin` suggested | the same |
-| internal memory is two 64 KiB pages, `0xFE` and `0xFF`, so 128 KiB is reachable | it declares one `0xFE0000` region of `0x20000` |
-| base slot 3 is the clock, section 21 | its section index 3 is named for the clock |
-#### And the session around it, from the Desktop client, for the Harmony One specifically
+| the pointer table starts at `0x0B`, an item is 4 bytes and an address 3 | the three constants 11, 4 and 3 |
+| the marker sits at `0x0B + 4 * N` | trailer offsets of 91 on the Harmony 525 and 99 on the Harmony One |
+| 22 pointer slots on the Harmony One, 20 on the Harmony 525, 600, 650 and 700 | the same three numbers |
+| the Harmony One's user configuration is at `0x040000` | the same |
+| the Harmony 600, 650 and 700's user configuration is at `0x030000` | the same |
+| the Harmony 525's safe mode image at `0x800000` and application at `0x810000` | the same, with an embedded configuration of 32 KiB at `0x820000` |
+| base slot 3 holds the configuration's build stamp, framed by `0xADDF` and `0xEFBF` | its section index 3 is named for the clock, with the same two words |
 
-A second client, independently, and this one states the whole sequence rather than the report
-format. Four commands, and the two sources agree wherever they overlap:
+A test holds every row[^t-host-client]. The client also declares the Harmony One's user configuration
+region as exactly `[0x040000, 0x400000)`, the range that model's log area writer refuses outside[^s47],
+and its embedded configuration at flash `0x002000`[^t-host-client].
 
-1. **Enter learning.** A restart command with a subcommand, an entry point selecting start learn,
-   and a configuration type selecting the current firmware: `0xA0 0x0A 0x07 0x00`. One reply packet,
-   beginning `0xF0 0xA0`.
-2. **Start capture.** `0x70`, with a timeout far longer than any other command here, answered by
-   exactly **two** packets.
-3. **Stop capture.** `0x80`, answered by an **unspecified number** of packets, the last of which
-   begins `0xF0 0x70`.
-4. **Leave learning.** The same restart command with the stop learn entry point,
-   `0xA0 0x0A 0x08 0x00`, preceded by a two byte no-op and ending on `0xF0 0xA0`.
+## Learning a code, as Harmony Desktop states it for the Harmony One
 
-**This narrows what section 91 could not find, and does not close it.** That section established the
-bracket from the firmware, `0x70` opening and `0x80` closing and states 6 and 7 acknowledging with
-`0xF0 0x70`, and then failed to find any code that sends capture data. What this client adds is that
-the sample packets are **collected under the two capture commands and terminated by that same
-acknowledgement**: it reads a fixed two packets after the start and an unspecified number after the
-stop, stopping at `0xF0 0x70`. So the samples ride the ordinary response path on the one IN
-endpoint, which is why no separate sender was ever going to turn up.
+Harmony Desktop, a later client, describes the learning session for the Harmony One by name, in four
+commands[^s91]:
 
-**The two clients do not obviously agree here**, and the disagreement is the useful part. The
-classic client, section 91, takes learn reports off a queue its reader thread has already filled,
-sending nothing, which reads as the remote pushing reports unsolicited while a session is open. This
-one models the same bytes as a command's response stream. Both end at `0xF0 0x70` on the same
-endpoint, so they can be the same wire behaviour described from two heights, but which it is decides
-what an implementation has to do: keep reading during the session, or read after the stop. **Not
-established, and it is the question to put to the firmware**, whose answer is the response path of
-the `0x70` and `0x80` handlers rather than a search for a sender that does not exist.
+1. **Enter learning**: the restart command with an entry point selecting start learn and a configuration
+   type selecting the current firmware, `0xA0 0x0A 0x07 0x00`. One reply, beginning `0xF0 0xA0`.
+2. **Start capture**: `0x70`, with a timeout far longer than any other command, answered by two packets.
+3. **Stop capture**: `0x80`, answered by any number of packets, the last beginning `0xF0 0x70`.
+4. **Leave learning**: the restart command with the stop learn entry point, `0xA0 0x0A 0x08 0x00`,
+   after a two byte no-op, ending on `0xF0 0xA0`.
 
-The **restart command is `WRITE_MISC` selector `0x0A`** and it is wider than
-learning. Its entry points cover terminate, default, before and after a config update, after a
-firmware update, start and stop update, start and stop learn, and start and stop upgrade; its
-configuration types are current firmware, user configuration and embedded configuration.
+**The two clients disagreed about the samples and the firmware sides with the classic one**: Harmony
+Desktop reads them as a command's reply stream after the stop, while the classic client takes reports
+its reader thread collected during the session. The remote pushes them unsolicited, so a host keeps
+reading for the whole session[^s98]. Where they leave the remote is
+[the commands](../usb-protocol/commands.md#where-a-learn-sessions-samples-leave-the-remote).
 
-**Read from the firmware on 9 August 2026, section 97, and it partly contradicts this file.** On
-arch 14 the selector acts for exactly five entry points, and numbering the client's list from zero
-those are start update, start learn, stop learn, start upgrade and stop upgrade. The client's own
-`0x07` and `0x08` land on start learn and stop learn, so **the firmware confirms this list's order**,
-which is the first check of it against anything. Terminate is entry point zero, and it does nothing.
+**The restart command is `WRITE_MISC` selector `0x0A`, and the client's list of entry points is wider
+than learning**: terminate, default, before and after a configuration update, after a firmware update,
+start and stop update, start and stop learn, and start and stop upgrade, with configuration types for
+the current firmware, the user configuration and the embedded configuration[^s97b]. The firmware confirms
+the order of that list, and **on the Harmony One the whole selector does nothing**, so the
+`0xA0 0x0A 0x07 0x00` this client sends a Harmony One is ignored by it[^s97],
+[the restart command](../usb-protocol/commands.md#write_misc-selector-0x0a-is-the-restart-command).
+Sending it is a write all the same: on the Harmony 600, 650 and 700 it puts two instructions into the
+running interpreter[^s97].
 
-**On arch 12 the whole selector is a no-op**, four instructions that set a "packet handled" flag. So
-the `0xA0 0x0A 0x07 0x00` this file records the client sending **to a Harmony One** is ignored by the
-Harmony One. That is what a host written across skins looks like rather than an error in the
-reading, and it is this file's standing caveat in one example: the client says what it sends, never
-what the remote does with it.
+## Its liveness ping, on macOS only
 
-**It is a write, whatever the flash rails say.** Sending it restarts a remote into a mode, so an
-implementation belongs behind `WRITES_ENABLED` in `packages/usb/src/rails.ts` alongside the flash
-writes, and nothing in a read path may issue it. Section 97 does not soften that: on arch 14 it
-injects two action list instructions into a running interpreter.
-### Its liveness ping is a macOS workaround, and that is the row to act on
+Every access to a running remote is followed by a ping whose body is a platform test: **on macOS it sends
+one harmless read, and on every other system it does nothing**[^t-host-client]. The read is the version
+block, or on one architecture the first byte of EEPROM, and a reply that does not parse counts as a
+failure; two in a row are logged as a thread that could not be recovered[^t-host-client]. It follows every
+RAM read and write, every state variable read and write, every erased flash block and every written flash
+chunk[^s213].
 
-Section 213, and it is the only thing found in this client so far that bears on a fault this project
-has actually seen on hardware.
+So Logitech met something on macOS that made them insert a read after every operation. Whether it is the
+same thing as a Harmony One dropping the first command after sitting idle on the cable,
+[its behaviour](../remotes/harmony-one/behaviour.md#the-first-command-after-idling), is not
+known[^unchecked].
 
-Every access to a running remote in this client is followed by `selectivePingUnit`, whose entire body
-is a platform test: **on macOS it pings the unit, and on every other operating system it does
-nothing.** The ping is not a network ping despite its inherited name. It sends one harmless read, the
-version block, or on one architecture the first byte of EEPROM, and treats a reply that does not parse
-as a failure. Two consecutive failures log that the thread could not be recovered.
+## How it writes
 
-It is called after every RAM read, every RAM write, every state variable read and write, every erased
-flash block, and every written flash chunk.
-
-**Why it matters here.** This project develops and measures on macOS, and it carries two intermittent
-faults it cannot explain: a Harmony One that drops the first command of a session, which
-`packages/corpus/src/read.ts` works around by sending the first command twice, and a Harmony One that
-strands after sitting idle on USB and needs its batteries pulled. Logitech shipped a workaround for
-something platform specific on the same platform, in the same place a command completes. That does not
-identify the cause and it is not evidence that the causes are the same. It does say the vendor met a
-macOS specific stall and chose to insert an extra read after every operation, which is a cheap thing
-to try.
-
-Client sourced and unconfirmed, like everything else here. What would settle it is a bench measurement
-rather than more reading.
-
-### The write transfer, from an implementation that is not ours
-
-Section 213, and it agrees with section 175 in shape while being an entirely separate reading:
+**A flash write is an announce, a batch and one reply**[^t-host-client]:
 
 1. an announce naming the address and the length,
-2. every data packet built into an array, with a done packet appended as its **last element**,
+2. every data packet built into an array, with a done packet as its **last element**,
 3. the whole array handed to the sender in **one call**,
 4. one reply read after the batch.
 
 **Nothing is paced and nothing is read between packets**, and there is no sleep anywhere in the send
-path. `docs/review-before-first-write.md` keeps the pacing question open because the firmware side was
-read and the USB peripheral's own buffer ownership was not; this is the client's answer to the same
-question and it is "no pacing at all". It is not proof about the endpoint.
+path[^s213]. A chunk is fifty whole packets, the same fifty as a read; a failed chunk is **retried once**,
+and if the retry fails the whole write aborts and the remote is pinged[^t-host-client].
 
-Two more rules of theirs worth having:
+**Erasing first is the caller's decision, not the write's.** The write takes a flag, and when it is set
+the range is erased first, block by block[^t-host-client]. The one caller that writes a region passes true,
+and invalidates the region beforehand[^s213].
 
-* a chunk is sized at fifty whole packets, which is the same fifty the read path uses, section 210
-* a failed chunk is **retried once**, and if the retry fails the whole write aborts and the unit is
-  pinged. Not per byte, and not indefinitely.
+**The write does not verify itself.** No comparison happens in the chunk loop; the read back, with three
+retries, is one layer up, in the caller that owns the erase, and the method for an on device checksum
+exists and throws[^s213].
 
-**Erasing before programming is the caller's decision, not the write's.** Their write takes a flag,
-and when it is set the whole range is erased first, block by block. So this client cannot answer
-"does programming erase first"; it answers "when the caller says so". The one caller that writes a
-region passes true, and invalidates the region beforehand.
+**Every single byte write is read back, with no unverified variant.** RAM, on chip EEPROM and internal
+program memory each have one read and one write, and the write writes, reads the same address back and
+throws on a mismatch[^t-host-client].
 
-**Their write does not verify itself either**, which is this project's own arrangement arrived at
-separately: no comparison happens anywhere in their chunk loop, and the read back with three retries
-lives one layer up, in the caller that owns the erase. And there is no on device checksum to lean on
-instead, since the method for it exists and throws.
+### Its address bounds, which are only assertions
 
-### Erasing the identity block is a write path nothing here had described
+| what | the client's bound |
+|---|---|
+| RAM | address below 256, value a byte |
+| on chip EEPROM | address below 256, value below 16384 |
+| internal program memory | address below 8192, value below 16384 |
 
-Section 213. It is the one operation in this client that would destroy something irreplaceable, so it
-is written down rather than left in a note.
+**All three are Java assertions, which run only when the virtual machine is started with them enabled**,
+and the client's launcher does not enable them, so they say where Logitech expected these commands to be
+used and nothing about what the firmware accepts[^t-host-client]. The value widths disagree with each
+other: a byte wide on chip EEPROM has no use for 16383, and nothing available decides whether that
+assertion was copied from the program memory service or the field is wider than the storage[^t-host-client].
+
+### Erasing the identity block
+
+The one operation in this client that would destroy something irreplaceable, and it differs by
+architecture[^t-host-client]:
 
 | architecture | what it does |
 |---|---|
-| 12 | reads a **kilobyte** at the identity block, blanks the first 64 bytes, writes the kilobyte back |
-| 14 | writes 64 blank bytes, with no read at all |
-| 7 and 8 | writes a **bootloader unlock** value first, then reads 64 KiB, blanks 48 bytes of it and writes it back |
+| Harmony One | reads a **kilobyte** at the identity block, blanks the first 64 bytes, writes the kilobyte back |
+| Harmony 600, 650 and 700 | writes 64 blank bytes, with no read at all |
+| arch 7, and the Harmony 880 and 885 | writes a **bootloader unlock** value first, then reads 64 KiB, blanks 48 bytes of it and writes it back |
 
-Three things follow. The block is **64** bytes when it is being erased and **48** when it is being
-read, which is the same boundary [the Harmony One's memory page](../architectures/harmony-one/memory.md)
-describes as 64 bytes ending in sixteen zero bytes. The arch 7 and 8 arm is the only place in this whole client where anything is unlocked before
-a write, so if a write protect interlock exists on those architectures, that constant pair is where it
-is named; this repository has no arch 7 or 8 write target and does not need it, and it is recorded
-because `docs/review-before-first-write.md` calls the interlock the highest value target it has.
+The block is **64** bytes when it is erased and **48** when it is read, the same boundary
+[the Harmony One's memory](../architectures/harmony-one/memory.md) describes as 64 bytes ending in sixteen
+zero bytes. The arch 7 and 8 arm is the only place in this client where anything is unlocked before a
+write[^s213]. Writing a serial back is the mirror of this, and its Harmony 525 arm alone passes erase
+first as **false**: that remote keeps its identity in on chip EEPROM, which takes a write without an
+erase[^s213].
 
-Writing a serial back is the mirror of this and its arch 9 arm passes erase-all **false**, alone among
-the flash writes here. That is consistent rather than odd: arch 9 keeps its identity in on chip EEPROM,
-which takes a write without an erase.
+## State variables are read and written by name
 
-### State variables are addressed by name, and are word wide above architecture 7
+The reader walks the architecture's data table, keeps the entries of one type and reads each by index.
+The writer **re-reads the whole set, refuses unless the names still match, and looks each name's index up
+again** before writing, and it never writes a variable it counts as a system one[^t-host-client]. So an
+index is not assumed stable between a read and a write.
 
-Section 213. Their reader walks the per architecture data table, keeps the entries of one type, and
-reads each by index; their writer **re-reads the whole set, refuses unless the names still match, and
-then looks up each name's current index** before writing. It never writes a variable it considers a
-system one.
+**A variable is a word on the Harmony 880 and 885, the Harmony 525 and the Harmony One, and a byte below
+architecture 8.** The Harmony 600, 650 and 700 fall into the byte path, whose own assertion is that the
+architecture is below 8, and the region table below has a Harmony One arm and no other, so this build
+drove the Harmony One and was never exercised on the Harmony 600, 650 or 700[^t-host-client].
 
-That is their version of the rail this project states as base slot 13's first records belonging to the
-firmware, and it is stricter in one way worth copying: an index is not assumed stable between a read
-and a write.
+### The clock, by name
 
-Word wide on architectures 8, 9 and 12, byte wide below 8. **Architecture 14 falls between the two**,
-into a byte path whose own assertion is that the architecture is under 8, so a Harmony 600 or 700 would
-violate it. Read together with this build's region table, which has an architecture 12 arm and no
-other, the reading is that **this build drove arch 12 and was never exercised on arch 14**.
+**The client sets a remote's clock by writing state variables 0 to 6 in order**, as second, minute, hour,
+day of month, day of week, month and year, and reads them back the same way[^t-host-client]. That is base
+slot 13's first seven records, [the clock records](../config-format/state.md)[^s209].
 
-### The region index space, and what each index names
+* **The day of the month counts from 0**: the client reads the stored value plus one and writes it minus
+  one, and the firmware's month end routine agrees[^s322].
+* **The weekday counts from Sunday**: the client writes Java's day of week minus one, and so does the
+  record[^s322].
+* **The client is wrong about where the month is on two architectures.** It takes the day of week only on
+  the Harmony 880 and 885 and the Harmony One, and on every other architecture reads the month from index
+  4 and the year from index 5. The Harmony 525, 600, 650 and 700 keep the weekday at index 4 and the month
+  at index 5 like the others, measured in their configurations, so the client would put the wrong date on
+  those remotes[^t-host-client-configs].
 
-Section 212. The client uses one set of region numbers for two different things, and keeping them
-apart matters because the numbers overlap nothing.
+After writing it sends **misc selector 8**, a clock recalculate, and only on the two architectures it
+believes carry a weekday[^t-host-client]. On the Harmony One selector 8 does nothing at all, so there it is
+not a repair, [READ_MISC and WRITE_MISC](../usb-protocol/commands.md#write_misc-and-the-answer-on-event-injection).
 
-| index | what it names | where this project already had it |
+## The region numbers
+
+**The client uses one set of region numbers for two different things**[^s212]:
+
+| index | what it names | where the remote states it |
 |---|---|---|
-| 0 | boot loader | version block field 7, program `0x000017` |
-| 1 | safe mode | field 10, `0x001007` |
-| 2 | normal mode, the application | field 11, `0x009007` |
-| 3 | the embedded configuration | flash `0x002000`, 122880 bytes, section 210 |
-| 4 | the user configuration | flash `0x040000`, `0x3C0000` bytes, section 210 |
-| 5 | the CPLD image | field 9, `0xFF0000` |
-| 7 | the Z-Wave module | no field on either architecture this project reads |
-| 11 | the PIC library | field 8, `0xFFE000` |
+| 0 | the bootloader | version block field 7 |
+| 1 | safe mode | field 10 |
+| 2 | normal mode, the application | field 11 |
+| 3 | the embedded configuration | flash `0x002000`, 122880 bytes |
+| 4 | the user configuration | flash `0x040000`, `0x3C0000` bytes |
+| 5 | the CPLD image | field 9 |
+| 7 | the Z-Wave module | no field on either architecture read |
+| 11 | the PIC library | field 8 |
 
 **Indices 3 and 4 are storage it reads; the rest are images with a version.** Its list of region ids
-returns `0, 1, 2, 5, 11`, plus `7` when the remote reports a Z-Wave version, and it never includes 3
-or 4. So a region id in one call is not a region id in the other.
+returns 0, 1, 2, 5 and 11, plus 7 when the remote reports a Z-Wave version, and never 3 or 4, and that
+list is **computed from the version block, not asked of the remote**: it is empty when the reply carries
+no bootloader version, and no packet is sent[^s212][^s214].
 
-**That list is computed from the version block, not asked of the remote.** It is gated on the reply
-carrying a bootloader version and returns nothing at all when it does not, and no packet is sent. This
-document is where that belongs precisely because it is easy to read the method's name as a query: it
-is not one, and section 210's capture shows the remote is never asked.
-
-**That warning was already earned, in the lab, before it was written.** A read out this project built
-on 7 August 2026 documents `getRegionIds` as the remote naming its own regions, which is the same
-misreading, and it sat in a file inside Logitech's package name where nothing here could see it.
-Section 214.
-
-### Where a region read is allowed to go, and what it closes on
-
-Section 214. The addresses in the table above are not only measurements off a capture. The client
-carries them, in `UpdateHidService`, as one switch for the address and one for the size, and between
-them they name **two regions and one architecture**:
+**Where a region read may go is two regions on one architecture.** The client carries an address and a
+size per region and names exactly two, both on the Harmony One[^t-host-client]:
 
 | architecture | region | address | size | ends at |
 |---|---|---|---|---|
-| 12 | 3, the embedded configuration | 8192 | 122880 | `0x020000` |
-| 12 | 4, the user configuration | 262144 | `0x3C0000` | `0x400000` |
+| Harmony One | 3, the embedded configuration | `0x002000` | 122880 | `0x020000` |
+| Harmony One | 4, the user configuration | `0x040000` | `0x3C0000` | `0x400000` |
 
-**This predicts the extents the client actually read**, exactly, on all four numbers: section 210's
-capture went from `0x002000` to `0x020000` and from `0x040000` to `0x400000` and nowhere else in
-flash. The table was read on 29 August 2026 and the capture made on 7 August, by routes with nothing in
-common, and neither was derived from the other, so this is the independent closure the rest of this
-document mostly cannot offer. Both ends carry a test.
+**That table predicts the capture exactly**, on all four numbers, by a route with nothing in common with
+it[^t-host-client][^t-capture]. Asking for a region an architecture has no entry for throws while the call
+is being built, so it costs an exception and no packet; and a region read is an ordinary flash read of the
+table's address, with nothing on the wire that says region[^t-host-client].
 
-Two consequences. **The vendor's own classic client reads a region on a Harmony One and on no other
-architecture**, and the refusal is thrown while the call is being built rather than answered by a
-device, so asking for a region an architecture has no entry for costs an exception and no packet.
-Section 213 noted the single architecture arm in passing; this is the same fact with its numbers. And a
-region is **not a second protocol**: `readRegion` sizes a buffer from the table and hands the matching
-address to the ordinary flash read, so nothing on the wire says region.
-
-### Every single byte write it makes is read back, and there is no unverified variant
-
-Section 211, out of the three single byte memory services: RAM, on chip EEPROM and internal program
-memory. Each offers one read and one write, the write is named for verifying, and its body writes,
-reads the same address back and compares. A mismatch throws. There is no second method that writes
-without the read back, so a caller cannot choose to skip it.
-
-That is the same rail this project already imposes on flash, "every write is followed by a read of
-the same range and a byte comparison", arrived at independently. It is worth recording because it is
-the vendor doing it at the finest granularity there is, one byte, where the cost of the extra round
-trip is highest.
-
-### Its own address bounds, and why they are a lead rather than a limit
-
-| what | the client's bound | this project's rail |
-|---|---|---|
-| RAM | address below 256, value a byte | address below `0xF40`, the special function register page |
-| on chip EEPROM | address below 256, value below 16384 | none, nothing here writes EEPROM |
-| internal program memory | address below 8192, value below 16384 | none, nothing here writes program memory |
-
-**All three are Java assertions, which do not run unless the virtual machine is started with them
-enabled**, and nothing in the client's own launcher does. So these are the author's statement of
-intent and not a guard in the shipped software, which is exactly why they are a lead: they say where
-Logitech expected these commands to be used, and they say nothing about what the firmware accepts.
-
-The RAM row is the one that touches a rail here. `packages/usb/src/rails.ts` bounds a RAM write below
-`0xF40` because bank 15 holds the self programming registers, and the reasoning behind that is
-unchanged and still right. What is new is that the vendor never intends an address above 255 at all,
-which is sixteen times tighter. **Tightening our rail to match is not done here**, because a rail is
-a decision rather than a consequence, and the argument for it should be made on its own.
-
-The value widths disagree with each other and the disagreement is recorded rather than explained: RAM
-asserts a byte, while EEPROM and program memory both assert fourteen bits. A byte wide on chip EEPROM
-has no use for 16383, so either that assertion is copied from the program memory service or the
-command's field is wider than the storage it addresses. Nothing available here decides which.
-### The clock is read and written over USB by name, and it agrees with the firmware
-
-*`hid/services/time/TimeHidService.java`, read 28 August 2026, section 209. Unlike everything above it
-this comes out of `hid/services/` rather than `hid/commands/`, which is the half of the layer the lab
-extraction never opened.*
-
-The client sets a remote's clock by writing **state variables 0 to 6**, in order, as second, minute,
-hour, day of month, day of week, month and year, and reads them back the same way. That is base slot
-13's first seven records exactly as section 130 reads them and as section 111 measured them live in a
-Harmony One's data memory, which is a third route to a field assignment that already had two.
-
-This said three details disagree with us. **Two of them were ours, `docs/findings.md` section 322**:
-the client was right about the day and the weekday, and the firmware's month end routine says so on
-every image read. The third stands.
-
-* the client reads the day of month as the stored value **plus one** and writes it **minus one**, and
-  that is how the field counts: the 1st is 0. This said section 111 measured the byte as 6 on 6 August
-  2026, so the field held the day itself; the day was the 7th, and the 6th came from the stamp read
-  that same wrong way.
-* the client takes the day of week only on architectures 8 and 12, and on every other one it reads the
-  month from index 4 and the year from index 5. Architecture 9 (Harmony 525) and architecture 14
-  (Harmony 600 and 700) put the month at index 5 like the others, measured: one Harmony 525 config
-  stores 3, 9 and 13 at indices 4, 5 and 6 for a build stamped 2 October 2013, where 3 is the weekday
-  counted from Sunday, 9 is the zero based month and 13 is the year since 2000.
-* the client writes the weekday as Java's `DAY_OF_WEEK` minus one, which counts from **Sunday**, and
-  so does the record. Section 111's Saturday epoch was the Sunday count of the day after, which is
-  what the misread day made it look like.
-
-The client does send a **clock recalculate**, misc selector 8, after writing, which is the one thing
-that could repair the second. It sends it only on the two architectures it believes carry a
-day of week, and `reference/usb-protocol/commands.md` reads selector 8 as doing nothing at all on architecture 12,
-so on the one bench architecture where it is sent it is not the repair.
-
-**What this is evidence for is the field assignment and its counting.** It was written up as evidence
-against trusting a client, on two disagreements that were this project's own misreading; the one left,
-the month's index on architectures 9 and 14, would put the wrong date on those remotes' screens.
+[^d9]: Chosen by this project. [Decision 9](../../docs/decisions.md#d9)
+[^t-gspm]: Measured in configurations. [The test](../../tests/test_gspm.py)
+[^s206]: Stated by Logitech, in their client. [Section 206](../../docs/findings.md#s206)
+[^t-host-client]: Stated by Logitech, in their client. [The test](../../tests/test_host_client.py)
+[^t-capture]: Stated by Logitech, in their client. [The test](../../packages/usb/test/classic-capture.test.ts)
+[^s214]: Stated by Logitech, in their client. [Section 214](../../docs/findings.md#s214)
+[^s210]: Measured on a unit. [Section 210](../../docs/findings.md#s210)
+[^s47]: Read in the firmware. [Section 47](../../docs/findings.md#s47)
+[^s91]: Stated by Logitech, in their client. [Section 91](../../docs/findings.md#s91)
+[^s98]: Read in the firmware. [Section 98](../../docs/findings.md#s98)
+[^s97b]: Stated by Logitech, in their client. [Section 97](../../docs/findings.md#s97)
+[^s97]: Read in the firmware. [Section 97](../../docs/findings.md#s97)
+[^s213]: Stated by Logitech, in their client. [Section 213](../../docs/findings.md#s213)
+[^unchecked]: Not checked.
+[^s209]: Stated by Logitech, in their client. [Section 209](../../docs/findings.md#s209)
+[^s322]: Read in the firmware. [Section 322](../../docs/findings.md#s322)
+[^t-host-client-configs]: Measured in configurations. [The test](../../tests/test_host_client.py)
+[^s212]: Stated by Logitech, in their client. [Section 212](../../docs/findings.md#s212)

@@ -13,7 +13,7 @@ the document's figures, which also means that if the client is ever re-mirrored 
 moved, the document fails rather than quietly ages.
 
 What travels is operation names and counts, which is functional fact of the kind the interoperability
-rule in `reference/logitech/clients.md` covers. Logitech's code stays in the lab, nothing is quoted, and the API
+rule of decision 9 in `docs/decisions.md` covers. Logitech's code stays in the lab, nothing is quoted, and the API
 keys the client carries in plain text are deliberately neither extracted nor asserted here.
 
 **None of this says the service answers.** It says what one client asks for. Section 56 measured
@@ -215,6 +215,21 @@ class ProductTable(unittest.TestCase):
         self.assertEqual(len(enabled), 19)
         self.assertEqual(len(self.products), 120)
         self.assertNotIn(22, enabled, 'the Harmony 525 is the model this explains')
+
+    def test_the_nineteenth_enabled_skin_is_the_hub_generations_placeholder(self):
+        """Why one count says 18 enabled skins and another 19, settled in `todo-reference.md` 4.5.
+
+        Section 136 listed eighteen skins and section 145 counted nineteen, over the same reply. Both are
+        right: 27 records are enabled, nine of them carry skin 0 in place of a skin of their own, all of
+        the hub generation, and the other eighteen are section 136's list exactly. The 97 section 136
+        called products is the number of distinct skins over the 120 records.
+        """
+        records = [p for p in self.products if p['IsEnabled']]
+        self.assertEqual(len(records), 27)
+        self.assertEqual(sum(1 for p in records if p['SkinId'] == 0), 9)
+        self.assertEqual(sorted({p['SkinId'] for p in records} - {0}),
+                         [54, 66, 69, 71, 72, 73, 74, 75, 78, 79, 80, 81, 97, 99, 102, 104, 106, 112])
+        self.assertEqual(len({p['SkinId'] for p in self.products}), 97)
 
     def test_the_table_agrees_with_our_own_model_figures(self):
         """The device and favourite counts, which `packages/usb/src/models.ts` already carries.
@@ -456,7 +471,9 @@ class ASyncIsRecordedWhenTheClientSaysSo(unittest.TestCase):
     been synced existed at the same moment.
 
     What the pair cannot establish is the mechanism, since it is one occurrence. See
-    `reference/logitech/service.md` for the reading and for why the deliberate repeat is not worth doing.
+    `reference/logitech/service.md`, "Syncing, and what the record says about it", for the reading. A
+    deliberate repeat would mean interrupting a sync at the moment the remote restarts, which is not a
+    thing to do to an irreplaceable remote.
     """
 
     def setUp(self):
@@ -766,8 +783,8 @@ def protocol_constants(architecture):
 class TheClassicClientCarriesAPerArchitectureConstantTable(unittest.TestCase):
     """The seven per architecture tables, recomputed and checked against our own derivations.
 
-    **These tables are not a new find.** They were extracted on 9 August 2026 and `reference/logitech/clients.md`
-    is built on them; section 206 is the day a later session dug them up again from the same source
+    **These tables are not a new find.** They were extracted on 9 August 2026 and
+    `reference/logitech/classic-client.md` states what they agree with; section 206 is the day a later session dug them up again from the same source
     and had to be told so by its own register. What that session did leave behind is this class, which
     is the thing the ledger never had: an executable check. Every number below is one this project
     derived on its own, from the firmware or from the corpus, and the client is the second route.
@@ -931,6 +948,15 @@ class TheClassicClientCarriesAPerArchitectureConstantTable(unittest.TestCase):
         self.assertEqual(table['CODE_APP_FIRMWARE_ADDRESS'], 0x810000)
         self.assertEqual(table['CODE_BOOT_ONLY_ADDRESS'], 0x000000)
         self.assertEqual(table['CODE_BOOT_ONLY_SIZE'], 0x1000)
+        # The third region the client names for this architecture, and the one that disagrees with the
+        # remote: an embedded configuration of 32 KiB at 0x820000, where a Harmony 525 keeps its user
+        # configuration, longer than that, and its safe mode configuration sits at 0x818000. Asserted
+        # as what the client states, so the reference can cite it; which of the two maps is right about
+        # the word is `reference/architectures/harmony-5xx/memory.md`'s open question.
+        self.assertEqual(table['CODE_EMBEDDED_CONFIG_ADDRESS'], 0x820000)
+        self.assertEqual(table['CODE_EMBEDDED_CONFIG_SIZE'], 0x8000)
+        self.assertEqual(table['CODE_SAFEMODE_SIZE'], 0x10000)
+        self.assertEqual(table['CODE_APP_FIRMWARE_SIZE'], 0x10000)
 
     def test_the_harmony_525s_eeprom_window_is_the_one_section_118_measured(self):
         """Top byte `0x20`, which that section read as 256 bytes of EEPROM inside the address space
@@ -1560,7 +1586,7 @@ class EverySingleByteWriteIsReadBack(unittest.TestCase):
     """Section 211: the client has no unverified single byte write, and its own bounds.
 
     These are claims about Logitech's code, so they are recomputed from the source rather than
-    transcribed, per rule 2 in `reference/logitech/clients.md`. What is asserted is what the client does, not
+    transcribed, per decision 9 in `docs/decisions.md`. What is asserted is what the client does, not
     that the client is right about the hardware.
     """
 
@@ -1623,8 +1649,8 @@ class EverySingleByteWriteIsReadBack(unittest.TestCase):
 class TheClientsWriteTransferAndItsMacWorkaround(unittest.TestCase):
     """Section 213: the rest of the same client's HID services.
 
-    Claims about Logitech's code, recomputed from the source rather than transcribed, per rule 2 in
-    `reference/logitech/clients.md`. What is asserted is what their client does. Whether the firmware requires
+    Claims about Logitech's code, recomputed from the source rather than transcribed, per decision 9 in
+    `docs/decisions.md`. What is asserted is what their client does. Whether the firmware requires
     any of it is a separate question and mostly still open.
     """
 
@@ -1876,7 +1902,7 @@ class TheClientsRegionTableNamesOneArchitectureAndTwoRegions(unittest.TestCase):
 
 
 #: The JEDEC pair the two bench Harmony Ones report in their version block, manufacturer then
-#: device. Recorded in `reference/logitech/clients.md` since 9 August 2026 and re-read off the spare on
+#: device. Recorded in `reference/architectures/harmony-one/memory.md` and re-read off the spare on
 #: 30 August 2026 by `packages/usb/bin/rehearse-block.ts`, which now prints it for this reason.
 BENCH_ONE_FLASH = (0x1f, 0xc8)
 

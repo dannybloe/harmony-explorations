@@ -1,425 +1,303 @@
 # Logitech's configuration service
 
-## The service API, which is a different surface and answers a product question
+MyHarmony and Harmony Desktop are the programs a person sees, but the work happens on a web service
+behind them, `svcs.myharmony.com`. It keeps each person's household: their remotes, the devices each
+remote drives, the activities, and what every button does. It keeps Logitech's catalogue of devices
+and their infrared codes. And it **compiles**: given an account, it builds the configuration file the
+remote runs and hands it back as a file, with no remote attached. The service still answers and still
+compiles[^s56][^s58]; the older generation's service, the one the classic desktop software used, is the
+one that was switched off[^s56].
 
-Added 12 August 2026. Everything above mines this client for the **USB** layer: what a packet looks
-like, what an operation sends to a remote. This section is the other half, the **service** the client
-talks to, and it was never looked at until a product decision needed it. Decision 11 in
-`docs/decisions.md` says FreeHarmony works offline and may optionally take Logitech's device data while
-that service is alive. The question that decision left open was whether the device database is its own
-call or only a side effect of compiling a config. **It is its own call.**
+This page describes that service as a client meets it: how a request is made, what can be asked, and
+what the answers have been. What the service **stores**, entity by entity and field by field, is
+[the data model](data-model/model.md). Which remotes it serves is [the product line](product-line.md).
 
-Extracted from the mirrored client, offline, with no request made to Logitech and no account involved.
-`tests/test_host_client.py` recomputes every figure below, so this is a list nobody has to trust.
+## How a client talks to it
 
-**Fourteen services and 78 operations.** 75 are declared through the client's own service SDK, and
-three more are built by hand, which is why the surface is "at least this" rather than "exactly this".
+**It is JSON over HTTP, not SOAP.** The endpoints are WCF `.svc` addresses, which suggests an
+envelope, but the client sends a JSON body to a URL under `json/` or `json2/`, and the word `soap`
+appears nowhere in it[^t-host-client]. Every call is a `POST` of a JSON body to
+`<service base>/<operation>`[^s132].
+
+**A login comes first and the session rides on a cookie.** `LoginUser` answers with the account's
+identifiers; a login with no household behind it answers `AccountId: 0` and `HouseholdId: null` and
+still opens the device catalogue[^s132].
+
+**The account scoped addresses are the exception, and they want a `GET`.** They have the form
+`.../json/Account/<account>/<name>`, and a `POST` to one answers 405, "Method not allowed"[^s219].
+
+**Not every operation lives where its neighbours do.** The user feature manager is at
+`UserFeaturePlatform/UserFeatureManager.svc/json/` and not on `HarmonyPlatform` like the rest, and a
+guess at the usual base answers **404 with an empty body**, which looks exactly like an operation that
+has been withdrawn[^s235].
+
+## What can be asked of it
+
+Three sources state the service's surface, and none of them contains another.
+
+| source | operations | services |
+|---|---|---|
+| Harmony Desktop's web application, as it declares its calls | 78 | 14 |
+| the service's own Discovery listing, which answers without a login | 308 | 50 |
+| MyHarmony's generated service proxy | 298 | 19 |
+
+The first is a count of one client[^t-host-client], the second is what the service advertises[^s132],
+and the third is [the data model's](data-model/model.md#what-can-be-asked-of-it) subject, where the
+comparison is made in full[^s219]. **Five of Discovery's services Harmony Desktop never mentions**:
+`LIPService`, `CloudApi`, `AWSServices`, `ContentService` and a `TimeServer`[^s132]. **Discovery is
+not exhaustive either**: `AddEntertainmentSystemToMyHousehold` is absent from it and answers, its reply
+wrapped as `CreateNewAccountInHouseholdResult` rather than under its own name, so a name a client uses
+is not always the service's[^s135].
+
+Harmony Desktop's own fourteen, which is the surface one client actually uses: 75 operations declared
+through the client's service library and three more built by hand, `Account`, `CheckEasyZapperAccount`
+and `GetSmartTVMenuNames`[^t-host-client].
 
 | service | operations | what it is for, from the names alone |
 |---|---|---|
-| `userAccountDirector` | 18 | the account's products, activity roles and recommendations, plus a REST device search |
-| `userButtonMappingManager` | 13 | button to command mappings, per device mode, with save and reset |
+| `userAccountDirector` | 18 | the account's products, activity roles and recommendations, plus a plain device search |
+| `userButtonMappingManager` | 13 | which button sends which command, per device and per activity, with save and reset |
 | `accountManager` | 10 | household, password, ratings |
-| `deviceManager` | 10 | **the device database**, see below |
+| `deviceManager` | 10 | the device catalogue, below |
 | `security` | 8 | login, tokens, impersonation |
 | `remoteManager` | 6 | a remote's properties, pairings, sync status |
-| `userFeatureManager` | 3 | user features, and copying them from a global device |
+| `userFeatureManager` | 3 | a device's features, and copying them from a catalogue device |
 | `deletionManager` | 2 | delete devices, delete activities |
 | `productsManager` | 2 | a product and its button list |
 | `compileManager` | 1 | whether a remote needs syncing |
-| `downloadManager` | 1 | **the configuration, in JSON** |
-| `infraredAnalysisManager` | 1 | analyse infrared, which is the learning service |
-| `easyZapperManager` | 0 | bound but declares nothing: its calls are the hand built ones |
+| `downloadManager` | 1 | the compiled configuration |
+| `infraredAnalysisManager` | 1 | analyse a learned infrared code |
+| `easyZapperManager` | 0 | bound, and its calls are the hand built ones |
 | `softwareUpdateService` | 0 | the same |
 
-**The device database is `deviceManager`**, and six of its operations are the ones that matter:
-`SearchGlobalDevices`, `GetCommands`, `GetGlobalLanguageCommands`,
-`GetAllTeachingCommandsForGivenPowerAndInputTypes` and, found on 23 August 2026 and missing from this
-list until then, `DetectLanguage` and `DetectLanguageForMultiCodeDevice`, which are the two that turn a
-button press on somebody's original remote into an appliance. They have their own section below, and the
-reason they were missed is worth saying: this table was built from the **discovery document**, and those
-two are declared by the client rather than advertised, exactly like `RemoteConfigurationInJson`. `userAccountDirector` carries
-`SimpleRestSearchGlobalDevices` as well, whose name says it is the plain REST form of the search, and
-`userFeatureManager` has `CopyFeaturesFromGlobalDevice`. So a device can be searched for and its
-commands fetched without going anywhere near a config, a remote or a compile.
+## The device catalogue is its own call
 
-**`userFeatureManager` was called on 31 August 2026 and it is where a device's delays are**, which
-is worth a paragraph because the obvious place is wrong twice over. A device's power on delay is not
-on the device record that `GetDevicesInAccount` returns, so the lab's `setdelay.py` cannot reach it;
-it is on a `PowerFeature` hanging off the device, fetched with `GetUserFeatures`. And that manager
-does **not** live on `HarmonyPlatform` where every other one here does: it is
-`UserFeaturePlatform/UserFeatureManager.svc/json/`, read off the service's own discovery reply. A
-guess at the usual platform answers **404 with an empty body**, which is indistinguishable from the
-operation having been withdrawn, so it is the same trap as the update service's missing header. What
-it gives is a per device `PowerOnDelay` and `DefaultPowerOnDelay` in milliseconds, which is the only
-statement of those numbers outside a configuration and is therefore the external check on
-`docs/findings.md` section 235. All reads.
+**A device and its commands can be fetched without an account record, a remote or a compile.** The
+catalogue is `deviceManager`: `SearchGlobalDevices` finds a device and `GetGlobalLanguageCommands`
+returns its commands, beside `GetCommands` and `GetAllTeachingCommandsForGivenPowerAndInputTypes`;
+`userAccountDirector` has a plain search, `SimpleRestSearchGlobalDevices`, and `userFeatureManager`
+has `CopyFeaturesFromGlobalDevice`[^t-host-client]. A plain login is enough to use them, and no
+household is needed[^s132].
 
-**The transport is JSON over HTTP, not SOAP.** The endpoints are `.svc`, which means WCF and implies an
-envelope to anyone who has met it, and the client uses `json/` and `json2/` path variants and contains
-the string `soap` exactly zero times. That halves what a client would cost: a body and a URL, no WSDL
-and no generator.
+**What it serves is symbolic**: per command a protocol family name and a frame value, with the raw
+pulse field empty on every command fetched[^s132]. A frame becomes a pulse train through the family's
+rhythm, [Infrared](../infrared/README.md). How the catalogue names devices and commands is
+[the device catalogue](device-catalogue.md).
 
-**`downloadManager.RemoteConfigurationInJson` is the prize for this repository rather than for the
-application.** A configuration, described in JSON, by the people who wrote the format, for a remote
-whose bytes this project already reads to the last one. That is a vendor authored second view of the
-same object, which is the strongest kind of cross check there is, and it would either confirm the
-readings in `reference/config-format/README.md` or name the field that is wrong. It needs an account and a
-registered remote, so it is not free, and it is the single most valuable call on this list.
+**A command's code is written in a small grammar**, `G:<family>:(<A>)(<B>)(<C>):<n>`. Slots A and B
+both hold content and C is empty in every code seen, and the trailing number is 3 in every code. A slot
+holds items joined by `_`, each a value written with a one digit position prefix or one of three words,
+`Start`, `Repeat` and `Trailer`, which name a standard frame of the family instead of stating one. Six
+item sequences occur. The family's name states one width per value, and the base the digits are
+written in comes from the family's definition: one family writes its values in base four[^s159][^s231].
 
-**What this does not establish, which was most of it.** No call in the list above had been made by
-this project when the list was written, and everything below the next heading is measured now.
-The client also names development and integration hosts and carries several API keys in plain text,
-which stay in the lab and are deliberately not extracted; nothing measured here needed one.
+**A catalogue device's features** are its power behaviour, its inputs and how long a power command is
+held. `CopyFeaturesFromGlobalDevice` returns them, asked with device 0 and the catalogue entry's own
+version identifier, and it changes nothing on the account[^s305].
 
-### The same surface, measured, 13 August 2026
+**A device on an account keeps its delays in its features, not on its record**: `GetUserFeatures`
+returns a power feature per device with a `PowerOnDelay` and a `DefaultPowerOnDelay` in milliseconds,
+and an `InterDeviceDelay` per device beside them[^s235]. The configuration carries the current value,
+`PowerOnDelay`, and not the default[^s235].
 
-Section 132, and it moves most of this section from a reading of a client to a measurement of a live
-service. Three corrections and one addition, all of which the paragraphs above got wrong or could not
-know.
+**The service can work out which codes a person's own remote sends.** `deviceManager` declares
+`DetectLanguage` and `DetectLanguageForMultiCodeDevice`. The request is a device type and the commands
+learned so far, each a name, a code and the raw capture; the reply is one of `Success`,
+`NeedMoreCommands`, `Failure`, `NoMatchFound` and `NoMoreCommandExist`, and on `NeedMoreCommands` it
+names the next button to press, while on `Success` it carries the identifier `GetGlobalLanguageCommands`
+takes. The multi code variant takes a catalogue device in place of the type. This is the flow that had
+people press buttons on their original remote during setup[^unchecked].
 
-**The surface is four times bigger than this client's.** `Discovery/GetJsonOperations` answers without
-a login and advertises **308 operations over 50 services** where the client declares 78 over 14. Five
-of the extra services, `LIPService`, `CloudApi`, `AWSServices`, `ContentService` and a `TimeServer`,
-this client never mentions. So the extraction above is a lower bound on Logitech's platform and an
-accurate description of one client.
+## Compiling
 
-**A third source exists and it is the biggest of the three**, section 219, added 30 August 2026:
-MyHarmony's own generated service proxy declares **298 operations over 19 service interfaces**, with a
-reply type resolved for every one. That does not correct the 78 over 14 above, which is Harmony
-Desktop's web application and a different client; it adds a third surface. Eleven services are in both
-the proxy and the Discovery listing, and neither contains the other: the proxy adds operations on all
-eleven and the listing adds operations on seven. So "the extraction above is a lower bound" holds and
-is now bounded from a second direction as well. `reference/logitech/data-model/operations.json` is the data.
+**A compile runs on the service, with the remote unplugged**, and the result is a file[^s58].
+`CompileManager/StartCompileWithLocaleAndSettings` answers with a download address per compilation;
+the client rewrites `/RemoteConfiguration` in it to `/json2/RemoteConfigurationInJson` and polls[^s132].
+**What comes back is a ZIP, not JSON**: a manifest, `Description.xml`, and `Result.EzHex`, which is a
+bare configuration container. The manifest names the intended skin and states the container's trailer
+checksum with its seed and algorithm[^s132]. The download operation is not in the Discovery listing:
+its address arrives only in a compile's answer[^s132].
 
-**`downloadManager` is not in Discovery at all**, which is why the paragraph above calling
-`RemoteConfigurationInJson` the prize needed a correction rather than a confirmation. Its URL is not
-published: `CompileManager/StartCompileWithLocaleAndSettings` returns a `DownloadUrl` per compilation
-and the client rewrites that URL into the JSON variant. **The call exists and it was made.** What comes
-back is a ZIP holding a manifest and a bare `GSPM` container, so the JSON name describes the transport
-rather than the payload, and the vendor authored second view this section hoped for is the manifest:
-`Description.xml`, which states the trailer checksum with its seed and its algorithm and names the
-intended skin. That is corroboration of section 41 by its author, and it is less than a JSON
-description of every field would have been.
+**Two compiles of the same account are not the same file.** Two compiles eight minutes apart with
+nothing changed differ in two thirds of their bytes[^s132]; two compiles that share a build stamp are
+identical[^s154].
 
-**It needs no registered remote to reach the database, and no account record either.** The paragraph
-above guessed that the search might be public and the account scoped calls certainly not. Both halves
-are wrong in the interesting direction: the search is **not** public, and the gate is a plain Logitech
-login with `AccountId: 0` and no household. A compile does need a remote on the account, and it does
-**not** need one plugged in.
+**MyHarmony picks a route per product, from the product's declared capabilities.** A product declaring
+`LocaleEnabled`, a Harmony One or a Harmony 600, takes the compile route, the call above. A product
+declaring provisioning support, a Harmony Touch, takes a provisioning route that marks the
+configuration as not required and never compiles at all[^s202][^t-host-client]. So a compile that fails
+for a Touch is the service being asked for something that product has no route to.
 
-**The device data is symbolic**, which no reading of the client would have shown, and it is the one
-measured fact here with a cost attached. `GetGlobalLanguageCommands` returns a protocol name and a frame
-value per command, `Raw` null on all 419 fetched, so the infrared blocks in base slot 5 are the compiled
-form. This concluded that "an importer needs **an encoder per protocol family**"<!--superseded-->, and
-section 152 refutes it: a stored record states its own timings, so a frame is rebuilt exactly from five
-durations taken off any code of the same appliance, and 52 of 58 device groups in the corpus carry one
-set of timings for every code they hold. Section 132 has the numbers for the catalogue itself.
+**A compile for a Harmony 525 ends in an error that names nothing**: the compile is accepted, reports
+`Compiling`, and ends `<RemoteConfiguration status='Error' length='0'/>`, where the same session
+compiles a Harmony One[^s135]. The product table says why: the 525's product is not enabled, below[^s145].
 
-**And the frame value is directly comparable with one this project decodes, which is worth more than the
-encoder would have been.** Measured on 22 August 2026: 52 of the 58 commands Logitech states for a
-Panasonic television equal a frame `irframe.ts` read out of `h600_config`, byte for byte, on a different
-model of the same family. So the catalogue names a code a remote already holds without anything being
-encoded at all, which is the whole of what an importer needed for names. The encoder is still what a
-**new** device would need, and that is a smaller claim than this document used to make.
+## Which remotes the service serves
 
-**And the button mapping service says more than its name suggested.** The paragraph below is still
-right that no operation promises a scan code. But an account's own button maps split
-`HardRemoteButton` from `SoftRemoteButton` and carry a **name** on each, which is the same two disjoint
-populations section 128 derived from the container, and a compiled config binds a scan code to a list
-that sends a named command. So the pair gives a read only route from a scan code to a button name, which
-this document had ruled out on the strength of the operation names alone. Unexplored, and section 132
-records it as the largest thing left on the table.
+**`ProductsManager/GetAllProducts` is the product table**: 120 records over 97 distinct skins, each
+stating a display name, an enabled flag and the device and favourite channel maxima[^t-host-client-service].
+Logitech's own list of models is [the product line](product-line.md), and each model's maxima are on its
+page under [the remotes](../remotes/README.md).
 
-**And a name is not a finding, which is the trap this section could have walked into.**
-`GetRootButtonMap` and `GetDeviceModeButtonMaps` read exactly like the physical button map that
-`CLAUDE.md` lists as open. They are not it. They sit in the user's button **mapping** service beside
-`SaveButtonMaps` and `RestoreToDefaultButtonMaps`, so they map a named button to a command, which is
-what section 48 derived from the firmware and what this document already says: a host names buttons and
-the firmware resolves the name. No operation anywhere in the surface mentions a scan code, a matrix or a
-keypad, and the test asserts that too.
+**Enabled is what decides whether a remote can be set up.** 27 of the 120 records are enabled. They
+carry 19 distinct skins, and one of those is skin 0, which nine records of the hub generation carry in
+place of a skin of their own; the other 18 are 54, 66, 69, 71, 72, 73, 74, 75, 78, 79, 80, 81, 97, 99,
+102, 104, 106 and 112[^t-host-client-service][^s136]. The list the setup flow reads,
+`GetHarmonyProducts`, is exactly those 19 skins, with no exception in either direction[^t-host-client-service].
+Skin 22, the Harmony 525, is not enabled, which is why no setup flow offers it and why its compile
+fails[^s145].
 
-### The button maps were read, on 23 August 2026, and a favourite channel is a button
+Harmony Desktop carries two hard coded lists, and they mirror that flag[^s136]:
 
-The paragraph above calls an account's own button maps unexplored and the largest thing left on the
-table. They were read, for one purpose: base slot 16, the number sender, is the one section of the config
-format read entirely out of firmware and exercised by no file, so a config that populates it had to be
-manufactured. Danny created three favourite channels on a Harmony One for a television, `Chan1`, `Chan100`
-and `Chan666`. This is what the account states about them, with nothing compiled and nothing synced.
-
-**A favourite channel is not a structure of its own.** It is a `SoftRemoteButton` on the television's own
-`DeviceButtonMap`, whose `ButtonAction` is a `ButtonChannelAction` carrying a `ChannelNumber` and naming
-the device, and whose `MenuItem` puts it at a position on a menu called `FavoriteChannels`. The label is
-`TextOnRemote`. Three buttons, positions 0, 1 and 2, all three naming the same device. The other two
-remotes on the same account carry none, so the feature is per remote rather than per household, and the
-television's map holds 77 buttons of which these three are the addition.
-
-**The channel is text and not a number**, `"1"`, `"100"`, `"666"`. So a leading zero can be authored, and
-whatever pads a short channel in the compiled form cannot be a per record field, because two channels of
-one television would want different padding.
-
-**There is a before and an after, and the control is the two devices that did not move.** The same
-account's button maps were captured on 13 August 2026, through a different operation, ten days before the
-channels existed. The television went from 74 buttons to 77 and the three extra ones are exactly the three
-on the `FavoriteChannels` menu, its other 41 soft buttons and 33 hard ones being unchanged in count. Two
-different calls could simply count differently, which is why the other two devices matter: they come back
-at 77 and 52 in both reads. And **only the edited device has a saved map**. Before, all three were
-defaults named by a string; after, the television's is a stored map with a number and the other two are
-still defaults. So authoring one channel persists that device's entire button map.
-
-**The request shape is the part worth writing down**, because two spellings of it are refused with no
-usable reason. `UserButtonMappingManager/GetButtonMaps` takes `deviceIds` and `activityIds` as **lists**
-of `{__type: 'DeviceId:#Logitech.Harmony.Services.Common.Contracts.Data', Value, IsPersisted}`, plus
-`remoteSkinId`, `accountId` wrapped as `{Value}`, and a bare `surfaceId`. A **surface** is not a remote:
-the household reply carries a `Surfaces` array whose entries pair a surface id with a `RemoteId` and a
-`SkinId`, and the button maps are asked for by surface. Sending a `remoteId` instead answers 400 with
-`ThrowArgumentNullException`, and `UserAccountDirector/GetButtonMaps` answers 400 with
-`AuthorizeActionOnAccount`, neither of which says what is missing.
-
-**Which call serves a remote's favourites is a product decision of theirs, and the One is on the old
-side of it.** The client gates the flow on a list holding the Harmony One, the 600, the 650, the 665 and
-the 700, and calls that branch by an internal codename; every later remote reads its channels through
-`GetDeviceModeButtonMaps` instead, whose request wants `deviceIds` as a list as well. So a reader written
-against the newer call would find nothing on a Harmony One and report that the account holds no channels.
-
-**An appliance record carries options their client asks the user about, and one of them was noticed from
-the outside.** On 24 August 2026, adding a `Thomson 14MG115` in their client, Danny was asked whether he
-uses it with a SCART cable, and the account's own appliance records carry `IsScartCableSupported` beside
-`IsMultiCode`, `IsKeyboardAssociated`, `IsInterKeyDelayOptimized` and `Characterization`. The catalogue's
-command list for that appliance carries `InputScart1` and its neighbours, so the plausible reading is that
-the answer decides which input command an activity uses. **That reading is not tested**: nothing here has
-compiled the same appliance both ways, which is the cheap experiment that would settle it, and until then
-it is one of this document's hypotheses rather than a fact.
-
-Two reasons it matters beyond curiosity. It is a per appliance **question** rather than a per appliance
-measurement, so an importer that fetches a definition from their catalogue has nowhere to put the answer
-and no way to know it was asked; and it is evidence that a catalogue appliance is not a closed object,
-which is the assumption an import would otherwise make. `docs/adding-a-device.md` phase 4 carries the
-consequence.
-
-## The browser sign in is decaying while the JSON service is not, observed 25 August 2026
-
-MyHarmony, the MartiniWeb client at `setup.myharmony.com`, refused to sign any of three accounts in,
-identically, on a rebooted machine. The captured request shows why: the client signs in through
-Logitech's central SSO, `id.logi.com` posting to `accounts.logi.com/websso/signin`, and the JSON body it
-sends carries `"channel_id": "channel_id"`, a literal placeholder where a value belongs. The answer is a
-bare `400 Bad Request`, so the refusal happens before any credential is checked, which is what makes
-every account fail the same way. The same hour, `LoginUser` on `svcs.myharmony.com` accepted one of
-those accounts and returned its household, twice.
-
-**It cleared the same morning**: a later attempt signed in normally, with nothing changed on the
-machine in between. So the observation is an intermittent failure of their SSO front end and not a
-permanent one, and "already rotting" would overstate it. What stands is narrower and still worth
-having: the failure mode exists, it is theirs, it refuses before any credential is checked, and while
-it lasts every account fails identically.
-
-Two consequences worth the paragraph. Everything this project does speaks the JSON route and was
-unaffected even while the SSO refused; what such an outage removes, for as long as it lasts, is the
-**hand** route of adding appliances in their client. And an importer in FreeHarmony should speak
-`LoginUser` directly and never the browser SSO, because the SSO is the half that has now been seen
-failing. The shelf life argument this document and decision 11 lean on gained a dated observation,
-of an outage rather than of a death.
-### Confirmed on 21 August 2026, from the captured replies
-
-Section 145, and all of it recomputed by `tests/test_host_client.py` rather than transcribed.
-
-* **`IsEnabled` is real and decides registration.** 19 skins of 120 carry it, and the list the setup
-  flow reads holds exactly those 19. Skin 22 is false, which is why a Harmony 525 cannot be registered
-  and why its compile ends in a bare error. This was section 136's inference and is now an equality
-  with no exception either way.
-* **`CompilerArchitecture` is null on all 120.** The field would have handed us the architecture per
-  model and it carries nothing.
-* **`MaxActivities` is null on every model here.** One enabled product states a value, the Harmony 350
-  at 1. Everything else enabled is null and the disabled half is a flat 255. So the claim that no
-  source states an activity limit for these remotes holds, with the field named.
-* **The device and favourite counts agree with `packages/usb/src/models.ts`** on every model here.
-* **An activity is roles plus a wanted state**, and `EnterActions` and `LeaveActions` are empty on both
-  captured activities. A role names its device, its selected input by name, and its position in the
-  power up and power down order.
-* **A `KeyCode` is a grammar, not three shapes**, section 159, measured over 2921 distinct codes from
-  106 appliances after section 145 had read three shapes off the 419 available then. It is
-  `G:<family>:(<A>)(<B>)(<C>):<n>`; slots A and B both hold content, C is empty in every code and the
-  trailing number is 3 in every code. A slot holds items joined by `_`, and an item is a value written
-  with a one digit position prefix, or one of the three words `Start`, `Repeat` and `Trailer`, which name
-  a standard frame of the protocol instead of stating it. Six item sequences occur and no seventh. The
-  family's name states one width per value, checked on 3706 values with none exceeding its width. It also
-  states the **base** those digits are written in: `Galaxis 16 Bit Quad Toggle` writes its values in
-  quaternary, two bits a digit, and reading them as hexadecimal overstated them threefold and refused all
-  69. `packages/codec/src/stated.ts` reads the base out of the name, so the notation reads whole, 2921 of
-  2921 distinct codes and 33 of 33 families.
-* **Their analyser recognises a rhythm at a bit count, from its own list**, section 159, which bounds how
-  far it can be used as a judge. It accepts the Samsung lead in at 32 bits, naming it `GoVideoO1 32 Bit`,
-  and refuses the same lead in at 16, 20 and 38 bits, which is where their own catalogue states those
-  codes. So a refusal from it is not evidence against a rhythm. Its family names are also coarser than
-  the catalogue's: one rhythm answers for both of their Sharp families, and a 48 bit code is named from a
-  vendor field inside its own payload. `ProtocolList` is advertised on two services and 404s as a POST on
-  both, so the list it decodes from is not reachable.
-#### What the analysis service takes, and it is one string
-
-The desktop client turns a capture into a single string and posts it to
-`infraredAnalysisManager.AnalyzeInfrared` as `{ rawSequence }`. The answer carries a `KeyCode` in the
-same notation the device database uses, section 132, so **the service is a protocol decoder we can
-call**: durations in, a protocol name and a frame value out. The client keeps the raw string beside the
-answer and uploads both when the command is saved, as `KeyCode` and `RawInfrared`.
-
-The string is `F` and the carrier in hertz, then one letter and one duration per interval: `P` for a
-mark, which the client calls a carrier interval because that is when the emitter modulates, and `S` for
-a space. Every number is upper case hexadecimal padded to four digits, or eight where it does not fit.
-Microseconds throughout.
-
-Five modules build it and each states one rule:
-
-* **the report**, `infrareddata`: byte 0's high nibble is `0x90` for data and `0xF0` for done, byte 1's
-  high nibble is a sequence that must advance by one and wrap at fifteen, byte 1's **low nibble is an
-  error code** and anything but zero aborts the capture, the **last byte** carries the real byte count,
-  and the words are big endian starting at offset 2. That confirms the report framing above from a
-  second client, and it **corrects one part**: this document read byte 1's low nibble as a dropped
-  sample counter whose increase means samples were lost in pairs. The desktop client treats it as a
-  hard error. Both may be true of the same field, and only a capture settles it.
-* **the calibration**, `carrierprocessor`: the first three words are a first pulse time, a header pulse
-  time and a cycle count. The count is decremented, the difference of the times must be positive, and
-  the carrier is `1e6 / (difference / count)` hertz. The difference is then **emitted as the first
-  mark**, so the header pulse is both the calibration and the first interval of the code.
-* **the data**, the same module: words alternate envelope and gap. An envelope word is the mark's own
-  length. A **gap word is total elapsed time**, so the space is that minus the preceding mark, and a
-  gap shorter than its own mark is dropped. A zero word still flips the phase, which is a trap for
-  anyone implementing it.
-* **the merge**, `carrierrecorder`: two intervals of the same kind in a row are one interval, summed.
-  This is the rule that matters most for reusing the service on a stored record, since a stored
-  duration is fifteen bits and a long silence is spelled as several words.
-* **the stop**, the same module: an interval longer than **500000 microseconds** ends the capture.
-
-`packages/codec/src/irda.ts` builds the string, with the merge, and `packages/codec/test/irda.test.ts`
-asserts it over the corpus. **Nothing here has yet seen the service accept one.**
-
-**The format is ambiguous above 65535 microseconds and the corpus says it does not have to matter.** `F`
-is a hexadecimal digit as well as a token letter, so a duration cannot be found by scanning for
-letters: 1647 of 4323 class 1 records hold one whose four digits contain an `F`. And a field that is
-four digits or eight cannot be read at a fixed width either. Both problems live entirely in the closing
-silence: 3309 records hold an interval above 65535 microseconds and **none holds one before its own
-closing silence**. So a caller sends the code up to and including the silence that closes it, clamped,
-and every duration fits in four digits. Cutting **before** that silence is wrong, and measurably: a
-pulse width frame's last bit is a mark whose space is the trailing gap, so a Sony code read as twelve
-bits over the whole block reads as eleven over a train cut short of it.
-#### DetectLanguage: the service works out which code set an appliance uses
-
-This is the flow the user manuals gesture at and never describe, and it is the reason a Harmony asked
-people to press buttons on their original remote. `deviceManager` carries two operations this document's
-own service table missed, `DetectLanguage` and `DetectLanguageForMultiCodeDevice`, and the client's
-teach page has three modes: detect the language, teach a missing command, teach a missing input.
-
-The request is smaller than expected:
-
-```
-DetectLanguage { deviceType, maxNewCommands: 1, learnedCommands: [ { Name, KeyCode, RawInfrared } ] }
-```
-
-**A device type and nothing else.** No manufacturer, no model number. The reply is a status of five,
-`Success`, `NeedMoreCommands`, `Failure`, `NoMatchFound` and `NoMoreCommandExist`, plus
-`DetectLanguageCommands`, which on `NeedMoreCommands` names **the next button to press**, and on
-`Success` an `UpdateLanguageOperation` carrying the `GlobalLanguageVersionId`. That identifier is what
-`GetGlobalLanguageCommands` takes, so one loop of press, ask, press again ends with every command of
-the appliance as a protocol and a frame value.
-
-The multi code variant is for an appliance already chosen from the catalogue whose model has several
-code sets, and it takes a `publicGlobalDeviceId` in place of the type. When detection gives up the
-client falls back to a search by make and model, which is the route Logitech's wizard is remembered
-for.
-
-**Unconfirmed here, entirely.** Nothing in this project has called either operation.
-## The client's own product lists, and what the service does without them
-
-Read on 13 August 2026 out of the desktop web app, and then measured against the service. Section 135.
-This is the one place in this document where a client sourced fact was **checked** rather than filed as
-unconfirmed, because the client's refusal turned out to be the client's alone.
-
-Two hardcoded lists of skin numbers decide what Harmony Desktop will touch:
-
-| list | members | what it gates |
+| list | members | what it decides |
 |---|---|---|
-| `DesktopAppSupportedProducts` | 54, 66, 69, 71, 72, 73, 74, 75, 78, 79, 80, 81, 99, 102, 104, 112 | whether the application handles a detected remote at all, `isSupportedProducts` |
-| `CompilerProducts` | the same without 99, 102 and 112 | compiler path or hub path, `isCompilerBasedRemote` |
+| `DesktopAppSupportedProducts` | the 18 enabled skins without the two hubs, 97 and 106 | whether the application handles a detected remote at all |
+| `CompilerProducts` | the same without 99, 102 and 112 | the compiler route or the hub route |
 
-A Harmony 525's skin 22 is in neither, which is why that remote gets nowhere in that application. The
-service still carries it as `ProductId 35, SkinId 22`, a remote record for it is **accepted**, and
-`Account/{a}/Remote/{r}/Settings` answers and calls it `Harmony 525`.
+**Two fields that would have answered questions are empty.** `CompilerArchitecture` is null on all 120
+records, so the service states no architecture per model. `MaxActivities` is null on every enabled
+product but one, the Harmony 350, which states 1; the disabled records carry 255[^t-host-client-service].
 
-~~So these two lists are the client's policy and not the service's capability~~<!--superseded--> and that
-was wrong within the hour, section 136: **the lists mirror a service flag.** Every product carries
-`IsEnabled`, it is true for eighteen skins, and `DesktopAppSupportedProducts` is that set minus the two
-hubs. Skin 22 is false. So the client is what refuses to **add** the remote, which stands, and the
-compile most likely meets the flag rather than a missing architecture backend. `CompilerArchitecture` is
-a field on every product too and is null on all 97, so the vendor's architecture map is not there.
+## Registering a remote
 
-**A serial is validated.** Two registrations with a synthetic serial, for a Harmony 880 and a Harmony
-300, are refused with `ErrorCode 5, "Remote is invalid bearing serial Number: ...", Source:
-ValidateRemote`, where the 525's real one passed. So a remote nobody owns cannot be registered, and the
-compile route is closed for every model not on the bench.
+**A household holds one account record per remote**, and a remote's devices and activities hang off
+that record rather than off the household. A remote needs its own record first,
+`AccountManager/AddEntertainmentSystemToMyHousehold`, and then
+`UserAccountDirector/AddRemoteToAccount` attaches it, taking `remoteInfo: { AccountId, KeyPadLayout,
+SerialNumber, SkinId, UsbPid, UsbVid }`[^s135]. The serial is three brace wrapped GUIDs, the remote's
+48 identity bytes rendered three times[^s135].
 
-**`MaxDevicesPerAccount` is stated per product** and agrees with `packages/usb/src/models.ts` on 28 of
-35 shared skins, which is the strongest corroboration that table has had. The seven disagreements went
-the vendor's way in section 136, because in each one our figure was an inference or a count mistaken for
-a ceiling.
+**A record that already has a remote refuses a second** with `ErrorCode 5, Message "1175"`, and a
+supported skin is refused the same way, so the number is about the record and not about the skin[^s135].
+A remote record for a product that is not enabled is accepted; only its compile fails[^s135].
 
-### Adding a remote, which is three facts and one trap
+**A serial is validated.** A made up serial is refused with `ErrorCode 5`, "Remote is invalid bearing
+serial Number", from `ValidateRemote`, where a real one passes, so a remote nobody owns cannot be
+registered and nothing can be compiled for it[^s136].
 
-`UserAccountDirector/AddRemoteToAccount` takes `remoteInfo: { AccountId, KeyPadLayout, SerialNumber,
-SkinId, UsbPid, UsbVid }`, where the serial is three brace wrapped GUIDs, concordance's 48 bytes
-rendered three times. **Devices and activities hang off the account record, not the household**, and a
-household holds one record per remote, so a remote needs its own record from
-`AccountManager/AddEntertainmentSystemToMyHousehold` first. Attaching to a record that already has a
-remote is refused with `ErrorCode 5, Message "1175"`, and the trap is that an opaque number arriving
-right after an unsupported skin reads as being about the skin: it is not, a supported skin is refused
-identically.
+## Button maps
 
-**`Discovery/GetJsonOperations` is not exhaustive.** That account operation is absent from the 308 it
-lists and answers anyway, and its reply is wrapped in `CreateNewAccountInHouseholdResult` rather than in
-its own name. So the operation census is a floor, and the names the client uses are not always the
-service's.
+**Which button sends what is held as button maps**, one per device and one per activity, and the data
+model describes their types: [button maps](data-model/model.md#the-button-maps-which-say-which-button-sends-what).
+None of the operations around them mentions a scan code, a key matrix or a keypad: a host names a
+button and the firmware resolves the name[^t-host-client][^s48].
 
-### A sync is recorded when the client says so, not when the remote is programmed
+**The call that reads them is `UserButtonMappingManager/GetButtonMaps`.** It takes `deviceIds` and
+`activityIds` as lists of typed identifiers, `remoteSkinId`, `accountId` and a `surfaceId`[^t-ops].
+A surface is not a remote: an account and a remote each carry a list of surfaces, and maps are asked
+for by surface[^t-model]. Two other names lead elsewhere.
+`UserAccountDirector/GetButtonMaps` is declared too and answers 400 with `AuthorizeActionOnAccount`;
+sending a remote identifier in place of the surface answers 400 with `ThrowArgumentNullException`, and
+neither names what is missing[^unchecked]. And `RemoteManager/GetButtonMaps` in the Discovery listing is
+an alias: its address and its operation are `UserButtonMappingManager/GetDeviceModeButtonMaps`[^t-ops].
 
-Measured on 23 August 2026, on our own second account, and it is a before and after on the service's
-own record rather than a reading of the client. The client showed the spare Harmony One as setup not
-complete, refused the ordinary interface until a re-sync, and that re-sync then failed repeatedly. The
-household record at that moment stated:
+**A favourite channel is a button, not a structure of its own.** It is a `SoftRemoteButton` on the
+television's own device map, whose action is a `ButtonChannelAction` carrying the channel and naming
+the device, and whose menu item places it on a menu called `FavoriteChannels`, with its label in
+`TextOnRemote`[^t-host-client-service]. **The channel is text**, `"1"`, `"100"`, `"666"`, so a leading zero
+can be authored[^t-host-client-service]. Favourite channels belong to the remote and not to the device:
+another remote on the same household driving the same television carries none[^t-host-client-service].
+**Saving one channel saves that device's whole map**: before, every device's map was a default named by
+a string; after, the edited device's is a stored map with an identifier and the others are still
+defaults[^t-host-client-service]. How a channel reaches the configuration is
+[the state sections](../config-format/state.md).
 
-```
-Remotes[0].FirstSyncDate  = ''
-Remotes[0].LastSyncDate   = ''
-Remotes[0].IsSyncRequired = False
-```
+**Which activity an activity key starts is a button map too**, saved with `SaveButtonMaps`, each key
+holding a short and a long press activity; an activity's type and group do not choose its key[^s340].
 
-After the sync finally went through, both dates hold the same timestamp to the second and nothing else
-about the remote's record moved. So `FirstSyncDate` was written on that retry, which is the field that
-makes this a finding rather than an anecdote: the account had never recorded a completed sync for that
-remote at all.
+**A device record carries options the client asks a person about**, among them
+`IsScartCableSupported` beside `IsMultiCode`, `IsKeyboardAssociated`, `IsInterKeyDelayOptimized` and
+`Characterization`. What the SCART answer changes in a compiled configuration is not known; the
+plausible reading is that it chooses which input command an activity sends[^unchecked].
 
-**The control is that the remote was already programmed.** The previous day's sync did reach it, and we
-know that independently of anything the service says, because the config was read off the remote and
-filed byte for byte as `one_spare_myharmony`. So there was a fully programmed remote and an account
-record stating it had never been synced, at the same moment.
+## What a device's commands are called
 
-The reading is that the service records a sync when the client reports the session finished, and the
-client reports that only after it sees the remote come back on the bus. That matches what was observed
-from the other side: after an earlier sync the remote restarted and the client sat waiting for a
-connection that never arrived. Section 155 is the same phenomenon measured from our own host code, where
-a remote left idle in USB mode drops the first command it is given and answers the next.
+The service names a device's commands in **function maps**, one per device and one per activity, read
+with the account scoped `FunctionList`[^s220]. That layer is in no configuration, which numbers its codes
+and names none. The data model describes it:
+[what a device's commands are called](data-model/model.md#what-a-devices-commands-are-called).
 
-**One occurrence, so the mechanism stays a reading.** What would settle it is interrupting a sync
-deliberately at the moment the remote restarts, which is not a thing to do to an irreplaceable remote.
-What the measurement does settle, without the mechanism, is that the record can disagree with the
-hardware and that `IsSyncRequired` is not the field the interface keys on, since it was false throughout.
+## The analysis service
 
-The consequence for FreeHarmony is a design rule rather than a protocol fact: what is on a remote is
-established by reading the remote, never by a bookkeeping field a lost handshake can leave empty. The
-captured pair is `GetMyHousehold_account2_before_sync.json` and `..._after_sync.json`, and
-`tests/test_host_client.py` asserts the transition.
+**`infraredAnalysisManager.AnalyzeInfrared` is a protocol decoder that can be called**: it takes a
+learned code as durations and answers with a protocol family and a value in the catalogue's own code
+grammar, and it answers for any code[^s153]. The client keeps the raw capture beside the answer and
+uploads both when a learned command is saved[^unchecked].
 
-### The compile refuses architecture 9, without saying so
+**The request is one string**, `{ rawSequence }`: `F` and the carrier in hertz, then one letter and one
+duration per interval, `P` for a mark and `S` for a space, each number upper case hexadecimal padded to
+four digits, or eight where it does not fit, in microseconds[^t-irda]. The client builds it from a
+capture by five rules[^unchecked]:
 
-With devices and activities in place the compile is accepted, reports `Compiling`, and ends
-`<RemoteConfiguration status='Error' length='0'/>`, twice, with no reason. The same session compiled a
-Harmony One to `Successful, length 288096` minutes later, so the compiler works; and the 525's settings,
-device command counts and activity count are indistinguishable from the remotes that succeed. The
-architecture is what is left, and it stays a reading rather than a fact because the error names nothing.
+* **the report**: byte 0's high nibble is `0x90` for data and `0xF0` for done; byte 1's high nibble is a
+  sequence that advances by one and wraps at fifteen, and its low nibble is an error code, anything but
+  zero aborting the capture; the last byte carries the real byte count; the words are big endian from
+  offset 2.
+* **the calibration**: the first three words are a first pulse time, a header pulse time and a cycle
+  count. The count is decremented, and the carrier is `1e6 / (difference / count)` hertz. The difference
+  is then emitted as the first mark, so the header pulse is both the calibration and the first interval.
+* **the data**: words alternate a mark's length and a gap that is the total elapsed time, so a space is
+  the gap less the mark before it, and a gap shorter than its own mark is dropped. A zero word still
+  flips between mark and space.
+* **the merge**: two intervals of the same kind in a row are one interval, summed.
+* **the stop**: an interval longer than 500000 microseconds ends the capture.
+
+**The format is ambiguous above 65535 microseconds**, since `F` is a hexadecimal digit as well as a
+token letter and a field is four digits or eight. On a stored record that only ever matters in the
+closing silence: every interval above 65535 microseconds in the configurations measured is a code's own
+closing silence, so a code sent up to and including that silence, clamped, fits in four digits
+throughout. Cutting before the silence is wrong: a pulse width code's last bit is a mark whose space is
+the trailing gap[^t-irda-configs].
+
+**Their analyser is not a judge of a rhythm.** It recognises a rhythm at the bit counts on its own list
+and refuses it at others, so a refusal says nothing against a code[^s159]; it accepts rhythms Logitech's
+own compiler does not emit, and it names some families wrongly[^s160][^s162]. A family is named by the
+catalogue instead, [the families](../infrared/families.md).
+
+## Syncing, and what the record says about it
+
+**A sync is recorded when the client says the session finished, not when the remote was programmed.**
+A remote's record carries `FirstSyncDate`, `LastSyncDate` and `IsSyncRequired`. A record has been seen
+stating no sync at all, both dates empty and `IsSyncRequired` false, for a remote already programmed by
+that account's compile; the next sync to complete wrote both dates to the same second and moved nothing
+else[^t-host-client-service]. So what is on a remote is established by reading the remote, and
+`IsSyncRequired` is not the field the client's interface keys on[^t-host-client-service].
+
+**The sign in is the fragile half.** MyHarmony signs in through Logitech's central sign in service, and
+that front end has been seen refusing every account identically with a bare `400` for a morning, from a
+placeholder in its own request, while `LoginUser` on the configuration service accepted the same
+accounts[^unchecked].
+
+## Not checked
+
+* What the SCART option changes in a compiled configuration[^unchecked].
+* Whether `DetectLanguage` behaves as the client describes; no call to it has been made[^unchecked].
+* The request shapes of the button map calls beyond the one that reads them; no test holds a
+  request[^unchecked].
+
+[^s56]: Stated by Logitech, by their service. [Section 56](../../docs/findings.md#s56)
+[^s58]: Stated by Logitech, by their service. [Section 58](../../docs/findings.md#s58)
+[^t-host-client]: Stated by Logitech, in their client. [The test](../../tests/test_host_client.py)
+[^s132]: Stated by Logitech, by their service. [Section 132](../../docs/findings.md#s132)
+[^s219]: Stated by Logitech, by their service. [Section 219](../../docs/findings.md#s219)
+[^s235]: Stated by Logitech, by their service. [Section 235](../../docs/findings.md#s235)
+[^s135]: Stated by Logitech, by their service. [Section 135](../../docs/findings.md#s135)
+[^s159]: Stated by Logitech, in their catalogue. [Section 159](../../docs/findings.md#s159)
+[^s231]: Stated by Logitech, in their catalogue. [Section 231](../../docs/findings.md#s231)
+[^s305]: Stated by Logitech, by their service. [Section 305](../../docs/findings.md#s305)
+[^unchecked]: Not checked.
+[^s154]: Stated by Logitech, by their service. [Section 154](../../docs/findings.md#s154)
+[^s202]: Stated by Logitech, in their client. [Section 202](../../docs/findings.md#s202)
+[^s145]: Stated by Logitech, by their service. [Section 145](../../docs/findings.md#s145)
+[^t-host-client-service]: Stated by Logitech, by their service. [The test](../../tests/test_host_client.py)
+[^s136]: Stated by Logitech, by their service. [Section 136](../../docs/findings.md#s136)
+[^s48]: Read in the firmware. [Section 48](../../docs/findings.md#s48)
+[^t-ops]: Stated by Logitech, by their service. [The test](../../tests/test_myharmony_model.py)
+[^t-model]: Stated by Logitech, in their client. [The test](../../tests/test_myharmony_model.py)
+[^s340]: Stated by Logitech, by their service. [Section 340](../../docs/findings.md#s340)
+[^s220]: Stated by Logitech, by their service. [Section 220](../../docs/findings.md#s220)
+[^s153]: Stated by Logitech, by their service. [Section 153](../../docs/findings.md#s153)
+[^t-irda]: Stated by Logitech, in their client. [The test](../../packages/codec/test/irda.test.ts)
+[^t-irda-configs]: Measured in configurations. [The test](../../packages/codec/test/irda.test.ts)
+[^s160]: Stated by Logitech, by their service. [Section 160](../../docs/findings.md#s160)
+[^s162]: Stated by Logitech, by their service. [Section 162](../../docs/findings.md#s162)

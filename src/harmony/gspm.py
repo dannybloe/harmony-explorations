@@ -2933,7 +2933,7 @@ def frame_length(blob: bytes, off: int) -> Optional[int]:
 
     **The length is 24 bits and not 16.** This read a `u16` with the byte at +0x04 described
     as "zero in every sample", which it is, because no name tree in the corpus reaches 64 KiB.
-    Logitech's own client reads three bytes here, `reference/logitech/clients.md`, and that is client
+    Logitech's own client reads three bytes here, `reference/config-format/header-records.md`, and that is client
     sourced and unconfirmed. Adopted anyway because the two readings cannot disagree on any
     sample this project has and the wider one survives a config the corpus does not contain.
     Same family as the font header's spare byte<!--superseded-->, which was the first glyph code,

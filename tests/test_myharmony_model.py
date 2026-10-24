@@ -181,33 +181,49 @@ class TheDocumentedVocabulariesAreTheModelsEnums(unittest.TestCase):
                 self.assertEqual(int(found.group(1)), len(values), 'stated count is wrong')
 
 
+LISTING = ROOT / 'reference' / 'logitech' / 'data-model' / 'entities.md'
+
+
 class TheAreaTableNamesEveryAreaWithAnExactCount(unittest.TestCase):
-    """Every area, every count, and the 44 contracts that belong to none of them."""
+    """Every area, every count, and the 44 contracts that belong to none of them.
+
+    **Read from the generated listing's headings since `todo-reference.md` 4.5.** `model.md` carried
+    a hand table of the 28 areas and their counts, a second copy of what `entities.md` states in its
+    own headings, and plan 009 drops it for those headings. The claims are the same and so are the
+    assertions: every area named, every count exact, the column summing to the contracts that declare
+    an area, and the 44 that declare none counted and said. What changed is only which file states
+    them, and the generator's staleness check is what keeps that file equal to the model.
+    """
+
+    HEADING = re.compile(r'^## `([^`]+)`, (\d+) contracts$', re.M)
 
     def setUp(self):
         self.model = model()
-        self.text = document()
-        self.rows = two_column_table(self.text, '\n## Every area, by how many contracts it holds\n')
+        self.text = LISTING.read_text(encoding='utf-8')
+        self.rows = [(area, int(n)) for area, n in self.HEADING.findall(self.text)]
         self.actual = collections.Counter(
             v['area'] for v in self.model['entities'].values()
             if v['isServiceContract'] and v['area']
         )
 
     def test_the_table_names_every_area(self):
+        self.assertEqual(len(self.rows), 28, 'the guard on the guard: no headings would pass below')
         self.assertEqual(sorted(area for area, _ in self.rows), sorted(self.actual))
 
     def test_every_count_is_exact(self):
         for area, stated in self.rows:
             with self.subTest(area):
-                self.assertEqual(int(stated), self.actual[area])
+                self.assertEqual(stated, self.actual[area])
 
     def test_the_column_sums_to_the_contracts_that_declare_an_area(self):
-        self.assertEqual(sum(int(n) for _, n in self.rows), sum(self.actual.values()))
+        self.assertEqual(sum(n for _, n in self.rows), sum(self.actual.values()))
 
     def test_the_contracts_with_no_area_are_counted_and_explained(self):
         without = self.model['counts']['serviceContracts'] - sum(self.actual.values())
         self.assertEqual(without, 44)
-        self.assertIn('44 service contracts declare no namespace', self.text)
+        self.assertIn('\n## Declaring no area, 44 contracts\n', self.text)
+        # And the reading points at those headings rather than restating them.
+        self.assertIn('are the headings of\n[`entities.md`](entities.md)', document())
 
 
 class TheModelCarriesSchemaAndNoInstances(unittest.TestCase):
@@ -430,6 +446,44 @@ class NoSourceForTheOperationSurfaceIsASupersetOfAnother(unittest.TestCase):
         self.assertEqual(only, ['AmazonS3ImageManager', 'Authentication', 'DiscoveryService',
                                 'HelpContent', 'ProductManager', 'RomDataService',
                                 'SecurityDirector'])
+
+    def test_the_button_maps_are_read_with_the_mapping_managers_get_button_maps(self):
+        """Which `GetButtonMaps` reads an account's button maps, settled in `todo-reference.md` 4.5.
+
+        Three operations carry the name and the documents named two different ones: the service page
+        said `UserButtonMappingManager/GetButtonMaps`, the `myharmony-service` skill said
+        `RemoteManager/GetButtonMaps`. Both exist in the Discovery listing, and the listing says what
+        the second one is: an alias whose address is the button mapping platform and whose operation
+        is `GetDeviceModeButtonMaps`, the newer remotes' call. So the maps of a device and an activity
+        are read with the mapping manager's own `GetButtonMaps`, whose parameters the proxy states;
+        `UserAccountDirector/GetButtonMaps` is a third, declared and advertised both.
+        """
+        listing = {row['Identifier']: row for row in self.listing}
+        alias = listing['RemoteManager/GetButtonMaps']
+        self.assertEqual(alias['Name'], 'GetDeviceModeButtonMaps')
+        self.assertIn('/UserButtonMappingPlatform/UserButtonMappingManager.svc/', alias['Address'])
+        own = listing['UserButtonMappingManager/GetButtonMaps']
+        self.assertEqual(own['Name'], 'GetButtonMaps')
+        self.assertIn('UserAccountDirector/GetButtonMaps', listing)
+        parameters = {
+            service['configurationName']: [p['name'] for o in service['operations']
+                                            if o['name'] == 'GetButtonMaps' for p in o['parameters']]
+            for service in self.ops['services']}
+        self.assertEqual(parameters['UserButtonMappingManager.IUserButtonMappingManager'],
+                         ['deviceIds', 'activityIds', 'remoteSkinId', 'accountId', 'surfaceId'])
+
+    def test_the_protocol_list_is_advertised_on_two_services_as_an_account_address(self):
+        """The one route to an `IrProtocol` the document settles, from the listing's side.
+
+        The proxy names `UserAccountDirector/GetProtocolList`; the listing advertises `ProtocolList` on
+        two services, each at an account scoped address. What each address answered is the archive's,
+        sections 132, 159, 219 and 258, and `model.md` states them as one measurement.
+        """
+        found = {row['Identifier']: row['Address'] for row in self.listing
+                 if row['Identifier'].endswith('/ProtocolList')}
+        self.assertEqual(sorted(found), ['DeviceManager/ProtocolList', 'UserAccountDirector/ProtocolList'])
+        for address in found.values():
+            self.assertTrue(address.endswith('/Account/{accountId}/'), address)
 
 
 
