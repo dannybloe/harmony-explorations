@@ -731,7 +731,7 @@ arch 14 use the base layout directly.
   two arch 8 (Harmony 880 and 885) configs out because adding them moves every coverage figure in one
   commit. **It does include the Harmony One sync pair**, and this entry said 15 and gave excluding
   that pair as the reason until 29 August 2026. Both halves were wrong, and the reason was a
-  paraphrase of a claim `reference/superseded.md` already carries: a config before a sync and the
+  paraphrase of a claim `docs/superseded.md` already carries: a config before a sync and the
   same remote's config after one are two containers, because the bytes differ, and a total over
   containers is not a headcount of remotes. This paragraph exists to stop exactly this drift, which
   is the part worth recording.

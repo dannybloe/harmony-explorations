@@ -283,7 +283,7 @@ None of those may ask for a command to be run or a rail to be relaxed. All of th
 which then takes the ordinary route: a hypothesis to test, per decision 7.
 
 **Staleness is a different problem and has a different rule.** A comment we wrote can be wrong, and that
-is what `reference/superseded.md` and `make facts` are for. Wrong is about truth; the paragraphs above
+is what `docs/superseded.md` and `make facts` are for. Wrong is about truth; the paragraphs above
 are about authority, and the two must not be collapsed.
 
 **An issue is outward facing**, so creating, editing, closing or commenting on one needs his say each
@@ -305,7 +305,7 @@ net, not a policy:
 * **No firmware or config binaries.** Unlicensed proprietary Logitech code. Also, the archived
   `.hfw` packages contain a `Data.xml` with a stranger's Logitech `UserId`, account GUIDs,
   `ServerID` and `ASPSESSIONID` session cookie. Publish checksums, never files. See
-  `reference/checksums.md`.
+  `docs/checksums.md`.
 * **No config dumps or `concordance -i` output.** Decided on 7 August 2026, and **not for the
   reason everyone assumes**: a config carries no account data at all, only an equipment inventory
   its owner published knowingly, and `samples/README.md` now records the check. What blocks it is
@@ -529,7 +529,7 @@ document:
   not four**, section 87: protocol, skin, flash and board plus `SOFTWARETYPE` and `ARCHITECTURE`,
   and an absent or empty field matches anything. This said four until 29 August 2026, which is two
   fields short of a gate that is supposed to refuse a config built for a different remote, and the
-  four field wording was already dead in `reference/superseded.md` at the time.
+  four field wording was already dead in `docs/superseded.md` at the time.
   **And nothing performed the comparison until section 225**, 30 August 2026: the rail took a boolean
   and every caller passed true, which is section 224's lesson at one day's remove, a rail that asks a
   caller a question being a rail the caller answers. It takes the config's statement and the remote's
@@ -748,7 +748,7 @@ source file's own header is where its reading lives. The ones a session reaches 
   `docs/config-format.md`, the structured spec; `docs/glossary.md`, the vocabulary
 * `docs/how-a-harmony-works.md`, the operating concept, and `docs/myharmony/model.md`, consulted before
   naming a field or designing anything about devices, activities or remotes
-* `reference/superseded.md`, claims a finding killed; `reference/remotes/`, the public per model
+* `docs/superseded.md`, claims a finding killed; `reference/remotes/`, the public per model
   reference, which carries **nothing** about our units, accounts or dumps
 * `packages/codec` the one config codec, `packages/usb` the protocol and the write rails,
   `packages/corpus` reading and writing a remote's configuration, `packages/bench` the bench instrument
@@ -775,7 +775,7 @@ source file's own header is where its reading lives. The ones a session reaches 
 * **When something new is confirmed, four things happen together**: the structured fact in
   `docs/config-format.md`, the reasoning in `docs/findings.md`, a regression test, and a sweep of every
   summary of the old answer. A number quoted in prose carries a fact marker naming what it states, and a claim a finding
-  kills goes into `reference/superseded.md` in the same commit; `make facts` checks both, in `make all`
+  kills goes into `docs/superseded.md` in the same commit; `make facts` checks both, in `make all`
   and the pre-commit hook. The `finding` skill holds the gate.
 * **The write rails live in `packages/usb/src/rails.ts` and on the transport, and both halves are load
   bearing.** `openHarmony` returns a guarded transport with an allow list of read commands and a per
@@ -992,7 +992,7 @@ to get wrong:
   arch 9 the same command returns the complete firmware region**, because `firmware_base` is its
   own region there and `config_base - firmware_base` is exactly `FIRMWARE_MAX_SIZE`. So asking a
   contributor for `concordance -b -f` is the route to an arch 8 image, and it is how the incoming
-  525 gets dumped. `reference/concordance-notes.md`, asserted in `tests/test_concordance_notes.py`.
+  525 gets dumped. `docs/concordance-notes.md`, asserted in `tests/test_concordance_notes.py`.
 * **A misaligned read of an ascending table is itself ascending.** Twice a long run of ascending
   `u24` values looked like an undiscovered pointer table into the picture region, and twice it was
   base slot 10's own array read one byte late: a real entry with a constant high byte puts that

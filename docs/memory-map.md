@@ -114,4 +114,4 @@ inferred rather than measured. The configuration words being where they are is c
 * `docs/findings.md` sections 1 to 5 for the images and their headers, 20 to 23 for the sweeps.
 * `docs/usb-protocol.md` section 4 for `READ_FLASH`, the region validator and the version block.
 * `docs/config-format.md` for what is inside a `GSPM` container.
-* `reference/checksums.md` for the provenance of every file the figures came from.
+* `docs/checksums.md` for the provenance of every file the figures came from.

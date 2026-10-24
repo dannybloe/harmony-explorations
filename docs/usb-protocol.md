@@ -30,7 +30,7 @@ Method, and why it matters here: everything is derived from the firmware images.
 derived, as corroboration, never as the source. That is partly licensing (concordance is
 GPLv3 and this repository is MIT, so its code is not read for structure or copied) and
 partly that concordance has two documented defects on exactly these two architectures. See
-`reference/concordance-notes.md`.
+`docs/concordance-notes.md`.
 
 ## 1. The transport
 

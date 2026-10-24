@@ -141,8 +141,8 @@ src/harmony/                    the research library, see below
 tools/                          thin command line wrappers, no logic of their own
 tools/ghidra/                   headless script plus extracted branch target seeds
 tests/                          one regression test per documented finding
-reference/checksums.md          provenance, load addresses, public sample checksums
-reference/superseded.md         claims a finding killed, which no document may restate
+docs/checksums.md          provenance, load addresses, public sample checksums
+docs/superseded.md         claims a finding killed, which no document may restate
 reference/models.md             the 40 models Logitech retired in 2025, mapped to architectures
 reference/capabilities.md       what each model's hardware can do, per skin, with a verification
                                 column. Third party and unconfirmed except where that column says
@@ -172,14 +172,14 @@ reference/silhouettes/          the front face of a model, one SVG per model, **
 reference/button-maps.md        which button a scan code is, per model, measured through the account
                                 that generated the calibration configs. Partial and honest about it:
                                 the scans two buttons share are listed as sets, not assigned
-reference/lab-register.md       the lab, artefact by artefact: what each thing is, how deep anybody
+docs/lab-register.md       the lab, artefact by artefact: what each thing is, how deep anybody
                                 has been, and which of the excavation's seventeen want list tags it
                                 might answer. **A catalogue and not a set of claims**, so it carries
                                 no tests of its own, per the rule in docs/lab-excavation.md. Two
                                 things about its frame are tested, that every path it names exists
                                 and that every artefact in the lab has a row, which is the check the
                                 directory level one could not make
-reference/concordance-notes.md  the two concordance defects, with patches
+docs/concordance-notes.md  the two concordance defects, with patches
 reference/ghidra_functions.txt  derived metadata: 521 functions by reference count
 bin/setup-ghidra.sh             build or refresh the Ghidra project
 bin/lab-register-hook.py        prints the lab register's rows for a path at the moment that path is
@@ -577,7 +577,7 @@ test. So the copies are executable now, and `make facts` is the check:
 * a number quoted in prose carries a marker naming the fact it states,
   `22846<!--fact:screen_programs-->`, invisible when rendered. `tools/facts.py` recomputes it from
   the corpus, `make facts-write` updates every copy, and `--list` shows what is available.
-* a claim that a finding kills goes into `reference/superseded.md` **in the same commit**, and the
+* a claim that a finding kills goes into `docs/superseded.md` **in the same commit**, and the
   check then refuses that wording anywhere outside a correction. Quoting a dead claim in order to
   refute it is what `<!--superseded-->` on the line is for.
 * **the phrase half reads the source too**, `.ts` and `.py`, since section 139. It walked `*.md` alone,

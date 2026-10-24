@@ -33,7 +33,7 @@ byte of them. A scrubber removes what is understood, and git history is permanen
 
 * **Derived structure is published freely.** That is what `docs/config-format.md` and
   `docs/findings.md` are, and there is no restriction on it in any `META.md`.
-* **Checksums and provenance** go in [../reference/checksums.md](../reference/checksums.md), so a
+* **Checksums and provenance** go in [../docs/checksums.md](../docs/checksums.md), so a
   claim about a file can be checked by anyone holding the same file.
 * **The contribution probe**, `packages/probe`, exists precisely for this: a few kilobytes of JSON
   describing a config's shape, its counts, its addresses and its check outcomes, and none of its

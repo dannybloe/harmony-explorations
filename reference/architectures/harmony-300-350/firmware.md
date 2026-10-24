@@ -8,7 +8,7 @@
 |---|---|---|
 | package | `skin104-harmony350-production-1.4.0.0`, a ZIP holding `Description.xml` and `Region_2.EZUpgrade`, whose `<INTENDED>` names skins 78, 79 and 104, written to `/fw/normalmode` | Logitech's service, its software update service, section 196 |
 | version | 1.4 | the manifest and the image header, section 196; MyHarmony's version list also names both models at 1.4.0, Logitech's client |
-| decoded | 73472 bytes, an `HG` header that verifies, an ordinary PIC18 image | read in the firmware, section 196; checksum in `reference/checksums.md` |
+| decoded | 73472 bytes, an `HG` header that verifies, an ordinary PIC18 image | read in the firmware, section 196; checksum in `docs/checksums.md` |
 | load base | `0x9000`: 1581 of 1582 branch targets land in code there | read in the firmware, section 196; agrees with `/fw/normalmode`'s own row in the file table, section 199 |
 | the checksum Logitech's manifest states | the XOR of little endian words that section 41 found for configuration containers, seeded `0x4321` | Logitech's service, recomputed, section 196 |
 

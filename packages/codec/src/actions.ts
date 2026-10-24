@@ -3,7 +3,7 @@
  *
  * This file is the step 6 progress number in executable form. The share of instructions whose
  * opcode nobody has read used to be quoted in prose and recomputed by hand each time, which is
- * exactly the shape of claim `reference/superseded.md` exists to stop. Here it is a function over
+ * exactly the shape of claim `docs/superseded.md` exists to stop. Here it is a function over
  * the corpus, so it moves when the reading moves and cannot drift away from the documents.
  *
  * The structure mirrors the firmware's, because anything else would be a second opcode table by

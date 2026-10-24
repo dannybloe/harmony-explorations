@@ -603,7 +603,7 @@ What is genuinely left is the **silicon half of pacing**: whether the USB periph
 second report before the first is serviced, which is the endpoint's buffer descriptor and its
 ownership bit, and which nothing here has read. The firmware half is derived and blind confirmed, the
 dispatcher drains the staging buffer in the same service call. **Do not merge the two halves**, which
-`reference/superseded.md` exists to prevent.
+`docs/superseded.md` exists to prevent.
 
 Erase before program is closed on both bench architectures: section 186 read the Harmony 600's SPI
 path and section 191 the Harmony One's resident flash library, where erase and program are separate

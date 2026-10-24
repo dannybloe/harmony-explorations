@@ -162,7 +162,7 @@ image is a second sample rather than a stand in. Other models are iterated on la
    is **the silicon half of pacing**: whether the USB peripheral can accept a second report before
    the first is serviced, which is the endpoint's buffer descriptor and its ownership bit, and which
    nothing here has read. The **firmware** half was answered by reading the same day, and the two
-   halves must not be collapsed, which is what `reference/superseded.md` records and what this
+   halves must not be collapsed, which is what `docs/superseded.md` records and what this
    paragraph did by saying "one thing rather than two"<!--superseded--> until 29 August 2026. Erase
    before program is closed on both bench architectures since sections 186 and 191, and it was moot
    anyway for a caller that erases first.
@@ -301,7 +301,7 @@ image is a second sample rather than a stand in. Other models are iterated on la
 
    **The failure is structural, not carelessness.** Every rule this project has for keeping facts
    straight operates on the repository: `make facts` recomputes marked numbers and refuses dead
-   phrasings, `reference/superseded.md` kills old wording, a finding needs a regression test, and
+   phrasings, `docs/superseded.md` kills old wording, a finding needs a regression test, and
    the four places rule makes a fact land in all of them or none. The lab is **deliberately outside
    all of it**, because it holds unlicensed firmware, contributors' configs and Logitech's own
    client code, and that is the right decision for what may be published. The consequence is that a

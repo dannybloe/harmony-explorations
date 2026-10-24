@@ -12,7 +12,7 @@ alongside the repository is used when one exists:
     make test
 
 Files are located by name anywhere beneath that directory, so the corpus can be arranged
-however suits it. See reference/checksums.md for what the names refer to.
+however suits it. See docs/checksums.md for what the names refer to.
 """
 import glob
 import json
@@ -31,7 +31,7 @@ def _default_lab():
 
 LAB = os.environ.get('HARMONY_LAB') or _default_lab()
 
-# Logical name -> filename, as named in reference/checksums.md.
+# Logical name -> filename, as named in docs/checksums.md.
 IMAGES = {
     'one34_code': 'one-3.4-code-base0x20000.bin',
     # The 525's whole internal program flash, read over USB on 8 August 2026: the bootloader at
@@ -101,7 +101,7 @@ IMAGES = {
     # on the model it is claimed for. 8192 bytes as read; the container is the first 7115.
     'h600_safemode_gspm': '600-0.2-safemode-gspm-base0x20000.bin',
     # The Harmony 650 update package, the third and last published Harmony firmware. It sat in
-    # reference/checksums.md as "not yet analysed, arch 15" until the package was opened; it is
+    # docs/checksums.md as "not yet analysed, arch 15" until the package was opened; it is
     # arch 14, so arch 14 had three firmware images and three safe mode configs where arch 12 has
     # one of each. Four images since section 281, with the bench Harmony 650's own 0.2 below.
     'h650_code': '650-0.4-Region_2-code-base0x9000.bin',

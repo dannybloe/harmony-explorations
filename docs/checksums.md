@@ -176,7 +176,7 @@ harmony-decompiler. The **first arch 8 firmware and the first arch 10 configs** 
 project. `docs/findings.md` sections 113, 114 and 115.
 
 The firmware was dumped with `concordance -b -f`, which returns the complete firmware region on arch
-8 and nothing usable on arch 12 or arch 14; `reference/concordance-notes.md` has why. Two images of
+8 and nothing usable on arch 12 or arch 14; `docs/concordance-notes.md` has why. Two images of
 one build, 65536 bytes each, load base `0x010000`, differing at exactly two offsets which are both
 the skin byte.
 

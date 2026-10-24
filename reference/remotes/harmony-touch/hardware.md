@@ -5,7 +5,7 @@ image has not been read, and the only hardware facts off a unit are the fields i
 
 | | value | standing and source |
 |---|---|---|
-| processor | **not checked**. Its firmware is an ARM image with a squashfs root, which says the family, not the part | Logitech's service image, not read, `reference/checksums.md` |
+| processor | **not checked**. Its firmware is an ARM image with a squashfs root, which says the family, not the part | Logitech's service image, not read, `docs/checksums.md` |
 | memory | `/sys/sysinfo` states a `ram_size` field; its value and the flash size are **not checked** | measured, section 200 |
 | link | `link_hw usb`, `link_type hid`, `link_packet_length 64`, the report size this project has always used | measured, section 200 |
 | `feature` | `Infrared`, and nothing else | measured, section 200 |

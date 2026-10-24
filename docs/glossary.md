@@ -277,7 +277,7 @@ loaded into tells you what the section is for.
 **concordance** (someone else's program). The existing open source tool for talking to these
 remotes. Used here as a cross-check and as a source of protocol facts, never copied, because its
 licence is incompatible with this repository's. It has two known defects on our architectures,
-recorded in `reference/concordance-notes.md`.
+recorded in `docs/concordance-notes.md`.
 
 **Ghidra** (standard tool). A disassembler and decompiler. Its project files embed a copy of the
 firmware, so they never go in this repository.
@@ -314,7 +314,7 @@ recompute the value from the corpus and refuse a document that has drifted away 
 one. No example is spelled out here on purpose: this file would then contain a marker naming a fact
 that does not exist, and the check would fail on it.
 
-**superseded** (our name). A claim a later finding killed. Recorded in `reference/superseded.md`
+**superseded** (our name). A claim a later finding killed. Recorded in `docs/superseded.md`
 in the same commit, after which the tooling refuses that wording anywhere outside a correction.
 This exists because an audit found eleven documents restating claims that `docs/findings.md` had
 already corrected.

@@ -9,7 +9,7 @@ model and are the architecture's as far as anything here knows.
 | application | 3.0, product string `Harmony Remote 0-3.0.0` | measured, section 76 |
 | safe mode image | 2.0, product string `Harmony Safe Mode!` | measured, section 118 |
 | newest firmware the forum table knows | 3.0, which agrees with the unit | third party, `reference/capabilities.md` |
-| where it comes from | off a unit; there is no Logitech package of it here, and the manual has the owner update through the Harmony Remote Software | `reference/checksums.md`; Logitech's manual |
+| where it comes from | off a unit; there is no Logitech package of it here, and the manual has the owner update through the Harmony Remote Software | `docs/checksums.md`; Logitech's manual |
 
 ## The rail
 

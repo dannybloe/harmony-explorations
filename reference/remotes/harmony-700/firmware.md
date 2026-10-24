@@ -47,7 +47,7 @@ Logitech still serves firmware for it is **not established**, section 295.
 
 ## Images in the lab
 
-Never in this repository. Checksums are in `reference/checksums.md`.
+Never in this repository. Checksums are in `docs/checksums.md`.
 
 | file in `lab/firmware/` | what |
 |---|---|

@@ -404,7 +404,7 @@ the wrong flash region. On arch 14 it returns real code, silently truncated to 6
 image is larger. Both read `flash_base` = 0. It is an architecture table entry rather than the
 tool, though, and on **arch 8 and arch 9 the same command returns the whole firmware region**, so
 it stays the way to obtain an image for a model nobody here owns. See
-[../reference/concordance-notes.md](../reference/concordance-notes.md).
+[concordance-notes.md](concordance-notes.md).
 
 **It is a Microchip PIC18, and it disassembles cleanly** once you have the right file at the
 right load address. 87% of the Harmony 700 image resolves into 521 functions.
@@ -712,7 +712,7 @@ this project's oldest rule is about. Two right copies are what precede two diver
   host must keep reading during the session; that settles section 91's disagreement between the two
   clients in the classic one's favour.
   **Do not argue this from a literal scan**: a data response code carries a computed length nibble
-  and never appears as a literal, which cost one wrong negative here, `reference/superseded.md`.
+  and never appears as a literal, which cost one wrong negative here, `docs/superseded.md`.
 * **The physical button map**, meaning the matrix keypad. **The Harmony One's touch panel is mapped**,
   section 125, and out of the config rather than the hardware: base slot 17's rectangles, the mode page
   byte saying which page is in force, and a transform onto the display. That leaves the 40 keys around

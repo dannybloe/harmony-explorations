@@ -1190,7 +1190,7 @@ class TheLabExcavationGridCoversTheWholeSite(unittest.TestCase):
 
     Skips without a lab, like every other lab backed test.
 
-    **Superseded in scope on 28 August 2026 and kept deliberately.** `reference/lab-register.md`
+    **Superseded in scope on 28 August 2026 and kept deliberately.** `docs/lab-register.md`
     exists now and `TheLabRegisterCoversTheSiteAtArtefactLevel` is the check that actually covers the
     site, at artefact granularity. This one is narrower and still has its own claim: the roadmap's
     grid is a **summary**, and a summary is exactly what step 4 of the four places rule says drifts,
@@ -1230,7 +1230,7 @@ class TheLabExcavationGridCoversTheWholeSite(unittest.TestCase):
 
 
 class TheLabRegisterCoversTheSiteAtArtefactLevel(unittest.TestCase):
-    """`reference/lab-register.md` is step 9's deliverable, and this is the check the plan promises.
+    """`docs/lab-register.md` is step 9's deliverable, and this is the check the plan promises.
 
     Two claims, and the second is the one the directory level guard above cannot make.
 
@@ -1245,7 +1245,7 @@ class TheLabRegisterCoversTheSiteAtArtefactLevel(unittest.TestCase):
     catalogue's own frame still matches the site. Nothing here asserts a description is right.
     """
 
-    REGISTER = ('reference', 'lab-register.md')
+    REGISTER = ('docs', 'lab-register.md')
     #: Directories whose children are not artefacts in their own right: build products, a virtual
     #: environment, a cache. Each is named by a row already, and expanding it would add hundreds of
     #: rows that say nothing. Stated so the exclusion is visible rather than silent.
@@ -1379,7 +1379,7 @@ class TheRegisterQueryAnswersForThePathThatWasOpened(unittest.TestCase):
 
     def rows(self):
         module = self.module()
-        with io.open(os.path.join(ROOT, 'reference', 'lab-register.md'), encoding='utf-8') as fh:
+        with io.open(os.path.join(ROOT, 'docs', 'lab-register.md'), encoding='utf-8') as fh:
             return module, module['rows'](fh.read())
 
     def test_the_register_parses_into_the_rows_the_document_states(self):

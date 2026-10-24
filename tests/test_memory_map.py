@@ -304,7 +304,7 @@ class TestArch14MapFor700(unittest.TestCase):
 class TestTheHarmony650IsArch14(unittest.TestCase):
     """The third published firmware package, and the one nobody here had opened.
 
-    `reference/checksums.md` listed it as arch 15 for as long as it went unexamined, which would
+    `docs/checksums.md` listed it as arch 15 for as long as it went unexamined, which would
     have put it in the network-transport family alongside the 900 and the 1100. It is arch 14, the
     same as the 600 on the bench, and that matters twice: it is a third independent arch 14 sample,
     and it makes the 650 a model whose firmware can be checked against a published image if one is

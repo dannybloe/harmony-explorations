@@ -56,7 +56,7 @@ question we cannot answer ourselves is where an independent reading is worth mos
 | 1 | the transfer sequence: which command, what a data packet holds, what answers each step, how a length is stated, whether a whole erase block fits in one transfer | **settled**, and this is the part that checks section 175 |
 | 2 | does programming erase first, or is the old content marked invalid and written over | **closed on both bench architectures since 29 August 2026**, and this row said open. Section 186 read the Harmony 600's SPI path and section 191 the Harmony One's resident flash library, where erase and program are separate gates; there is a passing test for the arch 14 half. Still worth an independent reading, but as a check rather than as the open question it was billed as. The hypothesis from Logitech's own client stays withheld |
 | 3 | must the host pace its packets, and **how long may a burst be** | **the pacing half is settled twice over and the burst half was never asked.** No pacing: the firmware asks for none, derived, and neither Logitech's client nor concordance sleeps between packets, so all three agree. What nobody asked until 3 September 2026 is how many packets one announce may carry, and both implementations cap a transfer at 3150 bytes where ours sent 32768, sections 245 and 246. The peripheral half stays unread: whether the endpoint can accept a second report before the first is serviced is its buffer descriptor's ownership bit |
-| 4 | the write protect interlock: which bit, its polarity, its resting state, what sets and clears it | settled, and **the highest value target, because we have got it wrong twice.** Both wrong versions are kept in `reference/superseded.md` |
+| 4 | the write protect interlock: which bit, its polarity, its resting state, what sets and clears it | settled, and **the highest value target, because we have got it wrong twice.** Both wrong versions are kept in `docs/superseded.md` |
 
 Question 4 is the one to spend the time on, and the reason is its history rather than its difficulty.
 A place where two successive readings of ours were wrong is exactly where a third, independent one
@@ -84,7 +84,7 @@ re-implementing a PIC18 decoder is not the exercise. The line runs between tools
 - `tools/pic18_disasm.py`, `tools/pic18_trace.py`, `tools/pic18_xref.py`, `tools/usbdesc.py`
 - `src/harmony/pic18/`, the opcode table, the disassembler, the tracer, the switch chain decoder
 - `src/harmony/firmware.py`, `src/harmony/usbdesc.py`
-- `docs/memory-map.md`, `docs/memory-map-one.md`, `docs/memory-map-600.md`, `docs/memory-map-700.md`, and `reference/checksums.md`. **The five memory maps were named here by a glob until 5 September 2026** and the 525's came off the list, per the row for it in the withhold table below. They are spelled out one by one now, because a glob quietly re-admits whatever is written next
+- `docs/memory-map.md`, `docs/memory-map-one.md`, `docs/memory-map-600.md`, `docs/memory-map-700.md`, and `docs/checksums.md`. **The five memory maps were named here by a glob until 5 September 2026** and the 525's came off the list, per the row for it in the withhold table below. They are spelled out one by one now, because a glob quietly re-admits whatever is written next
 - the Microchip headers the project already relies on, `p18f87j50.inc` and `p18f67j50.inc`
 
 **Must not be read.** This list was built by inventorying the tree rather than from memory, and that
@@ -101,7 +101,7 @@ that could have leaked.
 |---|---|
 | `docs/findings.md` | section 175 is the answer, and other sections state parts of it |
 | `docs/usb-protocol.md` | **a worse leak than section 175.** The wire sequence, an address table across three images, the state table, and the length nibble mapping, which is the chunking rule |
-| `reference/superseded.md` | twelve contiguous rows, each pairing an answer we got wrong with the corrected one and its addresses. On question 4 it states both wrong readings and the right one |
+| `docs/superseded.md` | twelve contiguous rows, each pairing an answer we got wrong with the corrected one and its addresses. On question 4 it states both wrong readings and the right one |
 | `docs/host-client.md` | question 2's hypothesis, and an independent statement of the transfer shape taken from Logitech's client |
 | `CLAUDE.md`, `docs/status.md`, `todo.md`, `docs/adding-a-device.md` | all restate the sequence |
 | `docs/README.md` | the map of documents and commands moved out of `CLAUDE.md` on 7 October 2026, which names `rehearse-block.ts` and the write protect interlock |
@@ -221,7 +221,7 @@ no enclosing project for a tool to discover. That is the whole reason for the lo
 | `600-0.2-code-base0x9000-COMPLETE.bin` | the Harmony 600 application firmware, by symlink |
 | `tools/` | the four permitted tools plus `_bootstrap.py`, by symlink, file by file so that nothing else in `tools/` comes with them |
 | `src/` | the research library, by one symlink, since all of it is clean of the write path |
-| `docs/`, `reference/` | the five memory maps and `reference/checksums.md`, by symlink |
+| `docs/`, `reference/` | the five memory maps and `docs/checksums.md`, by symlink |
 
 **Derived images only, never a `.hfw` package**, because each package carries the original
 downloader's Logitech account identifiers.

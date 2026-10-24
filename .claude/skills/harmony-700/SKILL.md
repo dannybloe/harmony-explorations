@@ -92,7 +92,7 @@ they apply unchanged. The 700's runs are in `packages/bench/irtests/done/`, thos
 | the firmware images | `700-2.8-Region_2-code-base0x9000.bin` and the 2.8 package in the lab's `firmware/` |
 | the unit record | the lab's `units/h700.txt`, never copied into this repository |
 | region reads and compiles | the lab's `reads/`, named in `packages/lab` and `tests/lab.py` with the prefix `h700_` |
-| the published pair of a contributor's 700 | `h700_config` and its sibling, `reference/checksums.md` |
+| the published pair of a contributor's 700 | `h700_config` and its sibling, `docs/checksums.md` |
 
 ## Related
 

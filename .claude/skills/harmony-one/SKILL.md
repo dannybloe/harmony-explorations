@@ -97,7 +97,7 @@ run so far is `packages/bench/irtests/done/one-spare-activities.json`.
 |---|---|
 | the public reference | `reference/remotes/harmony-one/` |
 | the long form of the memory | `docs/memory-map-one.md` |
-| the firmware images | the 3.4 package and its derived files in the lab's `firmware/`, `reference/checksums.md` |
+| the firmware images | the 3.4 package and its derived files in the lab's `firmware/`, `docs/checksums.md` |
 | the spare's unit record | the lab's `units/one_spare.txt`, never copied into this repository |
 | region reads and configurations | the lab's `reads/` and `dumps/`, named in `packages/lab` and `tests/lab.py` with the prefixes `one_` and `one_spare_` |
 | the plan for composing on a One | `docs/adding-a-device.md` |

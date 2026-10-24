@@ -1,7 +1,7 @@
 # Development tasks. Nothing here needs anything beyond a Python 3 install.
 #
 # Tests that need firmware images look for HARMONY_LAB and skip cleanly without it,
-# because the binaries are not in this repository. See reference/checksums.md.
+# because the binaries are not in this repository. See docs/checksums.md.
 #
 #   export HARMONY_LAB=/path/to/lab
 #
@@ -156,7 +156,7 @@ prose:
 
 # The documents must agree with the code. Two checks, both from one audit that found eleven places
 # where they did not: every value carrying a `fact:` marker is recomputed from the corpus, and every
-# phrasing listed in reference/superseded.md must not appear as a live assertion. The numeric half
+# phrasing listed in docs/superseded.md must not appear as a live assertion. The numeric half
 # needs a lab and skips cleanly without one; the phrase half is pure text and always runs.
 facts:
 	@$(PYTHON) tools/facts.py

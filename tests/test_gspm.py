@@ -186,7 +186,7 @@ class TestContainerAcrossSamples(unittest.TestCase):
         self.assertIn('three pointer table lengths\n(20, 21, 22)', text)
         self.assertIn('the same property the word at `0x08` states', text)
         # No assertion that the old wording is gone here: `make facts` owns that, since the phrase is
-        # in reference/superseded.md, and the correction notes quote it on purpose.
+        # in docs/superseded.md, and the correction notes quote it on purpose.
 
         # Every base address the document names is one the corpus actually has, and vice versa.
         # Scoped to the sentence that names them, not the whole file, which quotes addresses for
@@ -617,7 +617,7 @@ class TestTheConfigStatesItsOwnArchitecture(unittest.TestCase):
 
         The classic client table in `reference/models.md` holds 46 skins and lacks 59 and 73, the
         two numbers containers here carry where the remote reports 54 and 71. Two rules were
-        derived from that absence and both are dead, `reference/superseded.md`; the second one
+        derived from that absence and both are dead, `docs/superseded.md`; the second one
         said each was the first free number above the run containing the remote's own skin, and
         it was asserted here, exactly, computed from the table.
 

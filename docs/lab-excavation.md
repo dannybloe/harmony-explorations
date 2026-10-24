@@ -42,7 +42,7 @@ the register, which means nobody could answer it by reading. It also has no step
 per square loop below.
 
 **The numbers are a command rather than a paragraph**, `make lab-progress`, which recomputes them from
-`reference/lab-register.md`. That is deliberate and it is not caution: `CLAUDE.md` carried "58
+`docs/lab-register.md`. That is deliberate and it is not caution: `CLAUDE.md` carried "58
 artefacts" for a day where the register holds 44, because a count in prose has nothing recomputing it.
 The command prints the depth of every artefact, a tick per want list tag when all of its artefacts have
 landed here, and the list of what is still shut.
@@ -133,7 +133,7 @@ Two layers, because they do different jobs.
 
 ### The register, which guarantees coverage
 
-`reference/lab-register.md`, one row per **artefact**. That unit was chosen deliberately on 28 August
+`docs/lab-register.md`, one row per **artefact**. That unit was chosen deliberately on 28 August
 2026 and both alternatives were rejected by measurement: one row per file is 12506 rows and
 unfinishable, and one row per top level directory is nine rows, which is what step 9 shipped first and
 it is useless, since section 197's own square was already named in it. An artefact is one mirrored
@@ -150,7 +150,7 @@ is not going to grow into the old estimate.
 | path | relative to the lab root, with a trailing slash where it is a tree |
 | what it is | one line, plain |
 | files | how many, because a count is what tells the next person the size of the job |
-| origin | where it came from and when, in the manner of `reference/checksums.md` |
+| origin | where it came from and when, in the manner of `docs/checksums.md` |
 | status | `unseen`, `surveyed`, `read`, `catalogued`, or `mined`. See below |
 | tags | from the list above, space separated, or empty |
 | holds | one line on what is inside, with a marked confidence where it is a guess |
@@ -265,7 +265,7 @@ see. The three clients agreeing about a screen is the example: no worker holding
 it. So the relating passes stay single threaded, by choice rather than by oversight.
 
 **And landing a claim is serial, whatever else is running.** Every claim touches `docs/findings.md`,
-`reference/superseded.md` and usually `CLAUDE.md`, so those files are serialisation points by nature.
+`docs/superseded.md` and usually `CLAUDE.md`, so those files are serialisation points by nature.
 Parallel workers survey and catalogue; anything that becomes a fact this project depends on comes back
 to one thread and takes the four places there.
 
@@ -355,11 +355,11 @@ What is unchanged is that a claim this project **depends on** still takes the fo
 inspiration: their interface is a labelled view of the config format, so an inventory of their
 settings is a semantic key for bytes already read and not yet named.
 
-**The deliverable is a register in this repository**, `reference/lab-register.md`, one row per
+**The deliverable is a register in this repository**, `docs/lab-register.md`, one row per
 artefact: what it is, where it came from, what is inside, and a status. **It exists**, 44 rows, with
 `TheLabRegisterCoversTheSiteAtArtefactLevel` asserting that every artefact in the lab has one. This
 sentence said it did not exist for as long as the paragraph eleven lines below said it did.
-`reference/checksums.md` is the model for the tone and `tools/corpus.py` for the idea, since it
+`docs/checksums.md` is the model for the tone and `tools/corpus.py` for the idea, since it
 already reports which dumps have no description recorded. The register covers the whole site, not
 the binaries, and the catalogue pages beside it hold the substance.
 
@@ -369,7 +369,7 @@ cleanly where there is no lab, exactly as every other lab backed test does. That
 the mechanism survive the session that builds it, and it is the half that would have caught section
 197 nineteen days earlier.
 
-**The survey pass is done, 28 August 2026**, and `reference/lab-register.md` is the register: 44
+**The survey pass is done, 28 August 2026**, and `docs/lab-register.md` is the register: 44
 artefacts across the eleven squares, each with a status and the want list tags it might answer, and
 `TheLabRegisterCoversTheSiteAtArtefactLevel` is the test, controlled by creating an unregistered
 directory and watching exactly one test name it.
@@ -518,7 +518,7 @@ surveyed with the HID command layer mined and three resource files with it. `mak
 answer to how far anything has been dug, and a count in this file is exactly the kind of thing it
 exists to replace.
 
-**The survey is done since 28 August 2026** and `reference/lab-register.md` is the register: one row
+**The survey is done since 28 August 2026** and `docs/lab-register.md` is the register: one row
 per artefact, each with a status and its tags, with a test that fails when the lab gains one the
 register does not name. **The row count deliberately no longer appears here**, and that is the third
 correction of the same defect rather than a style change. It said 58 for a day, which was a count
@@ -575,7 +575,7 @@ can carry would have warned about that, because a register describes artefacts a
 are inside them.
 
 **So the standing rule gains a second half**: this project's own claims are scattered across the lab in
-places catalogued as somebody else's, where `reference/superseded.md`, `make facts` and the four places
+places catalogued as somebody else's, where `docs/superseded.md`, `make facts` and the four places
 cannot reach them. A claim of ours in a lab docstring is worse than the same claim in a lab note, since
 a note announces itself as ours and a package name announces the opposite. When a lab file states
 something about a remote, check who wrote it before believing it **and** before re-deriving it.
@@ -591,7 +591,7 @@ firmware update are local and still work, while the device database, the interfa
 holds, it closes it as a recovery target.
 
 The mechanism is the thing to understand, because it is not carelessness. Every rule here for keeping
-facts straight, `make facts`, `reference/superseded.md`, the four places, a regression test per claim,
+facts straight, `make facts`, `docs/superseded.md`, the four places, a regression test per claim,
 operates on **this repository**. The lab is deliberately outside all of it, since it holds unlicensed
 firmware, contributors' configs and Logitech's own client code. So **a fact recorded only in a lab
 `META.md` is invisible to every check this project has**, and no amount of care in here can see it.

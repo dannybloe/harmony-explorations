@@ -83,7 +83,7 @@ def check_name(path: str) -> list[str]:
     lower = path.lower()
     if lower.endswith(BINARY_SUFFIXES):
         return ['is a firmware or config binary; publish its checksum in '
-                'reference/checksums.md instead']
+                'docs/checksums.md instead']
     if lower.endswith('-info.txt'):
         return ["is concordance identity output, which carries the remote's serial GUIDs"]
     if lower.endswith(GHIDRA_SUFFIXES):

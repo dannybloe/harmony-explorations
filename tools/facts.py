@@ -39,7 +39,7 @@ The `finding` skill says the same thing at the point where it bites.
 
 **Superseded claims.** The other five were assertions a later finding falsified, corrected in
 `findings.md` in place but left standing in the summaries: that `MCU_ID` was reachable, that arch 9
-had no picture region, that no further reader would move the coverage. `reference/superseded.md`
+had no picture region, that no further reader would move the coverage. `docs/superseded.md`
 lists the dead phrasings; this fails if one appears in a document without a correction marker
 beside it, which is what the house convention already asks a correction to carry.
 
@@ -59,7 +59,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.abspath(os.path.join(HERE, '..'))
-SUPERSEDED = os.path.join(ROOT, 'reference', 'superseded.md')
+SUPERSEDED = os.path.join(ROOT, 'docs', 'superseded.md')
 
 # A marked value: the number, then the comment naming what it states.
 MARKER = re.compile(r'([0-9][0-9,.]*%?)<!--fact:([a-z0-9_]+)-->')
@@ -576,7 +576,7 @@ def user_config_facts():
 
 
 def superseded_phrases():
-    """The dead phrasings, read from the table in `reference/superseded.md`."""
+    """The dead phrasings, read from the table in `docs/superseded.md`."""
     if not os.path.exists(SUPERSEDED):
         return []
     out = []

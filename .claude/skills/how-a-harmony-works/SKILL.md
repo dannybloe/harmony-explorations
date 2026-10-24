@@ -74,7 +74,7 @@ device shows one appliance and mentions no activity.
 at: no keypad map in any configuration here sends a code outside an activity. That the keypad **is**
 remapped is not in doubt, since Logitech says so. Do not close the storage question by inventing a
 mechanism, and do not restate the dead phrasing `every keypad binding belongs to an activity` in
-`reference/superseded.md`.
+`docs/superseded.md`.
 
 ## The rule this skill is really about
 

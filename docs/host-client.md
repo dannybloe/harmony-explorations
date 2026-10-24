@@ -1494,7 +1494,7 @@ the control on any claim about a channel is that two names have to disagree.
 
 ### What it serves, and the one image that matters here
 
-Eleven images are in the lab with their digests in `reference/checksums.md`. Nine are the Linux
+Eleven images are in the lab with their digests in `docs/checksums.md`. Nine are the Linux
 generation, ARM with a squashfs root, which nothing here reads. The tenth, under skin 104, is the
 **Harmony 300 and Harmony 350 firmware**: an ordinary PIC18 image in the same package format as the
 three `.hfw` files this project started from, executing at `0x9000`, and it reads with no new code.

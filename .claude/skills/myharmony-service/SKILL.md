@@ -316,7 +316,7 @@ Harmony 650 at 0.2 having been programmed with MyHarmony while the list names 0.
 ### What is already downloaded, so nobody fetches it twice
 
 Eleven images sit in `../lab/firmware/packages/sus/` with a `META.md` and a `MANIFEST.json` of sizes,
-digests and source URLs; the digests are also published in `reference/checksums.md`. **One image
+digests and source URLs; the digests are also published in `docs/checksums.md`. **One image
 serves a whole family**: skins 99 and 112 are byte identical, as are 97 and 106.
 
 The one that matters to this project is **skin 104, the Harmony 300 and Harmony 350 firmware**: an

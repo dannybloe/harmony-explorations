@@ -168,7 +168,7 @@ Say when that happened.
 
 **Then kill the old phrasing everywhere else**, which is step 4 and is not optional:
 
-* Add the dead wording to the table in `reference/superseded.md`, in the same commit. `make facts`
+* Add the dead wording to the table in `docs/superseded.md`, in the same commit. `make facts`
   then fails for anyone who restates it, including you in six weeks.
 * Choose a phrase that is dead in **every** context, not just the one that prompted it. A figure
   that stays correct under a narrower scope does not belong in that table; mark the live value
@@ -197,7 +197,7 @@ sentence beside the number and the heading above it.
 * So after a rewrite, **re-read the prose around every number it touched**, not the number. Phrases
   like "nothing else moved", "at the ceiling", "about a third" are summaries of a figure with no
   figure in them, so nothing mechanical will ever catch them. Kill them through
-  `reference/superseded.md` like any other dead claim.
+  `docs/superseded.md` like any other dead claim.
 
 ## Two reviewers, before the commit and after the diff exists
 

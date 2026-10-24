@@ -4,7 +4,7 @@
 Section 209 is the sixth time a session derived something the lab had written down, and the fifth
 time the fix proposed was a paragraph telling the next session to remember. Section 206 said the
 structural fix is to make the check cheap and then did not make it cheaper, which is why this exists:
-one command, answered from `reference/lab-register.md`, so the check costs a line rather than a
+one command, answered from `docs/lab-register.md`, so the check costs a line rather than a
 grep-and-read of a 58 row table.
 
 **Run it on the directory you are about to open, not on the topic you are working on.** Both the
@@ -28,7 +28,7 @@ import sys
 
 #: Where the register lives, relative to the repository root.
 REGISTER = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                        'reference', 'lab-register.md')
+                        'docs', 'lab-register.md')
 
 #: A row is a markdown table line whose first cell is a backticked path. The register also holds
 #: header and separator rows and prose, and neither matches this. The **status legend** does match

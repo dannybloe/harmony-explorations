@@ -218,7 +218,7 @@ product range suggests.
 **This table is incomplete, and the two numbers it lacks are the two that cost the most time.**
 Section 81 found that two containers carry a skin the remote does not report, 59 on a Harmony One and
 73 on a Harmony 600, and both are absent here. Two rules were derived from that absence and both are
-dead, `reference/superseded.md`: the second and better one said each was "the first free number above<!--superseded-->
+dead, `docs/superseded.md`: the second and better one said each was "the first free number above<!--superseded-->
 the run containing that remote's own skin", which is exact on both cases and predicts nothing.
 
 **59 is the Harmony One EMEA and 73 is the Harmony 600 EMEA.** Section 131, from

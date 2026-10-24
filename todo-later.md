@@ -93,7 +93,7 @@ The Harmony One is a different type, with a touch screen and its own screens, so
 - [ ] 6.8 A black screen on the Harmony 650 after unplugging, once, cleared by a battery pull (was L5)
 - [ ] 6.9 `GET_VERSION` field 6 and field 9's accessor, the two fields of twelve with no reading (was L3)
 - [ ] 6.10 Excavate the lab: discovery is done, the reading phase is left, in tag order (was L2)
-- [ ] 6.11 Five documents call the spare Harmony One's first configuration a factory configuration; it is a Logitech compile with one television and one activity, so correct the claim in place and add the wording to `reference/superseded.md`
+- [ ] 6.11 Five documents call the spare Harmony One's first configuration a factory configuration; it is a Logitech compile with one television and one activity, so correct the claim in place and add the wording to `docs/superseded.md`
 - [ ] 6.12 Whether Logitech compiles a configuration with no activities, or none at all; MyHarmony greys out its Sync button without activities, but our compile call never goes through the button; with no activities it does (sections 352 and 364, the harvest compiles); with no devices unknown
 - [x] 6.13 Six Python tests fail on the Harmony 650 and 700 compiles the long press work added to the lab, and the golden vector list lacks `h650_plasma_base`: the EzHex population counts 23 against 17, and the per config checks on those six files; done (commit 8ae451c): the six bare containers named and excluded, `h650_plasma_base`'s golden vector added
 - [x] 6.14 Moved to `todo-process-logitech.md` 2.1; done there (section 359)

@@ -28,7 +28,7 @@ Three independent sources, which is what makes this a measurement rather than a 
 * and **the live service**, which can be asked about anything the other two do not exercise.
 
 Against the captures, **nothing in the schema is missing from live data**. The captures come from
-this project's own test accounts on dates recorded in `reference/lab-register.md`, and those accounts
+this project's own test accounts on dates recorded in `docs/lab-register.md`, and those accounts
 change, so the table is a statement about what was captured. It is evidence that the schema is
 faithful, which is what it is for, and not a description of an account:
 
