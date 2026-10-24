@@ -56,12 +56,9 @@ PINNED = {
         ('reference/README.md', 'bench'): 4,
         ('reference/README.md', 'lab'): 1,
         ('reference/glossary.md', 'dump'): 2,
-        ('reference/how-a-harmony-works.md', 'bench'): 7,
-        ('reference/how-a-harmony-works.md', 'lab'): 4,
     },
     'names': {
         ('reference/glossary.md', 'a person'): 2,
-        ('reference/how-a-harmony-works.md', 'a person'): 15,
     },
     'copy': {
     },
