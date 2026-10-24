@@ -18,8 +18,9 @@ versions; this file states what is common.
 | 2.5, 71552 bytes | Harmony 700 | read out of a unit's staging region | measured[^s295][^s298] |
 | 2.8, application 76672 bytes, entry `0x1BB38` | Harmony 700 | Logitech's package, installed on a unit by staging it | read in the firmware and measured[^s297] |
 
-Every image loads at `0x9000`, its header is `0x00` to `0x0F` and its own checksum verifies,
-`docs/checksums.md` and sections 1 to 5. **Logitech's software update service answers 404 for
+Every image loads at `0x9000`, its header is `0x00` to `0x0F` so its code starts at `0x9010`, and its own
+checksum verifies.[^s5][^s10][^s4] On the Harmony 600 the 0.2 entry point lies past the first 64 KiB, so
+only the complete 70336 byte image holds it, and a copy cut at 64 KiB loses it.[^s5] **Logitech's software update service answers 404 for
 skins 66, 71 and 72**, section 295, so the packages above are all there is.
 
 ## Routines read and where
@@ -162,6 +163,9 @@ The interrupt service routine is `0x1AD80` to `0x1AF00`: eight reads of `UIR` be
 `0x1ADE0` and `0x1AE4E`, each followed by a bit test, dispatching on the interrupt source.
 
 [^s23]: Measured on a unit. [Section 23](../../../docs/findings.md#s23)
+[^s5]: Read in the firmware. [Section 5](../../../docs/findings.md#s5)
+[^s10]: Read in the firmware. [Section 10](../../../docs/findings.md#s10)
+[^s4]: Read in the firmware. [Section 4](../../../docs/findings.md#s4)
 [^s281]: Measured on a unit. [Section 281](../../../docs/findings.md#s281)
 [^s295]: Measured on a unit. [Section 295](../../../docs/findings.md#s295)
 [^s298]: Measured on a unit. [Section 298](../../../docs/findings.md#s298)

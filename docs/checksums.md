@@ -442,19 +442,12 @@ because one file is the whole region and the other stops at the container's end.
 ## Load addresses
 
 Required. Without these a disassembler produces plausible-looking garbage rather than
-obviously failing.
-
-| Image | Execution base | Entry point | Notes |
-|---|---|---|---|
-| One 3.4 code half | `0x20000` | `0x2EA38` | mark `0x20000-0x2002F` as data: header plus `DEADDEAD` fill |
-| 700 2.8 `Region_2` | `0x9000` | `0x1BB38` | header is `0x00-0x0F` only, code starts at `0x9010` |
-| 600 0.2 dump | `0x9000` | `0x1A26E` | entry point falls in the truncated tail |
-| 525 flash `0x810000` | `0x1000` | `GOTO 0x07FB4` at `0x1008` | derived at 717 boundary hits against 326, then **confirmed against the device's own internal memory**; framed `HG` at `+4` and `GH` at `0x6FFE` |
-| 525 flash `0x800000` | `0x1000` | `GOTO 0x0BF5*2` at `0x1008` | the safe mode application, 182 boundary hits of 183 |
-| 525 internal | `0x0000` | reset `GOTO 0x0EF6` | bootloader below `0x1000`, application above it |
-| 880 / 885 application | `0x010000` | not in the image | the `HG` magic is at offset **4** here, not 8; 979 boundary hits against 602 |
-| 880 / 885 bootloader | `0x000000` | reset `GOTO 0x0637C` on the 880 | 342 boundary hits against 46; both interrupt vectors go to `0x010400` and `0x010800`, inside the application |
-| 300 / 350 1.4 `Region_2` | `0x9000` | `GOTO 0x1AED4` at `0x900A` | 1581 of 1582 targets land on a boundary, 99.9%, against 475 of 1460 for the runner up, 32.5%. The header's own entry point field says `0x1AED4`, so the base has a closure and not only a score. Section 196 |
+obviously failing. Each image's execution base, entry point and what to mark as data are stated once, in
+its architecture's firmware page: [the Harmony One](../reference/architectures/harmony-one/firmware.md),
+[the Harmony 600, 650 and 700](../reference/architectures/harmony-600-650-700/firmware.md),
+[the Harmony 525](../reference/architectures/harmony-5xx/firmware.md),
+[the Harmony 880 and 885](../reference/architectures/harmony-880-885/firmware.md) and
+[the Harmony 300 and 350](../reference/architectures/harmony-300-350/firmware.md).
 
 Ghidra language: `PIC-18:LE:24:PIC-18`. Only a generic variant exists, so SFRs come out
 unnamed; `tools/pic18_disasm.py` resolves them instead.

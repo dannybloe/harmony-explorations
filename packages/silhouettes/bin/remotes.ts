@@ -31,7 +31,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { SCREEN_SIZES } from '@harmony/codec';
+import { BASE_SLOT_COUNT, SCREEN_SIZES, SLOT_MAPS } from '@harmony/codec';
 import { PROFILES } from '@harmony/corpus/read';
 import {
   ARCH9_FLASH_TOP_MAX,
@@ -69,8 +69,16 @@ interface RemoteFolder {
   readonly folder: string;
   /** The skins this folder describes, both regional variants where there are two. */
   readonly skins: readonly number[];
-  /** The drawing it uses, which may be a sibling's where the face is shared. */
-  readonly drawing: string;
+  /**
+   * The drawing it uses, which may be a sibling's where the face is shared.
+   *
+   * **Absent for a model nobody has drawn yet**, which is the Harmony 885's and the Harmony 890's case:
+   * plan 009 gives both a full folder before a unit or a drawing exists, so that a unit's arrival adds
+   * content and changes no path. Their keys and display blocks then say that no drawing exists rather
+   * than failing, and `test/remotes.test.ts` names exactly which folders may be without one, so a model
+   * that has a drawing cannot lose it unnoticed.
+   */
+  readonly drawing?: string;
   readonly architecture: number;
   /**
    * Where the screen size on the drawing comes from, for a model whose architecture has no entry in
@@ -99,8 +107,13 @@ interface RemoteFolder {
 export const MODEL_FILES: readonly string[] = ['README.md', 'behaviour.md', 'display.md', 'features.md',
   'firmware.md', 'hardware.md', 'keys.md', 'memory.md', 'misc.md', 'usb.md'];
 
-/** The blocks an architecture folder can carry. */
-type ArchitectureBlock = 'skins' | 'memory-constants' | 'usb-identity' | 'write-rails';
+/**
+ * The blocks an architecture folder can carry. `slot-map` is the pointer table's alignment from
+ * `SLOT_MAPS`, which the two architectures known only from configurations carry because their
+ * `memory.md` is where plan 009 puts it; the other folders state theirs in prose and could take the
+ * block too.
+ */
+type ArchitectureBlock = 'skins' | 'memory-constants' | 'usb-identity' | 'write-rails' | 'slot-map';
 
 /** One architecture folder under `reference/architectures/`. */
 interface ArchitectureFolder {
@@ -146,6 +159,12 @@ export const REMOTES: readonly RemoteFolder[] = [
     folder: 'harmony-touch', skins: [99], drawing: 'touch', architecture: 17,
     rasterFromDrawing: '`touch.ts`, the size of every screen capture in Logitech\'s user guide; no configuration of this model has been read',
   },
+  // The two models known only from contributed configurations and firmware images, plan 009's step 3.5.
+  // One folder per regional pair, named for one of the two as `harmony-525` is: skins 15 and 17 are the
+  // Harmony 880 and 885, one remote under two regional names, and 19 and 23 the Harmony 890 and 895.
+  // Neither has a drawing yet, which is what the optional `drawing` above is for.
+  { folder: 'harmony-885', skins: [15, 17], architecture: 8 },
+  { folder: 'harmony-890', skins: [19, 23], architecture: 10 },
 ];
 
 /** The five files of a full architecture folder, and the same with the page on what Logitech's compiler writes. */
@@ -173,6 +192,14 @@ export const ARCHITECTURES: readonly ArchitectureFolder[] = [
     folder: 'harmony-one', architecture: 12, files: WITH_A_COMPILER,
     blocks: ['skins', 'memory-constants', 'usb-identity', 'write-rails'],
   },
+  // The two architectures this project knows only from contributed configurations and, for arch 8,
+  // firmware images, plan 009's step 3.5. **Neither carries the memory constants, the USB identity or
+  // the write rails**, for the reason the Harmony 300 and 350's folder gives: this library opens no
+  // remote of either, so every row would read `none` or `no`, which says less than the folder's prose
+  // and looks like a measurement. What both do carry is the pointer table's alignment, which is code
+  // and is exactly what a reader of these configurations depends on.
+  { folder: 'harmony-880-885', architecture: 8, files: ARCHITECTURE_FILES, blocks: ['skins', 'slot-map'] },
+  { folder: 'harmony-890-895', architecture: 10, files: ARCHITECTURE_FILES, blocks: ['skins', 'slot-map'] },
   // The Harmony Touch's generation, plan 009's thin folder of three files: no memory page, because no
   // address on it has been read, and no misc page, because nothing is left over. 17 is the remote's own
   // number and Logitech's templates say 18, section 197, so this row takes the remote's word the way the
@@ -319,9 +346,25 @@ function keyTable(drawing: Drawing): string {
   ].join('\n');
 }
 
-function displayTable(remote: RemoteFolder, drawing: Drawing): string {
+/**
+ * The keys block of a model nobody has drawn. One sentence and the provenance, and no table: a key
+ * list from anywhere else, a configuration's key table say, would be a second source of the keys for
+ * a model whose drawing will become the first, and the folder's prose is where what is known from
+ * configurations is stated with its footnotes.
+ */
+function noDrawingKeys(remote: RemoteFolder): string {
+  return [
+    `No drawing of this model exists yet, so no key is listed here: the row for \`${remote.folder}\` in`
+      + ' `REMOTES` names none. A drawing added to `packages/silhouettes` fills this block.',
+    '',
+    provenance('`REMOTES` in `packages/silhouettes/bin/remotes.ts`'),
+  ].join('\n');
+}
+
+function displayTable(remote: RemoteFolder, drawing: Drawing | undefined): string {
   const { architecture, skins } = remote;
   const size = SCREEN_SIZES[architecture];
+  if (drawing === undefined) return undrawnDisplayTable(remote);
   // A model with no screen has neither a raster nor a screen on its drawing, and both are stated as
   // absent. A raster with no screen on the drawing, or the reverse, is a disagreement and refused,
   // unless the folder names where the drawing's raster comes from, which is the Harmony Touch's case.
@@ -349,6 +392,66 @@ function displayTable(remote: RemoteFolder, drawing: Drawing): string {
     `| touch | ${touch} | \`packages/usb/src/models.ts\`, and \`touch\` on the drawing's screen is ${yes(drawing.screen?.touch ?? false)} |`,
     '',
     provenance('`packages/codec`, `packages/usb` and the drawing'),
+  ].join('\n');
+}
+
+/**
+ * The display block of a model nobody has drawn: the codec's raster and the model table's fields, with
+ * the drawing's row saying there is none. The refusal `displayTable` makes when a raster and a drawing
+ * disagree has nothing to compare here, so it does not apply; the raster stands on the configurations.
+ */
+function undrawnDisplayTable(remote: RemoteFolder): string {
+  const { architecture, skins } = remote;
+  const size = SCREEN_SIZES[architecture];
+  const panels = [...new Set(skins.map((s) => MODELS_BY_SKIN[s]?.panel ?? NO_RECORD))].join(', ');
+  const touch = [...new Set(skins.map((s) => {
+    const m = MODELS_BY_SKIN[s];
+    return m === undefined ? NO_RECORD : yes(m.touch);
+  }))].join(', ');
+  const raster = size === undefined
+    ? `| raster | none: no entry for architecture ${architecture} | \`SCREEN_SIZES\` in \`packages/codec/src/render.ts\` |`
+    : `| raster | ${size.width} by ${size.height} pixels | \`SCREEN_SIZES\` in \`packages/codec/src/render.ts\`, measured from the configurations' full screen pictures |`;
+  return [
+    '| field | value | from |',
+    '|---|---|---|',
+    raster,
+    `| raster on the drawing | no drawing of this model exists yet | \`REMOTES\` in \`packages/silhouettes/bin/remotes.ts\` |`,
+    `| panel | ${panels} | \`packages/usb/src/models.ts\` |`,
+    `| touch | ${touch} | \`packages/usb/src/models.ts\` |`,
+    '',
+    provenance('`packages/codec`, `packages/usb` and the model folders\' rows'),
+  ].join('\n');
+}
+
+/**
+ * Where each base slot sits on an architecture, from `SLOT_MAPS`, and which raw slots no base slot names.
+ *
+ * The pointer count is not in `SLOT_MAPS` and does not need to be: base slots 18 and 19, the two
+ * trailing NULLs, are present on every architecture the table holds, so the highest raw slot it names is
+ * the last one the container carries. That is 20 on arch 8, a 21 slot table, and 22 on arch 10, a 23
+ * slot one, which is what each container's own format word states, section 194.
+ */
+function slotMapTable(architecture: number): string {
+  const map = SLOT_MAPS[architecture];
+  if (map === undefined) throw new Error(`no slot map for architecture ${architecture}`);
+  const present = map.filter((raw): raw is number => raw !== undefined);
+  const slots = Math.max(...present) + 1;
+  const absent = map.map((raw, base) => (raw === undefined ? base : -1)).filter((base) => base >= 0);
+  const unnamed = Array.from({ length: slots }, (_unused, raw) => raw).filter((raw) => !present.includes(raw));
+  const list = (ns: readonly number[]): string => (ns.length === 0 ? 'none' : ns.join(', '));
+  const rows = Array.from({ length: BASE_SLOT_COUNT }, (_unused, base) => {
+    const raw = map[base];
+    return `| ${base} | ${raw === undefined ? 'absent' : raw} |`;
+  });
+  return [
+    `${slots} raw slots. ${present.length} of the ${BASE_SLOT_COUNT} base slots are present; absent: ${list(absent)}. `
+      + `Raw slots no base slot names: ${list(unnamed)}.`,
+    '',
+    '| base slot | raw slot |',
+    '|---|---|',
+    ...rows,
+    '',
+    provenance('`SLOT_MAPS` in `packages/codec/src/gspm.ts`'),
   ].join('\n');
 }
 
@@ -473,12 +576,13 @@ export function expectedBlocks(): Map<string, Map<string, string>> {
     files.set(file, blocks);
   };
   for (const r of REMOTES) {
-    const drawing = MODELS[r.drawing];
-    if (drawing === undefined) throw new Error(`no drawing ${r.drawing}`);
+    // A row that names a drawing must find it; a row that names none is a model nobody has drawn.
+    const drawing = r.drawing === undefined ? undefined : MODELS[r.drawing];
+    if (r.drawing !== undefined && drawing === undefined) throw new Error(`no drawing ${r.drawing}`);
     const dir = join('reference', 'remotes', r.folder);
     put(join(dir, 'README.md'), 'skins', skinTable(r.skins, r.architecture));
     put(join(dir, 'features.md'), 'capabilities', featureTable(r.skins));
-    put(join(dir, 'keys.md'), 'keys', keyTable(drawing));
+    put(join(dir, 'keys.md'), 'keys', drawing === undefined ? noDrawingKeys(r) : keyTable(drawing));
     put(join(dir, 'display.md'), 'display', displayTable(r, drawing));
     put(join(dir, 'usb.md'), 'usb-identity', usbIdentity(r.architecture));
   }
@@ -490,6 +594,7 @@ export function expectedBlocks(): Map<string, Map<string, string>> {
     }
     if (a.blocks.includes('usb-identity')) put(join(dir, 'usb.md'), 'usb-identity', usbIdentity(a.architecture));
     if (a.blocks.includes('write-rails')) put(join(dir, 'usb.md'), 'write-rails', writeRails(a.architecture));
+    if (a.blocks.includes('slot-map')) put(join(dir, 'memory.md'), 'slot-map', slotMapTable(a.architecture));
   }
   return files;
 }

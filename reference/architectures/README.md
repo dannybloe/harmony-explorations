@@ -7,7 +7,9 @@ named for the models a reader holds rather than for the number.
 
 | folder | architecture |
 |---|---|
+| [harmony-880-885](harmony-880-885/README.md) | 8 |
 | [harmony-5xx](harmony-5xx/README.md) | 9 |
+| [harmony-890-895](harmony-890-895/README.md) | 10 |
 | [harmony-one](harmony-one/README.md) | 12 |
 | [harmony-600-650-700](harmony-600-650-700/README.md) | 14 |
 | [harmony-300-350](harmony-300-350/README.md) | 16 |

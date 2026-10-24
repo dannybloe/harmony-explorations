@@ -42,7 +42,7 @@ takes over `todo-later.md` chapter 8, plan 005's steps, which now live here.
 - [x] 3.2 The memory maps into their architecture folders: all five maps removed, their content in the Harmony One, 5xx and 600-650-700 folders with the first footnotes, the units' records in `docs/test-notes/`, the three contradictions settled
 - [ ] 3.3 The button maps into each model's keys, the tables as data the drawings already hold, the derivation to the archive
 - [ ] 3.4 `reference/capabilities.md` and `reference/models.md` absorbed into the model and architecture folders
-- [ ] 3.5 Thinner folders for the Harmony 880/885 and 890, which only contributed configurations
+- [x] 3.5 Thinner folders for the Harmony 880/885 and 890, which only contributed configurations: `harmony-880-885/` and `harmony-890-895/` (five files each, a generated slot map from `SLOT_MAPS`), `remotes/harmony-885/` and `harmony-890/` (ten each, no drawing yet, so `drawing` is optional and the test names the two folders allowed without one), every fact footnoted; the load address table of `docs/checksums.md` folded into the five architectures' firmware pages
 
 ## 4. Subjects across models
 
