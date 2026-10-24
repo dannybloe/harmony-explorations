@@ -7,7 +7,7 @@
  * config's real wrapper and needs both.
  *
  * **The sharpest case is the Harmony 525's**, because its version block was recorded verbatim off
- * the remote, `reference/usb-protocol/version-block.md`, so this compares a captured reply against a file
+ * the remote, `reference/remotes/harmony-525/usb.md`, so this compares a captured reply against a file
  * header with nothing assembled in between.
  */
 import { test } from 'node:test';
@@ -28,7 +28,7 @@ import {
  * A Harmony 525's own `GET_VERSION` reply, minus the report header byte `0x27`.
  *
  * `27 30 25 12 ff 90 16 09` is what the remote answered on 8 August 2026, recorded in
- * `reference/usb-protocol/version-block.md`: firmware 3.0, board 2.5.0, flash `0xFF:0x12`, architecture 9, skin 22,
+ * `reference/remotes/harmony-525/usb.md`: firmware 3.0, board 2.5.0, flash `0xFF:0x12`, architecture 9, skin 22,
  * platform 9. Nothing here computed any of it.
  */
 const H525_BLOCK = Uint8Array.from([0x30, 0x25, 0x12, 0xff, 0x90, 0x16, 0x09]);

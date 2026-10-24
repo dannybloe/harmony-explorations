@@ -31,20 +31,11 @@ The product id comes from `FILE_BASED_PRODUCTS` in `packages/usb/src/transport.t
 
 ## The protocol, as far as it was used
 
-* **A packet** is service `0xFF`, a command, a sequence number, a parameter count and the parameters. Open
-  is `0x01`, read `0x04`, close `0x07`, a bare ping `0x00`[^s198].
-* **The two directions are framed differently.** A request's string parameter is `0x80`, the characters and
-  a NUL, as Logitech's own parameter encoder writes it[^s200]; a reply's parameters are length prefixed,
-  which is why Logitech's templates read an open's handle at position 5 and its size at 7[^s200b]. A bare
-  NUL terminated string draws a refusal and a plain length prefix draws no reply[^s198b].
-* **A reply's third byte is `0xFF` on an error**, and a refusal arrives as `ff 01 ff 01 01 0b`[^s198b]. The
-  refusal comes before the path is looked up: a file, a directory and a path that does not exist draw the
-  same six bytes[^s198b].
-* **A malformed packet silences the session**: every command after it in the same session draws nothing,
-  so each attempt needs a fresh handle[^s198b]. Four well formed opens in one session all answer, so it is
-  the malformed packet and not the number of attempts[^s198b].
-* **A file's stated size is its only end**: the last data packet declares a full payload and pads it with
-  NUL, so a read is cut to the size the open states[^s201].
+The packet, how a request and a reply encode their parameters, what a refusal looks like and why one
+malformed packet silences a session are [the file protocol](../../usb-protocol/file-protocol.md#the-packet),
+measured there on a Touch. What is this model's own:
+
+* **The Touch has been sent four commands**, a bare ping, open, read and close, and only to read[^s200].
 * Through the charging dock the remote is not detected by a computer; only a direct cable is[^x-touch-manual].
 
 ## Paths
@@ -73,7 +64,6 @@ a sync rides on the request and response command, `0x08`, which has never been s
 ## Not checked
 
 * The files `INERT_PATHS` permits and the Touch refuses, beyond their refusal[^unchecked].
-* What the `0x0b` in the refusal means[^unchecked].
 * The request and response command and the provisioning session[^unchecked].
 
 [^s198]: Stated by Logitech, in their client. [Section 198](../../../docs/findings.md#s198)
@@ -81,8 +71,6 @@ a sync rides on the request and response command, `0x08`, which has never been s
 [^s195]: Measured on a unit. [Section 195](../../../docs/findings.md#s195)
 [^s200]: Measured on a unit. [Section 200](../../../docs/findings.md#s200)
 [^s201]: Measured on a unit. [Section 201](../../../docs/findings.md#s201)
-[^s200b]: Stated by Logitech, in their client. [Section 200](../../../docs/findings.md#s200)
-[^s198b]: Measured on a unit. [Section 198](../../../docs/findings.md#s198)
 [^x-touch-manual]: Stated by Logitech, in the manual. [The Harmony Touch user guide](https://www.manualslib.com/manual/641224/Logitech-Harmony-Touch.html)
 [^s203]: Stated by Logitech, in their client. [Section 203](../../../docs/findings.md#s203)
 [^unchecked]: Not checked.

@@ -1140,9 +1140,9 @@ class TestReadFlash(unittest.TestCase):
 
     Scope note, after a correction. Everything here is about the **request**: the parser, the
     validator it calls, and the proof that the address triple is an address. The response side
-    was published as located and is not: see the correction in reference/usb-protocol/commands.md. The two
-    tests below that touch 0x13E90 and 0x0C9B2 assert what that code does, not which command
-    it serves.
+    was published as located and is not: the correction is section 19 of docs/findings.md, and
+    reference/usb-protocol/commands.md now states only what survived it. The two tests below that
+    touch 0x13E90 and 0x0C9B2 assert what that code does, not which command it serves.
     """
 
     BASE = 0x9000

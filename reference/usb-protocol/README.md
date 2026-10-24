@@ -1,73 +1,65 @@
-# The Harmony USB protocol, from the firmware
+# Talking to a Harmony over USB
 
-**Status: derived from the firmware, and now read back off a remote.** The transport is complete and
-quoted from the device's own descriptors. The command layer has its dispatch table, its length
-nibble mapping, its state machine, and the request and response layout of every command. Live RAM
-over USB works, event injection does not exist, and on arch 14 an action instruction can be queued
-through command state `0x34`, section 326, read and never sent.
+A Harmony that plugs into a computer is programmed over that cable. What crosses it depends on the
+remote, and there are three families:
 
-**Section 4 is the part a host measured**, on **both architectures**: the programmed Harmony 600 and
-the spare Harmony One. Read only. `GET_VERSION`, `READ_MISC` and `READ_FLASH` have run, the flash read
-is byte-identical to a dump made months earlier by other software on each unit, and six fields of the
-version block were **predicted from the 600 and then confirmed on the One**, which differs in skin,
-firmware, hardware version, flash part and architecture.
+* **The command protocol**, spoken by the Harmony 525, the Harmony One and the Harmony 600, 650 and 700. The
+  computer sends short reports that ask the remote what it is, read or write bytes of its flash at an
+  address, erase a block, read or write a small item, or start learning an infrared code. Most of these
+  pages are about this protocol.
+* **The file protocol**, spoken by the Harmony 300, 350 and Touch. The computer opens a file on the remote
+  by its name and reads or writes it, and never sees an address, [the file protocol](file-protocol.md).
+* **A tunnelled protocol**, spoken by the Harmony 890 and 895, which wraps a datagram protocol inside the
+  USB channel. None of these pages applies to it, [its usb page](../architectures/harmony-890-895/usb.md)[^s207].
 
-Three things the hardware corrected are marked in place rather than quietly fixed, and one thing it
-did was not expected: a read of internal program memory whose final chunk is one byte **restarted a
-remote**. Section 4 says what is known about that and `packages/usb` refuses that exact case.
-
-This document is the deliverable of step 3 of `docs/plans/002-the-roadmap.md`, and it was written as each part was
-established rather than at the end.
-
-Scope: the Harmony One 3.4 image (architecture 12) and the Harmony 700 2.8 image
-(architecture 14). The Harmony 600 0.2 dump was truncated by concordance at 65536 of 70336 bytes
-while most of this document was written, so several things here were confirmed against the live
-remote instead. **That image is complete now**, read off the remote by the command layer this
-document describes and checked by its own header checksum, section 4.
-
-Method, and why it matters here: everything is derived from the firmware images.
-`concordance/specs/protocol.txt` and the libconcord source are consulted **after** a fact is
-derived, as corroboration, never as the source. That is partly licensing (concordance is
-GPLv3 and this repository is MIT, so its code is not read for structure or copied) and
-partly that concordance has two documented defects on exactly these two architectures. See
-`docs/concordance-notes.md`.
+Underneath the first two the link is the same: a vendor defined HID device with one endpoint each way and
+reports of 64 bytes.
 
 ## Pages
 
-* [Transport](transport.md)
-* [Commands](commands.md)
-* [The version block](version-block.md)
-* [The bootloader](bootloader.md)
-* [The file based protocol](file-protocol.md)
+| page | what it holds |
+|---|---|
+| [Transport](transport.md) | how a remote presents itself when plugged in: its descriptors, its endpoints, and how `bcdDevice` carries the model |
+| [Commands](commands.md) | every request of the command protocol and its reply, how an address picks a memory, the hazards of a read, a write and a configuration write |
+| [The version block](version-block.md) | what a remote says it is: firmware, hardware, flash chip, architecture, mode, skin, platform |
+| [The bootloader](bootloader.md) | the separate flash programming protocol a Harmony One or 600 speaks before its firmware starts |
+| [The file protocol](file-protocol.md) | the protocol of the Harmony 300, 350 and Touch |
 
-### Answered since this list was first written
+What a particular remote answers is on its architecture's usb page, [the Harmony 525](../architectures/harmony-5xx/usb.md),
+[the Harmony One](../architectures/harmony-one/usb.md), [the Harmony 600, 650 and 700](../architectures/harmony-600-650-700/usb.md),
+[the Harmony 300 and 350](../architectures/harmony-300-350/usb.md) and [the Harmony Touch](../architectures/harmony-touch/usb.md),
+and on each model's usb page. What `packages/usb` refuses, and which writes it allows on which
+architecture, is `packages/usb/src/rails.ts`, generated into each architecture's usb page.
 
-Recorded rather than deleted, because three of the four were open questions this step was set up
-to settle, and a list that only ever grows is not a status.
+## Where it comes from
 
-* **Which `MISC` items the firmware services**, and whether `MISC_RAM` works in normal mode: yes,
-  four read selectors and nine write ones, and RAM is selector `0x07` and not upstream's `0x06`.
-* **Whether `MISC_QUEUE_ACTION` and `MISC_QUEUE_EVENT` exist**: `0x03` is unhandled and `0x09` is a
-  no-op that reports success, so there is no event injection. **An action can be queued all the same**,
-  through command state `0x34`, section 326.
-* **The response layout of each command**: the table above, from the state handlers rather than the
-  parsers.
-* **GET_VERSION's block is twelve fields**, by two independent counts. **Eleven of the twelve now
-  have a reading**, from sections 57 and 59 of `docs/findings.md`: field 4 is the architecture, from
-  a compiled in literal in four images, and fields 7, 10 and 11 are version bytes at program
-  addresses the accessors state outright. Only **field 6** has no reading, and only **field 9's
-  accessor** is located without explaining its value. **Field 6 has a reading now**, section 116, and
-  it is unconfirmed rather than absent: it names a **platform** and not an architecture. `0x0C` on
-  arch 12 and arch 14 alike across six images, `0x09` on arch 9, `0x08` on arch 8. What moved it was the
-  population going from four images to eleven, which is what separates "equals the architecture,
-  except once" from "equals the platform, always". **A third leg fell away**, section 118: a live 525
-  in safe mode reports field 6 as `0x00`, so a recovery role image answers zero and the reading holds
-  for an application image only. The `bcdDevice` high byte has the same shape and different values, so the two
-  are not one variable.
+**The command protocol is read out of the firmware**: the Harmony One 3.4 and Harmony 700 2.8 images
+first, then the Harmony 600, 650 and 525 images, and every part a host relies on has since been run against
+remotes of each architecture[^s19][^s19b][^s76]. The executable form of most of it is
+`tests/test_usb_firmware.py`, which reads each claim back out of the images, and
+`packages/usb/src/protocol.ts`, which is the library built from it.
 
-## Corroboration used, after the fact
+**It has been checked against Logitech's own client on the wire.** A capture of Logitech's classic client
+reading a Harmony One sends nothing but the reset escape, the version request and flash reads, and every
+one of its 1312 requests is byte for byte what `packages/usb` builds, [the classic client](../logitech/classic-client.md)[^s210].
 
-* `USB_PACKET_LENGTH 64` in libconcord's hidapi backend agrees with the 64 byte reports.
-* libconcord matches Harmony remotes by vendor `0x046D` and a product id **range**,
-  `0xC110` to `0xC14F`, rather than by exact id, so it cannot corroborate or contradict the
-  600 and 700 sharing `0xC122`. Our own descriptor read is the better evidence.
+**concordance was read after the fact, as corroboration and never as the source**: its code is GPLv3 and
+this repository is MIT, so its code is not read for structure or copied, and it has documented defects on
+exactly the Harmony One and Harmony 600, 650 and 700 architectures. Its hidapi backend's packet length of
+64 agrees with the 64 byte reports. It matches Harmony remotes by vendor `0x046D` and a product id **range**,
+`0xC110` to `0xC14F`, rather than by exact id, so it cannot speak to the Harmony 600 and 700 sharing
+`0xC122`; the remotes' own descriptors are the better evidence there[^x-concordance]. Three of the names
+its header gives the small item selectors are wrong for these remotes, [the commands](commands.md#read_misc-and-live-ram-over-usb)[^s19][^s246].
+
+**The file protocol is stated by Logitech** in its client's per model templates, and its read path has been
+driven on a Harmony Touch, a Harmony 350 and a Harmony 300[^s198][^s200].
+
+[^s207]: Stated by Logitech, in their client. [Section 207](../../docs/findings.md#s207)
+[^s19]: Read in the firmware. [Section 19](../../docs/findings.md#s19)
+[^s19b]: Measured on a unit. [Section 19](../../docs/findings.md#s19)
+[^s76]: Measured on a unit. [Section 76](../../docs/findings.md#s76)
+[^s210]: Measured on a unit. [Section 210](../../docs/findings.md#s210)
+[^x-concordance]: Stated by a third party. [concordance](https://github.com/jaymzh/concordance)
+[^s246]: Read in the firmware. [Section 246](../../docs/findings.md#s246)
+[^s198]: Stated by Logitech, in their client. [Section 198](../../docs/findings.md#s198)
+[^s200]: Measured on a unit. [Section 200](../../docs/findings.md#s200)

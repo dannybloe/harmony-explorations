@@ -1,124 +1,134 @@
 # Transport
 
-## 1. The transport
+Plugged into a computer, a Harmony One, 525, 600, 650 or 700 shows up as a USB device of the HID kind,
+the class keyboards and mice use, but with a vendor defined purpose, so no operating system takes it for an
+input device. Everything a host says to it and hears back crosses two endpoints, one in each direction, in
+reports of exactly 64 bytes, at most one per millisecond. The remote states all of this itself when it is
+plugged in, so this page is quotation rather than inference. Each model's own identity on the bus, its
+product id, `bcdDevice` and product string, is on its usb page, such as
+[the Harmony One's](../remotes/harmony-one/usb.md) and [the Harmony 600's](../remotes/harmony-600/usb.md).
 
-Every byte of every command crosses one of two interrupt endpoints, 64 bytes at a time. The
-remote states all of it at enumeration, so this section is quotation rather than inference.
+The Harmony 300, 350 and Touch speak a different protocol over the same kind of link,
+[the file protocol](file-protocol.md), and the Harmony 890 and 895 neither,
+[their usb page](../architectures/harmony-890-895/usb.md).
 
-| | Harmony One 3.4 | Harmony 700 2.8 | Harmony 600 0.2 |
-|---|---|---|---|
-| Source | image | image | **live device** |
-| Descriptor block at | `0x2E38E` | `0x1B7C6` | past the dump's truncation |
-| USB version | 2.00 | 2.00 | 2.00 |
-| Vendor and product | `046D:C121` | `046D:C122` | `046D:C122` |
-| `bcdDevice` | `0x1054` | `0x1066` | `0x1071` |
-| Interface class | 3 (HID), subclass 0, protocol 0 | same | same |
-| Control endpoint packet size | 8 | 8 | 8 |
-| Endpoint 1 | interrupt IN, 64 bytes, 1 ms | same | same |
-| Endpoint 2 | interrupt OUT, 64 bytes, 1 ms | same | same |
-| Report descriptor | 33 bytes at `0x2E42D` | 33 bytes at `0x1B865` | 33 bytes, identical to the 700's |
-| Product string | `Harmony Remote 0-3.4.0` | `Harmony Remote 0-2.8.0` | `Harmony Remote 0-0.2.0` |
+## What every remote presents
 
-Read it with:
+Read in the descriptors of the Harmony One 3.4 and Harmony 700 2.8 images and measured on a Harmony 600,
+and the same in all three[^s19][^t-usbdesc][^s19b]:
+
+| | value |
+|---|---|
+| USB version | 2.00 |
+| interface class | 3, HID, subclass 0, protocol 0 |
+| control endpoint packet size | 8 |
+| endpoint 1 | interrupt **IN**, 64 bytes, every 1 ms |
+| endpoint 2 | interrupt **OUT**, 64 bytes, every 1 ms |
+| report descriptor | 33 bytes, usage page `0xFF00`, an input and an output report of 64 bytes, no report id |
+| configuration attributes | `bmAttributes 0xC0`, self powered; `bMaxPower 0x32`, 100 mA |
+
+The firmware's own USB set up agrees: endpoint 1 is configured IN only and endpoint 2 OUT only, and the
+buffer descriptor for endpoint 1 OUT is never touched anywhere in the Harmony 700 image, which is what an
+endpoint descriptor set with no endpoint 1 OUT requires, [the firmware's USB stack](../architectures/harmony-600-650-700/firmware.md#the-usb-stack-inside-the-firmware)[^s19].
+
+## What a host implementation has to get right
+
+* **The endpoint numbering is asymmetric.** IN is endpoint 1 and OUT is endpoint **2**; the endpoint
+  descriptors say `81 03 40 00 01` and `02 03 40 00 01`. Code that assumes endpoint 1 in both directions
+  will not talk to the remote[^s19][^s19b].
+* **64 bytes each way, and no report ids.** The report descriptor declares report size 8 by report count 64
+  for both reports and has no Report ID item, so a report is exactly 64 payload bytes. hidapi wants a
+  leading report id byte of zero prepended on some platforms; that byte is not part of the
+  protocol[^s19][^t-usbdesc].
+* **A vendor defined usage page, `0xFF00`.** With interface subclass 0 and protocol 0 this is not a boot
+  keyboard or mouse, so no operating system claims the device as an input device. On Linux a non root
+  process still needs a udev rule to open it[^t-usbdesc][^unchecked].
+* **Interrupt polling at 1 ms** in both directions. One 64 byte report per frame is a ceiling of 62.5 KiB/s
+  each way, so reading the Harmony One's 1.6 MiB configuration cannot beat about 26 seconds however
+  efficient the command layer is[^s19].
+* **The remote draws bus power while charging** whatever its configuration descriptor reports[^unchecked].
+
+## Finding the descriptors in an image
+
+A firmware image carries its descriptors as one block, and `tools/usbdesc.py` finds and decodes it, given an
+image and the address it loads at:
 
 ```sh
-tools/usbdesc.py 700-2.8-Region_2-code-base0x9000.bin 0x9000 --raw
+tools/usbdesc.py <image> <load address> --raw
 ```
 
-### What a host implementation has to get right
+Searching for `12 01` alone would be weak, since those two bytes occur in code, so two independent checks
+confirm a block[^t-usbdesc]:
 
-* **The endpoint numbering is asymmetric.** IN is endpoint 1, OUT is endpoint **2**. The
-  device descriptors say `81 03 40 00 01` and `02 03 40 00 01`, so this is not a symmetric
-  pair and code that assumes endpoint 1 in both directions will not talk to the remote.
-  Measured on the bench remote as well, see below.
-* **64 bytes each way, and no report ids.** The report descriptor declares report size 8 by
-  report count 64 for both the input and the output report, and contains no Report ID item.
-  So a report is exactly 64 payload bytes. hidapi wants a leading report id byte of zero
-  prepended on some platforms; that byte is not part of the protocol.
-* **Vendor defined usage page `0xFF00`.** With interface subclass 0 and protocol 0 this is
-  not a boot keyboard or mouse, so no operating system claims the device as an input
-  device. On Linux a udev rule is still needed for a non-root process to open it.
-* **Interrupt polling at 1 ms** in both directions. One 64 byte report per frame is a
-  ceiling of 62.5 KiB/s per direction, so reading the Harmony One's 1.6 MiB config cannot
-  beat about 26 seconds however efficient the command layer is.
-* The configuration descriptor reports `bmAttributes 0xC0`, self powered, and `bMaxPower
-  0x32`, so 100 mA. It draws bus power while charging regardless.
+1. **The chain walks.** Nine descriptors, each one's `bLength` landing exactly on the start of the next,
+   ending where an unrecognised type begins: device, configuration, interface, HID, endpoint, endpoint, then
+   three strings.
+2. **`wTotalLength` closes.** The configuration descriptor declares `0x29`, 41 bytes, and the configuration,
+   interface, HID and two endpoint descriptors are 9 + 9 + 9 + 7 + 7 = 41.
 
-### Two closures that make the location trustworthy
+A third check says the block belongs to the image it was found in: the product string states the firmware
+version, `Harmony Remote 0-2.8.0` and `Harmony Remote 0-3.4.0`, which the packages the images came from
+state too. Where each image keeps its block is pinned in `tests/test_usbdesc.py`[^t-usbdesc].
 
-Finding a descriptor block by searching for `12 01` alone would be weak: those two bytes
-occur in code. Two independent checks confirm the block:
+**A firmware image can hold a second descriptor block that validates as well as the real one**, a
+Microchip stock descriptor left in by the USB stack the firmware is built on. The chain walk cannot tell the
+two apart, so the block naming Logitech's vendor id is the remote's. The case found is the Harmony 525's,
+[its architecture's firmware](../architectures/harmony-5xx/firmware.md)[^s113].
 
-1. **The chain walks.** Nine descriptors, each one's `bLength` landing exactly on the start
-   of the next, ending where an unrecognised type begins. Both images give the same nine:
-   device, configuration, interface, HID, endpoint, endpoint, then three strings.
-2. **`wTotalLength` closes.** The configuration descriptor declares `0x29`, 41 bytes, and
-   the configuration, interface, HID and two endpoint descriptors are 9 + 9 + 9 + 7 + 7 = 41.
+## `bcdDevice` carries the skin, in one of two encodings
 
-A third check confirms the block belongs to the image it was found in rather than to some
-other firmware sharing the file: the product string states the firmware version, 2.8.0 and
-3.4.0, which was already known from the package each image was extracted from.
-### `bcdDevice` carries the skin, in one of two encodings
-
-The device release number states the remote's skin, and **which of two forms it is in depends on the
-word's value**, which is also what tells the two firmware generations apart.[^s113] Seven pairs, each an
-image's `bcdDevice` against a `<SKIN>` a config of that model states, which is an independent oracle
-produced by the other half of Logitech's toolchain, plus three words read off remotes, two whose oracle
-is the remote's own `/sys/sysinfo` and one Logitech's product table:[^s195]
+The device release number states the remote's skin, the number Logitech gives each model, and **which of
+two forms it is in depends on the word's value**, which is also what tells the two firmware generations
+apart[^s113][^s195]:
 
 | the word's value | reading | words |
 |---|---|---|
-| below 1000 | the low byte is the skin in **plain binary**, and the high byte is the protocol | `0x080F` skin 15, `0x0811` skin 17, `0x0916` skin 22[^s76] |
+| below 1000 | the low byte is the skin in **plain binary**, and the high byte is the protocol | `0x080F` skin 15, `0x0811` skin 17, `0x0916` skin 22 |
 | 1000 and above | the **whole word** is BCD of `1000 + skin`, so the high byte is the carry | `0x1054` skin 54, `0x1066` skin 66, `0x1071` skin 71, `0x1072` skin 72, `0x1078` skin 78, `0x1099` skin 99, `0x1104` skin 104 |
 
-**The two forms are separated by value, not by high byte**, section 195, because `0x0916` is valid BCD
-for 916 and means skin 22: at 1000 and above the word is the whole number, below it the low byte is
-the skin and the high byte the protocol. **Only a Harmony 350's `0x1104` separates the whole word
-reading from reading the low byte alone**, since every other word on this generation names a skin
-below 100 and both readings return it. That remote states skin 104 through its own `/sys/sysinfo`,
-which is not a USB field, so the two ends of the closure share nothing.
+Seven pairs are each an image's `bcdDevice` against the skin a configuration of that model states, which is
+an independent answer produced by the other half of Logitech's toolchain, and three words were read off
+remotes, two checked against the remote's own `/sys/sysinfo` and one against Logitech's product
+table[^s195]. The Harmony One and the Harmony 600 are the later form[^s19b][^s113]; the Harmony 525 is the
+earlier, a unit enumerating `0x0916`, protocol 9 and skin 22 in plain hex[^s76].
 
-`0x0A` for the 890 is still the obvious entry for the older form and still deliberately not
-implemented, because no arch 10 firmware exists here to check it against. **And since section 207
-there is a second reason that is not going away**: the Harmony 890 platform does not speak this
-protocol at all, so nothing here will ever read that word off a remote. Its skin comes out of a
-config's own header.
+**The two forms are told apart by value and not by the high byte**, because `0x0916` is valid BCD for 916
+and still means skin 22: at 1000 and above the word is the whole number, below it the low byte is the skin.
+**Only a Harmony 350's `0x1104` separates the whole word reading from reading the low byte alone**, since
+every other word of the later generation names a skin below 100 and both readings return it; that remote
+states skin 104 through its own `/sys/sysinfo`, which is not a USB field, so the two ends share
+nothing[^s195].
 
-**This document said "read as BCD" without qualification until 10 August 2026**, and so did three<!--superseded-->
-copies of the code. It is right for arch 12 and arch 14 and wrong for arch 8 and arch 9, and the
-failure is silent: `0x0811` read as BCD is 11, which is a Harmony 655. The 880 could not have
-exposed it, because `0x0F` is 15 under either rule. `docs/findings.md` section 113, which also
-records why the two generations differ: base slot 1 carries the skin as a plain byte everywhere, so
-what is BCD is the USB field, following the specification's own convention for `bcdDevice`.
+**Read as BCD throughout, the rule fails silently on the earlier generation**: `0x0811` read as BCD is 11,
+which is a Harmony 655, and the Harmony 880's `0x080F` cannot show it, since `0x0F` is 15 under either
+rule. Base slot 1 of a configuration carries the skin as a plain byte on every architecture, so what is BCD
+is the USB field alone, which follows the USB specification's own convention for
+`bcdDevice`[^s113].
 
-This is more useful than it sounds. **The 600 and the 700 share product id `0xC122`**, so the
-product id does not identify an arch 14 model, and the skin does, before a single config byte
-is read. It is directly load bearing for the write rails in `CLAUDE.md`, where a write
-must refuse to proceed unless the config's `INTENDEDVERSION` matches the connected remote's
-skin.
+**This matters more than it looks.** The Harmony 600, 650 and 700 share product id `0xC122`, so the product
+id does not tell those three apart and the skin does, before a single configuration byte is read. The write
+rails in `packages/usb/src/rails.ts` refuse a configuration whose declared version does not match the
+remote it is written to, and the skin is part of that comparison[^s113].
 
-The arch 14 case was recorded here as a prediction before it was checked: the Harmony 600 should
-report `bcdDevice 0x1071`, because that remote is skin 71. **Measured, and it does.**
+The Harmony 890's older form, `0x0A` in the high byte, is not implemented and will not be read off a remote
+here, since that platform does not speak this protocol at all, [its usb page](../architectures/harmony-890-895/usb.md)[^s207].
 
-**The Harmony 525 is the remote that showed the rule is generation specific.** Before one was read, the
-two remotes measured, a Harmony One at `0x1054` and a Harmony 600 at `0x1071`, fitted a constant `0x10`
-followed by the skin in BCD, which would make the 525 `0x1022`. A unit enumerates `0x0916`, protocol 9 and
-skin 22 in plain hex, so the `0x10` plus BCD reading belongs to the later generation.[^s76]
+## The one byte the two architectures disagree on
 
-**A firmware image can hold a second descriptor block that validates as well as the real one**, a
-Microchip stock descriptor left in by the USB stack the firmware is built on. The chain walk cannot tell
-the two apart, so the block naming Logitech's vendor id is the remote's. The case found is the Harmony
-525's, [its architecture's firmware.md](../architectures/harmony-5xx/firmware.md).[^s113]
+The 33 byte report descriptors of the Harmony One and the Harmony 600 and 700 are identical except one flag
+bit: the Harmony 600 and 700's input report is declared `Relative`, `81 06`, and the Harmony One's
+`Absolute`, `81 02`. No HID parser interprets a vendor defined report, so it changes nothing; it is
+recorded because it is the only difference, which makes it a fingerprint, and it is counted in
+`tests/test_usbdesc.py` rather than seen by eye[^s19][^t-usbdesc]. The Harmony 525's report descriptor
+differs between its application and its safe mode in one input flag, a different difference,
+[its usb page](../architectures/harmony-5xx/usb.md)[^s118].
 
-### The one byte the two architectures disagree on
-
-The 33 byte report descriptors are identical except a single flag bit: the arch 14 input
-report is declared `Relative` (`81 06`) and the arch 12 one `Absolute` (`81 02`). No HID
-parser interprets a vendor defined blob, so it changes nothing. Recorded because it is the
-only difference, which makes it a fingerprint, and because "identical except one byte" is the
-sort of claim worth counting rather than eyeballing. It is counted in
-`tests/test_usbdesc.py`.
-
+[^s19]: Read in the firmware. [Section 19](../../docs/findings.md#s19)
+[^t-usbdesc]: Read in the firmware. [The test](../../tests/test_usbdesc.py)
+[^s19b]: Measured on a unit. [Section 19](../../docs/findings.md#s19)
+[^unchecked]: Not checked.
 [^s113]: Read in the firmware. [Section 113](../../docs/findings.md#s113)
 [^s195]: Measured on a unit. [Section 195](../../docs/findings.md#s195)
 [^s76]: Measured on a unit. [Section 76](../../docs/findings.md#s76)
+[^s207]: Stated by Logitech, in their client. [Section 207](../../docs/findings.md#s207)
+[^s118]: Measured on a unit. [Section 118](../../docs/findings.md#s118)

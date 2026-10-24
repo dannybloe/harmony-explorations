@@ -480,7 +480,7 @@ test('the whole block reads back as the three bench remotes reported it', () => 
 });
 
 test('safe mode is the one software type a remote here has ever reported besides application', () => {
-  // Predicted in `reference/usb-protocol/version-block.md` before anyone tried it, `0xC4` for a Harmony One and `0xE4`
+  // Predicted in `docs/findings.md` section 87 before anyone tried it, `0xC4` for a Harmony One and `0xE4`
   // for a Harmony 600, and then met on a stranded Harmony 525, section 118. The names are Logitech's
   // own, from their firmware packages and their client, which agree on all five.
   const stranded = Uint8Array.from([0x30, 0x25, 0x12, 0xff, 0x94, 0x16, 0x00]);
