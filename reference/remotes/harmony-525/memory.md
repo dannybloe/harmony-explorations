@@ -3,7 +3,7 @@
 The layout is the architecture's, read on this model: the address windows, the external flash with the
 safe mode image at `0x800000`, the application at `0x810000` and the configuration from `0x820000`, the
 32 KiB of internal flash and the 256 bytes of EEPROM, [the architecture's memory.md](../../architectures/harmony-5xx/memory.md).
-The long form is `docs/memory-map-525.md`. This page carries what a reader of the 525 needs first.
+This page carries what a reader of the 525 needs first.
 
 ## The three facts to carry
 

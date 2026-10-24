@@ -37,7 +37,7 @@ runs action lists of many instructions on every architecture read, section 34.
 **So nothing can compile a configuration for a 525 today**, and no vendor built file exists to check one
 of this project's against, `CLAUDE.md` and section 269. The model's own software, the Harmony Remote
 Software, is the classic platform, Logitech's manual, whose site now serves a discontinuation notice,
-`docs/memory-map-525.md`.
+[the architecture's firmware.md](../../architectures/harmony-5xx/firmware.md).
 
 ## Devices: twelve or ten
 

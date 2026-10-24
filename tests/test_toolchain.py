@@ -1629,7 +1629,7 @@ class TheWriteReviewWithholdListIsComplete(unittest.TestCase):
         text = self._document()
         may = self._paths_between(text, '**May be read and used.**', '**Must not be read.**')
         must = self._paths_between(text, '**Must not be read.**', '\n## ')
-        # 12 since 5 September 2026, section 267: `docs/memory-map-525.md` moved to the withhold
+        # 12 since 5 September 2026, section 267: the Harmony 525's memory map moved to the withhold
         # list, and the four remaining memory maps are spelled out one by one where a glob used to
         # stand for all five. The glob is what let the 525's document acquire the erase mechanism
         # and stay on the readable side, so naming them is part of the fix rather than tidying.
@@ -1641,7 +1641,7 @@ class TheWriteReviewWithholdListIsComplete(unittest.TestCase):
         # 19 since 29 August 2026: the `recovering-a-remote` skill went on the list, as both its
         # real path and the `.agents/` symlink a second agent discovers it through. It states the
         # interlock, which is question 4.
-        # 21 since 5 September 2026: `docs/memory-map-525.md`, which now states the Harmony 525's
+        # 21 since 5 September 2026: the Harmony 525's memory map, which now states the Harmony 525's
         # erase handler, its window classifier, the block size and an interlock. That is question 4
         # on another architecture, and this sweep found it rather than a person.
         # 22 since 6 September 2026: `packages/corpus/bin/read-region.ts`, a read only script that
@@ -1652,12 +1652,15 @@ class TheWriteReviewWithholdListIsComplete(unittest.TestCase):
         # 25 with `docs/README.md`, the document map moved out of `CLAUDE.md` on 7 October 2026.
         # 28 since 10 October 2026: the Harmony 525's skill, whose write procedure names
         # `rehearse-block.ts`, and its two reference folders, which state what an erase address
-        # selects on that model and are withheld on `docs/memory-map-525.md`'s ground.
+        # selects on that model and are withheld on the 525 memory map's ground.
         # 29 since 24 October 2026: `docs/plans/009-the-reference.md`, the plan of the reference,
         # which names `rehearse-block.ts` and the interlock among the readers it moves.
         # 30 since plan 009's step 2.1 cut the USB protocol and the host client document: the USB
         # row names its folder whole, and the client row names both files the transfer now sits in.
-        self.assertEqual(len(must), 30, 'the withhold list should resolve to 30 paths, got %s'
+        # 29 since plan 009's step 3.2 removed the Harmony 525's memory map: its erase and write
+        # mechanism moved into `reference/architectures/harmony-5xx/`, which a row already withholds,
+        # and that row now carries the map's history. Nothing widened; the list was re-read.
+        self.assertEqual(len(must), 29, 'the withhold list should resolve to 29 paths, got %s'
                          % sorted(must))
 
     def test_every_may_read_path_is_clean_of_the_write_path(self):
@@ -1735,7 +1738,7 @@ class TheWriteReviewWithholdListIsComplete(unittest.TestCase):
         # is withheld whole, so nothing widens. The list was re-read against all 32 before this
         # number moved.
         #
-        # **33 since 5 September 2026, section 267**, and the new one is `docs/memory-map-525.md`,
+        # **33 since 5 September 2026, section 267**, and the new one is the Harmony 525's memory map,
         # which acquired the Harmony 525's erase and write mechanism. It was on the **may read**
         # list at the time, as one of five memory maps named by a glob, so this is the sweep catching
         # a widening rather than counting a new file: the companion test failed first and this number
@@ -1768,6 +1771,9 @@ class TheWriteReviewWithholdListIsComplete(unittest.TestCase):
         # Still 41 after plan 009's step 2.1 cut the USB protocol and the host client document: the
         # two files that stated the path stopped and `reference/usb-protocol/commands.md` and
         # `reference/logitech/classic-client.md` started. Both are withheld; the list was re-read.
+        # Still 41 after plan 009's step 3.2 removed the Harmony 525's memory map, which stated the
+        # interlock: `reference/architectures/harmony-5xx/firmware.md` took that text and started
+        # stating it, inside a folder already withheld. The list was re-read.
         self.assertEqual(len(stating), 41,
                          'the number of files stating the write path moved, so re-read the withhold '
                          'list before restamping this: %s' % stating)

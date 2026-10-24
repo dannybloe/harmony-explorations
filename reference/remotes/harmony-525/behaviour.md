@@ -26,7 +26,7 @@ checked**.
 |---|---|
 | the first `GET_VERSION` of a session went unanswered for three polls of two seconds, and every exchange after it answered in about 2 ms; a single retry covers it, and no reset is sent | measured on a unit, section 76 |
 | a whole internal read of 32 KiB, 529 single chunk commands, completed with no restart | measured on a unit, section 76 |
-| an odd count internal read is refused by `packages/usb` here too, as on the Harmony One, because nothing establishes that this model does not hang on one | `docs/memory-map-525.md`; `CLAUDE.md` |
+| an odd count internal read is refused by `packages/usb` here too, as on the Harmony One, because nothing establishes that this model does not hang on one | [the architecture's memory.md](../../architectures/harmony-5xx/memory.md); `CLAUDE.md` |
 | in safe mode the remote still answers reads, its configuration at `0x820000` included, and `GET_VERSION` is flaky enough to need retries | measured on a unit, section 118 |
 | a running remote's data memory cannot be read: every window answers zeros, including bytes the answering read is using | measured on a unit, sections 90 and 137 |
 

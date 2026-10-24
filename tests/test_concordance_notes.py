@@ -424,7 +424,7 @@ class TheArch9EraseNumbersAgreeWithConcordance(unittest.TestCase):
         return row, values
 
     def test_the_525s_flash_id_is_a_512_KiB_part_of_eight_uniform_64_KiB_sectors(self):
-        # `0xFF:0x12` is what the bench 525 reports, `docs/memory-map-525.md`. concordance names it
+        # `0xFF:0x12` is what the bench 525 reports, `reference/architectures/harmony-5xx/memory.md`. concordance names it
         # a 25F040 of 512 KiB, and its sector table is eight boundaries a block apart. So the
         # granularity section 267 read off the opcode is stated here by a table nobody derived from
         # that opcode.

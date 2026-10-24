@@ -49,6 +49,19 @@ _MAP_GLOBS = (
 _MAPS = tuple(sorted({os.path.relpath(p, _ROOT).replace(os.sep, '/')
                       for pattern in _MAP_GLOBS for p in glob.glob(os.path.join(_ROOT, pattern))}))
 
+#: Where the Harmony 525's memory map went when plan 009's step 3.2 removed it: the long form into its
+#: architecture folder, the predictions and the bench unit's record into `docs/`. **Listed rather than
+#: globbed**, and that is not the mistake the comment above records: these are the exact files the map's
+#: text landed in, so the byte runs it published travelled with it and the identity guard below keeps
+#: reading them. Paths are from the repository root, like the maps, and the ones the globs above already
+#: reach are counted once. The folder's `misc.md` took none of the
+#: map's text and lists skin numbers, which read as a byte run, so it is not one of them.
+_MOVED_FROM_MAPS = (
+    'docs/predictions/harmony-525.md',
+    'docs/test-notes/harmony-525.md',
+) + tuple('reference/architectures/harmony-5xx/%s.md' % name
+          for name in ('README', 'firmware', 'memory', 'usb'))
+
 
 # concordance's own architecture table, read out of the sibling checkout. Imported rather than
 # reparsed, since `test_concordance_notes.py` already has the reader and two copies of a derivation
@@ -617,6 +630,9 @@ _PUBLISHABLE_BYTE_RUNS = {
     # called it the Harmony 600's descriptor bytes until step 3.2.
     '09 00 20 11 02 18 e0 3c 00 67 01',
     '27 30 25 12 ff 90 16 09',               # the Harmony 525's GET_VERSION reply
+    # The same reply in safe mode, the version of the safe mode image, which the architecture's
+    # `usb.md` publishes beside the first. A model's state, the same in every unit's safe mode.
+    '20 25 12 ff 94 16 00',
     # Base slot 3's clock record on the bench Harmony 525: a build timestamp of 2 October 2013, the
     # unit on our own bench, and the document spells out what each byte means two lines above it.
     '2c 28 12 01 03 09 0d',
@@ -647,6 +663,8 @@ class TestEveryMap(unittest.TestCase):
         `_MAPS` was a hand written tuple that never gained `docs/memory-map-525.md`, so the arch 9 map
         had never been examined at all. Since step 3.2 it globs the maps' new homes, so what it asserts
         about the population is that the two homes it must reach are in it, not a count.
+        The Harmony 525's map went the same way, and the pages its text landed in that the globs do not
+        reach are `_MOVED_FROM_MAPS`.
 
         A publication guard is the one kind of test where a vacuous pass is not merely useless. This
         one now globs the documents, matches either case and both separators, compares a run whole
@@ -656,8 +674,11 @@ class TestEveryMap(unittest.TestCase):
         """
         self.assertIn(_ARCHITECTURES, _MAPS, 'the memory map glob stopped matching')
         self.assertIn(_ONE, _MAPS, 'the memory map glob stopped matching')
+        self.assertIn('reference/architectures/harmony-5xx/memory.md', _MAPS, 'the memory map glob stopped matching')
+        self.assertEqual(len(_MOVED_FROM_MAPS), 6, 'the 525 map\'s new homes changed')
         examined = 0
-        for name in _MAPS:
+        documents = tuple(sorted(set(_MAPS) | set(_MOVED_FROM_MAPS)))
+        for name in documents:
             with self.subTest(document=name):
                 text = _read(name)
                 examined += 1
@@ -667,7 +688,7 @@ class TestEveryMap(unittest.TestCase):
                                   'an unexplained byte run in %s' % name)
                 self.assertEqual(_GUID.findall(text), [],
                                  'something shaped like an account GUID in %s' % name)
-        self.assertEqual(examined, len(_MAPS), 'a document went unread')
+        self.assertEqual(examined, len(documents), 'a document went unread')
 
 
 if __name__ == '__main__':

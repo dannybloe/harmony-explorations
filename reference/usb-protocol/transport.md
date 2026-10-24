@@ -61,14 +61,14 @@ other firmware sharing the file: the product string states the firmware version,
 ### `bcdDevice` carries the skin, in one of two encodings
 
 The device release number states the remote's skin, and **which of two forms it is in depends on the
-word's value**, which is also what tells the two firmware generations apart. Seven pairs, each an
+word's value**, which is also what tells the two firmware generations apart.[^s113] Seven pairs, each an
 image's `bcdDevice` against a `<SKIN>` a config of that model states, which is an independent oracle
-produced by the other half of Logitech's toolchain, plus three words read off remotes on the bench,
-two whose oracle is the remote's own `/sys/sysinfo` and one Logitech's product table:
+produced by the other half of Logitech's toolchain, plus three words read off remotes, two whose oracle
+is the remote's own `/sys/sysinfo` and one Logitech's product table:[^s195]
 
 | the word's value | reading | words |
 |---|---|---|
-| below 1000 | the low byte is the skin in **plain binary**, and the high byte is the protocol | `0x080F` skin 15, `0x0811` skin 17, `0x0916` skin 22 |
+| below 1000 | the low byte is the skin in **plain binary**, and the high byte is the protocol | `0x080F` skin 15, `0x0811` skin 17, `0x0916` skin 22[^s76] |
 | 1000 and above | the **whole word** is BCD of `1000 + skin`, so the high byte is the carry | `0x1054` skin 54, `0x1066` skin 66, `0x1071` skin 71, `0x1072` skin 72, `0x1078` skin 78, `0x1099` skin 99, `0x1104` skin 104 |
 
 **The two forms are separated by value, not by high byte**, section 195, because `0x0916` is valid BCD
@@ -100,10 +100,15 @@ skin.
 The arch 14 case was recorded here as a prediction before it was checked: the Harmony 600 should
 report `bcdDevice 0x1071`, because that remote is skin 71. **Measured, and it does.**
 
-**A firmware image can hold a second descriptor block that validates as well as the real one.** The
-525's carries a Microchip stock descriptor at `0x00E92` claiming `04D8:000B` with a zero release,
-left in by the USB stack the firmware is built on, alongside the remote's own at `0x07DFE`. The
-chain walk cannot tell them apart, so the block naming Logitech's vendor id wins. Section 113.
+**The Harmony 525 is the remote that showed the rule is generation specific.** Before one was read, the
+two remotes measured, a Harmony One at `0x1054` and a Harmony 600 at `0x1071`, fitted a constant `0x10`
+followed by the skin in BCD, which would make the 525 `0x1022`. A unit enumerates `0x0916`, protocol 9 and
+skin 22 in plain hex, so the `0x10` plus BCD reading belongs to the later generation.[^s76]
+
+**A firmware image can hold a second descriptor block that validates as well as the real one**, a
+Microchip stock descriptor left in by the USB stack the firmware is built on. The chain walk cannot tell
+the two apart, so the block naming Logitech's vendor id is the remote's. The case found is the Harmony
+525's, [its architecture's firmware.md](../architectures/harmony-5xx/firmware.md).[^s113]
 
 ### The one byte the two architectures disagree on
 
@@ -113,3 +118,7 @@ parser interprets a vendor defined blob, so it changes nothing. Recorded because
 only difference, which makes it a fingerprint, and because "identical except one byte" is the
 sort of claim worth counting rather than eyeballing. It is counted in
 `tests/test_usbdesc.py`.
+
+[^s113]: Read in the firmware. [Section 113](../../docs/findings.md#s113)
+[^s195]: Measured on a unit. [Section 195](../../docs/findings.md#s195)
+[^s76]: Measured on a unit. [Section 76](../../docs/findings.md#s76)

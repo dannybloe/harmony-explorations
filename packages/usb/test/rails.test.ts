@@ -1020,7 +1020,7 @@ test('arch 9 has every constant a write needs, and the constants were never what
 });
 
 test('the arch 9 ceiling stops below the log area, and the region is five of the part\'s eight blocks', () => {
-  // The ceiling is `0x870000` because `docs/memory-map-525.md` puts the log area there, not because
+  // The ceiling is `0x870000` because `reference/architectures/harmony-5xx/memory.md` puts the log area there, not because
   // the part ends: it ends at `0x880000`. Both numbers are real and taking the larger one would put
   // the log inside a writable range for no gain.
   const start = CONFIG_REGION_BASE[9] as number;

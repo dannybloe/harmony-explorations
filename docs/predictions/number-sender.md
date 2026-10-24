@@ -18,7 +18,7 @@ Nothing has been synced to a remote; it exists only in the account. A server sid
 the first configuration anywhere with this section populated, and the numbers are known in advance.
 
 This file is the prediction, committed before the file is fetched, so that the comparison afterwards is
-a measurement and not a story. The same discipline as `docs/memory-map-525.md`, which recorded what was
+a measurement and not a story. The same discipline as `docs/predictions/harmony-525.md`, which recorded what was
 expected of a Harmony 525 before one was connected. **Where a prediction turns out wrong, that is the
 result worth having**, and the reason for writing it down is that a layout confirmed by a sample nobody
 predicted is a layout that was fitted to the sample.

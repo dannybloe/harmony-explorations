@@ -40,7 +40,7 @@ alone. No skin 18 unit or configuration has been read.
 | `bcdDevice` | `0x0916`, protocol 9 and skin 22 in plain hex, not the later `1000 + skin` form | measured, sections 76 and 195 |
 | version block | seven fields, not twelve | measured, section 76 |
 | firmware | 3.0, safe mode image 2.0 | measured, sections 76 and 118 |
-| processor | `PIC18F4550` family, 32 KiB of program flash | read in the firmware and concordance, `docs/memory-map-525.md`; [hardware.md](hardware.md) |
+| processor | `PIC18F4550` family, 32 KiB of program flash | read in the firmware and concordance, [the architecture's README](../../architectures/harmony-5xx/README.md); [hardware.md](hardware.md) |
 | external flash | 512 KiB serial flash, id `FF:12`, a 25F040 by concordance's table | measured, sections 76 and 268; Logitech's manual, "Memory Amount 512 KB" |
 | user configuration | flash `0x820000`, with its own pointers counting from `0x020000` | measured, section 76 |
 | application firmware | flash `0x810000`, **one 64 KiB erase block below the configuration** | measured, sections 76 and 269 |
@@ -60,7 +60,7 @@ alone. No skin 18 unit or configuration has been read.
 | [display.md](display.md) | the panel, the raster, the one bit pictures and two bit glyphs, the status screens |
 | [features.md](features.md) | Logitech's statement, the device limit disagreement, learning, delays, sequences |
 | [behaviour.md](behaviour.md) | device mode, Glow and Deep Sleep, what was seen on the cable, after a write and in safe mode |
-| [memory.md](memory.md) | what is the 525's own, linking `docs/memory-map-525.md` and the architecture's map |
+| [memory.md](memory.md) | what is the 525's own, linking the architecture's map |
 | [firmware.md](firmware.md) | 3.0 and the 2.0 safe mode image, where both are stored, safe mode and recovery |
 | [usb.md](usb.md) | product id, version block, address windows, commands, write standing |
 | [misc.md](misc.md) | everything else |
