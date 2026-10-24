@@ -123,3 +123,75 @@ bytes, from `+0xF643`, differ on the other One, so it is per unit data of some k
 **The battery scale.** The calibration words at `0xFF` `+0xF5C0` had been in the lab for a day, filed as
 "unidentified" two rows above the note that the two remotes differ at `+0xF582`, before section 105 joined
 the two facts up.
+
+## What moved out of the model folder
+
+Moved here when plan 009's step 3.1 cleaned `reference/remotes/harmony-one/`, which now states what a
+Harmony One does without saying whose remote it was seen on. The archive sections named are where each
+observation is argued.
+
+### The units behind the reference's measurements
+
+* **The spare Harmony One was the first remote this project wrote to**, section 222, and every write to a
+  One since went to it. The everyday One is never written.
+* **The calibration configuration** that names 32 keys against a scan, and decides the two arrow pairs, was
+  compiled through an account this project controls, sections 133 and 398. The account's contents belong in
+  `docs/test-notes/accounts.md` when it exists.
+* **The clock on screen**, `Sun 3:42` after a battery pull, was seen on the spare, section 242. On the
+  everyday One, in its owner's account, it "runs badly wrong after a while" and has never been used, section
+  111; its rate was deliberately not measured.
+* **The everyday One's compile is the odd one out among the nineteen**: it has another Options menu and no
+  Remote Assistant, so fifteen value maps where the others have sixteen, sections 405, 412 and 416.
+* **The font set past the eighteenth**: a configuration carrying 31 sets showed its screens in sets 21 to 28
+  on the spare, section 399.
+* **The click**: a composed device page written without the click read as a touch that had not registered on
+  the spare, and with it clicked once on every touch, section 404.
+* **The configuration without the tour and the assistant** was written to the spare and seen to start on its
+  ordinary screen, section 421.
+* **The screen light raised to 60 seconds** stayed lit about 60 seconds on the spare, section 400.
+* **Safe mode by holding Off while inserting the battery** was entered on a bench unit, announced in about
+  five seconds, section 190.
+
+### The first command dropped after idling
+
+Observed twice on 6 August 2026, both times on a Harmony One, both times the first command after the device
+was opened:
+
+| Command | Symptom | Immediately afterwards |
+|---|---|---|
+| `READ_FLASH`, 256 bytes at `0x040000` | `flash read returned 0 of 256 bytes` | the same test passed, and a 60050 byte firmware read passed in the same run |
+| `GET_VERSION` | `no reply to command 0x10 within 3 polls of 2000 ms` | a rerun read the whole 1232237 byte config without a hiccup |
+
+The Harmony 600 has not done it, on either occasion, including runs where its first command came before the
+One's. Section 155 then caught a third occurrence on the spare with the clock read straight after, which
+settled what the two above could not: no restart in between, nothing unplugged, no command sent before, so
+idleness is what the cases share. The reference states that; the open question left is why idleness does it.
+
+The workaround is one retry of the **first** command only, and only on silence, in `packages/corpus`
+(`firstCommand` in `packages/corpus/src/read.ts`). Everything after the first command stays strict. The same
+rule, with the same two message shapes, is in `packages/usb/test/hardware.test.ts`. Both comments still say the
+cause is unknown, written before section 155.
+
+### Stranding
+
+A Harmony One occasionally strands after sitting idle on USB, which a battery pull clears, `CLAUDE.md`.
+Section 155 is the occurrence that was measured, and it was cleared by a retry alone, without a battery pull;
+whether every stranding is that same dropped first command is not settled.
+
+### Telling the two Ones apart
+
+The two Harmony Ones on the bench enumerate identically, so the write rails compare the identity block read
+off the remote with the lab's record of the spare, `assertUnitIsPermitted`, section 226. The record is
+`units/one_spare.txt` in the lab and never in this repository.
+
+### Images in the lab
+
+Never in this repository. Checksums are in `docs/checksums.md`: Logitech's 3.4 package,
+`harmony_one_firmware_3_4.hfw` from the repair site, its decoded region, the application cut from it, the
+safe mode configuration, and the internal `0xFE` page, read off two units and byte identical, so any One on
+3.4 reproduces it.
+
+### Infrared bench runs
+
+`packages/bench/irtests/done/one-spare-activities.json` records what four activities and Off send on the spare
+One, with no prediction attached. It is the only bench run for this model.

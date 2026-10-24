@@ -1,35 +1,34 @@
 # Harmony One: firmware
 
-What the One runs, what exists of it in the lab, and how it would be recovered. The images themselves,
-where each lives, how Logitech's package loads and what safe mode can do are the platform's,
-[the platform's firmware page](../../architectures/harmony-one/firmware.md).
+The One runs one firmware version that anybody here knows of, 3.4, and it can be started in a safe mode
+that repairs the remote. The images themselves, where each lives, how Logitech's package loads and what safe
+mode can do are the platform's, [the platform's firmware page](../../architectures/harmony-one/firmware.md),
+since the One is the only model on it.
 
 ## Versions
 
-| version | where | standing and source |
-|---|---|---|
-| **3.4** | application 60050 bytes at external `0x020000`, entry `0x2EA38`, executed in place; safe mode image, programmable logic 1.6 and the flash programmer library beside it | measured on two units, byte identical to Logitech's package `harmony_one_firmware_3_4.hfw` from the repair site, sections 3 and 88, `docs/checksums.md` |
-| 3.4.0 | the forum table's "newest seen" | third party, `reference/capabilities.md` |
+**3.4** is the only version known for this model, and a remote's application is byte for byte the 3.4
+package Logitech published[^s3][^s88]; the newest version the community table knows is the same, in
+[the README's skin table](README.md#skins). The images and their versions are
+[the platform's](../../architectures/harmony-one/firmware.md#the-images).
 
-The descriptor names `Harmony Remote 0-3.4.0` for the application and `4-3.4.0` in safe mode, the leading
-digit being the software type, `reference/usb-protocol/version-block.md`. No other version is known here. Whether Logitech's
-software update service serves this model is **not checked**; section 295 reports its 404 for the arch 14
-skins only.
-
-## Images in the lab
-
-Never in this repository. Checksums are in `docs/checksums.md`: the package's decoded region, the
-application cut from it, the safe mode configuration, and the internal `0xFE` page, read off two units and
-byte identical, so any One on 3.4 reproduces it.
+The USB descriptor names `Harmony Remote 0-3.4.0` for the application and `4-3.4.0` in safe mode, the
+leading digit being the software type[^s190], [the version block reference](../../usb-protocol/version-block.md).
+Whether Logitech's software update service serves this model is not checked[^unchecked].
 
 ## Safe mode and recovery
 
-* **Entered by holding Off while inserting the battery**, announced in about five seconds, seen at the
-  bench, section 190. What safe mode then does, and what the bootloader does before it, is
+* **Entered by holding Off while the battery goes in**, announced in about five seconds[^s190]. What safe
+  mode then does, and what the bootloader does before it, is
   [the platform's](../../architectures/harmony-one/firmware.md#safe-mode-the-bootloader-and-recovery).
-* The `recovering-a-remote` skill is the route to read before any of this.
+* Safe mode does not stick: a plain power cycle boots normally again[^s190].
 
 ## Not checked
 
-* Which keys produce the bootloader's two codes.
-* Any firmware update path for this model on Logitech's current services.
+* Which keys produce the bootloader's two key codes[^unchecked].
+* Any firmware update path for this model on Logitech's current services[^unchecked].
+
+[^s3]: Read in the firmware. [Section 3](../../../docs/findings.md#s3)
+[^s88]: Measured on a unit. [Section 88](../../../docs/findings.md#s88)
+[^s190]: Measured on a unit. [Section 190](../../../docs/findings.md#s190)
+[^unchecked]: Not checked.
