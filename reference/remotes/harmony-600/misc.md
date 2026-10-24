@@ -11,4 +11,4 @@ Activities, Devices and Remote Settings tabs[^x-manual]. Today's client for this
 settings for the 600 are in [features.md](features.md); where a step in the manual and MyHarmony
 disagree, the manual describes the older generation of the software.
 
-[^x-manual]: Stated by Logitech, in the manual. [The Harmony 600 user manual](https://support.myharmony.com/harmony-600-user-manual)
+[^x-manual]: Stated by Logitech, in the manual. [The Harmony 600 user manual](https://www.manualslib.com/manual/634914/Logitech-Harmony-600.html)

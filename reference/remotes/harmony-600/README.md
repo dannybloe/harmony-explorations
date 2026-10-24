@@ -83,7 +83,7 @@ are the 600's own:
 * Any firmware for this model other than 0.2: Logitech's version list names 0.3, [firmware.md](firmware.md).
 * Whether the remote counts devices at all: it ran six where Logitech states five[^s390].
 
-[^x-manual]: Stated by Logitech, in the manual. [The Harmony 600 user manual](https://support.myharmony.com/harmony-600-user-manual)
+[^x-manual]: Stated by Logitech, in the manual. [The Harmony 600 user manual](https://www.manualslib.com/manual/634914/Logitech-Harmony-600.html)
 [^s19]: Measured on a unit. [Section 19](../../../docs/findings.md#s19)
 [^s302]: Measured on a unit. [Section 302](../../../docs/findings.md#s302)
 [^s131]: Stated by Logitech, by their service. [Section 131](../../../docs/findings.md#s131)

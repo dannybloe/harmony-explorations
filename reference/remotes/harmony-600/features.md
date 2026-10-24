@@ -129,7 +129,7 @@ and Product Specification[^x-manual]. Learning on a 600 is not checked[^unchecke
 [^x-forum]: Stated by a third party. [The comparison table of harmony-remote-forum.de](https://www.harmony-remote-forum.de/harmony_compare.php)
 [^t-capabilities]: Stated by Logitech, by their service. [The test](../../../tests/test_product_capabilities.py)
 [^s292]: Stated by Logitech, by their service. [Section 292](../../../docs/findings.md#s292)
-[^x-manual]: Stated by Logitech, in the manual. [The Harmony 600 user manual](https://support.myharmony.com/harmony-600-user-manual)
+[^x-manual]: Stated by Logitech, in the manual. [The Harmony 600 user manual](https://www.manualslib.com/manual/634914/Logitech-Harmony-600.html)
 [^s390]: Measured on a unit. [Section 390](../../../docs/findings.md#s390)
 [^unchecked]: Not checked.
 [^s331]: Measured in configurations. [Section 331](../../../docs/findings.md#s331)

@@ -140,7 +140,7 @@ swallows all but the centre key, which returns[^s311].
 * Whether a skin 73 unit's keypad differs in its printing. The 600's and 700's safe mode configurations
   differ in 83 bytes, almost all in the key table, and nothing has read why[^s24].
 
-[^x-manual]: Stated by Logitech, in the manual. [The Harmony 600 user manual](https://support.myharmony.com/harmony-600-user-manual)
+[^x-manual]: Stated by Logitech, in the manual. [The Harmony 600 user manual](https://www.manualslib.com/manual/634914/Logitech-Harmony-600.html)
 [^s133]: Measured in configurations. [Section 133](../../../docs/findings.md#s133)
 [^s145]: Stated by Logitech, by their service. [Section 145](../../../docs/findings.md#s145)
 [^s17]: Measured in configurations. [Section 17](../../../docs/findings.md#s17)

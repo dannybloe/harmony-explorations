@@ -55,7 +55,7 @@ read on the Harmony 650[^s346].
 * What differs between hardware 1.1 and the 650's 1.2 beyond the panel[^unchecked].
 * Which light the configuration's group 3 sets, and whether the screen is seen by it[^s392].
 
-[^x-manual]: Stated by Logitech, in the manual. [The Harmony 600 user manual](https://support.myharmony.com/harmony-600-user-manual)
+[^x-manual]: Stated by Logitech, in the manual. [The Harmony 600 user manual](https://www.manualslib.com/manual/634914/Logitech-Harmony-600.html)
 [^s23]: Measured on a unit. [Section 23](../../../docs/findings.md#s23)
 [^s88]: Measured on a unit. [Section 88](../../../docs/findings.md#s88)
 [^s88b]: Read in the firmware. [Section 88](../../../docs/findings.md#s88)
