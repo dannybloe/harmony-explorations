@@ -26,8 +26,8 @@ takes over `todo-later.md` chapter 8, plan 005's steps, which now live here.
 ## 1. Inventory and plan
 
 - [x] 1.1 An inventory of every document and every section of the large ones: knowledge or bookkeeping, which model or subject, where it belongs, what it duplicates; done by two agents, reading only, about 20 stale or contradicting statements among what they found
-- [ ] 1.2 The website's structure: the sections a reader meets, in order, and the folder layout under `reference/` that follows it
-- [ ] 1.3 A plan, `docs/plans/009-the-reference.md`: the target layout, a move table per file and section, and the order; shown before anything moves
+- [x] 1.2 The website's structure: the sections a reader meets, in order, and the folder layout under `reference/` that follows it
+- [x] 1.3 A plan, `docs/plans/009-the-reference.md`: the target layout, a move table per file and section, and the order; shown before anything moves
 - [x] 1.4 Decision 25 corrected in place: `reference/` instead of `docs/spec/`, footnotes as the evidence form, written in layers, the website built and not committed
 
 ## 2. The skeleton
@@ -63,6 +63,8 @@ takes over `todo-later.md` chapter 8, plan 005's steps, which now live here.
 - [ ] 6.2 The skills and the `finding` procedure send a new fact to its home in `reference/` with its footnote
 
 ## 7. The website
+
+7.1 runs straight after 2.1, so the site's strict build checks every link from chapter 3 on (plan 009, section 3).
 
 - [ ] 7.1 MkDocs with the Material theme, pinned, the contents from 1.2, built from `reference/`
 - [ ] 7.2 Published by GitHub Pages through a build on every push; the built site is not committed

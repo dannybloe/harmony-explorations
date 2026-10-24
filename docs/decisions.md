@@ -725,8 +725,8 @@ remote and 2 in the second, which is what section 117 measured as a generator er
    configuration) are decisions of this project and stay in `docs/`, since they will become FreeHarmony's
    parameters. **The reference never describes our bench**: no unit, account, dump, lab read, test setup or
    todo item, and no person's name; it states the kind of evidence instead, as a named footnote,
-   `[^s424]`, saying whether a fact was read in the firmware, measured on a unit, stated by Logitech, chosen
-   by this project or not checked, and linking to the findings section that holds the argument. **One home
+   `[^s424]`, saying whether a fact was read in the firmware, measured on a unit, measured in configurations,
+   stated by Logitech, stated by a third party, chosen by this project or not checked (the form is plan 009's), and linking to the findings section that holds the argument. **One home
    per fact**: a second place links; what the code holds is generated into the text and tested against it.
    **Written in layers**: each subject opens in plain words and grows more technical further down, so one
    text serves a reader who wants to understand a Harmony and one who wants to build a configuration. The
