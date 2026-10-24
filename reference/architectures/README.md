@@ -11,6 +11,7 @@ named for the models a reader holds rather than for the number.
 | [harmony-one](harmony-one/README.md) | 12 |
 | [harmony-600-650-700](harmony-600-650-700/README.md) | 14 |
 | [harmony-300-350](harmony-300-350/README.md) | 16 |
+| [harmony-touch](harmony-touch/README.md) | 17 by the Harmony Touch's own report, 18 by Logitech's templates |
 
 Each folder's README says which models it covers and how much of it was measured on which of them.
 
