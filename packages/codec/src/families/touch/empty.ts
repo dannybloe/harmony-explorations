@@ -13,9 +13,11 @@
  *
  * **What the assembly decides itself**, each a choice of ours and none a measurement:
  *
- * * **Where each piece sits.** Each mode is laid out as the Harmony 650's assembly lays one: its own key map, then per
- *   page its program and its page record, then the chrome its pages call and the program pieces a switch reaches, then
- *   its entry; mode 0's own key map is the key table and so sits where the frame puts it. The page lists' second copies,
+ * * **Where each piece sits.** Within a mode, Logitech's order, measured on all 102 device lists of the nineteen One
+ *   compiles, findings section 435: its own key map, the chrome, then per page its program, the pieces it reaches by a
+ *   switch and its page record, then its entry. Section 434 had the chrome after the page records, as the Harmony 650's
+ *   assembly lays a mode, until section 435 corrected it; the code below has followed 435 since. Mode 0's own key map
+ *   is the key table and so sits where the frame puts it. The page lists' second copies,
  *   which nothing names, follow the last entry in mode order and base slot 9's sets follow them, which is where
  *   `taggedListPools` finds them on every compile, section 69. Then base slot 11's programs, the hit pages, the timers.
  * * **One inline copy of a text across the file**, section 334: the sets are built in the composed path's order,
@@ -40,8 +42,16 @@
  * three hold a leap year the fixed screens add a Day 29 picker and a second Month picker, `fixedscreens.ts`.
  *
  * **What no Logitech compile shows**, since every one of the nineteen holds at least one device: no device at all, device
- * lists with no row, base slot 5 with no infrared group. Inferred, and unconfirmed until the spare Harmony One runs it,
- * `todo-compile-one.md` 7.2; findings section 434 lists them with the rest of what the empty One alone holds. An
+ * lists with no row, base slot 5 with no infrared group. Inferred, and seen on a remote since `todo-compile-one.md` 7.2:
+ * written to the spare Harmony One, 486460 bytes as 8 erase blocks read back byte for byte, it started on My Activities
+ * with no activity, the clock ran, the device list opened with no row and All Off redrew My Activities; that run is the
+ * todo item's record and in no findings section, the archive being frozen at 436. Section 434 lists what the empty One
+ * alone holds. A configuration built from nothing is a design choice of this project with no decision yet, so this
+ * header, and not the reference, is where it is described. What it holds, against the fewest of Logitech's nineteen:
+ * 67 modes and 1314 lists (84 and 1955), 14 hit pages, 29 font sets (section 427's 18 and 11 blended copies), 27 base
+ * slot 11 entries (29), 25 timers (26); 486460 bytes built in 2026 and 489507 in a build year whose Year picker offers a
+ * leap year (69 modes, 15 hit pages), `test/touchempty.test.ts`. It starts on the activity menu, the case the start's
+ * ready map takes for location 0. An
  * activity menu with no row is Logitech's own on the four compiles with no activity, and an all off case with nothing
  * to switch off is `harvest_one_families_1`'s, section 430.
  *

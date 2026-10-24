@@ -40,6 +40,13 @@
  * leftover entry, 7, the first after the seven fixed ones, as on `harvest_one_families_1`; and the lists, the front
  * first, then the hour list, then the wiring's in `touchWiringNeeds`' order and the fixed cases' four.
  *
+ * **What it comes to**: eleven redraw timers, the three second one and the thirteen, 25 timers in all, one fewer than the
+ * fewest any of Logitech's compiles holds; 346 lists (the front's 168, the hour list, the wiring's 173 and the fixed
+ * cases' four, the page and button sound toggles'); 18 variables after the firmware's, the activity counter 0 to 0 as on
+ * the four compiles with no activity; and 15 value maps, every role of section 416's catalogue but the start up toggle.
+ * A choice of this project with no decision yet, so described here and not in the reference. Run on a remote with the
+ * rest of the empty One, `todo-compile-one.md` 7.2, `empty.ts`.
+ *
  * The Harmony One alone, the touch family's, arch 12: the Harmony 600, 650 and 700's is `families/four-slot/empty.ts`.
  * Read only towards hardware: the result is pieces.
  */
