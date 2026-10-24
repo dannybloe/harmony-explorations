@@ -55,7 +55,7 @@ takes over `todo-later.md` chapter 8, plan 005's steps, which now live here.
 
 ## 5. The findings archive
 
-- [ ] 5.1 Every section's conclusion checked against `reference/`: present, added, or marked as disproved in `docs/superseded.md`'s successor (agents by section range)
+- [x] 5.1 Every section's conclusion checked against `reference/`: present, added, or marked as disproved in `docs/superseded.md`'s successor (agents by section range)
 
 ## 6. The rules
 
