@@ -53,10 +53,8 @@ import reference_guards as guards  # noqa: E402
 # BEGIN PINNED: written by tools/reference_guards.py --pin, never by hand
 PINNED = {
     'bench': {
-        ('reference/glossary.md', 'dump'): 2,
     },
     'names': {
-        ('reference/glossary.md', 'a person'): 2,
     },
     'copy': {
     },

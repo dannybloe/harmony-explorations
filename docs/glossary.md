@@ -17,6 +17,10 @@ passes.
 **sample** (standard). One file in the corpus. "Two samples" is the minimum evidence for a claim
 here, and **two samples of one model are much weaker than two architectures**.
 
+**dump** (standard). A copy of what is actually on one remote, read out over USB, as opposed to a file
+that was sent to it. A dump is evidence about one physical unit, and like every other sample it lives in
+the lab.
+
 **contributor** (our name). Someone who shared a dump. Each contributed directory carries a
 `META.md` recording who, when, with what permission, and **what is in the config**, which is the
 part that is hardest to recover later and most valuable to have.
