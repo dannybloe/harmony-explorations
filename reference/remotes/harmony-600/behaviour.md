@@ -1,7 +1,7 @@
 # Harmony 600: behaviour
 
 What the remote does in use, as a person holding it sees it. The operating concept, activities and
-device mode, is `docs/how-a-harmony-works.md`, and this page does not restate it; it says how the 600
+device mode, is `reference/how-a-harmony-works.md`, and this page does not restate it; it says how the 600
 does it. Most of what has been seen at the bench on this architecture was seen on the Harmony 650, whose
 [behaviour.md](../harmony-650/behaviour.md) carries it; a row here is the 600's own or names its source.
 
@@ -11,10 +11,10 @@ The 600 plays no click on a key or a screen key: its architecture has no tone in
 
 | | how | standing and source |
 |---|---|---|
-| in | **the centre key below the display**, under the word "Devices". There is no Devices key: the manual's button table lists every key and none is called Devices | Logitech's manual pages 5 and 6, "you select devices by pressing the center button below Devices"; `docs/how-a-harmony-works.md`, which records that this file's predecessors claimed a Devices key for a day |
-| choosing a device | a list of devices, chosen with the arrows and the side keys, four to a page | Logitech's manual page 9; `docs/how-a-harmony-works.md` |
+| in | **the centre key below the display**, under the word "Devices". There is no Devices key: the manual's button table lists every key and none is called Devices | Logitech's manual pages 5 and 6, "you select devices by pressing the center button below Devices"; `reference/how-a-harmony-works.md`, which records that this file's predecessors claimed a Devices key for a day |
+| choosing a device | a list of devices, chosen with the arrows and the side keys, four to a page | Logitech's manual page 9; `reference/how-a-harmony-works.md` |
 | a device's page | that device's commands on the screen, and its own keypad map | Logitech's manual page 9; the map is the device's own screen record, section 271 |
-| out | the centre key again, which then writes "Activity" | Logitech's manual page 9, "press the center button to return to Activities"; `docs/how-a-harmony-works.md` |
+| out | the centre key again, which then writes "Activity" | Logitech's manual page 9, "press the center button to return to Activities"; `reference/how-a-harmony-works.md` |
 
 The manual: "In some cases, you may want to control a device individually. You can use the device
 feature of the Harmony 600 to control devices one-by-one." Logitech's manual page 9.

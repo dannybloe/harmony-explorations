@@ -1636,7 +1636,7 @@ export interface DeviceListRow {
  * The device list, read off the widest menu that lists devices.
  *
  * **This is the list the Devices button shows**, and it is the authoritative population of devices,
- * per `docs/how-a-harmony-works.md`: a device is what that list offers, whether or not it sends
+ * per `reference/how-a-harmony-works.md`: a device is what that list offers, whether or not it sends
  * infrared. A configuration carries several copies of the list, one per context it is shown in,
  * all reaching the same modes, so the first menu reaching the most distinct device modes is taken.
  *

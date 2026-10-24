@@ -38,13 +38,13 @@ All of it **Logitech's service**, `reference/capabilities.md`. So no sequences a
 longer two second press", Logitech's manual. Logitech's service says 8, and **every configuration of a 350
 carries eight infrared groups whatever the device count**, the table being allocated at the maximum,
 measured, section 263. Four keys times two presses is exactly the stated maximum, where the 300 has four
-keys, no long press and four devices, `docs/how-a-harmony-works.md`.
+keys, no long press and four devices, `reference/how-a-harmony-works.md`.
 
 ## One activity
 
 The **Watch TV** activity "automatically power[s] on/off devices you use to watch TV"; pressing Watch TV
 again turns them all off, Logitech's manual. `MaxActivities` 1, Logitech's service, and a fill test of
-model records accepted exactly one, `docs/how-a-harmony-works.md`. That the limit is the remote's and not
+model records accepted exactly one, `reference/how-a-harmony-works.md`. That the limit is the remote's and not
 only the software's is **not checked**: no configuration can be given a second activity to compare.
 
 ## Favourite channels

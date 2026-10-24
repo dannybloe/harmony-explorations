@@ -1392,7 +1392,7 @@ test('a button map belongs to a device, and an activity map is that plus its ove
   // to show a keypad per activity, on the strength of every keypad binding here sitting in an activity's
   // map. The measurement was right and the question was wrong: a Harmony has a **device mode**, where
   // the Devices key points the whole keypad at one chosen device, and that is what a page about a device
-  // is for. `docs/how-a-harmony-works.md` is the context that was missing.
+  // is for. `reference/how-a-harmony-works.md` is the context that was missing.
   //
   // What the corpus does say, once asked properly: for each pair of a device and a scan code, the
   // command that pair sends is the **same in every activity that binds it**, 1096 of 1105 times. So the

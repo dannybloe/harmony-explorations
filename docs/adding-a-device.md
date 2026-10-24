@@ -80,7 +80,7 @@ Named so that nobody adds them to the critical path.
   Harmony 600 stays read only. Phases 1 to 7 are architecture neutral and 7 and 8 are the One alone.
 * **The application's interface.** Phase 1 touches FreeHarmony's main process and no screen. The rest of
   this repository owes FreeHarmony an API, not a page.
-* **An activity.** A device added in device mode is reachable without one, `docs/how-a-harmony-works.md`,
+* **An activity.** A device added in device mode is reachable without one, `reference/how-a-harmony-works.md`,
   and an activity would add a second keypad map to author for no gain here. Adding a device **to** an
   existing activity is the natural next goal and is not this one.
 * **Logitech's device search in the application.** It exists already, `src/main/logitech/client.ts` in

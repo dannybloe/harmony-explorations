@@ -69,7 +69,7 @@ outside our own reading: their platform has one abstract button map with three s
 device, by an activity, and by neither. It also says a button holds **three** actions, a press, a long
 press and a double press, and it names the button kinds per surface. That schema is for a later
 generation of hardware, so it is evidence about the product's design and not about what these remotes
-hold. `reference/logitech/data-model/model.md` and `docs/how-a-harmony-works.md` carry it.
+hold. `reference/logitech/data-model/model.md` and `reference/how-a-harmony-works.md` carry it.
 
 **The Harmony 600, 650 and 700 show no clock. There is no time anywhere on their screen**, Danny's
 observation at the bench, said many times and got wrong by sessions anyway, because until 7 October
@@ -109,7 +109,7 @@ the main one. **So a device page reads the stated map and never reconstructs one
 what the activities agree on: that rule is wrong on 136 of the 1032 pairs where they do agree, and blind
 to 568 keys no activity binds.
 
-`docs/how-a-harmony-works.md` is the long form and `.claude/skills/how-a-harmony-works/SKILL.md` is the
+`reference/how-a-harmony-works.md` is the long form and `.claude/skills/how-a-harmony-works/SKILL.md` is the
 ritual that makes it get read. **The rule behind both**: a measurement over the corpus answers "what do
 these files contain" and never "what does the product do". The corpus will agree with itself about a
 feature it holds no bytes for. When the product answer is not written down here, ask Danny rather than
@@ -746,7 +746,7 @@ source file's own header is where its reading lives. The ones a session reaches 
   `docs/decisions.md` and `docs/plans/`, per "How planning works" above
 * `docs/findings.md`, the argument, grepped and read in ranges and never loaded whole;
   `docs/config-format.md`, the structured spec; `docs/glossary.md`, the vocabulary
-* `docs/how-a-harmony-works.md`, the operating concept, and `reference/logitech/data-model/model.md`, consulted before
+* `reference/how-a-harmony-works.md`, the operating concept, and `reference/logitech/data-model/model.md`, consulted before
   naming a field or designing anything about devices, activities or remotes
 * `docs/superseded.md`, claims a finding killed; `reference/remotes/`, the public per model
   reference, which carries **nothing** about our units, accounts or dumps

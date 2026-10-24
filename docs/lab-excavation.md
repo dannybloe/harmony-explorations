@@ -331,7 +331,7 @@ The grid, with the two squares that matter marked. File counts are what to plan 
 | `software/LogitechHarmonyRemoteSoftware.app/` | 202M | 208 | catalogued 29 August 2026, section 214: the **pristine vendor build**, and the copy to compare it against is our repack rather than the unpacked original, which is what its register row had guessed |
 | `software/desktop-webapp/` | 21M | 370 | **section 197's square**, and the one that proves the point |
 | `reference/logitech-icons/` | 20M | 1560 | opened 30 August 2026, section 216, and it was **ours**: an extraction of every graphic resource in Logitech's software. It was a third complete and is finished now, 1554 distinct images. The artwork stays in the lab; the category names crossed |
-| `Docs/` | 20M | 7 | user manuals, the source `docs/how-a-harmony-works.md` rests on |
+| `Docs/` | 20M | 7 | user manuals, the source `reference/how-a-harmony-works.md` rests on |
 | `fonts/` | 532K | 11 | the Oxanium typeface for the letters our configurations draw, decision 19, added 10 October 2026; catalogued, nothing to dig |
 | `dumps/`, `firmware/`, `reads/`, `golden/`, `ghidra/`, `reviews/`, `units/`, `bin/` | 172M | 258 | the well worked areas, and still to be registered rather than assumed. `units/` is the newest and the smallest, one hex line per bench remote: which unit is on the cable, which is what the write rails compare against and what may not be in a public repository, section 226 |
 

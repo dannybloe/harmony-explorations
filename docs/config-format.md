@@ -1739,7 +1739,7 @@ reads the stated one. Scored against it: of 1123 pairs of a device and a key tha
 device's own map holds the same command on 896 and a different one on 136 where every activity agrees, and
 it binds a further 568 keys no activity binds at all. So the reconstruction is wrong on 13% of what it can
 see and blind to a third again as much.
-[how-a-harmony-works.md](how-a-harmony-works.md) is the product side of this.
+[../reference/how-a-harmony-works.md](../reference/how-a-harmony-works.md) is the product side of this.
 
 The index is carried by opcode `0x1F` with the operand's high byte `0xFF` and the index in the low
 byte. When it changes, the firmware runs the outgoing entry's list with **tag 2** and the incoming

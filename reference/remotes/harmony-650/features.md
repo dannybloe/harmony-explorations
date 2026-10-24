@@ -47,7 +47,7 @@ plus its inputs, so the device count binds first on every configuration measured
 | | standing and source |
 |---|---|
 | three activity keys, Watch TV, Watch a Movie, Listen to Music, plus More Activities for the rest | Logitech's manual, page 2 |
-| how many activities a 650 may hold | **not stated**. The manual: "The number of activities you can add depends on the devices you have added". Seventeen model records were filled with seven activities each and every model with a screen took all seven, `docs/how-a-harmony-works.md`, Logitech's service; whether a 650 record was among the seventeen is not recorded there, so for the 650 **not checked**. The bench unit holds four, section 317 |
+| how many activities a 650 may hold | **not stated**. The manual: "The number of activities you can add depends on the devices you have added". Seventeen model records were filled with seven activities each and every model with a screen took all seven, `reference/how-a-harmony-works.md`, Logitech's service; whether a 650 record was among the seventeen is not recorded there, so for the 650 **not checked**. The bench unit holds four, section 317 |
 | an activity key with no activity opens mode 0, "Use the Harmony setup software to add an Activity on this button", and the centre key under "Exit" returns to the screen before; an activity on no key still starts from the Activities menu | read from configurations, section 311, and seen on the bench with a key we emptied, section 341 |
 | which activity each activity key starts: MyHarmony's "Customize Activity Buttons", one activity per key and no empty choice, so a key is empty only with fewer than three activities | MyHarmony's client and Logitech's compiles, section 340 |
 | no long press on an activity key, or on any key: the firmware raises press, repeat and release only | the firmware, build 0.2, section 340; [keys.md](keys.md) |
@@ -75,13 +75,13 @@ plus its inputs, so the device count binds first on every configuration measured
 * **Help** asks whether things worked and resends what is needed; **held for 5 seconds** it opens
   advanced help, Logitech's manual page 6. On the Harmony 600 and 700 that is where a device's
   inter device delay and repeats are adjusted, their manuals; on the 650 **not checked**.
-* Help also leads to a "Select device" screen, a third list of devices, `docs/how-a-harmony-works.md`.
+* Help also leads to a "Select device" screen, a third list of devices, `reference/how-a-harmony-works.md`.
 * **Help belongs to what is running, not to a device**: in an activity it resends that activity's power
   and inputs, with nothing running it resends power off and asks "Did that fix the problem?", and a
   device page binds no Help, so a press there goes to whatever is running underneath. Read in Logitech's
   compiles, every activity and the nothing running state binding Help and no device mode, section 333;
   the nothing running case **measured on a unit** from a device page. In an activity from a device page
-  **not checked**. `docs/how-a-harmony-works.md` has the long form.
+  **not checked**. `reference/how-a-harmony-works.md` has the long form.
 * **Remote Assistant**: shown after a sync and when an activity starts, turned off temporarily from its
   own screen, back after the next sync, Logitech's manual page 4. MyHarmony lists `RemoteAssistant` as a
   setting for the 600 and 700, section 292, and for the 650; switched off, Logitech's compile holds no

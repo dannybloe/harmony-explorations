@@ -364,7 +364,7 @@ and it has exactly three subclasses:
 | `RootButtonMap` | nothing: it adds no field at all |
 
 **This is Logitech stating the operating concept in their own schema**, and it is the first
-independent source for it. `docs/how-a-harmony-works.md` argues that a device's map and an
+independent source for it. `reference/how-a-harmony-works.md` argues that a device's map and an
 activity's map are two maps of the same keypad, authored separately, and it was written from
 their help pages and from measurements over the corpus. Here the two are separate types with a
 shared base, keyed by the two different things.
@@ -737,7 +737,7 @@ person to read, and an identifier.
 
 Both kinds of map are the same shape in the schema, `DeviceFunctionMap` and `ActivityFunctionMap`
 extending one `AbstractFunctionMap` that holds the groups. That is the operating concept in
-`docs/how-a-harmony-works.md` stated by the vendor: a device's map and an activity's map are two maps
+`reference/how-a-harmony-works.md` stated by the vendor: a device's map and an activity's map are two maps
 of the same keypad. A device map names the default mode, an activity map names its own activity.
 
 ### A named group against the catch all beside it

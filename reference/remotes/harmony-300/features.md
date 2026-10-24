@@ -39,12 +39,12 @@ the 78 against 79 favourite figures are section 265.
 Logitech's service says 4, and **every configuration of a 300 carries four infrared groups**, allocated at
 the maximum with the unused ones empty, measured, section 264; the group index is the device key,
 [keys.md](keys.md). Four keys with no long press is the maximum, where the 350 doubles it with a long press,
-`docs/how-a-harmony-works.md`.
+`reference/how-a-harmony-works.md`.
 
 ## The activity question
 
 **The 300 states no `Activities` capability**, only `PartiallySetupActivities`, and a fill test of model
-records accepted exactly one activity for it, `docs/how-a-harmony-works.md`. Its setup guide: "Watch TV with
+records accepted exactly one activity for it, `reference/how-a-harmony-works.md`. Its setup guide: "Watch TV with
 one click: Turn your TV and cable/ satellite box on with a single button press". An account from the bench
 describes it as a shortcut that switches several devices on and does not remap the keypad, section 265.
 **Whether that shortcut is held in the configuration as an activity is not checked**: the activity reader

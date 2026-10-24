@@ -230,7 +230,7 @@ produce a config the remote accepts and mishandles.
   that record; base slot 13 gains the state variable values whose transitions run those lists, which is
   where the reference actually lives; and the screen gains a page. No new key binding and no new
   infrared group. Reading a favourite channel as a page of keys is the mistake to avoid, and it is the
-  same mistake `docs/how-a-harmony-works.md` warns about generally: the format answers "what is in this
+  same mistake `reference/how-a-harmony-works.md` warns about generally: the format answers "what is in this
   file" and not "how does the product model this".
 * **And it is not one mechanism either**, section 156. A channel that survives being written as an
   integer goes through base slot 16, and one that does not, meaning anything with a leading zero, is

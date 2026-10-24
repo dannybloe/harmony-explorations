@@ -58,7 +58,7 @@ is the cause.
 | power | AA batteries, no charger | Logitech's manual, "Power Source AA batteries" |
 | external flash | 2 MiB SPI, EON F16, id `15:1C` | measured, section 88; Logitech's manual, "Memory Amount 2MB" |
 | user configuration | external `0x030000` | measured, `docs/memory-map-600.md` |
-| clock on screen | **none** | seen at the bench, 4 October 2026, `docs/how-a-harmony-works.md` |
+| clock on screen | **none** | seen at the bench, 4 October 2026, `reference/how-a-harmony-works.md` |
 | long press | none | Logitech's service, `reference/capabilities.md` |
 
 ## The files

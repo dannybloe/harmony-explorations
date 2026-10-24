@@ -104,7 +104,7 @@ docs/lab-excavation.md          the method for step 9: the seventeen things wort
                                 load bearing rule is that **a catalogue is not a claim and only a
                                 claim needs a test**, taken by Danny on 28 August 2026, because
                                 demanding a test per row is what keeps the site unexcavated
-docs/how-a-harmony-works.md     the operating concept: activities, device mode, the Devices key, what
+reference/how-a-harmony-works.md     the operating concept: activities, device mode, the Devices key, what
                                 the keypad and the screen each do. Read before designing anything about
                                 behaviour, since every other document here is about bytes
 docs/review-before-first-write.md

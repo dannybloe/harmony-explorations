@@ -23,7 +23,7 @@ In this order, every time, including in an agent:
    conversation say "the Harmony 300" or "the Harmony 350", never the bare architecture number.
 2. `reference/remotes/harmony-300/README.md` or `reference/remotes/harmony-350/README.md`, or both: the
    key numbers and the map of each model's nine topic files.
-3. `docs/how-a-harmony-works.md` when the task touches what the remote does for a person: on these two a
+3. `reference/how-a-harmony-works.md` when the task touches what the remote does for a person: on these two a
    device key **is** device mode, and neither has a screen.
 
 **When the reference does not answer a question about the remote, ask** before designing around the gap,

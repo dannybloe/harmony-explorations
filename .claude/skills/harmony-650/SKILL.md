@@ -24,7 +24,7 @@ In this order, every time, including in an agent:
    architecture 14, including its memory layout. In conversation say "the Harmony 650", never the bare
    architecture number.
 3. `todo-compile-650.md`: the plan, which item the task is, and the evidence already recorded on it.
-4. `docs/how-a-harmony-works.md` when the task touches what the remote does for a person: activities,
+4. `reference/how-a-harmony-works.md` when the task touches what the remote does for a person: activities,
    device mode, Help, the device list.
 
 **When the reference does not answer a question about the remote, ask Danny** before designing around

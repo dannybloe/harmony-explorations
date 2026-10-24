@@ -77,7 +77,7 @@ Favorites the favourite channels, Logitech's manual, "Know your product".
 
 **A long press exists on this model**: Logitech's product record declares `LongPressAction` for skin 99,
 `SKINS_WITH_A_LONG_PRESS` in `packages/usb/src/models.ts`. A key with one cannot also repeat, because the
-firmware has to wait to learn which was meant, `docs/how-a-harmony-works.md`. Which keys have one, and how
+firmware has to wait to learn which was meant, `reference/how-a-harmony-works.md`. Which keys have one, and how
 long the press is, is **not checked**.
 
 ## Not checked

@@ -2,7 +2,7 @@
 
 **The Harmony 350 has no screen.** Logitech's service states its display as none,
 `reference/capabilities.md`, and its manual draws none. It is one of the three screenless models, with the
-Harmony 300 and 200, `docs/how-a-harmony-works.md`.
+Harmony 300 and 200, `reference/how-a-harmony-works.md`.
 
 <!-- generated:display -->
 | field | value | from |

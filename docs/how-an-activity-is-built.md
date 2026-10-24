@@ -16,7 +16,7 @@ reason `composeDeviceScreen` is separate from `composeDevice`.
 
 An activity is "Watch TV". You press it, several appliances switch on, their inputs get set, and the
 keypad is pointed at a mixture of them: volume to the amplifier, channels to the set top box. Read
-`docs/how-a-harmony-works.md` before this document, because everything below is the file's answer to a
+`reference/how-a-harmony-works.md` before this document, because everything below is the file's answer to a
 question that document asks.
 
 The thing to hold on to, because it is what the bytes turn out to say: an activity is **not a list of

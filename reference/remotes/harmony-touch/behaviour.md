@@ -1,7 +1,7 @@
 # Harmony Touch: behaviour
 
 What the remote does in use, from Logitech's manual, and what it did on the cable. The operating concept is
-`docs/how-a-harmony-works.md`. **Nothing about the Touch in use has been seen at the bench** and recorded:
+`reference/how-a-harmony-works.md`. **Nothing about the Touch in use has been seen at the bench** and recorded:
 no infrared run exists for it.
 
 ## Device mode, in and out

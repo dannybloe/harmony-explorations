@@ -869,7 +869,7 @@ class TheActivityDrawingCoversTheCluster(unittest.TestCase):
 class TheButtonMapsSayWhichButtonSendsWhat(unittest.TestCase):
     """The cluster that corroborates the operating concept, asserted against the schema.
 
-    `docs/how-a-harmony-works.md` argues that a device's map and an activity's map are two maps of
+    `reference/how-a-harmony-works.md` argues that a device's map and an activity's map are two maps of
     the same keypad. That was derived from Logitech's help pages and from counting agreements over
     fifteen configurations. This is the independent source, so what it says has to be pinned: if the
     schema ever stops having two keyed map types, the corroboration is gone and both documents are
@@ -894,7 +894,7 @@ class TheButtonMapsSayWhichButtonSendsWhat(unittest.TestCase):
 
     def test_both_documents_state_the_corroboration(self):
         for text in (document(),
-                     (ROOT / 'docs' / 'how-a-harmony-works.md').read_text(encoding='utf-8')):
+                     (ROOT / 'reference' / 'how-a-harmony-works.md').read_text(encoding='utf-8')):
             self.assertIn('three subclasses', text)
 
     def test_a_button_holds_a_press_a_long_press_and_a_double_press(self):

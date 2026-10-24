@@ -22,7 +22,7 @@ In this order, every time, including in an agent:
    `memory.md`, `firmware.md`, `usb.md`, `hardware.md`, `misc.md`.
 2. `reference/architectures/harmony-600-650-700/README.md`: what the 700 shares with the 600 and 650,
    architecture 14. In conversation say "the Harmony 700", never the bare architecture number.
-3. `docs/how-a-harmony-works.md` when the task touches what the remote does for a person.
+3. `reference/how-a-harmony-works.md` when the task touches what the remote does for a person.
 
 **`docs/memory-map-700.md` was written before any 700 was measured** and was corrected against the bench
 unit on 9 October 2026; the reference's `memory.md` carries the same measurements with their standing.

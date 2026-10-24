@@ -4,7 +4,7 @@
  * `hitpages.ts`, as the activity menu (`activitymenu.ts`, section 419) and the device pages (`devicepages.ts`,
  * section 420) are built.
  *
- * **What it is.** The list the Devices item on the touch panel opens, `docs/how-a-harmony-works.md`: every device
+ * **What it is.** The list the Devices item on the touch panel opens, `reference/how-a-harmony-works.md`: every device
  * once, three to a page, a touch on a row entering that device's mode. **A Harmony One compile holds one per
  * activity, one for no activity running and one nothing enters**, section 424, so three kinds by what reaches them:
  *

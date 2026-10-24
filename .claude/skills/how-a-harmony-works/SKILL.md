@@ -15,7 +15,7 @@ Every document in this repository is about bytes, firmware and pointers. Not one
 Harmony does when you press a button on it. So a design question got answered out of the file format
 instead of out of the product, and the file format cannot answer it.
 
-Read `docs/how-a-harmony-works.md` before designing anything that touches behaviour. It is short and
+Read `reference/how-a-harmony-works.md` before designing anything that touches behaviour. It is short and
 it is the missing half of every finding here.
 
 ## The one paragraph, if you read nothing else
@@ -49,13 +49,13 @@ own Activities key. A **Harmony 600 has no such key at all**: its screen writes 
 centre key of the three below the display, and "Activity" to come back. A Harmony One has both as items
 on its touch panel, the second called "Current Activity". On a Harmony 885 you press DEVICE and press it
 again to leave. So do not print "Current Activity" as though it were the product's vocabulary, and do
-not put a Devices key on a drawing of a 600. `docs/how-a-harmony-works.md` has the table with the
+not put a Devices key on a drawing of a 600. `reference/how-a-harmony-works.md` has the table with the
 manuals' own wording.
 
 **Help belongs to what is running, never to a device.** In an activity it resends that activity's power
 and inputs, with nothing running it resends power off and asks "Did that fix the problem?", and a device
 page binds no Help, so a press there goes to whatever runs underneath. Measured on the Harmony 600, 650
-and 700 only; `docs/how-a-harmony-works.md` has the evidence.
+and 700 only; `reference/how-a-harmony-works.md` has the evidence.
 
 ## What follows for the format work
 

@@ -36,7 +36,7 @@ of every screen:
   below the screen. Labels of one line sit at y 40 and 90, read from configurations, sections 285 and
   290.
 * **A device list**, four devices to a page, one in each corner, under the centre key's "Devices",
-  `docs/how-a-harmony-works.md` and section 326. A second, two row device list is compiled into every
+  `reference/how-a-harmony-works.md` and section 326. A second, two row device list is compiled into every
   arch 14 configuration and **nothing on the remote opens it**, section 326.
 * **The page counter** `n/m` in the upper right corner, Logitech's manual and section 285.
 * **An infrared status indicator** that "flashes in the bottom right corner whenever command is being
@@ -96,7 +96,7 @@ all 437 page lists moved drew every screen as before, `todo-compile-650.md` 10.5
 ## What the screen does not show
 
 **No clock.** The ordinary screen of the Harmony 600, 650 and 700 has no time on it, the project owner's
-observation at the bench on 4 October 2026, recorded in `docs/how-a-harmony-works.md`. The remote keeps
+observation at the bench on 4 October 2026, recorded in `reference/how-a-harmony-works.md`. The remote keeps
 a clock all the same: the first seven state variables, which every restart of the 0.2 build resets to
 the configuration's stamp, measured in the 650's memory, sections 283 and 310. So a wrong stamp is
 **invisible on this remote** and has to be checked by reading its memory, never by looking at it.

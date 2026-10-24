@@ -25,7 +25,7 @@ In this order, every time, including in an agent:
    One is the only model on its platform, and in conversation it is "the Harmony One", never the bare
    architecture number.
 2. `docs/memory-map-one.md`: the long form of its memory, which the reference summarises.
-3. `docs/how-a-harmony-works.md` when the task touches what the remote does for a person, and in
+3. `reference/how-a-harmony-works.md` when the task touches what the remote does for a person, and in
    particular its sections on the four keys around the One's screen and on the click before a screen
    command.
 

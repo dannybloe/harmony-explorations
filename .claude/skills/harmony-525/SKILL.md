@@ -29,7 +29,7 @@ In this order, every time, including in an agent:
    arrived kept beside what was measured.
 4. The `recovering-a-remote` skill **before anything that touches safe mode, the bootloader or the
    EEPROM**, including a plan that only mentions them.
-5. `docs/how-a-harmony-works.md` when the task touches what the remote does for a person.
+5. `reference/how-a-harmony-works.md` when the task touches what the remote does for a person.
 
 **When the reference does not answer a question about the remote, ask** before designing around the gap,
 and land the answer in the reference afterwards with its source.

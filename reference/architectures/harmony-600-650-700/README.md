@@ -46,8 +46,8 @@ table's, third party, except the 600's monochrome panel, which is seen on the be
 | screen raster | 128 by 128 | measured from the configurations, section 129; and all three manuals |
 | screen size | 1.5 inch | all three manuals |
 | keys | 54 scan codes, three events each | read from configurations, sections 17 and 311 |
-| device mode | the centre key below the display, under "Devices"; no Devices key | manuals, `docs/how-a-harmony-works.md` |
-| clock on screen | **none** | seen at the bench, 4 October 2026, `docs/how-a-harmony-works.md` |
+| device mode | the centre key below the display, under "Devices"; no Devices key | manuals, `reference/how-a-harmony-works.md` |
+| clock on screen | **none** | seen at the bench, 4 October 2026, `reference/how-a-harmony-works.md` |
 | long press | none | Logitech's service, `reference/capabilities.md` |
 | USB product id | `0xC122` for all three | measured, section 281 |
 | battery voltage over USB | in millivolts, `READ_MISC` `0x0C` detail 1, see [usb.md](usb.md) | firmware on all three, sent to the 650 only, sections 212 and 340 |

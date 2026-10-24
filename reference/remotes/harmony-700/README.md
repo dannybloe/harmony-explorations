@@ -43,7 +43,7 @@ read.
 | power | rechargeable NiMH AA, charged through the USB socket with an AC adaptor | Logitech's manual |
 | external flash | 2 MiB SPI, EON F16, id `15:1C` on a unit; the 2.8 package's header names `0x14:0x1C`, 1 MiB | measured, section 297; read in the package, section 295 |
 | user configuration | external `0x030000` | measured, section 300 |
-| clock on screen | **none** | seen at the bench, 4 October 2026, `docs/how-a-harmony-works.md` |
+| clock on screen | **none** | seen at the bench, 4 October 2026, `reference/how-a-harmony-works.md` |
 | long press | none | Logitech's service, `reference/capabilities.md` |
 
 ## The files

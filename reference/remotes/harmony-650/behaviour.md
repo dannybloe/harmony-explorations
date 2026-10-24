@@ -1,7 +1,7 @@
 # Harmony 650: behaviour
 
 What the remote does in use, as a person holding it sees it. The operating concept, activities and
-device mode, is `docs/how-a-harmony-works.md`, and this page does not restate it; it says how the 650
+device mode, is `reference/how-a-harmony-works.md`, and this page does not restate it; it says how the 650
 does it and what has been seen on the bench unit.
 
 ## Device mode, in and out
@@ -18,7 +18,7 @@ where a Harmony One clicks before every command on its touch screen, section 337
 | out | the centre key again, which then writes "Activity" on an activity's own device list and "Activities" on the idle one | Logitech's manual page 4, "press the center button to return to Activities mode"; read from configurations and seen on the 650, sections 290 and 294 |
 
 The words are this model family's and not the product's: the Harmony One says "Current Activity",
-`docs/how-a-harmony-works.md`.
+`reference/how-a-harmony-works.md`.
 
 **An activity's own device list** puts that activity's devices first and the rest after them, read from
 configurations and seen on the 650: LG kijken's list showed LG, Denon, PS3, KPN, then Kodi and the

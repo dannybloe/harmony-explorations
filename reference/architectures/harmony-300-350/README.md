@@ -54,7 +54,7 @@ model; 104 is the Harmony 350 alone. Logitech's service, sections 131 and 196. L
 | power | two AA batteries | Logitech's manuals, both models |
 | face | one moulding, 55 keys, with different printing | a statement from the bench holding both; `packages/silhouettes/src/models/h300.ts` |
 | scan codes | **none known**: nothing measured ties a key to a code on this architecture | `h350.ts`; `packages/silhouettes/test/models.test.ts` |
-| activities | at most one, a screenless model's limit | Logitech's service and a fill test, `docs/how-a-harmony-works.md` |
+| activities | at most one, a screenless model's limit | Logitech's service and a fill test, `reference/how-a-harmony-works.md` |
 | long press | the 350 has one and the 300 does not | Logitech's service, `SKINS_WITH_A_LONG_PRESS` |
 
 ## How the two differ

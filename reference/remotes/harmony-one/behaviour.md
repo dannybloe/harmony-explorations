@@ -1,18 +1,18 @@
 # Harmony One: behaviour
 
 What the remote does in use, as a person holding it sees it. The operating concept, activities and
-device mode, is `docs/how-a-harmony-works.md`, and this page does not restate it; it says how the One does
+device mode, is `reference/how-a-harmony-works.md`, and this page does not restate it; it says how the One does
 it and what has been seen and measured on this model.
 
 ## Device mode, in and out
 
 | | how | standing and source |
 |---|---|---|
-| in | **"Devices"**, the touch key below the screen on the right, which the activity menu labels | Logitech's manual, "When you press the Devices button, the Harmony One's screen displays a list of your devices"; `docs/how-a-harmony-works.md`; section 275 |
+| in | **"Devices"**, the touch key below the screen on the right, which the activity menu labels | Logitech's manual, "When you press the Devices button, the Harmony One's screen displays a list of your devices"; `reference/how-a-harmony-works.md`; section 275 |
 | on a device | "the Harmony One controls only that device", every key and the screen | Logitech's manual, "Controlling your devices individually"; the device's own screen record, section 271 |
-| out | the key below the screen on the left, which the device list labels "Activities"; the right one is **not enabled** there, the configuration giving it no touch rectangle on 29 of 29 device list pages | read from configurations and an account from the bench, section 275 and `docs/how-a-harmony-works.md` |
+| out | the key below the screen on the left, which the device list labels "Activities"; the right one is **not enabled** there, the configuration giving it no touch rectangle on 29 of 29 device list pages | read from configurations and an account from the bench, section 275 and `reference/how-a-harmony-works.md` |
 
-`docs/how-a-harmony-works.md` also names the way back "Current Activity", as the One's own wording rather
+`reference/how-a-harmony-works.md` also names the way back "Current Activity", as the One's own wording rather
 than the product's. The device list measured in section 275 writes "Activities". Where on the remote each
 word appears is **not checked** here.
 
@@ -38,7 +38,7 @@ later than the same command on a key:
   hold flag, read in the firmware, section 337, which corrects section 127.
 * **Unconfirmed** in section 337: that a touch is posted while the finger is down, how long it settles,
   and that sliding onto another item gives a release and a new press. Whether a long press on the screen
-  would take as long as on a key is not established, `docs/how-a-harmony-works.md`.
+  would take as long as on a key is not established, `reference/how-a-harmony-works.md`.
 
 None of this applies to the Harmony 600, 650 and 700: no touch panel, no click, and their wait between
 devices is a separate step, section 337.
