@@ -86,10 +86,11 @@ Plan: [003-how-an-activity-is-built.md](docs/plans/003-how-an-activity-is-built.
 - [x] 3.4 Generate the text inside a screen program rather than carrying it; done as todo-compile-650 8.1 (section 358): every text spelled from its word, 22 Logitech compiles rebuilt byte for byte; arch 14 only
 - [x] 3.5 Write a fully built configuration to the spare Harmony One and use it: its own track since 15 October 2026, [todo-compile-one.md](todo-compile-one.md); done on 24 October 2026: the empty One and the test setup on it written to the spare and run with a bench test (sections 434 to 436)
 - [ ] 3.6 Straight after 3.5, decided on 18 October 2026: take [plan 005](docs/plans/005-specs-and-code.md)'s decision and start it, `docs/findings.md` frozen as an archive and every new fact in one home under `docs/spec/`, so knowledge stops spreading over more documents; `todo-later.md` chapter 8 holds its steps
-- [ ] 3.6 Room for a record of our own in every configuration we write, its contents undecided (FreeHarmony's document, its version, and more): carried in base slot 0, which the firmware never reads (section 81)
-  - [ ] 3.6.1 Confirm no firmware seeks base slot 0 on the images not yet scanned, the Harmony 600's and 650's 0.2 among them, per architecture; the Harmony 600 and 650 0.2 builds scanned since, never 0 or 1 (section 392), beside the One 3.4 and 700 2.8 (section 81) and the 525 (section 274); left: the 650 0.4 and 700 2.5 images, and reads that bypass the seeker
-  - [ ] 3.6.2 The codec writes and reads the record, kept apart from Logitech's name tree, and a configuration without one reads as having none
-  - [ ] 3.6.3 Written to a bench remote and read back, the remote running unchanged
+- [ ] 3.7 Straight after 3.6, decided on 24 October 2026: the Harmony 300 and 350 to the same finish line, a configuration built entirely by us, written to a bench unit and used; its own track, to be written when 3.6 is done
+- [ ] 3.8 Room for a record of our own in every configuration we write, its contents undecided (FreeHarmony's document, its version, and more): carried in base slot 0, which the firmware never reads (section 81)
+  - [ ] 3.8.1 Confirm no firmware seeks base slot 0 on the images not yet scanned, the Harmony 600's and 650's 0.2 among them, per architecture; the Harmony 600 and 650 0.2 builds scanned since, never 0 or 1 (section 392), beside the One 3.4 and 700 2.8 (section 81) and the 525 (section 274); left: the 650 0.4 and 700 2.5 images, and reads that bypass the seeker
+  - [ ] 3.8.2 The codec writes and reads the record, kept apart from Logitech's name tree, and a configuration without one reads as having none
+  - [ ] 3.8.3 Written to a bench remote and read back, the remote running unchanged
 
 ## 4. The device library
 

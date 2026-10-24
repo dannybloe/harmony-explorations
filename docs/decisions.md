@@ -698,7 +698,7 @@ remote and 2 in the second, which is what section 117 measured as a generator er
    "Turning system off" where no run with 73 reported it, section 392, one sighting that does not prove the
    number is the cause. Nothing else changes: every table here treats both numbers of a pair alike, and
    the builder takes either. A file of Logitech's written back as it is keeps its own number. Our own data
-   on a remote, `todo.md` 3.6, sits beside this byte and does not replace it.
+   on a remote, `todo.md` 3.8 (3.6 until 24 October 2026), sits beside this byte and does not replace it.
 
 24. **The Harmony One gets our own letters and pictures too, its button boxes included.** *Taken by the
    project owner on 15 October 2026, for `todo-compile-one.md` 1.2.* Decisions 19, 20 and 22 were taken for
@@ -712,3 +712,21 @@ remote and 2 in the second, which is what section 117 measured as a generator er
    taken: it is work the finish line throws away, and it still cannot spell every name. What it costs: the
    container frame for the One's 22 slots and the One's fonts, `todo-compile-one.md` 6.1 and 5.2, come
    before the first file on the spare. The One's colours are not decided by this.
+
+25. **The specification and the code are the product, and `docs/findings.md` is an archive.** *Taken by
+   the project owner on 18 October 2026, when `todo.md` 3.6 put plan 005 straight after the Harmony One's
+   track, and started on 24 October 2026 once that track was done.* This project delivers three things:
+   how a Harmony works, written as a specification a stranger can read, under `docs/spec/`; the libraries
+   that read, change and write configurations and talk to a remote; and the tests that hold the two
+   together. The line runs between public knowledge and project bookkeeping: `docs/spec/` describes the
+   models and never our bench, and what concerns our own units, accounts and dumps goes to
+   `docs/test-notes/`. Each fact states its standing in a few words, measured on a unit, read in the
+   firmware, stated by Logitech, a design choice of this project, or not checked, with the test that holds
+   it. What the code already knows is generated into the text and tested against it. `docs/findings.md` is
+   frozen where it is, since code and tests cite its sections thousands of times and every citation must
+   keep resolving: nothing new is added, a new fact goes straight to its home in `docs/spec/`, and old
+   content moves when it is touched rather than in one rewrite. Why: knowledge had spread over the
+   journal, `docs/config-format.md`, `reference/remotes/`, the status page and the skills, so finding the
+   current answer to a question meant reading several of them, and a summary in one drifted from another.
+   This changes decision 13: `findings.md` is not split, and it is no longer where a finding is written.
+   The steps are plan 005's, `todo-later.md` chapter 8.
