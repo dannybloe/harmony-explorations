@@ -25,10 +25,10 @@ takes over `todo-later.md` chapter 8, plan 005's steps, which now live here.
 
 ## 1. Inventory and plan
 
-- [ ] 1.1 An inventory of every document and every section of the large ones: knowledge or bookkeeping, which model or subject, where it belongs, what it duplicates (two agents, reading only, running)
+- [x] 1.1 An inventory of every document and every section of the large ones: knowledge or bookkeeping, which model or subject, where it belongs, what it duplicates; done by two agents, reading only, about 20 stale or contradicting statements among what they found
 - [ ] 1.2 The website's structure: the sections a reader meets, in order, and the folder layout under `reference/` that follows it
 - [ ] 1.3 A plan, `docs/plans/009-the-reference.md`: the target layout, a move table per file and section, and the order; shown before anything moves
-- [ ] 1.4 Decision 25 corrected in place: `reference/` instead of `docs/spec/`, footnotes as the evidence form, the website built and not committed
+- [x] 1.4 Decision 25 corrected in place: `reference/` instead of `docs/spec/`, footnotes as the evidence form, written in layers, the website built and not committed
 
 ## 2. The skeleton
 

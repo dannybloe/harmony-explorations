@@ -713,20 +713,28 @@ remote and 2 in the second, which is what section 117 measured as a generator er
    container frame for the One's 22 slots and the One's fonts, `todo-compile-one.md` 6.1 and 5.2, come
    before the first file on the spare. The One's colours are not decided by this.
 
-25. **The specification and the code are the product, and `docs/findings.md` is an archive.** *Taken by
-   the project owner on 18 October 2026, when `todo.md` 3.6 put plan 005 straight after the Harmony One's
-   track, and started on 24 October 2026 once that track was done.* This project delivers three things:
-   how a Harmony works, written as a specification a stranger can read, under `docs/spec/`; the libraries
-   that read, change and write configurations and talk to a remote; and the tests that hold the two
-   together. The line runs between public knowledge and project bookkeeping: `docs/spec/` describes the
-   models and never our bench, and what concerns our own units, accounts and dumps goes to
-   `docs/test-notes/`. Each fact states its standing in a few words, measured on a unit, read in the
-   firmware, stated by Logitech, a design choice of this project, or not checked, with the test that holds
-   it. What the code already knows is generated into the text and tested against it. `docs/findings.md` is
-   frozen where it is, since code and tests cite its sections thousands of times and every citation must
-   keep resolving: nothing new is added, a new fact goes straight to its home in `docs/spec/`, and old
-   content moves when it is touched rather than in one rewrite. Why: knowledge had spread over the
-   journal, `docs/config-format.md`, `reference/remotes/`, the status page and the skills, so finding the
-   current answer to a question meant reading several of them, and a summary in one drifted from another.
+25. **The reference and the code are the product, and `docs/findings.md` is an archive.** *Taken by the
+   project owner on 18 October 2026, when `todo.md` 3.6 put plan 005 straight after the Harmony One's track;
+   started and refined on 24 October 2026, `todo-reference.md`.* This project delivers three things: how a
+   Harmony works, written as a reference a stranger can read, in `reference/`; the libraries that read,
+   change and write configurations and talk to a remote; and the tests that hold the two together.
+   **Everything known about a Harmony is reference knowledge**, whether Logitech stated it or this project
+   derived it, what Logitech's compiler writes into a file included. **`docs/` holds only the project's
+   bookkeeping**: status, decisions, plans, the findings archive, notes on our own units, accounts and lab,
+   the lab method, and the internal lookup lists. Our own design choices (letters, colours, the empty
+   configuration) are decisions of this project and stay in `docs/`, since they will become FreeHarmony's
+   parameters. **The reference never describes our bench**: no unit, account, dump, lab read, test setup or
+   todo item, and no person's name; it states the kind of evidence instead, as a named footnote,
+   `[^s424]`, saying whether a fact was read in the firmware, measured on a unit, stated by Logitech, chosen
+   by this project or not checked, and linking to the findings section that holds the argument. **One home
+   per fact**: a second place links; what the code holds is generated into the text and tested against it.
+   **Written in layers**: each subject opens in plain words and grows more technical further down, so one
+   text serves a reader who wants to understand a Harmony and one who wants to build a configuration. The
+   reference is published as a website, built from `reference/` on every push and never committed.
+   `docs/findings.md` is frozen where it is: nothing new is added; its headings get short fixed anchors and
+   its links to moved files are corrected, its content otherwise unchanged. Why: knowledge had spread over
+   the journal, `docs/config-format.md`, `reference/remotes/`, the status page, `CLAUDE.md` and the skills,
+   so finding the current answer meant reading several of them, and a summary in one drifted from another.
    This changes decision 13: `findings.md` is not split, and it is no longer where a finding is written.
-   The steps are plan 005's, `todo-later.md` chapter 8.
+   Plan 005 named the knowledge folder `docs/spec/`; it is `reference/` since 24 October 2026, which also
+   moves the internal lookup lists out of `reference/` into `docs/`. The steps are `todo-reference.md`.
