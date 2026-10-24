@@ -21,6 +21,27 @@
  * must not accidentally take this road: the two are separate entry points on purpose, and nothing
  * in `edit.ts` calls this.
  *
+ * **The six steps of a relocation**, which moved here from `reference/config-format/relocation.md`
+ * (plan 009's move table) because they describe this code rather than the format. The reference page
+ * keeps the census, the costs and what no address protects; this is the procedure built on them.
+ *
+ * 1. **Decide the insertion point and get the cost from the census.** `insertionCost` in `growth.ts`
+ *    answers in a fraction of a second per container, and the cheapest place is the top of the picture
+ *    bank, where nothing above the cut is addressed.
+ * 2. **Move the bytes.** Everything at or above the insertion point shifts by the delta; `relocate`.
+ * 3. **Rewrite every address whose target moved.** Every census entry but base slot 2's two outward
+ *    pointers is a candidate, and which of them moved is the comparison against the insertion point;
+ *    `relocate`, out of `pointers` in `growth.ts`.
+ * 4. **Reproduce every implied position.** The frame ones fall out of the container's arithmetic. The
+ *    packed ones, a mode page list's second copy and base slot 15's group 9, need whatever produced their
+ *    neighbour to produce them in the same pass. The chained ones are the dangerous set, because nothing
+ *    says when a walk now lands one byte out. This is the caller's: `relocate` refuses only the offsets
+ *    wrong for every caller, `relocationFloor` and the trailer.
+ * 5. **Restamp `end_addr` and the trailer checksum**; `relocate`.
+ * 6. **Verify by reading it back**, because nothing in steps 3 or 4 is checked by the format: a wrong
+ *    address reads its neighbours rather than raising an error. `test/relocate.test.ts` does this over the
+ *    corpus; a writer does it again against the remote.
+ *
  * Read only towards hardware, like everything in this package: the result is bytes in memory, and
  * what may ever be written to a remote is `packages/usb`'s rails' question, not this file's.
  */
@@ -62,11 +83,17 @@ const POINTER_CEILING = 0xffffff;
 
 /**
  * The lowest offset an insertion can go, which is **past the key table** and not merely past the
- * marker, and the corpus check is what established that rather than a reading: the firmware's own
- * parse reads the key table at a fixed offset after the marker, section 52, so filler between the
- * two would be read as key records whatever the mode table's rewritten pointer says. The one place
- * in the format where a structure's position is stated by a pointer **and** demanded by arithmetic
- * at once, which is why it gets its own function rather than a constant.
+ * marker, and the corpus check is what established that rather than a reading: a parse reads the
+ * key table at a fixed offset after the marker, section 52, so filler between the two would be read
+ * as key records whatever the mode table's rewritten pointer says. The one place in the format where
+ * a structure's position is stated by a pointer **and** demanded by arithmetic at once, which is why
+ * it gets its own function rather than a constant.
+ *
+ * **Whose parse that is was corrected by section 328.** This said "the firmware's own parse", from
+ * section 172; on the Harmony 600 0.2, 650 0.2 and 0.4 and 700 2.8 images no instruction loading a
+ * literal loads the key table's offset, and mode 0 is reached through base slot 6, section 311. So
+ * the floor is this codec's readers' demand, and the remote's is not shown either way: the Harmony One's
+ * firmware half is unread, and no container with the key table elsewhere has been written.
  */
 export function relocationFloor(c: Container): number {
   const content = c.markerOffset + END_MARKER_LENGTH;

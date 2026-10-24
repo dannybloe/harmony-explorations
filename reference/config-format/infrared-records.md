@@ -1,30 +1,26 @@
 # Infrared records
 
-### Base slot 5: the infrared database
+A remote sends a command by blinking an infrared lamp in a precise rhythm. A configuration stores every
+command it can send as a **record**: the rhythm written out as a list of on and off times in microseconds,
+the frequency the lamp flickers at while it is on, and up to three such lists for one key, what a tap sends,
+what repeats while the key is held, and what follows at the end. The records of one device sit together in
+one **infrared group**, and the configuration's action lists name a command by its group and its place in
+that group.
 
-**A record is findable with no pointer slot, and it is the cleanest closure in the format.** The `u24`
-at a record's `+8` is the record's own start address, so a candidate does not merely look like a
-record, it states where it is: a twenty four bit exact match. With the class byte at `+7` and the group
-count at `+11` as the shape filter, `irRecordsByClosure` is exact against the slot route on **13 of 13**
-containers, all **3925** records, and it needs no threshold of any kind.
+This page says how the records sit in the file: where they are, what a record's header holds, how its time
+lists are stored and shared, and what a writer must not break. What the light itself does, how a code's bits
+become marks and spaces, which protocol families exist and how many times a press sends a code, is the
+[infrared](../infrared/README.md) part of this reference: [frames](../infrared/frames.md),
+[families](../infrared/families.md) and [sending](../infrared/sending.md).
 
-The shape filter is not optional. A run of ascending `u24` pointers crosses `value == base + offset`
-repeatedly, so a plain pointer table yields 125 hits in one Harmony 890 config and 198 in a Harmony
-895; none of those is record shaped, where 300 of the Harmony 890's 301 are.
+Three words are used precisely below. An **infrared group** is one device's list of records. A **pointer
+group** is three addresses inside one record, naming its blocks. A **block** is one stored list of
+durations.
 
-**On arch 10 a Harmony 890 gives 300 records**, one pointer group each, 463 duration block pointers
-that all decode, and carriers of 38.0 kHz on 151 records, 36.4 kHz on 147 and 37.2 kHz on 2. A
-**Harmony 895 gives none**, and that is a proven absence: searching every base at once, no bucket in
-its blob holds one record shaped position, and its named content is 94845 bytes against the 890's
-170691, which a missing record area accounts for. Why is open.
+## Base slot 5, the infrared database
 
-**The grouping is still gated**, so this is a flat list of records and not a list of devices: which
-appliance a record belongs to is the base slot 5 pointer array itself.
-[findings.md](../../docs/findings.md) section 181.
-
-
-**Confirmed on 15<!--fact:user_configs--> user configs across four architectures.** Two levels of pointer array over records of
-mark and space durations.
+Two levels of pointer array over the records, confirmed on 15<!--fact:user_configs--> user configurations
+across four architectures[^s32][^s61]:
 
 ```
 base slot 5:  u8  count
@@ -33,130 +29,214 @@ base slot 5:  u8  count
 per group:    u8  zero            the same spare byte the section table carries
               u16 count
               u24 record_address[count]
+```
 
-per record:   u8  zero            not read by anything; zero in all 3387 records
-              u24 carrier_period  nanoseconds
-              u24 carrier_on      nanoseconds, the period halved
-              u8  class           the pointer array lands HERE, seven bytes in
-              u24 start             the record's own first byte
-              u8
-              u24 block             durations, or NULL
-              u24 block             durations, or NULL
-              u24                   zero in every record seen
+* **An infrared group is a device.** Base slot 0's names tie a device's label to exactly one infrared group
+  through base slot 13's state variable transitions[^s86][^s126].
+* **The number of groups is the number of distinct high bytes a `0x7C` operand takes**, in every user
+  configuration, and the group indices run contiguously from zero: from 1 group in a Harmony One with nothing
+  programmed to 7 in a Harmony 880[^s32]. So the high byte of a `0x7C` operand is the infrared group,
+  [actions](actions.md).
+* **The arrays are regular**: over 63<!--fact:ir_groups--> groups and 4147<!--fact:ir_references--> record
+  pointers the lead byte is zero every time, each group is exactly `3 + 3 * count` bytes, the groups are
+  packed one after the other, every record pointer lands inside the container, and none of them is an action
+  list address[^s32].
+* **A record pointer lands seven bytes into its record**, on the class byte, and not on the record's first
+  byte[^s42b].
 
+## A record
+
+```
++0x00  u8   zero, read by nothing found
++0x01  u24  carrier period, nanoseconds
++0x04  u24  carrier on time, nanoseconds, the period halved
++0x07  u8   class                     a record pointer lands here
++0x08  u24  the record's own start
++0x0B  u8   count of pointer groups
++0x0C  group[count], each { u24 block; u24 block; u24 block }, a pointer NULL where it names nothing
+```
+
+The header is `12 + 9 * count` bytes: 21 for one pointer group, 30 for two[^s75]. The byte at `+0x00` is zero
+in every class 1 record counted, 3387 of them, and nothing has been found that reads it[^s92].
+
+**A record states its own address**, so it can be found with no pointer at all. The `u24` at `+0x08` is the
+record's own start, a twenty four bit exact match, and with the class byte before it and the group count
+after it as a shape filter, a search for that closure finds exactly the records base slot 5 names: 3925 of
+3925 over the 13 containers that have an infrared table, none missed and none extra[^s181]. The shape filter
+is needed: a plain table of ascending pointers crosses `value == base + offset` again and again, 125 times in
+one Harmony 890 configuration and 198 times in a Harmony 895, and none of those positions is record
+shaped[^s181]. The search is how the records are read on the
+[Harmony 890 and 895](../architectures/harmony-890-895/memory.md), whose slot map is otherwise unsettled.
+`irRecordsByClosure` in `packages/codec/src/ir.ts` is the reader.
+
+### The carrier
+
+The two `u24` values below the class byte are the infrared **carrier**, the frequency the lamp flickers at
+while a mark is sent[^s92]:
+
+* the period is stored as `floor(1e9 / f)` nanoseconds for a frequency in whole hundreds of hertz, so 40 kHz
+  is 25000 exactly, 38 kHz is 26315 and 36 kHz is 27777, which reads back as 36001 Hz. **Truncated, not
+  rounded**[^s92];
+* the on time is the period halved, in every record, which is a fifty percent duty cycle[^s92];
+* the firmware clamps the period at 256000 and switches the timer's prescaler when the period no longer fits
+  in sixteen bits, read on the Harmony 700's image[^s92b];
+* the carrier is **per record**, not per configuration and not per device: one Harmony One configuration holds
+  56.3 kHz and 38 kHz records inside a single infrared group[^s92].
+
+### The blocks sit below the header
+
+A block is a run of `u16` durations: bit 15 set is a mark, the lamp flickering, and clear is a space, the lamp
+dark; bits 14 to 0 are microseconds, so one word holds at most 32767 microseconds and a longer gap is split
+across several words. A word reading zero closes the block[^s61].
+
+```
 per block:    u16 duration[]      bit 15 set is a mark, bits 14..0 are microseconds,
                                   closed by a word reading zero
 ```
 
-**A record's blocks sit below its header, not after it**, so the header is the last thing in the
-run and a record is not one contiguous span. Reading forwards from the header reads the *next*
-record's durations. [findings.md](../../docs/findings.md) section 61.
+**A record's blocks sit in front of its header, not after it**, so the header is the last thing in a record's
+run and a record is not one contiguous span starting at its header. Reading forwards from a header reads the
+next record's durations. A typical Harmony One record that does not toggle is a 620 byte block, a 208 byte
+block and its 21 byte header, in that order[^s61].
 
-~~The header is 21 bytes~~<!--superseded--> **the header states its own length**, section 75. Byte
-`+0x0B` is a count of nine byte **pointer groups**, each `{ u24 block; u24 block; u24 block }`, so
-the header is `12 + 9 * count`:
+**The zero word is a length, not a validity check.** The headers and the blocks tile the record area with no
+gap, so the distance from a block to the next boundary is a second measurement of its length, and the two
+agree exactly on all 4692 class 1 blocks of thirteen configurations[^s141]. But on the Harmony 525, whose
+records are class 5 below, every one of its 380 blocks also finds a zero word and not one finds it in the
+right place[^s61][^s139]. What tells a block this reading covers from one it does not is the class byte.
 
-```
-+0x00  u8   zero, unread
-+0x01  u24  carrier period, nanoseconds
-+0x04  u24  carrier on time, nanoseconds
-+0x07  u8   class
-+0x08  u24  the record's own start
-+0x0B  u8   count
-+0x0C  group[count]
-```
+**Blocks are shared.** A record may be a bare header whose pointers name blocks another record also names, so
+one stored rhythm can serve several commands[^s61]. [Relocation](relocation.md) counts how many there are.
 
-**The two `u24` values below the class byte are the infrared carrier**, section 92, and they used to
-be part of the eleven bytes this listing called unread. A stored period is `floor(1e9 / f)` for a
-frequency in whole hundreds of hertz, so 40 kHz is 25000 exactly, 38 kHz is 26315 and 36 kHz is
-27777, which reads back as 36001 Hz. **Truncated, not rounded**: a writer that rounds emits 27778
-and differs from Logitech's own generator by one byte per device. The on time is the period halved,
-in every record of the corpus, which is a fifty percent duty cycle. The firmware clamps the period
-at 256000 and moves the Timer 2 prescaler when it no longer fits in sixteen bits.
+### Once, held and tail
 
-The carrier is **per record, not per config and not per device**. One Harmony One config carries
-56.3 kHz and 38 kHz inside a single infrared group.
+The three pointers of a pointer group are three parts of one key press. At the end of every block the
+firmware samples the keypad and steps to the next pointer accordingly, read in the record streamer on the
+Harmony 600, 700 and One images[^s127]:
 
-~~The count is 1 in every record on arch 12, arch 14 and most of arch 9~~<!--superseded--> **The count is 1 in
-every record matched to a code that does not toggle**, and that case is exactly the 21 byte header with two
-pointers and a trailing NULL that section 61 described. **A record of a toggling code has 2 on every architecture
-whose configurations hold one**, section 365: 572 distinct records on arch 12 (Harmony One), 253 on arch 14
-(Harmony 650 and 700), 130 on arch 16 (Harmony 350) and 36 on arch 8, every record of the lab's configurations
-matched to a toggling catalogue code. The corpus the 1 was counted on held no toggling family on arch 12 or 14. ~~On arch 8 it is
-2 in exactly 37 records of every config~~<!--superseded--> **it is 2 in 37 records of four arch 8
-configs and in none of two others**, and the count follows the **devices** rather than the
-architecture, section 134. On arch 9 it is 2 in 61 of `h525_config`'s 200 records and in **all 107** of
-the second 525 config, so 168 against 139 corpus wide: more than half, which four comments in
-`packages/codec/src/ir.ts` denied outright while this page said it. A two group header is 30 bytes and names
-up to six blocks. `620 + 208 + 21` is the whole of a typical Harmony One record that does not toggle.
+| at the end of | key up | key down |
+|---|---|---|
+| slot 0 | advance two, so slot 1 is skipped | advance one |
+| slot 1 | advance one | advance **zero**, so slot 1 plays again |
+| slot 2 | stop | stop |
 
-**A second group is the same code with one bit inverted**, section 134. Block `i` of the second group
-and block `i` of the first differ in exactly two adjacent words, which are a mark and a space of equal
-duration exchanged, at a fixed offset in the frame, in all 61 block pairs of each of the four configs
-that have any. Exchanging equal halves of a pair is what inverting one cell of a **biphase** code does,
-and those records read as RC6 mode 6 at 36200 Hz: a six and two unit leader on a 441 us unit, a start
-bit of one, mode bits 110 and a double width trailer. So the two groups are the two states of a bit
-the protocol requires the sender to alternate between presses, and a config stores both because the
-action list language has no arithmetic that could compute one. ~~Which group a given press uses is
-unconfirmed~~<!--superseded-->
+So slot 0, **once**, is what a tap sends; slot 1, **held**, plays only while the key is still down and then
+repeats for as long as it is; slot 2, **tail**, plays at the end either way. A NULL pointer reads as a
+finished block, so a group with no held block falls through[^s127]. On a Harmony One one sense line says that
+some key is down, where the Harmony 600 and 700 test four[^s127], and a held touch on the One's screen
+repeats its code as a held key does[^s337].
 
-**Which group a send plays**, section 365, read on the Harmony 650's 0.2 image (arch 14) and the Harmony One's
-3.4 (arch 12):
+Four shapes occur, over 3703 pointer groups, and slot 0 is never NULL[^s127b][^s141]:
 
-* the firmware keeps a sixteen bit word with **one bit per infrared group**, and a send reaching the record
-  start XORs `1 << (tag & 0x0F)` into it, the tag's low nibble being the infrared group; on the Harmony 650 and
-  600 a tag with bit 4 or 5 set returns before the XOR, and what those bits mean is not read;
-* the record start reads the count and skips groups of nine bytes, **one fewer when the count is 2 and that bit
-  is set** after the XOR, so a set bit plays the first group and a clear one the second;
-* the Harmony 650 clears the word at `0x11D08`, so the first send after that plays the first group. What
-  calls the clear, and where the Harmony One clears its word, is not read.
+| shape | groups |
+|---|---|
+| `B00`, once only | 1699 |
+| `BB0`, once plus held | 1541 |
+| `B0B`, once plus tail | 368 |
+| `BBB`, all three | 95, all in four Harmony 880 configurations |
 
-The same update is found, and the skip not read, on the Harmony 600's 0.2, the Harmony 700's 2.8, the
-Harmony 650's 0.4 and the Harmony 350's 1.4. The Harmony 525's image is in the lab and was not searched.
+**The interval between two sends of a held key is the held block's own duration**, since the firmware replays
+the whole block before it looks at the keypad again: 30.8 ms to 752 ms across the corpus, most between 60 and
+120 ms[^s127b]. That is what a person feels as the repeat rate, and `irRepeatPeriod` returns it.
 
-**The first group is the code as the catalogue states it**, and the second the same code with the toggle
-bit its definition names flipped, in its first and held blocks; no toggling record in the lab has a tail. The
-calibration is the 23 records of the pinned devices whose code states the bit set: every first group holds it
-set. A one block copy of such a record,
-section 349, keeps two groups, each its record's first block less the opening silence.
+**A command named Power has its family's held block** like any other command: all twenty Power commands of
+seven devices Logitech compiled for a Harmony 650, and an LG television's power toggle compiled for a Harmony
+One[^s338]. A power **step**, the record a power action list sends, is a different record and has no held
+block[^s309]. Whether every command of a family with a held block carries one is not settled: three
+PlayStation 3 records with a lead in and no held block are unexplained[^s338].
 
-**A release group is the tail**, the third pointer, section 365: a block of its own holding the code's
-release, `Logitech 24 Bit`'s Stop on arch 12, 14 and one arch 8 configuration and `Microsoft 36 Bit`'s on arch 8. **A tail carries no
-stored microsecond**: every first and held block in the lab outside the Harmony 525 ends on the carved one
-microsecond word, and the lab's two distinct tails are the definition's release with nothing added, the
-silence uncarved.
+### Two pointer groups: a toggling code
 
-**A block ends at a zero word, and that is not a validity check.** Over **4692 blocks in thirteen
-configs the terminator agrees exactly with the region's tiling on every one of them**, and none stops
-short or overruns. But arch 9's **380** blocks all find a zero word too and **not one is in the right
-place**, so what separates a block this reading covers from one it does not is the **class byte**,
-which is 1 here and 5 there.
+Some infrared codes carry a **toggle bit**, a bit the sender flips on every new press so that a device can
+tell a second press from a key held down, [frames](../infrared/frames.md). A configuration cannot compute a
+flipped bit, since the action list language has no arithmetic that reaches a duration[^s134], so it stores the
+code twice.
 
-Both figures moved again in section 141, and for a different reason from section 139's: the population
-did. The two arch 8 (Harmony 880 and 885) configs were missing from the eleven this closure walked,
-which is where section 134's second pointer group lives, so the tiling had never been asserted on the
-configs the correction came from.
+* **A record of a code that does not toggle has one pointer group**, and **a record of a toggling code has
+  two**, on every architecture whose configurations hold one: 572 distinct records on the Harmony One, 253 on
+  the Harmony 650 and 700, 130 on the Harmony 350 and 36 on the Harmony 880, every record matched to a
+  toggling code of Logitech's catalogue over 153 configurations[^s365]. The Harmony 600's configurations hold
+  no toggling code[^s365].
+* **The count therefore follows the devices, not the architecture**: 37 records in each of four Harmony 880
+  configurations that drive the same media centre device, and none in two that do not[^s134]. On the
+  Harmony 525 it is 61 of one configuration's 200 records and all 107 of the other's, toggling codes of
+  Logitech's `Magnavox 13 Bit` and `Microsoft 30 Bit` families[^s139][^s365].
+* **The first group is the code as the catalogue states it, and the second is the same code with its toggle
+  bit flipped**, in its first and held blocks[^s365]. Checked on 23 records whose code states the bit set:
+  every first group holds it set and every second clear[^s365]. In a biphase code that flip exchanges a mark
+  and a space of equal length, so block `i` of the second group differs from block `i` of the first in
+  exactly two adjacent words, at a fixed place in the frame, on every pair of the Harmony 880's records, whose
+  pulses read as a biphase code with RC6's mode 6 leader at 36.2 kHz and which Logitech's catalogue calls
+  `Microsoft 30 Bit`[^s134][^s365].
+* A record that sends nothing else in a sequence, the one block copy, keeps both groups, each group its
+  record's first block less the opening silence[^s349][^s365].
 
-The first move was in section 139 and for one reason: a two group header's second set of pointers was
-missing from the boundary list, so 133 blocks looked as though they stopped short of the next boundary
-and 103 of arch 9's blocks were not seen at all. The old reading was 3490 blocks with 3357 exact and
-133 short<!--superseded-->, and the 133 had an explanation, that they were padding on arch 8. A
-remainder with an explanation attached is a remainder nobody counts again.
-#### Class 5 shares the header, and behind it spells a code from a dictionary
+#### Which group a send plays
 
-Class 5 is the infrared encoding of [the Harmony 5xx platform](../architectures/harmony-5xx/README.md):
-every record of both arch 9 configurations is class 5, 200 in one and 107 in the other.[^s82] Arch 9's 200 records
-all read class 5, and every structural property of the header above holds on every one of them: the class byte at +7, the record's own start at +8 seven bytes back, both `u24`
-pointing backwards and staying inside the area, the third `u24` NULL, and no two headers
-overlapping. So **the header is one structure across both classes** and a reader can claim it,
-though 61 of those 200 carry two pointer groups, and 107 of 107 in the second 525 config do, so its
-length is read rather than assumed.[^s75] `gspm.ir_region` gives the whole area, from the lowest backward pointer to the end of the
-highest header, and on the 525 those two ends land exactly on the boundaries of the largest region
-the byte accounting could not attribute.[^s65]
+Read on the Harmony 650's 0.2 image and the Harmony One's 3.4[^s365b]:
 
-**Confirmed on both arch 9 configs, and every field width is a literal in the firmware that reads
-it**.[^s82b] Where a class 1 pointer names a run of durations, a class 5 pointer names a body
-that spells the code as indices into a shared table of short pulse blocks:
+* the firmware keeps a sixteen bit word with **one bit per infrared group**, and a send reaching a record
+  flips the bit of its group, `1 << (tag & 0x0F)`, the tag's low nibble being the group. So the bit is the
+  device's and not the command's: every send to that group flips it, a record with one pointer group included.
+  On the Harmony 600 and 650 a tag with bit 4 or 5 set returns before the flip, and what those bits mean is not
+  read;
+* the record start reads the count and skips pointer groups of nine bytes, **one fewer when the count is 2 and
+  that bit is set** after the flip, so a set bit plays the first group and a clear one the second;
+* the Harmony 650 clears the word when its infrared starts up, so the first send after that plays the first
+  group, the code as stated, and the next the second.
+
+The same flip is found on the Harmony 600's 0.2, the Harmony 700's 2.8, the Harmony 650's 0.4 and the
+Harmony 350's 1.4, whose skip is not read there[^s365b]. The Harmony 525's image has not been searched for
+it[^unchecked].
+
+#### A release sits in the tail
+
+**When a code has a release, a part sent once as the key comes up, it is the tail**, the third pointer, a block
+of its own[^s365]: `Logitech 24 Bit`'s Stop, the PlayStation 3's, on the Harmony One, the Harmony 650 and
+700 and one Harmony 880 configuration, and `Microsoft 36 Bit`'s release on four Harmony 880
+configurations[^s365]. A tail is spelt without the trailing microsecond every once and held block
+ends on, [sending](../infrared/sending.md)[^s365].
+
+## Classes
+
+The byte at `+0x07` names how the blocks encode a code. The firmware of the Harmony One, 600 and 700
+dispatches on classes 1 to 4 at three sites, send, stop and the record loader, and every record in their
+configurations, and in the Harmony 880's, is class 1; every record of the Harmony 525 is class 5[^s42][^s42b].
+No configuration mixes classes[^s42b]. Classes 2 to 4 are used by no configuration measured[^s42b].
+
+### Class 1: the durations are the rhythm
+
+A class 1 block is the rhythm itself, mark and space after mark and space, and bit 15 alternates strictly
+along it. A once block commonly holds the code, a gap, the protocol's own repeat frame and a long silence, so a
+block is more than one transmission and every class 1 record measured has a gap somewhere other than at its
+end[^s139]. Some records open with a run of `0x7FFF` words of varying length, so a reader locates the frame
+rather than assuming an offset[^s32]. How the frame decodes into bits is [frames](../infrared/frames.md),
+read with `irFrame` in `packages/codec/src/irframe.ts`, the one frame decoder here.
+
+**The decoded bit count closes against the header's timings**, two quantities from opposite ends of a record,
+over all fifteen user configurations[^s139]:
+
+| header mark / space, microseconds | which is | records | bits decoded |
+|---|---|---|---|
+| 8900 to 9100 / 4400 to 4600 | NEC | 1567 | 32, every one |
+| 3350 to 3520 / 1650 to 1760 | Kaseikyo | 670 | 48, every one |
+
+The bands are ranges because the corpus holds several calibrations of each: NEC as 8990/4490 and 9000/4500,
+Kaseikyo as 3364/1682, 3460/1730 and 3480/1730[^s32].
+
+### Class 5: a code spelled from a dictionary
+
+Class 5 is the infrared encoding of [the Harmony 5xx platform](../architectures/harmony-5xx/README.md): every
+record of both Harmony 525 configurations is class 5, 200 in one and 107 in the other[^s82]. **The header is the
+same structure as class 1's**: on every one of those records the class byte at `+0x07`, the record's own start
+at `+0x08`, every block pointer pointing backwards and staying inside the area, and no two headers
+overlapping[^s65]. 61 of the 200 and 107 of the 107 carry two pointer groups, so the header's length is read
+rather than assumed[^s139]. The whole infrared area, from the lowest block pointer to the end of the highest
+header, lands exactly on the boundaries of the largest region the byte accounting could not otherwise
+attribute[^s65].
+
+**Behind the header, a class 5 pointer names a body that spells the code as indices into a shared table of
+short pulse blocks**, and every field width below is a literal in the firmware that reads it[^s82b]:
 
 ```
 per body:     u24 table           the symbol table's address
@@ -171,105 +251,69 @@ per symbol:   u16 count
               u16 0x0000          present in all 50 blocks, and read by nothing
 ```
 
-A body is `5 + n` bytes, a table `1 + 3 * count`, a symbol block `4 + 2 * count`. The pulse words
-are the same format class 1 uses, so one body expands to an ordinary duration run: the corpus's
-tables hold a symbol per bit value plus one each for the header, the trailing mark, the gaps and the
-repeat frame. A gap longer than 32767 microseconds is split across words, since that is all fifteen
-bits can say.
+A body is `5 + n` bytes, a table `1 + 3 * count`, a symbol block `4 + 2 * count`. The pulse words are class
+1's, so one body expands to an ordinary duration run; the tables hold a symbol per bit value plus one each for
+the header, the trailing mark, the gaps and the repeat frame[^s82]. The configuration of 200 records holds 5
+symbol tables[^s82].
 
-~~the record body opens with a `u24` naming one of 66 shared descriptors~~<!--superseded--> That
-`u24` is the symbol table pointer and there are 5 of them in the configuration of 200 records, not 66;
-the count came from reading at each block area's start rather than at a pointer target, which is a body
-start only 135 times in 199.[^s65][^s82]
+**All three levels are shared, harder than anywhere else in the format**: two records name one body, up to 206
+bodies name one symbol table, and a symbol block is reused by every code with that pulse pair in it[^s82].
 
-**All three levels are shared, harder than anywhere else in the format.** Two records name one body,
-up to 206 bodies name one symbol table, and a symbol block is reused by every code with that pulse
-pair in it. Nothing here can be edited in place.[^s82]
+## For a writer
 
-**Blocks are shared.** A record may carry a bare header whose pointers name a block another record
-also names, so one duration stream can serve several codes. A writer cannot edit a block in place
-without checking who else points at it.
+Each of these is a way to write a configuration that the remote accepts and that sends the wrong thing.
 
-**The three pointers of a group are once, held and tail**, section 127, read from the record streamer
-on three images. At the end of every block the firmware samples the keypad's sense lines and steps the
-pointer accordingly:
+* **A block cannot be edited in place without checking who else names it**, since blocks are shared[^s61], and
+  on class 5 bodies, symbol tables and symbols are all shared[^s82].
+* **The repeat rate of a held key is the held block's trailing gap**, per code. A duration word carries at most
+  32767 microseconds, so a gap already spelled over three words can be raised to 98301 microseconds without
+  changing the block's length, and anything slower lengthens the block, which moves everything above it,
+  [relocation](relocation.md)[^s127b].
+* **How many times a press sends the code is the ratio of the first two blocks**, so changing it adds or removes
+  a whole copy and its gap: a length change, not a same length edit. Reading the first block's copies alone is
+  wrong for a family that sends two code words per repetition. [Sending](../infrared/sending.md) has the
+  rule[^s258].
+* **A carrier is written truncated**: a writer that rounds writes 27778 for 36 kHz where Logitech writes 27777,
+  one byte per record different[^s92].
+* **A toggling code needs both pointer groups**, the code as stated first; written with one, every second press
+  sends the same bit[^s365].
+* **The `+0x00` byte is carried, not written as zero**: it is constant across the corpus and read by nothing
+  found, so asserting a value would turn a configuration that differs into a wrong round trip instead of a
+  loud one[^s92].
+* **A frame can be rebuilt from five durations off a record of the same device, and what follows the frame
+  cannot simply be copied** from a sibling code, [families](../infrared/families.md)[^s152].
 
-| at the end of | key up | key down |
-|---|---|---|
-| slot 0 | advance two, so slot 1 is skipped | advance one |
-| slot 1 | advance one | advance **zero**, so slot 1 plays again |
-| slot 2 | stop | stop |
+## Not settled
 
-So slot 0 is what a tap sends, slot 1 plays **only** while the key is held and then repeats for as long
-as it is, and slot 2 is a tail that plays either way. A NULL pointer reads as a finished block, so a
-group without a held block falls through. Four shapes occur over 3703 groups and slot 0 is never NULL:
+* What the byte at `+0x00` selects[^s92].
+* What calls the Harmony 650's clear of the toggle word, and where the Harmony One clears its own[^s365b].
+* What bits 4 and 5 of a send's tag mean to the Harmony 600 and 650[^s365b].
+* Why three PlayStation 3 records with a lead in carry no held block[^s338].
 
-| shape | groups |
-|---|---|
-| `B00`, no repeat | 1699 |
-| `BB0`, once plus held | 1541 |
-| `B0B`, once plus tail | 368 |
-| `BBB` | 95, and only in four arch 8 configs |
-
-**A command named Power gets its family's held block** like any other command, section 338: all twenty
-on the seven devices of the Harmony 650's test setup, and the Harmony One LG's power toggle in phase 7's
-compile. A power **step**, the record a power action list sends, is a different record and has none,
-section 309. Whether every command of a family with a held block carries it is not settled: three PS3
-records with a lead in and no held block are unexplained, section 338.
-
-**The interval between two sends of a held key is slot 1's own duration**, since the firmware replays
-the whole block before looking at the keypad again. 30.8 ms to 752 ms across the corpus, most between
-60 and 120 ms. `irRepeatPeriod` returns it, and it is the number a user experiences as the repeat rate.
-
-*A writer rail follows.* Slowing a key down means lengthening slot 1's trailing gap, and a duration
-word carries at most 32767 us: a gap already spelled over three words can be raised to 98301 us
-without changing the block's length, and anything beyond that lengthens the block and relocates
-everything above it. The sharing rule applies first.
-#### Group checks
-
-63<!--fact:ir_groups--> groups and 4147<!--fact:ir_references--> record pointers checked: the lead byte is zero every time, each group is exactly
-`3 + 3 * count` bytes and groups are packed adjacently, every record pointer is inside the
-container, and none of them is an action list address.
-
-**The number of groups equals the number of distinct high bytes a `0x7C` operand takes**, in all
-fifteen user configs, with the group indices contiguous from zero. The count runs from 1 to 7, and the
-unprogrammed Harmony One is the minimal case at 1.
-
-The duration run has bit 15 strictly alternating, and is framed as `header mark, header space,
-bits * (mark, space), trailing mark, trailing gap`. **The run from the first mark is not
-`2 * bits + 4` values**<!--superseded-->, which this said on the strength of 2137 framed records with
-no exception: section 139 found that both numbers in that identity came from a neighbouring record,
-because the locator searched from a fixed offset instead of following the header's pointers. On the
-right bytes it is simply false. A once block commonly carries the code, a gap, the protocol's own
-**repeat header** and a long silence, so its length gives more bits than its timings say, and every
-class 1 record in the corpus has a gap somewhere other than at its end.
-
-The closure is real again and it is a different one: the **decoded bit count** against the protocol
-the header timings name, over all fifteen user configs.
-
-| header mark / space | records | bits, decoded |
-|---|---|---|
-| 8900 to 9100 / 4400 to 4600, which is NEC | 1567 | 32, every one |
-| 3350 to 3520 / 1650 to 1760, which is Kaseikyo | 670 | 48, every one |
-
-Two quantities computed from opposite ends of the record, agreeing with no exception on 2237 of
-them. The bands are ranges because the corpus holds several calibrations of each: NEC turns up as
-8990/4490 and as 9000/4500, Kaseikyo as 3364/1682, 3460/1730 and 3480/1730. Read with
-`irFrame` in `packages/codec/src/irframe.ts`, which is the only frame decoder here.
-
-**Not every record uses this encoding.** The whole arch 9 sample uses something else, and the 880
-has a second population with headers near 303 / 310. The firmware routes four infrared encoding
-classes; this is one.
-
-Read with `gspm.ir_groups`, `gspm.ir_pulses` and `gspm.ir_frame`. The reader locates the duration
-run rather than assuming a fixed offset, because some records carry a prefix of `0x7FFF` words
-whose length varies.
-
-*A group is a device*: base slot 0's names tie a device label to exactly one group through base
-slot 13's transitions, sections 86 and 126. *What the 14 byte header holds is not established.*
-[findings.md](../../docs/findings.md) section 32.
-
-[^s82]: Measured in configurations. [Section 82](../../docs/findings.md#s82)
+[^s32]: Measured in configurations. [Section 32](../../docs/findings.md#s32)
+[^s61]: Measured in configurations. [Section 61](../../docs/findings.md#s61)
+[^s86]: Measured in configurations. [Section 86](../../docs/findings.md#s86)
+[^s126]: Measured in configurations. [Section 126](../../docs/findings.md#s126)
+[^s42b]: Measured in configurations. [Section 42](../../docs/findings.md#s42)
 [^s75]: Measured in configurations. [Section 75](../../docs/findings.md#s75)
+[^s92]: Measured in configurations. [Section 92](../../docs/findings.md#s92)
+[^s181]: Measured in configurations. [Section 181](../../docs/findings.md#s181)
+[^s92b]: Read in the firmware. [Section 92](../../docs/findings.md#s92)
+[^s141]: Measured in configurations. [Section 141](../../docs/findings.md#s141)
+[^s139]: Measured in configurations. [Section 139](../../docs/findings.md#s139)
+[^s127]: Read in the firmware. [Section 127](../../docs/findings.md#s127)
+[^s337]: Read in the firmware. [Section 337](../../docs/findings.md#s337)
+[^s127b]: Measured in configurations. [Section 127](../../docs/findings.md#s127)
+[^s338]: Measured in configurations. [Section 338](../../docs/findings.md#s338)
+[^s309]: Measured in configurations. [Section 309](../../docs/findings.md#s309)
+[^s134]: Measured in configurations. [Section 134](../../docs/findings.md#s134)
+[^s365]: Measured in configurations. [Section 365](../../docs/findings.md#s365)
+[^s349]: Measured in configurations. [Section 349](../../docs/findings.md#s349)
+[^s365b]: Read in the firmware. [Section 365](../../docs/findings.md#s365)
+[^unchecked]: Not checked.
+[^s42]: Read in the firmware. [Section 42](../../docs/findings.md#s42)
+[^s82]: Measured in configurations. [Section 82](../../docs/findings.md#s82)
 [^s65]: Measured in configurations. [Section 65](../../docs/findings.md#s65)
 [^s82b]: Read in the firmware. [Section 82](../../docs/findings.md#s82)
+[^s258]: Measured in configurations. [Section 258](../../docs/findings.md#s258)
+[^s152]: Measured in configurations. [Section 152](../../docs/findings.md#s152)
