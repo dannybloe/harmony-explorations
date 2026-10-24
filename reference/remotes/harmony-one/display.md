@@ -23,7 +23,7 @@ Generated from `packages/codec`, `packages/usb` and the drawing by `make remote-
 | resolution | "220 x 176 (QCIF+)"; a full screen picture in a configuration is 176 wide and 220 tall | Logitech's manual; read from configurations, section 54 |
 | colour | "64,000 Color" | Logitech's manual; Logitech's service, display "colour, 2 by 3", `reference/capabilities.md` |
 | touch | capacitive | Logitech's manual, "Touch Screen Technology". Confirmed independently by the configuration: base slot 17 is a touch hit map on this architecture alone, sections 45 and 62 |
-| pixel format in the configuration | two bytes a pixel, RGB565, high byte first; a raw picture is 5 plus two bytes a pixel | read from configurations, section 54 and `reference/config-format/README.md` |
+| pixel format in the configuration | two bytes a pixel, RGB565, high byte first; a raw picture is 5 plus two bytes a pixel | read from configurations, section 54 and `reference/config-format/screens.md` |
 
 ## Where a touch lands: the hit map
 

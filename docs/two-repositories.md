@@ -157,7 +157,7 @@ what is fetched; the application works identically for somebody who never touche
 needs no new protocol work at all, since base slot 5 is fully read: a config Logitech compiled can be
 read off the remote and converted with today's code.
 
-**The other route is measured now, not just mapped**, `reference/logitech/clients.md` and section 132: the live
+**The other route is measured now, not just mapped**, `reference/logitech/service.md` and section 132: the live
 service advertises **308 operations over 50 services**, the device database opens for **a plain Logitech
 login with no account record and no registered remote**, and the chain is `SearchGlobalDevices` then
 `GetGlobalLanguageCommands`. **What it serves is symbolic, not pulses**: a protocol name and a frame

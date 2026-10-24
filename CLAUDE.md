@@ -944,7 +944,7 @@ to get wrong:
 * **Follow control flow, not variables, when attributing code to a command.** The USB command
   handlers parse their arguments into shared variables, so finding code that uses those
   variables proves what the variables hold and nothing about which command runs it. That
-  mistake put READ_FLASH's response in `reference/usb-protocol/README.md` when only its request had been
+  mistake put READ_FLASH's response in `reference/usb-protocol/commands.md` when only its request had been
   found, twice in one commit. Start from the dispatch table or the state machine.
 * **An `XORLW` chain's literals are not its case values.** The compiler emits a switch as a
   chain that XORs with the difference to the next case, so the case value is the running XOR

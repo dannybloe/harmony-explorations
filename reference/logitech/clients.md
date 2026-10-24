@@ -160,7 +160,7 @@ roughly the order it is worth doing.
 ### A config is invalidated before it is written
 
 The write sequence is a `WRITE_MISC` with selector 2 and no arguments, then the flash write.
-Selector 2 is already known to be serviced on arch 14, `reference/usb-protocol/README.md`, and has no
+Selector 2 is already known to be serviced on arch 14, `reference/usb-protocol/commands.md`, and has no
 reading. Selector 11 does the same thing for the embedded config.
 
 So the remote is not erased before a write, it is marked invalid, and a half written config is

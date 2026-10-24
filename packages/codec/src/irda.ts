@@ -1,5 +1,5 @@
 /**
- * A pulse train as Logitech's own analysis service takes it, `reference/logitech/clients.md`.
+ * A pulse train as Logitech's own analysis service takes it, `reference/logitech/service.md`.
  *
  * **This is not part of the config format and it is here because this is where pulses live.** The
  * service `infraredAnalysisManager.AnalyzeInfrared` takes a code as a string of durations and answers

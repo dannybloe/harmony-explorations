@@ -47,11 +47,11 @@ Read in the firmware and, live, on a unit over `READ_MISC` selector 7, sections 
 variable `n` at `0x108 + n`, the clock the first seven and the firmware's own variables 0 to 17, section
 284; the light band at `0x110` and the gauge at `0x111`; the cache drop's descriptors at `0x0EE8`, section
 246; the font pointer, the address of the set the next text is drawn in, at `0x2EC` to `0x2EE`, written
-by the copy at `0x2B93C` that the font select handler at `0x292AC` calls, in the 3.4 image, section 399. The write path's own variables are in `reference/usb-protocol/README.md` and are deliberately not repeated
+by the copy at `0x2B93C` that the font select handler at `0x292AC` calls, in the 3.4 image, section 399. The write path's own variables are in `reference/usb-protocol/commands.md` and are deliberately not repeated
 here. At every boot the state variable storage above `narrow + 2 * wide` is painted `0xFE`, section 276.
 
 What a configuration seeds that storage with, measured on all 19 distinct compiles and built so since
-`todo-compile-one.md` 6.4 (`reference/config-format/README.md`, base slot 13): the firmware's variables 13 and 14
+`todo-compile-one.md` 6.4 (`reference/config-format/state.md`, base slot 13): the firmware's variables 13 and 14
 start at 1 and 2 with maxima 1 and 4, where the Harmony 600, 650 and 700's start at 0 and 1; every
 variable of the configuration's own is one byte, maxima up to 121, and the compiler's `0/65277` at index
 `narrow` is the only two byte one, the variable the clock pickers read and write while the time is being set

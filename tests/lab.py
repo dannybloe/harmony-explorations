@@ -621,7 +621,7 @@ IMAGES = {
     'account_commands': 'GetCommands_mine.json',
     # Not an image and not a config: Harmony Desktop's whole hosted client, mirrored from Logitech's
     # content network on 9 August 2026 and unauthenticated. It is here because the service API surface
-    # documented in `reference/logitech/clients.md` is extracted from it, and a claim about that surface has to
+    # documented in `reference/logitech/service.md` is extracted from it, and a claim about that surface has to
     # be recomputable rather than transcribed. Logitech's expression, so it stays in the lab: what
     # travels is the list of operation names, which is functional fact. `software/desktop-webapp`.
     'desktop_webapp_main': 'en.desktop-app-main.js',

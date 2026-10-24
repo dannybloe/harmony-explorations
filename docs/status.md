@@ -742,7 +742,7 @@ this project's oldest rule is about. Two right copies are what precede two diver
   the config already binds a scan code to it. `0x70` is still a command that changes a remote's
   state rather than reading it, so `READ_ONLY_COMMANDS` refuses it and nothing here has sent one. **The refusal is that allow list and not the write flag**, which this said until 29 August 2026: no method sends `0x70`, no rail mentions it, and `HARMONY_ENABLE_WRITES=1` would enable nothing, so whoever implements learning has to add the command, its classification and a rail rather than lift a switch. Neither of Logitech's own applications has
   it either, checked on 9 August 2026: a host names buttons and the firmware resolves the name to
-  hardware, so no host ever held the map. `reference/logitech/clients.md`.
+  hardware, so no host ever held the map. `reference/logitech/service.md`.
   **Arch 9 sits below both and needs no census**, section 89: the 525 senses on a single line like
   the One, so a press is not even worth a column, and its matrix falls out of the firmware instead.
   8 by 8, scan code `group * 8 + column` running 1 to 64, and both its configs bind the same 50

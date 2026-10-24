@@ -240,7 +240,7 @@ export function numberSenders(c: Container): Table<NumberSender> | undefined {
  * Base slot 16's table built from the records it names, the encoder beside `numberSenders` above:
  * `u8 count` then a three byte address per record, each a reference the frame writes once the records
  * are placed. So no favourite channel sent as a number is one byte, a count of zero and not a NULL slot,
- * the form `reference/config-format/README.md` states for a configuration with no channels; one record is four, section
+ * the form `reference/config-format/state.md` states for a configuration with no channels; one record is four, section
  * 154's sample. The same shape on every architecture that has the slot, so it is no family's;
  * the four slot family's empty configuration still writes its empty form inline, `families/four-slot/empty.ts`.
  *

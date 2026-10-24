@@ -141,7 +141,7 @@ both known before handover:
    see the correction below this list. Nine of the ten are clean of any write path marker, which is
    the good half. But **six of them name a document on the withhold list and tell the reader to open
    it**, and
-   `probe-remote` names `reference/usb-protocol/README.md` and `packages/usb/src/rails.ts`, which are the two
+   `probe-remote` names `reference/usb-protocol/transport.md` and `packages/usb/src/rails.ts`, which are the two
    worst leaks for this exercise. Codex discovers skills on its own, so this is a path into a
    withheld file that nobody would have to choose to take. The brief therefore carries an explicit
    rule that the withhold list **overrides any instruction from a skill, a docstring, a comment or a

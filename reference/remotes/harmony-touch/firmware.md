@@ -17,7 +17,7 @@ has been examined, `docs/checksums.md`.
 
 * **Factory reset**: Logitech's hidden recovery tool, reached in the MyHarmony clients by a key combination,
   installs a whole factory firmware image fetched over the network, and it worked on a Touch,
-  `reference/logitech/clients.md` and section 196. It is Logitech's route and this library has no part in it.
+  `reference/usb-protocol/commands.md` and section 196. It is Logitech's route and this library has no part in it.
 * **`/sys/factoryreset` and `/sys/reboot`** are paths that act when opened, section 200, and are kept out of
   reach by `INERT_PATHS`, [usb.md](usb.md).
 * Safe mode and a bootloader on this model are **not checked**; the `recovering-a-remote` skill has nothing

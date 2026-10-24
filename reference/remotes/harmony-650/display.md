@@ -102,7 +102,7 @@ the configuration's stamp, measured in the 650's memory, sections 283 and 310. S
 **invisible on this remote** and has to be checked by reading its memory, never by looking at it.
 
 Older text in this repository was written as though the stamp time were on the screen: section 283
-("leaves the remote showing its stamp time"), section 322, and two sentences of `reference/config-format/README.md`.
+("leaves the remote showing its stamp time"), section 322, and two sentences of `reference/config-format/state.md`.
 Those describe the clock's value in memory; none of them is an observation of the screen, and this
 file is the place that says what the screen shows.
 

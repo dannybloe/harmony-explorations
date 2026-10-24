@@ -19,7 +19,7 @@ Generated from `packages/corpus` and `packages/usb` by `make remote-reference-wr
 | field | value on the bench 650 | standing and source |
 |---|---|---|
 | vendor and product id | `046D:C122`, the same as the Harmony 600 and 700 | measured, section 281. `PROFILES` still labels it "Harmony 600 or 700" |
-| `bcdDevice` | `0x1072` predicted, from the rule that it is BCD of 1000 plus the skin | the 650's 0.2 build carries `0x1072` as its USB device descriptor's release number, read in the firmware, section 392; **not measured** on the bus. The rule is measured on the 600 (`0x1071`), `reference/usb-protocol/README.md` section 1 |
+| `bcdDevice` | `0x1072` predicted, from the rule that it is BCD of 1000 plus the skin | the 650's 0.2 build carries `0x1072` as its USB device descriptor's release number, read in the firmware, section 392; **not measured** on the bus. The rule is measured on the 600 (`0x1071`), `reference/usb-protocol/transport.md` |
 | firmware | 0.2 | measured, version block |
 | hardware | 1.2, where the 600 reports 1.1 | measured, version block, lab reads |
 | flash id | `15:1C`, EON F16, 2 MiB | measured, section 281 |
@@ -47,14 +47,14 @@ section 281. Three arch 14 units are on the bench and all enumerate alike.
 | the reinstall, the staging write | **never sent** to this unit, [firmware.md](firmware.md) |
 | `WRITE_MISC` selector `0x07`, a RAM write | **refused** on this architecture by the rails |
 
-The command table's handler addresses in `reference/usb-protocol/README.md` are given for the 600's and 700's
+The command table's handler addresses in `reference/usb-protocol/commands.md` are given for the 600's and 700's
 images. The 600's lie in the part of the program that sits at the same address in the 650's 0.2 build,
 section 281, so they very likely hold for the 650; that is this reference's inference, **not checked**
 handler by handler.
 
 ## A tension, since reconciled
 
-`reference/usb-protocol/README.md`, under `READ_MISC`, says that on arch 14 the configuration is not loaded while
+`reference/usb-protocol/commands.md`, under `READ_MISC`, says that on arch 14 the configuration is not loaded while
 the remote is on the cable, from section 110 on the Harmony 600. Section 283 then read config derived
 variables live on the 650. **Section 387 reconciles them**: the state variables are live on the cable on
 the Harmony 600 too, from `0xE10` on build 0.2, its clock running and the Off screen's mark readable, as

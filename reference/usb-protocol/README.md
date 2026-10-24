@@ -32,6 +32,14 @@ GPLv3 and this repository is MIT, so its code is not read for structure or copie
 partly that concordance has two documented defects on exactly these two architectures. See
 `docs/concordance-notes.md`.
 
+## Pages
+
+* [Transport](transport.md)
+* [Commands](commands.md)
+* [The version block](version-block.md)
+* [The bootloader](bootloader.md)
+* [The file based protocol](file-protocol.md)
+
 ### Answered since this list was first written
 
 Recorded rather than deleted, because three of the four were open questions this step was set up

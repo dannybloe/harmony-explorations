@@ -72,7 +72,7 @@ so nothing in the schema bounds how many of anything there may be. Two things na
   field;
 * an account record takes **one** remote, and that is the service's own rule rather than a count of
   ours: `UserAccountDirector/AddRemoteToAccount` **refuses** a record that already has one, with
-  `ErrorCode 5`, measured on 13 August 2026 and written up in `reference/logitech/clients.md`. The captures
+  `ErrorCode 5`, measured on 13 August 2026 and written up in `reference/logitech/service.md`. The captures
   agree, 21 account records with exactly one remote each and 3 to 10 devices, but the refusal is the
   stronger statement and it was already in this repository.
 
@@ -91,7 +91,7 @@ Then the replacement led with the wrong entity. It made **the account** the head
 reader needs is that **a household has zero or more remotes**, the account layer being the mechanism
 by which it holds them rather than the shape itself. Caught by Danny reading the diagram.
 
-Neither correction needed a new measurement, and that is the part to carry: `reference/logitech/clients.md` has
+Neither correction needed a new measurement, and that is the part to carry: `reference/logitech/service.md` has
 said since 13 August 2026 that a household holds one record per remote, that devices and activities
 hang off the account record rather than the household, and that the service refuses a second remote on
 a record. All three were re-derived here from captures instead of read from the document next door.

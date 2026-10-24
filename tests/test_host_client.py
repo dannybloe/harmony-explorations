@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """The service API surface of Logitech's own client, recomputed rather than transcribed.
 
-`reference/logitech/clients.md` documents which services Harmony Desktop talks to and which operations it
+`reference/logitech/service.md` documents which services Harmony Desktop talks to and which operations it
 declares on each. That is the answer to a product question, decision 11 in `docs/decisions.md`: whether
 Logitech's device database is reachable as its own call or only as a side effect of compiling a config.
 It is reachable as its own call, and the list below is why we believe that.
@@ -133,7 +133,7 @@ class ServiceSurface(unittest.TestCase):
         `CLAUDE.md` lists as open. They are not: they belong to the user's button **mapping** service,
         alongside save and restore-to-default operations, so they map a named button to a command. That
         agrees with what section 48 concluded from the firmware and with the reading in
-        `reference/logitech/clients.md` that a host names buttons and the firmware resolves the name. Pinned so
+        `reference/logitech/service.md` that a host names buttons and the firmware resolves the name. Pinned so
         that nobody reads the name and reopens a closed question.
         """
         mapping = self.table['userButtonMappingManager']
@@ -450,7 +450,7 @@ class ASyncIsRecordedWhenTheClientSaysSo(unittest.TestCase):
     been synced existed at the same moment.
 
     What the pair cannot establish is the mechanism, since it is one occurrence. See
-    `reference/logitech/clients.md` for the reading and for why the deliberate repeat is not worth doing.
+    `reference/logitech/service.md` for the reading and for why the deliberate repeat is not worth doing.
     """
 
     def setUp(self):
@@ -1041,7 +1041,7 @@ class TheThreeRegionsTheLedgerCouldNotExplain(unittest.TestCase):
 class TheArch14LoggingRegionIsWhatItsSafeModeConfigsDeclare(unittest.TestCase):
     """Section 206: a client sourced number the corpus turns out to state, exactly.
 
-    `reference/logitech/clients.md` listed `USERLOGGING_BASE` as a smaller lead: arch 14 declares a 128 KiB
+    `reference/architectures/harmony-600-650-700/memory.md` listed `USERLOGGING_BASE` as a smaller lead: arch 14 declares a 128 KiB
     logging region at `0x0E0000`, and since section 47 found the log area's writer is arch 12 only,
     all that could be said was that the region exists on paper. Every arch 14 safe mode container in
     the corpus declares exactly that range in base slot 2, so it comes off the unconfirmed ledger.

@@ -427,7 +427,7 @@ test('0x70 and 0x71 resolve eight operations, six comparisons and two updates', 
     assert.match(at(STATE_OPERATION, nibble).what, /^condition:/, `nibble ${nibble}`);
     assert.equal(at(STATE_OPERATION, nibble).section, 34, 'a comparison is section 34s reading');
   }
-  // The order is the one `reference/config-format/README.md` already recorded from section 34, which is worth
+  // The order is the one `reference/config-format/actions.md` already recorded from section 34, which is worth
   // saying because reading the chain's `BZ` targets in the order they appear gives 3, 4 and 5 the
   // wrong way round: the chain tests nibble 7 first and falls through to nibble 0.
   assert.match(at(STATE_OPERATION, 0).what, /is equal to/);

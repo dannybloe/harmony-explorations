@@ -70,7 +70,7 @@ export const IR_POINTERS_PER_GROUP = 3;
  * unclaimed, and the 37 gaps in between were the second group. `docs/findings.md` section 75.
  *
  * **And it is 2 in more than half of arch 9 (Harmony 525)**, 168 records against 139, which four
- * comments in this file said was impossible while `reference/config-format/README.md` had said the opposite for
+ * comments in this file said was impossible while `reference/config-format/infrared-records.md` had said the opposite for
  * weeks. The code was right throughout; what a reader sizing a header would have trusted was not.
  * The distribution is asserted per architecture in `test/irframe.test.ts`.
  */

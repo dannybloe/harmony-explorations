@@ -21,6 +21,20 @@ container header               absolute pointer table
 u16 checksum + end marker
 ```
 
+## Pages
+
+* [The container](container.md): header, cookies, the section table, the checksum, pointer arrays.
+* [The EZHex wrapper](ezhex.md).
+* [Header records](header-records.md): base slots 0, 1 and 3.
+* [Modes and keys](modes-and-keys.md): base slots 6, 8, 9 and 17, tagged lists, the key table.
+* [Activities and devices](activities-and-devices.md).
+* [Actions](actions.md): base slot 10 and the action list language.
+* [State](state.md): base slots 2, 4, 12, 13, 14, 15 and 16.
+* [Screens](screens.md): the screen language, pictures, fonts, text.
+* [Infrared records](infrared-records.md): base slot 5.
+* [Layout](layout.md): how Logitech's compiler places a container.
+* [Relocation](relocation.md): what growing a section moves.
+
 ## Sections
 
 **Every one of the twenty base slots is now accounted for.** Slots 0 and 1 are the header records,

@@ -95,7 +95,7 @@ states on the One and 70 on the 700; the byte at a time sender's 32 callers all 
 response region; and the response buffer's pointer and counter are touched only inside the USB
 transport layer. The capture driver touches none of it. So an assumption in that search is wrong,
 and section 91 lists the candidates. The report layout the client expects is in
-`reference/logitech/clients.md`, marked unconfirmed.
+`reference/usb-protocol/commands.md`, marked unconfirmed.
 
 **This is why `0x40` WRITE_FLASH_DATA is absent from the main table.** WRITE_FLASH sets state
 2 as its first instruction, and state 2 is the only state in which the `0x40` chain runs, so
@@ -142,7 +142,7 @@ operand then opcode, at `0x1AD` through `0x1AF`:
 | first | the entry point, high byte `0xB0 \| (configuration type & 0x0F)` | `0x3F` |
 | second | `0xFFF4` | `0x07` |
 
-Every other entry point, including terminate, is acknowledged and ignored. `reference/logitech/clients.md`
+Every other entry point, including terminate, is acknowledged and ignored. `reference/usb-protocol/commands.md`
 carries the client's entry point names, whose order the firmware confirms.
 
 ### Every command's response, in one table
@@ -1162,7 +1162,7 @@ Restated as commands, each with its acknowledgement:
 
 **So selector `0x06` is an update status byte at address 0**, 0 meaning none and 2 meaning a new
 image is present, written before the erase and again after the write. That is what
-`reference/usb-protocol/README.md` calls one of the bodies this project located and never read, and it is the
+`reference/usb-protocol/commands.md` calls one of the bodies this project located and never read, and it is the
 most testable item here.
 
 Addresses are three bytes and sizes two, high byte first, which agrees with this project's own
@@ -1177,7 +1177,7 @@ This project's `encodeRequest` already computes it.
 
 The client names the `READ_MISC` and `WRITE_MISC` selectors. Four are serviced for reading on arch
 14, and the client has a name for each: selector 1 is a state accessor, 6 is memory, 7 is registers,
-and 12 asks what hardware features the remote has. That last one is `reference/usb-protocol/README.md`'s "not
+and 12 asks what hardware features the remote has. That last one is `reference/usb-protocol/commands.md`'s "not
 read yet" body, and the first and second are bodies this project has located and not read either.
 
 **It does not overturn the `0x07` correction and it does sharpen it.** This project derived from the

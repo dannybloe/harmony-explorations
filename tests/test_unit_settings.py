@@ -1,7 +1,7 @@
 """The per unit settings blocks a remote keeps in its own flash, `docs/findings.md` section 150.
 
 Logitech's client names twelve 64 byte records above the application firmware, seven of them settings
-of one kind or another, and `reference/logitech/clients.md` recorded that as the answer to "which settings does a
+of one kind or another, and `reference/architectures/harmony-600-650-700/memory.md` recorded that as the answer to "which settings does a
 remote have that its config does not carry". It is not the answer. Six of the seven are **erased
 flash** on every remote on this bench, so the regions exist and nothing has ever written them.
 

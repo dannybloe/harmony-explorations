@@ -1,6 +1,6 @@
 # Harmony 600, 650 and 700: USB
 
-The command protocol is `reference/usb-protocol/README.md` and the rails are `packages/usb/src/rails.ts`, with the
+The command protocol is `reference/usb-protocol/` and the rails are `packages/usb/src/rails.ts`, with the
 argument in `CLAUDE.md`'s "Never write to a remote". This file states what holds for all three models
 and links there for the rest.
 
@@ -18,21 +18,21 @@ Generated from `packages/corpus` and `packages/usb` by `make remote-reference-wr
 
 * **One product id for three models**, measured on all three bench units. Nothing on the bus separates
   them but the skin in the version block and, per unit, the identity block, section 281.
-* `bcdDevice` is BCD of 1000 plus the skin, measured on the 600 as `0x1071`, `reference/usb-protocol/README.md`
-  section 1. The 650's 0.2 build carries `0x1072` in its device descriptor, read in the firmware, section
+* `bcdDevice` is BCD of 1000 plus the skin, measured on the 600 as `0x1071`, `reference/usb-protocol/transport.md`.
+  The 650's 0.2 build carries `0x1072` in its device descriptor, read in the firmware, section
   392; on the 650's bus and on the 700 **not checked**.
 * The model number in the version reply is the build's own constant: 71 in the 600's 0.2 and 72 in the
   650's, section 392.
 * The version block's twelve bytes: firmware, hardware, flash id, architecture in field 4's high nibble,
-  skin and platform, `reference/usb-protocol/README.md` "GET_VERSION's twelve bytes" and section 57.
+  skin and platform, `reference/usb-protocol/version-block.md` "GET_VERSION's twelve bytes" and section 57.
 * Safe mode answers as software type 4, the application as 0.
 
 ## Commands
 
-The same seven commands as every image, `reference/usb-protocol/README.md` "The command table", with handler
+The same seven commands as every image, `reference/usb-protocol/commands.md` "The command table", with handler
 addresses given for the 600's 0.2 and the 700's 2.8. Two arch 14 only additions:
 
-* **`0x10` with a payload is a second command family**, `reference/usb-protocol/README.md` and section 304: its first
+* **`0x10` with a payload is a second command family**, `reference/architectures/harmony-600-650-700/usb.md` and section 304: its first
   payload byte selects a state, `0xB2` reads a setting, `0xB3` writes the settings store, `0xB1` any byte
   of data memory and `0xBD` a word of program memory. **Only `0x10` bare and `0x13 0xB2` pass the read
   only allow list**; the write is behind its own rail, `assertSettingsWriteAllowed`, and has been sent

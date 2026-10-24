@@ -95,7 +95,7 @@ most guesses.
 
 Two slots are already known, and neither is a target: slot 0 is that one frame, holding a tree
 of named nodes under `Root`, and slot 1 is a seven byte record stating the architecture. See
-`reference/config-format/README.md`.
+`reference/config-format/header-records.md`.
 
 ## Step 2: find where the firmware reads that slot
 

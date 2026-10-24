@@ -232,7 +232,7 @@ Follow the `finding` skill for the write-up, plus three things specific to hardw
   silently. `tests/test_usbdesc.py` holds the Harmony 600's live report descriptor this way.
   A hardware measurement that is not executable is just a note.
 * **Say it was hardware.** Mark the source of every hardware-derived number in the document.
-  `reference/usb-protocol/README.md` has a "Source" row saying image or live device per column.
+  `reference/usb-protocol/transport.md` has a "Source" row saying image or live device per column.
 * **Check the provenance claim in `docs/findings.md`.** Its introduction states what kind of
   analysis produced the document, and it said "no hardware probing" until the first
   measurement made that false. If a measurement makes that paragraph wrong, correct it in the

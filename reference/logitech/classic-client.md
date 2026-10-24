@@ -357,7 +357,7 @@ every image read. The third stands.
 
 The client does send a **clock recalculate**, misc selector 8, after writing, which is the one thing
 that could repair the second. It sends it only on the two architectures it believes carry a
-day of week, and `reference/usb-protocol/README.md` reads selector 8 as doing nothing at all on architecture 12,
+day of week, and `reference/usb-protocol/commands.md` reads selector 8 as doing nothing at all on architecture 12,
 so on the one bench architecture where it is sent it is not the repair.
 
 **What this is evidence for is the field assignment and its counting.** It was written up as evidence

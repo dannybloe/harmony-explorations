@@ -40,7 +40,7 @@ In every table, "erased" means `0xFF` bytes, and a region with no row is erased.
 **Reading internal memory is the one place where read only is not the same as harmless.** A
 `READ_FLASH` with top byte `0xFE` or `0xFF` restarts the remote when the transfer ends in a one byte
 chunk. `packages/usb` caps an internal read at a single chunk, which is a workaround rather than an
-explanation. See `reference/usb-protocol/README.md`.
+explanation. See `reference/usb-protocol/commands.md`.
 
 ## Two execution models
 
@@ -112,6 +112,6 @@ inferred rather than measured. The configuration words being where they are is c
 ## Where the detail is
 
 * `docs/findings.md` sections 1 to 5 for the images and their headers, 20 to 23 for the sweeps.
-* `reference/usb-protocol/README.md` section 4 for `READ_FLASH`, the region validator and the version block.
+* `reference/usb-protocol/commands.md` and `reference/usb-protocol/version-block.md` for `READ_FLASH`, the region validator and the version block.
 * `reference/config-format/README.md` for what is inside a `GSPM` container.
 * `docs/checksums.md` for the provenance of every file the figures came from.

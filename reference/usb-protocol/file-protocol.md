@@ -108,7 +108,7 @@ and changes nothing.
 
 Added 28 August 2026, section 198. The mirrored desktop client specifies the protocol of the
 **nineteen** skins this project does not read, per skin, in the same XML directories section 197
-found. The full description is in `reference/usb-protocol/README.md` section 6, which is the right home because
+found. The full description is in `reference/usb-protocol/file-protocol.md`, which is the right home because
 it is a protocol description; this entry is the ledger line saying it is believed on the client's
 word alone.
 

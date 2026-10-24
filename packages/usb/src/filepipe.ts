@@ -1,7 +1,7 @@
 /**
  * The **file protocol**, which is how the file based family is addressed. Read paths only.
  *
- * `docs/findings.md` section 198 is the derivation and `reference/usb-protocol/README.md` section 6 the
+ * `docs/findings.md` section 198 is the derivation and `reference/usb-protocol/file-protocol.md` the
  * specification. In one paragraph: these remotes address their storage by **name** rather than by
  * address over USB. They expose a small filesystem, and a host opens a path, gets a handle, and reads
  * through it. So none of `protocol.ts` applies, which is why this file exists rather than a branch in

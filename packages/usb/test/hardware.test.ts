@@ -47,7 +47,7 @@ async function present(productId: number): Promise<boolean> {
  * The Harmony One sometimes drops the first command after the device is opened. Observed twice: a
  * `readFlash` returning "0 of 256 bytes", and a `GET_VERSION` answered with no reply at all, each
  * followed immediately by a run that worked end to end. The 600 has not done it. See
- * `reference/usb-protocol/README.md`; the cause is not known and this is a workaround.
+ * `reference/remotes/harmony-one/behaviour.md`; the cause is not known and this is a workaround.
  *
  * **Two message shapes**, because the layers word silence differently: `exchange` says "no reply to
  * command 0x10", `readFlash` says "returned 0 of 256 bytes". The first version of this helper

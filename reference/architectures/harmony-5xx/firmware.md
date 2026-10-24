@@ -18,7 +18,7 @@ The model's manual has its owner update firmware through the classic Harmony Rem
 manual, "Upgrading your Harmony 525 firmware".
 
 The application's USB descriptor block has a second, Microchip stock descriptor left in beside it,
-claiming `04D8:000B`, which validates as well as the real one, section 113 and `reference/usb-protocol/README.md`.
+claiming `04D8:000B`, which validates as well as the real one, section 113 and `reference/usb-protocol/transport.md`.
 
 ## Routines read on the application image
 

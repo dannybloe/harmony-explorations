@@ -233,7 +233,7 @@ image is a second sample rather than a stand in. Other models are iterated on la
    Logitech: fourteen services, 78 operations, JSON over HTTP rather than SOAP, and **the device
    database is its own call**, `deviceManager.SearchGlobalDevices` with `GetCommands` beside it and a
    REST form of the search on another service. So the expensive route is real rather than hypothetical.
-   `reference/logitech/clients.md` has the map and `tests/test_host_client.py` recomputes it.
+   `reference/logitech/service.md` has the map and `tests/test_host_client.py` recomputes it.
 
    **One operation on that list is worth more to this repository than to the application**:
    `downloadManager.RemoteConfigurationInJson`, a configuration described in JSON by the people who

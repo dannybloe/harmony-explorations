@@ -8,7 +8,7 @@
 
 Base slot 16 is the one section of the config format that was read entirely out of firmware and never
 once exercised by a file. All 21 containers in the corpus carry a count of zero, so
-`reference/config-format/README.md`'s layout for it rests on the code alone, and two of its fields could not be
+`reference/config-format/state.md`'s layout for it rests on the code alone, and two of its fields could not be
 read from anything: what `flags` bits above 2 do, and what `base` is for. `docs/findings.md` section 39
 is the reading.
 

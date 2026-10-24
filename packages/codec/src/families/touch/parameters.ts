@@ -5,7 +5,7 @@
  * `test/startupassistant.test.ts`, as the Harmony 600, 650 and 700 each carry one set of their own,
  * `families/four-slot/wiring.ts`' `PARAMETER_VALUES`.
  *
- * What the groups hold is `reference/config-format/README.md` under base slot 15, read off the 3.4 image: 0 the display
+ * What the groups hold is `reference/config-format/state.md` under base slot 15, read off the 3.4 image: 0 the display
  * light fade's step delay, 1 four display light levels, 4 the analogue channel 1 band thresholds, 5 and 6
  * the battery millivolt curves, 7 a timeout in seconds, 9 the I2C device's level pairs, with band 3's pair
  * and the two bit field table past its declared entries, section 103. Groups 2, 3, 8 and 10 are not read.

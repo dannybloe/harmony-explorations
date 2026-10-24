@@ -34,7 +34,7 @@ read.
 |---|---|---|
 | architecture | 14 | measured, version block, section 295; read in the firmware, section 13 |
 | USB product id | `0xC122`, shared with the 600 and 650 | measured, section 281; [usb.md](usb.md) |
-| `bcdDevice` | `0x1066` in the 2.8 image's descriptor | read in the firmware, `reference/usb-protocol/README.md` section 1; on a unit **not checked** |
+| `bcdDevice` | `0x1066` in the 2.8 image's descriptor | read in the firmware, `reference/usb-protocol/transport.md`; on a unit **not checked** |
 | firmware | 2.8, application 76672 bytes, entry `0x1BB38`, Logitech's package; 2.5 and a 2.3 safe mode image also seen on a unit | read in the firmware and measured, sections 295 and 297; [firmware.md](firmware.md) |
 | screen | 1.5 inch, 128 by 128, "65,000 Color" | Logitech's manual, Product Specification; raster also measured from configurations, section 129 |
 | keys | 54 scan codes, the 600's face | read from configurations, section 17; a statement from the bench for the face |
