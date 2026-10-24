@@ -1642,7 +1642,9 @@ class TheWriteReviewWithholdListIsComplete(unittest.TestCase):
         # 28 since 10 October 2026: the Harmony 525's skill, whose write procedure names
         # `rehearse-block.ts`, and its two reference folders, which state what an erase address
         # selects on that model and are withheld on `docs/memory-map-525.md`'s ground.
-        self.assertEqual(len(must), 28, 'the withhold list should resolve to 28 paths, got %s'
+        # 29 since 24 October 2026: `docs/plans/009-the-reference.md`, the plan of the reference,
+        # which names `rehearse-block.ts` and the interlock among the readers it moves.
+        self.assertEqual(len(must), 29, 'the withhold list should resolve to 29 paths, got %s'
                          % sorted(must))
 
     def test_every_may_read_path_is_clean_of_the_write_path(self):
@@ -1748,7 +1750,9 @@ class TheWriteReviewWithholdListIsComplete(unittest.TestCase):
         # 39 since docs/README.md, the document map moved out of CLAUDE.md, which names the write path.
         # 40 with `.claude/skills/harmony-525/SKILL.md`, whose write procedure names the rehearsal
         # script. It went on the withhold list in the same commit; the list was re-read first.
-        self.assertEqual(len(stating), 40,
+        # 41 with `docs/plans/009-the-reference.md`, which names the rehearsal script and the
+        # interlock among the readers it moves. It went on the withhold list; the list was re-read.
+        self.assertEqual(len(stating), 41,
                          'the number of files stating the write path moved, so re-read the withhold '
                          'list before restamping this: %s' % stating)
 
