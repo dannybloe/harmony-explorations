@@ -409,7 +409,7 @@ roughly the order it is worth doing.
 ### A config is invalidated before it is written
 
 The write sequence is a `WRITE_MISC` with selector 2 and no arguments, then the flash write.
-Selector 2 is already known to be serviced on arch 14, `docs/usb-protocol.md`, and has no
+Selector 2 is already known to be serviced on arch 14, `reference/usb-protocol/README.md`, and has no
 reading. Selector 11 does the same thing for the embedded config.
 
 So the remote is not erased before a write, it is marked invalid, and a half written config is
@@ -921,7 +921,7 @@ Restated as commands, each with its acknowledgement:
 
 **So selector `0x06` is an update status byte at address 0**, 0 meaning none and 2 meaning a new
 image is present, written before the erase and again after the write. That is what
-`docs/usb-protocol.md` calls one of the bodies this project located and never read, and it is the
+`reference/usb-protocol/README.md` calls one of the bodies this project located and never read, and it is the
 most testable item here.
 
 Addresses are three bytes and sizes two, high byte first, which agrees with this project's own
@@ -1176,7 +1176,7 @@ config's declared version is matched against the remote rather than against a co
 
 The client names the `READ_MISC` and `WRITE_MISC` selectors. Four are serviced for reading on arch
 14, and the client has a name for each: selector 1 is a state accessor, 6 is memory, 7 is registers,
-and 12 asks what hardware features the remote has. That last one is `docs/usb-protocol.md`'s "not
+and 12 asks what hardware features the remote has. That last one is `reference/usb-protocol/README.md`'s "not
 read yet" body, and the first and second are bodies this project has located and not read either.
 
 **It does not overturn the `0x07` correction and it does sharpen it.** This project derived from the
@@ -1219,7 +1219,7 @@ every image read. The third stands.
 
 The client does send a **clock recalculate**, misc selector 8, after writing, which is the one thing
 that could repair the second. It sends it only on the two architectures it believes carry a
-day of week, and `docs/usb-protocol.md` reads selector 8 as doing nothing at all on architecture 12,
+day of week, and `reference/usb-protocol/README.md` reads selector 8 as doing nothing at all on architecture 12,
 so on the one bench architecture where it is sent it is not the repair.
 
 **What this is evidence for is the field assignment and its counting.** It was written up as evidence
@@ -1241,7 +1241,7 @@ the month's index on architectures 9 and 14, would put the wrong date on those r
   prediction for whenever one arrives rather than something to act on.
 * Arch 12 and arch 14 each declare an embedded configuration region, `0x1E000` and `0x4000`,
   distinct from the safe mode image and from the user config.
-* Read selector 12 is `docs/usb-protocol.md`'s "not read yet" selector `0x0C`. The client uses
+* Read selector 12 is `reference/usb-protocol/README.md`'s "not read yet" selector `0x0C`. The client uses
   it to ask what hardware features the remote has.
 * **Flash `0x200000` on arch 9 has left this ledger**, section 119, and it is the first entry to do so
   by being confirmed rather than refuted. It was here as concordance's claim that the address is a
@@ -1508,7 +1508,7 @@ has supplied firmware to this project, and it is the fourth published package of
 
 Added 28 August 2026, section 198. The mirrored desktop client specifies the protocol of the
 **nineteen** skins this project does not read, per skin, in the same XML directories section 197
-found. The full description is in `docs/usb-protocol.md` section 6, which is the right home because
+found. The full description is in `reference/usb-protocol/README.md` section 6, which is the right home because
 it is a protocol description; this entry is the ledger line saying it is believed on the client's
 word alone.
 

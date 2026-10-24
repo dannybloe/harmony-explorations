@@ -1140,7 +1140,7 @@ class TestReadFlash(unittest.TestCase):
 
     Scope note, after a correction. Everything here is about the **request**: the parser, the
     validator it calls, and the proof that the address triple is an address. The response side
-    was published as located and is not: see the correction in docs/usb-protocol.md. The two
+    was published as located and is not: see the correction in reference/usb-protocol/README.md. The two
     tests below that touch 0x13E90 and 0x0C9B2 assert what that code does, not which command
     it serves.
     """
@@ -2008,7 +2008,7 @@ class TestArch12Band0xC0(unittest.TestCase):
 
 class TestReadMiscSelectorTwelve(unittest.TestCase):
     """
-    Section 212. `READ_MISC` selector `0x0C`, which `docs/usb-protocol.md` carried as "not read
+    Section 212. `READ_MISC` selector `0x0C`, which `reference/usb-protocol/README.md` carried as "not read
     yet" from the day the selector chain was decoded.
 
     Logitech's classic client is what said where to look: it calls this selector a hardware feature

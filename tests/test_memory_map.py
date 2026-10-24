@@ -537,7 +537,7 @@ class TestTheSharedMap(unittest.TestCase):
 #: window of one pass, and would let an unrelated run through for sitting inside one of these.
 #:
 #: Both are properties of a model rather than of a unit, and both are published in
-#: `docs/usb-protocol.md` already. The second was found by widening this check: it is the Harmony
+#: `reference/usb-protocol/README.md` already. The second was found by widening this check: it is the Harmony
 #: 525's `GET_VERSION` reply, seven fields naming its protocol, skin, board and flash id, with no
 #: serial in it. A unit's serial GUIDs are what this test exists to keep out, and they appear in
 #: `concordance -i` output rather than in a version reply.

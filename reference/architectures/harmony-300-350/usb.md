@@ -1,7 +1,7 @@
 # Harmony 300 and 350: USB
 
 The file based family does not speak the command protocol of the Harmony One and the Harmony 600, 650 and
-700. Its protocol is `docs/usb-protocol.md` section 6, from Logitech's own specification, and this file
+700. Its protocol is `reference/usb-protocol/README.md` section 6, from Logitech's own specification, and this file
 states what holds for both models and what this library does with them.
 
 ## Identity
@@ -33,7 +33,7 @@ with `0xC124` "Harmony 300, and measured here on a Harmony 350".
 
 * A packet is `FF`, a command, a sequence number, a count and parameters. Commands: ping, open, write,
   read, commit, device control, close, a bus command and a control family whose members reset the
-  filesystem and reboot. Logitech's client and its specification, section 198 and `docs/usb-protocol.md`
+  filesystem and reboot. Logitech's client and its specification, section 198 and `reference/usb-protocol/README.md`
   section 6.
 * A request names a file by path; an open reply carries a handle and a big endian size, and a file's
   stated size is its only end, packets padding with NUL. Logitech's client, confirmed on a Harmony Touch,

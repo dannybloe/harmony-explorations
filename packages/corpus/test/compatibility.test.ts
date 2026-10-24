@@ -20,7 +20,7 @@ import { COMPARABLE_FIELDS, compareIntendedVersionAgainstBlock, encodeVersionBlo
  *
  * The blocks come from what each unit reports: for the three bench remotes that is `concordance -i`
  * plus this project's own `GET_VERSION`, both recorded in `docs/findings.md`'s source list, and the
- * Harmony 525's whole reply is in `docs/usb-protocol.md` verbatim. The Harmony 700 and the arch 8
+ * Harmony 525's whole reply is in `reference/usb-protocol/README.md` verbatim. The Harmony 700 and the arch 8
  * models are **not** on the bench, so their blocks are assembled from what those configs' own
  * wrappers state, which makes those rows a check that the reader and the comparison agree rather
  * than an independent measurement. They are labelled so, because a row that cannot fail is worth

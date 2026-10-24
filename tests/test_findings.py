@@ -145,7 +145,7 @@ class TestFirmwareHeader(unittest.TestCase):
         self.assertTrue(firmware.verify_checksum(page[0x1000:0x1000 + size]))
 
     # What each remote reports in version block fields 8 and 9, measured over USB and published in
-    # docs/usb-protocol.md. They are here because the refutation below needs both ends and only one
+    # reference/usb-protocol/README.md. They are here because the refutation below needs both ends and only one
     # of them is in a sample: no `h600_internal_ff` was ever taken, so "nothing at 0xFF +0x0000 and
     # nothing at 0xFF +0xE000" is a hardware reading and not something this test can recompute.
     REPORTED_IMAGE_FIELDS = {'h600': (0x00, 0x00), 'one': (0x34, 0x16)}
@@ -2307,7 +2307,7 @@ class TestTheFlashAddressIsClassifiedBeforeItIsUsed(unittest.TestCase):
         found, _c, _r = self.classifier(lab.load('one_internal_fe'), 0x0000)
         self.assertEqual(found, 0x07CAC)
         # Which command each caller belongs to, against handler bounds taken from the command table
-        # in docs/usb-protocol.md. That table is derived from the XORLW dispatch chain and so shares
+        # in reference/usb-protocol/README.md. That table is derived from the XORLW dispatch chain and so shares
         # no reasoning with this routine, which is what makes the attribution a check rather than a
         # restatement: three callers, three commands, and the fourth command in between untouched.
         for handlers, callers, expected in (

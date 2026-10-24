@@ -7,7 +7,7 @@ bench. Every fact that bore on the question was already somewhere in this reposi
 document each time.
 
 **This is a reference and not a derivation.** The arguments live where they always have, in
-`docs/findings.md`, the memory maps, `docs/usb-protocol.md` and the code, and a folder here links to
+`docs/findings.md`, the memory maps, `reference/usb-protocol/README.md` and the code, and a folder here links to
 them with one sentence of what they say. Where a fact is long, the link is the fact and the sentence is
 a summary of it. Two copies of a derivation is the state this repository refuses everywhere else, and a
 reference that restated the findings would be the largest such copy it had.

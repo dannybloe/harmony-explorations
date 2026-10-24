@@ -10,7 +10,7 @@ What the One runs, what exists of it in the lab, and how it would be recovered.
 | 3.4.0 | the forum table's "newest seen" | third party, `reference/capabilities.md` |
 
 The descriptor names `Harmony Remote 0-3.4.0` for the application and `4-3.4.0` in safe mode, the leading
-digit being the software type, `docs/usb-protocol.md`. No other version is known here. Whether Logitech's
+digit being the software type, `reference/usb-protocol/README.md`. No other version is known here. Whether Logitech's
 software update service serves this model is **not checked**; section 295 reports its 404 for the arch 14
 skins only.
 

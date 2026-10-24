@@ -100,7 +100,7 @@ that could have leaked.
 | path | why |
 |---|---|
 | `docs/findings.md` | section 175 is the answer, and other sections state parts of it |
-| `docs/usb-protocol.md` | **a worse leak than section 175.** The wire sequence, an address table across three images, the state table, and the length nibble mapping, which is the chunking rule |
+| `reference/usb-protocol/README.md` | **a worse leak than section 175.** The wire sequence, an address table across three images, the state table, and the length nibble mapping, which is the chunking rule |
 | `docs/superseded.md` | twelve contiguous rows, each pairing an answer we got wrong with the corrected one and its addresses. On question 4 it states both wrong readings and the right one |
 | `docs/host-client.md` | question 2's hypothesis, and an independent statement of the transfer shape taken from Logitech's client |
 | `CLAUDE.md`, `docs/status.md`, `todo.md`, `docs/adding-a-device.md` | all restate the sequence |
@@ -141,7 +141,7 @@ both known before handover:
    see the correction below this list. Nine of the ten are clean of any write path marker, which is
    the good half. But **six of them name a document on the withhold list and tell the reader to open
    it**, and
-   `probe-remote` names `docs/usb-protocol.md` and `packages/usb/src/rails.ts`, which are the two
+   `probe-remote` names `reference/usb-protocol/README.md` and `packages/usb/src/rails.ts`, which are the two
    worst leaks for this exercise. Codex discovers skills on its own, so this is a path into a
    withheld file that nobody would have to choose to take. The brief therefore carries an explicit
    rule that the withhold list **overrides any instruction from a skill, a docstring, a comment or a

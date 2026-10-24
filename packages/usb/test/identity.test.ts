@@ -2,7 +2,7 @@
  * Which unit is on the cable, tested on synthetic blocks in the real block's shape.
  *
  * Section 226. No lab and no hardware: the values that identify a real remote live in the private
- * lab, so this file works on blocks built here, in the layout `docs/usb-protocol.md` read off three
+ * lab, so this file works on blocks built here, in the layout `reference/usb-protocol/README.md` read off three
  * remotes. The one thing it must get right is the trap, and that is the first test.
  */
 import { test } from 'node:test';
@@ -35,7 +35,7 @@ function block(seed: number): Uint8Array {
 }
 
 test('the field named the serial cannot identify a unit, which is why the GUIDs are compared', () => {
-  // **The trap this module exists for.** `docs/usb-protocol.md`: the first 16 bytes are `0xEE` on
+  // **The trap this module exists for.** `reference/usb-protocol/README.md`: the first 16 bytes are `0xEE` on
   // all three remotes read here, `concordance -i` agrees the serial is unset, and it is a field
   // nobody writes. So the obvious comparison, of the field actually called the serial, matches every
   // unit against every other and says yes with confidence.

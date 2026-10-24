@@ -1,6 +1,6 @@
 # Harmony One: USB
 
-How the One looks on the cable and what it answers. The command protocol is `docs/usb-protocol.md`, whose
+How the One looks on the cable and what it answers. The command protocol is `reference/usb-protocol/README.md`, whose
 section 4 is the One's, and the rails are `packages/usb/src/rails.ts`, with the argument in `CLAUDE.md`'s
 "Never write to a remote".
 
@@ -18,10 +18,10 @@ Generated from `packages/corpus` and `packages/usb` by `make remote-reference-wr
 
 | field | value | standing and source |
 |---|---|---|
-| vendor and product id | `046D:C121`, its own; the 600, 650 and 700 share `0xC122` | read in the firmware's descriptor and measured, `docs/usb-protocol.md` sections 1 and 4 |
-| `bcdDevice` | `0x1054` | measured, `docs/usb-protocol.md` section 4 |
-| interface | HID, interrupt endpoints of 64 bytes at 1 ms; the report descriptor differs from arch 14's in one input item | read in the firmware and measured, `docs/usb-protocol.md` section 1 |
-| version block | `34 05 c8 1f c0 36 0c 34 34 16 34 34`: firmware 3.4, hardware 0.5, flash `1F:C8`, architecture 12 and software type 0, skin 54, platform `0x0C`, then the versions of five images | measured on two units, identical, `docs/usb-protocol.md` section 4 |
+| vendor and product id | `046D:C121`, its own; the 600, 650 and 700 share `0xC122` | read in the firmware's descriptor and measured, `reference/usb-protocol/README.md` sections 1 and 4 |
+| `bcdDevice` | `0x1054` | measured, `reference/usb-protocol/README.md` section 4 |
+| interface | HID, interrupt endpoints of 64 bytes at 1 ms; the report descriptor differs from arch 14's in one input item | read in the firmware and measured, `reference/usb-protocol/README.md` section 1 |
+| version block | `34 05 c8 1f c0 36 0c 34 34 16 34 34`: firmware 3.4, hardware 0.5, flash `1F:C8`, architecture 12 and software type 0, skin 54, platform `0x0C`, then the versions of five images | measured on two units, identical, `reference/usb-protocol/README.md` section 4 |
 | in safe mode | the same block with software type 4 | measured, section 190 |
 | identity block | internal `0xFF` `+0xF400` | measured; the values are a unit's serial and never appear here |
 

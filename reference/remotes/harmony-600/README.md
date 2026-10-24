@@ -24,7 +24,7 @@ other two carry over, `reference/button-maps.md`. Standing words and their meani
 Generated from `MODELS_BY_SKIN` in `packages/usb/src/models.ts` by `make remote-reference-write`. Change the source, not this block.
 <!-- /generated -->
 
-Skin 71 is **confirmed** from a live remote's `bcdDevice`, `0x1071`, measured, `docs/usb-protocol.md`
+Skin 71 is **confirmed** from a live remote's `bcdDevice`, `0x1071`, measured, `reference/usb-protocol/README.md`
 section 1 and findings section 19, and `reference/models.md` marks it confirmed on the remote. Skin 73 is
 **Logitech's service**, `ProductsManager/GetAllProducts`, the European model, section 131. Logitech's
 compiles for skins 71 and 73 share one picture look, the monochrome one, section 330.
@@ -46,8 +46,8 @@ is the cause.
 | | value | standing and source |
 |---|---|---|
 | architecture | 14 | measured, version block field 4, section 57; read in the firmware |
-| USB product id | `0xC122`, shared with the 650 and 700 | measured, `docs/usb-protocol.md` section 1; [usb.md](usb.md) |
-| `bcdDevice` | `0x1071` | measured, `docs/usb-protocol.md` section 1 |
+| USB product id | `0xC122`, shared with the 650 and 700 | measured, `reference/usb-protocol/README.md` section 1; [usb.md](usb.md) |
+| `bcdDevice` | `0x1071` | measured, `reference/usb-protocol/README.md` section 1 |
 | firmware | 0.2, application 70336 bytes, entry `0x1A26E` | measured, read off a unit and verified by its own checksum, section 23 |
 | hardware version | 1.1 | measured, version block, sections 281 and 302 |
 | screen | 1.5 inch, 128 by 128, **monochrome** | Logitech's manual, Product Specification; monochrome also seen at the bench, `reference/capabilities.md`, and Logitech's service |

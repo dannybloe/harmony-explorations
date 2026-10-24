@@ -1,6 +1,6 @@
 # Harmony 5xx: USB
 
-The command protocol is `docs/usb-protocol.md` and the rails are `packages/usb/src/rails.ts`, with the
+The command protocol is `reference/usb-protocol/README.md` and the rails are `packages/usb/src/rails.ts`, with the
 argument in `CLAUDE.md`'s "Never write to a remote". This file states what holds on this architecture,
 measured on a Harmony 525, and links there for the rest.
 

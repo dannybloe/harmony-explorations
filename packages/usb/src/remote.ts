@@ -248,7 +248,7 @@ export class HarmonyRemote {
    * Twelve because two independent counts agree there: the firmware stores through its output
    * pointer at exactly twelve sites, and the executor copies twelve bytes. A read of a Harmony 600
    * compared against `concordance -i` on the same unit identifies five of them and leaves six
-   * unidentified, with one candidate; see `docs/usb-protocol.md` for the mapping and its caveat.
+   * unidentified, with one candidate; see `reference/usb-protocol/README.md` for the mapping and its caveat.
    *
    * **The length is stated by the reply and is not a constant.** This used to insist on twelve, so
    * an arch 9 remote answering `0x27` and seven good fields was refused twice over: once because
@@ -543,7 +543,7 @@ export class HarmonyRemote {
    * architecture and where each one came from, and on a 525 the block is in the on chip EEPROM.
    *
    * The arch 12 address was predicted before it was read and confirmed on three remotes across two
-   * architectures, `docs/usb-protocol.md`, and the closure is that all three GUIDs `concordance -i`
+   * architectures, `reference/usb-protocol/README.md`, and the closure is that all three GUIDs `concordance -i`
    * prints for one exact unit appear in it in the same order.
    *
    * **What it is for**: two Harmony Ones enumerate identically, so `targetIsTheSpareRemote` was a

@@ -47,7 +47,7 @@ Read in the firmware and, live, on a unit over `READ_MISC` selector 7, sections 
 variable `n` at `0x108 + n`, the clock the first seven and the firmware's own variables 0 to 17, section
 284; the light band at `0x110` and the gauge at `0x111`; the cache drop's descriptors at `0x0EE8`, section
 246; the font pointer, the address of the set the next text is drawn in, at `0x2EC` to `0x2EE`, written
-by the copy at `0x2B93C` that the font select handler at `0x292AC` calls, in the 3.4 image, section 399. The write path's own variables are in `docs/usb-protocol.md` and are deliberately not repeated
+by the copy at `0x2B93C` that the font select handler at `0x292AC` calls, in the 3.4 image, section 399. The write path's own variables are in `reference/usb-protocol/README.md` and are deliberately not repeated
 here. At every boot the state variable storage above `narrow + 2 * wide` is painted `0xFE`, section 276.
 
 What a configuration seeds that storage with, measured on all 19 distinct compiles and built so since

@@ -37,7 +37,7 @@ docs/findings.md                authoritative technical reference, narrative
 reference/config-format/README.md           the config format spec, structured, for tools to track, ending
                                 with the per base slot summary that used to sit in this file
 reference/glossary.md                the vocabulary: which terms are Logitech's, which are ours
-docs/usb-protocol.md            the USB protocol spec, step 3, transport done, commands open
+reference/usb-protocol/README.md            the USB protocol spec, step 3, transport done, commands open
 docs/host-client.md             Logitech's own client as a source: the rule, and the ledger of
                                 what is believed on its word alone, all of it unconfirmed
 reference/logitech/data-model/             everything about the vendor platform, one subject in one folder since

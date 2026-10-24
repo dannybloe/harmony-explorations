@@ -8,7 +8,7 @@ image is laid out, what safe mode is and the `-safe.bin` naming trap, is in
 
 | version | where | standing and source |
 |---|---|---|
-| **2.8** | Logitech's package `harmony_700_firmware_2_8__1_.hfw`: application 76672 bytes, entry `0x1BB38`, execution base `0x9000`; the descriptor names `Harmony Remote 0-2.8.0` and `bcdDevice` `0x1066` | read in the firmware, sections 13 and 297, `docs/usb-protocol.md` section 1; and measured installed and running on a unit, section 297 |
+| **2.8** | Logitech's package `harmony_700_firmware_2_8__1_.hfw`: application 76672 bytes, entry `0x1BB38`, execution base `0x9000`; the descriptor names `Harmony Remote 0-2.8.0` and `bcdDevice` `0x1066` | read in the firmware, sections 13 and 297, `reference/usb-protocol/README.md` section 1; and measured installed and running on a unit, section 297 |
 | **2.5** | an application of 71552 bytes, seen on a unit and in its staging region | measured, sections 295 and 298 |
 | **2.3** | the safe mode image, 29888 bytes | measured, section 295 |
 | 2.5.0 | the forum table's "newest seen", which is out of date | third party, `reference/capabilities.md` |

@@ -54,7 +54,7 @@ Read on each build named, sections cited. Where a build is missing it is not rea
 * **The `-safe.bin` trap**: on this architecture the `*-safe.bin` file concordance's `--dump-safemode`
   writes holds the **application** truncated at 64 KiB, not a safe mode image; the lab keeps the 600's
   as `600-0.2-code-base0x9000-TRUNCATED64k.bin`, `docs/checksums.md` and `CLAUDE.md`.
-* Safe mode reports software type 4 over USB, the application 0, `docs/usb-protocol.md`.
+* Safe mode reports software type 4 over USB, the application 0, `reference/usb-protocol/README.md`.
 * The status screens a rejected configuration raises are the architecture's 35, section 244, and a failed
   validation re-arms rather than latching, unlike the Harmony One, section 253.
 * **The status screens live in the safe mode configuration** at external `0x020000`, linked for that

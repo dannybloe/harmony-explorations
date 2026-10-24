@@ -1,7 +1,7 @@
 /**
  * The Harmony command protocol, encoding and decoding only.
  *
- * Everything here is derived from `docs/usb-protocol.md`, which is derived from the firmware
+ * Everything here is derived from `reference/usb-protocol/README.md`, which is derived from the firmware
  * images. No I/O: this module turns commands into 64 byte reports and reports back into replies,
  * so all of it is testable without a remote attached, which matters because the remotes are
  * irreplaceable and the interesting failure modes are in the encoding.
@@ -19,7 +19,7 @@
 
 export class ProtocolError extends Error {}
 
-/** The seven commands every image dispatches. `docs/usb-protocol.md` section 3. */
+/** The seven commands every image dispatches. `reference/usb-protocol/README.md` section 3. */
 export const GET_VERSION = 0x10;
 export const WRITE_FLASH = 0x30;
 export const WRITE_FLASH_DATA = 0x40;
@@ -728,7 +728,7 @@ export function softwareTypeFromVersion(fields: Uint8Array): number | undefined 
  * arranged to prevent. The names were already here, in `packages/bench`, and the **values** were
  * computed nowhere, so the labels and the arithmetic now sit together.
  *
- * Six fields, and no more, because six is what `docs/usb-protocol.md` section 4 establishes: the
+ * Six fields, and no more, because six is what `reference/usb-protocol/README.md` section 4 establishes: the
  * reading was written down as a prediction from a Harmony 600 and then confirmed on a Harmony One
  * whose first six bytes came back exactly as predicted, with a third architecture, the Harmony 525,
  * agreeing on all of them. Fields 7 to 11 have placements in that document and are deliberately not

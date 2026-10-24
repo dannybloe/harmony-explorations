@@ -18,9 +18,9 @@ Generated from `packages/corpus` and `packages/usb` by `make remote-reference-wr
 
 | field | value | standing and source |
 |---|---|---|
-| vendor and product id | `046D:C122`, the same as the Harmony 600 and 650 | measured, section 281; read in the 2.8 image's descriptor, `docs/usb-protocol.md` section 1 |
-| `bcdDevice` | `0x1066` | read in the 2.8 image's descriptor, `docs/usb-protocol.md` section 1; on a unit **not checked** |
-| product string | `Harmony Remote 0-2.8.0` | read in the 2.8 image, `docs/usb-protocol.md` section 1 |
+| vendor and product id | `046D:C122`, the same as the Harmony 600 and 650 | measured, section 281; read in the 2.8 image's descriptor, `reference/usb-protocol/README.md` section 1 |
+| `bcdDevice` | `0x1066` | read in the 2.8 image's descriptor, `reference/usb-protocol/README.md` section 1; on a unit **not checked** |
+| product string | `Harmony Remote 0-2.8.0` | read in the 2.8 image, `reference/usb-protocol/README.md` section 1 |
 | firmware | 2.8 since the install of section 297; 2.5, and 2.3 in safe mode, before it | measured, version block, sections 295 and 297 |
 | software type | 4 in safe mode, 0 running | measured, sections 295 and 296 |
 | flash id | `15:1C`, EON F16, 2 MiB | measured, version block, section 295 |
@@ -46,7 +46,7 @@ Generated from `packages/corpus` and `packages/usb` by `make remote-reference-wr
 | `READ_MISC` selector 7, live data memory | measured: the state variables from `0x900` on build 2.8, the clock among them, section 386. This row said "never sent to a 700 here"<!--superseded--> until section 386 |
 | `WRITE_MISC` selector `0x07`, a RAM write | **refused** on this architecture by the rails |
 
-The command table's handler addresses in `docs/usb-protocol.md` are given for the 700's 2.8 image and the
+The command table's handler addresses in `reference/usb-protocol/README.md` are given for the 700's 2.8 image and the
 Harmony 600's 0.2.
 
 ## Not checked

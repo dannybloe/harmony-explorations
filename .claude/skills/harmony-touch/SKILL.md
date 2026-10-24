@@ -66,7 +66,7 @@ test; the read itself goes into the lab.
 | the drawing | `packages/silhouettes/src/models/touch.ts`, rendered into `reference/silhouettes/touch.svg` |
 | the transport | `packages/usb/src/filepipe.ts`, with `INERT_PATHS`; the refusal in `packages/usb/src/transport.ts`, `FILE_BASED_PRODUCTS` |
 | the read script | `packages/usb/bin/read-file-identity.ts` |
-| the protocol | `docs/usb-protocol.md` section 6 |
+| the protocol | `reference/usb-protocol/README.md` section 6 |
 | what Logitech's client does for it | `docs/host-client.md` and findings sections 202 and 203 |
 
 ## Related

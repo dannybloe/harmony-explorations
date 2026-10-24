@@ -36,10 +36,10 @@ What makes a compile choose one or the other is **not checked**.
 | | value | standing and source |
 |---|---|---|
 | architecture | 12, codename Gin, the only model on it | measured, version block field 4, sections 57 and 87; Logitech's client, `reference/models.md` |
-| USB product id | `0xC121`, its own | measured, `docs/usb-protocol.md` sections 1 and 4 |
-| `bcdDevice` | `0x1054` | measured, `docs/usb-protocol.md` section 4 |
+| USB product id | `0xC121`, its own | measured, `reference/usb-protocol/README.md` sections 1 and 4 |
+| `bcdDevice` | `0x1054` | measured, `reference/usb-protocol/README.md` section 4 |
 | firmware | 3.4, byte identical to Logitech's 3.4 package | measured, sections 3 and 88 |
-| hardware version | 0.5 | measured, version block field 1, `docs/usb-protocol.md` section 4 |
+| hardware version | 0.5 | measured, version block field 1, `reference/usb-protocol/README.md` section 4 |
 | screen | 2.2 inch, colour, capacitive touch; 176 by 220 pixels upright | Logitech's manual, "220 x 176 (QCIF+)", "64,000 Color", "Capacitive"; the raster read from configurations, section 54 |
 | keys | 44 on the drawing, 40 keypad keys and 4 touch keys; 32 named against a scan | the drawing, `reference/button-maps.md`; the count has **no cross check**, [keys.md](keys.md) |
 | devices | 15 | Logitech's manual, Logitech's service and the forum table agree |
