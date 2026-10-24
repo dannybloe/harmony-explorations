@@ -282,6 +282,8 @@ CONTAINERS = (
     'one_spare_track_start', 'one_spare_look_base', 'one_spare_look_written',
     'one_spare_glow_written', 'one_spare_arrows_written', 'one_spare_bottom_written',
     'one_spare_light60_written', 'one_spare_noassistant_written',
+    'one_spare_tourfree_base', 'one_spare_tourfree_written', 'one_spare_pictures_written', 'one_spare_options_written',
+    'one_spare_lists_written', 'one_spare_devlistfix_written', 'one_spare_pictures2_written', 'one_spare_empty_written',
 )
 
 
