@@ -1,19 +1,35 @@
 # Harmony 300: memory
 
-The layout is the architecture's, from the firmware's own file table: the configuration is `/cfg/usercfg`
-on the external medium at `0x020000`, and the container has 15 pointer slots,
-[the architecture's memory.md](../../architectures/harmony-300-350/memory.md). **No memory has been read
-off a 300**; only its files.
+Where the 300 keeps what it knows: one configuration file, which holds its devices and the infrared codes
+it sends for each. The layout of the remote's storage and of that file is the family's, stated once in
+[the family's memory.md](../../architectures/harmony-300-350/memory.md), from the firmware's own file
+table. Only its files have been read off a 300, never its memory.
 
 ## What is the 300's own
 
-| | value | standing and source |
+| | value | evidence |
 |---|---|---|
-| infrared groups | **four in every configuration**, unused ones empty, the model's maximum | measured, section 264 |
-| the group index | the device key: TV 0, Cable/Sat 1, DVD 2, VCR/Aux 3 | measured, section 265 |
-| raw slot 8 | twice the device count on a current compile, and empty on a configuration built in 2011, so it follows the compiler and not the model | measured, section 265, which corrects section 264 |
-| configurations read | 41234 bytes as a second hand unit arrived, 97474 after four devices were programmed | measured, sections 264 and 265 |
+| infrared groups | **four in every configuration**, unused ones empty, the model's stated maximum | [^s264] |
+| the group index | the device key: TV 0, Cable/Sat 1, DVD 2, VCR/Aux 3 | [^s265] |
+
+## What the 300 showed about the family
+
+This holds for both models, and the 300's configurations are what settled it. Raw slot 6, one entry more
+than there are devices, is the family's open question, [the family's memory.md](../../architectures/harmony-300-350/memory.md).
+
+| | value | evidence |
+|---|---|---|
+| raw slot 8 | twice the device count on a configuration Logitech's current service compiled, and empty on one compiled in 2011, so it follows the compiler and not the model | [^s265] |
+
+**A configuration from a different generation of the compiler is not a sample of the same population**:
+raw slot 8's emptiness on the 2011 configuration was first read as a property of the model[^s264], and a
+second configuration off the same remote, compiled by the current service, holds eight for four
+devices[^s265]. Each configuration states its own build date, so the check is available in every one.
 
 ## Not checked
 
 * Anything in the remote's memory beyond the files it serves.
+* What raw slot 8 holds.
+
+[^s264]: Measured in configurations. [Section 264](../../../docs/findings.md#s264)
+[^s265]: Measured in configurations. [Section 265](../../../docs/findings.md#s265)

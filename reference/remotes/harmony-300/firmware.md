@@ -1,16 +1,17 @@
 # Harmony 300: firmware
 
-The 300 runs the image the Harmony 350 runs: one package, `skin104-harmony350-production-1.4.0.0`, names
-skins 78, 79 and 104. Its version, layout, routines and source are stated once in
-[the architecture's firmware.md](../../architectures/harmony-300-350/firmware.md).
+The 300 runs the same program as the Harmony 350: Logitech publishes one firmware package for both, and
+its version, layout, routines and source are stated once in
+[the family's firmware.md](../../architectures/harmony-300-350/firmware.md).
 
-| | value | standing and source |
-|---|---|---|
-| version | 1.4 | Logitech's service, section 196; the product string says `0-1.4.0` |
+What is the 300's own is only that the package names it: its list of intended skins is 78, 79 and 104,
+the two Harmony 300 skins and the Harmony 350's[^s196], at version 1.4[^s196].
 
 ## Not checked
 
-* The version a unit runs, from its own `/sys/sysinfo`.
-* Whether Logitech's software update service serves the image by product 78 or 79 as well as by 104,
-  section 196.
+* The version a remote of this model runs, from its own `/sys/sysinfo`.
+* Whether Logitech's software update service serves the image when asked by skin 78 or 79 as well as by
+  104.
 * Safe mode and recovery on this model.
+
+[^s196]: Stated by Logitech, by their service. [Section 196](../../../docs/findings.md#s196)
