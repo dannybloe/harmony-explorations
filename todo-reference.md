@@ -34,7 +34,7 @@ takes over `todo-later.md` chapter 8, plan 005's steps, which now live here.
 
 - [x] 2.1 Files moved into the layout with `git mv`, every path that names them rewritten: `CLAUDE.md`, skills, code, tests, generators, links; whole files moved, the three large documents cut by heading, pointers to their sections retargeted, `make facts` 245 and 546 before and after, and FreeHarmony's mentions on its branch `reference-paths`
 - [x] 2.2 A short fixed anchor on every findings heading, with no other change to the archive: 436 section anchors and 25 decision anchors, the one live link corrected, digest pinned in tests/test_archive.py
-- [ ] 2.3 The tests that guard the layout: no bench, lab, account, dump or todo in `reference/`, every link and footnote resolves, no em or en dashes
+- [x] 2.3 The tests that guard the layout: no bench, lab, account, dump or todo in `reference/`, every link and footnote resolves, no em or en dashes; `tests/test_reference.py` runs plan 009's five guards from `tools/reference_guards.py` against a pinned list that may only shrink (bench 551, names 29, copy 7, footnotes 0, links 0), each guard shown failing on a planted line in `reference/infrared/README.md` and kept failing on a synthetic tree; dashes stay `make prose`'s
 
 ## 3. Models and architectures
 

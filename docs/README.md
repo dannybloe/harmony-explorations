@@ -816,6 +816,9 @@ tools/corpus.py        [lab_directory] [--json]
 tools/lab_register.py  <lab path>   which register rows bear on a path, ancestors and descendants
 tools/golden.py        [--write]   golden vectors for the Python/TypeScript comparison
 tools/facts.py         [--write] [--list]   the document checks behind `make facts`
+tools/reference_guards.py [--counts] [--pin]   the five guards of reference/ (no bench, no person,
+                       no copy of Logitech's database, footnotes well formed, links resolve), their
+                       counts per folder, and --pin to shrink the list tests/test_reference.py holds
 tools/usbdesc.py       <file> <base> [--raw] [--json]
 tools/usbprobe.py      [--json]   reads a CONNECTED remote, enumeration only, needs pyusb
 node packages/usb/bin/list-remotes.ts    the same question over HID, also enumeration only
