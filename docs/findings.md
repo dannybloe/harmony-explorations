@@ -325,6 +325,7 @@ asserted in `tests/test_isa.py` and every documented finding has a regression te
 
 ---
 
+<a id="s1"></a>
 ## 1. Summary
 
 The firmware is PIC18 machine code and it is directly disassemblable. The reason this
@@ -348,6 +349,7 @@ Load addresses, determined empirically and cross-validated:
 | Harmony 600 0.2 | 70336 (`0x112C0`) | `0x009000` | `0x01A26E` |
 | Harmony 700 2.8 | 76672 (`0x12B80`) | `0x009000` | `0x01BB38` |
 
+<a id="s2"></a>
 ## 2. Why the concordance dumps look the way they do
 
 On both remotes, `--dump-safemode` and `--dump-firmware` produce **byte-identical**
@@ -410,6 +412,7 @@ Asserted in `tests/test_concordance_notes.py`, which reads the constants out of 
 checkout and skips when there is none. Nothing here reads that source for structure or copies it;
 these are constants describing hardware, which is the same footing as the rest of this section.
 
+<a id="s3"></a>
 ## 3. Flash layout per architecture
 
 | | arch 12 (Gin, Harmony One) | arch 14 (Harmony 600 / 700) |
@@ -466,6 +469,7 @@ data itself: the GSPM header's `end_addr` field marks where the config ends.
 Arch 14 keeps the two parts in separate files instead: the 700's `.hfw` ships
 `Region_2.EZUpgrade` (code) and `Region_3.EZHex` (a GSPM config based at `0x020000`).
 
+<a id="s4"></a>
 ## 4. Firmware image header
 
 Identical across all three images:
@@ -505,6 +509,7 @@ Note that this differs from `_fix_magic_bytes()`, which starts the sum at
 independent constants: the `0x48 0x47` magic sits at offset **8**, the checksum range
 starts at offset **4**, and the range ends at the actual image size, not at 64 KiB.
 
+<a id="s5"></a>
 ## 5. Determining the load address
 
 Method: decode every `GOTO`/`CALL` pair (`0xEF`/`0xEC`/`0xED` followed by a word whose
@@ -557,6 +562,7 @@ The 7 stragglers on the One target a 5-entry vector table in internal flash at
 bootloader's exported service routines, plausibly the flash erase and write helpers the
 application needs in order to reprogram the external flash.
 
+<a id="s6"></a>
 ## 6. Confirmation that this is PIC18
 
 Not inference. Sample from the One at `0x20030`, and note the header at `0x20000` is
@@ -597,6 +603,7 @@ Textbook C-compiler PIC18 profile, consistent with the description in discussion
 code "compiled from C with minimal hand crafted assembly". `DEADDEAD` appears as linker
 fill in the One image.
 
+<a id="s7"></a>
 ## 7. The GSPM config container
 
 Now validated against **four** independent samples at four different base addresses:
@@ -719,6 +726,7 @@ under one comment reading
 "must be in application mode or Safe mode", and section 87 separates them by reading the same
 accessor out of each remote's two images.
 
+<a id="s8"></a>
 ## 8. LWJL, and a caution about reading too much into it
 
 **Superseded in its central claim. Read section 17 first.** The matrix encoding this section
@@ -778,6 +786,7 @@ scan codes in three event classes. "162 codes is far more than the 600 has physi
 the right observation and the wrong inference, because the 162 includes each key three times. The
 second bank of rows at 8 to 14 was bit 6 of the code, which is the release flag, not a row bit.
 
+<a id="s9"></a>
 ## 9. Still unidentified
 
 External flash `0x000000-0x00011F` on the Harmony One: 288 bytes in which **every
@@ -792,6 +801,7 @@ range across two dumps of the same remote taken at different times would settle 
 immediately. Note this region does **not** exist on the 600, where flash `0x000000` is
 the start of the firmware image.
 
+<a id="s10"></a>
 ## 10. Ghidra recipe
 
 For the One's code half (`one34_code.bin`, 60050 bytes):
@@ -818,6 +828,7 @@ For arch 14 (`h700_r2.bin`, 76672 bytes, or the 600 dump):
 Independent sanity check outside Ghidra: `gpdasm -p p18f67j50` (arch 14) or
 `-p p18f87j50` (arch 12) from gputils, after converting to Intel HEX.
 
+<a id="s11"></a>
 ## 11. Suggested concordance changes
 
 ### arch 12, `remote_info.h`
@@ -847,6 +858,7 @@ than at `FIRMWARE_MAX_SIZE`.
 the read path only (`concordance -f`). Do not run any erase or write operation against
 a remote with a patched architecture table.
 
+<a id="s12"></a>
 ## 12. Open items
 
 * Confirm the MCU markings on an opened Harmony One (expected `PIC18F87J50` or a close
@@ -862,6 +874,7 @@ a remote with a patched architecture table.
   should be recoverable from the key scanning routine directly, without flashing test
   configs onto hardware.
 
+<a id="s13"></a>
 ## 13. Firmware internals: first Ghidra pass (Harmony 700 2.8)
 
 Ghidra 12.1.2, language `PIC-18:LE:24:PIC-18`, base `0x9000`. Result: **28974
@@ -1292,6 +1305,7 @@ LWJL sections genuinely differ in meaning, and there must be a translation somew
 between the scanner's linear index and the event codes the config uses. Finding that
 translation is now the concrete next step for the button mapping problem.
 
+<a id="s14"></a>
 ## 14. The container is one format across four architectures
 
 Section 7 established the container against four samples, all of them arch 12 or arch 14. That
@@ -1419,6 +1433,7 @@ file holds. The XML text is 3151 bytes and the 3153 already includes the separat
 derivation `payload = last BINARYDATASIZE bytes` avoids the question entirely, which is the
 argument for deriving boundaries rather than measuring them by hand.
 
+<a id="s15"></a>
 ## 15. A config states its own architecture, and slot 0 is the only frame
 
 Both of these came out of adding a **Harmony 700 config**, posted publicly by dmrzzz. It
@@ -1536,6 +1551,7 @@ like is the thing `.claude/skills/trace-section/SKILL.md` exists to prevent: the
 from the firmware routine that consumes the pointer. This is a strong candidate for "state
 variables" and nothing more until that routine is found.
 
+<a id="s16"></a>
 ## 16. The Harmony 700 pair, and what a controlled sample buys
 
 Both of dmrzzz's Harmony 700 dumps are in the corpus, so the corpus has its first **controlled
@@ -1766,6 +1782,7 @@ The `version word` in section slot 1 did not move: both dumps read 3394, across 
 and a configuration change. So it is not a timestamp and not a revision counter for the config
 itself.
 
+<a id="s17"></a>
 ## 17. Key codes carry an event type, and slot 10 holds the action lists
 
 Both of these started as claims in harmony-decompiler discussions 5 and 6, which by decision 7 of
@@ -1897,6 +1914,7 @@ one instruction set with per architecture extensions rather than two encodings, 
 have to be read out of the arch 14 firmware. That is now the most valuable thing to look for while
 in there.
 
+<a id="s18"></a>
 ## 18. The register map was the wrong one, and there is a shadow register set
 
 This section is a correction, and the correction was pre-announced: the intro has listed the
@@ -2010,6 +2028,7 @@ Also fixed while in there: `trace.report` crashed on any address that had hits, 
 formatted a namedtuple with `%s`. So `pic18_trace.py`, described in the project brief as the
 highest-value tool here, could only report addresses with no accesses at all.
 
+<a id="s19"></a>
 ## 19. The USB command layer, and a switch that lies about its case values
 
 The protocol itself lives in `docs/usb-protocol.md`, which is the spec other tools consume.
@@ -2428,6 +2447,7 @@ itself. The `0x05` case is present in both arch 14 images and absent from the ar
 which tracks the architecture rather than the firmware version, the 600 being 0.2 against the
 700's 2.8. No explanation is offered for that yet.
 
+<a id="s20"></a>
 ## 20. The section table was one slot short, and the padding was never padding
 
 The container parser had an off by one from the first day it existed, in both implementations,
@@ -2519,6 +2539,7 @@ resolving it.**
 `tests/test_gspm.py` class `TestPointerTableLength` and
 `packages/codec/test/gspm.test.ts` hold this, in both implementations, over every sample.
 
+<a id="s21"></a>
 ## 21. Slot 3 says when the config was built, and the weekday proves it
 
 > **Corrected on 3 October 2026, section 322.** The field assignment stands; how two of its fields
@@ -2664,6 +2685,7 @@ with a record field whose meaning is already confirmed on sixteen samples, inclu
 month and the weekday. Section 111 has the measurement, on a remote whose clock was reading its own
 config's build date. That the day too is zero based, and the weekday Sunday based, is section 322.
 
+<a id="s22"></a>
 ## 22. The internal read window is two pages, and one of them holds the remote's identity
 
 Measured on the spare unprogrammed Harmony One, read only. `docs/usb-protocol.md` section 4 has the
@@ -2743,6 +2765,7 @@ readable**, 128 KiB at 62 bytes a read, which turns the internal half of "a comp
 both bench remotes" from an unknown into about two thousand reads. What is up there is code that no
 image in the corpus contains, because on arch 12 the application runs from external NOR.
 
+<a id="s23"></a>
 ## 23. The Harmony 600's firmware, complete, and checked by its own checksum
 
 The 600's firmware image has been truncated for as long as this project has existed. `concordance
@@ -2907,6 +2930,7 @@ two bytes of every page are unreadable, because the offset clamps at `0xFFC0` an
 there end at `0xFFFD`; no image runs that far, so nothing here depends on them. And the 700 2.8
 image remains worth keeping: it is a second arch 14 sample and the only one for that model.
 
+<a id="s24"></a>
 ## 24. The 600's safe mode config, read where the 700's package said it would be
 
 Section 3 has put the architecture 14 safe mode config at flash `0x020000` for as long as this
@@ -2965,6 +2989,7 @@ work and belongs with section 17, not here.
 measurement. Nothing changed about the address, which is the point: a prediction that had to hold
 for the architecture claim to stand held.
 
+<a id="s25"></a>
 ## 25. The six bytes at the top of the `0xFF` page are the configuration words
 
 Section 23 listed an unexplained run of six bytes at `0xFF` `+0xFFF8`, present on all three bench
@@ -3028,6 +3053,7 @@ What the six bytes actually say. Decoding them into `WDTEN`, `PLLDIV`, `XINST` a
 byte level reading of a per unit region that is not published here, and nothing in this project
 needs it yet.
 
+<a id="s26"></a>
 ## 26. Action list opcode `0x7F` is a call, and the operands prove it without the firmware
 
 Section 17 left the opcode table as the most valuable thing to look for, and said the meanings had
@@ -3144,6 +3170,7 @@ configs, which is itself odd for an index, and `0x71` at `0x833E` on the 700 aga
 
 Neither is claimed as a meaning. They are constraints on what the meanings can be.
 
+<a id="s27"></a>
 ## 27. Base slot 8 is bindings: a key press, and the action list it runs
 
 Section 26 found that slot 8 reaches the action lists nothing else calls, and left its layout
@@ -3233,6 +3260,7 @@ without being tested.
 And the other opcodes in these records. `0x7F` is a call, per section 26; `0x7E` and the rest are
 as unread here as they are in slot 10.
 
+<a id="s28"></a>
 ## 28. Most of an arch 14 config is one cross product, against a fixed vocabulary
 
 Opcode `0x6C` was the reason section 17 said the arch 9 opcode table does not transfer: it is the
@@ -3295,6 +3323,7 @@ programmed config and 21 from 43 to 110 in the unprogrammed one. So this is an a
 structure and the arch 12 equivalent, if there is one, has not been read. Forcing the two together
 would be exactly the kind of transfer section 17 warns about.
 
+<a id="s29"></a>
 ## 29. `0x7C` carries a value of at most 100, and longer numbers are spelled out
 
 `0x7C` is the most used opcode on architecture 14, 7272 times in the 700 config and 4788 in the
@@ -3353,6 +3382,7 @@ both track the config rather than the model, but matching counts are not identit
 And why the field maximum is 100 rather than 255, when the operand byte could hold more. A decimal
 looking bound in a binary field usually means somebody upstream of the encoder thought in decimal.
 
+<a id="s30"></a>
 ## 30. The Harmony 650 is arch 14, and it was the third arch 14 sample sitting unopened
 
 `reference/checksums.md` has named three surviving Harmony firmware packages since the corpus was
@@ -3421,6 +3451,7 @@ of the eleven architectures concordance names models for and every architecture 
 discontinuation list in `reference/models.md`. For those the only route to an image is `READ_FLASH`
 off a physical remote.
 
+<a id="s31"></a>
 ## 31. Four opcodes take an operand above `0xC000` and no other opcode enters that band
 
 ~~Titled "Four opcodes address a second operand space" until section 72, which is the wrong noun:
@@ -3522,6 +3553,7 @@ proves nothing.
 And why the floor is `-16384` rather than `-32768`. Half the negative range is untouched by every
 sample.
 
+<a id="s32"></a>
 ## 32. Base slot 5 is the infrared database
 
 The first section pointer labelled by function, and it was reached from the opcode work rather
@@ -3645,6 +3677,7 @@ the run rather than assuming an offset, so this does not block decoding, but a w
 
 **The other three encoding classes**, including whatever arch 9 uses for all of its records.
 
+<a id="s33"></a>
 ## 33. Opcode `0x7D` sends an infrared code, and the reference is one to one
 
 The count gave it away. On the 700, `0x7D` has 350 distinct operands and the infrared database has
@@ -3718,6 +3751,7 @@ will name all three.
 to an infrared send, and the corpus never shows it above 10, so the obvious reading is also
 untested. A value of 0 appears 665 times, which a repeat count would have to explain.
 
+<a id="s34"></a>
 ## 34. The action list interpreter, read out of the firmware
 
 Section 26 tried to find this by scanning for `XORLW` chains and failed, because **the opcode
@@ -3883,6 +3917,7 @@ bank 15 and that reads as hardware when it is not.
 **Everything below `0x65`**, which is a second dispatcher not read here, and everything at `0x80`
 and above, which is one routine not read here.
 
+<a id="s35"></a>
 ## 35. Base slot 13 is the state variable table, and the firmware confirms the section table
 
 Section 34 left `0x17E28` as an unnamed lookup that `0x70`, `0x71` and `0x72` all index with a
@@ -4016,6 +4051,7 @@ rail rather than a convention.
 which is the one `0x71` reads most. **Answered by section 86**: base slot 0 names every variable
 the generator gave a name to, and the name says what it is for and how many values it takes.
 
+<a id="s36"></a>
 ## 36. Base slot 4 is the firmware event map, and section sizes are upper bounds
 
 The second slot labelled from section 35's map. It also produces a correction that applies to every
@@ -4100,6 +4136,7 @@ What is new is that `0x7E` and slot 4 share it and that thirty entries of it are
 
 **Why the fallback repeats the value for key 0**, in every config.
 
+<a id="s37"></a>
 ## 37. Base slot 6 is the mode table, and that places `0x7E`
 
 Section 36 found that opcode `0x7E` and the event map write the same register, without saying what
@@ -4179,6 +4216,7 @@ the pointer at offset 6 are read and not followed here.
 
 **Why there are so many.** 374 on a config with six infrared groups is the number to explain.
 
+<a id="s38"></a>
 ## 38. The slot map on a third image, and what the remaining consumers do
 
 Section 35's map was built on the Harmony 700 and section 37 repeated it on the 600. Here it is
@@ -4283,6 +4321,7 @@ least one image and a structure, which is the difference between a search and a 
 Slots 9, 14 and 16 came off that list in section 39, slots 7 and 11 in section 40, slot 12 in
 section 43, slot 15 in section 44 and slot 17 in section 45. The list is empty.
 
+<a id="s39"></a>
 ## 39. Three more sections named, and what the accumulator computes
 
 Section 38 ended with eight slots that had a consumer address and no name, and with the rule that
@@ -4557,6 +4596,7 @@ sample, and the compile that would touch them is named at the end of that sectio
 Slots 7 and 11 came off that list in section 40, slot 12 in section 43, slot 15 in section 44 and
 slot 17 in section 45, which empties the list.
 
+<a id="s40"></a>
 ## 40. The second interpreter, and base slot 11
 
 Section 39 ended with a routine located and not decoded: base slot 14's lookup follows an address
@@ -4691,6 +4731,7 @@ some other way.
 **The glyph table.** Its address is held in RAM, at `0x398` on the Harmony 700, and where that is loaded
 from is not traced. Section 46 traced it: the font select instruction stores it there.
 
+<a id="s41"></a>
 ## 41. The trailer checksum
 
 Section 22 located the boot validator and could not derive the checksum it enforces. It is a
@@ -4771,6 +4812,7 @@ even number of identical changes. So it will not catch a corrupted transfer as r
 sixteen bits suggest, and a writer should not treat a passing checksum as evidence that a config
 is correct, only that the remote will not refuse it outright.
 
+<a id="s42"></a>
 ## 42. The infrared class byte, and why three classes cannot be derived from the corpus
 
 The roadmap has carried "three of the four infrared encoding classes" as a known unknown since
@@ -4890,6 +4932,7 @@ firmware implements or a different field entirely, and the corpus cannot tell th
 space stream. Narrowed to one byte by section 92, which named the two durations: what is left is
 the `u8` at `+0x00`, zero in every record of the corpus.
 
+<a id="s43"></a>
 ## 43. Base slot 12 is the timer table
 
 The section that runs an action later. It is the thirteenth of twenty base slots to be named, it is
@@ -5020,6 +5063,7 @@ reachable; nothing here says that index 3 on the 600 is the backlight.
 entry's remaining while the scheduler counts down its own sixteen bit copy, and the routine that
 reconciles the two was not read.
 
+<a id="s44"></a>
 ## 44. Base slot 15 is the parameter block, and the firmware checks every group's length
 
 Section 38 found that the firmware compares this section's entry count against a literal, 9 on
@@ -5159,6 +5203,7 @@ counts and millivolts is still not read.
 > properties are is what is left, and both One configs carry the same table so no comparison can
 > name them.
 
+<a id="s45"></a>
 ## 45. Base slot 17 is the touch screen hit map, and that is the last unnamed pointer
 
 The Harmony One is the only remote in this project with a touch panel, and this is the only section
@@ -5269,6 +5314,7 @@ rectangle runs to 4437, which is either the panel's edge or deliberately past it
 
 **Why one code of the eleven, 45, is missing** from the map while the key table has it.
 
+<a id="s46"></a>
 ## 46. Base slot 7 is the font table
 
 Section 40 placed the slot, as the table the screen language's opcode 16 indexes, and left its
@@ -5388,6 +5434,7 @@ property of the format, and a config that starts its sets at 1 has renumbered.
 
 **Arch 9's packing.**
 
+<a id="s47"></a>
 ## 47. Base slot 2 is the log area, and the pointer table is fully named
 
 Slot 2 was the last of the twenty base slots that was neither named nor NULL. It is not a pointer
@@ -5530,6 +5577,7 @@ census.
 With this, **every one of the twenty base slots is accounted for**: 0 and 1 are the header records,
 2 to 17 are sixteen named sections, and 18 and 19 are NULL in all thirteen containers.
 
+<a id="s48"></a>
 ## 48. The button mapping experiment, predicted before it is run
 
 This section is written **before** the measurement, which is the point of it. A hardware result
@@ -5749,6 +5797,7 @@ scan codes 1 to 40, then 43 to 53, then 55. So the 40 matrix buttons should be c
 per press, and `watch-keys.ts --address --mask` for watching a port with unrelated traffic in it.
 `tests/test_keypad.py` pins the 54 measurements and the closure against the config.
 
+<a id="s49"></a>
 ## 49. Most of a config is a region nothing named reaches, and screen opcode 2 is its only referent
 
 Found by the byte accounting of milestone M2 rather than by looking for it, which is the argument
@@ -5843,6 +5892,7 @@ have to reproduce. It is also the best remaining target for the firmware method 
 `trace-section` skill: opcode 2 has a handler in the arch 14 dispatcher at `0x1879C`, and that
 handler is what the region is for.
 
+<a id="s50"></a>
 ## 50. Screen opcode 2 draws a bitmap, and that is not what fills the region
 
 Section 49 named opcode 2 as the only referent of the region that holds most of a config, and left
@@ -5978,6 +6028,7 @@ are decoded but whose record fields are not all named.
   accounting, for both kinds.
 * `tests/test_interpreter.py` `TestTheBitmap` and `packages/codec/test/screen.test.ts`.
 
+<a id="s51"></a>
 ## 51. The region is image data, and the second referent is still missing
 
 Section 49 found the region and could not say what it holds. Section 50 read the firmware that
@@ -6082,6 +6133,7 @@ attributed.
 * `tests/test_region.py`, five tests including the calibration case and the byte order comparison.
 * `docs/config-format.md`, under the screen language.
 
+<a id="s52"></a>
 ## 52. Base slot 6's pointer does not land on its entry, and the key table is one of them
 
 Found while hunting section 51's missing referent, by asking whether a mode entry's three trailing
@@ -6152,6 +6204,7 @@ Coverage moves to 28.3% on a Harmony 700 and 26.5% on a Harmony 600.
 * `packages/codec/src/sections.ts`: `modeRecords`, plus `slot-6-mode` and `slot-6-tail` claims.
 * `tests/test_interpreter.py` `TestTheModeRecord`, and `packages/codec/test/sections.test.ts`.
 
+<a id="s53"></a>
 ## 53. A mode record carries a screen program, and that is what names the large pictures
 
 Section 52 corrected where a base slot 6 record starts and observed that only about a tenth of one
@@ -6233,6 +6286,7 @@ Coverage: **59.3% of a Harmony 700**, up from 28.3%, 57.5% of a Harmony 600, 50.
 * `tests/test_interpreter.py` and `packages/codec/test/screen.test.ts`, with every corpus total
   moved and the old value recorded beside the new one.
 
+<a id="s54"></a>
 ## 54. One missing operand count was holding arch 12 shut, and the region is pictures
 
 Section 53 left the sharpest open question in the format: a mode record carries a screen program on
@@ -6321,6 +6375,7 @@ Zero overlapping claims anywhere, which is the check that keeps those numbers ho
 * `tests/test_interpreter.py` and `packages/codec/test/screen.test.ts`, where the tiling test now
   asserts the opposite of what it did and says so.
 
+<a id="s55"></a>
 ## 55. The region is one array of pictures, and about a third of them are addressed
 
 Section 54 left the Harmony One at 48% of its region explained and framed the remainder as a
@@ -6404,6 +6459,7 @@ corpus is never.
   with a `picture-bank` claim.
 * `tests/test_interpreter.py` `TestThePictureBank` and `packages/codec/test/screen.test.ts`.
 
+<a id="s56"></a>
 ## 56. "Logitech's servers are gone" was false, and it was load bearing
 
 This project opened four of its documents with a sentence that is not true. `README.md` said
@@ -6495,6 +6551,7 @@ however many documents repeat it. This section exists as much to record that as 
   admission that the answer expires. This is the only finding in this document with no test, and
   saying so is the point.
 
+<a id="s57"></a>
 ## 57. Version block field 4 is the architecture, and its accessors are compiled in literals
 
 Ten of `GET_VERSION`'s twelve fields were unnamed and the open items list has said so for a while.
@@ -6600,6 +6657,7 @@ section's location of the table with it.
 * `tests/test_usb_firmware.py`, `TestFieldFourIsTheArchitecture`, five tests over all four images.
 * The open items list, which loses one of its ten unnamed fields and keeps the other nine.
 
+<a id="s58"></a>
 ## 58. The service still compiles configs, and the corpus now has a pair we asked for
 
 Section 56 established that Logitech's MyHarmony service answers and refused to conclude anything
@@ -6740,6 +6798,7 @@ right and the 700 pair's recorded direction is what is wrong.
   the negative half asserted too, the timestamp against a date known in advance, and the day of week
   byte against the arithmetic rather than against the parser that already checks it.
 
+<a id="s59"></a>
 ## 59. The version block names four images, and one of them is the safe mode firmware
 
 Section 57 named field 4 by reading five `RETLW` accessors. The remaining unnamed fields turn out to
@@ -6871,6 +6930,7 @@ unexplained accessor.
   images, the addressed bytes against two remotes' measured blocks, the arch 14 `CLRF` pair, and the
   pairing that carries field 9.
 
+<a id="s60"></a>
 ## 60. The state variable record, found by asking the labelled pair a question
 
 Section 58 said the deliberately built config pair is "a different and slower instrument" than the
@@ -6988,6 +7048,7 @@ been stuck:
   pair reading 12 and 23, the partial name agreement stated as partial, and the one invariant the
   undecoded values have.
 
+<a id="s61"></a>
 ## 61. An infrared record's durations sit below its header, and coverage jumps to 98%
 
 The infrared database has been named since section 32 and its records were still the largest
@@ -7102,6 +7163,7 @@ them. Every one of the 103 that were invisible also finds a zero word in the wro
   negative case with the counts that refuted the first version, the sharing, and that the pointers
   point backwards.
 
+<a id="s62"></a>
 ## 62. Base slot 17 names the picture bank, and arch 9's pictures are one bit a pixel
 
 Two corrections, both of section 55, both found by reading harmony-decompiler's `FORMAT.md` and
@@ -7195,6 +7257,7 @@ arch 9 firmware here to appeal to. `docs/memory-map-525.md` is the plan for chan
 * `tests/test_interpreter.py`: the four monochrome pictures, and the stated start against all eight
   samples that have one plus arch 12 as the negative case.
 
+<a id="s63"></a>
 ## 63. Arch 9 packs a glyph two bits to a pixel, and its font reads as letters
 
 Section 62's lesson, one slot over. The picture bank turned out to be present on arch 9 and encoded
@@ -7316,6 +7379,7 @@ and that needs firmware. `docs/memory-map-525.md` is the plan.
   calibration that the packed reader is refused where it does not belong.
 * The corpus glyph total moves from 3933 to 4093 in both suites.
 
+<a id="s64"></a>
 ## 64. Screen opcode 22 is a call on arch 12 and a picture draw on arch 9
 
 The third time an architecture's mode programs turned out to be shut by a single missing operand
@@ -7424,6 +7488,7 @@ addresses, so neither finding fed the other and their agreement is a genuine che
 * `tests/test_interpreter.py`, `TestScreenOpcode22`: the dispatcher case, the link register trace,
   the 912 pictures, the calibration over every other width, and the 1205 strings.
 
+<a id="s65"></a>
 ## 65. Infrared class 5 keeps class 1's header, and that is all it keeps
 
 Arch 9's infrared records have been the largest single unread structure in the corpus for a while,
@@ -7515,6 +7580,7 @@ would make the measure useless for exactly the thing it exists to track.
   the region landing on both gap boundaries, the deliberate refusal of the blocks, and a
   calibration that class 1 is untouched.
 
+<a id="s66"></a>
 ## 66. A mode has pages, and each one names its own key map and its own screen
 
 Base slot 6's entry was read as four bytes: a kind byte and a `u24` back pointer to the record
@@ -7723,6 +7789,7 @@ the obvious reading and it is not evidence, so it is not claimed here.
 * `tests/test_interpreter.py` `TestTheModePages`, and `packages/codec/test/sections.test.ts`, with
   every corpus total moved and the old value recorded beside the new one.
 
+<a id="s67"></a>
 ## 67. The two runs are a pool of tagged lists, and only base slot 9's part of it is claimable
 
 Section 66 left the remaining unaccounted bytes as two runs per container, both following a mode
@@ -7886,6 +7953,7 @@ arch 8 and 24467 of class 5 on arch 9, ~~the latter still wanting a firmware nob
 * `packages/codec/test/sections.test.ts`: the 54 sets, their entry counts, the absent back pointer
   with base slot 6 as the calibration, and the pool's two derived ends with the count identity.
 
+<a id="s68"></a>
 ## 68. A mode page has two tagged lists, keyed by the same tags
 
 Section 67 claimed the pool and left its purpose open, with the count identity as the only clue:
@@ -7965,6 +8033,7 @@ call sites properly is what closed it.
 * `packages/codec/test/sections.test.ts`: the bijection over the corpus, the operand disagreement
   as the statement that the twins are not copies, and the wide form matching emptiness exactly.
 
+<a id="s69"></a>
 ## 69. The second list is a copy of the first, and nothing reads it
 
 Sections 67 and 68 left one question: what reaches the pool's non slot 9 lists, given that no
@@ -8104,6 +8173,7 @@ structure.
 * `packages/codec/test/sections.test.ts`: the semantic identity per entry, the off by one
   calibration with its scores, and the pointer scan against its chance baseline.
 
+<a id="s70"></a>
 ## 70. Opcode `0x7C` is a per device quantity, capped at 100 and spelled out above it
 
 `0x7C` is the most used instruction in the corpus, 21882 of 97537, and it has been unread since
@@ -8232,6 +8302,7 @@ section read the queue before the dispatcher. What it means is still open.
 * `packages/codec/test/sections.test.ts`: the group closure against the infrared table, the 101 to
   450 closure, and the refusals that stop `irQuantity` summing a shape it has not read.
 
+<a id="s71"></a>
 ## 71. The `0x65` to `0x6D` block is an accumulator machine, and `0x6C` writes a device record
 
 Section 70 read one opcode by chasing its handler. This reads the dispatcher instead and takes nine
@@ -8338,6 +8409,7 @@ Of 97537 action list instructions in the corpus, the share using an opcode with 
 * `packages/codec/test/sections.test.ts`: that no `0x6C` stands alone, the key count against the
   infrared table, both fields enumerated exhaustively, and the pair's refusals.
 
+<a id="s72"></a>
 ## 72. Below `0x65` the operand is a second opcode field, and `0x00` does nothing
 
 Section 31 measured that four opcodes, `0x07`, `0x0F`, `0x1F` and `0x3F`, never carry an operand
@@ -8432,6 +8504,7 @@ it.
 * `packages/codec/test/sections.test.ts`: the five opcodes, the two ignored bands with zero
   instructions in them, and every no-op carrying operand zero.
 
+<a id="s73"></a>
 ## 73. Both dispatchers read to the end, and what a third of the language turns out to be
 
 Sections 70, 71 and 72 each took a slice of the action list language and stopped: one opcode, then
@@ -8681,6 +8754,7 @@ which would put the two architectures back on one table and make the divergence 
 * `src/harmony/pic18/isa.py`: `SFR_PAGE_START`, with `tests/test_isa.py` pinning it.
 
 
+<a id="s74"></a>
 ## 74. The Harmony One's remaining opcodes, and what the remote does with them
 
 Section 73 measured an arch 12 gap and named it: 75 to 80% of the One's instructions had a meaning
@@ -8864,6 +8938,7 @@ state variable 5 is written with a value at or above 12 by an instruction other 
   coverage figures.
 
 
+<a id="s75"></a>
 ## 75. An infrared record header is a counted list of pointer groups, and arch 8 closes
 
 Arch 8 sat at 97.7% of its bytes attributed while both target architectures were at 100.0%, and
@@ -8966,6 +9041,7 @@ records is not 37.
 * `packages/codec/test/sections.test.ts` and `test/coverage.test.ts`.
 
 
+<a id="s76"></a>
 ## 76. A Harmony 525 on the bench: two address spaces, a seven byte version block, and arch 9 firmware
 
 A Harmony 525 was connected on 8 August 2026, which made architecture 9 the third this project has
@@ -9198,6 +9274,7 @@ disassemble at `0x1000`.
   internal region as well as the `0xFE` window it was written for.
 
 
+<a id="s77"></a>
 ## 77. Base slot 0 is a tree of named nodes, and level 1 names the state variables
 
 The one section the emitter could not touch, and the last one whose extent was known while none of
@@ -9297,6 +9374,7 @@ containing a byte that is not text, which would suggest the field is not a name.
   the frame tiling.
 
 
+<a id="s78"></a>
 ## 78. A font set states its first glyph code, and the count is not where the architecture says
 
 Section 46 read the three byte header above a glyph pointer array as `height`, then a count and a
@@ -9413,6 +9491,7 @@ outright.
   range.
 
 
+<a id="s79"></a>
 ## 79. The last two of the six, and neither was a contradiction
 
 Section 76 kept the arch 9 safe mode container out of the corpus because it contradicted six
@@ -9511,6 +9590,7 @@ list and not the other, and each file then agreed with itself. The list is the s
 as `lab.CONTAINERS` now.
 
 
+<a id="s80"></a>
 ## 80. The arch 9 infrared chain, and the register map that nearly wrecked it
 
 The first work done in the Harmony 525's firmware, which arrived on 8 August 2026 and which
@@ -9609,6 +9689,7 @@ elsewhere and the bank on those accesses is inferred rather than known.
 * `tests/lab.py`, `h525_code`, the 525's whole internal program flash.
 
 
+<a id="s81"></a>
 ## 81. Base slots 0 and 1 are host side, and the version word is per config
 
 Section 79 left the version word as a sharpened lead: its low byte is very close to the remote's
@@ -9730,6 +9811,7 @@ the device and everything to whoever reads the config afterwards, which now incl
 * `tests/test_findings.py`, the census, computed rather than quoted.
 
 
+<a id="s82"></a>
 ## 82. Infrared class 5 is class 1 with a dictionary
 
 The last remainder in the byte accounting, and it closes the way section 65 guessed it would. Class
@@ -9866,6 +9948,7 @@ anything to do with infrared, and it is the next thing to do.
 * `tests/test_findings.py`, the firmware addresses, pinned against the image.
 
 
+<a id="s83"></a>
 ## 83. Three rules take the residue to single figures, and one of them names base slot 8
 
 Section 82 left the accounting with the same six shapes in every container, four architectures
@@ -9957,6 +10040,7 @@ base slot 17 and four runs of 26 to 189 bytes that read as instructions.
 * `docs/config-format.md`, base slots 0 and 8.
 
 
+<a id="s84"></a>
 ## 84. Five rules take every user config to the byte, and the residue copy to nothing
 
 Section 83 left a list rather than a number: 4 to 68 bytes per container in five shapes, three of
@@ -10091,6 +10175,7 @@ that config belongs to a structure, which is the fact that made the first half u
 * `docs/config-format.md`, base slots 3, 11, 15 and 17.
 
 
+<a id="s85"></a>
 ## 85. Opcode 22 takes one operand on arch 9, and a monochrome row is padded to a byte
 
 Two corrections, both found in the arch 9 safe mode container, both invisible in every other
@@ -10222,6 +10307,7 @@ an arch 9 firmware trace of the switch handler, which nobody has read yet.
   separates one from eleven.
 
 
+<a id="s86"></a>
 ## 86. A config states its devices and its activities, and a state variable is a machine
 
 The application has to show a user their devices and their activities before it can let them edit
@@ -10379,6 +10465,7 @@ it reads as an initial value. Nothing has been traced to it and it is marked unc
   docstring, since the research library reads the same record.
 
 
+<a id="s87"></a>
 ## 87. The wrapper states what we were deriving, and a remote says which image is running
 
 This section came out of reading Logitech's own file format classes, the last of the digs into the
@@ -10628,6 +10715,7 @@ for a path these remotes do not use.
 * `docs/usb-protocol.md` and section 7 above, both corrected in place.
 
 
+<a id="s88"></a>
 ## 88. Each firmware bounds a flash address at its own flash size, and they differ
 
 Section 87 left the arch 14 flash size open at 2 MiB by three routes against 4 MiB by concordance's
@@ -10843,6 +10931,7 @@ reasons.
   client's word alone.
 
 
+<a id="s89"></a>
 ## 89. Arch 9 scans an 8 by 8 keypad over one sense line, and its configs bind fifty of it
 
 The question that started this was whether the button census of section 48, run on the Harmony 600
@@ -10966,6 +11055,7 @@ offer one.
   RAM read.
 
 
+<a id="s90"></a>
 ## 90. `READ_MISC` selector `0x07` answers on arch 9 and returns zero for every address
 
 Live RAM of a running remote is readable over USB. That is section 48's instrument, it is the
@@ -11108,6 +11198,7 @@ and time that tracked Concordance's own reading half a minute apart. Nothing her
 to a remote. The decode is fixed and tested; the capability is his measurement, not ours.
 
 
+<a id="s91"></a>
 ## 91. Infrared learning is a command family the firmware brackets and a stream nobody has found
 
 The last square of the client dig. `docs/host-client.md`'s rule is firmware first, and this section
@@ -11329,6 +11420,7 @@ issue it. `docs/host-client.md` has the rest, marked client sourced.
 * `reference/superseded.md`, so the withdrawn inference cannot be restated.
 
 
+<a id="s92"></a>
 ## 92. The seven bytes below an infrared record's class byte are its carrier
 
 The last unread field of a class 1 record, and the one a writer cannot do without. Section 42 read
@@ -11433,6 +11525,7 @@ same rule section 55 states for pictures. And it does not measure a carrier, whi
 open transport question. **Building the bytes was the part that could be settled without hardware,
 and it is settled.**
 
+<a id="s93"></a>
 ## 93. The internal read cap is stricter than the hazard it was built for
 
 **Written before measuring, and committed before the remote was touched**, which is the only reason
@@ -11526,6 +11619,7 @@ architecture nobody has tested is the thing not to do, and the arch 9 remote is 
 tempt somebody, since its internal memory sits at plain low addresses where every caller can reach
 it.
 
+<a id="s94"></a>
 ## 94. An odd internal read count never terminates, and that is the whole restart
 
 Section 93 measured the hazard and narrowed a rail around it. This reads the firmware and finds the
@@ -11963,6 +12057,7 @@ is read, the validator in front of it is read, the chunker and the parse are rea
 case is in none of them. The rail does not depend on it, because it refuses odd counts everywhere,
 which is strictly more than the hazard needs.
 
+<a id="s95"></a>
 ## 95. A remote stays in USB mode when the cable goes, and its own software never lets that happen
 
 An observation on 9 August 2026, and it turns out to be a product requirement rather than a
@@ -12052,6 +12147,7 @@ batteries clear it.
 whether a read only session should reset a remote at all is a product question rather than a
 protocol one, and the terminate entry point may be the gentler answer.
 
+<a id="s96"></a>
 ## 96. There is no boundary: the response sender has no bound, so the loop overwrites its own counter
 
 Section 94 ended by saying the threshold at program `0x010A56` had to be a comparison somewhere in
@@ -12246,6 +12342,7 @@ is architecture independent, so nothing about the rail changes; what this settle
 read profile for a new architecture must not be taken as evidence that its internal read path is
 safe, because on the evidence here it will have the same defect.
 
+<a id="s97"></a>
 ## 97. Ending a session politely means resetting the remote, and the restart command does nothing on a One
 
 Section 95 left a product question open: FreeHarmony ends every session by closing a handle and
@@ -12403,6 +12500,7 @@ batteries clear it, or find what does write that mode variable, which this secti
 change a device's state, so they belong behind `WRITES_ENABLED` exactly where `docs/host-client.md`
 already put them, and reading what they do does not change that.
 
+<a id="s98"></a>
 ## 98. The learn samples are never sent: the endpoint is pointed straight at them
 
 Section 91 established the learn session's bracket from the firmware and then failed to find any
@@ -12536,6 +12634,7 @@ That is a requirement for FreeHarmony rather than a curiosity, and it is the hal
 dead service cannot take with it: the remote produces the timings, and section 92's carrier plus
 `packages/codec`'s record builder already turn timings into a record.
 
+<a id="s99"></a>
 ## 99. USB mode does have an exit, and it is gated on the command state being zero
 
 Section 97 ended by saying a polite session end is a reboot or nothing, and offered finding what
@@ -12772,6 +12871,7 @@ normally does not strand a remote, so version 1 needs to send nothing at the end
 choice section 95 posed does not arise. The gentle escape stays implemented, gated and unused, which
 is the right place for it.
 
+<a id="s100"></a>
 ## 100. A hang ends in a real device reset, which kills the idle flag hypothesis by mechanism
 
 Run on 10 August 2026, on the spare, with all three predictions and all four failure modes committed
@@ -12927,6 +13027,7 @@ baseline leg is a useful two second check that a remote's idle flags are clean. 
 failed with "the remote is not answering", which is now explained rather than a bug to fix: it opened
 the device as soon as it enumerated, and a remote that has just reset needs longer than that.
 
+<a id="s101"></a>
 ## 101. Arch 9's screen opcodes 22 and 23 are a page select and a page transfer
 
 An outside lead, verified here rather than adopted. On 10 August 2026 trelowney, who maintains
@@ -13083,6 +13184,7 @@ neither is complete on its own, so a number quoted from either needs its populat
 > no opcode 22 in that slot at all. The 912 is the mode records, and it is the same programs counted
 > a second time.
 
+<a id="s102"></a>
 ## 102. Arch 12's `0x3F` band `0xC0` is three fields and three mechanisms, and it is still placement
 
 The largest single item left in the action list language: 424 uses on arch 12, described as
@@ -13178,6 +13280,7 @@ rather than an opcode: eight states, a predicate at `0x23CA6`, and a peripheral 
 > two peripherals: `CVREF`, which the datasheet names for us, and `LATC` bit 5, which **section 106**
 > reads as the enable of an I2C device at address 0x60 whose thirteen channels the selectors are.
 
+<a id="s103"></a>
 ## 103. The `0x3F` band `0xC0` state machine sets the display's light level, and base slot 15's twelve spare bytes are read after all
 
 Section 102 stopped at the door of `0x23952` and said what was behind it would need a subsystem
@@ -13360,6 +13463,7 @@ for three mechanisms. The split in each One config is 68 uses of selector 17 aga
 selectors 0 to 12 and 2 of selector 16, and 65 of the 68 are state 6 without a fade, which is
 "bring the light up to whatever the band says". Three instructions in the whole corpus set bit 0.
 
+<a id="s104"></a>
 ## 104. `0x1F` band `0xFC` is intercepted before the dispatcher, on all four architectures
 
 Found while asking how a band change reaches a config. `0x2346A` announces one by calling
@@ -13399,6 +13503,7 @@ dispatcher, not one handler at a time", and the rule has a second half it did no
 that a dispatcher is not the only thing that can consume an opcode. Anything upstream of it gets a
 first look.
 
+<a id="s105"></a>
 ## 105. `PORTB` bit 1 is the charger input, and the battery curve really is millivolts
 
 Section 44 read groups 5 and 6 as a measurement to level curve, noted that "the consumer picks
@@ -13489,6 +13594,7 @@ The word at `0x01F5C0`, 94 on both units, and its partner at `0x01F5C2`, which i
 its consumer runs on the substituted 1. Both are read by the same helper and neither has a caller
 traced here. And what the flag `0x2385C` raises at 3400 mV is used for.
 
+<a id="s106"></a>
 ## 106. `LATC` bit 5 enables an I2C device, and band `0xC0`'s thirteen properties are its channels
 
 Three loose ends left by sections 102 and 103: an unnamed pin, thirteen unnamed properties, and the
@@ -13591,6 +13697,7 @@ firmware work.
 since a call setting two of them, added to a screen's entry, is what lit them on the spare Harmony One. The
 part number is still not established.
 
+<a id="s107"></a>
 ## 107. The action list language has multiply, divide and modulo, and the block one of them sits in is arch 14 only
 
 `0x6E` was the last opcode in the corpus with no reading at all, six instructions in three configs.
@@ -13763,6 +13870,7 @@ produced the 600 and 700 configs and never backported, since arch 8 is older and
 and the arch 12 firmware carries the ladder entries without the code. Nothing here tests that, and
 the One's own firmware is younger than the 700's by version number alone.
 
+<a id="s108"></a>
 ## 108. The diagnostic channel writes to the serial flash, and the arch 14 firmware sizes the chip itself
 
 Three opcodes were left with a handler and no reading: `0x65`, `0x66` and `0x76`. No config in the
@@ -13894,6 +14002,7 @@ not been done and it is read only.
 
 **Which array `0x76` walks**, above.
 
+<a id="s109"></a>
 ## 109. What the flash journal holds on a real remote
 
 Section 108 read a writer and could not say whether anything has ever gone through it. A Harmony 600
@@ -14014,6 +14123,7 @@ declared limit is the **generator's** idea of the chip size, not the remote's: t
 for a 1 MiB part. That is consistent with the section being host side reservation, and it is why the
 comparison above is restricted to user configs.
 
+<a id="s110"></a>
 ## 110. The journal's own variables on a running remote
 
 Section 109 read the flash and found the region erased, which says nothing about whether the firmware
@@ -14146,6 +14256,7 @@ on a remote that has loaded its config, and a remote on USB never has.
 `0x688` are deliberately **not** pinned, because uninitialised memory is not a fact about the
 firmware.
 
+<a id="s111"></a>
 ## 111. Two open items measured on a Harmony One, which turns out to be running while it is read
 
 A Harmony One is on the bench, so section 103's display light band and section 47's log area can both
@@ -14297,7 +14408,7 @@ cookie, and calls two helpers. `0x27CC0` copies `0x108`, `0x109`, `0x10A` into s
 three config bytes, and computes the difference in seconds. `0x27DFA` copies `0x10B`, `0x10D`, `0x10E`,
 reads three more config bytes with **one extra cursor advance between the first and the second**, and
 computes the difference in days. Line the two up against the record in
-[config-format.md](config-format.md):
+[config-format.md](../reference/config-format/README.md):
 
 | record | field | paired with |
 |---|---|---|
@@ -14595,6 +14706,7 @@ month grouping derived from the calendar rather than tabulated, and the log reco
 `tests/test_interpreter.py` pins the boot scan arithmetic, that a region whose last byte is written
 disables the appender, and the negative that an erased one does not.
 
+<a id="s112"></a>
 ## 112. The screen's text reads back, and a glyph code is not a character
 
 The application needs to show a config's activities and devices by name. Section 86 found the
@@ -14766,6 +14878,7 @@ configs disagree about codes for characters they both draw.
 are its owner's own equipment names and this repository is public, so `make text --names` counts the
 matches and never shows them.
 
+<a id="s113"></a>
 ## 113. What `bcdDevice` says, and the two ways its low byte is read
 
 A skin is Logitech's own index into its model list, so the number names the remote. That has been
@@ -14874,6 +14987,7 @@ tools print `skin UNREADABLE` rather than a guess.
 `tests/test_usbdesc.py` carries the closure, each firmware image against a config of the same model,
 and the two negative controls above as assertions rather than as prose.
 
+<a id="s114"></a>
 ## 114. The first arch 8 firmware, and an arch 8 safe mode config inside it
 
 Contributed on 10 August 2026 through harmony-decompiler discussion 17, two images dumped with
@@ -15027,6 +15141,7 @@ gated on `is_fw_dump_supported()`, which refuses only Z remotes, so it will run.
 That is the one thing worth asking the contributor for, and it is worth asking before anything else
 about arch 8: everything above rests on an image whose entry point nobody has seen.
 
+<a id="s115"></a>
 ## 115. Architecture 10 arrives, and what it measures
 
 Two Harmony 890 configs came with the same 10 August 2026 contribution, protocol 10, skin 19, board
@@ -15097,6 +15212,7 @@ Both are in `tools/golden.py`'s vector list, failing checks and all, so the Pyth
 readers are held to agreeing about arch 10 while neither understands it. That is deliberate: the
 comparison is worth more before the readers are written than after.
 
+<a id="s116"></a>
 ## 116. The arch 8 dump called safe mode is a bootloader, and it says so itself
 
 Asked for at the end of section 114 and delivered the same day, 10 August 2026: two 65536 byte
@@ -15202,6 +15318,7 @@ memory beside the bootloader, and on arch 8 no dump has produced one. Either it 
 `-f` nor `-s` reaches, or arch 8's boot mode does the job that later platforms split in two. Nothing
 here decides which, and no claim depends on it.
 
+<a id="s117"></a>
 ## 117. The container's base address was recovered circularly, and a second Harmony 890 said so
 
 The second of the two Harmony 890 configs was filed on 10 August 2026 as an anomaly with two
@@ -15371,6 +15488,7 @@ and arch 14 config in the corpus, 11 in every arch 8 config, 12 on arch 9, and 3
 890s. Seven candidate algorithms over the payload were tried and none reproduces any of the 21
 values. `<BINARYDATASIZE>`, in the same header, is exact on all 21.
 
+<a id="s118"></a>
 ## 118. A count with no population, and opcode 3's destination comes first
 
 Two corrections and one new field reading, all from trelowney's mail of 10 August 2026, all measured
@@ -15990,6 +16108,7 @@ coordinate happened to be `0x16`, which is a **byte pattern search finding its p
 of an instruction**. The defence is the one `chains.py` already states for switch tables: decode the
 stream, do not scan it.
 
+<a id="s119"></a>
 ## 119. Address `0x200000` is not flash at all: it is the EEPROM, and the boot state machine is in it
 
 The one thing section 118 could not settle. concordance writes `0x02` there to finish a firmware
@@ -16194,6 +16313,7 @@ writable range, which starts at the configuration and stops below the log area, 
 outside it, and the judgment that a write path this young should not be the thing that installs
 firmware. The script that does it lives in the private lab.
 
+<a id="s120"></a>
 ## 120. Which key starts which activity: four hops, and the field that says what idle means
 
 An application that reads a config has to be able to say "this is the Watch TV activity and this
@@ -16292,6 +16412,7 @@ and it is why "writer lists equals activity count" is 1 against 0 there and nowh
 Which of a page's drawn strings is the activity's name. `activityBindings` gets to the page; section
 121 gets to the string, and to the architecture where it cannot.
 
+<a id="s121"></a>
 ## 121. The commoner text opcode points at another program's string, and it names the activities
 
 Section 120 gets from a key to an activity. What was still missing is the other end: which of the
@@ -16426,6 +16547,7 @@ codes, the modes it enters and, where it resolves, the label and where on the sc
 `packages/codec/src/text.ts` gained `referencedStringAddress` and `glyphRunAt`, and `screenStrings`
 marks a referenced draw with `referencedFrom` so a writer can tell a shared string from an owned one.
 
+<a id="s122"></a>
 ## 122. An arch 10 read duplicates whole 54 byte chunks, and that is what section 117 measured
 
 Section 117 found a Harmony 890 config that declares an end 864 bytes before its own end marker, and
@@ -16589,6 +16711,7 @@ whose trailer checksum is the value stored in the file. Two derivations agreeing
 guessed is worth more here than either alone, and it is recorded because the alternative, a single
 reading nothing can contradict, is this project's own stated failure mode.
 
+<a id="s123"></a>
 ## 123. The Harmony 525 implements infrared learning, and that is the route to its button map
 
 Section 98 read where a learn session's samples leave a remote on the Harmony One and the 600: not
@@ -16639,6 +16762,7 @@ already binds a scan code to it. The map falls out of two things the remote will
 command that changes a remote's state rather than reading it, so it sits behind the same flag every
 other write does. This section is static reading.
 
+<a id="s124"></a>
 ## 124. A contributor's description of his own remote is ground truth, and checking against it moved four readers
 
 The corpus has had labelled samples before, in the sense that a contributor said which remote a config
@@ -16817,6 +16941,7 @@ corpus wide assertion now, so any container that puts a character on two codes f
 plus `make activities` for the number. The lab's description sheet is in the 880's `META.md`, which is
 where a labelled sample's labels belong.
 
+<a id="s125"></a>
 ## 125. The mode page's spare byte indexes the touch hit map, and that finishes the activity names
 
 Section 45 read base slot 17 completely: a page of rectangles per screen, each rectangle carrying the
@@ -16944,6 +17069,7 @@ title would do that.
 matching, because a stated answer beats an inferred one. `packages/codec/test/touch.test.ts` carries the
 controls, `make activities` prints the figures, and `docs/config-format.md` has the structured form.
 
+<a id="s126"></a>
 ## 126. A device's name is in the config as ASCII, and a state variable's transitions say which device it is
 
 The application needs a list of devices with their names before it can show anything, and section 86
@@ -17102,6 +17228,7 @@ project keeps about second copies, the first thing to drift.
 column, `packages/codec/test/inventory.test.ts` carries the closures and the controls, and
 `docs/config-format.md` has the structured form.
 
+<a id="s127"></a>
 ## 127. A record's three block pointers are once, held and tail, and the second one is the repeat rate
 
 The question came from using the bench Harmony One: holding volume up
@@ -17225,6 +17352,7 @@ all 205 pairs of one config. `docs/config-format.md` has the structured form.
 * safe mode entry procedure, third party and unconfirmed here, section 118:
   https://www.harmonyremoterepair.com/files/theme/Documents/Safe_Mode_Instructions.pdf
 
+<a id="s128"></a>
 ## 128. A screen key's label is the text in its place on the screen, and the places are measured
 
 Section 126 named every device and section 120 named every activity, which left the bench
@@ -17369,6 +17497,7 @@ key rewrites every draw that names the same string.
 `packages/codec/test/inventory.test.ts`, and the bench instrument's button table shows the label with
 its source, so a row placement is visibly weaker than a stated rectangle.
 
+<a id="s129"></a>
 ## 129. Drawing the screen, which is the check a reader test cannot perform
 
 Every finding here lands with a regression test, and the tests have a shape: a number came back, a
@@ -17464,6 +17593,7 @@ That is the shape FreeHarmony needs. An editor that renames an activity has to s
 will look like afterwards, and the answer has to come from the same reading of the format that wrote
 the bytes, not from a second implementation in the interface.
 
+<a id="s130"></a>
 ## 130. Base slot 13 starts with the firmware's own clock, and the build timestamp proves it
 
 This one fell out of drawing screens. Section 129's variant walk asks which state variable a screen
@@ -17554,6 +17684,7 @@ else, that the stamped records read back through `stateRecords` as the moment as
 save of a 2023 config comes out as 30 with a maximum of 31, and that one moved maximum makes the whole
 stamp refuse.
 
+<a id="s131"></a>
 ## 131. Skin 59 and skin 73 are the European models, not orphan numbers
 
 The version word in base slot 1 carries a skin number in its low byte, section 81, and seven of the
@@ -17679,6 +17810,7 @@ model including the 880, where our table says 16 and the configs draw them. So t
 what MyHarmony manages rather than what the hardware has, and a source has to be read for what it is
 about before its numbers are copied.
 
+<a id="s132"></a>
 ## 132. Logitech's service still answers, a plain login opens the device database, and it compiled two configs to our specification
 
 Section 56 measured `svcs.myharmony.com` alive and section 58 watched it compile a config for a
@@ -17896,6 +18028,7 @@ nobody reads the field as provenance, and because on arch 12 a remote sets its c
 section 111, which means a config Logitech compiles today gives a Harmony One a clock almost a day slow.
 
 
+<a id="s133"></a>
 ## 133. A scan code gets a button name, read only, by decoding the code it sends
 
 Section 48 measured how far a connected remote can be pushed towards the keypad map and stopped in the
@@ -18061,6 +18194,7 @@ table.
 * `docs/config-format.md`: base slot 5, that a record's frame is recoverable and what it is not.
 
 
+<a id="s134"></a>
 ## 134. Arch 8's second pointer group is the same code with one bit inverted, and the code is biphase
 
 Section 75 closed arch 8's byte accounting on one number: an infrared record header is `12 + 9 * count`
@@ -18154,6 +18288,7 @@ reading of the record player showing it uses both groups in some way other than 
 * `reference/superseded.md`: the wording that made the count a property of the architecture.
 
 
+<a id="s135"></a>
 ## 135. Logitech's service accepts a Harmony 525 and will not compile for it
 
 Section 132 established that the live service compiles a configuration to our own specification with
@@ -18244,6 +18379,7 @@ strengthen it without proving it, since the failure would still carry no reason.
   that were wrong.
 
 
+<a id="s136"></a>
 ## 136. A product is enabled or not, the service validates a serial, and a device maximum was circular
 
 Three things came out of one read of `ProductsManager/GetAllProducts`, which section 131 had used only
@@ -18336,6 +18472,7 @@ than a lookup.
 * `docs/host-client.md`: `IsEnabled`, the serial validation, and the null `CompilerArchitecture`.
 * `reference/superseded.md`: the circular test's own title.
 
+<a id="s137"></a>
 ## 137. Arch 9's data memory window answers zeros about bytes it is using, and the clock question was not answerable by measuring a clock
 
 Section 111 measured a Harmony One (arch 12) whose clock held base slot 3's build timestamp plus its own
@@ -18473,6 +18610,7 @@ from the corpus.
   rather than at `>= 15`, which was equal to the population by coincidence and would not have stayed so.
 * `reference/superseded.md`: the two dead phrasings.
 
+<a id="s138"></a>
 ## 138. The clock is state variables 0 to 6, and the firmware owns thirteen of them<!--superseded-->
 
 Section 137 posed the question this answers: whether a remote's clock is read from base slot 3's record
@@ -18634,6 +18772,7 @@ A container where base slot 0 names any of variables 0 to 12. A container whose 
 `0x108` from a path other than the state variable store. And on the closure, a Harmony One measurement
 where `0x111` exceeds 7 or `0x110` exceeds 3, which the config's own maxima forbid.
 
+<a id="s139"></a>
 ## 139. Seventy nine shipped readers answered plausibly where they should have refused, and nine were rails
 
 Every finding in this document rests on code, and this section is about the code rather than about a
@@ -19975,6 +20114,7 @@ at all**: the two level infrared table's totals moved to 67 groups and 4347 reco
 class's own list predated `lab.USER_CONFIGS` and appended one config by name, so widening the list
 counted that config twice. A population appended to is a population to check.
 
+<a id="s140"></a>
 ## 140. Bit 15 of a comparison is the else arm, and the queue is writable because of it
 
 Section 34 read `0x70` and `0x71` down to the `XORLW` chain that picks one of eight operations out of
@@ -20119,6 +20259,7 @@ one table across architectures. And, for the mechanism rather than the field: an
 interpreter found reading instructions from anywhere other than a writable copy, which would leave the
 zeroing with nothing to write to.
 
+<a id="s141"></a>
 ## 141. The two languages disagreed about what the corpus is, and four claims were smaller than their titles
 
 Section 140 widened eight test classes from ten configs to fifteen and found five claims that were
@@ -20217,6 +20358,7 @@ question the section deliberately leaves open: a coverage figure computed over `
 beside one computed over the TypeScript nineteen, which is the confusion the containment check permits
 and the equality check would have caught.
 
+<a id="s142"></a>
 ## 142. The corpus is nineteen containers, decided rather than derived
 
 Section 141 found that this project had two definitions of "the corpus", fifteen on the Python side and
@@ -20296,6 +20438,7 @@ would be the first real case for the old exclusion and would need its own popula
 change to this one. And, for the two configs still outside: their coverage, once computed, differing
 from every other arch 8 container in a way that says they should have stayed out.
 
+<a id="s143"></a>
 ## 143. Ninety three floors across both languages, and the two halves were loose in different ways
 
 Section 142 ended by making three floors exact in one file and calling them "the population wearing a
@@ -20552,6 +20695,7 @@ was not a fact about the corpus but about the order a container happens to be re
 three closures, a container where the two sides genuinely differ, which would make the closure a
 coincidence of this corpus rather than a property of the format.
 
+<a id="s144"></a>
 ## 144. Arch 8 spells a scan code as a line times four, and no other architecture here does
 
 Prompted from outside. harmony-decompiler discussion 6 carries a claim, on 15 August 2026, that the
@@ -20642,6 +20786,7 @@ all. An arch 8 image whose routine differs, which would make it per build rather
 architecture. Or a second 885 whose column census is not 14, 14, 14, 13, which would make the
 agreement with the board a coincidence of one config.
 
+<a id="s145"></a>
 ## 145. The product table confirms `IsEnabled`, states no architecture and no activity limit, and its button maps close against ours
 
 Section 132 measured Logitech's live service and left three things as inferences. This is the
@@ -20794,6 +20939,7 @@ LongToggle` carries three values totalling 48 bits under a name saying 16. Secti
 value, that no **single** value exceeds the width its name states, over 3499 values. Both hold, and they
 are different measurements of the same codes.
 
+<a id="s146"></a>
 ## 146. Two opcodes draw a picture, and the second one is why a bank held pictures nothing reached
 
 Screen opcode 2 names a picture in its last three operand bytes, section 50, and `bitmaps` was
@@ -20866,6 +21012,7 @@ performs it, and the arch 9 page that was missing every picture now draws all of
 that section did not expect: the order is confirmed a second time on arch 8 rather than arch 9, and
 arch 9 turns out to state its own display size through this instruction's destination rectangle.
 
+<a id="s147"></a>
 ## 147. What a length change moves, counted: 140272 addresses, and growth has a price per place
 
 `edit.ts` refuses to change the length of anything, and its docstring gives the reason as a list of
@@ -21017,6 +21164,7 @@ need and today's emitter does not do. That is one item, not a programme.
   diffs against an existing config and reproducing what Logitech's generator would have emitted is
   not achievable. A relocation is for changing a config, not for matching one.
 
+<a id="s148"></a>
 ## 148. Opcode 3 is a region copy, the renderer draws it now, and arch 9 states its own display size
 
 Section 146 read screen opcode 3's address and left two things open: where it draws, and the
@@ -21120,6 +21268,7 @@ it is a guess. It costs nothing either way, since the copy is idempotent.
 And screen opcodes 1 and 21, which section 147 lists as possibly carrying an address and which are in
 neither the census nor the renderer.
 
+<a id="s149"></a>
 ## 149. A config's interface is localised, no field says which language, and one of ours is Dutch
 
 Noticed by accident. A search for the Help walkthrough's wording across the corpus returned nothing at
@@ -21210,6 +21359,7 @@ And the fact that base slot 15 or base slot 1 does not carry a language code som
 result from looking rather than from reading the firmware. Nothing seeks such a field, so a byte
 holding one would be unattributed, and the byte accounting says there are none of those left.
 
+<a id="s150"></a>
 ## 150. The per unit settings blocks are empty, so a settings page edits the config and nothing else
 
 `docs/host-client.md` recorded Logitech's client naming twelve 64 byte records above the application
@@ -21276,6 +21426,7 @@ remote.
 So the three places a setting could live are all accounted for, and only one of them has anything in
 it.
 
+<a id="s151"></a>
 ## 151. A button map belongs to a device, and an activity's map is that plus its overrides
 
 **This section exists because a design was got wrong, and the wrong design passed every check.** On 22
@@ -21478,6 +21629,7 @@ It is TypeScript rather than Python because the readers are: `keyCodes`, `activi
 `infraredCodesPerList` live in `packages/codec`, and the last of those is what the walk has to go
 through, per the memoisation failure recorded above.
 
+<a id="s152"></a>
 ## 152. A stored code's frame is redundant: five durations and the bits rebuild it exactly, 3502 of 3502
 
 **An infrared command is a lamp blinking in a precise rhythm, and a record stores that rhythm as a list
@@ -21583,6 +21735,7 @@ claim beside them, which is exactly the pair of diverging population lists secti
 * the boundary above, so nobody reads the rebuild as a whole block
 * the timings per device group, 52 of 58, which is the half the application needs
 
+<a id="s153"></a>
 ## 153. Logitech's own decoder answers for any code, and it settles two things ours could not
 
 **Section 133's decoder had one thing to be checked against and it was not enough.** A frame it recovers
@@ -21665,6 +21818,7 @@ same service, `Ping`, `SaveTeachingRequest`, `GetTeachingRequest` and `GetTeachi
 the rest of the learning flow. `Ping` answers 200 with no session; `AnalyzeInfrared` answers 400 and
 `Access is denied`.
 
+<a id="s154"></a>
 ## 154. Base slot 16 has a sample now, it was made rather than found, and a record is a method
 
 Section 39 read the number sender out of three firmware images and had to end by saying that every
@@ -21807,6 +21961,7 @@ numbers exercise none of them. What would: a channel authored with a leading zer
 and two digit channels only, which separates the two readings of bit 2 above. Each is one more compile
 on the same account and none needs a remote.
 
+<a id="s155"></a>
 ## 155. A remote idle in USB mode drops its first command, and the retry alone clears it
 
 The stranding of the spare Harmony One has been PARKED since 10 August 2026 on the reading that it
@@ -21891,6 +22046,7 @@ the retry cannot turn a dead remote into a hang; and a remote that has already a
 a retry on a later silence, because that is a different event and reporting it is right. With the
 retry removed, two of the three fail.
 
+<a id="s156"></a>
 ## 156. A favourite channel with a leading zero does not use the number sender at all
 
 Section 154 read base slot 16 off a config made for it, three favourite channels whose numbers were 1,
@@ -21951,6 +22107,7 @@ clock from that record at every boot, so a remote synced with this file would co
 the field is not the moment the config was built or the service stamps it from something older. Left
 open here rather than explained, and the cheap test is another compile after another change.
 
+<a id="s157"></a>
 ## 157. A protocol family's durations are the family's, so a stated code can be emitted with no sibling
 
 **The gap this closes.** Logitech's device database states a code as a protocol name and a number,
@@ -22046,6 +22203,7 @@ later sections alone, because this is the paragraph that states the boundary.
 and that no family is at two carriers, section 227 having found that the one that appeared to be was
 two families.
 
+<a id="s158"></a>
 ## 158. A code built from a name and a number reads back correctly, on 30 of 30, and a stated code has two frames
 
 **What was manufactured.** Section 157 measured the durations of six protocol entries off the corpus. This
@@ -22157,6 +22315,7 @@ it is not a case of the wrong rhythm but of a shape nothing here produces. Its n
 `0x00801_1x1DA05F`, a five digit first frame and a `1x` second, and neither the widths nor the prefix is
 understood.
 
+<a id="s159"></a>
 ## 159. A catalogue code is a grammar with two frame slots, and their analyser is not a general decoder
 
 Section 158 read Logitech's code notation as a family, a parameter slot to skip, and a frames field
@@ -22316,6 +22475,7 @@ codes and 32 of 33 families at the time and all 2921 and 33 since the quaternary
 five measured off the corpus and one documented and judged. The nine of section 158 was counted against
 a catalogue of fourteen families, which the wider census puts at 33.
 
+<a id="s160"></a>
 ## 160. Logitech's own compiler will state a rhythm, and it contradicts their analyser twice
 
 Section 159 left the infrared side with a ceiling: their catalogue states a protocol family and a number
@@ -22468,6 +22628,7 @@ instrument here and cost less than the pair did.
 differ by exactly `0x3FF`, the low ten bits, which is what section 159 read out of the notation and what
 the published protocol does.
 
+<a id="s161"></a>
 ## 161. The config names the appliance a group belongs to, one family counts its bits the other way up, and no constant can find the end of a frame
 
 Section 160 left a remainder it described as one question: 171 records of the compiled sample matched no
@@ -22567,6 +22728,7 @@ section 153 already says why; `Magnavox 13 Bit`, whose every duration is 880 or 
 of what is left in this sample is one known gap plus the Jerrold case above. The 56.3 kHz is worth
 noticing on its own: every other carrier measured anywhere here is between 36 and 40 kHz.
 
+<a id="s162"></a>
 ## 162. Biphase codes read, and the reading is confirmed on somebody else's configs
 
 Section 153 recorded 148 codes in the corpus that Logitech's own service reads and this project cannot,
@@ -22690,6 +22852,7 @@ under the pulse distance decoder, section 134, is now doing two jobs: it is the 
 thing that would break if the terminator rule were relaxed, section 161. Reading these codes does not
 change that trade, because it needs no change to `decode` at all.
 
+<a id="s163"></a>
 ## 163. A frame's constant half is the rule the terminator constant was standing in for
 
 Section 161 measured a trade and did not take it. `JerroldO1 16 Bit`, the Motorola cable box, carries a
@@ -22780,6 +22943,7 @@ device name to match on.
 recorded. 115 records their analyser named nothing for stay out by construction. That is the whole
 remainder of the infrared side of both populations.
 
+<a id="s164"></a>
 ## 164. Two durations of one kind in a row are one interval, and reading them apart named 45 codes wrongly
 
 **A change decided in section 153 and deliberately left unmade there, made on 24 August 2026.** The rule
@@ -22855,6 +23019,7 @@ because it was written by hand with the last bit's space running straight into t
 Every framed record in the corpus carries a closing mark between the two, which is what makes the merge
 cost 45 records rather than thousands, and the train carries one now.
 
+<a id="s165"></a>
 ## 165. A flat half of 433 and 434 is one length, and ten codes Logitech names come back
 
 **The rule section 163 introduced was right and its test was too strict.** A pulse distance frame has one
@@ -22974,6 +23139,7 @@ on one sample, from a compile that shares only the account with it. And it has a
 matters more here than anywhere: eighteen of the rhythm table's entries are measured off this one file, so
 a disagreement between the two implementations about it is a disagreement about the table.
 
+<a id="s166"></a>
 ## 166. "38 Bit" means across the pair: one frame in sections, the boundary carrying a bit
 
 25 August 2026. `Samsung 38 Bit` was one of the six families whose records sat in the compiled samples
@@ -23021,6 +23187,7 @@ because the final bit lives inside it. The table stands at 31 entries, 25 of 33 
 4949 of 5219 commands. `packages/codec/test/stated.test.ts` asserts the entry and the width sum;
 `packages/codec/test/irframe.test.ts` asserts the encoder's emission and its three refusals.
 
+<a id="s167"></a>
 ## 167. A segment is read at its own scale, which no constant gap could allow
 
 25 August 2026. `Short 11 Bit 2` and `Videocrypt 11 Bit Toggle`, 42 and 32 records of the compiled
@@ -23059,6 +23226,7 @@ which the one length rail refuses deliberately<!--superseded-->, section 166's n
 `Sharp 48 Bit`, plus `Saitek 11 Bit`. The refusal reading did not survive the day after: their two
 lengths are two exact durations riding with the bit, section 170.
 
+<a id="s168"></a>
 ## 168. The long toggle family is three regions under one bit rule, and it reproduces whole
 
 25 August 2026. `Philips Hurd 16 Bit LongToggle`, 85 catalogue commands, was the largest family with no
@@ -23101,6 +23269,7 @@ The table stands at 34 entries, **28 of 33 catalogue families, 5085 of 5219 comm
 `Galaxis 16 Bit Quad Toggle` (104), `Panasonic 16 Bit` (26), and the three of one or two commands,
 `MemorexV2 32 Bit Dual`, `Sharp 48 Bit`, `Saitek 11 Bit`.
 
+<a id="s169"></a>
 ## 169. Galaxis is quaternary on the wire too, and its name said so twice
 
 25 August 2026. Section 159 read `Quad` in `Galaxis 16 Bit Quad Toggle` as the base of the catalogue's
@@ -23129,6 +23298,7 @@ written, with `Panasonic 16 Bit`, `MemorexV2 32 Bit Dual` and `Sharp 48 Bit` sti
 two read as refused deliberately by the one length rail<!--superseded-->. Section 170, the same day,
 showed all three are one mechanism, the mark riding with the bit, and the table stands at 38.
 
+<a id="s170"></a>
 ## 170. The mark can ride with the bit, and the catalogue's Start word tells two codes apart
 
 25 August 2026. Three of the four families still missing from the rhythm table turned out to share one
@@ -23177,6 +23347,7 @@ they are two durations, each exact, and the record does state both. The diagnosi
 printing the cell **pairs** instead of the mark population: `+521-1575 x5  +525-527 x11` says the
 correlation in one line where two histograms hide it.
 
+<a id="s171"></a>
 ## 171. A block's tail is copies, literals and pads sharing one value, measured per family
 
 25 August 2026. Section 152 established that nothing after the frame follows from the bits and left
@@ -23262,6 +23433,7 @@ their family shape; the single record families still cannot show their tail is t
 whole record shapes' held pointers are unread; and on the toggle families 48 Thomson records carry a
 **second pointer group**, which section 134's arch 8 pairs suggest is the toggled variant, unread.
 
+<a id="s172"></a>
 ## 172. A config can change length: shift, rewrite the census, restamp two fields
 
 **25 August 2026.** `relocate(container, at, delta)` in `packages/codec/src/relocate.ts` inserts bytes
@@ -23312,6 +23484,7 @@ reader here reports identically, and section 117's cloning experiment is the sta
 that parsing is not validating. That is phase 7's known answer comparison and, behind its gate, the
 hardware run.
 
+<a id="s173"></a>
 ## 173. A device is composed onto the screen: its own mode, and one row on every device list menu
 
 **25 August 2026.** `composeDeviceScreen` in `packages/codec/src/compose.ts` finishes phase 6 of
@@ -23378,6 +23551,7 @@ compile: the menu row's device icon, the bottom bar switch on state variable 35 
 the record list's keypad bindings, the per mode housekeeping lists the corpus chrome queues with opcode
 `0x73`, and base slot 9, which the checklist itself marks optional and gated on a named scan.
 
+<a id="s174"></a>
 ## 174. Logitech compiled the same addition, and the composed blocks are theirs to the byte
 
 **25 August 2026, phase 7 of `docs/adding-a-device.md`.** The calibration account's Harmony One record
@@ -23435,6 +23609,7 @@ follow-up work, not this phase's.
 merges it back indistinguishably, but it is not what the generator writes, and phase 6's composed
 blocks differed from a compile of the same code until the measured spelling replaced it.
 
+<a id="s175"></a>
 ## 175. How the bytes of a write reach storage, and what still stands between that and a first write
 
 The gate on phase 8 opened on 25 August 2026, and the first thing behind it was not a bench session
@@ -23713,6 +23888,7 @@ block changes nothing. The question only bites for a caller who wants to **skip*
 nothing here does. Answering it properly needs a write whose new bytes set a bit the old bytes clear,
 which is a real modification and belongs after a first write has worked, not before it.
 
+<a id="s176"></a>
 ## 176. Key lookup walks a stack, and two placement readings become meaning
 
 **Reported from outside and tested here.** trelowney sent this by email on 26 August 2026, out of
@@ -23803,6 +23979,7 @@ is named, and this section describes the structure the name goes into. If anythi
 better than before, since "select the current entry" and "push an entry onto a lookup stack" want
 the same argument.
 
+<a id="s177"></a>
 ## 177. The key table states the keypad, and it matches a hand probed board on three models
 
 **The sample.** kkong42 posted a Harmony 895 configuration as issue 34 of harmony-decompiler on 25
@@ -23871,6 +24048,7 @@ presses without saying what the rest are, and at least four of them are this fou
 the release or repeat section 17's three event types would predict. Not read, and recorded so that
 "every binding is a press" is not extended past the population it was measured on.
 
+<a id="s178"></a>
 ## 178. Arch 10's layout is not the base layout with insertions, and a known answer proves it
 
 **Section 117 reached this conclusion and could not prove it.** It scored all placements of three
@@ -24014,6 +24192,7 @@ So the cost of an exact count is a diff every time a sample lands, and the retur
 cannot land without every claim about the corpus being restated by somebody. A floor buys the
 opposite trade and hides exactly the three cases above.
 
+<a id="s179"></a>
 ## 179. The picture bank is locatable with no pointer slot, and it states the Harmony 890's display
 
 Section 178 ended with a prediction rather than a result: that the structures surviving arch 10's
@@ -24117,6 +24296,7 @@ about which pointer slot names what, so `INSERTED_SLOTS` still has no arch 10 en
 still the single thing not to do. What it does is confirm the direction section 178 pointed in, at a
 cost of one function.
 
+<a id="s180"></a>
 ## 180. The font sets read on arch 10 too, and a Harmony 890 turns out to use the Harmony 885 typeface
 
 Section 179's closing suggestion was that the font table would be reachable next, because it sits at
@@ -24212,6 +24392,7 @@ observation: a structure that refuses to decode when misread can be located by t
 That is worth reaching for again before anybody spends another afternoon on the mapping, and it is
 not progress towards it.
 
+<a id="s181"></a>
 ## 181. A record states its own address, so the infrared database reads on arch 10 too, and a Harmony 895 has none
 
 Section 180 ended by suggesting the infrared records would go the same way as the picture bank and
@@ -24316,6 +24497,7 @@ refuses to decode when misread can be located by trying every offset, and this o
 case of it because the record does not merely refuse, it states the answer. None of it is progress
 towards the slot mapping.
 
+<a id="s182"></a>
 ## 182. Arch 10 states its architecture after all, has no name tree slot, and seventeen of its base slots are identified
 
 Section 181 ended by noting that 300 known record addresses are a sharper test of a candidate slot
@@ -24480,6 +24662,7 @@ best target, since an action list is a three byte instruction stream with its ow
 candidate met. Scoring readers against a guessed mapping is what this section tried and it is the
 weaker instrument.
 
+<a id="s183"></a>
 ## 183. Arch 10's slot mapping, determined: three base slots are absent and six raw slots are not base slots<!--superseded-->
 
 Section 182's verification refuted its own arithmetic and named the target: find one more anchor the way
@@ -24580,6 +24763,7 @@ representation change and the switch-on; it bought the screens, the bindings and
 did not buy the devices or the activities. And the four by order rows were the risk exactly as named:
 two of them were wrong. Section 184.
 
+<a id="s184"></a>
 ## 184. Arch 10 is switched on, which needed a new representation and refuted two of section 183's rows
 
 Danny's call on 26 August 2026, answering section 183's own two objections: change the representation so
@@ -24757,6 +24941,7 @@ Three of the rewrites are better tests than what they replaced, because a refusa
 base slot 5 against the self pointer scan on all 300 records, base slot 7 against the closure search on
 all eight sets, and the clock against the arch 8 container fifteen minutes away.
 
+<a id="s185"></a>
 ## 185. The 111 byte family is screen programs, and the coverage percentage preferred the wrong answer
 
 Section 184 ended by naming the biggest unclaimed family on arch 10 as the next thing to read: 18 runs of
@@ -24894,6 +25079,7 @@ lesser problem than no check at all. `TheDocumentChecksReadOnlyTrackedFiles` in
 `tests/test_toolchain.py` asserts both directions, because a check that stops reading untracked files
 could just as easily stop reading everything, and a third test asserts the real documents are still in.
 
+<a id="s186"></a>
 ## 186. A blind second reading of the write path, and the two things it settled
 
 The brief in `docs/review-before-first-write.md` was handed to Codex on 27 August 2026, working in a
@@ -24973,6 +25159,7 @@ protect the comparison. It was not maintained, nothing tested it, and it drifted
 one afternoon. The worksheet is corrected in place and says so. What it does not get is a promotion:
 it remains a dated artefact, and section 175 remains the derivation.
 
+<a id="s187"></a>
 ## 187. A same length edit is not a small write, and the cheapest one costs two erase blocks
 
 Prompted by the blind review's handover, which asked that an implementation read and preserve
@@ -25017,6 +25204,7 @@ the bytes that changed", which is the shape the API's own vocabulary suggests, s
 and a run of bytes. Deciding that after the interface exists would be expensive, which is the reason
 this is recorded before anything writes.
 
+<a id="s188"></a>
 ## 188. The write rails guarded the methods and not the wire, and it is the same hole twice
 
 Found by the independent review of 27 August 2026, jobs 2 to 4, and verified here before anything was
@@ -25090,6 +25278,7 @@ open and they are the next thing in front of a first write.
 open itself, so guarding it would be guarding somebody who has already gone around the front door.
 `openHarmony` is the boundary this claim is about, and the test asserts that it wraps.
 
+<a id="s189"></a>
 ## 189. The bootloader is a USB flash programmer, and it does test a key
 
 Danny asked whether the firmware could settle what a recovery from a failed first write would entail.
@@ -25318,6 +25507,7 @@ per section 48: a scan code does not yield a key on arch 12 because sixteen butt
 The published procedure in section 118 remains a third party claim about which key, and the cheap
 confirmation remains read only hardware on the spare Harmony One.
 
+<a id="s190"></a>
 ## 190. A Harmony One in safe mode, measured, and it settles section 118's open question
 
 Section 118 ended its field 6 subsection with a request: "it needs an arch 12 or arch 14 remote put
@@ -25453,6 +25643,7 @@ narrower than it was and it is stated exactly: a Harmony One's recovery has two 
 one is confirmed on hardware, and which key reaches the deeper one is still open. Nothing about a
 config restore is settled by any of this, per section 189's own limit.
 
+<a id="s191"></a>
 ## 191. The Harmony One can write its own external flash, and safe mode carries the code
 
 Section 189 concluded that the recovery route "is **not shown to restore a config**, and must not be
@@ -25565,6 +25756,7 @@ routine loads `0x80` for `MEMCON` and `0xF0` for `TRISH`. A byte is a command be
 stored, not because of its value, so the table counts only literals that reach `TABLAT` and are
 committed by a `TBLWT`. Same family as reading a field split off the data when a header states it.
 
+<a id="s192"></a>
 ## 192. A host does not send a flash address, it sends a request that one routine classifies
 
 **The write protect interlock is found, and it is a byte rather than a bit.** One routine per image
@@ -25730,6 +25922,7 @@ instructions**, and both looked like findings for a few minutes:
 `tests/test_findings.py`, `TestTheFlashAddressIsClassifiedBeforeItIsUsed`, seven tests, nine controls run
 and reversed.
 
+<a id="s193"></a>
 ## 193. Two remotes on the bench were inside the range that gates opening one
 
 **A predicate that looked like a range check was one, and that was the defect.** `isHarmony` accepted
@@ -25798,6 +25991,7 @@ model**: the skin does that, and reading a skin means opening the device.
 
 `packages/usb/test/remote.test.ts`, one test, four controls run and reversed.
 
+<a id="s194"></a>
 ## 194. The format version is the pointer count, and a Harmony 350 is what said so
 
 **The header's second word is not a version.** Its high byte is the number of pointer slots in the
@@ -25912,6 +26106,7 @@ numbers across five documents. Whether to admit it is a decision, not a side eff
 
 `tests/test_gspm.py`, `TheHeaderWordStatesThePointerCount`, four tests, six controls run and reversed.
 
+<a id="s195"></a>
 ## 195. The skin carries into the high byte, and the road to knowing it went through a wrong claim
 
 Three remotes came onto the bench on 27 August 2026, a Harmony Touch, a Harmony 350 and a Harmony
@@ -26014,6 +26209,7 @@ the bench.
 case as the surviving negative. Controls run and reversed in both languages: putting the low byte
 reading back fails two tests in Python and three in TypeScript.
 
+<a id="s196"></a>
 ## 196. The Harmony 300 and 350 firmware is published, and Logitech's own manifest states section 41's checksum
 
 Section 193 fenced the file based family off from `openHarmony` on the ground that nothing here can
@@ -26163,6 +26359,7 @@ its config is reachable at all is untouched by this and stays section 193's ques
 `tests/test_harmony_350_firmware.py`, ten tests, starting from the ZIP as downloaded rather than from
 any file this project produced out of it, with a flipped byte as the checksum's negative control.
 
+<a id="s197"></a>
 ## 197. Logitech's own protocol specification is in the lab, and it has been for three weeks
 
 Danny asked how a Harmony Touch could be talked to. The answer is that Logitech states it, in
@@ -26318,6 +26515,7 @@ a remote it has no firmware for, and the file protocol includes writes.
 the Touch architecture 17, moving the skin count, changing the legacy list and changing the read
 command each fail exactly one test.
 
+<a id="s198"></a>
 ## 198. The file based family speaks one file protocol, Logitech specifies it whole, and a Harmony Touch can be read without writing anything
 
 Section 193 refused to open a Harmony Touch on the ground that "the file based family keeps its config
@@ -26566,6 +26764,7 @@ the repository before saying what is not in it, and the reason it was not run is
 like the point of the section. A process failure is not evidence for itself.
 
 
+<a id="s199"></a>
 ## 199. A file based remote states its own filesystem, and that is where its config lives
 
 The Harmony 300 and 350 firmware is the only image this project holds for a remote in the file based
@@ -26645,6 +26844,7 @@ open: `0xFE` appears at `0x12A42` as the value a loop compares against, which is
 section 198 records from the templates, so the read's end condition has a firmware source now.
 
 
+<a id="s200"></a>
 ## 200. A Harmony Touch answers, and one of its files is an action
 
 The first read this project has ever taken from the file based family. `/sys/sysinfo` opened, read and
@@ -26731,6 +26931,7 @@ be defeated by what an operand *names*, so an allow list of operands is not belt
 operand space includes verbs.
 
 
+<a id="s201"></a>
 ## 201. A file states its end in one place only, and one of these files is a query
 
 Two things came out of reading the one other file on a Harmony Touch that has any content in it,
@@ -26813,6 +27014,7 @@ file on one unit and is marked as such. What would falsify either: content conti
 size, or a NUL inside a file's real content, or a `/rf/deviceinfo` on another model that answers
 without the prefix.
 
+<a id="s202"></a>
 ## 202. MyHarmony does not compile a configuration for a Harmony Touch at all
 
 Why every attempt to fetch a Harmony Touch's configuration from Logitech's service ends in
@@ -26875,6 +27077,7 @@ square, and the cost was a wrong reading published in four documents.
 * **The sync required flag.** It reads false for the Touch and also for the Harmony 600, which has
   compiled successfully here.
 
+<a id="s203"></a>
 ## 203. A Harmony Touch fetches its own configuration, and the client is only a pipe
 
 The mechanism behind section 202, read out of MyHarmony's source on 28 August 2026, and it explains
@@ -26916,6 +27119,7 @@ elsewhere.
 None of that is built and none of it is proposed here. It is written down because the alternative is
 concluding, wrongly, that the generation is closed.
 
+<a id="s204"></a>
 ## 204. Logitech's classic client cannot build a configuration, and never looks inside one
 
 The first square of the lab excavation, step 9, dug on 28 August 2026. The register named exactly one
@@ -26958,6 +27162,7 @@ independent way a configuration could reach a remote, and because it was going t
 it. Nineteen days of the same failure are recorded in section 197; this one was found by looking at a
 column rather than by remembering.
 
+<a id="s205"></a>
 ## 205. What a local learn has to replace is a judgement, and the only local test was a stopwatch
 
 The excavation's second square, the `ir-learn` tag, dug on 28 August 2026 out of the classic client's
@@ -27014,6 +27219,7 @@ The negative worth recording: **nothing in the classic client can turn a capture
 configuration record.** That is consistent with section 204, and it is the same boundary seen from a
 different direction, since a record needs a container and the client has never parsed one.
 
+<a id="s206"></a>
 ## 206. The excavation dug a square that was already mined, and three ledger rows fell out anyway
 
 *28 August 2026. The finding is the process failure and the three results are what it cost to notice.*
@@ -27109,6 +27315,7 @@ same tables. Re-measuring them was part of the same afternoon and produced the s
 the duplication was finally noticed: the second census of a block matched a table this repository had
 already published, down to the one populated byte of the power settings record.
 
+<a id="s207"></a>
 ## 207. The classic client has three transports, and two of them are not ours
 
 *28 August 2026. Section 206's square, dug one directory further, and this half was not already known.*
@@ -27207,6 +27414,7 @@ and the premise was one sentence long and never examined: **that arch 10 being a
 project reads means it is an architecture this project can open.** Reading a config and speaking to a
 remote are different capabilities, and every arch 10 config here arrived as a file.
 
+<a id="s208"></a>
 ## 208. The teaching pictures name an architecture per skin, and they fill the gap section 207 left
 
 *28 August 2026. `software/classic/res/client/skins/logitech/intl/images/images.properties`, four
@@ -27296,6 +27504,7 @@ Still client sourced under decision 2, and nothing is adopted from it: the archi
 `reference/models.md` was already concordance's and stays concordance's. What the file changes is
 that the skin numbering and the architecture numbering are now tied together by their author.
 
+<a id="s209"></a>
 ## 209. The sixth occurrence, and the first time the check became a command
 
 *28 and 29 August 2026, and this section is about the session that wrote it.*
@@ -27412,6 +27621,7 @@ what a status of `mined` on a directory risks: it is a claim about a whole subtr
 mined part of it. The register's own schema says `mined` means "everything the want list asks of it
 has been extracted", so the honest granularity is the directory somebody actually read.
 
+<a id="s210"></a>
 ## 210. Logitech's client reading a Harmony One, captured on the wire, and the first check of our encoder against something that is not us
 
 *29 August 2026. `software/classic/reports/`, the excavation square that carried the `fh-failures`
@@ -27535,6 +27745,7 @@ distinct paths under `EasyZapper`, plus our own instrumentation posting the clie
 back. It corroborates `SERVER-DEPENDENCY.md` on which calls the client makes at startup and adds no
 protocol.
 
+<a id="s211"></a>
 ## 211. The client verifies every byte it writes, and its own bounds are sixteen times tighter than our rail
 
 *29 August 2026. `software/classic/src/hidcommands/.../services/core/memory/`, three files of about
@@ -27605,6 +27816,7 @@ version, and no packet is sent for it. The sentence above is left as written bec
 method does from its name is exactly the habit this project keeps warning itself about, and it took
 one afternoon to make the mistake and one file to catch it.*
 
+<a id="s212"></a>
 ## 212. The one selector nobody had read is a battery gauge, and the client's region numbers place two version fields
 
 *29 August 2026. `.../hid/services/system/`, 448 lines, named in no lab note and in no document
@@ -27697,6 +27909,7 @@ project has never described, an erase of the unit's identity block, which on arc
 at `0xFFF400`, blanks the first 64 and writes the block back. That is worth its own reading before any
 write work, and it is not read here.
 
+<a id="s213"></a>
 ## 213. The rest of the client's HID services, a macOS workaround worth trying, and the seventh and eighth times a dig re-derived the lab
 
 *29 August 2026. The remaining unopened services in
@@ -27866,6 +28079,7 @@ Nothing in `hid/services/`. Its last unopened directory is now read, and what re
 overall is `tools/` at 365 MB and `dist/` at 299 MB, both build products, plus the string bundles and
 HTML layouts in `res/` that section 207 judged unlikely to answer anything.
 
+<a id="s214"></a>
 ## 214. The client's own read out is ours, its region table predicts the packets it sent, and the ninth re-derivation was a claim of ours wearing Logitech's package name
 
 The last two unopened squares of the classic client were `tools/` at 365 MB and `dist/` at 299 MB.
@@ -28021,6 +28235,7 @@ Nothing. The classic client is fully dug: `hid/services/` was finished by sectio
 `dist/` are ours. What remains anywhere in it is the string bundles and HTML layouts in `res/` that
 section 207 judged unlikely to answer anything, and that judgement stands.
 
+<a id="s215"></a>
 ## 215. Our config reader against Logitech's, byte for byte, and the space past a config is not blank
 
 Section 214 established that `software/classic/dist/` is our repack of Logitech's classic client with a
@@ -28136,6 +28351,7 @@ exposed **four** counts and one comment that had to move or be excluded, includi
 `golden.test.ts` that said 25 and 9 where the assertions two lines below said 28 and 8. Prose beside a
 number is the thing nothing recomputes, which is the whole reason `make facts` exists.
 
+<a id="s216"></a>
 ## 216. The last unopened square was already ours, the extraction in it was a third complete, and the era we support has no category pictures
 
 The excavation's last artefact at status `unseen` was `reference/logitech-icons/`, 877 files, and
@@ -28198,6 +28414,7 @@ borrow from, being brand heavy, ageing badly, and carrying no category for an am
 AV receiver, no tuner, no projector and no tape machine, all of which the infrared database this
 project already reads holds commands for.
 
+<a id="s217"></a>
 ## 217. A status pass over the register, and the blank row that had already cost a wrong claim
 
 Sixteen of the register's 44 rows sat at `read` or `surveyed` while the thing they described was
@@ -28244,6 +28461,7 @@ about. The register's own test cannot see it, because a row with a blank note is
 So the pass filled notes as well as moving statuses, and the rule now lives in `docs/lab-excavation.md`
 beside the status definitions rather than in this section alone.
 
+<a id="s218"></a>
 ## 218. The platform's own data model, recovered from the client's generated proxy and checked against live replies
 
 The vendor's service is the other half of a Harmony. A config says what a remote does; the platform
@@ -28373,6 +28591,7 @@ It is not the configuration compiler and does not become one. The platform's sch
 account holds; how a container is built from that is what `SERVER-DEPENDENCY.md` records as having
 been server side, and section 214 is where that stands.
 
+<a id="s219"></a>
 ## 219. What the platform can be asked, three sources that disagree, and the one route to an infrared protocol is broken
 
 Section 218 recovered what the platform **holds**. This is what it can be **asked**: 298 operations
@@ -28465,6 +28684,7 @@ function identifier. That is the vendor's own naming and grouping of what a devi
 which is the same subject as the commands page FreeHarmony will need. It carries account and device
 identifiers, so it stays in the lab.
 
+<a id="s220"></a>
 ## 220. What a device's commands are called, and the split that says which are canonical
 
 A configuration addresses infrared codes **by number**. `devices()` reports a group and a code count,
@@ -28566,6 +28786,7 @@ expose, but it is an observation and not a measurement until both sides come fro
 account's replies separately by design and a suffixed filename in one directory would have been a
 copy of evidence rather than a reference to it.
 
+<a id="s221"></a>
 ## 221. Which flash part the bench Harmony Ones carry, and the erase block that follows from it
 
 `ERASE_BLOCK_SIZE` in `packages/usb/src/rails.ts` says an erase on arch 12 takes 64 KiB, and it has
@@ -28624,6 +28845,7 @@ decided.
 transcribing it, walking the blocks to find the one at `0x040000`, and asserting the rail's own
 constant against the answer. Its control is the two rows that differ.
 
+<a id="s222"></a>
 ## 222. The first write, and the erase block measured rather than believed
 
 On 30 August 2026 this project wrote to a Harmony remote for the first time. The spare Harmony One,
@@ -28695,6 +28917,7 @@ write that changes a configuration, which is where the reader questions start, a
 other 25 blocks of this configuration. The restore route is still unexercised: this run never needed
 it, which is the point of choosing it, and so it also never tested it.
 
+<a id="s223"></a>
 ## 223. Why the verification read failed, which is the host and not the remote
 
 Section 222 recorded a read that failed twice before it worked and said the cause was unknown. It is
@@ -28799,6 +29022,7 @@ rate and a threshold.
 **It is not the stranding fault**, which is a remote that stops answering after sitting idle and
 needs its batteries out. That one is untouched and still unexplained.
 
+<a id="s224"></a>
 ## 224. The same rails bypass a third time, and why a name check could never have caught it
 
 Job 2 of `docs/review-before-first-write.md` was performed here on 30 August 2026: find an input that
@@ -28886,6 +29110,7 @@ this close the class: the lesson is that a rail on an object's **surface** needs
 surface, and the only two things enumerated that way today are this transport and the file protocol's
 allow list.
 
+<a id="s225"></a>
 ## 225. The compatibility gate, performed at last, and what each of its six fields means
 
 `WritePermission` in `packages/usb/src/rails.ts` had a field called `intendedVersionMatches`, a
@@ -29022,6 +29247,7 @@ is the honest ceiling for that field: the library cannot know where a caller's b
 section 188, since identifying a unit would mean carrying a serial through the enumeration path that
 `@harmony/probe` reads, and the reason that path has no serial is worth more.
 
+<a id="s226"></a>
 ## 226. Which unit is on the cable, read off the unit instead of asserted
 
 `WritePermission` had a boolean called `targetIsTheSpareRemote` and every caller passed `true`. It was
@@ -29151,6 +29377,7 @@ Of section 188's three world facts, one is now measured, section 225's is perfor
 `originalDumpVerified` is the honest ceiling: the library cannot know where a caller's bytes came from,
 so the rehearsal passes the measurement it already made instead of a literal.
 
+<a id="s227"></a>
 ## 227. Logitech's own catalogue names a rhythm, and their analyser had named three of them wrongly
 
 **A protocol family's name in the rhythm table used to come from Logitech's analyser, and every entry
@@ -29359,6 +29586,7 @@ measured over to the microsecond, 533 records between them. So the stored form k
 the emitter is already right. It is pinned by a test, because it stops being harmless the moment a block
 is derived from their definitions.
 
+<a id="s228"></a>
 ## 228. Logitech's definitions state a block whole, except how many times it repeats
 
 **31 August 2026.** Section 227 converted Logitech's own protocol definitions into 424 new rhythm table
@@ -29518,6 +29746,7 @@ alternate two frames, the shape our own records showed first for seven families.
 A stated row's block carries no `tailExact` and no `heldExact`, because those count records that rebuilt
 from it and there are none. `source` is still what tells a caller the difference.
 
+<a id="s229"></a>
 ## 229. Logitech's device catalogue as a local source, and every button gets a name
 
 **31 August 2026.** Sections 227 and 228 read the protocol half of the Harmony infrared archive, the
@@ -29644,6 +29873,7 @@ database, whatever else is done with it.
 tests name each codeset rather than searching for it, so they run in a tenth of a second and a codeset
 that stops holding a device's codes fails by name.
 
+<a id="s230"></a>
 ## 230. Two million of Logitech's own renderings, against our encoder, and five defects it found<!--superseded-->
 
 *Correction, section 365: the renderings are the archive maintainer's, produced from Logitech's definitions,
@@ -29853,6 +30083,7 @@ with 424 stated, and seven of those now carry `carriedFirst`. Nothing measured c
 34 of 35 rhythm calibration and the 29 of 29 block calibration both pass unaltered, which is the control
 that says these seven fixes did not buy their agreement by moving what our own measurements say.
 
+<a id="s231"></a>
 ## 231. The families whose bit is a whole cell shape, and the table answers for 599 of 684
 
 **31 August 2026.** An infrared command is a lamp blinking in a precise rhythm, and until today this
@@ -29994,6 +30225,7 @@ reader accepts, `Start` on 15,146 codes, `Finish` on 10,442, `Trailer` on 5581 a
 and the remaining 14,636 fail on a width. A word outside the set is a refusal rather than a guess, so
 each is a reading to do.
 
+<a id="s232"></a>
 ## 232. A repetition can send several rhythms, and 84694 commands were refused for it
 
 **31 August 2026.** An infrared command is a lamp blinking in a precise rhythm, and this project
@@ -30134,6 +30366,7 @@ than the table's older flat one, deliberately: the row's own fields are one shap
 extras are handed to the emitter as they stand, so `shapeOf` in `stated.ts` is the single place the two
 are joined. Two spellings in one row is the cost of not migrating 600 rows.
 
+<a id="s233"></a>
 ## 233. Every rendered command in Logitech's catalogue, and every one agrees
 
 Section 232 left 124,000 of the archive's 2.07 million commands uncompared and one figure that read
@@ -30283,6 +30516,7 @@ none disagrees, and 29 of 29 measured blocks rebuild from them, and those are th
 archive can be believed. Nothing here makes an archive sourced definition shareable either: decision 11
 stands, and only a definition learned from hardware may go into a community database.
 
+<a id="s234"></a>
 ## 234. A device's delays are not in base slot 15, and the screen is what says whose they are
 
 `docs/plans/002-the-roadmap.md` carried "which base slot 15 group holds a device's delays" as the last reading<!--superseded-->
@@ -30458,6 +30692,7 @@ battery curve instead.
 `packages/codec/test/inventory.test.ts` carries seven tests, including both controls above and the
 button map closure.
 
+<a id="s235"></a>
 ## 235. `0x7C` is a delay in tenths of a second, so every architecture states a power on delay
 
 Section 234 found a device's power on delay on arch 14 (Harmony 600 and 700) and reported that the
@@ -30620,6 +30855,7 @@ removed because this section refuted their titles. The service reply is a **date
 lab, since an account is a live thing whose contents change and a test that read whatever is there
 today would be asserting about the future.
 
+<a id="s236"></a>
 ## 236. The delay is per device, so the first write that changed a remote showed nothing
 
 **This is the first time this project has changed a byte on a remote to test a claim, and the first
@@ -30748,6 +30984,7 @@ different question than mode 3 reads as.
   The post revert read is deliberately **not** registered as a named dump, since it is byte identical
   to `one_spare_20260830` and that is what it is for.
 
+<a id="s237"></a>
 ## 237. A configuration our own codec produced is on a remote, and it came back byte identical
 
 **The last box in front of adding a device.** Everything written to a remote before today came off
@@ -30873,6 +31110,7 @@ length edit whose changed bytes fall in blocks `blocksDiffering` does not name.
 * `packages/codec/test/edit.test.ts` and `packages/usb/test/rehearsal.test.ts`.
 * The container that was written is `one_spare_written_by_us` in the lab.
 
+<a id="s238"></a>
 ## 238. The action queue holds forty instructions and drops the rest in silence
 
 The oldest unpriced rail in this project was "refuse an oversized sequence", and it had no number
@@ -31012,6 +31250,7 @@ would put the count past its equality test and make the whole reading unsafe.
 * `packages/codec/test/queue.test.ts`, the corpus table and the refusal.
 * The behaviour it is a rail for is `../lab/reads/20260823T1408Z-onres-sequence-NOTES.md`.
 
+<a id="s239"></a>
 ## 239. Two constants in the composer were per config, and the second one blocks phase 9
 
 Phase 9 of `docs/adding-a-device.md` is one command: put an appliance from Logitech's catalogue on
@@ -31123,6 +31362,7 @@ does not give it.
 * `packages/codec/test/compose.test.ts`: the marker table, the lead table, and the refusal that
   proves the spare gets past the marker and stops at the layout.
 
+<a id="s240"></a>
 ## 240. A device that sends nothing was not a device, and the device list is what counts them
 
 **Date:** 3 September 2026. **Status:** confirmed on the one configuration that has such a device
@@ -31191,6 +31431,7 @@ are unchanged and their populations are still the infrared groups.
   and `tools/facts.py` reads them, so the seven documents quoting them carry markers now.
 * `packages/codec/test/inventory.test.ts`: the moved counts, and the population comparison.
 
+<a id="s241"></a>
 ## 241. A seventh device is a third page, and it is composed now
 
 **Date:** 3 September 2026. **Status:** confirmed by construction on the spare Harmony One's own
@@ -31292,6 +31533,7 @@ television's mode from its row is what this section does not yet claim.
   the full page's, the three, three, one shape on all nine menus, the render, the pool copies, and the
   one row refusal exercised by composing twice.
 
+<a id="s242"></a>
 ## 242. A device from Logitech's catalogue is on a Harmony One and the television answers it
 
 **Date:** 3 September 2026. **Status:** performed once, on the spare Harmony One, observed by Danny at
@@ -31442,6 +31684,7 @@ ships, and the two the table keeps for a configuration that is wrong are differe
 * The lab: both write logs beside the candidate's note, `reads/20260903T-one-spare-plus-lg-write-attempt1.log`
   and `attempt2.log`.
 
+<a id="s243"></a>
 ## 243. The remote cannot erase its own configuration region, so the erased block was ours
 
 **Date:** 3 September 2026. **Status:** measured in the Harmony One 3.4 application image, with
@@ -31545,6 +31788,7 @@ second caller in another arch 12 image, if one ever reaches the lab.
 * `packages/corpus/bin/write-config.ts`: the durable journal.
 * Section 242's hypothesis, corrected in place.
 
+<a id="s244"></a>
 ## 244. The remote was not calling itself unprogrammed, and there are thirty screens it could have shown instead
 
 **Date:** 3 September 2026. **Status:** the table is measured in five containers across two
@@ -31661,6 +31905,7 @@ has two other things it says when a configuration is wrong.
 * `docs/config-format.md`: what the container at flash `0x002000` holds.
 * Section 242's open question, reworded in place, and `reference/superseded.md`.
 
+<a id="s245"></a>
 ## 245. A working config write is eight steps and ours was two
 
 **Date:** 3 September 2026. **Status:** read out of concordance's own source, `libconcord/`, against
@@ -31781,6 +32026,7 @@ and adding one would be a second way to set the same field.
 * `packages/usb/test/rails.test.ts`: both refused with the flag off, and each condition refusing on
   its own with the flag on.
 
+<a id="s246"></a>
 ## 246. What "invalidate flash" does on a Harmony One, read before it was ever sent
 
 **Date:** 3 September 2026. **Status:** read out of the Harmony One 3.4 application image, with a
@@ -31875,6 +32121,7 @@ what the next write will show.
   is byte for byte what concordance sends.
 * `docs/usb-protocol.md`: selector `0x02` identified, where it was one of the unidentified ones.
 
+<a id="s247"></a>
 ## 247. The full write sequence on hardware: the remote restarts itself and asks for nothing
 
 **Date:** 3 September 2026. **Status:** measured on the spare Harmony One, arch 12, with Danny
@@ -31952,6 +32199,7 @@ symptoms have now survived every other write this project has made.
 * The remote is left with that device's power on delay half a second longer than Logitech's compiler
   put it, which is a deliberate, reversible difference rather than an oversight.
 
+<a id="s248"></a>
 ## 248. The control separates the two steps, and its conclusion was overturned the same day
 
 **Date:** 3 September 2026. **Status:** measured on the spare Harmony One, arch 12, one write, with
@@ -32032,6 +32280,7 @@ demonstrated block by block from a dump.
 * `tests/test_write_sequence.py` gains the round trip: the region after the revert against the region
   before the edit.
 
+<a id="s249"></a>
 ## 249. What puts a status screen on the display, and which condition picks which one
 
 **Date:** 3 September 2026. **Status:** read out of four firmware images, three architectures, with
@@ -32191,6 +32440,7 @@ mean the byte is not the discriminator this says it is.
   control that no neighbouring base fits.
 * Section 244's closing paragraph, corrected in place, and `reference/superseded.md`.
 
+<a id="s250"></a>
 ## 250. Why the screen stays up until the batteries come out, and what the invalidate is really for
 
 **Date:** 3 September 2026, with its control run on 4 September. **Status:** read out of the Harmony
@@ -32362,6 +32612,7 @@ the others, and the fact that a clean write appeared not to help.
   What it changes is the status of the claims, from read to measured.
 * Sections 248 and 249, corrected in place, and `reference/superseded.md`.
 
+<a id="s251"></a>
 ## 251. The re-check runs on the cable, and the restart was the write's
 
 Section 250 read the latch out of the firmware and scored one control against it. Three more runs on
@@ -32508,6 +32759,7 @@ what the permission is protecting here is the **unit**, and that is exactly the 
 * `packages/corpus/bin/write-config.ts`, which gains the control and, from the same evening's failed
   write, the recovery of a block an earlier run erased and did not write.
 
+<a id="s252"></a>
 ## 252. The Harmony 600 has the same poll and does not have the latch
 
 Section 250 left "whether arch 14 latches the same way" open, on the ground that its display routine
@@ -32621,6 +32873,7 @@ hardware evidence for it is the resting state.
   does not read the verdict bit, with arch 12's arming half as the positive control.
 * Section 250's open item, answered.
 
+<a id="s253"></a>
 ## 253. The Harmony 525 re-validates on request, and cannot latch because nothing arms
 
 Sections 250 to 252 read the status screen machinery on arch 12 (Harmony One) and arch 14 (Harmony
@@ -32741,6 +32994,7 @@ silence.
 * Section 249's condition, scoped to arch 12 and arch 14, and `CLAUDE.md` corrected.
 * `.claude/skills/trace-section/SKILL.md`: the second dead end.
 
+<a id="s254"></a>
 ## 254. The Harmony 525's re-validation is an instruction, and its action ring closes arithmetically
 
 **Read sections 256 and 257 first.** Most of what follows re-derives two earlier readings. Section 72
@@ -32825,6 +33079,7 @@ the band this section called an opcode range is a band of an operand.
   being in opposite directions.
 * The open item above, and section 253's pitfall, which this is a second instance of.
 
+<a id="s255"></a>
 ## 255. An arch 9 instruction is operand then opcode, and the chain switches on the operand
 
 **Read sections 256 and 257 first.** This section's headline, that opcodes `0x1F` to `0x3E` dispatch
@@ -32917,6 +33172,7 @@ operand byte, and what they do is unread.
   operand band.
 * Section 254, corrected in place, and `reference/superseded.md`.
 
+<a id="s256"></a>
 ## 256. Sections 254 and 255 re-derived section 72, and one of them got it wrong doing so
 
 **This section is a correction to the two before it, and its subject is the failure rather than the
@@ -33002,6 +33258,7 @@ been checked against the other's image.
 * `tests/test_status_screens.py`: the arch 9 band map as its own test, and the `0xD0` band's second
   fetch, which is the part a codec would need.
 
+<a id="s257"></a>
 ## 257. The audit section 256 asked for, and it found a second re-derivation and a scoping error
 
 Section 256 established that sections 254 and 255 had re-derived section 72, and added one grep before
@@ -33101,6 +33358,7 @@ section number in its comment, and either file would have answered faster than 3
   over both arch 14 images rather than one.
 * `.claude/skills/trace-section/SKILL.md`: the library half of the grep, and the collision note.
 
+<a id="s258"></a>
 ## 258. How many times a press sends a code is the ratio between a record's two blocks
 
 **4 September 2026.** FreeHarmony's device settings screen waits on three numbers, and two of them were
@@ -33232,6 +33490,7 @@ reading" for the value beside a send in an action list, with 665 zeroes it would
 pause in tenths of a second, section 236, and the send count is in the infrared record, so the two
 questions were never the same one.
 
+<a id="s259"></a>
 ## 259. Six of the Harmony 350's fifteen slots, named from its own firmware
 
 **4 September 2026.** Section 194 read a Harmony 350's container and stopped at its framing: fifteen
@@ -33352,6 +33611,7 @@ side effect.
 golden vectors compare the two languages' copies of it, which is the only thing standing between one
 stated table and two.
 
+<a id="s260"></a>
 ## 260. A configuration can name its own devices and commands, and two architectures do
 
 **4 September 2026.** Section 259 named six of the Harmony 350's fifteen slots and left nine. This
@@ -33453,6 +33713,7 @@ architectures, and raw 12 is two bytes, which is what arch 10's map calls base s
 before the picture bank. **Both are candidates and neither is in the map**, because a one byte match
 against a zero is not an identification and this document has promoted a width before.
 
+<a id="s261"></a>
 ## 261. What connects a key to a stored code on arch 16, and why the names cannot be checked there
 
 **4 September 2026.** Section 260 found a configuration naming its own devices and commands and said
@@ -33548,6 +33809,7 @@ container's records **exactly**, which nothing checked before, and the test walk
 that states an action list table rather than a list of names, so a sixth architecture joins it by
 having its slot mapped rather than by anyone editing a test.
 
+<a id="s262"></a>
 ## 262. A Harmony 350 read by this library, and the slot its favourites named
 
 Two things, and they arrived together because the second needed the first. This library can now read
@@ -33663,6 +33925,7 @@ two lists is unknown rather than approximately known.
 three devices to four, is a lead and nothing more: it is one pair, and a count that moves with the
 devices could be several things. Neither is in the map.
 
+<a id="s263"></a>
 ## 263. One device removed, and which infrared group belongs to which device
 
 Danny took the Playstation 3 off the bench Harmony 350 and changed nothing else, so this container and
@@ -33746,6 +34009,7 @@ added exactly five, and `MaxDevicesPerAccount: 8`, which is the group count abov
 in raw 6 cannot be tested by adding a second activity on this model, and whether it is the activity
 is a question for the firmware or for another architecture.
 
+<a id="s264"></a>
 ## 264. A Harmony 300, and what a second model on the same architecture is worth
 
 Everything in sections 262 and 263 rests on one remote. The bench has a Harmony 300 as well, and
@@ -33841,6 +34105,7 @@ is what happens when a question about placement is asked with only a length to a
 that settled it was not removing a device: it was identifying every group independently in Logitech's
 catalogue.
 
+<a id="s265"></a>
 ## 265. The same Harmony 300 programmed, and the variable nobody controlled for
 
 Section 264 read a second hand Harmony 300 exactly as it arrived and got one measurement badly wrong.
@@ -34020,6 +34285,7 @@ caught it was the person who had used the client saying so.
 8 for all five arch 16 containers, the exact send cover, and the number sender's single record with its
 digit tables pointing at one group.
 
+<a id="s266"></a>
 ## 266. The biphase reader required a favour from its caller, and 411 records went unread
 
 The Harmony 300's set top box was the one device group of section 265 that could not be identified in
@@ -34148,6 +34414,7 @@ break and updated the number.
 that the two readers stay disjoint, and `packages/codec/test/catalogue.test.ts`, the four
 configurations against Logitech's codeset with the width taken from their definition.
 
+<a id="s267"></a>
 ## 267. The Harmony 525's flash erase and write, and the two numbers arch 9 was missing
 
 `CONFIG_REGION_BASE` in `packages/usb/src/rails.ts` carries no arch 9 entry, and its comment says
@@ -34370,6 +34637,7 @@ opcodes, the chip select, the interlock and the classifier's normalisation again
 `tests/test_concordance_notes.py`, which asserts the sector table, the arch 9 addresses, the two
 places we are narrower and the support table against the checkout, skipping cleanly without one.
 
+<a id="s268"></a>
 ## 268. A Harmony 525 keeps its identity in EEPROM, and the rehearsal now reads one
 
 **Date:** 6 September 2026. **Status:** measured on the bench Harmony 525 over USB, all reads, with
@@ -34482,6 +34750,7 @@ row; `packages/usb/test/rails.test.ts`, the arch 9 refusal with writing enabled 
 `packages/corpus/test/file.test.ts`, the region against the August configuration read and the erased
 tail.
 
+<a id="s269"></a>
 ## 269. The first write to a Harmony 525, and what an architecture that does not execute its config in place does differently
 
 On 6 September 2026 this project wrote to a Harmony 525 for the first time. One 64 KiB erase block at
@@ -34633,6 +34902,7 @@ permission, which is the claim that survives the two lists coinciding. `tests/te
 the neighbour the arch 9 rehearsal has to check is the application firmware, so a wrong block size
 would be a firmware erase.
 
+<a id="s270"></a>
 ## 270. The Harmony 525's configuration region past the end of its configuration, and why two of five blocks are worth rehearsing
 
 Section 269 needed one erase block of the bench Harmony 525 and read one. The other four blocks of
@@ -34734,6 +35004,7 @@ than counted, and the erased pair called out where a block is chosen.
 when a registration is left half done. `tests/test_harmony_525_region.py`: the table above, byte for
 byte, including the closure between the container's stated length and where the flash stops.
 
+<a id="s271"></a>
 ## 271. Device mode's keypad map is the device's own mode record, and section 151 looked in the wrong slot
 
 **This closes the open question section 151 left and refutes the claim it left standing.** That
@@ -34893,6 +35164,7 @@ list row enters a mode the census does not pick.
   claim, that a device mode map addresses exactly one device.
 * Section 151 is corrected in place and the dead wording is in `reference/superseded.md`.
 
+<a id="s272"></a>
 ## 272. What a base slot 9 entry corresponds to: a fixed prefix, one per activity, and one more
 
 **Not devices and activities together**, which is the reading `docs/config-format.md` recorded as
@@ -34965,6 +35237,7 @@ configurations of one architecture.
 * `packages/codec/test/inventory.test.ts`: the three counts, the prefix lengths per architecture, and
   the score of the old reading against the new one, which is what stops it being written again.
 
+<a id="s273"></a>
 ## 273. How an activity is numbered, where its entry goes, and how many keys it needs
 
 **Written because a composer has to choose a number for an activity it is adding**, and the rule this
@@ -35187,6 +35460,7 @@ recover an activity's number.
   count since that one is a licence rather than a constraint, the arch 14 binding split with its
   event type control, the handler shapes, and the four hop reader against a two hop walk.
 
+<a id="s274"></a>
 ## 274. The state variable seeder on three architectures, and where arch 9 differs
 
 **Danny asked whether section 138's seeder was checked against the other firmwares**, after the
@@ -35301,6 +35575,7 @@ reader of it outside the loop.
 * `tests/test_state_seeder.py`, which pins the census, the site counts, the marker on the two that
   have it and the index rule on the one that does not.
 
+<a id="s275"></a>
 ## 275. An activity menu page is not a device list page, it holds three rows, and that is what fills it
 
 ### What prompted it
@@ -35524,6 +35799,7 @@ activities on one page.
   the composer keeping every binding it found, the whole chain from `composeActivity` through to the
   four hop reader, and the refusals including the full page.
 
+<a id="s276"></a>
 ## 276. Base slot 13's `wide` sizes the state variable storage, and everything above it is painted with `0xFE` at every boot
 
 **A device this project composed and wrote to the spare Harmony One appeared on the activity menu,
@@ -35844,6 +36120,7 @@ and two bytes of storage is much the cheaper price.
   `wide` each rise by one, that `narrow` does not move, and that the new index is inside the storage.
 * `CLAUDE.md`'s table of rails and `.claude/skills/writing-a-config/SKILL.md`.
 
+<a id="s277"></a>
 ## 277. A device's power variable belongs below `narrow`, the renumbering that puts it there, and the width is not why the activity stays silent
 
 > **Corrected by section 278.** The transition this section treats as not firing did fire; what
@@ -36016,6 +36293,7 @@ compare against.
   surviving in order, the names moving with their variables, a per host census of displaced
   references, and the refusals.
 
+<a id="s278"></a>
 ## 278. A send is always paired with a `0x7C` naming the same device, and a composed send without it goes out on a key press and not when a state transition runs it
 
 Section 277 ended with a composed activity that switched on nothing, with every candidate it could
@@ -36192,6 +36470,7 @@ Two claims in section 277 are wrong. Each carries a pointer here rather than bei
   marks its device byte, the worker's full test agrees with section 236's ring bounds, and the
   priority byte at `0x119` takes 2 from the send, 1 from the quantity and 3 after the picker.
 
+<a id="s279"></a>
 ## 279. An activity on a Harmony One shows two screens, and the one it runs on is named by a base slot 14 record that device mode's Activities key reaches
 
 Section 278 ended with a composed activity that switched the television on and showed the wrong
@@ -36355,6 +36634,7 @@ its working screen. On the remote, the composed activity staying on its start up
   closure; a composed activity's two screens, enter list, deadened keys, full accounting and round
   trip; and the three refusals.
 
+<a id="s280"></a>
 ## 280. A device is switched off by two lists it has to be in, and a composed device was in neither
 
 Section 279's activity started the television and Off left it on, measured on the spare Harmony One:
@@ -36497,6 +36777,7 @@ and the blind one was right**: the second said nothing reachable from a one devi
 idle map writes its power variable, having followed queued calls only; the case queues the write
 itself, `a4:0` on `one_config_unprogrammed`, measured.
 
+<a id="s281"></a>
 ## 281. Arch 14 gets a write target, and it is the Harmony 650 rather than the Harmony 600
 
 A second hand Harmony 650 arrived on the bench, programmed with Logitech's current software for a
@@ -36649,6 +36930,7 @@ erase at `0x030000`, or a Harmony 600 whose identity block matches the 650's rec
 * `packages/usb/test/rails.test.ts` and `rehearsal.test.ts`: the reset and invalidate refused on arch
   14 at runtime, and every test that pinned the old lists rewritten to the new ones.
 
+<a id="s282"></a>
 ## 282. On the Harmony 650 the cache drop arms the next erase, and the restart is the Harmony 700's
 
 `todo.md` 1.4.1: read the cache drop and the restart in the Harmony 650's own firmware, then send each
@@ -36811,6 +37093,7 @@ rail text. All corrected. **The two reviewers disagreed on the store's size**: t
 asserted in the test, name two, and the scan bound is per block, so both are right about what they
 measured.
 
+<a id="s283"></a>
 ## 283. On the Harmony 650 a changed delay is live straight after the write, and a restart resets the clock
 
 `todo.md` 1.4.2: the first write to arch 14 that changes something, one device's power on delay
@@ -37123,6 +37406,7 @@ flag test blind to arithmetic writes; and the restart ordinals disagreeing betwe
 corrected.
 
 
+<a id="s284"></a>
 ## 284. The firmware owns state variables 0 to 17 on arch 8, 12 and 14, and 0 to 12 only on arch 9
 
 **Section 138's boundary is arch 9's and was read as everyone's.** It cut the firmware's block at 12
@@ -37267,6 +37551,7 @@ loosely in places. All corrected, and its account of the Harmony One's gate, a b
 read as the sum's compare, was checked and corrected in turn: that branch is the flag test, and the
 compare is at `0x2A27C`.
 
+<a id="s285"></a>
 ## 285. Arch 14's device list and device mode screens are read and composed, and a composed device works on the Harmony 650
 
 **The device list reader found no row on any arch 14 configuration, and that was the row's shape
@@ -37483,6 +37768,7 @@ whose key does not send its command.
   to 124 and that selected the label font again each failed the first.
 * `docs/config-format.md`, `todo.md`, `docs/status.md` and the `writing-a-config` skill.
 
+<a id="s286"></a>
 ## 286. The Harmony 650's introduction tour is one list, and skipping it is the form Logitech's own compiler writes
 
 **After a write the Harmony 650 opened Logitech's introduction tour**, Danny reports, after section
@@ -37625,6 +37911,7 @@ failing to follow a skipped reload.
 * `docs/config-format.md`, `todo.md` and `docs/status.md`.
 
 
+<a id="s287"></a>
 ## 287. Every arch 14 command opens with a delay step of three lists, and a composed device now gets all three
 
 **Todo 1.2.6, and it closes an open reading of section 285.** Every send list Logitech's compiler writes
@@ -37797,6 +38084,7 @@ commands stop sending from device mode once they carry the prelude.
   asserts the prelude where it asserted the bare pair as a known deviation.
 * `docs/config-format.md`, `todo.md`, `docs/status.md` and the `writing-a-config` skill.
 
+<a id="s288"></a>
 ## 288. An arch 14 device switches on through its power command and then its power on delay, and a composed device now does too
 
 **Todo 1.2.8.** Section 287 gave a composed device the inter device delay and left the power on delay
@@ -37932,6 +38220,7 @@ to it goes out without the wait its variable holds.
   composed 650 device read back through the same readers; the four host test asserts the on list.
 * `docs/config-format.md`, `todo.md`, `docs/status.md` and the `writing-a-config` skill.
 
+<a id="s289"></a>
 ## 289. An arch 14 activity menu is the two row device list with its own rows, and a composed activity now gets a row on it
 
 **Todo 1.2.3.** `composeActivityMenuRow` built a Harmony One row and refused everything else, so an
@@ -38077,6 +38366,7 @@ composed row that shows its label and starts nothing when either of its buttons 
   refusal.
 * `docs/config-format.md`, `todo.md` and `docs/status.md`.
 
+<a id="s290"></a>
 ## 290. An arch 14 activity has a start up screen of its own and a working screen shaped like a device page, and a composed activity now gets both
 
 **Todo 1.2.9.** Section 289 put a composed activity on the Harmony 600, 650 and 700 activity menu and
@@ -38277,6 +38567,7 @@ bring back.
   configurations, the composed activity on all four, and the refusal test moved to the Harmony 525.
 * `docs/config-format.md`, `todo.md` and `docs/status.md`.
 
+<a id="s291"></a>
 ## 291. A composed activity runs on the Harmony 650: its row, its two screens, its commands and the way back
 
 **Todo 1.4.4**, the arch 14 counterpart of section 279. Sections 289 and 290 composed an activity's
@@ -38345,6 +38636,7 @@ outside a write of ours.
   lists: `h650_pre144_region` and `h650_post144_region`.
 * `todo.md` and `docs/status.md`.
 
+<a id="s292"></a>
 ## 292. The Harmony 650's screen light timeout is a timer in the configuration, and MyHarmony calls it GlowTime
 
 **Asked for from the bench**: the 650's screen goes dark after six or seven seconds, which is too soon
@@ -38497,6 +38789,7 @@ and two test titles and an off arch 14 assertion that could not fail. Each is co
   650 holds at the end of this section.
 * `docs/config-format.md`, section 43's open question, `todo.md` and `docs/status.md`.
 
+<a id="s293"></a>
 ## 293. A Harmony One screen states its paging in three places, and a composed activity past a full menu now opens a page
 
 **Asked for by `todo.md` 1.2.2**: a fourth activity on a Harmony One whose activity menu page already
@@ -38677,6 +38970,7 @@ check that no text any screen drew is lost but the menu's own old total.
   growths, the nine device list totals, and section 275's two totals.
 * `docs/config-format.md`, `todo.md` and `docs/status.md`.
 
+<a id="s294"></a>
 ## 294. An arch 14 activity's own device list is the idle one with its devices first, and a composed activity now gets one
 
 **Asked for by `todo.md` 1.2.10**: section 290 composed an activity's two screens and pointed the key
@@ -38823,6 +39117,7 @@ placeholder's device asserted nowhere, which the calibration test now counts, 63
   on the three configurations the end to end test composes a menu row on.
 * `docs/config-format.md`, `todo.md` and `docs/status.md`.
 
+<a id="s295"></a>
 ## 295. A Harmony 700 installs its firmware from a staged copy in external flash, and one stuck in safe mode was repaired by asking it to install its own
 
 A second hand Harmony 700 arrived showing the safe mode screen at every start. It is on the bench as
@@ -38994,6 +39289,7 @@ changing anything outside the damaged page, was run and did not happen.
 * `packages/usb/test/firmware.test.ts`: the images, the repair, the scope, and the rail's refusals.
 * `docs/usb-protocol.md`, the `recovering-a-remote` skill, `CLAUDE.md` and `todo.md`.
 
+<a id="s296"></a>
 ## 296. A Harmony Desktop sync on a running Harmony 700 writes no firmware and appends two records to its settings store
 
 The bench Harmony 700 of section 295, running its 2.5 application after the repair, synced once more with
@@ -39071,6 +39367,7 @@ records that were not appended by a sync.
   container being `h700_gspm`'s. The two configuration reads stay unregistered, being measured and not
   asserted, as the table says.
 
+<a id="s297"></a>
 ## 297. The bench Harmony 700 was taken from firmware 2.5 to 2.8 by staging Logitech's image and letting it install itself
 
 Danny's decision of 29 September 2026, decision 18: the one route by which this project writes flash
@@ -39182,6 +39479,7 @@ flash, or a remote that did not report 2.8 afterwards. None happened.
 * `tests/test_harmony_700_status_byte.py`: the 2.5 application's selector 6 arm and `0x19868`, decoded.
 * `docs/decisions.md` decision 18, `CLAUDE.md`, the `recovering-a-remote` skill and `todo.md`.
 
+<a id="s298"></a>
 ## 298. The Harmony 700's 2.8 application handles the update status byte as 2.5 does, and both builds' restart is read
 
 Section 297 left the rail refusing to stage on a Harmony 700 running 2.8 from application mode,
@@ -39293,6 +39591,7 @@ the escape's `0x02`.
 * `packages/usb/test/firmware.test.ts`: 2.8 allowed for staging and reinstall, and 2.3 in application
   mode refused, since no application build of that number is read.
 
+<a id="s299"></a>
 ## 299. The Harmony 700's 2.8 cache drop is the 0.2 builds' drop at other addresses, so the configuration writer admits 2.8
 
 `write-config.ts` refuses a commit on a firmware build whose cache drop and restart nobody has read,
@@ -39381,6 +39680,7 @@ settings store changes on a drop followed by an erase anywhere but `0x030000`.
   whole arm's difference.
 * `packages/usb/test/rehearsal.test.ts`: the writer's build list.
 
+<a id="s300"></a>
 ## 300. The Harmony 700's first configuration block, written back unchanged
 
 `todo.md` L7's next step, and the fourth unit to take it after the spare Harmony One, the Harmony 525
@@ -39450,6 +39750,7 @@ the erase.
   and the read back.
 * The run's output is in the lab beside the reads, `h700_rehearsal_log`.
 
+<a id="s301"></a>
 ## 301. The Harmony 700's first configuration change: a power on delay raised and put back, and both heard
 
 `todo.md` L7's last item: a real write to the Harmony 700 with `write-config.ts`, the unit running
@@ -39581,6 +39882,7 @@ that moves with it, or a region read after the revert that differs from the one 
   maximum, both writes' journals and the stopped one's, the three runs' gaps on both clocks, and the
   receiver's clock against a repeat.
 
+<a id="s302"></a>
 ## 302. The Harmony 600's first configuration block, written back unchanged
 
 `todo.md` L6's second item, and the fifth unit to take it after the spare Harmony One, the Harmony
@@ -39655,6 +39957,7 @@ block that changed across the erase.
   the erase, the neighbour check and the read back.
 * The backup and its notes are in the lab, `20261001T0900Z-h600-backup-NOTES.md` beside the reads.
 
+<a id="s303"></a>
 ## 303. A delay saved on an arch 14 remote overrides the configuration's, and the Harmony 600 had one for the delay we changed
 
 `todo.md` L6's third item: the Harmony 600's first configuration change, the KPN box's power on delay
@@ -39841,6 +40144,7 @@ does not hold after a start; a configuration whose saving table writes another d
   and the rail.
 * The lab note is `work/plan-L6/settings-store-NOTES.md`.
 
+<a id="s304"></a>
 ## 304. The settings store is read and written over USB by a version request carrying a payload, and the read only allow list let it through
 
 `todo.md` L9's first question, after section 303: a delay saved on the remote wins over the
@@ -39968,6 +40272,7 @@ read passes the transport; the write is refused and needs a rail of its own.
 * `tests/test_arch14_write_target.py`, `AVersionRequestWithAPayloadIsASettingsAndMemoryCommandOnArch14`.
 * `docs/usb-protocol.md`, `todo.md` L9 and `CLAUDE.md`'s rail.
 
+<a id="s305"></a>
 ## 305. The settings store written over USB: the Harmony 600's saved KPN delay cleared, and on the 0.2 build a successful write answers 1
 
 `todo.md` L9 after section 304: an editor that changes a delay on an arch 14 remote has to be able to
@@ -40238,6 +40543,7 @@ whose stored copies overrun it, or leave room for another.
   against `SHA256SUMS`, and the calibration devices read through the one door.
 * `docs/usb-protocol.md`, `docs/config-format.md` and `CLAUDE.md`'s list of what has been written.
 
+<a id="s306"></a>
 ## 306. A power press held for a stated time is a frame count the compiler fits to the hold
 
 **Corrected by sections 307 and 308, the same day.** Section 308 has the rule: as many frames as start
@@ -40395,6 +40701,7 @@ press sends more than one frame would separate the floor from counting starts.
 * The two compiles are lab fixtures `h700_power_hold_compile` and `h650_power_hold_compile`, out of the
   corpus since no remote ever held them, and in the golden vectors.
 
+<a id="s307"></a>
 ## 307. A held power press counts the frames that start inside the hold in five families, and one fewer for the Panasonic power codes
 
 **Corrected by section 308, the same day.** The two groups below are one rule seen through the lengths
@@ -40546,6 +40853,7 @@ from the definition's own opening segment.
 * The three compiles are lab fixtures `h700_power_hold_compile_2`, `h650_power_hold_compile_2` and
   `h700_power_hold_compile_3`, out of the corpus and in the golden vectors.
 
+<a id="s308"></a>
 ## 308. A held power press holds as many frames as start inside the hold, on the frame lengths Logitech's definition states
 
 **2 October 2026, todo L9.** Section 307 left three readings, none tested ahead. The **long gap** and the
@@ -40664,6 +40972,7 @@ enough, would separate this from counting whole sent copies.
 * `docs/config-format.md`, the held power entry, restated.
 * The compile is the lab fixture `h700_power_hold_compile_4`, out of the corpus and in the golden vectors.
 
+<a id="s309"></a>
 ## 309. A held power record is its press's frames cycled to the count, and every block's trailing microsecond comes off before its gap is split
 
 **2 October 2026, todo 4.3.4.** Section 308 says how many frames a held power step holds. This is what
@@ -40804,6 +41113,7 @@ quantity and is spelled with the microsecond carved off after the split.
   four tests.
 * Section 174 corrected in place, and `docs/config-format.md` under how the generator spells a block.
 
+<a id="s310"></a>
 ## 310. Base slot 3's boot read fills the counter of time since the build, and the clock comes from base slot 13 on the Harmony 650 too
 
 **Todo `todo-compile-650.md` 1.3**: what a configuration writer must stamp for the Harmony 650, and
@@ -40886,6 +41196,7 @@ routine on any of the three images; or, on the 650, a configuration whose base s
 * Section 38's paragraph corrected in place, and its two phrasings in `reference/superseded.md`.
 * `docs/config-format.md` under base slot 3.
 
+<a id="s311"></a>
 ## 311. The table after the end marker is mode 0's key list of single instructions, and a constant on each model
 
 **Todo `todo-compile-650.md` 10.4**: the table that follows the end marker had two fields with no
@@ -40979,6 +41290,7 @@ something while the "add an Activity" screen is up, scan 25 apart.
   The counts of 19, 10 and 34 are this section's and are not asserted.
 * `docs/config-format.md` under the key table, with the constants per model, and the arch 8 row's
   "identical" narrowed to the order of the events.
+<a id="s312"></a>
 ## 312. An arch 14 device list opens a page when its last one is full, and the page is the one Logitech compiles
 
 **Date:** 3 October 2026. **Status:** confirmed by construction and by calibration against Logitech's own
@@ -41097,6 +41409,7 @@ it; section 294 had already found that neither record of an activity does.
   section 285 refusal test rewritten to what is true now.
 * `docs/config-format.md`, the `writing-a-config` skill, `todo-compile-650.md` and `todo.md`.
 
+<a id="s313"></a>
 ## 313. Tag 5 is picking the activity that is already running, and what Logitech puts there
 
 **Todo `todo-compile-650.md` 3.9.** Section 273 measured what an activity's tag 5 list writes and
@@ -41213,6 +41526,7 @@ re-picking a Logitech activity showing its start up screen.
   and 700 runs the tag 5 list Logitech compiles": the composer's half, on four hosts.
 * `ACTIVITY_START_TAG`'s docstring corrected in place.
 
+<a id="s314"></a>
 ## 314. Which activity a key starts is one entry in a key map that is always installed
 
 **Todo `todo-compile-650.md` 3.11**: putting an activity on Watch TV, Watch a Movie or Listen to Music.
@@ -41276,6 +41590,7 @@ and getting anything but the activity named.
 * `packages/codec/test/inventory.test.ts`, "an activity key is one select in base slot 9 entry 1": the
   table above, counted.
 
+<a id="s315"></a>
 ## 315. The list after the end marker is stored in a hash table's bucket order, so mode 0's list can be generated
 
 **Todo `todo-compile-650.md` 10.4**: mode 0's list after the end marker, emitted from a rule rather than
@@ -41399,6 +41714,7 @@ or 700 list that differs from `modeZeroKeyList`.
   tie.
 * `docs/config-format.md` under the key table: the rule, and the correction of the canonical order.
 
+<a id="s316"></a>
 ## 316. An arch 14 activity menu opens a page when its last one is full, and the page is the one Logitech compiles
 
 **Date:** 3 October 2026. **Status:** confirmed by construction and by calibration against Logitech's own
@@ -41585,6 +41901,7 @@ body: the paging test's tally names each count it asserts.
   rewritten to what refuses `calibration_h600` now.
 * `docs/config-format.md`, the `writing-a-config` skill, `todo-compile-650.md` and `docs/status.md`.
 
+<a id="s317"></a>
 ## 317. Every screen byte of a Harmony 650 configuration is fixed, dynamic or the setup's, and seven tenths to three quarters is fixed
 
 **Todo `todo-compile-650.md` 7.2**: categorise every screen left as the same on every 650, dynamic, or
@@ -41810,6 +42127,7 @@ would mean structure is too strict; or a fixed mode whose pages render different
   * 3.13 leaves help and Remote Assistant out, and their screens are among the 216 other modes, which
     then need no generator; how many of the 216 they are is not counted here.
 
+<a id="s318"></a>
 ## 318. An arch 14 container's frame is laid out from its content, with the skin and the build time as arguments
 
 **Date:** 3 October 2026. **Status:** confirmed by construction over the thirteen arch 14 compiles the
@@ -41954,6 +42272,7 @@ from `relocate`'s.
   and a stated slot left empty.
 * `docs/config-format.md`, "What decides each byte of the frame on arch 14".
 
+<a id="s319"></a>
 ## 319. What the arch 14 device composer copied, built instead: the prelude's operands, the case order and the identifier
 
 **Date:** 3 October 2026. **Status:** confirmed by calibration against Logitech's own compiles and, for
@@ -42105,6 +42424,7 @@ order; a compile of an account holding a device numbered below one an earlier co
 * `docs/config-format.md`, base slot 14 and the arch 14 command lists; sections 287 and 288 corrected
   in place.
 
+<a id="s320"></a>
 ## 320. A catalogue device's power is wired the way Logitech's compiler wires it, the long press version and the catalogue's delays included
 
 **3 October 2026, `todo-compile-650.md` 2.2.** Section 309 composed the long press version, the record
@@ -42272,6 +42592,7 @@ against main. And the amounts test's docstring attributed commands it does not a
 * `docs/config-format.md`, the power wiring and which `0x7C` value a send gets.
 * `DEVICE_QUANTITY_DEFAULT`'s docstring in `inventory.ts`, corrected in place.
 
+<a id="s321"></a>
 ## 321. A device's inputs are two layers of state variables, and the catalogue states enough to compose them
 
 **Todo `todo-compile-650.md` 2.5, and 3.6**: a device's inputs, its input states and the commands that
@@ -42432,6 +42753,7 @@ variable already holds the value is read on the Harmony One only.
   refusals, the calibration table, and the composed activity.
 * `packages/codec/src/inputs.ts`, `docs/config-format.md` under base slot 13.
 
+<a id="s322"></a>
 ## 322. The clock counts the day of the month from 0 and the weekday from Sunday, so every date here was a day early
 
 **Every build date this project has reported was one day early, and every configuration it stamped set
@@ -42633,6 +42955,7 @@ the one its date has.
   `writing-a-config` skill and `docs/memory-map-525.md`; the dead phrasings in
   `reference/superseded.md`.
 
+<a id="s323"></a>
 ## 323. An activity's key map is two roles over the devices' own maps, and its screen is their own screen items
 
 **Todo `todo-compile-650.md` 3.7 and 3.8**: the activity's key map built from its roles, volume to one
@@ -42863,6 +43186,7 @@ the same label on that device's Devices screen.
   corner label census with the widths either side of the band as its control.
 * `docs/config-format.md` under base slot 9, and `reference/button-maps.md` for the arrows.
 
+<a id="s324"></a>
 ## 324. Base slots 0, 13 and 14 are built from a description, and the name tree's order is a hash order of the variable index
 
 **Date:** 3 October 2026. **Status:** confirmed by construction over the thirteen arch 14 compiles
@@ -43046,6 +43370,7 @@ two byte variable stating other values on an arch 14 compile.
   the stored order, the device and activity variables, and the refusals.
 * `docs/config-format.md` under base slots 0, 13 and 14.
 
+<a id="s325"></a>
 ## 325. A whole device's device mode is laid out by rules: hard keys by preference, the screen sorted, labels sized down a ladder of six
 
 **Logitech's compiler puts a catalogue device's whole command list into device mode by rules this
@@ -43322,6 +43647,7 @@ device has an earlier one; a counter or title off the stated places.
   twenty with every difference named, the held out LG, the composer page for page and the control.
 * `docs/config-format.md`, under the device mode pages on arch 14.
 
+<a id="s326"></a>
 ## 326. The two row device list on a Harmony 600, 650 or 700 is compiled and nothing enters it
 
 **Date:** 3 October 2026. **Status:** confirmed in the configurations and in five firmware builds; not
@@ -43507,6 +43833,7 @@ remote, any key or screen sequence that shows a device list two to a page.
 * `docs/config-format.md` under the arch 14 device list, `docs/usb-protocol.md`, sections 19 and 312
   corrected in place, `docs/how-a-harmony-works.md`, `docs/status.md` and `todo-compile-650.md`.
 
+<a id="s327"></a>
 ## 327. A sequence is one action list of calls and per device pauses: five of its six lists composed again exactly on the Harmony One, and inferred on the Harmony 600, 650 and 700
 
 A sequence is what Logitech's software calls a macro: up to 25 steps, each a command to one device or a
@@ -43727,6 +44054,7 @@ compile whose sequence differs from the composer's output in any of the five nam
   the composer on the Harmony 650 and the refusal at the boundary.
 * `docs/config-format.md`, under `0x7C` and base slot 10, and section 70 corrected in place.
 
+<a id="s328"></a>
 ## 328. What Logitech parks in front of a table is placed by a rule, and the picture bank and the page lists are in an order the pictures and the pages do not fix
 
 **Date:** 4 October 2026. **Status:** confirmed by construction over the thirteen arch 14 compiles of
@@ -43877,6 +44205,7 @@ where the test said 7, the same count the 7.5 run heard for the same code. Harmo
 * `docs/config-format.md`, "What decides each byte of the frame on arch 14", and section 318's open
   question answered in place.
 
+<a id="s329"></a>
 ## 329. The start variable, the flag, the activity keyed records and the menu marker, built instead of copied
 
 **Date:** 4 October 2026. **Status:** confirmed by calibration against Logitech's own compiles, with a
@@ -44018,6 +44347,7 @@ writing another variable or value, or a marker record other than 0 of 3.
 * `packages/codec/test/compose.test.ts`: the calibration on the thirteen and the 27, and the controls.
 * `docs/config-format.md`, under the arch 14 activity's enter list, the activity menu row and base slot 13.
 
+<a id="s330"></a>
 ## 330. A device mode page's chrome and a device mode's key map, built instead of copied, and one wrap rule
 
 **Date:** 4 October 2026. **Status:** confirmed by calibration against Logitech's own compiles, with a
@@ -44188,6 +44518,7 @@ Each is corrected above.
   `LABEL_WRAP_WIDTH`, and `wrapAtSpaces` exported over a width function.
 * `packages/codec/test/devicepage.test.ts`: the calibration on the thirteen and the controls.
 * `docs/config-format.md`, after section 325's table.
+<a id="s331"></a>
 ## 331. Several catalogue devices composed in one run are composing them one at a time, and they land where Logitech's compile of the same devices puts them
 
 **Date:** 4 October 2026. **Status:** confirmed by construction against five Logitech compiles that
@@ -44392,6 +44723,7 @@ alone; a configuration with more than 128 state variables that a remote runs.
   control.
 * `docs/config-format.md` under base slot 0.
 
+<a id="s332"></a>
 ## 332. The Harmony 600 and 650 fire every matching transition, a fired write fires its own, and Logitech resets a `-3` input after a power on
 
 Todo-compile-650 2.5. The combined bench file put a composed Panasonic TX-P42GT30E, "Plasma", on the
@@ -44586,6 +44918,7 @@ remote whose `InputType` reads anything but 3 before the start.
   silent skip.
 * Section 321 corrected in place; `reference/superseded.md`: "transition walker is unread".
 
+<a id="s333"></a>
 ## 333. Help is the running activity's own binding and the Remote Assistant is a branch on one variable, so a composed activity has neither
 
 **Todo `todo-compile-650.md` 3.13 and 4.3.2.** The 650 track builds without Help and without the
@@ -44755,6 +45088,7 @@ nothing. Each is corrected and the row walk is in the test.
 * `docs/config-format.md`, base slot 9: the key stack's indirections and order, and where Help is
   bound; the arch 14 enter list: the assistant chain and the setting.
 
+<a id="s334"></a>
 ## 334. An arch 14 menu page, built instead of copied off its menu's last page
 
 **Date:** 4 October 2026. **Status:** confirmed by calibration against Logitech's own compiles, with an
@@ -44908,6 +45242,7 @@ taken; none was overruled.
   pages.
 * `docs/config-format.md`, after section 330's table.
 
+<a id="s335"></a>
 ## 335. On the Harmony 650 the delay between devices holds back that device's own command, and on arch 14 it acts in All Off and Help as well as in an activity's start
 
 **Date:** 7 October 2026. **Status:** measured on the bench Harmony 650 with an infrared receiver, three
@@ -45108,6 +45443,7 @@ sentence about what Help screens send. All are corrected above, in the summaries
   650's features page, the docstrings of `sendPreludeCondition`, `SendPrelude` and the arch 14 delay
   notes in `compose.ts` and `sequence.ts`, and `reference/superseded.md`.
 
+<a id="s336"></a>
 ## 336. An arch 14 activity's start up screen, working screen and keyed cases, built instead of copied off another activity
 
 **Date:** 7 October 2026. **Status:** confirmed by calibration against Logitech's own compiles, with an
@@ -45289,6 +45625,7 @@ menu row too and that refuses in both codecs, so 18, 21 and 3 stand and the thre
 * `docs/config-format.md`, after the four records keyed by the activity counter.
 
 
+<a id="s337"></a>
 ## 337. On a Harmony One most screen commands wait the device's delay between devices before the code, and every one clicks first
 
 **The question came from the bench**: a command touched on a Harmony One's screen seems to go out a
@@ -45428,6 +45765,7 @@ a screen command sending its copy without the copy's silence.
 * `packages/codec/test/ir.test.ts`: the commands and their single shot copies on both remotes.
 * `docs/config-format.md` under `0x75` and the activity composer's send list; `docs/how-a-harmony-works.md`.
 
+<a id="s338"></a>
 ## 338. Every infrared record the Harmony 650's test setup composes is one Logitech compiled, and a power command repeats while held
 
 **Date:** 8 October 2026. **Status:** confirmed in the configuration, on one compile of seven devices;
@@ -45534,6 +45872,7 @@ same device.
 * `packages/codec/src/composecatalogue.ts`: the power exception removed under `full`.
 * `docs/config-format.md` under the record's three blocks.
 
+<a id="s339"></a>
 ## 339. A pass through device is switched on and set to its input, and given nothing else
 
 **Todo `todo-compile-650.md` 3.14.** MyHarmony lets an activity hold a device with no job, which its
@@ -45614,6 +45953,7 @@ on a key press.
   switch left out as the control, and the refusals.
 * `docs/config-format.md` under an activity's key map.
 
+<a id="s340"></a>
 ## 340. Keeping a device on between activities removes its switch off from the other activities' starts, and an activity's type does not choose its key alone
 
 **Todo `todo-compile-650.md` 3.10 and 3.11.** Two questions about what Logitech's compiler does with a
@@ -45756,6 +46096,7 @@ All Off leaves it out; for the key, a compile where saving an activity as `Custo
   with the door `MYHARMONY_ALLOW_FEATURE_WRITE` in `packages/corpus/src/myharmony.ts`.
 * `docs/config-format.md` under entry 1's activity keys.
 
+<a id="s341"></a>
 ## 341. An activity key emptied on a compile that had all three taken opens the "add an Activity" screen, on the Harmony 650
 
 todo-compile-650 3.11's last part was to see an emptied key on the remote. Section 340 left two routes,
@@ -45822,6 +46163,7 @@ where an empty key calls something other than the two instruction list.
 * The run files in the lab's `reads/`, `20261008T141329Z`, `20261008T142549Z`, `20261008T142833Z` and
   `20261008T143827Z`, and the configuration in `work/bench-3-11/`.
 
+<a id="s342"></a>
 ## 342. A composed sequence runs on the Harmony 650, and its pause holds back every device of the activity
 
 todo-compile-650 4.2. Section 327 composed sequences in the Harmony One's form and listed five things
@@ -45881,6 +46223,7 @@ long pause into runs; or a rerun where a key pressed during a pause is sent at o
   header of `packages/codec/src/sequence.ts`.
 * The configuration and its write journals in the lab's `work/bench-4-2/`.
 
+<a id="s343"></a>
 ## 343. Logitech's compile of a sequence on the Harmony 650 has the composer's form, and sends single block copies of the codes
 
 `todo-secure-logitech.md` 3.7 and `todo-compile-650.md` 4.2. Section 342 heard our sequence run; this is
@@ -45933,6 +46276,7 @@ whose delay is not 100 ms.
   `ARCH14_INFERRED` down to two.
 * `packages/codec/src/sequence.ts`, `ARCH14_INFERRED` and the header; `docs/config-format.md`.
 
+<a id="s344"></a>
 ## 344. A Harmony 650 activity shows the favourites of the one device that changes its channels
 
 Found at the bench while gathering favourite channels for `todo-secure-logitech.md` 3.6. Four favourites
@@ -45984,6 +46328,7 @@ shows the favourites of two devices.
   files, and one number sender record per device whose favourites are shown.
 * `docs/how-a-harmony-works.md`, the favourite channel section; `reference/remotes/harmony-650/features.md`.
 
+<a id="s345"></a>
 ## 345. MyHarmony's Remote Assistant setting decides whether Logitech compiles the Assistant's screens at all
 
 `todo-compile-650.md` 4.3.2. Every Logitech compile in the lab had the Remote Assistant on, so what the
@@ -46035,6 +46380,7 @@ none.
   in the on file, none in the off file, and the counts that do and do not move.
 * `reference/remotes/harmony-650/features.md`, the `RemoteAssistant` row.
 
+<a id="s346"></a>
 ## 346. MyHarmony's tilt sensor setting is one flag instruction, `3F F101`, that the compile leaves out when it is off
 
 `todo-compile-650.md` 4.3.3. The tilt sensor wakes the remote when it is picked up. It is set in MyHarmony's
@@ -46084,6 +46430,7 @@ A Logitech compile with the sensor off that holds `3F F1xx`, or one with it on t
 * `reference/remotes/harmony-650/features.md`, the `TiltSensor` row.
 
 
+<a id="s347"></a>
 ## 347. The firmware's own wiring on arch 14 is built from a description, and with the tilt sensor off a binding goes too
 
 **Date:** 9 October 2026. **Status:** confirmed by construction over the thirteen arch 14 compiles
@@ -46280,6 +46627,7 @@ model's tie; a Logitech compile with the tilt sensor off that binds `0x17`.
   over the thirteen, the event map and the named screens, the tie alternatives, the parameter block per
   model, the lists not built, and the refusals.
 * `docs/config-format.md`, "The firmware's own wiring on arch 14".
+<a id="s348"></a>
 ## 348. A family whose definition states no repeat count repeats the device's own count
 
 `todo-process-logitech.md` 2.2. A press sends a code's start once, its repeating part some number of
@@ -46495,6 +46843,7 @@ device's count.
 * `packages/codec/bin/composecensus.ts`, `make composecensus`.
 * `docs/config-format.md`, the press count paragraph.
 
+<a id="s349"></a>
 ## 349. A sequence on the Harmony 650 sends each command's one block copy, the group's own where there is one, and the composer now makes the same record
 
 `todo-compile-650.md` 5.2.4. Section 343 found that Logitech's compile of a sequence on the Harmony 650
@@ -46595,6 +46944,7 @@ or a group holding two copies of one record with the sequence sending the later.
   `packages/codec/src/compare.ts`, `listSends`, the view's own reading of what a list sends.
 * `docs/config-format.md` under "A sequence is one action list of calls and per device pauses".
 
+<a id="s350"></a>
 ## 350. The rhythm table's blocks hold the count their measured records repeat, and the composer now builds them at the device's own
 
 `todo-process-logitech.md` 2.2.5, which section 348 left open. A press sends a code's start once, its
@@ -46779,6 +47129,7 @@ compile holding a `MemorexO1 32 Bit` code of other than twenty set bits with the
   reread.
 * `docs/config-format.md`, the press count paragraph; `reference/superseded.md`, the twenty set bits.
 
+<a id="s351"></a>
 ## 351. MyHarmony gives a Harmony 600, 650 or 700 owner no control over the activity menu's order, so ours follows the setup description
 
 `todo-compile-650.md` 5.2.2. The comparison of 5.2 put the test setup's five activities in a different
@@ -46857,6 +47208,7 @@ account's `ActivityOrder` where the two differ, or a MyHarmony control that reor
   missing activity still shows.
 * `packages/codec/src/compare.ts`, `CompareOptions.menuOrder`.
 
+<a id="s352"></a>
 ## 352. An arch 14 activity's own device list, built instead of copied off the idle list and another activity's list, its labels and the order of the devices it does not use still read
 
 **Date:** 9 October 2026. **Status:** confirmed by calibration against every activity device list of
@@ -47051,6 +47403,7 @@ test, and test titles that do not claim the labels are built. All taken; none ov
   the controls.
 * `docs/config-format.md`, after section 294's paragraph.
 
+<a id="s353"></a>
 ## 353. A container is linked for one flash address, so the 650's status screen library needs moving before it can stand in as a configuration
 
 `todo-compile-650.md` 7.1, the first probe of what the remote demands at minimum. The candidate was the
@@ -47139,6 +47492,7 @@ well was looking where section 249's table said, base slot 4, which was the tabl
 
 * `packages/codec/test/relocate.test.ts`: the four rebase tests.
 
+<a id="s354"></a>
 ## 354. The Harmony 650 accepts the 7.1 probe as its configuration, on its three markers alone
 
 `todo-compile-650.md` 7.1.3, from the firmware, and 7.1.4, on the remote. Section 353 left open which of
@@ -47222,6 +47576,7 @@ sections 249, 253, 257, 282 and 347; Logitech's client does not validate a conta
   the codec's parser, checksum included, on the probe and the 6.2.13 file, with the probe's figures
   pinned, and one byte of the end marker or the body changed giving the third marker and the checksum.
 
+<a id="s355"></a>
 ## 355. The Harmony 650 draws none of a configuration's thirty status screens, as far as its code reads
 
 `todo-compile-650.md` 7.1.5, code only: which screens a person sees that no key leads to. Section 354
@@ -47305,6 +47660,7 @@ structure at other addresses, section 257, and was not read for this; arch 12 (H
   callers, the five call sites and their codes, the select bit cleared before code 22, Missing License
   clearing the verdict, and the sleep state cleared before the loop head, on both builds.
 
+<a id="s356"></a>
 ## 356. The idle device list's, the activity menu's and Off's whole records are built from a description, the menu in the setup's order
 
 **Date:** 9 October 2026. **Status:** confirmed by construction over the thirteen arch 14 compiles
@@ -47477,6 +47833,7 @@ description, or whose rebuild from the blinded bytes differs.
   the blind control, Off's text and page, the mode 85 measurements, the four failing controls, the row
   order, and the composed comparison.
 
+<a id="s357"></a>
 ## 357. The firmware's own screens are built whole from a description, and the welcome tour's ten screens can be left out
 
 **Date:** 9 October 2026. **Status:** confirmed by construction over 21 arch 14 compiles, 2 Harmony 600,
@@ -47698,6 +48055,7 @@ its low battery flag; a skipped tour whose screens something enters.
 * `docs/config-format.md`, after the three screen records; section 311's open item and the table after the
   end marker's Harmony 700 row.
 
+<a id="s358"></a>
 ## 358. Every text a configuration draws is generated from its word: its codes, its place, and whether it is drawn inline or by reference
 
 **Date:** 9 October 2026. **Status:** confirmed by construction over 22 arch 14 compiles, 2 Harmony 600,
@@ -47993,6 +48351,7 @@ wrong.
   text generated and its six changed lengths.
 * `docs/config-format.md`, after the firmware's own screens, and the start up title limit in its two places.
 
+<a id="s359"></a>
 ## 359. The catalogue composer reads a code at the widths its family's definition states, and writes 39074 commands more
 
 **Date:** 9 October 2026. **Status:** confirmed by construction against one Harmony One compile, three
@@ -48205,6 +48564,7 @@ record of a gap longer than a word spelt as maximal words and a remainder under 
   78, the three devices against the compile with their three controls, `joinedGaps`, and the Harmony 350.
 * `docs/config-format.md`, after the press count paragraphs.
 
+<a id="s360"></a>
 ## 360. The lists the firmware's wiring calls are built from a description, and the three left are the delay restore, the Assistant's gate and the Help list of the key read as All Off
 
 **Date:** 9 October 2026. **Status:** confirmed by construction over the 22 arch 14 compiles of sections
@@ -48472,6 +48832,7 @@ Logitech compile with no activities whose scan 4 list maps the location.
   delay table.
 * `todo-later.md` 3.3.5.1: the restore's device constant rule and order, for when the restore is built.
 
+<a id="s361"></a>
 ## 361. A family spelt otherwise than its definition is found by Logitech's own protocol id, and a code the family's whole block does not take is built from the definition
 
 **Date:** 10 October 2026. **Status:** confirmed by construction against two Harmony One compiles for two
@@ -48708,6 +49069,7 @@ count.
   against the compiles with their controls.
 * `docs/config-format.md`, after section 359's paragraphs.
 
+<a id="s362"></a>
 ## 362. A setup file and a donor make a whole Harmony 650 configuration, and what the donor still supplies is the devices, the activities with their screens and Help, the infrared, the fonts and the pictures
 
 **Date:** 10 October 2026. **Status:** confirmed by construction on the Harmony 650's test setup with
@@ -48986,6 +49348,7 @@ person something other than the donor in a cell outside the activity menu.
   attribution.
 * `docs/config-format.md`, base slot 10, every place that names a list.
 
+<a id="s363"></a>
 ## 363. Six of a Harmony 650's pictures are drawn by rule and built, the four backgrounds 9.1 names are artwork, and a picture or a glyph does re-encode from its pixels
 
 **Todo `todo-compile-650.md` 9.1**: build the backgrounds ourselves, the cross dividing the four corners, the
@@ -49209,6 +49572,7 @@ picture's bytes, the 98 one step pixels included.
 * `docs/config-format.md`, the picture object's encoding and the 650's pictures by source.
 * `edit.ts`'s docstring and `docs/status.md`, the rail narrowed.
 
+<a id="s364"></a>
 ## 364. The assembly composes the setup's devices and activities a donor lacks, the smallest compile takes no composer, and an activity's screen is an input of its own
 
 **Date:** 10 October 2026. **Status:** confirmed by construction on the Harmony 650: the test setup's fifth
@@ -49443,6 +49807,7 @@ now asserted; the `<manufacturer>_<model>` name was fitted to this project's own
 count was a second copy of the model table's, now an option the caller takes from it. The start route's
 attribution and the 1308 bytes, untested before, are asserted now.
 
+<a id="s365"></a>
 ## 365. A toggling code's record holds the code twice, as stated and with its toggle bit flipped, the firmware alternates the two, and a release sits behind the third pointer
 
 **Date:** 10 October 2026. **Status:** confirmed. The two group layout is confirmed on every record of a
@@ -49741,6 +50106,7 @@ way; a compile holding a release other than in the tail, or with the stored micr
 * `packages/codec/test/togglegroups.test.ts` and `tests/test_toggle_groups.py`, the compiles and the firmware.
 * `docs/config-format.md`, the record header's count, the group a send plays and the release.
 
+<a id="s366"></a>
 ## 366. Each screen state gets one flat background colour, Logitech's pictures do not follow the states, and the idle state takes a battery program of its own
 
 `todo-compile-650.md` 9.1.2. **Decided on 10 October 2026 by the project owner**: the designed
@@ -49871,6 +50237,7 @@ Where it lives:
 * `packages/codec/test/backgrounds.test.ts`: the closure, the 13 compiles, the five controls and the
   Harmony 700's refusal.
 
+<a id="s367"></a>
 ## 367. A glyph's pixel is stored high byte first, like a picture's, and the codec read it the other way
 
 **Found while drawing section 366's screens**: every text came out green, mint or pink, where the
@@ -49913,6 +50280,7 @@ re-encoded from Logitech's bytes by an encoder and decoder that agreed.
 * `packages/codec/test/render.test.ts`: the five colours, and two neutral read the other way.
 * `docs/config-format.md`, the glyph stream's pixel order.
 
+<a id="s368"></a>
 ## 368. Logitech's Harmony 650 fonts fall into nine faces by measurement, and the font table is rebuilt in Oxanium with every printable character in every set
 
 `todo-compile-650.md` 8.2, decisions 19 and 20. Sources checked first: Logitech's own fonts in the 13
@@ -50041,6 +50409,7 @@ too, the table called about as large on every compile, and the borrowing called 
   `packages/codec/src/families/four-slot/fonts.ts`, which `fonttable.ts` asks as `Family.fonts`.
 * `packages/codec/test/fonttable.test.ts`.
 
+<a id="s369"></a>
 ## 369. A queued screen program is indexed by one byte, so only base slot 11's first 256 entries can run
 
 **Found because section 366's file stalled the Harmony 650**, and the control there pinned it on the idle
@@ -50098,6 +50467,7 @@ seek of base slot 11 on an arch 14 image.
   idle corner as entry 5 plus `0x1900`.
 * Section 73 corrected in place; `docs/config-format.md`, base slot 11 and the `0x73` row.
 
+<a id="s370"></a>
 ## 370. Our letters are blended into the colour under them, one copy of a set per background, where Logitech's are one bit
 
 `todo-compile-650.md` 8.2.6, decision 22. Sources checked first: Logitech's own sets in the 13 Harmony 650
@@ -50192,6 +50562,7 @@ letter is mostly greys. Not reproduced, so open and watched.
 * `packages/codec/test/blending.test.ts`; `fonttable.test.ts`, the shape count.
 * Section 368's shape count corrected in place.
 
+<a id="s371"></a>
 ## 371. A configuration in our letters is measured in our letters' widths, and a corner label too wide for its font goes down a size
 
 `todo-compile-650.md` 8.2.3. Harmony 650 only: our letters are built for its faces and nothing else.
@@ -50280,6 +50651,7 @@ codec, section 372, and the same assembly counts 93675 glyph bytes, all of them.
   assembly in our letters and the smallest compile's refusals; `activityroles.test.ts`, no activity of the
   13 compiles refused and `Antenna`'s pages Logitech's on the second Harmony 700 copy.
 
+<a id="s372"></a>
 ## 372. Our letters are drawn from Oxanium's outlines in the codec, and hinting is what had put them on Logitech's rows
 
 `todo-compile-650.md` 10.8. The Harmony 650's letters only, the nine faces of section 368; the rasteriser is
@@ -50349,6 +50721,7 @@ with the default weights the assembly is byte equal to before.
 * `packages/codec/test/typeface.test.ts`, the rasteriser on known shapes, each face's rows and the digest;
   `blending.test.ts` and `fonttable.test.ts`, the alphabet's forms and structures in the new letters.
 
+<a id="s373"></a>
 ## 373. Our own six pictures that are no state's background, icons drawn from a font on the placed file
 
 `todo-compile-650.md` 9.1.2.2. The Harmony 650's colour look of 2026 only, the six artwork pictures of
@@ -50400,6 +50773,7 @@ where the attribution is rebuilt. The start up icon becomes a FreeHarmony design
 * `packages/codec/test/icons.test.ts`, the names, the placement and the pictures' digest; `assemble.test.ts`,
   the 9.1.2.2 assembly and its refusals.
 
+<a id="s374"></a>
 ## 374. An empty Harmony 650 configuration's wiring and screens, built with no Logitech file
 
 `todo-compile-650.md` 11.1.1.2 and 11.1.1.3, plan 008 steps 2 and 3. Sources checked first: the
@@ -50481,6 +50855,7 @@ in which the empty file's Back or Devices key does not reach the other menu.
   rebuilt, the menus' keys followed, the copies and the bank, and the corner program against all 24
   compiles, with a control that one changed byte fails it.
 
+<a id="s375"></a>
 ## 375. The empty Harmony 650 configuration read back, and every byte of it attributed to a generator
 
 **Status: confirmed, on 24 Harmony 600, 650 and 700 compiles and on the empty configuration of section
@@ -50562,6 +50937,7 @@ or base slot 9 entry 1's scan 4 list writes another variable than the rows; a pi
 * `packages/codec/test/empty.test.ts`: the empty configuration read back and attributed whole, and both
   structural readings against all 24 compiles.
 
+<a id="s376"></a>
 ## 376. Composing the first devices onto the empty Harmony 650 configuration
 
 **Status: confirmed for the switch off on the Harmony 525 and the Harmony One, built for the Harmony
@@ -50632,6 +51008,7 @@ or whose idle key map maps through no record of that shape.
   the list of both, every byte claimed and the file round tripping; `test/empty.test.ts`: the first and
   second device onto the empty configuration, with a control that a write of 1 fails it.
 
+<a id="s377"></a>
 ## 377. The first catalogue device on the empty Harmony 650: its look, its fonts and the idle list's first row
 
 `todo-compile-650.md` 11.1.1.5. After section 376 the device composer stopped at its template, which read
@@ -50713,6 +51090,7 @@ ones, or a composed device list page that `menuPageDifference` refuses.
   fonts read back off the pages equal to the described ones, and the idle list's one row in the idle look;
   `test/assemble.test.ts`: the two device compile's new refusals.
 
+<a id="s378"></a>
 ## 378. The assembly on the empty Harmony 650 configuration
 
 `todo-compile-650.md` 11.1.1.5. Section 377 composed a device onto the empty configuration directly; the
@@ -50767,6 +51145,7 @@ whose attribution carries anything but the composed device.
 * `packages/codec/test/empty.test.ts`: the assembly on the empty configuration, its steps, its one row,
   a copy for every page, what it carries, and the blended donor refused.
 
+<a id="s379"></a>
 ## 379. The first activity on the empty Harmony 650 configuration
 
 `todo-compile-650.md` 11.1.1.5. The assembly composes the first activity onto the empty configuration now:
@@ -50859,6 +51238,7 @@ or a bench run on which pressing a key after returning from device mode sends no
   scan 4 with every key empty built as with its keys set; `test/assemble.test.ts`: the two device
   compile's new refusal.
 
+<a id="s380"></a>
 ## 380. The whole test setup on the empty Harmony 650 configuration
 
 `todo-compile-650.md` 11.1. The test setup, seven devices and five activities, one of them with its own
@@ -50942,6 +51322,7 @@ compile's, a name with a space, or a difference `compareViews` finds outside the
 * `packages/codec/test/empty.test.ts`: the whole test setup on the empty configuration, its activities,
   every device list's order, its look and what it carries.
 
+<a id="s381"></a>
 ## 381. The test setup built from nothing runs on the Harmony 650
 
 The file of section 380, the whole test setup built on the empty configuration by our own generators and
@@ -50994,6 +51375,7 @@ or the wrong device's code, or an activity's start that differs from the list ab
   `packages/bench/test/irmonitor.test.ts`, one of the camera's frames held unreadable and a press, a
   repeat and a bare repeat not.
 
+<a id="s382"></a>
 ## 382. The empty configuration builds for the Harmony 700, with two choices of ours where no Logitech compile has been read
 
 `todo-compile-700.md` 1.1 and 1.2. The empty builder of plan 008, which named the Harmony 650 throughout,
@@ -51079,6 +51461,7 @@ not leave "USB Connected" when the cable comes out.
   refused with no activity; `packages/codec/test/icons.test.ts`: the 650's six pictures unchanged and the
   700's five pinned.
 
+<a id="s383"></a>
 ## 383. The empty configuration runs on the Harmony 700, and More Activities shows "add Activities" only as Logitech's empty compile binds it
 
 `todo-compile-700.md` 1.4. Section 382's file, blended, 548006 bytes, was written to the bench Harmony 700 on
@@ -51149,6 +51532,7 @@ Activities on our empty Activities screen does anything other than show "add Act
   first activity composed onto it maps back.
 * `packages/bench/irtests/done/700-empty.json`, the test; its run is in the lab's `reads/`.
 
+<a id="s384"></a>
 ## 384. The Harmony 700 shows its charging screens only on a charger whose data lines it reads as a dedicated charger
 
 `todo-compile-700.md` 1.4, the open half of section 383: no charging screen showed on the bench. With our
@@ -51244,6 +51628,7 @@ lines are measured both high at the test on which it shows no charging screen an
 * The lab's `work/charging-700/`: the listings of the 700 2.8 and 650 0.2 and 0.4 images the reading was
   done on.
 
+<a id="s385"></a>
 ## 385. The test setup assembles on the Harmony 700's empty configuration, and the setup comparison finds nothing different from the Harmony 650's
 
 `todo-compile-700.md` 2.1: the assembly takes skin 66, and every measurement a composer or the assembly holds
@@ -51314,6 +51699,7 @@ ours against ours, and what Logitech's compiler would make of it for a 700 is no
   setup comparison, the activity keys and the drawn device lists; and a Logitech 700 compile read as not ours
   and refused as a donor.
 
+<a id="s386"></a>
 ## 386. The test setup runs on the Harmony 700, and the Off screen waits for a mark no file of ours set
 
 `todo-compile-700.md` 2.2 and 2.3: the test setup of section 385 written to the bench Harmony 700 and run with
@@ -51381,6 +51767,7 @@ mark reads 0 after the write's restart.
 * The runs: `packages/bench/irtests/done/700-setup-*.json` and `700-title-lower.json`, their recordings in the
   lab's `reads/`.
 
+<a id="s387"></a>
 ## 387. The Harmony 600 built from nothing runs, and shows no Off screen with the mark it waits for at 1
 
 `todo-compile-600.md` 1.1 to 1.4: the empty configuration of section 374 built for the Harmony 600, what the
@@ -51505,6 +51892,7 @@ file's `first`; a 600 that shows `0x0446` as black or as white.
 * `packages/bench/irtests/done/600-empty.json` and `600-empty-mark-off.json`, the tests; their runs and the reads
   are in the lab's `reads/`.
 
+<a id="s388"></a>
 ## 388. The test setup assembles on the Harmony 600's empty configuration in one grey, and compares equal to the Harmony 650's
 
 `todo-compile-600.md` 2.1: the assembly takes skins 71 and 73 on a donor of ours, `OUR_DONOR_SKINS`, as it took
@@ -51571,6 +51959,7 @@ donor's.
 * `packages/codec/test/empty.test.ts`: the five device setup on both models, page by page and by attribution,
   and Logitech's 600 compiles refused as donors.
 
+<a id="s389"></a>
 ## 389. The five device test setup runs on the Harmony 600 as the file predicts
 
 `todo-compile-600.md` 2.2: section 388's five device setup, with smoothed letters in grey 2, written to the
@@ -51609,6 +51998,7 @@ A frame of this run that the written file does not send at that step.
 * `packages/bench/src/irmonitor.ts`: `BENCH_CONFIGS` names the 600 by its current read.
 * `packages/bench/irtests/done/600-setup-five.json`, the test; its run and the region read are in the lab's `reads/`.
 
+<a id="s390"></a>
 ## 390. A six device configuration runs on the Harmony 600, and its sixth device's codes go out
 
 `todo-compile-600.md` 2.2.2: the test setup with the Switch kept and the Sony HT and Muziek left out, so six
@@ -51663,6 +52053,7 @@ step; a Switch command on its device page that sends nothing when pressed, which
 * `packages/bench/src/irmonitor.ts`: `BENCH_CONFIGS` names the 600 by its current read.
 * `packages/bench/irtests/done/600-setup-six.json`, the test; its run and the region read are in the lab's `reads/`.
 
+<a id="s391"></a>
 ## 391. The setup's look and timing on the Harmony 600
 
 `todo-compile-600.md` 2.3, run on the six device file already on the remote, section 390, so no write:
@@ -51715,6 +52106,7 @@ matches; "Turning system off" shown by this file on this remote.
   `reads/20261015T090758Z-ir-test-harmony-600-the-setup-s-look-and-timing.json` in the lab.
 * `todo-compile-600.md` 1.4.1 stays open with this run added to it.
 
+<a id="s392"></a>
 ## 392. The Harmony 600 and 650 run one program, and the setting their files differ in is a light's levels
 
 `todo-compile-600.md` 1.4.1: why "Turning system off" shows on the Harmony 650 and not on the Harmony 600, with
@@ -51788,6 +52180,7 @@ nothing calls; a second call asking for group 3, or a reader of `0xD2F` to `0xD3
   groups' comment.
 * `todo-compile-600.md` 1.4.1 stays open with these three readings.
 
+<a id="s393"></a>
 ## 393. On the Harmony One a device's inputs are the 600 family's, and its power on delay is the catalogue's
 
 **Asked for by `todo-compile-one.md` 1.2**, composing the 650 family's test setup onto Logitech's compile of
@@ -51865,6 +52258,7 @@ send's shape, or whose power on wait is not the catalogue's delay in tenths.
 * `packages/codec/src/inputs.ts` and `shared/devices.ts`, the composers. `docs/config-format.md`, the
   inputs and the inlined delay.
 
+<a id="s394"></a>
 ## 394. How Logitech's compiler lays a command's name on a Harmony One pad
 
 **Asked for by `todo-compile-one.md` 1.2.6.** The One's composers drew a pad's label as one line rounded to
@@ -51949,6 +52343,7 @@ A Harmony One pad whose label breaks, cuts or sits otherwise than the rule says,
 * `packages/codec/test/touchlabels.test.ts`: the cases that pin each part, and the census.
 * The measurement's scripts are in the lab's `work/one-track/labels/`.
 
+<a id="s395"></a>
 ## 395. A Harmony One container's frame is laid out from its content by the same linker as arch 14's
 
 **Asked for by `todo-compile-one.md` 6.1.** Section 318's frame refused everything but arch 14. It lays out
@@ -52003,6 +52398,7 @@ the byte after base slot 17's table.
 * `packages/codec/src/frame.ts`: `FRAME_ARCHITECTURES`, `formatWord`, `ContainerLayout.inserted`.
 * `packages/codec/test/frame.test.ts`: the One's compiles, our writes, the two exceptions and the growth control.
 
+<a id="s396"></a>
 ## 396. The Harmony One's fonts in our letters: five faces of its own, and each set keeps its pair of colours
 
 **Asked for by `todo-compile-one.md` 5.2 and 1.2.7**, under decision 24: the One's screens lettered in our
@@ -52111,6 +52507,7 @@ original's.
 * `packages/codec/test/fonttable.test.ts`: the census and the rows over the nineteen, the eighteen re-lettered
   and read back, and the donor; `typeface.test.ts`, `blending.test.ts` and `text.test.ts`.
 
+<a id="s397"></a>
 ## 397. A device composed onto a Harmony One: its keys in device mode are its family's, its pages are several, and a donor's devices get their inputs
 
 **Asked for by `todo-compile-one.md` 1.2.9 and 1.2.10**: the test setup composed with the One's composers onto
@@ -52263,6 +52660,7 @@ A Logitech One compile of a catalogue device whose device mode binds a key to an
 gives, beyond the AVR-28's iPod commands; a device mode of other than 49 or 51 entries; a device menu hit page
 of a known row count with a second geometry; a device menu whose row draws two pictures on two pages.
 
+<a id="s398"></a>
 ## 398. An activity's keypad from its roles holds on the Harmony One with its own keys
 
 **Asked for by `todo-compile-one.md` 1.2.11.3.** Section 323's rule builds an activity's keypad map from its
@@ -52328,6 +52726,7 @@ An activity of a One compile with stated roles whose volume keys send a device o
 device; a control device binding the lower arrow itself and the activity putting a screen command there.
 
 
+<a id="s399"></a>
 ## 399. The Harmony One's look in our pictures: what Logitech's pads hold, and the title, colour buttons and labels on ours
 
 **Asked for by `todo-compile-one.md` 1.2.11.2**, while the One's screens were given our own pictures under
@@ -52465,6 +52864,7 @@ A One compile whose working screen draws its title in a device page's font; a de
 another height; a label the centring step moves twice; a set past the eighteenth that the remote draws
 wrongly or not at all.
 
+<a id="s400"></a>
 ## 400. The Harmony One's key lights and its screen light are the configuration's, and our multi page screens lacked the call that lights their page keys
 
 **Asked for by the bench**, `todo-compile-one.md` 1.2.11.2.9 and 1.2.11.2.10: after the configuration of section
@@ -52574,6 +52974,7 @@ changing nothing, and refusing 0 and `0x10000` seconds.
 A Harmony One compile with a screen of several pages whose entry does not light its pair; a key lit by the
 firmware with no list calling it; a remote whose screen light follows the 20 second timer.
 
+<a id="s401"></a>
 ## 401. The keys below a composed Harmony One device page are bound and labelled as the configuration's own device pages bind and label them
 
 **Asked for by the bench**, `todo-compile-one.md` 1.2.11.2.11: on the spare Harmony One, from an activity into
@@ -52639,6 +53040,7 @@ two keys before its rows and renders two screens.
 A Harmony One device page of Logitech's that does not close on the switch or does not bind a key its hit page
 offers; a composed page whose keys do not reach the working screen or the device list on a remote.
 
+<a id="s402"></a>
 ## 402. Our Harmony One activity builder rebuilds 52 of Logitech's 64 activities part for part, and each activity of theirs has a device list holding every device
 
 **Asked for by `todo-compile-one.md` 1.2.11.2.6**: `buildTouchActivityScreens` builds an activity's working
@@ -52753,6 +53155,7 @@ A Logitech One activity whose rebuild differs in a compared part; a One compile 
 set of the title's face, or drawing titles in both; an activity's device list missing a device or holding one
 twice, or not ending in the idle order.
 
+<a id="s403"></a>
 ## 403. What the Harmony One shows when it starts is one state variable starting at 0, and starting it at 3 starts the remote as usual
 
 **Asked for at the bench**: after every write the spare Harmony One started on the Remote Assistant's "Welcome to
@@ -52824,6 +53227,7 @@ starting value alone, to 3, with every check passing, and returning `one_config`
 
 A One compile whose start shows the assistant with its variable at 3; a One that, written so, still shows it.
 
+<a id="s404"></a>
 ## 404. A composed Harmony One device page's row sent its command without the click, where every row of Logitech's device pages opens with it
 
 **Seen at the bench**, `todo-compile-one.md` 1.3: on the spare Harmony One written with the test setup composed
@@ -52906,6 +53310,7 @@ composed onto `one_config` binds each row to the click and a call of its command
 A row of a Logitech One device page that runs its command without the click; a configuration built with the fix
 silent on a touched row, or clicking twice on an activity screen's pad.
 
+<a id="s405"></a>
 ## 405. Every screen byte of a Harmony One configuration is fixed, dynamic or the setup's, and fixed is 795792 to 795925 bytes on each compile of its skin
 
 **Todo `todo-compile-one.md` 2.1**: every screen byte of the Logitech One configurations in the lab sorted into
@@ -53086,6 +53491,7 @@ would make it the setup's feature rather than the remote's.
   One's Options menu and missing Remote Assistant, and a Dutch compile's text are the known variations.
 * 5.3: 36 pictures are fixed and 16 dynamic; 6 are the setup's.
 
+<a id="s406"></a>
 ## 406. Every text of a Harmony One compile is spelled from its word, and a start up title joins "Starting" and the name with a blank of its own
 
 **Status:** confirmed by construction over the 18 English Harmony One compiles of section 403's set, with a blind control
@@ -53234,6 +53640,7 @@ joiner; a start up title joined with the space.
   control, the blind control, the failing control and the Dutch compile.
 * `docs/config-format.md`, after section 358's table; `reference/remotes/harmony-one/display.md`.
 
+<a id="s407"></a>
 ## 407. The Harmony One's state tables, clock, log area and parameter block are built by the Harmony 600 family's builders with its differences as data, byte for byte on all 19 compiles
 
 **Todo `todo-compile-one.md` 6.4**: the parameter block's groups, the clock records, the state variable storage
@@ -53317,6 +53724,7 @@ its description; or one holding a variable of its own above 121, which the build
 Arch 12 (Harmony One) and arch 14 (Harmony 600, 650 and 700) are built and measured; every other architecture
 has no family to give the builder its state table facts and no row in the log area's table, and is refused.
 
+<a id="s408"></a>
 ## 408. The Harmony One's firmware names a configuration's screen by number once, the status screen for code 9, and every other screen is entered by the configuration's own instructions or by nothing
 
 **Todo `todo-compile-one.md` 4.4.1**: which of section 405's 78 fixed screens the Harmony One's 3.4 firmware draws
@@ -53500,6 +53908,7 @@ status container's screen rather than the configuration's.
   enters by their text.
 * `docs/config-format.md`, after the Harmony One's screen categories; `reference/remotes/harmony-one/display.md`.
 
+<a id="s409"></a>
 ## 409. The Harmony One's ten firmware screens are built from a description of their numbering, byte for byte on the sixteen English compiles of skin 54 and the European factory file
 
 **Todo `todo-compile-one.md` 4.4.3**: the ten screens at the head of a Harmony One mode table built whole, what
@@ -53625,6 +54034,7 @@ first 178 lists are not these screens'.
 Arch 12 (Harmony One) alone; the Harmony 600, 650 and 700's are section 357's builder. The module is the touch
 family's.
 
+<a id="s410"></a>
 ## 410. The Harmony One's own wiring is one catalogue on all 19 compiles, the same but for three settings, two kinds of timer and its numbering, and it is built from a description byte for byte
 
 **Todo `todo-compile-one.md` 6.3**: the lists, entries, timers and tables that connect the Harmony One's firmware
@@ -53799,6 +54209,7 @@ count rather than as itself.
 * `docs/config-format.md`, "The firmware's own wiring on the Harmony One" and base slot 12's timer table;
   `reference/remotes/harmony-one/behaviour.md`.
 
+<a id="s411"></a>
 ## 411. The Harmony One's twenty three fixed screens past the firmware's ten are built from a description of their numbering, byte for byte on the sixteen English compiles of skin 54
 
 **Todo `todo-compile-one.md` 4.4.4.1**: the screens section 408 says a configuration needs beyond the ten firmware
@@ -54035,6 +54446,7 @@ byte is 0, or one binding none whose byte is 1; a list of the 531 named from out
 Arch 12 (Harmony One) alone, and skin 54 in English; the module is the touch family's. The Harmony 600, 650 and 700
 carry other fixed screens, section 357's.
 
+<a id="s412"></a>
 ## 412. The Harmony One's welcome tour and Remote Assistant are built from a description of their numbering, byte for byte on the sixteen English compiles of skin 54 and both European ones, the assistant where the wiring's start ladder keeps it
 
 **Todo `todo-compile-one.md` 4.4.4.2**: the welcome tour (11 screens) and the Remote Assistant (5), the last of section
@@ -54279,6 +54691,7 @@ Harmony 600, 650 and 700 carry a welcome tour of ten screens of another shape an
 own, section 357's; none of the 102 arch 14 samples the lab names holds the One's start ladder, by the second
 reviewer's run of `touchStartupVariables`, where section 403 checked five.
 
+<a id="s413"></a>
 ## 413. The Harmony One's twenty nine status screens past code 9's are one shape with Logitech's words, built from a description of their numbering byte for byte on the sixteen English compiles of skin 54 and both European ones
 
 **Todo `todo-compile-one.md` 4.5**: the 29 status screens of the head that nothing enters, section 408's, either
@@ -54480,6 +54893,7 @@ Arch 12 (Harmony One) alone, skin 54 and the European skin 59, in English; the m
 Harmony 600, 650 and 700 are the four slot family, whose screens are its own (plan 007), and our configurations
 for them leave the status screens out, section 405's correction; the Harmony 525 is not read.
 
+<a id="s414"></a>
 ## 414. The Harmony One's clock header, four screen programs and the six lists the clock calls, is built from a description of its numbering, byte for byte on the sixteen English compiles of skin 54 and both European ones
 
 **Todo `todo-compile-one.md` 4.7**: base slot 11's four header programs and the lists the clock's minute and hour
@@ -54699,6 +55113,7 @@ Arch 12 (Harmony One) alone, skin 54 and the European skin 59, in English; the m
 Harmony 600, 650 and 700 show no clock, `CLAUDE.md`; their corner program on variable 17, sections 369 and 374, is
 the One's sending mark at another place. The engine's three additions are generic to the template language, used by the One's modules only.
 
+<a id="s415"></a>
 ## 415. The Harmony One's power off help is a chain of 4n + 2 screens for n devices, built from a description of its numbering and the devices' names, byte for byte on the sixteen English compiles of skin 54 and both European ones
 
 **Todo `todo-compile-one.md` 4.6**: the help screens, "the power off questions asked about each device and the
@@ -55006,6 +55421,7 @@ language's, `screentemplate.ts`, used by the One's modules only. The Harmony 600
 family, whose help is not built anywhere, `todo-later.md` 3.3, and was not compared here. The Harmony 525 is not
 read.
 
+<a id="s416"></a>
 ## 416. The Harmony One's value maps are one catalogue of sixteen records, and base slot 11's case programs and its table are built from a description of their numbering, byte for byte on all nineteen compiles
 
 **Todo `todo-compile-one.md` 6.6**: base slot 11's case programs of the value maps, with the lists they call, and the
@@ -55205,6 +55621,7 @@ in the lab, and the 6 of arch 8 (Harmony 880, 885) and 6 of arch 9 (Harmony 525)
 so this catalogue is not theirs as found; arch 10 (Harmony 890, 895) and 16 (Harmony 300, 350) have no base slot 14
 that reads.
 
+<a id="s417"></a>
 ## 417. The Harmony One's fixed screens are touched through 23 hit pages, built from a description of their numbering byte for byte on the sixteen English compiles of skin 54, a rectangle by rule wherever it is a button or a key below the screen
 
 **Todo `todo-compile-one.md` 4.8**: the touch map's hit pages the fixed screens name, carried out of the donor on
@@ -55421,6 +55838,7 @@ Arch 12 (Harmony One) alone, the only model with a touch map: on the Harmony 600
 the picture bank (section 62), and the Harmony 525 has none. Skin 54 in English for the build; the rules on all
 nineteen compiles, both European ones and the Dutch one included. The module is the touch family's.
 
+<a id="s418"></a>
 ## 418. The Harmony One's lists below its screens are each built by the screen set or the wiring that reaches them, from a description of their numbering, byte for byte on the sixteen English compiles of skin 54
 
 **Todo `todo-compile-one.md` 6.5**: the lists sections 409, 411 and 412 named by index and did not build, and the
@@ -55640,6 +56058,7 @@ Arch 12 (Harmony One) alone: the screens, the wiring's catalogue and the builder
 Harmony 600, 650 and 700 family was not checked for this. Skin 54 in
 English for the screens; the wiring's transitions on all nineteen compiles.
 
+<a id="s419"></a>
 ## 419. The Harmony One's activity menu is one shape on every English compile, built whole from the activities' names and the configuration's numbering, byte for byte on the eighteen; on the composed path a row is added by building the menu again
 
 **Todo `todo-compile-one.md` 4.1 and 3.2.2.7**: the activity menu, its rows, hit rectangles, page counters and page
@@ -55831,6 +56250,7 @@ Arch 12 (Harmony One) alone: the screens and the builder are the touch family's.
 their activity menus out otherwise (section 316) and were not checked for this. Skin 54 and the European skin 59 in
 English; the Dutch compile refused.
 
+<a id="s420"></a>
 ## 420. The Harmony One's device pages are one shape on every English compile, built whole from each device's name, label lines and keys and the configuration's numbering, byte for byte on the eighteen; on the composed path a device's pages are built by the same template
 
 **Todo `todo-compile-one.md` 4.2 and 3.2.2.8**: a device's pages, the rows of commands and their hit rectangles,
@@ -56055,6 +56475,7 @@ Arch 12 (Harmony One) alone: the screens and the builder are the touch family's.
 their device pages with `screenrecords.ts` (sections 330 and 397) and were not checked for this. Skin 54 and the
 European skin 59 in English; the Dutch compile refused.
 
+<a id="s421"></a>
 ## 421. The Harmony One's welcome tour and start up Remote Assistant can be left out of a configuration whole, on all sixteen English compiles of skin 54 and on the composed path by default, once the list census reads base slots 10 and 8 through `archSlot`
 
 **Todo `todo-compile-one.md` 4.10**, a decision of 18 October 2026: a person reads the manual instead of the tour, so
@@ -56277,6 +56698,7 @@ it is refused and has never run. In none of the four did a wrong rule produce a 
 sentences did not say. Two smaller points: "the step is a fixed point" was an early return, and the scope sentence
 named arch 14 only.
 
+<a id="s422"></a>
 ## 422. The Harmony One's fixed pictures are drawn by us inside Logitech's masks, and its whole screen background is one black picture the six photograph blank screens draw too
 
 `todo-compile-one.md` 5.3.1 and 5.3.3. **Decided on the sample of 18 October 2026**: every fixed picture past the
@@ -56448,6 +56870,7 @@ Where it lives:
 * `packages/codec/test/touchpictures.test.ts`: the census, the masks over the sixteen, the control, the places and
   the background; `composesetup.test.ts` and `touchbuilders.test.ts` for the path and the attribution.
 
+<a id="s423"></a>
 ## 423. The Harmony One's activity screens are one shape each on every English compile, every activity's start up screen and working screen built whole from its name, its pads' label lines and what each pad runs and the configuration's numbering, byte for byte on the fourteen compiles that hold an activity; on the composed path the composer's are laid out by the same template
 
 **Todo `todo-compile-one.md` 4.3**: an activity's own screens, its start up screen and its working screen. Nothing of
@@ -56657,6 +57080,7 @@ reviewers were not run is replaced by this one. **Where the reviewers' counts di
 34 one page working screens with 19 of five pads, which includes the Dutch compile's; on this section's 63 it is 33 and
 19. Nothing else a reviewer reported was wrong on checking.
 
+<a id="s424"></a>
 ## 424. The Harmony One compiles a device list for no activity running, one for each activity and one nothing enters, one shape on every English compile, built whole from the rows' names and the configuration's numbering, byte for byte on the eighteen; an activity's own list puts the devices its start switches on first, the Harmony 600 family's rule, on 61 of 64
 
 **Todo `todo-compile-one.md` 4.3.3**: an activity's own device list, which section 402 found on every activity of
@@ -56891,6 +57315,7 @@ is its control: both entered mode 50, the idle list. Arch 12 (Harmony One) alone
 setup, 983694 bytes, written to the spare Harmony One as 9 erase blocks and read back byte for byte; Devices inside
 TV kijken opened the LG, the KPN and the Denon first.
 
+<a id="s425"></a>
 ## 425. Screen opcode 1 is a filled rectangle, x, y, width, height and a colour, read in full on the Harmony One and the Harmony 650 and to its row loop on the Harmony 600 and 700; the Harmony One draws a mode page over what the screen held, and our black background is one fill a draw
 
 `todo-compile-one.md` 5.3.4. Section 422 left the background a whole screen picture of 77445 bytes, because a picture
@@ -57044,6 +57469,7 @@ Where it lives:
   handler, and the One's page draw calling no fill; `packages/codec/test/screenfill.test.ts`: the fill's pixels, the
   frame closure and its control, the sixteen, and three of the six refusals.
 
+<a id="s426"></a>
 ## 426. The Harmony One's pictures and glyph sets are placed by section 328's rule unchanged, on all nineteen of Logitech's One compiles, and the composed path places what it builds the same way
 
 **Date:** 23 October 2026. **Status:** confirmed by construction over the nineteen distinct Harmony One compiles of
@@ -57183,6 +57609,7 @@ between sets on any One compile, so the placer's choice for a shared glyph, the 
 * `packages/codec/test/composesetup.test.ts`: the step, the 583 moved, the fixed point and its reversed control.
 * `docs/config-format.md`, "What decides each byte of the frame on arch 14"; sections 328 and 395 scoped in place.
 
+<a id="s427"></a>
 ## 427. The Harmony One's font table stated rather than read off a donor: sixteen sets every English compile holds, two the setup brings, and a code order whose first 60 are Logitech's
 
 **Status:** confirmed by measurement on the sixteen English Harmony One compiles of skin 54 and by construction on
@@ -57321,6 +57748,7 @@ rather than through the census, which now calls one function, `misfits`.
   byte for byte layout, the controls and the table from nothing; `composesetup.test.ts` the composed setup's 33 sets.
 * `docs/config-format.md`, after section 396's table; `reference/remotes/harmony-one/display.md`.
 
+<a id="s428"></a>
 ## 428. The Harmony One's fixed pictures built by their rule alone, transparent where our own drawing leaves a pixel empty: they differ from section 422's masked form on the ten gauge pictures and the cross and nowhere else, and the masked form had cut our level 3 gauge's outline and tip
 
 **Status:** the differences confirmed by measurement on all nineteen Harmony One compiles and on the composed test
@@ -57487,6 +57915,7 @@ Where it lives:
   control, the direct control and the differences on every copy of the nineteen; `composesetup.test.ts` the sizes.
 * `docs/config-format.md`, after section 422's paragraph; `reference/remotes/harmony-one/display.md`, the status strip.
 
+<a id="s429"></a>
 ## 429. The Harmony One's device lists of no rows are the template with no row in it, one page as Logitech's own activity menu of no row is, inferred and unconfirmed; and the power off help's three hit pages are built with its screens, byte for byte on the sixteen English compiles of skin 54
 
 **Todo `todo-compile-one.md` 7.1.6**: two pieces a Harmony One configuration with no device needs that no builder made.
@@ -57664,6 +58093,7 @@ the hit page from where the file places its first area, the header's length stil
   `withTouchHelpScreens`, and on the composed path in `withTouchHelpChain`.
 * `docs/config-format.md`, the help screens' and the device lists' tables; `reference/remotes/harmony-one/display.md`.
 
+<a id="s430"></a>
 ## 430. The Harmony One's redraw timers are one per class of screen, thirteen classes with no activity, and the wiring, timers, fixed cases and hour list of an empty One are numbered from nothing
 
 **Todo `todo-compile-one.md` 7.1.5**: the wiring and the timers of a Harmony One with no device and no activity, the
@@ -57863,6 +58293,7 @@ per activity. The test changes it asked for are in the test file.
   `docs/config-format.md`, "The firmware's own wiring on the Harmony One" and base slot 12;
   `reference/remotes/harmony-one/behaviour.md`.
 
+<a id="s431"></a>
 ## 431. The Harmony One's skeleton is laid out from nothing and passes every parse check, and a probe drawing every code once lets every screen set's builder spell through it
 
 **Status:** confirmed by construction with no lab, against the nineteen distinct Harmony One compiles for the table
@@ -58029,6 +58460,7 @@ sentences stated as measured that were expected.
   screen sets through the probe and not the skeleton.
 * `docs/config-format.md`, "What decides each byte of the frame on arch 14", the One's empty forms.
 
+<a id="s432"></a>
 ## 432. The Harmony One's screen sets numbered by role: every number an empty One's screens take is a name, one name is one number across every set on the sixteen English compiles of skin 54, and an empty One is numbered from nothing
 
 **Todo `todo-compile-one.md` 7.1.4**: an empty Harmony One numbered, its modes, variables, value maps, lists and hit
@@ -58197,6 +58629,7 @@ is known only from the walks collected, so a numbering must collect all of a con
 * `packages/codec/test/touchnumbering.test.ts`; `docs/config-format.md`, base slot 13 and the lists below the screens;
   `packages/codec/src/statetables.ts`, `FIRST_WIDE_VARIABLE`; `reference/remotes/harmony-one/memory.md`.
 
+<a id="s433"></a>
 ## 433. The composed Harmony One setup carries no infrared byte of its donor: the LG and the Denon get the records the catalogue composes for them, and the fifteen that differ from Logitech's are the one block copies, which open with the device's delay between devices
 
 **Todo `todo-compile-one.md` 8.1.3.** The Harmony One's test setup is composed onto Logitech's compile of two of its
@@ -58345,6 +58778,7 @@ and include a friend's two. It also asked that what a remote does be said as wha
   control.
 * `docs/config-format.md`, how Logitech's generator spells a block; `reference/remotes/harmony-one/features.md`, delays.
 
+<a id="s434"></a>
 ## 434. The empty Harmony One assembled from nothing: every byte made by a generator and none carried, a build year offering a leap year built with the two screens Logitech's compiles add, and what no compile of Logitech's shows, inferred and unconfirmed until the bench
 
 **Todo `todo-compile-one.md` 7.1.7, 7.1.8 and 7.1.9.** Sections 427 to 432 each built a part of a Harmony One
@@ -58610,6 +59044,7 @@ two and four where `devices` counts two, two, four and two; that is section 429'
 * `docs/config-format.md`, the empty One's table, the Year picker's row and the assistant variable's;
   `reference/superseded.md`, the refusal's two phrasings.
 
+<a id="s435"></a>
 ## 435. The test setup composed onto the empty Harmony One: no lettering and no picture step, no byte carried of its donor, 905173 bytes; what the composers needed that a configuration with no device does not hold, read off Logitech's compiles; and section 434's mode piece order corrected
 
 **Todo `todo-compile-one.md` 8.1.1, 8.1.2 and 8.1.4.** The Harmony One test setup, seven devices and five activities,
@@ -58801,6 +59236,7 @@ status screen on the spare, or a device page whose clock stops.
   `compose.test.ts`, the dropped hit page; `composesetup.test.ts`, every hit page named; `packages/codec/bin/empty-one.ts`,
   `--setup`.
 
+<a id="s436"></a>
 ## 436. The test setup composed two ways and compared by what a person meets: 388 differences, every one of seven causes, and a defect on the composition onto Logitech's compile that put the Denon and the LG on the wrong input, fixed
 
 **Todo `todo-compile-one.md` 8.1.5.** The Harmony One test setup, seven devices and five activities,
