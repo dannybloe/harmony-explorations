@@ -22,6 +22,12 @@
  *    of anything this project has tried. So the selection is an input here and the layout, four to a
  *    page in the order given, is `composeActivityScreen`'s.
  *
+ * **Help is left out of the keypad map, deliberately**, a choice of ours with no decision yet: Help is
+ * scan 3's release and repeat, and no device mode binds scan 3, so a map built from roles never holds it.
+ * Logitech's compiles bind it in every activity's own map, release and repeat, 40 of 40, section 333, and
+ * the four slot track builds without Help, so on an activity built here Help does nothing. The reference
+ * states only the compiler's half, `reference/architectures/harmony-600-650-700/compiler.md`.
+ *
  * **Roles are read off a compiled activity's sends where nothing states them**, `activityRolesFromSends`:
  * the volume device is the one VolumeUp sends to and the control device the one most other keys send
  * to. That is an inference, and it is checked against the devices Logitech's stated button maps give
