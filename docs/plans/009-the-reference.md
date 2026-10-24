@@ -665,4 +665,5 @@ Settled when the plan was accepted, 24 October 2026:
    decision 25 names them.
 2. **The inventories stay outside the repository.** They were working material; this plan carries what they
    found, and the move table is the part that matters.
-3. **Whether the site publishes the archive** is asked before 7.1 builds the hook.
+3. **The site publishes the archive**, split one page per section by the build as step 7.1 describes, so the
+   footnotes work on the website too.
