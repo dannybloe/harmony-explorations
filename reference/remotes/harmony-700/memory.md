@@ -6,18 +6,18 @@ That map and its constants are in
 [the architecture's memory.md](../../architectures/harmony-600-650-700/memory.md). This page states only
 where the 700 differs or has been measured on its own.
 
-**`docs/memory-map-700.md` was written before any 700 was connected** and marked most rows "presumed";
-it was corrected in place against the measurements below on 9 October 2026.
-
 ## Where the 700 differs
 
-| region | on the 700 | standing and source |
+| region | on the 700 | evidence |
 |---|---|---|
-| external `0x000000` to `0x020000` | **the staging region**: the application an install copies from. Logitech's region 2 for skin 66 | measured, sections 295 and 297; `STAGING_REGION` in `packages/usb/src/rails.ts` |
-| external `0x020000` | the safe mode configuration, 7115 bytes, byte for byte the 2.8 package's region 3 on a unit | measured, section 295 |
-| internal safe mode, `0xFE` `+0x1000` | 2.3, 29888 bytes, verifying | measured, section 295 |
-| internal application, `0xFE` `+0x9000` | 2.8, 76672 bytes, entry `0x1BB38`, running into page `0xFF` to `+0xBB80`, since the install of section 297; before it, 2.5 | measured, sections 295 and 297 |
-| internal `0x10000` to `0x10400` | erased on a unit that arrived in safe mode, which is why its application did not verify | measured, section 295 |
+| external flash | 2 MiB, the same part as the 600 and 650, reporting flash id `15:1C`; the configuration may run from `0x030000` to `0x200000`, 1856 KiB | [^s295], [^s300] |
+| external `0x000000` to `0x020000` | **the staging region**: the application an install copies from, Logitech's region 2 for skin 66. Erased past the image staged in it | [^s295], [^s297]; `STAGING_REGION` in `packages/usb/src/rails.ts` |
+| external `0x020000` to `0x021BCB` | the safe mode configuration, 7115 bytes, format 1.4, byte for byte the 2.8 package's region 3 | [^s295], [^s297] |
+| internal `0xFE` `+0x0000` | the bootloader, 4096 bytes, unchanged by both installs | [^s295], [^s297] |
+| internal `0xFE` `+0x1000` | safe mode 2.3, 29888 bytes, verifying | [^s295] |
+| internal `0xFE` `+0x9000` | the application 2.8, 76672 bytes, entry `0x1BB38`, running into page `0xFF` to `+0xBB80`, 6336 bytes longer than the 600's and well below the install's limit at `+0xEC00`; before 2.8, 2.5 at 71552 bytes | [^s297], [^s295b] |
+| internal `0x10000` to `0x10400` | erased on a remote that arrived in safe mode, which is why its application did not verify | [^s295] |
+| internal `0xFF` `+0xF400` | the identity block, the architecture's four 16 byte fields; the values are one remote's serial and never appear in this repository | [^s295] |
 
 ## The settings store
 
@@ -41,14 +41,14 @@ and the USB poll's state, which runs the charger test, at `0x3AB`, a host having
 configuration's variable at the value the file starts it at, from `0x900` on build 2.8, measured, section
 386. This said "**No data memory value has been read live on a 700.**"<!--superseded--> until section 386.
 
-## The identity block
-
-Internal `0xFF` `+0xF400`, measured, section 295. The values are one unit's serial and never appear in this
-repository.
-
 ## Not checked
 
 * The 2.8 build's restore path for saved delays, and which list it runs at start, section 303. Its state
   variable addresses and its clock are read since, sections 384 and 386.
 * External flash past the configuration on a 700.
 * What setting `0x80` means.
+
+[^s295]: Measured on a unit. [Section 295](../../../docs/findings.md#s295)
+[^s300]: Measured on a unit. [Section 300](../../../docs/findings.md#s300)
+[^s297]: Measured on a unit. [Section 297](../../../docs/findings.md#s297)
+[^s295b]: Read in the firmware. [Section 295](../../../docs/findings.md#s295)

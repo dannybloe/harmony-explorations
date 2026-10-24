@@ -23,8 +23,8 @@ In this order, every time, including in an agent:
 2. `reference/architectures/harmony-600-650-700/README.md`: what the 600 shares with the 650 and 700,
    architecture 14, including its memory layout. In conversation say "the Harmony 600", never the bare
    architecture number.
-3. `docs/memory-map-600.md`: the 600's measured map row by row, which the reference links rather than
-   restates.
+3. `reference/remotes/harmony-600/memory.md`: the 600's measured map row by row, beside the
+   architecture's `memory.md`, which holds the 0.2 build's data memory.
 4. `reference/how-a-harmony-works.md` when the task touches what the remote does for a person: activities,
    device mode, Help, the device list.
 
@@ -93,7 +93,7 @@ they apply unchanged. The 600's runs are in `packages/bench/irtests/done/`, thos
 | what | where |
 |---|---|
 | the public reference | `reference/remotes/harmony-600/` and `reference/architectures/harmony-600-650-700/` |
-| the measured map | `docs/memory-map-600.md` |
+| the measured map | `reference/remotes/harmony-600/memory.md`, and what is the bench unit's own in `docs/test-notes/harmony-600.md` |
 | the firmware image to read | `600-0.2-code-base0x9000-COMPLETE.bin` in the lab's `firmware/derived/` |
 | the unit record | the lab's `units/h600.txt`, never copied into this repository |
 | region reads and compiles | the lab's `reads/`, named in `packages/lab` and `tests/lab.py` with the prefix `h600_` |

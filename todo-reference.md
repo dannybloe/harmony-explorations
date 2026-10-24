@@ -39,7 +39,7 @@ takes over `todo-later.md` chapter 8, plan 005's steps, which now live here.
 ## 3. Models and architectures
 
 - [ ] 3.1 Each model folder cleaned: our own units out to `docs/test-notes/<model>.md`, the evidence as footnotes, duplicates replaced by links (one agent per model)
-- [ ] 3.2 The memory maps into their architecture folders
+- [x] 3.2 The memory maps into their architecture folders: all five maps removed, their content in the Harmony One, 5xx and 600-650-700 folders with the first footnotes, the units' records in `docs/test-notes/`, the three contradictions settled
 - [ ] 3.3 The button maps into each model's keys, the tables as data the drawings already hold, the derivation to the archive
 - [ ] 3.4 `reference/capabilities.md` and `reference/models.md` absorbed into the model and architecture folders
 - [ ] 3.5 Thinner folders for the Harmony 880/885 and 890, which only contributed configurations

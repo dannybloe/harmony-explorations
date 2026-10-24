@@ -56,13 +56,6 @@ Read from Logitech's compiles, the compiler being on Logitech's service and not 
 * **A configuration with no activity**, of which one compile is in hand, a Harmony 650's: More Activities
   on the activity menu opens "add Activities", section 383.
 
-## Configurations in the corpus
-
-User configurations of this architecture held in the lab: the Harmony 600's, the Harmony 650's reads,
-and two of a contributor's Harmony 700 plus the bench 700's, with Logitech compiled calibration and power
-hold compiles beside them. Names and counts are in `tests/lab.py` and `packages/lab`, and the corpus
-totals in `docs/status.md`; nothing here restates them.
-
 ## Not checked
 
 * Nothing in this file is a claim about a remote beyond the cited sources.

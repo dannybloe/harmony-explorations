@@ -5,7 +5,9 @@ Harmony and never our bench.
 
 * [Harmony 525](harmony-525.md)
 * [Harmony 600](harmony-600.md)
+* [Harmony 700](harmony-700.md)
 * [Harmony One](harmony-one.md)
+* [The corpus](corpus.md): which configurations the work was measured on
 
 ## The units
 
@@ -28,3 +30,7 @@ appear throughout this page as firmware images or contributed configurations, an
 the one that gets mistaken for hardware, because it is the best mapped arch 14 image and is quoted
 constantly. **A Harmony 700 unit has been on the bench since 29 September 2026**, and this said there
 had never been one until 9 October 2026.
+
+**The Harmony 600, 650 and 700 on the bench are all write targets**, the 650 since 27 September 2026 and
+the 600 and 700 since 29 September, decisions recorded in `CLAUDE.md`'s "Never write to a remote". This
+sat in the architecture's USB page until plan 009 step 3.2.

@@ -24,8 +24,9 @@ In this order, every time, including in an agent:
    architecture 14. In conversation say "the Harmony 700", never the bare architecture number.
 3. `reference/how-a-harmony-works.md` when the task touches what the remote does for a person.
 
-**`docs/memory-map-700.md` was written before any 700 was measured** and was corrected against the bench
-unit on 9 October 2026; the reference's `memory.md` carries the same measurements with their standing.
+**The 700's memory map was written before any 700 was measured**, was corrected against the bench unit
+on 9 October 2026, and is folded into the reference's `memory.md`; the unit's own history is
+`docs/test-notes/harmony-700.md`.
 
 **When the reference does not answer a question about the remote, ask** before designing around the gap,
 and land the answer in the reference afterwards with its source.

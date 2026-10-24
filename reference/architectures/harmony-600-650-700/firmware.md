@@ -8,15 +8,15 @@ calls, or the model number and USB release number each build reports, 71 and `0x
 and `0x1072` on the 650, section 392. Each model folder lists its own
 versions; this file states what is common.
 
-## Builds in the lab
+## Builds
 
 | build | model | where it came from | standing and source |
 |---|---|---|---|
-| 0.2, application 70336 bytes, entry `0x1A26E` | Harmony 600 | read off the bench unit | measured; `600-0.2-code-base0x9000-COMPLETE.bin`, checksum in `docs/checksums.md` |
-| 0.2, application 70336 bytes, entry `0x1A262` | Harmony 650 | read off the bench unit | measured, section 281 |
+| 0.2, application 70336 bytes, entry `0x1A26E` | Harmony 600 | read off a unit | measured, its own header checksum verifying over all of it[^s23] |
+| 0.2, application 70336 bytes, entry `0x1A262` | Harmony 650 | read off a unit | measured[^s281] |
 | 0.4, application 75392 bytes, entry `0x1B658` | Harmony 650 | Logitech's package, repair site | read in the firmware, section 30 |
-| 2.5, 71552 bytes | Harmony 700 | the bench unit's staging read | measured, sections 295 and 298 |
-| 2.8, application 76672 bytes, entry `0x1BB38` | Harmony 700 | Logitech's package; what the bench 700 runs since section 297 | read in the firmware and measured |
+| 2.5, 71552 bytes | Harmony 700 | read out of a unit's staging region | measured[^s295][^s298] |
+| 2.8, application 76672 bytes, entry `0x1BB38` | Harmony 700 | Logitech's package, installed on a unit by staging it | read in the firmware and measured[^s297] |
 
 Every image loads at `0x9000`, its header is `0x00` to `0x0F` and its own checksum verifies,
 `docs/checksums.md` and sections 1 to 5. **Logitech's software update service answers 404 for
@@ -50,10 +50,11 @@ Read on each build named, sections cited. Where a build is missing it is not rea
 ## Safe mode
 
 * The safe mode **image** is in internal flash at `0xFE` `+0x1000`; the safe mode **configuration** is in
-  external flash at `0x020000`. On the Harmony One the arrangement is different, [the comparison of architectures](../README.md).
-* **The `-safe.bin` trap**: on this architecture the `*-safe.bin` file concordance's `--dump-safemode`
-  writes holds the **application** truncated at 64 KiB, not a safe mode image; the lab keeps the 600's
-  as `600-0.2-code-base0x9000-TRUNCATED64k.bin`, `docs/checksums.md` and `CLAUDE.md`.
+  external flash at `0x020000`, [memory.md](memory.md). On the Harmony One the arrangement is different,
+  [its memory page](../harmony-one/memory.md).
+* **The `-safe.bin` trap**: on this architecture the `*-safe.bin` file concordance writes when asked for
+  the safe mode image holds the **application** truncated at 64 KiB, not a safe mode image: on a Harmony
+  600 it is the first 65536 bytes of the 70336 byte application[^s23].
 * Safe mode reports software type 4 over USB, the application 0, `reference/usb-protocol/version-block.md`.
 * The status screens a rejected configuration raises are the architecture's 35, section 244, and a failed
   validation re-arms rather than latching, unlike the Harmony One, section 253.
@@ -77,6 +78,11 @@ Nothing here writes the processor's flash. Two routes exist and both make the **
    otherwise unread.
 2. **Stage an image first**: Logitech's own unmodified image written into external `0x000000` to
    `0x020000`, decision 18; run on the 700, taking it from 2.5 to 2.8, section 297.
+
+**An install copies at most up to internal `0x1EC00`**, where the settings store begins: the install
+routine ends any copy there, so an application image can be at most 89088 bytes, `0x1EC00` less the
+`0x9000` it loads at[^s295b]. The Harmony 700's 2.8, at 76672 bytes and ending at `0xFF` `+0xBB80`, is
+well inside it[^s297].
 
 The rails, the named doors and the unit list are `CLAUDE.md`'s "Never write to a remote" and
 [usb.md](usb.md). The `recovering-a-remote` skill holds the route.
@@ -154,3 +160,10 @@ was found through the accessors instead, using `pic18_xref.py` to walk callers.
 
 The interrupt service routine is `0x1AD80` to `0x1AF00`: eight reads of `UIR` between
 `0x1ADE0` and `0x1AE4E`, each followed by a bit test, dispatching on the interrupt source.
+
+[^s23]: Measured on a unit. [Section 23](../../../docs/findings.md#s23)
+[^s281]: Measured on a unit. [Section 281](../../../docs/findings.md#s281)
+[^s295]: Measured on a unit. [Section 295](../../../docs/findings.md#s295)
+[^s298]: Measured on a unit. [Section 298](../../../docs/findings.md#s298)
+[^s297]: Measured on a unit. [Section 297](../../../docs/findings.md#s297)
+[^s295b]: Read in the firmware. [Section 295](../../../docs/findings.md#s295)

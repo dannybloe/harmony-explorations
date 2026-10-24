@@ -1633,7 +1633,10 @@ class TheWriteReviewWithholdListIsComplete(unittest.TestCase):
         # list, and the four remaining memory maps are spelled out one by one where a glob used to
         # stand for all five. The glob is what let the 525's document acquire the erase mechanism
         # and stay on the readable side, so naming them is part of the fix rather than tidying.
-        self.assertEqual(len(may), 12, 'the may read list should resolve to 12 paths, got %s'
+        # 13 since plan 009 step 3.2 removed `docs/memory-map-600.md` and `docs/memory-map-700.md`:
+        # their rows went to three reference pages, the architecture's memory page and the 600's and
+        # 700's, which take their place on the list, and the strict sweep below holds all three.
+        self.assertEqual(len(may), 13, 'the may read list should resolve to 13 paths, got %s'
                          % sorted(may))
         # The AGENTS.md row remains reserved, but the file is deliberately absent. Its place in the
         # resolved population is taken by the Codex config named in that row.

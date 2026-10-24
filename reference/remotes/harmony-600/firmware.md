@@ -64,7 +64,7 @@ The `0xFF` page holds one unit's identity block, so its checksum is not listed.
   architecture.
 * The 600's 0.2 safe mode image carries part of the reinstall routine the Harmony 700 uses, at `0x01A8C`,
   and is otherwise unread, [the architecture's firmware.md](../../architectures/harmony-600-650-700/firmware.md).
-* The stored application at external `0x000000` is what a reinstall would copy, `docs/memory-map-600.md`.
+* The stored application at external `0x000000` is what a reinstall would copy, [memory.md](memory.md).
   The reinstall route has been run on the Harmony 700 only, section 295.
 * The `recovering-a-remote` skill is the route to read before anything here.
 

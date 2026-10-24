@@ -118,3 +118,28 @@ The two unreachable bytes are a protocol fact worth stating on its own: the firm
 offset at `0xFFC0` and a 62 byte read from there ends at `0xFFFD`, so **the last two bytes of each
 page cannot be read** by this path. They came from the truncated dump instead, and they are inside
 the checksum that verifies.
+
+## The bench 600's memory, as read
+
+What the Harmony 600's memory map recorded about this one unit, kept here when the map's architecture
+and model rows moved to `reference/architectures/harmony-600-650-700/memory.md` and
+`reference/remotes/harmony-600/memory.md`. Read only throughout: both internal pages whole, and the
+configuration region.
+
+* **The configuration** read off the unit from `0x030000` is byte identical to the unit's own `.EZHex`,
+  738149 of 738149 bytes.
+* **The identity block's three printed values**, the `0xEE` serial field and the two GUIDs, all match
+  `concordance -i` for this unit, in order at `+0x00`, `+0x10` and `+0x20`, section 22. Its fourth field
+  is erased, so 48 bytes of the 64 are written, section 23.
+* **The settings store** held 121 bytes of its 2048: 59 records in the first block and the second block
+  erased. Two saved delays were live when section 303 read it, the KPN box's power on delay at 10 tenths
+  and the PS3's inter device delay at 15; section 305 cleared the first over USB.
+* **The external flash is 2 MiB on this unit**, section 88's measurement: `0x130000` is erased and
+  differs from `0x030000`, which is the calibration case and rules out a 1 MiB part that would wrap;
+  `0x1F0000` answers; `0x230000` is refused.
+* **The read at `0x020000`** was 8192 bytes: the 7115 byte safe mode configuration and 1077 erased
+  bytes after it, section 24.
+* **`concordance --dump-firmware`** returned the first 64 KiB of the stored application at external
+  `0x000000` and nothing past it, section 23.
+* **Data memory on this unit** was read live only from section 387 on. The map said "The 600 was not
+  measured" for the 0.2 build's data memory until then, which was true when written.

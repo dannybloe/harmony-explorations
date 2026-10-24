@@ -80,8 +80,6 @@ reference/logitech/data-model/  everything about the vendor platform, one subjec
                                 diagram names those two types and cannot draw them, neither being a
                                 core entity. Also a build product
   model.pdf                     model.md typeset, `make model-pdf`. Also a build product
-docs/memory-map-600.md          the same for the Harmony 600
-docs/memory-map-700.md          the same for the 700, measured on the bench unit since section 295
 docs/predictions/harmony-525.md
                                 predictions about a Harmony 525, its identity before it was first
                                 connected and its clock before that was read, each scored beside it
@@ -172,10 +170,9 @@ reference/remotes/              the per remote technical reference, one folder p
 reference/architectures/        what one architecture's models share, stated once and linked from
                                 each model folder: harmony-600-650-700/ for arch 14, harmony-one/
                                 for arch 12. Its README compares the two execution models, and
-                                harmony-one/memory.md is the Harmony One's memory map, both since
-                                plan 009's step 3.2. It carries the
-                                architecture's memory layout now, and docs/memory-map-600.md and
-                                -700.md keep what is one unit's
+                                each folder's memory.md carries the architecture's memory layout,
+                                since plan 009's step 3.2; a model's own rows are in its model
+                                folder's memory.md and what is one unit's is in docs/test-notes/
 reference/silhouettes/          the front face of a model, one SVG per model, **generated** from
                                 packages/silhouettes/src/models/<id>.ts and never edited by hand.
                                 The geometry is traced from Logitech's own documentation, by hand,

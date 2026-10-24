@@ -2,7 +2,7 @@
 
 The layout is the architecture's: internal flash of two 64 KiB pages holding the bootloader, safe mode
 and the application, and 2 MiB of external SPI flash holding the user configuration from `0x030000`.
-That map, its constants and the per unit maps of the 600 and 700 are in
+That map and its constants are in
 [the architecture's memory.md](../../architectures/harmony-600-650-700/memory.md). This page states only
 where the bench Harmony 650 differs or has been measured on its own.
 
@@ -40,7 +40,8 @@ are the unit's serial and live only in the lab's `units/h650.txt`; they are neve
 ## Data memory
 
 The addresses of the 0.2 build, which the 600 and 650 share for the routines read, are in
-`docs/memory-map-600.md`'s data memory table. **The values were read live on the 650 only**, over
+[the architecture's memory.md](../../architectures/harmony-600-650-700/memory.md), "Build 0.2, the Harmony
+600 and 650". **The values were read live on the 650 only**, over
 `READ_MISC` selector 7, section 283: the state variables at `0xE10` with the clock as the first seven,
 the reload checksum at `0xED2`, the infrared ring at `0x500` kept across a bare restart, the verdict bits
 at `0x68B` and the cache drop flag at `0x725`. The current mode is at `0x0A8` and its argument at
