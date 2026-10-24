@@ -9,7 +9,7 @@ by hand: `reference/logitech/data-model/core-model.mmd` draws the entities an ac
 checks they still agree with the model.
 
 **Consult this before designing anything about devices, activities or remotes, and before naming a
-field.** It is a labelled view of bytes this project already reads: where `docs/config-format.md` says
+field.** It is a labelled view of bytes this project already reads: where `reference/config-format/README.md` says
 what a byte is, this says what the vendor **called** it and what else travelled beside it. Sections 159
 to 171 derived an infrared rhythm table the hard way, and the vocabulary for the same thing is in here.
 

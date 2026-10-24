@@ -74,7 +74,7 @@ image is a second sample rather than a stand in. Other models are iterated on la
 4. **Spec and libraries together, product apart.** *Revised. This decision originally read
    "monorepo" and put the application here as well.* The documents, the research tooling, the
    TypeScript libraries and the tests stay in one repository, because a codec in a second one drifts
-   away from `docs/config-format.md`, and the rule that a confirmed fact must land as a regression
+   away from `reference/config-format/README.md`, and the rule that a confirmed fact must land as a regression
    test only bites while the code sits next to the documents. The **application** is a separate
    repository, [FreeHarmony](https://github.com/dannybloe/FreeHarmony), GPLv3, consuming these
    libraries. The line runs between library and product, not between documents and code. See "The two
@@ -238,7 +238,7 @@ image is a second sample rather than a stand in. Other models are iterated on la
    **One operation on that list is worth more to this repository than to the application**:
    `downloadManager.RemoteConfigurationInJson`, a configuration described in JSON by the people who
    wrote the format, for a remote whose bytes we already read to the last one. A vendor authored second
-   view of the same object would confirm `docs/config-format.md` or name the field that is wrong, which
+   view of the same object would confirm `reference/config-format/README.md` or name the field that is wrong, which
    is a stronger check than anything available here.
 
    **The requests were made on 13 August 2026, with authorisation and a throwaway account,
@@ -733,7 +733,7 @@ remote and 2 in the second, which is what section 117 measured as a generator er
    reference is published as a website, built from `reference/` on every push and never committed.
    `docs/findings.md` is frozen where it is: nothing new is added; its headings get short fixed anchors and
    its links to moved files are corrected, its content otherwise unchanged. Why: knowledge had spread over
-   the journal, `docs/config-format.md`, `reference/remotes/`, the status page, `CLAUDE.md` and the skills,
+   the journal, `reference/config-format/README.md`, `reference/remotes/`, the status page, `CLAUDE.md` and the skills,
    so finding the current answer meant reading several of them, and a summary in one drifted from another.
    This changes decision 13: `findings.md` is not split, and it is no longer where a finding is written.
    Plan 005 named the knowledge folder `docs/spec/`; it is `reference/` since 24 October 2026, which also

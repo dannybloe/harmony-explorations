@@ -31,7 +31,7 @@ byte of them. A scrubber removes what is understood, and git history is permanen
 
 ## What is done instead
 
-* **Derived structure is published freely.** That is what `docs/config-format.md` and
+* **Derived structure is published freely.** That is what `reference/config-format/README.md` and
   `docs/findings.md` are, and there is no restriction on it in any `META.md`.
 * **Checksums and provenance** go in [../docs/checksums.md](../docs/checksums.md), so a
   claim about a file can be checked by anyone holding the same file.

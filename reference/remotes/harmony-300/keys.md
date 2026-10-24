@@ -91,7 +91,7 @@ Generated from `packages/silhouettes/src/models/h300.ts` by `make remote-referen
 
 **The infrared group index is the device key**: TV is group 0, Cable/Sat 1, DVD 2 and VCR/Aux 3, each group
 identified in Logitech's catalogue on a configuration given one device per key, measured, section 265 and
-`docs/config-format.md`.
+`reference/config-format/README.md`.
 
 ## No scan codes
 

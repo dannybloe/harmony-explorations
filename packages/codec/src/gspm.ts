@@ -3,7 +3,7 @@
  *
  * A port of `src/harmony/gspm.py`, and for now a deliberately close one: the two are held
  * equivalent by golden vectors, so a difference in behaviour has to show up as a diff rather
- * than as a judgement call. The format is specified in `docs/config-format.md`.
+ * than as a judgement call. The format is specified in `reference/config-format/README.md`.
  *
  * It is one container with a per architecture four letter cookie rather than one format per
  * architecture, which is why this is written against the shape and not against a model table:

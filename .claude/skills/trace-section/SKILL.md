@@ -95,7 +95,7 @@ most guesses.
 
 Two slots are already known, and neither is a target: slot 0 is that one frame, holding a tree
 of named nodes under `Root`, and slot 1 is a seven byte record stating the architecture. See
-`docs/config-format.md`.
+`reference/config-format/README.md`.
 
 ## Step 2: find where the firmware reads that slot
 
@@ -224,7 +224,7 @@ Two dynamic routes exist, both read-only:
 ## Finishing
 
 A labelled section is a finding, so it lands in three places at once: the structured fact in
-`docs/config-format.md`, the reasoning and the trace in `docs/findings.md`, and a regression
+`reference/config-format/README.md`, the reasoning and the trace in `docs/findings.md`, and a regression
 test in `tests/`. Use the `finding` skill, which does exactly that and refuses to skip the
 test.
 

@@ -1,7 +1,7 @@
 # The Harmony config format
 
 Living specification. This is the deliverable other tools consume, so it is kept separate
-from the narrative in [findings.md](findings.md). Anything stated here is confirmed against at
+from the narrative in [../../docs/findings.md](../../docs/findings.md). Anything stated here is confirmed against at
 least two independent samples unless marked otherwise.
 
 Work is focused on architectures 12 (Harmony One) and 14 (Harmony 600, 700), because those are
@@ -11,7 +11,7 @@ whether a claim is about the format or only about those two models.
 **It is one container across architectures, not one per architecture.** Each architecture has
 its own four letter cookie, and the header shape behind it is the same. The 525's
 `0xFEED`/`0xBEEF` framing appears inside this one, but at **section slot 0 only**, not once
-per section. See [findings.md](findings.md) for the correction that replaced.
+per section. See [../../docs/findings.md](../../docs/findings.md) for the correction that replaced.
 
 ```
 container header               absolute pointer table
@@ -352,7 +352,7 @@ two transposed words and to any even number of identical changes, so a passing c
 remote will not refuse the file, not that the file is correct.
 
 Read with `gspm.trailer_checksum` or `trailerChecksum`, and the parse reports
-`trailer_checksum_recomputes` as a container check. [findings.md](findings.md) section 41.
+`trailer_checksum_recomputes` as a container check. [../../docs/findings.md](../../docs/findings.md) section 41.
 
 ### Telling a config that arrived from a config that parses
 
@@ -370,11 +370,11 @@ also outside the container it does not move the marker either. That case is harm
 bytes are not the config.
 
 Neither check is a validity test. A file can pass both and be wrong in ways nothing here detects; see
-the arch 9 device clone under [findings.md](findings.md) section 117.
+the arch 9 device clone under [../../docs/findings.md](../../docs/findings.md) section 117.
 
 ### What decides each byte of the frame on arch 14
 
-Arch 14 (Harmony 600, 650 and 700); [findings.md](findings.md) section 318. Laid out by
+Arch 14 (Harmony 600, 650 and 700); [../../docs/findings.md](../../docs/findings.md) section 318. Laid out by
 `layOutContainer` in `packages/codec/src/frame.ts` and taken apart by `takeApart`, which reproduce all
 thirteen arch 14 compiles in the lab byte for byte with every address field zeroed first. **The same linker
 lays out the Harmony One**, section 395, with `0x1600` and twenty two slots, raw slot 8 NULL and raw slot 18
@@ -411,7 +411,7 @@ base slot 0..17  each table, preceded by what Logitech parks in front of it:
 end - 6          the trailer
 ```
 
-**What is parked and in what order is decided from the content**, [findings.md](findings.md) section
+**What is parked and in what order is decided from the content**, [../../docs/findings.md](../../docs/findings.md) section
 328: a parked structure follows everything it names, and the parked pieces of a table come in the
 table's own field order. `placePieces` in `packages/codec/src/placer.ts` places them from an
 unordered bag and gives Logitech's order exactly for base slots 5, 7, 10 and 15 on all thirteen
@@ -426,7 +426,7 @@ demand. `placePieces` keeps that order and puts the rest of the page lists in th
 body order and the pictures in the order a screen program first names them; with Logitech's two
 permutations substituted, all thirteen come back byte for byte.
 
-**The Harmony One is placed by the same rule, with nothing of its own**, [findings.md](findings.md)
+**The Harmony One is placed by the same rule, with nothing of its own**, [../../docs/findings.md](../../docs/findings.md)
 section 426: on all nineteen distinct One compiles, twenty fixtures, base slots 5, 7, 10 and 15 come
 back exactly from a shuffled bag, the parked action lists are base slot 10's tail and are called once
 each in ascending number by the page lists, no glyph is shared between sets, and with Logitech's two
@@ -437,7 +437,7 @@ whose bodies differ in five clock records, put 3 of 75 pictures and 1 of 198 pag
 place; what fixes the order is open, and no two One compiles share a build time. The firmware half is unread on the One, whose bank the container states nowhere. On the
 composed path `composeSetup` places the result the same way, after the look and before the stamp.
 
-**A Harmony One with nothing in it**, [findings.md](findings.md) section 431, `buildTouchSkeleton` in
+**A Harmony One with nothing in it**, [../../docs/findings.md](../../docs/findings.md) section 431, `buildTouchSkeleton` in
 `families/touch/skeleton.ts`: every check the parser runs passes with these empty forms, and nothing has been written
 to a remote.
 
@@ -476,7 +476,7 @@ Thursday 1 October and the encoder produces it; the six said to be stamped that 
 
 ### The firmware's own wiring on arch 14
 
-Arch 14 (Harmony 600, 650 and 700) only; [findings.md](findings.md) sections 347 and 360. Built by
+Arch 14 (Harmony 600, 650 and 700) only; [../../docs/findings.md](../../docs/findings.md) sections 347 and 360. Built by
 `buildWiring` in `packages/codec/src/families/four-slot/wiring.ts` from a description `describeWiring` reads, byte for byte on
 all thirteen compiles section 312 lists, on the six later Harmony 650 compiles, and since section 360 with
 the tree the lists call on the 22 compiles of sections 356 to 358 and on `harvest_650_two_devices`, with
@@ -605,7 +605,7 @@ reading, not a measurement.
 
 ### The firmware's own wiring on the Harmony One
 
-Arch 12 (Harmony One) only; [findings.md](findings.md) section 410. Built by `buildTouchWiring` in
+Arch 12 (Harmony One) only; [../../docs/findings.md](../../docs/findings.md) section 410. Built by `buildTouchWiring` in
 `packages/codec/src/families/touch/wiring.ts` from a description `describeTouchWiring` reads, byte for byte on the
 19 compiles of section 405 and on seven configurations of ours, with every generated byte overwritten in the input
 first. The engine, an instruction's, a list's and an entry's encoding and the swap into a layout, is
@@ -709,7 +709,7 @@ one fewer than the fewest any compile holds.
 slots 2 to 17 are sixteen named sections, and 18 and 19 are NULL in every sample.
 
 The method that named them is described in
-[../todo.md](../todo.md) step 6: the firmware copies each config pointer into a per-subsystem RAM
+[../../todo.md](../../todo.md) step 6: the firmware copies each config pointer into a per-subsystem RAM
 variable, so finding the consumer of that variable labels the section by function. The infrared
 section was identified exactly this way, and every slot from 2 to 19 now has a located consumer.
 
@@ -770,7 +770,7 @@ Known so far:
 | 18, 19 | NULL in every sample of every architecture | 21 containers |
 
 **Every slot from 2 to 19 has a located firmware consumer**, on the Harmony 700, the 600 and the
-One. See [findings.md](findings.md) sections 35 and 38 for the addresses. On arch 12 the firmware
+One. See [../../docs/findings.md](../../docs/findings.md) sections 35 and 38 for the addresses. On arch 12 the firmware
 seeks every raw slot from 2 to 19 **except raw slot 8**, which is the NULL that architecture
 inserts, and it does seek raw slot 18, which is the section it has and the base layout does not. So
 the alignment rule below is how the firmware itself addresses the table.
@@ -796,14 +796,14 @@ remote validates it, which is why its width varies between containers.
 Confirmed on eight containers over five architectures: `0c 0c 3b 0d` on a Harmony One, `0e 0e 49 0d`
 and `0e 0e 42 0d` on a Harmony 600 and 700, `09 09 16 0d` on a Harmony 525, `08 08 0f 0d` and
 `08 08 11 0d` on a Harmony 880 and 885. The skins are the model numbers in
-[capabilities.md](../reference/capabilities.md), established there from Logitech's own product table.
+[capabilities.md](../capabilities.md), established there from Logitech's own product table.
 
 **On arch 10 it is at raw slot 0, not raw slot 1, because arch 10 has no base slot 0.** So an arch 10
 config **does** state its architecture, `0a 0a 13 0d` on a Harmony 890 and `0a 0a 17 0d` on a Harmony
 895, meaning architecture 10 with skins 19 and 23. The container check
 `slot1_states_the_architecture` reports false there because it reads raw slot 1, and
 `slot0_is_a_feed_frame` reports false because the name tree has no slot on that architecture at all:
-no `0xFEED` word occurs anywhere in either payload. [findings.md](findings.md) section 182.
+no `0xFEED` word occurs anywhere in either payload. [../../docs/findings.md](../../docs/findings.md) section 182.
 
 **Seventeen of arch 10's nineteen base slots follow from that.** Base slot 1 to raw 0, 3 to 4, 5 to 6,
 7 to 10, 17 to 20, and 18 and 19 to the trailing NULLs at 21 and 22, each identified by content rather
@@ -812,7 +812,7 @@ addresses, and the two byte bias in front of the picture bank. Exactly nine four
 fit all seven, and the only freedom is which of raw 1 to 3 is base slot 2 and which of raw 7 to 9 is
 base slot 6, the latter narrowed to raw 9 by its mode table size. **The readers stay gated**: a mapping
 needing a base slot *removed* is not something `archSlot` can express, and two slots are still
-ambiguous. [findings.md](findings.md) section 182.
+ambiguous. [../../docs/findings.md](../../docs/findings.md) section 182.
 
 ### Base slot 2: the log area
 
@@ -863,7 +863,7 @@ bound rejects it by zeroing the remaining count. **A writer cannot use this regi
 64 KiB block inside the config region first**, which the rails refuse.
 
 Read with `gspm.log_area`; `gspm.log_reference` names the append case an instruction selects.
-[findings.md](findings.md) sections 47 and 111.
+[../../docs/findings.md](../../docs/findings.md) sections 47 and 111.
 
 **Built**, by `buildLogArea` in `packages/codec/src/firmwaresections.ts`, from the per architecture table
 `LOG_AREAS`, which holds the user configuration rows of arch 12 and arch 14: byte for byte on all 19
@@ -877,7 +877,7 @@ firmware never reads this section is *not established*. **No config in the corpu
 writer that copies these three numbers unchanged is doing everything the corpus does.
 
 On arch 14 every user configuration states `16384, 0x1E0000, 0x200000`, 13 of 13, and `buildWiring`
-writes it, [findings.md](findings.md) section 347.
+writes it, [../../docs/findings.md](../../docs/findings.md) section 347.
 
 ### Base slot 4: the firmware event map
 
@@ -903,7 +903,7 @@ block takes 10 to 39, and the config resumes at 40, abutting on both sides.
 
 Read with `gspm.event_map`.
 *What the thirty events are, and what the numbering space counts, are not established.*
-[findings.md](findings.md) section 36.
+[../../docs/findings.md](../../docs/findings.md) section 36.
 
 **This section is 125 bytes**, not the 419 to 1532 that the distance to the next pointer reports.
 See the warning under "Sections" about what that distance means.
@@ -911,12 +911,12 @@ See the warning under "Sections" about what that distance means.
 **`N` is the count of the firmware's own screens at the front of base slot 6**, 14 on the Harmony 600 and
 650 and 19 on the Harmony 700, and the key is a status code: mode `N` draws "Go to Website to update
 settings" and `N + 26` "Configuration Corrupted", section 249's codes 0 and 26, 13 of 13. Generated by
-`buildWiring`, [findings.md](findings.md) section 347.
+`buildWiring`, [../../docs/findings.md](../../docs/findings.md) section 347.
 
 **On the Harmony 600 and 650 only the status screen routine interprets it**, for five codes, and none of
 those is drawn from the configuration as far as the code reads: four are asked for with the built in
 status screens selected, and "Application Terminated" sits behind a state the main loop never leaves
-there. [findings.md](findings.md) section 355.
+there. [../../docs/findings.md](../../docs/findings.md) section 355.
 
 ### Base slot 6: the mode table
 
@@ -959,7 +959,7 @@ An entry maps a **tag** to one action list instruction. Two tags are the handler
 mode is left and tag 6 when it is entered**, the only two either arch 14 image selects, and on both
 Harmony Ones every mode carries exactly one of each. The rest are key codes.
 
-**Those key codes are device mode's keypad map.** [findings.md](findings.md) section 271. A key press
+**Those key codes are device mode's keypad map.** [../../docs/findings.md](../../docs/findings.md) section 271. A key press
 is resolved against the current page's list, then the current mode record's **own** list, then the
 base slot 9 stack, and the second of those is where a device's own commands live: pick a device on the
 remote and the whole keypad points at it. For every infrared group in the corpus, the mode whose two
@@ -1570,7 +1570,7 @@ there is an ordinary mode record, 189 bytes in `h525_safemode_ahcm`. `docs/findi
 **A screen program follows the list**, at the record's start plus the list's length, and every
 record has one on **every** architecture: 374 of 374, 237 of 237, 268 of 268, 103 of 103, 114 of
 114 and 35 of 35 in a safe mode container. That program is where the region's large pictures are
-addressed from. [findings.md](findings.md) sections 53 and 64.
+addressed from. [../../docs/findings.md](../../docs/findings.md) sections 53 and 64.
 
 Twice this looked like an architecture that did not carry them, and twice the cause was one
 missing operand count rather than a different layout: arch 12 in section 54 and arch 9 in section
@@ -1606,15 +1606,15 @@ as a screen program.
 
 **Prefer `program` over the computed root above.** On arch 8, 9 and 14 the first page's program is
 usually the same address; on arch 12 it never is, because the stated program begins with a call
-(opcode 22) to the fragment sitting where the computation lands. [findings.md](findings.md)
+(opcode 22) to the fragment sitting where the computation lands. [../../docs/findings.md](../../docs/findings.md)
 section 66.
 
 Read with `gspm.mode_records`, `gspm.mode_pages` and `gspm.mode_program_roots`; `gspm.mode_table`
-returns the raw pointers. [findings.md](findings.md) sections 52 and 66.
+returns the raw pointers. [../../docs/findings.md](../../docs/findings.md) sections 52 and 66.
 
 *It is not the activity list*: a Harmony has a handful of activities and this table has hundreds of
 entries. What distinguishes one entry from another is not established.
-[findings.md](findings.md) section 37.
+[../../docs/findings.md](../../docs/findings.md) section 37.
 
 ### Tagged lists
 
@@ -1637,7 +1637,7 @@ tag is unreachable through anything but its first copy. A writer that emits two 
 has emitted dead data, silently. Bit 0 of `flags` in the second form is tested after the match and
 what it selects is *not established*.
 
-Read with `gspm.tagged_list`. [findings.md](findings.md) section 39.
+Read with `gspm.tagged_list`. [../../docs/findings.md](../../docs/findings.md) section 39.
 
 ### Base slot 9: the binding table
 
@@ -1654,7 +1654,7 @@ exactly the count minus one, in all fifteen**, over counts from 6 to 17.
 **The pointer is the list**, unlike base slot 6's, which lands inside a record. Read a slot 9
 target as slot 6's shape, a `u8` and a `u24` back pointer, and not one of the 54 sets in the corpus
 gives an address below itself where all 1616 of slot 6's do. So the extent is the list's own
-declared length. [findings.md](findings.md) section 67.
+declared length. [../../docs/findings.md](../../docs/findings.md) section 67.
 
 **A key is resolved against a stack of these lists, top down, first match winning**, and the index
 into this array is the low byte of action list opcode `0x1F` with high byte `0xFE` to push and
@@ -1662,11 +1662,11 @@ into this array is the low byte of action list opcode `0x1F` with high byte `0xF
 the push and the pop. **The ordering is the mechanism**: it is what lets one list override another
 instead of merely coexisting with it, which is why this table used to say "sets" and that was wrong
 rather than merely loose. The firmware reading is trelowney's, reported 26 August 2026;
-[findings.md](findings.md) section 176 records what the corpus confirms and what it cannot, since a
+[../../docs/findings.md](../../docs/findings.md) section 176 records what the corpus confirms and what it cannot, since a
 count cannot distinguish a push from an unordered insert.
 
 **Three pushed values are indirections, not entries**, read on the Harmony 700's 2.8 and the Harmony
-600's and 650's 0.2 images, arch 14, [findings.md](findings.md) section 333:
+600's and 650's 0.2 images, arch 14, [../../docs/findings.md](../../docs/findings.md) section 333:
 
 | stack byte | resolves through |
 |---|---|
@@ -1710,9 +1710,9 @@ entry; and reading every byte position in a container as a `u24` finds 27 that n
 seventeen containers, against 148.8 that chance predicts. An emitter still has to reproduce them
 byte for byte, and their position is implied by everything packed before them, as pictures are.
 *Why the generator emits them is not established*, and no config can answer it.
-[findings.md](findings.md) sections 67, 68 and 69.
+[../../docs/findings.md](../../docs/findings.md) sections 67, 68 and 69.
 
-**A set is one activity's keypad map.** [findings.md](findings.md) section 151. Over the fifteen user
+**A set is one activity's keypad map.** [../../docs/findings.md](../../docs/findings.md) section 151. Over the fifteen user
 configs: 158 sets, 65 installed by something in the config, 50 of those by an activity, and **exactly
 those 50 send an infrared code**. No set an activity does not install sends one, so base slot 9 belongs
 to the activities and holds no spares. The other 108 send nothing, and 38 of them bind fifty or more keys
@@ -1722,7 +1722,7 @@ to lists of comparisons, register work and mode entries, which is a menu.
 "no config here holds a keypad map for device mode, which the product certainly has"<!--superseded-->,
 which followed from the count above and from taking base slot 9 for the whole of the keypad. A device's
 own map is a **base slot 6 mode record's own tagged list**, the one below.
-[findings.md](findings.md) section 271.
+[../../docs/findings.md](../../docs/findings.md) section 271.
 
 For every pair of a device and a scan code, the command that pair sends is the **same in every activity
 map that binds it**, 1096 of 1105, and 47 of 50 devices agree on every one of their buttons. The nine
@@ -1739,7 +1739,7 @@ reads the stated one. Scored against it: of 1123 pairs of a device and a key tha
 device's own map holds the same command on 896 and a different one on 136 where every activity agrees, and
 it binds a further 568 keys no activity binds at all. So the reconstruction is wrong on 13% of what it can
 see and blind to a third again as much.
-[../reference/how-a-harmony-works.md](../reference/how-a-harmony-works.md) is the product side of this.
+[../how-a-harmony-works.md](../how-a-harmony-works.md) is the product side of this.
 
 The index is carried by opcode `0x1F` with the operand's high byte `0xFF` and the index in the low
 byte. When it changes, the firmware runs the outgoing entry's list with **tag 2** and the incoming
@@ -1753,7 +1753,7 @@ The two Harmony 700 configs differ in exactly one place in this section, one add
 press tag in one entry, and their owner's notes record exactly one added standard button assignment
 in one activity.
 
-**An entry is one of three things, and a device is never one of them.** [findings.md](findings.md)
+**An entry is one of three things, and a device is never one of them.** [../../docs/findings.md](../../docs/findings.md)
 section 272. Split the table by which entries the configuration's own `0x1F` ever selects:
 
 | population | what it is | how many |
@@ -1776,10 +1776,10 @@ are the same eleven.
 Read with `handlerSetRoles` in `packages/codec/src/inventory.ts`.
 
 **On arch 14 the prefix and the left over entry are generated**, entries 0 to 4 and the leftover entry's
-bindings, order and lists, 13 of 13, [findings.md](findings.md) section 347; "The firmware's own wiring on
+bindings, order and lists, 13 of 13, [../../docs/findings.md](../../docs/findings.md) section 347; "The firmware's own wiring on
 arch 14" above has them.
 
-**Entry 1 holds the activity keys on arch 14** (Harmony 600, 650 and 700), [findings.md](findings.md)
+**Entry 1 holds the activity keys on arch 14** (Harmony 600, 650 and 700), [../../docs/findings.md](../../docs/findings.md)
 section 314. It is a prefix entry nothing selects, and its press entries for the three activity keys
 are one of two four byte forms in all 13 Logitech compiles measured:
 
@@ -1795,9 +1795,9 @@ edit: `setActivityKey` and `clearActivityKey` in `packages/codec/src/families/fo
 only while some key is empty, 6 of the 13, which are two setups, and adding it is a length change, so the edit refuses on a
 configuration without it. **Appending the list first works**: `appendActionLists` with `[07 FFFD, 7E m]`
 and then `clearActivityKey`, written to a Harmony 650 whose compile had all three keys taken, opened the
-"add an Activity" screen, [findings.md](findings.md) section 341. Arch 12 (Harmony One) is not compared.
+"add an Activity" screen, [../../docs/findings.md](../../docs/findings.md) section 341. Arch 12 (Harmony One) is not compared.
 
-**Which activity a key gets is not its type alone**, [findings.md](findings.md) section 340: an
+**Which activity a key gets is not its type alone**, [../../docs/findings.md](../../docs/findings.md) section 340: an
 activity saved again as `Custom`, its group read back as 0 on the account, kept the Listen to Music key
 in Logitech's compile, and an activity `Custom` from the start held none. Over fifteen arch 14 compiles a
 key is empty exactly where the activities number two, Listen to Music each time. MyHarmony assigns the
@@ -1807,13 +1807,13 @@ choice, client sourced.
 **A device kept on between activities**, MyHarmony's per device power setting
 (`IsPoweredOnBetweenActivities`), has its write of 0 left out of the start of every activity that does
 not use it, and nothing else changes: it is still switched on by the activities that use it and still in
-the All Off list, [findings.md](findings.md) section 340. Measured on one device in one compile pair on
+the All Off list, [../../docs/findings.md](../../docs/findings.md) section 340. Measured on one device in one compile pair on
 the Harmony 650. `keepDeviceOn` applies it to the activities a configuration holds, and
 `activityPowerTargets`'s `keepOn` to an activity composed after; applied to the compile without the setting,
 the starts equal the compile with it.
 
 **An activity's key map is built from two roles on arch 14** (Harmony 600, 650 and 700),
-[findings.md](findings.md) section 323, measured on the 40 activities of the 13 Logitech compiles:
+[../../docs/findings.md](../../docs/findings.md) section 323, measured on the 40 activities of the 13 Logitech compiles:
 
 | keys | press entry runs |
 |---|---|
@@ -1829,16 +1829,16 @@ for key on 20 of the 40 activities, about 14 distinct; the other 20 are the nine
 on the test account's 650 and 700 records, four keys each, and 11 activities of the three hand
 customised configurations. On two Harmony 650 configurations set up by other owners it is Logitech's
 on 4 of 6 activities and 223 of 226 keys, the three others on the one activity each that a user may
-have edited, [findings.md](findings.md) section 323. A display device that neither changes channels nor plays contributes no
+have edited, [../../docs/findings.md](../../docs/findings.md) section 323. A display device that neither changes channels nor plays contributes no
 key. Scans 26 and 27 are `UpArrow` and `DownArrow` and 50 and 42 the pad's, decided from the device
 maps, `reference/button-maps.md`. `activityKeysFromRoles` in
 `packages/codec/src/activityroles.ts`. Help (scan 3, release and repeat) is not built, deliberately:
 no device mode binds scan 3, so a map built from roles never holds it, and Help then does nothing in
-that activity, [findings.md](findings.md) section 333.
+that activity, [../../docs/findings.md](../../docs/findings.md) section 333.
 
 **A pass through device**, one in an activity that MyHarmony gives no role, an HDMI switch the picture
 only passes through, is switched on in the activity's start and set to its input, and bound no key and
-no screen item, [findings.md](findings.md) section 339. Measured on one Logitech compile with the role
+no screen item, [../../docs/findings.md](../../docs/findings.md) section 339. Measured on one Logitech compile with the role
 stated, the Harmony 650's starting setup; a contributed Harmony 700 configuration has the same shape
 with the role inferred. Nothing in a configuration states the role: a display device with no key and no
 screen item looks the same. `activityFromRoles` in `packages/codec/src/activityroles.ts`.
@@ -1856,7 +1856,7 @@ drawn in another font, which is not composed. The start up title breaks the
 same way at 126 pixels onto y 5 and 19, each line centred, section 358, a Harmony 650 measurement applied to
 the 600 and 700 by assumption.
 
-Read with `gspm.handler_sets` and `gspm.handler_index`. [findings.md](findings.md) section 39.
+Read with `gspm.handler_sets` and `gspm.handler_index`. [../../docs/findings.md](../../docs/findings.md) section 39.
 
 ### Base slot 14: the state value map
 
@@ -1941,9 +1941,9 @@ compile with one device is in the lab, so that model's form is the other archite
 
 **On arch 14 every record leads with 2 and has no range table**, 501 of 501 over the thirteen compiles,
 and no address points into another record, so `buildValueMap` writes each record whole from its cases.
-[findings.md](findings.md) section 324.
+[../../docs/findings.md](../../docs/findings.md) section 324.
 
-Read with `gspm.value_maps` and `gspm.value_map_reference`. [findings.md](findings.md) section 39.
+Read with `gspm.value_maps` and `gspm.value_map_reference`. [../../docs/findings.md](../../docs/findings.md) section 39.
 
 ### The screen language
 
@@ -1967,7 +1967,7 @@ display. Programs are reached from base slot 11, from a base slot 14 lookup, and
 | 22 | **per architecture**, below | *arch 12*: call. *arch 9*: select a screen row |
 | 23 | none | **per architecture**: *arch 12* the return matching opcode 22; *arch 9* the page transfer |
 
-**Opcode 1 is a filled rectangle**, read in the firmware, [findings.md](findings.md) section 425. Six bytes: `x`, `y`,
+**Opcode 1 is a filled rectangle**, read in the firmware, [../../docs/findings.md](../../docs/findings.md) section 425. Six bytes: `x`, `y`,
 `width`, `height`, each one byte, then the colour as two bytes in the order a picture's pixel is stored, high byte
 first, the order read on the Harmony One 3.4 and the Harmony 650 0.2. The remote fills one row at a time from `y` while the row is below `y + height` **taken in eight bits**, so a
 rectangle whose `y + height` is 256 or more draws nothing (220 rows from `y` 40 end at row 4); each row is clipped to the
@@ -2047,9 +2047,9 @@ opcode 3 that follows as part of opcode 22. Both readings consume the same twelv
 the same address whenever opcode 22 is followed by opcode 3, and that is 1856 instances out of 1856
 in the two arch 9 user configs, so the corpus could not separate them. The arch 9 safe mode
 container has four that are followed by something else, and there the 11 byte reading walks a
-program off the end. See [findings.md](findings.md) section 85.
+program off the end. See [../../docs/findings.md](../../docs/findings.md) section 85.
 
-[findings.md](findings.md) section 64.
+[../../docs/findings.md](../../docs/findings.md) section 64.
 
 A switch:
 
@@ -2072,10 +2072,10 @@ which is the check that matters: instructions are variable length with no length
 operand count desynchronises the walk immediately. Programs are reached from base slot 11, from a
 base slot 14 lookup, and on **every** architecture **from a mode record**, whose own program sits
 immediately after its tagged list. That third source is 2119 roots and is where the full screen
-pictures are named. [findings.md](findings.md) sections 53, 54 and 64.
+pictures are named. [../../docs/findings.md](../../docs/findings.md) sections 53, 54 and 64.
 
 Read with `gspm.screen_program` and `gspm.screen_program_roots`, or dump one with
-`tools/screen_dump.py`. [findings.md](findings.md) section 40.
+`tools/screen_dump.py`. [../../docs/findings.md](../../docs/findings.md) section 40.
 
 #### What opcode 2 draws
 
@@ -2100,7 +2100,7 @@ monochrome. A row is padded to a whole byte, so the record is `5 + ceil(stride /
 pixel row is 12 bytes and a 19 pixel one is 3, not 2.375. Every picture in an arch 9 user config is
 96 by 64, the whole panel, at 773 bytes; the safe mode container also carries a 19 by 10 and an 18
 by 10. Corrected from `5 + stride * rows / 8`, which agrees for every width that is a multiple of
-eight and so for everything the user configs contain. [findings.md](findings.md) section 85.
+eight and so for everything the user configs contain. [../../docs/findings.md](../../docs/findings.md) section 85.
 
 Two rails for a writer, both read off the firmware and invisible in the corpus:
 
@@ -2123,7 +2123,7 @@ its start lands exactly on the trailer in every container that has one: 98 pictu
 One, 18 on a 600, 24 on a 700, 31 to 33 on arch 8. **Every entry of a bank is drawn by a screen
 program**, on all four architectures, with two exceptions in the whole corpus and both in the arch 9
 safe mode container. So the bank is the set of pictures the programs draw rather than a region that
-happens to contain them. [findings.md](findings.md) sections 66 and 146.
+happens to contain them. [../../docs/findings.md](../../docs/findings.md) sections 66 and 146.
 
 **Where the bank starts is stated three ways, and the third needs no pointer slot.** Base slot 17
 names it, two bytes in front, on arch 8, 9 and 14; arch 12 uses that slot for the touch hit map, so
@@ -2140,14 +2140,14 @@ Confirmed against the reader route on **14 of 14** containers whose bank it can 
 and picture count both, over four architectures. Step 3 alone is right on 9 of the 14 and step 1 alone
 on 4, so both filters are load bearing. The ceiling is a plateau: 224, 256, 400 and 1024 give the
 identical answer everywhere, and 180 does not, because it is below the Harmony One's 220 pixel
-backgrounds. `pictureBankByClosure`. [findings.md](findings.md) section 179.
+backgrounds. `pictureBankByClosure`. [../../docs/findings.md](../../docs/findings.md) section 179.
 
 **The largest picture in a bank is the display size**, which is the second independent statement of
 `SCREEN_SIZES`: the first reads where programs draw pictures, this one reads the array, and they agree
 on all four architectures that state one. On arch 10 it gives **128 by 160 for the Harmony 890 and
 895**, with five full screen pictures each, and those two payloads use exactly the ten distinct
 picture sizes a Harmony 880 and 885 use, where a Harmony 600 and a Harmony One share none of them.
-[findings.md](findings.md) section 179.
+[../../docs/findings.md](../../docs/findings.md) section 179.
 
 **Two opcodes draw one**, 2 and 3, each naming it in its last three operand bytes. This said "exactly
 two per container are not" drawn on arch 8 and arch 14 until section 146, and those were opcode 3's:<!--superseded-->
@@ -2179,7 +2179,7 @@ Opcode 3 is a **region copy**, nine operands, and the destination comes first:
 Read as stated, every destination rectangle fits its display and every source rectangle fits the
 picture it names, 3540 of 3540 across the corpus. Swapping the two pairs puts 292 of the 708
 asymmetric arch 8 instructions outside their own picture, against none as stated.
-[findings.md](findings.md) sections 118 and 148.
+[../../docs/findings.md](../../docs/findings.md) sections 118 and 148.
 
 2624 of the 3540 copy a rectangle onto itself, which is a page strip drawn where it already sits.
 Why is unread and it costs nothing either way, since the copy is idempotent.
@@ -2192,7 +2192,7 @@ reference to a copy or a photograph pointed at the one; and since section 425 th
 the screen per draw, opcode 1 with 0, 0, 176, 220 and colour 0, seven bytes where a draw is six, `withPictureFilled`,
 unless `TouchChoices.backgroundFill` keeps the picture. **A picture nothing names is not a piece of its own** to
 `takeApart`: its bytes are carried on the end of the piece before it, so taking one out is a cut by the extent its
-header states. [findings.md](findings.md) section 422.
+header states. [../../docs/findings.md](../../docs/findings.md) section 422.
 
 **Which of the Harmony One's fixed pictures leave pixels undrawn**, the same on every stored copy of all nineteen One
 compiles: of the 29 images behind the 23 drawings `families/touch/pictures.ts` names, the ten battery gauge pictures,
@@ -2206,7 +2206,7 @@ empty is a choice: the gauges at row 0 and column 0 alone, as nine of Logitech's
 drawn black where no ink falls; the cross at every pixel outside its circle that the icon does not ink, 4458, its
 paper a disc of radius 10 of the icon font's 24 units, encoded at 2069 bytes; and every other picture at no pixel. Built with no configuration, `touchFixedPictures`; the
 masked form of section 422, Logitech's undrawn pixels taken off the picture replaced, is `TouchChoices.logitechMasks`.
-[findings.md](findings.md) section 428.
+[../../docs/findings.md](../../docs/findings.md) section 428.
 
 **A config's interface is localised and no field says which language.** Every word a remote shows is
 in the file as a run of glyph codes, in the language of whoever generated it, and the language itself
@@ -2215,7 +2215,7 @@ are English and one is Dutch. It is therefore **inferred**, from Logitech's own 
 which answers on all thirteen with every rival language at zero and refuses on the three containers
 that are nobody's config. A third to a half of the mode pages are the Help walkthrough, whose wording
 is that template with the user's own device names in it, so a generator has to know the language and a
-reader does not. `configLanguage`, `LANGUAGE_MARKERS`. [findings.md](findings.md) section 149.
+reader does not. `configLanguage`, `LANGUAGE_MARKERS`. [../../docs/findings.md](../../docs/findings.md) section 149.
 
 **For a writer:** the language cannot be changed by editing a field, because there is no field. It
 means regenerating every drawn string, and the service that held Logitech's translations is the
@@ -2225,17 +2225,17 @@ discontinued one.
 picture's own dimensions, opcode 3 as `dx + w` by `dy + h` from the instruction itself. Nine
 containers state it both ways and agree exactly, on arch 8 and arch 14, which is what makes opcode 3
 trustworthy on arch 9, where it is the only witness and where the 96 by 64 rested on nothing in the
-container until section 148. `SCREEN_SIZES`. [findings.md](findings.md) section 148.
+container until section 148. `SCREEN_SIZES`. [../../docs/findings.md](../../docs/findings.md) section 148.
 
 The start is found by trying offsets above the named content under two constraints, the exact
 landing and the presence of every addressed picture; exactly one candidate satisfies both, except in
 the arch 9 safe mode container, where two do because two of its four pictures are addressed by
 nothing.
-`gspm.picture_bank`. [findings.md](findings.md) sections 49 to 55.
+`gspm.picture_bank`. [../../docs/findings.md](../../docs/findings.md) sections 49 to 55.
 
 **For a writer:** a picture's position is implied by everything before it, so inserting or resizing
 one moves every later address.
-Read with `gspm.bitmaps` and `gspm.bitmap_at`. [findings.md](findings.md) section 50.
+Read with `gspm.bitmaps` and `gspm.bitmap_at`. [../../docs/findings.md](../../docs/findings.md) section 50.
 
 **A pixel is RGB565 stored high byte first**, section 129, which is the one field in this format that is
 not little endian: it is the order a display controller takes over a serial bus, so a picture is stored
@@ -2275,7 +2275,7 @@ Opcode 3 draws the same object with a six byte position record instead of two. O
 it is used by one instruction in the whole corpus, so its operand layout there is read from the
 firmware and exercised by almost nothing. **On arch 9 it is the ordinary way to draw**, 1856 times
 across the two user configs, always preceded by an opcode 22 naming the row: two `(0, 8 * row)`
-pairs, then 96 by 8, then the picture. [findings.md](findings.md) section 85.
+pairs, then 96 by 8, then the picture. [../../docs/findings.md](../../docs/findings.md) section 85.
 
 #### What fills the region
 
@@ -2300,7 +2300,7 @@ blank screens of exactly 77440 bytes. Section 54 then found the header states `s
 rows 220`. A measurement and a declaration agreeing is worth more than either alone, which is why
 `harmony/region.py` is kept even though nothing needs it any more. It is reverse engineering only
 and deliberately not in `packages/codec`: a width recovered by minimisation is a measurement, not a
-reader. [findings.md](findings.md) sections 51, 54 and 55.
+reader. [../../docs/findings.md](../../docs/findings.md) sections 51, 54 and 55.
 
 ### Base slot 11: the screen program table
 
@@ -2317,7 +2317,7 @@ so the table is mostly indirection.
 operand's low byte, read on the Harmony 600 0.2, the Harmony 650 0.2 and 0.4, the Harmony 700 2.8 and
 the Harmony One 3.4; on the four arch 14 images the table is sought at that one site and no other. So
 an operand of 256 or more runs entry `operand & 0xff`, and a program of ours has to take a free entry
-below 256 rather than be appended. [findings.md](findings.md) section 369.
+below 256 rather than be appended. [../../docs/findings.md](../../docs/findings.md) section 369.
 
 **The corner program**, which the codec named a battery program until its names took up section 369, and which draws the sending mark,
 section 369, is one shape on every Harmony 600, 650 and 700 compile, 70 of 70 on 24, three runs back to
@@ -2449,7 +2449,7 @@ set declaring 73 pointers of which 66 are: the array must hold at least 8 pointe
 5, where 0 admits 179 false positives and 8 loses four real sets.
 
 **The font table is not adjacent to the picture bank**, which was checked before being relied on: over
-thirteen containers its top sits 1918 to 48385 bytes below the bank. [findings.md](findings.md)
+thirteen containers its top sits 1918 to 48385 bytes below the bank. [../../docs/findings.md](../../docs/findings.md)
 section 180.
 
 **On arch 10 this gives eight sets** on both clean reads, 282 glyphs on the Harmony 890 and 277 on the
@@ -2458,7 +2458,7 @@ the Harmony 880's own order, 14, 14, 15, 14, 13, 13, 8, 11. The encoding is two 
 is **measured**: the arch 9 packed form finds zero sets in either container and the unpacked form
 finds all eight. And the glyph shapes are named by the arch 8 alphabet at 213 of 237 and 212 of 229,
 against 44 and 42 for the Harmony 600's and **0** for the Harmony One's, so a Harmony 890 uses the
-Harmony 885 typeface. [findings.md](findings.md) section 180.
+Harmony 885 typeface. [../../docs/findings.md](../../docs/findings.md) section 180.
 
 **This does not give arch 10 its text.** A string's address comes out of a screen program, base slot
 11, and these sets declare a first code of 1 rather than 32, so the codes are per container and a run
@@ -2548,10 +2548,10 @@ because the codes are the generator's own and nothing looks a character up.
 
 Read with `characterMap`, `screenStrings` and `textCoverage` in `packages/codec/src/text.ts`, the
 alphabets in `packages/codec/src/alphabets.ts`, and `make text` for the per container figures.
-[findings.md](findings.md) section 112.
+[../../docs/findings.md](../../docs/findings.md) section 112.
 
 Read the sets and glyphs with `gspm.font_sets`, `gspm.Container.images` and `gspm.Container.glyph`;
-draw them with `tools/screen_dump.py --images` or `--strings`. [findings.md](findings.md) sections 46
+draw them with `tools/screen_dump.py --images` or `--strings`. [../../docs/findings.md](../../docs/findings.md) sections 46
 and 63.
 
 **A pad's label, the Harmony One**, section 394: a box 81 by 50 at one of six places, its name in the
@@ -2775,7 +2775,7 @@ rectangles: one activity page has the bar on 48 and 49 with the blocks on 50 to 
 blocks on 48 to 50 with the bar on 51 and 52.
 
 Read with `gspm.touch_pages` and `gspm.Container.touch_hit`, or in TypeScript with `touchPages`,
-`touchPageOf` and `touchOwner`. [findings.md](findings.md) sections 45 and 125.
+`touchPageOf` and `touchOwner`. [../../docs/findings.md](../../docs/findings.md) sections 45 and 125.
 
 **The hit pages the fixed screens name, built**, section 417: `families/touch/hitpages.ts`. The 103 pages of the
 firmware, status, fixed, tour and Remote Assistant screens name 23 hit pages on each of the sixteen English compiles
@@ -2839,7 +2839,7 @@ red patch on all seven Harmony 700 compiles, and the top bar on both Harmony 600
 
 Fixed is per model and per service generation: 53 of the 55 fixed modes and all 19 pictures recur on
 the 2026 Harmony 700 compiles, none of the modes and 2 of the pictures on the Harmony 600's. Read with
-`screenUnits`, `attributeScreens` and `screenCategoryTotals`. [findings.md](findings.md) section 317.
+`screenUnits`, `attributeScreens` and `screenCategoryTotals`. [../../docs/findings.md](../../docs/findings.md) section 317.
 
 ### The screen sections by category, the Harmony One
 
@@ -2864,7 +2864,7 @@ identical once relocated; only the 38 other modes change size, the rest of fixed
 **Fixed is per skin, per language and per compile**: the two compiles of skin 59, the European One, differ in 10
 and 4 of the 78 fixed modes (the clock's pickers on both, Options and the absent Remote Assistant on the everyday
 One's compile only), and the Dutch compile in 69 of the 78, every one that draws text.
-Nothing in a configuration states its language. [findings.md](findings.md) section 405.
+Nothing in a configuration states its language. [../../docs/findings.md](../../docs/findings.md) section 405.
 
 **Read and put back by the record machinery**, `todo-compile-one.md` 4.4.2: `recordReading` reads a One page
 record as seven bytes, the hit page, then the list and program addresses, describing the hit page; follows a
@@ -3187,7 +3187,7 @@ Battery, USB Connected, the charging problem) and no instruction the readers loc
 sixteen compiles of skin 54 all 38 others are entered by the configuration, 30 from a key or touch, two Remote
 Assistant screens from the start and six blank screens by timers. Above the head one device list per compile is
 named by no enter at all. Harmony One 3.4 only; computed jumps, `FSR` writes and a computed `0x7E` not excluded.
-[findings.md](findings.md) section 408.
+[../../docs/findings.md](../../docs/findings.md) section 408.
 
 ### Base slot 15: the parameter block
 
@@ -3291,9 +3291,9 @@ six containers holding 3, 4, 6 and 7 devices. The fifth set is the two Harmony 7
 and six devices each, so it is silent rather than contrary. What the values track is the **model**:
 the Harmony 600 and the Harmony 700 disagree about their display light levels and their battery
 curves and about nothing else. A device's own numbers are state variables in base slot 13.
-[findings.md](findings.md) section 234.
+[../../docs/findings.md](../../docs/findings.md) section 234.
 
-Read with `gspm.parameter_groups`. [findings.md](findings.md) sections 44, 103 and 105.
+Read with `gspm.parameter_groups`. [../../docs/findings.md](../../docs/findings.md) sections 44, 103 and 105.
 
 **Built**, by `buildParameterBlock` in `packages/codec/src/firmwaresections.ts`, from the model's values
 and checked against `PARAMETER_GROUP_COUNTS`, refusing a group of another length: the Harmony 600, 650
@@ -3307,7 +3307,7 @@ above does not read hold `60`, `80`, `2500, 10980` and `129, 21, 3, 1, 0, 0, 0, 
 `1 3 5 32` on the Harmony 600, `10 20 8 32` on the Harmony 650 and `3 5 10 32` on the Harmony 700, then
 `96 98 308 310 768 770`, group 5's curve, group 6's `2025 2075 2375 2425 2475 2525` and eight of 3300, `0`
 and `1800 10980`. Group 5 is group 6's curve on the Harmony 700 and `2025 2075 2100 2125 2200 2525` and
-eight of 3300 on the other two. `PARAMETER_VALUES` in `families/four-slot/wiring.ts`, [findings.md](findings.md) section 347.
+eight of 3300 on the other two. `PARAMETER_VALUES` in `families/four-slot/wiring.ts`, [../../docs/findings.md](../../docs/findings.md) section 347.
 
 ### Base slot 12: the timer table
 
@@ -3351,17 +3351,17 @@ which is 20 and also its default, and on the Harmony 700 both timers of the pair
 the rule's and *not established*. The two are the arms of one test of state variable 9; when the
 other arm is taken is *not established*. Arch 8 and arch 10 carry the same pair, *unmeasured*. `screenLightTimer` in `packages/codec/src/tables.ts`, findings.md section 292.
 
-Read with `gspm.timers` and `gspm.timer_reference`. [findings.md](findings.md) section 43.
+Read with `gspm.timers` and `gspm.timer_reference`. [../../docs/findings.md](../../docs/findings.md) section 43.
 
 **Every arch 14 timer but a device's is the firmware's, in a fixed order**, 13 of 13: light off, the
 Harmony 700's four cycling frames, the screen light, its tick, the screen light again and the return to
 USB Connected, "The firmware's own wiring on arch 14" above. A device's own timer writes 1 into its
 `<label>_OnlinePower_2` after 30 or 45 seconds, on 10 of the 13, at index 3, 4, 5, 7 or 9; what decides
-its place is *not established*. [findings.md](findings.md) section 347.
+its place is *not established*. [../../docs/findings.md](../../docs/findings.md) section 347.
 
 **On the Harmony One every timer but a device's is one of thirteen on every compile, a three second one on 2
 of 19, or a four second redraw timer**, 13 to 20 of those, 19 of 19, one per class of screen (section 430); the
-thirteen come in three orders over the 19. "The firmware's own wiring on the Harmony One" above. [findings.md](findings.md)
+thirteen come in three orders over the 19. "The firmware's own wiring on the Harmony One" above. [../../docs/findings.md](../../docs/findings.md)
 section 410.
 
 ### Base slot 16: the number sender
@@ -3457,7 +3457,7 @@ The fourteen bytes read in sequence end exactly where the first of the three fix
 begins, which is the closure for this layout, and the routine is identical on the 700, the 600 and
 the One.
 
-Read with `gspm.number_senders` and `tables.numberSenders`. [findings.md](findings.md) sections 39,
+Read with `gspm.number_senders` and `tables.numberSenders`. [../../docs/findings.md](../../docs/findings.md) sections 39,
 154 and 156.
 
 ### Base slot 13: the state variable table
@@ -3541,7 +3541,7 @@ consecutive records end exactly where the next begins and **none overruns**, and
 the byte accounting produces no overlap with any other structure.
 
 **Which transitions a write fires**, read in the firmware on the Harmony 600 and 650's 0.2 builds, whose
-walker and setters are byte identical ([findings.md](findings.md) section 332). The sentinels and the
+walker and setters are byte identical ([../../docs/findings.md](../../docs/findings.md) section 332). The sentinels and the
 silent flag's skip were read on the Harmony One 3.4 too, section 277; the rest is not read there, and on
 the 650's 0.4 and the Harmony 700's 2.8 the walker is located and not compared:
 
@@ -3639,7 +3639,7 @@ of the corpus, which is what settles it. Every non negative `from` and `to` is i
 every instruction has a reading, and every one of the 439 that name a base slot 10 list by index
 names one that exists. A record either carries no transitions or covers every value of the variable
 the same number of times, so `count` is a multiple of `max + 1`: once per value in 83 records, twice
-in two and four times in one. [findings.md](findings.md) section 86.
+in two and four times in one. [../../docs/findings.md](../../docs/findings.md) section 86.
 
 **Variables 13 and up are the config's own, and eight per device are that device's delays.** On arch
 14 (Harmony 600 and 700) each device carries `PowerOnDelay`, `DefaultPowerOnDelay`,
@@ -3721,7 +3721,7 @@ the Harmony 650's and Harmony 700's configurations, and the range is the 451 cas
 `setPowerOnDelayVariable` in `packages/codec/src/edit.ts` refuses anything else. Written to the Harmony
 650 and the Harmony 700 and put back, the new value in force after the writer's restart on both,
 measured in memory on the first and by infrared timing on the second. **On the Harmony 600 the same
-edit landed and was not used**, because a value saved on the remote wins, below. [findings.md](findings.md)
+edit landed and was not used**, because a value saved on the remote wins, below. [../../docs/findings.md](../../docs/findings.md)
 sections 283, 301 and 303.
 
 **A delay saved on the remote overrides the configuration's at start**, arch 14, measured across three
@@ -3755,10 +3755,10 @@ starts on the Harmony 600:
   Harmony 600; the 0.2 path is byte identical on the 650.
 
 `packages/codec/test/settingsstore.test.ts` and `packages/usb/test/settings.test.ts`.
-[findings.md](findings.md) sections 303 to 305.
+[../../docs/findings.md](../../docs/findings.md) sections 303 to 305.
 
 `deviceDelays`, `powerOnInstructions` and `deviceIdOfGroup` in `packages/codec/src/inventory.ts`.
-[findings.md](findings.md) sections 234 and 235.
+[../../docs/findings.md](../../docs/findings.md) sections 234 and 235.
 
 **A device's inputs**, arch 14, section 321, measured on the thirteen arch 14 compiles the lab holds, and the same on the Harmony One but for the send, which is two instructions there, section 393.
 Two layers of one byte variables, each a record with `first` 0 and `second` the number of values less
@@ -3801,7 +3801,7 @@ one:
 `inputPlan`, `composeDeviceInputs`, `activityStartTargets` and `deviceStateMachines` in
 `packages/codec/src/inputs.ts`; `packages/codec/test/inputs.test.ts`.
 
-**Built from a description, arch 14**, [findings.md](findings.md) section 324. `buildStateTables` in
+**Built from a description, arch 14**, [../../docs/findings.md](../../docs/findings.md) section 324. `buildStateTables` in
 `packages/codec/src/statetables.ts`, with the four slot family's facts of
 `packages/codec/src/families/four-slot/statetables.ts`, rebuilds all thirteen arch 14 compiles' base slots 0, 13 and 14
 byte for byte. What it generates rather than carries:
@@ -3847,7 +3847,7 @@ the value map lead byte and the name tree's roots and order are arch 14's on all
 
 Read with `gspm.state_table`, `gspm.state_records` and `gspm.state_index`; `stateTable` and
 `stateRecords` in `packages/codec`.
-[findings.md](findings.md) sections 35, 60 and 86.
+[../../docs/findings.md](../../docs/findings.md) sections 35, 60 and 86.
 
 ### Base slot 5: the infrared database
 
@@ -3869,7 +3869,7 @@ its blob holds one record shaped position, and its named content is 94845 bytes 
 
 **The grouping is still gated**, so this is a flat list of records and not a list of devices: which
 appliance a record belongs to is the base slot 5 pointer array itself.
-[findings.md](findings.md) section 181.
+[../../docs/findings.md](../../docs/findings.md) section 181.
 
 
 **Confirmed on 15<!--fact:user_configs--> user configs across four architectures.** Two levels of pointer array over records of
@@ -3899,7 +3899,7 @@ per block:    u16 duration[]      bit 15 set is a mark, bits 14..0 are microseco
 
 **A record's blocks sit below its header, not after it**, so the header is the last thing in the
 run and a record is not one contiguous span. Reading forwards from the header reads the *next*
-record's durations. [findings.md](findings.md) section 61.
+record's durations. [../../docs/findings.md](../../docs/findings.md) section 61.
 
 ~~The header is 21 bytes~~<!--superseded--> **the header states its own length**, section 75. Byte
 `+0x0B` is a count of nine byte **pointer groups**, each `{ u24 block; u24 block; u24 block }`, so
@@ -4322,7 +4322,7 @@ bits can say.
 ~~the record body opens with a `u24` naming one of 66 shared descriptors~~<!--superseded--> That
 `u24` is the symbol table pointer and there are 5 of them in `h525_config`, not 66; the count came
 from reading at each block area's start rather than at a pointer target, which is a body start only
-135 times in 199. [findings.md](findings.md) sections 65 and 82.
+135 times in 199. [../../docs/findings.md](../../docs/findings.md) sections 65 and 82.
 
 **All three levels are shared, harder than anywhere else in the format.** Two records name one body,
 up to 206 bodies name one symbol table, and a symbol block is reused by every code with that pulse
@@ -4609,7 +4609,7 @@ whose length varies.
 
 *A group is a device*: base slot 0's names tie a device label to exactly one group through base
 slot 13's transitions, sections 86 and 126. *What the 14 byte header holds is not established.*
-[findings.md](findings.md) section 32.
+[../../docs/findings.md](../../docs/findings.md) section 32.
 
 ### Base slot 8: key press bindings
 
@@ -4634,7 +4634,7 @@ structure: a record is a narrow tagged list, and the `0x00` it skips is the wide
 The leading list is the section's own and is `1 + 3 * count` bytes, 4 on arch 8 and arch 12 and 34
 on arch 9 and arch 14.
 On arch 14 it is the eleven start up entry points the firmware queues by index, generated by
-`buildWiring`, "The firmware's own wiring on arch 14" above, [findings.md](findings.md) section 347.
+`buildWiring`, "The firmware's own wiring on arch 14" above, [../../docs/findings.md](../../docs/findings.md) section 347.
 
 **The tag is a key press.** Under the same `EVENT_MASK` and `SCAN_MASK` split as the key table,
 every tag in every sample is a press, `0x80`, and the scan codes are model specific: 2, 8, 9 and 34
@@ -4668,7 +4668,7 @@ chain on 62 of the 63 keys where both have an opinion.
 
 **The controlled pair closes it.** The owner's account of the one change includes two new additional
 buttons. Slot 8 grew by 8 bytes, an entry is 4, the record count is unchanged, and exactly one
-record went from two entries to four. [findings.md](findings.md) section 27.
+record went from two entries to four. [../../docs/findings.md](../../docs/findings.md) section 27.
 
 Slot 8's `0x7F` instructions also call **every** action list in the final packed run, exactly once
 each, which is the only thing that reaches those lists.
@@ -4741,7 +4741,7 @@ Two properties hold corpus wide and are what make this a tree rather than a list
 
 Level 2 appears on arch 8 and arch 9 only, holding a small menu under `HarmonyAssistant`.
 
-**The order Logitech's compiler stores the nodes in**, [findings.md](findings.md) section 324. Level
+**The order Logitech's compiler stores the nodes in**, [../../docs/findings.md](../../docs/findings.md) section 324. Level
 0 first, `Root` then `State` on the arch 12 and 14 configurations measured and those two then
 `HarmonyAssistant` on the arch 8 and 9 ones. The exceptions are containers that are not a user
 configuration: the Harmony 525's safe mode container and the one in its firmware package hold one
@@ -5316,7 +5316,7 @@ their steps; on arch 14 confirmed from one Logitech compile of a Harmony 650 hol
 section 343, for the shape, the pause's devices and order, and a 20 second pause as one `0x7C`, and from a
 second on the same model, section 349, for the screen copy and the record a command sends; the send's
 quantity is still inferred there.**
-[findings.md](findings.md) section 327. **On a Harmony 650 the composed form runs as written**, section 342:
+[../../docs/findings.md](../../docs/findings.md) section 327. **On a Harmony 650 the composed form runs as written**, section 342:
 one press sent the three commands with the two pauses, 2 and 20 seconds, between them, and Logitech's
 compile of the same sequence is the same list, section 343, sending single block records of its own.
 **A pause holds every device it names, and so the whole activity**: a key pressed during the 20 second
@@ -5458,7 +5458,7 @@ indices. Not established.*
 
 Architecture 12 has an analogous pair, `{0x75 a; 0x7E b}`, with one group and a value set that is
 neither the same size nor contiguous, so the structure does not transfer as it stands.
-[findings.md](findings.md) section 28.
+[../../docs/findings.md](../../docs/findings.md) section 28.
 
 #### `0x7C` is a per device delay in tenths of a second, folded no further than 100
 
@@ -5466,7 +5466,7 @@ neither the same size nor contiguous, so the structure does not transfer as it s
 `{ u8 group; u8 value }`: the group is an infrared group, and in 21882 uses across twelve
 containers it is always one the config's infrared table has. ~~The value is 0 to 100 and never more.~~<!--superseded-->
 **The value is 0 to 100 in those twelve, and Logitech's compiler writes 200 in one instruction** for a
-sequence's 20 second wait on the Harmony One, twelve times in one configuration, [findings.md](findings.md)
+sequence's 20 second wait on the Harmony One, twelve times in one configuration, [../../docs/findings.md](../../docs/findings.md)
 section 327.
 
 **The fold stops at 100 in the firmware**, which is all the firmware shows; it does not cap a single
@@ -5480,7 +5480,7 @@ asks for priority 1 where `0x7D` asks for 2.
 That bit changes what enqueueing means. A quantity folds into the last entry of the queue when the
 tag matches: the larger value wins and the smaller is dropped. **The fold is refused when the
 queued value is already 100**, which pushes a second entry instead, and that is the mechanism that
-makes a quantity above 100 expressible at all. [findings.md](findings.md) section 70.
+makes a quantity above 100 expressible at all. [../../docs/findings.md](../../docs/findings.md) section 70.
 
 Two rails follow. ~~A writer must **spell out a value above 100** rather than emit it whole~~: the
 fold is refused at 100 and a **single** entry is not capped, and Logitech's own compiler emits a
@@ -5517,7 +5517,7 @@ one, at the top level of the action list a device's `Power` variable runs on its
 naming that device's own group. 57 of 57 transitions across those three architectures carry one and
 all 16 on arch 14 carry none. The nested list that sends the code carries its own `0x7C` of value 1,
 the ordinary per send quantity, so a reader must stay at the top level. `powerOnInstructions` in
-`packages/codec`. [findings.md](findings.md) sections 29, 70 and 235.
+`packages/codec`. [../../docs/findings.md](../../docs/findings.md) sections 29, 70 and 235.
 
 **Changing one is a two block write**, section 237. `applyEdits` restamps the trailer checksum, which
 sits at the far end of the container, so the operand and the checksum land in different 64 KiB erase
@@ -5575,7 +5575,7 @@ nothing between `450` and `0x8000`.
 **The number of distinct keys is the number of infrared groups**, 6 and 6 and 4, so a key is a
 device. Keys occur nowhere else in the container, so they are identifiers the generator brought in
 rather than offsets into it. *What the two fields are is not established*, but field 0's range is
-the same 0 to 450 that `0x7C` carries by a different route. [findings.md](findings.md) section 71.
+the same 0 to 450 that `0x7C` carries by a different route. [../../docs/findings.md](../../docs/findings.md) section 71.
 
 #### `0x07`, `0x0F`, `0x1F` and `0x3F` carry a second opcode field in the operand
 
@@ -5626,7 +5626,7 @@ an emitter reproduces the argument.
 **Only five opcodes occur below `0x65` in the whole corpus**, `0x00`, `0x07`, `0x0F`, `0x1F` and
 `0x3F`, one per range and each the top of its own, which is `2^n - 1`. What the low bits would mean
 is unconfirmed because nothing exercises them.
-[findings.md](findings.md) sections 31, 72 and 73.
+[../../docs/findings.md](../../docs/findings.md) sections 31, 72 and 73.
 
 **The bands are read, and they are not one table across architectures.** Every branch of both
 dispatchers is followed to its `RETURN` in section 73. The full band tables are there; what a
@@ -5687,7 +5687,7 @@ each on, and the firmware itself never enables that device: it only switches it 
 config that omits them leaves the device disabled. `findings.md` section 106.
 
 `actions.BAND_3F_C0_SELECTOR` extracts the selector and `actions.reading` resolves the instruction.
-[findings.md](findings.md) sections 102, 103 and 106.
+[../../docs/findings.md](../../docs/findings.md) sections 102, 103 and 106.
 
 #### `0x75` sounds a tone
 
@@ -5704,7 +5704,7 @@ cycles. At the 4 MIPS the infrared carrier gives (section 32) that is 4.25 us a 
 
 The whole corpus uses those four and nothing else. Counting the loop's own overhead moves the
 highest by about 8% and the lowest by under 1%. **`0x3F` with high byte `0xF3` gates it**: the
-generator returns without playing when that byte is zero. [findings.md](findings.md) section 74.
+generator returns without playing when that byte is zero. [../../docs/findings.md](../../docs/findings.md) section 74.
 
 **On arch 12 (Harmony One) Logitech's compiler clicks before every screen send.** Every screen binding
 that sends runs `0x75 0x0FCA`, then its calls, then its `0x7D`, and no key binding that sends runs it,
@@ -5714,12 +5714,12 @@ loop turns later. A screen binding's send is also more often a **one block copy*
 with its device's delay between devices, 500 or 1000 ms on the One, where a two block record opens with
 50 ms: 148 of `one_config`'s 241 screen sends against 23 of its 377 key sends. A touch reaches the same
 event poster as a key, and the touch code `0x202` sets the streamer's hold flag as a held key does.
-[findings.md](findings.md) section 337. **A device page's row, a `0x7F` binding, runs a list that opens with
+[../../docs/findings.md](../../docs/findings.md) section 337. **A device page's row, a `0x7F` binding, runs a list that opens with
 the click**, on 3545 of 3545 rows over nineteen of Logitech's One compiles: `{0x75 0x0FCA, 0x7F list}` on 3495,
 the click and a `0x72` on 50. The touch family's device page wraps every row whose list does not already open with
 a click that way, and an activity screen's pad, which clicks itself, calls the command under the device page's
 click, so no binding reaches two clicks, as none in Logitech's compiles does. The Harmony 600, 650 and 700
-compiles' device page rows open with a call instead. [findings.md](findings.md) section 404.
+compiles' device page rows open with a call instead. [../../docs/findings.md](../../docs/findings.md) section 404.
 
 #### State variables 3, 5 and 6 are the date
 
@@ -5730,7 +5730,7 @@ from the state variable base appear in both firmwares, `0x900` on arch 14 and `0
 
 A writer must not reuse those indices. The corpus agrees: the value counts of the first twelve
 base slot 13 records are identical across all four architectures.
-[findings.md](findings.md) section 74.
+[../../docs/findings.md](../../docs/findings.md) section 74.
 
 #### `0x80 | n` writes state variable `n`
 
@@ -5749,13 +5749,13 @@ instruction names a variable the table does not have, and **none of the 2947 nar
 a high byte**, which is the one an emitter has to respect.
 
 `0x1F` bands `0xEE` and `0xED` reach the same store with the index in the operand instead, so an
-index above `0x7F` is reachable only through those. [findings.md](findings.md) section 73.
+index above `0x7F` is reachable only through those. [../../docs/findings.md](../../docs/findings.md) section 73.
 
 #### `0x73` runs a screen program
 
 **Confirmed on eight containers**, 3927 uses, all arch 8, 9 and 12; no arch 14 config issues it.
 The operand indexes base slot 11, the same table the screen language programs live in, and
-**nothing in the corpus names a program outside it**. [findings.md](findings.md) section 73.
+**nothing in the corpus names a program outside it**. [../../docs/findings.md](../../docs/findings.md) section 73.
 
 #### `0x7D` sends an infrared code
 
@@ -5804,7 +5804,7 @@ programmed Harmony 300 whose four groups are all occupied, 154 sends over 154 re
 first arch 16 sample where no group is empty.
 
 Read with `gspm.ir_reference` and `gspm.ir_references`.
-[findings.md](findings.md) sections 33 and 261.
+[../../docs/findings.md](../../docs/findings.md) sections 33 and 261.
 
 #### The interpreter, from the firmware
 
@@ -5896,7 +5896,7 @@ comparisons and two updates, and the nine uses of `7` are what an arch 8 or arch
 a remainder out of.
 
 The lookup all three of `0x70`, `0x71` and `0x72` index with their low byte is the **state variable
-table**, base slot 13. [findings.md](findings.md) sections 34, 35, 39 and 107.
+table**, base slot 13. [../../docs/findings.md](../../docs/findings.md) sections 34, 35, 39 and 107.
 
 #### The arithmetic block `0x65` to `0x6E` is arch 14 only
 
@@ -5908,7 +5908,7 @@ do-nothing handler everywhere.
 
 The corpus agrees without being asked: of the eleven opcodes `0x65` to `0x6F` exactly two are used
 anywhere, `0x6C` and `0x6E`, both arch 14 only. A writer must not emit one for another architecture,
-where it is accepted and ignored. [findings.md](findings.md) section 107.
+where it is accepted and ignored. [../../docs/findings.md](../../docs/findings.md) section 107.
 
 **A zero operand to `0x6E`, `0x77` or `0x78` is defined rather than an error.** The division loop runs
 sixteen iterations whatever it is given, so a divisor of zero returns `0xFFFF` from `0x77` and the
@@ -5933,7 +5933,7 @@ table derived from the 525 does not cover the remotes on the bench.
 
 **Corrected here:** the paragraph below was written when `0x7E` was measured and unplaced, and it is
 kept because its measurements are still the record of what the operand statistics could and could
-not see. `0x7E` **is** placed, in [findings.md](findings.md) section 37: it enters the base slot 6
+not see. `0x7E` **is** placed, in [../../docs/findings.md](../../docs/findings.md) section 37: it enters the base slot 6
 mode its operand indexes. Read the paragraph as an account of why counting operands was not enough,
 not as an open question. Its last sentence is the one that mattered: the maximum tracked nothing
 countable in the config, because nobody had counted the mode table yet.
@@ -6029,7 +6029,7 @@ the keypad scanner's own scan code:
 
 Corrected: this document previously stated `0x80 | (row << 3) | col` with bit 7 marking a matrix
 key, which made the arch 14 table describe a keypad that cannot exist. See
-[findings.md](findings.md) section 17 for the three agreements that settle it.
+[../../docs/findings.md](../../docs/findings.md) section 17 for the three agreements that settle it.
 
 | Sample | count | Shape |
 |---|---|---|
@@ -6053,7 +6053,7 @@ no measurement there can produce a code.
 
 | Arch | Lattice | Scan code | Range | Source |
 |---|---|---|---|---|
-| 8 (880, 885) | 4 by 16 | `(line - 1) * 4 + input`, `input` 1 to 4 | 1 to 64, nothing binds 64 | firmware, all four images, [findings.md](findings.md) section 144 |
+| 8 (880, 885) | 4 by 16 | `(line - 1) * 4 + input`, `input` 1 to 4 | 1 to 64, nothing binds 64 | firmware, all four images, [../../docs/findings.md](../../docs/findings.md) section 144 |
 | 9 (525) | 8 by 8 | `group * 8 + column`, both 1 to 8 | 1 to 64, nothing binds a multiple of 8 | firmware, section 89 |
 | 14 (600, 700) | 4 by 14 | column is `(code - 1) mod 4` | 1 to 54 bound of 56 | 54 buttons pressed on the bench, section 48 |
 | 12 (One) | not established | not established | 1 to 55 bound | sixteen buttons share one sense line, so no census yields a code. Section 48 |
@@ -6073,7 +6073,7 @@ more entries in the parseable corpus, 12 distinct and six of them contained in n
 Java's default rather than a measurement. Other tagged lists are not asserted, and the Harmony 525's
 safe mode container's mode 0 list breaks the rule. Two tags in one bucket
 keep an order the rule does not give, and 33 of the 39 hold such a tie; mode 0's list on a Harmony
-600, 650 and 700 holds none, so `modeZeroKeyList` generates it. [findings.md](findings.md) section 315.
+600, 650 and 700 holds none, so `modeZeroKeyList` generates it. [../../docs/findings.md](../../docs/findings.md) section 315.
 
 ### Arch 8 and arch 12 share a code ordering, because they share the hash
 
@@ -6126,14 +6126,14 @@ to 64; not one bound code in any of the three containers is a multiple of eight,
 binds nothing, and within the resulting lattice of eight groups of seven the fifty are contiguous
 from 1 to 57. That implies fifty matrix buttons on a Harmony 525, **confirmed on the physical remote
 on 9 August 2026**, its owner counting fifty. So every matrix button is bound and every bound code
-has a button, with nothing left over on either side. See [findings.md](findings.md) section 89 for
+has a button, with nothing left over on either side. See [../../docs/findings.md](../../docs/findings.md) section 89 for
 the firmware side.
 
 ### The key table is not the button to action map
 
 Whatever binds a key to an action, it is not this table. Two configs of the same Harmony 700 whose
 owner recorded reassigning three buttons between them carry a byte identical key table, all 163
-records. See [findings.md](findings.md) section 16.
+records. See [../../docs/findings.md](../../docs/findings.md) section 16.
 
 That left the table looking like a description of the remote's own keypad and event capability.
 

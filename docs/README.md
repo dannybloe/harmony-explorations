@@ -34,7 +34,7 @@ docs/plans/                     one worked out plan per planning session, NNN-sl
                                 reasoning behind every step taken, and 003 the live plan for
                                 chapter 1
 docs/findings.md                authoritative technical reference, narrative
-docs/config-format.md           the config format spec, structured, for tools to track, ending
+reference/config-format/README.md           the config format spec, structured, for tools to track, ending
                                 with the per base slot summary that used to sit in this file
 reference/glossary.md                the vocabulary: which terms are Logitech's, which are ours
 docs/usb-protocol.md            the USB protocol spec, step 3, transport done, commands open
@@ -560,7 +560,7 @@ above, because the test is often the only thing that can tell you which of two i
 
 When something new is confirmed, four things happen together:
 
-1. the **structured fact** goes in `docs/config-format.md`, which is what other tools consume
+1. the **structured fact** goes in `reference/config-format/README.md`, which is what other tools consume
 2. the **reasoning and evidence** goes in `docs/findings.md`, which is why it is believed
 3. a **regression test** goes in `tests/`, which is what stops it silently rotting
 4. **everything that summarised the old answer gets swept**, which is what stops the rest of the

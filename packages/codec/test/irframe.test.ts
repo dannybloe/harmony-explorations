@@ -316,7 +316,7 @@ test('a two group record is biphase, and the reverse no longer holds', skipWitho
         // duration stream at the record at all, section 82, so no convention can read it and the left
         // half of the biconditional is empty by construction. This restriction was added because the
         // test failed on an arch 9 record, and the first explanation written for it, that the count
-        // byte means something else there, is wrong and `docs/config-format.md` says so.
+        // byte means something else there, is wrong and `reference/config-format/README.md` says so.
         if (irClass(c, record) !== IR_CLASS_STREAM) continue;
         records += 1;
         const first = irHeaderPointers(c, record)[0];
@@ -697,7 +697,7 @@ test('the two gap thresholds are tuned, and these are the margins they are tuned
 test('how many pointer groups a record declares, per architecture', skipWithoutLab(), () => {
   // Four comments in `ir.ts` said this is 1 on arch 9 (Harmony 525) as well as on arch 12 (Harmony
   // One) and arch 14 (Harmony 600 and 700), and one of them was on the constant a caller reaches for
-  // when sizing a header. `docs/config-format.md` had said the opposite for weeks and the code was
+  // when sizing a header. `reference/config-format/README.md` had said the opposite for weeks and the code was
   // right the whole time, which is the worst combination: nothing failed, and the comment is what a
   // reader trusts.
   //

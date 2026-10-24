@@ -33,7 +33,7 @@ section 199. The external medium's part and size are **not checked**; concordanc
 | pointer slots | 15; the header byte `0x0F` is the count, which is how section 194 found that "format 1.4" was a slot count all along | measured, section 194 |
 | the marker's offset | `0x47`, which is `0x0B + 4 * 15`, hardcoded in the firmware's validator | read in the firmware, section 259 |
 | base address | `0x020000`, the file's place on the external medium | measured, section 194 |
-| slot map | raw slot to base slot in `ARCH16_SLOT_MAP`, `packages/codec/src/gspm.ts`: the name tree, the architecture record, the log area, the clock record, the infrared database, the action list table, the parameter block and the number sender are named; raw 13 is a metadata ZIP that names devices and commands; raw 5, 6, 8, 9, 12 and 14 are unread | read in the firmware and configurations, sections 259, 260 and 262, `docs/config-format.md` |
+| slot map | raw slot to base slot in `ARCH16_SLOT_MAP`, `packages/codec/src/gspm.ts`: the name tree, the architecture record, the log area, the clock record, the infrared database, the action list table, the parameter block and the number sender are named; raw 13 is a metadata ZIP that names devices and commands; raw 5, 6, 8, 9, 12 and 14 are unread | read in the firmware and configurations, sections 259, 260 and 262, `reference/config-format/README.md` |
 | the infrared table | allocated at the model's **maximum** device count, four groups on a 300 and eight on a 350, unused groups empty, unlike every other architecture | measured, sections 263 and 264 |
 | what is stored | exactly the codes some action list sends | measured on five configurations, sections 261 to 265 |
 

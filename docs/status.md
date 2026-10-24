@@ -14,7 +14,7 @@ page says what is true today, and neither restates the other. Where a number app
 the twelfth.
 
 For the argument behind any claim here, [findings.md](findings.md) is authoritative and numbered by
-section. For the format as a specification, [config-format.md](config-format.md).
+section. For the format as a specification, [../reference/config-format/README.md](../reference/config-format/README.md).
 
 ## Status
 
@@ -269,7 +269,7 @@ which is a buffer descriptor nobody here has read. The firmware's own answer on 
 asks for none. What keeps a write from happening is the rails and the unopened door, not an open
 question. See
 [findings.md](findings.md) for detail and
-[config-format.md](config-format.md) for the spec as it firms up.
+[../reference/config-format/README.md](../reference/config-format/README.md) for the spec as it firms up.
 
 ## Coverage, and why it is a problem
 
@@ -571,7 +571,7 @@ finding.
 
 `todo.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 436<!--fact:findings_sections--> sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 436<!--fact:findings_sections--> sections, and `reference/config-format/README.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works, and flash has been written on five units**, the first in section 222:

@@ -6,7 +6,7 @@ point is that the parser derives the base address, the pointer count and the mar
 from the data rather than from a per-model table, so these assertions check that derivation
 rather than a hardcoded lookup.
 
-The two non-GSPM architectures are here on purpose. `docs/config-format.md` claims this is
+The two non-GSPM architectures are here on purpose. `reference/config-format/README.md` claims this is
 one container with a per-architecture cookie rather than a family resemblance, and arch 8 and
 arch 9 are the samples that can falsify that claim. They currently confirm it.
 """
@@ -26,7 +26,7 @@ EXPECTED = {
     'one34_region2': (b'GSPM', 0x002000, '1.6', 22, b'LWJL', 2),
     'h700_gspm': (b'GSPM', 0x020000, '1.4', 20, b'LWJL', 0),
     # The other two arch 14 safe mode configs. Both were in the corpus without being in this
-    # table, which is how docs/config-format.md came to say thirteen samples while fifteen
+    # table, which is how reference/config-format/README.md came to say thirteen samples while fifteen
     # containers were being parsed elsewhere.
     'h600_safemode_gspm': (b'GSPM', 0x020000, '1.4', 20, b'LWJL', 0),
     'h650_safemode_gspm': (b'GSPM', 0x020000, '1.4', 20, b'LWJL', 0),
@@ -156,7 +156,7 @@ class TestContainerAcrossSamples(unittest.TestCase):
         self.assertEqual(len({c.architecture for c in seen}), 4, 'architectures')
 
     def test_the_document_quotes_the_spread_this_table_actually_has(self):
-        """The header of docs/config-format.md states the corpus in numbers, and it drifted.
+        """The header of reference/config-format/README.md states the corpus in numbers, and it drifted.
 
         It said thirteen samples after two more had been added, five base addresses beside a list
         of four, and four pointer table lengths where there are three. Counting the table here and
@@ -174,7 +174,7 @@ class TestContainerAcrossSamples(unittest.TestCase):
         self.assertEqual(counts, {'samples': 17, 'architectures': 4, 'bases': 5, 'lengths': 3})
 
         path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                            'docs', 'config-format.md')
+                            'reference', 'config-format', 'README.md')
         with open(path, encoding='utf-8') as fh:
             text = fh.read()
         self.assertIn('**seventeen samples across four architectures**, five base addresses', text)
@@ -2205,7 +2205,7 @@ class TestSlotAlignmentAcrossArchitectures(unittest.TestCase):
         """A third anchor, and it is free: base slot 18 is NULL in every container.
 
         Four names stood here, one per architecture, which is what "on every architecture" asks for
-        and is not what `docs/config-format.md` says: that document claims base slots 18 and 19 are
+        and is not what `reference/config-format/README.md` says: that document claims base slots 18 and 19 are
         NULL in every container. Section 141.
         """
         lab.require(*lab.ALL_CONTAINERS)

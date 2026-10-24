@@ -170,7 +170,7 @@ keeping those two apart is most of what the split bought.
    the application's language, for the same reason there is one opcode table.
 4. **Spec and libraries together, product apart.** The documents, the research tooling and the
    TypeScript libraries stay in one repository, because a codec in a second one drifts away from
-   `docs/config-format.md` and the rule that a finding must be executable stops biting. The
+   `reference/config-format/README.md` and the rule that a finding must be executable stops biting. The
    application lives in FreeHarmony and consumes those libraries. This supersedes the earlier
    "monorepo" wording, which put the app here too.
 5. **Hardware in the loop first, emulator deferred.** Round trip equality, read back and diff,
@@ -745,7 +745,7 @@ source file's own header is where its reading lives. The ones a session reaches 
   `todo-compile-650.md` (finished), `todo-compile-700.md` (finished) and `todo-compile-600.md` (finished) and `todo-compile-one.md`, the sequence, with `todo-later.md` and `todo-freeharmony.md` for what is off that route;
   `docs/decisions.md` and `docs/plans/`, per "How planning works" above
 * `docs/findings.md`, the argument, grepped and read in ranges and never loaded whole;
-  `docs/config-format.md`, the structured spec; `reference/glossary.md`, the vocabulary
+  `reference/config-format/README.md`, the structured spec; `reference/glossary.md`, the vocabulary
 * `reference/how-a-harmony-works.md`, the operating concept, and `reference/logitech/data-model/model.md`, consulted before
   naming a field or designing anything about devices, activities or remotes
 * `docs/superseded.md`, claims a finding killed; `reference/remotes/`, the public per model
@@ -773,7 +773,7 @@ source file's own header is where its reading lives. The ones a session reaches 
 * **Never delete a test unless the thing it tests has left the repository.** A refuted test is
   rewritten, an overclaiming title renamed, a test that cannot fail given a body that can.
 * **When something new is confirmed, four things happen together**: the structured fact in
-  `docs/config-format.md`, the reasoning in `docs/findings.md`, a regression test, and a sweep of every
+  `reference/config-format/README.md`, the reasoning in `docs/findings.md`, a regression test, and a sweep of every
   summary of the old answer. A number quoted in prose carries a fact marker naming what it states, and a claim a finding
   kills goes into `docs/superseded.md` in the same commit; `make facts` checks both, in `make all`
   and the pre-commit hook. The `finding` skill holds the gate.
@@ -821,7 +821,7 @@ reports arch 10 as not stating one.
 **The pointer table is one table across architectures too.** Arch 9 and 14 carry the base
 layout of 20 slots; arch 8 inserts a NULL at slot 8; arch 12 inserts that plus a real section at
 slot 18. So a section labelled on arch 14 transfers to the One by index, through
-`gspm.base_slot` and `gspm.arch_slot`. Slot numbers in `docs/config-format.md` are base slots.
+`gspm.base_slot` and `gspm.arch_slot`. Slot numbers in `reference/config-format/README.md` are base slots.
 Six of them (base 5, 7, 10, 11, 12, 15) are count prefixed arrays of **three byte** flash
 pointers, and base 18 and 19 are NULL on all four architectures.
 
@@ -1034,7 +1034,7 @@ to get wrong:
 Output here is AI-produced and published as such, so claims are expected to be checkable. Two
 norms are always on, because neither has a moment to hook them to: **record corrections in place**
 rather than quietly fixing them, so readers can calibrate the rest against the recorded mistakes;
-and **mark anything unconfirmed as unconfirmed**, which `docs/config-format.md` does explicitly.
+and **mark anything unconfirmed as unconfirmed**, which `reference/config-format/README.md` does explicitly.
 
 **The rest is the `finding` skill**, and it moved there on 29 August 2026 because it describes two
 moments rather than a standing state: passing the gate before a claim is written, and choosing the
@@ -1051,7 +1051,7 @@ drifting apart. Invoke it when recording a finding or writing a test.
 warns about everywhere else.
 ## What is known, by base slot
 
-**Moved to `docs/config-format.md` on 29 August 2026**, which is the structured spec and already
+**Moved to `reference/config-format/README.md` on 29 August 2026**, which is the structured spec and already
 the place a tool reads a slot's meaning from.
 ## Rails a writer will have to respect
 

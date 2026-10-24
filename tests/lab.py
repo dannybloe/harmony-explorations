@@ -856,7 +856,7 @@ CONTAINERS = (
 # not a corpus wide total that double counting could distort.
 #
 # **It exists because eight test classes each carried their own literal** of seven, nine or ten
-# names, while `docs/config-format.md` said "ten configs across four architectures" throughout and
+# names, while `reference/config-format/README.md` said "ten configs across four architectures" throughout and
 # the lab holds fifteen. Two of them, `arch8_config_880` and `arch8_config_885`, were read by the
 # TypeScript suite and by the golden vectors and by no assertion on this side at all. A population
 # nobody compares is a population that drifts, which `TheCorpusWidePopulationsAgree` already says of

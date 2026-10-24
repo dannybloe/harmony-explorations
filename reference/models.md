@@ -63,7 +63,7 @@ architecture as the Harmony 600 on this bench, and they stayed on MyHarmony. So 
 covers both arch 7 and arch 14, and the split is by platform generation rather than by number.
 
 Do not infer an architecture from a model number. Read it out of the config, per
-`docs/config-format.md`: section slot 1 states it.
+`reference/config-format/README.md`: section slot 1 states it.
 
 ## The platform codenames, and the skin number of every model
 

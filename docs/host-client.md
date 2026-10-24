@@ -66,7 +66,7 @@ actually about, which is libconcord and harmony-decompiler.
    what is believed: where the firmware or the hardware can answer, that is the citation, and where
    neither can, the fact is marked client sourced here and wherever it is used, in those words. A
    client sourced fact may be acted on and may be built on; what it may not do is enter
-   `docs/config-format.md` as confirmed, or carry a regression test asserting it as true. A test may
+   `reference/config-format/README.md` as confirmed, or carry a regression test asserting it as true. A test may
    assert our corpus is consistent with it, which is a different claim, and a fact moves out of this
    ledger the day something measures it.
 3. **Expression does not travel.** No identifier, no comment, no code, no structure. An address
@@ -172,7 +172,7 @@ an internal codename, and an arch 9 remote.
 
 **The rules above apply unchanged.** The files are Logitech's expression, they stay in the private
 lab, nothing is quoted here, and every fact taken from them is marked client sourced and enters the
-ledger below rather than `docs/config-format.md`. What makes this source better than the decompiled
+ledger below rather than `reference/config-format/README.md`. What makes this source better than the decompiled
 client is only that it is **legible**: a packet is stated as a packet rather than reconstructed from
 disassembly, so the cost of checking a claim against the firmware drops rather than the standard
 for believing one.
@@ -245,7 +245,7 @@ and no generator.
 application.** A configuration, described in JSON, by the people who wrote the format, for a remote
 whose bytes this project already reads to the last one. That is a vendor authored second view of the
 same object, which is the strongest kind of cross check there is, and it would either confirm the
-readings in `docs/config-format.md` or name the field that is wrong. It needs an account and a
+readings in `reference/config-format/README.md` or name the field that is wrong. It needs an account and a
 registered remote, so it is not free, and it is the single most valuable call on this list.
 
 **What this does not establish, which was most of it.** No call in the list above had been made by

@@ -2370,7 +2370,7 @@ const UNSELECTED_PREFIX: Readonly<Record<number, number>> = { 8: 7, 9: 4, 12: 7,
 
 test('base slot 9 is a per model prefix, one entry per activity, and exactly one more',
      skipUnless(...USER_CONFIGS), () => {
-  // Section 272, and it replaces "devices and activities together", which `docs/config-format.md`
+  // Section 272, and it replaces "devices and activities together", which `reference/config-format/README.md`
   // recorded as the reading the counts support. A device never has an entry.
   let contiguous = 0;
   let matchingActivities = 0;

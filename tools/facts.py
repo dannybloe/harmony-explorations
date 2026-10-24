@@ -421,7 +421,7 @@ def corpus_facts():
 
 
 def parseable_facts():
-    """The population `docs/config-format.md` quotes about odd bodies, and why it is its own fact.
+    """The population `reference/config-format/README.md` quotes about odd bodies, and why it is its own fact.
 
     The odd body sentence said "19 of the 33 parseable containers" while the test said 21 of 39 and
     then 22 of 41: it had drifted through two sample additions because it carried no marker, found on
@@ -522,7 +522,7 @@ def protocol_facts():
 
 
 def user_config_facts():
-    """The totals `docs/config-format.md` quotes over `lab.USER_CONFIGS`, the fifteen user configs.
+    """The totals `reference/config-format/README.md` quotes over `lab.USER_CONFIGS`, the fifteen user configs.
 
     **Every one of these had drifted**, and section 140 is the write up. The document said "ten
     configs across four architectures" in 23 places while the lab held fifteen, because eight test

@@ -169,7 +169,7 @@ import {
 } from './actions.ts';
 /**
  * Opcode `0x1F` with operand `0xFFxx` selects the current binding table entry, the low byte being
- * the index into base slot 9. `docs/config-format.md`, from the register machine's own band.
+ * the index into base slot 9. `reference/config-format/README.md`, from the register machine's own band.
  *
  * Exported since section 273, because the activity composer emits one and there must not be a
  * second spelling of it in `compose.ts`.
@@ -2035,7 +2035,7 @@ export type HandlerSetRole = 'unselected' | 'activity' | 'idle';
 /**
  * Every base slot 9 entry with what it is for, which settles what the table corresponds to.
  *
- * `docs/config-format.md` recorded this as not established and offered "devices and activities
+ * `reference/config-format/README.md` recorded this as not established and offered "devices and activities
  * together" as the reading the counts support. It is not: a device never has an entry, and the count
  * is a fixed per model prefix plus one entry per activity plus exactly one more. Section 272.
  *

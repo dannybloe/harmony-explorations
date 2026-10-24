@@ -1,7 +1,7 @@
 """
 Parser for the Harmony config container: `GSPM` and its relatives.
 
-The format is specified in `docs/config-format.md`. It is one container with a per
+The format is specified in `reference/config-format/README.md`. It is one container with a per
 architecture four letter cookie rather than one format per architecture, which is why this
 module is written against the shape and not against a model table:
 
@@ -3427,7 +3427,7 @@ def report(c: Container):
                     base = None
             yield '   [%2d] NULL%s' % (s.slot, '' if base is None else '   base slot %s' % base)
             continue
-        # The base slot is what a section is called in `docs/config-format.md`, and the pointer
+        # The base slot is what a section is called in `reference/config-format/README.md`, and the pointer
         # array reading is the most useful orientation there is on an unfamiliar config.
         try:
             base = '' if c.architecture is None else '  base %-2s' % base_slot(

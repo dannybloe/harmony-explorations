@@ -51,7 +51,7 @@ by the copy at `0x2B93C` that the font select handler at `0x292AC` calls, in the
 here. At every boot the state variable storage above `narrow + 2 * wide` is painted `0xFE`, section 276.
 
 What a configuration seeds that storage with, measured on all 19 distinct compiles and built so since
-`todo-compile-one.md` 6.4 (`docs/config-format.md`, base slot 13): the firmware's variables 13 and 14
+`todo-compile-one.md` 6.4 (`reference/config-format/README.md`, base slot 13): the firmware's variables 13 and 14
 start at 1 and 2 with maxima 1 and 4, where the Harmony 600, 650 and 700's start at 0 and 1; every
 variable of the configuration's own is one byte, maxima up to 121, and the compiler's `0/65277` at index
 `narrow` is the only two byte one, the variable the clock pickers read and write while the time is being set

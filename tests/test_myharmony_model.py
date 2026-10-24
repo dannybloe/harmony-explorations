@@ -2,7 +2,7 @@
 
 `reference/logitech/data-model/model.json` is the recovered model and `reference/logitech/data-model/model.md` is the
 reading of it. That is the two copies state this project's oldest rule warns about, and it is
-allowed here for the same reason `docs/config-format.md` restates bytes: one is for a tool and one
+allowed here for the same reason `reference/config-format/README.md` restates bytes: one is for a tool and one
 is for a person. What makes it safe is this file, which compares every number and every field name
 the document states against the data, so the copy cannot drift.
 

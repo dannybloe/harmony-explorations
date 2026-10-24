@@ -785,7 +785,7 @@ export interface VersionReading {
  * is a constant `0x0C`, which the bench Harmony 525 had contradicted since 8 August 2026.
  *
  * `undefined` where nothing is placed. Showing "field 7" is the honest rendering, and inventing a
- * label for a byte nobody has placed is what `docs/config-format.md` marks as unconfirmed elsewhere.
+ * label for a byte nobody has placed is what `reference/config-format/README.md` marks as unconfirmed elsewhere.
  */
 export const VERSION_FIELD_NAMES: readonly (string | undefined)[] = [
   'firmware version',

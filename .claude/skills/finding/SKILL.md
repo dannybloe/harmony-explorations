@@ -9,7 +9,7 @@ Every confirmed fact lands in four places at once. Not three, and the fourth was
 hard way. The rule exists because the analysis here is AI-produced and published as such, so a
 claim that is not executable is only an assertion.
 
-1. **The structured fact** in `docs/config-format.md`, which is what other tools consume.
+1. **The structured fact** in `reference/config-format/README.md`, which is what other tools consume.
 2. **The reasoning and the evidence** in `docs/findings.md`, which is why anyone should believe
    it.
 3. **A regression test** in `tests/`, which is what stops it silently rotting.
@@ -68,7 +68,7 @@ the honest move is to write it up as unconfirmed, using that word.
 
 ## Writing it
 
-`docs/config-format.md` is a specification: offsets, widths, endianness, what is derived versus
+`reference/config-format/README.md` is a specification: offsets, widths, endianness, what is derived versus
 what is tabulated, and an explicit "unconfirmed" on anything that has not passed the gate. No
 narrative.
 
@@ -174,7 +174,7 @@ Say when that happened.
   that stays correct under a narrower scope does not belong in that table; mark the live value
   with a `fact:` marker instead.
 * Grep the summaries yourself as well: `README.md`, `CLAUDE.md`, `docs/status.md`, `todo.md`,
-  `docs/config-format.md` and the memory maps. **`docs/plans/` is deliberately not on that list**:
+  `reference/config-format/README.md` and the memory maps. **`docs/plans/` is deliberately not on that list**:
   a plan is a record of what was decided at the time, so a dead claim inside one stays as written
   and the correction goes in the live document. A superseded phrase in a plan is not drift. The table only catches the exact wording you
   thought to record.

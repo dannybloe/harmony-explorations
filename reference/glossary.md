@@ -11,7 +11,7 @@ from ordinary software practice, listed because they turn up without explanation
 says which it is.
 
 Grouped by subject rather than alphabetically, because the terms only make sense in relation to
-each other. `docs/findings.md` is the technical reference and `docs/config-format.md` the
+each other. `docs/findings.md` is the technical reference and `reference/config-format/README.md` the
 specification; this file defines the words those use.
 
 ## The two kinds of file
