@@ -1,0 +1,70 @@
+# The reference website, todo-reference.md 7.2 and plan 009. On every push to main this builds the site
+# exactly as `make site` does locally (the same pinned requirements, installed with every hash checked and
+# wheels only, then `mkdocs build` in strict mode) and publishes it to GitHub Pages. The built site is
+# never committed.
+#
+# **Every action is pinned to a commit, not a tag**, because a tag can be moved to other code after the
+# fact and a commit cannot. Each was chosen at least two weeks after its release, the same rule as the
+# Python pins in tools/site/requirements.txt, so a bad release has had time to be noticed. The version in
+# the comment beside each is the tag that commit carried when it was pinned.
+#
+# Publishing needs Pages switched on in the repository's settings with "GitHub Actions" as its source.
+# That is a setting on GitHub rather than a file here, so this workflow does nothing useful until it is.
+
+name: site
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# The least the deploy needs: read the code, write to Pages, and prove to Pages who is deploying.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deploy at a time, and a newer push replaces one still waiting rather than queueing behind it.
+# A deploy already running is left to finish, since a half published site is worse than a stale one.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # 3.12 for the same reason as `make site`: Material needs 3.11 or newer.
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
+
+      - name: Install the pinned build requirements
+        run: python -m pip install --disable-pip-version-check --require-hashes --only-binary :all: -r tools/site/requirements.txt
+
+      # Strict, so a broken link, anchor or navigation entry fails the deploy instead of publishing.
+      - name: Build the site
+        env:
+          SITE_STRICT: 'true'
+          NO_MKDOCS_2_WARNING: '1'
+        run: mkdocs build
+
+      - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
