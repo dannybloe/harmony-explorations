@@ -764,6 +764,24 @@ _GUID = re.compile(r'[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}
 _BYTE_RUN = re.compile(r'(?:\b[0-9a-fA-F]{2}\b[ ,]+){5,}\b[0-9a-fA-F]{2}\b')
 
 
+def _is_a_number_list(run):
+    """A comma separated, strictly ascending run of decimal numbers is a list, not bytes.
+
+    The reference lists skin numbers that way, `18, 22, 36, 41, ...`, and the pattern above accepts either
+    separator, so every such list read as an unexplained byte run once the comparison of architectures
+    gained its platform table in plan 009's step 3.4. Both conditions are needed: a hex run written with
+    commas is exactly what this guard exists to catch, and identity bytes are neither all decimal nor
+    ascending except by an accident this guard would rather report.
+    """
+    if ',' not in run:
+        return False
+    items = run.replace(',', ' ').split()
+    if not all(item.isdigit() for item in items):
+        return False
+    values = [int(item) for item in items]
+    return all(a < b for a, b in zip(values, values[1:]))
+
+
 class TestEveryMap(unittest.TestCase):
     def test_none_of_them_publishes_identity_bytes(self):
         """A remote's GUIDs are personal data. The maps give the offset and the length only.
@@ -796,6 +814,8 @@ class TestEveryMap(unittest.TestCase):
                 text = _read(name)
                 examined += 1
                 for run in _BYTE_RUN.findall(text):
+                    if _is_a_number_list(run):
+                        continue
                     self.assertIn(' '.join(run.replace(',', ' ').split()),
                                   _PUBLISHABLE_BYTE_RUNS,
                                   'an unexplained byte run in %s' % name)
