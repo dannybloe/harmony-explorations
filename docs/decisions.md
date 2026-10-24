@@ -54,24 +54,24 @@ image is a second sample rather than a stand in. Other models are iterated on la
 
 ## Decisions taken
 
-1. **Licence stays MIT.** libconcord and harmony-decompiler are both GPLv3, so their code cannot
+1. <a id="d1"></a>**Licence stays MIT.** libconcord and harmony-decompiler are both GPLv3, so their code cannot
    be copied or ported into this repository without relicensing it, which cannot be undone.
    Running concordance as a separate program has no licensing consequence at all, and protocol
    facts (command bytes, length nibble mappings) are not copyrightable expression.
-2. **The USB protocol is derived clean-room from the firmware**, which is also what the project
+2. <a id="d2"></a>**The USB protocol is derived clean-room from the firmware**, which is also what the project
    doctrine already demands: the firmware is the spec. `concordance/specs/protocol.txt` serves as
    corroboration of facts, and concordance itself stays in use as a cross-check oracle and as the
    tool that produces corpus dumps. There are technical reasons beyond the licence: concordance
    has two documented defects on these two architectures, `--dump-firmware` was silently wrong
    for years, and arch 14 IR learning is listed upstream as "believed working" rather than
    confirmed.
-3. **TypeScript owns the config codec, Python stays reverse engineering only.** The app-relevant
+3. <a id="d3"></a>**TypeScript owns the config codec, Python stays reverse engineering only.** The app-relevant
    Python code is 461 lines today (`ezfile.py` 168, `gspm.py` 180, `firmware.py` 113) and will be
    five times larger in six months, so this is the cheapest moment to move it. The PIC18 tooling
    (`isa.py`, `disasm.py`, `trace.py`, `loadaddr.py`, 694 lines) and the eventual emulator are
    research tools the app never calls. The repository doctrine "never a second opcode table"
    applies equally to config codecs: there will be exactly one, in TypeScript.
-4. **Spec and libraries together, product apart.** *Revised. This decision originally read
+4. <a id="d4"></a>**Spec and libraries together, product apart.** *Revised. This decision originally read
    "monorepo" and put the application here as well.* The documents, the research tooling, the
    TypeScript libraries and the tests stay in one repository, because a codec in a second one drifts
    away from `reference/config-format/README.md`, and the rule that a confirmed fact must land as a regression
@@ -105,7 +105,7 @@ image is a second sample rather than a stand in. Other models are iterated on la
    has happened here twice, and both times a test could see both copies. Across a repository boundary
    nothing can. A **generated** vendor copy with a check against a commit is acceptable if
    distribution ever demands it.
-5. **Hardware in the loop first, emulator deferred.** The emulator remains the right tool for
+5. <a id="d5"></a>**Hardware in the loop first, emulator deferred.** The emulator remains the right tool for
    activity semantics, but it is the largest single build in the plan and the app would sit
    behind it for months. The cheap substitutes are a byte-identical round trip, a read back and
    diff after every write, IR cross learning between the two remotes, and live RAM polling over
@@ -115,7 +115,7 @@ image is a second sample rather than a stand in. Other models are iterated on la
    base slot 15 and is executing, so some derived state is there to see. Even on arch 12 the remote is
    in USB mode, so its interface cannot be driven and its analogue sampler is stopped, which is not
    what activity semantics would need. The decision stands on the first three.
-6. **Safety rails are absolute.** Firmware is never written. **Five units may be written to** since
+6. <a id="d6"></a>**Safety rails are absolute.** Firmware is never written. **Five units may be written to** since
    29 September 2026, the last paragraph below, and **three** before that from 27 September 2026, the
    third; it was **two**, the spare Harmony One and the Harmony
    525, from Danny's decision of 5 September 2026, which replaced "the spare Harmony One is the only
@@ -150,11 +150,11 @@ image is a second sample rather than a stand in. Other models are iterated on la
    section 299 read its 2.8's drop, which is the 0.2 drop relocated plus one flag.
    Each unit takes the order the others took: identity and region into the lab, one block back
    unchanged, then a real write.
-7. **Heads down on our own derivation.** The findings in harmony-decompiler discussion #1 are
+7. <a id="d7"></a>**Heads down on our own derivation.** The findings in harmony-decompiler discussion #1 are
    treated as hypotheses to test, not as facts to adopt. The original format designer
    (`glenharris`) is active there and is a privileged source, but asking is held in reserve for
    when we are genuinely stuck.
-8. **Version 1 of the app is read only.** Detect the remote, read the config, show the container
+8. <a id="d8"></a>**Version 1 of the app is read only.** Detect the remote, read the config, show the container
    and the labelled sections, export IR codes. The write rails, the erase scoping and the request
    encoders are written and sit behind a flag that is off in release builds. The `WRITE_FLASH` data
    path was read on 25 August 2026, section 175, so the packets are known and `writeFlash` sends
@@ -166,7 +166,7 @@ image is a second sample rather than a stand in. Other models are iterated on la
    paragraph did by saying "one thing rather than two"<!--superseded--> until 29 August 2026. Erase
    before program is closed on both bench architectures since sections 186 and 191, and it was moot
    anyway for a caller that erases first.
-9. **Logitech's own client is read alongside the firmware, not as a fallback.** *Taken 9 August 2026
+9. <a id="d9"></a>**Logitech's own client is read alongside the firmware, not as a fallback.** *Taken 9 August 2026
    as a fallback, and reordered by Danny on 28 August 2026.* Before deriving anything about how a
    remote is driven, what a packet looks like or which call to make, **look in their code and in the
    image**. Neither is junior: the firmware is as important as the client and often more, and what
@@ -193,7 +193,7 @@ image is a second sample rather than a stand in. Other models are iterated on la
    argument and the ledger of everything currently believed on the client's word alone are in
    `reference/logitech/clients.md`.
 
-10. **The application comes before a wider corpus.** *Taken 12 August 2026, and it reverses the
+10. <a id="d10"></a>**The application comes before a wider corpus.** *Taken 12 August 2026, and it reverses the
    posture the front page had carried.* No general call for dumps goes out, and the eight unseen models
    and the arch 10 firmware stop being wanted things. The reasoning is the shape of the cost rather than
    the value: broadening the corpus answers questions about hardware nobody here owns, each answer costs
@@ -206,7 +206,7 @@ image is a second sample rather than a stand in. Other models are iterated on la
    Harmony One, or quietly narrowing a claim to the bench: a reading that only holds on arch 12 and arch
    14 still says so.
 
-11. **Offline is the floor, Logitech's live service is an optional import, and provenance decides what
+11. <a id="d11"></a>**Offline is the floor, Logitech's live service is an optional import, and provenance decides what
    may be shared.** *Taken 12 August 2026, and it is the first decision here about the
    product rather than about the format.* Three parts, in the order they constrain each other.
 
@@ -295,7 +295,7 @@ image is a second sample rather than a stand in. Other models are iterated on la
    line of the format is written: provenance has to be a field in the definition from the first
    version, because retrofitting it means auditing a database whose origins nobody kept.
 
-12. **The lab is an archaeology site, and its knowledge is not knowledge until it is in this
+12. <a id="d12"></a>**The lab is an archaeology site, and its knowledge is not knowledge until it is in this
    repository.** *Taken 28 August 2026, by Danny, after the fourth time a session discovered that
    something it was working out had already been established in the lab and written down there.*
 
@@ -330,7 +330,7 @@ image is a second sample rather than a stand in. Other models are iterated on la
    **Afterwards it is per arrival.** Anything new in the lab gets its row in the session that puts
    it there, the same way a confirmed fact gets its four places.
 
-13. **`docs/findings.md` stays one file.** Splitting it is the obvious idea at 27175 lines and it was
+13. <a id="d13"></a>**`docs/findings.md` stays one file.** Splitting it is the obvious idea at 27175 lines and it was
    measured and rejected on 8 August 2026, so do not re-derive this. It **costs no tokens**, because
    it is never loaded whole, only grepped and read in ranges; the per-session cost was `CLAUDE.md`
    and that has been cut. **No cutting line is better than another**: 140 references run between
@@ -341,7 +341,7 @@ image is a second sample rather than a stand in. Other models are iterated on la
    size alone, at roughly 8060 bytes a section over 209 sections: if it outgrows rendering, split by era, keep section
    numbers global, and keep the index at `docs/findings.md` so the 159 references that name that
    path stay correct.
-14. **The vendor's data model moves into this repository whole.** *Taken by Danny on 30 August 2026,
+14. <a id="d14"></a>**The vendor's data model moves into this repository whole.** *Taken by Danny on 30 August 2026,
    overruling a narrower reading of decision 9 that this assistant had raised.* The platform's schema,
    what an account holds and what every field is called, is recovered in `reference/logitech/data-model/model.json`
    with `reference/logitech/data-model/model.md` as its reading, and **it is to be consulted before naming a field or
@@ -355,7 +355,7 @@ image is a second sample rather than a stand in. Other models are iterated on la
    the lab is decision 12's, in one sentence: a fact recorded only in the lab is invisible to every
    check this project has, and this one is too useful to leave there. Section 218.
 
-15. **A third party's archive of Logitech's device database is a source, on the same footing as the
+15. <a id="d15"></a>**A third party's archive of Logitech's device database is a source, on the same footing as the
    live service.** *Taken by Danny on 31 August 2026, after Eric Schewe wrote to say he had archived
    it and concordance pointed him here.* It is checked out as a sibling,
    `../logitech-harmony-ir-archive`, and it holds 276236 devices from 7889 manufacturers, 257720 of
@@ -399,7 +399,7 @@ image is a second sample rather than a stand in. Other models are iterated on la
    audited in later. Without this paragraph the archive would quietly contaminate the shareable pool,
    which is the exact failure decision 11 exists to prevent.
 
-16. **Every step asks the architecture question, and a step that answers it for one architecture says
+16. <a id="d16"></a>**Every step asks the architecture question, and a step that answers it for one architecture says
    so.** *Taken by Danny on 6 September 2026, prompted by section 274.* A step of `todo.md` is not
    finished when it works on one remote. It is finished when the other architectures have been
    **asked about**, and the answer may perfectly well be "not checked" or "no image exists": what is
@@ -568,7 +568,7 @@ consistent. So the refusal is the finding and the fallback is the warning, and *
 damaged is now read**: an arch 10 read duplicates whole 54 byte chunks, 16 in the first read of that
 remote and 2 in the second, which is what section 117 measured as a generator error.
 
-17. **One screen builder per kind of menu, never one that branches.** *Taken by Danny on 7 September
+17. <a id="d17"></a>**One screen builder per kind of menu, never one that branches.** *Taken by Danny on 7 September
    2026, prompted by section 275.* The composer that adds a row to the **device** list and the one
    that adds a row to the **activity** menu are separate functions and stay separate, even where they
    share a step.
@@ -602,7 +602,7 @@ remote and 2 in the second, which is what section 117 measured as a generator er
     of record that holds decisions, and this is one.*
 
 
-18. **Logitech's own firmware may be staged on an arch 14 remote for it to install, and on nothing
+18. <a id="d18"></a>**Logitech's own firmware may be staged on an arch 14 remote for it to install, and on nothing
    else.** *Taken by Danny on 29 September 2026, prompted by sections 295 and 297.* It is the one
    exception to "firmware is never written", and it is narrow on purpose: an image Logitech built,
    unmodified and verifying, written into the external flash region an arch 14 remote installs an
@@ -627,7 +627,7 @@ remote and 2 in the second, which is what section 117 measured as a generator er
    admits any arch 14 unit**, the 600 and the 650 on safe mode status byte handlers nobody has read,
    which is section 295's width carried over and not a reading.
 
-19. **The letters our configurations draw come from Oxanium.** *Taken by the project owner on 10 October
+19. <a id="d19"></a>**The letters our configurations draw come from Oxanium.** *Taken by the project owner on 10 October
    2026, closing the first half of `todo-compile-650.md` 8.2.* A Logitech configuration's fonts hold only
    the letters its own names use, so a composer spelling a new name borrowed letters it could not always
    find: section 364 measured the font of the smallest Harmony 650 compile having no K, and no font
@@ -651,7 +651,7 @@ remote and 2 in the second, which is what section 117 measured as a generator er
    gets is chosen when the font table is built, and tuned per use after that. That, and
    the eleven designed pictures of `todo-compile-650.md` 9.1.2, are separate and still open.
 
-20. **Our screens are one colour per state, and our letters are white with a black shadow.** *Taken by
+20. <a id="d20"></a>**Our screens are one colour per state, and our letters are white with a black shadow.** *Taken by
    the project owner on 10 October 2026, for `todo-compile-650.md` 9.1.2 and 8.2; both become a user's
    setting later, a colour or a picture for a background.* Device mode is `rgb(184 32 55)`, an activity's
    screens `rgb(18 37 200)`, and while nothing runs and no device is chosen, the activity menu and the
@@ -664,7 +664,7 @@ remote and 2 in the second, which is what section 117 measured as a generator er
    words on them stay dark and unshadowed as Logitech draws them, since white there would not show.
    Decided the same day, after a preview; this item said the bars were open until then.
 
-21. **The friend's Harmony One and Harmony 525 are the project owner's own, and write targets.** *Taken
+21. <a id="d21"></a>**The friend's Harmony One and Harmony 525 are the project owner's own, and write targets.** *Taken
    by the project owner on 11 October 2026.* A Harmony One with a dead display and a Harmony 525, given by
    a friend, are his to do with as he wants, and so are their serials: Logitech's service may be shown
    either, and either may be registered, synced or blocked, with nobody else's hardware at stake. Both
@@ -678,7 +678,7 @@ remote and 2 in the second, which is what section 117 measured as a generator er
    and a configuration carries no serial; and todo-secure-logitech 2.2.3's slower harvest has a serial
    whose loss costs nothing.
 
-22. **Our letters are blended into the colour under them, the labels in SemiBold and the regular faces in
+22. <a id="d22"></a>**Our letters are blended into the colour under them, the labels in SemiBold and the regular faces in
    Regular.** *Taken by the project owner on 11 October 2026, after the bench run of the one bit letters and
    a preview of both, for `todo-compile-650.md` 8.2.6.* Decision 20's white letters over a black shadow
    stand, and the dark words on the bars; what changes is the edge. In one bit, Oxanium at the remote's
@@ -688,7 +688,7 @@ remote and 2 in the second, which is what section 117 measured as a generator er
    label faces one step heavier than the Medium first tried, SemiBold, and the three regular faces of the
    start up, Off and Help screens Regular rather than ExtraLight. All remain tunable under decision 19.
 
-23. **A configuration of ours states the model number the remote reports.** *Taken on 15 October 2026, on
+23. <a id="d23"></a>**A configuration of ours states the model number the remote reports.** *Taken on 15 October 2026, on
    the recommendation in `todo-compile-600.md` 1.4.1, after the consequences were laid out.* Base slot 1
    carries a model number, the skin, and Logitech's compile of the bench Harmony 600 states 73, the European
    600, where the remote's own firmware reports 71. A file of ours states what the remote's version block
@@ -700,7 +700,7 @@ remote and 2 in the second, which is what section 117 measured as a generator er
    the builder takes either. A file of Logitech's written back as it is keeps its own number. Our own data
    on a remote, `todo.md` 3.8 (3.6 until 24 October 2026), sits beside this byte and does not replace it.
 
-24. **The Harmony One gets our own letters and pictures too, its button boxes included.** *Taken by the
+24. <a id="d24"></a>**The Harmony One gets our own letters and pictures too, its button boxes included.** *Taken by the
    project owner on 15 October 2026, for `todo-compile-one.md` 1.2.* Decisions 19, 20 and 22 were taken for
    the Harmony 650's screens and carried to the 600 and 700; this carries the letters and the pictures to
    the One, and says outright that the boxes drawn behind a touchable command, a device page's pads and a
@@ -713,7 +713,7 @@ remote and 2 in the second, which is what section 117 measured as a generator er
    container frame for the One's 22 slots and the One's fonts, `todo-compile-one.md` 6.1 and 5.2, come
    before the first file on the spare. The One's colours are not decided by this.
 
-25. **The reference and the code are the product, and `docs/findings.md` is an archive.** *Taken by the
+25. <a id="d25"></a>**The reference and the code are the product, and `docs/findings.md` is an archive.** *Taken by the
    project owner on 18 October 2026, when `todo.md` 3.6 put plan 005 straight after the Harmony One's track;
    started and refined on 24 October 2026, `todo-reference.md`.* This project delivers three things: how a
    Harmony works, written as a reference a stranger can read, in `reference/`; the libraries that read,

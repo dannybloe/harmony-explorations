@@ -33,7 +33,7 @@ takes over `todo-later.md` chapter 8, plan 005's steps, which now live here.
 ## 2. The skeleton
 
 - [x] 2.1 Files moved into the layout with `git mv`, every path that names them rewritten: `CLAUDE.md`, skills, code, tests, generators, links; whole files moved, the three large documents cut by heading, pointers to their sections retargeted, `make facts` 245 and 546 before and after, and FreeHarmony's mentions on its branch `reference-paths`
-- [ ] 2.2 A short fixed anchor on every findings heading, with no other change to the archive
+- [x] 2.2 A short fixed anchor on every findings heading, with no other change to the archive: 436 section anchors and 25 decision anchors, the one live link corrected, digest pinned in tests/test_archive.py
 - [ ] 2.3 The tests that guard the layout: no bench, lab, account, dump or todo in `reference/`, every link and footnote resolves, no em or en dashes
 
 ## 3. Models and architectures
