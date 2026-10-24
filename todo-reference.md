@@ -46,11 +46,11 @@ takes over `todo-later.md` chapter 8, plan 005's steps, which now live here.
 
 ## 4. Subjects across models
 
-- [ ] 4.1 The configuration file format, one home, its per model facts linked to the model folders
-- [ ] 4.2 The USB protocol
-- [ ] 4.3 Infrared, gathered from the code and the findings
-- [ ] 4.4 How a Harmony works for a person
-- [ ] 4.5 Logitech's world: their data model, their host software, their device database
+- [x] 4.1 The configuration file format, one home, its per model facts linked to the model folders; both compiler pages, the cross-page moves applied, an independent review of every changed statement against the archive and its nine corrections
+- [x] 4.2 The USB protocol
+- [x] 4.3 Infrared, gathered from the code and the findings
+- [x] 4.4 How a Harmony works for a person
+- [x] 4.5 Logitech's world: their data model, their host software, their device catalogue
 - [ ] 4.6 The glossary
 
 ## 5. The findings archive
