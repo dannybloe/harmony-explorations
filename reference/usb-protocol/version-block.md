@@ -1,11 +1,19 @@
 # The version block
 
-### GET_VERSION
+The first thing a computer asks a Harmony over its cable is what it is. The remote answers with a short
+block of bytes: which firmware it runs, its hardware version, which flash chip it carries, its
+architecture, whether it is running normally or in safe mode, which model it is (its skin), the platform
+it belongs to, and the versions of the other programs it keeps beside the one running. A Harmony One,
+600, 650 or 700 answers with twelve bytes and a Harmony 525 with seven. `readVersion` in
+`packages/usb/src/protocol.ts` is the library's reading of the block, and this page is its argument.
 
-**Request: `0x10 | length nibble`.** The parser is inline in the USB callback at `0x0BDFE`
-rather than a separate handler, and it sets state 1.
+The request is GET_VERSION, [the commands](commands.md). Each model's own reply is on its usb page, for
+example [the Harmony One's](../remotes/harmony-one/usb.md).
 
-The executor is state 1, `0x0C906`:
+## The request and the reply
+
+**Request: `0x10`**, with no arguments. The parser is inline in the USB callback at `0x0BDFE` rather than a
+separate handler, and it sets state 1, whose executor is `0x0C906` (Harmony 700 2.8)[^s19][^t-usb-firmware]:
 
 ```
 0c908: 4f 0e       MOVLW 0x4f         ; a 16-bit pointer, 0x0D4F
@@ -21,207 +29,184 @@ The executor is state 1, `0x0C906`:
 0c930: 10 e2       BC 0x0c952
 ```
 
-**Response: `0x28` then 12 bytes**, copied out of a block that `0x1422C` builds. On **arch 9** the
-response is `0x27` and seven fields; see below.
+**Reply: `0x28` then 12 bytes**, copied out of a block that `0x1422C` builds. **It is twelve fields, and the
+count closes**: `0x1422C` stores through the pointer in `0xEDD` and `0xEDE` at exactly twelve sites, from
+`0x142C0` to `0x143AE`, one per field, and the executor's loop copies twelve bytes, and neither number was
+derived from the other[^s57][^t-usb-firmware].
 
-**It is twelve fields, and the count closes.** `0x1422C` takes the pointer in `0xEDD` and
-`0xEDE` as a base and stores through it with `ADDWF 0xedd,W` at exactly **twelve** sites, from
-`0x142C0` to `0x143AE`, one per field, with `0xD1C` as the running offset. Twelve stores, twelve
-bytes copied by the executor's loop, and neither number was derived from the other.
+**The reply byte's low nibble counts the fields, and twelve is not universal**[^s76]:
 
-Each field comes from its own small accessor. Two of them say something about what they are
-without any further work:
-
-* `0x14244` clears `LATF` bit 7, the external flash chip select, then calls `0x10974` and takes a
-  **16-bit** result out of `PROD`. A 16-bit value read over SPI from the flash chip is the flash
-  id, which the corpus already records per remote as a manufacturer and device byte pair.<!--superseded-->
-
-  **Corrected in section 109.** `0x10974` sends the JEDEC `0x9F` and keeps two of the three bytes it
-  gets back, and the pair is **the capacity code and the manufacturer**, not a manufacturer and a
-  device id, which is concordance's split. The mechanism decides it: the firmware compares one of the
-  two against `0x13`, `0x14` and `0x15` to choose a flash size of 512 KiB, 1 MiB or 2 MiB, and only a
-  capacity code can do that. On the bench 600 the pair is `0x15` and `0x1C`, 16 Mbit and EON, which is
-  the part section 88 identified from the address validator instead.
-* `0x14268` takes two separately fetched values and packs them into one byte, `SWAPF` then
-  `ANDLW 0xf0` then `IORWF`, so one of the twelve bytes is **two four-bit fields**. A major and
-  minor version pair is the obvious candidate.
-
-Naming the other ten means following their accessors, which is a separate piece of work and is
-not done. concordance's `GET_VERSION` yields firmware, hardware, skin, flash id, protocol and
-architecture, so those are the candidates, and the honest way to settle it is to compare our
-twelve bytes against a concordance run on the same remote once there is a host implementation.
-Which is the cross-check roadmap step 3 asks for anyway.
-
-One loose end, recorded rather than smoothed over: `0x28` under the request encoding would be
-code `0x20` with length nibble 8, and nibble 8 means **15** payload bytes, not 12. Either the
-response length nibble is not the request mapping, or three more bytes follow the loop. Not
-resolved.
-### The reply's low nibble is the field count, and twelve is not universal
-
-*Measured on a Harmony 525, live device, 8 August 2026. `docs/findings.md` section 76.*
-
-| architecture | reply byte | fields |
+| remotes | reply byte | fields |
 |---|---|---|
-| 9 | `0x27` | 7, and every one of them identified |
-| 12, 14 | `0x28` | 12, by the firmware's own two counts above |
+| Harmony 525 | `0x27` | 7 |
+| Harmony One, 600, 650 and 700 | `0x28` | 12, by the firmware's own two counts above |
 
-A 525 answers `27 30 25 12 ff 90 16 09`: firmware 3.0, board 2.5.0, flash `0xFF:0x12`, then `0x90`
-for architecture 9, skin 22, and `0x09` where the two MyHarmony era remotes carry a compiled in
-`0x0C`. concordance reads the nibble as a length and branches on it, accepting 5, 7 or 8 and giving
-up the architecture and the skin below 6 and the protocol below 7, which is the same rule seen from
-the other side: the nibble counts where it is small and is a floor at 8, and the arch 12 firmware
-settles the real figure at twelve by copying twelve bytes.
+concordance reads the nibble as a length and branches on it, accepting 5, 7 or 8 and giving up the
+architecture and the skin below 6 and the protocol below 7[^x-concordance]: the nibble counts where it is
+small and is a floor at 8, and the firmware settles the real figure at twelve by copying twelve bytes. On
+the request side nibble 8 would mean fifteen bytes, so as a length `0x28` does not fit the twelve that
+follow; what its low nibble means, if anything, is not checked[^unchecked]. A host that expects twelve
+fields refuses a 525's correct answer, which is why `readVersion` takes any block of seven bytes or more
+and refuses a shorter one, which carries neither the architecture nor the skin[^s76].
 
-**Field 4's high nibble is the architecture, now on three architectures.** That reading came from
-four images spanning two, so `0x90` on a third is the test it had been waiting for.
+## GET_VERSION's twelve bytes, six identified by prediction
 
-### GET_VERSION's twelve bytes, six identified by prediction
+Eleven of the twelve fields have a reading, from the accessors that fill them and from replies of remotes
+that differ in every one of the values. Six were first read off a Harmony 600 beside concordance's report
+for the same remote and then written down as a prediction for a Harmony One before it was read; the One
+answered with the first six bytes exactly as predicted[^s57][^s59].
 
-The 600 gave `02 11 1c 15 e0 47 0c 02 00 00 02 02`. Laid beside `concordance -i` on the same unit,
-six fields had a reading. **That reading was then written down as a prediction for the Harmony One,
-before the One was read**, and the One gave `34 05 c8 1f c0 36 0c 34 34 16 34 34`: the first six
-bytes exactly as predicted.
-
-| Field | 600 | One | Reading |
+| field | Harmony 600 | Harmony One | reading |
 |---|---|---|---|
-| 0 | `0x02` | `0x34` | firmware version, as two nibbles: `0.2` and `3.4` |
-| 1 | `0x11` | `0x05` | hardware version, as two nibbles: `1.1` and `0.5` |
-| 2 | `0x1c` | `0xc8` | flash device id |
-| 3 | `0x15` | `0x1f` | flash manufacturer id, so the pairs are `15:1C` and `1F:C8` |
-| 4 | `0xe0` | `0xc0` | **the architecture** in the high nibble: 14 and 12. Low nibble the **software type** |
-| 5 | `0x47` | `0x36` | skin, 71 and 54, which `bcdDevice` says independently |
-| 6 | `0x0c` | `0x0c` | a **platform**, not a constant and not the architecture, section 116. What a remote in a recovery role answers is **per architecture**, section 190 |
-| 7 | `0x02` | `0x34` | **the version byte at program `0x000017`**, in the boot area |
-| 8 | `0x00` | `0x34` | **the version of the image at `0xFF` `+0xE000`**, from `0x01E007` |
-| 9 | `0x00` | `0x16` | **the version of the image at `0xFF` `+0x0000`**, by pairing, accessor unexplained |
-| 10 | `0x02` | `0x34` | **the safe mode firmware's version**, from `0x001007` |
-| 11 | `0x02` | `0x34` | **the running application image's own header version**, from `0x009007` |
+| 0 | `0x02` | `0x34` | firmware version, as two nibbles: 0.2 and 3.4 |
+| 1 | `0x11` | `0x05` | hardware version, as two nibbles: 1.1 and 0.5 |
+| 2 | `0x1c` | `0xc8` | the second byte of the flash chip's id, below |
+| 3 | `0x15` | `0x1f` | the first byte of the flash chip's id, below |
+| 4 | `0xe0` | `0xc0` | **the architecture** in the high nibble, 14 and 12, and the **software type** in the low |
+| 5 | `0x47` | `0x36` | the skin, 71 and 54, as a plain byte; `bcdDevice` states the same skin independently |
+| 6 | `0x0c` | `0x0c` | a **platform**, not the architecture |
+| 7 | `0x02` | `0x34` | the version byte at program `0x000017`, in the boot area |
+| 8 | `0x00` | `0x34` | the version of the image at `0xFF` `+0xE000`, from `0x01E007` |
+| 9 | `0x00` | `0x16` | the version of the image at `0xFF` `+0x0000`, by pairing |
+| 10 | `0x02` | `0x34` | the safe mode image's version, from `0x001007` |
+| 11 | `0x02` | `0x34` | the running application image's own header version, from `0x009007` |
 
-**The same Harmony One in safe mode gives `34 05 c8 1f c4 36 0c 34 34 16 34 34`**, section 190,
-measured on 27 August 2026. **One byte of twelve differs**, field 4's low nibble going from 0 to 4, and
-the flash id and the skin are unchanged as hardware fields should be. Compare the Harmony 525, section
-118, whose safe mode block differs in **three** fields, adding the firmware version and the platform,
-because arch 9 copies a different image over its application where arch 12 runs one resident beside it.
-So a caller must read field 4's low nibble to learn the state, and **must not** read field 6 as saying
-it: zero there means safe mode on arch 9 and arch 8 and means nothing of the sort on arch 12.
+The rows' evidence: fields 0 to 5 by prediction and two remotes[^s57]; field 4 by its accessor[^s57][^s87];
+field 6 by eleven images[^s116]; fields 7 to 11 by the program addresses their accessors build[^s59].
 
-**The reading is executable, in `readVersion`.** Added on 21 August 2026 in
-`packages/usb/src/protocol.ts`, because FreeHarmony needs a firmware version and a flash id for a
-document and must not compute either itself: interpreting a reply is the library's job. It surfaces the
-six fields this table establishes and no more, keeps the whole block beside them so nothing it does not
-understand is lost, and refuses a block under seven bytes, which carries neither the architecture nor
-the skin. `VERSION_FIELD_NAMES` moved there in the same change, from `packages/bench`, which had been
-the only place the block was labelled at all and had carried a wrong claim about field 6 for a month.
-Asserted against all three bench remotes in `packages/usb/test/protocol.test.ts`.
+* **Fields 0 and 1** are packed by `0x14268`, which takes two separately fetched values and packs them
+  with `SWAPF`, `ANDLW 0xF0` and `IORWF`[^s19][^t-usb-firmware].
+* **Fields 2 and 3 are the flash chip's own id, and what the two bytes mean differs by architecture**,
+  because one part is parallel NOR and the other is serial. On the Harmony 600, 650 and 700 the accessor
+  `0x14244` drops the chip select and `0x10974` sends the JEDEC `0x9F`, keeping two of the three bytes:
+  field 3 is the **capacity code**, which the firmware compares against `0x13`, `0x14` and `0x15` to choose
+  512 KiB, 1 MiB or 2 MiB, and field 2 the **manufacturer**, `0x1C` being EON's. On the Harmony One field 3
+  is the manufacturer, `0x1F` being Atmel's, and field 2 the device. So the pair is written field 3 then
+  field 2, `15:1C` and `1F:C8`, and neither byte may be read as the same thing on both
+  architectures[^s109]. The Harmony 525 answers `FF:12`[^s76].
+* **Field 5 is the skin in plain binary**, where `bcdDevice` carries the same skin in BCD on these remotes,
+  [the transport](transport.md#bcddevice-carries-the-skin-in-one-of-two-encodings)[^s113].
+* **Fields 8 and 9 version two images that only the Harmony One carries**, the flash programmer and the
+  programmable logic image, and the Harmony 600 answers zero for both. That zero is a compiled in constant
+  on that architecture, `CLRF INDF0`, and not an absent image answering; field 8 is proved by the address
+  its accessor builds, and field 9 by the three internal images pairing onto three fields with the other two
+  proved. Field 9's own accessor is a table read whose address does not explain its value[^s59].
+* **Fields 7, 10 and 11 repeat field 0** because they version things a firmware release stamps together:
+  the boot area, the safe mode image and the running application[^s59].
 
-That is six fields agreeing across two architectures, with the second remote differing in every one
-of the values the reading predicts. Fields 2 and 3 are the 16-bit SPI read the firmware performs with
-the chip select low, characterised as "the flash id" from the image alone; fields 0 and 1 are the
-packed nibble shape the `SWAPF`, `ANDLW 0xF0`, `IORWF` sequence builds. So two of the six are
-agreements between a disassembly and a device.
+**Two fields concordance reports are not in the block**: its firmware type and its `IRL, ORL, FRL` have no
+field here[^unchecked]. The third component of the hardware version it prints is not in the block at all:
+concordance sets it to zero itself[^x-concordance].
 
-**Field 4's low nibble is the software type, and this document said it was a compiled in zero.**<!--superseded-->
-It comes from its own `RETLW` accessor beside the architecture one, and the two are combined by the
-same `SWAPF`, `ANDLW 0xF0`, `IORWF` shape as fields 0 and 1. Zero on all four application images and
-**4 on the safe mode image of each bench remote**, whose other four accessors are byte for byte
-identical to the application's. Logitech's firmware packages name the values in their own comments:
-0 and 4 are "application mode or Safe mode", 1 is Test mode and 3 is Boot mode. The client names
-all five independently: 0 application, 1 test, 2 minimal, 3 bootloader, 4 safe mode.
-`docs/findings.md` section 87.
+### The five compiled in fields
 
-So the reply says which of a remote's four firmware personalities is answering. Both bench remotes
-read zero because both were running their application. **The prediction, recorded before anyone
-tries it**: a 600 in safe mode answers field 4 as `0xE4` and a One as `0xC4`.
+Fields 0, 4, 5 and 6 come from five consecutive `RETLW` instructions, in the order field 0, field 4's
+low nibble, field 5, field 6, field 4's high nibble, so their values can be read off any image without
+running it: at `0x10648` on the Harmony 700 2.8, `0x11964` on the Harmony 600 0.2, `0x138C8` on the Harmony
+650 0.4 and `0x24262` on the Harmony One 3.4[^s57][^t-usb-firmware].
 
-**Fields 8 and 9 are both placed now, and by the thing this paragraph used to say did not exist.** It read: "`0x16` on
-the One is the only value in the block that has no counterpart anywhere in concordance's output".
-The counterpart is not in concordance's output, it is in the remote. Reading the One's internal
-memory in full turned up three images carrying the `48 47` header, and the one at `0xFF` `+0x0000`
-has `0x16` in its header's version byte. On the 600 that address holds no image, only zeros, and the
-600's field 9 is `0x00`. Two remotes, a distinctive value in a block otherwise full of `0x34`, and an
-absence matching an absence.
+| image | field 0 | field 5 | field 4 high nibble | software type | field 6 |
+|---|---|---|---|---|---|
+| Harmony 700 2.8 | `0x28` | `0x42`, skin 66 | 14 | 0 | `0x0C` |
+| Harmony 600 0.2 | `0x02` | `0x47`, skin 71 | 14 | 0 | `0x0C` |
+| Harmony 650 0.4 | `0x04` | `0x48`, skin 72 | 14 | 0 | `0x0C` |
+| Harmony One 3.4 | `0x34` | `0x36`, skin 54 | 12 | 0 | `0x0C` |
+| Harmony 525 3.0 | `0x30` | `0x16`, skin 22 | 9 | 0 | `0x09` |
+| Harmony 880 4.4 | `0x44` | `0x0f`, skin 15 | 8 | 0 | `0x08` |
+| Harmony 885 4.4 | `0x44` | `0x11`, skin 17 | 8 | 0 | `0x08` |
+| Harmony One safe mode | `0x34` | `0x36`, skin 54 | 12 | 4 | `0x0C` |
+| Harmony 600 safe mode | `0x02` | `0x47`, skin 71 | 14 | 4 | `0x0C` |
+| Harmony 880 bootloader 4.0 | `0x40` | `0x0f`, skin 15 | 8 | 3 | `0x00` |
+| Harmony 885 bootloader 4.0 | `0x40` | `0x11`, skin 17 | 8 | 3 | `0x00` |
 
-> **Corrected in section 59 of `docs/findings.md`.** The two paragraphs below place fields 8 and 9
-> correctly and argue for them wrongly. Both rest on the Harmony 600 reporting `0x00` as an absent
-> image answering zero, and on the 700 image those two bytes are `CLRF INDF0`, a compiled in
-> constant. Arch 14 zeroes exactly the two fields that name images only arch 12 carries, which is
-> consistent with the assignment but is not a measurement of it. Field 8 is now proved by the
-> address its accessor builds, `0x01E007`, and field 9 by the three internal images pairing onto
-> three fields with the other two proved. Field 9's own accessor is a table read whose address does
-> not explain its value, and that is unresolved.
+Read in the firmware[^s116][^t-usb-firmware].
 
-**Field 8 was settled the same way, by the two reads named as the test.** Both candidate addresses
-were then read on the 600. It has an image at `0xFE` `+0x1000`, the safe mode one, 24320 bytes at
-version `0x02`, and its checksum verifies. And it has **nothing at all at `0xFF` `+0xE000`**, which is
-erased. Field 8 is `0x00`. So field 8 is the version of the image at `0xFF` `+0xE000`, and the
-alternative is ruled out rather than merely unfavoured: if field 8 named the safe mode image, the 600
-would report `0x02` there, and it does not.
+**Field 4's high nibble is the architecture and nothing else**: three Harmony 600, 650 and 700 images with
+three firmware versions and three skins all report 14, the Harmony One reports 12, the Harmony 525 9, and
+the four Harmony 880 and 885 images 8. It matches the architecture each remote's own configuration states,
+and that is evidence rather than a tautology, because the accessor has exactly one caller and the firmware
+never compares the constant with the configuration[^s57][^t-usb-firmware]. The packing leaves four bits
+for it, so it can express fifteen architectures[^t-usb-firmware].
 
-**Fields 4, 5 and 6 come from compiled in literals, and that names field 4.** The version block's
-accessors for them are five consecutive `RETLW` instructions, so their values are readable off any
-image without running anything. On the 700 2.8 they are at `0x10648`, on the complete 600 0.2 at
-`0x11964`, on the 650 0.4 at `0x138C8` and on the One 3.4 at `0x24262`, in the order field 0, field
-4's low nibble, field 5, field 6, field 4's high nibble.
+**Field 6 is a platform**: `0x0C` on the Harmony One and the Harmony 600, 650 and 700 alike, `0x09` on the
+Harmony 525 and `0x08` on the Harmony 880 and 885, the lowest architecture number on each platform. The
+Harmony One and the 600, 650 and 700 are one platform under it, which their shared processor family and
+container cookies say too[^s116]. The `bcdDevice` high byte has a similar shape with different values, so
+the two are not one variable[^s113].
 
-| Image | field 0 | field 5 | field 4 high | architecture |
-|---|---|---|---|---|
-| 700 2.8 | `0x28` | `0x42`, so skin 66 | `0x0e` | 14 |
-| 600 0.2 | `0x02` | `0x47`, so skin 71 | `0x0e` | 14 |
-| 650 0.4 | `0x04` | `0x48`, so skin 72 | `0x0e` | 14 |
-| One 3.4 | `0x34` | `0x36`, so skin 54 | `0x0c` | 12 |
-| 880 4.4 | `0x44` | `0x0f`, so skin 15 | `0x08` | 8 |
-| 885 4.4 | `0x44` | `0x11`, so skin 17 | `0x08` | 8 |
-| 880 boot 4.0 | `0x40` | `0x0f`, so skin 15 | `0x08` | 8 |
-| 885 boot 4.0 | `0x40` | `0x11`, so skin 17 | `0x08` | 8 |
+## Software type, and what safe mode changes
 
-Three arch 14 images with three different firmware versions and three different skins all report
-14, the arch 12 image reports 12, and **the four arch 8 images report 8**, so the byte tracks the
-architecture and nothing else across three architectures now. The last two of those are the arch 8
-**bootloaders**, section 116, whose software type nibble is 3 where an application's is 0 and a safe
-mode image's is 4, so they are a third value of that field on a third architecture. The arch 8 pair is the sharpest case in
-the table: one build, two models, and field 5 is the only one of the five constants that differs
-between them. It also
-matches the architecture each bench remote's own config states in base slot 1, on all three units.
-That agreement is evidence rather than a tautology, because the accessor has exactly one caller and
-the firmware never compares the constant against the config. Read as "protocol" until then;
-`docs/findings.md` section 57.
+**Field 4's low nibble is the software type**, from its own `RETLW` accessor beside the architecture one and
+combined by the same `SWAPF`, `ANDLW 0xF0`, `IORWF` shape as fields 0 and 1[^s87][^t-usb-firmware].
+Logitech names the values in the comments of its firmware packages, 0 and 4 being application mode and safe
+mode, 1 test mode and 3 boot mode, and its client names all five: 0 application, 1 test, 2 minimal, 3
+bootloader, 4 safe mode[^s87b]. So the reply says which of a remote's firmware personalities is answering.
+`readVersion` names the software type with those words.
 
-Two predictions fall out for remotes nobody here has connected, and they are recorded now so that
-connecting one is a test rather than a confirmation: a Harmony 700 should enumerate `bcdDevice`
-`0x1066` and a Harmony 650 `0x1072`, since the skin is reported in binary here and in BCD there.
+**What safe mode changes in the block is per architecture**, because the remotes enter safe mode
+differently:
 
-**What is still not claimed.** ~~Fields 7, 10 and 11 repeating field 0 is an observation, not a
-reading.~~ **All three have readings now**, in section 59: field 7 is the version byte at program
-`0x000017`, field 10 the safe mode firmware's, and field 11 the running application image's own
-header. They agree with field 0 because they version four things a firmware release stamps
-together, which is what this section already suspected and rightly declined to claim. It read:
+* **On a Harmony One one byte of twelve changes**: field 4's low nibble goes from 0 to 4, and a Harmony One
+  in safe mode answers `34 05 c8 1f c4 36 0c 34 34 16 34 34`. Its safe mode image runs beside the
+  application and copies nothing over it, so the flash id, the skin and the platform stay as they
+  were[^s190].
+* **On a Harmony 525 three fields change**, the firmware version, the software type and the platform:
+  entering safe mode copies a different image over the application, so a different program, of a
+  different generation, is answering, [its usb page](../architectures/harmony-5xx/usb.md)[^s118][^s190].
+* **On the Harmony 600, 650 and 700** a Harmony 700 in safe mode answers software type 4[^s295], and the
+  Harmony 600's safe mode image carries the platform `0x0C` like its application[^s116]. What else such a
+  reply changes on a remote is not checked[^unchecked].
 
-> Three copies of the firmware version is a strange thing for a version block to carry, and the
-> likelier explanation is that they version other components which happen to match. One candidate
-> is now visible: the safe mode image at `0xFE` `+0x1000` carries the same version as the
-> application on both remotes, `0x34` and `0x02`, so a field naming it would be indistinguishable
-> from a field naming the application. That is exactly why nothing is claimed.
+So a caller learns the state from field 4's low nibble and **must not** read field 6 as saying it. A zero
+in field 6 is measured only from a Harmony 525 in safe mode[^s118]. On the Harmony 880 and 885 a zero is
+seen only in their two bootloader images, which are software type 3, and no safe mode image of that
+architecture is known, so whether one would answer zero is not known[^s116][^unchecked].
 
-The candidate was the right one and the objection was the right objection. What answered it was not
-a better comparison of values but the address the accessor builds, `0x001007`, which cannot be the
-application on either architecture.
+## What Logitech's client reads from it
 
-Concordance prints three things this block could plausibly carry, of which **two** are still
-unplaced: firmware type and `IRL, ORL, FRL`. The third component of the hardware version is not
-unplaced but absent, section 225: concordance sets it to zero itself and says why.
-### The version reply's field map, which agrees with ours field for field
+Logitech's client reads GET_VERSION when it identifies a remote and assigns the same six fields this page
+reads, in the same order: firmware and hardware version as nibble pairs, then flash device id, then flash
+manufacturer id, then architecture in the high nibble and software type in the low, then the
+skin[^s212]. Its naming of fields 2 and 3 is the Harmony One's reading, above. It names nothing past the
+skin. Its region numbers place fields 8 and 9 as the versions of the flash programmer and the programmable
+logic image, which agrees with the readings above, [the Harmony One's firmware](../architectures/harmony-one/firmware.md)[^s212].
 
-The client's identify operation reads `GET_VERSION` and assigns the same fields this project derived
-from disassembly and prediction: firmware version and hardware version as nibble pairs, then flash
-device id, then flash manufacturer id, then a byte carrying the architecture in the high nibble and
-the software type in the low, then the skin. Six fields, the same six, in the same order.
+**One agreement and one contradiction.** The client's file for the Harmony 525's skin declares a flash
+device id of `0x12` and a manufacturer of `0xFF`, and its file for the Harmony One declares `0xF9` and
+`0x01`; no archive section holds those two statements[^unchecked]. A Harmony 525 reports exactly the first
+pair[^s76], and a Harmony One reports `0xC8` and `0x1F`, not the second[^s57]. Either the One shipped with
+more than one flash part or the file is wrong; either way **a writer takes the flash id from the remote and
+never from the client's table**, and the write rails in `packages/usb/src/rails.ts` compare a
+configuration's declared version against the version block the remote returns rather than against a
+constant.
 
-It stops there. It has no name for field 6, the compiled in `0x0C` this project cannot explain, nor
-for anything above it, so the client does not settle that and never did.
+## `bcdDevice` and field 5 on the remotes not yet read for it
 
-**One agreement and one contradiction, both measured.** The arch 9 skin declares a flash device id
-of `0x12` and a manufacturer of `0xFF`, and the bench Harmony 525 reports exactly that pair. The
-Harmony One skin declares `0xF9` and `0x01`, and the bench Harmony One reports `0xC8` and `0x1F`.
-Either the One shipped with more than one flash part or the file is wrong; either way **a writer
-must take the flash id from the remote and never from this table**, and `rails.ts` already says the
-config's declared version is matched against the remote rather than against a constant.
+The Harmony 700 2.8 image's device descriptor carries `bcdDevice` `0x1066` and the Harmony 650 0.2 build's
+`0x1072`, BCD of 1000 plus the skin, where field 5 states the same skins as `0x42` and `0x48` in plain
+binary[^s113][^s392]. Neither has been read off a remote's bus[^unchecked].
+
+## Not checked
+
+* What the low nibble of the reply byte `0x28` means, if anything[^unchecked].
+* What field 9's accessor reads, given that its address does not explain its value[^s59].
+* What a Harmony 600 or 650 in safe mode answers beyond the software type[^unchecked].
+* Whether a safe mode image exists on the Harmony 880 and 885, and what its field 6 would be[^unchecked].
+
+[^s19]: Read in the firmware. [Section 19](../../docs/findings.md#s19)
+[^t-usb-firmware]: Read in the firmware. [The test](../../tests/test_usb_firmware.py)
+[^s57]: Read in the firmware. [Section 57](../../docs/findings.md#s57)
+[^s76]: Measured on a unit. [Section 76](../../docs/findings.md#s76)
+[^x-concordance]: Stated by a third party. [concordance](https://github.com/jaymzh/concordance)
+[^unchecked]: Not checked.
+[^s59]: Read in the firmware. [Section 59](../../docs/findings.md#s59)
+[^s87]: Read in the firmware. [Section 87](../../docs/findings.md#s87)
+[^s116]: Read in the firmware. [Section 116](../../docs/findings.md#s116)
+[^s109]: Read in the firmware. [Section 109](../../docs/findings.md#s109)
+[^s113]: Read in the firmware. [Section 113](../../docs/findings.md#s113)
+[^s87b]: Stated by Logitech, in their client. [Section 87](../../docs/findings.md#s87)
+[^s190]: Measured on a unit. [Section 190](../../docs/findings.md#s190)
+[^s118]: Measured on a unit. [Section 118](../../docs/findings.md#s118)
+[^s295]: Measured on a unit. [Section 295](../../docs/findings.md#s295)
+[^s212]: Stated by Logitech, in their client. [Section 212](../../docs/findings.md#s212)
+[^s392]: Read in the firmware. [Section 392](../../docs/findings.md#s392)
