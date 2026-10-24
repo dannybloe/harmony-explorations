@@ -53,8 +53,6 @@ import reference_guards as guards  # noqa: E402
 # BEGIN PINNED: written by tools/reference_guards.py --pin, never by hand
 PINNED = {
     'bench': {
-        ('reference/README.md', 'bench'): 4,
-        ('reference/README.md', 'lab'): 1,
         ('reference/glossary.md', 'dump'): 2,
         ('reference/how-a-harmony-works.md', 'bench'): 7,
         ('reference/how-a-harmony-works.md', 'lab'): 4,

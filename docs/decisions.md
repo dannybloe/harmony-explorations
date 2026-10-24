@@ -189,9 +189,12 @@ image is a second sample rather than a stand in. Other models are iterated on la
    Auteurswet, which permits obtaining the information and does not permit republishing the code,
    which is why the decompiled source stays in the private lab. **A licence change is not the
    lever**: copying unlicensed proprietary code infringes whatever licence the result carries, so
-   MIT is not the obstacle and moving to GPL would not create a permission. The rule, the legal
-   argument and the ledger of everything currently believed on the client's word alone are in
-   `reference/logitech/clients.md`.
+   MIT is not the obstacle and moving to GPL would not create a permission. The rule and the legal
+   argument are this decision. **The ledger of what is believed on the client's word alone is the
+   reference's footnotes**: every such fact carries the evidence words "Stated by Logitech, in their
+   client", per the footnote convention in `reference/README.md`, and `reference/logitech/clients.md`
+   says what each client is. Until plan 009 this sentence put the rule, the argument and the ledger
+   in `reference/logitech/clients.md`, which no longer holds any of the three.
 
 10. <a id="d10"></a>**The application comes before a wider corpus.** *Taken 12 August 2026, and it reverses the
    posture the front page had carried.* No general call for dumps goes out, and the eight unseen models

@@ -15,11 +15,13 @@ what is the 600's own.
 |---|---|---|
 | **0.2** | the application, 70336 bytes, entry `0x1A26E`, execution base `0x9000`, read whole off a unit and verified by its own header checksum; safe mode 0.2, 24320 bytes | [^s23] |
 | 0.2 | the forum table's newest seen, which is out of date | [^x-forum] |
-| **0.3** | named for skin 71 by MyHarmony's own version list; the image it names answers 404, as every image on that list does | [^unchecked] |
+| **0.3** | named for skin 71 by MyHarmony's own version list; the image it names answers 404, as every image on that list does | [^x-versiondb][^unchecked] |
 
 **A newer version exists by Logitech's word and no copy of it is held.** The version list in MyHarmony
-names 0.3 for skin 71, the 600 for the Americas, and has no entry for skin 73; no archive section or test
-holds that list yet[^unchecked]. Logitech's software update service answers 404 for skin 71[^s295].
+names 0.3 for skin 71, the 600 for the Americas, and has no entry for skin 73[^x-versiondb]; that the
+image it names answers 404 is in no archive section or test yet[^unchecked]. Logitech's software update
+service answers 404 for skin 71[^s295]. [Logitech's update service](../../logitech/update-service.md#myharmonys-own-version-list)
+holds the whole list.
 
 ## The 600's 0.2 and the 650's 0.2
 
@@ -65,6 +67,7 @@ raised that way on this model[^s384].
 
 [^s23]: Measured on a unit. [Section 23](../../../docs/findings.md#s23)
 [^x-forum]: Stated by a third party. [The comparison table of harmony-remote-forum.de](https://www.harmony-remote-forum.de/harmony_compare.php)
+[^x-versiondb]: Stated by Logitech. [MyHarmony's firmware version list](https://files.myharmony.com/Assets/Firmware/VersionDbDefaults2.xml)
 [^unchecked]: Not checked.
 [^s295]: Stated by Logitech, by their service. [Section 295](../../../docs/findings.md#s295)
 [^s281]: Read in the firmware. [Section 281](../../../docs/findings.md#s281)

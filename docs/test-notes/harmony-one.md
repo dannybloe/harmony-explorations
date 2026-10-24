@@ -72,7 +72,11 @@ Three things this changes, none of them about bytes:
   "does not exist", which section 175 read on 25 August 2026 and `packages/usb/src/writes.ts` now
   builds. What has never happened is the sending, and that is the half this bullet is about.) That gap is procedural rather than a gap in the data, and it is why the spare was the
   first write target when writing arrived, and why the units permitted since, the Harmony 525 and the
-  Harmony 650, are ones a failed restore would not cost Danny his everyday remote.
+  Harmony 650, are ones a failed restore would not cost the everyday Harmony One.
+
+**The Ones here are European units**: a Harmony One configuration read here carries skin 59, the Harmony
+One EMEA, in base slot 1, section 131, as the Harmony 600's carries 73, and the remotes are Dutch units. This sat in the
+configuration format's header records page until plan 009's step 4.1.
 
 ## The memory maps of the Harmony Ones read here
 
@@ -151,6 +155,57 @@ observation is argued.
 * **Safe mode by holding Off while inserting the battery** was entered on a bench unit, announced in about
   five seconds, section 190.
 
+### Reads on the spare that the reference states without the unit
+
+Moved here from the USB protocol pages when plan 009's step 4.2 rewrote them, and from the configuration
+format pages in step 4.1.
+
+* **The identity block's three values were matched against concordance**, section 22: `concordance -i`
+  output filed in the lab for this exact unit months earlier names three GUIDs, and all three appear in
+  the block, in that order, at `+0x00`, `+0x10` and `+0x20`. The first is the serial field, `0xEE` filled,
+  which concordance also reports as all E's.
+* **The odd count rail was narrowed on the spare**, section 93: internal reads of 64 and 124 bytes were
+  repeated there and returned, before section 94 explained that the count's parity is the hazard.
+* **A connected One was found running**, section 111: on the spare, its display light band, saved state
+  and cached level agree with each other through its own base slot 15 and its clock ticks. The special
+  function registers answered on the same unit, `UCON` `0x08`, `PORTA` `0x29`, `PORTC` `0xB8`, `LATC`
+  `0x37`, `T1CON` `0x1F`, with `TMR1H:TMR1L` advancing between reads; `UCON` is the positive control.
+* **Its log region reads full**, section 111: the top sixteen bytes of flash, `0x3FFFF0`, are the end of
+  the `00 FF` pattern block at `0x3F0000`, the same on both programmed Ones, so the boot scan recovers the
+  cursor at the region's limit and the append refuses.
+* **The first write that changed a remote showed nothing**, section 236: a television's power on delay
+  raised from 5.0 to 10.0 seconds on the spare, verified byte for byte, and no pause seen when the
+  activity started, because a delay holds back that device's next command and the activity sent it one.
+* **The first container the codec emitted was written there**, section 237: one device's power on delay,
+  six seconds to ten, a two block write since the trailer checksum sits 1.3 MiB from the operand, read
+  back byte identical.
+* **The full write sequence**, section 247: the cache drop sent as the first step of a two block write
+  and the restart at the end; the remote left the bus, came back running its application and did not
+  ask to be synced, where every earlier write had left it asking until its battery came out.
+* **The control**, section 248: the same container written again with the drop and without the restart
+  also left the ordinary screen, so the drop is what closed the symptom.
+* **The bare send**, section 278: three writes, the composed activity's send without its `0x7C` went out
+  on a key press and not when the start's transition ran it; with the pair the television came on.
+* **The nine device lists carried the old page total**, section 293: the seventh device composed in
+  section 241 gave every device list a third page and the headers still drew `2`; the configuration
+  written in section 293 restated all nine.
+
+### The empty configuration and the setup on it
+
+Runs of `todo-compile-one.md` chapters 7 and 8 whose record is that file and the lab's reads rather than
+an archive section:
+
+* **The empty configuration**, 7.2: `empty-one.bin`, 486460 bytes, written as eight erase blocks and read
+  back byte for byte. It started on My Activities with no activity, the clock ran, the device list opened
+  empty, and All Off with no activity redrew My Activities once and stayed there.
+* **The test setup composed onto it**, 8.2, `packages/bench/irtests/done/one-setup-on-empty.json`: every
+  one of the 16 codes heard was the file's own and nothing else was sent, the Denon and the LG went to the
+  inputs asked for, the television and the Denon switched on with no wait before their power codes, and a
+  device page's clock updated. The KPN box on the bench answered none of the catalogue's KPN TV6000COK
+  codes, which is the setup's choice of model and not the codec's.
+* **The charging screen** was seen on the spare during 7.1.2's work, the gauge at one level only and the
+  cross not shown.
+
 ### The first command dropped after idling
 
 Observed twice on 6 August 2026, both times on a Harmony One, both times the first command after the device
@@ -193,4 +248,6 @@ safe mode configuration, and the internal `0xFE` page, read off two units and by
 ### Infrared bench runs
 
 `packages/bench/irtests/done/one-spare-activities.json` records what four activities and Off send on the spare
-One, with no prediction attached. It is the only bench run for this model.
+One, with no prediction attached. The others in the same folder carry one: `one-1-3-composed-setup.json`,
+the test setup composed onto Logitech's compile, section 403; `one-1-3b-row-click.json`, the click on
+composed screen rows, section 404; and `one-setup-on-empty.json`, the 8.2 run above.

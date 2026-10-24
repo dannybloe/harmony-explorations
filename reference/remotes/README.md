@@ -220,8 +220,12 @@ repeat: whether a code repeats while a key is down is a property of the code[^s1
 long press cannot repeat at all, because the remote has to wait to find out which of the two was meant.
 
 Logitech's service declares it, `LongPressAction`, on 37 of its 120 product records, 17 product names, and
-fifteen of those carry a skin[^t-long-press]. **No model with a record has one**; the feature arrives with
-the Harmony Touch's generation:
+fifteen of those carry a skin[^t-long-press]. **Of the models described here two have one, the Harmony
+350 and the Harmony Touch**[^t-long-press], and of the six models whose capabilities the service was asked
+for, the Harmony 350 is the only one that states it[^t-capabilities]. Neither has a record in this
+library's skin table, [above](#skins-without-a-record), which is how this page could say until plan 009's
+step 4.4 that no model with a record has one and that the feature arrived with the Harmony Touch's
+generation; the first half was true and the second left out the Harmony 350:
 
 | skin | the record's name | what Logitech sold it as |
 |---|---|---|

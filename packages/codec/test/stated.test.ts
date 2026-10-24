@@ -249,8 +249,10 @@ test('the table states six hundred and eighty one entries, of which thirty seven
   assert.deepEqual([quads[0]!.codes, quads[0]!.exact], [48, 48], 'whole records, gap words included');
   assert.equal(quads[0]!.header, undefined, 'a shape of its own, not a patched frame');
 
-  // **Two families carry their bits the other way up, and the table says so by its numbers**, section
-  // 161. Such a family sends a set bit as the **shorter** space, so its `zero` is longer than its `one`.
+  // **Four measured families carry their bits the other way up, and the table says so by its numbers**,
+  // section 161, which found the first; the three after it are named below in the order they turned up,
+  // and this opening said "two" until plan 009's step 4.3 noticed the list beneath it holds four. Such a
+  // family sends a set bit as the **shorter** space, so its `zero` is longer than its `one`.
   // Nothing in a pulse train says which way round a protocol counts, so this comes from the catalogue
   // stating the complement of what our decoder read, and it needs no field of its own: an encoder
   // reading these two numbers emits the record again.
@@ -434,6 +436,9 @@ test('a catalogue code is a grammar, and reading one slot of it reads half a com
   // **Their string is `G:<family>:(<A>)(<B>)(<C>):<n>` and slots A and B both hold content.** The first
   // reading here treated A as parameters to skip. Six item sequences occur across the 2921 distinct
   // codes measured, and one literal of each is asserted here so a parser change cannot quietly drop one.
+  // Section 159's table has **seven** rows because it keeps the two slots apart: a value in each slot
+  // (`Pioneer 32 Bit 2`, 7 codes) and two values in slot B (`Sharp 15 Bit`) are two rows there and one
+  // sequence here, since `items` reads A then B as one list. Both counts are right of what they count.
   const shape = (keyCode: string): string =>
     (statedCode(keyCode)?.items ?? []).map((one) => one.kind === 'word' ? one.word : 'v').join('+');
   assert.equal(shape('G:Sony 12 Bit:()(0x910)():3'), 'v');

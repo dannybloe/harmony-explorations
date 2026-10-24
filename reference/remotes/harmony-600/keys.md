@@ -101,9 +101,10 @@ So the 650 and 700 carry the 600's numbers.
 
 **There are 54**, and three routes agree: the key table's split of a key code into an event and a
 scan[^s17]; the keys pressed one by one on a unit, which fall into the four columns of the keypad matrix
-as 14, 14, 13 and 13[^t-keypad]; and the drawing. The keypad scanner is a matrix of 14 rows by 4 columns
-returning `row * 4 + column`, read in the Harmony 700's 2.8 image[^s13], the same architecture; no 600 has
-been opened to check the board[^unchecked].
+as 14, 14, 13 and 13[^t-keypad]; and the drawing. The keypad scanner is a matrix of 14 rows by 4 columns,
+found in the Harmony 700's 2.8 image[^s13], the same architecture, and it returns `(row - 1) * 4 + column`
+with the row counted from one, so the codes run from 1 to 56[^s17b]; no 600 has been opened to check the
+board[^unchecked].
 
 ## The two populations
 
@@ -111,6 +112,14 @@ A key is either on the **keypad**, bound by the activity and device maps, or one
 for**. On this architecture the two share no scan code[^s128]. The manual: "The arrow buttons below the
 screen allow you to move through various options on the remote screen. The center button below the
 remote screen and the side buttons beside the screen let you choose those options."[^x-manual]
+
+**The labels of the side keys sit in two rows**, at pixel rows 35 and 79 with a line pitch of 14: the
+top row belongs to keys 2 and 8, left then right, and the bottom row to 9 and 34[^s128]. Which side is
+which comes from behaviour, since every label whose activity is known is drawn centred: the help screens draw
+"No" at x 5 and "Yes" at x 97, and scan 9's action list differs from one help screen to the next while
+scan 34's is identical on all of them, which is what a retry and a finish look like[^s128]. Measured over
+the configurations of this architecture, so the Harmony 650 and 700, which share the face, place their
+labels the same way[^s128].
 
 ## What the drawing does not yet carry
 
@@ -146,6 +155,7 @@ swallows all but the centre key, which returns[^s311].
 [^s17]: Measured in configurations. [Section 17](../../../docs/findings.md#s17)
 [^t-keypad]: Measured on a unit. [The test](../../../tests/test_keypad.py)
 [^s13]: Read in the firmware. [Section 13](../../../docs/findings.md#s13)
+[^s17b]: Read in the firmware. [Section 17](../../../docs/findings.md#s17)
 [^unchecked]: Not checked.
 [^s128]: Measured in configurations. [Section 128](../../../docs/findings.md#s128)
 [^s323]: Measured in configurations. [Section 323](../../../docs/findings.md#s323)

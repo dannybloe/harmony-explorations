@@ -40,6 +40,15 @@ survey names as the 885's alone.[^s177] How a person meets the colour keys is in
 **A code is a position, not a legend.** The 880 and the 885 already differ over two positions of one
 lattice, so the same code on another model of this platform can be a differently printed key.[^s177]
 
+## The keys beside the screen
+
+**Eight keys sit in two columns beside the screen, and their labels in four rows**, at pixel rows 42,
+74, 106 and 138 with a line pitch of 14. The left column is 5, 6, 7 and 8 and the right column 45, 46,
+48 and 44, top to bottom: one configuration's activity menu names all eight keys of one page, and draws
+four of the names at x 3 and four at x 70 to 97.[^s128] Those are the keys the screen speaks for, and on
+this architecture they share exactly one scan code with the keypad's bindings, where every other
+architecture measured shares none.[^s128]
+
 ## Not checked
 
 * Which printed key sits at which scan code: that needs a drawing or a unit.[^unchecked]
@@ -47,4 +56,5 @@ lattice, so the same code on another model of this platform can be a differently
 [^s144]: Read in the firmware. [Section 144](../../../docs/findings.md#s144)
 [^s144b]: Measured in configurations. [Section 144](../../../docs/findings.md#s144)
 [^s177]: Measured in configurations. [Section 177](../../../docs/findings.md#s177)
+[^s128]: Measured in configurations. [Section 128](../../../docs/findings.md#s128)
 [^unchecked]: Not checked.

@@ -110,9 +110,11 @@ read it back). Both refuse without credentials and are **never in `make all`**.
 * **The account scoped addresses want a GET**, and that is the exception to the rule above:
   `.../json/Account/<accountId>/<Name>` answers **405** to a POST. `probe.call` takes a `method`
   argument for it, with the refusal list unchanged and still running first. `ActivityList` and
-  `FunctionList` answer; `ProtocolList`, `DeviceList` and `CapabilityList` return a bare **502** on
-  both accounts, which is the service being broken rather than the request being wrong, and the two
-  that answer are the control that says so. **`FunctionList` is the one worth knowing**, section 220:
+  `FunctionList` answer; `ProtocolList`, `DeviceList` and `CapabilityList` fail: a GET answers a
+  bare **502** gateway error on an account holding devices, reproducibly on both, and 200 with an
+  empty body on an empty account, and a POST answers 405 like every account scoped address. That is
+  the service being broken rather than the request being wrong, and the two that answer are the
+  control that says so. **`FunctionList` is the one worth knowing**, section 220:
   it is the layer that names a device's commands, which no configuration holds, one map per device
   and one per activity. **Both accounts are test accounts whose contents change**, so a capture of it
   is evidence about a moment: `tests/test_function_maps.py` reads dated copies and section 220 says
@@ -241,7 +243,7 @@ reasoning instead of querying.
   `deviceVersionIds`, the entry's delays and minimum repeats, and `GetInputInfo` with `versionIds`, its
   input type and named inputs. `DeviceManager/GetGlobalDevices` with plain ids answers an internal
   error. Replies in `responses/20261001-catalogue-reads/`.
-* **Button maps**: `RemoteManager/GetButtonMaps` and the `ActivityButtonMap` records, which is
+* **Button maps**: `UserButtonMappingManager/GetButtonMaps` and the `ActivityButtonMap` records, which is
   where the drawings' scan codes came from, via the account that generated the calibration
   configs, `docs/test-notes/accounts.md`.
 
@@ -325,7 +327,9 @@ which the existing readers take with no new code, and whose own manifest states 
 algorithm section 41 derived from config containers. `tests/test_harmony_350_firmware.py` pins it.
 
 Eight skins have no image on either channel: 78 and 104 by this route, 98, 101, 107, 109, 113, 114.
-The Linux images are ARM with a squashfs root and reading them needs squashfs-tools, not installed.
+Of the Linux images only the hubs' have been opened: a squashfs root, in a legacy lzma variant mainline
+`unsquashfs` refuses, and an updater for a 32 bit big endian MIPS processor. The remotes' package has not
+been opened, so its processor is not known.
 
 **`xmppupdate` is unidentified.** It is the only mode with no product name, and the hub's preview
 build is 4.15.250 against production's 4.15.600, which fits the public episode where XMPP was removed

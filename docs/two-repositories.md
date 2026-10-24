@@ -127,17 +127,14 @@ shared**, because decision 11's rule is that only a definition learned from hard
 that the archive contaminates the shareable pool.
 
 **Its device half is read too, section 229, and what it buys is the naming layer.** A configuration
-numbers its infrared codes and names none of them, so which of a device's ninety codes is volume up was
-known only from Logitech's button map service through two test accounts. The archive names every command
-locally: **a device group is identified by the numbers its records decode to**, 36 of 38 groups in this
-corpus, 31 of them on every number they send, and 537 of 598 button bindings then get a command name,
-every one of them on the two calibration configurations. Two things to carry rather than re-derive. The
-name must come from the **identified device's own codeset** and never from the catalogue at large, since a
-number alone is held by several manufacturers. And **the identification's margin is part of its answer**,
-because Logitech's catalogue holds ranges of near identical codesets, so a device matching 108 of 108
-often has a runner up at 105 and the honest answer is a model range. `make catalogue` is the measurement,
-`packages/codec/src/catalogue.ts` the reader, and every reader in it is lazy except the code index,
-because the catalogue is 2.2 GB.
+numbers its infrared codes and names none of them, and the copy names every command locally, which
+before it was known only from Logitech's button map service through two test accounts. How a device is
+identified from the numbers its codes decode to, and why a name is taken from the identified codeset
+and never from the catalogue at large, is Logitech's catalogue's own shape and lives with it:
+[the device catalogue](../reference/logitech/device-catalogue.md#how-it-names-a-devices-commands) and
+[naming the commands a configuration sends](../reference/infrared/families.md#naming-the-commands-a-configuration-sends).
+`make catalogue` is the measurement, `packages/codec/src/catalogue.ts` the reader, and every reader in it
+is lazy except the code index, because the copy is 2.2 GB.
 
 **A community device database is a direction now, decision 11 in `docs/decisions.md`, and almost all of
 it is still undecided**: its shape, its licence, where it lives, how an upload is reviewed. That is
@@ -157,108 +154,38 @@ what is fetched; the application works identically for somebody who never touche
 needs no new protocol work at all, since base slot 5 is fully read: a config Logitech compiled can be
 read off the remote and converted with today's code.
 
-**The other route is measured now, not just mapped**, `reference/logitech/service.md` and section 132: the live
-service advertises **308 operations over 50 services**, the device database opens for **a plain Logitech
-login with no account record and no registered remote**, and the chain is `SearchGlobalDevices` then
-`GetGlobalLanguageCommands`. **What it serves is symbolic, not pulses**: a protocol name and a frame
-value, `Raw` null on all 419 commands fetched, and on all 5219 the wider census of 24 August 2026
-fetched too. That was read as "an importer needs an **infrared encoder per protocol family**"<!--superseded-->
+**What the live service offers an importer is [the service page](../reference/logitech/service.md)**:
+the device catalogue opens to a plain login, and it serves a family name and a value per command rather
+than pulses, [the device catalogue is its own call](../reference/logitech/service.md#the-device-catalogue-is-its-own-call).
+That was read as "an importer needs an **infrared encoder per protocol family**"<!--superseded-->
 and as "**a work item nobody had priced**"<!--superseded-->, and section 152 refutes both: a record
 states its own timings, so a frame is rebuilt from five durations read off any code of the same
-appliance a config already holds, exactly, on 3502 of 3502 records. 52 of 58 device groups carry one set
-of timings for every code, which is what makes those five numbers transferable. The cheap route, reading
-base slot 5 out of a compiled config, still needs none of it.
+appliance a configuration already holds. The cheap route, reading base slot 5 out of a compiled
+configuration, needs none of it.
 
-**Their notation is read as a grammar now and their analyser is not a general decoder**, section 159, and
-both matter to an importer. A code states its frames in **two** slots, either of which may hold a word
-naming a standard behaviour rather than a value, and reading one slot refused every Toshiba code in the
-catalogue and sent half a command on the families that fill both. **The notation reads whole**, 2921 of
-2921 distinct codes and 33 of 33 families, since the one family that was refused turned out to state its
-digits in **base 4**, the same width check that refused all 69 of its codes accepting all 69 once the base
-is right. That was written up as `Quad` in a family name being the base of its digits<!--superseded--> and
-section 231 refutes it: it is the base on that one family and is nothing at all on `Quad 5 Bit`, which
-states two symbols and five bits. **The base comes from Logitech's definition**, as the number of cells
-its frame segment holds, and the name is a fallback only where no definition is in hand.
-**Thirty five of the table's 37 families have a rhythm measured off Logitech's own compiler**, sections
-160 to 171, of which **nine** are measured off **both** that route and the corpus and two off the corpus
-alone. This said "eighteen ... sections 160 to 163"<!--superseded--> until 29 August 2026, which was the
-count when that paragraph was written and roughly half of what sections 165 to 171 left it at; the
-"three of them agree" below is the same figure and is nine now, three of them added by section 227
-without a single new measurement, by naming a rhythm out of Logitech's catalogue instead of out of their
-analyser.
+**What the copy contributes to the infrared side is Logitech's own statements, and those live in the
+reference**: how their catalogue writes a code, [how the catalogue writes a code](../reference/infrared/families.md#how-the-catalogue-writes-a-code);
+the rhythm table and its stated rows, [the rhythm table](../reference/infrared/families.md#the-rhythm-table);
+the cell tables and the families that send several rhythms in one press,
+[several rhythms in one press](../reference/infrared/families.md#several-rhythms-in-one-press); and why a
+family is named by their catalogue and never by their analyser,
+[a family is named by Logitech's catalogue](../reference/infrared/families.md#a-family-is-named-by-logitechs-catalogue).
+This document used to carry all of it, with counts that went stale here while the reference moved on;
+plan 009 moved it out in steps 4.3 and 4.5.
 
-**A family is named by their catalogue and never by their analyser**, section 227, which is the rule to
-carry rather than the counts above. The analyser was retired as evidence for a **rhythm** by section 160
-and stayed the only source of a **name** for a corpus measured entry, and all three entries so named were
-wrong: two held another family's durations under a name whose real carrier is 38.2 kHz, and one held
-Toshiba's under Memorex's. The catalogue **states** each family's rhythm, 684 definitions of them in the
-archive, so the rhythm is looked up rather than named. What makes that believable is the calibration:
-**34 of our 35 measured rhythms are reproduced from their own definitions field for field and none
-disagrees**, by two routes with nothing in common. The generator refuses to write the table without the
-archive, since a regeneration elsewhere would silently restore the analyser's names.
+**What stays here is the provenance rule those statements obey.** A row the generator writes out of the
+copy is marked `source: 'stated'` and carries the honest zeroes, no code reproduced and none exact, and
+every count of what reproduces a recorded code filters on `source`, because a row generated out of the
+catalogue agrees with the catalogue by construction. The generator refuses to write the table without the
+copy, since a regeneration elsewhere would silently restore the analyser's names, and a definition sourced
+from the copy is never shared, decision 11. **Where a stated count was not given, it is not defaulted**:
+three repetitions would fit most measured families that state none, and fitting the corpus is what once
+put three wrong names in the table.
 
-**And the table answers for 600 families now rather than 37**, the same section's second pass plus
-section 231: 563 of Logitech's own definitions are entries marked `source: 'stated'`, for families no
-configuration here holds a record of. **The distinction is load bearing and is one field.** A stated row
-has `codes: 0`, `exact: 0` and `spread: 0`, which are the honest numbers, and no `tailExact`, since that
-counts the records that rebuilt from it and there are none. **22 of the 563 carry a whole block and 541
-do not**, section 228, so a code of those 541 can be **built and not written** and `blockOfStatedCode`
-refuses it.
-**139 of the rows are a sixth shape, a cell table**, section 231: 142 of their families spell a bit as a
-whole cell rather than as one of two lengths, a value being read a digit at a time with each digit
-picking one cell out of four or out of sixteen. Base four and base sixteen are **one** shape and reading
-them was one job rather than two. **Which base a family uses comes from its definition and never from
-its name**, the cell count, and a field width is then in digits and has to be multiplied out, **per
-segment** rather than per family.
-**A family can send several rhythms inside one press**, section 232, and 44 of theirs do: `Classe 16 Bit
-Toggle` sends four mode bits at a 442 microsecond half cell, one bit at 880 and sixteen data bits back at
-442, which is RC6's shape. A block's copy names which rhythm it goes out in and a copy naming one the
-shape does not hold **throws** rather than falling back on the first, which would send a segment in
-another's rhythm and look well formed. Refusing those families had cost 84694 catalogue commands. Two
-rules of Logitech's own came out of it and both are easy to get wrong: their **field order is `sequence`
-then `token`**, token alone being ambiguous on 103 definitions, and a **segment states its own width
-inside `Payload`**, which is the only place a secondary segment's width is stated.
-This said a stated row carries no block at all<!--superseded--> for one day: Logitech's own `KeyCode`
-field states a block's shape whole, and reading it reproduces all 29 blocks measured off their compiler
-to the microsecond. What their definitions do not state, on 645 of 684, is **how many times a repetition
-is sent**, and that is the whole reason 541 stay unwritable. It is stated for 39 families, right on all
-five of ours that have it, and **not defaulted**, because three would fit 22 of our 24 unstated families
-and fitting the corpus is what put three wrong names in this table to begin with. Any count of what
-reproduces a corpus record filters on `source`, and the calibration deliberately excludes stated rows,
-since a row generated out of the catalogue agrees with the catalogue by construction. Two rules of ours
-turn out to be common rather than odd, which is worth more than the rows: 84 further families send a set
-bit as the **shorter** carried half, where four cases out of 37 had made that look like an exception, and
-52 further ones have no constant half at all. The route is open: `DeviceManager/UpdateMultiple` takes an operation bag and puts a catalogue appliance on an
-account, so their service will compile a configuration containing any family we ask for and the
-durations in it are the ones their generator emits. Fifteen appliances, 1143 records, and every family
-reproduces its own durations on every one of its records. Three of them agree to the microsecond with
-what the corpus already gave, by a route with nothing in common, and `Toshiba 32 Bit` turns out to be the
-NEC entry exactly, which is over a third of their catalogue. The thirteenth is the lesson in miniature:
-Sharp was written up as two problems, a rhythm that would not split and numbers that joined under no
-transform, and it was one. Its opening mark is 270 where every later one is 260, which a strict reader
-refuses, and its numbers needed no transform at all: the second half was a pair of numbers compared
-without establishing they were the same command, and a set against a set maps 162 of 162 under the
-identity. The fourteenth needed the attribution fixed rather than another appliance, section 161: the
-join decided which appliance a group of codes belongs to by a vote of overlapping numbers, and the config
-**states** it, so four groups of fifteen had been dropped whole. One of them, the PS3's, then joined once
-it was allowed to state the **complement** of what our decoder reads, because that family sends a set bit
-as the shorter space where every other one here uses the longer.
-
-**Their analyser is retired as evidence for a rhythm**, section 160, and that is the load bearing
-correction: it accepted two rhythms their compiler does not emit, `JVC 16 Bit` under NEC's durations and
-a Sharp seed whose every duration was out by a fifth to a quarter, and it named both correctly. So a
-family judged only by their analyser is a command that will be recognised by their decoder and by no
-appliance. **And it is wrong about families too**, section 162: three records on a Denon receiver come
-back `Makita 10 Bit` with a ten bit number, where the record is a fifteen bit Sharp code whose durations
-their own compiler emits, and their ten bits are ours with the first dropped and the last four cut. `source` on a table entry says which route it came from and the documented category is
-deliberately empty.
-
-Two things on that list matter beyond the import.
-`downloadManager.RemoteConfigurationInJson` **was called and it is less than its name promised**: the
-URL is not advertised, it comes back from a compile, and it returns a ZIP holding a bare `GSPM` container
-plus a manifest. The manifest corroborates section 41's trailer checksum, seed and algorithm, from its
-author. And `infraredAnalysisManager.AnalyzeInfrared` is the learning service the user manuals describe,
-which is the piece M5 has to replace locally.
+**Two of the service's calls matter beyond the import**, [the service page](../reference/logitech/service.md):
+a compile's download is a ZIP holding a bare container and a manifest, which corroborates section 41's
+trailer checksum, seed and algorithm from its author; and the analysis service is the learning service
+the user manuals describe, which is the piece M5 has to replace locally.
 
 **The compile is the surprise worth carrying**: it runs server side with the remote unplugged, so
 Logitech will compile a config **to our own specification** and hand it over as a file. Two of those

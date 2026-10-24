@@ -128,6 +128,23 @@ in an archive section, so the reference states them only as far as a section car
 * **The panel's colour as seen** has not been written down.
 * **The composer refuses skin 74**, section 330; no skin 74 unit or compile has been read.
 
+Runs with an archive section of their own, whose bench half the reference states without the unit:
+
+* **The tour skipped**, section 286: list 660's entry into the introduction tour replaced by the call its
+  Exit makes, a three byte change written as two erase blocks and read back identical. Off the cable the
+  tour did not appear and the remote showed the Remote Assistant screen, which it also shows after an
+  ordinary restart; that screen was accepted as it is.
+* **The delay between devices**, section 335: the Denon's value raised by 15 units lengthened the silence
+  before the Denon by 1.506 s in a start and 1.505 s in All Off, while the same change to the device sent
+  before it left the start's silence at 0.620 s. The wait begins once the device sent before it has gone.
+  Whether the list's instructions all run before its first code goes out, and whether it holds back a
+  device queued after it, were not measured, and neither was the Harmony 600 or 700.
+* **A composed sequence**, section 342, `h650_bench_4_2_base`: on Red in TV kijken, KPN 1, a pause of 20
+  tenths, KPN 2, a pause of 200 tenths and KPN Red. Heard with the Flirc, 2.80 s and 20.28 s between the
+  codes, nothing to the LG or the Denon; a Volume Up pressed during the long pause waited for it, which
+  is the measurement behind the reference's "a pause holds back the whole activity",
+  `reads/20261008T152233Z-ir-test-harmony-650-a-sequence-on-red-in-tv-kijken.json`.
+
 ## Where the 650's work is planned
 
 `todo-compile-650.md` is the plan for composing whole configurations for this model, and the place to

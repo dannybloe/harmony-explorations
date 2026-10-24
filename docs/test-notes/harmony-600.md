@@ -40,6 +40,11 @@ answers 404, as every image on that list does. The model folder said "no other v
 firmware is known here"<!--superseded--> until 15 October 2026, while the version list had been filed
 with 0.3 in it. No archive section or test holds the list.
 
+**The unit is a European one**: its configuration carries skin 73, the Harmony 600 EMEA, in base slot 1,
+section 131, and a Harmony One configuration read here carries 59, the One EMEA. Both remotes are Dutch
+units. This sat in the configuration
+format's header records page until plan 009's step 4.1.
+
 ## What has been sent to this unit
 
 | command | what was done |
@@ -61,6 +66,10 @@ with 0.3 in it. No archive section or test holds the list.
   this project's, sections 387, 389 and 391.
 * **"Turning system off"**: not seen on any run of a file stating 73; seen once, very briefly after a
   boot, with the six device file built for skin 71, with All Off not reported on, section 392.
+* **The saved delay that won**, section 303: the KPN box's power on delay raised from 15 tenths to 45 in
+  the configuration, written as two blocks and read back identical, was not heard, because the remote's
+  settings store already held a saved value for that delay and the configuration copies a saved value
+  over its own at start. That saved value was cleared over USB in section 305.
 * **The saved delays on this unit** when the runs were made: the PS3's inter device delay at 15 tenths,
   still in the store after this project's configuration writes, sections 387 and 391.
 * **The Devices key**: the model folder's predecessors claimed a Devices key on the 600 for a day; there

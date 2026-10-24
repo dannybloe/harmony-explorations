@@ -14,8 +14,8 @@ reference and changes only the nameplate.
 Every scan code on the drawing was **measured on the Harmony 600**[^s133], and is carried over on the
 strength of the shared face; the 700's own button map has **not** been measured[^unchecked]. What holds
 on the 700 itself: its mode 0 lists the 600's 162 key events in the 600's order, so it has the same 54
-scans[^s311]; and the keypad scanner, a 14 by 4 matrix returning `row * 4 + column`, was first read in
-the 700's 2.8 image[^s13].
+scans[^s311]; and the keypad scanner, a 14 by 4 matrix, was first read in the 700's 2.8 image[^s13],
+where it returns `(row - 1) * 4 + column` with the row counted from one[^s17].
 
 The screen keys, 8, 2, 9 and 34 for the corners and 25 for the centre key, are read from configurations
 including the 700's[^s285][^s311]; the Harmony 650's [keys.md](../harmony-650/keys.md) has the table. The
@@ -113,6 +113,7 @@ compiles[^s385].
 [^unchecked]: Not checked.
 [^s311]: Measured in configurations. [Section 311](../../../docs/findings.md#s311)
 [^s13]: Read in the firmware. [Section 13](../../../docs/findings.md#s13)
+[^s17]: Read in the firmware. [Section 17](../../../docs/findings.md#s17)
 [^s285]: Measured in configurations. [Section 285](../../../docs/findings.md#s285)
 [^s314]: Measured in configurations. [Section 314](../../../docs/findings.md#s314)
 [^s323]: Measured in configurations. [Section 323](../../../docs/findings.md#s323)

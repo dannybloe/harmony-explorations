@@ -25,6 +25,10 @@ Its configurations were changed only through Logitech's own service, by syncing,
 | the configuration after programming, 83840 bytes | the same, after the unit was given four devices, one activity and five favourite channels through Logitech's service, copying the bench Harmony 600's setup | 262 |
 | the configuration with one device removed, 68985 bytes | the same, after the Playstation 3 was taken off and nothing else changed | 263 |
 
+**The five favourites** the unit was given through Logitech's service are five action lists of two
+instructions, `0x7A n` and then `0x1F`, which is what named the slot their channels go through, section
+262; the reference states the slot without the unit.
+
 The three configurations are lab fixtures, `h350_config`, `h350_programmed_config` and
 `h350_three_devices_config`, named in `tests/lab.py` and `packages/lab`, and outside every corpus wide
 total by decision, section 194. The archive calls the first the factory configuration; it held three

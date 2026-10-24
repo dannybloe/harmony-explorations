@@ -12,7 +12,11 @@
  *   provide, and it is the reason this file exists before any learning is possible here
  *
  * The format is read out of the desktop client's own analyser, five modules that turn a capture into
- * this string, and it is **client sourced**: nothing here has seen the service accept one yet.
+ * this string, so how the client builds it is **client sourced**. The string itself is not any more:
+ * the service has accepted strings built here and answered with a family and a value, at some bit
+ * counts and not at others, sections 159 and 160. This header said nothing here had seen the service
+ * accept one until plan 009's step 4.3, written before those sections. What the answers are worth as
+ * evidence about a rhythm is little, and `reference/logitech/service.md` says why.
  */
 import { IR_PULSE_MARK, IR_PULSE_MAX } from './ir.ts';
 import { mergedIntervals } from './irframe.ts';

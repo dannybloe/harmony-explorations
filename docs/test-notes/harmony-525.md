@@ -28,6 +28,14 @@ Dutch, section 149, and one published by another owner before the unit arrived, 
 region at flash `0x818000`, and its configuration region in five 64 KiB blocks. The names are in
 `tests/lab.py` and `packages/lab`, and the corpus totals in `docs/status.md`.
 
+**The unit's own configuration, read over USB on 8 August 2026, is identical in every container field to
+the published sample**, section 76, which is what let it join the container checks as their sixteenth
+sample. **The safe mode container**, `h525_safemode_ahcm`, was held out of the corpus for a while because
+it contradicted six established claims at once; sections 77 to 79 re-derived all six, four of them
+becoming findings and two artefacts of reading a fixed length where the format states none, and it is in
+the corpus since, bringing a fifth base address with it. Both sat in the configuration format's
+container page until plan 009's step 4.1.
+
 What the two user configurations hold that the reference states without naming them: this unit's holds
 four devices, below both stated device limits; the four soft keys carry opcode `0x7E`, enter a mode by
 index, 57 and 18 times across the two, which is the measurement behind the reference's "paging is a soft
