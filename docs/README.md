@@ -169,7 +169,13 @@ reference/remotes/              the per remote technical reference, one folder p
                                 the convention
 reference/architectures/        what one architecture's models share, stated once and linked from
                                 each model folder: harmony-600-650-700/ for arch 14, harmony-one/
-                                for arch 12. Its README compares the two execution models, and
+                                for arch 12, harmony-5xx/ for arch 9, harmony-300-350/ for arch 16,
+                                harmony-880-885/ for arch 8, harmony-890-895/ for arch 10 and
+                                harmony-touch/ for the Touch's family, whose number is disputed. The
+                                last three were built by plan 009's step 3.5 from contributed
+                                configurations, images and Logitech's own material, the 880 and 890
+                                having model folders beside them, reference/remotes/harmony-885/ and
+                                harmony-890/. Its README compares the execution models, and
                                 each folder's memory.md carries the architecture's memory layout,
                                 since plan 009's step 3.2; a model's own rows are in its model
                                 folder's memory.md and what is one unit's is in docs/test-notes/
@@ -405,58 +411,15 @@ the family's own transfer, commit and device control commands are writes and bel
 `WRITES_ENABLED`. Client sourced under decision 2, and its skin 96 contradiction is deliberately
 unresolved.
 
-**And it has been tried on hardware now, which is where it stops being a paragraph.** A Harmony Touch
-answers an open of `/sys/sysinfo` and **refuses** it, `ff 01 ff 01 01 0b`, identically for two paths
-and both sequence numbers, so the packet is understood and something in it is wrong. Three things to
-carry rather than re-derive: a packet the remote dislikes leaves it **silent for the rest of the
-session**, so a run of attempts through one handle measures the first and then nothing; a bare ping is
-not the missing step, measured; and the remote is unharmed and enumerates normally afterwards.
-`openFileBasedRemote` is the door, deliberately separate from `openHarmony` rather than a widening of
-it. Section 198.
-
-**And it reads now, section 200.** A Harmony Touch's `/sys/sysinfo` opened, read and closed, 234 bytes
-of plain text in fourteen fields. **`arch 0x11` is 17**, so section 197's disagreement is settled on the
-hardware's side and is real rather than a mistake in either source; its firmware version matches the
-package the update service served for that skin, by two routes with nothing in common; and
-`link_packet_length 64` is the report size this project has used since section 3 and had never seen a
-remote state.
-
-**A file states its end in one place and it is the open reply, section 201.** The last data packet
-declares a full payload and pads it with NUL, so a packet's own length is the transfer unit and not the
-number of bytes belonging to the file, and `readOpenFile` was returning the padding as content: 124
-bytes for an 83 byte file and 248 for a 234 byte one. That is what section 200's field count was, since
-a run of NUL parses as a field, and it would have been worse on a config, because a container arriving
-with bytes on the end fails its checksum in the way a bad read does rather than in the way a bad
-reader does. A **short** read is still returned short, deliberately. The other file with content on a
-Harmony Touch, `/rf/deviceinfo`, turns out to be **a query rather than storage**: its 83 bytes are the
-word `Response`, a comma and a JSON object naming a radio identity and a list of paired devices, which
-is empty on the bench unit. So two files on one remote are two formats, and a filesystem that
-synthesises an answer on open is the deeper reason `INERT_PATHS` exists rather than a mode check.
-
-**What made it work was reading Logitech's own encoder instead of guessing, and Danny asked for that.**
-`molsonparamwriter.getBytes` in the mirrored client: a **string** parameter is `0x80`, the characters
-and a NUL, where every other type states its own width. Two guesses were tried on hardware first and
-both are refuted, a bare NUL terminated string and a plain length prefix. The encoder had been in the
-lab the whole time, which is decision 12 in one paragraph.
-
-**A path on this protocol can be an action, and that is a rail.** `/sys/factoryreset` and `/sys/reboot`
-both **open for reading** on a Harmony Touch, and both were opened here while probing which paths
-exist, with nothing happening by luck rather than by design. So a mode of `R` says what a handle will be
-used for and nothing about what opening the path does. `INERT_PATHS` is the allow list and
-`HARMONY_FILE_PATH_EXPERIMENT=1` the named door. **The general form applies beyond this family**: a rail
+**The file based family reads now, and what it showed has homes of its own.** The protocol as Logitech
+specifies it and as a remote answers it is `reference/usb-protocol/file-protocol.md`; how a Harmony Touch
+speaks it, its refusal bytes, its silenced session, the `0x80` string encoding and the paths that are
+actions are `reference/remotes/harmony-touch/usb.md` and `reference/architectures/harmony-touch/`, with
+provisioning in place of a compile in the latter's `usb.md`; what was tried on the bench unit, the six
+configuration spellings among it, is `docs/test-notes/harmony-touch.md`. Sections 198 and 200 to 202. **The
+rail that came out of it stays here because it is about this library**: a path on this protocol can be an
+action, so `INERT_PATHS` is an allow list and `HARMONY_FILE_PATH_EXPERIMENT=1` the named door, and a rail
 derived from what a command is can be defeated by what an operand names.
-
-**A Harmony Touch's configuration is not reachable as a file**, six spellings tried including the
-Harmony 350's own `/cfg/usercfg`, which is consistent with the read of a user configuration being
-commented out in Logitech's own template.
-
-**Nor is it reachable as a compile, and that is settled rather than unfound**, section 202. Logitech's
-service will not produce one: MyHarmony's sync branches on the product's declared capabilities, a
-Harmony One and a Harmony 600 take the compile route that yields a file, and a Harmony Touch takes a
-**provisioning** route that sets config not required and never calls the compiler. Every compile
-requested for one ends in a bare `status='Error'` six seconds in, which is the service being asked for
-an artefact this product has no route to. So neither of the two ways this project has ever obtained a
-configuration reaches that generation, and what does is unread.
 
 Its five product ids sit **inside** `0xC110` to `0xC14F`, so `isHarmony`
 excludes them explicitly and `isFileBasedRemote` reports them, which is section 189's second predicate

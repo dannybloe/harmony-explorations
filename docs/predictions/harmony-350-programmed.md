@@ -2,10 +2,10 @@
 
 The bench Harmony 350 held its factory configuration, which exercises almost nothing: three device
 groups, one hundred and thirty infrared records, no favourites, and nine of its fifteen container
-slots that nothing here could name. Danny programmed it on the test account by copying the settings
-of his Harmony 600, so the two remotes now carry the same equipment.
+slots that nothing here could name. It was programmed on the test account by copying the settings
+of the bench Harmony 600, so the two remotes now carry the same equipment.
 
-**What he set up**, in his words and before the read:
+**What was set up**, as described before the read:
 
 * four devices, a Sony Playstation 3, a KPN VIP1853 set top box, a Google Chromecast and a Panasonic
   TX-P42GT30E television
@@ -24,10 +24,10 @@ means the sync did not land and the read is of the old file.
 **P2. The metadata archive names four devices.** The factory file names three and all 165 of their
 commands. The archive is the only naming route on this remote, so this is also the check that the
 archive tracks the configuration rather than being a factory artefact. The names should be the ones
-on his screen rather than the manufacturer's model numbers.
+on the account's screen rather than the manufacturer's model numbers.
 
 **P3. Two of the four devices carry no infrared codes at all.** A Playstation 3 is driven by
-Bluetooth and a Chromecast has no infrared receiver, and his own screen marks both with a warning
+Bluetooth and a Chromecast has no infrared receiver, and the account's screen marks both with a warning
 badge where the television and the set top box carry none. So the expectation is codes for the
 television and the set top box and empty groups for the other two. **This is the prediction most
 likely to be wrong**, because Logitech does sell an infrared adapter for a Playstation 3 and their
@@ -67,7 +67,7 @@ Five right or partly right, three wrong.
 | | outcome |
 |---|---|
 | P1, larger than the factory file | **wrong**. 83840 bytes against 121251. A factory configuration carries codes for equipment nobody owns |
-| P2, four devices named | right, and the name lengths are his four names in his order |
+| P2, four devices named | right, and the name lengths are the four names given, in their order |
 | P3, two devices with no codes | **half right**. The Chromecast has none, the Playstation has 59, which is the half this document flagged as most likely wrong |
 | P4, the k-th device is the k-th non-empty group | supported and not settled. The digit tables put the set top box on the group its position predicts, and the other three are unresolved |
 | P5, one activity | not answerable. No reader here reports an activity count on this architecture |
@@ -83,7 +83,7 @@ still arrives with 59 infrared commands.
 
 ## A second differential: the Playstation removed
 
-Danny then took the Playstation 3 off the remote, leaving the set top box, the Chromecast and the
+The Playstation 3 was then taken off the remote, leaving the set top box, the Chromecast and the
 television. Written before this read too, and the point of it is narrow: the previous pair moved two
 things at once, the device count and the favourites, so raw slots 6 and 8 both grew and neither could
 be attributed. This pair moves **one** thing.

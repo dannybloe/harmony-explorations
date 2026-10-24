@@ -2,8 +2,8 @@
 
 The Harmony One runs one program, the application, and keeps four smaller ones beside it: a bootloader
 that decides at power on what to start, a safe mode that can repair the remote, an image for its
-programmable logic, and a library that programs the external flash. Only the application is ever
-updated by Logitech's packages. This page says where each lives, how the package that carries the
+programmable logic, and a library that programs the external flash. Of the five, Logitech's package
+carries only the application, together with the configuration safe mode shows[^s3]. This page says where each lives, how the package that carries the
 application is laid out, and what safe mode can and cannot do. Where each sits in memory is
 [memory.md](memory.md).
 
@@ -12,10 +12,10 @@ application is laid out, and what safe mode can and cannot do. Where each sits i
 | image | version | where it is stored | where it runs |
 |---|---|---|---|
 | application | 3.4 | external `0x020000` to `0x02EA92`, 60050 bytes, and a stored copy at `0x3D0000` | in place at `0x020000`, entry point `0x02EA38`[^s3][^s1]; `0x020000` to `0x02002F` is data, the header and a `DEADDEAD` fill, which a disassembler must be told, since `48 47` decodes as a valid instruction[^s10] |
-| safe mode | 3.4 | internal `0xFE` `+0x1000` | internal flash[^s189] |
+| safe mode | 3.4[^s23] | internal `0xFE` `+0x1000` | internal flash[^s189] |
 | bootloader | none, it has no header | internal `0xFE` `+0x0000` | internal flash, from the reset vector[^s189] |
-| programmable logic image | 1.6 | internal `0xFF` `+0x0000` | not known[^s206] |
-| external flash programmer | 3.4 | internal `0xFF` `+0xE000` | internal flash, called by the application and by safe mode[^s191] |
+| programmable logic image | 1.6[^s23] | internal `0xFF` `+0x0000` | not known[^s206] |
+| external flash programmer | 3.4[^s23] | internal `0xFF` `+0xE000` | internal flash, called by the application and by safe mode[^s191] |
 
 **The version block carries the versions of five images**, in fields 7 to 11, and Logitech's client
 numbers them by region: 0 the bootloader, 1 safe mode, 2 normal mode, 3 the embedded configuration at
@@ -64,6 +64,13 @@ stored copy at `0x3D0000`[^s88].
 
 ### Which screen the 3.4 firmware draws
 
+A screen held in a Harmony One's configuration is shown because the configuration's own instructions ask
+for it. The firmware itself picks a screen out of a configuration by number exactly once, for one status
+message; the other status messages it raises on its own come from a small status library or from its own
+code[^s408]. The detail,
+for anyone writing a configuration, counts over the 78 screens at the head of every compiled configuration's
+mode table:
+
 **Which of the 78 the 3.4 firmware draws by number**: one. A mode becomes current only from an `0x7E` operand, the
 mode stack (a mode that was current) or base slot 4, and base slot 4 is walked only for status code 9, "LCD Module
 Failed", after the licence check passed and while the configuration's verdict stands, so its key 9 (mode 19 in
@@ -85,6 +92,7 @@ named by no enter at all. Harmony One 3.4 only; computed jumps, `FSR` writes and
 [^s3]: Read in the firmware. [Section 3](../../../docs/findings.md#s3)
 [^s1]: Read in the firmware. [Section 1](../../../docs/findings.md#s1)
 [^s10]: Read in the firmware. [Section 10](../../../docs/findings.md#s10)
+[^s23]: Measured on a unit. [Section 23](../../../docs/findings.md#s23)
 [^s189]: Read in the firmware. [Section 189](../../../docs/findings.md#s189)
 [^s206]: Measured on a unit. [Section 206](../../../docs/findings.md#s206)
 [^s191]: Read in the firmware. [Section 191](../../../docs/findings.md#s191)

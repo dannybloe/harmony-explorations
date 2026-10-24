@@ -1,54 +1,57 @@
 # Harmony 600, 650 and 700: firmware
 
-The firmware is **one program in several builds**: the same routines, mostly at the same addresses
-within a build family, with the builds differing by model and version. So nothing read on one build
-transfers to another by address without checking, section 281. **The 600's and 650's 0.2 builds are one program**:
-every differing byte is code that moved, a reference to it, the header checksum, two routines nothing
-calls, or the model number and USB release number each build reports, 71 and `0x1071` on the 600 and 72
-and `0x1072` on the 650, section 392. Each model folder lists its own
-versions; this file states what is common.
+The firmware is the program the remote runs; a configuration is the data it reads. On these three models
+the program is **one program in several builds**: the same routines, mostly at the same addresses within
+a build family, with the builds differing by model and version. So nothing read on one build transfers
+to another by address without checking[^s281b]. **The 600's and 650's 0.2 builds are one program**: every
+differing byte is code that moved, a reference to it, the header checksum, two routines nothing calls, or
+the model number and USB release number each build reports, 71 and `0x1071` on the 600 and 72 and
+`0x1072` on the 650[^s392]. Each model folder lists its own versions; this file states what is common.
 
 ## Builds
 
-| build | model | where it came from | standing and source |
+| build | model | where it came from | evidence |
 |---|---|---|---|
-| 0.2, application 70336 bytes, entry `0x1A26E` | Harmony 600 | read off a unit | measured, its own header checksum verifying over all of it[^s23] |
-| 0.2, application 70336 bytes, entry `0x1A262` | Harmony 650 | read off a unit | measured[^s281] |
-| 0.4, application 75392 bytes, entry `0x1B658` | Harmony 650 | Logitech's package, repair site | read in the firmware, section 30 |
-| 2.5, 71552 bytes | Harmony 700 | read out of a unit's staging region | measured[^s295][^s298] |
-| 2.8, application 76672 bytes, entry `0x1BB38` | Harmony 700 | Logitech's package, installed on a unit by staging it | read in the firmware and measured[^s297] |
+| 0.2, application 70336 bytes, entry `0x1A26E` | Harmony 600 | read off a remote, its own header checksum verifying over all of it | [^s23] |
+| 0.2, application 70336 bytes, entry `0x1A262` | Harmony 650 | read off a remote | [^s281] |
+| 0.4, application 75392 bytes, entry `0x1B658` | Harmony 650 | Logitech's package, from a repair site | [^s30] |
+| 2.5, 71552 bytes | Harmony 700 | read out of a remote's staging region | [^s295], [^s298] |
+| 2.8, application 76672 bytes, entry `0x1BB38` | Harmony 700 | Logitech's package, installed on a remote by staging it | [^s297] |
 
 Every image loads at `0x9000`, its header is `0x00` to `0x0F` so its code starts at `0x9010`, and its own
-checksum verifies.[^s5][^s10][^s4] On the Harmony 600 the 0.2 entry point lies past the first 64 KiB, so
-only the complete 70336 byte image holds it, and a copy cut at 64 KiB loses it.[^s5] **Logitech's software update service answers 404 for
-skins 66, 71 and 72**, section 295, so the packages above are all there is.
+checksum verifies[^s5][^s10][^s4]. On the Harmony 600 the 0.2 entry point lies past the first 64 KiB, so
+only the complete 70336 byte image holds it, and a copy cut at 64 KiB loses it[^s5]. **Logitech's software
+update service answers 404 for skins 66, 71 and 72**[^s295c], so the packages above are all there is.
 
 ## Routines read and where
 
-Read on each build named, sections cited. Where a build is missing it is not read.
+Read on each build named. Where a build is missing it is not read.
 
-| routine | builds read | section |
+| routine | builds read | evidence |
 |---|---|---|
-| flash address classifier, ceiling `0x200000` | 600 0.2, 650 0.2, 650 0.4, 700 2.8 | 192, 281 |
-| external flash eraser, SPI `0xD8`, 64 KiB | the same four | 281 |
-| cache drop, `WRITE_MISC` selector `0x02` | 600 and 650 0.2, 650 0.4, 700 2.8 | 282, 283, 299 |
-| restart, the escape's `0x02` | 600 and 650 0.2, 700 2.5 and 2.8 | 97, 282, 298 |
-| settings store read and write, `0x13 0xB2` and `0x14 0xB3` | 600 and 650 0.2; 700 2.8 reaches its own append, unread | 304, 305 |
-| clock routines | 600 and 650 0.2 | 310 |
-| state variable seeder | 0.2, 0.4 | 283, 284 |
-| update status byte, `WRITE_MISC` selector 6 | 700 2.5 and 2.8; the 2.3 safe mode image | 295, 297, 298 |
-| state variable storage sized from `narrow + 2 * wide`, everything above painted `0xFE` at boot | 700 reference image, 600 0.2; the bound check also on 650 0.2 | 276 |
-| state transition walker: every transition tested in record order and every match fired, `-2` on any write and `-3` on a change; a fired instruction runs next; the action queue holds 40 | 600 and 650 0.2, one routine; located on 650 0.4 and 700 2.8 | 332 |
-| configuration validator: `GSPM` at 0, `LWJL` at `0x5B`, `PTYY` at `end_addr`, and the trailer checksum only while setting `0x80`'s bit 0 is set | 600 and 650 0.2; 700 2.8, gated on `0x3A9` | 354 |
-| status screen routine and the five codes it is asked for | 600 and 650 0.2 | 355 |
-| which infrared group a send plays, the toggle alternation | 650 0.2; the same update found on 600 0.2, 650 0.4 and 700 2.8 | 365 |
-| pixel path, flash to panel in stored order | 600 and 650 0.2, 700 2.8; its shape found on 650 0.4 | 367, 387 |
-| text draw: the font select keeps the set's address, a glyph found by its pointer | 650 0.2, 700 2.8 | 368 |
-| queued screen program: base slot 11 entry `operand & 0xff` | 600 and 650 0.2, 650 0.4, 700 2.8 | 369 |
-| picture and page list placement: nothing found reads a position | 600 and 650 0.2, 650 0.4, 700 2.8 | 328 |
-| parameter group 3, a light's levels | 600 0.2, 700 2.8 | 392 |
+| flash address classifier, ceiling `0x200000` | 600 0.2, 650 0.2, 650 0.4, 700 2.8 | [^s192], [^s281c] |
+| external flash eraser, SPI `0xD8`, 64 KiB | the same four | [^s281c] |
+| cache drop, `WRITE_MISC` selector `0x02` | 600 and 650 0.2, 650 0.4, 700 2.8 | [^s282], [^s283], [^s299] |
+| restart, the escape's `0x02` | 600 and 650 0.2, 700 2.5 and 2.8 | [^s97], [^s282], [^s298b] |
+| settings store read and write, `0x13 0xB2` and `0x14 0xB3` | 600 and 650 0.2; 700 2.8 reaches its own append, unread | [^s304], [^s305] |
+| clock routines | 600 and 650 0.2 | [^s310] |
+| state variable seeder | 0.2, 0.4 | [^s283], [^s284] |
+| update status byte, `WRITE_MISC` selector 6 | 700 2.5 and 2.8; the 2.3 safe mode image | [^s295b], [^s297b], [^s298b] |
+| state variable storage sized from `narrow + 2 * wide`, everything above painted `0xFE` at boot | 700 2.8, 600 0.2; the bound check also on 650 0.2 | [^s276] |
+| state transition walker: every transition tested in record order and every match fired, `-2` on any write and `-3` on a change; a fired instruction runs next; the action queue holds 40 | 600 and 650 0.2, one routine; located on 650 0.4 and 700 2.8 | [^s332] |
+| configuration validator: `GSPM` at 0, `LWJL` at `0x5B`, `PTYY` at `end_addr`, and the trailer checksum only while setting `0x80`'s bit 0 is set | 600 and 650 0.2; 700 2.8, gated on `0x3A9` | [^s354] |
+| status screen routine and the five codes it is asked for | 600 and 650 0.2 | [^s355] |
+| which infrared group a send plays, the toggle alternation | 650 0.2; the same update found on 600 0.2, 650 0.4 and 700 2.8 | [^s365] |
+| pixel path, flash to panel in stored order | 600 and 650 0.2, 700 2.8; its shape found on 650 0.4 | [^s367], [^s387] |
+| text draw: the font select keeps the set's address, a glyph found by its pointer | 650 0.2, 700 2.8 | [^s368] |
+| queued screen program: base slot 11 entry `operand & 0xff` | 600 and 650 0.2, 650 0.4, 700 2.8 | [^s369] |
+| picture and page list placement: nothing found reads a position | 600 and 650 0.2, 650 0.4, 700 2.8 | [^s328] |
+| parameter group 3, a light's levels | 600 0.2, 700 2.8 | [^s392] |
 
 ## Safe mode
+
+Safe mode is a second, smaller program the remote falls back on when its application or configuration
+cannot be used.
 
 * The safe mode **image** is in internal flash at `0xFE` `+0x1000`; the safe mode **configuration** is in
   external flash at `0x020000`, [memory.md](memory.md). On the Harmony One the arrangement is different,
@@ -56,52 +59,53 @@ Read on each build named, sections cited. Where a build is missing it is not rea
 * **The `-safe.bin` trap**: on this architecture the `*-safe.bin` file concordance writes when asked for
   the safe mode image holds the **application** truncated at 64 KiB, not a safe mode image: on a Harmony
   600 it is the first 65536 bytes of the 70336 byte application[^s23].
-* Safe mode reports software type 4 over USB, the application 0, `reference/usb-protocol/version-block.md`.
-* The status screens a rejected configuration raises are the architecture's 35, section 244, and a failed
-  validation re-arms rather than latching, unlike the Harmony One, section 253.
+* Safe mode reports software type 4 over USB, the application 0,
+  [the version block](../../usb-protocol/version-block.md)[^s87].
+* The status screens a rejected configuration raises are the architecture's 35[^s244], and a failed
+  validation re-arms rather than latching, unlike the Harmony One[^s253].
 * **The status screens live in the safe mode configuration** at external `0x020000`, linked for that
-  address, section 353. One bit, data memory `0x68B` bit 4 on the 0.2 builds, chooses whether a read goes
-  there or to the configuration at `0x030000`, and the status screen routine reads them from there with
-  the configuration's verdict clear; **the thirty status screens a user configuration carries are not
-  drawn**, as far as the 0.2 code reads, section 355.
+  address[^s353]. One bit, data memory `0x68B` bit 4 on the 0.2 builds, chooses whether a read goes there
+  or to the configuration at `0x030000`, and the status screen routine reads them from there with the
+  configuration's verdict clear; **the thirty status screens a user configuration carries are not
+  drawn**, as far as the 0.2 code reads[^s355].
 * **What a configuration must pass is its three markers.** The checksum is checked only while setting
   `0x80`'s bit 0 is set, which it is not on the Harmony 600 and 650 read, so "Configuration Corrupted"
-  can come from the configuration there only with that bit set, section 354. The Harmony 650 ran a
-  configuration that was the status screen library, moved, on those markers alone.
+  can come from the configuration there only with that bit set[^s354]. A Harmony 650 ran a configuration
+  that was the status screen library, moved, on those markers alone[^s354b].
 
 ## Installing firmware
 
 Nothing here writes the processor's flash. Two routes exist and both make the **remote** install:
 
 1. **Reinstall what is staged**: set the update status byte to 2 and restart, and safe mode copies the
-   application staged at external `0x000000`. Read on the 700's 2.3 safe mode image and run on the 700,
-   section 295; the 600's and 650's 0.2 safe mode images carry part of the routine, at `0x01A8C`, and are
-   otherwise unread.
+   application staged at external `0x000000`. Read on the 700's 2.3 safe mode image and run on a
+   700[^s295b][^s295]; the 600's and 650's 0.2 safe mode images carry part of the routine, at `0x01A8C`,
+   and are otherwise unread[^s295b].
 2. **Stage an image first**: Logitech's own unmodified image written into external `0x000000` to
-   `0x020000`, decision 18; run on the 700, taking it from 2.5 to 2.8, section 297.
+   `0x020000`[^d18]; run on a 700, taking it from 2.5 to 2.8[^s297].
 
 **An install copies at most up to internal `0x1EC00`**, where the settings store begins: the install
 routine ends any copy there, so an application image can be at most 89088 bytes, `0x1EC00` less the
 `0x9000` it loads at[^s295b]. The Harmony 700's 2.8, at 76672 bytes and ending at `0xFF` `+0xBB80`, is
 well inside it[^s297].
 
-The rails, the named doors and the unit list are `CLAUDE.md`'s "Never write to a remote" and
-[usb.md](usb.md). The `recovering-a-remote` skill holds the route.
+The rails and the named doors are in [usb.md](usb.md) and `packages/usb/src/rails.ts`.
 
 ## Not checked
 
-* The Harmony 700's 2.8 build compared with the 0.2 builds routine by routine. Why the 600's and 650's 0.2
-  builds differ is read: one program, its code moved and its model number its own, section 392. This
-  listed "Why builds of the same version differ between the 600 and 650"<!--superseded--> as not checked
-  until then.
-* The 600's and 650's safe mode handling of the status byte, end to end.
-* Safe mode entry by keys on any unit of this architecture: the bootloader compares two scan codes,
-  `0x14` and `0x2C`, section 87, which is a reading and has not been tried.
-* The 0.4 package's validator and clock routines.
+* The Harmony 700's 2.8 build compared with the 0.2 builds routine by routine[^unchecked]. Why the 600's
+  and 650's 0.2 builds differ is read: one program, its code moved and its model number its own[^s392].
+  This listed "Why builds of the same version differ between the 600 and 650"<!--superseded--> as not
+  checked until then.
+* The 600's and 650's safe mode handling of the status byte, end to end[^unchecked].
+* Safe mode entry by keys on any remote of this architecture: the bootloader compares two key codes,
+  `0x14` and `0x2C`[^s87], which is a reading and has not been tried[^unchecked].
+* The 0.4 package's validator and clock routines[^unchecked].
 
-## 2. The USB stack inside the firmware
+## The USB stack inside the firmware
 
-Addresses in this section are the Harmony 700 2.8 image unless stated otherwise.
+Addresses in this section are the Harmony 700 2.8 image unless stated otherwise, read in its
+firmware[^s19].
 
 ### Attach
 
@@ -121,9 +125,9 @@ Addresses in this section are the Harmony 700 2.8 image unless stated otherwise.
 Both agree with the endpoint descriptors, and the agreement is three-way: the buffer
 descriptor for endpoint 1 OUT at `0x408` is **never touched anywhere in the image**, which is
 what `UEP1` with `EPOUTEN` clear implies and what an endpoint descriptor set with no EP1 OUT
-requires.
+requires[^s19].
 
-`UCON` bit 3, `USBEN`, is set at `0x17294`, which is the attach.
+`UCON` bit 3, `USBEN`, is set at `0x17294`, which is the attach[^s19].
 
 ### The report buffers
 
@@ -140,12 +144,12 @@ requires.
 **Every command the host sends lands at data address `0x0428`, and every response is built at
 `0x0468`.** The two buffers are adjacent and 64 bytes each. The ownership bits are the right
 way round: the OUT descriptor is handed to the serial interface engine immediately, the IN
-descriptor is held by the firmware until it has something to send.
+descriptor is held by the firmware until it has something to send[^s19].
 
 ### From buffer to handler
 
 The buffers are only ever reached through FSR, so `pic18_trace.py` cannot see them; the path
-was found through the accessors instead, using `pic18_xref.py` to walk callers.
+was found through the accessors instead, using `pic18_xref.py` to walk callers[^s19].
 
 | Address | What it is |
 |---|---|
@@ -160,14 +164,48 @@ was found through the accessors instead, using `pic18_xref.py` to walk callers.
 | `0x0BD0A` | **the command entry point**, called from `0x1715E` and `0x171E8` |
 
 The interrupt service routine is `0x1AD80` to `0x1AF00`: eight reads of `UIR` between
-`0x1ADE0` and `0x1AE4E`, each followed by a bit test, dispatching on the interrupt source.
+`0x1ADE0` and `0x1AE4E`, each followed by a bit test, dispatching on the interrupt source[^s19].
 
+[^s281b]: Read in the firmware. [Section 281](../../../docs/findings.md#s281)
+[^s392]: Read in the firmware. [Section 392](../../../docs/findings.md#s392)
 [^s23]: Measured on a unit. [Section 23](../../../docs/findings.md#s23)
-[^s5]: Read in the firmware. [Section 5](../../../docs/findings.md#s5)
-[^s10]: Read in the firmware. [Section 10](../../../docs/findings.md#s10)
-[^s4]: Read in the firmware. [Section 4](../../../docs/findings.md#s4)
 [^s281]: Measured on a unit. [Section 281](../../../docs/findings.md#s281)
+[^s30]: Read in the firmware. [Section 30](../../../docs/findings.md#s30)
 [^s295]: Measured on a unit. [Section 295](../../../docs/findings.md#s295)
 [^s298]: Measured on a unit. [Section 298](../../../docs/findings.md#s298)
 [^s297]: Measured on a unit. [Section 297](../../../docs/findings.md#s297)
+[^s5]: Read in the firmware. [Section 5](../../../docs/findings.md#s5)
+[^s10]: Read in the firmware. [Section 10](../../../docs/findings.md#s10)
+[^s4]: Read in the firmware. [Section 4](../../../docs/findings.md#s4)
+[^s295c]: Stated by Logitech, by their service. [Section 295](../../../docs/findings.md#s295)
+[^s192]: Read in the firmware. [Section 192](../../../docs/findings.md#s192)
+[^s281c]: Read in the firmware. [Section 281](../../../docs/findings.md#s281)
+[^s282]: Read in the firmware. [Section 282](../../../docs/findings.md#s282)
+[^s283]: Read in the firmware. [Section 283](../../../docs/findings.md#s283)
+[^s299]: Read in the firmware. [Section 299](../../../docs/findings.md#s299)
+[^s97]: Read in the firmware. [Section 97](../../../docs/findings.md#s97)
+[^s298b]: Read in the firmware. [Section 298](../../../docs/findings.md#s298)
+[^s304]: Read in the firmware. [Section 304](../../../docs/findings.md#s304)
+[^s305]: Read in the firmware. [Section 305](../../../docs/findings.md#s305)
+[^s310]: Read in the firmware. [Section 310](../../../docs/findings.md#s310)
+[^s284]: Read in the firmware. [Section 284](../../../docs/findings.md#s284)
 [^s295b]: Read in the firmware. [Section 295](../../../docs/findings.md#s295)
+[^s297b]: Read in the firmware. [Section 297](../../../docs/findings.md#s297)
+[^s276]: Read in the firmware. [Section 276](../../../docs/findings.md#s276)
+[^s332]: Read in the firmware. [Section 332](../../../docs/findings.md#s332)
+[^s354]: Read in the firmware. [Section 354](../../../docs/findings.md#s354)
+[^s355]: Read in the firmware. [Section 355](../../../docs/findings.md#s355)
+[^s365]: Read in the firmware. [Section 365](../../../docs/findings.md#s365)
+[^s367]: Read in the firmware. [Section 367](../../../docs/findings.md#s367)
+[^s387]: Read in the firmware. [Section 387](../../../docs/findings.md#s387)
+[^s368]: Read in the firmware. [Section 368](../../../docs/findings.md#s368)
+[^s369]: Read in the firmware. [Section 369](../../../docs/findings.md#s369)
+[^s328]: Read in the firmware. [Section 328](../../../docs/findings.md#s328)
+[^s87]: Read in the firmware. [Section 87](../../../docs/findings.md#s87)
+[^s244]: Measured in configurations. [Section 244](../../../docs/findings.md#s244)
+[^s253]: Read in the firmware. [Section 253](../../../docs/findings.md#s253)
+[^s353]: Measured in configurations. [Section 353](../../../docs/findings.md#s353)
+[^s354b]: Measured on a unit. [Section 354](../../../docs/findings.md#s354)
+[^d18]: Chosen by this project. [Decision 18](../../../docs/decisions.md#d18)
+[^unchecked]: Not checked.
+[^s19]: Read in the firmware. [Section 19](../../../docs/findings.md#s19)

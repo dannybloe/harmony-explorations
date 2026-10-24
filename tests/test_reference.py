@@ -55,13 +55,6 @@ PINNED = {
     'bench': {
         ('reference/README.md', 'bench'): 6,
         ('reference/README.md', 'lab'): 2,
-        ('reference/architectures/harmony-300-350/README.md', 'bench'): 2,
-        ('reference/architectures/harmony-300-350/firmware.md', 'bench'): 1,
-        ('reference/architectures/harmony-300-350/firmware.md', 'fixture skin104-harmony350-production-1.4.0.0'): 1,
-        ('reference/architectures/harmony-300-350/firmware.md', 'lab'): 1,
-        ('reference/architectures/harmony-300-350/misc.md', 'lab'): 2,
-        ('reference/architectures/harmony-600-650-700/README.md', 'bench'): 7,
-        ('reference/architectures/harmony-600-650-700/README.md', 'todo'): 1,
         ('reference/architectures/harmony-600-650-700/compiler.md', 'bench'): 2,
         ('reference/architectures/harmony-600-650-700/compiler.md', 'fixture calibration_h600'): 3,
         ('reference/architectures/harmony-600-650-700/compiler.md', 'fixture h600_config'): 5,
@@ -367,12 +360,16 @@ class PlantedViolations(unittest.TestCase):
     def test_footnotes(self):
         good = (
             'Fact[^s1], choice[^d1], later[^t-thing], outside[^x-forum], open[^unchecked], again[^s1b].\n\n'
+            # A reference directly followed by a colon is still a reference, todo-reference 3.1's
+            # follow up: the guard once told a definition by its colon and missed this one.
+            'As measured[^s1c]: a colon after a reference.\n\n'
             '[^s1]: Read in the firmware. [Section 1](../docs/findings.md#s1)\n'
             '[^d1]: Chosen by this project. [Decision 1](../docs/decisions.md#d1)\n'
             '[^t-thing]: Measured on a unit. [The test](../tests/test_thing.py)\n'
             '[^x-forum]: Stated by a third party. [The table](https://example.org/table)\n'
             '[^unchecked]: Not checked.\n'
             '[^s1b]: Stated by Logitech, in their client. [Section 1](../docs/findings.md#s1)\n'
+            '[^s1c]: Measured on a unit. [Section 1](../docs/findings.md#s1)\n'
             '```\n[^s9]: an example in a fence is not a footnote\n```\n')
         path = write(self.root, 'reference/clean.md', good)
         self.assertEqual(guards.footnote_problems(path, good, self.root), [])

@@ -21,34 +21,53 @@ where the 700 differs or has been measured on its own.
 
 ## The settings store
 
-Internal page `0xFF` `+0xEC00`, the architecture's layout. On a 700 it held **only setting `0x80`
-records**, twelve as found, so no delay was saved, section 303; a Harmony Desktop sync appended two more,
-`0xFE` and `0xFF`, section 296. What writes setting `0x80` is only partly accounted for on any unit,
-section 296.
+Internal page `0xFF` `+0xEC00`, the architecture's layout,
+[the architecture's memory.md](../../architectures/harmony-600-650-700/memory.md). On a 700 it holds
+**only setting `0x80` records**, so no delay is saved on it[^s303][^s296]. A Harmony Desktop sync on a
+running 700 appends two of them, `0xFE` and `0xFF`[^s296]. What writes setting `0x80` is only partly
+accounted for on any remote of this architecture[^s296b].
 
 ## Data memory, the 2.8 build
 
-The addresses differ from the 0.2 builds'. Those read: the verdict bits at `0x68E`, the cache drop's
-erase flag at `0x380` and its second flag at `0x1E9`, section 299; the update status byte at `0x100`, read
-on 2.5 and 2.8, section 298. Read in the firmware since: the state variables at `0x900 + n`, section 384;
-the counter of time since the configuration was built at `0xF0F`, section 310; the current mode at `0xF28`
-and the mode switch's argument at `0xF2D`, section 326, where the 2.5 build had `0x6E7` and `0x6EC`; the
-bit gating the trailer checksum at `0x3A9`, section 354; the infrared toggle word at `0x088`, section 365;
-and the USB poll's state, which runs the charger test, at `0x3AB`, a host having addressed the remote at `0x0B0`, the charger flag at
-`0x0B1` and the charging flag at `0x0B2`, section 384.
+The addresses differ from the 0.2 builds'. Read in the firmware:
+
+| what | address | evidence |
+|---|---|---|
+| the verdict bits | `0x68E` | [^s310] |
+| the cache drop's erase flag, and its second flag | `0x380`, `0x1E9` | [^s299] |
+| the update status byte, on 2.5 and 2.8 | `0x100` | [^s298] |
+| the state variables | `0x900 + n` | [^s384] |
+| the counter of time since the configuration was built | `0xF0F` | [^s310] |
+| the current mode and the mode switch's argument, where the 2.5 build had `0x6E7` and `0x6EC` | `0xF28`, `0xF2D` | [^s326] |
+| the bit gating the trailer checksum | `0x3A9` | [^s354] |
+| the infrared toggle word | `0x088` | [^s365] |
+| the USB poll's state, which runs the charger test; a host having addressed the remote; the charger flag; the charging flag | `0x3AB`, `0x0B0`, `0x0B1`, `0x0B2` | [^s384] |
 
 **Data memory is read live on a 700**: a read over USB found the clock in state variables 0 to 6 and a
-configuration's variable at the value the file starts it at, from `0x900` on build 2.8, measured, section
-386. This said "**No data memory value has been read live on a 700.**"<!--superseded--> until section 386.
+configuration's variable at the value the file starts it at, from `0x900` on build 2.8[^s386]. This said
+"**No data memory value has been read live on a 700.**"<!--superseded--> until then.
 
 ## Not checked
 
-* The 2.8 build's restore path for saved delays, and which list it runs at start, section 303. Its state
-  variable addresses and its clock are read since, sections 384 and 386.
-* External flash past the configuration on a 700.
-* What setting `0x80` means.
+* The 2.8 build's restore path for saved delays: in the 700's configurations it hangs off start list 2
+  where the 600's is on list 1[^s303b], and the 2.8 code that runs it is not read[^unchecked].
+* External flash past the configuration on a 700[^unchecked].
+* What setting `0x80` means[^s296b].
 
 [^s295]: Measured on a unit. [Section 295](../../../docs/findings.md#s295)
 [^s300]: Measured on a unit. [Section 300](../../../docs/findings.md#s300)
 [^s297]: Measured on a unit. [Section 297](../../../docs/findings.md#s297)
 [^s295b]: Read in the firmware. [Section 295](../../../docs/findings.md#s295)
+[^s303]: Measured on a unit. [Section 303](../../../docs/findings.md#s303)
+[^s296]: Measured on a unit. [Section 296](../../../docs/findings.md#s296)
+[^s296b]: Read in the firmware. [Section 296](../../../docs/findings.md#s296)
+[^s310]: Read in the firmware. [Section 310](../../../docs/findings.md#s310)
+[^s299]: Read in the firmware. [Section 299](../../../docs/findings.md#s299)
+[^s298]: Read in the firmware. [Section 298](../../../docs/findings.md#s298)
+[^s384]: Read in the firmware. [Section 384](../../../docs/findings.md#s384)
+[^s326]: Read in the firmware. [Section 326](../../../docs/findings.md#s326)
+[^s354]: Read in the firmware. [Section 354](../../../docs/findings.md#s354)
+[^s365]: Read in the firmware. [Section 365](../../../docs/findings.md#s365)
+[^s386]: Measured on a unit. [Section 386](../../../docs/findings.md#s386)
+[^s303b]: Measured in configurations. [Section 303](../../../docs/findings.md#s303)
+[^unchecked]: Not checked.

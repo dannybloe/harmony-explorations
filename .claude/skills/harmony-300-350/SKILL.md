@@ -81,6 +81,7 @@ and should say so in its own header, since there is no screen to confirm a step 
 | the transport | `packages/usb/src/filepipe.ts`, with `INERT_PATHS` |
 | the read scripts | `packages/usb/bin/read-file.ts` and `read-file-identity.ts` |
 | the predictions | `docs/predictions/harmony-3*.md` |
+| each unit's notes | `docs/test-notes/harmony-300.md` and `docs/test-notes/harmony-350.md` |
 | the configurations read so far | the lab's `reads/` and `dumps/`, named in `packages/lab` and `tests/lab.py` as `h350_config`, `h350_programmed_config`, `h350_three_devices_config`, `h300_config` and `h300_programmed_config` |
 | the firmware image | the lab's `firmware/`, named `h350_code` and `h350_package` in `packages/lab` |
 

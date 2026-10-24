@@ -3,10 +3,14 @@
 This project's own units, accounts and configurations, kept apart from the reference, which describes a
 Harmony and never our bench.
 
+* [Harmony 300](harmony-300.md)
+* [Harmony 350](harmony-350.md)
 * [Harmony 525](harmony-525.md)
 * [Harmony 600](harmony-600.md)
+* [Harmony 650](harmony-650.md)
 * [Harmony 700](harmony-700.md)
 * [Harmony One](harmony-one.md)
+* [Harmony Touch](harmony-touch.md)
 * [The corpus](corpus.md): which configurations the work was measured on
 
 ## The units

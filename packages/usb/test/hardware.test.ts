@@ -46,8 +46,10 @@ async function present(productId: number): Promise<boolean> {
  *
  * The Harmony One sometimes drops the first command after the device is opened. Observed twice: a
  * `readFlash` returning "0 of 256 bytes", and a `GET_VERSION` answered with no reply at all, each
- * followed immediately by a run that worked end to end. The 600 has not done it. See
- * `reference/remotes/harmony-one/behaviour.md`; the cause is not known and this is a workaround.
+ * followed immediately by a run that worked end to end. The 600 has not done it. A third
+ * occurrence, `docs/findings.md` section 155, narrowed what the cases share to **idleness**, and why
+ * idleness does it is still open, so this stays a workaround. The occurrences are in
+ * `docs/test-notes/harmony-one.md`, "The first command dropped after idling".
  *
  * **Two message shapes**, because the layers word silence differently: `exchange` says "no reply to
  * command 0x10", `readFlash` says "returned 0 of 256 bytes". The first version of this helper

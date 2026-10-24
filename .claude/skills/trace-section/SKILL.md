@@ -19,6 +19,11 @@ not to. Every config byte read on arch 14 passes through one SPI primitive at `0
 the readers are enumerable. On arch 12 the config is memory-mapped and reads are ordinary
 loads scattered everywhere. Decode arch 14, then port to arch 12 and confirm.
 
+**That is a rule about reading code, not about where data is.** Two things exist on arch 12 alone and
+arch 14 never reads them: the touch hit map and the log area's writer, each with a base slot of its
+own. So when a slot looks empty or unread on arch 14, read arch 12 before concluding anything about
+the slot.
+
 ## Step 1: get the actual pointer values
 
 ```sh

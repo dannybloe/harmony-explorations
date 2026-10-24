@@ -3,7 +3,7 @@
 **Architecture 12**, which Logitech's client calls Gin and which carries one model, the Harmony
 One[^s81]. What sets it apart from every other Harmony is that its processor runs the remote's program
 straight out of a flash chip beside it, read as ordinary memory, where the Harmony 600, 650 and 700 copy
-their program into the processor before running it. Most of what is different about the One for a
+their program into the processor before running it[^s3]. Most of what is different about the One for a
 programmer follows from that. This folder is for what the platform does; the model's own folder, keys,
 screen and behaviour, is [harmony-one](../../remotes/harmony-one/README.md).
 
@@ -27,7 +27,7 @@ Generated from `MODELS_BY_SKIN` in `packages/usb/src/models.ts` by `make remote-
 | execution | the application runs in place from external flash at `0x020000`, entry point `0x02EA38` in 3.4[^s3][^s1] |
 | user configuration | from external `0x040000`; writes stop at `0x3D0000`, where a stored copy of the application sits[^s88] |
 | configuration storage | executed in place out of the same flash, which is why a write restarts the remote[^s251] |
-| container | `GSPM` and `PTYY`, marker `LWJL`, format `0x1600`, 22 pointer slots[^s7][^s115] |
+| container | `GSPM` and `PTYY`, marker `LWJL`, format `0x1600`, 22 pointer slots[^s7][^s115]; the slot layout beside the other architectures is [the container's pointer table](../../config-format/container.md#one-table-four-architectures) |
 | internal program memory | the bootloader, safe mode, the programmable logic image and the external flash programmer, [memory.md](memory.md) |
 | USB product id | `0xC121`, its own[^s190] |
 | the host protocol family | the HID command protocol, which Logitech's client groups with architectures 9 and 14[^s197] |

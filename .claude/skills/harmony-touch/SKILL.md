@@ -19,8 +19,8 @@ are stated, and a task that leans on a stated one should say so.
 In this order, every time, including in an agent:
 
 1. `reference/remotes/harmony-touch/README.md`: the key numbers and the map of its nine topic files. Then
-   open the topic file the task touches, above all `usb.md` for anything on the cable and `misc.md` for
-   why it has no architecture folder.
+   open the topic file the task touches, above all `usb.md` for anything on the cable. Its family, the
+   firmware and the disputed architecture number are in `reference/architectures/harmony-touch/`.
 2. `reference/architectures/harmony-300-350/usb.md`: the file based family's transport rails are argued
    there, for the Harmony 300 and 350, and they are the same transport.
 3. `reference/how-a-harmony-works.md` when the task touches what the remote does for a person.
@@ -62,7 +62,7 @@ test; the read itself goes into the lab.
 
 | what | where |
 |---|---|
-| the public reference | `reference/remotes/harmony-touch/` |
+| the public reference | `reference/remotes/harmony-touch/` and `reference/architectures/harmony-touch/` |
 | the drawing | `packages/silhouettes/src/models/touch.ts`, rendered into `reference/silhouettes/touch.svg` |
 | the transport | `packages/usb/src/filepipe.ts`, with `INERT_PATHS`; the refusal in `packages/usb/src/transport.ts`, `FILE_BASED_PRODUCTS` |
 | the read script | `packages/usb/bin/read-file-identity.ts` |

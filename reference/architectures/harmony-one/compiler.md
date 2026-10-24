@@ -95,7 +95,8 @@ not); and the thirteen: 25 timers in
 `harvest_one_two_devices`' order, its device timer's place the three second one's. 346 lists numbered from a given
 index: the front's 168, the hour list, the wiring's 173 and the fixed cases' four (the page and button sound
 toggles'). 18 variables after the firmware's, each with the range and transitions it has on all 19 (the activity
-counter 0 to 0, as on the 4 with no activity), and 15 value maps, every role but the start up toggle; the wiring's
+counter 0 to 0, as on the 4 with no activity), and 15 value maps, every role but the start up toggle (the catalogue of sixteen they come from is
+[the screen program table's](../../config-format/screens.md#base-slot-11-the-screen-program-table)); the wiring's
 five are `readyMap` the menu record, `menuMap` the working route, `idleA6Map` help, `idleEnterMap` idle and
 `idleMap` the all off, on 19 of 19. *Unconfirmed on a remote*: no Logitech compile holds no device, and 25 timers is
 one fewer than the fewest any compile holds.

@@ -20,9 +20,8 @@ question.
 
 ## What the configurations say
 
-Every send is paired with a `0x7C` naming the same device, on all five configurations of this family, the
-300's and the 350's[^s278]; the rule itself is the configuration format's,
-[actions](../../config-format/actions.md).
+How a send is spelled in this family's configurations, every send paired with a `0x7C` naming the same
+device, is the family's, [the family's memory.md](../../architectures/harmony-300-350/memory.md#the-configuration-container).
 
 ## Not checked
 
@@ -31,4 +30,3 @@ Every send is paired with a `0x7C` naming the same device, on all five configura
 
 [^unchecked]: Not checked.
 [^s265]: Measured in configurations. [Section 265](../../../docs/findings.md#s265)
-[^s278]: Measured in configurations. [Section 278](../../../docs/findings.md#s278)
