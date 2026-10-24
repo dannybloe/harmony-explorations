@@ -58,27 +58,10 @@ PINNED = {
         ('reference/glossary.md', 'dump'): 2,
         ('reference/how-a-harmony-works.md', 'bench'): 7,
         ('reference/how-a-harmony-works.md', 'lab'): 4,
-        ('reference/logitech/classic-client.md', 'bench'): 2,
-        ('reference/logitech/classic-client.md', 'lab'): 3,
-        ('reference/logitech/clients.md', 'bench'): 5,
-        ('reference/logitech/clients.md', 'lab'): 10,
-        ('reference/logitech/data-model/model.md', 'bench'): 1,
-        ('reference/logitech/data-model/model.md', 'lab'): 2,
-        ('reference/logitech/data-model/model.md', 'test account'): 2,
-        ('reference/logitech/device-catalogue.md', 'lab'): 2,
-        ('reference/logitech/service.md', 'bench'): 1,
-        ('reference/logitech/service.md', 'fixture h600_config'): 1,
-        ('reference/logitech/service.md', 'fixture one_spare_myharmony'): 1,
-        ('reference/logitech/service.md', 'lab'): 2,
-        ('reference/logitech/service.md', 'the spare'): 1,
-        ('reference/logitech/update-service.md', 'lab'): 1,
     },
     'names': {
         ('reference/glossary.md', 'a person'): 2,
         ('reference/how-a-harmony-works.md', 'a person'): 15,
-        ('reference/logitech/clients.md', 'a person'): 2,
-        ('reference/logitech/data-model/model.md', 'a person'): 4,
-        ('reference/logitech/service.md', 'a person'): 2,
     },
     'copy': {
     },
@@ -88,6 +71,7 @@ PINNED = {
         ('reference/config-format/actions.md', 'missing anchor: modes-and-keys.md#base-slot-8-key-press-bindings'): 1,
         ('reference/config-format/activities-and-devices.md', 'missing anchor: actions.md#0x7c-is-a-per-device-delay-in-tenths-of-a-second-folded-no-further-than-100'): 1,
         ('reference/config-format/modes-and-keys.md', 'missing anchor: actions.md#the-final-run-belongs-to-base-slot-8'): 1,
+        ('reference/logitech/classic-client.md', 'missing anchor: ../usb-protocol/commands.md#where-a-learn-sessions-samples-leave-the-remote'): 1,
     },
 }
 # END PINNED
@@ -238,9 +222,7 @@ class PlantedViolations(unittest.TestCase):
 
     def test_copy(self):
         write(self.root, 'reference/clean.md', (
-            'The metadata archive, an archived package, archive section 3, the findings archive.\n'
-            # An anchor spells the same names with hyphens, todo-reference 3.1's follow up 65.
-            '[the container](container.md#the-metadata-archive), [ours](a.md#the-findings-archive).\n'))
+            'The metadata archive, an archived package, archive section 3, the findings archive.\n'))
         write(self.root, 'reference/page.md', (
             'Cloned from logitech-harmony-ir-archive, located by HARMONY_IR_ARCHIVE under decision 15, '
             'the infrared archive by %s; the archive names it.\n' % NOT_A_NAME))

@@ -271,8 +271,15 @@ class TheDocumentedCommandVocabularyIsWhatTheCapturesHeld(RequireCaptures):
                 self.assertEqual(listed, sorted(self.named[group]))
 
     def test_the_document_states_the_table_is_a_sample_from_test_accounts(self):
-        """The honesty check, and the one that would have stopped the first version of this section."""
-        for phrase in ('test accounts', 'a floor', '30 August 2026'):
+        """The honesty check, and the one that would have stopped the first version of this section.
+
+        **The phrase is "two accounts" and not "test accounts" since `todo-reference.md` 4.5.** The
+        reference describes no bench, and which accounts the captures came from is bookkeeping, plan
+        009 section 5, so the page says the table is the union over two accounts on one date, and the
+        accounts themselves are `docs/test-notes/accounts.md`. What the check guards is unchanged: the
+        page has to say the table is a dated sample and a floor.
+        """
+        for phrase in ('two accounts', 'a floor', '30 August 2026'):
             with self.subTest(phrase):
                 self.assertIn(phrase, self.text)
 

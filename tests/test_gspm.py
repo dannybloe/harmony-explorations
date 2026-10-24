@@ -697,7 +697,7 @@ class TestSlotZeroIsTheOnlyFeedFrame(unittest.TestCase):
                 self.assertIsNotNone(gspm.parse(lab.load(name)).frame_length)
 
     def test_the_length_is_three_bytes_and_no_sample_can_tell(self):
-        """Why the width was widened on a claim this corpus cannot check. `reference/logitech/clients.md`.
+        """Why the width was widened on a claim this corpus cannot check. `reference/config-format/header-records.md`.
 
         The reader took a `u16` at +0x02 and called the byte at +0x04 "zero in every sample".
         Logitech's own client reads three bytes there, which is client sourced and unconfirmed,
