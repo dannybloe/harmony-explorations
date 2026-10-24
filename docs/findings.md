@@ -58745,8 +58745,8 @@ that the set starts on TV without sending it. The Denon went to CBL/SAT and Medi
 inputs section 436 found wrong on the build onto Logitech's file. The TV and the Denon switched on with no wait
 before their power codes, so for those two Logitech's half second is not needed. **The KPN box did not respond**:
 the setup's KPN is the catalogue's TV6000COK, 32 bit NEC frames at address 0x20FF, and the box on the bench answers
-the everyday Harmony One's records, which this repository's frame reader does not decode, so a different model;
-`todo-compile-one.md` 8.2.1. A device page's clock updated after a minute.
+the everyday Harmony One's records, which this repository's frame reader does not decode, so a different model: a choice of
+model in the test setup, not a fault of the codec, and not pursued here. A device page's clock updated after a minute.
 
 ### What is not settled
 
