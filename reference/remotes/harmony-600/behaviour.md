@@ -78,7 +78,7 @@ that read zero; those are variables of another kind and say nothing about the co
 * Whether the remote counts devices at all; it ran six[^s390].
 
 [^s74]: Read in the firmware. [Section 74](../../../docs/findings.md#s74)
-[^x-manual]: Stated by Logitech, in the manual. [The Harmony 600 user manual](https://support.myharmony.com/harmony-600-user-manual)
+[^x-manual]: Stated by Logitech, in the manual. [The Harmony 600 user manual](https://www.manualslib.com/manual/634914/Logitech-Harmony-600.html)
 [^s271]: Read in the firmware. [Section 271](../../../docs/findings.md#s271)
 [^s332]: Read in the firmware. [Section 332](../../../docs/findings.md#s332)
 [^s389]: Measured on a unit. [Section 389](../../../docs/findings.md#s389)

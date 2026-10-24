@@ -83,7 +83,7 @@ unblended, which agrees with the panel showing shades between black and white[^s
 * Whether any battery picture is ever drawn on a 600[^unchecked].
 * How many shades the panel shows, and which colour channels count[^unchecked].
 
-[^x-manual]: Stated by Logitech, in the manual. [The Harmony 600 user manual](https://support.myharmony.com/harmony-600-user-manual)
+[^x-manual]: Stated by Logitech, in the manual. [The Harmony 600 user manual](https://www.manualslib.com/manual/634914/Logitech-Harmony-600.html)
 [^s129]: Measured in configurations. [Section 129](../../../docs/findings.md#s129)
 [^s387]: Measured on a unit. [Section 387](../../../docs/findings.md#s387)
 [^s51]: Measured in configurations. [Section 51](../../../docs/findings.md#s51)

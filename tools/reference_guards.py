@@ -238,8 +238,18 @@ def catalogue_authors(checkout):
     return name_tokens(people)
 
 
+_WORD_PATTERNS = {}
+
+
 def word_pattern(tokens):
-    return re.compile(r'\b(?:%s)\b' % '|'.join(sorted(map(re.escape, tokens))), re.I) if tokens else None
+    """One compiled pattern per set of tokens, since `redact` asks for it once per key printed."""
+    if not tokens:
+        return None
+    key = frozenset(tokens)
+    if key not in _WORD_PATTERNS:
+        _WORD_PATTERNS[key] = re.compile(
+            r'\b(?:%s)\b' % '|'.join(sorted(map(re.escape, tokens))), re.I)
+    return _WORD_PATTERNS[key]
 
 
 def redact(text, tokens):
@@ -283,6 +293,22 @@ def links(text):
                 yield number, match.group(1).strip('<>')
 
 
+# Anchors per file, kept for the life of the process. Parsing a file's headings is the expensive part
+# of resolving a link (docs/findings.md is 27000 lines), and the guards resolve thousands of links
+# into a handful of files, so reading them once per link was most of the run time. The key carries the
+# file's mtime and size, so a file a test rewrites between two calls is read again.
+_ANCHOR_CACHE = {}
+
+
+def _anchors_of(destination, cache=None):
+    stat = os.stat(destination)
+    key = (destination, stat.st_mtime_ns, stat.st_size)
+    store = _ANCHOR_CACHE if cache is None else cache
+    if key not in store:
+        store[key] = anchors(read(destination))
+    return store[key]
+
+
 def resolve(source, target, root=ROOT, cache=None):
     """Where a relative link lands, and what is wrong with it: (path, None) or (path, reason).
 
@@ -318,11 +344,7 @@ def resolve(source, target, root=ROOT, cache=None):
                 length = sum(1 for _ in handle)
             return destination, None if int(line.group(2) or line.group(1)) <= length else 'missing anchor'
         return destination, 'missing anchor'
-    if cache is None:
-        cache = {}
-    if destination not in cache:
-        cache[destination] = anchors(read(destination))
-    return destination, None if fragment in cache[destination] else 'missing anchor'
+    return destination, None if fragment in _anchors_of(destination, cache) else 'missing anchor'
 
 
 def broken_links(path, text, root=ROOT, cache=None):
