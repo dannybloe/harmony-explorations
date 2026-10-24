@@ -55,14 +55,6 @@ PINNED = {
     'bench': {
         ('reference/README.md', 'bench'): 4,
         ('reference/README.md', 'lab'): 1,
-        ('reference/config-format/README.md', 'bench'): 2,
-        ('reference/config-format/README.md', 'lab'): 2,
-        ('reference/config-format/README.md', 'todo'): 2,
-        ('reference/config-format/container.md', 'bench'): 1,
-        ('reference/config-format/container.md', 'fixture h525_safemode_ahcm'): 1,
-        ('reference/config-format/header-records.md', 'bench'): 1,
-        ('reference/config-format/header-records.md', 'dump'): 2,
-        ('reference/config-format/header-records.md', 'lab'): 3,
         ('reference/glossary.md', 'dump'): 2,
         ('reference/how-a-harmony-works.md', 'bench'): 7,
         ('reference/how-a-harmony-works.md', 'lab'): 4,
@@ -246,7 +238,9 @@ class PlantedViolations(unittest.TestCase):
 
     def test_copy(self):
         write(self.root, 'reference/clean.md', (
-            'The metadata archive, an archived package, archive section 3, the findings archive.\n'))
+            'The metadata archive, an archived package, archive section 3, the findings archive.\n'
+            # An anchor spells the same names with hyphens, todo-reference 3.1's follow up 65.
+            '[the container](container.md#the-metadata-archive), [ours](a.md#the-findings-archive).\n'))
         write(self.root, 'reference/page.md', (
             'Cloned from logitech-harmony-ir-archive, located by HARMONY_IR_ARCHIVE under decision 15, '
             'the infrared archive by %s; the archive names it.\n' % NOT_A_NAME))

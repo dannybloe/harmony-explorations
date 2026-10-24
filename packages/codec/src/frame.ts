@@ -301,7 +301,8 @@ export function architectureRecord(architecture: number, skin: number): Uint8Arr
   }
   // Byte 3 is the version word's high byte, `0x0D` on every container built from 2009 onward, and
   // the last three are zero on every arch 14 and Harmony One container: the record is seven bytes
-  // long and states four. Section 182 and `reference/config-format/header-records.md`'s "Slot 1". **The one container here it
+  // long and states four. Section 182 and `reference/config-format/header-records.md`'s "Base slot 1: the
+  // architecture record". **The one container here it
   // does not lay out is the Harmony One's safe mode configuration**, stamped 2007, whose byte 3 is
   // `0x0C`: rebuilt, it differs in that byte and in the trailer checksum it moves, and nowhere else.
   // It is the firmware's own fallback and not something a composer makes, so the constant stays.

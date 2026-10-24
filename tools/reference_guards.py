@@ -81,9 +81,12 @@ COPY_PATTERNS = (
     # naming it, "the archive's name", "in the archive", "archive commands"), "catalogue, archived", and
     # the converter's module. Not the container's metadata archive, not an archived firmware package
     # (`archived` is not `archive`), and not the findings archive, which the reference names as an
-    # "archive section" or "the findings archive" when it names it in words at all.
+    # "archive section" or "the findings archive" when it names it in words at all. The hyphenated
+    # lookbehinds are the same two names as a link's anchor, `container.md#the-metadata-archive`,
+    # which the guard counted as the copy until todo-reference 4.1 named a heading that way.
     ('the archive, meaning the copy',
-     r'(?<!metadata )(?<!findings )\barchive\b(?!\s+sections?\b)|\bcatalogue, archived\b'
+     r'(?<!metadata )(?<!metadata-)(?<!findings )(?<!findings-)\barchive\b(?!\s+sections?\b)'
+     r'|\bcatalogue, archived\b'
      r'|codec/src/archive\w*\.ts'),
 )
 
