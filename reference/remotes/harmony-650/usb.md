@@ -1,8 +1,9 @@
 # Harmony 650: USB
 
-How the 650 looks on the cable and what it answers. The command set, the rails and the write lists
-are the architecture's, [the architecture's usb.md](../../architectures/harmony-600-650-700/usb.md);
-this page states what is the 650's own and what has been sent to this unit.
+How the 650 looks on the cable and what it answers. To a computer the 600, 650 and 700 look alike: one
+product id, one command set, one set of rails. That shared part is
+[the architecture's usb.md](../../architectures/harmony-600-650-700/usb.md); this page states what is the
+650's own.
 
 ## Identity on the bus
 
@@ -16,62 +17,63 @@ this page states what is the 650's own and what has been sent to this unit.
 Generated from `packages/corpus` and `packages/usb` by `make remote-reference-write`. Change the source, not this block.
 <!-- /generated -->
 
-| field | value on the bench 650 | standing and source |
+| field | on the 650 | evidence |
 |---|---|---|
-| vendor and product id | `046D:C122`, the same as the Harmony 600 and 700 | measured, section 281. `PROFILES` still labels it "Harmony 600 or 700" |
-| `bcdDevice` | `0x1072` predicted, from the rule that it is BCD of 1000 plus the skin | the 650's 0.2 build carries `0x1072` as its USB device descriptor's release number, read in the firmware, section 392; **not measured** on the bus. The rule is measured on the 600 (`0x1071`), `reference/usb-protocol/transport.md` |
-| firmware | 0.2 | measured, version block |
-| hardware | 1.2, where the 600 reports 1.1 | measured, version block, lab reads |
-| flash id | `15:1C`, EON F16, 2 MiB | measured, section 281 |
-| architecture | 14 | measured, version block field 4, section 57 |
-| skin | 72 | measured, version block; it is the 0.2 build's own constant in its version reply, where the 600's build has 71, read in the firmware, section 392 |
-| software type | 0, running normally | measured, section 282 |
-| identity block | two GUIDs at internal `0xFF` `+0xF400` | measured; **the values are the unit's serial and are kept in the lab's `units/h650.txt` only** |
+| vendor and product id | `046D:C122`, the same as the Harmony 600 and 700 | [^s281] |
+| skin | 72, which the 0.2 build reports as a constant of its own in its version reply, where the 600's build has 71 | [^s281]; [^s392] |
+| `bcdDevice` | `0x1072`, the 0.2 build's USB device descriptor release number, which fits the rule that it is BCD of 1000 plus the skin, [the transport](../../usb-protocol/transport.md#bcddevice-carries-the-skin-in-one-of-two-encodings). **Not measured** on the bus | [^s392]; [^unchecked] |
+| firmware | 0.2, [firmware.md](firmware.md) | [^s281] |
+| flash id, architecture, software type and identity block | the architecture's: flash id `15:1C`, architecture 14, software type 0 while running normally, and two GUIDs at internal `0xFF` `+0xF400`, [the architecture's usb.md](../../architectures/harmony-600-650-700/usb.md#identity) | [^s281], [^s282] |
 
-**Telling the 650 from the 600 and 700**: product id, architecture, firmware and flash id cannot; the
-skin can for a person, and the **identity block** is what the write rails compare, `assertUnitIsPermitted`,
-section 281. Three arch 14 units are on the bench and all enumerate alike.
+**Telling the 650 from the 600 and 700**: the product id, the architecture, the firmware version and the
+flash id cannot. The skin can, which is a model, and the identity block can, which is one
+remote[^s281].
 
-## What has been sent to this unit
+## What a 650 answers
 
-| command | standing and source |
-|---|---|
-| `GET_VERSION`, `READ_FLASH` external and both internal pages | measured, read only, section 281 |
-| `READ_MISC` selector 7, live data memory | measured: config derived variables read live on the 650, section 283; the verdict flags `0x68B` and setting `0x80`'s copy `0x744`, section 354 |
-| `READ_MISC` selector `0x0C` detail 1, the battery voltage | measured, in millivolts, section 340; [the architecture's usb.md](../../architectures/harmony-600-650-700/usb.md) |
-| `ERASE_FLASH` and `WRITE_FLASH`, configuration blocks | measured: first a block written back unchanged, section 281; then real changes, sections 283 onwards |
-| the cache drop, `WRITE_MISC` selector `0x02` | sent and measured, section 282: verdict `0x68B` from `0x16` to `0x02`, flag `0x725` from 0 to 1 |
-| the restart, the escape's `0x02` | sent and measured: off the bus in about 2 seconds, back in about 8, section 282 |
-| the settings read, `0x13 0xB2` | the 650's code path is byte identical to the 600's, read in the firmware; the reply shape is measured on the 600 only, section 304. Sent to the 650: **not checked** |
-| the settings write, `0x14 0xB3` | read on both 0.2 builds; **sent to the 600 only**, section 305. The rail admits the 650 |
-| the reinstall, the staging write | **never sent** to this unit, [firmware.md](firmware.md) |
-| `WRITE_MISC` selector `0x07`, a RAM write | **refused** on this architecture by the rails |
+Each of these has been sent to a 650 and its answer measured:
 
-The command table's handler addresses in `reference/usb-protocol/commands.md` are given for the 600's and 700's
-images. The 600's lie in the part of the program that sits at the same address in the 650's 0.2 build,
-section 281, so they very likely hold for the 650; that is this reference's inference, **not checked**
-handler by handler.
+* **`READ_FLASH`** of the external flash and of both internal pages, read only[^s281].
+* **Live data memory**, `READ_MISC` selector 7: the configuration's state variables read while the remote
+  is on the cable, the verdict flags at `0x68B` and setting `0x80`'s copy at `0x744`[^s283][^s354].
+* **The battery voltage**, `READ_MISC` selector `0x0C` detail 1, in millivolts, a little below what a
+  meter shows on the cells since it is measured under load[^s340],
+  [the architecture's usb.md](../../architectures/harmony-600-650-700/usb.md#commands).
+* **`ERASE_FLASH` and `WRITE_FLASH`** of configuration blocks: a block written back unchanged, then real
+  changes, the blocks either side byte identical before and after an erase[^s281][^s283].
+* **The cache drop**, `WRITE_MISC` selector `0x02`: the verdict at `0x68B` went from `0x16` to `0x02` and
+  the flag at `0x725` from 0 to 1[^s282].
+* **The restart**, the escape's `0x02`: off the bus in about 2 seconds, back in about 8[^s282].
 
-## A tension, since reconciled
+The settings read and write, `0x13 0xB2` and `0x14 0xB3`, follow a code path that is byte identical to
+the 600's 0.2[^s304][^s305]; neither has been sent to a 650[^unchecked], and the reply shape is measured
+on the 600[^s304b]. The firmware reinstall and the staging write have never been sent to a 650,
+[firmware.md](firmware.md), and a data memory write, `WRITE_MISC` selector `0x07`, is refused on this
+architecture, [the architecture's write standing](../../architectures/harmony-600-650-700/usb.md#write-standing).
 
-`reference/usb-protocol/commands.md`, under `READ_MISC`, says that on arch 14 the configuration is not loaded while
-the remote is on the cable, from section 110 on the Harmony 600. Section 283 then read config derived
-variables live on the 650. **Section 387 reconciles them**: the state variables are live on the cable on
-the Harmony 600 too, from `0xE10` on build 0.2, its clock running and the Off screen's mark readable, as
-section 303 read its delays; section 110 measured five variables of another kind, the journal's. So on
-this architecture the configuration's state variables can be read on the cable. This page said "The two
-are not reconciled in any document here"<!--superseded--> and did not reconcile them until then. What
-section 110's journal variables are for is a separate question, **not checked** here.
-
-## Reads that misbehave
-
-Flash reads during write runs occasionally drop out of sequence on this unit, "expected 0x45, got 0x0",
-and a rerun succeeds, section 294 and `todo.md` L8. The cause is **not checked**.
+**Handler addresses**: the command table in
+[the command reference](../../usb-protocol/commands.md#the-command-table) gives them for the 600's 0.2
+and the 700's 2.8. The 600's lie in the part of the program that sits at the same address in the 650's
+0.2 build[^s281], so they very likely hold for the 650; that is this reference's inference and is not
+checked handler by handler[^unchecked].
 
 ## Not checked
 
-* `bcdDevice` on this unit as the bus reports it; the build's value is read, above.
-* The settings read and write on this unit.
-* Safe mode's USB identity on the 650.
-* What `WRITE_MISC` selector `0x0A`, which concordance's arch 14 path sends before and after an erase,
-  does on this build; this project does not send it, section 282.
+* `bcdDevice` on a 650 as the bus reports it; the build's value is read, above[^unchecked].
+* The settings read and write on a 650[^unchecked].
+* Safe mode's USB identity on the 650[^unchecked].
+* `WRITE_MISC` selector `0x0A` on the 650's build. It is read on the architecture,
+  [the command reference](../../usb-protocol/commands.md#write_misc-selector-0x0a-is-the-restart-command);
+  concordance's path for this architecture sends it before and after an erase, and a write to a 650 works
+  without it[^s282].
+
+[^s281]: Measured on a unit. [Section 281](../../../docs/findings.md#s281)
+[^s392]: Read in the firmware. [Section 392](../../../docs/findings.md#s392)
+[^unchecked]: Not checked.
+[^s282]: Measured on a unit. [Section 282](../../../docs/findings.md#s282)
+[^s283]: Measured on a unit. [Section 283](../../../docs/findings.md#s283)
+[^s354]: Measured on a unit. [Section 354](../../../docs/findings.md#s354)
+[^s340]: Measured on a unit. [Section 340](../../../docs/findings.md#s340)
+[^s304]: Read in the firmware. [Section 304](../../../docs/findings.md#s304)
+[^s305]: Read in the firmware. [Section 305](../../../docs/findings.md#s305)
+[^s304b]: Measured on a unit. [Section 304](../../../docs/findings.md#s304)

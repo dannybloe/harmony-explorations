@@ -1,78 +1,75 @@
 # Harmony 650: firmware
 
-What the 650 runs, what exists of it in the lab, and how it would be recovered. The architecture's
-part, how an image is laid out, what safe mode is and the `-safe.bin` naming trap, is in
+What the 650 runs and how it would be recovered. The architecture's part, how an image is laid out, what
+safe mode is, the `-safe.bin` naming trap and which routines are read on which build, is in
 [the architecture's firmware.md](../../architectures/harmony-600-650-700/firmware.md).
 
 ## Versions
 
-| version | where | standing and source |
-|---|---|---|
-| **0.2** | what the bench unit runs: application 70336 bytes, entry `0x1A262`, safe mode 24320 bytes | measured, version block and its own internal pages, section 281 |
-| **0.4** | the newest published, Logitech's package `harmony_650_firmware_0_4.hfw`: application 75392 bytes, entry `0x1B658`, execution base `0x9000` | read in the firmware, section 30 |
-| 0.2 | the forum table's "newest seen", which is out of date | third party, `reference/capabilities.md` |
+Two builds exist for the 650, both in
+[the architecture's table of builds](../../architectures/harmony-600-650-700/firmware.md#builds):
 
-The bench unit has **not** been updated to 0.4 and nothing here proposes it.
+* **0.2**, which a 650 read over USB runs: application 70336 bytes, entry `0x1A262`, safe mode 24320
+  bytes[^s281].
+* **0.4**, the newest Logitech published, in a firmware package of theirs: application 75392 bytes, entry
+  `0x1B658`[^s30]. A forum's table names 0.2 as the newest, which is out of date.
 
-**The 650's 0.2 is not the 600's 0.2.** One program in two builds: 1395 bytes differ position by
-position, 67333 of 70336 sit at the same address, and a run near the top is shifted twelve bytes lower
-on the 650. So an address read on the 600 does not transfer to the 650 without checking, section 281.
+**Logitech's software update service does not serve this model**: it answers 404 for skin 72, so the
+0.4 package is the only published image[^s295c].
 
-**Why they differ is read now, and it is not the panel**, section 392: nearly every differing byte is a
-code address that moved. Two routines near the top swap places, one of 232 bytes sitting 240 bytes lower
-on the 650 and the other, 228 bytes, 232 higher; the 600's build carries 12 bytes the 650's lacks, two
-routines nothing calls, so everything from the USB descriptors up sits 12 bytes lower on the 650; the
-rest are 91 `CALL` and `GOTO` targets, 21 `MOVLW` literals and seven three byte pointers following that
-code, and the header checksum word. **What differs in meaning is the model number the build reports**, 72
-on the 650 and 71 on the 600 in the version reply, and the USB device descriptor's release number,
-`0x1072` against `0x1071`. Read in the firmware, both 0.2 images. This page said why the builds differ
-was not checked and that "the colour panel is the obvious suspect"<!--superseded--> until then; the
-drawing path the panel is fed by is byte for byte the same code on both builds, section 387.
+## The 650's 0.2 is not the 600's 0.2
 
-Routines read on both 0.2 builds and found identical: the flash classifier and eraser, section 281; the
-cache drop and the restart, section 282; the clock routines, section 310; the settings store read and
-write path, sections 304 and 305; the state variable seeder, section 284; the state transition walker,
-section 332; the configuration validator and the status screen routine, sections 354 and 355; the
-queued screen program's index, section 369; the pixel path to the panel, sections 367 and 387. Read on
-the 650's own 0.2 and not compared with the 600's: the text routine, section 368, and which infrared
-group a send plays, section 365. What each routine does is in
-[the architecture's firmware.md](../../architectures/harmony-600-650-700/firmware.md).
+**One program in two builds.** 1395 bytes differ position by position, 67333 of 70336 sit at the same
+address, and a run near the top is shifted twelve bytes lower on the 650. So an address read on the 600
+does not transfer to the 650 without checking[^s281].
 
-## Images in the lab
+**Why they differ is read, and it is not the panel**: nearly every differing byte is a code address that
+moved. Two routines near the top swap places, one of 232 bytes sitting 240 bytes lower on the 650 and
+the other, 228 bytes, 232 higher; the 600's build carries 12 bytes the 650's lacks, two routines nothing
+calls, so everything from the USB descriptors up sits 12 bytes lower on the 650; the rest are 91 `CALL`
+and `GOTO` targets, 21 `MOVLW` literals and seven three byte pointers following that code, and the header
+checksum word. **What differs in meaning is the model number the build reports**, 72 on the 650 and 71 on
+the 600 in the version reply, and the USB device descriptor's release number, `0x1072` against
+`0x1071`[^s392]. The drawing path the panel is fed by is byte for byte the same code on both
+builds[^s387]. This page said why the builds differ was not checked and that "the colour panel is the
+obvious suspect"<!--superseded--> until section 392 read it.
 
-Never in this repository. Checksums, where published, are in `docs/checksums.md`.
-
-| file in `lab/firmware/` | what | checksum |
-|---|---|---|
-| `packages/harmony_650_firmware_0_4.hfw` | Logitech's 0.4 package, from the repair site | SHA-256 in `docs/checksums.md` |
-| `derived/650-0.4-Region_2-code-base0x9000.bin` | its application | in `docs/checksums.md` |
-| `derived/650-0.4-Region_3-gspm-base0x20000.bin` | its safe mode configuration, 7115 bytes | in `docs/checksums.md` |
-| `derived/650-0.2-code-base0x9000-bench.bin` | the bench unit's own 0.2 application, read off it | not listed, being one unit's |
-
-The bench unit's two internal pages are in the lab's `reads/` as region reads; `tests/lab.py` names
-the second `h650_page_ff` and the 0.2 application cut from the first `h650_bench_code`.
-
-**Logitech's software update service does not serve this model**: it answers 404 for skins 66, 71 and
-72, section 295. The repair site's 0.4 package is the only published image.
+Which routines are read on the 650's 0.2, and which of them were compared with the 600's, is the
+architecture's
+[table of routines](../../architectures/harmony-600-650-700/firmware.md#routines-read-and-where).
 
 ## Safe mode and recovery
 
 * The 650's 0.2 safe mode image carries part of the reinstall routine the Harmony 700 uses: the status
   normalisation at `0x01A8C`, in a routine at `0x01A80` called once from `0x0107E`. Its selector 6
-  handler and its escape handler are **unread**, section 295.
-* The reinstall route, set the update status byte and restart so safe mode copies a staged application,
-  **has been run on the Harmony 700 only**. The rail admits the 650, `CLAUDE.md`.
-* **The 650 has no staged application to reinstall**: its external block at zero is erased apart from a
-  copy of its identity, [memory.md](memory.md). So the reinstall route would first need an image staged,
-  which is decision 18's staging path, run on the 700 only. This is this reference's reading of two
-  measurements; it has **not** been tried.
-* Entering safe mode on this model has **not** been tried. On the Harmony 525 it destroys the
-  application; on arch 14 the `recovering-a-remote` skill is the route to read first.
+  handler and its escape handler are **unread**[^s295b].
+* The reinstall route, which sets the update status byte and restarts so safe mode copies a staged
+  application, **has been run on the Harmony 700 only**,
+  [the architecture's firmware.md](../../architectures/harmony-600-650-700/firmware.md#installing-firmware)[^s295].
+* **A 650 has no staged application to reinstall**: its external block at zero is erased apart from a
+  copy of its identity, [memory.md](memory.md)[^s281]. So the reinstall route would first need an image
+  staged, the staging route, which has been run on the Harmony 700 only. This is this reference's reading
+  of two measurements and has **not** been tried[^unchecked].
+* Entering safe mode on this model has **not** been tried[^unchecked]. On the Harmony 525 it destroys the
+  application, [its firmware page](../../architectures/harmony-5xx/firmware.md).
 
 ## Not checked
 
-* The 0.4 package's validator and clock routines, sections 299 and 310. Its walker, toggle update,
-  pixel loop and queued program run are located, sections 332, 365, 367 and 369, and not compared.
-* Whether the 0.4 build differs from 0.2 in anything a person sees.
-* What the 650's safe mode does with a status byte of 2, end to end.
-* How the bench unit behaves in safe mode, or how it is entered.
+* The 0.4 package's validator and clock routines[^unchecked]. Its walker, toggle update, pixel loop and
+  queued program run are located and not compared[^s332][^s365][^s367][^s369].
+* Whether the 0.4 build differs from 0.2 in anything a person sees[^unchecked].
+* What the 650's safe mode does with a status byte of 2, end to end[^unchecked].
+* How a 650 behaves in safe mode, and how it is entered[^unchecked].
+
+[^s281]: Measured on a unit. [Section 281](../../../docs/findings.md#s281)
+[^s30]: Read in the firmware. [Section 30](../../../docs/findings.md#s30)
+[^s295c]: Stated by Logitech, by their service. [Section 295](../../../docs/findings.md#s295)
+[^s392]: Read in the firmware. [Section 392](../../../docs/findings.md#s392)
+[^s387]: Read in the firmware. [Section 387](../../../docs/findings.md#s387)
+[^s295b]: Read in the firmware. [Section 295](../../../docs/findings.md#s295)
+[^s295]: Measured on a unit. [Section 295](../../../docs/findings.md#s295)
+[^unchecked]: Not checked.
+[^s332]: Read in the firmware. [Section 332](../../../docs/findings.md#s332)
+[^s365]: Read in the firmware. [Section 365](../../../docs/findings.md#s365)
+[^s367]: Read in the firmware. [Section 367](../../../docs/findings.md#s367)
+[^s369]: Read in the firmware. [Section 369](../../../docs/findings.md#s369)
