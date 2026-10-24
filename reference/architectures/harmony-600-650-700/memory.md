@@ -1,7 +1,8 @@
 # Harmony 600, 650 and 700: memory
 
-Where things live on all three, stated once. The addressing rules, the `0xFE` and `0xFF` notation and
-the comparison with the Harmony One are in `docs/memory-map.md` and are not restated.
+Where things live on all three, stated once. The addressing rules and the `0xFE` and `0xFF` notation
+are [the command reference's](../../usb-protocol/commands.md#addressing-in-short), and the comparison
+with the Harmony One is [the comparison of architectures](../README.md); neither is restated.
 
 ## What this file carries and what the per unit maps keep
 
@@ -55,7 +56,7 @@ section 297; the store is read in the firmware and measured on the 600 and 650, 
 | `0xFE` `+0x9000` | the application, running into page `0xFF` | measured on all three |
 | `0xFF` `+0xEC00` | the **settings store**: two 1 KiB blocks used one at a time, a four byte header `fc ff 00 00`, then two byte records, setting then value, appended. Settings `0x00` to `0x13` and `0x18` to `0x2B` are the saved power on and inter device delays, which override the configuration's at start. **Setting `0x80`'s bit 0 decides whether the configuration's checksum is checked**, copied at start to `0x744` on the 0.2 builds and `0x3A9` on the 700's 2.8 | read in the firmware, measured on the 600 and 650, sections 282 and 303; bit 0 read in the firmware, section 354 |
 | `0xFF` `+0xF400` | the **identity block**: a 16 byte field that is named the serial and holds `0xEE` on every remote read, then two GUIDs, which Logitech's service takes as the serial. `docs/memory-map-600.md` counts the `0xEE` field as a third GUID | measured on the 600, 650 and 700, sections 226 and 281 and `CLAUDE.md`. Values only in the lab |
-| `0xFF` `+0xFFF8` | the processor's configuration words | `docs/memory-map.md` |
+| `0xFF` `+0xFFF8` | the processor's configuration words | section 25, [the comparison of architectures](../README.md#the-top-of-program-memory) |
 
 ## Data memory
 

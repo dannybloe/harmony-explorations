@@ -80,8 +80,6 @@ reference/logitech/data-model/  everything about the vendor platform, one subjec
                                 diagram names those two types and cannot draw them, neither being a
                                 core entity. Also a build product
   model.pdf                     model.md typeset, `make model-pdf`. Also a build product
-docs/memory-map.md              memory maps: the addressing rules and the architecture comparison
-docs/memory-map-one.md          where everything lives on a Harmony One, derived, one page
 docs/memory-map-600.md          the same for the Harmony 600
 docs/memory-map-700.md          the same for the 700, measured on the bench unit since section 295
 docs/memory-map-525.md          arch 9, predictions written down before the remote arrives
@@ -171,7 +169,9 @@ reference/remotes/              the per remote technical reference, one folder p
                                 the convention
 reference/architectures/        what one architecture's models share, stated once and linked from
                                 each model folder: harmony-600-650-700/ for arch 14, harmony-one/
-                                for arch 12. It carries the
+                                for arch 12. Its README compares the two execution models, and
+                                harmony-one/memory.md is the Harmony One's memory map, both since
+                                plan 009's step 3.2. It carries the
                                 architecture's memory layout now, and docs/memory-map-600.md and
                                 -700.md keep what is one unit's
 reference/silhouettes/          the front face of a model, one SVG per model, **generated** from

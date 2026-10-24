@@ -1,11 +1,16 @@
 """
 Regression tests for the memory maps.
 
-`docs/memory-map.md` and the three device documents beside it restate figures that were established
-elsewhere, which makes them the documents most likely to rot: nothing in them is derived, so nothing
-in them fails when the underlying measurement is corrected. These tests take the figures back to the
-images and, for the addresses no lab image covers, at least check that the document still says what
-the rest of the suite believes.
+The memory maps restate figures that were established elsewhere, which makes them the documents most
+likely to rot: nothing in them is derived, so nothing in them fails when the underlying measurement is
+corrected. These tests take the figures back to the images and, for the addresses no lab image covers, at
+least check that the document still says what the rest of the suite believes.
+
+**Where the maps live since plan 009's step 3.2.** The shared document, `docs/memory-map.md`, went three
+ways: its addressing rules to `reference/usb-protocol/commands.md`, its comparison of the two execution
+models to `reference/architectures/README.md`, and the rest was dropped as a restatement. The Harmony
+One's map, `docs/memory-map-one.md`, became `reference/architectures/harmony-one/memory.md`, with what
+was about our own units moved to `docs/test-notes/harmony-one.md`. The tests read those homes now.
 
 Only the `0xFE` internal pages appear here. The `0xFF` pages hold each unit's identity block, so
 they are deliberately absent from `tests/lab.py` and their rows in the maps are not executable.
@@ -19,14 +24,30 @@ import lab
 from harmony import ezfile, firmware, gspm
 from harmony.pic18 import isa, loadaddr
 
-_DOCS = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'docs')
+_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
+_DOCS = os.path.join(_ROOT, 'docs')
 
-#: The shared document first, then every per device map. **Globbed rather than listed**, because it
-#: was listed and `docs/memory-map-525.md` was never added: the arch 9 map had not been seen by the
-#: identity byte guard below at all, from the day it was written. A publication check that has to be
-#: extended by hand is a publication check that covers whatever somebody remembered.
-_MAPS = ('memory-map.md',) + tuple(
-    sorted(os.path.basename(p) for p in glob.glob(os.path.join(_DOCS, 'memory-map-*.md'))))
+#: The homes of the shared map and of the Harmony One's, plan 009's step 3.2.
+_ARCHITECTURES = 'reference/architectures/README.md'
+_ADDRESSING = 'reference/usb-protocol/commands.md'
+_ONE = 'reference/architectures/harmony-one/memory.md'
+
+#: Every page that carries a memory map, as paths from the repository root. **Globbed rather than
+#: listed**, because it was listed and `docs/memory-map-525.md` was never added: the arch 9 map had not
+#: been seen by the identity byte guard below at all, from the day it was written. A publication check
+#: that has to be extended by hand is a publication check that covers whatever somebody remembered. The
+#: globs are the maps' homes since step 3.2: the comparison of architectures, each architecture's and
+#: each model's memory page, and the test notes, where what was about our own units went. The old
+#: `docs/memory-map-*.md` stays in the glob while any of them is still there.
+_MAP_GLOBS = (
+    _ARCHITECTURES,
+    'reference/architectures/*/memory.md',
+    'reference/remotes/*/memory.md',
+    'docs/test-notes/*.md',
+    'docs/memory-map-*.md',
+)
+_MAPS = tuple(sorted({os.path.relpath(p, _ROOT).replace(os.sep, '/')
+                      for pattern in _MAP_GLOBS for p in glob.glob(os.path.join(_ROOT, pattern))}))
 
 
 # concordance's own architecture table, read out of the sibling checkout. Imported rather than
@@ -51,8 +72,14 @@ def _doc(name):
         return fh.read()
 
 
+def _read(path):
+    """A file by its path from the repository root, which is how the maps' new homes are named."""
+    with open(os.path.join(_ROOT, path), encoding='utf-8') as fh:
+        return fh.read()
+
+
 class TestArch12Map(unittest.TestCase):
-    """docs/memory-map-one.md"""
+    """reference/architectures/harmony-one/memory.md, the Harmony One's memory map since step 3.2."""
 
     def test_application_firmware_length_and_version(self):
         code = lab.load('one34_code')
@@ -104,7 +131,7 @@ class TestArch12Map(unittest.TestCase):
             self.skipTest('no concordance checkout beside this one')
         self.assertEqual(base, 0x040000, "concordance's own config_base")
         self.assertEqual((0x400000 - base) // 1024, 3840, 'which is the KiB figure the map quotes')
-        self.assertIn('3840 KiB', _doc('memory-map-one.md'))
+        self.assertIn('3840 KiB', _read(_ONE))
 
     def test_the_two_config_samples_sit_at_the_documented_base(self):
         # The population up front, so a partial lab skips this whole test rather than shrinking its
@@ -117,10 +144,24 @@ class TestArch12Map(unittest.TestCase):
                 self.assertEqual(c.architecture, 12)
 
     def test_the_document_still_carries_these_addresses(self):
-        text = _doc('memory-map-one.md')
+        text = _read(_ONE)
         for token in ('0x002000', '0x0042C6', '0x020000', '0x02EA92', '0x040000',
                       '60050', '45356', '8438', '634', '3840 KiB'):
-            self.assertIn(token, text, 'missing from docs/memory-map-one.md: %s' % token)
+            self.assertIn(token, text, 'missing from %s: %s' % (_ONE, token))
+
+    def test_the_internal_images_are_named_and_not_left_open(self):
+        """The stale open question the old map carried, settled in step 3.2.
+
+        The One's old memory map listed "the roles of the three internal images" as not established
+        while sections 189 to 191, 206 and 212 had named all three: the safe mode image, the programmable
+        logic image and the external flash programmer. A page that names them and still lists them as
+        open is the state this asserts against, both halves.
+        """
+        text = _read(_ONE)
+        for role in ('the **safe mode image**', 'the **programmable logic image**',
+                     'the **external flash programmer**'):
+            self.assertIn(role, text)
+        self.assertNotIn('roles of the three internal images', text)
 
 
 class TestArch14Map(unittest.TestCase):
@@ -184,8 +225,8 @@ class TestArch14Map(unittest.TestCase):
         # The shared map is the document a reader opens first, and it endorsed the dead figure for
         # both architectures until this correction. Assert the live claim rather than the absence of
         # the dead one, so a reworded restatement fails too.
-        shared = _doc('memory-map.md')
-        self.assertIn('0x200000', shared, 'the shared map states the arch 14 ceiling')
+        shared = _read(_ARCHITECTURES)
+        self.assertIn('0x200000', shared, 'the comparison of architectures states the arch 14 ceiling')
         six = _doc('memory-map-600.md')
         self.assertIn('3904 KiB is wrong', six, 'the 600 map still carries the refutation')
         self.assertIn('0x030000` to `0x200000', six, 'and the measured region')
@@ -427,9 +468,9 @@ class TestTheConfigurationWords(unittest.TestCase):
             self.assertGreater(lost, self.CONFIG_END, 'past the configuration region')
 
     def test_the_documents_name_them(self):
-        for name in ('memory-map.md', 'memory-map-one.md', 'memory-map-600.md'):
+        for name in (_ARCHITECTURES, _ONE, 'docs/memory-map-600.md'):
             with self.subTest(document=name):
-                text = _doc(name)
+                text = _read(name)
                 self.assertIn('configuration words', text)
                 self.assertIn('0x1FFF8', text)
         findings = _doc('findings.md')
@@ -512,25 +553,54 @@ class TestTheBootloaderChoosesWhatToRun(unittest.TestCase):
 
 
 class TestTheSharedMap(unittest.TestCase):
-    """docs/memory-map.md, which carries what the per device maps have in common."""
+    """What the shared memory map carried for every architecture, in the homes step 3.2 gave it.
 
-    def test_it_links_to_every_device_map(self):
-        text = _doc('memory-map.md')
-        for name in _MAPS[1:]:
-            self.assertIn(name, text, 'the index does not mention %s' % name)
+    The addressing rules are `reference/usb-protocol/commands.md`'s "Addressing, in short", and the
+    comparison of the execution models is `reference/architectures/README.md`. Rewritten rather than
+    deleted when the document left, since its three claims stand: the comparison reaches every
+    architecture folder, the per architecture maps point at the rules rather than restating them, and
+    the read clamp is stated once.
+    """
 
-    def test_each_device_map_points_back_at_it(self):
-        for name in _MAPS[1:]:
-            with self.subTest(document=name):
-                self.assertIn('memory-map.md', _doc(name))
+    def test_the_comparison_links_every_architecture_folder(self):
+        text = _read(_ARCHITECTURES)
+        folders = sorted(os.path.basename(os.path.dirname(p)) for p in
+                         glob.glob(os.path.join(_ROOT, 'reference', 'architectures', '*', 'README.md')))
+        self.assertGreater(len(folders), 0, 'the folder glob stopped matching')
+        for folder in folders:
+            self.assertIn('(%s/README.md)' % folder, text, 'the comparison does not link %s' % folder)
+
+    def test_the_addressing_rules_are_where_the_maps_point(self):
+        """The heading the maps link to exists, and the One's map links it.
+
+        The other architectures' pages join this population as their own steps rewrite them; listed
+        rather than globbed until then, because a glob over pages that do not link yet would fail on
+        work that is not this step's.
+        """
+        self.assertIn('### Addressing, in short', _read(_ADDRESSING))
+        for page in (_ONE,):
+            with self.subTest(page=page):
+                self.assertIn('usb-protocol/commands.md#addressing-in-short', _read(page))
 
     def test_the_shared_rules_are_stated_once(self):
-        """The 0xFFC0 clamp and the two page window belong in one document, not three."""
-        shared = _doc('memory-map.md')
-        self.assertIn('0xFFC0', shared)
-        for name in _MAPS[1:]:
-            with self.subTest(document=name):
-                self.assertNotIn('0xFFC0', _doc(name), 'repeated instead of referenced')
+        """The 0xFFC0 clamp and the two page window belong in one document, not in every memory page."""
+        self.assertIn('0xFFC0', _read(_ADDRESSING))
+        pages = [p for p in _MAPS if p.startswith('reference/')]
+        self.assertGreater(len(pages), 0, 'the memory page glob stopped matching')
+        for page in pages:
+            with self.subTest(page=page):
+                self.assertNotIn('0xFFC0', _read(page), 'repeated instead of referenced')
+
+    def test_the_odd_count_rule_replaced_the_one_byte_chunk_reading(self):
+        """The shared memory map read the internal read hazard as a matter of the transfer's last chunk,
+        and the library's answer as a cap of one chunk. Section 94 found the cause in the count's
+        parity and the library refuses an odd count; the addressing rules moved to the command
+        reference with that correction, which this pins."""
+        text = _read(_ADDRESSING)
+        rules = text[text.index('### Addressing, in short'):]
+        rules = rules[:rules.index('\n### ')]
+        self.assertIn('even number of bytes', rules)
+        self.assertIn('[^s94]', rules)
 
 
 #: The byte runs any memory map may carry, each compared **whole**: a substring test would let any
@@ -542,11 +612,19 @@ class TestTheSharedMap(unittest.TestCase):
 #: serial in it. A unit's serial GUIDs are what this test exists to keep out, and they appear in
 #: `concordance -i` output rather than in a version reply.
 _PUBLISHABLE_BYTE_RUNS = {
-    '09 00 20 11 02 18 e0 3c 00 67 01',      # the Harmony 600's descriptor bytes
+    # The eleven byte record at `0xFF` `+0xF640` on the spare Harmony One, unidentified, published since
+    # section 22 and kept in its test notes; seven of its bytes differ on the other One. This comment
+    # called it the Harmony 600's descriptor bytes until step 3.2.
+    '09 00 20 11 02 18 e0 3c 00 67 01',
     '27 30 25 12 ff 90 16 09',               # the Harmony 525's GET_VERSION reply
     # Base slot 3's clock record on the bench Harmony 525: a build timestamp of 2 October 2013, the
     # unit on our own bench, and the document spells out what each byte means two lines above it.
     '2c 28 12 01 03 09 0d',
+    # The Harmony 600's two endpoint descriptors, IN on endpoint 1 and OUT on endpoint 2, as its test
+    # notes compare them with the 700 image. A model's USB descriptor, the same on every unit, and in
+    # this population since step 3.2 widened the glob to the test notes.
+    '07 05 81 03 40 00 01',
+    '07 05 02 03 40 00 01',
 }
 
 #: What an account id looks like, the same shape `.githooks/pre-commit` refuses in staged content.
@@ -567,7 +645,8 @@ class TestEveryMap(unittest.TestCase):
         body never ran. Its assertion was `assertIn(run, whitelist)`, a **substring** test, so any
         window of the permitted run passed and so did any run that happened to sit inside it. And
         `_MAPS` was a hand written tuple that never gained `docs/memory-map-525.md`, so the arch 9 map
-        had never been examined at all.
+        had never been examined at all. Since step 3.2 it globs the maps' new homes, so what it asserts
+        about the population is that the two homes it must reach are in it, not a count.
 
         A publication guard is the one kind of test where a vacuous pass is not merely useless. This
         one now globs the documents, matches either case and both separators, compares a run whole
@@ -575,11 +654,12 @@ class TestEveryMap(unittest.TestCase):
         byte run's length. It also asserts that it examined every document, because the failure it is
         replacing was silence.
         """
-        self.assertEqual(len(_MAPS), 5, 'the memory map glob stopped matching')
+        self.assertIn(_ARCHITECTURES, _MAPS, 'the memory map glob stopped matching')
+        self.assertIn(_ONE, _MAPS, 'the memory map glob stopped matching')
         examined = 0
         for name in _MAPS:
             with self.subTest(document=name):
-                text = _doc(name)
+                text = _read(name)
                 examined += 1
                 for run in _BYTE_RUN.findall(text):
                     self.assertIn(' '.join(run.replace(',', ' ').split()),

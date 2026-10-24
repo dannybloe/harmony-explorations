@@ -118,8 +118,8 @@ test('the client reads three extents and never the firmware', lab.skipUnless(FIX
     }
   }
   assert.deepEqual(runs, [
-    // The unit's identity block, 48 bytes at `0xFF` `+0xF400`. `docs/memory-map-one.md` gives the
-    // block as 64 bytes with its fourth field erased, and the client asks for exactly the 48 that
+    // The unit's identity block, 48 bytes at `0xFF` `+0xF400`. The architecture's memory page,
+    // `reference/architectures/harmony-one/memory.md`, gives the block as 64 bytes with its fourth field erased, and the client asks for exactly the 48 that
     // hold the three GUIDs, which is an independent reading of the same boundary.
     { from: 0xfff400, to: 0xfff430, reads: 1 },
     // The safe mode container's whole extent, from its base up to the application firmware.

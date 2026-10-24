@@ -39,9 +39,9 @@ table's, third party, except the 600's monochrome panel, which is seen on the be
 
 | | value | standing and source |
 |---|---|---|
-| processor | `PIC18F67J50`, 64 pins, no external memory bus | read in the firmware, `CLAUDE.md` key facts and `docs/memory-map.md`; the device id is outside the read window, so not measured |
+| processor | `PIC18F67J50`, 64 pins, no external memory bus | read in the firmware, `CLAUDE.md` key facts and [the comparison of architectures](../README.md); the device id is outside the read window, so not measured |
 | external flash | 2 MiB SPI, EON F16, reported as `15:1C` | measured on all three bench units, sections 281, 300 and 302 |
-| execution | the application is stored in external flash and copied into internal flash at `0x9000` to run; the configuration is read through one SPI routine and never executed in place | read in the firmware, `docs/memory-map.md` |
+| execution | the application is stored in external flash and copied into internal flash at `0x9000` to run; the configuration is read through one SPI routine and never executed in place | read in the firmware, [the comparison of architectures](../README.md) |
 | user configuration | external `0x030000`, container format 1.4, 20 pointer slots, cookies `GSPM` and `PTYY` | measured, `CLAUDE.md` key facts |
 | screen raster | 128 by 128 | measured from the configurations, section 129; and all three manuals |
 | screen size | 1.5 inch | all three manuals |

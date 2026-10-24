@@ -10,7 +10,7 @@ again only where the 700 adds something.
 
 | | value | standing and source |
 |---|---|---|
-| processor | `PIC18F67J50`, the architecture's part | read in the firmware. The device id is outside the read window, so the part is **not measured**, `docs/memory-map.md` |
+| processor | `PIC18F67J50`, the architecture's part | read in the firmware. The device id is outside the read window, so the part is **not measured**, [the comparison of architectures](../../architectures/README.md#what-no-read-can-show) |
 | internal flash | 128 KiB in two pages | measured, both pages read off a unit, section 295 |
 | external flash | 2 MiB SPI, EON F16, id `15:1C` | measured, version block, section 295; the 2.8 build's classifier refuses at `0x200000`, read in the firmware, section 88 |
 | the package's flash part | the 2.8 package's upgrade header states `0x14:0x1C`, which reads as 1 MiB, and its `Data.xml` states `0x15:0x1C` | read in the package, sections 295 and 297. So the half sized part `docs/memory-map-700.md` allowed for until 9 October 2026 was the package's target and not a measurement |

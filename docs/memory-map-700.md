@@ -15,7 +15,7 @@ presumed, and it was not revisited when the unit arrived.
 Every row and paragraph that sections 295 to 301 overtook is corrected in place below, with what it
 said.
 
-Read [memory-map.md](memory-map.md) first for the addressing rules and the `0xFE` and `0xFF`
+Read [the addressing rules](../reference/usb-protocol/commands.md#addressing-in-short) first, which carry the `0xFE` and `0xFF`
 notation. The Harmony 600 is the same architecture and has been read in full, so
 [memory-map-600.md](memory-map-600.md) is the fuller version of this layout. The per model reference,
 [reference/remotes/harmony-700/memory.md](../reference/remotes/harmony-700/memory.md), carries the same
@@ -35,7 +35,7 @@ The application row said "nobody here has seen it sitting at that address"<!--su
 bootloader, safe mode and identity rows said "presumed, never read", until 9 October 2026.
 
 It is 6336 bytes longer than the 600's and reaches `0xFF` `+0xBB80`, still well below the read clamp
-that [memory-map.md](memory-map.md) describes, and below the install routine's own clamp, which ends any
+that [the addressing rules](../reference/usb-protocol/commands.md#addressing-in-short) describe, and below the install routine's own clamp, which ends any
 copy at `0x1EC00`, the settings store, section 295.
 
 ## External flash, SPI, 2 MiB

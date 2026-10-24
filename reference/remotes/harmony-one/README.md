@@ -2,9 +2,10 @@
 
 An activity based infrared universal remote, its manual dated 2007, with a 2.2 inch colour **touch**
 screen above the keypad, a rechargeable lithium ion cell and a charging station. It is the only model on
-its platform, which Logitech's own client calls architecture 12 and codename Gin, so there is no
-architecture folder: what would be shared is stated here, and the long form of its memory is
-`docs/memory-map-one.md`.
+its platform, which Logitech's own client calls architecture 12 and codename Gin. What follows from that
+platform, its memory, firmware and USB commands, is in
+[the platform's folder](../../architectures/harmony-one/README.md), and this folder is what a person meets
+holding the remote.
 
 The One is the model most of this project's format work was first measured on, and the first remote this
 project wrote to, findings section 222. It differs from the Harmony 600, 650 and 700 in the ways that
@@ -58,9 +59,9 @@ What makes a compile choose one or the other is **not checked**.
 | [display.md](display.md) | the touch panel and its hit map, the screen grid, the clock, status screens |
 | [features.md](features.md) | Logitech's statement, device mode, sequences, delays, favourites |
 | [behaviour.md](behaviour.md) | the click before every screen command and the held touch, USB mode, writes and restarts |
-| [memory.md](memory.md) | where things are, linking `docs/memory-map-one.md` |
-| [firmware.md](firmware.md) | 3.4, its images, safe mode, the bootloader |
-| [usb.md](usb.md) | product id, version block, commands, write standing |
+| [memory.md](memory.md) | a pointer to the platform's memory page |
+| [firmware.md](firmware.md) | the versions of this model, how to enter safe mode; the images are the platform's |
+| [usb.md](usb.md) | product id and version block; the commands and write standing are the platform's |
 | [misc.md](misc.md) | everything else |
 
 ## Not checked

@@ -10,7 +10,7 @@ again only where the 600 adds something.
 
 | | value | standing and source |
 |---|---|---|
-| processor | `PIC18F67J50`, the architecture's part | read in the firmware. The device id is outside the read window, so the part is **not measured**, `docs/memory-map.md` |
+| processor | `PIC18F67J50`, the architecture's part | read in the firmware. The device id is outside the read window, so the part is **not measured**, [the comparison of architectures](../../architectures/README.md#what-no-read-can-show) |
 | internal flash | 128 KiB in two pages | measured, both pages read whole off a unit, `docs/memory-map-600.md` |
 | external flash | 2 MiB SPI, EON F16, id `15:1C` | measured: a unit answers at `0x1F0000` and refuses at `0x230000`, and the firmware's address classifier refuses at `0x200000`, section 88 |
 | "Memory Amount 2MB", "Memory Type Flash" | | Logitech's manual, Product Specification. Agrees with the measurement |

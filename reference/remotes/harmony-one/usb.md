@@ -1,8 +1,8 @@
 # Harmony One: USB
 
-How the One looks on the cable and what it answers. The command protocol is `reference/usb-protocol/`,
-and the rails are `packages/usb/src/rails.ts`, with the argument in `CLAUDE.md`'s
-"Never write to a remote".
+How the One looks on the cable. What it answers, and which write paths this library opens on it, is
+[the platform's USB page](../../architectures/harmony-one/usb.md); the command protocol is
+`reference/usb-protocol/`.
 
 ## Identity on the bus
 
@@ -28,39 +28,6 @@ Generated from `packages/corpus` and `packages/usb` by `make remote-reference-wr
 **Two Harmony Ones enumerate identically**, so the identity block is what the write rails compare,
 `assertUnitIsPermitted`, section 226.
 
-## Commands, as this model answers them
-
-* **Reads**: `GET_VERSION`, `READ_FLASH` over external flash and the two internal pages, measured. An odd
-  count of internal bytes hangs the remote, so `packages/usb` refuses one everywhere, sections 94 and 96.
-* **Live data memory**: `READ_MISC` selector 7 answers, measured, section 111; the battery is selector
-  `0x0C`, section 212.
-* **The escape** dispatches `0x01`, which ends a session, and `0x02` and `0x03`, which restart; it has no
-  `0x05`, read in the firmware, section 97.
-* **`WRITE_MISC`** services eight selectors, four of which do nothing on this model; `0x02` drops the
-  cached region descriptors and writes no flash, read in the firmware, sections 97 and 246.
-* **A write** is an announce, unanswered data packets and an acknowledged end, in transfers of 3150 bytes,
-  derived from the firmware and confirmed on hardware, sections 175, 222 and 245.
-* **Logitech's classic client reading a One**, captured on the wire, matches this project's encoder on 1312
-  of 1312 requests, section 210, and verifies every byte it writes, section 211.
-* Read failures of the form "expected 0xbf, got 0x14" were the host dropping queued reports, not the remote,
-  section 223.
-
-## Write standing
-
-| path | on this architecture | list in `rails.ts` |
-|---|---|---|
-| erase and write a configuration block | yes | `ARCHITECTURES_WITH_A_WRITE_TARGET` |
-| drop the cached region descriptors | yes | `ARCHITECTURES_WITH_AN_INVALIDATE_TARGET` |
-| restart, the escape's `0x02` | yes | `ARCHITECTURES_WITH_A_RESET_TARGET` |
-| write a byte of data memory, `WRITE_MISC` `0x07` | yes, the only architecture | `ARCHITECTURES_WITH_A_RAM_WRITE_TARGET` |
-
-Every row also needs `HARMONY_ENABLE_WRITES=1`, its own named door and the unit check. **Which unit may be
-written is not in this table**: on this model it is one of two that enumerate alike, `CLAUDE.md`. All four
-paths have been sent to a unit, sections 222, 247 and 251.
-
 ## Not checked
 
-* `WRITE_MISC` selector `0x0A`, the learn and restart command of other models, does nothing here by the
-  firmware's reading, section 246; learning over USB is Logitech's desktop client's, `reference/usb-protocol/commands.md`.
-* The internal read window's own bound on this architecture against the one `packages/usb` applies,
-  section 175.
+* Learning infrared over USB, which is Logitech's desktop client's, `reference/usb-protocol/commands.md`.

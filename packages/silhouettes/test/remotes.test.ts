@@ -13,7 +13,7 @@ import { dirname, join, resolve } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
-import { REMOTES, expectedBlocks, regenerate, run } from '../bin/remotes.ts';
+import { ARCHITECTURES, MODEL_FILES, REMOTES, expectedBlocks, regenerate, run } from '../bin/remotes.ts';
 import { MODELS } from '../src/index.ts';
 
 test('every generated block in the remote reference matches the code it is generated from', () => {
@@ -52,11 +52,29 @@ test('a model folder and its drawing serve the same skins', () => {
   assert.deepEqual(MODELS.h300!.skins, [78, 79], 'the Harmony 300 drawing serves both regional skins');
 });
 
-test('every model folder has the same ten files', () => {
+test('every model and architecture folder holds exactly the files its row declares', () => {
+  // Plan 009 section 5. This held the model folders to one list of ten and looked at no architecture
+  // folder at all, so a folder gaining `compiler.md` or a thin folder of three files had nowhere to say
+  // so. Each row states its files now, a model row only where it differs from the ten, and both
+  // directions fail: a file the row does not name, and a file the row names that is not there.
   const repo = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
-  const ten = ['README.md', 'behaviour.md', 'display.md', 'features.md', 'firmware.md', 'hardware.md',
-    'keys.md', 'memory.md', 'misc.md', 'usb.md'];
+  const sorted = (names: readonly string[]): string[] => [...names].sort();
   for (const r of REMOTES) {
-    assert.deepEqual(readdirSync(join(repo, 'reference', 'remotes', r.folder)).sort(), ten, r.folder);
+    const dir = join(repo, 'reference', 'remotes', r.folder);
+    assert.deepEqual(readdirSync(dir).sort(), sorted(r.files ?? MODEL_FILES), `reference/remotes/${r.folder}`);
   }
+  for (const a of ARCHITECTURES) {
+    const dir = join(repo, 'reference', 'architectures', a.folder);
+    assert.deepEqual(readdirSync(dir).sort(), sorted(a.files), `reference/architectures/${a.folder}`);
+  }
+});
+
+test('every folder under reference/remotes and reference/architectures has a row', () => {
+  // The other half of the test above, which only visits folders that have a row: a folder added without
+  // one would be checked by nothing, its shape and its generated blocks both.
+  const repo = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
+  const folders = (under: string): string[] => readdirSync(join(repo, 'reference', under), { withFileTypes: true })
+    .filter((d) => d.isDirectory()).map((d) => d.name).sort();
+  assert.deepEqual(folders('remotes'), REMOTES.map((r) => r.folder).sort());
+  assert.deepEqual(folders('architectures'), ARCHITECTURES.map((a) => a.folder).sort());
 });

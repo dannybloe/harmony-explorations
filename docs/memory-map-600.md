@@ -4,9 +4,9 @@ Where everything lives on a Harmony 600. The Harmony 700 is the same architectur
 map in [memory-map-700.md](memory-map-700.md), because the two remotes carry different images. Both
 have been read off a device since section 295; this said only one had until 9 October 2026.
 
-Read [memory-map.md](memory-map.md) first: the addressing rules, the `0xFE` and `0xFF` notation, the
-two execution models and the comparison against architecture 12 are all there, and this document
-assumes them. Every figure below is measured elsewhere and the **Source** column says where.
+Read [the addressing rules](../reference/usb-protocol/commands.md#addressing-in-short) and [the comparison of architectures](../reference/architectures/README.md) first:
+the `0xFE` and `0xFF` notation, the two execution models and the comparison against architecture 12
+are there, and this document assumes them. Every figure below is measured elsewhere and the **Source** column says where.
 
 One Harmony 600 has been read here, read only, both internal pages and its whole config.
 

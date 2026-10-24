@@ -1728,7 +1728,8 @@ class TheClientsWriteTransferAndItsMacWorkaround(unittest.TestCase):
         # The arch 12 read modify write.
         self.assertIn('byte[] guid_memory_block = new byte[1024];', system)
         self.assertIn('flashService.readFlash(childProgress, 0xFFF400, guid_memory_block);', system)
-        # 64 blanked, which is the block length `docs/memory-map-one.md` gives, not the 48 the
+        # 64 blanked, which is the block length `reference/architectures/harmony-one/memory.md` gives,
+        # not the 48 the
         # ordinary identity read asks for.
         self.assertIn('for (int i = 0; i < 64; ++i) {', system)
         # And the unlock, which exists for arch 7 and 8 only.
