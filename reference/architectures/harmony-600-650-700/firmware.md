@@ -48,6 +48,29 @@ Read on each build named. Where a build is missing it is not read.
 | picture and page list placement: nothing found reads a position | 600 and 650 0.2, 650 0.4, 700 2.8 | [^s328] |
 | parameter group 3, a light's levels | 600 0.2, 700 2.8 | [^s392] |
 
+## The state variable seeder
+
+At start the firmware writes each state variable's starting value, the `first` its record in the
+configuration states, [state](../../config-format/state.md#a-variables-record), unless a checksum says the
+variables already in memory are good, so a restart that keeps data memory keeps the running values. On the
+600's and 650's 0.2 builds the seeder is at `0x16024`, called from the boot path at `0x14F9C` and from
+`0x0F390`[^s283]:
+
+* **It runs only when a container validated**, the user container or the one at external `0x020000`[^s283].
+* **The checksum** is an XOR seeded `0xA5` over the variable array from its nineteenth byte, so the clock
+  and the firmware's own variables are outside it: 174 bytes from data `0xE22` on the 0.2 builds, 237 bytes
+  from `0x912` on the Harmony 700's 2.8 and the Harmony 650's 0.4. A matching sum makes the loop store
+  nothing, and every store restamps the sum; where it sits is [memory.md](memory.md)[^s283].
+* **Then a paint**: `0xFE` over everything above the table's size, the fill
+  [state](../../config-format/state.md#what-the-four-header-words-do) describes[^s283].
+* **A user container that fails validation does not reload.** That path ends in the paint from byte 18,
+  so the configuration's variables are erased rather than reloaded[^s283].
+* **The 700 2.8 and the 650's 0.4 force a reload after a cache drop.** The drop sets a flag, `0x1E9` on the
+  700 and `0x0E9` on the 0.4, which the next boot clears while spoiling the sum, at `0x1EC` and `0x0EC`, so
+  the seeder reloads every variable. The 0.2 builds have no such flag[^s283][^s299].
+
+How the seeder differs on the Harmony One and the Harmony 525 is [state](../../config-format/state.md#a-variables-record).
+
 ## Safe mode
 
 Safe mode is a second, smaller program the remote falls back on when its application or configuration
@@ -166,6 +189,30 @@ was found through the accessors instead, using `pic18_xref.py` to walk callers[^
 The interrupt service routine is `0x1AD80` to `0x1AF00`: eight reads of `UIR` between
 `0x1ADE0` and `0x1AE4E`, each followed by a bit test, dispatching on the interrupt source[^s19].
 
+### The command handlers
+
+What each command of [the command table](../../usb-protocol/commands.md#the-command-table) runs, on the two
+builds read for it. A handler sets the state variable and parses its arguments; the executor the main loop
+reaches for that state does the work[^s19][^t-usb-firmware].
+
+| command | name | state | handler, 700 2.8 | handler, 600 0.2 | executor, 700 2.8 |
+|---|---|---|---|---|---|
+| `0x10` | GET_VERSION | 1 | `0x0BDFE` | `0x0BD68` | `0x0C906` |
+| `0x30` | WRITE_FLASH | 2 | `0x0C21A` | `0x0C184` | `0x0D30C`, through the test before the chain |
+| `0x50` | READ_FLASH | 4 | `0x0C266` | `0x0C1D0` | `0x0C982` starts a chunk, `0x0D3A8` finishes one |
+| `0x70` | START_IRCAP | 5 | `0x0C2B2` | `0x0C21C` | `0x0CB1E`, a branch to the shared transmitter at `0x0D2E0` |
+| `0xD0` | ERASE_FLASH | 8 | `0x0C2D6` | `0x0C240` | `0x0CB4A` |
+| `0xA0` | WRITE_MISC | 9 | `0x0C364` | `0x0C2CE` | `0x0CB6E` |
+| `0xB0` | READ_MISC | 10 | `0x0C4CE` | `0x0C432` | `0x0CB92` |
+| `0x05` | the escape's internal continuation | 13 | `0x0C500` | `0x0C464` | `0x0CC46` |
+
+Two states have an executor and no command: 3, a write transfer that has finished, at `0x0C95C`, and 6 and 7,
+learning stopped, at `0x0CB20`[^s19][^s175].
+
+**The state variable** is at `0xEC9` on the 700 2.8 and `0x1C1` on the 600 0.2. While a flash write is in
+progress, state 2, the dispatch goes to a two entry chain accepting `0x40` and `0xF0`, at `0x0C55C` on the 700
+and `0x0C4C0` on the 600[^s19][^t-usb-firmware].
+
 [^s281b]: Read in the firmware. [Section 281](../../../docs/findings.md#s281)
 [^s392]: Read in the firmware. [Section 392](../../../docs/findings.md#s392)
 [^s23]: Measured on a unit. [Section 23](../../../docs/findings.md#s23)
@@ -209,3 +256,5 @@ The interrupt service routine is `0x1AD80` to `0x1AF00`: eight reads of `UIR` be
 [^d18]: Chosen by this project. [Decision 18](../../../docs/decisions.md#d18)
 [^unchecked]: Not checked.
 [^s19]: Read in the firmware. [Section 19](../../../docs/findings.md#s19)
+[^t-usb-firmware]: Read in the firmware. [The test](../../../tests/test_usb_firmware.py)
+[^s175]: Read in the firmware. [Section 175](../../../docs/findings.md#s175)

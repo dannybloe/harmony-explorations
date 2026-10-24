@@ -84,12 +84,8 @@ pulse field empty on every command fetched[^s132]. A frame becomes a pulse train
 rhythm, [Infrared](../infrared/README.md). How the catalogue names devices and commands is
 [the device catalogue](device-catalogue.md).
 
-**A command's code is written in a small grammar**, `G:<family>:(<A>)(<B>)(<C>):<n>`. Slots A and B
-both hold content and C is empty in every code seen, and the trailing number is 3 in every code. A slot
-holds items joined by `_`, each a value written with a one digit position prefix or one of three words,
-`Start`, `Repeat` and `Trailer`, which name a standard frame of the family instead of stating one. Six
-item sequences occur. The family's name states one width per value, and the base the digits are
-written in comes from the family's definition: one family writes its values in base four[^s159][^s231].
+**A command's code is written in a small grammar**, `G:<family>:(<A>)(<B>)(<C>):<n>`, which
+[the families](../infrared/families.md#how-the-catalogue-writes-a-code) sets out whole[^s159].
 
 **A catalogue device's features** are its power behaviour, its inputs and how long a power command is
 held. `CopyFeaturesFromGlobalDevice` returns them, asked with device 0 and the catalogue entry's own
@@ -141,8 +137,8 @@ page under [the remotes](../remotes/README.md).
 
 **Enabled is what decides whether a remote can be set up.** 27 of the 120 records are enabled. They
 carry 19 distinct skins, and one of those is skin 0, which nine records of the hub generation carry in
-place of a skin of their own; the other 18 are 54, 66, 69, 71, 72, 73, 74, 75, 78, 79, 80, 81, 97, 99,
-102, 104, 106 and 112[^t-host-client-service][^s136]. The list the setup flow reads,
+place of a skin of their own[^t-host-client-service]; the other 18 are 54, 66, 69, 71, 72, 73, 74, 75, 78,
+79, 80, 81, 97, 99, 102, 104, 106 and 112[^s136]. The list the setup flow reads,
 `GetHarmonyProducts`, is exactly those 19 skins, with no exception in either direction[^t-host-client-service].
 Skin 22, the Harmony 525, is not enabled, which is why no setup flow offers it and why its compile
 fails[^s145].
@@ -151,7 +147,7 @@ Harmony Desktop carries two hard coded lists, and they mirror that flag[^s136]:
 
 | list | members | what it decides |
 |---|---|---|
-| `DesktopAppSupportedProducts` | the 18 enabled skins without the two hubs, 97 and 106 | whether the application handles a detected remote at all |
+| `DesktopAppSupportedProducts` | 16 skins: the 18 enabled ones above less the two hubs, 97 and 106 | whether the application handles a detected remote at all |
 | `CompilerProducts` | the same without 99, 102 and 112 | the compiler route or the hub route |
 
 **Two fields that would have answered questions are empty.** `CompilerArchitecture` is null on all 120
@@ -249,10 +245,8 @@ closing silence, so a code sent up to and including that silence, clamped, fits 
 throughout. Cutting before the silence is wrong: a pulse width code's last bit is a mark whose space is
 the trailing gap[^t-irda-configs].
 
-**Their analyser is not a judge of a rhythm.** It recognises a rhythm at the bit counts on its own list
-and refuses it at others, so a refusal says nothing against a code[^s159]; it accepts rhythms Logitech's
-own compiler does not emit, and it names some families wrongly[^s160][^s162]. A family is named by the
-catalogue instead, [the families](../infrared/families.md).
+**Their analyser is not a judge of a rhythm**: what it gets wrong, and why a family is named by the
+catalogue instead, is [the families](../infrared/families.md#a-family-is-named-by-logitechs-catalogue).
 
 ## Syncing, and what the record says about it
 
@@ -283,7 +277,6 @@ accounts[^unchecked].
 [^s235]: Stated by Logitech, by their service. [Section 235](../../docs/findings.md#s235)
 [^s135]: Stated by Logitech, by their service. [Section 135](../../docs/findings.md#s135)
 [^s159]: Stated by Logitech, in their catalogue. [Section 159](../../docs/findings.md#s159)
-[^s231]: Stated by Logitech, in their catalogue. [Section 231](../../docs/findings.md#s231)
 [^s305]: Stated by Logitech, by their service. [Section 305](../../docs/findings.md#s305)
 [^unchecked]: Not checked.
 [^s154]: Stated by Logitech, by their service. [Section 154](../../docs/findings.md#s154)
@@ -299,5 +292,3 @@ accounts[^unchecked].
 [^s153]: Stated by Logitech, by their service. [Section 153](../../docs/findings.md#s153)
 [^t-irda]: Stated by Logitech, in their client. [The test](../../packages/codec/test/irda.test.ts)
 [^t-irda-configs]: Measured in configurations. [The test](../../packages/codec/test/irda.test.ts)
-[^s160]: Stated by Logitech, by their service. [Section 160](../../docs/findings.md#s160)
-[^s162]: Stated by Logitech, by their service. [Section 162](../../docs/findings.md#s162)

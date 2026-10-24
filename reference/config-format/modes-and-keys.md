@@ -179,7 +179,7 @@ u8   opcode        that instruction's opcode
 | Harmony 880 and 885 | 56 or 58 | 53 presses plus the same three as the One, in the same order on five configurations, with operands differing in 2 of 56; one Harmony 885 configuration has 58 | not one constant |
 | the Harmony One's safe mode configuration | 2 | the presses of scans 47 and 46, a two button recovery screen | |
 | the Harmony 700's region 3 | 0 | empty | |
-| Harmony 525 | none | the byte where a count would sit after `CMAH` is zero; the keys are bound in the mode records instead | |
+| Harmony 525 | none | the byte where a count would sit after `CMAH` is zero; the keys are bound in the mode records instead, [its keys page](../remotes/harmony-525/keys.md#fifty-keys-and-every-one-is-bound) | |
 
 On the Harmony 880 and 885, 890, and 300 and 350 it is not one constant: configurations agree in some
 pairs and differ in others[^s311b]. The codec
@@ -317,6 +317,14 @@ map that binds it**, 1096 of 1105, and 47 of 50 devices agree on every one of th
 nine exceptions are per activity overrides, an amplifier's input selection being the clearest. 970 of the
 1096 are bound in every activity that drives that device and 126 in only some, which is authoring rather
 than structure[^s151].
+
+**Another device often holds the button in some of a device's activities.** Asked the other way round, over
+the same 1105 pairs: in every activity that drives the device the button is that device's on 938, another
+device holds it in at least one such activity on 131, nothing holds it in at least one on 117, and both on
+81. It is concentrated: the Harmony One's receiver in one configuration has 35 buttons, eight activities
+drive it, and 3 of the 35 are its own in all eight[^s151]. So a change written into every activity that
+drives a device would take most of that receiver's buttons off another device, which is the writer's rule
+[below](#for-a-writer).
 
 **Reconstructing a device's map from that agreement is not sound and is not needed**, since a device's
 own map is stated. Scored against it: of 1123 pairs of a device and a key that some activity binds, the
@@ -516,7 +524,7 @@ mode page, and **no mode page binds a key code its indexed hit page does not off
 pages. Shifting the index breaks 54 to 227 of them[^s125].
 
 How Logitech's compiler numbers and places the hit pages, and the rules that build one from what a page
-draws, are [the Harmony One's compiler page](../architectures/harmony-one/compiler.md).
+draws, are [the Harmony One's compiler page](../architectures/harmony-one/compiler.md#the-hit-pages-the-fixed-screens-name).
 
 Read with `gspm.touch_pages` and `gspm.Container.touch_hit`, or in TypeScript with `touchPages`,
 `touchPageOf` and `touchOwner`.
@@ -577,7 +585,8 @@ its keys and says where each name came from.
   the device does not own[^s285]. What a left out key then does on these remotes has not been measured.
 * **A device's button is stated in its own map and again in every activity map that binds it**, so a
   change to it has to be written into each of them, or it is invisible in the activity a person is
-  sitting in[^s151][^s271].
+  sitting in[^s151][^s271]. An activity where another device holds that button is left as it is, and named
+  before the change is made, rather than refused as a whole or overwritten[^s151].
 * **An entry with no scan 3 binding has no Help**, on the Harmony 600, 650 and 700, on its own screens and
   in device mode entered from it[^s333].
 

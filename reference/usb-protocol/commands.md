@@ -52,16 +52,20 @@ Every image dispatches the same seven commands, from a chain of `XORLW` comparis
 running XOR, which `src/harmony/pic18/chains.py` computes[^s19][^t-usb-firmware]. The names are the ones
 the protocol is known by; the firmware names nothing.
 
-| command | name | state it sets | 700 2.8 | 600 0.2 | One 3.4 |
-|---|---|---|---|---|---|
-| `0x10` | GET_VERSION | 1 | `0x0BDFE` | `0x0BD68` | `0x264B4` |
-| `0x30` | WRITE_FLASH | 2 | `0x0C21A` | `0x0C184` | `0x264C2` |
-| `0x50` | READ_FLASH | 4 | `0x0C266` | `0x0C1D0` | `0x2650C` |
-| `0x70` | START_IRCAP | 5 | `0x0C2B2` | `0x0C21C` | `0x26556` |
-| `0xD0` | ERASE_FLASH | 8 | `0x0C2D6` | `0x0C240` | `0x2657A` |
-| `0xA0` | WRITE_MISC | 9 | `0x0C364` | `0x0C2CE` | `0x26626` |
-| `0xB0` | READ_MISC | 10 | `0x0C4CE` | `0x0C432` | `0x2671E` |
-| `0x05` | not a command a host sends: the escape's internal continuation, below | 13 | `0x0C500` | `0x0C464` | absent |
+| command | name | state it sets |
+|---|---|---|
+| `0x10` | GET_VERSION | 1 |
+| `0x30` | WRITE_FLASH | 2 |
+| `0x50` | READ_FLASH | 4 |
+| `0x70` | START_IRCAP | 5 |
+| `0xD0` | ERASE_FLASH | 8 |
+| `0xA0` | WRITE_MISC | 9 |
+| `0xB0` | READ_MISC | 10 |
+| `0x05` | not a command a host sends: the escape's internal continuation, below; absent on the Harmony One | 13 |
+
+Where each build keeps the handler for each command, and the executor that does its work, is that
+architecture's firmware page: [the Harmony 600, 650 and 700](../architectures/harmony-600-650-700/firmware.md#the-command-handlers)
+and [the Harmony One](../architectures/harmony-one/firmware.md#the-command-handlers)[^s19].
 
 The Harmony 525 dispatches the same seven, [its usb page](../architectures/harmony-5xx/usb.md)[^s267]. Two
 further commands exist inside a state rather than in this table: `0x40`, a write's data packet, only while
@@ -77,13 +81,12 @@ asynchronous**, and a host has to allow for it: writing a command does not mean 
 waiting[^s19].
 
 **The state numbering is the same in all three images** while the state variable sits at a different
-address in each: `0xEC9` on the 700 2.8, `0x1C1` on the 600 0.2 and `0x284` on the One 3.4[^s19][^t-usb-firmware].
+address in each, listed with the handlers on each firmware page[^s19][^t-usb-firmware].
 
 The dispatch at `0x0BDCA` is itself gated on that state, at `0x0BDB2`[^s19][^s175]:
 
 * state 0, idle: the command table
-* state 2, a flash write in progress: a two entry chain accepting `0x40` and `0xF0`, at `0x0C55C` on the
-  700, `0x0C4C0` on the 600 and `0x26752` on the One
+* state 2, a flash write in progress: a two entry chain accepting `0x40` and `0xF0`
 * state 5, learning: `0x0C5D4`
 * anything else: `0x0C5EE`, which clears the state
 
@@ -110,15 +113,15 @@ addresses, [ERASE_FLASH](#erase_flash)[^s19].
 
 ## Every command's response, in one table
 
-| command | response | executor |
-|---|---|---|
-| `0x10` GET_VERSION | `0x28` then 12 bytes on the One, 600, 650 and 700; `0x27` then 7 on the 525, [the version block](version-block.md) | `0x0C906` |
-| `0x30` WRITE_FLASH | none from its executor, a bare `RETURN`; the reply comes when the transfer ends, [below](#write_flashs-data-path) | `0x0D30C` |
-| `0x50` READ_FLASH | data in chunks, then an acknowledgement, [below](#what-a-read-sends-back) | `0x0C982`, `0x0D3A8` |
-| `0x70` START_IRCAP | none of its own: it branches to the shared transmitter at `0x0D2E0`, which sends whatever was queued | `0x0CB1E` |
-| `0xA0` WRITE_MISC | `0xF0 0xA0` | `0x0CB6E` |
-| `0xB0` READ_MISC | `0xC2`, the selector, then one byte | `0x0CB92` |
-| `0xD0` ERASE_FLASH | `0xF0 0xD0` | `0x0CB4A` |
+| command | response |
+|---|---|
+| `0x10` GET_VERSION | `0x28` then 12 bytes on the One, 600, 650 and 700; `0x27` then 7 on the 525, [the version block](version-block.md) |
+| `0x30` WRITE_FLASH | none from its executor, a bare `RETURN`; the reply comes when the transfer ends, [below](#write_flashs-data-path) |
+| `0x50` READ_FLASH | data in chunks, then an acknowledgement, [below](#what-a-read-sends-back) |
+| `0x70` START_IRCAP | none of its own: it branches to the shared transmitter, which sends whatever was queued |
+| `0xA0` WRITE_MISC | `0xF0 0xA0` |
+| `0xB0` READ_MISC | `0xC2`, the selector, then one byte |
+| `0xD0` ERASE_FLASH | `0xF0 0xD0` |
 
 Read in the firmware[^s19][^t-usb-firmware].
 
@@ -133,21 +136,22 @@ command by the nibble finds nothing there[^s19b][^t-remote].
 
 The main loop's dispatch on the state variable is **one chain of 70 cases** from `0x0C720` to `0x0C8FE`,
 values `0x01` to `0xD6`, all distinct, reaching 31 distinct bodies. States 2 and `0x0B` are tested just
-before it with ordinary `SUBWF` comparisons and go to `0x0D30C`[^s19][^t-usb-firmware]. The command states
-and their executors:
+before it with ordinary `SUBWF` comparisons and go to the write executor[^s19][^t-usb-firmware]. The
+command states, whose executors' addresses are with the handlers on
+[the firmware page](../architectures/harmony-600-650-700/firmware.md#the-command-handlers):
 
-| state | command | executor |
-|---|---|---|
-| 1 | GET_VERSION | `0x0C906` |
-| 2 | WRITE_FLASH | `0x0D30C`, through the test before the chain |
-| 3 | a write transfer that has finished: entered by the done packet, not by a command a host names, and answers `0xF0 0x30` | `0x0C95C` |
-| 4 | READ_FLASH | `0x0C982` |
-| 5 | START_IRCAP | `0x0CB1E` |
-| 6, 7 | learning, stopped | `0x0CB20` |
-| 8 | ERASE_FLASH | `0x0CB4A` |
-| 9 | WRITE_MISC | `0x0CB6E` |
-| 10 | READ_MISC | `0x0CB92` |
-| 13 | the internal case | `0x0CC46` |
+| state | command |
+|---|---|
+| 1 | GET_VERSION |
+| 2 | WRITE_FLASH, through the test before the chain |
+| 3 | a write transfer that has finished: entered by the done packet, not by a command a host names, and answers `0xF0 0x30` |
+| 4 | READ_FLASH |
+| 5 | START_IRCAP |
+| 6, 7 | learning, stopped |
+| 8 | ERASE_FLASH |
+| 9 | WRITE_MISC |
+| 10 | READ_MISC |
+| 13 | the internal case |
 
 State 3 is the one a survey of commands misses, since no host sends it[^s175].
 

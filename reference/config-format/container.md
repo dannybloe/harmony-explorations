@@ -65,8 +65,8 @@ been read, so its end marker is unknown and no reader accepts it.[^s14]
 **The Harmony 890 and 895 are the exception to everything below about slots.** Their frame verifies like
 the others, but their section table is not the base layout with slots inserted: five base slots are absent
 and eight raw slots name no base slot, so a reader written for another architecture must not answer for
-them.[^s184] [Harmony 890 and 895: memory](../architectures/harmony-890-895/memory.md) carries their slot
-map, how it was placed and what reads in it.
+them.[^s184] Their slot map is [the table below](#one-table-four-architectures), and how it was placed and
+what reads in it is [Harmony 890 and 895: memory](../architectures/harmony-890-895/memory.md).
 
 ## The section table
 
@@ -123,16 +123,49 @@ included.[^s20]
 ## One table, four architectures
 
 On four architectures the section table is one table with slots inserted, rather than a table whose slots
-mean different things:
+mean different things: arch 9 and 14 hold the base layout of 20 slots, arch 8 inserts a NULL at raw slot 8,
+and arch 12 inserts that and a real section at raw slot 18. So base slot `b` sits at raw slot `b`, at `b + 1`
+for `b >= 8` on arch 8 and 12, and arch 12 pushes `b >= 17` up by one more.[^s16] The table below gives every
+architecture whose alignment is established, these four and the two that state their own map:
 
-| Architecture | slots | insertions relative to the base layout |
-|---|---|---|
-| 9, 14 | 20 | none, this is the base layout |
-| 8 | 21 | a NULL at slot 8 |
-| 12 | 22 | a NULL at slot 8, and a real section at slot 18 |
+<!-- generated:slot-maps -->
+| architecture | map | base slots placed | the others | raw slots no base slot names |
+|---|---|---|---|---|
+| [8](../architectures/harmony-880-885/memory.md) | complete, 21 raw slots | 20 | absent: none | 8 |
+| [9](../architectures/harmony-5xx/memory.md) | complete, 20 raw slots | 20 | absent: none | none |
+| [10](../architectures/harmony-890-895/memory.md) | complete, 23 raw slots | 15 | absent: 0, 2, 8, 13, 14 | 1, 2, 3, 7, 8, 13, 16, 17 |
+| [12](../architectures/harmony-one/memory.md) | complete, 22 raw slots | 20 | absent: none | 8, 18 |
+| [14](../architectures/harmony-600-650-700/memory.md) | complete, 20 raw slots | 20 | absent: none | none |
+| [16](../architectures/harmony-300-350/memory.md) | partial | 8 | unread: 4, 6, 7, 8, 9, 11, 12, 13, 14, 17, 18, 19 | not derived |
 
-So base slot `b` sits at raw slot `b`, at `b + 1` for `b >= 8` on arch 8 and 12, and arch 12 pushes
-`b >= 17` up by one more. The base slot numbers are what these pages use. `gspm.base_slot` and
+Each base slot's raw slot, by architecture; an empty cell is one the row above names absent or unread:
+
+| base slot | [8](../architectures/harmony-880-885/memory.md) | [9](../architectures/harmony-5xx/memory.md) | [10](../architectures/harmony-890-895/memory.md) | [12](../architectures/harmony-one/memory.md) | [14](../architectures/harmony-600-650-700/memory.md) | [16](../architectures/harmony-300-350/memory.md) |
+|---|---|---|---|---|---|---|
+| 0 | 0 | 0 |  | 0 | 0 | 0 |
+| 1 | 1 | 1 | 0 | 1 | 1 | 1 |
+| 2 | 2 | 2 |  | 2 | 2 | 2 |
+| 3 | 3 | 3 | 4 | 3 | 3 | 3 |
+| 4 | 4 | 4 | 5 | 4 | 4 |  |
+| 5 | 5 | 5 | 6 | 5 | 5 | 4 |
+| 6 | 6 | 6 | 9 | 6 | 6 |  |
+| 7 | 7 | 7 | 10 | 7 | 7 |  |
+| 8 | 9 | 8 |  | 9 | 8 |  |
+| 9 | 10 | 9 | 11 | 10 | 9 |  |
+| 10 | 11 | 10 | 12 | 11 | 10 | 7 |
+| 11 | 12 | 11 | 14 | 12 | 11 |  |
+| 12 | 13 | 12 | 15 | 13 | 12 |  |
+| 13 | 14 | 13 |  | 14 | 13 |  |
+| 14 | 15 | 14 |  | 15 | 14 |  |
+| 15 | 16 | 15 | 18 | 16 | 15 | 10 |
+| 16 | 17 | 16 | 19 | 17 | 16 | 11 |
+| 17 | 18 | 17 | 20 | 19 | 17 |  |
+| 18 | 19 | 18 | 21 | 20 | 18 |  |
+| 19 | 20 | 19 | 22 | 21 | 19 |  |
+
+Generated from `SLOT_MAPS` in `packages/codec/src/gspm.ts` by `make remote-reference-write`. Change the source, not this block.
+<!-- /generated -->
+ The base slot numbers are what these pages use. `gspm.base_slot` and
 `gspm.arch_slot` in `src/harmony/gspm.py` translate, and so does `SLOT_MAPS` in
 `packages/codec/src/gspm.ts`, which refuses an architecture whose alignment is not established rather than
 guessing.[^s16]
@@ -145,8 +178,8 @@ seek raw slot 18, the section that architecture adds.[^s38] That added section i
 One configurations.[^s16]
 
 What the alignment buys is that a section named on one of these four architectures is named on all four by
-its index. **The other two architectures state their own map**: the Harmony 890 and 895's is above, and
-the Harmony 300 and 350's is [below](#the-harmony-300-and-350s-slots).
+its index. **The other two architectures state their own map**, the Harmony 890 and 895's and the Harmony
+300 and 350's, in the table above; what the latter's slots hold is [below](#the-harmony-300-and-350s-slots).
 
 ## Six sections are arrays of three byte pointers
 
@@ -242,6 +275,13 @@ not recompute. It is also weak: a word XOR catches any single changed byte and i
 words and to any even number of identical changes, so a passing checksum means the remote will not refuse
 the file, not that the file is correct.[^s41]
 
+**Because the checksum sits at the far end of the container, every edit moves it**, so the cheapest edit
+there is, one byte changed in place, writes two places that are normally in different 64 KiB erase blocks:
+on a Harmony One configuration a delay operand and the checksum sat 1.3 MiB apart. So a same length edit
+still erases at least two blocks, and the checksum's block runs past the container's declared end, so what a
+writer reads back first and puts back is a flash region rather than the container alone.[^s237] A page
+binding costs two blocks for a second reason, its list's copy, [modes and keys](modes-and-keys.md)[^s187].
+
 ## Telling a configuration that arrived from one that parses
 
 A transfer can insert bytes into a configuration without losing any, so two independent checks belong
@@ -329,3 +369,5 @@ makes it a candidate rather than an entry.[^s259b] What the model's own configur
 [^s260]: Measured in configurations. [Section 260](../../docs/findings.md#s260)
 [^s259b]: Measured in configurations. [Section 259](../../docs/findings.md#s259)
 [^s262]: Measured in configurations. [Section 262](../../docs/findings.md#s262)
+[^s237]: Measured on a unit. [Section 237](../../docs/findings.md#s237)
+[^s187]: Measured in configurations. [Section 187](../../docs/findings.md#s187)

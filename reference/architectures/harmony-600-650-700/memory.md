@@ -12,8 +12,7 @@ Where the three models differ, each model's own memory page says so: the
 [Harmony 600](../../remotes/harmony-600/memory.md), the [Harmony 650](../../remotes/harmony-650/memory.md)
 and the [Harmony 700](../../remotes/harmony-700/memory.md). Internal flash is addressed as two pages, `0xFE`
 for program addresses `0x00000` to `0x0FFFF` and `0xFF` for `0x10000` to `0x1FFFF`, which is how a USB
-read names them, [the command reference](../../usb-protocol/commands.md#addressing-in-short) "Internal memory: `0xFE` and
-`0xFF` are two pages, not one selector and a dud".
+read names them, [the command reference](../../usb-protocol/commands.md#addressing-in-short).
 
 ## Constants in the code
 

@@ -231,6 +231,10 @@ class PlantedViolations(unittest.TestCase):
             # A reference directly followed by a colon is still a reference, todo-reference 3.1's
             # follow up: the guard once told a definition by its colon and missed this one.
             'As measured[^s1c]: a colon after a reference.\n\n'
+            # And one at a line's start behind inline code, todo-reference chapter 4's follow up: the
+            # definition test once read the line with its code removed, so this read as a second
+            # definition of s1c.
+            '`57`[^s1c]: a line that opens with code.\n\n'
             '[^s1]: Read in the firmware. [Section 1](../docs/findings.md#s1)\n'
             '[^d1]: Chosen by this project. [Decision 1](../docs/decisions.md#d1)\n'
             '[^t-thing]: Measured on a unit. [The test](../tests/test_thing.py)\n'

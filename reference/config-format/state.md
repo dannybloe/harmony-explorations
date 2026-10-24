@@ -117,6 +117,24 @@ and on 895 of 895 over the thirteen arch 14 compiles[^s332]; it is not an enable
 `CurrentActivityState` that is the idle value, because no activity is running while a configuration is
 compiled.
 
+**`first` is also what the firmware seeds the variable with**, on the three architectures whose firmware is
+read for it, the Harmony One, the Harmony 700 and the Harmony 525: each asks its section seeker for raw slot
+13, reads the header and walks the records, writing each `first` into its variable, so an initial value is
+stated and nothing infers it[^s274]. Arch 9 (Harmony 525) gets there differently in two ways[^s274]:
+
+* **It has no "no initial value" marker.** Arch 12 (Harmony One) and arch 14 (Harmony 600, 650 and 700) skip a
+  record whose `first` is `0xFEFE`; arch 9 compares nothing and fills the array's unused tail with `0xFE`
+  after the loop instead, from `narrow + 2 * wide` up to 64.
+* **Its guard is per variable.** On arch 12 and arch 14 one byte decides between seeding every variable and
+  seeding none. On arch 9 the application's start seeds every variable, the firmware's thirteen included,
+  and a second path, at run time and not identified, seeds only the configuration's, skipping indices 0 to
+  12 and so leaving the clock alone.
+
+What decides between the two on arch 12 and arch 14 is a checksum over data memory, on
+[the Harmony One's](#variables-0-to-6-are-the-clock) and on
+[the Harmony 600, 650 and 700's](../architectures/harmony-600-650-700/firmware.md#the-state-variable-seeder)
+own terms.
+
 **`max` is the highest value**, and it is what base slot 0's name for the variable ends in, plus one, in
 all 250 named variables[^s86]. Every non negative `from` and `to` is inside `0` to `max`, every
 instruction has a reading, and every one of the 439 that name a base slot 10 list by index names one that
@@ -296,7 +314,7 @@ configuration the remote's own delay page reaches the save through "Set to defau
 default values; what saves anything else is not established[^s303]. That the firmware runs the restore at
 start is inferred from where the restore lists hang, list 1 on the Harmony 600 and 650 and list 2 on the
 Harmony 700, whose 2.8 firmware is unread for this[^s303]; the restore program is part of
-[the compiler's wiring](../architectures/harmony-600-650-700/compiler.md). **The key is the device
+[the compiler's wiring](../architectures/harmony-600-650-700/compiler.md#the-firmwares-own-wiring-on-arch-14). **The key is the device
 identifier's last five decimal digits, or its last four where five would exceed 65535**, on 290 of 290
 restore leaves over 23 compiles[^s360].
 
@@ -402,36 +420,17 @@ range table**, 501 of 501 over thirteen compiles, and no address points into ano
 
 ### The order of the cases
 
-**On arch 14 the cases are stored in the compiler's hash order**, the one [the layout page](layout.md)
-states for other lists: ascending by `k ^ (k >>> 4) ^ (k >>> 7)`, so 0 to 15, 17, 16, 19, 18, 20 for 0 to
-20. All 410 records with two or more cases over the thirteen arch 14 compiles fit, but **two orderings pin
-it**: the 332 that are not ascending hold only the key sets 0 to 20 and 0 to 450, 166 records each, each set
-in one identical order, and the other 78 have every key below 16, where the hash is the key itself[^s319].
-The firmware's exact match walks the cases in stored order and leaves at the first equal key, trying the
-range table only when none matched, `0x19A2E` on the Harmony 600's 0.2 image and `0x1B30A` on the Harmony
-700's 2.8, so the order changes nothing on the remote and a writer reproduces it to match the compiler byte
-for byte[^s319b].
-
-That the generator iterated a Java hash map is an inference from the formula, which is that map's
-supplemental hash in Java 6 and 7. **The map's table size is unknown**, and Java 6 and later Java 7 updates
-grow it differently, so a key set the corpus does not hold may come out in another order: keys 2 to 13 and
-16 would put 16 first under the second rule. `compilerCaseOrder` therefore accepts only key sets all below
-16 and the runs 0 to 20 and 0 to 450, and refuses the rest[^s319].
-
-**Undecided on arch 8, 9 and 12**: their 65 records of two or more cases, over the Harmony One's four
-containers, the Harmony 525's two and the six arch 8 ones, all have keys below 16, the largest 9, so they
-are ascending and fit either rule[^s319]. Arch 10 (Harmony 890 and 895) is not scored, having no reader
-here.
+**On arch 14 the cases are stored in the compiler's hash order**, so 0 to 15, 17, 16, 19, 18, 20 for 0 to 20,
+and the firmware walks them in stored order and leaves at the first equal key, so the order changes nothing
+on the remote and a writer reproduces it to match the compiler byte for byte[^s319][^s319b]. The rule, the
+two key sets that pin it, why it is undecided on arch 8, 9 and 12 and which key sets `compilerCaseOrder`
+therefore accepts are [the layout's bucket order](layout.md#the-order-is-a-hash-tables-bucket-order).
 
 ### Records the compiler always writes
 
 **An activity's working screen, arch 12 (Harmony One).** One record is keyed by `CurrentActivityState` and
-holds, per activity, the two instruction screen program `17 lo hi 0x7E; 0`, entering that activity's
-working screen, plus one case for the idle value that enters no screen. It is found by walking from the left
-bottom key of a device mode page, the "Activities" key, through `0x7F` and `0x72`; its index differs per
-configuration, 3, 5, 11 or 13 on the thirteen measured, so it is never a constant. The activity's enter list
-opens with a `0x7E` into a different mode, its start up screen, on 60 of 60[^s279]. Not checked on the
-other architectures[^unchecked]. `activityScreens` in `packages/codec/src/inventory.ts`.
+enters, per activity, that activity's working screen, [the Harmony One's compiler page](../architectures/harmony-one/compiler.md#the-activity-screens)[^s279].
+Not checked on the other architectures[^unchecked].
 
 **The all off list.** A base slot 10 list of state writes only, each a 0 into a device's `Power` variable,
 reached from the `idle` base slot 9 entry's enter list through `0x7F` and the `0x7F` a base slot 14 case
@@ -499,12 +498,12 @@ is not established. Arch 8 and arch 10 carry the same pair, not measured[^s292].
 Harmony 700's four cycling frames, the screen light, its tick, the screen light again and the return to USB
 Connected. A device's own timer writes 1 into its `<label>_OnlinePower_2` after 30 or 45 seconds, on 10 of
 the 13, at index 3, 4, 5, 7 or 9; what decides its place is not established[^s347]. The order is part of
-[the compiler's wiring](../architectures/harmony-600-650-700/compiler.md).
+[the compiler's wiring](../architectures/harmony-600-650-700/compiler.md#the-firmwares-own-wiring-on-arch-14).
 
 **On the Harmony One every timer but a device's is one of thirteen on every compile, a three second one on
 2 of 19, or a four second redraw timer**, 13 to 20 of those, 19 of 19, one per class of screen; the
 thirteen come in three orders over the 19[^s410][^s430]. That is
-[the Harmony One compiler's wiring](../architectures/harmony-one/compiler.md).
+[the Harmony One compiler's wiring](../architectures/harmony-one/compiler.md#the-timers).
 
 Read with `gspm.timers` and `gspm.timer_reference`.
 
@@ -654,29 +653,12 @@ of any group whose declared entry count was damaged while every byte still read 
 
 ### What the groups hold
 
-On arch 12 (Harmony One), from the routines that read them. Every default is a literal in the firmware,
-used when the length does not match[^s44][^s103]:
-
-| group | what it is | the Harmony One's values | default |
-|---|---|---|---|
-| 0 | the display light fade's per step delay | 44 | 50 |
-| 1 | entries 2 to 5 are four display light levels, 0 to 27; entries 0 and 1 are read and discarded | 38, 38, 20, 20, 26, 26 | 9, 16, 24, 27 |
-| 4 | three threshold pairs, two apart, turning the four sample sum of analogue channel 1 into a band 0 to 3 with hysteresis | 96, 98, 308, 310, 768, 770 | none |
-| 5, 6 | two measurement to level curves over analogue channel 0, eight levels, chosen by the charger input on `PORTB` bit 1: group 6 when it is clear | 3000 to 4051, and 3000 to 4170 | none |
-| 7 | a timeout in seconds, handed to the one second scheduler | 0 | 10 |
-| 9 | four pairs at four bytes a band, both halves sent to the I2C device at address `0x60` as its registers 2/3 and 4/5; band 3's pair is past the declared entries | 16, 16, 64, 64, 128, 128, then 255, 255 | 64 |
-
-A level above 27 is **silently refused** by the setter, which a writer has to respect: 27 is the number of
-distinct `CVREF` voltages the part can produce, and the ladder that maps a level to one is in the
-firmware[^s103].
-
-**Groups 5 and 6 are battery millivolts.** On arch 12 the value walked against them is
-`mean * A + ((mean * B) >> 16)` where the mean is eight samples of analogue channel 0 and `A` and `B` are two
-`u16` in the remote's own internal page `0xFF`, giving 4.284 mV a converter count, and the firmware compares
-the result against the literal 3400[^s105]. The thirteen two bit fields are channels of the I2C device at
-`0x60`, whose part is not identified: thirteen channels of three states, two eight bit level registers, an
-enable pin and no readback[^s106]. That device is the Harmony One's,
-[its hardware page](../remotes/harmony-one/hardware.md).
+**On arch 12 (Harmony One) the groups are read**, from the routines that read them: the display light's fade
+and levels, a light sensor's thresholds, two battery curves, a timeout and the levels sent to a device on the
+I2C bus. Every default is a literal in the firmware, used when a group's length does not match[^s44][^s103]. The
+table of groups, their values and defaults, and what the battery curve and that device are, is
+[the Harmony One's firmware](../architectures/harmony-one/firmware.md#base-slot-15s-groups). **A light level above
+27 is silently refused** by the setter, which a writer has to respect[^s103].
 
 **On arch 14 group 3 is a second light's four levels**, read by a routine built like group 1's light
 routine, which fills `0xD2F` to `0xD32` where group 1's fills `0xD2E` to `0xD31` and keeps its state in

@@ -48,7 +48,9 @@ protocol.
 **A code is `G:<family>:(<A>)(<B>)(<C>):<n>`, and slots A and B both hold content.**[^s159] Slot C is
 empty and the trailing number is 3 in every one of 2921 distinct codes over 5219 commands. A slot holds
 items joined by `_`; an item is a **value**, a one digit position prefix and hexadecimal digits, or a
-**word** naming a standard frame of the protocol instead of stating it. Seven item sequences occur:[^s159]
+**word** naming a standard frame of the protocol instead of stating it. Seven slot shapes occur, and six item
+sequences once the two slots are read as one list, since a value in each slot and two values in slot B both
+read as two values:[^s159][^t-stated]
 
 | distinct codes | slot A | slot B | families like |
 |---|---|---|---|
@@ -100,14 +102,14 @@ one, and `Finish` is what a key release sends.
 ## The rhythm table
 
 **The rhythm table holds one entry per family, 681<!--fact:protocol_entries--> of them**, generated into
-`protocols.ts` in `packages/codec/src` and never edited by hand.[^s227][^s231] An entry is a family at its
+`protocols.ts` in `packages/codec/src` and never edited by hand.[^s233][^s227] An entry is a family at its
 carrier, the frame in one of the six shapes [Frames](frames.md) describes, and, where known, the whole
 first block and the held block.
 
 **`source` says where an entry's durations came from, and it is the field to filter on.** 37<!--fact:protocol_measured-->
 entries were measured, most off configurations Logitech's compiler produced for chosen devices and some
 off configurations people use; **644<!--fact:protocol_stated--> are `source: 'stated'`, Logitech's own
-definitions converted for families no configuration measured holds a record of**.[^s227][^s231] A stated
+definitions converted for families no configuration measured holds a record of**.[^s233] A stated
 row carries `codes: 0`, `exact: 0` and `spread: 0`, which are the honest numbers rather than placeholders,
 and no `tailExact` and no `heldExact`, since those count the records that rebuilt from the row and there
 are none. Anything counting what reproduces a recorded code excludes those rows.[^s227] `exact` is how
@@ -121,7 +123,7 @@ space pairs by construction.
 
 **33<!--fact:protocol_tails_stated--> of the 644<!--fact:protocol_stated--> stated rows carry a whole block, `tail` and `held`, derived from the
 definition rather than measured**, and the others carry a frame and nothing after it, so
-`blockOfStatedCode` refuses them.[^s228] The derivation reproduces all 29 blocks measured off Logitech's
+`blockOfStatedCode` refuses them.[^s233][^s228] The derivation reproduces all 29 blocks measured off Logitech's
 compiler to the microsecond, which is why a derived one is believed.[^s228b] What a definition mostly does
 not state is **how many times a repetition is sent**: `pressMinimumRepeats` is stated on 39 of the 684
 definitions and null on 645, and where it is stated for a measured family it is right on five of

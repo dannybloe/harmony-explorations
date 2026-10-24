@@ -26,8 +26,10 @@ wakes.[^s258][^s308]
 **Learning a code was Logitech's service's job.** The Harmony 880 manual says a learned signal is
 uploaded to Logitech's web site, which looks for a matching pattern, converts a match into a compact form
 and stores a miss as it was captured.[^s42] So the choice between a recognised family and a raw recording
-was made on Logitech's server, not on the remote, which is why the configurations measured use one of
-the four encodings the firmware of the Harmony One, 600 and 700 can play, and never the other three.[^s42b]
+was made on Logitech's server, not on the remote. The firmware of the Harmony One, 600 and 700 can play
+four encodings[^s42b], and every record of the configurations measured uses one of them and never the
+other three[^s42c]. That the server's choice is why the other three are unused is an inference from the
+manual and not checked[^unchecked].
 
 The pages, from the number outwards:
 
@@ -47,3 +49,5 @@ The pages, from the number outwards:
 [^s308]: Measured in configurations. [Section 308](../../docs/findings.md#s308)
 [^s42]: Stated by Logitech, in the manual. [Section 42](../../docs/findings.md#s42)
 [^s42b]: Read in the firmware. [Section 42](../../docs/findings.md#s42)
+[^s42c]: Measured in configurations. [Section 42](../../docs/findings.md#s42)
+[^unchecked]: Not checked.

@@ -68,7 +68,7 @@ Each row is evidenced in the model's own folder, which is its home; this table i
 | devices, Logitech's service | 4 | 8 |
 | infrared groups in every configuration | 4 | 8 |
 | device keys and a long press | four keys, no long press | four keys, each with a short and a two second press |
-| activities, Logitech's service | no `Activities` capability, only `PartiallySetupActivities` | `Activities`, at most 1 |
+| activities, Logitech's service | no `Activities` capability, only `PartiallySetupActivities`[^t-capabilities] | `Activities`, at most 1[^t-capabilities] |
 | favourite channels, Logitech's service | 5 for skin 78 and 4 for skin 79, the European model | 5 |
 | device keys print | TV, Cable/Sat, DVD, VCR/Aux | TV / AVR, Cable/DVD, BD / Media, Game/MP3 |
 
@@ -107,3 +107,4 @@ Each row is evidenced in the model's own folder, which is its home; this table i
 [^x-manual-350]: Stated by Logitech, in the manual. [The Harmony 350 setup guide](https://www.logitech.com/assets/51207/harmony-350-qsg-and-iid.pdf)
 [^t-moulding]: Measured on a unit. [The test](../../../packages/silhouettes/test/models.test.ts)
 [^s145]: Stated by Logitech, by their service. [Section 145](../../../docs/findings.md#s145)
+[^t-capabilities]: Stated by Logitech, by their service. [The test](../../../tests/test_product_capabilities.py)

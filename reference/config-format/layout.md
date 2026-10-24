@@ -133,7 +133,7 @@ It holds on four kinds of list:
 | mode 0's key list after the end marker | the tag | 39 lists of two or more entries, 12 distinct, on arch 8, 10, 12, 14 and 16, with no step down; the hash is pinned term by term | [^s315] |
 | every mode and page tagged list | the tag | 6921 of 6921 lists of two or more tags in the thirteen arch 14 compiles, every device mode page included, and the key sets of 40 of 40 activities | [^s330][^s323] |
 | the name tree's level 1 nodes | the state variable's index | 13 of 13 arch 14 compiles, and none fits in index order; 22 distinct trees on arch 8, 9, 12 and 16 with no step down | [^s324] |
-| base slot 14's cases | the case value | all 410 records of two or more cases in the thirteen arch 14 compiles | [^s319] |
+| base slot 14's cases | the case value | all 410 records of two or more cases in the thirteen arch 14 compiles; the 332 that are not ascending hold only the key sets 0 to 20 and 0 to 450, 166 records each, each set in one identical order, and the other 78 have every key below 16, so those two sets are what pin it | [^s319] |
 
 **The capacity is pinned only in places.** Two arch 16 key lists, of 11 and 13 entries, fit 16 and 32 buckets
 and fail at the other, so the threshold lies between them; the 55 to 59 entry lists fit both 64 and 128 and are
@@ -153,12 +153,13 @@ stored first[^s324].
 
 **Where it does not hold, or is not settled**: the Harmony 525's safe mode configuration's mode 0 list steps down
 at every capacity from 16 to 256[^s315]; on arch 8, 9 and 12 base slot 14's cases all have keys below
-16, where the hash is the key itself, so they fit any rule[^s319]; the Harmony 890 and 895 have no name
-tree[^s324].
+16, where the hash is the key itself, the largest 9 over 65 records, so they fit any rule[^s319]; the Harmony
+890 and 895 have no name tree[^s324], and their value maps are not scored, having no reader here[^unchecked].
 
 **Nothing on the remote reads any of these orders.** A key lookup takes the first equal tag[^s311], base slot
 14's exact match walks the cases in stored order and leaves at the first equal key, trying the range table only
-when none matched[^s319b], and base slot 0, the name tree, is read by the host and not by the remote,
+when none matched, `0x19A2E` on the Harmony 600's 0.2 image and `0x1B30A` on the Harmony 700's 2.8[^s319b],
+and base slot 0, the name tree, is read by the host and not by the remote,
 [header records](header-records.md). The order is reproduced so that a written file is one Logitech's compiler
 could have written: `modeZeroKeyList`, `compilerTagOrder`, `buildNameTree` and `compilerCaseOrder` in
 `packages/codec` generate it, each refusing a tie it has not measured.
@@ -190,3 +191,4 @@ could have written: `modeZeroKeyList`, `compilerTagOrder`, `buildNameTree` and `
 [^s324]: Measured in configurations. [Section 324](../../docs/findings.md#s324)
 [^s319]: Measured in configurations. [Section 319](../../docs/findings.md#s319)
 [^s319b]: Read in the firmware. [Section 319](../../docs/findings.md#s319)
+[^unchecked]: Not checked.

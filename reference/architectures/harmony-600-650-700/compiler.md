@@ -246,6 +246,18 @@ page gains the counter right after its title[^s312][^s334].
 | bars | `DRAW_IMAGE_AT 0,0,0,0,128,16` the top bar after the queue; `DRAW_IMAGE_AT 0,0,0,0,128,128` the bottom bar before the word | 639 of 639 |
 | bottom word | font 1, the first set of the title's size; "Back" at `floor((128 - width) / 2)` = 49, y 114; drawn inline once per configuration, every other page `TEXT_AT` pointing at that copy | 639 of 639 |
 
+**The corner program**, which draws the sending mark, is one shape on every Harmony 600, 650 and 700 compile,
+70 of 70 on 24, three runs back to back[^s374][^s369]:
+
+```
++0x00  12 11 01 00 u24 case0  01 01 03 u24 range   switch on variable 17: case 0, range 1 to 3
++0x0D  11 FA FF 07 00                              the tail: queue 0x07 0xFFFA, end
++0x12  02 72 70 u24 patch  14 u24 tail             case 0: the state's 12 by 10 patch at 114, 112
++0x1C  02 72 70 u24 mark   14 u24 tail             range: the mark at 114, 112
+```
+
+What `0x07 0xFFFA` does is not read[^unchecked].
+
 ### What a compiled catalogue device puts where
 
 **On twenty devices Logitech compiled from its catalogue**, in seven of the thirteen configurations, plus
@@ -263,9 +275,10 @@ one held out; the rules are read off the output and `devicemode.ts` is their exe
 | title | size 14, x 0, y 2; whole if at most `125 - 14 * digits(total) - 8`, else the longest prefix plus `..` that is | 125 of 128 |
 
 The key lists and several pairs of the leading list are fitted to this population or ordered by choice,
-and the title limit is a fit of two measured limits, so neither is confirmed beyond it[^unchecked]. The
-character map names no code for `J` or `#`, so the table holds no width for either and a label holding
-one is not laid out[^s325].
+and the title limit is a fit of two measured limits, so neither is confirmed beyond it[^unchecked]. When this
+layout was measured the character map named no code for `J` or `#`, so a label holding one was not laid
+out[^s325]. The `J` has a code and a width since, with the colon, and every drawn code of the thirteen
+compiles resolves[^s368]; whether `#` has one now is not checked[^unchecked].
 
 ### A device mode's key map
 
@@ -817,6 +830,9 @@ the red patch on all seven Harmony 700 compiles, and the top bar on both Harmony
 
 ## A device's inputs, and the state tables built
 
+How the compiler wires a device's power, its on and off sends and its three delays, is
+[sending](../../infrared/sending.md#how-the-compiler-wires-a-devices-power).
+
 **A device's inputs**, measured on the thirteen compiles[^s321], and the same on the Harmony One but for
 the send, which is two instructions there, [its compiler page](../harmony-one/compiler.md)[^s393]. Two
 layers of one byte variables, each a record with `first` 0 and `second` the number of values less one:
@@ -842,8 +858,8 @@ The catalogue's fields named here are Logitech's[^s321b].
 * One input that steps gives a variable of one value and no transitions; one input that does not step
   gives none. A state no input writes, directly or through another state, is not compiled[^s321].
 * **The catalogue's `power.onReset`** becomes one list per state, `[0x07 0xFFFF, 0x80 | variable value]`,
-  called from the power variable's `0 to 1` list after the power on delay, in the catalogue's order, and on
-  the Harmony One the same shape after its wait in 3 of Logitech's 19 compiles[^s393]: 13 of 13 lists on
+  called from the power variable's `0 to 1` list after the power on delay, in the catalogue's order
+  (on [the Harmony One](../harmony-one/compiler.md#state-tables-and-a-devices-inputs) the same shape): 13 of 13 lists on
   the eight device instances that compose, and a fourteenth on a device that does not compose has the same
   place and flag[^s332]. The value is the named value's index, told apart from "always the first value" by
   one catalogue entry only; where the catalogue names a value the variable does not declare, twice, the
@@ -869,7 +885,7 @@ and 14 byte for byte. What it generates rather than carries:
 |---|---|
 | records 7 to 17, `first / max` | `0/2, 0/3, 5/7, 0/7, 0/32, 0/1, 0/32, 1/1, 0/3, 0/1, 0/3`, no transitions |
 | the clock's transitions | minute, day, month: `{-2 to 0, 0x1F 0xF2nn}` incrementing hour, month, year; hour: `{-2 to 0, 0x7F list}`, the list `[0x1F 0xF203, 0x1F 0xF204]` incrementing day and weekday, its index the configuration's |
-| index `narrow` | `first` 0, max 65277, no transitions, unnamed, stored straight after record 17; purpose **not read** on these models (on the Harmony One it is the clock pickers' variable) |
+| index `narrow` | `first` 0, max 65277, no transitions, unnamed, stored straight after record 17; purpose **not read** on these models ([on the Harmony One](../harmony-one/compiler.md#state-tables-and-a-devices-inputs) it is the clock pickers' variable) |
 | a variable's width | one byte for a maximum up to 100, two from 254; **between is not pinned** |
 | a device's eight delay variables | `PowerOnDelay` and `InterDeviceDelay` max 65277, their `Default` copies max 254, all two bytes; `PowerOnDelayFlagCounter` 0/5, `InterDeviceDelayFlagCounter` 0/3, both `FixingTriggered` 0/100, one byte; 83 of 83 devices, `deviceDelayVariables` |
 | `CurrentActivityState_0` and `CurrentLocation` | the activity count for both value and max, and 0/0, `activityStateVariables` |
@@ -880,11 +896,10 @@ Carried: which variables there are, their stems, values, maxima and transitions 
 order of their indices within each width, which no hash of their names fits[^s324]. **A value can exceed
 its maximum**: `DefaultPowerOnDelay` holds 65535 under 254 for one device of one Harmony 650 compile, so
 "at most `second`" holds for the populations it was first measured on[^s86][^s120] and not
-for every compile[^s324]. The constants are this architecture's: on the Harmony 880 and 885 and the
-Harmony One records 7 to 12 and 15 to 17 hold the same values while 13 and 14 hold `1/1, 0/1` (Harmony 880
-and 885) and `1/1, 2/4` (Harmony One), the Harmony 525 differs from record 8 on, and on all three the
-`0/65277` variable at index `narrow` is the only two byte one while one byte maxima reach 121, inside the
-gap not pinned here[^s324].
+for every compile[^s324]. The constants are this architecture's: on the Harmony 880 and 885 records 7 to 12
+and 15 to 17 hold the same values while 13 and 14 hold `1/1, 0/1`, the Harmony 525 differs from record 8 on,
+and on both, as on [the Harmony One](../harmony-one/compiler.md#state-tables-and-a-devices-inputs), the `0/65277` variable at index `narrow` is the only two byte one
+while one byte maxima reach 121, inside the gap not pinned here[^s324].
 
 Read with `gspm.state_table`, `gspm.state_records` and `gspm.state_index`; `stateTable` and
 `stateRecords` in `packages/codec`[^s35][^s60][^s86].
@@ -908,6 +923,7 @@ Read with `gspm.state_table`, `gspm.state_records` and `gspm.state_index`; `stat
 [^s334]: Measured in configurations. [Section 334](../../../docs/findings.md#s334)
 [^s330]: Measured in configurations. [Section 330](../../../docs/findings.md#s330)
 [^s369]: Read in the firmware. [Section 369](../../../docs/findings.md#s369)
+[^s374]: Measured in configurations. [Section 374](../../../docs/findings.md#s374)
 [^s325]: Measured in configurations. [Section 325](../../../docs/findings.md#s325)
 [^s326]: Measured in configurations. [Section 326](../../../docs/findings.md#s326)
 [^s326b]: Read in the firmware. [Section 326](../../../docs/findings.md#s326)

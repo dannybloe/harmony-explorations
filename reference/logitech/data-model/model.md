@@ -641,8 +641,9 @@ it `UserAccountDirector/GetProtocolList`, and at that name the service answers w
 gateway error[^s258]. The Discovery listing advertises an account scoped `ProtocolList` instead, on two
 services[^t-ops]. On `UserAccountDirector/ProtocolList` a `POST` answers 405 and a `GET` a bare gateway
 error page, reproducibly and on two accounts[^s219]; the `GET` answers 502 on an account holding devices
-and 200 with an empty body on an empty one[^s132]. On `DeviceManager` the same address answers
-404[^s159]. **The request is right and the endpoint is what fails**: on the same address form
+and 200 with an empty body on an empty one[^s132]. An earlier probe recorded a `POST` to `ProtocolList`
+answering 404 on both services the listing names, without saying which[^s159], where the later one had
+`UserAccountDirector` answer 405[^s219]. **The request is right and the endpoint is what fails**: on the same address form
 `ActivityList` and `FunctionList` answer normally, while `DeviceList` and `CapabilityList` fail exactly as
 `ProtocolList` does[^s219]. So the catalogue's protocol definitions are stated in this shape and the
 service hands out none of them.

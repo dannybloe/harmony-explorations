@@ -461,12 +461,15 @@ def footnote_problems(path, text, root=ROOT, sections=None, decisions=None):
     sections = _sections(root) if sections is None else sections
     decisions = _decisions(root) if decisions is None else decisions
     references, definitions, problems = collections.Counter(), collections.defaultdict(list), []
-    for _, line in prose_lines(text):
+    # The definition test reads the line as written and only then drops its inline code. Testing the
+    # line with its code already removed made "`57`[^s347]: ..." at a line's start read as the
+    # definition of s347, so a reference there was miscounted as a second definition.
+    for _, line in prose_lines(text, keep_code=True):
         definition = FOOTNOTE_DEFINITION.match(line)
         if definition:
-            definitions[definition.group(1)].append(definition.group(2))
+            definitions[definition.group(1)].append(INLINE_CODE.sub('', definition.group(2)))
             line = line[definition.end(1) + 2:]
-        for label in FOOTNOTE_REFERENCE.findall(line):
+        for label in FOOTNOTE_REFERENCE.findall(INLINE_CODE.sub('', line)):
             references[label] += 1
     for label in sorted(set(references) | set(definitions)):
         match = LABEL.match(label)

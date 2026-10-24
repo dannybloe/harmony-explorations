@@ -32,34 +32,7 @@ every container that is not damaged.[^s117]
 Harmony 880 and 885, the Harmony One, the Harmony 525 and the Harmony 600, 650 and 700 all relate to one
 another. Five base slots are absent, and eight raw slots correspond to no base slot.[^s184]
 
-<!-- generated:slot-map -->
-23 raw slots. 15 of the 20 base slots are present; absent: 0, 2, 8, 13, 14. Raw slots no base slot names: 1, 2, 3, 7, 8, 13, 16, 17.
-
-| base slot | raw slot |
-|---|---|
-| 0 | absent |
-| 1 | 0 |
-| 2 | absent |
-| 3 | 4 |
-| 4 | 5 |
-| 5 | 6 |
-| 6 | 9 |
-| 7 | 10 |
-| 8 | absent |
-| 9 | 11 |
-| 10 | 12 |
-| 11 | 14 |
-| 12 | 15 |
-| 13 | absent |
-| 14 | absent |
-| 15 | 18 |
-| 16 | 19 |
-| 17 | 20 |
-| 18 | 21 |
-| 19 | 22 |
-
-Generated from `SLOT_MAPS` in `packages/codec/src/gspm.ts` by `make remote-reference-write`. Change the source, not this block.
-<!-- /generated -->
+Where each base slot sits is [the container's table of every architecture](../../config-format/container.md#one-table-four-architectures).[^s184]
 
 **Every row was placed by what its section holds**, with no firmware to read: the architecture record in
 raw slot 0, the clock frame, a 125 byte event map of 30 entries as on the Harmony 880, the infrared
@@ -94,9 +67,9 @@ because each is found from the header, the trailer or its own contents rather th
 | structure | how it is found | what it holds here |
 |---|---|---|
 | the key table | from the marker after the pointer table | 55 press codes on a Harmony 895, exactly the Harmony 885's populated positions[^s177] |
-| the picture bank | from the trailer's position, the walk that lands on it | 128 by 160 pictures; 26 on a Harmony 890 and 38 on a Harmony 895, 57% and 72% of each file[^s179] |
-| the font sets | every pointer must decode into a glyph that tiles exactly | eight sets, whose glyph shapes are named by the Harmony 880 and 885's alphabet, 213 of 237[^s180] |
-| the infrared records | a record states its own start address | 300 codes on a Harmony 890, in four groups, with every one of 463 duration blocks decoding; **none** on a Harmony 895[^s181][^s184] |
+| the picture bank | from the trailer's position, the walk that lands on it | 128 by 160 pictures; 26 on a Harmony 890 and 38 on a Harmony 895, 57% and 72% of each file, five of them full screen on each; the two use exactly the ten distinct picture sizes a Harmony 880 and 885 use, where a Harmony 600 and a Harmony One share none of them[^s179] |
+| the font sets | every pointer must decode into a glyph that tiles exactly | eight sets, 282 glyphs on a Harmony 890 and 277 on a Harmony 895, 70 slots each and a first code of 1, heights 8, 11, 13, 14 and 15 in exactly the Harmony 880's order of its eight sets; two bytes a pixel, since the Harmony 525's packed form finds no set and this form all eight; the glyph shapes are named by the Harmony 880 and 885's alphabet at 213 of 237 and 212 of 229, against 44 and 42 for the Harmony 600's and none for the Harmony One's, so the typeface is the Harmony 885's[^s180] |
+| the infrared records | a record states its own start address | 300 codes on a Harmony 890, in four groups, with every one of 463 duration blocks decoding, at 38.0 kHz on 151 records, 36.4 kHz on 147 and 37.2 kHz on 2; **none** on a Harmony 895[^s181][^s184] |
 
 **Three readers needed this architecture's own value and had none**, which is the thing to know before
 reading one of these configurations with a reader written for another architecture:
@@ -108,6 +81,10 @@ reading one of these configurations with a reader written for another architectu
   One's groups fired on it because its group existed.[^s185]
 * Base slot 7 keeps its glyph bodies inside its own section, so the section is read as a header, a `u16`
   count and that many three byte pointers, on every architecture.[^s184]
+
+**The font sets do not give this architecture its text.** A string's address comes out of a screen program,
+base slot 11, and these sets declare a first code of 1 rather than 32, so the codes are each configuration's own
+numbering and a run of printable bytes is not a string; `usesAscii` is false on both[^s180].
 
 **What remains unread is 0.7% and 2.8%** of the two clean configurations, with nothing claimed twice: runs
 with no family, the largest 7187 bytes on the Harmony 895, and the eight raw slots that are no base slot,

@@ -86,10 +86,8 @@ that holds for the Harmony One, 600, 650 and 700[^d9].
 ## The user manuals
 
 **A manual is weak on mechanism and strong on intent**, the opposite of the firmware: it does not say what
-a packet looks like, it says what the system was for. The one that settled most is the Harmony 880's,
-which says that a learned code is uploaded to Logitech's web site, that the site looks for a matching
-pattern, and that a match is stored in a compact form while a miss is stored as it was captured. That is
-why three of the four infrared encoding classes appear in no configuration[^s42].
+a packet looks like, it says what the system was for. The one that settled most is the Harmony 880's, on
+how a learned code was turned into a stored one, [Infrared](../infrared/README.md)[^s42].
 
 The manuals describe the product as a person meets it, and [how a Harmony works](../how-a-harmony-works.md)
 quotes them. The models they cover are [the product line](product-line.md).
