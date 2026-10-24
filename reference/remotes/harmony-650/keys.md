@@ -127,7 +127,7 @@ this architecture[^s340c].
 ## What pressing a key raises
 
 A press, a repeat and a release, and no long press; Help waits five times longer than any other key
-before its repeat. Both were read in the 650's own 0.2 build and are stated for the architecture, with
+before its repeat[^s340]. Both were read in the 650's own 0.2 build and are stated for the architecture, with
 the scope of that reading, in [the architecture's README](../../architectures/harmony-600-650-700/README.md#keys).
 MyHarmony's client offers a long press activity per activity key, which belongs to later models[^s340b].
 
