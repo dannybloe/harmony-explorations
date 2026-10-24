@@ -58733,6 +58733,21 @@ donor path. All sixteen are past the empty One's 1314 lists, every one of which 
 The screens before a write, rendered by `packages/codec/bin/empty-one.ts --setup`: the start, the activity menu, the
 first activity's working screen, the idle device list and the LG's device page, none missing a picture or a glyph.
 
+### At the bench
+
+**Run on the spare Harmony One**, `packages/bench/irtests/done/one-setup-on-empty.json`: the file, 905173 bytes, written as
+14 erase blocks over the empty One and read back byte for byte. Every one of the 16 codes the Flirc heard is a code the
+file's own lists send at that step, and nothing else was sent. The test's six failed checks are its own prediction:
+the monitor names neither of the Denon's two 14 bit power codes, though their numbers are the file's; an input change
+waits for its own device's power on delay while the other devices go ahead, so the Denon's input came before the
+LG's at TV kijken and the LG went off before the Plasma's input at Film kijken; and the Plasma's power on records
+that the set starts on TV without sending it. The Denon went to CBL/SAT and Media Player and the LG to HDMI 1, the
+inputs section 436 found wrong on the build onto Logitech's file. The TV and the Denon switched on with no wait
+before their power codes, so for those two Logitech's half second is not needed. **The KPN box did not respond**:
+the setup's KPN is the catalogue's TV6000COK, 32 bit NEC frames at address 0x20FF, and the box on the bench answers
+the everyday Harmony One's records, which this repository's frame reader does not decode, so a different model;
+`todo-compile-one.md` 8.2.1. A device page's clock updated after a minute.
+
 ### What is not settled
 
 Everything above is the file; none of it has been on a remote. Unconfirmed until the spare Harmony One runs it,

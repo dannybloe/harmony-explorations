@@ -1,0 +1,47 @@
+{
+  "name": "Spare Harmony One, the test setup on the empty One",
+  "description": "todo-compile-one 8.2, one write of lab/work/one-track/empty/setup-on-empty.bin: the test setup of seven devices and five activities composed onto our own empty Harmony One, nothing from Logitech's files, section 435. By the file, from everything off: TV kijken switches on the LG, the KPN and the Denon, then sets the LG to HDMI 1 and the Denon to CBL/SAT. Film kijken from there switches on the Plasma (which first goes to TV) and Kodi, sets the Plasma to HDMI 2 and the Denon to Media Player, switches the LG off and leaves the KPN on, since Film kijken does not name it. Off switches off the Plasma, the Denon, the KPN and Kodi. What it answers: whether the setup built on the empty One drives the devices as predicted, whether the Denon and the LG go to the inputs asked for (they did not on the build on Logitech's file, section 436), and whether a power code needs Logitech's half second before it. Keep the remote pointed at the Flirc throughout.",
+  "steps": [
+    {
+      "instruction": "After the write the remote restarts on its own. Take it off the cable and point it at the Flirc. Expect 'My Activities 1/2' with TV kijken, Film kijken and Muziek, Options and Devices on the keys below the screen. Mark when you see it"
+    },
+    {
+      "instruction": "Touch TV kijken on the screen and wait until the remote is done. Expect the TV kijken screen with Teletext and DVR, and Devices on the key below the screen, bottom right",
+      "expect": [
+        { "device": ["LG TV", "LG_TV", "LG", "TV"], "command": "PowerOn" },
+        { "device": "KPN", "command": "PowerToggle" },
+        { "device": "Denon", "command": "PowerOn" },
+        { "device": ["LG TV", "LG_TV", "LG", "TV"], "command": "InputHdmi1" },
+        { "device": "Denon", "command": "InputCbl/Sat" }
+      ]
+    },
+    {
+      "instruction": "Press Volume up once",
+      "expect": [{ "device": "Denon", "command": "VolumeUp" }]
+    },
+    {
+      "instruction": "Press the key below the screen, bottom right (Devices). Expect 'Devices' with LG TV, KPN and Denon first. Touch LG TV. Expect the LG TV page with PowerToggle, PowerOn, PowerOff, Home and Return. Leave it there and watch the clock at the top right for a minute: it should move. Then touch PowerOn",
+      "expect": [{ "device": ["LG TV", "LG_TV", "LG", "TV"], "command": "PowerOn" }]
+    },
+    {
+      "instruction": "Press Activities, then touch Film kijken and wait until the remote is done",
+      "expect": [
+        { "device": "Plasma", "command": "PowerOn" },
+        { "device": "Plasma", "command": "TV" },
+        { "device": "Kodi", "command": "PowerToggle" },
+        { "device": "Plasma", "command": "InputHdmi2" },
+        { "device": "Denon", "command": "InputMediaPlayer" },
+        { "device": ["LG TV", "LG_TV", "LG", "TV"], "command": "PowerOff" }
+      ]
+    },
+    {
+      "instruction": "Press Off and wait until the remote is done. Expect the 'My Activities' screen after",
+      "expect": [
+        { "device": "Plasma", "command": "PowerOff" },
+        { "device": "Denon", "command": "PowerOff" },
+        { "device": "KPN", "command": "PowerToggle" },
+        { "device": "Kodi", "command": "PowerToggle" }
+      ]
+    }
+  ]
+}
