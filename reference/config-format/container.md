@@ -1,347 +1,129 @@
 # The container
 
-## Outer container
+A configuration, as it sits in a remote's flash, is one block of bytes this reference calls the
+**container**. It opens with four letters that say which family of remotes it was built for, the address
+where it ends and a table of pointers, one per section: the infrared codes, the screens, the key bindings,
+the remote's state and the rest. After the sections come a checksum and four more letters marking the
+end. Every pointer is the address a byte will have in the remote's flash, not its place in the file, so a
+container is built for one place in one model's memory and cannot simply be moved.
 
-Validated against **seventeen samples across four architectures**, five base addresses
-(`0x002000`, `0x018000`, `0x020000`, `0x030000`, `0x040000`) and three pointer table lengths
-(20, 21, 22), which is the same property the word at `0x08` states rather than a second one,
-section 194. Every consistency check passes on all seventeen. A fifth
-architecture and a fourth of each arrived on 10 August 2026 and is **not** in that set: arch 10,
-format 1.7, 23 slots, whose framing verifies while four of the checks fail on the slot mapping.
-See the cookie table below and section 115. See
-`tests/test_gspm.py`. The sixteenth is the bench Harmony 525's own config, read over USB on
-8 August 2026 and identical in every container field to the published arch 9 sample, section 76.
+It is the same format on every remote from the Harmony 880 on that has been read, six architectures in
+all. What differs between them is the four letters, the number of pointers and which section sits in which
+slot of the table.[^s14][^s194] This page describes that shared frame; what the sections hold is on the
+pages listed in [the format's front page](README.md).
 
-**The seventeenth was held out of that set for a while**: the same remote's arch 9 safe mode
-config, at flash `0x818000`, which contradicted six established claims at once. All six are
-re-derived, sections 77 to 79, and none of them was a fix. Four became findings, base slot 0's
-nodes and the font set's first code among them; two were artefacts of reading a fixed length where
-the format states none. It is in the corpus now, as `h525_safemode_ahcm`, it brings the fifth base
-address with it, and it is the counterexample two corpus wide claims have to name.
-
-**Corrected here.** This paragraph said thirteen samples, five base addresses and four pointer
-table lengths. The count was stale, and the other two numbers never matched the list beside them:
-four addresses were named at the time and the lengths are 20, 21 and 22. The fifth address is real
-now and it arrived with a seventeenth sample rather than by the number being right all along. The
-counts are computed in
-`tests/test_gspm.py` now rather than written down, so they cannot drift again.
-
-**That last sentence was half true for a week, which section 143 found and fixed.** The test did compute
-the five spans, and then asserted a **lower bound** on each: three cookies, four base addresses, three
-format versions, three lengths, four architectures. Four of those bounds were exactly the span and the
-base address one was **under by one**, so the document said five addresses while the test would have
-passed on four. Computing a number and asserting a bound under it is not pinning it. All five are
-asserted exactly now, and the TypeScript twin of that test reports 4 addresses over a 13 sample table
-against these 17, which is the second thing section 143 found.
+## The header
 
 ```
 0x00  char[4]  cookie          per architecture, see the table below
 0x04  u32      end_addr        absolute flash address of the trailing end marker
-0x08  u32      pointer_count   byte at 0x09 IS N below; upper half zero. Section 194
+0x08  u32      pointer_count   the byte at 0x09 is N below; the upper half is zero
 0x0B  item[N]  section_table   { u8 spare; u24 address }[N], see below
       char[4]  marker          per architecture; starts the key table on arch 8, 12 and 14
-      u8       count
-               { u8 event_code; u16 index; u8 flags }[count]
-      ...      remaining sections, reached via section_ptr
-end-6 u16      checksum        seeded word XOR, below
+      ...      sections, reached through the section table
+end-6 u16      checksum        a seeded word XOR, below
 end-4 char[4]  end marker      per architecture
 ```
 
-**The word at `0x08` is the pointer count, not a version**, section 194. The byte at `0x09` is `N`
-below, exactly, on all 25 containers here across six architectures: `0x14` is 20 on arch 9 and 14,
-`0x15` is 21 on arch 8, `0x16` is 22 on arch 12, `0x17` is 23 on arch 10 and `0x0F` is 15 on arch 16.
-The reading as a nibble BCD version, `0x1400` as "1.4", survives only as a label: it is plausible for
-`0x14` to `0x17` and prints `0x0F` as "0.15", which would make a Harmony 350 older than a Harmony 880.
-`N` is independently derived from where the marker sits, so the two agreeing is a check on the file
-and `format_states_the_pointer_count` is it. This is also why `format` never identified an
-architecture: arch 9 and arch 14 both carry `0x14` because both have 20 slots.
+All little endian. Pointers are **absolute flash addresses, not offsets**, which is why a container is
+position dependent.[^s7] The marker after the table starts the key table on three architectures, and that
+table is [the first mode record](modes-and-keys.md).
 
-All little endian. Pointers are **absolute flash addresses, not offsets**, so a blob is
-position dependent and cannot simply be relocated.
+This layout holds on **seventeen samples across four architectures**, five base addresses
+(`0x002000`, `0x018000`, `0x020000`, `0x030000`, `0x040000`) and three pointer table lengths
+(20, 21, 22), which is the same property the word at `0x08` states rather than a second one[^s194]: every
+consistency check passes on all seventeen, and the counts are computed rather than written down.[^t-gspm]
+The Harmony 890 and 895 and the Harmony 300 and 350 hold the same frame, with a section table of their
+own.[^s115][^s259]
 
-### The per architecture cookies
+### The word at `0x08` is the pointer count, not a version
 
-| Arch | Models | cookie | end marker | marker after the table | format seen |
+The byte at `0x09` is `N`, the number of items in the section table, exactly, on all 25 containers
+measured across six architectures: `0x14` is 20 on arch 9 and 14, `0x15` is 21 on arch 8, `0x16` is 22 on
+arch 12, `0x17` is 23 on arch 10 and `0x0F` is 15 on arch 16.[^s194] Reading it as a version, `0x1400` as
+"1.4", is plausible for `0x14` to `0x17` and prints `0x0F` as "0.15", which would make a Harmony 350 older
+than a Harmony 880. `N` is also derived independently from where the marker sits, below, so the two
+agreeing is a check on the file. It is also why the word never identified an architecture: arch 9 and
+arch 14 both carry `0x14` because both have 20 slots, and the cookie is what names the family.[^s194]
+
+### The cookies of each architecture
+
+| Arch | Models | cookie | end marker | marker after the table | pointer slots |
 |---|---|---|---|---|---|
-| 8 | 720, 785, 88x | `TPTP` | `DKDK` | `WLWL`, key table | `0x1500` |
-| 9 | 36x, 51x, 52x, 55x | `AHCM` | `MCHA` | `CMAH`, contents unestablished | `0x1400` |
-| 12 | One | `GSPM` | `PTYY` | `LWJL`, key table | `0x1600` |
-| 14 | 600, 700 | `GSPM` | `PTYY` | `LWJL`, key table | `0x1400` |
-| 10 | 89x | `TPTP` | `DKDK` | `WLWL` | **`0x1700`** |
+| 8 | 720, 785, 880, 882, 885 | `TPTP` | `DKDK` | `WLWL`, the key table | 21 |
+| 9 | 36x, 51x, 52x, 55x | `AHCM` | `MCHA` | `CMAH`, no key table follows it | 20 |
+| 10 | 890, 895 | `TPTP` | `DKDK` | `WLWL` | 23 |
+| 12 | One | `GSPM` | `PTYY` | `LWJL`, the key table | 22 |
+| 14 | 600, 650, 700 | `GSPM` | `PTYY` | `LWJL`, the key table | 20 |
+| 16 | 300, 350 | `GSPM` | `PTYY` | `LWJL` | 15 |
 
-The cookies agree with concordance's own per architecture table, which also lists `BMBM` for
-arch 7 (the older 6xx). No arch 7 sample has been seen here, so its end marker is unknown and
-it is deliberately absent from the parser. Architectures 2 and 3 use a two byte cookie and are
-a different layout.
+Measured on the containers of each architecture.[^s14][^s115][^s194] The cookies agree with
+concordance's per architecture table,[^s14] which also lists `BMBM` for arch 7, the older 6xx models, and
+a two byte cookie for architectures 2 and 3, a different layout.[^x-concordance] No arch 7 container has
+been read, so its end marker is unknown and no reader accepts it.[^s14]
 
-Note that `format` is not an architecture identifier: arch 9 and arch 14 both carry `0x1400`.
-It is a generation of the format, and the cookie is what says which architecture.
+**The Harmony 890 and 895 are the exception to everything below about slots.** Their frame verifies like
+the others, but their section table is not the base layout with slots inserted: five base slots are absent
+and eight raw slots name no base slot, so a reader written for another architecture must not answer for
+them.[^s184] [Harmony 890 and 895: memory](../architectures/harmony-890-895/memory.md) carries their slot
+map, how it was placed and what reads in it.
 
-**Arch 10 is the newest row and nothing beyond this table is read from it**, sections 115 and 117:
-two Harmony 890 configs, format 1.7 and **23 pointer slots**, both based at flash `0x030000`. The
-framing verifies and one of the two recomputes its trailer checksum, so the container layout above
-holds.
-
-**The slot mapping is stated, not derived from insertions**, sections 183 and 184. It was unknown for a
-year, and the reason it could not be guessed is the reason it now needs its own table: arch 10 is not a
-relabelling of the twenty. All 1330 ways of placing three insertions were scored by asking seventeen
-readers to parse and the best reached 34 of 47 with an eight way tie, where arch 8, 9 and 14 each score
-47 uniquely, section 117.
-
-| base slot | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| raw slot | absent | 0 | absent | 4 | 5 | 6 | 9 | 10 | absent | 11 | 12 | 14 | 15 | absent | absent | 18 | 19 | 20 | 21 | 22 |
-
-Fifteen present, **five absent** (0, 2, 8, 13 and 14) and **eight raw slots that are no base slot** (1,
-2, 3, 7, 8, 13, 16 and 17). An absent base slot is what `INSERTED_SLOTS` cannot express, so arch 10 has
-no entry there and never will: `SLOT_MAPS` carries a table per architecture, with the four insertion
-architectures derived from `INSERTED_SLOTS` so their alignment is stated once. `arch_slot` **throws** for
-an absent base slot rather than returning a number, because a number would hand a reader the
-neighbouring section.
-
-Thirteen rows were placed by their own contents, the decisive one being base slot 10's packing closure,
-and four by order between placed neighbours. **Two of those four were then wrong**, section 184: base
-slots 4 and 6 confirmed, base slots 13 and 14 refuted and absent. Base slot 13's refutation is the
-strongest single measurement here, since section 130 gives it a closure across sections: its first seven
-records hold the build timestamp's own fields, and no run of pointers in either payload has targets
-carrying those seven values, at any field offset and either width, where an arch 8 container hits
-exactly once.
-
-Three consequences for readers, and the third is the one that bit twice. **A per architecture table must
-not answer for arch 10 just because its shape happens to fit**, section 185: screen opcode 22's operand
-width had no arch 10 entry and 49 mode page programs on a Harmony 890 went unread as a result, three
-being the answer; base slot 15's group bodies had one and it is wrong there, all fourteen reading as two
-entries where arch 8's nine vary between one and fourteen, so they are refused and the shape is open; and
-`lightBandExtras`, an arch 12 firmware reading gated only on its group existing, fired on a Harmony 890
-because arch 10 declares fourteen groups where nine was the most anywhere else. **No `0xFEED` frame validates anywhere in either payload**, so an arch 10
-config does not state the names of its devices and activities the way base slot 0 does everywhere else,
-and with base slot 13 absent too a Harmony 890's device names and activity count are unread. And **base
-slot 7 is read as a header rather than as the whole section** on every architecture, because arch 10
-keeps its glyph bodies inside base slot 7's own section: a `u16` count then that many three byte
-pointers, calibrated on six containers and agreeing with the pointer free closure search on all of
-them.
-
-### Recovering the base address
-
-Needed to turn the pointers into file offsets, and derivable from the blob itself. **Anchored on
-the clock record, not on the end marker**, section 117:
-
-```
-candidates = { address_of_slot - offset_of_the_clock_record : slot in table, slot not NULL }
-base       = the single candidate that is a multiple of 0x1000 and leaves every
-             non-NULL pointer inside the blob
-```
-
-Exactly one candidate survives on 26 of the 27 containers in the corpus, spanning five architectures
-and six distinct bases from `0x002000` to `0x040000`. The anchor is a closure rather than a cookie
-match: a clock record is only accepted when its stored day of week agrees with its stored date, and
-there is exactly one accepted record per container.
-
-On the 27th, `H890-Bedroom-2-New`, the clock record sits 54 bytes off the pointer that names it and no
-candidate is aligned, so the recovery **returns nothing** and the caller falls back. That is correct
-behaviour on a container that arrived damaged, section 122, and the fallback's answer on it is
-unaligned. **A refusal is a result and must not be repaired by relaxing the filter.**
-
-Worth noting against concordance's table, which lists arch 9's `config_base` as `0x820000` where
-the derived value is `0x020000`.
-
-> **Corrected on 10 August 2026, section 117.** This used to read
-> `base = end_addr - (offset_of_end_marker - offset_of_cookie)` and call it exact on all<!--superseded-->
-> sixteen samples. That reading is right on 23 of 24 containers and wrong by 864 bytes on
-> `H890-Bedroom-2`, whose header declares an end before its own end marker. It was also
-> **circular**: the check `end_addr_points_at_end_marker` tested the assumption the base had just
-> been computed from, so no input could fail it. With the base anchored on content instead, that
-> check is real and it fails on exactly that sample. The marker subtraction remains in both
-> implementations as the fallback for a container with no clock record, and one container reaches
-> it: the second read of that same 890, where it returns an unaligned base and the circular check
-> then pronounces the file consistent. Section 122.
->
-> **Amended on 11 August 2026, section 122.** Why `H890-Bedroom-2` declares an end before its own
-> marker is not a generator error, which is what section 117 concluded: the read duplicated 16 whole
-> 54 byte chunks. So the corrected base derivation stands and the reason given for one of its inputs
-> does not.
-
-> **Corrected on 8 August 2026, section 76.** This used to end "bit 23 looks like a flag<!--superseded-->
-> rather than an address bit". Both numbers are right and they are different address spaces: a
-> `READ_FLASH` command must name `0x820000` and a 525 is silent below `0x800000`, while every
-> pointer inside the container counts from `0x020000`. Deriving the container's base from the data
-> is still what sidesteps the question here, and a reader that talks to a remote needs both.
-
-### The section table starts at `0x0B`, and an item is a spare byte plus a three byte pointer
+## The section table
 
 ```
 0x0B  { u8 spare; u24 address }[N]
 ```
 
-So the addresses land on `0x0C`, `0x10`, `0x14` and so on. The `spare` byte is **zero in every
-section of every sample**, and its meaning is unestablished; it is not known to be padding. A
-parser must not read the item as a `u32` pointer, because a nonzero `spare` would then add
-`0x1000000` to the following address and produce a plausible wrong answer rather than an error.
+The table starts at `0x0B`, so the addresses land on `0x0C`, `0x10`, `0x14` and so on. The `spare` byte is
+**zero in every section of every sample** and its meaning is not established; it is not known to be
+padding. A reader must not take an item as a `u32` pointer, because a nonzero `spare` would then add
+`0x1000000` to the address and give a plausible wrong answer rather than an error.[^s20]
 
-| Architecture | N | table ends, marker at |
-|---|---|---|
-| 8 | 21 | `0x5F` |
-| 9 | 20 | `0x5B` |
-| 12 | 22 | `0x63` |
-| 14 | 20 | `0x5B` |
-
-Derive it rather than hardcoding per model:
+`N` follows from the marker's position, `0x0B + 4 * N` being exactly the marker's offset on every
+container, and the word at `0x08` states it too:[^s20][^s194]
 
 ```
 N = (marker_offset - 0x0B) / 4
 ```
 
-The marker itself is found from the data: it is the first four uppercase letters preceded by
-three zero bytes. Those three bytes are the final section's NULL address, not padding, so the
-heuristic works for a reason rather than by luck, and it would fail on a container whose last
-section is populated. Which four letters they are is a per architecture fact, so the parser
-asserts it against the table above rather than computing it.
-
-**Corrected here.** This document previously put the table at `0x0C` with `N` one lower, treated
-the three bytes before the marker as padding, and recorded an ambiguity: whether arch 8 and
-arch 9 carried a trailing NULL slot or simply more padding. Both readings were wrong in the same
-way. Once the table starts at `0x0B` the length follows from the marker position with no
-remainder, so there is nothing left for padding to be ambiguous about. The evidence is arithmetic
-on the whole corpus: `0x0B + 4 * N` equals the measured marker offset in all seventeen samples
-across four architectures, where the old reading could only close by subtracting three bytes it
-could not account for. Every address the old parser reported was still correct, because the slot
-it lacked is NULL everywhere. See `docs/findings.md` section 20.
-### The trailer checksum
-
-**Confirmed on fourteen containers across four architectures**, sizes from 7115 bytes to 1672832,
-and derived from the boot validator rather than guessed. A sixteen bit XOR of the container's
-little endian words, seeded `0x4321`, from its first byte up to the stored value:
-
-```python
-accumulator = 0x4321
-for offset in range(0, len(blob) - 6 - 1, 2):
-    accumulator ^= int.from_bytes(blob[offset:offset + 2], 'little')
-```
-
-An odd trailing byte is not folded in, because the firmware divides the byte count by two and
-counts words, and **25<!--fact:parseable_odd_body--> of the 48<!--fact:parseable_containers-->
-parseable containers have an odd body**, of which 20<!--fact:odd_body_verifying--> verify their
-stored checksum under that rule. (This said 19 of 33 with 14 verifying, which had drifted through
-two sample additions because it carried no marker; it carries three now.) This said the corpus holds none<!--superseded-->, which made the
-behaviour read as untested when more than half the corpus tests it.
-
-**Logitech states this rule in writing, in a file type that shares no bytes with a config**, section
-196. The Harmony 300 and 350 firmware package's `Description.xml` carries
-`SEED="0x4321" ... TYPE="XOR"` with an offset, a length and an expected value, and recomputing this
-same arithmetic over that range reproduces the stated value. This entry was derived from the boot
-validator alone; the vendor's own manifest now agrees with it, by a route with nothing in common.
-`gspm.xor_words` is the one implementation, with `trailer_checksum` and the firmware package test as
-its two consumers over two different ranges.
-
-**This is the value a writer has to get right**; the remote refuses a config whose checksum does
-not recompute. It is also a weak check: a word XOR catches any single changed byte but is blind to
-two transposed words and to any even number of identical changes, so a passing checksum means the
-remote will not refuse the file, not that the file is correct.
-
-Read with `gspm.trailer_checksum` or `trailerChecksum`, and the parse reports
-`trailer_checksum_recomputes` as a container check. [findings.md](../../docs/findings.md) section 41.
-
-### Telling a config that arrived from a config that parses
-
-Two independent checks, and a reader that keeps a file should run both. Section 122, where a transfer
-was caught inserting bytes into a config without losing any:
-
-| check | catches | blind to |
+| Architecture | N | marker at |
 |---|---|---|
-| the end marker sits at `end_addr` | anything that changes the length, insertion included | damage that preserves the length |
-| the trailer checksum recomputes | a single changed byte, most insertions | two transposed words, and an insertion whose words XOR to zero, which a run of zeroes is |
+| 8 | 21 | `0x5F` |
+| 9 | 20 | `0x5B` |
+| 10 | 23 | `0x67` |
+| 12 | 22 | `0x63` |
+| 14 | 20 | `0x5B` |
+| 16 | 15 | `0x47` |
 
-An insertion of duplicated content passes neither in general and **can pass both** in one case: a
-duplicated run of zeroes inside a zero filled stretch leaves the checksum alone, and if the run is
-also outside the container it does not move the marker either. That case is harmless, because those
-bytes are not the config.
+The Harmony 300 and 350's firmware hardcodes the marker's offset at `0x47`, which makes the interpreter a
+third route to the same count.[^s259]
 
-Neither check is a validity test. A file can pass both and be wrong in ways nothing here detects; see
-the arch 9 device clone under [findings.md](../../docs/findings.md) section 117.
-#### The metadata archive, and the arch 16 slots
+The marker itself is found from the data: it is the first four uppercase letters preceded by three zero
+bytes. Those three bytes are the last item's NULL address, not padding, so the rule works for a reason, and
+it would fail on a container whose last section is populated. Which four letters they are is a fact of
+each architecture, so a reader checks them against the cookie table rather than accepting any.[^s20]
 
-**Two architectures carry a metadata archive inside the container**, section 260: a `u32` length then
-a ZIP holding one file, `MetaData.xml`, deflated with a data descriptor so the compressed length comes
-from the central directory. Each gives it a raw slot of its own and **neither is a base slot**: raw 3
-on arch 10 (Harmony 890 and 895), which sections 178 to 184 left unexplained, and raw 13 on arch 16
-(Harmony 300 and 350). No other architecture carries one.
+## Sections, and how long each one is
 
-Arch 10's is 270 bytes and describes one boolean, whether an assistant menu is shown. Arch 16's is 1513
-bytes and holds two things: the **record layout of the log area**, being an infrared event that carries
-a device, a command and a three byte time, and a device selected event; and the **naming layer**, every
-device by name and every command by index and name. The naming half is **not joined to base slot 5**:
-there are more named commands than records, 61 against 52 on one device, and the device index is not
-the group index. `metadataArchive` in `packages/codec/src/metadata.ts`. `DeviceId` there is account
-scoped and **not** a catalogue id.
+**A section's length is not stated.** The non-NULL pointers ascend with the slot number in every
+container, so sections are laid out in slot order, and a section runs to the next non-NULL pointer, the
+last one to the trailer.[^s15] A reader checks the ascent rather than assuming it, since a section length
+computed across a descending pair comes out negative.[^s139]
 
-**Arch 16 (Harmony 300 and 350) places six base slots and refuses the rest**, section 259. Fifteen
-slots, and they are not the base twenty with insertions, so nothing transfers by index:
+**That distance is an upper bound, not the section's size.** Base slot 4 holds 125 bytes and the gap to
+base slot 5 is between 419 and 1532 bytes, because base slot 5's infrared group arrays are laid out in that
+space. A section's own data can end long before the next pointer with another section's structures
+filling the rest, so a large gap is no evidence of a large section.[^s36]
 
-| raw slot | base slot | named by |
-|---|---|---|
-| 0 | 0 | the `0xFEED` frame, 131 bytes |
-| 1 | 1 | seven bytes stating architecture 16 twice, skin 104, then `0x0d` |
-| 3 | 3 | the `0xADDF` framed clock record |
-| 2 | 2 | the log area, and its eight bytes are byte for byte the Harmony 525's, section 260 |
-| 4 | 5 | the infrared database: eight groups, `u8 spare; u16 count; u24 record[]`, records in the base layout exactly |
-| 7 | 10 | the action list table: a `u16` count of 171, each list a `u8` length then three byte instructions |
-| 10 | 15 | the parameter block: a `u8` count of 5, each group a `u8` length then its bytes |
+**Which slots are NULL is a property of the architecture, not of the configuration.** Base slots 18 and 19
+are NULL in every container of the four insertion architectures below; in raw slots that is 18 and 19 on
+arch 9 and 14, 8, 19 and 20 on arch 8, and 8, 20 and 21 on arch 12, each architecture's inserted slot
+included.[^s20]
 
-Raw slot 13 holds the **metadata archive**, section 260, which is not a base slot. Raw slots 5, 6, 8,
-9, 11, 12 and 14 are **unread**, raw 14 being NULL, and `archSlot` throws for the base slots they would
-hold, so an unread slot refuses rather than answering wrongly. Raw 11 is one byte holding zero and raw
-12 is two bytes, which are base slots 16 and 17's own widths, and both are candidates rather than
-entries. Single container plus the
-skin 104 firmware, whose section seeker at `0x10BCE` computes `0x0B + 4 * slot` from a literal its
-fourteen callers load, naming raw slots 3 to 12. The firmware also **hardcodes the marker offset at
-`0x47`**, which is `0x0B + 4 * 15`, so the interpreter is a third independent route to section 194's
-pointer count.
-### Six sections are arrays of three byte pointers
+## One table, four architectures
 
-Recognised structurally rather than tabulated. A section is such an array when a `u8` or `u16`
-count at its start satisfies `width + 3 * count == section_length` exactly:
-
-```
-+0x00  u8 or u16   count
-       u24[count]  absolute flash addresses, little endian, ascending
-```
-
-Three bytes, not four, because 24 bits covers the config region with room to spare and the
-arrays are large: slot 10 of the Harmony 700 config holds 8037 entries, where a fourth byte
-would cost 8 KiB in that one section.
-
-That test picks out **the same six base slots in all fifteen config samples** across four
-architectures, and rejects every other section. Every entry lands inside the container, and
-every array ascends.
-
-The confirmation that these are pointers rather than a shape that happens to fit is the Harmony
-700 pair: two configs of one remote where the whole layout shifted by 50 bytes and then 58. In
-five of the six arrays every single entry moved by exactly that shift, and the shift is known
-independently, from the container's own pointer table. Slot 10 is the exception, and it is an
-informative one: its entries moved by fourteen different deltas, because it addresses the region
-that was rewritten rather than merely displaced.
-
-| Base slot | count width | entries, 700 | 600 | 525 | One | arch 8 |
-|---|---|---|---|---|---|---|
-| 5 | `u8` | 6 | 4 | 4 | 5 | 3 |
-| 7 | `u16` | 17 | 15 | 5 | 18 | 14 |
-| 10 | `u16` | 8037 | 4955 | 487 | 4277 | 1318 |
-| 11 | `u16` | 5711 | 3810 | 22 | 59 | 28 |
-| 12 | `u8` | 9 | 5 | 5 | 30 | 19 |
-| 15 | `u8` | 9 | 9 | 5 | 11 | 9 |
-
-What most of them point at is **not yet established**. The counts are suggestive (slot 10's
-thousands of entries against slot 5's handful) but a count is not a label. Two things are known:
-
-* **Base slots 5, 7 and 15 index the section immediately before them.** Every entry of base slot 5
-  lands inside base slot 4, every entry of base slot 7 inside base slot 6, every entry of base slot
-  15 inside base slot 14. All entries, all five configs measured, four architectures. Base slots
-  10, 11 and 12 point elsewhere, mostly into the large region ahead of slot 0.
-* **Base slot 10 is the action list address table**, below.
-### One table, four architectures
-
-The pointer table is the same table everywhere, with per architecture insertions rather than per
-architecture meanings:
+On four architectures the section table is one table with slots inserted, rather than a table whose slots
+mean different things:
 
 | Architecture | slots | insertions relative to the base layout |
 |---|---|---|
@@ -349,21 +131,201 @@ architecture meanings:
 | 8 | 21 | a NULL at slot 8 |
 | 12 | 22 | a NULL at slot 8, and a real section at slot 18 |
 
-So a base slot `b` sits at `b`, at `b + 1` for `b >= 8`, and arch 12 additionally pushes
-`b >= 17` up by one more. `src/harmony/gspm.py` implements this as `base_slot` and `arch_slot`,
-and refuses rather than guesses for an architecture whose insertions are not established.
+So base slot `b` sits at raw slot `b`, at `b + 1` for `b >= 8` on arch 8 and 12, and arch 12 pushes
+`b >= 17` up by one more. The base slot numbers are what these pages use. `gspm.base_slot` and
+`gspm.arch_slot` in `src/harmony/gspm.py` translate, and so does `SLOT_MAPS` in
+`packages/codec/src/gspm.ts`, which refuses an architecture whose alignment is not established rather than
+guessing.[^s16]
 
-Three independent fingerprints agree on this alignment across fifteen configs: the six pointer array
-slots land on base slots 5, 7, 10, 11, 12 and 15; the single **one byte** section lands on base
-slot 16; and base slot 18 is NULL. Any one of those alone would be arithmetic, and all three
-agreeing is an alignment.
+Three fingerprints in the containers agree on this alignment: the six pointer array sections below land on
+base slots 5, 7, 10, 11, 12 and 15; the single one byte section lands on base slot 16; and base slot 18 is
+NULL.[^s16] **The Harmony One's firmware addresses the table the same way**: its section seeker is called
+for every raw slot from 2 to 19 except raw slot 8, which is the NULL that architecture inserts, and it does
+seek raw slot 18, the section that architecture adds.[^s38] That added section is 2 bytes in both Harmony
+One configurations.[^s16]
 
-Why it is worth having: format work is done on arch 14, because there every config byte read
-passes through one SPI primitive, while the remote most people own is the arch 12 Harmony One. A
-section labelled on arch 14 transfers through this table instead of through a second
-investigation. The one section arch 12 has and the base layout does not, its slot 18, is 2 bytes
-in both One samples.
+What the alignment buys is that a section named on one of these four architectures is named on all four by
+its index. **The other two architectures state their own map**: the Harmony 890 and 895's is above, and
+the Harmony 300 and 350's is [below](#the-harmony-300-and-350s-slots).
 
-In the 1.6 MB Harmony One user config all 21 pointers land within the first 310 KiB. The
-remaining 1.36 MB is reached indirectly, presumably the IR code database and the touchscreen
-bitmaps.
+## Six sections are arrays of three byte pointers
+
+Six sections have the same shape, a count then that many flash addresses, recognised by the shape rather
+than tabulated: a section is such an array when a `u8` or `u16` count at its start satisfies
+`width + 3 * count == section_length` exactly.[^s16]
+
+```
++0x00  u8 or u16   count
+       u24[count]  absolute flash addresses, little endian, ascending
+```
+
+Three bytes, not four, because 24 bits covers the configuration region with room to spare and the arrays
+are large: base slot 10 of one Harmony 700 configuration holds 8037 entries, where a fourth byte would cost
+8 KiB in that one section.[^s16] The shape picks out the same six base slots in every user configuration,
+on four architectures, and no other section; every entry lands inside the container and every array
+ascends.[^s16]
+
+| Base slot | count width | what the entries address | entries, Harmony 700 | 600 | 525 | One | 880 or 885 |
+|---|---|---|---|---|---|---|---|
+| 5 | `u8` | [the infrared groups](infrared-records.md), one per device | 6 | 4 | 4 | 5 | 3 |
+| 7 | `u16` | [the font sets](screens.md) | 17 | 15 | 5 | 18 | 14 |
+| 10 | `u16` | [the action lists](actions.md) | 8037 | 4955 | 487 | 4277 | 1318 |
+| 11 | `u16` | [the screen programs](screens.md) | 5711 | 3810 | 22 | 59 | 28 |
+| 12 | `u8` | [the timers](state.md) | 9 | 5 | 5 | 30 | 19 |
+| 15 | `u8` | [the parameter groups](state.md) | 9 | 9 | 5 | 11 | 9 |
+
+The counts are one configuration of each model.[^s16] Each section is named from its firmware
+consumer.[^s32][^s46][^s17][^s40][^s43][^s44]
+
+**That these are pointers and not a shape that happens to fit** is shown by the published pair of one
+Harmony 700's configurations, whose layout shifted by 50 bytes and then 58 between them. In five of the six
+arrays every entry moved by exactly that shift, which the section table states independently. Base slot 10
+is the exception that argues the same way: its entries moved by fourteen different deltas, because they
+address a region that was rewritten rather than displaced.[^s16]
+
+**Three of the arrays index the section just before them**: every entry of base slot 5 lands inside base
+slot 4, every entry of base slot 7 inside base slot 6, and every entry of base slot 15 inside base slot 14,
+in all fifteen user configurations on four architectures. Base slots 10, 11 and 12 point elsewhere.[^t-gspm]
+
+## Finding the base address
+
+The pointers are flash addresses, so turning them into file offsets needs the address the container
+starts at, and the container does not state it. It is derived from the content, **anchored on the clock
+record** in base slot 3:[^s117]
+
+```
+candidates = { address_of_slot - offset_of_the_clock_record : slot in table, slot not NULL }
+base       = the single candidate that is a multiple of 0x1000 and leaves every
+             non-NULL pointer inside the blob
+```
+
+The anchor is a closure rather than a cookie match: a clock record is accepted only when its stored day of
+week agrees with its stored date, and there is exactly one accepted record per container. Exactly one
+candidate survives on 26 of 27 containers, over five architectures and six bases from `0x002000` to
+`0x040000`.[^s117]
+
+On the 27th, a damaged read of a Harmony 890, the clock record sits 54 bytes off the pointer that names it
+and no candidate is aligned, so the derivation **returns nothing** and the caller falls back to
+`end_addr` minus the end marker's offset, which gives an unaligned answer on it.[^s122] **A refusal is a
+result and must not be repaired by relaxing the filter.** The end marker subtraction is right on every
+undamaged container and was the first rule used; it cannot notice damage, because the check it was
+tested against is the same arithmetic run backwards.[^s117]
+
+A remote's own read address is a different number from the container's base on one model: the Harmony 525
+answers a read at `0x820000` while every pointer inside its container counts from `0x020000`, so a reader
+that talks to a remote needs both, [the Harmony 5xx memory map](../architectures/harmony-5xx/memory.md).[^s76]
+
+## The trailer checksum
+
+A sixteen bit XOR of the container's little endian words, seeded `0x4321`, from its first byte up to the
+stored value, derived from the firmware's boot validator and confirmed on fourteen containers across four
+architectures, from 7115 to 1672832 bytes:[^s41]
+
+```python
+accumulator = 0x4321
+for offset in range(0, len(blob) - 6 - 1, 2):
+    accumulator ^= int.from_bytes(blob[offset:offset + 2], 'little')
+```
+
+An odd trailing byte is not folded in, because the firmware divides the byte count by two and counts
+words.[^s41] **25<!--fact:parseable_odd_body--> of the 48<!--fact:parseable_containers--> parseable
+containers have an odd body**, of which 20<!--fact:odd_body_verifying--> verify their stored checksum under
+that rule.[^s139]
+
+**Logitech states the same rule in writing, in a file that shares no bytes with a configuration**: the
+Harmony 300 and 350 firmware package's `Description.xml` carries `SEED="0x4321" ... TYPE="XOR"` with an
+offset, a length and an expected value, and the same arithmetic over that range reproduces it.[^s196]
+`gspm.xor_words` is the one implementation, and `gspm.trailer_checksum` and `trailerChecksum` read it.
+
+**This is the value a writer has to get right**: the remote refuses a configuration whose checksum does
+not recompute. It is also weak: a word XOR catches any single changed byte and is blind to two transposed
+words and to any even number of identical changes, so a passing checksum means the remote will not refuse
+the file, not that the file is correct.[^s41]
+
+## Telling a configuration that arrived from one that parses
+
+A transfer can insert bytes into a configuration without losing any, so two independent checks belong
+after every read:[^s122]
+
+| check | catches | blind to |
+|---|---|---|
+| the end marker sits at `end_addr` | anything that changes the length, insertion included | damage that preserves the length |
+| the trailer checksum recomputes | a single changed byte, most insertions | two transposed words, and an insertion whose words XOR to zero, which a run of zeroes is |
+
+An insertion of duplicated content fails both in general and **can pass both** in one case: a duplicated
+run of zeroes inside a zero filled stretch leaves the checksum alone, and if the run is also past the
+container it does not move the marker either. That case is harmless, because those bytes are not the
+configuration.[^s122]
+
+Neither check is a validity test. A configuration can pass both and be wrong in ways nothing here detects:
+a device cloned into a Harmony 525 configuration by inserting bytes passed both checksums, drew every screen
+identically and addressed every infrared command wrongly.[^s117]
+
+## The metadata archive
+
+**Two architectures carry a metadata archive inside the container**: a `u32` length, then a ZIP holding
+one file, `MetaData.xml`, deflated with a data descriptor so the compressed length comes from the central
+directory. Each gives it a raw slot of its own and **neither is a base slot**: raw slot 3 on the Harmony
+890 and 895, and raw slot 13 on the Harmony 300 and 350. No other architecture carries one.[^s260]
+
+The Harmony 890 and 895's is 270 bytes and describes one boolean, whether an assistant menu is shown,
+[their memory page](../architectures/harmony-890-895/memory.md). The Harmony 300 and 350's is 1513 bytes
+and holds two things: the **record layout of the log area**, an infrared event that carries a device, a
+command and a three byte time, and a device selected event; and the **naming layer**, every device by name
+and every command by index and name. The naming half is **not joined to base slot 5**: there are more named
+commands than records, 61 against 52 on one device, and the device index is not the group index.[^s260]
+`metadataArchive` in `packages/codec/src/metadata.ts` reads it. Its `DeviceId` is scoped to the account
+and is **not** an id in Logitech's device catalogue.[^s260]
+
+## The Harmony 300 and 350's slots
+
+Fifteen slots, and they are not the base twenty with insertions, so nothing transfers by index. Eight base
+slots are placed and the rest refused:[^s259b]
+
+| raw slot | base slot | what it holds |
+|---|---|---|
+| 0 | 0 | the `0xFEED` name tree, 131 bytes |
+| 1 | 1 | seven bytes stating architecture 16 twice, skin 104, then `0x0d` |
+| 2 | 2 | the log area, its eight bytes byte for byte the Harmony 525's[^s260] |
+| 3 | 3 | the `0xADDF` framed clock record |
+| 4 | 5 | the infrared database: groups of `u8 spare; u16 count; u24 record[]`, records in the base layout exactly |
+| 7 | 10 | the action list table: a `u16` count, each list a `u8` length then three byte instructions |
+| 10 | 15 | the parameter block: a `u8` count, each group a `u8` length then its bytes |
+| 11 | 16 | the number sender: a count of zero with no favourite channels and one record per device that has them, in the base layout[^s262] |
+
+Raw slot 13 holds the metadata archive above. Raw slots 5, 6, 8, 9, 12 and 14 are **unread**, raw 14
+being NULL, and `archSlot` throws for the base slots they would hold, so an unread slot refuses rather than
+answering wrongly. `ARCH16_SLOT_MAP` in `packages/codec/src/gspm.ts` is the table above as code.[^s259b]
+The firmware's section seeker at `0x10BCE` computes `0x0B + 4 * slot` from a literal its fourteen callers
+load, naming raw slots 3 to 12.[^s259] Raw slot 12 is two bytes, the width base slot 17 has elsewhere, which
+makes it a candidate rather than an entry.[^s259b] What the model's own configuration holds in these slots is in
+[the Harmony 300 and 350 memory page](../architectures/harmony-300-350/memory.md).
+
+[^s14]: Measured in configurations. [Section 14](../../docs/findings.md#s14)
+[^s194]: Measured in configurations. [Section 194](../../docs/findings.md#s194)
+[^s7]: Measured in configurations. [Section 7](../../docs/findings.md#s7)
+[^t-gspm]: Measured in configurations. [The test](../../tests/test_gspm.py)
+[^s115]: Measured in configurations. [Section 115](../../docs/findings.md#s115)
+[^s259]: Read in the firmware. [Section 259](../../docs/findings.md#s259)
+[^x-concordance]: Stated by a third party. [concordance](https://github.com/jaymzh/concordance)
+[^s184]: Measured in configurations. [Section 184](../../docs/findings.md#s184)
+[^s20]: Measured in configurations. [Section 20](../../docs/findings.md#s20)
+[^s15]: Measured in configurations. [Section 15](../../docs/findings.md#s15)
+[^s139]: Measured in configurations. [Section 139](../../docs/findings.md#s139)
+[^s36]: Measured in configurations. [Section 36](../../docs/findings.md#s36)
+[^s16]: Measured in configurations. [Section 16](../../docs/findings.md#s16)
+[^s38]: Read in the firmware. [Section 38](../../docs/findings.md#s38)
+[^s32]: Measured in configurations. [Section 32](../../docs/findings.md#s32)
+[^s46]: Measured in configurations. [Section 46](../../docs/findings.md#s46)
+[^s17]: Measured in configurations. [Section 17](../../docs/findings.md#s17)
+[^s40]: Read in the firmware. [Section 40](../../docs/findings.md#s40)
+[^s43]: Read in the firmware. [Section 43](../../docs/findings.md#s43)
+[^s44]: Read in the firmware. [Section 44](../../docs/findings.md#s44)
+[^s117]: Measured in configurations. [Section 117](../../docs/findings.md#s117)
+[^s122]: Measured in configurations. [Section 122](../../docs/findings.md#s122)
+[^s76]: Measured on a unit. [Section 76](../../docs/findings.md#s76)
+[^s41]: Read in the firmware. [Section 41](../../docs/findings.md#s41)
+[^s196]: Stated by Logitech. [Section 196](../../docs/findings.md#s196)
+[^s260]: Measured in configurations. [Section 260](../../docs/findings.md#s260)
+[^s259b]: Measured in configurations. [Section 259](../../docs/findings.md#s259)
+[^s262]: Measured in configurations. [Section 262](../../docs/findings.md#s262)

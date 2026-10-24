@@ -7,9 +7,9 @@ model folder instead, and `reference/README.md` and the generator's test get upd
 ## Two configurations of one 700, and their timestamps
 
 Two configurations of one Harmony 700, published by their owner with one documented change between them,
-979184 and 979242 bytes, are a controlled pair[^s16]. **Their build timestamps order them the opposite way
-round from the owner's stated direction of the change**, and that is unresolved, so a timestamp is not used
-to order two configurations of the same remote[^s21].
+979184 and 979242 bytes, are a controlled pair[^s16]. Their build timestamps order them the opposite way
+round from the owner's stated direction of the change, which is why a timestamp does not order two
+configurations of the same remote: [the header records](../../config-format/header-records.md#dating-a-configuration-and-where-that-fails).
 
 ## The software the manual names
 
@@ -29,7 +29,6 @@ compiles for or the service's own generation decides it is not established[^unch
 * Nothing in this file is a claim about the remote beyond the cited sources.
 
 [^s16]: Measured in configurations. [Section 16](../../../docs/findings.md#s16)
-[^s21]: Measured in configurations. [Section 21](../../../docs/findings.md#s21)
 [^x-manual]: Stated by Logitech, in the manual. [The Harmony 700 user manual, the 2009 edition](https://www.manualslib.com/manual/96454/Logitech-Harmony-700.html)
 [^s295]: Measured on a unit. [Section 295](../../../docs/findings.md#s295)
 [^s347]: Measured in configurations. [Section 347](../../../docs/findings.md#s347)

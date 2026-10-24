@@ -1992,6 +1992,41 @@ class TestPointerArraySections(unittest.TestCase):
         for slot in (0, 1, 2, 3, 4, 6, 8, 9, 13, 14, 16, 17, 18):
             self.assertIsNone(c.pointer_array(slot), 'slot %d' % slot)
 
+    # Each of these three arrays addresses the section directly before it in the base layout.
+    INDEXES_ITS_PREDECESSOR = {5: 4, 7: 6, 15: 14}
+
+    def test_three_arrays_index_the_section_just_before_them(self):
+        """Base slots 5, 7 and 15 point into base slots 4, 6 and 14, every entry, every config.
+
+        `reference/config-format/container.md` stated this under "Six sections are arrays of three
+        byte pointers" with no section or test behind it; no section of `docs/findings.md` records
+        the measurement, so the argument is this test, plan 009's `t` label. It is why a section's
+        size is not the gap to the next pointer (section 36): base slot 5's group arrays fill the
+        room after base slot 4's own 125 bytes, and the same shape repeats for the font sets inside
+        the mode table's gap and the parameter groups inside the value map's. The other three arrays,
+        base slots 10, 11 and 12, address the large region of lists and programs instead, so the
+        negative is asserted too: a rule that held for all six would be a statement about pointer
+        tables in general and not about these three.
+        """
+        lab.require(*self.CONFIGS)
+        for name in self.CONFIGS:
+            with self.subTest(image=name):
+                c = gspm.parse(lab.load(name))
+
+                def entries_inside(base, predecessor):
+                    raw, before = (gspm.arch_slot(c.architecture, b) for b in (base, predecessor))
+                    low, high = c.sections[before].address, c.sections[raw].address
+                    entries = c.pointer_array(raw)
+                    return sum(low <= e < high for e in entries), len(entries)
+
+                for base, predecessor in self.INDEXES_ITS_PREDECESSOR.items():
+                    inside, total = entries_inside(base, predecessor)
+                    self.assertEqual(inside, total, 'base slot %d into %d' % (base, predecessor))
+                    self.assertGreater(total, 0)
+                for base in (10, 11, 12):
+                    inside, total = entries_inside(base, base - 1)
+                    self.assertLess(inside, total, 'base slot %d is not that shape' % base)
+
 
 class TestTheHarmony700Pair(unittest.TestCase):
     """

@@ -84,9 +84,6 @@ PINNED = {
         ('reference/architectures/harmony-one/compiler.md', 'test account'): 1,
         ('reference/architectures/harmony-one/compiler.md', 'the spare'): 3,
         ('reference/architectures/harmony-one/compiler.md', 'todo'): 5,
-        ('reference/config-format/README.md', 'bench'): 2,
-        ('reference/config-format/README.md', 'lab'): 2,
-        ('reference/config-format/README.md', 'todo'): 2,
         ('reference/config-format/actions.md', 'fixture calibration_h600'): 2,
         ('reference/config-format/actions.md', 'fixture h600_config'): 1,
         ('reference/config-format/actions.md', 'fixture h650_test_config_clean'): 1,
@@ -97,11 +94,6 @@ PINNED = {
         ('reference/config-format/activities-and-devices.md', 'fixture arch8_config_880'): 1,
         ('reference/config-format/activities-and-devices.md', 'fixture arch8_config_885'): 1,
         ('reference/config-format/activities-and-devices.md', 'fixture one_config'): 6,
-        ('reference/config-format/container.md', 'bench'): 1,
-        ('reference/config-format/container.md', 'fixture h525_safemode_ahcm'): 1,
-        ('reference/config-format/header-records.md', 'bench'): 1,
-        ('reference/config-format/header-records.md', 'dump'): 2,
-        ('reference/config-format/header-records.md', 'lab'): 3,
         ('reference/config-format/infrared-records.md', 'fixture h525_config'): 1,
         ('reference/config-format/infrared-records.md', 'lab'): 5,
         ('reference/config-format/layout.md', 'fixture calibration_favchannels'): 1,
@@ -337,7 +329,9 @@ class PlantedViolations(unittest.TestCase):
 
     def test_copy(self):
         write(self.root, 'reference/clean.md', (
-            'The metadata archive, an archived package, archive section 3, the findings archive.\n'))
+            'The metadata archive, an archived package, archive section 3, the findings archive.\n'
+            # An anchor spells the same names with hyphens, todo-reference 3.1's follow up 65.
+            '[the container](container.md#the-metadata-archive), [ours](a.md#the-findings-archive).\n'))
         write(self.root, 'reference/page.md', (
             'Cloned from logitech-harmony-ir-archive, located by HARMONY_IR_ARCHIVE under decision 15, '
             'the infrared archive by %s; the archive names it.\n' % NOT_A_NAME))
