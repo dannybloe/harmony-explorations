@@ -36,8 +36,8 @@ firmware on the same kind of hardware, stated once:
 * [Infrared](infrared/README.md): how a command becomes light, the code families and how a remote sends
   them.
 
-**[Logitech's world](logitech/README.md)**: the product line, Logitech's own software and services,
-and their data model.
+**[Logitech's world](logitech/README.md)**: a short overview of the side of a Harmony that lived at
+Logitech, and the models they sold.
 
 **[Glossary](glossary.md)**: every term these pages use, and whether it is Logitech's word, a standard
 one or one coined here.

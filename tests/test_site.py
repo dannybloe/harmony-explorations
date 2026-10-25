@@ -113,6 +113,24 @@ class Rewrite(unittest.TestCase):
         with self.assertLogs("mkdocs.hooks.site", logging.WARNING):
             self.rewrite("../../../../lab/units")
 
+    def test_pages_kept_off_the_site_go_to_github(self):
+        """`extra.off_site` in mkdocs.yml: the detail of Logitech's side stays in the repository, and a
+        link to it, from a page or from the archive, opens the file on GitHub rather than breaking. A page
+        that stays on the site beside it is untouched, so this cannot pass by sending everything away."""
+        saved = hooks._off_site
+        hooks._off_site = ("logitech/service.md", "logitech/data-model/")
+        try:
+            self.assertEqual(self.rewrite("../../logitech/service.md#accounts"),
+                             GITHUB + "/blob/main/reference/logitech/service.md#accounts")
+            self.assertEqual(self.rewrite("../../logitech/data-model/model.md"),
+                             GITHUB + "/blob/main/reference/logitech/data-model/model.md")
+            self.assertEqual(self.rewrite("../../logitech/product-line.md"), "../../logitech/product-line.md")
+            archive = ROOT / hooks.ARCHIVE_SOURCE
+            self.assertEqual(self.rewrite("../reference/logitech/service.md", page="archive/s7.md", origin=archive),
+                             GITHUB + "/blob/main/reference/logitech/service.md")
+        finally:
+            hooks._off_site = saved
+
     def test_archive_pages_resolve_from_docs(self):
         archive = ROOT / hooks.ARCHIVE_SOURCE
         page = "archive/s7.md"

@@ -38,6 +38,10 @@ reference must never name), and an archive anchor that is not a section number.
    pick another remote, which lands on the same page of that remote, and below it only the current
    remote's pages. `tools/site/overrides/partials/nav.html` draws it on wide screens; on a phone the
    full menu stays, since it is the only navigation there.
+5. **It keeps some of `reference/` off the site**, the pages listed under `extra.off_site` in
+   `mkdocs.yml`: the detail of Logitech's software, services, catalogue and data model, which belongs in
+   the repository and not in a reference a reader browses. Each is dropped from the build, and every link
+   to one, from a page or from the archive, goes to the file on GitHub instead, so nothing breaks.
 
 Nothing here is specific to a page's content, and it carries no list of files: what is published is
 `reference/` plus the archive, and the navigation is `mkdocs.yml`'s.
@@ -93,6 +97,14 @@ _github: str = ""
 _origin: dict[str, Path] = {}
 # Section numbers that exist, so an anchor to a missing one is reported rather than linked.
 _sections: set[int] = set()
+# Pages of `reference/` kept off the site, relative to docs_dir: a file, or a folder ending in `/`.
+_off_site: tuple[str, ...] = ()
+
+
+def off_site(docs_relative: str) -> bool:
+    """Whether a file of `reference/`, named relative to it, is kept off the site."""
+    return any(docs_relative == entry or (entry.endswith("/") and docs_relative.startswith(entry))
+               for entry in _off_site)
 
 
 def configure(root: Path, docs: Path, repo_url: str, sections: set[int] = frozenset()) -> None:
@@ -109,7 +121,9 @@ def configure(root: Path, docs: Path, repo_url: str, sections: set[int] = frozen
 
 
 def on_config(config):
+    global _off_site
     configure(Path(config.config_file_path).parent, Path(config.docs_dir), config.repo_url)
+    _off_site = tuple((config.extra or {}).get("off_site", ()))
     return config
 
 
@@ -223,6 +237,9 @@ def on_files(files, config):
     _sections.update(numbers)
     _origin.clear()
 
+    for kept_off in [f for f in files if off_site(f.src_uri)]:
+        files.remove(kept_off)
+
     pages = {f"{ARCHIVE_DIR}/index.md": _index_page(preamble, sections)}
     for number, heading, body in sections:
         pages[f"{ARCHIVE_DIR}/s{number}.md"] = _section_page(number, heading, body, numbers)
@@ -277,6 +294,10 @@ def _rewrite(target: str, page_uri: str, origin: Path | None) -> str:
     if resolved == _root / ARCHIVE_SOURCE:
         landed = _archive_target(fragment, where)
         return posixpath.relpath(landed, page_dir)
+
+    if resolved.is_relative_to(_docs) and off_site(resolved.relative_to(_docs).as_posix()):
+        relative = resolved.relative_to(_root).as_posix()
+        return f"{_github}/blob/{BRANCH}/{relative}" + (f"#{fragment}" if fragment else "")
 
     if resolved.is_relative_to(_docs):
         if origin is None:

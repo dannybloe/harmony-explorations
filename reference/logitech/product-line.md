@@ -33,7 +33,7 @@ while the 610 to 688 beside them are on it[^x-notice]. Which architecture each l
 
 ## The live catalogue
 
-Logitech's configuration service answers `ProductsManager/GetAllProducts` with 120 product records, 80 of
+Logitech's configuration service lists 120 product records, [the configuration service](service.md), 80 of
 them carrying a skin below 100[^s131]. Each record states a skin, a display name, an enabled flag and the
 device and favourite channel maxima the software allows[^t-product-table]. **19 skins are enabled**, and the
 list the service offers when a person sets up a remote is exactly those 19, so a disabled product, the

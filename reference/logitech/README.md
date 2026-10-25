@@ -14,16 +14,12 @@ gone, its remotes keeping whatever configuration they last received[^x-notice].
 
 * [The product line](product-line.md): which models Logitech sold, under which names, and which its
   software stopped serving.
-* [The clients](clients.md): the programs a person used, from the classic desktop software to MyHarmony
-  and Harmony Desktop, and the user manuals, and what each is worth as a source.
-* [The classic client on the wire](classic-client.md): what Logitech's own software sends to a remote,
-  packet by packet.
-* [The configuration service](service.md): accounts, compiles, the catalogue, button maps.
-* [The software update service](update-service.md): where firmware comes from.
-* [The device catalogue](device-catalogue.md): how Logitech named devices, their codes and their
-  categories.
-* [The data model](data-model/model.md): what the service stores, entity by entity, with
-  [every contract listed](data-model/entities.md).
+
+The detail of that side is kept in the repository and not on the website: [Logitech's
+clients](clients.md), from the classic desktop software to MyHarmony and Harmony Desktop, and the user
+manuals; [what the classic client sends to a remote](classic-client.md); [the configuration
+service](service.md) and [the software update service](update-service.md); [the device
+catalogue](device-catalogue.md); and [the data model](data-model/model.md) of what the service stores.
 
 **A fact Logitech states is marked as theirs.** Each footnote says where it was stated: in a manual, by
 their service, in their client or in their catalogue. A fact believed on the word of Logitech's client

@@ -84,6 +84,18 @@ markdown_extensions:
 
 # The order a reader meets, plan 009 section 1, "The website's navigation". Pages the plan names that do
 # not exist yet are listed all the same, so the strict build reports each until its step writes it.
+# Kept in the repository and off the site: the detail of Logitech's software, services, catalogue and data
+# model. The section on the site is an overview. tools/site/hooks.py drops these from the build and sends
+# every link to one of them to the file on GitHub.
+extra:
+  off_site:
+    - logitech/clients.md
+    - logitech/classic-client.md
+    - logitech/service.md
+    - logitech/update-service.md
+    - logitech/device-catalogue.md
+    - logitech/data-model/
+
 nav:
   - Introduction: README.md
   - How a Harmony works: how-a-harmony-works.md
@@ -272,12 +284,4 @@ nav:
   - Logitech's world:
       - logitech/README.md
       - Product line: logitech/product-line.md
-      - Clients: logitech/clients.md
-      - The classic client: logitech/classic-client.md
-      - The configuration service: logitech/service.md
-      - The update service: logitech/update-service.md
-      - The device catalogue: logitech/device-catalogue.md
-      - The data model:
-          - logitech/data-model/model.md
-          - Entities: logitech/data-model/entities.md
   - Glossary: glossary.md
