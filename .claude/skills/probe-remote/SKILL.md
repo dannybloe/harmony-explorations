@@ -9,11 +9,9 @@ The project is read only, and these remotes are irreplaceable. So a hardware mea
 having and is also the easiest place to do permanent damage. This skill is the ritual that separates
 the two.
 
-This used to add "with Logitech's recovery servers gone", which is wrong: the MyHarmony service was
-measured alive on 7 August 2026 and we can sign in and read a remote through it. The classic
-`members.harmonyremote.com` service is the one that is discontinued. Nothing about the rails
-changes, because a remote is still irreplaceable, the service can go at any time, and it has not
-been shown to compile a config any more. See `docs/findings.md` section 56.
+Logitech's live service being alive changes none of this, since a remote is still irreplaceable and the
+service can go at any time; this line once said the recovery servers were gone, which confused the live
+service with the discontinued classic one, section 56 and `reference/logitech/service.md`.
 
 ## Stop before you experiment: is the answer written down somewhere already
 
@@ -29,22 +27,24 @@ them in, not a ranking of what to believe:
 
 1. **Logitech's own client**, mirrored in the lab. It **builds** the packets, so the framing is code
    rather than inference. **MyHarmony is the reference client**, `work/myharmony/xap/`, and for how a
-   remote is driven or which service call to make it is the only one to read, per Danny's instruction of
-   28 August 2026 and the rule in `reference/logitech/clients.md`. Harmony Desktop's mirror is the source for
+   remote is driven or which service call to make it is the only one to read, per decision 2 and
+   `reference/logitech/clients.md`. Harmony Desktop's mirror is the source for
    exactly two things and they are the ones nothing else holds: the file family's per skin templates
    under `software/desktop-webapp/mirror/*/opt/desktop-app-scripts/libs/ds/templates/SKIN<n>/`, and the
-   parameter encoders in `en.desktop-app-main.js`. `reference/logitech/clients.md` is the ledger and decision 2
-   the standing.
-2. **The firmware**, which is the authority when the two disagree, and `docs/memory-map-*.md` for where
-   to look per architecture.
-3. **`docs/findings.md`**, by grep rather than by memory, and `reference/` for the catalogues.
+   parameter encoders in `en.desktop-app-main.js`. A fact resting on the client alone carries "Stated by
+   Logitech, in their client" in its reference footnote, and a search for those words is the ledger.
+2. **The firmware**, which is the authority when the two disagree. Where to look per architecture is that
+   architecture's `memory.md` and `firmware.md` under `reference/architectures/`, and what each command
+   does is `reference/usb-protocol/`.
+3. **`reference/`** for what is already established, and **`docs/findings.md`**, the frozen archive, by
+   grep rather than by memory for the argument behind it.
 
 Then write down which of the three you checked, in the finding or in the commit. **The absence of that
 line is the signal**, because nothing can test that somebody failed to look somewhere.
 
 **Why this is a gate and not advice.** On 28 August 2026 a session spent six rounds of hardware guessing
-the parameter framing of the file protocol, got a refusal every time, and had to be told by Danny to
-look at the client. The answer was one function, `molsonparamwriter.getBytes`, and it had been in the
+the parameter framing of the file protocol, got a refusal every time, and had to be told to look at
+the client. The answer was one function, `molsonparamwriter.getBytes`, and it had been in the
 lab since 9 August. Both guesses tried against the remote were wrong and neither was close. Section 200.
 
 **The failure mode is momentum, not ignorance.** The rule already existed, as decision 12, and it reads
@@ -61,9 +61,11 @@ near miss is the same day's other lesson, where a filename turned out to be a ve
 
 `openHarmony` refuses three families on purpose: the **file based** remotes (Harmony Touch, 300 and
 350), the **tunnelled** ones (the Harmony 890 platform), and a remote sitting in its **bootloader**.
-The argument for each, what the file protocol looks like and why a path on it can be an action, is
-in `docs/README.md` under "Where things go", moved there out of `CLAUDE.md`. Read it before
-widening any of those refusals.
+The argument for each refusal is in `docs/README.md` under "Where things go", and it is about this
+library, so it stays there. What each family speaks is the reference's: the file protocol and why a path
+on it can be an action, `reference/usb-protocol/file-protocol.md`; the tunnelled transport,
+`reference/architectures/harmony-890-895/usb.md`; the bootloader, `reference/usb-protocol/bootloader.md`.
+Read both before widening any of those refusals.
 
 ## The rails
 
@@ -78,103 +80,53 @@ that path and must never grow one that sends a command.
 
 **Read commands are allowed, through the library.** This section used to say never send a command at
 all, on the grounds that the command layer was unverified against hardware. It is verified now:
-`GET_VERSION`, `READ_MISC` and `READ_FLASH` have run on both bench remotes and a flash read matches
-each unit's own dump byte for byte. A stale rail is worse than no rail, because the first person to
-need the forbidden thing learns to ignore the document. So the rule is the narrower one it should
-always have been:
+`GET_VERSION`, `READ_MISC` and `READ_FLASH` have run on every model this library opens, the Harmony One,
+525, 600, 650 and 700, and a flash read matches each unit's own dump byte for byte. A stale rail is worse
+than no rail, because the first person to need the forbidden thing learns to ignore the document. So the
+rule is the narrower one it should always have been:
 
 * Go through `packages/usb`, never a one off script that opens the device itself. The refusals live
   there.
-* **Never ask for an odd count on an internal memory read.** It hangs the remote: the fetch loop
-  reads a word, subtracts two and exits on zero, so an odd count runs away. `readInternalMemory`
-  refuses odd counts and nothing else, which is the same rule stated sixteen lines below.
-  **There is no length cap and this said there was one**, "refuses more than 62 bytes",<!--superseded--> until
-  29 August 2026: 124 bytes is two chunks and reads fine, and 65 and 127 hang despite being over a
-  chunk in a different way. Sections 94 and 96.
+* **Never ask for an odd count on an internal memory read.** It hangs the remote, and even a read that
+  returns has overwritten 2247 bytes of its memory; the mechanism is
+  `reference/usb-protocol/commands.md`, "The odd count hazard". `readInternalMemory` refuses odd counts
+  and nothing else. **There is no length cap and this said there was one**, "refuses more than 62
+  bytes",<!--superseded--> until two earlier refusals turned out to be bounds around the hazard rather
+  than the hazard, the second of which would have let 65 and 127 hang a remote, sections 94 and 96.
+* **`HARMONY_ODD_READ_EXPERIMENT=1` is the only way past that refusal**, a named door in `rails.ts`.
+  The refusal was bypassed twice by patching `remote.ts` and patching it back, and a rail edited under
+  time pressure with nothing in the tests to say so is worse than a door that announces itself.
 * Health check between provocations: read something with a known answer, usually a config window
   against the lab dump, and stop at the first failure to recover.
-* One remote at a time, and identify which one before trusting any per unit number. Two Harmony Ones
-  are on the bench and they are not interchangeable.
+* One remote at a time, and identify which one before trusting any per unit number. Three Harmony Ones
+  are on the bench, and the Harmony 600 and 650 report the same product id and architecture, so units
+  that enumerate alike are not interchangeable; the identity block tells them apart.
 
-## What a bench session does to a remote, measured
+## What a bench session does to a remote
 
-Moved out of `CLAUDE.md` on 29 August 2026. Every paragraph is a measurement on the remotes here, and
-the reason they belong at the moment of connecting rather than in every session's context is that
-none of them is a rule to obey: they are what to expect, and what not to re-derive.
+What to expect, so that it is not re-derived: each of these cost a round of hardware. The facts are the
+reference's, `reference/remotes/harmony-one/behaviour.md` "On the cable", and the history is
+`docs/test-notes/harmony-one.md` "Stranding".
 
-**The first one is a rail as well as a hazard**, and `packages/usb` enforces it, so the mechanism
-below is why the refusal exists rather than something a caller has to remember.
+* **A clean read only session leaves a remote normally**, so a session needs to send nothing at the end.
+  USB mode is left on the cable's removal while the command state is zero, and a completed read clears
+  its own state.
+* **A hang ends in a genuine device reset**: the remote reboots, its data memory and clock are reset,
+  and its configuration is intact. So nothing a hang corrupts survives it.
+* **The escape's `0x01` ends a session and is not a reset; `0x02` restarts the remote**,
+  `reference/usb-protocol/commands.md`. `packages/usb/bin/end-session-experiment.ts` sends the first,
+  is gated by `assertSessionEndAllowed`, and is deliberately unrun because the controls made it
+  unnecessary.
+* **A Harmony One left idle in USB mode can drop its first command**, and a retry answers in full.
+  `getVersion` resends once when a remote that has never spoken says nothing, and that bounded retry is
+  the only one: everything after the first command stays strict.
+* **What strands a remote until its battery comes out is unexplained, and it is parked.** Expect it, a
+  battery pull clears it, and nothing here knows why. What reopens it is another occurrence, nothing
+  else, and **do not re-derive the dead leads**, which the test notes list.
 
-**Reads of internal program memory restart a remote, so read only is not the same as harmless.**
-`READ_FLASH` with top address byte `0xFF`, when the transfer ends in a one byte chunk, makes the
-remote leave the USB bus. Reproduced deliberately on the spare One, then still unprogrammed: 5
-restarts, all self-recovering, config verified against the dump afterwards. Ruled out: ordering,
-chunk count, and the size 63 by itself. **The cause is read now**, section 94: the internal fetch
-primitive can only read a word, the loop emits two bytes and subtracts two, and its exit test is
-equality with zero, so an **odd** count never terminates and `CLRWDT` inside the loop keeps the
-watchdog from ending it. `packages/usb` refuses an odd count. Two earlier refusals were bounds
-around the hazard rather than the hazard, and the second would have let 65 and 127 hang a remote.
-**The trigger is read all the way through, section 96, and there is no address threshold.** The
-sender at `0x20394` has no bound, so an unterminated loop walks a write pointer up through data
-memory writing what it reads, and after 2247 bytes it overwrites its own counter. The read returns
-if and only if the flash byte it lands on, `0x8C7` above the failing chunk, is **even**. So the
-outcome is content, not location: the threshold at `0x010A56` reported earlier the same day was an
-artefact of which offsets the bisection tried, and it is corrected in place. The rail refuses odd
-counts everywhere, and the case that returns is no better, because it has already scribbled 2247
-bytes over the remote's memory.
-
-**A clean read only session does not strand a remote, and that is measured three times out of three.**
-On 10 August 2026 three rounds of one plain 32 byte read, then the cable out, each left the spare One
-**out** of USB mode and on its normal display. So version 1 of FreeHarmony needs to send nothing at
-the end, and the awkward choice section 95 posed does not arise. USB mode's exit is gated on the command state variable
-`0x284` being zero, section 99, and a completed `READ_FLASH` clears its own state, so a clean session
-leaves the gate open.
-
-**A hang does not strand one either, and it ends in a genuine device reset**, section 100, measured on
-10 August 2026: the remote reboots, comes up in USB mode, and **its clock is reset**, which a
-re-enumeration does not do. So data memory is reinitialised and no corruption survives a hang, which
-refutes the idle flag hypothesis by mechanism rather than by measurement. "A self-clearing restart" was
-the weaker name for two days.
-
-**What does strand one is unexplained, and it is PARKED**, decided on 10 August 2026 on the reading
-that it may be an anomaly of that one unit: the spare has been synced by Logitech's
-software, hung deliberately more than a dozen times and had its batteries pulled repeatedly, and it is
-the only remote it has ever happened to. **What reopens it is another occurrence, nothing else.** Three leads followed
-and all three dead: the disconnect on its own, falsified by three control rounds; the hang's RAM
-corruption, refuted by mechanism since the hang resets the device; and the charger to USB transition,
-which behaved like every other round on 10 August 2026. **Do not read that as a narrowing.** A bench
-session should expect a stranding, a battery pull clears it, and nothing here knows why. Untested and
-not leads until something suggests a mechanism: those two sessions ran dozens of commands where every
-round here ran one, and both followed hours of continuous bench work rather than a remote picked up
-cold. `session-end-control.ts [--from-charger]` is the instrument, and its charger mode refuses to
-start with the remote already on USB because its first wait is the measurement. **Do not re-derive the
-dead leads**: each cost a round of hardware, and if it happens again the two things to capture in the
-moment are how many commands the session had sent and whether the screen still said USB mode before
-anything was unplugged. Every previous occurrence lost both.
-
-**Both were captured on 23 August 2026 and the answer narrows it**, section 155, on a milder instance
-that recovered by itself. A Harmony One that had sat in USB mode for about forty minutes after a sync
-by Logitech's own software dropped its first `GET_VERSION` entirely; the screen said "USB Connected",
-this session had sent it **zero** commands, the cable was never touched, and the next attempt answered
-and read the whole config off it. Its clock excludes the obvious explanation by measurement rather than
-by argument: uptime was continuous with the boot that followed the sync, so **no reset happened between
-the failure and the recovery**. So a busy session is not the trigger and a disconnect is not the cure,
-and what the cases share is idleness rather than traffic. It is **not proof they are the same event**,
-since this one cleared on a retry and the earlier two needed a battery pull, and the unexplained case
-stays open. What changed in the code is one bounded thing: `getVersion` resends once when a remote that
-has never spoken says nothing, because otherwise a person plugging a remote in sees a hard failure that
-a second attempt clears.
-`packages/usb/bin/idle-flags-after-hang.ts` is kept for its baseline leg and because it is what
-demonstrates the reset. It needs `HARMONY_ODD_READ_EXPERIMENT=1`, which is a **named door** in
-`rails.ts` rather than a source edit: the odd count refusal was bypassed twice by patching
-`remote.ts` and patching it back, and a rail edited under time pressure with nothing in the tests to
-say so is worse than a door that announces itself. `0xE0 0x01` clears the gate and is not a reset, `0xE0 0x02` reboots, section 97;
-`packages/usb/bin/end-session-experiment.ts` exists, is gated by `assertSessionEndAllowed`, and is
-**deliberately unrun** because the control made it unnecessary.
-
-**Two things to capture if a stranding happens**, because every previous occurrence lost both: how
-many commands this session had sent, and whether the screen still said USB mode before anything was
-unplugged.
+**Two things to capture if a stranding happens**, because the two occurrences that needed a battery pull
+lost both: how many commands this session had sent, and whether the screen still said USB mode before
+anything was unplugged. `packages/usb/bin/session-end-control.ts` is the instrument for a control round.
 
 ## What works on this machine, and what silently does not
 
@@ -214,15 +166,15 @@ unplugged.
 
 ## Method
 
-1. **Write the prediction down first**, in the document, before looking. A measurement that
+1. **Write the prediction down first**, and commit it, before looking. A measurement that
    confirms a number nobody committed to in advance is worth much less. The `bcdDevice 0x1071`
    result was worth having precisely because the prediction was already published.
 2. Measure with the commands above. Record the raw values, not just the interpretation.
 3. **Compare field by field against the image**, and say which fields agree rather than
    "it matches". A summary hides the one field that did not.
 4. Ask what the measurement settles that the images could not. The endpoint numbers and the
-   600's skin were unobtainable from the 600's own dump, which is truncated before its
-   descriptor block, so they had rested on a remote nobody here owns.
+   600's skin were unobtainable from the 600's first dump, which was truncated before its
+   descriptor block, so they had rested on a remote nobody here owns until the unit answered.
 
 ## Where the result lands
 
@@ -234,10 +186,11 @@ Follow the `finding` skill for the write-up, plus three things specific to hardw
 * **Say it was hardware.** Every hardware-derived number in `reference/` carries a footnote whose
   evidence words are "Measured on a unit.", per the footnote convention in `reference/README.md`,
   and a number read off the image says "Read in the firmware." instead.
-* **Check the provenance claim in `docs/findings.md`.** Its introduction states what kind of
-  analysis produced the document, and it said "no hardware probing" until the first
-  measurement made that false. If a measurement makes that paragraph wrong, correct it in the
-  same commit, in place, rather than leaving it standing.
+* **Keep the unit out of the reference.** The reference states what the model does; which unit was
+  read, what was sent to it and in which session goes to that model's `docs/test-notes/` file. The
+  argument for a new measurement lives in the header of the test that pins it, footnoted `[^t-name]`,
+  since `docs/findings.md` is a frozen archive and takes nothing new. Write the prediction down in
+  `docs/predictions/` or the test notes before the read.
 
 ## Things that are cheap while a remote is connected
 

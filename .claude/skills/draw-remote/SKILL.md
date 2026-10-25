@@ -12,7 +12,8 @@ the same on all models, and the buttons have to sit where they really sit, becau
 keys are all on a horizontal axis is a picture nobody recognises.
 
 **The geometry is code and the SVG is output.** A model is a measured table in
-`packages/silhouettes/src/models/<id>.ts` and `bin/generate.ts` writes
+`packages/silhouettes/src/models/<id>.ts` and `bin/generate.ts` (paths in this skill without a leading
+`packages/` are inside `packages/silhouettes/`) writes
 `reference/silhouettes/<id>.svg` from it. Never edit the SVG. A test asserts the checked in file is
 byte for byte what the generator produces, so a hand edit fails the suite rather than surviving.
 
@@ -221,6 +222,13 @@ own maps decided on the Harmony 600 and the Harmony One, 125 for the One's touch
 the 600. `make remote-reference` prints each as a footnote on the model's keys page, so a keys page must
 define that section's footnote, and a new source is a new row in `SCAN_SOURCES` with its own sentence.
 
+**In the SVG a code is the `data-scan` attribute, and only an established one.** `toSvg` writes
+`data-scan` from `scan` and `data-scan-candidates` from `scanCandidates`, and nothing else puts either
+there, so the attribute's absence on a key is the statement that its code is unknown. A drawing once
+carried no `data-scan` at all, on the reasoning that filling one in would mean guessing the rest; it would
+not, since leaving the attribute off is exactly what says unknown. FreeHarmony reads the attribute, which
+is why it may never carry a guess.
+
 **Never invent a scan code.** `scan` is present only where an archive section established it, which is
 38 of 44 keys on a Harmony One, 41 of 54 on a Harmony 600, none of the 50 on a Harmony 525 and none of
 the 55 on a Harmony 350. A wrong scan code is invisible: the interface then shows the wrong assignment
@@ -342,8 +350,11 @@ drawing coordinates, so anything expressed in screen pixels lands in the right p
 * the checked in SVG regenerated, so the byte for byte test passes
 * every name unique within the model, every `catalogue` name carrying a scan code its `scanFrom`
   names, and the counts per source in `test/models.test.ts`
-* at least one key row genuinely at an angle, so a drawing that forgot this step fails rather than
-  passes
+* its angles accounted for in `a model that has no tilted key says so by measurement` in
+  `test/models.test.ts`: a traced model goes in `LEVEL`, since its tilt is in the path and every `angle`
+  is 0, and a model measured off a photograph stays off it, so the test demands at least one key at an
+  angle and a drawing that forgot step 3 fails. This bullet asked every model for an angled row until
+  `todo-reference.md` 6.2; every model drawn so far is traced and level
 
 ## Step 8: the check that actually decides it
 
@@ -362,10 +373,21 @@ otherwise.
 
 ## Adding a model
 
-1. Make `reference/remotes/harmony-<model>/` with the same ten files, copying the headings of an
-   existing folder.
-2. Add the model to `REMOTES` in `packages/silhouettes/bin/remotes.ts`: its skins, the drawing it
-   uses and its architecture. A model with no drawing of its own uses its sibling's where the project owner or the
-   manual says the face is shared, and says so in `keys.md`.
-3. Put the markers where the generator expects them and run `make remote-reference-write`.
-4. If its architecture has no folder yet, add one and a row in `ARCHITECTURES`.
+A model joins the reference and the drawings together, and the reference's layout is plan 009's.
+
+1. Make `reference/remotes/harmony-<model>/` with the same ten files, README, keys, display, features,
+   behaviour, hardware, memory, firmware, usb and misc, copying the headings of an existing folder. Every
+   fact in them carries a footnote in plan 009 section 4's convention, and nothing about our unit goes
+   there: the unit's notes start `docs/test-notes/harmony-<model>.md`, and `docs/test-notes/README.md`
+   gets its row.
+2. Add the model to `REMOTES` in `packages/silhouettes/bin/remotes.ts`: its skins, the drawing it uses
+   and its architecture. A model with no drawing of its own uses its sibling's where the manual or the
+   person holding both says the face is shared, and says so in `keys.md`; a model nobody has drawn yet
+   leaves the drawing out, and its keys and display blocks say none exists, as the Harmony 885's and
+   890's do. The skin table in `reference/remotes/README.md` is generated from `MODELS_BY_SKIN`.
+3. Put the markers where the generator expects them and run `make remote-reference-write`, then
+   `make remote-reference`; `test/remotes.test.ts` checks every folder against its row.
+4. If its architecture has no folder yet, add one under `reference/architectures/`, named for the models
+   a reader holds rather than for the number, and a row in `ARCHITECTURES` naming the files it holds.
+5. Drawing it is steps 1 to 8 above, and a model skill, if it gets one, follows the shape of the others:
+   where its facts are, the procedure, and where things live.

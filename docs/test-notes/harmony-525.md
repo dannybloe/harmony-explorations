@@ -107,7 +107,11 @@ control, the clock prediction's outcome 1, section 137.
 The unit was put into safe mode by the published key procedure and would not come out, so the state was
 measured rather than wasted, section 118: internal program flash before and after, the stored copies, the
 version block and the product string in safe mode. EEPROM byte 0, the bootloader's install byte, read 0
-while it was stranded, section 119.
+while it was stranded, section 119, where 3 had been predicted; so safe mode persisted by being resident
+and not by being reinstalled at each boot, and only that byte could tell the two apart. The image at
+external `0x800000` had been labelled the safe mode image from its header before the unit stranded, and
+the stranded unit's version reply matched that image's five version accessors exactly, which is the
+calibration for the label.
 
 Leaving it was done once, by hand, from a script in the private lab that set byte 0 to 2 and restarted the
 remote, and the unit came back with its application and its configuration intact, section 119. This

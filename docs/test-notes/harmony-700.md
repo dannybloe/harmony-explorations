@@ -13,6 +13,11 @@ flash, section 295, and was then taken to 2.8 by staging Logitech's image and in
 297. Both internal pages, external flash from `0x000000` and the configuration region were read off it
 before and after each step, and the reads are in the lab.
 
+**Logitech's clients did not repair it**, section 295: MyHarmony's sync failed, for a reason not
+established, and Harmony Desktop's sync wrote a configuration and left the application as it was. The
+repair changed exactly the damaged page: the internal pages read afterwards differ from the arrival reads
+in 1005 bytes, all in the page at `0x10000`.
+
 * **The staging region** at external `0x000000` held the 2.5 application, 71552 bytes, verifying, when
   first read. Since section 297 it holds the 2.8 image, 76672 bytes, to `0x012B80`, and is erased past it.
 * **The configuration** at `0x030000` was the previous owner's, 974009 bytes, every structural check

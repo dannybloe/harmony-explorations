@@ -186,6 +186,15 @@ format pages in step 4.1.
   also left the ordinary screen, so the drop is what closed the symptom.
 * **The bare send**, section 278: three writes, the composed activity's send without its `0x7C` went out
   on a key press and not when the start's transition ran it; with the pair the television came on.
+* **The variable painted over**, section 276: a device composed with base slot 13's `count` raised alone
+  appeared on the activity menu, beeped when pressed and started nothing; a read only look at the connected
+  spare found the `0xFE` run beginning at exactly the byte `narrow + 2 * wide` predicts, the activity's own
+  variable the first casualty. That is what `assertStateTableConsistent` answers.
+* **The 25 step sequence that hung a One**, 23 August 2026: three hangs out of three under heavy tapping of
+  the touch panel, the battery out each time, against five gentle or untouched runs that completed. It was
+  deliberately not written up as a finding; the run table and the notes sit in the lab beside the
+  configuration, `../lab/reads/20260823T1408Z-onres-sequence-NOTES.md`, so a missing section does not mean
+  it is unread. The queue depth behind the rail is section 238.
 * **The nine device lists carried the old page total**, section 293: the seventh device composed in
   section 241 gave every device list a third page and the headers still drew `2`; the configuration
   written in section 293 restated all nine.
@@ -231,6 +240,30 @@ as what the cases share, after section 155, and point here.
 A Harmony One occasionally strands after sitting idle on USB, which a battery pull clears, `CLAUDE.md`.
 Section 155 is the occurrence that was measured, and it was cleared by a retry alone, without a battery pull;
 whether every stranding is that same dropped first command is not settled.
+
+The history, moved here from the `probe-remote` skill by plan 009's step 6.2:
+
+* **Two strandings needed a battery pull**, both on the spare, which by then had been synced by Logitech's
+  software, hung deliberately more than a dozen times and had its batteries pulled repeatedly. It is the
+  only remote it has happened to, and on that reading the question was **parked** on 10 August 2026: what
+  reopens it is another occurrence, nothing else.
+* **Three leads were followed and all three are dead.** The disconnect on its own: three control rounds of
+  one plain 32 byte read and the cable out each left the spare out of USB mode on its normal display,
+  section 99. The hang's corruption of data memory: refuted by mechanism, since a hang ends in a genuine
+  device reset that reinitialises data memory and resets the clock, section 100. The charger to USB
+  transition: it behaved like every other round, the same day.
+* **Untested, and not leads until something suggests a mechanism**: both strandings came in sessions that
+  sent dozens of commands where each control round sent one, and both followed hours of continuous bench
+  work rather than a remote picked up cold.
+* **Neither earlier occurrence recorded** how many commands the session had sent or whether the screen still
+  said USB mode before anything was unplugged. Section 155's milder case recorded both: zero commands, and
+  "USB Connected" on the screen after about forty minutes idle following a sync, which is why idleness
+  rather than traffic is what the cases share.
+* **The instruments**: `packages/usb/bin/session-end-control.ts [--from-charger]`, whose charger mode refuses to start with
+  the remote already on USB because its first wait is the measurement; `packages/usb/bin/idle-flags-after-hang.ts`, kept for
+  its baseline leg and for demonstrating the reset, behind `HARMONY_ODD_READ_EXPERIMENT=1`; and
+  `packages/usb/bin/end-session-experiment.ts`, gated by `assertSessionEndAllowed` and deliberately never run, because the
+  controls made it unnecessary.
 
 ### Telling the two Ones apart
 

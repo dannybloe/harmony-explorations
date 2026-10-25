@@ -21,12 +21,15 @@ In this order, every time, including in an agent:
 1. `reference/remotes/harmony-touch/README.md`: the key numbers and the map of its nine topic files. Then
    open the topic file the task touches, above all `usb.md` for anything on the cable. Its family, the
    firmware and the disputed architecture number are in `reference/architectures/harmony-touch/`.
-2. `reference/architectures/harmony-300-350/usb.md`: the file based family's transport rails are argued
-   there, for the Harmony 300 and 350, and they are the same transport.
+2. `reference/usb-protocol/file-protocol.md`: the file based family's protocol, which the Touch speaks,
+   and `reference/architectures/harmony-300-350/usb.md`, where the transport's rails are argued for the
+   Harmony 300 and 350 on the same transport.
 3. `reference/how-a-harmony-works.md` when the task touches what the remote does for a person.
+4. `docs/test-notes/harmony-touch.md` for what was done to the bench unit, the first contact and the
+   paths tried.
 
 **Its architecture is disputed and stays disputed.** Logitech's templates say 18 and the remote reports 17;
-findings section 197 holds both and settles neither. In conversation say "the Harmony Touch" and, where a
+`reference/architectures/harmony-touch/README.md` holds both with their sources and settles neither. In conversation say "the Harmony Touch" and, where a
 number is needed, give both and say which source each came from.
 
 **When the reference does not answer a question about the remote, ask** before designing around the gap,
@@ -67,6 +70,8 @@ test; the read itself goes into the lab.
 | the transport | `packages/usb/src/filepipe.ts`, with `INERT_PATHS`; the refusal in `packages/usb/src/transport.ts`, `FILE_BASED_PRODUCTS` |
 | the read script | `packages/usb/bin/read-file-identity.ts` |
 | the protocol | `reference/usb-protocol/file-protocol.md` |
+| its family, firmware and the disputed number | `reference/architectures/harmony-touch/` |
+| the bench unit's notes | `docs/test-notes/harmony-touch.md` |
 | what Logitech's client does for it | `reference/logitech/clients.md` and findings sections 202 and 203 |
 
 ## Related
