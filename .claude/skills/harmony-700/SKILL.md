@@ -32,9 +32,9 @@ on 9 October 2026, and is folded into the reference's `memory.md`; the unit's ow
 and land the answer in the reference afterwards with its source.
 
 **What differs from the 650 and catches a session out**: the 700 runs build 2.8, not 0.2, so no address
-read on the 0.2 builds transfers without checking; its mode 0 is a charging battery and its "add an
-Activity" placeholder is another mode; and it charges, so it may be on its adaptor rather than on a
-computer.
+read on the 0.2 builds transfers without checking; its first modes are a charging battery, so every mode
+number the 650 uses shifts, `reference/remotes/harmony-700/display.md`; and it charges, so it may be on
+its adaptor rather than on a computer.
 
 ## 2. Writing a configuration to the bench 700
 
@@ -60,7 +60,8 @@ as the Harmony 650's in `harmony-650` with the 700's names.
          --config <file> --dump <region name> --commit
 
    The identity block read off the remote must match the lab's `h700` record, and the writer refuses a
-   build other than 2.8, whose cache drop and restart were read, findings sections 97 and 299.
+   build other than 2.8, whose cache drop and restart were read,
+   `reference/architectures/harmony-600-650-700/firmware.md`.
 
 When a write stops part way, rerun it with exactly the same arguments, and do not unplug the remote or
 take its batteries out first.
@@ -90,10 +91,11 @@ they apply unchanged. The 700's runs are in `packages/bench/irtests/done/`, thos
 | what | where |
 |---|---|
 | the public reference | `reference/remotes/harmony-700/` and `reference/architectures/harmony-600-650-700/` |
+| the bench unit: its arrival, repair, firmware update, writes and runs | `docs/test-notes/harmony-700.md` |
 | the firmware images | `700-2.8-Region_2-code-base0x9000.bin` and the 2.8 package in the lab's `firmware/` |
 | the unit record | the lab's `units/h700.txt`, never copied into this repository |
 | region reads and compiles | the lab's `reads/`, named in `packages/lab` and `tests/lab.py` with the prefix `h700_` |
-| the published pair of a contributor's 700 | `h700_config` and its sibling, `docs/checksums.md` |
+| the published pair of a contributor's 700 | `h700_config` and its sibling, `docs/test-notes/corpus.md` and `docs/checksums.md` |
 
 ## Related
 

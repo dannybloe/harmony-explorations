@@ -58,7 +58,12 @@ stored copy at `0x3D0000`[^s88].
   with the same product id, so enumeration cannot tell the two apart[^s190].
 * **Safe mode carries six of the application's seven commands**, the same bytes and the same states,
   without `0x70` START_IRCAP, and both flash commands reach the external flash programmer, so it could
-  rewrite a configuration with no protocol beyond what the application speaks[^s191][^s192].
+  rewrite a configuration with no protocol beyond what the application speaks[^s191][^s192]. It does not
+  call the library for that: it carries its own byte identical copy of the programmer's routines, 601
+  bytes at `0x009CCA` matching the library from `0x01E018`[^s191].
+* **Safe mode reads the keypad itself**, fifteen port reads from `0x004D8C` on, `PORTB`, `PORTA` bit 4,
+  `PORTF` and `PORTG`, the ports of the One's key matrix; that is what a running mode needs, and it says
+  nothing about what enters safe mode[^s118].
 * **The bootloader is a USB flash programmer** that enumerates as a Microchip device and writes internal
   flash only. At start it scans the keypad and compares two codes, `0x0E` and `0x1E`; the second runs
   the safe mode image without validating it[^s189]. Otherwise it checks only that the image at `0x1000`
@@ -113,6 +118,10 @@ accepting `0x40` and `0xF0`, at `0x26752`[^s19][^t-usb-firmware].
 What the firmware does with two things a configuration states as numbers: the `0x3F` instructions of band `0xC0`
 and the groups of the parameter block, base slot 15. The format of both is the configuration format's,
 [the action language](../../config-format/actions.md) and [state](../../config-format/state.md#base-slot-15-the-parameter-block).
+
+**Where the configuration starts is never a literal in the application**: no `0x002000` or `0x040000`
+reaches `TBLPTRU` anywhere in the 3.4 image, so the base arrives in a variable, and a search for the
+constant finds nothing to follow[^s118].
 
 ### The `0x3F` band `0xC0`
 
@@ -192,3 +201,4 @@ enable pin and no readback[^s106], [the hardware page](../../remotes/harmony-one
 [^s102]: Measured in configurations. [Section 102](../../../docs/findings.md#s102)
 [^s103]: Read in the firmware. [Section 103](../../../docs/findings.md#s103)
 [^s295]: Read in the firmware. [Section 295](../../../docs/findings.md#s295)
+[^s118]: Read in the firmware. [Section 118](../../../docs/findings.md#s118)

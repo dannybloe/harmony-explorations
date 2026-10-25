@@ -23,8 +23,11 @@ In this order, every time, including in an agent:
    conversation say "the Harmony 300" or "the Harmony 350", never the bare architecture number.
 2. `reference/remotes/harmony-300/README.md` or `reference/remotes/harmony-350/README.md`, or both: the
    key numbers and the map of each model's nine topic files.
+   `reference/usb-protocol/file-protocol.md` for the protocol the family speaks.
 3. `reference/how-a-harmony-works.md` when the task touches what the remote does for a person: on these two a
    device key **is** device mode, and neither has a screen.
+4. `docs/test-notes/harmony-300.md` and `docs/test-notes/harmony-350.md` for what was read off each bench
+   unit, and `docs/predictions/harmony-3*.md` for what was predicted first.
 
 **When the reference does not answer a question about the remote, ask** before designing around the gap,
 and land the answer in the reference afterwards with its source. **What somebody did in Logitech's
@@ -77,6 +80,7 @@ and should say so in its own header, since there is no screen to confirm a step 
 | what | where |
 |---|---|
 | the public reference | `reference/architectures/harmony-300-350/`, `reference/remotes/harmony-300/`, `reference/remotes/harmony-350/` |
+| the protocol | `reference/usb-protocol/file-protocol.md` |
 | the drawings | `packages/silhouettes/src/models/h300.ts` and `h350.ts`, rendered into `reference/silhouettes/` |
 | the transport | `packages/usb/src/filepipe.ts`, with `INERT_PATHS` |
 | the read scripts | `packages/usb/bin/read-file.ts` and `read-file-identity.ts` |

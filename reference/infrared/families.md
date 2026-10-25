@@ -176,7 +176,9 @@ and the rhythm table serves the rest.
 times, the gap between consecutive copies is byte identical in all 3502 records that frame, and what
 follows the last copy is 140 distinct shapes, copied rather than computed.[^s152] A block's tail is
 copies, literal words and pads sharing one value, measured per family,[^s171] and a tail can hold a second
-command.[^s152]
+command: 226 records of the corpus hold a second, different code in one block, a complement, a near variant
+or a constant lead in, systematic per group rather than authored, so a tail copied from a sibling code sends
+the sibling's second command.[^s152]
 
 **Two things a derived block does not claim.**[^s228] Its long gaps are chunked greedily into stored
 words of at most 32767 microseconds, where Logitech's compiler chunks inconsistently, so it matches on

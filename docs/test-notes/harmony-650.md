@@ -22,7 +22,11 @@ activities onto it. What it holds at any moment is in the lab's `reads/` and not
   `reads/20260927T0840Z-h650-programmed-config.json`. Section 281 says the two units differ without
   stating either value, so the hardware version has no archive section and the reference lists it as
   not checked.
-* **Not updated to 0.4**, and nothing proposes it.
+* **Not updated to 0.4**, and nothing proposes it. It was programmed with MyHarmony at 0.2 while
+  MyHarmony's own version list names 0.4 for this model, read on 7 October 2026, so on this unit a sync
+  did not wait for the listed version. That is the observation that does not fit the reading that the
+  list's missing images are where a sync of the 600 or the 700 stopped; it moved here from the
+  `myharmony-service` skill in plan 009's step 6.2.
 * **Safe mode has never been entered** on this unit; the reinstall and the staging write have never
   been sent to it.
 * `PROFILES` in `packages/corpus/src/read.ts` still labels product id `0xC122` "Harmony 600 or 700".

@@ -446,9 +446,14 @@ part[^s267].
 
 **Not read**, and none of it changes what a host sends: the Harmony One's external mechanism, which pokes a
 bank register rather than writing directly; why the Harmony 600 and 700's external path issues an SPI
-read setup before it programs, whose presence is read at `0x17434` on the 600 and `0x18D98` on the 700;
-and whether the firmware erases before it programs, which is moot for a caller that erases
-first[^s175][^unchecked].
+read setup before it programs, whose presence is read at `0x17434` on the 600 and `0x18D98` on the
+700[^s175][^unchecked].
+
+**Neither the Harmony One nor the Harmony 600 erases before it programs**, so the caller erases. On the
+600 the program path loads the page program opcode and never the block erase one, which only the eraser
+sends[^s186]; on the Harmony One the external flash programmer's erase and program are separate entry
+points and the program entry emits no erase command[^s191]. The Harmony 700, 650 and 525 are not
+read[^unchecked].
 
 ## ERASE_FLASH
 
@@ -797,6 +802,7 @@ written that way came back on its own and did not ask to be synced[^s247].
 [^t-external-erase]: Read in the firmware. [The test](../../tests/test_external_erase.py)
 [^s282]: Read in the firmware. [Section 282](../../docs/findings.md#s282)
 [^s191]: Read in the firmware. [Section 191](../../docs/findings.md#s191)
+[^s186]: Read in the firmware. [Section 186](../../docs/findings.md#s186)
 [^s212b]: Stated by Logitech, in their client. [Section 212](../../docs/findings.md#s212)
 [^s212]: Read in the firmware. [Section 212](../../docs/findings.md#s212)
 [^s298]: Read in the firmware. [Section 298](../../docs/findings.md#s298)

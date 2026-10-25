@@ -5,7 +5,8 @@ description: Label a config section pointer by finding the firmware code that co
 
 # Labelling a config section from the firmware
 
-The container is a table of 19 to 21 absolute pointers and almost none of them are labelled.
+The container is a table of 15 to 22 absolute pointers, by architecture, and on every one of them some
+are still unlabelled; `reference/config-format/container.md` has each architecture's slot map.
 This is the method that labelled the infrared one, and it produces facts rather than
 hypotheses, because it reads the interpreter rather than diffing the program.
 
@@ -14,10 +15,23 @@ variable, so whoever reads that variable tells you what the section is for.** Th
 was identified because the dispatcher at `0x12F08` copied a pointer into `0x3BD/0x3BE` and the
 handler that consumed it drove the IR LED.
 
-Do the work on **arch 14** (the Harmony 700 2.8 image, base `0x9000`) unless there is a reason
-not to. Every config byte read on arch 14 passes through one SPI primitive at `0x1B9AC`, so
-the readers are enumerable. On arch 12 the config is memory-mapped and reads are ordinary
-loads scattered everywhere. Decode arch 14, then port to arch 12 and confirm.
+## Which image to read: arch 14 first, then port
+
+**Prefer arch 14 (the Harmony 600, 650 and 700) over arch 12 (the Harmony One) for reading code**, even
+though the One is the more popular remote. Every config byte read on arch 14 passes through one SPI
+primitive at `0x1B9AC`, a single instrumentable choke point, so the readers are enumerable; on arch 12
+the config is memory mapped, executes in place, and reads are ordinary loads scattered everywhere.
+Decode arch 14, then port to arch 12 and confirm. The choke point and the routines already read per
+build are in `reference/architectures/harmony-600-650-700/firmware.md`, "Routines read and where".
+
+**Which arch 14 image.** The Harmony 700 2.8 image is the reference for anything about the 700 and the
+second arch 14 sample, and it is what the bench 700 runs. For the Harmony 600 use
+`600-0.2-code-base0x9000-COMPLETE.bin`, read off the remote, whose own header checksum verifies over all
+70336 bytes; a copy cut at 64 KiB loses the entry point, so check which file you hold. The images and
+their load addresses are each architecture's `firmware.md` and `docs/checksums.md`.
+
+**Ghidra**: language `PIC-18:LE:24:PIC-18`, the generic variant only, so the SFRs are unnamed and
+`src/harmony/pic18/isa.py`'s per part map names them. `analyzeHeadless` rejects relative project paths.
 
 **That is a rule about reading code, not about where data is.** Two things exist on arch 12 alone and
 arch 14 never reads them: the touch hit map and the log area's writer, each with a base slot of its
@@ -50,7 +64,7 @@ Prefer that kind of conclusion: a described change that leaves a structure untou
 structure out, and ruling out is cheap and does not decay.
 
 **Do not start from scratch. Every slot from 3 to 17 already has a named firmware entry point**,
-in `docs/findings.md` section 35: the routine `0x10B92` on the Harmony 700 image takes the slot
+in `docs/findings.md` section 35 and the slot index of `reference/config-format/README.md`: the routine `0x10B92` on the Harmony 700 image takes the slot
 number in a register that callers load with a literal, so one scan produced the whole map. Go
 straight to the consumer for the slot you want and skip steps 2 and 3 below.
 
@@ -65,6 +79,10 @@ routine converts "which slot is which" from nineteen separate digs into one scan
 |---|---|---|---|
 | 14 | Harmony 700 reference image | `0x10B92` | 3 to 17, section 35 |
 | 16 | Harmony 300 and 350, skin 104 | `0x10BCE` | 3 to 12, from 14 call sites, section 259 |
+| 12 | Harmony One 3.4 | `0x2BA76` | section 274 |
+| 9 | Harmony 525 | `0x066A8` | section 274 |
+
+Both the arch 14 and arch 16 rows are also in the routine tables of their architecture's `firmware.md`.
 
 How to find it on an image nobody has scanned:
 
@@ -105,7 +123,9 @@ of named nodes under `Root`, and slot 1 is a seven byte record stating the archi
 ## Step 2: find where the firmware reads that slot
 
 The container header is read at load time, so look for the routine that walks the pointer
-table at header offset `0x0C` onwards. On arch 14 start from the callers of the SPI byte read
+table at header offset `0x0B` onwards, four bytes an item, `{ u8 spare; u24 address }`. It is not a
+`u32` table at `0x0C`, which is what both early parsers had,<!--superseded--> one slot short;
+`reference/config-format/container.md` has it. On arch 14 start from the callers of the SPI byte read
 at `0x1B9AC`:
 
 ```sh
@@ -147,7 +167,8 @@ August, in section 72, on a different architecture, and the constant was in
 Nothing in the image announces that a structure has been read before, and the four places rule only
 makes a claim findable **if somebody looks**. So look, before reading rather than after:
 
-* grep `docs/findings.md` for the **constants** the structure is built out of, in both spellings:
+* grep `docs/findings.md` **and `reference/`** for the **constants** the structure is built out of, in
+  both spellings:
   `0xC000` and `0xC0`, an address, an opcode value, a length.
 * grep it for the **phrase** you would use to describe what you are about to claim, "operand's high
   byte", "second copy", "container select".
@@ -196,8 +217,9 @@ of addresses names an image, and a claim that spans an architecture has to be as
 * **A wrong load address produces a plausible listing, not an error.** Bases are `0x9000` for
   arch 14 and `0x20000` for arch 12. For an unexamined image use `loadaddr.find_base` and
   check the margin over the runner-up.
-* **Do not trust the 600 dump for disassembly.** concordance truncates it at 65536 of 70336
-  bytes and the entry point is in the missing tail. Use the 700 image.
+* **Do not trust a 600 image cut at 64 KiB for disassembly.** concordance's dump stops at 65536 of
+  70336 bytes and the entry point is in the missing tail. The complete image read off the remote is in
+  the lab now, above; this entry said "use the 700 image" until that read existed.
 * **A key code is an event type plus a scan code**, `0xC0` and `0x3F`, not a matrix address with
   bit 7 as a flag. That misreading stood here for a while and produced a whole paragraph of wrong
   reasoning about the 600's table being unable to describe its own keypad. It can: 54 scan codes
@@ -209,18 +231,20 @@ Two dynamic routes exist, both read-only:
 
 * **RAM over USB, and which architecture decides whether it is any use.** `READ_MISC` with
   sub-command `MISC_RAM 0x06` reads live RAM off a running remote; `packages/usb` is built and
-  `read-ram.ts` is the instrument. **On arch 14 it cannot label a section**: a connected Harmony 600
-  has not loaded its config, `docs/findings.md` section 110, and the loader's own variables are all
-  zero, so no section is live and there is no per subsystem pointer variable to poll. **On arch 12 it
-  can**, section 111: a connected Harmony One has read its base slot 15 and is executing, so a
-  candidate variable can hold a real value. Two things temper it even there. A remote on USB is in USB
+  `read-ram.ts` is the instrument, and each architecture's `usb.md` says what it answers. **On arch 12
+  (Harmony One) it can label a section**, section 111: a connected Harmony One has read its base slot 15
+  and is executing, so a candidate variable can hold a real value. **On arch 14 the configuration's
+  state variables are live on the cable too**, section 387, on the Harmony 600, 650 and 700; this entry
+  said a connected 600 had not loaded its config<!--superseded-->, section 110, until `todo-reference.md`
+  6.2, and section 110's zero variables were journal variables, another kind. Whether a per subsystem
+  pointer variable is live there is not checked. Two things temper it everywhere. A remote on USB is in USB
   mode, so its normal user interface cannot be driven by hand and the values are whatever the last
   normal mode pass left; and its analogue sampler does not run, so anything downstream of a
   measurement is frozen. Use it for hardware state the firmware sets up regardless, which is what
-  sections 105 and 110 used it for, and on arch 12 for asking whether a variable a config should have
-  filled is filled.
+  sections 105 and 110 used it for, and for asking whether a variable a config should have filled is
+  filled.
   **This entry said "a remote on USB has not loaded its config" flat, for one day**<!--superseded-->, on the strength
-  of one architecture. That is the mistake the pitfall about arch 14 at the end of this file warns
+  of one architecture. That is the mistake the rule about reading code near the top of this file warns
   about, made in the dynamic route rather than the static one.
 * **The emulator**, deferred by decision 5 in `docs/decisions.md`. If a question genuinely needs
   an ordered trace of every config byte read, that is the argument for building it, and it
@@ -228,10 +252,11 @@ Two dynamic routes exist, both read-only:
 
 ## Finishing
 
-A labelled section is a finding, so it lands in three places at once: the structured fact in
-`reference/config-format/README.md`, the reasoning and the trace in `docs/findings.md`, and a regression
-test in `tests/`. Use the `finding` skill, which does exactly that and refuses to skip the
-test.
+A labelled section is a finding, so it lands in the `finding` skill's four places: the fact in its
+home, the slot's page under `reference/config-format/` with the routine's address in the
+architecture's `firmware.md` routine table, both footnoted; the reasoning and the trace in the header of
+the regression test, since `docs/findings.md` is a frozen archive; the test itself; and the sweep. Use
+the `finding` skill, which does exactly that and refuses to skip the test.
 
 Two independent samples minimum. Mark anything single-sample as unconfirmed, in the document,
-in those words.
+in those words, and say which architectures were checked (decision 16).

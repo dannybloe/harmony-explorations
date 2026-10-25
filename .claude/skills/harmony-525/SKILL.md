@@ -37,10 +37,10 @@ and land the answer in the reference afterwards with its source.
 ## 2. The three rails that are this model's own
 
 All three are `CLAUDE.md`'s, from "Never write to a remote", and are restated here only as what they
-require of a session. The reasons are in that section and in the reference.
+require of a session. The mechanisms are in the reference, linked per rail.
 
 * **The 525 is a permitted write target.** One of the units that section names, and its first write, one
-  block of its own bytes put back unchanged, is findings section 269. **Permitted is not capable**:
+  block of its own bytes put back unchanged, is findings section 269 and `docs/test-notes/harmony-525.md`. **Permitted is not capable**:
   nothing can compile a configuration for this model, so there is no vendor built file to check one of
   ours against, and the next step on it is `todo-later.md` 5.4 rather than anything improvised.
 * **An erase is bounded only by the flash part.** The firmware erases any of the eight 64 KiB blocks it is
@@ -48,11 +48,13 @@ require of a session. The reasons are in that section and in the reference.
   that the safe mode image. `packages/usb/src/rails.ts` is the only thing that refuses a wrong address, so
   **never ask for a door around it, never pass an address outside the configuration region, and never
   treat a refusal as something to work around.** An erase on this model is a 64 KiB decision every time.
+  The layout is `reference/architectures/harmony-5xx/memory.md`, the eraser `firmware.md` beside it.
 * **Entering safe mode destroys the application firmware, and it must never be entered as an
   experiment.** Holding Off while the batteries go in is that entry: never ask for it, never suggest it as
   a reset, and never write EEPROM byte 0, which is what installs an image. A power cycle does not leave
-  safe mode. Leaving it was done once, by hand, from a script in the private lab, and this project's write
-  path does not do it.
+  safe mode. Leaving it was done once, by hand, from a script in the private lab,
+  `docs/test-notes/harmony-525.md`, and this project's write path does not do it. What the bootloader does
+  with each value of byte 0 is `reference/architectures/harmony-5xx/firmware.md`.
 
 And the paths that are closed on this model and stay closed: the restart, the data memory write and the
 odd count internal read, each refused by `packages/usb`. `HARMONY_ODD_READ_EXPERIMENT` is never opened for
@@ -101,9 +103,12 @@ this is the procedure on top of those.
 When a run stops part way, do not unplug the remote or take its batteries out; report the first failure
 as it happened and rerun only with the same arguments once the cause is understood.
 
-**Things the 525 does on the cable that are not faults**: the first `GET_VERSION` of a session can go
-unanswered and a retry covers it, findings section 76; and every data memory read answers zeros, which
-is the firmware and not the cable, sections 90 and 137.
+**Things the 525 does on the cable that are not faults**, `reference/remotes/harmony-525/behaviour.md` and
+`usb.md`: the first `GET_VERSION` of a session can go unanswered and a retry covers it; and the data
+memory window and every `READ_MISC` selector but 1 answer zeros, which is the firmware and not the
+cable. **Selector 1 is served**, with its value in the byte after the one a naive decoder takes,
+`reference/architectures/harmony-5xx/usb.md`; this said every data memory read answers zeros until
+`todo-reference.md` 6.2.
 
 ## 4. Bench tests
 

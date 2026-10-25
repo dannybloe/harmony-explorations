@@ -14,8 +14,10 @@ because two copies of a fact are two copies until one of them moves.
 2. The `myharmony-service` skill: the accounts, the rails for writes, and the traps already met. **Load
    it before anything that talks to the service.** The harvest itself is `packages/corpus/bin/harvest.ts`,
    item 1.1; its header holds the rails and the usage.
-3. Per model, its reference folder in `reference/remotes/`. Only `harmony-650/` exists yet; item 3.2
-   starts the others with a `features.md`, and from then on the model's own file is read, not guessed.
+3. Per model, its reference folder in `reference/remotes/`, where every model has its ten pages: what
+   Logitech's service states about a model is its `features.md`, read rather than guessed. What the
+   service is and what it answers is `reference/logitech/service.md`, and what our test accounts hold is
+   `docs/test-notes/accounts.md`.
 
 ## 2. Why this track, and what it is not
 
@@ -53,10 +55,12 @@ of the item, not of the next todo.
 * **One compile at a time, with a pause between**, watching for refusals; stop and report the first one.
 * **An account entry is a real remote's entry.** The harvest got the spare Harmony One blocked by
   Logitech's service on 7 October 2026, after about 42 devices went on and off the entry carrying its
-  serial; Logitech lifted the block, reported on 12 October 2026. Before any write, read the `myharmony-service` skill's section on it: whose serial the entry
-  carries, the volume per entry, and that a refusal with `ErrorCode` 5 means stop.
+  serial; Logitech lifted the block, reported on 12 October 2026. Before any write, read the
+  `myharmony-service` skill's rules on it: whose serial the entry carries, the volume per entry, and that
+  a refusal with `ErrorCode` 5 means stop. Which entry carries which serial is
+  `docs/test-notes/accounts.md`.
 * **Never touch the real records**: not the Harmony 650's record with its owner's devices, not the
-  spare Harmony One's protected record. Use the disposable records that skill lists.
+  spare Harmony One's protected record. Use the disposable records `docs/test-notes/accounts.md` lists.
 * **No tests after a document or plan edit.** Tests only when code changed, and then the one that
   covers it.
 * In conversation: plain English, the remote named beside any architecture number, no times or

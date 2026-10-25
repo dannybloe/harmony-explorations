@@ -23,11 +23,14 @@ In this order, every time, including in an agent:
    open the topic file the task touches: `keys.md`, `display.md`, `features.md`, `behaviour.md`,
    `memory.md`, `firmware.md`, `usb.md`, `hardware.md`, `misc.md`. In conversation it is "the Harmony
    One", never the bare architecture number.
-2. `reference/architectures/harmony-one/`: its platform, the memory, firmware and USB commands, since the
-   One is the only model on it; `memory.md` there is the long form of its memory.
-3. `reference/how-a-harmony-works.md` when the task touches what the remote does for a person, and in
-   particular its sections on the four keys around the One's screen and on the click before a screen
+2. `reference/architectures/harmony-one/`: its platform, `compiler.md` (what Logitech's compiler wires
+   into every configuration), `memory.md`, `firmware.md` and `usb.md`, since the One is the only model on
+   it; `memory.md` there is the long form of its memory.
+3. `reference/how-a-harmony-works.md` when the task touches what the remote does for a person, then the
+   One's own `behaviour.md` for the four keys around its screen and the click and wait before a screen
    command.
+4. `docs/test-notes/harmony-one.md` when the task touches the bench units: what was read and written on
+   each, the strandings, the bench runs.
 
 **When the reference does not answer a question about the remote, ask** before designing around the gap,
 and land the answer in the reference afterwards with its source.
@@ -36,7 +39,8 @@ and land the answer in the reference afterwards with its source.
 
 **There are two Harmony Ones on the bench and they enumerate identically.**
 
-* **The spare Harmony One is a write target.** Every write to a One in `docs/findings.md` went to it.
+* **The spare Harmony One is a write target.** Every write to a One went to it,
+  `docs/test-notes/harmony-one.md`.
 * **The everyday Harmony One is never written.** It is excluded by name in `CLAUDE.md`'s "Never write to
   a remote", and nothing in this skill applies to it beyond reading.
 
@@ -55,7 +59,7 @@ procedure on top of those.
        node packages/corpus/bin/read-region.ts --label <name> --address 0x40000 --count <length>
 
    with the length covering the configuration and rounded up to whole 64 KiB blocks. Writes stop at
-   `0x3D0000`, where the stored application copy sits.
+   `0x3D0000`, where the stored application copy sits, `reference/architectures/harmony-one/memory.md`.
 2. **Register that read** under a name like `one_spare_<what>_base`: `IMAGES` in
    `packages/lab/src/index.ts` and in `tests/lab.py`, `PARSEABLE_EXCLUDED` in both, and `SPARE_DUMPS` in
    `packages/corpus/bin/write-config.ts`. Then raise the two counts in `packages/lab/test/parity.test.ts`.
@@ -71,32 +75,39 @@ procedure on top of those.
    The writer drops the cached descriptors, erases and writes only the blocks that differ, reads them
    back, and restarts the remote; it refuses a firmware build other than 3.4. It stamps the
    configuration with the moment of writing and appends a journal beside it.
-5. **The One restarts itself after the write** and shows its ordinary screen, findings section 247. If it
-   instead shows a status screen, that screen latches until the batteries come out on this model, and the
-   `recovering-a-remote` skill is the next read.
+5. **The One restarts itself after the write** and shows its ordinary screen, or first the Remote Assistant
+   and a "Welcome!" screen when the configuration starts the variable behind them at 0, as Logitech's
+   compiles do; neither is a fault. If it instead shows a status
+   screen, that screen latches until the batteries come out on this model, and the `recovering-a-remote`
+   skill is the next read. Both are in `reference/remotes/harmony-one/behaviour.md`, "After a write".
 
 When a write stops part way, rerun it with exactly the same arguments, and do not unplug the remote or
 take its battery out first.
 
 **Things the One does on the cable that are not faults**: after idling in USB mode it drops its first
-command and a retry clears it, findings section 155; and it occasionally strands after sitting idle on
-USB, which a battery pull clears, `CLAUDE.md`. An odd count internal read hangs it, and `packages/usb`
-refuses one for that reason; never open the named door around that rail.
+command and a retry clears it, `reference/remotes/harmony-one/behaviour.md`; and it occasionally strands
+after sitting idle on USB, which a battery pull clears, with the history in
+`docs/test-notes/harmony-one.md`. An odd count internal read hangs it, `reference/usb-protocol/commands.md`,
+and `packages/usb` refuses one for that reason; never open the named door around that rail.
 
 ## 4. Bench tests
 
 The shape, the rules and the Flirc's firmware requirement are the `harmony-650` skill's section 3. Two
 things differ on a One: a screen command is touched rather than pressed, so an instruction names the row
 on the screen, and a screen command goes out after a click and usually after the device's delay between
-devices, so a monitor sees it later than the same command on a key, findings section 337. The One's only
-run so far is `packages/bench/irtests/done/one-spare-activities.json`.
+devices, so a monitor sees it later than the same command on a key, findings section 337. The One's
+runs are the four `one-*.json` in `packages/bench/irtests/done/`, listed in
+`docs/test-notes/harmony-one.md`; this said `one-spare-activities.json` was the only one until
+`todo-reference.md` 6.2.
 
 ## Where things live
 
 | what | where |
 |---|---|
 | the public reference | `reference/remotes/harmony-one/` |
+| its architecture: compiler, memory, firmware, USB | `reference/architectures/harmony-one/` |
 | the long form of the memory | `reference/architectures/harmony-one/memory.md` |
+| the bench units, their reads, writes, strandings and runs | `docs/test-notes/harmony-one.md` |
 | the firmware images | the 3.4 package and its derived files in the lab's `firmware/`, `docs/checksums.md` |
 | the spare's unit record | the lab's `units/one_spare.txt`, never copied into this repository |
 | region reads and configurations | the lab's `reads/` and `dumps/`, named in `packages/lab` and `tests/lab.py` with the prefixes `one_` and `one_spare_` |

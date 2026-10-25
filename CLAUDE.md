@@ -568,8 +568,8 @@ file's own header is where its reading lives.
 * **`docs/findings.md` is the frozen archive** of the arguments, sections 1 to 436, grepped and read in
   ranges, never loaded whole, and it takes nothing new.
 * `docs/status.md`, where the work stands; `todo.md`, `todo-secure-logitech.md` and `todo-process-logitech.md` (first, in that order) and
-  `todo-compile-650.md` (finished), `todo-compile-700.md` (finished) and `todo-compile-600.md` (finished), `todo-compile-one.md` and
-  `todo-reference.md`, the sequence, with `todo-later.md` and `todo-freeharmony.md` for what is off that route;
+  `todo-compile-650.md` (finished), `todo-compile-700.md` (finished) and `todo-compile-600.md` (finished), `todo-compile-one.md`,
+  `todo-compile-350.md` (first) and `todo-compile-300.md`, and `todo-reference.md`, the sequence, with `todo-later.md` and `todo-freeharmony.md` for what is off that route;
   `docs/decisions.md` and `docs/plans/`, per "How planning works" above
 * `docs/superseded.md`, claims a finding killed; `docs/glossary.md`, this project's process words;
   `docs/predictions/`, `docs/checksums.md`, `docs/lab-register.md`, the lookup lists

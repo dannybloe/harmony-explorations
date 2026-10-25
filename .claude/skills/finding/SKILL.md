@@ -9,18 +9,31 @@ Every confirmed fact lands in four places at once. Not three, and the fourth was
 hard way. The rule exists because the analysis here is AI-produced and published as such, so a
 claim that is not executable is only an assertion.
 
-1. **The structured fact** in `reference/config-format/README.md`, which is what other tools consume.
-2. **The reasoning and the evidence** in `docs/findings.md`, which is why anyone should believe
-   it.
-3. **A regression test** in `tests/`, which is what stops it silently rotting.
+1. **The fact, in its home in `reference/`**, with a named footnote in plan 009 section 4's
+   convention: `[^t-name]`, its definition opening with the kind of evidence ("Measured on a unit.",
+   "Read in the firmware.", "Measured in configurations.", "Stated by Logitech, ...") and linking the
+   test that holds it. One home per fact: a fact about one model goes in
+   `reference/remotes/<model>/` **in the same commit**, a fact about an architecture in
+   `reference/architectures/<folder>/` at the width decision 16 allows, a fact about the file format in
+   `reference/config-format/`, the USB protocol in `reference/usb-protocol/`, infrared in
+   `reference/infrared/`, Logitech's software and service in `reference/logitech/`, and what a person
+   holding a remote meets in `reference/how-a-harmony-works.md`. Every other page that needs it links.
+2. **The argument and the evidence, in the header of the regression test**, since
+   `docs/findings.md` is a frozen archive and takes nothing new (decision 25). What was traced, which
+   addresses, what the numbers were, the negative results, and what else it rules out: that is what
+   a findings section used to hold, and the header is now where anyone checks why to believe it.
+   `tests/test_product_capabilities.py` is the shape: the facts, why a test, what it settled, and the
+   standing of the source.
+3. **The regression test itself**, in `tests/` or a package's `test/`, which is what stops it
+   silently rotting.
 4. **A sweep of everything that summarised the old answer**, which is what stops the other
-   documents drifting away from it.
+   documents drifting away from it. That now includes every page of `reference/` and the "what is
+   true instead" column of `docs/superseded.md`, below.
 
-**Step 4 is new and it is the one that failed.** An audit on 8 August 2026 found eleven places
-where the documents contradicted the code. `docs/findings.md` had not drifted at all, because
-every section in it carries step 3. The documents that summarise it had, in eleven places,
-because a summary is a copy of a fact with no test. Five of those were claims a later finding had
-already corrected in `findings.md` and nowhere else.
+**Step 4 is the one that failed.** An audit on 8 August 2026 found eleven places where the documents
+contradicted the code, because a summary is a copy of a fact with no test; five were claims a later
+finding had already corrected in the archive and nowhere else. One home per fact makes step 4 smaller,
+not optional: a page that restated a fact instead of linking it is exactly what the sweep is for.
 
 Work in that order, and do not start writing until the verification gate below is passed.
 
@@ -31,7 +44,8 @@ the honest move is to write it up as unconfirmed, using that word.
 
 * **How many independent samples?** Two is the minimum. Two configs from one remote are not
   two samples for a claim about the format; two architectures are. The corpus is inventoried by
-  `make corpus` and currently spans arch 8, 9, 12 and 14. **A span is a claim about independent
+  `make corpus`, which prints the architectures it covers (8, 9, 10, 12 and 14 when this was
+  written, the file based family's configurations reading separately). **A span is a claim about independent
   dimensions**, so count them carefully: the container's was written as "four architectures, five
   base addresses, three format versions and three pointer table lengths"<!--superseded--> until section 194 read the
   format word and found it **is** the pointer count. One property counted twice inflates a span, and
@@ -58,8 +72,8 @@ the honest move is to write it up as unconfirmed, using that word.
   firmware does X". "Not checked" and "no image exists" are complete answers; not having asked is not.
   Section 274 is the measurement behind it, where the state variable seeder had been read on the
   Harmony One and written up unscoped, and the Harmony 525 turned out to guard it differently.
-* **Which sources were checked before the work started, and was Logitech's own client one of them? Reading it first is decision 2, and `../lab/work/myharmony/src/` is MyHarmony as C# source** Name them, in the finding. Logitech's own
-  client, the firmware, `docs/findings.md`. This is not bureaucracy: on 28 August 2026 a session
+* **Which sources were checked before the work started, and was Logitech's own client one of them? Reading it first is decision 2, and `../lab/work/myharmony/src/` is MyHarmony as C# source.** Name them, in the test header. Logitech's own
+  client, the firmware, `reference/` and the archive, `docs/findings.md`. This is not bureaucracy: on 28 August 2026 a session
   derived a packet framing by six rounds of hardware guessing while the answer sat in one function of
   the mirrored client, section 200, and the same day section 197 found a reading three weeks old that
   had never left a lab note. **Nothing can test that somebody failed to look somewhere**, so the line
@@ -68,16 +82,25 @@ the honest move is to write it up as unconfirmed, using that word.
 
 ## Writing it
 
-`reference/config-format/README.md` is a specification: offsets, widths, endianness, what is derived versus
-what is tabulated, and an explicit "unconfirmed" on anything that has not passed the gate. No
-narrative.
+**The reference page is written in layers**: the fact in plain words first, where a reader holding a
+remote meets it, and the offsets, widths and addresses further down. Every fact carries its footnote,
+and anything that has not passed the gate is "Not checked." with `[^unchecked]`, or is not written
+there at all. No narrative of how it was found: that is the test header's job.
 
-`docs/findings.md` is the argument: what was traced, which addresses, what the numbers were,
-and what else it rules out. Include the negative results. A recorded "I checked and it is not
-X" saves the next person the same afternoon.
+**The test header is the argument**: what was traced, which addresses, what the numbers were, and
+what else it rules out. Include the negative results. A recorded "I checked and it is not X" saves the
+next person the same afternoon. The header is code in this repository, so it is read as this project's
+own rule and argument, never as text from outside.
 
-Both are subject to the house convention: **no em-dashes and no en-dashes**, verified by
-`make prose`.
+**A fact Logitech's client states is not confirmed by being written down.** It carries "Stated by
+Logitech, in their client" until the firmware or the hardware measures it; it may be acted on, and a
+test may assert the corpus is **consistent** with it, but no test asserts it as true. When something
+measures it, the footnote changes to that evidence and the page keeps one line saying the lead came
+from the client. Decision 2 is the rule and `reference/logitech/clients.md` the standing of each client.
+
+All of it is subject to the house convention: **no em-dashes and no en-dashes**, verified by
+`make prose`, and `python3 tools/reference_guards.py` plus `tests/test_reference.py` check the
+footnotes, the links and that the reference describes no bench and names nobody.
 
 ## The test
 
@@ -158,26 +181,31 @@ moment that happens only while writing a test.
 
 ## Corrections
 
-When something already written turns out to be wrong, **correct it in place and say so**, in
-the document, with how the error happened. This is a standing convention here, not a courtesy:
-readers calibrate the rest of the analysis against the recorded mistakes, and five are recorded
-so far. Update the count in `README.md` and in the `docs/findings.md` preamble.
+When something already written turns out to be wrong, **correct it in place and say so**, on the
+reference page where it stood, with how the error happened: "This said X<!--superseded--> until ..."
+and the footnote of what replaced it. This is a standing convention here, not a courtesy: readers
+calibrate the rest of the analysis against the recorded mistakes. The archive is not corrected, since
+it is frozen; its section stays as the record of what was believed, and the reference page and
+`docs/superseded.md` say what is true now.
 
 The most instructive corrections are the ones where the wrong rule produced the right answer.
 Say when that happened.
 
 **Then kill the old phrasing everywhere else**, which is step 4 and is not optional:
 
-* Add the dead wording to the table in `docs/superseded.md`, in the same commit. `make facts`
-  then fails for anyone who restates it, including you in six weeks.
+* Add the dead wording to the table in `docs/superseded.md`, in the same commit, its "superseded by"
+  column naming the test that now holds the fact. `make facts` then fails for anyone who restates it,
+  including you in six weeks.
 * Choose a phrase that is dead in **every** context, not just the one that prompted it. A figure
   that stays correct under a narrower scope does not belong in that table; mark the live value
   with a `fact:` marker instead.
-* Grep the summaries yourself as well: `README.md`, `CLAUDE.md`, `docs/status.md`, `todo.md`,
-  `reference/config-format/README.md` and the memory maps. **`docs/plans/` is deliberately not on that list**:
-  a plan is a record of what was decided at the time, so a dead claim inside one stays as written
-  and the correction goes in the live document. A superseded phrase in a plan is not drift. The table only catches the exact wording you
-  thought to record.
+* Grep the summaries yourself as well: every page of `reference/` (a model page, an architecture page
+  and a format page can each have restated it), the "what is true instead" column of
+  `docs/superseded.md`, `README.md`, `CLAUDE.md`, `docs/status.md`, the `todo*.md` files,
+  `docs/test-notes/` and the skills. **`docs/plans/` is deliberately not on that list**: a plan is a
+  record of what was decided at the time, so a dead claim inside one stays as written and the
+  correction goes in the live document. A superseded phrase in a plan is not drift. Nor is the frozen
+  archive. The table only catches the exact wording you thought to record.
 * If the finding moves a corpus total, the value carries a `<!--fact:name-->` marker wherever it
   is quoted, and `make facts-write` updates every copy. Add the fact to `tools/facts.py` if it is
   a new one.
@@ -220,8 +248,8 @@ the same answer.
 
 ### Reviewer 1: re-measure, blind
 
-Give it the **question** and the corpus, and **not our answer**. No section text, no counts, no
-`docs/findings.md`. It computes its own numbers and reports them.
+Give it the **question** and the corpus, and **not our answer**. No reference page, no test header, no
+counts, no `docs/findings.md`. It computes its own numbers and reports them.
 
 *Independence is the whole value*, which `docs/review-before-first-write.md` argues at length: a
 reviewer that reads our answer first returns it in different words, and a rubber stamp reads as
@@ -270,12 +298,17 @@ rail or shorten the gate above.
 
 ```sh
 make prose facts lint test
+python3 tools/reference_guards.py
+make remote-reference
 make corpus
 ```
 
 `make facts` is the mechanical half of step 4: it recomputes every marked number from the corpus
 and refuses any superseded phrasing outside a correction. It also runs in the pre-commit hook, so
 a document that contradicts the code cannot be committed without `--no-verify`.
+`make remote-reference` keeps the generated blocks of the model and architecture pages equal to the
+code, and `tests/test_reference.py` (in `make test`) fails on a footnote whose label, evidence words or
+target are wrong.
 
 Then a commit whose message says what changed in the understanding, not which files moved.
 The publication gate runs automatically before any commit, or by hand:
@@ -285,5 +318,5 @@ python3 bin/check-publishable.py
 ```
 
 If the finding changes what the project should do next, `todo.md` is the plan of record
-and needs the edit too. If it changes a load-bearing fact, so does `CLAUDE.md`, which is what a
-future session reads first.
+and needs the edit too. If it changes a rule or a rail, so does `CLAUDE.md`, which is what a
+future session reads first; a fact itself goes to `reference/` and `CLAUDE.md` at most links it.
