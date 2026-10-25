@@ -120,10 +120,20 @@ def configure(root: Path, docs: Path, repo_url: str, sections: set[int] = frozen
         _sections.update(sections)
 
 
+#: The search worker shim Material's offline plugin loads from a CDN in a build for browsing from disk.
+#: The plugin names it without a version, which this repository never allows, so it is pinned here to
+#: an exact release at least two weeks old when chosen, the rule in tools/site/requirements.txt.
+IFRAME_WORKER = "https://unpkg.com/iframe-worker@1.0.4/shim"
+
+
 def on_config(config):
     global _off_site
     configure(Path(config.config_file_path).parent, Path(config.docs_dir), config.repo_url)
     _off_site = tuple((config.extra or {}).get("off_site", ()))
+    # Hooks run after the theme's plugins, so the offline plugin has already added its unpinned shim.
+    polyfills = (config.extra or {}).get("polyfills")
+    if polyfills:
+        config.extra["polyfills"] = [IFRAME_WORKER if "iframe-worker" in url else url for url in polyfills]
     return config
 
 

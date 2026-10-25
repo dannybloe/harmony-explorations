@@ -69,6 +69,11 @@ theme:
 # the privacy plugin would fetch, and none is wanted (tools/site/requirements.txt).
 plugins:
   - search
+  # Off on the live site. `make site-offline` turns it on for browsing the build straight from disk: it
+  # writes every link as an explicit .html file and inlines the search index so search works without a
+  # server. Its one runtime script, the search worker shim, is pinned by tools/site/hooks.py.
+  - offline:
+      enabled: !ENV [SITE_OFFLINE, false]
 
 markdown_extensions:
   # The evidence form of plan 009 section 4 is a named footnote.

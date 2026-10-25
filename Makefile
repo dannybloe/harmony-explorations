@@ -36,7 +36,7 @@ JAVA_21 ?= /opt/homebrew/opt/openjdk@21
 
 export PYTHONPATH := $(SRC):$(TESTS)
 
-.PHONY: help site test test-nolab test-partial test-verbose lint pyright prose facts facts-write corpus lab-check lab-progress ghidra ts ts-test ts-typecheck audit hooks golden golden-write bench probe remotes watch-keys watch-columns coverage emit reading growth text render page activities devices alphabets silhouettes remote-reference remote-reference-write all clean protocols segmentlengths prontocheck composecensus catalogue catalogue-raw emitcheck myharmony-model model-pdf model-diagram model-activity model-cluster
+.PHONY: help site site-offline test test-nolab test-partial test-verbose lint pyright prose facts facts-write corpus lab-check lab-progress ghidra ts ts-test ts-typecheck audit hooks golden golden-write bench probe remotes watch-keys watch-columns coverage emit reading growth text render page activities devices alphabets silhouettes remote-reference remote-reference-write all clean protocols segmentlengths prontocheck composecensus catalogue catalogue-raw emitcheck myharmony-model model-pdf model-diagram model-activity model-cluster
 
 BENCH_PORT ?= 8731
 
@@ -67,6 +67,7 @@ help:
 	@echo "remote-reference  check the generated blocks of reference/remotes and reference/architectures"
 	@echo "remote-reference-write  rewrite those blocks from the code"
 	@echo "site         build the reference website into site/, strict; SITE_STRICT=false while chapters 3 and 4 run"
+	@echo "site-offline the same website for browsing from disk: open site/index.html, no server needed"
 	@echo "page         drive the bench page in Chrome, which is what checks the page itself"
 	@echo "activities   which activity each key starts, and which label is its name"
 	@echo "catalogue    what Logitech's device catalogue says about our own configs' devices"
@@ -374,6 +375,12 @@ SITE_STRICT ?= true
 
 site: $(SITE_VENV)/.installed
 	@SITE_STRICT=$(SITE_STRICT) NO_MKDOCS_2_WARNING=1 $(SITE_VENV)/bin/mkdocs build
+
+# The same site with every link an explicit .html file and the search index inlined, so site/index.html
+# opens in a browser straight from disk. Material's offline plugin does both; it is off for `make site`
+# and the live build, whose addresses keep their directory form.
+site-offline: $(SITE_VENV)/.installed
+	@SITE_OFFLINE=true SITE_STRICT=$(SITE_STRICT) NO_MKDOCS_2_WARNING=1 $(SITE_VENV)/bin/mkdocs build
 
 $(SITE_VENV)/.installed: tools/site/requirements.txt
 	@rm -rf $(SITE_VENV)
