@@ -1,4 +1,8 @@
-# How an activity is built: the anatomy, and what a composer has to produce
+# Plan 003, the anatomy: how an activity is built, and what a composer has to produce
+
+**Status: done.** The anatomy plan 003 produced, kept as its record. Its structures and counts live in
+[the reference](../../reference/config-format/activities-and-devices.md) now, which is where a composer reads
+them; this moved into `docs/plans/` beside its plan.
 
 **The goal, in one sentence.** Know what an activity consists of well enough to build one, to the
 standard `docs/adding-a-device.md` sets for a device: every structure it touches, in the order a
@@ -36,8 +40,8 @@ bottom says which specimens and what happened.
 
 ## The seven structures, and what an activity shares with a device
 
-Both moved to the reference, whole: [the seven structures](../reference/config-format/activities-and-devices.md#the-seven-structures-in-the-order-a-builder-touches-them)
-and [what an activity shares with a device](../reference/config-format/activities-and-devices.md#what-an-activity-shares-with-a-device-and-must-not-duplicate).
+Both moved to the reference, whole: [the seven structures](../../reference/config-format/activities-and-devices.md#the-seven-structures-in-the-order-a-builder-touches-them)
+and [what an activity shares with a device](../../reference/config-format/activities-and-devices.md#what-an-activity-shares-with-a-device-and-must-not-duplicate).
 
 ## What this deliberately does not need
 

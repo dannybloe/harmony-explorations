@@ -23,7 +23,7 @@ sequence. The reasoning it held is `docs/plans/002-the-roadmap.md`, its decision
 Plan: [003-how-an-activity-is-built.md](docs/plans/003-how-an-activity-is-built.md)
 
 - [x] 1.1 Establish how an activity is built, read off the factory configuration.
-      Anatomy: [how-an-activity-is-built.md](docs/how-an-activity-is-built.md)
+      Anatomy: [how-an-activity-is-built.md](docs/plans/003-how-an-activity-is-built-anatomy.md)
   - [x] 1.1.1 Which sections it occupies, and which it shares with a device
   - [x] 1.1.2 The keypad map: bindings, and the enter and leave lists
   - [x] 1.1.3 The power on sequence, and how a device's delay relates to it

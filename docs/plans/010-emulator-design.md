@@ -1,6 +1,7 @@
-# Design: a PIC18 emulator harness
+# Plan 010: a PIC18 emulator harness
 
-**Status: design only, not built, and deferred by decision 5 in `docs/decisions.md`.** Hardware in the
+**Status: design only, not built, and deferred by decision 5 in `docs/decisions.md`.** Numbered 010 when it moved into `docs/plans/`, where
+a design that is not built belongs; it was written before plan 001 and kept its text. Hardware in the
 loop came first, on the argument that round trip equality, read back and diff, cross learning and live
 RAM polling do most of what this was wanted for at a fraction of the build. This document said it was
 "the next substantial piece of work"<!--superseded--> until 29 August 2026, which was true when it was

@@ -110,7 +110,7 @@ their fields is a semantic key for the format as well as a specification of the 
 
 ### Deliberately not on the list
 
-* **The emulator.** Deferred, `docs/emulator-design.md`, and it would pull the survey towards firmware
+* **The emulator.** Deferred, `docs/plans/010-emulator-design.md`, and it would pull the survey towards firmware
   internals.
 * **The hub family.** Out of scope, and large enough to swallow the whole excavation.
 

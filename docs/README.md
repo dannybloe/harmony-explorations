@@ -92,7 +92,7 @@ reference/config-format/relocation.md
                                 implied positions and the three restamped fields. The survey behind
                                 edit.ts's refusal to change a length, and since section 172 also the
                                 spec of relocate.ts, the separate entry point that performs it
-docs/how-an-activity-is-built.md
+docs/plans/003-how-an-activity-is-built-anatomy.md
                                 the anatomy of an activity, written from the factory Harmony One's
                                 single activity and then scored against a second and third specimen.
                                 Its load bearing claim is that an activity **sets a device's state
@@ -142,7 +142,7 @@ docs/predictions/power-hold.md
                                 account's Harmony 650 and 700 records, each predicted before it ran
                                 and scored after, for todo L9. The last one is what settled the rule
 docs/plans/001-generating-configs.md                    the earlier proposal, superseded, kept for its arguments
-docs/emulator-design.md         design for the emulator harness, deferred, not built
+docs/plans/010-emulator-design.md the emulator harness, deferred, not built
 src/harmony/                    the research library, see below
 tools/                          thin command line wrappers, no logic of their own
 tools/ghidra/                   headless script plus extracted branch target seeds
