@@ -1,6 +1,6 @@
 # Plan 009: the reference
 
-**Status: open.** Written 24 October 2026 for `todo-reference.md` 1.2 and 1.3, which this plan answers
+**Status: done.** Written 24 October 2026 for `todo-reference.md` 1.2 and 1.3, which this plan answers
 together. It carries out decision 25 and supersedes plan 005 in part: plan 005's three deliverables and its
 rules stand, its `docs/spec/` is `reference/`, its committed static site is a site built on every push and
 never committed, and its steps are `todo-reference.md`'s chapters. When this plan is accepted, plan 005's
