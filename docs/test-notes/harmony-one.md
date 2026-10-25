@@ -173,6 +173,8 @@ format pages in step 4.1.
 * **Its log region reads full**, section 111: the top sixteen bytes of flash, `0x3FFFF0`, are the end of
   the `00 FF` pattern block at `0x3F0000`, the same on both programmed Ones, so the boot scan recovers the
   cursor at the region's limit and the append refuses.
+* **The first write**, section 222: one block of the spare's own configuration erased and written back
+  unchanged, on 30 August 2026, the first flash write this project made to any remote.
 * **The first write that changed a remote showed nothing**, section 236: a television's power on delay
   raised from 5.0 to 10.0 seconds on the spare, verified byte for byte, and no pause seen when the
   activity started, because a delay holds back that device's next command and the activity sent it one.
@@ -184,6 +186,16 @@ format pages in step 4.1.
   ask to be synced, where every earlier write had left it asking until its battery came out.
 * **The control**, section 248: the same container written again with the drop and without the restart
   also left the ordinary screen, so the drop is what closed the symptom.
+* **A device added**, section 242: 25 blocks written on 3 September 2026, after which the television
+  answered the new device.
+* **Neither command**, section 250: a two block write with the drop and the restart both withheld left the
+  verdict byte, the re-check flag and all three cached descriptors byte for byte as they were, and the
+  ordinary screen once the cable was out, which refuted section 248's reading of what the drop is for.
+* **The drop alone**, section 251: the drop with no erase and no write, then the cable out and back in. The
+  verdict came back on its own and the remote's clock showed it had never restarted, so the re-check runs
+  on the cable's removal and the restart seen after a write is the write's.
+* **Moved here from `CLAUDE.md` by plan 009 step 6.1**, which keeps one line per unit there: this list and
+  the bullets above are the spare's write history.
 * **The bare send**, section 278: three writes, the composed activity's send without its `0x7C` went out
   on a key press and not when the start's transition ran it; with the pair the television came on.
 * **The variable painted over**, section 276: a device composed with base slot 13's `count` raised alone

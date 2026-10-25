@@ -51,7 +51,7 @@ format's header records page until plan 009's step 4.1.
 |---|---|
 | `GET_VERSION`, `READ_FLASH` external and both internal pages | read only, sections 23, 24 and 88 |
 | `READ_MISC` selector 7, live data memory | the state variables from `0xE10`, the clock ticking, and the panel's identity byte at `0x384`, section 387; the flash id at `0x686`, section 110. The model folder said "the configuration's journal variables read zero, so it was not loaded"<!--superseded--> until section 387 found those five variables to be of another kind |
-| `ERASE_FLASH` and `WRITE_FLASH`, configuration blocks | a block written back unchanged, section 302; then a delay changed and put back with the whole write sequence, section 303; then configurations built by this project, up to eleven 64 KiB blocks at a time, each read back byte for byte, sections 387, 389 and 390 |
+| `ERASE_FLASH` and `WRITE_FLASH`, configuration blocks | after a full backup of both internal pages and the whole external flash, a block written back unchanged, section 302; then a delay changed and put back with the whole write sequence, section 303; then configurations built by this project, up to eleven 64 KiB blocks at a time, each read back byte for byte, sections 387, 389 and 390 |
 | the cache drop, `WRITE_MISC` selector `0x02`, and the restart | sent as part of that write sequence, section 303 |
 | the settings read, `0x13 0xB2` | its reply measured, section 304; used again before predicting a configuration's timing, sections 387 and 391 |
 | the settings write, `0x14 0xB3` | sent once, the only arch 14 unit to receive it: the KPN box's saved power on delay cleared, section 305 |

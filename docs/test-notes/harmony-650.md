@@ -80,7 +80,7 @@ The unit's two internal pages are in the lab's `reads/` as region reads; `tests/
 | `GET_VERSION`, `READ_FLASH` external and both internal pages | read only, section 281 |
 | `READ_MISC` selector 7, live data memory | config derived variables read live, section 283; the verdict flags `0x68B` and setting `0x80`'s copy `0x744`, section 354 |
 | `READ_MISC` selector `0x0C` detail 1, the battery voltage | in millivolts, section 340 |
-| `ERASE_FLASH` and `WRITE_FLASH`, configuration blocks | first a block written back unchanged, section 281; then real changes, sections 283 onwards |
+| `ERASE_FLASH` and `WRITE_FLASH`, configuration blocks | first a block written back unchanged, with the blocks either side identical before and after the erase and the whole configuration read back with the SHA-256 of the read before it, section 281; then a power on delay raised and put back, two blocks each way, live in the remote's memory straight after the restart, section 283; then real changes, sections 283 onwards |
 | the cache drop, `WRITE_MISC` selector `0x02` | section 282 |
 | the restart, the escape's `0x02` | section 282; the restart was also seen on the remote |
 | the settings read and write | **never sent** to this unit |
