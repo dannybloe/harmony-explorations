@@ -47,6 +47,8 @@ theme:
   features:
     # The top level of the navigation as tabs, the reader's order of plan 009 section 1.
     - navigation.tabs
+    # The tabs stay in view while the page scrolls, rather than folding away under the header.
+    - navigation.tabs.sticky
     - navigation.sections
     # A folder's README is that section's own page rather than a child of it.
     - navigation.indexes

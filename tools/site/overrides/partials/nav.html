@@ -33,15 +33,20 @@
     <div class="harmony-switcher">
       <label class="harmony-switcher__label" for="harmony-switcher">{{ harmony_switcher.label }}</label>
       <select id="harmony-switcher" class="harmony-switcher__select" onchange="window.location.href = this.value">
+        {% if harmony_switcher.prompt %}
+          <option value="" selected disabled>{{ harmony_switcher.prompt }}</option>
+        {% endif %}
         {% for choice in harmony_switcher.choices %}
           <option value="{{ choice.url | url }}"{% if choice.current %} selected{% endif %}>{{ choice.title }}</option>
         {% endfor %}
       </select>
+      {% if harmony_switcher.pages %}
       <ul class="harmony-switcher__pages">
         {% for item in harmony_switcher.pages %}
           <li><a href="{{ item.url | url }}" class="md-nav__link{% if item.current %} md-nav__link--active{% endif %}">{{ item.title }}</a></li>
         {% endfor %}
       </ul>
+      {% endif %}
     </div>
   {% endif %}
   <ul class="md-nav__list" data-md-scrollfix>

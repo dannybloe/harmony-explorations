@@ -383,8 +383,9 @@ def drawing_for(src_uri: str, docs_dir: str) -> str | None:
 
 
 #: The sections whose members are all the same kind of thing with the same pages, where the left hand
-#: menu becomes a switcher: pick a remote, or an architecture, and see only its pages.
-SWITCHED = ("remotes/", "architectures/")
+#: menu becomes a switcher: pick a remote, or an architecture, and see only its pages. The text is what
+#: the switcher shows on the section's own landing page, where nothing is picked yet.
+SWITCHED = {"remotes/": "Choose a remote", "architectures/": "Choose an architecture"}
 
 
 def _first_page(section):
@@ -402,11 +403,21 @@ def switcher_for(page) -> dict | None:
     live under one of `SWITCHED`. The switcher lists every group of that top section, each pointing at
     **the page of the same name** in that group, so moving from the 650's `features.md` to the One's
     lands on the One's `features.md`; a group without that page, such as the Touch's architecture which
-    has three files, falls back to its first page. Below it come the current group's own pages.
+    has three files, falls back to its first page. Below it come the current group's own pages. On the
+    section's own landing page nothing is picked yet: the list opens on a prompt and each member goes to
+    its overview.
     """
+    prefix = next((p for p in SWITCHED if page.file.src_uri.startswith(p)), None)
+    if prefix is None or page.parent is None:
+        return None
+    if page.file.src_uri == prefix + "README.md":
+        # The section's landing page: the same list, nothing picked yet, each member at its overview.
+        choices = [{"title": m.title, "url": _first_page(m).url, "current": False}
+                   for m in page.parent.children if m.is_section and _first_page(m) is not None]
+        return {"label": page.parent.title, "prompt": SWITCHED[prefix], "choices": choices, "pages": []}
     group = page.parent
-    top = group.parent if group else None
-    if top is None or not any(page.file.src_uri.startswith(prefix) for prefix in SWITCHED):
+    top = group.parent
+    if top is None:
         return None
     name = posixpath.basename(page.file.src_uri)
     choices = []
@@ -421,7 +432,7 @@ def switcher_for(page) -> dict | None:
     pages = [{"title": "Overview" if c.file.src_uri.endswith("README.md") else c.title,
               "url": c.url, "current": c is page}
              for c in group.children if c.is_page]
-    return {"label": top.title, "choices": choices, "pages": pages}
+    return {"label": top.title, "prompt": None, "choices": choices, "pages": pages}
 
 
 def on_page_context(context, page, config, nav):
