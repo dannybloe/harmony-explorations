@@ -27,6 +27,8 @@ In this order, every time, including in an agent:
    architecture's `memory.md`, which holds the 0.2 build's data memory.
 4. `reference/how-a-harmony-works.md` when the task touches what the remote does for a person: activities,
    device mode, Help, the device list.
+5. `docs/test-notes/harmony-600.md` when the task touches the bench unit: its backups, its writes, its
+   saved delays and its runs.
 
 **When the reference does not answer a question about the remote, ask** before designing around the gap,
 and land the answer in the reference afterwards with its source.
@@ -71,16 +73,17 @@ as the Harmony 650's in `harmony-650` with the 600's names.
        HARMONY_ENABLE_WRITES=1 HARMONY_SETTINGS_WRITE=1 \
          node packages/usb/bin/write-settings.ts --unit h600 --table 'power on' --key <key> --commit
 
-   The 600 is the only unit this has been sent to, findings section 305.
+   The 600 is the only unit this has been sent to, `docs/test-notes/harmony-600.md`. The store's layout
+   is `reference/architectures/harmony-600-650-700/memory.md`.
 
 When a write stops part way, rerun it with exactly the same arguments, and do not unplug the remote or
 take its batteries out first. The 650 skill's notes on idle disconnects and out of sequence reads apply
 to this architecture as a whole.
 
-**The 600 has no clock on its screen.** A clock is checked by reading memory over USB, and on the cable
-the 600's state variables are live, from `0xE10` on build 0.2: the clock in variables 0 to 6 ticks between
-two reads, findings section 387, and section 303 read its delays there. Findings section 110 measured
-another kind of variable and is not a reason to distrust such a read.
+**The 600 has no clock on its screen.** A clock is checked by reading memory over USB, never by looking:
+on the cable the 600's state variables are live, clock included, and where they sit on build 0.2 is
+`reference/remotes/harmony-600/memory.md`, "Data memory". An older reading that a connected 600 had not
+loaded its configuration measured another kind of variable and is not a reason to distrust such a read.
 
 ## 3. Bench tests
 

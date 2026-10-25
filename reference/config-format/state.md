@@ -258,6 +258,12 @@ are not touched. `clockStateEdits` in `packages/codec/src/edit.ts`, and `CLOCK_S
 What a configuration names in base slot 0 starts at 18 on arch 8, 12 and 14 and at 13 on arch 9[^s284b]:
 the current activity, each device's power, its inputs, and on arch 14 each device's delays, below.
 
+**A configuration holds at most 128 state variables**, because `0x80 | n` names its variable in seven bits,
+[actions.md](actions.md), "`0x80 | n` writes state variable `n`"[^s331]. Logitech's own configurations come close:
+six eight device compiles for the Harmony 650 and 700 hold 112 to 124, where the configurations they were
+compiled from hold 85 and 97, since Logitech's compiler gives an added device its power variable, two delays,
+its inputs and six more variables, seven on one device of fourteen[^s331].
+
 ## A device's delays
 
 A person meets these as "how long to wait after switching the television on before sending it anything"
@@ -845,6 +851,7 @@ Read with `gspm.log_area`; `gspm.log_reference` names the append case an instruc
 [^s74]: Read in the firmware. [Section 74](../../docs/findings.md#s74)
 [^s407]: Measured in configurations. [Section 407](../../docs/findings.md#s407)
 [^s284b]: Measured in configurations. [Section 284](../../docs/findings.md#s284)
+[^s331]: Measured in configurations. [Section 331](../../docs/findings.md#s331)
 [^s103]: Read in the firmware. [Section 103](../../docs/findings.md#s103)
 [^s105]: Read in the firmware. [Section 105](../../docs/findings.md#s105)
 [^s369]: Read in the firmware. [Section 369](../../docs/findings.md#s369)

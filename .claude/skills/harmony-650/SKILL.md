@@ -27,7 +27,7 @@ In this order, every time, including in an agent:
 4. `reference/how-a-harmony-works.md` when the task touches what the remote does for a person: activities,
    device mode, Help, the device list.
 
-**When the reference does not answer a question about the remote, ask Danny** before designing around
+**When the reference does not answer a question about the remote, ask** before designing around
 the gap, and land the answer in the reference afterwards with its source.
 
 ## 2. Writing a configuration to the bench 650
@@ -56,8 +56,8 @@ the `writing-a-config` skill; this is the procedure on top of those, in the orde
    The writer stamps the configuration with the moment of writing and saves the stamped file over
    `--config` before it erases anything. `--as-is` writes a file's own stamp, for a Logitech compile
    put back unchanged. Each run appends a journal beside the configuration, `<config>.write-*.log`.
-5. **After the restart, the remote shows its ordinary screen.** Its clock is checked by reading memory
-   over USB, never by looking: it has no clock on screen.
+5. **After the restart, the remote shows its ordinary screen**, `reference/remotes/harmony-650/behaviour.md`.
+   Its clock is checked by reading memory over USB, never by looking: it has no clock on screen.
 
 **When a write stops part way, rerun it with exactly the same arguments.** The rerun recognises the half
 written blocks and writes the file the stopped run saved. Do not unplug the remote or take its
@@ -66,7 +66,7 @@ batteries out first.
 **Three things the bench does that are not faults:**
 
 * The remote drops off USB when it sits idle, and every command then answers "no matching Harmony
-  remote attached". Danny wakes or replugs it.
+  remote attached". Whoever is at the bench wakes or replugs it.
 * A read sometimes fails with a chunk out of sequence when the machine is busy, for instance while a
   test suite runs. Wait for the load to finish and run it again.
 * A failed read can leave the connection holding stale data, and every read after it fails. A replug
@@ -74,7 +74,7 @@ batteries out first.
 
 ## 3. Writing and running a bench test
 
-A bench test is a JSON file in `packages/bench/irtests/` that Danny performs on the remote while the
+A bench test is a JSON file in `packages/bench/irtests/` that the person at the bench performs on the remote while the
 infrared monitor at `/ir.html` (`make bench`) records what the Flirc receiver hears. The run is filed in
 the lab's `reads/`; when it is done, the test file moves to `irtests/done/`.
 
@@ -91,12 +91,24 @@ prove it wrong.
 * **Plain English, as a person holding the remote reads it.** Name a key by what is printed on it or
   by its place beside the screen ("the button beside Plasma, bottom right"), and say what the screen
   should show at each step.
-* **Trace the path in the file before asking Danny to look**: which key opens which page, and what
+* **Trace the path in the file before asking anyone at the bench to look**: which key opens which page, and what
   that page binds. A step that asks him to check something the file can answer wastes a bench run.
 * **The monitor counts frames.** A held or timed power code shows its total number of frames, so "7
   frames" is one press of a code sent seven times.
 * **The Flirc must be on firmware 4.10.7 or later**; older firmware drops the Denon's long codes
   without a trace.
+
+## Where things live
+
+| what | where |
+|---|---|
+| the public reference | `reference/remotes/harmony-650/` and `reference/architectures/harmony-600-650-700/` |
+| the bench unit: its reads, writes, account and bench runs | `docs/test-notes/harmony-650.md`, with the account in `docs/test-notes/accounts.md` |
+| the plan | `todo-compile-650.md` |
+| the drawing | `packages/silhouettes/src/models/h650.ts`, rendered into `reference/silhouettes/h650.svg` |
+| the unit record | the lab's `units/h650.txt`, never copied into this repository |
+| region reads and compiles | the lab's `reads/`, named in `packages/lab` and `tests/lab.py` with the prefix `h650_` |
+| bench tests | `packages/bench/irtests/`, done ones in `irtests/done/` with names starting `650-` |
 
 ## Related
 

@@ -23,8 +23,8 @@ take another route[^s295].
 | routine | evidence |
 |---|---|
 | the file table and the name pool | [^s199] |
-| the configuration validator, marker at `0x47` | [^s259] |
-| the section seeker, called for raw slots 3 to 12 | [^s259] |
+| the configuration validator, marker at `0x47`; on the 350's 1.4 image it compares `GSPM` from `0x14AE8` | [^s259], [^t-harmony-350-firmware] |
+| the section seeker, `0x0B + 4 * slot` at `0x10BCE` on the 350's 1.4 image, called for raw slots 3 to 12 from 14 call sites | [^s259] |
 | the month end routine of the clock | [^s322] |
 | the state variable bound | [^s276] |
 
@@ -46,6 +46,7 @@ need recovering from, [usb.md](usb.md).
 [^s199]: Read in the firmware. [Section 199](../../../docs/findings.md#s199)
 [^s295]: Stated by Logitech, in their client. [Section 295](../../../docs/findings.md#s295)
 [^s259]: Read in the firmware. [Section 259](../../../docs/findings.md#s259)
+[^t-harmony-350-firmware]: Read in the firmware. [The test](../../../tests/test_harmony_350_firmware.py)
 [^s322]: Read in the firmware. [Section 322](../../../docs/findings.md#s322)
 [^s276]: Read in the firmware. [Section 276](../../../docs/findings.md#s276)
 [^unchecked]: Not checked.

@@ -47,6 +47,8 @@ Read on each build named. Where a build is missing it is not read.
 | queued screen program: base slot 11 entry `operand & 0xff` | 600 and 650 0.2, 650 0.4, 700 2.8 | [^s369] |
 | picture and page list placement: nothing found reads a position | 600 and 650 0.2, 650 0.4, 700 2.8 | [^s328] |
 | parameter group 3, a light's levels | 600 0.2, 700 2.8 | [^s392] |
+| the section seeker: `0x0B + 4 * slot` at `0x10B92`, its callers loading raw slots 3 to 17 as literals, so one scan of its call sites names every slot's consumer | 700 2.8 | [^s35], [^s81] |
+| the action dispatcher at `0x12F08`: a switch on a selector routes a pointer into one of four subsystem slots, the infrared one at `0x3BD` and `0x3BE` | 700 2.8 | [^s13] |
 | every configuration byte read: one SPI read primitive at `0x1B9AC`, with its output twin at `0x1B984`, reached through two accessors, so the configuration is read a few bytes at a time and is never mapped | 700 2.8 | [^s13] |
 | a reset key combination: before the keypad scan three key intersections are probed, and one executes the processor's `RESET` while its key is held, at `0x19120`, independent of any configuration; the other two gate whether that check runs | 700 2.8 | [^s13] |
 | a cycle exact delay, a computed jump into a run of `NOP`s, at `0x10D00`, the infrared carrier's timing and the most called primitive | 700 2.8; at the same address on 600 0.2 | [^s13] |
@@ -116,6 +118,11 @@ Nothing here writes the processor's flash. Two routes exist and both make the **
 routine ends any copy there, so an application image can be at most 89088 bytes, `0x1EC00` less the
 `0x9000` it loads at[^s295b]. The Harmony 700's 2.8, at 76672 bytes and ending at `0xFF` `+0xBB80`, is
 well inside it[^s297].
+
+**An interrupted install can be run again.** The install routine erases every page of the application
+before it copies any, and it only reads the staged image, so a copy that stops part way leaves the safe
+mode image resident, the application erased past the break and the staged copy as it was, which is the
+state the same request starts from[^s295].
 
 The rails and the named doors are in [usb.md](usb.md) and `packages/usb/src/rails.ts`.
 
@@ -254,6 +261,8 @@ and `0x0C4C0` on the 600[^s19][^t-usb-firmware].
 [^s369]: Read in the firmware. [Section 369](../../../docs/findings.md#s369)
 [^s328]: Read in the firmware. [Section 328](../../../docs/findings.md#s328)
 [^s13]: Read in the firmware. [Section 13](../../../docs/findings.md#s13)
+[^s35]: Read in the firmware. [Section 35](../../../docs/findings.md#s35)
+[^s81]: Read in the firmware. [Section 81](../../../docs/findings.md#s81)
 [^s87]: Read in the firmware. [Section 87](../../../docs/findings.md#s87)
 [^s244]: Measured in configurations. [Section 244](../../../docs/findings.md#s244)
 [^s253]: Read in the firmware. [Section 253](../../../docs/findings.md#s253)

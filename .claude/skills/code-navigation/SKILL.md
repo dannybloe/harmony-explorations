@@ -90,12 +90,14 @@ invisible. Do not read its absence as "nothing re-exports this".
   `tools/pic18_trace.py` is this project's reference finder for firmware, and the `trace-section`
   skill is the method around it, including the dead end that matters: it cannot see indirect access
   through `FSR`, so an empty trace means "look for the `LFSR`", not "nothing uses this".
-* **The documents.** `docs/findings.md` is 15000 lines of prose and grep is the right tool for it. The
-  same goes for `docs/superseded.md` and the `fact:` markers, which `make facts` checks anyway.
+* **The documents.** `reference/` and the frozen archive `docs/findings.md`, which is nearly 60000 lines,
+  are prose and grep is the right tool for them. The same goes for `docs/superseded.md` and the `fact:`
+  markers, which `make facts` checks anyway.
 * **Bytes.** A config or an image is not source. That is `tools/gspm_parse.py`, `make coverage` and the
   codec's own readers.
 * **"Where is this number from"**, which is the question this project asks most. No index answers it.
-  `docs/findings.md` does, by section.
+  The fact's footnote in `reference/` does, naming the archive section or the test that holds the
+  argument.
 
 ## Before changing a signature
 

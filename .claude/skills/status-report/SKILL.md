@@ -13,7 +13,7 @@ So this is not a smaller version of a commit message. Three registers, one subje
 
 | | for | can be |
 |---|---|---|
-| `docs/findings.md` | whoever has to believe it | long, technical, with the evidence |
+| `reference/` and a test's header | whoever has to believe it | long, technical, with the evidence |
 | a commit message | the record | long, technical, addresses and counts |
 | a status update | whoever has to decide what happens next | short, plain, one example |
 
@@ -45,12 +45,15 @@ a report that only ever contains good news stops being read as information.
 * **Name the remote, never the architecture number alone.** "de Harmony One", "de Harmony 600", not
   "arch 12". This is a standing rule for all conversation here and it matters most in a report, because
   the numbers are this project's internal handle and map to nothing on the desk.
-* **Dutch in conversation**, per the standing preference; documents and code stay English.
+* **English in conversation, even when the question came in Dutch**, per the standing preference;
+  documents and code are English anyway. This said Dutch until `todo-reference.md` 6.2, which is why the
+  accepted example below is in Dutch: the register is what it shows, not the language.
 * **A number needs its denominator.** "98,9%" says less than "3100 van de 3106 toetsen".
 * **No em-dashes and no en-dashes**, like everything else published here.
 * Write as the colleague who did the work: "ik" for what you did, "we" for where the project is. Name a
   dead end when there was one. No exclamation marks, no performed enthusiasm, no praise of the reader.
-* **Aim for 120 to 200 words.** If it needs more, the extra belongs in `docs/findings.md`.
+* **Aim for 120 to 200 words.** If it needs more, the extra belongs in the reference or a test's
+  header, where the evidence lives.
 
 ## What it looks like
 
