@@ -1894,11 +1894,14 @@ class TheFindingGateHookFires(unittest.TestCase):
     def setUp(self):
         self.session = 'finding-gate-test-%d' % os.getpid()
 
-    def test_a_new_section_interrupts_once_and_the_retry_goes_through(self):
-        payload = {'tool_input': {'file_path': 'docs/findings.md',
-                                  'new_string': '\n## 999. Something established\n\nbody\n'}}
+    #: A fact as the finding skill lands it since the archive froze: a sentence on its reference page
+    #: and a footnote naming the test that holds it.
+    FACT = '\nA thing established[^t-something].\n\n[^t-something]: Measured in configurations. [The test](../../tests/test_x.py)\n'
+
+    def test_a_new_tested_fact_interrupts_once_and_the_retry_goes_through(self):
+        payload = {'tool_input': {'file_path': 'reference/config-format/state.md', 'new_string': self.FACT}}
         code, err = self._run(payload, self.session)
-        self.assertEqual(code, 2, 'a new section has to be impossible to scroll past')
+        self.assertEqual(code, 2, 'a new tested fact has to be impossible to scroll past')
         # The two things the gate above does not cover on its own, which is why the hook says more
         # than "run the skill".
         self.assertIn('reviewers', err)
@@ -1907,12 +1910,22 @@ class TheFindingGateHookFires(unittest.TestCase):
         self.assertEqual(again, 0, 'the retry must succeed or the hook is a wall')
 
     def test_it_stays_out_of_the_way_of_everything_else(self):
-        """It fires on one edit and no other, or it becomes noise and gets disabled."""
+        """It fires on one edit and no other, or it becomes noise and gets disabled.
+
+        The archive's own section heading is among the quiet cases now: `docs/findings.md` is frozen,
+        so a section written there is a different mistake and not a finding being recorded.
+        """
         for name, payload in (
-            ('an ordinary edit to findings.md',
-             {'tool_input': {'file_path': 'docs/findings.md', 'new_string': 'a corrected sentence'}}),
-            ('a heading in another document',
-             {'tool_input': {'file_path': 'docs/status.md', 'new_string': '\n## 999. A thing\n'}}),
+            ('an ordinary edit to a reference page',
+             {'tool_input': {'file_path': 'reference/config-format/state.md',
+                             'new_string': 'a corrected sentence[^s331]'}}),
+            ('a footnote citing a section, not a test',
+             {'tool_input': {'file_path': 'reference/config-format/state.md',
+                             'new_string': '\n[^s331]: Read in the firmware. [Section 331](x)\n'}}),
+            ('a tested fact outside the reference',
+             {'tool_input': {'file_path': 'docs/status.md', 'new_string': self.FACT}}),
+            ('a section heading in the archive',
+             {'tool_input': {'file_path': 'docs/findings.md', 'new_string': '\n## 999. A thing\n'}}),
             ('no tool input', {}),
             ('a field of the wrong type', {'tool_input': {'file_path': 17}}),
         ):
@@ -1931,19 +1944,18 @@ class TheFindingGateHookFires(unittest.TestCase):
         register hook has carried `command` since it was written, for the same reason and with the
         same loose text match: there is no path to resolve inside a pipeline.
         """
-        heredoc = 'cat >> docs/findings.md <<EOF\n\n## 999. Something established\n\nbody\nEOF'
+        heredoc = 'cat >> reference/config-format/state.md <<EOF%sEOF' % self.FACT
         code, err = self._run({'tool_input': {'command': heredoc}}, self.session + 'shell')
-        self.assertEqual(code, 2, 'a heredoc that appends a section has to fire it')
+        self.assertEqual(code, 2, 'a heredoc that appends a tested fact has to fire it')
         self.assertIn('reviewers', err)
-        # Two controls, and they are different claims, which the sentence audit of 6 September 2026
-        # separated. The first two name the document and carry no section heading, so they reach the
-        # section check and it says no: reading and grepping are not writing. The third names no file
-        # at all, so it is refused one step earlier, by the name match. Both matter, because the name
-        # match is deliberately loose text and cannot resolve a path inside a pipeline: any command
-        # that both mentions the document and carries a `## N.` line fires, whatever it writes.
+        # Two kinds of control, and they are different claims. The first two name the reference and
+        # write no footnote definition, so they reach the footnote check and it says no: reading and
+        # grepping are not writing. The third names no file at all, so it is refused one step earlier,
+        # by the name match. Both matter, because the name match is deliberately loose text and
+        # cannot resolve a path inside a pipeline.
         for name, command in (
-            ('reading it', 'sed -n 1,40p docs/findings.md'),
-            ('grepping it', 'grep -n "## 151" docs/findings.md'),
+            ('reading it', 'sed -n 1,40p reference/config-format/state.md'),
+            ('grepping it', 'grep -rn "t-something" reference/'),
             ('naming no file', 'make prose facts'),
         ):
             with self.subTest(case=name):
@@ -1960,46 +1972,51 @@ class TheFindingGateHookFires(unittest.TestCase):
                             if any('finding-gate-hook.py' in h['command'] for h in entry['hooks'])]
                 self.assertTrue(any('Bash' in m for m in matchers), matchers)
 
-    def test_it_finds_a_section_however_the_edit_spells_its_content(self):
+    def test_it_finds_a_fact_however_the_edit_spells_its_content(self):
         """Edit, Write and the multi-edit form name the new text differently.
 
         A missed spelling is a missed reminder and nothing would ever say so, which is the failure
         mode this whole class exists to avoid.
         """
-        section = '\n## 999. Something established\n'
+        page = 'reference/config-format/state.md'
         for name, tool_input in (
-            ('Write', {'file_path': 'docs/findings.md', 'content': section}),
-            ('Edit', {'file_path': 'docs/findings.md', 'new_string': section}),
-            ('MultiEdit', {'file_path': 'docs/findings.md',
-                           'edits': [{'old_string': 'x', 'new_string': section}]}),
+            ('Write', {'file_path': page, 'content': self.FACT}),
+            ('Edit', {'file_path': page, 'new_string': self.FACT}),
+            ('MultiEdit', {'file_path': page, 'edits': [{'old_string': 'x', 'new_string': self.FACT}]}),
         ):
             with self.subTest(tool=name):
                 code, _ = self._run({'tool_input': tool_input}, self.session + name)
                 self.assertEqual(code, 2, '%s spells its content differently and must still fire' % name)
 
-    def test_it_agrees_with_facts_about_what_a_section_is(self):
-        """Two readers of one heading shape is the state this repository's oldest rule forbids.
+    def test_it_agrees_with_the_reference_guard_about_what_a_test_footnote_is(self):
+        """Two readers of one label shape is the state this repository's oldest rule forbids.
 
-        `tools/facts.py` counts findings sections and this hook fires on one, so a disagreement would
-        show as the hook going quiet while the section count still moved.
+        `tools/reference_guards.py` decides which footnote labels are legal and this hook fires on the
+        `t-` ones, so a disagreement would show as the hook going quiet on a label the guard accepts.
+        Checked over every definition the reference holds, so neither reader can agree with the other
+        by both matching nothing.
         """
-        with open(os.path.join(ROOT, 'docs', 'findings.md'), encoding='utf-8') as handle:
-            text = handle.read()
         spec = importlib.util.spec_from_file_location('finding_gate_hook', self.HOOK)
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
-        self.assertEqual(len(module.SECTION.findall(text)),
-                         len(re.findall(r'^## \d+\.', text, re.MULTILINE)))
-        # And the hook fires on a heading taken out of the document itself, so neither reader can
-        # agree with the other by both matching nothing. Deliberately not a count: the number of
-        # sections moves with every finding, so a bound on it would be a fossil and an equality
-        # would be a line to edit on every commit.
-        headings = re.findall(r'^## \d+\..*$', text, re.MULTILINE)
-        self.assertTrue(headings, 'docs/findings.md states no sections at all')
-        code, _ = self._run({'tool_input': {'file_path': 'docs/findings.md',
-                                            'new_string': '\n%s\n' % headings[-1]}},
-                            self.session + 'real')
-        self.assertEqual(code, 2, 'the hook does not fire on a heading out of the document')
+        hook = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(hook)
+        guards_spec = importlib.util.spec_from_file_location(
+            'reference_guards', os.path.join(ROOT, 'tools', 'reference_guards.py'))
+        guards = importlib.util.module_from_spec(guards_spec)
+        guards_spec.loader.exec_module(guards)
+        seen = 0
+        for folder, _, files in os.walk(os.path.join(ROOT, 'reference')):
+            for name in files:
+                if not name.endswith('.md'):
+                    continue
+                with open(os.path.join(folder, name), encoding='utf-8') as handle:
+                    for line in handle:
+                        found = guards.FOOTNOTE_DEFINITION.match(line.rstrip('\n'))
+                        if not found or not guards.LABEL.match(found.group(1)):
+                            continue
+                        is_test = found.group(1).startswith('t-')
+                        self.assertEqual(bool(hook.FINDING.match(line)), is_test, line)
+                        seen += is_test
+        self.assertTrue(seen, 'the reference cites no test at all')
 
     def test_both_agents_are_wired_to_it(self):
         """A guard installed for one agent is a guard the other walks past."""

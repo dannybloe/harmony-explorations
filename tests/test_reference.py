@@ -283,7 +283,9 @@ class PlantedViolations(unittest.TestCase):
         write(self.root, 'reference/target.md', (
             '# Target\n\n## A heading, with `code` and [a link](clean.md)\n\n## Twice\n\n## Twice\n\n'
             '<a id="s5"></a>\n'))
-        clean = ('[a](target.md) [b](target.md#a-heading-with-code-and-a-link) [c](target.md#twice-1) '
+        clean = ('[a](target.md) [b](target.md#a-heading-with-code-and-a-link) '
+                 # `#twice-1`, GitHub's number for the second heading, is refused since the website numbers it `_1`,
+                 # test_an_anchor_counts_only_where_github_and_the_website_agree
                  '[d](target.md#s5) [e](#self) [f](https://example.org/x) ![g](target.md)\n\n'
                  '## Self\n\n`[not](a-link.md)`\n\n```\n[not](a-link.md)\n```\n[ref]: target.md#twice\n')
         path = write(self.root, 'reference/clean.md', clean)
@@ -299,6 +301,21 @@ class PlantedViolations(unittest.TestCase):
     def test_links_leave_the_archive_to_its_own_test(self):
         write(self.root, 'docs/findings.md', '[a](gone.md)\n')
         self.assertEqual(guards.link_violations(self.root), collections.Counter())
+
+    def test_an_anchor_counts_only_where_github_and_the_website_agree(self):
+        """A link the guard passed and the website's strict build refused, found by step 6.2.
+
+        A heading holding `|` is `0x80--n` on GitHub and `0x80-n` on the website, and a repeated
+        heading is numbered `-1` on one and `_1` on the other. Each check accepted one form, so a link
+        passed here and broke there. Both forms of each are refused now, and a plain heading still
+        resolves, so this cannot pass by refusing everything.
+        """
+        write(self.root, 'reference/a.md', '# Page\n\n## 0x80 | n calls a list\n\n## Twice\n\n## Twice\n\n## Plain words\n')
+        write(self.root, 'reference/b.md', ''.join('[x](a.md#%s)\n' % anchor for anchor in (
+            '0x80--n-calls-a-list', '0x80-n-calls-a-list', 'twice-1', 'twice_1', 'twice', 'plain-words')))
+        found = guards.link_violations(self.root)
+        self.assertEqual(sum(found.values()), 4, found)
+        self.assertEqual({p for p, _ in found}, {'reference/b.md'})
 
 
 class ThisGuardNamesNobody(unittest.TestCase):

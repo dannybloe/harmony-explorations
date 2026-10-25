@@ -42,6 +42,7 @@ import os
 import re
 import subprocess
 import sys
+import unicodedata
 import urllib.parse
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -274,16 +275,40 @@ def heading_slug(heading):
     return re.sub(r'[^\w\- ]', '', text.lower()).replace(' ', '-')
 
 
+def site_slug(heading):
+    """The website's anchor for the same heading: Python Markdown's `toc` slugify, which MkDocs uses.
+
+    Restated rather than imported because the site's packages live in their own environment outside the
+    checkout, `make site`, and this guard runs without them. It differs from GitHub's in two places that
+    matter here: a run of spaces and hyphens becomes one hyphen, so `0x80 | n` is `0x80-n` on the site and
+    `0x80--n` on GitHub, and non ASCII letters are folded or dropped rather than kept.
+    """
+    text = re.sub(r'!?\[([^\]]*)\]\([^)]*\)', r'\1', heading)
+    text = re.sub(r'<[^>]+>', '', text)
+    text = re.sub(r'\s+#+\s*$', '', text.strip())
+    text = unicodedata.normalize('NFKD', text).encode('ascii', 'ignore').decode('ascii')
+    text = re.sub(r'[^\w\s-]', '', text).strip().lower()
+    return re.sub(r'[-\s]+', '-', text)
+
+
 def anchors(text):
-    """Every fragment a Markdown file offers: explicit ids and names, and heading slugs, duplicates
-    numbered the way GitHub numbers them."""
+    """Every fragment a Markdown file offers on **both** of the places it is read: explicit ids and
+    names, and the heading slugs GitHub and the website agree on.
+
+    The reference is read on GitHub and published as the website, and the two slug a heading
+    differently in two ways: `site_slug` says where, and a repeated heading is numbered `-1` by GitHub
+    and `_1` by the website. A link to an anchor only one of them has works in one place and is broken
+    in the other, and each check passed it while the other failed, so an anchor counts only where they
+    agree. A heading whose slugs differ, or the second of two equal headings, takes an explicit id.
+    """
     out = set(re.findall(r'\b(?:id|name)="([^"]+)"', text))
     seen = collections.Counter()
     for _, line in prose_lines(text, keep_code=True):
         match = re.match(r'^ {0,3}#{1,6} +(.*)$', line)
         if match:
             slug = heading_slug(match.group(1))
-            out.add(slug if not seen[slug] else '%s-%d' % (slug, seen[slug]))
+            if not seen[slug] and slug == site_slug(match.group(1)):
+                out.add(slug)
             seen[slug] += 1
     return out
 

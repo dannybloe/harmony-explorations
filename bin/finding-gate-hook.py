@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
-"""Put the finding skill's gate in front of a session at the moment `docs/findings.md` gains a section.
+"""Put the finding skill's gate in front of a session at the moment `reference/` gains a tested fact.
+
+**What it fires on moved with the reference, todo-reference.md 6.2.** It fired on a new `## N.` section
+in `docs/findings.md` until that document became a frozen archive, after which it could never fire. A
+new fact now lands on its reference page with a footnote naming the test that holds it, `[^t-name]:` in
+plan 009 section 4's convention, so a new definition of that shape in a file under `reference/` is the
+moment a finding is being written, and it is what this matches.
 
 **This exists because the skill is invoked by judgement and the judgement has a blind spot.** The four
 places do land: every one of the last 33 commits that added a `## NNN.` heading also touched a test.
@@ -13,7 +19,7 @@ a session does not think to invoke a skill for.
 
 **It interrupts once per session.** The same shape as `bin/lab-register-hook.py` and for the reason
 that file records at length: advisory text that scrolls past is what momentum ignores, so the first
-write of a new section exits 2 and puts the gate in front of whoever is reading. The retry immediately
+write of a tested fact exits 2 and puts the gate in front of whoever is reading. The retry immediately
 afterwards succeeds. One round trip, once, per session that records a finding.
 
 **It fails open, always.** Anything it cannot parse, anything that raises, returns 0. Losing the
@@ -33,9 +39,9 @@ import tempfile
 #: hook itself having failed.
 HOOK_INTERRUPT = 2
 
-#: A new findings section, which is the one edit this fires on. The heading shape is the same one
-#: `tools/facts.py` counts sections by, so the two cannot drift apart on what a section is.
-SECTION = re.compile(r'^## \d+\.', re.MULTILINE)
+#: A footnote definition citing a test, which is the one edit this fires on. The label's shape is
+#: `LABEL`'s `t-` arm in `tools/reference_guards.py`, and a test holds the two to the same labels.
+FINDING = re.compile(r'^\[\^t-[a-z0-9]+(?:-[a-z0-9]+)*\]:', re.MULTILINE)
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -43,7 +49,7 @@ REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 #: two sessions in one working copy do not silence each other.
 STAMP = os.path.join(tempfile.gettempdir(), 'harmony-finding-gate-%s')
 
-REMINDER = """A new section is being written into docs/findings.md, so the finding skill applies.
+REMINDER = """A fact with a test behind it is being written into reference/, so the finding skill applies.
 This fires once per session and the retry straight after it succeeds.
 
 Before the commit, two things the gate does not cover on its own:
@@ -90,14 +96,14 @@ def edited_text(payload: dict) -> str:
     return '\n'.join(parts)
 
 
-#: How `docs/findings.md` is named in a shell command. Deliberately loose, on the lab register
-#: hook's reasoning: a false positive costs one lookup that prints nothing and a false negative
-#: costs the reminder this whole file exists to deliver.
-FINDINGS_IN_A_COMMAND = re.compile(r'findings\.md')
+#: How `reference/` is named in a shell command. Deliberately loose, on the lab register hook's
+#: reasoning: a false positive costs one lookup that prints nothing and a false negative costs the
+#: reminder this whole file exists to deliver.
+REFERENCE_IN_A_COMMAND = re.compile(r'\breference/')
 
 
-def targets_findings(payload: dict) -> bool:
-    """Whether this call writes `docs/findings.md`, by real path or, for a shell, by name.
+def targets_reference(payload: dict) -> bool:
+    """Whether this call writes a file under `reference/`, by real path or, for a shell, by name.
 
     Two routes because there are two ways a document gets written here. A file writing tool names
     the path, and that is resolved through `realpath` so a relative name, an absolute one and a
@@ -111,12 +117,13 @@ def targets_findings(payload: dict) -> bool:
     if isinstance(named, str):
         path = named if os.path.isabs(named) else os.path.join(os.getcwd(), named)
         try:
-            if os.path.realpath(path) == os.path.realpath(os.path.join(REPO, 'docs', 'findings.md')):
+            root = os.path.realpath(os.path.join(REPO, 'reference'))
+            if os.path.realpath(path).startswith(root + os.sep):
                 return True
         except OSError:
             return False
     command = tool_input.get('command')
-    return isinstance(command, str) and FINDINGS_IN_A_COMMAND.search(command) is not None
+    return isinstance(command, str) and REFERENCE_IN_A_COMMAND.search(command) is not None
 
 
 def already_fired(payload: dict) -> bool:
@@ -140,9 +147,9 @@ def already_fired(payload: dict) -> bool:
 
 def run_as_hook() -> int:
     payload = json.load(sys.stdin)
-    if not targets_findings(payload):
+    if not targets_reference(payload):
         return 0
-    if not SECTION.search(edited_text(payload)):
+    if not FINDING.search(edited_text(payload)):
         return 0
     if already_fired(payload):
         return 0
@@ -165,7 +172,7 @@ def main(argv: list[str]) -> int:
     except OSError as problem:
         print('cannot read %s: %s' % (argv[0], problem))
         return 0
-    print(REMINDER if SECTION.search(text) else 'no new findings section in that text')
+    print(REMINDER if FINDING.search(text) else 'no footnote citing a test in that text')
     return 0
 
 
