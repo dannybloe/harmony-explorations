@@ -276,6 +276,10 @@ it; [the architectures](../architectures/README.md#three-ways-a-host-talks-to-a-
 * Every capability column of a model nobody has read, which is every row without a folder[^unchecked].
 * What a remote itself enforces, as against what Logitech's software allows, for devices, activities and
   favourites[^unchecked].
+* Which skin of a regional pair a compiled configuration carries, and so which number its architecture
+  record names: the locale the compile was asked for and the product record the account holds are both
+  candidates, and nothing has separated them. An editor copies the number the configuration already
+  carries rather than choosing one[^unchecked].
 
 [^s57]: Read in the firmware. [Section 57](../../docs/findings.md#s57)
 [^s131]: Stated by Logitech, by their service. [Section 131](../../docs/findings.md#s131)

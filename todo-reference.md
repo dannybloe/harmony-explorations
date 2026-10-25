@@ -59,7 +59,7 @@ takes over `todo-later.md` chapter 8, plan 005's steps, which now live here.
 
 ## 6. The rules
 
-- [ ] 6.1 `CLAUDE.md` keeps the instructions and points to `reference/` for the facts it now repeats
+- [x] 6.1 `CLAUDE.md` keeps the instructions and points to `reference/` for the facts it now repeats: 96 KB to 73 KB, every rule and rail kept, the per unit write history to `docs/test-notes/`, decision 5's stale arch 14 sentence, the read back bullet and section NNN (331) settled, `README.md`'s stale standing and firmware backup line corrected
 - [ ] 6.2 The skills and the `finding` procedure send a new fact to its home in `reference/` with its footnote
 
 ## 7. The website

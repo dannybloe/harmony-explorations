@@ -258,6 +258,13 @@ are not touched. `clockStateEdits` in `packages/codec/src/edit.ts`, and `CLOCK_S
 What a configuration names in base slot 0 starts at 18 on arch 8, 12 and 14 and at 13 on arch 9[^s284b]:
 the current activity, each device's power, its inputs, and on arch 14 each device's delays, below.
 
+**A configuration holds at most 128 state variables**, because the instruction that writes one names it
+in the seven bits below the opcode's top bit, `0x80 | n` with `n` from 0 to `0x7F`, [actions](actions.md)[^s73].
+Logitech's own configurations come close: six of its compiles holding eight devices hold 112, 113, 116,
+116, 122 and 124 variables. A device costs three, its power variable and two delays, plus one per input,
+and the device count a model allows binds before the ceiling on every configuration measured; the ceiling
+was reached only by adding devices past that count[^s331].
+
 ## A device's delays
 
 A person meets these as "how long to wait after switching the television on before sending it anything"
@@ -894,3 +901,5 @@ Read with `gspm.log_area`; `gspm.log_reference` names the append case an instruc
 [^s47b]: Read in the firmware. [Section 47](../../docs/findings.md#s47)
 [^t-host-client]: Stated by Logitech, in their client. [The test](../../tests/test_host_client.py)
 [^s260]: Measured in configurations. [Section 260](../../docs/findings.md#s260)
+[^s73]: Read in the firmware. [Section 73](../../docs/findings.md#s73)
+[^s331]: Measured in configurations. [Section 331](../../docs/findings.md#s331)

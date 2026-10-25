@@ -23,47 +23,30 @@ Logitech can make a new one.
 configuration off your remote, lets you change your devices and activities, learns codes from your old
 remotes, and writes it back. Nothing hosted, nothing that can be switched off later.
 
-It has begun and there is nothing to install yet. As of 25 August 2026 it is a desktop application
-taking shape: it opens, keeps your remotes in one place, and reads a configuration file into the
-devices and activities it holds, so the seam between the two repositories is proven by something
-that runs. Everything else about it is still ahead, and it cannot be
-written until the file a remote stores is properly understood. Working that out is what this repository is
-for: the understanding, and the code that does the reading.
+It has begun and there is nothing to install yet. It cannot be finished until the file a remote stores
+is properly understood, and working that out is what this repository is for: the understanding, and the
+code that reads, changes and writes that file.
 
 **The first version will only read, never write.** These remotes cannot be bought new and a bad write
-can turn one into a brick, so the first thing this project ever writes to a remote will not be a guess.
+can turn one into a brick, so writing stays switched off in the application until the way back from a
+mistake is proven.
 
 ## Where we stand
 
-Nine remotes are on the bench: a Harmony One, a second One kept as a spare, a Harmony 600, a Harmony
-525, a Harmony Touch, a Harmony 350 and a Harmony 300, and later a Harmony 650 and a Harmony 700, plus
-configuration files that other owners have sent in. The work is about the Harmony Ones, the 525, the 600,
-the 650 and the 700; the Touch, the 350 and the 300 speak a different protocol and are only partly
-reachable.
-
-| | |
-|---|---|
-| Read the whole configuration off a remote | **Works.** What comes off matches a backup of that unit byte for byte |
-| Work out what is in it | **Done** to the last byte for the four remote families the tools cover, and nearly so for the fifth |
-| List your devices and activities, with their names | **Works.** The names are recovered from the pictures the remote draws on its own screen, because that is the only place it keeps them |
-| Take a configuration apart and rebuild it identically | **Works.** This is the test that has to pass before it is safe to change anything |
-| Change a configuration on the computer | **Works.** Small edits, bigger ones that move everything after them, and adding a whole device from Logitech's catalogue, whose infrared comes out byte for byte what Logitech's own service would have written |
-| Write it back to the remote | **Started.** A remote's own settings have been written back to it unchanged, which proves the mechanism without risking anything. Writing something you actually changed is the next step, and it stays switched off until the way back from a mistake is proven |
-| Learn a code from an old remote | Half built: turning a known code into pulses works and is checked against Logitech's own compiler; capturing one from a real remote is read but not built |
-
-**One write has been performed here, and it changed nothing.** On 30 August 2026 a small part of a
-spare remote's own settings was erased and written straight back, unchanged, and the remote afterwards
-was exactly as it started. Everything else that has ever happened here is reading, and the code
-refuses to write at all unless somebody deliberately turns that on.
+A configuration can be read off a Harmony One, 525, 600, 650 or 700, taken apart to the last byte, changed
+on the computer and put back together, and configurations built here have been written to this project's
+own test remotes, never to anybody else's. The Harmony Touch, 350 and 300 speak a different protocol and
+are only partly reachable. [docs/status.md](docs/status.md) has the detail and the numbers, and
+[todo.md](todo.md) what comes next.
 
 ## The details, for anyone who wants them
 
 | | |
 |---|---|
-| [docs/status.md](docs/status.md) | where the work stands today |
-| [docs/findings.md](docs/findings.md) | every finding, numbered, with the evidence for it |
-| [reference/config-format/README.md](reference/config-format/README.md) | the file format written up as a specification |
-| [todo.md](todo.md) | the plan, and the decisions behind it |
+| [reference/README.md](reference/README.md) | how a Harmony works and everything known about each model, its memory, its USB protocol and its configuration file, every fact marked with the kind of evidence behind it |
+| [docs/findings.md](docs/findings.md) | the archive of numbered findings that the reference's footnotes point into, with the evidence for each |
+| [docs/status.md](docs/status.md) | where the work stands |
+| [todo.md](todo.md) | the plan |
 
 The analysis was produced by an AI and is published as such, so all of it is written to be checked
 rather than trusted: every conclusion carries a test that fails if it stops being true, and the mistakes
@@ -87,8 +70,13 @@ tool that reads one off:
 
 ```sh
 concordance -c my-remote-config.EZHex     # the configuration
-concordance -f my-remote-firmware.bin     # the firmware
+concordance -f my-remote-firmware.bin     # the firmware, on older models only
 ```
+
+The firmware read is complete on the older models, such as the Harmony 880, 885 and the 520 and 525
+family. On a Harmony One, 600, 650 or 700 it returns no usable firmware, because of two entries in
+concordance's own table of remotes, so the configuration is the part worth keeping there,
+[docs/concordance-notes.md](docs/concordance-notes.md).
 
 One warning is worth more than all the rest: **use lower case flags only.** `-c` reads the configuration
 off the remote and `-C` writes one to it, `-f` reads the firmware and `-F` overwrites it. The flag you
