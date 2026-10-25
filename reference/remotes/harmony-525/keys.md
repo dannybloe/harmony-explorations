@@ -11,8 +11,6 @@ bars that the product does not have, `h525.ts`. The photograph's nameplate reads
 `h525.ts` records; the drawing is the 525's, the two faces differing by the four teletext keys
 alone.[^x-forum]
 
-![The Harmony 525's face](../../silhouettes/h525.svg)
-
 ## Every key on the drawing
 
 <!-- generated:keys -->

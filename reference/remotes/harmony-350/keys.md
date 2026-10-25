@@ -9,8 +9,6 @@ The drawing, [`reference/silhouettes/h350.svg`](../../silhouettes/h350.svg), is 
 counted shape by shape[^t-silhouette]. The Harmony 300's drawing takes every shape from it, since the two
 share [one case](../../architectures/harmony-300-350/README.md#shared-in-one-table).
 
-![The Harmony 350's face](../../silhouettes/h350.svg)
-
 ## The keys Logitech's setup guide names
 
 1. **Watch TV button**: "Powers devices on/off for your Watch TV Activity".

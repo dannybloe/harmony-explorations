@@ -7,8 +7,6 @@ the two keys below it do what the screen above them says. Its drawing,
 `packages/silhouettes/src/models/one.ts`: the shapes are traced from Logitech's own documentation and the
 words read off a photograph.
 
-![The Harmony One's face](../../silhouettes/one.svg)
-
 ## Every key on the drawing
 
 <!-- generated:keys -->

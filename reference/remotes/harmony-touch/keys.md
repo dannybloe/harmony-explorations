@@ -5,8 +5,6 @@ The drawing, [`reference/silhouettes/touch.svg`](../../silhouettes/touch.svg), i
 guide's "Know your product" page, moved into the drawing's coordinates[^x-touch-manual]; its symbols and words
 are read off a photograph of the whole face, and drawing and photograph agree mark for mark, `touch.ts`.
 
-![The Harmony Touch's face](../../silhouettes/touch.svg)
-
 ## Every key on the drawing
 
 <!-- generated:keys -->

@@ -9,8 +9,6 @@ measurement of the case[^x-manual]. So its drawing,
 reference and changes only the nameplate. Whether the 650's case differs in colour or finish does not
 matter to the drawing and is not checked[^unchecked].
 
-![The Harmony 650's face](../../silhouettes/h650.svg)
-
 ## The two populations
 
 A key is either on the **keypad** or one **the screen speaks for**, and on this architecture the two

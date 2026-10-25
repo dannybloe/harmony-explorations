@@ -115,8 +115,8 @@ interface RemoteFolder {
 }
 
 /**
- * The ten files of a model folder, `reference/README.md`'s shape: a missing file reads as "nothing known",
- * where a file whose section says "not checked" reads as what it is.
+ * The ten files of a model folder, `docs/README.md`'s "How the reference is kept": a missing file reads as
+ * "nothing known", where a file whose section says "not checked" reads as what it is.
  */
 export const MODEL_FILES: readonly string[] = ['README.md', 'behaviour.md', 'display.md', 'features.md',
   'firmware.md', 'hardware.md', 'keys.md', 'memory.md', 'misc.md', 'usb.md'];

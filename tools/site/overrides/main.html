@@ -1,0 +1,31 @@
+{#-
+  The page template, extended only to add the styles the two overrides in partials/ need: the remote
+  switcher in the left hand menu and the drawing in the right hand column. Kept here rather than in a
+  stylesheet under reference/, which is published as content.
+-#}
+{% extends "base.html" %}
+{% block styles %}
+  {{ super() }}
+  <style>
+    .harmony-switcher { padding: 0 0.6rem 0.8rem; }
+    .harmony-switcher__label { display: block; font-weight: 700; margin-bottom: 0.4rem; }
+    .harmony-switcher__select {
+      width: 100%; padding: 0.3rem 0.4rem; font: inherit;
+      color: var(--md-default-fg-color); background: var(--md-default-bg-color);
+      border: 1px solid var(--md-default-fg-color--lighter); border-radius: 0.2rem;
+    }
+    .harmony-switcher__pages { list-style: none; margin: 0.8rem 0 0; padding: 0; }
+    .harmony-switcher__pages li { margin: 0; }
+    .harmony-switcher__pages .md-nav__link { margin-top: 0.5rem; }
+    .harmony-switcher__pages .md-nav__link--active { color: var(--md-typeset-a-color); }
+    /* On a wide screen the switcher is the whole menu. On a phone the menu is the only navigation, so
+       the full list stays and the switcher's own page list, which repeats part of it, goes. */
+    @media screen and (min-width: 76.25em) {
+      .harmony-switched > .md-nav__list { display: none; }
+    }
+    @media screen and (max-width: 76.234375em) {
+      .harmony-switcher__pages { display: none; }
+      .harmony-switcher { padding-top: 0.8rem; }
+    }
+  </style>
+{% endblock %}

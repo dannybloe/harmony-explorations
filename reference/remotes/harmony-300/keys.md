@@ -9,8 +9,6 @@ The drawing, [`reference/silhouettes/h300.svg`](../../silhouettes/h300.svg), is 
 states only what is printed differently, because the two are one moulding[^t-moulding]. The printing is
 read off the cover photograph of Logitech's setup guide, PDF page 2[^t-printing].
 
-![The Harmony 300's face](../../silhouettes/h300.svg)
-
 ## How the printing differs from the 350's
 
 | | Harmony 300 | Harmony 350 |

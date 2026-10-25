@@ -168,8 +168,8 @@ reference/remotes/              the per remote technical reference, one folder p
                                 the Harmony 600, 650 and 700 show a clock, which none of them does.
                                 Facts that live in code are **generated** blocks, between
                                 `<!-- generated:name -->` markers, by packages/silhouettes/bin/remotes.ts;
-                                `make remote-reference` fails on drift. reference/README.md holds
-                                the convention
+                                `make remote-reference` fails on drift. "How the reference is
+                                kept" below holds the convention
 reference/architectures/        what one architecture's models share, stated once and linked from
                                 each model folder: harmony-600-650-700/ for arch 14, harmony-one/
                                 for arch 12, harmony-5xx/ for arch 9, harmony-300-350/ for arch 16,
@@ -573,6 +573,68 @@ test. So the copies are executable now, and `make facts` is the check:
 It runs in `make all` and in the pre-commit hook, so a document that contradicts the code cannot be
 committed. The numeric half needs a lab and skips cleanly without one; the phrase half is pure text
 and always runs, because a fresh clone with no lab still has to be protected by it.
+
+## How the reference is kept
+
+`reference/README.md` is the website's front page and talks to a reader; this is the part of the
+convention only a writer needs. Moved here from that page, which talked about folders a reader of the
+website never sees.
+
+**Every model folder holds the same ten files**, `README.md`, `hardware.md`, `keys.md`, `display.md`,
+`features.md`, `behaviour.md`, `memory.md`, `firmware.md`, `usb.md` and `misc.md`, including a model where a
+file says little, because a missing file reads as "nothing known" and an empty section that says "not
+checked" reads as what it is. `packages/silhouettes/test/remotes.test.ts` fails when a folder holds anything
+else.
+
+**What several models share goes in the architecture folder once**, above all the memory map and the
+firmware, and the model folders link to it and state only how they differ. An architecture folder is named
+for the models it covers rather than for its number, since the number is this project's handle and means
+nothing on the desk; its README says which number it is. The Harmony Touch's number is disputed, so its
+folder is named for the generation and says why.
+
+**A remote's drawing is shown on the website beside every page of that remote**, above the contents in the
+right hand column and at most 380 pixels tall, by `tools/site/hooks.py` and the one theme override in
+`tools/site/overrides/`. So a page does not embed the drawing itself; `keys.md` links the file.
+
+**The footnote labels**, the only forms there are, plan 009 section 4:
+
+| label | where the argument is | the definition links to |
+|---|---|---|
+| `[^s424]` | section 424 of the findings archive, `docs/findings.md` | that section |
+| `[^s424b]` | the same section, backing a fact of a second kind on the same page | that section |
+| `[^d25]` | a choice this project made, decision 25 in `docs/decisions.md` | that decision |
+| `[^t-name]` | established after the findings archive froze, argued in the header of the test that holds it | that test file |
+| `[^x-name]` | a public outside source with no archive section, such as a repair shop's procedure | its public address |
+| `[^unchecked]` | nowhere: nobody has established it | nothing |
+
+A label may be used several times on a page and is defined once, in order of first use. One footnote names
+one section, so a fact resting on two carries two footnotes. A definition reads, on a model page:
+
+```
+[^s136]: Stated by Logitech, by their service. [Section 136](../../../docs/findings.md#s136)
+```
+
+The evidence words that open a definition are listed for readers on `reference/README.md`; `x` labels
+take "Stated by a third party", `d` labels "Chosen by this project" and `[^unchecked]` "Not checked".
+
+**Generated blocks.** Some facts already live in code, and those are generated into the documents rather
+than typed: the skin table and capability fields of `packages/usb/src/models.ts`, the key list and measured
+scan codes of the drawing in `packages/silhouettes`, the screen raster in `packages/codec/src/render.ts`,
+the product id in `packages/corpus/src/read.ts`, and the memory constants and write lists in
+`packages/usb/src/rails.ts`, `protocol.ts` and `settings.ts`. A generated block sits between two markers:
+
+```
+<!-- generated:keys -->
+... owned by the generator ...
+<!-- /generated -->
+```
+
+Text outside the markers is hand written and never touched. `packages/silhouettes/bin/remotes.ts` is the
+generator; it keeps the list of model and architecture folders and which block goes in which file.
+`make remote-reference` checks every block against the code and `make remote-reference-write` rewrites
+them; the check also runs in `packages/silhouettes/test/remotes.test.ts`. To change a generated fact,
+change the code it comes from and run the write target. The names are `remote-reference` rather than
+`remotes` because `make remotes` already lists the remotes attached to this machine.
 
 ## Commands
 

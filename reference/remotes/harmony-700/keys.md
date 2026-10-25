@@ -7,8 +7,6 @@ draws the same keys under "The buttons on your Harmony 700", page 5[^x-manual]. 
 `packages/silhouettes/src/models/h700.ts`, which takes every shape and scan code from the 600's model by
 reference and changes only the nameplate.
 
-![The Harmony 700's face](../../silhouettes/h700.svg)
-
 ## Where the scan codes come from
 
 Every scan code on the drawing was **measured on the Harmony 600**[^s133], and is carried over on the

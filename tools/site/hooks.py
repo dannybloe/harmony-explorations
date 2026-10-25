@@ -28,6 +28,17 @@ would make of the heading, `#424-summary`, read by its leading number.
 a file that does not exist in the repository, a link that leaves the repository (`../lab`, which the
 reference must never name), and an archive anchor that is not a section number.
 
+3. **It names a remote's drawing for every page of that remote**, so the theme override in
+   `tools/site/overrides/partials/toc.html` can show it above the page's contents in the right hand
+   column, at most 380 pixels tall. A page under `remotes/harmony-650/` gets `silhouettes/h650.svg`,
+   `harmony-one` and `harmony-touch` take `one.svg` and `touch.svg`, and a model with no drawing, such as
+   the Harmony 885, gets none because the file does not exist. The drawing is derived from the folder
+   name rather than listed, so a model that gains a drawing shows it without an edit here.
+4. **It turns the left hand menu into a switcher on a remote's or an architecture's pages**: a list to
+   pick another remote, which lands on the same page of that remote, and below it only the current
+   remote's pages. `tools/site/overrides/partials/nav.html` draws it on wide screens; on a phone the
+   full menu stays, since it is the only navigation there.
+
 Nothing here is specific to a page's content, and it carries no list of files: what is published is
 `reference/` plus the archive, and the navigation is `mkdocs.yml`'s.
 """
@@ -321,3 +332,71 @@ def on_page_markdown(markdown: str, page, config, files) -> str:
     # Runs before MkDocs converts the page, and so before it validates the links, which is the point:
     # a link this rewrote is checked in its rewritten form.
     return _rewrite_markdown(markdown, page.file.src_uri, _origin.get(page.file.src_uri))
+
+
+#: A page of one remote: `remotes/<folder>/<page>.md`, the folder named `harmony-<model>`.
+REMOTE_PAGE = re.compile(r"^remotes/harmony-([a-z0-9]+)/[^/]+\.md$")
+
+
+def drawing_for(src_uri: str, docs_dir: str) -> str | None:
+    """The site path of the drawing for a remote's page, or None when the page is not a remote's or the
+    model has no drawing. `harmony-650` is `h650.svg`, while `harmony-one` and `harmony-touch` keep their
+    word, `one.svg` and `touch.svg`, which is how `packages/silhouettes` names its models."""
+    match = REMOTE_PAGE.match(src_uri)
+    if not match:
+        return None
+    model = match.group(1)
+    name = ("h%s" % model if model.isdigit() else model) + ".svg"
+    path = "silhouettes/" + name
+    return path if (Path(docs_dir) / path).is_file() else None
+
+
+#: The sections whose members are all the same kind of thing with the same pages, where the left hand
+#: menu becomes a switcher: pick a remote, or an architecture, and see only its pages.
+SWITCHED = ("remotes/", "architectures/")
+
+
+def _first_page(section):
+    """The first page in a navigation section, its index page when it has one."""
+    for child in section.children:
+        if child.is_page:
+            return child
+    return None
+
+
+def switcher_for(page) -> dict | None:
+    """What the left hand switcher shows for a page of one remote or one architecture, or None.
+
+    A page qualifies when it sits in a group section, `Harmony 650`, inside a top section whose pages
+    live under one of `SWITCHED`. The switcher lists every group of that top section, each pointing at
+    **the page of the same name** in that group, so moving from the 650's `features.md` to the One's
+    lands on the One's `features.md`; a group without that page, such as the Touch's architecture which
+    has three files, falls back to its first page. Below it come the current group's own pages.
+    """
+    group = page.parent
+    top = group.parent if group else None
+    if top is None or not any(page.file.src_uri.startswith(prefix) for prefix in SWITCHED):
+        return None
+    name = posixpath.basename(page.file.src_uri)
+    choices = []
+    for member in top.children:
+        if not member.is_section:
+            continue
+        same = next((c for c in member.children
+                     if c.is_page and posixpath.basename(c.file.src_uri) == name), None)
+        target = same or _first_page(member)
+        if target is not None:
+            choices.append({"title": member.title, "url": target.url, "current": member is group})
+    pages = [{"title": "Overview" if c.file.src_uri.endswith("README.md") else c.title,
+              "url": c.url, "current": c is page}
+             for c in group.children if c.is_page]
+    return {"label": top.title, "choices": choices, "pages": pages}
+
+
+def on_page_context(context, page, config, nav):
+    drawing = drawing_for(page.file.src_uri, config["docs_dir"])
+    if drawing:
+        context["harmony_drawing"] = drawing
+        context["harmony_drawing_alt"] = "The face of the " + (page.parent.title if page.parent else "remote")
+    context["harmony_switcher"] = switcher_for(page)
+    return context

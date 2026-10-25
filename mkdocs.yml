@@ -42,6 +42,8 @@ hooks:
 
 theme:
   name: material
+  # One override: a remote's drawing above the contents column on each of its pages, tools/site/hooks.py.
+  custom_dir: tools/site/overrides
   features:
     # The top level of the navigation as tabs, the reader's order of plan 009 section 1.
     - navigation.tabs

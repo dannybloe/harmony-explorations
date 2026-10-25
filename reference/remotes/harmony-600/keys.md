@@ -12,8 +12,6 @@ and 700 drawings take every shape and every scan code from this one and change o
 [`reference/silhouettes/h600.svg`](../../silhouettes/h600.svg) is generated from
 `packages/silhouettes/src/models/h600.ts`, traced from Logitech's own documentation of this model.
 
-![The Harmony 600's face](../../silhouettes/h600.svg)
-
 ## Every key on the drawing
 
 <!-- generated:keys -->
