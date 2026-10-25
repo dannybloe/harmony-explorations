@@ -1,89 +1,79 @@
 # harmony-explorations
 
-**Logitech switched off the software that programmed these remotes. This project is working out how to
-program them without it.**
+Logitech's Harmony remotes were among the best universal remotes ever made. You told Logitech's software
+which equipment you had and what you wanted to watch or listen to, and the remote did the rest: it
+switched everything on, picked the right inputs and sent each button to the device that needed it.
 
-## Everything we know: the reference
+The remote does all of that by itself, but changing what is on it has always gone through Logitech.
+Logitech stopped making Harmony remotes a couple of years ago and has been closing down the services
+behind them since. The original desktop software stopped working in May 2025, and the MyHarmony service that still
+programs the newer models could go the same way at any moment. When it does, a remote keeps doing what it
+did the day it was last synced, and nobody can add a device or change an activity on it again.
 
-**[How a Harmony works](https://dannybloe.github.io/harmony-explorations/)** is the primary source of
-information here: what the remotes do, each model in depth, its keys, screen, memory, firmware and USB
-protocol, and how the configuration file and the infrared codes work. Every fact says how it is known,
-whether read in the firmware, measured on a remote or stated by Logitech.
+This project sets out to learn everything there is to know about these remotes, so that they can be
+programmed without any Logitech service at all: what the configuration file on the remote holds, what the
+firmware does with it, how a computer talks to the remote over USB and how the infrared codes are built.
+What we learn goes into [FreeHarmony](https://github.com/dannybloe/FreeHarmony), a program for your own
+computer that reads the configuration off your remote, lets you change your devices and activities and
+writes it back. No account and no server, so nothing that can be switched off. It is early days and there
+is nothing to install yet.
 
-It is work in progress and not guaranteed to be correct. It was produced with an AI and is published as
-such, so it is written to be checked rather than trusted: each conclusion carries a test that fails if it
-stops being true, and mistakes are corrected in the open, where they happened, so the rest can be judged
-against them.
+## The reference
 
-## If you came here looking for a replacement
+Everything we have found out is collected in
+[How a Harmony works](https://dannybloe.github.io/harmony-explorations/): what the remotes do, each model
+in depth, and the configuration file, the USB protocol and the infrared codes. Each fact says how we know
+it, whether it was read in the firmware, measured on a remote or taken from Logitech.
 
-On 28 May 2025 Logitech discontinued the Harmony Remote Software, the desktop program that 40 of these
-remotes were set up with. A remote that already works keeps working, because everything it needs is
-stored inside it. What you can no longer do is **change** it: add a device, rename an activity, teach it
-a button off an old remote. There is nothing left to do that with.
+It is a work in progress and some of it will turn out to be wrong. Much of the analysis was done with the
+help of an AI, which is why every conclusion is backed by a test that fails when it stops being true, and
+why mistakes are corrected in the open rather than quietly.
 
-The newer service, MyHarmony, is still running and still programmes the remotes it supports. It does not
-cover the older models at all, and it is somebody else's server, so how long it stays up is not up to you.
+## Where we are
 
-## What we are trying to build
+These remotes are on the bench: the Harmony One, 300, 350, 525, 600, 650, 700 and Touch.
 
-[FreeHarmony](https://github.com/dannybloe/FreeHarmony): a program on your own computer that reads the
-configuration off your remote, lets you change your devices and activities, learns codes from your old
-remotes, and writes it back. Nothing hosted, nothing that can be switched off later. It has begun and there
-is nothing to install yet; this repository holds the understanding and the code underneath it.
+* On the Harmony One, 600, 650 and 700 we can read the configuration and account for every byte of it, and
+  each of them has run a configuration we built ourselves from scratch, without copying anything from a
+  Logitech file.
+* The Harmony 525 can be read completely, and we have written its own configuration back to it. Logitech
+  no longer builds configurations for this model at all.
+* The Harmony 300, 350 and Touch use a different protocol, and so far we only read them. The 350 and 300
+  are what we work on next.
+* The Harmony 880, 885, 890 and 895 we know from configurations other people sent in.
 
-**The first version will only read, never write.** These remotes cannot be bought new and a bad write can
-turn one into a brick, so writing stays switched off in the application until the way back from a mistake
-is proven.
+## Sending us your configuration
 
-## Where we stand
+Every configuration helps, whatever the model. Each one shows how Logitech's software set up a remote
+with devices and activities we have never configured ourselves, and that is exactly what we learn from.
 
-On the bench: the Harmony One, 300, 350, 525, 600, 650, 700 and Touch.
+Read the configuration off your remote with concordance, as described under backing up below. Then open an
+issue telling us which model you have and what is set up on it, and we will arrange a private way to send
+the file. Please don't attach it to the issue: this repository is public and a configuration can't be
+published here. A configuration holds the devices and activities you set up, and no account details.
 
-* **Harmony One, 600, 650 and 700**: a configuration is read off the remote and taken apart to the last
-  byte, and each of the four has run a configuration built entirely here, with nothing copied out of a
-  Logitech file, written to a test remote and used.
-* **Harmony 525**: read in full, and written to once with its own configuration put back unchanged. Nothing
-  can compile a configuration for it, Logitech included.
-* **Harmony 300, 350 and Touch**: they speak a different protocol and are read only. The 350 and the 300
-  are next.
-* **Harmony 880, 885, 890 and 895**: known from configurations people sent in; a Harmony 885 is on its way.
-
-## Contributing a configuration
-
-**Every configuration helps, of any model.** Each one is another sample of how Logitech's software built
-a file, with devices and activities nobody here has set up, and that is what this work learns from.
-
-1. Read the configuration off your remote with concordance, as under [backing up](#backing-up-your-own-remote)
-   below. The firmware read is welcome too on the older models where it works.
-2. **Open an issue saying which model you have**, and what is set up on it: the devices, the activities
-   and anything you changed by hand. That description is what makes a file useful.
-3. **Do not attach the file to the issue.** This repository is public and a configuration cannot be
-   published in it, so the transfer is arranged privately from there.
-
-A configuration carries the devices and activities you set up and no account details. Issues are welcome
-for anything else too, especially a reading on the reference that disagrees with what your own remote does.
+Issues are also welcome when something in the reference doesn't match what your own remote does.
 
 ## Backing up your own remote
 
-Worth doing now, whatever happens to this project, because a remote that loses its configuration cannot
-be given a new one. [concordance](https://github.com/jaymzh/concordance) is an existing command line
-tool that reads one off:
+If you own a Harmony, back up its configuration now, whatever happens to this project: a remote that
+loses it can't be given a new one. [concordance](https://github.com/jaymzh/concordance) is an existing
+command line tool that reads it off:
 
 ```sh
 concordance -c my-remote-config.EZHex     # the configuration
 concordance -f my-remote-firmware.bin     # the firmware, on older models only
 ```
 
-The firmware read is complete on the older models, such as the Harmony 880, 885 and the 520 and 525
-family. On a Harmony One, 600, 650 or 700 it returns no usable firmware, because of two entries in
-concordance's own table of remotes, so the configuration is the part worth keeping there,
+The firmware read works on the older models, such as the Harmony 880, 885 and the 520 and 525 family.
+On a Harmony One, 600, 650 or 700 it returns no usable firmware because of two entries in concordance's
+own list of remotes, so there the configuration is what to keep,
 [docs/concordance-notes.md](docs/concordance-notes.md).
 
-One warning is worth more than all the rest: **use lower case flags only.** `-c` reads the configuration
-off the remote and `-C` writes one to it, `-f` reads the firmware and `-F` overwrites it. The flag you
-want and the flag that reflashes your remote differ by one shift key, and a bare filename with no flag at
-all makes concordance decide for itself, which for a configuration means writing it.
+Use lower case flags only. `-c` reads the configuration and `-C` writes one to the remote, `-f` reads the
+firmware and `-F` overwrites it. A missed shift key is the difference between a backup and a reflash, and
+a filename without any flag lets concordance decide for itself, which for a configuration means writing
+it.
 
 ## Licence
 
