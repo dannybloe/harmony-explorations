@@ -208,6 +208,11 @@ image is a second sample rather than a stand in. Other models are iterated on la
    **What this does not license** is loosening any rail, since the write target is still one spare
    Harmony One, or quietly narrowing a claim to the bench: a reading that only holds on arch 12 and arch
    14 still says so.
+   **Reversed on 25 October 2026**: configuration dumps are invited again, on the front page. The cost
+   argument held while there was no application; the Harmony One, 600, 650 and 700 now each run a
+   configuration built entirely here, so every file is worth having, of any model. A file is
+   never attached to an issue, since this repository cannot publish one: the issue names the model and
+   the transfer is arranged privately. The probe of step 8 stays unadvertised.
 
 11. <a id="d11"></a>**Offline is the floor, Logitech's live service is an optional import, and provenance decides what
    may be shared.** *Taken 12 August 2026, and it is the first decision here about the

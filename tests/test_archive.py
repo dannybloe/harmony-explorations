@@ -41,7 +41,9 @@ FINDINGS_DIGEST = "c4bc62336900cb13eee50b2c375c7a11ca399e67ad9183a44830b8799aa74
 # Repinned for one recorded correction in place: decision 9's last sentence put its rule, its argument and
 # its ledger in `reference/logitech/clients.md`, which holds none of the three since plan 009, and now says
 # where each is (todo-reference chapter 4's follow-ups, item 125). The digest before it was d6d9727e.
-DECISIONS_DIGEST = "39af6d8ede740b46e4873eb421c5edd5133c7cda701e313bcf76aaab1cfe7e5a"
+# Repinned again for decision 10's reversal, recorded at the end of its own entry: dumps are invited on the
+# front page again. The digest before it was 39af6d8e.
+DECISIONS_DIGEST = "d5796991588095b679d96da9b7ae6ef0b2ab1d86d1a8dc40c206ae3124c46654"
 
 SECTIONS = 436
 DECISIONS = 25

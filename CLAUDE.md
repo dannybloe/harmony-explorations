@@ -305,8 +305,8 @@ re-deriving it. The method and its history: `docs/lab-excavation.md`.
 description recorded. A dump whose contributor has moved on is far harder to label later than one
 described on arrival, and section 124 is what that is worth: the one config with a written description
 beside it is the only place two readers here have ever been checked against something outside the code.
-**No new dumps are being solicited**, decision 10 in `docs/decisions.md`, so the column matters for the
-files already here rather than for incoming ones.
+**Dumps are invited again** since decision 10 was reversed, through an issue naming the model and a
+private transfer, so a description gets recorded on arrival, while the contributor is still there to ask.
 
 ## Never write to a remote
 
