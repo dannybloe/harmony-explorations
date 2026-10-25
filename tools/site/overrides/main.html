@@ -1,7 +1,8 @@
 {#-
-  The page template, extended only to add the styles the two overrides in partials/ need: the remote
-  switcher in the left hand menu and the drawing in the right hand column. Kept here rather than in a
-  stylesheet under reference/, which is published as content.
+  The page template, extended only to add what the two overrides in partials/ need: the styles of the
+  remote switcher in the left hand menu and of the drawing in the right hand column, and the magnifier
+  that shows the drawing enlarged under the pointer. Kept here rather than in files under reference/,
+  which is published as content.
 -#}
 {% extends "base.html" %}
 {% block styles %}
@@ -27,5 +28,43 @@
       .harmony-switcher__pages { display: none; }
       .harmony-switcher { padding-top: 0.8rem; }
     }
+    .harmony-drawing__img { cursor: zoom-in; }
+    .harmony-loupe {
+      position: fixed; z-index: 10; pointer-events: none; display: none;
+      width: 240px; height: 240px; border-radius: 50%;
+      border: 2px solid var(--md-default-fg-color--light);
+      background-color: #fff; background-repeat: no-repeat;
+      box-shadow: 0 0.2rem 0.8rem rgba(0, 0, 0, 0.25);
+    }
   </style>
+{% endblock %}
+{% block scripts %}
+  {{ super() }}
+  <script>
+    // The magnifier over a remote's drawing. The drawing is an SVG, so drawing it again as the lens's
+    // background at three times the size stays sharp. The lens sits to the left of the pointer rather
+    // than under it, because the drawing is in the right hand column and a lens on top would hide the
+    // part being looked at. A touch screen has no hover and never shows it.
+    (function () {
+      var ZOOM = 3, SIZE = 240, GAP = 24;
+      var lens = document.createElement("div");
+      lens.className = "harmony-loupe";
+      document.body.appendChild(lens);
+      document.querySelectorAll(".harmony-drawing__img").forEach(function (img) {
+        img.addEventListener("mouseenter", function () {
+          lens.style.backgroundImage = "url('" + img.currentSrc + "')";
+          lens.style.display = "block";
+        });
+        img.addEventListener("mouseleave", function () { lens.style.display = "none"; });
+        img.addEventListener("mousemove", function (event) {
+          var box = img.getBoundingClientRect();
+          var x = event.clientX - box.left, y = event.clientY - box.top;
+          lens.style.backgroundSize = (box.width * ZOOM) + "px " + (box.height * ZOOM) + "px";
+          lens.style.backgroundPosition = (SIZE / 2 - x * ZOOM) + "px " + (SIZE / 2 - y * ZOOM) + "px";
+          lens.style.left = Math.max(8, event.clientX - SIZE - GAP) + "px";
+          lens.style.top = Math.min(window.innerHeight - SIZE - 8, Math.max(8, event.clientY - SIZE / 2)) + "px";
+        });
+      });
+    })();
+  </script>
 {% endblock %}

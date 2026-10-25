@@ -12,7 +12,7 @@
 <nav class="md-nav md-nav--secondary" aria-label="{{ title | e }}">
   {% if harmony_drawing %}
     <div class="harmony-drawing" style="text-align:center;margin:0 0 1rem 0">
-      <img src="{{ harmony_drawing | url }}" alt="{{ harmony_drawing_alt | e }}"
+      <img class="harmony-drawing__img" src="{{ harmony_drawing | url }}" alt="{{ harmony_drawing_alt | e }}"
            style="max-height:380px;max-width:100%;width:auto;height:auto">
     </div>
   {% endif %}
