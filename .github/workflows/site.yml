@@ -44,7 +44,8 @@ jobs:
           python-version: '3.12'
 
       - name: Install the pinned build requirements
-        run: python -m pip install --disable-pip-version-check --require-hashes --only-binary :all: -r tools/site/requirements.txt
+        # Quoted, because `:all: ` would otherwise read as a YAML key and the whole file be refused.
+        run: 'python -m pip install --disable-pip-version-check --require-hashes --only-binary :all: -r tools/site/requirements.txt'
 
       # Strict, so a broken link, anchor or navigation entry fails the deploy instead of publishing.
       - name: Build the site
