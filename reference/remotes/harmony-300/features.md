@@ -54,9 +54,12 @@ setup guide: "Watch TV with one click: Turn your TV and cable/ satellite box on 
 press"[^unchecked]. A person who set one up describes it as a shortcut that switches several devices on and
 does not remap the keypad[^s265c], which is an activity's switch on step without its keypad map.
 
-**Whether that shortcut is held in the configuration as an activity is not checked**: the activity reader
-finds none on any configuration of this family, and raw slot 6's one extra entry is only a
-candidate[^s265d].
+**The shortcut is held as one binding of the family's key table**, which sends codes or sets the devices'
+state variables and then selects one device's map, and not as an activity's own key map: the configuration's key map table holds
+one map per device and the key table, and no more,
+[the family's memory page](../../architectures/harmony-300-350/memory.md#the-six-slots-the-firmware-was-read-for)[^t-harmony-350-slots-c].
+This said raw slot 6's extra entry was a candidate for the activity<!--superseded--> until the firmware
+reading of that slot: the extra entry is the key table[^t-harmony-350-slots-c].
 
 ## Favourite channels
 
@@ -80,3 +83,4 @@ integers[^s265d]; how the number sender works is
 [^unchecked]: Not checked.
 [^s265c]: Measured on a unit. [Section 265](../../../docs/findings.md#s265)
 [^s265d]: Measured in configurations. [Section 265](../../../docs/findings.md#s265)
+[^t-harmony-350-slots-c]: Measured in configurations. [The test](../../../tests/test_harmony_350_slots.py)
