@@ -33,13 +33,13 @@ reached it, and before that it said seven, the same count `CLAUDE.md` had correc
 | a Harmony 700 | yes, since 29 September 2026 | repaired out of safe mode by a reinstall request, section 295; firmware staged from 2.5 to 2.8, section 297; then configurations, sections 300 onwards | [harmony-700.md](harmony-700.md) |
 | two Harmony 885s | no: arch 8 is not a write target | nothing; read only | [harmony-885.md](harmony-885.md) |
 | a Harmony Touch | no: `openHarmony` refuses the file based family | nothing; read only, section 200 | [harmony-touch.md](harmony-touch.md) |
-| a Harmony 350 | no, for the same reason | nothing; read as a file, section 262 | [harmony-350.md](harmony-350.md) |
-| a Harmony 300 | no, for the same reason | nothing; read as a file, section 264 | [harmony-300.md](harmony-300.md) |
+| a Harmony 350 | yes, since 27 October 2026, decision 26; no write path exists yet | nothing; read as a file, section 262 | [harmony-350.md](harmony-350.md) |
+| a Harmony 300 | yes, since 27 October 2026, decision 26; no write path exists yet | nothing; read as a file, section 264 | [harmony-300.md](harmony-300.md) |
 
 The rule and the rails are `CLAUDE.md`'s "Never write to a remote", and which unit is on the cable is read
 off its identity block, never asserted by the caller.
 
-**The Touch, the 350 and the 300 are the file based family** and are not targets for the config work:
+**The Touch, the 350 and the 300 are the file based family**, and until decision 26 none was a target for the config work:
 `openHarmony` refuses them by product id rather than by accident, section 193. What they have bought is the
 reading of the descriptor field that names a model, section 195, the route to their firmware, section 196,
 and their whole protocol as Logitech specifies it, section 198. `packages/usb/src/filepipe.ts` read a Harmony

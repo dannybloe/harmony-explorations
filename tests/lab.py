@@ -635,6 +635,10 @@ IMAGES = {
     'myharmony_sync_model': 'RemoteSyncUserControlModel.cs',
     'myharmony_update_manager': 'RemoteUpdateManager.cs',
     'myharmony_ds_controller': 'DSController.cs',
+    # The client's templates for writing a configuration to the Harmony 300 and the Harmony 350, skins 78
+    # and 104, `todo-compile-350.md` 1.2. What travels is the order of the commands and their conditions.
+    'myharmony_write_h300': 'Logitech.Harmony.Web.Driver.Resources.Templates.SKIN78.userconfiguration.xml',
+    'myharmony_write_h350': 'Logitech.Harmony.Web.Driver.Resources.Templates.SKIN104.userconfiguration.xml',
     # Not an image and not a config: the wire log of Logitech's own classic client reading a Harmony
     # One, captured 7 August 2026 by running the client rebuilt from its own decompiled source against
     # a local stand-in for its discontinued server. Read by the TypeScript side, where the command

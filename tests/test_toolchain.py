@@ -226,7 +226,7 @@ class TheRunnerSeesEveryTest(unittest.TestCase):
         # 50 with `tests/test_archive.py`, todo-reference 2.2, and 51 with `tests/test_reference.py`, 2.3.
         # 52 with `tests/test_site.py`, todo-reference 7.1.
         # 53 with `tests/test_product_capabilities.py`, todo-reference 3.4.
-        self.assertEqual(len(files), 54, 'the Python test files')
+        self.assertEqual(len(files), 55, 'the Python test files')
         with_block = 0
         for path in files:
             with open(path, encoding='utf-8') as handle:
@@ -255,7 +255,7 @@ class TheRunnerSeesEveryTest(unittest.TestCase):
         # 49 with `tests/test_archive.py` and `tests/test_reference.py`, todo-reference 2.2 and 2.3,
         # which carry one each. 50 with `tests/test_site.py`, todo-reference 7.1, which carries one.
         # 51 with `tests/test_product_capabilities.py`, todo-reference 3.4, which carries one.
-        self.assertEqual(with_block, 52,
+        self.assertEqual(with_block, 53,
                          'files carrying a __main__ block, of %d' % len(files))
 
 
@@ -746,7 +746,7 @@ class APythonBoundOnACorpusTotalIsExact(unittest.TestCase):
         # 50 with `tests/test_archive.py`, todo-reference 2.2, and 51 with `tests/test_reference.py`, 2.3.
         # 52 with `tests/test_site.py`, todo-reference 7.1.
         # 53 with `tests/test_product_capabilities.py`, todo-reference 3.4.
-        self.assertEqual(len(scanned), 54, 'Python test files, which moves when one is added')
+        self.assertEqual(len(scanned), 55, 'Python test files, which moves when one is added')
         self.assertIn(self.CONTROL, found, 'the pattern matches nothing it should match')
 
     def test_every_remaining_bound_says_why_it_is_not_a_measurement(self):
@@ -1324,7 +1324,7 @@ class TheLabRegisterCoversTheSiteAtArtefactLevel(unittest.TestCase):
         # `work/agent-freeze-9-1-2/`, `work/fonts-10-8/` and `work/pictures-9-1-2-2/`, sections 366 to 373.
         # 150 and 151 with `work/agent-11-1-1/` and `work/empty-11-1-1/`, todo-compile-650 11.1.1.
         # 163 with the twelve work folders of the Harmony 600, 700 and One tracks, registered at once.
-        self.assertEqual(len(named), 163, "lab paths the register names, as at 17 October 2026")
+        self.assertEqual(len(named), 164, "lab paths the register names")
         for path in sorted(named):
             with self.subTest(path=path):
                 if '*' in path:
@@ -1431,8 +1431,8 @@ class TheRegisterQueryAnswersForThePathThatWasOpened(unittest.TestCase):
         # `work/freeze-9-1-2/`, `work/agent-freeze-9-1-2/`, `work/fonts-10-8/` and `work/pictures-9-1-2-2/`.
         # 127 and 128 with `work/agent-11-1-1/` and `work/empty-11-1-1/`.
         # 140 with the twelve work folders of the Harmony 600, 700 and One tracks.
-        self.assertEqual(len(rows), 140)
-        self.assertEqual(len(dict(rows)), 140, 'a duplicated path would make a query ambiguous')
+        self.assertEqual(len(rows), 141)
+        self.assertEqual(len(dict(rows)), 141, 'a duplicated path would make a query ambiguous')
         self.assertNotIn('unseen', dict(rows), 'the status legend is not an artefact')
 
     def test_a_query_is_answered_by_ancestors_and_by_descendants(self):

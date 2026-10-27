@@ -124,6 +124,14 @@ Harmony Touch generation the type is `MD5`. So the check is one shape across bot
 field rather than a constant**[^s196][^s198]. Nothing in this reference has sent a write, a commit or a
 device control, and `packages/usb` implements none of them[^s198].
 
+**For the Harmony 300 and the Harmony 350 the client's sequence is seven commands**, the same for both
+models: the file system reset, open `W` with the file's size, the write in chunks of at most 50 data packets
+under one sequence counter that runs 0 to 63 and wraps, the check, the commit **only** on `m`, the close, and
+the reboot `0xFF 0x00` **only** when the package's manifest asks for it. A failure reruns the whole sequence
+once from the reset. The client sends the package's file as it ships and computes no checksum of its
+own.[^t-write-route] **None of it has been sent to a remote**, and what the reset erases is not
+checked.[^unchecked]
+
 Logitech's template for writing a Harmony Touch's configuration carries the read of the same file commented
 out, under a header calling it "for testing only", so its client writes a configuration to that generation
 and does not read one back, by choice rather than by capability,
@@ -134,6 +142,9 @@ and does not read one back, by choice rather than by capability,
 * The write, the commit, both device controls and the request and response command, on any
   remote[^unchecked].
 * What the `0x0b` at the end of a refusal means[^unchecked].
+* On the Harmony 300 and 350: what the file system reset erases, whether a configuration package's file
+  includes the four byte end marker, what its manifest states for the check and the reboot, and what the
+  remote answers to a failed check or to a size that disagrees with the bytes sent[^unchecked].
 * **Skin 96.** It declares model id 66 and architecture 14, which is the Harmony 700, and specifies a file
   protocol operation identical to the Harmony Touch's. It is absent from Logitech's own live product table
   of 97 skins, and the client's own rule would pick the command protocol for that architecture. Whether the
@@ -152,3 +163,4 @@ and does not read one back, by choice rather than by capability,
 [^unchecked]: Not checked.
 [^s19]: Measured on a unit. [Section 19](../../docs/findings.md#s19)
 [^s295]: Measured on a unit. [Section 295](../../docs/findings.md#s295)
+[^t-write-route]: Stated by Logitech, in their client. [The test](../../tests/test_file_family_write_route.py)

@@ -38,8 +38,9 @@ silence about favourite channels was read as their absence.
 
 * **`openHarmony` refuses both models**, and that is the rail rather than a gap to be closed: this family
   speaks a file protocol in which a path can be an action. `make remotes` reports them separately.
-* **Nothing writes to them, and neither is on any write list.** No flash, no settings, no file. A task
-  that seems to need a write to a Harmony 300 or 350 is a question to put first, not a step to take.
+* **Both bench units may be written, decision 26, and nothing writes to them yet.** The file protocol's
+  write path does not exist; it is built behind its own rail, `todo-compile-350.md` 1.6, after 1.2 to 1.5.
+  Until it exists, a task that seems to need a write is a step of that chapter, not a shortcut around it.
 * **Reading goes through `openFileBasedRemote`**, whose transport permits opening a file for reading,
   reading, closing and a ping and refuses everything else.
 * **Only paths on `INERT_PATHS` are opened.** `HARMONY_FILE_PATH_EXPERIMENT=1` is the named door in
