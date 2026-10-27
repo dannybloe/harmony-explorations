@@ -31,6 +31,18 @@ take another route[^s295].
 | the month end routine of the clock | [^s322] |
 | the state variable bound | [^s276] |
 
+## Routines read in the bootloader and safe mode
+
+Both images read off a Harmony 350, at the file table's addresses, with the PIC18F67J50 register map: the
+bootloader reaches `ANCON0` and `ANCON1` through the shadow bit of `WDTCON` and uses `UCON` at `0xF65`, both
+that family's, both images program 64 bytes at a time, and safe mode erases 1 KiB pages. Which part exactly is not
+checked[^t-harmony-350-boot][^unchecked].
+
+| routine | evidence |
+|---|---|
+| the bootloader's reset vector `GOTO 0x0EFA`; its start decision at `0x0700`; the header test for `HG` at `0x001008`, `0x0782`; the keypad scan at `0x0360`; the command switch at `0x01A8`, the Harmony 600's | [^t-harmony-350-boot] |
+| safe mode's entry `0x758E` and start `0x520C`; the request kept or cleared at `0x717C`, `0x0F` at `0x53BC`, the install at `0x5424`; the keypad scan at `0x6948` and the key switch at `0x527E`; the application check at `0x53DE`, with the header checksum at `0x3FE0` | [^t-harmony-350-boot] |
+
 ## What validates the configuration
 
 **In the 1.4 image a remote keeps its judgement of the configuration in one bit and acts on the bit**, not
@@ -60,53 +72,105 @@ Harmony 350, five of them[^t-harmony-350-file-write].
 
 ## Safe mode and recovery
 
-The file table names a bootloader, 4 KiB at internal `0x000000`, and a safe mode image, 32 KiB at
-`0x001000`[^s199]. Neither is in the firmware package, which carries the application alone, so everything
-below is what the 1.4 **application** does, and what the two images below it do is not
-checked[^unchecked].
+**Entering safe mode or the bootloader on this family destroys nothing**, the opposite of the
+[Harmony 525](../harmony-5xx/firmware.md), whose safe mode copies itself over the application. The file
+table names the two images below the application, the bootloader, 4 KiB at internal `0x000000`, and safe
+mode, 32 KiB at `0x001000`[^s199]; both run at every start before it, and the only thing either writes on
+its own is an install the application asked for[^t-harmony-350-boot]. What follows about the two images is
+read in one unit's copies, a Harmony 350 on 1.4, since Logitech's package carries the application alone; the
+Harmony 300's have not been read[^unchecked], and none of it has been done to a unit[^unchecked].
 
-**A remote whose configuration fails still serves its files over USB, so a configuration write that
-fails half way can be written again from the computer.** The start runs the validator, carries on whatever
-its verdict, and enters the main loop, which calls the USB service; nothing in the USB service and the file
-commands it reaches reads the verdict, and the only two instructions there that touch it are the open for
-writing, which clears it, and a matching check, which sets it[^t-harmony-350-recovery]. A write that stops
-with the power on leaves a file open, which the file system reset closes; one that stops with the power
-off leaves a configuration the start rejects, after which the remote runs on with no configuration and
-answers on the cable, [usb.md](usb.md#what-the-firmware-does-with-a-write)[^t-harmony-350-recovery]. None
-of this has been done to a unit[^unchecked].
+### What runs at a start
+
+| step | what happens | evidence |
+|---|---|---|
+| the bootloader | scans the keypad: key `0x14` keeps it, as a USB programmer; key `0x2C` runs safe mode at once; anything else runs safe mode if its header mark `HG` is at `0x001008`, and keeps the programmer otherwise. It never runs the application and never reads the request byte below | [^t-harmony-350-boot] |
+| safe mode, first | keeps the request byte only after a restart by the `RESET` instruction and clears it after any other, a power on among them | [^t-harmony-350-boot] |
+| a request of `0x0F` | the reboot with parameter `0x73`: cleared, and safe mode stays for this one start | [^t-harmony-350-boot] |
+| a request of 2 | a firmware install's flush and close: safe mode **installs the staged copy**, below, and clears the request; 4, 6 and 7 do the same, and the 1.4 application sets none of them | [^t-harmony-350-boot] |
+| a key held | `0x03`, `0x32` or `0x2C`: safe mode stays | [^t-harmony-350-boot] |
+| otherwise | safe mode checks the application against the checksum in its header, seeds `0x21` and `0x43`, and runs it at `0x900A` when it matches; when it does not, safe mode stays | [^t-harmony-350-boot] |
+
+**This page said the application's start clears that request only after a restart by the reset
+instruction**<!--superseded-->, which read the branch the wrong way round: it keeps the request after exactly
+that restart and clears it after any other, which is how the request reaches safe
+mode[^t-harmony-350-recovery].
+
+**The install copies the staged copy and never safe mode.** It reads the staged image's length at external
+`0x000004`, adds 8 and caps it at `0x15C00`, erases 1 KiB pages of internal flash from `0x009000` and copies
+the external bytes from `0x000000` over them, the arrangement the Harmony 600, 650 and 700 have,
+[their firmware.md](../harmony-600-650-700/firmware.md). **It does not check the staged copy first**: a bad
+one leaves a bad application, and then the check of the same start fails and the remote stays in safe mode,
+still on the cable. The cap keeps the erase below `0x01F400`, the unit's own records[^t-harmony-350-boot].
+
+**The keys** are numbered by a scan both images share, four codes to a drive line: `0x14` is `PORTE` bit 4
+against `PORTB` bit 7, `0x2C` is `PORTD` bit 0 against `PORTB` bit 7, `0x03` is `PORTE` bit 0 against `PORTB`
+bit 6 and `0x32` is `PORTD` bit 2 against `PORTB` bit 5. The bootloader's two codes are the Harmony 600's,
+[the bootloader](../../usb-protocol/bootloader.md)[^t-harmony-350-boot]. Which printed keys they are is not
+known, since no scan code is tied to a key on this architecture[^unchecked].
+
+### What each serves over USB
+
+* **Safe mode answers the application's file protocol**: the same device descriptor, `046D:C124` with
+  release `0x1104`, ten of the application's switch tables case for case, the control commands, device
+  control and the check among them, and a file table of eleven rows. So the
+  product id cannot tell the two apart; **the product string can**, `Harmony Remote 4-1.4.0` in safe mode
+  against the application's `Harmony Remote 0-1.4.0`, and `/sys/sysinfo` states `fw_type` 4, which
+  Logitech's client calls safe mode[^t-harmony-350-boot][^t-harmony-350-recovery-client]. That every command
+  behaves as the application's does is not checked[^unchecked].
+* **It can take a configuration and an application.** `/cfg/usercfg` is readable and writable in its
+  table, and `/fw/normalmode` is the resident application for reading and the staged copy for writing; a
+  flush of the staged copy stores request 2 and its close reboots, so the next start installs
+  it[^t-harmony-350-boot]. `/fw/bootloader` and `/fw/safemode` are writable rows there too.
+* **The bootloader is the Microchip USB programmer** of the Harmony One and the Harmony 600, `04D8:000B`,
+  with the Harmony 600's twelve commands and its erase that refuses anything below `0x001000`,
+  [the bootloader](../../usb-protocol/bootloader.md). It writes internal flash only, and only when a host
+  sends a write or an erase[^t-harmony-350-boot].
+
+### Restoring a remote
+
+**A failed configuration write can be sent again over USB.** The application starts, rejects a broken
+configuration, carries on without one and keeps answering on the cable: nothing in the USB service and the
+file commands it reaches reads the configuration's verdict, and the only two instructions there that touch
+it are the open for writing, which clears it, and a matching check, which sets it[^t-harmony-350-recovery].
+A write that stops with the power on leaves a file open, which the file system reset closes; one that stops
+with the power off leaves a configuration the start rejects, after which the remote runs on with no
+configuration and answers on the cable, [usb.md](usb.md#what-the-firmware-does-with-a-write)[^t-harmony-350-recovery].
+
+**A damaged application is restored by safe mode, with the same seven commands as a configuration**: a
+remote whose application fails its checksum stays in safe mode, a host writes the application to
+`/fw/normalmode`, flushes and closes, and the next start installs it[^t-harmony-350-boot]. That is
+Logitech's own route: its client calls an install required whenever a remote reports safe mode, and its
+firmware sequence for skin 104 is the configuration's seven commands, writing the package's image to
+`/fw/normalmode` with the reboot its manifest asks for[^t-harmony-350-recovery-client][^t-harmony-350-recovery-package].
+**A damaged safe mode image** is the bootloader's case: with no `HG` mark, or key `0x14` held, the remote
+stays in the programmer, which can rewrite internal flash above `0x001000`[^t-harmony-350-boot].
 
 | | what the 1.4 application does | evidence |
 |---|---|---|
 | a failing configuration | latches an error code, 8 for a missing marker and 4 for the checksum, which stands until the processor restarts, and switches four output pins on and off in a pattern counted from it, from the main loop. It neither stops nor restarts. That the pins are the remote's lights is not checked | [^t-harmony-350-recovery], [^unchecked] |
-| the firmware type `/sys/sysinfo` states | always 0, a constant in the code. Logitech's client calls 0 normal mode, 3 the bootloader and 4 safe mode, so a 3 or a 4 means another image is answering | [^t-harmony-350-recovery], [^t-harmony-350-recovery-client] |
-| a request for whatever runs after a restart | a byte in data memory, set to `0x0F` by the reboot command's parameter `0x73` and to 2 by a flush of `/fw/normalmode` open for writing, whose close then restarts. The start clears it only after a restart by the reset instruction, so code that runs before the application reads it. What the bootloader or safe mode does with either value is not checked; on the Harmony 600, 650 and 700 a 2 asks safe mode to install the staged copy, [their firmware.md](../harmony-600-650-700/firmware.md) | [^t-harmony-350-recovery], [^unchecked] |
-| three keys held together | restart the processor, tested at the start of the keypad routine. Which three keys is not known, since no scan code is tied to a key on this architecture | [^t-harmony-350-recovery], [^unchecked] |
-| a way into the images below it | none: no call or jump in the application targets an address below `0x9000`, and its three reset instructions, the reboot command's, the key combination's and one after sleep, restart the processor with nothing written on the way | [^t-harmony-350-recovery] |
-
-**What restores a damaged application is, on Logitech's account, a firmware install over the same file
-protocol.** The firmware package writes `/fw/normalmode`, which for writing is the staged copy on the
-external medium at `0x000000`, `0x15C00` bytes, then flushes and closes, and its manifest asks for the
-reboot[^t-harmony-350-recovery-package][^t-harmony-350-recovery]. Logitech's client calls an install required
-whenever a remote reports safe mode, ahead of any version comparison, and its firmware sequence for skin
-104 is the configuration's seven commands[^t-harmony-350-recovery-client]. Whether this family's safe mode
-image serves that sequence, and what installs the staged copy, is not checked[^unchecked].
+| the firmware type `/sys/sysinfo` states | always 0, a constant in the code; safe mode's is 4 | [^t-harmony-350-recovery], [^t-harmony-350-boot] |
+| a request for the next start | a byte in data memory, `0x0F` from the reboot command's parameter `0x73` and 2 from a flush of `/fw/normalmode` open for writing, whose close then restarts; safe mode acts on both, [above](#what-runs-at-a-start) | [^t-harmony-350-recovery], [^t-harmony-350-boot] |
+| three keys held together | restart the processor, tested at the start of the keypad routine; safe mode tests the same three and the bootloader swaps one for key `0x14`. Which keys is not known | [^t-harmony-350-recovery], [^t-harmony-350-boot], [^unchecked] |
+| a way into the images below it | none: no call or jump in the application targets an address below `0x9000`, and its three reset instructions restart the processor with nothing written on the way, which runs the bootloader and then safe mode | [^t-harmony-350-recovery] |
 
 * **A configuration write cannot damage the firmware.** Its erase runs from `0x020000` to `0x07FFFF`, the
   staged copy ends below `0x020000`, and nothing in it reaches the processor's own flash, where the
   application, the safe mode image and the bootloader live[^t-harmony-350-recovery].
-* **The two images this page could not read are readable files on the remote**: `/fw/bootloader`,
-  `/fw/safemode` and the resident `/fw/normalmode` all allow reading. The check command tests the `HG`
-  header in both internal images, the safe mode image and the application, so a remote can verify them
-  without a read[^t-harmony-350-recovery].
+* **An internal image is served eight bytes short.** The application states the size of `/fw/safemode`
+  and `/fw/normalmode` for reading as the image header's length field, which is the length less 8, so a
+  read ends eight bytes before the image does: 26040 bytes of a 26048 byte safe mode
+  image[^t-harmony-350-boot-unit][^t-harmony-350-boot]. Those eight bytes hold a routine safe mode's start
+  calls, which is therefore not read[^unchecked]. The check command tests the `HG` header in both internal
+  images, so a remote can verify them without a read[^t-harmony-350-recovery].
 
 ## Not checked
 
 * Which version a given remote runs: its `/sys/sysinfo` carries a version field, and only the product
   string's 1.4.0 has been read[^s193].
-* How safe mode and the bootloader are entered other than through the application's request byte, whether
-  either tests a key at power on, what each serves over USB, and whether entering either overwrites the
-  application, as entering safe mode does on the [Harmony 525](../harmony-5xx/firmware.md): all of it is in
-  the two images this project does not hold[^unchecked].
+* The Harmony 300's own bootloader and safe mode image, and any build of them but the one read off a Harmony 350;
+  which printed keys the four start codes are; and the eight bytes at the end of the safe mode image that
+  a read does not return[^unchecked].
 * Whether a configuration that passes the validator and hangs while its state is loaded at start would
   keep a remote from the USB service, and whether the processor's watchdog is on, which is in the
   configuration words at internal `0x01FFF8`[^unchecked].
@@ -133,3 +197,5 @@ image serves that sequence, and what installs the staged copy, is not checked[^u
 [^s310]: Read in the firmware. [Section 310](../../../docs/findings.md#s310)
 [^s354]: Read in the firmware. [Section 354](../../../docs/findings.md#s354)
 [^t-harmony-350-slots]: Read in the firmware. [The test](../../../tests/test_harmony_350_slots.py)
+[^t-harmony-350-boot]: Read in the firmware. [The test](../../../tests/test_harmony_350_boot.py)
+[^t-harmony-350-boot-unit]: Measured on a unit. [The test](../../../tests/test_harmony_350_boot.py)

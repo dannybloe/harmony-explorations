@@ -151,25 +151,33 @@ wrong or is about to.
 
 ## The Harmony 300 and 350
 
-**Read before the family's first write, `todo-compile-350.md` 1.6 and 1.7.** What the firmware does is
-`reference/architectures/harmony-300-350/firmware.md` "Safe mode and recovery" and `usb.md` "What the
-firmware does with a write", and the argument is the headers of `tests/test_harmony_350_recovery.py` and
-`tests/test_harmony_350_file_write.py`. All of it is read in the 1.4 **application** alone: the
-bootloader and the safe mode image are not in the lab, so nothing below says what either does, and none of
-it has been done to a unit.
+**Read before any write to this family, and before anything near its safe mode.** What the firmware does
+is `reference/architectures/harmony-300-350/firmware.md` "Safe mode and recovery" and `usb.md` "What the
+firmware does with a write", and the argument is the headers of `tests/test_harmony_350_boot.py` (the
+bootloader and safe mode, read off the bench Harmony 350), `tests/test_harmony_350_recovery.py` (the
+application's side) and `tests/test_harmony_350_file_write.py`. One build, 1.4, and the bench 350's own two
+images; the Harmony 300's bootloader and safe mode have not been read. None of the routes below has been
+run on a unit.
 
-**The reassurance, and the reason a first write is survivable: a failed configuration write can be sent
-again over USB.** The application starts, rejects a broken configuration, carries on without one and keeps
-answering on the cable, and no file command waits on the configuration being valid. A configuration write
-also cannot reach the firmware: its erase stops short of the staged firmware copy and never touches the
-processor's own flash.
+**Safe mode is safe to enter on this family, and that is the difference from the Harmony 525.** Every start
+runs the bootloader, then safe mode, and safe mode decides whether to run the application; it writes the
+application only when a firmware install asks it to, and then it copies the **staged** copy, never itself.
+Entering it by a held key, by the reboot with `0x73`, or because the application failed its checksum writes
+nothing, and a plain restart leaves it again. Entering the bootloader writes nothing either until a host
+sends it a write or an erase.
+
+**The reassurance for a configuration write: a failed one can be sent again over USB.** The application
+starts, rejects a broken configuration, carries on without one and keeps answering on the cable, and no
+file command waits on the configuration being valid. A configuration write also cannot reach the firmware:
+its erase stops short of the staged firmware copy and never touches the processor's own flash.
 
 The route, in order:
 
 1. **Recognise the state.** There is no screen and no version block.
-   * `/sys/sysinfo`, read only, carries `fw_type`: the 1.4 application can only ever answer 0, so a 3 or a
-     4 means the bootloader or safe mode is answering, by Logitech's client's numbering, and what to do then
-     is unread. Stop and ask.
+   * **Without opening anything**, `ioreg` shows the product string: `Harmony Remote 0-1.4.0` is the
+     application and `Harmony Remote 4-1.4.0` is safe mode, under the same `046D:C124`. A remote that
+     enumerates as `04D8:000B` is in its bootloader, the Microchip programmer, and `openHarmony` refuses it.
+   * `/sys/sysinfo`, read only, carries `fw_type`: 0 the application, 4 safe mode.
    * A rejected configuration latches an error code, 8 for a missing marker and 4 for the checksum, and the
      remote switches four outputs on and off in a pattern counted from it, likely its lights. **The code
      stands until the processor restarts**, even after a good configuration has been written.
@@ -184,18 +192,27 @@ The route, in order:
    arrived and not the body.
 4. **Then restart the processor**, the reboot `0xFF` with `0x00` or a battery pull: the latched code stands
    until one, and the start is where a configuration is validated and loaded.
+5. **A remote that comes up in safe mode** after a plain restart, with no key held, has an application
+   that failed its checksum. Stop and ask: the restore is a firmware install, below, which this project does
+   not perform on this family. Safe mode serves the same file protocol and its `/cfg/usercfg` is writable, so
+   the configuration route above still reaches the remote there, which is read and not tried.
 
 What must never be part of that route:
 
 * **Never open any path but `/cfg/usercfg` for writing.** An open for writing erases what it opens before it
-  answers, and `/fw/bootloader` and `/fw/safemode` are writable rows in the processor's own flash: an open
-  of either erases pages that no route read here puts back.
-* **Never send the reboot with `0x73`, and never flush `/fw/normalmode`.** Each leaves a request in data
-  memory for the code that runs before the application, `0x0F` and 2, and what the bootloader or safe mode
-  does with it is unread. On the Harmony 525 entering safe mode destroys the application, and nothing here
-  rules that out for this family.
-* **Three keys held together restart the processor**, tested in the keypad routine. Which three is unknown, and as far
-  as the application says it is a reboot and writes nothing.
+  answers, and `/fw/bootloader` and `/fw/safemode` are writable rows in the processor's own flash, in the
+  application's table and in safe mode's: an open of either erases pages that nothing this project runs
+  puts back. An open of `/fw/normalmode` for writing erases the staged copy.
+* **Never flush `/fw/normalmode`.** It leaves request 2 for the next start, and safe mode then erases the
+  application and copies the staged copy over it **without checking the staged copy first**. With a good
+  staged image that is a firmware install; with anything else it leaves an application that fails its
+  check and a remote in safe mode. This project does not write firmware to this family.
+* **The reboot with `0x73` is not needed.** As read it keeps safe mode for one start and writes nothing,
+  and a plain reboot leaves it, so it is harmless and also of no use to a configuration write.
+* **Keys held at power on choose the image**: codes `0x03`, `0x32` and `0x2C` keep safe mode, `0x14` keeps
+  the bootloader's programmer, and three keys held together restart the processor. Which printed keys
+  those are is unknown, so a key stuck or held while the batteries go in is the first suspect for a remote
+  that will not leave safe mode.
 
 **What is not covered**, and what would cover it:
 
@@ -203,13 +220,12 @@ What must never be part of that route:
   before the main loop that serves USB, so one that hangs there would stand between a restart and the
   cable, and whether the watchdog is on is unread. The protection is the composer's rails,
   `writing-a-config`, not a recovery route.
-* **A damaged application.** Logitech's route is a firmware install of the package in the lab,
-  `h350_package`, written to `/fw/normalmode` through the same seven commands, which lands in the staged
-  copy on the external medium; its manifest asks for the reboot, and Logitech's client calls an install
-  required whenever a remote reports safe mode. What installs the staged copy is in the images this project
-  does not hold, so this is a prediction and not a route, and this project does not write firmware to this
-  family.
-* **The two unread images are readable files on the remote**, `/fw/bootloader` and `/fw/safemode`. Reading
-  them into the lab is what would answer how safe mode is entered and whether it overwrites anything. Both
-  paths are off the transport's inert list, so that read is a decision and needs
-  `HARMONY_FILE_PATH_EXPERIMENT=1`, and it is not a step of a configuration write.
+* **A damaged application.** Safe mode is where such a remote lands, and Logitech's route back is a
+  firmware install of the package in the lab, `h350_package`, written to `/fw/normalmode` through the same
+  seven commands, flushed and closed, after which safe mode's next start installs it. That is read in both
+  ends, the client and safe mode, and has not been run; this project does not write firmware to this family.
+* **A damaged safe mode image or bootloader.** With no `HG` at `0x001008`, or key `0x14` held, the bootloader
+  stays in its Microchip programmer, which can rewrite internal flash above `0x001000`; nothing here
+  implements it, `reference/usb-protocol/bootloader.md`. A damaged bootloader has no route.
+* **The last eight bytes of the safe mode image** are not in the lab: the remote serves an internal image
+  eight bytes short. They hold a routine its start calls, likely an empty one.

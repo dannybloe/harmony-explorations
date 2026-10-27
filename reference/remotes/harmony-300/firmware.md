@@ -12,8 +12,8 @@ the two Harmony 300 skins and the Harmony 350's[^s196], at version 1.4[^s196].
 * The version a remote of this model runs, from its own `/sys/sysinfo`.
 * Whether Logitech's software update service serves the image when asked by skin 78 or 79 as well as by
   104.
-* How safe mode and the bootloader are entered on this model, and what they do: the application's side
-  of recovery is [the family's](../../architectures/harmony-300-350/firmware.md#safe-mode-and-recovery), and
-  the two images below it have not been read.
+* How safe mode and the bootloader are entered on this model, and what they do: both were read off a
+  Harmony 350, [the family's](../../architectures/harmony-300-350/firmware.md#safe-mode-and-recovery), and
+  this model's own two images have not been, since Logitech's package carries the application alone.
 
 [^s196]: Stated by Logitech, by their service. [Section 196](../../../docs/findings.md#s196)

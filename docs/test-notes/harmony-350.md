@@ -25,6 +25,7 @@ Its configurations were changed only through Logitech's own service, by syncing,
 | the configuration after programming, 83840 bytes | the same, after the unit was given four devices, one activity and five favourite channels through Logitech's service, copying the bench Harmony 600's setup | 262 |
 | the configuration with one device removed, 68985 bytes | the same, after the Playstation 3 was taken off and nothing else changed | 263 |
 | every file on the inert path list, the backup before the first write, decision 26: the configuration now 35587 bytes as stated, read twice and identical | the same, all twelve paths, filed whole in the lab's `reads/20261027T1700Z-h350-backup/` | `todo-compile-350.md` 1.5 |
+| `/fw/bootloader`, 4096 bytes, and `/fw/safemode`, 26040 bytes, the safe mode image less its last eight bytes because the remote serves an internal image's header length as its size | the same, read only, those two paths opened through `HARMONY_FILE_PATH_EXPERIMENT=1` by decision at the bench; the lab's `reads/20261027T1929Z-h350-fw/`, fixtures `h350_bootloader` and `h350_safemode` | `todo-compile-350.md` 1.4, `tests/test_harmony_350_boot.py` |
 
 **The five favourites** the unit was given through Logitech's service are five action lists of two
 instructions, `0x7A n` and then `0x1F`, which is what named the slot their channels go through, section
