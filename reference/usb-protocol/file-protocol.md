@@ -122,7 +122,8 @@ the manifest says `XOR` with seed `0x4321`, on the Harmony 300 and 350 package, 
 container's own trailer checksum, reached by a route that shares no bytes with the one that found it; on the
 Harmony Touch generation the type is `MD5`. So the check is one shape across both and **the algorithm is a
 field rather than a constant**[^s196][^s198]. Nothing in this reference has sent a write, a commit or a
-device control, and `packages/usb` implements none of them[^s198].
+device control to a remote. `packages/usb` implements them for the Harmony 300 and 350's `/cfg/usercfg`
+alone, behind a rail of its own, [their USB page](../architectures/harmony-300-350/usb.md#what-this-library-does-with-these-models).
 
 **For the Harmony 300 and the Harmony 350 the client's sequence is seven commands**, the same for both
 models: the file system reset, open `W` with the file's size, the write in chunks of at most 50 data packets

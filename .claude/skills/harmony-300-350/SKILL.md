@@ -1,6 +1,6 @@
 ---
 name: harmony-300-350
-description: "Everything needed before working on the Harmony 300 or the Harmony 350, the file based family: where their facts are (read them first), why this library never opens them the ordinary way and never writes to them, and how a configuration is read off one as a file. Use before any task on either model, before reading or composing a configuration for them, before touching the file based transport, and in every agent brief for Harmony 300 or 350 work."
+description: "Everything needed before working on the Harmony 300 or the Harmony 350, the file based family: where their facts are (read them first), why this library never opens them the ordinary way and writes to them through one railed path only, and how a configuration is read off one as a file. Use before any task on either model, before reading or composing a configuration for them, before touching the file based transport, and in every agent brief for Harmony 300 or 350 work."
 ---
 
 # Working on the Harmony 300 and the Harmony 350
@@ -11,7 +11,7 @@ copies of a fact are two copies until one of them moves.
 
 **One skill for both, and not one each**, because what a skill holds is procedure and the procedure is
 identical: the two models share one firmware image, one product id, one file based protocol and one
-container, they are opened by the same function and written by nothing. Where they differ, devices,
+container, they are opened by the same function and written by the same railed path. Where they differ, devices,
 long press, activities and favourites, is a fact and lives in each model's own folder.
 
 ## 1. Read these before anything else
@@ -38,9 +38,13 @@ silence about favourite channels was read as their absence.
 
 * **`openHarmony` refuses both models**, and that is the rail rather than a gap to be closed: this family
   speaks a file protocol in which a path can be an action. `make remotes` reports them separately.
-* **Both bench units may be written, decision 26, and nothing writes to them yet.** The file protocol's
-  write path does not exist; it is built behind its own rail, `todo-compile-350.md` 1.6, after 1.2 to 1.5.
-  Until it exists, a task that seems to need a write is a step of that chapter, not a shortcut around it.
+* **Both bench units may be written, decision 26, through one path and only that one**, built in
+  `todo-compile-350.md` 1.6: `writeFileConfig` in `packages/usb/src/filewrite.ts`, behind
+  `assertFileWriteAllowed` in `rails.ts`, `HARMONY_ENABLE_WRITES=1` and `HARMONY_FILE_WRITE=1`. It opens
+  `/cfg/usercfg` and nothing else, checks `/sys/guid` against the lab's `units/h350.txt` or `units/h300.txt`
+  (recorded with `read-file-identity.ts --record`), writes the whole container **with** its end marker,
+  and reads it back. The script is `packages/usb/bin/write-file-config.ts`, read only without `--commit`.
+  A task that seems to need a write goes through it, not around it.
 * **Reading goes through `openFileBasedRemote`**, whose transport permits opening a file for reading,
   reading, closing and a ping and refuses everything else.
 * **Only paths on `INERT_PATHS` are opened.** `HARMONY_FILE_PATH_EXPERIMENT=1` is the named door in

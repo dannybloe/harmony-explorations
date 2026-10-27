@@ -21,10 +21,20 @@
  * **Nothing in this file writes, and that is enforced rather than intended.** Section 188's lesson
  * is that a rail on a method is no rail at all while the barrel exports the encoder, so the refusal
  * sits on the transport `openFileBasedRemote` returns: an allow list of the four commands that only
- * read, plus a check that an open asks for reading. There is no authorisation path here, because
- * there is nothing to authorise: this family's write commands are not implemented, and
- * `WRITES_ENABLED` therefore has nothing to enable.
+ * read, plus a check that an open asks for reading.
+ *
+ * **The write path exists since `todo-compile-350.md` 1.6, and it is not in this file.** It is
+ * `filewrite.ts`, which the barrel does not re-export, behind `assertFileWriteAllowed` in `rails.ts`.
+ * This said "there is no authorisation path here, because there is nothing to
+ * authorise"<!--superseded--> until then. What the guard below gained is the second half of the
+ * command protocol's arrangement, section 224: a report on the **write route's own allow list**,
+ * `onTheFileWriteRoute`, passes only when `filewrite.ts` has authorised exactly those bytes through
+ * `authorise.ts` and both write flags are set. Everything else is refused as before, so a caller
+ * holding this transport still has no way to send a write, and the route reaches `/cfg/usercfg` and no
+ * other path even for a caller who reaches the hatch by a deep import.
  */
+import { takeAuthorisation } from './authorise.ts';
+import { FILE_WRITE_DOOR, FILE_WRITE_PATHS, WRITES_ENABLED } from './rails.ts';
 import { TransportError, type Transport, isFileBasedRemote, listFileBasedRemotes } from './transport.ts';
 
 /**
@@ -39,19 +49,25 @@ export const FILE_SERVICE = 0xff;
 export const FILE_PING = 0x00;
 /** Open: a path string, a mode string, and for writing a size. Reply carries handle and size. */
 export const FILE_OPEN = 0x01;
-/** Write. Not implemented here and refused by the guard. */
+/** Write. Refused by the guard unless `filewrite.ts` authorised it, see `onTheFileWriteRoute`. */
 export const FILE_WRITE = 0x03;
 /** Read: a handle and how many packets to send. */
 export const FILE_READ = 0x04;
-/** Commit. Not implemented here and refused by the guard. */
+/** Commit. Refused by the guard unless `filewrite.ts` authorised it. */
 export const FILE_FLUSH = 0x05;
-/** Device control on an open file, which includes asking for a checksum. Refused by the guard. */
+/**
+ * Device control on an open file, which includes asking for a checksum. Refused by the guard unless
+ * `filewrite.ts` authorised it, and then only the check, subcommand 1.
+ */
 export const FILE_DEVCTRL = 0x06;
 /** Close: a handle. */
 export const FILE_CLOSE = 0x07;
 /** A request with no file at all, which the client's comments call an HBus command. */
 export const FILE_HBUS = 0x08;
-/** Device control with no file: reset the filesystem, or reboot. Refused by the guard. */
+/**
+ * Device control with no file: reset the filesystem, or reboot. Refused by the guard unless
+ * `filewrite.ts` authorised it, and then only the two parameters the write route sends.
+ */
 export const FILE_CONTROL = 0xff;
 
 /**
@@ -490,16 +506,151 @@ export function requestedPath(report: Uint8Array): string | undefined {
 }
 
 /**
- * A transport for a remote of this family, refusing everything that is not one of the four reads.
+ * The parameter of `FILE_CONTROL` that resets the file system, which on the Harmony 300 and 350's 1.4
+ * firmware closes whatever file is open and does nothing else, `tests/test_harmony_350_file_write.py`.
+ * Logitech's client sends it first so that a handle an interrupted attempt left open cannot make the
+ * open refuse.
+ */
+export const FILE_RESET_FILESYSTEM = 0x66;
+
+/**
+ * The parameter of `FILE_CONTROL` that reboots the remote: a processor reset after a short delay, with
+ * nothing on the way that writes flash, read in the same firmware. `0x62` and `0x6E` do the same and are
+ * never sent; `0x73` stores a request first and `0x75` is unread, and neither is on the write route.
+ */
+export const FILE_REBOOT = 0x00;
+
+/** The device control subcommand that asks the remote to check a written file, the only one sent. */
+export const FILE_CHECK = 0x01;
+
+/**
+ * A data packet's sequence numbers run 0 to 63 and wrap, one counter for a whole operation, commands
+ * and data packets alike: Logitech's client, `tests/test_file_family_write_route.py`. So a data packet's
+ * first byte is never `FILE_SERVICE`, which is what lets the guard tell one from a command.
+ */
+export const SEQUENCE_MODULUS = 64;
+
+/**
+ * The packet that ends a write: one byte, `0x7E`, padded. The firmware parses it as a data packet of
+ * length zero and answers the chunk it ends with `0x80 | 0x7E`, `0xFE`; it takes no sequence number.
+ */
+export const DONE_PACKET = 0x7e;
+
+/**
+ * A data packet's payload: the report less its sequence byte and its length byte. The firmware reads
+ * the length from the low six bits, so a packet can state at most 63, and 62 fits.
+ */
+export const DATA_PACKET_PAYLOAD = FILE_REPORT_BYTES - 2;
+
+/** Whether every byte from `from` on is zero, which is how every packet here is padded. */
+function zeroFrom(report: Uint8Array, from: number): boolean {
+  for (let i = from; i < report.length; i += 1) if (report[i] !== 0) return false;
+  return true;
+}
+
+/**
+ * Whether a report is one the file write route sends, judged on its bytes alone.
+ *
+ * **This is the allow list the write path adds to the transport, and an authorisation is not enough
+ * without it.** `guardFileProtocol` sends a report outside the read allow list only when it was
+ * authorised byte for byte **and** it is one of these shapes **and** both write flags are set. So even a
+ * caller who imports `authorise.ts` by path, which is the deliberate act section 224 left possible, can
+ * open `/cfg/usercfg` for writing and nothing else, and cannot send a reboot parameter the route does
+ * not use. Each shape is the one `filewrite.ts` builds, and nothing looser:
+ *
+ * | report | shape |
+ * |---|---|
+ * | reset the file system | `FF FF seq 01 01 66` |
+ * | reboot | `FF FF seq 01 01 00` |
+ * | open for writing | `FF 01 seq 03`, a path on `FILE_WRITE_PATHS`, the mode `W`, a four byte size |
+ * | write a chunk | `FF 03 seq 02 01 handle 01 count` |
+ * | a data packet | a sequence below 64, a length of 1 to 62, and padding after the payload |
+ * | the done packet | `7E` and nothing else |
+ * | check | `FF 06 seq 07 01 handle 01 01` and the five checksum fields |
+ * | flush | `FF 05 seq 02 01 handle 01 00` |
+ * | close | `FF 07 seq 01 01 handle` |
+ *
+ * The close is on the read allow list as well; it is here so that the route is stated whole.
+ */
+export function onTheFileWriteRoute(report: Uint8Array): boolean {
+  if (report.length !== FILE_REPORT_BYTES) return false;
+  const first = report[0] as number;
+  if (first === DONE_PACKET) return zeroFrom(report, 1);
+  if (first < SEQUENCE_MODULUS) {
+    const length = report[1] as number;
+    return length >= 1 && length <= DATA_PACKET_PAYLOAD && zeroFrom(report, 2 + length);
+  }
+  if (first !== FILE_SERVICE) return false;
+  const command = report[OFFSET_COMMAND] as number;
+  const count = report[OFFSET_PARAMETER_COUNT] as number;
+  // A byte parameter is `01 value`, so `at` and `at + 1` are its two bytes.
+  const byteParam = (at: number, value?: number): boolean =>
+    report[at] === 1 && (value === undefined || report[at + 1] === value);
+  switch (command) {
+    case FILE_CONTROL:
+      return count === 1 && report[4] === 1
+        && (report[5] === FILE_RESET_FILESYSTEM || report[5] === FILE_REBOOT) && zeroFrom(report, 6);
+    case FILE_OPEN: {
+      if (count !== 3) return false;
+      const path = requestedPath(report);
+      if (path === undefined || !FILE_WRITE_PATHS.includes(path)) return false;
+      // The believed framing, section 198: `80 path 00 80 W 00 04 size`. Read off the bytes at fixed
+      // places after the path, so a second string or a different mode cannot hide behind the first.
+      const mode = 5 + path.length + 1;
+      return report[mode] === STRING_PREFIX && report[mode + 1] === 0x57 && report[mode + 2] === 0
+        && report[mode + 3] === 4 && zeroFrom(report, mode + 8);
+    }
+    case FILE_WRITE:
+      return count === 2 && byteParam(4) && byteParam(6) && zeroFrom(report, 8);
+    case FILE_DEVCTRL:
+      return count === 7 && byteParam(4) && byteParam(6, FILE_CHECK);
+    case FILE_FLUSH:
+      return count === 2 && byteParam(4) && byteParam(6, 0) && zeroFrom(report, 8);
+    case FILE_CLOSE:
+      return count === 1 && byteParam(4) && zeroFrom(report, 6);
+    default:
+      return false;
+  }
+}
+
+function sameBytes(a: Uint8Array, b: Uint8Array): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i += 1) if (a[i] !== b[i]) return false;
+  return true;
+}
+
+/**
+ * A transport for a remote of this family, refusing everything that is not one of the four reads,
+ * unless the write path authorised it.
  *
  * Separate from `guardMutations` on purpose. That one keys on the high nibble of byte 0, which is
  * this protocol's fixed service id, so it would classify every packet here as one command. Two
  * protocols cannot share one allow list, and a guard that silently misreads a protocol is worse
  * than no guard.
+ *
+ * **The write route's half**, `todo-compile-350.md` 1.6, is the arrangement `guardMutations` has had
+ * since section 224, with one more condition. An authorisation is looked up by this object's identity
+ * in `authorise.ts`, which the barrel does not offer, and consumed by the next write whether or not it
+ * matches, so a permission cannot be left lying about. A report is sent on it only when its bytes are
+ * exactly the authorised ones, it is on `onTheFileWriteRoute`, and `HARMONY_ENABLE_WRITES` and
+ * `HARMONY_FILE_WRITE` are both set. A report that fails any of the three falls through to the read
+ * checks below, which refuse every write as they always have. The returned object still offers
+ * `write`, `read` and `close` and nothing else, which a test enumerates.
  */
 export function guardFileProtocol(inner: Transport): Transport {
-  return {
+  const guarded: Transport = {
     async write(report: Uint8Array): Promise<void> {
+      const pending = takeAuthorisation(guarded);
+      if (
+        pending !== undefined
+        && sameBytes(pending, report)
+        && onTheFileWriteRoute(report)
+        && WRITES_ENABLED
+        && FILE_WRITE_DOOR
+      ) {
+        await inner.write(report);
+        return;
+      }
       const service = report[OFFSET_SERVICE] ?? 0;
       const command = report[OFFSET_COMMAND] ?? 0;
       if (service !== FILE_SERVICE) {
@@ -511,8 +662,8 @@ export function guardFileProtocol(inner: Transport): Transport {
       if (!FILE_READ_ONLY_COMMANDS.has(command)) {
         throw new TransportError(
           `refusing file protocol command 0x${command.toString(16)}: only ping, open, read and ` +
-            'close are implemented, and the rest of this family\'s commands write. Nothing here has ' +
-            'ever written to a remote.',
+            'close pass on their own, and the rest of this family\'s commands write. A write goes ' +
+            'through writeFileConfig, which asks rails.ts first and authorises each report itself.',
         );
       }
       if (command === FILE_OPEN && !opensForReading(report)) {
@@ -549,6 +700,7 @@ export function guardFileProtocol(inner: Transport): Transport {
       return inner.close();
     },
   };
+  return guarded;
 }
 
 /**

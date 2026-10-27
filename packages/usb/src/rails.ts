@@ -19,6 +19,7 @@ import { compareIntendedVersion } from './compatible.ts';
 import { sameUnit } from './identity.ts';
 import { checkFirmwareImage } from './firmware.ts';
 import { DELAY_SETTINGS, predictStoreAfter } from './settings.ts';
+import { TRAILER_CHECKSUM_OFFSET, trailerChecksum } from './trailer.ts';
 import type { SettingWrite } from './settings.ts';
 import type { Compatibility, StatedVersion } from './compatible.ts';
 
@@ -1224,4 +1225,242 @@ export function assertSettingsWriteAllowed(
   } catch (error: unknown) {
     throw new RailError(`refusing the settings write: ${error instanceof Error ? error.message : String(error)}`);
   }
+}
+
+// ---------------------------------------------------------------------------------------------------
+// The file based family's write path: the Harmony 300 and the Harmony 350, `todo-compile-350.md` 1.6.
+// ---------------------------------------------------------------------------------------------------
+
+/**
+ * The named door for writing a configuration to a remote of the file based family, beside
+ * `HARMONY_ENABLE_WRITES` rather than instead of it.
+ *
+ * **Its own door, and not the flash write's**, because nothing about the command protocol's rails
+ * reaches this family: there is no address to bound, no erase to align and no block to compare. What
+ * the firmware does instead is erase the whole configuration the moment a host opens it for writing,
+ * before it answers the open, `tests/test_harmony_350_file_write.py`. So a run with both flags set
+ * has destroyed the remote's configuration by its second command, and the operator has to have said
+ * out loud that this is understood.
+ *
+ * Both bench units of the family may be written, decision 26, and the unit check below is what says
+ * which one is on the cable.
+ */
+export const FILE_WRITE_DOOR: boolean = process.env['HARMONY_FILE_WRITE'] === '1';
+
+/**
+ * The architectures whose file write path is read: arch 16, the Harmony 300 and the Harmony 350, as
+ * their identity file states it (`arch 0x10`). One firmware build, 1.4, read in
+ * `tests/test_harmony_350_file_write.py`; the Harmony Touch generation speaks the same protocol and its
+ * firmware is not read, so it is not here and its own `arch` refuses.
+ */
+export const ARCHITECTURES_WITH_A_FILE_WRITE_TARGET: readonly number[] = [16];
+
+/**
+ * The paths the file write path will open for writing, **an allow list of one**.
+ *
+ * The firmware refuses no writable row of its file table: fourteen rows allow writing, among them
+ * `/fw/bootloader` and `/fw/safemode` in the processor's own program flash, and an open for writing
+ * erases what it opens, `reference/architectures/harmony-300-350/usb.md`. So the bound is this list
+ * and nothing in the remote. Checked here, before anything is sent, and again on the bytes of the
+ * open request by `guardFileProtocol`, since a rail on a function is not a rail on the transport.
+ */
+export const FILE_WRITE_PATHS: readonly string[] = ['/cfg/usercfg'];
+
+/**
+ * Where `/cfg/usercfg` sits on the external flash, which is also the base the container is linked
+ * for: its `end_addr` field is `0x020000` plus the offset of its end marker. The firmware's file table
+ * row 5, `reference/architectures/harmony-300-350/memory.md`.
+ */
+export const FILE_FAMILY_CONFIG_BASE = 0x020000;
+
+/**
+ * The most a configuration may hold: `/cfg/usercfg`'s own size in the firmware's file table, 256 KiB.
+ *
+ * **Not the 384 KiB the open erases, and the difference is the log.** The open for writing erases six
+ * 64 KiB blocks from `0x020000`, the file's 256 KiB and the 128 KiB after it, which on a 512 KiB flash
+ * part is `/cfg/log`. The write itself is unbounded in the firmware: it programs each packet at a
+ * running address and never compares it with the file's size. So a writer bounded by the erase would be
+ * allowed to write a configuration into the log's place, which the firmware places there at start from
+ * the flash part's identity. The file's own size is the bound that keeps a write inside the file.
+ */
+export const FILE_FAMILY_CONFIG_MAX = 0x040000;
+
+/**
+ * The report length the file write path is built for, which is what fixes a data packet's payload at
+ * 62 bytes. The identity file states it as `link_packet_length`, and the write refuses a remote that
+ * states anything else rather than sending packets sized for a length it does not use.
+ */
+export const FILE_FAMILY_PACKET_LENGTH = 64;
+
+const FILE_FAMILY_MAGIC = 'GSPM';
+const FILE_FAMILY_HEADER_MARKER = 'LWJL';
+const FILE_FAMILY_END_MARKER = 'PTYY';
+/** `0x0B + 4 * 15`: fifteen pointer slots, and the firmware's validator hardcodes it, section 259. */
+const FILE_FAMILY_HEADER_MARKER_OFFSET = 0x47;
+
+function asciiAt(bytes: Uint8Array, at: number, length: number): string {
+  return String.fromCharCode(...bytes.subarray(at, at + length));
+}
+
+/** What `assertFileFamilyContainer` read off a container it accepted. */
+export interface FileFamilyContainer {
+  /** The checksum word stored ahead of the end marker, which is what the remote's check compares. */
+  readonly storedChecksum: number;
+  /** The container's `end_addr` field, the flash address of its end marker. */
+  readonly endAddr: number;
+  /** How many bytes a read of `/cfg/usercfg` returns once this is written: the end marker is not served. */
+  readonly readLength: number;
+}
+
+/**
+ * Throws unless `container` is a whole configuration for the Harmony 300 and 350 family, in the form a
+ * remote of that family validates at start.
+ *
+ * Every check is one the firmware makes, `tests/test_harmony_350_file_write.py`, and so a container
+ * failing any of them is one the remote would leave unused with no configuration to fall back on:
+ *
+ * * `GSPM` at its start and `LWJL` at `0x47`, which the check command and the boot validator both
+ *   test. `LWJL` at `0x47` also says fifteen pointer slots, which is this family's count and no other's,
+ *   so a Harmony One or Harmony 600 container, which share the cookie, is refused here.
+ * * `end_addr` at offset 4 naming exactly the end marker's place above `0x020000`, since the boot
+ *   validator looks for the marker there and the read size is computed from it.
+ * * **`PTYY` as the last four bytes.** A read of `/cfg/usercfg` comes back four bytes short of a
+ *   container and the boot validator demands the marker, so a container taken from a read has to have
+ *   it put back. The todo item this rail answers said to take the marker off, and the firmware reading
+ *   says the opposite; the firmware wins, decision 2.
+ * * the stored trailer checksum recomputing, since the boot validator recomputes it whenever setting
+ *   `0x80` asks for it, which an absent setting does.
+ * * a length no greater than the file's own size, `FILE_FAMILY_CONFIG_MAX`, because the firmware
+ *   bounds nothing.
+ */
+export function assertFileFamilyContainer(container: Uint8Array): FileFamilyContainer {
+  const length = container.length;
+  const minimum = FILE_FAMILY_HEADER_MARKER_OFFSET + 4 + TRAILER_CHECKSUM_OFFSET;
+  if (length < minimum) {
+    throw new RailError(`a configuration of ${length} bytes is too short to hold this family's header`);
+  }
+  if (length > FILE_FAMILY_CONFIG_MAX) {
+    throw new RailError(
+      `a configuration of ${length} bytes is longer than /cfg/usercfg's ${FILE_FAMILY_CONFIG_MAX}: the `
+        + 'firmware does not bound a write, so the bytes past the file would land in the log',
+    );
+  }
+  if (asciiAt(container, 0, 4) !== FILE_FAMILY_MAGIC) {
+    throw new RailError(`the file does not start with ${FILE_FAMILY_MAGIC}, so it is not a configuration`);
+  }
+  if (asciiAt(container, FILE_FAMILY_HEADER_MARKER_OFFSET, 4) !== FILE_FAMILY_HEADER_MARKER) {
+    throw new RailError(
+      `no ${FILE_FAMILY_HEADER_MARKER} at 0x${FILE_FAMILY_HEADER_MARKER_OFFSET.toString(16)}: this is not `
+        + 'a fifteen slot container, which is the only kind the Harmony 300 and 350 firmware accepts',
+    );
+  }
+  if (asciiAt(container, length - 4, 4) !== FILE_FAMILY_END_MARKER) {
+    throw new RailError(
+      `the file does not end in ${FILE_FAMILY_END_MARKER}. A read of /cfg/usercfg comes back four bytes `
+        + 'short of a container, and the remote\'s start up check demands the marker, so it has to be '
+        + 'put back before a write',
+    );
+  }
+  const view = new DataView(container.buffer, container.byteOffset, container.byteLength);
+  const endAddr = view.getUint32(4, true);
+  const expectedEnd = FILE_FAMILY_CONFIG_BASE + length - 4;
+  if (endAddr !== expectedEnd) {
+    throw new RailError(
+      `end_addr says 0x${endAddr.toString(16)} and the end marker is at 0x${expectedEnd.toString(16)}: `
+        + 'the remote looks for the marker where end_addr says, so it would refuse this file',
+    );
+  }
+  const storedChecksum = view.getUint16(length - TRAILER_CHECKSUM_OFFSET, true);
+  const recomputed = trailerChecksum(container);
+  if (storedChecksum !== recomputed) {
+    throw new RailError(
+      `the stored trailer checksum is 0x${storedChecksum.toString(16)} and the bytes recompute to `
+        + `0x${recomputed.toString(16)}: the remote would refuse this configuration at start`,
+    );
+  }
+  return { storedChecksum, endAddr, readLength: length - 4 };
+}
+
+/**
+ * Everything the file write path needs judged before it sends its first command.
+ *
+ * The same lesson as `WritePermission`, sections 224 and 225: the facts about the remote are read off
+ * the remote by `writeFileConfig` itself and handed in here, and what a caller chooses is only what it
+ * has to: the path, the bytes and the unit record they are meant for.
+ */
+export interface FileWritePermission {
+  /** The path to open for writing. Anything but `/cfg/usercfg` is refused. */
+  readonly path: string;
+  /** `/sys/sysinfo` as read off the remote and parsed, one field per name. */
+  readonly sysinfo: ReadonlyMap<string, string>;
+  /** `/sys/guid` as read off the remote: the same 64 byte identity block the command family keeps in program memory. */
+  readonly guid: Uint8Array;
+  /** The unit this write is meant for, from the lab's `units/<label>.txt`, never from the remote. */
+  readonly permittedUnit: Uint8Array;
+  /** The whole container to write, its end marker included. */
+  readonly container: Uint8Array;
+}
+
+/**
+ * Throws unless the remote these facts were read off may be given this container at this path,
+ * **leaving the two flags aside**. A dry run asks this; `assertFileWriteAllowed` asks it and the flags.
+ *
+ * * **the path is on `FILE_WRITE_PATHS`**, the allow list of one.
+ * * **the remote states architecture 16** in its identity file, the one whose write path is read.
+ * * **it states a packet length of 64**, which the data packets are sized for.
+ * * **`/sys/guid` names the unit the permission is for.** That file holds the same 64 byte identity
+ *   block a Harmony One keeps in program memory, sixteen `0xEE` and then two GUIDs, and the identity
+ *   file's `guid` field is its hex, so `sameUnit` compares it exactly as it compares the others and
+ *   refuses a block whose GUIDs are filler. The Harmony 300 and 350 report the same product id, so
+ *   this is the only thing on the cable that tells the two bench units apart.
+ * * **the container is one this family's firmware accepts**, `assertFileFamilyContainer`.
+ */
+export function assertFileWriteTarget(p: FileWritePermission): FileFamilyContainer {
+  if (!FILE_WRITE_PATHS.includes(p.path)) {
+    throw new RailError(
+      `refusing to write ${p.path}: the file write path opens ${FILE_WRITE_PATHS.join(', ')} and nothing `
+        + 'else. The firmware refuses no writable row of its table, /fw/bootloader and /fw/safemode '
+        + 'among them, and opening one for writing erases it',
+    );
+  }
+  const stated = p.sysinfo.get('arch');
+  const architecture = stated === undefined ? Number.NaN : Number.parseInt(stated, 16);
+  if (!ARCHITECTURES_WITH_A_FILE_WRITE_TARGET.includes(architecture)) {
+    throw new RailError(
+      `the remote states architecture ${stated ?? 'nothing'}, and the file write path is read for `
+        + `architecture ${ARCHITECTURES_WITH_A_FILE_WRITE_TARGET.join(', ')} only (the Harmony 300 and 350)`,
+    );
+  }
+  const packet = Number.parseInt(p.sysinfo.get('link_packet_length') ?? '', 10);
+  if (packet !== FILE_FAMILY_PACKET_LENGTH) {
+    throw new RailError(
+      `the remote states a packet length of ${p.sysinfo.get('link_packet_length') ?? 'nothing'}, and `
+        + `the write path sizes its data packets for ${FILE_FAMILY_PACKET_LENGTH}`,
+    );
+  }
+  assertUnitIsPermitted({ identityBlock: p.guid, permittedUnit: p.permittedUnit });
+  return assertFileFamilyContainer(p.container);
+}
+
+/**
+ * Throws unless a configuration may be written to the file based remote these facts were read off.
+ *
+ * The two flags first, `HARMONY_ENABLE_WRITES` and `HARMONY_FILE_WRITE`, so that a shipped build's
+ * refusal names the build flag and not a detail, and then `assertFileWriteTarget`. It is called by
+ * `writeFileConfig` after it has read the identity file, `/sys/guid` and the current configuration
+ * itself, and only then are reports authorised for the guard, one at a time.
+ */
+export function assertFileWriteAllowed(p: FileWritePermission): FileFamilyContainer {
+  if (!WRITES_ENABLED) {
+    throw new RailError(
+      'writing is disabled: this build is read only (set HARMONY_ENABLE_WRITES=1 knowing why)',
+    );
+  }
+  if (!FILE_WRITE_DOOR) {
+    throw new RailError(
+      'a file write needs HARMONY_FILE_WRITE=1 as well as HARMONY_ENABLE_WRITES=1: opening '
+        + '/cfg/usercfg for writing erases the configuration before the remote even answers',
+    );
+  }
+  return assertFileWriteTarget(p);
 }

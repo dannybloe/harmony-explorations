@@ -749,8 +749,9 @@ remote and 2 in the second, which is what section 117 measured as a generator er
 
 26. <a id="d26"></a>**The bench Harmony 300 and Harmony 350 may be written to.** *Taken on 27 October 2026,
    as `todo-compile-350.md` 1.1 asks.* Both units are permitted write targets, and the 350 goes first, by
-   that track's order. Nothing writes to either yet: the file protocol's write path does not exist in the
-   library, and it gets a rail of its own before any write is sent, `todo-compile-350.md` 1.6, after the
+   that track's order. Nothing wrote to either when this was taken: the file protocol's write path did not
+   exist in the library, and it got a rail of its own before any write is sent, `todo-compile-350.md` 1.6
+   (`assertFileWriteAllowed`, `HARMONY_FILE_WRITE=1`, `/cfg/usercfg` only), after the
    client's and the firmware's write routes are read and recovery is understood, 1.2 to 1.4. `openHarmony`
    keeps refusing the file based family; the write route for it is the file protocol, never the command
    protocol. The Harmony Touch is not covered by this and stays unwritten.

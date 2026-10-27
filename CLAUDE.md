@@ -322,7 +322,7 @@ irreplaceable. One line each here; what was written to each, block by block, is 
 | a **Harmony 700** | permitted 29 September 2026; repaired out of safe mode, its firmware staged from 2.5 to 2.8, and configurations written, sections 295, 297 and 300 onwards |
 | a **Harmony 600** | permitted 29 September 2026; configurations written since section 302, and its settings store appended to once, section 305, behind its own rail, `assertSettingsWriteAllowed` and `HARMONY_SETTINGS_WRITE=1` |
 | the **friend's Harmony One** (dead display) and the **friend's Harmony 525** | given to the project and its own, decision 21; permitted, not yet among `write-config.ts`'s targets, nothing written |
-| a **Harmony 350** and a **Harmony 300** | permitted 27 October 2026, decision 26; nothing written, and no write path exists yet: the file protocol's gets its own rail first, `todo-compile-350.md` chapter 1 |
+| a **Harmony 350** and a **Harmony 300** | permitted 27 October 2026, decision 26; nothing written. The file protocol's write path exists behind its own rail since `todo-compile-350.md` 1.6: `assertFileWriteAllowed` and `HARMONY_FILE_WRITE=1`, `/cfg/usercfg` only, `/sys/guid` checked against `units/h350.txt` or `units/h300.txt`, `packages/usb/bin/write-file-config.ts` |
 
 **No other remote may be written.** The exclusion is the point: the everyday Harmony One. The Harmony
 Touch is never written either, and `openHarmony` refuses it and the 300 and 350, whose writes are to go

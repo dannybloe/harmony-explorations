@@ -56,7 +56,7 @@ user configuration commented out[^s198].
 | **`openHarmony` refuses it**, by product id, and `make remotes` lists it separately | [^s193] |
 | **`openFileBasedRemote` opens it read only**: a bare ping, an open for reading, a read and a close, and only for the paths on `INERT_PATHS`. Two of those twelve answer on a Touch, `/sys/sysinfo` and `/rf/deviceinfo`; the other ten are refused at open | [^s200], [^s201] |
 | any other path needs `HARMONY_FILE_PATH_EXPERIMENT=1`, because a path can be an action | [^s200] |
-| **nothing is written**: no write, commit, device control, filesystem reset or request and response command is implemented, and no write list in `packages/usb/src/rails.ts` names this model | [^s198] |
+| **nothing is written**: the file write path the library has is the Harmony 300 and 350's, and it refuses a remote whose identity file states any architecture but 16, which a Touch's does not; no request and response command is implemented, and no write list in `packages/usb/src/rails.ts` names this model | [^s198] |
 
 **So there is nothing left to read on a Touch without the named door**[^s201]. What the remote asks for during
 a sync rides on the request and response command, `0x08`, which has never been sent[^s203].
