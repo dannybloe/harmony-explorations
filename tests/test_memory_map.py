@@ -754,6 +754,9 @@ _PUBLISHABLE_BYTE_RUNS = {
     # this population since step 3.2 widened the glob to the test notes.
     '07 05 81 03 40 00 01',
     '07 05 02 03 40 00 01',
+    # The Harmony 885's GET_VERSION reply, in its test notes. A model's state and not a unit's: both
+    # bench 885s answered it byte for byte, and the architecture's `usb.md` publishes it too.
+    '44 21 49 01 80 11 08',
 }
 
 #: What an account id looks like, the same shape `.githooks/pre-commit` refuses in staged content.

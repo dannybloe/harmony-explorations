@@ -226,7 +226,7 @@ class TheRunnerSeesEveryTest(unittest.TestCase):
         # 50 with `tests/test_archive.py`, todo-reference 2.2, and 51 with `tests/test_reference.py`, 2.3.
         # 52 with `tests/test_site.py`, todo-reference 7.1.
         # 53 with `tests/test_product_capabilities.py`, todo-reference 3.4.
-        self.assertEqual(len(files), 53, 'the Python test files')
+        self.assertEqual(len(files), 54, 'the Python test files')
         with_block = 0
         for path in files:
             with open(path, encoding='utf-8') as handle:
@@ -255,7 +255,7 @@ class TheRunnerSeesEveryTest(unittest.TestCase):
         # 49 with `tests/test_archive.py` and `tests/test_reference.py`, todo-reference 2.2 and 2.3,
         # which carry one each. 50 with `tests/test_site.py`, todo-reference 7.1, which carries one.
         # 51 with `tests/test_product_capabilities.py`, todo-reference 3.4, which carries one.
-        self.assertEqual(with_block, 51,
+        self.assertEqual(with_block, 52,
                          'files carrying a __main__ block, of %d' % len(files))
 
 
@@ -746,7 +746,7 @@ class APythonBoundOnACorpusTotalIsExact(unittest.TestCase):
         # 50 with `tests/test_archive.py`, todo-reference 2.2, and 51 with `tests/test_reference.py`, 2.3.
         # 52 with `tests/test_site.py`, todo-reference 7.1.
         # 53 with `tests/test_product_capabilities.py`, todo-reference 3.4.
-        self.assertEqual(len(scanned), 53, 'Python test files, which moves when one is added')
+        self.assertEqual(len(scanned), 54, 'Python test files, which moves when one is added')
         self.assertIn(self.CONTROL, found, 'the pattern matches nothing it should match')
 
     def test_every_remaining_bound_says_why_it_is_not_a_measurement(self):
