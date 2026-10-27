@@ -129,8 +129,16 @@ models: the file system reset, open `W` with the file's size, the write in chunk
 under one sequence counter that runs 0 to 63 and wraps, the check, the commit **only** on `m`, the close, and
 the reboot `0xFF 0x00` **only** when the package's manifest asks for it. A failure reruns the whole sequence
 once from the reset. The client sends the package's file as it ships and computes no checksum of its
-own.[^t-write-route] **None of it has been sent to a remote**, and what the reset erases is not
-checked.[^unchecked]
+own.[^t-write-route] **None of it has been sent to a remote.**
+
+**What a remote does with these steps has been read in one firmware, the Harmony 300 and 350's 1.4
+build**, and three of them do less than their names suggest: the file system reset only closes whatever
+file is open, the check uses none of the type, seed, offset and length and, for `/cfg/usercfg`, compares
+the checksum word stored in the file with the expected value, and the flush reads no flag. The open for writing does more, since it erases the file
+before it answers. The detail is [their USB page](../architectures/harmony-300-350/usb.md#what-the-firmware-does-with-a-write)[^t-harmony-350-file-write].
+The same reading also places the bytes the templates check: the reply to the reset carries no parameter,
+the check's character is byte 7 and a write chunk ending in the done packet answers `0xFE`, as the client
+expects[^t-harmony-350-file-write]. The Harmony Touch generation's firmware is not read[^unchecked].
 
 Logitech's template for writing a Harmony Touch's configuration carries the read of the same file commented
 out, under a header calling it "for testing only", so its client writes a configuration to that generation
@@ -142,9 +150,9 @@ and does not read one back, by choice rather than by capability,
 * The write, the commit, both device controls and the request and response command, on any
   remote[^unchecked].
 * What the `0x0b` at the end of a refusal means[^unchecked].
-* On the Harmony 300 and 350: what the file system reset erases, whether a configuration package's file
-  includes the four byte end marker, what its manifest states for the check and the reboot, and what the
-  remote answers to a failed check or to a size that disagrees with the bytes sent[^unchecked].
+* On the Harmony 300 and 350: whether a configuration package's file includes the four byte end marker,
+  and what its manifest states for the check and the reboot[^unchecked]. Every step's effect on a unit,
+  since the firmware reading is one build's code[^unchecked].
 * **Skin 96.** It declares model id 66 and architecture 14, which is the Harmony 700, and specifies a file
   protocol operation identical to the Harmony Touch's. It is absent from Logitech's own live product table
   of 97 skins, and the client's own rule would pick the command protocol for that architecture. Whether the
@@ -164,3 +172,4 @@ and does not read one back, by choice rather than by capability,
 [^s19]: Measured on a unit. [Section 19](../../docs/findings.md#s19)
 [^s295]: Measured on a unit. [Section 295](../../docs/findings.md#s295)
 [^t-write-route]: Stated by Logitech, in their client. [The test](../../tests/test_file_family_write_route.py)
+[^t-harmony-350-file-write]: Read in the firmware. [The test](../../tests/test_harmony_350_file_write.py)

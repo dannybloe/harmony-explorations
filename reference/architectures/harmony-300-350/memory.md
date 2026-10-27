@@ -15,8 +15,9 @@ The 1.4 firmware carries its filesystem as data: a pool of names at `0x00910A` a
 | `/fw/bootloader` | internal `0x000000`, 4 KiB | the bootloader |
 | `/fw/safemode` | internal `0x001000`, 32 KiB | the safe mode image |
 | `/fw/normalmode` | internal `0x009000`, 89088 bytes, **and** the external medium at `0x000000`, the same size | the application, resident and stored, the arrangement the [Harmony 525](../harmony-5xx/memory.md) has too |
-| `/fw/embeddedcfg` | | an embedded configuration |
+| `/fw/embeddedcfg` | no row: a name in the pool that no row of the table and no instruction points at | nothing this firmware serves, so there is no configuration to fall back on |
 | `/cfg/usercfg` | external `0x020000`, 256 KiB | **the user configuration** |
+| `/cfg/log` | external, the top 128 KiB of the part, placed at start from the flash part's identity: `0x060000` on a 512 KiB part | the log |
 | `/sys/guid`, `/sys/pid`, `/sys/sku`, `/sys/battery`, `/sys/flags0` to `/sys/flags3` | seven 64 byte records from internal `0x01F400` | the unit's records; `/sys/guid` identifies a unit |
 | `/fw/config_bits` | internal `0x01FFF8`, 8 bytes | the processor's configuration words |
 | `/sys/sysinfo` | dynamic, nothing stored | identity text built on request |
@@ -24,7 +25,16 @@ The 1.4 firmware carries its filesystem as data: a pool of names at `0x00910A` a
 
 Media: `I` internal program flash, 12 files; `E` the external medium, 3; `D` dynamic, 7; `S` a stream,
 1[^s199]. The external medium's part and size are not checked[^unchecked]; concordance reported 512 KiB for
-a 350[^s194b].
+a 350[^s194b]. The 1.4 firmware knows four flash identities, two of 512 KiB, one of 1 MiB and one of 2 MiB, and places the log
+from them[^t-harmony-350-file-write].
+
+**This table listed `/fw/embeddedcfg` as a file with no place until the write path was read**: its name is
+in the pool, and none of the 23 rows points at it, so it is not one of them[^t-harmony-350-file-write].
+The `/cfg/log` row is the firmware's own: the table states no place or size for it, and the code supplies
+both at start[^t-harmony-350-file-write].
+
+**An open of `/cfg/usercfg` for writing erases `0x020000` to `0x07FFFF`**, the configuration's 256 KiB and
+the 128 KiB after it, which on a 512 KiB part is the log, [usb.md](usb.md#what-the-firmware-does-with-a-write)[^t-harmony-350-file-write].
 
 ## The configuration container
 
@@ -45,7 +55,10 @@ what holds on this architecture.
 
 **A file states its size four bytes short**: `/cfg/usercfg` reports `end_addr - flash_base`, and the read
 pads past it rather than serving the `PTYY` marker, so a configuration read as a file needs that marker
-appended to be byte identical to concordance's copy, measured on both models[^s262][^s264b].
+appended to be byte identical to concordance's copy, measured on both models[^s262][^s264b]. The firmware
+states it that way: the open for reading computes the size as `end_addr - 0x020000`, and as zero when that
+field is erased[^t-harmony-350-file-write]. **A write has to put the marker back**, since the validator a
+remote runs at start demands it, [firmware.md](firmware.md#what-validates-the-configuration)[^t-harmony-350-file-write].
 
 **A configuration from a different generation of the compiler is not a sample of the same population.**
 Raw slot 8's emptiness on the 2011 configuration was first read as a property of the model, and a second
@@ -66,6 +79,7 @@ pair[^s278]. The rule is every architecture's, [the action language](../../confi
 
 [^s199]: Read in the firmware. [Section 199](../../../docs/findings.md#s199)
 [^t-firmware]: Read in the firmware. [The test](../../../tests/test_harmony_350_firmware.py)
+[^t-harmony-350-file-write]: Read in the firmware. [The test](../../../tests/test_harmony_350_file_write.py)
 [^unchecked]: Not checked.
 [^s194b]: Measured on a unit. [Section 194](../../../docs/findings.md#s194)
 [^s194]: Measured in configurations. [Section 194](../../../docs/findings.md#s194)

@@ -23,10 +23,39 @@ take another route[^s295].
 | routine | evidence |
 |---|---|
 | the file table and the name pool | [^s199] |
-| the configuration validator, marker at `0x47`; on the 350's 1.4 image it compares `GSPM` from `0x14AE8` | [^s259], [^t-harmony-350-firmware] |
+| the configuration test the host's check runs, at `0x14AC2`: `GSPM` compared from `0x14AE8`, `LWJL` at the hardcoded `0x47`, then the stored checksum word returned rather than recomputed. Section 259 called it the configuration validator<!--superseded-->; the validator that runs at start is the next row | [^s259], [^t-harmony-350-firmware], [^t-harmony-350-file-write] |
+| the configuration validator at `0x16090`, run at start and from a second call site in the main loop while the verdict is clear: `GSPM`, `LWJL` at `0x47`, `PTYY` at `end_addr` and the trailer checksum, below | [^t-harmony-350-file-write] |
+| the file protocol: the request parser at `0xCB88`, the reply dispatcher at `0xE2F0`, the file lookup at `0x12CF0`, the close at `0x12CE6`, the read size of `/cfg/usercfg` at `0x14C58`, [usb.md](usb.md#what-the-firmware-does-with-a-write) | [^t-harmony-350-file-write] |
 | the section seeker, `0x0B + 4 * slot` at `0x10BCE` on the 350's 1.4 image, called for raw slots 3 to 12 from 14 call sites | [^s259] |
 | the month end routine of the clock | [^s322] |
 | the state variable bound | [^s276] |
+
+## What validates the configuration
+
+**In the 1.4 image a remote keeps its judgement of the configuration in one bit and acts on the bit**, not
+on the bytes: the configuration's verdict, bit 2 of data memory `0x68E`, the same byte and bit the Harmony
+700 uses[^t-harmony-350-file-write][^s310]. Six of the fourteen calls that seek a section of the
+configuration test the bit a few instructions before and skip the configuration when it is clear, and a
+seventh runs only after the validator has set it; whether the other seven are reached only with the bit
+set is not checked[^t-harmony-350-file-write][^unchecked].
+
+| | what sets or clears it | evidence |
+|---|---|---|
+| at start | the validator at `0x16090`: `GSPM` at the start, `LWJL` at `0x47`, `PTYY` at `end_addr`, then the trailer checksum, seeded `0x4321`, over the little endian words from the start to the stored word at `end_addr - 2`, [the container](../../config-format/container.md#the-trailer-checksum) | [^t-harmony-350-file-write] |
+| the checksum's gate | skipped while bit 0 of setting `0x80` in the settings store is clear, the gate the Harmony 600, 650 and 700 have; an absent setting reads `0xFF`, so a store without one asks for the checksum | [^t-harmony-350-file-write], [^s354] |
+| a second call site in the main loop | the same validator again, only if the verdict is clear; that this is the end of a USB session is likely and not checked | [^t-harmony-350-file-write] |
+| an open of `/cfg/usercfg` for writing | clears it | [^t-harmony-350-file-write] |
+| the host's check answering `m` for `/cfg/usercfg` | sets it, on the stored checksum word alone and without `PTYY`, [usb.md](usb.md#what-the-firmware-does-with-a-write) | [^t-harmony-350-file-write] |
+
+**In the code read, a configuration that fails is not refused and does not stop the firmware.** The validator returns
+with the verdict clear and an error code latched, 8 when a marker is missing and 4 when the checksum fails,
+which a routine at `0x1A7EE` copies to `0x700` while setting four port pins, and the start goes on without
+loading the configuration's state[^t-harmony-350-file-write]. What a person sees from the code, and how a
+unit behaves with a failing configuration, is not checked[^unchecked]. **There is no configuration to fall back on**: `/fw/embeddedcfg` is a name in the
+firmware's pool that no row of the file table and no instruction points at, [memory.md](memory.md)[^t-harmony-350-file-write].
+
+The checksum as read reproduces the stored word of every configuration read off a Harmony 300 and a
+Harmony 350, five of them[^t-harmony-350-file-write].
 
 ## Safe mode and recovery
 
@@ -39,6 +68,10 @@ need recovering from, [usb.md](usb.md).
 * Which version a given remote runs: its `/sys/sysinfo` carries a version field, and only the product
   string's 1.4.0 has been read[^s193].
 * Safe mode entry and recovery[^unchecked].
+* What a failed validation shows a person, and whether a configuration the check marked good is put to
+  use before the remote restarts, since the check sets the verdict without the loading the start does[^unchecked].
+* Whether a unit's settings store holds setting `0x80`, and so whether its start checks the
+  checksum[^unchecked].
 
 [^s196]: Stated by Logitech, by their service. [Section 196](../../../docs/findings.md#s196)
 [^x-versiondb]: Stated by Logitech, in their client. [MyHarmony's version list](https://files.myharmony.com/Assets/Firmware/VersionDbDefaults2.xml)
@@ -51,3 +84,6 @@ need recovering from, [usb.md](usb.md).
 [^s276]: Read in the firmware. [Section 276](../../../docs/findings.md#s276)
 [^unchecked]: Not checked.
 [^s193]: Measured on a unit. [Section 193](../../../docs/findings.md#s193)
+[^t-harmony-350-file-write]: Read in the firmware. [The test](../../../tests/test_harmony_350_file_write.py)
+[^s310]: Read in the firmware. [Section 310](../../../docs/findings.md#s310)
+[^s354]: Read in the firmware. [Section 354](../../../docs/findings.md#s354)
