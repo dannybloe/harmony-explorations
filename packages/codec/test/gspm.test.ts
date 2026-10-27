@@ -922,7 +922,8 @@ test('the frame tiles to the next section on every container that has one', skip
 });
 
 /**
- * Arch 16's map is partial and refuses the rest, sections 259 and 260.
+ * Arch 16's map is partial and refuses the rest, sections 259 and 260, and base slot 13 since the power
+ * on delay, `tests/test_harmony_350_delay.py`.
  *
  * **The refusals are the assertion, not the six.** A map with a hopeful entry in it would pass a test
  * that only checked what is named, and on this architecture a guessed alignment is worse than none:
@@ -933,22 +934,23 @@ test('the frame tiles to the next section on every container that has one', skip
  * No lab, so a fresh clone is protected by this too. The Python mirror is in `tests/test_gspm.py`,
  * and the golden vectors compare the two copies, which is the only thing keeping them one table.
  */
-test('arch 16 places eight slots and refuses the other twelve', () => {
-  const named: Record<number, number> = { 0: 0, 1: 1, 2: 2, 3: 3, 5: 4, 10: 7, 15: 10, 16: 11 };
+test('arch 16 places nine slots and refuses the other eleven', () => {
+  const named: Record<number, number> = { 0: 0, 1: 1, 2: 2, 3: 3, 5: 4, 10: 7, 13: 9, 15: 10, 16: 11 };
   for (const [base, raw] of Object.entries(named)) {
     assert.equal(archSlot(16, Number(base)), raw, `base slot ${base} moved`);
   }
-  const unread = [4, 6, 7, 8, 9, 11, 12, 13, 14, 17, 18, 19];
+  // Base slots 9 and 12 are read in the firmware, raw 6 and 8, and still declined: no reader needs them.
+  const unread = [4, 6, 7, 8, 9, 11, 12, 14, 17, 18, 19];
   for (const base of unread) {
     assert.throws(() => archSlot(16, base), /has no base slot/, `base slot ${base} answered`);
   }
   // The control on the pair: neither list may quietly shrink.
   assert.deepEqual([...Object.keys(named).map(Number), ...unread].sort((a, b) => a - b),
     Array.from({ length: 20 }, (_unused, i) => i));
-  // Raw slots the container holds that are not base slots: nine of the fifteen, which is the other
-  // direction and the honest count of what section 259 left open.
-  // Raw 13 stays here: it holds the metadata archive, which no base slot names, section 260.
-  const unnamedRaw = [5, 6, 8, 9, 12, 13, 14];
+  // Raw slots the container holds that the map gives no base slot: six of the fifteen, which is the
+  // other direction. Raw 13 stays here: it holds the metadata archive, which no base slot names,
+  // section 260.
+  const unnamedRaw = [5, 6, 8, 12, 13, 14];
   for (const raw of unnamedRaw) {
     assert.equal(baseSlot(16, raw), undefined, `raw slot ${raw} is claimed by a base slot`);
   }
@@ -956,6 +958,7 @@ test('arch 16 places eight slots and refuses the other twelve', () => {
   assert.equal(baseSlot(16, 7), 10, 'raw slot 7 is the action list table');
   assert.equal(baseSlot(16, 11), 16, 'raw slot 11 is the number sender, section 262');
   assert.equal(baseSlot(16, 10), 15, 'raw slot 10 is the parameter block');
+  assert.equal(baseSlot(16, 9), 13, 'raw slot 9 is the state variable table');
 });
 
 test('every key list after the end marker is stored in the bucket order of a hash on its tags',

@@ -22,6 +22,9 @@ than pressing Watch TV or another device key. What device mode is on every Harmo
 
 * How a send is spelled, every send paired with a `0x7C` naming the same device, is the family's,
   [the family's memory.md](../../architectures/harmony-300-350/memory.md#the-configuration-container).
+* After the power key switches a device on, the remote waits a time stated per device before that
+  device's next command, and the activity keeps its own copy of each wait; both are the family's,
+  [the family's memory.md](../../architectures/harmony-300-350/memory.md#a-devices-power-on-delay).
 * One configuration compiled for a 350 sends each code three times a press: 106 of its 130 records state
   a count, and every one of them states 3[^s259].
 

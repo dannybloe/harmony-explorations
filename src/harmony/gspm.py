@@ -312,7 +312,11 @@ ARCH16_SLOT_MAP: Tuple[Optional[int], ...] = (
     7,
     None,  # 11, unread
     None,  # 12, unread
-    None,  # 13, unread
+    # 13, the state variable table, raw slot 9, read in the 1.4 firmware: its seeder reads base slot
+    # 13's four header words and seeds records of base slot 13's layout, tests/test_harmony_350_slots.py.
+    # Placed for the power on delay, tests/test_harmony_350_delay.py; raw 6 and 8, base slots 9 and 12
+    # by the same reading, stay out until a reader needs them.
+    9,
     None,  # 14, unread
     10,    # 15, the parameter block: five groups, each u8 length then that many bytes
     # 16, the number sender, section 262. Named by a differential rather than by a shape: raw slot 11

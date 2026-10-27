@@ -339,7 +339,9 @@ export const ARCH10_SLOT_MAP: readonly (number | undefined)[] = [
  * than devices that can send something. Knowing what a slot counts is not knowing which base slot it
  * is, and a map entry is a claim about the second, so neither is placed here. The cross architecture
  * route was tried and fails: no count prefixed base slot in the corpus has either length on more than
- * three of the thirteen containers that state both counts.
+ * three of the thirteen containers that state both counts. The firmware has since named both, raw 6
+ * base slot 9 and raw 8 base slot 12 (`tests/test_harmony_350_slots.py`), and they stay out of the map
+ * until a reader here needs them, as the entry for base slot 13 below says.
  */
 export const ARCH16_SLOT_MAP: readonly (number | undefined)[] = [
   0, // 0, the 0xFEED name tree, 131 bytes under Root, State and Radio
@@ -365,7 +367,17 @@ export const ARCH16_SLOT_MAP: readonly (number | undefined)[] = [
   //    idiom `xx 00 7f` is section 26's call to another list, which is what the key table holds too.
   undefined, // 11, unread
   undefined, // 12, unread
-  undefined, // 13, unread
+  // 13, the state variable table, raw slot 9, read in the 1.4 firmware: its seeder at `0x16E6C` reads
+  //     base slot 13's four header words and seeds records of base slot 13's layout, and the record
+  //     locator at `0x17360` indexes past the same eight byte header (`tests/test_harmony_350_slots.py`).
+  //     Placed here for the delay reader, `tests/test_harmony_350_delay.py` and
+  //     `packages/codec/test/filefamilydelays.test.ts`: once it is, `devices`, `deviceDelays` and
+  //     `setPowerOnDelay` read and edit this family's power on delays with no change of their own,
+  //     because a device's power on delay here is the arch 8, 9 and 12 shape, one `0x7C` at the top
+  //     level of the list its `Power` variable runs going from off to on. Raw 6 and 8, base slots 9 and
+  //     12 by the same reading, are still left out: nothing here needs them yet, and placing a slot
+  //     hands every reader of it a container it has not been run on.
+  9,
   undefined, // 14, unread
   10, // 15, the parameter block. Five groups, each `u8 length` then that many bytes, which is base
   //     slot 15's shape and per architecture by section 44.

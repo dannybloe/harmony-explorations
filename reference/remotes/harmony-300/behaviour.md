@@ -22,6 +22,7 @@ question.
 
 How a send is spelled in this family's configurations, every send paired with a `0x7C` naming the same
 device, is the family's, [the family's memory.md](../../architectures/harmony-300-350/memory.md#the-configuration-container).
+So is the wait after a device is switched on, stated per device, [a device's power on delay](../../architectures/harmony-300-350/memory.md#a-devices-power-on-delay).
 
 ## Not checked
 

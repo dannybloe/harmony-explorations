@@ -47,7 +47,7 @@ what holds on this architecture.
 | pointer slots | 15; the header byte `0x0F` is the count, which is how "format 1.4" turned out to be a slot count all along | [^s194] |
 | the marker's offset | `0x47`, which is `0x0B + 4 * 15`, hardcoded in the firmware's validator | [^s259] |
 | base address | `0x020000`, the file's place on the external medium | [^s194] |
-| slot map | raw slot to base slot in `ARCH16_SLOT_MAP`, `packages/codec/src/gspm.ts`: the name tree, the architecture record, the log area, the clock record, the infrared database, the action list table, the parameter block and the number sender are named; raw 13 is a metadata archive that names devices and commands, [the metadata archive](../../config-format/container.md#the-metadata-archive) and [the container's slots for this family](../../config-format/container.md#the-harmony-300-and-350s-slots). Raw 5, 6, 8, 9, 12 and 14 are read in the firmware, [below](#the-six-slots-the-firmware-was-read-for), and the map does not carry them yet | [^s259b], [^s260], [^s262b], [^t-slots] |
+| slot map | raw slot to base slot in `ARCH16_SLOT_MAP`, `packages/codec/src/gspm.ts`: the name tree, the architecture record, the log area, the clock record, the infrared database, the action list table, the parameter block and the number sender are named; raw 13 is a metadata archive that names devices and commands, [the metadata archive](../../config-format/container.md#the-metadata-archive) and [the container's slots for this family](../../config-format/container.md#the-harmony-300-and-350s-slots). Raw 5, 6, 8, 9, 12 and 14 are read in the firmware, [below](#the-six-slots-the-firmware-was-read-for), and of those the map carries raw 9 alone, the state variable table, which a device's power on delay is read through | [^s259b], [^s260], [^s262b], [^t-slots], [^t-file-family-delays] |
 | the infrared table | allocated at the model's **maximum** device count, four groups on a 300 and eight on a 350, unused groups empty, unlike every other architecture | [^s263], [^s264] |
 | which group a device takes | on the 300, the device key it is assigned to, [the 300's memory.md](../../remotes/harmony-300/memory.md); not the metadata archive's name list, which is alphabetical. On the 350 not checked | [^s265], [^unchecked] |
 | what is stored | exactly the codes some action list sends | [^s261] |
@@ -76,7 +76,7 @@ seeker, and what the code does with the bytes is what names them[^t-slots]:
 | 5 | **the start up event table**, this family's own: a `u8` count, then one action list instruction per event, 11 in every configuration. The firmware queues entry 1 once, when a configuration passes the validator at start, and no other entry is raised by any direct reference in the image[^t-slots][^t-slots-c] | entry 1 installs the key maps and selects the map of the device on infrared group 0, so on that reading the remote starts in that device's mode, which on the Harmony 300 is the TV key's device[^t-slots][^t-slots-c][^s265] |
 | 6 | **[base slot 9, the key map table](../../config-format/modes-and-keys.md#base-slot-9-the-key-map-table)**: a `u8` count and pointers to tagged lists, looked up through the same stack, with the same leave and enter tags 2 and 1, as on the Harmony 600, 650 and 700[^t-slots] | each device key selects its device's map[^t-slots-c] |
 | 8 | **[base slot 12, the timer table](../../config-format/state.md#base-slot-12-the-timer-table)**, its seven byte records and its four concurrent timers[^t-slots] | on the Harmony 350 one binding of each device key starts two, which switch one of four output pins; what the pins drive is not checked[^t-slots-c][^unchecked] |
-| 9 | **[base slot 13, the state variable table](../../config-format/state.md#base-slot-13-the-state-variable-table)**, its header of four words and its seeder, `0xFE` fill to `0xC0` included, as on the Harmony 600[^t-slots] | |
+| 9 | **[base slot 13, the state variable table](../../config-format/state.md#base-slot-13-the-state-variable-table)**, its header of four words and its seeder, `0xFE` fill to `0xC0` included, as on the Harmony 600[^t-slots] | each device's `Power` variable, whose switch on carries the device's power on delay, [below](#a-devices-power-on-delay)[^t-file-family-delays] |
 | 12 | **a digit entry table**, no base slot: an instruction arms an entry, digits sent by opcode `0x74` are collected, and the entry turns them into a number or matches them. Two zero bytes in every configuration, so no entry, and none issues a digit[^t-slots][^t-slots-c] | nothing |
 | 14 | NULL in every configuration, and no direct reference in the image reads it; a computed jump was not excluded[^t-slots][^t-slots-c] | |
 
@@ -97,12 +97,41 @@ this family has no mode table for it to live in[^t-slots].
 configurations of this architecture, some of them as a third shape, `{0x07, 0x7D, 0x7C}`, beside the plain
 pair[^s278]. The rule is every architecture's, [the action language](../../config-format/actions.md).
 
+## A device's power on delay
+
+**After switching a device on, the remote waits before it sends that device anything else**, and the wait
+is stated per device in the configuration. A person would meet it with the power key in a device's mode:
+the power code goes out, and a command pressed for the same device straight after it waits. The firmware
+queues the wait behind the power code and counts it down only while nothing ahead of it names the same
+device[^t-harmony-350-delay]; that a later command to that device is held until it ends, and a command to
+another device is not, is how the other images send, and on this one it is not checked[^unchecked].
+
+Where it is: the device's `Power` state variable, going from 0 to 1, runs a list that calls the list
+sending the power code and then carries one `0x7C` naming the device's group, with the wait as its low
+byte. That is how the Harmony 880 and 885, the Harmony 525 and the Harmony One keep it,
+[state.md](../../config-format/state.md#on-arch-16-the-same-instruction-and-the-activity-keeps-a-copy). 13 of
+the 14 devices that send a code over this family's five configurations carry one `0x7C` there, with values
+of 15, 50 and 80; the fourteenth carries two, 100 and then 70[^t-file-family-delays]. A Harmony 350 set
+up with a Harmony 600's devices states the same three values the Harmony 600 keeps in tenths of a second,
+80, 15 and 15[^t-file-family-delays].
+
+**The activity keeps its own copy** of the wait for each device its start switches on directly, eight
+over the five configurations: seven equal to the device's own, and one of 170 for the device whose own
+list carries 100 and 70. So a device's wait is in two places on a configuration with an
+activity[^t-file-family-delays].
+
+Changing one is a one byte edit of that `0x7C`'s operand plus the trailer checksum, `setPowerOnDelay` in
+`packages/codec/src/edit.ts`, which leaves the activity's copy alone[^t-file-family-delays].
+
 ## Not checked
 
 * The external medium's part and size, and the RAM size[^unchecked].
 * What raises the start up event table's entries 2 to 4, the unit of a timer's duration, what the four
   output pins drive, and the digit entry record beyond its first three bytes, which no configuration
   fills[^unchecked].
+* That a unit of the power on delay is a tenth of a second on this firmware, and that the wait holds back
+  the next command to its own device and no other: its tick is read, and how fast it runs and the routine
+  that picks the next send are not, [above](#a-devices-power-on-delay)[^unchecked].
 * Which state variables the firmware owns on this family, and whether the remote keeps a running clock:
   the configuration has a clock record and the firmware a month end routine[^s322], and the state
   variable table is read for its layout and its seeder only, [above](#the-six-slots-the-firmware-was-read-for)[^unchecked].
@@ -127,3 +156,5 @@ pair[^s278]. The rule is every architecture's, [the action language](../../confi
 [^s322]: Read in the firmware. [Section 322](../../../docs/findings.md#s322)
 [^t-slots]: Read in the firmware. [The test](../../../tests/test_harmony_350_slots.py)
 [^t-slots-c]: Measured in configurations. [The test](../../../tests/test_harmony_350_slots.py)
+[^t-file-family-delays]: Measured in configurations. [The test](../../../packages/codec/test/filefamilydelays.test.ts)
+[^t-harmony-350-delay]: Read in the firmware. [The test](../../../tests/test_harmony_350_delay.py)

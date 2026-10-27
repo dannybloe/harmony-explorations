@@ -652,3 +652,5 @@ it reachable in the same commit and the test comparing the two tables is what ca
 | `No unit of this architecture has been measured` | `tests/test_arch8_usb.py` | as above |
 | `no remote of this architecture has been measured` | `tests/test_arch8_usb.py` | as above |
 | `This library opens none of these remotes` | `tests/test_arch8_usb.py` | `openHarmony` opens a Harmony 885 unchanged, and the library reads its flash below `0x200000`; it writes none of them |
+| `raw 6, 8 and 9 are not in it yet` | `packages/codec/test/filefamilydelays.test.ts` | raw 9, base slot 13, is in `ARCH16_SLOT_MAP`; raw 6 and 8 are not |
+| `holds one of 170 in an unread list` | `packages/codec/test/filefamilydelays.test.ts` | the list is the activity's start, read, and the same television's own transition spells 170 as 100 and 70 |

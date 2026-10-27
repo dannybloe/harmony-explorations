@@ -3261,7 +3261,7 @@ class TheHeaderWordStatesThePointerCount(unittest.TestCase):
 
 
 class TestTheHarmony350SlotMapIsPartialAndRefusesTheRest(unittest.TestCase):
-    """Eight of arch 16's fifteen slots, sections 259, 260 and 262.
+    """Nine of arch 16's fifteen slots, sections 259, 260 and 262 and `test_harmony_350_slots.py`.
 
     The map is deliberately incomplete, so the assertion has two halves and the second is the one
     that matters: what is named, and that everything unnamed **refuses**. A guessed alignment on this
@@ -3270,11 +3270,14 @@ class TestTheHarmony350SlotMapIsPartialAndRefusesTheRest(unittest.TestCase):
     """
 
     #: Base slot to raw slot, named out of the firmware and the container. The log area came
-    #: from section 260, the number sender from section 262 and the other six from section 259.
-    NAMED = {0: 0, 1: 1, 2: 2, 3: 3, 5: 4, 10: 7, 15: 10, 16: 11}
+    #: from section 260, the number sender from section 262, the state variable table from the
+    #: firmware's seeder in `test_harmony_350_slots.py`, placed for the power on delay
+    #: (`test_harmony_350_delay.py`), and the other six from section 259.
+    NAMED = {0: 0, 1: 1, 2: 2, 3: 3, 5: 4, 10: 7, 13: 9, 15: 10, 16: 11}
     #: Every base slot the map declines to place. Stated rather than derived from NAMED, so that
-    #: adding an entry to the map without naming it here fails.
-    UNREAD = (4, 6, 7, 8, 9, 11, 12, 13, 14, 17, 18, 19)
+    #: adding an entry to the map without naming it here fails. Base slots 9 and 12 are read in the
+    #: firmware, raw 6 and 8, and still declined: no reader here needs them yet.
+    UNREAD = (4, 6, 7, 8, 9, 11, 12, 14, 17, 18, 19)
 
     def test_the_named_slots_are_exactly_these(self):
         for base, raw in self.NAMED.items():

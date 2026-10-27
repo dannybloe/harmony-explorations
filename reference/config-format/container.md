@@ -325,7 +325,7 @@ and is **not** an id in Logitech's device catalogue.[^s260]
 ## The Harmony 300 and 350's slots
 
 Fifteen slots, and they are not the base twenty with insertions, so nothing transfers by index. Eleven base
-slots are identified, eight of them in the slot map and the rest refused:[^s259b][^t-harmony-350-slots]
+slots are identified, nine of them in the slot map and the rest refused:[^s259b][^t-harmony-350-slots]
 
 | raw slot | base slot | what it holds |
 |---|---|---|
@@ -338,16 +338,16 @@ slots are identified, eight of them in the slot map and the rest refused:[^s259b
 | 6 | 9 | the key map table, read in the firmware and not in the slot map; its entry 0 is the key table after `LWJL`[^t-harmony-350-slots] |
 | 7 | 10 | the action list table: a `u16` count, each list a `u8` length then three byte instructions |
 | 8 | 12 | the timer table, read in the firmware and not in the slot map[^t-harmony-350-slots] |
-| 9 | 13 | the state variable table, read in the firmware and not in the slot map[^t-harmony-350-slots] |
+| 9 | 13 | the state variable table, read in the firmware[^t-harmony-350-slots] and in the slot map since a device's power on delay is read through it[^t-file-family-delays] |
 | 10 | 15 | the parameter block: a `u8` count, each group a `u8` length then its bytes |
 | 11 | 16 | the number sender: a count of zero with no favourite channels and one record per device that has them, in the base layout[^s262] |
 | 12 | none | a digit entry table[^t-harmony-350-slots], empty in every configuration read[^t-harmony-350-slots-c] |
 | 14 | none | NULL, and no direct reference in the firmware reads it[^t-harmony-350-slots] |
 
 Raw slot 13 holds the metadata archive above. `ARCH16_SLOT_MAP` in `packages/codec/src/gspm.ts` carries the
-eight rows with a base slot that were identified first, and `archSlot` throws for every other base slot, so
-a slot the map does not carry refuses rather than answering wrongly; raw 6, 8 and 9 are not in it
-yet.[^s259b] The firmware's section seeker at `0x10BCE` computes `0x0B + 4 * slot` from a literal its
+eight rows with a base slot that were identified first and raw 9, and `archSlot` throws for every other base
+slot, so a slot the map does not carry refuses rather than answering wrongly; raw 6 and 8 are not in it
+yet.[^s259b][^t-file-family-delays] The firmware's section seeker at `0x10BCE` computes `0x0B + 4 * slot` from a literal its
 fourteen callers load, naming raw slots 3 to 12.[^s259] This page called raw slot 12 a candidate for base
 slot 17 on its two byte width<!--superseded--> until its reader was read: it is the digit entry table, which
 no base slot holds.[^t-harmony-350-slots] What each of these slots holds, and what the model's own
@@ -387,3 +387,4 @@ configuration holds in them, is in
 [^s237]: Measured on a unit. [Section 237](../../docs/findings.md#s237)
 [^s187]: Measured in configurations. [Section 187](../../docs/findings.md#s187)
 [^s215]: Measured on a unit. [Section 215](../../docs/findings.md#s215)
+[^t-file-family-delays]: Measured in configurations. [The test](../../packages/codec/test/filefamilydelays.test.ts)
