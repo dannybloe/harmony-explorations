@@ -217,7 +217,7 @@ for a sequence's 20 second wait on the Harmony One, twelve times in one configur
 devices twice, once for a Harmony One and once for a Harmony 600, and arch 14 states a device's power on delay
 in a state variable whose unit its own screen spells out in tenths. The two agree device for device, 3 of 3,
 so the operand is tenths of a second and 450 is 45 seconds[^s235]. Where each architecture keeps a device's
-power on delay is [state.md](state.md#a-devices-delays): on arch 8, 9 and 12 it is one of these
+power on delay is [state.md](state.md#a-devices-delays): on arch 8, 9, 12 and 16 it is one of these
 instructions, at the top level of the list a device's `Power` variable runs on its 0 to 1 transition, where the
 nested list that sends the code carries its own `0x7C` of value 1, so a reader must stay at the top level.
 `powerOnInstructions` in `packages/codec`.
@@ -232,6 +232,11 @@ when the queued value is already 100**, which pushes a second entry instead, and
 above 100 expressible at all[^s70]. The fold stops at 100 and does not cap a single instruction, and one instruction above 100 is waited in
 full: a pause of one `0x7C` of 200 per device held a Harmony 650 for its 20 seconds, [above](#a-sequence-is-one-action-list-of-calls-and-per-device-pauses)[^s342].
 Arch 12 (Harmony One) is not measured for this[^unchecked].
+
+**The Harmony 300 and 350's 1.4 image queues it the same way**: its handler at `0x12026` is the send's at
+`0x12004` with bit 6 of the group byte set, priorities 1 and 2, the ring 30 bytes, the fold refused at 100,
+and a tick that counts a quantity down only while no earlier entry names its device[^t-harmony-350-delay].
+How fast that tick runs, and so whether a unit is a tenth of a second on this image, is not read[^unchecked].
 
 Two rules follow for a writer. No inline power on delay on arch 8, 9 or 12 exceeds 100 and arch 14 spells its
 larger ones out, so a delay above 100 is spelled out as the configurations do, while a sequence's pause is
@@ -638,3 +643,4 @@ instructions; that no other route exists is not established[^unchecked].
 [^s39]: Read in the firmware. [Section 39](../../docs/findings.md#s39)
 [^s118]: Read in the firmware. [Section 118](../../docs/findings.md#s118)
 [^s118b]: Measured in configurations. [Section 118](../../docs/findings.md#s118)
+[^t-harmony-350-delay]: Read in the firmware. [The test](../../tests/test_harmony_350_delay.py)

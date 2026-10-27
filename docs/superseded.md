@@ -656,3 +656,5 @@ it reachable in the same commit and the test comparing the two tables is what ca
 | `clears it after a restart caused by a` | `tests/test_harmony_350_recovery.py` | as above |
 | `what the two images below it do is not checked` | `tests/test_harmony_350_boot.py` | the Harmony 350's bootloader and safe mode image are read: every start runs both, safe mode chooses the application, and entering either writes nothing |
 | `nothing here rules that out for this family` | `tests/test_harmony_350_boot.py` | entering safe mode on a Harmony 350 destroys nothing; it copies the staged application only when a firmware install asks it to |
+| `raw 6, 8 and 9 are not in it yet` | `packages/codec/test/filefamilydelays.test.ts` | raw 9, base slot 13, is in `ARCH16_SLOT_MAP`; raw 6 and 8 are not |
+| `holds one of 170 in an unread list` | `packages/codec/test/filefamilydelays.test.ts` | the list is the activity's start, read, and the same television's own transition spells 170 as 100 and 70 |

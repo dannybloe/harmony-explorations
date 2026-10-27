@@ -2959,6 +2959,11 @@ export interface PowerOnInstruction {
  *
  * The group is not taken on trust: a `0x7C` naming a different group than the device would be some
  * other quantity and is dropped. 56 of 56 agree, the odd one out being a device no route names.
+ *
+ * **Arch 16 (Harmony 300 and 350) uses the same shape**, read once base slot 13 was placed in its slot
+ * map: 13 of the 14 devices that send a code over the five configurations of that family carry exactly
+ * one, and the fourteenth carries two, 100 and 70, which this leaves out rather than summing, so a caller
+ * gets no value instead of half of one. `packages/codec/test/filefamilydelays.test.ts`.
  */
 export function powerOnInstructions(c: Container): Map<number, PowerOnInstruction> {
   const out = new Map<number, PowerOnInstruction>();

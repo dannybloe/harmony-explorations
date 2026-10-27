@@ -3,9 +3,9 @@
  *
  *   node packages/codec/bin/set-delay.ts --in <config> --group 0 --tenths 100 --out <file>
  *
- * On a Harmony One or 525 the delay is an instruction and the ceiling is 100 tenths; on a Harmony 600,
- * 650 or 700 it is a stored setting and the ceiling is 450, 45 seconds. The tool picks by what the
- * configuration holds.
+ * On a Harmony One, 525, 300 or 350 the delay is an instruction and the ceiling is 100 tenths; on a
+ * Harmony 600, 650 or 700 it is a stored setting and the ceiling is 450, 45 seconds. The tool picks by
+ * what the configuration holds.
  *
  * **The smallest end to end exercise of the editor there is**, and that is what it is for: one byte
  * of content, no length change, no count restamped, and the trailer checksum recomputed by
@@ -50,7 +50,7 @@ const tenths = Number(argument('tenths') ?? fail('--tenths is the delay, in tent
 const container = parse(new Uint8Array(readFileSync(input)));
 const named = new Map(devices(container).map((one) => [one.group, one.name ?? '?']));
 
-// Two shapes of the same setting. A Harmony One and a 525 write the delay into the device's power on
+// Two shapes of the same setting. A Harmony One, a 525, a 300 and a 350 write the delay into the device's power on
 // list, so the edit is that instruction's operand; a Harmony 600, 650 or 700 keeps it as a stored
 // setting, a state variable, so the edit is that record. `deviceDelays` says which this device has.
 const delayOf = (c: typeof container): Map<number, number> =>

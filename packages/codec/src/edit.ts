@@ -504,9 +504,15 @@ export function setTimerDuration(c: Container, index: number, seconds: number): 
  * larger **except** at 100, where it pushes a second entry instead, section 70. No inline power on delay
  * on arch 8, 9 or 12 exceeds 100, and a larger one spelled out would be a length change and not a byte
  * edit. Logitech's compiler does write a single `0x7C` above 100 for a sequence's pause on the Harmony
- * One, section 327, and the Harmony 350's factory configuration holds one of 170 in an unread list, but
- * whether the remote honours one is unmeasured, so a caller asking for one here is asking for something
- * this function cannot honestly do.
+ * One, section 327, and the Harmony 350's factory configuration holds one of 170 in its activity's start,
+ * but whether the remote honours one is unmeasured, so a caller asking for one here is asking for something
+ * this function cannot honestly do. The same configuration spells that television's own power on delay as
+ * two instructions, 100 and 70, which `powerOnInstructions` does not report and this does not edit.
+ *
+ * **On arch 16 (Harmony 300 and 350) the activity keeps a second copy**, `packages/codec/test/filefamilydelays.test.ts`:
+ * its start switches a device on with the device's power code list and a `0x7C` of its own, equal to the
+ * device's, and this changes the device's transition only, so on a configuration with an activity the
+ * activity keeps the old value. This said "an unread list" of the 170 until that list was read.
  *
  * **What it will not tell you is whether the delay does anything**, section 236. The quantity holds
  * back the next command to its own device and nothing else, so in an activity that sends that device

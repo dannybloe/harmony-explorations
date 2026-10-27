@@ -230,7 +230,8 @@ class TheRunnerSeesEveryTest(unittest.TestCase):
         # 57 with `tests/test_harmony_350_recovery.py`, todo-compile-350 1.4.
         # 58 with `tests/test_harmony_350_slots.py`, todo-compile-350 2.1.
         # 59 with `tests/test_harmony_350_boot.py`, the bootloader and safe mode of todo-compile-350 1.4.
-        self.assertEqual(len(files), 59, 'the Python test files')
+        # 60 with `tests/test_harmony_350_delay.py`, todo-compile-350 1.8, after `tests/test_harmony_350_boot.py`.
+        self.assertEqual(len(files), 60, 'the Python test files')
         with_block = 0
         for path in files:
             with open(path, encoding='utf-8') as handle:
@@ -263,7 +264,8 @@ class TheRunnerSeesEveryTest(unittest.TestCase):
         # 55 with `tests/test_harmony_350_recovery.py`, todo-compile-350 1.4, which carries one.
         # 56 with `tests/test_harmony_350_slots.py`, todo-compile-350 2.1, which carries one.
         # 57 with `tests/test_harmony_350_boot.py`, todo-compile-350 1.4's two images, which carries one.
-        self.assertEqual(with_block, 57,
+        # 57 with `tests/test_harmony_350_delay.py`, todo-compile-350 1.8, which carries one.
+        self.assertEqual(with_block, 58,
                          'files carrying a __main__ block, of %d' % len(files))
 
 
@@ -482,7 +484,8 @@ class ATypeScriptSampleLoopStatesItsPopulation(unittest.TestCase):
         # section 425, todo-compile-one 5.3.4. 141 with touchdevicelists.test.ts, section 424, 4.3.3.
         # 143 with touchskeleton.test.ts, section 431, todo-compile-one 7.1.3; 144 with touchnumbering.test.ts, section 432, 7.1.4. 145 with touchempty.test.ts, section 434, 7.1.7. 147 with composeempty.test.ts and the census it shares with composesetup.test.ts, carried.ts, section 435, 8.1.4. 148 with composecompare.test.ts, section 436, 8.1.5.
         # 150 with filewrite.test.ts and the fake remote it shares with its subprocesses, fake-file-remote.ts, todo-compile-350 1.6.
-        self.assertEqual(scanned, 150, 'the TypeScript test files, as ABoundOnACorpusTotalIsExact counts them')
+        # 151 with filefamilydelays.test.ts, todo-compile-350 1.8.
+        self.assertEqual(scanned, 151, 'the TypeScript test files, as ABoundOnACorpusTotalIsExact counts them')
         self.assertEqual(
             {name: len(lines) for name, lines in counted.items()},
             TYPESCRIPT_LOOPS_ALLOWED_TO_SKIP_A_SAMPLE,
@@ -641,8 +644,8 @@ class ABoundOnACorpusTotalIsExact(unittest.TestCase):
         # 137 with touchpictures, 5.3.1 and 5.3.3, section 422. 138 with touchactivityscreens, 4.3, section 423. 139 with touchfontsets,
         # 7.1.1, section 427. 140 with screenfill, 5.3.4, section 425.
         # 141 with touchdevicelists, 4.3.3, section 424. 143 with touchskeleton, 7.1.3, section 431. 144 with touchnumbering, 7.1.4, section 432. 145 with touchempty, 7.1.7, section 434. 147 with composeempty and carried, 8.1.4, section 435. 148 with composecompare, 8.1.5, section 436.
-        # 150 with filewrite and fake-file-remote, todo-compile-350 1.6.
-        self.assertEqual(len(scanned), 150, 'TypeScript test files, which moves when one is added')
+        # 150 with filewrite and fake-file-remote, todo-compile-350 1.6. 151 with filefamilydelays, 1.8.
+        self.assertEqual(len(scanned), 151, 'TypeScript test files, which moves when one is added')
         self.assertIn(self.CONTROL, found, 'the pattern matches nothing it should match')
 
     def test_every_remaining_bound_says_why_it_is_not_a_measurement(self):
@@ -760,7 +763,8 @@ class APythonBoundOnACorpusTotalIsExact(unittest.TestCase):
         # 57 with `tests/test_harmony_350_recovery.py`, todo-compile-350 1.4.
         # 58 with `tests/test_harmony_350_slots.py`, todo-compile-350 2.1.
         # 59 with `tests/test_harmony_350_boot.py`, todo-compile-350 1.4's two images.
-        self.assertEqual(len(scanned), 59, 'Python test files, which moves when one is added')
+        # 60 with `tests/test_harmony_350_delay.py`, todo-compile-350 1.8, after `tests/test_harmony_350_boot.py`.
+        self.assertEqual(len(scanned), 60, 'Python test files, which moves when one is added')
         self.assertIn(self.CONTROL, found, 'the pattern matches nothing it should match')
 
     def test_every_remaining_bound_says_why_it_is_not_a_measurement(self):
@@ -1338,6 +1342,7 @@ class TheLabRegisterCoversTheSiteAtArtefactLevel(unittest.TestCase):
         # `work/agent-freeze-9-1-2/`, `work/fonts-10-8/` and `work/pictures-9-1-2-2/`, sections 366 to 373.
         # 150 and 151 with `work/agent-11-1-1/` and `work/empty-11-1-1/`, todo-compile-650 11.1.1.
         # 163 with the twelve work folders of the Harmony 600, 700 and One tracks, registered at once.
+        # 165 with `work/350-delay/`, todo-compile-350 1.8.
         self.assertEqual(len(named), 165, "lab paths the register names")
         for path in sorted(named):
             with self.subTest(path=path):
@@ -1445,6 +1450,7 @@ class TheRegisterQueryAnswersForThePathThatWasOpened(unittest.TestCase):
         # `work/freeze-9-1-2/`, `work/agent-freeze-9-1-2/`, `work/fonts-10-8/` and `work/pictures-9-1-2-2/`.
         # 127 and 128 with `work/agent-11-1-1/` and `work/empty-11-1-1/`.
         # 140 with the twelve work folders of the Harmony 600, 700 and One tracks.
+        # 142 with `work/350-delay/`, todo-compile-350 1.8.
         self.assertEqual(len(rows), 142)
         self.assertEqual(len(dict(rows)), 142, 'a duplicated path would make a query ambiguous')
         self.assertNotIn('unseen', dict(rows), 'the status legend is not an artefact')

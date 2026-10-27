@@ -384,6 +384,28 @@ the format: `UserFeatureManager/GetUserFeatures` returns a `PowerFeature` per de
 account, four of four devices agree at exactly a hundred times the stored number, and on two of them the
 current value differs from the catalogue default, with the configuration taking the current one[^s235c].
 
+### On arch 16, the same instruction, and the activity keeps a copy
+
+**Arch 16 (Harmony 300 and 350) keeps a device's power on delay the same way**: the device's `Power`
+variable, on its 0 to 1 transition, calls the list that sends the power code and then carries one `0x7C`
+for the device's group. Over this family's five configurations 14 devices send a code and 13 carry exactly
+one; the fourteenth carries two, 100 and then 70, where the same configuration's activity carries that
+device's copy as one `0x7C` of 170, and why the compiler split one and not the other is not
+established[^t-file-family-delays]. The firmware queues it as the quantity the other images do and
+counts it down per device, [actions.md](actions.md#0x7c-is-a-per-device-delay-in-tenths-of-a-second)[^t-harmony-350-delay].
+A Harmony 350 set up with a Harmony 600's devices states as operands the same three values the Harmony 600
+keeps as delay variables, 80, 15 and 15; the 15s are likely a common default, and the television's 80 is
+what says the compiler writes tenths of a second here too[^t-file-family-delays]; that this firmware waits a tenth of a second per unit is not checked[^unchecked].
+`deviceDelays` reads them and `setPowerOnDelay` changes one, a one byte edit.
+
+**The activity's start carries its own copy.** On this family the one activity switches a device on by
+calling the device's power code list directly and following it with a `0x7C` of its own, where the
+architectures above switch it on through its `Power` variable. Over the five configurations that is eight
+copies, every one in the list the activity's key binding calls. Seven equal their device's single
+`0x7C`; the eighth is the television above, 170 in one instruction against its transition's 100 and
+70[^t-file-family-delays]. So a writer that changes a device's power on delay on a configuration with an
+activity has two places to change; `setPowerOnDelay` changes the device's transition alone.
+
 What a delay does once it is queued, holding back only its own device, is the `0x7C` instruction's,
 [actions.md](actions.md).
 
@@ -913,3 +935,5 @@ Read with `gspm.log_area`; `gspm.log_reference` names the append case an instruc
 [^s260]: Measured in configurations. [Section 260](../../docs/findings.md#s260)
 [^t-harmony-350-slots]: Read in the firmware. [The test](../../tests/test_harmony_350_slots.py)
 [^t-harmony-350-slots-c]: Measured in configurations. [The test](../../tests/test_harmony_350_slots.py)
+[^t-file-family-delays]: Measured in configurations. [The test](../../packages/codec/test/filefamilydelays.test.ts)
+[^t-harmony-350-delay]: Read in the firmware. [The test](../../tests/test_harmony_350_delay.py)
