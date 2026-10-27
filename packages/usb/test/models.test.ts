@@ -171,8 +171,8 @@ test('a model states an architecture this library may not be able to address', (
   const unaddressable = [...stated].filter((a) => !addressable.has(a)).sort((a, b) => a - b);
   // The exact set, not "some": it moves when a model is added or an address rule is read, and then
   // it moves in the diff.
-  assert.deepEqual(unaddressable, [2, 3, 7, 8, 10]);
-  assert.deepEqual([...addressable].sort((a, b) => a - b), [9, 12, 14]);
+  assert.deepEqual(unaddressable, [2, 3, 7, 10]);
+  assert.deepEqual([...addressable].sort((a, b) => a - b), [8, 9, 12, 14]);
   // And the consequence, so the claim is about behaviour rather than about two lists: an
   // unaddressable architecture refuses every top byte rather than borrowing a neighbour's rule.
   for (const architecture of unaddressable) {

@@ -46,6 +46,7 @@ import {
   readMiscRequest,
   readRamRequest,
   regionOf,
+  ARCH8_FLASH_TOP,
   ARCH9_WINDOWS,
   ARCHITECTURES_WITH_A_WRITE_TARGET,
   CONFIG_REGION_BASE,
@@ -170,9 +171,36 @@ test('the two bench architectures bound the address differently, at their flash 
 
 test('an architecture with no recorded bound is refused rather than given a neighbour', () => {
   // The mistake the table exists to prevent, stated as a test: adding a read profile for a new
-  // architecture must not silently inherit arch 12's range.
-  assert.equal(FLASH_TOP_BYTE_BOUND[8], undefined);
-  assert.throws(() => validateRegionByte(0x00, 8), ProtocolError);
+  // architecture must not silently inherit arch 12's range. The subject was arch 8 (Harmony 880
+  // and 885) until it gained a rule of its own, below; arch 10 (Harmony 890) has none.
+  assert.equal(FLASH_TOP_BYTE_BOUND[10], undefined);
+  assert.throws(() => validateRegionByte(0x00, 10), ProtocolError);
+});
+
+test('arch 8 reads one program memory space below 2 MiB, and has no internal window', () => {
+  // **The firmware has no address check on a read at all**, which is what makes this row unlike the
+  // others. Read in the Harmony 885's 4.4 application: the command dispatch at 0x15854 sends
+  // READ_FLASH to 0x15886, which parses the address into 0x25B to 0x25D and the count into 0x25E and
+  // 0x25F and calls nothing that tests them; the read state at 0x15D0C chunks the count at 63, 31,
+  // 15 and 7 like the later Harmonys, then fetches byte by byte through 0x1908E, whose primitive at
+  // 0x1A29C is one TBLRD* off a 24 bit pointer. Only the erase handler calls a checker, 0x19B5C.
+  //
+  // Two consequences, both pinned here. The bound is the program memory space, 2 MiB on a PIC18,
+  // which the log area every arch 8 configuration declares fits by ending at 0x1FE000, so
+  // 0x1F is the top byte that reads and 0x20 is refused. And 0xFE and 0xFF are refused rather than
+  // routed to an internal window this ROMless part does not have: on arch 12 and 14 they are the
+  // processor's own flash, and here they select no memory of their own.
+  //
+  // Each chunk's fetch counts down by one, so the odd count hang of arch 12 (Harmony One), which
+  // comes from a word fetch that counts down by two, has no counterpart in that loop.
+  assert.equal(ARCH8_FLASH_TOP, 0x20);
+  assert.equal(FLASH_TOP_BYTE_BOUND[8], ARCH8_FLASH_TOP);
+  assert.equal(validateRegionByte(0x00, 8), 'config-flash');
+  assert.equal(validateRegionByte(0x1f, 8), 'config-flash');
+  assert.equal(regionOf(0x000110, 8), 'config-flash');
+  for (const byte of [0x20, 0x40, 0x80, 0xfe, 0xff]) {
+    assert.throws(() => validateRegionByte(byte, 8), ProtocolError, `0x${byte.toString(16)}`);
+  }
 });
 
 test('arch 9 puts its flash a megabyte up, and the two rules disagree everywhere', () => {

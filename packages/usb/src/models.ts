@@ -24,7 +24,8 @@
  * has an entry for none of them. So `modelForSkin(19).architecture` is 10, and handing that to
  * `RemoteOptions.architecture` refuses every address. The direction is safe, and the sentence is
  * what a caller trusts when deciding whether the field is usable, which is why it is corrected
- * rather than left to be discovered. `ADDRESSABLE_ARCHITECTURES` is the executable half.
+ * rather than left to be discovered. `ADDRESSABLE_ARCHITECTURES` is the executable half. Arch 8 left that
+ * list when a Harmony 885 came onto the cable and its read path was read, so it is 2, 3, 7 and 10 now.
  */
 
 /** What kind of panel a model has, which is the field a renderer needs and a config cannot state. */

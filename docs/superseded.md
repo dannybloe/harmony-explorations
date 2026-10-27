@@ -645,3 +645,7 @@ it reachable in the same commit and the test comparing the two tables is what ca
 | `key codes are matrix addresses` | section 17, correcting section 8 | as above |
 | `0x6C writes a device record` | section 303, correcting section 71 | `0x7A key; 0x6C value` saves a value under that key in the remote's settings store in its internal program memory, arch 14 only; the key is a device, which is what section 71 measured, and what is saved is a delay |
 | `writes into a device record` | section 303, correcting section 71 | as above |
+| `No remote of this architecture has been on a cable` | `tests/test_arch8_usb.py` | a Harmony 885 has answered `GET_VERSION` and `READ_FLASH` on the cable, read only |
+| `No unit of this architecture has been measured` | `tests/test_arch8_usb.py` | as above |
+| `no remote of this architecture has been measured` | `tests/test_arch8_usb.py` | as above |
+| `This library opens none of these remotes` | `tests/test_arch8_usb.py` | `openHarmony` opens a Harmony 885 unchanged, and the library reads its flash below `0x200000`; it writes none of them |

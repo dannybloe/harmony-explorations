@@ -6,7 +6,8 @@ small configuration of its own tucked into its last 8 KiB, and the user's config
 This page says what sits where, then how the configuration container is laid out on this architecture,
 then the few things in a configuration that are this architecture's own.
 
-Nothing here was read off a remote. The layout comes from two firmware images of each of the two halves
+Little here was read off a remote: a Harmony 885 answered reads at the application's and the configuration's
+addresses, and its identity block at `0x000110`.[^t-arch8-usb] The layout comes from two firmware images of each of the two halves
 and from concordance's table, and the container from six configurations, as each footnote says. How a
 configuration is laid out in general is [the configuration format](../../config-format/README.md); this
 page states what differs here.
@@ -97,3 +98,4 @@ or where a page there names it:
 [^s129]: Measured in configurations. [Section 129](../../../docs/findings.md#s129)
 [^s180]: Measured in configurations. [Section 180](../../../docs/findings.md#s180)
 [^s144]: Read in the firmware. [Section 144](../../../docs/findings.md#s144)
+[^t-arch8-usb]: Measured on a unit. [The test](../../../tests/test_arch8_usb.py)

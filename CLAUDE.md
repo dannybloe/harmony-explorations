@@ -472,7 +472,7 @@ architecture numbers are this project's internal handle and map to nothing on th
 | 9 | Harmony 525 | `reference/architectures/harmony-5xx/` |
 | 12 | Harmony One, or the spare Harmony One | `reference/architectures/harmony-one/` |
 | 14 | Harmony 600, Harmony 650 or Harmony 700. All three are on the bench and they enumerate alike, so name which | `reference/architectures/harmony-600-650-700/` |
-| 8 | Harmony 880 or 885, known from contributed configurations and images only | `reference/architectures/harmony-880-885/` |
+| 8 | Harmony 880 or 885; two 885s are on the bench, read only, and the rest is contributed configurations and images | `reference/architectures/harmony-880-885/` |
 | 10 | Harmony 890 or 895, known from contributed configurations only | `reference/architectures/harmony-890-895/` |
 | 16 | Harmony 300 or Harmony 350, the file based family; never opened by `openHarmony` | `reference/architectures/harmony-300-350/` |
 | 17 | the number a Harmony Touch reports for itself, and the hub family in Logitech's own template map | `reference/architectures/harmony-touch/` |

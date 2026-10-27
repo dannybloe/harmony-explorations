@@ -490,14 +490,38 @@ export type Region =
 export const DEFAULT_REGION_ARCHITECTURE = 12;
 
 /**
+ * The first top address byte this library refuses on arch 8 (Harmony 880 and 885).
+ *
+ * **Unlike every other row, this bound is not the firmware's, because the firmware has none.** The
+ * 885's `READ_FLASH` handler at `0x15886` parses the three address bytes straight into a 24 bit
+ * pointer, and the read state at `0x15D0C` fetches every byte through one `TBLRD*` at `0x1A2A8` with
+ * no range test anywhere on the way; only `ERASE_FLASH` calls a checker. The processor is a ROMless
+ * PIC18LC801 by concordance's table, so the firmware, the configuration and the serial are all
+ * program memory reached by table read, and there is no internal window to select with `0xFE`.
+ *
+ * So the bound is the program memory space itself: a PIC18's table pointer reaches 2 MiB of program
+ * memory below `0x200000` and the configuration words above it. The log area every configuration
+ * declares ends at `0x1FE000`, section 47, which fits a 2 MiB part; which part the flash id the remote
+ * reports, `0x01:0x49`, names is not checked. Nothing in the firmware refuses a read above the bound
+ * either, and what it returns there is not checked, which is why the bound is a refusal of a question
+ * with no known answer rather than a safety rail.
+ *
+ * **Reads only.** `ARCHITECTURES_WITH_A_WRITE_TARGET` in `rails.ts` is the write gate and arch 8 is
+ * not in it; adding an address rule adds no write target, and the erase tables still have no row.
+ */
+export const ARCH8_FLASH_TOP = 0x20;
+
+/**
  * The first top address byte each firmware's validator rejects, per architecture.
  *
  * Read out of the validators themselves: `0x2637A` on the One and `0x13DFE` on the 700, both of
  * which build the bound as a literal and branch on the carry. An architecture that is not listed
  * has no reading and is refused rather than given a neighbour's bound, which is the mistake this
- * table exists to prevent.
+ * table exists to prevent. **Arch 8's row is the exception**: that firmware checks nothing on a read,
+ * so its bound is the program memory space rather than a validator's literal, `ARCH8_FLASH_TOP`.
  */
 export const FLASH_TOP_BYTE_BOUND: Readonly<Record<number, number>> = {
+  8: ARCH8_FLASH_TOP, // 2 MiB, the PIC18's program memory space, and no validator
   12: 0x40, // 4 MiB, an Atmel AT49BV322A
   14: 0x20, // 2 MiB, an EON F16
 };
@@ -542,6 +566,7 @@ export const ARCH9_WINDOWS: Readonly<Record<number, { region: Region; bound: num
   0x40: { region: 'data-memory', bound: 0x0800 },
 };
 
+
 /**
  * The architectures whose address rule has been read, so whose flash this library can address.
  *
@@ -584,6 +609,16 @@ export function validateRegionByte(
     throw new ProtocolError(
       `arch 9 rejects 0x${topByte.toString(16)} as a top address byte; its flash is at 0x80 to ` +
         `0x87 and its other windows are 0x00, 0x20, 0x30 and 0x40`,
+    );
+  }
+  if (architecture === 8) {
+    // One address space and no internal window, so 0xFE and 0xFF are refused here rather than
+    // reaching the arm below, which would call them internal program memory. On this part they
+    // select no memory of their own. `ARCH8_FLASH_TOP` has the reading.
+    if (topByte < ARCH8_FLASH_TOP) return 'config-flash';
+    throw new ProtocolError(
+      `architecture 8 has one program memory space below 0x${(ARCH8_FLASH_TOP << 16).toString(16)} `
+        + `and no internal window, so 0x${topByte.toString(16)} is not an address on it`,
     );
   }
   // The internal window is tested first and by masking bit 0 off, which is why both 0xFE and 0xFF

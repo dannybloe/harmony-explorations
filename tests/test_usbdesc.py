@@ -39,6 +39,17 @@ HARMONY_600_LIVE_ENDPOINTS = [
 ]
 
 
+# A Harmony 885 on the bench, enumerated on 27 October 2026: the first remote of arch 8 on a cable
+# here. Its HID report descriptor out of `ioreg -rc IOHIDInterface`, and its endpoints with pyusb,
+# both enumeration only. It reported product 0xC110, bcdDevice 0x0811 and the product string
+# "Harmony Remote 0-4.4.2", and draws 100 mA. The argument is in the class that uses these.
+HARMONY_885_LIVE_REPORT_DESCRIPTOR = bytes.fromhex(
+    '0600ff0901a101150026ff007508a102090295408102c0a102090595409102c0c0')
+HARMONY_885_LIVE_ENDPOINTS = HARMONY_600_LIVE_ENDPOINTS
+HARMONY_885_LIVE_BCD_DEVICE = 0x0811
+HARMONY_885_LIVE_PRODUCT = 'Harmony Remote 0-4.4.2'
+
+
 def summary(name):
     return usbdesc.summary(lab.load(name), BASES[name])
 
@@ -337,6 +348,50 @@ class TestTheLiveArch14RemoteMatchesTheArch14Image(unittest.TestCase):
         self.assertEqual(report['input_bytes'], 64)
         self.assertEqual(report['output_bytes'], 64)
         self.assertFalse(report['has_report_id'])
+
+
+class TestTheLiveHarmony885MatchesItsImage(unittest.TestCase):
+    """
+    A Harmony 885 enumerated against the 885 application image a contributor published, which until
+    then was everything known about arch 8 on USB.
+
+    **Every field the image predicts, the remote reports**, and the comparison reads both ends: the
+    image through `usbdesc.summary` at its load address, the remote through the constants above. The
+    report descriptor is byte for byte the image's, the endpoints are the same asymmetric pair as
+    every other architecture, and `bcdDevice` is `0x0811`, the plain binary skin of
+    `TestBcdDeviceCarriesTheSkin`. The product string the remote reports, firmware 4.4.2, is in the
+    image as UTF-16 although the descriptor walk does not reach it, which ties the remote to this
+    build more tightly than the version block's `0x44` can, since that names only 4.4.
+
+    It also settles the one flag byte: **arch 8 declares the input report Absolute**, as arch 12
+    (Harmony One) does and arch 14 (Harmony 600, 650 and 700) does not, so that byte classifies
+    arch 14 rather than separating every architecture.
+    """
+
+    def setUp(self):
+        lab.require('arch8_code_885')
+        self.image = lab.load('arch8_code_885')
+        self.info = usbdesc.summary(self.image, 0x10000)
+
+    def test_the_report_descriptor_is_the_images(self):
+        offset = self.info['report_descriptor_at'] - 0x10000
+        self.assertEqual(self.image[offset:offset + 33], HARMONY_885_LIVE_REPORT_DESCRIPTOR)
+
+    def test_the_input_report_is_absolute_like_the_one_and_unlike_arch_14(self):
+        self.assertEqual(HARMONY_885_LIVE_REPORT_DESCRIPTOR[21], 0x02)
+        differing = [i for i, (a, b) in enumerate(
+            zip(HARMONY_885_LIVE_REPORT_DESCRIPTOR, HARMONY_600_LIVE_REPORT_DESCRIPTOR)) if a != b]
+        self.assertEqual(differing, [21])
+
+    def test_the_endpoints_and_the_identity_are_the_images(self):
+        self.assertEqual(self.info['endpoints'], HARMONY_885_LIVE_ENDPOINTS)
+        self.assertEqual(self.info['product'], 0xC110)
+        self.assertEqual(self.info['bcd_device'], HARMONY_885_LIVE_BCD_DEVICE)
+        self.assertEqual(usbdesc.skin_id(HARMONY_885_LIVE_BCD_DEVICE), 17)
+
+    def test_the_product_string_the_remote_reports_is_in_the_image(self):
+        self.assertEqual(self.image.count(HARMONY_885_LIVE_PRODUCT.encode('utf-16-le')), 1)
+        self.assertEqual(self.info['strings'], [], 'the walk does not reach it, so this test does')
 
 
 class TestTheStringsNameTheFirmwareVersion(unittest.TestCase):

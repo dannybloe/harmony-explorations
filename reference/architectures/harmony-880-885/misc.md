@@ -3,9 +3,9 @@
 **The rule for this file** is the model folders' rule: a note goes here only when it fits none of the
 other files, and a kind of note that recurs gets a file of its own.
 
-## Why a full folder for an architecture nobody here has measured
+## Why a full folder for an architecture known mostly from other people's files
 
-Every fact on these pages comes from published configurations and firmware images. The folder has the
+Nearly every fact on these pages comes from published configurations and firmware images. The folder has the
 same files as one whose remote has been measured, so that a measurement on a unit replaces a footnote in
 place and moves nothing.
 

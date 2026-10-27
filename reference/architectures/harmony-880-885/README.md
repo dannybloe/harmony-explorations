@@ -6,7 +6,8 @@ processor, one address space that holds the firmware and the configuration toget
 configuration format of the same family as every later Harmony's. This folder describes that design once.
 
 **Everything here is known from configurations and firmware images that other people published, and
-nothing from a remote.** No unit of this architecture has been measured, so a fact on these pages is read
+nothing from a remote**, apart from what a Harmony 885 answered on the cable, which is on the
+[USB page](usb.md); it said no unit had been measured<!--superseded--> until then. So a fact on these pages is read
 in one of two firmware images or counted over a handful of configurations, and each footnote says which.
 A Harmony 885 measured on a unit would turn a "Measured in configurations" footnote into a measurement,
 and nothing in this folder's layout would have to move for it.

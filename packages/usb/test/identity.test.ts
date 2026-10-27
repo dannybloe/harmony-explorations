@@ -152,12 +152,28 @@ test('an architecture with no recorded identity address refuses rather than gues
   // compared confidently against the wrong bytes.
   assert.equal(identityAddress(12), 0xfff400);
   assert.equal(identityAddress(9), 0x200010);
-  for (const architecture of [8, 10, 16, 18]) {
+  for (const architecture of [10, 16, 18]) {
     assert.throws(() => identityAddress(architecture), UnitIdentityError,
                   `architecture ${architecture}`);
   }
   // And an unknown architecture is its own refusal, with its own sentence, because the caller's fix
   // is different: read the version block first rather than add a table row.
   assert.throws(() => identityAddress(undefined), UnitIdentityError);
-  assert.deepEqual(Object.keys(IDENTITY_ADDRESS).sort(), ['12', '14', '9']);
+  assert.deepEqual(Object.keys(IDENTITY_ADDRESS).sort(), ['12', '14', '8', '9']);
+});
+
+test('the Harmony 880 and 885 keep the identity block in the bootloader region of their one flash part', () => {
+  // **The arch 8 row, added when a Harmony 885 first came onto the cable here.** concordance's
+  // ArchList states SERIAL_LOCATION_FLASH at 0x000110 for arch 8. The two bootloader images a
+  // contributor read off an 880 and an 885 both hold the block's shape at that address, without
+  // either value being quoted: sixteen bytes of 0xEE, which is the field named the serial on every
+  // remote read here, then the two GUID fields, which differ between the two images. So the address
+  // has two sources, and the second is the layout this module already compares.
+  //
+  // It is a plain flash address, top byte 0x00, so `readUnitIdentity` sends it through `readFlash`
+  // and not through the internal window: arch 8 has none, the part being ROMless, and the region
+  // rule refuses 0xFE and 0xFF there. And the 64 byte read stays inside the bootloader's 64 KiB.
+  assert.equal(identityAddress(8), 0x000110);
+  assert.equal(IDENTITY_ADDRESS[8]! >>> 16, 0x00);
+  assert.ok(IDENTITY_ADDRESS[8]! + IDENTITY_BYTES <= 0x010000);
 });

@@ -80,6 +80,10 @@ export const IDENTITY_OFFSET = 0xf400;
  * `readUnitIdentity` must say so rather than guess a page.
  */
 export const IDENTITY_ADDRESS: Readonly<Record<number, number>> = {
+  // Harmony 880 and 885, in the bootloader's 64 KiB of the one flash part: concordance's ArchList,
+  // and both published bootloader images carry the block's shape there, sixteen 0xEE bytes and then
+  // two fields that differ between the two units they were read off
+  8: 0x000110,
   9: 0x200010, // Harmony 525, the on chip EEPROM at offset 0x10
   12: (IDENTITY_PAGE << 16) | IDENTITY_OFFSET, // Harmony One, internal program memory
   14: (IDENTITY_PAGE << 16) | IDENTITY_OFFSET, // Harmony 600 and 700, the same place

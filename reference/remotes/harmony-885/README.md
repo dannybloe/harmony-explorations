@@ -7,9 +7,9 @@ An activity based infrared universal remote from Logitech's classic generation, 
 folder states what is the model's own. Standing words and their meaning are in
 [the reference's README](../../README.md).
 
-**Nothing in this folder was measured on a unit.** What is known comes from configurations and firmware
-images other people read off their remotes and published, and from Logitech's own manuals and services, as
-each footnote says. A fact measured on a unit would replace a footnote in place.
+**Almost nothing in this folder was measured on a unit**: what a Harmony 885 reports on the cable is on
+the [USB page](usb.md), and the rest comes from configurations and firmware images other people read off
+their remotes and published, and from Logitech's own manuals and services, as each footnote says.
 
 ## Skins
 

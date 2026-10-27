@@ -7,7 +7,8 @@ in two bytes. This page says what each image is, where it loads, how its header 
 Harmony's, and how a copy of one is obtained.
 
 Read in two application images and two bootloaders, an 880's and an 885's of each, which other people
-read off their remotes and published; no remote of this architecture has been measured. Where each image
+read off their remotes and published. A Harmony 885's application, read off it over USB, is the 885 image
+byte for byte, which measures its load address at `0x010000`.[^t-arch8-usb] Where each image
 sits in flash is [memory.md](memory.md).
 
 ## The images
@@ -86,3 +87,4 @@ No Logitech package of this firmware is known; the images were read off remotes 
 [^s7]: Stated by Logitech. [Section 7](../../../docs/findings.md#s7)
 [^s144]: Read in the firmware. [Section 144](../../../docs/findings.md#s144)
 [^unchecked]: Not checked.
+[^t-arch8-usb]: Measured on a unit. [The test](../../../tests/test_arch8_usb.py)
