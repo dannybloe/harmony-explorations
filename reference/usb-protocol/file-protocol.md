@@ -124,6 +124,15 @@ Harmony Touch generation the type is `MD5`. So the check is one shape across bot
 field rather than a constant**[^s196][^s198]. Nothing in this reference has sent a write, a commit or a
 device control, and `packages/usb` implements none of them[^s198].
 
+**What a remote does with these steps has been read in one firmware, the Harmony 300 and 350's 1.4
+build**, and three of them do less than their names suggest: the file system reset only closes whatever
+file is open, the check uses none of the type, seed, offset and length and, for `/cfg/usercfg`, compares
+the checksum word stored in the file with the expected value, and the flush reads no flag. The open for writing does more, since it erases the file
+before it answers. The detail is [their USB page](../architectures/harmony-300-350/usb.md#what-the-firmware-does-with-a-write)[^t-harmony-350-file-write].
+The same reading also places the bytes the templates check: the reply to the reset carries no parameter,
+the check's character is byte 7 and a write chunk ending in the done packet answers `0xFE`, as the client
+expects[^t-harmony-350-file-write]. The Harmony Touch generation's firmware is not read[^unchecked].
+
 Logitech's template for writing a Harmony Touch's configuration carries the read of the same file commented
 out, under a header calling it "for testing only", so its client writes a configuration to that generation
 and does not read one back, by choice rather than by capability,
@@ -152,3 +161,4 @@ and does not read one back, by choice rather than by capability,
 [^unchecked]: Not checked.
 [^s19]: Measured on a unit. [Section 19](../../docs/findings.md#s19)
 [^s295]: Measured on a unit. [Section 295](../../docs/findings.md#s295)
+[^t-harmony-350-file-write]: Read in the firmware. [The test](../../tests/test_harmony_350_file_write.py)

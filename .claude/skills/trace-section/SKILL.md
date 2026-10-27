@@ -93,8 +93,9 @@ How to find it on an image nobody has scanned:
 2. **The marker offset is the cross check and it is a second literal.** The container validator
    hardcodes where the marker sits, which is `0x0B + 4 * N` for that architecture's pointer count.
    `0x47` on arch 16 is `0x0B + 4 * 15`, so it confirms the pointer count independently of the header
-   byte that states it. On the Harmony 350 the validator is at `0x14AE8` and the cookie letters sit
-   just after it, which is how it was found.
+   byte that states it. On the Harmony 350 the cookie letters sit at `0x14AE8`, in the container test
+   the host's check runs, which is how it was found; the validator that runs at start, `0x16090`,
+   hardcodes the same `0x47`.
 3. **Then trace the callers and read each literal.** The set of literals is the slot map's domain, and
    a slot **absent** from it is a slot the firmware never seeks, which is itself a finding: base slots
    0 and 1 are host side for exactly that reason.
