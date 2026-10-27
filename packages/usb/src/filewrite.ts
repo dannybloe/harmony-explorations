@@ -72,7 +72,9 @@ import {
   readFile,
 } from './filepipe.ts';
 import {
+  FILE_WRITE_DOOR,
   RailError,
+  WRITES_ENABLED,
   assertFileFamilyContainer,
   assertFileWriteAllowed,
   type FileFamilyContainer,
@@ -416,7 +418,23 @@ export async function writeFileConfig(
 ): Promise<FileWriteResult> {
   const log = request.log ?? ((): void => undefined);
 
-  const facts = await readFileWriteFacts(transport);
+  // 0. **A run that stopped after its open leaves `/cfg/usercfg` open for writing**, and the firmware
+  // refuses to open any other file while one is open, so the identity read fails and the unit cannot be
+  // checked: measured on a Harmony 350 whose first write stopped after the erase. So when the first read
+  // fails and both flags are set, a file system reset goes out and the read is tried once more. The reset
+  // only closes an open file, read in the firmware, and the family is already fixed by the product id the
+  // transport opened; without the flags the failure stands, so the shipped state still sends nothing.
+  let facts: Awaited<ReturnType<typeof readFileWriteFacts>>;
+  try {
+    facts = await readFileWriteFacts(transport);
+  } catch (error: unknown) {
+    if (!(WRITES_ENABLED && FILE_WRITE_DOOR)) throw error;
+    log(`the reads failed (${error instanceof Error ? error.message : String(error)}); a file left open `
+      + 'by an interrupted run does that, so a file system reset closes it and the reads go again');
+    await send(transport, resetFilesystemReport(0));
+    await awaitReply(transport, FILE_CONTROL, TIMEOUT_MS.reset, 'file system reset before the reads');
+    facts = await readFileWriteFacts(transport);
+  }
   log(`read: architecture ${facts.sysinfo.get('arch') ?? '?'}, skin ${facts.sysinfo.get('skin') ?? '?'}, `
     + `firmware ${facts.sysinfo.get('fw_ver') ?? '?'}, /cfg/usercfg ${facts.current.length} bytes`);
   const container = assertFileWriteAllowed({
@@ -446,8 +464,14 @@ export async function writeFileConfig(
   log(`opening ${request.path} for writing: the remote erases its configuration before it answers`);
   await send(transport, openForWritingReport(request.path, request.container.length, openSequence));
   const opened = await awaitReply(transport, FILE_OPEN, TIMEOUT_MS.open, 'open for writing');
-  if (opened[OFFSET_SEQUENCE] !== openSequence) {
-    throw new FileWriteError(`the open's reply carries sequence ${opened[OFFSET_SEQUENCE]}, not ${openSequence}`);
+  // **The reply sets the high bit of the sequence it echoes**: a Harmony 350 answered an open sent with
+  // sequence 1 with 129, `0x80 | 1`, on its first write, and this check stopped the run there, after the
+  // erase. The chunk replies already carry the bit, so the rule is one rule across the commands. Plain
+  // echo is still accepted, since nothing has shown which form every command uses; `0xFF` is the error
+  // marker and matches neither.
+  const echoed = opened[OFFSET_SEQUENCE];
+  if (echoed !== openSequence && echoed !== (CHUNK_REPLY_FLAG | openSequence)) {
+    throw new FileWriteError(`the open's reply carries sequence ${echoed}, not ${openSequence} or ${CHUNK_REPLY_FLAG | openSequence}`);
   }
   const handle = opened[OFFSET_HANDLE] as number;
   log(`opened: handle ${handle}`);
@@ -461,10 +485,13 @@ export async function writeFileConfig(
   let dataPackets = 0;
   const chunks = chunksFor(request.container);
   try {
-    // 5. The chunks. The count includes the command and, on the last chunk, the done packet.
+    // 5. The chunks. **Every chunk ends with the done packet**, as the client's template sends it inside
+    // its repeat, and the count includes the command and the done packet, so every chunk is answered
+    // `0xFE`. This sent the done packet after the last chunk alone until a Harmony 350's first write
+    // stopped after chunk 1: it answered that chunk and accepted no report afterwards until restarted.
     let sent = 0;
     for (const [index, chunk] of chunks.entries()) {
-      const count = 1 + chunk.payloads.length + (chunk.last ? 1 : 0);
+      const count = 1 + chunk.payloads.length + 1;
       await send(transport, writeChunkReport(handle, count, sequence.take()));
       let lastSequence = -1;
       for (const payload of chunk.payloads) {
@@ -473,9 +500,9 @@ export async function writeFileConfig(
         sent += payload.length;
         dataPackets += 1;
       }
-      if (chunk.last) await send(transport, donePacket());
+      await send(transport, donePacket());
       const reply = await awaitReply(transport, FILE_WRITE, TIMEOUT_MS.chunk, `write chunk ${index + 1}`);
-      const expected = chunk.last ? DONE_REPLY : CHUNK_REPLY_FLAG | lastSequence;
+      const expected = DONE_REPLY;
       if (reply[OFFSET_SEQUENCE] !== expected) {
         throw new FileWriteError(
           `chunk ${index + 1} of ${chunks.length} was answered with 0x${(reply[OFFSET_SEQUENCE] ?? 0).toString(16)}, `

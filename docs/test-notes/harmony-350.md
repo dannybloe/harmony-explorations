@@ -35,6 +35,22 @@ The three configurations are lab fixtures, `h350_config`, `h350_programmed_confi
 total by decision, section 194. The archive calls the first the factory configuration; it held three
 devices a previous owner had named, section 261.
 
+## The first writes, todo-compile-350 1.7
+
+Three runs of `write-file-config.ts` with the unit's own configuration, from the backup, on 27 October 2026:
+
+1. The open answered with sequence `0x81`, the high bit set on the echo, where the writer expected `0x01`,
+   so the run stopped after the open had erased the configuration. The writer accepts both forms since.
+2. The unit check passed after the restart, the open answered, chunk 1 (50 data packets, 3100 bytes) was
+   answered `0xB4`, and the next host write timed out in IOKit; every later write timed out the same way
+   until the remote was restarted.
+3. With the done packet ending every chunk, as the client's template sends it: chunk 1 answered `0xFE`, and
+   the same timeout on the next write. So the done packet was not the cause.
+
+After each restart the remote flashed the lights under its activity buttons eight times, the firmware's
+error 8, a missing marker, and answered reads normally. Its configuration is erased until a write
+completes; the backup is the lab's `reads/20261027T1700Z-h350-backup/`.
+
 ## What was predicted
 
 Each programmed read was predicted in writing and committed before it was taken:

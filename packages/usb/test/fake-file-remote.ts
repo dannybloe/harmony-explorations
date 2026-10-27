@@ -131,6 +131,8 @@ export class FakeFileRemote implements Transport {
 
   async close(): Promise<void> {}
 
+  // The open's reply sets the high bit of the sequence it echoes, as a Harmony 350 answered on its first
+  // write: sequence 1 came back as 129.
   private open(report: Uint8Array, sequence: number): void {
     let at = 5;
     const name: number[] = [];
@@ -147,12 +149,12 @@ export class FakeFileRemote implements Transport {
       this.flash.fill(0xff);
       this.erased = true;
       this.address = 0;
-      this.replies.push(padded([SERVICE, 0x01, sequence, 2, 1, file.handle, 4, ...be32(ERASED)]));
+      this.replies.push(padded([SERVICE, 0x01, 0x80 | sequence, 2, 1, file.handle, 4, ...be32(ERASED)]));
       return;
     }
     const bytes = file.bytes();
     this.reading = { bytes, at: 0 };
-    this.replies.push(padded([SERVICE, 0x01, sequence, 2, 1, file.handle, 4, ...be32(bytes.length)]));
+    this.replies.push(padded([SERVICE, 0x01, 0x80 | sequence, 2, 1, file.handle, 4, ...be32(bytes.length)]));
   }
 
   /** Up to `packets` data packets, and the terminator only when the file ends inside this batch. */

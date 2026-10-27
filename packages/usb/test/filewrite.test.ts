@@ -489,31 +489,34 @@ describe('the whole write against a fake remote, with both flags set', () => {
     // The reset is sequence 0 and the open sequence 1, then one counter for everything after.
     assert.equal(sent[0], 'ff ff 00 01 01 66 00 00 00 00 00 00');
     assert.equal(sent[1]!.slice(0, 17), 'ff 01 01 03 80 2f');
-    // First chunk: its command at 2 stating 51 packets, and fifty data packets 3 to 52.
-    assert.equal(sent[2], 'ff 03 02 02 01 05 01 33 00 00 00 00');
+    // First chunk: its command at 2 stating 52 packets, the command, fifty data packets 3 to 52 and the
+    // done packet at 53, which every chunk ends with, as the client's template sends it.
+    assert.equal(sent[2], 'ff 03 02 02 01 05 01 34 00 00 00 00');
     assert.equal(sent[3]!.slice(0, 5), '03 3e');
     assert.equal(sent[52]!.slice(0, 5), '34 3e');
-    // Second chunk: its command at 53, and its data packets run 54 to 63 and wrap to 0 to 39.
-    assert.equal(sent[53], 'ff 03 35 02 01 05 01 33 00 00 00 00');
-    assert.equal(sent[54]!.slice(0, 2), '36');
-    assert.equal(sent[63]!.slice(0, 2), '3f');
-    assert.equal(sent[64]!.slice(0, 2), '00');
-    assert.equal(sent[103]!.slice(0, 2), '27');
+    assert.equal(sent[53], '7e 00 00 00 00 00 00 00 00 00 00 00');
+    // Second chunk: its command at 54, and its data packets run 54 to 63 and wrap to 0 to 39.
+    assert.equal(sent[54], 'ff 03 35 02 01 05 01 34 00 00 00 00');
+    assert.equal(sent[55]!.slice(0, 2), '36');
+    assert.equal(sent[64]!.slice(0, 2), '3f');
+    assert.equal(sent[65]!.slice(0, 2), '00');
+    assert.equal(sent[104]!.slice(0, 2), '27');
+    assert.equal(sent[105], '7e 00 00 00 00 00 00 00 00 00 00 00');
     // The last chunk: command 40, two data packets (62 and 38 bytes), the done packet, count 4.
-    assert.equal(sent[104], 'ff 03 28 02 01 05 01 04 00 00 00 00');
-    assert.equal(sent[105]!.slice(0, 5), '29 3e');
-    assert.equal(sent[106]!.slice(0, 5), '2a 26');
-    assert.equal(sent[107], '7e 00 00 00 00 00 00 00 00 00 00 00');
+    assert.equal(sent[106], 'ff 03 28 02 01 05 01 04 00 00 00 00');
+    assert.equal(sent[107]!.slice(0, 5), '29 3e');
+    assert.equal(sent[108]!.slice(0, 5), '2a 26');
+    assert.equal(sent[109], '7e 00 00 00 00 00 00 00 00 00 00 00');
     // The check with the stored word, the flush on m, the close, at 43, 44 and 45.
-    assert.equal(sent[108]!.slice(0, 23), 'ff 06 2b 07 01 05 01 01');
-    assert.equal(sent[109], 'ff 05 2c 02 01 05 01 00 00 00 00 00');
-    assert.equal(sent[110], 'ff 07 2d 01 01 05 00 00 00 00 00 00');
+    assert.equal(sent[110]!.slice(0, 23), 'ff 06 2b 07 01 05 01 01');
+    assert.equal(sent[111], 'ff 05 2c 02 01 05 01 00 00 00 00 00');
+    assert.equal(sent[112], 'ff 07 2d 01 01 05 00 00 00 00 00 00');
     // The read back is the read path again, 6296 bytes in four reads, and the reboot is the last thing
     // sent, at 46.
-    assert.deepEqual(sent.slice(111, -1).map((r) => r.slice(0, 5)),
+    assert.deepEqual(sent.slice(113, -1).map((r) => r.slice(0, 5)),
       ['ff 00', 'ff 01', 'ff 04', 'ff 04', 'ff 04', 'ff 04', 'ff 07']);
     assert.equal(sent.at(-1), 'ff ff 2e 01 01 00 00 00 00 00 00 00');
-    assert.equal(sent.length, 119);
+    assert.equal(sent.length, 121);
     assert.match(result.lines.join('\n'), /identical to what was sent, less the end marker/);
   });
 
