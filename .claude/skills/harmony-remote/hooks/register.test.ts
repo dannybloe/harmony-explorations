@@ -1,6 +1,6 @@
 import { expect, test } from 'claude-code/testing'
 
-import { bandColour, configOf, usbState, writeLine, writeProgress } from './register'
+import { bandColour, configOf, modelName, usbState, writeLine, writeProgress } from './register'
 
 const usb650 = '+-o Harmony Remote  <class IOUSBHostDevice>\n  "idProduct" = 49442\n  "idVendor" = 1133\n'
 const hid650 = '+-o IOHIDInterface\n  "Product" = "Harmony Remote 0-0.2.0"\n  "VendorID" = 1133\n  "ProductID" = 49442\n'
@@ -13,6 +13,17 @@ test('a Harmony 650 on USB with its HID interface up reads as ready', () => {
 test('on the bus without the HID interface reads as not answering, and a mouse is not a remote', () => {
   expect(usbState(usb650, '')).toBe('Harmony 600/650/700 on USB, not answering yet')
   expect(usbState(mouse, '')).toBe('no remote on USB')
+})
+
+const usb885 = '+-o Harmony Remote 0-4.4.2  <class IOUSBHostDevice>\n  "idProduct" = 49424\n  "bcdDevice" = 2065\n  "idVendor" = 1133\n'
+const hid885 = '+-o IOHIDInterface\n  "Product" = "Harmony Remote 0-4.4.2"\n  "VendorID" = 1133\n  "ProductID" = 49424\n'
+
+test('a remote on the 880 platform is named by the skin in its bcdDevice, not by its product id', () => {
+  expect(usbState(usb885, hid885)).toBe('Harmony 885 on USB, ready')
+  expect(modelName(0xc110, 0x080f)).toBe('Harmony 880')
+  // A skin nobody has listed still names the family rather than a bare product id.
+  expect(modelName(0xc110, 0x0899)).toBe('Harmony 880/885')
+  expect(modelName(0xc121, 0)).toBe('Harmony One')
 })
 
 const journal = [

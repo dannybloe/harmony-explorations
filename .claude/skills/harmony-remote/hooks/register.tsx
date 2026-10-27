@@ -42,11 +42,30 @@ const LAST = 0xc14f
 const MICROCHIP = 0x04d8
 const BOOTLOADER = 0x000b
 const MODELS: Record<number, string> = {
+  0xc110: 'Harmony 880/885',
   0xc111: 'Harmony 525',
   0xc121: 'Harmony One',
   0xc122: 'Harmony 600/650/700',
   0xc124: 'Harmony 300/350',
   0xc12b: 'Harmony Touch',
+}
+
+// The Harmony 880 family shares one product id, so the model is the skin, which the low byte of
+// bcdDevice carries in plain binary on this platform (harmony-explorations reference/architectures/
+// harmony-880-885/usb.md): 0x0811 is skin 17, a Harmony 885.
+const ESPRESSO = 0xc110
+const ESPRESSO_SKINS: Record<number, string> = {
+  15: 'Harmony 880',
+  17: 'Harmony 885',
+  39: 'Harmony 880 Pro',
+  44: 'Harmony 720',
+  45: 'Harmony 785',
+}
+
+/** The name to show for a Harmony's product id, and its bcdDevice where the product id is shared. */
+export function modelName(product: number, bcdDevice: number): string {
+  if (product === ESPRESSO) return ESPRESSO_SKINS[bcdDevice & 0xff] ?? MODELS[product]!
+  return MODELS[product] ?? `Harmony 0x${product.toString(16)}`
 }
 
 /** The numeric properties of each device block in an ioreg listing. */
@@ -65,11 +84,12 @@ const isHarmony = (vendor: number, product: number): boolean =>
 
 /** What the bus says: a Harmony on USB, whether its command interface is up, or one in recovery. */
 export function usbState(usb: string, hid: string): string {
-  const onBus = ioregBlocks(usb).map((p) => [Number(p.get('idVendor')), Number(p.get('idProduct'))] as const)
+  const onBus = ioregBlocks(usb).map((p) =>
+    [Number(p.get('idVendor')), Number(p.get('idProduct')), Number(p.get('bcdDevice'))] as const)
   if (onBus.some(([v, p]) => v === MICROCHIP && p === BOOTLOADER)) return 'a remote in recovery (bootloader)'
   const harmony = onBus.find(([v, p]) => isHarmony(v, p))
   if (harmony === undefined) return 'no remote on USB'
-  const name = MODELS[harmony[1]] ?? `Harmony 0x${harmony[1].toString(16)}`
+  const name = modelName(harmony[1], harmony[2])
   // The device can be on the bus while its HID interface is not up yet, or no longer: that is the
   // state in which every read here answers "no matching Harmony remote attached".
   const ready = ioregBlocks(hid).some((p) => isHarmony(Number(p.get('VendorID')), Number(p.get('ProductID'))))
