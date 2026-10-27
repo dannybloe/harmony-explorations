@@ -15,7 +15,9 @@ package, version, layout, routines and safe mode are stated once in
 ## Not checked
 
 * The version a unit runs, from its own `/sys/sysinfo`.
-* Safe mode and recovery on this model.
+* How safe mode and the bootloader are entered on this model, and what they do: the application's side
+  of recovery is [the family's](../../architectures/harmony-300-350/firmware.md#safe-mode-and-recovery), and
+  the two images below it have not been read.
 
 [^s196]: Stated by Logitech, by their service. [Section 196](../../../docs/findings.md#s196)
 [^s193]: Measured on a unit. [Section 193](../../../docs/findings.md#s193)

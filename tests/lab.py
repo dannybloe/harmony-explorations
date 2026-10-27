@@ -639,6 +639,11 @@ IMAGES = {
     # and 104, `todo-compile-350.md` 1.2. What travels is the order of the commands and their conditions.
     'myharmony_write_h300': 'Logitech.Harmony.Web.Driver.Resources.Templates.SKIN78.userconfiguration.xml',
     'myharmony_write_h350': 'Logitech.Harmony.Web.Driver.Resources.Templates.SKIN104.userconfiguration.xml',
+    # The same client's firmware template for the Harmony 350 and the converter that names the firmware
+    # type a remote reports, `todo-compile-350.md` 1.4, recovery. What travels is the order of the
+    # commands and which number means safe mode.
+    'myharmony_firmware_h350': 'Logitech.Harmony.Web.Driver.Resources.Templates.SKIN104.firmwareupgrade.xml',
+    'myharmony_firmware_type': 'FirmwareTypeConverter.cs',
     # Not an image and not a config: the wire log of Logitech's own classic client reading a Harmony
     # One, captured 7 August 2026 by running the client rebuilt from its own decompiled source against
     # a local stand-in for its discontinued server. Read by the TypeScript side, where the command

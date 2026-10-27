@@ -52,7 +52,8 @@ wrong or is about to.
 1. **The screen**, above.
 2. **The version block**: software type 4 is safe mode and 0 the application, on every architecture
    read, `reference/usb-protocol/version-block.md`. On a Harmony One enumeration cannot tell the two
-   apart, since the product id does not change.
+   apart, since the product id does not change. The Harmony 300 and 350 have neither a screen nor a
+   version block: their section below says what stands in for both.
 3. **Which architecture**, and then that route below. Nothing transfers between them by default.
 4. **What a file actually holds, before trusting its name**, before anything is restored from it.
 
@@ -147,3 +148,68 @@ wrong or is about to.
   section 186's reviewer said the external flash programmer was in nothing this project holds, which was
   true of the review packet and false of the repository, section 191. Copying a reviewer's statement out of
   its scope is how a withhold list produces a wrong claim rather than a missing one.
+
+## The Harmony 300 and 350
+
+**Read before the family's first write, `todo-compile-350.md` 1.6 and 1.7.** What the firmware does is
+`reference/architectures/harmony-300-350/firmware.md` "Safe mode and recovery" and `usb.md` "What the
+firmware does with a write", and the argument is the headers of `tests/test_harmony_350_recovery.py` and
+`tests/test_harmony_350_file_write.py`. All of it is read in the 1.4 **application** alone: the
+bootloader and the safe mode image are not in the lab, so nothing below says what either does, and none of
+it has been done to a unit.
+
+**The reassurance, and the reason a first write is survivable: a failed configuration write can be sent
+again over USB.** The application starts, rejects a broken configuration, carries on without one and keeps
+answering on the cable, and no file command waits on the configuration being valid. A configuration write
+also cannot reach the firmware: its erase stops short of the staged firmware copy and never touches the
+processor's own flash.
+
+The route, in order:
+
+1. **Recognise the state.** There is no screen and no version block.
+   * `/sys/sysinfo`, read only, carries `fw_type`: the 1.4 application can only ever answer 0, so a 3 or a
+     4 means the bootloader or safe mode is answering, by Logitech's client's numbering, and what to do then
+     is unread. Stop and ask.
+   * A rejected configuration latches an error code, 8 for a missing marker and 4 for the checksum, and the
+     remote switches four outputs on and off in a pattern counted from it, likely its lights. **The code
+     stands until the processor restarts**, even after a good configuration has been written.
+   * A read of `/cfg/usercfg` states `end_addr` less the base as its size, and zero when that field is
+     erased, so an empty read means an erased header.
+2. **Rerun the whole write from the file system reset**, `0xFF` with `0x66`, with the same container and
+   its four byte end marker: the reset closes a file an interrupted attempt left open, which is all an
+   interrupted attempt with the power on leaves behind. One with the power off left a rejected configuration
+   and nothing open, and the same rerun covers it. This is exactly what Logitech's client does on a failure.
+3. **Read back and compare**, the four end marker bytes put back, through `read-file.ts --file
+   /cfg/usercfg --product 0xc124`. An `m` from the check proves the header and the stored checksum word
+   arrived and not the body.
+4. **Then restart the processor**, the reboot `0xFF` with `0x00` or a battery pull: the latched code stands
+   until one, and the start is where a configuration is validated and loaded.
+
+What must never be part of that route:
+
+* **Never open any path but `/cfg/usercfg` for writing.** An open for writing erases what it opens before it
+  answers, and `/fw/bootloader` and `/fw/safemode` are writable rows in the processor's own flash: an open
+  of either erases pages that no route read here puts back.
+* **Never send the reboot with `0x73`, and never flush `/fw/normalmode`.** Each leaves a request in data
+  memory for the code that runs before the application, `0x0F` and 2, and what the bootloader or safe mode
+  does with it is unread. On the Harmony 525 entering safe mode destroys the application, and nothing here
+  rules that out for this family.
+* **Three keys held together restart the processor**, tested in the keypad routine. Which three is unknown, and as far
+  as the application says it is a reboot and writes nothing.
+
+**What is not covered**, and what would cover it:
+
+* **A configuration that passes the validator and then hangs the remote.** Its state is loaded at start,
+  before the main loop that serves USB, so one that hangs there would stand between a restart and the
+  cable, and whether the watchdog is on is unread. The protection is the composer's rails,
+  `writing-a-config`, not a recovery route.
+* **A damaged application.** Logitech's route is a firmware install of the package in the lab,
+  `h350_package`, written to `/fw/normalmode` through the same seven commands, which lands in the staged
+  copy on the external medium; its manifest asks for the reboot, and Logitech's client calls an install
+  required whenever a remote reports safe mode. What installs the staged copy is in the images this project
+  does not hold, so this is a prediction and not a route, and this project does not write firmware to this
+  family.
+* **The two unread images are readable files on the remote**, `/fw/bootloader` and `/fw/safemode`. Reading
+  them into the lab is what would answer how safe mode is entered and whether it overwrites anything. Both
+  paths are off the transport's inert list, so that read is a decision and needs
+  `HARMONY_FILE_PATH_EXPERIMENT=1`, and it is not a step of a configuration write.

@@ -61,6 +61,10 @@ start demands `PTYY` at `end_addr`, which the check does not look at, so an `m` 
 arrived. What that validator checks and what a failing configuration does is
 [the firmware page](firmware.md#what-validates-the-configuration)[^t-harmony-350-file-write].
 
+**A write that fails half way can be sent again**: no file command waits on the configuration being valid,
+so a remote whose configuration was left erased or broken still answers every step of the sequence above,
+[recovery](firmware.md#safe-mode-and-recovery)[^t-harmony-350-recovery].
+
 **The firmware refuses no writable row of its file table.** Fourteen rows allow writing, `/fw/bootloader`
 and `/fw/safemode` in internal program flash among them, and an open for writing erases what it
 opens: 64 KiB blocks of the external flash, or 1 KiB pages of the processor's own program flash for a file
@@ -98,3 +102,4 @@ each rests on.
 [^s201]: Measured on a unit. [Section 201](../../../docs/findings.md#s201)
 [^unchecked]: Not checked.
 [^t-harmony-350-file-write]: Read in the firmware. [The test](../../../tests/test_harmony_350_file_write.py)
+[^t-harmony-350-recovery]: Read in the firmware. [The test](../../../tests/test_harmony_350_recovery.py)
