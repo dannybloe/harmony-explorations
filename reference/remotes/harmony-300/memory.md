@@ -17,13 +17,14 @@ table. Only its files have been read off a 300, never its memory.
 The 300's configurations are what settled two facts that hold for both models: raw slot 8 follows the
 compiler and not the model, and a configuration from a different generation of the compiler is not a
 sample of the same population. Both are stated once in
-[the family's memory.md](../../architectures/harmony-300-350/memory.md#the-configuration-container), with
-raw slot 6, the family's open question.
+[the family's memory.md](../../architectures/harmony-300-350/memory.md#the-configuration-container). On a
+300 the timers raw slot 8 holds are started by nothing in either configuration measured,
+[the six slots](../../architectures/harmony-300-350/memory.md#the-six-slots-the-firmware-was-read-for)[^t-harmony-350-slots-c].
 
 ## Not checked
 
 * Anything in the remote's memory beyond the files it serves.
-* What raw slot 8 holds.
 
 [^s264]: Measured in configurations. [Section 264](../../../docs/findings.md#s264)
 [^s265]: Measured in configurations. [Section 265](../../../docs/findings.md#s265)
+[^t-harmony-350-slots-c]: Measured in configurations. [The test](../../../tests/test_harmony_350_slots.py)

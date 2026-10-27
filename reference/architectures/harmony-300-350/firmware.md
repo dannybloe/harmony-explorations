@@ -27,6 +27,7 @@ take another route[^s295].
 | the configuration validator at `0x16090`, run at start and from a second call site in the main loop while the verdict is clear: `GSPM`, `LWJL` at `0x47`, `PTYY` at `end_addr` and the trailer checksum, below | [^t-harmony-350-file-write] |
 | the file protocol: the request parser at `0xCB88`, the reply dispatcher at `0xE2F0`, the file lookup at `0x12CF0`, the close at `0x12CE6`, the read size of `/cfg/usercfg` at `0x14C58`, [usb.md](usb.md#what-the-firmware-does-with-a-write) | [^t-harmony-350-file-write] |
 | the section seeker, `0x0B + 4 * slot` at `0x10BCE` on the 350's 1.4 image, called for raw slots 3 to 12 from 14 call sites | [^s259] |
+| the readers of raw slots 5, 6, 8, 9 and 12: the start up event table at `0x11D48`, called once from the validator's tail at `0x162B8`; the key map lookup at `0x1113A` and its tagged list reader at `0x1AB24`; the timer start at `0x16A2E` and the expiry pass at `0x1694A`; the state variable seeder at `0x16E6C` and the record locator at `0x17360`; the digit entry reader at `0x19D56`. What each slot is, [memory.md](memory.md#the-six-slots-the-firmware-was-read-for) | [^t-harmony-350-slots] |
 | the month end routine of the clock | [^s322] |
 | the state variable bound | [^s276] |
 
@@ -131,3 +132,4 @@ image serves that sequence, and what installs the staged copy, is not checked[^u
 [^t-harmony-350-recovery-package]: Stated by Logitech, by their service. [The test](../../../tests/test_harmony_350_recovery.py)
 [^s310]: Read in the firmware. [Section 310](../../../docs/findings.md#s310)
 [^s354]: Read in the firmware. [Section 354](../../../docs/findings.md#s354)
+[^t-harmony-350-slots]: Read in the firmware. [The test](../../../tests/test_harmony_350_slots.py)

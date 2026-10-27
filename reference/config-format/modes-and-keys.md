@@ -182,7 +182,9 @@ u8   opcode        that instruction's opcode
 | Harmony 525 | none | the byte where a count would sit after `CMAH` is zero; the keys are bound in the mode records instead, [its keys page](../remotes/harmony-525/keys.md#fifty-keys-and-every-one-is-bound) | |
 
 On the Harmony 880 and 885, 890, and 300 and 350 it is not one constant: configurations agree in some
-pairs and differ in others[^s311b]. The codec
+pairs and differ in others[^s311b]. **On the Harmony 300 and 350, which have no mode table, it is not a
+mode's list at all**: it is entry 0 of base slot 9, the map looked up last, holding the device keys and the
+activity's key, [their memory page](../architectures/harmony-300-350/memory.md#the-six-slots-the-firmware-was-read-for)[^t-harmony-350-slots]. The codec
 generates the Harmony 600, 650 and 700 tables rather than copying them, `modeZeroKeyList` in
 `packages/codec/src/families/four-slot/modezero.ts`.
 
@@ -302,6 +304,11 @@ How an activity is numbered and where its entry goes is
 [Activities and devices](activities-and-devices.md#1-a-value-of-the-activity-counter). Read with
 `handlerSetRoles` in `packages/codec/src/inventory.ts`.
 
+**The Harmony 300 and 350 fill the table differently**, read in their firmware and measured on their five
+configurations, outside the fifteen above: entry 0 is the key table, entries 1 to N are the devices' maps,
+one per device, and the activity has no entry, its key selecting a device's map instead,
+[their memory page](../architectures/harmony-300-350/memory.md#the-six-slots-the-firmware-was-read-for)[^t-harmony-350-slots][^t-harmony-350-slots-c].
+
 ### A set is one activity's keypad map
 
 Over the fifteen user configurations: 158 sets, 65 installed by something in the configuration, 50 of
@@ -310,7 +317,8 @@ install sends one, so base slot 9 holds no spares. The other 108 send nothing, a
 or more keys to lists of comparisons, register work and mode entries, which is a menu[^s151].
 
 **Device mode's map is not here**: a device's own map is its mode record's own list,
-[above](#a-devices-mode-is-device-modes-keypad-map)[^s271].
+[above](#a-devices-mode-is-device-modes-keypad-map)[^s271]. The Harmony 300 and 350, with no mode table,
+are the exception, above[^t-harmony-350-slots].
 
 For every pair of a device and a scan code, the command that pair sends is the **same in every activity
 map that binds it**, 1096 of 1105, and 47 of 50 devices agree on every one of their buttons[^s151]. The
@@ -651,3 +659,5 @@ its keys and says where each name came from.
 [^s133]: Measured in configurations. [Section 133](../../docs/findings.md#s133)
 [^s187]: Measured in configurations. [Section 187](../../docs/findings.md#s187)
 [^unchecked]: Not checked.
+[^t-harmony-350-slots]: Read in the firmware. [The test](../../tests/test_harmony_350_slots.py)
+[^t-harmony-350-slots-c]: Measured in configurations. [The test](../../tests/test_harmony_350_slots.py)

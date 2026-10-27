@@ -52,7 +52,10 @@ enabled product with any value in that field[^s145]; the 350 declares `Activitie
 `PartiallySetupActivities`[^s264]. Why a remote without a screen holds one is in
 [how a Harmony works](../../how-a-harmony-works.md#a-remote-with-no-screen-holds-exactly-one-activity).
 Whether the limit is the remote's and not only the software's is **not checked**: no configuration can be
-given a second activity to compare.
+given a second activity to compare. **In the configuration the activity is one key's binding**, which
+sends codes or sets the devices' state variables and then selects one device's map, with no key map of its
+own,
+[the family's memory page](../../architectures/harmony-300-350/memory.md#the-six-slots-the-firmware-was-read-for)[^t-harmony-350-slots-c].
 
 ## Favourite channels
 
@@ -78,3 +81,4 @@ on transition[^s327]; how this architecture interprets it is **not read**.
 [^s263b]: Measured in configurations. [Section 263](../../../docs/findings.md#s263)
 [^s262]: Measured in configurations. [Section 262](../../../docs/findings.md#s262)
 [^s327]: Measured in configurations. [Section 327](../../../docs/findings.md#s327)
+[^t-harmony-350-slots-c]: Measured in configurations. [The test](../../../tests/test_harmony_350_slots.py)

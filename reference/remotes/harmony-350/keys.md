@@ -95,8 +95,11 @@ Generated from `packages/silhouettes/src/models/h350.ts` by `make remote-referen
 
 **Nothing measured ties a key on this remote to a scan code**, and the drawing's test asserts that no key
 claims one or a list of candidates[^t-silhouette]. The configuration does carry a key table after its
-`LWJL` marker, an instruction against each scan code[^s259], and mode 0's list in it held 9, 11 or 13
-entries over the five configurations of this architecture measured[^s311][^s315], so the codes exist.
+`LWJL` marker, an instruction against each scan code[^s259], which on this family is the map every key
+press is looked up in last, holding the device keys and the activity's key: 11 or 13 entries over the
+three Harmony 350 configurations measured, so the codes exist[^t-harmony-350-slots-c]. An earlier
+version of this page called it mode 0's list<!--superseded-->, which is what it is on the models with a
+screen[^s311], [the family's memory page](../../architectures/harmony-300-350/memory.md#the-six-slots-the-firmware-was-read-for).
 Which physical key each one is would need this generation's keypad scanner read in the firmware, which it
 has not been. The same holds for the Harmony 300,
 [the architecture's README](../../architectures/harmony-300-350/README.md#shared-in-one-table).
@@ -110,4 +113,4 @@ has not been. The same holds for the Harmony 300,
 [^x-manual]: Stated by Logitech, in the manual. [The Harmony 350 setup guide](https://www.logitech.com/assets/51207/harmony-350-qsg-and-iid.pdf)
 [^s259]: Measured in configurations. [Section 259](../../../docs/findings.md#s259)
 [^s311]: Measured in configurations. [Section 311](../../../docs/findings.md#s311)
-[^s315]: Measured in configurations. [Section 315](../../../docs/findings.md#s315)
+[^t-harmony-350-slots-c]: Measured in configurations. [The test](../../../tests/test_harmony_350_slots.py)

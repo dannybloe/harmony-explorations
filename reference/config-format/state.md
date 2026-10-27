@@ -135,6 +135,11 @@ What decides between the two on arch 12 and arch 14 is a checksum over data memo
 [the Harmony 600, 650 and 700's](../architectures/harmony-600-650-700/firmware.md#the-state-variable-seeder)
 own terms.
 
+**The Harmony 300 and 350's 1.4 image seeds as arch 14 does**: one byte, from a check over data memory,
+decides between every variable and none, a `first` of `0xFEFE` is skipped, and the `0xFE` fill runs from
+`narrow + 2 * wide` to `0xC0`, the Harmony 600's ceiling. Its table is raw slot 9,
+[their memory page](../architectures/harmony-300-350/memory.md#the-six-slots-the-firmware-was-read-for)[^t-harmony-350-slots].
+
 **`max` is the highest value**, and it is what base slot 0's name for the variable ends in, plus one, in
 all 250 named variables[^s86]. Every non negative `from` and `to` is inside `0` to `max`, every
 instruction has a reading, and every one of the 439 that name a base slot 10 list by index names one that
@@ -485,6 +490,11 @@ not there. The safe mode containers carry no records and issue neither instructi
 
 The firmware runs at most **four** timers at once, so a configuration with thirty records describes thirty
 possible timers rather than thirty concurrent ones, and starting a fifth is a silent no-op[^s43b].
+
+**On the Harmony 300 and 350 the table is raw slot 8**, read the same way by their 1.4 image, four slots
+included. Their records are all kind 0, two per device on a configuration Logitech's current service
+compiled, and on the Harmony 300 nothing starts them,
+[their memory page](../architectures/harmony-300-350/memory.md#the-six-slots-the-firmware-was-read-for)[^t-harmony-350-slots][^t-harmony-350-slots-c].
 
 **A timer fires exactly one instruction**, not a list. Anything longer has to be a single instruction that
 runs an action list, which is what 116 of the 159 records do[^s43]. The scheduled kind also **clamps the
@@ -901,3 +911,5 @@ Read with `gspm.log_area`; `gspm.log_reference` names the append case an instruc
 [^s47b]: Read in the firmware. [Section 47](../../docs/findings.md#s47)
 [^t-host-client]: Stated by Logitech, in their client. [The test](../../tests/test_host_client.py)
 [^s260]: Measured in configurations. [Section 260](../../docs/findings.md#s260)
+[^t-harmony-350-slots]: Read in the firmware. [The test](../../tests/test_harmony_350_slots.py)
+[^t-harmony-350-slots-c]: Measured in configurations. [The test](../../tests/test_harmony_350_slots.py)
