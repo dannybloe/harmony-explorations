@@ -52,6 +52,9 @@ Three runs of `write-file-config.ts` with the unit's own configuration, from the
    went out 63 bytes long. With a zero report ID in front of every report, the fourth run wrote all 12
    chunks, the check answered `m`, the read back was identical and the reboot was sent.
 
+Off the cable after the fourth run the lights stopped flashing, and eleven presses reached the bench's
+infrared monitor as the bench TV's codes, volume, channel and three digits, each matched to its command.
+
 After each failed run's restart the remote flashed the lights under its activity buttons eight times, the firmware's
 error 8, a missing marker, and answered reads normally. Its configuration is erased until a write
 completes; the backup is the lab's `reads/20261027T1700Z-h350-backup/`.
