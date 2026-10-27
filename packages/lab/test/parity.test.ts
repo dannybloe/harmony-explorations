@@ -113,7 +113,9 @@ test('the Python table was actually parsed, rather than read as empty', () => {
   // 231 with Logitech's compile of the whole test setup, 5.2.
   // 232 with our 5.1 file as written, 233 with Logitech's clean compile of the test setup, 234 with the region before 5.2.5, 235 before 6.2.13, 236 before 7.1, 237 after its stopped probe, 238 with the probe, 239 before 7.5.
   // 242 with the friend's Harmony One, two reads, and Harmony 525, 243 with the region before 10.5, 244 before 9.1.2, 245 with the 9.1.2 file stuck on it, 246 before the freeze's variant A, 247 before the fixed 9.1.2, 248 before its bright test colours, 249 before 8.2.2, 250 before 8.2.6, 251 after it, 252 with the one bit control on it, 253 before the empty configuration, 11.1.1.4, 254 before its blended letters, 255 before 11.2.3, the setup built from nothing, 256 before 11.2.4, 257 before its two cosmetic changes, 258 with the Harmony 700's region before its empty configuration, 259 with it on, 260 before the test setup, 261 with its six devices on, 262 with its seven, 263 with them in bright colours, 264 with the Harmony 600's region before its empty configuration, 265 with it on, 266 with the mark at 0, 267 in grey 2, 268 with its letters blended, 269 with the five device setup on, 270 with the six device file on, 271 with the spare Harmony One at the start of todo-compile-one, 274 with the three harvest compiles for the One.
-  assert.equal(Object.keys(pythonImages()).length, 289, 'every fixture tests/lab.py names');
+  // 291 with the client's two write templates for the Harmony 300 and 350, todo-compile-350 1.2, 293 with
+  // the 350's firmware upgrade template and the client's firmware type converter, 1.4.
+  assert.equal(Object.keys(pythonImages()).length, 293, 'every fixture tests/lab.py names');
 });
 
 test('the two sides exclude the same fixtures from the parseable population', () => {

@@ -706,6 +706,10 @@ export const IMAGES: Readonly<Record<string, string>> = {
   myharmony_sync_model: 'RemoteSyncUserControlModel.cs',
   myharmony_update_manager: 'RemoteUpdateManager.cs',
   myharmony_ds_controller: 'DSController.cs',
+  myharmony_write_h300: 'Logitech.Harmony.Web.Driver.Resources.Templates.SKIN78.userconfiguration.xml',
+  myharmony_write_h350: 'Logitech.Harmony.Web.Driver.Resources.Templates.SKIN104.userconfiguration.xml',
+  myharmony_firmware_h350: 'Logitech.Harmony.Web.Driver.Resources.Templates.SKIN104.firmwareupgrade.xml',
+  myharmony_firmware_type: 'FirmwareTypeConverter.cs',
   // Not an image and not a config: the wire log of Logitech's own classic client reading a Harmony
   // One, captured on 7 August 2026 by running the client rebuilt from its own decompiled source
   // against a local stand-in for its discontinued server. 69572 lines, of which 69344 are packets.
