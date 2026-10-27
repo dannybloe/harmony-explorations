@@ -485,13 +485,13 @@ export async function writeFileConfig(
   let dataPackets = 0;
   const chunks = chunksFor(request.container);
   try {
-    // 5. The chunks. **Every chunk ends with the done packet**, as the client's template sends it inside
-    // its repeat, and the count includes the command and the done packet, so every chunk is answered
-    // `0xFE`. This sent the done packet after the last chunk alone until a Harmony 350's first write
-    // stopped after chunk 1: it answered that chunk and accepted no report afterwards until restarted.
+    // 5. The chunks. The count includes the command and, on the last chunk, the done packet: Logitech's
+    // driver emits the template's done packet on the last pass of its repeat only. For one run this sent
+    // it on every chunk, on a wrong guess at why a Harmony 350 stopped after chunk 1; the cause was the
+    // transport dropping a leading zero byte, `transportOverFileDevice`, and the firmware accepts both.
     let sent = 0;
     for (const [index, chunk] of chunks.entries()) {
-      const count = 1 + chunk.payloads.length + 1;
+      const count = 1 + chunk.payloads.length + (chunk.last ? 1 : 0);
       await send(transport, writeChunkReport(handle, count, sequence.take()));
       let lastSequence = -1;
       for (const payload of chunk.payloads) {
@@ -500,9 +500,9 @@ export async function writeFileConfig(
         sent += payload.length;
         dataPackets += 1;
       }
-      await send(transport, donePacket());
+      if (chunk.last) await send(transport, donePacket());
       const reply = await awaitReply(transport, FILE_WRITE, TIMEOUT_MS.chunk, `write chunk ${index + 1}`);
-      const expected = DONE_REPLY;
+      const expected = chunk.last ? DONE_REPLY : CHUNK_REPLY_FLAG | lastSequence;
       if (reply[OFFSET_SEQUENCE] !== expected) {
         throw new FileWriteError(
           `chunk ${index + 1} of ${chunks.length} was answered with 0x${(reply[OFFSET_SEQUENCE] ?? 0).toString(16)}, `

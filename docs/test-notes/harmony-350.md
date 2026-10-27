@@ -47,7 +47,12 @@ Three runs of `write-file-config.ts` with the unit's own configuration, from the
 3. With the done packet ending every chunk, as the client's template sends it: chunk 1 answered `0xFE`, and
    the same timeout on the next write. So the done packet was not the cause.
 
-After each restart the remote flashed the lights under its activity buttons eight times, the firmware's
+4. The cause was ours: hidapi took the first byte of every write as a report ID and dropped it when it
+   was zero, and the 11th data packet of chunk 2 is the first whose sequence number wraps to zero, so it
+   went out 63 bytes long. With a zero report ID in front of every report, the fourth run wrote all 12
+   chunks, the check answered `m`, the read back was identical and the reboot was sent.
+
+After each failed run's restart the remote flashed the lights under its activity buttons eight times, the firmware's
 error 8, a missing marker, and answered reads normally. Its configuration is erased until a write
 completes; the backup is the lab's `reads/20261027T1700Z-h350-backup/`.
 

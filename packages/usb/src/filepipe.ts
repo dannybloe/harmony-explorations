@@ -802,8 +802,15 @@ function transportOverFileDevice(device: {
 }): Transport {
   return {
     async write(report: Uint8Array): Promise<void> {
-      const written = device.write(Array.from(report));
-      if (written !== report.length) {
+      // **A report ID of zero goes in front of every report, always.** hidapi reads the first byte of a
+      // write as the report ID and, when it is zero, drops it and sends the rest, one byte short. This
+      // family's reports carry no ID, and its data packets start with their sequence number, which wraps
+      // to zero every 64 packets: a Harmony 350's configuration write sent the 11th data packet of its
+      // second chunk 63 bytes long, after which the remote's OUT endpoint stayed armed for 63 bytes and
+      // refused every report until it was restarted, twice. A command starts with `0xFF` and went out
+      // whole, which is why reads never met it. With the explicit zero, the zero is what gets dropped.
+      const written = device.write([0x00, ...report]);
+      if (written !== report.length && written !== report.length + 1) {
         throw new TransportError(`wrote ${written} of ${report.length} bytes`);
       }
     },
