@@ -12,7 +12,7 @@ relied on (the todo-reference 2.2 note says how):
    If the archive is edited on purpose some day (a recorded correction in place, say), the new digest
    is pinned here in the same commit and the commit says why.
 2. **Every `## N.` heading, 1 to 436, has exactly one anchor line directly above it** and nothing else
-   in the file carries an anchor, so a footnote's `#sN` always lands. And each of decisions 1 to 25
+   in the file carries an anchor, so a footnote's `#sN` always lands. And each of decisions 1 to 26
    carries its `dN` anchor. The count 436 is the number of sections the archive holds; a new section
    raises it here when it is written.
 3. **Every relative link resolves**, to an existing file and, where the link names a fragment, to an
@@ -43,10 +43,12 @@ FINDINGS_DIGEST = "c4bc62336900cb13eee50b2c375c7a11ca399e67ad9183a44830b8799aa74
 # where each is (todo-reference chapter 4's follow-ups, item 125). The digest before it was d6d9727e.
 # Repinned again for decision 10's reversal, recorded at the end of its own entry: dumps are invited on the
 # front page again. The digest before it was 39af6d8e.
-DECISIONS_DIGEST = "d5796991588095b679d96da9b7ae6ef0b2ab1d86d1a8dc40c206ae3124c46654"
+# Repinned for decision 26, a new entry rather than an edit: the Harmony 300 and 350 may be written. The
+# digest before it was d5796991.
+DECISIONS_DIGEST = "031fe5d61eb22ba026dd2eae371cb33bf35700519015f7ccb9f528a852af54f5"
 
 SECTIONS = 436
-DECISIONS = 25
+DECISIONS = 26
 
 
 def anchor_problems(findings, decisions):
