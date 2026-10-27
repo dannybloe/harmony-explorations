@@ -8,6 +8,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./models": "./src/models.ts",
+    "./trailer": "./src/trailer.ts",
     "./write": "./src/write.ts"
   },
   "scripts": {

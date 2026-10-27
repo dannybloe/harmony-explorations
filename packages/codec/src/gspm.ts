@@ -23,6 +23,8 @@
  *
  * Accepts a bare blob or a raw flash dump with the blob somewhere inside it.
  */
+import { TRAILER_CHECKSUM_OFFSET, TRAILER_CHECKSUM_SEED, trailerChecksum } from '@harmony/usb/trailer';
+
 import { ascii, bytesOf, indexOf, matchesAt, u16, u24, u32, u8, uint } from './bytes.ts';
 
 export class GspmError extends Error {}
@@ -123,36 +125,17 @@ export const MINIMUM_HEADER_LENGTH =
   SECTION_TABLE_OFFSET + SECTION_ITEM_SIZE * LONGEST_POINTER_TABLE + 5;
 
 /**
- * The trailer checksum's seed, written as two literals by the boot validator on all three images.
- * The checksum is a sixteen bit XOR of the container's little endian words from its first byte up
- * to the stored value, which sits six bytes from the end. `docs/findings.md` section 41.
- */
-export const TRAILER_CHECKSUM_SEED = 0x4321;
-/** From the end of the container, ahead of the four byte marker. */
-export const TRAILER_CHECKSUM_OFFSET = 6;
-
-/**
- * Recompute a container's trailer checksum from its bytes.
+ * The trailer checksum lives in `packages/usb/src/trailer.ts` and is re-exported here unchanged, so
+ * every importer of the codec keeps the names it had.
  *
- * An odd trailing byte is not folded in, because the firmware divides the byte count by two and
- * counts words.
- *
- * This said "no container in the corpus has an odd body"<!--superseded--> and called that the
- * firmware's behaviour rather than a tested one, and both halves were wrong. **19 of the 33 parseable
- * containers here have an odd extent**, spanning arch 8, 9, 10, 12 and 14, and 14 of them verify
- * their stored checksum under exactly this loop. So the behaviour is tested, by more than half the
- * corpus, and it is the comment that was untested. The direction of the error is what makes it worth
- * correcting rather than deleting: it invited a reader to fold the last byte in on the grounds that
- * nothing would catch it, and folding it in breaks fourteen containers at once.
+ * **Moved rather than copied, for the file family's write rail**, `todo-compile-350.md` 1.6. That rail
+ * refuses a container whose stored checksum does not recompute, and it has to compute it itself: a rail
+ * that asks its caller whether the checksum is right is a rail the caller answers, section 225. The
+ * codec depends on `@harmony/usb` and not the other way round, so the one copy had to move to the
+ * package both can reach. The parse below still reads the stored word, and the derivation's argument
+ * stays with the function.
  */
-export function trailerChecksum(blob: Uint8Array): number {
-  let accumulator = TRAILER_CHECKSUM_SEED;
-  const end = blob.length - TRAILER_CHECKSUM_OFFSET;
-  for (let offset = 0; offset + 1 < end; offset += 2) {
-    accumulator ^= blob[offset]! | (blob[offset + 1]! << 8);
-  }
-  return accumulator;
-}
+export { TRAILER_CHECKSUM_OFFSET, TRAILER_CHECKSUM_SEED, trailerChecksum };
 
 /**
  * Section slot 0 is a single 0xFEED framed block. Stored little endian, so the cookie reads

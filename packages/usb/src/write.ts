@@ -34,6 +34,18 @@ export {
 } from './rails.ts';
 export type { WritePermission } from './rails.ts';
 
+// The file based family's write path, `todo-compile-350.md` 1.6: the Harmony 300 and 350. A second
+// protocol's writer beside the first, behind its own rail, `assertFileWriteAllowed`.
+export {
+  FileWriteError,
+  chunksFor,
+  judgeCurrentContent,
+  readFileWriteFacts,
+  withEndMarker,
+  writeFileConfig,
+} from './filewrite.ts';
+export type { CurrentContent, FileConfigWrite, FileWriteFacts, FileWriteResult } from './filewrite.ts';
+
 export {
   NOMINAL_FLASH_SIZE,
   blocksDiffering,

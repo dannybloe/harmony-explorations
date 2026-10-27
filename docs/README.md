@@ -876,14 +876,27 @@ node packages/usb/bin/read-battery.ts
                        reads detail 0 and the data memory byte it is built from, as an agreement
                        check. Refused on arch 9, whose executor answers only selector 1. First
                        sent to a Harmony 650, section 340. Opens the device.
-node packages/usb/bin/read-file-identity.ts [--product 0xc12b] [--raw]
+node packages/usb/bin/read-file-identity.ts [--product 0xc12b] [--raw] [--record <label>]
                        read the identity of a remote in the **file based** family: open
                        `/sys/sysinfo` for reading, read it, close it. A different door from
                        `openHarmony`, which still refuses this family, with its own allow list of
-                       four commands and no write path at all. **It reads on a Harmony Touch**,
+                       four commands. **It reads on a Harmony Touch**,
                        fourteen fields including the architecture the remote itself states, sections
                        200 and 201. That paragraph said the open was refused for as long as the
-                       framing was guessed. Opens the device.
+                       framing was guessed. `--record h350` or `h300` also reads `/sys/guid` and
+                       writes its two GUIDs to the lab's `units/<label>.txt`, the record the file
+                       write path compares against; `/sys/guid` is the same identity block the
+                       command family keeps in program memory. Reads only. Opens the device.
+node packages/usb/bin/write-file-config.ts --unit h350 --config <file> --backup <file> [--commit] [--no-reboot]
+                       write a configuration to a Harmony 350 or 300 through the file protocol,
+                       `todo-compile-350.md` 1.6. Without `--commit` it reads the identity file,
+                       `/sys/guid` and the configuration and says what a commit would do; a refusal
+                       there is the one a commit would meet. `--commit` needs HARMONY_ENABLE_WRITES=1
+                       **and** HARMONY_FILE_WRITE=1, and runs `writeFileConfig`: the file system
+                       reset, the open for writing (which erases the configuration before it is
+                       answered), the chunks, the check, the flush, the close, a read back compared
+                       byte for byte, and the reboot. A file read off a remote has its end marker put
+                       back. Every line is journalled beside `--config`. Unrun on a remote.
 node packages/usb/bin/read-file.ts --file <path> [--product 0xc12b] [--device <path>]
                        the general form of the above: read any path on `INERT_PATHS` and print it as
                        bytes and, where it is printable, as text. Deliberately does not parse, since

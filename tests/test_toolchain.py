@@ -475,7 +475,8 @@ class ATypeScriptSampleLoopStatesItsPopulation(unittest.TestCase):
         # 139 with touchfontsets.test.ts, section 427, todo-compile-one 7.1.1. 140 with screenfill.test.ts,
         # section 425, todo-compile-one 5.3.4. 141 with touchdevicelists.test.ts, section 424, 4.3.3.
         # 143 with touchskeleton.test.ts, section 431, todo-compile-one 7.1.3; 144 with touchnumbering.test.ts, section 432, 7.1.4. 145 with touchempty.test.ts, section 434, 7.1.7. 147 with composeempty.test.ts and the census it shares with composesetup.test.ts, carried.ts, section 435, 8.1.4. 148 with composecompare.test.ts, section 436, 8.1.5.
-        self.assertEqual(scanned, 148, 'the TypeScript test files, as ABoundOnACorpusTotalIsExact counts them')
+        # 150 with filewrite.test.ts and the fake remote it shares with its subprocesses, fake-file-remote.ts, todo-compile-350 1.6.
+        self.assertEqual(scanned, 150, 'the TypeScript test files, as ABoundOnACorpusTotalIsExact counts them')
         self.assertEqual(
             {name: len(lines) for name, lines in counted.items()},
             TYPESCRIPT_LOOPS_ALLOWED_TO_SKIP_A_SAMPLE,
@@ -634,7 +635,8 @@ class ABoundOnACorpusTotalIsExact(unittest.TestCase):
         # 137 with touchpictures, 5.3.1 and 5.3.3, section 422. 138 with touchactivityscreens, 4.3, section 423. 139 with touchfontsets,
         # 7.1.1, section 427. 140 with screenfill, 5.3.4, section 425.
         # 141 with touchdevicelists, 4.3.3, section 424. 143 with touchskeleton, 7.1.3, section 431. 144 with touchnumbering, 7.1.4, section 432. 145 with touchempty, 7.1.7, section 434. 147 with composeempty and carried, 8.1.4, section 435. 148 with composecompare, 8.1.5, section 436.
-        self.assertEqual(len(scanned), 148, 'TypeScript test files, which moves when one is added')
+        # 150 with filewrite and fake-file-remote, todo-compile-350 1.6.
+        self.assertEqual(len(scanned), 150, 'TypeScript test files, which moves when one is added')
         self.assertIn(self.CONTROL, found, 'the pattern matches nothing it should match')
 
     def test_every_remaining_bound_says_why_it_is_not_a_measurement(self):

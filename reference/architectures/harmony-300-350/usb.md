@@ -41,8 +41,8 @@ family.
 ## What the firmware does with a write
 
 Logitech's client writes a configuration to these remotes in seven steps,
-[the file protocol](../../usb-protocol/file-protocol.md#writing-a-file-checked-by-the-remote). Nothing in
-this library sends any of them, and none has been sent to a remote; what follows is what the 1.4 firmware
+[the file protocol](../../usb-protocol/file-protocol.md#writing-a-file-checked-by-the-remote). This library
+sends them through one railed path, below, and none has been sent to a remote; what follows is what the 1.4 firmware
 does with each, read in the image[^t-harmony-350-file-write].
 
 | step | what the remote does |
@@ -77,7 +77,8 @@ each rests on.
 | **`openHarmony` refuses them**: `isHarmony` excludes every id in `FILE_BASED_PRODUCTS`, and `make remotes` reports them separately[^s193] | `packages/usb/src/transport.ts` |
 | **`openFileBasedRemote` reads them**, allowing a bare ping, an open for reading, a read and a close, and only for the paths on `INERT_PATHS`, which include `/cfg/usercfg`[^s200] | `packages/usb/src/filepipe.ts` |
 | opening any other path needs `HARMONY_FILE_PATH_EXPERIMENT=1`, a door that exists because on this family **a path can be an action**: a Harmony Touch's `/sys/factoryreset` and `/sys/reboot` open for reading[^s200] | `packages/usb/src/filepipe.ts` |
-| **no write, commit, device control or filesystem reset is implemented**, and this architecture is on none of the write lists | `packages/usb/src/rails.ts` |
+| **one write path, for `/cfg/usercfg` alone**: `writeFileConfig` sends the client's seven steps, the end marker included, then reads the file back and compares it byte for byte. It refuses unless `HARMONY_ENABLE_WRITES=1` and `HARMONY_FILE_WRITE=1` are set, the remote states architecture 16, its `/sys/guid` matches the unit record the caller names, and the container passes the checks the firmware makes, no longer than the file's 256 KiB since the firmware bounds no write. Its own list, `ARCHITECTURES_WITH_A_FILE_WRITE_TARGET`; the command protocol's write lists do not name this architecture | `packages/usb/src/filewrite.ts`, `packages/usb/src/rails.ts` |
+| the transport passes a write, check, flush, close, file system reset or reboot only when that path authorised exactly those bytes, both flags are set and the report is one the path sends; an open for writing names `/cfg/usercfg` or is refused | `packages/usb/src/filepipe.ts` |
 | a configuration is read this way off both models, the end marker appended, [memory.md](memory.md)[^s262][^s264] | `packages/usb/src/filepipe.ts` |
 
 ## Not checked
