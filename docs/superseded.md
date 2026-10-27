@@ -652,3 +652,7 @@ it reachable in the same commit and the test comparing the two tables is what ca
 | `No unit of this architecture has been measured` | `tests/test_arch8_usb.py` | as above |
 | `no remote of this architecture has been measured` | `tests/test_arch8_usb.py` | as above |
 | `This library opens none of these remotes` | `tests/test_arch8_usb.py` | `openHarmony` opens a Harmony 885 unchanged, and the library reads its flash below `0x200000`; it writes none of them |
+| `clears it only after a restart by the reset instruction` | `tests/test_harmony_350_recovery.py`, `test_the_start_keeps_it_only_after_a_reset_instruction` | the Harmony 300 and 350 application keeps the request byte only after a restart by the `RESET` instruction and clears it after any other; safe mode makes the same test and acts on the request |
+| `clears it after a restart caused by a` | `tests/test_harmony_350_recovery.py` | as above |
+| `what the two images below it do is not checked` | `tests/test_harmony_350_boot.py` | the Harmony 350's bootloader and safe mode image are read: every start runs both, safe mode chooses the application, and entering either writes nothing |
+| `nothing here rules that out for this family` | `tests/test_harmony_350_boot.py` | entering safe mode on a Harmony 350 destroys nothing; it copies the staged application only when a firmware install asks it to |

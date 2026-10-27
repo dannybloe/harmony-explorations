@@ -5,7 +5,9 @@
 the package's manifest names for skins 78, 79 and 104, so every claim covers the Harmony 300 and the
 Harmony 350 running that build and no other; other builds are not checked. The image is the
 **application** alone, internal `0x9000` onwards: the 4 KiB bootloader at internal `0x000000` and the
-32 KiB safe mode image at `0x001000` are in no file the lab holds, so whatever they do is not read here.
+32 KiB safe mode image at `0x001000` were in no file the lab held when this was written, so whatever they
+do is not read here. They have been read off the bench Harmony 350 since, and what they do is
+`tests/test_harmony_350_boot.py`.
 
 **Sources checked first.** `tests/test_harmony_350_file_write.py`, whose header holds the write path
 (the reset only closes a file, the open for writing erases at once, the check compares the stored word,
@@ -70,13 +72,16 @@ build it can.**
   `0x1A754` copies `0x103` into it unless `0x102` is set. Two places fill it: the reboot command's `0x73`
   parameter stores `0x0F` (`0xCD8E`) and falls into the ordinary reboot, and a flush of `/fw/normalmode`
   open for writing stores 2 (`0xD2C0`), which the close then turns into a reboot by reading it back through
-  `0x1A748` (`0xD33A`). The start clears it after a restart caused by a `RESET` instruction (`0x1A6A4`:
-  `0x1ADC8` tests `RCON` bit 4, the reset instruction flag) and leaves it alone after any other reset, a
-  power on among them, so it is
-  read, if at all, by code that runs before the application. Which code, and what it does with `0x0F` or 2,
-  is in the bootloader or the safe mode image and not checked. The parallel is the Harmony 700's update
-  status byte, where 2 asks the safe mode image to install the staged copy; on this family that is a
-  likely reading of 2, and nothing more.
+  `0x1A748` (`0xD33A`). **The start keeps it only after a restart by a `RESET` instruction and clears it
+  after any other**, a power on among them (`0x1A6A4`: `0x1ADC8` tests `RCON` bit 4, the reset instruction
+  flag, which a `RESET` clears, returns 1 then, and the `BNZ` skips the clear; `0x1ADCE` sets the flag
+  again). So a request survives exactly the restart its writer causes, and is read by code that runs
+  before the application.
+  **Corrected in place**: this said the start clears it after a `RESET` instruction and leaves it alone
+  after any other reset, which is the branch read the wrong way round; the conclusion it drew, that the
+  reader runs before the application, stood. The safe mode image, read later, makes the same test at its
+  own start (`0x7502`) and is the reader: `0x0F` keeps safe mode for one start, and 2 installs the staged
+  copy, as the Harmony 700's status byte does, `tests/test_harmony_350_boot.py`.
 * **A three key reset**: the keypad routine at `0x18BA0` first calls `0x1892A`, which drives three keypad lines
   low one at a time (`PORTE` bit 1, `PORTD` bits 3 and 2) and reads three return lines (`PORTB` bits 5, 4
   and 6); when all three read pressed it executes `RESET` at `0x18956`. Which three keys those are is not
@@ -317,11 +322,17 @@ class TheWaysOut(unittest.TestCase):
         self.assertEqual(_listing(self.code, 0x1A748, 5),
                          ['MOVLB 0x1', 'MOVF 0x101,W', 'BNZ 0x1a752', 'MOVF 0x00,B,W', 'RETURN'])
 
-    def test_the_start_clears_it_only_after_a_reset_instruction(self):
-        self.assertEqual(_listing(self.code, 0x1A6A4, 7),
+    def test_the_start_keeps_it_only_after_a_reset_instruction(self):
+        """Renamed from `..._clears_it_only_after_...`, the branch read the wrong way round; the body stood.
+
+        `RCON` bit 4 reads 0 after a `RESET` instruction, so `0x1ADC8` returns 1 then and the `BNZ`
+        jumps over the clear; any other reset returns 0 and clears it. `0x1ADCE` sets the flag again.
+        """
+        self.assertEqual(_listing(self.code, 0x1A6A4, 9),
                          ['CALL 0x1adc8', 'IORLW 0x00', 'BNZ 0x1a6b6', 'MOVLB 0x1', 'CLRF 0x103',
-                          'MOVLB 0x1', 'CLRF 0x102'])
-        self.assertEqual(_listing(self.code, 0x1ADC8, 3), ['BTFSS RCON,4', 'RETLW 0x01', 'RETLW 0x00'])
+                          'MOVLB 0x1', 'CLRF 0x102', 'RCALL 0x1a754', 'GOTO 0x1adce'])
+        self.assertEqual(_listing(self.code, 0x1ADC8, 4),
+                         ['BTFSS RCON,4', 'RETLW 0x01', 'RETLW 0x00', 'BSF RCON,4'])
 
     def test_three_held_keys_restart_the_processor(self):
         self.assertEqual(_listing(self.code, KEY_SCAN, 1), ['RCALL 0x1892a'])

@@ -363,6 +363,14 @@ package of this kind and the first that did not come from a third party site.
 |---|---|---|
 | `350-1.4-Region_2-code-base0x9000.bin` | `7762d37273b8a22fcb58e733ddb064d77ec91c358a65d5e6062d325f0649c300` | `tools/ezextract.py` on `Region_2.EZUpgrade` from that ZIP, 73472 bytes |
 
+The package carries the application alone. The two images below it were read off the bench Harmony 350 as
+files, read only, into the lab's `reads/20261027T1929Z-h350-fw/`:
+
+| File | SHA-256 | What it is |
+|---|---|---|
+| `fw_bootloader.bin` | `7d5d4e03f7ab010b0536100328d4b62f670b46df4a1e8cd518f466564c0620c1` | `/fw/bootloader`, internal `0x000000`, 4096 bytes, `h350_bootloader` |
+| `fw_safemode.bin` | `c69199c18b1ec47b11f06bc5c46bcb04a45f0a2cb04289c3613572f501012eb5` | `/fw/safemode`, internal `0x001000`, 26040 bytes: the image less its last eight, as the remote serves it, so its header checksum does not verify; `h350_safemode` |
+
 Its `Description.xml` states `SEED="0x4321" OFFSET="0x0004" LENGTH="0x11EF8"
 EXPECTEDVALUE="0x8F7B" TYPE="XOR"`, and that recomputes over the decoded payload. The seed, the word
 width and the algorithm are section 41's, derived here from config container trailers, so **the

@@ -122,6 +122,15 @@ IMAGES = {
     # artefact rather than from a file this project produced out of it. Its Description.xml is
     # what states the checksum seed and algorithm that section 41 derived from config trailers.
     'h350_package': 'skin104-harmony350-production-1.4.0.0',
+    # The bench Harmony 350's own bootloader and safe mode image, read off it as the files
+    # `/fw/bootloader` and `/fw/safemode` on 27 October 2026, read only, into the lab's
+    # `reads/20261027T1929Z-h350-fw/`. Neither is in Logitech's package, which carries the application
+    # alone, so these are what answered `todo-compile-350.md` 1.4's open half,
+    # `tests/test_harmony_350_boot.py`. They load at 0x000000 and 0x001000. The safe mode file is the
+    # image less its last eight bytes, because the remote states an internal image's size as its
+    # header's length field.
+    'h350_bootloader': 'fw_bootloader.bin',
+    'h350_safemode': 'fw_safemode.bin',
     'one_hfw': 'harmony_one_firmware_3_4.hfw',
     'h700_hfw': 'harmony_700_firmware_2_8.hfw',
     'h650_hfw': 'harmony_650_firmware_0_4.hfw',

@@ -104,6 +104,12 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // The same firmware as the vendor serves it, ZIP and all, so a test can start from the artefact
   // rather than from a file this project produced out of it.
   h350_package: 'skin104-harmony350-production-1.4.0.0',
+  // The bench Harmony 350's own bootloader and safe mode image, read off it as files on 27 October
+  // 2026, read only, into the lab's `reads/20261027T1929Z-h350-fw/`. Python reads them,
+  // `tests/test_harmony_350_boot.py`; they are named here to keep the two fixture tables identical.
+  // The safe mode file is the image less its last eight bytes, which is how the remote serves it.
+  h350_bootloader: 'fw_bootloader.bin',
+  h350_safemode: 'fw_safemode.bin',
   one_hfw: 'harmony_one_firmware_3_4.hfw',
   h700_hfw: 'harmony_700_firmware_2_8.hfw',
   h650_hfw: 'harmony_650_firmware_0_4.hfw',

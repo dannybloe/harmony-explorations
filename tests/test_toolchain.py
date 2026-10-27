@@ -229,7 +229,8 @@ class TheRunnerSeesEveryTest(unittest.TestCase):
         # 54 with `tests/test_arch8_usb.py`, 55 with `tests/test_file_family_write_route.py`, 56 with `tests/test_harmony_350_file_write.py`, todo-compile-350 1.3.
         # 57 with `tests/test_harmony_350_recovery.py`, todo-compile-350 1.4.
         # 58 with `tests/test_harmony_350_slots.py`, todo-compile-350 2.1.
-        self.assertEqual(len(files), 58, 'the Python test files')
+        # 59 with `tests/test_harmony_350_boot.py`, the bootloader and safe mode of todo-compile-350 1.4.
+        self.assertEqual(len(files), 59, 'the Python test files')
         with_block = 0
         for path in files:
             with open(path, encoding='utf-8') as handle:
@@ -261,7 +262,8 @@ class TheRunnerSeesEveryTest(unittest.TestCase):
         # 52, 53 and 54 with `tests/test_arch8_usb.py`, `tests/test_file_family_write_route.py` and `tests/test_harmony_350_file_write.py`, one each.
         # 55 with `tests/test_harmony_350_recovery.py`, todo-compile-350 1.4, which carries one.
         # 56 with `tests/test_harmony_350_slots.py`, todo-compile-350 2.1, which carries one.
-        self.assertEqual(with_block, 56,
+        # 57 with `tests/test_harmony_350_boot.py`, todo-compile-350 1.4's two images, which carries one.
+        self.assertEqual(with_block, 57,
                          'files carrying a __main__ block, of %d' % len(files))
 
 
@@ -757,7 +759,8 @@ class APythonBoundOnACorpusTotalIsExact(unittest.TestCase):
         # 54 with `tests/test_arch8_usb.py`, 55 with `tests/test_file_family_write_route.py`, 56 with `tests/test_harmony_350_file_write.py`, todo-compile-350 1.3.
         # 57 with `tests/test_harmony_350_recovery.py`, todo-compile-350 1.4.
         # 58 with `tests/test_harmony_350_slots.py`, todo-compile-350 2.1.
-        self.assertEqual(len(scanned), 58, 'Python test files, which moves when one is added')
+        # 59 with `tests/test_harmony_350_boot.py`, todo-compile-350 1.4's two images.
+        self.assertEqual(len(scanned), 59, 'Python test files, which moves when one is added')
         self.assertIn(self.CONTROL, found, 'the pattern matches nothing it should match')
 
     def test_every_remaining_bound_says_why_it_is_not_a_measurement(self):
