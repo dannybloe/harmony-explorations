@@ -6,6 +6,8 @@
  * Then open the printed address. The server binds to the loopback address only, so nothing on the
  * network can reach it.
  */
+import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { IR_ARCHIVE, LAB, load } from '@harmony/lab';
@@ -22,9 +24,17 @@ const port = at < 0 ? DEFAULT_PORT : Number(process.argv[at + 1]);
 // configuration, and its catalogue names follow straight after, which is a full pass over the archive
 // and holds the process for several seconds once.
 let book: CodeBook | undefined;
+// A lab name, or a path inside the lab for a configuration no lab table names: a bench unit's current
+// file is a working copy, and naming it would put it in every corpus population the tables feed.
+const loadBenchConfig = (name: string): Uint8Array | undefined => {
+  if (!name.includes('/')) return load(name);
+  if (LAB === undefined) return undefined;
+  const path = join(LAB, name);
+  return existsSync(path) ? new Uint8Array(readFileSync(path)) : undefined;
+};
 const codeBook = (): CodeBook => {
   if (book === undefined) {
-    book = new CodeBook(load, undefined, IR_ARCHIVE);
+    book = new CodeBook(loadBenchConfig, undefined, IR_ARCHIVE);
     const named = book;
     setTimeout(() => {
       named.nameFromCatalogue();

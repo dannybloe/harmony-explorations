@@ -1,0 +1,53 @@
+{
+  "name": "Harmony 350, the TV's power on delay at 3 s",
+  "description": "todo-compile-350 1.8, one write of lab/work/350-delay/after.bin: the bench configuration with the LG TV's power on delay at 30 tenths, the Denon's untouched. Written down before the run: Volume Up pressed straight after the TV's PowerOn is held back until the delay has run, so it arrives about 3 s after PowerOn; the other file, 350-1-8-delay-10s.json, is the same test at the other value. If the gap comes out in another ratio than 10 to 3 between the two runs, the unit is not tenths on this family and the change still worked. The control step: Volume Up pressed long after the delay goes out at once. The 350 has no screen, so the receiver is the only witness.",
+  "steps": [
+    {
+      "instruction": "Unplug the Harmony 350 from USB and point it at the receiver. Press the TV's device key once so the remote is in the TV's mode"
+    },
+    {
+      "instruction": "Press Power, once. If the monitor shows PowerOn, the remote thought the TV was off: press Power once more so it shows PowerOff. Stop when the last thing heard is PowerOff",
+      "expect": [
+        {
+          "device": "LG_TV",
+          "command": "PowerOff"
+        }
+      ]
+    },
+    {
+      "instruction": "Wait a moment, then press Power and straight after it tap Volume Up once, briefly. Do not press anything else until Volume Up has been heard",
+      "expect": [
+        {
+          "device": "LG_TV",
+          "command": "PowerOn"
+        },
+        {
+          "device": "LG_TV",
+          "command": "VolumeUp",
+          "pauseMs": [
+            2000,
+            4500
+          ]
+        }
+      ]
+    },
+    {
+      "instruction": "Wait fifteen seconds, then tap Volume Up once. This is the control: with the delay long run out it should go at once",
+      "expect": [
+        {
+          "device": "LG_TV",
+          "command": "VolumeUp"
+        }
+      ]
+    },
+    {
+      "instruction": "Press Power once, to leave the TV off",
+      "expect": [
+        {
+          "device": "LG_TV",
+          "command": "PowerOff"
+        }
+      ]
+    }
+  ]
+}

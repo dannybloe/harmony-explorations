@@ -56,6 +56,9 @@ export const BENCH_CONFIGS: readonly string[] = [
   // device test setup plus the Switch; Logitech's own compile it held before named none of those devices.
   'one_config', 'one_spare_page4_base', 'h600_setup6_on', 'h650_devicelist_region',
   'h700_28_config_region', 'h525_config_2',
+  // The bench Harmony 350's, by its path in the lab rather than a lab name, since it is a working copy
+  // and no lab table names it; todo-compile-350 1.8's bench test. `bin/bench.ts` loads a path.
+  'work/350-delay/before.bin',
 ];
 
 /** A space at least this long ends a frame: the Flirc splits there too, and NEC's longest inner space is 4.5 ms. */
