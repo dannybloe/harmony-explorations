@@ -152,7 +152,8 @@ test('every per input and per state action list in the archive is in the service
   needing(skipWithoutIrArchive(), skipUnless('ir_archive_raw_features')), async () => {
     const where = new Map<number, string>();
     const root = join(IR_ARCHIVE!, 'devices');
-    for (const slug of readdirSync(root)) {
+    // Folders only: Finder leaves a .DS_Store beside them, which is not a device.
+    for (const slug of readdirSync(root, { withFileTypes: true }).filter((one) => one.isDirectory()).map((one) => one.name)) {
       for (const row of JSON.parse(readFileSync(join(root, slug, 'index.json'), 'utf8')) as { f: string; id: number }[]) {
         where.set(row.id, join(root, slug, row.f));
       }

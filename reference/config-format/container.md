@@ -136,7 +136,7 @@ architecture whose alignment is established, these four and the two that state t
 | [10](../architectures/harmony-890-895/memory.md) | complete, 23 raw slots | 15 | absent: 0, 2, 8, 13, 14 | 1, 2, 3, 7, 8, 13, 16, 17 |
 | [12](../architectures/harmony-one/memory.md) | complete, 22 raw slots | 20 | absent: none | 8, 18 |
 | [14](../architectures/harmony-600-650-700/memory.md) | complete, 20 raw slots | 20 | absent: none | none |
-| [16](../architectures/harmony-300-350/memory.md) | partial | 8 | unread: 4, 6, 7, 8, 9, 11, 12, 13, 14, 17, 18, 19 | not derived |
+| [16](../architectures/harmony-300-350/memory.md) | partial | 9 | unread: 4, 6, 7, 8, 9, 11, 12, 14, 17, 18, 19 | not derived |
 
 Each base slot's raw slot, by architecture; an empty cell is one the row above names absent or unread:
 
@@ -155,7 +155,7 @@ Each base slot's raw slot, by architecture; an empty cell is one the row above n
 | 10 | 11 | 10 | 12 | 11 | 10 | 7 |
 | 11 | 12 | 11 | 14 | 12 | 11 |  |
 | 12 | 13 | 12 | 15 | 13 | 12 |  |
-| 13 | 14 | 13 |  | 14 | 13 |  |
+| 13 | 14 | 13 |  | 14 | 13 | 9 |
 | 14 | 15 | 14 |  | 15 | 14 |  |
 | 15 | 16 | 15 | 18 | 16 | 15 | 10 |
 | 16 | 17 | 16 | 19 | 17 | 16 | 11 |

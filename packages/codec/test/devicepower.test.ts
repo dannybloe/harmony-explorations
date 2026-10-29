@@ -488,7 +488,8 @@ test('the mapping takes the power of 235572 of the archive\'s 276236 devices, an
     // it and a power off with one. A compile of one of these is the next calibration this needs.
     let waitInOffOnly = 0;
     const root = join(IR_ARCHIVE!, 'devices');
-    for (const slug of readdirSync(root)) {
+    // Folders only: Finder leaves a .DS_Store beside them, which is not a device.
+    for (const slug of readdirSync(root, { withFileTypes: true }).filter((one) => one.isDirectory()).map((one) => one.name)) {
       for (const file of readdirSync(join(root, slug))) {
         if (file === 'index.json') continue;
         const driving = deviceDriving(JSON.parse(readFileSync(join(root, slug, file), 'utf8')));

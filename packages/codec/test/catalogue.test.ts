@@ -341,13 +341,13 @@ test('a Harmony 300 device group is indexed by its device type button',
   // **The control that makes it a placement claim rather than three lookups.** The archive names the
   // four devices in a different order, alphabetically, so a group index is provably not a position in
   // that list: the set top box is named first and owns group 1.
-  // `devices()` gives one entry per occupied group here and names none of them, which is the state to
-  // assert rather than to work around: on this architecture the name lives in the metadata archive and
-  // nothing joins the two, which is exactly the gap this test fills from outside the file.
-  assert.deepEqual(devices(c).map((one) => one.group), [0, 1, 2, 3]);
-  for (const one of devices(c)) {
-    assert.equal((one as { name?: string }).name, undefined, 'devices() names arch 16 now');
-  }
+  // `devices()` gives one entry per occupied group, and it names each one from the file itself. This said
+  // it named none of them, so that the name lived only in the metadata archive and nothing joined the
+  // two, until the power on delay work placed base slot 13 in `ARCH16_SLOT_MAP` (todo-compile-350 1.8),
+  // after which the reader found each group's name; this assertion caught the change. The names agree
+  // with the placement above, group by group, so the file and the outside lookup now close on each other.
+  assert.deepEqual(devices(c).map((one) => [one.group, one.name]),
+    [[0, 'Panasonic_TV'], [1, 'KPN'], [2, 'Panasonic_DVD'], [3, 'Sony_VCR']]);
   const archive = metadataArchive(c)!.devices.map((one) => one.name);
   assert.equal(archive.length, 4);
   assert.deepEqual([...archive].sort(), archive, 'the archive is not in alphabetical order');

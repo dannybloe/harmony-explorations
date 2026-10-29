@@ -142,7 +142,8 @@ test('every device record in the archive reads, and the power and input counts a
       }
     };
     const root = join(IR_ARCHIVE!, 'devices');
-    for (const slug of readdirSync(root)) {
+    // Folders only: Finder leaves a .DS_Store beside them, which is not a device.
+    for (const slug of readdirSync(root, { withFileTypes: true }).filter((one) => one.isDirectory()).map((one) => one.name)) {
       for (const file of readdirSync(join(root, slug))) {
         if (file === 'index.json') continue;
         const raw = JSON.parse(readFileSync(join(root, slug, file), 'utf8')) as unknown;
@@ -198,7 +199,8 @@ test('the archive puts every power, input and channel action list in the service
   needing(skipWithoutIrArchive(), skipUnless('ir_archive_raw_features')), async () => {
     const where = new Map<number, string>();
     const root = join(IR_ARCHIVE!, 'devices');
-    for (const slug of readdirSync(root)) {
+    // Folders only: Finder leaves a .DS_Store beside them, which is not a device.
+    for (const slug of readdirSync(root, { withFileTypes: true }).filter((one) => one.isDirectory()).map((one) => one.name)) {
       for (const row of JSON.parse(readFileSync(join(root, slug, 'index.json'), 'utf8')) as { f: string; id: number }[]) {
         where.set(row.id, join(root, slug, row.f));
       }
