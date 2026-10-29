@@ -1,6 +1,6 @@
 import { expect, test } from 'claude-code/testing'
 
-import { bandColour, configOf, modelName, usbState, writeLine, writeProgress } from './register'
+import { bandColour, bar, configOf, modelName, testCounts, testLabel, testLine, usbState, writeLine, writeProgress } from './register'
 
 const usb650 = '+-o Harmony Remote  <class IOUSBHostDevice>\n  "idProduct" = 49442\n  "idVendor" = 1133\n'
 const hid650 = '+-o IOHIDInterface\n  "Product" = "Harmony Remote 0-0.2.0"\n  "VendorID" = 1133\n  "ProductID" = 49442\n'
@@ -58,4 +58,40 @@ test('the band is blue on a light theme and the theme orange on a dark or automa
   expect(bandColour('light-daltonized')).toBe('#1f5fbf')
   expect(bandColour('dark')).toBe('claude')
   expect(bandColour('auto')).toBe('claude')
+})
+
+test('a run counts Python progress characters and Node result lines, and its failures once each', () => {
+  const output = [
+    '> node --test',
+    '✔ a passing test (1.2ms)',
+    '✖ a failing suite (3ms)',
+    '  ✖ the failing test in it (1ms)',
+    '﹣ a skipped test # SKIP',
+    '..F..s.E',
+    '----------------------------------------------------------------------',
+    'Ran 8 tests in 0.1s',
+    'FAILED (failures=1, errors=1)',
+    '✖ failing tests:',
+    '✖ a failing suite (3ms)',
+  ].join('\n')
+  expect(testCounts(output)).toEqual({ done: 4 + 8, failed: 1 + 2 })
+})
+
+test('a word that starts with a progress character is not progress', () => {
+  expect(testCounts('ERROR: test_x\nFAIL: test_y\nsee .mcp.json\n...\n')).toEqual({ done: 3, failed: 0 })
+})
+
+test('a running suite shows a bar against the last run, and never claims done while it runs', () => {
+  expect(bar(0.5, 10)).toBe('█████░░░░░')
+  expect(testLine('make all', { done: 50, failed: 0 }, 100, '1:02', true))
+    .toBe('tests: make all  ██████████░░░░░░░░░░ 50%  50 of about 100, none failed  1:02')
+  expect(testLine('make all', { done: 120, failed: 2 }, 100, '2:00', true)).toContain('99%')
+  expect(testLine('make all', { done: 120, failed: 2 }, 100, '2:00', true)).toContain('2 FAILED')
+  expect(testLine('make all', { done: 7, failed: 0 }, undefined, '0:05', true)).toBe('tests: make all  7 done, none failed  0:05')
+  expect(testLine('make all', { done: 7, failed: 0 }, undefined, '0:05', false)).toBe('tests: make all finished, 7 done, none failed, 0:05')
+})
+
+test('a label is the program name and its arguments', () => {
+  expect(testLabel('/opt/homebrew/bin/python3 -m unittest discover -s tests')).toBe('python3 -m unittest discover -s tests')
+  expect(testLabel('make all')).toBe('make all')
 })

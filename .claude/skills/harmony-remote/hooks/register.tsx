@@ -14,6 +14,8 @@ import type { Register } from 'claude-code'
 // Drawn in the band above the prompt rather than on the status line, because the status line takes
 // text only and its colour is the engine's, which reads poorly on a light theme.
 const line = atom({ plugin: 'harmony-remote', key: 'line' } as const, null)
+// A second line while a test suite runs, and for a while after it ends: what runs, a bar, the counts.
+const tests = atom({ plugin: 'harmony-remote', key: 'tests' } as const, null)
 const theme = atom({ plugin: 'harmony-remote', key: 'theme' } as const, '')
 
 // Blue on a light theme and the theme's own orange on a dark one. A theme of "auto" follows the
@@ -138,6 +140,71 @@ export function configOf(args: string, cwd: string): string | undefined {
   return config.startsWith('/') ? config : `${cwd.replace(/\/$/, '')}/${config}`
 }
 
+// A test run of this repository: make's test targets, pnpm's test script, Python's unittest and Node's
+// own runner. The brackets keep the pattern from matching the shell that runs pgrep, as above.
+const TESTS = 'mak[e]( -[^ ]+)* (all|test|ts-test|ts|test-nolab)( |$)|pnp[m]( [^ ]+)* test|-m unittes[t]|nod[e]( [^ ]+)* --tes[t]'
+
+/**
+ * How many tests a run's output says have finished, and how many failed. The measure is whatever the
+ * two runners print as they go: a Python progress character per test (`.`, `s`, `F`, `E`, `x`, `u`) and
+ * a Node result line per test or suite (`✔`, `✖`, `﹣`). Node's suites are counted with their tests, so
+ * the number is not a test count; it is compared only with the same measure of an earlier run of the
+ * same command, which is what the bar's total is.
+ */
+export function testCounts(output: string): { done: number; failed: number } {
+  let done = 0
+  let failed = 0
+  // Node repeats every failure in a summary at the end, which is not another test.
+  let inSummary = false
+  for (const raw of output.split('\n')) {
+    const text = raw.replace(/\x1b\[[0-9;]*m/g, '')
+    if (/^✖ failing tests:/.test(text)) { inSummary = true; continue }
+    const node = /^(\s*)([✔✖﹣]) /.exec(text)
+    if (node !== null) {
+      if (inSummary) continue
+      done += 1
+      // A failing test fails its suite too, so only the outermost line is counted as a failure.
+      if (node[2] === '✖' && node[1] === '') failed += 1
+      continue
+    }
+    // Python's progress characters stream on one line, which a parallel make can break with other
+    // output; a run of at least three not followed by a letter is never a word.
+    const python = /^([.sFExu]{3,}|[.sFExu]+$)(?![A-Za-z:])/.exec(text)
+    if (python !== null) {
+      done += python[1]!.length
+      failed += (python[1]!.match(/[FE]/g) ?? []).length
+    }
+  }
+  return { done, failed }
+}
+
+/** A run's command line, short: the program's own name and its arguments, cut at 40 characters. */
+export function testLabel(args: string): string {
+  const words = args.trim().split(/\s+/)
+  words[0] = words[0]!.replace(/^.*\//, '')
+  const label = words.join(' ')
+  return label.length > 40 ? `${label.slice(0, 39)}…` : label
+}
+
+/** A bar of `width` cells, filled to `share`, which is clamped to between zero and one. */
+export function bar(share: number, width = 20): string {
+  const filled = Math.round(Math.max(0, Math.min(1, share)) * width)
+  return '█'.repeat(filled) + '░'.repeat(width - filled)
+}
+
+/**
+ * The band's test line. `total` is the same measure at the end of the last run of this command, or
+ * undefined the first time; a run that goes past it holds at 99 percent rather than claiming done.
+ */
+export function testLine(label: string, counts: { done: number; failed: number }, total: number | undefined,
+  elapsed: string, isRunning: boolean): string {
+  const failed = counts.failed === 0 ? 'none failed' : `${counts.failed} FAILED`
+  if (!isRunning) return `tests: ${label} finished, ${counts.done} done, ${failed}, ${elapsed}`
+  if (total === undefined || total === 0) return `tests: ${label}  ${counts.done} done, ${failed}  ${elapsed}`
+  const share = Math.min(counts.done / total, 0.99)
+  return `tests: ${label}  ${bar(share)} ${Math.floor(share * 100)}%  ${counts.done} of about ${total}, ${failed}  ${elapsed}`
+}
+
 const quote = (s: string): string => `'${s.replace(/'/g, `'\\''`)}'`
 
 export const register: Register = (on) => {
@@ -151,6 +218,7 @@ export const register: Register = (on) => {
 
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
     const text = await read($, line)
+    const testText = await read($, tests)
     if (e.props.hasSurvey || text === null) return next(e)
     const { Box, Text } = $.ui.resolve(e)
     // A rule above the line, so it reads as a panel of its own rather than as the tail of whatever
@@ -161,6 +229,11 @@ export const register: Register = (on) => {
         <Box paddingLeft={2}>
           <Text color={bandColour(await read($, theme))} wrap="truncate-end">{text}</Text>
         </Box>
+        {testText === null ? null : (
+          <Box paddingLeft={2}>
+            <Text color={bandColour(await read($, theme))} bold={/FAILED/.test(testText)} wrap="truncate-end">{testText}</Text>
+          </Box>
+        )}
       </Box>
     )
   })
@@ -182,6 +255,58 @@ export const register: Register = (on) => {
         return r.stdout
       } catch {
         return ''
+      }
+    }
+
+    // The test run being followed: its label, its output file, and how many polls since it ended.
+    let run: { label: string; file: string; elapsed: string } | undefined
+    let runEndedPolls = 0
+    let lastTests: string | null = null
+
+    // Each command's count at the end of its last run, in a file rather than the mod's own store so a
+    // total can be seeded from a run the mod did not watch, in another session or before it loaded.
+    const totalsFile = `${(await sh('printf %s "$HOME"')).trim()}/.claude/harmony-remote/test-totals.json`
+    const totals = async (): Promise<Record<string, number>> => {
+      try { return JSON.parse(await $.fs.read(totalsFile)) as Record<string, number> } catch { return {} }
+    }
+
+    const pollTests = async (): Promise<void> => {
+      // The outermost test process, the one whose parent is not a test process too, and its parent's
+      // standard output, which is where the shell that started it writes: a file when Claude Code runs
+      // it, foreground or background, and a terminal when somebody types it, which has nothing to read.
+      const found = (await sh(`pids=$(pgrep -f '${TESTS}'); for p in $pids; do`
+        + ` pp=$(ps -o ppid= -p "$p" | tr -d ' '); case " $(echo $pids) " in *" $pp "*) ;; *)`
+        + ` f=$(lsof -a -p "$pp" -d 1 -Fn 2>/dev/null | sed -n 's/^n//p' | head -1);`
+        + ` printf '%s\\t%s\\t%s\\n' "$(ps -o etime= -p "$p" | tr -d ' ')" "$f" "$(ps -ww -o args= -p "$p")"; break;; esac; done`)).trim()
+      let text: string | null = null
+      if (found !== '') {
+        const [elapsed = '', file = '', args = ''] = found.split('\t')
+        run = { label: testLabel(args), file, elapsed }
+        runEndedPolls = 0
+        let output = ''
+        if (file.startsWith('/')) { try { output = await $.fs.read(file) } catch { /* not readable */ } }
+        text = testLine(run.label, testCounts(output), (await totals())[run.label], elapsed, true)
+      } else if (run !== undefined) {
+        runEndedPolls += 1
+        let output = ''
+        if (run.file.startsWith('/')) { try { output = await $.fs.read(run.file) } catch { /* gone */ } }
+        const counts = testCounts(output)
+        if (runEndedPolls === 1 && counts.done > 0) {
+          // The finished run's count is the next run's total, kept across sessions.
+          const all = await totals()
+          all[run.label] = counts.done
+          try {
+            await sh(`mkdir -p ${quote(totalsFile.replace(/\/[^/]*$/, ''))}`)
+            await $.fs.write(totalsFile, `${JSON.stringify(all, null, 2)}\n`)
+          } catch { /* the bar stays without a total */ }
+          if (counts.failed > 0) $.ui.toast(`${run.label}: ${counts.failed} failed`)
+        }
+        if (runEndedPolls <= LINGER_POLLS) text = testLine(run.label, counts, undefined, run.elapsed, false)
+        else run = undefined
+      }
+      if (text !== lastTests) {
+        lastTests = text
+        await update($, tests, () => text)
       }
     }
 
@@ -216,6 +341,7 @@ export const register: Register = (on) => {
           if (line !== undefined) parts.push(line)
         }
         if (reader.trim() === 'yes') parts.push('reading flash')
+        await pollTests()
         const text = parts.join('  |  ')
         if (text !== last) {
           // A toast on the two moments worth looking up for, once each.
