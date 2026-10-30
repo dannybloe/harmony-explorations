@@ -48,7 +48,10 @@ misspelling is an error rather than a default.
 
 **Favourite channels are given to Logitech's service and built by nothing of ours yet.**
 `packages/corpus/bin/build-setup.ts --stage favourites` saves them on a test account's record so a
-compile of theirs holds them, the Harmony 350's setup first, `todo-compile-350.md` 3.1; every composer
+compile of theirs holds them, for the Harmony One, 600, 650 and 700. **It refuses the Harmony 300 and
+350**, which keep their favourites on another map that only `UpdateDeviceModeButtonMaps` writes, and the
+favourites on the 350's test setup were typed into MyHarmony's own screen, `todo-compile-350.md` 3.2,
+`reference/logitech/service.md`, "Button maps". Every composer
 refuses a recipe that states any, since none writes a favourite channel and a configuration built
 without them would be missing what its recipe asked for.
 

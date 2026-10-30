@@ -187,7 +187,7 @@ sending a remote identifier in place of the surface answers 400 with `ThrowArgum
 neither names what is missing[^unchecked]. And `RemoteManager/GetButtonMaps` in the Discovery listing is
 an alias: its address and its operation are `UserButtonMappingManager/GetDeviceModeButtonMaps`[^t-ops].
 
-**A favourite channel is a button, not a structure of its own.** It is a `SoftRemoteButton` on the
+**A favourite channel is a button, not a structure of its own.** On a Harmony One it is a `SoftRemoteButton` on the
 television's own device map, whose action is a `ButtonChannelAction` carrying the channel and naming
 the device, and whose menu item places it on a menu called `FavoriteChannels`, with its label in
 `TextOnRemote`[^t-host-client-service]. **The channel is text**, `"1"`, `"100"`, `"666"`, so a leading zero
@@ -197,6 +197,16 @@ another remote on the same household driving the same television carries none[^t
 a string; after, the edited device's is a stored map with an identifier and the others are still
 defaults[^t-host-client-service]. How a channel reaches the configuration is
 [the state sections](../config-format/state.md).
+
+**A Harmony 350 keeps its favourite channels on another map.** This section said the soft button was
+how every remote held a favourite until one saved that way on a Harmony 350 was accepted and then
+compiled into nothing. The 350's favourites are on the device's **mode map**, the one
+`UserButtonMappingManager/GetDeviceModeButtonMaps` reads: five hard buttons named `Fav1` to `Fav5`, each
+carrying a `ChannelButtonAssignment` with the channel as text, `"07"` keeping its zero, and the device it
+tunes, and no menu at all[^t-fav350]. MyHarmony saves them with `UpdateDeviceModeButtonMaps`, sending only
+the buttons that changed[^t-fav350-client]. The soft button route is the one the client takes for the
+Harmony One, the 600, 650 and 700 and the 800 series; the Harmony 300 has a favourites screen of its own,
+which reads the same mode map, and how it saves was not checked[^unchecked].
 
 **Which activity an activity key starts is a button map too**, saved with `SaveButtonMaps`, each key
 holding a short and a long press activity; an activity's type and group do not choose its key[^s340].
@@ -283,6 +293,8 @@ accounts[^unchecked].
 [^s202]: Stated by Logitech, in their client. [Section 202](../../docs/findings.md#s202)
 [^s145]: Stated by Logitech, by their service. [Section 145](../../docs/findings.md#s145)
 [^t-host-client-service]: Stated by Logitech, by their service. [The test](../../tests/test_host_client.py)
+[^t-fav350]: Stated by Logitech, by their service. [The test](../../packages/corpus/test/favourites.test.ts)
+[^t-fav350-client]: Stated by Logitech, in their client. [The test](../../packages/corpus/test/favourites.test.ts)
 [^s136]: Stated by Logitech, by their service. [Section 136](../../docs/findings.md#s136)
 [^s48]: Read in the firmware. [Section 48](../../docs/findings.md#s48)
 [^t-ops]: Stated by Logitech, by their service. [The test](../../tests/test_myharmony_model.py)

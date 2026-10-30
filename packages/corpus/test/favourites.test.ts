@@ -11,7 +11,27 @@
  * built here have to carry exactly their members, in their order, and the same action and menu place
  * where the two can agree. The reply carries an account identity, so it stays in the lab and the test
  * names no identifier out of it; without the lab those two tests skip, and the made up map's tests still
- * pin the exact shape the Harmony 350's setup sends.
+ * pin the exact shape the stage sends.
+ *
+ * **The Harmony 350 does not take that save, and the last test holds why.** The stage was first written for
+ * the 350's setup and sent it there: `SaveButtonMaps` answered 200, the read back showed the five buttons on
+ * the KPN's map, and the compile that followed bound no favourite key. MyHarmony's favourites screen showed
+ * none either. When the five were typed into that screen instead, the `GetButtonMaps` read of the same map
+ * came back unchanged and the next compile bound all five keys, so the screen had saved somewhere that read
+ * does not reach. The client says where: the dashboard sends a Harmony 350 (`ProductFamily` "Harmony350",
+ * skin 104) to `FavouriteChannelsView` in the ButtonMapping task package, which reads
+ * `UserButtonMappingManager/GetDeviceModeButtonMaps` and saves with `UpdateDeviceModeButtonMaps`, a delta of
+ * hard buttons `Fav1` to `Fav5` each holding a `ChannelButtonAssignment{Channel, DeviceId}`; the
+ * `SaveButtonMaps` route with soft buttons is `UpdateMolsonFavoriteList`, taken for the Molson family, the
+ * 800 series and the Harmony One. The Harmony 300 has a panel of its own whose save was not traced.
+ *
+ * The captured `GetDeviceModeButtonMaps` reply after MyHarmony's save is the closure: it holds the five
+ * channels as typed, `"07"` with its zero, on the five `Fav` keys, in the order the second compile's KPN map
+ * binds them (`packages/bench/test/setup350.test.ts`), and nothing on that map is a soft button or names a
+ * menu. Sources checked first: the decompiled client in the lab's `work/myharmony/src/`, the task packages
+ * fetched for it, and `reference/logitech/service.md`, which stated the soft button route for every remote.
+ * What is not checked: that `UpdateDeviceModeButtonMaps` takes the delta the client builds, since nothing
+ * here has sent it, and the Harmony 300's save.
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -66,10 +86,13 @@ test('the Harmony 350 setup states five favourite channels on the KPN, as text, 
   assert.ok(H350.devices.some((one) => one.name === 'KPN'));
 });
 
-test('a favourite channel\'s place on its menu starts at 1 on the Harmony 350, after MyHarmony\'s Commands entry, and at 0 on a Harmony One', () => {
-  assert.equal(favouriteIndexBase('Harmony 350'), 1);
-  assert.equal(favouriteIndexBase('Harmony 300'), 1);
+// This title said the place started at 1 on the Harmony 350 until the 350 turned out to keep its favourites on
+// another map altogether, the captured device mode map below; the 650 is a model the claim still covers.
+test('a favourite channel\'s place on its menu starts at 1 on the Harmony 650, after MyHarmony\'s Commands entry, and at 0 on a Harmony One, and the 300 and 350 are refused', () => {
+  assert.equal(favouriteIndexBase('Harmony 650'), 1);
   assert.equal(favouriteIndexBase('Harmony One'), 0);
+  assert.throws(() => favouriteIndexBase('Harmony 350'), /device mode map, saved with UpdateDeviceModeButtonMaps/);
+  assert.throws(() => favouriteIndexBase('Harmony 300'), /device mode map/);
   assert.throws(() => favouriteIndexBase('Harmony Touch'), /not read/);
 });
 
@@ -83,10 +106,12 @@ test('the read asks for the one device by a typed identifier, with the record as
   });
 });
 
-test('the Harmony 350 save: the map as read with its surface set, and five channel buttons appended, exactly', () => {
+// This was the Harmony 350's save until the 350 turned out to ignore it; the shape is still what MyHarmony
+// sends for the 600, 650 and 700, so the same five channels are built for a 650 here.
+test('a SaveButtonMaps favourites save: the map as read with its surface set, and five channel buttons appended, exactly', () => {
   const map = defaultMap(KPN);
   const { channels } = H350.favourites![0]!;
-  const payload = favouritesPayload(map, KPN, channels, SURFACE, favouriteIndexBase(H350.model.name));
+  const payload = favouritesPayload(map, KPN, channels, SURFACE, favouriteIndexBase('Harmony 650'));
   assert.deepEqual(Object.keys(payload), ['buttonMaps']);
   const maps = payload['buttonMaps'] as Record<string, unknown>[];
   assert.equal(maps.length, 1);
@@ -209,4 +234,35 @@ test('on a captured reply: a button built here has exactly the members of a favo
       assert.deepEqual(Object.keys(mine).filter((key) => JSON.stringify(mine[key]) !== JSON.stringify(one[key])),
         ['ButtonId', 'ButtonState', 'ImageId', 'TextOnRemote']);
     }
+  });
+
+/**
+ * The KPN's device mode map on the Harmony 350's test record, read after MyHarmony's favourites screen saved
+ * its five channels, `todo-compile-350.md` 3.2. Guarded on the file itself like the capture above.
+ */
+const MODE_CAPTURE = LAB === undefined ? undefined
+  : join(LAB, 'work', 'myharmony', 'responses', '20261030-h350-setup_GetDeviceModeButtonMaps.json');
+const needModeCapture = { skip: MODE_CAPTURE !== undefined && existsSync(MODE_CAPTURE) ? false as const : 'no captured GetDeviceModeButtonMaps reply in the lab' };
+
+test('on a captured reply: a Harmony 350 holds its favourite channels on the device\'s mode map, as hard buttons Fav1 to Fav5 carrying the channel as text',
+  needModeCapture, () => {
+    const reply = JSON.parse(readFileSync(MODE_CAPTURE!, 'utf8').replace(/^\uFEFF/, '')) as
+      { GetDeviceModeButtonMapsResult: { Key: { Value: number }; Value: Record<string, unknown> }[] };
+    const entries = reply.GetDeviceModeButtonMapsResult;
+    assert.equal(entries.length, 1);
+    const [{ Key: key, Value: map }] = entries as [typeof entries[number]];
+    assert.equal(key.Value, KPN);
+    assert.deepEqual(map['PrimaryDeviceReferenceId'], { IsPersisted: true, Value: KPN });
+    const buttons = map['Buttons'] as { __type: string; ButtonKey: string; ButtonAssignment: Record<string, unknown> | null }[];
+    // Every button on this map is a hard button named by key, so nothing here has a menu place to number.
+    assert.deepEqual(new Set(buttons.map((one) => one.__type)), new Set(['HardButton:#Logitech.Harmony.Services.DataContract.ButtonMapping']));
+    const favourites = buttons.filter((one) => one.ButtonKey.startsWith('Fav'));
+    assert.deepEqual(favourites.map((one) => one.ButtonKey), ['Fav1', 'Fav2', 'Fav3', 'Fav4', 'Fav5']);
+    assert.deepEqual(favourites.map((one) => one.ButtonAssignment), ['1', '2', '3', '666', '07'].map((channel) => ({
+      __type: 'ChannelButtonAssignment:#Logitech.Harmony.Services.DataContract.ButtonMapping',
+      Channel: channel,
+      DeviceId: { IsPersisted: true, Value: KPN },
+    })));
+    // And no other button on the map carries a channel.
+    assert.equal(buttons.filter((one) => String(one.ButtonAssignment?.['__type']).startsWith('ChannelButtonAssignment')).length, 5);
   });

@@ -158,6 +158,16 @@ export function customPayload(existing: Record<string, unknown>, record: number)
 // that device's map as read, drops whatever favourites it held, appends the list and sends the one map with
 // `UserButtonMappingManager/SaveButtonMaps` (`ButtonMappingStore.SaveFavoriteChannelList`). So saving one
 // channel saves the device's whole map, which is what the replies in the lab show the service doing.
+//
+// **That is the route of the Harmony One, the 600, 650 and 700 and the 800 series, and not of the Harmony
+// 300 or 350.** This said it was the route of every remote until the Harmony 350's setup was saved through it:
+// the service accepted the five buttons, and the compile and MyHarmony's own favourites screen ignored them.
+// The dashboard sends a Harmony 350 to a screen of its own, `FavouriteChannelsView` in the ButtonMapping task
+// package, which saves with `UpdateDeviceModeButtonMaps` onto the device mode map that
+// `GetDeviceModeButtonMaps` reads: hard buttons `Fav1` to `Fav5`, each a `ChannelButtonAssignment`. The
+// record holds exactly that after MyHarmony's save, `test/favourites.test.ts`. The Harmony 300 has its own
+// panel again and its save was not traced, so both are refused by `favouriteIndexBase` below until a stage
+// sends that operation, behind a door of its own.
 
 /** The button mapping contracts' namespace, as the service's replies name it. */
 const BUTTON_MAPPING_CONTRACT = 'Logitech.Harmony.Services.DataContract.UserButtonMapping';
@@ -179,11 +189,15 @@ const BUTTON_ADDED = 2;
  * entry called Commands at place 0 on every remote but the Harmony One and the 800 series, numbers the
  * channels after it, and removes it before saving, so on those remotes the channels are saved from place 1;
  * on a Harmony One they start at 0, as the three channels MyHarmony saved on one read back, 0, 1 and 2. A
- * model this has not been read for is refused rather than given either answer.
+ * model this has not been read for is refused rather than given either answer, and so are the Harmony 300
+ * and 350, whose favourites are not on this menu at all, the comment above.
  */
 export function favouriteIndexBase(modelName: string): number {
   if (modelName === 'Harmony One') return 0;
-  if (['Harmony 300', 'Harmony 350', 'Harmony 600', 'Harmony 650', 'Harmony 700'].includes(modelName)) return 1;
+  if (['Harmony 600', 'Harmony 650', 'Harmony 700'].includes(modelName)) return 1;
+  if (['Harmony 300', 'Harmony 350'].includes(modelName)) {
+    throw new Error(`the ${modelName} keeps its favourite channels on its device mode map, saved with UpdateDeviceModeButtonMaps, which nothing here sends; a SoftRemoteButton saved for it is accepted and ignored`);
+  }
   throw new Error(`where the ${modelName}'s favourite channels start on their menu is not read`);
 }
 
