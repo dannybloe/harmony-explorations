@@ -105,6 +105,10 @@ export function composeSetupParts(
   devicesComposed: ComposedDeviceNote[]; donorInfrared: DonorInfrared[];
 } {
   let c = donor;
+  // 0. Favourite channels are a recipe field Logitech's service is given and no composer writes, so a
+  //    recipe stating some is refused for every family alike rather than built without them, which would
+  //    be a configuration missing what its recipe asked for and saying nothing about it.
+  if ((setup.favourites?.length ?? 0) > 0) throw new AssemblyError('no composer writes a favourite channel, and the recipe states some');
   // 1. The donor holds nothing the setup does not, since no composer removes a device or an activity.
   //    A donor device is the setup's by the setup's name, or by `<manufacturer>_<model>`, the name the
   //    service's compiles of catalogue devices for this project carry; other owners' configurations name

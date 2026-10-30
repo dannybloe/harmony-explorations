@@ -331,7 +331,7 @@ test('a second setup assembles and passes every check: the starting setup on its
   assert.deepEqual(assembleSetup(setupOf('h650-options.json'), { donor: require_('h650_options_config') }).keptOn, []);
 });
 
-test('a setup the donor cannot serve is refused: an input named with no catalogue to number it, an activity the donor holds and the setup does not, another model, a device kept on against the setup',
+test('a setup the donor cannot serve is refused: an input named with no catalogue to number it, an activity the donor holds and the setup does not, another model, a device kept on against the setup, favourite channels, which no composer writes',
      skipUnless('h650_start_config', 'h650_test_config_clean', 'h700_config', 'h650_options_config'), () => {
   assert.throws(() => assembleSetup(setupOf('h650-test.json'), { donor: require_('h650_start_config') }),
     /composing Plasma kijken: Plasma kijken puts Plasma on HDMI 1, and naming a donor device's input needs the catalogue's archive/);
@@ -340,6 +340,8 @@ test('a setup the donor cannot serve is refused: an input named with no catalogu
   assert.throws(() => assembleSetup(setupOf('h650-start.json'), { donor: require_('h700_config') }), AssemblyError);
   assert.throws(() => assembleSetup(setupOf('h650-start.json'), { donor: require_('h650_options_config') }),
     /keeps Denon on/);
+  assert.throws(() => assembleSetup({ ...setupOf('h650-start.json'), favourites: [{ device: 'KPN', channels: ['1'] }] },
+    { donor: require_('h650_start_config') }), /no composer writes a favourite channel, and the recipe states some/);
 });
 
 // ---------------------------------------------------------------------------------------------------

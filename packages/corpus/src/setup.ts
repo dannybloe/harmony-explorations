@@ -143,3 +143,170 @@ export function customPayload(existing: Record<string, unknown>, record: number)
     activities: [{ ...existing, ActivityGroup: 0, SuggestedDisplay: 'Custom', Type: ACTIVITY_TYPES.Custom }],
   };
 }
+
+// ---------------------------------------------------------------------------------------------------
+// Favourite channels
+// ---------------------------------------------------------------------------------------------------
+//
+// **How MyHarmony saves a favourite channel**, read in its decompiled client in the lab, `work/myharmony/
+// src/`, and not yet sent from here. The dashboard's favourites control reads the one device's button map
+// with `GetButtonMaps` and puts the account's surface on it (`FavoritesControlViewModel.GetButtonMapsCompleted`
+// with `FillSurfaceData`); the add screen makes one `SoftRemoteButton` per channel, whose action is a
+// `ButtonChannelAction` carrying the channel as text and the device, labelled with the channel when no label
+// is typed, on the menu `FavoriteChannels` (`AddFavoriteChannelsViewModel.AddButton_Click`); the list screen
+// numbers the menu's places (`FavoriteChannelsViewModel.OkButton_Click`); and the button mapping store takes
+// that device's map as read, drops whatever favourites it held, appends the list and sends the one map with
+// `UserButtonMappingManager/SaveButtonMaps` (`ButtonMappingStore.SaveFavoriteChannelList`). So saving one
+// channel saves the device's whole map, which is what the replies in the lab show the service doing.
+
+/** The button mapping contracts' namespace, as the service's replies name it. */
+const BUTTON_MAPPING_CONTRACT = 'Logitech.Harmony.Services.DataContract.UserButtonMapping';
+/** The common contracts' namespace, where every identifier type lives. */
+const COMMON_CONTRACT = 'Logitech.Harmony.Services.Common.Contracts.Data';
+
+/** The menu a favourite channel's button sits on, the client's own string. */
+export const FAVOURITE_MENU = 'FavoriteChannels';
+
+/**
+ * `ButtonState.Added`, the client's enum, whose members are default, original, added, modified and deleted,
+ * 0 to 4. A new button carries it because the client's list marks every button it gains as added before the
+ * save, `StatefulObservableCollection`; a button the service returned carries original, 1.
+ */
+const BUTTON_ADDED = 2;
+
+/**
+ * Where a model's first favourite channel sits on the favourites menu. MyHarmony's favourites list puts an
+ * entry called Commands at place 0 on every remote but the Harmony One and the 800 series, numbers the
+ * channels after it, and removes it before saving, so on those remotes the channels are saved from place 1;
+ * on a Harmony One they start at 0, as the three channels MyHarmony saved on one read back, 0, 1 and 2. A
+ * model this has not been read for is refused rather than given either answer.
+ */
+export function favouriteIndexBase(modelName: string): number {
+  if (modelName === 'Harmony One') return 0;
+  if (['Harmony 300', 'Harmony 350', 'Harmony 600', 'Harmony 650', 'Harmony 700'].includes(modelName)) return 1;
+  throw new Error(`where the ${modelName}'s favourite channels start on their menu is not read`);
+}
+
+/**
+ * The `GetButtonMaps` argument for some devices' maps, as the client asks it: the devices as typed
+ * identifiers, `__type` first, no activities, the remote's skin, the record as the account, and the
+ * surface's number, which is a plain number here and an identifier on a map.
+ */
+export function getButtonMapsRequest(deviceIds: readonly number[], skin: number, record: number, surface: number):
+    Record<string, unknown> {
+  return {
+    deviceIds: deviceIds.map((value) => ({ __type: `DeviceId:#${COMMON_CONTRACT}`, IsPersisted: true, Value: value })),
+    activityIds: [],
+    remoteSkinId: skin,
+    accountId: id(record),
+    surfaceId: surface,
+  };
+}
+
+/** One favourite channel as it sits on a map: the channel's text, the device it tunes, its menu place. */
+export interface FavouriteOnMap {
+  readonly channel: string;
+  readonly device: number | undefined;
+  readonly index: number;
+}
+
+/** The favourite channels a map holds, in menu order. A map's own buttons are read, nothing else. */
+export function favouritesOnMap(map: Record<string, unknown>): FavouriteOnMap[] {
+  const buttons = (map['Buttons'] ?? []) as Record<string, unknown>[];
+  return buttons
+    .filter((button) => (button['MenuItem'] as { MenuName?: string } | null)?.MenuName === FAVOURITE_MENU)
+    .map((button) => {
+      const action = (button['ButtonAction'] ?? {}) as { ChannelNumber?: string; DeviceId?: { Value?: number } };
+      return {
+        channel: String(action.ChannelNumber), device: action.DeviceId?.Value,
+        index: (button['MenuItem'] as { IndexInMenu: number }).IndexInMenu,
+      };
+    })
+    .sort((a, b) => a.index - b.index);
+}
+
+/**
+ * One new favourite channel's button, with the members the service returns for one and in its order,
+ * `__type` first in the button and in its action, which the service's deserialiser needs to bind the
+ * subclass. What the client leaves unset goes as the contract's default: no button id, which the service
+ * assigns, no picture, no long or double press action. The label is the channel itself, which is what the
+ * client writes when no label is typed, and the Harmony 300 and 350 have no screen to show another.
+ */
+export function favouriteButton(channel: string, deviceId: number, index: number): Record<string, unknown> {
+  return {
+    __type: `SoftRemoteButton:#${BUTTON_MAPPING_CONTRACT}`,
+    ButtonAction: {
+      __type: `ButtonChannelAction:#${BUTTON_MAPPING_CONTRACT}`,
+      EventType: 0,
+      Id: 0,
+      Order: 0,
+      ChannelNumber: channel,
+      DeviceId: id(deviceId),
+    },
+    ButtonDoublePressAction: null,
+    ButtonId: 0,
+    ButtonLongPressAction: null,
+    ButtonState: BUTTON_ADDED,
+    FunctionGroupType: 0,
+    ButtonImageKey: null,
+    ButtonImagePath: null,
+    ImageId: null,
+    MenuItem: { IndexInMenu: index, MenuName: FAVOURITE_MENU },
+    TextOnRemote: channel,
+  };
+}
+
+/**
+ * The `SaveButtonMaps` argument that puts `channels` on a device: the device's map as `GetButtonMaps`
+ * returned it, every member and every button carried through in order, the account's surface set on both
+ * of its surface members as the client sets them, and one button per channel appended, numbered from
+ * `indexBase`. Refused for a map that is not this device's, and for one that already holds favourites,
+ * which the client would replace and this never does, so an earlier save is never overwritten unseen.
+ *
+ * **One difference from the client, deliberate**: the client's list also carries the device's other soft
+ * buttons, the very objects already in the map, so its request names each of them twice; the service
+ * keeps one, as the Harmony One's map read back with three more buttons and not twice as many. This sends
+ * each once, which is the map the service ends up holding.
+ */
+export function favouritesPayload(map: Record<string, unknown>, deviceId: number, channels: readonly string[],
+    surface: number, indexBase: number): Record<string, unknown> {
+  if (!String(map['__type'] ?? '').startsWith('DeviceButtonMap:')) throw new Error('not a device\'s button map');
+  if ((map['DeviceId'] as { Value?: number } | null)?.Value !== deviceId) throw new Error(`not device ${deviceId}'s map`);
+  const held = favouritesOnMap(map);
+  if (held.length > 0) {
+    throw new Error(`device ${deviceId} already holds ${held.length} favourite channels, ${held.map((one) => one.channel).join(', ')}`);
+  }
+  if (channels.length === 0) throw new Error('no channel to save');
+  if (channels.some((one) => typeof one !== 'string')) throw new Error('a channel is not text');
+  const buttons = (map['Buttons'] ?? []) as Record<string, unknown>[];
+  return {
+    buttonMaps: [{
+      ...map,
+      ButtonMapSurfaceId: id(surface),
+      Buttons: [...buttons, ...channels.map((channel, k) => favouriteButton(channel, deviceId, indexBase + k))],
+      SurfaceId: id(surface),
+    }],
+  };
+}
+
+/**
+ * The read back's verdict on a save: the device's map is now a stored one, with a number for an
+ * identifier, and holds exactly `channels` as favourites, in that order, each tuning this device, with
+ * every other button it held before still there. Returns what is wrong, or an empty list.
+ */
+export function favouritesSavedProblems(before: Record<string, unknown>, after: Record<string, unknown>, deviceId: number,
+    channels: readonly string[]): string[] {
+  const problems: string[] = [];
+  const stored = (after['ButtonMapId'] as { Value?: unknown } | null)?.Value;
+  if (typeof stored !== 'number') problems.push('the map has no stored identifier');
+  const found = favouritesOnMap(after);
+  if (JSON.stringify(found.map((one) => one.channel)) !== JSON.stringify(channels)) {
+    problems.push(`the map holds favourites ${found.map((one) => one.channel).join(', ') || 'none'}, not ${channels.join(', ')}`);
+  }
+  if (found.some((one) => one.device !== deviceId)) problems.push(`a favourite tunes another device than ${deviceId}`);
+  const count = (map: Record<string, unknown>) => ((map['Buttons'] ?? []) as unknown[]).length;
+  if (count(after) !== count(before) + channels.length) {
+    problems.push(`the map held ${count(before)} buttons and holds ${count(after)}, not ${count(before) + channels.length}`);
+  }
+  return problems;
+}
