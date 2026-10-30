@@ -1,6 +1,6 @@
 import { expect, test } from 'claude-code/testing'
 
-import { bandColour, bar, bounce, BOUNCE, configOf, modelName, testCounts, testLabel, testLine, usbState, writeLine, writeProgress } from './register'
+import { bandColour, bar, bounce, BOUNCE, isWholeRun, configOf, modelName, testCounts, testLabel, testLine, usbState, writeLine, writeProgress } from './register'
 
 const usb650 = '+-o Harmony Remote  <class IOUSBHostDevice>\n  "idProduct" = 49442\n  "idVendor" = 1133\n'
 const hid650 = '+-o IOHIDInterface\n  "Product" = "Harmony Remote 0-0.2.0"\n  "VendorID" = 1133\n  "ProductID" = 49442\n'
@@ -101,4 +101,18 @@ test('with no total the block bounces end to end and back, always its own size',
   expect(bounce(7, 10, 4)).toBe('░░░░░████░')
   expect(bounce(12, 10, 4)).toBe('████░░░░░░')
   for (let frame = 0; frame < 30; frame += 1) expect(bounce(frame).length).toBe(20)
+})
+
+test('only a whole run leaves a total behind, never a filtered or a cut short one', () => {
+  const node = '✔ a (1ms)\n✔ b (1ms)\n✖ c (1ms)\nℹ tests 3\nℹ fail 1\n'
+  expect(isWholeRun(node, testCounts(node).done)).toBe(true)
+  // Through `tail -2`: the statement is there and the results are not.
+  const tail = 'ℹ tests 3\nℹ fail 1\n'
+  expect(isWholeRun(tail, testCounts(tail).done)).toBe(false)
+  // Through `grep` for failures: one result against a stated three.
+  const grep = '✖ c (1ms)\nℹ tests 3\n'
+  expect(isWholeRun(grep, testCounts(grep).done)).toBe(false)
+  expect(isWholeRun('✔ a (1ms)\n', 1)).toBe(false)
+  const python = '....s.\n------\nRan 6 tests in 0.1s\n\nOK\n'
+  expect(isWholeRun(python, testCounts(python).done)).toBe(true)
 })

@@ -181,6 +181,19 @@ export function testCounts(output: string): { done: number; failed: number } {
   return { done, failed }
 }
 
+/**
+ * Whether an output is a whole run rather than a filtered one, so its count can be the next run's
+ * total. Both runners state their own count at the end, Python `Ran N tests` and Node `ℹ tests N`, and
+ * an unfiltered output holds at least that many results; one piped through `tail` or `grep` holds the
+ * statement without the results, and one cut short holds no statement.
+ */
+export function isWholeRun(output: string, done: number): boolean {
+  const text = output.replace(/\x1b\[[0-9;]*m/g, '')
+  let stated = 0
+  for (const m of text.matchAll(/^(?:Ran (\d+) tests?\b|ℹ tests (\d+))/gm)) stated += Number(m[1] ?? m[2])
+  return stated > 0 && done >= stated
+}
+
 /** A run's command line, short: the program's own name and its arguments, cut at 40 characters. */
 export function testLabel(args: string): string {
   const words = args.trim().split(/\s+/)
@@ -318,7 +331,7 @@ export const register: Register = (on) => {
         runEndedPolls += 1
         const output = await readOutput(run.file)
         const counts = testCounts(output)
-        if (runEndedPolls === 1 && counts.done > 0) {
+        if (runEndedPolls === 1 && isWholeRun(output, counts.done)) {
           // The finished run's count is the next run's total, kept across sessions.
           const all = await totals()
           all[run.label] = counts.done
