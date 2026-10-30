@@ -54,6 +54,7 @@ model[^s131]; 104 is the Harmony 350 alone[^s196]. Logitech's client names 78 "P
 | power | two AA batteries | [^x-manual-350]; the 300's guide is not checked[^unchecked] |
 | face | one moulding, 55 keys, with different printing | [^t-moulding] |
 | scan codes | **four known**, the device keys', 5, 1, 7 and 4 in the order of their printing, from the configurations; the keypad scanner is not read, [memory.md](memory.md#which-infrared-group-a-device-takes) | [^t-moulding], [^t-device-groups-c] |
+| state variables the firmware owns | 0 to 17, as on the Harmony One and the Harmony 600, 650 and 700; its clock runs to the minute and no further, [memory.md](memory.md#the-state-variables) | [^t-state-block], [^t-harmony-350-clock] |
 | activities | at most one, a screenless model's limit, [how a Harmony works](../../how-a-harmony-works.md#a-remote-with-no-screen-holds-exactly-one-activity) | [^s145] |
 | long press | the 350 has one and the 300 does not | [^t-models] |
 
@@ -109,3 +110,5 @@ Each row is evidenced in the model's own folder, which is its home; this table i
 [^s145]: Stated by Logitech, by their service. [Section 145](../../../docs/findings.md#s145)
 [^t-capabilities]: Stated by Logitech, by their service. [The test](../../../tests/test_product_capabilities.py)
 [^t-device-groups-c]: Measured in configurations. [The test](../../../tests/test_harmony_350_device_groups.py)
+[^t-state-block]: Read in the firmware. [The test](../../../tests/test_firmware_state_block.py)
+[^t-harmony-350-clock]: Read in the firmware. [The test](../../../tests/test_harmony_350_clock.py)

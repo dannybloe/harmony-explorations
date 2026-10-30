@@ -28,7 +28,8 @@ take another route[^s295].
 | the file protocol: the request parser at `0xCB88`, the reply dispatcher at `0xE2F0`, the file lookup at `0x12CF0`, the close at `0x12CE6`, the read size of `/cfg/usercfg` at `0x14C58`, [usb.md](usb.md#what-the-firmware-does-with-a-write) | [^t-harmony-350-file-write] |
 | the section seeker, `0x0B + 4 * slot` at `0x10BCE` on the 350's 1.4 image, called for raw slots 3 to 12 from 14 call sites | [^s259] |
 | the readers of raw slots 5, 6, 8, 9 and 12: the start up event table at `0x11D48`, called once from the validator's tail at `0x162B8`; the key map lookup at `0x1113A` and its tagged list reader at `0x1AB24`; the timer start at `0x16A2E` and the expiry pass at `0x1694A`; the state variable seeder at `0x16E6C` and the record locator at `0x17360`; the digit entry reader at `0x19D56`. What each slot is, [memory.md](memory.md#the-six-slots-the-firmware-was-read-for) | [^t-harmony-350-slots] |
-| the month end routine of the clock | [^s322] |
+| the month end routine of the clock, at `0x14382` | [^s322] |
+| the state variables: the reader at `0x17302` and the store at `0x172B2`, from data memory `0x108`; the tick at `0x13C12`, which adds the time elapsed to the second; the minute's step queued at `0x13E52`; bands `0xF2` and `0xF1` of `0x1F` at `0x11984`, one added to a variable or taken off it, wrapping through its `max` at `0x171E8`; the reply carrying the clock at `0x0F3BE`. What they add up to, [memory.md](memory.md#the-state-variables) | [^t-harmony-350-clock] |
 | the state variable bound | [^s276] |
 
 ## Routines read in the bootloader and safe mode
@@ -197,5 +198,6 @@ stays in the programmer, which can rewrite internal flash above `0x001000`[^t-ha
 [^s310]: Read in the firmware. [Section 310](../../../docs/findings.md#s310)
 [^s354]: Read in the firmware. [Section 354](../../../docs/findings.md#s354)
 [^t-harmony-350-slots]: Read in the firmware. [The test](../../../tests/test_harmony_350_slots.py)
+[^t-harmony-350-clock]: Read in the firmware. [The test](../../../tests/test_harmony_350_clock.py)
 [^t-harmony-350-boot]: Read in the firmware. [The test](../../../tests/test_harmony_350_boot.py)
 [^t-harmony-350-boot-unit]: Measured on a unit. [The test](../../../tests/test_harmony_350_boot.py)

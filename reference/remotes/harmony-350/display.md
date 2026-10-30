@@ -19,8 +19,11 @@ Generated from `packages/codec`, `packages/usb` and the drawing by `make remote-
 What it shows instead: **the device keys light** while an infrared command is being sent, and after Watch
 TV is pressed the remote should be kept pointed at the devices "until the Device buttons turn off"[^x-manual].
 
-Whether the remote keeps a running clock is open for the whole family, and nothing on a 350 could show one;
-[the architecture's memory.md](../../architectures/harmony-300-350/memory.md#not-checked) has what is known.
+The remote runs a clock that steps the minute and, on every configuration read, never moves the hour or
+the date, the whole family's, and nothing on a 350 could show it,
+[the architecture's memory.md](../../architectures/harmony-300-350/memory.md#the-state-variables), which
+also has the four output pins every configuration switches on the variable the firmware raises while it
+sends, a fit for the device keys lighting.
 
 ## Not checked
 

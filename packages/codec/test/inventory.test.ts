@@ -1238,9 +1238,11 @@ test('the firmware owns 0 to 17 on arch 8, 12 and 14, and 0 to 12 on arch 9',
     // configurations: both name some of 13 to 17 and the safe mode container names 14.
     assert.deepEqual(['h525_config', 'h525_config_2', 'h525_safemode_ahcm'].map((n) => namedPerContainer.get(n)),
       [[13, 15, 16, 17], [13, 15, 17], [14]]);
-    // The rail follows, and an architecture nothing measured gets the widest block.
-    assert.deepEqual(FIRMWARE_STATE_VARIABLE_MAX_BY_ARCHITECTURE, { 8: 17, 9: 12, 12: 17, 14: 17 });
-    assert.deepEqual([8, 9, 12, 14, 10, undefined].map(firmwareStateVariableMax), [17, 12, 17, 17, 17, 17]);
+    // The rail follows, and an architecture nothing measured gets the widest block. Arch 16 (Harmony 300
+    // and 350) is the firmware's reading alone, `tests/test_firmware_state_block.py` and
+    // `tests/test_harmony_350_clock.py`, todo-compile-350 2.5; its configurations are outside this population.
+    assert.deepEqual(FIRMWARE_STATE_VARIABLE_MAX_BY_ARCHITECTURE, { 8: 17, 9: 12, 12: 17, 14: 17, 16: 17 });
+    assert.deepEqual([8, 9, 12, 14, 16, 10, undefined].map(firmwareStateVariableMax), [17, 12, 17, 17, 17, 17, 17]);
   });
 
 test('a page binds more keys than it sends codes with, which is why pageScans exists',

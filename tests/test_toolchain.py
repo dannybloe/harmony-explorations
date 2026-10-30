@@ -232,7 +232,8 @@ class TheRunnerSeesEveryTest(unittest.TestCase):
         # 59 with `tests/test_harmony_350_boot.py`, the bootloader and safe mode of todo-compile-350 1.4.
         # 60 with `tests/test_harmony_350_delay.py`, todo-compile-350 1.8, after `tests/test_harmony_350_boot.py`.
         # 61 with `tests/test_harmony_350_device_groups.py`, todo-compile-350 2.3.
-        self.assertEqual(len(files), 61, 'the Python test files')
+        # 62 with `tests/test_harmony_350_clock.py`, todo-compile-350 2.5.
+        self.assertEqual(len(files), 62, 'the Python test files')
         with_block = 0
         for path in files:
             with open(path, encoding='utf-8') as handle:
@@ -267,7 +268,8 @@ class TheRunnerSeesEveryTest(unittest.TestCase):
         # 57 with `tests/test_harmony_350_boot.py`, todo-compile-350 1.4's two images, which carries one.
         # 57 with `tests/test_harmony_350_delay.py`, todo-compile-350 1.8, which carries one.
         # 59 with `tests/test_harmony_350_device_groups.py`, todo-compile-350 2.3, which carries one.
-        self.assertEqual(with_block, 59,
+        # 60 with `tests/test_harmony_350_clock.py`, todo-compile-350 2.5, which carries one.
+        self.assertEqual(with_block, 60,
                          'files carrying a __main__ block, of %d' % len(files))
 
 
@@ -767,7 +769,8 @@ class APythonBoundOnACorpusTotalIsExact(unittest.TestCase):
         # 59 with `tests/test_harmony_350_boot.py`, todo-compile-350 1.4's two images.
         # 60 with `tests/test_harmony_350_delay.py`, todo-compile-350 1.8, after `tests/test_harmony_350_boot.py`.
         # 61 with `tests/test_harmony_350_device_groups.py`, todo-compile-350 2.3.
-        self.assertEqual(len(scanned), 61, 'Python test files, which moves when one is added')
+        # 62 with `tests/test_harmony_350_clock.py`, todo-compile-350 2.5.
+        self.assertEqual(len(scanned), 62, 'Python test files, which moves when one is added')
         self.assertIn(self.CONTROL, found, 'the pattern matches nothing it should match')
 
     def test_every_remaining_bound_says_why_it_is_not_a_measurement(self):

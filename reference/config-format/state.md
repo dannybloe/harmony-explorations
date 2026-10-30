@@ -199,8 +199,10 @@ Harmony One the clock read exactly the timestamp's date and its time plus its up
 is **not** read for the clock: `0x27F20` subtracts it from these variables to work out how long ago the
 configuration was built[^s138]. Where the other architectures keep their variables is in their memory
 pages: the [Harmony One](../architectures/harmony-one/memory.md), the
-[Harmony 600, 650 and 700](../architectures/harmony-600-650-700/memory.md) and the
-[Harmony 5xx](../architectures/harmony-5xx/memory.md).
+[Harmony 600, 650 and 700](../architectures/harmony-600-650-700/memory.md), the
+[Harmony 5xx](../architectures/harmony-5xx/memory.md) and the
+[Harmony 300 and 350](../architectures/harmony-300-350/memory.md#the-state-variables), whose variables
+start at `0x108` as the Harmony One's do[^t-harmony-350-clock].
 
 **The firmware steps the date itself.** `0x07` with operand high byte `0xF8` advances variables 3, 5 and
 6, day, month and year: the month length table has the four thirty day months at months 3, 5, 8 and 10
@@ -208,35 +210,42 @@ counted from 0, February apart, and the month is reduced modulo 12. The same thr
 variable base appear in both firmwares, `0x900` on arch 14 (Harmony 600, 650 and 700) and `0x108` on
 arch 12 (Harmony One)[^s74], and the month end routine is read on five architectures[^s322].
 
-**The clock's transitions** are the same skeleton in every container: one each on the minute, hour, day
-and month records and none on the other three, and the only part that varies between configurations is
-which base slot 10 list a `0x7F` names[^s130]. On the Harmony One the minute carries a second
-transition, `{-2 to -2, 0x7F list}`, calling the clock's screen list[^s407].
+**The clock's transitions are the carry**, and every container of arch 8, 9, 12 and 14 has the same
+skeleton: one each on the minute, hour, day and month records and none on the other three, the minute's
+adding one to the hour when it wraps to 0, and the only part that varies between configurations is which
+base slot 10 list a `0x7F` names[^s130][^t-harmony-350-clock-c]. On the Harmony One the minute carries a
+second transition, `{-2 to -2, 0x7F list}`, calling the clock's screen list[^s407]. This said the skeleton
+was in every container<!--superseded--> until the Harmony 300 and 350 were read: **on arch 16 the seven
+clock records carry no transition at all**, in all five configurations read, so the firmware steps the minute and nothing carries it
+further, and the remote's hour, date and year stay where a cold start set them,
+[their memory page](../architectures/harmony-300-350/memory.md#the-state-variables)[^t-harmony-350-clock-c].
+The stamp rule above holds there too, in all five of its configurations[^t-harmony-350-clock-c].
 
 ### Variables 7 to 17 belong to the firmware too
 
-**The firmware owns state variables 0 to 17 on arch 8, 12 and 14 (Harmony 880 and 885, Harmony One,
-Harmony 600, 650 and 700) and 0 to 12 on arch 9 (Harmony 525).** Its alternative `0xFE` fill and the
-checksum that decides whether the seeder runs both start at index 18 on the first three, the firmware
-stores its own state into 13 to 17, and arch 9's seeder skips below the literal 13[^s284]. Within one
-architecture every container states the same `first` and `max` for these, and base slot 0 names none of
-them[^s284b].
+**The firmware owns state variables 0 to 17 on arch 8, 12, 14 and 16 (Harmony 880 and 885, Harmony One,
+Harmony 600, 650 and 700, Harmony 300 and 350) and 0 to 12 on arch 9 (Harmony 525).** Its alternative `0xFE` fill and the
+checksum that decides whether the seeder runs both start at index 18 on the first four, the firmware
+stores its own state into 13 to 17, and arch 9's seeder skips below the literal 13[^s284][^t-state-block].
+Within one architecture every container states the same `first` and `max` for these, and base slot 0
+names none of them[^s284b]; on arch 16 the five configurations state arch 14's values, the arch 16 column
+below[^t-harmony-350-clock-c], and whether its base slot 0 names any is not checked[^unchecked].
 
-| index | arch 8 | arch 9 | arch 12 | arch 14 | what it is |
-|---|---|---|---|---|---|
-| 7 | 0 / 2 | 0 / 2 | 0 / 2 | 0 / 2 | unread |
-| 8 | 0 / 3 | 1 / 2 | 0 / 3 | 0 / 3 | the display light band on arch 12[^s103] |
-| 9 | 5 / 7 | 0 / 1 | 5 / 7 | 5 / 7 | the battery gauge on arch 12, eight levels[^s105] |
-| 10 | 0 / 7 | 0 / 1 | 0 / 7 | 0 / 7 | the saved display light state on arch 12[^s103] |
-| 11 | 0 / 32 | 0 / 1 | 0 / 32 | 0 / 32 | the cached display light level on arch 12[^s103] |
-| 12 | 0 / 1 | 0 / 3 | 0 / 1 | 0 / 1 | unread |
-| 13 | 1 / 1 | the configuration's own | 1 / 1 | 0 / 32 | on arch 12 set from the charger input[^s284] |
-| 14 | 0 / 1 | the configuration's own | 2 / 4 | 1 / 1 | no direct writer, except on the Harmony 700[^s284] |
-| 15 | 0 / 3 | the configuration's own | 0 / 3 | 0 / 3 | on arch 12 stored when a value the firmware derives changes[^s284] |
-| 16 | 0 / 1 | the configuration's own | 0 / 1 | 0 / 1 | on arch 12 stored when a value the firmware derives changes[^s284] |
-| 17 | 0 / 3 | the configuration's own | 0 / 3 | 0 / 3 | on arch 14 the sending flag, 2 while a code is sent[^s369] |
+| index | arch 8 | arch 9 | arch 12 | arch 14 | arch 16 | what it is |
+|---|---|---|---|---|---|---|
+| 7 | 0 / 2 | 0 / 2 | 0 / 2 | 0 / 2 | 0 / 2 | unread |
+| 8 | 0 / 3 | 1 / 2 | 0 / 3 | 0 / 3 | 0 / 3 | the display light band on arch 12[^s103] |
+| 9 | 5 / 7 | 0 / 1 | 5 / 7 | 5 / 7 | 5 / 7 | the battery gauge on arch 12, eight levels[^s105] |
+| 10 | 0 / 7 | 0 / 1 | 0 / 7 | 0 / 7 | 0 / 7 | the saved display light state on arch 12[^s103] |
+| 11 | 0 / 32 | 0 / 1 | 0 / 32 | 0 / 32 | 0 / 32 | the cached display light level on arch 12[^s103]; on arch 16 set to 10 at every start[^t-harmony-350-clock] |
+| 12 | 0 / 1 | 0 / 3 | 0 / 1 | 0 / 1 | 0 / 1 | unread |
+| 13 | 1 / 1 | the configuration's own | 1 / 1 | 0 / 32 | 0 / 32 | on arch 12 set from the charger input[^s284]; on arch 16 set to 0 at every start[^t-harmony-350-clock] |
+| 14 | 0 / 1 | the configuration's own | 2 / 4 | 1 / 1 | 1 / 1 | no direct writer, except on the Harmony 700[^s284] |
+| 15 | 0 / 3 | the configuration's own | 0 / 3 | 0 / 3 | 0 / 3 | on arch 12 stored when a value the firmware derives changes[^s284] |
+| 16 | 0 / 1 | the configuration's own | 0 / 1 | 0 / 1 | 0 / 1 | on arch 12 stored when a value the firmware derives changes[^s284]; on arch 16 the same, from an input pin[^t-harmony-350-clock] |
+| 17 | 0 / 3 | the configuration's own | 0 / 3 | 0 / 3 | 0 / 3 | on arch 14 the sending flag, 2 while a code is sent[^s369]; on arch 16 the send queue's priority, 0 to 3, the Harmony One's byte[^t-harmony-350-clock] |
 
-Each cell is `first / max`[^s138][^s284b]. The meanings are arch 12 readings except where marked: arch 9
+Each cell is `first / max`[^s138][^s284b], arch 16's from its five configurations[^t-harmony-350-clock-c]. The meanings are arch 12 readings except where marked: arch 9
 states different maxima for 8 to 12, which is consistent with a Harmony 525 having no dimmable display of
 that kind, and nothing establishes that it puts the same things there. The values measured on a connected
 Harmony One for 8 to 11 all sit inside the maxima stated here, the battery exactly at its own[^s111]. On
@@ -245,8 +254,8 @@ arch 12 the safe mode container states 0 / 1 for index 14[^s284b].
 ### What a writer does with the clock
 
 **Stamp all seven clock records at the moment of writing**, the same rule as base slot 3's timestamp, and
-**reuse none of the firmware's block for anything else**: 0 to 17 on arch 8, 12 and 14, and 0 to 12 on
-arch 9[^s284]. A carried over configuration sets the remote's clock to when the old one was made[^s130].
+**reuse none of the firmware's block for anything else**: 0 to 17 on arch 8, 12, 14 and 16, and 0 to 12 on
+arch 9[^s284][^t-state-block]. A carried over configuration sets the remote's clock to when the old one was made[^s130].
 
 **A save writes eight values rather than seven, because one maximum moves with its value.** Six of the
 maxima are constants, `59, 59, 23, 30, 6, 11`. The year's is that year plus one and so always moves:
@@ -937,3 +946,6 @@ Read with `gspm.log_area`; `gspm.log_reference` names the append case an instruc
 [^t-harmony-350-slots-c]: Measured in configurations. [The test](../../tests/test_harmony_350_slots.py)
 [^t-file-family-delays]: Measured in configurations. [The test](../../packages/codec/test/filefamilydelays.test.ts)
 [^t-harmony-350-delay]: Read in the firmware. [The test](../../tests/test_harmony_350_delay.py)
+[^t-harmony-350-clock]: Read in the firmware. [The test](../../tests/test_harmony_350_clock.py)
+[^t-harmony-350-clock-c]: Measured in configurations. [The test](../../tests/test_harmony_350_clock.py)
+[^t-state-block]: Read in the firmware. [The test](../../tests/test_firmware_state_block.py)

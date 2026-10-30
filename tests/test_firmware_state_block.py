@@ -1,4 +1,4 @@
-"""Section 284: the firmware's own state variables run to 17 on arch 8, 12 and 14, and to 12 on arch 9.
+"""Section 284: the firmware's own state variables run to 17 on arch 8, 12, 14 and 16, and to 12 on arch 9.
 
 Section 138 cut the block at 12 because index 13 varies and is named on arch 9 (Harmony 525), and read
 that boundary as every architecture's. The configurations' half of the correction, that 13 to 17 are
@@ -15,6 +15,12 @@ bytes of the image rather than any document:
   to where each image's fill stops, bar a handful of hits inside data that only decodes as code: the
   USB report descriptor, and on arch 8 the text of its flash commands;
 * and on arch 9 the alternative fill starts at 13, beside section 274's guard at the same literal.
+
+**Arch 16 joined in `todo-compile-350.md` 2.5**, the Harmony 300 and 350's 1.4 image (`h350_code`): its
+variables start at `0x108` as the Harmony One's and the 880 and 885's do, its fill starts at 18 and stops
+at `0xC0`, the Harmony 600's ceiling, its memory check starts at `0x11A`, and it stores directly into 13,
+16 and 17, the Harmony 600 and 650's three. Above 17 its one hit is inside its USB report descriptor. The
+rest of what that image does with the block, the clock among it, is `tests/test_harmony_350_clock.py`.
 """
 
 import unittest
@@ -32,6 +38,7 @@ IMAGES = {
     'h650_code': (0x9000, 0x900, 0x1782A, 254),
     'arch8_code_880': (0x10000, 0x108, 0x17370, 63),
     'arch8_code_885': (0x10000, 0x108, 0x17370, 63),
+    'h350_code': (0x9000, 0x108, 0x16F42, 191),
 }
 
 #: image -> the indices from 13 to 17 with a direct store, byte or bit, as the tracer sees them.
@@ -43,6 +50,7 @@ DIRECTLY_WRITTEN = {
     'h650_code': [13, 16, 17],
     'arch8_code_880': [13, 15, 16, 17],
     'arch8_code_885': [13, 15, 16, 17],
+    'h350_code': [13, 16, 17],
 }
 
 #: image -> every code address that stores above 17, each inside data that only decodes as code: the
@@ -53,6 +61,7 @@ TABLE_HITS = {
     'h600_code_complete': [0x19FB0],
     'arch8_code_880': [0x1A67E, 0x1E17C, 0x1E1AA, 0x1E20C, 0x1E216],
     'arch8_code_885': [0x1A67E, 0x1E17C, 0x1E1AA, 0x1E20C, 0x1E216],
+    'h350_code': [0x1ACB6],
 }
 #: What the bytes around a table hit are: a HID report descriptor's collection with its logical range
 #: and report size, or the flash commands' names.
@@ -68,9 +77,9 @@ def _writers(code, base, address):
     return [hit.addr for hit in trace.trace(code, base, [address])[address] if _is_store(hit.kind)]
 
 
-class TheFirmwareOwnsZeroToSeventeenOnArch8And12And14(unittest.TestCase):
+class TheFirmwareOwnsZeroToSeventeenOnArch8And12And14And16(unittest.TestCase):
 
-    def test_the_alternative_fill_starts_at_eighteen_on_every_arch_8_12_and_14_image_here(self):
+    def test_the_alternative_fill_starts_at_eighteen_on_every_arch_8_12_14_and_16_image_here(self):
         lab.require(*IMAGES)
         for name, (base, _, at, _) in IMAGES.items():
             with self.subTest(name):
@@ -118,6 +127,19 @@ class TheFirmwareOwnsZeroToSeventeenOnArch8And12And14(unittest.TestCase):
         self.assertEqual((at(0x2A278).mnemonic, at(0x2A278).fields.get('target')), ('RCALL', 0x2A234))
         self.assertEqual((at(0x2A27C).mnemonic, at(0x2A27C).fields.get('f')), ('SUBWF', 0x89))
         self.assertEqual((at(0x2A288).mnemonic, at(0x2A288).fields.get('f')), ('MOVWF', 0x03))
+
+
+    def test_the_checksum_that_gates_the_seeder_starts_at_eighteen_on_the_harmony_300_and_350(self):
+        # The same seed and the same start, 0x11A, as the Harmony One's; it runs for 0xAE bytes, to
+        # 0x1C7, the last byte below where this image keeps narrow, wide and the stored check.
+        lab.require('h350_code')
+        code = lab.load('h350_code')
+        at = lambda a: isa.decode(code, a - 0x9000, 0x9000)
+        loads = [(at(a).mnemonic, at(a).fields.get('k')) for a in (0x16E40, 0x16E44, 0x16E48, 0x16E4C)]
+        self.assertEqual(loads, [('MOVLW', 0xA5), ('MOVLW', 0x1A), ('MOVLW', 0x01), ('MOVLW', 0xAE)])
+        self.assertEqual(0x11A + 0xAE, 0x108 + 0xC0)
+        self.assertEqual((at(0x16E78).mnemonic, at(0x16E78).fields.get('target')), ('RCALL', 0x16E3C))
+        self.assertEqual((at(0x16E7C).mnemonic, at(0x16E7C).fields.get('f')), ('SUBWF', 0xCA))
 
 
 class TheHarmony525sBlockEndsAtTwelve(unittest.TestCase):

@@ -43,7 +43,7 @@ Logitech compile of part of a test setup written and used, then our composers on
 - [ ] 2.2 The scan codes: which code each of the 55 keys raises, from the firmware's keypad table, checked at the bench with the infrared receiver since there is no screen to confirm a press on
 - [ ] 2.3 Which infrared group a device takes on the 350, measured on the 300 only: a short press takes the key's place, `TV / AVR` 0 to `Game/MP3` 3, selected on the key's release, `tests/test_harmony_350_device_groups.py`; the long press waits for a compile with a device on one, 3.1
 - [ ] 2.4 How a device key's long press is stored
-- [ ] 2.5 The state variables on this family: where they live, which the firmware owns, and whether the clock record seeds a running clock
+- [x] 2.5 The state variables on this family: where they live, which the firmware owns, and whether the clock record seeds a running clock: from `0x108`, 0 to 17 the firmware's, and the clock records seed a clock the firmware runs to the minute while no configuration carries it into the hour, `tests/test_harmony_350_clock.py`
 
 ## 3. A Logitech compile, written and used
 
