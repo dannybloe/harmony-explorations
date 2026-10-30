@@ -31,6 +31,7 @@ export const ACCOUNT_MANAGER = `${SVCS}/HarmonyPlatform/AccountManager.svc/json/
 export const ACCOUNT_DIRECTOR = `${SVCS}/UserAccountDirectorPlatform/UserAccountDirector.svc/json/`;
 export const COMPILE_MANAGER = `${SVCS}/SyncPlatform/CompileManager.svc/json/`;
 export const DELETION_MANAGER = `${SVCS}/SyncPlatform/DeletionManager.svc/json/`;
+export const BUTTON_MAPPING_MANAGER = `${SVCS}/UserButtonMappingPlatform/UserButtonMappingManager.svc/json/`;
 
 /** Refused before sending, from the lab client's list: the account is evidence, so this is a rail. */
 const MUTATING = [
@@ -56,6 +57,10 @@ export const DOORS: ReadonlyMap<string, string> = new Map([
   // Saving a device's power feature, opened for `todo-compile-650.md` 3.10: MyHarmony's "keep this
   // device on when switching Activities" is a flag in it, saved through this call alone.
   ['saveuserfeatures', 'MYHARMONY_ALLOW_FEATURE_WRITE'],
+  // Saving a device's button map, opened for `todo-compile-350.md` 3.1: a favourite channel is a button on
+  // the device's own map, and the service takes it only as that whole map, `build-setup.ts --stage
+  // favourites`. One door for the operation, whatever map it carries, since the operation is the write.
+  ['savebuttonmaps', 'MYHARMONY_ALLOW_BUTTONMAP_WRITE'],
 ]);
 
 /** A call this client will not send, with the reason, raised before any request exists. */

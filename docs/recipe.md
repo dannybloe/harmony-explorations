@@ -3,7 +3,7 @@
 **Status: preliminary.** Written 12 October 2026 for `todo-compile-650.md` 10.7.4. The format a
 configuration of ours is built from: what FreeHarmony is to produce from what a user configures, and
 what the codec's `assembleSetup` reads. Its code is `packages/codec/src/recipe/recipe.ts`, whose
-`readRecipe` checks a recipe's shape and `recipeTarget` its model; the three setup files in
+`readRecipe` checks a recipe's shape and `recipeTarget` its model; the setup files in
 `packages/corpus/setups/` are recipes and are read as such by `packages/codec/test/recipe.test.ts`.
 
 Preliminary because one model has been built from it, the Harmony 650, and because it still needs a
@@ -43,6 +43,14 @@ misspelling is an error rather than a default.
 | `activities[].screen[]` | optional, the working screen's items in order: `{ device, command }`, a command by the label the device's own screen draws it under, or `{ sequence, steps }` |
 | `...screen[].steps[]` | `{ device, scan }`, the command that device's key sends, by the key's scan code (`reference/remotes/harmony-650/keys.md`), or `{ pause }` in tenths of a second |
 | `choices` | optional, the family's choices over its defaults; the family refuses one it does not make |
+| `favourites[]` | optional, favourite channels per device: `device` by name, a device of the recipe, at most once, and `channels`, in the order of the remote's favourite keys |
+| `...favourites[].channels[]` | each a channel number **as text**, digits with at most one dot or dash between them, so a leading zero survives: `"07"` is a channel of its own. Logitech's service holds a channel as text, `reference/logitech/service.md`, "Button maps" |
+
+**Favourite channels are given to Logitech's service and built by nothing of ours yet.**
+`packages/corpus/bin/build-setup.ts --stage favourites` saves them on a test account's record so a
+compile of theirs holds them, the Harmony 350's setup first, `todo-compile-350.md` 3.1; every composer
+refuses a recipe that states any, since none writes a favourite channel and a configuration built
+without them would be missing what its recipe asked for.
 
 ## Against FreeHarmony's data model
 
@@ -69,6 +77,7 @@ configures; a **difference** is the same thing said another way, which a convert
 | `steps[].pause` in tenths | `SequenceItem.waitMs` | difference: tenths against milliseconds, which FreeHarmony already holds to multiples of 100 |
 | none | keypad `ButtonBinding`s | an activity's keypad comes from its roles, section 323, and a device's from its catalogue entry; a recipe states neither yet |
 | none | `Activity.opensOn` | the Harmony 650 has one start screen; a choice when a family has more |
+| `favourites[]` | none | **gap**: FreeHarmony holds no favourite channel, by its own decision that a sequence expresses one |
 | `choices` | none | **gap**: the look and the settings; `RemoteContent.language` is the start of it, and the words are a choice once a configuration is built rather than patched |
 
 So FreeHarmony can produce a recipe once it holds three things it does not: the catalogue entry behind a

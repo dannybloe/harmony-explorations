@@ -4,8 +4,9 @@
  * preliminary definition, field by field against FreeHarmony's data model.
  *
  * **What it holds**: the model it is for, the devices by their catalogue entries, the activities with
- * each device's input and jobs and the working screen's items, and the choices of the model's family
- * over that family's defaults. **What it never holds is what the model can do**: how many devices it
+ * each device's input and jobs and the working screen's items, the choices of the model's family over
+ * that family's defaults, and favourite channels, which only Logitech's service is given so far, since no
+ * composer of ours writes one. **What it never holds is what the model can do**: how many devices it
  * takes, its screen, which family builds for it. Those come from the model's definition,
  * `packages/usb/src/models.ts`, documented in `reference/remotes/`, so a recipe states a wish and the
  * model's definition says whether it can be granted.
@@ -71,12 +72,29 @@ export interface RecipeActivity {
   readonly screen?: readonly RecipeScreenItem[];
 }
 
+/**
+ * One device's favourite channels, in the order of the remote's favourite keys: the device by its setup
+ * name, and each channel as **text**, because Logitech's service holds a channel as text and a leading
+ * zero is a channel of its own ("07" is not "7"), `reference/logitech/service.md`, "Button maps". A digit,
+ * a dot or a dash only, the characters MyHarmony's favourites screen reads a channel number for.
+ *
+ * **Sent to Logitech's service and built by nothing yet**: `packages/corpus/bin/build-setup.ts --stage
+ * favourites` saves them on a test account's record, so a compile of theirs holds them, and the codec's
+ * composers refuse a recipe that states any, since none of them writes a favourite channel.
+ */
+export interface RecipeFavourites {
+  readonly device: string;
+  readonly channels: readonly string[];
+}
+
 /** A recipe. The activities are in the order the activity menu lists them. */
 export interface Recipe {
   readonly about?: string;
   readonly model: RecipeModel;
   readonly devices: readonly RecipeDevice[];
   readonly activities: readonly RecipeActivity[];
+  /** Favourite channels, per device; absent is none. */
+  readonly favourites?: readonly RecipeFavourites[];
   /**
    * The model's family's choices over its defaults, `FourSlotChoices` for a Harmony 600, 650 or 700. Read
    * by the family, which refuses one it does not make.
@@ -182,7 +200,7 @@ function screenItem(value: unknown, what: string): RecipeScreenItem {
  * role one of the contract's. Refused with the first thing wrong, by where it is.
  */
 export function readRecipe(json: unknown): Recipe {
-  const top = fields(json, 'the recipe', ['model', 'devices', 'activities'], ['about', 'choices']);
+  const top = fields(json, 'the recipe', ['model', 'devices', 'activities'], ['about', 'choices', 'favourites']);
   const m = fields(top.model, 'the model', ['name'], ['skin']);
   if (m.skin !== undefined && !Number.isInteger(m.skin)) throw new RecipeError('the model\'s skin is not a number');
   const model: RecipeModel = { name: text(m.name, 'the model\'s name'), ...(m.skin === undefined ? {} : { skin: m.skin as number }) };
@@ -213,9 +231,29 @@ export function readRecipe(json: unknown): Recipe {
       : list(a.screen, `${what}'s screen`).map((item, j) => screenItem(item, `${what}'s screen item ${j + 1}`));
     return { name: a.name as string, type: text(a.type, `${what}'s type`), devices: used, ...(screen === undefined ? {} : { screen }) };
   });
+  const favourites = top.favourites === undefined ? undefined
+    : list(top.favourites, 'the favourites').map((value, k): RecipeFavourites => {
+      const what = `favourites ${k + 1}`;
+      const f = fields(value, what, ['device', 'channels']);
+      const device = text(f.device, `${what}'s device`);
+      if (!devices.some((one) => one.name === device)) throw new RecipeError(`${what} names ${device}, which is no device of the recipe`);
+      const channels = list(f.channels, `${what}'s channels`).map((channel, j) => {
+        // Text and never a number: a number would drop a leading zero, which is a channel of its own.
+        if (typeof channel !== 'string' || !/^[0-9]+([.-][0-9]+)?$/.test(channel)) {
+          throw new RecipeError(`${what}'s channel ${j + 1} is not a channel number written as text`);
+        }
+        return channel;
+      });
+      if (channels.length === 0) throw new RecipeError(`${what} has no channel`);
+      return { device, channels };
+    });
+  if (favourites !== undefined && new Set(favourites.map((one) => one.device)).size !== favourites.length) {
+    throw new RecipeError('the favourites name one device twice');
+  }
   return {
     ...(top.about === undefined ? {} : { about: text(top.about, 'the recipe\'s about') }),
     model, devices, activities,
     ...(top.choices === undefined ? {} : { choices: object(top.choices, 'the choices') }),
+    ...(favourites === undefined ? {} : { favourites }),
   };
 }

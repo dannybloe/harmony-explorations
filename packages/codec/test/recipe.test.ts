@@ -14,12 +14,18 @@ import { FOUR_SLOT_CHOICES, fourSlotChoices } from '../src/families/four-slot/ch
 const SETUPS = new URL('../../corpus/setups/', import.meta.url);
 const raw = (file: string): Record<string, unknown> => JSON.parse(readFileSync(new URL(file, SETUPS), 'utf8'));
 
-test('every setup file reads as a recipe: the three for the Harmony 650, skin 72, which the four slot family builds for and which holds eight devices, and the test setup for the Harmony One, skin 54, the touch family\'s',
+test('every setup file reads as a recipe: the three for the Harmony 650, skin 72, which the four slot family builds for and which holds eight devices, the test setup for the Harmony One, skin 54, the touch family\'s, and the Harmony 350\'s, which no family builds for',
   () => {
   const files = readdirSync(SETUPS).filter((one) => one.endsWith('.json')).sort();
-  assert.deepEqual(files, ['h650-options.json', 'h650-start.json', 'h650-test.json', 'one-test.json']);
+  assert.deepEqual(files, ['h350-test.json', 'h650-options.json', 'h650-start.json', 'h650-test.json', 'one-test.json']);
   for (const file of files) {
     const recipe = readRecipe(raw(file));
+    // The Harmony 350's setup is sent to Logitech's service and built by nothing here: its skin is not in
+    // the model table, so its target is refused. This fails, and should be rewritten, when a family arrives.
+    if (file.startsWith('h350-')) {
+      assert.throws(() => recipeTarget(recipe), /no model has skin 104/);
+      continue;
+    }
     const target = recipeTarget(recipe);
     const one = file.startsWith('one-');
     assert.equal(target.skin, one ? 54 : 72, file);
@@ -77,6 +83,27 @@ test('a recipe\'s shape is checked before anything is built: an unknown field, a
   refuses(withScreen([{ sequence: 'Radio', steps: [] }]), /screen item 1 has no step/);
   refuses(withScreen([{ sequence: 'Radio', steps: [{ pause: 1.5 }] }]), /pauses for no whole number of tenths/);
   refuses(withScreen([{ device: 'KPN' }]), /screen item 1 has no command/);
+});
+
+test('favourite channels are read as text per device, and a number, an unknown device or a device named twice is refused', () => {
+  const h350 = raw('h350-test.json');
+  assert.deepEqual(readRecipe(h350).favourites, [{ device: 'KPN', channels: ['1', '2', '3', '666', '07'] }]);
+  // Only the Harmony 350's setup states any.
+  for (const file of ['h650-options.json', 'h650-start.json', 'h650-test.json', 'one-test.json']) {
+    assert.equal(readRecipe(raw(file)).favourites, undefined, file);
+  }
+  const refuses = (favourites: unknown, pattern: RegExp) => assert.throws(() => readRecipe({ ...h350, favourites }),
+    (error: unknown) => error instanceof RecipeError && pattern.test(error.message));
+  // A number would lose a leading zero, so a channel is text or it is refused.
+  refuses([{ device: 'KPN', channels: [7] }], /channel 1 is not a channel number written as text/);
+  refuses([{ device: 'KPN', channels: ['seven'] }], /channel 1 is not a channel number written as text/);
+  refuses([{ device: 'KPN', channels: [] }], /favourites 1 has no channel/);
+  refuses([{ device: 'Radio', channels: ['1'] }], /names Radio, which is no device of the recipe/);
+  refuses([{ device: 'KPN', channels: ['1'] }, { device: 'KPN', channels: ['2'] }], /name one device twice/);
+  refuses([{ device: 'KPN', channels: ['1'], label: 'x' }], /favourites 1 has a field label no recipe has/);
+  // A dot or a dash between digits is a channel number too, as MyHarmony's screen reads one.
+  assert.deepEqual(readRecipe({ ...h350, favourites: [{ device: 'KPN', channels: ['5.1', '12-3'] }] }).favourites,
+    [{ device: 'KPN', channels: ['5.1', '12-3'] }]);
 });
 
 test('a choice the family does not make is refused, so a misspelt one is not silently its default', () => {
