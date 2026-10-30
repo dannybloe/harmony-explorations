@@ -1,0 +1,12 @@
+{
+  "name": "Harmony 350, which device each device key selects",
+  "description": "todo-compile-350 2.3. The remote holds its own configuration, lab work/350-delay/before.bin: the LG TV on infrared group 0 and the Denon receiver on group 2, group 1 and 3 empty. Written down before the run, from tests/test_harmony_350_device_groups.py: a short press of a device key selects the device on that key's place, TV/Media group 0 and AVR/Game group 2, so Volume Up after AVR/Game is the Denon's and after TV/Media the LG's. The key to place assignment on the 350 is inferred from the Harmony 300 and the shared moulding; this run is what checks it. Cable/PC holds no device, so what Volume Up sends after it is the open part.",
+  "steps": [
+    { "instruction": "Unplug the Harmony 350 from USB and point it at the receiver. Press AVR/Game once, briefly, then press Volume Up once",
+      "expect": [{ "device": "Denon_AV_Receiver", "command": "VolumeUp" }] },
+    { "instruction": "Press TV/Media once, briefly, then press Volume Up once",
+      "expect": [{ "device": "LG_TV", "command": "VolumeUp" }] },
+    { "instruction": "Press Cable/PC once, briefly, then press Volume Up once. This key holds no device, so nothing is predicted: whatever the monitor hears, or silence, is the answer" },
+    { "instruction": "Press TV/Media once, briefly, so the remote is back in the TV's mode" }
+  ]
+}

@@ -522,7 +522,7 @@ class TestTheHarmony300Silhouette(TestTheHarmony350Silhouette):
         for word in ('Cable/Sat', 'VCR/Aux', 'List', 'Replay', 'Harmony 300'):
             with self.subTest(word=word):
                 self.assertIn(f'>{word}<', text)
-        for word in ('Cable/DVD', 'Game/MP3', 'DVR', 'Favorites'):
+        for word in ('Cable/PC', 'AVR/Game', 'DVR', 'Favorites'):
             with self.subTest(absent=word):
                 self.assertNotIn(f'>{word}<', text)
 

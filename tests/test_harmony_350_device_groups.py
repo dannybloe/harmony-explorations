@@ -24,8 +24,8 @@ the long press stays open.
   Harmony 300 file, so 4 of the 14 are where it came from; the three Harmony 350 files, which played no
   part in choosing it, agree on 8 of 8, with both empty maps theirs. On a Harmony 300 the four scan codes are the keys printed TV, Cable/Sat, DVD and
   VCR/Aux, from which device was put on which key (section 265). The 350 is the same moulding with
-  different printing and runs the same image, so the same four codes are the keys printed `TV / AVR`,
-  `Cable/DVD`, `BD / Media` and `Game/MP3`: **a short press of each takes group 0, 1, 2 and 3**.
+  different printing and runs the same image, so the same four codes are the keys printed `TV/Media`,
+  `Cable/PC`, `AVR/Game` and `DVD/Music`: **a short press of each takes group 0, 1, 2 and 3**.
 * **On the 350 a short press is the key's release.** The 1.4 image's keypad routine queues the held key's
   scan code with one of three event types: press `0x80 | scan`, release `0x40 | scan`, and repeat
   `0xC0 | scan`; everything else the image queues as a key event is a fixed code, not a held key's. A Harmony 300's device key
@@ -101,7 +101,7 @@ is checked.
 * **A position in the device list.** Section 265 already showed the archive's order is alphabetical on
   the 300; here the factory 350 holds groups 0, 1 and 3 with 2 empty, and the bench 350's file 0 and 2
   with 1 empty, so groups are not filled from 0 in any order.
-* **An interleaved short and long, `2 * key + long`.** That puts the Cable/DVD key's short press in group
+* **An interleaved short and long, `2 * key + long`.** That puts the Cable/PC key's short press in group
   2; it is in group 1 on all three 350 files that bind it.
 * **The 350 numbering its eight groups differently from the 300's four.** Every short press group is the
   300's group for the same key.
@@ -109,17 +109,17 @@ is checked.
 ## What would settle the long press
 
 No file has a device on a long press, so three rules for one fit the corpus equally and differ in where
-it goes: `4 + key` (TV / AVR 4 to Game/MP3 7), the lowest group no short press uses, or interleaving only
-the long ones. A compile through Logitech's service onto a 350 that puts **a device on the TV / AVR key's
-short press, a second on Cable/DVD's long press and a third on BD / Media's long press, with nothing on
+it goes: `4 + key` (TV/Media 4 to DVD/Music 7), the lowest group no short press uses, or interleaving only
+the long ones. A compile through Logitech's service onto a 350 that puts **a device on the TV/Media key's
+short press, a second on Cable/PC's long press and a third on AVR/Game's long press, with nothing on
 either short press of those two keys**, separates them: `4 + key` gives the two long press devices groups
 5 and 6, the lowest unused group gives 1 and 2, and any interleaving gives 3 and 5. The same file shows how
 the long press is stored, `todo-compile-350.md` 2.4: which event and which binding select the second
 device.
 
-A bench check settles the one inference above, that scan 7 is the key printed `BD / Media` on a 350:
-with the bench 350's current file, a short press of `BD / Media` and then any key should send the Denon's
-code, and a short press of `TV / AVR` the LG's. No write is needed.
+A bench check settles the one inference above, that scan 7 is the key printed `AVR/Game` on a 350:
+with the bench 350's current file, a short press of `AVR/Game` and then any key should send the Denon's
+code, and a short press of `TV/Media` the LG's. No write is needed.
 
 **Sources checked first.** Logitech's client, `../lab/work/myharmony/src/`: its button mapping model
 holds, per device key, one `UserModeMappingInfo` with a `Mode` (`ModeTV`, `ModeCable`, `ModeDVD`,
@@ -157,8 +157,8 @@ ARM_RELEASE = 0x1959E
 DISARM = 0x19592
 
 #: The scan code each device key binds, in the order of the keys on the remote, from the Harmony 300's
-#: device to key statement, section 265: TV, Cable/Sat, DVD, VCR/Aux on a 300; TV / AVR, Cable/DVD,
-#: BD / Media, Game/MP3 on a 350. The position is the group.
+#: device to key statement, section 265: TV, Cable/Sat, DVD, VCR/Aux on a 300; TV/Media, Cable/PC,
+#: AVR/Game, DVD/Music on a 350. The position is the group.
 DEVICE_KEYS = (5, 1, 7, 4)
 #: The output pin each device key's binding switches, by scan code. What the pins drive is not checked.
 PIN = {5: 0, 7: 1, 1: 2, 4: 3}

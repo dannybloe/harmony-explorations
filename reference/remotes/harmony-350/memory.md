@@ -11,7 +11,7 @@ memory off a 350, only the files it serves.
 | | value |
 |---|---|
 | infrared groups | **eight in every configuration**, unused ones empty, the model's maximum device count[^s263] |
-| the group index | a short press of a device key: `TV / AVR` 0, `Cable/DVD` 1, `BD / Media` 2, `Game/MP3` 3, the keys named by the moulding the Harmony 300 shares, [the family's memory.md](../../architectures/harmony-300-350/memory.md#which-infrared-group-a-device-takes)[^t-device-groups-c]; a long press, not checked[^unchecked] |
+| the group index | a short press of a device key: `TV/Media` 0, `Cable/PC` 1, `AVR/Game` 2, `DVD/Music` 3, the keys named by the moulding the Harmony 300 shares, [the family's memory.md](../../architectures/harmony-300-350/memory.md#which-infrared-group-a-device-takes)[^t-device-groups-c]; a long press, not checked[^unchecked] |
 | configuration size | 68985 to 121251 bytes over the three configurations measured, by what they hold[^s262][^s263] |
 
 ## Not checked

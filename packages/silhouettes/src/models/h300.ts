@@ -45,10 +45,10 @@ const below = (text: string): Label => ({ text, place: 'below', size: 'small' })
 
 /** Keyed by the 350's key name. Every key not listed is printed the same on both. */
 const REPRINT: Readonly<Record<string, Reprint>> = {
-  TvAvr: { name: 'Tv', labels: [{ text: 'TV', place: 'on', size: 'tiny' }] },
-  CableDvd: { name: 'CableSat', labels: [{ text: 'Cable/Sat', place: 'on', size: 'tiny' }] },
-  BdMedia: { name: 'Dvd', labels: [{ text: 'DVD', place: 'on', size: 'tiny' }] },
-  GameMp3: { name: 'VcrAux', labels: [{ text: 'VCR/Aux', place: 'on', size: 'tiny' }] },
+  TvMedia: { name: 'Tv', labels: [{ text: 'TV', place: 'on', size: 'tiny' }] },
+  CablePc: { name: 'CableSat', labels: [{ text: 'Cable/Sat', place: 'on', size: 'tiny' }] },
+  AvrGame: { name: 'Dvd', labels: [{ text: 'DVD', place: 'on', size: 'tiny' }] },
+  DvdMusic: { name: 'VcrAux', labels: [{ text: 'VCR/Aux', place: 'on', size: 'tiny' }] },
   Power: { labels: [below('Power')] },
   // Two words stacked on one key; a label is one line, so two labels either side of the middle.
   Input: { labels: [{ text: 'TV', place: 'on', size: 'tiny', dy: -4 }, { text: 'Input', place: 'on', size: 'tiny', dy: 4 }] },

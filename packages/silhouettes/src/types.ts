@@ -132,7 +132,7 @@ export interface Label {
   /**
    * `small` is for the secondary printing: `abc` under a digit, `Replay` under a key whose face
    * carries only a symbol, `Vol` between the halves of a rocker. `tiny` is for a word that has to fit
-   * across a small key, a Harmony 350's `BD / Media`.
+   * across a small key, a Harmony 350's `DVD/Music`.
    */
   readonly size?: 'normal' | 'small' | 'tiny';
   /** Extra offset in model units, for the cases where the printing is not where the rule puts it. */

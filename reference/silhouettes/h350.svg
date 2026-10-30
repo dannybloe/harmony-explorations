@@ -61,21 +61,21 @@
       <g class="layer-icons"><g transform="translate(61.387 49.765) scale(12.563)"><path class="mark mark-stroke" d="M -0.8 -0.75 H 0.8 V 0.35 H -0.8 Z" fill="none" stroke="#222" stroke-width="0.16" stroke-linecap="round" stroke-linejoin="round" /><path class="mark mark-stroke" d="M -0.3 0.35 L -0.45 0.8 M 0.3 0.35 L 0.45 0.8 M -0.55 0.8 H 0.55" fill="none" stroke="#222" stroke-width="0.16" stroke-linecap="round" stroke-linejoin="round" /></g></g>
       <text class="lbl layer-text" x="61.387" y="73.252" font-size="9" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">Watch TV</text>
     </g>
-    <g class="key-group" id="k-tv-avr" data-name="TvAvr" data-kind="keypad" data-src="printed">
+    <g class="key-group" id="k-tv-media" data-name="TvMedia" data-kind="keypad" data-src="printed">
       <path class="key" d="M 117.784 127.41 C 116.294 129.91 114.358 132.007 108.892 132.933 C 101.795 134.156 85.147 134.2 78.562 132.933 C 71.966 131.678 70.499 128.911 69.668 127.41 C 68.2 124.782 68.222 117.252 69.668 114.987 C 70.583 113.541 71.966 110.73 78.562 109.475 C 85.147 108.211 101.795 108.263 108.892 109.475 C 114.358 110.401 116.37 112.454 117.784 114.987 C 119.317 117.721 119.05 125.294 117.784 127.41 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
-      <text class="lbl layer-text" x="93.726" y="123.829" font-size="7.5" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">TV / AVR</text>
+      <text class="lbl layer-text" x="93.726" y="123.829" font-size="7.5" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">TV/Media</text>
     </g>
-    <g class="key-group" id="k-cable-dvd" data-name="CableDvd" data-kind="keypad" data-src="printed">
+    <g class="key-group" id="k-cable-pc" data-name="CablePc" data-kind="keypad" data-src="printed">
       <path class="key" d="M 147.762 127.41 C 149.262 129.91 151.188 132.007 156.656 132.933 C 163.75 134.156 180.409 134.2 186.983 132.933 C 193.579 131.678 195.047 128.911 195.888 127.41 C 197.345 124.782 197.324 117.252 195.888 114.987 C 194.962 113.541 193.579 110.73 186.983 109.475 C 180.409 108.211 163.75 108.263 156.656 109.475 C 151.188 110.401 149.189 112.454 147.762 114.987 C 146.242 117.721 146.495 125.294 147.762 127.41 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
-      <text class="lbl layer-text" x="171.825" y="123.829" font-size="7.5" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">Cable/DVD</text>
+      <text class="lbl layer-text" x="171.825" y="123.829" font-size="7.5" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">Cable/PC</text>
     </g>
-    <g class="key-group" id="k-bd-media" data-name="BdMedia" data-kind="keypad" data-src="printed">
+    <g class="key-group" id="k-avr-game" data-name="AvrGame" data-kind="keypad" data-src="printed">
       <path class="key" d="M 117.784 166.539 C 116.294 169.039 114.358 171.133 108.892 172.07 C 101.795 173.282 85.147 173.326 78.562 172.07 C 71.966 170.804 70.499 168.037 69.668 166.539 C 68.2 163.911 68.222 156.378 69.668 154.124 C 70.583 152.667 71.966 149.859 78.562 148.592 C 85.147 147.337 101.795 147.378 108.892 148.592 C 114.358 149.527 116.37 151.58 117.784 154.124 C 119.317 156.847 119.05 164.42 117.784 166.539 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
-      <text class="lbl layer-text" x="93.726" y="162.956" font-size="7.5" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">BD / Media</text>
+      <text class="lbl layer-text" x="93.726" y="162.956" font-size="7.5" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">AVR/Game</text>
     </g>
-    <g class="key-group" id="k-game-mp3" data-name="GameMp3" data-kind="keypad" data-src="printed">
+    <g class="key-group" id="k-dvd-music" data-name="DvdMusic" data-kind="keypad" data-src="printed">
       <path class="key" d="M 147.762 166.539 C 149.262 169.039 151.188 171.133 156.656 172.07 C 163.75 173.282 180.409 173.326 186.983 172.07 C 193.579 170.804 195.047 168.037 195.888 166.539 C 197.345 163.911 197.324 156.378 195.888 154.124 C 194.962 152.667 193.579 149.859 186.983 148.592 C 180.409 147.337 163.75 147.378 156.656 148.592 C 151.188 149.527 149.189 151.58 147.762 154.124 C 146.242 156.847 146.495 164.42 147.762 166.539 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
-      <text class="lbl layer-text" x="171.825" y="162.956" font-size="7.5" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">Game/MP3</text>
+      <text class="lbl layer-text" x="171.825" y="162.956" font-size="7.5" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">DVD/Music</text>
     </g>
     <g class="key-group" id="k-power" data-name="Power" data-kind="keypad" data-src="printed">
       <path class="key" d="M 231.46 178.219 C 231.46 172.122 226.482 167.133 220.387 167.133 L 216.174 167.133 C 210.09 167.133 205.101 172.122 205.101 178.219 L 205.101 181.994 C 205.101 188.091 210.09 193.07 216.174 193.07 L 220.387 193.07 C 226.482 193.07 231.46 188.091 231.46 181.994 Z" fill="#fff" stroke="#666" stroke-width="1.4" />

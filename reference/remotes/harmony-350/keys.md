@@ -13,8 +13,10 @@ share [one case](../../architectures/harmony-300-350/README.md#shared-in-one-tab
 
 1. **Watch TV button**: "Powers devices on/off for your Watch TV Activity".
 2. **Device buttons**: "Set the remote to control specific devices", four of them, each with a short press
-   and a two second press. They print `TV / AVR`, `Cable/DVD`, `BD / Media` and `Game/MP3` under "My
-   Devices"[^t-silhouette].
+   and a two second press. They print `TV/Media`, `Cable/PC`, `AVR/Game` and `DVD/Music` under "My
+   Devices"[^t-silhouette], or in an earlier printing `TV / AVR`, `Cable/DVD`, `BD / Media` and `Game/MP3`
+   on the same four places, so a device key is known by its place rather than its printing[^x-manual]. The
+   drawing showed the earlier printing until it was corrected.
 3. **Favorite Channel buttons**: "Configure these buttons for quick access to favorite TV channels", five.
 4. **Color buttons**: "Navigate menus and select options on some TVs, cable/satellite receivers, DVRs, and
    Blu-ray players". Four, red, green, yellow and blue on the drawing.
@@ -32,9 +34,9 @@ digits, clear and enter[^t-silhouette].
 
 | key | kind | name from | scan code | screen zone | printed on or beside it |
 |---|---|---|---|---|---|
-| `BdMedia` | keypad | printed | not measured |  | BD / Media |
+| `AvrGame` | keypad | printed | not measured |  | AVR/Game |
 | `Blue` | keypad | printed | not measured |  |  |
-| `CableDvd` | keypad | printed | not measured |  | Cable/DVD |
+| `CablePc` | keypad | printed | not measured |  | Cable/PC |
 | `ChannelDown` | keypad | printed | not measured |  |  |
 | `ChannelUp` | keypad | printed | not measured |  |  |
 | `Clear` | keypad | printed | not measured |  | Clear |
@@ -43,6 +45,7 @@ digits, clear and enter[^t-silhouette].
 | `DirectionRight` | keypad | printed | not measured |  |  |
 | `DirectionUp` | keypad | printed | not measured |  |  |
 | `DownArrow` | keypad | printed | not measured |  |  |
+| `DvdMusic` | keypad | printed | not measured |  | DVD/Music |
 | `Dvr` | keypad | printed | not measured |  | DVR |
 | `Enter` | keypad | printed | not measured |  | E, Enter |
 | `Exit` | keypad | printed | not measured |  | Exit |
@@ -52,7 +55,6 @@ digits, clear and enter[^t-silhouette].
 | `Favorite3` | keypad | printed | not measured |  | 3 |
 | `Favorite4` | keypad | printed | not measured |  | 4 |
 | `Favorite5` | keypad | printed | not measured |  | 5 |
-| `GameMp3` | keypad | printed | not measured |  | Game/MP3 |
 | `Green` | keypad | printed | not measured |  |  |
 | `Guide` | keypad | printed | not measured |  | Guide |
 | `Info` | keypad | printed | not measured |  | Info |
@@ -80,7 +82,7 @@ digits, clear and enter[^t-silhouette].
 | `SkipBack` | keypad | printed | not measured |  |  |
 | `SkipForward` | keypad | printed | not measured |  |  |
 | `Stop` | keypad | printed | not measured |  |  |
-| `TvAvr` | keypad | printed | not measured |  | TV / AVR |
+| `TvMedia` | keypad | printed | not measured |  | TV/Media |
 | `UpArrow` | keypad | printed | not measured |  |  |
 | `VolumeDown` | keypad | printed | not measured |  |  |
 | `VolumeMute` | keypad | printed | not measured |  |  |
@@ -94,7 +96,7 @@ Generated from `packages/silhouettes/src/models/h350.ts` by `make remote-referen
 ## No scan codes
 
 **Only the four device keys' scan codes are known, from a Harmony 300's configurations and the shared
-moulding rather than from the scanner**: `TV / AVR` 5, `Cable/DVD` 1, `BD / Media` 7 and `Game/MP3` 4,
+moulding rather than from the scanner**: `TV/Media` 5, `Cable/PC` 1, `AVR/Game` 7 and `DVD/Music` 4,
 the codes a Harmony 300's configuration binds to the same four keys, and the four a 350's binds too; a short press of each
 is its release,
 [the family's memory page](../../architectures/harmony-300-350/memory.md#which-infrared-group-a-device-takes)[^t-device-groups-c].

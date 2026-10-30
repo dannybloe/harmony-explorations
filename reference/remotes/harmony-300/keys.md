@@ -13,7 +13,7 @@ read off the cover photograph of Logitech's setup guide, PDF page 2[^t-printing]
 
 | | Harmony 300 | Harmony 350 |
 |---|---|---|
-| device keys | TV, Cable/Sat, DVD, VCR/Aux | TV / AVR, Cable/DVD, BD / Media, Game/MP3 |
+| device keys | TV, Cable/Sat, DVD, VCR/Aux | TV/Media, Cable/PC, AVR/Game, DVD/Music, or in an earlier printing TV / AVR, Cable/DVD, BD / Media, Game/MP3 |
 | power key | `Power` printed under it | |
 | the key between the favourites | TV over Input, and no "Favorites" word | Input, under "Favorites" |
 | colour keys | yellow, blue, red, green, with A to D under them | red, green, yellow, blue |

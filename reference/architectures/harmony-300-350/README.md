@@ -71,7 +71,7 @@ Each row is evidenced in the model's own folder, which is its home; this table i
 | device keys and a long press | four keys, no long press | four keys, each with a short and a two second press |
 | activities, Logitech's service | no `Activities` capability, only `PartiallySetupActivities`[^t-capabilities] | `Activities`, at most 1[^t-capabilities] |
 | favourite channels, Logitech's service | 5 for skin 78 and 4 for skin 79, the European model | 5 |
-| device keys print | TV, Cable/Sat, DVD, VCR/Aux | TV / AVR, Cable/DVD, BD / Media, Game/MP3 |
+| device keys print | TV, Cable/Sat, DVD, VCR/Aux | TV/Media, Cable/PC, AVR/Game, DVD/Music, or in an earlier printing TV / AVR, Cable/DVD, BD / Media, Game/MP3 |
 
 ## The files
 

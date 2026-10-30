@@ -117,10 +117,10 @@ service. The configurations state it: the scan code whose release selects each d
 `tests/test_harmony_350_device_groups.py`, read as a printed key through the Harmony 300's device to key
 statement, with each group's device named by the codec's `devices` from its `Power` variable
 (`packages/codec/test/filefamilydelays.test.ts` for the lab fixtures; the names are not asserted by the
-first test). On the four device file the television is on `TV / AVR`, the KPN box on `Cable/DVD`, the
-Playstation 3 on `BD / Media` and the Chromecast on `Game/MP3`. On the file the unit holds now, the same
-file as the backup read the test opens, the LG television is on `TV / AVR` and the Denon receiver on
-`BD / Media`. Asking which keys were chosen, or pressing `BD / Media` and hearing a Denon code, would
+first test). On the four device file the television is on `TV/Media`, the KPN box on `Cable/PC`, the
+Playstation 3 on `AVR/Game` and the Chromecast on `DVD/Music`. On the file the unit holds now, the same
+file as the backup read the test opens, the LG television is on `TV/Media` and the Denon receiver on
+`AVR/Game`. Asking which keys were chosen, or pressing `AVR/Game` and hearing a Denon code, would
 check the one inference in that, which key a scan code is on a 350.
 
 ## What has not been done

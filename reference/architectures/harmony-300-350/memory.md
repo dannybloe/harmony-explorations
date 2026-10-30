@@ -102,8 +102,8 @@ pair[^s278]. The rule is every architecture's, [the action language](../../confi
 **A device takes the infrared group of the device key it sits on, by the key's place among the four**:
 on a Harmony 300 the keys printed TV, Cable/Sat, DVD and VCR/Aux give groups 0, 1, 2 and 3[^s265], and
 on a Harmony 350 the short press of the same four scan codes gives the same four groups, which by the
-shared moulding are the keys printed `TV / AVR`, `Cable/DVD`, `BD / Media` and
-`Game/MP3`[^t-device-groups-c]. A group whose key holds no
+shared moulding are the keys printed `TV/Media`, `Cable/PC`, `AVR/Game` and
+`DVD/Music`[^t-device-groups-c]. A group whose key holds no
 device stays empty, so a configuration can hold group 3 with group 2 empty: the groups are not filled in
 order[^t-device-groups-c]. The 350's printed keys follow from the 300's, since the two are one moulding
 running one image; no device key was pressed on a 350 to confirm it[^unchecked].

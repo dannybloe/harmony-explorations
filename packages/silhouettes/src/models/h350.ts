@@ -2,8 +2,9 @@
  * The Harmony 350, skin 104, architecture 16.
  *
  * **Geometry from Logitech's own drawing, read by a person.** The source is the line drawing on the
- * "Buttons" page of the Harmony 350 setup guide, printed page 4, which is page 5 of the copy in the lab
- * at `Docs/350 manual.pdf`. Unlike the other three models there was no hand trace to start from and none
+ * "Buttons" page of the Harmony 350 setup guide, printed page 4, which is page 5 of the edition that was
+ * in the lab at `Docs/350 manual.pdf` until 30 October 2026 and is kept in the lab's own history. The
+ * edition there now prints the four device keys differently, below, and was not extracted again. Unlike the other three models there was no hand trace to start from and none
  * was needed: that page is vector, so `pdftocairo -svg` turns it into an SVG of real strokes and
  * `bin/extract.ts` reads it as it stands. Every path in here is that drawing's own, moved into this
  * package's coordinates and nothing else. The page SVG stays in the lab, like every other trace.
@@ -34,8 +35,12 @@
  *
  * **Names follow the marking**, or Logitech's vocabulary where the marking is a symbol, the same rule
  * the Harmony 525 used. Three groups needed a choice. The four device keys are named for what they
- * print, `TV / AVR` and so on, which is the honest reading and is **not** a name shared across models:
- * the Harmony 300 prints `TV`, `Cable/Sat`, `DVD` and `VCR/Aux` on the same four keys, and section 265
+ * print, `TV/Media`, `Cable/PC`, `AVR/Game` and `DVD/Music`, which is the honest reading and is **not**
+ * a name shared across models, nor across printings of this one: the guide this drawing was extracted
+ * from printed `TV / AVR`, `Cable/DVD`, `BD / Media` and `Game/MP3` on the same four keys, and a Harmony
+ * 350 in hand, with the edition of the guide that replaced it in the lab, prints the four above. The
+ * drawing carried the earlier printing until 30 October 2026. So the printing varies between production
+ * runs and the key's place is what identifies it. The Harmony 300 prints `TV`, `Cable/Sat`, `DVD` and `VCR/Aux` on the same four keys, and section 265
  * found that the key's position is what picks the infrared group. The key printed `Clear` under a dot and
  * a plus is named `Clear`, although a Harmony One's `+` over `clear` measured as `NumberPlus`, because
  * that is the One's code and not this remote's. And the five favourite keys are `Favorite1` to
@@ -116,10 +121,10 @@ const KEYS: readonly Key[] = [
   // Shape 32. The television mark on the key and `Watch TV` printed beneath it.
   { name: 'WatchTV', src: 'printed', kind: 'keypad', shape: traced('M 77.86 53.968 C 77.86 60.063 72.871 65.052 66.787 65.052 L 56 65.052 C 49.902 65.052 44.913 60.063 44.913 53.968 L 44.913 45.553 C 44.913 39.455 49.902 34.477 56 34.477 L 66.787 34.477 C 72.871 34.477 77.86 39.455 77.86 45.553 Z'), angle: 0, icon: 'tv', markSize: 20.1, labels: [{ text: 'Watch TV', place: 'below', size: 'small' }] },
   // Shapes 27, 26, 25 and 24: the four device keys, left to right and top to bottom.
-  { name: 'TvAvr', src: 'printed', kind: 'keypad', shape: traced('M 117.784 127.41 C 116.294 129.91 114.358 132.007 108.892 132.933 C 101.795 134.156 85.147 134.2 78.562 132.933 C 71.966 131.678 70.499 128.911 69.668 127.41 C 68.2 124.782 68.222 117.252 69.668 114.987 C 70.583 113.541 71.966 110.73 78.562 109.475 C 85.147 108.211 101.795 108.263 108.892 109.475 C 114.358 110.401 116.37 112.454 117.784 114.987 C 119.317 117.721 119.05 125.294 117.784 127.41 Z'), angle: 0, labels: [{ text: 'TV / AVR', place: 'on', size: 'tiny' }] },
-  { name: 'CableDvd', src: 'printed', kind: 'keypad', shape: traced('M 147.762 127.41 C 149.262 129.91 151.188 132.007 156.656 132.933 C 163.75 134.156 180.409 134.2 186.983 132.933 C 193.579 131.678 195.047 128.911 195.888 127.41 C 197.345 124.782 197.324 117.252 195.888 114.987 C 194.962 113.541 193.579 110.73 186.983 109.475 C 180.409 108.211 163.75 108.263 156.656 109.475 C 151.188 110.401 149.189 112.454 147.762 114.987 C 146.242 117.721 146.495 125.294 147.762 127.41 Z'), angle: 0, labels: [{ text: 'Cable/DVD', place: 'on', size: 'tiny' }] },
-  { name: 'BdMedia', src: 'printed', kind: 'keypad', shape: traced('M 117.784 166.539 C 116.294 169.039 114.358 171.133 108.892 172.07 C 101.795 173.282 85.147 173.326 78.562 172.07 C 71.966 170.804 70.499 168.037 69.668 166.539 C 68.2 163.911 68.222 156.378 69.668 154.124 C 70.583 152.667 71.966 149.859 78.562 148.592 C 85.147 147.337 101.795 147.378 108.892 148.592 C 114.358 149.527 116.37 151.58 117.784 154.124 C 119.317 156.847 119.05 164.42 117.784 166.539 Z'), angle: 0, labels: [{ text: 'BD / Media', place: 'on', size: 'tiny' }] },
-  { name: 'GameMp3', src: 'printed', kind: 'keypad', shape: traced('M 147.762 166.539 C 149.262 169.039 151.188 171.133 156.656 172.07 C 163.75 173.282 180.409 173.326 186.983 172.07 C 193.579 170.804 195.047 168.037 195.888 166.539 C 197.345 163.911 197.324 156.378 195.888 154.124 C 194.962 152.667 193.579 149.859 186.983 148.592 C 180.409 147.337 163.75 147.378 156.656 148.592 C 151.188 149.527 149.189 151.58 147.762 154.124 C 146.242 156.847 146.495 164.42 147.762 166.539 Z'), angle: 0, labels: [{ text: 'Game/MP3', place: 'on', size: 'tiny' }] },
+  { name: 'TvMedia', src: 'printed', kind: 'keypad', shape: traced('M 117.784 127.41 C 116.294 129.91 114.358 132.007 108.892 132.933 C 101.795 134.156 85.147 134.2 78.562 132.933 C 71.966 131.678 70.499 128.911 69.668 127.41 C 68.2 124.782 68.222 117.252 69.668 114.987 C 70.583 113.541 71.966 110.73 78.562 109.475 C 85.147 108.211 101.795 108.263 108.892 109.475 C 114.358 110.401 116.37 112.454 117.784 114.987 C 119.317 117.721 119.05 125.294 117.784 127.41 Z'), angle: 0, labels: [{ text: 'TV/Media', place: 'on', size: 'tiny' }] },
+  { name: 'CablePc', src: 'printed', kind: 'keypad', shape: traced('M 147.762 127.41 C 149.262 129.91 151.188 132.007 156.656 132.933 C 163.75 134.156 180.409 134.2 186.983 132.933 C 193.579 131.678 195.047 128.911 195.888 127.41 C 197.345 124.782 197.324 117.252 195.888 114.987 C 194.962 113.541 193.579 110.73 186.983 109.475 C 180.409 108.211 163.75 108.263 156.656 109.475 C 151.188 110.401 149.189 112.454 147.762 114.987 C 146.242 117.721 146.495 125.294 147.762 127.41 Z'), angle: 0, labels: [{ text: 'Cable/PC', place: 'on', size: 'tiny' }] },
+  { name: 'AvrGame', src: 'printed', kind: 'keypad', shape: traced('M 117.784 166.539 C 116.294 169.039 114.358 171.133 108.892 172.07 C 101.795 173.282 85.147 173.326 78.562 172.07 C 71.966 170.804 70.499 168.037 69.668 166.539 C 68.2 163.911 68.222 156.378 69.668 154.124 C 70.583 152.667 71.966 149.859 78.562 148.592 C 85.147 147.337 101.795 147.378 108.892 148.592 C 114.358 149.527 116.37 151.58 117.784 154.124 C 119.317 156.847 119.05 164.42 117.784 166.539 Z'), angle: 0, labels: [{ text: 'AVR/Game', place: 'on', size: 'tiny' }] },
+  { name: 'DvdMusic', src: 'printed', kind: 'keypad', shape: traced('M 147.762 166.539 C 149.262 169.039 151.188 171.133 156.656 172.07 C 163.75 173.282 180.409 173.326 186.983 172.07 C 193.579 170.804 195.047 168.037 195.888 166.539 C 197.345 163.911 197.324 156.378 195.888 154.124 C 194.962 152.667 193.579 149.859 186.983 148.592 C 180.409 147.337 163.75 147.378 156.656 148.592 C 151.188 149.527 149.189 151.58 147.762 154.124 C 146.242 156.847 146.495 164.42 147.762 166.539 Z'), angle: 0, labels: [{ text: 'DVD/Music', place: 'on', size: 'tiny' }] },
   // Shape 59. It switches the selected device, per the guide, so it is `Power` and not an all off key.
   { name: 'Power', src: 'printed', kind: 'keypad', shape: traced('M 231.46 178.219 C 231.46 172.122 226.482 167.133 220.387 167.133 L 216.174 167.133 C 210.09 167.133 205.101 172.122 205.101 178.219 L 205.101 181.994 C 205.101 188.091 210.09 193.07 216.174 193.07 L 220.387 193.07 C 226.482 193.07 231.46 188.091 231.46 181.994 Z'), angle: 0, icon: 'power', markAt: { x: 218.1, y: 180 }, markSize: 12.6 },
   // Shape 17.

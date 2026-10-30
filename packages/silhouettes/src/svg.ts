@@ -48,7 +48,7 @@ export const DETAIL = {
  * character, so nine is the size that fits where the real printing fits.
  *
  * `tiny` is the same argument one step down. A Harmony 350's device keys are 48 units wide and print
- * `BD / Media` and `Game/MP3` with a cap height of 5.3 in Logitech's drawing, where nine gives about
+ * words like `DVD/Music` with a cap height of 5.3 in Logitech's drawing, where nine gives about
  * 6.4 and the words ran into the key's own ends. Seven and a half gives the drawing's 5.3.
  */
 const FONT_SIZE = { normal: 15, small: 9, tiny: 7.5 } as const;
