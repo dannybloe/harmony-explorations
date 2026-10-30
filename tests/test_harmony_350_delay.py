@@ -265,11 +265,13 @@ class TheBench350WaitsTenthsOfASecond(unittest.TestCase):
 
     def test_volume_up_long_after_the_delay_goes_at_once(self):
         lab.require(*self.RUNS)
+        silences = {}
         for name in self.RUNS:
             step = self._step(json.loads(lab.load(name)), 4)
             self.assertEqual(step[0][0], 'VolumeUp', name)
-            # The silence before it is the person waiting out the instruction, longer than any delay.
-            self.assertGreater(step[0][1], 15000000, name)
+            silences[name] = step[0][1]
+        # The silence before it is the person waiting out the instruction, each longer than either delay.
+        self.assertEqual(silences, {'h350_delay_ir_3s': 19628000, 'h350_delay_ir_10s': 29274000})
 
 
 if __name__ == '__main__':
