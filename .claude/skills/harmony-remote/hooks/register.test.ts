@@ -1,6 +1,6 @@
 import { expect, test } from 'claude-code/testing'
 
-import { bandColour, bar, bounce, BOUNCE, isWholeRun, configOf, modelName, testCounts, testLabel, testLine, usbState, writeLine, writeProgress } from './register'
+import { bandColour, bar, bounce, BOUNCE, isWholeRun, configOf, modelName, testCounts, testLabel, testLine, usbState, writeLine, writeProgress, fileWriteLine } from './register'
 
 const usb650 = '+-o Harmony Remote  <class IOUSBHostDevice>\n  "idProduct" = 49442\n  "idVendor" = 1133\n'
 const hid650 = '+-o IOHIDInterface\n  "Product" = "Harmony Remote 0-0.2.0"\n  "VendorID" = 1133\n  "ProductID" = 49442\n'
@@ -36,13 +36,13 @@ const journal = [
 
 test('a running write shows its block count, and one that died shows where it stopped', () => {
   const w = writeProgress(journal)
-  expect(writeLine(w, true)).toBe('h650: writing block 2 of 14')
-  expect(writeLine(w, false)).toBe('h650: write STOPPED after 2 of 14 blocks, rerun it')
+  expect(writeLine(w, true)).toBe('Writing to h650: [█░░░░░░░░░░░░░░░░░░░] 7%')
+  expect(writeLine(w, false)).toBe('Write to h650 STOPPED after 2 of 14 blocks, rerun it')
 })
 
 test('a finished write reads as done, and a dry run shows nothing', () => {
   const done = writeProgress(journal + '\nthe whole configuration reads back byte for byte identical to the file.\nthe restart is sent.')
-  expect(writeLine(done, false)).toBe('h650: write done, verified, restarted')
+  expect(writeLine(done, false)).toBe('Write to h650 done, verified, restarted')
   expect(writeLine(writeProgress(journal + '\ndry run: nothing was written.'), false)).toBe(undefined)
 })
 
@@ -115,4 +115,26 @@ test('only a whole run leaves a total behind, never a filtered or a cut short on
   expect(isWholeRun('✔ a (1ms)\n', 1)).toBe(false)
   const python = '....s.\n------\nRan 6 tests in 0.1s\n\nOK\n'
   expect(isWholeRun(python, testCounts(python).done)).toBe(true)
+})
+
+const fileRun = [
+  'Harmony 350, unit record h350: writing 35591 bytes to /cfg/usercfg, checksum 0xe5ad, in 12 chunks of 575 data packets',
+  'the remote states architecture 0x10, skin 0x68, firmware 1.4.0, and serves /cfg/usercfg as 35587 bytes',
+  'file system reset: answered',
+  'opening /cfg/usercfg for writing: the remote erases its configuration before it answers',
+  'opened: handle 5',
+  'chunk 1 of 12: 50 packets, 3100 of 35591 bytes, answered 0xb4',
+  'chunk 2 of 12: 50 packets, 6200 of 35591 bytes, answered 0xa7',
+  'chunk 3 of 12: 50 packets, 9300 of 35591 bytes, answered 0x9a',
+].join('\n')
+
+test('the 350 writer shows a bar by chunk, and where it stopped says whether anything was erased', () => {
+  expect(fileWriteLine(fileRun, true)).toBe('Writing to the Harmony 350: [█████░░░░░░░░░░░░░░░] 25%')
+  expect(fileWriteLine(fileRun, false))
+    .toBe('Write to the Harmony 350 STOPPED after chunk 3 of 12: its configuration is erased until a write completes')
+  const refused = fileRun.split('\n').slice(0, 2).join('\n') + '\nrefused: the remote holds a configuration that is neither'
+  expect(fileWriteLine(refused, false)).toBe('Write to the Harmony 350 did not start, nothing was erased')
+  expect(fileWriteLine(fileRun + '\nchunk 12 of 12: 25 packets', true)).toBe('Writing to the Harmony 350: [████████████████████] checking and reading back')
+  expect(fileWriteLine(fileRun + '\nverified: 35587 bytes read back identical', false)).toBe('Write to the Harmony 350 done, verified, restarted')
+  expect(fileWriteLine('Harmony 350, unit record h350: writing\nread only: nothing was sent', false)).toBe(undefined)
 })

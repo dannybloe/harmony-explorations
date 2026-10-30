@@ -36,7 +36,9 @@ const LINGER_POLLS = 40
 // The bracket keeps a pattern from matching the shell that runs it: the shell's own command line
 // holds `confi[g]`, which the expression does not match, where a plain `config` would make every
 // poll find a writer.
-const WRITER = 'corpus/bin/write-confi[g][.]ts'
+const WRITER = '(corpus/bin/write-confi[g]|usb/bin/write-file-confi[g])[.]ts'
+// The Harmony 300 and 350's writer, which keeps no journal: its own output is what is read.
+const FILE_WRITER = /usb\/bin\/write-file-config[.]ts/
 const READER = 'corpus/bin/read-(regio[n]|confi[g])[.]ts'
 
 // Logitech's Harmony product range and Microchip's bootloader identity, which is what a Harmony in
@@ -122,15 +124,40 @@ export function writeProgress(journal: string): WriteProgress {
   }
 }
 
-/** The status line for a write, given whether the writer is still running. */
+/** The status line for a write, given whether the writer is still running: a bar while blocks go. */
 export function writeLine(w: WriteProgress, isRunning: boolean): string | undefined {
   if (w.isDryRun) return undefined
-  if (w.isDone) return `${w.unit}: write done, verified, restarted`
-  if (w.isVerified) return `${w.unit}: written and verified, restarting`
-  if (!isRunning) return `${w.unit}: write STOPPED after ${w.erased} of ${w.total} blocks, rerun it`
-  if (w.total > 0 && w.erased === 0) return `${w.unit}: write starting, comparing ${w.total} blocks`
-  if (w.erased >= w.total && w.total > 0) return `${w.unit}: reading the whole configuration back`
-  return `${w.unit}: writing block ${w.erased} of ${w.total}`
+  if (w.isDone) return `Write to ${w.unit} done, verified, restarted`
+  if (w.isVerified) return `Write to ${w.unit} verified, restarting`
+  if (!isRunning) return `Write to ${w.unit} STOPPED after ${w.erased} of ${w.total} blocks, rerun it`
+  if (w.total > 0 && w.erased === 0) return `Writing to ${w.unit}: comparing ${w.total} blocks`
+  if (w.erased >= w.total && w.total > 0) return `Writing to ${w.unit}: [${bar(1)}] reading it all back`
+  const share = w.total === 0 ? 0 : (w.erased - 1) / w.total
+  return `Writing to ${w.unit}: [${bar(share)}] ${Math.floor(share * 100)}%`
+}
+
+/**
+ * The Harmony 300 and 350 writer's line, from its own output: a chunk at a time while it writes, then
+ * the check and the read back. The open erases the remote's configuration, so a run that stops after
+ * it says so, and one that stops before it, a refusal included, says nothing was erased.
+ */
+export function fileWriteLine(output: string, isRunning: boolean): string | undefined {
+  if (/^read only:/m.test(output)) return undefined
+  const model = /^(Harmony \w+), unit record/m.exec(output)?.[1] ?? 'the remote'
+  const chunks = [...output.matchAll(/^chunk (\d+) of (\d+)/gm)]
+  const last = chunks[chunks.length - 1]
+  const opened = /^opened: /m.test(output)
+  if (/^verified: /m.test(output)) return `Write to the ${model} done, verified, restarted`
+  if (!isRunning) {
+    if (!opened) return `Write to the ${model} did not start, nothing was erased`
+    const at = last === undefined ? '' : ` after chunk ${last[1]} of ${last[2]}`
+    return `Write to the ${model} STOPPED${at}: its configuration is erased until a write completes`
+  }
+  if (!opened) return `Writing to the ${model}: checking the unit`
+  if (last === undefined) return `Writing to the ${model}: [${bar(0)}] 0%`
+  const share = Number(last[1]) / Number(last[2])
+  if (share >= 1) return `Writing to the ${model}: [${bar(1)}] checking and reading back`
+  return `Writing to the ${model}: [${bar(share)}] ${Math.floor(share * 100)}%`
 }
 
 /**
@@ -278,7 +305,7 @@ export const register: Register = (on) => {
     let last: string | undefined
     let busy = false
     // The journal of the most recent write seen running, and how many polls ago it stopped.
-    let journal: string | undefined
+    let journal: { kind: 'journal' | 'output'; path: string } | undefined
     let stoppedPolls = 0
 
     const sh = async (script: string): Promise<string> => {
@@ -359,25 +386,34 @@ export const register: Register = (on) => {
           sh('ioreg -rc IOHIDInterface -w0'),
           // The running writer's working directory on the first line and its command line on the
           // second, or nothing when no write is running.
-          sh(`pid=$(pgrep -f '${WRITER}' | head -1); [ -n "$pid" ] && {`
-            + ` lsof -a -p "$pid" -d cwd -Fn 2>/dev/null | sed -n 's/^n//p'; ps -ww -o args= -p "$pid"; }`),
+          // The running writer's working directory, its command line and the file its shell writes its
+          // output to, one per line, or nothing when no write is running. A shell is never the writer,
+          // though the one Claude Code wraps a command in carries the command as text.
+          sh(`for p in $(pgrep -f '${WRITER}'); do case "$(ps -o comm= -p "$p")" in *sh) continue ;; esac;`
+            + ` lsof -a -p "$p" -d cwd -Fn 2>/dev/null | sed -n 's/^n//p' | head -1; ps -ww -o args= -p "$p";`
+            + ` pp=$(ps -o ppid= -p "$p" | tr -d ' '); lsof -a -p "$pp" -d 1 -Fn 2>/dev/null | sed -n 's/^n//p' | head -1;`
+            + ` break; done`),
           sh(`pgrep -f '${READER}' >/dev/null && echo yes`),
         ])
         const parts = [usbState(usb, hid)]
-        const [cwd, args] = writer.trim().split('\n')
+        const [cwd, args, output] = writer.trim().split('\n')
         const config = cwd !== undefined && args !== undefined ? configOf(args, cwd) : undefined
         const isWriting = config !== undefined
         if (config !== undefined) {
-          const newest = (await sh(`ls -t ${quote(config)}.write-*.log 2>/dev/null | head -1`)).trim()
-          if (newest !== '') journal = newest
+          if (FILE_WRITER.test(args!)) {
+            if (output !== undefined && output.startsWith('/')) journal = { kind: 'output', path: output }
+          } else {
+            const newest = (await sh(`ls -t ${quote(config)}.write-*.log 2>/dev/null | head -1`)).trim()
+            if (newest !== '') journal = { kind: 'journal', path: newest }
+          }
           stoppedPolls = 0
         } else {
           stoppedPolls += 1
         }
         if (journal !== undefined && (isWriting || stoppedPolls <= LINGER_POLLS)) {
-          let text = ''
-          try { text = await $.fs.read(journal) } catch { /* moved or deleted: show nothing */ }
-          const line = text === '' ? undefined : writeLine(writeProgress(text), isWriting)
+          const text = await readOutput(journal.path)
+          const line = text === '' ? undefined
+            : journal.kind === 'output' ? fileWriteLine(text, isWriting) : writeLine(writeProgress(text), isWriting)
           if (line !== undefined) parts.push(line)
         }
         if (reader.trim() === 'yes') parts.push('reading flash')
@@ -385,7 +421,7 @@ export const register: Register = (on) => {
         const text = parts.join('  |  ')
         if (text !== last) {
           // A toast on the two moments worth looking up for, once each.
-          if (/write done/.test(text) && !/write done/.test(last ?? '')) $.ui.toast('Harmony write done and verified')
+          if (/done, verified/.test(text) && !/done, verified/.test(last ?? '')) $.ui.toast('Harmony write done and verified')
           if (/STOPPED/.test(text) && !/STOPPED/.test(last ?? '')) $.ui.toast('Harmony write stopped before it finished')
           last = text
           await update($, line, () => text)
