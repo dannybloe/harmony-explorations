@@ -1,0 +1,60 @@
+{
+  "name": "Harmony 350, the favourites and the three keys one at a time",
+  "description": "Follow up to 350-every-key.json on the same configuration, lab/work/350-every-key/every-key.bin. In that run no key sent the TV's Home, which the configuration binds to one key, the one an earlier run heard from favourite key 5, and one of Watch TV, Cable/PC and DVD/Music sent nothing. Here each of those keys is its own step, so the run file says which key did what. The favourite steps carry no expectation, since which favourite holds Home is the question.",
+  "steps": [
+    {
+      "instruction": "Unplug the Harmony 350 from USB, point it at the receiver and press TV/Media once and briefly, so the remote is in the TV's mode. Nothing should be heard"
+    },
+    {
+      "instruction": "Press favourite key 1 (beside Input on the left) once, and nothing else in this step. One of the five should send the TV's Home and the other four Info; which one sends Home is what this step finds out"
+    },
+    {
+      "instruction": "Press favourite key 2 (below Input, left) once, and nothing else in this step. One of the five should send the TV's Home and the other four Info; which one sends Home is what this step finds out"
+    },
+    {
+      "instruction": "Press favourite key 3 (below Input, middle) once, and nothing else in this step. One of the five should send the TV's Home and the other four Info; which one sends Home is what this step finds out"
+    },
+    {
+      "instruction": "Press favourite key 4 (below Input, right) once, and nothing else in this step. One of the five should send the TV's Home and the other four Info; which one sends Home is what this step finds out"
+    },
+    {
+      "instruction": "Press favourite key 5 (beside Input on the right) once, and nothing else in this step. One of the five should send the TV's Home and the other four Info; which one sends Home is what this step finds out"
+    },
+    {
+      "instruction": "Press Watch TV once",
+      "expect": [
+        {
+          "device": "LG_TV",
+          "command": "Info"
+        }
+      ]
+    },
+    {
+      "instruction": "Press Cable/PC, the top right of the four device keys, once",
+      "expect": [
+        {
+          "device": "LG_TV",
+          "command": "Info"
+        }
+      ]
+    },
+    {
+      "instruction": "Press DVD/Music, the bottom right of the four device keys, once",
+      "expect": [
+        {
+          "device": "LG_TV",
+          "command": "Info"
+        }
+      ]
+    },
+    {
+      "instruction": "Press Volume Up once, to show the remote is still in the TV's mode",
+      "expect": [
+        {
+          "device": "LG_TV",
+          "command": "VolumeUp"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,57 @@
+{
+  "name": "Harmony 350, does a device key turn Watch TV off",
+  "description": "On lab/work/350-every-key/every-key.bin, where every key the TV's map left unbound, Watch TV among them, sends the same code as Info. Watch TV sent Info after a battery pull and stopped after a device key press; every earlier test began with TV/Media and heard nothing from it. This test pulls the batteries, presses Watch TV before and after TV/Media, and checks whether a second TV/Media press brings it back. Menu is the control: it is on the same column wire as Watch TV.",
+  "steps": [
+    {
+      "instruction": "Take the batteries out of the Harmony 350 and put them back, unplugged from USB. Do not press any device key. Point it at the receiver"
+    },
+    {
+      "instruction": "Press Watch TV once. After a battery pull the remote starts in the TV's mode, and Watch TV is filled in there to send Info",
+      "expect": [
+        {
+          "device": "LG_TV",
+          "command": "Info"
+        }
+      ]
+    },
+    {
+      "instruction": "Press TV/Media (top left of the four device keys) once and briefly. Nothing should be heard"
+    },
+    {
+      "instruction": "Press Watch TV once. If it is silent, pressing TV/Media is enough to turn it off",
+      "expect": [
+        {
+          "device": "LG_TV",
+          "command": "Info"
+        }
+      ]
+    },
+    {
+      "instruction": "Press Volume Up once, to show the remote is in the TV's mode",
+      "expect": [
+        {
+          "device": "LG_TV",
+          "command": "VolumeUp"
+        }
+      ]
+    },
+    {
+      "instruction": "Press TV/Media once more, briefly, then Watch TV once. This shows whether it comes back without a battery pull",
+      "expect": [
+        {
+          "device": "LG_TV",
+          "command": "Info"
+        }
+      ]
+    },
+    {
+      "instruction": "Press Menu once, a key on the same wire as Watch TV, as a control",
+      "expect": [
+        {
+          "device": "LG_TV",
+          "command": "Info"
+        }
+      ]
+    }
+  ]
+}

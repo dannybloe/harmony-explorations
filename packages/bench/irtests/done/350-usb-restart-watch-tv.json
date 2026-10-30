@@ -1,0 +1,45 @@
+{
+  "name": "Harmony 350, Watch TV after a restart over USB",
+  "description": "On lab/work/350-every-key/every-key.bin, written again so that the write ends with the reboot command. Watch TV was silent in three runs that each followed such a write with no battery pull between, and has sent Info in every run since a battery pull. This run checks whether the restart over USB is what leaves it silent, and whether a battery pull brings it back.",
+  "steps": [
+    {
+      "instruction": "The remote has just been written and restarted over USB. Unplug it, do not take the batteries out, and point it at the receiver"
+    },
+    {
+      "instruction": "Press Watch TV once, before any other key",
+      "expect": [
+        {
+          "device": "LG_TV",
+          "command": "Info"
+        }
+      ]
+    },
+    {
+      "instruction": "Press TV/Media once and briefly, then Watch TV once",
+      "expect": [
+        {
+          "device": "LG_TV",
+          "command": "Info"
+        }
+      ]
+    },
+    {
+      "instruction": "Press Menu once, the control on Watch TV's column wire",
+      "expect": [
+        {
+          "device": "LG_TV",
+          "command": "Info"
+        }
+      ]
+    },
+    {
+      "instruction": "If Watch TV was silent: take the batteries out, put them back, and press Watch TV once more",
+      "expect": [
+        {
+          "device": "LG_TV",
+          "command": "Info"
+        }
+      ]
+    }
+  ]
+}

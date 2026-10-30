@@ -1,0 +1,60 @@
+{
+  "name": "Harmony 350, does AVR/Game turn Watch TV off",
+  "description": "On lab/work/350-every-key/every-key.bin. The previous run showed TV/Media does not switch Watch TV off. AVR/Game's press switches a light on output pin RB0, on the same port as the keypad's column wires, and no later press sets that pin back, while TV/Media's light is on another port. This run checks whether AVR/Game is the trigger, with Menu, on Watch TV's column, as the control, and asks what the two lights do.",
+  "steps": [
+    {
+      "instruction": "Take the batteries out of the Harmony 350 and put them back, unplugged from USB. Do not press any device key. Point it at the receiver"
+    },
+    {
+      "instruction": "Press Watch TV once. It should send Info",
+      "expect": [
+        {
+          "device": "LG_TV",
+          "command": "Info"
+        }
+      ]
+    },
+    {
+      "instruction": "Press AVR/Game (bottom left of the four device keys) once and briefly, and watch its light for a few seconds: note whether it blinks, and whether it stays lit afterwards. Nothing should be heard"
+    },
+    {
+      "instruction": "Press Volume Up once, to show the receiver is selected",
+      "expect": [
+        {
+          "device": "Denon_AV_Receiver",
+          "command": "VolumeUp"
+        }
+      ]
+    },
+    {
+      "instruction": "Press TV/Media once and briefly, and again note what the lights under TV/Media and AVR/Game do"
+    },
+    {
+      "instruction": "Press Watch TV once. Predicted: silent, since AVR/Game's light pin is still where its press left it",
+      "expect": [
+        {
+          "device": "LG_TV",
+          "command": "Info"
+        }
+      ]
+    },
+    {
+      "instruction": "Press Menu once, a key on the same column wire as Watch TV, as a control",
+      "expect": [
+        {
+          "device": "LG_TV",
+          "command": "Info"
+        }
+      ]
+    },
+    {
+      "instruction": "Press Volume Up once, to show the remote is in the TV's mode",
+      "expect": [
+        {
+          "device": "LG_TV",
+          "command": "VolumeUp"
+        }
+      ]
+    }
+  ]
+}

@@ -556,9 +556,14 @@ for (const button of document.querySelectorAll('.modes button')) {
   button.addEventListener('click', () => setMode(button.dataset.mode));
 }
 $('test-pick').addEventListener('change', aboutTest);
-$('run-start').addEventListener('click', () => void runAction('/api/ir/run/start', mode === 'test'
-  ? { kind: 'test', test: $('test-pick').value }
-  : { kind: 'recording', name: $('record-name').value }));
+// A run starts with an empty log, so what the panel shows is this run's presses and nothing left over
+// from the last one. The run's own file in the lab is unaffected either way.
+$('run-start').addEventListener('click', () => {
+  clearLog();
+  void runAction('/api/ir/run/start', mode === 'test'
+    ? { kind: 'test', test: $('test-pick').value }
+    : { kind: 'recording', name: $('record-name').value });
+});
 /** Save the note on the open step. A mark with nothing typed still records that the step was wrong. */
 async function markStep() {
   const text = $('run-problem').value.trim();
@@ -578,7 +583,8 @@ $('run-stop').addEventListener('click', () => void runAction('/api/ir/run/stop')
 $('live').addEventListener('click', () => setLive(!live));
 $('hide-unreadable').addEventListener('click', () => setHideUnreadable(!hideUnreadable));
 setHideUnreadable(hideUnreadable);
-$('clear').addEventListener('click', () => {
+/** Empty the log panel and its counts, as the Clear button and the start of a run do. */
+function clearLog() {
   presses.clear();
   shown = undefined;
   unknown = 0;
@@ -592,5 +598,6 @@ $('clear').addEventListener('click', () => {
   clear($('wave'));
   clear($('durations'));
   $('signal-head').textContent = '';
-});
+}
+$('clear').addEventListener('click', clearLog);
 void start();

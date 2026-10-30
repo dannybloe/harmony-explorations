@@ -1,0 +1,39 @@
+{
+  "name": "Harmony 350, does Watch TV select the TV",
+  "description": "On lab/work/350-every-key/every-key.bin. Every code the keypad can raise now sends something in the TV's mode except codes 5 and 7, TV/Media and AVR/Game, which the key table binds to select a device and which send nothing. Watch TV sent nothing in the TV's mode, twice, after cleaning, so it raises either one of those two codes or none the configuration sees. In the receiver's mode, a Watch TV press that raised TV/Media's code would put the remote in the TV's mode, and the next Volume Up says so.",
+  "steps": [
+    {
+      "instruction": "Unplug the Harmony 350 from USB, point it at the receiver, and press AVR/Game (bottom left of the four device keys) once and briefly. The remote is now in the receiver's mode. Nothing should be heard"
+    },
+    {
+      "instruction": "Press Volume Up once, to show the remote is in the receiver's mode",
+      "expect": [
+        {
+          "device": "Denon_AV_Receiver",
+          "command": "VolumeUp"
+        }
+      ]
+    },
+    {
+      "instruction": "Press Watch TV once and briefly. Nothing is expected to be heard"
+    },
+    {
+      "instruction": "Press Volume Up once. If the receiver's Volume Up comes, Watch TV changed nothing; if the TV's comes, Watch TV selected the TV the way TV/Media does. The monitor shows which"
+    },
+    {
+      "instruction": "Press AVR/Game once and briefly, then hold Watch TV down for three seconds and let go"
+    },
+    {
+      "instruction": "Press Volume Up once. Again, the receiver's or the TV's says whether Watch TV, held, selected the TV"
+    },
+    {
+      "instruction": "Press TV/Media once and briefly to leave the remote in the TV's mode, then Volume Up",
+      "expect": [
+        {
+          "device": "LG_TV",
+          "command": "VolumeUp"
+        }
+      ]
+    }
+  ]
+}
