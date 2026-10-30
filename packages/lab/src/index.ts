@@ -696,6 +696,13 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // October 2026, the premise section 265 withdrew. Outside every corpus wide population, like the
   // four before it.
   h300_programmed_config: 'harmony-300-programmed-config.bin',
+  // A Harmony 350 configuration another owner posted as harmony-decompiler issue 37, received 7 October
+  // 2026: the only configuration here that gives a device key a second device, which is what
+  // todo-compile-350 2.4 read the long press off. The file is a ZIP (LZMA) holding Description.xml and the
+  // bare container as `Result.EzHex`, a name eight lab files share, so the fixture is the ZIP and a reader
+  // takes the container out of it. Neither parser takes the ZIP, so it stays outside every parseable and
+  // corpus wide population without being listed, like the bench 350's.
+  h350_issue37_config: 'H350-Config.EZHex',
   phase7_before: 'phase7-before-gspm.bin',
   phase7_after: 'phase7-after-gspm.bin',
   // The account's own command list, captured 13 August 2026: a name and a stated code per command,

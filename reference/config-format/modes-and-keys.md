@@ -550,7 +550,9 @@ keypad scanner's own scan code**, `EVENT_MASK` `0xC0` and `SCAN_MASK` `0x3F`[^s1
 | `11` | repeat |
 
 Three agreements settle the split, among them that it makes the Harmony 700's table 54 scan codes times
-three events, which a keypad can be[^s17].
+three events, which a keypad can be[^s17]. **On the 1.4 image the Harmony 300 and 350 run, the `11` event does not repeat**:
+it fires once, when a key has been held for a time the configuration sets, and a press then ends in it or
+in the release and never both, [their firmware](../architectures/harmony-300-350/firmware.md#a-held-key)[^t-long-press].
 
 **A scan code's arithmetic is per architecture**, because the scanner that produces it is not one
 routine across the family, so the same number means a different place on each:
@@ -661,3 +663,4 @@ its keys and says where each name came from.
 [^unchecked]: Not checked.
 [^t-harmony-350-slots]: Read in the firmware. [The test](../../tests/test_harmony_350_slots.py)
 [^t-harmony-350-slots-c]: Measured in configurations. [The test](../../tests/test_harmony_350_slots.py)
+[^t-long-press]: Read in the firmware. [The test](../../tests/test_harmony_350_long_press.py)

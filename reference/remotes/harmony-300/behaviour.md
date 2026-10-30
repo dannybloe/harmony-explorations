@@ -23,6 +23,8 @@ question.
 How a send is spelled in this family's configurations, every send paired with a `0x7C` naming the same
 device, is the family's, [the family's memory.md](../../architectures/harmony-300-350/memory.md#the-configuration-container).
 So is the wait after a device is switched on, stated per device, [a device's power on delay](../../architectures/harmony-300-350/memory.md#a-devices-power-on-delay).
+A device key selects its device as it goes down, where a Harmony 350's selects as it is let go, so on
+the firmware image both run by Logitech's package, holding one longer does nothing more, [a device key and its long press](../../architectures/harmony-300-350/memory.md#a-device-key-and-its-long-press)[^t-long-press-c][^t-long-press].
 
 ## Not checked
 
@@ -31,3 +33,5 @@ So is the wait after a device is switched on, stated per device, [a device's pow
 
 [^unchecked]: Not checked.
 [^s265]: Measured in configurations. [Section 265](../../../docs/findings.md#s265)
+[^t-long-press]: Read in the firmware. [The test](../../../tests/test_harmony_350_long_press.py)
+[^t-long-press-c]: Measured in configurations. [The test](../../../tests/test_harmony_350_long_press.py)

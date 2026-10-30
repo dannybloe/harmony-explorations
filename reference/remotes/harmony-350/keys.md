@@ -107,10 +107,15 @@ has not been. The same holds for the Harmony 300,
 ## Not checked
 
 * Every key's scan code.
-* How the firmware tells a two second device key press from a short one.
+* Which printed device key each of the scan codes 1, 4, 5 and 7 is: those are the codes whose bindings
+  select a device. This listed how the firmware tells a two second device key press from a short one,
+  until it was read: a press ends in a release or, held past the hold time, in a held event, and the
+  long press device is bound to the held event,
+  [the family's firmware](../../architectures/harmony-300-350/firmware.md#a-held-key)[^t-long-press].
 
 [^t-silhouette]: Stated by Logitech, in the manual. [The test](../../../tests/test_silhouettes.py)
 [^x-manual]: Stated by Logitech, in the manual. [The Harmony 350 setup guide](https://www.logitech.com/assets/51207/harmony-350-qsg-and-iid.pdf)
 [^s259]: Measured in configurations. [Section 259](../../../docs/findings.md#s259)
 [^s311]: Measured in configurations. [Section 311](../../../docs/findings.md#s311)
 [^t-harmony-350-slots-c]: Measured in configurations. [The test](../../../tests/test_harmony_350_slots.py)
+[^t-long-press]: Read in the firmware. [The test](../../../tests/test_harmony_350_long_press.py)
