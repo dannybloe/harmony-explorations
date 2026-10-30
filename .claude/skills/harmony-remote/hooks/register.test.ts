@@ -83,12 +83,11 @@ test('a word that starts with a progress character is not progress', () => {
 
 test('a running suite shows a bar against the last run, and never claims done while it runs', () => {
   expect(bar(0.5, 10)).toBe('█████░░░░░')
-  expect(testLine('make all', { done: 50, failed: 0 }, 100, '1:02', true))
-    .toBe('tests: make all  ██████████░░░░░░░░░░ 50%  50 of about 100, none failed  1:02')
-  expect(testLine('make all', { done: 120, failed: 2 }, 100, '2:00', true)).toContain('99%')
-  expect(testLine('make all', { done: 120, failed: 2 }, 100, '2:00', true)).toContain('2 FAILED')
-  expect(testLine('make all', { done: 7, failed: 0 }, undefined, '0:05', true)).toBe('tests: make all  7 done, none failed  0:05')
-  expect(testLine('make all', { done: 7, failed: 0 }, undefined, '0:05', false)).toBe('tests: make all finished, 7 done, none failed, 0:05')
+  expect(testLine({ done: 20, failed: 0 }, 100, true)).toBe('Tests running: [████░░░░░░░░░░░░░░░░] 20%')
+  expect(testLine({ done: 120, failed: 2 }, 100, true)).toBe('Tests running: [████████████████████] 99%, 2 FAILED')
+  expect(testLine({ done: 7, failed: 0 }, undefined, true)).toBe('Tests running')
+  expect(testLine({ done: 7, failed: 0 }, undefined, false)).toBe('Tests done')
+  expect(testLine({ done: 7, failed: 1 }, undefined, false)).toBe('Tests done, 1 FAILED')
 })
 
 test('a label is the program name and its arguments', () => {

@@ -193,16 +193,18 @@ export function bar(share: number, width = 20): string {
 }
 
 /**
- * The band's test line. `total` is the same measure at the end of the last run of this command, or
- * undefined the first time; a run that goes past it holds at 99 percent rather than claiming done.
+ * The band's test line, kept short: whether tests run, a bar, and a failure count only when there is
+ * one. `total` is the same measure at the end of the last run of this command, or undefined the first
+ * time, when there is nothing to fill a bar against; a run that goes past it holds at 99 percent
+ * rather than claiming done.
  */
-export function testLine(label: string, counts: { done: number; failed: number }, total: number | undefined,
-  elapsed: string, isRunning: boolean): string {
-  const failed = counts.failed === 0 ? 'none failed' : `${counts.failed} FAILED`
-  if (!isRunning) return `tests: ${label} finished, ${counts.done} done, ${failed}, ${elapsed}`
-  if (total === undefined || total === 0) return `tests: ${label}  ${counts.done} done, ${failed}  ${elapsed}`
+export function testLine(counts: { done: number; failed: number }, total: number | undefined,
+  isRunning: boolean): string {
+  const failed = counts.failed === 0 ? '' : `, ${counts.failed} FAILED`
+  if (!isRunning) return `Tests done${failed}`
+  if (total === undefined || total === 0) return `Tests running${failed}`
   const share = Math.min(counts.done / total, 0.99)
-  return `tests: ${label}  ${bar(share)} ${Math.floor(share * 100)}%  ${counts.done} of about ${total}, ${failed}  ${elapsed}`
+  return `Tests running: [${bar(share)}] ${Math.floor(share * 100)}%${failed}`
 }
 
 const quote = (s: string): string => `'${s.replace(/'/g, `'\\''`)}'`
@@ -274,7 +276,11 @@ export const register: Register = (on) => {
       // The outermost test process, the one whose parent is not a test process too, and its parent's
       // standard output, which is where the shell that started it writes: a file when Claude Code runs
       // it, foreground or background, and a terminal when somebody types it, which has nothing to read.
-      const found = (await sh(`pids=$(pgrep -f '${TESTS}'); for p in $pids; do`
+      // A shell is never the run, even when its command line names one: the shell Claude Code wraps a
+      // command in carries the whole command as text. Dropping shells also makes the run's own parent,
+      // that shell, the place its output is read from.
+      const found = (await sh(`pids=; for p in $(pgrep -f '${TESTS}'); do case "$(ps -o comm= -p "$p")" in`
+        + ` *sh) ;; *) pids="$pids $p" ;; esac; done; for p in $pids; do`
         + ` pp=$(ps -o ppid= -p "$p" | tr -d ' '); case " $(echo $pids) " in *" $pp "*) ;; *)`
         + ` f=$(lsof -a -p "$pp" -d 1 -Fn 2>/dev/null | sed -n 's/^n//p' | head -1);`
         + ` printf '%s\\t%s\\t%s\\n' "$(ps -o etime= -p "$p" | tr -d ' ')" "$f" "$(ps -ww -o args= -p "$p")"; break;; esac; done`)).trim()
@@ -285,7 +291,7 @@ export const register: Register = (on) => {
         runEndedPolls = 0
         let output = ''
         if (file.startsWith('/')) { try { output = await $.fs.read(file) } catch { /* not readable */ } }
-        text = testLine(run.label, testCounts(output), (await totals())[run.label], elapsed, true)
+        text = testLine(testCounts(output), (await totals())[run.label], true)
       } else if (run !== undefined) {
         runEndedPolls += 1
         let output = ''
@@ -301,7 +307,7 @@ export const register: Register = (on) => {
           } catch { /* the bar stays without a total */ }
           if (counts.failed > 0) $.ui.toast(`${run.label}: ${counts.failed} failed`)
         }
-        if (runEndedPolls <= LINGER_POLLS) text = testLine(run.label, counts, undefined, run.elapsed, false)
+        if (runEndedPolls <= LINGER_POLLS) text = testLine(counts, undefined, false)
         else run = undefined
       }
       if (text !== lastTests) {
