@@ -49,8 +49,8 @@ Logitech compile of part of a test setup written and used, then our composers on
 
 ## 3. A Logitech compile, written and used
 
-- [ ] 3.1 The test setup: devices up to the 350's eight, its one activity, five favourite channels and a long press, chosen so between them they use every feature in chapter 4; no real device needed, since the bench's infrared receiver hears what the remote sends
-- [ ] 3.2 The starting setup out of it, compiled by Logitech's service onto a test account's 350 record and filed in the lab
+- [x] 3.1 The test setup: devices up to the 350's eight, its one activity, five favourite channels and a long press, chosen so between them they use every feature in chapter 4; no real device needed, since the bench's infrared receiver hears what the remote sends: `packages/corpus/setups/h350-test.json`, the shared test setup's seven devices and the Knoll, TV kijken on Watch TV, 1, 2, 3, 666 and 07 on the KPN; the service placed the eight on the four keys itself, a short and a long press each
+- [x] 3.2 The starting setup out of it, compiled by Logitech's service onto a test account's 350 record and filed in the lab: the bench 350's own record on the first test account, `build-setup.ts` with a new `favourites` stage, one compile, the lab's `work/setups/h350-test/`; the compile check's missing activity is the check's, since this family names no activity and Watch TV's binding is there
 - [ ] 3.3 Written to the bench 350 through 1.6's route, with the family's first bench test: no screen, so every step is a key and a code heard
 
 ## 4. Our composers on it
