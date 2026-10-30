@@ -59,6 +59,9 @@ export const BENCH_CONFIGS: readonly string[] = [
   // The bench Harmony 350's, by its path in the lab rather than a lab name, since it is a working copy
   // and no lab table names it; todo-compile-350 1.8's bench test. `bin/bench.ts` loads a path.
   'work/350-delay/before.bin',
+  // What it holds since todo-compile-350 3.2, Logitech's compile of the test setup, by path for the same
+  // reason and because every compile in `work/setups/` carries this file name; 3.3's bench test.
+  'work/setups/h350-test/compile-Result.EzHex',
 ];
 
 /** A space at least this long ends a frame: the Flirc splits there too, and NEC's longest inner space is 4.5 ms. */
