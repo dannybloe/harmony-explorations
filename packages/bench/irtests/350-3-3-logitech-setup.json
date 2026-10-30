@@ -1,6 +1,6 @@
 {
   "name": "Harmony 350, Logitech's compile of the test setup",
-  "description": "todo-compile-350 3.3, the family's first full bench test, on the configuration the bench Harmony 350 holds: Logitech's own compile of the test setup, lab work/setups/h350-test/compile-Result.EzHex, written to the remote and read back identical. Every expectation below was derived from that file before the run, and the derivation is kept as a test, packages/bench/test/setup350.test.ts, which presses the same keys on a model built from the file and fails if this test and the file disagree. Logitech's service put the eight devices on the four device keys itself, and the file says: TV/Media short the LG TV, long the Knoll; Cable/PC short the Plasma, long Kodi; AVR/Game short the Denon, long the Switch; DVD/Music short the KPN, long the Sony HT. A short press chooses its device when the key is let go; for a long press hold the key down for about two seconds, since the remote chooses the long press device after about one second while the key is still held. Choosing a device sends nothing. The 350 has no screen, so the receiver is the only witness, and a step with no expectation predicts silence. In five of the other seven devices' modes Volume Up goes to the Denon, so each device step also presses a key only that device's map binds. This run is also the first time a 350 is heard with a device on Cable/PC and DVD/Music, and with Menu, DVR, Enter and Watch TV bound. Power on delays in the file, each holding back the next code to that device after it is switched on: LG TV 10 s, Plasma 5 s, Denon 2 s, the KPN, Kodi, the Switch and the Sony HT 1.5 s each, and the Knoll three waits of 10, 10 and 5 s; Watch TV carries the KPN's 1.5 s again. Whether a delay also holds back codes to other devices is not known on this remote, so the steps state an order and no pauses, and say how long to wait. Watch TV switches each of its devices over rather than the activity as a whole: a press turns the LG TV and the Denon on where the remote thinks they are off and off where it thinks they are on, sends the KPN's power toggle either way, and sends the Denon's CBL/SAT input only on the press that sets the activity's own on flag. Steps 9 and 10 put the TV and the Denon in the off state first. The file sends no input to the LG TV. What the setup asked for and this file does not do: the KPN's map binds only Volume Up and Down (to the Denon), Input (to the TV), Power, Previous Channel, OK and DVR, and none of the five favourite channels saved on the KPN, 1, 2, 3, 666 and 07, is bound to any key: nothing binds favourite keys 1 to 4 in any mode, and favourite 5 sends only the TV's and the Plasma's own keys. So steps 15 to 19 press each favourite on its own in the KPN's mode and predict silence, which means this run cannot settle which favourite key is which of codes 8, 9, 11 and 34; any favourite that does send something is the surprise to note.",
+  "description": "todo-compile-350 3.3, the family's first full bench test, on the configuration the bench Harmony 350 holds: Logitech's own compile of the test setup, lab work/setups/h350-test/compile-Result.EzHex, written to the remote and read back identical. Every expectation below was derived from that file before the run, and the derivation is kept as a test, packages/bench/test/setup350.test.ts, which presses the same keys on a model built from the file and fails if this test and the file disagree. Logitech's service put the eight devices on the four device keys itself, and the file says: TV/Media short the LG TV, long the Knoll; Cable/PC short the Plasma, long Kodi; AVR/Game short the Denon, long the Switch; DVD/Music short the KPN, long the Sony HT. A short press chooses its device when the key is let go; for a long press hold the key down for about two seconds, since the remote chooses the long press device after about one second while the key is still held. Choosing a device sends nothing. The 350 has no screen, so the receiver is the only witness, and a step with no expectation predicts silence. In five of the other seven devices' modes Volume Up goes to the Denon, so each device step also presses a key only that device's map binds. This run is also the first time a 350 is heard with a device on Cable/PC and DVD/Music, and with Menu, DVR, Enter and Watch TV bound. Power on delays in the file, each holding back the next code to that device after it is switched on: LG TV 10 s, Plasma 5 s, Denon 2 s, the KPN, Kodi, the Switch and the Sony HT 1.5 s each, and the Knoll three waits of 10, 10 and 5 s; Watch TV carries the KPN's 1.5 s again. Whether a delay also holds back codes to other devices is not known on this remote, so the steps state an order and no pauses, and say how long to wait. Watch TV switches each of its devices over rather than the activity as a whole: a press turns the LG TV and the Denon on where the remote thinks they are off and off where it thinks they are on, sends the KPN's power toggle either way, and sends the Denon's CBL/SAT input only on the press that sets the activity's own on flag. Steps 9 and 10 put the TV and the Denon in the off state first. The file sends no input to the LG TV. The favourite channels: the five saved on the KPN, 1, 2, 3, 666 and 07, are on the five favourite keys in the KPN's mode, and Watch TV leaves the remote in that mode. Channels 1, 2, 3 and 666 are each sent as the KPN's digits, one code per digit, so 666 is three 6s, which the monitor may show as one press with repeats; 07 is sent as the KPN's 0 and then its 7, the leading zero included. Nothing follows the digits: no OK or Enter. This run settles which favourite key is which code: favourite 5 was heard to be code 2, which holds 07, and favourites 1 to 4 are codes 8, 9, 11 and 34 in an order no configuration states. Those four codes hold 1, 2, 3 and 666, so the channel each key sends names its code. Each favourite is pressed in a step of its own, predicted to send the channels in the order they were entered: favourite 1 channel 1 (code 8), favourite 2 channel 2 (code 9), favourite 3 channel 3 (code 11) and favourite 4 channel 666 (code 34). Where another channel comes, the channel heard is the answer, so note it. Besides the favourites the KPN's map binds only Volume Up and Down (to the Denon), Input (to the TV), Power, Previous Channel, OK and DVR: no channel keys and no digits. This is the record's second compile, made after the channels were saved through MyHarmony's own favourite channel screen. The first, lab work/setups/h350-test/first-compile/compile-Result.EzHex, bound no favourite, and apart from the KPN's map and the favourites the two are the same in every key map, state variable and infrared code, which the derivation test checks.",
   "steps": [
     {
       "instruction": "Unplug the Harmony 350 from USB and point it at the receiver. Press TV/Media, the top left of the four keys under My Devices, once and briefly: this chooses the LG TV and sends nothing. Then press Volume Up (the top of the rocker on the left), then Info",
@@ -99,19 +99,35 @@
       ]
     },
     {
-      "instruction": "Still in the KPN's mode, press favourite key 1 once (the five keys around Input print 1 to 5: 1 and 5 beside Input, 2, 3 and 4 below it). The file binds no favourite channel, so nothing should be heard; note anything the monitor shows"
+      "instruction": "Still in the KPN's mode, press favourite key 1 once (the five keys around Input print 1 to 5: 1 and 5 beside Input, 2, 3 and 4 below it). Predicted: channel 1, the KPN's digit 1. If another channel's digits come, note which: the channel heard settles which code favourite 1 is",
+      "expect": [
+        { "device": "KPN", "command": "1" }
+      ]
     },
     {
-      "instruction": "Press favourite key 2 once. Nothing should be heard"
+      "instruction": "Press favourite key 2 once. Predicted: channel 2, the KPN's digit 2. If another channel's digits come, note which",
+      "expect": [
+        { "device": "KPN", "command": "2" }
+      ]
     },
     {
-      "instruction": "Press favourite key 3 once. Nothing should be heard"
+      "instruction": "Press favourite key 3 once. Predicted: channel 3, the KPN's digit 3. If another channel's digits come, note which",
+      "expect": [
+        { "device": "KPN", "command": "3" }
+      ]
     },
     {
-      "instruction": "Press favourite key 4 once. Nothing should be heard"
+      "instruction": "Press favourite key 4 once. Predicted: channel 666, the KPN's digit 6 three times a tenth of a second apart, which the monitor may show as one press with repeats. If another channel's digits come, note which",
+      "expect": [
+        { "device": "KPN", "command": "6" }
+      ]
     },
     {
-      "instruction": "Press favourite key 5, right of Input, once. In the KPN's mode nothing should be heard"
+      "instruction": "Press favourite key 5, right of Input, once. Expected: channel 07, the KPN's digit 0 and then its 7, and nothing after them",
+      "expect": [
+        { "device": "KPN", "command": "0" },
+        { "device": "KPN", "command": "7" }
+      ]
     },
     {
       "instruction": "Press TV/Media once and briefly to leave the remote in the TV's mode, then Volume Up",
