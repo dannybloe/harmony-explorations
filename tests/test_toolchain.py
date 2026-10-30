@@ -406,6 +406,42 @@ TYPESCRIPT_LOOPS_ALLOWED_TO_SKIP_A_SAMPLE = {
 }
 
 
+#: The TypeScript files a test scanner is meant to cover, as git lists them: one directory level
+#: under `packages/<name>/test/`, every `.ts` there, so helpers such as `tagfive.ts` count as well
+#: as the `*.test.ts` files, because the scanners read what the glob reads. This is written as a
+#: regular expression over git's own listing and not as a second glob, so the two enumerations
+#: share no code and a glob that silently matched too little disagrees with it.
+TYPESCRIPT_TEST_PATH = re.compile(r'^packages/[^/]+/test/[^/]+\.ts$')
+
+
+def git_listed_typescript_tests(testcase):
+    """The set of TypeScript test paths git knows of, relative to the repository root, or a skip.
+
+    This replaces a literal count of the files the scanners read. The literal was there to catch a
+    pattern that silently matched nothing, or too little, and so passed vacuously, but it made every
+    new test file cost a manual bump and a paragraph of history. A comparison against git's listing
+    catches the same defect and moves by itself: a file the scanner misses is named in the failure.
+
+    The listing is tracked files plus untracked files that are not ignored, which is what a developer
+    has on disk before the first commit of a new test, so adding a file does not fail this until it
+    is committed. A tracked file deleted from the working tree is subtracted, since the scanner can
+    no longer see it either. Where git or its metadata is absent, as in an exported tree, there is
+    nothing independent to compare against, so the test skips with that reason and never passes.
+    """
+    if not os.path.exists(os.path.join(ROOT, '.git')):
+        testcase.skipTest('no .git here (an exported tree?), so there is no independent listing of the test files')
+
+    def listing(*arguments):
+        try:
+            done = subprocess.run(['git', 'ls-files', '-z', *arguments], cwd=ROOT, capture_output=True, check=True)
+        except (OSError, subprocess.CalledProcessError) as error:
+            testcase.skipTest('git ls-files is unavailable (%s), so there is no independent listing' % error)
+        return {name for name in done.stdout.decode('utf-8').split('\0') if name}
+
+    present = listing('--cached', '--others', '--exclude-standard') - listing('--deleted')
+    return {name for name in present if TYPESCRIPT_TEST_PATH.match(name)}
+
+
 class ATypeScriptSampleLoopStatesItsPopulation(unittest.TestCase):
     """The TypeScript half of `ASampleLoopStatesItsPopulation`, and it had the sharper version of it.
 
@@ -433,12 +469,12 @@ class ATypeScriptSampleLoopStatesItsPopulation(unittest.TestCase):
     PATTERN = re.compile(r'^\s*const (\w+) = load\(')
 
     def _offenders(self):
-        counted, scanned = {}, 0
+        counted, scanned = {}, []
         for path in sorted(glob.glob(os.path.join(ROOT, 'packages', '*', 'test', '*.ts'))):
             relative = os.path.relpath(path, ROOT)
             with open(path, encoding='utf-8') as handle:
                 lines = handle.read().splitlines()
-            scanned += 1
+            scanned.append(relative)
             for at, line in enumerate(lines[:-1]):
                 match = self.PATTERN.match(line)
                 if not match:
@@ -450,51 +486,17 @@ class ATypeScriptSampleLoopStatesItsPopulation(unittest.TestCase):
 
     def test_no_test_skips_a_missing_sample_inside_a_loop(self):
         counted, scanned = self._offenders()
-        # 48 since `packages/usb/test/classic-capture.test.ts`, section 210, the first fixture
-        # backed test here whose fixture is a captured log rather than a file off a device.
-        # 50 since `packages/usb/test/rehearsal.test.ts`, the job 3 review of 30 August 2026, which
-        # loads no sample at all: it tests the rehearsal's arithmetic with no lab and no device.
-        # 52 since the compatibility gate, section 225: `packages/usb/test/compatible.test.ts` is
-        # literals only and `packages/corpus/test/compatibility.test.ts` is the corpus half, which
-        # needs both languages' halves of the config format and so cannot live beside the first.
-        # 53 since `packages/usb/test/identity.test.ts`, section 226, which identifies the unit on
-        # the cable and works on synthetic blocks because the real values live in the lab.
-        # 55 since `packages/codec/test/catalogue.test.ts`, section 229: their device catalogue as a
-        # local source, tested against the devices our own configurations drive.
-        # 54 since `packages/codec/test/archive.test.ts`, section 227: it reads Logitech's own protocol
-        # definitions out of the infrared archive checkout and skips without one, like a lab test.
-        # 56 since `packages/codec/test/pronto.test.ts`, section 230: Pronto Hex, and our own waveforms
-        # against the two million the archive's renderer produced from the same definitions.
-        # 59 since `packages/usb/test/blockwrite.test.ts`, section 245: the transfer planner had
-        # no test at all while its chunk size was ten times Logitech's own, so the module the
-        # write path leans on hardest was the one nothing asserted.
-        # 63 since `packages/bench/test/irmonitor.test.ts` and `irsession.test.ts`: the infrared
-        # monitor and its test runner, fed by hand rather than by a receiver. 64 since
-        # `packages/codec/test/settingsstore.test.ts`, section 303.
-        # 65 since `packages/usb/test/settings.test.ts`, section 304, 66 since
-        # `packages/codec/test/driving.test.ts`, section 305. 67 since `packages/codec/test/tagfive.ts`,
-        # section 313's tag 5 check shared by the corpus test and the composer's, which is a helper
-        # rather than a test file and is counted because the glob reads every `.ts` under `test/`. 69 with
-        # section 315's two and 70 with `packages/codec/test/screencategories.test.ts`, section 317. 71 with frame.test.ts, section 318, and 72 with devicepower.test.ts, section 320, and 73 with inputs.test.ts, section 321, and 74 with activityroles.test.ts, section 323, and 75 with statetables.test.ts, section 324, and 76 with devicemode.test.ts, section 325. 77 with tworowlist.test.ts, section 326, and 78 with sequence.test.ts, section 327. 80 with devicepage.test.ts, section 330, and 81 with composecatalogue.test.ts, section 331. 82 with `packages/silhouettes/test/remotes.test.ts`, the per remote reference's generated blocks. 83 with `packages/codec/test/catalogueraw.test.ts`, todo-later 1.3 and 1.4. 84 with help.test.ts, section 333, and 85 with menupage.test.ts, section 334. 86 with `packages/corpus/test/stamp.test.ts`, todo-compile-650 1.3. 87 with activityscreen.test.ts, section 336. 88 with `packages/corpus/test/harvest.test.ts`, the harvest script of todo-secure-logitech 1.1, which did not move this count when it landed. 89 with `packages/corpus/test/setup.test.ts`, the setup builder of todo-compile-650 1.6. 90 with `packages/codec/test/passthrough.test.ts`, the pass through device of todo-compile-650 3.14. 91 with `packages/codec/test/wiring.test.ts`, section 347, and 92 with pressrepeats.test.ts, section 348. 93 with compare.test.ts, todo-compile-650 5.2, and 94 with activitydevicelist.test.ts, section 352. 95 with screenrecords.test.ts, section 356, and 96 with firmwarescreens.test.ts, section 357; neither moved this count when it landed. 97 with screentexts.test.ts, section 358. 98 with cataloguereading.test.ts, section 359. 99 with catalogueleftovers.test.ts, section 361, todo-process-logitech 2.3. 100 with assemble.test.ts, section 362, todo-compile-650 10.6. 101 with pictures.test.ts, section 363, todo-compile-650 9.1. 102 with togglegroups.test.ts, section 365, todo-process-logitech 2.5. 103 with backgrounds.test.ts, section 366, todo-compile-650 9.1.2. 104 with fonttable.test.ts, section 368. 122 with touchfirmwarescreens.test.ts,
-        # section 409, and 123 with wiring-one.test.ts, section 410, todo-compile-one 6.3. 124 with touchfixedscreens.test.ts,
-        # section 411, todo-compile-one 4.4.4.1. 126 with touchtourscreens.test.ts, section 412, 4.4.4.2, and
-        # screenlists.ts, the list walk it shares with touchfixedscreens.test.ts, a helper rather than a test file.
-        # 127 with touchstatusscreens.test.ts, section 413, todo-compile-one 4.5. 128 with touchbuilders.test.ts,
-        # todo-compile-one 3.2.2.1, the builders on the composed path. 129 with touchclockheader.test.ts,
-        # section 414, todo-compile-one 4.7. 130 with touchcaseprograms.test.ts, section 416, todo-compile-one 6.6.
-        # 131 with touchhitpages.test.ts, section 417, todo-compile-one 4.8. 132 with touchhelpscreens.test.ts,
-        # section 415, todo-compile-one 4.6. 133 with touchbelowlists.test.ts, section 418, todo-compile-one 6.5.
-        # 134 with touchactivitymenu.test.ts, section 419, todo-compile-one 4.1. 135 with
-        # touchdevicepages.test.ts, section 420, todo-compile-one 4.2. 136 with touchwithouttour.test.ts,
-        # section 421, todo-compile-one 4.10. 137 with touchpictures.test.ts, section 422, todo-compile-one 5.3.1
-        # and 5.3.3. 138 with touchactivityscreens.test.ts, section 423, todo-compile-one 4.3.
-        # 139 with touchfontsets.test.ts, section 427, todo-compile-one 7.1.1. 140 with screenfill.test.ts,
-        # section 425, todo-compile-one 5.3.4. 141 with touchdevicelists.test.ts, section 424, 4.3.3.
-        # 143 with touchskeleton.test.ts, section 431, todo-compile-one 7.1.3; 144 with touchnumbering.test.ts, section 432, 7.1.4. 145 with touchempty.test.ts, section 434, 7.1.7. 147 with composeempty.test.ts and the census it shares with composesetup.test.ts, carried.ts, section 435, 8.1.4. 148 with composecompare.test.ts, section 436, 8.1.5.
-        # 150 with filewrite.test.ts and the fake remote it shares with its subprocesses, fake-file-remote.ts, todo-compile-350 1.6.
-        # 151 with filefamilydelays.test.ts, todo-compile-350 1.8. 152 with `packages/bench/test/keys350.test.ts`, 2.2.
-        # 153 with `packages/corpus/test/favourites.test.ts`, 3.1.
-        self.assertEqual(scanned, 153, 'the TypeScript test files, as ABoundOnACorpusTotalIsExact counts them')
+        # What this asserts is that the scan read exactly the TypeScript test files git lists, as sets
+        # so that a difference names the files. It used to assert a literal count, bumped by hand for
+        # every new file (48 at section 210, 153 at todo-compile-350 3.1), and the history of those
+        # bumps is in git. The literal guarded against a glob that matches nothing or too little and
+        # so reports every file clean; the comparison guards the same thing without a floor, and
+        # without a number that moves with unrelated work.
+        expected = git_listed_typescript_tests(self)
+        self.assertEqual(
+            sorted(scanned), sorted(expected),
+            'the scan and git disagree about which TypeScript test files exist. Only in the scan: %s. '
+            'Only in git: %s.' % (sorted(set(scanned) - expected), sorted(expected - set(scanned))))
         self.assertEqual(
             {name: len(lines) for name, lines in counted.items()},
             TYPESCRIPT_LOOPS_ALLOWED_TO_SKIP_A_SAMPLE,
@@ -615,47 +617,16 @@ class ABoundOnACorpusTotalIsExact(unittest.TestCase):
 
     def test_the_pattern_still_matches_a_known_bound(self):
         found, scanned = self._bounds()
-        # 48 since `packages/usb/test/classic-capture.test.ts`, section 210.
-        # 50 since `packages/usb/test/rehearsal.test.ts`, the job 3 review of 30 August 2026.
-        # 52 since the compatibility gate, section 225: one test file per package, since the corpus
-        # half needs the codec and `packages/usb` deliberately does not depend on it.
-        # 53 since `packages/usb/test/identity.test.ts`, section 226.
-        # 55 since `packages/codec/test/catalogue.test.ts`, section 229; 54 since `archive.test.ts`.
-        # 59 since `packages/usb/test/blockwrite.test.ts`, section 245: the transfer planner had
-        # no test at all while its chunk size was ten times Logitech's own, so the module the
-        # write path leans on hardest was the one nothing asserted.
-        # 63 since `packages/bench/test/irmonitor.test.ts` and `irsession.test.ts`: the infrared
-        # monitor and its test runner, fed by hand rather than by a receiver. 64 since
-        # `packages/codec/test/settingsstore.test.ts`, section 303.
-        # 65 since `packages/usb/test/settings.test.ts`, section 304, 66 since
-        # `packages/codec/test/driving.test.ts`, section 305. 67 since `packages/codec/test/tagfive.ts`,
-        # section 313, a shared helper rather than a test file. 69 with section 315's two and 70 with
-        # `packages/codec/test/screencategories.test.ts`, section 317. 71 with frame.test.ts, section 318, and 72 with devicepower.test.ts, section 320, and 73 with inputs.test.ts, section 321, and 74 with activityroles.test.ts, section 323, and 75 with statetables.test.ts, section 324, and 76 with devicemode.test.ts, section 325. 77 with tworowlist.test.ts, section 326, and 78 with sequence.test.ts, section 327. 80 with devicepage.test.ts, section 330, and 81 with composecatalogue.test.ts, section 331. 82 with `packages/silhouettes/test/remotes.test.ts`, the per remote reference's generated blocks. 83 with `packages/codec/test/catalogueraw.test.ts`, todo-later 1.3 and 1.4. 84 with help.test.ts, section 333, and 85 with menupage.test.ts, section 334. 86 with `packages/corpus/test/stamp.test.ts`, todo-compile-650 1.3. 87 with activityscreen.test.ts, section 336.
-        # 88 with `packages/corpus/test/harvest.test.ts`, todo-secure-logitech 1.1.
-        # 89 with `packages/corpus/test/setup.test.ts`, todo-compile-650 1.6.
-        # 90 with `packages/codec/test/passthrough.test.ts`, todo-compile-650 3.14.
-        # 91 with `packages/codec/test/wiring.test.ts`, section 347, and 92 with pressrepeats.test.ts, section 348. 93 with compare.test.ts, todo-compile-650 5.2, and 94 with activitydevicelist.test.ts, section 352. 95 with screenrecords.test.ts, section 356, and 96 with firmwarescreens.test.ts, section 357; neither moved this count when it landed. 97 with screentexts.test.ts, section 358. 98 with cataloguereading.test.ts, section 359. 99 with catalogueleftovers.test.ts, section 361, todo-process-logitech 2.3. 100 with assemble.test.ts, section 362, todo-compile-650 10.6. 101 with pictures.test.ts, section 363, todo-compile-650 9.1. 102 with togglegroups.test.ts, section 365, todo-process-logitech 2.5. 103 with backgrounds.test.ts, section 366, todo-compile-650 9.1.2. 104 with fonttable.test.ts, section 368, 8.2.
-        # 105 with blending.test.ts, section 370, 106 with recipe.test.ts, 10.7.4, and 107 with
-        # typeface.test.ts, section 372, none of which moved this count when it landed; 108 with
-        # icons.test.ts, section 373; 109 with empty.test.ts, todo-compile-650 11.1.1, which did not move this
-        # count when it landed. 120 with the eleven of todo-compile-one, none of which moved this count when it
-        # landed: composesetup, generic, onelook, startupassistant, touchactivity, touchlabels, touchrowclick,
-        # screencategories-one (section 405), touchscreentexts (406), firmwaresections (407) and
-        # onestatusscreens (408). 121 with screenrecords-one, 4.4.2, 122 with touchfirmwarescreens, 4.4.3, and
-        # 123 with wiring-one, 6.3, section 410. 124 with touchfixedscreens,
-        # 4.4.4.1, section 411. 126 with touchtourscreens, 4.4.4.2, section 412, and screenlists, the
-        # list walk it shares with touchfixedscreens, a helper rather than a test file. 127 with
-        # touchstatusscreens, 4.5, section 413. 128 with touchbuilders,
-        # todo-compile-one 3.2.2.1. 129 with touchclockheader, 4.7, section 414. 130 with touchcaseprograms,
-        # 6.6, section 416. 131 with touchhitpages, 4.8, section 417. 132 with touchhelpscreens, 4.6, section 415.
-        # 133 with touchbelowlists, 6.5, section 418. 134 with touchactivitymenu, 4.1, section 419.
-        # 135 with touchdevicepages, 4.2, section 420. 136 with touchwithouttour, 4.10, section 421.
-        # 137 with touchpictures, 5.3.1 and 5.3.3, section 422. 138 with touchactivityscreens, 4.3, section 423. 139 with touchfontsets,
-        # 7.1.1, section 427. 140 with screenfill, 5.3.4, section 425.
-        # 141 with touchdevicelists, 4.3.3, section 424. 143 with touchskeleton, 7.1.3, section 431. 144 with touchnumbering, 7.1.4, section 432. 145 with touchempty, 7.1.7, section 434. 147 with composeempty and carried, 8.1.4, section 435. 148 with composecompare, 8.1.5, section 436.
-        # 150 with filewrite and fake-file-remote, todo-compile-350 1.6. 151 with filefamilydelays, 1.8.
-        # 152 with keys350, todo-compile-350 2.2. 153 with favourites, 3.1.
-        self.assertEqual(len(scanned), 153, 'TypeScript test files, which moves when one is added')
+        # The scan has to have read exactly the TypeScript test files git lists, compared as sets so
+        # that a difference names the files. This was a literal count (48 at section 210, 153 at
+        # todo-compile-350 3.1) bumped by hand for every new file, which guarded against a glob that
+        # matches too little and so finds no bounds at all; the comparison does the same without a
+        # floor and without the bump. Its sibling above makes the same comparison.
+        expected = git_listed_typescript_tests(self)
+        self.assertEqual(
+            sorted(scanned), sorted(expected),
+            'the scan and git disagree about which TypeScript test files exist. Only in the scan: %s. '
+            'Only in git: %s.' % (sorted(set(scanned) - expected), sorted(expected - set(scanned))))
         self.assertIn(self.CONTROL, found, 'the pattern matches nothing it should match')
 
     def test_every_remaining_bound_says_why_it_is_not_a_measurement(self):
