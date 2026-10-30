@@ -262,6 +262,11 @@ test('the infrared page shows one mode at a time, and a test is a checklist that
     await until(async () => (await page.locator('#status').textContent() ?? '').includes('listening'),
       'the page never said it was listening');
 
+    // The page opens on Test, the mode a bench session is mostly spent in.
+    assert.equal(await page.locator('#run').isVisible(), true, 'the page did not open on Test');
+    assert.equal(await page.locator('#signal').isVisible(), false);
+    await page.getByRole('button', { name: 'Live', exact: true }).click();
+
     // A code nobody holds, heard: it is listed, and Live shows it with its signal.
     feed('+1000000');
     feed('+9000 -4500 ' + '+560 -1690 '.repeat(16) + '+560 -560 '.repeat(16) + '+560');

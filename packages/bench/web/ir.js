@@ -264,6 +264,8 @@ function status(event) {
 }
 
 async function start() {
+  // The page opens on Test, the mode a bench session is mostly spent in; Live is one click away.
+  setMode('test');
   await loadTests();
   try {
     const open = await api('/api/ir/run');
