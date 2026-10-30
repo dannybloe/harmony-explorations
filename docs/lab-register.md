@@ -157,6 +157,7 @@ The largest square and the least read. 6758 files, 1.1 GB.
 | `work/review-384-prose/` | **ours**: the sentence audit of section 384, its listings and scripts | 8 | `catalogued` | `intermediate` | section 384 |
 | `work/350-write-route/` | **ours**: the reading of how Logitech's client writes a configuration to the Harmony 300 and 350, `todo-compile-350.md` 1.2, one note naming the client file and function behind each step | 1 | `mined` | `intermediate` | the file family write route test |
 | `work/350-delay/` | **ours**: the bench Harmony 350's configuration as a container before and after one power on delay is changed, and a note saying which delay, which key and what the receiver should show, `todo-compile-350.md` 1.8 | 3 | `catalogued` | `intermediate` `write-path` | the file family delay test |
+| `work/350-every-key/` | **ours**: the bench Harmony 350's configuration with every scan code its television map left unbound given a press sending Info, written to check the keypad after cleaning, its note and its write journals, `todo-compile-350.md` 2.2.2 | 7 | `catalogued` | `intermediate` `write-path` | the Harmony 350 test notes |
 
 ## Firmware
 

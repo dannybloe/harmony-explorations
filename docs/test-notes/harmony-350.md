@@ -87,6 +87,52 @@ VolumeUp, TV/Media (top left) then Volume Up the LG's, and Cable/PC (top right),
 nothing to, left the remote in the LG's mode. The unit's device keys print TV/Media, Cable/PC, AVR/Game
 and DVD/Music, not what the earlier setup guide's drawing showed; the drawing was corrected.
 
+## Every key in two modes, todo-compile-350 2.2.2
+
+**The run.** `packages/bench/irtests/350-2-2-keys.json`, with the unit holding `work/350-delay/before.bin`,
+the LG television on the top left key and the Denon receiver on the bottom left, written back after the
+keypad check below. The run file is the lab's
+`reads/20261030T142422Z-ir-test-harmony-350-every-key-in-the-tv-s-and-the-receiver-s-modes.json`, fixture
+`h350_keys_ir`, and `TheBench350HeardEveryKey` in `tests/test_harmony_350_keys.py` holds it. Every key was
+pressed in the television's mode and again in the receiver's, each step naming what the monitor should hear.
+
+**Scored against [the predictions](../predictions/harmony-350-keys.md)**:
+
+| prediction | result |
+|---|---|
+| P1, the receiver is on the bottom left key, AVR/Game | confirmed: AVR/Game, then Volume Up, Volume Down and Mute sent the Denon's |
+| P2, a device key sends nothing | confirmed: nothing heard on TV/Media, AVR/Game, Cable/PC or DVD/Music |
+| P3, exactly one favourite sends the television's Home | confirmed, and it is favourite 5, the one right of Input, so code 2; favourites 1 to 4 sent nothing and stay 8, 9, 11 and 34 in an order still open |
+| P4, the upper arrow sends the receiver's ChannelUp and the lower its ChannelDown, both silent in the television's mode | confirmed, so the upper arrow is code 25 and the lower 26 |
+| P5, every other key as the table says, in both modes | confirmed for every key but one press: digit 0 sent nothing in the television's mode, and sent its code in the receiver's |
+
+So 37 of the 38 keys predicted to send in the television's mode did, all with the predicted command, and
+29 of 29 in the receiver's. **Three presses heard where silence was predicted are not a finding**: Info,
+Exit and Guide in the television's silent step, which the tester pressed because the step's wording named
+them as landmarks for the arrows; each sent its own code. Live is still 43 or 56: the file binds neither,
+so this run cannot split them, and Menu, DVR, Enter and Watch TV sent nothing for the same reason.
+
+**Digit 0 is an intermittent contact on this unit**, not a fact about the model: it sent its code in an
+earlier run of another test after the keypad was cleaned, and in this run's receiver steps.
+
+**The keypad was cleaned inside before this run.** A first partial run of this test, the lab's
+`reads/20261030T113234Z-ir-test-harmony-350-every-key-in-the-tv-s-and-the-receiver-s-modes.json`, had Mute
+silent and digits 5 and 9 sending twice. After cleaning, `work/350-every-key/every-key.bin` was written, the
+bench file with the 16 codes the television's map leaves unbound given a press sending Info's list
+(`work/350-every-key/NOTE.md`), and every key sent something. The bench tests for that check and for the
+Watch TV runs below are `packages/bench/irtests/done/350-every-key.json`, `350-every-key-2.json`,
+`350-watch-tv.json`, `350-device-key-watch-tv.json`, `350-avr-watch-tv.json` and
+`350-usb-restart-watch-tv.json`. Then `before.bin` was written back.
+
+**Watch TV sent nothing in three runs before a battery pull, and has sent in every run since**, including
+after TV/Media, after AVR/Game and after a restart over USB. The cause was not found; it was seen and not
+reproduced.
+
+**`/cfg/log` was read over USB after many presses since the last write, and all 131072 bytes were erased,
+`0xFF`.** So this firmware with this configuration logs no key press or send there. That read was not
+saved to the lab, so nothing pins it. The backup read before the first write,
+`reads/20261027T1700Z-h350-backup/cfg_log.bin`, is 131072 bytes of `0xFF` as well.
+
 ## What was predicted
 
 Each programmed read was predicted in writing and committed before it was taken:
@@ -128,12 +174,12 @@ statement, with each group's device named by the codec's `devices` from its `Pow
 first test). On the four device file the television is on `TV/Media`, the KPN box on `Cable/PC`, the
 Playstation 3 on `AVR/Game` and the Chromecast on `DVD/Music`. On the file the unit holds now, the same
 file as the backup read the test opens, the LG television is on `TV/Media` and the Denon receiver on
-`AVR/Game`. Asking which keys were chosen, or pressing `AVR/Game` and hearing a Denon code, would
-check the one inference in that, which key a scan code is on a 350.
+`AVR/Game`. Pressing `AVR/Game` and hearing a Denon code checked the one inference in that, which key a
+scan code is on a 350, for the two keys this file binds, 2.3 and 2.2.2 above.
 
 ## What has not been done
 
-* Only one infrared bench test has been run on this model, the power on delay above; a command to another
-  device right after a power code was not pressed.
-* No key press has been tied to a scan code.
+* A command to another device right after a power code was not pressed.
+* Menu, DVR, Enter, Watch TV, favourites 1 to 4, Live and the top right and bottom right device keys have
+  not been tied to a code by pressing them, since the file the unit held binds none of them.
 * No firmware version has been read off the unit beyond the product string's 1.4.0.

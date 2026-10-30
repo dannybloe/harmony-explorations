@@ -62,7 +62,7 @@ import {
 } from '@harmony/usb';
 
 import { MODELS } from '../src/index.ts';
-import { SCAN_SOURCES } from '../src/types.ts';
+import { SCAN_SOURCES, scanFootnote } from '../src/types.ts';
 import type { Key, Model as Drawing, ScanSource } from '../src/types.ts';
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
@@ -326,9 +326,10 @@ function featureTable(skins: readonly number[]): string {
 }
 
 /**
- * A scan code's cell, with the footnote of the archive section that established it.
+ * A scan code's cell, with the footnote of the archive section or test that established it.
  *
- * **The footnote is the drawing's `scanFrom`, printed as plan 009 section 4's label `[^sN]`**, so the page
+ * **The footnote is the drawing's `scanFrom`, printed as plan 009 section 4's label `[^sN]`**, or the
+ * test's own label where the source is a test, `scanFootnote`, so the page
  * this block lands in must define that label, and `tests/test_reference.py` fails a page that references
  * one it does not define. That coupling is the point: a scan code is a fact in the reference like any
  * other and carries its evidence, and the evidence words belong to the page, which knows whether its
@@ -337,7 +338,7 @@ function featureTable(skins: readonly number[]): string {
 function scanCell(k: Key): string {
   if (k.scan !== undefined) {
     if (k.scanFrom === undefined) throw new Error(`${k.name} carries scan ${k.scan} and no scanFrom`);
-    return `${k.scan} (${hex(k.scan, 2)})[^s${k.scanFrom}]`;
+    return `${k.scan} (${hex(k.scan, 2)})[^${scanFootnote(k.scanFrom)}]`;
   }
   if (k.scanCandidates !== undefined) return `one of ${k.scanCandidates.join(' or ')}`;
   return 'not measured';
@@ -355,10 +356,12 @@ function scanSources(drawing: Drawing): string {
   for (const k of drawing.keys) {
     if (k.scanFrom !== undefined) counts.set(k.scanFrom, (counts.get(k.scanFrom) ?? 0) + 1);
   }
-  // The largest source first, which is the button maps wherever there are any, and by section after that.
-  const sources = (Object.keys(SCAN_SOURCES).map(Number) as ScanSource[]).filter((s) => counts.has(s))
-    .sort((a, b) => (counts.get(b)! - counts.get(a)!) || a - b);
-  return sources.map((s) => `${counts.get(s)} ${SCAN_SOURCES[s]}[^s${s}]`).join('; ');
+  // The largest source first, which is the button maps wherever there are any, and in the table's order
+  // after that. A key of `SCAN_SOURCES` that spells a number is a section, the rest are tests' labels.
+  const order = Object.keys(SCAN_SOURCES).map((s) => (/^\d+$/.test(s) ? Number(s) : s) as ScanSource);
+  const sources = order.filter((s) => counts.has(s))
+    .sort((a, b) => (counts.get(b)! - counts.get(a)!) || order.indexOf(a) - order.indexOf(b));
+  return sources.map((s) => `${counts.get(s)} ${SCAN_SOURCES[s]}[^${scanFootnote(s)}]`).join('; ');
 }
 
 function keyTable(drawing: Drawing): string {

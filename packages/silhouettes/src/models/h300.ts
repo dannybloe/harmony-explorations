@@ -27,9 +27,11 @@
  * Harmony 600. The statement made holding both is that the shape is the same as the 350's, and a remote
  * in the hand outranks a product photograph, so the 350's single part with two halves stands.
  *
- * **No scan code**, for the reason `h350.ts` gives: the keypad scanner is not read, and the four device
- * keys' codes, 5, 1, 7 and 4, come from the configurations rather than from the scanner,
- * `tests/test_harmony_350_device_groups.py`.
+ * **No scan code**, though the 350's drawing now carries 44: those were heard by pressing a Harmony 350,
+ * `tests/test_harmony_350_keys.py`, and no Harmony 300 has been pressed. The same moulding and the 300's
+ * configurations binding the same codes make it likely the 300's are the same, which is an inference and
+ * not a measurement, so `reprint` drops the codes and the candidates the 350 carries. This said the keypad
+ * scanner was not read, which stopped being true when the 1.4 image's scan was read for both models.
  */
 import { H350 } from './h350.ts';
 import type { Key, Label, Model } from '../types.ts';
@@ -64,7 +66,9 @@ const REPRINT: Readonly<Record<string, Reprint>> = {
   Stop: { labels: [below('Stop')] },
 };
 
-function reprint(key: Key): Key {
+function reprint(drawn: Key): Key {
+  // The 350's codes are a measurement on a 350, so none of them crosses to this drawing.
+  const { scan: _scan, scanFrom: _scanFrom, scanCandidates: _candidates, ...key } = drawn;
   const change = REPRINT[key.name];
   if (change === undefined) return key;
   return {

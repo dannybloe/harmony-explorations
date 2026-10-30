@@ -219,8 +219,10 @@ table in `reference/button-maps.md`, which tests parsed back out of Markdown; th
 drawing is the one copy. `scan` carries a code and `scanFrom` the archive section that established it, one
 of `SCAN_SOURCES` in `src/types.ts`: 133 for the button maps, 323 and 398 for the arrow pairs the devices'
 own maps decided on the Harmony 600 and the Harmony One, 125 for the One's touch hit map, 333 for Help on
-the 600. `make remote-reference` prints each as a footnote on the model's keys page, so a keys page must
-define that section's footnote, and a new source is a new row in `SCAN_SOURCES` with its own sentence.
+the 600. Since the archive is frozen a new source is a test's footnote label instead of a section,
+`t-harmony-350-keys-u` for the Harmony 350's keys heard by pressing them. `make remote-reference` prints
+each as a footnote on the model's keys page, `[^s133]` or `[^t-harmony-350-keys-u]`, so a keys page must
+define that footnote, and a new source is a new row in `SCAN_SOURCES` with its own sentence.
 
 **In the SVG a code is the `data-scan` attribute, and only an established one.** `toSvg` writes
 `data-scan` from `scan` and `data-scan-candidates` from `scanCandidates`, and nothing else puts either
@@ -229,14 +231,15 @@ carried no `data-scan` at all, on the reasoning that filling one in would mean g
 not, since leaving the attribute off is exactly what says unknown. FreeHarmony reads the attribute, which
 is why it may never carry a guess.
 
-**Never invent a scan code.** `scan` is present only where an archive section established it, which is
-38 of 44 keys on a Harmony One, 41 of 54 on a Harmony 600, none of the 50 on a Harmony 525 and none of
-the 55 on a Harmony 350. A wrong scan code is invisible: the interface then shows the wrong assignment
+**Never invent a scan code.** `scan` is present only where an archive section or, since the archive was
+frozen, a test established it, which is 38 of 44 keys on a Harmony One, 41 of 54 on a Harmony 600, none of
+the 50 on a Harmony 525, 44 of the 55 on a Harmony 350, heard by pressing them, and none on the Harmony
+300 that shares its face. A wrong scan code is invisible: the interface then shows the wrong assignment
 beside a key with complete confidence. `test/models.test.ts` pins the count per source and names every
 code that did not come from the button maps; `packages/codec/test/irframe.test.ts` checks every button
 map code against the frames it sends in the calibration configurations. Where the name is settled and the
 code is only narrowed, use `scanCandidates`: the Harmony 525's four soft keys, a block of four from the
-firmware's matrix, section 89. The four arrow keys of a Harmony One and a Harmony 600 were candidates
+firmware's matrix, section 89, and the Harmony 350's four unheard favourites and its Live key. The four arrow keys of a Harmony One and a Harmony 600 were candidates
 until the devices' own maps decided them.
 
 **What a scan code does not tell you, so do not try.**

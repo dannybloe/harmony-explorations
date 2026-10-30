@@ -21,17 +21,14 @@
  * agree, mark for mark. A position comes from the drawing's own printed mark, which the extraction
  * reports per key, so a symbol sits where the document prints it rather than where a key's centre is.
  *
- * **No scan code appears anywhere in here, and that is not an omission.** `openHarmony` refuses this
+ * **The scan codes are the bench's**, `HEARD` and `CANDIDATES` below. `openHarmony` refuses this
  * architecture, and the one path that reads it, `openFileBasedRemote`, reads its configuration as a
- * file and sees no key press, section 262. This said the architecture had never been opened over USB
- * by this library until 9 October 2026. No calibration configuration was compiled for it, section 133. The
- * configuration does state a key table, `docs/findings.md` section 259, so the codes exist; which physical
- * key each one belongs to has not been measured, except that the four device keys bind 5, 1, 7 and 4 in
- * the order of their printing, read out of the configurations through a Harmony 300's device to key
- * statement and not pressed on a 350, `tests/test_harmony_350_device_groups.py`. This said nothing in
- * the repository or the lab tied a key on this remote to a code<!--superseded--> until then. Nor are there candidates: the Harmony 525's four come from its firmware's matrix
- * arithmetic, section 89, and nobody has read this generation's keypad scanner. So every key is
- * `printed` and none carries a code.
+ * file and sees no key press, section 262, and no calibration configuration was compiled for it, section
+ * 133. So a code was tied to a key by pressing it with an infrared receiver listening, `todo-compile-350.md`
+ * 2.2.2, after the firmware's keypad scan was read and five configurations had narrowed every key to a code
+ * or a set, `tests/test_harmony_350_keys.py`. This said no scan code appeared anywhere in here and that
+ * nobody had read this generation's keypad scanner until those two. Every key is still `printed`: the codes
+ * were named by pressing, not through Logitech's button maps.
  *
  * **Names follow the marking**, or Logitech's vocabulary where the marking is a symbol, the same rule
  * the Harmony 525 used. Three groups needed a choice. The four device keys are named for what they
@@ -111,13 +108,13 @@ const ROCKERS: readonly Rocker[] = [
 ];
 
 /**
- * The keys, 55 of them, in reading order.
+ * The keys, 55 of them, in reading order, as the drawing gives them; `KEYS` below adds the codes.
  *
  * Each comment names the extracted shape it came from, so a reading can be checked against
  * `bin/extract.ts` run on the page. A `markAt` is the centre of the drawing's own printed mark and a
  * `markSize` that mark's longer side, both in this package's units.
  */
-const KEYS: readonly Key[] = [
+const DRAWN: readonly Key[] = [
   // Shape 32. The television mark on the key and `Watch TV` printed beneath it.
   { name: 'WatchTV', src: 'printed', kind: 'keypad', shape: traced('M 77.86 53.968 C 77.86 60.063 72.871 65.052 66.787 65.052 L 56 65.052 C 49.902 65.052 44.913 60.063 44.913 53.968 L 44.913 45.553 C 44.913 39.455 49.902 34.477 56 34.477 L 66.787 34.477 C 72.871 34.477 77.86 39.455 77.86 45.553 Z'), angle: 0, icon: 'tv', markSize: 20.1, labels: [{ text: 'Watch TV', place: 'below', size: 'small' }] },
   // Shapes 27, 26, 25 and 24: the four device keys, left to right and top to bottom.
@@ -191,6 +188,51 @@ const KEYS: readonly Key[] = [
   { name: 'Number0', src: 'printed', kind: 'keypad', shape: traced('M 112.955 895.207 C 114.189 897.876 115.785 900.111 120.284 901.111 C 126.114 902.407 139.826 902.451 145.251 901.111 C 150.665 899.76 151.879 896.803 152.571 895.207 C 153.761 892.388 153.75 884.324 152.571 881.92 C 151.803 880.367 150.665 877.355 145.251 876.015 C 139.826 874.665 126.114 874.716 120.284 876.015 C 115.785 877.015 114.126 879.207 112.955 881.92 C 111.7 884.844 111.912 892.941 112.955 895.207 Z'), angle: 0, labels: [{ text: '0', place: 'on' }] },
   { name: 'Enter', src: 'printed', kind: 'keypad', shape: traced('M 197.623 882.696 C 197.623 876.612 192.645 871.612 186.536 871.612 L 178.091 871.612 C 171.997 871.612 167.016 876.612 167.016 882.696 L 167.016 891.026 C 167.016 897.11 171.997 902.099 178.091 902.099 L 186.536 902.099 C 192.645 902.099 197.623 897.11 197.623 891.026 Z'), angle: 0, labels: [{ text: 'E', place: 'on', size: 'small' }, { text: 'Enter', place: 'below', size: 'small' }] },
 ];
+
+/**
+ * The 44 keys whose code was heard at the bench, `todo-compile-350.md` 2.2.2: each pressed on a Harmony 350
+ * with an infrared receiver listening, and its code the one binding of the mode in force that sends what
+ * was heard, `tests/test_harmony_350_keys.py`, `TheBench350HeardEveryKey`. Power is the one binding of
+ * each device's map that toggles a power state, and the two device keys the bench file binds are the ones
+ * whose release selected the device heard after them.
+ *
+ * Kept as a table beside the geometry rather than written into each key, because the codes are one
+ * measurement and the shapes another, and because `h300.ts` takes every shape from here and none of the
+ * codes: no Harmony 300 has been pressed.
+ */
+const HEARD: Readonly<Record<string, number>> = {
+  TvMedia: 5, AvrGame: 7, Power: 3, Input: 35, Favorite5: 2, Info: 36, Exit: 12, Guide: 33, UpArrow: 25,
+  DownArrow: 26, Red: 13, Green: 27, Yellow: 28, Blue: 29, VolumeUp: 49, VolumeDown: 52, DirectionUp: 51,
+  DirectionRight: 31, DirectionDown: 42, DirectionLeft: 14, Select: 50, ChannelUp: 55, ChannelDown: 41,
+  VolumeMute: 15, PrevChannel: 32, Rewind: 22, FastForward: 30, SkipBack: 21, SkipForward: 38, Record: 23,
+  Stop: 40, Play: 44, Pause: 46, Number1: 24, Number2: 47, Number3: 39, Number4: 17, Number5: 48,
+  Number6: 37, Number7: 18, Number8: 53, Number9: 45, Clear: 19, Number0: 20,
+};
+
+/**
+ * The keys narrowed to a set and not decided. The favourites are the codes that send a favourite channel,
+ * and favourite 5 was heard as code 2, so the other four share the remaining four; Live is on one of the
+ * two codes no configuration binds, and the bench file binds neither. `packages/bench/test/keys350.test.ts`.
+ *
+ * Menu, DVR, Enter, Watch TV and the top right and bottom right device keys are decided in the
+ * configurations and carry neither: the bench file binds nothing to them, so no press of them was heard,
+ * and the drawing takes a code from the bench alone.
+ */
+const CANDIDATES: Readonly<Record<string, readonly number[]>> = {
+  Favorite1: [8, 9, 11, 34], Favorite2: [8, 9, 11, 34], Favorite3: [8, 9, 11, 34], Favorite4: [8, 9, 11, 34],
+  Live: [43, 56],
+};
+
+for (const name of [...Object.keys(HEARD), ...Object.keys(CANDIDATES)]) {
+  if (!DRAWN.some((k) => k.name === name)) throw new Error(`h350: no key ${name} to give a code`);
+}
+
+const KEYS: readonly Key[] = DRAWN.map((key) => {
+  const scan = HEARD[key.name];
+  if (scan !== undefined) return { ...key, scan, scanFrom: 't-harmony-350-keys-u' };
+  const candidates = CANDIDATES[key.name];
+  return candidates === undefined ? key : { ...key, scanCandidates: candidates };
+});
 
 export const H350: Model = {
   id: 'h350',

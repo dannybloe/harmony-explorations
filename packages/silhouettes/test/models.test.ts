@@ -51,14 +51,25 @@ const EXPECTED: Readonly<Record<string, {
       + "setup guide's cover photograph shows the same 55 keys",
   },
   /**
-   * The weakest count here and stated as such: there is no firmware derived figure for this
-   * architecture's keypad and no bench census, so the number is the drawing's. Two of Logitech's own
-   * drawings in the setup guide agree on it, the button page and the box contents page, and the cover
-   * photograph agrees for the 35 keys above the transport block that it shows.
+   * The count is the drawing's. Two of Logitech's own drawings in the setup guide agree on it, the button
+   * page and the box contents page, and the cover photograph agrees for the 35 keys above the transport
+   * block that it shows; the firmware's keypad scan numbers 56 codes, one of which no key raises.
+   *
+   * 44 codes heard at the bench, `todo-compile-350.md` 2.2.2, and no other source: every one is a
+   * decision of its own, so all 44 are named below.
    */
   h350: {
     buttons: 55,
-    scans: {},
+    scans: { 't-harmony-350-keys-u': 44 },
+    decided: {
+      5: 'TvMedia', 7: 'AvrGame', 3: 'Power', 35: 'Input', 2: 'Favorite5', 36: 'Info', 12: 'Exit', 33: 'Guide',
+      25: 'UpArrow', 26: 'DownArrow', 13: 'Red', 27: 'Green', 28: 'Yellow', 29: 'Blue', 49: 'VolumeUp',
+      52: 'VolumeDown', 51: 'DirectionUp', 31: 'DirectionRight', 42: 'DirectionDown', 14: 'DirectionLeft',
+      50: 'Select', 55: 'ChannelUp', 41: 'ChannelDown', 15: 'VolumeMute', 32: 'PrevChannel', 22: 'Rewind',
+      30: 'FastForward', 21: 'SkipBack', 38: 'SkipForward', 23: 'Record', 40: 'Stop', 44: 'Play', 46: 'Pause',
+      24: 'Number1', 47: 'Number2', 39: 'Number3', 17: 'Number4', 48: 'Number5', 37: 'Number6', 18: 'Number7',
+      53: 'Number8', 45: 'Number9', 19: 'Clear', 20: 'Number0',
+    },
     why: "Logitech's own button drawing in the Harmony 350 setup guide, counted shape by shape, "
       + 'which its box contents drawing and the cover photograph agree with where they reach',
   },
@@ -206,8 +217,8 @@ test('a key whose code is undecided carries candidates and no scan', () => {
   for (const [id, model] of drawn) {
     const undecided = model.keys.filter((k) => k.scanCandidates !== undefined);
     /**
-     * Only the Harmony 525 has any now, one block of four from the firmware's own matrix rather than
-     * from any measured code, because nothing says which of two columns is the left one.
+     * The Harmony 525 has one block of four from the firmware's own matrix rather than from any measured
+     * code, because nothing says which of two columns is the left one; the Harmony 350's are below.
      *
      * The Harmony One and the Harmony 600 had two symmetric pairs each until plan 009's step 3.3: the two
      * up keys send one command and so do the two down keys, so neither elimination nor decoding could
@@ -216,30 +227,35 @@ test('a key whose code is undecided carries candidates and no scan', () => {
      * have forced a wrong answer on the 525.
      */
     /**
-     * The Harmony 350 has **none**, and that is the claim rather than a gap in the table: nothing
-     * narrows any of its codes to a set, because nobody has read its keypad scanner, so a candidate
-     * list there could only be a guess.
+     * The Harmony 350 has two shapes of ambiguity, which is why a set is stated by its size rather than
+     * by one size per model: four favourite keys sharing the four codes favourite 5 did not take, and Live
+     * alone on one of two codes no configuration binds, `packages/bench/test/keys350.test.ts`. A set of
+     * candidates may be larger than the keys sharing it, as Live's is. The Harmony 300 has none, because
+     * its drawing takes no code from the 350's, `h300.ts`.
      */
-    const SETS: Readonly<Record<string, { sets: number; each: number }>> = {
-      h300: { sets: 0, each: 0 }, h350: { sets: 0, each: 0 },
-      h525: { sets: 1, each: 4 }, h600: { sets: 0, each: 0 }, h650: { sets: 0, each: 0 }, h700: { sets: 0, each: 0 },
-      one: { sets: 0, each: 0 }, touch: { sets: 0, each: 0 },
+    const SETS: Readonly<Record<string, readonly { keys: number; codes: number }[]>> = {
+      h300: [], h350: [{ keys: 4, codes: 4 }, { keys: 1, codes: 2 }],
+      h525: [{ keys: 4, codes: 4 }], h600: [], h650: [], h700: [], one: [], touch: [],
     };
     const want = SETS[id]!;
-    assert.equal(undecided.length, want.sets * want.each,
-      `${id}: ${undecided.length} undecided keys, not ${want.sets * want.each}`);
     for (const key of undecided) {
       assert.equal(key.scan, undefined, `${id}: ${key.name} claims a code and candidates`);
-      assert.equal(key.scanCandidates!.length, want.each,
-        `${id}: ${key.name} has ${key.scanCandidates!.length} candidates, not ${want.each}`);
     }
     const sets = new Map<string, string[]>();
     for (const key of undecided) {
       const k = [...key.scanCandidates!].sort((a, b) => a - b).join(',');
       sets.set(k, [...(sets.get(k) ?? []), key.name]);
     }
-    assert.equal(sets.size, want.sets, `${id}: ${sets.size} candidate sets, not ${want.sets}`);
-    for (const [, names] of sets) assert.equal(names.length, want.each);
+    const shapes = [...sets].map(([codes, names]) => ({ keys: names.length, codes: codes.split(',').length }))
+      .sort((a, b) => b.keys - a.keys || b.codes - a.codes);
+    assert.deepEqual(shapes, want, `${id}: the candidate sets`);
+    // A candidate is never a code another key on the drawing carries.
+    const carried = new Set(model.keys.flatMap((k) => (k.scan === undefined ? [] : [k.scan])));
+    for (const key of undecided) {
+      for (const code of key.scanCandidates!) {
+        assert.ok(!carried.has(code), `${id}: ${key.name}'s candidate ${code} is another key's code`);
+      }
+    }
   }
 });
 
