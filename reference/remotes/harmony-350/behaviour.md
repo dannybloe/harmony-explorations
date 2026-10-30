@@ -8,8 +8,16 @@ hold, and one thing was measured on a unit: the wait after a device is switched 
 **A device key is device mode.** Press one of the four device keys, briefly for one device or for two
 seconds for another, and the remote controls that device; the power key then switches the selected device
 on or off[^x-manual]. There is no list to choose from, and the guide says nothing about leaving it other
-than pressing Watch TV or another device key. What device mode is on every Harmony is in
-[how a Harmony works](../../how-a-harmony-works.md#the-two-things-a-harmony-can-be-doing).
+than pressing Watch TV or another device key.
+
+**A short press changes the device when the key is let go, and a long press when the key has been held
+long enough**, which is how the remote tells the two apart: a key held until the firmware's hold time runs
+out ends in a held event instead of a release, and a configuration binds the key's second device to that
+event[^t-long-press-c][^t-long-press]. That hold is about a second in every configuration read, by the
+firmware's count and the tick measured on a unit, where the guide says two[^t-long-press][^t-long-press-u][^x-manual].
+**A key with one device selects nothing on a long press**: nothing binds its held event, so the remote
+stays in the mode it was in. Both are read in the firmware and the configurations rather than watched on
+a unit[^unchecked], [the family's memory.md](../../architectures/harmony-300-350/memory.md#a-device-key-and-its-long-press).
 
 ## Watch TV
 
@@ -44,10 +52,15 @@ than pressing Watch TV or another device key. What device mode is on every Harmo
 
 * Anything else about the 350 in use. This said anything at all, until the power on delay was measured
   with an infrared receiver.
-* What a long press on a device key does when that key holds only one device.
+* Whether a person meets the long press after one second or two, and that a long press on a key with
+  one device leaves the mode as it was. This listed what a long press does on a key with one device,
+  until the firmware's hold and the configurations' device keys were read.
 
 [^x-manual]: Stated by Logitech, in the manual. [The Harmony 350 setup guide](https://www.logitech.com/assets/51207/harmony-350-qsg-and-iid.pdf)
 [^s259]: Measured in configurations. [Section 259](../../../docs/findings.md#s259)
 [^t-delay-heard]: Measured on a unit. [The test](../../../tests/test_harmony_350_delay.py)
 [^t-device-groups-c]: Measured in configurations. [The test](../../../tests/test_harmony_350_device_groups.py)
+[^t-long-press]: Read in the firmware. [The test](../../../tests/test_harmony_350_long_press.py)
+[^t-long-press-c]: Measured in configurations. [The test](../../../tests/test_harmony_350_long_press.py)
+[^t-long-press-u]: Measured on a unit. [The test](../../../tests/test_harmony_350_long_press.py)
 [^unchecked]: Not checked.

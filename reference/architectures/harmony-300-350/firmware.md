@@ -28,9 +28,36 @@ take another route[^s295].
 | the file protocol: the request parser at `0xCB88`, the reply dispatcher at `0xE2F0`, the file lookup at `0x12CF0`, the close at `0x12CE6`, the read size of `/cfg/usercfg` at `0x14C58`, [usb.md](usb.md#what-the-firmware-does-with-a-write) | [^t-harmony-350-file-write] |
 | the section seeker, `0x0B + 4 * slot` at `0x10BCE` on the 350's 1.4 image, called for raw slots 3 to 12 from 14 call sites | [^s259] |
 | the readers of raw slots 5, 6, 8, 9 and 12: the start up event table at `0x11D48`, called once from the validator's tail at `0x162B8`; the key map lookup at `0x1113A` and its tagged list reader at `0x1AB24`; the timer start at `0x16A2E` and the expiry pass at `0x1694A`; the state variable seeder at `0x16E6C` and the record locator at `0x17360`; the digit entry reader at `0x19D56`. What each slot is, [memory.md](memory.md#the-six-slots-the-firmware-was-read-for) | [^t-harmony-350-slots] |
+| the keypad's three events, raised at `0x18AEA`, `0x18B4A`, `0x18B84` and `0x18BCE`; the hold counter at `0x312`, started at `0x1959E` and decremented from `0x19708`; parameter 0, the hold time, written by `0x3F` band `0xF0` at `0x117C4`, [below](#a-held-key) | [^t-long-press] |
 | the month end routine of the clock, at `0x14382` | [^s322] |
 | the state variables: the reader at `0x17302` and the store at `0x172B2`, from data memory `0x108`; the tick at `0x13C12`, which adds the time elapsed to the second; the minute's step queued at `0x13E52`; bands `0xF2` and `0xF1` of `0x1F` at `0x11984`, one added to a variable or taken off it, wrapping through its `max` at `0x171E8`; the reply carrying the clock at `0x0F3BE`. What they add up to, [memory.md](memory.md#the-state-variables) | [^t-harmony-350-clock] |
 | the state variable bound | [^s276] |
+
+## A held key
+
+**A key press ends in one of two events, and that is what a long press is on this image.** A key raises
+its press when it goes down and starts a hold counter. Let go while the counter runs and the remote
+raises the release; keep the key down until the counter runs out and it raises a third event instead,
+after which no release follows[^t-long-press]. The three are the event types of
+[key codes](../../config-format/modes-and-keys.md#key-codes-and-scan-codes): `0x80` the press, `0x40` the
+release, and `0xC0`, which that table calls repeat and which here fires once and never repeats, so it is
+called the held event on this page[^t-long-press]. So the firmware tells a short press from a long one by
+itself, for every key, and a configuration only chooses which of the two endings it binds.
+
+| | what the 1.4 image does | evidence |
+|---|---|---|
+| the hold | parameter 0 times 100 ticks, one value for every key; a count of 1000 runs out on the 1001st tick and then stops | [^t-long-press] |
+| parameter 0 | written by `0x3F` with operand `0xF0nn`, which sets it to `nn`; `0xF6nn` and `0xF7nn` set two others. The image starts it at 10, and every configuration of this family read sets 10 again at start, so the hold is 1001 ticks. A third writer sits in the USB service and was not followed | [^t-long-press], [^t-long-press-c], [^unchecked] |
+| the tick | the one the power on delay counts in, 100 ticks to each tenth of a second the delay waits, so by the delay measured on a unit 1001 ticks are about 1.005 s, where Logitech's guide says two seconds; the kind 0 timers of [the timer table](memory.md#the-six-slots-the-firmware-was-read-for) count the same tick | [^t-long-press], [^t-long-press-u], [^x-manual-350] |
+| a select ends the hold | `0x1F` band `0xFF`, which selects a key map, and bands `0xFE` and `0xFD`, which push and pop the map stack, clear the counter, so a press whose binding selects a map is followed by neither a release nor a held event | [^t-long-press] |
+
+How each model's configurations use it is [memory.md](memory.md#a-device-key-and-its-long-press): a
+Harmony 350 binds a key's short press device to the release and a long press device to the held event.
+All of this is read in the one 1.4 image, which Logitech's package names for both models; no image was
+read off a Harmony 300[^unchecked]. The
+Harmony 650's firmware raises the same three events with the same reload, `0x200` times 100,
+[its keys](../../remotes/harmony-650/keys.md); whether its counter also stops after the held event is not
+checked[^unchecked].
 
 ## Routines read in the bootloader and safe mode
 
@@ -201,3 +228,7 @@ stays in the programmer, which can rewrite internal flash above `0x001000`[^t-ha
 [^t-harmony-350-clock]: Read in the firmware. [The test](../../../tests/test_harmony_350_clock.py)
 [^t-harmony-350-boot]: Read in the firmware. [The test](../../../tests/test_harmony_350_boot.py)
 [^t-harmony-350-boot-unit]: Measured on a unit. [The test](../../../tests/test_harmony_350_boot.py)
+[^t-long-press]: Read in the firmware. [The test](../../../tests/test_harmony_350_long_press.py)
+[^t-long-press-c]: Measured in configurations. [The test](../../../tests/test_harmony_350_long_press.py)
+[^t-long-press-u]: Measured on a unit. [The test](../../../tests/test_harmony_350_long_press.py)
+[^x-manual-350]: Stated by Logitech, in the manual. [The Harmony 350 setup guide](https://www.logitech.com/assets/51207/harmony-350-qsg-and-iid.pdf)

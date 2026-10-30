@@ -523,15 +523,20 @@ The firmware runs at most **four** timers at once, so a configuration with thirt
 possible timers rather than thirty concurrent ones, and starting a fifth is a silent no-op[^s43b].
 
 **On the Harmony 300 and 350 the table is raw slot 8**, read the same way by their 1.4 image, four slots
-included. Their records are all kind 0, two per device on a configuration Logitech's current service
-compiled, and on the Harmony 300 nothing starts them,
+included. Their records are all kind 0, two for each device a key selects on a configuration Logitech's
+current service compiled, which is two per device unless a device is on two keys[^t-long-press-c], and on
+the Harmony 300 nothing starts them,
 [their memory page](../architectures/harmony-300-350/memory.md#the-six-slots-the-firmware-was-read-for)[^t-harmony-350-slots][^t-harmony-350-slots-c].
 
 **A timer fires exactly one instruction**, not a list. Anything longer has to be a single instruction that
 runs an action list, which is what 116 of the 159 records do[^s43]. The scheduled kind also **clamps the
 duration to sixteen bits**, so a value above 65535 becomes 65535 rather than an error[^s43b]. Both are
-rules a writer has to keep. Kind `0` is counted down in software instead and no configuration uses it, so
-its rate is not established[^s43b].
+rules a writer has to keep. Kind `0` is counted down in software instead, and no configuration of the
+architectures section 43 read uses it[^s43b]. On the Harmony 300 and 350 every record is kind 0, and their
+1.4 image takes one from each running one a tick, the tick that paces the power on delay, about a
+millisecond, so their durations of 400 and 600 are about 0.40 and 0.60 s[^t-long-press][^t-long-press-u].
+This said no configuration uses kind 0 and its rate is not established, until the Harmony 300 and 350's
+timers were read.
 
 **One timer is named: the screen light, on arch 14.** Two timers on every arch 14 user configuration queue
 a list opening with `1F E910`, and the lower index of the two is how long the screen stays lit, in seconds;
@@ -949,3 +954,6 @@ Read with `gspm.log_area`; `gspm.log_reference` names the append case an instruc
 [^t-harmony-350-clock]: Read in the firmware. [The test](../../tests/test_harmony_350_clock.py)
 [^t-harmony-350-clock-c]: Measured in configurations. [The test](../../tests/test_harmony_350_clock.py)
 [^t-state-block]: Read in the firmware. [The test](../../tests/test_firmware_state_block.py)
+[^t-long-press]: Read in the firmware. [The test](../../tests/test_harmony_350_long_press.py)
+[^t-long-press-c]: Measured in configurations. [The test](../../tests/test_harmony_350_long_press.py)
+[^t-long-press-u]: Measured on a unit. [The test](../../tests/test_harmony_350_long_press.py)

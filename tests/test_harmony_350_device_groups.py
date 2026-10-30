@@ -27,15 +27,19 @@ the long press stays open.
   different printing and runs the same image, so the same four codes are the keys printed `TV/Media`,
   `Cable/PC`, `AVR/Game` and `DVD/Music`: **a short press of each takes group 0, 1, 2 and 3**.
 * **On the 350 a short press is the key's release.** The 1.4 image's keypad routine queues the held key's
-  scan code with one of three event types: press `0x80 | scan`, release `0x40 | scan`, and repeat
-  `0xC0 | scan`; everything else the image queues as a key event is a fixed code, not a held key's. A Harmony 300's device key
+  scan code with one of three event types: press `0x80 | scan`, release `0x40 | scan`, and held
+  `0xC0 | scan`, which fires once when the key has been down for the hold time and is followed by no
+  release (this called it repeat until `tests/test_harmony_350_long_press.py` read the hold); everything else the image queues as a key event is a fixed code, not a held key's. A Harmony 300's device key
   selects its device on the **press**; a Harmony 350's selects it on the **release**, and its press only
   switches one output pin and starts two timers. That is consistent with a key whose held action has to be
-  told from a short one, which cannot be decided before the key comes up; how it is told is not read.
-* **The long press is not settled.** Groups 4 to 7 are allocated on every Harmony 350 configuration and
-  empty on all of them: no configuration here has a device on a long press, and no device key binds any
-  event but its press and its release. So which group a long press device takes, and how the long press
-  is told apart, have nothing in the corpus to be measured on.
+  told from a short one, which cannot be decided before the key comes up; how it is told is the hold,
+  `tests/test_harmony_350_long_press.py`.
+* **The long press, on one file.** Groups 4 to 7 are allocated on every Harmony 350 configuration and
+  empty on all five read here, none of which has a device on a long press. Another owner's Harmony 350
+  configuration, `h350_issue37_config`, read by `tests/test_harmony_350_long_press.py`, has two: the top
+  right key's long press device sends from group 5, `4 + place`, and the bottom left key's is the top
+  right key's short press device, keeping its group 1. This said the long press was not settled until
+  that file was read; one file is one sample, so the rule stands on it alone.
 
 ## What was traced, on the 1.4 image (`h350_code`, load base `0x9000`)
 
@@ -45,22 +49,22 @@ the long press stays open.
   the walk base slot 9's stack does, `tests/test_harmony_350_slots.py`.
 * **Seven calls queue an event, and four carry a scan code.** The keypad routine keeps the held key's
   code in `0x711` and queues it ORed with `0x80` when a key goes down (`0x18B4A`), with `0x40` when it
-  comes up (`0x18B84` and `0x18BCE`, the two ways a held key can end), and with `0xC0` when the repeat
-  flag `0x315` is up (`0x18AEA`). The other three queue fixed codes rather than the held key's: `0x28`,
+  comes up (`0x18B84` and `0x18BCE`, the two ways a held key can end), and with `0xC0` when the
+  flag `0x315` is up, the hold time having run out (`0x18AEA`). The other three queue fixed codes rather than the held key's: `0x28`,
   `0x27` or `0x26` (`0x145E6`, `0x14604`) and `0x30` or `0xFF` through `0x10FE2` (`0x11EE0`). The first
   four are event type 0, the codes that are not keypad events, and every configuration binds four of that
   kind in its key table, `0x2D` to `0x30`; `0xFF` reads as event `0xC0` with scan 63, and what it is for
   is not read. A gate, `0x11266` with `0x2AA` set to 1, can skip a press or a release, and what it tests
   is not read either. Only direct calls of `0x10FC4` were followed: a computed jump was not excluded.
-* **The press arms the repeat, and the release is only queued after a press.** After the press is queued,
+* **The press arms the hold, and the release is only queued after a press.** After the press is queued,
   `0x200 * 100` goes to `0x316`, and `0x1959E` copies it into the countdown `0x312` and sets `0x314`; the
   release is queued only while `0x314` is set, and `0x19592` clears both. What decrements the countdown
   and raises `0x315` is not located: no direct write sets either, so it is indirect.
 
 Negative results. No direct caller queues the held key's code with an event type other than the three,
-so **the keypad routine raises no long press event**. On that reading a two second press is told apart from a short one by
-something the configuration states, and what that is was not read: no configuration here has a long
-press to read it from. The image was not searched for a test of the skin, so whether the 300 and 350
+so the keypad raises no event of its own for a long press beyond the held `0xC0`. This said it raised
+no long press event at all, which was right about the event types and wrong about `0xC0`, read as a
+repeat until the hold was read in `tests/test_harmony_350_long_press.py`. The image was not searched for a test of the skin, so whether the 300 and 350
 behave differently anywhere in the key path is not read; nothing in what follows needs it, since both
 models' differences show up in the configurations.
 
@@ -108,8 +112,8 @@ is checked.
 
 ## What would settle the long press
 
-No file has a device on a long press, so three rules for one fit the corpus equally and differ in where
-it goes: `4 + key` (TV/Media 4 to DVD/Music 7), the lowest group no short press uses, or interleaving only
+This was written before the issue 37 file was read, which settles it on one sample in favour of
+`4 + key`, above. Three rules fitted the five files equally and differed in where it goes: `4 + key` (TV/Media 4 to DVD/Music 7), the lowest group no short press uses, or interleaving only
 the long ones. A compile through Logitech's service onto a 350 that puts **a device on the TV/Media key's
 short press, a second on Cable/PC's long press and a third on AVR/Game's long press, with nothing on
 either short press of those two keys**, separates them: `4 + key` gives the two long press devices groups
@@ -203,7 +207,7 @@ def _bindings_of(c, scan):
             if tag & 0x3F == scan and opcode == 0x7F}
 
 
-class TheImageRaisesPressReleaseAndRepeatOnly(unittest.TestCase):
+class TheImageRaisesPressReleaseAndHeldOnly(unittest.TestCase):
     def setUp(self):
         lab.require('h350_code')
         self.code = _code()

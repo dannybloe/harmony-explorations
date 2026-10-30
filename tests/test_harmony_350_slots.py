@@ -131,13 +131,15 @@ not five, and raw 14's absence is of direct references.
   of kind 0 with a duration of 400 or 600, every instruction `0x1F` band `0xE9`. On the three Harmony 350
   configurations the indices band `0xEB` starts are exactly 0 to `count - 1`, two from one binding of each
   device key (tags `0x81`, `0x84`, `0x85` and `0x87`; this said which key event that is was not checked,
-  and it is each device key's press, `tests/test_harmony_350_device_groups.py`); on both
+  and it is each device key's press, `tests/test_harmony_350_device_groups.py` and
+  `tests/test_harmony_350_long_press.py`); on both
   Harmony 300 configurations nothing starts a timer, and one of them holds eight anyway. The count is
   twice the archive's devices on four of the five and zero on the fifth, the 2011 file, which is section
   265's reading that it follows the compiler; on the 300 those timers are never run.
 * Band `0xE9` switches one of four output pins, chosen by the operand's high nibble, on for a low byte
-  whose bits 1 to 3 are zero and off otherwise (`0x14568`). What the pins drive, and the unit of a kind
-  0 duration, are not checked.
+  whose bits 1 to 3 are zero and off otherwise (`0x14568`). What the pins drive is not checked. The unit
+  of a kind 0 duration was listed here as not checked too, until `tests/test_harmony_350_long_press.py`
+  read a kind 0 timer losing one a tick of the clock the power on delay counts in, about a millisecond.
 
 ## Raw slot 9 is base slot 13, the state variable table
 

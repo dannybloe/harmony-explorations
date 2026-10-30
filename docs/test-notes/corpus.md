@@ -107,6 +107,12 @@ by decision, section 194. Which read each one is, and what was predicted before 
 [the 350's notes](harmony-350.md) and [the 300's notes](harmony-300.md). This paragraph sat in the
 architecture folder's `misc.md` until plan 009's cleaning of the architecture folders.
 
+A sixth, `h350_issue37_config`, is another owner's Harmony 350, posted as harmony-decompiler issue 37: a
+ZIP holding the bare container as `Result.EzHex`, which neither parser takes, so it sits outside every
+population without being listed. It is the only configuration here with a second device on a device key,
+which is what `todo-compile-350.md` 2.4 read the long press off, `tests/test_harmony_350_long_press.py`.
+It was in the lab before anything here read it, and the second reviewer of that finding found it.
+
 ## What the corpus holds per architecture
 
 Plan 009's step 3.4 moved this column out of the reference's table of the models Logitech retired, which

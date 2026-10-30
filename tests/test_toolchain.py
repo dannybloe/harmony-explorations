@@ -233,7 +233,8 @@ class TheRunnerSeesEveryTest(unittest.TestCase):
         # 60 with `tests/test_harmony_350_delay.py`, todo-compile-350 1.8, after `tests/test_harmony_350_boot.py`.
         # 61 with `tests/test_harmony_350_device_groups.py`, todo-compile-350 2.3.
         # 62 with `tests/test_harmony_350_clock.py`, todo-compile-350 2.5.
-        self.assertEqual(len(files), 62, 'the Python test files')
+        # 63 with `tests/test_harmony_350_long_press.py`, todo-compile-350 2.4.
+        self.assertEqual(len(files), 63, 'the Python test files')
         with_block = 0
         for path in files:
             with open(path, encoding='utf-8') as handle:
@@ -269,7 +270,8 @@ class TheRunnerSeesEveryTest(unittest.TestCase):
         # 57 with `tests/test_harmony_350_delay.py`, todo-compile-350 1.8, which carries one.
         # 59 with `tests/test_harmony_350_device_groups.py`, todo-compile-350 2.3, which carries one.
         # 60 with `tests/test_harmony_350_clock.py`, todo-compile-350 2.5, which carries one.
-        self.assertEqual(with_block, 60,
+        # 61 with `tests/test_harmony_350_long_press.py`, todo-compile-350 2.4, which carries one.
+        self.assertEqual(with_block, 61,
                          'files carrying a __main__ block, of %d' % len(files))
 
 
@@ -770,7 +772,8 @@ class APythonBoundOnACorpusTotalIsExact(unittest.TestCase):
         # 60 with `tests/test_harmony_350_delay.py`, todo-compile-350 1.8, after `tests/test_harmony_350_boot.py`.
         # 61 with `tests/test_harmony_350_device_groups.py`, todo-compile-350 2.3.
         # 62 with `tests/test_harmony_350_clock.py`, todo-compile-350 2.5.
-        self.assertEqual(len(scanned), 62, 'Python test files, which moves when one is added')
+        # 63 with `tests/test_harmony_350_long_press.py`, todo-compile-350 2.4.
+        self.assertEqual(len(scanned), 63, 'Python test files, which moves when one is added')
         self.assertIn(self.CONTROL, found, 'the pattern matches nothing it should match')
 
     def test_every_remaining_bound_says_why_it_is_not_a_measurement(self):

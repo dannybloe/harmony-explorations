@@ -115,10 +115,13 @@ firmware, which it has not been. The same holds for the Harmony 300,
 
 ## Not checked
 
-* Every scan code but the device keys', and those on a 350 by pressing them.
-* How a two second device key press is told from a short one. The firmware's keypad routine queues a
-  held key as a press, a release or a repeat and nothing else, and the configurations bind a short press
-  to the release; none measured has a long press to show the rest[^t-device-groups][^unchecked].
+* Every key's scan code.
+* Which device key each of the scan codes 1, 4, 5 and 7 is on a Harmony 350 itself: they are taken to be
+  the top right, bottom right, top left and bottom left keys from the Harmony 300's order, and what is
+  printed on the four keys differs between units, so a key is named by its place[^unchecked]. This listed how the firmware tells a two second device key press from a short one,
+  until it was read: a press ends in a release or, held past the hold time, in a held event, and the
+  long press device is bound to the held event,
+  [the family's firmware](../../architectures/harmony-300-350/firmware.md#a-held-key)[^t-long-press].
 
 [^t-silhouette]: Stated by Logitech, in the manual. [The test](../../../tests/test_silhouettes.py)
 [^x-manual]: Stated by Logitech, in the manual. [The Harmony 350 setup guide](https://www.logitech.com/assets/51207/harmony-350-qsg-and-iid.pdf)
@@ -126,5 +129,5 @@ firmware, which it has not been. The same holds for the Harmony 300,
 [^s311]: Measured in configurations. [Section 311](../../../docs/findings.md#s311)
 [^t-harmony-350-slots-c]: Measured in configurations. [The test](../../../tests/test_harmony_350_slots.py)
 [^t-device-groups-c]: Measured in configurations. [The test](../../../tests/test_harmony_350_device_groups.py)
-[^t-device-groups]: Read in the firmware. [The test](../../../tests/test_harmony_350_device_groups.py)
 [^unchecked]: Not checked.
+[^t-long-press]: Read in the firmware. [The test](../../../tests/test_harmony_350_long_press.py)

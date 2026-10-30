@@ -235,7 +235,10 @@ third kind of key: it is a key whose long press has taken its repeat away.
 declares it; the Harmony One, 600, 650, 700 and 300 do not[^t-capabilities]. The Harmony 650's firmware
 agrees: a key raises press, repeat and release and nothing else, and only the Help key waits longer before
 its repeat[^s340]. On the 350 the long press is on its device keys, a second device per key,
-[its behaviour page](remotes/harmony-350/behaviour.md).
+[its behaviour page](remotes/harmony-350/behaviour.md). Its firmware makes the choice itself: a press ends
+either in a release or, held past a hold time the configuration sets, in a held event and no release, and
+a configuration binds a device key's first device to the release and its second to the held event; a key
+with one device selects nothing on a long press[^t-long-press][^t-long-press-c].
 
 ## A remote with no screen holds exactly one activity
 
@@ -310,3 +313,5 @@ devices and then asked "Did that fix the problem?", as that predicts[^s335]. Hel
 [^s333]: Measured in configurations. [Section 333](../docs/findings.md#s333)
 [^s333b]: Read in the firmware. [Section 333](../docs/findings.md#s333)
 [^s335]: Measured on a unit. [Section 335](../docs/findings.md#s335)
+[^t-long-press]: Read in the firmware. [The test](../tests/test_harmony_350_long_press.py)
+[^t-long-press-c]: Measured in configurations. [The test](../tests/test_harmony_350_long_press.py)
