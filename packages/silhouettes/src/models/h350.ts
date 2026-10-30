@@ -23,10 +23,12 @@
  * **No scan code appears anywhere in here, and that is not an omission.** `openHarmony` refuses this
  * architecture, and the one path that reads it, `openFileBasedRemote`, reads its configuration as a
  * file and sees no key press, section 262. This said the architecture had never been opened over USB
- * by this library until 9 October 2026. No calibration configuration was compiled for it, section 133, and nothing in
- * the repository or the lab ties a key on this remote to a code. The configuration does state a key
- * table, `docs/findings.md` section 259, so the codes exist; which physical key each one belongs to has
- * not been measured. Nor are there candidates: the Harmony 525's four come from its firmware's matrix
+ * by this library until 9 October 2026. No calibration configuration was compiled for it, section 133. The
+ * configuration does state a key table, `docs/findings.md` section 259, so the codes exist; which physical
+ * key each one belongs to has not been measured, except that the four device keys bind 5, 1, 7 and 4 in
+ * the order of their printing, read out of the configurations through a Harmony 300's device to key
+ * statement and not pressed on a 350, `tests/test_harmony_350_device_groups.py`. This said nothing in
+ * the repository or the lab tied a key on this remote to a code<!--superseded--> until then. Nor are there candidates: the Harmony 525's four come from its firmware's matrix
  * arithmetic, section 89, and nobody has read this generation's keypad scanner. So every key is
  * `printed` and none carries a code.
  *

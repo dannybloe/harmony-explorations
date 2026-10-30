@@ -93,24 +93,36 @@ Generated from `packages/silhouettes/src/models/h350.ts` by `make remote-referen
 
 ## No scan codes
 
-**Nothing measured ties a key on this remote to a scan code**, and the drawing's test asserts that no key
-claims one or a list of candidates[^t-silhouette]. The configuration does carry a key table after its
+**Only the four device keys' scan codes are known, from a Harmony 300's configurations and the shared
+moulding rather than from the scanner**: `TV / AVR` 5, `Cable/DVD` 1, `BD / Media` 7 and `Game/MP3` 4,
+the codes a Harmony 300's configuration binds to the same four keys, and the four a 350's binds too; a short press of each
+is its release,
+[the family's memory page](../../architectures/harmony-300-350/memory.md#which-infrared-group-a-device-takes)[^t-device-groups-c].
+No 350 key was pressed to confirm them, which is why the drawing still claims no code, and its test
+asserts that no key claims one or a list of candidates[^t-silhouette]. This said nothing measured tied a
+key on this remote to a scan code<!--superseded--> until the device keys were read out of the
+configurations. The configuration does carry a key table after its
 `LWJL` marker, an instruction against each scan code[^s259], which on this family is the map every key
 press is looked up in last, holding the device keys and the activity's key: 11 or 13 entries over the
 three Harmony 350 configurations measured, so the codes exist[^t-harmony-350-slots-c]. An earlier
 version of this page called it mode 0's list<!--superseded-->, which is what it is on the models with a
 screen[^s311], [the family's memory page](../../architectures/harmony-300-350/memory.md#the-six-slots-the-firmware-was-read-for).
-Which physical key each one is would need this generation's keypad scanner read in the firmware, which it
-has not been. The same holds for the Harmony 300,
+Which physical key each of the others is would need this generation's keypad scanner read in the
+firmware, which it has not been. The same holds for the Harmony 300,
 [the architecture's README](../../architectures/harmony-300-350/README.md#shared-in-one-table).
 
 ## Not checked
 
-* Every key's scan code.
-* How the firmware tells a two second device key press from a short one.
+* Every scan code but the device keys', and those on a 350 by pressing them.
+* How a two second device key press is told from a short one. The firmware's keypad routine queues a
+  held key as a press, a release or a repeat and nothing else, and the configurations bind a short press
+  to the release; none measured has a long press to show the rest[^t-device-groups][^unchecked].
 
 [^t-silhouette]: Stated by Logitech, in the manual. [The test](../../../tests/test_silhouettes.py)
 [^x-manual]: Stated by Logitech, in the manual. [The Harmony 350 setup guide](https://www.logitech.com/assets/51207/harmony-350-qsg-and-iid.pdf)
 [^s259]: Measured in configurations. [Section 259](../../../docs/findings.md#s259)
 [^s311]: Measured in configurations. [Section 311](../../../docs/findings.md#s311)
 [^t-harmony-350-slots-c]: Measured in configurations. [The test](../../../tests/test_harmony_350_slots.py)
+[^t-device-groups-c]: Measured in configurations. [The test](../../../tests/test_harmony_350_device_groups.py)
+[^t-device-groups]: Read in the firmware. [The test](../../../tests/test_harmony_350_device_groups.py)
+[^unchecked]: Not checked.

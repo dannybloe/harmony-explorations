@@ -40,7 +40,7 @@ in `SKINS_WITH_A_LONG_PRESS`, [features.md](features.md).
 | `bcdDevice` | `0x1104`[^s195] |
 | firmware | 1.4, the image the Harmony 300 runs too[^s196] |
 | screen | **none**[^t-silhouette] |
-| keys | 55, counted off the drawing in Logitech's setup guide; **no scan code known**[^t-silhouette] |
+| keys | 55, counted off the drawing in Logitech's setup guide[^t-silhouette]; scan codes known for the four device keys only, from the configurations, [keys.md](keys.md)[^t-device-groups-c] |
 | devices | **8**: "Control up to eight devices individually using these four Device buttons, each with a short press or a longer two second press"[^x-manual][^s263] |
 | activities | **1**, Watch TV[^x-manual][^s145] |
 | favourite channels | **5**[^x-manual][^s263] |
@@ -63,7 +63,7 @@ in `SKINS_WITH_A_LONG_PRESS`, [features.md](features.md).
 
 ## Not checked
 
-* Which key sends which scan code.
+* Which scan code each key but the device keys sends, and those not pressed on a 350.
 * The firmware version a unit runs, beyond the product string's 1.4.0.
 
 [^x-manual]: Stated by Logitech, in the manual. [The Harmony 350 setup guide](https://www.logitech.com/assets/51207/harmony-350-qsg-and-iid.pdf)
@@ -75,3 +75,4 @@ in `SKINS_WITH_A_LONG_PRESS`, [features.md](features.md).
 [^s263]: Stated by Logitech, by their service. [Section 263](../../../docs/findings.md#s263)
 [^s145]: Stated by Logitech, by their service. [Section 145](../../../docs/findings.md#s145)
 [^s264]: Stated by Logitech, by their service. [Section 264](../../../docs/findings.md#s264)
+[^t-device-groups-c]: Measured in configurations. [The test](../../../tests/test_harmony_350_device_groups.py)

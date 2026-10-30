@@ -466,10 +466,14 @@ class TestTheHarmony350Silhouette(_SilhouetteConventions, unittest.TestCase):
 
     def test_no_key_claims_a_code_or_a_candidate(self):
         """
-        Nothing ties a key on this remote to a scan code: the architecture has never been opened over
-        USB by this library and no calibration configuration exists for it, section 133. Unlike the 525, there
-        is not even a block to narrow to, since that came from reading the firmware's matrix
-        arithmetic. So the claim is total: no code and no candidate list on any key.
+        No key on this remote is tied to a scan code by pressing it or by reading the keypad scanner:
+        no calibration configuration exists for it, section 133. Unlike the 525, there is not even a
+        block to narrow to, since that came from reading the firmware's matrix arithmetic. The four
+        device keys' codes, 5, 1, 7 and 4, come from the configurations through a Harmony 300's device
+        to key statement, `tests/test_harmony_350_device_groups.py`, and are not drawn until a 350 is
+        pressed. So the drawing's claim stays total: no code and no candidate list on any key. This said
+        nothing tied a key on this remote to a scan code<!--superseded--> until the device keys were
+        read out of the configurations.
         """
         buttons = _buttons(_tree(self.NAME).getroot())
         for ident, element in buttons.items():

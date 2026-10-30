@@ -27,8 +27,9 @@
  * Harmony 600. The statement made holding both is that the shape is the same as the 350's, and a remote
  * in the hand outranks a product photograph, so the 350's single part with two halves stands.
  *
- * **No scan code**, for the reason `h350.ts` gives: nothing measured ties a key on this architecture to
- * a code.
+ * **No scan code**, for the reason `h350.ts` gives: the keypad scanner is not read, and the four device
+ * keys' codes, 5, 1, 7 and 4, come from the configurations rather than from the scanner,
+ * `tests/test_harmony_350_device_groups.py`.
  */
 import { H350 } from './h350.ts';
 import type { Key, Label, Model } from '../types.ts';
