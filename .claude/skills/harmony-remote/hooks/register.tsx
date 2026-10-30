@@ -16,6 +16,8 @@ import type { Register } from 'claude-code'
 const line = atom({ plugin: 'harmony-remote', key: 'line' } as const, null)
 // A second line while a test suite runs, and for a while after it ends: what runs, a bar, the counts.
 const tests = atom({ plugin: 'harmony-remote', key: 'tests' } as const, null)
+// The frame of the bouncing block, advanced on its own faster clock while a run with no total shows.
+const tick = atom({ plugin: 'harmony-remote', key: 'tick' } as const, 0)
 const theme = atom({ plugin: 'harmony-remote', key: 'theme' } as const, '')
 
 // Blue on a light theme and the theme's own orange on a dark one. A theme of "auto" follows the
@@ -26,6 +28,7 @@ export function bandColour(themeSetting: string): string {
 }
 
 const POLL_MS = 3000
+const BOUNCE_MS = 150
 // A finished or stopped write stays on the line this many polls, two minutes, so it is seen after
 // looking away.
 const LINGER_POLLS = 40
@@ -192,6 +195,19 @@ export function bar(share: number, width = 20): string {
   return '█'.repeat(filled) + '░'.repeat(width - filled)
 }
 
+/** Where the bouncing block goes in a line; the drawing puts the current frame there. */
+export const BOUNCE = '{bounce}'
+
+/**
+ * A block of `size` cells going to and fro across `width`, for a run whose length is not known yet:
+ * movement says it is alive, where a bar would claim a share nobody measured.
+ */
+export function bounce(frame: number, width = 20, size = 4): string {
+  const span = width - size
+  const at = span - Math.abs((frame % (2 * span)) - span)
+  return '░'.repeat(at) + '█'.repeat(size) + '░'.repeat(span - at)
+}
+
 /**
  * The band's test line, kept short: whether tests run, a bar, and a failure count only when there is
  * one. `total` is the same measure at the end of the last run of this command, or undefined the first
@@ -202,7 +218,7 @@ export function testLine(counts: { done: number; failed: number }, total: number
   isRunning: boolean): string {
   const failed = counts.failed === 0 ? '' : `, ${counts.failed} FAILED`
   if (!isRunning) return `Tests done${failed}`
-  if (total === undefined || total === 0) return `Tests running${failed}`
+  if (total === undefined || total === 0) return `Tests running: [${BOUNCE}] ${counts.done} done${failed}`
   const share = Math.min(counts.done / total, 0.99)
   return `Tests running: [${bar(share)}] ${Math.floor(share * 100)}%${failed}`
 }
@@ -220,7 +236,8 @@ export const register: Register = (on) => {
 
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
     const text = await read($, line)
-    const testText = await read($, tests)
+    const raw = await read($, tests)
+    const testText = raw === null ? null : raw.replace(BOUNCE, bounce(await read($, tick)))
     if (e.props.hasSurvey || text === null) return next(e)
     const { Box, Text } = $.ui.resolve(e)
     // A rule above the line, so it reads as a panel of its own rather than as the tail of whatever
@@ -367,6 +384,10 @@ export const register: Register = (on) => {
 
     await poll()
     $.clock.every(POLL_MS, () => { void poll() })
+    // Only while the line has a block to move, so an idle band is never redrawn for nothing.
+    $.clock.every(BOUNCE_MS, () => {
+      if (lastTests?.includes(BOUNCE)) void update($, tick, (n) => n + 1)
+    })
     return next(e)
   })
 }

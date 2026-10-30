@@ -1,6 +1,6 @@
 import { expect, test } from 'claude-code/testing'
 
-import { bandColour, bar, configOf, modelName, testCounts, testLabel, testLine, usbState, writeLine, writeProgress } from './register'
+import { bandColour, bar, bounce, BOUNCE, configOf, modelName, testCounts, testLabel, testLine, usbState, writeLine, writeProgress } from './register'
 
 const usb650 = '+-o Harmony Remote  <class IOUSBHostDevice>\n  "idProduct" = 49442\n  "idVendor" = 1133\n'
 const hid650 = '+-o IOHIDInterface\n  "Product" = "Harmony Remote 0-0.2.0"\n  "VendorID" = 1133\n  "ProductID" = 49442\n'
@@ -85,7 +85,7 @@ test('a running suite shows a bar against the last run, and never claims done wh
   expect(bar(0.5, 10)).toBe('█████░░░░░')
   expect(testLine({ done: 20, failed: 0 }, 100, true)).toBe('Tests running: [████░░░░░░░░░░░░░░░░] 20%')
   expect(testLine({ done: 120, failed: 2 }, 100, true)).toBe('Tests running: [████████████████████] 99%, 2 FAILED')
-  expect(testLine({ done: 7, failed: 0 }, undefined, true)).toBe('Tests running')
+  expect(testLine({ done: 7, failed: 0 }, undefined, true)).toBe(`Tests running: [${BOUNCE}] 7 done`)
   expect(testLine({ done: 7, failed: 0 }, undefined, false)).toBe('Tests done')
   expect(testLine({ done: 7, failed: 1 }, undefined, false)).toBe('Tests done, 1 FAILED')
 })
@@ -93,4 +93,12 @@ test('a running suite shows a bar against the last run, and never claims done wh
 test('a label is the program name and its arguments', () => {
   expect(testLabel('/opt/homebrew/bin/python3 -m unittest discover -s tests')).toBe('python3 -m unittest discover -s tests')
   expect(testLabel('make all')).toBe('make all')
+})
+
+test('with no total the block bounces end to end and back, always its own size', () => {
+  expect(bounce(0, 10, 4)).toBe('████░░░░░░')
+  expect(bounce(6, 10, 4)).toBe('░░░░░░████')
+  expect(bounce(7, 10, 4)).toBe('░░░░░████░')
+  expect(bounce(12, 10, 4)).toBe('████░░░░░░')
+  for (let frame = 0; frame < 30; frame += 1) expect(bounce(frame).length).toBe(20)
 })
