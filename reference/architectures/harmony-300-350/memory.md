@@ -106,8 +106,11 @@ on a Harmony 350 the short press of the same four scan codes gives the same four
 shared moulding are the keys printed `TV/Media`, `Cable/PC`, `AVR/Game` and
 `DVD/Music`[^t-device-groups-c]. A group whose key holds no
 device stays empty, so a configuration can hold group 3 with group 2 empty: the groups are not filled in
-order[^t-device-groups-c]. The 350's printed keys follow from the 300's, since the two are one moulding
-running one image; no device key was pressed on a 350 to confirm it[^unchecked].
+order[^t-device-groups-c]. On a Harmony 350 the bottom left key selected the device on group 2 and the
+top left key the device on group 0, heard with an infrared receiver[^t-device-groups-u]; the top right
+and bottom right keys follow from the 300's order, since the two are one moulding running one image,
+and were not pressed with a device on them[^unchecked]. This said no device key had been pressed on a
+350 until that run.
 
 **Nothing in the key path picks a group.** A key press reaches the configuration as an event looked up in
 the key table, and a device key's binding there selects the key map its operand names; the group is
@@ -308,6 +311,7 @@ never send it[^t-harmony-350-clock][^unchecked].
 [^t-slots-c]: Measured in configurations. [The test](../../../tests/test_harmony_350_slots.py)
 [^t-file-family-delays]: Measured in configurations. [The test](../../../packages/codec/test/filefamilydelays.test.ts)
 [^t-device-groups]: Read in the firmware. [The test](../../../tests/test_harmony_350_device_groups.py)
+[^t-device-groups-u]: Measured on a unit. [The test](../../../tests/test_harmony_350_device_groups.py)
 [^t-device-groups-c]: Measured in configurations. [The test](../../../tests/test_harmony_350_device_groups.py)
 [^t-model]: Stated by Logitech, in their client. [The test](../../../tests/test_myharmony_model.py)
 [^t-harmony-350-delay]: Read in the firmware. [The test](../../../tests/test_harmony_350_delay.py)

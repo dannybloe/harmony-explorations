@@ -63,7 +63,7 @@ completes; the backup is the lab's `reads/20261027T1700Z-h350-backup/`.
 ## The first change, todo-compile-350 1.8
 
 The TV's power on delay, written at 30 and put back at 100, each heard with the infrared monitor and the
-test `packages/bench/irtests/350-1-8-delay-*.json`, on 30 October 2026:
+test `packages/bench/irtests/done/350-1-8-delay-*.json`, on 30 October 2026:
 
 1. `work/350-delay/after.bin` written, verified and restarted. The run was started as the 10 s test while the
    remote held this 3 s file, so its file in the lab is named for 10 s and its verdict on the gap failed;
@@ -78,6 +78,14 @@ test `packages/bench/irtests/350-1-8-delay-*.json`, on 30 October 2026:
 So a unit is a tenth of a second, and Volume Up pressed long after went out at once in both runs. The
 argument is the header of `tests/test_harmony_350_delay.py`. The remote holds `before.bin` again, its
 own configuration.
+
+## Which device each device key selects, todo-compile-350 2.3
+
+Run with the unit's own configuration, no write, `packages/bench/irtests/done/350-2-3-device-keys.json`,
+on 30 October 2026, `h350_device_keys_ir`: AVR/Game (bottom left) then Volume Up sent the Denon's
+VolumeUp, TV/Media (top left) then Volume Up the LG's, and Cable/PC (top right), which the file binds
+nothing to, left the remote in the LG's mode. The unit's device keys print TV/Media, Cable/PC, AVR/Game
+and DVD/Music, not what the earlier setup guide's drawing showed; the drawing was corrected.
 
 ## What was predicted
 

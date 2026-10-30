@@ -118,7 +118,8 @@ test('the Python table was actually parsed, rather than read as empty', () => {
   // 295 with the bench 350's own bootloader and safe mode image, read off it as files, 1.4's open half.
   // 297 with the bench 350's two power on delay runs on the receiver, 1.8.
   // 298 with the Harmony 350 configuration of harmony-decompiler issue 37, the long press, 2.4.
-  assert.equal(Object.keys(pythonImages()).length, 298, 'every fixture tests/lab.py names');
+  // 299 with the bench 350's device key run, 2.3.
+  assert.equal(Object.keys(pythonImages()).length, 299, 'every fixture tests/lab.py names');
 });
 
 test('the two sides exclude the same fixtures from the parseable population', () => {

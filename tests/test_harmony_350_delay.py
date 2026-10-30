@@ -51,7 +51,7 @@ read there.
 
 The bench Harmony 350 was written `work/350-delay/after.bin`, the LG TV's power on delay at 30, and then
 `before.bin`, the same at 100, each read back identical and restarted, and each heard on the Flirc with
-the test `packages/bench/irtests/350-1-8-delay-*.json`: Power from the TV's mode, its PowerOn code, Volume
+the test `packages/bench/irtests/done/350-1-8-delay-*.json`: Power from the TV's mode, its PowerOn code, Volume
 Up pressed straight after it, then Volume Up again long after, then Power off. `h350_delay_ir_3s` and
 `h350_delay_ir_10s` here. **The 3 s run's file is named for 10 s**, since the 10 s test was started while
 the remote still held the 30; its own verdict on the gap failed for that reason and nothing else.

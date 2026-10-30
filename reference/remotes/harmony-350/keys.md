@@ -116,9 +116,10 @@ firmware, which it has not been. The same holds for the Harmony 300,
 ## Not checked
 
 * Every key's scan code.
-* Which device key each of the scan codes 1, 4, 5 and 7 is on a Harmony 350 itself: they are taken to be
-  the top right, bottom right, top left and bottom left keys from the Harmony 300's order, and what is
-  printed on the four keys differs between units, so a key is named by its place[^unchecked]. This listed how the firmware tells a two second device key press from a short one,
+* Which device key the scan codes 1 and 4 are on a Harmony 350 itself: they are taken to be the top
+  right and bottom right keys from the Harmony 300's order, and what is printed on the four keys differs
+  between units, so a key is named by its place[^unchecked]. Scans 5 and 7 are the top left and bottom
+  left keys, each pressed on a 350 and heard selecting its device[^t-device-groups-u]. This listed how the firmware tells a two second device key press from a short one,
   until it was read: a press ends in a release or, held past the hold time, in a held event, and the
   long press device is bound to the held event,
   [the family's firmware](../../architectures/harmony-300-350/firmware.md#a-held-key)[^t-long-press].
@@ -128,6 +129,7 @@ firmware, which it has not been. The same holds for the Harmony 300,
 [^s259]: Measured in configurations. [Section 259](../../../docs/findings.md#s259)
 [^s311]: Measured in configurations. [Section 311](../../../docs/findings.md#s311)
 [^t-harmony-350-slots-c]: Measured in configurations. [The test](../../../tests/test_harmony_350_slots.py)
+[^t-device-groups-u]: Measured on a unit. [The test](../../../tests/test_harmony_350_device_groups.py)
 [^t-device-groups-c]: Measured in configurations. [The test](../../../tests/test_harmony_350_device_groups.py)
 [^unchecked]: Not checked.
 [^t-long-press]: Read in the firmware. [The test](../../../tests/test_harmony_350_long_press.py)

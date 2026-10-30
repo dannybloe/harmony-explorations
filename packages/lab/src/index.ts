@@ -328,6 +328,8 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // todo-compile-350 1.8, the bench Harmony 350's TV power on delay heard at 3 s and at 10 s. **The first
   // file is named for 10 s and holds the 3 s run**: the remote held `work/350-delay/after.bin` while the
   // 10 s test was started, so its own verdict on the gap failed and the gap it measured is the 3 s one.
+  // todo-compile-350 2.3: the bench 350's device keys pressed, AVR/Game then Volume Up and TV/Media then Volume Up.
+  h350_device_keys_ir: '20261030T112024Z-ir-test-harmony-350-which-device-each-device-key-selects.json',
   h350_delay_ir_3s: '20261030T094935Z-ir-test-harmony-350-the-tv-s-power-on-delay-at-10-s.json',
   h350_delay_ir_10s: '20261030T095433Z-ir-test-harmony-350-the-tv-s-power-on-delay-at-10-s.json',
   h600_delay_ir_before: '20261001T093603Z-ir-test-harmony-600-the-kpn-box-s-power-on-delay.json',

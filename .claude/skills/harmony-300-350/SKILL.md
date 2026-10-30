@@ -77,7 +77,7 @@ silence about favourite channels was read as their absence.
 ## 4. Bench tests
 
 The shape, the rules and the Flirc's firmware requirement are the `harmony-650` skill's section 3. The
-Harmony 350's first, `packages/bench/irtests/350-1-8-delay-*.json`, is the pattern for this family:
+Harmony 350's first, `packages/bench/irtests/done/350-1-8-delay-*.json`, is the pattern for this family:
 
 * **There is no screen, so the receiver is the only witness.** Every step names the code the monitor
   should hear, and a step that changes the remote's state (the TV's power, here) says how to read that

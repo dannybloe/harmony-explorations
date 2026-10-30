@@ -144,7 +144,8 @@ two Harmony 300s. The 350's printed key for each scan code rests on the shared m
 pressed on a 350.
 
 **Standing.** Read in the firmware, and measured in configurations, with the 300's key identities a
-person's statement of where each device was put. Nothing was sent to a remote.
+person's statement of where each device was put; the bottom left and top left keys measured on a Harmony
+350 with the receiver, `TheBench350SelectsByPlace`.
 """
 import os
 import unittest
@@ -381,6 +382,35 @@ class TheBench350sOwnFile(unittest.TestCase):
         keys = _device_keys(c)
         self.assertEqual({scan: (event, _own_group(c, entry)) for scan, (event, entry) in keys.items()},
                          {5: (RELEASE, 0), 7: (RELEASE, 2)})
+
+
+class TheBench350SelectsByPlace(unittest.TestCase):
+    """The receiver run of 2.3: the bottom left key gives the Denon, the top left the LG, on a 350.
+
+    With the bench 350 holding the file above, AVR/Game then Volume Up sent the Denon's VolumeUp and
+    TV/Media then Volume Up the LG's; Cable/PC, which the file binds nothing to, left the remote in the
+    LG's mode, so Volume Up after it was the LG's again. So scans 7 and 5 are the bottom left and top left
+    keys on a Harmony 350 itself, where above they rested on the 300's order; the top right and bottom
+    right keys are still taken from the 300, since this file binds neither.
+    """
+
+    @staticmethod
+    def _heard(step):
+        out = []
+        for press in step['presses']:
+            names = [(m['device'], m.get('command')) for m in press['frame']['matches']
+                     if m['config'] == 'work/350-delay/before.bin']
+            out.append(names[0] if names else None)
+        return out
+
+    def test_each_device_key_selected_the_device_of_its_place(self):
+        import json
+        lab.require('h350_device_keys_ir')
+        run = json.loads(lab.load('h350_device_keys_ir'))
+        self.assertEqual(run['name'], 'Harmony 350, which device each device key selects')
+        heard = [self._heard(step) for step in run['steps'][:3]]
+        self.assertEqual(heard, [[('Denon_AV_Receiver', 'VolumeUp')], [('LG_TV', 'VolumeUp')],
+                                 [('LG_TV', 'VolumeUp')]])
 
 
 if __name__ == '__main__':
