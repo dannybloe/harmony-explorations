@@ -14,10 +14,11 @@ activity). A route that reaches the 350's finish line covers the 300's, which th
 **Before working any item, load the `harmony-300-350` skill**, in this session and in every agent brief, and
 `code-for-a-family` before any build code: this is a new family in the codec, and what differs belongs in it.
 
-**Nothing writes to this family today.** The 350 is on none of the write lists, the transport refuses every
-command but open for reading, read, close and ping, and how a remote of this family is recovered is not
-checked. So chapter 1 is longer than any other track's: the write route has to be read, railed and rehearsed
-before anything is composed for it.
+**Nothing wrote to this family when this plan was written.** The 350 was on none of the write lists, the
+transport refused every command but open for reading, read, close and ping, and how a remote of this family
+is recovered was not checked. So chapter 1 is longer than any other track's: the write route had to be read,
+railed and rehearsed before anything was composed for it. It is done: decision 26 permits the bench 300 and
+350, `/cfg/usercfg` is written behind its own rail, and a changed delay was heard on the receiver.
 
 **The route**: the write route first, then what the configuration holds that is still unread, then a
 Logitech compile of part of a test setup written and used, then our composers on it, then nothing copied.
