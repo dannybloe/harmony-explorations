@@ -106,7 +106,7 @@ holds a long press, from the five alone, and proposed a compile to find out.
 | | Harmony 350, four files | Harmony 300, two files |
 |---|---|---|
 | a key's first device | the release, `0x40 | scan`: `07 FFFB` then `1F FFnn` | the press, `0x80 | scan`: `1F E9p2` then `1F FFnn` |
-| a key's second device | the held event, `0xC0 | scan`: `07 FFFB` then `1F FFnn`, on scans 1 and 7 of the issue 37 file | none |
+| a key's second device | the held event, `0xC0 | scan`: `07 FFFB` then `1F FFnn`, on scans 1 and 7 of the issue 37 file (the top right and bottom left keys; the printing on the keys differs between units) | none |
 | a device key's press | per device on the key, `07 FFFB`, `1F E9p2` and two `1F EB` starts, whose records are 400 ticks to `E9p0` and 600 to `E9p2` | the first device's binding |
 | scan codes | 1, 4, 5 on the two files with three devices, 1, 4, 5, 7 on the others | 1, 5 and 1, 4, 5, 7 |
 | parameter 0 at start | `3F F00A`, 10 | `3F F00A`, 10 |

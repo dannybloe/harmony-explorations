@@ -117,9 +117,10 @@ held event[^t-long-press].
 | the press | per device on the key, `07 FFFB`, `1F E9p2` and two `1F EB` starts, whose timers run 400 ticks to `1F E9p0` and 600 to `1F E9p2`: one pulse of the pin. A key with two devices carries the group twice, and the second `07 FFFB` cancels the first group's timers | the binding above | [^t-long-press-c], [^t-long-press] |
 | scan codes of those bindings | 1, 4 and 5 on a configuration with three devices, and 7 with four or more | 1 and 5 with two devices, 1, 4, 5 and 7 with four | [^t-long-press-c] |
 | the pin `p` each switches | 2 for scan 1, 3 for 4, 0 for 5 and 1 for 7 | the same | [^t-long-press-c] |
+| the key's place | scan 5 top left, 1 top right, 7 bottom left and 4 bottom right, the order of the Harmony 300's keys; what is printed on the four keys differs between units, so a key is named by its place | the same | [^t-long-press-c] |
 | the hold time at start | `3F F00A`, parameter 0 at 10, about one second | the same | [^t-long-press-c], [^t-long-press-u] |
 
-**One configuration read has long press devices**, two of them, on scan codes 1 and 7, and it sets the
+**One configuration read has long press devices**, two of them, on scan codes 1 and 7, the top right and bottom left keys, and it sets the
 hold to 10 like every other, so on it a long press selects after about a second, where Logitech's guide
 says two[^t-long-press-c][^t-long-press-u]. Its timer table holds two records per device a key selects,
 twelve for five devices on six key assignments, since one device is on two keys, the short press of one
