@@ -17,9 +17,9 @@ no screen holds one activity at most,
 Generated from `packages/codec`, `packages/usb` and the drawing by `make remote-reference-write`. Change the source, not this block.
 <!-- /generated -->
 
-A configuration still carries a clock record, and whether the remote keeps a running clock is the
-family's open question, [the family's memory.md](../../architectures/harmony-300-350/memory.md). Nothing on
-a 300 could show one.
+A configuration still carries a clock record, and the remote runs a clock from it that steps the minute
+and, on every configuration read, never moves the hour or the date, [the family's memory.md](../../architectures/harmony-300-350/memory.md#the-state-variables).
+Nothing on a 300 could show it.
 
 ## Not checked
 

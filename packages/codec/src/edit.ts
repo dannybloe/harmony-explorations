@@ -378,10 +378,13 @@ export function timestampEdit(c: Container, builtAt: string): Edit[] {
  * The seven values come from `clockRecordFields`, the same encoder base slot 3 uses, rather than from
  * a second decomposition of the same string: that is the rule this project bans two copies of.
  *
- * The transitions those records carry are **not** touched. They are structural, not date derived: the
- * seven records carry the same skeleton in every container, a minute, hour, day and month each with
- * one transition in the register machine band and the other three with none, and the only part that
- * varies is which action list a `0x7F` names.
+ * The transitions those records carry are **not** touched. They are structural, not date derived: on
+ * arch 8, 9, 12 and 14 the seven records carry one skeleton in every container, the carry: the minute
+ * adds one to the hour, the hour calls a list adding one to the day and the weekday, the day adds one to
+ * the month and the month to the year, the other three carry nothing, and the only part that varies is
+ * which action list the hour's `0x7F` names (the Harmony One's minute carries a second transition). On
+ * arch 16 (Harmony 300 and 350) the five configurations read carry none at all, so the remote's clock
+ * stops at the minute, `tests/test_harmony_350_clock.py`; a save leaves that alone too.
  */
 export function clockStateEdits(c: Container, builtAt: string): Edit[] {
   const fields = clockRecordFields(builtAt);

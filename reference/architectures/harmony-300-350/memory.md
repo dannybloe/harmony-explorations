@@ -126,6 +126,69 @@ activity[^t-file-family-delays].
 Changing one is a one byte edit of that `0x7C`'s operand plus the trailer checksum, `setPowerOnDelay` in
 `packages/codec/src/edit.ts`, which leaves the activity's copy alone[^t-file-family-delays].
 
+## The state variables
+
+**The remote keeps a clock that runs to the minute and no further.** It counts a variable it keeps as
+the second and steps the minute by itself, but on all five configurations of this family read here the
+hour, the date and the year stay what a cold start set them to, which is the moment the configuration was
+built. Nothing a person meets is known to depend on it: neither model has a screen, and none of the five
+reads the clock[^t-harmony-350-clock][^t-harmony-350-clock-c].
+
+**The variables sit in data memory from `0x108`**, the Harmony One's address: a one byte variable at
+`0x108` plus its index, a two byte one, little endian, at `0x108 + narrow + 2 * (index - narrow)`. The area
+ends at `0x1C7`, 192 bytes, where the seeder keeps `narrow`, `wide` and its memory check
+next[^t-harmony-350-clock].
+
+**The firmware owns variables 0 to 17**, as on the Harmony 880 and 885, the Harmony One and the Harmony
+600, 650 and 700, [state.md](../../config-format/state.md#variables-7-to-17-belong-to-the-firmware-too): the
+seeder's other arm paints from 18, and the memory check that decides whether the seeder runs covers 18
+upward only[^t-state-block]. In all five configurations records 7 to 17 state the Harmony 600, 650 and
+700's values[^t-harmony-350-clock-c]. What the firmware stores into, directly[^t-harmony-350-clock]:
+
+| variable | what the firmware does with it |
+|---|---|
+| 0, the second | adds the time elapsed, and takes 60 off each time it reaches 60, raising a minute flag |
+| 1, the minute | steps it by one, below, never directly |
+| 3 and 5, the day and the month | the month end routine[^s322] moves a day past its month's last index to 0 and the month on by one |
+| 4, the weekday | worked out from the date by an instruction no configuration here issues |
+| 11 and 13 | 10 and 0 at every start, straight after the seeder; no direct reference reads either |
+| 16 | 0 or 1 from an input pin, stored when it changes; what the pin senses is not checked[^unchecked] |
+| 17 | the send queue's priority, 0 to 3, set by the send path; the Harmony One's priority byte and the Harmony 600, 650 and 700's sending flag |
+
+**The minute is the firmware's last step.** When the second passes 60 and the action queue is empty, the
+firmware queues the instruction that adds one to variable 1, which wraps past its `max` of 59 to 0 and then
+fires the minute's transitions[^t-harmony-350-clock]. On every other architecture those transitions do
+the carry, in all 21 of their containers measured: the minute adds one to the hour when it wraps, the hour
+calls a list adding one to the day and the weekday, the day adds one to the month and the month to the
+year[^t-harmony-350-clock-c]. **On this family's five configurations the seven clock records carry no
+transition at all**, and no instruction in their lists, key maps, start up events, timers or transitions
+writes, steps or adds to any of variables 0 to 17; the name tree was not scanned[^t-harmony-350-clock-c].
+Five configurations of two generations of Logitech's compiler is the width of this: one that carried the
+chain would run its clock, and none is known[^unchecked].
+
+**The clock records seed it.** Their `first` values are base slot 3's build stamp field for field in all
+five configurations, and the seeder writes them only when its memory check fails, so at a cold start; a
+warm start keeps the running values[^t-harmony-350-clock-c][^t-harmony-350-clock]. The time since the
+build is a counter of its own, filled from base slot 3 at start as on the Harmony One, 600 and
+700[^t-harmony-350-clock].
+
+**Variable 17 is the one of the eighteen a configuration names**: all five read it in four lists, each
+switching one of four output pins one way or the other on its value, the pins band `0xE9` switches, which
+is the instruction the timer table's records hold too[^t-harmony-350-clock-c][^t-slots]. That fits the Harmony 350's device keys lighting while it sends,
+[the 350's display.md](../../remotes/harmony-350/display.md); that the pins are those lights is not
+checked[^unchecked].
+
+**What a configuration writer does**: stamp the seven clock records with the moment of writing, the year's
+`max` with them, as on every architecture; reuse none of 0 to 17; and write no clock transitions, since
+none of the five configurations read here has any and what the remote would do with them is not
+checked[^t-harmony-350-clock-c][^unchecked].
+
+**No read over USB reaches the clock as the library stands.** The file protocol has no read of data
+memory, [the file protocol](../../usb-protocol/file-protocol.md), and no file on the inert list serves it.
+The firmware does answer one request with the time and the date, one whose service byte is `0xC0` rather
+than the file commands' `0xFF`; how it is framed is not read, and Logitech's templates for these skins
+never send it[^t-harmony-350-clock][^unchecked].
+
 ## Not checked
 
 * The external medium's part and size, and the RAM size[^unchecked].
@@ -136,9 +199,15 @@ Changing one is a one byte edit of that `0x7C`'s operand plus the trailer checks
   is not read, and only the same device was measured, [above](#a-devices-power-on-delay)[^unchecked]. This
   listed the unit as not checked too, until a Harmony 350 was measured at two values; on a Harmony 300 the
   unit rests on its running the same image[^unchecked].
-* Which state variables the firmware owns on this family, and whether the remote keeps a running clock:
-  the configuration has a clock record and the firmware a month end routine[^s322], and the state
-  variable table is read for its layout and its seeder only, [above](#the-six-slots-the-firmware-was-read-for)[^unchecked].
+* Whether the clock's unit is a second: the firmware counts from a timer and from watchdog wakes whose
+  rates are not read, and only a read of the running remote would say[^unchecked].
+* Whether a restart after a configuration is written seeds the new configuration's values or keeps the
+  old ones: the same memory check decides, and what survives in data memory across this family's restart
+  is not read[^unchecked].
+* What variables 11, 13 and 16 mean, and what variables 7 to 10, 12, 14 and 15 are for, since nothing
+  in the image stores into them directly[^unchecked]. This listed which variables the firmware owns and
+  whether the clock runs as not checked too, until the state variables were read,
+  [above](#the-state-variables).
 
 [^s199]: Read in the firmware. [Section 199](../../../docs/findings.md#s199)
 [^t-firmware]: Read in the firmware. [The test](../../../tests/test_harmony_350_firmware.py)
@@ -163,3 +232,6 @@ Changing one is a one byte edit of that `0x7C`'s operand plus the trailer checks
 [^t-file-family-delays]: Measured in configurations. [The test](../../../packages/codec/test/filefamilydelays.test.ts)
 [^t-harmony-350-delay]: Read in the firmware. [The test](../../../tests/test_harmony_350_delay.py)
 [^t-harmony-350-delay-heard]: Measured on a unit. [The test](../../../tests/test_harmony_350_delay.py)
+[^t-harmony-350-clock]: Read in the firmware. [The test](../../../tests/test_harmony_350_clock.py)
+[^t-harmony-350-clock-c]: Measured in configurations. [The test](../../../tests/test_harmony_350_clock.py)
+[^t-state-block]: Read in the firmware. [The test](../../../tests/test_firmware_state_block.py)

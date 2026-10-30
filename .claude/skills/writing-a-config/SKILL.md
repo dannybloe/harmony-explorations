@@ -50,7 +50,9 @@ safe. Before writing build code in `packages/codec/src`, load `code-for-a-family
   "Variables 7 to 17 belong to the firmware too" and "What a writer does with the clock". Stamp eight
   values, since the year's maximum moves with it; the day counts from 0, so a 31st is stored as 30 and
   its maximum stays 30. Reuse none of the firmware's block, 0 to 17 or 0 to 12 by architecture,
-  `firmwareStateVariableMax`. `clockStateEdits` does the stamping. This page once said a 31st needed its
+  `firmwareStateVariableMax`. `clockStateEdits` does the stamping. On the Harmony 300 and 350 the clock
+  records carry no transitions in any configuration read, so the remote's clock stops at the minute; write none there either,
+  `reference/architectures/harmony-300-350/memory.md`. This page once said a 31st needed its
   maximum raised to 31, that a save on a 31st writes a day of 31 against a range that stops at
   30, which set every clock we wrote a day ahead.
 * **A delay saved on the remote wins over the configuration's at start**, arch 14 (Harmony 600, 650 and

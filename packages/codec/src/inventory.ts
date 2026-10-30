@@ -2286,6 +2286,11 @@ export const FIRMWARE_STATE_VARIABLE_MAX = 12;
  * 138's cut at 12 came from arch 9 (Harmony 525), where its configurations name 13 upward and its own
  * seeder compares the index against the literal 13.
  *
+ * Arch 16 (Harmony 300 and 350) owns 0 to 17 as well, read in its 1.4 image in `todo-compile-350.md` 2.5:
+ * its alternative fill and the memory check that gates its seeder both start at 18, it stores directly
+ * into 0, 3, 4, 5, 11, 13, 16 and 17, and it steps the minute itself, `tests/test_firmware_state_block.py`
+ * and `tests/test_harmony_350_clock.py`.
+ *
  * An architecture not listed gets the widest block, since refusing a variable that turns out to be free
  * costs a composer nothing and writing one the firmware owns costs a device that silently misbehaves.
  * Arch 10 (Harmony 890 and 895) is not listed because nothing here reads its state table.
@@ -2295,6 +2300,7 @@ export const FIRMWARE_STATE_VARIABLE_MAX_BY_ARCHITECTURE: Readonly<Record<number
   9: 12,
   12: 17,
   14: 17,
+  16: 17,
 };
 
 /** The highest firmware owned index on `architecture`, the widest known block when it is unlisted. */

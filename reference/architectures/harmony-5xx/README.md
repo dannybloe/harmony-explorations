@@ -58,7 +58,7 @@ Measured or read on a Harmony 525, per the opening paragraph.
 | infrared | class 5 in every record: a code spelled from a dictionary of short pulse blocks, [infrared records](../../config-format/infrared-records.md)[^s82] |
 | screen raster | 96 by 64, one bit a pixel[^s62][^s148] |
 | keypad | 8 by 8 over one sense line, scan code `group * 8 + column`[^s89] |
-| state variables the firmware owns | 0 to 12, where architectures 8, 12 and 14 own 0 to 17[^s284] |
+| state variables the firmware owns | 0 to 12, where architectures 8, 12, 14 and 16 own 0 to 17[^s284][^t-state-block] |
 | USB | product id `0xC111`, a seven field version block, `bcdDevice` as protocol and skin in plain hex, [usb.md](usb.md)[^s76] |
 | the host protocol family | the HID command protocol: Logitech groups architectures 9, 12 and 14 as one legacy protocol, and every other architecture takes the file protocol[^s197] |
 | Logitech's software | the classic Harmony Remote Software. Logitech's live service accepts a skin 22 remote and has it switched off, so it compiles no configuration for one[^s135][^s145] |
@@ -102,3 +102,4 @@ thing between a wrong address and both firmware images.[^s267] [usb.md](usb.md) 
 [^s135]: Stated by Logitech, by their service. [Section 135](../../../docs/findings.md#s135)
 [^s145]: Stated by Logitech, by their service. [Section 145](../../../docs/findings.md#s145)
 [^s267]: Read in the firmware. [Section 267](../../../docs/findings.md#s267)
+[^t-state-block]: Read in the firmware. [The test](../../../tests/test_firmware_state_block.py)

@@ -660,3 +660,5 @@ it reachable in the same commit and the test comparing the two tables is what ca
 | `holds one of 170 in an unread list` | `packages/codec/test/filefamilydelays.test.ts` | the list is the activity's start, read, and the same television's own transition spells 170 as 100 and 70 |
 | `nothing about the 350 in use has been observed on a unit` | `tests/test_harmony_350_delay.py` | the power on delay was measured on a Harmony 350 with an infrared receiver: a unit is a tenth of a second |
 | `No infrared bench test exists` | `tests/test_harmony_350_delay.py` | the Harmony 350's power on delay was heard at two values, todo-compile-350 1.8 |
+| `same skeleton in every container` | `tests/test_harmony_350_clock.py` | true of arch 8, 9, 12 and 14; on arch 16 (Harmony 300 and 350) the seven clock records carry no transition in the five configurations read, so the clock stops at the minute |
+| `whether the remote keeps a running clock` | `tests/test_harmony_350_clock.py` | the Harmony 300 and 350 run a clock to the minute, and on the five configurations read nothing carries the minute into the hour |

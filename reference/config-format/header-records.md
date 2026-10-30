@@ -191,8 +191,15 @@ remote knows how long ago the configuration was built; the subtraction skips the
 since the firmware derives it.[^s138]
 
 **The boot read of three bytes at index 10 fills the counter of time since the build, not the clock**, on
-the Harmony One, 600 and 700 images: the same variable the subtraction writes.[^s310] What it loads is
-`EF 00 00` in every container measured, which is unexplained.[^s310b]
+the Harmony One, 600 and 700 images: the same variable the subtraction writes.[^s310] The Harmony 300 and
+350's image does the same, into the counter its clock's tick adds to.[^t-harmony-350-clock] What it loads is
+`EF 00 00` in every container measured, which is unexplained, and in the five of the Harmony 300 and 350
+too.[^s310b][^t-harmony-350-clock-c]
+
+**On the Harmony 300 and 350 the clock this record seeds stops at the minute**: the seven clock records
+of the five configurations read carry none of the transitions that carry it into the hour on every other architecture, so the hour and
+the date stay at the stamp's until the next cold start,
+[their memory page](../architectures/harmony-300-350/memory.md#the-state-variables).[^t-harmony-350-clock-c]
 
 **A writer stamps this record with the moment it writes**, together with base slot 13's clock records,
 which are where a stale moment shows: a clock wrong after every power cycle by exactly the staleness. A
@@ -245,3 +252,5 @@ one Harmony One before and after a sync with Logitech's service, is ordered corr
 [^t-edit]: Measured in configurations. [The test](../../packages/codec/test/edit.test.ts)
 [^s16]: Measured in configurations. [Section 16](../../docs/findings.md#s16)
 [^s58]: Measured in configurations. [Section 58](../../docs/findings.md#s58)
+[^t-harmony-350-clock]: Read in the firmware. [The test](../../tests/test_harmony_350_clock.py)
+[^t-harmony-350-clock-c]: Measured in configurations. [The test](../../tests/test_harmony_350_clock.py)
