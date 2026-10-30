@@ -10,7 +10,7 @@ table. Only its files have been read off a 300, never its memory.
 | | value | evidence |
 |---|---|---|
 | infrared groups | **four in every configuration**, unused ones empty, the model's stated maximum | [^s264] |
-| the group index | the device key: TV 0, Cable/Sat 1, DVD 2, VCR/Aux 3 | [^s265] |
+| the group index | the device key: TV 0, Cable/Sat 1, DVD 2, VCR/Aux 3, selected on the key's press | [^s265], [^t-device-groups-c] |
 
 ## What the 300 showed about the family
 
@@ -28,3 +28,4 @@ sample of the same population. Both are stated once in
 [^s264]: Measured in configurations. [Section 264](../../../docs/findings.md#s264)
 [^s265]: Measured in configurations. [Section 265](../../../docs/findings.md#s265)
 [^t-harmony-350-slots-c]: Measured in configurations. [The test](../../../tests/test_harmony_350_slots.py)
+[^t-device-groups-c]: Measured in configurations. [The test](../../../tests/test_harmony_350_device_groups.py)

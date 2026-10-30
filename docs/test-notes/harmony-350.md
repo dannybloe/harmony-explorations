@@ -110,6 +110,19 @@ made holding both units, and is recorded in `packages/silhouettes/src/models/h30
 traced from the button page of its setup guide, whose copy in the lab is `Docs/350 manual.pdf`, the same
 text as the guide Logitech publishes.
 
+## Which device is on which key
+
+Nobody recorded which device key each device was put on when the unit was programmed through Logitech's
+service. The configurations state it: the scan code whose release selects each device's map,
+`tests/test_harmony_350_device_groups.py`, read as a printed key through the Harmony 300's device to key
+statement, with each group's device named by the codec's `devices` from its `Power` variable
+(`packages/codec/test/filefamilydelays.test.ts` for the lab fixtures; the names are not asserted by the
+first test). On the four device file the television is on `TV / AVR`, the KPN box on `Cable/DVD`, the
+Playstation 3 on `BD / Media` and the Chromecast on `Game/MP3`. On the file the unit holds now, the same
+file as the backup read the test opens, the LG television is on `TV / AVR` and the Denon receiver on
+`BD / Media`. Asking which keys were chosen, or pressing `BD / Media` and hearing a Denon code, would
+check the one inference in that, which key a scan code is on a 350.
+
 ## What has not been done
 
 * Only one infrared bench test has been run on this model, the power on delay above; a command to another

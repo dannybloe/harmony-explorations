@@ -49,7 +49,7 @@ what holds on this architecture.
 | base address | `0x020000`, the file's place on the external medium | [^s194] |
 | slot map | raw slot to base slot in `ARCH16_SLOT_MAP`, `packages/codec/src/gspm.ts`: the name tree, the architecture record, the log area, the clock record, the infrared database, the action list table, the parameter block and the number sender are named; raw 13 is a metadata archive that names devices and commands, [the metadata archive](../../config-format/container.md#the-metadata-archive) and [the container's slots for this family](../../config-format/container.md#the-harmony-300-and-350s-slots). Raw 5, 6, 8, 9, 12 and 14 are read in the firmware, [below](#the-six-slots-the-firmware-was-read-for), and of those the map carries raw 9 alone, the state variable table, which a device's power on delay is read through | [^s259b], [^s260], [^s262b], [^t-slots], [^t-file-family-delays] |
 | the infrared table | allocated at the model's **maximum** device count, four groups on a 300 and eight on a 350, unused groups empty, unlike every other architecture | [^s263], [^s264] |
-| which group a device takes | on the 300, the device key it is assigned to, [the 300's memory.md](../../remotes/harmony-300/memory.md); not the metadata archive's name list, which is alphabetical. On the 350 not checked | [^s265], [^unchecked] |
+| which group a device takes | the position of the device key it is on, on both models: the first key 0 to the fourth key 3, a short press on the 350; not the metadata archive's name list, which is alphabetical. A long press on the 350 is not checked, [below](#which-infrared-group-a-device-takes) | [^s265], [^t-device-groups-c], [^unchecked] |
 | what is stored | exactly the codes some action list sends | [^s261] |
 | raw slot 8 | the timer table, twice the device count on a configuration Logitech's current service compiled, and empty on one compiled in 2011, so it follows the compiler and not the model, [below](#the-six-slots-the-firmware-was-read-for) | [^s264], [^s265], [^t-slots-c] |
 
@@ -75,7 +75,7 @@ seeker, and what the code does with the bytes is what names them[^t-slots]:
 |---|---|---|
 | 5 | **the start up event table**, this family's own: a `u8` count, then one action list instruction per event, 11 in every configuration. The firmware queues entry 1 once, when a configuration passes the validator at start, and no other entry is raised by any direct reference in the image[^t-slots][^t-slots-c] | entry 1 installs the key maps and selects the map of the device on infrared group 0, so on that reading the remote starts in that device's mode, which on the Harmony 300 is the TV key's device[^t-slots][^t-slots-c][^s265] |
 | 6 | **[base slot 9, the key map table](../../config-format/modes-and-keys.md#base-slot-9-the-key-map-table)**: a `u8` count and pointers to tagged lists, looked up through the same stack, with the same leave and enter tags 2 and 1, as on the Harmony 600, 650 and 700[^t-slots] | each device key selects its device's map[^t-slots-c] |
-| 8 | **[base slot 12, the timer table](../../config-format/state.md#base-slot-12-the-timer-table)**, its seven byte records and its four concurrent timers[^t-slots] | on the Harmony 350 one binding of each device key starts two, which switch one of four output pins; what the pins drive is not checked[^t-slots-c][^unchecked] |
+| 8 | **[base slot 12, the timer table](../../config-format/state.md#base-slot-12-the-timer-table)**, its seven byte records and its four concurrent timers[^t-slots] | on the Harmony 350 each device key's press starts two, which switch one of four output pins, [below](#which-infrared-group-a-device-takes); what the pins drive is not checked[^t-slots-c][^t-device-groups-c][^unchecked] |
 | 9 | **[base slot 13, the state variable table](../../config-format/state.md#base-slot-13-the-state-variable-table)**, its header of four words and its seeder, `0xFE` fill to `0xC0` included, as on the Harmony 600[^t-slots] | each device's `Power` variable, whose switch on carries the device's power on delay, [below](#a-devices-power-on-delay)[^t-file-family-delays] |
 | 12 | **a digit entry table**, no base slot: an instruction arms an entry, digits sent by opcode `0x74` are collected, and the entry turns them into a number or matches them. Two zero bytes in every configuration, so no entry, and none issues a digit[^t-slots][^t-slots-c] | nothing |
 | 14 | NULL in every configuration, and no direct reference in the image reads it; a computed jump was not excluded[^t-slots][^t-slots-c] | |
@@ -96,6 +96,39 @@ this family has no mode table for it to live in[^t-slots].
 **Every send is paired with a `0x7C` naming the same device**, 602 of 602 lists over the five
 configurations of this architecture, some of them as a third shape, `{0x07, 0x7D, 0x7C}`, beside the plain
 pair[^s278]. The rule is every architecture's, [the action language](../../config-format/actions.md).
+
+## Which infrared group a device takes
+
+**A device takes the infrared group of the device key it sits on, by the key's place among the four**:
+on a Harmony 300 the keys printed TV, Cable/Sat, DVD and VCR/Aux give groups 0, 1, 2 and 3[^s265], and
+on a Harmony 350 the short press of the same four scan codes gives the same four groups, which by the
+shared moulding are the keys printed `TV / AVR`, `Cable/DVD`, `BD / Media` and
+`Game/MP3`[^t-device-groups-c]. A group whose key holds no
+device stays empty, so a configuration can hold group 3 with group 2 empty: the groups are not filled in
+order[^t-device-groups-c]. The 350's printed keys follow from the 300's, since the two are one moulding
+running one image; no device key was pressed on a 350 to confirm it[^unchecked].
+
+**Nothing in the key path picks a group.** A key press reaches the configuration as an event looked up in
+the key table, and a device key's binding there selects the key map its operand names; the group is
+whatever that map sends from, so the rule is the compiler's, stated in each
+configuration[^t-device-groups][^t-slots]. The 1.4 image, read as Logitech serves it for the 350 and named
+by Logitech for the 300 too, queues a held key's scan code with one of three event types: press
+`0x80 | scan`, release `0x40 | scan` and repeat `0xC0 | scan`,
+[key codes](../../config-format/modes-and-keys.md#key-codes-and-scan-codes)[^t-device-groups]. Its
+other key events are fixed codes, not a held key's[^t-device-groups].
+
+The four device keys bind scan codes 5, 1, 7 and 4, in the order above, on both models; on the Harmony 300
+that order is tied to the printed keys by which device was put on which key[^s265][^t-device-groups-c].
+**A Harmony 300 selects the device on the key's press, and a Harmony 350 on its release.** The 350's press
+selects nothing: it switches one of the four output pins and starts two timers that switch it again, the
+timers of [the six slots](#the-six-slots-the-firmware-was-read-for)[^t-device-groups-c].
+
+**A long press on the 350 is not settled.** Every 350 configuration allocates eight groups[^s263], no
+code is sent from groups 4 to 7 in any of them, and no configuration measured has a device on a long
+press[^t-device-groups-c], so which group
+such a device takes and how the long press is stored are not checked[^unchecked]. Logitech's client holds
+a device key as one record, `UserModeMappingInfo`, with a short press device and a long press device,
+[its data model](../../logitech/data-model/entities.md#usermodemappinginfo)[^t-model].
 
 ## A device's power on delay
 
@@ -129,6 +162,8 @@ Changing one is a one byte edit of that `0x7C`'s operand plus the trailer checks
 ## Not checked
 
 * The external medium's part and size, and the RAM size[^unchecked].
+* Which infrared group a device on a Harmony 350's long press takes, how the long press is stored, and
+  which printed key each device key scan code is on a 350 rather than a 300, [above](#which-infrared-group-a-device-takes)[^unchecked].
 * What raises the start up event table's entries 2 to 4, the unit of a timer's duration, what the four
   output pins drive, and the digit entry record beyond its first three bytes, which no configuration
   fills[^unchecked].
@@ -161,5 +196,8 @@ Changing one is a one byte edit of that `0x7C`'s operand plus the trailer checks
 [^t-slots]: Read in the firmware. [The test](../../../tests/test_harmony_350_slots.py)
 [^t-slots-c]: Measured in configurations. [The test](../../../tests/test_harmony_350_slots.py)
 [^t-file-family-delays]: Measured in configurations. [The test](../../../packages/codec/test/filefamilydelays.test.ts)
+[^t-device-groups]: Read in the firmware. [The test](../../../tests/test_harmony_350_device_groups.py)
+[^t-device-groups-c]: Measured in configurations. [The test](../../../tests/test_harmony_350_device_groups.py)
+[^t-model]: Stated by Logitech, in their client. [The test](../../../tests/test_myharmony_model.py)
 [^t-harmony-350-delay]: Read in the firmware. [The test](../../../tests/test_harmony_350_delay.py)
 [^t-harmony-350-delay-heard]: Measured on a unit. [The test](../../../tests/test_harmony_350_delay.py)

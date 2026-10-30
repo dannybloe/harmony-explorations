@@ -92,19 +92,23 @@ Generated from `packages/silhouettes/src/models/h300.ts` by `make remote-referen
 ## A device key is a slot in the configuration
 
 **The infrared group index is the device key**: TV is group 0, Cable/Sat 1, DVD 2 and VCR/Aux 3, each group
-identified in Logitech's catalogue on a configuration given one device per key[^s265]. What an infrared
-group is, is [the configuration format's](../../config-format/infrared-records.md).
+identified in Logitech's catalogue on a configuration given one device per key[^s265]. The key table binds
+each key's **press** to selecting its device, under scan codes 5, 1, 7 and 4 in that order, so those four
+are the only scan codes known on this remote,
+[the family's memory page](../../architectures/harmony-300-350/memory.md#which-infrared-group-a-device-takes)[^t-device-groups-c].
+What an infrared group is, is [the configuration format's](../../config-format/infrared-records.md).
 
 ## No scan codes
 
-Nothing measured ties a key on this family to a scan code, and the keypad scanner of this generation has
-not been read[^unchecked], [the family's README](../../architectures/harmony-300-350/README.md). So the
-drawing claims no code and no candidate on any key, and its test asserts exactly that,
-`tests/test_silhouettes.py`.
+Beyond the four device keys, whose codes come from the configurations above, nothing ties a key on this
+family to a scan code, and the keypad scanner of this generation has not been read[^unchecked],
+[the family's README](../../architectures/harmony-300-350/README.md). The drawing claims no code and no
+candidate on any key, the device keys included until the scanner is read, and its test asserts exactly
+that, `tests/test_silhouettes.py`.
 
 ## Not checked
 
-* Every key's scan code.
+* Every scan code but the device keys'.
 * Whether the pause half of the play key is a separate part: the setup guide's photograph suggests one,
   and the drawing follows the 350's single part with two halves, since the moulding is the
   350's[^t-moulding].
@@ -113,3 +117,4 @@ drawing claims no code and no candidate on any key, and its test asserts exactly
 [^t-printing]: Stated by Logitech, in the manual. [The test](../../../tests/test_silhouettes.py)
 [^s265]: Measured in configurations. [Section 265](../../../docs/findings.md#s265)
 [^unchecked]: Not checked.
+[^t-device-groups-c]: Measured in configurations. [The test](../../../tests/test_harmony_350_device_groups.py)

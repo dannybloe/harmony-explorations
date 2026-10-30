@@ -25,6 +25,11 @@ than pressing Watch TV or another device key. What device mode is on every Harmo
 * After the power key switches a device on, the remote waits a time stated per device before that
   device's next command, and the activity keeps its own copy of each wait; both are the family's,
   [the family's memory.md](../../architectures/harmony-300-350/memory.md#a-devices-power-on-delay).
+* A short press of a device key acts when the key comes up: the configurations select the device on the
+  key's release, and its press only switches one of four outputs and starts two timers, which a Harmony
+  300's device key does not. Each key's short press device takes the infrared group of the key's place,
+  [the family's memory.md](../../architectures/harmony-300-350/memory.md#which-infrared-group-a-device-takes)[^t-device-groups-c].
+  What a two second press does in the configuration is not checked, since none measured has one[^unchecked].
 * One configuration compiled for a 350 sends each code three times a press: 106 of its 130 records state
   a count, and every one of them states 3[^s259].
 
@@ -44,3 +49,5 @@ than pressing Watch TV or another device key. What device mode is on every Harmo
 [^x-manual]: Stated by Logitech, in the manual. [The Harmony 350 setup guide](https://www.logitech.com/assets/51207/harmony-350-qsg-and-iid.pdf)
 [^s259]: Measured in configurations. [Section 259](../../../docs/findings.md#s259)
 [^t-delay-heard]: Measured on a unit. [The test](../../../tests/test_harmony_350_delay.py)
+[^t-device-groups-c]: Measured in configurations. [The test](../../../tests/test_harmony_350_device_groups.py)
+[^unchecked]: Not checked.

@@ -41,7 +41,7 @@ The figures that are the family's link to its folder; the rest are the 300's own
 | architecture, product id, firmware, container | the family's | [the family's README](../../architectures/harmony-300-350/README.md) |
 | `bcdDevice` | `0x1078`, the family's base skin even on a skin 79 remote | [^s195][^s264] |
 | screen | **none** | [^t-no-screen]; [display.md](display.md) |
-| keys | 55, the 350's moulding with different printing; no scan code known | [^t-moulding]; [keys.md](keys.md) |
+| keys | 55, the 350's moulding with different printing; scan codes known for the four device keys only, from the configurations | [^t-moulding], [^t-device-groups-c]; [keys.md](keys.md) |
 | devices | **4**, one per device key, and every configuration holds four infrared groups | [^s264c][^s264b] |
 | activities | no `Activities` capability, only `PartiallySetupActivities`; at most one, a power on shortcut | [^s265b]; [features.md](features.md) |
 | favourite channels | 4 for skin 79; 5 for skin 78 | [^s265b] for 79; [^unchecked] for 78 |
@@ -63,7 +63,7 @@ The figures that are the family's link to its folder; the rest are the 300's own
 
 ## Not checked
 
-* Which key sends which scan code.
+* Which scan code each key but the device keys sends.
 * What decides skin 78 or 79 on a unit.
 
 [^s131]: Stated by Logitech, by their service. [Section 131](../../../docs/findings.md#s131)
@@ -76,3 +76,4 @@ The figures that are the family's link to its folder; the rest are the 300's own
 [^s264b]: Measured in configurations. [Section 264](../../../docs/findings.md#s264)
 [^s265b]: Stated by Logitech, by their service. [Section 265](../../../docs/findings.md#s265)
 [^t-long-press]: Stated by Logitech, by their service. [The test](../../../packages/usb/test/models.test.ts)
+[^t-device-groups-c]: Measured in configurations. [The test](../../../tests/test_harmony_350_device_groups.py)
