@@ -103,8 +103,11 @@ pair[^s278]. The rule is every architecture's, [the action language](../../confi
 is stated per device in the configuration. A person would meet it with the power key in a device's mode:
 the power code goes out, and a command pressed for the same device straight after it waits. The firmware
 queues the wait behind the power code and counts it down only while nothing ahead of it names the same
-device[^t-harmony-350-delay]; that a later command to that device is held until it ends, and a command to
-another device is not, is how the other images send, and on this one it is not checked[^unchecked].
+device[^t-harmony-350-delay]. **A unit is a tenth of a second**: on a Harmony 350, a wait of 30 held the
+next command to the same device 3.17 seconds after its power code ended and a wait of 100 held it 10.21
+seconds, the same 0.16 seconds besides in both[^t-harmony-350-delay-heard]. That a command to another
+device is not held behind it is how the other images send, and on this one it is not
+checked[^unchecked].
 
 Where it is: the device's `Power` state variable, going from 0 to 1, runs a list that calls the list
 sending the power code and then carries one `0x7C` naming the device's group, with the wait as its low
@@ -129,9 +132,10 @@ Changing one is a one byte edit of that `0x7C`'s operand plus the trailer checks
 * What raises the start up event table's entries 2 to 4, the unit of a timer's duration, what the four
   output pins drive, and the digit entry record beyond its first three bytes, which no configuration
   fills[^unchecked].
-* That a unit of the power on delay is a tenth of a second on this firmware, and that the wait holds back
-  the next command to its own device and no other: its tick is read, and how fast it runs and the routine
-  that picks the next send are not, [above](#a-devices-power-on-delay)[^unchecked].
+* That the power on delay holds back no command to another device: the routine that picks the next send
+  is not read, and only the same device was measured, [above](#a-devices-power-on-delay)[^unchecked]. This
+  listed the unit as not checked too, until a Harmony 350 was measured at two values; on a Harmony 300 the
+  unit rests on its running the same image[^unchecked].
 * Which state variables the firmware owns on this family, and whether the remote keeps a running clock:
   the configuration has a clock record and the firmware a month end routine[^s322], and the state
   variable table is read for its layout and its seeder only, [above](#the-six-slots-the-firmware-was-read-for)[^unchecked].
@@ -158,3 +162,4 @@ Changing one is a one byte edit of that `0x7C`'s operand plus the trailer checks
 [^t-slots-c]: Measured in configurations. [The test](../../../tests/test_harmony_350_slots.py)
 [^t-file-family-delays]: Measured in configurations. [The test](../../../packages/codec/test/filefamilydelays.test.ts)
 [^t-harmony-350-delay]: Read in the firmware. [The test](../../../tests/test_harmony_350_delay.py)
+[^t-harmony-350-delay-heard]: Measured on a unit. [The test](../../../tests/test_harmony_350_delay.py)

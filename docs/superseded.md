@@ -658,3 +658,5 @@ it reachable in the same commit and the test comparing the two tables is what ca
 | `nothing here rules that out for this family` | `tests/test_harmony_350_boot.py` | entering safe mode on a Harmony 350 destroys nothing; it copies the staged application only when a firmware install asks it to |
 | `raw 6, 8 and 9 are not in it yet` | `packages/codec/test/filefamilydelays.test.ts` | raw 9, base slot 13, is in `ARCH16_SLOT_MAP`; raw 6 and 8 are not |
 | `holds one of 170 in an unread list` | `packages/codec/test/filefamilydelays.test.ts` | the list is the activity's start, read, and the same television's own transition spells 170 as 100 and 70 |
+| `nothing about the 350 in use has been observed on a unit` | `tests/test_harmony_350_delay.py` | the power on delay was measured on a Harmony 350 with an infrared receiver: a unit is a tenth of a second |
+| `No infrared bench test exists` | `tests/test_harmony_350_delay.py` | the Harmony 350's power on delay was heard at two values, todo-compile-350 1.8 |

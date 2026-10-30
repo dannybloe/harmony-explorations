@@ -116,7 +116,8 @@ test('the Python table was actually parsed, rather than read as empty', () => {
   // 291 with the client's two write templates for the Harmony 300 and 350, todo-compile-350 1.2, 293 with
   // the 350's firmware upgrade template and the client's firmware type converter, 1.4.
   // 295 with the bench 350's own bootloader and safe mode image, read off it as files, 1.4's open half.
-  assert.equal(Object.keys(pythonImages()).length, 295, 'every fixture tests/lab.py names');
+  // 297 with the bench 350's two power on delay runs on the receiver, 1.8.
+  assert.equal(Object.keys(pythonImages()).length, 297, 'every fixture tests/lab.py names');
 });
 
 test('the two sides exclude the same fixtures from the parseable population', () => {

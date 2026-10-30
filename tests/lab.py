@@ -314,6 +314,9 @@ IMAGES = {
     'h600_ram_after_battery_pull': '20261001T1045Z-h600-ram-e00-after-battery-pull.txt',
     'h600_ram_after_restore': '20261001T1100Z-h600-ram-e00-after-restore.txt',
     # The bench test before and after the raise, and the monitor logs each run's frames are in.
+    # todo-compile-350 1.8; the first file is named for 10 s and holds the 3 s run, packages/lab says why.
+    'h350_delay_ir_3s': '20261030T094935Z-ir-test-harmony-350-the-tv-s-power-on-delay-at-10-s.json',
+    'h350_delay_ir_10s': '20261030T095433Z-ir-test-harmony-350-the-tv-s-power-on-delay-at-10-s.json',
     'h600_delay_ir_before': '20261001T093603Z-ir-test-harmony-600-the-kpn-box-s-power-on-delay.json',
     'h600_delay_ir_after': '20261001T100643Z-ir-test-harmony-600-the-kpn-box-s-power-on-delay.json',
     'h600_delay_ir_monitor_before': '20261001T0934Z-ir-monitor.jsonl',

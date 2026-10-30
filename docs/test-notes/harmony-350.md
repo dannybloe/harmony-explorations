@@ -60,6 +60,25 @@ After each failed run's restart the remote flashed the lights under its activity
 error 8, a missing marker, and answered reads normally. Its configuration is erased until a write
 completes; the backup is the lab's `reads/20261027T1700Z-h350-backup/`.
 
+## The first change, todo-compile-350 1.8
+
+The TV's power on delay, written at 30 and put back at 100, each heard with the infrared monitor and the
+test `packages/bench/irtests/350-1-8-delay-*.json`, on 30 October 2026:
+
+1. `work/350-delay/after.bin` written, verified and restarted. The run was started as the 10 s test while the
+   remote held this 3 s file, so its file in the lab is named for 10 s and its verdict on the gap failed;
+   the gap it measured, 3.174 s of silence between PowerOn and the held Volume Up, is the 3 s one.
+   `h350_delay_ir_3s`.
+2. `before.bin` written back. The first attempt got no reply to its first request, as a freshly plugged
+   in 350 has done before, and wrote nothing; the second was refused, correctly, because the remote held
+   the 3 s file and that was named neither as the backup nor as the file being written; the third, naming
+   `after.bin` as the backup, was verified and restarted. The 10 s test then measured 10.205 s and passed.
+   `h350_delay_ir_10s`.
+
+So a unit is a tenth of a second, and Volume Up pressed long after went out at once in both runs. The
+argument is the header of `tests/test_harmony_350_delay.py`. The remote holds `before.bin` again, its
+own configuration.
+
 ## What was predicted
 
 Each programmed read was predicted in writing and committed before it was taken:
@@ -93,7 +112,7 @@ text as the guide Logitech publishes.
 
 ## What has not been done
 
-* **No infrared bench test exists** for this model: nothing it sends has been watched with the Flirc, and
-  the model's `behaviour.md` is the guide and the configurations only.
+* Only one infrared bench test has been run on this model, the power on delay above; a command to another
+  device right after a power code was not pressed.
 * No key press has been tied to a scan code.
 * No firmware version has been read off the unit beyond the product string's 1.4.0.

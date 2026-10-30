@@ -76,9 +76,20 @@ silence about favourite channels was read as their absence.
 
 ## 4. Bench tests
 
-**No bench infrared test exists for either model.** The shape, the rules and the Flirc's firmware
-requirement are the `harmony-650` skill's section 3; a first test for this family would follow them
-and should say so in its own header, since there is no screen to confirm a step against.
+The shape, the rules and the Flirc's firmware requirement are the `harmony-650` skill's section 3. The
+Harmony 350's first, `packages/bench/irtests/350-1-8-delay-*.json`, is the pattern for this family:
+
+* **There is no screen, so the receiver is the only witness.** Every step names the code the monitor
+  should hear, and a step that changes the remote's state (the TV's power, here) says how to read that
+  state off the monitor, since the person cannot see it.
+* **The monitor names this family's codes only from a configuration it loads**, `BENCH_CONFIGS` in
+  `packages/bench/src/irmonitor.ts`. The bench unit's current file is named there by its path in the lab
+  rather than by a lab name, so a working copy stays out of every corpus population.
+* **Start the test that matches what is on the remote.** A run of the wrong one measures the right thing
+  and fails its own verdict, which is how `h350_delay_ir_3s` came to be filed under a 10 s name.
+* **Writing a file back** names the file the remote holds now as `--backup`, since the writer refuses to
+  erase what is neither the backup nor the file being written, and a freshly plugged in remote may drop
+  the first request, so a "no reply" with nothing written is retried as it is.
 
 ## Where things live
 

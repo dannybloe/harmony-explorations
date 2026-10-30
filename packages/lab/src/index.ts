@@ -325,6 +325,11 @@ export const IMAGES: Readonly<Record<string, string>> = {
   h600_ram_after_battery_pull: '20261001T1045Z-h600-ram-e00-after-battery-pull.txt',
   h600_ram_after_restore: '20261001T1100Z-h600-ram-e00-after-restore.txt',
   // The bench test before and after the raise, and the monitor logs each run's frames are in.
+  // todo-compile-350 1.8, the bench Harmony 350's TV power on delay heard at 3 s and at 10 s. **The first
+  // file is named for 10 s and holds the 3 s run**: the remote held `work/350-delay/after.bin` while the
+  // 10 s test was started, so its own verdict on the gap failed and the gap it measured is the 3 s one.
+  h350_delay_ir_3s: '20261030T094935Z-ir-test-harmony-350-the-tv-s-power-on-delay-at-10-s.json',
+  h350_delay_ir_10s: '20261030T095433Z-ir-test-harmony-350-the-tv-s-power-on-delay-at-10-s.json',
   h600_delay_ir_before: '20261001T093603Z-ir-test-harmony-600-the-kpn-box-s-power-on-delay.json',
   h600_delay_ir_after: '20261001T100643Z-ir-test-harmony-600-the-kpn-box-s-power-on-delay.json',
   h600_delay_ir_monitor_before: '20261001T0934Z-ir-monitor.jsonl',

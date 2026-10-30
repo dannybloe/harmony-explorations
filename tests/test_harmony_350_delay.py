@@ -47,9 +47,34 @@ read there.
   only once the send in front of it for the same device has gone: the tick's half of section 236's per
   device order, here on arch 16.
 
+## What the receiver measured, 1.8
+
+The bench Harmony 350 was written `work/350-delay/after.bin`, the LG TV's power on delay at 30, and then
+`before.bin`, the same at 100, each read back identical and restarted, and each heard on the Flirc with
+the test `packages/bench/irtests/350-1-8-delay-*.json`: Power from the TV's mode, its PowerOn code, Volume
+Up pressed straight after it, then Volume Up again long after, then Power off. `h350_delay_ir_3s` and
+`h350_delay_ir_10s` here. **The 3 s run's file is named for 10 s**, since the 10 s test was started while
+the remote still held the 30; its own verdict on the gap failed for that reason and nothing else.
+
+The silence the receiver reports before the first Volume Up, from the end of the PowerOn frame:
+
+| written | silence |
+|---|---|
+| 30 | 3.174 s |
+| 100 | 10.205 s |
+
+Seventy more units bought 7.031 s, so **a unit is a tenth of a second within half a percent**, 1.0044 s
+per ten, and both runs carry the same 0.16 s besides, the press and the frame time. The control press,
+Volume Up with the delay long run out, went at once in both runs, after silences of 19.6 s and 29.3 s
+that were the person waiting. So the Volume Up was **held by the remote** until the wait ended: the gap
+follows the value written, which a press timed by hand to the same instruction would not.
+
+What this does not settle: that a code to **another** device is not held behind it, since only the TV was
+pressed; and the Harmony 300, which runs the same image on Logitech's word and was not measured.
+
 ## What was not read
 
-* **The tick's rate, and so the unit, is not read on this image.** `0x12624` has one caller, `0x12A76`,
+* **The tick's rate is not read on this image**; the receiver measured the unit instead, above. `0x12624` has one caller, `0x12A76`,
   and what paces it was not followed. The unit the configuration states is the compiler's, and the
   closure in the TypeScript test is that a Harmony 350 programmed with the bench Harmony 600's devices
   states the same three numbers inline that the Harmony 600 states as delay variables, which the 600's
@@ -72,8 +97,9 @@ and this family's `memory.md` and `firmware.md`. The library: `powerOnInstructio
 (`h350_code`); Logitech's package names it for skins 78, 79 and 104, so it is the Harmony 300's too on
 Logitech's word, and no image was read off a Harmony 300.
 
-**Standing.** Read in the firmware. Nothing was sent to a remote.
+**Standing.** Read in the firmware, and the unit measured on a unit by the receiver, 1.8.
 """
+import json
 import unittest
 
 import lab
@@ -196,6 +222,54 @@ class TheTickHoldsAQuantityPerDevice(unittest.TestCase):
                           'MOVLB 0xc', 'SUBWF 0xc1a,W', 'BNZ 0x12196', 'MOVLB 0x0', 'BTFSC 0x0a8,1',
                           'BRA 0x12194'])
         self.assertEqual(_text(0x12194, 1), ['RETLW 0x01'])
+
+
+class TheBench350WaitsTenthsOfASecond(unittest.TestCase):
+    """1.8 on the receiver: 30 units are 3.17 s and 100 are 10.21 s, one unit a tenth of a second."""
+
+    RUNS = {'h350_delay_ir_3s': 30, 'h350_delay_ir_10s': 100}
+
+    @staticmethod
+    def _step(run, number):
+        """A step's presses as (command, receiver silence before it in microseconds), in order."""
+        out = []
+        for press in run['steps'][number - 1]['presses']:
+            frame = press['frame']
+            names = [m.get('command') for m in frame['matches'] if m['config'] == 'work/350-delay/before.bin']
+            out.append((names[0] if names else None, frame.get('gapUs')))
+        return out
+
+    def _silences(self):
+        lab.require(*self.RUNS)
+        found = {}
+        for name, units in self.RUNS.items():
+            run = json.loads(lab.load(name))
+            self.assertEqual(run['name'], "Harmony 350, the TV's power on delay at 10 s", name)
+            step = self._step(run, 3)
+            # PowerOn, then the Volume Up the delay held; anything pressed after it is not the measurement.
+            self.assertEqual([command for command, _ in step[:2]], ['PowerOn', 'VolumeUp'], name)
+            found[units] = step[1][1]
+        return found
+
+    def test_the_held_volume_up_follows_power_on_by_the_delay(self):
+        self.assertEqual(self._silences(), {30: 3174000, 100: 10205000})
+
+    def test_a_unit_is_a_tenth_of_a_second_within_half_a_percent(self):
+        found = self._silences()
+        per_unit = (found[100] - found[30]) / (100 - 30)
+        self.assertAlmostEqual(per_unit / 100000, 1.0, delta=0.005)
+        # The same fixed part on both runs, the press and the frame, well under one unit's worth twice.
+        offsets = [found[units] - units * per_unit for units in found]
+        self.assertLess(abs(offsets[0] - offsets[1]), 1000)
+        self.assertTrue(all(100000 < offset < 250000 for offset in offsets), offsets)
+
+    def test_volume_up_long_after_the_delay_goes_at_once(self):
+        lab.require(*self.RUNS)
+        for name in self.RUNS:
+            step = self._step(json.loads(lab.load(name)), 4)
+            self.assertEqual(step[0][0], 'VolumeUp', name)
+            # The silence before it is the person waiting out the instruction, longer than any delay.
+            self.assertGreater(step[0][1], 15000000, name)
 
 
 if __name__ == '__main__':
