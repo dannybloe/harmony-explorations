@@ -22,8 +22,11 @@ export interface DrawnKey {
   readonly name: string;
   readonly src: 'catalogue' | 'printed';
   readonly scan?: number;
-  /** The archive section that established `scan`, `SCAN_SOURCES` in the same file. */
-  readonly scanFrom?: number;
+  /**
+   * The archive section that established `scan`, or the footnote label of the test that did, as
+   * `SCAN_SOURCES` in the same file has them.
+   */
+  readonly scanFrom?: number | string;
 }
 
 const INDEX = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'silhouettes', 'src', 'index.ts');
@@ -37,7 +40,7 @@ const silhouettes = (await import(pathToFileURL(INDEX).href)) as {
  * 600 and section 398 on the Harmony One. The other sources a drawing names, the One's touch hit map and
  * the 600's Help, come from the configuration alone and no map of Logitech's names them.
  */
-export const NAMED_BY_LOGITECH: ReadonlySet<number> = new Set([133, 323, 398]);
+export const NAMED_BY_LOGITECH: ReadonlySet<number | string> = new Set([133, 323, 398]);
 
 /** Each calibration configuration and the drawing of the model it was compiled for. */
 export const CALIBRATION_DRAWINGS: Readonly<Record<string, string>> = {
@@ -50,7 +53,8 @@ export function drawnKeys(drawing: string): readonly DrawnKey[] {
   const model = silhouettes.MODELS[drawing];
   if (model === undefined) throw new Error(`packages/silhouettes draws no model ${drawing}`);
   for (const key of model.keys) {
-    if (typeof key.name !== 'string' || (key.scan !== undefined && typeof key.scanFrom !== 'number')) {
+    const source = typeof key.scanFrom;
+    if (typeof key.name !== 'string' || (key.scan !== undefined && source !== 'number' && source !== 'string')) {
       throw new Error(`${drawing}: a key does not have the shape DrawnKey reads, ${JSON.stringify(key.name)}`);
     }
   }
@@ -62,7 +66,7 @@ export function drawnKeys(drawing: string): readonly DrawnKey[] {
  * them when none is given. A scan code names one key, which the silhouettes' own test asserts, so a map
  * loses nothing.
  */
-export function drawnScans(drawing: string, sources?: ReadonlySet<number>): Map<number, string> {
+export function drawnScans(drawing: string, sources?: ReadonlySet<number | string>): Map<number, string> {
   const out = new Map<number, string>();
   for (const key of drawnKeys(drawing)) {
     if (key.scan === undefined) continue;

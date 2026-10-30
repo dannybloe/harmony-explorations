@@ -330,6 +330,9 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // 10 s test was started, so its own verdict on the gap failed and the gap it measured is the 3 s one.
   // todo-compile-350 2.3: the bench 350's device keys pressed, AVR/Game then Volume Up and TV/Media then Volume Up.
   h350_device_keys_ir: '20261030T112024Z-ir-test-harmony-350-which-device-each-device-key-selects.json',
+  // todo-compile-350 2.2.2: every key of the bench 350 pressed in the TV's and the receiver's modes, on
+  // `work/350-delay/before.bin`; the favourite that sends and the arrow pair are read out of it.
+  h350_keys_ir: '20261030T142422Z-ir-test-harmony-350-every-key-in-the-tv-s-and-the-receiver-s-modes.json',
   h350_delay_ir_3s: '20261030T094935Z-ir-test-harmony-350-the-tv-s-power-on-delay-at-10-s.json',
   h350_delay_ir_10s: '20261030T095433Z-ir-test-harmony-350-the-tv-s-power-on-delay-at-10-s.json',
   h600_delay_ir_before: '20261001T093603Z-ir-test-harmony-600-the-kpn-box-s-power-on-delay.json',

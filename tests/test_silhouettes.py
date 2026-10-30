@@ -455,31 +455,44 @@ class TestTheHarmonyOneSilhouette(_SilhouetteConventions, unittest.TestCase):
 
 
 class TestTheHarmony350Silhouette(_SilhouetteConventions, unittest.TestCase):
-    """Fifty five, counted off Logitech's own drawing, with nothing from the firmware to check it."""
+    """Fifty five, counted off Logitech's own drawing, and 44 of them tied to a code by pressing them."""
 
     NAME = 'h350.svg'
-    # **The weakest count in this directory, and stated as such.** Nobody has read arch 16's keypad
-    # scanner, so there is no equivalent of section 89's fifty or of the 600's column census. The number
-    # is the button page of the Harmony 350 setup guide, counted shape by shape out of its vector
-    # drawing; the guide's box contents drawing and the cover photograph agree where they reach.
+    # The count is the button page of the Harmony 350 setup guide, counted shape by shape out of its vector
+    # drawing; the guide's box contents drawing and the cover photograph agree where they reach. The 1.4
+    # firmware's keypad scan numbers 56 codes, `tests/test_harmony_350_keys.py`, one more than the keys.
     EXPECTED_BUTTONS = 55
+    # The codes heard at the bench, `TheBench350HeardEveryKey` in `tests/test_harmony_350_keys.py`, by the
+    # drawing's names, and the keys narrowed to a set. Stated here rather than read back from the drawing,
+    # so a code that moves in the drawing moves in this file's diff too.
+    CODES = {
+        'TvMedia': 5, 'AvrGame': 7, 'Power': 3, 'Input': 35, 'Favorite5': 2, 'Info': 36, 'Exit': 12,
+        'Guide': 33, 'UpArrow': 25, 'DownArrow': 26, 'Red': 13, 'Green': 27, 'Yellow': 28, 'Blue': 29,
+        'VolumeUp': 49, 'VolumeDown': 52, 'DirectionUp': 51, 'DirectionRight': 31, 'DirectionDown': 42,
+        'DirectionLeft': 14, 'Select': 50, 'ChannelUp': 55, 'ChannelDown': 41, 'VolumeMute': 15,
+        'PrevChannel': 32, 'Rewind': 22, 'FastForward': 30, 'SkipBack': 21, 'SkipForward': 38, 'Record': 23,
+        'Stop': 40, 'Play': 44, 'Pause': 46, 'Number1': 24, 'Number2': 47, 'Number3': 39, 'Number4': 17,
+        'Number5': 48, 'Number6': 37, 'Number7': 18, 'Number8': 53, 'Number9': 45, 'Clear': 19, 'Number0': 20,
+    }
+    CANDIDATES = {
+        'Favorite1': '8 9 11 34', 'Favorite2': '8 9 11 34', 'Favorite3': '8 9 11 34',
+        'Favorite4': '8 9 11 34', 'Live': '43 56',
+    }
 
-    def test_no_key_claims_a_code_or_a_candidate(self):
+    def test_exactly_the_stated_keys_carry_a_code_or_candidates(self):
         """
-        No key on this remote is tied to a scan code by pressing it or by reading the keypad scanner:
-        no calibration configuration exists for it, section 133. Unlike the 525, there is not even a
-        block to narrow to, since that came from reading the firmware's matrix arithmetic. The four
-        device keys' codes, 5, 1, 7 and 4, come from the configurations through a Harmony 300's device
-        to key statement, `tests/test_harmony_350_device_groups.py`, and are not drawn until a 350 is
-        pressed. So the drawing's claim stays total: no code and no candidate list on any key. This said
-        nothing tied a key on this remote to a scan code<!--superseded--> until the device keys were
-        read out of the configurations.
+        On the Harmony 350, 44 keys carry the code they were heard sending with, and five a set of
+        candidates, `todo-compile-350.md` 2.2.2; the other six, Menu, DVR, Enter, Watch TV and the top right
+        and bottom right device keys, carry neither, because the file the unit held binds nothing to them
+        and the drawing takes a code from the bench alone. This said no key on this remote was tied to a
+        scan code, and none carried candidates either, until that run. The Harmony 300's class states none.
         """
         buttons = _buttons(_tree(self.NAME).getroot())
-        for ident, element in buttons.items():
-            with self.subTest(button=ident):
-                self.assertIsNone(element.get('data-scan'))
-                self.assertIsNone(element.get('data-scan-candidates'))
+        codes = {e.get('data-name'): int(e.get('data-scan')) for e in buttons.values() if e.get('data-scan')}
+        candidates = {e.get('data-name'): e.get('data-scan-candidates') for e in buttons.values()
+                      if e.get('data-scan-candidates')}
+        self.assertEqual(codes, self.CODES)
+        self.assertEqual(candidates, self.CANDIDATES)
 
     def test_there_is_no_screen(self):
         """
@@ -511,6 +524,11 @@ class TestTheHarmony300Silhouette(TestTheHarmony350Silhouette):
 
     NAME = 'h300.svg'
     EXPECTED_BUTTONS = 55
+    # **None**, although the 350's drawing carries 44: those were heard on a Harmony 350 and no Harmony 300
+    # has been pressed. The moulding and the 300's configurations make it likely the codes are the same,
+    # which is an inference, so `h300.ts` drops every code and candidate it takes over with the shapes.
+    CODES = {}
+    CANDIDATES = {}
 
     def test_the_printing_is_the_300s(self):
         """

@@ -2,8 +2,8 @@
 
 Fifty five keys, the same keys in the same places as on a Harmony 350, with different words printed on
 some of them. The four device keys each pick one device. Which code each key raises is the Harmony 350's
-table, read off configurations of both models, [below](#scan-codes), and has not been checked by pressing
-the keys.
+table, read off configurations of both models, [below](#scan-codes). It was checked by pressing the keys of
+a Harmony 350 and not of a Harmony 300[^unchecked].
 
 The drawing, [`reference/silhouettes/h300.svg`](../../silhouettes/h300.svg), is generated from
 `packages/silhouettes/src/models/h300.ts`, which **takes every shape from the Harmony 350's drawing** and
@@ -115,11 +115,14 @@ keys, while this model prints yellow, blue, red and green on those four position
 Either the remote sends another colour's command than the one on the key, or the printing was read wrong;
 neither is checked[^unchecked].
 
-The drawing claims no code on any key, and its test asserts exactly that, `tests/test_silhouettes.py`.
+The drawing claims no code on any key, and its test asserts exactly that, `tests/test_silhouettes.py`. The
+Harmony 350's drawing carries 44, heard by pressing a Harmony 350, [its keys](../harmony-350/keys.md#scan-codes);
+the same moulding and this model's configurations binding the same codes make it likely they hold here,
+which is an inference, so none is drawn on this one[^unchecked].
 
 ## Not checked
 
-* Any key's code, by pressing it with a receiver listening.
+* Any key's code, by pressing it on a Harmony 300 with a receiver listening; the Harmony 350's were.
 * What the colour keys send.
 * Whether the pause half of the play key is a separate part: the setup guide's photograph suggests one,
   and the drawing follows the 350's single part with two halves, since the moulding is the
