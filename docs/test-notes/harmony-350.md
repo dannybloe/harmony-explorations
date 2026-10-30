@@ -8,10 +8,10 @@ as the bench rows of the model folder, moved here by plan 009 step 3.1.
 ## The unit
 
 A Harmony 350 has been on the bench since 27 August 2026, one of the three file based remotes that arrived
-together, section 193. **It is read only and stays that way**: `openHarmony` refuses its product id, the
-one path that reaches it, `openFileBasedRemote`, opens files for reading on the inert path list, and this
-architecture is on none of the write lists. **Nothing has ever been written to it** over USB, by concordance
-or by this library. Its own records, `/sys/guid` and the `guid` field of `/sys/sysinfo`, identify the
+together, section 193. This said it was read only and that nothing had ever been written to it, which
+stopped being true with decision 26: it is a permitted write target, written through the file write rail
+(`writeFileConfig`, `/cfg/usercfg` only, unit `h350`) since `todo-compile-350.md` 1.7, and the sections
+below say what was written for each item. `openHarmony` still refuses its product id. Its own records, `/sys/guid` and the `guid` field of `/sys/sysinfo`, identify the
 unit and stay on the terminal.
 
 Its configurations were changed only through Logitech's own service, by syncing, never from here.
