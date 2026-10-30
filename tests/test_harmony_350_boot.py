@@ -139,7 +139,9 @@ line is one of `PORTE` bits 0 to 6 (lines 0 to 6), `PORTA` bits 3 to 5 (7 to 9) 
 | `0x03` | `PORTE` bit 0 with `PORTB` bit 6 | safe mode stays |
 | `0x32` | `PORTD` bit 2 with `PORTB` bit 5 | safe mode stays |
 
-Which printed keys those are is not known, since no scan code is tied to a key on this architecture.
+Which printed keys those are was not known when this was written. `tests/test_harmony_350_keys.py` read the
+application's scan, the same routine, and tied codes to keys from configurations: by that table `0x14` is the
+digit 0, `0x2C` Play, `0x03` Power and `0x32` OK, none of it tried on a remote.
 Each scan also opens with a three key reset: safe mode's tests the application's three keys, and the
 bootloader's swaps one of them for code `0x14`'s key.
 

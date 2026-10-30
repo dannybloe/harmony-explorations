@@ -234,7 +234,8 @@ class TheRunnerSeesEveryTest(unittest.TestCase):
         # 61 with `tests/test_harmony_350_device_groups.py`, todo-compile-350 2.3.
         # 62 with `tests/test_harmony_350_clock.py`, todo-compile-350 2.5.
         # 63 with `tests/test_harmony_350_long_press.py`, todo-compile-350 2.4.
-        self.assertEqual(len(files), 63, 'the Python test files')
+        # 64 with `tests/test_harmony_350_keys.py`, todo-compile-350 2.2.
+        self.assertEqual(len(files), 64, 'the Python test files')
         with_block = 0
         for path in files:
             with open(path, encoding='utf-8') as handle:
@@ -271,7 +272,8 @@ class TheRunnerSeesEveryTest(unittest.TestCase):
         # 59 with `tests/test_harmony_350_device_groups.py`, todo-compile-350 2.3, which carries one.
         # 60 with `tests/test_harmony_350_clock.py`, todo-compile-350 2.5, which carries one.
         # 61 with `tests/test_harmony_350_long_press.py`, todo-compile-350 2.4, which carries one.
-        self.assertEqual(with_block, 61,
+        # 62 with `tests/test_harmony_350_keys.py`, todo-compile-350 2.2, which carries one.
+        self.assertEqual(with_block, 62,
                          'files carrying a __main__ block, of %d' % len(files))
 
 
@@ -490,8 +492,8 @@ class ATypeScriptSampleLoopStatesItsPopulation(unittest.TestCase):
         # section 425, todo-compile-one 5.3.4. 141 with touchdevicelists.test.ts, section 424, 4.3.3.
         # 143 with touchskeleton.test.ts, section 431, todo-compile-one 7.1.3; 144 with touchnumbering.test.ts, section 432, 7.1.4. 145 with touchempty.test.ts, section 434, 7.1.7. 147 with composeempty.test.ts and the census it shares with composesetup.test.ts, carried.ts, section 435, 8.1.4. 148 with composecompare.test.ts, section 436, 8.1.5.
         # 150 with filewrite.test.ts and the fake remote it shares with its subprocesses, fake-file-remote.ts, todo-compile-350 1.6.
-        # 151 with filefamilydelays.test.ts, todo-compile-350 1.8.
-        self.assertEqual(scanned, 151, 'the TypeScript test files, as ABoundOnACorpusTotalIsExact counts them')
+        # 151 with filefamilydelays.test.ts, todo-compile-350 1.8. 152 with `packages/bench/test/keys350.test.ts`, 2.2.
+        self.assertEqual(scanned, 152, 'the TypeScript test files, as ABoundOnACorpusTotalIsExact counts them')
         self.assertEqual(
             {name: len(lines) for name, lines in counted.items()},
             TYPESCRIPT_LOOPS_ALLOWED_TO_SKIP_A_SAMPLE,
@@ -651,7 +653,8 @@ class ABoundOnACorpusTotalIsExact(unittest.TestCase):
         # 7.1.1, section 427. 140 with screenfill, 5.3.4, section 425.
         # 141 with touchdevicelists, 4.3.3, section 424. 143 with touchskeleton, 7.1.3, section 431. 144 with touchnumbering, 7.1.4, section 432. 145 with touchempty, 7.1.7, section 434. 147 with composeempty and carried, 8.1.4, section 435. 148 with composecompare, 8.1.5, section 436.
         # 150 with filewrite and fake-file-remote, todo-compile-350 1.6. 151 with filefamilydelays, 1.8.
-        self.assertEqual(len(scanned), 151, 'TypeScript test files, which moves when one is added')
+        # 152 with keys350, todo-compile-350 2.2.
+        self.assertEqual(len(scanned), 152, 'TypeScript test files, which moves when one is added')
         self.assertIn(self.CONTROL, found, 'the pattern matches nothing it should match')
 
     def test_every_remaining_bound_says_why_it_is_not_a_measurement(self):
@@ -773,7 +776,8 @@ class APythonBoundOnACorpusTotalIsExact(unittest.TestCase):
         # 61 with `tests/test_harmony_350_device_groups.py`, todo-compile-350 2.3.
         # 62 with `tests/test_harmony_350_clock.py`, todo-compile-350 2.5.
         # 63 with `tests/test_harmony_350_long_press.py`, todo-compile-350 2.4.
-        self.assertEqual(len(scanned), 63, 'Python test files, which moves when one is added')
+        # 64 with `tests/test_harmony_350_keys.py`, todo-compile-350 2.2.
+        self.assertEqual(len(scanned), 64, 'Python test files, which moves when one is added')
         self.assertIn(self.CONTROL, found, 'the pattern matches nothing it should match')
 
     def test_every_remaining_bound_says_why_it_is_not_a_measurement(self):

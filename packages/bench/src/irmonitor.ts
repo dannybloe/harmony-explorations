@@ -224,6 +224,19 @@ export class CodeBook implements FrameBook {
   get named(): boolean { return this.index !== undefined; }
 
   /**
+   * What the monitor will report for one stored code: its device and its command name, taken from the
+   * code's opening frame, or undefined when the book holds no such code.
+   *
+   * For a prediction written before a press, which has to name a command the way a capture of it will be
+   * named: the Harmony 350's key test, `packages/bench/test/keys350.test.ts`, asks this of every code a
+   * key map sends. The command is undefined when the catalogue could not name the device's codeset.
+   */
+  storedName(config: string, group: number, code: number): { device: string; command: string | undefined } | undefined {
+    const one = this.frames.find((f) => f.opening && f.config === config && f.group === group && f.code === code);
+    return one === undefined ? undefined : { device: one.device, command: one.command };
+  }
+
+  /**
    * Read the catalogue and name every stored frame's command out of its own device's codeset.
    *
    * Per device rather than per number, the rule `make catalogue` follows: identify the device's codeset

@@ -129,6 +129,10 @@ docs/predictions/harmony-350-programmed.md
                                 partly so, and the two most useful were wrong: a real configuration is
                                 **smaller** than the factory one, and the exact record cover holds on
                                 a programmed remote rather than breaking
+docs/predictions/harmony-350-keys.md
+                                what every key of the bench Harmony 350 should send in its TV's and
+                                its receiver's mode, written before the keys were pressed with the
+                                Flirc listening, todo-compile-350 2.2
 docs/predictions/sequence-delay.md
                                 the same for how a sequence states its delays. **Scored on
                                 29 August 2026 and its headline prediction was wrong**: the pause is

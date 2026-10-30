@@ -28,6 +28,7 @@ take another route[^s295].
 | the file protocol: the request parser at `0xCB88`, the reply dispatcher at `0xE2F0`, the file lookup at `0x12CF0`, the close at `0x12CE6`, the read size of `/cfg/usercfg` at `0x14C58`, [usb.md](usb.md#what-the-firmware-does-with-a-write) | [^t-harmony-350-file-write] |
 | the section seeker, `0x0B + 4 * slot` at `0x10BCE` on the 350's 1.4 image, called for raw slots 3 to 12 from 14 call sites | [^s259] |
 | the readers of raw slots 5, 6, 8, 9 and 12: the start up event table at `0x11D48`, called once from the validator's tail at `0x162B8`; the key map lookup at `0x1113A` and its tagged list reader at `0x1AB24`; the timer start at `0x16A2E` and the expiry pass at `0x1694A`; the state variable seeder at `0x16E6C` and the record locator at `0x17360`; the digit entry reader at `0x19D56`. What each slot is, [memory.md](memory.md#the-six-slots-the-firmware-was-read-for) | [^t-harmony-350-slots] |
+| the keypad scan at `0x1892A`, its returns at `0x188C8`, and the key events it raises: press at `0x18B4A`, release at `0x18B84` and `0x18BCE`, held at `0x18AEA`; the firmware's own events at `0x145E2` and `0x11EA6`, [below](#the-keypad-scan) | [^t-harmony-350-keys] |
 | the keypad's three events, raised at `0x18AEA`, `0x18B4A`, `0x18B84` and `0x18BCE`; the hold counter at `0x312`, started at `0x1959E` and decremented from `0x19708`; parameter 0, the hold time, written by `0x3F` band `0xF0` at `0x117C4`, [below](#a-held-key) | [^t-long-press] |
 | the month end routine of the clock, at `0x14382` | [^s322] |
 | the state variables: the reader at `0x17302` and the store at `0x172B2`, from data memory `0x108`; the tick at `0x13C12`, which adds the time elapsed to the second; the minute's step queued at `0x13E52`; bands `0xF2` and `0xF1` of `0x1F` at `0x11984`, one added to a variable or taken off it, wrapping through its `max` at `0x171E8`; the reply carrying the clock at `0x0F3BE`. What they add up to, [memory.md](memory.md#the-state-variables) | [^t-harmony-350-clock] |
@@ -131,11 +132,33 @@ the external bytes from `0x000000` over them, the arrangement the Harmony 600, 6
 one leaves a bad application, and then the check of the same start fails and the remote stays in safe mode,
 still on the cable. The cap keeps the erase below `0x01F400`, the unit's own records[^t-harmony-350-boot].
 
-**The keys** are numbered by a scan both images share, four codes to a drive line: `0x14` is `PORTE` bit 4
-against `PORTB` bit 7, `0x2C` is `PORTD` bit 0 against `PORTB` bit 7, `0x03` is `PORTE` bit 0 against `PORTB`
-bit 6 and `0x32` is `PORTD` bit 2 against `PORTB` bit 5. The bootloader's two codes are the Harmony 600's,
-[the bootloader](../../usb-protocol/bootloader.md)[^t-harmony-350-boot]. Which printed keys they are is not
-known, since no scan code is tied to a key on this architecture[^unchecked].
+### The keypad scan
+
+**Every key is a number from 1 to 56, and all three images number it the same way.** The bootloader,
+safe mode and the application share one scan routine, literal for literal, apart from one key of the
+bootloader's three key restart[^t-harmony-350-boot][^t-harmony-350-keys]. It pulls one of fourteen drive
+lines low at a time, `PORTE` bits 0 to 6, `PORTA` bits 3 to 5 and `PORTD` bits 0 to 3, reads four returns,
+`PORTB` bits 4 to 7, and numbers the key `4 * line + return`, return counting from 1; 0 is no key.
+
+**The application hands that number to the key maps as it is**, with an event type in the top two bits:
+`0x80` when a key goes down, `0x40` when it is let go or replaced by another, and `0xC0` once it has been
+held past a timer the press arms. A configuration's key map tag is therefore that type plus the code, and a
+tag below `0x40` is not a key: the firmware raises `0x26` to `0x28` and, from its send path, `0x2D` to
+`0x30` through the same lookup[^t-harmony-350-keys]. Which key carries which code is each model's, [the
+Harmony 350's keys](../../remotes/harmony-350/keys.md#scan-codes).
+
+| code | where | what the start up images do with it | the key, by the Harmony 350's table |
+|---|---|---|---|
+| `0x14`, 20 | `PORTE` bit 4 with `PORTB` bit 7 | the bootloader stays, as a USB programmer | the digit 0 |
+| `0x2C`, 44 | `PORTD` bit 0 with `PORTB` bit 7 | the bootloader runs safe mode unchecked, and safe mode stays | Play |
+| `0x03`, 3 | `PORTE` bit 0 with `PORTB` bit 6 | safe mode stays | Power |
+| `0x32`, 50 | `PORTD` bit 2 with `PORTB` bit 5 | safe mode stays | OK |
+
+The bootloader's two codes are the Harmony 600's, [the bootloader](../../usb-protocol/bootloader.md)[^t-harmony-350-boot].
+The restart the scan tests first is codes 6, 53 and 51 held together in the application and safe mode,
+Watch TV, the digit 8 and the up direction key, and codes 6, 20 and 51 in the bootloader[^t-harmony-350-boot].
+The key column rests on the Harmony 350's table, which is read and inferred from configurations, and none of
+it has been tried on a remote[^t-harmony-350-keys-c][^unchecked].
 
 ### What each serves over USB
 
@@ -179,7 +202,7 @@ stays in the programmer, which can rewrite internal flash above `0x001000`[^t-ha
 | a failing configuration | latches an error code, 8 for a missing marker and 4 for the checksum, which stands until the processor restarts, and switches four output pins on and off in a pattern counted from it, from the main loop. It neither stops nor restarts. That the pins are the remote's lights is not checked | [^t-harmony-350-recovery], [^unchecked] |
 | the firmware type `/sys/sysinfo` states | always 0, a constant in the code; safe mode's is 4 | [^t-harmony-350-recovery], [^t-harmony-350-boot] |
 | a request for the next start | a byte in data memory, `0x0F` from the reboot command's parameter `0x73` and 2 from a flush of `/fw/normalmode` open for writing, whose close then restarts; safe mode acts on both, [above](#what-runs-at-a-start) | [^t-harmony-350-recovery], [^t-harmony-350-boot] |
-| three keys held together | restart the processor, tested at the start of the keypad routine; safe mode tests the same three and the bootloader swaps one for key `0x14`. Which keys is not known | [^t-harmony-350-recovery], [^t-harmony-350-boot], [^unchecked] |
+| three keys held together | restart the processor, tested at the start of the keypad routine; safe mode tests the same three and the bootloader swaps one for key `0x14`. By the Harmony 350's key table they are Watch TV, the digit 8 and the up direction key, [above](#the-keypad-scan), which has not been tried | [^t-harmony-350-recovery], [^t-harmony-350-boot], [^t-harmony-350-keys-c], [^unchecked] |
 | a way into the images below it | none: no call or jump in the application targets an address below `0x9000`, and its three reset instructions restart the processor with nothing written on the way, which runs the bootloader and then safe mode | [^t-harmony-350-recovery] |
 
 * **A configuration write cannot damage the firmware.** Its erase runs from `0x020000` to `0x07FFFF`, the
@@ -197,7 +220,7 @@ stays in the programmer, which can rewrite internal flash above `0x001000`[^t-ha
 * Which version a given remote runs: its `/sys/sysinfo` carries a version field, and only the product
   string's 1.4.0 has been read[^s193].
 * The Harmony 300's own bootloader and safe mode image, and any build of them but the one read off a Harmony 350;
-  which printed keys the four start codes are; and the eight bytes at the end of the safe mode image that
+  that the four start codes and the restart are the keys the Harmony 350's table names; and the eight bytes at the end of the safe mode image that
   a read does not return[^unchecked].
 * Whether a configuration that passes the validator and hangs while its state is loaded at start would
   keep a remote from the USB service, and whether the processor's watchdog is on, which is in the
@@ -232,3 +255,5 @@ stays in the programmer, which can rewrite internal flash above `0x001000`[^t-ha
 [^t-long-press-c]: Measured in configurations. [The test](../../../tests/test_harmony_350_long_press.py)
 [^t-long-press-u]: Measured on a unit. [The test](../../../tests/test_harmony_350_long_press.py)
 [^x-manual-350]: Stated by Logitech, in the manual. [The Harmony 350 setup guide](https://www.logitech.com/assets/51207/harmony-350-qsg-and-iid.pdf)
+[^t-harmony-350-keys]: Read in the firmware. [The test](../../../tests/test_harmony_350_keys.py)
+[^t-harmony-350-keys-c]: Measured in configurations. [The test](../../../tests/test_harmony_350_keys.py)
