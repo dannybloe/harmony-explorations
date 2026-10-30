@@ -1,8 +1,9 @@
 # Harmony 300: keys
 
 Fifty five keys, the same keys in the same places as on a Harmony 350, with different words printed on
-some of them. The four device keys each pick one device, and nothing yet says which electrical code each
-key sends to the remote's processor.
+some of them. The four device keys each pick one device. Which code each key raises is the Harmony 350's
+table, read off configurations of both models, [below](#scan-codes), and has not been checked by pressing
+the keys.
 
 The drawing, [`reference/silhouettes/h300.svg`](../../silhouettes/h300.svg), is generated from
 `packages/silhouettes/src/models/h300.ts`, which **takes every shape from the Harmony 350's drawing** and
@@ -95,16 +96,28 @@ Generated from `packages/silhouettes/src/models/h300.ts` by `make remote-referen
 identified in Logitech's catalogue on a configuration given one device per key[^s265]. What an infrared
 group is, is [the configuration format's](../../config-format/infrared-records.md).
 
-## No scan codes
+## Scan codes
 
-Nothing measured ties a key on this family to a scan code, and the keypad scanner of this generation has
-not been read[^unchecked], [the family's README](../../architectures/harmony-300-350/README.md). So the
-drawing claims no code and no candidate on any key, and its test asserts exactly that,
-`tests/test_silhouettes.py`.
+**The codes are the Harmony 350's**, [its table](../harmony-350/keys.md#scan-codes): both run the one 1.4
+image, whose keypad scan numbers a key 1 to 56, [the family's firmware page](../../architectures/harmony-300-350/firmware.md#the-keypad-scan),
+and the commands the two models' configurations send from each code carry the same names, the digits on
+every map that names them, with a minority that disagrees: one of this model's configurations names its
+television's volume codes `DirectionRight` and `DirectionLeft`, which is not explained[^t-harmony-350-keys-c]. The device keys are codes
+5, 1, 7 and 4, TV, Cable/Sat, DVD and VCR/Aux, which this model's configurations select **on the press**,
+where the Harmony 350 waits for the release[^t-harmony-350-keys-c].
+
+**The colour keys disagree with the printing.** Both configurations send the `Red` command from code 13 and
+`Green`, `Yellow` and `Blue` from 27, 28 and 29, the codes of the Harmony 350's red, green, yellow and blue
+keys, while this model prints yellow, blue, red and green on those four positions[^t-harmony-350-keys-c][^t-printing].
+Either the remote sends another colour's command than the one on the key, or the printing was read wrong;
+neither is checked[^unchecked].
+
+The drawing claims no code on any key, and its test asserts exactly that, `tests/test_silhouettes.py`.
 
 ## Not checked
 
-* Every key's scan code.
+* Any key's code, by pressing it with a receiver listening.
+* What the colour keys send.
 * Whether the pause half of the play key is a separate part: the setup guide's photograph suggests one,
   and the drawing follows the 350's single part with two halves, since the moulding is the
   350's[^t-moulding].
@@ -113,3 +126,4 @@ drawing claims no code and no candidate on any key, and its test asserts exactly
 [^t-printing]: Stated by Logitech, in the manual. [The test](../../../tests/test_silhouettes.py)
 [^s265]: Measured in configurations. [Section 265](../../../docs/findings.md#s265)
 [^unchecked]: Not checked.
+[^t-harmony-350-keys-c]: Measured in configurations. [The test](../../../tests/test_harmony_350_keys.py)

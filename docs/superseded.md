@@ -660,3 +660,5 @@ it reachable in the same commit and the test comparing the two tables is what ca
 | `holds one of 170 in an unread list` | `packages/codec/test/filefamilydelays.test.ts` | the list is the activity's start, read, and the same television's own transition spells 170 as 100 and 70 |
 | `nothing about the 350 in use has been observed on a unit` | `tests/test_harmony_350_delay.py` | the power on delay was measured on a Harmony 350 with an infrared receiver: a unit is a tenth of a second |
 | `No infrared bench test exists` | `tests/test_harmony_350_delay.py` | the Harmony 350's power on delay was heard at two values, todo-compile-350 1.8 |
+| `no scan code is tied to a key on this architecture` | `tests/test_harmony_350_keys.py` | the Harmony 300 and 350 number a key 1 to 56 from their keypad grid, read in the 1.4 firmware, and configurations tie 47 of the Harmony 350's keys to a code, none of them yet pressed with a receiver listening |
+| `no scan code known` | `tests/test_harmony_350_keys.py` | the Harmony 350's key table is read and inferred from configurations, `reference/remotes/harmony-350/keys.md` |

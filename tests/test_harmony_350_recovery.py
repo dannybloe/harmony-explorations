@@ -84,8 +84,9 @@ build it can.**
   copy, as the Harmony 700's status byte does, `tests/test_harmony_350_boot.py`.
 * **A three key reset**: the keypad routine at `0x18BA0` first calls `0x1892A`, which drives three keypad lines
   low one at a time (`PORTE` bit 1, `PORTD` bits 3 and 2) and reads three return lines (`PORTB` bits 5, 4
-  and 6); when all three read pressed it executes `RESET` at `0x18956`. Which three keys those are is not
-  known, since no scan code is tied to a key on this architecture. It restarts the processor and writes
+  and 6); when all three read pressed it executes `RESET` at `0x18956`. Which three keys those are was not
+  known when this was written; they are codes 6, 53 and 51, which `tests/test_harmony_350_keys.py`'s table
+  makes Watch TV, the digit 8 and the up direction key, not tried on a remote. It restarts the processor and writes
   nothing, so it is a reboot rather than a way into safe mode, as far as this image says.
 * The image holds exactly three `RESET` instructions: the reboot command's (`0x16054`), the key
   combination's, and the one after `SLEEP` at `0x1A744`, reached from the main loop's state 2, which is

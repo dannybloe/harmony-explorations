@@ -41,6 +41,8 @@ Logitech compile of part of a test setup written and used, then our composers on
 
 - [x] 2.1 Raw slots 5, 6, 8, 9, 12 and 14, read where the firmware's section seeker is called for them; raw 6's extra entry and whether it is the activity: raw 5 the start up instructions, raw 6 the key map table with entry 0 the key table, the activity a binding and not a map, raw 8 timers, raw 9 state variables, raw 12 an empty digit table, raw 14 NULL, `tests/test_harmony_350_slots.py`
 - [ ] 2.2 The scan codes: which code each of the 55 keys raises, from the firmware's keypad table, checked at the bench with the infrared receiver since there is no screen to confirm a press on
+  - [x] 2.2.1 Read: the 1.4 image's keypad scan numbers a key 1 to 56 and the key maps bind it as it is; 47 keys tied to a code and eight narrowed to sets from five configurations, `tests/test_harmony_350_keys.py`, `packages/bench/test/keys350.test.ts`
+  - [ ] 2.2.2 Checked at the bench: `packages/bench/irtests/350-2-2-keys.json` against `docs/predictions/harmony-350-keys.md`, which also settles the receiver's device key, one favourite and the arrow pair; then the codes onto the drawing with a `SCAN_SOURCES` row
 - [ ] 2.3 Which infrared group a device takes on the 350, measured on the 300 only
 - [ ] 2.4 How a device key's long press is stored
 - [ ] 2.5 The state variables on this family: where they live, which the firmware owns, and whether the clock record seeds a running clock

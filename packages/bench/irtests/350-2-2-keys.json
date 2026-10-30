@@ -1,0 +1,197 @@
+{
+  "name": "Harmony 350, every key in the TV's and the receiver's modes",
+  "description": "todo-compile-350 2.2, on the configuration the bench 350 holds now, lab/work/350-delay/before.bin: the LG TV on infrared group 0, the top left device key, the Denon receiver on group 2, and nothing else. The device keys are named here as the bench remote prints them, which differs from Logitech's setup guide: top left TV/Media, top right Cable/PC, bottom left AVR/Game, bottom right DVD/Music. Written down before the run, from the configuration and the firmware: which code each key raises, and so what each key sends in each mode, tests/test_harmony_350_keys.py and packages/bench/test/keys350.test.ts. The 350 has no screen, so the receiver is the only witness, and a key that sends nothing is part of the prediction too: those steps carry no expectation and the run file shows anything heard. Three things this run settles that the configurations cannot: which device key is the receiver's (predicted AVR/Game, the bottom left one), which favourite key sends the TV's Home (exactly one of the five should), and which of the two arrow keys in the middle of Menu, Info, Exit and Guide is the receiver's ChannelUp (predicted the upper one). A device key changes the mode when it is let go and sends nothing itself, so press device keys briefly. Expect the TV's power on delay: after PowerOn the remote holds the next TV code for ten seconds.",
+  "steps": [
+    {
+      "instruction": "Unplug the Harmony 350 from USB and point it at the receiver. Press TV/Media, the top left of the four keys under My Devices, once and briefly. The remote is now in the TV's mode. Nothing should be heard"
+    },
+    {
+      "instruction": "Press, one at a time: Volume Up (the top of the rocker on the left, the speaker with waves), Volume Down (its bottom half), then Mute (the round key below that rocker)",
+      "expect": [
+        { "device": "LG_TV", "command": "VolumeUp" },
+        { "device": "LG_TV", "command": "VolumeDown" },
+        { "device": "LG_TV", "command": "Mute" }
+      ]
+    },
+    {
+      "instruction": "Press, one at a time: Channel Up (the plus at the top of the rocker on the right), Channel Down (the minus), then Previous Channel (the round key below that rocker)",
+      "expect": [
+        { "device": "LG_TV", "command": "ChannelUp" },
+        { "device": "LG_TV", "command": "ChannelDown" },
+        { "device": "LG_TV", "command": "Qview" }
+      ]
+    },
+    {
+      "instruction": "Press the four keys around OK, one at a time: up, right, down, left. Then OK",
+      "expect": [
+        { "device": "LG_TV", "command": "DirectionUp" },
+        { "device": "LG_TV", "command": "DirectionRight" },
+        { "device": "LG_TV", "command": "DirectionDown" },
+        { "device": "LG_TV", "command": "DirectionLeft" },
+        { "device": "LG_TV", "command": "OK" }
+      ]
+    },
+    {
+      "instruction": "Press Exit, then Guide, then Info",
+      "expect": [
+        { "device": "LG_TV", "command": "Exit" },
+        { "device": "LG_TV", "command": "Guide" },
+        { "device": "LG_TV", "command": "Info" }
+      ]
+    },
+    {
+      "instruction": "Press the four colour keys below Exit and Guide, left to right: red, green, yellow, blue",
+      "expect": [
+        { "device": "LG_TV", "command": "Red" },
+        { "device": "LG_TV", "command": "Green" },
+        { "device": "LG_TV", "command": "Yellow" },
+        { "device": "LG_TV", "command": "Blue" }
+      ]
+    },
+    {
+      "instruction": "Press, one at a time: Rewind (the top of the three keys left of the tall Play and Pause key), Play (its top half), Pause (its bottom half), Fast Forward (the top of the three on the right), then Record (the bottom left one) and Stop (the bottom right one). The configuration binds Stop's code to a TV code the monitor names LiveTv",
+      "expect": [
+        { "device": "LG_TV", "command": "Rewind" },
+        { "device": "LG_TV", "command": "Play" },
+        { "device": "LG_TV", "command": "Pause" },
+        { "device": "LG_TV", "command": "FastForward" },
+        { "device": "LG_TV", "command": "Record" },
+        { "device": "LG_TV", "command": "LiveTv" }
+      ]
+    },
+    {
+      "instruction": "Press the digits 1, 2, 3, 4, 5, 6, 7, 8, 9 and 0 in that order, then Clear (left of 0)",
+      "expect": [
+        { "device": "LG_TV", "command": "1" },
+        { "device": "LG_TV", "command": "2" },
+        { "device": "LG_TV", "command": "3" },
+        { "device": "LG_TV", "command": "4" },
+        { "device": "LG_TV", "command": "5" },
+        { "device": "LG_TV", "command": "6" },
+        { "device": "LG_TV", "command": "7" },
+        { "device": "LG_TV", "command": "8" },
+        { "device": "LG_TV", "command": "9" },
+        { "device": "LG_TV", "command": "0" },
+        { "device": "LG_TV", "command": "-" }
+      ]
+    },
+    {
+      "instruction": "Press Input, the wide key at the top centre above the word Favorites, with favourite keys 1 and 5 on either side of it",
+      "expect": [
+        { "device": "LG_TV", "command": "Input" }
+      ]
+    },
+    {
+      "instruction": "Press favourite key 1 once (the five keys around Input print 1 to 5: 1 and 5 beside Input, 2, 3 and 4 below it). Exactly one of the five favourite keys should send the TV's Home; this and the next four steps find out which, so note whether anything was heard"
+    },
+    {
+      "instruction": "Press favourite key 2 once"
+    },
+    {
+      "instruction": "Press favourite key 3 once"
+    },
+    {
+      "instruction": "Press favourite key 4 once"
+    },
+    {
+      "instruction": "Press favourite key 5 once"
+    },
+    {
+      "instruction": "These should all send nothing in the TV's mode. Press each once, slowly, and say which if the monitor shows anything: Menu, the up arrow and the down arrow in the middle of Menu, Info, Exit and Guide, DVR, Live, skip back and skip forward (the middle key of the three on each side of Play and Pause), Enter (right of 0), Watch TV, Cable/PC (top right of the four device keys) and DVD/Music (bottom right). The last three are keys this configuration gives nothing to, so the remote should stay in the TV's mode"
+    },
+    {
+      "instruction": "Press Volume Up once, to show the remote is still in the TV's mode",
+      "expect": [
+        { "device": "LG_TV", "command": "VolumeUp" }
+      ]
+    },
+    {
+      "instruction": "Press Power once. If the monitor shows PowerOn, the remote thought the TV was off: wait twelve seconds, since the TV's power on delay holds the next code for ten, and press Power once more. Stop when the last thing heard is PowerOff",
+      "expect": [
+        { "device": "LG_TV", "command": "PowerOff" }
+      ]
+    },
+    {
+      "instruction": "Press AVR/Game, the bottom left of the four device keys, once and briefly. This is predicted to put the remote in the receiver's mode. Nothing should be heard"
+    },
+    {
+      "instruction": "Press Volume Up, Volume Down, then Mute. If the TV's codes come instead, the receiver is not on AVR/Game: try Cable/PC (top right) or DVD/Music (bottom right) and note which one gives the receiver",
+      "expect": [
+        { "device": "Denon_AV_Receiver", "command": "VolumeUp" },
+        { "device": "Denon_AV_Receiver", "command": "VolumeDown" },
+        { "device": "Denon_AV_Receiver", "command": "Mute" }
+      ]
+    },
+    {
+      "instruction": "Press the four keys around OK, one at a time: up, right, down, left. Then OK",
+      "expect": [
+        { "device": "Denon_AV_Receiver", "command": "DirectionUp" },
+        { "device": "Denon_AV_Receiver", "command": "DirectionRight" },
+        { "device": "Denon_AV_Receiver", "command": "DirectionDown" },
+        { "device": "Denon_AV_Receiver", "command": "DirectionLeft" },
+        { "device": "Denon_AV_Receiver", "command": "Enter" }
+      ]
+    },
+    {
+      "instruction": "Press Exit, then Info, then Previous Channel (the round key below the channel rocker). Exit and Previous Channel send the same code",
+      "expect": [
+        { "device": "Denon_AV_Receiver", "command": "Back" },
+        { "device": "Denon_AV_Receiver", "command": "Info" },
+        { "device": "Denon_AV_Receiver", "command": "Back" }
+      ]
+    },
+    {
+      "instruction": "Press the up arrow in the middle of Menu, Info, Exit and Guide, then the down arrow below it. Predicted: the up arrow gives ChannelUp and the down arrow ChannelDown; if they come the other way round, say so",
+      "expect": [
+        { "device": "Denon_AV_Receiver", "command": "ChannelUp" },
+        { "device": "Denon_AV_Receiver", "command": "ChannelDown" }
+      ]
+    },
+    {
+      "instruction": "Press skip back (the middle of the three keys left of Play and Pause), then skip forward (the middle of the three on the right)",
+      "expect": [
+        { "device": "Denon_AV_Receiver", "command": "TuneDown" },
+        { "device": "Denon_AV_Receiver", "command": "TuneUp" }
+      ]
+    },
+    {
+      "instruction": "Press Play, then Pause. Both send the receiver's iPodPause, the same signal, so this step shows that both keys send and cannot tell them apart",
+      "expect": [
+        { "device": "Denon_AV_Receiver", "command": "iPodPause", "times": 2 }
+      ]
+    },
+    {
+      "instruction": "Press the digits 1, 2, 3, 4, 5, 6, 7, 8, 9 and 0 in that order",
+      "expect": [
+        { "device": "Denon_AV_Receiver", "command": "1" },
+        { "device": "Denon_AV_Receiver", "command": "2" },
+        { "device": "Denon_AV_Receiver", "command": "3" },
+        { "device": "Denon_AV_Receiver", "command": "4" },
+        { "device": "Denon_AV_Receiver", "command": "5" },
+        { "device": "Denon_AV_Receiver", "command": "6" },
+        { "device": "Denon_AV_Receiver", "command": "7" },
+        { "device": "Denon_AV_Receiver", "command": "8" },
+        { "device": "Denon_AV_Receiver", "command": "9" },
+        { "device": "Denon_AV_Receiver", "command": "0" }
+      ]
+    },
+    {
+      "instruction": "Press Input. In the receiver's mode this key sends the TV's input code, not the receiver's",
+      "expect": [
+        { "device": "LG_TV", "command": "Input" }
+      ]
+    },
+    {
+      "instruction": "These should all send nothing in the receiver's mode. Press each once, slowly, and say which if the monitor shows anything: Channel Up, Channel Down, Menu, Guide, the four colour keys, Rewind, Fast Forward, Record, Stop, Clear, Enter, DVR, Live and the five favourite keys"
+    },
+    {
+      "instruction": "Press Power once. If the monitor shows the receiver's code 20, its power on, the remote thought it was off: wait three seconds and press Power once more. Stop when the last thing heard is the receiver's code 13, its power off. The catalogue has no name for either",
+      "expect": [
+        { "device": "Denon_AV_Receiver", "code": 13, "config": "work/350-delay/before.bin" }
+      ]
+    },
+    {
+      "instruction": "Press TV/Media, top left of the four device keys, once and briefly, to leave the remote in the TV's mode. Nothing should be heard"
+    }
+  ]
+}

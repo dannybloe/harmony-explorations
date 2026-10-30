@@ -115,8 +115,8 @@ not five, and raw 14's absence is of direct references.
   an entry: it reaches lists that send codes, in all five, and write state variables, in four, and
   ends by selecting one of the devices' maps, on the same tag, `0x86`, in all five. That is an activity's start without a keypad map
   of its own, which is what the Harmony 300's `PartiallySetupActivities` and the description of it as a
-  shortcut say. Which physical key carries tag `0x86` is not checked, since no scan code is tied to a
-  key on this family.
+  shortcut say. Tag `0x86` is a press of code 6, which `tests/test_harmony_350_keys.py` reads as Watch TV,
+  the only key the face gives an activity; that was not known when this was written.
 
 ## Raw slot 8 is base slot 12, the timer table
 

@@ -86,8 +86,8 @@ devices' maps, one per device, each selected by one device key's binding; a map 
 device's codes. Where one device has no infrared commands, exactly one map is empty. **The activity has
 no map of its own on this family**: it is one binding in entry 0 that sends codes or sets the devices' state variables and then
 selects one device's map, which matches the Harmony 300's `PartiallySetupActivities` and the description
-of it as a shortcut[^t-slots-c][^s265]. Which physical key carries it is not checked, since no scan code is
-tied to a key here[^unchecked].
+of it as a shortcut[^t-slots-c][^s265]. Its tag is a press of code 6, which is Watch TV, the only key the
+face gives an activity, [the Harmony 350's keys](../../remotes/harmony-350/keys.md#scan-codes)[^t-harmony-350-keys-c].
 
 So **device mode lives in base slot 9 here**, where on the models with a screen it is the device's own
 mode record, [modes and keys](../../config-format/modes-and-keys.md#a-devices-mode-is-device-modes-keypad-map):
@@ -163,3 +163,4 @@ Changing one is a one byte edit of that `0x7C`'s operand plus the trailer checks
 [^t-file-family-delays]: Measured in configurations. [The test](../../../packages/codec/test/filefamilydelays.test.ts)
 [^t-harmony-350-delay]: Read in the firmware. [The test](../../../tests/test_harmony_350_delay.py)
 [^t-harmony-350-delay-heard]: Measured on a unit. [The test](../../../tests/test_harmony_350_delay.py)
+[^t-harmony-350-keys-c]: Measured in configurations. [The test](../../../tests/test_harmony_350_keys.py)

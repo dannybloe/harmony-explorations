@@ -53,7 +53,7 @@ model[^s131]; 104 is the Harmony 350 alone[^s196]. Logitech's client names 78 "P
 | screen | **none** | [^t-no-screen] |
 | power | two AA batteries | [^x-manual-350]; the 300's guide is not checked[^unchecked] |
 | face | one moulding, 55 keys, with different printing | [^t-moulding] |
-| scan codes | **none known**: nothing measured ties a key to a code on this architecture | [^t-moulding] |
+| scan codes | 1 to 56, computed from a grid of fourteen lines of four and bound by the key maps as they are, with an event type in the top two bits, [firmware.md](firmware.md#the-keypad-scan); which key is which code is read and inferred from configurations, [the Harmony 350's keys](../../remotes/harmony-350/keys.md#scan-codes) | [^t-harmony-350-keys], [^t-harmony-350-keys-c] |
 | activities | at most one, a screenless model's limit, [how a Harmony works](../../how-a-harmony-works.md#a-remote-with-no-screen-holds-exactly-one-activity) | [^s145] |
 | long press | the 350 has one and the 300 does not | [^t-models] |
 
@@ -85,7 +85,7 @@ Each row is evidenced in the model's own folder, which is its home; this table i
 
 * The processor part, the external medium's part and size, and the RAM size[^unchecked].
 * Skin 103, and whether the Harmony 200 is this architecture[^unchecked].
-* Which key sends which code, on either model[^unchecked].
+* Which key sends which code, on a remote of either model rather than in configurations[^unchecked].
 
 [^s197]: Stated by Logitech, in their client. [Section 197](../../../docs/findings.md#s197)
 [^s198]: Stated by Logitech, in their client. [Section 198](../../../docs/findings.md#s198)
@@ -108,3 +108,5 @@ Each row is evidenced in the model's own folder, which is its home; this table i
 [^t-moulding]: Measured on a unit. [The test](../../../packages/silhouettes/test/models.test.ts)
 [^s145]: Stated by Logitech, by their service. [Section 145](../../../docs/findings.md#s145)
 [^t-capabilities]: Stated by Logitech, by their service. [The test](../../../tests/test_product_capabilities.py)
+[^t-harmony-350-keys]: Read in the firmware. [The test](../../../tests/test_harmony_350_keys.py)
+[^t-harmony-350-keys-c]: Measured in configurations. [The test](../../../tests/test_harmony_350_keys.py)
