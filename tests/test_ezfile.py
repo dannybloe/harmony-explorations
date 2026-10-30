@@ -185,6 +185,13 @@ BARE_CONTAINERS_NAMED_EZHEX = (
     'harvest_one_families_1', 'harvest_one_families_2', 'harvest_one_families_3')
 _BARE = BARE_CONTAINERS_NAMED_EZHEX
 
+# Files named `.ezhex` that are a ZIP archive, the way the service's own download arrives: the
+# configuration is a member, `Result.EzHex`, and the file itself has neither a header nor a container
+# at its start. The one so far is a Harmony 350 configuration posted to harmony-decompiler issue 37,
+# kept as its owner posted it and read through the archive by `tests/test_harmony_350_long_press.py`.
+ZIPS_NAMED_EZHEX = ('h350_issue37_config',)
+_ZIPS = ZIPS_NAMED_EZHEX
+
 
 class TestEzHexHeader(unittest.TestCase):
     """
@@ -212,11 +219,12 @@ class TestEzHexHeader(unittest.TestCase):
     # sample on the strength of its neighbours.
     # Inlined rather than referenced: a comprehension in a class body cannot see class level names.
     BARE_CONTAINERS_NAMED_EZHEX = _BARE
+    ZIPS_NAMED_EZHEX = _ZIPS
     CONFIGS = tuple(sorted(
         n for n, f in lab.IMAGES.items()
         if f.lower().endswith('.ezhex')
         and n not in ('h890_config', 'h890_config_2', 'h890_config_rescan', 'h890_config_2_rescan')
-        and n not in _BARE))
+        and n not in _BARE and n not in _ZIPS))
 
     def test_the_population_is_every_ezhex_in_the_lab_bar_arch_10(self):
         """The derivation, asserted, because a derived list can narrow as quietly as a written one.
@@ -231,10 +239,13 @@ class TestEzHexHeader(unittest.TestCase):
         # compiles, bare containers, were registered.
         # 30 since the three harvest compiles of `work/harvest/families-one`, bare containers too, so
         # the population below stays at 15 and the exclusions grow by three.
-        self.assertEqual(len(ez), 30)
+        # 31 since a Harmony 350 configuration that is a ZIP under that name, harmony-decompiler issue
+        # 37, which is excluded by name with its own predicate below.
+        self.assertEqual(len(ez), 31)
         self.assertEqual(sorted(ez - set(self.CONFIGS)),
                          sorted(['h890_config', 'h890_config_2', 'h890_config_2_rescan',
-                                 'h890_config_rescan', *self.BARE_CONTAINERS_NAMED_EZHEX]))
+                                 'h890_config_rescan', *self.BARE_CONTAINERS_NAMED_EZHEX,
+                                 *self.ZIPS_NAMED_EZHEX]))
         self.assertEqual(len(self.CONFIGS), 15)
 
     def test_a_file_is_excluded_as_a_bare_container_exactly_when_it_has_no_header(self):
@@ -250,14 +261,20 @@ class TestEzHexHeader(unittest.TestCase):
         ez = sorted(n for n, f in lab.IMAGES.items() if f.lower().endswith('.ezhex'))
         lab.require(*ez)
         headerless = []
+        zips = []
         for name in ez:
             blob = lab.load(name)
+            # A ZIP is told by its own local file header, and is neither kind of file below.
+            if blob[:4] == b'PK\x03\x04':
+                zips.append(name)
+                continue
             if not ezfile.parse_ezhex(blob, name).has_a_header:
                 headerless.append(name)
                 with self.subTest(bare=name):
                     self.assertEqual(blob[:4], b'GSPM', 'a headerless file starts at its container')
         self.assertEqual(sorted(headerless), sorted(self.BARE_CONTAINERS_NAMED_EZHEX))
         self.assertEqual(len(headerless), 11)
+        self.assertEqual(sorted(zips), sorted(self.ZIPS_NAMED_EZHEX))
 
     def test_every_config_verifies_its_own_split(self):
         # The population up front, so a partial lab skips this whole test rather than shrinking its
