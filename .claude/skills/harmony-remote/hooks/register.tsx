@@ -272,6 +272,12 @@ export const register: Register = (on) => {
       try { return JSON.parse(await $.fs.read(totalsFile)) as Record<string, number> } catch { return {} }
     }
 
+    // Through the shell rather than `$.fs`, which recorded nothing from the output file Claude Code writes
+    // in the system's temporary folder, why not measured; and only an ordinary file, since a terminal
+    // would block.
+    const readOutput = (file: string): Promise<string> =>
+      file.startsWith('/') ? sh(`[ -f ${quote(file)} ] && cat ${quote(file)}`) : Promise.resolve('')
+
     const pollTests = async (): Promise<void> => {
       // The outermost test process, the one whose parent is not a test process too, and its parent's
       // standard output, which is where the shell that started it writes: a file when Claude Code runs
@@ -289,13 +295,11 @@ export const register: Register = (on) => {
         const [elapsed = '', file = '', args = ''] = found.split('\t')
         run = { label: testLabel(args), file, elapsed }
         runEndedPolls = 0
-        let output = ''
-        if (file.startsWith('/')) { try { output = await $.fs.read(file) } catch { /* not readable */ } }
+        const output = await readOutput(file)
         text = testLine(testCounts(output), (await totals())[run.label], true)
       } else if (run !== undefined) {
         runEndedPolls += 1
-        let output = ''
-        if (run.file.startsWith('/')) { try { output = await $.fs.read(run.file) } catch { /* gone */ } }
+        const output = await readOutput(run.file)
         const counts = testCounts(output)
         if (runEndedPolls === 1 && counts.done > 0) {
           // The finished run's count is the next run's total, kept across sessions.
