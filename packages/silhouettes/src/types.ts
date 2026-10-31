@@ -78,7 +78,8 @@ export const SCAN_SOURCES = {
     + 'it, its code the one of the 56 that, raised at that point of the presses, gives what was heard',
   // The European Harmony 300's keys pressed in two device modes on its own configuration, and in one on a copy
   // binding every key, with a receiver listening: the code is the one of the 56 that, raised in the key's
-  // place, gives what was heard from there to the end of the run, `todo-compile-300.md` 2.1 and 2.2,
+  // place with every other key on its 350 code, gives what was heard from there to the end of the run, the
+  // keys taken as pressed in the order asked, `todo-compile-300.md` 2.1 and 2.2,
   // `packages/bench/test/keys300.test.ts`, and the footnote's test is `TheBench300HeardEveryKey` in
   // `tests/test_harmony_300_keys.py`.
   't-harmony-300-keys-u': 'heard by pressing each key with a receiver listening, in two device modes, its code '

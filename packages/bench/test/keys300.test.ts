@@ -20,14 +20,18 @@
  * yellow, blue, red, green lettered A to D; and the favourite block prints 1 left of TV Input, 3 right of
  * it, and 2, Teletext and 4 below, where the US printing has favourites 1 to 5. So the person pressed the
  * colour keys by the colour the step named and the favourites by their printed numbers, in another order
- * than the steps expected, and steps 6, 9, 15 and 18 failed their stored verdicts. **These tests do not read
+ * than the steps expected, and steps 6, 9, 15 and 18 failed their stored verdicts; step 6 was also pressed
+ * out of order, one press more than asked, as the person noted. **These tests do not read
  * a stored verdict as the result**: every press is matched again from the pulses the receiver reported,
  * and each step is held to what the file sends for the presses the European printing implies, `STEPS_22`.
  *
  * **The method**, as for the Harmony 350's run on Logitech's compile, `setup350.test.ts`: the remote is the
  * file walked key by key, `filemodel.ts`, and a key's code is every one of the 56 that, raised in its place
- * with every other press of the run as it was, gives what the receiver heard from that point to the end of
- * the run, intersected over every press of the key in both runs. A key is tied where one code is left. No
+ * with every other key on the code of the 350 key in its place, gives what the receiver heard from that
+ * point to the end of the run, intersected over every press of the key in both runs. A key is tied where one
+ * code is left. **Every tie rests on the keys having been pressed in the order `STEPS_21` and `STEPS_22`
+ * state**: the receiver hears codes, not keys, so two keys pressed the other way round would trade codes
+ * wherever both send. No
  * code is taken from one key's set because another key holds it: the favourites printed 1, 2 and 3 send the
  * KPN box a channel whose digit the digit keys send too, so their presses in that mode fit their own code and
  * the digit key's alike, and the television's mode tells them apart, where the digit keys send and the
@@ -35,25 +39,31 @@
  *
  * ## What was heard
  *
- * **Every step of both runs is what the file sends for the presses the European printing implies**: 36 of
- * the 37 steps, 132 sends compared code by code, 53 in the first run and 79 in the second; the other step,
- * the first run's favourite block, is not known press by press, below. **49 of the 55 keys are tied to one code, and every one is the code of the Harmony 350 key
- * in the same place**, `DECIDED`: the four device keys, Watch TV, Power, the three favourites and Teletext
- * among them. The six left are the keys both files bind to nothing in the modes pressed, which sent
- * nothing: Clear, Enter, TV Input, Live and the two arrows between Menu, Info, Exit and Guide.
+ * **Every step of both runs is what the file sends for the presses the European printing implies**, but
+ * the first run's favourite step, which is not known press by press, below: 132 sends compared code by code,
+ * 53 in the first run and 79 in the second. Five of the 79 are the second run's colour step in the
+ * television's mode, held to the order heard rather than one asked, so they test nothing. **49 of the 55
+ * keys are tied to one code, and every one is the code of the Harmony 350 key in the same place**,
+ * `DECIDED`: the four device keys, Watch TV, Power, the four favourites and Teletext among them. The six
+ * left are Clear, Enter, TV Input, Live and the two arrows between Menu, Info, Exit and Guide: the unit's own
+ * file binds nothing to them in either mode and they sent nothing, and on the first run's file each sent
+ * Info's command, which that file gives twelve codes besides Info's, so neither run tells them apart.
  *
  * * **The colour keys are the 350's order on this unit.** Pressed left to right in the first run they sent
  *   the television's Red, Green, Yellow and Blue, codes 13, 27, 28 and 29; pressed by colour in the KPN box's
  *   mode of the second, yellow, blue, red, green as the step named them, they raised 28, 29, 13 and 27. In
  *   the television's mode of the second the person noted pressing in the wrong order: heard were Red,
  *   Yellow, Blue, Red and Green, five presses, each a command one code alone binds, so that step ties no
- *   key, `STEPS_22` restating it from what was heard.
+ *   key, `STEPS_22` restating it from what was heard. The two other passes tie the four only through their
+ *   order: the one other assignment that fits both has neither pressed in the order asked.
  * * **The favourites printed 2 and 3 carry the second and third channels the other way round.** In the KPN
  *   box's mode the key printed 1 sent channel 1, printed 2 channel 3, printed 3 channel 2, and printed 4
  *   channel 666, three 6s: codes 8, 9, 2 and 34, the file binding channels 1, 2, 3 and 666 to codes 8, 2, 9
- *   and 34. How the channels were
- *   entered in Logitech's client is not recorded here, and the order is reported, not explained.
- * * **Teletext is code 11**, the code of the Harmony 350's favourite 3 in the same place. In the first run's
+ *   and 34. How the channels were entered in Logitech's client is not recorded here, and the order is
+ *   reported, not explained. Which key is which of the four codes is the press order again, by printed
+ *   number: pressed by the instruction's places instead, skipping Teletext, the keys printed 3 and 4 would
+ *   trade 2 and 34, against the places measured on the Harmony 350.
+ * * **Teletext is code 11 by elimination**, the code of the Harmony 350's favourite 3 in the same place. In the first run's
  *   favourite step, seven presses heard where five keys were named, six sent Info, which every key of the
  *   block but code 11 sends on that file, and one the television's Teletext, which code 11 alone binds. The
  *   second run did not press it: its television's favourite step heard nothing, and the person noted that
@@ -63,8 +73,10 @@
  *
  * **The predictions scored**: P1 holds for all 49 keys tied and no key sent another's code or sent where
  * silence was predicted; P2's six silent keys were silent, and its three favourites that send a digit were
- * placed after all, through the television's mode; P3 holds; P4 holds for the four favourites pressed, and its favourite 3, code 11, is this
- * unit's Teletext key and was not pressed in the KPN box's mode; P5 holds. `docs/test-notes/harmony-300.md`.
+ * placed after all, through the television's mode; P3 holds; P4 holds for the four favourites pressed,
+ * read by printed number, and its favourite 3, code 11, is this unit's Teletext key and was not pressed in
+ * the KPN box's mode; P5 holds with steps 6, 9, 15 and 18 restated for the European printing.
+ * `docs/test-notes/harmony-300.md`.
  *
  * **The control on the method**: matched again against the file and judged against the test's own
  * expectations, the second run gives the verdicts its monitor stored, word for word, steps 6, 9, 15 and 18
@@ -244,7 +256,8 @@ function rematched(name: string, named = false): readonly RunFileStep[] {
 
 /**
  * The presses a step's sends are held to: not a bare trailing frame, and not an unreadable fragment, which on
- * these runs is always the tail of the press before it, cut off 85 to 90 ms after it began, the test below.
+ * these runs always follows a readable frame within 90 ms of silence, so it is more of that press, its tail
+ * or a repeat, and not a press of its own, the test below.
  */
 function sent(step: RunFileStep): RunPress[] {
   return step.presses.filter((press) => !press.frame.bare && !press.frame.unreadable);
@@ -364,7 +377,7 @@ test('the two files hold the same infrared codes, so matching both runs against 
   assert.deepEqual(devices(b).map((one) => `${one.group} ${one.name}`), ['0 Panasonic_TV', '1 KPN', '2 Panasonic_DVD', '3 Sony_VCR']);
 });
 
-test('every unreadable frame is the tail of the press before it, cut off within 90 ms', NEEDS_RUNS, () => {
+test('every unreadable frame follows a readable one within 90 ms of silence, so it is more of that press', NEEDS_RUNS, () => {
   for (const name of RUNS) {
     for (const step of rematched(name)) {
       for (const [at, press] of step.presses.entries()) {
@@ -510,12 +523,13 @@ test('Teletext is code 11: once in the first run\'s favourite step, among six pr
 const DECIDED: Readonly<Record<string, number>> = Object.fromEntries(Object.entries(SCAN)
   .filter(([key]) => !['Clear', 'Enter', 'Input', 'Live', 'UpArrow', 'DownArrow'].includes(key)));
 
-test('49 keys are tied to one code, each the code of the Harmony 350 key in the same place, and six sent nothing',
+test('49 keys are tied to one code, each the code of the Harmony 350 key in the same place, and six are left open',
   needing(skipWithoutLab(), skipUnless(...RUNS, NAMED_BY)), () => {
     const { codes, open } = decided();
     assert.deepEqual(codes, DECIDED);
     assert.equal(Object.keys(codes).length, 49);
-    // The six, and how many codes each fits: the codes neither file binds in the modes they were pressed in.
+    // The six, and how many codes each fits: the seven left over, which the unit's own file binds to nothing
+    // in either mode and the first run's file binds to Info's command.
     assert.deepEqual(open, { UpArrow: 7, DownArrow: 7, Live: 7, Clear: 7, Enter: 7, Input: 7 });
   });
 

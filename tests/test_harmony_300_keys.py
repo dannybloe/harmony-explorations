@@ -16,8 +16,10 @@ device keys and Watch TV by the map they select or the codes they send.
 
 **What it settles**: 49 keys of the 55, each on the code of the Harmony 350 key in the same place, by the
 European drawing's names, `packages/silhouettes/src/models/h300eu.ts`, which carries them. The six left are
-Clear, Enter, TV Input, Live and the two arrows between Menu, Info, Exit and Guide, which the files bind to
-nothing in the modes they were pressed in.
+Clear, Enter, TV Input, Live and the two arrows between Menu, Info, Exit and Guide: the unit's own file
+binds nothing to them in either mode, and the first run's file gives them Info's command, as it gives
+twelve codes besides Info's, so neither run tells them apart. **Every tie rests on the keys having been
+pressed in the order the steps name**: the receiver hears codes and not keys.
 
 **Sources checked first**: the TypeScript test above and the Harmony 350's classes in
 `tests/test_harmony_350_keys.py`; `reference/remotes/harmony-300/keys.md` and `harmony-350/keys.md`.
@@ -158,7 +160,12 @@ class TheBench300HeardEveryKey(unittest.TestCase):
         digit = {d: first[DECIDED['Number%d' % d]] for d in (1, 2, 3, 6)}
         heard = [next(d for d, send in digit.items() if send in _heard(p)) for p in _sent(self.run22['steps'][17])]
         self.assertEqual(heard, [1, 3, 2, 6, 6, 6])
-        printed = {'Favorite1': loads[1], 'Favorite2': loads[3], 'Favorite3': loads[2], 'Favorite4': loads[666]}
+        # The keys were pressed by printed number, 1 to 4, so the nth channel heard is the nth key's. Pressed
+        # by the step's places instead, skipping Teletext, the keys printed 3 and 4 would trade codes, against
+        # the places measured on the Harmony 350; this test cannot tell the two orders apart by itself.
+        channels = [1, 3, 2, 666]
+        self.assertEqual(''.join(str(n) for n in channels), ''.join(str(n) for n in heard))
+        printed = {key: loads[n] for key, n in zip(('Favorite1', 'Favorite2', 'Favorite3', 'Favorite4'), channels)}
         self.assertEqual(printed, {k: DECIDED[k] for k in printed})
 
     def test_teletext_is_11_the_one_binding_that_sends_what_the_first_run_heard(self):

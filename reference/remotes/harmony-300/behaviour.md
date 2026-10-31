@@ -11,8 +11,9 @@ or off, click the device you want to operate and then press the power button." T
 guide, "Using Your Harmony 300"[^unchecked]. So a device key is device mode, which
 [how a Harmony works](../../how-a-harmony-works.md) describes, and each of the four keys holds one device:
 the infrared group of the same index in the configuration[^s265], [keys.md](keys.md). Pressed with a
-receiver listening, each of the four device keys made the keys after it send that one device's codes, and
-the keys a device's map leaves unbound sent nothing[^t-harmony-300-keys-u].
+receiver listening, each of the four device keys made the keys after it send that device's codes, or
+another device's where its map sends a key there, as the DVD's map sends volume to the television; in the
+television's and the set top box's maps, a key left unbound sent nothing[^t-harmony-300-keys-u].
 
 ## Watch TV
 

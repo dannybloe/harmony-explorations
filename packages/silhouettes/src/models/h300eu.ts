@@ -22,10 +22,11 @@
  *
  * **49 keys carry the code they were heard raising**, `packages/bench/test/keys300.test.ts`: every key of the
  * bench unit pressed in the television's mode and the KPN box's, on two configurations, and each of these
- * tied to the one code of the 56 that, raised in its place, gives what the receiver heard. Every one is the
- * code of the Harmony 350 key in the same place. The six without a code are the keys neither configuration
- * binds in the modes pressed, which sent nothing: Clear, Enter, TV Input, Live and the two arrows between
- * Menu, Info, Exit and Guide. No candidate set is carried: the 350's are a reading of 350 and 300
+ * tied to the one code of the 56 that, raised in its place, gives what the receiver heard, taking the keys
+ * to have been pressed in the order asked. Every one is the code of the Harmony 350 key in the same place.
+ * The six without a code are Clear, Enter, TV Input, Live and the two arrows between Menu, Info, Exit and
+ * Guide: the unit's own configuration binds nothing to them and they sent nothing, and the other gives
+ * them Info's command, as it gives several codes, so neither tells them apart. No candidate set is carried: the 350's are a reading of 350 and 300
  * configurations, and this drawing carries only what its own unit decided.
  */
 import { COMMON, H300, below, reprintKeys, type Reprint } from './h300.ts';

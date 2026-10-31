@@ -79,8 +79,10 @@ favourite maximum of 5.
 
 * No skin 78 Harmony 300 has been pressed, so the US printing's codes and what its colour keys send are
   not measured.
-* Clear, Enter, TV Input, Live and the two arrows between Menu, Info, Exit and Guide have no code: no file
-  on the unit bound them in the modes pressed. Teletext was heard once, in 2.1, and not pressed in 2.2.
+* Clear, Enter, TV Input, Live and the two arrows between Menu, Info, Exit and Guide have no code: the
+  unit's own file binds nothing to them in either mode and they sent nothing in 2.2, and 2.1's file gave
+  them Info's command, as it gave twelve codes besides Info's, so they all sent Info there. Teletext was
+  heard once, in 2.1, and not pressed in 2.2.
 
 This list said no infrared bench run existed for this unit until 1.4, below.
 * The firmware version it runs: `/sys/sysinfo`'s version field was not recorded, and only the product
@@ -145,9 +147,9 @@ keypad; which code each key raises is 2.2.
 The favourites step heard seven presses where five keys were named: six Info, which every key of the block
 but Teletext sends on that file, and one the television's Teletext; the steps were worded for the US printing, and on this
 unit the key the step called favourite 3 is Teletext and there is no favourite 5. 2.2 holds the run again
-from its pulses, `packages/bench/test/keys300.test.ts`, which ties Teletext to code 11 from that press and
-ties the colour keys from step 7, pressed left to right: red, green, yellow and blue sent the television's
-Red, Green, Yellow and Blue, codes 13, 27, 28 and 29.
+from its pulses, `packages/bench/test/keys300.test.ts`, which ties Teletext to code 11 from that press, by
+elimination, and ties the colour keys from step 7, pressed left to right: red, green, yellow and blue sent
+the television's Red, Green, Yellow and Blue, codes 13, 27, 28 and 29.
 
 ## Every key in two modes, todo-compile-300 2.2
 
@@ -160,13 +162,15 @@ to the code of the 350 key in the same place. The run is the lab's
 `h300_keys_ir`; 2.1's is `h300_every_key_ir`. `packages/bench/test/keys300.test.ts` matches both runs again
 from their pulses and holds every step to what the file sends for the presses this unit's printing implies.
 
-**Four steps failed their stored verdicts, 6, 9, 15 and 18, and all four are the test's wording.** The steps
-named keys by the US printing, and this unit has the European one:
+**Four steps failed their stored verdicts, 6, 9, 15 and 18, and all four are the test's wording**, step 6
+with a press order of the person's own on top. The steps named keys by the US printing, and this unit has
+the European one:
 
 * **Step 6**, the colour keys in the television's mode, "A (yellow), B (blue), C (red), D (green)": there
   are no letters on this unit. Heard were the television's Red, Yellow, Blue, Red and Green, five presses,
-  and the person noted pressing in the wrong order. Each is the code of one colour key, so the step is
-  consistent with the file and ties nothing.
+  one press more than asked, and the person noted pressing in the wrong order. Each is the code of one
+  colour key, so the step is consistent with the file and ties nothing; it would have failed on the
+  letters alone.
 * **Step 9**, TV Input and favourites 1 to 5 in the television's mode, expecting Teletext from the key the
   US printing calls favourite 3: nothing was heard, and the person noted that there is no favourite 5, only
   Teletext. TV Input and the four favourites send nothing in that mode, as predicted; Teletext was not
@@ -179,35 +183,50 @@ named keys by the US printing, and this unit has the European one:
   favourite 3 place, which on this unit is Teletext and was not pressed.
 
 **Every other step passed as stored**, and every step of both runs, matched again, is what the file sends
-for the presses this printing implies: 53 presses in 2.1 outside its favourites step and 79 in 2.2,
-compared code by code. Five unreadable fragments in 2.2 are each the tail of the press before it, after
-86 ms of silence, and are not presses.
+for the presses this printing implies: 53 sends in 2.1 outside its favourites step and 79 in 2.2,
+compared code by code. Five of the 79 are step 6, held to the order heard rather than one asked, so they
+test nothing. Five unreadable fragments in 2.2 each follow a readable frame of the press before them within
+90 ms of silence, so they are more of that press, its tail or a repeat, and not presses of their own.
 
-**49 keys are tied to one code**, each the one of the 56 that, raised in the key's place, gives what was
-heard from there to the end of the run, and **every one is the code of the 350 key in the same place**:
-`DECIDED` in that test, carried by `h300eu.ts`. The six left, Clear, Enter, TV Input, Live and the two
-arrows, sent nothing in both modes; the file binds none of them in either. The favourites printed 1, 2 and 3
+**49 keys are tied to one code**, each the one of the 56 that, raised in the key's place with every other
+key on its 350 code, gives what was heard from there to the end of the run, and **every one is the code of
+the 350 key in the same place**: `DECIDED` in that test, carried by `h300eu.ts`. **Every tie takes the keys
+to have been pressed in the order the step names**, since the receiver hears codes and not keys. Where that
+order carries the tie alone:
+
+* the colour keys: the one other reading of the four that fits both 2.1's step 7 and 2.2's step 15 has
+  neither pressed in the order asked;
+* the favourites: pressed by printed number they are 8, 9, 2 and 34; pressed by the step's places,
+  skipping Teletext, the keys printed 3 and 4 would trade 2 and 34, against the 350's measured places;
+* Teletext: one press of the favourite block in 2.1 sent the television's Teletext, which only code 11
+  sends, and every other key of the block holds another code or was silent where 11 sends.
+
+The six left, Clear, Enter, TV Input, Live and the two arrows, sent nothing in both modes of 2.2, where the
+unit's own file binds nothing to them, and Info's command in 2.1, where the file gave it to them and to
+several other codes; neither run tells them apart. The favourites printed 1, 2 and 3
 send a digit the digit keys send too, and are told apart from them by the television's mode, where the
 digit keys send and they do not. The KPN's Play and Pause are one frame in this file, codes 20 and 31 the
 same bytes; the television's mode decides them.
 
 The predictions, scored:
 
-* **P1**, every key raises the 350's code for its place: **holds** for all 49 keys tied; no key sent another
-  key's code and no key predicted silent sent anything. Its counts of keys the file could tie per mode, 39
+* **P1**, every key raises the 350's code for its place: **holds** for all 49 keys tied, with the press
+  order above; no key sent another key's code and no key predicted silent sent anything. Its counts of keys the file could tie per mode, 39
   and 32, are the file's and were not re-measured.
 * **P2**, the nine keys the file cannot tie: **holds**. Clear, Enter, TV Input, Live and the two arrows sent
   nothing in either mode. The three favourites that send a digit, which it named 1, 2 and 5 by the US places
   and which this unit prints 1, 2 and 3, were tied by position after all, through the television's mode.
 * **P3**, the device keys: **holds**. TV selected the television's mode and Cable/Sat the KPN's, neither
   sending anything; in 2.1 DVD, VCR/Aux and Watch TV were tied the same way, codes 7, 4 and 6.
-* **P4**, the favourites in the KPN's mode, by the US places: **holds for the four pressed**. The place of
+* **P4**, the favourites in the KPN's mode, by the US places: **holds for the four pressed**, read by
+  printed number as above. The place of
   favourite 1 sent channel 1, favourite 2's channel 3, favourite 4's 666 and favourite 5's channel 2, which
   on this unit are the keys printed 1, 2, 4 and 3. Favourite 3's place, predicted to send the KPN's code 22,
   is this unit's Teletext key, not pressed in that mode. The prediction left a favourite sending 3 and
   another sending code 22 unexplained; the second is explained by the printing, and the order of the
   channels on the keys printed 2 and 3 is reported and not explained.
-* **P5**, every other key as the test's expectations state: **holds**.
+* **P5**, every other key as the test's expectations state: **holds**, with steps 6, 9, 15 and 18 restated
+  for the European printing.
 
 **What the run settled for the drawing**: the 49 codes on `h300eu.ts`, source `t-harmony-300-keys-u`. The US
 drawing, `h300.ts`, takes none, since no skin 78 unit was pressed. The bench test moved to

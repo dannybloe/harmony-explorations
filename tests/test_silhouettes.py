@@ -577,7 +577,8 @@ class TestTheHarmony300EuropeanSilhouette(TestTheHarmony350Silhouette):
     NAME = 'h300eu.svg'
     EXPECTED_BUTTONS = 55
     # Every one the code of the 350 key in the same place, by this drawing's names. Clear, Enter, TV Input,
-    # Live and the two arrows carry none: no configuration on the unit bound them in the modes pressed.
+    # Live and the two arrows carry none: one configuration on the unit binds nothing to them, and the other
+    # gives them Info's command, as it gives several codes, so neither tells them apart.
     CODES = {
         'CableSat': 1, 'Favorite3': 2, 'Power': 3, 'VcrAux': 4, 'Tv': 5, 'WatchTV': 6, 'Dvd': 7,
         'Favorite1': 8, 'Favorite2': 9, 'Menu': 10, 'Teletext': 11, 'Exit': 12, 'Red': 13,
@@ -606,7 +607,11 @@ class TestTheHarmony300EuropeanSilhouette(TestTheHarmony350Silhouette):
         self.assertEqual([text.count(f'>{n}<') for n in '12345'], [2, 2, 2, 2, 1])
 
     def test_the_colour_keys_run_red_green_yellow_blue_left_to_right(self):
-        """As on the 350, by place, and the codes they were heard raising are the 350's for those places."""
+        """
+        As on the 350, by place, as the printing was read off the unit. Only the order of the drawn keys is
+        checked here; the codes on them are `CODES` above, and which press raised which is
+        `packages/bench/test/keys300.test.ts`, resting on the order the keys were pressed in.
+        """
         buttons = _buttons(_tree(self.NAME).getroot())
         order = sorted(('k-red', 'k-green', 'k-yellow', 'k-blue'), key=lambda one: _centre_x(buttons[one]))
         self.assertEqual(order, ['k-red', 'k-green', 'k-yellow', 'k-blue'])

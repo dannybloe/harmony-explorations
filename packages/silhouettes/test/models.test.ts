@@ -55,7 +55,8 @@ const EXPECTED: Readonly<Record<string, {
    * The European printing, skin 79: the same 55 shapes, and 49 codes heard by pressing every key of a skin 79
    * unit in two device modes, `todo-compile-300.md` 2.1 and 2.2, `packages/bench/test/keys300.test.ts`. Every
    * one is a decision of its own, so all 49 are named below; each is the code of the 350 key in the same
-   * place, and the six left are the keys no configuration on the unit bound in the modes pressed.
+   * place, and the six left are keys neither configuration on the unit tells apart: one binds nothing to
+   * them, the other gives them Info's command, as it gives several codes.
    */
   h300eu: {
     buttons: 55,

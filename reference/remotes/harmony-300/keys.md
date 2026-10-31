@@ -5,8 +5,8 @@ some of them. **The model comes in two printings**: the US one, skin 78, and the
 which Logitech names the Harmony 300 EMEA. They differ in the colour keys and in the favourite block, and
 each has a drawing of its own. The four device keys each pick one device. **Each key raises the code of
 the Harmony 350 key in the same place**: pressed one by one on a European Harmony 300 with an infrared
-receiver listening, 49 keys were tied to their code and every one was that code[^t-harmony-300-keys-u],
-[below](#scan-codes).
+receiver listening, and taking each key to have been pressed in the order asked, 49 keys were tied to their
+code and every one was that code[^t-harmony-300-keys-u], [below](#scan-codes).
 
 The two drawings are generated from `packages/silhouettes/src/models/`, and both **take every shape from
 the Harmony 350's drawing** and state only what is printed differently, because the two models are one
@@ -15,8 +15,8 @@ moulding[^t-moulding]:
 * [`reference/silhouettes/h300.svg`](../../silhouettes/h300.svg), the US printing, skin 78, from `h300.ts`,
   read off the cover photograph of Logitech's setup guide, PDF page 2[^t-printing];
 * [`reference/silhouettes/h300eu.svg`](../../silhouettes/h300eu.svg), the European printing, skin 79, from
-  `h300eu.ts`, as stated by a person holding a skin 79 remote[^t-printing-eu]. No manual or photograph of
-  the European model was read.
+  `h300eu.ts`, from the printing read off a skin 79 remote[^t-printing-eu]. No manual or photograph of the
+  European model was read.
 
 ## How the printing differs from the 350's
 
@@ -31,9 +31,9 @@ moulding[^t-moulding]:
 | the four keys beside play | Replay, Skip, Record and Stop printed under them | as skin 78 | |
 | the top and bottom of the face | Logitech's logo, and "Harmony 300" | as skin 78 | "Harmony" |
 
-The skin 78 column is read off Logitech's setup guide[^t-printing]. The skin 79 column is what a person
-holding a skin 79 remote stated differs from skin 78, the colour keys and the favourite block, and the
-rest as skin 78[^t-printing-eu]. Where on or beside the Teletext key its word is printed was not
+The skin 78 column is read off Logitech's setup guide[^t-printing]. The skin 79 column is read off a skin
+79 remote: the colour keys and the favourite block differ from skin 78, and the rest is as skin
+78[^t-printing-eu]. Where on or beside the Teletext key its word is printed was not
 stated[^unchecked]. The skin 78 drawing served both skins until the skin 79 printing was stated.
 
 ## Every key on the drawings
@@ -177,7 +177,8 @@ identified in Logitech's catalogue on a configuration given one device per key[^
 each key's **press** to selecting its device, under scan codes 5, 1, 7 and 4 in that order,
 [the family's memory page](../../architectures/harmony-300-350/memory.md#which-infrared-group-a-device-takes)[^t-device-groups-c].
 Pressed on a remote, each of the four selected its device: the keys pressed after it sent that device's
-codes[^t-harmony-300-keys-u]. What an infrared group is, is
+codes, except where the device's map sends a key to another device, as volume after DVD, which sent the
+television's volume[^t-harmony-300-keys-u]. What an infrared group is, is
 [the configuration format's](../../config-format/infrared-records.md).
 
 ## Scan codes
@@ -187,11 +188,13 @@ run the one 1.4 image, whose keypad scan numbers a key 1 to 56,
 [the family's firmware page](../../architectures/harmony-300-350/firmware.md#the-keypad-scan). **On a skin
 79 remote every key was pressed** with an infrared receiver listening, in the television's mode and the set
 top box's, on a configuration of four devices, and in the television's mode again on a copy binding every
-key; each key's code is the one of the 56 that, raised in its place, gives what the receiver heard. **49
-keys were tied that way and each is the code of the 350 key in the same place**, the device keys, Watch
-TV, Power, the favourites and Teletext among them[^t-harmony-300-keys-u]. The six left are Clear, Enter,
-TV Input, Live and the two arrows between Menu, Info, Exit and Guide: neither configuration binds them in
-the modes pressed, and they sent nothing[^t-harmony-300-keys-u].
+key; each key's code is the one of the 56 that, raised in its place with every other key at the 350's code
+and every key pressed in the order asked, gives what the receiver heard. **49 keys were tied that way and
+each is the code of the 350 key in the same place**, the device keys, Watch TV, Power, the favourites and
+Teletext among them[^t-harmony-300-keys-u]. The six left are Clear, Enter, TV Input, Live and the two
+arrows between Menu, Info, Exit and Guide: on the configuration of four devices nothing is bound to them in
+either mode and they sent nothing, and on the copy binding every key each sent the command Info sends,
+which that copy gives twelve codes besides Info's, so neither pass tells them apart[^t-harmony-300-keys-u].
 
 The device keys are codes 5, 1, 7 and 4, TV, Cable/Sat, DVD and VCR/Aux, which this model's configurations
 select **on the press**, where the Harmony 350 waits for the release[^t-harmony-350-keys-c]. Before the keys
@@ -203,7 +206,9 @@ not explained[^t-harmony-350-keys-c].
 **The colour keys of skin 79 send the colour printed on them.** Left to right they sent the television's
 red, green, yellow and blue, codes 13, 27, 28 and 29, the 350's red, green, yellow and blue; pressed by
 colour in the set top box's mode, yellow, blue, red and green, they raised 28, 29, 13 and
-27[^t-harmony-300-keys-u]. **Skin 78 prints yellow, blue, red and green on those four
+27[^t-harmony-300-keys-u]. The receiver hears codes and not keys, so this rests on the order the keys were
+pressed in: the one other reading of the four that fits both passes has neither pressed in the order
+asked. **Skin 78 prints yellow, blue, red and green on those four
 places**[^t-printing], while both of this model's configurations send the `Red` command from code 13 and
 `Green`, `Yellow` and `Blue` from 27, 28 and 29[^t-harmony-350-keys-c]. So on skin 78 either the keys send
 another colour's command than the one printed on them, or the photograph's printing was read wrong; no
@@ -211,13 +216,18 @@ skin 78 remote has been pressed[^unchecked]. This paragraph said the colour keys
 printing on the whole model until the skin 79 printing was stated and pressed.
 
 **The favourites of skin 79** are codes 8, 9, 2 and 34 for the keys printed 1, 2, 3 and 4, and Teletext is
-code 11, the places of the 350's favourites 1, 2, 5 and 4 and its favourite 3[^t-harmony-300-keys-u]. On a
-configuration Logitech's service compiled with the channels 1, 2, 3 and 666, the key printed 1 sent channel
-1, printed 2 channel 3, printed 3 channel 2 and printed 4 channel 666: the configuration binds the four
-channels to codes 8, 2, 9 and 34 in that order, so the second and third channels sit on the keys printed 3
-and 2[^t-harmony-300-keys-u]. Why the compile put them there is not explained; the order in which the
-channels were entered is not known here[^unchecked]. Code 11 sends the television's Teletext in that
-configuration and the set top box's code 22, a command bound to no other key[^t-harmony-300-keys-u].
+code 11, the places of the 350's favourites 1, 2, 5 and 4 and its favourite 3[^t-harmony-300-keys-u]. In
+the set top box's mode the four favourites sent channels, and a channel's digits are the digit keys' codes
+too, so there each press fits a favourite's code and a digit key's alike; in the television's mode the
+favourites sent nothing where the digit keys send, which leaves 8, 9, 2 and 34[^t-harmony-300-keys-u].
+Which of the four keys is which code rests on the order they were pressed in, by printed number; pressed
+by place instead, the keys printed 3 and 4 would trade codes 2 and 34, against the places measured on the
+350[^t-harmony-350-keys-u]. On a configuration compiled with the channels 1, 2, 3 and 666, the four codes
+send channels 1, 3, 2 and 666, so channel 2 sits on the key printed 3 and channel 3 on the key printed 2,
+which is not explained[^unchecked]. **Teletext is code 11 by elimination**: one press in the favourite block
+sent the television's Teletext, a command no other code sends, and every other key of the block holds
+another code or was silent where code 11 sends; it was heard once, and the set top box's mode did not hear
+it[^t-harmony-300-keys-u].
 
 **The skin 79 drawing carries the 49 codes**, and the skin 78 drawing none: no skin 78 remote has been
 pressed, and its printing puts other colours on the colour keys, so that its keys raise the same codes by
@@ -228,8 +238,8 @@ candidate codes for Live.
 
 * Any key of skin 78, by pressing it with a receiver listening; and what its colour keys send against what
   they print.
-* The codes of Clear, Enter, TV Input, Live and the two arrows on either printing: no configuration on the
-  remote pressed bound them.
+* The codes of Clear, Enter, TV Input, Live and the two arrows on either printing: on one configuration
+  nothing was bound to them, and on the other each sent the command thirteen codes send alike.
 * Where the word Teletext is printed on skin 79, and the exact form of its teletext glyph.
 * Whether the pause half of the play key is a separate part: the setup guide's photograph suggests one,
   and the drawings follow the 350's single part with two halves, since the moulding is the
@@ -243,3 +253,4 @@ candidate codes for Live.
 [^t-device-groups-c]: Measured in configurations. [The test](../../../tests/test_harmony_350_device_groups.py)
 [^t-harmony-350-keys-c]: Measured in configurations. [The test](../../../tests/test_harmony_350_keys.py)
 [^t-harmony-300-keys-u]: Measured on a unit. [The test](../../../tests/test_harmony_300_keys.py)
+[^t-harmony-350-keys-u]: Measured on a unit. [The test](../../../tests/test_harmony_350_keys.py)
