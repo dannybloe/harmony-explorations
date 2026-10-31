@@ -37,9 +37,12 @@ trusting the keypad, and a first change heard before a whole configuration rides
 
 ## 3. A Logitech compile, written and used
 
-- [ ] 3.1 The test setup cut to four devices, one per device key, and the 300's four favourite channels, on the bench 300's record; the favourites typed into MyHarmony, since our setup script refuses this family's (`todo-later.md` 6.24)
-- [ ] 3.2 Compiled by Logitech's service and filed in the lab, and what the compile holds in place of an activity read
-- [ ] 3.3 Written to the bench 300 and used with a bench test derived from the compile, the compile added to the infrared monitor's list and the bench restarted before the run
+Changed on 31 October 2026: the bench 300 already held a Logitech compile of its record, so no new setup was put on the account. The record holds no devices any more; the compile is kept in the lab and is the reference.
+
+- [x] 3.1 A Logitech compile of a four device setup for the bench 300: `h300_programmed_config`, compiled from its record with the Panasonic television, the KPN box, the Panasonic DVD player and the Sony video recorder and four favourite channels, section 265
+- [x] 3.2 What the compile holds in place of an activity read: Watch TV is one list that toggles the KPN's and the television's power with their waits and ends in the KPN's mode, the lab's `work/setups/h350-test/chapter4-reading.md`, and its delay heard in 1.5
+- [x] 3.3 Written to the bench 300 and used: 1.4's write of it unchanged, and the bench tests of 1.4, 1.5, 2.1 and 2.2 on it
+- [ ] 3.4 The recipe our composers rebuild it from, `packages/corpus/setups/h300-test.json`, checked against the compile: devices, keys, Watch TV and the favourites
 
 ## 4. Our composers on it
 
