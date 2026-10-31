@@ -406,8 +406,12 @@ function encodedList(body: ListBody): Writer {
   return out;
 }
 
-/** A transition record, as section 86 reads it: a seven byte header, then eight bytes per transition. */
-function encodeRecord(values: number, encoded: readonly { from: number; to: number; instruction: Instruction }[]): Uint8Array {
+/**
+ * A transition record, as section 86 reads it: a seven byte header, then eight bytes per transition, `first` 0
+ * and `max` one under the count of values. Exported for the Harmony 300 and 350's activity composer,
+ * `families/no-screen/activity.ts`, whose input variables and activity flag are records of the same shape.
+ */
+export function encodeStateRecord(values: number, encoded: readonly { from: number; to: number; instruction: Instruction }[]): Uint8Array {
   const out = new Writer(STATE_RECORD_HEADER + STATE_VALUE_LENGTH * encoded.length)
     .u16(0).u16(values - 1).u16(encoded.length).u8(0);
   for (const one of encoded) {
@@ -529,7 +533,7 @@ export function composeDeviceInputs(c: Container, inputs: ComposeInputs): Compos
     bodies.push({ list, steps });
     return { opcode: ACTION_LIST_INDEX_OPCODE, operand: list };
   };
-  const records = variables.map((variable) => encodeRecord(variable.values.length, variable.transitions.map(
+  const records = variables.map((variable) => encodeStateRecord(variable.values.length, variable.transitions.map(
     (one) => ({ from: one.from, to: one.to, instruction: instructionOf(one.steps) }))));
 
   // ---- 1. the variables ----
