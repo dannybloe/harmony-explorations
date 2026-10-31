@@ -1329,7 +1329,8 @@ class TheLabRegisterCoversTheSiteAtArtefactLevel(unittest.TestCase):
         # 150 and 151 with `work/agent-11-1-1/` and `work/empty-11-1-1/`, todo-compile-650 11.1.1.
         # 163 with the twelve work folders of the Harmony 600, 700 and One tracks, registered at once.
         # 165 with `work/350-delay/`, todo-compile-350 1.8, and 166 with `work/350-every-key/`, 2.2.2.
-        self.assertEqual(len(named), 166, "lab paths the register names")
+        # 167 with `work/300-delay/`, todo-compile-300 1.5, and 168 with `work/300-every-key/`, 2.1 and 2.2.
+        self.assertEqual(len(named), 168, "lab paths the register names")
         for path in sorted(named):
             with self.subTest(path=path):
                 if '*' in path:
@@ -1437,8 +1438,9 @@ class TheRegisterQueryAnswersForThePathThatWasOpened(unittest.TestCase):
         # 127 and 128 with `work/agent-11-1-1/` and `work/empty-11-1-1/`.
         # 140 with the twelve work folders of the Harmony 600, 700 and One tracks.
         # 142 with `work/350-delay/`, todo-compile-350 1.8, and 143 with `work/350-every-key/`, 2.2.2.
-        self.assertEqual(len(rows), 143)
-        self.assertEqual(len(dict(rows)), 143, 'a duplicated path would make a query ambiguous')
+        # 144 with `work/300-delay/`, todo-compile-300 1.5, and 145 with `work/300-every-key/`, 2.1 and 2.2.
+        self.assertEqual(len(rows), 145)
+        self.assertEqual(len(dict(rows)), 145, 'a duplicated path would make a query ambiguous')
         self.assertNotIn('unseen', dict(rows), 'the status legend is not an artefact')
 
     def test_a_query_is_answered_by_ancestors_and_by_descendants(self):

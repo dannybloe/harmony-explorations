@@ -56,14 +56,14 @@ Logitech compile of part of a test setup written and used, then our composers on
 ## 4. Our composers on it
 
 - [ ] 4.1 A composed device: its infrared group at the model's maximum allocation, its names in the metadata archive, its key map; the no screen family's first members, and the Plasma composed onto the three device file matches Logitech's compile of it in records, send lists, power variable, waits, metadata and 38 of 40 bindings, `packages/codec/test/noscreen.test.ts`
-  - [ ] 4.1.1 The product answers the composer stopped at: the Input key's device, volume to the receiver per device, the favourite key and soft buttons, the uncalled one block digit copies
+  - [ ] 4.1.1 The product answers the composer stopped at: the Input key's device, volume to the receiver per device, the favourite key and soft buttons, the uncalled one block digit copies; the copies are what favourites send in four compiles, so the open part is why other devices hold them
   - [ ] 4.1.2 The top left key, which needs raw slot 5's start up select
   - [ ] 4.1.3 Composing onto the full test compile, after a device removal step, since all eight groups are in use
   - [ ] 4.1.4 The metadata archive's `Index` and `DeviceId`, once what reads the archive is known
   - [ ] 4.1.5 A composed device written to the bench 350 and heard
 - [ ] 4.2 The composed activity
-- [ ] 4.3 The favourite channels
-- [ ] 4.4 A device key's long press
+- [x] 4.3 The favourite channels: `composeNoScreenFavourites`, up to five on one device, composed onto Logitech's compile without favourites equals its compile with them in length, the KPN's map, the number sender and all 331 lists, `packages/codec/test/noscreenfavourites.test.ts`; the Harmony 300's key order is its own track's, and a bench test is 4.5's
+- [x] 4.4 A device key's long press: `composeNoScreenDevice` with `press: 'long'`, groups 4 to 7, held event, press list and timers equal to Logitech's compile on the four long press devices, `packages/codec/test/noscreen.test.ts`; Logitech's other routing of volume, Input and the favourite key is 4.1.1, and a bench test is 4.5's
 - [ ] 4.5 The whole test setup, written and run with a bench test
 
 ## 5. Nothing copied
