@@ -292,7 +292,7 @@ ARCH10_SLOT_MAP: Tuple[Optional[int], ...] = (
 # to 12, which is the shape section 35 used on arch 14.
 ARCH16_SLOT_MAP: Tuple[Optional[int], ...] = (
     0,     # 0, the 0xFEED name tree, 131 bytes under Root, State and Radio
-    1,     # 1, seven bytes: architecture 16 twice, skin 104, then the constant 0x0d
+    1,     # 1, seven bytes: architecture 16 twice, the skin (104 on a 350, 79 on a European 300), then 0x0d
     # 2, the log area, section 260. Eight bytes, byte for byte what the Harmony 525's base slot 2
     # holds on a different architecture, and the archive in raw slot 13 of the same container states
     # the log's own record layout, which is a second source with nothing in common with the match.

@@ -677,3 +677,4 @@ it reachable in the same commit and the test comparing the two tables is what ca
 | `arrow pair by elimination` | `TheBench350HeardEveryKey`, `tests/test_harmony_350_keys.py` | the configurations narrow the arrow pair to 25 and 26 and pressing them decided it |
 | `none of the 55 on a Harmony 350` | `packages/silhouettes/test/models.test.ts` | the Harmony 350's drawing carries 53 codes, heard by pressing the keys |
 | `No key press has been tied to a scan code` | `TheBench350HeardEveryKey`, `tests/test_harmony_350_keys.py` | 53 keys of the bench Harmony 350 were tied to a code by pressing them, 44 in that run and nine in `TheBench350HeardTheTestSetup` |
+| `300 and 350 state architecture 16 and skin 104` | `TheConfigurationsSkinIsNeverSought`, `tests/test_harmony_350_skin.py` | the Harmony 350's configurations state skin 104 and the Harmony 300's state its own, 79 on the European model, in base slot 1 |

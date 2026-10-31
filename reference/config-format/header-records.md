@@ -95,7 +95,7 @@ what makes a configuration describe itself.[^s15]
 
 Examples: `0c 0c 3b 0d` on a Harmony One, `0e 0e 49 0d` and `0e 0e 42 0d` on a Harmony 600 and 700,
 `09 09 16 0d` on a Harmony 525, `08 08 0f 0d` and `08 08 11 0d` on a Harmony 880 and 885.[^s182] The
-Harmony 300 and 350 state architecture 16 and skin 104 the same way.[^s259] The skins are the model numbers
+Harmony 350 states architecture 16 and skin 104 the same way, `10 10 68 0d`, and the Harmony 300 states its own skin, `10 10 4f 0d`, 79 on the European model.[^s259][^t-harmony-350-skin-c] The skins are the model numbers
 in [the remotes index](../remotes/README.md). On the Harmony 890 and 895 the record is raw slot 0,
 `0a 0a 13 0d` and `0a 0a 17 0d`.[^s182]
 
@@ -237,6 +237,7 @@ one Harmony One before and after a sync with Logitech's service, is ordered corr
 [^s324]: Measured in configurations. [Section 324](../../docs/findings.md#s324)
 [^s86]: Measured in configurations. [Section 86](../../docs/findings.md#s86)
 [^s259]: Measured in configurations. [Section 259](../../docs/findings.md#s259)
+[^t-harmony-350-skin-c]: Measured in configurations. [The test](../../tests/test_harmony_350_skin.py)
 [^s79]: Measured in configurations. [Section 79](../../docs/findings.md#s79)
 [^s114]: Measured in configurations. [Section 114](../../docs/findings.md#s114)
 [^s81b]: Measured in configurations. [Section 81](../../docs/findings.md#s81)

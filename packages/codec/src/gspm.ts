@@ -345,7 +345,7 @@ export const ARCH10_SLOT_MAP: readonly (number | undefined)[] = [
  */
 export const ARCH16_SLOT_MAP: readonly (number | undefined)[] = [
   0, // 0, the 0xFEED name tree, 131 bytes under Root, State and Radio
-  1, // 1, seven bytes: architecture 16 twice, skin 104, then the constant 0x0d
+  1, // 1, seven bytes: architecture 16 twice, the skin (104 on a 350, 79 on a European 300), then the constant 0x0d
   // 2, the log area, section 260. Eight bytes, and they are byte for byte what the Harmony 525's base
   //    slot 2 holds, `00 20 00 00 07 00 00 08`, on a different architecture. The archive in raw slot
   //    13 of the same container states the log's own record layout, an infrared event carrying a

@@ -32,7 +32,7 @@ control[^s264].
 ## Not checked
 
 * The other files on `INERT_PATHS` on a 300.
-* What decides 78 or 79 on a unit[^unchecked].
+* What sets the skin 79 on a unit beyond the one byte of its `/sys/sku` record that the firmware reports, and why its `bcdDevice` says 78: the 1.4 image read states a constant `0x1104`, so a Harmony 300's own application is not that image, [the family's firmware.md](../../architectures/harmony-300-350/firmware.md#the-skin)[^unchecked].
 
 [^s195]: Measured on a unit. [Section 195](../../../docs/findings.md#s195)
 [^s264]: Measured on a unit. [Section 264](../../../docs/findings.md#s264)
