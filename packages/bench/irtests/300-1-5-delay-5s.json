@@ -1,9 +1,9 @@
 {
   "name": "Harmony 300, the TV's power on delay at 5 s",
-  "description": "todo-compile-300 1.5. On the 300 the TV's power on delay that is ever run is the copy inside Watch TV's own list: Watch TV toggles the KPN's power, waits 1.5 s, toggles the Panasonic television's power, then holds every later command to the television for the delay; the copy in the TV's power state list is reached by no key on this configuration, since the Power key sends the toggle code alone. The file under test has both copies at 50 tenths. Written down before the run: Volume Up for the television pressed straight after Watch TV is held until about 5 s after the television's power code. The other file, 300-1-5-delay-10s.json, is the same test at 10 s. The control step: Volume Up pressed long after goes out at once. The 300 has no screen, so the receiver is the only witness. Revised after the first 10 s run: the TV key pressed during Watch TV was lost, while Volume Up presses are kept and sent once the wait is over; Watch TV leaves the remote where Volume Up reaches the television, so no device key is pressed.",
+  "description": "todo-compile-300 1.5. On the 300 the TV's power on delay that is ever run is the copy inside Watch TV's own list: Watch TV toggles the KPN's power, waits 1.5 s, toggles the Panasonic television's power, then holds every later command to the television for the delay; the copy in the TV's power state list is reached by no key on this configuration, since the Power key sends the toggle code alone. The file under test has both copies at 50 tenths. Written down before the run: Volume Up for the television pressed straight after Watch TV is held until about 5 s after the television's power code. The other file, 300-1-5-delay-10s.json, is the same test at 10 s. The control step: Volume Up pressed long after goes out at once. The 300 has no screen, so the receiver is the only witness. Revised after the first 10 s runs: keys pressed while Watch TV runs are taken in the mode the remote is in when they are pressed and sent once it has finished, and Watch TV switches to the KPN's mode, which binds no Volume Up, only at its end; so the test starts in the television's mode and Volume Up is pressed straight after Watch TV. The TV key pressed during Watch TV was lost.",
   "steps": [
     {
-      "instruction": "Unplug the Harmony 300 from USB and point it at the receiver"
+      "instruction": "Unplug the Harmony 300 from USB and point it at the receiver. Press TV, the top left device key, once, so the remote starts in the television's mode"
     },
     {
       "instruction": "Press Watch TV once, then straight away tap Volume Up about five times. Press nothing else until the monitor shows the television's Volume Up",
@@ -30,9 +30,6 @@
           "command": "VolumeUp"
         }
       ]
-    },
-    {
-      "instruction": "One more check, nothing expected: press Cable/Sat (the top right device key), then Volume Up once. The file binds no Volume Up in the KPN's mode, so whatever the monitor shows here is the answer"
     }
   ]
 }
