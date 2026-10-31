@@ -245,13 +245,13 @@ export const VERDICTS: Readonly<Record<string, { verdict: Verdict; by: string }>
   'clock record': { verdict: 'builds', by: 'buildTimestampSection, 7 of 7 files' },
   'infrared group arrays': { verdict: 'edits', by: 'fillIrGroup, into the donor\'s group at its allocation' },
   'infrared group table': { verdict: 'other', by: 'countedTable in the frame, a table of three byte addresses; not used for 16' },
-  'infrared record headers': { verdict: 'edits', by: 'composeIrGroup and irBuildRecord through composeDeviceFor; 39 of the plasma\'s 51 records, word for word' },
-  'infrared blocks': { verdict: 'edits', by: 'the same; the plasma\'s 12 other records are not written' },
+  'infrared record headers': { verdict: 'edits', by: 'composeIrGroup and irBuildRecord through composeDeviceFor, and the digit copies through deviceDigitLists; 51 of the plasma\'s 51 records, word for word' },
+  'infrared blocks': { verdict: 'edits', by: 'the same' },
   'start up table': { verdict: 'nowhere', by: 'eleven instructions in 7 of 7 files, written by no generator' },
   'list, start up': { verdict: 'nowhere', by: 'the hold time parameter, the four device selects and the empty list, written by no generator' },
   'key map table': { verdict: 'edits', by: 'appendTableEntries, onto the donor\'s table' },
   'key table (map 0)': { verdict: 'edits', by: 'composeNoScreenDevice adds the press, release and held entries; the four pin tags and the activity entry are the donor\'s' },
-  'device key map': { verdict: 'edits', by: 'composeNoScreenDevice from NO_SCREEN_HARD_KEYS; Input, volume and the favourite key are not Logitech\'s routing yet' },
+  'device key map': { verdict: 'edits', by: 'composeNoScreenDevice from NO_SCREEN_HARD_KEYS with Logitech\'s routing of Input, volume and the favourite key, 4.1.1; equal to Logitech\'s with the other seven devices there, noscreenremove.test.ts' },
   'action list table': { verdict: 'edits', by: 'appendActionLists, onto the donor\'s table' },
   'list, send': { verdict: 'edits', by: 'NO_SCREEN_SENDS through composeDeviceFor' },
   'list, key': { verdict: 'edits', by: 'composeNoScreenDevice: the press list, the release and the held select' },
@@ -259,8 +259,8 @@ export const VERDICTS: Readonly<Record<string, { verdict: Verdict; by: string }>
   'list, channel': { verdict: 'edits', by: 'composeNoScreenFavourites' },
   'list, pin': { verdict: 'nowhere', by: 'the four pin lists of the key table, their wrappers and helpers, written by no generator' },
   'list, activity': { verdict: 'nowhere', by: 'todo-compile-350.md 4.2, in progress and not in this tree' },
-  'list, uncalled send': { verdict: 'nowhere', by: 'Logitech stores sends no list or key reaches; the composer writes only those reached' },
-  'list, uncalled silent write': { verdict: 'nowhere', by: 'two lists per power variable that nothing calls, written by no generator' },
+  'list, uncalled send': { verdict: 'edits', by: 'composeNoScreenDevice: Teletext, STORED_UNBOUND, and the digit copies, DIGIT_COPIES_BY_TYPE, 4.1.1' },
+  'list, uncalled silent write': { verdict: 'edits', by: 'composeNoScreenDevice: two per power variable, POWER_RESETS, 4.1.3' },
   'timer table': { verdict: 'edits', by: 'appendTableEntries, onto the donor\'s table' },
   'timer record': { verdict: 'edits', by: 'composeNoScreenDevice, two per key device' },
   'state variable table': { verdict: 'other', by: 'buildStateTables for the four slot and touch families; NO_SCREEN_FAMILY.stateTables refuses' },
@@ -482,9 +482,11 @@ test('the device composer emits lists of the roles the census credits it with, a
   };
   const [before, after] = [tally(donor), tally(parse(out.bytes))];
   const added = Object.fromEntries([...after].map(([role, n]) => [role, n - (before.get(role) ?? 0)]).filter(([, n]) => n !== 0));
-  // Thirty nine sends, the press and release pair, and three power lists; no pin, start up or activity list, and no
-  // list nothing calls. The activity and start up counts of the donor itself do not move.
-  assert.deepEqual(added, { send: 39, key: 2, power: 3 });
+  // Forty sends, the press and release pair and three power lists; and the lists nothing calls that Logitech stores
+  // for the plasma too, `todo-compile-350.md` 4.1.1 and 4.1.3: eleven sends, Teletext and the ten digits' one block
+  // copies, and the power variable's two silent writes, `POWER_RESETS`. No pin, start up or activity list; the
+  // activity and start up counts of the donor itself do not move.
+  assert.deepEqual(added, { send: 40, key: 2, power: 3, 'uncalled send': 11, 'uncalled silent write': 2 });
 });
 
 test('node zlib reproduces none of the three metadata archives\' deflate streams, and the same search finds its own', needsLab, () => {
@@ -548,5 +550,7 @@ const CENSUS_300 = {
   'state record, firmware': 77, 'state record, unnamed': 7, 'state variable table': 80, 'timer record': 56, 'timer table': 25,
   'trailer': 6,
 };
-const VERDICT_BYTES_350 = { builds: 280, edits: 116945, other: 330, nowhere: 958 };
-const VERDICT_BYTES_300 = { builds: 174, edits: 96435, other: 300, nowhere: 565 };
+// Plan 011 measured 958 and 565 bytes nowhere; the uncalled sends and silent writes moved to `edits` when the device
+// composer took them on, `todo-compile-350.md` 4.1.1 and 4.1.3, 452 and 266 bytes.
+const VERDICT_BYTES_350 = { builds: 280, edits: 117397, other: 330, nowhere: 506 };
+const VERDICT_BYTES_300 = { builds: 174, edits: 96701, other: 300, nowhere: 299 };

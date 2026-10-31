@@ -49,7 +49,7 @@ what holds on this architecture.
 | base address | `0x020000`, the file's place on the external medium | [^s194] |
 | slot map | raw slot to base slot in `ARCH16_SLOT_MAP`, `packages/codec/src/gspm.ts`: the name tree, the architecture record, the log area, the clock record, the infrared database, the action list table, the parameter block and the number sender are named; raw 13 is a metadata archive that names devices and commands, [the metadata archive](../../config-format/container.md#the-metadata-archive) and [the container's slots for this family](../../config-format/container.md#the-harmony-300-and-350s-slots). Raw 5, 6, 8, 9, 12 and 14 are read in the firmware, [below](#the-six-slots-the-firmware-was-read-for), and of those the map carries raw 9 alone, the state variable table, which a device's power on delay is read through | [^s259b], [^s260], [^s262b], [^t-slots], [^t-file-family-delays] |
 | the infrared table | allocated at the model's **maximum** device count, four groups on a 300 and eight on a 350, unused groups empty, unlike every other architecture | [^s263], [^s264] |
-| which group a device takes | the position of the device key it is on, on both models: the first key 0 to the fourth key 3, a short press on the 350, and a long press 4 plus the place; not the metadata archive's name list, which is alphabetical, [below](#which-infrared-group-a-device-takes) | [^s265], [^t-device-groups-c], [^t-long-press-c], [^t-harmony-350-setup-u] |
+| which group a device takes | the position of the device key it is on, on both models: the first key 0 to the fourth key 3, a short press on the 350, and a long press 4 plus the place; not the metadata archive's name list, which is in the account's order, ascending `DeviceId`[^t-noscreen-routing]. This said the list was alphabetical<!--superseded-->, which holds on the two Harmony 300 files and on none of the five Harmony 350 files; [below](#which-infrared-group-a-device-takes) | [^s265], [^t-device-groups-c], [^t-long-press-c], [^t-harmony-350-setup-u] |
 | what is stored | exactly the codes some action list sends | [^s261] |
 | raw slot 8 | the timer table, two records per device a key selects on a configuration Logitech's current service compiled, which is twice the devices unless a device is on two keys, and empty on one compiled in 2011, so it follows the compiler and not the model, [below](#the-six-slots-the-firmware-was-read-for). This said twice the device count until a configuration with a device on two keys held twelve for five, [a device key and its long press](#a-device-key-and-its-long-press) | [^s264], [^s265], [^t-slots-c], [^t-long-press-c] |
 
@@ -181,6 +181,38 @@ not recorded; about two seconds was asked. This said a long press was read and n
 of a key without a second device, so held past the hold time it ends in a held event nothing binds, the
 release that would select its device is never raised, and the remote stays in the mode it was
 in[^t-long-press][^t-long-press-c]. Not watched on a unit either[^unchecked].
+
+## What a device's map borrows from another
+
+**A device's map is not only its own commands.** Logitech's service gives some keys of a device's map another
+device's command, and its compiler binds them to the very list that device's own map binds, so pressing the key
+in one device's mode sends another device's code[^t-noscreen-routing]:
+
+* **Input** sends the input command of the device on the TV key's short press, `InputNext`, `Input` or `Source`,
+  on every device's map, that device's own included; where that device has none of the three, no map binds
+  Input. All seven Logitech configurations of the family read agree[^t-noscreen-routing].
+* **Volume and mute** are the device's own on a television or a receiver; on any other device they are the first
+  receiver's of the account, else its first television's. All eight devices of one compile agree, and the
+  service's own maps for that account state it; on the other configurations 9 of 12 devices that are neither
+  agree, two keeping their own on configurations compiled for earlier owners and one being a map that is the
+  activity's[^t-noscreen-routing].
+
+**What a Harmony 350 compile stores and no key sends**, each with a send list nothing calls: a device's
+Teletext, which the service puts on a key the Harmony 350 does not have, 11 of 11 devices with the
+command[^t-noscreen-routing]; and for some device types, televisions, set top boxes and media players among
+them, the ten digits' one block copies, which a favourite channel sends where there is one, 25 of 25 devices
+agreeing by type[^t-noscreen-routing]. A television's fifth favourite key holds its Home or its Internet, on 4
+of the 5 televisions with either[^t-noscreen-routing].
+
+**Every device's power variable has two lists nothing calls**, on both models: each sets the variable without
+running its transitions, the silent flag `07 FFFF` and then the write, one to 0 and one to 1. All 27 devices of
+the seven configurations read have the pair, none of the 54 lists is called, and no other list opens with the
+flag[^t-noscreen-routing]. What would run them is not read; on the other platforms a list of this shape resets a
+variable without sending anything[^unchecked].
+
+**The start up selects the TV key's short press device.** Entry 1 of the start up events calls a list that ends
+by selecting that device's map, the same list entries 2 to 4 call without it, on all seven
+configurations[^t-noscreen-routing].
 
 ## A device's power on delay
 
@@ -385,6 +417,7 @@ never send it[^t-harmony-350-clock][^unchecked].
 [^t-harmony-350-clock]: Read in the firmware. [The test](../../../tests/test_harmony_350_clock.py)
 [^t-harmony-350-clock-c]: Measured in configurations. [The test](../../../tests/test_harmony_350_clock.py)
 [^t-state-block]: Read in the firmware. [The test](../../../tests/test_firmware_state_block.py)
+[^t-noscreen-routing]: Measured in configurations. [The test](../../../packages/codec/test/noscreenrouting.test.ts)
 [^t-long-press]: Read in the firmware. [The test](../../../tests/test_harmony_350_long_press.py)
 [^t-long-press-c]: Measured in configurations. [The test](../../../tests/test_harmony_350_long_press.py)
 [^t-long-press-u]: Measured on a unit. [The test](../../../tests/test_harmony_350_long_press.py)

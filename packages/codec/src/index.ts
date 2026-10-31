@@ -137,4 +137,6 @@ export {
   composeNoScreenDevice, composeNoScreenFavourites, type ComposedNoScreenDevice, type ComposedNoScreenFavourites,
   DEVICE_KEYS, FAVOURITE_SCANS, inCompilerOrder, LONG_PRESS_GROUP_BASE, NO_SCREEN_FAMILY, NO_SCREEN_HARD_KEYS,
   NO_SCREEN_SENDS, NUMBER_SENDER_BAND, type NoScreenDeviceRequest, type NoScreenFavouritesRequest, powerOnWaits,
+  type AccountDevice, DIGIT_COPIES_BY_TYPE, RECEIVER_TYPE, TELEVISION_TYPE, volumeSource,
+  type RemovedNoScreenDevice, withoutNoScreenDevice,
 } from './families/no-screen/index.ts';
