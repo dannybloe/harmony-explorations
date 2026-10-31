@@ -56,10 +56,10 @@ Logitech compile of part of a test setup written and used, then our composers on
 ## 4. Our composers on it
 
 - [ ] 4.1 A composed device: its infrared group at the model's maximum allocation, its names in the metadata archive, its key map; the no screen family's first members, and the Plasma composed onto the three device file matches Logitech's compile of it in records, send lists, power variable, waits, metadata and 38 of 40 bindings, `packages/codec/test/noscreen.test.ts`
-  - [ ] 4.1.1 Logitech's choices copied, decided rather than asked since the plan checks our file against theirs and the bench test is derived from their compile: Input to the television in every mode, volume to the receiver per device as they route it, the favourite key and soft buttons as they bind them, the one block digit copies where they hold them; letting a user choose otherwise is FreeHarmony's question
-  - [ ] 4.1.2 The top left key, which needs raw slot 5's start up select
-  - [ ] 4.1.3 Composing onto the full test compile, after a device removal step, since all eight groups are in use
-  - [ ] 4.1.4 The metadata archive's `Index` and `DeviceId`, once what reads the archive is known
+  - [x] 4.1.1 Logitech's choices copied, decided rather than asked since the plan checks our file against theirs and the bench test is derived from their compile: Input to the television in every mode, volume to the receiver per device as they route it, the favourite key and soft buttons as they bind them, the one block digit copies where they hold them; letting a user choose otherwise is FreeHarmony's question: `packages/codec/test/noscreenrouting.test.ts`, with Logitech's two unused power reset lists per device found on the way
+  - [x] 4.1.2 The top left key, which needs raw slot 5's start up select: entry 1 ends by selecting the TV key device's map on 7 of 7 files, and taking it out and putting it back gives Logitech's file byte for byte
+  - [x] 4.1.3 Composing onto the full test compile, after a device removal step, since all eight groups are in use: four long press devices taken out of two compiles and composed back equal Logitech's by content, only placement and numbering differ, `packages/codec/test/noscreenremove.test.ts`
+  - [x] 4.1.4 The metadata archive's `Index` and `DeviceId`, once what reads the archive is known: `Index` the position and `DeviceId` ascending on 7 of 7 files, read by nothing found
   - [ ] 4.1.5 A composed device written to the bench 350 and heard
 - [x] 4.2 The composed activity: `composeNoScreenActivity`, Watch TV's one list rebuilt from the setup, composed onto Logitech's three device file it matches their compile of the test setup step for step, power order, flag, inputs and the closing map, and the shape holds on seven Logitech files, one a Harmony 300's, `packages/codec/test/noscreenactivity.test.ts`
   - [ ] 4.2.1 Replacing a device's input variable, which needs a variable removal step
