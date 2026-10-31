@@ -23,7 +23,8 @@ family.
 
 * **One product id for both models**, `046D:C124`[^s193][^s195].
 * **`bcdDevice` is BCD of 1000 plus a skin**, `0x1104` on a 350[^s195], so the skin can be read from a
-  listing without opening the device. On a Harmony 300 it names the family's base skin and not a unit's
+  listing without opening the device. It is a constant in each build's own image, one word of its device
+  descriptor, [firmware.md](firmware.md#the-two-models-images-compared)[^t-harmony-300-350-images]. On a Harmony 300 it names the family's base skin and not a unit's
   regional one, [the 300's usb.md](../../remotes/harmony-300/usb.md).
 * `/sys/sysinfo` answers its architecture and skin, `arch 0x10 skin 0x68` on a 350 and skin `0x4F` on a
   300[^s262][^s264]. Its field names are strings in the firmware, listed as `SYSINFO_FIELDS` in
@@ -104,3 +105,4 @@ each rests on.
 [^unchecked]: Not checked.
 [^t-harmony-350-file-write]: Read in the firmware. [The test](../../../tests/test_harmony_350_file_write.py)
 [^t-harmony-350-recovery]: Read in the firmware. [The test](../../../tests/test_harmony_350_recovery.py)
+[^t-harmony-300-350-images]: Read in the firmware. [The test](../../../tests/test_harmony_300_350_images.py)

@@ -1,6 +1,7 @@
 # Harmony 350: firmware
 
-The 350 runs the image the Harmony 300 runs: one package from Logitech names skins 78, 79 and 104. Its
+The 350 runs the image Logitech's package carries, byte for byte; the Harmony 300 runs a near copy of it, a
+different build of the same version, and Logitech's manifest names skins 78, 79 and 104 for the one. Its
 package, version, layout, routines and safe mode are stated once in
 [the architecture's firmware.md](../../architectures/harmony-300-350/firmware.md).
 

@@ -42,7 +42,7 @@ XMPP[^s196].
 ## What it serves
 
 Eleven images: nine packages of the Linux generation, among them the remotes' image and the hubs', and
-one image for the Harmony 300 and 350 under skin 104[^s196]. **One image serves a whole family**: skins
+one image for the Harmony 300 and 350 under skin 104[^s196], which a Harmony 350 runs and a Harmony 300 read runs a near copy of, [firmware.md](../architectures/harmony-300-350/firmware.md#the-two-models-images-compared). **One image serves a whole family** of the Linux generation: skins
 99 and 112 receive the same file, as do skins 97 and 106[^s196]. What a package of the Linux generation
 holds is [that generation's firmware](../architectures/harmony-touch/firmware.md): the one opened, the
 hubs', carries an updater for a 32 bit big endian MIPS processor and a squashfs root

@@ -121,7 +121,9 @@ test('the Python table was actually parsed, rather than read as empty', () => {
   // 299 with the bench 350's device key run, 2.3.
   // 300 with the bench 350's every key run, 2.2.2.
   // 302 with the bench 350's two runs on Logitech's compile of the test setup, todo-compile-350 3.3.
-  assert.equal(Object.keys(pythonImages()).length, 302, 'every fixture tests/lab.py names');
+  // 306 with the Harmony 300's three firmware images and the Harmony 350's application, each read off its
+  // unit, which `tests/test_harmony_300_350_images.py` compares.
+  assert.equal(Object.keys(pythonImages()).length, 306, 'every fixture tests/lab.py names');
 });
 
 test('the two sides exclude the same fixtures from the parseable population', () => {

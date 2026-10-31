@@ -245,3 +245,11 @@ keys were heard selecting them, short and long, 3.3 above.
 * A long press held for one second rather than two has not been tried. A command to another device right
   after a power code was listed here until Watch TV sent three in 3.3.
 * No firmware version has been read off the unit beyond the product string's 1.4.0.
+
+## Its application read, and compared with the 300's
+
+On 31 October 2026 the unit's `/fw/normalmode` was read twice, read only, identical both times
+(the lab's `reads/20261031T-h350-fw-first/` and `-second/`): 73464 bytes, byte for byte the first 73464 bytes
+of Logitech's package image, the package's last eight being `0xFF` and not served. So the package is what this
+unit runs. Compared with the bench Harmony 300's application in `tests/test_harmony_300_350_images.py`, it is
+the same program with one routine's mask on the send kind. Nothing was written to the unit.

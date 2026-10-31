@@ -6,8 +6,8 @@ every key on the remote controls that one device; press Watch TV and, in Logitec
 and the set top box switch on together, [behaviour.md](behaviour.md). It runs on two AA batteries and is
 set up from a computer over USB.
 
-The Harmony 300 is the Harmony 350 with **half the devices and no long press**: the same moulding, the
-same firmware, four device keys that each hold one device rather than two. What the two share is stated
+The Harmony 300 is the Harmony 350 with **half the devices and no long press**: the same moulding, a
+near identical application, four device keys that each hold one device rather than two. What the two share is stated
 once in [the family's folder](../../architectures/harmony-300-350/README.md), and this folder states what
 is the 300's own. How evidence is marked is in [the reference's README](../../README.md).
 

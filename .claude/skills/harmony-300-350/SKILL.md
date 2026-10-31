@@ -10,7 +10,7 @@ has no other home.** The facts live in the public reference and are not repeated
 copies of a fact are two copies until one of them moves.
 
 **One skill for both, and not one each**, because what a skill holds is procedure and the procedure is
-identical: the two models share one firmware image, one product id, one file based protocol and one
+identical: the two models run applications that are one program but for one routine (their bootloaders and safe mode images differ), one product id, one file based protocol and one
 container, they are opened by the same function and written by the same railed path. Where they differ, devices,
 long press, activities and favourites, is a fact and lives in each model's own folder.
 

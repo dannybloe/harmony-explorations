@@ -45,7 +45,7 @@ model[^s131]; 104 is the Harmony 350 alone[^s196]. Logitech's client names 78 "P
 | architecture | 16 | [^s262], [^s264]; stated in every configuration's base slot 1[^s259]; [^s197] |
 | USB product id | `0xC124` for both | [^s193], [^s195] |
 | USB product string | `Harmony Remote 0-1.4.0` | [^s193] |
-| firmware | 1.4, **one image for skins 78, 79 and 104**, [firmware.md](firmware.md) | [^s196] |
+| firmware | 1.4 on both, and **an application that is one program linked twice**, the same code but for one routine; bootloaders and safe mode images that are different builds, [firmware.md](firmware.md#the-two-models-images-compared) | [^s196], [^t-harmony-300-350-images-u] |
 | processor | an ordinary PIC18 image; the part is not checked | [^s196b], [^unchecked] |
 | internal flash | 128 KiB: bootloader, safe mode, application and records, from the firmware's own file table | [^s199] |
 | where the configuration lives | `/cfg/usercfg`, on the external medium at `0x020000`, 256 KiB, [memory.md](memory.md) | [^s199], [^t-firmware] |
@@ -114,3 +114,4 @@ Each row is evidenced in the model's own folder, which is its home; this table i
 [^t-harmony-350-keys]: Read in the firmware. [The test](../../../tests/test_harmony_350_keys.py)
 [^t-harmony-350-keys-c]: Measured in configurations. [The test](../../../tests/test_harmony_350_keys.py)
 [^t-harmony-350-keys-u]: Measured on a unit. [The test](../../../tests/test_harmony_350_keys.py)
+[^t-harmony-300-350-images-u]: Measured on a unit. [The test](../../../tests/test_harmony_300_350_images.py)

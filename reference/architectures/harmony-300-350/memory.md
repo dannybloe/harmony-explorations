@@ -108,7 +108,7 @@ shared moulding are the keys printed `TV/Media`, `Cable/PC`, `AVR/Game` and
 device stays empty, so a configuration can hold group 3 with group 2 empty: the groups are not filled in
 order[^t-device-groups-c]. On a Harmony 350 the bottom left key selected the device on group 2 and the
 top left key the device on group 0, heard with an infrared receiver[^t-device-groups-u]; the top right
-and bottom right keys follow from the 300's order, since the two are one moulding running one image,
+and bottom right keys follow from the 300's order, since the two are one moulding running near identical applications,
 and were not pressed with a device on them[^unchecked]. This said no device key had been pressed on a
 350 until that run.
 

@@ -1,8 +1,13 @@
 # Harmony 300 and 350: firmware
 
-**One program runs both models.** Logitech publishes a single firmware package whose manifest names the
-Harmony 300's two skins and the Harmony 350's, and it is an ordinary PIC18 program like the Harmony 600's.
-Each model folder's `firmware.md` points here.
+**The two models' applications are one program linked twice, and the images below it are not shared.** Read
+off a Harmony 300 and off a Harmony 350, the two applications are the same code with one routine changed and
+every address after it moved by up to ten bytes; their bootloaders are different builds and their safe mode
+images are different versions, 1.2 on the Harmony 300 read and 1.4 on the Harmony 350[^t-harmony-300-350-images-u].
+Logitech's package manifest names the Harmony 300's two skins and the Harmony 350's for one image, which is a
+statement about the package: the one image in it is what a Harmony 350 runs and is not what the
+Harmony 300 read runs[^t-harmony-300-350-images-u]. Both are ordinary PIC18 programs like the Harmony 600's.
+Each model folder's `firmware.md` points here, and [the comparison](#the-two-models-images-compared) is below.
 
 ## The 1.4 image
 
@@ -18,7 +23,52 @@ Each model folder's `firmware.md` points here.
 login[^s196]. MyHarmony asks that service for the Harmony 350 by name, where the Harmony 600, 650 and 700
 take another route[^s295].
 
+## The two models' images compared
+
+**The package image is the Harmony 350's application, byte for byte**: a Harmony 350 serves `/fw/normalmode`
+as the package's first 73464 bytes, and the package's last eight are `0xFF`, the eight the remote does not
+serve because it states the header's length, which is 8 short[^t-harmony-300-350-images-u]. **A Harmony 300
+serves a different build of the same version.** Its header states the same version, 1.4, and the same length,
+73472, but the two images differ in 37809 of 73464 bytes read straight across, which is what a shift of up to
+ten bytes does to every address operand[^t-harmony-300-350-images-u]. Aligned instruction by instruction with
+the address operands masked they are one program, and these are the only places the two differ, the
+Harmony 350's addresses first[^t-harmony-300-350-images]:
+
+| | Harmony 300 | Harmony 350 |
+|---|---|---|
+| header checksum, entry point | `0xAF6A`, `GOTO 0x1AECA` | `0x8F7B`, `GOTO 0x1AED4` |
+| where the code ends | `0x1AEEE`, `0xFF` to `0x1AEF8` | `0x1AEF8` |
+| USB `bcdDevice`, one word of the descriptor constant | `0x1078`, at `0x1AC06` | `0x1104`, at `0x1AC10` |
+| the `0x7D` arm, a send, at `0x1134E` in the 350 | stores the group's send kind as it stands | stores the kind `AND 3`, at `0x11356`, `0x1136A` and `0x11384` |
+| a `CALL` at `0x11A8C` | an `RCALL` to the same target | a `CALL`, since the ten bytes before it put the target out of range |
+
+**Every other instruction is the same**: 30579 equal byte for byte, 1083 calls and jumps and 54 relative
+branches whose targets moved by the shift of the place they point at and nothing else, and 9 pointer bytes
+loaded as literals, each the 300's plus the shift[^t-harmony-300-350-images]. The shift, 350 against 300, is
+0 below `0x11356`, 2 from `0x11358`, 4 from `0x1136E`, 8 from `0x1138A` and 10 from `0x11A90`, so **an address
+quoted on this page for the application is the 300's with that shift added, and is the same in both below
+`0x11356`**. The product string `Harmony Remote 0-1.4.0` is the same in both.
+
+**What the one changed routine does.** The action list dispatcher's arm for `0x7D` maps the operand's high
+byte, the infrared group, to a send kind in `0x203` before it calls the send handler: group 0 stays 0 and 3
+stays 3, 1 becomes 2 and 2 becomes 1, and any group from 4 up becomes `0xFF`. The 350's build then keeps only
+the low two bits, so a group from 4 up is kind 3 there, where the 300's leaves `0xFF`[^t-harmony-300-350-images].
+The kind picks the firmware event the send raises, `0x2D` for 0 and for `0xFF`, `0x2F` for 1, `0x2E` for 2 and
+`0x30` for 3, [the key tags below `0x40`](#the-keypad-scan). **So the two builds disagree for one input only,
+a send from a group above 3: the 300's build raises the event of group 0 and the 350's the event of group
+3**[^t-harmony-300-350-images]. The tracer finds no other direct access to the kind, which
+is its blind spot for indirect ones, and no configuration of the family read holds a
+group above 3, which makes the difference unreached in all five[^t-harmony-300-350-images]. Logitech's service
+holds a Harmony 300 to four infrared groups and a Harmony 350 to eight, [the README](README.md#how-the-two-differ),
+so a configuration it compiles for a 300 cannot reach the difference at all and one for a 350 with more than
+four groups can. What the four events do on a unit is not checked[^unchecked].
+
+**The bootloader and safe mode differ more**, [below](#the-two-models-bootloaders-and-safe-mode-images).
+
 ## Routines read on it
+
+**Addresses here are the Harmony 350's**, from the package image; for a Harmony 300's application subtract the
+shift above.
 
 | routine | evidence |
 |---|---|
@@ -54,15 +104,16 @@ itself, for every key, and a configuration only chooses which of the two endings
 
 How each model's configurations use it is [memory.md](memory.md#a-device-key-and-its-long-press): a
 Harmony 350 binds a key's short press device to the release and a long press device to the held event.
-All of this is read in the one 1.4 image, which Logitech's package names for both models; no image was
-read off a Harmony 300[^unchecked]. The
+All of this is read in the Harmony 350's application. The Harmony 300's application is the same code at
+every routine named here, [the comparison](#the-two-models-images-compared)[^t-harmony-300-350-images]. The
 Harmony 650's firmware raises the same three events with the same reload, `0x200` times 100,
 [its keys](../../remotes/harmony-650/keys.md); whether its counter also stops after the held event is not
 checked[^unchecked].
 
 ## Routines read in the bootloader and safe mode
 
-Both images read off a Harmony 350, at the file table's addresses, with the PIC18F67J50 register map: the
+Both images read off a Harmony 350, at the file table's addresses, with the PIC18F67J50 register map
+(the Harmony 300's two images are not these, [below](#the-two-models-bootloaders-and-safe-mode-images)): the
 bootloader reaches `ANCON0` and `ANCON1` through the shadow bit of `WDTCON` and uses `UCON` at `0xF65`, both
 that family's, both images program 64 bytes at a time, and safe mode erases 1 KiB pages. Which part exactly is not
 checked[^t-harmony-350-boot][^unchecked].
@@ -106,8 +157,9 @@ Harmony 350, five of them[^t-harmony-350-file-write].
 table names the two images below the application, the bootloader, 4 KiB at internal `0x000000`, and safe
 mode, 32 KiB at `0x001000`[^s199]; both run at every start before it, and the only thing either writes on
 its own is an install the application asked for[^t-harmony-350-boot]. What follows about the two images is
-read in one unit's copies, a Harmony 350 on 1.4, since Logitech's package carries the application alone; the
-Harmony 300's have not been read[^unchecked], and none of it has been done to a unit[^unchecked].
+read in a Harmony 350's copies, on 1.4, since Logitech's package carries the application alone; a Harmony 300's
+two are different builds, [compared below](#the-two-models-bootloaders-and-safe-mode-images), and none of it
+has been done to a unit[^unchecked].
 
 ### What runs at a start
 
@@ -215,12 +267,48 @@ stays in the programmer, which can rewrite internal flash above `0x001000`[^t-ha
   calls, which is therefore not read[^unchecked]. The check command tests the `HG` header in both internal
   images, so a remote can verify them without a read[^t-harmony-350-recovery].
 
+## The two models' bootloaders and safe mode images
+
+**They are different builds, and the safe mode images are different versions.** Read off a Harmony 300 and
+off a Harmony 350, with the PIC18F67J50 register map[^t-harmony-300-350-images-u]:
+
+| | Harmony 300 | Harmony 350 |
+|---|---|---|
+| safe mode version, from the header's byte 7 and the product string | 1.2, `Harmony Remote 4-1.2.0` | 1.4, `Harmony Remote 4-1.4.0` |
+| safe mode length stated, served | 25408, 25400 | 26048, 26040 |
+| safe mode entry point | `0x72D2` | `0x758E` |
+| safe mode `bcdDevice`, at `0x102A` | `0x1078` | `0x1104` |
+
+* **The two safe mode images differ in version as well as in model**, so which of what follows is the model's
+  and which the version's cannot be told from these two[^t-harmony-300-350-images]. With RAM addresses,
+  literals and branch targets masked their listings differ in 24 stretches. The larger ones: a block of 709
+  instructions that sits `0xF46` lower in the Harmony 350's image than in the Harmony 300's, a stretch of 181
+  instructions, 408 bytes, at `0x3B52` in the Harmony 350's that the Harmony 300's has no counterpart of, and
+  a block of state in bank 14 in the Harmony 350's that holds 15000 and 1000 and compares a sum with
+  1000[^t-harmony-300-350-images]. What the added code does, and whether any of it is in the file protocol
+  that carries a configuration, is not read[^unchecked].
+* **The bootloaders differ in 1998 of 4096 bytes.** Their start decision is the same and the rest of the build is not: the keys `0x14` and
+  `0x2C` and the test for `HG` are in both; **one key of the restart combination differs**, the Harmony
+  300's scan testing `PORTD` bit 3 with `PORTB` bit 4, code 53, as the application does, where the
+  Harmony 350's tests `PORTE` bit 4 with `PORTB` bit 7, code 20; the Harmony 350's has a byte exchange on the
+  second serial port, `SSP2`, at `0x0E6C` that the Harmony 300's has no counterpart of, the Harmony 300's only
+  switching that port off; the two set up their ports and oscillator with different values; and the Harmony
+  300's start code makes `PORTB` bit 3 an output where the Harmony 350's makes `PORTG` bit 0 one and drives
+  it as a counted pattern[^t-harmony-300-350-images]. What those pins are wired to is not read[^unchecked].
+* **Neither runs a configuration.** The application interprets a configuration's action lists and these two
+  do not, so a difference in them cannot change what a configuration does once the application runs; whether
+  one changes how a configuration is written to a unit in safe mode is not read[^unchecked].
+
 ## Not checked
 
+* Which image Logitech's service serves a Harmony 300 when asked by skin 78 or 79: the package fetched
+  was the one for skin 104, and the Harmony 300 read runs a different build of the same version[^unchecked].
+* Which of the two applications is the later build: both say 1.4, and the Harmony 350's carries the mask[^unchecked].
+* That a Harmony 300 of the other printing, skin 78, runs the build a skin 79 unit does[^unchecked].
 * Which version a given remote runs: its `/sys/sysinfo` carries a version field, and only the product
   string's 1.4.0 has been read[^s193].
-* The Harmony 300's own bootloader and safe mode image, and any build of them but the one read off a Harmony 350;
-  that the four start codes and the restart are the keys the Harmony 350's table names; and the eight bytes at the end of the safe mode image that
+* What a Harmony 300's bootloader and safe mode image do beyond how they differ from the Harmony 350's, and
+  any build of either but the two read; that the four start codes and the restart are the keys the Harmony 350's table names; and the eight bytes at the end of the safe mode image that
   a read does not return[^unchecked].
 * Whether a configuration that passes the validator and hangs while its state is loaded at start would
   keep a remote from the USB service, and whether the processor's watchdog is on, which is in the
@@ -257,3 +345,5 @@ stays in the programmer, which can rewrite internal flash above `0x001000`[^t-ha
 [^x-manual-350]: Stated by Logitech, in the manual. [The Harmony 350 setup guide](https://www.logitech.com/assets/51207/harmony-350-qsg-and-iid.pdf)
 [^t-harmony-350-keys]: Read in the firmware. [The test](../../../tests/test_harmony_350_keys.py)
 [^t-harmony-350-keys-c]: Measured in configurations. [The test](../../../tests/test_harmony_350_keys.py)
+[^t-harmony-300-350-images]: Read in the firmware. [The test](../../../tests/test_harmony_300_350_images.py)
+[^t-harmony-300-350-images-u]: Measured on a unit. [The test](../../../tests/test_harmony_300_350_images.py)

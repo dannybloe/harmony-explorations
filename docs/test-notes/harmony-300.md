@@ -128,3 +128,18 @@ code in order, and no press went unheard or was heard twice, apart from two Info
 favourites step asked for. The device keys and Watch TV passed by what the next key sent. This checks the
 keypad; which code each key raises is 2.2.
 
+
+## Its three firmware images read, and compared with the 350's
+
+The unit's three images, read as the files `/fw/normalmode`, `/fw/bootloader` and `/fw/safemode`, read only,
+each twice with identical results: the lab's `reads/20261031T-h300-fw/` and `-second/`, each with a note and
+the unit's `/sys/sysinfo` (its guid is not quoted anywhere). The first request after plugging in got no
+reply, as usual on this family, and was repeated. The unit reports firmware 1.4.0, skin `0x4F`.
+
+Sizes served: the application 73464 bytes, the bootloader 4096, safe mode 25400. The same day the
+Harmony 350's application was read the same way, `reads/20261031T-h350-fw-first/` and `-second/`, 73464
+bytes and byte for byte the first 73464 bytes of Logitech's package image. So the comparison in
+`tests/test_harmony_300_350_images.py` is unit against unit. Its result, against the belief that both
+models run one image: the applications are one program but for a mask on the send kind, the bootloaders are
+different builds, and this unit's safe mode image is version 1.2 where the 350's is 1.4. Nothing was written
+to the unit. Which image Logitech's service would serve this unit, asked by its own skin, was not asked.

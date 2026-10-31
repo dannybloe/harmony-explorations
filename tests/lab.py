@@ -114,7 +114,9 @@ IMAGES = {
     # The Harmony 300 and Harmony 350 firmware, fetched from Logitech's own software update
     # service on 28 August 2026, section 196. **The fourth published Harmony firmware and the
     # first that did not come from a third party repair site**: the service serves it under
-    # skin 104 and its own manifest names skins 78, 79 and 104, so one image covers both models.
+    # skin 104 and its own manifest names skins 78, 79 and 104.
+    # **It is the Harmony 350's application and not the Harmony 300's**, which is a near copy of it,
+    # `tests/test_harmony_300_350_images.py`.
     # A plain PIC18 image executing at 0x9000, like every arch 14 one, which is why the file name
     # follows their convention.
     'h350_code': '350-1.4-Region_2-code-base0x9000.bin',
@@ -129,8 +131,21 @@ IMAGES = {
     # `tests/test_harmony_350_boot.py`. They load at 0x000000 and 0x001000. The safe mode file is the
     # image less its last eight bytes, because the remote states an internal image's size as its
     # header's length field.
-    'h350_bootloader': 'fw_bootloader.bin',
-    'h350_safemode': 'fw_safemode.bin',
+    #
+    # **These four names are paths under the lab, not bare file names**, because the lab now holds
+    # three folders each with a `fw_bootloader.bin` or `fw_safemode.bin` of its own and a lookup by
+    # bare name returns whichever the walk reaches first. `_find` resolves a name with a slash from
+    # the lab's root. The Harmony 300's three images and the Harmony 350's application, each as the
+    # unit serves it, were read on 31 October 2026 into `reads/20261031T-h300-fw/` and
+    # `reads/20261031T-h350-fw-first/` (a second identical read of each sits beside them), and are what
+    # `tests/test_harmony_300_350_images.py` compares. `h350_unit_code` is the package image less
+    # its last eight bytes, byte for byte, which is what shows the package is what a 350 runs.
+    'h350_bootloader': 'reads/20261027T1929Z-h350-fw/fw_bootloader.bin',
+    'h350_safemode': 'reads/20261027T1929Z-h350-fw/fw_safemode.bin',
+    'h350_unit_code': 'reads/20261031T-h350-fw-first/fw_normalmode.bin',
+    'h300_code': 'reads/20261031T-h300-fw/fw_normalmode.bin',
+    'h300_bootloader': 'reads/20261031T-h300-fw/fw_bootloader.bin',
+    'h300_safemode': 'reads/20261031T-h300-fw/fw_safemode.bin',
     'one_hfw': 'harmony_one_firmware_3_4.hfw',
     'h700_hfw': 'harmony_700_firmware_2_8.hfw',
     'h650_hfw': 'harmony_650_firmware_0_4.hfw',
@@ -706,11 +721,18 @@ _cache = {}
 
 
 def _find(filename):
-    """First match for `filename` anywhere under LAB, or None."""
+    """First match for `filename` anywhere under LAB, or None.
+
+    A name holding a slash is a path from the lab's root and is not searched for, since two reads of
+    one kind of file can share a bare name.
+    """
     if filename in _cache:
         return _cache[filename]
     found = None
-    if LAB and os.path.isdir(LAB):
+    if '/' in filename:
+        if LAB and os.path.isfile(os.path.join(LAB, filename)):
+            found = os.path.join(LAB, filename)
+    elif LAB and os.path.isdir(LAB):
         for root, dirs, files in os.walk(LAB):
             dirs[:] = [d for d in dirs if not d.startswith('.')]
             if filename in files:

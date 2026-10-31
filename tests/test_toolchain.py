@@ -235,7 +235,8 @@ class TheRunnerSeesEveryTest(unittest.TestCase):
         # 62 with `tests/test_harmony_350_clock.py`, todo-compile-350 2.5.
         # 63 with `tests/test_harmony_350_long_press.py`, todo-compile-350 2.4.
         # 64 with `tests/test_harmony_350_keys.py`, todo-compile-350 2.2.
-        self.assertEqual(len(files), 64, 'the Python test files')
+        # 65 with `tests/test_harmony_300_350_images.py`, the Harmony 300's three images against the 350's.
+        self.assertEqual(len(files), 65, 'the Python test files')
         with_block = 0
         for path in files:
             with open(path, encoding='utf-8') as handle:
@@ -273,7 +274,8 @@ class TheRunnerSeesEveryTest(unittest.TestCase):
         # 60 with `tests/test_harmony_350_clock.py`, todo-compile-350 2.5, which carries one.
         # 61 with `tests/test_harmony_350_long_press.py`, todo-compile-350 2.4, which carries one.
         # 62 with `tests/test_harmony_350_keys.py`, todo-compile-350 2.2, which carries one.
-        self.assertEqual(with_block, 62,
+        # 63 with `tests/test_harmony_300_350_images.py`, which carries one.
+        self.assertEqual(with_block, 63,
                          'files carrying a __main__ block, of %d' % len(files))
 
 
@@ -750,7 +752,8 @@ class APythonBoundOnACorpusTotalIsExact(unittest.TestCase):
         # 62 with `tests/test_harmony_350_clock.py`, todo-compile-350 2.5.
         # 63 with `tests/test_harmony_350_long_press.py`, todo-compile-350 2.4.
         # 64 with `tests/test_harmony_350_keys.py`, todo-compile-350 2.2.
-        self.assertEqual(len(scanned), 64, 'Python test files, which moves when one is added')
+        # 65 with `tests/test_harmony_300_350_images.py`.
+        self.assertEqual(len(scanned), 65, 'Python test files, which moves when one is added')
         self.assertIn(self.CONTROL, found, 'the pattern matches nothing it should match')
 
     def test_every_remaining_bound_says_why_it_is_not_a_measurement(self):
@@ -1330,7 +1333,9 @@ class TheLabRegisterCoversTheSiteAtArtefactLevel(unittest.TestCase):
         # 163 with the twelve work folders of the Harmony 600, 700 and One tracks, registered at once.
         # 165 with `work/350-delay/`, todo-compile-350 1.8, and 166 with `work/350-every-key/`, 2.2.2.
         # 167 with `work/300-delay/`, todo-compile-300 1.5, and 168 with `work/300-every-key/`, 2.1 and 2.2.
-        self.assertEqual(len(named), 168, "lab paths the register names")
+        # 172 with the four firmware reads of 31 October 2026, `reads/20261031T-h300-fw/` and
+        # `reads/20261031T-h350-fw-first/` each with its second read beside it.
+        self.assertEqual(len(named), 172, "lab paths the register names")
         for path in sorted(named):
             with self.subTest(path=path):
                 if '*' in path:
@@ -1439,8 +1444,9 @@ class TheRegisterQueryAnswersForThePathThatWasOpened(unittest.TestCase):
         # 140 with the twelve work folders of the Harmony 600, 700 and One tracks.
         # 142 with `work/350-delay/`, todo-compile-350 1.8, and 143 with `work/350-every-key/`, 2.2.2.
         # 144 with `work/300-delay/`, todo-compile-300 1.5, and 145 with `work/300-every-key/`, 2.1 and 2.2.
-        self.assertEqual(len(rows), 145)
-        self.assertEqual(len(dict(rows)), 145, 'a duplicated path would make a query ambiguous')
+        # 146 and 147 with the two firmware read rows of 31 October 2026, the Harmony 300's and the 350's.
+        self.assertEqual(len(rows), 147)
+        self.assertEqual(len(dict(rows)), 147, 'a duplicated path would make a query ambiguous')
         self.assertNotIn('unseen', dict(rows), 'the status legend is not an artefact')
 
     def test_a_query_is_answered_by_ancestors_and_by_descendants(self):

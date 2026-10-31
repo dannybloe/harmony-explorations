@@ -5,7 +5,7 @@ other files, and a kind of note that recurs gets a file of its own.
 
 ## Why an architecture folder for two screenless models
 
-The two share one firmware image byte for byte[^s196], one file table and so one memory map[^s199], one
+The two run applications that are one program but for one routine, [firmware.md](firmware.md#the-two-models-images-compared)[^t-harmony-300-350-images], both named by one package[^s196], one file table and so one memory map[^s199], one
 product id and protocol[^s193][^s195], one container format and slot map[^s194][^s259], and one
 moulding[^t-moulding], [README.md](README.md). That is the pattern of the Harmony 600, 650 and 700, and
 stating it twice would be two copies of one derivation.
@@ -36,3 +36,4 @@ Its compiler's class path says `binarizer.pepsi`, Pepsi being Logitech's name fo
 [^s353]: Measured in configurations. [Section 353](../../../docs/findings.md#s353)
 [^s260]: Measured in configurations. [Section 260](../../../docs/findings.md#s260)
 [^s197]: Stated by Logitech, in their client. [Section 197](../../../docs/findings.md#s197)
+[^t-harmony-300-350-images]: Read in the firmware. [The test](../../../tests/test_harmony_300_350_images.py)

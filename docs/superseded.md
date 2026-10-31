@@ -677,3 +677,9 @@ it reachable in the same commit and the test comparing the two tables is what ca
 | `arrow pair by elimination` | `TheBench350HeardEveryKey`, `tests/test_harmony_350_keys.py` | the configurations narrow the arrow pair to 25 and 26 and pressing them decided it |
 | `none of the 55 on a Harmony 350` | `packages/silhouettes/test/models.test.ts` | the Harmony 350's drawing carries 53 codes, heard by pressing the keys |
 | `No key press has been tied to a scan code` | `TheBench350HeardEveryKey`, `tests/test_harmony_350_keys.py` | 53 keys of the bench Harmony 350 were tied to a code by pressing them, 44 in that run and nine in `TheBench350HeardTheTestSetup` |
+| `One program runs both models.` | `tests/test_harmony_300_350_images.py` | the Harmony 300 and the Harmony 350 run applications that are one program but for one routine, and different bootloaders and safe mode images |
+| `one image for skins 78, 79 and 104` | `tests/test_harmony_300_350_images.py` | Logitech's package names three skins for one image; the Harmony 350 runs it and the Harmony 300 read runs a near copy |
+| `The two share one firmware image byte for byte` | `tests/test_harmony_300_350_images.py` | the two applications differ in 37809 of 73464 bytes read straight across and in one routine once aligned |
+| `runs the image the Harmony 300 runs` | `tests/test_harmony_300_350_images.py` | the Harmony 350 runs Logitech's package image byte for byte and the Harmony 300 a near copy of it |
+| `The 300 runs the same program as the Harmony 350` | `tests/test_harmony_300_350_images.py` | the Harmony 300 runs a near copy: the same code but for one routine |
+| `the two are one moulding running one image` | `tests/test_harmony_300_350_images.py` | one moulding running near identical applications |
