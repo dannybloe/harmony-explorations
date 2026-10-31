@@ -116,3 +116,15 @@ Watch TV runs are taken in the mode the remote is in at the press and sent once 
 pressed then was lost. Watch TV ends in the KPN's mode, which binds no Volume Up, as was confirmed at the
 bench. The remote holds `before.bin` again, its own configuration.
 
+## Every key sends something, todo-compile-300 2.1
+
+On 31 October 2026, with no cleaning beforehand. The lab's `work/300-every-key/every-key.bin` is the unit's
+own configuration with the television's map given a press for the 12 scan codes it left unbound and the
+key table does not bind, 2 8 9 16 19 25 26 34 35 43 54 56, each calling Info's list; its `NOTE.md` says how
+it was built. Written on the second attempt, verified and restarted. `packages/bench/irtests/done/300-2-1-every-key.json`,
+whose every expectation was traced through that file's lists, passed all 18 steps, the run in the lab's
+`reads/20261031T125339Z-ir-test-harmony-300-every-key-sends-something.json`: every key sent its expected
+code in order, and no press went unheard or was heard twice, apart from two Info codes more than the
+favourites step asked for. The device keys and Watch TV passed by what the next key sent. This checks the
+keypad; which code each key raises is 2.2.
+
