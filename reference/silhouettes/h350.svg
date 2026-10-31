@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="-2 -2 269.545 1004"
      role="img" aria-labelledby="title desc" class="silhouette silhouette-h350">
   <title id="title">Harmony 350, front face</title>
-  <desc id="desc">Outline drawing of the Harmony 350 front face, one shape per button. Its shapes are traced from the product documentation and its lettering and symbols are drawn from a photograph. 55 buttons, of which 44 carry a measured scan code. Every fill and stroke reads a custom property, so the interface decides the colours; nothing here is coloured in.</desc>
+  <desc id="desc">Outline drawing of the Harmony 350 front face, one shape per button. Its shapes are traced from the product documentation and its lettering and symbols are drawn from a photograph. 55 buttons, of which 53 carry a measured scan code. Every fill and stroke reads a custom property, so the interface decides the colours; nothing here is coloured in.</desc>
 
   <!--
     GENERATED FILE. Do not edit.
@@ -56,7 +56,7 @@
     <path class="rocker-fill" id="rocker-volume" d="M 47.083 438.04 C 40 438.04 37.105 441.485 37.713 448.253 C 37.914 450.508 44.447 538.994 44.66 541.015 C 45.297 547.303 47.734 549.952 54.042 549.952 C 57.043 549.952 67.446 549.952 69.2 549.952 C 77.669 549.952 81.721 545.187 81.721 537.006 C 81.721 527.749 79.423 525.165 76.136 520.813 C 65.232 506.431 63.105 488.572 73.456 471.423 C 76.604 466.21 77.457 463.868 77.457 457.847 L 77.457 450.551 C 77.457 443.868 74.232 438.03 64.935 438.03 C 61.201 438.03 50.956 438.04 47.083 438.04 Z" fill="#fff" stroke="none" />
     <path class="rocker-fill" id="rocker-channel" d="M 218.462 438.04 C 225.548 438.04 228.451 441.485 227.833 448.253 C 227.631 450.508 221.101 538.994 220.888 541.015 C 220.248 547.303 217.814 549.952 211.504 549.952 C 208.516 549.952 198.111 549.952 196.357 549.952 C 187.887 549.952 183.835 545.187 183.835 537.006 C 183.835 527.749 186.123 525.165 189.42 520.813 C 200.314 506.431 202.452 488.572 192.089 471.423 C 188.952 466.21 188.102 463.868 188.102 457.847 L 188.102 450.551 C 188.102 443.868 191.324 438.03 200.621 438.03 C 204.355 438.03 214.589 438.04 218.462 438.04 Z" fill="#fff" stroke="none" />
     <path class="rocker-fill" id="rocker-play" d="M 132.773 732.488 C 116.561 732.69 109.731 730.223 108.581 712.243 C 107.89 701.511 108.23 657.649 108.775 648.267 C 109.529 635.427 111.381 627.97 132.773 628.15 C 154.178 627.97 156.016 635.427 156.773 648.267 C 157.315 657.649 157.656 701.511 156.964 712.243 C 155.815 730.223 148.985 732.69 132.773 732.488 Z" fill="#fff" stroke="none" />
-    <g class="key-group" id="k-watch-tv" data-name="WatchTV" data-kind="keypad" data-src="printed">
+    <g class="key-group" id="k-watch-tv" data-name="WatchTV" data-kind="keypad" data-src="printed" data-scan="6">
       <path class="key" d="M 77.86 53.968 C 77.86 60.063 72.871 65.052 66.787 65.052 L 56 65.052 C 49.902 65.052 44.913 60.063 44.913 53.968 L 44.913 45.553 C 44.913 39.455 49.902 34.477 56 34.477 L 66.787 34.477 C 72.871 34.477 77.86 39.455 77.86 45.553 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
       <g class="layer-icons"><g transform="translate(61.387 49.765) scale(12.563)"><path class="mark mark-stroke" d="M -0.8 -0.75 H 0.8 V 0.35 H -0.8 Z" fill="none" stroke="#222" stroke-width="0.16" stroke-linecap="round" stroke-linejoin="round" /><path class="mark mark-stroke" d="M -0.3 0.35 L -0.45 0.8 M 0.3 0.35 L 0.45 0.8 M -0.55 0.8 H 0.55" fill="none" stroke="#222" stroke-width="0.16" stroke-linecap="round" stroke-linejoin="round" /></g></g>
       <text class="lbl layer-text" x="61.387" y="73.252" font-size="9" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">Watch TV</text>
@@ -65,7 +65,7 @@
       <path class="key" d="M 117.784 127.41 C 116.294 129.91 114.358 132.007 108.892 132.933 C 101.795 134.156 85.147 134.2 78.562 132.933 C 71.966 131.678 70.499 128.911 69.668 127.41 C 68.2 124.782 68.222 117.252 69.668 114.987 C 70.583 113.541 71.966 110.73 78.562 109.475 C 85.147 108.211 101.795 108.263 108.892 109.475 C 114.358 110.401 116.37 112.454 117.784 114.987 C 119.317 117.721 119.05 125.294 117.784 127.41 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
       <text class="lbl layer-text" x="93.726" y="123.829" font-size="7.5" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">TV/Media</text>
     </g>
-    <g class="key-group" id="k-cable-pc" data-name="CablePc" data-kind="keypad" data-src="printed">
+    <g class="key-group" id="k-cable-pc" data-name="CablePc" data-kind="keypad" data-src="printed" data-scan="1">
       <path class="key" d="M 147.762 127.41 C 149.262 129.91 151.188 132.007 156.656 132.933 C 163.75 134.156 180.409 134.2 186.983 132.933 C 193.579 131.678 195.047 128.911 195.888 127.41 C 197.345 124.782 197.324 117.252 195.888 114.987 C 194.962 113.541 193.579 110.73 186.983 109.475 C 180.409 108.211 163.75 108.263 156.656 109.475 C 151.188 110.401 149.189 112.454 147.762 114.987 C 146.242 117.721 146.495 125.294 147.762 127.41 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
       <text class="lbl layer-text" x="171.825" y="123.829" font-size="7.5" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">Cable/PC</text>
     </g>
@@ -73,7 +73,7 @@
       <path class="key" d="M 117.784 166.539 C 116.294 169.039 114.358 171.133 108.892 172.07 C 101.795 173.282 85.147 173.326 78.562 172.07 C 71.966 170.804 70.499 168.037 69.668 166.539 C 68.2 163.911 68.222 156.378 69.668 154.124 C 70.583 152.667 71.966 149.859 78.562 148.592 C 85.147 147.337 101.795 147.378 108.892 148.592 C 114.358 149.527 116.37 151.58 117.784 154.124 C 119.317 156.847 119.05 164.42 117.784 166.539 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
       <text class="lbl layer-text" x="93.726" y="162.956" font-size="7.5" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">AVR/Game</text>
     </g>
-    <g class="key-group" id="k-dvd-music" data-name="DvdMusic" data-kind="keypad" data-src="printed">
+    <g class="key-group" id="k-dvd-music" data-name="DvdMusic" data-kind="keypad" data-src="printed" data-scan="4">
       <path class="key" d="M 147.762 166.539 C 149.262 169.039 151.188 171.133 156.656 172.07 C 163.75 173.282 180.409 173.326 186.983 172.07 C 193.579 170.804 195.047 168.037 195.888 166.539 C 197.345 163.911 197.324 156.378 195.888 154.124 C 194.962 152.667 193.579 149.859 186.983 148.592 C 180.409 147.337 163.75 147.378 156.656 148.592 C 151.188 149.527 149.189 151.58 147.762 154.124 C 146.242 156.847 146.495 164.42 147.762 166.539 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
       <text class="lbl layer-text" x="171.825" y="162.956" font-size="7.5" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">DVD/Music</text>
     </g>
@@ -85,19 +85,19 @@
       <path class="key" d="M 107.754 218.887 C 109.295 221.387 111.294 223.473 116.945 224.41 C 124.295 225.622 141.517 225.662 148.326 224.41 C 155.145 223.143 156.667 220.387 157.528 218.887 C 159.039 216.248 159.017 208.718 157.528 206.463 C 156.569 205.014 155.145 202.196 148.326 200.94 C 141.517 199.676 124.295 199.728 116.945 200.94 C 111.294 201.877 109.221 203.919 107.754 206.463 C 106.169 209.186 106.433 216.76 107.754 218.887 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
       <text class="lbl layer-text" x="132.641" y="215.825" font-size="9" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">Input</text>
     </g>
-    <g class="key-group" id="k-favorite1" data-name="Favorite1" data-kind="keypad" data-src="printed" data-scan-candidates="8 9 11 34">
+    <g class="key-group" id="k-favorite1" data-name="Favorite1" data-kind="keypad" data-src="printed" data-scan="8">
       <path class="key" d="M 89.701 230.728 C 88.551 233.152 87.073 235.186 82.892 236.09 C 77.468 237.28 64.722 237.324 59.679 236.09 C 54.638 234.864 53.51 232.185 52.871 230.728 C 51.754 228.162 51.776 220.834 52.871 218.642 C 53.573 217.239 54.638 214.494 59.679 213.282 C 64.722 212.046 77.468 212.1 82.892 213.282 C 87.073 214.186 88.614 216.174 89.701 218.642 C 90.869 221.302 90.667 228.663 89.701 230.728 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
       <text class="lbl layer-text" x="71.286" y="229.936" font-size="15" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">1</text>
     </g>
-    <g class="key-group" id="k-favorite2" data-name="Favorite2" data-kind="keypad" data-src="printed" data-scan-candidates="8 9 11 34">
+    <g class="key-group" id="k-favorite2" data-name="Favorite2" data-kind="keypad" data-src="printed" data-scan="9">
       <path class="key" d="M 89.701 266.61 C 88.551 269.034 87.073 271.066 82.892 271.981 C 77.468 273.163 64.722 273.206 59.679 271.981 C 54.638 270.758 53.51 268.067 52.871 266.61 C 51.754 264.045 51.776 256.727 52.871 254.524 C 53.573 253.119 54.638 250.387 59.679 249.162 C 64.722 247.939 77.468 247.983 82.892 249.162 C 87.073 250.066 88.614 252.057 89.701 254.524 C 90.869 257.185 90.667 264.557 89.701 266.61 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
       <text class="lbl layer-text" x="71.286" y="265.822" font-size="15" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">2</text>
     </g>
-    <g class="key-group" id="k-favorite3" data-name="Favorite3" data-kind="keypad" data-src="printed" data-scan-candidates="8 9 11 34">
+    <g class="key-group" id="k-favorite3" data-name="Favorite3" data-kind="keypad" data-src="printed" data-scan="11">
       <path class="key" d="M 151.199 266.61 C 150.06 269.034 148.582 271.066 144.39 271.981 C 138.966 273.163 126.22 273.206 121.188 271.981 C 116.147 270.758 115.019 268.067 114.379 266.61 C 113.252 264.045 113.274 256.727 114.379 254.524 C 115.082 253.119 116.147 250.387 121.188 249.162 C 126.22 247.939 138.966 247.983 144.39 249.162 C 148.582 250.066 150.112 252.057 151.199 254.524 C 152.367 257.185 152.165 264.557 151.199 266.61 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
       <text class="lbl layer-text" x="132.789" y="265.822" font-size="15" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">3</text>
     </g>
-    <g class="key-group" id="k-favorite4" data-name="Favorite4" data-kind="keypad" data-src="printed" data-scan-candidates="8 9 11 34">
+    <g class="key-group" id="k-favorite4" data-name="Favorite4" data-kind="keypad" data-src="printed" data-scan="34">
       <path class="key" d="M 175.847 266.61 C 176.994 269.034 178.473 271.066 182.656 271.981 C 188.091 273.163 200.823 273.206 205.867 271.981 C 210.91 270.758 212.038 268.067 212.675 266.61 C 213.791 264.045 213.781 256.727 212.675 254.524 C 211.972 253.119 210.91 250.387 205.867 249.162 C 200.823 247.939 188.091 247.983 182.656 249.162 C 178.473 250.066 176.931 252.057 175.847 254.524 C 174.676 257.185 174.878 264.557 175.847 266.61 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
       <text class="lbl layer-text" x="194.261" y="265.822" font-size="15" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">4</text>
     </g>
@@ -105,7 +105,7 @@
       <path class="key" d="M 175.847 230.728 C 176.994 233.152 178.473 235.186 182.656 236.09 C 188.091 237.28 200.823 237.324 205.867 236.09 C 210.91 234.864 212.038 232.185 212.675 230.728 C 213.791 228.162 213.781 220.834 212.675 218.642 C 211.972 217.239 210.91 214.494 205.867 213.282 C 200.823 212.046 188.091 212.1 182.656 213.282 C 178.473 214.186 176.931 216.174 175.847 218.642 C 174.676 221.302 174.878 228.663 175.847 230.728 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
       <text class="lbl layer-text" x="194.261" y="229.936" font-size="15" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">5</text>
     </g>
-    <g class="key-group" id="k-menu" data-name="Menu" data-kind="keypad" data-src="printed">
+    <g class="key-group" id="k-menu" data-name="Menu" data-kind="keypad" data-src="printed" data-scan="10">
       <path class="key" d="M 89.796 322.449 C 88.031 325.192 85.755 327.479 79.338 328.5 C 71 329.84 51.435 329.895 43.69 328.5 C 35.956 327.117 34.224 324.097 33.244 322.449 C 31.52 319.554 31.552 311.289 33.244 308.811 C 34.319 307.215 35.956 304.129 43.69 302.746 C 51.435 301.362 71 301.417 79.338 302.746 C 85.755 303.767 88.116 306.022 89.796 308.811 C 91.582 311.809 91.275 320.118 89.796 322.449 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
       <text class="lbl layer-text" x="61.52" y="320.873" font-size="15" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">Menu</text>
     </g>
@@ -282,7 +282,7 @@
       <path class="key" d="M 112.955 895.207 C 114.189 897.876 115.785 900.111 120.284 901.111 C 126.114 902.407 139.826 902.451 145.251 901.111 C 150.665 899.76 151.879 896.803 152.571 895.207 C 153.761 892.388 153.75 884.324 152.571 881.92 C 151.803 880.367 150.665 877.355 145.251 876.015 C 139.826 874.665 126.114 874.716 120.284 876.015 C 115.785 877.015 114.126 879.207 112.955 881.92 C 111.7 884.844 111.912 892.941 112.955 895.207 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
       <text class="lbl layer-text" x="132.763" y="893.813" font-size="15" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">0</text>
     </g>
-    <g class="key-group" id="k-enter" data-name="Enter" data-kind="keypad" data-src="printed">
+    <g class="key-group" id="k-enter" data-name="Enter" data-kind="keypad" data-src="printed" data-scan="54">
       <path class="key" d="M 197.623 882.696 C 197.623 876.612 192.645 871.612 186.536 871.612 L 178.091 871.612 C 171.997 871.612 167.016 876.612 167.016 882.696 L 167.016 891.026 C 167.016 897.11 171.997 902.099 178.091 902.099 L 186.536 902.099 C 192.645 902.099 197.623 897.11 197.623 891.026 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
       <text class="lbl layer-text" x="182.32" y="890.006" font-size="9" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">E</text>
       <text class="lbl layer-text" x="182.32" y="910.299" font-size="9" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">Enter</text>

@@ -21,12 +21,13 @@
  * agree, mark for mark. A position comes from the drawing's own printed mark, which the extraction
  * reports per key, so a symbol sits where the document prints it rather than where a key's centre is.
  *
- * **The scan codes are the bench's**, `HEARD` and `CANDIDATES` below. `openHarmony` refuses this
+ * **The scan codes are the bench's**, `HEARD`, `HEARD_ON_THE_SETUP` and `CANDIDATES` below. `openHarmony` refuses this
  * architecture, and the one path that reads it, `openFileBasedRemote`, reads its configuration as a
  * file and sees no key press, section 262, and no calibration configuration was compiled for it, section
  * 133. So a code was tied to a key by pressing it with an infrared receiver listening, `todo-compile-350.md`
  * 2.2.2, after the firmware's keypad scan was read and five configurations had narrowed every key to a code
- * or a set, `tests/test_harmony_350_keys.py`. This said no scan code appeared anywhere in here and that
+ * or a set, `tests/test_harmony_350_keys.py`, and the keys that run could not reach on a configuration that
+ * binds them, 3.3. This said no scan code appeared anywhere in here and that
  * nobody had read this generation's keypad scanner until those two. Every key is still `printed`: the codes
  * were named by pressing, not through Logitech's button maps.
  *
@@ -210,26 +211,42 @@ const HEARD: Readonly<Record<string, number>> = {
 };
 
 /**
- * The keys narrowed to a set and not decided. The favourites are the codes that send a favourite channel,
- * and favourite 5 was heard as code 2, so the other four share the remaining four; Live is on one of the
- * two codes no configuration binds, and the bench file binds neither. `packages/bench/test/keys350.test.ts`.
+ * The nine keys whose code was heard on Logitech's compile of the test setup, `todo-compile-350.md` 3.3: the
+ * first run's file bound nothing to them. Each was pressed twice, in two runs, on a unit holding a file
+ * that binds them, and its code is the one of the 56 that, raised at that point of the run, gives what the
+ * receiver heard; for a device key that is what the keys after it sent in the mode it selected,
+ * `packages/bench/test/setup350.test.ts`, and `TheBench350HeardTheTestSetup` in
+ * `tests/test_harmony_350_keys.py`. Favourites 1 to 4 sent the channels in the order they were
+ * entered.
  *
- * Menu, DVR, Enter, Watch TV and the top right and bottom right device keys are decided in the
- * configurations and carry neither: the bench file binds nothing to them, so no press of them was heard,
- * and the drawing takes a code from the bench alone.
+ * DVR is not here: it sent the KPN's code that OK's binding sends as well, in the same bytes, so the press
+ * fits 16 and 50 alike and the drawing takes a code only from a press that decides it.
+ */
+const HEARD_ON_THE_SETUP: Readonly<Record<string, number>> = {
+  CablePc: 1, DvdMusic: 4, WatchTV: 6, Favorite1: 8, Favorite2: 9, Menu: 10, Favorite3: 11, Favorite4: 34,
+  Enter: 54,
+};
+
+/**
+ * The key narrowed to a set and not decided: Live, on one of the two codes no configuration binds, and
+ * neither bench file binds either. `packages/bench/test/keys350.test.ts`. The four favourites were a set
+ * here, the codes 8, 9, 11 and 34, until 3.3 heard them.
+ *
+ * DVR is decided in the configurations and carries neither, since no press of it decided its code.
  */
 const CANDIDATES: Readonly<Record<string, readonly number[]>> = {
-  Favorite1: [8, 9, 11, 34], Favorite2: [8, 9, 11, 34], Favorite3: [8, 9, 11, 34], Favorite4: [8, 9, 11, 34],
   Live: [43, 56],
 };
 
-for (const name of [...Object.keys(HEARD), ...Object.keys(CANDIDATES)]) {
+for (const name of [...Object.keys(HEARD), ...Object.keys(HEARD_ON_THE_SETUP), ...Object.keys(CANDIDATES)]) {
   if (!DRAWN.some((k) => k.name === name)) throw new Error(`h350: no key ${name} to give a code`);
 }
 
 const KEYS: readonly Key[] = DRAWN.map((key) => {
   const scan = HEARD[key.name];
   if (scan !== undefined) return { ...key, scan, scanFrom: 't-harmony-350-keys-u' };
+  const setup = HEARD_ON_THE_SETUP[key.name];
+  if (setup !== undefined) return { ...key, scan: setup, scanFrom: 't-harmony-350-setup-u' };
   const candidates = CANDIDATES[key.name];
   return candidates === undefined ? key : { ...key, scanCandidates: candidates };
 });

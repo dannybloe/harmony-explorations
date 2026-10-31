@@ -670,10 +670,10 @@ it reachable in the same commit and the test comparing the two tables is what ca
 | `each selected by one device key's binding` | `tests/test_harmony_350_long_press.py` | a device's map is selected by two bindings where the device is on two keys, the short press of one and the long press of another |
 | `is counted down in software instead and no configuration uses it` | `tests/test_harmony_350_long_press.py` | no configuration of the architectures section 43 read uses kind 0; every Harmony 300 and 350 timer is kind 0, counted once a tick of about a millisecond |
 | `no scan code is tied to a key on this architecture` | `tests/test_harmony_350_keys.py` | the Harmony 300 and 350 number a key 1 to 56 from their keypad grid, read in the 1.4 firmware, configurations tie 50 of the Harmony 350's keys to a code, and 44 were heard by pressing them with a receiver listening |
-| `no scan code known` | `tests/test_harmony_350_keys.py` | the Harmony 350's key table is read and inferred from configurations and heard for 44 keys, `reference/remotes/harmony-350/keys.md` |
+| `no scan code known` | `tests/test_harmony_350_keys.py` | the Harmony 350's key table is read and inferred from configurations and heard for 53 keys, `reference/remotes/harmony-350/keys.md` |
 | `which of 25 and 26 is the up arrow` | `TheBench350HeardEveryKey`, `tests/test_harmony_350_keys.py` | on a Harmony 350 the upper arrow is code 25 and the lower 26, heard sending the receiver's channel up and down |
 | `25 and 26, which is which not settled` | `TheBench350HeardEveryKey`, `tests/test_harmony_350_keys.py` | the upper arrow is 25 and the lower 26 |
 | `which arrow is 25` | `TheBench350HeardEveryKey`, `tests/test_harmony_350_keys.py` | the upper arrow, heard on a Harmony 350 |
 | `arrow pair by elimination` | `TheBench350HeardEveryKey`, `tests/test_harmony_350_keys.py` | the configurations narrow the arrow pair to 25 and 26 and pressing them decided it |
-| `none of the 55 on a Harmony 350` | `packages/silhouettes/test/models.test.ts` | the Harmony 350's drawing carries 44 codes, heard by pressing the keys |
-| `No key press has been tied to a scan code` | `TheBench350HeardEveryKey`, `tests/test_harmony_350_keys.py` | 44 keys of the bench Harmony 350 were tied to a code by pressing them |
+| `none of the 55 on a Harmony 350` | `packages/silhouettes/test/models.test.ts` | the Harmony 350's drawing carries 53 codes, heard by pressing the keys |
+| `No key press has been tied to a scan code` | `TheBench350HeardEveryKey`, `tests/test_harmony_350_keys.py` | 53 keys of the bench Harmony 350 were tied to a code by pressing them, 44 in that run and nine in `TheBench350HeardTheTestSetup` |

@@ -55,12 +55,12 @@ const EXPECTED: Readonly<Record<string, {
    * page and the box contents page, and the cover photograph agrees for the 35 keys above the transport
    * block that it shows; the firmware's keypad scan numbers 56 codes, one of which no key raises.
    *
-   * 44 codes heard at the bench, `todo-compile-350.md` 2.2.2, and no other source: every one is a
-   * decision of its own, so all 44 are named below.
+   * 44 codes heard at the bench, `todo-compile-350.md` 2.2.2, and 9 more heard on Logitech's compile of the
+   * test setup, 3.3, and no other source: every one is a decision of its own, so all 53 are named below.
    */
   h350: {
     buttons: 55,
-    scans: { 't-harmony-350-keys-u': 44 },
+    scans: { 't-harmony-350-keys-u': 44, 't-harmony-350-setup-u': 9 },
     decided: {
       5: 'TvMedia', 7: 'AvrGame', 3: 'Power', 35: 'Input', 2: 'Favorite5', 36: 'Info', 12: 'Exit', 33: 'Guide',
       25: 'UpArrow', 26: 'DownArrow', 13: 'Red', 27: 'Green', 28: 'Yellow', 29: 'Blue', 49: 'VolumeUp',
@@ -69,6 +69,8 @@ const EXPECTED: Readonly<Record<string, {
       30: 'FastForward', 21: 'SkipBack', 38: 'SkipForward', 23: 'Record', 40: 'Stop', 44: 'Play', 46: 'Pause',
       24: 'Number1', 47: 'Number2', 39: 'Number3', 17: 'Number4', 48: 'Number5', 37: 'Number6', 18: 'Number7',
       53: 'Number8', 45: 'Number9', 19: 'Clear', 20: 'Number0',
+      1: 'CablePc', 4: 'DvdMusic', 6: 'WatchTV', 8: 'Favorite1', 9: 'Favorite2', 10: 'Menu', 11: 'Favorite3',
+      34: 'Favorite4', 54: 'Enter',
     },
     why: "Logitech's own button drawing in the Harmony 350 setup guide, counted shape by shape, "
       + 'which its box contents drawing and the cover photograph agree with where they reach',
@@ -227,14 +229,14 @@ test('a key whose code is undecided carries candidates and no scan', () => {
      * have forced a wrong answer on the 525.
      */
     /**
-     * The Harmony 350 has two shapes of ambiguity, which is why a set is stated by its size rather than
-     * by one size per model: four favourite keys sharing the four codes favourite 5 did not take, and Live
-     * alone on one of two codes no configuration binds, `packages/bench/test/keys350.test.ts`. A set of
-     * candidates may be larger than the keys sharing it, as Live's is. The Harmony 300 has none, because
-     * its drawing takes no code from the 350's, `h300.ts`.
+     * The Harmony 350 has one set left, Live alone on one of two codes no configuration binds,
+     * `packages/bench/test/keys350.test.ts`, which is why a set is stated by its size rather than by one
+     * size per model: a set of candidates may be larger than the keys sharing it. It had a second, four
+     * favourite keys sharing the four codes favourite 5 did not take, until `todo-compile-350.md` 3.3 heard
+     * them. The Harmony 300 has none, because its drawing takes no code from the 350's, `h300.ts`.
      */
     const SETS: Readonly<Record<string, readonly { keys: number; codes: number }[]>> = {
-      h300: [], h350: [{ keys: 4, codes: 4 }, { keys: 1, codes: 2 }],
+      h300: [], h350: [{ keys: 1, codes: 2 }],
       h525: [{ keys: 4, codes: 4 }], h600: [], h650: [], h700: [], one: [], touch: [],
     };
     const want = SETS[id]!;

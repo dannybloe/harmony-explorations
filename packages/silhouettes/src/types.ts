@@ -70,6 +70,12 @@ export const SCAN_SOURCES = {
   // `todo-compile-350.md` 2.2.2, `tests/test_harmony_350_keys.py`.
   't-harmony-350-keys-u': 'heard by pressing each key with a receiver listening, its code the one binding of '
     + 'the configuration on the remote that sends what was heard',
+  // The Harmony 350's keys the first run left, pressed on a unit holding Logitech's compile of a test setup
+  // that binds them: the code is the one of the 56 that, raised at that point of the run, gives what was
+  // heard, `todo-compile-350.md` 3.3, `packages/bench/test/setup350.test.ts`, and the footnote's test is
+  // `TheBench350HeardTheTestSetup` in `tests/test_harmony_350_keys.py`.
+  't-harmony-350-setup-u': 'heard by pressing each key with a receiver listening, on a configuration that binds '
+    + 'it, its code the one of the 56 that, raised at that point of the presses, gives what was heard',
 } as const;
 export type ScanSource = keyof typeof SCAN_SOURCES;
 
@@ -208,7 +214,7 @@ export interface Key {
   readonly accent?: string;
   /**
    * The scan code, present **only** where something established it, and `scanFrom` says what: 38 of 44
-   * keys on a Harmony One, 41 of 54 on a Harmony 600, none of the 50 on a Harmony 525, 44 of the 55 on a
+   * keys on a Harmony One, 41 of 54 on a Harmony 600, none of the 50 on a Harmony 525, 53 of the 55 on a
    * Harmony 350, none on the Harmony 300 that shares its face, and none of the 29 on a Harmony Touch. Never filled in on a guess. A wrong scan
    * code is invisible, because the interface would then show the wrong assignment beside a key with
    * complete confidence.
@@ -219,8 +225,8 @@ export interface Key {
   /**
    * Where the name is settled and the code is narrowed to a set but not decided. The Harmony 525's four
    * soft keys are the case: the firmware's own matrix arithmetic puts them in one block of four codes and
-   * nothing says which column is the left one, section 89. The Harmony 350's four favourites that sent
-   * nothing at the bench and its Live key are the others. The four arrow keys of a Harmony One and a
+   * nothing says which column is the left one, section 89. The Harmony 350's Live key is the other; its
+   * four favourites were one until they were heard. The four arrow keys of a Harmony One and a
    * Harmony 600 were the other case until the devices' own maps decided them, sections 398 and 323.
    */
   readonly scanCandidates?: readonly number[];

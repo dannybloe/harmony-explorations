@@ -116,7 +116,7 @@ Either the remote sends another colour's command than the one on the key, or the
 neither is checked[^unchecked].
 
 The drawing claims no code on any key, and its test asserts exactly that, `tests/test_silhouettes.py`. The
-Harmony 350's drawing carries 44, heard by pressing a Harmony 350, [its keys](../harmony-350/keys.md#scan-codes);
+Harmony 350's drawing carries 53, heard by pressing a Harmony 350, [its keys](../harmony-350/keys.md#scan-codes);
 the same moulding and this model's configurations binding the same codes make it likely they hold here,
 which is an inference, so none is drawn on this one[^unchecked].
 

@@ -49,7 +49,7 @@ what holds on this architecture.
 | base address | `0x020000`, the file's place on the external medium | [^s194] |
 | slot map | raw slot to base slot in `ARCH16_SLOT_MAP`, `packages/codec/src/gspm.ts`: the name tree, the architecture record, the log area, the clock record, the infrared database, the action list table, the parameter block and the number sender are named; raw 13 is a metadata archive that names devices and commands, [the metadata archive](../../config-format/container.md#the-metadata-archive) and [the container's slots for this family](../../config-format/container.md#the-harmony-300-and-350s-slots). Raw 5, 6, 8, 9, 12 and 14 are read in the firmware, [below](#the-six-slots-the-firmware-was-read-for), and of those the map carries raw 9 alone, the state variable table, which a device's power on delay is read through | [^s259b], [^s260], [^s262b], [^t-slots], [^t-file-family-delays] |
 | the infrared table | allocated at the model's **maximum** device count, four groups on a 300 and eight on a 350, unused groups empty, unlike every other architecture | [^s263], [^s264] |
-| which group a device takes | the position of the device key it is on, on both models: the first key 0 to the fourth key 3, a short press on the 350; not the metadata archive's name list, which is alphabetical. A long press on the 350 is not checked, [below](#which-infrared-group-a-device-takes) | [^s265], [^t-device-groups-c], [^unchecked] |
+| which group a device takes | the position of the device key it is on, on both models: the first key 0 to the fourth key 3, a short press on the 350, and a long press 4 plus the place; not the metadata archive's name list, which is alphabetical, [below](#which-infrared-group-a-device-takes) | [^s265], [^t-device-groups-c], [^t-long-press-c], [^t-harmony-350-setup-u] |
 | what is stored | exactly the codes some action list sends | [^s261] |
 | raw slot 8 | the timer table, two records per device a key selects on a configuration Logitech's current service compiled, which is twice the devices unless a device is on two keys, and empty on one compiled in 2011, so it follows the compiler and not the model, [below](#the-six-slots-the-firmware-was-read-for). This said twice the device count until a configuration with a device on two keys held twelve for five, [a device key and its long press](#a-device-key-and-its-long-press) | [^s264], [^s265], [^t-slots-c], [^t-long-press-c] |
 
@@ -128,14 +128,17 @@ that order is tied to the printed keys by which device was put on which key[^s26
 selects nothing: it switches one of the four output pins and starts two timers that switch it again, the
 timers of [the six slots](#the-six-slots-the-firmware-was-read-for)[^t-device-groups-c].
 
-**A long press device takes group 4 plus the key's place, on the one configuration that has
-one.** Every 350 configuration allocates eight groups[^s263]. One configuration read gives two keys a
+**A long press device takes group 4 plus the key's place, on both configurations read that have
+one.** Every 350 configuration allocates eight groups[^s263]. The first read gives two keys a
 second device: the top right key's long press selects a device that sends from group 5, and the bottom
 left key's long press selects the device already on the top right key's short press, which keeps its
 group 1, so a device on two keys has one group[^t-long-press-c]. Of the rules the
 short presses left open, `4 + place` predicts 5 for the top right key and fits; the lowest group no
-short press uses predicts 4 and an interleaved numbering 3, and neither fits. One configuration from one
-owner is below two samples, so the rule is not checked beyond it[^unchecked]. Logitech's client holds a
+short press uses predicts 4 and an interleaved numbering 3, and neither fits. **The second has a long
+press device on every key**, groups 4, 5, 6 and 7 on the top left, top right, bottom left and bottom right
+keys, which is `4 + place` four times, and on a Harmony 350 each key held long chose the device whose group
+the next key was heard sending from[^t-harmony-350-setup-u]. This said one configuration was below two
+samples and the rule not checked beyond it until then. Logitech's client holds a
 device key as one record, `UserModeMappingInfo`, with a short press device and a long press device,
 [its data model](../../logitech/data-model/entities.md#usermodemappinginfo)[^t-model]. How the long press
 is stored and timed is [below](#a-device-key-and-its-long-press).
@@ -159,7 +162,7 @@ held event[^t-long-press].
 | the press | per device on the key, `07 FFFB`, `1F E9p2` and two `1F EB` starts, whose timers run 400 ticks to `1F E9p0` and 600 to `1F E9p2`: one pulse of the pin. A key with two devices carries the group twice, and the second `07 FFFB` cancels the first group's timers | the binding above | [^t-long-press-c], [^t-long-press] |
 | scan codes of those bindings | 1, 4 and 5 on a configuration with three devices, and 7 with four or more | 1 and 5 with two devices, 1, 4, 5 and 7 with four | [^t-long-press-c] |
 | the pin `p` each switches | 2 for scan 1, 3 for 4, 0 for 5 and 1 for 7 | the same | [^t-long-press-c] |
-| the key's place | scan 5 top left, 1 top right, 7 bottom left and 4 bottom right, the order of the Harmony 300's keys; what is printed on the four keys differs between units, so a key is named by its place | the same | [^t-long-press-c] |
+| the key's place | scan 5 top left, 1 top right, 7 bottom left and 4 bottom right, the order of the Harmony 300's keys, and all four heard so on a Harmony 350; what is printed on the four keys differs between units, so a key is named by its place | the same | [^t-long-press-c], [^t-harmony-350-setup-u] |
 | the hold time at start | `3F F00A`, parameter 0 at 10, about one second | the same | [^t-long-press-c], [^t-long-press-u] |
 
 **One configuration read has long press devices**, two of them, on scan codes 1 and 7, the top right and bottom left keys, and it sets the
@@ -168,6 +171,11 @@ says two[^t-long-press-c][^t-long-press-u]. Its timer table holds two records pe
 twelve for five devices on six key assignments, since one device is on two keys, the short press of one
 and the long press of another[^t-long-press-c]. That the remote meets the long press at a second is read
 in the firmware and that configuration, not watched on a unit[^unchecked].
+
+**A long press was watched selecting the second device** on a Harmony 350 holding a configuration with
+two devices on every device key: each key held long chose its second device's map, which the next key was
+heard sending from, and each short press its first[^t-harmony-350-setup-u]. How long each key was held was
+not recorded; about two seconds was asked. This said a long press was read and not watched until then.
 
 **A key with one device selects nothing on a long press.** No configuration read binds the held event
 of a key without a second device, so held past the hold time it ends in a held event nothing binds, the
@@ -182,9 +190,14 @@ the power code goes out, and a command pressed for the same device straight afte
 queues the wait behind the power code and counts it down only while nothing ahead of it names the same
 device[^t-harmony-350-delay]. **A unit is a tenth of a second**: on a Harmony 350, a wait of 30 held the
 next command to the same device 3.17 seconds after its power code ended and a wait of 100 held it 10.21
-seconds, the same 0.16 seconds besides in both[^t-harmony-350-delay-heard]. That a command to another
-device is not held behind it is how the other images send, and on this one it is not
-checked[^unchecked].
+seconds, the same 0.16 seconds besides in both[^t-harmony-350-delay-heard]. **On a Harmony 350, a power
+code to another device was not held behind it**, in one activity switching three devices on: the second
+device's power code reached the receiver 0.19 seconds after the first's, inside the first's wait of ten
+seconds, and the third's 0.50 seconds after that, inside the second's wait of two, while the second
+device's own next code arrived 2.54 seconds after its power code[^t-harmony-350-setup-u]. The other images
+are read to send that way; a key pressed for another device inside a wait was not tried, and on a Harmony
+300 it rests on the shared image[^unchecked]. This said a command to another device was not checked on
+this image until then.
 
 Where it is: the device's `Power` state variable, going from 0 to 1, runs a list that calls the list
 sending the power code and then carries one `0x7C` naming the device's group, with the wait as its low
@@ -275,10 +288,11 @@ never send it[^t-harmony-350-clock][^unchecked].
   on delay counts in, [firmware.md](firmware.md#a-held-key)[^t-long-press].
 * Whether a person meets a Harmony 350's long press after one second, as the configurations and the
   firmware say, or after the two the guide states, [above](#a-device-key-and-its-long-press)[^unchecked].
-* That the power on delay holds back no command to another device: the routine that picks the next send
-  is not read, and only the same device was measured, [above](#a-devices-power-on-delay)[^unchecked]. This
-  listed the unit as not checked too, until a Harmony 350 was measured at two values; on a Harmony 300 the
-  unit rests on its running the same image[^unchecked].
+* The routine that picks the next send past a held one is not read, so that a power on delay holds back no
+  command to another device rests on one activity's power codes measured on a Harmony 350,
+  [above](#a-devices-power-on-delay)[^unchecked]. This listed the measurement itself as not checked until
+  then, and the unit too, until a Harmony 350 was measured at two values; on a Harmony 300 both rest on its
+  running the same image[^unchecked].
 * Whether the clock's unit is a second: the firmware counts from a timer and from watchdog wakes whose
   rates are not read, and only a read of the running remote would say[^unchecked].
 * Whether a restart after a configuration is written seeds the new configuration's values or keeps the
@@ -323,3 +337,4 @@ never send it[^t-harmony-350-clock][^unchecked].
 [^t-long-press-c]: Measured in configurations. [The test](../../../tests/test_harmony_350_long_press.py)
 [^t-long-press-u]: Measured on a unit. [The test](../../../tests/test_harmony_350_long_press.py)
 [^t-harmony-350-keys-c]: Measured in configurations. [The test](../../../tests/test_harmony_350_keys.py)
+[^t-harmony-350-setup-u]: Measured on a unit. [The test](../../../tests/test_harmony_350_keys.py)

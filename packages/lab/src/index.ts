@@ -333,6 +333,13 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // todo-compile-350 2.2.2: every key of the bench 350 pressed in the TV's and the receiver's modes, on
   // `work/350-delay/before.bin`; the favourite that sends and the arrow pair are read out of it.
   h350_keys_ir: '20261030T142422Z-ir-test-harmony-350-every-key-in-the-tv-s-and-the-receiver-s-modes.json',
+  // todo-compile-350 3.3: Logitech's compile of the test setup on the bench 350, run twice. **The first run's
+  // stored verdicts are not the result**: the bench server was started before `BENCH_CONFIGS` named that
+  // compile, so no frame was matched against it and seven steps failed. The second ran after a restart and
+  // its stored verdicts pass; `packages/bench/test/setup350.test.ts` matches both runs' pulses again and
+  // judges each step afresh. A run of the same name between the two reached only step 1 and is not named.
+  h350_logitech_setup_ir: '20261031T111033Z-ir-test-harmony-350-logitech-s-compile-of-the-test-setup.json',
+  h350_logitech_setup_ir_2: '20261031T112340Z-ir-test-harmony-350-logitech-s-compile-of-the-test-setup.json',
   h350_delay_ir_3s: '20261030T094935Z-ir-test-harmony-350-the-tv-s-power-on-delay-at-10-s.json',
   h350_delay_ir_10s: '20261030T095433Z-ir-test-harmony-350-the-tv-s-power-on-delay-at-10-s.json',
   h600_delay_ir_before: '20261001T093603Z-ir-test-harmony-600-the-kpn-box-s-power-on-delay.json',

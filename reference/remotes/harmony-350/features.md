@@ -61,6 +61,10 @@ own,
 
 "Program up to five Favorite Channels for your TV or cable/satellite receiver"[^x-manual]; 5 per Logitech's
 service[^s263]. **A configuration given five holds five**[^s263b], each sent through the number sender[^s262].
+**Pressed on a unit, each favourite key sent its channel as the device's own digits**, one code per digit
+and nothing after the last, favourites 1 to 5 the channels in the order they were entered, and a channel
+with a leading zero with its zero[^t-harmony-350-setup-u]. Which code each favourite key is,
+[keys.md](keys.md#how-each-code-is-known).
 
 ## Delays
 
@@ -82,3 +86,4 @@ on transition[^s327]; how this architecture interprets it is **not read**.
 [^s262]: Measured in configurations. [Section 262](../../../docs/findings.md#s262)
 [^s327]: Measured in configurations. [Section 327](../../../docs/findings.md#s327)
 [^t-harmony-350-slots-c]: Measured in configurations. [The test](../../../tests/test_harmony_350_slots.py)
+[^t-harmony-350-setup-u]: Measured on a unit. [The test](../../../tests/test_harmony_350_keys.py)

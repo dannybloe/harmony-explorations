@@ -102,7 +102,7 @@ pressed in the television's mode and again in the receiver's, each step naming w
 |---|---|
 | P1, the receiver is on the bottom left key, AVR/Game | confirmed: AVR/Game, then Volume Up, Volume Down and Mute sent the Denon's |
 | P2, a device key sends nothing | confirmed: nothing heard on TV/Media, AVR/Game, Cable/PC or DVD/Music |
-| P3, exactly one favourite sends the television's Home | confirmed, and it is favourite 5, the one right of Input, so code 2; favourites 1 to 4 sent nothing and stay 8, 9, 11 and 34 in an order still open |
+| P3, exactly one favourite sends the television's Home | confirmed, and it is favourite 5, the one right of Input, so code 2; favourites 1 to 4 sent nothing, leaving 8, 9, 11 and 34 in an order this run could not give, which 3.3 settled below |
 | P4, the upper arrow sends the receiver's ChannelUp and the lower its ChannelDown, both silent in the television's mode | confirmed, so the upper arrow is code 25 and the lower 26 |
 | P5, every other key as the table says, in both modes | confirmed for every key but one press: digit 0 sent nothing in the television's mode, and sent its code in the receiver's |
 
@@ -132,6 +132,64 @@ reproduced.
 `0xFF`.** So this firmware with this configuration logs no key press or send there. That read was not
 saved to the lab, so nothing pins it. The backup read before the first write,
 `reads/20261027T1700Z-h350-backup/cfg_log.bin`, is 131072 bytes of `0xFF` as well.
+
+## Logitech's compile of the test setup, todo-compile-350 3.3
+
+**What was written.** The test setup, `packages/corpus/setups/h350-test.json`, compiled by Logitech's
+service onto the unit's own record on the first test account: eight devices, the service putting a short
+and a long press device on each of the four device keys, Watch TV, and the favourite channels 1, 2, 3, 666
+and 07 on the KPN. **The favourites were typed into MyHarmony's own favourite channel screen**, not saved by
+`build-setup.ts`: its stage saved them with `SaveButtonMaps`, which the service accepts for a 350 and the
+compile then ignores, so the first compile, the lab's `work/setups/h350-test/first-compile/`, bound no
+favourite. MyHarmony's screen for this model saves them on the device's mode map with
+`UpdateDeviceModeButtonMaps` (commit 00ab8d5b, `reference/logitech/service.md`, "Button maps"), and the
+second compile, `work/setups/h350-test/compile-Result.EzHex`, binds them. That file was written with
+`write-file-config.ts`, the first compile named as the backup since the remote held it. The first attempt
+found no remote of the family attached and the second got no reply to its first request, neither writing
+anything; the third wrote 39 chunks, the check answered `m`, the read back was identical less the end
+marker and the reboot was sent. The write logs are beside the
+compile in the lab.
+
+**The runs.** `packages/bench/irtests/done/350-3-3-logitech-setup.json`, twenty steps, run twice with the
+Flirc: the lab's `reads/20261031T111033Z-...-logitech-s-compile-of-the-test-setup.json`, fixture
+`h350_logitech_setup_ir`, and `reads/20261031T112340Z-...`, fixture `h350_logitech_setup_ir_2`. A run of the
+same test between them, `20261031T112137Z`, heard presses in step 1 only and is not used.
+
+**The first run's stored verdicts are wrong, and the remote is not why.** The bench server had been
+started before `BENCH_CONFIGS` named this compile, so the monitor matched every frame against the other
+bench remotes' files only and never this one. Every code only this file holds went unrecognised, the
+Knoll's, the Switch's, the Sony's, the Denon's power codes and the KPN's DVR, and the run file records
+seven of twenty steps failed, 2, 6, 7, 8, 10, 11 and 14. Matched again from the pulses against the compile
+alone and judged again, it passes 20 of 20. The server was restarted for the second run, whose stored
+verdicts pass all nineteen steps with an expectation, step 13 being the silent one, and judging it again
+from its pulses gives the same verdicts word for word. `packages/bench/test/setup350.test.ts` does both and
+reads no stored verdict as the result.
+
+**The tester's notes in the second run**: a 9 pressed by accident in step 4, heard as Kodi's 9 between
+two of Kodi's Enter, the second of which no note explains; Input pressed first in step 16, heard as the television's Input before favourite 2's
+channel; and Watch TV perhaps pressed twice in step 11, of which one sequence was heard. In the first run
+DVR was heard twice in step 7, 3.8 seconds apart, where once was asked.
+
+**The result.**
+
+* Favourites 1 to 4 sent channels 1, 2, 3 and 666 in both runs, so they are codes 8, 9, 11 and 34 in that
+  order, the order the channels were entered; favourite 5 sent 0 then 7, code 2, as known.
+* Every device key's short press and its long press selected the device the file puts there, all eight,
+  how long each key was held not recorded, about two seconds being asked; Menu, Enter and Watch TV each sent what the file binds them to. With favourites 1
+  to 4 that is nine codes onto the drawing, 53 of 55 keys now.
+* DVR sent the KPN's `List`, a frame the file's codes 11 and 14 hold in the same bytes, and OK's binding
+  sends 11, so the press does not decide DVR's code. It stays off the drawing.
+* Watch TV from everything off sent the TV's power on, the Denon's arriving 0.19 s later and the KPN's
+  toggle 0.50 s after that, inside the TV's ten second and the Denon's two second waits, and the Denon's
+  input 2.54 s after its power code. So in this activity a power on delay held back its own device's code
+  and no other device's power code, the first time that was measured on this family. The times are when
+  each frame reached the host, not when it began.
+* Channel 666 went out as three 6s arriving 0.32 to 0.33 s apart, with 0.21 s of silence between them, not the tenth of a second the bench test's text gave; the file waits a tenth after each digit.
+  Past the monitor's 200 ms window, so the monitor showed three presses.
+* Channel Up and the digit 1 in the KPN's mode sent nothing, as the file binds neither there.
+
+The argument is the header of `packages/bench/test/setup350.test.ts`; `TheBench350HeardTheTestSetup` in
+`tests/test_harmony_350_keys.py` holds the second run for the reference. The remote holds the compile.
 
 ## What was predicted
 
@@ -172,14 +230,18 @@ service. The configurations state it: the scan code whose release selects each d
 statement, with each group's device named by the codec's `devices` from its `Power` variable
 (`packages/codec/test/filefamilydelays.test.ts` for the lab fixtures; the names are not asserted by the
 first test). On the four device file the television is on `TV/Media`, the KPN box on `Cable/PC`, the
-Playstation 3 on `AVR/Game` and the Chromecast on `DVD/Music`. On the file the unit holds now, the same
-file as the backup read the test opens, the LG television is on `TV/Media` and the Denon receiver on
-`AVR/Game`. Pressing `AVR/Game` and hearing a Denon code checked the one inference in that, which key a
-scan code is on a 350, for the two keys this file binds, 2.3 and 2.2.2 above.
+Playstation 3 on `AVR/Game` and the Chromecast on `DVD/Music`. On the file the unit held through 2.3 and
+2.2.2, the same file as the backup read the test opens, the LG television is on `TV/Media` and the Denon
+receiver on `AVR/Game`. Pressing `AVR/Game` and hearing a Denon code checked the one inference in that,
+which key a scan code is on a 350, for the two keys that file binds, 2.3 and 2.2.2 above. On the test
+setup's compile, which the unit holds since 3.3, the service placed the eight devices itself, and all four
+keys were heard selecting them, short and long, 3.3 above.
 
 ## What has not been done
 
-* A command to another device right after a power code was not pressed.
-* Menu, DVR, Enter, Watch TV, favourites 1 to 4, Live and the top right and bottom right device keys have
-  not been tied to a code by pressing them, since the file the unit held binds none of them.
+* DVR has not been tied to a code by pressing it: on the test setup's compile it sends the frame OK sends.
+  Live has not either, since no file the unit held binds it. Menu, Enter, Watch TV, favourites 1 to 4 and
+  the top right and bottom right device keys were listed here until 3.3 heard them.
+* A long press held for one second rather than two has not been tried. A command to another device right
+  after a power code was listed here until Watch TV sent three in 3.3.
 * No firmware version has been read off the unit beyond the product string's 1.4.0.
