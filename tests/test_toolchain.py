@@ -435,7 +435,8 @@ def git_listed_typescript_tests(testcase):
         try:
             done = subprocess.run(['git', 'ls-files', '-z', *arguments], cwd=ROOT, capture_output=True, check=True)
         except (OSError, subprocess.CalledProcessError) as error:
-            testcase.skipTest('git ls-files is unavailable (%s), so there is no independent listing' % error)
+            # Raised rather than `testcase.skipTest`, which the type checker does not know never returns.
+            raise unittest.SkipTest('git ls-files is unavailable (%s), so there is no independent listing' % error) from error
         return {name for name in done.stdout.decode('utf-8').split('\0') if name}
 
     present = listing('--cached', '--others', '--exclude-standard') - listing('--deleted')
