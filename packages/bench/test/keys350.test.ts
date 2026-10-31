@@ -39,6 +39,12 @@
  * favourite 5 is code 2 and the upper and lower arrows 25 and 26, evidence `bench`. The rest of the table
  * was not reached by that run, because the file the unit held binds nothing to those keys: Menu, DVR,
  * Enter, Watch TV, the top right and bottom right device keys, favourites 1 to 4 and Live.
+ *
+ * **Then on Logitech's compile of the test setup**, `todo-compile-350.md` 3.3, which binds all of those but
+ * Live: two runs of `packages/bench/irtests/done/350-3-3-logitech-setup.json`, held in
+ * `packages/bench/test/setup350.test.ts`. Every key this table had decided and those runs pressed came out on
+ * its code, and favourites 1 to 4, a set of four here until then, are 8, 9, 11 and 34 in that order,
+ * evidence `bench`. DVR sent the frame OK sends too, so its press fits 16 and 50 and leaves it `named`.
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -64,7 +70,8 @@ type Evidence =
   // The commonest catalogue name of what it sends, in the census below.
   | 'named'
   // Heard at the bench where the configurations left a set: the key was pressed with the receiver listening
-  // and the bench file binds what was heard to this code alone, `tests/test_harmony_350_keys.py`.
+  // and the file on the unit binds what was heard to this code alone, `tests/test_harmony_350_keys.py` for
+  // favourite 5 and the arrows, `setup350.test.ts` for favourites 1 to 4.
   | 'bench';
 
 /**
@@ -81,7 +88,10 @@ const KEYS: Readonly<Record<string, { scan: number; from: Evidence; names?: read
   TvMedia: { scan: 5, from: 'structure' },
   WatchTV: { scan: 6, from: 'structure' },
   AvrGame: { scan: 7, from: 'structure' },
+  Favorite1: { scan: 8, from: 'bench' },
+  Favorite2: { scan: 9, from: 'bench' },
   Menu: { scan: 10, from: 'named', names: ['Menu'] },
+  Favorite3: { scan: 11, from: 'bench' },
   Exit: { scan: 12, from: 'named', names: ['Exit', 'Cancel'] },
   Red: { scan: 13, from: 'named', names: ['Red'] },
   DirectionLeft: { scan: 14, from: 'named', names: ['DirectionLeft'] },
@@ -104,6 +114,7 @@ const KEYS: Readonly<Record<string, { scan: number; from: Evidence; names?: read
   DirectionRight: { scan: 31, from: 'named', names: ['DirectionRight'] },
   PrevChannel: { scan: 32, from: 'named', names: ['LastView'] },
   Guide: { scan: 33, from: 'named', names: ['Guide'] },
+  Favorite4: { scan: 34, from: 'bench' },
   Input: { scan: 35, from: 'named', names: ['InputNext'] },
   Info: { scan: 36, from: 'named', names: ['Info'] },
   Number6: { scan: 37, from: 'named', names: ['6'] },
@@ -129,13 +140,12 @@ const KEYS: Readonly<Record<string, { scan: number; from: Evidence; names?: read
 /**
  * Keys whose code is narrowed to a set and not decided, `scanCandidates` in the drawing's vocabulary.
  *
- * The five favourites are the codes that call the number sender, `tests/test_harmony_350_keys.py`, and the
- * two configurations disagree about which is which; the bench run took favourite 5 out of the set, code 2,
- * and the other four sent nothing there. Live is the key left over, on one of the two codes nothing binds.
- * The arrow pair was a set of two here until the bench run decided it.
+ * Live is the key left over, on one of the two codes nothing binds. The arrow pair was a set of two here
+ * until the first bench run decided it, and the five favourites, the codes that call the number sender,
+ * were a set until the first run took favourite 5 out of it as code 2 and the runs on Logitech's compile of
+ * the test setup heard the other four, `setup350.test.ts`.
  */
 const UNDECIDED: readonly { keys: readonly string[]; scans: readonly number[] }[] = [
-  { keys: ['Favorite1', 'Favorite2', 'Favorite3', 'Favorite4'], scans: [8, 9, 11, 34] },
   { keys: ['Live'], scans: [43, 56] },
 ];
 
@@ -194,29 +204,30 @@ test('the table places every key on the Harmony 350 drawing once, and every code
   assert.equal(placed.length, 55);
   const scans = [...Object.values(KEYS).map((one) => one.scan), ...UNDECIDED.flatMap((one) => one.scans)];
   assert.equal(new Set(scans).size, scans.length, 'a code claimed twice');
-  // 50 decided, 6 codes shared by 5 keys, and all 56 codes of the matrix accounted for, one of them no key.
-  assert.equal(Object.keys(KEYS).length, 50);
+  // 54 decided, 2 codes shared by Live, and all 56 codes of the matrix accounted for, one of them no key.
+  assert.equal(Object.keys(KEYS).length, 54);
   const by = (from: Evidence): number => Object.values(KEYS).filter((one) => one.from === from).length;
   assert.deepEqual({ structure: by('structure'), named: by('named'), bench: by('bench') },
-    { structure: 6, named: 41, bench: 3 });
+    { structure: 6, named: 41, bench: 7 });
   assert.deepEqual([...scans].sort((a, b) => a - b), Array.from({ length: 56 }, (_, i) => i + 1));
 });
 
 test('every code and candidate set the Harmony 350 drawing carries is this table\'s', () => {
-  // The drawing carries a code only where a press was heard, `tests/test_harmony_350_keys.py`, so it is a
-  // subset of this table, and its candidate sets are this table's undecided sets exactly. Read from the
-  // generated SVG, which is what FreeHarmony reads.
+  // The drawing carries a code only where a press decided it, `tests/test_harmony_350_keys.py` and
+  // `setup350.test.ts`, so it is a subset of this table, and its candidate sets are this table's undecided
+  // sets exactly. Read from the generated SVG, which is what FreeHarmony reads.
   const svg = readFileSync(fileURLToPath(new URL('../../../reference/silhouettes/h350.svg', import.meta.url)), 'utf8');
   const codes = Object.fromEntries([...svg.matchAll(/data-name="(\w+)"[^>]*? data-scan="(\d+)"/g)]
     .map((m) => [m[1]!, Number(m[2])]));
   const candidates = Object.fromEntries([...svg.matchAll(/data-name="(\w+)"[^>]*? data-scan-candidates="([\d ]+)"/g)]
     .map((m) => [m[1]!, m[2]!.split(' ').map(Number)]));
-  assert.equal(Object.keys(codes).length, 44);
+  assert.equal(Object.keys(codes).length, 53);
   for (const [name, scan] of Object.entries(codes)) assert.equal(KEYS[name]?.scan, scan, name);
   assert.deepEqual(candidates, Object.fromEntries(UNDECIDED.flatMap((one) => one.keys.map((k) => [k, [...one.scans]]))));
-  // The six decided here and not drawn are the keys the bench file binds nothing to.
-  assert.deepEqual(Object.keys(KEYS).filter((name) => codes[name] === undefined).sort(),
-    ['CablePc', 'DvdMusic', 'Dvr', 'Enter', 'Menu', 'WatchTV']);
+  // The one decided here and not drawn is DVR, whose press sent a frame OK's binding sends as well. The other
+  // five that were not drawn after the first run, the keys its file bound nothing to, were heard on the
+  // test setup's compile.
+  assert.deepEqual(Object.keys(KEYS).filter((name) => codes[name] === undefined), ['Dvr']);
 });
 
 test('what every device map press sends, named as the monitor names it, over the five configurations',

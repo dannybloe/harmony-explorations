@@ -11,15 +11,16 @@ memory off a 350, only the files it serves.
 | | value |
 |---|---|
 | infrared groups | **eight in every configuration**, unused ones empty, the model's maximum device count[^s263] |
-| the group index | a short press of a device key: `TV/Media` 0, `Cable/PC` 1, `AVR/Game` 2, `DVD/Music` 3, the keys named by the moulding the Harmony 300 shares, [the family's memory.md](../../architectures/harmony-300-350/memory.md#which-infrared-group-a-device-takes)[^t-device-groups-c]; a long press, not checked[^unchecked] |
+| the group index | a short press of a device key: `TV/Media` 0, `Cable/PC` 1, `AVR/Game` 2, `DVD/Music` 3, the keys named by the moulding the Harmony 300 shares, [the family's memory.md](../../architectures/harmony-300-350/memory.md#which-infrared-group-a-device-takes)[^t-device-groups-c]; a long press 4 plus the key's place, `TV/Media` 4 to `DVD/Music` 7, on the two configurations read with one[^t-harmony-350-setup-u] |
 | configuration size | 68985 to 121251 bytes over the three configurations measured, by what they hold[^s262][^s263] |
 
 ## Not checked
 
 * Anything in the remote's memory beyond the files it serves.
-* Which infrared group a device on a long press takes: no configuration measured has one[^unchecked].
+* Whether a long press takes 4 plus the place beyond the two configurations read with one[^unchecked]. This listed which group it takes, saying no configuration measured had one, until two were read.
 
 [^s263]: Measured in configurations. [Section 263](../../../docs/findings.md#s263)
+[^t-harmony-350-setup-u]: Measured on a unit. [The test](../../../tests/test_harmony_350_keys.py)
 [^s262]: Measured in configurations. [Section 262](../../../docs/findings.md#s262)
 [^t-device-groups-c]: Measured in configurations. [The test](../../../tests/test_harmony_350_device_groups.py)
 [^unchecked]: Not checked.

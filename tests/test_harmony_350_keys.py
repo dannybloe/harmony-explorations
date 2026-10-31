@@ -81,7 +81,8 @@ Harmony 300 files (`h300_config`, `h300_programmed_config`).
   account, send 1, 2, 3, 4 and 666 from 8, 9, 11, 34 and 2, and the 300 file sends 1, 2, 3 and 666 from 8,
   2, 9 and 34, so the channel order and the key order do not line up the same way on both accounts, and
   nothing here states the order the channels were entered in. The bench run settled one: favourite 5 is
-  code 2. Favourites 1 to 4 are 8, 9, 11 and 34 in an order still open.
+  code 2. Favourites 1 to 4 are 8, 9, 11 and 34 in that order, heard on Logitech's compile of the test
+  setup, `TheBench350HeardTheTestSetup`.
 * **The other 41 keys are named by what they send**, `packages/bench/test/keys350.test.ts`: every code a
   device map sends is named the way the bench's infrared monitor names it, by Logitech's catalogue, and
   each scan's commonest name is the printed key Logitech's compile bound it to. That holds the whole
@@ -109,11 +110,11 @@ the Harmony 300). The reference: both models' `keys.md`, the family's README, `m
 
 ## Not settled here
 
-* Which of favourites 1 to 4 is which of 8, 9, 11 and 34, and whether Live is 43 or 56. The bench file
-  binds none of them, so the run heard nothing from them.
-* Menu (10), DVR (16), Enter (54), Watch TV (6) and the top right and bottom right device keys (1 and 4)
-  on a Harmony 350 itself: the bench file binds nothing to them either, so their codes rest on the
-  configurations alone.
+* Whether Live is 43 or 56: no file on the unit has bound either. Which of favourites 1 to 4 is which was
+  listed here until `TheBench350HeardTheTestSetup`.
+* DVR (16) by a press that decides it: on Logitech's compile of the test setup it sends a code whose bytes
+  OK's binding sends as well. Menu (10), Enter (54), Watch TV (6) and the top right and bottom right
+  device keys (1 and 4) were listed here until that run heard them.
 * Anything on a Harmony 300 pressed: the moulding is the 350's and its files bind the same codes, but no
   300 has been pressed with the receiver listening.
 * The Harmony 300's colour keys. Both its files send the `Red` command from code 13 and `Green`, `Yellow`
@@ -123,7 +124,9 @@ the Harmony 300). The reference: both models' `keys.md`, the family's README, `m
 
 **Standing.** Read in the firmware and measured in configurations, and the 41 keys `HEARD` names measured
 on the bench Harmony 350 with the infrared receiver, `TheBench350HeardEveryKey`, while the unit held its
-own configuration, `work/350-delay/before.bin`, written back to it after the keypad check before the run.
+own configuration, `work/350-delay/before.bin`, written back to it after the keypad check before the run;
+and nine more measured on the same unit holding Logitech's compile of the test setup,
+`TheBench350HeardTheTestSetup`, whose argument is `packages/bench/test/setup350.test.ts`.
 """
 import json
 import os
@@ -531,9 +534,10 @@ class TheBench350HeardEveryKey(unittest.TestCase):
     does, which is why a key's code is the intersection over both. Power and the two device keys the file
     binds are decided by what their bindings do, the last three tests.
 
-    **What it did not settle**: favourites 1 to 4 sent nothing, so they stay 8, 9, 11 and 34 in some order;
+    **What it did not settle**: favourites 1 to 4 sent nothing, so they stayed 8, 9, 11 and 34 in some order;
     Live, Menu, DVR, Enter, Watch TV and the top right and bottom right device keys sent nothing because
-    this file binds nothing to them. Digit 0 sent nothing once in the television's mode and its code in the
+    this file binds nothing to them. All but Live and DVR were settled later on Logitech's compile of the
+    test setup, `TheBench350HeardTheTestSetup` below. Digit 0 sent nothing once in the television's mode and its code in the
     receiver's; that is the unit's contact, `docs/test-notes/harmony-350.md`, not a finding.
 
     **Width**: one Harmony 350. The Harmony 300 is the same moulding and its configurations bind the same
@@ -640,19 +644,192 @@ class TheBench350HeardEveryKey(unittest.TestCase):
         self.assertEqual(failed, [(7, 'lg_tv · 0', 'heard 0 of 1')])
 
 
-class TheHarmony350DrawingCarriesTheCodesHeard(unittest.TestCase):
-    """The drawing's codes, read back from the generated keys page, are the bench run's and nothing else.
+#: Logitech's compile of the test setup, by its path in the lab, which is also the name the monitor gives it.
+SETUP_FILE = 'work/setups/h350-test/compile-Result.EzHex'
 
-    The 41 keys `HEARD` names, Power, and the two device keys whose release was heard selecting a device,
-    all with the test footnote. Needs no lab, since both sides are in the repository.
+
+def _setup_config():
+    """The compile read by path, as `_bench_config` reads the backup, skipping where the lab lacks it."""
+    path = os.path.join(lab.LAB or '', *SETUP_FILE.split('/'))
+    if not lab.LAB or not os.path.isfile(path):
+        raise unittest.SkipTest('Logitech\'s compile of the Harmony 350 test setup is not in the lab')
+    c = _Config.__new__(_Config)
+    c.name = 'setup'
+    with open(path, 'rb') as handle:
+        c.blob = handle.read()
+    return c
+
+
+class TheBench350HeardTheTestSetup(unittest.TestCase):
+    """`todo-compile-350.md` 3.3: the nine keys the every key run left, heard on a file that binds them.
+
+    The bench Harmony 350 held Logitech's compile of the test setup, eight devices on the four device keys,
+    Watch TV, and the favourite channels 1, 2, 3, 666 and 07 on the KPN, and
+    `packages/bench/irtests/done/350-3-3-logitech-setup.json` was run twice. **The argument is the header of
+    `packages/bench/test/setup350.test.ts`**, which matches both runs again from their pulses, judges every
+    step, and asks of every key pressed which of the 56 codes, raised at that point of the run, gives what
+    was heard. This class is the reference's footnote for what that settled, and it reads the second run by
+    another route: the matches its own monitor stored, which the TypeScript test shows equal a fresh match,
+    against this file's own reading of the key maps. The first run's stored matches are not read here, since
+    its monitor had not loaded the compile, which is why its stored verdicts fail seven steps.
+
+    **What it settles**: favourites 1 to 4 are codes 8, 9, 11 and 34, each the one binding of the KPN's map
+    that loads the channel heard; the top right device key is 1 and the bottom right 4, their release and
+    held events selecting the maps the next key was heard in, the Plasma's and Kodi's, the KPN's and the
+    Sony's, and in two of those Menu is 10 and Enter 54, each the one binding that sends what was heard;
+    Watch TV is 6, the one binding of the key table that is not a device key, and its step heard the
+    activity. **DVR is not**: its press sent a frame the KPN's codes 11 and 14 hold alike, and OK's binding
+    sends 11.
+
+    **And two things about the remote rather than its keys.** A long press selects the key's second device:
+    each of the four device keys, held long, chose the map the next key was then heard from,
+    the held event read in the firmware and one configuration, `tests/test_harmony_350_long_press.py`; how
+    long each was held is not recorded. And in Watch TV a power on delay held back no power code to another
+    device: the Denon's power on reached the host 0.19 s after the television's PowerOn, inside the
+    television's ten seconds, and the KPN's toggle 0.50 s after the Denon's, inside its two, while the
+    Denon's own input arrived 2.54 s after its power code; the first run measured the same to within three
+    milliseconds, `setup350.test.ts`. A key pressed for another device inside a wait was not tried.
+
+    **Width**: one Harmony 350, one file, two runs; this class reads the second.
     """
 
+    #: Steps by number, 1 based: what each step expected and what this class reads out of it.
+    FAVOURITE_STEPS = {15: 'Favorite1', 16: 'Favorite2', 17: 'Favorite3', 18: 'Favorite4', 19: 'Favorite5'}
+    SETUP = {'CablePc': 1, 'DvdMusic': 4, 'WatchTV': 6, 'Favorite1': 8, 'Favorite2': 9, 'Menu': 10,
+             'Favorite3': 11, 'Favorite4': 34, 'Enter': 54}
+
+    def setUp(self):
+        lab.require('h350_logitech_setup_ir_2')
+        self.run = json.loads(lab.load('h350_logitech_setup_ir_2'))
+        self.config = _setup_config()
+
+    def heard(self, step):
+        """A step's presses as the monitor named them in the compile: (group, code, command) sets."""
+        return [{(m['group'], m['code'], m.get('command')) for m in press['frame']['matches']
+                 if m['config'] == SETUP_FILE} for press in self.run['steps'][step - 1]['presses']
+                if not press['frame']['bare']]
+
+    def test_the_run_is_the_setup_test_and_its_monitor_named_the_compile(self):
+        self.assertEqual(self.run['name'], "Harmony 350, Logitech's compile of the test setup")
+        self.assertEqual(len(self.run['steps']), 20)
+        failed = [index + 1 for index, step in enumerate(self.run['steps'])
+                  if not all(verdict['ok'] for verdict in step['verdicts'])]
+        self.assertEqual(failed, [])
+        # The key table and one map per device.
+        self.assertEqual(len(self.config.maps()), 9)
+
+    def test_favourites_1_to_4_are_the_codes_that_load_the_channels_heard(self):
+        # Each favourite's channel, as the digits heard. Step 16 heard the television's Input first, which
+        # the tester noted pressing by accident; it is not a KPN digit and is dropped with the rest.
+        channels = {}
+        for step, key in self.FAVOURITE_STEPS.items():
+            digits = [command for press in self.heard(step) for group, code, command in press if group == 3]
+            channels[key] = ''.join(digits)
+        self.assertEqual(channels, {'Favorite1': '1', 'Favorite2': '2', 'Favorite3': '3', 'Favorite4': '666',
+                                    'Favorite5': '07'})
+        # The KPN's map, entry 3: which press loads which number for the number sender.
+        loads = {}
+        for tag, operand, opcode in self.config.tagged(self.config.maps()[3]):
+            flat = self.config.flat(operand, opcode)
+            for (op, opc), after in zip(flat, flat[1:]):
+                # `0x7A` loads the number and `0x1F` band `0xF3` hands it to the number sender.
+                if opc == 0x7A and after[1] == 0x1F and after[0] >> 8 == NUMBER_SENDER:
+                    loads[tag] = op
+        self.assertEqual(loads, {PRESS | 8: 1, PRESS | 9: 2, PRESS | 11: 3, PRESS | 34: 666})
+        found = {key: sorted(tag & 0x3F for tag, number in loads.items() if str(number) == channels[key])
+                 for key in self.FAVOURITE_STEPS.values() if key != 'Favorite5'}
+        self.assertEqual(found, {'Favorite1': [8], 'Favorite2': [9], 'Favorite3': [11], 'Favorite4': [34]})
+
+    def test_every_device_keys_short_and_long_press_selected_the_map_the_next_key_was_heard_from(self):
+        # Entry 0, the key table: which map each device key's release and held event select.
+        selects = {}
+        for tag, operand, opcode in self.config.tagged(self.config.maps()[0]):
+            picks = [op & 0xFF for op, opc in self.config.flat(operand, opcode) if opc == 0x1F and op >> 8 == 0xFF]
+            if picks:
+                selects[tag] = picks[-1]
+        # Each map is selected by one device key event only, so the map a key was heard in names the event that
+        # chose it. Watch TV's press selects the KPN's map as well, and is no device key.
+        keys = {tag: entry for tag, entry in selects.items() if tag & 0x3F in DEVICE_KEYS}
+        self.assertEqual(sorted(tag & 0x3F for tag in set(selects) - set(keys)), [WATCH_TV])
+        self.assertEqual(len(set(keys.values())), len(keys))
+        self.assertEqual(len(keys), 8)
+        # Steps 1 to 8: each device key short, then held long, each followed by Volume Up and a key
+        # only that device's map binds. In the map the event selects, that key is the one binding whose first
+        # send is what was heard after it, and the group it was heard from is the device's.
+        found = []
+        for step, event, key in ((1, RELEASE | 5, 'Info'), (2, HELD | 5, 'DirectionUp'), (3, RELEASE | 1, 'Menu'),
+                                 (4, HELD | 1, 'Enter'), (5, RELEASE | 7, 'Info'), (6, HELD | 7, 'Number1'),
+                                 (7, RELEASE | 4, 'PrevChannel'), (8, HELD | 4, 'Stop')):
+            heard = {(g, c) for g, c, _ in self.heard(step)[1]}
+            sends = _first_sends(self.config, selects[event])
+            found.append((key, sorted(scan for scan, first in sends.items() if first in heard), sorted(heard)))
+        self.assertEqual(found, [
+            ('Info', [36], [(0, 15)]), ('DirectionUp', [51], [(4, 3)]), ('Menu', [10], [(1, 32)]),
+            ('Enter', [54], [(5, 15)]), ('Info', [36], [(2, 11)]), ('Number1', [24], [(6, 1)]),
+            ('PrevChannel', [32], [(3, 4)]), ('Stop', [40], [(7, 20)])])
+
+    def test_watch_tv_is_the_one_key_table_binding_that_is_not_a_device_key(self):
+        table = {tag & 0x3F for tag, _, _ in self.config.tagged(self.config.maps()[0]) if tag & 0xC0}
+        self.assertEqual(sorted(table - set(DEVICE_KEYS)), [WATCH_TV])
+        # And its step heard the activity's four codes, the television's PowerOn first.
+        self.assertEqual([sorted(command for _, _, command in press) for press in self.heard(11)],
+                         [['PowerOn'], [None], ['PowerToggle'], ['InputCbl/Sat']])
+
+    def test_a_power_on_delay_held_back_its_own_device_and_no_other(self):
+        # Step 11, Watch TV from everything off: when each code reached the host, in ms since the run started.
+        at = [press['atMs'] for press in self.run['steps'][10]['presses'] if not press['frame']['bare']]
+        self.assertEqual(at, [149486, 149675, 150170, 152210])
+        # The television's PowerOn, the Denon's power on 189 ms later, inside the television's wait of 100
+        # tenths; the KPN's toggle 495 ms after that, inside the Denon's 20; the Denon's input 2535 ms after
+        # its power code, past it. The waits are this file's, read by `setup350.test.ts`.
+        self.assertEqual([at[1] - at[0], at[2] - at[1], at[3] - at[1]], [189, 495, 2535])
+        self.assertLess(at[1] - at[0], 100 * 100)
+        self.assertLess(at[2] - at[1], 20 * 100)
+        self.assertGreater(at[3] - at[1], 20 * 100)
+
+    def test_a_favourites_digits_went_out_a_third_of_a_second_apart_with_nothing_after(self):
+        # Channel 666, step 18, and 07, step 19: when each digit arrived, the silence before it, its repeats.
+        read = [[(press['atMs'], press['frame']['gapUs'], press['repeats']) for press in self.run['steps'][step]['presses']]
+                for step in (17, 18)]
+        self.assertEqual(read, [[(253234, 3273000, 1), (253551, 208000, 1), (253880, 208000, 1)],
+                                [(258049, 4065000, 1), (258373, 208000, 1)]])
+        # Starts 0.32 and 0.33 s apart, and 0.32 s for 07. The configuration waits a tenth after each digit,
+        # `setup350.test.ts`; what makes up the rest is not traced.
+        self.assertEqual([253551 - 253234, 253880 - 253551, 258373 - 258049], [317, 329, 324])
+
+    def test_dvr_sent_the_frame_oks_binding_sends_as_well(self):
+        heard = self.heard(7)[2]
+        self.assertEqual(sorted((g, c) for g, c, _ in heard), [(3, 11), (3, 14)])
+        # The KPN's map, which DVD/Music's release selects, entry 3.
+        kpn = _first_sends(self.config, 3)
+        self.assertEqual(sorted(scan for scan, first in kpn.items() if first in {(g, c) for g, c, _ in heard}),
+                         [16, 50])
+
+
+class TheHarmony350DrawingCarriesTheCodesHeard(unittest.TestCase):
+    """The drawing's codes, read back from the generated keys page, are the bench runs' and nothing else.
+
+    The 41 keys `HEARD` names, Power, and the two device keys whose release was heard selecting a device,
+    all with this file's footnote; and the nine keys heard on Logitech's compile of the test setup,
+    `todo-compile-350.md` 3.3, with the footnote of `TheBench350HeardTheTestSetup` above, whose argument is
+    `packages/bench/test/setup350.test.ts`: the two device keys on the right, Watch TV, Menu, Enter and
+    favourites 1 to 4. Needs no lab, since
+    both sides are in the repository.
+    """
+
+    SETUP = {'CablePc': 1, 'DvdMusic': 4, 'WatchTV': 6, 'Favorite1': 8, 'Favorite2': 9, 'Menu': 10,
+             'Favorite3': 11, 'Favorite4': 34, 'Enter': 54}
+
     def test_the_drawing_carries_exactly_the_codes_heard(self):
-        drawn = {name: scan for name, (_, _, scan, label) in generated_keys('harmony-350').items()
-                 if scan is not None}
-        labels = {label for _, (_, _, scan, label) in generated_keys('harmony-350').items() if scan is not None}
+        keys = generated_keys('harmony-350')
+        drawn = {name: scan for name, (_, _, scan, label) in keys.items() if label == 't-harmony-350-keys-u'}
+        setup = {name: scan for name, (_, _, scan, label) in keys.items() if label == 't-harmony-350-setup-u'}
+        labels = {label for _, (_, _, scan, label) in keys.items() if scan is not None}
         self.assertEqual(drawn, {**HEARD, 'Power': POWER, 'TvMedia': 5, 'AvrGame': 7})
-        self.assertEqual(labels, {'t-harmony-350-keys-u'})
+        self.assertEqual(setup, self.SETUP)
+        self.assertEqual(labels, {'t-harmony-350-keys-u', 't-harmony-350-setup-u'})
+        # The favourites are the five codes that send a favourite channel, now each on its own key.
+        self.assertEqual({setup['Favorite%d' % n] for n in range(1, 5)} | {HEARD['Favorite5']}, FAVOURITES)
 
 
 if __name__ == '__main__':

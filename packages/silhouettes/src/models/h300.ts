@@ -27,7 +27,7 @@
  * Harmony 600. The statement made holding both is that the shape is the same as the 350's, and a remote
  * in the hand outranks a product photograph, so the 350's single part with two halves stands.
  *
- * **No scan code**, though the 350's drawing now carries 44: those were heard by pressing a Harmony 350,
+ * **No scan code**, though the 350's drawing now carries 53: those were heard by pressing a Harmony 350,
  * `tests/test_harmony_350_keys.py`, and no Harmony 300 has been pressed. The same moulding and the 300's
  * configurations binding the same codes make it likely the 300's are the same, which is an inference and
  * not a measurement, so `reprint` drops the codes and the candidates the 350 carries. This said the keypad

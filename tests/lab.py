@@ -318,6 +318,10 @@ IMAGES = {
     'h350_device_keys_ir': '20261030T112024Z-ir-test-harmony-350-which-device-each-device-key-selects.json',
     # todo-compile-350 2.2.2, every key of the bench 350 pressed in the TV's and the receiver's modes.
     'h350_keys_ir': '20261030T142422Z-ir-test-harmony-350-every-key-in-the-tv-s-and-the-receiver-s-modes.json',
+    # todo-compile-350 3.3, Logitech's compile of the test setup on the bench 350, run twice; the first run's
+    # stored verdicts are not the result, packages/lab says why.
+    'h350_logitech_setup_ir': '20261031T111033Z-ir-test-harmony-350-logitech-s-compile-of-the-test-setup.json',
+    'h350_logitech_setup_ir_2': '20261031T112340Z-ir-test-harmony-350-logitech-s-compile-of-the-test-setup.json',
     # todo-compile-350 1.8; the first file is named for 10 s and holds the 3 s run, packages/lab says why.
     'h350_delay_ir_3s': '20261030T094935Z-ir-test-harmony-350-the-tv-s-power-on-delay-at-10-s.json',
     'h350_delay_ir_10s': '20261030T095433Z-ir-test-harmony-350-the-tv-s-power-on-delay-at-10-s.json',

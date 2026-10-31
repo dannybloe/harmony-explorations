@@ -233,7 +233,7 @@ is why it may never carry a guess.
 
 **Never invent a scan code.** `scan` is present only where an archive section or, since the archive was
 frozen, a test established it, which is 38 of 44 keys on a Harmony One, 41 of 54 on a Harmony 600, none of
-the 50 on a Harmony 525, 44 of the 55 on a Harmony 350, heard by pressing them, and none on the Harmony
+the 50 on a Harmony 525, 53 of the 55 on a Harmony 350, heard by pressing them, and none on the Harmony
 300 that shares its face. A wrong scan code is invisible: the interface then shows the wrong assignment
 beside a key with complete confidence. `test/models.test.ts` pins the count per source and names every
 code that did not come from the button maps; `packages/codec/test/irframe.test.ts` checks every button

@@ -455,15 +455,16 @@ class TestTheHarmonyOneSilhouette(_SilhouetteConventions, unittest.TestCase):
 
 
 class TestTheHarmony350Silhouette(_SilhouetteConventions, unittest.TestCase):
-    """Fifty five, counted off Logitech's own drawing, and 44 of them tied to a code by pressing them."""
+    """Fifty five, counted off Logitech's own drawing, and 53 of them tied to a code by pressing them."""
 
     NAME = 'h350.svg'
     # The count is the button page of the Harmony 350 setup guide, counted shape by shape out of its vector
     # drawing; the guide's box contents drawing and the cover photograph agree where they reach. The 1.4
     # firmware's keypad scan numbers 56 codes, `tests/test_harmony_350_keys.py`, one more than the keys.
     EXPECTED_BUTTONS = 55
-    # The codes heard at the bench, `TheBench350HeardEveryKey` in `tests/test_harmony_350_keys.py`, by the
-    # drawing's names, and the keys narrowed to a set. Stated here rather than read back from the drawing,
+    # The codes heard at the bench, `TheBench350HeardEveryKey` in `tests/test_harmony_350_keys.py` and the nine
+    # more heard on Logitech's compile of the test setup, `packages/bench/test/setup350.test.ts`, by the
+    # drawing's names, and the key narrowed to a set. Stated here rather than read back from the drawing,
     # so a code that moves in the drawing moves in this file's diff too.
     CODES = {
         'TvMedia': 5, 'AvrGame': 7, 'Power': 3, 'Input': 35, 'Favorite5': 2, 'Info': 36, 'Exit': 12,
@@ -473,19 +474,19 @@ class TestTheHarmony350Silhouette(_SilhouetteConventions, unittest.TestCase):
         'PrevChannel': 32, 'Rewind': 22, 'FastForward': 30, 'SkipBack': 21, 'SkipForward': 38, 'Record': 23,
         'Stop': 40, 'Play': 44, 'Pause': 46, 'Number1': 24, 'Number2': 47, 'Number3': 39, 'Number4': 17,
         'Number5': 48, 'Number6': 37, 'Number7': 18, 'Number8': 53, 'Number9': 45, 'Clear': 19, 'Number0': 20,
+        'CablePc': 1, 'DvdMusic': 4, 'WatchTV': 6, 'Favorite1': 8, 'Favorite2': 9, 'Menu': 10, 'Favorite3': 11,
+        'Favorite4': 34, 'Enter': 54,
     }
-    CANDIDATES = {
-        'Favorite1': '8 9 11 34', 'Favorite2': '8 9 11 34', 'Favorite3': '8 9 11 34',
-        'Favorite4': '8 9 11 34', 'Live': '43 56',
-    }
+    CANDIDATES = {'Live': '43 56'}
 
     def test_exactly_the_stated_keys_carry_a_code_or_candidates(self):
         """
-        On the Harmony 350, 44 keys carry the code they were heard sending with, and five a set of
-        candidates, `todo-compile-350.md` 2.2.2; the other six, Menu, DVR, Enter, Watch TV and the top right
-        and bottom right device keys, carry neither, because the file the unit held binds nothing to them
-        and the drawing takes a code from the bench alone. This said no key on this remote was tied to a
-        scan code, and none carried candidates either, until that run. The Harmony 300's class states none.
+        On the Harmony 350, 53 keys carry the code they were heard sending with, 44 in `todo-compile-350.md`
+        2.2.2 and nine in 3.3, and Live a set of candidates; DVR carries neither, because its press sent a
+        frame OK's binding sends as well, and the drawing takes a code from a press that decides it alone.
+        This said no key on this remote was tied to a scan code, and none carried candidates either, until
+        2.2.2's run, and that 44 carried a code and five a set until 3.3's. The Harmony 300's class states
+        none.
         """
         buttons = _buttons(_tree(self.NAME).getroot())
         codes = {e.get('data-name'): int(e.get('data-scan')) for e in buttons.values() if e.get('data-scan')}
@@ -524,7 +525,7 @@ class TestTheHarmony300Silhouette(TestTheHarmony350Silhouette):
 
     NAME = 'h300.svg'
     EXPECTED_BUTTONS = 55
-    # **None**, although the 350's drawing carries 44: those were heard on a Harmony 350 and no Harmony 300
+    # **None**, although the 350's drawing carries 53: those were heard on a Harmony 350 and no Harmony 300
     # has been pressed. The moulding and the 300's configurations make it likely the codes are the same,
     # which is an inference, so `h300.ts` drops every code and candidate it takes over with the shapes.
     CODES = {}
