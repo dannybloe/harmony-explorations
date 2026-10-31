@@ -1,0 +1,455 @@
+{
+  "name": "Harmony 300, every key in the TV's and the KPN's modes",
+  "description": "todo-compile-300 2.2, against docs/predictions/harmony-300-keys.md, written and committed before the run. The bench 300 holds its own configuration, lab/work/300-delay/before.bin. Every key is pressed in the television's mode and again in the KPN box's mode, and each step expects what that file binds to the scan code the Harmony 350 raises for the key in the same place, traced through its lists; the two remotes are one moulding, so the prediction is that every key raises the 350's code. A key predicted to send nothing is named in its step, and anything heard there is a finding. The KPN's codes have no catalogue names, so they are expected by number.",
+  "steps": [
+    {
+      "instruction": "Unplug the Harmony 300 from USB and point it at the receiver. Press TV, the top left device key, once and briefly. The remote is now in the television's mode. Nothing should be heard"
+    },
+    {
+      "instruction": "Press, one at a time and in this order: Volume Up, Volume Down, Mute, Power. Power toggles the television; press it twice in a row so it ends where it started.",
+      "expect": [
+        {
+          "device": "Panasonic_TV",
+          "command": "VolumeUp"
+        },
+        {
+          "device": "Panasonic_TV",
+          "command": "VolumeDown"
+        },
+        {
+          "device": "Panasonic_TV",
+          "command": "Mute"
+        },
+        {
+          "device": "Panasonic_TV",
+          "command": "PowerToggle"
+        },
+        {
+          "device": "Panasonic_TV",
+          "command": "PowerToggle"
+        }
+      ]
+    },
+    {
+      "instruction": "Press, one at a time and in this order: Channel Up, Channel Down, Previous Channel.",
+      "expect": [
+        {
+          "device": "Panasonic_TV",
+          "command": "ChannelUp"
+        },
+        {
+          "device": "Panasonic_TV",
+          "command": "ChannelDown"
+        },
+        {
+          "device": "Panasonic_TV",
+          "command": "LastView"
+        }
+      ]
+    },
+    {
+      "instruction": "Press, one at a time and in this order: Up of the four around OK, Right of the four around OK, Down of the four around OK, Left of the four around OK, OK.",
+      "expect": [
+        {
+          "device": "Panasonic_TV",
+          "command": "DirectionUp"
+        },
+        {
+          "device": "Panasonic_TV",
+          "command": "DirectionRight"
+        },
+        {
+          "device": "Panasonic_TV",
+          "command": "DirectionDown"
+        },
+        {
+          "device": "Panasonic_TV",
+          "command": "DirectionLeft"
+        },
+        {
+          "device": "Panasonic_TV",
+          "command": "OK"
+        }
+      ]
+    },
+    {
+      "instruction": "Press, one at a time and in this order: Menu, Exit, Guide, Info, the up arrow in the middle of Menu, Info, Exit and Guide, the down arrow there. In the television's mode the up arrow in the middle of Menu, Info, Exit and Guide, the down arrow there are predicted to send nothing.",
+      "expect": [
+        {
+          "device": "Panasonic_TV",
+          "command": "Menu"
+        },
+        {
+          "device": "Panasonic_TV",
+          "command": "Exit"
+        },
+        {
+          "device": "Panasonic_TV",
+          "command": "Guide"
+        },
+        {
+          "device": "Panasonic_TV",
+          "command": "Info"
+        }
+      ]
+    },
+    {
+      "instruction": "Press, one at a time and in this order: A (yellow), B (blue), C (red), D (green).",
+      "expect": [
+        {
+          "device": "Panasonic_TV",
+          "command": "Red"
+        },
+        {
+          "device": "Panasonic_TV",
+          "command": "Green"
+        },
+        {
+          "device": "Panasonic_TV",
+          "command": "Yellow"
+        },
+        {
+          "device": "Panasonic_TV",
+          "command": "Blue"
+        }
+      ]
+    },
+    {
+      "instruction": "Press, one at a time and in this order: Rewind, Play, Pause, Fast Forward, Record, Stop, Replay, Skip, List, Live (right of List). In the television's mode List, Live (right of List) are predicted to send nothing.",
+      "expect": [
+        {
+          "device": "Panasonic_TV",
+          "command": "Rewind"
+        },
+        {
+          "device": "Panasonic_TV",
+          "command": "Play"
+        },
+        {
+          "device": "Panasonic_TV",
+          "command": "Pause"
+        },
+        {
+          "device": "Panasonic_TV",
+          "command": "FastForward"
+        },
+        {
+          "device": "Panasonic_TV",
+          "command": "Record"
+        },
+        {
+          "device": "Panasonic_TV",
+          "command": "Stop"
+        },
+        {
+          "device": "Panasonic_TV",
+          "command": "ChapterPrev"
+        },
+        {
+          "device": "Panasonic_TV",
+          "command": "ChapterNext"
+        }
+      ]
+    },
+    {
+      "instruction": "Press, one at a time and in this order: digit 1, digit 2, digit 3, digit 4, digit 5, digit 6, digit 7, digit 8, digit 9, digit 0, the key left of 0, the key right of 0. In the television's mode the key left of 0, the key right of 0 are predicted to send nothing.",
+      "expect": [
+        {
+          "device": "Panasonic_TV",
+          "command": "1"
+        },
+        {
+          "device": "Panasonic_TV",
+          "command": "2"
+        },
+        {
+          "device": "Panasonic_TV",
+          "command": "3"
+        },
+        {
+          "device": "Panasonic_TV",
+          "command": "4"
+        },
+        {
+          "device": "Panasonic_TV",
+          "command": "5"
+        },
+        {
+          "device": "Panasonic_TV",
+          "command": "6"
+        },
+        {
+          "device": "Panasonic_TV",
+          "command": "7"
+        },
+        {
+          "device": "Panasonic_TV",
+          "command": "8"
+        },
+        {
+          "device": "Panasonic_TV",
+          "command": "9"
+        },
+        {
+          "device": "Panasonic_TV",
+          "command": "0"
+        }
+      ]
+    },
+    {
+      "instruction": "Press, one at a time and in this order: TV Input, favourite 1 (beside TV Input on the left), favourite 2 (below TV Input, left), favourite 3 (below, middle), favourite 4 (below, right), favourite 5 (beside TV Input on the right). In the television's mode TV Input, favourite 1 (beside TV Input on the left), favourite 2 (below TV Input, left), favourite 4 (below, right), favourite 5 (beside TV Input on the right) are predicted to send nothing.",
+      "expect": [
+        {
+          "device": "Panasonic_TV",
+          "command": "Teletext"
+        }
+      ]
+    },
+    {
+      "instruction": "Press Cable/Sat, the top right device key, once and briefly. The remote is now in the KPN box's mode. Nothing should be heard"
+    },
+    {
+      "instruction": "Press, one at a time and in this order: Volume Up, Volume Down, Mute, Power. In the KPN box's mode Volume Up, Volume Down, Mute are predicted to send nothing.",
+      "expect": [
+        {
+          "device": "KPN",
+          "code": 29,
+          "config": "h300_programmed_config"
+        }
+      ]
+    },
+    {
+      "instruction": "Press, one at a time and in this order: Channel Up, Channel Down, Previous Channel.",
+      "expect": [
+        {
+          "device": "KPN",
+          "code": 35,
+          "config": "h300_programmed_config"
+        },
+        {
+          "device": "KPN",
+          "code": 34,
+          "config": "h300_programmed_config"
+        },
+        {
+          "device": "KPN",
+          "code": 19,
+          "config": "h300_programmed_config"
+        }
+      ]
+    },
+    {
+      "instruction": "Press, one at a time and in this order: Up of the four around OK, Right of the four around OK, Down of the four around OK, Left of the four around OK, OK.",
+      "expect": [
+        {
+          "device": "KPN",
+          "code": 24,
+          "config": "h300_programmed_config"
+        },
+        {
+          "device": "KPN",
+          "code": 27,
+          "config": "h300_programmed_config"
+        },
+        {
+          "device": "KPN",
+          "code": 7,
+          "config": "h300_programmed_config"
+        },
+        {
+          "device": "KPN",
+          "code": 15,
+          "config": "h300_programmed_config"
+        },
+        {
+          "device": "KPN",
+          "code": 33,
+          "config": "h300_programmed_config"
+        }
+      ]
+    },
+    {
+      "instruction": "Press, one at a time and in this order: Menu, Exit, Guide, Info, the up arrow in the middle of Menu, Info, Exit and Guide, the down arrow there. In the KPN box's mode Exit, the up arrow in the middle of Menu, Info, Exit and Guide, the down arrow there are predicted to send nothing.",
+      "expect": [
+        {
+          "device": "KPN",
+          "code": 3,
+          "config": "h300_programmed_config"
+        },
+        {
+          "device": "KPN",
+          "code": 16,
+          "config": "h300_programmed_config"
+        },
+        {
+          "device": "KPN",
+          "code": 11,
+          "config": "h300_programmed_config"
+        }
+      ]
+    },
+    {
+      "instruction": "Press, one at a time and in this order: A (yellow), B (blue), C (red), D (green).",
+      "expect": [
+        {
+          "device": "KPN",
+          "code": 10,
+          "config": "h300_programmed_config"
+        },
+        {
+          "device": "KPN",
+          "code": 18,
+          "config": "h300_programmed_config"
+        },
+        {
+          "device": "KPN",
+          "code": 38,
+          "config": "h300_programmed_config"
+        },
+        {
+          "device": "KPN",
+          "code": 1,
+          "config": "h300_programmed_config"
+        }
+      ]
+    },
+    {
+      "instruction": "Press, one at a time and in this order: Rewind, Play, Pause, Fast Forward, Record, Stop, Replay, Skip, List, Live (right of List). In the KPN box's mode Replay, Skip, Live (right of List) are predicted to send nothing.",
+      "expect": [
+        {
+          "device": "KPN",
+          "code": 37,
+          "config": "h300_programmed_config"
+        },
+        {
+          "device": "KPN",
+          "code": 31,
+          "config": "h300_programmed_config"
+        },
+        {
+          "device": "KPN",
+          "code": 20,
+          "config": "h300_programmed_config"
+        },
+        {
+          "device": "KPN",
+          "code": 13,
+          "config": "h300_programmed_config"
+        },
+        {
+          "device": "KPN",
+          "code": 12,
+          "config": "h300_programmed_config"
+        },
+        {
+          "device": "KPN",
+          "code": 28,
+          "config": "h300_programmed_config"
+        },
+        {
+          "device": "KPN",
+          "code": 41,
+          "config": "h300_programmed_config"
+        }
+      ]
+    },
+    {
+      "instruction": "Press, one at a time and in this order: digit 1, digit 2, digit 3, digit 4, digit 5, digit 6, digit 7, digit 8, digit 9, digit 0, the key left of 0, the key right of 0. In the KPN box's mode the key left of 0, the key right of 0 are predicted to send nothing.",
+      "expect": [
+        {
+          "device": "KPN",
+          "code": 43,
+          "config": "h300_programmed_config"
+        },
+        {
+          "device": "KPN",
+          "code": 8,
+          "config": "h300_programmed_config"
+        },
+        {
+          "device": "KPN",
+          "code": 30,
+          "config": "h300_programmed_config"
+        },
+        {
+          "device": "KPN",
+          "code": 42,
+          "config": "h300_programmed_config"
+        },
+        {
+          "device": "KPN",
+          "code": 6,
+          "config": "h300_programmed_config"
+        },
+        {
+          "device": "KPN",
+          "code": 26,
+          "config": "h300_programmed_config"
+        },
+        {
+          "device": "KPN",
+          "code": 5,
+          "config": "h300_programmed_config"
+        },
+        {
+          "device": "KPN",
+          "code": 4,
+          "config": "h300_programmed_config"
+        },
+        {
+          "device": "KPN",
+          "code": 0,
+          "config": "h300_programmed_config"
+        },
+        {
+          "device": "KPN",
+          "code": 39,
+          "config": "h300_programmed_config"
+        }
+      ]
+    },
+    {
+      "instruction": "Press, one at a time and in this order: TV Input, favourite 1 (beside TV Input on the left), favourite 2 (below TV Input, left), favourite 3 (below, middle), favourite 4 (below, right), favourite 5 (beside TV Input on the right). In the KPN box's mode TV Input is predicted to send nothing.",
+      "expect": [
+        {
+          "device": "KPN",
+          "code": 43,
+          "config": "h300_programmed_config"
+        },
+        {
+          "device": "KPN",
+          "code": 30,
+          "config": "h300_programmed_config"
+        },
+        {
+          "device": "KPN",
+          "code": 22,
+          "config": "h300_programmed_config"
+        },
+        {
+          "device": "KPN",
+          "code": 26,
+          "config": "h300_programmed_config"
+        },
+        {
+          "device": "KPN",
+          "code": 26,
+          "config": "h300_programmed_config"
+        },
+        {
+          "device": "KPN",
+          "code": 26,
+          "config": "h300_programmed_config"
+        },
+        {
+          "device": "KPN",
+          "code": 8,
+          "config": "h300_programmed_config"
+        }
+      ]
+    },
+    {
+      "instruction": "Press TV, the top left device key, to leave the remote in the television's mode. Nothing should be heard"
+    }
+  ]
+}
