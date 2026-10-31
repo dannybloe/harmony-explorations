@@ -1,0 +1,38 @@
+{
+  "name": "Harmony 300, its own configuration written back",
+  "description": "todo-compile-300 1.4: the bench 300's own configuration, the four devices Logitech's service put on it, written back unchanged over the file protocol. Each step expects what that file binds, traced key by key: the TV key selects the Panasonic television, Cable/Sat the KPN box, DVD the Panasonic player and VCR/Aux the Sony recorder, and a device key sends nothing itself. The catalogue names none of the KPN's codes, so those are expected by their number in the file. The 300 has no screen, so the receiver is the only witness.",
+  "steps": [
+    {
+      "instruction": "Unplug the Harmony 300 from USB and point it at the receiver. Press TV, the top left device key, once"
+    },
+    {
+      "instruction": "Press Volume Up, then Channel Up, then the digit 1",
+      "expect": [
+        { "device": "Panasonic_TV", "command": "VolumeUp" },
+        { "device": "Panasonic_TV", "command": "ChannelUp" },
+        { "device": "Panasonic_TV", "command": "1" }
+      ]
+    },
+    {
+      "instruction": "Press Cable/Sat, the top right device key, then Channel Up, then the digit 1",
+      "expect": [
+        { "device": "KPN", "code": 35, "config": "h300_programmed_config" },
+        { "device": "KPN", "code": 43, "config": "h300_programmed_config" }
+      ]
+    },
+    {
+      "instruction": "Press DVD, the bottom left device key, then the digit 1, then Volume Up",
+      "expect": [
+        { "device": "Panasonic_DVD", "command": "1" },
+        { "device": "Panasonic_TV", "command": "VolumeUp" }
+      ]
+    },
+    {
+      "instruction": "Press VCR/Aux, the bottom right device key, then Channel Up, then the digit 1",
+      "expect": [
+        { "device": "Sony_VCR", "command": "ChannelUp" },
+        { "device": "Sony_VCR", "command": "1" }
+      ]
+    }
+  ]
+}

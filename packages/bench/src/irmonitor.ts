@@ -62,6 +62,9 @@ export const BENCH_CONFIGS: readonly string[] = [
   // What it holds since todo-compile-350 3.2, Logitech's compile of the test setup, by path for the same
   // reason and because every compile in `work/setups/` carries this file name; 3.3's bench test.
   'work/setups/h350-test/compile-Result.EzHex',
+  // The bench Harmony 300's own configuration, the four devices Logitech's service put on it, written back
+  // unchanged by todo-compile-300 1.4; that item's bench test.
+  'h300_programmed_config',
 ];
 
 /** A space at least this long ends a frame: the Flirc splits there too, and NEC's longest inner space is 4.5 ms. */
