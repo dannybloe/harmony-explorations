@@ -35,10 +35,12 @@
  * compressed length comes from the central directory. `node:zlib` inflates it; no dependency is added
  * for this, which is deliberate, since a ZIP reader would be a large tree for one file.
  */
-import { inflateRawSync } from 'node:zlib';
+import { crc32, deflateRawSync, inflateRawSync } from 'node:zlib';
 import type { Container } from './gspm.ts';
-import { GspmError } from './gspm.ts';
+import { GspmError, parse, TRAILER_CHECKSUM_OFFSET, trailerChecksum } from './gspm.ts';
 import { u16, u32 } from './bytes.ts';
+import { Writer } from './emit.ts';
+import { excise, relocate } from './relocate.ts';
 
 /**
  * The raw slot the archive sits in, per architecture, and **not** a base slot on either.
@@ -194,4 +196,98 @@ export function metadataArchive(c: Container): Metadata | undefined {
     return { xml, offset: off, length, devices: devicesOf(xml) };
   }
   return undefined;
+}
+
+// ---------------------------------------------------------------------------------------------------
+// Writing one: a device's names added, todo-compile-350.md 4.1
+
+/** A data descriptor, which the archives here carry after the compressed bytes, and the end of the directory. */
+const DESCRIPTOR = 0x08074b50;
+const END_OF_DIRECTORY = 0x06054b50;
+/** The local header's flags bit saying the sizes and checksum follow the data, in a descriptor. */
+const FLAG_DESCRIPTOR = 0x0008;
+
+/** What `withMetadataDevice` adds: the device's name and every command name the catalogue holds for it. */
+export interface MetadataDeviceEntry {
+  readonly name: string;
+  readonly commands: readonly string[];
+}
+
+/** Text as an XML element's content: the three characters that would end it escaped. */
+function escaped(text: string): string {
+  return text.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
+}
+
+/**
+ * The archive again around new text: one entry, deflated, its header fields, flags, time and date the old
+ * archive's, the sizes and checksum in a data descriptor after the data and again in the central directory, which
+ * is the shape of every archive this reader has met, `inflateOneEntry`. The deflated bytes are this machine's
+ * zlib's and not Logitech's, so the archive is not theirs byte for byte; what it says, inflated, is the measure.
+ */
+function rezipped(old: Uint8Array, xml: string): Uint8Array {
+  if (u32(old, 0) !== LOCAL_HEADER || (u16(old, 6) & FLAG_DESCRIPTOR) === 0) {
+    throw new GspmError('the metadata archive is not one entry with a data descriptor, the only shape written');
+  }
+  const nameLength = u16(old, 26);
+  const name = old.subarray(30, 30 + nameLength);
+  let central = -1;
+  for (let scan = 30 + nameLength; scan + 46 <= old.length; scan += 1) {
+    if (u32(old, scan) === CENTRAL_HEADER) { central = scan; break; }
+  }
+  if (central < 0) throw new GspmError('the metadata archive has no central directory');
+  const text = Buffer.from(xml, 'utf8');
+  const data = deflateRawSync(text);
+  const check = crc32(text) >>> 0;
+  // The local header as it was, the extra field dropped, sizes and checksum zero since a descriptor follows.
+  const local = new Writer(30 + nameLength).raw(old.subarray(0, 26)).u16(nameLength).u16(0).raw(name);
+  local.bytes.fill(0, 14, 26);
+  const descriptor = new Writer(16).u32(DESCRIPTOR).u32(check).u32(data.length).u32(text.length);
+  const directoryAt = local.bytes.length + data.length + descriptor.bytes.length;
+  // The central header as it was, with this entry's checksum and sizes, its extra and comment dropped.
+  const directory = new Writer(46 + nameLength).raw(old.subarray(central, central + 16))
+    .u32(check).u32(data.length).u32(text.length).u16(nameLength).u16(0).u16(0)
+    .raw(old.subarray(central + 34, central + 42)).u32(0).raw(name);
+  const end = new Writer(22).u32(END_OF_DIRECTORY).u16(0).u16(0).u16(1).u16(1)
+    .u32(directory.bytes.length).u32(directoryAt).u16(0);
+  return Buffer.concat([local.bytes, data, descriptor.bytes, directory.bytes, end.bytes]);
+}
+
+/**
+ * The configuration with a device's names added to its metadata archive: one `Device` element after the ones it
+ * holds, its `Index` the count before it, and every command the catalogue names for it, sorted by character code
+ * and numbered from 0. The archive is rewritten whole in place and its length word restated; nothing else moves
+ * but what follows it, which on the Harmony 300 and 350 is the trailer alone.
+ *
+ * **What it rests on**, `packages/codec/test/noscreen.test.ts`: Logitech's compile of the Harmony 350 test setup
+ * names its eight devices in the order the setup lists them, each with every command of its catalogue codeset in
+ * that order, numbered from 0, and the archive is the configuration's last section. A device's `DeviceId` there
+ * is a number of Logitech's account, section 260, which a composed device does not have, so none is written.
+ *
+ * **What reads it is not known to be the remote**: no instruction of the Harmony 350's firmware is known to seek
+ * raw slot 13, and its log area's records name a device and a command by number, which is what the archive would
+ * name them by for a host. So what `Index` has to agree with is not read. Run on the Harmony 350 alone, the one
+ * architecture whose archive names devices; the Harmony 890's names none and is refused.
+ */
+export function withMetadataDevice(c: Container, entry: MetadataDeviceEntry): Uint8Array {
+  const metadata = metadataArchive(c);
+  if (metadata === undefined) throw new GspmError('the configuration carries no metadata archive');
+  const close = metadata.xml.indexOf('</Devices>');
+  if (close < 0) throw new GspmError('the metadata archive names no devices, so there is no list to add one to');
+  if (metadata.devices.some((one) => one.name === entry.name)) throw new GspmError(`the metadata archive names ${entry.name} already`);
+  const names = [...new Set(entry.commands)].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+  const element = `<Device><Name>${escaped(entry.name)}</Name><Index>${metadata.devices.length}</Index><Commands>`
+    + names.map((name, k) => `<Command><Index>${k}</Index><Name>${escaped(name)}</Name></Command>`).join('')
+    + '</Commands></Device>';
+  const xml = metadata.xml.slice(0, close) + element + metadata.xml.slice(close);
+  const at = metadata.offset + 4;
+  const zip = rezipped(c.blob.subarray(at, at + metadata.length), xml);
+  // The new archive in front of the old one, then the old one cut, then the length word: each step a container
+  // the census can walk, and nothing points inside an archive.
+  const grown = relocate(c, at, zip.length);
+  grown.bytes.set(zip, at);
+  const cut = excise(parse(grown.bytes), at + zip.length, metadata.length);
+  cut.bytes.set(new Writer(4).u32(zip.length).bytes, metadata.offset);
+  // The length word changed after the cut restamped the trailer, so the checksum is recomputed last.
+  cut.bytes.set(new Writer(2).u16(trailerChecksum(cut.bytes)).bytes, cut.bytes.length - TRAILER_CHECKSUM_OFFSET);
+  return cut.bytes;
 }

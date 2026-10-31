@@ -320,7 +320,10 @@ command and a three byte time, and a device selected event; and the **naming lay
 and every command by index and name. The naming half is **not joined to base slot 5**: there are more named
 commands than records, 61 against 52 on one device, and the device index is not the group index.[^s260]
 `metadataArchive` in `packages/codec/src/metadata.ts` reads it. Its `DeviceId` is scoped to the account
-and is **not** an id in Logitech's device catalogue.[^s260]
+and is **not** an id in Logitech's device catalogue.[^s260] In a compile of eight devices by Logitech's current
+service each device's `Index` is its position in the list, and each device's commands
+are every command its catalogue entry names, sorted by character code and numbered from 0, records or
+none.[^t-noscreen]
 
 ## The Harmony 300 and 350's slots
 
@@ -387,4 +390,5 @@ configuration holds in them, is in
 [^s237]: Measured on a unit. [Section 237](../../docs/findings.md#s237)
 [^s187]: Measured in configurations. [Section 187](../../docs/findings.md#s187)
 [^s215]: Measured on a unit. [Section 215](../../docs/findings.md#s215)
+[^t-noscreen]: Measured in configurations. [The test](../../packages/codec/test/noscreen.test.ts)
 [^t-file-family-delays]: Measured in configurations. [The test](../../packages/codec/test/filefamilydelays.test.ts)

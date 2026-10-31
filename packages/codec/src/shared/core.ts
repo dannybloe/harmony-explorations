@@ -282,9 +282,13 @@ export function appendNarrowStateVariable(
 /**
  * Append action lists at the foot of the action table, where `composeDevice` puts its own, and
  * return the index of the first. Each list is its instructions, `[operand, opcode]`.
+ *
+ * `at`, where given, is the blob offset the lists' bodies go in at instead, `DevicePlacement.listsAt`: the
+ * Harmony 300 and 350 keep a counted array right in front of the action table, whose reader demands it fill
+ * the gap to the next section, so a hole there would make it stop reading.
  */
 export function appendActionLists(
-  c: Container, bodies: readonly (readonly [number, number])[][],
+  c: Container, bodies: readonly (readonly [number, number])[][], at?: number,
 ): { bytes: Uint8Array; first: number } {
   if (c.architecture === undefined) throw new ComposeError('the container states no architecture');
   const slot = archSlot(c.architecture, ACTION_TABLE_SLOT);
@@ -295,10 +299,10 @@ export function appendActionLists(
     for (const [operand, opcode] of body) one.u16(operand).u8(opcode);
     return one;
   });
-  const at = table.start;
-  const hole = relocate(c, at, writers.reduce((sum, one) => sum + one.bytes.length, 0));
+  const where = at ?? table.start;
+  const hole = relocate(c, where, writers.reduce((sum, one) => sum + one.bytes.length, 0));
   const addresses: number[] = [];
-  let next = at;
+  let next = where;
   for (const one of writers) {
     hole.bytes.set(one.bytes, next);
     addresses.push(c.flashBase + next);

@@ -45,6 +45,7 @@ export {
 export {
   type ComposedDevice,
   type ComposeDevice,
+  type DevicePlacement,
 } from './shared/devices.ts';
 export {
   appendTableEntries,
@@ -54,6 +55,7 @@ export {
   type ComposeCommand,
   type ComposedGroup,
   composeIrGroup,
+  fillIrGroup,
   type ComposePowerStep,
   type StatedBlocks,
   type ToggledCode,

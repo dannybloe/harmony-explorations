@@ -35,7 +35,7 @@ import { u24 } from '../bytes.ts';
 import { Writer } from '../emit.ts';
 import { archSlot, Container, parse } from '../gspm.ts';
 import {
-  IR_CLASS_STREAM, IR_POINTERS_PER_GROUP, IR_PULSE_MAX, IR_TABLE_SLOT, irBuildBlock, irBuildRecord, type IrPulse,
+  IR_CLASS_STREAM, IR_POINTERS_PER_GROUP, IR_PULSE_MAX, IR_TABLE_SLOT, irBuildBlock, irBuildRecord, irGroups, type IrPulse,
 } from '../ir.ts';
 import { type Pulse } from '../irframe.ts';
 import { relocate } from '../relocate.ts';
@@ -280,23 +280,20 @@ export function appendTableEntries(
 }
 
 /**
- * Add one device group to base slot 5: records and blocks below the section, one pointer at the
- * table's end, and the count bumped.
- *
- * Two relocations, in an order where the container stays parseable in between: first the hole for
- * the content, whose bytes are unreferenced filler until the table names them, then three bytes at
- * the table's own end for the pointer. The intermediate state matters because each relocation runs
- * the full census on what it is given.
+ * A group's blocks and records, built and laid out but not yet placed: `size` bytes, blocks first and the
+ * records after them, which `write` puts at a blob offset and answers with each record's pointer, the address
+ * a group's own array names it by. Split out of `composeIrGroup` so that a group appended to the table and a
+ * group put into an empty entry of it, `fillIrGroup`, are built by one derivation, since two copies of how a
+ * record is built are two copies until one of them moves.
  */
-export function composeIrGroup(
-  c: Container, commands: readonly ComposeCommand[],
-): ComposedGroup {
+interface IrGroupContent {
+  readonly size: number;
+  readonly records: number;
+  write(bytes: Uint8Array, at: number, base: number): number[];
+}
+
+function irGroupContent(commands: readonly ComposeCommand[]): IrGroupContent {
   if (commands.length === 0) throw new ComposeError('a device with no commands is not a device');
-  if (c.architecture === undefined) throw new ComposeError('the container states no architecture');
-  const slot = archSlot(c.architecture, IR_TABLE_SLOT);
-  // An empty table is one, in a configuration with no device yet.
-  const table = c.pointerArrayAt(slot, true);
-  if (table === undefined) throw new ComposeError('base slot 5 does not read as a group table');
 
   // Every command's blocks, derived and refused early: composing half a device helps nobody. A record is
   // one pointer group per reading of the code: the code as stated and, where it toggles, the code with its
@@ -384,7 +381,59 @@ export function composeIrGroup(
   // A header is twelve bytes and nine per pointer group, so a toggling code's record is nine longer.
   const recordSizes = laid.map((one) => 12 + 3 * IR_POINTERS_PER_GROUP * one.groups.length);
   const recordAt = recordSizes.map((_, k) => blocksSize + recordSizes.slice(0, k).reduce((a, b) => a + b, 0));
-  const arrayAt = blocksSize + recordSizes.reduce((a, b) => a + b, 0);
+  const size = blocksSize + recordSizes.reduce((a, b) => a + b, 0);
+
+  return {
+    size,
+    records: commands.length,
+    write(bytes, at, base) {
+      const pointers: number[] = [];
+      laid.forEach((one, k) => {
+        const start = base + recordAt[k]!;
+        const record = irBuildRecord({
+          periodNs: one.periodNs,
+          start,
+          encoding: IR_CLASS_STREAM,
+          // Once, held and tail per group, section 127; the tail is the release where the code names one.
+          pointers: one.groups.flatMap((group) => [
+            base + group.once,
+            group.held === undefined ? 0 : base + group.held,
+            group.release === undefined ? 0 : base + group.release,
+          ]),
+        });
+        bytes.set(record.bytes, at + recordAt[k]!);
+        pointers.push(record.pointer);
+      });
+      let offset = 0;
+      for (const block of blocks) {
+        bytes.set(block, at + offset);
+        offset += block.length;
+      }
+      return pointers;
+    },
+  };
+}
+
+/**
+ * Add one device group to base slot 5: records and blocks below the section, one pointer at the
+ * table's end, and the count bumped.
+ *
+ * Two relocations, in an order where the container stays parseable in between: first the hole for
+ * the content, whose bytes are unreferenced filler until the table names them, then three bytes at
+ * the table's own end for the pointer. The intermediate state matters because each relocation runs
+ * the full census on what it is given.
+ */
+export function composeIrGroup(
+  c: Container, commands: readonly ComposeCommand[],
+): ComposedGroup {
+  if (commands.length === 0) throw new ComposeError('a device with no commands is not a device');
+  if (c.architecture === undefined) throw new ComposeError('the container states no architecture');
+  const slot = archSlot(c.architecture, IR_TABLE_SLOT);
+  // An empty table is one, in a configuration with no device yet.
+  const table = c.pointerArrayAt(slot, true);
+  if (table === undefined) throw new ComposeError('base slot 5 does not read as a group table');
+  const content = irGroupContent(commands);
+  const arrayAt = content.size;
   const holeSize = arrayAt + 3 + 3 * commands.length;
 
   // The hole goes exactly where the group arrays end and the section begins, so the new group sits
@@ -393,31 +442,56 @@ export function composeIrGroup(
   const first = relocate(c, at, holeSize);
   const base = c.flashBase + at;
   const array = new Writer(3 + 3 * commands.length).u8(0).u16(commands.length);
-  laid.forEach((one, k) => {
-    const start = base + recordAt[k]!;
-    const record = irBuildRecord({
-      periodNs: one.periodNs,
-      start,
-      encoding: IR_CLASS_STREAM,
-      // Once, held and tail per group, section 127; the tail is the release where the code names one.
-      pointers: one.groups.flatMap((group) => [
-        base + group.once,
-        group.held === undefined ? 0 : base + group.held,
-        group.release === undefined ? 0 : base + group.release,
-      ]),
-    });
-    first.bytes.set(record.bytes, at + recordAt[k]!);
-    array.u24(record.pointer);
-  });
-  let offset = 0;
-  for (const block of blocks) {
-    first.bytes.set(block, at + offset);
-    offset += block.length;
-  }
+  for (const pointer of content.write(first.bytes, at, base)) array.u24(pointer);
   first.bytes.set(array.bytes, at + arrayAt);
 
   // The table entry: three bytes at the table's end, then the count. The middle parse is what lets
   // the second relocation run its census on a container whose every reader still answers.
   const bytes = restamped(appendTableEntries(parse(first.bytes), slot, [base + arrayAt]));
   return { bytes, group: table.values.length, records: commands.length };
+}
+
+/**
+ * Put one device's records into an **empty** group the table already holds, rather than appending a group:
+ * the table keeps its count and every other group its index, and the empty group's own array grows in place.
+ *
+ * **Why a second way in.** Every architecture here sizes the infrared table to the configuration, one group
+ * per device, so a device composed onto one is appended, `composeIrGroup`; the Harmony 300 and 350 allocate it
+ * at the model's maximum, eight groups on a 350 and four on a 300, the unused ones empty arrays of three bytes,
+ * and which group a device takes is the place of the key it sits on, `reference/architectures/harmony-300-350/
+ * memory.md`. So a device there goes into a group that already exists, at an index the caller chooses. Nothing
+ * in this names a remote: it is the generic half, and the family that allocates its table that way chooses the
+ * group, `families/no-screen/`. Run on the Harmony 350's compiles only, the one family with empty groups.
+ *
+ * **Two relocations, each leaving a container the census can walk**, as `composeIrGroup`'s are: first the
+ * blocks and records, as one hole where the group arrays begin, so they sit after every record of the table,
+ * unreferenced filler until the array names them; then `3 * records` bytes inside the empty array, just past its
+ * count, which moves every later array up, the next array's pointer landing exactly at the cut and moving with
+ * it, and moves nothing below. The records lie below the second cut, so their pointers stand as written.
+ */
+export function fillIrGroup(c: Container, group: number, commands: readonly ComposeCommand[]): ComposedGroup {
+  if (c.architecture === undefined) throw new ComposeError('the container states no architecture');
+  const groups = irGroups(c);
+  if (groups === undefined) throw new ComposeError('base slot 5 does not read as a group table');
+  const target = groups[group];
+  if (target === undefined) throw new ComposeError(`the infrared table holds ${groups.length} groups, so there is no group ${group}`);
+  if (target.addresses.length !== 0) {
+    throw new ComposeError(`group ${group} holds ${target.addresses.length} records already, so a device cannot be put there`);
+  }
+  const content = irGroupContent(commands);
+
+  // 1. The blocks and records where the arrays begin.
+  const arraysStart = Math.min(...groups.map((one) => one.start));
+  const first = relocate(c, arraysStart, content.size);
+  const pointers = content.write(first.bytes, arraysStart, c.flashBase + arraysStart);
+  const between = parse(first.bytes);
+
+  // 2. The empty array grows by one pointer per record, and its count says so.
+  const moved = irGroups(between)?.[group];
+  if (moved === undefined || moved.addresses.length !== 0) throw new ComposeError(`group ${group} stopped reading as empty`);
+  const second = relocate(between, moved.start + 3, 3 * pointers.length);
+  const array = new Writer(2 + 3 * pointers.length).u16(pointers.length);
+  for (const pointer of pointers) array.u24(pointer);
+  second.bytes.set(array.bytes, moved.start + 1);
+  return { bytes: restamped(second.bytes), group, records: pointers.length };
 }
