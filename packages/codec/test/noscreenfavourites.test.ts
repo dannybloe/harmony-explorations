@@ -198,7 +198,7 @@ test('every list of the result is one of Logitech\'s compile with favourites, an
     assert.deepEqual(groups(ours), groups(first));
   });
 
-test('on a KPN of ours the composer makes the ten digit copies, each Logitech\'s KPN copy of the same digit word for word',
+test('on a KPN of ours the device composer makes the ten digit copies, each Logitech\'s KPN copy of the same digit word for word, and the favourites use them',
   needing(skipWithoutLab(), skipWithoutIrArchive(), skipUnless('h350_config')), () => {
     // The factory configuration's bottom left key is free, and it holds no favourites.
     const factory = parse(require_('h350_config'));
@@ -206,8 +206,11 @@ test('on a KPN of ours the composer makes the ten digit copies, each Logitech\'s
     const out = composeNoScreenFavourites(parse(device.bytes), IR_ARCHIVE!, { ...KPN, channels: CHANNELS });
     const ours = parse(out.bytes);
     assert.ok(ours.allChecksPass);
-    assert.equal(out.copiesAdded, 10);
-    assert.equal(out.listsAdded, 10);
+    // A set top box is a type Logitech stores the copies for whether or not a favourite calls them, `DIGIT_COPIES_BY_TYPE`,
+    // so the device composer made them, todo-compile-350.md 4.1.1, and the favourites found them.
+    assert.equal(device.digitCopies, 10);
+    assert.equal(out.copiesAdded, 0);
+    assert.equal(out.listsAdded, 0);
     // The digit each table entry sends, ours against Logitech's, record for record.
     const second = lab(SECOND);
     const sent = (c: Container) => numberSenders(c)!.records[0]!.tables[0]!.instructions.map((one) => spelled(c, one, 0, WHOLE));
@@ -216,8 +219,10 @@ test('on a KPN of ours the composer makes the ten digit copies, each Logitech\'s
     const mine = spelledMap(ours, out.map, WHOLE);
     const logitech = spelledMap(second, KPN_MAP, WHOLE);
     for (const tag of [0x88, 0x89, 0x8b, 0xa2, 0x82]) assert.equal(mine.get(tag), logitech.get(tag), tag.toString(16));
-    // The copies are new records of the group: its whole records, which its keys send, are still there.
-    assert.equal(irGroups(ours)![2]!.addresses.length, irGroups(parse(device.bytes))![2]!.addresses.length + 10);
+    // The copies are records of the group beside its whole records, which its keys send, and the favourites added no
+    // record to it: the group is the device composer's, record for record.
+    const group = (c: Container) => irGroups(c)![2]!.addresses.map((address) => recordKey(c, address));
+    assert.deepEqual(group(ours), group(parse(device.bytes)));
     // And Logitech's KPN holds no whole record of a digit: the copies are the only records of its digits there.
     const whole = device.commands.flatMap((name, k) => (/^[0-9]$/.test(name) ? [recordKey(ours, irGroups(ours)![2]!.addresses[k]!)] : []));
     assert.equal(whole.length, 10);

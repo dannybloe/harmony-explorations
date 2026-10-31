@@ -323,7 +323,10 @@ commands than records, 61 against 52 on one device, and the device index is not 
 and is **not** an id in Logitech's device catalogue.[^s260] In a compile of eight devices by Logitech's current
 service each device's `Index` is its position in the list, and each device's commands
 are every command its catalogue entry names, sorted by character code and numbered from 0, records or
-none.[^t-noscreen]
+none.[^t-noscreen] In all seven Logitech configurations of the Harmony 300 and 350 read, `Index` is the position
+and `DeviceId` ascends strictly along the list, which is the account's order and alphabetical only on the two
+Harmony 300 files; in the one account whose replies are kept, `DeviceId` is the account's number for the
+device.[^t-noscreen-routing]
 
 ## The Harmony 300 and 350's slots
 
@@ -391,4 +394,5 @@ configuration holds in them, is in
 [^s187]: Measured in configurations. [Section 187](../../docs/findings.md#s187)
 [^s215]: Measured on a unit. [Section 215](../../docs/findings.md#s215)
 [^t-noscreen]: Measured in configurations. [The test](../../packages/codec/test/noscreen.test.ts)
+[^t-noscreen-routing]: Measured in configurations. [The test](../../packages/codec/test/noscreenrouting.test.ts)
 [^t-file-family-delays]: Measured in configurations. [The test](../../packages/codec/test/filefamilydelays.test.ts)

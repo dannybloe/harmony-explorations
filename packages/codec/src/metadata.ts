@@ -253,20 +253,36 @@ function rezipped(old: Uint8Array, xml: string): Uint8Array {
 }
 
 /**
+ * The `DeviceId` a device composed here is given: one above the highest the archive holds, or this where it holds
+ * none. Logitech's is its account's number for the device, and a device composed without an account has none, so
+ * this keeps what every Logitech file shows rather than inventing an account: the numbers ascend strictly along the
+ * archive, `todo-compile-350.md` 4.1.4.
+ */
+const FIRST_DEVICE_ID = 1;
+
+/**
  * The configuration with a device's names added to its metadata archive: one `Device` element after the ones it
- * holds, its `Index` the count before it, and every command the catalogue names for it, sorted by character code
- * and numbered from 0. The archive is rewritten whole in place and its length word restated; nothing else moves
- * but what follows it, which on the Harmony 300 and 350 is the trailer alone.
+ * holds, its `Index` the count before it, its `DeviceId` one above the highest there, and every command the
+ * catalogue names for it, sorted by character code and numbered from 0. The archive is rewritten whole in place
+ * and its length word restated; nothing else moves but what follows it, which on the Harmony 300 and 350 is the
+ * trailer alone.
  *
  * **What it rests on**, `packages/codec/test/noscreen.test.ts`: Logitech's compile of the Harmony 350 test setup
  * names its eight devices in the order the setup lists them, each with every command of its catalogue codeset in
- * that order, numbered from 0, and the archive is the configuration's last section. A device's `DeviceId` there
- * is a number of Logitech's account, section 260, which a composed device does not have, so none is written.
+ * that order, numbered from 0, and the archive is the configuration's last section. In all seven Logitech files of
+ * the family read, five Harmony 350 and two Harmony 300, 32 devices: `Index` is the device's position in the
+ * archive, and `DeviceId` ascends strictly along it; in the one account whose replies are in the lab, the test
+ * setup's, `DeviceId` is the account's number for the device, 8 of 8, section 260. A composed device has no account,
+ * so it is given the next number above the archive's highest, which keeps the order every file shows,
+ * `FIRST_DEVICE_ID`; this omitted `DeviceId` until `todo-compile-350.md` 4.1.4, a file Logitech never produced.
  *
- * **What reads it is not known to be the remote**: no instruction of the Harmony 350's firmware is known to seek
- * raw slot 13, and its log area's records name a device and a command by number, which is what the archive would
- * name them by for a host. So what `Index` has to agree with is not read. Run on the Harmony 350 alone, the one
- * architecture whose archive names devices; the Harmony 890's names none and is refused.
+ * **No reader of either number is known**, which is why the choice is to copy the shape and not a meaning: the
+ * Harmony 350's 1.4 firmware never seeks raw slot 13 (its section seeker's fourteen callers ask for slots 3 to 12)
+ * and holds no ZIP signature and no `DeviceId`, `Index` or `xml` string; MyHarmony's decompiled source and Harmony
+ * Desktop's skin 104 templates treat the configuration as an opaque file and never read it back from the remote;
+ * the lab's `work/setups/h350-test/metadata-reading.md` is that search. Nothing in the container outside the
+ * archive carries either number. Run on the Harmony 350 alone, the one architecture whose archive names devices;
+ * the Harmony 890's names none and is refused.
  */
 export function withMetadataDevice(c: Container, entry: MetadataDeviceEntry): Uint8Array {
   const metadata = metadataArchive(c);
@@ -275,10 +291,37 @@ export function withMetadataDevice(c: Container, entry: MetadataDeviceEntry): Ui
   if (close < 0) throw new GspmError('the metadata archive names no devices, so there is no list to add one to');
   if (metadata.devices.some((one) => one.name === entry.name)) throw new GspmError(`the metadata archive names ${entry.name} already`);
   const names = [...new Set(entry.commands)].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
-  const element = `<Device><Name>${escaped(entry.name)}</Name><Index>${metadata.devices.length}</Index><Commands>`
+  const ids = metadata.devices.map((one) => (one.deviceId === undefined ? Number.NaN : Number(one.deviceId)));
+  if (ids.some((one) => !Number.isSafeInteger(one))) throw new GspmError('a device of the metadata archive states no numeric DeviceId');
+  const id = ids.length === 0 ? FIRST_DEVICE_ID : Math.max(...ids) + 1;
+  const element = `<Device><Name>${escaped(entry.name)}</Name><Index>${metadata.devices.length}</Index><DeviceId>${id}</DeviceId><Commands>`
     + names.map((name, k) => `<Command><Index>${k}</Index><Name>${escaped(name)}</Name></Command>`).join('')
     + '</Commands></Device>';
-  const xml = metadata.xml.slice(0, close) + element + metadata.xml.slice(close);
+  return withMetadataXml(c, metadata, metadata.xml.slice(0, close) + element + metadata.xml.slice(close));
+}
+
+/**
+ * The configuration with one device's element taken out of its metadata archive and every later device's `Index`
+ * moved down one, so that `Index` stays the position, as it does in every Logitech file and as it did in the one pair
+ * of Logitech's compiles of one account with a device taken out, the bench Harmony 350's, where its KPN went from
+ * `Index` 1 to 0 and its `DeviceId` stayed, `todo-compile-350.md` 4.1.3.
+ */
+export function withoutMetadataDevice(c: Container, name: string): Uint8Array {
+  const metadata = metadataArchive(c);
+  if (metadata === undefined) throw new GspmError('the configuration carries no metadata archive');
+  const open = metadata.xml.indexOf('<Devices>');
+  const close = metadata.xml.indexOf('</Devices>');
+  if (open < 0 || close < 0) throw new GspmError('the metadata archive names no devices');
+  const blocks = metadata.xml.slice(open + '<Devices>'.length, close).split('</Device>').slice(0, -1).map((one) => `${one}</Device>`);
+  const gone = blocks.findIndex((one) => elements(one, 'Name')[0] === escaped(name));
+  if (gone < 0) throw new GspmError(`the metadata archive names no device ${name}`);
+  const kept = blocks.filter((_, k) => k !== gone).map((block, k) =>
+    block.replace(/^<Device><Name>(.*?)<\/Name><Index>\d+<\/Index>/, (_, called: string) => `<Device><Name>${called}</Name><Index>${k}</Index>`));
+  return withMetadataXml(c, metadata, metadata.xml.slice(0, open + '<Devices>'.length) + kept.join('') + metadata.xml.slice(close));
+}
+
+/** The archive rewritten around new text, in place, its length word and the trailer restated. */
+function withMetadataXml(c: Container, metadata: Metadata, xml: string): Uint8Array {
   const at = metadata.offset + 4;
   const zip = rezipped(c.blob.subarray(at, at + metadata.length), xml);
   // The new archive in front of the old one, then the old one cut, then the length word: each step a container

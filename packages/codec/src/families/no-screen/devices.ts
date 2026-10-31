@@ -25,12 +25,23 @@
  * cancel stopping the first block's timers. Held against the four long press devices of Logitech's compile of the
  * test setup, `packages/codec/test/noscreen.test.ts`.
  *
+ * **Logitech's routing is copied**, `todo-compile-350.md` 4.1.1, the rules and their counts in `keys.ts`: Input
+ * borrows the TV mode device's binding, volume and mute the device `volumeFrom` names, a television's fifth
+ * favourite key holds its Home or Internet, Teletext is stored with a send list and bound to no key, and the ten
+ * digits' one block copies are stored for the device types Logitech stores them for. A device on the top left
+ * key's short press is the TV mode device, 4.1.2: the start up's select names its map and every other map gains
+ * its Input. Held in `noscreen.test.ts` and `noscreenrouting.test.ts`.
+ *
  * **What it refuses**, each one something no compile here shows or a later step of the track builds: a short
  * press on a key that already holds a device, a long press on a key with no short press device or with a long
- * press device already, the top left key's short press (the start up instructions select its device's map, and
- * what they select with no device there is not read), a device whose catalogue states no power steps, and a
- * configuration whose key maps, start up instructions or timers name a state variable at or above `narrow`, which
- * the shared composer renumbers in action lists and the name tree only.
+ * press device already, a device whose catalogue states no power steps or whose type no compile shows,
+ * `DIGIT_COPIES_BY_TYPE`, a television on a model with no fifth favourite key measured, and a configuration whose
+ * key maps, start up instructions or timers name a state variable at or above `narrow`, which the shared
+ * composer renumbers in action lists and the name tree only.
+ *
+ * **What it does not do**: a receiver composed onto a configuration does not take over the volume of the devices
+ * already there, which Logitech's service would give it, and the test setup's LG television's second stored but
+ * unbound record, its Back, is not reproduced, since no rule read says why it is there.
  */
 import { CANCEL_TIMERS, PIN_BAND, START_TIMER_BAND, STATE_BAND, STATE_WRITE_BASE, stateVariableSite } from '../../actions.ts';
 import { u8, u16 } from '../../bytes.ts';
@@ -41,15 +52,17 @@ import {
   BYTE_REGISTER_LOAD, compilerHash, CONDITION_OPCODE, CONDITION_TWO_ARMS, devices, SELECT_BINDING_SET, SELECT_BINDING_SET_MASK,
 } from '../../inventory.ts';
 import { withMetadataDevice } from '../../metadata.ts';
-import { relocate } from '../../relocate.ts';
+import { excise, relocate } from '../../relocate.ts';
 import {
   ACTION_LIST_INDEX_OPCODE, stateTable, taggedList, taggedListBytes, taggedListExtent,
 } from '../../sections.ts';
 import { appendActionLists, ComposeError, nameOfLabel, restamped } from '../../shared/core.ts';
 import { composeDeviceFor, type ComposeDevice, type ComposedDevice } from '../../shared/devices.ts';
 import { appendTableEntries } from '../../shared/infrared.ts';
+import { deviceDigitLists } from './digits.ts';
 import {
-  DEVICE_KEYS, KEY_MAP_SLOT, KEY_TIMERS, LONG_PRESS_GROUP_BASE, POWER_SCAN, START_UP_SLOT, TIMER_SLOT,
+  DEVICE_KEYS, DIGIT_COPIES_BY_TYPE, FAVOURITE_FIVE, INPUT_KEY, KEY_MAP_SLOT, KEY_TIMERS, LONG_PRESS_GROUP_BASE, POWER_SCAN,
+  START_UP_SELECT_ENTRY, START_UP_SLOT, STORED_UNBOUND, TELEVISION_TYPE, TIMER_SLOT, VOLUME_SCANS,
 } from './keys.ts';
 import { NO_SCREEN_SENDS } from './sends.ts';
 
@@ -89,6 +102,13 @@ export interface NoScreenDeviceRequest {
    * device already.
    */
   readonly press?: 'short' | 'long';
+  /**
+   * The device whose volume and mute the device's map sends, by its setup name: `volumeSource` in `keys.ts` gives
+   * Logitech's choice from the account's devices and their types. Its own when not given. Another device's means
+   * the composed map binds the three keys to the lists that device's own map binds them to, and the device's own
+   * volume and mute are not stored, as Logitech's compile stores none for a device whose volume it routes.
+   */
+  readonly volumeFrom?: string;
 }
 
 export interface ComposedNoScreenDevice {
@@ -99,10 +119,16 @@ export interface ComposedNoScreenDevice {
   readonly map: number;
   /** The catalogue commands composed, one record each in this order, then the power steps' records. */
   readonly commands: readonly string[];
-  /** Which command each key of its map sends, by scan code; the power key is in `power`. */
+  /** Which of the device's own commands each key of its map sends, by scan code; the power key is in `power`. */
   readonly keys: ReadonlyMap<number, string>;
   /** How its power key works: the toggle's step sent, or the power variable switched. */
   readonly power: 'toggle' | 'variable';
+  /** The bindings its map borrows from another device's map, by scan code: Input and the volume keys. */
+  readonly borrowed: ReadonlyMap<number, number>;
+  /** The commands stored with a send list and bound to no key, `STORED_UNBOUND`. */
+  readonly unbound: readonly string[];
+  /** The one block digit copies and their send lists made, `DIGIT_COPIES_BY_TYPE`. */
+  readonly digitCopies: number;
   readonly device: ComposedDevice;
 }
 
@@ -114,6 +140,20 @@ export function instructionsAt(blob: Uint8Array, at: number): Instruction[] {
 /** The end of whichever of a set of blob ranges ends highest: where a run of one kind of thing stops. */
 export const highestEnd = (ranges: readonly { readonly start: number; readonly length: number }[]): number =>
   Math.max(...ranges.map((one) => one.start + one.length));
+
+/** The key map a device's key selects: its key's release for a short press device, the held event for a long one. */
+export function mapOfGroup(c: Container, group: number): number {
+  const key = DEVICE_KEYS[group % LONG_PRESS_GROUP_BASE];
+  if (key === undefined || group >= 2 * LONG_PRESS_GROUP_BASE) throw new ComposeError(`group ${group} is no device key's`);
+  const event = group < LONG_PRESS_GROUP_BASE ? RELEASE : HELD;
+  const binding = keyMaps(c)[0]!.entries.find((one) => one.tag === (event | key.scan));
+  const list = binding?.opcode === ACTION_LIST_INDEX_OPCODE ? c.pointerArray(7)![binding.operand] : undefined;
+  const at = list === undefined ? undefined : c.blobOffsetOf(list);
+  const select = at === undefined ? undefined
+    : instructionsAt(c.blob, at).find((one) => one.opcode === SELECT_BINDING_SET && (one.operand & SELECT_BINDING_SET_MASK) === SELECT_BINDING_SET_MASK);
+  if (select === undefined) throw new ComposeError(`the ${key.place} key's ${event === RELEASE ? 'short' : 'long'} press selects no map`);
+  return select.operand & 0xff;
+}
 
 /** Every action list body's extent, through the action table. */
 export function listExtents(c: Container): { start: number; length: number }[] {
@@ -242,6 +282,73 @@ function isOneDevicePress(list: readonly Instruction[], pin: number): boolean {
     && list.slice(2).every((one) => one.opcode === STATE_BAND && one.operand >> 8 === START_TIMER_BAND);
 }
 
+/** The start up event list that selects the TV mode device's map, `START_UP_SELECT_ENTRY`, and where it is. */
+function startUpSelectList(c: Container): { list: number; at: number; body: Instruction[] } {
+  const startUp = c.sections[START_UP_SLOT];
+  const startUpAt = startUp === undefined || startUp.address === 0 ? undefined : c.blobOffsetOf(startUp.address);
+  if (startUpAt === undefined) throw new ComposeError('raw slot 5 holds no start up events');
+  const entry = instructionsAt(c.blob, startUpAt)[START_UP_SELECT_ENTRY];
+  if (entry?.opcode !== ACTION_LIST_INDEX_OPCODE) throw new ComposeError(`start up event ${START_UP_SELECT_ENTRY} is not a call of a list`);
+  const at = c.blobOffsetOf(c.pointerArray(7)![entry.operand]!)!;
+  return { list: entry.operand, at, body: instructionsAt(c.blob, at) };
+}
+
+const isSelect = (one: Instruction | undefined): boolean =>
+  one?.opcode === SELECT_BINDING_SET && (one.operand & SELECT_BINDING_SET_MASK) === SELECT_BINDING_SET_MASK;
+
+/**
+ * The start up event list with its last instruction selecting `map`, `todo-compile-350.md` 4.1.2: in all seven
+ * compiles of the family read, entry 1's list is the same two calls as entries 2 to 4's and then a select of the
+ * map of the device on infrared group 0, so the remote starts in that device's mode. A select already there is
+ * restated; with none, as after the device on group 0 is taken out, one is appended to the list.
+ */
+export function withStartUpSelect(c: Container, map: number): Container {
+  const { at, body } = startUpSelectList(c);
+  const select = new Writer(3).u16(SELECT_BINDING_SET_MASK | map).u8(SELECT_BINDING_SET).bytes;
+  if (isSelect(body.at(-1))) {
+    const out = c.blob.slice();
+    out.set(select, at + 1 + 3 * (body.length - 1));
+    return parse(restamped(out));
+  }
+  if (body.some(isSelect)) throw new ComposeError('the start up list selects a map before its end, which no compile shows');
+  const hole = relocate(c, at + 1 + 3 * body.length, select.length);
+  hole.bytes.set(select, at + 1 + 3 * body.length);
+  hole.bytes[at] = body.length + 1;
+  return parse(restamped(hole.bytes));
+}
+
+/**
+ * The start up event list without its select: the inverse of `withStartUpSelect`, which leaves entry 1's list as
+ * entries 2 to 4's are, for a configuration whose device on infrared group 0 is taken out.
+ */
+export function withoutStartUpSelect(c: Container): Container {
+  const { at, body } = startUpSelectList(c);
+  if (!isSelect(body.at(-1))) return c;
+  const hole = excise(c, at + 1 + 3 * (body.length - 1), 3);
+  hole.bytes[at] = body.length - 1;
+  return parse(restamped(hole.bytes));
+}
+
+/**
+ * A key map entry put in every device map but `except`, where the map does not bind the tag already: the TV mode
+ * device's Input on every other device's map, as Logitech's compiles carry it, `INPUT_KEY`. Each map is rewritten in
+ * place at its own address with the room made at its end; nothing points inside a tagged list.
+ */
+function withBindingOnEveryMap(c: Container, except: number, tag: number, list: number): Container {
+  let current = c;
+  for (let entry = 1; entry < keyMaps(current).length; entry += 1) {
+    if (entry === except) continue;
+    const map = keyMaps(current)[entry]!;
+    if (map.entries.some((one) => one.tag === tag)) continue;
+    const grown = taggedListBytes(inCompilerOrder(map.entries, [{ tag, operand: list, opcode: ACTION_LIST_INDEX_OPCODE }]));
+    if (taggedListExtent(current.blob, map.start)?.wide !== false) throw new ComposeError(`map ${entry} is not in the narrow form`);
+    const hole = relocate(current, map.start + map.length, grown.length - map.length);
+    hole.bytes.set(grown, map.start);
+    current = parse(hole.bytes);
+  }
+  return current;
+}
+
 /**
  * Compose a catalogue device onto a Harmony 300 or 350 configuration, on a key's short or long press. Unstamped
  * where the shared composer leaves it so; the result is restamped once at the end.
@@ -252,13 +359,11 @@ export function composeNoScreenDevice(c: Container, archive: string, request: No
   const long = request.press === 'long';
   // A long press device's group is four on from the short press device's, whichever device is on the short press.
   const group = long ? LONG_PRESS_GROUP_BASE + request.place : request.place;
-  // The top left key's short press device is the one the start up instructions select; a long press device on it
-  // is not, as Logitech's compile of the test setup shows, whose start up selects the LG TV's map with the Knoll
-  // on the same key's long press. So only the short press is refused there.
-  if (request.place === 0 && !long) {
-    throw new ComposeError('the top left key is not composed: the start up instructions select its device\'s map, '
-      + 'and what they select with no device there is not read');
-  }
+  // The top left key's short press device is the TV mode's, in the service's words: the start up instructions select
+  // its map, `todo-compile-350.md` 4.1.2, and every other device's Input key sends its input command, 4.1.1. A long
+  // press device on the same key is neither, as Logitech's compile of the test setup shows, whose start up selects
+  // the LG TV's map with the Knoll on the same key's long press.
+  const tvMode = request.place === 0 && !long;
   const label = request.name;
   if (devices(c).some((one) => one.name === nameOfLabel(label))) throw new ComposeError(`a device called ${label} is already here`);
   const before = keyMaps(c);
@@ -292,7 +397,49 @@ export function composeNoScreenDevice(c: Container, archive: string, request: No
   });
   const bound = planned.layout?.keys;
   if (bound === undefined) throw new ComposeError('the family states no key table');
-  const names = planned.wanted.filter((name) => [...bound.values()].includes(name));
+  const type = planned.entry.deviceType;
+  const copies = DIGIT_COPIES_BY_TYPE.get(type);
+  if (copies === undefined) {
+    throw new ComposeError(`whether Logitech stores digit copies for a device of type ${type} is in no compile read, `
+      + `so ${request.manufacturer} ${request.model} is not composed; the measured types are ${[...DIGIT_COPIES_BY_TYPE.keys()].join(', ')}`);
+  }
+
+  // Logitech's routing, `todo-compile-350.md` 4.1.1, `keys.ts`: which keys the map binds to the device's own
+  // commands, and which it borrows from another device's map, the same list that map calls.
+  const own = new Map(bound);
+  const borrowed = new Map<number, number>();
+  // Input: the TV mode device's own input command on its own map, and its binding on every other map.
+  let inputOwn: string | undefined;
+  if (tvMode) {
+    inputOwn = INPUT_KEY.prefer.find((name) => planned.wanted.includes(name));
+    if (inputOwn !== undefined) own.set(INPUT_KEY.scan, inputOwn);
+  } else if (devices(c).some((one) => one.group === 0 && one.name !== undefined)) {
+    const tv = keyMaps(c)[mapOfGroup(c, 0)]!.entries.find((one) => one.tag === (PRESS | INPUT_KEY.scan));
+    if (tv !== undefined) borrowed.set(INPUT_KEY.scan, tv.operand);
+  }
+  // Volume and mute: the device's own, or the lists the named device's map binds them to.
+  if (request.volumeFrom !== undefined && nameOfLabel(request.volumeFrom) !== nameOfLabel(label)) {
+    const from = devices(c).find((one) => one.name === nameOfLabel(request.volumeFrom!));
+    if (from?.group === undefined) throw new ComposeError(`no device called ${request.volumeFrom} is here to take the volume from`);
+    const fromMap = keyMaps(c)[mapOfGroup(c, from.group)]!;
+    for (const scan of VOLUME_SCANS) {
+      own.delete(scan);
+      const entry = fromMap.entries.find((one) => one.tag === (PRESS | scan));
+      if (entry !== undefined) borrowed.set(scan, entry.operand);
+    }
+  }
+  // A television's fifth favourite key, per skin.
+  if (type === TELEVISION_TYPE) {
+    const skin = (c.versionWord ?? -1) & 0xff;
+    const five = FAVOURITE_FIVE[skin];
+    if (five === undefined) throw new ComposeError(`which command a television's favourite key takes is measured on the Harmony 350 alone, not skin ${skin}`);
+    const command = five.prefer.find((name) => planned.wanted.includes(name));
+    if (command !== undefined) own.set(five.scan, command);
+  }
+  // And what Logitech stores with a send list and binds to no key of this keypad.
+  const ownNames = new Set(own.values());
+  const unbound = STORED_UNBOUND.filter((name) => planned.wanted.includes(name) && !ownNames.has(name));
+  const names = planned.wanted.filter((name) => ownNames.has(name) || unbound.includes(name));
   const commands = names.map((name) => planned.device.commands[planned.wanted.indexOf(name)]!);
   if (planned.power === undefined || planned.device.powerOn === undefined || planned.device.powerOff === undefined) {
     throw new ComposeError(`${request.manufacturer} ${request.model} states no power steps, and a device without them is not measured on this family`);
@@ -333,8 +480,11 @@ export function composeNoScreenDevice(c: Container, archive: string, request: No
 
   // The device's own map: every key the family's table gives it, then the power key, in the compiler's order,
   // after the last map, and named by a pointer appended to the table.
+  // The borrowed keys go in where the family's table has them and the rest after, then the power key; the order
+  // only matters where two tags share a slot of the compiler's hash map, `inCompilerOrder`.
   const mapEntries: KeyEntry[] = [
-    ...[...bound].map(([scan, name]) => ({ tag: PRESS | scan, operand: sendList(name), opcode: ACTION_LIST_INDEX_OPCODE })),
+    ...[...own].map(([scan, name]) => ({ tag: PRESS | scan, operand: sendList(name), opcode: ACTION_LIST_INDEX_OPCODE })),
+    ...[...borrowed].map(([scan, list]) => ({ tag: PRESS | scan, operand: list, opcode: ACTION_LIST_INDEX_OPCODE })),
     { tag: PRESS | POWER_SCAN, operand: powerList, opcode: ACTION_LIST_INDEX_OPCODE },
   ];
   const mapBytes = taggedListBytes(inCompilerOrder([], mapEntries));
@@ -401,6 +551,23 @@ export function composeNoScreenDevice(c: Container, archive: string, request: No
   tableHole.bytes.set(grown, table.start);
   current = parse(tableHole.bytes);
 
+  // The TV mode device, `todo-compile-350.md` 4.1.2: the start up's select names its map, and every other device's
+  // map gains its Input binding where it has an input command.
+  if (tvMode) {
+    current = withStartUpSelect(current, map);
+    if (inputOwn !== undefined) current = withBindingOnEveryMap(current, map, PRESS | INPUT_KEY.scan, sendList(inputOwn));
+  }
+
+  // The ten digits' one block copies, each with a send list nothing calls until a favourite does, for the device
+  // types Logitech stores them for, `DIGIT_COPIES_BY_TYPE`; a device without the ten digit commands has none to copy.
+  let digitCopies = 0;
+  const digitNames = Array.from({ length: 10 }, (_, d) => String(d));
+  if (copies && digitNames.every((name) => planned.wanted.includes(name))) {
+    const made = deviceDigitLists(current, archive, { name: label, manufacturer: request.manufacturer, model: request.model }, group);
+    current = made.container;
+    digitCopies = made.copiesAdded;
+  }
+
   // And its names, for whatever reads the metadata archive; the remote does not, `metadata.ts`.
   const commandNames = [...new Set(planned.available.map((one) => one.name))];
   current = parse(withMetadataDevice(current, { name: request.name, commands: commandNames }));
@@ -410,8 +577,11 @@ export function composeNoScreenDevice(c: Container, archive: string, request: No
     group: composed.group,
     map,
     commands: names,
-    keys: bound,
+    keys: new Map([...own].map(([scan, name]) => [scan, name])),
     power: toggle ? 'toggle' : 'variable',
+    borrowed,
+    unbound,
+    digitCopies,
     device: composed,
   };
 }

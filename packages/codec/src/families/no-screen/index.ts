@@ -82,5 +82,8 @@ export { composeNoScreenDevice, type ComposedNoScreenDevice, inCompilerOrder, ty
 export {
   composeNoScreenFavourites, type ComposedNoScreenFavourites, NUMBER_SENDER_BAND, type NoScreenFavouritesRequest,
 } from './favourites.ts';
-export { DEVICE_KEYS, FAVOURITE_SCANS, LONG_PRESS_GROUP_BASE, NO_SCREEN_HARD_KEYS } from './keys.ts';
+export {
+  type AccountDevice, DEVICE_KEYS, DIGIT_COPIES_BY_TYPE, FAVOURITE_SCANS, LONG_PRESS_GROUP_BASE, NO_SCREEN_HARD_KEYS,
+  RECEIVER_TYPE, TELEVISION_TYPE, volumeSource,
+} from './keys.ts';
 export { NO_SCREEN_SENDS, powerOnWaits } from './sends.ts';
