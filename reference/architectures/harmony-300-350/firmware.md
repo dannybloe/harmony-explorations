@@ -33,6 +33,7 @@ take another route[^s295].
 | the month end routine of the clock, at `0x14382` | [^s322] |
 | the state variables: the reader at `0x17302` and the store at `0x172B2`, from data memory `0x108`; the tick at `0x13C12`, which adds the time elapsed to the second; the minute's step queued at `0x13E52`; bands `0xF2` and `0xF1` of `0x1F` at `0x11984`, one added to a variable or taken off it, wrapping through its `max` at `0x171E8`; the reply carrying the clock at `0x0F3BE`. What they add up to, [memory.md](memory.md#the-state-variables) | [^t-harmony-350-clock] |
 | the state variable bound | [^s276] |
+| the skin: its getter at `0x14626`, reading byte 2 of the `/sys/sku` record at internal `0x01F4C0`; the three places that report it, `0x13216`, `0x1389A` and `0x0F258`; the record writer at `0x15288`, which nothing calls; the device descriptor, a constant at `0x1AC04`. What they add up to, [below](#the-skin) | [^t-harmony-350-skin] |
 
 ## A held key
 
@@ -59,6 +60,33 @@ read off a Harmony 300[^unchecked]. The
 Harmony 650's firmware raises the same three events with the same reload, `0x200` times 100,
 [its keys](../../remotes/harmony-650/keys.md); whether its counter also stops after the held event is not
 checked[^unchecked].
+
+## The skin
+
+**The 1.4 image reports the unit's skin and never acts on it.** It reads one byte, tells the host, and has no
+branch on it that anything reaches[^t-harmony-350-skin]. So the keypad scan, the held event, the file write
+path and the configuration validator treat a remote that states skin 79 as they treat one that states 104, and the
+firmware caps nothing by skin: the limits this family states per skin, [the README](README.md#how-the-two-differ),
+are Logitech's service's and not the image's[^t-harmony-350-skin].
+
+| | what the image does | evidence |
+|---|---|---|
+| where the skin comes from | byte 2 of a 64 byte record in internal flash, the file table's `/sys/sku` row at `0x01F4C0`, so `0x01F4C2`; the getter is `0x14626`. A unit's `/sys/sysinfo` states exactly that byte | [^t-harmony-350-skin], [^t-harmony-350-skin-u] |
+| who reads it | three places, each storing the byte into a reply and testing nothing: the `skin` field of `/sys/sysinfo`, a second builder of the same fields and one of the one byte replies of the reply dispatcher | [^t-harmony-350-skin] |
+| the only branch on it | a record writer at `0x15288` whose chain separates a blank record, skin 72 and skin 79 from the rest and sets a four byte value of the record to 2 for those two and 1 for the others. **Nothing calls it**: no transfer into its routines from outside, and no instruction or table anywhere in the image holds its address; the safe mode image holds the same routine and is as silent about it. A call through a pointer, which one helper at `0x19F1C` makes, would not have been seen, and the pointers it jumps to were not enumerated[^unchecked] | [^t-harmony-350-skin] |
+| the record's last bytes | the value above, 2 on a skin 79 unit and 1 on a skin 104 one, and nothing read in the image fetches it | [^t-harmony-350-skin-u] |
+| the check command on `/sys/sku` | compares the record's first two bytes with the host's value and looks at nothing else | [^t-harmony-350-skin] |
+| the board | a nibble of `PORTD`, which `/sys/sysinfo` states as `hw_ver`, 0 on both models' units read, so the two boards do not differ there | [^t-harmony-350-skin], [^t-harmony-350-skin-u] |
+| the configuration's own skin | base slot 1 states it, [the container](../../config-format/header-records.md#base-slot-1-the-architecture-record), and the firmware never reads that slot: the section seeker loads slots 3 to 12 and the validator reads header offsets 0, 4 and `0x47` | [^t-harmony-350-skin], [^t-harmony-350-slots] |
+
+**This image cannot be what a Harmony 300 runs, byte for byte.** Its USB device descriptor is a constant in
+flash, `0x1AC04`, copied to the endpoint buffer unchanged, and its `bcdDevice` is `0x1104`, the Harmony 350's; the
+pair `0x78 0x10`, which is the 300's `0x1078`, is nowhere in the image. A Harmony 300 enumerates as `0x1078`,
+[its usb.md](../../remotes/harmony-300/usb.md), so what it runs differs from this image in at least that word.
+Logitech's package names skins 78, 79 and 104 together, which is its word that one image is meant for all
+three and not a read off a 300; no application image has been read off a Harmony 300[^t-harmony-350-skin][^s196][^unchecked].
+Nothing in this image makes a configuration behave differently by skin; whether a 300's own image differs
+in other ways than its descriptor is not checked[^unchecked].
 
 ## Routines read in the bootloader and safe mode
 
@@ -257,3 +285,5 @@ stays in the programmer, which can rewrite internal flash above `0x001000`[^t-ha
 [^x-manual-350]: Stated by Logitech, in the manual. [The Harmony 350 setup guide](https://www.logitech.com/assets/51207/harmony-350-qsg-and-iid.pdf)
 [^t-harmony-350-keys]: Read in the firmware. [The test](../../../tests/test_harmony_350_keys.py)
 [^t-harmony-350-keys-c]: Measured in configurations. [The test](../../../tests/test_harmony_350_keys.py)
+[^t-harmony-350-skin]: Read in the firmware. [The test](../../../tests/test_harmony_350_skin.py)
+[^t-harmony-350-skin-u]: Measured on a unit. [The test](../../../tests/test_harmony_350_skin.py)

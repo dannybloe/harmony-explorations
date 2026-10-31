@@ -57,6 +57,7 @@ model[^s131]; 104 is the Harmony 350 alone[^s196]. Logitech's client names 78 "P
 | state variables the firmware owns | 0 to 17, as on the Harmony One and the Harmony 600, 650 and 700; its clock runs to the minute and no further, [memory.md](memory.md#the-state-variables) | [^t-state-block], [^t-harmony-350-clock] |
 | activities | at most one, a screenless model's limit, [how a Harmony works](../../how-a-harmony-works.md#a-remote-with-no-screen-holds-exactly-one-activity) | [^s145] |
 | long press | the 350 has one and the 300 does not | [^t-models] |
+| what the firmware does with the skin | reports it and acts on nothing, [firmware.md](firmware.md#the-skin); the image read is not known to be a Harmony 300's, whose `bcdDevice` it cannot produce | [^t-harmony-350-skin] |
 
 ## How the two differ
 
@@ -115,3 +116,4 @@ Each row is evidenced in the model's own folder, which is its home; this table i
 [^t-harmony-350-keys-c]: Measured in configurations. [The test](../../../tests/test_harmony_350_keys.py)
 [^t-harmony-350-keys-u]: Measured on a unit. [The test](../../../tests/test_harmony_350_keys.py)
 [^t-harmony-300-keys-u]: Measured on a unit. [The test](../../../tests/test_harmony_300_keys.py)
+[^t-harmony-350-skin]: Read in the firmware. [The test](../../../tests/test_harmony_350_skin.py)

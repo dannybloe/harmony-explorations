@@ -333,7 +333,7 @@ slots are identified, nine of them in the slot map and the rest refused:[^s259b]
 | raw slot | base slot | what it holds |
 |---|---|---|
 | 0 | 0 | the `0xFEED` name tree, 131 bytes |
-| 1 | 1 | seven bytes stating architecture 16 twice, skin 104, then `0x0d` |
+| 1 | 1 | seven bytes stating architecture 16 twice, the model's skin (104 on a Harmony 350, 79 on a European Harmony 300), then `0x0d`[^t-harmony-350-skin-c] |
 | 2 | 2 | the log area, its eight bytes byte for byte the Harmony 525's[^s260] |
 | 3 | 3 | the `0xADDF` framed build timestamp |
 | 4 | 5 | the infrared database: groups of `u8 spare; u16 count; u24 record[]`, records in the base layout exactly |
@@ -386,6 +386,7 @@ configuration holds in them, is in
 [^s196]: Stated by Logitech. [Section 196](../../docs/findings.md#s196)
 [^s260]: Measured in configurations. [Section 260](../../docs/findings.md#s260)
 [^s259b]: Measured in configurations. [Section 259](../../docs/findings.md#s259)
+[^t-harmony-350-skin-c]: Measured in configurations. [The test](../../tests/test_harmony_350_skin.py)
 [^s262]: Measured in configurations. [Section 262](../../docs/findings.md#s262)
 [^s237]: Measured on a unit. [Section 237](../../docs/findings.md#s237)
 [^s187]: Measured in configurations. [Section 187](../../docs/findings.md#s187)
