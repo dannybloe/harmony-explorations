@@ -34,9 +34,12 @@ import type { HardKey } from '../../devicemode.ts';
  *   Denon keep theirs. So which device a device mode's volume goes to is Logitech's choice per device, and this
  *   table gives every device its own.
  *
- * And the KPN's map binds three of the table's keys and nothing else of its own, since it is the map the
- * activity ends in and the one holding the favourites, `todo-compile-350.md` 4.2 and 4.3, so it is not a
- * sample of a device's own map. **Scan 3, Power, is not here**: a device's power key sends its power step where
+ * And the KPN's map binds three of the table's keys and nothing else of its own, so it is not a sample of a device's
+ * own map, and why it binds so few is not read. It is the map the activity ends in and the one holding the
+ * favourites, but that is not why: on the bench Harmony 350's two compiles of an earlier setup, with another model of
+ * KPN box, the activity ends in the box's map as well, the same map in both, and there 33 bindings send one of the
+ * box's own codes, `noscreenactivity.test.ts`. This gave the
+ * activity as the reason, until `todo-compile-350.md` 4.2 read those two. **Scan 3, Power, is not here**: a device's power key sends its power step where
  * the catalogue's power is a toggle and switches its power variable where it is not, `devices.ts`.
  *
  * The names are the scan codes' in `reference/remotes/harmony-350/keys.md`. Scan 54, Enter, takes `NumberEnter`

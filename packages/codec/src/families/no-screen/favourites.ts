@@ -41,21 +41,19 @@ import { catalogueDevicePlan } from '../../composecatalogue.ts';
 import { Writer } from '../../emit.ts';
 import { archSlot, type Container, parse } from '../../gspm.ts';
 import { ACCUMULATOR_LOAD_OPCODE, irGroups } from '../../ir.ts';
-import {
-  DEVICE_QUANTITY, DEVICE_QUANTITY_DEFAULT, devices, SELECT_BINDING_SET, SELECT_BINDING_SET_MASK, SEND_INFRARED,
-} from '../../inventory.ts';
+import { DEVICE_QUANTITY, DEVICE_QUANTITY_DEFAULT, devices, SEND_INFRARED } from '../../inventory.ts';
 import { relocate } from '../../relocate.ts';
 import { appendCopyRecord, oneBlockCopy } from '../../sequence.ts';
-import { ACTION_LIST_INDEX_OPCODE, stateRecords, taggedListBytes, taggedListExtent } from '../../sections.ts';
+import { ACTION_LIST_INDEX_OPCODE, stateRecords } from '../../sections.ts';
 import { appendActionLists, ComposeError, nameOfLabel, restamped } from '../../shared/core.ts';
 import { appendTableEntries, composeIrGroup } from '../../shared/infrared.ts';
 import {
   NUMBER_SENDER_DIGITS, NUMBER_SENDER_RECORD_LENGTH, NUMBER_SENDER_SLOT, NUMBER_SENDER_TABLE_LENGTH, numberSenders,
 } from '../../tables.ts';
 import {
-  highestEnd, HELD, inCompilerOrder, instructionsAt, type KeyEntry, keyMaps, listExtents, PRESS, RELEASE, SCAN_MASK,
+  arraysStart, highestEnd, instructionsAt, type KeyEntry, keyMaps, listExtents, mapOfGroup, PRESS, SCAN_MASK, withMapEntries,
 } from './devices.ts';
-import { DEVICE_KEYS, FAVOURITE_SCANS, LONG_PRESS_GROUP_BASE } from './keys.ts';
+import { FAVOURITE_SCANS } from './keys.ts';
 
 /**
  * The band whose sub-operation hands the accumulator to a number sender record, the record its low byte: `1F F300`
@@ -107,23 +105,6 @@ function routeOf(channel: string): 'number' | 'digits' {
   if (value > ACCUMULATOR_MAX) throw new ComposeError(`a favourite channel past ${ACCUMULATOR_MAX} does not fit the load, and no compile holds one`);
   return 'number';
 }
-
-/** The key map a device's key selects: its key's release for a short press device, the held event for a long one. */
-function mapOfGroup(c: Container, group: number): number {
-  const key = DEVICE_KEYS[group % LONG_PRESS_GROUP_BASE];
-  if (key === undefined || group >= 2 * LONG_PRESS_GROUP_BASE) throw new ComposeError(`group ${group} is no device key's`);
-  const event = group < LONG_PRESS_GROUP_BASE ? RELEASE : HELD;
-  const binding = keyMaps(c)[0]!.entries.find((one) => one.tag === (event | key.scan));
-  const list = binding?.opcode === ACTION_LIST_INDEX_OPCODE ? c.pointerArray(7)![binding.operand] : undefined;
-  const at = list === undefined ? undefined : c.blobOffsetOf(list);
-  const select = at === undefined ? undefined
-    : instructionsAt(c.blob, at).find((one) => one.opcode === SELECT_BINDING_SET && (one.operand & SELECT_BINDING_SET_MASK) === SELECT_BINDING_SET_MASK);
-  if (select === undefined) throw new ComposeError(`the ${key.place} key's ${event === RELEASE ? 'short' : 'long'} press selects no map`);
-  return select.operand & 0xff;
-}
-
-/** Where a family of this kind puts a new record's blocks and header: where the group arrays begin, as `fillIrGroup`. */
-const arraysStart = (c: Container): number => Math.min(...(irGroups(c) ?? []).map((one) => one.start));
 
 /**
  * The action list sending each of the device's digits, 0 to 9, and the configuration holding them.
@@ -259,15 +240,10 @@ export function composeNoScreenFavourites(
 
   // 3. The device's map gains a press of each favourite key, rewritten in place at its own address with the room
   //    made at its end; nothing points inside a tagged list.
-  const now = keyMaps(current)[map]!;
   const added: KeyEntry[] = request.channels.map((_, k) => ({
     tag: PRESS | scans[k]!, operand: appended.first + k, opcode: ACTION_LIST_INDEX_OPCODE,
   }));
-  const grown = taggedListBytes(inCompilerOrder(now.entries, added));
-  if (taggedListExtent(current.blob, now.start)?.wide !== false) throw new ComposeError('the device\'s map is not in the narrow form');
-  const mapHole = relocate(current, now.start + now.length, grown.length - now.length);
-  mapHole.bytes.set(grown, now.start);
-  current = parse(mapHole.bytes);
+  current = withMapEntries(current, map, added);
 
   return {
     bytes: restamped(current.blob),
