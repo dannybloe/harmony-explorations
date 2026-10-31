@@ -76,6 +76,13 @@ export const SCAN_SOURCES = {
   // `TheBench350HeardTheTestSetup` in `tests/test_harmony_350_keys.py`.
   't-harmony-350-setup-u': 'heard by pressing each key with a receiver listening, on a configuration that binds '
     + 'it, its code the one of the 56 that, raised at that point of the presses, gives what was heard',
+  // The European Harmony 300's keys pressed in two device modes on its own configuration, and in one on a copy
+  // binding every key, with a receiver listening: the code is the one of the 56 that, raised in the key's
+  // place, gives what was heard from there to the end of the run, `todo-compile-300.md` 2.1 and 2.2,
+  // `packages/bench/test/keys300.test.ts`, and the footnote's test is `TheBench300HeardEveryKey` in
+  // `tests/test_harmony_300_keys.py`.
+  't-harmony-300-keys-u': 'heard by pressing each key with a receiver listening, in two device modes, its code '
+    + 'the one of the 56 that, raised at that point of the presses, gives what was heard',
 } as const;
 export type ScanSource = keyof typeof SCAN_SOURCES;
 
@@ -215,7 +222,8 @@ export interface Key {
   /**
    * The scan code, present **only** where something established it, and `scanFrom` says what: 38 of 44
    * keys on a Harmony One, 41 of 54 on a Harmony 600, none of the 50 on a Harmony 525, 53 of the 55 on a
-   * Harmony 350, none on the Harmony 300 that shares its face, and none of the 29 on a Harmony Touch. Never filled in on a guess. A wrong scan
+   * Harmony 350, 49 of the 55 on the Harmony 300's European printing and none on its US printing, and none
+   * of the 29 on a Harmony Touch. Never filled in on a guess. A wrong scan
    * code is invisible, because the interface would then show the wrong assignment beside a key with
    * complete confidence.
    */

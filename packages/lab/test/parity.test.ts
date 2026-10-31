@@ -121,7 +121,8 @@ test('the Python table was actually parsed, rather than read as empty', () => {
   // 299 with the bench 350's device key run, 2.3.
   // 300 with the bench 350's every key run, 2.2.2.
   // 302 with the bench 350's two runs on Logitech's compile of the test setup, todo-compile-350 3.3.
-  assert.equal(Object.keys(pythonImages()).length, 302, 'every fixture tests/lab.py names');
+  // 304 with the bench 300's two key runs, todo-compile-300 2.1 and 2.2.
+  assert.equal(Object.keys(pythonImages()).length, 304, 'every fixture tests/lab.py names');
 });
 
 test('the two sides exclude the same fixtures from the parseable population', () => {

@@ -41,14 +41,37 @@ const EXPECTED: Readonly<Record<string, {
   why: string;
 }>> = {
   /**
-   * The Harmony 350's moulding with the 300's printing, so its count is the 350's drawing's, which a
-   * statement made holding both remotes confirms; `h300.ts` takes every shape from `H350`.
+   * The Harmony 350's moulding with the US 300's printing, skin 78, so its count is the 350's drawing's,
+   * which a statement made holding both remotes confirms; `h300.ts` takes every shape from `H350`. No code:
+   * no US unit has been pressed.
    */
   h300: {
     buttons: 55,
     scans: {},
     why: "the Harmony 350's drawing, the same moulding per a statement made holding both, and the 300 "
       + "setup guide's cover photograph shows the same 55 keys",
+  },
+  /**
+   * The European printing, skin 79: the same 55 shapes, and 49 codes heard by pressing every key of a skin 79
+   * unit in two device modes, `todo-compile-300.md` 2.1 and 2.2, `packages/bench/test/keys300.test.ts`. Every
+   * one is a decision of its own, so all 49 are named below; each is the code of the 350 key in the same
+   * place, and the six left are the keys no configuration on the unit bound in the modes pressed.
+   */
+  h300eu: {
+    buttons: 55,
+    scans: { 't-harmony-300-keys-u': 49 },
+    decided: {
+      1: 'CableSat', 2: 'Favorite3', 3: 'Power', 4: 'VcrAux', 5: 'Tv', 6: 'WatchTV', 7: 'Dvd', 8: 'Favorite1',
+      9: 'Favorite2', 10: 'Menu', 11: 'Teletext', 12: 'Exit', 13: 'Red', 14: 'DirectionLeft', 15: 'VolumeMute',
+      16: 'List', 17: 'Number4', 18: 'Number7', 20: 'Number0', 21: 'SkipBack', 22: 'Rewind', 23: 'Record',
+      24: 'Number1', 27: 'Green', 28: 'Yellow', 29: 'Blue', 30: 'FastForward', 31: 'DirectionRight',
+      32: 'PrevChannel', 33: 'Guide', 34: 'Favorite4', 36: 'Info', 37: 'Number6', 38: 'SkipForward',
+      39: 'Number3', 40: 'Stop', 41: 'ChannelDown', 42: 'DirectionDown', 44: 'Play', 45: 'Number9', 46: 'Pause',
+      47: 'Number2', 48: 'Number5', 49: 'VolumeUp', 50: 'Select', 51: 'DirectionUp', 52: 'VolumeDown',
+      53: 'Number8', 55: 'ChannelUp',
+    },
+    why: "the Harmony 350's drawing, the same moulding per a statement made holding a 300 and a 350, with the "
+      + 'European printing stated by a person holding a skin 79 unit',
   },
   /**
    * The count is the drawing's. Two of Logitech's own drawings in the setup guide agree on it, the button
@@ -233,10 +256,11 @@ test('a key whose code is undecided carries candidates and no scan', () => {
      * `packages/bench/test/keys350.test.ts`, which is why a set is stated by its size rather than by one
      * size per model: a set of candidates may be larger than the keys sharing it. It had a second, four
      * favourite keys sharing the four codes favourite 5 did not take, until `todo-compile-350.md` 3.3 heard
-     * them. The Harmony 300 has none, because its drawing takes no code from the 350's, `h300.ts`.
+     * them. The Harmony 300 has none on either printing: its drawings take no code from the 350's, `h300.ts`,
+     * and the European one carries only what its own unit decided, `h300eu.ts`.
      */
     const SETS: Readonly<Record<string, readonly { keys: number; codes: number }[]>> = {
-      h300: [], h350: [{ keys: 1, codes: 2 }],
+      h300: [], h300eu: [], h350: [{ keys: 1, codes: 2 }],
       h525: [{ keys: 4, codes: 4 }], h600: [], h650: [], h700: [], one: [], touch: [],
     };
     const want = SETS[id]!;
@@ -522,7 +546,7 @@ test('a model that has no tilted key says so by measurement', () => {
    * a degree on the keys that looked tilted in its photograph.
    */
   const LEVEL: Readonly<Record<string, boolean>> = {
-    h300: true, h350: true, h525: true, h600: true, h650: true, h700: true, one: true, touch: true,
+    h300: true, h300eu: true, h350: true, h525: true, h600: true, h650: true, h700: true, one: true, touch: true,
   };
   for (const [id, model] of drawn) {
     for (const key of model.keys) {

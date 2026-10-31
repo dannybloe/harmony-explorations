@@ -144,6 +144,10 @@ test('a detail level leaves out what it says it leaves out', () => {
       // The 350's 44 plus Power, the second line of TV Input, A to D, Replay, Skip, Record and Stop; the
       // symbols are the same parts, so the marks are the 350's 41.
       h300: { text: 54, marks: 41, keys: 55 },
+      // The European printing: the 350's 44 plus Power, the second line of TV Input, Replay, Skip, Record,
+      // Stop and the word Teletext, less the 5 of the favourite the Teletext key replaces; the 350's 41
+      // symbols and the teletext glyph's two parts.
+      h300eu: { text: 50, marks: 43, keys: 55 },
       h350: { text: 44, marks: 41, keys: 55 },
       h525: { text: 44, marks: 36, keys: 50 },
       h600: { text: 37, marks: 56, keys: 54 },

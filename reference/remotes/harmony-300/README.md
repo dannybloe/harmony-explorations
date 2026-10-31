@@ -1,7 +1,9 @@
 # Harmony 300
 
 An infrared universal remote with **no screen**: a Watch TV key, four device keys printed TV, Cable/Sat,
-DVD and VCR/Aux, a power key, four favourite channel keys and an ordinary keypad. Press a device key and
+DVD and VCR/Aux, a power key, favourite channel keys and an ordinary keypad. It comes in two printings, the
+US one, skin 78, with five favourite keys, and the European one, skin 79, with four and a Teletext key,
+[keys.md](keys.md). Press a device key and
 every key on the remote controls that one device; press Watch TV and, in Logitech's words, the television
 and the set top box switch on together, [behaviour.md](behaviour.md). It runs on two AA batteries and is
 set up from a computer over USB.
@@ -41,7 +43,7 @@ The figures that are the family's link to its folder; the rest are the 300's own
 | architecture, product id, firmware, container | the family's | [the family's README](../../architectures/harmony-300-350/README.md) |
 | `bcdDevice` | `0x1078`, the family's base skin even on a skin 79 remote | [^s195][^s264] |
 | screen | **none** | [^t-no-screen]; [display.md](display.md) |
-| keys | 55, the 350's moulding with different printing; its configurations bind the Harmony 350's codes, [keys.md](keys.md#scan-codes) | [^t-moulding], [^t-harmony-350-keys-c]; [keys.md](keys.md) |
+| keys | 55, the 350's moulding, in two printings, skin 78's and skin 79's; each key raises the code of the 350 key in the same place, 49 heard so on a skin 79 remote, [keys.md](keys.md#scan-codes) | [^t-moulding], [^t-harmony-350-keys-c], [^t-harmony-300-keys-u]; [keys.md](keys.md) |
 | devices | **4**, one per device key, and every configuration holds four infrared groups | [^s264c][^s264b] |
 | activities | no `Activities` capability, only `PartiallySetupActivities`; at most one, a power on shortcut | [^s265b]; [features.md](features.md) |
 | favourite channels | 4 for skin 79; 5 for skin 78 | [^s265b] for 79; [^unchecked] for 78 |
@@ -51,7 +53,7 @@ The figures that are the family's link to its folder; the rest are the 300's own
 
 | file | what it holds |
 |---|---|
-| [keys.md](keys.md) | the keys, how their printing differs from the 350's, the drawing |
+| [keys.md](keys.md) | the keys, the two printings and how each differs from the 350's, the two drawings |
 | [display.md](display.md) | none |
 | [features.md](features.md) | Logitech's statement, devices, the activity question, favourites |
 | [behaviour.md](behaviour.md) | what the remote does in use |
@@ -63,7 +65,9 @@ The figures that are the family's link to its folder; the rest are the 300's own
 
 ## Not checked
 
-* Which key sends which scan code, on the remote, and what its colour keys send against what they print.
+* Which key sends which scan code on a skin 78 remote, and what its colour keys send against what they
+  print. On a skin 79 remote 49 keys were pressed and heard, [keys.md](keys.md#scan-codes); this line
+  covered the whole model until then.
 * What decides skin 78 or 79 on a unit.
 
 [^s131]: Stated by Logitech, by their service. [Section 131](../../../docs/findings.md#s131)
@@ -77,3 +81,4 @@ The figures that are the family's link to its folder; the rest are the 300's own
 [^s265b]: Stated by Logitech, by their service. [Section 265](../../../docs/findings.md#s265)
 [^t-long-press]: Stated by Logitech, by their service. [The test](../../../packages/usb/test/models.test.ts)
 [^t-harmony-350-keys-c]: Measured in configurations. [The test](../../../tests/test_harmony_350_keys.py)
+[^t-harmony-300-keys-u]: Measured on a unit. [The test](../../../tests/test_harmony_300_keys.py)

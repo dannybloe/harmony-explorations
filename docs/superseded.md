@@ -677,3 +677,5 @@ it reachable in the same commit and the test comparing the two tables is what ca
 | `arrow pair by elimination` | `TheBench350HeardEveryKey`, `tests/test_harmony_350_keys.py` | the configurations narrow the arrow pair to 25 and 26 and pressing them decided it |
 | `none of the 55 on a Harmony 350` | `packages/silhouettes/test/models.test.ts` | the Harmony 350's drawing carries 53 codes, heard by pressing the keys |
 | `No key press has been tied to a scan code` | `TheBench350HeardEveryKey`, `tests/test_harmony_350_keys.py` | 53 keys of the bench Harmony 350 were tied to a code by pressing them, 44 in that run and nine in `TheBench350HeardTheTestSetup` |
+| `no Harmony 300 has been pressed` | `TheBench300HeardEveryKey`, `tests/test_harmony_300_keys.py` | a skin 79 Harmony 300 was pressed key by key and 49 keys tied to the code of the 350 key in the same place; no skin 78 one has been pressed |
+| `none on the Harmony 300 that shares its face` | `packages/silhouettes/test/models.test.ts` | the drawing of the Harmony 300's European printing carries 49 codes, heard by pressing the keys; the US printing's carries none |
