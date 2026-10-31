@@ -19,7 +19,7 @@ beyond the 350's, so it starts when that track is done. todo.md 3.7.
 
 ## 1. The write route
 
-- [ ] 1.1 The decision whether the bench 300 may be written to, asked and recorded as a decision, not assumed
+- [x] 1.1 The decision whether the bench 300 may be written to, asked and recorded as a decision, not assumed: decision 26, taken with the 350's 1.1; the write rail already names a record `h300`, skin 79
 - [ ] 1.2 A full backup of the unit into the lab, as the 350's 1.5
 - [ ] 1.3 The 300 on the 350's rail, checked against its own lab record
 - [ ] 1.4 The first write: its own configuration back unchanged, read back and compared, and the remote still sends what it sent before
