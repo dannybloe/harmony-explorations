@@ -55,7 +55,12 @@ Logitech compile of part of a test setup written and used, then our composers on
 
 ## 4. Our composers on it
 
-- [ ] 4.1 A composed device: its infrared group at the model's maximum allocation, its names in the metadata archive, its key map
+- [ ] 4.1 A composed device: its infrared group at the model's maximum allocation, its names in the metadata archive, its key map; the no screen family's first members, and the Plasma composed onto the three device file matches Logitech's compile of it in records, send lists, power variable, waits, metadata and 38 of 40 bindings, `packages/codec/test/noscreen.test.ts`
+  - [ ] 4.1.1 The product answers the composer stopped at: the Input key's device, volume to the receiver per device, the favourite key and soft buttons, the uncalled one block digit copies
+  - [ ] 4.1.2 The top left key, which needs raw slot 5's start up select
+  - [ ] 4.1.3 Composing onto the full test compile, after a device removal step, since all eight groups are in use
+  - [ ] 4.1.4 The metadata archive's `Index` and `DeviceId`, once what reads the archive is known
+  - [ ] 4.1.5 A composed device written to the bench 350 and heard
 - [ ] 4.2 The composed activity
 - [ ] 4.3 The favourite channels
 - [ ] 4.4 A device key's long press
