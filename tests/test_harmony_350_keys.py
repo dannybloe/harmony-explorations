@@ -115,12 +115,16 @@ the Harmony 300). The reference: both models' `keys.md`, the family's README, `m
 * DVR (16) by a press that decides it: on Logitech's compile of the test setup it sends a code whose bytes
   OK's binding sends as well. Menu (10), Enter (54), Watch TV (6) and the top right and bottom right
   device keys (1 and 4) were listed here until that run heard them.
-* Anything on a Harmony 300 pressed: the moulding is the 350's and its files bind the same codes, but no
-  300 has been pressed with the receiver listening.
-* The Harmony 300's colour keys. Both its files send the `Red` command from code 13 and `Green`, `Yellow`
-  and `Blue` from 27, 28 and 29, the codes of the 350's red, green, yellow and blue keys, while the 300's
-  drawing prints yellow, blue, red and green on those four positions. Either the 300 sends the command
-  of another colour than the one printed on the key, or its printing was read wrong. Not checked.
+* A US Harmony 300, skin 78, pressed. A European one, skin 79, was, `packages/bench/test/keys300.test.ts`,
+  and 49 of its keys came out on the code of the 350 key in the same place; this said no 300 had been
+  pressed with the receiver listening until `todo-compile-300.md` 2.2.
+* The US Harmony 300's colour keys. Both the 300's files send the `Red` command from code 13 and `Green`,
+  `Yellow` and `Blue` from 27, 28 and 29, the codes of the 350's red, green, yellow and blue keys, while
+  the US drawing, skin 78, prints yellow, blue, red and green on those four positions. Either the US 300
+  sends the command of another colour than the one printed on the key, or its printing was read wrong. Not
+  checked. The European printing, skin 79, runs red, green, yellow, blue as the 350 does, and its keys were
+  heard sending those colours by place, `packages/bench/test/keys300.test.ts`; this said the 300's printing
+  disagreed with the codes on the whole model until then.
 
 **Standing.** Read in the firmware and measured in configurations, and the 41 keys `HEARD` names measured
 on the bench Harmony 350 with the infrared receiver, `TheBench350HeardEveryKey`, while the unit held its

@@ -27,8 +27,10 @@
  * **The key table, fitted.** `NO_SCREEN_HARD_KEYS` was fitted to the eight devices of the test setup compile; the
  * test below states, device by device, where Logitech binds a key to the device's own command and the table does
  * not or the other way round. On seven devices the only differences are the favourite key and the volume and mute
- * Logitech sends to the Denon instead of the device's own; the KPN's map is the activity's, `todo-compile-350.md`
- * 4.2 and 4.3, and binds three of the table's keys.
+ * Logitech sends to the Denon instead of the device's own; the KPN's map binds three of the table's keys, for a
+ * reason not read. This gave the reason as the map being the one the activity ends in, until
+ * `noscreenactivity.test.ts` found the activity ending in another KPN box's map, of 33 bindings sending one of its
+ * own codes, on two other compiles.
  *
  * **The power on delay's waits are a closure**: the catalogue's power on delay, read by `catalogueDevicePower`,
  * split by `powerOnWaits`, is the waits Logitech's compile writes on each of the eight devices, the Knoll's 250
@@ -211,7 +213,7 @@ test('the family\'s key table gives every device of Logitech\'s compile the keys
     }
     // Scan, then what Logitech binds of the device's own and what the table gives it. The favourite key, scan 2,
     // takes a soft button's command; volume and mute go to the Denon on the Kodi and the Sony HT, which have their
-    // own; and the KPN's map is the activity's.
+    // own; and the KPN's map binds few of its own, for a reason not read, `noscreenactivity.test.ts`.
     assert.deepEqual(differences, {
       // The LG TV's own Input binding is the one every map of the compile carries, the LG TV's InputNext.
       LG_TV: ['2 Home/SmartMenu -', '35 InputNext -'],

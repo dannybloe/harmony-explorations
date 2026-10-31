@@ -7,13 +7,18 @@
  * built: the key table its map is laid out by, `deviceModeKeys`, and its send, `sends`, whose device half is
  * real; the composer itself is `composeNoScreenDevice` in `devices.ts`, since no member of the interface composes
  * a whole device, and it puts a device on a key's short press or, 4.4, its long press. The favourite channels,
- * 4.3, are `composeNoScreenFavourites` in `favourites.ts`, for the same reason. Everything else refuses with a
- * message saying why, as code-for-a-family's fourth question asks, rather than borrowing another family's answer:
+ * 4.3, are `composeNoScreenFavourites` in `favourites.ts`, and the one activity, Watch TV, 4.2, is
+ * `composeNoScreenActivity` in `activity.ts`, for the same reason. Everything else refuses with a message saying
+ * why, as code-for-a-family's fourth question asks, rather than borrowing another family's answer:
  *
  * * **No screen**, so the screen members refuse for good: a device's screen, an activity's row, menu and screen,
  *   the screen items, the font sets.
- * * **Not measured yet**, each with the step that measures it: the activity's start and its keys, 4.2; the state
- *   tables and the wiring the builders check against, chapter 5; the inputs and the sequences the send refuses.
+ * * **Not this family's shape**: the shared activity composer's start and activity keys, which build a start
+ *   sequence, a menu row and keys of an activity map this family has none of, and the shared input composer's
+ *   send, whose inputs send whole records after the input delay where this family's send one block copies after
+ *   a tenth; the activity composer builds both its own way.
+ * * **Not measured yet**, each with the step that measures it: the state tables and the wiring the builders check
+ *   against, chapter 5; the sequences the send refuses, which no compile of this family holds.
  *
  * A data member that cannot be stated refuses when it is read, `refusing` below, so a shared composer that asks
  * this family a question it has no answer to stops there with the reason, not with another family's answer.
@@ -57,7 +62,7 @@ export const NO_SCREEN_FAMILY: Family = {
   // compile of the test setup states every device's, and no activity key exists to choose.
   choices: {},
   deviceModeKeys: NO_SCREEN_HARD_KEYS,
-  activityKeyRules: refusing<ActivityKeyRules>(`an activity's keys are not composed for ${NAME} yet, todo-compile-350.md 4.2`),
+  activityKeyRules: refusing<ActivityKeyRules>(`${NAME} have no activity map, so an activity's keys are its channel device's; the activity is composeNoScreenActivity`),
   stateTables: refusing<StateTableFacts>(`the state tables are not built for ${NAME} yet, todo-compile-350.md 5.1`),
   wiring: { check: refuses(`the wiring is not built for ${NAME} yet, todo-compile-350.md 5.1`) },
   fonts: {
@@ -67,7 +72,7 @@ export const NO_SCREEN_FAMILY: Family = {
     refusal: () => `${NO_SCREEN}, so nothing is lettered`,
   } satisfies FamilyFonts,
   sends: NO_SCREEN_SENDS,
-  activityStart: refusing<ActivityStart>(`an activity's start is not composed for ${NAME} yet, todo-compile-350.md 4.2`),
+  activityStart: refusing<ActivityStart>(`${NAME}'s activity has no start sequence of the screen families' shape; it is composeNoScreenActivity`),
   screenItems: refuses(NO_SCREEN),
   drawsName: refuses(NO_SCREEN),
   composeDeviceScreen: refuses(NO_SCREEN),
@@ -78,7 +83,11 @@ export const NO_SCREEN_FAMILY: Family = {
   composeActivityScreen: refuses(NO_SCREEN),
 };
 
-export { composeNoScreenDevice, type ComposedNoScreenDevice, inCompilerOrder, type NoScreenDeviceRequest } from './devices.ts';
+export {
+  ACTIVITY_FLAG, type ActivityPowerStep, composeNoScreenActivity, type ComposedNoScreenActivity, type NoScreenActivityDevice,
+  type NoScreenActivityRequest, WATCH_TV_SCAN,
+} from './activity.ts';
+export { composeNoScreenDevice, type ComposedNoScreenDevice, inCompilerOrder, mapOfGroup, type NoScreenDeviceRequest } from './devices.ts';
 export {
   composeNoScreenFavourites, type ComposedNoScreenFavourites, NUMBER_SENDER_BAND, type NoScreenFavouritesRequest,
 } from './favourites.ts';

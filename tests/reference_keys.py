@@ -20,17 +20,23 @@ import re
 _HERE = os.path.dirname(os.path.abspath(__file__))
 REMOTES = os.path.normpath(os.path.join(_HERE, '..', 'reference', 'remotes'))
 
-_BLOCK = re.compile(r'<!-- generated:keys -->\n(.*?)<!-- /generated -->', re.S)
+_BLOCK = '<!-- generated:%s -->\n(.*?)<!-- /generated -->'
 _ROW = re.compile(r'^\| `([A-Za-z0-9]+)` \| (\w+) \| (\w+) \| ([^|]*) \|', re.M)
 _SCAN = re.compile(r'^(\d+) \(0x[0-9A-F]{2}\)\[\^(s\d+|t-[a-z0-9-]+)\]$')
 
 
-def generated_keys(folder):
-    """{name: (kind, name from, scan or None, its footnote label or None)} for one model folder's keys page."""
+def generated_keys(folder, block='keys'):
+    """
+    {name: (kind, name from, scan or None, its footnote label or None)} for one model folder's keys page.
+
+    `block` names the generated block: `keys` for the folder's drawing, and `keys-<drawing>` for a drawing of
+    another printing of the same model, the Harmony 300's European one being `keys-h300eu`.
+    """
     with open(os.path.join(REMOTES, folder, 'keys.md'), encoding='utf-8') as handle:
-        block = _BLOCK.search(handle.read())
-    if block is None:
-        raise ValueError('%s/keys.md has no generated keys block' % folder)
+        found = re.search(_BLOCK % re.escape(block), handle.read(), re.S)
+    if found is None:
+        raise ValueError('%s/keys.md has no generated block %s' % (folder, block))
+    block = found
     keys = {}
     for name, kind, source, cell in _ROW.findall(block.group(1)):
         scan = _SCAN.match(cell.strip())

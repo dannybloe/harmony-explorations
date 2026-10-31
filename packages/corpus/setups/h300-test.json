@@ -1,0 +1,18 @@
+{
+ "about": "The Harmony 300's test setup, todo-compile-300.md 3.4: what Logitech's service compiled for the bench 300's record, section 265, the configuration the unit holds and the lab keeps as h300_programmed_config. One device per device key: the Panasonic television on TV, the KPN box on Cable/Sat, the Panasonic DVD player on DVD and the Sony video recorder on VCR/Aux; Watch TV as Logitech set it up, toggling the KPN's and the television's power and ending in the KPN's mode; four favourite channels on the KPN, entered as 1, 2, 3 and 666. Which device goes on which key is not part of this file's format. The record holds no devices any more; the compile is the reference.",
+ "model": { "name": "Harmony 300", "skin": 79 },
+ "devices": [
+  { "name": "Panasonic TV", "device": "Panasonic/TX-P42GT30E" },
+  { "name": "KPN", "device": "KPN/VIP1853" },
+  { "name": "Panasonic DVD", "device": "Panasonic/DVD-S35" },
+  { "name": "Sony VCR", "device": "Sony/SLV-N700" }
+ ],
+ "activities": [
+  { "name": "Watch TV", "type": "WatchTV", "devices": [
+   { "device": "Panasonic TV", "roles": ["Display"] },
+   { "device": "KPN", "roles": ["ChannelChanging"] } ] }
+ ],
+ "favourites": [
+  { "device": "KPN", "channels": ["1", "2", "3", "666"] }
+ ]
+}

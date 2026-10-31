@@ -233,8 +233,8 @@ is why it may never carry a guess.
 
 **Never invent a scan code.** `scan` is present only where an archive section or, since the archive was
 frozen, a test established it, which is 38 of 44 keys on a Harmony One, 41 of 54 on a Harmony 600, none of
-the 50 on a Harmony 525, 53 of the 55 on a Harmony 350, heard by pressing them, and none on the Harmony
-300 that shares its face. A wrong scan code is invisible: the interface then shows the wrong assignment
+the 50 on a Harmony 525, 53 of the 55 on a Harmony 350 and 49 of the 55 on the Harmony 300's European
+printing, heard by pressing them, and none on its US printing, which nobody here has pressed. A wrong scan code is invisible: the interface then shows the wrong assignment
 beside a key with complete confidence. `test/models.test.ts` pins the count per source and names every
 code that did not come from the button maps; `packages/codec/test/irframe.test.ts` checks every button
 map code against the frames it sends in the calibration configurations. Where the name is settled and the
@@ -387,7 +387,11 @@ A model joins the reference and the drawings together, and the reference's layou
    and its architecture. A model with no drawing of its own uses its sibling's where the manual or the
    person holding both says the face is shared, and says so in `keys.md`; a model nobody has drawn yet
    leaves the drawing out, and its keys and display blocks say none exists, as the Harmony 885's and
-   890's do. The skin table in `reference/remotes/README.md` is generated from `MODELS_BY_SKIN`.
+   890's do. **A model sold in two printings gets a drawing per printing**, each serving its own skins,
+   the first as `drawing` and the others as `printings`, and its keys page carries a keys block for each,
+   `keys-<drawing>`: the Harmony 300's US printing, skin 78, is `h300` and its European one, skin 79,
+   `h300eu`, which differ in the colour keys and the favourite block. The skin table in
+   `reference/remotes/README.md` is generated from `MODELS_BY_SKIN`.
 3. Put the markers where the generator expects them and run `make remote-reference-write`, then
    `make remote-reference`; `test/remotes.test.ts` checks every folder against its row.
 4. If its architecture has no folder yet, add one under `reference/architectures/`, named for the models

@@ -22,9 +22,9 @@
  * * **Volume and mute** are a device's own on a television or a receiver and otherwise the account's first
  *   receiver's, else its first television's, `volumeSource`: the eight devices of the test setup, which the
  *   service's overrides state, and 9 of the 12 that are neither on the other compiles. Two that disagree keep
- *   their own, on compiles made for earlier owners; the third is the Harmony 300's KPN, whose map is its activity's.
- *   The KPN's map has no mute in the test setup's compile, and the service gives it no mute override, so it is not
- *   borrowed there; the KPN's map is the activity's, 4.2's.
+ *   their own, on compiles made for earlier owners; the third is the Harmony 300's KPN, whose map binds no volume
+ *   at all. The KPN's map has no mute in the test setup's compile, and the service gives it no mute override, so it
+ *   is not borrowed there; why that map binds so few keys is not read, `noscreenactivity.test.ts`.
  * * **The fifth favourite key** holds a television's Home, else Internet: 4 of 5 televisions with either, on the
  *   Harmony 350; the Philips of the bench 350's first configuration binds nothing there. No other type binds it.
  * * **Teletext** is stored with a send list nothing calls, for 11 of 11 devices with the command on the Harmony 350
@@ -312,7 +312,7 @@ test('volume and mute go where volumeSource says on all eight maps of the test s
       'h300programmed KPN': 'no   ',
     });
     // 12 that are neither on the other compiles: 9 agree, the QNAP and the Marantz keep their own, and the Harmony
-    // 300's KPN, whose map is its activity's and binds no volume at all, is the activity's question.
+    // 300's KPN, whose map binds no volume at all, for a reason not read.
     assert.deepEqual([agree, disagree], [9, 3]);
   });
 
@@ -412,7 +412,7 @@ test('Teletext is stored with a send list nothing calls for every device with th
       }
     }
     // On the Harmony 350 the Teletext is idle on all eleven devices with one, the only idle record but on two
-    // televisions; on the Harmony 300, which has the key, the plasma binds it, and the KPN's map is its activity's.
+    // televisions; on the Harmony 300, which has the key, the plasma binds it, and the KPN's map does not.
     assert.deepEqual(seen, {
       'setup Plasma': '1 idle', 'setup KPN': '1 idle',
       'issue37 LG TV': '3 idle', 'issue37 Humax DVR': '1 idle', 'issue37 Qnap Media Player': '1 idle',

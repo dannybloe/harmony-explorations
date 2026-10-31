@@ -14,16 +14,18 @@ import { FOUR_SLOT_CHOICES, fourSlotChoices } from '../src/families/four-slot/ch
 const SETUPS = new URL('../../corpus/setups/', import.meta.url);
 const raw = (file: string): Record<string, unknown> => JSON.parse(readFileSync(new URL(file, SETUPS), 'utf8'));
 
-test('every setup file reads as a recipe: the three for the Harmony 650, skin 72, which the four slot family builds for and which holds eight devices, the test setup for the Harmony One, skin 54, the touch family\'s, and the Harmony 350\'s, which no family builds for',
+test('every setup file reads as a recipe: the three for the Harmony 650, skin 72, which the four slot family builds for and which holds eight devices, the test setup for the Harmony One, skin 54, the touch family\'s, and the Harmony 300\'s and 350\'s, which no recipe target serves yet',
   () => {
   const files = readdirSync(SETUPS).filter((one) => one.endsWith('.json')).sort();
-  assert.deepEqual(files, ['h350-test.json', 'h650-options.json', 'h650-start.json', 'h650-test.json', 'one-test.json']);
+  assert.deepEqual(files, ['h300-test.json', 'h350-test.json', 'h650-options.json', 'h650-start.json', 'h650-test.json', 'one-test.json']);
   for (const file of files) {
     const recipe = readRecipe(raw(file));
     // The Harmony 350's setup is sent to Logitech's service and built by nothing here: its skin is not in
     // the model table, so its target is refused. This fails, and should be rewritten, when a family arrives.
-    if (file.startsWith('h350-')) {
-      assert.throws(() => recipeTarget(recipe), /no model has skin 104/);
+    // The Harmony 300's, todo-compile-300 3.4, is the recipe of the compile its bench unit holds, and is refused
+    // the same way, at skin 79.
+    if (file.startsWith('h350-') || file.startsWith('h300-')) {
+      assert.throws(() => recipeTarget(recipe), file.startsWith('h350-') ? /no model has skin 104/ : /no model has skin 79/);
       continue;
     }
     const target = recipeTarget(recipe);

@@ -51,6 +51,7 @@ import { u8, u16 } from '../../bytes.ts';
 import { catalogueDevicePlan } from '../../composecatalogue.ts';
 import { Writer } from '../../emit.ts';
 import { type Container, type Instruction, parse } from '../../gspm.ts';
+import { irGroups } from '../../ir.ts';
 import {
   BYTE_REGISTER_LOAD, compilerHash, CONDITION_OPCODE, CONDITION_TWO_ARMS, devices, SELECT_BINDING_SET, SELECT_BINDING_SET_MASK,
 } from '../../inventory.ts';
@@ -144,19 +145,12 @@ export function instructionsAt(blob: Uint8Array, at: number): Instruction[] {
 export const highestEnd = (ranges: readonly { readonly start: number; readonly length: number }[]): number =>
   Math.max(...ranges.map((one) => one.start + one.length));
 
-/** The key map a device's key selects: its key's release for a short press device, the held event for a long one. */
-export function mapOfGroup(c: Container, group: number): number {
-  const key = DEVICE_KEYS[group % LONG_PRESS_GROUP_BASE];
-  if (key === undefined || group >= 2 * LONG_PRESS_GROUP_BASE) throw new ComposeError(`group ${group} is no device key's`);
-  const event = group < LONG_PRESS_GROUP_BASE ? RELEASE : HELD;
-  const binding = keyMaps(c)[0]!.entries.find((one) => one.tag === (event | key.scan));
-  const list = binding?.opcode === ACTION_LIST_INDEX_OPCODE ? c.pointerArray(7)![binding.operand] : undefined;
-  const at = list === undefined ? undefined : c.blobOffsetOf(list);
-  const select = at === undefined ? undefined
-    : instructionsAt(c.blob, at).find((one) => one.opcode === SELECT_BINDING_SET && (one.operand & SELECT_BINDING_SET_MASK) === SELECT_BINDING_SET_MASK);
-  if (select === undefined) throw new ComposeError(`the ${key.place} key's ${event === RELEASE ? 'short' : 'long'} press selects no map`);
-  return select.operand & 0xff;
-}
+/**
+ * Where this family puts a new infrared record's blocks and header: where the group arrays begin, as `fillIrGroup`
+ * puts a group's, since the family's own sections sit right above the group table. The favourite channels' digit
+ * copies and the activity's input copies go there, `appendCopyRecord`.
+ */
+export const arraysStart = (c: Container): number => Math.min(...(irGroups(c) ?? []).map((one) => one.start));
 
 /** Every action list body's extent, through the action table. */
 export function listExtents(c: Container): { start: number; length: number }[] {
@@ -273,6 +267,43 @@ export function inCompilerOrder(existing: readonly KeyEntry[], added: readonly K
 }
 
 /**
+ * A key map with `added` put in, in the compiler's order, `inCompilerOrder`, rewritten in place at its own address
+ * with the room made at its end: nothing points inside a tagged list, so only what follows it moves. The device
+ * composer grows entry 0, the key table, this way, the favourite channels a device's map, and the activity entry 0.
+ */
+export function withMapEntries(c: Container, map: number, added: readonly KeyEntry[]): Container {
+  const now = keyMaps(c)[map];
+  if (now === undefined) throw new ComposeError(`raw slot 6 holds no map ${map}`);
+  const grown = taggedListBytes(inCompilerOrder(now.entries, added));
+  if (taggedListExtent(c.blob, now.start)?.wide !== false) throw new ComposeError(`map ${map} is not in the narrow form`);
+  const hole = relocate(c, now.start + now.length, grown.length - now.length);
+  hole.bytes.set(grown, now.start);
+  return parse(hole.bytes);
+}
+
+/**
+ * The key map a device's key selects: its key's release for a short press device on a Harmony 350, its press on a
+ * Harmony 300, whose device keys select on the press, `reference/architectures/harmony-300-350/memory.md` "A device
+ * key and its long press", and the held event for a long press device. Read off entry 0's binding for the key, the
+ * map its list selects, so it answers for Logitech's compiles and ours alike.
+ */
+export function mapOfGroup(c: Container, group: number): number {
+  const key = DEVICE_KEYS[group % LONG_PRESS_GROUP_BASE];
+  if (key === undefined || group < 0 || group >= 2 * LONG_PRESS_GROUP_BASE) throw new ComposeError(`group ${group} is no device key's`);
+  const events = group < LONG_PRESS_GROUP_BASE ? [RELEASE, PRESS] : [HELD];
+  const lists = c.pointerArray(7) ?? [];
+  for (const event of events) {
+    const binding = keyMaps(c)[0]!.entries.find((one) => one.tag === (event | key.scan));
+    const list = binding?.opcode === ACTION_LIST_INDEX_OPCODE ? lists[binding.operand] : undefined;
+    const at = list === undefined ? undefined : c.blobOffsetOf(list);
+    const select = at === undefined ? undefined
+      : instructionsAt(c.blob, at).find((one) => one.opcode === SELECT_BINDING_SET && (one.operand & SELECT_BINDING_SET_MASK) === SELECT_BINDING_SET_MASK);
+    if (select !== undefined) return select.operand & 0xff;
+  }
+  throw new ComposeError(`the ${key.place} key's ${group < LONG_PRESS_GROUP_BASE ? 'short' : 'long'} press selects no map`);
+}
+
+/**
  * The press list of a key with one device: the timers cancelled, the key's pin switched on and two timers started,
  * `07 FFFB`, `1F E9p2` and two `1F EBnn`, as Logitech's compiles and the short press composer below write it.
  * A long press appends the same block again, so a press list of any other shape is refused rather than extended.
@@ -341,13 +372,8 @@ function withBindingOnEveryMap(c: Container, except: number, tag: number, list: 
   let current = c;
   for (let entry = 1; entry < keyMaps(current).length; entry += 1) {
     if (entry === except) continue;
-    const map = keyMaps(current)[entry]!;
-    if (map.entries.some((one) => one.tag === tag)) continue;
-    const grown = taggedListBytes(inCompilerOrder(map.entries, [{ tag, operand: list, opcode: ACTION_LIST_INDEX_OPCODE }]));
-    if (taggedListExtent(current.blob, map.start)?.wide !== false) throw new ComposeError(`map ${entry} is not in the narrow form`);
-    const hole = relocate(current, map.start + map.length, grown.length - map.length);
-    hole.bytes.set(grown, map.start);
-    current = parse(hole.bytes);
+    if (keyMaps(current)[entry]!.entries.some((one) => one.tag === tag)) continue;
+    current = withMapEntries(current, entry, [{ tag, operand: list, opcode: ACTION_LIST_INDEX_OPCODE }]);
   }
   return current;
 }
@@ -550,14 +576,8 @@ export function composeNoScreenDevice(c: Container, archive: string, request: No
     ];
   }
 
-  // Entry 0, the key table, gains the bindings, rewritten in place at its own address with the room made at its
-  // end; nothing points inside a tagged list.
-  const table = keyMaps(current)[0]!;
-  const grown = taggedListBytes(inCompilerOrder(table.entries, added));
-  if (taggedListExtent(current.blob, table.start)?.wide !== false) throw new ComposeError('the key table is not in the narrow form');
-  const tableHole = relocate(current, table.start + table.length, grown.length - table.length);
-  tableHole.bytes.set(grown, table.start);
-  current = parse(tableHole.bytes);
+  // Entry 0, the key table, gains the bindings.
+  current = withMapEntries(current, 0, added);
 
   // The TV mode device, `todo-compile-350.md` 4.1.2: the start up's select names its map, and every other device's
   // map gains its Input binding where it has an input command.

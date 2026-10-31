@@ -24,7 +24,7 @@ import { appendCopyRecord, oneBlockCopy } from '../../sequence.ts';
 import { appendActionLists, ComposeError, nameOfLabel } from '../../shared/core.ts';
 import { composeIrGroup } from '../../shared/infrared.ts';
 import { NUMBER_SENDER_DIGITS } from '../../tables.ts';
-import { highestEnd, instructionsAt, listExtents } from './devices.ts';
+import { arraysStart, highestEnd, instructionsAt, listExtents } from './devices.ts';
 
 /** The device whose digits are wanted, as the setup names it and as the catalogue holds it. */
 export interface DigitDevice {
@@ -41,9 +41,6 @@ export interface DigitLists {
   readonly copiesAdded: number;
   readonly listsAdded: number;
 }
-
-/** Where a family of this kind puts a new record's blocks and header: where the group arrays begin, as `fillIrGroup`. */
-const arraysStart = (c: Container): number => Math.min(...(irGroups(c) ?? []).map((one) => one.start));
 
 /**
  * The action list sending each of the device's digits, 0 to 9, as its one block copy, and the configuration

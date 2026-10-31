@@ -56,6 +56,10 @@ given a second activity to compare. **In the configuration the activity is one k
 sends codes or sets the devices' state variables and then selects one device's map, with no key map of its
 own,
 [the family's memory page](../../architectures/harmony-300-350/memory.md#the-six-slots-the-firmware-was-read-for)[^t-harmony-350-slots-c].
+**In the configuration it flips each device's power without asking whether the device is on**, so a device
+switched on in its own mode beforehand would be switched off by Watch TV, which was not tried on a
+unit[^unchecked]; it sets inputs on the way on only,
+[the activity](../../architectures/harmony-300-350/memory.md#the-activity)[^t-noscreen-activity].
 
 ## Favourite channels
 
@@ -90,3 +94,5 @@ on transition[^s327]; how this architecture interprets it is **not read**.
 [^t-harmony-350-slots-c]: Measured in configurations. [The test](../../../tests/test_harmony_350_slots.py)
 [^t-harmony-350-setup-u]: Measured on a unit. [The test](../../../tests/test_harmony_350_keys.py)
 [^t-noscreen-favourites]: Measured in configurations. [The test](../../../packages/codec/test/noscreenfavourites.test.ts)
+[^t-noscreen-activity]: Measured in configurations. [The test](../../../packages/codec/test/noscreenactivity.test.ts)
+[^unchecked]: Not checked.

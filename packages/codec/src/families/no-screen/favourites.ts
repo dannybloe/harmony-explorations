@@ -43,14 +43,14 @@ import { archSlot, type Container, parse } from '../../gspm.ts';
 import { ACCUMULATOR_LOAD_OPCODE } from '../../ir.ts';
 import { devices } from '../../inventory.ts';
 import { relocate } from '../../relocate.ts';
-import { ACTION_LIST_INDEX_OPCODE, stateRecords, taggedListBytes, taggedListExtent } from '../../sections.ts';
+import { ACTION_LIST_INDEX_OPCODE, stateRecords } from '../../sections.ts';
 import { appendActionLists, ComposeError, nameOfLabel, restamped } from '../../shared/core.ts';
 import { appendTableEntries } from '../../shared/infrared.ts';
 import {
   NUMBER_SENDER_RECORD_LENGTH, NUMBER_SENDER_SLOT, NUMBER_SENDER_TABLE_LENGTH, numberSenders,
 } from '../../tables.ts';
 import {
-  highestEnd, inCompilerOrder, type KeyEntry, keyMaps, listExtents, mapOfGroup, PRESS, SCAN_MASK,
+  highestEnd, type KeyEntry, keyMaps, listExtents, mapOfGroup, PRESS, SCAN_MASK, withMapEntries,
 } from './devices.ts';
 import { deviceDigitLists } from './digits.ts';
 import { FAVOURITE_SCANS } from './keys.ts';
@@ -174,15 +174,10 @@ export function composeNoScreenFavourites(
 
   // 3. The device's map gains a press of each favourite key, rewritten in place at its own address with the room
   //    made at its end; nothing points inside a tagged list.
-  const now = keyMaps(current)[map]!;
   const added: KeyEntry[] = request.channels.map((_, k) => ({
     tag: PRESS | scans[k]!, operand: appended.first + k, opcode: ACTION_LIST_INDEX_OPCODE,
   }));
-  const grown = taggedListBytes(inCompilerOrder(now.entries, added));
-  if (taggedListExtent(current.blob, now.start)?.wide !== false) throw new ComposeError('the device\'s map is not in the narrow form');
-  const mapHole = relocate(current, now.start + now.length, grown.length - now.length);
-  mapHole.bytes.set(grown, now.start);
-  current = parse(mapHole.bytes);
+  current = withMapEntries(current, map, added);
 
   return {
     bytes: restamped(current.blob),

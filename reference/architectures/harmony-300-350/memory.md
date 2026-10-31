@@ -162,7 +162,7 @@ held event[^t-long-press].
 | the press | per device on the key, `07 FFFB`, `1F E9p2` and two `1F EB` starts, whose timers run 400 ticks to `1F E9p0` and 600 to `1F E9p2`: one pulse of the pin. A key with two devices carries the group twice, and the second `07 FFFB` cancels the first group's timers | the binding above | [^t-long-press-c], [^t-long-press] |
 | scan codes of those bindings | 1, 4 and 5 on a configuration with three devices, and 7 with four or more | 1 and 5 with two devices, 1, 4, 5 and 7 with four | [^t-long-press-c] |
 | the pin `p` each switches | 2 for scan 1, 3 for 4, 0 for 5 and 1 for 7 | the same | [^t-long-press-c] |
-| the key's place | scan 5 top left, 1 top right, 7 bottom left and 4 bottom right, the order of the Harmony 300's keys, and all four heard so on a Harmony 350; what is printed on the four keys differs between units, so a key is named by its place | the same | [^t-long-press-c], [^t-harmony-350-setup-u] |
+| the key's place | scan 5 top left, 1 top right, 7 bottom left and 4 bottom right, the order of the Harmony 300's keys, and all four heard so on a Harmony 350 and on a Harmony 300; what is printed on the four keys differs between units, so a key is named by its place | the same | [^t-long-press-c], [^t-harmony-350-setup-u], [^t-harmony-300-keys-u] |
 | the hold time at start | `3F F00A`, parameter 0 at 10, about one second | the same | [^t-long-press-c], [^t-long-press-u] |
 
 **One configuration read has long press devices**, two of them, on scan codes 1 and 7, the top right and bottom left keys, and it sets the
@@ -248,6 +248,55 @@ activity[^t-file-family-delays].
 Changing one is a one byte edit of that `0x7C`'s operand plus the trailer checksum, `setPowerOnDelay` in
 `packages/codec/src/edit.ts`, which leaves the activity's copy alone[^t-file-family-delays].
 
+## The activity
+
+**Watch TV flips every device it uses, and asks none of them what state it is in.** Pressing it the first
+time switches each device's power, then notes that the activity is running and puts the devices on their
+inputs; pressing it again switches each device's power back, and the configuration writes no input then. It
+keeps no record of whether a device is really on: a device switched on beforehand in its own mode is
+switched off by Watch TV, and a device with one power code for both ways is sent that code either
+way[^t-noscreen-activity]. Both ways end in the same device mode, the map of the device that changes
+channels[^t-noscreen-activity]. That is how Logitech's compiles hold it; what a person meets with a device
+already on was not tried on a unit[^unchecked].
+
+**In the configuration** the activity is one list bound to Watch TV's press in entry 0, as
+[above](#the-six-slots-the-firmware-was-read-for), and it runs, in order[^t-noscreen-activity]:
+
+1. **Each device's power**, in the order the metadata archive lists the devices, which is the account's.
+   A device whose power is one code both ways is sent that code's list and then one `0x7C` of its power on
+   delay, the activity's own copy, [above](#a-devices-power-on-delay). Any other device has its `Power`
+   variable flipped by two lists of the activity's own: the byte register loaded with 0, then a two armed
+   compare of the register with the variable whose arms write 1 and 0, so a variable at 0 becomes 1 and one
+   at 1 becomes 0, and its transitions send the codes. A device's power key in its own mode runs a list of
+   the same bytes, and the activity does not share it.
+2. **The activity's flag**, `ActivityPowerState_2`, a variable of two values and no transitions, flipped
+   the same way.
+3. **The inputs, on the way on only**: the register loaded with 1 and a one armed compare with the flag,
+   whose arm runs where the flag has just become 1. The arm is the one input write, or a list of the writes
+   in the same device order where there are several, or the null instruction where there are none.
+4. **The channel device's map selected**, the map that device's key selects.
+
+**A device has an input variable only where the activity puts it on an input**: in one compile for a Harmony
+350, four devices whose catalogue entries list inputs carry none, and the two the activity uses
+do[^t-noscreen-activity]. Every value goes from any value to its own through a list of its own sending a
+record of its own, the input command's one block copy, its first block without the silence in front of it
+and with no held block, as a favourite channel's digits are, [the number
+sender](../../config-format/state.md#base-slot-16-the-number-sender), waiting a tenth after it. All 50 values
+of the five configurations with inputs have that shape and that wait, from three devices; on the one whose
+catalogue entry is known, a receiver, all 19 records are its input commands' copies word for word, and the
+values are numbered in the catalogue's order of the inputs[^t-noscreen-activity]. Every activity read writes
+value 0, so a write of another value is in no configuration[^t-noscreen-activity]. **A
+television whose every input sets internal states of the catalogue's rather than sending a code of its own
+gets a variable of one value and no transitions**, which the activity writes 0, so nothing is sent for its
+input: measured on one LG television[^t-noscreen-activity]. How a stepping input, or one mixing codes and
+states, compiles here is not read[^unchecked].
+
+**Seven configurations of the current generation hold this shape**, six for a Harmony 350 and one for a
+Harmony 300, and composed again from their own devices each gives Logitech's power steps and flag, and six
+whose channel device is known give its map[^t-noscreen-activity]. A Harmony
+300 configuration of an older generation of Logitech's compiler holds an older one, two power codes
+with waits and the map, with no flag and no register[^t-noscreen-activity].
+
 ## The state variables
 
 **The remote keeps a clock that runs to the minute and no further.** It counts a variable it keeps as
@@ -325,6 +374,9 @@ never send it[^t-harmony-350-clock][^unchecked].
   [above](#a-devices-power-on-delay)[^unchecked]. This listed the measurement itself as not checked until
   then, and the unit too, until a Harmony 350 was measured at two values; on a Harmony 300 both rest on its
   running the same image[^unchecked].
+* What a person meets pressing Watch TV with one of its devices already on, which the configurations say
+  switches it off, and how an input that steps through its values, or mixes codes and states, compiles
+  here, [the activity](#the-activity)[^unchecked].
 * Whether the clock's unit is a second: the firmware counts from a timer and from watchdog wakes whose
   rates are not read, and only a read of the running remote would say[^unchecked].
 * Whether a restart after a configuration is written seeds the new configuration's values or keeps the
@@ -371,3 +423,5 @@ never send it[^t-harmony-350-clock][^unchecked].
 [^t-long-press-u]: Measured on a unit. [The test](../../../tests/test_harmony_350_long_press.py)
 [^t-harmony-350-keys-c]: Measured in configurations. [The test](../../../tests/test_harmony_350_keys.py)
 [^t-harmony-350-setup-u]: Measured on a unit. [The test](../../../tests/test_harmony_350_keys.py)
+[^t-noscreen-activity]: Measured in configurations. [The test](../../../packages/codec/test/noscreenactivity.test.ts)
+[^t-harmony-300-keys-u]: Measured on a unit. [The test](../../../tests/test_harmony_300_keys.py)
