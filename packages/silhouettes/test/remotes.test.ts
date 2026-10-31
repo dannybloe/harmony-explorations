@@ -40,17 +40,24 @@ test('a marker nothing generates and a block a file lacks are both reported', ()
     'x.md: block wanted is missing, add the two markers where it belongs']);
 });
 
-test('a model folder and its drawing serve the same skins', () => {
+test('a model folder and its drawings serve the same skins, and every drawing is a folder\'s', () => {
   // Two lists of one population, and nothing compared them until 9 October 2026: the Harmony 300's
   // folder named 78 and 79 while its drawing served 78 alone, so a drawing looked up by the skin a
   // bench unit states about itself, 79, section 264, found nothing. A folder whose drawing is a
   // sibling's, the 650's taking the 600's shapes, still has a drawing of its own with its own skins.
+  // A model with two printings, the Harmony 300's, has a drawing per printing, and the folder's skins are
+  // theirs together, each skin served by exactly one of them.
   for (const r of REMOTES) {
     if (r.drawing === undefined) continue; // the next test holds which folders may have none
-    const drawing = MODELS[r.drawing] ?? assert.fail(`${r.folder}: no drawing ${r.drawing}`);
-    assert.deepEqual([...drawing.skins].sort((a, b) => a - b), [...r.skins].sort((a, b) => a - b), r.folder);
+    const served = [r.drawing, ...(r.printings ?? [])].flatMap((id) =>
+      (MODELS[id] ?? assert.fail(`${r.folder}: no drawing ${id}`)).skins);
+    assert.deepEqual([...served].sort((a, b) => a - b), [...r.skins].sort((a, b) => a - b), r.folder);
   }
-  assert.deepEqual(MODELS.h300!.skins, [78, 79], 'the Harmony 300 drawing serves both regional skins');
+  assert.deepEqual(MODELS.h300!.skins, [78], 'the Harmony 300 drawing serves the US skin');
+  assert.deepEqual(MODELS.h300eu!.skins, [79], 'and its European printing has a drawing of its own');
+  // Every drawing is some folder's drawing or printing, so a printing cannot be drawn and described nowhere.
+  const described = REMOTES.flatMap((r) => [...(r.drawing === undefined ? [] : [r.drawing]), ...(r.printings ?? [])]);
+  assert.deepEqual(Object.keys(MODELS).filter((id) => !described.includes(id)), []);
 });
 
 test('only the Harmony 885 and 890 folders are without a drawing, so a drawn model cannot lose its drawing', () => {

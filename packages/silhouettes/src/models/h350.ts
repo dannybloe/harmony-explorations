@@ -199,7 +199,8 @@ const DRAWN: readonly Key[] = [
  *
  * Kept as a table beside the geometry rather than written into each key, because the codes are one
  * measurement and the shapes another, and because `h300.ts` takes every shape from here and none of the
- * codes: no Harmony 300 has been pressed.
+ * codes: they were heard on a Harmony 350. The European Harmony 300's codes were heard on one of those,
+ * `h300eu.ts`, and are its own table.
  */
 const HEARD: Readonly<Record<string, number>> = {
   TvMedia: 5, AvrGame: 7, Power: 3, Input: 35, Favorite5: 2, Info: 36, Exit: 12, Guide: 33, UpArrow: 25,

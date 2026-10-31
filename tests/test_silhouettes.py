@@ -35,10 +35,12 @@ SILHOUETTES = os.path.normpath(os.path.join(_HERE, '..', 'reference', 'silhouett
 
 SVG = '{http://www.w3.org/2000/svg}'
 
-# The model folder whose keys page states each drawing's scan codes. The Harmony 650's and 700's drawings
-# take the 600's codes and their own pages carry the same generated block.
+# The model folder whose keys page states each drawing's scan codes, and the block where it is not `keys`.
+# The Harmony 650's and 700's drawings take the 600's codes and their own pages carry the same generated
+# block; the Harmony 300's European printing has a block of its own beside the US one's.
 KEYS_PAGE = {
-    'h300.svg': 'harmony-300', 'h350.svg': 'harmony-350', 'h525.svg': 'harmony-525',
+    'h300.svg': 'harmony-300', 'h300eu.svg': ('harmony-300', 'keys-h300eu'), 'h350.svg': 'harmony-350',
+    'h525.svg': 'harmony-525',
     'h600.svg': 'harmony-600', 'h650.svg': 'harmony-650', 'h700.svg': 'harmony-700',
     'one.svg': 'harmony-one', 'touch.svg': 'harmony-touch',
 }
@@ -65,6 +67,15 @@ def _text(name):
 
 def _tree(name):
     return ET.parse(os.path.join(SILHOUETTES, name))
+
+
+def _centre_x(button):
+    """Where a key's symbol sits across the face: the x of the `translate` that places its mark on the key."""
+    for element in button.iter():
+        found = re.match(r'translate\(([-\d.]+) ', element.get('transform', ''))
+        if found:
+            return float(found.group(1))
+    raise ValueError('%s carries no placed mark' % button.get('id'))
 
 
 def _buttons(root):
@@ -145,10 +156,11 @@ class _SilhouetteConventions:
         buttons = _buttons(_tree(self.NAME).getroot())
         claimed = {e.get('data-name'): int(e.get('data-scan'))
                    for e in buttons.values() if e.get('data-scan')}
-        stated = {name: row[2] for name, row in generated_keys(KEYS_PAGE[self.NAME]).items()
-                  if row[2] is not None}
+        page = KEYS_PAGE[self.NAME]
+        page = page if isinstance(page, tuple) else (page,)
+        stated = {name: row[2] for name, row in generated_keys(*page).items() if row[2] is not None}
         self.assertEqual(claimed, stated)
-        for name, (_, _, scan, section) in generated_keys(KEYS_PAGE[self.NAME]).items():
+        for name, (_, _, scan, section) in generated_keys(*page).items():
             if scan is not None:
                 with self.subTest(button=name):
                     self.assertIsNotNone(section, f'{name} states scan {scan} with no section behind it')
@@ -518,16 +530,19 @@ class TestTheHarmony350Silhouette(_SilhouetteConventions, unittest.TestCase):
 
 class TestTheHarmony300Silhouette(TestTheHarmony350Silhouette):
     """
-    The Harmony 350's moulding with the Harmony 300's printing: every shape is taken from the 350's model,
-    on Danny's statement that the two are the same part with different labels, so every convention the
-    350's drawing is held to holds here, and what this class adds is the printing that differs.
+    The Harmony 350's moulding with the US Harmony 300's printing, skin 78: every shape is taken from the
+    350's model, on a statement made holding a 300 and a 350 that the two are the same part with different
+    labels, so every convention the 350's drawing is held to holds here, and what this class adds is the
+    printing that differs.
     """
 
     NAME = 'h300.svg'
     EXPECTED_BUTTONS = 55
-    # **None**, although the 350's drawing carries 53: those were heard on a Harmony 350 and no Harmony 300
-    # has been pressed. The moulding and the 300's configurations make it likely the codes are the same,
-    # which is an inference, so `h300.ts` drops every code and candidate it takes over with the shapes.
+    # **None**, although the 350's drawing carries 53 and the European 300's 49: those were heard on a
+    # Harmony 350 and on a skin 79 Harmony 300, and no skin 78 remote has been pressed. The moulding makes it
+    # likely the codes are the same by place, which is an inference, so `h300.ts` drops every code and
+    # candidate it takes over with the shapes. This said no Harmony 300 had been pressed until
+    # `todo-compile-300.md` 2.2.
     CODES = {}
     CANDIDATES = {}
 
@@ -538,12 +553,68 @@ class TestTheHarmony300Silhouette(TestTheHarmony350Silhouette):
         would not carry.
         """
         text = _text(self.NAME)
-        for word in ('Cable/Sat', 'VCR/Aux', 'List', 'Replay', 'Harmony 300'):
+        for word in ('Cable/Sat', 'VCR/Aux', 'List', 'Replay', 'Harmony 300', 'A', 'D'):
             with self.subTest(word=word):
                 self.assertIn(f'>{word}<', text)
-        for word in ('Cable/PC', 'AVR/Game', 'DVR', 'Favorites'):
+        for word in ('Cable/PC', 'AVR/Game', 'DVR', 'Favorites', 'Teletext'):
             with self.subTest(absent=word):
                 self.assertNotIn(f'>{word}<', text)
+        # Five favourites: each of 1 to 5 is printed twice, on a favourite and on a digit key.
+        self.assertEqual([text.count(f'>{n}<') for n in '12345'], [2, 2, 2, 2, 2])
+
+
+class TestTheHarmony300EuropeanSilhouette(TestTheHarmony350Silhouette):
+    """
+    The Harmony 300's European printing, skin 79, on the same moulding, and 49 keys tied to a code by pressing
+    every key of a skin 79 unit, `todo-compile-300.md` 2.1 and 2.2, `packages/bench/test/keys300.test.ts`.
+
+    The printing is the statement of a person holding that unit, with a photograph of its upper half shown at
+    the bench and not kept: the colour keys red, green, yellow, blue with no letters, as on the 350, and the
+    favourite block 1 left of TV Input, 3 right of it, and 2, Teletext and 4 below, where the US printing has
+    favourites 1 to 5; the rest as the US printing. No manual of the European model is in the lab.
+    """
+
+    NAME = 'h300eu.svg'
+    EXPECTED_BUTTONS = 55
+    # Every one the code of the 350 key in the same place, by this drawing's names. Clear, Enter, TV Input,
+    # Live and the two arrows carry none: one configuration on the unit binds nothing to them, and the other
+    # gives them Info's command, as it gives several codes, so neither tells them apart.
+    CODES = {
+        'CableSat': 1, 'Favorite3': 2, 'Power': 3, 'VcrAux': 4, 'Tv': 5, 'WatchTV': 6, 'Dvd': 7,
+        'Favorite1': 8, 'Favorite2': 9, 'Menu': 10, 'Teletext': 11, 'Exit': 12, 'Red': 13,
+        'DirectionLeft': 14, 'VolumeMute': 15, 'List': 16, 'Number4': 17, 'Number7': 18, 'Number0': 20,
+        'SkipBack': 21, 'Rewind': 22, 'Record': 23, 'Number1': 24, 'Green': 27, 'Yellow': 28, 'Blue': 29,
+        'FastForward': 30, 'DirectionRight': 31, 'PrevChannel': 32, 'Guide': 33, 'Favorite4': 34, 'Info': 36,
+        'Number6': 37, 'SkipForward': 38, 'Number3': 39, 'Stop': 40, 'ChannelDown': 41, 'DirectionDown': 42,
+        'Play': 44, 'Number9': 45, 'Pause': 46, 'Number2': 47, 'Number5': 48, 'VolumeUp': 49, 'Select': 50,
+        'DirectionUp': 51, 'VolumeDown': 52, 'Number8': 53, 'ChannelUp': 55,
+    }
+    CANDIDATES = {}
+
+    def test_the_printing_is_the_european_300s(self):
+        """
+        The US printing's device names and words, the colour keys without letters, four favourites and
+        Teletext; no fifth favourite and no `Favorites` word.
+        """
+        text = _text(self.NAME)
+        for word in ('Cable/Sat', 'VCR/Aux', 'List', 'Replay', 'Harmony 300', 'Teletext'):
+            with self.subTest(word=word):
+                self.assertIn(f'>{word}<', text)
+        for word in ('Cable/PC', 'AVR/Game', 'DVR', 'Favorites', 'A', 'B', 'C', 'D'):
+            with self.subTest(absent=word):
+                self.assertNotIn(f'>{word}<', text)
+        # Four favourites: 1 to 4 printed twice, on a favourite and on a digit key, and 5 once, on the digit.
+        self.assertEqual([text.count(f'>{n}<') for n in '12345'], [2, 2, 2, 2, 1])
+
+    def test_the_colour_keys_run_red_green_yellow_blue_left_to_right(self):
+        """
+        As on the 350, by place, as the printing was read off the unit. Only the order of the drawn keys is
+        checked here; the codes on them are `CODES` above, and which press raised which is
+        `packages/bench/test/keys300.test.ts`, resting on the order the keys were pressed in.
+        """
+        buttons = _buttons(_tree(self.NAME).getroot())
+        order = sorted(('k-red', 'k-green', 'k-yellow', 'k-blue'), key=lambda one: _centre_x(buttons[one]))
+        self.assertEqual(order, ['k-red', 'k-green', 'k-yellow', 'k-blue'])
 
 
 class TestTheHarmony650Silhouette(TestTheHarmony600Silhouette):
@@ -638,6 +709,7 @@ class TestTheSilhouetteDirectory(unittest.TestCase):
     # naming it is the oversight this pairing exists to refuse.
     DRAWN = {
         'h300.svg': TestTheHarmony300Silhouette,
+        'h300eu.svg': TestTheHarmony300EuropeanSilhouette,
         'h350.svg': TestTheHarmony350Silhouette,
         'h525.svg': TestTheHarmony525Silhouette,
         'h600.svg': TestTheHarmony600Silhouette,

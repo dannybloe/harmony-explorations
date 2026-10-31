@@ -33,7 +33,7 @@ trusting the keypad, and a first change heard before a whole configuration rides
 ## 2. The keys
 
 - [x] 2.1 Every key sends something: the unit's configuration with every unbound scan code given a send, and a bench test pressing every key, as the 350's keypad check before 2.2.2: the lab's `work/300-every-key/every-key.bin`, 12 keys given Info's list, `packages/bench/irtests/done/300-2-1-every-key.json` passed all 18 steps, no key silent or sending twice
-- [ ] 2.2 Every key in two modes against the 350's key table, the predictions written first since the two share one moulding; then the codes onto the 300's drawing, its printed labels checked against the unit
+- [x] 2.2 Every key in two modes against the 350's key table, the predictions written first since the two share one moulding; then the codes onto the 300's drawing, its printed labels checked against the unit: 49 keys heard on the code of the 350 key in the same place, P1 to P5 held, four failed steps the US wording on the European unit; the European printing is its own drawing, `h300eu`, carrying the 49, `packages/bench/test/keys300.test.ts`
 
 ## 3. A Logitech compile, written and used
 

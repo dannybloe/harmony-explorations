@@ -185,8 +185,9 @@ with OK heard on 50[^t-harmony-350-setup-u].
   alone, which prints `List` on the DVR key and sends a command of that name from code 16. A key's accepted
   names include another device's word for the same function, `LastView` for the previous channel key,
   `ChapterPrev` for skip back, chosen after the names were counted. The colour keys rest on the command names
-  and on the drawing's order, and the Harmony 300's printing of the same four positions disagrees with
-  them, [its keys](../harmony-300/keys.md#scan-codes)[^t-harmony-350-keys-c].
+  and on the drawing's order; the Harmony 300's US printing of the same four positions disagrees with
+  them, and its European printing agrees and was heard sending them by place,
+  [its keys](../harmony-300/keys.md#scan-codes)[^t-harmony-350-keys-c].
 * **The rest the configurations narrow and cannot decide.** Codes 25 and 26 are bound and never named by
   the catalogue here, and the arrow pair is the only pair of keys left; codes 43 and 56 are bound by
   nothing, and Live is the only key left[^t-harmony-350-keys-c]. **The arrows were decided by pressing

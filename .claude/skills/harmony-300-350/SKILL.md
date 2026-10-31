@@ -97,7 +97,7 @@ Harmony 350's first, `packages/bench/irtests/done/350-1-8-delay-*.json`, is the 
 |---|---|
 | the public reference | `reference/architectures/harmony-300-350/`, `reference/remotes/harmony-300/`, `reference/remotes/harmony-350/` |
 | the protocol | `reference/usb-protocol/file-protocol.md` |
-| the drawings | `packages/silhouettes/src/models/h300.ts` and `h350.ts`, rendered into `reference/silhouettes/` |
+| the drawings | `packages/silhouettes/src/models/h300.ts` (the 300's US printing, skin 78), `h300eu.ts` (its European printing, skin 79, the bench unit's) and `h350.ts`, rendered into `reference/silhouettes/` |
 | the transport | `packages/usb/src/filepipe.ts`, with `INERT_PATHS` |
 | the read scripts | `packages/usb/bin/read-file.ts` and `read-file-identity.ts` |
 | the predictions | `docs/predictions/harmony-3*.md` |
