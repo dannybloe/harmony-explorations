@@ -1037,6 +1037,17 @@ export const BYTE_REGISTER_LOAD = 0xfb;
  */
 export const QUEUE_INTER_DEVICE_DELAY = 0x67;
 /**
+ * Java 6 and 7's `HashMap` supplemental hash, all four terms, so the formula is the one the identification in
+ * `compilerCaseOrder` names. It is invertible, so distinct keys never share a hash, and a shared slot is the
+ * table size's mask at work. One copy for every order this module and a family generate from it, since two
+ * copies of one derivation are two copies until one of them moves.
+ */
+export function compilerHash(key: number): number {
+  const h = key ^ (key >>> 20) ^ (key >>> 12);
+  return h ^ (h >>> 7) ^ (h >>> 4);
+}
+
+/**
  * The order Logitech's compiler stores a base slot 14 record's cases in, generated rather than copied
  * off a record, section 319.
  *
@@ -1063,12 +1074,7 @@ export const QUEUE_INTER_DEVICE_DELAY = 0x67;
  * is used for are the measured ones, and a wider key set waits for a compile that holds one.
  */
 export function compilerCaseOrder(keys: readonly number[]): number[] {
-  // The supplemental hash, all four terms, so the formula is the one the identification names. It is
-  // invertible, so distinct keys never share a hash; a shared slot needs the mask refused below.
-  const hash = (key: number): number => {
-    const h = key ^ (key >>> 20) ^ (key >>> 12);
-    return h ^ (h >>> 7) ^ (h >>> 4);
-  };
+  const hash = compilerHash;
   if (keys.some((key) => !Number.isInteger(key) || key < 0)) {
     throw new RangeError('a case key is a whole number from 0');
   }
@@ -1124,10 +1130,7 @@ export function tagSlotOrder(
   tags: readonly number[],
   ties: ReadonlyMap<string, readonly [number, number]>,
 ): number[] {
-  const hash = (key: number): number => {
-    const h = key ^ (key >>> 20) ^ (key >>> 12);
-    return h ^ (h >>> 7) ^ (h >>> 4);
-  };
+  const hash = compilerHash;
   if (tags.some((tag) => !Number.isInteger(tag) || tag < 0 || tag > 0xff)) {
     throw new RangeError('a tag is one byte');
   }

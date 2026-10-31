@@ -105,6 +105,33 @@ export const DEVICE_KEYS: readonly { readonly place: string; readonly scan: numb
 ];
 
 /**
+ * The infrared group a long press device takes is this plus its key's place, `todo-compile-350.md` 4.4: on all
+ * four keys of Logitech's compile of the Harmony 350 test setup, groups 4 to 7 for the top left to the bottom
+ * right, and on the one long press of another owner's Harmony 350 compile that selects a device of its own,
+ * `reference/architectures/harmony-300-350/memory.md` "Which infrared group a device takes". The Harmony 300 has
+ * no long press, so a long press is this family's fact on the 350 alone.
+ */
+export const LONG_PRESS_GROUP_BASE = DEVICE_KEYS.length;
+
+/**
+ * The scan codes of the keys a favourite channel goes on, in the order the channels are given, per skin: the
+ * Harmony 350's, skin 104, `todo-compile-350.md` 4.3. Logitech's compile of the test setup puts the channels 1,
+ * 2, 3, 666 and 07, entered in that order, on scans 8, 9, 11, 34 and 2; the three other Harmony 350 compiles with
+ * five favourites, which come from two remotes, hold them on the same five scans, and with the fourth and fifth
+ * on 34 and 2 where their channels, 4 and then 666 or 130, read as entered in that order too, though nothing
+ * records how they were. So the order is scored on one compile and measured with five channels; fewer take the
+ * first of them, which is our choice, since no compile holds fewer on a Harmony 350. Which scan is which printed key is `reference/remotes/harmony-350/keys.md`.
+ *
+ * **The Harmony 300 has no entry**: its one compile with favourites holds 1, 2, 3 and 666 on scans 8, 2, 9 and 34,
+ * another order on another keypad, `reference/remotes/harmony-300/features.md`, and one compile is one sample with
+ * nothing to say how the channels were entered, so a favourite composed for it is refused until a second is read.
+ * A table by skin rather than a test of the skin, so the composer asks it a question.
+ */
+export const FAVOURITE_SCANS: Readonly<Record<number, readonly number[]>> = {
+  104: [8, 9, 11, 34, 2],
+};
+
+/**
  * The two timers a device key's press starts per device on the key, in the order it starts them, as the low
  * byte of the instruction each runs when it fires and its duration in ticks: the pin switched one way at 400
  * and back at 600, measured on every press list of the Harmony 350 compiles read, `memory.md`.

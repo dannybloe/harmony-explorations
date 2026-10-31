@@ -130,8 +130,10 @@ export * from './shared/setup.ts';
 // The recipe a configuration of ours is built from, todo-compile-650 10.7.4, `docs/recipe.md`.
 export * from './recipe/recipe.ts';
 export * from './icons.ts';
-// The Harmony 300 and 350's family, plan 007, and its device composer, todo-compile-350.md 4.1.
+// The Harmony 300 and 350's family, plan 007, its device composer, todo-compile-350.md 4.1 and 4.4, and its
+// favourite channels, 4.3.
 export {
-  composeNoScreenDevice, type ComposedNoScreenDevice, DEVICE_KEYS, NO_SCREEN_FAMILY, NO_SCREEN_HARD_KEYS, NO_SCREEN_SENDS,
-  type NoScreenDeviceRequest, powerOnWaits,
+  composeNoScreenDevice, composeNoScreenFavourites, type ComposedNoScreenDevice, type ComposedNoScreenFavourites,
+  DEVICE_KEYS, FAVOURITE_SCANS, inCompilerOrder, LONG_PRESS_GROUP_BASE, NO_SCREEN_FAMILY, NO_SCREEN_HARD_KEYS,
+  NO_SCREEN_SENDS, NUMBER_SENDER_BAND, type NoScreenDeviceRequest, type NoScreenFavouritesRequest, powerOnWaits,
 } from './families/no-screen/index.ts';

@@ -33,6 +33,25 @@
  * split by `powerOnWaits`, is the waits Logitech's compile writes on each of the eight devices, the Knoll's 250
  * tenths as 100, 100 and 50.
  *
+ * **A long press device, `todo-compile-350.md` 4.4.** Logitech's compile of the test setup puts a second device on
+ * every key's long press: the Knoll top left, the Kodi top right, the Switch bottom left and the Sony HT bottom
+ * right, on groups 4 to 7. So the same four are composed from the catalogue onto the donor, on the same keys'
+ * long presses, after the plasma on the bottom left key's short press, since the donor's bottom left key is free
+ * and a long press goes on a key with a short press device. Each is held against the same device in Logitech's
+ * compile as the plasma is, part by part: its group, its records and their send lists, its power variable, its
+ * map, the held binding that selects it and the key's press list with its second block of timers, and its names.
+ * What it settled, in counts, is in the tests below: 76 of the 82 records the composer writes are Logitech's word
+ * for word, and the other six are the Kodi's and the Sony HT's own volume and mute, which Logitech does not store
+ * because their maps send the Denon's; the four maps differ from Logitech's by the Input key, which Logitech binds
+ * to the LG TV's, and by volume and mute, which it binds to the Denon's where we bind the device's own or nothing,
+ * two of the product answers of 4.1.1, and bind every other key both hold to the same thing. No favourite key
+ * differs: none of the four has a soft button of its own.
+ *
+ * **The order of a key map's tags**, `inCompilerOrder`, is now a simulation of the compiler's hash map rather than
+ * a refusal wherever two tags share a slot, since the long press's held tags share slots with the donor's own:
+ * Logitech's stored order is the map's state and our tags are put in after it. The composed Knoll map holds the
+ * one shared slot of the test setup's device maps, Left and Right, in Logitech's order.
+ *
  * **Sources checked first.** Logitech's client compiles nothing for this family, the service does
  * (`reference/logitech/clients.md`). The reference: `reference/architectures/harmony-300-350/memory.md`, the 350's
  * `keys.md`, `reference/config-format/actions.md`; the archive, sections 260 to 265 and 278; the lab's
@@ -48,10 +67,11 @@ import { IR_ARCHIVE, LAB, needing, require_, skipUnless, skipWithoutIrArchive, s
 
 import {
   bytes, catalogueDevicePlan, composeIrGroup, ComposeError, composeNoScreenDevice, type Container, deviceModeLayout, devices,
-  irBlockWords, irGroups, irHeaderPointers, irRecordStart, metadataArchive, NO_SCREEN_FAMILY, NO_SCREEN_HARD_KEYS,
-  parse, powerOnWaits, stateRecords, stateVariables, taggedList,
+  compilerHash, irGroups, metadataArchive, NO_SCREEN_FAMILY, NO_SCREEN_HARD_KEYS, parse, powerOnWaits, stateRecords, stateVariables,
+  taggedList,
 } from '../src/index.ts';
 import { familyOf, familyOfArchitecture } from '../src/families/registry.ts';
+import { onceWithoutLeadIn, recordKey, spelled, spelledMap } from './noscreenparts.ts';
 
 /** Logitech's compile of the test setup, by its path in the lab, as `packages/bench/test/setup350.test.ts` names it. */
 const COMPILE = 'work/setups/h350-test/compile-Result.EzHex';
@@ -80,45 +100,6 @@ function composed() {
   return memo;
 }
 
-/** A record as its header, its own address zeroed, and each block's words: what it sends, wherever it sits. */
-function recordKey(c: Container, address: number): string {
-  const off = c.blobOffsetOf(irRecordStart(c, address)!)!;
-  const header = c.blob.slice(off, off + 12);
-  header.fill(0, 8, 11);
-  const blocks = irHeaderPointers(c, address).map((pointer) => (pointer === 0 ? '-' : irBlockWords(c, pointer)!.join(',')));
-  return `${Buffer.from(header).toString('hex')}/${blocks.join('|')}`;
-}
-
-/** A record's once block without the silence it opens with, and whether it has a held block. */
-function onceWithoutLeadIn(c: Container, address: number): { code: string; held: boolean; opening: number } {
-  const [once, held] = irHeaderPointers(c, address);
-  const words = irBlockWords(c, once!)!;
-  const first = words.findIndex((word) => (word & 0x8000) !== 0);
-  return { code: words.slice(first).join(','), held: held !== 0, opening: first };
-}
-
-/** One instruction with every list it calls written out, and every send named by the record it sends. */
-function spelled(c: Container, one: { operand: number; opcode: number }, depth = 0): string {
-  if (one.opcode === 0x7d) {
-    const group = irGroups(c)![one.operand >> 8]!;
-    return `send(${recordKey(c, group.addresses[one.operand & 0xff]!).slice(0, 40)}..)`;
-  }
-  if (one.opcode === 0x7c) return `7c:${(one.operand & 0xff).toString(16)}`;
-  if (one.opcode !== 0x7f || depth > 6) return `${one.opcode.toString(16)}:${one.operand.toString(16)}`;
-  const at = c.blobOffsetOf(c.pointerArray(7)![one.operand]!)!;
-  const body = Array.from({ length: bytes.u8(c.blob, at) }, (_, k) => ({
-    operand: bytes.u16(c.blob, at + 1 + 3 * k), opcode: bytes.u8(c.blob, at + 3 + 3 * k),
-  }));
-  return `(${body.map((x) => spelled(c, x, depth + 1)).join(' ')})`;
-}
-
-/** A key map, tag to spelled binding, with the state variable a write or a condition names left out. */
-function spelledMap(c: Container, entry: number): Map<number, string> {
-  const list = taggedList(c, c.pointerArray(6)![entry]!)!;
-  // A condition's variable is its operand's low byte, `71:80vv`, and a write's its opcode's low seven bits, `9v:`.
-  return new Map(list.entries.map((one) => [one.tag, spelled(c, one)
-    .replace(/71:80[0-9a-f]{2}/g, '71:80vv').replace(/\b9[0-9a-f]:/g, '9v:')]));
-}
 
 test('the registry hands the Harmony 300 and 350 their own family, which refuses every question it has no answer to', () => {
   assert.equal(familyOfArchitecture(16), NO_SCREEN_FAMILY);
@@ -466,7 +447,8 @@ test('the composer refuses what no compile shows or a later step builds', needsA
   const { donor, ours } = composed();
   const compose = (c: Container, request: Partial<Parameters<typeof composeNoScreenDevice>[2]>) => () =>
     composeNoScreenDevice(c, IR_ARCHIVE!, { ...PLASMA, name: 'Plasma', place: PLACE, ...request });
-  assert.throws(compose(donor, { press: 'long' }), /long press .* 4\.4/);
+  // A long press on the bottom left key, which holds no short press device in the donor.
+  assert.throws(compose(donor, { press: 'long' }), /holds no short press device/);
   assert.throws(compose(donor, { place: 0 }), /top left key/);
   assert.throws(compose(donor, { place: 4 }), /place is 0 to 3/);
   // The top right key holds a device already.
@@ -476,3 +458,290 @@ test('the composer refuses what no compile shows or a later step builds', needsA
   assert.throws(compose(ours, { name: 'Other' }), /already holds a device/);
   assert.equal(familyOf(ours), NO_SCREEN_FAMILY);
 });
+
+// ---------------------------------------------------------------------------------------------------------------
+// The order inside a shared bucket, which `inCompilerOrder` simulates, read off the family's key tables.
+
+// `reference/config-format/layout.md` "Two keys in one bucket": the key table's pair `0x2E` and `0x85` share a
+// bucket at 16 and at 32 buckets and are stored one way at 16 and the other at 32, which is Java 6 doubling the table
+// and moving each bucket's entries to the head of their new bucket. Six key tables of six compiles: three at 16
+// buckets, and three at 32, two of which are one setup compiled twice. A review over every arch 16 container the
+// lab holds found the same direction in all fourteen distinct ones, nine at 16 and five at 32; the six here are the
+// ones the lab registers by name or the test names by path. The pair `0x2F` and `0x84` flips alike.
+test('the family\'s key tables store 0x85 before 0x2E at 16 buckets and 0x2E before 0x85 at 32, while 0x2D and 0x86 keep their order across the doubling on two of three',
+  needing(skipWithoutLab(), skipUnless('h350_three_devices_config', 'h350_config', 'h300_programmed_config', 'h350_programmed_config')), () => {
+    const tables: Record<string, Container> = {
+      three: parse(require_('h350_three_devices_config')),
+      factory: parse(require_('h350_config')),
+      h300: parse(require_('h300_programmed_config')),
+      programmed: parse(require_('h350_programmed_config')),
+      setup: compile(),
+      setupFirst: (() => {
+        const path = join(LAB!, 'work/setups/h350-test/first-compile/compile-Result.EzHex');
+        assert.ok(existsSync(path));
+        return parse(new Uint8Array(readFileSync(path)));
+      })(),
+    };
+    const seen: Record<string, string> = {};
+    const other: Record<string, string> = {};
+    const slotOf = (tag: number, buckets: number) => compilerHash(tag) & (buckets - 1);
+    for (const [name, c] of Object.entries(tables)) {
+      const tags = taggedList(c, c.pointerArray(6)![0]!)!.entries.map((one) => one.tag);
+      const buckets = tags.length > 12 ? 32 : 16;
+      // The two share a bucket at the table's size, which is what makes their order a tie at all.
+      assert.equal(slotOf(0x2e, buckets), slotOf(0x85, buckets), name);
+      seen[name] = `${buckets} ${tags.indexOf(0x85) < tags.indexOf(0x2e) ? '85 first' : '2e first'}`;
+      // The other pair at that bucket, Watch TV's press and a pin event, which does not flip alike.
+      assert.equal(slotOf(0x2d, buckets), slotOf(0x86, buckets), name);
+      other[name] = `${buckets} ${tags.indexOf(0x86) < tags.indexOf(0x2d) ? '86 first' : '2d first'}`;
+    }
+    assert.deepEqual(other, {
+      three: '16 86 first', factory: '16 86 first', h300: '16 86 first',
+      programmed: '32 2d first', setup: '32 86 first', setupFirst: '32 86 first',
+    });
+    assert.deepEqual(seen, {
+      three: '16 85 first', factory: '16 85 first', h300: '16 85 first',
+      programmed: '32 2e first', setup: '32 2e first', setupFirst: '32 2e first',
+    });
+  });
+
+// ---------------------------------------------------------------------------------------------------------------
+// A long press device, todo-compile-350.md 4.4.
+
+/** The four long press devices of Logitech's compile: the key's place, and its group and map there. */
+const LONG = [
+  { manufacturer: 'Knoll', model: 'HDP-1100', name: 'Knoll', place: 0, theirGroup: 4, theirMap: 2 },
+  { manufacturer: 'Plex', model: 'Plex_Player', name: 'Kodi', place: 1, theirGroup: 5, theirMap: 7 },
+  { manufacturer: 'Ligawo', model: '3090063', name: 'Switch', place: 2, theirGroup: 6, theirMap: 5 },
+  { manufacturer: 'Sony', model: 'DAV-C540', name: 'Sony HT', place: 3, theirGroup: 7, theirMap: 6 },
+] as const;
+/** Each key's scan code by place, the reference's: top left 5, top right 1, bottom left 7, bottom right 4. */
+const SCAN_OF_PLACE = [5, 1, 7, 4] as const;
+
+let longMemo: {
+  donor: Container; before: Container; ours: Container; theirs: Container;
+  outs: Map<string, ReturnType<typeof composeNoScreenDevice>>;
+} | undefined;
+/** The donor with the plasma on the bottom left key's short press, then the four long press devices in turn. */
+function longComposed() {
+  if (longMemo !== undefined) return longMemo;
+  const donor = parse(require_('h350_three_devices_config'));
+  const before = parse(composeNoScreenDevice(donor, IR_ARCHIVE!, { ...PLASMA, name: 'Plasma', place: PLACE }).bytes);
+  let ours = before;
+  const outs = new Map<string, ReturnType<typeof composeNoScreenDevice>>();
+  for (const one of LONG) {
+    const out = composeNoScreenDevice(ours, IR_ARCHIVE!, {
+      manufacturer: one.manufacturer, model: one.model, name: one.name, place: one.place, press: 'long',
+    });
+    outs.set(one.name, out);
+    ours = parse(out.bytes);
+  }
+  longMemo = { donor, before, ours, theirs: compile(), outs };
+  return longMemo;
+}
+
+test('a long press device takes group 4 plus its key\'s place on all four keys, the group Logitech\'s compile gives the same device',
+  needsAll, () => {
+    const { ours, theirs, outs } = longComposed();
+    assert.ok(ours.allChecksPass);
+    // Logitech's group for each, read off its compile by the device's name.
+    const theirGroups = LONG.map((one) => devices(theirs).find((device) => device.name === one.name.replaceAll(' ', '_'))!.group);
+    assert.deepEqual(theirGroups, LONG.map((one) => one.theirGroup));
+    assert.deepEqual(LONG.map((one) => outs.get(one.name)!.group), theirGroups);
+    assert.deepEqual(LONG.map((one) => outs.get(one.name)!.group), [4, 5, 6, 7]);
+    assert.deepEqual(devices(ours).map((one) => `${one.group} ${one.name ?? '-'}`),
+      ['0 TV', '1 KPN', '2 Plasma', '3 -', '4 Knoll', '5 Kodi', '6 Switch', '7 Sony_HT']);
+  });
+
+test('a composed long press device\'s records are Logitech\'s word for word, but the volume and mute it keeps and the digit copies it leaves out',
+  needsAll, () => {
+    const { ours, theirs, outs } = longComposed();
+    const counts: Record<string, { ours: number; theirs: number; shared: number; onlyOurs: string[]; digitCopies: number }> = {};
+    for (const one of LONG) {
+      const out = outs.get(one.name)!;
+      const mine = irGroups(ours)![one.theirGroup]!.addresses.map((address) => recordKey(ours, address));
+      const logitech = irGroups(theirs)![one.theirGroup]!.addresses.map((address) => recordKey(theirs, address));
+      // The records of ours Logitech does not store, by the command each sends: the commands come first and the
+      // power steps after them, `ComposedNoScreenDevice.commands`.
+      const onlyOurs = mine.flatMap((key, k) => (logitech.includes(key) ? [] : [out.commands[k] ?? `power ${k}`]));
+      // Logitech's records ours does not hold that are a digit's one block copy: no silence first, no held block,
+      // and the code of one of our digits.
+      const ourCodes = irGroups(ours)![one.theirGroup]!.addresses.map((address) => onceWithoutLeadIn(ours, address).code);
+      const digits = out.commands.flatMap((name, k) => (/^[0-9]$/.test(name) ? [ourCodes[k]] : []));
+      const copies = irGroups(theirs)![one.theirGroup]!.addresses.filter((address) => {
+        if (mine.includes(recordKey(theirs, address))) return false;
+        const copy = onceWithoutLeadIn(theirs, address);
+        return !copy.held && copy.opening === 0 && digits.includes(copy.code);
+      });
+      counts[one.name] = {
+        ours: mine.length, theirs: logitech.length, shared: mine.filter((key) => logitech.includes(key)).length,
+        onlyOurs: onlyOurs.sort(), digitCopies: copies.length,
+      };
+    }
+    // The Kodi and the Sony HT keep their own volume and mute, which Logitech sends to the Denon and so does not
+    // store for them; the Kodi's ten one block copies of its digits are what Logitech stores besides, which
+    // nothing calls, as on the plasma; and on all four every other record is Logitech's.
+    assert.deepEqual(counts, {
+      Knoll: { ours: 8, theirs: 8, shared: 8, onlyOurs: [], digitCopies: 0 },
+      Kodi: { ours: 40, theirs: 47, shared: 37, onlyOurs: ['Mute', 'VolumeDown', 'VolumeUp'], digitCopies: 10 },
+      Switch: { ours: 5, theirs: 5, shared: 5, onlyOurs: [], digitCopies: 0 },
+      'Sony HT': { ours: 29, theirs: 26, shared: 26, onlyOurs: ['Mute', 'VolumeDown', 'VolumeUp'], digitCopies: 0 },
+    });
+  });
+
+test('every record of a composed long press device sends through a list of Logitech\'s shape, and each Logitech also stores through the list Logitech has for it',
+  needsAll, () => {
+    const { ours, theirs } = longComposed();
+    const listsOf = (c: Container, group: number) => {
+      const keys = irGroups(c)![group]!.addresses.map((address) => recordKey(c, address));
+      const out = new Map<string, string>();
+      for (const address of c.pointerArray(7)!) {
+        const at = c.blobOffsetOf(address)!;
+        const count = bytes.u8(c.blob, at);
+        const body = Array.from({ length: count }, (_, k) => [bytes.u16(c.blob, at + 1 + 3 * k), bytes.u8(c.blob, at + 3 + 3 * k)] as const);
+        const send = body.find(([, opcode]) => opcode === 0x7d);
+        if (send === undefined || send[0] >> 8 !== group || count !== 3) continue;
+        out.set(keys[send[0] & 0xff]!, body.map(([operand, opcode]) => (opcode === 0x7d ? '7d:g/r'
+          : opcode === 0x7c ? `7c:g/${operand & 0xff}` : `${opcode.toString(16)}:${operand.toString(16)}`)).join(' '));
+      }
+      return out;
+    };
+    // Per device, our send lists and how many of them are Logitech's list for the same record; the three each of
+    // the Kodi and the Sony HT do not match are the volume and mute above, which Logitech holds no record of.
+    const agree: Record<string, [number, number]> = {};
+    const shapes: Record<string, string[]> = {};
+    for (const one of LONG) {
+      const mine = listsOf(ours, one.theirGroup);
+      const logitech = listsOf(theirs, one.theirGroup);
+      agree[one.name] = [mine.size, [...mine].filter(([key, body]) => logitech.get(key) === body).length];
+      // Every one of ours, the six with no counterpart included, is the shape: the timers cancelled, the send, and
+      // the device named with a quantity, which is 1 but on a power step, where it is the device's own inter key
+      // delay, 5 on the Switch and on the Sony HT.
+      shapes[one.name] = [...new Set(mine.values())].sort();
+    }
+    assert.deepEqual(agree, { Knoll: [8, 8], Kodi: [40, 37], Switch: [5, 5], 'Sony HT': [29, 26] });
+    assert.deepEqual(shapes, {
+      Knoll: ['7:fffb 7d:g/r 7c:g/1'], Kodi: ['7:fffb 7d:g/r 7c:g/1'],
+      Switch: ['7:fffb 7d:g/r 7c:g/1', '7:fffb 7d:g/r 7c:g/5'], 'Sony HT': ['7:fffb 7d:g/r 7c:g/1', '7:fffb 7d:g/r 7c:g/5'],
+    });
+  });
+
+test('a composed long press device\'s power variable is Logitech\'s for the same device, transition for transition',
+  needsAll, () => {
+    const { ours, theirs, outs } = longComposed();
+    const transitions = (c: Container, name: string) => {
+      const index = stateVariables(c).find((one) => one.name === name)!.index;
+      const record = stateRecords(c)![index]!;
+      return { first: record.first, max: record.second, values: record.values.map((one) => `${one.from}>${one.to} ${spelled(c, one)}`).sort() };
+    };
+    const power: Record<string, string> = {};
+    for (const one of LONG) {
+      const name = `${one.name.replaceAll(' ', '_')}_Power_2`;
+      assert.deepEqual(transitions(ours, name), transitions(theirs, name), one.name);
+      power[one.name] = outs.get(one.name)!.power;
+    }
+    // How each one's power key works: a toggle sends its step, two steps switch the variable.
+    assert.deepEqual(power, { Knoll: 'variable', Kodi: 'toggle', Switch: 'variable', 'Sony HT': 'toggle' });
+  });
+
+/** The infrared groups a map's binding of `tag` sends from, every list it calls written out. */
+function groupsSent(c: Container, map: number, tag: number): number[] {
+  const entry = taggedList(c, c.pointerArray(6)![map]!)!.entries.find((one) => one.tag === tag)!;
+  const out = new Set<number>();
+  const walk = (list: number, depth: number) => {
+    const at = c.blobOffsetOf(c.pointerArray(7)![list]!)!;
+    for (let k = 0; k < bytes.u8(c.blob, at); k += 1) {
+      const operand = bytes.u16(c.blob, at + 1 + 3 * k);
+      const opcode = bytes.u8(c.blob, at + 3 + 3 * k);
+      if (opcode === 0x7d) out.add(operand >> 8);
+      if (opcode === 0x7f && depth < 6) walk(operand, depth + 1);
+    }
+  };
+  walk(entry.operand, 0);
+  return [...out];
+}
+
+test('a composed long press device\'s map binds what Logitech\'s binds but Input, which Logitech sends to the LG TV, and volume and mute, which it sends to the Denon',
+  needsAll, () => {
+    const { ours, theirs, outs } = longComposed();
+    const differences: Record<string, { ours: number; theirs: number; onlyTheirs: string[]; onlyOurs: string[]; differ: string[] }> = {};
+    for (const one of LONG) {
+      const mine = spelledMap(ours, outs.get(one.name)!.map);
+      const logitech = spelledMap(theirs, one.theirMap);
+      differences[one.name] = {
+        ours: mine.size,
+        theirs: logitech.size,
+        onlyTheirs: [...logitech.keys()].filter((tag) => !mine.has(tag)).sort((a, b) => a - b).map((tag) => tag.toString(16)),
+        onlyOurs: [...mine.keys()].filter((tag) => !logitech.has(tag)).sort((a, b) => a - b).map((tag) => tag.toString(16)),
+        differ: [...mine].filter(([tag, body]) => logitech.has(tag) && logitech.get(tag) !== body).map(([tag]) => tag.toString(16)),
+      };
+      // The tags both hold, in Logitech's order: the one shared slot, the Knoll's Left and Right, included.
+      const tags = taggedList(ours, ours.pointerArray(6)![outs.get(one.name)!.map]!)!.entries.map((entry) => entry.tag);
+      const theirOrder = taggedList(theirs, theirs.pointerArray(6)![one.theirMap]!)!.entries.map((entry) => entry.tag);
+      assert.deepEqual(tags.filter((tag) => theirOrder.includes(tag)), theirOrder.filter((tag) => tags.includes(tag)), one.name);
+      // Every binding of Logitech's that ours lacks or holds otherwise sends another device's code: Input, scan 35,
+      // the LG TV's on group 0, and mute and volume, scans 15, 49 and 52, the Denon's on group 2.
+      for (const tag of [...differences[one.name]!.onlyTheirs, ...differences[one.name]!.differ].map((hex) => parseInt(hex, 16))) {
+        assert.deepEqual(groupsSent(theirs, one.theirMap, tag), [tag === 0xa3 ? 0 : 2], `${one.name} ${tag.toString(16)}`);
+      }
+    }
+    // Our map's size, Logitech's, the tags only Logitech's binds and those both bind to different things: the
+    // Knoll and the Switch have no volume of their own, the Kodi and the Sony HT do; no key differs otherwise.
+    assert.deepEqual(differences, {
+      Knoll: { ours: 7, theirs: 11, onlyTheirs: ['8f', 'a3', 'b1', 'b4'], onlyOurs: [], differ: [] },
+      Kodi: { ours: 40, theirs: 41, onlyTheirs: ['a3'], onlyOurs: [], differ: ['8f', 'b1', 'b4'] },
+      Switch: { ours: 4, theirs: 8, onlyTheirs: ['8f', 'a3', 'b1', 'b4'], onlyOurs: [], differ: [] },
+      'Sony HT': { ours: 29, theirs: 30, onlyTheirs: ['a3'], onlyOurs: [], differ: ['8f', 'b1', 'b4'] },
+    });
+  });
+
+test('each key\'s held event selects its composed long press device and its press list gains a second block, as Logitech\'s lists for that key do',
+  needsAll, () => {
+    const { donor, before, ours, theirs, outs } = longComposed();
+    const mine = spelledMap(ours, 0);
+    const logitech = spelledMap(theirs, 0);
+    const start = spelledMap(before, 0);
+    // Four tags added to the key table, the four held events, and nothing else changed but the four press lists.
+    assert.deepEqual([...mine.keys()].filter((tag) => !start.has(tag)).sort((a, b) => a - b), [0xc1, 0xc4, 0xc5, 0xc7]);
+    for (const [tag, body] of start) {
+      if ((tag & 0xc0) === 0x80 && SCAN_OF_PLACE.includes((tag & 0x3f) as 5)) continue;
+      assert.equal(mine.get(tag), body, tag.toString(16));
+    }
+    const normal = (body: string) => body.replace(/eb[0-9a-f]{2}/g, 'ebnn');
+    for (const one of LONG) {
+      const scan = SCAN_OF_PLACE[one.place];
+      assert.equal(mine.get(0xc0 | scan), `(7:fffb 1f:ff${outs.get(one.name)!.map.toString(16).padStart(2, '0')})`, one.name);
+      assert.equal(logitech.get(0xc0 | scan), `(7:fffb 1f:ff${one.theirMap.toString(16).padStart(2, '0')})`, one.name);
+      // The press: the short press device's block as it was, then the same block again with two new timers, which is
+      // the shape of Logitech's press list for the same key with its two devices.
+      const press = mine.get(0x80 | scan)!;
+      assert.ok(press.startsWith(start.get(0x80 | scan)!.slice(0, -1)), one.name);
+      assert.equal(normal(press), normal(logitech.get(0x80 | scan)!), one.name);
+    }
+    // Two timers per device a key selects, sixteen for eight, which is Logitech's count.
+    assert.equal(ours.pointerArray(8)!.length, donor.pointerArray(8)!.length + 2 + 8);
+    assert.equal(ours.pointerArray(8)!.length, theirs.pointerArray(8)!.length);
+  });
+
+test('the metadata archive names each composed long press device with Logitech\'s commands in Logitech\'s order',
+  needsAll, () => {
+    const { ours, theirs } = longComposed();
+    for (const one of LONG) {
+      const mine = metadataArchive(ours)!.devices.find((device) => device.name === one.name)!;
+      const logitech = metadataArchive(theirs)!.devices.find((device) => device.name === one.name)!;
+      assert.deepEqual(mine.commands, logitech.commands, one.name);
+    }
+  });
+
+test('the long press composer refuses a key with no short press device and a second long press, and the short press composer a key with a long press device',
+  needsAll, () => {
+    const { donor, ours } = longComposed();
+    const long = (c: Container, place: number, name = 'Other') => () =>
+      composeNoScreenDevice(c, IR_ARCHIVE!, { ...PLASMA, name, place, press: 'long' });
+    // The donor's bottom left key is free.
+    assert.throws(long(donor, 2), /holds no short press device/);
+    // Every key of the composed configuration holds a long press device already.
+    for (const place of [0, 1, 2, 3]) assert.throws(long(ours, place), /already holds a long press device/);
+    // A short press on a key with a long press device is a key that holds a device.
+    assert.throws(() => composeNoScreenDevice(ours, IR_ARCHIVE!, { ...PLASMA, name: 'Other', place: 1 }), /already holds a device/);
+  });
