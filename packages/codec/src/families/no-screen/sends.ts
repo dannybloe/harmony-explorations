@@ -76,6 +76,10 @@ export const NO_SCREEN_SENDS: SendShape = {
   sendLists: notYet('A sequence', '4.2'),
   newSendLists: notYet('A sequence', '4.2'),
   sequenceRecords: 'named',
-  oneBlockCopyRefusal: 'a one block copy is not composed for the Harmony 300 and 350: the compile\'s digit copies '
-    + 'open with no silence and are sent by nothing, todo-compile-350.md 4.1',
+  // A sequence's copies, not the favourite channels': those are the digits' one block copies, which the number
+  // sender calls and `favourites.ts` composes, todo-compile-350.md 4.3. This said the digit copies were sent by
+  // nothing until a compile with favourites showed its number sender calling them; on a device without favourites
+  // nothing does.
+  oneBlockCopyRefusal: 'a sequence\'s one block copy is not composed for the Harmony 300 and 350, since no sequence '
+    + 'is; the digit copies their favourite channels send are composed with the channels, todo-compile-350.md 4.3',
 };

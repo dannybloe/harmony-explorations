@@ -187,7 +187,7 @@ export interface ComposedSequence {
 }
 
 /** What a one block copy is made of: the bytes of its one block per pointer group, and the header fields it keeps. */
-interface CopyRecord {
+export interface CopyRecord {
   blocks: Uint8Array[];
   periodNs: number;
   spare: number;
@@ -220,8 +220,14 @@ const sameBytes = (a: Uint8Array, b: Uint8Array): boolean =>
  * 700's power hold compiles, 32 copies, and another owner's Harmony 650 configuration, 12; every one of
  * them has a source record in its group whose two groups give its two blocks. A record with a tail, a code
  * naming a release group, is still refused: no compile here shows a copy of one.
+ *
+ * **The Harmony 350's digit copies are the same rule**, `todo-compile-350.md` 4.3: the ten copies of the KPN's
+ * digits Logitech's compile of the Harmony 350 test setup holds, which its favourite channels send, are each
+ * the catalogue digit's composed first block less its opening silence, no held block and no tail,
+ * `packages/codec/test/noscreen.test.ts`. So the favourite channel composer of the no screen family asks this
+ * too, with a record list that holds the device's group and the catalogue's records after it.
  */
-function oneBlockCopy(
+export function oneBlockCopy(
   c: Container, records: readonly number[], code: number,
 ): { code: number } | { copy: CopyRecord } {
   const address = records[code] as number;
@@ -283,8 +289,17 @@ function oneBlockCopy(
  * Logitech's compiler puts a copy among the group's own records and numbers it in among them, renumbering
  * every later code of that group; this appends it, so its code is the group's old count and no other
  * code moves. Both send the same bytes.
+ *
+ * **Where the block and the header go is the caller's to say, `recordsAt`**, and below the table by default.
+ * The Harmony 300 and 350 keep their section table's own sections right above base slot 5's table, the clock
+ * record directly below it, so a hole there would land inside the clock record's extent; their records go
+ * where `fillIrGroup` puts a group's, where the group arrays begin, `todo-compile-350.md` 4.3. Below the
+ * arrays the new entry moves up with them, so the entry is found again by reading the group's array after the
+ * hole is made, which is the same place as before wherever the hole is above it.
  */
-function appendCopyRecord(c: Container, group: number, copy: CopyRecord): { bytes: Uint8Array; code: number } {
+export function appendCopyRecord(
+  c: Container, group: number, copy: CopyRecord, recordsAt?: (c: Container) => number,
+): { bytes: Uint8Array; code: number } {
   const slot = archSlot(c.architecture as number, IR_TABLE_SLOT);
   const before = (irGroups(c) ?? [])[group];
   if (before === undefined) throw new ComposeError(`there is no infrared group ${group}`);
@@ -301,8 +316,8 @@ function appendCopyRecord(c: Container, group: number, copy: CopyRecord): { byte
 
   const table = middle.pointerArrayAt(slot);
   if (table === undefined) throw new ComposeError('base slot 5 does not read as a group table');
-  const at = table.start;
-  if (end + 3 > at) throw new ComposeError(`group ${group}'s array does not sit below base slot 5's table`);
+  const at = recordsAt === undefined ? table.start : recordsAt(middle);
+  if (recordsAt === undefined && end + 3 > at) throw new ComposeError(`group ${group}'s array does not sit below base slot 5's table`);
   // The blocks, one per pointer group in group order, then the header naming each as its group's first.
   const headerLength = IR_HEADER_BASE + IR_HEADER_GROUP * copy.blocks.length;
   const blocksLength = copy.blocks.reduce((n, block) => n + block.length, 0);
@@ -315,7 +330,9 @@ function appendCopyRecord(c: Container, group: number, copy: CopyRecord): { byte
   });
   copy.blocks.forEach((block, g) => second.bytes.set(block, at + offsets[g]!));
   second.bytes.set(record.bytes, at + blocksLength);
-  second.bytes.set(new Writer(3).u24(record.pointer).bytes, end);
+  // The entry moved up with everything at or above the hole when the hole is below it.
+  const entryAt = at <= end ? end + blocksLength + headerLength : end;
+  second.bytes.set(new Writer(3).u24(record.pointer).bytes, entryAt);
   const bytes = restamped(second.bytes);
   if ((irGroups(parse(bytes)) ?? [])[group]?.addresses[code] !== record.pointer) {
     throw new ComposeError(`group ${group}'s new record does not read back where it was put`);

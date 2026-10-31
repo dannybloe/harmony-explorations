@@ -16,9 +16,19 @@
  * setup, part by part, since Logitech's compiler numbers lists and maps in an order no compile shows a rule for
  * and reorders them between two compiles of one account.
  *
- * **What it refuses**, each one something no compile here shows or a later step of the track builds: a long
- * press, a key that already holds a device, the top left key (the start up instructions select its device's map,
- * and what they select with no device there is not read), a device whose catalogue states no power steps, and a
+ * **A long press device**, `todo-compile-350.md` 4.4, is the same device on the key's held event: its group is
+ * `LONG_PRESS_GROUP_BASE` plus the key's place, its map, power and names are built as a short press device's are,
+ * and the key gains a binding of its held event, `0xC0` and the scan code, to a list that cancels the timers and
+ * selects the device's map, beside the release that selects the short press device. The key's press list, which
+ * switches its pin and starts two timers per device on the key, gains a second such block with two new timers,
+ * so it reads as Logitech's press list for a key with two devices: one list, the block twice, the second block's
+ * cancel stopping the first block's timers. Held against the four long press devices of Logitech's compile of the
+ * test setup, `packages/codec/test/noscreen.test.ts`.
+ *
+ * **What it refuses**, each one something no compile here shows or a later step of the track builds: a short
+ * press on a key that already holds a device, a long press on a key with no short press device or with a long
+ * press device already, the top left key's short press (the start up instructions select its device's map, and
+ * what they select with no device there is not read), a device whose catalogue states no power steps, and a
  * configuration whose key maps, start up instructions or timers name a state variable at or above `narrow`, which
  * the shared composer renumbers in action lists and the name tree only.
  */
@@ -28,7 +38,7 @@ import { catalogueDevicePlan } from '../../composecatalogue.ts';
 import { Writer } from '../../emit.ts';
 import { type Container, type Instruction, parse } from '../../gspm.ts';
 import {
-  BYTE_REGISTER_LOAD, CONDITION_OPCODE, CONDITION_TWO_ARMS, devices, SELECT_BINDING_SET, SELECT_BINDING_SET_MASK, tagSlotOrder,
+  BYTE_REGISTER_LOAD, compilerHash, CONDITION_OPCODE, CONDITION_TWO_ARMS, devices, SELECT_BINDING_SET, SELECT_BINDING_SET_MASK,
 } from '../../inventory.ts';
 import { withMetadataDevice } from '../../metadata.ts';
 import { relocate } from '../../relocate.ts';
@@ -38,15 +48,24 @@ import {
 import { appendActionLists, ComposeError, nameOfLabel, restamped } from '../../shared/core.ts';
 import { composeDeviceFor, type ComposeDevice, type ComposedDevice } from '../../shared/devices.ts';
 import { appendTableEntries } from '../../shared/infrared.ts';
-import { DEVICE_KEYS, KEY_MAP_SLOT, KEY_TIMERS, POWER_SCAN, START_UP_SLOT, TIMER_SLOT } from './keys.ts';
+import {
+  DEVICE_KEYS, KEY_MAP_SLOT, KEY_TIMERS, LONG_PRESS_GROUP_BASE, POWER_SCAN, START_UP_SLOT, TIMER_SLOT,
+} from './keys.ts';
 import { NO_SCREEN_SENDS } from './sends.ts';
 
-/** A key event's type, in the top two bits of a key map's tag, `reference/config-format/modes-and-keys.md`. */
-const RELEASE = 0x40;
-const PRESS = 0x80;
+/**
+ * A key event's type, in the top two bits of a key map's tag, `reference/config-format/modes-and-keys.md`: the
+ * press, the release, and the held event the firmware raises in place of the release once a key has been held for
+ * the hold time, `reference/architectures/harmony-300-350/memory.md` "A device key and its long press".
+ */
+export const RELEASE = 0x40;
+export const PRESS = 0x80;
+export const HELD = 0xc0;
+/** The scan code in the low six bits of a key map's tag. */
+export const SCAN_MASK = 0x3f;
 
 /** One entry of a key map, the tag and the one instruction it runs, in the narrow form these maps take. */
-interface KeyEntry {
+export interface KeyEntry {
   readonly tag: number;
   readonly operand: number;
   readonly opcode: number;
@@ -64,13 +83,17 @@ export interface NoScreenDeviceRequest {
   readonly name: string;
   /** The device key's place, `DEVICE_KEYS`: 0 top left to 3 bottom right. */
   readonly place: number;
-  /** Which press of the key: only the short one is composed, the long one is `todo-compile-350.md` 4.4. */
+  /**
+   * Which press of the key: the short one, selected when the key is let go, or the long one, selected when it is
+   * held, `todo-compile-350.md` 4.4; short when not given. A long press goes on a key that holds a short press
+   * device already.
+   */
   readonly press?: 'short' | 'long';
 }
 
 export interface ComposedNoScreenDevice {
   readonly bytes: Uint8Array;
-  /** The infrared group, the key's place. */
+  /** The infrared group: the key's place for a short press, `LONG_PRESS_GROUP_BASE` plus it for a long one. */
   readonly group: number;
   /** The device's key map, its index in raw slot 6. */
   readonly map: number;
@@ -84,16 +107,16 @@ export interface ComposedNoScreenDevice {
 }
 
 /** A blob offset's instructions, `u8 count` then three bytes each, as raw slot 5 and an action list hold them. */
-function instructionsAt(blob: Uint8Array, at: number): Instruction[] {
+export function instructionsAt(blob: Uint8Array, at: number): Instruction[] {
   return Array.from({ length: u8(blob, at) }, (_, k) => ({ operand: u16(blob, at + 1 + 3 * k), opcode: u8(blob, at + 3 + 3 * k) }));
 }
 
 /** The end of whichever of a set of blob ranges ends highest: where a run of one kind of thing stops. */
-const highestEnd = (ranges: readonly { readonly start: number; readonly length: number }[]): number =>
+export const highestEnd = (ranges: readonly { readonly start: number; readonly length: number }[]): number =>
   Math.max(...ranges.map((one) => one.start + one.length));
 
 /** Every action list body's extent, through the action table. */
-function listExtents(c: Container): { start: number; length: number }[] {
+export function listExtents(c: Container): { start: number; length: number }[] {
   return (c.pointerArray(7) ?? []).map((address) => {
     const start = c.blobOffsetOf(address);
     if (start === undefined) throw new ComposeError('an action list is outside the container');
@@ -102,7 +125,7 @@ function listExtents(c: Container): { start: number; length: number }[] {
 }
 
 /** Every key map's extent and entries, raw slot 6, entry 0 the key table. */
-function keyMaps(c: Container): { start: number; length: number; entries: KeyEntry[] }[] {
+export function keyMaps(c: Container): { start: number; length: number; entries: KeyEntry[] }[] {
   const table = c.pointerArray(KEY_MAP_SLOT);
   if (table === undefined || table.length === 0) throw new ComposeError('raw slot 6 does not read as the key map table');
   return table.map((address) => {
@@ -129,7 +152,7 @@ function timerExtents(c: Container): { start: number; length: number }[] {
  * those three are this family's own and not walked there. On Logitech's compiles of the Harmony 350 every one of
  * them is a call, a select, a pin or a timer, none of which names a variable, so this has refused nothing yet.
  */
-function assertNoVariablesOutsideLists(c: Container): void {
+export function assertNoVariablesOutsideLists(c: Container): void {
   const narrow = stateTable(c)?.narrow;
   if (narrow === undefined) throw new ComposeError('raw slot 9 does not read as the state table');
   const outside: Instruction[] = keyMaps(c).flatMap((map) => map.entries);
@@ -145,40 +168,120 @@ function assertNoVariablesOutsideLists(c: Container): void {
   }
 }
 
+/** Java 6's `HashMap` starting table and load factor, which `tagSlotOrder` sizes a stored list by too. */
+const HASH_TABLE_START = 16;
+const HASH_LOAD_FACTOR = 0.75;
+
 /**
- * A tagged list's entries in the compiler's order, `tagSlotOrder`, with two tags that share a slot kept in the
- * order the list held them, since that order is the order the compiler inserted them, which nothing here reads;
- * a new tag sharing a slot with another is refused rather than guessed. Logitech's compile stores every key map
- * of the Harmony 350 test setup in that order wherever no two tags share a slot, six maps of nine.
+ * A tagged list with `added` put in, in the order the compiler would store it: a Java 6 `HashMap` whose state is
+ * `existing` as stored, into which `added` is inserted in its own order.
+ *
+ * **Why a simulation and not a sort.** A key map is written by walking the compiler's hash map, so tags come out
+ * by slot, `hash & (size - 1)`, which is `tagSlotOrder`; two tags in one slot come out in the order the map holds
+ * them, which is the order they went in, reversed. Java 6 puts a new entry at the head of its slot and, when an
+ * insertion finds the map at three quarters full, doubles the table and moves each slot's entries over one by one
+ * to the head of their new slot, which reverses them again. Any one pair's order fits some insertion order, so
+ * what speaks for the rule is two measurements that a fixed insertion order would not give alone: `0x2E` and
+ * `0x85` are stored with `0x85` first in the three key tables of 16 slots `noscreen.test.ts` reads and with `0x2E`
+ * first in its three of 32, which is the reversal, another owner's compile of 32 agreeing; and the favourites
+ * below. `0x85` and `0xC1` are stored both ways round in two compiles of 32, which is two insertion orders and
+ * why no fixed tie table would do. So the stored order is the map's state, and inserting into it gives what the
+ * compiler would have stored had it put our tags in last. `noscreen.test.ts` holds it on
+ * Logitech's compile with favourites, whose favourites device's map is the compile without them plus five tags,
+ * which is what this predicts with the five put in at the heads of their slots, and not at the tails.
+ *
+ * **Where it chooses.** The tags of a list built here from nothing go in in the order given, which is the family's
+ * key table order and then the power key: that order is ours, and it gives the one pair sharing a slot in the
+ * test setup's device maps, Left and Right, `0x8E` and `0x9F`, the order Logitech stores. A table doubled by our
+ * insertions follows Java 6's rule, which no composition here has been held against yet, though one crosses it:
+ * the long press composer takes the key table from 11 entries to 17, past the twelve at which 16 slots double,
+ * and `noscreen.test.ts` scores the long press devices' maps against Logitech's and not that table's order.
+ *
+ * **None of it changes what the remote does**: the firmware stops at the first entry whose tag matches, read on
+ * the other families' images, `reference/config-format/modes-and-keys.md` "For a writer", and a list holds each
+ * tag once. It is reproduced so that a composed list stores as Logitech's would. A stored list whose tags are not
+ * in slot order is not a hash map's and is refused, as is a tag given twice.
  */
-function inCompilerOrder(existing: readonly KeyEntry[], added: readonly KeyEntry[]): KeyEntry[] {
-  const ties = new Map<string, readonly [number, number]>();
-  for (const [k, a] of existing.entries()) {
-    for (const b of existing.slice(k + 1)) ties.set([a.tag, b.tag].sort((x, y) => x - y).join(','), [a.tag, b.tag]);
+export function inCompilerOrder(existing: readonly KeyEntry[], added: readonly KeyEntry[]): KeyEntry[] {
+  const tags = [...existing, ...added].map((one) => one.tag);
+  if (new Set(tags).size !== tags.length) throw new ComposeError('a tagged list cannot hold a tag twice');
+  let size = HASH_TABLE_START;
+  while (existing.length > size * HASH_LOAD_FACTOR) size *= 2;
+  const slot = (tag: number, of: number): number => compilerHash(tag) & (of - 1);
+  let slots: KeyEntry[][] = Array.from({ length: size }, () => []);
+  for (const one of existing) slots[slot(one.tag, size)]!.push(one);
+  if (slots.flat().some((one, k) => one !== existing[k])) {
+    throw new ComposeError('a tagged list here is not stored in the compiler\'s slot order, so it is not its hash map');
   }
-  const all = [...existing, ...added];
-  const byTag = new Map(all.map((one) => [one.tag, one]));
-  return tagSlotOrder(all.map((one) => one.tag), ties).map((tag) => byTag.get(tag)!);
+  let count = existing.length;
+  for (const one of added) {
+    // `addEntry`: the new entry at the head of its slot, then the table doubled if the map was already at its
+    // threshold, each old slot's entries moved to the head of their new slot in turn.
+    slots[slot(one.tag, size)]!.unshift(one);
+    if (count >= size * HASH_LOAD_FACTOR) {
+      const doubled: KeyEntry[][] = Array.from({ length: 2 * size }, () => []);
+      for (const entries of slots) for (const entry of entries) doubled[slot(entry.tag, 2 * size)]!.unshift(entry);
+      slots = doubled;
+      size *= 2;
+    }
+    count += 1;
+  }
+  return slots.flat();
 }
 
 /**
- * Compose a catalogue device onto a Harmony 300 or 350 configuration, on a key's short press. Unstamped where the
- * shared composer leaves it so; the result is restamped once at the end.
+ * The press list of a key with one device: the timers cancelled, the key's pin switched on and two timers started,
+ * `07 FFFB`, `1F E9p2` and two `1F EBnn`, as Logitech's compiles and the short press composer below write it.
+ * A long press appends the same block again, so a press list of any other shape is refused rather than extended.
+ */
+function isOneDevicePress(list: readonly Instruction[], pin: number): boolean {
+  const pinOn = (PIN_BAND << 8) | (pin << 4) | KEY_TIMERS[KEY_TIMERS.length - 1]!.pinState;
+  return list.length === 2 + KEY_TIMERS.length
+    && list[0]!.opcode === CANCEL_TIMERS.opcode && list[0]!.operand === CANCEL_TIMERS.operand
+    && list[1]!.opcode === STATE_BAND && list[1]!.operand === pinOn
+    && list.slice(2).every((one) => one.opcode === STATE_BAND && one.operand >> 8 === START_TIMER_BAND);
+}
+
+/**
+ * Compose a catalogue device onto a Harmony 300 or 350 configuration, on a key's short or long press. Unstamped
+ * where the shared composer leaves it so; the result is restamped once at the end.
  */
 export function composeNoScreenDevice(c: Container, archive: string, request: NoScreenDeviceRequest): ComposedNoScreenDevice {
   const key = DEVICE_KEYS[request.place];
   if (key === undefined) throw new ComposeError(`a device key's place is 0 to ${DEVICE_KEYS.length - 1}, not ${request.place}`);
-  if (request.press === 'long') throw new ComposeError('a long press device is not composed yet, todo-compile-350.md 4.4');
-  if (request.place === 0) {
+  const long = request.press === 'long';
+  // A long press device's group is four on from the short press device's, whichever device is on the short press.
+  const group = long ? LONG_PRESS_GROUP_BASE + request.place : request.place;
+  // The top left key's short press device is the one the start up instructions select; a long press device on it
+  // is not, as Logitech's compile of the test setup shows, whose start up selects the LG TV's map with the Knoll
+  // on the same key's long press. So only the short press is refused there.
+  if (request.place === 0 && !long) {
     throw new ComposeError('the top left key is not composed: the start up instructions select its device\'s map, '
       + 'and what they select with no device there is not read');
   }
   const label = request.name;
   if (devices(c).some((one) => one.name === nameOfLabel(label))) throw new ComposeError(`a device called ${label} is already here`);
   const before = keyMaps(c);
-  const taken = before[0]!.entries.filter((one) => (one.tag & 0x3f) === key.scan);
-  if (taken.length > 0) {
+  const onKey = (event: number) => before[0]!.entries.filter((one) => one.tag === (event | key.scan));
+  if (!long && before[0]!.entries.some((one) => (one.tag & SCAN_MASK) === key.scan)) {
     throw new ComposeError(`the ${key.place} key already holds a device; a second one is its long press, todo-compile-350.md 4.4`);
+  }
+  // The held event is bound only on a key whose release selects a device too, in both compiles read with a long
+  // press: what a key with nothing on its short press should do when let go is not answered by any of them, so a
+  // long press there is refused rather than leaving the short press to whatever the firmware does with a release
+  // nothing binds.
+  if (long && onKey(RELEASE).length === 0) {
+    throw new ComposeError(`the ${key.place} key holds no short press device, and a long press device goes on a key that has one`);
+  }
+  if (long && onKey(HELD).length > 0) throw new ComposeError(`the ${key.place} key already holds a long press device`);
+  // The press list a long press extends, read and checked before anything is changed.
+  const press = long ? onKey(PRESS) : [];
+  if (long) {
+    const at = press.length === 1 && press[0]!.opcode === ACTION_LIST_INDEX_OPCODE
+      ? c.blobOffsetOf(c.pointerArray(7)![press[0]!.operand]!) : undefined;
+    if (at === undefined || !isOneDevicePress(instructionsAt(c.blob, at), key.pin)) {
+      throw new ComposeError(`the ${key.place} key's press is not the one device press a long press extends`);
+    }
   }
   assertNoVariablesOutsideLists(c);
 
@@ -196,10 +299,10 @@ export function composeNoScreenDevice(c: Container, archive: string, request: No
   }
   const device: ComposeDevice = { ...planned.device, commands, power: 0 };
 
-  // The shared device composer: the group at the key's place, the send lists after the last list body, since the
-  // key map table sits right in front of the action table, the power variable and its name.
+  // The shared device composer: the group the key and its press give, the send lists after the last list body,
+  // since the key map table sits right in front of the action table, the power variable and its name.
   const composed = composeDeviceFor(c, device, NO_SCREEN_SENDS, undefined, {
-    group: request.place,
+    group,
     listsAt: (at) => highestEnd(listExtents(at)),
   });
   let current = parse(composed.bytes);
@@ -256,23 +359,43 @@ export function composeNoScreenDevice(c: Container, archive: string, request: No
     KEY_TIMERS.map((_, k) => current.flashBase + timerAt + TIMER_RECORD_LENGTH * k)));
   const firstTimer = timersNow.length;
 
-  // The key's two lists: the press cancels the timers, switches its pin on and starts its two timers; the release
-  // cancels the timers and selects the device's map, `reference/architectures/harmony-300-350/memory.md`.
+  // The key's lists. A short press: the press cancels the timers, switches its pin on and starts its two timers,
+  // and the release cancels the timers and selects the device's map, `reference/architectures/harmony-300-350/memory.md`.
+  // A long press: the held event cancels the timers and selects the device's map, and the press list the short
+  // press device already has gains the same block again with the new timers, as Logitech's press list for a key
+  // with two devices carries it; the release stays the short press device's.
   const pinOn = (PIN_BAND << 8) | (key.pin << 4) | KEY_TIMERS[KEY_TIMERS.length - 1]!.pinState;
-  const keyLists = appendActionLists(current, [
-    [[CANCEL_TIMERS.operand, CANCEL_TIMERS.opcode], [pinOn, STATE_BAND],
-      ...KEY_TIMERS.map((_, k): [number, number] => [(START_TIMER_BAND << 8) | (firstTimer + k), STATE_BAND])],
-    [[CANCEL_TIMERS.operand, CANCEL_TIMERS.opcode], [SELECT_BINDING_SET_MASK | map, SELECT_BINDING_SET]],
-  ], highestEnd(listExtents(current)));
-  current = parse(keyLists.bytes);
+  const pressBlock: [number, number][] = [[CANCEL_TIMERS.operand, CANCEL_TIMERS.opcode], [pinOn, STATE_BAND],
+    ...KEY_TIMERS.map((_, k): [number, number] => [(START_TIMER_BAND << 8) | (firstTimer + k), STATE_BAND])];
+  const select: [number, number][] = [[CANCEL_TIMERS.operand, CANCEL_TIMERS.opcode], [SELECT_BINDING_SET_MASK | map, SELECT_BINDING_SET]];
+  let added: KeyEntry[];
+  if (long) {
+    const held = appendActionLists(current, [select], highestEnd(listExtents(current)));
+    current = parse(held.bytes);
+    // The press list grows at its own end, its count raised; nothing points inside a list, and the list after it
+    // moves up with everything else at or above the cut.
+    const at = current.blobOffsetOf(current.pointerArray(7)![press[0]!.operand]!)!;
+    const count = u8(current.blob, at);
+    const block = new Writer(3 * pressBlock.length);
+    for (const [operand, opcode] of pressBlock) block.u16(operand).u8(opcode);
+    const pressHole = relocate(current, at + 1 + 3 * count, block.bytes.length);
+    pressHole.bytes.set(block.bytes, at + 1 + 3 * count);
+    pressHole.bytes[at] = count + pressBlock.length;
+    current = parse(pressHole.bytes);
+    added = [{ tag: HELD | key.scan, operand: held.first, opcode: ACTION_LIST_INDEX_OPCODE }];
+  } else {
+    const keyLists = appendActionLists(current, [pressBlock, select], highestEnd(listExtents(current)));
+    current = parse(keyLists.bytes);
+    added = [
+      { tag: PRESS | key.scan, operand: keyLists.first, opcode: ACTION_LIST_INDEX_OPCODE },
+      { tag: RELEASE | key.scan, operand: keyLists.first + 1, opcode: ACTION_LIST_INDEX_OPCODE },
+    ];
+  }
 
-  // Entry 0, the key table, gains the press and the release, rewritten in place at its own address with the room
-  // made at its end; nothing points inside a tagged list.
+  // Entry 0, the key table, gains the bindings, rewritten in place at its own address with the room made at its
+  // end; nothing points inside a tagged list.
   const table = keyMaps(current)[0]!;
-  const grown = taggedListBytes(inCompilerOrder(table.entries, [
-    { tag: PRESS | key.scan, operand: keyLists.first, opcode: ACTION_LIST_INDEX_OPCODE },
-    { tag: RELEASE | key.scan, operand: keyLists.first + 1, opcode: ACTION_LIST_INDEX_OPCODE },
-  ]));
+  const grown = taggedListBytes(inCompilerOrder(table.entries, added));
   if (taggedListExtent(current.blob, table.start)?.wide !== false) throw new ComposeError('the key table is not in the narrow form');
   const tableHole = relocate(current, table.start + table.length, grown.length - table.length);
   tableHole.bytes.set(grown, table.start);

@@ -147,7 +147,16 @@ another order: keys 2 to 13 and 16 would put 16 first under one rule and last un
 mode 0's list on a Harmony 600, 650 and 700 holds none, since at 256 buckets the hash is a one to one map of a
 byte[^s315]. In a device mode's key map `0x2D` precedes `0xA4` in their shared bucket on 83 of 83; in other modes'
 lists `0xC3` is stored before `0x87` on 454 lists and after it on 117, which fits a map that puts a new entry at
-the head of its bucket, so a tie shows the order the compiler inserted the keys in[^s330]. No arch 14 name tree
+the head of its bucket, so a tie shows the order the compiler inserted the keys in[^s330]. **On arch 16 (Harmony
+300 and 350) one pair comes out in opposite orders at two table sizes**: the key table's `0x2E` and `0x85`,
+which share a bucket at 16 and at 32, are stored `0x85` first in three tables of 16 buckets and `0x2E` first in
+three of 32, which fits Java 6 again, since doubling the table moves each bucket's entries over one at a time to
+the head of their new bucket and so reverses them[^t-noscreen]. It fits only given each compile's own insertion
+order, which nothing here reads, and another pair, `0x2D` and `0x86`, keeps its order across the doubling in two
+of the three tables of 32 and not in the third[^t-noscreen]. And a compile whose only difference from another is five favourite channels stores
+the favourites' map as the other's with the five tags put in at the heads of their buckets: one of the five,
+`0x82`, shares a bucket with two tags already there and is stored ahead of both, where putting it in at the tail
+would store it behind them[^t-noscreen-favourites]. No arch 14 name tree
 has a tie; on arch 8 and 12 ten distinct pairs tie, fifteen times, and every time the larger index is
 stored first[^s324].
 
@@ -192,3 +201,5 @@ could have written: `modeZeroKeyList`, `compilerTagOrder`, `buildNameTree` and `
 [^s319]: Measured in configurations. [Section 319](../../docs/findings.md#s319)
 [^s319b]: Read in the firmware. [Section 319](../../docs/findings.md#s319)
 [^unchecked]: Not checked.
+[^t-noscreen]: Measured in configurations. [The test](../../packages/codec/test/noscreen.test.ts)
+[^t-noscreen-favourites]: Measured in configurations. [The test](../../packages/codec/test/noscreenfavourites.test.ts)

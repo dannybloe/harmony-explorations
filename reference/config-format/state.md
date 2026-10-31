@@ -635,6 +635,15 @@ slot changes that way, which is what names base slot 16 on that architecture. Th
 with nothing adjusted, its three digit tables are distinct and thirty bytes apart, all thirty entries call
 lists that send codes from one group, and `flags` is 0 against the Harmony One sample's `0x04`[^s262b].
 Where a device's codes sit on that architecture is [its memory page](../architectures/harmony-300-350/memory.md).
+**What those lists send is the device's one block copy of each digit**, not the record its digit key sends:
+in four compiles of the architecture with favourite channels, three for a Harmony 350 and one for a Harmony
+300, every one of the thirty entries calls a list of three instructions sending a record with one block, which
+opens on a mark rather than a silence[^t-noscreen-favourites]. In one of them each of the ten is the digit's
+catalogue code with its first block's opening silence dropped and no held block, the
+[one block copy](actions.md#a-sequence-is-one-action-list-of-calls-and-per-device-pauses) a Harmony 650 sequence
+sends[^t-noscreen-favourites]. That device's group holds no whole record of a digit, since nothing of that
+device in that configuration sends one, where a device whose digit keys send its digits holds both. The one
+channel with a leading zero in these compiles, 07, calls two of the same lists, 0's and then 7's[^t-noscreen-favourites].
 
 Read with `gspm.number_senders` and `tables.numberSenders`.
 
@@ -955,5 +964,6 @@ Read with `gspm.log_area`; `gspm.log_reference` names the append case an instruc
 [^t-harmony-350-clock-c]: Measured in configurations. [The test](../../tests/test_harmony_350_clock.py)
 [^t-state-block]: Read in the firmware. [The test](../../tests/test_firmware_state_block.py)
 [^t-long-press]: Read in the firmware. [The test](../../tests/test_harmony_350_long_press.py)
+[^t-noscreen-favourites]: Measured in configurations. [The test](../../packages/codec/test/noscreenfavourites.test.ts)
 [^t-long-press-c]: Measured in configurations. [The test](../../tests/test_harmony_350_long_press.py)
 [^t-long-press-u]: Measured on a unit. [The test](../../tests/test_harmony_350_long_press.py)

@@ -6,8 +6,9 @@
  * **What is real and what refuses.** `todo-compile-350.md` 4.1 composes a device, so what a device needs is
  * built: the key table its map is laid out by, `deviceModeKeys`, and its send, `sends`, whose device half is
  * real; the composer itself is `composeNoScreenDevice` in `devices.ts`, since no member of the interface composes
- * a whole device. Everything else refuses with a message saying why, as code-for-a-family's fourth question asks,
- * rather than borrowing another family's answer:
+ * a whole device, and it puts a device on a key's short press or, 4.4, its long press. The favourite channels,
+ * 4.3, are `composeNoScreenFavourites` in `favourites.ts`, for the same reason. Everything else refuses with a
+ * message saying why, as code-for-a-family's fourth question asks, rather than borrowing another family's answer:
  *
  * * **No screen**, so the screen members refuse for good: a device's screen, an activity's row, menu and screen,
  *   the screen items, the font sets.
@@ -77,6 +78,9 @@ export const NO_SCREEN_FAMILY: Family = {
   composeActivityScreen: refuses(NO_SCREEN),
 };
 
-export { composeNoScreenDevice, type ComposedNoScreenDevice, type NoScreenDeviceRequest } from './devices.ts';
-export { DEVICE_KEYS, NO_SCREEN_HARD_KEYS } from './keys.ts';
+export { composeNoScreenDevice, type ComposedNoScreenDevice, inCompilerOrder, type NoScreenDeviceRequest } from './devices.ts';
+export {
+  composeNoScreenFavourites, type ComposedNoScreenFavourites, NUMBER_SENDER_BAND, type NoScreenFavouritesRequest,
+} from './favourites.ts';
+export { DEVICE_KEYS, FAVOURITE_SCANS, LONG_PRESS_GROUP_BASE, NO_SCREEN_HARD_KEYS } from './keys.ts';
 export { NO_SCREEN_SENDS, powerOnWaits } from './sends.ts';
