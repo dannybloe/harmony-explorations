@@ -9,8 +9,9 @@ reference could not cite.
 
 **A second hand Harmony 300, on the bench since 27 August 2026**, sections 195 and 264. It reports skin
 79, the European model, in its own `/sys/sysinfo` and its configuration, and 78 in its `bcdDevice`. It is
-read only as files through `openFileBasedRemote`, and **nothing has ever been written to it**: the file
-based family is on none of the write lists.
+read as files through `openFileBasedRemote`. This said nothing had ever been written to it and that the
+family was on no write list; decision 26 made it a permitted write target, written through the file write
+rail as unit `h300`, and the section below says what was written.
 
 ## The two reads
 
@@ -71,3 +72,21 @@ favourite maximum of 5.
 * The firmware version it runs: `/sys/sysinfo`'s version field was not recorded, and only the product
   string says 1.4.0.
 * No other file on `INERT_PATHS` was read off it.
+
+## Its own configuration written back, todo-compile-300 1.2 to 1.4
+
+On 31 October 2026. The unit's identity was recorded as the lab's `units/h300.txt`, and every file on the
+inert path list was read into `reads/20261031T1205Z-h300-backup/`, the configuration a second time into
+`-second/`, identical: 97470 bytes, the programmed configuration of section 265 byte for byte less the end
+marker, so the unit still held what Logitech's service had put on it. `/cfg/log` was 131072 bytes of `0xFF`,
+as on the 350. The first two identity reads after plugging in got no reply and the third answered, one more
+than the 350 has needed.
+
+The write rail compares the skin in `/sys/sysinfo`, 79, and not the `bcdDevice`'s 78, so the dry run passed
+unchanged. `write-file-config.ts --unit h300` then wrote `h300_programmed_config` back: verified by reading,
+check answered `m`, restarted. Off the cable, `packages/bench/irtests/done/300-1-4-own-config.json` passed
+every step, the run in the lab's `reads/20261031T121348Z-ir-test-harmony-300-its-own-configuration-written-back.json`:
+the TV's Volume Up, Channel Up and 1, the KPN's codes 35 and 43, the DVD player's 1 with Volume Up still the
+television's, and the recorder's Channel Up and 1. One unreadable fragment followed the KPN's digit by a
+third of a second. The monitor names the 300's codes since `h300_programmed_config` joined its list.
+

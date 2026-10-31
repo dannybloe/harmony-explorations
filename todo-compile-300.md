@@ -25,9 +25,9 @@ trusting the keypad, and a first change heard before a whole configuration rides
 ## 1. The write route
 
 - [x] 1.1 The decision whether the bench 300 may be written to, asked and recorded as a decision, not assumed: decision 26, taken with the 350's 1.1; the write rail already names a record `h300`, skin 79
-- [ ] 1.2 Its identity recorded as `h300` and a full backup of the unit into the lab, as the 350's 1.5, the configuration read twice and identical
-- [ ] 1.3 The 300 on the 350's rail, checked against its own lab record, with which skin the rail compares settled first: 79 in `/sys/sysinfo` and the configuration, 78 in `bcdDevice`
-- [ ] 1.4 The first write: its own configuration back unchanged, read back and compared, and the remote still sends what it sent before
+- [x] 1.2 Its identity recorded as `h300` and a full backup of the unit into the lab, as the 350's 1.5, the configuration read twice and identical: the lab's `units/h300.txt` and `reads/20261031T1205Z-h300-backup/`, 97470 bytes, the four device configuration read in section 265 byte for byte
+- [x] 1.3 The 300 on the 350's rail, checked against its own lab record, with which skin the rail compares settled first: 79 in `/sys/sysinfo` and the configuration, 78 in `bcdDevice`; the rail compares `/sys/sysinfo`'s, 79, and the dry run passed
+- [x] 1.4 The first write: its own configuration back unchanged, read back and compared, and the remote still sends what it sent before: verified and restarted, then `packages/bench/irtests/done/300-1-4-own-config.json` passed every step
 - [ ] 1.5 A first change: one delay changed and put back, each heard by the bench's infrared receiver, as the 350's 1.8
 
 ## 2. The keys
