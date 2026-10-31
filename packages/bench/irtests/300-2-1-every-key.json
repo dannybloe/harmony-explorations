@@ -1,0 +1,318 @@
+{
+  "name": "Harmony 300, every key sends something",
+  "description": "todo-compile-300 2.1. The bench 300 holds lab/work/300-every-key/every-key.bin: its own configuration, lab/work/300-delay/before.bin, with the TV's map given a press for every key it left unbound, 12 of them (2 8 9 16 19 25 26 34 35 43 54 56), each sending the same list as Info. So every one of the 55 keys sends something in the TV's mode, and the four device keys and Watch TV are checked by what they make the next key send. Each expectation is what this file binds to the key, traced through its lists. A key that sends nothing, or sends twice for one press, is a contact to look at. This is a check of the keypad, not a measurement of which code each key raises; that is 2.2. Live is one of two codes on the 350, 43 or 56, and both are filled in here.",
+  "steps": [
+    {
+      "instruction": "Unplug the Harmony 300 from USB and point it at the receiver. Press TV, the top left of the four device keys, once and briefly. The remote is now in the TV's mode. Nothing should be heard"
+    },
+    {
+      "instruction": "Press, one at a time: Volume Up, Volume Down, then Mute (the round key below the volume rocker)",
+      "expect": [
+        {
+          "device": "Panasonic_TV",
+          "command": "VolumeUp"
+        },
+        {
+          "device": "Panasonic_TV",
+          "command": "VolumeDown"
+        },
+        {
+          "device": "Panasonic_TV",
+          "command": "Mute"
+        }
+      ]
+    },
+    {
+      "instruction": "Press, one at a time: Channel Up, Channel Down, then Previous Channel (the round key below the channel rocker)",
+      "expect": [
+        {
+          "device": "Panasonic_TV",
+          "command": "ChannelUp"
+        },
+        {
+          "device": "Panasonic_TV",
+          "command": "ChannelDown"
+        },
+        {
+          "device": "Panasonic_TV",
+          "command": "LastView"
+        }
+      ]
+    },
+    {
+      "instruction": "Press the four keys around OK, one at a time: up, right, down, left. Then OK",
+      "expect": [
+        {
+          "device": "Panasonic_TV",
+          "command": "DirectionUp"
+        },
+        {
+          "device": "Panasonic_TV",
+          "command": "DirectionRight"
+        },
+        {
+          "device": "Panasonic_TV",
+          "command": "DirectionDown"
+        },
+        {
+          "device": "Panasonic_TV",
+          "command": "DirectionLeft"
+        },
+        {
+          "device": "Panasonic_TV",
+          "command": "OK"
+        }
+      ]
+    },
+    {
+      "instruction": "Press Exit, then Guide, then Info",
+      "expect": [
+        {
+          "device": "Panasonic_TV",
+          "command": "Exit"
+        },
+        {
+          "device": "Panasonic_TV",
+          "command": "Guide"
+        },
+        {
+          "device": "Panasonic_TV",
+          "command": "Info"
+        }
+      ]
+    },
+    {
+      "instruction": "Press Menu, then the up arrow and the down arrow in the middle of Menu, Info, Exit and Guide",
+      "expect": [
+        {
+          "device": "Panasonic_TV",
+          "command": "Menu"
+        },
+        {
+          "device": "Panasonic_TV",
+          "command": "Info"
+        },
+        {
+          "device": "Panasonic_TV",
+          "command": "Info"
+        }
+      ]
+    },
+    {
+      "instruction": "Press the four colour keys, left to right: A (yellow), B (blue), C (red), D (green)",
+      "expect": [
+        {
+          "device": "Panasonic_TV",
+          "command": "Red"
+        },
+        {
+          "device": "Panasonic_TV",
+          "command": "Green"
+        },
+        {
+          "device": "Panasonic_TV",
+          "command": "Yellow"
+        },
+        {
+          "device": "Panasonic_TV",
+          "command": "Blue"
+        }
+      ]
+    },
+    {
+      "instruction": "Press Rewind (top of the three keys left of Play and Pause), Play (its top half), Pause (its bottom half), Fast Forward (top of the three on the right), Record (bottom left) and Stop (bottom right)",
+      "expect": [
+        {
+          "device": "Panasonic_TV",
+          "command": "Rewind"
+        },
+        {
+          "device": "Panasonic_TV",
+          "command": "Play"
+        },
+        {
+          "device": "Panasonic_TV",
+          "command": "Pause"
+        },
+        {
+          "device": "Panasonic_TV",
+          "command": "FastForward"
+        },
+        {
+          "device": "Panasonic_TV",
+          "command": "Record"
+        },
+        {
+          "device": "Panasonic_TV",
+          "command": "Stop"
+        }
+      ]
+    },
+    {
+      "instruction": "Press Replay (the middle of the three keys left of Play and Pause), Skip (the middle of the three on the right), then List and Live",
+      "expect": [
+        {
+          "device": "Panasonic_TV",
+          "command": "ChapterPrev"
+        },
+        {
+          "device": "Panasonic_TV",
+          "command": "ChapterNext"
+        },
+        {
+          "device": "Panasonic_TV",
+          "command": "Info"
+        },
+        {
+          "device": "Panasonic_TV",
+          "command": "Info"
+        }
+      ]
+    },
+    {
+      "instruction": "Press the digits 1, 2, 3, 4, 5, 6, 7, 8, 9 and 0 in that order, then the key left of 0 and the key right of 0",
+      "expect": [
+        {
+          "device": "Panasonic_TV",
+          "command": "1"
+        },
+        {
+          "device": "Panasonic_TV",
+          "command": "2"
+        },
+        {
+          "device": "Panasonic_TV",
+          "command": "3"
+        },
+        {
+          "device": "Panasonic_TV",
+          "command": "4"
+        },
+        {
+          "device": "Panasonic_TV",
+          "command": "5"
+        },
+        {
+          "device": "Panasonic_TV",
+          "command": "6"
+        },
+        {
+          "device": "Panasonic_TV",
+          "command": "7"
+        },
+        {
+          "device": "Panasonic_TV",
+          "command": "8"
+        },
+        {
+          "device": "Panasonic_TV",
+          "command": "9"
+        },
+        {
+          "device": "Panasonic_TV",
+          "command": "0"
+        },
+        {
+          "device": "Panasonic_TV",
+          "command": "Info"
+        },
+        {
+          "device": "Panasonic_TV",
+          "command": "Info"
+        }
+      ]
+    },
+    {
+      "instruction": "Press TV Input, the wide key at the top centre",
+      "expect": [
+        {
+          "device": "Panasonic_TV",
+          "command": "Info"
+        }
+      ]
+    },
+    {
+      "instruction": "Press favourite keys 1, 2, 3 and 4, one at a time (1 beside TV Input on the left, 2, 3 and 4 below it), then favourite 5, beside TV Input on the right",
+      "expect": [
+        {
+          "device": "Panasonic_TV",
+          "command": "Info"
+        },
+        {
+          "device": "Panasonic_TV",
+          "command": "Info"
+        },
+        {
+          "device": "Panasonic_TV",
+          "command": "Teletext"
+        },
+        {
+          "device": "Panasonic_TV",
+          "command": "Info"
+        },
+        {
+          "device": "Panasonic_TV",
+          "command": "Info"
+        }
+      ]
+    },
+    {
+      "instruction": "Press Power once",
+      "expect": [
+        {
+          "device": "Panasonic_TV",
+          "command": "PowerToggle"
+        }
+      ]
+    },
+    {
+      "instruction": "Press DVD, the bottom left device key, then the digit 1 and Volume Up",
+      "expect": [
+        {
+          "device": "Panasonic_DVD",
+          "command": "1"
+        },
+        {
+          "device": "Panasonic_TV",
+          "command": "VolumeUp"
+        }
+      ]
+    },
+    {
+      "instruction": "Press VCR/Aux, the bottom right device key, then Channel Up",
+      "expect": [
+        {
+          "device": "Sony_VCR",
+          "command": "ChannelUp"
+        }
+      ]
+    },
+    {
+      "instruction": "Press Cable/Sat, the top right device key, then Channel Up",
+      "expect": [
+        {
+          "device": "KPN",
+          "code": 35,
+          "config": "h300_programmed_config"
+        }
+      ]
+    },
+    {
+      "instruction": "Press Watch TV, the key at the very top, once, and wait until the lights go out",
+      "expect": [
+        {
+          "device": "KPN",
+          "code": 29,
+          "config": "h300_programmed_config"
+        },
+        {
+          "device": "Panasonic_TV",
+          "command": "PowerToggle"
+        }
+      ]
+    },
+    {
+      "instruction": "Press Watch TV once more, to switch back, and wait until the lights go out. Then press TV, the top left device key, to leave the remote in the TV's mode"
+    }
+  ]
+}
