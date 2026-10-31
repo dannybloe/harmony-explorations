@@ -11,23 +11,26 @@
  * and two compiles of one account already differ in it; so a record is compared by its header and its blocks, a
  * list by what it does with every list it calls written out, and the group and the key's place are allowed to
  * differ, since they follow the key. The donor is not the test setup with the plasma taken out: no compile of that
- * exists, and taking a device out is a composer of its own.
+ * exists; taking a device out of Logitech's compile and composing it back is `noscreenremove.test.ts`, 4.1.3.
  *
- * **What it settled, in counts.** Of the 51 records Logitech stores for the plasma, the composer writes 39 and every
- * one of them is one of Logitech's word for word; the 12 it leaves out are ten one block copies of the digits that
- * no list or key reaches, and Internet and Teletext, which only the favourite key and the soft buttons hold, below.
- * Each of the 39 sends through a list of Logitech's shape, the timers cancelled, the send and its quantity. The power
- * variable's two transitions are Logitech's, the 50 tenths wait included. The plasma's map binds 38 keys where
- * Logitech's binds 40, every one of the 38 to what Logitech's binds it to, and the two it leaves out are the
- * favourite key, Internet in Logitech's, and the Input key, which Logitech binds to the LG TV's InputNext on every
- * map. The key's press and release are Logitech's lists for a key of that place, and the metadata archive names
- * the plasma with Logitech's 63 commands in Logitech's order.
+ * **What it settled, in counts.** The composer writes the 51 records Logitech stores for the plasma, every one of
+ * them Logitech's word for word: its keys' commands, Internet on the fifth favourite key, Teletext on no key and
+ * the ten digits' one block copies, the last eleven with send lists nothing calls, as in Logitech's,
+ * `todo-compile-350.md` 4.1.1 and `noscreenrouting.test.ts`. Each of the 51 sends through a list of Logitech's
+ * shape, the timers cancelled, the send and its quantity. The power variable's two transitions are Logitech's, the
+ * 50 tenths wait included. The plasma's map binds 39 keys where Logitech's binds 40, every one of the 39 to what
+ * Logitech's binds it to; the one it leaves out is Input, which Logitech binds to its TV mode device's InputNext,
+ * the LG's, and which the donor's TV mode device has no command for. The key's press and release are Logitech's
+ * lists for a key of that place, and the metadata archive names the plasma with Logitech's 63 commands in
+ * Logitech's order.
  *
  * **The key table, fitted.** `NO_SCREEN_HARD_KEYS` was fitted to the eight devices of the test setup compile; the
  * test below states, device by device, where Logitech binds a key to the device's own command and the table does
  * not or the other way round. On seven devices the only differences are the favourite key and the volume and mute
- * Logitech sends to the Denon instead of the device's own; the KPN's map is the activity's, `todo-compile-350.md`
- * 4.2 and 4.3, and binds three of the table's keys.
+ * Logitech sends to the Denon instead of the device's own; the KPN's map binds three of the table's keys, for a
+ * reason not read. This gave the reason as the map being the one the activity ends in, until
+ * `noscreenactivity.test.ts` found the activity ending in another KPN box's map, of 33 bindings sending one of its
+ * own codes, on two other compiles.
  *
  * **The power on delay's waits are a closure**: the catalogue's power on delay, read by `catalogueDevicePower`,
  * split by `powerOnWaits`, is the waits Logitech's compile writes on each of the eight devices, the Knoll's 250
@@ -40,12 +43,12 @@
  * and a long press goes on a key with a short press device. Each is held against the same device in Logitech's
  * compile as the plasma is, part by part: its group, its records and their send lists, its power variable, its
  * map, the held binding that selects it and the key's press list with its second block of timers, and its names.
- * What it settled, in counts, is in the tests below: 76 of the 82 records the composer writes are Logitech's word
- * for word, and the other six are the Kodi's and the Sony HT's own volume and mute, which Logitech does not store
- * because their maps send the Denon's; the four maps differ from Logitech's by the Input key, which Logitech binds
- * to the LG TV's, and by volume and mute, which it binds to the Denon's where we bind the device's own or nothing,
- * two of the product answers of 4.1.1, and bind every other key both hold to the same thing. No favourite key
- * differs: none of the four has a soft button of its own.
+ * What it settled, in counts, is in the tests below: all 86 records the composer writes are Logitech's word for
+ * word, the Kodi's ten digit copies included, and no device stores its own volume and mute, which each takes from
+ * the donor's TV as `volumeSource` says with no receiver in the donor; the four maps differ from Logitech's by the
+ * Input key, which Logitech binds to the LG TV's and the donor's TV mode device has none of, and by volume and
+ * mute, the Denon's in Logitech's where the donor has no Denon, and bind every other key both hold to the same
+ * thing. The whole equality, with the Denon there, is `todo-compile-350.md` 4.1.3's, `noscreenremove.test.ts`.
  *
  * **The order of a key map's tags**, `inCompilerOrder`, is now a simulation of the compiler's hash map rather than
  * a refusal wherever two tags share a slot, since the long press's held tags share slots with the donor's own:
@@ -66,9 +69,9 @@ import { join } from 'node:path';
 import { IR_ARCHIVE, LAB, needing, require_, skipUnless, skipWithoutIrArchive, skipWithoutLab } from '@harmony/lab';
 
 import {
-  bytes, catalogueDevicePlan, composeIrGroup, ComposeError, composeNoScreenDevice, type Container, deviceModeLayout, devices,
+  type AccountDevice, bytes, catalogueDevicePlan, composeIrGroup, ComposeError, composeNoScreenDevice, type Container, deviceModeLayout, devices,
   compilerHash, irGroups, metadataArchive, NO_SCREEN_FAMILY, NO_SCREEN_HARD_KEYS, parse, powerOnWaits, stateRecords, stateVariables,
-  taggedList,
+  taggedList, TELEVISION_TYPE, volumeSource,
 } from '../src/index.ts';
 import { familyOf, familyOfArchitecture } from '../src/families/registry.ts';
 import { onceWithoutLeadIn, recordKey, spelled, spelledMap } from './noscreenparts.ts';
@@ -210,7 +213,7 @@ test('the family\'s key table gives every device of Logitech\'s compile the keys
     }
     // Scan, then what Logitech binds of the device's own and what the table gives it. The favourite key, scan 2,
     // takes a soft button's command; volume and mute go to the Denon on the Kodi and the Sony HT, which have their
-    // own; and the KPN's map is the activity's.
+    // own; and the KPN's map binds few of its own, for a reason not read, `noscreenactivity.test.ts`.
     assert.deepEqual(differences, {
       // The LG TV's own Input binding is the one every map of the compile carries, the LG TV's InputNext.
       LG_TV: ['2 Home/SmartMenu -', '35 InputNext -'],
@@ -239,55 +242,44 @@ function layout350(scan: number): string {
   return names[scan]!;
 }
 
-test('the composed plasma\'s records are 39 of the 51 Logitech stores for it, word for word, and the 12 left out are sent by no key',
+test('the composed plasma\'s records are the 51 Logitech stores for it, word for word, and the 11 no key reaches are the same 11 in both',
   needsAll, () => {
     const { ours, theirs, out } = composed();
     assert.ok(ours.allChecksPass);
     assert.equal(out.group, PLACE);
     const mine = irGroups(ours)![PLACE]!.addresses.map((address) => recordKey(ours, address));
     const logitech = irGroups(theirs)![THEIR_GROUP]!.addresses.map((address) => recordKey(theirs, address));
-    // 37 commands on keys and the two power steps.
-    assert.equal(out.commands.length, 37);
-    assert.equal(mine.length, 39);
+    // 37 commands on the family's keys, Internet on the fifth favourite key and Teletext on none, `keys.ts`; the two
+    // power steps; and the ten digits' one block copies.
+    assert.equal(out.commands.length, 39);
+    assert.deepEqual(out.unbound, ['Teletext']);
+    assert.equal(out.keys.get(2), 'Internet');
+    assert.equal(out.digitCopies, 10);
+    assert.equal(mine.length, 51);
     assert.equal(logitech.length, 51);
-    assert.equal(mine.filter((key) => logitech.includes(key)).length, 39);
-    // What Logitech stores and the composer does not: ten one block copies, each a digit's code with no silence in
-    // front of it and no held block, and two commands.
-    const left = irGroups(theirs)![THEIR_GROUP]!.addresses.filter((address) => !mine.includes(recordKey(theirs, address)));
-    assert.equal(left.length, 12);
+    assert.equal(mine.filter((key) => logitech.includes(key)).length, 51);
+    // The copies are what a one block copy is: a digit's code with no silence in front of it and no held block.
     const ourCodes = irGroups(ours)![PLACE]!.addresses.map((address) => onceWithoutLeadIn(ours, address).code);
     const digits = out.commands.flatMap((name, k) => (/^[0-9]$/.test(name) ? [ourCodes[k]] : []));
-    const copies = left.filter((address) => {
-      const one = onceWithoutLeadIn(theirs, address);
+    const copies = (c: Container, group: number) => irGroups(c)![group]!.addresses.filter((address) => {
+      const one = onceWithoutLeadIn(c, address);
       return !one.held && one.opening === 0 && digits.includes(one.code);
-    });
-    assert.equal(copies.length, 10);
-    // The two commands, named by composing every catalogue command: the favourite key's Internet and the soft
-    // buttons' Teletext.
-    const plan = catalogueDevicePlan(theirs, IR_ARCHIVE!, { ...PLASMA, label: 'Plasma', full: true });
-    const scratch = parse(composeIrGroup(theirs, plan.device.commands).bytes);
-    const every = irGroups(scratch)!.at(-1)!.addresses.map((address) => recordKey(scratch, address));
-    const named = left.filter((address) => !copies.includes(address))
-      .map((address) => plan.wanted.filter((_, k) => every[k] === recordKey(theirs, address)).join('/'));
-    assert.deepEqual(named.sort(), ['Internet', 'Teletext']);
-    // And neither one block copy nor Teletext is sent by anything in Logitech's compile: no `lo hi 7F` names their
-    // send lists anywhere in the file.
-    const lists = theirs.pointerArray(7)!;
-    const sendListOf = (record: number) => lists.findIndex((address) => {
-      const at = theirs.blobOffsetOf(address)!;
-      return bytes.u8(theirs.blob, at) === 3 && bytes.u16(theirs.blob, at + 4) === ((THEIR_GROUP << 8) | record);
-    });
-    const unreached = left.filter((address) => !named.includes('Internet') || plan.wanted[every.indexOf(recordKey(theirs, address))] !== 'Internet')
-      .map((address) => sendListOf(irGroups(theirs)![THEIR_GROUP]!.addresses.indexOf(address)));
-    const called = (list: number) => {
-      let n = 0;
-      for (let k = 0; k + 2 < theirs.blob.length; k += 1) {
-        if (theirs.blob[k + 2] === 0x7f && bytes.u16(theirs.blob, k) === list) n += 1;
-      }
-      return n;
+    }).map((address) => recordKey(c, address)).sort();
+    assert.equal(copies(theirs, THEIR_GROUP).length, 10);
+    assert.deepEqual(copies(ours, PLACE), copies(theirs, THEIR_GROUP));
+    // The records whose send lists nothing in the file calls, no `lo hi 7F` naming the list anywhere: the ten copies
+    // and Teletext, in Logitech's compile and in ours.
+    const unreached = (c: Container, group: number) => {
+      const lists = c.pointerArray(7)!;
+      const called = new Set<number>();
+      for (let k = 0; k + 2 < c.blob.length; k += 1) if (c.blob[k + 2] === 0x7f) called.add(bytes.u16(c.blob, k));
+      return irGroups(c)![group]!.addresses.filter((_, record) => lists.every((address, index) => {
+        const at = c.blobOffsetOf(address)!;
+        return bytes.u8(c.blob, at) !== 3 || bytes.u16(c.blob, at + 4) !== ((group << 8) | record) || !called.has(index);
+      })).map((address) => recordKey(c, address)).sort();
     };
-    assert.equal(unreached.length, 11);
-    assert.deepEqual(unreached.map(called), new Array(11).fill(0));
+    assert.equal(unreached(theirs, THEIR_GROUP).length, 11);
+    assert.deepEqual(unreached(ours, PLACE), unreached(theirs, THEIR_GROUP));
   });
 
 test('every record of the composed plasma sends through a list of Logitech\'s shape, as Logitech\'s list for the same record does',
@@ -310,8 +302,8 @@ test('every record of the composed plasma sends through a list of Logitech\'s sh
     };
     const mine = listsOf(ours, PLACE);
     const logitech = listsOf(theirs, THEIR_GROUP);
-    assert.equal(mine.size, 39);
-    assert.equal([...mine].filter(([key, body]) => logitech.get(key) === body).length, 39);
+    assert.equal(mine.size, 51);
+    assert.equal([...mine].filter(([key, body]) => logitech.get(key) === body).length, 51);
     // Every one opens by cancelling the timers and carries a quantity of 1, the power steps' included, which is
     // the plasma's inter key delay in the catalogue.
     assert.deepEqual([...new Set(mine.values())], ['7:fffb 7d:g/r 7c:g/1']);
@@ -335,16 +327,18 @@ test('the composed plasma\'s power variable is Logitech\'s: off sends the power 
     assert.match(mine.values[0]!, /^0>1 \(\(.*\) 7c:32\)$/);
   });
 
-test('the composed plasma\'s key map binds 38 keys, each to what Logitech\'s binds it to; Logitech\'s binds the favourite key and the Input key besides',
+test('the composed plasma\'s key map binds 39 keys, each to what Logitech\'s binds it to; Logitech\'s binds Input besides, to a TV mode device the donor does not have',
   needsAll, () => {
-    const { ours, theirs, out } = composed();
+    const { donor, ours, theirs, out } = composed();
     const mine = spelledMap(ours, out.map);
     const logitech = spelledMap(theirs, THEIR_MAP);
-    assert.equal(mine.size, 38);
+    assert.equal(mine.size, 39);
     assert.equal(logitech.size, 40);
     assert.deepEqual([...mine].filter(([tag, body]) => logitech.get(tag) !== body), []);
-    // Favourite 5 and Input, both presses: Internet, and the LG TV's InputNext.
-    assert.deepEqual([...logitech.keys()].filter((tag) => !mine.has(tag)).sort((a, b) => a - b), [0x82, 0xa3]);
+    // Input, a press: the LG TV's InputNext in Logitech's compile, whose TV key holds the LG. The donor's TV key holds
+    // a television with no input command, so no map of the donor binds Input and neither does ours, `INPUT_KEY`.
+    assert.deepEqual([...logitech.keys()].filter((tag) => !mine.has(tag)).sort((a, b) => a - b), [0xa3]);
+    assert.equal(donor.pointerArray(6)!.filter((_, entry) => entry > 0 && spelledMap(donor, entry).has(0xa3)).length, 0);
     // The power key switches the power variable, as Logitech's does for a device switched on and off by two steps.
     assert.equal(out.power, 'variable');
     assert.equal(mine.get(0x83), '(1f:fb00 (71:80vv 9v:1 9v:0))');
@@ -390,9 +384,15 @@ test('the metadata archive names the composed plasma with Logitech\'s commands i
     const logitech = metadataArchive(theirs)!.devices.find((one) => one.name === 'Plasma')!;
     assert.equal(plasma.name, 'Plasma');
     assert.equal(plasma.index, before.length);
-    // Logitech's states the account's own number for the device, which a composed device has none of.
-    assert.equal(plasma.deviceId, undefined);
+    // Logitech's states the account's own number for the device, which a composed device has none of; it is given
+    // the next number above the donor's highest, so the numbers ascend along the archive as in every Logitech file,
+    // todo-compile-350.md 4.1.4.
     assert.ok(logitech.deviceId !== undefined);
+    assert.equal(Number(plasma.deviceId), Math.max(...before.map((one) => Number(one.deviceId))) + 1);
+    const ascending = (c: Container) => metadataArchive(c)!.devices.map((one) => Number(one.deviceId))
+      .every((id, k, all) => k === 0 || id > all[k - 1]!);
+    assert.ok(ascending(ours));
+    assert.ok(ascending(theirs));
     assert.deepEqual(plasma.commands, logitech.commands);
     assert.equal(plasma.commands.length, 63);
     // Everything after the devices, the log area's record layout, is the donor's.
@@ -515,6 +515,8 @@ const LONG = [
   { manufacturer: 'Ligawo', model: '3090063', name: 'Switch', place: 2, theirGroup: 6, theirMap: 5 },
   { manufacturer: 'Sony', model: 'DAV-C540', name: 'Sony HT', place: 3, theirGroup: 7, theirMap: 6 },
 ] as const;
+/** The donor's TV's map, the TV key's short press device: `h350_three_devices_config`'s map 1. */
+const TV_MAP = 1;
 /** Each key's scan code by place, the reference's: top left 5, top right 1, bottom left 7, bottom right 4. */
 const SCAN_OF_PLACE = [5, 1, 7, 4] as const;
 
@@ -522,6 +524,15 @@ let longMemo: {
   donor: Container; before: Container; ours: Container; theirs: Container;
   outs: Map<string, ReturnType<typeof composeNoScreenDevice>>;
 } | undefined;
+/**
+ * The donor's account as `volumeSource` asks about it, in the metadata archive's order: its KPN, a set top box,
+ * and its TV, a television whose command list is the plasma's, then the plasma composed onto it. The Chromecast
+ * the archive names holds no group and no map. No receiver, so a device that is neither takes the TV's volume.
+ */
+const DONOR_ACCOUNT: readonly AccountDevice[] = [
+  { name: 'KPN', deviceType: 18 }, { name: 'TV', deviceType: TELEVISION_TYPE }, { name: 'Plasma', deviceType: TELEVISION_TYPE },
+];
+
 /** The donor with the plasma on the bottom left key's short press, then the four long press devices in turn. */
 function longComposed() {
   if (longMemo !== undefined) return longMemo;
@@ -530,8 +541,10 @@ function longComposed() {
   let ours = before;
   const outs = new Map<string, ReturnType<typeof composeNoScreenDevice>>();
   for (const one of LONG) {
+    const deviceType = catalogueDevicePlan(ours, IR_ARCHIVE!, { manufacturer: one.manufacturer, model: one.model, label: 'X', full: true }).entry.deviceType;
     const out = composeNoScreenDevice(ours, IR_ARCHIVE!, {
       manufacturer: one.manufacturer, model: one.model, name: one.name, place: one.place, press: 'long',
+      volumeFrom: volumeSource({ name: one.name, deviceType }, DONOR_ACCOUNT),
     });
     outs.set(one.name, out);
     ours = parse(out.bytes);
@@ -553,39 +566,27 @@ test('a long press device takes group 4 plus its key\'s place on all four keys, 
       ['0 TV', '1 KPN', '2 Plasma', '3 -', '4 Knoll', '5 Kodi', '6 Switch', '7 Sony_HT']);
   });
 
-test('a composed long press device\'s records are Logitech\'s word for word, but the volume and mute it keeps and the digit copies it leaves out',
+test('a composed long press device\'s records are Logitech\'s word for word, the Kodi\'s ten digit copies included, with volume and mute stored by none of the four',
   needsAll, () => {
     const { ours, theirs, outs } = longComposed();
-    const counts: Record<string, { ours: number; theirs: number; shared: number; onlyOurs: string[]; digitCopies: number }> = {};
+    const counts: Record<string, { ours: number; theirs: number; shared: number; digitCopies: number; borrowed: number[] }> = {};
     for (const one of LONG) {
       const out = outs.get(one.name)!;
       const mine = irGroups(ours)![one.theirGroup]!.addresses.map((address) => recordKey(ours, address));
       const logitech = irGroups(theirs)![one.theirGroup]!.addresses.map((address) => recordKey(theirs, address));
-      // The records of ours Logitech does not store, by the command each sends: the commands come first and the
-      // power steps after them, `ComposedNoScreenDevice.commands`.
-      const onlyOurs = mine.flatMap((key, k) => (logitech.includes(key) ? [] : [out.commands[k] ?? `power ${k}`]));
-      // Logitech's records ours does not hold that are a digit's one block copy: no silence first, no held block,
-      // and the code of one of our digits.
-      const ourCodes = irGroups(ours)![one.theirGroup]!.addresses.map((address) => onceWithoutLeadIn(ours, address).code);
-      const digits = out.commands.flatMap((name, k) => (/^[0-9]$/.test(name) ? [ourCodes[k]] : []));
-      const copies = irGroups(theirs)![one.theirGroup]!.addresses.filter((address) => {
-        if (mine.includes(recordKey(theirs, address))) return false;
-        const copy = onceWithoutLeadIn(theirs, address);
-        return !copy.held && copy.opening === 0 && digits.includes(copy.code);
-      });
       counts[one.name] = {
         ours: mine.length, theirs: logitech.length, shared: mine.filter((key) => logitech.includes(key)).length,
-        onlyOurs: onlyOurs.sort(), digitCopies: copies.length,
+        digitCopies: out.digitCopies, borrowed: [...out.borrowed.keys()].sort((x, y) => x - y),
       };
     }
-    // The Kodi and the Sony HT keep their own volume and mute, which Logitech sends to the Denon and so does not
-    // store for them; the Kodi's ten one block copies of its digits are what Logitech stores besides, which
-    // nothing calls, as on the plasma; and on all four every other record is Logitech's.
+    // The four take their volume and mute from the donor's TV, `volumeSource`, so none stores its own, as Logitech's
+    // compile stores none for the four, whose volume it sends to the Denon; the Kodi, a media player, gets the ten
+    // one block copies of its digits Logitech stores for it, `DIGIT_COPIES_BY_TYPE`, which nothing calls.
     assert.deepEqual(counts, {
-      Knoll: { ours: 8, theirs: 8, shared: 8, onlyOurs: [], digitCopies: 0 },
-      Kodi: { ours: 40, theirs: 47, shared: 37, onlyOurs: ['Mute', 'VolumeDown', 'VolumeUp'], digitCopies: 10 },
-      Switch: { ours: 5, theirs: 5, shared: 5, onlyOurs: [], digitCopies: 0 },
-      'Sony HT': { ours: 29, theirs: 26, shared: 26, onlyOurs: ['Mute', 'VolumeDown', 'VolumeUp'], digitCopies: 0 },
+      Knoll: { ours: 8, theirs: 8, shared: 8, digitCopies: 0, borrowed: [15, 49, 52] },
+      Kodi: { ours: 47, theirs: 47, shared: 47, digitCopies: 10, borrowed: [15, 49, 52] },
+      Switch: { ours: 5, theirs: 5, shared: 5, digitCopies: 0, borrowed: [15, 49, 52] },
+      'Sony HT': { ours: 26, theirs: 26, shared: 26, digitCopies: 0, borrowed: [15, 49, 52] },
     });
   });
 
@@ -606,20 +607,19 @@ test('every record of a composed long press device sends through a list of Logit
       }
       return out;
     };
-    // Per device, our send lists and how many of them are Logitech's list for the same record; the three each of
-    // the Kodi and the Sony HT do not match are the volume and mute above, which Logitech holds no record of.
+    // Per device, our send lists and how many of them are Logitech's list for the same record.
     const agree: Record<string, [number, number]> = {};
     const shapes: Record<string, string[]> = {};
     for (const one of LONG) {
       const mine = listsOf(ours, one.theirGroup);
       const logitech = listsOf(theirs, one.theirGroup);
       agree[one.name] = [mine.size, [...mine].filter(([key, body]) => logitech.get(key) === body).length];
-      // Every one of ours, the six with no counterpart included, is the shape: the timers cancelled, the send, and
+      // Every one of ours is the shape: the timers cancelled, the send, and
       // the device named with a quantity, which is 1 but on a power step, where it is the device's own inter key
       // delay, 5 on the Switch and on the Sony HT.
       shapes[one.name] = [...new Set(mine.values())].sort();
     }
-    assert.deepEqual(agree, { Knoll: [8, 8], Kodi: [40, 37], Switch: [5, 5], 'Sony HT': [29, 26] });
+    assert.deepEqual(agree, { Knoll: [8, 8], Kodi: [47, 47], Switch: [5, 5], 'Sony HT': [26, 26] });
     assert.deepEqual(shapes, {
       Knoll: ['7:fffb 7d:g/r 7c:g/1'], Kodi: ['7:fffb 7d:g/r 7c:g/1'],
       Switch: ['7:fffb 7d:g/r 7c:g/1', '7:fffb 7d:g/r 7c:g/5'], 'Sony HT': ['7:fffb 7d:g/r 7c:g/1', '7:fffb 7d:g/r 7c:g/5'],
@@ -661,7 +661,7 @@ function groupsSent(c: Container, map: number, tag: number): number[] {
   return [...out];
 }
 
-test('a composed long press device\'s map binds what Logitech\'s binds but Input, which Logitech sends to the LG TV, and volume and mute, which it sends to the Denon',
+test('a composed long press device\'s map binds what Logitech\'s binds, volume and mute borrowed from the donor\'s TV where Logitech\'s borrow the Denon\'s, and Input nowhere since the donor\'s TV mode device has none',
   needsAll, () => {
     const { ours, theirs, outs } = longComposed();
     const differences: Record<string, { ours: number; theirs: number; onlyTheirs: string[]; onlyOurs: string[]; differ: string[] }> = {};
@@ -680,17 +680,21 @@ test('a composed long press device\'s map binds what Logitech\'s binds but Input
       const theirOrder = taggedList(theirs, theirs.pointerArray(6)![one.theirMap]!)!.entries.map((entry) => entry.tag);
       assert.deepEqual(tags.filter((tag) => theirOrder.includes(tag)), theirOrder.filter((tag) => tags.includes(tag)), one.name);
       // Every binding of Logitech's that ours lacks or holds otherwise sends another device's code: Input, scan 35,
-      // the LG TV's on group 0, and mute and volume, scans 15, 49 and 52, the Denon's on group 2.
+      // the LG TV's on group 0, and mute and volume, scans 15, 49 and 52, the Denon's on group 2. Ours sends the
+      // donor's TV's on group 0, the same list its own map binds, `volumeSource` with no receiver in the donor.
       for (const tag of [...differences[one.name]!.onlyTheirs, ...differences[one.name]!.differ].map((hex) => parseInt(hex, 16))) {
         assert.deepEqual(groupsSent(theirs, one.theirMap, tag), [tag === 0xa3 ? 0 : 2], `${one.name} ${tag.toString(16)}`);
       }
+      for (const tag of differences[one.name]!.differ.map((hex) => parseInt(hex, 16))) {
+        assert.equal(spelledMap(ours, outs.get(one.name)!.map).get(tag), spelledMap(ours, TV_MAP).get(tag), `${one.name} ${tag.toString(16)}`);
+      }
     }
-    // Our map's size, Logitech's, the tags only Logitech's binds and those both bind to different things: the
-    // Knoll and the Switch have no volume of their own, the Kodi and the Sony HT do; no key differs otherwise.
+    // Our map's size, Logitech's, the tags only Logitech's binds and those both bind to different things: Input
+    // and the three volume keys, on all four, and no key otherwise.
     assert.deepEqual(differences, {
-      Knoll: { ours: 7, theirs: 11, onlyTheirs: ['8f', 'a3', 'b1', 'b4'], onlyOurs: [], differ: [] },
+      Knoll: { ours: 10, theirs: 11, onlyTheirs: ['a3'], onlyOurs: [], differ: ['8f', 'b1', 'b4'] },
       Kodi: { ours: 40, theirs: 41, onlyTheirs: ['a3'], onlyOurs: [], differ: ['8f', 'b1', 'b4'] },
-      Switch: { ours: 4, theirs: 8, onlyTheirs: ['8f', 'a3', 'b1', 'b4'], onlyOurs: [], differ: [] },
+      Switch: { ours: 7, theirs: 8, onlyTheirs: ['a3'], onlyOurs: [], differ: ['8f', 'b1', 'b4'] },
       'Sony HT': { ours: 29, theirs: 30, onlyTheirs: ['a3'], onlyOurs: [], differ: ['8f', 'b1', 'b4'] },
     });
   });

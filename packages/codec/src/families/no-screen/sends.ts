@@ -12,9 +12,9 @@
  * the factory configuration's 170 are 100 and 70, `reference/architectures/harmony-300-350/memory.md` "A
  * device's power on delay"; every other device's is one wait of 100 or less.
  *
- * Only the device composer's half is built. What the input composer, the sequence composer and the donor
- * matcher ask is refused with the step that will build it, since nothing composed for this family has been
- * measured against a compile of it.
+ * Only the device composer's half is built. What the shared input composer asks is refused for good, since this
+ * family's inputs are the activity's and are composed by it, `activity.ts`; what the sequence composer asks is
+ * refused, since no compile of this family holds a sequence.
  */
 import type { DeviceSends, SendShape } from '../family.ts';
 import { CANCEL_TIMERS } from '../../actions.ts';
@@ -62,19 +62,27 @@ function noScreenDevice(c: Container, group: number, device: ComposeDevice): Dev
   };
 }
 
-/** A refusal for what a step of `todo-compile-350.md` will build and nothing has measured yet. */
-const notYet = (what: string, step: string) => (): never => {
-  throw new ComposeError(`${what} is not composed for the Harmony 300 and 350 yet, todo-compile-350.md ${step}`);
+/** A sequence's refusal: no compile of this family holds one, so nothing says what Logitech's would be. */
+const noSequence = (): never => {
+  throw new ComposeError('a sequence is not composed for the Harmony 300 and 350: no compile of theirs read holds one');
+};
+
+/** A refusal for a shared composer's question this family answers in a composer of its own. */
+const notThis = (what: string) => (): never => {
+  throw new ComposeError(`${what} is not how the Harmony 300 and 350 are composed: the activity composes their inputs, `
+    + 'composeNoScreenActivity, todo-compile-350.md 4.2');
 };
 
 /** The no screen family's send, `Family.sends`. */
 export const NO_SCREEN_SENDS: SendShape = {
   listsPerSend: 1,
   device: noScreenDevice,
-  switchOnList: notYet('A device\'s inputs', '4.2'),
-  sendWriter: notYet('A device\'s inputs', '4.2'),
-  sendLists: notYet('A sequence', '4.2'),
-  newSendLists: notYet('A sequence', '4.2'),
+  // The shared input composer's two questions: its inputs send whole records after the input delay and reset after
+  // the power on, where this family's are the activity's, one block copies after a tenth, `activity.ts`.
+  switchOnList: notThis('A device\'s inputs through the shared input composer'),
+  sendWriter: notThis('A device\'s inputs through the shared input composer'),
+  sendLists: noSequence,
+  newSendLists: noSequence,
   sequenceRecords: 'named',
   // A sequence's copies, not the favourite channels': those are the digits' one block copies, which the number
   // sender calls and `favourites.ts` composes, todo-compile-350.md 4.3. This said the digit copies were sent by

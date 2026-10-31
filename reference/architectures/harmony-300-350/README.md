@@ -53,10 +53,11 @@ model[^s131]; 104 is the Harmony 350 alone[^s196]. Logitech's client names 78 "P
 | screen | **none** | [^t-no-screen] |
 | power | two AA batteries | [^x-manual-350]; the 300's guide is not checked[^unchecked] |
 | face | one moulding, 55 keys, with different printing | [^t-moulding] |
-| scan codes | 1 to 56, computed from a grid of fourteen lines of four and bound by the key maps as they are, with an event type in the top two bits, [firmware.md](firmware.md#the-keypad-scan); which key is which code is read and inferred from configurations, and heard for 53 keys of a Harmony 350 and none of a Harmony 300, [the Harmony 350's keys](../../remotes/harmony-350/keys.md#scan-codes) | [^t-harmony-350-keys], [^t-harmony-350-keys-c], [^t-harmony-350-keys-u] |
+| scan codes | 1 to 56, computed from a grid of fourteen lines of four and bound by the key maps as they are, with an event type in the top two bits, [firmware.md](firmware.md#the-keypad-scan); which key is which code is read and inferred from configurations, and heard for 53 keys of a Harmony 350 and for 49 of a Harmony 300, each of those on the code of the 350 key in the same place, [the Harmony 350's keys](../../remotes/harmony-350/keys.md#scan-codes) and [the Harmony 300's](../../remotes/harmony-300/keys.md#scan-codes) | [^t-harmony-350-keys], [^t-harmony-350-keys-c], [^t-harmony-350-keys-u], [^t-harmony-300-keys-u] |
 | state variables the firmware owns | 0 to 17, as on the Harmony One and the Harmony 600, 650 and 700; its clock runs to the minute and no further, [memory.md](memory.md#the-state-variables) | [^t-state-block], [^t-harmony-350-clock] |
 | activities | at most one, a screenless model's limit, [how a Harmony works](../../how-a-harmony-works.md#a-remote-with-no-screen-holds-exactly-one-activity) | [^s145] |
 | long press | the 350 has one and the 300 does not | [^t-models] |
+| what the firmware does with the skin | reports it and acts on nothing, [firmware.md](firmware.md#the-skin); read in the Harmony 350's image; the Harmony 300's application shares the routines involved, and differs in its `bcdDevice` word | [^t-harmony-350-skin], [^t-harmony-300-350-images] |
 
 ## How the two differ
 
@@ -78,7 +79,7 @@ Each row is evidenced in the model's own folder, which is its home; this table i
 | file | what it holds |
 |---|---|
 | [memory.md](memory.md) | the file table, the configuration's slot map |
-| [firmware.md](firmware.md) | the 1.4 image and where it comes from |
+| [firmware.md](firmware.md) | the 1.4 images, the two models' compared, and where they come from |
 | [usb.md](usb.md) | the file protocol, what is read, the rails |
 | [misc.md](misc.md) | the rest |
 
@@ -115,3 +116,6 @@ Each row is evidenced in the model's own folder, which is its home; this table i
 [^t-harmony-350-keys-c]: Measured in configurations. [The test](../../../tests/test_harmony_350_keys.py)
 [^t-harmony-350-keys-u]: Measured on a unit. [The test](../../../tests/test_harmony_350_keys.py)
 [^t-harmony-300-350-images-u]: Measured on a unit. [The test](../../../tests/test_harmony_300_350_images.py)
+[^t-harmony-300-keys-u]: Measured on a unit. [The test](../../../tests/test_harmony_300_keys.py)
+[^t-harmony-350-skin]: Read in the firmware. [The test](../../../tests/test_harmony_350_skin.py)
+[^t-harmony-300-350-images]: Read in the firmware. [The test](../../../tests/test_harmony_300_350_images.py)

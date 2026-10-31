@@ -33,7 +33,7 @@ trusting the keypad, and a first change heard before a whole configuration rides
 ## 2. The keys
 
 - [x] 2.1 Every key sends something: the unit's configuration with every unbound scan code given a send, and a bench test pressing every key, as the 350's keypad check before 2.2.2: the lab's `work/300-every-key/every-key.bin`, 12 keys given Info's list, `packages/bench/irtests/done/300-2-1-every-key.json` passed all 18 steps, no key silent or sending twice
-- [ ] 2.2 Every key in two modes against the 350's key table, the predictions written first since the two share one moulding; then the codes onto the 300's drawing, its printed labels checked against the unit
+- [x] 2.2 Every key in two modes against the 350's key table, the predictions written first since the two share one moulding; then the codes onto the 300's drawing, its printed labels checked against the unit: 49 keys heard on the code of the 350 key in the same place, P1 to P5 held, four failed steps the US wording on the European unit; the European printing is its own drawing, `h300eu`, carrying the 49, `packages/bench/test/keys300.test.ts`
 
 ## 3. A Logitech compile, written and used
 
@@ -47,7 +47,7 @@ Changed on 31 October 2026: the bench 300 already held a Logitech compile of its
 ## 4. Our composers on it
 
 - [ ] 4.1 The 350's composers take the 300: four groups, no long press, the device key deciding the group, and 3.2's answer in place of an activity
-  - [ ] 4.1.1 A power on delay edited in every copy a key reaches: Watch TV's list holds its own, which `set-delay.ts` does not change
+  - [ ] 4.1.1 A power on delay edited in every copy a key reaches: Watch TV's list holds its own, which `set-delay.ts` does not change; the activity's copy exists for a device with one power code only, a device with separate on and off codes reaches its delay through its power variable's list
   - [ ] 4.1.2 The favourites in the 300's own key order, which `composeNoScreenFavourites` refuses: Logitech's compile puts them on other keys than the 350's
 - [ ] 4.2 The test setup built by us with nothing copied, every byte attributed, and compared with 3.2's compile
 - [ ] 4.3 Written to the bench 300 and used with 3.3's bench test

@@ -330,6 +330,21 @@ class TheTwoApplications(unittest.TestCase):
         self.assertEqual(_text(b, BASE, 0x11A88, 2), ['MOVFF 0x2b3,0x2ad', 'CALL 0x112b0'])
 
 
+class TheSkinRoutinesAreInTheSharedRuns(unittest.TestCase):
+    """`tests/test_harmony_350_skin.py` read the skin in the 350's image: the getter at 0x14626 and the record
+    writer at 0x15288, both above the last shift, so the 300's are ten lower and identical."""
+
+    def test_the_getter_and_the_record_writer_are_the_same_code_in_both(self):
+        lab.require('h300_code', 'h350_unit_code')
+        a, b = lab.load('h300_code'), lab.load('h350_unit_code')
+        for at, count in ((0x14626, 8), (0x15288, 40)):
+            self.assertTrue(any(s - BASE + 10 <= at - BASE < e - BASE + 10 for s, e, d in
+                                [(x + BASE, y + BASE, z) for x, y, z in EQUAL_RUNS] if d == 10), hex(at))
+            ta = [HEX.sub('@', t) for t in _text(a, BASE, at - 10, count)]
+            tb = [HEX.sub('@', t) for t in _text(b, BASE, at, count)]
+            self.assertEqual(ta, tb, hex(at))
+
+
 class TheOneFunctionThatDiffers(unittest.TestCase):
     """The `0x7D` arm: the 300 stores the send kind as it stands and the 350 masks it to two bits."""
 

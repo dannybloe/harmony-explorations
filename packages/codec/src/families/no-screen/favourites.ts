@@ -33,29 +33,27 @@
  * keys; a channel that is not decimal digits, that is 0, or past what the instruction holds, none of them in any
  * compile; a configuration whose number sender holds a record already, since every compile read holds at most
  * one and favourites on a second device are not read; and a device map that binds a favourite key already, since
- * what that key should hold for the device then is the open question of what the favourite key holds outside the
- * favourites, `todo-compile-350.md` 4.1.1.
+ * whether a channel replaces what the device's own map holds there, a television's Home or Internet on the fifth
+ * favourite key, `todo-compile-350.md` 4.1.1, is read on one compile only, another owner's, whose LG television
+ * holds a channel there and has a Home command, and one sample is not a rule.
  */
-import { CANCEL_TIMERS, STATE_BAND } from '../../actions.ts';
-import { catalogueDevicePlan } from '../../composecatalogue.ts';
+import { STATE_BAND } from '../../actions.ts';
 import { Writer } from '../../emit.ts';
 import { archSlot, type Container, parse } from '../../gspm.ts';
-import { ACCUMULATOR_LOAD_OPCODE, irGroups } from '../../ir.ts';
-import {
-  DEVICE_QUANTITY, DEVICE_QUANTITY_DEFAULT, devices, SELECT_BINDING_SET, SELECT_BINDING_SET_MASK, SEND_INFRARED,
-} from '../../inventory.ts';
+import { ACCUMULATOR_LOAD_OPCODE } from '../../ir.ts';
+import { devices } from '../../inventory.ts';
 import { relocate } from '../../relocate.ts';
-import { appendCopyRecord, oneBlockCopy } from '../../sequence.ts';
-import { ACTION_LIST_INDEX_OPCODE, stateRecords, taggedListBytes, taggedListExtent } from '../../sections.ts';
+import { ACTION_LIST_INDEX_OPCODE, stateRecords } from '../../sections.ts';
 import { appendActionLists, ComposeError, nameOfLabel, restamped } from '../../shared/core.ts';
-import { appendTableEntries, composeIrGroup } from '../../shared/infrared.ts';
+import { appendTableEntries } from '../../shared/infrared.ts';
 import {
-  NUMBER_SENDER_DIGITS, NUMBER_SENDER_RECORD_LENGTH, NUMBER_SENDER_SLOT, NUMBER_SENDER_TABLE_LENGTH, numberSenders,
+  NUMBER_SENDER_RECORD_LENGTH, NUMBER_SENDER_SLOT, NUMBER_SENDER_TABLE_LENGTH, numberSenders,
 } from '../../tables.ts';
 import {
-  highestEnd, HELD, inCompilerOrder, instructionsAt, type KeyEntry, keyMaps, listExtents, PRESS, RELEASE, SCAN_MASK,
+  highestEnd, type KeyEntry, keyMaps, listExtents, mapOfGroup, PRESS, SCAN_MASK, withMapEntries,
 } from './devices.ts';
-import { DEVICE_KEYS, FAVOURITE_SCANS, LONG_PRESS_GROUP_BASE } from './keys.ts';
+import { deviceDigitLists } from './digits.ts';
+import { FAVOURITE_SCANS } from './keys.ts';
 
 /**
  * The band whose sub-operation hands the accumulator to a number sender record, the record its low byte: `1F F300`
@@ -108,97 +106,14 @@ function routeOf(channel: string): 'number' | 'digits' {
   return 'number';
 }
 
-/** The key map a device's key selects: its key's release for a short press device, the held event for a long one. */
-function mapOfGroup(c: Container, group: number): number {
-  const key = DEVICE_KEYS[group % LONG_PRESS_GROUP_BASE];
-  if (key === undefined || group >= 2 * LONG_PRESS_GROUP_BASE) throw new ComposeError(`group ${group} is no device key's`);
-  const event = group < LONG_PRESS_GROUP_BASE ? RELEASE : HELD;
-  const binding = keyMaps(c)[0]!.entries.find((one) => one.tag === (event | key.scan));
-  const list = binding?.opcode === ACTION_LIST_INDEX_OPCODE ? c.pointerArray(7)![binding.operand] : undefined;
-  const at = list === undefined ? undefined : c.blobOffsetOf(list);
-  const select = at === undefined ? undefined
-    : instructionsAt(c.blob, at).find((one) => one.opcode === SELECT_BINDING_SET && (one.operand & SELECT_BINDING_SET_MASK) === SELECT_BINDING_SET_MASK);
-  if (select === undefined) throw new ComposeError(`the ${key.place} key's ${event === RELEASE ? 'short' : 'long'} press selects no map`);
-  return select.operand & 0xff;
-}
-
-/** Where a family of this kind puts a new record's blocks and header: where the group arrays begin, as `fillIrGroup`. */
-const arraysStart = (c: Container): number => Math.min(...(irGroups(c) ?? []).map((one) => one.start));
-
 /**
- * The action list sending each of the device's digits, 0 to 9, and the configuration holding them.
+ * Compose favourite channels onto a Harmony 350 configuration, on one device. Restamped at the end.
  *
- * **A digit a favourite sends is the digit's one block copy**, not the record a digit key sends: in Logitech's
- * compile of the test setup every list the number sender's tables call, and both of `07`'s, sends a record of the
- * KPN that is the catalogue digit's first block less its opening silence, with no held block, `oneBlockCopy`; the
- * KPN's group holds no other record of a digit. So each digit's copy is found in the device's group by what it
- * sends, and where the group has none, a device of ours whose digit keys send the whole record, it is appended,
- * `appendCopyRecord`. Then the one list of the family's send shape that sends it, the timers cancelled, the send
- * and its quantity, is found, or appended with the quantity a command's send carries.
- *
- * **These are the one block copies `todo-compile-350.md` 4.1.1 asks about**: Logitech's compile stores them for
- * every device with digits, the plasma's included, and on a device without favourites nothing calls them. Here
- * they are made for the device whose favourites call them and for no other; whether to store them on a device
- * nothing calls them on is still that question.
+ * The digits a channel sends are the device's one block copies, `deviceDigitLists` in `digits.ts`. Logitech's
+ * compile stores those copies for a device of some types whether or not a favourite calls them, and the device
+ * composer makes them for the same types, `todo-compile-350.md` 4.1.1, so on a device composed here they are
+ * usually found rather than made.
  */
-function digitListsOf(
-  c: Container, archive: string, request: NoScreenFavouritesRequest, group: number,
-): { container: Container; lists: number[]; copiesAdded: number; listsAdded: number } {
-  const plan = catalogueDevicePlan(c, archive, {
-    manufacturer: request.manufacturer, model: request.model, label: nameOfLabel(request.name), full: true,
-  });
-  const digits = Array.from({ length: NUMBER_SENDER_DIGITS }, (_, d) => String(d));
-  const missing = digits.filter((d) => !plan.wanted.includes(d));
-  if (missing.length > 0) throw new ComposeError(`${request.manufacturer} ${request.model} states no command for the digits ${missing.join(', ')}`);
-  // The ten digits' records built as the device composer builds them, in a scratch copy holding the device's group
-  // as well, so that a copy is looked for among the group's records and derived from the catalogue's.
-  const scratch = parse(composeIrGroup(c, digits.map((d) => plan.device.commands[plan.wanted.indexOf(d)]!)).bytes);
-  const own = irGroups(scratch)![group]!.addresses;
-  const records = [...own, ...irGroups(scratch)!.at(-1)!.addresses];
-  let current = c;
-  let copiesAdded = 0;
-  const codes = digits.map((digit, d) => {
-    const found = oneBlockCopy(scratch, records, own.length + d);
-    if ('code' in found) {
-      if (found.code >= own.length) throw new ComposeError(`the catalogue's ${digit} has no held block, so it would be its own copy, which no compile here shows`);
-      return found.code;
-    }
-    const appended = appendCopyRecord(current, group, found.copy, arraysStart);
-    current = parse(appended.bytes);
-    copiesAdded += 1;
-    return appended.code;
-  });
-  // The send list of each copy: the configuration's own where there is one, a new one after the last list body
-  // where there is not, as the device composer puts its lists.
-  const lists = current.pointerArray(7) ?? [];
-  const sendersOf = (code: number): number[] => lists.flatMap((address, index) => {
-    const body = instructionsAt(current.blob, current.blobOffsetOf(address)!);
-    return body.length === 3 && body[0]!.opcode === CANCEL_TIMERS.opcode && body[0]!.operand === CANCEL_TIMERS.operand
-      && body[1]!.opcode === SEND_INFRARED && body[1]!.operand === ((group << 8) | code)
-      && body[2]!.opcode === DEVICE_QUANTITY && body[2]!.operand >> 8 === group ? [index] : [];
-  });
-  const found = codes.map(sendersOf);
-  const many = found.findIndex((one) => one.length > 1);
-  if (many >= 0) throw new ComposeError(`${found[many]!.length} lists send the device's ${many}, and which a favourite sends is not read`);
-  const wanting = codes.filter((_, d) => found[d]!.length === 0);
-  const made = new Map<number, number>();
-  if (wanting.length > 0) {
-    const appended = appendActionLists(current, wanting.map((code) => [
-      [CANCEL_TIMERS.operand, CANCEL_TIMERS.opcode], [(group << 8) | code, SEND_INFRARED],
-      [(group << 8) | DEVICE_QUANTITY_DEFAULT, DEVICE_QUANTITY],
-    ]), highestEnd(listExtents(current)));
-    current = parse(appended.bytes);
-    wanting.forEach((code, k) => made.set(code, appended.first + k));
-  }
-  return {
-    container: current,
-    lists: codes.map((code, d) => found[d]![0] ?? made.get(code)!),
-    copiesAdded,
-    listsAdded: wanting.length,
-  };
-}
-
-/** Compose favourite channels onto a Harmony 350 configuration, on one device. Restamped at the end. */
 export function composeNoScreenFavourites(
   c: Container, archive: string, request: NoScreenFavouritesRequest,
 ): ComposedNoScreenFavourites {
@@ -224,7 +139,7 @@ export function composeNoScreenFavourites(
     throw new ComposeError(`the device's map binds ${taken.length} favourite key(s) already, and what such a key holds beside a favourite is not answered`);
   }
   // 0. The digits a favourite sends, made where the device's group lacks them.
-  const digits = digitListsOf(c, archive, request, device.group);
+  const digits = deviceDigitLists(c, archive, request, device.group);
   const digitLists = digits.lists;
   let current = digits.container;
 
@@ -259,15 +174,10 @@ export function composeNoScreenFavourites(
 
   // 3. The device's map gains a press of each favourite key, rewritten in place at its own address with the room
   //    made at its end; nothing points inside a tagged list.
-  const now = keyMaps(current)[map]!;
   const added: KeyEntry[] = request.channels.map((_, k) => ({
     tag: PRESS | scans[k]!, operand: appended.first + k, opcode: ACTION_LIST_INDEX_OPCODE,
   }));
-  const grown = taggedListBytes(inCompilerOrder(now.entries, added));
-  if (taggedListExtent(current.blob, now.start)?.wide !== false) throw new ComposeError('the device\'s map is not in the narrow form');
-  const mapHole = relocate(current, now.start + now.length, grown.length - now.length);
-  mapHole.bytes.set(grown, now.start);
-  current = parse(mapHole.bytes);
+  current = withMapEntries(current, map, added);
 
   return {
     bytes: restamped(current.blob),

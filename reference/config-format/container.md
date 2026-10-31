@@ -323,7 +323,10 @@ commands than records, 61 against 52 on one device, and the device index is not 
 and is **not** an id in Logitech's device catalogue.[^s260] In a compile of eight devices by Logitech's current
 service each device's `Index` is its position in the list, and each device's commands
 are every command its catalogue entry names, sorted by character code and numbered from 0, records or
-none.[^t-noscreen]
+none.[^t-noscreen] In all seven Logitech configurations of the Harmony 300 and 350 read, `Index` is the position
+and `DeviceId` ascends strictly along the list, which is the account's order and alphabetical only on the two
+Harmony 300 files; in the one account whose replies are kept, `DeviceId` is the account's number for the
+device.[^t-noscreen-routing]
 
 ## The Harmony 300 and 350's slots
 
@@ -333,7 +336,7 @@ slots are identified, nine of them in the slot map and the rest refused:[^s259b]
 | raw slot | base slot | what it holds |
 |---|---|---|
 | 0 | 0 | the `0xFEED` name tree, 131 bytes |
-| 1 | 1 | seven bytes stating architecture 16 twice, skin 104, then `0x0d` |
+| 1 | 1 | seven bytes stating architecture 16 twice, the model's skin (104 on a Harmony 350, 79 on a European Harmony 300), then `0x0d`[^t-harmony-350-skin-c] |
 | 2 | 2 | the log area, its eight bytes byte for byte the Harmony 525's[^s260] |
 | 3 | 3 | the `0xADDF` framed build timestamp |
 | 4 | 5 | the infrared database: groups of `u8 spare; u16 count; u24 record[]`, records in the base layout exactly |
@@ -386,9 +389,11 @@ configuration holds in them, is in
 [^s196]: Stated by Logitech. [Section 196](../../docs/findings.md#s196)
 [^s260]: Measured in configurations. [Section 260](../../docs/findings.md#s260)
 [^s259b]: Measured in configurations. [Section 259](../../docs/findings.md#s259)
+[^t-harmony-350-skin-c]: Measured in configurations. [The test](../../tests/test_harmony_350_skin.py)
 [^s262]: Measured in configurations. [Section 262](../../docs/findings.md#s262)
 [^s237]: Measured on a unit. [Section 237](../../docs/findings.md#s237)
 [^s187]: Measured in configurations. [Section 187](../../docs/findings.md#s187)
 [^s215]: Measured on a unit. [Section 215](../../docs/findings.md#s215)
 [^t-noscreen]: Measured in configurations. [The test](../../packages/codec/test/noscreen.test.ts)
+[^t-noscreen-routing]: Measured in configurations. [The test](../../packages/codec/test/noscreenrouting.test.ts)
 [^t-file-family-delays]: Measured in configurations. [The test](../../packages/codec/test/filefamilydelays.test.ts)

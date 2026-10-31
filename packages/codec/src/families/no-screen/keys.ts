@@ -34,9 +34,12 @@ import type { HardKey } from '../../devicemode.ts';
  *   Denon keep theirs. So which device a device mode's volume goes to is Logitech's choice per device, and this
  *   table gives every device its own.
  *
- * And the KPN's map binds three of the table's keys and nothing else of its own, since it is the map the
- * activity ends in and the one holding the favourites, `todo-compile-350.md` 4.2 and 4.3, so it is not a
- * sample of a device's own map. **Scan 3, Power, is not here**: a device's power key sends its power step where
+ * And the KPN's map binds three of the table's keys and nothing else of its own, so it is not a sample of a device's
+ * own map, and why it binds so few is not read. It is the map the activity ends in and the one holding the
+ * favourites, but that is not why: on the bench Harmony 350's two compiles of an earlier setup, with another model of
+ * KPN box, the activity ends in the box's map as well, the same map in both, and there 33 bindings send one of the
+ * box's own codes, `noscreenactivity.test.ts`. This gave the
+ * activity as the reason, until `todo-compile-350.md` 4.2 read those two. **Scan 3, Power, is not here**: a device's power key sends its power step where
  * the catalogue's power is a toggle and switches its power variable where it is not, `devices.ts`.
  *
  * The names are the scan codes' in `reference/remotes/harmony-350/keys.md`. Scan 54, Enter, takes `NumberEnter`
@@ -90,6 +93,107 @@ export const NO_SCREEN_HARD_KEYS: readonly HardKey[] = [
 
 /** The Power key's scan code, whose binding in a device's map is the power step or the power variable's switch. */
 export const POWER_SCAN = 3;
+
+// ---------------------------------------------------------------------------------------------------------------
+// Logitech's routing in a device's map, `todo-compile-350.md` 4.1.1. Every rule below is a choice Logitech's service
+// makes and its compiler writes, copied so that a device composed here stores and binds what Logitech's compile of
+// the same setup does. The service states two of them itself: its mode maps of the test setup's eight devices, the
+// lab's `work/myharmony/responses/20261031-h350-setup_GetDeviceModeButtonMaps-all.json`, carry an override on the
+// keys a device's map borrows, `TvInput` to the TV key's mode and the volume keys to the receiver. What the service
+// does for a setup it was never asked about is not read; the rules are what its compiles show, with their counts.
+// `packages/codec/test/noscreenrouting.test.ts` holds each.
+
+/**
+ * The Input key, and the commands a device's own Input key takes, first the device has: on every compile of the
+ * family read, every device map's Input sends the input command of the device on the TV key's short press, the
+ * device mode the service calls its TV mode, and that device's own map binds it too; which command was each time
+ * the first of these the device has: `InputNext` on the test setup's LG and the Harmony 300's Panasonic, `Input` on
+ * another owner's LG, `Source` on the Philips of the bench 350's first configuration. A TV mode device with none of
+ * them, the plasma of three compiles, leaves Input bound on no map.
+ */
+export const INPUT_KEY = { scan: 35, prefer: ['InputNext', 'Input', 'Source'] } as const;
+
+/** Volume up, volume down and mute, which a device's map takes from the receiver where Logitech routes them. */
+export const VOLUME_SCANS: readonly number[] = [49, 52, 15];
+
+/**
+ * Logitech's numeric device types the routing below asks about, the names its service's reply gives them in the
+ * lab's test setup capture: a television, and the receiver, `StereoReceiver`.
+ */
+export const TELEVISION_TYPE = 1;
+export const RECEIVER_TYPE = 5;
+
+/**
+ * The commands a television's fifth favourite key takes in its own map, first the device has, per skin, since the
+ * key is the Harmony 350's: `Fav5` in the service's mode maps. The test setup's LG holds Home there and its plasma
+ * Internet, and the plasma holds Internet there in both other Harmony 350 compiles it is in; no device of another
+ * type binds it on any compile. **One compile disagrees**: the bench 350's first configuration, compiled for its
+ * previous owner, binds nothing there on a Philips television with a Home command, and nothing says whether that
+ * owner changed it; the test setup's compile is the one composed against, so it decides. **The order of the two
+ * is not measured**: no television read has both commands, so putting Internet first fails no test, a control
+ * run and reverted.
+ */
+export const FAVOURITE_FIVE: Readonly<Record<number, { readonly scan: number; readonly prefer: readonly string[] }>> = {
+  104: { scan: 2, prefer: ['Home', 'Internet'] },
+};
+
+/**
+ * A command Logitech stores for a device and binds to no key of the Harmony 350, since the key the service puts it
+ * on, `Teletext` in its mode maps, is not on that keypad: the device's Teletext, stored with a send list nothing
+ * calls. In the service's maps of the test setup the key is on the plasma's and the KPN's, the two of eight devices
+ * with a Teletext command; on the five Harmony 350 compiles read, 11 of 11 devices with the command store it so.
+ * The Harmony 300, which has the key, binds it there, so this is the Harmony 350's.
+ */
+export const STORED_UNBOUND: readonly string[] = ['Teletext'];
+
+/**
+ * The values a device's power variable is set to by a list of its own that nothing calls, `07 FFFF` then the write:
+ * the silent flag, so the write runs no transition and sends nothing, `SILENT_WRITE` in `actions.ts`. Logitech's
+ * compiles of this family store the two for every device, 0 and 1, 27 of 27 devices over the seven files of the
+ * Harmony 300 and 350 read, none of the 54 lists called, and no other list there opens with the flag,
+ * `noscreenrouting.test.ts`. What would call them is not read: on the other families a list of this shape is a
+ * reset an activity's help or an input change runs, `inputs.ts`.
+ */
+export const POWER_RESETS: readonly number[] = [0, 1];
+
+/**
+ * Which device types Logitech stores one block copies of the ten digits for, each with a send list nothing calls
+ * unless a favourite channel does. By type and not by a command, since a Playstation 3 holds copies and has no
+ * ChannelUp. Measured on 25 devices of the six current compiles of the family, every one agreeing, ten copies or
+ * none: held for 1 television (seven devices), 2 VCR, 16 a satellite receiver, 18 a PVR (six), 23 a game console and
+ * 35 a media player (two); not for 4 DVD (two), 5 receiver, 7 projector, 21 a Marantz network receiver, 22 a home
+ * theatre system and 30 a switch. A type not in this table is refused rather than guessed.
+ */
+export const DIGIT_COPIES_BY_TYPE: ReadonlyMap<number, boolean> = new Map([
+  [1, true], [2, true], [16, true], [18, true], [23, true], [35, true],
+  [4, false], [5, false], [7, false], [21, false], [22, false], [30, false],
+]);
+
+/** A device of the account, as a setup names it and the catalogue types it. */
+export interface AccountDevice {
+  readonly name: string;
+  readonly deviceType: number;
+}
+
+/**
+ * Whose volume and mute a device's map sends: its own if it is a television or a receiver, otherwise the first
+ * receiver of the account, otherwise the first television, otherwise its own. In the account's order, which is the
+ * setup's and the metadata archive's.
+ *
+ * **Measured**: all eight devices of Logitech's compile of the test setup, which the service's mode maps state as
+ * overrides on the five that are neither (the Denon's own map naming the Denon), the KPN's map binding no mute,
+ * which its service map gives no override either; and with no receiver, the television, on 9 of the 12 devices that
+ * are neither on the other five current compiles. Of the three that disagree two keep their own, a QNAP media player
+ * and a Marantz network receiver, both on compiles made for earlier owners, where a person may have used the
+ * service's volume screen, which offers that choice per key; nothing in the files says. The third is a Harmony
+ * 300's KPN, whose map binds no volume at all, for a reason no file states, `noscreenactivity.test.ts`.
+ */
+export function volumeSource(device: AccountDevice, account: readonly AccountDevice[]): string {
+  if (device.deviceType === TELEVISION_TYPE || device.deviceType === RECEIVER_TYPE) return device.name;
+  const receiver = account.find((one) => one.deviceType === RECEIVER_TYPE);
+  if (receiver !== undefined) return receiver.name;
+  return account.find((one) => one.deviceType === TELEVISION_TYPE)?.name ?? device.name;
+}
 
 /**
  * The four device keys by place, top left, top right, bottom left and bottom right: the scan code each raises
@@ -151,3 +255,8 @@ export const KEY_MAP_SLOT = 6;
 export const TIMER_SLOT = 8;
 /** The start up instructions, the family's own, raw slot 5. */
 export const START_UP_SLOT = 5;
+/**
+ * The start up event whose list selects the map of the device on infrared group 0, the TV key's short press, as its
+ * last instruction: entry 1, on all seven compiles of the family read, `reference/architectures/harmony-300-350/memory.md`.
+ */
+export const START_UP_SELECT_ENTRY = 1;

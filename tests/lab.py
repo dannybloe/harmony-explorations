@@ -337,6 +337,10 @@ IMAGES = {
     # stored verdicts are not the result, packages/lab says why.
     'h350_logitech_setup_ir': '20261031T111033Z-ir-test-harmony-350-logitech-s-compile-of-the-test-setup.json',
     'h350_logitech_setup_ir_2': '20261031T112340Z-ir-test-harmony-350-logitech-s-compile-of-the-test-setup.json',
+    # todo-compile-300 2.1 and 2.2, every key of the bench 300 pressed; the second run's four failed steps are
+    # the test's US wording on a European unit, packages/lab says why.
+    'h300_every_key_ir': '20261031T125339Z-ir-test-harmony-300-every-key-sends-something.json',
+    'h300_keys_ir': '20261031T131916Z-ir-test-harmony-300-every-key-in-the-tv-s-and-the-kpn-s-modes.json',
     # todo-compile-350 1.8; the first file is named for 10 s and holds the 3 s run, packages/lab says why.
     'h350_delay_ir_3s': '20261030T094935Z-ir-test-harmony-350-the-tv-s-power-on-delay-at-10-s.json',
     'h350_delay_ir_10s': '20261030T095433Z-ir-test-harmony-350-the-tv-s-power-on-delay-at-10-s.json',

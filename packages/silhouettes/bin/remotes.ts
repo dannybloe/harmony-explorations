@@ -82,6 +82,13 @@ interface RemoteFolder {
    * that has a drawing cannot lose it unnoticed.
    */
   readonly drawing?: string;
+  /**
+   * The drawings of the model's other printings, where one model is sold with different words on the same
+   * keys and each printing serves its own skins: the Harmony 300's European printing, skin 79, beside the US
+   * one, skin 78, which is `drawing`. Each gets a keys block of its own on the keys page, named
+   * `keys-<drawing>`, and the folder's skins are every printing's together, `test/remotes.test.ts`.
+   */
+  readonly printings?: readonly string[];
   readonly architecture: number;
   /**
    * Where the screen size on the drawing comes from, for a model whose architecture has no entry in
@@ -155,8 +162,12 @@ export const REMOTES: readonly RemoteFolder[] = [
   { folder: 'harmony-one', skins: [54, 59], drawing: 'one', architecture: 12 },
   // Neither model has a record in `MODELS_BY_SKIN`, so their skin and capability rows say so rather
   // than failing: 78 and 79 are named by `SKINS_WITHOUT_A_MODEL_RECORD`, and 104 by nothing in
-  // models.ts but `SKINS_WITH_A_LONG_PRESS`. The 300 uses its own drawing, which takes the 350's shapes.
-  { folder: 'harmony-300', skins: [78, 79], drawing: 'h300', architecture: 16, fileBasedProduct: 0xc124 },
+  // models.ts but `SKINS_WITH_A_LONG_PRESS`. The 300 has two drawings, one per printing, both taking the
+  // 350's shapes: the US printing for skin 78 and the European one for skin 79.
+  {
+    folder: 'harmony-300', skins: [78, 79], drawing: 'h300', printings: ['h300eu'], architecture: 16,
+    fileBasedProduct: 0xc124,
+  },
   { folder: 'harmony-350', skins: [104], drawing: 'h350', architecture: 16, fileBasedProduct: 0xc124 },
   { folder: 'harmony-600', skins: [71, 73], drawing: 'h600', architecture: 14 },
   { folder: 'harmony-650', skins: [72, 74], drawing: 'h650', architecture: 14 },
@@ -756,6 +767,16 @@ export function expectedBlocks(): Map<string, Map<string, string>> {
     put(join(dir, 'README.md'), 'skins', skinTable(r.skins, r.architecture));
     put(join(dir, 'features.md'), 'capabilities', featureTable(r.skins));
     put(join(dir, 'keys.md'), 'keys', drawing === undefined ? noDrawingKeys(r) : keyTable(drawing));
+    for (const id of r.printings ?? []) {
+      const printing = MODELS[id];
+      if (printing === undefined) throw new Error(`no drawing ${id}`);
+      // One display block serves every printing, so a printing whose screen differs would be described by
+      // another drawing's; the printings of one model share a face, which this holds.
+      if (JSON.stringify(printing.screen) !== JSON.stringify(drawing?.screen)) {
+        throw new Error(`${r.folder}: the printing ${id} and the drawing ${r.drawing} disagree about a screen`);
+      }
+      put(join(dir, 'keys.md'), `keys-${id}`, keyTable(printing));
+    }
     put(join(dir, 'display.md'), 'display', displayTable(r, drawing));
     put(join(dir, 'usb.md'), 'usb-identity', usbIdentity(r.architecture));
   }

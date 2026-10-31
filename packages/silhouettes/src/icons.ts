@@ -220,6 +220,16 @@ export const ICONS: Readonly<Record<string, Icon>> = {
       { d: 'M -0.03 -0.28 L 0.84 -0.48', mode: 'stroke' },
     ],
   },
+  /**
+   * The teletext glyph on the European Harmony 300's Teletext key: a screen with lines of text on it. Its
+   * shape is ours, as every symbol here is; that the key carries a teletext glyph is the statement of a
+   * person holding the unit, and the glyph's exact form was not stated.
+   */
+  teletext: { parts: [
+      { d: 'M -0.85 -0.65 H 0.85 V 0.65 H -0.85 Z', mode: 'stroke' },
+      { d: 'M -0.55 -0.3 H 0.55 M -0.55 0 H 0.55 M -0.55 0.3 H 0.15', mode: 'stroke' },
+    ],
+  },
   star: { parts: [
       {
         d: 'M 0 -0.85 L 0.212 -0.291 L 0.808 -0.263 L 0.342 0.111 L 0.5 0.688 '

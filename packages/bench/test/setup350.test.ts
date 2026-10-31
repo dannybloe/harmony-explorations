@@ -113,7 +113,8 @@
  * decompiled client was not read for this: it says nothing about which key raises which code on a unit.
  *
  * **Which architectures.** The Harmony 350 alone, one file, the one on the bench unit, and one unit. The
- * Harmony 300 shares the image and the moulding, and nothing here was pressed on one.
+ * Harmony 300 shares the image and the moulding, and nothing here was pressed on one; its own runs are
+ * `keys300.test.ts`.
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -128,6 +129,7 @@ import {
 import { IR_ARCHIVE, LAB, needing, require_, skipUnless, skipWithoutIrArchive, skipWithoutLab } from '@harmony/lab';
 
 import { BENCH_CONFIGS, CodeBook, REPEAT_WINDOW_US } from '../src/irmonitor.ts';
+import { PRESS, RELEASE, Remote, type Action, type Instruction, type Key, type Send } from './filemodel.ts';
 import {
   judge, testDefinitions, type Expectation, type RunPress, type TestDefinition, type Verdict,
 } from '../src/irsession.ts';
@@ -160,18 +162,8 @@ const SCAN: Readonly<Record<string, number>> = {
 /** Favourites 1 to 4, in that order: the codes no configuration orders, heard in this order by the runs. */
 const FAVOURITES_1_TO_4 = [8, 9, 11, 34] as const;
 
-/**
- * What a person does with one key, named by the drawing's key name, or by a scan code where the run is asked
- * which code a pressed key raised.
- */
-type Key = string | number;
-type Action =
-  | { readonly short: Key }
-  | { readonly long: Key }
-  | { readonly press: Key }
-  // Press Power in the selected mode, and once more if that press switched the device on: what the bench
-  // test asks for as "stop when the last thing heard is its power off". Only the last press is expected.
-  | { readonly powerOff: true };
+/** A key the model is handed by name, looked up in `SCAN`. */
+const scanOf = (key: Key): number => (typeof key === 'number' ? key : SCAN[key]!);
 
 /**
  * What each step of the bench test does, in the JSON's order, one entry per step.
@@ -202,146 +194,6 @@ const STEPS: readonly (readonly Action[])[] = [
   [{ short: 'TvMedia' }, { press: 'VolumeUp' }],
 ];
 
-/** Event types in the top two bits of a key map tag. */
-const PRESS = 0x80;
-const RELEASE = 0x40;
-const HELD = 0xC0;
-
-/** One instruction, as raw slot 7 and the key maps hold it: a `u16` operand, low byte first, and an opcode. */
-interface Instruction { readonly operand: number; readonly opcode: number }
-
-/** A code the remote sends: its infrared group, which is the device, and its number in that group. */
-interface Send { readonly group: number; readonly code: number }
-
-/**
- * The remote, as far as the file decides what it sends: the selected key map and the state variables.
- *
- * The state starts at each variable's `first`, which the firmware seeds from on a cold start; whether the
- * bench unit's restart after the write seeded them is not known, which is why the bench test sets the two
- * power states it depends on before Watch TV.
- */
-class Remote {
-  private map: number | undefined;
-  private register = 0;
-  private accumulator = 0;
-  private silent = false;
-  private readonly values: number[];
-  private readonly records: NonNullable<ReturnType<typeof stateRecords>>;
-  private readonly maps: Map<number, Instruction>[];
-  /** The writes the last key made, for the Power step that presses again when it switched something on. */
-  writes: { index: number; value: number }[] = [];
-
-  private readonly c: Container;
-
-  constructor(c: Container) {
-    this.c = c;
-    this.records = stateRecords(c)!;
-    this.values = this.records.map((one) => one.first);
-    this.maps = c.pointerArray(6)!.map((address) => new Map(taggedList(c, address)!.entries
-      .map((one) => [one.tag, { operand: one.operand, opcode: one.opcode }] as const)));
-  }
-
-  /** A key's events in the order the firmware raises them, and what they sent. */
-  act(action: Action): Send[] {
-    this.writes = [];
-    const code = (key: Key): number => (typeof key === 'number' ? key : SCAN[key]!);
-    if ('short' in action) return [...this.event(PRESS | code(action.short)), ...this.event(RELEASE | code(action.short))];
-    if ('long' in action) return [...this.event(PRESS | code(action.long)), ...this.event(HELD | code(action.long))];
-    if ('press' in action) return [...this.event(PRESS | code(action.press)), ...this.event(RELEASE | code(action.press))];
-    const first = this.act({ press: 'Power' });
-    // Pressed again only when the first press switched a device on, as the instruction says.
-    return this.writes.some((one) => one.value === 1) ? this.act({ press: 'Power' }) : first;
-  }
-
-  /** The selected map first, then entry 0, the first that binds the tag. */
-  private event(tag: number): Send[] {
-    const binding = (this.map === undefined ? undefined : this.maps[this.map]!.get(tag)) ?? this.maps[0]!.get(tag);
-    const out: Send[] = [];
-    if (binding !== undefined) this.run([binding], out);
-    return out;
-  }
-
-  private list(index: number): Instruction[] {
-    const at = this.c.blobOffsetOf(this.c.pointerArray(7)![index]!)!;
-    return Array.from({ length: bytes.u8(this.c.blob, at) }, (_, k) => ({
-      operand: bytes.u16(this.c.blob, at + 1 + 3 * k), opcode: bytes.u8(this.c.blob, at + 3 + 3 * k),
-    }));
-  }
-
-  /** A run of instructions in order, with a `0x71` taking the one or two after it as its arms. */
-  private run(body: readonly Instruction[], out: Send[]): void {
-    for (let i = 0; i < body.length; i += 1) {
-      const one = body[i]!;
-      if (one.opcode !== 0x71) {
-        this.step(one, out);
-        continue;
-      }
-      const variable = one.operand & 0xFF;
-      const operation = (one.operand >> 8) & 0x0F;
-      assert.ok(operation === 0 || operation === 1, `a 0x71 comparison ${operation} the model does not read`);
-      const holds = operation === 0 ? this.register === this.values[variable] : this.register !== this.values[variable];
-      if ((one.operand & 0x8000) !== 0) {
-        this.step(holds ? body[i + 1]! : body[i + 2]!, out);
-        i += 2;
-      } else {
-        if (holds) this.step(body[i + 1]!, out);
-        i += 1;
-      }
-    }
-  }
-
-  private step(one: Instruction, out: Send[]): void {
-    const { operand, opcode } = one;
-    const band = operand >> 8;
-    if (opcode === 0x7F) this.run(this.list(operand), out);
-    else if (opcode === 0x7D) out.push({ group: band, code: operand & 0xFF });
-    else if (opcode === 0x7C || opcode === 0x00) return;
-    else if (opcode === 0x07 && operand === 0xFFFF) this.silent = true;
-    else if (opcode === 0x07 && operand === 0xFFFB) return;
-    else if (opcode === 0x1F && band === 0xFB) this.register = operand & 0xFF;
-    else if (opcode === 0x1F && band === 0xFF) this.map = operand & 0xFF;
-    else if (opcode === 0x1F && (band === 0xE9 || band === 0xEB)) return;
-    else if (opcode === 0x7A) this.accumulator = operand;
-    else if (opcode === 0x1F && band === 0xF3) this.sendNumber(operand & 0xFF, out);
-    else if (opcode >= 0x80) this.write(opcode & 0x7F, operand, out);
-    else assert.fail(`an instruction the model does not read: ${opcode.toString(16)} ${operand.toString(16)}`);
-  }
-
-  /**
-   * `0x1F` band `0xF3`: the number sender's record, given the accumulator.
-   *
-   * The prefix fires only with `flags` bit 1 or 2, and which of the three digit tables a lone digit takes is
-   * not stated, so the model refuses a record that needs either answer: on this file `flags` is 0 and the
-   * three tables are the same thirty bytes, which a test below asserts.
-   */
-  private sendNumber(index: number, out: Send[]): void {
-    const record = numberSenders(this.c)!.records[index]!;
-    assert.equal(record.flags & 0x06, 0, 'a number sender whose prefix can fire');
-    const [first, middle, last] = record.tables.map((one) => JSON.stringify(one.instructions));
-    assert.ok(first === middle && middle === last, 'three different digit tables');
-    const digits = String(this.accumulator + record.base).padStart(record.digits, '0');
-    this.step(record.prologue, out);
-    for (const digit of digits) this.step(record.tables[0]!.instructions[Number(digit)]!, out);
-    this.step(record.epilogue, out);
-  }
-
-  /** `0x80 | n`: store, then fire every transition whose `from` and `to` match, in record order. */
-  private write(index: number, value: number, out: Send[]): void {
-    const old = this.values[index]!;
-    this.values[index] = value;
-    this.writes.push({ index, value });
-    if (this.silent) {
-      this.silent = false;
-      return;
-    }
-    const matches = (end: number, against: number): boolean =>
-      end === against || end === -2 || (end === -3 && old !== value);
-    for (const one of this.records[index]!.values) {
-      if (matches(one.from, old) && matches(one.to, value)) this.step({ operand: one.operand, opcode: one.opcode }, out);
-    }
-  }
-}
-
 function definition(): TestDefinition {
   const found = testDefinitions(fileURLToPath(new URL('../irtests/', import.meta.url)))
     .concat(testDefinitions(fileURLToPath(new URL('../irtests/done/', import.meta.url))))
@@ -360,7 +212,7 @@ function container(file = BENCH_FILE): { c: Container; blob: Uint8Array } {
 
 /** Every step's sends, from the file, as `device code` so a literal table can be read. */
 function derived(c: Container): Send[][] {
-  const remote = new Remote(c);
+  const remote = new Remote(c, scanOf);
   return STEPS.map((actions) => {
     const lastOnly = actions.some((one) => 'powerOff' in one);
     const sends = actions.map((one) => remote.act(one));
@@ -711,7 +563,7 @@ function fitting(c: Container, name: RunName, row: Pressed): number[] {
   const presses = row.presses[name];
   const fits: number[] = [];
   for (let scan = 1; scan <= 56; scan += 1) {
-    const remote = new Remote(c);
+    const remote = new Remote(c, scanOf);
     for (const actions of STEPS.slice(0, row.step - 1)) for (const action of actions) remote.act(action);
     const sends: Send[] = [];
     for (const [at, action] of STEPS[row.step - 1]!.entries()) {
