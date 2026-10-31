@@ -53,6 +53,20 @@ export const POP_MODE = { opcode: 0x07, operand: 0xfffc } as const;
  */
 export const SILENT_WRITE = { opcode: 0x07, operand: 0xffff } as const;
 /**
+ * `0x07` band `0xFB`, cancel all four running timers, section 73, `BANDS_07` below. Named for the Harmony 300
+ * and 350's composer, `families/no-screen/`: every send list of their configurations opens with it, and so does
+ * every binding of a device key, `reference/architectures/harmony-300-350/memory.md`.
+ */
+export const CANCEL_TIMERS = { opcode: 0x07, operand: 0xfffb } as const;
+/** `0x1F` band `0xEB`: start the base slot 12 timer the low byte indexes, section 43, `BANDS_1F`. */
+export const START_TIMER_BAND = 0xeb;
+/**
+ * `0x1F` band `0xE9`: the low byte split into three fields and acted on, section 73, `BANDS_1F`. On the Harmony
+ * 300 and 350 the operand `0xE9p2` and `0xE9p0` switch one of four output pins, `p`, one way and the other,
+ * `reference/architectures/harmony-300-350/memory.md`; what the pins drive is not checked.
+ */
+export const PIN_BAND = 0xe9;
+/**
  * Opcode `0x3F` with the operand's high nibble `0xD`: the six byte instruction whose second half is an
  * ordinary instruction carried as data, its argument, section 73. Every one of the eight on the spare
  * Harmony One is the operand `0xD000` heading a two slot list whose payload is a `0x7F`, sections 139 and 279.

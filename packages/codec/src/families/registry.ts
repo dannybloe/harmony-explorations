@@ -11,13 +11,18 @@
 import type { Container } from '../gspm.ts';
 import type { ActivityStart, CommonChoices, Family, FamilyTraits, SendShape } from './family.ts';
 import { FOUR_SLOT } from './four-slot/index.ts';
+import { NO_SCREEN_FAMILY } from './no-screen/index.ts';
 import { TOUCH } from './touch/index.ts';
 
-/** The family of the remotes of an architecture, or undefined for one no family serves yet. */
+/**
+ * The family of the remotes of an architecture, or undefined for one no family serves yet. The Harmony 300 and
+ * 350's, architecture 16, since `todo-compile-350.md` 4.1, which composes a device for it and refuses the rest.
+ */
 export function familyOfArchitecture(architecture: number | undefined): Family | undefined {
   switch (architecture) {
     case 12: return TOUCH;
     case 14: return FOUR_SLOT;
+    case 16: return NO_SCREEN_FAMILY;
     default: return undefined;
   }
 }

@@ -149,7 +149,7 @@ export interface ComposedCatalogueDevices {
  * composes it, and `composeDonorDeviceInfrared` puts its records in a donor device's place,
  * `todo-compile-one.md` 8.1.3, so the two cannot disagree about what a catalogue device's records are.
  */
-interface CatalogueDevicePlan {
+export interface CatalogueDevicePlan {
   readonly entry: ReturnType<typeof catalogueDevice>;
   readonly available: ReturnType<typeof catalogueCommands>;
   readonly driving: DeviceDriving;
@@ -166,7 +166,12 @@ interface CatalogueDevicePlan {
   readonly device: ComposeDevice;
 }
 
-function catalogueDevicePlan(c: Container, archive: string, request: CatalogueDeviceRequest): CatalogueDevicePlan {
+/**
+ * Exported for the Harmony 300 and 350's device composer, `families/no-screen/devices.ts`, which stores only the
+ * commands its keys bind, `todo-compile-350.md` 4.1, and takes them out of this plan rather than reading the
+ * catalogue a second way: the same codes, blocks and power steps as a device composed whole.
+ */
+export function catalogueDevicePlan(c: Container, archive: string, request: CatalogueDeviceRequest): CatalogueDevicePlan {
   const { manufacturer, model, label } = request;
   const full = request.full === true;
   if (full && (request.commands !== undefined || request.labels !== undefined)) {

@@ -248,7 +248,8 @@ The TypeScript workspace, per `docs/plans/002-the-roadmap.md` step 4:
                                 every remote's configuration is built from (devices, activities,
                                 infrared, power, spelling text, menus), src/families/<name>/
                                 what differs per kind of remote (four-slot: the Harmony 600, 650
-                                and 700; touch: the Harmony One), and src/families/registry.ts is
+                                and 700; touch: the Harmony One; no-screen: the Harmony 300 and
+                                350, a device only), and src/families/registry.ts is
                                 the one place that chooses a family. A shared module asks its
                                 family's traits rather than testing an architecture and reaches
                                 a family only through the registry, no family imports another,

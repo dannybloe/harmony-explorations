@@ -15,7 +15,7 @@ import { ACTION_LIST_INDEX_OPCODE, STATE_RECORD_HEADER, STATE_VALUE_LENGTH } fro
 import {
   ACTION_TABLE_SLOT, appendNarrowStateVariable, ComposeError, nameOfLabel, restamped,
 } from '../shared/core.ts';
-import { appendTableEntries, type ComposeCommand, composeIrGroup, type ComposePowerStep } from '../shared/infrared.ts';
+import { appendTableEntries, type ComposeCommand, composeIrGroup, type ComposePowerStep, fillIrGroup } from '../shared/infrared.ts';
 
 /** A device to compose whole: its label, its commands, and which command toggles the power. */
 export interface ComposeDevice {
@@ -171,8 +171,25 @@ export function deviceRecords(device: ComposeDevice): DeviceRecords {
   };
 }
 
+/**
+ * Where a family puts what `composeDeviceFor` adds, where it differs from where the composer puts it otherwise.
+ * Absent, the infrared group is appended to the table and the device's lists go in a hole right below the action
+ * table, which is where the Harmony 600, 650, 700 and One have them. A family that needs otherwise says so here
+ * rather than the composer testing which remote it is for.
+ */
+export interface DevicePlacement {
+  /** An empty group of the table to put the device's records into, `fillIrGroup`, rather than appending one. */
+  readonly group?: number;
+  /**
+   * The blob offset the device's action lists go in at, read off the configuration they go into. Needed where the
+   * section in front of the action table is a counted array its reader demands fill the gap to the next section
+   * exactly, so that a hole there would make it stop reading: the Harmony 300 and 350's key maps, raw slot 6.
+   */
+  listsAt?(c: Container): number;
+}
+
 export function composeDeviceFor(
-  c: Container, device: ComposeDevice, shape: SendShape, delayDefaults?: DelayDefaults,
+  c: Container, device: ComposeDevice, shape: SendShape, delayDefaults?: DelayDefaults, placement: DevicePlacement = {},
 ): ComposedDevice {
   if (device.label === '' || device.label.includes('_')
       || [...device.label].some((ch) => ch.charCodeAt(0) < 0x20 || ch.charCodeAt(0) > 0x7e)) {
@@ -194,7 +211,7 @@ export function composeDeviceFor(
   const { onSteps, offSteps, steps, stepIndex, sends } = deviceRecords(device);
 
   // The infrared half, then everything else on the reparsed result.
-  const group = composeIrGroup(c, sends);
+  const group = placement.group === undefined ? composeIrGroup(c, sends) : fillIrGroup(c, placement.group, sends);
 
   // One action list per command, in a hole below the action table, each named by a pointer appended
   // to the table. The list index is what the transitions below and phase 6's screen bindings point
@@ -241,7 +258,7 @@ export function composeDeviceFor(
   const onAction = onCalls.length > 1 ? nextList++ : undefined;
   if (offAction !== undefined) bodies.push(callingList(offCalls));
   if (onAction !== undefined) bodies.push(callingList(onCalls));
-  const listsAt = actionTable.start;
+  const listsAt = placement.listsAt?.(current) ?? actionTable.start;
   const listsLength = bodies.reduce((sum, body) => sum + body.bytes.length, 0);
   const listsHole = relocate(current, listsAt, listsLength);
   const listAddresses: number[] = [];
