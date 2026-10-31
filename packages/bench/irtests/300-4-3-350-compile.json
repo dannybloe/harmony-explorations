@@ -1,0 +1,249 @@
+{
+  "name": "Harmony 300, Logitech's compile of the Harmony 350's test setup",
+  "description": "todo-compile-300 4.3, against docs/predictions/harmony-300-as-350.md, written and committed before the run. The bench Harmony 300 holds Logitech's compile of the Harmony 350's test setup, lab work/setups/h350-test/compile-Result.EzHex, the file packages/bench/irtests/done/350-3-3-logitech-setup.json ran on, fixture h350_logitech_setup_ir. The 300 and the 350 run one program and one moulding, so the prediction is that every key of the 300 raises the code of the 350 key in the same place and that every step sends what the 350's did, with the 350's device keys read as the 300's European ones: TV for TV/Media, Cable/Sat for Cable/PC, DVD for AVR/Game and VCR/Aux for DVD/Music. Two keys differ from the 350 test: step 4 presses Exit where the 350 pressed Enter, since no Enter code was ever heard on a 300, and step 7 presses List where the 350 pressed DVR, the same code 16. A short press chooses its device when the key is let go, and a long press, about two seconds, when the remote has held it past the hold time: this file binds the press to a pin and the release and the held event to the choice, which is the 350's way and not the way the 300's own files bind it. The four long presses are the Knoll, Kodi, the Switch and the Sony HT, which send from infrared groups 4 to 7. There the 300's firmware raises the event of group 0 where a 350 raises group 3's, which changes one output pin's list and no code, docs/predictions/harmony-300-as-350.md P7. That is the only part a receiver cannot hear, so the steps that send from groups 0, 3 and 4 to 7 ask which device key lights, as an observation without a verdict. The steps state an order and no pauses; power on delays hold back the next code to a device, and whether they also hold back codes to other devices is not known on this remote.",
+  "steps": [
+    {
+      "instruction": "Unplug the Harmony 300 from USB and point it at the receiver. The four device keys sit in a block: TV top left, Cable/Sat top right, DVD bottom left and VCR/Aux bottom right. Press TV once and briefly: this chooses the LG TV and sends nothing. Then press Volume Up (the top of the rocker on the left), then Info. While Volume Up is sent, look at the four device keys and note which of them light",
+      "expect": [
+        {
+          "device": "LG_TV",
+          "command": "VolumeUp"
+        },
+        {
+          "device": "LG_TV",
+          "command": "Info"
+        }
+      ]
+    },
+    {
+      "instruction": "Hold TV down for about two seconds, then let go: this chooses the Knoll and sends nothing. Then press Volume Up, then the up key of the four around OK. While the up key is sent, note which device keys light. The Knoll is the first device that sends from a group above 3",
+      "expect": [
+        {
+          "device": "Denon",
+          "command": "VolumeUp"
+        },
+        {
+          "device": "Knoll",
+          "command": "Timer"
+        }
+      ]
+    },
+    {
+      "instruction": "Press Cable/Sat once and briefly: this chooses the Plasma. Then press Volume Up, then Menu (top left of the four keys Menu, Info, Exit and Guide)",
+      "expect": [
+        {
+          "device": "Plasma",
+          "command": "VolumeUp"
+        },
+        {
+          "device": "Plasma",
+          "command": "Menu"
+        }
+      ]
+    },
+    {
+      "instruction": "Hold Cable/Sat down for about two seconds, then let go: this chooses Kodi. Then press Volume Up, then the key printed Exit. While Exit is sent, note which device keys light",
+      "expect": [
+        {
+          "device": "Denon",
+          "command": "VolumeUp"
+        },
+        {
+          "device": "Kodi",
+          "code": 2,
+          "config": "work/setups/h350-test/compile-Result.EzHex"
+        }
+      ]
+    },
+    {
+      "instruction": "Press DVD once and briefly: this chooses the Denon. Then press Volume Up, then Info",
+      "expect": [
+        {
+          "device": "Denon",
+          "command": "VolumeUp"
+        },
+        {
+          "device": "Denon",
+          "command": "Info"
+        }
+      ]
+    },
+    {
+      "instruction": "Hold DVD down for about two seconds, then let go: this chooses the Switch. Then press Volume Up, then the digit 1 of the number pad (not one of the favourite keys). While the 1 is sent, note which device keys light",
+      "expect": [
+        {
+          "device": "Denon",
+          "command": "VolumeUp"
+        },
+        {
+          "device": "Switch",
+          "command": "Input1"
+        }
+      ]
+    },
+    {
+      "instruction": "Press VCR/Aux once and briefly: this chooses the KPN. Then press Volume Up, then Previous Channel (the round key below the channel rocker), then the key printed List. The catalogue calls both the KPN's OK and its List code List, so List is expected by its number. While List is sent, note which device keys light: the KPN is group 3",
+      "expect": [
+        {
+          "device": "Denon",
+          "command": "VolumeUp"
+        },
+        {
+          "device": "KPN",
+          "command": "ChannelPrev"
+        },
+        {
+          "device": "KPN",
+          "code": 14,
+          "config": "work/setups/h350-test/compile-Result.EzHex"
+        }
+      ]
+    },
+    {
+      "instruction": "Hold VCR/Aux down for about two seconds, then let go: this chooses the Sony HT. Then press Volume Up, then Stop (the key printed Stop). While Stop is sent, note which device keys light",
+      "expect": [
+        {
+          "device": "Denon",
+          "command": "VolumeUp"
+        },
+        {
+          "device": "Sony_HT",
+          "command": "Stop"
+        }
+      ]
+    },
+    {
+      "instruction": "Now the TV and the Denon are put in the off state, so Watch TV starts from there. Press TV once and briefly, then Power. If the monitor shows the TV's PowerOn, the remote thought the TV was off: wait twelve seconds, since the TV's power on delay holds its next code for ten, and press Power once more. Stop when the last thing heard is the TV's PowerOff",
+      "expect": [
+        {
+          "device": "LG_TV",
+          "command": "PowerOff"
+        }
+      ]
+    },
+    {
+      "instruction": "Press DVD once and briefly, then Power. If the monitor shows the Denon's code 6, its power on, the remote thought it was off: wait three seconds and press Power once more. Stop when the last thing heard is the Denon's code 12, its power off. The catalogue has no name for either",
+      "expect": [
+        {
+          "device": "Denon",
+          "code": 12,
+          "config": "work/setups/h350-test/compile-Result.EzHex"
+        }
+      ]
+    },
+    {
+      "instruction": "Press Watch TV, the key at the very top, once and briefly, then press nothing for twenty seconds. Expected in this order: the TV's PowerOn, the Denon's power on (code 6), the KPN's PowerToggle, and the Denon's CBL/SAT input, which the Denon's 2 s power on delay holds back; any code may come late behind a delay. If the Denon's input does not come, the activity's flag was already set before the test started: note it and carry on. Watch TV leaves the remote in the KPN's mode",
+      "expect": [
+        {
+          "device": "LG_TV",
+          "command": "PowerOn"
+        },
+        {
+          "device": "Denon",
+          "code": 6,
+          "config": "work/setups/h350-test/compile-Result.EzHex"
+        },
+        {
+          "device": "KPN",
+          "command": "PowerToggle"
+        },
+        {
+          "device": "Denon",
+          "command": "InputCbl/Sat"
+        }
+      ]
+    },
+    {
+      "instruction": "In the activity, press Volume Up, then Previous Channel",
+      "expect": [
+        {
+          "device": "Denon",
+          "command": "VolumeUp"
+        },
+        {
+          "device": "KPN",
+          "command": "ChannelPrev"
+        }
+      ]
+    },
+    {
+      "instruction": "Press Channel Up (the plus at the top of the rocker on the right), then the digit 1 of the number pad. The KPN's map in this file binds neither, so nothing should be heard; note anything the monitor shows"
+    },
+    {
+      "instruction": "Press Watch TV once and briefly to switch off, then press nothing for ten seconds. Expected in this order: the TV's PowerOff, the Denon's power off (code 12) and the KPN's PowerToggle, and no input. The remote stays in the KPN's mode",
+      "expect": [
+        {
+          "device": "LG_TV",
+          "command": "PowerOff"
+        },
+        {
+          "device": "Denon",
+          "code": 12,
+          "config": "work/setups/h350-test/compile-Result.EzHex"
+        },
+        {
+          "device": "KPN",
+          "command": "PowerToggle"
+        }
+      ]
+    },
+    {
+      "instruction": "Still in the KPN's mode, press the favourite key left of TV Input, printed 1, once. The favourite block has TV Input in the middle of the top row with 1 on its left and 3 on its right, and 2, Teletext and 4 in the row below. Predicted: channel 1, the KPN's digit 1. If another channel's digits come, note which: the channel heard settles which code the key is",
+      "expect": [
+        {
+          "device": "KPN",
+          "command": "1"
+        }
+      ]
+    },
+    {
+      "instruction": "Press the favourite key printed 2, the left key of the row below TV Input, once. Predicted: channel 2, the KPN's digit 2. If another channel's digits come, note which",
+      "expect": [
+        {
+          "device": "KPN",
+          "command": "2"
+        }
+      ]
+    },
+    {
+      "instruction": "Press the key printed Teletext, the middle key of the row below TV Input, once. Predicted: channel 3, the KPN's digit 3, since the key sends the code the Harmony 350 gives its favourite 3. If nothing comes, or another channel's digits, note which",
+      "expect": [
+        {
+          "device": "KPN",
+          "command": "3"
+        }
+      ]
+    },
+    {
+      "instruction": "Press the favourite key printed 4, the right key of the row below TV Input, once. Predicted: channel 666, the KPN's digit 6 three times a tenth of a second apart, which the monitor may show as one press with repeats. If another channel's digits come, note which",
+      "expect": [
+        {
+          "device": "KPN",
+          "command": "6"
+        }
+      ]
+    },
+    {
+      "instruction": "Press the favourite key printed 3, right of TV Input, once. Predicted: channel 07, the KPN's digit 0 and then its 7, and nothing after them. If another channel's digits come, note which",
+      "expect": [
+        {
+          "device": "KPN",
+          "command": "0"
+        },
+        {
+          "device": "KPN",
+          "command": "7"
+        }
+      ]
+    },
+    {
+      "instruction": "Press TV once and briefly to leave the remote in the TV's mode, then Volume Up",
+      "expect": [
+        {
+          "device": "LG_TV",
+          "command": "VolumeUp"
+        }
+      ]
+    }
+  ]
+}
