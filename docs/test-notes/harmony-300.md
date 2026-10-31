@@ -90,3 +90,29 @@ the TV's Volume Up, Channel Up and 1, the KPN's codes 35 and 43, the DVD player'
 television's, and the recorder's Channel Up and 1. One unreadable fragment followed the KPN's digit by a
 third of a second. The monitor names the 300's codes since `h300_programmed_config` joined its list.
 
+## The first change, todo-compile-300 1.5
+
+The television's power on delay, on 31 October 2026, with `packages/bench/irtests/done/300-1-5-delay-10s.json`
+and `-5s.json`; the files are the lab's `work/300-delay/`. **On this configuration the delay that any key
+reaches is the copy inside Watch TV's own list**: Watch TV toggles the KPN's power, waits 15 tenths,
+toggles the television's power and waits 50 tenths, and only then selects the KPN's mode. The Power key
+sends the television's toggle code alone, and the copy in the television's power state list is reached by
+no key. `packages/codec/bin/set-delay.ts` changed only that unreached copy, so `after.bin` was made with
+both copies at 100 tenths instead.
+
+1. `after.bin` written on the second attempt, verified and restarted. The first run lost the TV key and
+   Volume Up pressed during Watch TV, `reads/20261031T122346Z-...-10-s.json`. The second, with Volume Up
+   pressed five times at once while the remote was still in the television's mode, heard the first Volume
+   Up 11.545 s after the television's power code and the other four at about 0.55 s intervals after it,
+   `reads/20261031T123224Z-...-10-s.json`. The lights stayed on for about ten seconds.
+2. `before.bin` written back on the second attempt, verified and restarted; the same steps, starting in the
+   television's mode, heard the first Volume Up 6.543 s after the power code,
+   `reads/20261031T124638Z-...-5-s.json`.
+
+The two gaps differ by 5.002 s where the delay changed by 50 tenths, so a unit is a tenth here as on the
+350. Both carry the same 1.5 s more than the delay, which is the length of the KPN's wait before the
+television's toggle; that the two add is what the numbers show, and why is not traced. Keys pressed while
+Watch TV runs are taken in the mode the remote is in at the press and sent once it has finished; the TV key
+pressed then was lost. Watch TV ends in the KPN's mode, which binds no Volume Up, as was confirmed at the
+bench. The remote holds `before.bin` again, its own configuration.
+

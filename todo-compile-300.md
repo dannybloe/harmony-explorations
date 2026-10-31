@@ -28,7 +28,7 @@ trusting the keypad, and a first change heard before a whole configuration rides
 - [x] 1.2 Its identity recorded as `h300` and a full backup of the unit into the lab, as the 350's 1.5, the configuration read twice and identical: the lab's `units/h300.txt` and `reads/20261031T1205Z-h300-backup/`, 97470 bytes, the four device configuration read in section 265 byte for byte
 - [x] 1.3 The 300 on the 350's rail, checked against its own lab record, with which skin the rail compares settled first: 79 in `/sys/sysinfo` and the configuration, 78 in `bcdDevice`; the rail compares `/sys/sysinfo`'s, 79, and the dry run passed
 - [x] 1.4 The first write: its own configuration back unchanged, read back and compared, and the remote still sends what it sent before: verified and restarted, then `packages/bench/irtests/done/300-1-4-own-config.json` passed every step
-- [ ] 1.5 A first change: one delay changed and put back, each heard by the bench's infrared receiver, as the 350's 1.8
+- [x] 1.5 A first change: one delay changed and put back, each heard by the bench's infrared receiver, as the 350's 1.8: the TV's power on delay inside Watch TV at 100 and back at 50 tenths, the first Volume Up 11.5 s and 6.5 s after the TV's power code, `packages/bench/irtests/done/300-1-5-delay-*.json`; `set-delay.ts` changes only the power state's copy, which no key reaches on this file
 
 ## 2. The keys
 
@@ -44,5 +44,6 @@ trusting the keypad, and a first change heard before a whole configuration rides
 ## 4. Our composers on it
 
 - [ ] 4.1 The 350's composers take the 300: four groups, no long press, the device key deciding the group, and 3.2's answer in place of an activity
+  - [ ] 4.1.1 A power on delay edited in every copy a key reaches: Watch TV's list holds its own, which `set-delay.ts` does not change
 - [ ] 4.2 The test setup built by us with nothing copied, every byte attributed, and compared with 3.2's compile
 - [ ] 4.3 Written to the bench 300 and used with 3.3's bench test
