@@ -30,6 +30,9 @@
           "command": "VolumeUp"
         }
       ]
+    },
+    {
+      "instruction": "One more check, nothing expected: press Cable/Sat (the top right device key), then Volume Up once. The file binds no Volume Up in the KPN's mode, so whatever the monitor shows here is the answer"
     }
   ]
 }
