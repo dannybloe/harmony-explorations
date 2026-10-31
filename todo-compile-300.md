@@ -47,7 +47,7 @@ Changed on 31 October 2026: the bench 300 already held a Logitech compile of its
 ## 4. Our composers on it
 
 - [ ] 4.1 The 350's composers take the 300: four groups, no long press, the device key deciding the group, and 3.2's answer in place of an activity
-  - [ ] 4.1.1 A power on delay edited in every copy a key reaches: Watch TV's list holds its own, which `set-delay.ts` does not change
+  - [ ] 4.1.1 A power on delay edited in every copy a key reaches: Watch TV's list holds its own, which `set-delay.ts` does not change; the activity's copy exists for a device with one power code only, a device with separate on and off codes reaches its delay through its power variable's list
   - [ ] 4.1.2 The favourites in the 300's own key order, which `composeNoScreenFavourites` refuses: Logitech's compile puts them on other keys than the 350's
 - [ ] 4.2 The test setup built by us with nothing copied, every byte attributed, and compared with 3.2's compile
 - [ ] 4.3 Written to the bench 300 and used with 3.3's bench test

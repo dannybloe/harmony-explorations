@@ -61,13 +61,27 @@ Logitech compile of part of a test setup written and used, then our composers on
   - [ ] 4.1.3 Composing onto the full test compile, after a device removal step, since all eight groups are in use
   - [ ] 4.1.4 The metadata archive's `Index` and `DeviceId`, once what reads the archive is known
   - [ ] 4.1.5 A composed device written to the bench 350 and heard
-- [ ] 4.2 The composed activity
+- [x] 4.2 The composed activity: `composeNoScreenActivity`, Watch TV's one list rebuilt from the setup, composed onto Logitech's three device file it matches their compile of the test setup step for step, power order, flag, inputs and the closing map, and the shape holds on seven Logitech files, one a Harmony 300's, `packages/codec/test/noscreenactivity.test.ts`
+  - [ ] 4.2.1 Replacing a device's input variable, which needs a variable removal step
+  - [ ] 4.2.2 Stepping or mixed inputs, and inputs on a device whose key delay is not one tenth, which no Logitech file of this family shows
 - [x] 4.3 The favourite channels: `composeNoScreenFavourites`, up to five on one device, composed onto Logitech's compile without favourites equals its compile with them in length, the KPN's map, the number sender and all 331 lists, `packages/codec/test/noscreenfavourites.test.ts`; the Harmony 300's key order is its own track's, and a bench test is 4.5's
 - [x] 4.4 A device key's long press: `composeNoScreenDevice` with `press: 'long'`, groups 4 to 7, held event, press list and timers equal to Logitech's compile on the four long press devices, `packages/codec/test/noscreen.test.ts`; Logitech's other routing of volume, Input and the favourite key is 4.1.1, and a bench test is 4.5's
 - [ ] 4.5 The whole test setup, written and run with a bench test
 
 ## 5. Nothing copied
 
-- [ ] 5.1 Every section built by a generator: the name tree, the architecture record, the timestamp and clock, the infrared table, the action lists, the parameter block, the number sender, the metadata archive and the slots 2.1 named
+- [ ] 5.1 Every section built by a generator: the name tree, the architecture record, the timestamp and clock, the infrared table, the action lists, the parameter block, the number sender, the metadata archive and the slots 2.1 named; [plan 011](docs/plans/011-the-350-from-nothing.md) is the route
+  - [ ] 5.1.1 The frame for the family, a round trip on the seven Logitech compiles
+  - [ ] 5.1.2 The state tables on our own numbers, with the indices allocator
+  - [ ] 5.1.3 The family's constants: log area, parameter block, digit table, start up table and lists, pin tags and lists
+  - [ ] 5.1.4 The metadata archive from nothing, with a deflate of our own matching stock zlib's six streams
+  - [ ] 5.1.5 The empty configuration, written once to the bench 350
+  - [ ] 5.1.6 The composers emitting their pieces onto it
+  - [ ] 5.1.7 The stored but uncalled lists and the Denon's inputs
+  - [ ] 5.1.8 The numbering of lists, maps, timers and state variables: find the rule, or count it as description
 - [ ] 5.2 Checked: it rebuilds, and every byte is attributed to a generator with none carried
+  - [ ] 5.2.1 The family's attribution, calibrated on the seven Logitech compiles
+  - [ ] 5.2.2 Nothing carried and nothing unclaimed on our build, with a planted byte control
+  - [ ] 5.2.3 The entry takes no Logitech container and the build runs with no lab
+  - [ ] 5.2.4 The whole setup compared part by part with Logitech's compile, with the round trip and the inflated archive
 - [ ] 5.3 Written to the bench 350 and used with a bench test
