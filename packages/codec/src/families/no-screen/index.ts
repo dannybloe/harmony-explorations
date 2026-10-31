@@ -87,3 +87,4 @@ export {
   RECEIVER_TYPE, TELEVISION_TYPE, volumeSource,
 } from './keys.ts';
 export { NO_SCREEN_SENDS, powerOnWaits } from './sends.ts';
+export { noScreenSites, type NoScreenSite, type RemovedNoScreenDevice, withoutNoScreenDevice } from './remove.ts';

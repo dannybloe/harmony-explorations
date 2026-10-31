@@ -28,7 +28,8 @@
  * **Logitech's routing is copied**, `todo-compile-350.md` 4.1.1, the rules and their counts in `keys.ts`: Input
  * borrows the TV mode device's binding, volume and mute the device `volumeFrom` names, a television's fifth
  * favourite key holds its Home or Internet, Teletext is stored with a send list and bound to no key, and the ten
- * digits' one block copies are stored for the device types Logitech stores them for. A device on the top left
+ * digits' one block copies are stored for the device types Logitech stores them for, and the power variable gets
+ * the two silent writes nothing calls, `POWER_RESETS`. A device on the top left
  * key's short press is the TV mode device, 4.1.2: the start up's select names its map and every other map gains
  * its Input. Held in `noscreen.test.ts` and `noscreenrouting.test.ts`.
  *
@@ -43,7 +44,9 @@
  * already there, which Logitech's service would give it, and the test setup's LG television's second stored but
  * unbound record, its Back, is not reproduced, since no rule read says why it is there.
  */
-import { CANCEL_TIMERS, PIN_BAND, START_TIMER_BAND, STATE_BAND, STATE_WRITE_BASE, stateVariableSite } from '../../actions.ts';
+import {
+  CANCEL_TIMERS, PIN_BAND, SILENT_WRITE, START_TIMER_BAND, STATE_BAND, STATE_WRITE_BASE, stateVariableSite,
+} from '../../actions.ts';
 import { u8, u16 } from '../../bytes.ts';
 import { catalogueDevicePlan } from '../../composecatalogue.ts';
 import { Writer } from '../../emit.ts';
@@ -61,8 +64,8 @@ import { composeDeviceFor, type ComposeDevice, type ComposedDevice } from '../..
 import { appendTableEntries } from '../../shared/infrared.ts';
 import { deviceDigitLists } from './digits.ts';
 import {
-  DEVICE_KEYS, DIGIT_COPIES_BY_TYPE, FAVOURITE_FIVE, INPUT_KEY, KEY_MAP_SLOT, KEY_TIMERS, LONG_PRESS_GROUP_BASE, POWER_SCAN,
-  START_UP_SELECT_ENTRY, START_UP_SLOT, STORED_UNBOUND, TELEVISION_TYPE, TIMER_SLOT, VOLUME_SCANS,
+  DEVICE_KEYS, DIGIT_COPIES_BY_TYPE, FAVOURITE_FIVE, INPUT_KEY, KEY_MAP_SLOT, KEY_TIMERS, LONG_PRESS_GROUP_BASE, POWER_RESETS,
+  POWER_SCAN, START_UP_SELECT_ENTRY, START_UP_SLOT, STORED_UNBOUND, TELEVISION_TYPE, TIMER_SLOT, VOLUME_SCANS,
 } from './keys.ts';
 import { NO_SCREEN_SENDS } from './sends.ts';
 
@@ -477,6 +480,11 @@ export function composeNoScreenDevice(c: Container, archive: string, request: No
     current = parse(current.blob);
     powerList = lists.first;
   }
+  // The power variable's two silent writes, which nothing calls, as Logitech stores them for every device,
+  // `POWER_RESETS`.
+  current = parse(appendActionLists(current,
+    POWER_RESETS.map((value) => [[SILENT_WRITE.operand, SILENT_WRITE.opcode], [value, STATE_WRITE_BASE + composed.variable]]),
+    highestEnd(listExtents(current))).bytes);
 
   // The device's own map: every key the family's table gives it, then the power key, in the compiler's order,
   // after the last map, and named by a pointer appended to the table.

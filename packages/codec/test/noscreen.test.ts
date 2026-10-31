@@ -11,7 +11,7 @@
  * and two compiles of one account already differ in it; so a record is compared by its header and its blocks, a
  * list by what it does with every list it calls written out, and the group and the key's place are allowed to
  * differ, since they follow the key. The donor is not the test setup with the plasma taken out: no compile of that
- * exists, and taking a device out is a composer of its own.
+ * exists; taking a device out of Logitech's compile and composing it back is `noscreenremove.test.ts`, 4.1.3.
  *
  * **What it settled, in counts.** The composer writes the 51 records Logitech stores for the plasma, every one of
  * them Logitech's word for word: its keys' commands, Internet on the fifth favourite key, Teletext on no key and
@@ -46,7 +46,7 @@
  * the donor's TV as `volumeSource` says with no receiver in the donor; the four maps differ from Logitech's by the
  * Input key, which Logitech binds to the LG TV's and the donor's TV mode device has none of, and by volume and
  * mute, the Denon's in Logitech's where the donor has no Denon, and bind every other key both hold to the same
- * thing. The whole equality, with the Denon there, is `todo-compile-350.md` 4.1.3's.
+ * thing. The whole equality, with the Denon there, is `todo-compile-350.md` 4.1.3's, `noscreenremove.test.ts`.
  *
  * **The order of a key map's tags**, `inCompilerOrder`, is now a simulation of the compiler's hash map rather than
  * a refusal wherever two tags share a slot, since the long press's held tags share slots with the donor's own:

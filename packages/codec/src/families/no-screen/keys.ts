@@ -144,6 +144,16 @@ export const FAVOURITE_FIVE: Readonly<Record<number, { readonly scan: number; re
 export const STORED_UNBOUND: readonly string[] = ['Teletext'];
 
 /**
+ * The values a device's power variable is set to by a list of its own that nothing calls, `07 FFFF` then the write:
+ * the silent flag, so the write runs no transition and sends nothing, `SILENT_WRITE` in `actions.ts`. Logitech's
+ * compiles of this family store the two for every device, 0 and 1, 27 of 27 devices over the seven files of the
+ * Harmony 300 and 350 read, none of the 54 lists called, and no other list there opens with the flag,
+ * `noscreenrouting.test.ts`. What would call them is not read: on the other families a list of this shape is a
+ * reset an activity's help or an input change runs, `inputs.ts`.
+ */
+export const POWER_RESETS: readonly number[] = [0, 1];
+
+/**
  * Which device types Logitech stores one block copies of the ten digits for, each with a send list nothing calls
  * unless a favourite channel does. By type and not by a command, since a Playstation 3 holds copies and has no
  * ChannelUp. Measured on 25 devices of the six current compiles of the family, every one agreeing, ten copies or

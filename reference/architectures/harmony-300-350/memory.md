@@ -204,6 +204,12 @@ them, the ten digits' one block copies, which a favourite channel sends where th
 agreeing by type[^t-noscreen-routing]. A television's fifth favourite key holds its Home or its Internet, on 4
 of the 5 televisions with either[^t-noscreen-routing].
 
+**Every device's power variable has two lists nothing calls**, on both models: each sets the variable without
+running its transitions, the silent flag `07 FFFF` and then the write, one to 0 and one to 1. All 27 devices of
+the seven configurations read have the pair, none of the 54 lists is called, and no other list opens with the
+flag[^t-noscreen-routing]. What would run them is not read; on the other platforms a list of this shape resets a
+variable without sending anything[^unchecked].
+
 **The start up selects the TV key's short press device.** Entry 1 of the start up events calls a list that ends
 by selecting that device's map, the same list entries 2 to 4 call without it, on all seven
 configurations[^t-noscreen-routing].

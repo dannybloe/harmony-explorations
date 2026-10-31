@@ -80,14 +80,20 @@ export function restamped(bytes: Uint8Array): Uint8Array {
  * own eight device compiles do**, lab fixtures outside that population: they hold 112 to 124
  * variables, section 331, so a composer adding several devices to one of them meets this bound, and
  * `devicemode.test.ts` meets it on two.
+ *
+ * **`by` of -1 is the other direction**, for a variable taken out, `todo-compile-350.md` 4.1.3: every variable at
+ * or above `from` moves down by one, over the same sites, so a removal and an insertion are one enumeration and
+ * not two. The caller takes out variable `from - 1` and its name, and has made sure nothing kept still names it,
+ * since a site naming it would be left naming whatever moves into its place.
  */
-export function renumberStateVariables(c: Container, from: number): Uint8Array {
+export function renumberStateVariables(c: Container, from: number, by: 1 | -1 = 1): Uint8Array {
   const table = stateTable(c);
   if (table === undefined) throw new ComposeError('base slot 13 does not read as a table');
   if (!Number.isInteger(from) || from < 0 || from > table.count) {
     throw new ComposeError(`${from} is not a position in a table of ${table.count} variables`);
   }
-  if (table.count >= STATE_WRITE_LIMIT) {
+  if (by === -1 && from === 0) throw new ComposeError('no variable is below 0 to move down onto');
+  if (by === 1 && table.count >= STATE_WRITE_LIMIT) {
     throw new ComposeError(
       `renumbering would put a variable at ${table.count}, and a write opcode carries seven bits`);
   }
@@ -111,15 +117,15 @@ export function renumberStateVariables(c: Container, from: number): Uint8Array {
       const site = stateVariableSite(instruction);
       const where = sites[k];
       if (site === undefined || where === undefined || site.index < from) return;
-      if (site.where === 'opcode') bytes[where.opcodeAt] = STATE_WRITE_BASE + site.index + 1;
-      else bytes[where.operandAt] = site.index + 1;
+      if (site.where === 'opcode') bytes[where.opcodeAt] = STATE_WRITE_BASE + site.index + by;
+      else bytes[where.operandAt] = site.index + by;
     });
   });
 
   // The name tree's level 1 nodes, whose index is the variable.
   for (const node of nameNodes(c) ?? []) {
     if (node.level !== NAME_LEVEL_STATE_VARIABLE || node.index < from) continue;
-    bytes.set(new Writer(2).u16(node.index + 1).bytes, node.start + 5);
+    bytes.set(new Writer(2).u16(node.index + by).bytes, node.start + 5);
   }
   return bytes;
 }

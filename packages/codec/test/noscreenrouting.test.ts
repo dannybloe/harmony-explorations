@@ -32,6 +32,10 @@
  * * **The ten digit copies** are stored for some device types and not others, 25 of 25 devices of the six
  *   current compiles agreeing, `DIGIT_COPIES_BY_TYPE`; the Harmony 300's first configuration, from a 2011 generation
  *   of the compiler, is left out of the per type counts, as its one block records are of another shape.
+ * * **Two silent writes per device**, `07 FFFF` and a write of its power variable, one of 0 and one of 1, which
+ *   nothing calls: 27 of 27 devices over the seven files, and no other list opens with the flag, `POWER_RESETS`.
+ *   Found by taking a device out of Logitech's compile and composing it back, 4.1.3, `noscreenremove.test.ts`:
+ *   the two were the only lists of Logitech's the composer did not make.
  * * **The start up select**, entry 1's list ending in a select of the TV mode device's map: 7 of 7, 4.1.2.
  * * **The metadata archive**, 4.1.4: `Index` the position and `DeviceId` strictly ascending, 7 of 7, and the list
  *   alphabetical on the two Harmony 300 files only, which corrects `reference/architectures/harmony-300-350/memory.md`.
@@ -58,9 +62,10 @@ import { IR_ARCHIVE, LAB, load, needing, skipWithoutIrArchive, skipWithoutLab } 
 
 import {
   type AccountDevice, bytes, catalogueDevice, catalogueCommands, catalogueDevicePlan, composeIrGroup, type Container, devices, DIGIT_COPIES_BY_TYPE, irGroups,
-  metadataArchive, parse, taggedList, volumeSource,
+  metadataArchive, parse, stateVariables, taggedList, volumeSource,
 } from '../src/index.ts';
-import { DEVICE_KEYS, FAVOURITE_FIVE, INPUT_KEY, START_UP_SELECT_ENTRY, VOLUME_SCANS } from '../src/families/no-screen/keys.ts';
+import { DEVICE_KEYS, FAVOURITE_FIVE, INPUT_KEY, POWER_RESETS, START_UP_SELECT_ENTRY, VOLUME_SCANS } from '../src/families/no-screen/keys.ts';
+import { SILENT_WRITE } from '../src/actions.ts';
 import { withoutStartUpSelect, withStartUpSelect } from '../src/families/no-screen/devices.ts';
 import { onceWithoutLeadIn, recordKey } from './noscreenparts.ts';
 
@@ -415,6 +420,40 @@ test('Teletext is stored with a send list nothing calls for every device with th
       'factory TV': '2 idle', 'factory Delta': '1 idle',
       'h300programmed KPN': '0 not idle', 'h300programmed Panasonic TV': '1 not idle',
     });
+  });
+
+test('on every compile of the family each device\'s power variable has two silent writes, of 0 and of 1, which nothing calls, and no other list opens with the silent flag',
+  needs, () => {
+    const seen: Record<string, [number, number, number]> = {};
+    let devicesSeen = 0;
+    for (const [file, c] of Object.entries(compiles())) {
+      const lists = c.pointerArray(7)!;
+      const called = new Set<number>();
+      for (let k = 0; k + 2 < c.blob.length; k += 1) if (c.blob[k + 2] === 0x7f) called.add(bytes.u16(c.blob, k));
+      const body = (index: number) => {
+        const at = c.blobOffsetOf(lists[index]!)!;
+        return Array.from({ length: bytes.u8(c.blob, at) }, (_, k) => [bytes.u16(c.blob, at + 1 + 3 * k), bytes.u8(c.blob, at + 3 + 3 * k)] as const);
+      };
+      const silent = lists.map((_, index) => index).filter((index) => {
+        const first = body(index)[0];
+        return first?.[0] === SILENT_WRITE.operand && first[1] === SILENT_WRITE.opcode;
+      });
+      const powers = stateVariables(c).filter((one) => one.name.endsWith('_Power_2'));
+      devicesSeen += powers.length;
+      // Per device, the values its silent writes set, each list the flag and one write of the variable.
+      const values = powers.map((one) => silent.filter((index) => {
+        const list = body(index);
+        return list.length === 2 && list[1]![1] === 0x80 + one.index;
+      }).map((index) => body(index)[1]![0]).sort().join(','));
+      assert.deepEqual([...new Set(values)], [POWER_RESETS.join(',')], file);
+      seen[file] = [powers.length, silent.length, silent.filter((index) => called.has(index)).length];
+    }
+    // Devices, lists opening with the flag, and how many of those anything calls: twice the devices, and none.
+    assert.deepEqual(seen, {
+      setup: [8, 16, 0], issue37: [5, 10, 0], programmed: [3, 6, 0], three: [2, 4, 0], factory: [3, 6, 0],
+      h300programmed: [4, 8, 0], h300: [2, 4, 0],
+    });
+    assert.equal(devicesSeen, 27);
   });
 
 test('on every compile of the family the start up\'s entry 1 ends selecting the map of the device on the TV key\'s short press',
