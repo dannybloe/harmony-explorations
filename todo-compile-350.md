@@ -78,10 +78,10 @@ Logitech compile of part of a test setup written and used, then our composers on
   - [x] 5.1.6 The composers emitting their pieces onto it: `buildNoScreenSetup`, the test setup on the empty configuration, equal to Logitech's second compile by content but for the KPN's fuller map and two uncalled LG TV codes, `packages/codec/test/noscreenfromnothing.test.ts`; on the bench 350, 33 of 33 codes heard, Watch TV included
   - [x] 5.1.7 The stored but uncalled lists and the Denon's inputs: all 50 of Logitech's uncalled lists built, by digit copies, Teletext, the channel tuning finish copy and a television's Back, `packages/codec/test/noscreenstored.test.ts`; the KPN's 12 key map was our own account edit, not the compiler, so ours keeps the family's 43
   - [x] 5.1.8 The numbering of lists, maps, timers and state variables: find the rule, or count it as description: no rule over four distinct setups, so it is description (the device walk, the map order, the timer order and the send lists' interleaving), `packages/codec/test/noscreennumbering.test.ts`
-- [ ] 5.2 Checked: it rebuilds, and every byte is attributed to a generator with none carried
-  - [ ] 5.2.1 The family's attribution, calibrated on the seven Logitech compiles
-  - [ ] 5.2.2 Nothing carried and nothing unclaimed on our build, with a planted byte control
-  - [ ] 5.2.3 The entry takes no Logitech container and the build runs with no lab
+- [x] 5.2 Checked: it rebuilds, and every byte is attributed to a generator with none carried
+  - [x] 5.2.1 The family's attribution, calibrated on the seven Logitech compiles: `noScreenAttributedBytes`, five of seven every byte, the rest carried in shapes no composer writes (a key map of a device with no codes, the 2011 Harmony 300's older lists, the European 300's favourites), `packages/codec/test/noscreenattribution.test.ts`
+  - [x] 5.2.2 Nothing carried and nothing unclaimed on our build, with a planted byte control: 124166 of 124166 bytes generated, 7 contested by two list shapes, the planted byte and every dropped claim found
+  - [x] 5.2.3 The entry takes no Logitech container and the build runs with no lab: held already, now tested
   - [ ] 5.2.4 The whole setup compared part by part with Logitech's compile, with the round trip and the inflated archive
 - [ ] 5.3 Written to the bench 350 and used with a bench test
 - [ ] 5.4 Every configuration of the family binds firmware event 0xFF to the acknowledging list, after 5.2 holds without it, so one build serves the Harmony 300 and 350 alike, decision 28
