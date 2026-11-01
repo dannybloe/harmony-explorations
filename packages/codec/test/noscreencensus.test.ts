@@ -32,15 +32,17 @@
  *
  * **What each verdict rests on** is a probe in the tests below and not a sentence here: the frame lays out
  * architecture 16, whose round trip over all seven files is `frame.test.ts`'s, the name tree builder, the
- * architecture record builder and the timestamp builder reproduce those sections of all seven files byte for byte, the family's own members refuse as the registry
- * says, and the device composer emits lists of exactly the roles the table credits it with. A verdict that stops
+ * architecture record builder and the timestamp builder reproduce those sections of all seven files byte for byte, the
+ * constant sections and lists are built by `noscreenconstants.test.ts` over 13 compiles, the family's own members
+ * refuse as the registry says, and the device composer emits lists of exactly the roles the table credits it with. A verdict that stops
  * being true fails here, so a generator written for this family forces the census to move.
  *
  * **The metadata archive's text and stream.** Node's zlib reproduces none of the three archives checked at any of
  * 3465 settings of level, strategy, memory level and window, while the same search finds the stream Node's own
  * zlib wrote; stock zlib at its defaults reproduces all six distinct archives, which `tests/
  * test_harmony_350_metadata_deflate.py` holds. So the archive needs a deflate of our own, calibrated against
- * those six. The text around the devices is the same 149 and 610 characters in 7 of 7 compiles, a device's number
+ * those six, and `deflate.ts` is that deflate: since 5.1.4 `noScreenMetadataSection` builds the archive with it and the
+ * census counts the archive as `builds`, given the two choices below, `metadatabuild.test.ts`. The text around the devices is the same 149 and 610 characters in 7 of 7 compiles, a device's number
  * is the account's, and the ZIP's time is the stamp's less whole hours and 413 to 419 seconds, the three probes
  * below; what the check of 5.2 does about the last two is plan 011's.
  *
@@ -182,7 +184,18 @@ export function census(c: Container): Map<string, number> {
   (stateRecords(c) ?? []).forEach((record, index) => recordAt.set(c.blobOffsetOf(record.address)!, index));
   const variableName = new Map(nameNodes(c)!.filter((node) => node.level === 1).map((node) => [node.index, node.name]));
 
-  // What no reader claims, from the tables that point at it.
+  // What no reader claims, from the tables that point at it. The four entries of map 0 whose tags switch a pin are
+  // cut out of the key table first, so that they are a category of their own: the first claim wins, and the rest of
+  // the table keeps the name 'key table (map 0)'. The split is the census's own, made because 5.1.3's builders write
+  // exactly those entries (`noScreenSendEventEntries`) and none of the others, so one verdict cannot cover both.
+  {
+    const at = c.blobOffsetOf(c.pointerArray(6)![0]!)!;
+    const extent = taggedListExtent(c.blob, at)!;
+    const entrySize = extent.wide ? 5 : 4;
+    taggedList(c, c.pointerArray(6)![0]!)!.entries.forEach((entry, k) => {
+      if (PIN_TAGS.has(entry.tag)) put(at + (extent.wide ? 2 : 1) + entrySize * k, entrySize, 'key table, pin entries');
+    });
+  }
   c.pointerArray(6)!.forEach((address, map) => {
     const at = c.blobOffsetOf(address)!;
     put(at, taggedListExtent(c.blob, at)!.length, map === 0 ? 'key table (map 0)' : 'device key map');
@@ -241,24 +254,25 @@ export const VERDICTS: Readonly<Record<string, { verdict: Verdict; by: string }>
   'trailer': { verdict: 'builds', by: 'layOutContainer, arch 12, 14 and 16; takeApart then layOutContainer rebuilds 7 of 7 compiles, frame.test.ts' },
   'name tree': { verdict: 'builds', by: 'buildNameTree, byte for byte on 7 of 7 files; the names come from the state tables, which are nowhere' },
   'architecture record': { verdict: 'builds', by: 'architectureRecord(16, skin), 7 of 7 files' },
-  'log area': { verdict: 'nowhere', by: 'a constant of eight bytes in 7 of 7 files, written by no generator' },
+  'log area': { verdict: 'builds', by: 'noScreenLogArea (buildLogArea from LOG_AREAS), 13 of 13 compiles, noscreenconstants.test.ts' },
   'clock record': { verdict: 'builds', by: 'buildTimestampSection, 7 of 7 files' },
   'infrared group arrays': { verdict: 'edits', by: 'fillIrGroup, into the donor\'s group at its allocation' },
   'infrared group table': { verdict: 'other', by: 'countedTable in the frame, a table of three byte addresses; not used for 16' },
   'infrared record headers': { verdict: 'edits', by: 'composeIrGroup and irBuildRecord through composeDeviceFor, and the digit copies through deviceDigitLists; 51 of the plasma\'s 51 records, word for word' },
   'infrared blocks': { verdict: 'edits', by: 'the same' },
-  'start up table': { verdict: 'nowhere', by: 'eleven instructions in 7 of 7 files, written by no generator' },
-  'list, start up': { verdict: 'nowhere', by: 'the hold time parameter, the four device selects and the empty list, written by no generator' },
+  'start up table': { verdict: 'builds', by: 'noScreenStartUpTable, 13 of 13 compiles, noscreenconstants.test.ts' },
+  'list, start up': { verdict: 'builds', by: 'noScreenStartUpLists: the hold list, the four device selects and the empty list, 13 of 13 compiles, noscreenconstants.test.ts' },
   'key map table': { verdict: 'edits', by: 'appendTableEntries, onto the donor\'s table' },
-  'key table (map 0)': { verdict: 'edits', by: 'composeNoScreenDevice adds the press, release and held entries; the four pin tags and the activity entry are the donor\'s' },
+  'key table (map 0)': { verdict: 'edits', by: 'composeNoScreenDevice adds the press, release and held entries; the activity entry is the donor\'s, and the pin entries are their own category' },
+  'key table, pin entries': { verdict: 'builds', by: 'noScreenSendEventEntries, the four entries of the key table whose tags switch a pin, 13 of 13 compiles, noscreenconstants.test.ts' },
   'device key map': { verdict: 'edits', by: 'composeNoScreenDevice from NO_SCREEN_HARD_KEYS with Logitech\'s routing of Input, volume and the favourite key, 4.1.1; equal to Logitech\'s with the other seven devices there, noscreenremove.test.ts' },
   'action list table': { verdict: 'edits', by: 'appendActionLists, onto the donor\'s table' },
   'list, send': { verdict: 'edits', by: 'NO_SCREEN_SENDS through composeDeviceFor' },
   'list, key': { verdict: 'edits', by: 'composeNoScreenDevice: the press list, the release and the held select' },
   'list, power': { verdict: 'edits', by: 'composeNoScreenDevice and composeDeviceFor: wrapper, toggle helper, transition' },
   'list, channel': { verdict: 'edits', by: 'composeNoScreenFavourites' },
-  'list, pin': { verdict: 'nowhere', by: 'the four pin lists of the key table, their wrappers and helpers, written by no generator' },
-  'list, activity': { verdict: 'nowhere', by: 'todo-compile-350.md 4.2, in progress and not in this tree' },
+  'list, pin': { verdict: 'builds', by: 'noScreenSendEventLists: the thirteen lists the four pin tags reach, 13 of 13 compiles, noscreenconstants.test.ts' },
+  'list, activity': { verdict: 'edits', by: 'composeNoScreenActivity, 4.2: the ten lists held against Logitech\'s step for step, replacing the donor\'s activity, noscreenactivity.test.ts' },
   'list, uncalled send': { verdict: 'edits', by: 'composeNoScreenDevice: Teletext, STORED_UNBOUND, and the digit copies, DIGIT_COPIES_BY_TYPE, 4.1.1' },
   'list, uncalled silent write': { verdict: 'edits', by: 'composeNoScreenDevice: two per power variable, POWER_RESETS, 4.1.3' },
   'timer table': { verdict: 'edits', by: 'appendTableEntries, onto the donor\'s table' },
@@ -267,16 +281,16 @@ export const VERDICTS: Readonly<Record<string, { verdict: Verdict; by: string }>
   'state record, clock': { verdict: 'other', by: 'buildStateTables, clockSpec; refuses 16' },
   'state record, firmware': { verdict: 'other', by: 'buildStateTables, firmwareRecords; refuses 16' },
   'state record, device power': { verdict: 'edits', by: 'composeDeviceFor, appendNarrowStateVariable' },
-  'state record, device input': { verdict: 'nowhere', by: 'the Denon\'s 19 input values: the family\'s sends refuse inputs' },
-  'state record, activity flag': { verdict: 'nowhere', by: 'todo-compile-350.md 4.2' },
+  'state record, device input': { verdict: 'edits', by: 'composeNoScreenActivity, onto the donor: the Denon\'s 19 values each sending Logitech\'s record and the LG\'s one value, 4.2, noscreenactivity.test.ts' },
+  'state record, activity flag': { verdict: 'nowhere', by: 'composeNoScreenActivity reuses the flag the donor holds and never writes one, 4.2' },
   'state record, unnamed': { verdict: 'nowhere', by: 'the compiler\'s first two byte variable; the four slot family builds it, FIRST_WIDE_VARIABLE, and refuses 16' },
-  'parameter table': { verdict: 'nowhere', by: 'five pointers, the same in 7 of 7 files, written by no generator' },
-  'parameter group': { verdict: 'nowhere', by: 'five groups, the same 21 bytes in 7 of 7 files, written by no generator' },
+  'parameter table': { verdict: 'builds', by: 'noScreenParameterBlock, five pointers over NO_SCREEN_PARAMETERS, 13 of 13 compiles, noscreenconstants.test.ts' },
+  'parameter group': { verdict: 'builds', by: 'noScreenParameterBlock, the same 21 bytes, 13 of 13 compiles, noscreenconstants.test.ts' },
   'number sender table': { verdict: 'edits', by: 'composeNoScreenFavourites' },
   'number sender record': { verdict: 'edits', by: 'composeNoScreenFavourites' },
   'number sender digit tables': { verdict: 'edits', by: 'composeNoScreenFavourites' },
-  'digit entry table': { verdict: 'nowhere', by: 'two zero bytes in 7 of 7 files, written by no generator' },
-  'metadata archive': { verdict: 'edits', by: 'withMetadataDevice adds a device to a donor\'s archive through Node\'s zlib, whose stream is not Logitech\'s while stock zlib\'s is; no whole archive is written' },
+  'digit entry table': { verdict: 'builds', by: 'noScreenDigitEntryTable, 13 of 13 compiles, noscreenconstants.test.ts' },
+  'metadata archive': { verdict: 'builds', by: 'noScreenMetadataSection over our own deflate.ts, byte for byte on all seven compiles given each one\'s device numbers and ZIP time, the two choices; metadatabuild.test.ts. withMetadataDevice, which edits a donor\'s archive, is the composers\' route and no longer the census\'s' },
 };
 
 /** The census with each category's verdict, summed per verdict. */
@@ -533,7 +547,7 @@ test('node zlib reproduces none of the three metadata archives\' deflate streams
 const CENSUS_350 = {
   'action list table': 995, 'architecture record': 7, 'clock record': 14, 'device key map': 844, 'digit entry table': 2,
   'end marker': 4, 'header': 11, 'infrared blocks': 102982, 'infrared group arrays': 774, 'infrared group table': 25,
-  'infrared record headers': 5250, 'key map table': 28, 'key table (map 0)': 69, 'list, activity': 94, 'list, channel': 35,
+  'infrared record headers': 5250, 'key map table': 28, 'key table (map 0)': 53, 'key table, pin entries': 16, 'list, activity': 94, 'list, channel': 35,
   'list, key': 156, 'list, pin': 109, 'list, power': 157, 'list, send': 2160, 'list, start up': 42, 'list, uncalled send': 340,
   'list, uncalled silent write': 112, 'log area': 8, 'metadata archive': 3033, 'name tree': 259, 'number sender digit tables': 90,
   'number sender record': 23, 'number sender table': 4, 'parameter group': 21, 'parameter table': 16, 'section table': 60,
@@ -544,7 +558,7 @@ const CENSUS_350 = {
 const CENSUS_300 = {
   'action list table': 596, 'architecture record': 7, 'clock record': 14, 'device key map': 536, 'digit entry table': 2,
   'end marker': 4, 'header': 11, 'infrared blocks': 88228, 'infrared group arrays': 474, 'infrared group table': 13,
-  'infrared record headers': 3234, 'key map table': 16, 'key table (map 0)': 37, 'list, activity': 53, 'list, channel': 28,
+  'infrared record headers': 3234, 'key map table': 16, 'key table (map 0)': 21, 'key table, pin entries': 16, 'list, activity': 53, 'list, channel': 28,
   'list, pin': 109, 'list, power': 56, 'list, send': 1330, 'list, start up': 42, 'list, uncalled send': 210,
   'list, uncalled silent write': 56, 'log area': 8, 'metadata archive': 1610, 'name tree': 153, 'number sender digit tables': 90,
   'number sender record': 23, 'number sender table': 4, 'parameter group': 21, 'parameter table': 16, 'section table': 60,
@@ -557,5 +571,20 @@ const CENSUS_300 = {
 // bytes `builds` and 330 and 300 `other`; the frame's 81 on each file, the header's 11, the section table's 60, the
 // end marker's 4 and the trailer's 6, moved from `other` to `builds` when the frame took the family on,
 // `todo-compile-350.md` 5.1.1.
-const VERDICT_BYTES_350 = { builds: 361, edits: 117397, other: 249, nowhere: 506 };
-const VERDICT_BYTES_300 = { builds: 255, edits: 96701, other: 219, nowhere: 299 };
+// Since 5.1.3, the family's constants: the log area, the parameter table and groups, the digit entry table, the start
+// up table and lists, the pin lists and the key table's pin entries, 232 bytes a compile, moved from `nowhere` to
+// `builds`. Since 5.1.4, the whole metadata archive, 3033 and 1610 bytes, moved from `edits` to `builds`. Since 4.2, the
+// activity's ten lists (94 and 53 bytes) and the Denon's and the LG's input variables (166 bytes, the 350's alone) moved
+// from `nowhere` to `edits`: the composer replaces a donor's activity and appends the variables onto a donor.
+// **The split of map 0**: the census cuts the four pin entries (16 bytes, the entries whose tags are `PIN_TAGS`) out of
+// the key table into a category of their own, 'key table, pin entries', which `builds`, and the rest of the table
+// keeps 'key table (map 0)' and `edits`. A category is a verdict's unit here, so a table that two generators share
+// is split by entry and not given the weaker of the two verdicts.
+// Plan 011 itself (kept as written in `docs/plans/011-the-350-from-nothing.md`) measured, per file, 280 and 174 bytes
+// `builds`, 330 and 300 `other`, 958 and 565 `nowhere`. Since then, in order: the uncalled sends and silent writes
+// moved to `edits` when the device composer took them on, `todo-compile-350.md` 4.1.1 and 4.1.3, 452 and 266 bytes;
+// the frame's 81 on each file, the header's 11, the section table's 60, the end marker's 4 and the trailer's 6, moved
+// from `other` to `builds` when the frame took the family on, 5.1.1; and the items above. State tables, 5.1.2, are
+// not counted here yet: 249 and 219 bytes stay `other`, 14 stay `nowhere`.
+const VERDICT_BYTES_350 = { builds: 3642, edits: 114608, other: 249, nowhere: 14 };
+const VERDICT_BYTES_300 = { builds: 2113, edits: 95128, other: 219, nowhere: 14 };

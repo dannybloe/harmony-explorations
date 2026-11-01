@@ -24,7 +24,7 @@
  * shared with the activity, though its bytes are the same; only a toggle device's send list is, since it is the
  * device's. The wait after a toggle device is the device's power on delay as one `0x7C`, where the device's own on
  * list splits a delay past ten seconds into waits of ten, so a delay is stated twice and an edit of it must reach
- * both, `edit.ts`'s `setPowerOnDelay` reaching only the device's.
+ * both, which `edit.ts`'s `setPowerOnDelay` does through the family, `delay.ts`.
  *
  * **The inputs are the activity's too**: a device's input variable exists only where the activity puts the device
  * on an input. One composed here has one value per input the catalogue lists, each going from any value to its own

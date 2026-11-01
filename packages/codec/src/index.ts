@@ -88,6 +88,9 @@ export * from './fonttable.ts';
 // same reason the archive readers below are: FreeHarmony is what wants a command's name, and
 // what it must not do is grow a second reader for a format we already read.
 export * from './metadata.ts';
+// And the deflate it writes with, our own, which writes the stream stock zlib writes at its defaults, as Logitech's
+// compiler does, todo-compile-350.md 5.1.4.
+export * from './deflate.ts';
 // **The infrared archive's two readers**, added 31 August 2026 for the reason the `protocols.ts`
 // comment above records: FreeHarmony is what consumes a device catalogue, and a barrel that does not
 // offer a reader is part of why a second one gets written. `archive.ts` reads Logitech's protocol
@@ -147,4 +150,6 @@ export {
   // Its state tables and the allocator of a setup's variables, todo-compile-350.md 5.1.2.
   buildNoScreenStateTables, NO_SCREEN_FIRMWARE_STATE_RECORDS, NO_SCREEN_NARROW_MAX, NO_SCREEN_STATE_TABLES, type NoScreenStateDevice,
   type NoScreenStateRequest, type NoScreenStateTables, noScreenStateVariables, type NoScreenStateVariables, type NoScreenVariableRole,
+  NO_SCREEN_METADATA_AFTER, NO_SCREEN_METADATA_BEFORE, type NoScreenMetadataChoices, type NoScreenMetadataDevice,
+  noScreenMetadataSection, noScreenMetadataXml, noScreenZipTime, ZIP_TIME_BEFORE_STAMP_SECONDS,
 } from './families/no-screen/index.ts';

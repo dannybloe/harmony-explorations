@@ -9,7 +9,8 @@
  * a whole device, and it puts a device on a key's short press or, 4.4, its long press. The favourite channels,
  * 4.3, are `composeNoScreenFavourites` in `favourites.ts`, and the one activity, Watch TV, 4.2, is
  * `composeNoScreenActivity` in `activity.ts`, for the same reason. A whole setup, 4.5, is `composeNoScreenSetup` in
- * `setup.ts`, which runs the device and favourite composers in the order they need. Everything else refuses with a message saying
+ * `setup.ts`, which runs the device and favourite composers in the order they need. A power on delay's second copy,
+ * Watch TV's for a device with one power code, is `powerOnDelayCopies`, `delay.ts`, 4.6. Everything else refuses with a message saying
  * why, as code-for-a-family's fourth question asks, rather than borrowing another family's answer:
  *
  * * **No screen**, so the screen members refuse for good: a device's screen, an activity's row, menu and screen,
@@ -28,6 +29,7 @@
 import type { ActivityKeyRules } from '../../activityroles.ts';
 import { ComposeError } from '../../shared/core.ts';
 import type { ActivityStart, Family, FamilyFonts, FamilyTraits } from '../family.ts';
+import { noScreenPowerOnDelayCopies } from './delay.ts';
 import { NO_SCREEN_HARD_KEYS } from './keys.ts';
 import { NO_SCREEN_SENDS } from './sends.ts';
 import { NO_SCREEN_STATE_TABLES } from './statetables.ts';
@@ -85,6 +87,7 @@ export const NO_SCREEN_FAMILY: Family = {
   composeActivityRow: refuses(NO_SCREEN),
   activityDeviceList: refuses(`${NO_SCREEN}, and an activity's device list is a screen`),
   composeActivityScreen: refuses(NO_SCREEN),
+  powerOnDelayCopies: noScreenPowerOnDelayCopies,
 };
 
 export {
@@ -104,6 +107,7 @@ export {
   type AccountDevice, DEVICE_KEYS, DIGIT_COPIES_BY_TYPE, FAVOURITE_SCANS, LONG_PRESS_GROUP_BASE, NO_SCREEN_HARD_KEYS,
   RECEIVER_TYPE, TELEVISION_TYPE, volumeSource,
 } from './keys.ts';
+export { type DelayCopy, noScreenPowerOnDelayCopies } from './delay.ts';
 export { NO_SCREEN_SENDS, powerOnWaits } from './sends.ts';
 export { noScreenSites, type NoScreenSite, type RemovedNoScreenDevice, withoutNoScreenDevice } from './remove.ts';
 export {
@@ -113,3 +117,7 @@ export {
 export {
   composeNoScreenSetup, type ComposedNoScreenSetup, devicePlaces, type DevicePlace, groupOfPlace, type NoScreenSetupRequest,
 } from './setup.ts';
+export {
+  NO_SCREEN_METADATA_AFTER, NO_SCREEN_METADATA_BEFORE, type NoScreenMetadataChoices, type NoScreenMetadataDevice,
+  noScreenMetadataSection, noScreenMetadataXml, noScreenZipTime, ZIP_TIME_BEFORE_STAMP_SECONDS,
+} from './metadata.ts';

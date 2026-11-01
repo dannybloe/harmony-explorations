@@ -199,8 +199,10 @@ test('what differs from Logitech\'s second compile is placement and numbering: t
     // The metadata archive is the last section, so its length is the file's from its start, and the whole length
     // difference is there.
     const archive = (c: Container) => c.blob.length - c.blobOffsetOf(c.sections[13]!.address)!;
-    assert.equal(ours.blob.length - theirs.blob.length, -6);
-    assert.equal(archive(ours) - archive(theirs), -6);
+    // -6 while the archive went through Node's zlib; -4 since our own deflate writes Logitech's streams, 5.1.4,
+    // so what is left is the archive's order.
+    assert.equal(ours.blob.length - theirs.blob.length, -4);
+    assert.equal(archive(ours) - archive(theirs), -4);
     // The archive's order: the composed devices at its end, in the order composed, each with a DeviceId above the last.
     const listed = (c: Container) => metadataArchive(c)!.devices.map((one) => `${one.index} ${one.name} ${one.deviceId}`);
     assert.deepEqual(listed(theirs), ['0 LG TV 83962903', '1 Plasma 83962904', '2 Denon 83962905', '3 KPN 83962906', '4 Kodi 83962907',

@@ -280,6 +280,15 @@ export interface Family<Choices extends CommonChoices = CommonChoices> {
    * front list and the empty keys' own, section 379. Absent on the Harmony One, whose wiring an activity leaves.
    */
   activityRewiring?(c: Container, activityKey: string | undefined): ((bytes: Uint8Array) => Uint8Array) | undefined;
+  /**
+   * The copies of a device's inline power on delay that a key reaches besides the `0x7C` in its `Power` variable's
+   * switch on list, each as a list and an instruction's place in it, which `setPowerOnDelay` changes along with
+   * that one. The Harmony 300 and 350's Watch TV keeps its own copy for a device with one power code,
+   * `families/no-screen/delay.ts`, `todo-compile-350.md` 4.6. Absent where the switch on list is the only copy: the
+   * Harmony One's activities reach a device's delay through its variable, and the Harmony 600, 650 and 700 keep the
+   * delay as a stored setting, `setPowerOnDelayVariable`.
+   */
+  powerOnDelayCopies?(c: Container, group: number): readonly { readonly list: number; readonly at: number }[];
   /** The commands a mode's pages show, page by page in this family's item order, with each one's drawn label. */
   screenItems(c: Container, mode: number): DeviceScreenItem[];
   /** Whether an item is drawn the way this family draws a command called `name`. */

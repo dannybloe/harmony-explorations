@@ -114,7 +114,8 @@ reaches is the copy inside Watch TV's own list**: Watch TV toggles the KPN's pow
 toggles the television's power and waits 50 tenths, and only then selects the KPN's mode. The Power key
 sends the television's toggle code alone, and the copy in the television's power state list is reached by
 no key. `packages/codec/bin/set-delay.ts` changed only that unreached copy, so `after.bin` was made with
-both copies at 100 tenths instead.
+both copies at 100 tenths instead. Since `todo-compile-350.md` 4.6 it changes both, and given `before.bin`,
+group 0 and 100 tenths it writes `after.bin` byte for byte, `packages/codec/test/filefamilydelays.test.ts`.
 
 1. `after.bin` written on the second attempt, verified and restarted. The first run lost the TV key and
    Volume Up pressed during Watch TV, `reads/20261031T122346Z-...-10-s.json`. The second, with Volume Up

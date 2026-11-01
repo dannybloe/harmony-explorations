@@ -268,3 +268,7 @@ the LG TV's Volume Up were heard, and the remote went on working, the run being 
 `reads/20261101T090605Z-ir-test-harmony-350-logitech-s-compile-with-event-0xff-bound.json` (fixture
 `h350_event_ff_ir`). The entry is harmless on this build, which never raises event `0xFF`. The unit holds Logitech's
 compile again. The account is in `harmony-300.md`.
+
+## todo-compile-350 4.5: the test setup composed by us
+
+The composition of 4.5, Logitech's first compile with the Knoll, Kodi, the Switch, the Sony HT and the Plasma taken out and composed back with the five favourite channels, was written to the unit from the lab's `work/setups/h350-test/composed-4.5-node-deflate.bin` (its archive still deflated by Node's zlib; `composed-4.5.bin` is the same composition with our own deflate, the archive's bytes alone differing), read back identical, and pressed through `packages/bench/irtests/done/350-4-5-composed.json`: 12 steps, 20 of 20 expected codes heard, the lab's `reads/20261101T095218Z-ir-test-harmony-350-the-test-setup-composed-by-us.json`. The unit keeps that file. Observed at the bench: after step 4's Power in the Knoll's mode, the TV/Media key stayed lit for what the person judged above 20 seconds, while the following steps went through unhindered; the Knoll's power on waits are 100, 100 and 50 tenths in the setup, 25 seconds, and a power on delay holds back only that device's later codes. The light as busy for that long is the reading, not measured.
