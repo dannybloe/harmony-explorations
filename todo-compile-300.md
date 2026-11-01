@@ -54,6 +54,6 @@ Changed on 31 October 2026: the bench 300 already held a Logitech compile of its
 What stays the 300's own if 4.4 folds the track: our composers with the 300's settings checked against Logitech's compile for it.
 
 - [x] 5.1 The recipe our composers rebuild it from, `packages/corpus/setups/h300-test.json`, checked against the compile: devices, keys, Watch TV and the favourites: moved to `todo-later.md` 6.25
-- [x] 5.2 A power on delay edited in every copy a key reaches: Watch TV's list holds its own, which `set-delay.ts` does not change; the activity's copy exists for a device with one power code only, a device with separate on and off codes reaches its delay through its power variable's list: moved to `todo-compile-350.md` 4.6
+- [x] 5.2 A power on delay edited in every copy a key reaches: Watch TV's list holds its own, which `set-delay.ts` did not change until the 350's 4.6; the activity's copy exists for a device with one power code only, a device with separate on and off codes reaches its delay through its power variable's list: moved to `todo-compile-350.md` 4.6
 - [x] 5.3 The favourites in the 300's own key order, which `composeNoScreenFavourites` refuses: Logitech's compile puts them on other keys than the 350's: moved to `todo-freeharmony.md` 1.7
 - [x] 5.4 The test setup built by us with the 300's settings, compared with 3.1's compile, written to the bench 300 and used with 3.3's bench test: moved to `todo-later.md` 6.25

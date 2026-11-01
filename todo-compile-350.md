@@ -67,7 +67,7 @@ Logitech compile of part of a test setup written and used, then our composers on
 - [x] 4.3 The favourite channels: `composeNoScreenFavourites`, up to five on one device, composed onto Logitech's compile without favourites equals its compile with them in length, the KPN's map, the number sender and all 331 lists, `packages/codec/test/noscreenfavourites.test.ts`; the Harmony 300's key order is its own track's, and a bench test is 4.5's
 - [x] 4.4 A device key's long press: `composeNoScreenDevice` with `press: 'long'`, groups 4 to 7, held event, press list and timers equal to Logitech's compile on the four long press devices, `packages/codec/test/noscreen.test.ts`; Logitech's other routing of volume, Input and the favourite key is 4.1.1, and a bench test is 4.5's
 - [ ] 4.5 The whole test setup, written and run with a bench test
-- [ ] 4.6 A power on delay edited in every copy a key reaches: Watch TV's list holds its own for a device with one power code, which `set-delay.ts` does not change; a device with separate on and off codes reaches its delay through its power variable's list (was `todo-compile-300.md` 5.2, measured on the Harmony 300)
+- [x] 4.6 A power on delay edited in every copy a key reaches: Watch TV's list holds its own for a device with one power code, which `set-delay.ts` did not change until this item; a device with separate on and off codes reaches its delay through its power variable's list (was `todo-compile-300.md` 5.2, measured on the Harmony 300): `Family.powerOnDelayCopies`, the family's `delay.ts`, reproducing the 300's heard file byte for byte, `packages/codec/test/filefamilydelays.test.ts`
 
 ## 5. Nothing copied
 
