@@ -405,7 +405,7 @@ counts it down per device, [actions.md](actions.md#0x7c-is-a-per-device-delay-in
 A Harmony 350 set up with a Harmony 600's devices states as operands the same three values the Harmony 600
 keeps as delay variables, 80, 15 and 15; the 15s are likely a common default, and the television's 80 is
 what says the compiler writes tenths of a second here too[^t-file-family-delays]; that this firmware waits a tenth of a second per unit is not checked[^unchecked].
-`deviceDelays` reads them and `setPowerOnDelay` changes one, a one byte edit.
+`deviceDelays` reads them and `setPowerOnDelay` changes one, a one byte edit per copy.
 
 **The activity's start carries its own copy.** On this family the one activity switches a device on by
 calling the device's power code list directly and following it with a `0x7C` of its own, where the
@@ -413,7 +413,9 @@ architectures above switch it on through its `Power` variable. Over the five con
 copies, every one in the list the activity's key binding calls. Seven equal their device's single
 `0x7C`; the eighth is the television above, 170 in one instruction against its transition's 100 and
 70[^t-file-family-delays]. So a writer that changes a device's power on delay on a configuration with an
-activity has two places to change; `setPowerOnDelay` changes the device's transition alone.
+activity has two places to change for a device the activity switches by its code rather than by its `Power`
+variable, and `setPowerOnDelay` changes both, [the family's memory.md](../architectures/harmony-300-350/memory.md#a-devices-power-on-delay)[^t-file-family-delays].
+This said it changed the device's transition alone until the family named the activity's copy.
 
 What a delay does once it is queued, holding back only its own device, is the `0x7C` instruction's,
 [actions.md](actions.md).
