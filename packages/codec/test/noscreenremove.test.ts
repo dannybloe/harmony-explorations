@@ -21,8 +21,11 @@
  * exactly as many, found by construction, on both compiles: an independent closure, since nothing in the
  * composer reads what the removal found. Composed back, the whole file is Logitech's read by content: every list
  * of it, 331 and 326, as a multiset with every call written out, every map, the key table, every timer record,
- * every group's records and every state variable's transitions. The two files differ by the metadata archive's
- * length alone, 1 to 9 bytes, which is the deflate, ours rather than Logitech's.
+ * every group's records and every state variable's transitions. The two files differ in length by the metadata
+ * archive's alone, 0 to 9 bytes, which is its text: the composed device listed last with a `DeviceId` of its own.
+ * This said the 1 to 9 bytes were the deflate, ours rather than Logitech's, until the archive was deflated with our
+ * own, which writes Logitech's streams, `metadatabuild.test.ts`: where the text is Logitech's, the Knoll's, the
+ * archive is now theirs byte for byte.
  *
  * **What it found on the way**: the composer did not make the two lists Logitech stores for every device's power
  * variable, a silent write of 0 and one of 1 that nothing calls, which the removal had to take out too; with those
@@ -247,7 +250,7 @@ test('composed back, the device adds as many lists as the removal took, and the 
       [331, 331, 331, 331, 326, 326, 326, 326]);
   });
 
-test('what composing back changes is placement and numbering: the files differ by the metadata archive\'s deflate alone, the key table\'s order on the Kodi\'s key, and where the account lists the device',
+test('what composing back changes is placement and numbering: the key table\'s order on the Kodi\'s key and where the account lists the device, and the metadata archive is Logitech\'s byte for byte where its text is',
   needs, () => {
     const seen: Record<string, [number, boolean, boolean]> = {};
     for (const { file, one } of CASES) {
@@ -266,13 +269,16 @@ test('what composing back changes is placement and numbering: the files differ b
       const highest = Math.max(...logitech.filter((device) => device.name !== one.name).map((device) => Number(device.deviceId)));
       assert.deepEqual(mine.map((device) => device.deviceId),
         moved.map((device) => (device.name === one.name ? String(highest + 1) : device.deviceId)), where);
-      seen[where] = [ours.blob.length - theirs.blob.length,
-        tags(ours).join() === tags(theirs).join(), metadataArchive(ours)!.xml === metadataArchive(theirs)!.xml];
+      const sameText = metadataArchive(ours)!.xml === metadataArchive(theirs)!.xml;
+      seen[where] = [ours.blob.length - theirs.blob.length, tags(ours).join() === tags(theirs).join(), sameText];
+      // Where the text is Logitech's, so is the whole archive, its length word to its end: our deflate is theirs.
+      const archiveBytes = (c: Container) => Buffer.from(c.blob.subarray(c.blobOffsetOf(c.sections[13]!.address)!, c.blob.length - 6));
+      assert.equal(archiveBytes(ours).equals(archiveBytes(theirs)), sameText, where);
     }
     // Bytes the file shrank by, whether the key table's order is Logitech's, and whether the archive's text is.
     assert.deepEqual(seen, {
-      'second Knoll': [-1, true, true], 'second Kodi': [-9, false, false], 'second Switch': [-6, true, false], 'second Sony HT': [-2, true, false],
-      'first Knoll': [-1, true, true], 'first Kodi': [-9, false, false], 'first Switch': [-6, true, false], 'first Sony HT': [-2, true, false],
+      'second Knoll': [0, true, true], 'second Kodi': [-9, false, false], 'second Switch': [-6, true, false], 'second Sony HT': [-1, true, false],
+      'first Knoll': [0, true, true], 'first Kodi': [-9, false, false], 'first Switch': [-6, true, false], 'first Sony HT': [-1, true, false],
     });
     // The Kodi's held tag, 0xC1, shares a slot of the key table's hash map with 0x2E and 0x85: Logitech's file
     // stores it after them, and a tag put in last goes in front, `inCompilerOrder`.

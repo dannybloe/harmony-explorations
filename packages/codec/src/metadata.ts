@@ -33,9 +33,12 @@
  *
  * The archive is deflated with a data descriptor, so the local header's sizes are zero and the
  * compressed length comes from the central directory. `node:zlib` inflates it; no dependency is added
- * for this, which is deliberate, since a ZIP reader would be a large tree for one file.
+ * for this, which is deliberate, since a ZIP reader would be a large tree for one file. **Writing one
+ * deflates with `deflate.ts`, our own**, since the stream Logitech's compiler writes is stock zlib's
+ * at its defaults and Node's zlib writes another, `todo-compile-350.md` 5.1.4.
  */
-import { crc32, deflateRawSync, inflateRawSync } from 'node:zlib';
+import { crc32, inflateRawSync } from 'node:zlib';
+import { deflateRaw } from './deflate.ts';
 import type { Container } from './gspm.ts';
 import { GspmError, parse, TRAILER_CHECKSUM_OFFSET, trailerChecksum } from './gspm.ts';
 import { u16, u32 } from './bytes.ts';
@@ -199,13 +202,17 @@ export function metadataArchive(c: Container): Metadata | undefined {
 }
 
 // ---------------------------------------------------------------------------------------------------
-// Writing one: a device's names added, todo-compile-350.md 4.1
+// Writing one: the ZIP around a text, todo-compile-350.md 5.1.4, and a device's names added, 4.1
 
 /** A data descriptor, which the archives here carry after the compressed bytes, and the end of the directory. */
 const DESCRIPTOR = 0x08074b50;
 const END_OF_DIRECTORY = 0x06054b50;
 /** The local header's flags bit saying the sizes and checksum follow the data, in a descriptor. */
 const FLAG_DESCRIPTOR = 0x0008;
+/** The one entry's name, the version that made it and the version needed, and its method, deflate. */
+const ENTRY_NAME = 'MetaData.xml';
+const ZIP_VERSION = 20;
+const METHOD_DEFLATE = 8;
 
 /** What `withMetadataDevice` adds: the device's name and every command name the catalogue holds for it. */
 export interface MetadataDeviceEntry {
@@ -219,37 +226,108 @@ function escaped(text: string): string {
 }
 
 /**
- * The archive again around new text: one entry, deflated, its header fields, flags, time and date the old
- * archive's, the sizes and checksum in a data descriptor after the data and again in the central directory, which
- * is the shape of every archive this reader has met, `inflateOneEntry`. The deflated bytes are this machine's
- * zlib's and not Logitech's, so the archive is not theirs byte for byte; what it says, inflated, is the measure.
+ * The time a ZIP entry states, in the MS-DOS form a ZIP header holds: two seconds' resolution, years from 1980 to
+ * 2107. Which time an archive should state is a choice, plan 011 step 4; this is only its spelling.
  */
-function rezipped(old: Uint8Array, xml: string): Uint8Array {
-  if (u32(old, 0) !== LOCAL_HEADER || (u16(old, 6) & FLAG_DESCRIPTOR) === 0) {
-    throw new GspmError('the metadata archive is not one entry with a data descriptor, the only shape written');
+export interface ZipTime {
+  readonly year: number;
+  readonly month: number;
+  readonly day: number;
+  readonly hour: number;
+  readonly minute: number;
+  /** An odd second is written as the even one below it, which is all the field holds. */
+  readonly second: number;
+}
+
+/** The two words a ZIP header holds, the time and then the date. */
+export interface ZipTimeWords {
+  readonly time: number;
+  readonly date: number;
+}
+
+/** The two words a ZIP header holds for `time`, refusing a time the form cannot hold. */
+export function zipTimeWords(time: ZipTime): ZipTimeWords {
+  const { year, month, day, hour, minute, second } = time;
+  const within = (value: number, low: number, high: number) => Number.isInteger(value) && value >= low && value <= high;
+  if (!within(year, 1980, 2107) || !within(month, 1, 12) || !within(day, 1, 31) || !within(hour, 0, 23)
+    || !within(minute, 0, 59) || !within(second, 0, 59)) {
+    throw new GspmError(`a ZIP header cannot state ${JSON.stringify(time)}`);
   }
-  const nameLength = u16(old, 26);
-  const name = old.subarray(30, 30 + nameLength);
-  let central = -1;
-  for (let scan = 30 + nameLength; scan + 46 <= old.length; scan += 1) {
-    if (u32(old, scan) === CENTRAL_HEADER) { central = scan; break; }
-  }
-  if (central < 0) throw new GspmError('the metadata archive has no central directory');
+  return { time: (hour << 11) | (minute << 5) | (second >> 1), date: ((year - 1980) << 9) | (month << 5) | day };
+}
+
+/** The time a ZIP header's two words state, the inverse of `zipTimeWords`. */
+export function zipTimeOf(words: ZipTimeWords): ZipTime {
+  const { time, date } = words;
+  return {
+    year: 1980 + (date >> 9), month: (date >> 5) & 15, day: date & 31,
+    hour: time >> 11, minute: (time >> 5) & 63, second: (time & 31) * 2,
+  };
+}
+
+/**
+ * A ZIP of one file, `MetaData.xml`, holding `xml`, in the shape of every metadata archive read: ten files of two
+ * architectures, the Harmony 300 and 350's seven and the Harmony 890 and 895's three, equal byte for byte but for the
+ * time and what the text makes, `metadatabuild.test.ts`. A local header stating version 2.0, the descriptor flag
+ * alone, deflate, the time, and no sizes or checksum; the stream, `deflateRaw`, which is stock zlib's; a data
+ * descriptor with its signature, the checksum and both sizes; one central directory entry repeating the header
+ * with the checksum and sizes and every attribute zero; and the end of the directory, one entry and no comment.
+ */
+export function metadataZip(xml: string, time: ZipTime | ZipTimeWords): Uint8Array {
+  const words = 'year' in time ? zipTimeWords(time) : time;
   const text = Buffer.from(xml, 'utf8');
-  const data = deflateRawSync(text);
+  const data = deflateRaw(text);
   const check = crc32(text) >>> 0;
-  // The local header as it was, the extra field dropped, sizes and checksum zero since a descriptor follows.
-  const local = new Writer(30 + nameLength).raw(old.subarray(0, 26)).u16(nameLength).u16(0).raw(name);
-  local.bytes.fill(0, 14, 26);
+  const name = Buffer.from(ENTRY_NAME, 'latin1');
+  const local = new Writer(30 + name.length).u32(LOCAL_HEADER).u16(ZIP_VERSION).u16(FLAG_DESCRIPTOR).u16(METHOD_DEFLATE)
+    .u16(words.time).u16(words.date).u32(0).u32(0).u32(0).u16(name.length).u16(0).raw(name);
   const descriptor = new Writer(16).u32(DESCRIPTOR).u32(check).u32(data.length).u32(text.length);
   const directoryAt = local.bytes.length + data.length + descriptor.bytes.length;
-  // The central header as it was, with this entry's checksum and sizes, its extra and comment dropped.
-  const directory = new Writer(46 + nameLength).raw(old.subarray(central, central + 16))
-    .u32(check).u32(data.length).u32(text.length).u16(nameLength).u16(0).u16(0)
-    .raw(old.subarray(central + 34, central + 42)).u32(0).raw(name);
+  const directory = new Writer(46 + name.length).u32(CENTRAL_HEADER).u16(ZIP_VERSION).u16(ZIP_VERSION)
+    .u16(FLAG_DESCRIPTOR).u16(METHOD_DEFLATE).u16(words.time).u16(words.date).u32(check).u32(data.length).u32(text.length)
+    .u16(name.length).u16(0).u16(0).u16(0).u16(0).u32(0).u32(0).raw(name);
   const end = new Writer(22).u32(END_OF_DIRECTORY).u16(0).u16(0).u16(1).u16(1)
     .u32(directory.bytes.length).u32(directoryAt).u16(0);
   return Buffer.concat([local.bytes, data, descriptor.bytes, directory.bytes, end.bytes]);
+}
+
+/** The archive as its section: the `u32` length the reader finds it by, then the ZIP, on both architectures. */
+export function metadataSection(xml: string, time: ZipTime | ZipTimeWords): Uint8Array {
+  const zip = metadataZip(xml, time);
+  return Buffer.concat([new Writer(4).u32(zip.length).bytes, zip]);
+}
+
+/** A ZIP's time, its first entry's, read from its local header. */
+export function metadataZipTime(zip: Uint8Array): ZipTimeWords {
+  if (zip.length < 30 || u32(zip, 0) !== LOCAL_HEADER) throw new GspmError('not a ZIP local header');
+  return { time: u16(zip, 10), date: u16(zip, 12) };
+}
+
+/**
+ * One `Device` element as the Harmony 300 and 350's archives spell it: the name, the `Index`, the `DeviceId`, and
+ * the commands sorted by character code, numbered from 0, or `<Commands/>` where there are none. Measured over the
+ * seven Logitech files of the family, 32 devices, whose command names are sorted and distinct in every one, and two of
+ * whose devices name no command, `metadatabuild.test.ts`; this wrote an open and a close tag for a device with no
+ * command until the archive was built whole and those two were met.
+ */
+export function metadataDeviceElement(name: string, index: number, deviceId: number, commands: readonly string[]): string {
+  const names = [...new Set(commands)].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+  const listed = names.length === 0 ? '<Commands/>'
+    : `<Commands>${names.map((one, k) => `<Command><Index>${k}</Index><Name>${escaped(one)}</Name></Command>`).join('')}</Commands>`;
+  return `<Device><Name>${escaped(name)}</Name><Index>${index}</Index><DeviceId>${deviceId}</DeviceId>${listed}</Device>`;
+}
+
+/**
+ * The archive again around new text: one entry with the old archive's time, in the shape `metadataZip` writes,
+ * which is every archive's this reader has met, and refused for any other. Since `todo-compile-350.md` 5.1.4 the
+ * stream is our own deflate's, which is stock zlib's, so where the text is what Logitech's would be the archive is
+ * theirs byte for byte; until then it was this machine's zlib's, and only its inflated text could be compared.
+ */
+function rezipped(old: Uint8Array, xml: string): Uint8Array {
+  if (u32(old, 0) !== LOCAL_HEADER || (u16(old, 6) & FLAG_DESCRIPTOR) === 0 || u16(old, 8) !== METHOD_DEFLATE) {
+    throw new GspmError('the metadata archive is not one deflated entry with a data descriptor, the only shape written');
+  }
+  return metadataZip(xml, metadataZipTime(old));
 }
 
 /**
@@ -290,13 +368,10 @@ export function withMetadataDevice(c: Container, entry: MetadataDeviceEntry): Ui
   const close = metadata.xml.indexOf('</Devices>');
   if (close < 0) throw new GspmError('the metadata archive names no devices, so there is no list to add one to');
   if (metadata.devices.some((one) => one.name === entry.name)) throw new GspmError(`the metadata archive names ${entry.name} already`);
-  const names = [...new Set(entry.commands)].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
   const ids = metadata.devices.map((one) => (one.deviceId === undefined ? Number.NaN : Number(one.deviceId)));
   if (ids.some((one) => !Number.isSafeInteger(one))) throw new GspmError('a device of the metadata archive states no numeric DeviceId');
   const id = ids.length === 0 ? FIRST_DEVICE_ID : Math.max(...ids) + 1;
-  const element = `<Device><Name>${escaped(entry.name)}</Name><Index>${metadata.devices.length}</Index><DeviceId>${id}</DeviceId><Commands>`
-    + names.map((name, k) => `<Command><Index>${k}</Index><Name>${escaped(name)}</Name></Command>`).join('')
-    + '</Commands></Device>';
+  const element = metadataDeviceElement(entry.name, metadata.devices.length, id, entry.commands);
   return withMetadataXml(c, metadata, metadata.xml.slice(0, close) + element + metadata.xml.slice(close));
 }
 

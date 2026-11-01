@@ -97,3 +97,7 @@ export {
 } from './keys.ts';
 export { NO_SCREEN_SENDS, powerOnWaits } from './sends.ts';
 export { noScreenSites, type NoScreenSite, type RemovedNoScreenDevice, withoutNoScreenDevice } from './remove.ts';
+export {
+  NO_SCREEN_METADATA_AFTER, NO_SCREEN_METADATA_BEFORE, type NoScreenMetadataChoices, type NoScreenMetadataDevice,
+  noScreenMetadataSection, noScreenMetadataXml, noScreenZipTime, ZIP_TIME_BEFORE_STAMP_SECONDS,
+} from './metadata.ts';
