@@ -328,6 +328,22 @@ and `DeviceId` ascends strictly along the list, which is the account's order and
 Harmony 300 files; in the one account whose replies are kept, `DeviceId` is the account's number for the
 device.[^t-noscreen-routing]
 
+**The metadata archive can be written byte for byte, and its stream is stock zlib's.** The deflate stream in every
+distinct metadata archive of the Harmony 300 and 350 in seven configurations, six, is what zlib 1.2.12 writes at its default level, memory level 8
+and the default strategy; Node's zlib writes another.[^t-metadata-deflate] `deflateRaw` in
+`packages/codec/src/deflate.ts` writes that stream, its own code and not zlib's, and equals all six, along with
+stock zlib itself on 61 synthetic inputs.[^t-deflate][^t-metadatabuild] The ZIP around the text has one shape in
+all ten metadata archives of both architectures: version 2.0, the data descriptor flag alone, deflate, the descriptor with
+its signature, one central directory entry with every attribute zero, and no comment.[^t-metadatabuild] On the
+Harmony 300 and 350 the text around the devices is the same 149 characters before them and 610 after in all seven
+configurations; a device with no command spells its list `<Commands/>`, as two of their 32 device entries do; and the
+command names are sorted and distinct in all 32.[^t-metadatabuild] Two things are not a function of the file: each
+`DeviceId`, consecutive in each of the five Harmony 350 configurations and in neither Harmony 300 one, and the ZIP's
+time, the build stamp's less a zone's whole hours less 413 to 419 seconds, its date the stamp's date in all
+seven. Given those two, `noScreenMetadataSection` writes the whole section of each of the seven byte for byte; the
+time is four bytes of it, one word in each of the two headers.[^t-metadatabuild] Not checked: another version of
+zlib, a text past 65273 bytes, which the deflate refuses, and a name holding a character XML escapes.[^unchecked]
+
 ## The Harmony 300 and 350's slots
 
 Fifteen slots, and they are not the base twenty with insertions, so nothing transfers by index. Eleven base
@@ -396,4 +412,8 @@ configuration holds in them, is in
 [^s215]: Measured on a unit. [Section 215](../../docs/findings.md#s215)
 [^t-noscreen]: Measured in configurations. [The test](../../packages/codec/test/noscreen.test.ts)
 [^t-noscreen-routing]: Measured in configurations. [The test](../../packages/codec/test/noscreenrouting.test.ts)
+[^t-metadata-deflate]: Measured in configurations. [The test](../../tests/test_harmony_350_metadata_deflate.py)
+[^t-metadatabuild]: Measured in configurations. [The test](../../packages/codec/test/metadatabuild.test.ts)
+[^t-deflate]: Measured in configurations. [The test](../../packages/codec/test/deflate.test.ts)
+[^unchecked]: Not checked.
 [^t-file-family-delays]: Measured in configurations. [The test](../../packages/codec/test/filefamilydelays.test.ts)

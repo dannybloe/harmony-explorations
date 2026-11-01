@@ -20,7 +20,9 @@ byte, which is the same property the other architectures' configurations have[^s
 Raw slot 13 holds a metadata archive naming the devices and their commands and stating the log area's
 record layout, [the metadata archive](../../config-format/container.md#the-metadata-archive), with
 [the container's slots for this family](../../config-format/container.md#the-harmony-300-and-350s-slots).
-Its compiler's class path says `binarizer.pepsi`, Pepsi being Logitech's name for skin 78[^s260][^s197].
+Its compiler's class path says `binarizer.pepsi`, Pepsi being Logitech's name for skin 78[^s260][^s197]. It can be
+written byte for byte from the devices' names and their command names and two numbers no file determines, each
+device's `DeviceId` and the ZIP's time, [the metadata archive](../../config-format/container.md#the-metadata-archive).
 
 ## Not checked
 
