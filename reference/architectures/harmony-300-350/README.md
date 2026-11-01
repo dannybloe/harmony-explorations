@@ -47,6 +47,7 @@ model[^s131]; 104 is the Harmony 350 alone[^s196]. Logitech's client names 78 "P
 | USB product string | `Harmony Remote 0-1.4.0` | [^s193] |
 | firmware | 1.4 on both, and **an application that is one program linked twice**, the same code but for one routine; bootloaders and safe mode images that are different builds, [firmware.md](firmware.md#the-two-models-images-compared) | [^s196], [^t-harmony-300-350-images-u] |
 | processor | an ordinary PIC18 image; the part is not checked | [^s196b], [^unchecked] |
+| circuit board | **one design**: the same silkscreen, `PEPSI PA3`, and the same part number, `210-000767_010`, with the same parts and traces on both by a person's inspection; only the board maker's mark differs. A row of pads at the bottom is labelled `ICD_VPP`, `RB7`, `RB6`, `DGND`, `VDD_3V3`, `VBATT`, `UART1 RXD` and `UART1 TXD`: the processor's in circuit programming connection (reset or programming voltage, data on `RB7`, clock on `RB6`) and a serial port. What the serial port speaks, and whether the pads are wired, is not checked | [^t-harmony-300-350-boards-u], [^unchecked] |
 | internal flash | 128 KiB: bootloader, safe mode, application and records, from the firmware's own file table | [^s199] |
 | where the configuration lives | `/cfg/usercfg`, on the external medium at `0x020000`, 256 KiB, [memory.md](memory.md) | [^s199], [^t-firmware] |
 | configuration container | `GSPM`, `LWJL` and `PTYY` with **15 pointer slots**; the header byte `0x0F` is the slot count, not a version | [^s194] |
@@ -119,3 +120,4 @@ Each row is evidenced in the model's own folder, which is its home; this table i
 [^t-harmony-300-keys-u]: Measured on a unit. [The test](../../../tests/test_harmony_300_keys.py)
 [^t-harmony-350-skin]: Read in the firmware. [The test](../../../tests/test_harmony_350_skin.py)
 [^t-harmony-300-350-images]: Read in the firmware. [The test](../../../tests/test_harmony_300_350_images.py)
+[^t-harmony-300-350-boards-u]: Measured on a unit. [The test](../../../tests/test_harmony_300_group_4_send.py)

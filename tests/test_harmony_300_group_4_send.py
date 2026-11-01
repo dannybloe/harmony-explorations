@@ -1,0 +1,218 @@
+#!/usr/bin/env python3
+"""Why a send from an infrared group above 3 sends nothing on a Harmony 300, read in the 300's application:
+the send's firmware event is 0xFF, no list is bound to it, and the list that would have acknowledged the
+event never runs, so the sender waits for ever.
+
+**The question.** Logitech's compile of the Harmony 350's test setup was written to the bench Harmony 300.
+Groups 0 to 3 sent as predicted. After a long press selected the device on group 4, the key that sends a
+group 4 code sent nothing in three runs of three, the remote then stopped answering most keys, a device key
+pressed afterwards stayed lit, and pulling the batteries recovered it (`docs/test-notes/harmony-300.md`).
+`tests/test_harmony_300_350_images.py` had read the one routine in which the 300's application differs from
+the 350's, the arm for `0x7D`, and had the 300 raising event `0x2D` for a group above 3, which could not
+explain any of that. **That reading was wrong, and this test is the correction.**
+
+**Sources checked first.** `reference/architectures/harmony-300-350/firmware.md` and the two tests above;
+`docs/findings.md` and `reference/` grepped for `0x8A`, `0x11EE8` and `FFFA`: the arch 12 and arch 14
+compiler pages say what `07 FFFA` does is not read, and nothing says what the 300/350 image does with it.
+Logitech's client was not consulted: the answer is in the image. Read in the Harmony 300's application,
+`h300_code`, and the Harmony 350's, `h350_unit_code`, both at `0x9000`. Addresses are the 300's; the 350's
+are those plus 10 from `0x11A86` on and the same below `0x11356`.
+
+**What was traced, in the 300's addresses.**
+
+1. **The send kind has a default, and the default is event 0xFF.** The event chain at `0x11EA0` XORs
+   the kind with 3, 1, 3, 1 in turn, so its cases are 3, 2, 1 and, by falling out of the end with zero left,
+   0, which raise `0x30`, `0x2E`, `0x2F` and `0x2D`. Anything else is a `BNZ 0x11ECE` to `SETF 0xC19`: **a
+   kind of `0xFF` raises event `0xFF`.** The earlier reading took the default for case 0. The 350's build
+   has the same chain behind `ANDLW 3`, so its default is unreachable and every group it can send from
+   raises a bound event.
+2. **A raised event is a three byte item at the head of the action queue**: `0x10FC4` enqueues the event
+   byte, `0xFC` and `0x1F`, and the pop at `0x111D6` recognises that shape (`0x1F` third, `0xFC` second) and
+   hands the first byte to `0x1113A`, which asks `0x1AB1A` to find a binding of that tag in each active
+   map (slot 6, the seeker's literal at `0x1AB32`) and run it. **An unbound tag finds nothing and runs
+   nothing.** Over the 13 configurations of the family, 64 maps and 1751 bindings, none is tagged `0xFF`.
+3. **Raising an event sets a flag, and only `07 FFFA` clears it.** After a successful enqueue `0x11EE0`
+   sets bit 4 of `0x08A`. The dispatcher's arm for opcode `0x07` with operand `0xFFFA` is a `CALL 0x11EE8`
+   (`0x11CAC`), which clears bit 4 and sets bit 5. Every bit operation on that byte in the image is listed
+   below, so those are the only writers of bit 4: the reset at `0x11E84`, the enqueue, `0x11EE8` and its
+   failure branch. The four event lists the compilers write all end in `07 FFFA` (the sibling test), so on
+   every bound event the flag is cleared when the list ends.
+4. **The sender will not advance while the flag is set.** `0x12BA8`, the sender's step, opens with
+   `BTFSC 0x08A,4` and `RETLW 0`. Its state is `0x119`: `0x11FFA`, the arm's call, queues the group and code
+   in the 30 byte buffer at `0x65` and, when the state is below 2, sets state 2 and raises the kind's event
+   through `0x11E9C`; every later state change (`0x129FE`, `0x12B9E`, `0x12BD6`) raises it again. The step
+   that starts transmitting from state 2 is behind the flag. **So with a kind of `0xFF`: the event is
+   raised, nothing runs, the flag stays set, the state stays 2 and nothing is transmitted.**
+
+**What it explains, and what it does not.** Observation 1, nothing sent from group 4: explained by 1 to 4,
+traced. Observation 2, the remote answering most keys no more: explained as far as the state stays 2 for good,
+so a later send (Volume Up included) is queued and never transmitted, and the buffer is the only thing that
+takes it; a full buffer makes the `0x7D` arm return 0, which `0x113B2` turns into a retry of the same
+instruction, which would hold the interpreter. Three presses do not fill a buffer of 15 sends, so **that
+is a hypothesis for the keys that stopped, not a trace**. Observation 3, a lit device key: the sender's
+finishing event, which lowers the pin, never comes, so a pin and any key light it drives stay as they
+were; that the pins are the key lights is **not read** (`test_harmony_300_350_send_events.py`) and this
+step rests on it. **Not read either**: the caller of `0x11EE8`'s failure branch, the writer of `0x8A` as a
+whole byte at `0x109AC` (a routine that decodes a two byte command at `0x15D1C`, reached from the
+serial side as far as its callers go), and whether the main loop has another reader of state 2.
+
+**Predictions that need no hardware.** (a) A group above 3 on a Harmony 350 raises event `0x30` and works:
+the 350's configurations with groups 4 to 7 are the ones Logitech compiles for it. (b) A configuration
+holding groups 0 to 3 only works on a 300: Logitech's compiles for a 300 hold four and the 300's first
+programmed configuration did. (c) Binding event `0xFF` in entry 0 to a list ending in `07 FFFA` would
+make the 300 send, which is a prediction about a configuration and not an instruction to write one.
+(d) After one group 4 send every later send from groups 0 to 3 is queued and not transmitted until the
+batteries are pulled, which the bench has seen once (the keys after the hang).
+
+**Width.** Arch 16 (Harmony 300 and 350), the application 1.4 read on both models' units, one build each.
+The event acknowledgement is read on arch 16 only; arch 12 (Harmony One) and arch 14 (Harmony 600, 650 and
+700) are not checked, and their compiler pages still say `07 FFFA` is unread.
+
+**The two boards.** A person opened a Harmony 300 and a Harmony 350 and photographed the boards side by side,
+`reference/images/300-350-pcb.jpeg` in the lab. Read off the photograph: both boards carry `PEPSI PA3` and
+`Logitech P/N 210-000767_010` on the silkscreen, and by the person's inspection the same parts and traces;
+the board maker's mark differs (`CPS 94V-0 E243951` on the 350's, `EET-2 E246995 94V-0` on the 300's); a pad row
+at the bottom is labelled `ICD_VPP`, `RB7`, `RB6`, `DGND`, `VDD_3V3`, `VBATT`, `UART1 RXD`, `UART1 TXD`. The
+test below can only show the photograph is in the lab; the reading is the inspection's, recorded here as the
+reference's footnote needs it. It does not bear on the trace above, which is of the images. Nothing was connected.
+
+**What would falsify it.** A second writer of bit 4 of `0x08A` that a group 4 send reaches, a binding tagged
+`0xFF` in a configuration, or a group 4 send that transmits on a 300.
+"""
+import re
+import unittest
+
+import lab
+from harmony.pic18 import chains, disasm
+
+import test_harmony_300_350_images as images
+import test_harmony_300_350_send_events as events
+
+BASE = images.BASE
+text = images._text
+
+#: The shift of the 350's address against the 300's at the routines read here.
+SHIFT_350 = 10
+
+
+def _bit_operations_on(code, name):
+    """(address, text) of every instruction that touches bit 4 or 5 of the flag byte `0x8A`, or writes it whole."""
+    pattern = re.compile(r'\b0x0?8a,(B,)?[45]\b|(MOVWF|CLRF|SETF|ANDWF|IORWF|XORWF|INCF|DECF|MOVFF)\b.* 0x0?8a\b'
+                         r'|(MOVWF|CLRF|SETF) 0x8a,B')
+    out = []
+    for line in disasm.disassemble(code, BASE, BASE, len(code) // 2):
+        instruction = line[21:].strip()
+        if pattern.search(' ' + instruction):
+            out.append((int(line[2:7], 16), instruction))
+    return out
+
+
+class AKindOfFF_RaisesEventFF(unittest.TestCase):
+    def setUp(self):
+        lab.require('h300_code', 'h350_unit_code')
+        self.a, self.b = lab.load('h300_code'), lab.load('h350_unit_code')
+
+    def test_the_chain_has_a_default_and_the_default_stores_ff(self):
+        self.assertEqual(text(self.a, BASE, 0x11EA0, 17),
+                         ['MOVLB 0x2', 'MOVF 0x203,W', 'XORLW 0x03', 'BZ 0x11ec6', 'XORLW 0x01', 'BZ 0x11ec0',
+                          'XORLW 0x03', 'BZ 0x11eba', 'XORLW 0x01', 'BNZ 0x11ece', 'MOVLB 0xc', 'MOVLW 0x2d',
+                          'BRA 0x11eca', 'MOVLB 0xc', 'MOVLW 0x2f', 'BRA 0x11eca', 'MOVLB 0xc'])
+        self.assertEqual(text(self.a, BASE, 0x11ECE, 5),
+                         ['MOVLB 0xc', 'SETF 0xc19', 'MOVFF 0xc19,0x29d', 'CALL 0x10fe2', 'IORLW 0x00'])
+        # The cases the chain names are 1, 2 and 3; 0 is falling out of the end and everything else is the
+        # BNZ. The earlier reading sent the BNZ's branch to case 0.
+        self.assertEqual(set(chains.chain_table(self.a, BASE, 0x11EA4)), {1, 2, 3})
+
+    def test_the_350s_chain_is_the_same_and_its_default_cannot_be_reached(self):
+        ours = text(self.b, BASE, 0x11EA0 + SHIFT_350, 12)
+        theirs = text(self.a, BASE, 0x11EA0, 12)
+        strip = lambda lines: [re.sub(r'0x1[0-9a-f]{4}', '@', t) for t in lines]
+        self.assertEqual(strip(ours), strip(theirs))
+        # `ANDLW 3` in front of all three stores of the kind: 0 to 3 are all it can hold.
+        self.assertEqual(text(self.b, BASE, 0x1137E, 6),
+                         ['MOVLB 0xd', 'SETF 0xd06', 'MOVF 0xd06,W', 'ANDLW 0x03', 'MOVLB 0x2', 'MOVWF 0x203'])
+
+    def test_an_event_is_queued_as_the_tag_then_0xfc_then_0x1f_and_the_pop_recognises_it(self):
+        for code in (self.a, self.b):
+            self.assertEqual(text(code, BASE, 0x10FC4 + 6, 6),
+                             ['MOVFF 0x29c,0x29b', 'RCALL 0x10eba', 'MOVLB 0x2', 'MOVLW 0xfc', 'MOVWF 0x29b',
+                              'RCALL 0x10eba'])
+            self.assertEqual(text(code, BASE, 0x111EE, 6),
+                             ['MOVLW 0x1f', 'SUBWF 0x38,B,W', 'BNZ 0x11202', 'MOVLW 0xfc', 'SUBWF 0x37,B,W',
+                              'BNZ 0x11202'])
+            self.assertEqual(text(code, BASE, 0x111FA, 2), ['MOVFF 0xc36,0x2a8', 'GOTO 0x1113a'])
+
+    def test_no_configuration_binds_a_tag_of_0xff_so_the_lookup_finds_nothing(self):
+        configurations = events._all()
+        maps = bindings = 0
+        for c in configurations:
+            for entry in c.maps():
+                tags = [tag for tag, _, _ in c.tagged(entry)]
+                maps += 1
+                bindings += len(tags)
+                self.assertNotIn(0xFF, tags, c.name)
+        self.assertEqual((len(configurations), maps, bindings), (13, 64, 1751))
+
+    def test_the_lookup_seeks_slot_6_which_is_the_maps(self):
+        self.assertEqual(text(self.a, BASE, 0x1AB2E, 3), ['MOVLW 0x06', 'MOVWF 0xdd,B', 'CALL 0x10bce'])
+
+
+class OnlyFFFAClearsTheFlagTheSenderWaitsOn(unittest.TestCase):
+    def setUp(self):
+        lab.require('h300_code', 'h350_unit_code')
+        self.a, self.b = lab.load('h300_code'), lab.load('h350_unit_code')
+
+    def test_every_bit_operation_on_the_flag_byte_is_listed(self):
+        self.assertEqual(_bit_operations_on(self.a, 'h300'), [
+            (0x109AC, 'MOVWF 0x8a,B'), (0x11E84, 'BCF 0x08a,4'), (0x11E86, 'BCF 0x08a,5'),
+            (0x11EE0, 'BSF 0x08a,4'), (0x11EEA, 'BCF 0x08a,4'), (0x11EEC, 'BSF 0x08a,5'),
+            (0x12BAA, 'BTFSC 0x08a,4'), (0x12BE0, 'BCF 0x08a,5')])
+        self.assertEqual(_bit_operations_on(self.b, 'h350')[0], (0x109AC, 'MOVWF 0x8a,B'))
+        mine = [(a, t) for a, t in _bit_operations_on(self.a, 'h300') if a > 0x11E00]
+        theirs = [(a, t) for a, t in _bit_operations_on(self.b, 'h350') if a > 0x11E00]
+        self.assertEqual([(a + SHIFT_350, t) for a, t in mine], theirs)
+
+    def test_the_enqueue_sets_the_flag_and_07_fffa_calls_the_routine_that_clears_it(self):
+        self.assertEqual(text(self.a, BASE, 0x11EDA, 5),
+                         ['IORLW 0x00', 'BZ 0x11ee4', 'MOVLB 0x0', 'BSF 0x08a,4', 'RETURN'])
+        self.assertEqual(text(self.a, BASE, 0x11EE8, 4), ['MOVLB 0x0', 'BCF 0x08a,4', 'BSF 0x08a,5', 'RETURN'])
+        self.assertEqual(text(self.a, BASE, 0x11CA2, 6),
+                         ['NOP', 'BRA 0x11d16', 'MOVLW 0xfa', 'SUBWF 0xb3,B,W', 'BNC 0x11cb2', 'CALL 0x11ee8'])
+        # In front of that arm: the opcode is 0x07 and the operand's high byte is 0xFF.
+        self.assertEqual(text(self.a, BASE, 0x11C26, 6),
+                         ['MOVLW 0x07', 'SUBWF 0xb5,B,W', 'BNC 0x11d16', 'MOVLW 0xff', 'SUBWF 0xb3,B,W',
+                          'BNC 0x11c38'])
+        self.assertEqual(text(self.b, BASE, 0x11CA2 + SHIFT_350, 6)[-1], 'CALL 0x11ef2')
+
+    def test_the_sender_returns_while_the_flag_is_set(self):
+        self.assertEqual(text(self.a, BASE, 0x12BA8, 5),
+                         ['MOVLB 0x0', 'BTFSC 0x08a,4', 'RETLW 0x00', 'MOVLB 0x1', 'MOVF 0x119,W'])
+        self.assertEqual(text(self.b, BASE, 0x12BA8 + SHIFT_350, 3), ['MOVLB 0x0', 'BTFSC 0x08a,4', 'RETLW 0x00'])
+
+    def test_the_state_is_set_and_the_kinds_event_raised_by_the_same_routine(self):
+        self.assertEqual(text(self.a, BASE, 0x11E9C, 4), ['MOVFF 0x097,0x119', 'MOVLB 0x2', 'MOVF 0x203,W', 'XORLW 0x03'])
+        # The arm's call queues the send and raises the event only when the state is below 2.
+        self.assertEqual(text(self.a, BASE, 0x12008, 9),
+                         ['MOVLW 0x02', 'MOVLB 0x1', 'SUBWF 0x119,W', 'BC 0x12018', 'MOVLB 0x0', 'MOVLW 0x02',
+                          'MOVWF 0x097', 'RCALL 0x11e9c', 'RETLW 0x01'])
+
+    def test_the_four_event_lists_end_in_07_fffa_in_every_configuration(self):
+        for c in events._all():
+            for tag, lists in events._event_lists(c).items():
+                self.assertEqual(lists[0][-1], (0xFFFA, 0x07), (c.name, tag))
+
+
+class ThePhotographOfTheTwoBoardsIsInTheLab(unittest.TestCase):
+    def test_it_is_there(self):
+        import os
+        if not lab.LAB:
+            self.skipTest('no lab; set HARMONY_LAB')
+        path = os.path.join(lab.LAB, 'reference', 'images', '300-350-pcb.jpeg')
+        if not os.path.isfile(path):
+            self.skipTest('the photograph is not in the lab')
+        with open(path, 'rb') as handle:
+            self.assertEqual(handle.read(2), b'\xff\xd8', 'a JPEG')
+
+
+if __name__ == '__main__':
+    unittest.main()

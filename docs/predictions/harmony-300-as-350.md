@@ -96,6 +96,8 @@ lights as an observation with no verdict, since the mapping of pins to lights is
 the lights are those pins,* by a long press device sending with the KPN's light and not the LG TV's. If no key
 lights in any step, the half about lights is not tested.
 
+> **Result, added after the run: P7 was wrong<!--superseded-->.** The group 4 send raises event `0xFF`, not `0x2D`, and nothing is bound to it, so the send never starts; `tests/test_harmony_300_group_4_send.py`, `docs/test-notes/harmony-300.md` 4.3. The prediction stays as written.
+
 **P8. Teletext is code 11.** In the KPN's mode the key sends channel 3 (P6). Its press in the TV's mode, not
 tested here, was heard as the TV's Teletext.
 

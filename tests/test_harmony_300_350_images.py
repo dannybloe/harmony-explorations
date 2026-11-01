@@ -54,10 +54,10 @@ instruction whose bytes differ and is none of those, and on any pair that is not
   `0x203`: group 0 and 3 stay 0 and 3, 1 becomes 2 and 2 becomes 1, **and anything above 3 becomes `0xFF`
   in the 300 and is `0xFF AND 3`, that is 3, in the 350**, whose build stores `kind AND 3` where the 300
   stores the kind as it stands (`ANDLW 0x03` at `0x11356`, `0x1136A` and `0x11384`). The kind selects, at
-  `0x11EAE`, the firmware event `0x2D` for 0 and for anything not 1, 2 or 3, `0x2F` for 1, `0x2E` for 2 and
+  `0x11EAE`, the firmware event `0x2D` for 0, `0x2F` for 1, `0x2E` for 2 and
   `0x30` for 3, the four events entry 0 of every configuration of the family binds to a list switching one
   output pin (band `0xE9`). **So the two builds disagree for one input only, a `0x7D` whose group is 4 or
-  more: the 300 raises group 0's event and the 350 group 3's.** `0x203` has three accesses in each image,
+  more: the 300 raises event `0xFF`, which nothing is bound to, and the 350 group 3's event.** (This said the 300 raised group 0's event until `tests/test_harmony_300_group_4_send.py`: the chain's `BNZ` default was read as case 0, and it is the `SETF`.) `0x203` has three accesses in each image,
   its start up `SETF` at `0x10F98`, this store and the chain's read, so nothing else reads what the mask
   changes. **Not one `0x7D` of the five configurations of this family holds a group above 3**, measured
   below, so no configuration read exercises it.
@@ -381,7 +381,7 @@ class TheOneFunctionThatDiffers(unittest.TestCase):
         ta = chains.chain_table(self.a, BASE, 0x11EA4)
         tb = chains.chain_table(self.b, BASE, 0x11EAE)
         self.assertEqual({k: v - 10 for k, v in tb.items()}, ta)
-        self.assertEqual(set(tb), {1, 2, 3}, 'a kind of 0xFF is none of the cases and falls through to kind 0')
+        self.assertEqual(set(tb), {1, 2, 3}, 'a kind of 0xFF is none of the cases and is the default, event 0xFF, not case 0')
         self.assertEqual(_text(self.b, BASE, 0x11EAA, 2), ['MOVLB 0x2', 'MOVF 0x203,W'])
         self.assertEqual(_text(self.a, BASE, 0x11EA0, 2), ['MOVLB 0x2', 'MOVF 0x203,W'])
 
