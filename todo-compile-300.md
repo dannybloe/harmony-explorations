@@ -1,5 +1,10 @@
 # Todo: compile for the Harmony 300
 
+**Closed on 1 November 2026, folded into [todo-compile-350.md](todo-compile-350.md) by decision 28**: the
+Harmony 300 and the Harmony 350 are one remote for configurations, one configuration entry bringing a 300
+level with a 350. What was still open moved: 5.2 to the 350's 4.6, 5.3 to `todo-freeharmony.md` 1.7,
+5.1 and 5.4 to `todo-later.md` 6.25. Kept as the record of the route.
+
 **The finish line, changed on 31 October 2026**: settle whether the Harmony 300 is a Harmony 350 with
 other printing, and if it is, fold it into [todo-compile-350.md](todo-compile-350.md) with the model's
 limits as settings rather than keep a track of its own. todo.md 3.7.
@@ -40,7 +45,7 @@ Changed on 31 October 2026: the bench 300 already held a Logitech compile of its
 ## 4. Is it a 350
 
 - [x] 4.1 The two applications compared, both read off the units: one program linked twice, the only difference that is not an address the send kind a group above 3 gets, 0xFF on the 300 and 3 on the 350; bootloader and safe mode are other builds and run no configuration, `tests/test_harmony_300_350_images.py`
-- [ ] 4.2 What the four send kinds do: the lists entry 0 binds to firmware events 0x2D to 0x30, read in the configurations, so the one difference is known before the bench says it
+- [x] 4.2 What the four send kinds do: the lists entry 0 binds to firmware events 0x2D to 0x30, read in the configurations, so the one difference is known before the bench says it: one list on four pins, `tests/test_harmony_300_350_send_events.py`, and then the hang it hid, `tests/test_harmony_300_group_4_send.py`
 - [x] 4.3 Logitech's compile of the 350's test setup written to the bench 300 and the 350's 3.3 bench test run on it, the predictions written first, the long press devices in groups 4 to 7 among the steps: as compiled it hangs the 300 at the first send from group 4, `tests/test_harmony_300_group_4_send.py`; with firmware event 0xFF bound to event 0x30's list, one entry in key map 0, all four groups above 3 sent and the remote kept working, the lab's `work/300-event-ff/`
 - [ ] 4.4 The verdict in the reference, decided as decision 28, the 300 a 350 for configurations or what differs, and this track folded into the 350's with the device count, the long press and the favourites as the model's settings
 
@@ -48,7 +53,7 @@ Changed on 31 October 2026: the bench 300 already held a Logitech compile of its
 
 What stays the 300's own if 4.4 folds the track: our composers with the 300's settings checked against Logitech's compile for it.
 
-- [ ] 5.1 The recipe our composers rebuild it from, `packages/corpus/setups/h300-test.json`, checked against the compile: devices, keys, Watch TV and the favourites
-- [ ] 5.2 A power on delay edited in every copy a key reaches: Watch TV's list holds its own, which `set-delay.ts` does not change; the activity's copy exists for a device with one power code only, a device with separate on and off codes reaches its delay through its power variable's list
-- [ ] 5.3 The favourites in the 300's own key order, which `composeNoScreenFavourites` refuses: Logitech's compile puts them on other keys than the 350's
-- [ ] 5.4 The test setup built by us with the 300's settings, compared with 3.1's compile, written to the bench 300 and used with 3.3's bench test
+- [x] 5.1 The recipe our composers rebuild it from, `packages/corpus/setups/h300-test.json`, checked against the compile: devices, keys, Watch TV and the favourites: moved to `todo-later.md` 6.25
+- [x] 5.2 A power on delay edited in every copy a key reaches: Watch TV's list holds its own, which `set-delay.ts` does not change; the activity's copy exists for a device with one power code only, a device with separate on and off codes reaches its delay through its power variable's list: moved to `todo-compile-350.md` 4.6
+- [x] 5.3 The favourites in the 300's own key order, which `composeNoScreenFavourites` refuses: Logitech's compile puts them on other keys than the 350's: moved to `todo-freeharmony.md` 1.7
+- [x] 5.4 The test setup built by us with the 300's settings, compared with 3.1's compile, written to the bench 300 and used with 3.3's bench test: moved to `todo-later.md` 6.25

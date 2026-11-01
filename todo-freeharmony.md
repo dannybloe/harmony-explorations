@@ -16,6 +16,7 @@ about the product.
 - [ ] 1.4 The activity menu's order chosen by the user on every model: MyHarmony offers reordering to every remote with a screen except the Harmony 600, 650, 665 and 700, where its compiler picks an order the owner cannot set; the remote shows whatever order the configuration states, so ours is the setup description's (section 351)
 - [ ] 1.5 A configuration written to a remote states the model number that remote reports in its version block, decision 23: on the bench Harmony 600 that is 71 where Logitech's compile states 73
 - [ ] 1.6 An activity's own device list in an order the user chooses, on the Harmony One: the list Devices opens inside an activity holds every device, its start's devices first in the order it switches them on (section 424, `todo-compile-one.md` 4.3.3); the builder takes a description, so the order is the user's to give and the codec needs no change beyond accepting it
+- [ ] 1.7 A Harmony 300 or 350 shown by its own printing: the keys send the same codes on every printing, but the European Harmony 300 prints its favourites 1, 3 beside TV Input and 2, Teletext, 4 below, so a favourite is placed by the key the user sees, from the drawing `h300eu` (was `todo-compile-300.md` 5.3)
 
 ## 2. Screens
 
