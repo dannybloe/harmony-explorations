@@ -38,8 +38,8 @@ is read in the firmware and the configurations rather than watched on a unit[^un
   device's next command, and the activity keeps its own copy of each wait; both are the family's,
   [the family's memory.md](../../architectures/harmony-300-350/memory.md#a-devices-power-on-delay).
 * A short press of a device key acts when the key comes up: the configurations select the device on the
-  key's release, and its press only switches one of four outputs and starts two timers, which a Harmony
-  300's device key does not. Each key's short press device takes the infrared group of the key's place,
+  key's release, and its press only switches one of four outputs and starts two timers, which a
+  configuration Logitech compiled for a Harmony 300 does not do. Each key's short press device takes the infrared group of the key's place,
   [the family's memory.md](../../architectures/harmony-300-350/memory.md#which-infrared-group-a-device-takes)[^t-device-groups-c].
   A two second press is bound to the key's held event, selecting its second device[^t-long-press-c]. This
   said that was not checked until a configuration with one was read.

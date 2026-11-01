@@ -372,6 +372,9 @@ export const IMAGES: Readonly<Record<string, string>> = {
   h300_event_ff_ir: '20261101T083956Z-ir-test-harmony-300-logitech-s-compile-of-the-harmony-350-s-test-setup.json',
   h300_event_ff_ir_redo: '20261101T085419Z-ir-test-harmony-300-logitech-s-compile-of-the-harmony-350-s-test-setup.json',
   h300_event_ff_monitor: '20261031T1211Z-ir-monitor.jsonl',
+  // The same file on the bench Harmony 350, a two step check (`packages/bench/irtests/done/350-event-ff-check.json`): the
+  // entry is harmless on a build that never raises 0xFF. Read by `packages/bench/test/eventff300.test.ts`.
+  h350_event_ff_ir: '20261101T090605Z-ir-test-harmony-350-logitech-s-compile-with-event-0xff-bound.json',
   h350_delay_ir_3s: '20261030T094935Z-ir-test-harmony-350-the-tv-s-power-on-delay-at-10-s.json',
   h350_delay_ir_10s: '20261030T095433Z-ir-test-harmony-350-the-tv-s-power-on-delay-at-10-s.json',
   h600_delay_ir_before: '20261001T093603Z-ir-test-harmony-600-the-kpn-box-s-power-on-delay.json',

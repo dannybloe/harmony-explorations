@@ -232,7 +232,10 @@ third kind of key: it is a key whose long press has taken its repeat away.
 
 **Which models have a long press** is a list Logitech's service states,
 [the remotes index](remotes/README.md#a-long-press). Of the models in this reference only the Harmony 350
-declares it; the Harmony One, 600, 650, 700 and 300 do not[^t-capabilities]. The Harmony 650's firmware
+declares it; the Harmony One, 600, 650, 700 and 300 do not[^t-capabilities]. For the 300 that is
+Logitech's service giving it no long press: its firmware raises the held event as the 350's does, and a
+configuration compiled for a 350 gave its device keys a long press that worked,
+[the family's page](architectures/harmony-300-350/README.md#making-a-harmony-300-behave-as-a-harmony-350)[^t-harmony-300-group-4-send-u]. The Harmony 650's firmware
 agrees: a key raises press, repeat and release and nothing else, and only the Help key waits longer before
 its repeat[^s340]. On the 350 the long press is on its device keys, a second device per key,
 [its behaviour page](remotes/harmony-350/behaviour.md). Its firmware makes the choice itself: a press ends
@@ -315,3 +318,4 @@ devices and then asked "Did that fix the problem?", as that predicts[^s335]. Hel
 [^s335]: Measured on a unit. [Section 335](../docs/findings.md#s335)
 [^t-long-press]: Read in the firmware. [The test](../tests/test_harmony_350_long_press.py)
 [^t-long-press-c]: Measured in configurations. [The test](../tests/test_harmony_350_long_press.py)
+[^t-harmony-300-group-4-send-u]: Measured on a unit. [The test](../tests/test_harmony_300_group_4_send.py)

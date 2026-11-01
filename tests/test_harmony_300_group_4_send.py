@@ -85,7 +85,10 @@ Harmony 300 and read back identical. Run through the 350's test, the 300 sent fr
 group 5 (Kodi's Exit), group 6 (the Switch's Input 1) and group 7 (Sony HT's Stop), and went on answering
 through all 20 steps with no battery pull, where without the entry the first group 4 send hung it in three runs of
 three, `packages/bench/test/eventff300.test.ts`. **The long presses of the TV and DVD keys did not take in the
-first run** and did in the second and the live repeat; why is not known. What the measurement does not show: a
+first run** and did in the second and the live repeat; why is not known. **The same file written to the bench
+Harmony 350**, whose build masks the kind to two bits and never raises `0xFF`, heard the Denon's Volume Up, the
+Knoll's Timer from group 4 and the LG TV's Volume Up and the remote went on working: the entry is harmless there,
+measured on one unit. What the measurement does not show: a
 send from every key of the four maps, a long press that always takes, another build of the application, or that
 the later keys failing before were failing for the reason traced, which the entry's removing the hang bears out
 but no trace reads. Its width is arch 16 (Harmony 300 and Harmony 350), one unit of the Harmony 300, one build.
@@ -275,6 +278,38 @@ class BindingFFIsOneEntryThatCallsTheListEvent30Runs(unittest.TestCase):
         self.assertEqual(self.patched.u(self.patched.pointer(7), 2), count)
         for index in range(count):
             self.assertEqual(self.patched.action_list(index), self.compile.action_list(index), index)
+
+
+class TheBenchHeardGroups4To7WithTheEntry(unittest.TestCase):
+    """The runs' stored verdicts, which the monitor judged with the compile loaded; the TypeScript test
+    `packages/bench/test/eventff300.test.ts` matches the pulses again and holds group 6, heard live."""
+
+    def setUp(self):
+        lab.require('h300_event_ff_ir', 'h300_event_ff_ir_redo', 'h350_event_ff_ir')
+        import json
+        self.first = json.loads(lab.load('h300_event_ff_ir'))
+        self.redo = json.loads(lab.load('h300_event_ff_ir_redo'))
+        self.on_350 = json.loads(lab.load('h350_event_ff_ir'))
+
+    def test_the_first_run_passed_every_verdict_but_the_two_long_presses_that_did_not_take(self):
+        failed = [(i + 1, v['expected']) for i, step in enumerate(self.first['steps']) for v in step.get('verdicts') or []
+                  if not v['ok']]
+        self.assertEqual(failed, [(2, 'denon \u00b7 VolumeUp'), (2, 'knoll \u00b7 Timer'), (6, 'switch \u00b7 Input1')])
+        self.assertEqual(len(self.first['steps']), 20)
+        # Group 5 and group 7 sends, steps 4 and 8, heard.
+        step4 = [v for v in self.first['steps'][3]['verdicts'] if v['expected'].startswith('kodi')]
+        step8 = [v for v in self.first['steps'][7]['verdicts'] if v['expected'] == 'sony_ht \u00b7 Stop']
+        self.assertEqual([v['ok'] for v in step4 + step8], [True, True])
+
+    def test_the_redone_steps_heard_the_denon_and_the_knolls_timer_from_group_4(self):
+        verdicts = [[(v['expected'], v['ok']) for v in step.get('verdicts') or []] for step in self.redo['steps'][:2]]
+        self.assertEqual(verdicts, [[('lg_tv \u00b7 VolumeUp', True), ('lg_tv \u00b7 Info', True)],
+                                    [('denon \u00b7 VolumeUp', True), ('knoll \u00b7 Timer', True)]])
+
+    def test_the_same_file_on_a_350_heard_the_denon_the_knoll_and_the_lg_tv(self):
+        verdicts = [[(v['expected'], v['ok']) for v in step.get('verdicts') or []] for step in self.on_350['steps']]
+        self.assertEqual(verdicts, [[('denon \u00b7 VolumeUp', True), ('knoll \u00b7 Timer', True)],
+                                    [('lg_tv \u00b7 VolumeUp', True)]])
 
 
 class ThePhotographOfTheTwoBoardsIsInTheLab(unittest.TestCase):

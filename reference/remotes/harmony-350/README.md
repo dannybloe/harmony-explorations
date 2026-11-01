@@ -6,13 +6,13 @@ press and a second device with a press held for two seconds, so it controls up t
 straight to favourite channels, a power key switches the device you picked, and the rest is an ordinary
 keypad[^x-manual].
 
-It is built on the same platform as the Harmony 300: one firmware, one way of talking over USB, one
-configuration format and one case. What the two share is stated once in
+The Harmony 350 and the Harmony 300 are one remote for configurations: one firmware but for one instruction,
+one way of talking over USB, one configuration format and one case. What the two share, and the one entry that
+lets a Harmony 300 run a Harmony 350's configuration, is stated once in
 [the architecture folder](../../architectures/harmony-300-350/README.md), and this folder states what is
 the 350's own. Over USB it speaks a file protocol rather than the command protocol of the Harmony One and
-the Harmony 600, 650 and 700, so this library reads its configuration as a file, read only, and has no
-way to write to it; [the architecture's usb.md](../../architectures/harmony-300-350/usb.md) has the
-rails. How every fact below marks its evidence is in
+the Harmony 600, 650 and 700, so this library reads its configuration as a file;
+[the architecture's usb.md](../../architectures/harmony-300-350/usb.md) has the protocol. How every fact below marks its evidence is in
 [the reference's README](../../README.md#how-to-read-a-footnote).
 
 ## Skins
@@ -33,12 +33,16 @@ in `SKINS_WITH_A_LONG_PRESS`, [features.md](features.md).
 
 ## Key numbers
 
+The devices, activities, favourites and long press below are what Logitech's manual and service give this model;
+the remote also runs them as a configuration binds them, and a Harmony 300 ran the same configuration,
+[the family's page](../../architectures/harmony-300-350/README.md#making-a-harmony-300-behave-as-a-harmony-350).
+
 | | value |
 |---|---|
 | architecture | 16, [the file based family](../../architectures/harmony-300-350/README.md)[^s262] |
 | USB product id | `0xC124`, shared with the Harmony 300[^s193][^s195] |
 | `bcdDevice` | `0x1104`[^s195] |
-| firmware | 1.4, the image the Harmony 300 runs too[^s196] |
+| firmware | 1.4, the image Logitech's package carries; the Harmony 300 runs a build of the same program, [the family's firmware.md](../../architectures/harmony-300-350/firmware.md#the-two-models-images-compared)[^s196] |
 | screen | **none**[^t-silhouette] |
 | keys | 55, counted off the drawing in Logitech's setup guide[^t-silhouette]; a code for 54 of them, read and inferred from configurations[^t-harmony-350-keys-c], 53 of them heard by pressing the keys with a receiver listening, [keys.md](keys.md#scan-codes)[^t-harmony-350-keys-u][^t-harmony-350-setup-u] |
 | devices | **8**: "Control up to eight devices individually using these four Device buttons, each with a short press or a longer two second press"[^x-manual][^s263] |

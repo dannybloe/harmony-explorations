@@ -40,8 +40,9 @@ So no sequences and no remote settings. The table is the service's answer to
 longer two second press"[^x-manual]. Logitech's service says 8[^s263], and a configuration's infrared
 table is allocated at that maximum whatever the device count,
 [the architecture's memory.md](../../architectures/harmony-300-350/memory.md#the-configuration-container).
-Four keys times two presses is exactly the stated maximum, where the Harmony 300 has four keys, no long
-press and four devices; the arithmetic is in
+Four keys times two presses is exactly the stated maximum, where Logitech's service gives the Harmony 300 four
+device keys, no long press and four devices, though a 350's configuration ran on a 300,
+[the family's page](../../architectures/harmony-300-350/README.md#making-a-harmony-300-behave-as-a-harmony-350); the arithmetic is in
 [how a Harmony works](../../how-a-harmony-works.md#holding-a-key-is-two-mechanisms-and-a-repeat-and-a-long-press-exclude-each-other).
 
 ## One activity

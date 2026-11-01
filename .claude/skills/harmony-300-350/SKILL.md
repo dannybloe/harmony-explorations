@@ -9,20 +9,23 @@ description: "Everything needed before working on the Harmony 300 or the Harmony
 has no other home.** The facts live in the public reference and are not repeated here, because two
 copies of a fact are two copies until one of them moves.
 
-**One skill for both, and not one each**, because what a skill holds is procedure and the procedure is
-identical: the two models run applications that are one program but for one routine (their bootloaders and safe mode images differ), one product id, one file based protocol and one
-container, they are opened by the same function and written by the same railed path. Where they differ, devices,
-long press, activities and favourites, is a fact and lives in each model's own folder.
+**One skill for both, and not one each**, because the two are one remote for configurations (decision 28) and
+the procedure is identical: one application but for one routine (their bootloaders and safe mode images differ),
+one product id, one file based protocol and one container, opened by the same function and written by the same
+railed path. **A Harmony 300 runs a Harmony 350's configuration once firmware event `0xFF` is bound in key map 0 to
+the list event `0x30` runs**, and the entry is harmless on a 350, so there is no model distinction in a
+configuration: `reference/architectures/harmony-300-350/README.md`, "Making a Harmony 300 behave as a Harmony 350".
+What differs is Logitech's service per model (devices, long press, activities, favourites) and the printing.
 
 ## 1. Read these before anything else
 
 In this order, every time, including in an agent:
 
-1. `reference/architectures/harmony-300-350/README.md`: what the two share, and the table of how they
-   differ. Then its `memory.md`, `firmware.md`, `usb.md` and `misc.md` as the task needs. In
+1. `reference/architectures/harmony-300-350/README.md`: what the two share, the one entry that makes a 300
+   behave as a 350, and the table of what still differs (Logitech's service choices and the printing). Then its `memory.md`, `firmware.md`, `usb.md` and `misc.md` as the task needs. In
    conversation say "the Harmony 300" or "the Harmony 350", never the bare architecture number.
-2. `reference/remotes/harmony-300/README.md` or `reference/remotes/harmony-350/README.md`, or both: the
-   key numbers and the map of each model's nine topic files.
+2. `reference/remotes/harmony-300/README.md` or `reference/remotes/harmony-350/README.md`, or both: only what
+   is per model, the printing, keys, skin, USB identity and what Logitech's service states for it.
    `reference/usb-protocol/file-protocol.md` for the protocol the family speaks.
 3. `reference/how-a-harmony-works.md` when the task touches what the remote does for a person: on these two a
    device key **is** device mode, and neither has a screen.

@@ -258,3 +258,13 @@ The 350 and the bench Harmony 300 were opened side by side on 1 November 2026: s
 number, same parts and traces by a person's inspection, a different board maker's mark, and a pad row for the
 PIC's in circuit programming and a serial port. The photograph and the detail are in `harmony-300.md`
 ("Logitech's compile of the Harmony 350's test setup"). Nothing was connected to the pads.
+
+## Logitech's compile with firmware event 0xFF bound, a two step check
+
+On 1 November 2026 the lab's `work/300-event-ff/h350-compile-event-ff.bin`, Logitech's compile of the test setup
+with one entry added that a Harmony 300 needs to send from groups 4 to 7, was written to this unit and
+`packages/bench/irtests/done/350-event-ff-check.json` run: the Denon's Volume Up, the Knoll's Timer from group 4 and
+the LG TV's Volume Up were heard, and the remote went on working, the run being the lab's
+`reads/20261101T090605Z-ir-test-harmony-350-logitech-s-compile-with-event-0xff-bound.json` (fixture
+`h350_event_ff_ir`). The entry is harmless on this build, which never raises event `0xFF`. The unit holds Logitech's
+compile again. The account is in `harmony-300.md`.

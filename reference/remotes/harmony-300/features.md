@@ -1,8 +1,10 @@
 # Harmony 300: features
 
-What the 300 offers a person and what Logitech's software lets them set: four devices, one per device key;
-favourite channels; and one shortcut that switches several devices on, which Logitech does not call a full
-activity. No long press, no screen, no sequences.
+What Logitech's software lets a person set on a Harmony 300: four devices, favourite channels, and one shortcut
+that switches several devices on, which Logitech does not call a full activity. **These are the service's
+choices for this model and not limits of the remote**: the Harmony 300 runs a configuration compiled for a
+Harmony 350, with eight devices and a long press, once one entry is added,
+[the family's page](../../architectures/harmony-300-350/README.md#making-a-harmony-300-behave-as-a-harmony-350).
 
 ## The capability fields
 
@@ -36,36 +38,28 @@ For a skin 79 entry, `UserAccountDirector/GetProductCapabilities2`:
 
 The skin 79 product is named "Harmony 300 EMEA" and displayed as "Harmony 300"[^t-capabilities].
 
-## Devices: four, one per key
+## Devices, the activity and the favourites
 
-Logitech's service says 4[^s264], and **every configuration of a 300 carries four infrared groups**,
-allocated at the maximum with the unused ones empty[^s264b], the family's rule,
+**Devices.** Logitech's service says 4[^s264], and **every configuration it compiles for a 300 carries four
+infrared groups**, allocated at the maximum with the unused ones empty[^s264b], the family's rule,
 [the family's memory.md](../../architectures/harmony-300-350/memory.md). The group index is the device key,
-[keys.md](keys.md). Four keys with no long press is the maximum, where the 350 doubles it with a long
-press,
-[how a Harmony works](../../how-a-harmony-works.md#holding-a-key-is-two-mechanisms-and-a-repeat-and-a-long-press-exclude-each-other).
+[keys.md](keys.md). This is the service's maximum and not the remote's, which held eight when given a compile
+for a 350.
 
-## The activity question
+**The activity.** The 300 states no `Activities` capability, only `PartiallySetupActivities`[^s265], and a remote
+with no screen took exactly one activity when model records were filled through Logitech's copy step,
+[how a Harmony works](../../how-a-harmony-works.md#a-remote-with-no-screen-holds-exactly-one-activity). Its setup
+guide: "Watch TV with one click: Turn your TV and cable/ satellite box on with a single button
+press"[^unchecked]. A person who set one up describes it as a shortcut that switches several devices on and does
+not remap the keypad[^s265c], which is an activity's switch on step without its keypad map. **It is held as one
+binding of the family's key table**, the same as the 350's activity,
+[the family's memory page](../../architectures/harmony-300-350/memory.md#the-activity)[^t-harmony-350-slots-c].
+This said raw slot 6's extra entry was a candidate for the activity<!--superseded--> until the firmware reading of
+that slot: the extra entry is the key table[^t-harmony-350-slots-c].
 
-**The 300 states no `Activities` capability**, only `PartiallySetupActivities`[^s265], and a remote with
-no screen took exactly one activity when model records were filled through Logitech's copy step,
-[how a Harmony works](../../how-a-harmony-works.md#a-remote-with-no-screen-holds-exactly-one-activity). Its
-setup guide: "Watch TV with one click: Turn your TV and cable/ satellite box on with a single button
-press"[^unchecked]. A person who set one up describes it as a shortcut that switches several devices on and
-does not remap the keypad[^s265c], which is an activity's switch on step without its keypad map.
-
-**The shortcut is held as one binding of the family's key table**, which sends codes or sets the devices'
-state variables and then selects one device's map, and not as an activity's own key map: the configuration's key map table holds
-one map per device and the key table, and no more,
-[the family's memory page](../../architectures/harmony-300-350/memory.md#the-six-slots-the-firmware-was-read-for)[^t-harmony-350-slots-c].
-This said raw slot 6's extra entry was a candidate for the activity<!--superseded--> until the firmware
-reading of that slot: the extra entry is the key table[^t-harmony-350-slots-c].
-
-## Favourite channels
-
-"Personalize buttons: Jump to your favorite channels", Logitech's setup guide[^unchecked]. **A
-configuration given four favourites, 1, 2, 3 and 666, holds four**, sent through the number sender as
-integers[^s265d]; how the number sender works is
+**Favourite channels.** "Personalize buttons: Jump to your favorite channels", Logitech's setup
+guide[^unchecked]. **A configuration given four favourites, 1, 2, 3 and 666, holds four**, sent through the number
+sender as integers[^s265d]; how the number sender works is
 [the configuration format's](../../config-format/state.md#base-slot-16-the-number-sender).
 
 ## Not checked

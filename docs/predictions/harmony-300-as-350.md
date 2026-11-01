@@ -3,7 +3,7 @@
 `todo-compile-300.md` 4.3. The bench Harmony 300 is to be given the file the bench Harmony 350 ran its
 twenty step test on, Logitech's compile of the test setup, the lab's `work/setups/h350-test/compile-Result.EzHex`
 (fixture `h350_logitech_setup_ir`, the test `packages/bench/irtests/done/350-3-3-logitech-setup.json`), and
-the test `packages/bench/irtests/300-4-3-350-compile.json` is to be pressed through with the Flirc listening.
+the test `packages/bench/irtests/done/300-4-3-350-compile.json` is to be pressed through with the Flirc listening.
 This is what that run should hear, written down and committed before it, so the run can refute it.
 
 **Where the prediction comes from.** The two remotes are one moulding and run one program, linked twice with
@@ -111,3 +111,42 @@ The run is the 350's test, so a failure on the 300 is a difference between the m
 about the file, which is what 4.3 is for. The long presses are in because they are the one place the
 two images disagree. The colour keys and the rest of the 350's key table were heard on the 300 by
 `packages/bench/irtests/done/300-2-1-every-key.json` and are not pressed again.
+
+## Results, added after the runs
+
+The predictions above stay as written. Three runs of the file as Logitech compiled it, each ending at the first
+send from group 4 (`docs/test-notes/harmony-300.md` 4.3); then, after `tests/test_harmony_300_group_4_send.py` read why,
+the same file with one entry added, firmware event `0xFF` bound in key map 0 to the list event `0x30` runs, the
+trace's prediction (c). That file was run through the whole test once, with steps 1 and 2 done again and step 6
+done again live (`packages/bench/test/eventff300.test.ts`). **Scored on the file with the entry, unless it says
+otherwise:**
+
+* **P1, the write is accepted: holds**, for both files. The 300's configuration file took 118513 bytes and 118517,
+  and the second was read back identical. The question left open there, whether it has room, is answered for these sizes.
+* **P2, every step hears what the 350's did: holds for steps 1, 3, 5, 7 and 9 to 20**, with the repeated presses
+  the run's notes name, step 13 silent as predicted. **Steps 2, 4, 6 and 8, the four long press devices, held in
+  all four**: the Knoll's Timer (group 4, from the repeat of step 2), Kodi's code 2 (group 5), the Switch's Input 1
+  (group 6, from the live repeat of step 6) and Sony HT's Stop (group 7). Without the entry step 2 failed in all
+  three runs, which is what the trace explains.
+* **P3, a long press chooses when held, on the 300 as on the 350: falsified as worded for the first run, held on
+  the repeat.** Steps 2 and 6 of the first run were heard in the LG TV's and the Denon's modes, the short press
+  devices, which is what P3 said would falsify it. Both long presses took when done again, and steps 4 and 8
+  took the first time. Why two did not is not known: the hold is about a second and how long each key was held was
+  not recorded.
+* **P4, Watch TV does what it did on the 350: holds.** From everything off, the LG TV's power on, the Denon's
+  power code 0.196 seconds later, the KPN's toggle 0.494 seconds after that and the Denon's input 2.533 seconds
+  after its power code, where the 350 measured 0.19, 0.50 and 2.54. From everything on, step 14's three codes.
+* **P5, the power on delays are the 350's: not tested separately.** Step 11's timings above are consistent with
+  them; the 10 second delay of the LG TV was not run on this file.
+* **P6, the favourites by the codes of the places: holds.** The keys printed 1, 2, Teletext, 4 and 3 sent
+  channels 1, 2, 3, 666 and 07 in that order. The competing reading, that the keys printed 2 and 3 are swapped
+  against the places, was not seen.
+* **P7, a send from groups 4 to 7 changes a pin's list and no code: wrong**, as recorded above: the send never
+  started without the entry, and with it the codes of all four groups went out. The lights half was not observed.
+* **P8, Teletext is code 11: holds**, in the KPN's mode: the key printed Teletext sent channel 3.
+* **P9, nothing is left in a state the 300 cannot leave: falsified without the entry, held with it.** The three
+  runs of the file as compiled each needed the batteries out. With the entry the remote answered through all 20
+  steps and the redone ones, and no battery was pulled.
+
+**The same file on the Harmony 350**, a two step check: the Denon's Volume Up, the Knoll's Timer from group 4 and the
+LG TV's Volume Up were heard and the remote went on working, as predicted for a build that never raises `0xFF`.
