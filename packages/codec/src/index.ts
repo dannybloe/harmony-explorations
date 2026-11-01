@@ -155,4 +155,6 @@ export {
   // The configuration with no device and no activity, built from nothing, todo-compile-350.md 5.1.5.
   buildEmptyNoScreenConfiguration, EMPTY_LIST_NUMBERS, EMPTY_ZONE_HOURS, type EmptyNoScreenConfiguration,
   type EmptyNoScreenOptions, INFRARED_GROUPS_BY_SKIN, infraredGroupsOf, NO_SCREEN_COUNT_WIDTHS,
+  // A whole setup composed onto that configuration, so built with no Logitech file, todo-compile-350.md 5.1.6.
+  buildNoScreenSetup, type NoScreenSetupFromNothing,
 } from './families/no-screen/index.ts';

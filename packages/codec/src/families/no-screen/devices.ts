@@ -547,10 +547,13 @@ export function composeNoScreenDevice(c: Container, archive: string, request: No
   current = parse(appendTableEntries(parse(mapHole.bytes), KEY_MAP_SLOT, [current.flashBase + mapAt]));
   const map = mapsNow.length;
 
-  // The key's two timers, the pin switched off at 400 ticks and on at 600, after the last timer record.
+  // The key's two timers, the pin switched off at 400 ticks and on at 600, after the last timer record. A
+  // configuration with no timer yet, the empty one of `empty.ts` that a build from nothing starts from,
+  // `todo-compile-350.md` 5.1.6, puts them after the last list body instead: in all seven of Logitech's compiles the
+  // timer records follow the lists, plan 011 "the regions of the file come in one order", and every later list goes
+  // in at the end of the lists, so they stay after them. Where they sit is carried, not read: the table names each.
   const timersNow = timerExtents(current);
-  const timerAt = timersNow.length === 0 ? undefined : highestEnd(timersNow);
-  if (timerAt === undefined) throw new ComposeError('raw slot 8 holds no timer to put the key\'s after');
+  const timerAt = timersNow.length === 0 ? highestEnd(listExtents(current)) : highestEnd(timersNow);
   const timerBytes = new Writer(TIMER_RECORD_LENGTH * KEY_TIMERS.length);
   for (const one of KEY_TIMERS) {
     timerBytes.u8(0).u24(one.ticks).u16((PIN_BAND << 8) | (key.pin << 4) | one.pinState).u8(STATE_BAND);

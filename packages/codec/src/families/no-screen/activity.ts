@@ -41,7 +41,9 @@
  * composer replaces one: Watch TV's binding is pointed at the new list in place, the flag is reused, and the old
  * lists are left unreferenced, as Logitech's compile of the test setup leaves fifty of its own. A device the activity puts on an input and
  * which holds an input variable already is refused, since replacing a variable is a removal step nobody has built;
- * an old input variable the new activity does not write stays, and nothing writes it.
+ * an old input variable the new activity does not write stays, and nothing writes it. **On a configuration with no
+ * activity**, the empty one a build from nothing starts from, `todo-compile-350.md` 5.1.6, Watch TV's press is bound
+ * in the key table and the flag is created, as every input variable already was: `flag.reused` says which happened.
  *
  * **What it rests on**, `packages/codec/test/noscreenactivity.test.ts`: the test setup's activity composed onto
  * Logitech's compile of three devices for the bench Harmony 350, after our LG TV and Denon, held part by part

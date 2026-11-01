@@ -1,0 +1,314 @@
+/**
+ * The Harmony 350 test setup built from nothing, `todo-compile-350.md` 5.1.6, step 6 of plan 011: the family's
+ * composers emitting their pieces onto the empty configuration of 5.1.5, so no Logitech container goes in.
+ *
+ * **What it is.** `buildNoScreenSetup` builds the empty configuration for the setup's skin and runs
+ * `composeNoScreenSetup` over it: every device of `packages/corpus/setups/h350-test.json` on the key Logitech's service
+ * put it on, its keys and its long press; Watch TV with its devices, its inputs and its flag; and the five favourite
+ * channels on the KPN. What goes in is the setup, the keys, a moment and the infrared catalogue.
+ *
+ * **What it took.** Less than plan 011 expected, because the composers already built every piece and appended it to
+ * whatever configuration they were handed; what they read off a donor was where to put things and what was there
+ * already. Four things changed:
+ *
+ * * **The timers.** The device composer put a key's two timer records after the last one, and the empty configuration
+ *   has none, so it refused. It now puts the first after the last list body, where every Logitech compile of the
+ *   family has its timers, after the lists, `composeNoScreenDevice`.
+ * * **The activity.** The setup composer kept the configuration's own Watch TV and refused a setup whose activity named
+ *   a device it composed; on a configuration with no Watch TV binding it now composes the activity, after the devices
+ *   and before the favourites, from the setup's devices, their inputs and the `ChannelChanging` role. The activity
+ *   composer already created the flag and every input variable where the configuration had none; on a donor it had
+ *   reused the flag. Here it creates it: `flag.reused` is false.
+ * * **The order the devices are composed in**: the setup's, each device held back only until what it needs is there,
+ *   its key's short press device for a long press and the device whose volume it sends. Until now every short press
+ *   went first; on the test setup the two orders are the same, and on a setup listing a long press or a borrower
+ *   first they differ, the fourth test. It matters because the composer appends each device to the metadata archive as
+ *   it goes, the archive's order is the account's in every Logitech compile, and the activity switches its devices in
+ *   the archive's order.
+ * * **Nothing in the state tables.** The variables the composers append, each at `narrow` as its device or the
+ *   activity goes in, come out numbered exactly as the family's allocator numbers a setup, `noScreenStateVariables`:
+ *   power variables in the setup's order, then the inputs, then the flag. The second test holds this byte for byte, so
+ *   `statetables.ts`'s "whether a setup composed device by device onto a configuration of none comes out numbered
+ *   alike is not checked" is checked now, and it does.
+ *
+ * **What it settled, against Logitech's second compile of the same setup, part by part**, the way
+ * `noscreensetup.test.ts` holds 4.5's composition, every number that follows placement named:
+ *
+ * * **equal**: the key table, binding for binding and in the same order, Watch TV's binding spelled out to every list
+ *   it calls; seven of the eight device maps; every state variable with its transitions, the activity's flag and the
+ *   Denon's input of 19 values among them; all 16 timer records; the eleven start up events; the number sender and
+ *   its three digit tables; every device's records as a multiset but the LG TV's and the KPN's; and the metadata
+ *   archive's devices, their commands and their order;
+ * * **different, and why**:
+ *   * **the KPN's map**: Logitech's binds 12 keys, ours the family's 43, every one of Logitech's 12 among them with the
+ *     same binding. Logitech's compile binds none of the KPN's digits, its Channel Up or its arrows, which the 3.3 run
+ *     heard as silence, and another KPN box's map in two other compiles binds 33 of its own codes, so the reason is
+ *     not the device type or the activity; no compile shows it, `noscreen.test.ts` and `noscreenactivity.test.ts`. So
+ *     ours keeps the family's table, and the KPN stores 30 records and 30 send lists Logitech's does not;
+ *   * **the LG TV's two stored codes nothing sends**: Logitech stores the LG TV's Back and a copy of a code the
+ *     catalogue names OK, without its opening silence, each with a send list nothing calls, for no rule read, 4.1;
+ *   * **the numbering**: lists, maps, timers, records and state variables are numbered by our allocators, plan 011
+ *     and 5.1.8, so they are compared by content and never by number;
+ *   * **the metadata archive's device numbers**: ours count from 1, Logitech's are the account's, a choice plan 011
+ *     step 4 makes, and so the archive's bytes;
+ *   * **the length**, 123780 bytes against 118513, all of it the KPN's extra records, lists and bindings less the LG
+ *     TV's two, the archive's numbers and where things sit.
+ *
+ * **What it settles for 5.1.7**, the stored but uncalled lists and the Denon's inputs: **the Denon's inputs are done
+ * by this build**: the activity composer writes the 19 values, the 19 transitions each calling a send list of its
+ * own, and the 19 records, each the one block copy of the catalogue's input command, equal to Logitech's by content.
+ * Logitech places those records after the number sender and ours go in the Denon's group where it is; that is
+ * placement, carried by the group's addresses. **Of the 50 lists nothing calls, 48 are reproduced**: all 16 silent
+ * writes, two per power variable, and 32 of the 34 sends, Teletext and the digit copies, by the device composer; the
+ * two left are the LG TV's two above. The rule for which sends Logitech stores uncalled is still the one 4.1.1
+ * measured, Teletext and the digits by device type, and the LG TV's two are outside it.
+ *
+ * **What it does not do**: bind firmware event `0xFF`, which `todo-compile-350.md` 5.4 adds after 5.2; the first
+ * test holds that the key table has no such tag. And it does not attribute every byte to a generator, which is 5.2.
+ *
+ * **Controls**, each run and reverted by string replacement in the source unless it is a test of its own:
+ * taking out the timer placement of an empty configuration refuses the first device ("raw slot 8 holds no timer");
+ * composing every short press before every long press again composes the test setup the same, and the reordered setup
+ * of the fourth test is refused, the KPN composed before the Denon whose volume it sends; leaving the activity
+ * uncomposed fails every test, the comparison at the key table; the comparison run against Logitech's first compile,
+ * without the favourites, fails on the KPN's map, the lists and the number sender, the fifth test; and the allocator's
+ * tables with two devices' power lists swapped are not the file's, the second test.
+ *
+ * **Sources checked first**: plan 011 and chapter 5 of `todo-compile-350.md`; the family's composers and their
+ * tests, `noscreensetup.test.ts`, `noscreenactivity.test.ts`, `noscreenempty.test.ts`, `noscreenstatetables.test.ts`
+ * and `noscreennumbering.test.ts`; `reference/architectures/harmony-300-350/memory.md`; the lab's
+ * `work/setups/h350-test/chapter4-reading.md`. Logitech's client compiles nothing for this family, the service does.
+ * **Which architectures**: the Harmony 350 alone, one setup; a Harmony 300 runs a 350's configuration once 5.4 binds
+ * event `0xFF`, decision 28, and no Harmony 300 setup is built here.
+ */
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { assertFileFamilyContainer } from '@harmony/usb';
+import { IR_ARCHIVE, LAB, needing, skipWithoutIrArchive, skipWithoutLab } from '@harmony/lab';
+
+import {
+  buildNoScreenSetup, buildNoScreenStateTables, ComposeError, type ComposedNoScreenSetup, type Container, layOutContainer, metadataArchive,
+  type NoScreenStateDevice, parse, type Recipe, stateRecords, stateVariables, taggedList, takeApart, withStateTables,
+} from '../src/index.ts';
+import { nameOfLabel } from '../src/shared/core.ts';
+import { allLists, maps, records, senders, startUp, timerRecords, transitions } from './noscreenparts.ts';
+
+const needsArchive = needing(skipWithoutIrArchive());
+const needs = needing(skipWithoutLab(), skipWithoutIrArchive());
+
+const SECOND = 'work/setups/h350-test/compile-Result.EzHex';
+const FIRST = 'work/setups/h350-test/first-compile/compile-Result.EzHex';
+/** The file the bench unit is given, written by `bin/compose-no-screen-setup.ts --from-nothing`. */
+const FROM_NOTHING = 'work/setups/h350-test/from-nothing-5.1.6.bin';
+/** A moment for the builds that are not the lab's file, which is rebuilt from its own. */
+const MOMENT = '2026-11-01T12:00:00';
+
+const RECIPE = JSON.parse(readFileSync(new URL('../../corpus/setups/h350-test.json', import.meta.url), 'utf8')) as Recipe;
+
+/** Where Logitech's service put each device, as the setup file's own account of its compile states it. */
+const KEYS = {
+  'LG TV': { place: 0, press: 'short' }, Knoll: { place: 0, press: 'long' },
+  Plasma: { place: 1, press: 'short' }, Kodi: { place: 1, press: 'long' },
+  Denon: { place: 2, press: 'short' }, Switch: { place: 2, press: 'long' },
+  KPN: { place: 3, press: 'short' }, 'Sony HT': { place: 3, press: 'long' },
+} as const;
+
+/** Firmware event `0xFF`, which 5.4 binds and this step must not. */
+const EVENT_FF = 0xff;
+
+function labFile(path: string): Container {
+  const at = join(LAB!, path);
+  // The lab is there, so a missing file fails rather than skips: the claim is about these files.
+  assert.ok(existsSync(at), `${path} is in the lab`);
+  return parse(new Uint8Array(readFileSync(at)));
+}
+
+let memo: { out: ComposedNoScreenSetup; ours: Container } | undefined;
+/** The build, run once. */
+function built() {
+  if (memo !== undefined) return memo;
+  const out = buildNoScreenSetup(IR_ARCHIVE!, { recipe: RECIPE, keys: KEYS, builtAt: MOMENT });
+  memo = { out, ours: parse(out.bytes) };
+  return memo;
+}
+
+/** Two multisets' differences, each side's surplus counted. */
+function surplus(a: Map<string, number>, b: Map<string, number>): number {
+  let n = 0;
+  for (const [key, count] of a) n += Math.max(0, count - (b.get(key) ?? 0));
+  return n;
+}
+const multiset = (items: readonly string[]): Map<string, number> => {
+  const out = new Map<string, number>();
+  for (const one of items) out.set(one, (out.get(one) ?? 0) + 1);
+  return out;
+};
+
+/**
+ * The setup's description as the family's state allocator takes it, read off a configuration: each device's power
+ * lists and, where the activity puts it on one, its input's values and send lists, in the setup's order.
+ */
+function stateRequest(c: Container): NoScreenStateDevice[] {
+  const all = stateRecords(c)!;
+  const named = new Map(stateVariables(c).map((one) => [one.name, one.index]));
+  return RECIPE.devices.map((device) => {
+    const stem = nameOfLabel(device.name);
+    const power = all[named.get(`${stem}_Power_2`)!]!.values;
+    const input = [...named].find(([name]) => name.startsWith(`${stem}_Input_`));
+    const out: { name: string; power: { on: number; off: number }; input?: { values: number; sends?: number[] } } = {
+      name: device.name, power: { on: power.find((one) => one.to === 1)!.operand, off: power.find((one) => one.to === 0)!.operand },
+    };
+    if (input !== undefined) {
+      const values = Number(input[0].slice(input[0].lastIndexOf('_') + 1));
+      const sends = all[input[1]]!.values;
+      out.input = sends.length === 0 ? { values } : { values, sends: Array.from({ length: values }, (_, k) => sends.find((one) => one.to === k)!.operand) };
+    }
+    return out;
+  });
+}
+
+const same = (a: Uint8Array, b: Uint8Array): boolean => a.length === b.length && a.every((x, k) => x === b[k]);
+
+test('the whole test setup builds with no Logitech file: every device, Watch TV with its flag and inputs, and the favourites, and passes the writer\'s checks',
+  needsArchive, () => {
+    const { out, ours } = built();
+    assert.ok(ours.allChecksPass);
+    assertFileFamilyContainer(out.bytes);
+    // Every device composed, none kept, in the setup's order, which needed nothing held back on this setup.
+    assert.deepEqual(out.kept, []);
+    assert.deepEqual(out.composed.map((one) => [one.name, one.group]), [
+      ['LG TV', 0], ['Plasma', 1], ['Denon', 2], ['KPN', 3], ['Kodi', 5], ['Switch', 6], ['Sony HT', 7], ['Knoll', 4],
+    ]);
+    // The activity composed, its flag created and not reused, the LG TV's input of one value that sends nothing and
+    // the Denon's of 19, each of whose values sends a one block copy the composer added.
+    const activity = out.activity!;
+    assert.equal(activity.flag.reused, false);
+    assert.equal(activity.replaced, undefined);
+    assert.deepEqual(activity.inputs.map((one) => [one.device, one.values, one.value]), [['LG TV', 1, 0], ['Denon', 19, 0]]);
+    assert.equal(activity.recordsAdded, 19);
+    assert.deepEqual(activity.power.map((one) => [one.device, one.kind]), [['LG TV', 'variable'], ['Denon', 'variable'], ['KPN', 'toggle']]);
+    // The favourites, four as numbers and 07 digit by digit, on the KPN's map.
+    assert.deepEqual(out.favourites[0]!.channels.map((one) => one.sent), ['number', 'number', 'number', 'number', 'digits']);
+    assert.equal(ours.pointerArray(7)!.length, 359);
+    // No binding of firmware event 0xFF, which is 5.4's, in the key table every lookup falls through to.
+    assert.equal(taggedList(ours, ours.pointerArray(6)![0]!)!.entries.some((one) => one.tag === EVENT_FF), false);
+    // The start up events spelled out, none empty, which is what the 4.5 comparison did not hold, `noscreenparts.ts`.
+    assert.equal(startUp(ours).length, 11);
+    assert.equal(startUp(ours).filter((one) => one === '').length, 0);
+    // The same inputs build the same bytes.
+    assert.ok(same(buildNoScreenSetup(IR_ARCHIVE!, { recipe: RECIPE, keys: KEYS, builtAt: MOMENT }).bytes, out.bytes));
+  });
+
+test('its state tables are the family allocator\'s byte for byte, and the file goes through the frame unchanged', needsArchive, () => {
+  const { ours } = built();
+  // The frame's round trip over a file of ours, as `frame.test.ts` holds it over Logitech's seven.
+  assert.ok(same(layOutContainer(takeApart(ours)).bytes, ours.blob));
+  // The allocator's tables for the setup, put in place of the file's own: nothing moves, so the composers numbered
+  // every variable where the allocator does, the flag included.
+  const request = stateRequest(ours);
+  const allocated = buildNoScreenStateTables({ devices: request, activity: true }, ours.builtAt!);
+  assert.ok(same(layOutContainer(withStateTables(takeApart(ours), allocated.built)).bytes, ours.blob));
+  assert.deepEqual(stateVariables(ours).filter((one) => one.index >= 18 && one.name !== '').sort((a, b) => a.index - b.index)
+    .map((one) => `${one.index} ${one.name}`), [
+    '18 LG_TV_Power_2', '19 Plasma_Power_2', '20 Denon_Power_2', '21 KPN_Power_2', '22 Kodi_Power_2', '23 Switch_Power_2',
+    '24 Sony_HT_Power_2', '25 Knoll_Power_2', '26 LG_TV_Input_1', '27 Denon_Input_19', '28 ActivityPowerState_2',
+  ]);
+  // The control: one device's on and off lists the other way round, and the allocator's tables are not the file's.
+  const swapped = request.map((one, k) => (k === 0 ? { ...one, power: { on: one.power!.off, off: one.power!.on } } : one));
+  const wrong = buildNoScreenStateTables({ devices: swapped, activity: true }, ours.builtAt!);
+  assert.ok(!same(layOutContainer(withStateTables(takeApart(ours), wrong.built)).bytes, ours.blob));
+});
+
+test('built from nothing, the setup is Logitech\'s second compile by content but for the KPN\'s map and the LG TV\'s two stored codes', needs, () => {
+  const { ours } = built();
+  const theirs = labFile(SECOND);
+  // The key table, binding for binding, Watch TV's spelled out, and seven of the eight device maps.
+  const [mine, logitech] = [maps(ours), maps(theirs)];
+  assert.deepEqual(Object.keys(mine).sort(), Object.keys(logitech).sort());
+  for (const name of Object.keys(logitech)) if (name !== 'KPN') assert.deepEqual(mine[name], logitech[name], name);
+  // The key table in the same order too: built from nothing it grows as Logitech's did, where 4.5's, composed onto a
+  // table that had shrunk, put one tag in front of two others.
+  const tags = (c: Container) => taggedList(c, c.pointerArray(6)![0]!)!.entries.map((one) => one.tag);
+  assert.deepEqual(tags(ours), tags(theirs));
+  // The KPN's: Logitech's 12 bindings all ours, and 31 more of the family's table.
+  const [kpn, theirKpn] = [mine['KPN']!, logitech['KPN']!];
+  assert.equal(Object.keys(theirKpn).length, 12);
+  assert.equal(Object.keys(kpn).length, 43);
+  for (const [tag, binding] of Object.entries(theirKpn)) assert.equal(kpn[tag], binding, `KPN ${tag}`);
+  // Every record, per device as a multiset: equal but the KPN's 30 more and the LG TV's 2 fewer.
+  const [ourRecords, theirRecords] = [records(ours), records(theirs)];
+  const extra = Object.fromEntries(Object.keys(theirRecords).map((name): [string, [number, number]] => [name, [
+    surplus(multiset(ourRecords[name]!), multiset(theirRecords[name]!)), surplus(multiset(theirRecords[name]!), multiset(ourRecords[name]!)),
+  ]]).filter(([, [a, b]]) => a + b > 0));
+  assert.deepEqual(extra, { LG_TV: [0, 2], KPN: [30, 0] });
+  assert.equal(Object.values(theirRecords).flat().length, 250);
+  assert.equal(Object.values(ourRecords).flat().length, 278);
+  // Every list as a multiset, each send named by its whole record: the KPN's 30 sends more, the LG TV's 2 fewer.
+  const [ourLists, theirLists] = [allLists(ours, Number.MAX_SAFE_INTEGER), allLists(theirs, Number.MAX_SAFE_INTEGER)];
+  assert.equal(surplus(ourLists, theirLists), 30);
+  assert.equal(surplus(theirLists, ourLists), 2);
+  assert.equal(theirs.pointerArray(7)!.length, 331);
+  // Every state variable with its transitions, every timer, the start up events and the number sender.
+  assert.deepEqual(transitions(ours), transitions(theirs));
+  assert.deepEqual(timerRecords(ours), timerRecords(theirs));
+  assert.equal(timerRecords(theirs).length, 16);
+  assert.deepEqual(startUp(ours), startUp(theirs));
+  assert.deepEqual(senders(ours), senders(theirs));
+  // The metadata archive: the same devices with the same commands in the same order; the numbers are ours.
+  const listed = (c: Container) => metadataArchive(c)!.devices.map((one) => `${one.index} ${one.name} ${one.commands.map((x) => x.name).join(',')}`);
+  assert.deepEqual(listed(ours), listed(theirs));
+  assert.deepEqual(metadataArchive(ours)!.devices.map((one) => one.deviceId), ['1', '2', '3', '4', '5', '6', '7', '8']);
+  assert.deepEqual(metadataArchive(theirs)!.devices.map((one) => one.deviceId).slice(0, 2), ['83962903', '83962904']);
+  assert.equal(ours.blob.length, 123780);
+  assert.equal(theirs.blob.length, 118513);
+});
+
+test('the setup\'s order holds a device back only until what it needs is there: a long press for its key, a device for the volume it sends',
+  needsArchive, () => {
+    // The Knoll, a long press on the LG TV's key whose volume is the Denon's, and the KPN, whose volume is the Denon's
+    // too, first: each waits for what it needs, the Knoll for both, and the rest keep the setup's order.
+    const order = ['Knoll', 'KPN', 'LG TV', 'Plasma', 'Denon', 'Kodi', 'Switch', 'Sony HT'];
+    const recipe: Recipe = { ...RECIPE, devices: order.map((name) => RECIPE.devices.find((one) => one.name === name)!) };
+    const out = buildNoScreenSetup(IR_ARCHIVE!, { recipe, keys: KEYS, builtAt: MOMENT });
+    assert.deepEqual(out.composed.map((one) => one.name), ['LG TV', 'Plasma', 'Denon', 'Knoll', 'KPN', 'Kodi', 'Switch', 'Sony HT']);
+    // The archive lists them as composed, and the activity switches its devices in that order.
+    assert.deepEqual(metadataArchive(parse(out.bytes))!.devices.map((one) => one.name), out.composed.map((one) => one.name));
+    assert.deepEqual(out.activity!.power.map((one) => one.device), ['LG TV', 'Denon', 'KPN']);
+    // Refused before anything is composed: a setup with no skin, an activity ending in no device's map, and a long
+    // press on a key that holds no short press device.
+    assert.throws(() => buildNoScreenSetup(IR_ARCHIVE!, { recipe: { ...RECIPE, model: { name: 'Harmony 350' } }, keys: KEYS, builtAt: MOMENT }),
+      (error: unknown) => error instanceof ComposeError && /states no skin/.test(error.message));
+    const activity = RECIPE.activities[0]!;
+    const noChannel = { ...RECIPE, activities: [{ ...activity, devices: activity.devices.map((one) => ({ ...one, roles: [] })) }] };
+    assert.throws(() => buildNoScreenSetup(IR_ARCHIVE!, { recipe: noChannel, keys: KEYS, builtAt: MOMENT }), /gives 0 devices the ChannelChanging role/);
+    const { 'LG TV': _, ...noTv } = KEYS;
+    const withoutTv: Recipe = { ...RECIPE, devices: RECIPE.devices.filter((one) => one.name !== 'LG TV'), activities: [], favourites: [] };
+    assert.throws(() => buildNoScreenSetup(IR_ARCHIVE!, { recipe: withoutTv, keys: noTv, builtAt: MOMENT }), /Knoll cannot be composed/);
+  });
+
+test('the comparison bites: against Logitech\'s first compile, without the favourites, the KPN\'s map, the lists and the number sender differ', needs, () => {
+  const { ours } = built();
+  const first = labFile(FIRST);
+  // The same comparison as above, of which only what the five channels change can fail.
+  assert.notDeepEqual(maps(ours)['KPN'], maps(first)['KPN']);
+  assert.notEqual(surplus(allLists(ours, Number.MAX_SAFE_INTEGER), allLists(first, Number.MAX_SAFE_INTEGER)), 30);
+  assert.equal(senders(first).length, 0);
+  assert.notDeepEqual(senders(ours), senders(first));
+  // And what the channels do not touch still agrees, so the comparison is not failing on everything.
+  assert.deepEqual(transitions(ours), transitions(first));
+  assert.deepEqual(startUp(ours), startUp(first));
+});
+
+test('the file in the lab for the bench unit is this build from its own stamp, byte for byte, and passes the writer\'s checks', needs, () => {
+  const at = join(LAB!, FROM_NOTHING);
+  assert.ok(existsSync(at), `${FROM_NOTHING} is in the lab, written by bin/compose-no-screen-setup.ts --from-nothing`);
+  const file = new Uint8Array(readFileSync(at));
+  const stamp = parse(file).builtAt!;
+  const again = buildNoScreenSetup(IR_ARCHIVE!, { recipe: RECIPE, keys: KEYS, builtAt: stamp });
+  assert.ok(same(file, again.bytes));
+  // GSPM and PTYY, the end marker, end_addr at it and the trailer checksum, as write-file-config.ts checks them.
+  const checked = assertFileFamilyContainer(file);
+  assert.equal(checked.readLength, file.length - 4);
+});

@@ -36,9 +36,11 @@
  * 0 to 17, every device's power variable in the setup's order, then every input variable in the same order of
  * devices, then the flag; then the compiler's first two byte variable, which the generic builder places at
  * `narrow`. It follows the order the family's composers append in, a device's power variable at `narrow` as the
- * device is composed and the activity's inputs before its flag, `composeNoScreenActivity`; whether a setup
- * composed device by device onto a configuration of none comes out numbered alike is not checked, since nothing
- * has been composed onto one. A comparison with Logitech's compile is by role, never by number.
+ * device is composed and the activity's inputs before its flag, `composeNoScreenActivity`. **A setup composed device
+ * by device onto the configuration of none comes out numbered alike**, byte for byte: the test setup built from
+ * nothing, `todo-compile-350.md` 5.1.6, holds exactly the tables this builds for it, `noscreenfromnothing.test.ts`.
+ * This said that was not checked until then, since nothing had been composed onto one. A comparison with Logitech's
+ * compile is by role, never by number.
  *
  * **What the generator does not reproduce**: the order of the transitions inside a record. Logitech
  * stores the switch on first in 33 of the 49 power records of the 13 and the switch off first in the other 16, and

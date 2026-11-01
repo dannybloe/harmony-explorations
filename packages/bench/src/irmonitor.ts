@@ -62,6 +62,9 @@ export const BENCH_CONFIGS: readonly string[] = [
   // What it holds since todo-compile-350 3.2, Logitech's compile of the test setup, by path for the same
   // reason and because every compile in `work/setups/` carries this file name; 3.3's bench test.
   'work/setups/h350-test/compile-Result.EzHex',
+  // The test setup built from nothing, todo-compile-350 5.1.6, which the bench Harmony 350 holds for that item's bench
+  // test: the compile names every code it shares with it, and this the KPN's codes the compile does not store.
+  'work/setups/h350-test/from-nothing-5.1.6.bin',
   // The bench Harmony 300's own configuration, the four devices Logitech's service put on it, written back
   // unchanged by todo-compile-300 1.4; that item's bench test.
   'h300_programmed_config',
