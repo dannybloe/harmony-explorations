@@ -15,6 +15,8 @@ one product id, one file based protocol and one container, opened by the same fu
 railed path. **A Harmony 300 runs a Harmony 350's configuration once firmware event `0xFF` is bound in key map 0 to
 the list event `0x30` runs**, and the entry is harmless on a 350, so there is no model distinction in a
 configuration: `reference/architectures/harmony-300-350/README.md`, "Making a Harmony 300 behave as a Harmony 350".
+Every configuration the codec builds from nothing carries the entry, `noScreenAcknowledgingEntry`; a composition onto
+one of Logitech's compiles does not add it, so a file meant for a Harmony 300 is built from nothing.
 What differs is Logitech's service per model (devices, long press, activities, favourites) and the printing.
 
 ## 1. Read these before anything else

@@ -42,8 +42,12 @@
  *       --out ../lab/work/setups/h350-test/from-nothing-5.1.7.bin
  *
  * with the keys Logitech's service chose for the test setup, `h350-test.json`'s own account of its compile.
- * `packages/codec/test/noscreenfromnothing.test.ts` rebuilds the file from its own stamp and holds it against
- * Logitech's second compile part by part.
+ * **Since 5.4 a build from nothing binds firmware event `0xFF`** to the list event `0x30` runs, decision 28, so the
+ * file serves the Harmony 300 as well as the Harmony 350; the same command with `--out
+ * ../lab/work/setups/h350-test/from-nothing-5.4.bin` wrote that file, the 5.1.6 and 5.1.7 files staying in the lab as
+ * they were, without the entry. `packages/codec/test/noscreenfromnothing.test.ts` rebuilds the 5.4 file from its own
+ * stamp and holds it against Logitech's second compile part by part. A composition onto `--donor` does not add the
+ * entry, `families/no-screen/setup.ts` says why.
  */
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';

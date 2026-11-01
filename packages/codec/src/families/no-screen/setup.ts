@@ -35,6 +35,13 @@
  * configuration does not hold. Replacing an activity whose devices hold input variables already needs the variable
  * removal step of 4.2.1, which nothing has built, so a donor's activity is never replaced here.
  *
+ * **Event `0xFF`**, `todo-compile-350.md` 5.4: `buildNoScreenSetup` binds it as its last step, so a setup built from
+ * nothing serves a Harmony 300 and a Harmony 350 alike, decision 28. `composeNoScreenSetup` onto a Logitech compile
+ * does not add it, deliberately: no composer rebuilds the key table from the family's constants, each adds its own
+ * entries to what the file holds, so a composition onto a donor keeps the donor's key table, Logitech's own lack of
+ * the entry included, and changing that would make the composers' tests against Logitech's second compile hold
+ * something Logitech's compile does not. A configuration meant for a Harmony 300 is built from nothing.
+ *
  * **Measured** in `noscreensetup.test.ts`: Logitech's first compile of the test setup, with the five devices
  * `withoutNoScreenDevice` can take out taken out, composed back to the whole setup with the five favourite
  * channels, and held part by part against Logitech's second compile. And in `noscreenfromnothing.test.ts`, 5.1.6:
@@ -49,7 +56,7 @@ import type { Recipe } from '../../recipe/recipe.ts';
 import { ComposeError, nameOfLabel } from '../../shared/core.ts';
 import { type ComposedNoScreenActivity, composeNoScreenActivity, type NoScreenActivityDevice, WATCH_TV_SCAN } from './activity.ts';
 import { composeNoScreenDevice, keyMaps, PRESS } from './devices.ts';
-import { buildEmptyNoScreenConfiguration } from './empty.ts';
+import { emptyNoScreenForComposing, withAcknowledgingEntry } from './empty.ts';
 import { type ComposedNoScreenFavourites, composeNoScreenFavourites } from './favourites.ts';
 import { type AccountDevice, DEVICE_KEYS, LONG_PRESS_GROUP_BASE, volumeSource } from './keys.ts';
 
@@ -257,14 +264,19 @@ export interface NoScreenSetupFromNothing extends NoScreenSetupRequest {
  * composed onto it by `composeNoScreenSetup`. **Nothing goes in but the setup, its keys, a moment and the infrared
  * catalogue**: no Logitech container, which 5.2.3 checks, `noscreenattribution.test.ts`. The skin is the setup's,
  * refused where the setup states none, since the infrared allocation is the model's, `INFRARED_GROUPS_BY_SKIN`.
- * Unstamped by nothing after the last composer, which restamps; a caller writing it restamps again last, as every
- * writer does.
+ *
+ * **Then event `0xFF` is bound**, 5.4, decision 28: the entry that makes a Harmony 300 send from groups 4 to 7, so the
+ * file serves a Harmony 300 and a Harmony 350 alike. It is put in last, `withAcknowledgingEntry`, onto an empty
+ * configuration started without it, `emptyNoScreenForComposing`, which says why last: the key table then stores as
+ * Logitech's with the one entry added, as the file the bench Harmony 300 ran did. Restamped by that step; a caller
+ * writing it restamps again last, as every writer does.
  */
 export function buildNoScreenSetup(archive: string, request: NoScreenSetupFromNothing): ComposedNoScreenSetup {
   const skin = request.recipe.model.skin;
   if (skin === undefined) throw new ComposeError('the setup states no skin, so the model the configuration is built for is not known');
-  const empty = buildEmptyNoScreenConfiguration({
+  const empty = emptyNoScreenForComposing({
     skin, builtAt: request.builtAt, ...(request.zoneHours === undefined ? {} : { zoneHours: request.zoneHours }),
   });
-  return composeNoScreenSetup(empty.container, archive, { recipe: request.recipe, keys: request.keys });
+  const composed = composeNoScreenSetup(empty.container, archive, { recipe: request.recipe, keys: request.keys });
+  return { ...composed, bytes: withAcknowledgingEntry(parse(composed.bytes)).blob };
 }

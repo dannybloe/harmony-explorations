@@ -13,6 +13,10 @@
  *
  *   node packages/codec/bin/empty-no-screen.ts --out ../lab/work/setups/h350-empty/empty-350.bin
  *
+ * and since `todo-compile-350.md` 5.4 the empty configuration binds firmware event `0xFF` to the list event `0x30`
+ * runs, decision 28, four bytes more; that file is `--out ../lab/work/setups/h350-empty/empty-350-5.4.bin`, the 5.1.5
+ * file staying as it was written.
+ *
  * **Skins.** 104, the Harmony 350, and 79, the European Harmony 300, the two whose infrared allocation a compile has
  * stated. Skin 78 is refused by the builder, since no configuration stating it has been read.
  *

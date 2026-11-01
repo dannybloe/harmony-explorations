@@ -100,6 +100,8 @@ export {
   HOLD_TIME, NO_SCREEN_PARAMETERS, noScreenDigitEntryTable, noScreenLogArea, noScreenParameterBlock, noScreenSendEventEntries,
   noScreenSendEventLists, type NoScreenSendEventNumbers, noScreenStartUpLists, type NoScreenStartUpNumbers, noScreenStartUpTable,
   SEND_EVENT_PINS, type SendEventLists, SENDING_FLAG, START_UP_EVENT_COUNT, START_UP_OWN_EVENTS, startUpGroup,
+  // The entry binding event 0xFF that makes a Harmony 300 send from groups 4 to 7, todo-compile-350.md 5.4.
+  ACKNOWLEDGED_AS, noScreenAcknowledgingEntry, UNMASKED_SEND_EVENT,
 } from './constants.ts';
 export {
   composeNoScreenFavourites, type ComposedNoScreenFavourites, NUMBER_SENDER_BAND, type NoScreenFavouritesRequest,
