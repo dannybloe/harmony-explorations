@@ -778,3 +778,12 @@ remote and 2 in the second, which is what section 117 measured as a generator er
    **What it does not change.** Generating configuration files is still the route to everything, and this
    does not make firmware modification a route to anything. The rail is a door of its own, never the
    configuration write's, and it lives in `packages/usb/src/rails.ts`.
+
+28. <a id="d28"></a>**The Harmony 300 and the Harmony 350 are one remote for configurations.** *Taken on 1 November 2026,
+   `todo-compile-300.md` 4.4.* The two run one program linked twice on one board, and the one difference a
+   configuration meets, the firmware event a send from an infrared group above 3 raises on the 300, is met
+   by one entry in the configuration: bind event 0xFF to a list that ends in the acknowledgement, as event
+   0x30's does. With it the bench 300 sent from all eight groups, long press included. So the reference
+   describes the two as one, with that entry as what brings a 300 level with a 350; the code builds one
+   family with the entry for a 300; and the 300's own track folds into the 350's, keeping only the check of
+   our build against Logitech's 300 compile. Decision 27 was not exercised: no firmware was written.

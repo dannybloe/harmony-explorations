@@ -41,8 +41,8 @@ Changed on 31 October 2026: the bench 300 already held a Logitech compile of its
 
 - [x] 4.1 The two applications compared, both read off the units: one program linked twice, the only difference that is not an address the send kind a group above 3 gets, 0xFF on the 300 and 3 on the 350; bootloader and safe mode are other builds and run no configuration, `tests/test_harmony_300_350_images.py`
 - [ ] 4.2 What the four send kinds do: the lists entry 0 binds to firmware events 0x2D to 0x30, read in the configurations, so the one difference is known before the bench says it
-- [ ] 4.3 Logitech's compile of the 350's test setup written to the bench 300 and the 350's 3.3 bench test run on it, the predictions written first, the long press devices in groups 4 to 7 among the steps
-- [ ] 4.4 The verdict in the reference, the 300 a 350 for configurations or what differs, and this track folded into the 350's with the device count, the long press and the favourites as the model's settings
+- [x] 4.3 Logitech's compile of the 350's test setup written to the bench 300 and the 350's 3.3 bench test run on it, the predictions written first, the long press devices in groups 4 to 7 among the steps: as compiled it hangs the 300 at the first send from group 4, `tests/test_harmony_300_group_4_send.py`; with firmware event 0xFF bound to event 0x30's list, one entry in key map 0, all four groups above 3 sent and the remote kept working, the lab's `work/300-event-ff/`
+- [ ] 4.4 The verdict in the reference, decided as decision 28, the 300 a 350 for configurations or what differs, and this track folded into the 350's with the device count, the long press and the favourites as the model's settings
 
 ## 5. Logitech's 300 compile rebuilt
 
