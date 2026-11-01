@@ -85,6 +85,11 @@ prove it wrong.
 
 **Rules for the instructions, each learned at the bench:**
 
+* **An instruction says only which keys to press, in order, and nothing else**: "Hold TV 2 s → Volume Up →
+  Up". No prediction, no explanation of what a key chooses, no conditional prose: what is expected shows
+  on the bench page from `expect`, and why goes in `description` and the predictions document. A
+  conditional action is a step of its own. Asked for at the bench on 1 November 2026, after a long press
+  buried in a long sentence was missed twice in one run.
 * **Take every screen from the written file itself**, drawn by the bench (`GET /api/screen`) or by
   `make render`, never from memory or from another configuration. The device list exists in several
   copies, each with its own order, and the one the ordinary screen opens is the one to describe.
