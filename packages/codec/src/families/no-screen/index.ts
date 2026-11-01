@@ -18,18 +18,19 @@
  *   sequence, a menu row and keys of an activity map this family has none of, and the shared input composer's
  *   send, whose inputs send whole records after the input delay where this family's send one block copies after
  *   a tenth; the activity composer builds both its own way.
- * * **Not measured yet**, each with the step that measures it: the state tables and the wiring the builders check
- *   against, chapter 5; the sequences the send refuses, which no compile of this family holds.
+ * * **Not measured yet**, each with the step that measures it: the wiring the builders check against, chapter 5;
+ *   the sequences the send refuses, which no compile of this family holds. The state tables are the family's own
+ *   since `todo-compile-350.md` 5.1.2, `statetables.ts`.
  *
  * A data member that cannot be stated refuses when it is read, `refusing` below, so a shared composer that asks
  * this family a question it has no answer to stops there with the reason, not with another family's answer.
  */
 import type { ActivityKeyRules } from '../../activityroles.ts';
 import { ComposeError } from '../../shared/core.ts';
-import type { StateTableFacts } from '../../statetables.ts';
 import type { ActivityStart, Family, FamilyFonts, FamilyTraits } from '../family.ts';
 import { NO_SCREEN_HARD_KEYS } from './keys.ts';
 import { NO_SCREEN_SENDS } from './sends.ts';
+import { NO_SCREEN_STATE_TABLES } from './statetables.ts';
 
 /** The models this family serves, as a person names them, for a refusal. */
 const NAME = 'the Harmony 300 and 350';
@@ -64,7 +65,9 @@ export const NO_SCREEN_FAMILY: Family = {
   choices: {},
   deviceModeKeys: NO_SCREEN_HARD_KEYS,
   activityKeyRules: refusing<ActivityKeyRules>(`${NAME} have no activity map, so an activity's keys are its channel device's; the activity is composeNoScreenActivity`),
-  stateTables: refusing<StateTableFacts>(`the state tables are not built for ${NAME} yet, todo-compile-350.md 5.1`),
+  // The facts measured on the family's 13 compiles, `todo-compile-350.md` 5.1.2; the allocator beside them numbers a
+  // setup's own variables, `noScreenStateVariables`.
+  stateTables: NO_SCREEN_STATE_TABLES,
   wiring: { check: refuses(`the wiring is not built for ${NAME} yet, todo-compile-350.md 5.1`) },
   fonts: {
     faces: [],
@@ -103,6 +106,10 @@ export {
 } from './keys.ts';
 export { NO_SCREEN_SENDS, powerOnWaits } from './sends.ts';
 export { noScreenSites, type NoScreenSite, type RemovedNoScreenDevice, withoutNoScreenDevice } from './remove.ts';
+export {
+  buildNoScreenStateTables, NO_SCREEN_FIRMWARE_STATE_RECORDS, NO_SCREEN_NARROW_MAX, NO_SCREEN_STATE_TABLES, type NoScreenStateDevice,
+  type NoScreenStateRequest, type NoScreenStateTables, noScreenStateVariables, type NoScreenStateVariables, type NoScreenVariableRole,
+} from './statetables.ts';
 export {
   composeNoScreenSetup, type ComposedNoScreenSetup, devicePlaces, type DevicePlace, groupOfPlace, type NoScreenSetupRequest,
 } from './setup.ts';

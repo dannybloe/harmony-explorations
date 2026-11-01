@@ -83,8 +83,10 @@ metadata archive at raw slot 13, which runs up to the trailer, since there is no
 groups follow the clock record directly**: base slot 4, which sits between base slot 3 and base slot 5's groups on every other architecture laid
 out, is not on these two models, and the groups are still parked in front of base slot 5's table as on the Harmony
 600, 650, 700 and One[^t-frame]. Of the structures this project's readers claim on these files, nothing else is
-parked in front of any table in all seven compiles; the key maps, the timer records and the parameter groups are
-claimed by no reader yet, so where they sit relative to their tables is not checked[^t-frame][^unchecked].
+parked in front of any table in all seven compiles[^t-frame], and **the parameter groups, which no reader claims,
+sit between base slot 13's table and base slot 15's**, the whole gap, in all 13 compiles read[^t-noscreen-state-tables]; the key maps and
+the timer records are claimed by no reader yet, so where they sit relative to their tables is not
+checked[^unchecked]. This listed the parameter groups as not checked too, until the state tables were rebuilt.
 
 **What is parked, and in what order, is decided by the content**: a parked structure follows everything it names,
 and the parked pieces of a table come in the table's own field order[^s328]. `placePieces` in
@@ -222,3 +224,4 @@ could have written: `modeZeroKeyList`, `compilerTagOrder`, `buildNameTree` and `
 [^t-noscreen]: Measured in configurations. [The test](../../packages/codec/test/noscreen.test.ts)
 [^t-frame]: Measured in configurations. [The test](../../packages/codec/test/frame.test.ts)
 [^t-noscreen-favourites]: Measured in configurations. [The test](../../packages/codec/test/noscreenfavourites.test.ts)
+[^t-noscreen-state-tables]: Measured in configurations. [The test](../../packages/codec/test/noscreenstatetables.test.ts)

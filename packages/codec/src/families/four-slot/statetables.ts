@@ -45,6 +45,7 @@ export const FOUR_SLOT_STATE_TABLES: StateTableFacts = {
   // Two bytes, read off the readers' own table.
   caseCountWidth: VALUE_MAP_COUNT_WIDTH[ARCHITECTURE] as number,
   // The three rollovers and the hour's call, and nothing on the minute but its rollover on the thirteen.
+  clockCarry: true,
   minuteCall: false,
 };
 

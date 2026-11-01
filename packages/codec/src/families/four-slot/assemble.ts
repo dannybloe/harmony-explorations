@@ -88,7 +88,9 @@ import { characterMap, decode, glyphsReferencedBy, oxaniumAlphabet } from '../..
 import type { ContainerLayout } from '../../frame.ts';
 import { layOutContainer, takeApart } from '../../frame.ts';
 import { composedIntoBody, loosen, placePieces } from '../../placer.ts';
-import { buildStateTables, describeStateTables, hourListBytes, type StateTableFacts, withStateTables } from '../../statetables.ts';
+import {
+  buildStateTables, builtStatePieces, describeStateTables, hourListBytes, type StateTableFacts, withStateTables,
+} from '../../statetables.ts';
 
 import { checkOxaniumFonts, withOxaniumFonts, type SetFace } from '../../fonttable.ts';
 import { LETTERING_FACES, letterForm, maskForm } from '../../lettering.ts';
@@ -521,7 +523,7 @@ export function attributeBytes(c: Container): AttributedBytes {
   const tables = buildStateTables(tablesSpec, stateTablesOf(c));
   const tablesLaid = layOutContainer(withStateTables(layout, tables));
   if (!sameBytes(tablesLaid.bytes, c.blob)) throw new AssemblyError('the state tables do not rebuild from their description');
-  for (const piece of [tables.nameTree, tables.stateTable, tables.valueMapTable, ...tables.records, ...tables.valueMaps]) {
+  for (const piece of builtStatePieces(tables)) {
     const at = tablesLaid.offsetOf(piece);
     if (at !== undefined) mark(at, piece.bytes.length, 'state tables');
   }
@@ -529,7 +531,8 @@ export function attributeBytes(c: Container): AttributedBytes {
   // state, and every value map case that is a `caseProgram`, five bytes queuing one action, the action read
   // and its frame built. On Logitech's compiles the working screen record's idle case queues more and is
   // not one.
-  const hourAt = c.blobOffsetOf((c.pointerArray(10) ?? [])[tablesSpec.hourList] ?? -1);
+  // The four slot family's clock carries, `FOUR_SLOT_STATE_TABLES.clockCarry`, so the description names the hour's list.
+  const hourAt = tablesSpec.hourList === undefined ? undefined : c.blobOffsetOf((c.pointerArray(10) ?? [])[tablesSpec.hourList] ?? -1);
   const hour = hourListBytes();
   if (hourAt !== undefined && sameBytes(c.blob.subarray(hourAt, hourAt + hour.length), hour)) mark(hourAt, hour.length, 'state tables');
   for (const map of valueMaps(c) ?? []) {

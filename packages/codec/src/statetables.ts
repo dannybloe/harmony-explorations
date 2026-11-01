@@ -14,7 +14,10 @@
  * family's, the Harmony One's, over its 19 distinct compiles since `todo-compile-one.md` 6.4,
  * `families/touch/statetables.ts`, where they differ in records 13 and 14, the width line, a one byte case
  * count and a second transition on the minute. What is written below about the thirteen is that
- * measurement, and the rest of it holds on the One's 19 as well.
+ * measurement, and the rest of it holds on the One's 19 as well. The no screen family's, the Harmony 300 and
+ * 350's, over the 13 compiles of that family the lab holds since `todo-compile-350.md` 5.1.2,
+ * `families/no-screen/statetables.ts`, where the clock carries nothing, there are no value maps and every
+ * variable above the firmware's block but the compiler's first is one byte, with maxima up to 18.
  *
  * **What is generated**, each measured on the thirteen and each a place a carried copy could have
  * hidden a stale byte:
@@ -68,7 +71,7 @@
 import { Writer } from './emit.ts';
 import { CLOCK_FIELD_COUNT, FRAME_COOKIE, FRAME_END, actionListBytes, clockRecordFields } from './gspm.ts';
 import { u16, u24, u8 } from './bytes.ts';
-import type { ContainerLayout, ContainerPiece, PieceRef } from './frame.ts';
+import type { ContainerLayout, ContainerPiece, PieceRef, SectionPlacement } from './frame.ts';
 import { compilerCaseOrder } from './inventory.ts';
 import { STATE_BAND } from './actions.ts';
 import { keyListCapacity, keyListHash } from './modezero.ts';
@@ -115,8 +118,20 @@ export interface StateTableFacts {
    */
   readonly narrowMax: number;
   readonly wideMin: number | undefined;
-  /** A value map's case count, in bytes. */
-  readonly caseCountWidth: number;
+  /**
+   * A value map's case count, in bytes; undefined where the family keeps no value maps at all, the Harmony 300
+   * and 350's, whose configurations hold no base slot 14, `ARCH16_SLOT_MAP`. A description with a value map is
+   * refused there, and the builder builds no value map table.
+   */
+  readonly caseCountWidth: number | undefined;
+  /**
+   * Whether the clock's records carry the carry: the minute, day and month incrementing the next field when they
+   * roll over and the hour calling a list, `clockTransitions`. On every compile of the four slot and touch
+   * families, 13 and 19; on none of the 13 Harmony 300 and 350 compiles, whose seven clock records hold no
+   * transition at all, so a description there names no hour list. `reference/architectures/harmony-300-350/memory.md`
+   * under the state variables.
+   */
+  readonly clockCarry: boolean;
   /**
    * The minute calls a list on every write besides incrementing the hour, `StateTablesSpec.minuteList`: on
    * all 19 Harmony One compiles, whose screens show a clock, and on none of the thirteen arch 14 ones, whose
@@ -200,8 +215,11 @@ export interface ValueMapSpec {
 export interface StateTablesSpec {
   /** Records 0 to 6, `first` and `max`: second, minute, hour, day, weekday, month, year. */
   clock: readonly { first: number; max: number }[];
-  /** The base slot 10 list the hour calls when it rolls over, which increments the day and weekday. */
-  hourList: number;
+  /**
+   * The base slot 10 list the hour calls when it rolls over, which increments the day and weekday. Given exactly
+   * where the family's clock carries, `StateTableFacts.clockCarry`: the Harmony 300 and 350's hour calls nothing.
+   */
+  hourList?: number;
   /**
    * The base slot 10 list the minute calls on every change, `-2` to `-2`, after its increment of the hour:
    * on all 19 Harmony One compiles, the clock's screen side, a list calling two short lists, `todo-compile-one.md` 2.2,
@@ -223,7 +241,8 @@ export interface BuiltStateTables {
   stateTable: ContainerPiece;
   /** One record per variable, by index. */
   records: ContainerPiece[];
-  valueMapTable: ContainerPiece;
+  /** Absent where the family keeps no value maps, `StateTableFacts.caseCountWidth`. */
+  valueMapTable?: ContainerPiece;
   /** One record per value map, by the index `0x72`'s high byte names. */
   valueMaps: ContainerPiece[];
   /** The index each of the description's variables was given, in the description's order. */
@@ -462,7 +481,13 @@ export function buildStateTables(spec: StateTablesSpec, facts: StateTableFacts):
   narrowSpecs.forEach((k, i) => { indexOf[k] = firmwareCount + i; });
   wideSpecs.forEach((k, i) => { indexOf[k] = narrow + 1 + i; });
 
-  // Whether the minute calls a list is the family's; which list, the description's.
+  // Whether the clock carries and the minute calls a list is the family's; which lists, the description's.
+  if (facts.clockCarry !== (spec.hourList !== undefined)) {
+    throw new StateTablesError(facts.clockCarry
+      ? `the hour calls a list on ${facts.measuredOn} and the description names none`
+      : `the clock carries nothing on ${facts.measuredOn} and the description names hour list ${spec.hourList}`);
+  }
+  if (facts.minuteCall && !facts.clockCarry) throw new StateTablesError(`the facts for ${facts.measuredOn} call a list on the minute of a clock that carries nothing`);
   if (facts.minuteCall !== (spec.minuteList !== undefined)) {
     throw new StateTablesError(facts.minuteCall
       ? `the minute calls a list on ${facts.measuredOn} and the description names none`
@@ -470,7 +495,8 @@ export function buildStateTables(spec: StateTablesSpec, facts: StateTableFacts):
   }
   const recordBytes: Uint8Array[] = new Array(count);
   spec.clock.forEach((field, index) => {
-    recordBytes[index] = buildStateRecord(field.first, field.max, clockTransitions(index, spec.hourList, spec.minuteList));
+    recordBytes[index] = buildStateRecord(field.first, field.max,
+      spec.hourList === undefined ? [] : clockTransitions(index, spec.hourList, spec.minuteList));
   });
   facts.firmwareRecords.forEach(([first, max], i) => {
     recordBytes[CLOCK_FIELD_COUNT + i] = buildStateRecord(first, max);
@@ -489,22 +515,34 @@ export function buildStateTables(spec: StateTablesSpec, facts: StateTableFacts):
     if (v.stem !== undefined) named.push({ index: indexOf[k]!, name: stateVariableName(v.stem, v.max) });
   });
 
+  const built: BuiltStateTables = {
+    nameTree: piece(buildNameTree(named), 'slot-0-tree'),
+    stateTable: piece(table.bytes, 'slot-13-table', tableRefs),
+    records,
+    valueMaps: [],
+    indexOf,
+    narrow,
+    wide,
+  };
+  // A family with no base slot 14 gets no table for it, and a description with a value map is refused there.
+  if (facts.caseCountWidth === undefined) {
+    if (spec.valueMaps.length > 0) throw new StateTablesError(`${facts.measuredOn} keep no value maps, and the description holds ${spec.valueMaps.length}`);
+    return built;
+  }
   if (spec.valueMaps.length > 0xff) throw new StateTablesError(`${spec.valueMaps.length} value maps is more than its one byte count holds`);
   const valueMaps = spec.valueMaps.map((map) => buildValueMap(map, facts));
   const mapTable = new Writer(1 + 3 * valueMaps.length).u8(valueMaps.length);
   for (let k = 0; k < valueMaps.length; k += 1) mapTable.u24(0);
   const mapRefs: PieceRef[] = valueMaps.map((to, k) => ({ at: 1 + 3 * k, to, offset: 0 }));
+  return { ...built, valueMapTable: piece(mapTable.bytes, 'slot-14-table', mapRefs), valueMaps };
+}
 
-  return {
-    nameTree: piece(buildNameTree(named), 'slot-0-tree'),
-    stateTable: piece(table.bytes, 'slot-13-table', tableRefs),
-    records,
-    valueMapTable: piece(mapTable.bytes, 'slot-14-table', mapRefs),
-    valueMaps,
-    indexOf,
-    narrow,
-    wide,
-  };
+/** Every piece `buildStateTables` built, the tables first: what a caller counts as the state tables' bytes. */
+export function builtStatePieces(built: BuiltStateTables): ContainerPiece[] {
+  return [
+    built.nameTree, built.stateTable, ...(built.valueMapTable === undefined ? [] : [built.valueMapTable]),
+    ...built.records, ...built.valueMaps,
+  ];
 }
 
 /**
@@ -513,6 +551,7 @@ export function buildStateTables(spec: StateTablesSpec, facts: StateTableFacts):
  */
 export function buildValueMap(map: ValueMapSpec, facts: Pick<StateTableFacts, 'caseCountWidth'>): ContainerPiece {
   const caseCountWidth = facts.caseCountWidth;
+  if (caseCountWidth === undefined) throw new StateTablesError('this family keeps no value maps');
   const ranges = map.ranges ?? [];
   if (ranges.length > 0xff) throw new StateTablesError(`${ranges.length} ranges is more than a one byte count holds`);
   const byValue = new Map<number, PieceTarget>();
@@ -613,8 +652,16 @@ export function describeStateTables(layout: ContainerLayout, facts: StateTableFa
     const { first, max } = recordOf(index);
     return { first, max };
   });
+  // A clock that carries: the hour calls one list, which is the description's. One that does not: no clock
+  // record holds a transition, which is the family's fact and so is checked rather than read.
   const hour = recordOf(CLOCK_HOUR).transitions;
-  if (hour.length !== 1 || hour[0]!.opcode !== CALL) throw new StateTablesError('record 2 is not the clock\'s hour, which calls one list');
+  if (facts.clockCarry) {
+    if (hour.length !== 1 || hour[0]!.opcode !== CALL) throw new StateTablesError('record 2 is not the clock\'s hour, which calls one list');
+  } else {
+    for (let index = 0; index < CLOCK_FIELD_COUNT; index += 1) {
+      if (recordOf(index).transitions.length > 0) throw new StateTablesError(`clock record ${index} holds a transition, which ${facts.measuredOn} do not`);
+    }
+  }
 
   // Names from level 1, read as stems: whatever follows the last underscore is the generator's.
   const names = new Map<number, string>();
@@ -642,13 +689,18 @@ export function describeStateTables(layout: ContainerLayout, facts: StateTableFa
     variables.push(variable);
   }
 
-  const maps = refsByPosition(tablePiece(layout, VALUE_MAP_SLOT));
+  if (caseCountWidth === undefined && layout.sections[VALUE_MAP_SLOT] !== undefined) {
+    throw new StateTablesError(`${facts.measuredOn} keep no value maps, and this layout holds base slot ${VALUE_MAP_SLOT}`);
+  }
+  const maps = caseCountWidth === undefined ? [] : refsByPosition(tablePiece(layout, VALUE_MAP_SLOT));
   const valueMaps: ValueMapSpec[] = maps.map((ref, k) => {
     if (!('to' in ref) || ref.offset !== 0) throw new StateTablesError(`value map ${k} is not a piece of its own`);
     const b = ref.to.bytes;
     const fields = refsByPosition(ref.to);
     const fieldAt = (at: number): PieceRef | undefined => fields.find((one) => one.at === at);
     const stride = VALUE_MAP_KEY_WIDTH + 3;
+    // Reached only where the family keeps value maps, so the width is stated.
+    if (caseCountWidth === undefined) throw new StateTablesError('this family keeps no value maps');
     const casesAt = 1 + caseCountWidth;
     const n = caseCountWidth === 1 ? u8(b, 1) : u16(b, 1);
     const cases = Array.from({ length: n }, (_, i) => ({
@@ -668,7 +720,7 @@ export function describeStateTables(layout: ContainerLayout, facts: StateTableFa
   // rest of it is generated and a rebuild that matches computed it.
   const minute = recordOf(CLOCK_MINUTE).transitions;
   if (minute.length > 2) throw new StateTablesError(`record 1, the clock's minute, holds ${minute.length} transitions`);
-  const spec: StateTablesSpec = { clock, hourList: hour[0]!.operand, variables, valueMaps };
+  const spec: StateTablesSpec = { clock, ...(facts.clockCarry ? { hourList: hour[0]!.operand } : {}), variables, valueMaps };
   if (minute.length === 2) spec.minuteList = minute[1]!.operand;
   return spec;
 }
@@ -679,42 +731,89 @@ export function describeStateTables(layout: ContainerLayout, facts: StateTableFa
  * Each record built takes the place of the record of the same index in the body, or of the same
  * value map, which keeps the caller's emission order: where a record sits is the frame's carried
  * order, section 318, and not this module's. A built record with no counterpart goes at the end of
- * the body; a counterpart with no built record is dropped. A piece other than the tables
- * that names a replaced piece is refused.
+ * the body; a counterpart with no built record is dropped. Content `takeApart` left inside the old state table's
+ * piece past the table's own length, the Harmony 300 and 350's parameter groups, is kept behind the built table.
+ * A piece other than the tables that names a replaced piece is refused.
  */
 export function withStateTables(layout: ContainerLayout, built: BuiltStateTables): ContainerLayout {
-  const replace = new Map<ContainerPiece, ContainerPiece | undefined>();
+  const replace = new Map<ContainerPiece, ContainerPiece[]>();
   const swap = (slot: number, table: ContainerPiece, records: ContainerPiece[]): ContainerPiece[] => {
     const old = tablePiece(layout, slot);
-    replace.set(old, table);
+    replace.set(old, [table]);
     const oldRecords = refsByPosition(old).map((ref) => ('to' in ref ? ref.to : undefined));
-    oldRecords.forEach((p, k) => { if (p !== undefined) replace.set(p, records[k]); });
+    oldRecords.forEach((p, k) => { if (p !== undefined) replace.set(p, records[k] === undefined ? [] : [records[k]!]); });
     return records.slice(oldRecords.length);
   };
+
+  // **Content parked behind the state table.** On the Harmony 300 and 350 the parameter block's five groups sit
+  // straight after base slot 13's table in all 13 compiles, and since nothing claims them `takeApart` leaves them in
+  // the table's piece, where the parameter table names them by an offset past the table's own length. They are
+  // not the state tables' bytes, so they are kept as a piece of their own behind the built table, and every piece
+  // that named them through the old table is copied to name that piece instead.
+  const oldTable = tablePiece(layout, STATE_TABLE_SLOT);
+  const stated = STATE_TABLE_HEADER + 3 * u16(oldTable.bytes, 0);
+  const parked: ContainerPiece | undefined = oldTable.bytes.length <= stated ? undefined : {
+    bytes: oldTable.bytes.slice(stated),
+    refs: oldTable.refs.filter((r) => r.at >= stated).map((r) => ({ ...r, at: r.at - stated })),
+  };
+  if (parked !== undefined && oldTable.refs.some((r) => r.at < stated && r.at + 3 > stated)) {
+    throw new StateTablesError('a field straddles the end of base slot 13\'s table');
+  }
+
   const surplus13 = swap(STATE_TABLE_SLOT, built.stateTable, built.records);
-  const surplus14 = swap(VALUE_MAP_SLOT, built.valueMapTable, built.valueMaps);
-  replace.set(tablePiece(layout, NAME_TREE_SLOT), built.nameTree);
+  if (parked !== undefined) replace.set(oldTable, [built.stateTable, parked]);
+  // Base slot 14 where the family keeps it: a built table and a layout holding one, or neither.
+  if ((built.valueMapTable === undefined) !== (layout.sections[VALUE_MAP_SLOT] === undefined)) {
+    throw new StateTablesError(built.valueMapTable === undefined
+      ? `the layout holds base slot ${VALUE_MAP_SLOT} and the tables built none`
+      : `the tables built a value map table and the layout holds no base slot ${VALUE_MAP_SLOT}`);
+  }
+  const surplus14 = built.valueMapTable === undefined ? [] : swap(VALUE_MAP_SLOT, built.valueMapTable, built.valueMaps);
+  replace.set(tablePiece(layout, NAME_TREE_SLOT), [built.nameTree]);
+
+  // Every piece of the layout, its inserted sections among them, so that nothing naming a replaced piece is missed.
+  const inserted = Object.entries(layout.inserted ?? {});
+  const every = [
+    layout.keyTable, ...layout.body, ...layout.pictures,
+    ...[...layout.sections, ...inserted.map(([, s]) => s)].flatMap((s) => (s === undefined ? [] : [...s.before, ...s.head])),
+  ];
+  // A piece naming the parked content through the old table is copied to name the parked piece.
+  const redirected = new Map<ContainerPiece, ContainerPiece>();
+  if (parked !== undefined) {
+    for (const p of every) {
+      if (!p.refs.some((r) => 'to' in r && r.to === oldTable && r.offset >= stated)) continue;
+      redirected.set(p, {
+        ...p,
+        refs: p.refs.map((r) => ('to' in r && r.to === oldTable && r.offset >= stated ? { ...r, to: parked, offset: r.offset - stated } : r)),
+      });
+    }
+  }
 
   // Rewrite a run of pieces in place; a built record with no counterpart goes at the end of the body.
-  const rewrite = (run: ContainerPiece[]): ContainerPiece[] => run.flatMap((p) => {
-    if (!replace.has(p)) return [p];
-    const now = replace.get(p);
-    return now === undefined ? [] : [now];
-  });
-  const sections = layout.sections.map((s) => (s === undefined ? s : { before: rewrite(s.before), head: rewrite(s.head) }));
+  const rewrite = (run: readonly ContainerPiece[]): ContainerPiece[] =>
+    run.flatMap((p) => replace.get(p) ?? [redirected.get(p) ?? p]);
+  const place = (s: SectionPlacement | undefined): SectionPlacement | undefined =>
+    (s === undefined ? s : { before: rewrite(s.before), head: rewrite(s.head) });
+  const sections = layout.sections.map(place);
   const body = [...rewrite(layout.body), ...surplus13, ...surplus14];
   const pictures = rewrite(layout.pictures);
+  const out: ContainerLayout = { ...layout, body, sections, pictures };
+  if (layout.inserted !== undefined) out.inserted = Object.fromEntries(inserted.map(([raw, s]) => [raw, place(s)!]));
 
   // Nothing but its own table names a state record or a value map on the thirteen, and nothing names
-  // a table, so a piece that does would be left naming a piece the layout no longer holds. Refused
-  // rather than redirected, since redirecting means copying that piece and then every piece naming it.
-  const kept = [layout.keyTable, ...body, ...sections.flatMap((s) => (s === undefined ? [] : [...s.before, ...s.head])), ...pictures];
-  const ours = new Set<ContainerPiece>([built.nameTree, built.stateTable, built.valueMapTable, ...built.records, ...built.valueMaps]);
+  // a table but for the content parked behind it, so a piece that does would be left naming a piece the layout
+  // no longer holds. Refused rather than redirected, since redirecting means copying that piece and then every
+  // piece naming it; and a piece copied above that is itself named is refused for the same reason.
+  const kept = [
+    out.keyTable, ...body, ...pictures,
+    ...[...sections, ...Object.values(out.inserted ?? {})].flatMap((s) => (s === undefined ? [] : [...s.before, ...s.head])),
+  ];
+  const ours = new Set<ContainerPiece>(builtStatePieces(built));
   for (const p of kept) {
     if (ours.has(p)) continue;
-    if (p.refs.some((r) => 'to' in r && replace.has(r.to))) {
+    if (p.refs.some((r) => 'to' in r && (replace.has(r.to) || redirected.has(r.to)))) {
       throw new StateTablesError(`a piece${p.owner === undefined ? '' : ` (${p.owner})`} names a state table or record being replaced`);
     }
   }
-  return { ...layout, body, sections, pictures };
+  return out;
 }

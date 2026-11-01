@@ -40,5 +40,7 @@ export const TOUCH_STATE_TABLES: StateTableFacts = {
   wideMin: undefined,
   // One byte, read off the readers' own table.
   caseCountWidth: VALUE_MAP_COUNT_WIDTH[ARCHITECTURE] as number,
+  // The three rollovers and the hour's call on all 19, and the minute's call beside its rollover.
+  clockCarry: true,
   minuteCall: true,
 };

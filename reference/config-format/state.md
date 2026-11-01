@@ -216,7 +216,7 @@ adding one to the hour when it wraps to 0, and the only part that varies between
 base slot 10 list a `0x7F` names[^s130][^t-harmony-350-clock-c]. On the Harmony One the minute carries a
 second transition, `{-2 to -2, 0x7F list}`, calling the clock's screen list[^s407]. This said the skeleton
 was in every container<!--superseded--> until the Harmony 300 and 350 were read: **on arch 16 the seven
-clock records carry no transition at all**, in all five configurations read, so the firmware steps the minute and nothing carries it
+clock records carry no transition at all**, in all 13 configurations read[^t-noscreen-state-tables], so the firmware steps the minute and nothing carries it
 further, and the remote's hour, date and year stay where a cold start set them,
 [their memory page](../architectures/harmony-300-350/memory.md#the-state-variables)[^t-harmony-350-clock-c].
 The stamp rule above holds there too, in all five of its configurations[^t-harmony-350-clock-c].
@@ -228,8 +228,8 @@ Harmony 600, 650 and 700, Harmony 300 and 350) and 0 to 12 on arch 9 (Harmony 52
 checksum that decides whether the seeder runs both start at index 18 on the first four, the firmware
 stores its own state into 13 to 17, and arch 9's seeder skips below the literal 13[^s284][^t-state-block].
 Within one architecture every container states the same `first` and `max` for these, and base slot 0
-names none of them[^s284b]; on arch 16 the five configurations state arch 14's values, the arch 16 column
-below[^t-harmony-350-clock-c], and whether its base slot 0 names any is not checked[^unchecked].
+names none of them[^s284b]; on arch 16 all 13 configurations read state arch 14's values, the arch 16 column
+below[^t-harmony-350-clock-c][^t-noscreen-state-tables], and whether its base slot 0 names any is not checked[^unchecked].
 
 | index | arch 8 | arch 9 | arch 12 | arch 14 | arch 16 | what it is |
 |---|---|---|---|---|---|---|
@@ -245,7 +245,7 @@ below[^t-harmony-350-clock-c], and whether its base slot 0 names any is not chec
 | 16 | 0 / 1 | the configuration's own | 0 / 1 | 0 / 1 | 0 / 1 | on arch 12 stored when a value the firmware derives changes[^s284]; on arch 16 the same, from an input pin[^t-harmony-350-clock] |
 | 17 | 0 / 3 | the configuration's own | 0 / 3 | 0 / 3 | 0 / 3 | on arch 14 the sending flag, 2 while a code is sent[^s369]; on arch 16 the send queue's priority, 0 to 3, the Harmony One's byte[^t-harmony-350-clock] |
 
-Each cell is `first / max`[^s138][^s284b], arch 16's from its five configurations[^t-harmony-350-clock-c]. The meanings are arch 12 readings except where marked: arch 9
+Each cell is `first / max`[^s138][^s284b], arch 16's from its 13 configurations[^t-harmony-350-clock-c][^t-noscreen-state-tables]. The meanings are arch 12 readings except where marked: arch 9
 states different maxima for 8 to 12, which is consistent with a Harmony 525 having no dimmable display of
 that kind, and nothing establishes that it puts the same things there. The values measured on a connected
 Harmony One for 8 to 11 all sit inside the maxima stated here, the battery exactly at its own[^s111]. On
@@ -270,7 +270,9 @@ are not touched. `clockStateEdits` in `packages/codec/src/edit.ts`, and `CLOCK_S
 ### Variables 18 and up are the configuration's own
 
 What a configuration names in base slot 0 starts at 18 on arch 8, 12 and 14 and at 13 on arch 9[^s284b]:
-the current activity, each device's power, its inputs, and on arch 14 each device's delays, below.
+the current activity, each device's power, its inputs, and on arch 14 each device's delays, below. On arch 16
+(Harmony 300 and 350) it is the power of each device with commands, the inputs the activity sets and, where the
+activity has one, its flag, and nothing else, [their memory page](../architectures/harmony-300-350/memory.md#the-state-variables)[^t-noscreen-state-tables].
 
 **A configuration holds at most 128 state variables**, because `0x80 | n` names its variable in seven bits,
 [actions.md](actions.md), "`0x80 | n` writes state variable `n`"[^s331]. Logitech's own configurations come close:
@@ -965,5 +967,6 @@ Read with `gspm.log_area`; `gspm.log_reference` names the append case an instruc
 [^t-state-block]: Read in the firmware. [The test](../../tests/test_firmware_state_block.py)
 [^t-long-press]: Read in the firmware. [The test](../../tests/test_harmony_350_long_press.py)
 [^t-noscreen-favourites]: Measured in configurations. [The test](../../packages/codec/test/noscreenfavourites.test.ts)
+[^t-noscreen-state-tables]: Measured in configurations. [The test](../../packages/codec/test/noscreenstatetables.test.ts)
 [^t-long-press-c]: Measured in configurations. [The test](../../tests/test_harmony_350_long_press.py)
 [^t-long-press-u]: Measured on a unit. [The test](../../tests/test_harmony_350_long_press.py)

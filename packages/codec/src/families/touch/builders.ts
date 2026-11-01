@@ -126,7 +126,7 @@ import type { Container } from '../../gspm.ts';
 import { type ContainerLayout, layOutContainer, takeApart } from '../../frame.ts';
 import { type BlendedSet, unblendedSelects } from '../../blending.ts';
 import { ScreenRecordError, assertRebuilt } from '../../screenrecords.ts';
-import { StateTablesError, buildStateTables, describeStateTables, withStateTables } from '../../statetables.ts';
+import { StateTablesError, buildStateTables, builtStatePieces, describeStateTables, withStateTables } from '../../statetables.ts';
 import { WiringError, builtPieces, compareWiring, withWiring } from '../../wiringparts.ts';
 import { FirmwareSectionsError } from '../../firmwaresections.ts';
 import { ComposeError } from '../../shared/core.ts';
@@ -482,7 +482,7 @@ export function touchBuiltBytes(c: Container, blended: readonly BlendedSet[], ch
     }
     // Whole pieces, as `attributeBytes` counts the Harmony 600 family's: what a record or a value map holds is
     // the description's, and the builder makes every byte of it from that.
-    for (const piece of [built.nameTree, built.stateTable, built.valueMapTable, ...built.records, ...built.valueMaps]) {
+    for (const piece of builtStatePieces(built)) {
       const at = laid.offsetOf(piece);
       if (at !== undefined) mark(at, piece.bytes.length, 'state tables', () => false);
     }

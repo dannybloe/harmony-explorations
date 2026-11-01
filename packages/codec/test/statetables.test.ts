@@ -623,7 +623,7 @@ test('todo-compile-one 6.4: base slots 0, 13 and 14 of all 19 Harmony One compil
     if (same(built.stateTable.bytes, table.bytes)) tally.table += 1;
     if (same(built.nameTree.bytes, layout.sections[0]!.head[0]!.bytes)) tally.tree += 1;
     const mapTable = layout.sections[14]!.head[0]!;
-    if (same(built.valueMapTable.bytes, mapTable.bytes)) tally.mapTable += 1;
+    if (built.valueMapTable !== undefined && same(built.valueMapTable.bytes, mapTable.bytes)) tally.mapTable += 1;
     pieceTargets(mapTable).forEach((p, k) => { if (same(built.valueMaps[k]!.bytes, p.bytes)) tally.maps += 1; });
     if (firstDifference(rebuilt(layout, layout, TOUCH_STATE_TABLES), c.blob) === undefined) tally.whole += 1;
   }

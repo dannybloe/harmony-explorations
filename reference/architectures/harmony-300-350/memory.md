@@ -327,10 +327,10 @@ with waits and the map, with no flag and no register[^t-noscreen-activity].
 ## The state variables
 
 **The remote keeps a clock that runs to the minute and no further.** It counts a variable it keeps as
-the second and steps the minute by itself, but on all five configurations of this family read here the
+the second and steps the minute by itself, but on all 13 configurations of this family read here the
 hour, the date and the year stay what a cold start set them to, which is the moment the configuration was
-built. Nothing a person meets is known to depend on it: neither model has a screen, and none of the five
-reads the clock[^t-harmony-350-clock][^t-harmony-350-clock-c].
+built[^t-noscreen-state-tables]. Nothing a person meets is known to depend on it: neither model has a screen, and
+none of the five scanned for it reads the clock[^t-harmony-350-clock][^t-harmony-350-clock-c].
 
 **The variables sit in data memory from `0x108`**, the Harmony One's address: a one byte variable at
 `0x108` plus its index, a two byte one, little endian, at `0x108 + narrow + 2 * (index - narrow)`. The area
@@ -340,8 +340,9 @@ next[^t-harmony-350-clock].
 **The firmware owns variables 0 to 17**, as on the Harmony 880 and 885, the Harmony One and the Harmony
 600, 650 and 700, [state.md](../../config-format/state.md#variables-7-to-17-belong-to-the-firmware-too): the
 seeder's other arm paints from 18, and the memory check that decides whether the seeder runs covers 18
-upward only[^t-state-block]. In all five configurations records 7 to 17 state the Harmony 600, 650 and
-700's values[^t-harmony-350-clock-c]. What the firmware stores into, directly[^t-harmony-350-clock]:
+upward only[^t-state-block]. In all 13 configurations of the family read here records 7 to 17 state the Harmony
+600, 650 and 700's values, none with a transition[^t-harmony-350-clock-c][^t-noscreen-state-tables]. What the firmware
+stores into, directly[^t-harmony-350-clock]:
 
 | variable | what the firmware does with it |
 |---|---|
@@ -358,9 +359,10 @@ firmware queues the instruction that adds one to variable 1, which wraps past it
 fires the minute's transitions[^t-harmony-350-clock]. On every other architecture those transitions do
 the carry, in all 21 of their containers measured: the minute adds one to the hour when it wraps, the hour
 calls a list adding one to the day and the weekday, the day adds one to the month and the month to the
-year[^t-harmony-350-clock-c]. **On this family's five configurations the seven clock records carry no
-transition at all**, and no instruction in their lists, key maps, start up events, timers or transitions
-writes, steps or adds to any of variables 0 to 17; the name tree was not scanned[^t-harmony-350-clock-c].
+year[^t-harmony-350-clock-c]. **On this family's configurations the seven clock records carry no
+transition at all**, in all 13 read[^t-noscreen-state-tables], and in the five read for it no instruction in their
+lists, key maps, start up events, timers or transitions writes, steps or adds to any of variables 0 to 17; the
+name tree was not scanned[^t-harmony-350-clock-c].
 Five configurations of two generations of Logitech's compiler is the width of this: one that carried the
 chain would run its clock, and none is known[^unchecked].
 
@@ -376,10 +378,35 @@ is the instruction the timer table's records hold too[^t-harmony-350-clock-c][^t
 [the 350's display.md](../../remotes/harmony-350/display.md); that the pins are those lights is not
 checked[^unchecked].
 
+**A configuration's own variables are of three kinds, followed by the compiler's one two byte variable, and
+nothing else**, in all 13 configurations read, ten for a Harmony 350 and three for a Harmony 300, one of them from
+2011, one from 2017 and the rest from the current service[^t-noscreen-state-tables]:
+
+* **a power variable for every device with commands**, `<device>_Power_2`, holding 0, whose switch to 1 runs one
+  list and whose switch to 0 another, [a device's power on delay](#a-devices-power-on-delay); every such device
+  here has a power command, and the one device with no command at all has no variable;
+* **input variables**, `<device>_Input_<values>`, holding 0, with one transition per value from any value running
+  that value's send, or none and a single value; which devices have one is the activity's, [the
+  activity](#the-activity)[^t-noscreen-activity];
+* **the activity's flag**, `ActivityPowerState_2`, holding 0, no transitions, in 8 of the 13: every one that binds
+  Watch TV but the 2011 configuration, whose activity has none, and none that does not bind it.
+
+The two byte variable holds 0 under a maximum of 65277, as on every other architecture laid out, and it is the
+last; every one byte maximum is at most 18, an input of 19 values. There is no value map table, base slot 14, on
+this family[^t-noscreen-state-tables].
+
+**Logitech numbers these in an order no rule is known for**: in one configuration of eight devices a receiver's
+input sits fifth, between two power variables, and the flag ninth, before the last power variable, which is neither
+the setup's order of devices nor its keys'. Nothing on the remote reads an index but the instructions that name it, so a
+configuration of ours numbers them by its own rule, every power variable in the setup's order, then the inputs,
+then the flag, and is compared with Logitech's variable by variable, not by number. The order of the transitions
+inside a record is not reproduced either, since the firmware runs every one that matches a write and no two of a
+record's go to the same value[^t-noscreen-state-tables].
+
 **What a configuration writer does**: stamp the seven clock records with the moment of writing, the year's
 `max` with them, as on every architecture; reuse none of 0 to 17; and write no clock transitions, since
-none of the five configurations read here has any and what the remote would do with them is not
-checked[^t-harmony-350-clock-c][^unchecked].
+none of the 13 configurations read here has any and what the remote would do with them is not
+checked[^t-noscreen-state-tables][^unchecked].
 
 **No read over USB reaches the clock as the library stands.** The file protocol has no read of data
 memory, [the file protocol](../../usb-protocol/file-protocol.md), and no file on the inert list serves it.
@@ -456,5 +483,6 @@ never send it[^t-harmony-350-clock][^unchecked].
 [^t-harmony-350-setup-u]: Measured on a unit. [The test](../../../tests/test_harmony_350_keys.py)
 [^t-noscreen-activity]: Measured in configurations. [The test](../../../packages/codec/test/noscreenactivity.test.ts)
 [^t-noscreen-constants]: Measured in configurations. [The test](../../../packages/codec/test/noscreenconstants.test.ts)
+[^t-noscreen-state-tables]: Measured in configurations. [The test](../../../packages/codec/test/noscreenstatetables.test.ts)
 [^t-harmony-300-keys-u]: Measured on a unit. [The test](../../../tests/test_harmony_300_keys.py)
 [^t-harmony-300-group-4-send-u]: Measured on a unit. [The test](../../../tests/test_harmony_300_group_4_send.py)
