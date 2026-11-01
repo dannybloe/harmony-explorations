@@ -48,7 +48,7 @@ what holds on this architecture.
 | the marker's offset | `0x47`, which is `0x0B + 4 * 15`, hardcoded in the firmware's validator | [^s259] |
 | base address | `0x020000`, the file's place on the external medium | [^s194] |
 | slot map | raw slot to base slot in `ARCH16_SLOT_MAP`, `packages/codec/src/gspm.ts`: the name tree, the architecture record, the log area, the clock record, the infrared database, the action list table, the parameter block and the number sender are named; raw 13 is a metadata archive that names devices and commands, [the metadata archive](../../config-format/container.md#the-metadata-archive) and [the container's slots for this family](../../config-format/container.md#the-harmony-300-and-350s-slots). Raw 5, 6, 8, 9, 12 and 14 are read in the firmware, [below](#the-six-slots-the-firmware-was-read-for), and of those the map carries raw 9 alone, the state variable table, which a device's power on delay is read through | [^s259b], [^s260], [^s262b], [^t-slots], [^t-file-family-delays] |
-| the infrared table | allocated at the model's **maximum** device count, four groups on a 300 and eight on a 350, unused groups empty, unlike every other architecture | [^s263], [^s264] |
+| the infrared table | allocated at the model's **maximum** device count on every configuration Logitech's current service compiled, four groups on a 300 and eight on a 350, unused groups empty, unlike every other architecture; one compiled for a 350 in 2017 holds seven, so the allocation follows the compiler, as raw slot 8 does. This said eight on every 350 until that configuration's groups were counted | [^s263], [^s264], [^t-noscreen-empty] |
 | which group a device takes | the position of the device key it is on, on both models: the first key 0 to the fourth key 3, a short press on the 350, and a long press 4 plus the place; not the metadata archive's name list, which is in the account's order, ascending `DeviceId`[^t-noscreen-routing]. This said the list was alphabetical<!--superseded-->, which holds on the two Harmony 300 files and on none of the five Harmony 350 files; [below](#which-infrared-group-a-device-takes) | [^s265], [^t-device-groups-c], [^t-long-press-c], [^t-harmony-350-setup-u] |
 | what is stored | exactly the codes some action list sends | [^s261] |
 | raw slot 8 | the timer table, two records per device a key selects on a configuration Logitech's current service compiled, which is twice the devices unless a device is on two keys, and empty on one compiled in 2011, so it follows the compiler and not the model, [below](#the-six-slots-the-firmware-was-read-for). This said twice the device count until a configuration with a device on two keys held twelve for five, [a device key and its long press](#a-device-key-and-its-long-press) | [^s264], [^s265], [^t-slots-c], [^t-long-press-c] |
@@ -133,7 +133,7 @@ In a 350's compile the press selects nothing: it switches one of the four output
 switch it again, the timers of [the six slots](#the-six-slots-the-firmware-was-read-for)[^t-device-groups-c].
 
 **A long press device takes group 4 plus the key's place, on both configurations read that have
-one.** Every 350 configuration allocates eight groups[^s263]. The first read gives two keys a
+one.** Every 350 configuration Logitech's current service compiled allocates eight groups, and the one from 2017 seven[^s263][^t-noscreen-empty]. The first read gives two keys a
 second device: the top right key's long press selects a device that sends from group 5, and the bottom
 left key's long press selects the device already on the top right key's short press, which keeps its
 group 1, so a device on two keys has one group[^t-long-press-c]. Of the rules the
@@ -240,6 +240,23 @@ selects; nothing differs by model[^t-noscreen-constants].
 | the start up events, raw slot 5 | eleven calls: entries 0 and 5 to 10 an empty list, entries 1 to 4 a list each, numbered 0 to 3 in every configuration read | [^t-noscreen-constants] |
 | the start up's lists | each of the four calls one list, `3F F00A` (the hold time at 10), `1F FE00` and `1F FEFE`, and then the empty list; the first then selects a map, [above](#what-a-devices-map-borrows-from-another). Six lists | [^t-noscreen-constants] |
 | the send events' lists | what [firmware.md](firmware.md#the-two-models-images-compared) reads as one list per event is three in the file: the list the tag binds calls a second and then an empty list and ends `07 FFFA`; the second loads the byte register with 0 and calls a third; the third is the test of variable 17, `71 8111`, and the pin switched both ways. The four share one empty list, never the start up's. Thirteen lists | [^t-noscreen-constants] |
+
+**Five of the sections are a count and then three byte addresses, and the count's width is fixed**: one byte for
+the infrared table, the key map table, the timer table and the number sender, two bytes for the action list table.
+All seven configurations of the family it was checked on are written again byte for byte from those widths and the
+pieces each entry names. The infrared table's count is the model's allocation, eight on a Harmony 350 and four on a
+European Harmony 300, whatever the devices, on every configuration the current service compiled, [the container](#the-configuration-container);
+an unused group is three zero bytes[^t-noscreen-census][^t-noscreen-empty].
+
+**No configuration read holds no device.** Of the 13, the fewest devices is one, in two configurations compiled for
+a Harmony 350, and the next fewest two; so what Logitech's compiler writes for a remote with none is not
+read[^t-noscreen-empty]. In the three smallest, every part that names no device and not the activity is one of the
+parts above: the key table holds the send events' four entries and otherwise only the devices' keys and the
+activity's, every action list that names neither a device nor the activity is one of the start up's or the send
+events', the state records past the firmware's eighteen are the devices' and the activity's but for the compiler's
+two byte variable, and the metadata archive's text is the same frame with its device elements taken
+out[^t-noscreen-empty]. What a remote does with a configuration that
+holds no device is not checked[^unchecked].
 
 ## A device's power on delay
 
@@ -478,6 +495,8 @@ variable walk, the order of the device key maps, the order of the timers, and th
 ## Not checked
 
 * The external medium's part and size, and the RAM size[^unchecked].
+* What a remote does with a configuration that holds no device, and with a start up that selects no map, since no
+  configuration read holds either, [above](#the-sections-every-configuration-holds-alike)[^unchecked].
 * What raises the start up event table's entries 2 to 4, what the four output pins drive, and the digit
   entry record beyond its first three bytes, which no configuration fills[^unchecked]. This listed the
   unit of a timer's duration too, until a kind 0 timer was read losing one a tick of the clock the power
@@ -546,5 +565,7 @@ variable walk, the order of the device key maps, the order of the timers, and th
 [^t-noscreen-constants]: Measured in configurations. [The test](../../../packages/codec/test/noscreenconstants.test.ts)
 [^t-noscreen-numbering]: Measured in configurations. [The test](../../../packages/codec/test/noscreennumbering.test.ts)
 [^t-noscreen-state-tables]: Measured in configurations. [The test](../../../packages/codec/test/noscreenstatetables.test.ts)
+[^t-noscreen-census]: Measured in configurations. [The test](../../../packages/codec/test/noscreencensus.test.ts)
+[^t-noscreen-empty]: Measured in configurations. [The test](../../../packages/codec/test/noscreenempty.test.ts)
 [^t-harmony-300-keys-u]: Measured on a unit. [The test](../../../tests/test_harmony_300_keys.py)
 [^t-harmony-300-group-4-send-u]: Measured on a unit. [The test](../../../tests/test_harmony_300_group_4_send.py)

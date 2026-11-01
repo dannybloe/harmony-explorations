@@ -152,4 +152,7 @@ export {
   type NoScreenStateRequest, type NoScreenStateTables, noScreenStateVariables, type NoScreenStateVariables, type NoScreenVariableRole,
   NO_SCREEN_METADATA_AFTER, NO_SCREEN_METADATA_BEFORE, type NoScreenMetadataChoices, type NoScreenMetadataDevice,
   noScreenMetadataSection, noScreenMetadataXml, noScreenZipTime, ZIP_TIME_BEFORE_STAMP_SECONDS,
+  // The configuration with no device and no activity, built from nothing, todo-compile-350.md 5.1.5.
+  buildEmptyNoScreenConfiguration, EMPTY_LIST_NUMBERS, EMPTY_ZONE_HOURS, type EmptyNoScreenConfiguration,
+  type EmptyNoScreenOptions, INFRARED_GROUPS_BY_SKIN, infraredGroupsOf, NO_SCREEN_COUNT_WIDTHS,
 } from './families/no-screen/index.ts';

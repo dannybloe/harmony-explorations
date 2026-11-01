@@ -10,7 +10,7 @@ memory off a 350, only the files it serves.
 
 | | value |
 |---|---|
-| infrared groups | **eight in every configuration**, unused ones empty, the model's maximum device count[^s263] |
+| infrared groups | **eight on every configuration Logitech's current service compiled**, unused ones empty, the model's maximum device count[^s263]; one compiled in 2017 holds seven, so it is the compiler's choice, [the family's memory.md](../../architectures/harmony-300-350/memory.md#the-configuration-container)[^t-noscreen-empty]. This said eight in every configuration<!--superseded--> until that one was counted |
 | the group index | a short press of a device key: `TV/Media` 0, `Cable/PC` 1, `AVR/Game` 2, `DVD/Music` 3, the keys named by the moulding the Harmony 300 shares, [the family's memory.md](../../architectures/harmony-300-350/memory.md#which-infrared-group-a-device-takes)[^t-device-groups-c]; a long press 4 plus the key's place, `TV/Media` 4 to `DVD/Music` 7, on the two configurations read with one[^t-harmony-350-setup-u] |
 | configuration size | 68985 to 121251 bytes over the three configurations measured, by what they hold[^s262][^s263] |
 
@@ -23,4 +23,5 @@ memory off a 350, only the files it serves.
 [^t-harmony-350-setup-u]: Measured on a unit. [The test](../../../tests/test_harmony_350_keys.py)
 [^s262]: Measured in configurations. [Section 262](../../../docs/findings.md#s262)
 [^t-device-groups-c]: Measured in configurations. [The test](../../../tests/test_harmony_350_device_groups.py)
+[^t-noscreen-empty]: Measured in configurations. [The test](../../../packages/codec/test/noscreenempty.test.ts)
 [^unchecked]: Not checked.

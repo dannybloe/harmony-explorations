@@ -457,7 +457,8 @@ export function composeIrGroup(
  *
  * **Why a second way in.** Every architecture here sizes the infrared table to the configuration, one group
  * per device, so a device composed onto one is appended, `composeIrGroup`; the Harmony 300 and 350 allocate it
- * at the model's maximum, eight groups on a 350 and four on a 300, the unused ones empty arrays of three bytes,
+ * at the model's maximum, eight groups on a 350 and four on a 300 in every compile of Logitech's current service (a
+ * 350 compile from 2017 holds seven, `test/noscreenempty.test.ts`), the unused ones empty arrays of three bytes,
  * and which group a device takes is the place of the key it sits on, `reference/architectures/harmony-300-350/
  * memory.md`. So a device there goes into a group that already exists, at an index the caller chooses. Nothing
  * in this names a remote: it is the generic half, and the family that allocates its table that way chooses the
