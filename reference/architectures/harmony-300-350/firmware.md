@@ -53,30 +53,40 @@ quoted on this page for the application is the 300's with that shift added, and 
 byte, the infrared group, to a send kind in `0x203` before it calls the send handler: group 0 stays 0 and 3
 stays 3, 1 becomes 2 and 2 becomes 1, and any group from 4 up becomes `0xFF`. The 350's build then keeps only
 the low two bits, so a group from 4 up is kind 3 there, where the 300's leaves `0xFF`[^t-harmony-300-350-images].
-The kind picks the firmware event the send raises, `0x2D` for 0 and for `0xFF`, `0x2F` for 1, `0x2E` for 2 and
-`0x30` for 3, [the key tags below `0x40`](#the-keypad-scan). **So the two builds disagree for one input only,
-a send from a group above 3: the 300's build raises the event of group 0 and the 350's the event of group
-3**[^t-harmony-300-350-images]. The tracer finds no other direct access to the kind, which
-is its blind spot for indirect ones[^t-harmony-300-350-images]. Logitech's service
-holds a Harmony 300 to four infrared groups and a Harmony 350 to eight, [the README](README.md#how-the-two-differ),
-so a configuration it compiles for a 300 cannot reach the difference at all and one for a 350 with more than
-four groups can. Of the 13 configurations of the family read, four send from a group above 3 and all four are
-the 350's: Logitech's compile of the test setup and its first compile and the eight device compile, whose
-groups reach 7, and a contributed 350's, which reaches 5[^t-harmony-300-350-send-events].
+The kind picks the firmware event the send raises, `0x2D` for 0, `0x2F` for 1, `0x2E` for 2 and `0x30` for 3,
+[the key tags below `0x40`](#the-keypad-scan), and **any other kind is a default that raises event `0xFF`**.
+This said that `0xFF` raised `0x2D`, group 0's event<!--superseded-->, until the chain's end was read again:
+the `BNZ` after its last step is the default and the fall through is kind 0[^t-harmony-300-group-4-send].
+**So the two builds disagree for one input only, a send from a group above 3: the 350 raises the event of
+group 3 and the 300 raises event `0xFF`**, to which no configuration of the family binds anything[^t-harmony-300-group-4-send].
+Logitech's service holds a Harmony 300 to four infrared groups and a Harmony 350 to eight,
+[the README](README.md#how-the-two-differ), so a configuration it compiles for a 300 cannot reach the
+difference and one for a 350 with more than four groups can. Of the 13 configurations of the family read,
+four send from a group above 3 and all four are the 350's: Logitech's compile of the test setup and its
+first compile and the eight device compile, whose groups reach 7, and a contributed 350's, which reaches
+5[^t-harmony-300-350-send-events].
 
-**What the four events do, and what the difference changes.** Entry 0 of every configuration binds each event
-to one list, and the four lists are one list on four output pins: a test of the sending flag, state variable
-17, with two arms that set the pin one way and the other, then the `0x07 FFFA` the compilers append. `0x2D`
-switches pin 0, `0x2F` pin 1, `0x2E` pin 2 and `0x30` pin 3, and in all 13 configurations `0x2D`'s list and
-`0x30`'s differ in the pin and in nothing else[^t-harmony-300-350-send-events]. The pin routine, at `0x14568`
-on the 350 and `0x1455E` on the 300, is the same instructions in both images: pin 0 is `PORTC` bit 1, pin 1
-`PORTB` bit 0, pin 2 `PORTB` bit 2 and pin 3 `PORTB` bit 3, set for a zero value and cleared otherwise, and it
-touches nothing else[^t-harmony-300-350-send-events]. The kind has no other reader, so the code sent and the
-group it is sent from are the same on both models[^t-harmony-300-350-send-events]. **So a Harmony 300 sending
-from a group above 3 would raise and lower pin 0 where a Harmony 350 does pin 3, around the same infrared, and
-that is the whole difference.** What the pins drive is not checked: if they are the four device key lights,
-which the manual's description of the Device buttons lighting while the remote sends fits, the difference is
-which of two lights blinks[^unchecked].
+**What a send does with its event, and why event `0xFF` stops it.** Entry 0 of every configuration binds each
+of the four events to one list, and the four lists are one list on four output pins: a test of the sending
+flag, state variable 17, with two arms that set the pin one way and the other, then the `0x07 FFFA` the
+compilers append. `0x2D` switches pin 0, `0x2F` pin 1, `0x2E` pin 2 and `0x30` pin 3, and in all 13
+configurations `0x2D`'s list and `0x30`'s differ in the pin and in nothing else[^t-harmony-300-350-send-events].
+The pin routine, at `0x14568` on the 350 and `0x1455E` on the 300, is the same instructions in both images:
+pin 0 is `PORTC` bit 1, pin 1 `PORTB` bit 0, pin 2 `PORTB` bit 2 and pin 3 `PORTB` bit 3, set for a zero value
+and cleared otherwise[^t-harmony-300-350-send-events].
+
+**The send waits for its event's list.** Raising an event queues it and sets bit 4 of the flag byte `0x8A`,
+and the one thing that clears that bit is the dispatcher's arm for `0x07` with operand `0xFFFA`, which is
+the last instruction of every one of the four lists. The sender's step, at `0x12BA8` on the 300, returns at
+once while the bit is set, and the send's own state changes each raise the event again, so **a send moves from
+one step to the next only after the list of its event has run to its end**[^t-harmony-300-group-4-send].
+With event `0xFF` no list is bound, none runs, the bit stays set and the sender stays in its first state: a
+Harmony 300 given a send from a group above 3 queues the code and never transmits it, and every later send
+queues behind it[^t-harmony-300-group-4-send]. A Harmony 300 holding such a configuration did exactly
+that on a unit: the group above 3 sent nothing, the remote then ignored most keys, and a device key stayed
+lit until the batteries came out[^t-harmony-300-group-4-send-u]. That the later keys fail for the reason
+traced, and that the pins are the device key lights, are **not read**[^unchecked]. The acknowledgement is read
+on this family only, the Harmony One's and the Harmony 600, 650 and 700's are not checked.
 
 **The bootloader and safe mode differ more**, [below](#the-two-models-bootloaders-and-safe-mode-images).
 
@@ -394,6 +404,8 @@ off a Harmony 350, with the PIC18F67J50 register map[^t-harmony-300-350-images-u
 [^t-harmony-350-keys-c]: Measured in configurations. [The test](../../../tests/test_harmony_350_keys.py)
 [^t-harmony-300-350-images]: Read in the firmware. [The test](../../../tests/test_harmony_300_350_images.py)
 [^t-harmony-300-350-images-u]: Measured on a unit. [The test](../../../tests/test_harmony_300_350_images.py)
+[^t-harmony-300-group-4-send]: Read in the firmware. [The test](../../../tests/test_harmony_300_group_4_send.py)
+[^t-harmony-300-group-4-send-u]: Measured on a unit. [The test](../../../tests/test_harmony_300_group_4_send.py)
 [^t-harmony-300-350-send-events]: Measured in configurations. [The test](../../../tests/test_harmony_300_350_send_events.py)
 [^t-harmony-350-skin]: Read in the firmware. [The test](../../../tests/test_harmony_350_skin.py)
 [^t-harmony-350-skin-u]: Measured on a unit. [The test](../../../tests/test_harmony_350_skin.py)

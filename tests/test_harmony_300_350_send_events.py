@@ -1,7 +1,12 @@
 #!/usr/bin/env python3
 """What the four send kinds do on the Harmony 300 and the Harmony 350: each raises one firmware event, each
-event runs one list, the four lists are the same list on four output pins, and a send from an infrared
-group above 3 therefore lights another pin on a Harmony 300 than on a Harmony 350 and does nothing else.
+event runs one list, the four lists are the same list on four output pins.
+
+**Corrected by `tests/test_harmony_300_group_4_send.py`.** This header concluded that a send from an infrared
+group above 3 lights another pin on a Harmony 300 than on a Harmony 350 and does nothing else. That was
+wrong: the 300's kind for such a group is 0xFF, which raises event 0xFF, to which nothing is bound, so the
+list that ends in `07 FFFA` never runs and the send never starts. The measurements below about the four
+bound events stand; the sentences about the 300's group above 3, kept as written, do not.
 
 **The question.** `tests/test_harmony_300_350_images.py` found that the two applications are one program but
 for one routine: the action list dispatcher's arm for `0x7D`, a send, which maps the group to a send kind

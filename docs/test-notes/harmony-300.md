@@ -246,3 +246,42 @@ The predictions, scored:
 **What the run settled for the drawing**: the 49 codes on `h300eu.ts`, source `t-harmony-300-keys-u`. The US
 drawing, `h300.ts`, takes none, since no skin 78 unit was pressed. The bench test moved to
 `packages/bench/irtests/done/`; the remote still holds its own configuration.
+
+## Logitech's compile of the Harmony 350's test setup, written to this unit, todo-compile-300 4.3
+
+On 1 November 2026. The unit held Logitech's compile of the Harmony 350's test setup, eight devices on
+infrared groups 0 to 7, the lab's `work/setups/h350-test/compile-Result.EzHex`, written through
+`write-file-config.ts` (the write's journal sits beside the file in the lab, `compile-Result.EzHex.write-*.log`).
+The predictions, `docs/predictions/harmony-300-as-350.md`, and the bench test,
+`packages/bench/irtests/300-4-3-350-compile.json`, were committed before the run. Three runs, the lab's
+`reads/20261101T074757Z-*`, `075108Z-*` and `075344Z-*` (`ir-test-harmony-300-logitech-s-compile-...json`).
+
+**What was heard.** Step 1 (the LG TV, group 0) sent Volume Up and Info as predicted in all three. Step 2: a long
+press of the top left key chose the Knoll (group 4), Volume Up sent the Denon's code, group 2 as the map
+routes it, as predicted, and then the up key, which in the Knoll's map sends the Knoll's `Timer` from group 4,
+**sent nothing**, three runs of three presses, each heard 0 of 1. Everything up to the up key was as
+predicted and the up key was the first thing that was not. Runs 1 and 2 ended there. Run 3 went on to step 3
+(Cable/Sat, the Plasma): its Volume Up and Menu were heard 0 of 1 each, so after the group 4 press the
+following presses sent nothing either. That is what the trace predicts (a sender that stays in its first state), but
+the Plasma's group was not checked and the step does not separate a stuck sender from a group that fails the
+same way. From the group 4 press on, the remote **stopped responding to most keys**, and **a device key pressed
+afterwards stayed lit permanently**. **Removing the batteries recovered it**, each time. Prediction P7 (a
+send from groups 4 to 7 changes a pin's list and no code) was wrong, see the next paragraph.
+
+**What it is, in the image.** `tests/test_harmony_300_group_4_send.py`: a group above 3 is send kind `0xFF` on
+the 300's build, which raises event `0xFF`; nothing is bound to it, the list ending in `07 FFFA` that would
+clear the sender's wait flag never runs, and the sender stays in its first state. The earlier reading, that
+the 300 would raise group 0's event, was a misread default. That the later keys fail for this reason and that
+the pins are the key lights are not read. Checkable without a unit: a 350 configuration holding groups 0 to 3
+only should work on this unit; a binding of event `0xFF` to a list ending in `07 FFFA` should make a group 4 send
+work (not written, not proposed as anything but a prediction).
+
+**The two boards compared, by a person.** The Harmony 300 and the Harmony 350 were opened and the boards
+photographed side by side, the lab's `reference/images/300-350-pcb.jpeg`. Same silkscreen on both, `PEPSI PA3`
+and `Logitech P/N 210-000767_010`, and by the person's inspection the same parts and traces. One printing
+differs, the board maker's mark: `CPS 94V-0 E243951` with a date-like `15 16` on the 350's and
+`EET-2 E246995 94V-0` on the 300's. The two boards' large chips carry different dot marks in the photo (two
+cyan on the 350's, one blue and a scratch on the 300's); whether that is a part difference is not known, it
+is a photograph and not a reading. A pad row at the bottom is labelled `ICD_VPP`, `RB7`, `RB6`, `DGND`,
+`VDD_3V3`, `VBATT`, `UART1 RXD`, `UART1 TXD`: the PIC's in circuit programming connection and a serial port.
+Nothing was connected to them.

@@ -159,6 +159,12 @@ application's side) and `tests/test_harmony_350_file_write.py`. One build, 1.4, 
 images; the Harmony 300's bootloader and safe mode have not been read. None of the routes below has been
 run on a unit.
 
+**Both boards carry a pad row for the processor's in circuit programming**, labelled `ICD_VPP`, `RB7`, `RB6`
+(reset or programming voltage, data, clock), `DGND`, `VDD_3V3`, `VBATT` and a serial port, `UART1 RXD` and
+`UART1 TXD`, on one board design shared by the Harmony 300 and 350, `reference/architectures/harmony-300-350/README.md`.
+A fact and not a route: nothing here has been connected to them, and nothing in this project writes the
+processor's flash.
+
 **Safe mode is safe to enter on this family, and that is the difference from the Harmony 525.** Every start
 runs the bootloader, then safe mode, and safe mode decides whether to run the application; it writes the
 application only when a firmware install asks it to, and then it copies the **staged** copy, never itself.

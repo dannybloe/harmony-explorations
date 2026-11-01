@@ -253,3 +253,8 @@ On 31 October 2026 the unit's `/fw/normalmode` was read twice, read only, identi
 of Logitech's package image, the package's last eight being `0xFF` and not served. So the package is what this
 unit runs. Compared with the bench Harmony 300's application in `tests/test_harmony_300_350_images.py`, it is
 the same program with one routine's mask on the send kind. Nothing was written to the unit.
+
+The 350 and the bench Harmony 300 were opened side by side on 1 November 2026: same silkscreen and part
+number, same parts and traces by a person's inspection, a different board maker's mark, and a pad row for the
+PIC's in circuit programming and a serial port. The photograph and the detail are in `harmony-300.md`
+("Logitech's compile of the Harmony 350's test setup"). Nothing was connected to the pads.
