@@ -755,3 +755,26 @@ remote and 2 in the second, which is what section 117 measured as a generator er
    client's and the firmware's write routes are read and recovery is understood, 1.2 to 1.4. `openHarmony`
    keeps refusing the file based family; the write route for it is the file protocol, never the command
    protocol. The Harmony Touch is not covered by this and stays unwritten.
+
+27. <a id="d27"></a>**The Harmony 350's application may be installed on the bench Harmony 300, and the 300's own put
+   back.** *Taken on 1 November 2026, `todo-compile-300.md` 4.3.* The second exception to "firmware is never
+   written", after decision 18, and as narrow: an application image Logitech built, unmodified and
+   verifying, written to `/fw/normalmode` on the bench Harmony 300 alone, for its own safe mode to install,
+   and nothing else. Two images qualify, the Harmony 350's as read off the bench 350 (equal to Logitech's
+   package for skin 104) and the 300's own as read off the bench 300 before anything is written, which is
+   the way back. Bootloader and safe mode are never written.
+
+   **What prompted it.** Logitech's compile for the Harmony 350 hung the 300 at the first send from an
+   infrared group above 3, while the two applications are one program linked twice that differ in one
+   instruction on that path, and the two boards carry the same parts and traces under one part number.
+   Whether the 350's build on the 300's board sends from groups 4 to 7 separates a firmware difference from
+   a hardware one, which reading cannot.
+
+   **Why the risk is accepted.** The staged image is written to the external medium, the resident
+   application stays until safe mode installs a verifying image, and the 300's bootloader and safe mode are
+   untouched. Both boards also carry the processor's in circuit programming pads, so a unit whose program
+   no longer starts can still be programmed directly, which nothing here has done.
+
+   **What it does not change.** Generating configuration files is still the route to everything, and this
+   does not make firmware modification a route to anything. The rail is a door of its own, never the
+   configuration write's, and it lives in `packages/usb/src/rails.ts`.
