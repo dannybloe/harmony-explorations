@@ -5,8 +5,8 @@
  * for, so a record is compared by what it sends and a list by what it does with every list it calls written out.
  */
 import {
-  bytes, type Container, devices, irBlockWords, irGroups, irHeaderPointers, irRecordStart, mapOfGroup, stateRecords, stateVariables,
-  taggedList,
+  bytes, type Container, devices, irBlockWords, irGroups, irHeaderPointers, irRecordStart, mapOfGroup, numberSenders, stateRecords,
+  stateVariables, taggedList,
 } from '../src/index.ts';
 
 /** A record as its header, its own address zeroed, and each block's words: what it sends, wherever it sits. */
@@ -54,8 +54,8 @@ export function spelledMap(c: Container, entry: number, width = 40): Map<number,
 }
 
 // What follows reads a whole configuration part by part with every number that follows placement named, for the
-// tests that hold a file composed here against Logitech's whole compile: `noscreenremove.test.ts`, 4.1.3, and
-// `noscreensetup.test.ts`, 4.5.
+// tests that hold a file composed here against Logitech's whole compile: `noscreenremove.test.ts`, 4.1.3,
+// `noscreensetup.test.ts`, 4.5, and `noscreenfromnothing.test.ts`, 5.1.6.
 
 /**
  * A spelling with every number that follows placement named instead: a select by the device whose map it is, a
@@ -75,12 +75,16 @@ export function namer(c: Container): (text: string) => string {
     .replace(/71:([0-9a-f]{1,2})\b/g, (_, hex: string) => `on(${variable(hex)})`);
 }
 
-/** Every action list, written out and named, as a multiset. */
-export function allLists(c: Container): Map<string, number> {
+/**
+ * Every action list, written out and named, as a multiset. Each send is named by the first `width` characters of
+ * its record's key, `spelled`'s default unless given: the whole key, a wider `width`, tells apart codes of one device
+ * that share a long opening, which a comparison counting how many lists send each code needs.
+ */
+export function allLists(c: Container, width?: number): Map<string, number> {
   const name = namer(c);
   const out = new Map<string, number>();
   c.pointerArray(7)!.forEach((_, index) => {
-    const text = name(spelled(c, { operand: index, opcode: 0x7f }));
+    const text = name(spelled(c, { operand: index, opcode: 0x7f }, 0, width));
     out.set(text, (out.get(text) ?? 0) + 1);
   });
   return out;
@@ -123,3 +127,33 @@ export function timerRecords(c: Container): string[] {
 
 export const without = <T>(record: Record<string, T>, key: string): Record<string, T> =>
   Object.fromEntries(Object.entries(record).filter(([name]) => name !== key));
+
+/**
+ * The start up events, raw slot 5, each instruction spelled out with every number that follows placement named:
+ * eleven calls of a list in every configuration of the family. Read from the slot's own bytes, a `u8` count and then
+ * three bytes an instruction, `reference/architectures/harmony-300-350/memory.md`.
+ *
+ * **A correction.** This was a function of `noscreensetup.test.ts` until `todo-compile-350.md` 5.1.6, and it took each
+ * value `pointerArray(5)` returns for an address and spelled out the list it found there. The slot holds
+ * instructions, not addresses, so `pointerArray` reads each call as `0x7f0000` and its list number, which no
+ * address of the file is: every entry came out empty, on Logitech's compile and on ours alike, and the 4.5
+ * comparison of the start up events compared eleven empty strings and passed. Spelled out, the two agree, as that
+ * test still asserts; the first test of `noscreenfromnothing.test.ts` holds that none comes out empty.
+ */
+export function startUp(c: Container): string[] {
+  const name = namer(c);
+  const at = c.blobOffsetOf(c.sections[5]!.address)!;
+  return Array.from({ length: c.blob[at]! }, (_, k) => {
+    const operand = c.blob[at + 1 + 3 * k]! | (c.blob[at + 2 + 3 * k]! << 8);
+    return name(spelled(c, { operand, opcode: c.blob[at + 3 + 3 * k]! }));
+  });
+}
+
+/** The number sender's records: their fields and their three digit tables spelled out. */
+export function senders(c: Container): string[] {
+  const name = namer(c);
+  return numberSenders(c)!.records.map((one) => JSON.stringify({
+    flags: one.flags, base: one.base, digits: one.digits, ends: [one.prologue, one.epilogue, one.prefix].map((x) => x.opcode),
+    tables: one.tables.map((table) => table.instructions.map((x) => name(spelled(c, x)))),
+  }));
+}

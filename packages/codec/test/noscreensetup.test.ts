@@ -25,6 +25,11 @@
  * 165 lists out, 15, 51, 11, 30 and 58, and composing the five back adds 165, found by construction rather than by
  * reachability, an independent closure; the favourites add the five that make 331.
  *
+ * **A correction**: until `todo-compile-350.md` 5.1.6 the start up events were compared as eleven empty strings on
+ * both sides, since the helper read each instruction of raw slot 5 as an address, `startUp` in `noscreenparts.ts`.
+ * Spelled out from the slot's bytes they agree, entry 1 selecting the LG TV's map in both, so the claim stands and
+ * was not held until then.
+ *
  * **What differs, and why each is placement or numbering**, asserted in the second test:
  *
  * * **the length, by 6 bytes, all of it the metadata archive's**, which is ours deflated rather than Logitech's;
@@ -65,10 +70,10 @@ import { assertFileFamilyContainer } from '@harmony/usb';
 import { IR_ARCHIVE, LAB, needing, skipWithoutIrArchive, skipWithoutLab } from '@harmony/lab';
 
 import {
-  ComposeError, composeNoScreenSetup, type ComposedNoScreenSetup, type Container, devicePlaces, metadataArchive, numberSenders,
+  ComposeError, composeNoScreenSetup, type ComposedNoScreenSetup, type Container, devicePlaces, metadataArchive,
   parse, type Recipe, taggedList, withoutNoScreenDevice,
 } from '../src/index.ts';
-import { allLists, maps, namer, records, spelled, timerRecords, transitions } from './noscreenparts.ts';
+import { allLists, maps, records, senders, startUp, timerRecords, transitions } from './noscreenparts.ts';
 
 const needs = needing(skipWithoutLab(), skipWithoutIrArchive());
 
@@ -122,28 +127,6 @@ function composed() {
 const label = (name: string): string => name.replaceAll(' ', '_');
 const omit = <T>(record: Record<string, T>, keys: readonly string[]): Record<string, T> =>
   Object.fromEntries(Object.entries(record).filter(([name]) => !keys.includes(name)));
-
-/** The start up events, raw slot 5, each spelled out with every number that follows placement named. */
-function startUp(c: Container): string[] {
-  const name = namer(c);
-  return c.pointerArray(5)!.map((_, entry) => {
-    const at = c.blobOffsetOf(c.pointerArray(5)![entry]!)!;
-    const count = c.blob[at]!;
-    return Array.from({ length: count }, (_, k) => {
-      const operand = c.blob[at + 1 + 3 * k]! | (c.blob[at + 2 + 3 * k]! << 8);
-      return name(spelled(c, { operand, opcode: c.blob[at + 3 + 3 * k]! }));
-    }).join(' ');
-  });
-}
-
-/** The number sender's records: their fields and their three digit tables spelled out. */
-function senders(c: Container): string[] {
-  const name = namer(c);
-  return numberSenders(c)!.records.map((one) => JSON.stringify({
-    flags: one.flags, base: one.base, digits: one.digits, ends: [one.prologue, one.epilogue, one.prefix].map((x) => x.opcode),
-    tables: one.tables.map((table) => table.instructions.map((x) => name(spelled(c, x)))),
-  }));
-}
 
 test('the keys the setup is composed on are where Logitech\'s service put each device, in both of its compiles', needs, () => {
   const placed = (c: Container) => Object.fromEntries(Object.entries(devicePlaces(c)).map(([name, where]) => [name, { ...where }]));

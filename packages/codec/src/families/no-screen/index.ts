@@ -9,7 +9,8 @@
  * a whole device, and it puts a device on a key's short press or, 4.4, its long press. The favourite channels,
  * 4.3, are `composeNoScreenFavourites` in `favourites.ts`, and the one activity, Watch TV, 4.2, is
  * `composeNoScreenActivity` in `activity.ts`, for the same reason. A whole setup, 4.5, is `composeNoScreenSetup` in
- * `setup.ts`, which runs the device and favourite composers in the order they need. A power on delay's second copy,
+ * `setup.ts`, which runs the device, activity and favourite composers in the order they need, and onto the empty
+ * configuration of `empty.ts` it is the setup built from nothing, `buildNoScreenSetup`, 5.1.6. A power on delay's second copy,
  * Watch TV's for a device with one power code, is `powerOnDelayCopies`, `delay.ts`, 4.6. Everything else refuses with a message saying
  * why, as code-for-a-family's fourth question asks, rather than borrowing another family's answer:
  *
@@ -119,7 +120,8 @@ export {
   type NoScreenStateRequest, type NoScreenStateTables, noScreenStateVariables, type NoScreenStateVariables, type NoScreenVariableRole,
 } from './statetables.ts';
 export {
-  composeNoScreenSetup, type ComposedNoScreenSetup, devicePlaces, type DevicePlace, groupOfPlace, type NoScreenSetupRequest,
+  buildNoScreenSetup, composeNoScreenSetup, type ComposedNoScreenSetup, devicePlaces, type DevicePlace, groupOfPlace,
+  type NoScreenSetupFromNothing, type NoScreenSetupRequest,
 } from './setup.ts';
 export {
   NO_SCREEN_METADATA_AFTER, NO_SCREEN_METADATA_BEFORE, type NoScreenMetadataChoices, type NoScreenMetadataDevice,
