@@ -245,8 +245,31 @@ over the five configurations: seven equal to the device's own, and one of 170 fo
 list carries 100 and 70. So a device's wait is in two places on a configuration with an
 activity[^t-file-family-delays].
 
-Changing one is a one byte edit of that `0x7C`'s operand plus the trailer checksum, `setPowerOnDelay` in
-`packages/codec/src/edit.ts`, which leaves the activity's copy alone[^t-file-family-delays].
+**Which copy a key reaches depends on how the device is switched.** A device with one power code for both
+ways is switched on by Watch TV through the activity's copy, the call of its code's list and the `0x7C`
+after it, and not through its `Power` variable; a device with separate on and off codes is switched by
+Watch TV flipping its `Power` variable, so the list that variable runs is its only copy. On a compile with
+seven devices of a single wait each, three of them in the activity, the one device with one code in the
+activity has two copies, and the two with separate codes in it and the four outside it, two of those with
+one code, have one[^t-file-family-delays]. No copy sits anywhere else in the five configurations: searched
+over every list, each copy found is in the list Watch TV's press calls, and every other `0x7C` Watch TV can
+reach is a send's own wait of one or three tenths, a device's own switch on, or the one wait of 170 whose
+device's own list carries two[^t-file-family-delays].
+
+**For a device with one power code the activity's copy is the one a person meets.** Its power key in its
+own mode sends the code's list itself rather than writing its `Power` variable, so its switch on list, the
+copy the device's record holds, is run by no key at all: true of all four such devices on a Harmony 300's
+configuration and all three on a Harmony 350's, while each device with separate codes there has its switch
+on list reached[^t-file-family-delays]. Whether a timer or the start up events reach it is not
+checked[^unchecked].
+
+Changing one is a one byte edit of each copy's operand plus the trailer checksum, `setPowerOnDelay` in
+`packages/codec/src/edit.ts`, which changes the device's own `0x7C` and every copy in the lists Watch TV
+reaches, read as a call of the list the device's own switch on list calls followed by a `0x7C` naming the
+device; the family names them, `packages/codec/src/families/no-screen/delay.ts`. On a Harmony 300's
+configuration, a television's wait set from 50 to 100 tenths that way gives, byte for byte, the
+configuration whose two copies both say 100[^t-file-family-delays]. This said the edit left the activity's
+copy alone until the family named it.
 
 ## The activity
 
