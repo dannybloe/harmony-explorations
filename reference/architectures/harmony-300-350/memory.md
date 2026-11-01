@@ -209,6 +209,24 @@ them, the ten digits' one block copies, which a favourite channel sends where th
 agreeing by type[^t-noscreen-routing]. A television's fifth favourite key holds its Home or its Internet, on 4
 of the 5 televisions with either[^t-noscreen-routing].
 
+**Two more kinds are stored the same way**, read over every send list nothing calls in twelve current compiles of
+the family[^t-noscreen-stored]:
+
+* **The command a device finishes a channel number with**, the catalogue's channel tuning finish, as a one block
+  copy beside the digits' copies: on both devices that state one, in all 7 compiles holding either, and no other
+  uncalled list sends a copy of anything but a digit[^t-noscreen-stored]. That a favourite channel on such a device
+  would send it after the digits is not checked[^unchecked].
+* **A television's Back**, whole, where no key of its map binds it, its Exit and previous channel keys holding
+  other commands: in 7 of the 8 compiles with such a television, the eighth being the one whose setup holds that
+  television alone, which stores no Back at all; a video recorder in the same position stores none. Each of those
+  two conditions rests on one compile, and every such television was also the device on the TV key, so which of the
+  two the rule is about is not told apart[^t-noscreen-stored].
+
+On a Harmony 300 a television's Home or Internet, which the 350 puts on its fifth favourite key, is stored the same
+way, on 2 of 2 televisions with either, since that keypad lacks the key[^t-noscreen-stored]. One uncalled list of
+the twelve compiles fits none of these: a second copy of a television's OK, on a compile made for an earlier owner,
+whose catalogue entry states no channel tuning[^t-noscreen-stored].
+
 **Every device's power variable has two lists nothing calls**, on both models: each sets the variable without
 running its transitions, the silent flag `07 FFFF` and then the write, one to 0 and one to 1. All 27 devices of
 the seven configurations read have the pair, none of the 54 lists is called, and no other list opens with the
@@ -558,6 +576,7 @@ variable walk, the order of the device key maps, the order of the timers, and th
 [^t-harmony-350-clock-c]: Measured in configurations. [The test](../../../tests/test_harmony_350_clock.py)
 [^t-state-block]: Read in the firmware. [The test](../../../tests/test_firmware_state_block.py)
 [^t-noscreen-routing]: Measured in configurations. [The test](../../../packages/codec/test/noscreenrouting.test.ts)
+[^t-noscreen-stored]: Measured in configurations. [The test](../../../packages/codec/test/noscreenstored.test.ts)
 [^t-long-press]: Read in the firmware. [The test](../../../tests/test_harmony_350_long_press.py)
 [^t-long-press-c]: Measured in configurations. [The test](../../../tests/test_harmony_350_long_press.py)
 [^t-long-press-u]: Measured on a unit. [The test](../../../tests/test_harmony_350_long_press.py)

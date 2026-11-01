@@ -208,6 +208,17 @@ the buttons that changed[^t-fav350-client]. The soft button route is the one the
 Harmony One, the 600, 650 and 700 and the 800 series; the Harmony 300 has a favourites screen of its own,
 which reads the same mode map, and how it saves was not checked[^unchecked].
 
+**On a Harmony 350 the mode map is what the compile binds.** For each device, the buttons its mode map assigns
+on keys the remote has are as many as the bindings of that device's map in the compiled configuration, on all
+eight devices of one account; the one button such a map assigns that the remote lacks is Teletext[^t-mode-map-c].
+**A device map saved with `SaveButtonMaps` empties that device's mode map**: before the save the device's map was
+the service's default, with no identifier and a command on each hard button; the save gave it a stored identifier,
+the mode map read back later carries the same one, and every hard button the saved map named, 35 of them, reads as
+unassigned there, so the compile binds none of them[^t-mode-map]. The same catalogue device on an account where
+nothing saved its map binds every one of those keys[^t-mode-map-c]. Measured once, on one device; whether a save
+through `UpdateDeviceModeButtonMaps`, the client's route for this model, keeps the buttons it does not send was
+not checked[^unchecked].
+
 **Which activity an activity key starts is a button map too**, saved with `SaveButtonMaps`, each key
 holding a short and a long press activity; an activity's type and group do not choose its key[^s340].
 
@@ -295,6 +306,8 @@ accounts[^unchecked].
 [^t-host-client-service]: Stated by Logitech, by their service. [The test](../../tests/test_host_client.py)
 [^t-fav350]: Stated by Logitech, by their service. [The test](../../packages/corpus/test/favourites.test.ts)
 [^t-fav350-client]: Stated by Logitech, in their client. [The test](../../packages/corpus/test/favourites.test.ts)
+[^t-mode-map]: Stated by Logitech, by their service. [The test](../../packages/codec/test/noscreenfromnothing.test.ts)
+[^t-mode-map-c]: Measured in configurations. [The test](../../packages/codec/test/noscreenfromnothing.test.ts)
 [^s136]: Stated by Logitech, by their service. [Section 136](../../docs/findings.md#s136)
 [^s48]: Read in the firmware. [Section 48](../../docs/findings.md#s48)
 [^t-ops]: Stated by Logitech, by their service. [The test](../../tests/test_myharmony_model.py)

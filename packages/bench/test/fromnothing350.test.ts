@@ -13,7 +13,9 @@
  * remote, `filemodel.ts`, and every step but one is walked on Logitech's second compile of the test setup too and
  * sends the same codes, compared by their bytes. **The one that differs is chosen to**: in the KPN's mode, Channel Up
  * and the digit 1 send the KPN's own codes from our file and nothing from Logitech's, whose KPN map binds 12 keys
- * where ours binds the family's 43, for a reason no compile shows, `noscreenfromnothing.test.ts`. So the run hears
+ * where ours binds the family's 43, because that account's mode map for the KPN is the one the setup builder saved,
+ * which the service reads with its hard buttons unassigned, a reason found after this run, `todo-compile-350.md`
+ * 5.1.7 and `noscreenfromnothing.test.ts`. So the run hears
  * whether our fuller map works, where every other step can only agree with what was heard from Logitech's compile in
  * the 3.3 run.
  *

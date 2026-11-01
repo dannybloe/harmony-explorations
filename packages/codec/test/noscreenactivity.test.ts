@@ -404,7 +404,8 @@ test('every input value of five compiles runs a list of its own sending a record
 /**
  * The keys of a map that send one code of a device: a binding whose list sends that device's group once.
  * `noscreen.test.ts` explained the test setup's KPN map binding three of the key table's keys by its being the map
- * the activity ends in; this is what refutes that explanation.
+ * the activity ends in; this is what refutes that explanation. What does explain it, `todo-compile-350.md` 5.1.7, is
+ * the account: that KPN's mode map is the one the setup builder saved, `noscreenfromnothing.test.ts`.
  */
 function ownSends(c: Container, map: number, group: number): number {
   return taggedList(c, c.pointerArray(6)![map]!)!.entries.filter((one) => {

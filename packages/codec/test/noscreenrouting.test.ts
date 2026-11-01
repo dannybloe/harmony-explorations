@@ -24,7 +24,9 @@
  *   service's overrides state, and 9 of the 12 that are neither on the other compiles. Two that disagree keep
  *   their own, on compiles made for earlier owners; the third is the Harmony 300's KPN, whose map binds no volume
  *   at all. The KPN's map has no mute in the test setup's compile, and the service gives it no mute override, so it
- *   is not borrowed there; why that map binds so few keys is not read, `noscreenactivity.test.ts`.
+ *   is not borrowed there; that map binds so few keys because the account's mode map for it is the one the setup
+ *   builder saved, mute among the hard buttons it left unassigned, `noscreenfromnothing.test.ts`, and the same
+ *   catalogue KPN on an account where nothing saved its map borrows the receiver's mute, as `volumeSource` says.
  * * **The fifth favourite key** holds a television's Home, else Internet: 4 of 5 televisions with either, on the
  *   Harmony 350; the Philips of the bench 350's first configuration binds nothing there. No other type binds it.
  * * **Teletext** is stored with a send list nothing calls, for 11 of 11 devices with the command on the Harmony 350
@@ -67,7 +69,7 @@ import {
 import { DEVICE_KEYS, FAVOURITE_FIVE, INPUT_KEY, POWER_RESETS, START_UP_SELECT_ENTRY, VOLUME_SCANS } from '../src/families/no-screen/keys.ts';
 import { SILENT_WRITE } from '../src/actions.ts';
 import { withoutStartUpSelect, withStartUpSelect } from '../src/families/no-screen/devices.ts';
-import { onceWithoutLeadIn, recordKey } from './noscreenparts.ts';
+import { IDENTIFIED, onceWithoutLeadIn, recordKey } from './noscreenparts.ts';
 
 const needs = needing(skipWithoutLab(), skipWithoutIrArchive());
 
@@ -120,29 +122,6 @@ function compiles(): Record<string, Container> {
   };
 }
 
-/**
- * Each device of each file by the catalogue entry its command names identify, and how many names differ: the
- * test setup's from its setup file, the rest found by command names, `IDENTIFIED` checked below.
- */
-const IDENTIFIED: Record<string, Record<string, readonly [string, string, number]>> = {
-  setup: {
-    'LG TV': ['LG', 'OLED65G26LA', 0], Plasma: ['Panasonic', 'TX-P42GT30E', 0], Denon: ['Denon', 'AVR-X4800H', 0],
-    KPN: ['KPN', 'TV6000COK', 0], Kodi: ['Plex', 'Plex_Player', 0], Switch: ['Ligawo', '3090063', 0],
-    'Sony HT': ['Sony', 'DAV-C540', 0], Knoll: ['Knoll', 'HDP-1100', 0],
-  },
-  issue37: {
-    'LG TV': ['LG', '60PV250N-ZA', 2], 'Humax DVR': ['Humax', 'HDR_FOX_T2', 1], 'LG DVD': ['LG', 'bp520', 0],
-    'Qnap Media Player': ['QNAP', 'HS-251', 0], 'Thomson SAT': ['Thomson', 'DSL4206', 0],
-  },
-  programmed: { PS: ['Sony', 'Playstation_3', 0], KPN: ['KPN', 'VIP1853', 0], TV: ['Panasonic', 'TX-P42GT30E', 0] },
-  three: { KPN: ['KPN', 'VIP1853', 0], TV: ['Panasonic', 'TX-P42GT30E', 0] },
-  factory: { TV: ['Philips', '65OLED865_12', 0], Radio: ['Marantz', 'M-CR612', 0], Delta: ['Amino', 'Kamai_7X', 0] },
-  h300programmed: {
-    KPN: ['KPN', 'VIP1853', 0], 'Panasonic DVD': ['Panasonic', 'DVD-S35', 0], 'Panasonic TV': ['Panasonic', 'TX-P42GT30E', 0],
-    'Sony VCR': ['Sony', 'SLV-N700', 0],
-  },
-  h300: {},
-};
 
 interface Device {
   readonly name: string;

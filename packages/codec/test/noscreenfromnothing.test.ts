@@ -37,31 +37,40 @@
  * * **equal**: the key table, binding for binding and in the same order, Watch TV's binding spelled out to every list
  *   it calls; seven of the eight device maps; every state variable with its transitions, the activity's flag and the
  *   Denon's input of 19 values among them; all 16 timer records; the eleven start up events; the number sender and
- *   its three digit tables; every device's records as a multiset but the LG TV's and the KPN's; and the metadata
- *   archive's devices, their commands and their order;
+ *   its three digit tables; every device's records as a multiset but the KPN's; every list but the KPN's 30 sends;
+ *   and the metadata archive's devices, their commands and their order;
  * * **different, and why**:
  *   * **the KPN's map**: Logitech's binds 12 keys, ours the family's 43, every one of Logitech's 12 among them with the
- *     same binding. Logitech's compile binds none of the KPN's digits, its Channel Up or its arrows, which the 3.3 run
- *     heard as silence, and another KPN box's map in two other compiles binds 33 of its own codes, so the reason is
- *     not the device type or the activity; no compile shows it, `noscreen.test.ts` and `noscreenactivity.test.ts`. So
- *     ours keeps the family's table, and the KPN stores 30 records and 30 send lists Logitech's does not;
- *   * **the LG TV's two stored codes nothing sends**: Logitech stores the LG TV's Back and a copy of a code the
- *     catalogue names OK, without its opening silence, each with a send list nothing calls, for no rule read, 4.1;
+ *     same binding, so the KPN stores 30 records and 30 send lists Logitech's does not. **This is the account and not
+ *     a rule of the compile**, 5.1.7, the test of the account's maps: the service compiles a device's keys from its
+ *     mode map, the one
+ *     `GetDeviceModeButtonMaps` reads, and on this account the KPN's mode map is the map `build-setup.ts` saved with
+ *     `SaveButtonMaps` to put the favourites on before the first compile, the same map by its identifier, with the 35
+ *     hard buttons that save named reading as unassigned. So neither compile binds them. The same catalogue KPN on an
+ *     account where nothing saved its map binds every key ours does, 38 of 38, but two, and those two, Replay and
+ *     Advance on the skip keys, are the one difference left between our table and the service's for this device,
+ *     the test after it. **So the build keeps the family's table**: reproducing the 12 would be reproducing an edit
+ *     the setup file does not state;
  *   * **the numbering**: lists, maps, timers, records and state variables are numbered by our allocators, plan 011
  *     and 5.1.8, so they are compared by content and never by number;
  *   * **the metadata archive's device numbers**: ours count from 1, Logitech's are the account's, a choice plan 011
  *     step 4 makes, and so the archive's bytes;
- *   * **the length**, 123780 bytes against 118513, all of it the KPN's extra records, lists and bindings less the LG
- *     TV's two, the archive's numbers and where things sit.
+ *   * **the length**, 124166 bytes against 118513, all of it the KPN's extra records, lists and bindings, the
+ *     archive's numbers and where things sit.
+ *
+ * **A correction**: until 5.1.7 the LG TV's records and two lists differed too, Logitech storing its Back and a copy
+ * of a code the catalogue names OK without its opening silence, each with a send list nothing calls, "for no rule
+ * read". The rules are read now, `noscreenstored.test.ts`: the OK is the catalogue's channel tuning finish, stored as
+ * a one block copy beside the digits' wherever a device states one, and the Back a television's, stored where no key
+ * binds it and the setup holds another device. The device composer stores both, and the LG TV is Logitech's.
  *
  * **What it settles for 5.1.7**, the stored but uncalled lists and the Denon's inputs: **the Denon's inputs are done
  * by this build**: the activity composer writes the 19 values, the 19 transitions each calling a send list of its
  * own, and the 19 records, each the one block copy of the catalogue's input command, equal to Logitech's by content.
  * Logitech places those records after the number sender and ours go in the Denon's group where it is; that is
- * placement, carried by the group's addresses. **Of the 50 lists nothing calls, 48 are reproduced**: all 16 silent
- * writes, two per power variable, and 32 of the 34 sends, Teletext and the digit copies, by the device composer; the
- * two left are the LG TV's two above. The rule for which sends Logitech stores uncalled is still the one 4.1.1
- * measured, Teletext and the digits by device type, and the LG TV's two are outside it.
+ * placement, carried by the group's addresses. **All 50 lists nothing calls are reproduced**: the 16 silent writes,
+ * two per power variable, and the 34 sends, Teletext, the digit copies, the LG TV's finish copy and its Back, by the
+ * device composer, `noscreenstored.test.ts` for the rule.
  *
  * **What it does not do**: bind firmware event `0xFF`, which `todo-compile-350.md` 5.4 adds after 5.2; the first
  * test holds that the key table has no such tag. And it does not attribute every byte to a generator, which is 5.2.
@@ -71,29 +80,40 @@
  * composing every short press before every long press again composes the test setup the same, and the reordered setup
  * of the fourth test is refused, the KPN composed before the Denon whose volume it sends; leaving the activity
  * uncomposed fails every test, the comparison at the key table; the comparison run against Logitech's first compile,
- * without the favourites, fails on the KPN's map, the lists and the number sender, the fifth test; and the allocator's
- * tables with two devices' power lists swapped are not the file's, the second test.
+ * without the favourites, fails on the KPN's map, the lists and the number sender, the fifth test; the allocator's
+ * tables with two devices' power lists swapped are not the file's, the second test; taking `Back` out of
+ * `TELEVISION_STORED_UNBOUND` fails the third test at the LG TV's records, one fewer, and the channel finish's copy
+ * left out fails it the same way; the mode maps' count closure, every button counted whether assigned or not, misses
+ * the KPN's bindings by 35, the test of the account's maps; and our KPN map against the second compile's, in place of
+ * the other account's, differs on 31 tags where the other account's differs on 2, the test after it.
  *
  * **Sources checked first**: plan 011 and chapter 5 of `todo-compile-350.md`; the family's composers and their
  * tests, `noscreensetup.test.ts`, `noscreenactivity.test.ts`, `noscreenempty.test.ts`, `noscreenstatetables.test.ts`
  * and `noscreennumbering.test.ts`; `reference/architectures/harmony-300-350/memory.md`; the lab's
  * `work/setups/h350-test/chapter4-reading.md`. Logitech's client compiles nothing for this family, the service does.
+ * For the KPN's map, 5.1.7: the service's replies the lab holds, the mode maps of the test setup's eight devices,
+ * `work/myharmony/responses/20261031-h350-setup_GetDeviceModeButtonMaps-all.json`, and the setup builder's own
+ * record of its `GetButtonMaps` and `SaveButtonMaps` calls, `work/setups/h350-test/replies/`; the harvest's compile
+ * of eight devices on another account, `work/harvest/check-350-eight/`; `docs/test-notes/harmony-350.md`, which says
+ * how the favourites were saved; and MyHarmony's decompiled source, which saves a Harmony 350's favourites with
+ * `UpdateDeviceModeButtonMaps`, `reference/logitech/service.md`.
  * **Which architectures**: the Harmony 350 alone, one setup; a Harmony 300 runs a 350's configuration once 5.4 binds
  * event `0xFF`, decision 28, and no Harmony 300 setup is built here.
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { assertFileFamilyContainer } from '@harmony/usb';
 import { IR_ARCHIVE, LAB, needing, skipWithoutIrArchive, skipWithoutLab } from '@harmony/lab';
 
 import {
-  buildNoScreenSetup, buildNoScreenStateTables, ComposeError, type ComposedNoScreenSetup, type Container, layOutContainer, metadataArchive,
-  type NoScreenStateDevice, parse, type Recipe, stateRecords, stateVariables, taggedList, takeApart, withStateTables,
+  buildNoScreenSetup, buildNoScreenStateTables, catalogueDevicePlan, ComposeError, type ComposedNoScreenSetup, composeIrGroup, type Container,
+  irGroups, layOutContainer, metadataArchive, type NoScreenStateDevice, parse, type Recipe, stateRecords, stateVariables, taggedList, takeApart,
+  withStateTables,
 } from '../src/index.ts';
 import { nameOfLabel } from '../src/shared/core.ts';
-import { allLists, maps, records, senders, startUp, timerRecords, transitions } from './noscreenparts.ts';
+import { allLists, maps, records, recordKey, senders, startUp, timerRecords, transitions } from './noscreenparts.ts';
 
 const needsArchive = needing(skipWithoutIrArchive());
 const needs = needing(skipWithoutLab(), skipWithoutIrArchive());
@@ -101,7 +121,7 @@ const needs = needing(skipWithoutLab(), skipWithoutIrArchive());
 const SECOND = 'work/setups/h350-test/compile-Result.EzHex';
 const FIRST = 'work/setups/h350-test/first-compile/compile-Result.EzHex';
 /** The file the bench unit is given, written by `bin/compose-no-screen-setup.ts --from-nothing`. */
-const FROM_NOTHING = 'work/setups/h350-test/from-nothing-5.1.6.bin';
+const FROM_NOTHING = 'work/setups/h350-test/from-nothing-5.1.7.bin';
 /** A moment for the builds that are not the lab's file, which is rebuilt from its own. */
 const MOMENT = '2026-11-01T12:00:00';
 
@@ -191,7 +211,7 @@ test('the whole test setup builds with no Logitech file: every device, Watch TV 
     assert.deepEqual(activity.power.map((one) => [one.device, one.kind]), [['LG TV', 'variable'], ['Denon', 'variable'], ['KPN', 'toggle']]);
     // The favourites, four as numbers and 07 digit by digit, on the KPN's map.
     assert.deepEqual(out.favourites[0]!.channels.map((one) => one.sent), ['number', 'number', 'number', 'number', 'digits']);
-    assert.equal(ours.pointerArray(7)!.length, 359);
+    assert.equal(ours.pointerArray(7)!.length, 361);
     // No binding of firmware event 0xFF, which is 5.4's, in the key table every lookup falls through to.
     assert.equal(taggedList(ours, ours.pointerArray(6)![0]!)!.entries.some((one) => one.tag === EVENT_FF), false);
     // The start up events spelled out, none empty, which is what the 4.5 comparison did not hold, `noscreenparts.ts`.
@@ -221,7 +241,7 @@ test('its state tables are the family allocator\'s byte for byte, and the file g
   assert.ok(!same(layOutContainer(withStateTables(takeApart(ours), wrong.built)).bytes, ours.blob));
 });
 
-test('built from nothing, the setup is Logitech\'s second compile by content but for the KPN\'s map and the LG TV\'s two stored codes', needs, () => {
+test('built from nothing, the setup is Logitech\'s second compile by content but for the KPN\'s map', needs, () => {
   const { ours } = built();
   const theirs = labFile(SECOND);
   // The key table, binding for binding, Watch TV's spelled out, and seven of the eight device maps.
@@ -237,18 +257,18 @@ test('built from nothing, the setup is Logitech\'s second compile by content but
   assert.equal(Object.keys(theirKpn).length, 12);
   assert.equal(Object.keys(kpn).length, 43);
   for (const [tag, binding] of Object.entries(theirKpn)) assert.equal(kpn[tag], binding, `KPN ${tag}`);
-  // Every record, per device as a multiset: equal but the KPN's 30 more and the LG TV's 2 fewer.
+  // Every record, per device as a multiset: equal but the KPN's 30 more; the LG TV's Back and finish copy are there.
   const [ourRecords, theirRecords] = [records(ours), records(theirs)];
   const extra = Object.fromEntries(Object.keys(theirRecords).map((name): [string, [number, number]] => [name, [
     surplus(multiset(ourRecords[name]!), multiset(theirRecords[name]!)), surplus(multiset(theirRecords[name]!), multiset(ourRecords[name]!)),
   ]]).filter(([, [a, b]]) => a + b > 0));
-  assert.deepEqual(extra, { LG_TV: [0, 2], KPN: [30, 0] });
+  assert.deepEqual(extra, { KPN: [30, 0] });
   assert.equal(Object.values(theirRecords).flat().length, 250);
-  assert.equal(Object.values(ourRecords).flat().length, 278);
-  // Every list as a multiset, each send named by its whole record: the KPN's 30 sends more, the LG TV's 2 fewer.
+  assert.equal(Object.values(ourRecords).flat().length, 280);
+  // Every list as a multiset, each send named by its whole record: the KPN's 30 sends more and nothing fewer.
   const [ourLists, theirLists] = [allLists(ours, Number.MAX_SAFE_INTEGER), allLists(theirs, Number.MAX_SAFE_INTEGER)];
   assert.equal(surplus(ourLists, theirLists), 30);
-  assert.equal(surplus(theirLists, ourLists), 2);
+  assert.equal(surplus(theirLists, ourLists), 0);
   assert.equal(theirs.pointerArray(7)!.length, 331);
   // Every state variable with its transitions, every timer, the start up events and the number sender.
   assert.deepEqual(transitions(ours), transitions(theirs));
@@ -261,7 +281,7 @@ test('built from nothing, the setup is Logitech\'s second compile by content but
   assert.deepEqual(listed(ours), listed(theirs));
   assert.deepEqual(metadataArchive(ours)!.devices.map((one) => one.deviceId), ['1', '2', '3', '4', '5', '6', '7', '8']);
   assert.deepEqual(metadataArchive(theirs)!.devices.map((one) => one.deviceId).slice(0, 2), ['83962903', '83962904']);
-  assert.equal(ours.blob.length, 123780);
+  assert.equal(ours.blob.length, 124166);
   assert.equal(theirs.blob.length, 118513);
 });
 
@@ -312,3 +332,97 @@ test('the file in the lab for the bench unit is this build from its own stamp, b
   const checked = assertFileFamilyContainer(file);
   assert.equal(checked.readLength, file.length - 4);
 });
+
+// ---------------------------------------------------------------------------------------------------------------
+// The KPN's map, 5.1.7: the account's, not a rule of the compile.
+
+/** The service's mode maps of the test setup's eight devices, read off the live service into the lab. */
+const MODE_MAPS = 'work/myharmony/responses/20261031-h350-setup_GetDeviceModeButtonMaps-all.json';
+/** The setup builder's record of its calls, numbered in the order it made them. */
+const REPLIES = 'work/setups/h350-test/replies';
+/** The harvest's compile of eight devices on another account, the same catalogue KPN among them. */
+const EIGHT = 'work/harvest/check-350-eight/compile-001-Result.EzHex';
+
+interface ModeButton { ButtonKey: string; ButtonAssignment: unknown }
+interface ModeMap { Key: { Value: number }; Value: { ButtonMapId: { Value: number }; Buttons: ModeButton[] } }
+interface UserMap { ButtonMapId: { Value: number } | null; Buttons: { __type: string; ButtonKey?: string }[] }
+
+const json = <T>(path: string): T => {
+  const at = join(LAB!, path);
+  assert.ok(existsSync(at), `${path} is in the lab`);
+  return JSON.parse(readFileSync(at, 'utf8')) as T;
+};
+
+/** The button keys of the service's mode maps that the Harmony 350's keypad lacks: Teletext, `STORED_UNBOUND`. */
+const NOT_ON_THE_350 = new Set(['Teletext']);
+
+test('the account\'s mode maps are what Logitech binds, 8 of 8 devices, and the KPN\'s is the map the setup builder saved, its 35 hard buttons unassigned',
+  needs, () => {
+    const theirs = labFile(SECOND);
+    const modeMaps = json<{ GetDeviceModeButtonMapsResult: ModeMap[] }>(MODE_MAPS).GetDeviceModeButtonMapsResult;
+    // The account's device numbers are the metadata archive's, so each mode map is named by its device there.
+    const nameOf = new Map(metadataArchive(theirs)!.devices.map((one) => [Number(one.deviceId), one.name]));
+    const logitech = maps(theirs);
+    // The closure: per device, the buttons its mode map assigns on keys the Harmony 350 has, against the bindings of
+    // Logitech's map for it, counted from the compile's bytes. Two sources, the service's reply and the compiler's
+    // output, and they agree on every device; counting every button the map lists, assigned or not, is the control.
+    const counts: Record<string, [number, number, number]> = {};
+    for (const one of modeMaps) {
+      const name = nameOf.get(one.Key.Value)!;
+      const on350 = one.Value.Buttons.filter((button) => !NOT_ON_THE_350.has(button.ButtonKey));
+      counts[name] = [on350.filter((button) => button.ButtonAssignment !== null).length, Object.keys(logitech[nameOfLabel(name)]!).length,
+        on350.length];
+    }
+    assert.deepEqual(counts, {
+      'LG TV': [38, 38, 38], Plasma: [40, 40, 40], Denon: [29, 29, 29], KPN: [12, 12, 47],
+      Kodi: [41, 41, 41], Switch: [8, 8, 8], 'Sony HT': [30, 30, 30], Knoll: [11, 11, 11],
+    });
+    // The KPN's mode map is the one map that lists buttons it leaves unassigned, 35 of them.
+    const kpn = modeMaps.find((one) => nameOf.get(one.Key.Value) === 'KPN')!;
+    const unassigned = kpn.Value.Buttons.filter((button) => button.ButtonAssignment === null).map((button) => button.ButtonKey);
+    assert.equal(unassigned.length, 35);
+    assert.equal(modeMaps.filter((one) => one.Value.Buttons.some((button) => button.ButtonAssignment === null)).length, 1);
+    // And it is the map the setup builder saved: before its one `SaveButtonMaps` the KPN's map was the service's
+    // default, with no identifier and a command on each of those 35 hard buttons; after it, a stored map whose
+    // identifier is the mode map's, naming exactly those 35 hard buttons.
+    const replies = readdirSync(join(LAB!, REPLIES)).sort();
+    const saves = replies.filter((file) => file.endsWith('-SaveButtonMaps.bin'));
+    assert.equal(saves.length, 1);
+    const before = json<{ GetButtonMapsResult: UserMap[] }>(`${REPLIES}/${replies[replies.indexOf(saves[0]!) - 1]!}`).GetButtonMapsResult[0]!;
+    const after = json<{ GetButtonMapsResult: UserMap[] }>(`${REPLIES}/${replies[replies.indexOf(saves[0]!) + 1]!}`).GetButtonMapsResult[0]!;
+    assert.equal(before.ButtonMapId, null);
+    assert.equal(after.ButtonMapId!.Value, kpn.Value.ButtonMapId.Value);
+    const hard = (map: UserMap) => map.Buttons.filter((button) => button.__type.startsWith('HardRemoteButton:')).map((button) => button.ButtonKey!).sort();
+    assert.deepEqual(hard(before), [...unassigned].sort());
+    assert.deepEqual(hard(after), [...unassigned].sort());
+    // No other device's map has that identifier, and the save came before the first compile was asked for.
+    assert.equal(modeMaps.filter((one) => one.Value.ButtonMapId.Value === kpn.Value.ButtonMapId.Value).length, 1);
+    assert.ok(replies.indexOf(saves[0]!) < replies.findIndex((file) => file.endsWith('-StartCompileWithLocaleAndSettings.bin')));
+  });
+
+test('built from nothing, the KPN\'s map is the same catalogue KPN\'s on an account where nothing saved its map, 38 of 38 keys, but Replay and Advance',
+  needs, () => {
+    const { ours } = built();
+    const eight = labFile(EIGHT);
+    const mine = maps(ours)['KPN']!;
+    const other = maps(eight)['KPN_TV6000COK']!;
+    const second = maps(labFile(SECOND))['KPN']!;
+    // The five favourite channels' keys are this setup's own; the other account has none.
+    const favourites = ['82', '88', '89', '8b', 'a2'];
+    const differing = (a: Record<string, string>, b: Record<string, string>) => [...new Set([...Object.keys(a), ...Object.keys(b)])]
+      .filter((tag) => !favourites.includes(tag) && a[tag] !== b[tag]).sort();
+    assert.equal(Object.keys(mine).filter((tag) => !favourites.includes(tag) && mine[tag] === other[tag]).length, 38);
+    // The two keys the other account's map binds and ours does not: skip back and skip forward, scans 21 and 38.
+    assert.deepEqual(differing(mine, other), ['95', 'a6']);
+    assert.equal(mine['95'], undefined);
+    assert.equal(mine['a6'], undefined);
+    // Which commands they send: the catalogue's Replay and Advance, which the family's table gives no key, and which
+    // the service's own default map before the save put on SkipBack and SkipForward.
+    const plan = catalogueDevicePlan(eight, IR_ARCHIVE!, { manufacturer: 'KPN', model: 'TV6000COK', label: 'KPN', full: true });
+    const scratch = parse(composeIrGroup(eight, plan.device.commands).bytes);
+    const codeOf = (name: string) => recordKey(scratch, irGroups(scratch)!.at(-1)!.addresses[plan.wanted.indexOf(name)]!).slice(0, 40);
+    assert.ok(other['95']!.includes(codeOf('Replay')));
+    assert.ok(other['a6']!.includes(codeOf('Advance')));
+    // The control: against the second compile of the test setup, whose KPN map is the saved one, 31 tags differ.
+    assert.equal(differing(mine, second).length, 31);
+  });

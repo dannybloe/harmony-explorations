@@ -165,6 +165,8 @@ export function composeNoScreenSetup(c: Container, archive: string, request: NoS
     const where = keys[name]!;
     const out = composeNoScreenDevice(current, archive, {
       manufacturer, model, name, place: where.place, press: where.press, volumeFrom: volumeFrom.get(name)!,
+      // Whether the setup holds no other device, which decides a television's stored Back, `TELEVISION_STORED_UNBOUND`.
+      alone: recipe.devices.length === 1,
     });
     composed.push({ name, group: out.group, map: out.map });
     current = parse(out.bytes);

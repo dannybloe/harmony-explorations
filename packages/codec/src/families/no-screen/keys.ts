@@ -35,11 +35,14 @@ import type { HardKey } from '../../devicemode.ts';
  *   table gives every device its own.
  *
  * And the KPN's map binds three of the table's keys and nothing else of its own, so it is not a sample of a device's
- * own map, and why it binds so few is not read. It is the map the activity ends in and the one holding the
- * favourites, but that is not why: on the bench Harmony 350's two compiles of an earlier setup, with another model of
- * KPN box, the activity ends in the box's map as well, the same map in both, and there 33 bindings send one of the
- * box's own codes, `noscreenactivity.test.ts`. This gave the
- * activity as the reason, until `todo-compile-350.md` 4.2 read those two. **Scan 3, Power, is not here**: a device's power key sends its power step where
+ * own map. **Why is read since `todo-compile-350.md` 5.1.7**, and it is the account, not a rule: the service compiles
+ * a device's keys from its mode map, and that account's KPN mode map is the one the setup builder saved with
+ * `SaveButtonMaps` to put the favourites on, which reads its 35 hard buttons as unassigned. The same catalogue KPN on
+ * an account nothing saved binds every key this table gives it, and two more, Replay and Advance on the skip keys,
+ * which no prefer list here names, `noscreenfromnothing.test.ts`; the one other device of the family's compiles with
+ * a Replay, a Sony VCR on a Harmony 300, binds it on no key, so one for and one against, and they are not added. This gave the activity the map ends in as the reason, until
+ * 4.2 found another KPN box's map, the activity ending in it too, binding 33 of its own codes,
+ * `noscreenactivity.test.ts`; and then no reason, until 5.1.7. **Scan 3, Power, is not here**: a device's power key sends its power step where
  * the catalogue's power is a toggle and switches its power variable where it is not, `devices.ts`.
  *
  * The names are the scan codes' in `reference/remotes/harmony-350/keys.md`. Scan 54, Enter, takes `NumberEnter`
@@ -145,6 +148,22 @@ export const FAVOURITE_FIVE: Readonly<Record<number, { readonly scan: number; re
  * The Harmony 300, which has the key, binds it there, so this is the Harmony 350's.
  */
 export const STORED_UNBOUND: readonly string[] = ['Teletext'];
+
+/**
+ * A command Logitech stores for a television, with a send list nothing calls, where no key of its map binds it and
+ * the setup holds another device: the television's `Back`, `todo-compile-350.md` 5.1.7.
+ *
+ * **Measured** over the twelve current compiles of the family, `noscreenstored.test.ts`. Three televisions have a
+ * `Back` command no key of their map binds, each having `Exit` for the Exit key and `ChannelPrev` for the previous
+ * channel key, which take it before `Back` does: the test setup's LG in six compiles, another owner's LG and the
+ * bench 350's first Philips. Back is stored so in 7 of those 8 compiles; **the eighth is the one compile where the
+ * LG is the setup's only device**, and it stores no Back at all. Of the devices of other types with a `Back` no key
+ * binds there is one, a Humax video recorder, and it stores none. So the rule as stated fits all nine and **each of
+ * its two conditions rests on one compile**: the type on the Humax, the other device on the lone LG. Every one of
+ * the three televisions was also on the TV key, so "the TV mode device" fits the same files as "a television". What
+ * Logitech stores Back for is not read; no key or list of any compile sends it.
+ */
+export const TELEVISION_STORED_UNBOUND: readonly string[] = ['Back'];
 
 /**
  * The values a device's power variable is set to by a list of its own that nothing calls, `07 FFFF` then the write:

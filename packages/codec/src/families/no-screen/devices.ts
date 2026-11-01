@@ -63,10 +63,11 @@ import {
 import { appendActionLists, ComposeError, nameOfLabel, restamped } from '../../shared/core.ts';
 import { composeDeviceFor, type ComposeDevice, type ComposedDevice } from '../../shared/devices.ts';
 import { appendTableEntries } from '../../shared/infrared.ts';
-import { deviceDigitLists } from './digits.ts';
+import { channelFinish, deviceCopyLists, deviceDigitLists } from './digits.ts';
 import {
   DEVICE_KEYS, DIGIT_COPIES_BY_TYPE, FAVOURITE_FIVE, INPUT_KEY, KEY_MAP_SLOT, KEY_TIMERS, LONG_PRESS_GROUP_BASE, POWER_RESETS,
-  POWER_SCAN, START_UP_SELECT_ENTRY, START_UP_SLOT, STORED_UNBOUND, TELEVISION_TYPE, TIMER_SLOT, VOLUME_SCANS,
+  POWER_SCAN, START_UP_SELECT_ENTRY, START_UP_SLOT, STORED_UNBOUND, TELEVISION_STORED_UNBOUND, TELEVISION_TYPE, TIMER_SLOT,
+  VOLUME_SCANS,
 } from './keys.ts';
 import { NO_SCREEN_SENDS } from './sends.ts';
 
@@ -113,6 +114,13 @@ export interface NoScreenDeviceRequest {
    * volume and mute are not stored, as Logitech's compile stores none for a device whose volume it routes.
    */
   readonly volumeFrom?: string;
+  /**
+   * True where the setup holds this device and no other. Logitech's compile stores a television's `Back` uncalled
+   * where its map leaves it unbound, `TELEVISION_STORED_UNBOUND`, but not in the one compile where the television is
+   * the setup's only device, so the composer has to be told; it cannot see the devices composed after it. False when
+   * not given, the case of every setup but that one.
+   */
+  readonly alone?: boolean;
 }
 
 export interface ComposedNoScreenDevice {
@@ -129,10 +137,12 @@ export interface ComposedNoScreenDevice {
   readonly power: 'toggle' | 'variable';
   /** The bindings its map borrows from another device's map, by scan code: Input and the volume keys. */
   readonly borrowed: ReadonlyMap<number, number>;
-  /** The commands stored with a send list and bound to no key, `STORED_UNBOUND`. */
+  /** The commands stored with a send list and bound to no key, `STORED_UNBOUND` and `TELEVISION_STORED_UNBOUND`. */
   readonly unbound: readonly string[];
   /** The one block digit copies and their send lists made, `DIGIT_COPIES_BY_TYPE`. */
   readonly digitCopies: number;
+  /** The command whose one block copy is stored beside the digits', the channel tuning's finish, `channelFinish`. */
+  readonly finishCopy: string | undefined;
   readonly device: ComposedDevice;
 }
 
@@ -483,9 +493,19 @@ export function composeNoScreenDevice(c: Container, archive: string, request: No
     const command = five.prefer.find((name) => planned.wanted.includes(name));
     if (command !== undefined) own.set(five.scan, command);
   }
-  // And what Logitech stores with a send list and binds to no key of this keypad.
+  // And what Logitech stores with a send list and binds to no key of this keypad: Teletext on any device, and a
+  // television's Back where the setup holds another device, `TELEVISION_STORED_UNBOUND`, 5.1.7.
   const ownNames = new Set(own.values());
-  const unbound = STORED_UNBOUND.filter((name) => planned.wanted.includes(name) && !ownNames.has(name));
+  const storedUnbound = [...STORED_UNBOUND,
+    ...(type === TELEVISION_TYPE && request.alone !== true ? TELEVISION_STORED_UNBOUND : [])];
+  const unbound = storedUnbound.filter((name) => planned.wanted.includes(name) && !ownNames.has(name));
+  // The channel tuning's finish, whose one block copy goes in beside the digits' below; asked here, before anything
+  // is composed, so that a device it is refused for is refused with nothing done.
+  const finish = channelFinish(planned.driving, `${request.manufacturer} ${request.model}`);
+  if (finish !== undefined && !copies) {
+    throw new ComposeError(`${request.manufacturer} ${request.model} finishes a channel with ${finish}, and whether Logitech stores its copy for a `
+      + `device of type ${type}, which stores no digit copies, is in no compile read, todo-compile-350.md 5.1.7`);
+  }
   const names = planned.wanted.filter((name) => ownNames.has(name) || unbound.includes(name));
   const commands = names.map((name) => planned.device.commands[planned.wanted.indexOf(name)]!);
   if (planned.power === undefined || planned.device.powerOn === undefined || planned.device.powerOff === undefined) {
@@ -616,6 +636,16 @@ export function composeNoScreenDevice(c: Container, archive: string, request: No
     current = made.container;
     digitCopies = made.copiesAdded;
   }
+  // And the channel tuning's finish, a one block copy of its own with a send list nothing calls, as Logitech stores it
+  // beside the digits' copies, `channelFinish`, 5.1.7. A device with a finish and no ten digits to copy is in no
+  // compile read, so it is refused rather than given the copy alone.
+  if (finish !== undefined) {
+    if (!digitNames.every((name) => planned.wanted.includes(name))) {
+      throw new ComposeError(`${request.manufacturer} ${request.model} finishes a channel with ${finish} and has no ten digits, which no compile read shows`);
+    }
+    current = deviceCopyLists(current, archive, { name: label, manufacturer: request.manufacturer, model: request.model }, group, [finish],
+      'the channel tuning\'s finish').container;
+  }
 
   // And its names, for whatever reads the metadata archive; the remote does not, `metadata.ts`.
   const commandNames = [...new Set(planned.available.map((one) => one.name))];
@@ -631,6 +661,7 @@ export function composeNoScreenDevice(c: Container, archive: string, request: No
     borrowed,
     unbound,
     digitCopies,
+    finishCopy: finish,
     device: composed,
   };
 }

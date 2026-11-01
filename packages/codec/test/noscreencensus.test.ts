@@ -263,14 +263,14 @@ export const VERDICTS: Readonly<Record<string, { verdict: Verdict; by: string }>
   'clock record': { verdict: 'builds', by: 'buildTimestampSection, 7 of 7 files' },
   'infrared group arrays': { verdict: 'builds', by: 'fillIrGroup, into the donor\'s group at its allocation; since 5.1.6 run onto the empty configuration with no Logitech file, buildNoScreenSetup, noscreenfromnothing.test.ts' },
   'infrared group table': { verdict: 'builds', by: 'countedTable at NO_SCREEN_COUNT_WIDTHS, the count INFRARED_GROUPS_BY_SKIN in 7 of 7; the five counted tables of all seven compiles rebuilt, the order of the entries being the numbering, description by plan 011; buildEmptyNoScreenConfiguration builds it from nothing, 5.1.5' },
-  'infrared record headers': { verdict: 'builds', by: 'composeIrGroup and irBuildRecord through composeDeviceFor, and the digit copies through deviceDigitLists; 51 of the plasma\'s 51 records, word for word; since 5.1.6 run onto the empty configuration with no Logitech file, buildNoScreenSetup, noscreenfromnothing.test.ts, every device\'s records Logitech\'s by content but the KPN\'s 30 more for its fuller map and the LG TV\'s two stored codes nothing sends, not reproduced' },
+  'infrared record headers': { verdict: 'builds', by: 'composeIrGroup and irBuildRecord through composeDeviceFor, and the digit copies through deviceDigitLists; 51 of the plasma\'s 51 records, word for word; since 5.1.6 run onto the empty configuration with no Logitech file, buildNoScreenSetup, noscreenfromnothing.test.ts, every device\'s records Logitech\'s by content but the KPN\'s 30 more for its fuller map, the account\'s saved map and not a rule, and since 5.1.7 the LG TV\'s Back and channel finish copy too, noscreenstored.test.ts' },
   'infrared blocks': { verdict: 'builds', by: 'the same; since 5.1.6 run onto the empty configuration with no Logitech file, buildNoScreenSetup, noscreenfromnothing.test.ts, the same exceptions' },
   'start up table': { verdict: 'builds', by: 'noScreenStartUpTable, 13 of 13 compiles, noscreenconstants.test.ts' },
   'list, start up': { verdict: 'builds', by: 'noScreenStartUpLists: the hold list, the four device selects and the empty list, 13 of 13 compiles, noscreenconstants.test.ts' },
   'key map table': { verdict: 'builds', by: 'countedTable at NO_SCREEN_COUNT_WIDTHS; the five counted tables of all seven compiles rebuilt, the order of the entries being the numbering, description by plan 011; buildEmptyNoScreenConfiguration builds it from nothing, 5.1.5. appendTableEntries, onto a donor\'s table, stays the composers\' route' },
   'key table (map 0)': { verdict: 'builds', by: 'composeNoScreenDevice adds the press, release and held entries; the activity entry is the donor\'s, and the pin entries are their own category; since 5.1.6 run onto the empty configuration with no Logitech file, buildNoScreenSetup, noscreenfromnothing.test.ts, the activity entry composeNoScreenActivity\'s; equal to Logitech\'s binding for binding and in order' },
   'key table, pin entries': { verdict: 'builds', by: 'noScreenSendEventEntries, the four entries of the key table whose tags switch a pin, 13 of 13 compiles, noscreenconstants.test.ts' },
-  'device key map': { verdict: 'builds', by: 'composeNoScreenDevice from NO_SCREEN_HARD_KEYS with Logitech\'s routing of Input, volume and the favourite key, 4.1.1; equal to Logitech\'s with the other seven devices there, noscreenremove.test.ts; since 5.1.6 run onto the empty configuration with no Logitech file, buildNoScreenSetup, noscreenfromnothing.test.ts, equal to Logitech\'s but the KPN\'s, which binds the family\'s 43 keys where Logitech\'s binds 12, for a reason no compile shows' },
+  'device key map': { verdict: 'builds', by: 'composeNoScreenDevice from NO_SCREEN_HARD_KEYS with Logitech\'s routing of Input, volume and the favourite key, 4.1.1; equal to Logitech\'s with the other seven devices there, noscreenremove.test.ts; since 5.1.6 run onto the empty configuration with no Logitech file, buildNoScreenSetup, noscreenfromnothing.test.ts, equal to Logitech\'s but the KPN\'s, which binds the family\'s 43 keys where Logitech\'s binds 12, because the account\'s mode map for it is the one the setup builder saved, 5.1.7; on an account nothing saved, the same KPN\'s map is ours but Replay and Advance' },
   'action list table': { verdict: 'builds', by: 'countedTable at NO_SCREEN_COUNT_WIDTHS; the five counted tables of all seven compiles rebuilt, the order of the entries being the numbering, description by plan 011; buildEmptyNoScreenConfiguration builds it from nothing, 5.1.5. appendActionLists, onto a donor\'s table, stays the composers\' route' },
   'list, send': { verdict: 'builds', by: 'NO_SCREEN_SENDS through composeDeviceFor; since 5.1.6 run onto the empty configuration with no Logitech file, buildNoScreenSetup, noscreenfromnothing.test.ts, the KPN\'s 30 more' },
   'list, key': { verdict: 'builds', by: 'composeNoScreenDevice: the press list, the release and the held select; since 5.1.6 run onto the empty configuration with no Logitech file, buildNoScreenSetup, noscreenfromnothing.test.ts' },
@@ -278,7 +278,7 @@ export const VERDICTS: Readonly<Record<string, { verdict: Verdict; by: string }>
   'list, channel': { verdict: 'builds', by: 'composeNoScreenFavourites; since 5.1.6 run onto the empty configuration with no Logitech file, buildNoScreenSetup, noscreenfromnothing.test.ts' },
   'list, pin': { verdict: 'builds', by: 'noScreenSendEventLists: the thirteen lists the four pin tags reach, 13 of 13 compiles, noscreenconstants.test.ts' },
   'list, activity': { verdict: 'builds', by: 'composeNoScreenActivity, 4.2: the ten lists held against Logitech\'s step for step, replacing the donor\'s activity, noscreenactivity.test.ts; since 5.1.6 run onto the empty configuration with no Logitech file, buildNoScreenSetup, noscreenfromnothing.test.ts, the flag and the inputs created rather than reused' },
-  'list, uncalled send': { verdict: 'builds', by: 'composeNoScreenDevice: Teletext, STORED_UNBOUND, and the digit copies, DIGIT_COPIES_BY_TYPE, 4.1.1; since 5.1.6 run onto the empty configuration with no Logitech file, buildNoScreenSetup, noscreenfromnothing.test.ts, 32 of Logitech\'s 34, the LG TV\'s two not' },
+  'list, uncalled send': { verdict: 'builds', by: 'composeNoScreenDevice: Teletext, STORED_UNBOUND, and the digit copies, DIGIT_COPIES_BY_TYPE, 4.1.1; a television\'s Back, TELEVISION_STORED_UNBOUND, and the channel finish\'s copy, channelFinish, 5.1.7, noscreenstored.test.ts; since 5.1.6 run onto the empty configuration with no Logitech file, buildNoScreenSetup, noscreenfromnothing.test.ts, 34 of Logitech\'s 34 since 5.1.7' },
   'list, uncalled silent write': { verdict: 'builds', by: 'composeNoScreenDevice: two per power variable, POWER_RESETS, 4.1.3; since 5.1.6 run onto the empty configuration with no Logitech file, buildNoScreenSetup, noscreenfromnothing.test.ts, 16 of 16' },
   'timer table': { verdict: 'builds', by: 'countedTable at NO_SCREEN_COUNT_WIDTHS; the five counted tables of all seven compiles rebuilt, the order of the entries being the numbering, description by plan 011; buildEmptyNoScreenConfiguration builds it from nothing, 5.1.5. appendTableEntries, onto a donor\'s table, stays the composers\' route' },
   'timer record': { verdict: 'builds', by: 'composeNoScreenDevice, two per key device; since 5.1.6 run onto the empty configuration with no Logitech file, buildNoScreenSetup, noscreenfromnothing.test.ts, the first after the last list where there is none' },
@@ -581,14 +581,15 @@ test('built from nothing, the test setup holds every category of Logitech\'s com
     const theirs = census(lab(COMPILE));
     assert.deepEqual([...ours.keys()].sort(), [...theirs.keys()].sort());
     assert.equal(ours.has('unnamed'), false);
-    // Where the bytes per category differ, and by what: the KPN's fuller map and its records and sends, the LG TV's two
-    // stored codes and their uncalled lists, and the table counts and archive numbers that follow.
+    // Where the bytes per category differ, and by what: the KPN's fuller map and its records and sends, and the table
+    // counts and archive numbers that follow. Until 5.1.7 the uncalled sends differed too, by the LG TV's two lists,
+    // 20 bytes; the device composer stores them since, `noscreenstored.test.ts`, so that category is equal.
     const moved = Object.fromEntries([...theirs].filter(([name, n]) => ours.get(name) !== n).map(([name]) => [name, ours.get(name)! - theirs.get(name)!]));
     assert.deepEqual(Object.keys(moved).sort(), [
       'action list table', 'device key map', 'infrared blocks', 'infrared group arrays', 'infrared record headers', 'list, send',
-      'list, uncalled send', 'metadata archive',
+      'metadata archive',
     ]);
-    assert.equal(moved['list, uncalled send'], -20);
+    assert.equal(ours.get('list, uncalled send'), theirs.get('list, uncalled send'));
     assert.equal(moved['device key map'], 4 * 31);
   });
 
@@ -681,7 +682,7 @@ const CENSUS_300 = {
 // devices' records, lists, maps and timers, the key table's own entries, the activity's lists and the number sender,
 // moved to `builds`, since `buildNoScreenSetup` composes all of them onto a configuration built from nothing, the
 // probe below. **What `builds` does not say here**: that every byte equals Logitech's. On the 350's file it does by
-// content but for the KPN's map, its 30 more records and lists, and the LG TV's two stored codes, which the rows name;
+// content but for the KPN's map and its 30 more records and lists, which the rows name, and which are the account's;
 // whether every byte is a generator's with none carried is 5.2's attribution. And the Harmony 300's file is credited
 // on the 350's build: its categories are the same generators', decision 28 makes one build serve both once 5.4 binds
 // event `0xFF`, and the check of our build against Logitech's 300 compile is the part of `todo-compile-300.md` that

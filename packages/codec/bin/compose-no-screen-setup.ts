@@ -33,12 +33,13 @@
  * Logitech file goes in, `buildNoScreenSetup`. Which key each device goes on is then not read off a donor and is
  * given, `--keys`, each device as `name:place` for a short press or `name:place:long`, the place 0 top left to 3
  * bottom right; and the moment the file is built at is `--built-at`, the moment of running unless given, since the
- * stamp, the clock records and the archive's time are taken from it. The 5.1.6 file is
+ * stamp, the clock records and the archive's time are taken from it. The 5.1.7 file, which adds the LG TV's Back and
+ * its channel finish's copy to 5.1.6's, the lab keeping both, is
  *
  *   node packages/codec/bin/compose-no-screen-setup.ts --from-nothing \
  *       --setup packages/corpus/setups/h350-test.json \
  *       --keys 'LG TV:0,Knoll:0:long,Plasma:1,Kodi:1:long,Denon:2,Switch:2:long,KPN:3,Sony HT:3:long' \
- *       --out ../lab/work/setups/h350-test/from-nothing-5.1.6.bin
+ *       --out ../lab/work/setups/h350-test/from-nothing-5.1.7.bin
  *
  * with the keys Logitech's service chose for the test setup, `h350-test.json`'s own account of its compile.
  * `packages/codec/test/noscreenfromnothing.test.ts` rebuilds the file from its own stamp and holds it against

@@ -9,6 +9,33 @@ import {
   stateVariables, taggedList,
 } from '../src/index.ts';
 
+/**
+ * Each device of each Logitech file of the family by the catalogue entry its command names identify, and how many
+ * names differ: the test setup's from its setup file, the rest found by command names, checked in
+ * `noscreenrouting.test.ts`. The files by the short names that test's `compiles()` gives them; the further compiles
+ * of `noscreenstored.test.ts` name their devices "manufacturer model" and carry their own table. Moved here from
+ * `noscreenrouting.test.ts` in `todo-compile-350.md` 5.1.7 so that both tests read one table rather than two.
+ */
+export const IDENTIFIED: Readonly<Record<string, Readonly<Record<string, readonly [string, string, number]>>>> = {
+  setup: {
+    'LG TV': ['LG', 'OLED65G26LA', 0], Plasma: ['Panasonic', 'TX-P42GT30E', 0], Denon: ['Denon', 'AVR-X4800H', 0],
+    KPN: ['KPN', 'TV6000COK', 0], Kodi: ['Plex', 'Plex_Player', 0], Switch: ['Ligawo', '3090063', 0],
+    'Sony HT': ['Sony', 'DAV-C540', 0], Knoll: ['Knoll', 'HDP-1100', 0],
+  },
+  issue37: {
+    'LG TV': ['LG', '60PV250N-ZA', 2], 'Humax DVR': ['Humax', 'HDR_FOX_T2', 1], 'LG DVD': ['LG', 'bp520', 0],
+    'Qnap Media Player': ['QNAP', 'HS-251', 0], 'Thomson SAT': ['Thomson', 'DSL4206', 0],
+  },
+  programmed: { PS: ['Sony', 'Playstation_3', 0], KPN: ['KPN', 'VIP1853', 0], TV: ['Panasonic', 'TX-P42GT30E', 0] },
+  three: { KPN: ['KPN', 'VIP1853', 0], TV: ['Panasonic', 'TX-P42GT30E', 0] },
+  factory: { TV: ['Philips', '65OLED865_12', 0], Radio: ['Marantz', 'M-CR612', 0], Delta: ['Amino', 'Kamai_7X', 0] },
+  h300programmed: {
+    KPN: ['KPN', 'VIP1853', 0], 'Panasonic DVD': ['Panasonic', 'DVD-S35', 0], 'Panasonic TV': ['Panasonic', 'TX-P42GT30E', 0],
+    'Sony VCR': ['Sony', 'SLV-N700', 0],
+  },
+  h300: {},
+};
+
 /** A record as its header, its own address zeroed, and each block's words: what it sends, wherever it sits. */
 export function recordKey(c: Container, address: number): string {
   const off = c.blobOffsetOf(irRecordStart(c, address)!)!;
