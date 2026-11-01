@@ -315,4 +315,4 @@ exercised and is not needed**: nothing was written to the unit's firmware.
 
 After the 4.3 runs the unit was given its own configuration back, `harmony-300-programmed-config.bin`, read back identical; the bench 350 likewise holds Logitech's compile of the test setup again.
 
-Why the TV and DVD long presses did not take in the first 4.3 run, by the person at the bench afterwards: a device key flashes once when its long press registers, and the key can be let go before that flash, which then counts as a short press; most likely that happened on the first run. Not measured, since hold times are not recorded. Bench tests since say "Hold ... until it flashes".
+Why the TV and DVD long presses did not take in the first 4.3 run, by the person at the bench afterwards: a device key flashes once when its long press registers, and the key can be let go before that flash, which then counts as a short press; most likely that happened on the first run. Not measured, since hold times are not recorded. Bench tests since write a long press as "Long press DVD".
