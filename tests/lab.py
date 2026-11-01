@@ -341,6 +341,12 @@ IMAGES = {
     # the test's US wording on a European unit, packages/lab says why.
     'h300_every_key_ir': '20261031T125339Z-ir-test-harmony-300-every-key-sends-something.json',
     'h300_keys_ir': '20261031T131916Z-ir-test-harmony-300-every-key-in-the-tv-s-and-the-kpn-s-modes.json',
+    # todo-compile-300 4.3, Logitech's compile of the Harmony 350's test setup with firmware event 0xFF bound, on the
+    # bench 300: the first run of the 20 steps, its first two steps redone, and the monitor log the third group 6 send
+    # was heard in live. packages/lab says which steps each holds.
+    'h300_event_ff_ir': '20261101T083956Z-ir-test-harmony-300-logitech-s-compile-of-the-harmony-350-s-test-setup.json',
+    'h300_event_ff_ir_redo': '20261101T085419Z-ir-test-harmony-300-logitech-s-compile-of-the-harmony-350-s-test-setup.json',
+    'h300_event_ff_monitor': '20261031T1211Z-ir-monitor.jsonl',
     # todo-compile-350 1.8; the first file is named for 10 s and holds the 3 s run, packages/lab says why.
     'h350_delay_ir_3s': '20261030T094935Z-ir-test-harmony-350-the-tv-s-power-on-delay-at-10-s.json',
     'h350_delay_ir_10s': '20261030T095433Z-ir-test-harmony-350-the-tv-s-power-on-delay-at-10-s.json',

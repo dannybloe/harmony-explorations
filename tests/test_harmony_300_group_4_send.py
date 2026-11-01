@@ -60,7 +60,7 @@ serial side as far as its callers go), and whether the main loop has another rea
 the 350's configurations with groups 4 to 7 are the ones Logitech compiles for it. (b) A configuration
 holding groups 0 to 3 only works on a 300: Logitech's compiles for a 300 hold four and the 300's first
 programmed configuration did. (c) Binding event `0xFF` in entry 0 to a list ending in `07 FFFA` would
-make the 300 send, which is a prediction about a configuration and not an instruction to write one.
+make the 300 send. **(c) held on the bench Harmony 300**, see "The measurement" below.
 (d) After one group 4 send every later send from groups 0 to 3 is queued and not transmitted until the
 batteries are pulled, which the bench has seen once (the keys after the hang).
 
@@ -76,8 +76,26 @@ at the bottom is labelled `ICD_VPP`, `RB7`, `RB6`, `DGND`, `VDD_3V3`, `VBATT`, `
 test below can only show the photograph is in the lab; the reading is the inspection's, recorded here as the
 reference's footnote needs it. It does not bear on the trace above, which is of the images. Nothing was connected.
 
+**The measurement, which closes prediction (c).** One entry was added to key map 0 of Logitech's compile of
+the Harmony 350's test setup: tag `0xFF`, the opcode and operand of the entry tagged `0x30`, a call of the list
+that event runs, which ends in `07 FFFA`. The file is the lab's `work/300-event-ff/h350-compile-event-ff.bin`,
+made with the codec's `withMapEntries` and `restamped` by `bind-ff.ts` beside it, 118513 bytes to 118517, and
+`packages/codec/test/noscreeneventff.test.ts` makes it again byte for byte. It was written to the bench
+Harmony 300 and read back identical. Run through the 350's test, the 300 sent from group 4 (the Knoll's Timer),
+group 5 (Kodi's Exit), group 6 (the Switch's Input 1) and group 7 (Sony HT's Stop), and went on answering
+through all 20 steps with no battery pull, where without the entry the first group 4 send hung it in three runs of
+three, `packages/bench/test/eventff300.test.ts`. **The long presses of the TV and DVD keys did not take in the
+first run** and did in the second and the live repeat; why is not known. What the measurement does not show: a
+send from every key of the four maps, a long press that always takes, another build of the application, or that
+the later keys failing before were failing for the reason traced, which the entry's removing the hang bears out
+but no trace reads. Its width is arch 16 (Harmony 300 and Harmony 350), one unit of the Harmony 300, one build.
+The three tests of `BindingFFIsOneEntryThatCallsTheListEvent30Runs` read the entry in Python, next to the trace
+that named it.
+
 **What would falsify it.** A second writer of bit 4 of `0x08A` that a group 4 send reaches, a binding tagged
-`0xFF` in a configuration, or a group 4 send that transmits on a 300.
+`0xFF` in a configuration of Logitech's, or a group 4 send that transmits on a 300 given a configuration without
+the entry. **Falsified in part**: a group 4 to 7 send that did not transmit with the entry, which the bench did
+not see.
 """
 import re
 import unittest
@@ -200,6 +218,63 @@ class OnlyFFFAClearsTheFlagTheSenderWaitsOn(unittest.TestCase):
         for c in events._all():
             for tag, lists in events._event_lists(c).items():
                 self.assertEqual(lists[0][-1], (0xFFFA, 0x07), (c.name, tag))
+
+
+COMPILE = 'work/setups/h350-test/compile-Result.EzHex'
+PATCHED = 'work/300-event-ff/h350-compile-event-ff.bin'
+
+
+def _patched_pair():
+    """The compile and the patched file, read by raw slot like the rest of the family."""
+    if not lab.LAB:
+        raise unittest.SkipTest('no lab; set HARMONY_LAB')
+    import os
+    pair = []
+    for rel in (COMPILE, PATCHED):
+        path = os.path.join(lab.LAB, *rel.split('/'))
+        if not os.path.isfile(path):
+            raise unittest.SkipTest('%s is not in the lab' % rel)
+        c = events.keys._Config.__new__(events.keys._Config)
+        c.name = rel
+        with open(path, 'rb') as handle:
+            blob = handle.read()
+        c.blob = blob[blob.find(b'GSPM'):]
+        pair.append(c)
+    return pair
+
+
+class BindingFFIsOneEntryThatCallsTheListEvent30Runs(unittest.TestCase):
+    def setUp(self):
+        self.compile, self.patched = _patched_pair()
+
+    def test_the_patched_file_binds_ff_once_in_map_0_and_nowhere_else_and_the_compile_not_at_all(self):
+        maps = self.patched.maps()
+        self.assertEqual(len(maps), 9)
+        found = [(i, [tag for tag, _, _ in self.patched.tagged(m)].count(0xFF)) for i, m in enumerate(maps)]
+        self.assertEqual(found, [(0, 1)] + [(i, 0) for i in range(1, 9)])
+        self.assertEqual(sum(tag == 0xFF for m in self.compile.maps() for tag, _, _ in self.compile.tagged(m)), 0)
+        self.assertEqual((len(self.compile.blob), len(self.patched.blob)), (118513, 118517))
+
+    def test_the_entry_is_event_30s_call_and_that_list_ends_in_the_acknowledgement(self):
+        entries = {tag: (operand, opcode) for tag, operand, opcode in self.patched.tagged(self.patched.maps()[0])}
+        self.assertEqual(entries[0xFF], entries[0x30])
+        self.assertEqual(entries[0xFF][1], 0x7F, 'a call of an action list')
+        self.assertEqual(self.patched.flat(*entries[0xFF])[-1], (0xFFFA, 0x07))
+        # The rest of map 0 is the compile's seventeen entries, in order, the new one between 0x2D and 0x30.
+        before = self.compile.tagged(self.compile.maps()[0])
+        after = self.patched.tagged(self.patched.maps()[0])
+        self.assertEqual([e for e in after if e[0] != 0xFF], before)
+        self.assertEqual(len(before), 17)
+        tags = [tag for tag, _, _ in after]
+        self.assertEqual(tags[tags.index(0xFF) - 1:tags.index(0xFF) + 2], [0x2D, 0xFF, 0x30])
+
+    def test_the_other_maps_and_every_action_list_are_the_compiles(self):
+        for i in range(1, 9):
+            self.assertEqual(self.patched.tagged(self.patched.maps()[i]), self.compile.tagged(self.compile.maps()[i]), i)
+        count = self.compile.u(self.compile.pointer(7), 2)
+        self.assertEqual(self.patched.u(self.patched.pointer(7), 2), count)
+        for index in range(count):
+            self.assertEqual(self.patched.action_list(index), self.compile.action_list(index), index)
 
 
 class ThePhotographOfTheTwoBoardsIsInTheLab(unittest.TestCase):
