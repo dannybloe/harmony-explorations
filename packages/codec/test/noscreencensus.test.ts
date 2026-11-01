@@ -585,5 +585,5 @@ const CENSUS_300 = {
 // the frame's 81 on each file, the header's 11, the section table's 60, the end marker's 4 and the trailer's 6, moved
 // from `other` to `builds` when the frame took the family on, 5.1.1; and the items above. Then the state tables, 5.1.2,
 // 588 and 312 bytes from `other`, `edits` and `nowhere` to `builds`.
-const VERDICT_BYTES_350 = { builds: 3642, edits: 114608, other: 249, nowhere: 14 };
-const VERDICT_BYTES_300 = { builds: 2113, edits: 95128, other: 219, nowhere: 14 };
+const VERDICT_BYTES_350 = { builds: 4230, edits: 114258, other: 25, nowhere: 0 };
+const VERDICT_BYTES_300 = { builds: 2425, edits: 95036, other: 13, nowhere: 0 };
