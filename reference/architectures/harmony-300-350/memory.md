@@ -418,7 +418,7 @@ The two byte variable holds 0 under a maximum of 65277, as on every other archit
 last; every one byte maximum is at most 18, an input of 19 values. There is no value map table, base slot 14, on
 this family[^t-noscreen-state-tables].
 
-**Logitech numbers these in an order no rule is known for**: in one configuration of eight devices a receiver's
+**Logitech numbers these in an order no rule is known for, [numbering](#numbering)**: in one configuration of eight devices a receiver's
 input sits fifth, between two power variables, and the flag ninth, before the last power variable, which is neither
 the setup's order of devices nor its keys'. Nothing on the remote reads an index but the instructions that name it, so a
 configuration of ours numbers them by its own rule, every power variable in the setup's order, then the inputs,
@@ -436,6 +436,44 @@ memory, [the file protocol](../../usb-protocol/file-protocol.md), and no file on
 The firmware does answer one request with the time and the date, one whose service byte is `0xC0` rather
 than the file commands' `0xFF`; how it is framed is not read, and Logitech's templates for these skins
 never send it[^t-harmony-350-clock][^unchecked].
+
+## Numbering
+
+**No rule was found for the order Logitech's compiler numbers a configuration's lists, key maps, timers and state
+variables in, so a build takes that numbering as description: an input, not something a generator derives.** The
+number a part gets is free as far as the remote goes, since nothing reads an index but the instructions that name it,
+[the state variables](#the-state-variables), so a configuration of ours may use any numbering that is consistent. What
+the numbering is for is a byte for byte match with a Logitech compile, which this order makes unreachable, and for
+that the order itself has to be handed over.
+
+What the 13 compiles of the family do show[^t-noscreen-numbering]:
+
+* **A power variable and the list that switches it on are numbered in one walk**: in all 13 the on lists ascend with
+  the variables' indices. The input variables are not in it, since their lists come after every power list while the
+  variables sit between power ones, and the flag has no list. One order of the devices therefore decides both.
+* **The send lists of one infrared group ascend with the group's record number** in the 12 compiles that store any, and
+  interleave across groups in runs of varying length.
+* **A compile is deterministic**: two compiles of one setup agree on the order of the variables, the maps and the
+  timers, and differ in the lists the favourite channels add.
+
+What no candidate reproduces, each tried as an exact match of the whole order[^t-noscreen-numbering]:
+
+| order | candidates | best fit |
+|---|---|---|
+| the devices in the variable walk | 278: the order the compile lists them in, device number, name and group ascending and descending, and Java hash map orders over the number, its text, the name and the group under three spreading hashes, nine table sizes and both tie rules | 5 of 11 compiles with two or more devices, and 1 of the 5 with four or more |
+| the devices' key maps | the same 278 | 5 of 11, and 1 of the 5 with four or more; ascending group fits the five smallest and 69 of 110 pairs |
+| the send lists across groups | a hash order of a key made from the group or device number, the record and the name, 16,362 settings | 2 of 12, the two smallest |
+| the timers | paired, sorted by duration or by pin, and the order of the keys' places in either device walk | none paired or sorted; the places follow the variable walk in 0 of 6 compiles with four keys and the map order in 1 of 6 |
+
+The compiles are not independent: the test setup's two agree record for record and four of the 13 share devices, so
+what can refute a rule is the five with four or more devices, which are four distinct setups. A fit with two or three
+devices is one in two or six by luck. **Not tried**: the order the devices were added to an account, which the
+device number stands for and fits no better than chance, and any rule that needs a quantity the file does not state.
+The variables' own transitions are in the same position, [the state variables](#the-state-variables).
+
+**What a builder takes as input** to reproduce a numbering rather than choose its own: the order of the devices in the
+variable walk, the order of the device key maps, the order of the timers, and the interleaving of the send lists.
+
 
 ## Not checked
 
@@ -506,6 +544,7 @@ never send it[^t-harmony-350-clock][^unchecked].
 [^t-harmony-350-setup-u]: Measured on a unit. [The test](../../../tests/test_harmony_350_keys.py)
 [^t-noscreen-activity]: Measured in configurations. [The test](../../../packages/codec/test/noscreenactivity.test.ts)
 [^t-noscreen-constants]: Measured in configurations. [The test](../../../packages/codec/test/noscreenconstants.test.ts)
+[^t-noscreen-numbering]: Measured in configurations. [The test](../../../packages/codec/test/noscreennumbering.test.ts)
 [^t-noscreen-state-tables]: Measured in configurations. [The test](../../../packages/codec/test/noscreenstatetables.test.ts)
 [^t-harmony-300-keys-u]: Measured on a unit. [The test](../../../tests/test_harmony_300_keys.py)
 [^t-harmony-300-group-4-send-u]: Measured on a unit. [The test](../../../tests/test_harmony_300_group_4_send.py)
