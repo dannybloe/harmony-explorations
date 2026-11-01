@@ -30,9 +30,9 @@
  * orders the plan: every composer of this family edits a donor, as every composer of the four slot family did
  * before plan 008.
  *
- * **What each verdict rests on** is a probe in the tests below and not a sentence here: the frame refuses
- * architecture 16, the name tree builder, the architecture record builder and
- * the timestamp builder reproduce those sections of all seven files byte for byte, the family's own members refuse as the registry
+ * **What each verdict rests on** is a probe in the tests below and not a sentence here: the frame lays out
+ * architecture 16, whose round trip over all seven files is `frame.test.ts`'s, the name tree builder, the
+ * architecture record builder and the timestamp builder reproduce those sections of all seven files byte for byte, the family's own members refuse as the registry
  * says, and the device composer emits lists of exactly the roles the table credits it with. A verdict that stops
  * being true fails here, so a generator written for this family forces the census to move.
  *
@@ -235,10 +235,10 @@ type Verdict = 'builds' | 'edits' | 'other' | 'nowhere';
  * fails `EveryVerdictIsUsed`, so a category that stops existing is not left behind.
  */
 export const VERDICTS: Readonly<Record<string, { verdict: Verdict; by: string }>> = {
-  'header': { verdict: 'other', by: 'layOutContainer, arch 12 and 14; refuses 16' },
-  'section table': { verdict: 'other', by: 'layOutContainer, arch 12 and 14; refuses 16' },
-  'end marker': { verdict: 'other', by: 'layOutContainer, arch 12 and 14; refuses 16' },
-  'trailer': { verdict: 'other', by: 'layOutContainer, arch 12 and 14; refuses 16' },
+  'header': { verdict: 'builds', by: 'layOutContainer, arch 12, 14 and 16; takeApart then layOutContainer rebuilds 7 of 7 compiles, frame.test.ts' },
+  'section table': { verdict: 'builds', by: 'layOutContainer, arch 12, 14 and 16; takeApart then layOutContainer rebuilds 7 of 7 compiles, frame.test.ts' },
+  'end marker': { verdict: 'builds', by: 'layOutContainer, arch 12, 14 and 16; takeApart then layOutContainer rebuilds 7 of 7 compiles, frame.test.ts' },
+  'trailer': { verdict: 'builds', by: 'layOutContainer, arch 12, 14 and 16; takeApart then layOutContainer rebuilds 7 of 7 compiles, frame.test.ts' },
   'name tree': { verdict: 'builds', by: 'buildNameTree, byte for byte on 7 of 7 files; the names come from the state tables, which are nowhere' },
   'architecture record': { verdict: 'builds', by: 'architectureRecord(16, skin), 7 of 7 files' },
   'log area': { verdict: 'nowhere', by: 'a constant of eight bytes in 7 of 7 files, written by no generator' },
@@ -352,11 +352,13 @@ test('the census of the Harmony 300 programmed compile, in bytes per category', 
   assert.deepEqual(byVerdict(counts), VERDICT_BYTES_300);
 });
 
-test('the frame lays out arch 12 and 14 and refuses arch 16, so no whole container is built for this family', () => {
-  assert.deepEqual(Object.keys(FRAME_ARCHITECTURES), ['12', '14']);
-  assert.doesNotThrow(() => frameArchitecture(12));
-  assert.doesNotThrow(() => frameArchitecture(14));
-  assert.throws(() => frameArchitecture(16), LayoutError);
+test('the frame lays out arch 12, 14 and 16, so the header, the section table, the end marker and the trailer build', () => {
+  // The round trip over the seven compiles is `frame.test.ts`'s, `todo-compile-350.md` 5.1.1; this is the census's
+  // probe that the frame takes the family at all, and refuses the architectures it has not been run on.
+  assert.deepEqual(Object.keys(FRAME_ARCHITECTURES), ['12', '14', '16']);
+  for (const architecture of [12, 14, 16]) assert.doesNotThrow(() => frameArchitecture(architecture));
+  assert.equal(frameArchitecture(16).pointerCount, 15);
+  for (const architecture of [8, 9, 10]) assert.throws(() => frameArchitecture(architecture), LayoutError);
 });
 
 test('the architecture record, the clock record and the name tree are built byte for byte on all seven compiles', needsLab, () => {
@@ -551,6 +553,9 @@ const CENSUS_300 = {
   'trailer': 6,
 };
 // Plan 011 measured 958 and 565 bytes nowhere; the uncalled sends and silent writes moved to `edits` when the device
-// composer took them on, `todo-compile-350.md` 4.1.1 and 4.1.3, 452 and 266 bytes.
-const VERDICT_BYTES_350 = { builds: 280, edits: 117397, other: 330, nowhere: 506 };
-const VERDICT_BYTES_300 = { builds: 174, edits: 96701, other: 300, nowhere: 299 };
+// composer took them on, `todo-compile-350.md` 4.1.1 and 4.1.3, 452 and 266 bytes. Plan 011 measured 280 and 174
+// bytes `builds` and 330 and 300 `other`; the frame's 81 on each file, the header's 11, the section table's 60, the
+// end marker's 4 and the trailer's 6, moved from `other` to `builds` when the frame took the family on,
+// `todo-compile-350.md` 5.1.1.
+const VERDICT_BYTES_350 = { builds: 361, edits: 117397, other: 249, nowhere: 506 };
+const VERDICT_BYTES_300 = { builds: 255, edits: 96701, other: 219, nowhere: 299 };

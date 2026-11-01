@@ -31,6 +31,7 @@ import { join } from 'node:path';
 import { LAB, load, skipUnless } from '@harmony/lab';
 import type { Claim, Container, ContainerLayout, ContainerPiece } from '../src/index.ts';
 import {
+  FRAME_ARCHITECTURES,
   LayoutError,
   applyEdits,
   claims,
@@ -38,6 +39,7 @@ import {
   inventory,
   layOutContainer,
   parse,
+  pointers,
   relocate,
   roundTrip,
   saveEdits,
@@ -260,7 +262,7 @@ test('the frame refuses a layout it would get wrong, and an architecture it was 
   // `todo-compile-one.md` 6.1 made the frame lay that out too.
   const wrongArch = fresh();
   wrongArch.architecture = 9;
-  assert.throws(() => layOutContainer(wrongArch), /only arch 12 and arch 14 are laid out, not arch 9/);
+  assert.throws(() => layOutContainer(wrongArch), /only arch 12, arch 14 and arch 16 are laid out, not arch 9/);
 
   // An arch 14 layout called a Harmony One lacks the One's own raw slot 18, which every One container
   // states; and an arch 14 layout given one has a section its architecture does not.
@@ -453,6 +455,138 @@ test('a Harmony One section that grows moves every address above it, end_addr an
     const was = c.sections[raw]!.address;
     assert.equal(section.address, was === 0 || raw < 5 ? was : was + DELTA, `raw slot ${raw}`);
   });
+});
+
+/**
+ * The Harmony 300 and 350's frame, `todo-compile-350.md` 5.1.1, step 1 of plan 011: every Logitech compile of the
+ * family the lab holds, taken apart and laid out again byte for byte.
+ *
+ * **The seven.** The five registered compiles, three of a Harmony 350 and two of a Harmony 300, and the two
+ * compiles of the test setup, `work/setups/h350-test/`, the one with its favourite channels and the first one
+ * without. Two of them are one generation older than the rest: `h300_config` was compiled in 2011 and has no
+ * timers. They are the same seven the census of plan 011 counts its constants over, `noscreencensus.test.ts`.
+ *
+ * **What the frame had to learn, each a row of `FRAME_ARCHITECTURES[16]` rather than a test in its code**:
+ *
+ * * Fifteen raw slots, `0x0F` at `0x09` in all seven, stated rather than derived: the base slots come from
+ *   `ARCH16_SLOT_MAP`, and nothing about the base layout with insertions gives fifteen.
+ * * Five sections of the family's own, raw slots 5, 6, 8, 12 and 13, which the slot map places no base slot on,
+ *   and raw slot 14 NULL; the other nine raw slots are base slots 0, 1, 2, 3, 5, 10, 13, 15 and 16. Every one of
+ *   the fourteen sections ascends in raw order in all seven.
+ * * The key table after the end marker, at `0x4B`, is the tagged list the key map table's entry 0 names: there is
+ *   no base slot 6 here to find it through, so `relocationFloor` has nothing to read, and without the table's
+ *   entry the key table would have been an empty piece and the frame would have refused all seven.
+ * * No picture bank: the metadata archive at raw slot 13 is the last section and runs up to the trailer.
+ * * Flash base `0x020000` in all seven, the file's place on the external medium, `memory.md`.
+ *
+ * **One fact about Logitech's layout the frame did not know**: the infrared groups sit directly after the clock
+ * record, in front of the infrared table, because base slot 4 is not on this architecture to sit between base slot
+ * 3 and base slot 5's table. The frame used to take everything from a generated section to the next table as that
+ * section's own, which on arch 12 and 14 is the same range since nothing follows base slots 1 and 3 there; on this
+ * family that swallowed the groups, and the first run refused all seven with an address naming the frame's own
+ * bytes. A generated section is its own length now, and what follows it is parked in front of the next table, which
+ * is where the groups are parked on arch 12 and 14 too. So the one parking row that holds on this family's compiles
+ * is base slot 5's, the same as the other two families', and nothing the codec claims is parked anywhere else.
+ * **Narrower than the arch 14 claim**, since several structures here are claimed by no reader (the key maps, the
+ * timer records, the parameter groups): those travel inside the piece before them and are not seen as parked or
+ * not. Which of them the placer has to park is step 6's.
+ *
+ * **What this cannot see.** The census of address fields reads raw slot 5's start up table as a counted pointer
+ * table, since `pointerArrayAt` accepts a count and three byte entries, so its eleven instructions are zeroed and
+ * written back as absolute values. None of the 77 lands inside a container, asserted below, so each is carried as
+ * the value it is and the round trip holds; a growth would not rewrite them either, for the same reason. An instruction whose
+ * opcode byte were `0x02` or `0x03` would land and would be rewritten by a growth, which none of the seven has.
+ * An address field the census does not know at all would be carried as content and round trip, as the file's
+ * header says for every architecture.
+ *
+ * **Which architectures**: arch 16 alone, both of its models. Sources checked first: `reference/config-format/
+ * container.md` and `layout.md`, `reference/architectures/harmony-300-350/memory.md`, plan 011's census; Logitech's
+ * client compiles nothing for this family, so it has no layout of its own to read.
+ */
+const FAMILY_16 = ['h350_config', 'h350_three_devices_config', 'h350_programmed_config', 'h300_config', 'h300_programmed_config'] as const;
+const FAMILY_16_SETUP = ['work/setups/h350-test/compile-Result.EzHex', 'work/setups/h350-test/first-compile/compile-Result.EzHex'];
+/** The skin each states: 104 on the five Harmony 350 compiles, 79 on the two of the European Harmony 300. */
+const SKIN_16: Readonly<Record<string, number>> = { h300_config: 79, h300_programmed_config: 79 };
+
+test('every Harmony 300 and 350 configuration Logitech compiled is laid out again byte for byte',
+     skipUnless(...FAMILY_16), () => {
+  const fixtures = [...FAMILY_16, ...FAMILY_16_SETUP];
+  let rebuilt = 0;
+  for (const name of fixtures) {
+    const c = name.startsWith('work/') ? containerAt(name) : containerOf(name);
+    assert.equal(c.architecture, 16, `${name}: architecture`);
+    assert.equal(c.pointerCount, 15, `${name}: pointer slots`);
+    assert.equal(c.formatRaw, 0x0f00, `${name}: format word`);
+    assert.equal(c.flashBase, FRAME_ARCHITECTURES[16]!.flashBase, `${name}: flash base`);
+    assert.deepEqual(c.sections.flatMap((section, raw) => (section.isNull ? [raw] : [])), [14], `${name}: NULL slots`);
+    const layout = takeApart(c);
+    for (const piece of everyPiece(layout)) {
+      for (const ref of piece.refs) {
+        assert.deepEqual([...piece.bytes.subarray(ref.at, ref.at + 3)], [0, 0, 0], `${name}: a field kept its bytes`);
+      }
+    }
+    assert.equal(layout.skin, SKIN_16[name] ?? 104, `${name}: skin`);
+    assert.equal(typeof layout.builtAt, 'string', `${name}: stamp`);
+    // The key table is the list the key map table's first entry names, right after the end marker.
+    assert.equal(c.blobOffsetOf(c.pointerArray(6)![0]!), 0x4b, `${name}: key table`);
+    assert.equal(layout.keyTable.bytes.length, 1 + 4 * c.blob[0x4b]!, `${name}: key table extent`);
+    assert.equal(layout.pictures.length, 0, `${name}: no picture bank`);
+    // The nine base slots this family has, and its own five; the other base slots are absent.
+    assert.deepEqual(layout.sections.flatMap((placed, slot) => (placed === undefined ? [] : [slot])),
+                     [0, 1, 2, 3, 5, 10, 13, 15, 16], `${name}: base slots`);
+    assert.deepEqual(Object.keys(layout.inserted ?? {}).map(Number), [5, 6, 8, 12, 13], `${name}: the family's own`);
+    // Parked: base slot 5's groups and nothing else the codec claims, each table one piece.
+    type Placed = NonNullable<ContainerLayout['sections'][number]>;
+    const placements: [string, Placed][] = [
+      ...[...layout.sections.entries()].flatMap(([slot, placed]): [string, Placed][] => (placed === undefined ? [] : [[`base ${slot}`, placed]])),
+      ...Object.entries(layout.inserted ?? {}).map(([raw, placed]): [string, Placed] => [`raw ${raw}`, placed]),
+    ];
+    for (const [where, placed] of placements) {
+      const owners = [...new Set(placed.before.map((piece) => piece.owner))];
+      assert.deepEqual(owners, where === 'base 5' ? ['slot-5-group'] : [], `${name}: in front of ${where}`);
+      assert.equal(placed.head.length, where === 'base 1' || where === 'base 3' ? 0 : 1, `${name}: ${where}'s table`);
+    }
+    assert.equal(layout.sections[5]!.before.length, c.pointerArray(4)!.length, `${name}: one piece per group`);
+    // The start up table's eleven instructions, which the census reads as addresses: none lands in the container.
+    const startUp = pointers(c).filter((p) => p.holder === 'raw-5-table');
+    assert.equal(startUp.length, 11, `${name}: start up entries`);
+    assert.equal(startUp.filter((p) => p.lands !== undefined).length, 0, `${name}: a start up instruction lands`);
+    // The flash base is the frame's own default, so a layout that does not state one is linked where Logitech's was.
+    delete layout.flashBase;
+    assert.equal(firstDifference(layOutContainer(layout).bytes, c.blob), undefined, `${name} differs`);
+    rebuilt += 1;
+  }
+  assert.equal(rebuilt, 7);
+});
+
+test('the frame refuses what the Harmony 300 and 350 do not have', skipUnless('h350_config'), () => {
+  const c = containerOf('h350_config');
+  const fresh = (): ContainerLayout => takeApart(c);
+
+  // A base slot the family has no raw slot for, which the walk by raw slot would otherwise drop without a word.
+  const extraBase = fresh();
+  extraBase.sections[4] = { before: [], head: [{ bytes: new Uint8Array(1), refs: [] }] };
+  assert.throws(() => layOutContainer(extraBase), /arch 16 has no base slot 4/);
+  // A picture, which no screen draws.
+  const picture = fresh();
+  picture.pictures.push({ bytes: new Uint8Array(4), refs: [] });
+  assert.throws(() => layOutContainer(picture), /arch 16 has no picture bank/);
+  // The NULL raw slot 14 has no section of the family's own, and each of the five has to be given.
+  const raw14 = fresh();
+  raw14.inserted = { ...raw14.inserted, 14: { before: [], head: [{ bytes: new Uint8Array(1), refs: [] }] } };
+  assert.throws(() => layOutContainer(raw14), /arch 16 has no section of its own at raw slot 14/);
+  const noArchive = fresh();
+  delete (noArchive.inserted as Record<number, unknown>)[13];
+  assert.throws(() => layOutContainer(noArchive), /raw slot 13 of arch 16 has no table/);
+  const unaligned = fresh();
+  unaligned.flashBase = 0x020800;
+  assert.throws(() => layOutContainer(unaligned), /4 KiB boundary/);
+
+  // A container that says it is another architecture with this one's fifteen slots: the pointer count is checked.
+  const blob = new Uint8Array(c.blob);
+  const record = c.blobOffsetOf(c.sections[1]!.address)!;
+  blob.set([14, 14], record);
+  assert.throws(() => takeApart(parse(blob)), /arch 14 has 20 pointer slots and this container 15/);
 });
 
 function everyPiece(layout: ContainerLayout): ContainerPiece[] {

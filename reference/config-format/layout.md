@@ -12,7 +12,8 @@ and the trailer, and the page for each base slot for its table. What it costs to
 placed is [relocation](relocation.md).
 
 **Which remotes this covers.** The frame and the placement are measured on the Harmony 600, 650 and 700 and on
-the Harmony One[^s318][^s395][^s426]. The Harmony 525, 880, 885, 890 and 895 are not checked, and
+the Harmony One[^s318][^s395][^s426], and the frame alone on the Harmony 300 and 350, whose placement is not
+checked[^t-frame][^unchecked]. The Harmony 525, 880, 885, 890 and 895 are not checked, and
 `layOutContainer` refuses them[^s426]. The hash order at the end of this page is measured more widely, and says
 where.
 
@@ -44,6 +45,14 @@ the One rebuild byte for byte, and so do fifteen configurations this project com
 mode configuration, stamped 2007, rebuilds but for the one byte of its architecture record that every
 configuration from 2009 on states differently, [header records](header-records.md)[^s395].
 
+**The Harmony 300 and 350's frame is laid out by the same rule too**, though their container is further from
+the base layout: fifteen slots, so `0x0F00` at `0x08`, the marker at `0x47` and the key table at `0x4B`; nine base
+slots and five sections of the family's own that no base slot names, raw slots 5, 6, 8, 12 and 13, with raw slot
+14 NULL, [the container](container.md#the-harmony-300-and-350s-slots); the key table found as the first entry of
+the key map table, raw slot 6, since there is no mode table; no picture bank; and the configuration at flash
+`0x020000`. All seven Logitech configurations of the two models read, five of a Harmony 350 and two of a Harmony
+300, rebuild byte for byte[^t-frame].
+
 `layOutContainer` also refuses a layout whose base slot 13 clock records disagree with the build time it is
 given, which is a consistency rule of this project and not something the remote checks[^s318].
 
@@ -67,6 +76,15 @@ end - 6          the trailer
 
 On arch 14 base slot 17 is two bytes and the bank follows them; on the Harmony One base slot 17 is the hit map's
 table and the bank follows that[^s395].
+
+**On the Harmony 300 and 350 the tables go in raw slot order**, base slot 0 to 3, then the infrared groups and the
+infrared table, then every other section in raw slot order, the family's own among them, and last the
+metadata archive at raw slot 13, which runs up to the trailer, since there is no bank[^t-frame]. **The infrared
+groups follow the clock record directly**: base slot 4, which sits between base slot 3 and base slot 5's groups on every other architecture laid
+out, is not on these two models, and the groups are still parked in front of base slot 5's table as on the Harmony
+600, 650, 700 and One[^t-frame]. Of the structures this project's readers claim on these files, nothing else is
+parked in front of any table in all seven compiles; the key maps, the timer records and the parameter groups are
+claimed by no reader yet, so where they sit relative to their tables is not checked[^t-frame][^unchecked].
 
 **What is parked, and in what order, is decided by the content**: a parked structure follows everything it names,
 and the parked pieces of a table come in the table's own field order[^s328]. `placePieces` in
@@ -202,4 +220,5 @@ could have written: `modeZeroKeyList`, `compilerTagOrder`, `buildNameTree` and `
 [^s319b]: Read in the firmware. [Section 319](../../docs/findings.md#s319)
 [^unchecked]: Not checked.
 [^t-noscreen]: Measured in configurations. [The test](../../packages/codec/test/noscreen.test.ts)
+[^t-frame]: Measured in configurations. [The test](../../packages/codec/test/frame.test.ts)
 [^t-noscreen-favourites]: Measured in configurations. [The test](../../packages/codec/test/noscreenfavourites.test.ts)
