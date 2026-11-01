@@ -518,7 +518,8 @@ test('a device costs an arch 16 container one entry, and the infrared table is s
     // **The infrared table is sized by the skin's maximum and not by the configuration**, which is
     // this architecture's own behaviour: 8 groups on the Harmony 350 and 4 on the Harmony 300,
     // matching each skin's `MaxDevicesPerAccount`, with the unused groups empty. Every other
-    // architecture here holds exactly one group per device.
+    // architecture here holds exactly one group per device. That is the compiler's and not the remote's:
+    // a Harmony 350 compile from 2017, outside these five, holds seven, `noscreenempty.test.ts`.
     assert.equal((irGroups(c) ?? []).length, maxDevices, `${name} infrared groups`);
     // At most, not fewer than: the programmed Harmony 300 is the first container here that **fills**
     // its table, four devices in four groups, so the claim rests on the other four rows for its

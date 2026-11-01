@@ -37,8 +37,8 @@ So no sequences and no remote settings. The table is the service's answer to
 ## Devices: eight, and the long press is why
 
 "Control up to eight devices individually using these four Device buttons, each with a short press or a
-longer two second press"[^x-manual]. Logitech's service says 8[^s263], and a configuration's infrared
-table is allocated at that maximum whatever the device count,
+longer two second press"[^x-manual]. Logitech's service says 8[^s263], and a configuration its current service
+compiles allocates its infrared table at that maximum whatever the device count,
 [the architecture's memory.md](../../architectures/harmony-300-350/memory.md#the-configuration-container).
 Four keys times two presses is exactly the stated maximum, where Logitech's service gives the Harmony 300 four
 device keys, no long press and four devices, though a 350's configuration ran on a 300,

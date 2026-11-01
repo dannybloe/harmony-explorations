@@ -33,7 +33,9 @@
  * **What each verdict rests on** is a probe in the tests below and not a sentence here: the frame lays out
  * architecture 16, whose round trip over all seven files is `frame.test.ts`'s, the name tree builder, the
  * architecture record builder and the timestamp builder reproduce those sections of all seven files byte for byte, the
- * constant sections and lists are built by `noscreenconstants.test.ts` over 13 compiles, the family's own members
+ * constant sections and lists are built by `noscreenconstants.test.ts` over 13 compiles, the five tables of a count
+ * and three byte addresses are rebuilt on all seven from the pieces they name (since 5.1.5, which builds the empty
+ * configuration through the same two generators), the family's own members
  * refuse as the registry says, and the device composer emits lists of exactly the roles the table credits it with. A verdict that stops
  * being true fails here, so a generator written for this family forces the census to move.
  *
@@ -62,9 +64,10 @@ import { deflateRawSync } from 'node:zlib';
 import { IR_ARCHIVE, LAB, needing, require_, skipUnless, skipWithoutIrArchive, skipWithoutLab } from '@harmony/lab';
 
 import {
-  type Container, ComposeError, FRAME_ARCHITECTURES, LayoutError, NO_SCREEN_FAMILY, architectureRecord, buildNameTree,
-  buildTimestampSection, claims, composeNoScreenDevice, frameArchitecture, metadataArchive, nameNodes, numberSenders, parse,
-  stateRecords, taggedList, taggedListExtent,
+  type Container, type ContainerLayout, type ContainerPiece, ComposeError, FRAME_ARCHITECTURES, INFRARED_GROUPS_BY_SKIN,
+  LayoutError, NO_SCREEN_COUNT_WIDTHS, NO_SCREEN_FAMILY, architectureRecord, buildNameTree, buildTimestampSection, claims,
+  composeNoScreenDevice, countedTable, frameArchitecture, layOutContainer, metadataArchive, nameNodes, numberSenders,
+  numberSenderTable, parse, type SectionPlacement, stateRecords, takeApart, taggedList, taggedListExtent,
 } from '../src/index.ts';
 
 const COMPILE = 'work/setups/h350-test/compile-Result.EzHex';
@@ -257,16 +260,16 @@ export const VERDICTS: Readonly<Record<string, { verdict: Verdict; by: string }>
   'log area': { verdict: 'builds', by: 'noScreenLogArea (buildLogArea from LOG_AREAS), 13 of 13 compiles, noscreenconstants.test.ts' },
   'clock record': { verdict: 'builds', by: 'buildTimestampSection, 7 of 7 files' },
   'infrared group arrays': { verdict: 'edits', by: 'fillIrGroup, into the donor\'s group at its allocation' },
-  'infrared group table': { verdict: 'other', by: 'countedTable in the frame, a table of three byte addresses; not used for 16' },
+  'infrared group table': { verdict: 'builds', by: 'countedTable at NO_SCREEN_COUNT_WIDTHS, the count INFRARED_GROUPS_BY_SKIN in 7 of 7; the five counted tables of all seven compiles rebuilt, the order of the entries being the numbering, description by plan 011; buildEmptyNoScreenConfiguration builds it from nothing, 5.1.5' },
   'infrared record headers': { verdict: 'edits', by: 'composeIrGroup and irBuildRecord through composeDeviceFor, and the digit copies through deviceDigitLists; 51 of the plasma\'s 51 records, word for word' },
   'infrared blocks': { verdict: 'edits', by: 'the same' },
   'start up table': { verdict: 'builds', by: 'noScreenStartUpTable, 13 of 13 compiles, noscreenconstants.test.ts' },
   'list, start up': { verdict: 'builds', by: 'noScreenStartUpLists: the hold list, the four device selects and the empty list, 13 of 13 compiles, noscreenconstants.test.ts' },
-  'key map table': { verdict: 'edits', by: 'appendTableEntries, onto the donor\'s table' },
+  'key map table': { verdict: 'builds', by: 'countedTable at NO_SCREEN_COUNT_WIDTHS; the five counted tables of all seven compiles rebuilt, the order of the entries being the numbering, description by plan 011; buildEmptyNoScreenConfiguration builds it from nothing, 5.1.5. appendTableEntries, onto a donor\'s table, stays the composers\' route' },
   'key table (map 0)': { verdict: 'edits', by: 'composeNoScreenDevice adds the press, release and held entries; the activity entry is the donor\'s, and the pin entries are their own category' },
   'key table, pin entries': { verdict: 'builds', by: 'noScreenSendEventEntries, the four entries of the key table whose tags switch a pin, 13 of 13 compiles, noscreenconstants.test.ts' },
   'device key map': { verdict: 'edits', by: 'composeNoScreenDevice from NO_SCREEN_HARD_KEYS with Logitech\'s routing of Input, volume and the favourite key, 4.1.1; equal to Logitech\'s with the other seven devices there, noscreenremove.test.ts' },
-  'action list table': { verdict: 'edits', by: 'appendActionLists, onto the donor\'s table' },
+  'action list table': { verdict: 'builds', by: 'countedTable at NO_SCREEN_COUNT_WIDTHS; the five counted tables of all seven compiles rebuilt, the order of the entries being the numbering, description by plan 011; buildEmptyNoScreenConfiguration builds it from nothing, 5.1.5. appendActionLists, onto a donor\'s table, stays the composers\' route' },
   'list, send': { verdict: 'edits', by: 'NO_SCREEN_SENDS through composeDeviceFor' },
   'list, key': { verdict: 'edits', by: 'composeNoScreenDevice: the press list, the release and the held select' },
   'list, power': { verdict: 'edits', by: 'composeNoScreenDevice and composeDeviceFor: wrapper, toggle helper, transition' },
@@ -275,7 +278,7 @@ export const VERDICTS: Readonly<Record<string, { verdict: Verdict; by: string }>
   'list, activity': { verdict: 'edits', by: 'composeNoScreenActivity, 4.2: the ten lists held against Logitech\'s step for step, replacing the donor\'s activity, noscreenactivity.test.ts' },
   'list, uncalled send': { verdict: 'edits', by: 'composeNoScreenDevice: Teletext, STORED_UNBOUND, and the digit copies, DIGIT_COPIES_BY_TYPE, 4.1.1' },
   'list, uncalled silent write': { verdict: 'edits', by: 'composeNoScreenDevice: two per power variable, POWER_RESETS, 4.1.3' },
-  'timer table': { verdict: 'edits', by: 'appendTableEntries, onto the donor\'s table' },
+  'timer table': { verdict: 'builds', by: 'countedTable at NO_SCREEN_COUNT_WIDTHS; the five counted tables of all seven compiles rebuilt, the order of the entries being the numbering, description by plan 011; buildEmptyNoScreenConfiguration builds it from nothing, 5.1.5. appendTableEntries, onto a donor\'s table, stays the composers\' route' },
   'timer record': { verdict: 'edits', by: 'composeNoScreenDevice, two per key device' },
   'state variable table': { verdict: 'builds', by: 'buildNoScreenStateTables, 13 of 13 compiles by content with our numbering, transition order inside a record not reproduced, noscreenstatetables.test.ts' },
   'state record, clock': { verdict: 'builds', by: 'buildNoScreenStateTables, clockSpec with no carry, 13 of 13 byte for byte, noscreenstatetables.test.ts' },
@@ -286,7 +289,7 @@ export const VERDICTS: Readonly<Record<string, { verdict: Verdict; by: string }>
   'state record, unnamed': { verdict: 'builds', by: 'buildNoScreenStateTables, the compiler\'s first two byte variable, 13 of 13 byte for byte, noscreenstatetables.test.ts' },
   'parameter table': { verdict: 'builds', by: 'noScreenParameterBlock, five pointers over NO_SCREEN_PARAMETERS, 13 of 13 compiles, noscreenconstants.test.ts' },
   'parameter group': { verdict: 'builds', by: 'noScreenParameterBlock, the same 21 bytes, 13 of 13 compiles, noscreenconstants.test.ts' },
-  'number sender table': { verdict: 'edits', by: 'composeNoScreenFavourites' },
+  'number sender table': { verdict: 'builds', by: 'numberSenderTable; the five counted tables of all seven compiles rebuilt, the order of the entries being the numbering, description by plan 011; buildEmptyNoScreenConfiguration builds it from nothing, 5.1.5. composeNoScreenFavourites, onto a donor, stays the composers\' route' },
   'number sender record': { verdict: 'edits', by: 'composeNoScreenFavourites' },
   'number sender digit tables': { verdict: 'edits', by: 'composeNoScreenFavourites' },
   'digit entry table': { verdict: 'builds', by: 'noScreenDigitEntryTable, 13 of 13 compiles, noscreenconstants.test.ts' },
@@ -373,6 +376,64 @@ test('the frame lays out arch 12, 14 and 16, so the header, the section table, t
   for (const architecture of [12, 14, 16]) assert.doesNotThrow(() => frameArchitecture(architecture));
   assert.equal(frameArchitecture(16).pointerCount, 15);
   for (const architecture of [8, 9, 10]) assert.throws(() => frameArchitecture(architecture), LayoutError);
+});
+
+/**
+ * The five tables of a count and three byte addresses, `todo-compile-350.md` 5.1.5: the infrared group table (raw
+ * slot 4), the key map table (raw 6), the action list table (raw 7), the timer table (raw 8) and the number sender
+ * table (raw 11). The empty configuration builds each through `countedTable` or `numberSenderTable`, so this asks
+ * whether those generators write Logitech's tables too, given the pieces each names: every compile taken apart, each
+ * table replaced by one built from the pieces and offsets its entries name, at `NO_SCREEN_COUNT_WIDTHS`, and the
+ * whole laid out again and compared byte for byte. **Which pieces and in which order** is the table's numbering,
+ * description by plan 011; **the count, its width and the addresses** are what the generator writes, and an
+ * address is the frame's. The infrared table's count is the model's allocation besides, `INFRARED_GROUPS_BY_SKIN`,
+ * held here against all seven.
+ *
+ * The control: a width of two on the key map table, which every compile counts in one byte, moves every later
+ * section and the rebuild differs, so the widths are a measurement and not a tolerance.
+ */
+const COUNTED_TABLES: readonly { raw: number; where: (layout: ContainerLayout) => SectionPlacement }[] = [
+  { raw: 4, where: (layout) => layout.sections[5]! },
+  { raw: 6, where: (layout) => layout.inserted![6]! },
+  { raw: 7, where: (layout) => layout.sections[10]! },
+  { raw: 8, where: (layout) => layout.inserted![8]! },
+  { raw: 11, where: (layout) => layout.sections[16]! },
+];
+
+/** A table rebuilt from the pieces its entries name, at `width`, or by `numberSenderTable` for raw slot 11. */
+function rebuiltTable(table: ContainerPiece, raw: number, width = NO_SCREEN_COUNT_WIDTHS[raw]): ContainerPiece {
+  const refs = [...table.refs].sort((a, b) => a.at - b.at);
+  const targets = refs.map((ref) => {
+    assert.ok('to' in ref, `raw slot ${raw}: an entry names a piece of the container`);
+    return ref as { to: ContainerPiece; offset: number };
+  });
+  if (raw === 11) {
+    assert.ok(targets.every((one) => one.offset === 0), 'a number sender names a record\'s start');
+    return numberSenderTable(targets.map((one) => one.to));
+  }
+  return countedTable(width!, targets.map((one) => one.to), table.owner ?? `raw-${raw}-table`, targets.map((one) => one.offset));
+}
+
+test('the five counted tables of all seven compiles are built byte for byte from the pieces they name', needsLab, () => {
+  let rebuilt = 0;
+  for (const [label, c] of seven()) {
+    const layout = takeApart(c);
+    for (const { raw, where } of COUNTED_TABLES) {
+      const placed = where(layout);
+      placed.head = [rebuiltTable(placed.head[0]!, raw), ...placed.head.slice(1)];
+    }
+    const out = layOutContainer(layout).bytes;
+    assert.equal(Buffer.compare(Buffer.from(out), Buffer.from(c.blob)), 0, `${label}: the five tables rebuilt`);
+    const skin = c.blob[c.blobOffsetOf(c.sections[1]!.address)! + 2]!;
+    assert.equal(c.pointerArray(4)!.length, INFRARED_GROUPS_BY_SKIN[skin], `${label}: the infrared allocation of skin ${skin}`);
+    rebuilt += 1;
+  }
+  assert.equal(rebuilt, 7);
+  // The control: the key map table at a two byte count is another file.
+  const c = parse(require_('h350_config'));
+  const layout = takeApart(c);
+  layout.inserted![6]!.head = [rebuiltTable(layout.inserted![6]!.head[0]!, 6, 2)];
+  assert.notEqual(Buffer.compare(Buffer.from(layOutContainer(layout).bytes), Buffer.from(c.blob)), 0);
 });
 
 test('the architecture record, the clock record and the name tree are built byte for byte on all seven compiles', needsLab, () => {
@@ -584,6 +645,10 @@ const CENSUS_300 = {
 // moved to `edits` when the device composer took them on, `todo-compile-350.md` 4.1.1 and 4.1.3, 452 and 266 bytes;
 // the frame's 81 on each file, the header's 11, the section table's 60, the end marker's 4 and the trailer's 6, moved
 // from `other` to `builds` when the frame took the family on, 5.1.1; and the items above. Then the state tables, 5.1.2,
-// 588 and 312 bytes from `other`, `edits` and `nowhere` to `builds`.
-const VERDICT_BYTES_350 = { builds: 4230, edits: 114258, other: 25, nowhere: 0 };
-const VERDICT_BYTES_300 = { builds: 2425, edits: 95036, other: 13, nowhere: 0 };
+// 588 and 312 bytes from `other`, `edits` and `nowhere` to `builds`. Then the empty configuration, 5.1.5: the five
+// tables of a count and three byte addresses, the infrared group table (25 and 13 bytes, from `other`), the key map
+// table (28 and 16), the action list table (995 and 596), the timer table (49 and 25) and the number sender table (4
+// and 4), 1101 and 654 bytes, moved to `builds`, since `countedTable` and `numberSenderTable` rebuild all five on all
+// seven compiles from the pieces they name; which pieces, in which order, is the numbering, plan 011's description.
+const VERDICT_BYTES_350 = { builds: 5331, edits: 113182, other: 0, nowhere: 0 };
+const VERDICT_BYTES_300 = { builds: 3079, edits: 94395, other: 0, nowhere: 0 };
