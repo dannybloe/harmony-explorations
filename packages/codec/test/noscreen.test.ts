@@ -117,7 +117,6 @@ test('the registry hands the Harmony 300 and 350 their own family, which refuses
   const c = undefined as unknown as Container;
   attempt('traits', () => f.traits.screenItemsBeep);
   attempt('activityKeyRules', () => f.activityKeyRules.volume);
-  attempt('stateTables', () => f.stateTables.measuredOn);
   attempt('wiring', () => f.wiring.check(c));
   attempt('activityStart', () => f.activityStart.lists);
   for (const name of ['screenItems', 'drawsName', 'composeDeviceScreen', 'activityMenu', 'menuMarkerWriter',
@@ -128,7 +127,9 @@ test('the registry hands the Harmony 300 and 350 their own family, which refuses
   attempt('sends.sendWriter', () => f.sends.sendWriter(c, undefined as never));
   attempt('sends.sendLists', () => f.sends.sendLists(c));
   attempt('sends.newSendLists', () => f.sends.newSendLists([], 0, 0, 1, 0));
-  assert.equal(refusals.length, 17);
+  assert.equal(refusals.length, 16);
+  // The state tables answer since 5.1.2, noscreenstatetables.test.ts.
+  assert.ok(f.stateTables.measuredOn.length > 0);
   // The fonts answer with a reason, which is how that member refuses; and nothing is lettered.
   assert.match(f.fonts.refusal(104)!, /no screen/);
   assert.deepEqual(f.fonts.faces, []);
