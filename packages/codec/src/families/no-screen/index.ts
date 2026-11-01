@@ -8,7 +8,8 @@
  * real; the composer itself is `composeNoScreenDevice` in `devices.ts`, since no member of the interface composes
  * a whole device, and it puts a device on a key's short press or, 4.4, its long press. The favourite channels,
  * 4.3, are `composeNoScreenFavourites` in `favourites.ts`, and the one activity, Watch TV, 4.2, is
- * `composeNoScreenActivity` in `activity.ts`, for the same reason. Everything else refuses with a message saying
+ * `composeNoScreenActivity` in `activity.ts`, for the same reason. A whole setup, 4.5, is `composeNoScreenSetup` in
+ * `setup.ts`, which runs the device and favourite composers in the order they need. Everything else refuses with a message saying
  * why, as code-for-a-family's fourth question asks, rather than borrowing another family's answer:
  *
  * * **No screen**, so the screen members refuse for good: a device's screen, an activity's row, menu and screen,
@@ -97,3 +98,6 @@ export {
 } from './keys.ts';
 export { NO_SCREEN_SENDS, powerOnWaits } from './sends.ts';
 export { noScreenSites, type NoScreenSite, type RemovedNoScreenDevice, withoutNoScreenDevice } from './remove.ts';
+export {
+  composeNoScreenSetup, type ComposedNoScreenSetup, devicePlaces, type DevicePlace, groupOfPlace, type NoScreenSetupRequest,
+} from './setup.ts';

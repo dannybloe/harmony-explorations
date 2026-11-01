@@ -59,7 +59,7 @@ import {
   metadataArchive, parse, stateRecords, stateVariables, taggedList, volumeSource, withoutNoScreenDevice,
 } from '../src/index.ts';
 import { mapOfGroup } from '../src/families/no-screen/devices.ts';
-import { recordKey, spelled } from './noscreenparts.ts';
+import { allLists, maps, records, timerRecords, transitions, without } from './noscreenparts.ts';
 
 const needs = needing(skipWithoutLab(), skipWithoutIrArchive());
 
@@ -116,73 +116,6 @@ function round(file: keyof typeof COMPILES, one: (typeof LONG)[number]): Case {
   return made;
 }
 const CASES = (Object.keys(COMPILES) as (keyof typeof COMPILES)[]).flatMap((file) => LONG.map((one) => ({ file, one })));
-
-/**
- * A spelling with every number that follows placement named instead: a select by the device whose map it is, a
- * timer start as `ebnn` (every timer of one key is the same record), and a state variable by its name, in a write,
- * a condition and a load. What is left is what the instruction does.
- */
-function namer(c: Container): (text: string) => string {
-  const owner = new Map<number, string>();
-  for (const one of devices(c)) if (one.name !== undefined && one.group !== undefined) owner.set(mapOfGroup(c, one.group), one.name);
-  const names = new Map(stateVariables(c).map((one) => [one.index, one.name]));
-  const variable = (hex: string) => names.get(parseInt(hex, 16)) ?? `?${hex}`;
-  return (text) => text
-    .replace(/1f:ff([0-9a-f]{1,2})\b/g, (_, map: string) => `select(${owner.get(parseInt(map, 16)) ?? `?${map}`})`)
-    .replace(/1f:eb[0-9a-f]{1,2}\b/g, 'ebnn')
-    .replace(/\b([89][0-9a-f]):/g, (_, opcode: string) => `w(${names.get(parseInt(opcode, 16) - 0x80) ?? `?${opcode}`}):`)
-    .replace(/71:80([0-9a-f]{2})\b/g, (_, hex: string) => `if(${variable(hex)})`)
-    .replace(/71:([0-9a-f]{1,2})\b/g, (_, hex: string) => `on(${variable(hex)})`);
-}
-
-/** Every action list, written out and named, as a multiset. */
-function allLists(c: Container): Map<string, number> {
-  const name = namer(c);
-  const out = new Map<string, number>();
-  c.pointerArray(7)!.forEach((_, index) => {
-    const text = name(spelled(c, { operand: index, opcode: 0x7f }));
-    out.set(text, (out.get(text) ?? 0) + 1);
-  });
-  return out;
-}
-
-/** A key map, tag to binding written out and named; the map of a device by its name, the key table as `keys`. */
-function maps(c: Container): Record<string, Record<string, string>> {
-  const name = namer(c);
-  const read = (entry: number) => Object.fromEntries(taggedList(c, c.pointerArray(6)![entry]!)!.entries
-    .map((one) => [one.tag.toString(16), name(spelled(c, one))]));
-  const out: Record<string, Record<string, string>> = { keys: read(0) };
-  for (const one of devices(c)) if (one.name !== undefined && one.group !== undefined) out[one.name] = read(mapOfGroup(c, one.group));
-  return out;
-}
-
-/** Each group's records, by device name, as `recordKey`s in the group's order. */
-function records(c: Container): Record<string, string[]> {
-  const groups = irGroups(c)!;
-  return Object.fromEntries(devices(c).filter((one) => one.name !== undefined && one.group !== undefined)
-    .map((one) => [one.name!, groups[one.group!]!.addresses.map((address) => recordKey(c, address))]));
-}
-
-/** Each state variable's record by name: its first value, its maximum and its transitions written out. */
-function transitions(c: Container): Record<string, string> {
-  const name = namer(c);
-  const all = stateRecords(c)!;
-  return Object.fromEntries(stateVariables(c).map((one) => {
-    const record = all[one.index]!;
-    return [one.name, `${record.first}/${record.second} ${record.values.map((value) => `${value.from}>${value.to} ${name(spelled(c, value))}`).sort().join(' ')}`];
-  }));
-}
-
-/** Every timer record's seven bytes, sorted. */
-function timerRecords(c: Container): string[] {
-  return c.pointerArray(8)!.map((address) => {
-    const at = c.blobOffsetOf(address)!;
-    return Array.from(c.blob.subarray(at, at + 7)).join(',');
-  }).sort();
-}
-
-const without = <T>(record: Record<string, T>, key: string): Record<string, T> =>
-  Object.fromEntries(Object.entries(record).filter(([name]) => name !== key));
 
 test('taking a long press device out of Logitech\'s compile leaves the other seven as they were, read by content, on both compiles',
   needs, () => {
