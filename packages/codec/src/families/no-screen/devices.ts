@@ -242,13 +242,28 @@ const HASH_LOAD_FACTOR = 0.75;
 export function inCompilerOrder(existing: readonly KeyEntry[], added: readonly KeyEntry[]): KeyEntry[] {
   const tags = [...existing, ...added].map((one) => one.tag);
   if (new Set(tags).size !== tags.length) throw new ComposeError('a tagged list cannot hold a tag twice');
+  const slot = (tag: number, of: number): number => compilerHash(tag) & (of - 1);
+  const stored = (of: number): KeyEntry[][] => {
+    const into: KeyEntry[][] = Array.from({ length: of }, () => []);
+    for (const one of existing) into[slot(one.tag, of)]!.push(one);
+    return into;
+  };
+  // The table's size: the smallest the entries fit at three quarters full, or a larger one where the stored order
+  // is that size's slot order and not the smaller's. A Java `HashMap` never shrinks, so a list that held more tags
+  // and lost some keeps the size it grew to: the key table of Logitech's compile of the test setup is stored in 32
+  // slots, and with its five devices taken out by `withoutNoScreenDevice` holds eleven tags still in that order,
+  // `noscreensetup.test.ts`, `todo-compile-350.md` 4.5. A list in slot order at the smallest size is read at that
+  // size, as before, so every list this read before reads the same.
   let size = HASH_TABLE_START;
   while (existing.length > size * HASH_LOAD_FACTOR) size *= 2;
-  const slot = (tag: number, of: number): number => compilerHash(tag) & (of - 1);
-  let slots: KeyEntry[][] = Array.from({ length: size }, () => []);
-  for (const one of existing) slots[slot(one.tag, size)]!.push(one);
-  if (slots.flat().some((one, k) => one !== existing[k])) {
-    throw new ComposeError('a tagged list here is not stored in the compiler\'s slot order, so it is not its hash map');
+  const largest = 2 * HASH_TABLE_START * Math.max(1, existing.length);
+  let slots = stored(size);
+  while (slots.flat().some((one, k) => one !== existing[k])) {
+    size *= 2;
+    if (size > largest) {
+      throw new ComposeError('a tagged list here is not stored in the compiler\'s slot order, so it is not its hash map');
+    }
+    slots = stored(size);
   }
   let count = existing.length;
   for (const one of added) {
