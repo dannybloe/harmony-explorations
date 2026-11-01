@@ -349,6 +349,9 @@ IMAGES = {
     'h300_event_ff_monitor': '20261031T1211Z-ir-monitor.jsonl',
     # The same file on the bench 350, a two step check: the entry is harmless where the build never raises 0xFF.
     'h350_event_ff_ir': '20261101T090605Z-ir-test-harmony-350-logitech-s-compile-with-event-0xff-bound.json',
+    # todo-compile-350 5.1.5, the empty configuration built from nothing on the bench 350, and the monitor's log.
+    'h350_empty_ir': '20261101T124100Z-ir-test-harmony-350-the-empty-configuration-built-from-nothing.json',
+    'h350_empty_monitor': '20261031T1211Z-ir-monitor.jsonl',
     # todo-compile-350 1.8; the first file is named for 10 s and holds the 3 s run, packages/lab says why.
     'h350_delay_ir_3s': '20261030T094935Z-ir-test-harmony-350-the-tv-s-power-on-delay-at-10-s.json',
     'h350_delay_ir_10s': '20261030T095433Z-ir-test-harmony-350-the-tv-s-power-on-delay-at-10-s.json',

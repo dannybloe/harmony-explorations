@@ -375,6 +375,11 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // The same file on the bench Harmony 350, a two step check (`packages/bench/irtests/done/350-event-ff-check.json`): the
   // entry is harmless on a build that never raises 0xFF. Read by `packages/bench/test/eventff300.test.ts`.
   h350_event_ff_ir: '20261101T090605Z-ir-test-harmony-350-logitech-s-compile-with-event-0xff-bound.json',
+  // todo-compile-350 5.1.5: the empty configuration built from nothing (`work/setups/h350-empty/empty-350.bin`) on the
+  // bench Harmony 350, its seven steps pressed (`packages/bench/irtests/done/350-5-1-5-empty.json`), and the monitor's
+  // log covering the same window. Read by `packages/codec/test/noscreenemptyunit.test.ts`.
+  h350_empty_ir: '20261101T124100Z-ir-test-harmony-350-the-empty-configuration-built-from-nothing.json',
+  h350_empty_monitor: '20261031T1211Z-ir-monitor.jsonl',
   h350_delay_ir_3s: '20261030T094935Z-ir-test-harmony-350-the-tv-s-power-on-delay-at-10-s.json',
   h350_delay_ir_10s: '20261030T095433Z-ir-test-harmony-350-the-tv-s-power-on-delay-at-10-s.json',
   h600_delay_ir_before: '20261001T093603Z-ir-test-harmony-600-the-kpn-box-s-power-on-delay.json',

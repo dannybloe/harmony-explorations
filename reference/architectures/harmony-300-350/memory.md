@@ -255,8 +255,10 @@ parts above: the key table holds the send events' four entries and otherwise onl
 activity's, every action list that names neither a device nor the activity is one of the start up's or the send
 events', the state records past the firmware's eighteen are the devices' and the activity's but for the compiler's
 two byte variable, and the metadata archive's text is the same frame with its device elements taken
-out[^t-noscreen-empty]. What a remote does with a configuration that
-holds no device is not checked[^unchecked].
+out[^t-noscreen-empty]. **A Harmony 350 takes a configuration that holds no device**, one built of those parts
+alone and a start up that selects no key map: it starts, answers its keys without hanging, and sends nothing from
+the four device keys, Watch TV, Power, the volume keys, the arrows, the digits or a long press[^t-empty-350]. What a
+Harmony 300 does with one is not checked[^unchecked].
 
 ## A device's power on delay
 
@@ -495,8 +497,8 @@ variable walk, the order of the device key maps, the order of the timers, and th
 ## Not checked
 
 * The external medium's part and size, and the RAM size[^unchecked].
-* What a remote does with a configuration that holds no device, and with a start up that selects no map, since no
-  configuration read holds either, [above](#the-sections-every-configuration-holds-alike)[^unchecked].
+* What a Harmony 300 does with a configuration that holds no device, and with a start up that selects no map,
+  which only a Harmony 350 has been given, [above](#the-sections-every-configuration-holds-alike)[^unchecked].
 * What raises the start up event table's entries 2 to 4, what the four output pins drive, and the digit
   entry record beyond its first three bytes, which no configuration fills[^unchecked]. This listed the
   unit of a timer's duration too, until a kind 0 timer was read losing one a tick of the clock the power
@@ -566,6 +568,7 @@ variable walk, the order of the device key maps, the order of the timers, and th
 [^t-noscreen-numbering]: Measured in configurations. [The test](../../../packages/codec/test/noscreennumbering.test.ts)
 [^t-noscreen-state-tables]: Measured in configurations. [The test](../../../packages/codec/test/noscreenstatetables.test.ts)
 [^t-noscreen-census]: Measured in configurations. [The test](../../../packages/codec/test/noscreencensus.test.ts)
+[^t-empty-350]: Measured on a unit. [The test](../../../packages/codec/test/noscreenemptyunit.test.ts)
 [^t-noscreen-empty]: Measured in configurations. [The test](../../../packages/codec/test/noscreenempty.test.ts)
 [^t-harmony-300-keys-u]: Measured on a unit. [The test](../../../tests/test_harmony_300_keys.py)
 [^t-harmony-300-group-4-send-u]: Measured on a unit. [The test](../../../tests/test_harmony_300_group_4_send.py)
