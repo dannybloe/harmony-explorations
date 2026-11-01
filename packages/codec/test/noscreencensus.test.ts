@@ -78,6 +78,15 @@ const COMPILE = 'work/setups/h350-test/compile-Result.EzHex';
 const ACTIVITY_TAG = 0x86;
 /** The four tags of the key table with no event type, whose lists switch a pin: the firmware's own. */
 const PIN_TAGS = new Set([0x2d, 0x2e, 0x2f, 0x30]);
+/**
+ * The tags the firmware's send path raises, whose entries the census cuts out of the key table and whose lists it
+ * names the pin lists: the four above and, since `todo-compile-350.md` 5.4, `0xFF`, which a Harmony 300 raises for a
+ * send from a group above 3 and which our builds bind to the `0x30` entry's list, decision 28. No Logitech compile binds
+ * it, so on theirs this is the four alone and their counts below did not move; on ours, without it, the `0x30` entry's
+ * lists would be reached from an entry the census counts as a key's and read as power lists, 3 of them, which is what
+ * the probe of the build from nothing showed before `0xFF` was added here.
+ */
+const SEND_EVENT_TAGS = new Set([...PIN_TAGS, 0xff]);
 const ACTION_LIST_CALL = 0x7f;
 /** The clock record's length, `CLOCK_SECTION_LENGTH`: the cookie, seven field bytes, the terminator and three zeros. */
 const CLOCK_LENGTH = 14;
@@ -146,13 +155,13 @@ function listRoles(c: Container): string[] {
     entries.filter((one) => one.opcode === ACTION_LIST_CALL).map((one) => one.operand);
   const keyTable = taggedList(c, maps[0]!)!.entries;
   const activityEntry = keyTable.find((one) => one.tag === ACTIVITY_TAG);
-  const pinEntries = keyTable.filter((one) => PIN_TAGS.has(one.tag));
+  const pinEntries = keyTable.filter((one) => SEND_EVENT_TAGS.has(one.tag));
   // Raw slot 5 is a count and then instructions, three bytes each, and `pointerArray` reads each as an address:
   // the value is the opcode over the operand, so a call of list n reads as `0x7f0000 | n`.
   const startUp = (c.pointerArray(5) ?? []).filter((value) => value >> 16 === ACTION_LIST_CALL).map((value) => value & 0xffff);
   // Everything else that calls a list: the other key table entries, every other map, every transition.
   const others: number[] = [];
-  keyTable.forEach((one) => { if (one !== activityEntry && !PIN_TAGS.has(one.tag)) others.push(...callsOf([one])); });
+  keyTable.forEach((one) => { if (one !== activityEntry && !SEND_EVENT_TAGS.has(one.tag)) others.push(...callsOf([one])); });
   maps.slice(1).forEach((address) => others.push(...callsOf(taggedList(c, address)!.entries)));
   for (const record of stateRecords(c) ?? []) others.push(...callsOf(record.values ?? []));
   const digits = numberSenderLists(c);
@@ -198,7 +207,7 @@ export function census(c: Container): Map<string, number> {
     const extent = taggedListExtent(c.blob, at)!;
     const entrySize = extent.wide ? 5 : 4;
     taggedList(c, c.pointerArray(6)![0]!)!.entries.forEach((entry, k) => {
-      if (PIN_TAGS.has(entry.tag)) put(at + (extent.wide ? 2 : 1) + entrySize * k, entrySize, 'key table, pin entries');
+      if (SEND_EVENT_TAGS.has(entry.tag)) put(at + (extent.wide ? 2 : 1) + entrySize * k, entrySize, 'key table, pin entries');
     });
   }
   c.pointerArray(6)!.forEach((address, map) => {
@@ -269,7 +278,7 @@ export const VERDICTS: Readonly<Record<string, { verdict: Verdict; by: string }>
   'list, start up': { verdict: 'builds', by: 'noScreenStartUpLists: the hold list, the four device selects and the empty list, 13 of 13 compiles, noscreenconstants.test.ts' },
   'key map table': { verdict: 'builds', by: 'countedTable at NO_SCREEN_COUNT_WIDTHS; the five counted tables of all seven compiles rebuilt, the order of the entries being the numbering, description by plan 011; buildEmptyNoScreenConfiguration builds it from nothing, 5.1.5. appendTableEntries, onto a donor\'s table, stays the composers\' route' },
   'key table (map 0)': { verdict: 'builds', by: 'composeNoScreenDevice adds the press, release and held entries; the activity entry is the donor\'s, and the pin entries are their own category; since 5.1.6 run onto the empty configuration with no Logitech file, buildNoScreenSetup, noscreenfromnothing.test.ts, the activity entry composeNoScreenActivity\'s; equal to Logitech\'s binding for binding and in order' },
-  'key table, pin entries': { verdict: 'builds', by: 'noScreenSendEventEntries, the four entries of the key table whose tags switch a pin, 13 of 13 compiles, noscreenconstants.test.ts' },
+  'key table, pin entries': { verdict: 'builds', by: 'noScreenSendEventEntries, the four entries of the key table whose tags switch a pin, 13 of 13 compiles, noscreenconstants.test.ts; and on our builds since 5.4 noScreenAcknowledgingEntry, event 0xFF bound to the 0x30 entry\'s list, which no compile holds, noscreenacknowledging.test.ts' },
   'device key map': { verdict: 'builds', by: 'composeNoScreenDevice from NO_SCREEN_HARD_KEYS with Logitech\'s routing of Input, volume and the favourite key, 4.1.1; equal to Logitech\'s with the other seven devices there, noscreenremove.test.ts; since 5.1.6 run onto the empty configuration with no Logitech file, buildNoScreenSetup, noscreenfromnothing.test.ts, equal to Logitech\'s but the KPN\'s, which binds the family\'s 43 keys where Logitech\'s binds 12, because the account\'s mode map for it is the one the setup builder saved, 5.1.7; on an account nothing saved, the same KPN\'s map is ours but Replay and Advance' },
   'action list table': { verdict: 'builds', by: 'countedTable at NO_SCREEN_COUNT_WIDTHS; the five counted tables of all seven compiles rebuilt, the order of the entries being the numbering, description by plan 011; buildEmptyNoScreenConfiguration builds it from nothing, 5.1.5. appendActionLists, onto a donor\'s table, stays the composers\' route' },
   'list, send': { verdict: 'builds', by: 'NO_SCREEN_SENDS through composeDeviceFor; since 5.1.6 run onto the empty configuration with no Logitech file, buildNoScreenSetup, noscreenfromnothing.test.ts, the KPN\'s 30 more' },
@@ -583,12 +592,14 @@ test('built from nothing, the test setup holds every category of Logitech\'s com
     assert.equal(ours.has('unnamed'), false);
     // Where the bytes per category differ, and by what: the KPN's fuller map and its records and sends, and the table
     // counts and archive numbers that follow. Until 5.1.7 the uncalled sends differed too, by the LG TV's two lists,
-    // 20 bytes; the device composer stores them since, `noscreenstored.test.ts`, so that category is equal.
+    // 20 bytes; the device composer stores them since, `noscreenstored.test.ts`, so that category is equal. Since 5.4
+    // the key table's send event entries differ by one entry, ours binding event 0xFF and Logitech's not.
     const moved = Object.fromEntries([...theirs].filter(([name, n]) => ours.get(name) !== n).map(([name]) => [name, ours.get(name)! - theirs.get(name)!]));
     assert.deepEqual(Object.keys(moved).sort(), [
-      'action list table', 'device key map', 'infrared blocks', 'infrared group arrays', 'infrared record headers', 'list, send',
-      'metadata archive',
+      'action list table', 'device key map', 'infrared blocks', 'infrared group arrays', 'infrared record headers', 'key table, pin entries',
+      'list, send', 'metadata archive',
     ]);
+    assert.equal(moved['key table, pin entries'], 4);
     assert.equal(ours.get('list, uncalled send'), theirs.get('list, uncalled send'));
     assert.equal(moved['device key map'], 4 * 31);
   });
@@ -664,7 +675,8 @@ const CENSUS_300 = {
 // `builds`. Since 5.1.4, the whole metadata archive, 3033 and 1610 bytes, moved from `edits` to `builds`. Since 4.2, the
 // activity's ten lists (94 and 53 bytes) and the Denon's and the LG's input variables (166 bytes, the 350's alone) moved
 // from `nowhere` to `edits`: the composer replaces a donor's activity and appends the variables onto a donor.
-// **The split of map 0**: the census cuts the four pin entries (16 bytes, the entries whose tags are `PIN_TAGS`) out of
+// **The split of map 0**: the census cuts the four pin entries (16 bytes, the entries whose tags are `PIN_TAGS`, and on
+// our builds since 5.4 the entry binding event 0xFF, `SEND_EVENT_TAGS`) out of
 // the key table into a category of their own, 'key table, pin entries', which `builds`, and the rest of the table
 // keeps 'key table (map 0)' and `edits`. A category is a verdict's unit here, so a table that two generators share
 // is split by entry and not given the weaker of the two verdicts.
@@ -686,8 +698,8 @@ const CENSUS_300 = {
 // whether every byte is a generator's with none carried is 5.2's attribution, `noScreenAttributedBytes`, which finds
 // every byte of this file a generator's and names what it leaves on the Harmony 300's, `noscreenattribution.test.ts`.
 // And the Harmony 300's file is credited
-// on the 350's build: its categories are the same generators', decision 28 makes one build serve both once 5.4 binds
-// event `0xFF`, and the check of our build against Logitech's 300 compile is the part of `todo-compile-300.md` that
+// on the 350's build: its categories are the same generators', decision 28 makes one build serve both, which 5.4's
+// binding of event `0xFF` in every build of ours now does, and the check of our build against Logitech's 300 compile is the part of `todo-compile-300.md` that
 // stays, not run here.
 const VERDICT_BYTES_350 = { builds: 118513, edits: 0, other: 0, nowhere: 0 };
 const VERDICT_BYTES_300 = { builds: 97474, edits: 0, other: 0, nowhere: 0 };

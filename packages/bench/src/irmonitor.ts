@@ -65,6 +65,9 @@ export const BENCH_CONFIGS: readonly string[] = [
   // The test setup built from nothing, todo-compile-350 5.1.6, which the bench Harmony 350 holds for that item's bench
   // test: the compile names every code it shares with it, and this the KPN's codes the compile does not store.
   'work/setups/h350-test/from-nothing-5.1.6.bin',
+  // The same setup with firmware event 0xFF bound, todo-compile-350 5.4, which both the bench Harmony 350 and the bench
+  // Harmony 300 are given for 5.3's bench tests: every code the tests expect is named from this file.
+  'work/setups/h350-test/from-nothing-5.4.bin',
   // The bench Harmony 300's own configuration, the four devices Logitech's service put on it, written back
   // unchanged by todo-compile-300 1.4; that item's bench test.
   'h300_programmed_config',

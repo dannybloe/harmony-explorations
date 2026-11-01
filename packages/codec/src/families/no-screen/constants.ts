@@ -12,7 +12,10 @@
  * * the digit entry table, raw slot 12: a count of zero, 2 bytes. Raw slot 14 is NULL and has nothing to build;
  * * the start up events, raw slot 5, and the six lists they reach, 34 and 42 bytes;
  * * the four send events' lists, the thirteen lists the key table's tags `0x2D` to `0x30` reach, 109 bytes, and
- *   the four key table entries that bind them.
+ *   the four key table entries that bind them;
+ * * and one entry that is not measured on Logitech's compiles, since none holds it: event `0xFF` bound to event
+ *   `0x30`'s list, `noScreenAcknowledgingEntry`, which makes a Harmony 300 send from infrared groups 4 to 7,
+ *   decision 28, and which every configuration built from nothing carries, `todo-compile-350.md` 5.4.
  *
  * **What a configuration supplies is numbers, never bytes.** Lists are called by their index in the action list
  * table, and Logitech's compiler numbers them in an order no rule is known for, plan 011, so the list indices
@@ -232,4 +235,46 @@ export function noScreenSendEventLists(numbers: NoScreenSendEventNumbers): Map<n
  */
 export function noScreenSendEventEntries(numbers: NoScreenSendEventNumbers): KeyEntry[] {
   return sendEventsOf(numbers).map(([tag, , own]) => ({ tag, ...call(own.bound) }));
+}
+
+/**
+ * The firmware event a Harmony 300's application raises for a send from an infrared group above 3: the send kind
+ * `0xFF`, which the 350's build masks to two bits and the 300's leaves, `reference/architectures/harmony-300-350/
+ * firmware.md` "What a send does with its event, and why event `0xFF` stops it". No Logitech configuration of the
+ * family binds it, 13 of 13, `tests/test_harmony_300_group_4_send.py`.
+ */
+export const UNMASKED_SEND_EVENT = 0xff;
+
+/**
+ * The send event whose bound list event `UNMASKED_SEND_EVENT` is given: `0x30`, the event a 350 raises for a send
+ * from group 3 and from every group above it, so the list a 300 then runs is the one a 350 runs for the same send.
+ * Its list ends in `07 FFFA`, the acknowledgement that releases the sender, as the four bound lists all do; `0x30`
+ * is the one the bench 300 was run with, `packages/codec/test/noscreeneventff.test.ts`, and the only one measured.
+ */
+export const ACKNOWLEDGED_AS = 0x30;
+
+/**
+ * The key table's fifth entry, which makes a Harmony 300 send from infrared groups 4 to 7: event `0xFF` bound to a
+ * call of the list event `0x30`'s entry calls, decision 28 and `todo-compile-350.md` 5.4. 4 bytes.
+ *
+ * **Why it is a family fact and not a 300's.** Without it a Harmony 300 hangs at the first send from group 4, since
+ * no list runs the acknowledgement; with it the bench 300 sent from all eight groups, and the bench 350, whose build
+ * never raises the event, sent what it sent without it. So one configuration serves both models and nothing in it
+ * names the model, which is why this is not a table by skin: every configuration our builders write from nothing
+ * carries it, `buildEmptyNoScreenConfiguration` from the start and `buildNoScreenSetup` as its last step, which
+ * `emptyNoScreenForComposing` in `empty.ts` explains.
+ *
+ * **Why apart from `noScreenSendEventEntries`.** Those four are measured byte for byte on all 13 of Logitech's compiles
+ * and the attribution credits them there; Logitech binds no `0xFF`, so folding this in would make the calibration
+ * claim an entry their files do not hold. It is ours alone, and kept beside the four it borrows its list from.
+ *
+ * **Where it is not added**: to a Logitech file a composer edits. No composer rebuilds the key table from these
+ * constants, each adds its own entries to what the file holds, `withMapEntries`, so a Logitech compile composed onto
+ * keeps Logitech's key table as it was, and a configuration that should serve a 300 is built from nothing.
+ */
+export function noScreenAcknowledgingEntry(numbers: NoScreenSendEventNumbers): KeyEntry {
+  const own = sendEventsOf(numbers).find(([tag]) => tag === ACKNOWLEDGED_AS);
+  // `sendEventsOf` refuses numbers without every tag, so this is unreachable short of `SEND_EVENT_PINS` losing 0x30.
+  if (own === undefined) throw new ComposeError(`the send events hold no tag ${ACKNOWLEDGED_AS.toString(16)} to acknowledge event ${UNMASKED_SEND_EVENT.toString(16)} with`);
+  return { tag: UNMASKED_SEND_EVENT, ...call(own[2].bound) };
 }

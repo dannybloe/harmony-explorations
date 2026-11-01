@@ -15,7 +15,7 @@
  *
  * | section | ours against the smallest compiles |
  * |---|---|
- * | the key table | the four send event entries, spelled out, equal to theirs; their other entries are the devices' press and release (and on the 300 the activity's key) |
+ * | the key table | the four send event entries, spelled out, equal to theirs, and since `todo-compile-350.md` 5.4 the entry binding event `0xFF`, which no compile of theirs holds and which calls the list their `0x30` entry calls; their other entries are the devices' press and release (and on the 300 the activity's key) |
  * | the start up events | the eleven calls spelled out equal to theirs, but for the map select their first event ends with, which is the device's |
  * | the action lists | ours, nineteen, are theirs spelled out, but for that select; their other 57, 35 and 90 send codes, select a device, start a key's timers or write a device's or the activity's variable |
  * | the state records | the clock's seven and the firmware's eleven byte for byte, and the compiler's two byte variable; theirs add one power variable per device and the activity's flag |
@@ -76,7 +76,7 @@ import {
   architectureRecord, buildEmptyNoScreenConfiguration, buildNoScreenStateTables, buildTimestampSection, type Container,
   type ContainerPiece, EMPTY_LIST_NUMBERS, EMPTY_ZONE_HOURS, inCompilerOrder, INFRARED_GROUPS_BY_SKIN, irGroups,
   layOutContainer, metadataArchive, nameNodes, noScreenDigitEntryTable, noScreenLogArea, noScreenMetadataSection,
-  noScreenParameterBlock, noScreenSendEventEntries, noScreenSendEventLists, noScreenStartUpLists, noScreenStartUpTable,
+  noScreenAcknowledgingEntry, noScreenParameterBlock, noScreenSendEventEntries, noScreenSendEventLists, noScreenStartUpLists, noScreenStartUpTable,
   noScreenZipTime, parse, restamped, stateRecords, takeApart, taggedListBytes, trailerChecksum,
 } from '../src/index.ts';
 import { allLists, maps, namer, spelled } from './noscreenparts.ts';
@@ -158,7 +158,8 @@ function account(bytes: Uint8Array, skin: number, builtAt: string): { disagreeme
   const groups = INFRARED_GROUPS_BY_SKIN[skin]!;
 
   // The key table and the key map table that names it.
-  const keyTable = taggedListBytes(inCompilerOrder([], noScreenSendEventEntries(EMPTY_LIST_NUMBERS.sendEvents)));
+  const { sendEvents } = EMPTY_LIST_NUMBERS;
+  const keyTable = taggedListBytes(inCompilerOrder([], [...noScreenSendEventEntries(sendEvents), noScreenAcknowledgingEntry(sendEvents)]));
   const keyMaps = table('key map table', section(RAW.keyMaps), 1, 1);
   if (offsetOf(keyMaps[0]!) !== 0x4b) disagreements.push('the key map table names something other than the key table');
   claim('key table', 0x4b, keyTable.length, keyTable);
@@ -201,7 +202,8 @@ function account(bytes: Uint8Array, skin: number, builtAt: string): { disagreeme
 }
 
 test('the empty Harmony 350 and Harmony 300 configurations pass the writer\'s check, from a skin and a moment alone', () => {
-  for (const [skin, length, groups] of [[104, 1101, 8], [79, 1077, 4]] as const) {
+  // 1105 and 1081 bytes since `todo-compile-350.md` 5.4, four more than 5.1.5 built: the entry binding event 0xFF.
+  for (const [skin, length, groups] of [[104, 1105, 8], [79, 1081, 4]] as const) {
     const built = buildEmptyNoScreenConfiguration({ skin, builtAt: MOMENT });
     assert.equal(built.bytes.length, length, `skin ${skin}: length`);
     assert.equal(built.container.allChecksPass, true, `skin ${skin}: every container check`);
@@ -242,6 +244,22 @@ test('every byte of the empty configuration is a generator\'s, and a planted byt
   assert.deepEqual(account(planted, 104, MOMENT).disagreements, [`list ${EMPTY_LIST_NUMBERS.startUp.hold} differs at byte 1`]);
   // And the file as a read of `/cfg/usercfg` returns it, four bytes short, is refused for its missing end marker.
   assert.throws(() => assertFileFamilyContainer(built.bytes.subarray(0, built.bytes.length - 4)), /PTYY/);
+});
+
+/** The empty configuration with event `0xFF` bound, `todo-compile-350.md` 5.4, written by `bin/empty-no-screen.ts`. */
+const EMPTY_54 = 'work/setups/h350-empty/empty-350-5.4.bin';
+
+test('the 5.4 file in the lab is this build from its own stamp, byte for byte, binds event 0xFF and passes the writer\'s check', skipWithoutLab(), () => {
+  const at = join(LAB!, EMPTY_54);
+  assert.ok(existsSync(at), `${EMPTY_54} is in the lab, written by bin/empty-no-screen.ts`);
+  const file = new Uint8Array(readFileSync(at));
+  const c = parse(file);
+  assert.equal(file.length, 1105);
+  assert.deepEqual(buildEmptyNoScreenConfiguration({ skin: 104, builtAt: c.builtAt! }).bytes, file);
+  assert.equal(assertFileFamilyContainer(file).readLength, file.length - 4);
+  // The key table: the four send event entries and 0xFF, which calls what 0x30 calls.
+  assert.deepEqual(Object.keys(maps(c).keys!).sort(), [...PIN_TAGS, 'ff']);
+  assert.equal(maps(c).keys!['ff'], maps(c).keys!['30']);
 });
 
 test('the empty configuration is taken apart and laid out again byte for byte, and only the moment moves 25 bytes', () => {
@@ -296,10 +314,13 @@ test('the empty configuration is every part of the three smallest Logitech compi
     const theirs = atPath(path);
     const ours = buildEmptyNoScreenConfiguration({ skin, builtAt: theirs.builtAt! }).container;
     assert.equal(theirs.blob[theirs.blobOffsetOf(theirs.sections[RAW.arch]!.address)! + 2], skin, `${path}: skin`);
-    // The key table: the four send event entries alike, and nothing else in ours.
+    // The key table: the four send event entries alike, and the entry binding event 0xFF, which is ours alone, 5.4:
+    // theirs binds no 0xFF, and ours, spelled out, is what their 0x30 entry calls.
     const [keysOurs, keysTheirs] = [maps(ours).keys!, maps(theirs).keys!];
-    assert.deepEqual(Object.keys(keysOurs).sort(), PIN_TAGS);
+    assert.deepEqual(Object.keys(keysOurs).sort(), [...PIN_TAGS, 'ff']);
     for (const tag of PIN_TAGS) assert.equal(keysOurs[tag], keysTheirs[tag], `${path}: tag ${tag}`);
+    assert.equal(keysTheirs['ff'], undefined, `${path}: theirs binds no 0xFF`);
+    assert.equal(keysOurs['ff'], keysTheirs['30'], `${path}: our 0xFF is their 0x30's list`);
     const others = Object.keys(keysTheirs).filter((tag) => !PIN_TAGS.includes(tag));
     assert.deepEqual(others.sort(), otherTags, `${path}: the devices' entries`);
     // Each selects a device, or is a device key's press starting that key's timers.

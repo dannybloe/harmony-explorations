@@ -15,7 +15,7 @@
  *
  * | section | what the empty one holds | from |
  * |---|---|---|
- * | the key table, after `LWJL` | the four send event entries alone, in the compiler's hash order | `noScreenSendEventEntries`, `inCompilerOrder` |
+ * | the key table, after `LWJL` | the four send event entries and the entry binding event `0xFF`, in the compiler's hash order | `noScreenSendEventEntries`, `noScreenAcknowledgingEntry`, `inCompilerOrder` |
  * | base slot 0, the name tree | Root and State, no variable named | `buildNoScreenStateTables` |
  * | base slots 1 and 3 | the architecture record for the skin, and the build stamp | the frame |
  * | base slot 2, the log area | the family's constant region | `noScreenLogArea` |
@@ -47,23 +47,29 @@
  *   groups in front of base slot 5's table and the parameter groups in front of base slot 15's, which is where
  *   Logitech's compiles have both. Every piece is reached by an address, so the order is carried and not read.
  *
- * **What it does not hold, deliberately**: no binding of firmware event `0xFF`, which makes a Harmony 300 run a
- * Harmony 350's configuration and which `todo-compile-350.md` 5.4 adds to every configuration once 5.2 holds without
- * it. With no device nothing is ever sent, so neither model raises the event on this one.
+ * **What it holds that no Logitech compile does**: the binding of firmware event `0xFF` to the list event `0x30`'s
+ * entry calls, `noScreenAcknowledgingEntry`, which makes a Harmony 300 run a Harmony 350's configuration, decision 28,
+ * `todo-compile-350.md` 5.4. Until 5.4 this left it out, so that 5.2's attribution held on a build with no entry of
+ * ours that Logitech lacks; it is in now so that every configuration of ours built from nothing is one file for both
+ * models, this one included. `buildNoScreenSetup` starts from the same configuration without it,
+ * `emptyNoScreenForComposing`, and binds it as its last step, which keeps the key table in Logitech's order; no
+ * composer adds it. On the empty configuration itself it is never reached:
+ * with no device nothing is sent, so neither model raises the event. It costs four bytes, 1105 bytes on a Harmony
+ * 350 where 5.1.5 built 1101, and 1081 on a Harmony 300 where it built 1077.
  *
  * Both models alike but for the skin and the infrared allocation, decision 28. Read only towards hardware: the result
  * is bytes in memory, and the write is `packages/usb/bin/write-file-config.ts`'s.
  */
 import { countedTable, type ContainerPiece, layOutContainer } from '../../frame.ts';
-import { BASE_SLOT_COUNT, type Container } from '../../gspm.ts';
+import { BASE_SLOT_COUNT, type Container, parse } from '../../gspm.ts';
 import { taggedListBytes } from '../../sections.ts';
 import { ComposeError, restamped } from '../../shared/core.ts';
 import { numberSenderTable } from '../../tables.ts';
 import {
-  noScreenDigitEntryTable, noScreenLogArea, noScreenParameterBlock, noScreenSendEventEntries, noScreenSendEventLists,
-  type NoScreenSendEventNumbers, noScreenStartUpLists, type NoScreenStartUpNumbers, noScreenStartUpTable, SEND_EVENT_PINS,
+  ACKNOWLEDGED_AS, noScreenAcknowledgingEntry, noScreenDigitEntryTable, noScreenLogArea, noScreenParameterBlock, noScreenSendEventEntries,
+  noScreenSendEventLists, type NoScreenSendEventNumbers, noScreenStartUpLists, type NoScreenStartUpNumbers, noScreenStartUpTable, SEND_EVENT_PINS,
 } from './constants.ts';
-import { inCompilerOrder } from './devices.ts';
+import { inCompilerOrder, keyMaps, withMapEntries } from './devices.ts';
 import { KEY_MAP_SLOT, START_UP_SLOT, TIMER_SLOT } from './keys.ts';
 import { noScreenMetadataSection, noScreenZipTime } from './metadata.ts';
 import { buildNoScreenStateTables, type NoScreenStateTables } from './statetables.ts';
@@ -166,10 +172,51 @@ export function infraredGroupsOf(skin: number): number {
 
 /**
  * The Harmony 300 or 350 configuration with no device and no activity, from a skin and a moment and nothing else,
- * the module comment's table. Refuses a skin `INFRARED_GROUPS_BY_SKIN` does not hold and a stamp base slot 3 cannot
- * hold; `layOutContainer` then refuses anything the frame would, and parses the result with every container check.
+ * the module comment's table, the entry binding event `0xFF` included. Refuses a skin `INFRARED_GROUPS_BY_SKIN` does
+ * not hold and a stamp base slot 3 cannot hold; `layOutContainer` then refuses anything the frame would, and parses
+ * the result with every container check.
  */
 export function buildEmptyNoScreenConfiguration(options: EmptyNoScreenOptions): EmptyNoScreenConfiguration {
+  return emptyConfiguration(options, true);
+}
+
+/**
+ * The same configuration with the entry binding event `0xFF` left for last, which only a chain of composers that ends
+ * by putting it in may start from: `buildNoScreenSetup`, which binds it with `withAcknowledgingEntry` once every
+ * device, the activity and the favourites are composed. **Why it is not put in first there.** The key table is a hash
+ * map in the compiler's order, `inCompilerOrder`, and where an entry lands depends on when the table doubled; a fifth
+ * entry from the start doubles the table one device earlier and stores the test setup's `0xC1` before `0x2E` and
+ * `0x85` where Logitech stores it after them. Put in last, the key table is Logitech's binding for binding and in
+ * order with `0xFF` between `0x2D` and `0x30`, the same as the file the bench Harmony 300 ran, made by putting the
+ * entry into Logitech's compile, `noscreeneventff.test.ts`. The remote reads neither order differently, since a tag
+ * is in a list once; the order is kept so that our build stays comparable entry for entry with Logitech's.
+ * Not exported from the package: a configuration without the entry is never a finished one of ours.
+ */
+export function emptyNoScreenForComposing(options: EmptyNoScreenOptions): EmptyNoScreenConfiguration {
+  return emptyConfiguration(options, false);
+}
+
+/**
+ * The entry binding event `0xFF` put into a finished configuration's key table, `noScreenAcknowledgingEntry` for the
+ * send events' numbers `EMPTY_LIST_NUMBERS` gives, where the compiler's order puts it, `withMapEntries`, and the
+ * trailer restamped. Refuses a configuration whose `0x30` entry no longer calls the list those numbers name, since
+ * then the numbers are not this configuration's and the entry would call another list, and one that binds `0xFF`
+ * already.
+ */
+export function withAcknowledgingEntry(c: Container): Container {
+  const { sendEvents } = EMPTY_LIST_NUMBERS;
+  const entry = noScreenAcknowledgingEntry(sendEvents);
+  const keyTable = keyMaps(c)[0]?.entries ?? [];
+  if (keyTable.some((one) => one.tag === entry.tag)) throw new ComposeError('the key table binds event 0xff already');
+  const thirty = keyTable.find((one) => one.tag === ACKNOWLEDGED_AS);
+  if (thirty === undefined || thirty.opcode !== entry.opcode || thirty.operand !== entry.operand) {
+    throw new ComposeError(`the key table's 0x30 entry does not call list ${entry.operand}, so the empty configuration's numbers are not this one's`);
+  }
+  return parse(restamped(new Uint8Array(withMapEntries(c, 0, [entry]).blob)));
+}
+
+/** The empty configuration, with the entry binding event `0xFF` in its key table or without it. */
+function emptyConfiguration(options: EmptyNoScreenOptions, acknowledging: boolean): EmptyNoScreenConfiguration {
   const { skin, builtAt } = options;
   const groupCount = infraredGroupsOf(skin);
   const { startUp, sendEvents } = EMPTY_LIST_NUMBERS;
@@ -181,10 +228,12 @@ export function buildEmptyNoScreenConfiguration(options: EmptyNoScreenOptions): 
   const listPieces = dense(lists);
 
   // The key table: the send events' four entries, in the order Logitech's compiler would store them with nothing
-  // else in the table, which is its hash map's order at the smallest size, `inCompilerOrder`.
-  const keyTable: ContainerPiece = {
-    bytes: taggedListBytes(inCompilerOrder([], noScreenSendEventEntries(sendEvents))), refs: [], owner: 'raw-6-key-table',
-  };
+  // else in the table, which is its hash map's order at the smallest size, `inCompilerOrder`; then the entry binding
+  // event 0xFF, put in after them. Where it lands is the hash's slot for 0xFF, slot 1 of 16, first of the five. A
+  // chain of composers starts without it and puts it in last, `emptyNoScreenForComposing`, for the reason given there.
+  // The order of a tagged list changes nothing the remote does, since a tag is in it once.
+  const entries = [...noScreenSendEventEntries(sendEvents), ...(acknowledging ? [noScreenAcknowledgingEntry(sendEvents)] : [])];
+  const keyTable: ContainerPiece = { bytes: taggedListBytes(inCompilerOrder([], entries)), refs: [], owner: 'raw-6-key-table' };
 
   // Base slots 0 and 13: no variable of the setup's, so the firmware's eighteen and the compiler's two byte one.
   const stateTables = buildNoScreenStateTables({ devices: [], activity: false }, builtAt);

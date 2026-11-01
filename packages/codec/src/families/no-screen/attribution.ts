@@ -24,7 +24,7 @@
  * |---|---|---|
  * | frame | the header, the section table, its marker, the trailer, the architecture record and the stamp | the whole file taken apart and laid out again into itself, first, or nothing is credited; the record and the stamp rebuilt from the skin and the moment the file states |
  * | state tables | the name tree, the state variable table and its records | described and rebuilt by the family's facts, `NO_SCREEN_STATE_TABLES`, and the whole file laid out again equal |
- * | constants | the log area, the parameter block, the digit entry table, the start up table and its six lists, the send events' thirteen lists and their four key table entries | `constants.ts`' builders, given the list numbers read by following raw slot 5 and the key table's tags `0x2D` to `0x30` |
+ * | constants | the log area, the parameter block, the digit entry table, the start up table and its six lists, the send events' thirteen lists and their four key table entries, and the entry binding event `0xFF` where a file holds it | `constants.ts`' builders, given the list numbers read by following raw slot 5 and the key table's tags `0x2D` to `0x30` |
  * | metadata archive | raw slot 13, the length and the ZIP | `noScreenMetadataSection` given the devices, their numbers and the ZIP time the archive states |
  * | infrared | the group arrays, every record's header and every duration block | `irBuildRecord` given the carrier and the block addresses, `irBuildBlock` given the words |
  * | number sender | its record and its three digit tables | `numberSenderBlock` given the digits' send lists |
@@ -61,7 +61,8 @@ import { buildStateTables, builtStatePieces, describeStateTables, withStateTable
 import { numberSenders } from '../../tables.ts';
 import { WATCH_TV_SCAN } from './activity.ts';
 import {
-  noScreenDigitEntryTable, noScreenLogArea, noScreenParameterBlock, noScreenSendEventEntries, noScreenSendEventLists,
+  noScreenAcknowledgingEntry, noScreenDigitEntryTable, noScreenLogArea, noScreenParameterBlock, noScreenSendEventEntries,
+  noScreenSendEventLists,
   type NoScreenSendEventNumbers, noScreenStartUpLists, type NoScreenStartUpNumbers, noScreenStartUpTable, SEND_EVENT_PINS,
   type SendEventLists, START_UP_EVENT_COUNT, START_UP_OWN_EVENTS,
 } from './constants.ts';
@@ -304,6 +305,17 @@ export function noScreenAttributedBytes(c: Container, options: NoScreenAttributi
     for (const entry of noScreenSendEventEntries(numbers)) {
       const k = keyTable.entries.findIndex((one) => one.tag === entry.tag);
       const bytes = taggedListBytes([entry]).subarray(1);
+      ledger.markRebuilt(tableAt + 1 + ENTRY_LENGTH * k, bytes, 'constants', new Set([1, 2]));
+    }
+    // The entry binding event 0xFF, where the key table holds one: ours, `todo-compile-350.md` 5.4, credited only where
+    // it is exactly `noScreenAcknowledgingEntry` for the numbers just read, a call of event 0x30's bound list. Logitech's
+    // compiles bind no 0xFF, so on them this finds nothing and their calibration is what it was; an 0xFF bound to any
+    // other list is left to the key maps' pass, which does not take the tag, and so its four bytes show as carried, in
+    // the key map's region, `noscreenacknowledging.test.ts`.
+    const acknowledging = noScreenAcknowledgingEntry(numbers);
+    const k = keyTable.entries.findIndex((one) => one.tag === acknowledging.tag);
+    if (k >= 0) {
+      const bytes = taggedListBytes([acknowledging]).subarray(1);
       ledger.markRebuilt(tableAt + 1 + ENTRY_LENGTH * k, bytes, 'constants', new Set([1, 2]));
     }
   });

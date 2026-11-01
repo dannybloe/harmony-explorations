@@ -538,6 +538,10 @@ TYPESCRIPT_BOUNDS_WITH_A_REASON = {
     ('packages/corpus/test/harvest.test.ts', '(sent[at] as number) - (sent[at - 1] as number)', '>=', 195):
         'a physical interval, bounded below by the timer',
     ('packages/corpus/test/harvest.test.ts', 'MINIMUM_GAP_MS', '>=', 10000): 'a decided floor, at least ten seconds',
+    # Not a corpus total: a guard that a walk of the source tree found the sources at all, before the test asserts
+    # that none of them names the lab; the count is the repository's size and moves with every new module.
+    ('packages/codec/test/noscreenattribution.test.ts', 'files.length', '>', 100):
+        'a guard that the source walk found files, not a measured population',
     # Per item: the claim is that the thing is not empty, and its size is a property of the config.
     ('packages/bench/test/bench.test.ts', 'activity.devices.length', '>=', 1): 'per activity',
     ('packages/bench/test/bench.test.ts', 'key.sends', '>=', 1): 'per key',

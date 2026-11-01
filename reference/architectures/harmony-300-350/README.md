@@ -74,6 +74,15 @@ The entry is four bytes in the key map, which grows the file by four, put where 
 it, between the entries for events `0x2D` and `0x30`; every other map, action list and infrared group is
 unchanged[^t-event-ff-entry-c].
 
+**Every configuration this project builds for the family carries the entry**, so there is one build for both models
+and nothing in it names which. The codec's builders put it into each configuration they build from nothing, the empty
+one included, as a call of whatever list the `0x30` entry calls; a configuration with eight devices built that way
+binds `0xFF` once, between `0x2D` and `0x30` as above, and differs from Logitech's compile of the same setup in its key
+table by that entry alone[^t-noscreen-acknowledging-c]. What the codec composes onto one of Logitech's own compiles
+keeps that compile's key table, so it carries the entry only if the compile did. That a build of ours sends from
+groups 4 to 7 on a Harmony 300 has not been heard; what has been heard is the same entry in Logitech's compile,
+above[^unchecked].
+
 **Why it is needed.** The two applications are one program but for one routine, [firmware.md](firmware.md#the-two-models-images-compared).
 A send from an infrared group above 3 gets a send kind of `0xFF`. The 350's build keeps two bits of it, so every
 group raises one of the four events a configuration binds; the 300's build leaves it, so a group above 3 raises
@@ -168,4 +177,5 @@ bootloaders and safe mode images are different builds, [firmware.md](firmware.md
 [^t-harmony-300-group-4-send]: Read in the firmware. [The test](../../../tests/test_harmony_300_group_4_send.py)
 [^t-harmony-300-group-4-send-u]: Measured on a unit. [The test](../../../tests/test_harmony_300_group_4_send.py)
 [^t-event-ff-entry-c]: Measured in configurations. [The test](../../../packages/codec/test/noscreeneventff.test.ts)
+[^t-noscreen-acknowledging-c]: Measured in configurations. [The test](../../../packages/codec/test/noscreenacknowledging.test.ts)
 [^t-long-press]: Read in the firmware. [The test](../../../tests/test_harmony_350_long_press.py)

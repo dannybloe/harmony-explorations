@@ -55,8 +55,11 @@
  *     and 5.1.8, so they are compared by content and never by number;
  *   * **the metadata archive's device numbers**: ours count from 1, Logitech's are the account's, a choice plan 011
  *     step 4 makes, and so the archive's bytes;
- *   * **the length**, 124166 bytes against 118513, all of it the KPN's extra records, lists and bindings, the
- *     archive's numbers and where things sit.
+ *   * **the length**, 124170 bytes against 118513, all of it the KPN's extra records, lists and bindings, the
+ *     archive's numbers, where things sit, and since 5.4 the four bytes of the entry binding event `0xFF`;
+ *   * **the key table's entry for event `0xFF`**, since `todo-compile-350.md` 5.4: ours binds it, to the list the
+ *     `0x30` entry calls, and Logitech's binds nothing to it, decision 28. Every other entry of the key table is
+ *     Logitech's, in Logitech's order.
  *
  * **A correction**: until 5.1.7 the LG TV's records and two lists differed too, Logitech storing its Back and a copy
  * of a code the catalogue names OK without its opening silence, each with a send list nothing calls, "for no rule
@@ -72,9 +75,12 @@
  * two per power variable, and the 34 sends, Teletext, the digit copies, the LG TV's finish copy and its Back, by the
  * device composer, `noscreenstored.test.ts` for the rule.
  *
- * **What it does not do**: bind firmware event `0xFF`, which `todo-compile-350.md` 5.4 adds after 5.2; the first
- * test holds that the key table has no such tag. And it does not attribute every byte to a generator, which is 5.2,
- * `noscreenattribution.test.ts`: every byte of this build is one, none carried and none unclaimed.
+ * **Event `0xFF`, since 5.4.** Until 5.4 the first test held that the key table had no `0xFF` entry, so that 5.2's
+ * attribution was checked on a build with nothing of ours Logitech lacks. 5.4 put the entry into the empty
+ * configuration, so this build carries it from the start and no composer adds it; the first test now holds it there
+ * once, a call of the `0x30` entry's list, and `noscreenacknowledging.test.ts` holds the argument and its control.
+ * Attributing every byte to a generator is 5.2's, `noscreenattribution.test.ts`: every byte of this build is one,
+ * none carried and none unclaimed.
  *
  * **Controls**, each run and reverted by string replacement in the source unless it is a test of its own:
  * taking out the timer placement of an empty configuration refuses the first device ("raw slot 8 holds no timer");
@@ -98,8 +104,9 @@
  * of eight devices on another account, `work/harvest/check-350-eight/`; `docs/test-notes/harmony-350.md`, which says
  * how the favourites were saved; and MyHarmony's decompiled source, which saves a Harmony 350's favourites with
  * `UpdateDeviceModeButtonMaps`, `reference/logitech/service.md`.
- * **Which architectures**: the Harmony 350 alone, one setup; a Harmony 300 runs a 350's configuration once 5.4 binds
- * event `0xFF`, decision 28, and no Harmony 300 setup is built here.
+ * **Which architectures**: one setup, built for the Harmony 350's skin; with event `0xFF` bound since 5.4 the same
+ * file is the Harmony 300's too, decision 28. It cannot be built for a Harmony 300's own skin: the setup puts four
+ * devices on long presses, groups 4 to 7, and the 300's configurations allocate four groups, the last test.
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -121,8 +128,12 @@ const needs = needing(skipWithoutLab(), skipWithoutIrArchive());
 
 const SECOND = 'work/setups/h350-test/compile-Result.EzHex';
 const FIRST = 'work/setups/h350-test/first-compile/compile-Result.EzHex';
-/** The file the bench unit is given, written by `bin/compose-no-screen-setup.ts --from-nothing`. */
-const FROM_NOTHING = 'work/setups/h350-test/from-nothing-5.1.7.bin';
+/**
+ * The file the bench units are given, written by `bin/compose-no-screen-setup.ts --from-nothing`: since 5.4 the one
+ * with event `0xFF` bound, for the Harmony 350 and the Harmony 300 alike. The 5.1.6 and 5.1.7 files stay in the lab as
+ * they were written, without the entry, and this build no longer rebuilds them.
+ */
+const FROM_NOTHING = 'work/setups/h350-test/from-nothing-5.4.bin';
 /** A moment for the builds that are not the lab's file, which is rebuilt from its own. */
 const MOMENT = '2026-11-01T12:00:00';
 
@@ -136,8 +147,10 @@ const KEYS = {
   KPN: { place: 3, press: 'short' }, 'Sony HT': { place: 3, press: 'long' },
 } as const;
 
-/** Firmware event `0xFF`, which 5.4 binds and this step must not. */
+/** Firmware event `0xFF`, which the empty configuration binds since 5.4 and so every build of the setup. */
 const EVENT_FF = 0xff;
+/** The send event whose list event `0xFF` is bound to, `ACKNOWLEDGED_AS`, stated here as the test's own literal. */
+const EVENT_30 = 0x30;
 
 function labFile(path: string): Container {
   const at = join(LAB!, path);
@@ -213,8 +226,13 @@ test('the whole test setup builds with no Logitech file: every device, Watch TV 
     // The favourites, four as numbers and 07 digit by digit, on the KPN's map.
     assert.deepEqual(out.favourites[0]!.channels.map((one) => one.sent), ['number', 'number', 'number', 'number', 'digits']);
     assert.equal(ours.pointerArray(7)!.length, 361);
-    // No binding of firmware event 0xFF, which is 5.4's, in the key table every lookup falls through to.
-    assert.equal(taggedList(ours, ours.pointerArray(6)![0]!)!.entries.some((one) => one.tag === EVENT_FF), false);
+    // Firmware event 0xFF bound once in the key table every lookup falls through to, since 5.4, to a call of the list
+    // event 0x30's entry calls: what lets a Harmony 300 send from groups 4 to 7. Until 5.4 this held that it was not.
+    const keyTable = taggedList(ours, ours.pointerArray(6)![0]!)!.entries;
+    const bound = keyTable.filter((one) => one.tag === EVENT_FF);
+    const thirty = keyTable.find((one) => one.tag === EVENT_30)!;
+    assert.equal(bound.length, 1);
+    assert.deepEqual([bound[0]!.opcode, bound[0]!.operand], [thirty.opcode, thirty.operand]);
     // The start up events spelled out, none empty, which is what the 4.5 comparison did not hold, `noscreenparts.ts`.
     assert.equal(startUp(ours).length, 11);
     assert.equal(startUp(ours).filter((one) => one === '').length, 0);
@@ -245,14 +263,21 @@ test('its state tables are the family allocator\'s byte for byte, and the file g
 test('built from nothing, the setup is Logitech\'s second compile by content but for the KPN\'s map', needs, () => {
   const { ours } = built();
   const theirs = labFile(SECOND);
-  // The key table, binding for binding, Watch TV's spelled out, and seven of the eight device maps.
+  // The key table, binding for binding, Watch TV's spelled out, and seven of the eight device maps. Ours binds event
+  // 0xFF as well, 5.4, to what Logitech's 0x30 entry calls, and Logitech's binds nothing to it; the rest is theirs.
   const [mine, logitech] = [maps(ours), maps(theirs)];
   assert.deepEqual(Object.keys(mine).sort(), Object.keys(logitech).sort());
-  for (const name of Object.keys(logitech)) if (name !== 'KPN') assert.deepEqual(mine[name], logitech[name], name);
-  // The key table in the same order too: built from nothing it grows as Logitech's did, where 4.5's, composed onto a
-  // table that had shrunk, put one tag in front of two others.
+  const { ff, ...keysWithoutFf } = mine['keys']!;
+  assert.equal(logitech['keys']!['ff'], undefined);
+  assert.equal(ff, logitech['keys']!['30']);
+  assert.deepEqual(keysWithoutFf, logitech['keys']);
+  for (const name of Object.keys(logitech)) if (name !== 'KPN' && name !== 'keys') assert.deepEqual(mine[name], logitech[name], name);
+  // The key table in the same order too, 0xFF aside: built from nothing it grows as Logitech's did, where 4.5's,
+  // composed onto a table that had shrunk, put one tag in front of two others. 0xFF sits where the compiler's hash
+  // order puts it, between 0x2D and 0x30, as it did in the file the bench Harmony 300 ran, `noscreeneventff.test.ts`.
   const tags = (c: Container) => taggedList(c, c.pointerArray(6)![0]!)!.entries.map((one) => one.tag);
-  assert.deepEqual(tags(ours), tags(theirs));
+  assert.deepEqual(tags(ours).filter((tag) => tag !== EVENT_FF), tags(theirs));
+  assert.deepEqual(tags(ours).slice(tags(ours).indexOf(EVENT_FF) - 1, tags(ours).indexOf(EVENT_FF) + 2), [0x2d, EVENT_FF, 0x30]);
   // The KPN's: Logitech's 12 bindings all ours, and 31 more of the family's table.
   const [kpn, theirKpn] = [mine['KPN']!, logitech['KPN']!];
   assert.equal(Object.keys(theirKpn).length, 12);
@@ -282,7 +307,8 @@ test('built from nothing, the setup is Logitech\'s second compile by content but
   assert.deepEqual(listed(ours), listed(theirs));
   assert.deepEqual(metadataArchive(ours)!.devices.map((one) => one.deviceId), ['1', '2', '3', '4', '5', '6', '7', '8']);
   assert.deepEqual(metadataArchive(theirs)!.devices.map((one) => one.deviceId).slice(0, 2), ['83962903', '83962904']);
-  assert.equal(ours.blob.length, 124166);
+  // 124170 since 5.4, the four bytes of the entry binding event 0xFF; 124166 before.
+  assert.equal(ours.blob.length, 124170);
   assert.equal(theirs.blob.length, 118513);
 });
 
@@ -426,4 +452,27 @@ test('built from nothing, the KPN\'s map is the same catalogue KPN\'s on an acco
     assert.ok(other['a6']!.includes(codeOf('Advance')));
     // The control: against the second compile of the test setup, whose KPN map is the saved one, 31 tags differ.
     assert.equal(differing(mine, second).length, 31);
+  });
+
+// ---------------------------------------------------------------------------------------------------------------
+// The Harmony 300, 5.4: the 350's build is its file, since a build for its own skin is refused.
+
+test('the test setup cannot be built for the Harmony 300\'s own skin, so the Harmony 350 build, with event 0xFF bound, is the file for both',
+  needsArchive, () => {
+    // Skin 79, the bench Harmony 300's: the device composer refuses a television's favourite key, whose command is
+    // measured on the 350 alone, and even a setup with no television refuses a long press, since the 300's
+    // configurations allocate four infrared groups and a long press takes a group from 4 up.
+    const as300: Recipe = { ...RECIPE, model: { ...RECIPE.model, skin: 79 } };
+    assert.throws(() => buildNoScreenSetup(IR_ARCHIVE!, { recipe: as300, keys: KEYS, builtAt: MOMENT }),
+      (error: unknown) => error instanceof ComposeError && /television's favourite key .* not skin 79/.test(error.message));
+    const twoDevices: Recipe = {
+      ...as300, devices: as300.devices.filter((one) => one.name === 'Denon' || one.name === 'Switch'), activities: [], favourites: [],
+    };
+    assert.throws(() => buildNoScreenSetup(IR_ARCHIVE!, { recipe: twoDevices, keys: KEYS, builtAt: MOMENT }),
+      (error: unknown) => error instanceof ComposeError && /holds 4 groups, so there is no group 6/.test(error.message));
+    // The control: the same two devices on the 350's skin build, so it is the skin that refuses and not the pair.
+    assert.doesNotThrow(() => buildNoScreenSetup(IR_ARCHIVE!, { recipe: { ...twoDevices, model: RECIPE.model }, keys: KEYS, builtAt: MOMENT }));
+    // And the 350's build carries what the 300 needs: event 0xFF bound, the first test, and eight groups, four of them
+    // long presses a 300 sends from only through that entry.
+    assert.equal(irGroups(built().ours)!.length, 8);
   });

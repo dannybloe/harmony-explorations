@@ -5,11 +5,16 @@
  * list back through are `families/no-screen/lists.ts`.
  *
  * **What it settled, in one line each.** Our build of the test setup, made from nothing, is every byte a generator's
- * with none carried and none unclaimed, 124166 of 124166. Logitech's compiles of the family are as well, but for parts
+ * with none carried and none unclaimed, 124170 of 124170. Logitech's compiles of the family are as well, but for parts
  * no composer of ours writes, each named below: five of the seven are whole or two bytes short, and the two Harmony 300
  * compiles leave that model's own shapes. The function is not generous: a byte planted where no generator writes it is
  * found, by its list; a generator's claim dropped returns its bytes as carried; and the file has to lay out again into
  * itself before anything is credited.
+ *
+ * **Since `todo-compile-350.md` 5.4** our build carries one entry no Logitech compile holds, event `0xFF` bound to
+ * event `0x30`'s list, decision 28, which the constants are credited with: four bytes more on every build of ours and
+ * on the empty configurations, and nothing moved on Logitech's seven, which bind no `0xFF`. 5.2 was checked before
+ * the entry went in, 124166 bytes then; `noscreenacknowledging.test.ts` holds the entry and its control.
  *
  * **How a byte is credited.** Each generator reads its part's numbers off the file, writes the part again and is
  * credited only where that is the file byte for byte; the bytes the numbers reach are its description, found by
@@ -58,7 +63,7 @@
  *
  * **What the attribution cannot see, and so what 5.2.3 is for.** About nine bytes in ten of a file are description:
  * the infrared blocks' duration words, which are the catalogue's and which `irBuildBlock` only frames with its
- * terminator, 108066 of our build's 124166 bytes. A duration copied out of a Logitech file and one taken from the
+ * terminator, 108066 of our build's 124170 bytes. A duration copied out of a Logitech file and one taken from the
  * catalogue are the same bytes, so the attribution cannot say which, and the last test here holds what can: the build
  * takes no container, and no module it runs reads the lab. Within a list the same holds for its numbers: a send of
  * another record of the group is still a send, the fifth test.
@@ -269,7 +274,10 @@ test('5.2.1: a key\'s press starts its timers by numbers in no order of ours, so
 test('5.2.2: our build of the test setup from nothing is every byte a generator\'s, none carried and none unclaimed', needsArchive, () => {
   const c = ours();
   const a = noScreenAttributedBytes(c);
-  assert.equal(a.total, 124166);
+  // 124170 since `todo-compile-350.md` 5.4, which put the entry binding event 0xFF into the empty configuration, and so
+  // into everything built on it: four bytes in the key table, credited to the constants, two of them the list's number
+  // and so description. It was 124166, constants 248 and description 110040, when 5.2 was checked without it.
+  assert.equal(a.total, 124170);
   assert.deepEqual(Object.fromEntries(a.carried), {});
   assert.equal(a.unclaimed, 0);
   assert.equal(sum(a.generated), a.total);
@@ -278,13 +286,13 @@ test('5.2.2: our build of the test setup from nothing is every byte a generator\
   assert.equal(a.contested, 7);
   assert.deepEqual(Object.fromEntries(a.contests), { 'channel lists > action step lists': 7 });
   assert.deepEqual(a.generated, {
-    frame: 102, 'state tables': 847, constants: 248, 'metadata archive': 3028, infrared: 114150, 'number sender': 113, 'key timers': 112,
+    frame: 102, 'state tables': 847, constants: 252, 'metadata archive': 3028, infrared: 114150, 'number sender': 113, 'key timers': 112,
     'send lists': 2800, 'power on lists': 62, 'gate lists': 63, 'flip lists': 80, 'reset lists': 112, 'key press lists': 100,
     'key select lists': 56, 'activity lists': 22, 'condition lists': 7, 'input write lists': 7, 'channel lists': 35, 'action step lists': 10,
     'key maps': 1021, 'table headers': 1191,
   });
   // The description, what the generators were handed: nine bytes in ten, almost all the infrared blocks' durations.
-  assert.equal(sum(a.described), 110040);
+  assert.equal(sum(a.described), 110042);
   assert.equal(a.described.infrared, 108066);
   // Every list by its writer: 361, the test setup's 331 and the KPN's 30 more sends of 5.1.6.
   assert.deepEqual(listsBy(c, a), {
@@ -294,7 +302,8 @@ test('5.2.2: our build of the test setup from nothing is every byte a generator\
 });
 
 test('5.2.2: the empty configurations of both models are every byte a generator\'s, the accounting of noscreenempty.test.ts again', () => {
-  for (const [skin, length] of [[104, 1101], [79, 1077]] as const) {
+  // Four bytes longer than 5.1.5 built them, 1101 and 1077: the entry binding event 0xFF, 5.4, the constants' too.
+  for (const [skin, length] of [[104, 1105], [79, 1081]] as const) {
     const a = noScreenAttributedBytes(buildEmptyNoScreenConfiguration({ skin, builtAt: MOMENT }).container);
     assert.equal(a.total, length, `skin ${skin}`);
     assert.equal(sum(a.generated), length, `skin ${skin}`);
@@ -346,8 +355,9 @@ test('5.2.2, the control: a generator\'s claim dropped returns its bytes as carr
   const named = (who: NoScreenAttribution) => Object.fromEntries(noScreenAttributedBytes(c, { without: new Set<NoScreenAttribution>([who]) }).carried);
   assert.deepEqual(named('frame'), { header: 11, 'section-table': 60, marker: 4, trailer: 6, 'slot-1-arch': 7, 'slot-3-clock': 14 });
   assert.deepEqual(named('key timers'), { 'raw-8-timer': 112 });
+  // The key table's share is 20 bytes, the four send event entries and, since 5.4, the entry binding event 0xFF.
   assert.deepEqual(named('constants'), {
-    'slot-2-log': 8, 'slot-10-list': 151, 'raw-5-table': 34, 'raw-10-table': 16, 'raw-12-table': 2, 'raw-6-map': 16, 'raw-10-group': 21,
+    'slot-2-log': 8, 'slot-10-list': 151, 'raw-5-table': 34, 'raw-10-table': 16, 'raw-12-table': 2, 'raw-6-map': 20, 'raw-10-group': 21,
   });
 });
 
