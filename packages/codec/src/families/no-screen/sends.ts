@@ -17,24 +17,14 @@
  * refused, since no compile of this family holds a sequence.
  */
 import type { DeviceSends, SendShape } from '../family.ts';
-import { CANCEL_TIMERS } from '../../actions.ts';
-import { Writer } from '../../emit.ts';
 import type { Container } from '../../gspm.ts';
-import { DEVICE_QUANTITY, SEND_INFRARED } from '../../inventory.ts';
-import { ACTION_LIST_INDEX_OPCODE } from '../../sections.ts';
 import { ComposeError } from '../../shared/core.ts';
 import type { ComposeDevice } from '../../shared/devices.ts';
+import { powerOnList, sendList, writerOf } from './lists.ts';
 
-/** The longest one `0x7C` wait of a power on delay, in tenths: a delay past it is split, the rest last. */
-export const POWER_ON_WAIT_MAX = 100;
-
-/** A power on delay as the waits Logitech's compiler writes for it, `POWER_ON_WAIT_MAX` at a time. */
-export function powerOnWaits(tenths: number): number[] {
-  if (!Number.isInteger(tenths) || tenths < 1) throw new ComposeError(`a power on delay of ${tenths} tenths is not a wait`);
-  const out: number[] = [];
-  for (let left = tenths; left > 0; left -= POWER_ON_WAIT_MAX) out.push(Math.min(left, POWER_ON_WAIT_MAX));
-  return out;
-}
+// The waits moved to `lists.ts` with the power on list's writer, `todo-compile-350.md` 5.2.1, so that the writer and
+// the attribution that reads it back share one module; they are still the send's, and named from here as before.
+export { POWER_ON_WAIT_MAX, powerOnWaits } from './lists.ts';
 
 /**
  * A device's lists: one send list per record, `{0x07 FFFB, 0x7D, 0x7C}` with the send's quantity, then, where the
@@ -42,21 +32,15 @@ export function powerOnWaits(tenths: number): number[] {
  * power variable runs going from 0 to 1, as Logitech's compile writes it on every device of the test setup.
  */
 function noScreenDevice(c: Container, group: number, device: ComposeDevice): DeviceSends {
-  const waits = device.powerOnDelay === undefined ? undefined : powerOnWaits(device.powerOnDelay);
+  const delay = device.powerOnDelay;
   return {
     container: c,
     lay(firstList, sends, onCalls) {
-      const bodies = sends.map((one) => new Writer(10).u8(3)
-        .u16(CANCEL_TIMERS.operand).u8(CANCEL_TIMERS.opcode)
-        .u16((group << 8) | one.record).u8(SEND_INFRARED)
-        .u16((group << 8) | one.quantity).u8(DEVICE_QUANTITY));
+      // Each list through its writer in `lists.ts`, which the attribution reads the same lists back with.
+      const bodies = sends.map((one) => writerOf(sendList(group, one.record, one.quantity)));
       const after = firstList + sends.length;
-      if (waits === undefined) return { bodies, next: after, switchOn: undefined, described: () => ({}) };
-      const count = onCalls.length + waits.length;
-      const on = new Writer(1 + 3 * count).u8(count);
-      for (const at of onCalls) on.u16(at).u8(ACTION_LIST_INDEX_OPCODE);
-      for (const wait of waits) on.u16((group << 8) | wait).u8(DEVICE_QUANTITY);
-      bodies.push(on);
+      if (delay === undefined) return { bodies, next: after, switchOn: undefined, described: () => ({}) };
+      bodies.push(writerOf(powerOnList(onCalls, group, delay)));
       return { bodies, next: after + 1, switchOn: after, described: () => ({}) };
     },
   };

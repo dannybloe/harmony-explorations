@@ -44,16 +44,14 @@
  * already there, which Logitech's service would give it, and the test setup's LG television's second stored but
  * unbound record, its Back, is not reproduced, since no rule read says why it is there.
  */
-import {
-  CANCEL_TIMERS, PIN_BAND, SILENT_WRITE, START_TIMER_BAND, STATE_BAND, STATE_WRITE_BASE, stateVariableSite,
-} from '../../actions.ts';
+import { stateVariableSite } from '../../actions.ts';
 import { u8, u16 } from '../../bytes.ts';
 import { catalogueDevicePlan } from '../../composecatalogue.ts';
 import { Writer } from '../../emit.ts';
 import { type Container, type Instruction, parse } from '../../gspm.ts';
 import { irGroups } from '../../ir.ts';
 import {
-  BYTE_REGISTER_LOAD, compilerHash, CONDITION_OPCODE, CONDITION_TWO_ARMS, devices, SELECT_BINDING_SET, SELECT_BINDING_SET_MASK,
+  compilerHash, devices, SELECT_BINDING_SET, SELECT_BINDING_SET_MASK,
 } from '../../inventory.ts';
 import { withMetadataDevice } from '../../metadata.ts';
 import { excise, relocate } from '../../relocate.ts';
@@ -69,6 +67,9 @@ import {
   POWER_SCAN, START_UP_SELECT_ENTRY, START_UP_SLOT, STORED_UNBOUND, TELEVISION_STORED_UNBOUND, TELEVISION_TYPE, TIMER_SLOT,
   VOLUME_SCANS,
 } from './keys.ts';
+import {
+  bodyOf, flipList, gateList, keyTimerRecords, pressList, resetList, selectList, TIMER_RECORD_LENGTH,
+} from './lists.ts';
 import { NO_SCREEN_SENDS } from './sends.ts';
 
 /**
@@ -182,8 +183,7 @@ export function keyMaps(c: Container): { start: number; length: number; entries:
   });
 }
 
-/** The timer records' extents, raw slot 8, seven bytes each. */
-const TIMER_RECORD_LENGTH = 7;
+/** The timer records' extents, raw slot 8, seven bytes each, `TIMER_RECORD_LENGTH`. */
 function timerExtents(c: Container): { start: number; length: number }[] {
   return (c.pointerArrayAt(TIMER_SLOT, true)?.values ?? []).map((address) => {
     const start = c.blobOffsetOf(address);
@@ -334,11 +334,11 @@ export function mapOfGroup(c: Container, group: number): number {
  * A long press appends the same block again, so a press list of any other shape is refused rather than extended.
  */
 function isOneDevicePress(list: readonly Instruction[], pin: number): boolean {
-  const pinOn = (PIN_BAND << 8) | (pin << 4) | KEY_TIMERS[KEY_TIMERS.length - 1]!.pinState;
-  return list.length === 2 + KEY_TIMERS.length
-    && list[0]!.opcode === CANCEL_TIMERS.opcode && list[0]!.operand === CANCEL_TIMERS.operand
-    && list[1]!.opcode === STATE_BAND && list[1]!.operand === pinOn
-    && list.slice(2).every((one) => one.opcode === STATE_BAND && one.operand >> 8 === START_TIMER_BAND);
+  // One block of `pressList`'s, its timers whatever the list names: the writer's own shape, not a second spelling of
+  // it, and the timers description, as Logitech's compiles number them in no order of ours.
+  if (list.length !== 2 + KEY_TIMERS.length) return false;
+  const built = pressList(pin, [list.slice(2).map((one) => one.operand & 0xff)]);
+  return built.every((one, k) => one.opcode === list[k]!.opcode && one.operand === list[k]!.operand);
 }
 
 /** The start up event list that selects the TV mode device's map, `START_UP_SELECT_ENTRY`, and where it is. */
@@ -532,22 +532,20 @@ export function composeNoScreenDevice(c: Container, archive: string, request: No
   if (toggle) {
     powerList = steps.on!;
   } else {
+    // The two lists go in at the end of the action table, so the first takes its length as its index and the second
+    // the next; the gate is written calling that second index, and the append is held to having put them there.
     const variable = composed.variable;
-    const lists = appendActionLists(current, [
-      [[(BYTE_REGISTER_LOAD << 8) | 0, STATE_BAND], [0, ACTION_LIST_INDEX_OPCODE]],
-      [[CONDITION_TWO_ARMS | variable, CONDITION_OPCODE], [1, STATE_WRITE_BASE + variable], [0, STATE_WRITE_BASE + variable]],
-    ], highestEnd(listExtents(current)));
-    // The first list calls the second, whose index is only known now.
+    const first = current.pointerArray(7)?.length;
+    if (first === undefined) throw new ComposeError('raw slot 7 does not read as the action list table');
+    const lists = appendActionLists(current, [bodyOf(gateList(0, first + 1)), bodyOf(flipList(variable))], highestEnd(listExtents(current)));
+    if (lists.first !== first) throw new ComposeError('the power switch\'s lists did not go in at the end of the action table');
     current = parse(lists.bytes);
-    const outer = current.blobOffsetOf(current.pointerArray(7)![lists.first]!)!;
-    current.blob.set(new Writer(2).u16(lists.first + 1).bytes, outer + 4);
-    current = parse(current.blob);
     powerList = lists.first;
   }
   // The power variable's two silent writes, which nothing calls, as Logitech stores them for every device,
   // `POWER_RESETS`.
   current = parse(appendActionLists(current,
-    POWER_RESETS.map((value) => [[SILENT_WRITE.operand, SILENT_WRITE.opcode], [value, STATE_WRITE_BASE + composed.variable]]),
+    POWER_RESETS.map((value) => bodyOf(resetList(composed.variable, value))),
     highestEnd(listExtents(current))).bytes);
 
   // The device's own map: every key the family's table gives it, then the power key, in the compiler's order,
@@ -574,12 +572,9 @@ export function composeNoScreenDevice(c: Container, archive: string, request: No
   // in at the end of the lists, so they stay after them. Where they sit is carried, not read: the table names each.
   const timersNow = timerExtents(current);
   const timerAt = timersNow.length === 0 ? highestEnd(listExtents(current)) : highestEnd(timersNow);
-  const timerBytes = new Writer(TIMER_RECORD_LENGTH * KEY_TIMERS.length);
-  for (const one of KEY_TIMERS) {
-    timerBytes.u8(0).u24(one.ticks).u16((PIN_BAND << 8) | (key.pin << 4) | one.pinState).u8(STATE_BAND);
-  }
-  const timerHole = relocate(current, timerAt, timerBytes.bytes.length);
-  timerHole.bytes.set(timerBytes.bytes, timerAt);
+  const timerBytes = Uint8Array.from(keyTimerRecords(key.pin).flatMap((one) => [...one]));
+  const timerHole = relocate(current, timerAt, timerBytes.length);
+  timerHole.bytes.set(timerBytes, timerAt);
   current = parse(appendTableEntries(parse(timerHole.bytes), TIMER_SLOT,
     KEY_TIMERS.map((_, k) => current.flashBase + timerAt + TIMER_RECORD_LENGTH * k)));
   const firstTimer = timersNow.length;
@@ -589,10 +584,8 @@ export function composeNoScreenDevice(c: Container, archive: string, request: No
   // A long press: the held event cancels the timers and selects the device's map, and the press list the short
   // press device already has gains the same block again with the new timers, as Logitech's press list for a key
   // with two devices carries it; the release stays the short press device's.
-  const pinOn = (PIN_BAND << 8) | (key.pin << 4) | KEY_TIMERS[KEY_TIMERS.length - 1]!.pinState;
-  const pressBlock: [number, number][] = [[CANCEL_TIMERS.operand, CANCEL_TIMERS.opcode], [pinOn, STATE_BAND],
-    ...KEY_TIMERS.map((_, k): [number, number] => [(START_TIMER_BAND << 8) | (firstTimer + k), STATE_BAND])];
-  const select: [number, number][] = [[CANCEL_TIMERS.operand, CANCEL_TIMERS.opcode], [SELECT_BINDING_SET_MASK | map, SELECT_BINDING_SET]];
+  const pressBlock = bodyOf(pressList(key.pin, [KEY_TIMERS.map((_, k) => firstTimer + k)]));
+  const select = bodyOf(selectList(map));
   let added: KeyEntry[];
   if (long) {
     const held = appendActionLists(current, [select], highestEnd(listExtents(current)));

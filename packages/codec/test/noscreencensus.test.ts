@@ -683,7 +683,9 @@ const CENSUS_300 = {
 // moved to `builds`, since `buildNoScreenSetup` composes all of them onto a configuration built from nothing, the
 // probe below. **What `builds` does not say here**: that every byte equals Logitech's. On the 350's file it does by
 // content but for the KPN's map and its 30 more records and lists, which the rows name, and which are the account's;
-// whether every byte is a generator's with none carried is 5.2's attribution. And the Harmony 300's file is credited
+// whether every byte is a generator's with none carried is 5.2's attribution, `noScreenAttributedBytes`, which finds
+// every byte of this file a generator's and names what it leaves on the Harmony 300's, `noscreenattribution.test.ts`.
+// And the Harmony 300's file is credited
 // on the 350's build: its categories are the same generators', decision 28 makes one build serve both once 5.4 binds
 // event `0xFF`, and the check of our build against Logitech's 300 compile is the part of `todo-compile-300.md` that
 // stays, not run here.

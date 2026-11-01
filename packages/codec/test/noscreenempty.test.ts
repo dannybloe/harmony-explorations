@@ -29,9 +29,10 @@
  * header, the section table, the two markers and the trailer are the frame's; every other byte lies in a section, a
  * list, a state record, an infrared group or a parameter group found by following the file's own tables, and is
  * equal to what that part's generator writes, built afresh here at the same moment. Nothing is counted twice and
- * nothing is left over. That is not yet plan 011's attribution, 5.2.1, which rebuilds each part from a description
- * read off any container; it is the same accounting on the one configuration whose description is known without
- * reading it.
+ * nothing is left over. That was written before plan 011's attribution, 5.2.1, which rebuilds each part from a
+ * description read off any container, `noScreenAttributedBytes`; this is the same accounting on the one configuration
+ * whose description is known without reading it, and the attribution agrees with it on both models,
+ * `noscreenattribution.test.ts`.
  *
  * **The control**: a byte planted in the hold list, the hold time 10 made 11, and the trailer restamped. The
  * writer's own check, `assertFileFamilyContainer`, passes it, since it checks the frame and not the content, and the

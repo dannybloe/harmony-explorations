@@ -157,4 +157,11 @@ export {
   type EmptyNoScreenOptions, INFRARED_GROUPS_BY_SKIN, infraredGroupsOf, NO_SCREEN_COUNT_WIDTHS,
   // A whole setup composed onto that configuration, so built with no Logitech file, todo-compile-350.md 5.1.6.
   buildNoScreenSetup, type NoScreenSetupFromNothing,
+  // Which generator writes each byte, and the list writers it reads every list back through, todo-compile-350.md 5.2.1.
+  NO_SCREEN_ATTRIBUTIONS, type NoScreenAttributed, type NoScreenAttribution, noScreenAttributedBytes, type NoScreenAttributionOptions,
+  noScreenRegions, NO_SCREEN_LIST_KINDS, type ListKind, type ListNames, sendList, powerOnList, gateList, flipList, resetList, pressList,
+  selectList, activityList, type ActivityStepWrite, conditionList, type ConditionArm, writesList, channelNumberList, channelDigitsList,
+  readChannelDigits, keyTimerRecords, numberSenderBlock, TIMER_RECORD_LENGTH,
 } from './families/no-screen/index.ts';
+// The bookkeeping of an attribution, the ledger every family's could share, todo-compile-350.md 5.2.1.
+export * from './attribution.ts';

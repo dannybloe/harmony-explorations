@@ -73,7 +73,8 @@
  * device composer, `noscreenstored.test.ts` for the rule.
  *
  * **What it does not do**: bind firmware event `0xFF`, which `todo-compile-350.md` 5.4 adds after 5.2; the first
- * test holds that the key table has no such tag. And it does not attribute every byte to a generator, which is 5.2.
+ * test holds that the key table has no such tag. And it does not attribute every byte to a generator, which is 5.2,
+ * `noscreenattribution.test.ts`: every byte of this build is one, none carried and none unclaimed.
  *
  * **Controls**, each run and reverted by string replacement in the source unless it is a test of its own:
  * taking out the timer placement of an empty configuration refuses the first device ("raw slot 8 holds no timer");

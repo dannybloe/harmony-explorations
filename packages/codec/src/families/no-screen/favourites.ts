@@ -37,10 +37,8 @@
  * favourite key, `todo-compile-350.md` 4.1.1, is read on one compile only, another owner's, whose LG television
  * holds a channel there and has a Home command, and one sample is not a rule.
  */
-import { STATE_BAND } from '../../actions.ts';
 import { Writer } from '../../emit.ts';
 import { archSlot, type Container, parse } from '../../gspm.ts';
-import { ACCUMULATOR_LOAD_OPCODE } from '../../ir.ts';
 import { devices } from '../../inventory.ts';
 import { relocate } from '../../relocate.ts';
 import { ACTION_LIST_INDEX_OPCODE, stateRecords } from '../../sections.ts';
@@ -54,15 +52,11 @@ import {
 } from './devices.ts';
 import { deviceDigitLists } from './digits.ts';
 import { FAVOURITE_SCANS } from './keys.ts';
+import { bodyOf, channelDigitsList, channelNumberList, numberSenderBlock } from './lists.ts';
 
-/**
- * The band whose sub-operation hands the accumulator to a number sender record, the record its low byte: `1F F300`
- * in every favourite channel list of the five Harmony 300 and 350 compiles that hold one, as read while writing
- * this, four in the lab and another owner's archive; `noscreenfavourites.test.ts` holds it on the second compile and
- * on the Harmony 300's, and it was heard sending the channel on a unit. `actions.ts` names `0xF3` as the hand over to base slot 14 from the other families' images; which
- * slot this image's handler reaches is not read here, and the record it sends through is raw slot 11's.
- */
-export const NUMBER_SENDER_BAND = 0xf3;
+// The band that hands the accumulator to a number sender, `NUMBER_SENDER_BAND`, moved to `lists.ts` with the channel
+// list's writer, `todo-compile-350.md` 5.2.1, and is still named from here.
+export { NUMBER_SENDER_BAND } from './lists.ts';
 
 /** The largest number one `7A` load holds, its sixteen bit operand. */
 const ACCUMULATOR_MAX = 0xffff;
@@ -150,11 +144,11 @@ export function composeNoScreenFavourites(
   if (records === undefined || records.length === 0) throw new ComposeError('raw slot 9 holds no state record to put the number sender after');
   const blockAt = highestEnd(records.map((one) => ({ start: current.blobOffsetOf(one.address)!, length: one.length })));
   if (numberSenders(current)!.start < blockAt) throw new ComposeError('the number sender\'s table sits below the state records, which no compile shows');
-  const table = new Writer(NUMBER_SENDER_TABLE_LENGTH);
-  for (const list of digitLists) table.u16(list).u8(ACTION_LIST_INDEX_OPCODE);
+  const written = numberSenderBlock(digitLists);
   const tablesLength = 3 * NUMBER_SENDER_TABLE_LENGTH;
   const block = new Uint8Array(tablesLength + NUMBER_SENDER_RECORD_LENGTH);
-  for (let k = 0; k < 3; k += 1) block.set(table.bytes, k * NUMBER_SENDER_TABLE_LENGTH);
+  for (let k = 0; k < 3; k += 1) block.set(written.table, k * NUMBER_SENDER_TABLE_LENGTH);
+  block.set(written.record, tablesLength);
   // Flags, base, minimum, prologue, epilogue and prefix all zero, then the three table pointers: Logitech's
   // record in the five compiles of this family that hold one, as read while writing this; the test holds it on the
   // second compile.
@@ -166,9 +160,8 @@ export function composeNoScreenFavourites(
   current = parse(appendTableEntries(parse(hole.bytes), senderSlot, [current.flashBase + blockAt + tablesLength]));
 
   // 2. One list per channel, after the last list body, as the device composer puts its lists.
-  const bodies = request.channels.map((channel, k): [number, number][] => (routes[k] === 'number'
-    ? [[Number(channel), ACCUMULATOR_LOAD_OPCODE], [(NUMBER_SENDER_BAND << 8) | 0, STATE_BAND]]
-    : [...channel].map((digit): [number, number] => [digitLists[Number(digit)]!, ACTION_LIST_INDEX_OPCODE])));
+  const bodies = request.channels.map((channel, k) => bodyOf(routes[k] === 'number'
+    ? channelNumberList(Number(channel)) : channelDigitsList(digitLists, channel)));
   const appended = appendActionLists(current, bodies, highestEnd(listExtents(current)));
   current = parse(appended.bytes);
 

@@ -51,13 +51,11 @@
  * six for a Harmony 350 and one for a Harmony 300, given its own activity's devices again and compared with what
  * Logitech wrote.
  */
-import { CANCEL_TIMERS, STATE_BAND, STATE_WRITE_BASE } from '../../actions.ts';
 import { catalogueDevicePlan } from '../../composecatalogue.ts';
 import { type Container, type Instruction, parse } from '../../gspm.ts';
 import { commandIndex, encodeStateRecord, FROM_ANY } from '../../inputs.ts';
 import {
-  BYTE_REGISTER_LOAD, CONDITION_OPCODE, CONDITION_TWO_ARMS, DEVICE_QUANTITY, DEVICE_QUANTITY_DEFAULT, deviceVariables, devices,
-  INPUT_PROPERTY, POWER_PROPERTY, SELECT_BINDING_SET, SELECT_BINDING_SET_MASK, SEND_INFRARED, stateVariables,
+  DEVICE_QUANTITY, DEVICE_QUANTITY_DEFAULT, deviceVariables, devices, INPUT_PROPERTY, POWER_PROPERTY, stateVariables,
 } from '../../inventory.ts';
 import { metadataArchive } from '../../metadata.ts';
 import { ACTION_LIST_INDEX_OPCODE, stateRecords, taggedListExtent } from '../../sections.ts';
@@ -65,6 +63,9 @@ import { appendActionLists, appendNarrowStateVariable, ComposeError, nameOfLabel
 import { irGroups } from '../../ir.ts';
 import { appendCopyRecord, oneBlockCopy } from '../../sequence.ts';
 import { composeIrGroup } from '../../shared/infrared.ts';
+import {
+  type ActivityStepWrite, activityList, type Body, bodyOf, type ConditionArm, conditionList, flipList, gateList, sendList, writesList,
+} from './lists.ts';
 import {
   arraysStart, assertNoVariablesOutsideLists, highestEnd, keyMaps, listExtents, mapOfGroup, PRESS, withMapEntries,
 } from './devices.ts';
@@ -125,9 +126,6 @@ export interface ComposedNoScreenActivity {
   readonly listsAdded: number;
   readonly recordsAdded: number;
 }
-
-/** A list body, `[operand, opcode]` per instruction, as `appendActionLists` takes it. */
-type Body = [number, number][];
 
 /** What the catalogue makes of a device's input on this family, decided before any byte moves. */
 type InputPlan =
@@ -196,13 +194,9 @@ function powerStepOf(c: Container, name: string, group: number): ActivityPowerSt
   return { kind: 'toggle', device: name, send: off.operand, wait };
 }
 
-/** The register loaded with `value`, then a call of `list`: the wrapper every flip and the input gate open with. */
-const loadThenCall = (value: number, list: number): Body => [[(BYTE_REGISTER_LOAD << 8) | value, STATE_BAND], [list, ACTION_LIST_INDEX_OPCODE]];
-
-/** The register compared with `variable`, two arms, writing 1 where equal and 0 where not: with the register at 0, a flip. */
-const flip = (variable: number): Body => [
-  [CONDITION_TWO_ARMS | variable, CONDITION_OPCODE], [1, STATE_WRITE_BASE + variable], [0, STATE_WRITE_BASE + variable],
-];
+// The register loaded and a list called, and a flip, are `gateList` and `flipList` in `lists.ts` since
+// `todo-compile-350.md` 5.2.1: the device composer's power switch writes the same two, and the attribution reads both
+// back through the same writers.
 
 /**
  * Compose Watch TV onto a Harmony 300 or 350 configuration, replacing the one it holds. Unstamped steps, restamped
@@ -299,11 +293,7 @@ export function composeNoScreenActivity(c: Container, archive: string, request: 
     const codes = copies.get(one.label)!;
     const transitions = codes.map((code, k) => {
       const list = firstList + sendBodies.length;
-      sendBodies.push([
-        [CANCEL_TIMERS.operand, CANCEL_TIMERS.opcode],
-        [(one.group << 8) | code, SEND_INFRARED],
-        [(one.group << 8) | DEVICE_QUANTITY_DEFAULT, DEVICE_QUANTITY],
-      ]);
+      sendBodies.push(bodyOf(sendList(one.group, code, DEVICE_QUANTITY_DEFAULT)));
       return { from: FROM_ANY, to: k, instruction: { operand: list, opcode: ACTION_LIST_INDEX_OPCODE } as Instruction };
     });
     records.push({ label: one.label, values: one.plan.values, record: encodeStateRecord(one.plan.values, transitions) });
@@ -327,7 +317,7 @@ export function composeNoScreenActivity(c: Container, archive: string, request: 
 
   // 4. The activity's own lists, read off the configuration as it is now, its variables numbered for good.
   const power = ordered.map((device) => powerStepOf(current, device.name, groupOf.get(nameOfLabel(device.name))!));
-  const writes: Body = inputs.map((one) => [one.plan.kind === 'sends' ? one.plan.value : 0, STATE_WRITE_BASE + inputVariables.get(one.label)!]);
+  const writes = inputs.map((one) => ({ variable: inputVariables.get(one.label)!, value: one.plan.kind === 'sends' ? one.plan.value : 0 }));
   const map = mapOfGroup(current, groupOf.get(nameOfLabel(request.channel))!);
   const bodies: Body[] = [...sendBodies];
   const next = (body: Body): number => {
@@ -335,22 +325,21 @@ export function composeNoScreenActivity(c: Container, archive: string, request: 
     return firstList + bodies.length - 1;
   };
   const main = next([]);
-  const steps: Body = [];
+  const steps: ActivityStepWrite[] = [];
   for (const one of power) {
     if (one.kind === 'toggle') {
-      steps.push([one.send, ACTION_LIST_INDEX_OPCODE], [(groupOf.get(nameOfLabel(one.device))! << 8) | one.wait, DEVICE_QUANTITY]);
+      steps.push({ kind: 'toggle', send: one.send, group: groupOf.get(nameOfLabel(one.device))!, wait: one.wait });
     } else {
-      const helper = next(flip(one.variable));
-      steps.push([next(loadThenCall(0, helper)), ACTION_LIST_INDEX_OPCODE]);
+      const helper = next(bodyOf(flipList(one.variable)));
+      steps.push({ kind: 'call', list: next(bodyOf(gateList(0, helper))) });
     }
   }
-  steps.push([next(loadThenCall(0, next(flip(flag)))), ACTION_LIST_INDEX_OPCODE]);
+  const flagGate = next(bodyOf(gateList(0, next(bodyOf(flipList(flag))))));
   // The arm: the null instruction, the one write, or a list of them, as the seven compiles hold it.
-  const arm: [number, number] = writes.length === 0 ? [0, 0]
-    : writes.length === 1 ? writes[0]! : [next(writes), ACTION_LIST_INDEX_OPCODE];
-  steps.push([next(loadThenCall(1, next([[flag, CONDITION_OPCODE], arm]))), ACTION_LIST_INDEX_OPCODE]);
-  steps.push([SELECT_BINDING_SET_MASK | map, SELECT_BINDING_SET]);
-  bodies[main - firstList] = steps;
+  const arm: ConditionArm = writes.length === 0 ? { kind: 'none' }
+    : writes.length === 1 ? { kind: 'write', ...writes[0]! } : { kind: 'call', list: next(bodyOf(writesList(writes))) };
+  const conditionGate = next(bodyOf(gateList(1, next(bodyOf(conditionList(flag, arm))))));
+  bodies[main - firstList] = bodyOf(activityList(steps, flagGate, conditionGate, map));
 
   const appended = appendActionLists(current, bodies, highestEnd(listExtents(current)));
   if (appended.first !== firstList) throw new ComposeError('the action lists moved while the variables went in');

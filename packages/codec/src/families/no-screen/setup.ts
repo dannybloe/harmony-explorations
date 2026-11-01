@@ -255,9 +255,10 @@ export interface NoScreenSetupFromNothing extends NoScreenSetupRequest {
  * A whole setup built from nothing, `todo-compile-350.md` 5.1.6, step 6 of plan 011: the empty configuration for the
  * setup's skin, `buildEmptyNoScreenConfiguration`, with every device, the activity and the favourite channels
  * composed onto it by `composeNoScreenSetup`. **Nothing goes in but the setup, its keys, a moment and the infrared
- * catalogue**: no Logitech container, which is what 5.2.3 will check. The skin is the setup's, refused where the
- * setup states none, since the infrared allocation is the model's, `INFRARED_GROUPS_BY_SKIN`. Unstamped by nothing
- * after the last composer, which restamps; a caller writing it restamps again last, as every writer does.
+ * catalogue**: no Logitech container, which 5.2.3 checks, `noscreenattribution.test.ts`. The skin is the setup's,
+ * refused where the setup states none, since the infrared allocation is the model's, `INFRARED_GROUPS_BY_SKIN`.
+ * Unstamped by nothing after the last composer, which restamps; a caller writing it restamps again last, as every
+ * writer does.
  */
 export function buildNoScreenSetup(archive: string, request: NoScreenSetupFromNothing): ComposedNoScreenSetup {
   const skin = request.recipe.model.skin;

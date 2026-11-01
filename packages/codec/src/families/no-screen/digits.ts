@@ -17,17 +17,17 @@
  * device's commands, `deviceCopyLists`, because Logitech stores one more one block copy beside the digits, the
  * channel tuning's finish, `channelFinish`; the digits stay its first caller, with their own entry.
  */
-import { CANCEL_TIMERS } from '../../actions.ts';
 import { catalogueDevicePlan } from '../../composecatalogue.ts';
 import type { DeviceDriving } from '../../driving.ts';
 import { type Container, parse } from '../../gspm.ts';
 import { irGroups } from '../../ir.ts';
-import { DEVICE_QUANTITY, DEVICE_QUANTITY_DEFAULT, SEND_INFRARED } from '../../inventory.ts';
+import { DEVICE_QUANTITY_DEFAULT } from '../../inventory.ts';
 import { appendCopyRecord, oneBlockCopy } from '../../sequence.ts';
 import { appendActionLists, ComposeError, nameOfLabel } from '../../shared/core.ts';
 import { composeIrGroup } from '../../shared/infrared.ts';
 import { NUMBER_SENDER_DIGITS } from '../../tables.ts';
 import { arraysStart, highestEnd, instructionsAt, listExtents } from './devices.ts';
+import { bodyOf, sendList } from './lists.ts';
 
 /** The device whose digits are wanted, as the setup names it and as the catalogue holds it. */
 export interface DigitDevice {
@@ -88,11 +88,11 @@ export function deviceCopyLists(c: Container, archive: string, request: DigitDev
   // The send list of each copy: the configuration's own where there is one, a new one after the last list body
   // where there is not, as the device composer puts its lists.
   const lists = current.pointerArray(7) ?? [];
+  // A list sends the copy where it is `sendList`'s list for the group and the code, whatever its quantity.
   const sendersOf = (code: number): number[] => lists.flatMap((address, index) => {
     const body = instructionsAt(current.blob, current.blobOffsetOf(address)!);
-    return body.length === 3 && body[0]!.opcode === CANCEL_TIMERS.opcode && body[0]!.operand === CANCEL_TIMERS.operand
-      && body[1]!.opcode === SEND_INFRARED && body[1]!.operand === ((group << 8) | code)
-      && body[2]!.opcode === DEVICE_QUANTITY && body[2]!.operand >> 8 === group ? [index] : [];
+    const built = body.length === 3 ? sendList(group, code, body[2]!.operand & 0xff) : [];
+    return built.length === 3 && built.every((one, k) => one.opcode === body[k]!.opcode && one.operand === body[k]!.operand) ? [index] : [];
   });
   const found = codes.map(sendersOf);
   const many = found.findIndex((one) => one.length > 1);
@@ -100,10 +100,8 @@ export function deviceCopyLists(c: Container, archive: string, request: DigitDev
   const wanting = codes.filter((_, d) => found[d]!.length === 0);
   const made = new Map<number, number>();
   if (wanting.length > 0) {
-    const appended = appendActionLists(current, wanting.map((code) => [
-      [CANCEL_TIMERS.operand, CANCEL_TIMERS.opcode], [(group << 8) | code, SEND_INFRARED],
-      [(group << 8) | DEVICE_QUANTITY_DEFAULT, DEVICE_QUANTITY],
-    ]), highestEnd(listExtents(current)));
+    const appended = appendActionLists(current, wanting.map((code) => bodyOf(sendList(group, code, DEVICE_QUANTITY_DEFAULT))),
+      highestEnd(listExtents(current)));
     current = parse(appended.bytes);
     wanting.forEach((code, k) => made.set(code, appended.first + k));
   }

@@ -474,6 +474,36 @@ The firmware does answer one request with the time and the date, one whose servi
 than the file commands' `0xFF`; how it is framed is not read, and Logitech's templates for these skins
 never send it[^t-harmony-350-clock][^unchecked].
 
+## The shapes of the lists
+
+**Every action list of a configuration Logitech's current service compiled takes one of these shapes**, in all six of
+its compiles of the family read for this, both models; nothing else is in the action list
+table[^t-noscreen-attribution]:
+
+| shape | the instructions |
+|---|---|
+| a send | `07 FFFB`, `7D gg rr`, `7C gg qq`, one group named twice |
+| a device's power on list | each on step's send called, then `7C` waits on its group, [a device's power on delay](#a-devices-power-on-delay) |
+| a gate | `1F FBvv` and a call: the byte register loaded, then a flip or the activity's condition called |
+| a flip | `71 80vv`, then writes of 1 and of 0 to variable `vv` |
+| a power variable's silent write | `07 FFFF` and a write of 0, or of 1; two per power variable, called by nothing |
+| a power action of several steps | each step's send called in order |
+| a device key's press on a Harmony 350 | per device on the key `07 FFFB`, `1F E9p2` and two `1F EBnn`, [a device key and its long press](#a-device-key-and-its-long-press) |
+| a device key's press on a Harmony 300 | `1F E9p2` and `1F FFmm`, the pin and the map at once |
+| a device key's release or held event | `07 FFFB` and `1F FFmm` |
+| the activity's list | each device's power step, the flag's gate, the condition's gate, `1F FFmm`, [the activity](#the-activity) |
+| the activity's condition, and its writes | `71 ff` and one arm: nothing, a write, or a call of a list of two or more writes |
+| a favourite channel | `7A nnnn` and `1F F300`, or, with a leading zero, each digit's send called |
+| the start up's and the send events' lists | [the sections every configuration holds alike](#the-sections-every-configuration-holds-alike) |
+
+**The numbers in them are the compiler's own**, [numbering](#numbering): a press may start its two timers as 14 and 7
+in one compile and as 3 and 2 in another, so the numbers follow no order of the key's[^t-noscreen-attribution].
+
+**The Harmony 300 configuration compiled in 2011 has three shapes the current service does not write**: the send is
+the plain pair, `7D` and `7C` with no `07 FFFB`, which [section 278](../../../docs/findings.md#s278) read on the
+Harmony 300 and 350 configurations before the current compiles; its activity's list switches the devices and selects
+a map and sets no flag; and its power on lists call those plain sends[^t-noscreen-attribution].
+
 ## Numbering
 
 **No rule was found for the order Logitech's compiler numbers a configuration's lists, key maps, timers and state
@@ -589,5 +619,6 @@ variable walk, the order of the device key maps, the order of the timers, and th
 [^t-noscreen-census]: Measured in configurations. [The test](../../../packages/codec/test/noscreencensus.test.ts)
 [^t-empty-350]: Measured on a unit. [The test](../../../packages/codec/test/noscreenemptyunit.test.ts)
 [^t-noscreen-empty]: Measured in configurations. [The test](../../../packages/codec/test/noscreenempty.test.ts)
+[^t-noscreen-attribution]: Measured in configurations. [The test](../../../packages/codec/test/noscreenattribution.test.ts)
 [^t-harmony-300-keys-u]: Measured on a unit. [The test](../../../tests/test_harmony_300_keys.py)
 [^t-harmony-300-group-4-send-u]: Measured on a unit. [The test](../../../tests/test_harmony_300_group_4_send.py)
