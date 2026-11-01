@@ -8,9 +8,11 @@
  *
  * * the log area's region is the architecture's, `LOG_AREAS`, the same on every compile of it: on arch 14
  *   (Harmony 600, 650 and 700) sixteen thousand eight byte records from `0x1E0000` to `0x200000` on the
- *   thirteen compiles section 312 lists, and on arch 12 (Harmony One) sixteen records from `0x3FFFF0` to
- *   `0x400000` on its 19 distinct compiles, `todo-compile-one.md` 2.2. Its capacity is a `u24` on arch 12
- *   and a `u16` on arch 14, the readers' own `LOG_AREA_WIDE_ARCHITECTURES`;
+ *   thirteen compiles section 312 lists, on arch 12 (Harmony One) sixteen records from `0x3FFFF0` to
+ *   `0x400000` on its 19 distinct compiles, `todo-compile-one.md` 2.2, and on arch 16 (Harmony 300 and 350)
+ *   8192 records from `0x070000` to `0x080000` on its 13 compiles, `todo-compile-350.md` 5.1.3,
+ *   `test/noscreenconstants.test.ts`. Its capacity is a `u24` on arch 12 and a `u16` on arch 14 and 16, the
+ *   readers' own `LOG_AREA_WIDE_ARCHITECTURES`;
  * * the parameter block's group lengths the firmware demands are the readers' `PARAMETER_GROUP_COUNTS`,
  *   and the twelve bytes the Harmony One's firmware reads past group 9's declared entries are the
  *   readers' `LIGHT_BAND_ARCHITECTURES` and offsets, section 103.
@@ -52,6 +54,9 @@ export interface LogAreaRegion {
 export const LOG_AREAS: Readonly<Record<number, LogAreaRegion>> = {
   12: { capacity: 16, start: 0x3ffff0, limit: 0x400000 },
   14: { capacity: 16384, start: 0x1e0000, limit: 0x200000 },
+  // The Harmony 300 and 350's firmware never seeks this slot, `ARCH16_SLOT_MAP`; the region is what all 13 of
+  // the family's compiles in the lab state, and its capacity times eight is the region's length, as on arch 14.
+  16: { capacity: 8192, start: 0x070000, limit: 0x080000 },
 };
 
 /** Base slot 2 for `architecture`: capacity, then the region's two ends, addresses outside the container. */
@@ -106,19 +111,13 @@ export function buildParameterBlock(architecture: number, spec: ParameterBlockSp
       : `arch ${architecture}'s firmware is not read past group ${LIGHT_BAND_GROUP}, so nothing goes there`);
   }
   const groups = spec.groups.map((values, index) => {
-    if (values.length > 0xff) throw new FirmwareSectionsError(`group ${index} of ${values.length} values is more than its one byte count holds`);
-    for (const v of values) {
-      if (!Number.isInteger(v) || v < 0 || v > 0xffff) throw new FirmwareSectionsError(`a parameter is a u16, not ${v}`);
-    }
     const band = index === LIGHT_BAND_GROUP ? spec.lightBand : undefined;
     // The light band's two readers count from past the count byte, and the pair sits straight after the
     // declared values on the Harmony One; a group of another length would put them elsewhere.
     if (band !== undefined && 2 * values.length !== LIGHT_BAND_PAIR_AT) {
       throw new FirmwareSectionsError(`the light band's pair is read ${LIGHT_BAND_PAIR_AT} bytes into group ${index}, past ${values.length} values`);
     }
-    const w = new Writer(1 + 2 * values.length + (band === undefined ? 0 : LIGHT_BAND_FIELDS_AT + LIGHT_BAND_FIELDS_LENGTH - LIGHT_BAND_PAIR_AT));
-    w.u8(values.length);
-    for (const v of values) w.u16(v);
+    const w = parameterGroupWriter(values, band === undefined ? 0 : LIGHT_BAND_FIELDS_AT + LIGHT_BAND_FIELDS_LENGTH - LIGHT_BAND_PAIR_AT);
     if (band !== undefined) {
       if (band.pair.length * 2 !== LIGHT_BAND_PAIR_LENGTH || band.fields.length !== LIGHT_BAND_FIELDS_LENGTH
         || LIGHT_BAND_PAIR_AT + LIGHT_BAND_PAIR_LENGTH !== LIGHT_BAND_FIELDS_AT) {
@@ -139,6 +138,27 @@ export function buildParameterBlock(architecture: number, spec: ParameterBlockSp
   for (let k = 0; k < groups.length; k += 1) t.u24(0);
   const table: ContainerPiece = { bytes: t.bytes, refs: groups.map((to, k) => ({ at: 1 + 3 * k, to, offset: 0 })), owner: 'slot-15-table' };
   return { table, groups };
+}
+
+/**
+ * One parameter group's values, `u8 entries` then each a `u16`, in a writer with `extra` bytes left after them: the
+ * encoding every architecture's block shares, which `parameterGroups` in `tables.ts` reads. Refuses a group longer
+ * than its count holds and a value wider than its two bytes.
+ *
+ * Exported for a family whose firmware has not been read for the lengths it demands, so that `buildParameterBlock`
+ * refuses it: the Harmony 300 and 350's, whose five groups are what their compiles state,
+ * `families/no-screen/constants.ts`. That family builds its block through this and `countedTable`, so the
+ * encoding stays here once and the length rail stays where a demand is read.
+ */
+export function parameterGroupWriter(values: readonly number[], extra = 0): Writer {
+  if (values.length > 0xff) throw new FirmwareSectionsError(`a group of ${values.length} values is more than its one byte count holds`);
+  for (const v of values) {
+    if (!Number.isInteger(v) || v < 0 || v > 0xffff) throw new FirmwareSectionsError(`a parameter is a u16, not ${v}`);
+  }
+  const w = new Writer(1 + 2 * values.length + extra);
+  w.u8(values.length);
+  for (const v of values) w.u16(v);
+  return w;
 }
 
 /** The one piece a slot's table is, or a refusal. */

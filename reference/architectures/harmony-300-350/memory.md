@@ -73,7 +73,7 @@ seeker, and what the code does with the bytes is what names them[^t-slots]:
 
 | raw slot | what it is | what a person meets |
 |---|---|---|
-| 5 | **the start up event table**, this family's own: a `u8` count, then one action list instruction per event, 11 in every configuration. The firmware queues entry 1 once, when a configuration passes the validator at start, and no other entry is raised by any direct reference in the image[^t-slots][^t-slots-c] | entry 1 installs the key maps and selects the map of the device on infrared group 0, so on that reading the remote starts in that device's mode, which on the Harmony 300 is the TV key's device[^t-slots][^t-slots-c][^s265] |
+| 5 | **the start up event table**, this family's own: a `u8` count, then one action list instruction per event, 11 in every configuration. The firmware queues entry 1 once, when a configuration passes the validator at start, and no other entry is raised by any direct reference in the image[^t-slots][^t-slots-c] | entry 1 installs the key maps and selects the map of the device on the lowest infrared group that holds one, so on that reading the remote starts in that device's mode, which is the TV key's device wherever that key has one, [below](#the-sections-every-configuration-holds-alike)[^t-slots][^t-slots-c][^s265][^t-noscreen-constants] |
 | 6 | **[base slot 9, the key map table](../../config-format/modes-and-keys.md#base-slot-9-the-key-map-table)**: a `u8` count and pointers to tagged lists, looked up through the same stack, with the same leave and enter tags 2 and 1, as on the Harmony 600, 650 and 700[^t-slots] | each device key selects its device's map[^t-slots-c] |
 | 8 | **[base slot 12, the timer table](../../config-format/state.md#base-slot-12-the-timer-table)**, its seven byte records and its four concurrent timers[^t-slots] | on the Harmony 350 each device key's press starts two per device on the key, of 400 and 600 ticks, about 0.40 and 0.60 s, which switch that key's one of four output pins, [below](#a-device-key-and-its-long-press); what the pins drive is not checked[^t-slots-c][^t-long-press-c][^unchecked] |
 | 9 | **[base slot 13, the state variable table](../../config-format/state.md#base-slot-13-the-state-variable-table)**, its header of four words and its seeder, `0xFE` fill to `0xC0` included, as on the Harmony 600[^t-slots] | each device's `Power` variable, whose switch on carries the device's power on delay, [below](#a-devices-power-on-delay)[^t-file-family-delays] |
@@ -212,7 +212,29 @@ variable without sending anything[^unchecked].
 
 **The start up selects the TV key's short press device.** Entry 1 of the start up events calls a list that ends
 by selecting that device's map, the same list entries 2 to 4 call without it, on all seven
-configurations[^t-noscreen-routing].
+configurations[^t-noscreen-routing]. **Where the TV key holds no device the start up selects another**: of 13
+configurations, the one whose top left key is empty holds one device, on the bottom left key, and selects its
+map, so the rule that fits all 13 is the device on the lowest infrared group that holds one. Which of several
+devices would be chosen with the TV key empty is not checked, since that configuration has only
+one[^t-noscreen-constants][^unchecked]. This said the TV key's device without the case of an empty TV key until
+that configuration was read.
+
+## The sections every configuration holds alike
+
+**232 bytes of every configuration are the same whatever its devices**, on both models: the log area, the
+parameter block, the digit entry table, the start up events and their lists, and the lists of the four send
+events. In 13 configurations, three of a Harmony 300 and ten of a Harmony 350, from 2011 to Logitech's current
+service, they differ only in where they sit, in the numbers of the lists they call and in the map the start up
+selects; nothing differs by model[^t-noscreen-constants].
+
+| what | the bytes | evidence |
+|---|---|---|
+| the log area, raw slot 2 | a `u16` capacity of 8192 records, then the region `0x070000` to `0x080000` as two `u24`: 8192 eight byte records are exactly that 64 KiB. The firmware never seeks it, [the container](#the-configuration-container) | [^t-noscreen-constants] |
+| the parameter block, raw slot 10 | five groups, `[60]`, `[80]`, `[600, 602, 766, 769]`, `[1800]` and `[0]`, after a table of five pointers. No reading of them by the firmware is known, and the hold time is set by the start up instead | [^t-noscreen-constants], [^unchecked] |
+| the digit entry table, raw slot 12 | a count of zero, [above](#the-six-slots-the-firmware-was-read-for) | [^t-noscreen-constants] |
+| the start up events, raw slot 5 | eleven calls: entries 0 and 5 to 10 an empty list, entries 1 to 4 a list each, numbered 0 to 3 in every configuration read | [^t-noscreen-constants] |
+| the start up's lists | each of the four calls one list, `3F F00A` (the hold time at 10), `1F FE00` and `1F FEFE`, and then the empty list; the first then selects a map, [above](#what-a-devices-map-borrows-from-another). Six lists | [^t-noscreen-constants] |
+| the send events' lists | what [firmware.md](firmware.md#the-two-models-images-compared) reads as one list per event is three in the file: the list the tag binds calls a second and then an empty list and ends `07 FFFA`; the second loads the byte register with 0 and calls a third; the third is the test of variable 17, `71 8111`, and the pin switched both ways. The four share one empty list, never the start up's. Thirteen lists | [^t-noscreen-constants] |
 
 ## A device's power on delay
 
@@ -424,4 +446,5 @@ never send it[^t-harmony-350-clock][^unchecked].
 [^t-harmony-350-keys-c]: Measured in configurations. [The test](../../../tests/test_harmony_350_keys.py)
 [^t-harmony-350-setup-u]: Measured on a unit. [The test](../../../tests/test_harmony_350_keys.py)
 [^t-noscreen-activity]: Measured in configurations. [The test](../../../packages/codec/test/noscreenactivity.test.ts)
+[^t-noscreen-constants]: Measured in configurations. [The test](../../../packages/codec/test/noscreenconstants.test.ts)
 [^t-harmony-300-keys-u]: Measured on a unit. [The test](../../../tests/test_harmony_300_keys.py)

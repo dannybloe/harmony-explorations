@@ -139,4 +139,8 @@ export {
   NO_SCREEN_SENDS, NUMBER_SENDER_BAND, type NoScreenDeviceRequest, type NoScreenFavouritesRequest, powerOnWaits,
   type AccountDevice, DIGIT_COPIES_BY_TYPE, RECEIVER_TYPE, TELEVISION_TYPE, volumeSource,
   type RemovedNoScreenDevice, withoutNoScreenDevice,
+  // Its constant sections and lists, todo-compile-350.md 5.1.3.
+  HOLD_TIME, NO_SCREEN_PARAMETERS, noScreenDigitEntryTable, noScreenLogArea, noScreenParameterBlock, noScreenSendEventEntries,
+  noScreenSendEventLists, type NoScreenSendEventNumbers, noScreenStartUpLists, type NoScreenStartUpNumbers, noScreenStartUpTable,
+  SEND_EVENT_PINS, type SendEventLists, SENDING_FLAG, START_UP_EVENT_COUNT, START_UP_OWN_EVENTS, startUpGroup,
 } from './families/no-screen/index.ts';
