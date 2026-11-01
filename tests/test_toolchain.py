@@ -544,6 +544,10 @@ TYPESCRIPT_BOUNDS_WITH_A_REASON = {
     ('packages/bench/test/bench.test.ts', 'branching.variants.length', '>', 1): 'per page',
     ('packages/bench/test/bench.test.ts', 'variant.conditions.length', '>=', 1): 'per variant',
     ('packages/bench/test/page.test.ts', 'keys', '>', 1): 'per page the picker landed on',
+    # Not a corpus total: the codec's and the USB library's own source files, which grow with every module, so the
+    # floor only says the walk found them before a scan of them for the lab is trusted to find nothing.
+    ('packages/codec/test/noscreenattribution.test.ts', 'files.length', '>', 100):
+        'the repository\'s own source files, a churning population',
     ('packages/codec/test/inventory.test.ts', '(one.name as string).trim().length', '>=', 2):
         'per device: a name, not its length',
     ('packages/codec/test/inventory.test.ts', 'one.devices.length', '>=', 1): 'per config',
