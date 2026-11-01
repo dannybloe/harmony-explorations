@@ -52,6 +52,7 @@ what holds on this architecture.
 | which group a device takes | the position of the device key it is on, on both models: the first key 0 to the fourth key 3, a short press on the 350, and a long press 4 plus the place; not the metadata archive's name list, which is in the account's order, ascending `DeviceId`[^t-noscreen-routing]. This said the list was alphabetical<!--superseded-->, which holds on the two Harmony 300 files and on none of the five Harmony 350 files; [below](#which-infrared-group-a-device-takes) | [^s265], [^t-device-groups-c], [^t-long-press-c], [^t-harmony-350-setup-u] |
 | what is stored | exactly the codes some action list sends | [^s261] |
 | raw slot 8 | the timer table, two records per device a key selects on a configuration Logitech's current service compiled, which is twice the devices unless a device is on two keys, and empty on one compiled in 2011, so it follows the compiler and not the model, [below](#the-six-slots-the-firmware-was-read-for). This said twice the device count until a configuration with a device on two keys held twelve for five, [a device key and its long press](#a-device-key-and-its-long-press) | [^s264], [^s265], [^t-slots-c], [^t-long-press-c] |
+| the order of the sections | raw slot order, with the infrared groups directly after the clock record and the metadata archive last, up to the trailer; `layOutContainer` rebuilds all seven Logitech configurations read byte for byte, [layout](../../config-format/layout.md#where-everything-else-goes) | [^t-frame] |
 
 **A file states its size four bytes short**: `/cfg/usercfg` reports `end_addr - flash_base`, and the read
 pads past it rather than serving the `PTYY` marker, so a configuration read as a file needs that marker
@@ -415,6 +416,7 @@ never send it[^t-harmony-350-clock][^unchecked].
 [^t-slots]: Read in the firmware. [The test](../../../tests/test_harmony_350_slots.py)
 [^t-slots-c]: Measured in configurations. [The test](../../../tests/test_harmony_350_slots.py)
 [^t-file-family-delays]: Measured in configurations. [The test](../../../packages/codec/test/filefamilydelays.test.ts)
+[^t-frame]: Measured in configurations. [The test](../../../packages/codec/test/frame.test.ts)
 [^t-device-groups]: Read in the firmware. [The test](../../../tests/test_harmony_350_device_groups.py)
 [^t-device-groups-u]: Measured on a unit. [The test](../../../tests/test_harmony_350_device_groups.py)
 [^t-device-groups-c]: Measured in configurations. [The test](../../../tests/test_harmony_350_device_groups.py)

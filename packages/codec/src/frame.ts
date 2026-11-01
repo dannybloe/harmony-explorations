@@ -5,10 +5,10 @@
  * because everything that is the container's own arithmetic rather than content came with the file:
  * the cookies, the format word, the section table and every address in it, the end address, the
  * build timestamp and the trailer checksum. This module produces all of those from the content
- * alone, for arch 14 (Harmony 600, 650 and 700) and, since `todo-compile-one.md` 6.1, for arch 12
- * (Harmony One), and it is a **linker**: the content arrives as pieces of bytes whose address fields
- * are symbolic, the frame decides where every piece goes, and then writes each address field from
- * where its target ended up.
+ * alone, for arch 14 (Harmony 600, 650 and 700), since `todo-compile-one.md` 6.1 for arch 12
+ * (Harmony One) and since `todo-compile-350.md` 5.1.1 for arch 16 (Harmony 300 and 350), and it is a
+ * **linker**: the content arrives as pieces of bytes whose address fields are symbolic, the frame
+ * decides where every piece goes, and then writes each address field from where its target ended up.
  *
  * **One linker, and what differs per architecture is data**, `FRAME_ARCHITECTURES`. The Harmony One's
  * container is the same format with two more pointer slots, a NULL at raw slot 8 and a section of its
@@ -16,7 +16,11 @@
  * and a base slot 17 that is the touch hit map rather than the picture bank's two byte bias. Each of
  * those is a measurement on the One's own files, said where it is used, and none of them is a reason
  * for a second copy of the code below: the round trip in `test/frame.test.ts` is what says the one
- * implementation lays out both.
+ * implementation lays out both. **The Harmony 300 and 350's container is further from the base
+ * layout** and is still data: fifteen raw slots stated rather than inserted, five sections of the
+ * family's own that no base slot names, a key table named by the key map table's first entry rather
+ * than by a mode table it does not have, and no picture bank. The same round trip lays out its seven
+ * compiles.
  *
  * **Why pieces and not one run of bytes per base slot.** That was the obvious shape and the files
  * refute it. A section's pointer names its table, and the table's contents are anywhere: on the
@@ -36,7 +40,8 @@
  *    not insert in front of it, section 172. Section 311 reads the firmware reaching mode 0
  *    through base slot 6, like any other mode, and none of the four arch 14 application images read
  *    loads the key table's offset `0x5F` as a literal, section 328; a container with it elsewhere
- *    has not been written.
+ *    has not been written. On the Harmony 300 and 350 it is the tagged list the key map table's
+ *    entry 0 names, at `0x4B`, in all seven of their compiles, `keyTableList`.
  * 2. The body: every piece the caller lists, in the caller's order. Every piece in it is reached
  *    through an address, so the order is carried rather than derived; reproducing Logitech's
  *    emission order is a composer's question.
@@ -68,7 +73,9 @@
  *    `pictureBank`. The bank still starts on the byte after base slot 17's table on all 35 distinct One
  *    containers in the lab that have one, which is the same region in the same place with a table of
  *    its own length in front of it rather than two bytes. The hit map's pages and areas are not in
- *    this region: they are pieces like any other, wherever the caller puts them.
+ *    this region: they are pieces like any other, wherever the caller puts them. The Harmony 300 and
+ *    350 have no screen and no bank, `pictureBank`, and their last table, the metadata archive at raw
+ *    slot 13, runs up to the trailer.
  *
  * Then the trailer: the checksum over every whole sixteen bit word below it, then the end marker.
  *
@@ -119,7 +126,7 @@ import {
 import { RAW_SLOT_PREFIX, claims } from './coverage.ts';
 import { pointers } from './growth.ts';
 import { relocationFloor } from './relocate.ts';
-import { stateRecords } from './sections.ts';
+import { stateRecords, taggedListExtent } from './sections.ts';
 import { PICTURE_BANK_BIAS, PICTURE_BANK_UNADDRESSED, pictureBankStart } from './screen.ts';
 import { TOUCH_MAP_SLOT } from './tables.ts';
 
@@ -131,11 +138,31 @@ export interface FrameArchitecture {
   /** Where a user configuration is written in external flash, and so the default `flashBase`. */
   flashBase: number;
   /**
-   * The raw slots this architecture inserts into the base layout that hold a section rather than
-   * NULL. `INSERTED_SLOTS` says where the insertions are and not which of them are NULL, so this is
-   * the half it cannot say.
+   * The raw slots that hold a section of the architecture's own, one no base slot names, rather than
+   * NULL. On an insertion architecture `INSERTED_SLOTS` says where the insertions are and not which
+   * of them are NULL, so this is the half it cannot say; on the Harmony 300 and 350, whose slot table
+   * is stated rather than inserted into, it is every raw slot `ARCH16_SLOT_MAP` places no base slot on
+   * that is not NULL.
    */
   insertedSections: readonly number[];
+  /**
+   * How many raw slots the section table has, **stated only where the slot table is not the base
+   * layout with insertions**: there it cannot be derived, since a slot map names the raw slots its
+   * base slots sit on and not how many there are. Absent, it is the base layout plus `INSERTED_SLOTS`.
+   */
+  pointerCount?: number;
+  /**
+   * Whether the architecture's containers end in a picture bank: the region after the last table on a
+   * remote with a screen. A container without one ends in its last table and then the trailer.
+   */
+  pictureBank: boolean;
+  /**
+   * Where the key table after the end marker is named, when it is not mode 0's record: the raw slot of
+   * a counted table whose entry 0 names it, a tagged list. Absent on arch 12 and 14, whose key table is
+   * base slot 6's first mode record, section 52, and so `relocationFloor`'s; on the Harmony 300 and 350
+   * there is no mode table and the key table is entry 0 of the key map table, raw slot 6.
+   */
+  keyTableList?: number;
 }
 
 /**
@@ -147,26 +174,41 @@ export interface FrameArchitecture {
  *   on that remote, sections 88 and 222, and the base on every One user configuration in the lab. It
  *   inserts two raw slots, `INSERTED_SLOTS`: raw slot 8 is NULL on every One container, and raw slot
  *   18 holds a section on every one, two zero bytes, which the One's firmware seeks twice, section 38.
+ * * **Arch 16 (Harmony 300 and 350)**, `todo-compile-350.md` 5.1.1: the file `/cfg/usercfg` sits at
+ *   external `0x020000` and every pointer of the seven Logitech compiles the lab holds counts from it.
+ *   Fifteen raw slots, section 194, which are not the base twenty with insertions, so the count is
+ *   stated and the base slots come from `ARCH16_SLOT_MAP`. The five raw slots that map holds no base
+ *   slot on and that hold a section are the family's own here: raw 5 the start up event table, raw 6
+ *   the key map table, raw 8 the timer table, raw 12 the digit entry table and raw 13 the metadata
+ *   archive. Raw 6 and 8 are base slots 9 and 12 by the firmware's reading and stay out of the slot
+ *   map for the reason its docstring gives; the frame only needs to know they hold a section. Raw 14
+ *   is NULL in all seven, and no reference in the firmware reads it. No screen, so no picture bank:
+ *   the metadata archive runs up to the trailer in all seven. `test/frame.test.ts` holds each of
+ *   these on the seven, and the round trip of them all.
  *
  * Arch 8 (Harmony 880 and 885), 9 (Harmony 525) and 10 (Harmony 890) are other containers of the same
  * format, and nothing here has measured what laying one out would take, so they are refused.
  */
 export const FRAME_ARCHITECTURES: Readonly<Record<number, FrameArchitecture>> = {
-  14: { flashBase: 0x030000, insertedSections: [] },
-  12: { flashBase: 0x040000, insertedSections: [18] },
+  14: { flashBase: 0x030000, insertedSections: [], pictureBank: true },
+  12: { flashBase: 0x040000, insertedSections: [18], pictureBank: true },
+  16: {
+    flashBase: 0x020000, insertedSections: [5, 6, 8, 12, 13], pointerCount: 15, pictureBank: false, keyTableList: 6,
+  },
 };
 
 /** The frame data for `architecture`, or a refusal that names what is laid out. */
 export function frameArchitecture(architecture: number): FrameArchitecture & { pointerCount: number } {
   const profile = FRAME_ARCHITECTURES[architecture];
   const inserted = INSERTED_SLOTS[architecture];
-  if (profile === undefined || inserted === undefined) {
-    const known = Object.keys(FRAME_ARCHITECTURES).map((one) => `arch ${one}`).join(' and ');
+  if (profile === undefined || (inserted === undefined && profile.pointerCount === undefined)) {
+    const names = Object.keys(FRAME_ARCHITECTURES).map((one) => `arch ${one}`);
+    const known = `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
     throw new LayoutError(`only ${known} are laid out, not arch ${architecture}`);
   }
-  // The slot count is the base layout plus the insertions, the same arithmetic `SLOT_MAPS` is built
-  // with, rather than a second statement of 20 and 22.
-  return { ...profile, pointerCount: BASE_SLOT_COUNT + inserted.length };
+  // On an insertion architecture the slot count is the base layout plus the insertions, the same
+  // arithmetic `SLOT_MAPS` is built with, rather than a second statement of 20 and 22.
+  return { ...profile, pointerCount: profile.pointerCount ?? BASE_SLOT_COUNT + inserted!.length };
 }
 
 /**
@@ -254,7 +296,7 @@ export interface SectionPlacement {
 }
 
 export interface ContainerLayout {
-  /** 14 or 12, the architectures `FRAME_ARCHITECTURES` holds. */
+  /** 12, 14 or 16, the architectures `FRAME_ARCHITECTURES` holds. */
   architecture: number;
   /** The skin byte of the architecture record, which names the model. Section 131. */
   skin: number;
@@ -276,7 +318,8 @@ export interface ContainerLayout {
   sections: (SectionPlacement | undefined)[];
   /**
    * The sections an architecture has and the base layout does not, by **raw** slot: on the Harmony
-   * One raw slot 18, and absent or empty on arch 14. Kept apart from `sections` so that a base slot
+   * One raw slot 18, on the Harmony 300 and 350 raw slots 5, 6, 8, 12 and 13, and absent or empty on
+   * arch 14. Kept apart from `sections` so that a base slot
    * number means the same section on every architecture, which is the point of the base layout.
    */
   inserted?: Readonly<Record<number, SectionPlacement>>;
@@ -336,12 +379,13 @@ export function buildTimestampSection(builtAt: string | Uint8Array): Uint8Array 
 }
 
 /**
- * Lay out a whole arch 14 or Harmony One container from its content.
+ * Lay out a whole container of an architecture `FRAME_ARCHITECTURES` holds from its content.
  *
  * Refuses rather than repairs: an architecture `FRAME_ARCHITECTURES` does not hold, a missing table,
  * an inserted section the architecture does not have or lacks, a piece listed twice, a field outside
  * its piece, an address naming a piece that is not in the layout, on arch 14 a base slot 17 that is
- * not exactly the bank's two byte bias, and a base slot 13 clock that disagrees with the stamp. The
+ * not exactly the bank's two byte bias, a base slot or a picture the architecture does not have, and a
+ * base slot 13 clock that disagrees with the stamp. The
  * result is parsed before it is returned and every container check `parse` makes has to pass, except
  * base slot 3's own when the stamp is given as field bytes the reader refuses, which no compile here
  * needs.
@@ -371,6 +415,18 @@ export function layOutContainer(layout: ContainerLayout): LaidOut {
     if (slots[raw]?.kind !== 'inserted') {
       throw new LayoutError(`arch ${layout.architecture} has no section of its own at raw slot ${raw}`);
     }
+  }
+  // So would a base slot the architecture has no raw slot for, which on the Harmony 300 and 350 is
+  // eleven of the twenty: the walk below goes by raw slot and never asks for it. A base slot that has
+  // a raw slot and is NULL there, 18 and 19 elsewhere, is refused by the walk itself.
+  const mapped = new Set(slots.map((_kind, raw) => baseSlot(layout.architecture, raw)));
+  layout.sections.forEach((placed, slot) => {
+    if (placed !== undefined && !mapped.has(slot)) {
+      throw new LayoutError(`arch ${layout.architecture} has no base slot ${slot}`);
+    }
+  });
+  if (!profile.pictureBank && layout.pictures.length > 0) {
+    throw new LayoutError(`arch ${layout.architecture} has no picture bank`);
   }
 
   // The order, region by region, and which piece each table entry names. The table is walked in the
@@ -527,7 +583,7 @@ function checkLaidOut(c: Container, base: number, fields: Uint8Array, readable: 
 }
 
 /**
- * Take a laid out arch 14 or Harmony One container apart into the pieces `layOutContainer` puts back.
+ * Take a laid out container apart into the pieces `layOutContainer` puts back.
  *
  * Every address field the census in `growth.ts` knows becomes a reference and its bytes are zeroed,
  * the two generated sections are dropped, and the header, the section table and the trailer are
@@ -584,18 +640,30 @@ export function takeApart(c: Container): ContainerLayout {
   // The picture bank. Stated on arch 14, two bytes behind base slot 17's address. The Harmony One
   // states it nowhere, so its start is where the codec's own search put the first picture, which is
   // the reader every other Harmony One consumer uses; a container with no picture at all has an empty
-  // bank in front of the trailer.
-  const bank = PICTURE_BANK_UNADDRESSED.has(architecture)
+  // bank in front of the trailer. An architecture with no screen has no bank, and its last table runs
+  // up to the trailer, which is where an empty bank would start.
+  const bank = !profile.pictureBank ? trailer : PICTURE_BANK_UNADDRESSED.has(architecture)
     ? Math.min(trailer, ...claimed.filter((one) => one.owner === 'picture-bank').map((one) => one.start))
     : pictureBankStart(c);
   if (bank === undefined) throw new LayoutError('the picture bank has no stated start');
   const keyStart = c.markerOffset + END_MARKER_LENGTH;
-  const keyEnd = relocationFloor(c);
+  const keyEnd = keyTableEnd(c, profile, keyStart);
   const archRaw = archSlot(architecture, ARCHITECTURE_SLOT);
   const clockRaw = archSlot(architecture, CLOCK_RECORD_SLOT);
+  // Each generated section is its own length and no more. On arch 12 and 14 the next table follows
+  // it directly, so this is the same range as up to the next table; on the Harmony 300 and 350 the
+  // infrared groups follow the clock record, since base slot 4 is not there to sit between it and
+  // base slot 5's table, and they are content like anything else parked in front of a table.
+  const generatedRange = (raw: number, length: number): [number, number] => {
+    const from = starts[raw]!;
+    if (nextStart(raw, bank) < from + length) {
+      throw new LayoutError(`raw slot ${raw} is shorter than the ${length} bytes the frame writes there`);
+    }
+    return [from, from + length];
+  };
   const generated = new Map<number, [number, number]>([
-    [archRaw, [starts[archRaw]!, nextStart(archRaw, bank)]],
-    [clockRaw, [starts[clockRaw]!, nextStart(clockRaw, bank)]],
+    [archRaw, generatedRange(archRaw, ARCH_RECORD_LENGTH)],
+    [clockRaw, generatedRange(clockRaw, CLOCK_SECTION_LENGTH)],
   ]);
 
   const refusals: string[] = [];
@@ -694,9 +762,11 @@ export function takeApart(c: Container): ContainerLayout {
       if (kind.kind === 'base') sections[kind.base] = placement;
       else inserted[raw] = placement;
     };
-    if (generated.has(raw)) {
+    const framesOwn = generated.get(raw);
+    if (framesOwn !== undefined) {
       placeAt({ before, head: [] });
-      before = [];
+      // What follows the generated section up to the next table is parked in front of that table.
+      before = within(framesOwn[1], nextStart(raw, bank));
       continue;
     }
     const region = within(starts[raw]!, nextStart(raw, bank));
@@ -726,6 +796,23 @@ export function takeApart(c: Container): ContainerLayout {
     ...(Object.keys(inserted).length > 0 ? { inserted } : {}),
     pictures: within(bank, trailer),
   };
+}
+
+/**
+ * Where the key table after the end marker ends. On arch 12 and 14 it is mode 0's record,
+ * `relocationFloor`. On an architecture that names it as entry 0 of a table of tagged lists, the
+ * Harmony 300 and 350's key map table, that entry has to land on the first byte after the marker,
+ * as it does in all seven of their compiles, and the list's own count gives the extent.
+ */
+function keyTableEnd(c: Container, profile: FrameArchitecture, keyStart: number): number {
+  if (profile.keyTableList === undefined) return relocationFloor(c);
+  const first = c.pointerArray(profile.keyTableList)?.[0];
+  if (first === undefined || c.blobOffsetOf(first) !== keyStart) {
+    throw new LayoutError(`raw slot ${profile.keyTableList}'s first entry does not name the key table after the end marker`);
+  }
+  const extent = taggedListExtent(c.blob, keyStart);
+  if (extent === undefined) throw new LayoutError('the key table does not read as a tagged list');
+  return keyStart + extent.length;
 }
 
 /** The base slot an owner name belongs to, `slot-<n>-...`, or undefined for anything else. */
