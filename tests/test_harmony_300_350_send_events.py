@@ -55,7 +55,7 @@ about the Device buttons and on all four lists switching on the sending flag, no
 So the difference is invisible if the four pins light the four device keys alike, and visible as another
 light blinking if they do not. **Not checked**: that mapping, the `0x07 FFFA`, and whether an event raised
 while another list runs is dropped. The bench test written for `todo-compile-300.md` 4.3,
-`packages/bench/irtests/300-4-3-350-compile.json`, sends from groups 4 to 7 on a 300, and a receiver hears
+`packages/bench/irtests/done/300-4-3-350-compile.json`, sends from groups 4 to 7 on a 300, and a receiver hears
 the codes and cannot see the pins, so it can confirm the first half of the answer and not the second.
 
 **Width.** Arch 16 alone, one image build per model; 13 configurations, 2 of them read off a 300 and

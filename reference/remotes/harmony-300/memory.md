@@ -9,8 +9,8 @@ table. Only its files have been read off a 300, never its memory.
 
 | | value | evidence |
 |---|---|---|
-| infrared groups | **four in every configuration**, unused ones empty, the model's stated maximum | [^s264] |
-| the group index | the device key: TV 0, Cable/Sat 1, DVD 2, VCR/Aux 3, selected on the key's press | [^s265], [^t-device-groups-c] |
+| infrared groups | **four in every configuration Logitech compiles for it**, unused ones empty, the service's maximum for the model; a 350's compile with eight ran on it, [the family's page](../../architectures/harmony-300-350/README.md#making-a-harmony-300-behave-as-a-harmony-350) | [^s264] |
+| the group index | the device key: TV 0, Cable/Sat 1, DVD 2, VCR/Aux 3, selected on the key's press in Logitech's compile | [^s265], [^t-device-groups-c] |
 
 ## What the 300 showed about the family
 

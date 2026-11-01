@@ -8,13 +8,14 @@ every key on the remote controls that one device; press Watch TV and, in Logitec
 and the set top box switch on together, [behaviour.md](behaviour.md). It runs on two AA batteries and is
 set up from a computer over USB.
 
-The Harmony 300 is the Harmony 350 with **half the devices and no long press**: the same moulding, a
-near identical application, four device keys that each hold one device rather than two. What the two share is stated
-once in [the family's folder](../../architectures/harmony-300-350/README.md), and this folder states what
-is the 300's own. How evidence is marked is in [the reference's README](../../README.md).
+The Harmony 300 and the Harmony 350 are one remote for configurations, and the [family's folder](../../architectures/harmony-300-350/README.md)
+describes them as one: what a configuration can give each, and the one entry that lets a Harmony 300 run a
+configuration compiled for a Harmony 350 with eight devices and a long press. This folder holds only what is the
+300's own: its printing and keys, its skin, its USB identity and what Logitech's service allows it. How evidence is
+marked is in [the reference's README](../../README.md).
 
-**This library never opens it with `openHarmony` and never writes to it**; its configuration is read as a
-file, read only, [the family's usb.md](../../architectures/harmony-300-350/usb.md).
+**This library never opens it with `openHarmony`**; its configuration is read as a file,
+[the family's usb.md](../../architectures/harmony-300-350/usb.md).
 
 ## Skins
 
@@ -36,32 +37,24 @@ checked[^unchecked].
 
 ## Key numbers
 
-The figures that are the family's link to its folder; the rest are the 300's own.
+Everything the two models share, the architecture, product id, firmware, container, the screen, the devices
+and the activity a configuration can hold and the long press, is the family's. The 300's own:
 
 | | value | evidence |
 |---|---|---|
-| architecture, product id, firmware, container | the family's | [the family's README](../../architectures/harmony-300-350/README.md) |
 | `bcdDevice` | `0x1078`, the family's base skin even on a skin 79 remote | [^s195][^s264] |
-| screen | **none** | [^t-no-screen]; [display.md](display.md) |
-| keys | 55, the 350's moulding, in two printings, skin 78's and skin 79's; each key raises the code of the 350 key in the same place, 49 heard so on a skin 79 remote, [keys.md](keys.md#scan-codes) | [^t-moulding], [^t-harmony-350-keys-c], [^t-harmony-300-keys-u]; [keys.md](keys.md) |
-| devices | **4**, one per device key, and every configuration holds four infrared groups | [^s264c][^s264b] |
-| activities | no `Activities` capability, only `PartiallySetupActivities`; at most one, a power on shortcut | [^s265b]; [features.md](features.md) |
-| favourite channels | 4 for skin 79; 5 for skin 78 | [^s265b] for 79; [^unchecked] for 78 |
-| long press | **none** | [^t-long-press] |
+| keys | 55, the 350's moulding, in two printings, skin 78's and skin 79's; each key raises the code of the 350 key in the same place, 49 heard so on a skin 79 remote, [keys.md](keys.md#scan-codes) | [^t-moulding], [^t-harmony-350-keys-c], [^t-harmony-300-keys-u] |
+| what Logitech's service gives it | 4 devices, no long press, no `Activities` capability, 4 favourite channels for skin 79 and 5 for skin 78: choices of the service, not limits of the remote, [the family's table](../../architectures/harmony-300-350/README.md#what-still-differs) and [features.md](features.md) | [^s265b] |
 
 ## The files
 
 | file | what it holds |
 |---|---|
 | [keys.md](keys.md) | the keys, the two printings and how each differs from the 350's, the two drawings |
-| [display.md](display.md) | none |
-| [features.md](features.md) | Logitech's statement, devices, the activity question, favourites |
-| [behaviour.md](behaviour.md) | what the remote does in use |
-| [hardware.md](hardware.md) | what is known of the inside, which is the family's |
-| [memory.md](memory.md) | what of the configuration is the 300's own |
-| [firmware.md](firmware.md) | the shared 1.4 image |
+| [features.md](features.md) | what Logitech's service states for this model |
+| [behaviour.md](behaviour.md) | what the guide says it does, and what was heard of its keys |
 | [usb.md](usb.md) | `bcdDevice` and the skin it misnames |
-| [misc.md](misc.md) | everything else |
+| [display.md](display.md), [hardware.md](hardware.md), [memory.md](memory.md), [firmware.md](firmware.md), [misc.md](misc.md) | the family's, with a line each on what the 300 adds |
 
 ## Not checked
 
@@ -74,11 +67,7 @@ The figures that are the family's link to its folder; the rest are the 300's own
 [^s195]: Measured on a unit. [Section 195](../../../docs/findings.md#s195)
 [^s264]: Measured on a unit. [Section 264](../../../docs/findings.md#s264)
 [^unchecked]: Not checked.
-[^t-no-screen]: Stated by Logitech, in the manual. [The test](../../../tests/test_silhouettes.py)
 [^t-moulding]: Measured on a unit. [The test](../../../packages/silhouettes/test/models.test.ts)
-[^s264c]: Stated by Logitech, by their service. [Section 264](../../../docs/findings.md#s264)
-[^s264b]: Measured in configurations. [Section 264](../../../docs/findings.md#s264)
 [^s265b]: Stated by Logitech, by their service. [Section 265](../../../docs/findings.md#s265)
-[^t-long-press]: Stated by Logitech, by their service. [The test](../../../packages/usb/test/models.test.ts)
 [^t-harmony-350-keys-c]: Measured in configurations. [The test](../../../tests/test_harmony_350_keys.py)
 [^t-harmony-300-keys-u]: Measured on a unit. [The test](../../../tests/test_harmony_300_keys.py)

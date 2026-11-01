@@ -124,9 +124,12 @@ other key events are fixed codes, not a held key's[^t-device-groups].
 
 The four device keys bind scan codes 5, 1, 7 and 4, in the order above, on both models; on the Harmony 300
 that order is tied to the printed keys by which device was put on which key[^s265][^t-device-groups-c].
-**A Harmony 300 selects the device on the key's press, and a Harmony 350 on its release.** The 350's press
-selects nothing: it switches one of the four output pins and starts two timers that switch it again, the
-timers of [the six slots](#the-six-slots-the-firmware-was-read-for)[^t-device-groups-c].
+**Logitech's compiles for a Harmony 300 select the device on the key's press, and its compiles for a Harmony 350
+on the key's release.** This said the remotes differ in that<!--superseded--> until a configuration compiled for a 350
+ran on a Harmony 300 and the long presses chose their second devices through the held event: the firmware raises
+the same events on both, and which one selects is the configuration's binding, [the README](README.md#making-a-harmony-300-behave-as-a-harmony-350)[^t-harmony-300-group-4-send-u].
+In a 350's compile the press selects nothing: it switches one of the four output pins and starts two timers that
+switch it again, the timers of [the six slots](#the-six-slots-the-firmware-was-read-for)[^t-device-groups-c].
 
 **A long press device takes group 4 plus the key's place, on both configurations read that have
 one.** Every 350 configuration allocates eight groups[^s263]. The first read gives two keys a
@@ -145,17 +148,18 @@ is stored and timed is [below](#a-device-key-and-its-long-press).
 
 ## A device key and its long press
 
-**A Harmony 350 device key selects its short press device when it is let go, and its long press device
-when it is held; a Harmony 300's selects as it goes down.** The firmware ends every press in one of two
+**A device key selects its short press device when it is let go and its long press device when it is held,
+in a configuration compiled for a Harmony 350; in one compiled for a Harmony 300 it selects as it goes down.**
+Which of the two a remote does is the configuration's, on both models[^t-harmony-300-group-4-send-u]. The firmware ends every press in one of two
 events, a release or, once the key has been held for the hold time, a held event and no release,
-[firmware.md](firmware.md#a-held-key)[^t-long-press]. On every configuration of the 350 read, the binding
+[firmware.md](firmware.md#a-held-key)[^t-long-press]. On every configuration compiled for a 350 that was read, the binding
 in raw slot 6's entry 0 that selects a key's device is its release, and where the key has a second device
 a binding of its held event selects that one; the press only cancels the timers, switches one of the four
-output pins and starts timers. On both configurations of the 300 read, the press switches the pin and
-selects[^t-long-press-c]. A select ends the hold, so the 300's device keys never raise a release or a
+output pins and starts timers. On both configurations compiled for a 300 that were read, the press switches the pin
+and selects[^t-long-press-c]. A select ends the hold, so a device key bound that way never raises a release or a
 held event[^t-long-press].
 
-| | Harmony 350 | Harmony 300 | evidence |
+| | compiled for a Harmony 350 | compiled for a Harmony 300 | evidence |
 |---|---|---|---|
 | the short press device | the release, `0x40` and the scan code: `07 FFFB`, which cancels all four timers, then `1F FFnn` | the press, `0x80` and the scan code: `1F E9p2` then `1F FFnn` | [^t-long-press-c] |
 | the long press device | the held event, `0xC0` and the scan code: `07 FFFB` then `1F FFnn`, only on a key that has one | none | [^t-long-press-c] |
@@ -373,7 +377,10 @@ never send it[^t-harmony-350-clock][^unchecked].
   command to another device rests on one activity's power codes measured on a Harmony 350,
   [above](#a-devices-power-on-delay)[^unchecked]. This listed the measurement itself as not checked until
   then, and the unit too, until a Harmony 350 was measured at two values; on a Harmony 300 both rest on its
-  application being the same code but for one routine, which differs in the send kind only, [firmware.md](firmware.md#the-two-models-images-compared)[^unchecked].
+  application being the same code but for one routine, which differs in the send kind only, [firmware.md](firmware.md#the-two-models-images-compared)[^unchecked];
+  Watch TV's power on waits were then heard on a Harmony 300 within about 0.01 seconds of a Harmony 350's, [the README](README.md#making-a-harmony-300-behave-as-a-harmony-350)[^t-harmony-300-group-4-send-u].
+* Why the long press of two device keys did not take in the first run of a Harmony 300 given a Harmony 350's
+  configuration and took when repeated[^unchecked].
 * What a person meets pressing Watch TV with one of its devices already on, which the configurations say
   switches it off, and how an input that steps through its values, or mixes codes and states, compiles
   here, [the activity](#the-activity)[^unchecked].
@@ -425,3 +432,4 @@ never send it[^t-harmony-350-clock][^unchecked].
 [^t-harmony-350-setup-u]: Measured on a unit. [The test](../../../tests/test_harmony_350_keys.py)
 [^t-noscreen-activity]: Measured in configurations. [The test](../../../packages/codec/test/noscreenactivity.test.ts)
 [^t-harmony-300-keys-u]: Measured on a unit. [The test](../../../tests/test_harmony_300_keys.py)
+[^t-harmony-300-group-4-send-u]: Measured on a unit. [The test](../../../tests/test_harmony_300_group_4_send.py)

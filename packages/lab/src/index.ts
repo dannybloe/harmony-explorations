@@ -361,6 +361,20 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // unit held and holds every step to the presses the European printing implies.
   h300_every_key_ir: '20261031T125339Z-ir-test-harmony-300-every-key-sends-something.json',
   h300_keys_ir: '20261031T131916Z-ir-test-harmony-300-every-key-in-the-tv-s-and-the-kpn-s-modes.json',
+  // todo-compile-300 4.3: Logitech's compile of the Harmony 350's test setup with firmware event 0xFF bound in key map
+  // 0 (`work/300-event-ff/h350-compile-event-ff.bin`), on the bench Harmony 300. `h300_event_ff_ir` is the first run
+  // of the 20 steps: groups 5 and 7 sent, while the long presses of the TV and DVD keys did not take, so the remote
+  // stayed in the LG's and the Denon's modes. `h300_event_ff_ir_redo` is the first two steps done again, the TV's long press
+  // taking and group 4 sending. `h300_event_ff_monitor` is the bench monitor's log; the last Denon Volume Up and the
+  // Switch's Input 1, group 6, at 08:57:25 to 08:57:35 UTC on 1 November 2026, are step 6 done live. **The monitor
+  // log also holds three pulse fragments that match every code**: a test reads only frames of more than 20 pulses.
+  // `packages/bench/test/eventff300.test.ts` matches the pulses again against the patched file.
+  h300_event_ff_ir: '20261101T083956Z-ir-test-harmony-300-logitech-s-compile-of-the-harmony-350-s-test-setup.json',
+  h300_event_ff_ir_redo: '20261101T085419Z-ir-test-harmony-300-logitech-s-compile-of-the-harmony-350-s-test-setup.json',
+  h300_event_ff_monitor: '20261031T1211Z-ir-monitor.jsonl',
+  // The same file on the bench Harmony 350, a two step check (`packages/bench/irtests/done/350-event-ff-check.json`): the
+  // entry is harmless on a build that never raises 0xFF. Read by `packages/bench/test/eventff300.test.ts`.
+  h350_event_ff_ir: '20261101T090605Z-ir-test-harmony-350-logitech-s-compile-with-event-0xff-bound.json',
   h350_delay_ir_3s: '20261030T094935Z-ir-test-harmony-350-the-tv-s-power-on-delay-at-10-s.json',
   h350_delay_ir_10s: '20261030T095433Z-ir-test-harmony-350-the-tv-s-power-on-delay-at-10-s.json',
   h600_delay_ir_before: '20261001T093603Z-ir-test-harmony-600-the-kpn-box-s-power-on-delay.json',

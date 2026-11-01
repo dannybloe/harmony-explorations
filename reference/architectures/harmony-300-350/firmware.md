@@ -58,9 +58,10 @@ The kind picks the firmware event the send raises, `0x2D` for 0, `0x2F` for 1, `
 This said that `0xFF` raised `0x2D`, group 0's event<!--superseded-->, until the chain's end was read again:
 the `BNZ` after its last step is the default and the fall through is kind 0[^t-harmony-300-group-4-send].
 **So the two builds disagree for one input only, a send from a group above 3: the 350 raises the event of
-group 3 and the 300 raises event `0xFF`**, to which no configuration of the family binds anything[^t-harmony-300-group-4-send].
-Logitech's service holds a Harmony 300 to four infrared groups and a Harmony 350 to eight,
-[the README](README.md#how-the-two-differ), so a configuration it compiles for a 300 cannot reach the
+group 3 and the 300 raises event `0xFF`**, to which none of the 13 configurations of the family read, Logitech's compiles among them, binds anything[^t-harmony-300-group-4-send].
+Logitech's service holds a Harmony 300 to four infrared groups and a Harmony 350 to eight, which is a choice of the
+service and not of the remote,
+[the README](README.md#what-still-differs), so a configuration it compiles for a 300 cannot reach the
 difference and one for a 350 with more than four groups can. Of the 13 configurations of the family read,
 four send from a group above 3 and all four are the 350's: Logitech's compile of the test setup and its
 first compile and the eight device compile, whose groups reach 7, and a contributed 350's, which reaches
@@ -84,8 +85,11 @@ With event `0xFF` no list is bound, none runs, the bit stays set and the sender 
 Harmony 300 given a send from a group above 3 queues the code and never transmits it, and every later send
 queues behind it[^t-harmony-300-group-4-send]. A Harmony 300 holding such a configuration did exactly
 that on a unit: the group above 3 sent nothing, the remote then ignored most keys, and a device key stayed
-lit until the batteries came out[^t-harmony-300-group-4-send-u]. That the later keys fail for the reason
-traced, and that the pins are the device key lights, are **not read**[^unchecked]. The acknowledgement is read
+lit until the batteries came out[^t-harmony-300-group-4-send-u]. **Binding event `0xFF` to the list event `0x30`
+runs removes the hang**: the same configuration with that one entry sent from groups 4 to 7 on a Harmony 300 and the
+remote kept answering, [the README](README.md#making-a-harmony-300-behave-as-a-harmony-350)[^t-harmony-300-group-4-send-u]. That the
+later keys failed for the reason traced, which the entry's removing the hang supports and no trace reads, and that the
+pins are the device key lights, are **not read**[^unchecked]. The acknowledgement is read
 on this family only, the Harmony One's and the Harmony 600, 650 and 700's are not checked.
 
 **The bootloader and safe mode differ more**, [below](#the-two-models-bootloaders-and-safe-mode-images).
@@ -141,7 +145,7 @@ checked[^unchecked].
 **The Harmony 350's 1.4 image reports the unit's skin and never acts on it.** It reads one byte, tells the host, and has no
 branch on it that anything reaches[^t-harmony-350-skin]. So the keypad scan, the held event, the file write
 path and the configuration validator treat a remote that states skin 79 as they treat one that states 104, and the
-firmware caps nothing by skin: the limits this family states per skin, [the README](README.md#how-the-two-differ),
+firmware caps nothing by skin: the limits this family states per skin, [the README](README.md#what-still-differs),
 are Logitech's service's and not the image's[^t-harmony-350-skin].
 
 | | what the image does | evidence |

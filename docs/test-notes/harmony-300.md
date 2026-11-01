@@ -253,7 +253,7 @@ On 1 November 2026. The unit held Logitech's compile of the Harmony 350's test s
 infrared groups 0 to 7, the lab's `work/setups/h350-test/compile-Result.EzHex`, written through
 `write-file-config.ts` (the write's journal sits beside the file in the lab, `compile-Result.EzHex.write-*.log`).
 The predictions, `docs/predictions/harmony-300-as-350.md`, and the bench test,
-`packages/bench/irtests/300-4-3-350-compile.json`, were committed before the run. Three runs, the lab's
+`packages/bench/irtests/done/300-4-3-350-compile.json`, were committed before the run. Three runs, the lab's
 `reads/20261101T074757Z-*`, `075108Z-*` and `075344Z-*` (`ir-test-harmony-300-logitech-s-compile-...json`).
 
 **What was heard.** Step 1 (the LG TV, group 0) sent Volume Up and Info as predicted in all three. Step 2: a long
@@ -274,7 +274,7 @@ clear the sender's wait flag never runs, and the sender stays in its first state
 the 300 would raise group 0's event, was a misread default. That the later keys fail for this reason and that
 the pins are the key lights are not read. Checkable without a unit: a 350 configuration holding groups 0 to 3
 only should work on this unit; a binding of event `0xFF` to a list ending in `07 FFFA` should make a group 4 send
-work (not written, not proposed as anything but a prediction).
+work. The second was then written and run, below.
 
 **The two boards compared, by a person.** The Harmony 300 and the Harmony 350 were opened and the boards
 photographed side by side, the lab's `reference/images/300-350-pcb.jpeg`. Same silkscreen on both, `PEPSI PA3`
@@ -285,3 +285,30 @@ cyan on the 350's, one blue and a scratch on the 300's); whether that is a part 
 is a photograph and not a reading. A pad row at the bottom is labelled `ICD_VPP`, `RB7`, `RB6`, `DGND`,
 `VDD_3V3`, `VBATT`, `UART1 RXD`, `UART1 TXD`: the PIC's in circuit programming connection and a serial port.
 Nothing was connected to them.
+
+### The same file with event 0xFF bound, written and run
+
+On 1 November 2026. The lab's `work/300-event-ff/h350-compile-event-ff.bin` is the compile above with one entry
+added to key map 0: tag `0xFF`, the opcode and operand of the entry tagged `0x30`, so a send from a group above 3
+runs the list a 350 runs there, which ends in `07 FFFA`. `bind-ff.ts` beside it made the file from the compile with
+the codec's `withMapEntries` and `restamped`, 118513 bytes to 118517; `packages/codec/test/noscreeneventff.test.ts`
+makes it again byte for byte. It was written through `write-file-config.ts` (the journals sit beside it,
+`h350-compile-event-ff.bin.write-*.log`) and read back identical.
+
+* The whole bench test, the lab's `reads/20261101T083956Z-ir-test-harmony-300-*.json` (fixture `h300_event_ff_ir`):
+  all 20 steps ran, the remote answered through them and no battery was pulled. Group 5 (Kodi's Exit, step 4) and
+  group 7 (Sony HT's Stop, step 8) were heard. **The long presses of the TV key (step 2) and the DVD key (step 6)
+  did not take**: the remote stayed in the LG TV's mode and the Denon's, and the keys after them sent those
+  devices' codes. How long each was held was not recorded.
+* Steps 1 and 2 done again, `reads/20261101T085419Z-ir-test-harmony-300-*.json` (`h300_event_ff_ir_redo`): the
+  Denon's Volume Up, then the Knoll's Timer from group 4, which the three runs without the entry never heard.
+* Step 6 done again live, from the monitor log `reads/20261031T1211Z-ir-monitor.jsonl` (`h300_event_ff_monitor`)
+  at 08:57:25 to 08:57:35 UTC: the Denon's Volume Up and then the Switch's Input 1, group 6. The log's two- and
+  three-pulse fragments match every code and are not read.
+
+So each of groups 4 to 7 sent from this one configuration on this unit, from one press at least. The same file
+was written to the bench Harmony 350 and a two step check heard the Denon, the Knoll's Timer and the LG TV, the
+remote working throughout (`harmony-350.md`); the entry is harmless there. The predictions, scored,
+are in `docs/predictions/harmony-300-as-350.md`; the arguments are in `tests/test_harmony_300_group_4_send.py` and
+`packages/bench/test/eventff300.test.ts`. **Decision 27, installing the 350's application on this unit, was not
+exercised and is not needed**: nothing was written to the unit's firmware.

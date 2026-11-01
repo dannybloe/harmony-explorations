@@ -1,7 +1,7 @@
 # Harmony 300: hardware
 
-What is inside, as far as anything here can say, which is little: no 300 has been opened. The processor,
-its internal flash, the batteries and the moulding are the family's, stated once in
+What is inside is the family's, as far as anything here can say, which is little: the circuit board, the
+processor, its internal flash, the batteries and the moulding are stated once in
 [the family's README](../../architectures/harmony-300-350/README.md) and
 [memory.md](../../architectures/harmony-300-350/memory.md).
 

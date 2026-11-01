@@ -1349,8 +1349,8 @@ class TheLabRegisterCoversTheSiteAtArtefactLevel(unittest.TestCase):
         # 167 with `work/300-delay/`, todo-compile-300 1.5, and 168 with `work/300-every-key/`, 2.1 and 2.2.
         # 172 with the four firmware reads of 31 October 2026, `reads/20261031T-h300-fw/` and
         # `reads/20261031T-h350-fw-first/` each with its second read beside it.
-        # 173 with `reference/images/`, the bench photographs, 1 November 2026.
-        self.assertEqual(len(named), 173, "lab paths the register names")
+        # 173 with `reference/images/`, the bench photographs, 1 November 2026, and 174 with `work/300-event-ff/`.
+        self.assertEqual(len(named), 174, "lab paths the register names")
         for path in sorted(named):
             with self.subTest(path=path):
                 if '*' in path:
@@ -1460,9 +1460,9 @@ class TheRegisterQueryAnswersForThePathThatWasOpened(unittest.TestCase):
         # 142 with `work/350-delay/`, todo-compile-350 1.8, and 143 with `work/350-every-key/`, 2.2.2.
         # 144 with `work/300-delay/`, todo-compile-300 1.5, and 145 with `work/300-every-key/`, 2.1 and 2.2.
         # 146 and 147 with the two firmware read rows of 31 October 2026, the Harmony 300's and the 350's.
-        # 148 with `reference/images/`, the bench photographs.
-        self.assertEqual(len(rows), 148)
-        self.assertEqual(len(dict(rows)), 148, 'a duplicated path would make a query ambiguous')
+        # 148 with `reference/images/`, the bench photographs, and 149 with `work/300-event-ff/`.
+        self.assertEqual(len(rows), 149)
+        self.assertEqual(len(dict(rows)), 149, 'a duplicated path would make a query ambiguous')
         self.assertNotIn('unseen', dict(rows), 'the status legend is not an artefact')
 
     def test_a_query_is_answered_by_ancestors_and_by_descendants(self):

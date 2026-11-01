@@ -245,8 +245,9 @@ The other 22 records report skin 0, being regional duplicates of twelve of the s
 It is a list rather than a column of the record because a column would be 35 copies of "no", a property
 of the table rather than of the product; the test holds the list and the records apart, so a model with a
 long press cannot be given a record unnoticed[^t-long-press]. On the Harmony 350 it is what makes the
-device limit work: four device keys, two presses each, eight devices, where the Harmony 300 has four keys,
-no long press and four devices[^t-capabilities].
+device limit work: four device keys, two presses each, eight devices, where Logitech's service gives the
+Harmony 300 four device keys, no long press and four devices[^t-capabilities], a limit of the service, since a Harmony 300
+ran a configuration with eight[^t-harmony-300-group-4-send-u], [the family's page](../architectures/harmony-300-350/README.md#making-a-harmony-300-behave-as-a-harmony-350).
 
 ## An activity limit
 
@@ -303,3 +304,4 @@ it; [the architectures](../architectures/README.md#three-ways-a-host-talks-to-a-
 [^s127]: Read in the firmware. [Section 127](../../docs/findings.md#s127)
 [^t-long-press]: Stated by Logitech, by their service. [The test](../../packages/usb/test/models.test.ts)
 [^s88]: Read in the firmware. [Section 88](../../docs/findings.md#s88)
+[^t-harmony-300-group-4-send-u]: Measured on a unit. [The test](../../tests/test_harmony_300_group_4_send.py)
