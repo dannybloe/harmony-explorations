@@ -1,0 +1,13 @@
+{
+  "name": "Harmony 350, the empty configuration built from nothing",
+  "description": "todo-compile-350 5.1.5, one write of lab work/setups/h350-empty/empty-350.bin: 1101 bytes from buildEmptyNoScreenConfiguration, no device and no activity, no Logitech file as input. The key table binds only the four send events, which only the firmware's send path raises, and no press, release or hold of any key; the start up selects no key map, which no configuration read so far does. Predicted: no step sends anything, so the monitor hears nothing during the whole run; no device key lights, since the press binding is what lights one in Logitech's compiles (that the pins are the key lights is itself not checked); and the remote does not hang, since nothing is queued. Note per step whether any key lights and whether the remote still reacts at all.",
+  "steps": [
+    { "instruction": "TV/Media → Cable/PC → AVR/Game → DVD/Music", "expect": [] },
+    { "instruction": "Watch TV", "expect": [] },
+    { "instruction": "Power", "expect": [] },
+    { "instruction": "Volume Up → Volume Down → Mute", "expect": [] },
+    { "instruction": "Up → Down → Left → Right → OK", "expect": [] },
+    { "instruction": "1 → 2 → 3", "expect": [] },
+    { "instruction": "Long press TV/Media", "expect": [] }
+  ]
+}
