@@ -353,7 +353,10 @@ export function withStartUpSelect(c: Container, map: number): Container {
 
 /**
  * The start up event list without its select: the inverse of `withStartUpSelect`, which leaves entry 1's list as
- * entries 2 to 4's are, for a configuration whose device on infrared group 0 is taken out.
+ * entries 2 to 4's are, for a configuration whose device on infrared group 0 is taken out. **That is not what
+ * Logitech writes there**: the one compile of the family whose top left key holds no device selects the map of its
+ * one device, on group 2, `startUpGroup` in `constants.ts` and `test/noscreenconstants.test.ts`, so a removal that
+ * leaves another device would select it, and only a configuration with no device has no select.
  */
 export function withoutStartUpSelect(c: Container): Container {
   const { at, body } = startUpSelectList(c);
