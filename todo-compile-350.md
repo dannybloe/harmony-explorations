@@ -77,7 +77,7 @@ Logitech compile of part of a test setup written and used, then our composers on
   - [ ] 5.1.5 The empty configuration, written once to the bench 350
   - [ ] 5.1.6 The composers emitting their pieces onto it
   - [ ] 5.1.7 The stored but uncalled lists and the Denon's inputs
-  - [ ] 5.1.8 The numbering of lists, maps, timers and state variables: find the rule, or count it as description
+  - [x] 5.1.8 The numbering of lists, maps, timers and state variables: find the rule, or count it as description: no rule over four distinct setups, so it is description (the device walk, the map order, the timer order and the send lists' interleaving), `packages/codec/test/noscreennumbering.test.ts`
 - [ ] 5.2 Checked: it rebuilds, and every byte is attributed to a generator with none carried
   - [ ] 5.2.1 The family's attribution, calibrated on the seven Logitech compiles
   - [ ] 5.2.2 Nothing carried and nothing unclaimed on our build, with a planted byte control

@@ -87,7 +87,7 @@ import { join } from 'node:path';
 import { LAB, needing, require_, skipUnless, skipWithoutLab } from '@harmony/lab';
 
 import { type Container, irGroups, metadataArchive, parse, stateRecords, stateVariables } from '../src/index.ts';
-import { instructionsAt, keyMaps, mapOfGroup } from '../src/families/no-screen/devices.ts';
+import { instructionsAt, mapOfGroup } from '../src/families/no-screen/devices.ts';
 import { DEVICE_KEYS } from '../src/families/no-screen/keys.ts';
 import { nameOfLabel } from '../src/shared/core.ts';
 
@@ -155,7 +155,7 @@ function walkOf(label: string, c: Container): Walk {
   const used = new Set(devs.map((d) => d.group).filter((g) => g !== undefined));
   const free = (irGroups(c) ?? []).map((g, i) => [g, i] as const).filter(([g, i]) => g.addresses.length > 0 && !used.has(i)).map(([, i]) => i);
   const none = devs.filter((d) => d.group === undefined);
-  if (none.length === 1 && free.length === 1) none[0]!.group = free[0];
+  if (none.length === 1 && free.length === 1) none[0]!.group = free[0]!;
   for (const d of devs) {
     if (d.group === undefined) continue;
     try { d.map = mapOfGroup(c, d.group); } catch { /* a group no device key selects */ }
