@@ -84,4 +84,4 @@ Logitech compile of part of a test setup written and used, then our composers on
   - [x] 5.2.3 The entry takes no Logitech container and the build runs with no lab: held already, now tested
   - [ ] 5.2.4 The whole setup compared part by part with Logitech's compile, with the round trip and the inflated archive
 - [ ] 5.3 Written to the bench 350 and used with a bench test
-- [ ] 5.4 Every configuration of the family binds firmware event 0xFF to the acknowledging list, after 5.2 holds without it, so one build serves the Harmony 300 and 350 alike, decision 28
+- [x] 5.4 Every configuration of the family binds firmware event 0xFF to the acknowledging list, after 5.2 holds without it, so one build serves the Harmony 300 and 350 alike, decision 28: `noScreenAcknowledgingEntry`, added last by `withAcknowledgingEntry`, every build from nothing carries it and our build stays every byte a generator's, `packages/codec/test/noscreenacknowledging.test.ts`; the 350 build is the file for both remotes, the setup cannot be built for the 300's own skin
