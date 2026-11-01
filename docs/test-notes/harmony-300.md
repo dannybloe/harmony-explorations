@@ -312,3 +312,5 @@ remote working throughout (`harmony-350.md`); the entry is harmless there. The p
 are in `docs/predictions/harmony-300-as-350.md`; the arguments are in `tests/test_harmony_300_group_4_send.py` and
 `packages/bench/test/eventff300.test.ts`. **Decision 27, installing the 350's application on this unit, was not
 exercised and is not needed**: nothing was written to the unit's firmware.
+
+After the 4.3 runs the unit was given its own configuration back, `harmony-300-programmed-config.bin`, read back identical; the bench 350 likewise holds Logitech's compile of the test setup again.
