@@ -277,13 +277,13 @@ export const VERDICTS: Readonly<Record<string, { verdict: Verdict; by: string }>
   'list, uncalled silent write': { verdict: 'edits', by: 'composeNoScreenDevice: two per power variable, POWER_RESETS, 4.1.3' },
   'timer table': { verdict: 'edits', by: 'appendTableEntries, onto the donor\'s table' },
   'timer record': { verdict: 'edits', by: 'composeNoScreenDevice, two per key device' },
-  'state variable table': { verdict: 'other', by: 'buildStateTables for the four slot and touch families; NO_SCREEN_FAMILY.stateTables refuses' },
-  'state record, clock': { verdict: 'other', by: 'buildStateTables, clockSpec; refuses 16' },
-  'state record, firmware': { verdict: 'other', by: 'buildStateTables, firmwareRecords; refuses 16' },
-  'state record, device power': { verdict: 'edits', by: 'composeDeviceFor, appendNarrowStateVariable' },
-  'state record, device input': { verdict: 'edits', by: 'composeNoScreenActivity, onto the donor: the Denon\'s 19 values each sending Logitech\'s record and the LG\'s one value, 4.2, noscreenactivity.test.ts' },
-  'state record, activity flag': { verdict: 'nowhere', by: 'composeNoScreenActivity reuses the flag the donor holds and never writes one, 4.2' },
-  'state record, unnamed': { verdict: 'nowhere', by: 'the compiler\'s first two byte variable; the four slot family builds it, FIRST_WIDE_VARIABLE, and refuses 16' },
+  'state variable table': { verdict: 'builds', by: 'buildNoScreenStateTables, 13 of 13 compiles by content with our numbering, transition order inside a record not reproduced, noscreenstatetables.test.ts' },
+  'state record, clock': { verdict: 'builds', by: 'buildNoScreenStateTables, clockSpec with no carry, 13 of 13 byte for byte, noscreenstatetables.test.ts' },
+  'state record, firmware': { verdict: 'builds', by: 'buildNoScreenStateTables, the family\'s firmware records 7 to 17, 13 of 13 byte for byte, noscreenstatetables.test.ts' },
+  'state record, device power': { verdict: 'builds', by: 'buildNoScreenStateTables, 13 of 13 compiles by content with our numbering, transition order inside a record not reproduced, noscreenstatetables.test.ts' },
+  'state record, device input': { verdict: 'builds', by: 'buildNoScreenStateTables, 13 of 13 compiles by content with our numbering, transition order inside a record not reproduced, noscreenstatetables.test.ts' },
+  'state record, activity flag': { verdict: 'builds', by: 'buildNoScreenStateTables, the activity\'s flag, 8 of 8 compiles that hold one, noscreenstatetables.test.ts' },
+  'state record, unnamed': { verdict: 'builds', by: 'buildNoScreenStateTables, the compiler\'s first two byte variable, 13 of 13 byte for byte, noscreenstatetables.test.ts' },
   'parameter table': { verdict: 'builds', by: 'noScreenParameterBlock, five pointers over NO_SCREEN_PARAMETERS, 13 of 13 compiles, noscreenconstants.test.ts' },
   'parameter group': { verdict: 'builds', by: 'noScreenParameterBlock, the same 21 bytes, 13 of 13 compiles, noscreenconstants.test.ts' },
   'number sender table': { verdict: 'edits', by: 'composeNoScreenFavourites' },
@@ -478,10 +478,9 @@ test('the metadata archive\'s text around its devices is the same 149 and 610 ch
   assert.equal(around(all[0]![1]).ids.length, 8);
 });
 
-test('the family\'s own members refuse the state tables, the wiring and an activity\'s start', () => {
+test('the family\'s own members refuse the wiring and an activity\'s start', () => {
   const c = undefined as unknown as Container;
   for (const [name, ask] of [
-    ['stateTables', () => NO_SCREEN_FAMILY.stateTables.measuredOn],
     ['wiring', () => NO_SCREEN_FAMILY.wiring.check(c)],
     ['activityStart', () => NO_SCREEN_FAMILY.activityStart.lists],
     ['activityKeyRules', () => NO_SCREEN_FAMILY.activityKeyRules.volume],
@@ -584,7 +583,7 @@ const CENSUS_300 = {
 // `builds`, 330 and 300 `other`, 958 and 565 `nowhere`. Since then, in order: the uncalled sends and silent writes
 // moved to `edits` when the device composer took them on, `todo-compile-350.md` 4.1.1 and 4.1.3, 452 and 266 bytes;
 // the frame's 81 on each file, the header's 11, the section table's 60, the end marker's 4 and the trailer's 6, moved
-// from `other` to `builds` when the frame took the family on, 5.1.1; and the items above. State tables, 5.1.2, are
-// not counted here yet: 249 and 219 bytes stay `other`, 14 stay `nowhere`.
+// from `other` to `builds` when the frame took the family on, 5.1.1; and the items above. Then the state tables, 5.1.2,
+// 588 and 312 bytes from `other`, `edits` and `nowhere` to `builds`.
 const VERDICT_BYTES_350 = { builds: 3642, edits: 114608, other: 249, nowhere: 14 };
 const VERDICT_BYTES_300 = { builds: 2113, edits: 95128, other: 219, nowhere: 14 };
