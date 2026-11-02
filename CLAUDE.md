@@ -310,7 +310,7 @@ private transfer, so a description gets recorded on arrival, while the contribut
 
 ## Never write to a remote
 
-Read paths only, except on **nine units**, deliberately and behind two flags. These devices are
+Read paths only, except on **ten units**, deliberately and behind two flags. These devices are
 irreplaceable. One line each here; what was written to each, block by block, is its file in
 `docs/test-notes/`, and `docs/test-notes/README.md` lists every unit on the bench.
 
@@ -323,10 +323,10 @@ irreplaceable. One line each here; what was written to each, block by block, is 
 | a **Harmony 600** | permitted 29 September 2026; configurations written since section 302, and its settings store appended to once, section 305, behind its own rail, `assertSettingsWriteAllowed` and `HARMONY_SETTINGS_WRITE=1` |
 | the **friend's Harmony One** (dead display) and the **friend's Harmony 525** | given to the project and its own, decision 21; permitted, not yet among `write-config.ts`'s targets, nothing written |
 | a **Harmony 350** and a **Harmony 300** | permitted 27 October 2026, decision 26; nothing written. The file protocol's write path exists behind its own rail since `todo-compile-350.md` 1.6: `assertFileWriteAllowed` and `HARMONY_FILE_WRITE=1`, `/cfg/usercfg` only, `/sys/guid` checked against `units/h350.txt` or `units/h300.txt`, `packages/usb/bin/write-file-config.ts` |
+| the bench **Harmony Touch** | permitted 2 November 2026, decision 29; nothing written by this project. No write path exists; one gets its own rail on the file protocol before anything is sent, `/sys/hlapi` first, and never a path that acts when opened |
 
-**No other remote may be written.** The exclusion is the point: the everyday Harmony One. The Harmony
-Touch is never written either, and `openHarmony` refuses it and the 300 and 350, whose writes are to go
-through the file protocol. Every unit has taken the
+**No other remote may be written.** The exclusion is the point: the everyday Harmony One. `openHarmony`
+refuses the Touch, the 300 and the 350, whose writes go through the file protocol. Every unit has taken the
 same order: its identity and a whole region read into the lab, one block written back unchanged, then a
 real write.
 
@@ -373,7 +373,7 @@ transport:
   How both work is `reference/architectures/harmony-600-650-700/firmware.md`, and the
   `recovering-a-remote` skill holds the route. Nothing writes the processor's flash, and this is not a
   route to modifying firmware.
-* **Nine units may be written to and no others**, by the unit check above. **The config writer refuses
+* **Ten units may be written to and no others**, by the unit check above. **The config writer refuses
   a commit on a firmware build whose cache drop and restart nobody has read**, because those two commands
   are the firmware's; the builds read are in the architecture's `usb.md`. The block rehearsal sends
   neither and has no such check.

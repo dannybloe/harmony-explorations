@@ -787,3 +787,26 @@ remote and 2 in the second, which is what section 117 measured as a generator er
    describes the two as one, with that entry as what brings a 300 level with a 350; the code builds one
    family with the entry for a 300; and the 300's own track folds into the 350's, keeping only the check of
    our build against Logitech's 300 compile. Decision 27 was not exercised: no firmware was written.
+
+29. <a id="d29"></a>**The bench Harmony Touch may be written to.** *Taken on 2 November 2026, `todo-touch.md` 4.3.*
+   The bench Touch is a permitted write target. Nothing in this project wrote to it when this was taken;
+   Logitech's own client had synced it several times, which is a write by their client, recorded in
+   `docs/test-notes/harmony-touch.md`. **Permission is not a write path**: the library has none for a
+   Touch, `openHarmony` keeps refusing it, and a write gets a rail of its own before anything is sent, on
+   the file protocol and never on the command protocol: a flag of its own, the unit checked against a
+   record in the lab's `units/`, and an allow list of the paths a write may open, `/sys/hlapi` first.
+   `INERT_PATHS` and `HARMONY_FILE_PATH_EXPERIMENT=1` are unchanged, since they guard reads, and a path that
+   acts when opened, `/sys/factoryreset` and `/sys/reboot`, is never on a write list. Firmware is never
+   written.
+
+   **The route is answering a sync**, `todo-touch.md` 4.2: the remote asks for its documents and pictures
+   through `/sys/hlapi` and something other than Logitech's server answers, or the direct file route of 4.1
+   if one exists. Both are a configuration, never firmware.
+
+   **Why the risk is accepted.** What a sync puts on a Touch is replaceable: Logitech's client resyncs it
+   from the account, and a factory reset through Logitech's recovery tool reinstalls the whole firmware
+   over the network, which was done to this unit before any read. Both depend on Logitech's service staying
+   up. The known good content is in the lab, the recorded syncs, so the first write follows the order every
+   unit has taken: the identity read, which is done; Logitech's own recorded documents handed back
+   unchanged; then a real write.
+

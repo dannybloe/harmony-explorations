@@ -39,9 +39,11 @@ and land the answer in the reference afterwards with its source.
 
 * **`openHarmony` refuses it**, by product id, and that is the rail rather than a gap to be closed: it
   speaks the file protocol, in which a path can be an action. `make remotes` reports it separately.
-* **Nothing writes to it, and it is on no write list.** No flash, no settings, no file, no HBus command, no
-  provisioning session. A task that seems to need a write to a Harmony Touch is a question to put first,
-  not a step to take.
+* **It may be written, decision 29, and nothing in the library writes to it yet.** No write path exists:
+  no file write, no HBus command, no provisioning session. A write gets its own rail on the file protocol
+  before anything is sent, a flag, the unit checked against the lab's `units/`, and `/sys/hlapi` first;
+  never firmware and never a path that acts when opened. Until that rail exists, a task that seems to need
+  a write to a Harmony Touch is a question to put first, not a step to take.
 * **The only route onto it is `openFileBasedRemote`, read only, and it has been taken**: the two files on
   `INERT_PATHS` that a Touch answers are read, and the reference holds what they gave. **There is nothing
   more to read on a Touch without the named door**, so a new read on this model is not a routine step.

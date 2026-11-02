@@ -21,7 +21,7 @@ paths tried over USB exists on it, section 200, and whether those reads came bef
 not recorded.
 
 **Before working any item, load the `harmony-touch` skill**, in this session and in every agent brief.
-**Nothing writes to a Touch and it is on no write list.** A read of a path outside `INERT_PATHS` needs the
+**The bench Touch may be written, decision 29, and nothing in the library writes to it yet**: a write gets its own rail on the file protocol first. A read of a path outside `INERT_PATHS` needs the
 named door, and an item that seems to need one is a question first. Logitech's images and anything
 unpacked from them stay in the lab; only names, sizes and findings come into this repository.
 
@@ -59,4 +59,4 @@ Written on 2 November 2026, and placed in `todo.md`'s sequence the same day as 3
 
 - [ ] 4.1 Whether the files of 1.3 can be put on the remote directly, by the route of 1.5, without a sync through Logitech's servers
 - [ ] 4.2 If not: whether FreeHarmony could answer the remote's requests in place of Logitech's server
-- [ ] 4.3 Any write to a Touch waits for a decision of its own, as decision 26 was for the Harmony 300 and 350
+- [x] 4.3 Any write to a Touch waits for a decision of its own, as decision 26 was for the Harmony 300 and 350; done: decision 29, the bench Touch may be written, behind a rail of its own on the file protocol
