@@ -17,6 +17,10 @@ MyHarmony. That reset is a whole factory firmware image fetched over the network
 command, `reference/usb-protocol/commands.md` and section 196. Afterwards its configuration was zero
 bytes, section 195.
 
+**It was given a setup afterwards and synced**, the test account's two devices and one activity, and it
+shows that activity. Which client did the sync is not recorded, MyHarmony and Harmony Desktop sharing the
+account, and neither is whether the reads below came before or after it. Recorded on 2 November 2026.
+
 ## The first contact with the file based family
 
 The Touch was the first remote of its family this project sent a packet to, on 28 August 2026, and the

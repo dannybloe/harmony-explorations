@@ -7,6 +7,14 @@ Harmony One, 600, 650, 700, 300 and 350[^x-notice][^x-versiondb]; and **Harmony 
 application that still programs a Harmony 700[^s296]. Each remote also came with a **user manual**. All
 four are Logitech's own statements about the product, and each is good for something different.
 
+**MyHarmony and Harmony Desktop split by computer, not by generation.** MyHarmony is a 32 bit application
+for Windows and for macOS up to 10.14; from macOS 10.15 on it no longer starts. Harmony Desktop is the 64 bit
+application Logitech made for macOS 10.15 and later, and it does not run on anything older[^x-macos].
+Logitech's page lists the remotes it supports as the Harmony 200, 300, 350, 600, 650, 665, 700, Touch,
+Ultimate One and 950, and sends the hub based remotes to the mobile application[^x-macos]. **The page
+leaves out the Harmony One and the application does not**: its own list of supported skins holds the
+Harmony One's skin 54[^s135]. Both sign in to the same account[^x-macos].
+
 | source | what it is | what it is good for |
 |---|---|---|
 | the classic client | a Java desktop application, not obfuscated[^t-host-client] | what is sent to a remote, packet by packet, and what Logitech believed about each architecture's memory, [on the wire](classic-client.md) |
@@ -94,6 +102,8 @@ quotes them. The models they cover are [the product line](product-line.md).
 
 [^x-notice]: Stated by Logitech. [The discontinuation notice](https://members.harmonyremote.com/EasyZapper/Help/FAQShowById.asp?FaqId=1220)
 [^x-versiondb]: Stated by Logitech. [MyHarmony's firmware version list](https://files.myharmony.com/Assets/Firmware/VersionDbDefaults2.xml)
+[^x-macos]: Stated by Logitech. [Harmony and macOS](https://support.myharmony.com/harmony-and-macos)
+[^s135]: Stated by Logitech, in their client. [Section 135](../../docs/findings.md#s135)
 [^s296]: Measured on a unit. [Section 296](../../docs/findings.md#s296)
 [^t-host-client]: Stated by Logitech, in their client. [The test](../../tests/test_host_client.py)
 [^s204]: Stated by Logitech, in their client. [Section 204](../../docs/findings.md#s204)
