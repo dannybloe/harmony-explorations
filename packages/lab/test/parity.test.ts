@@ -130,8 +130,8 @@ test('the Python table was actually parsed, rather than read as empty', () => {
   // 320 with the Harmony Touch's two update packages, the hubs' production package and the bench Touch's
   // identity file, which `tests/test_harmony_touch_image.py` reads, todo-touch 1.2.
   // 321 with the recording of a Touch sync through Harmony Desktop, `packages/usb/test/touch-sync.test.ts`,
-  // todo-touch 2.3's trial.
-  assert.equal(Object.keys(pythonImages()).length, 321, 'every fixture tests/lab.py names');
+  // todo-touch 2.3's trial, and 323 with the full setup's sync and the reverse sync after it, 2.3.
+  assert.equal(Object.keys(pythonImages()).length, 323, 'every fixture tests/lab.py names');
 });
 
 test('the two sides exclude the same fixtures from the parseable population', () => {

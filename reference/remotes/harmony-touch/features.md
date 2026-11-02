@@ -50,7 +50,12 @@ are the manual's rather than measured.
 ## Changes on the remote travel back
 
 Changes made on the remote, favourite channels, backgrounds and commands among them, "are synced back to
-your myharmony.com account"[^x-touch-manual].
+your myharmony.com account"[^x-touch-manual]. **Measured for the settings**: a change of the screen and button
+brightness and the background went up as the remote's whole settings document, the client sent it to
+Logitech's service the same as parsed JSON, and the service answered with the same document[^t-touch-both-ways].
+Logitech's client asks for the remote's changes only when nothing is waiting on the account, among its other
+conditions[^t-client-reverse-sync], [usb.md](../../architectures/harmony-touch/usb.md#provisioning-instead-of-a-compile). Favourite
+channels and commands changed on the remote are not checked[^unchecked].
 
 ## Not checked
 
@@ -66,3 +71,5 @@ your myharmony.com account"[^x-touch-manual].
 [^s135]: Stated by Logitech, in their client. [Section 135](../../../docs/findings.md#s135)
 [^s203]: Stated by Logitech, in their client. [Section 203](../../../docs/findings.md#s203)
 [^t-touch-sync]: Measured on a unit. [The test](../../../packages/usb/test/touch-sync.test.ts)
+[^t-client-reverse-sync]: Stated by Logitech, in their client. [The test](../../../tests/test_client_templates.py), class `TheClientAsksForTheRemotesChangesOnlyWithNothingPending`
+[^t-touch-both-ways]: Measured on a unit. [The test](../../../packages/usb/test/touch-sync-both-ways.test.ts)

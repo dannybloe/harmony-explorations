@@ -127,6 +127,11 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // web request and every USB call through the page's prompt bridge, `todo-touch.md` 2.3's trial and
   // `packages/usb/test/touch-sync.test.ts`. It holds the test account's data and the unit's serial.
   touch_sync_recording: 'reads/20261102T1350Z-touch-sync-harmony-desktop/bridge.log',
+  // The sync after the bench Touch's setup was filled, `todo-touch.md` 2.2.1 and 2.3, and the copy's log
+  // after it, holding one reverse sync: the remote's changed settings uploaded to the account. Both read by
+  // `packages/usb/test/touch-sync-both-ways.test.ts`, and both hold the test account's data and the serial.
+  touch_full_sync_recording: 'reads/20261102T1520Z-touch-sync-full-setup/bridge.log',
+  touch_reverse_sync_recording: 'reads/20261102T1524Z-touch-reverse-sync/bridge.log',
   hub_package_production: 'firmware/packages/sus/skin97-ultimatehub-production-4.15.600.hfw2',
   h350_bootloader: 'reads/20261027T1929Z-h350-fw/fw_bootloader.bin',
   h350_safemode: 'reads/20261027T1929Z-h350-fw/fw_safemode.bin',

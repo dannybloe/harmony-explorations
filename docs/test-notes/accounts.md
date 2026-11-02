@@ -156,8 +156,12 @@ test account; this paragraph sat in the architecture's compiler page until plan 
 put `packages/corpus/setups/touch-full.json` on it on 2 November 2026 in **five writes**: one
 `UpdateMultiple` adding five devices, three `SaveActivities` and one `SaveUserFeatures` setting the
 receiver's keep on flag. The service refused none of them. Replies are in the lab's
-`work/setups/touch-full/`. The game activity, gestures, sequences, favourites and the remote's own settings
-are left to the client's screens, whose saves the lab's inspectable copy of Harmony Desktop records.
+`work/setups/touch-full/`. The game activity, sequences, delays, long presses, screen labels, favourites and
+the background were then set by hand in MyHarmony on another computer, which records nothing here; gestures
+are not offered by the client. The record now holds seven devices and five activities, as the Touch's sync
+delivered them. **One write came from the remote's side**: the reverse sync put the remote's settings
+document on the record through `PUT .../Remote/<id>/Settings`, both brightness settings and the background
+changed, recorded in the lab's `reads/20261102T1524Z-touch-reverse-sync/`.
 
 ## The per model capability answers
 

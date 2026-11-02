@@ -210,6 +210,46 @@ class TheTouchIsSyncedThroughOneFile(unittest.TestCase):
         self.assertEqual(self.PATH.findall(self.read['simplepostresponse.xml']), [])
 
 
+class TheClientAsksForTheRemotesChangesOnlyWithNothingPending(unittest.TestCase):
+    """Logitech's side of `packages/usb/test/touch-sync-both-ways.test.ts`, whose header holds the argument.
+
+    Opening a remote's account, Harmony Desktop's page checks `checkAccountToRemoteNeeded`, which is the
+    remote record's `isSyncRequired`. When it is set the page offers the sync from the account to the remote;
+    only when it is not does it go on to `checkReverseSyncSupported`, which leads to `reverseSyncViaUSB` and
+    so to the `syncRemoteChanges` request, the one that has the remote hand over its own changes. The
+    recorded syncs are one case each way: the trial, with nothing pending, opened with that request, and the
+    full setup's sync, with the account's edits pending, did not send it. Stated by Logitech, in their
+    client; this asserts the client says it, not what a remote does. Names only: the script is Logitech's.
+    """
+
+    def setUp(self):
+        self.src = lab.load('desktop_webapp_main').decode('utf-8', 'replace')
+
+    def body(self, name):
+        """The text of one method, from its name to the next method definition of the same object."""
+        m = re.search(name + r':function\([^)]*\)\{', self.src)
+        self.assertIsNotNone(m, f'{name} is no longer in the bundle')
+        nxt = re.compile(r'\},[A-Za-z_$][\w$]*:function\(').search(self.src, m.end())
+        return self.src[m.end():nxt.start() if nxt else m.end() + 2000]
+
+    def test_whether_a_sync_is_pending_is_the_remote_records_flag(self):
+        self.assertIn('activeRemote.isSyncRequired', self.body('checkAccountToRemoteNeeded'))
+
+    def test_the_reverse_sync_is_reached_only_on_the_branch_without_a_pending_sync(self):
+        branch = re.search(r'checkAccountToRemoteNeeded\(\)\?\(?([^:]*?)\)?:\(?([^}]*?)\)?\}', self.src)
+        self.assertIsNotNone(branch, 'the branch on a pending sync is no longer in the bundle')
+        pending, nothing_pending = branch.group(1), branch.group(2)
+        self.assertIn('openAccountToRemoteSyncPopup', pending)
+        self.assertNotIn('checkReverseSyncSupported', pending)
+        self.assertIn('checkReverseSyncSupported', nothing_pending)
+
+    def test_the_reverse_sync_sends_the_request_for_the_remotes_changes(self):
+        self.assertIn('onProceedReverseSync', self.body('checkReverseSyncSupported'))
+        self.assertIn('reverseSyncViaUSB', self.body('onProceedReverseSync'))
+        self.assertIn('getOnRemoteChanges', self.body('reverseSyncViaUSB'))
+        self.assertIn('DSGetOnRemoteChangesApiConstant="vnd.logitech.setup/vnd.logitech.syncRemoteChanges"', self.src)
+
+
 class TheFileProtocolIsSpecifiedWhole(unittest.TestCase):
     """Section 198. The nineteen skins this project does not read, and their one protocol.
 

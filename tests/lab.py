@@ -150,6 +150,9 @@ IMAGES = {
     # One sync of the bench Touch recorded through the lab's inspectable copy of Harmony Desktop,
     # `packages/usb/test/touch-sync.test.ts` reads it; named here to keep the two tables identical.
     'touch_sync_recording': 'reads/20261102T1350Z-touch-sync-harmony-desktop/bridge.log',
+    # The full setup's sync and the reverse sync after it, read by `packages/usb/test/touch-sync-both-ways.test.ts`.
+    'touch_full_sync_recording': 'reads/20261102T1520Z-touch-sync-full-setup/bridge.log',
+    'touch_reverse_sync_recording': 'reads/20261102T1524Z-touch-reverse-sync/bridge.log',
     'hub_package_production': 'firmware/packages/sus/skin97-ultimatehub-production-4.15.600.hfw2',
     'h350_bootloader': 'reads/20261027T1929Z-h350-fw/fw_bootloader.bin',
     'h350_safemode': 'reads/20261027T1929Z-h350-fw/fw_safemode.bin',

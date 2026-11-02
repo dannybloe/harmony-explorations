@@ -36,9 +36,10 @@ malformed packet silences a session are [the file protocol](../../usb-protocol/f
 measured there on a Touch. What is this model's own:
 
 * **This library has sent the Touch four commands**, a bare ping, open, read and close, and only to read[^s200].
-* **In the recorded sync, Logitech's client worked through one file, `/sys/hlapi`**: thirteen requests
-  written into it, twelve accepted and answered, and no request and response command `0x08`; it also tried
-  to write `/sys/time`, and the remote refused that write. What the exchanges carry is [the platform's usb.md](../../architectures/harmony-touch/usb.md#provisioning-instead-of-a-compile)[^t-touch-sync].
+* **In every recorded sync, Logitech's client worked through one file, `/sys/hlapi`, and sent no request and
+  response command `0x08`**; in the two syncs down it also tried to write `/sys/time`, and the remote refused
+  that write both times[^t-touch-sync][^t-touch-both-ways]. Changes made on the remote travel up through the
+  same file: a change of settings went up as a `put` of the whole settings document. What the exchanges carry is [the platform's usb.md](../../architectures/harmony-touch/usb.md#provisioning-instead-of-a-compile)[^t-touch-sync][^t-touch-both-ways].
 * Through the charging dock the remote is not detected by a computer; only a direct cable is[^x-touch-manual].
 
 ## Paths
@@ -71,7 +72,7 @@ named door, to learn its size, and has never read it[^s200][^t-touch-sync].
 ## Not checked
 
 * The files `INERT_PATHS` permits and the Touch refuses, beyond their refusal[^unchecked].
-* The provisioning session, which the recorded sync did not run[^unchecked].
+* The provisioning session, which none of the recorded syncs ran[^unchecked].
 
 [^s198]: Stated by Logitech, in their client. [Section 198](../../../docs/findings.md#s198)
 [^s193]: Measured on a unit. [Section 193](../../../docs/findings.md#s193)
@@ -80,4 +81,5 @@ named door, to learn its size, and has never read it[^s200][^t-touch-sync].
 [^s201]: Measured on a unit. [Section 201](../../../docs/findings.md#s201)
 [^x-touch-manual]: Stated by Logitech, in the manual. [The Harmony Touch user guide](https://www.manualslib.com/manual/641224/Logitech-Harmony-Touch.html)
 [^t-touch-sync]: Measured on a unit. [The test](../../../packages/usb/test/touch-sync.test.ts)
+[^t-touch-both-ways]: Measured on a unit. [The test](../../../packages/usb/test/touch-sync-both-ways.test.ts)
 [^unchecked]: Not checked.

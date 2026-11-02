@@ -49,7 +49,7 @@ checked**[^unchecked].
 | favourite channels | up to 50 | [^x-touch-manual] |
 | long press | yes | [^t-long-press] |
 | power | an internal, non replaceable lithium ion cell, charged in a dock | [^x-touch-manual] |
-| clock | the remote keeps the time, set from the computer at every sync, in 12 or 24 hour form; in the one sync recorded the remote refused the client's write to its clock file, [memory.md](memory.md) | [^x-touch-manual], [^t-touch-sync] |
+| clock | the remote keeps the time, set from the computer at every sync, in 12 or 24 hour form; in the two syncs down recorded the remote refused the client's write to its clock file, and the hand over of the remote's changes wrote none, [memory.md](memory.md) | [^x-touch-manual], [^t-touch-sync], [^t-touch-both-ways] |
 | configuration | **not reachable as a file** under any name known here | [^s200] |
 
 ## The files
@@ -82,6 +82,7 @@ checked**[^unchecked].
 [^s195]: Measured on a unit. [Section 195](../../../docs/findings.md#s195)
 [^unchecked]: Not checked.
 [^t-touch-sync]: Measured on a unit. [The test](../../../packages/usb/test/touch-sync.test.ts)
+[^t-touch-both-ways]: Measured on a unit. [The test](../../../packages/usb/test/touch-sync-both-ways.test.ts)
 [^s198]: Stated by Logitech, in their client. [Section 198](../../../docs/findings.md#s198)
 [^s196]: Stated by Logitech, by their service. [Section 196](../../../docs/findings.md#s196)
 [^t-long-press]: Stated by Logitech, by their service. [The test](../../../packages/usb/test/models.test.ts)

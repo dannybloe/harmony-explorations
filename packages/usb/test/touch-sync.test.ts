@@ -68,148 +68,17 @@ import {
   FILE_PING,
   FILE_READ,
   FILE_RESET_FILESYSTEM,
-  FILE_REPORT_BYTES,
   FILE_WRITE,
   OFFSET_COMMAND,
-  OFFSET_SEQUENCE,
-  REPLY_ERROR,
-  READ_TERMINATOR,
-  DONE_PACKET,
-  STRING_PREFIX,
-  requestedPath,
 } from '../src/filepipe.ts';
+import { SIX, commands, records, requestLists, requestName, resource, sessions, text } from './touch-recording.ts';
 
 const FIXTURE = 'touch_sync_recording';
-
-/** One line of the recording: a record the page's recorder posted, or the shell's own. */
-interface Line {
-  name: string;
-  body: unknown;
-}
-
-interface Record_ {
-  kind: string;
-  message?: string;
-  answer?: string;
-  method?: string;
-  url?: string;
-  response?: unknown;
-}
-
-function records(): Record_[] {
-  const text = new TextDecoder().decode(lab.require_(FIXTURE));
-  return text
-    .split('\n')
-    .filter((l) => l.length > 0)
-    .map((l) => JSON.parse(l) as Line)
-    .filter((l) => l.name === 'hdRecorder' && typeof l.body === 'object' && l.body !== null)
-    .map((l) => l.body as Record_);
-}
-
-function hex(s: string): Uint8Array {
-  return Uint8Array.from(Buffer.from(s.replace(/[^0-9A-Fa-f]/g, ''), 'hex'));
-}
-
-function reports(bytes: Uint8Array): Uint8Array[] {
-  const out: Uint8Array[] = [];
-  for (let at = 0; at < bytes.length; at += FILE_REPORT_BYTES) out.push(bytes.subarray(at, at + FILE_REPORT_BYTES));
-  return out;
-}
-
-/**
- * The USB commands, each its request reports and the reply reports of the polls after it.
- *
- * The page sends a command with `execute` and a non empty request, then calls `execute` with an empty
- * request until the reply arrives as hex; until then the shell answers with a `{{-n|...}}` status. So a
- * command is one non empty request and the first hex answer after it.
- */
-interface Command {
-  request: Uint8Array[];
-  reply: Uint8Array[];
-}
-
-function commands(all: Record_[]): Command[] {
-  const out: Command[] = [];
-  for (const r of all) {
-    if (r.kind !== 'prompt' || !r.message?.includes('"execute"')) continue;
-    const data = (JSON.parse(r.message) as { data: { request: string } }).data;
-    const answer = r.answer ?? '';
-    if (data.request) out.push({ request: reports(hex(data.request)), reply: [] });
-    else if (out.length > 0 && answer && !answer.startsWith('{{') && out.at(-1)!.reply.length === 0) {
-      out.at(-1)!.reply = reports(hex(answer));
-    }
-  }
-  return out;
-}
-
-/** Every string parameter of a request report, in order: `0x80`, the characters, a NUL. */
-function strings(report: Uint8Array): string[] {
-  const out: string[] = [];
-  let at = 4;
-  while (at < report.length && report[at] === STRING_PREFIX) {
-    let end = at + 1;
-    while (end < report.length && report[end] !== 0) end += 1;
-    out.push(Buffer.from(report.subarray(at + 1, end)).toString('latin1'));
-    at = end + 1;
-  }
-  return out;
-}
-
-/** The payload of a run of data packets: a sequence byte, a size byte, the payload, until a terminator. */
-function payload(packets: Uint8Array[]): Buffer {
-  const parts: Buffer[] = [];
-  for (const p of packets) {
-    if (p[0] === READ_TERMINATOR || p[0] === DONE_PACKET) break;
-    parts.push(Buffer.from(p.subarray(2, 2 + p[1]!)));
-  }
-  return Buffer.concat(parts);
-}
-
-/** A file session: what was opened, how, and the bytes written into it or read out of it. */
-interface Session {
-  path: string;
-  mode: string;
-  written: Buffer;
-  read: Buffer;
-  /** Whether the remote answered any write in this session with the error marker. */
-  refused: boolean;
-}
-
-function sessions(cmds: Command[]): Session[] {
-  const out: Session[] = [];
-  let current: Session | undefined;
-  for (const c of cmds) {
-    const head = c.request[0]!;
-    const command = head[OFFSET_COMMAND];
-    if (command === FILE_OPEN) {
-      current = { path: requestedPath(head) ?? '?', mode: strings(head)[1] ?? '?', written: Buffer.alloc(0), read: Buffer.alloc(0), refused: false };
-      out.push(current);
-    } else if (command === FILE_WRITE && current) {
-      current.written = Buffer.concat([current.written, payload(c.request.slice(1))]);
-      if (c.reply[0]?.[OFFSET_SEQUENCE] === REPLY_ERROR) current.refused = true;
-    } else if (command === FILE_READ && current) {
-      // The first reply report is the read's own header; the data packets follow it.
-      current.read = Buffer.concat([current.read, payload(c.reply.slice(1))]);
-    } else if (command === FILE_CLOSE) {
-      current = undefined;
-    }
-  }
-  return out;
-}
-
-const text = (b: Buffer): string => b.toString('utf8').replace(/\0+$/, '');
-
-/** The command a `/sys/hlapi` request line names, or the announcement line, without its arguments. */
-function requestName(line: string): string {
-  if (line.startsWith('Content-Length:')) return 'Content-Length';
-  if (line.startsWith('[object Object]')) return 'a stringified array';
-  return line.split('&')[0]!.replace(/^vnd\.logitech\./, '').replace('/vnd.logitech.', '/');
-}
 
 test('a Touch sync through Harmony Desktop sends no request and response command', lab.skipUnless(FIXTURE), () => {
   const byCommand = new Map<number, number>();
   const controls: number[] = [];
-  for (const c of commands(records())) {
+  for (const c of commands(records(FIXTURE))) {
     const id = c.request[0]![OFFSET_COMMAND]!;
     byCommand.set(id, (byCommand.get(id) ?? 0) + 1);
     // A device control's one byte parameter sits after the count and its type tag.
@@ -225,7 +94,7 @@ test('a Touch sync through Harmony Desktop sends no request and response command
 
 test('the sync opens /sys/hlapi, the identity file and the clock file and nothing else', lab.skipUnless(FIXTURE), () => {
   const opened = new Map<string, number>();
-  for (const s of sessions(commands(records()))) {
+  for (const s of sessions(commands(records(FIXTURE)))) {
     const key = `${s.path} ${s.mode}`;
     opened.set(key, (opened.get(key) ?? 0) + 1);
   }
@@ -238,7 +107,7 @@ test('the sync opens /sys/hlapi, the identity file and the clock file and nothin
 });
 
 test('each request is a line written into /sys/hlapi, and each accepted one is answered with Response and JSON', lab.skipUnless(FIXTURE), () => {
-  const hlapi = sessions(commands(records())).filter((s) => s.path === '/sys/hlapi');
+  const hlapi = sessions(commands(records(FIXTURE))).filter((s) => s.path === '/sys/hlapi');
   const written = hlapi.filter((s) => s.mode === 'W').map((s) => requestName(text(s.written)));
   assert.deepEqual(written, [
     'setup/syncRemoteChanges',
@@ -265,24 +134,8 @@ test('each request is a line written into /sys/hlapi, and each accepted one is a
   for (const a of answers.filter((x) => x.startsWith('Response,'))) JSON.parse(a.slice('Response,'.length));
 });
 
-/** The remote's list of requests, from the answer to a `proxy/request?read`. */
-function requestLists(hlapi: Session[]): { verb: string; uri: string; etag?: string }[][] {
-  const out: { verb: string; uri: string; etag?: string }[][] = [];
-  for (let i = 0; i + 1 < hlapi.length; i += 1) {
-    if (hlapi[i]!.mode !== 'W' || requestName(text(hlapi[i]!.written)) !== 'proxy/request?read') continue;
-    const answer = JSON.parse(text(hlapi[i + 1]!.read).slice('Response,'.length)) as { result: string };
-    out.push((JSON.parse(answer.result) as { requests: { verb: string; uri: string; etag?: string }[] }).requests);
-  }
-  return out;
-}
-
-const SIX = ['ActivityList', 'DeviceList', 'MapList', 'Context', 'Settings', 'ProtocolList'];
-
-/** The last path segment of a logical address, which names the resource. */
-const resource = (uri: string): string => uri.split('?')[0]!.split('/').at(-1)!;
-
 test('the remote asks for finished, then for six resources by logical address and entity tag, then for finished', lab.skipUnless(FIXTURE), () => {
-  const lists = requestLists(sessions(commands(records())).filter((s) => s.path === '/sys/hlapi'));
+  const lists = requestLists(sessions(commands(records(FIXTURE))).filter((s) => s.path === '/sys/hlapi'));
   assert.deepEqual(lists.map((l) => l.map((r) => `${r.verb} ${r.uri.startsWith('harmony://') ? resource(r.uri) : r.uri}`)), [
     ['POST proxy://Finished'],
     SIX.map((n) => `get ${n}`),
@@ -292,7 +145,7 @@ test('the remote asks for finished, then for six resources by logical address an
 });
 
 test('the six documents reach the remote as the same JSON Logitech\'s service sent', lab.skipUnless(FIXTURE), () => {
-  const all = records();
+  const all = records(FIXTURE);
   const hlapi = sessions(commands(all)).filter((s) => s.path === '/sys/hlapi');
   const writes = hlapi.filter((s) => s.mode === 'W').map((s) => text(s.written));
   const answer = writes.find((w) => w.startsWith('vnd.logitech.proxy/vnd.logitech.response?write') && w.includes('ActivityList'))!;
@@ -330,14 +183,14 @@ test('the six documents reach the remote as the same JSON Logitech\'s service se
 });
 
 test('the remote refuses two writes, the clock and the stringified array, and accepts every other', lab.skipUnless(FIXTURE), () => {
-  const writes = sessions(commands(records())).filter((s) => s.mode === 'W');
+  const writes = sessions(commands(records(FIXTURE))).filter((s) => s.mode === 'W');
   const refused = writes.filter((s) => s.refused).map((s) => (s.path === '/sys/time' ? '/sys/time' : requestName(text(s.written))));
   assert.deepEqual(refused, ['a stringified array', '/sys/time']);
   assert.equal(writes.length - refused.length, 12, 'the requests written to /sys/hlapi that the remote took');
 });
 
 test('the remote synced is a Harmony Touch on firmware 4.15.330, by the identity file the client read', lab.skipUnless(FIXTURE), () => {
-  const identity = sessions(commands(records())).filter((s) => s.path === '/sys/sysinfo');
+  const identity = sessions(commands(records(FIXTURE))).filter((s) => s.path === '/sys/sysinfo');
   assert.equal(identity.length, 2);
   for (const s of identity) {
     // Named fields only: the file also carries the unit's serial.

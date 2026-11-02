@@ -12,8 +12,8 @@ remote[^s200][^s201].
 | `/rf/deviceinfo` | 83 bytes | the word `Response`, a comma and a JSON object: a radio identity, a list of paired devices and their count. A query answered when opened, not storage | [^s201] |
 | `/tde/enable` | 1 byte | not read | [^s200] |
 | `/fw/otaupdate`, `/ir/ir_cap` | 0 bytes | not read | [^s200] |
-| `/sys/hlapi` | 0 bytes | **the remote's request and answer file**: a request is written into it and the answer read back, which is how Logitech's client syncs the remote, [usb.md](usb.md). It opened at 0 bytes when probed outside a sync | [^s200], [^t-touch-sync] |
-| `/sys/time` | 0 bytes | Logitech's client writes the time and a time zone into it during a sync, and in the sync measured the remote refused the write; not read | [^s200], [^t-touch-sync] |
+| `/sys/hlapi` | 0 bytes | **the remote's request and answer file**: a request is written into it and the answer read back, which is how Logitech's client syncs the remote in both directions, [usb.md](usb.md). It opened at 0 bytes when probed outside a sync | [^s200], [^t-touch-sync], [^t-touch-both-ways] |
+| `/sys/time` | 0 bytes | Logitech's client writes the time and a time zone into it during a sync down, and in both syncs down measured the remote refused the write; a hand over of the remote's changes wrote nothing to it; not read | [^s200], [^t-touch-sync], [^t-touch-both-ways] |
 | `/sys/factoryreset`, `/sys/reboot` | 0 bytes | **controls**: opening one is the action, which is why neither may be opened, [usb.md](usb.md) | [^s200] |
 
 **Two files on one remote are two formats**, lines of text and JSON, so a reader must not assume a shape,
@@ -40,6 +40,7 @@ either: this is a later generation[^s199].
 [^s201]: Measured on a unit. [Section 201](../../../docs/findings.md#s201)
 [^s199]: Read in the firmware. [Section 199](../../../docs/findings.md#s199)
 [^t-touch-sync]: Measured on a unit. [The test](../../../packages/usb/test/touch-sync.test.ts)
+[^t-touch-both-ways]: Measured on a unit. [The test](../../../packages/usb/test/touch-sync-both-ways.test.ts)
 [^unchecked]: Not checked.
 [^s198b]: Stated by Logitech, in their client. [Section 198](../../../docs/findings.md#s198)
 [^s203]: Stated by Logitech, in their client. [Section 203](../../../docs/findings.md#s203)

@@ -105,9 +105,23 @@ lab's `reads/20261102T1350Z-touch-sync-harmony-desktop/`. Logitech's client wrot
 `/sys/hlapi`, tried a write to `/sys/time` that the remote refused, and reset its file system twice; what the sync carried is
 `packages/usb/test/touch-sync.test.ts`.
 
+**Synced a third time after the account was filled**, `todo-touch.md` 2.2.1 and 2.3: seven devices, five
+activities, sequences, delays, long presses, screen labels, five favourite channels with one uploaded logo,
+and an uploaded background, set up partly by `packages/corpus/setups/touch-full.json` and partly by hand in
+MyHarmony on another computer, without a sync in between. Settings were changed on the remote before it,
+and when MyHarmony was opened without the remote attached it asked whether to overwrite the remote's
+settings, and the answer was yes; the sync through Harmony Desktop then did not ask the remote for its
+changes. Recorded in the lab's `reads/20261102T1520Z-touch-sync-full-setup/`.
+
+**Then the remote's changes were handed up once**: both brightness settings and the background changed on
+the remote, nothing changed on the account, and the remote attached when Harmony Desktop opened. The
+background went back to a built in one because text was hard to read on the uploaded picture. Recorded in
+the lab's `reads/20261102T1524Z-touch-reverse-sync/`; both are read by
+`packages/usb/test/touch-sync-both-ways.test.ts`.
+
 ## Not done
 
 * No infrared run has been recorded with this unit, and nothing about it in use has been seen and written
   down.
 * Nobody has recorded looking at its clock.
-* The request and response command `0x08` has never been sent to it, by us or, in the recorded sync, by Logitech's client.
+* The request and response command `0x08` has never been sent to it, by us or, in any of the recorded syncs, by Logitech's client.

@@ -30,9 +30,8 @@ reset and restart are paths that act when opened, [firmware.md](firmware.md).
 
 * The way back from device mode[^unchecked].
 * Anything in use with the infrared receiver[^unchecked].
-* What the remote requests during a sync when its account holds favourites, sequences or pictures; a sync of
-  an account with none asked for six documents, [usb.md](../../architectures/harmony-touch/usb.md#provisioning-instead-of-a-compile)[^t-touch-sync].
+* What becomes of changes made on the remote when the client syncs the account down without asking for them
+  first, [usb.md](../../architectures/harmony-touch/usb.md#provisioning-instead-of-a-compile)[^unchecked].
 
 [^unchecked]: Not checked.
 [^x-touch-manual]: Stated by Logitech, in the manual. [The Harmony Touch user guide](https://www.manualslib.com/manual/641224/Logitech-Harmony-Touch.html)
-[^t-touch-sync]: Measured on a unit. [The test](../../../packages/usb/test/touch-sync.test.ts)
