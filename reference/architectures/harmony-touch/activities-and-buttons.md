@@ -129,7 +129,8 @@ way[^t-touch-activities].
 
 The documents measured put five gestures, SwipeUp, SwipeDown, SwipeLeft, SwipeRight and Tap, on each activity
 except the one of the Custom type, and none on a device map[^t-touch-activities]. Whether that is Logitech's
-rule is not checked[^unchecked].
+rule is not checked[^unchecked]. How the screen tells a swipe, a held touch and a double tap apart is
+[the model's display page](../../remotes/harmony-touch/display.md#gestures).
 
 ## Sequences
 

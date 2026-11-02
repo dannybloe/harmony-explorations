@@ -261,7 +261,13 @@ The TypeScript workspace, per `docs/plans/002-the-roadmap.md` step 4:
                                 (Oxanium, with its OFL.txt) by src/typeface.ts on src/raster.ts, the
                                 one rasteriser for outlines, with opentype.js reading the font;
                                 src/icons.ts draws icons of Material Design Icons (@mdi/font) on
-                                the same rasteriser, for the pictures of 9.1.2.2
+                                the same rasteriser, for the pictures of 9.1.2.2.
+                                src/harmony-touch/ reads a Harmony Touch's configuration, which
+                                is Logitech's documents rather than a container: a view over the
+                                documents a sync delivers, never a copy, and a check of what the
+                                remote would refuse or ignore, tested in test/touch-reader.test.ts
+                                and test/touch-check.test.ts. The folder is not touch.ts, which
+                                is the Harmony One's touch screen
 packages/lab/                   TS: finds the private lab directory, mirrors tests/lab.py. Also
                                 finds the **public** infrared archive checkout, which is a
                                 separate locator on purpose: both make their tests skip when
@@ -274,6 +280,9 @@ packages/usb/                   TS: the command protocol and the write rails, re
                                 implementation, `writeBlock`, and a caller in this workspace reaches
                                 it through the `@harmony/usb/write` subpath rather than the barrel,
                                 so that a third write caller is a decision visible in a diff
+                                The `./test/touch-recording` subpath is test support only: the
+                                decoder of a recorded Touch sync, shared with packages/codec's
+                                tests, which a test file cannot import across packages otherwise
 packages/corpus/                TS: read a config off a remote and file it, read a **stated range**
                                 and file that, **and put one back**:
                                 since section 237 it also holds the config writer, which is here

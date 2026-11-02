@@ -213,6 +213,31 @@ export function periodOfCarrier(hz: number): number {
   return Math.floor(1e9 / hz);
 }
 
+/**
+ * A carrier's period in nanoseconds **rounded to the nearest**, and so deliberately not `periodOfCarrier`:
+ * the period as a Harmony Touch sends it. Named for its arithmetic rather than for the remote, since code
+ * outside the families names no remote, `test/generic.test.ts`; which remote takes it is its reader's
+ * choice, `harmony-touch/read.ts`. A compiled configuration stores the truncated period; a Touch is
+ * given no compiled period at all and works one out each time it sends, through its engine's bit library,
+ * whose conversion adds 2^52 + 2^51 in floating point and keeps the low word, which rounds.
+ * `reference/architectures/harmony-touch/devices-and-infrared.md`, "How a code becomes durations", where
+ * this is inferred from the decoded routine and not measured on the lamp. At 38 kHz the two differ by one,
+ * 26316 against 26315. Kept beside the truncating one so that a reader choosing between them sees both.
+ *
+ * **The same addition, rather than `Math.round`.** An IEEE addition takes an exact half to the even
+ * neighbour, where `Math.round` takes it up, so the two part at a carrier whose period is a whole number
+ * and a half: 25600 Hz is 39062.5 nanoseconds, 39062 here and 39063 by `Math.round`. JavaScript's numbers
+ * are the same doubles under the same default rounding, so adding and taking away the constant reproduces
+ * the remote's arithmetic at every carrier rather than everywhere but the ties. The low word the engine
+ * keeps is the whole number itself for any period below 2^31.
+ */
+export function roundedPeriodOfCarrier(hz: number): number {
+  return 1e9 / hz + ROUNDING_CONSTANT - ROUNDING_CONSTANT;
+}
+
+/** 2^52 + 2^51: added to a double below 2^51 in size, it leaves no bits below the units, so it rounds. */
+const ROUNDING_CONSTANT = 2 ** 52 + 2 ** 51;
+
 /** Why a definition could not be read as one of our row shapes. Counted rather than thrown. */
 export type ConversionRefusal =
   | 'no segments'

@@ -93,8 +93,10 @@ the image by version.
 **Settled**: the remotes' package layout, its signature and key, the kernel, the CPU, that the board code
 is DA850's, the boot arguments, the firmware files for three other parts and how each is installed, and
 that the engine is compiled Lua while the screens are source. **Not settled**: which DA850 variant; the
-RAM actually fitted, beyond what the kernel is told; the flash size; what the MSP430, the CC2544 and the
-`tps6507x` do; and where the configuration lives, which is `todo-touch.md` 1.3. The engine's strings name
+RAM actually fitted, beyond what the kernel is told; the flash size; what the CC2544 does; and where the
+configuration lives, which is `todo-touch.md` 1.3. What the MSP430 and the `tps6507x` do was settled later,
+in `tests/test_harmony_touch_keys.py`: the MSP430 reports the keypad's keys, and the `tps6507x` is the
+power controller the board declares, whose LED the screens drive as the key light. The engine's strings name
 JSON files under `/data/resources/`, `ActivityList.json`, `DeviceList.json` and others, and that is a lead
 for 1.3 and not asserted here.
 

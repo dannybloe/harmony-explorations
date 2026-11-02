@@ -74,6 +74,15 @@ export const SCREEN_SIZES: Readonly<Record<number, { width: number; height: numb
   9: { width: 96, height: 64 },
   12: { width: 176, height: 220 },
   14: { width: 128, height: 128 },
+  // Arch 17, the number a Harmony Touch reports for itself, and **the one row not measured from a
+  // configuration**, since no configuration of a Touch exists as a file here. It is read in the
+  // firmware instead, production image 4.15.330, where four programs state it independently: the
+  // screens' own `SCREEN_WIDTH` and `SCREEN_HEIGHT`, the kernel's framebuffer panel entry that the
+  // Touch's own board code names, the drawing library, which scales the touch controller's reports to
+  // 240 by 320, and the touch driver's Juniper-01 handler, which reports a finger's height on the
+  // display as 320 minus the sensor's. `tests/test_harmony_touch_keys.py` reads all four and this line. Nothing parses an arch 17
+  // container, so `blankScreen` never reaches the row; the drawing and the reference read it.
+  17: { width: 240, height: 320 },
 };
 
 /**

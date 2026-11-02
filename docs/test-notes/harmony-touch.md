@@ -5,6 +5,10 @@ showed about the model is in `reference/remotes/harmony-touch/` and about its pl
 `reference/architectures/harmony-touch/`; this file keeps what is one unit's, and the history of getting
 there.
 
+**This unit may be written to**, decision 29 in `docs/decisions.md`: it names this unit,
+and nothing in the library writes to it yet. A remote's own checks of an answer are no part of that
+permission, since the remote verifies no answerer, `reference/architectures/harmony-touch/answering-a-sync.md`.
+
 ## Arrival
 
 **A Harmony Touch has been on the bench since 27 August 2026**, alongside a Harmony 350 and a Harmony 300.
@@ -125,6 +129,36 @@ TV's `-` and the Xbox's `B` should be missing from those devices' screens. Neith
 person at the bench; `packages/usb/test/touch-activities.test.ts` holds the duplicated positions. The TV's
 channel tuning was switched to Three Numbers in MyHarmony between the trial and the full sync, which is why
 the two device lists differ there.
+
+## Bench checks waiting
+
+What the firmware reading of `todo-touch.md` 3.2 predicts, `tests/test_harmony_touch_keys.py`, to be checked on
+the unit. None has been done.
+
+| | keys | prediction |
+|---|---|---|
+| 1 | start an activity, then hold Off 10 s | the activity stops at once, the remote restarts at about 8 s |
+| 2 | Settings, Remote | Screen lock/Timeout, Remote Lock, Background, Brightness, Set time; Vibration or Tilt Sensor only if fitted |
+| 3 | timeout and both brightness sliders to both ends | timeout 1 to 30, brightness 10 to 100, a battery warning past 95 |
+| 4 | the star with a pen cap, then a finger, then the gap between star and house | nothing, favourites, nothing |
+| 5 | dock, 15 s, lift | Charging at once, the display sleeps after about 10 s, lifting wakes it |
+| 6 | USB cable to a computer | the USB screen, no Charging screen, the charging symbol in the status bar |
+| 7 | Menu + Mute, back out; Record + Previous, back out | pairing; the place in cradle screen |
+| 8 | start an activity, Devices, a device, Home, Volume Up, infrared monitor on | Volume Up goes to the activity's volume device |
+| 9 | long press Rewind, infrared monitor on | the long press code about 600 ms after the press |
+
+## A transport finding for answering a sync
+
+`packages/usb/src/filepipe.ts` waits 5 seconds for a reply to each command. In the recorded syncs the remote
+acknowledges each chunk of an answer write at once, in 0.30 to 0.45 s, and the final chunk of the write that
+completes the six core documents only after storing the set and reloading: 4.6 s in the trial, where that is
+the middle of three writes, 7.6 s in the full sync, where it is the first and largest, and 4.8 s in the
+reverse sync on a single chunk of 2647 bytes carrying Settings. The final chunks of the other writes took
+0.05 to 3.3 s. So the delay follows the reload and not the size, and of the three only the full sync passes
+the 5 second window; a host answering a sync on that transport needs a longer one for that chunk, as
+`packages/usb/src/filewrite.ts` already has with the client's 30 s per chunk. Measured from the recorder's
+timestamps, `packages/usb/test/touch-host.test.ts`. A note only: nothing here answers a sync yet, and the
+transport is unchanged.
 
 ## Not done
 

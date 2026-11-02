@@ -344,8 +344,9 @@ test('the screen carries the raster its own firmware draws into', () => {
     9: { width: 96, height: 64 },
     12: { width: 176, height: 220 },
     14: { width: 128, height: 128 },
-    // Arch 17 (Harmony Touch) is not in `SCREEN_SIZES`, since nothing here reads its configuration. The
-    // figure is the size of every one of the fifty screen captures in its own user guide.
+    // Arch 17 (Harmony Touch): read in its firmware, `tests/test_harmony_touch_keys.py`, and the size of
+    // every one of the fifty screen captures in its own user guide, which was the only source until
+    // `todo-touch.md` 3.2. It is the one row of `SCREEN_SIZES` no configuration measured.
     17: { width: 240, height: 320 },
   };
   /**

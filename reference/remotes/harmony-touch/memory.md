@@ -19,7 +19,12 @@ remote[^s200][^s201].
 **Two files on one remote are two formats**, lines of text and JSON, so a reader must not assume a shape,
 and the field set of `/sys/sysinfo` differs from the list in the Harmony 300 and 350's firmware[^s200].
 
-## The configuration is not a file
+## The configuration is not a file a host can open
+
+**On the remote it is a set of documents in the remote's own store, not a path on the cable**[^t-touch-favourites-firmware]. Where each
+document is kept, and the index beside them, is [the platform's favourites, settings and
+pictures](../../architectures/harmony-touch/favourites-and-settings.md#where-each-is-kept); what the
+documents hold is [the platform's pages](../../architectures/harmony-touch/README.md#the-files).
 
 **`/cfg/usercfg` does not exist on a Touch**, nor do five other spellings, so the Harmony 300 and 350's
 configuration path does not transfer[^s200]. That fits Logitech's own template, which carries the read of a
@@ -32,7 +37,7 @@ either: this is a later generation[^s199].
 ## Not checked
 
 * What `/tde/enable` is, and what `/sys/time` answers when read[^unchecked].
-* Where and in what form the remote keeps its configuration[^unchecked].
+* Whether any path a host can open reads a stored document back without the named door[^unchecked].
 * The flash and RAM sizes[^unchecked].
 
 [^s198]: Measured on a unit. [Section 198](../../../docs/findings.md#s198)
@@ -41,6 +46,7 @@ either: this is a later generation[^s199].
 [^s199]: Read in the firmware. [Section 199](../../../docs/findings.md#s199)
 [^t-touch-sync]: Measured on a unit. [The test](../../../packages/usb/test/touch-sync.test.ts)
 [^t-touch-both-ways]: Measured on a unit. [The test](../../../packages/usb/test/touch-sync-both-ways.test.ts)
+[^t-touch-favourites-firmware]: Read in the firmware. [The test](../../../tests/test_harmony_touch_favourites.py)
 [^unchecked]: Not checked.
 [^s198b]: Stated by Logitech, in their client. [Section 198](../../../docs/findings.md#s198)
 [^s203]: Stated by Logitech, in their client. [Section 203](../../../docs/findings.md#s203)

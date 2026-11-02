@@ -88,31 +88,13 @@ import assert from 'node:assert/strict';
 
 import * as lab from '@harmony/lab';
 import { FILE_HBUS, OFFSET_COMMAND } from '../src/filepipe.ts';
-import { SIX, commands, records, requestLists, requestName, resource, sessions, text } from './touch-recording.ts';
+import { SIX, answersWritten, commands, records, requestLists, requestName, resource, sessions, text } from './touch-recording.ts';
 import type { Record_, Request_, Session } from './touch-recording.ts';
 
 const FULL = 'touch_full_sync_recording';
 const REVERSE = 'touch_reverse_sync_recording';
 
-/** One answer the client writes back to the remote. */
-interface Answer {
-  uri: string;
-  statusCode: string;
-  'body-type'?: string;
-  etag?: string;
-  resource?: unknown;
-}
-
 const hlapi = (fixture: string): Session[] => sessions(commands(records(fixture))).filter((s) => s.path === '/sys/hlapi');
-
-/** Every answer written back in a `proxy/response?write`, in order. */
-function answers(sessionsOnHlapi: Session[]): Answer[] {
-  return sessionsOnHlapi
-    .filter((s) => s.mode === 'W')
-    .map((s) => text(s.written))
-    .filter((w) => w.startsWith('vnd.logitech.proxy/vnd.logitech.response?write'))
-    .flatMap((w) => (JSON.parse(decodeURIComponent(w.split('&responses=')[1]!)) as { responses: Answer[] }).responses);
-}
 
 /** How a request is drawn for comparison: the verb and the kind of address, with no identifier in it. */
 function shape(r: Request_): string {
@@ -189,7 +171,7 @@ test('the remote asks for the six documents, then its favourites one at a time, 
 });
 
 test('every document and picture of the full sync reaches the remote as Logitech\'s service sent it', lab.skipUnless(FULL), () => {
-  const given = answers(hlapi(FULL)).filter((a) => a.uri !== 'proxy://Finished');
+  const given = answersWritten(hlapi(FULL)).filter((a) => a.uri !== 'proxy://Finished');
   const web = webAnswers(records(FULL));
   // Each web answer once in a key order independent form, so matching nine documents is not a deep walk each.
   const webKeys = web.json.map(canonical);
@@ -280,7 +262,7 @@ test('the remote\'s settings reach the service unchanged and come back as the se
   assert.deepEqual(JSON.parse(body), uploaded, 'the web request carries the remote\'s document');
   assert.deepEqual(JSON.parse(web[0]!.response as string), uploaded, 'the service answers with the same document');
 
-  const back = answers(hlapi(REVERSE)).filter((a) => a.uri !== 'proxy://Finished');
+  const back = answersWritten(hlapi(REVERSE)).filter((a) => a.uri !== 'proxy://Finished');
   assert.equal(back.length, 1);
   assert.equal(resource(back[0]!.uri), 'Settings');
   assert.equal(back[0]!.statusCode, '200');
@@ -290,7 +272,7 @@ test('the remote\'s settings reach the service unchanged and come back as the se
 });
 
 test('the upload differs from the settings the full sync delivered in exactly BackgroundImage, KeyBrightness and ScreenBrightness', lab.skipUnless(FULL, REVERSE), () => {
-  const delivered = answers(hlapi(FULL)).find((a) => a.uri.startsWith('harmony://') && resource(a.uri) === 'Settings')!.resource;
+  const delivered = answersWritten(hlapi(FULL)).find((a) => a.uri.startsWith('harmony://') && resource(a.uri) === 'Settings')!.resource;
   const put = requestLists(hlapi(REVERSE))[0]![0]!;
   const uploaded = JSON.parse(decodeURIComponent(put.resource!.replace(/\+/g, ' '))) as Record<string, unknown>;
 

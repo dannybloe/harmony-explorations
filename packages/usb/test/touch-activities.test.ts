@@ -12,8 +12,9 @@
  * **The instrument** is `touch-sync-both-ways.test.ts`'s: the full sync of the filled account, recorded
  * through the lab's copy of Harmony Desktop and decoded by `touch-recording.ts`. The documents are the ones
  * the client wrote to the remote in its `proxy/response?write` answers, which that file shows equal, as
- * parsed JSON, to Logitech's web answers. `documents` below repeats its eight line `answers` walk, since
- * that helper is not exported; moving it into `touch-recording.ts` is the cleanup.
+ * parsed JSON, to Logitech's web answers. `documents` below shapes the shared `answersWritten` walk of
+ * `touch-recording.ts`, the one walk every test of what the remote received goes through, the codec's reader
+ * tests among them, by the package's `./test/touch-recording` export.
  *
  * **What was measured, each against the reading it checks.**
  *
@@ -106,7 +107,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import * as lab from '@harmony/lab';
-import { commands, records, resource, sessions, text } from './touch-recording.ts';
+import { answersWritten, commands, records, resource, sessions } from './touch-recording.ts';
 
 const FULL = 'touch_full_sync_recording';
 const MODEL = join(import.meta.dirname, '..', '..', '..', 'reference', 'logitech', 'data-model', 'model.json');
@@ -117,13 +118,10 @@ type Json = any;
 /** The documents of the `harmony://` answers the client wrote to the remote, by resource name. */
 function documents(): Record<string, Json> {
   const out: Record<string, Json> = {};
-  for (const s of sessions(commands(records(FULL)))) {
-    if (s.path !== '/sys/hlapi' || s.mode !== 'W') continue;
-    const w = text(s.written);
-    if (!w.startsWith('vnd.logitech.proxy/vnd.logitech.response?write')) continue;
-    const answers = (JSON.parse(decodeURIComponent(w.split('&responses=')[1]!)) as { responses: { uri: string; resource?: Json }[] }).responses;
-    for (const a of answers) if (a.uri.startsWith('harmony://')) out[resource(a.uri)] = a.resource;
-  }
+  const hlapi = sessions(commands(records(FULL))).filter((s) => s.path === '/sys/hlapi');
+  // The shared walk gives every answer in order; this test keeps the documents, and a later answer for a
+  // resource replaces an earlier one, as in the walk this replaced.
+  for (const a of answersWritten(hlapi)) if (a.uri.startsWith('harmony://')) out[resource(a.uri)] = a.resource;
   return out;
 }
 

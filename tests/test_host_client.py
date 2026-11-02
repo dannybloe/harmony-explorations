@@ -183,6 +183,16 @@ PRODUCTS = {
          'max_activities': None},
     73: {'name': 'Harmony 600', 'enabled': True, 'max_devices': 5, 'favourites': 23,
          'max_activities': None},
+    # The Harmony Touch, joined in `todo-touch.md` 3.2: its 15 devices and 50 favourites were the
+    # manual's alone in the reference until this row.
+    99: {'name': 'Harmony Touch', 'enabled': True, 'max_devices': 15, 'favourites': 50,
+         'max_activities': None},
+    # The two skins that run the Hops screens of the Touch's image, joined so the reference can name
+    # them, `reference/remotes/harmony-touch/keys.md`: the six home control keys are theirs.
+    111: {'name': 'Harmony Elite', 'enabled': False, 'max_devices': 15, 'favourites': 50,
+          'max_activities': None},
+    112: {'name': 'Harmony 950', 'enabled': True, 'max_devices': 15, 'favourites': 50,
+          'max_activities': None},
 }
 
 

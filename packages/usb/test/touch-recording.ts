@@ -36,6 +36,8 @@ export interface Line {
 
 export interface Record_ {
   kind: string;
+  /** When the page's recorder saw the call, in milliseconds; what times a command's reply. */
+  at?: number;
   message?: string;
   answer?: string;
   method?: string;
@@ -73,17 +75,29 @@ export function reports(bytes: Uint8Array): Uint8Array[] {
 export interface Command {
   request: Uint8Array[];
   reply: Uint8Array[];
+  /**
+   * Milliseconds from the call that sent the request to the poll that returned the reply, from the
+   * recorder's own timestamps; undefined when either has none. The page polls, so this is the reply's
+   * time to within one poll.
+   */
+  replyMs?: number;
 }
 
 export function commands(all: Record_[]): Command[] {
   const out: Command[] = [];
+  const sentAt = new Map<Command, number | undefined>();
   for (const r of all) {
     if (r.kind !== 'prompt' || !r.message?.includes('"execute"')) continue;
     const data = (JSON.parse(r.message) as { data: { request: string } }).data;
     const answer = r.answer ?? '';
-    if (data.request) out.push({ request: reports(hex(data.request)), reply: [] });
-    else if (out.length > 0 && answer && !answer.startsWith('{{') && out.at(-1)!.reply.length === 0) {
-      out.at(-1)!.reply = reports(hex(answer));
+    if (data.request) {
+      out.push({ request: reports(hex(data.request)), reply: [] });
+      sentAt.set(out.at(-1)!, r.at);
+    } else if (out.length > 0 && answer && !answer.startsWith('{{') && out.at(-1)!.reply.length === 0) {
+      const last = out.at(-1)!;
+      last.reply = reports(hex(answer));
+      const sent = sentAt.get(last);
+      if (typeof sent === 'number' && typeof r.at === 'number') last.replyMs = r.at - sent;
     }
   }
   return out;
@@ -120,6 +134,8 @@ export interface Session {
   read: Buffer;
   /** Whether the remote answered any write in this session with the error marker. */
   refused: boolean;
+  /** How long the remote took to acknowledge each write command of the session, in order, where timed. */
+  writeAcksMs: (number | undefined)[];
 }
 
 export function sessions(cmds: Command[]): Session[] {
@@ -129,10 +145,11 @@ export function sessions(cmds: Command[]): Session[] {
     const head = c.request[0]!;
     const command = head[OFFSET_COMMAND];
     if (command === FILE_OPEN) {
-      current = { path: requestedPath(head) ?? '?', mode: strings(head)[1] ?? '?', written: Buffer.alloc(0), read: Buffer.alloc(0), refused: false };
+      current = { path: requestedPath(head) ?? '?', mode: strings(head)[1] ?? '?', written: Buffer.alloc(0), read: Buffer.alloc(0), refused: false, writeAcksMs: [] };
       out.push(current);
     } else if (command === FILE_WRITE && current) {
       current.written = Buffer.concat([current.written, payload(c.request.slice(1))]);
+      current.writeAcksMs.push(c.replyMs);
       if (c.reply[0]?.[OFFSET_SEQUENCE] === REPLY_ERROR) current.refused = true;
     } else if (command === FILE_READ && current) {
       // The first reply report is the read's own header; the data packets follow it.
@@ -173,7 +190,43 @@ export function requestLists(hlapi: Session[]): Request_[][] {
   return out;
 }
 
+/**
+ * One answer the client writes back to the remote in a `proxy/response?write`: the logical address it
+ * answers, the status, and for a document or a picture its type, entity tag and the document parsed.
+ * Only `uri` is always there, and a reader that needs another field asserts it where it reads it.
+ */
+export interface Answer {
+  uri: string;
+  statusCode: string;
+  'body-type'?: string;
+  etag?: string;
+  resource?: unknown;
+}
+
+/**
+ * Every answer the client wrote back to the remote, in order, out of a recording's `/sys/hlapi` sessions.
+ *
+ * Each answer travels as one write, `vnd.logitech.proxy/vnd.logitech.response?write&...&responses=<URL
+ * encoded JSON>`, whose JSON holds a list of answers, so the walk keeps the writes that start that way,
+ * decodes each and flattens the lists. The one walk for every test that reads what the remote received;
+ * a test that wants the answers keyed by resource, or only the `harmony://` ones, shapes this result at
+ * its own call site rather than walking the sessions again.
+ */
+export function answersWritten(hlapi: Session[]): Answer[] {
+  return hlapi
+    .filter((s) => s.mode === 'W')
+    .map((s) => text(s.written))
+    .filter((w) => w.startsWith('vnd.logitech.proxy/vnd.logitech.response?write'))
+    .flatMap((w) => (JSON.parse(decodeURIComponent(w.split('&responses=')[1]!)) as { responses: Answer[] }).responses);
+}
+
 export const SIX = ['ActivityList', 'DeviceList', 'MapList', 'Context', 'Settings', 'ProtocolList'];
 
-/** The last path segment of a logical address, which names the resource. */
+/**
+ * The last path segment of a logical address, which names the resource.
+ *
+ * A twin of the rule in the codec's `documentsOfAnswers`, `packages/codec/src/harmony-touch/documents.ts`,
+ * kept here because this package cannot import the codec, which depends on it. The two are one line each and
+ * have to change together.
+ */
 export const resource = (uri: string): string => uri.split('?')[0]!.split('/').at(-1)!;

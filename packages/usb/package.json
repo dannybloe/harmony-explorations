@@ -9,7 +9,8 @@
     ".": "./src/index.ts",
     "./models": "./src/models.ts",
     "./trailer": "./src/trailer.ts",
-    "./write": "./src/write.ts"
+    "./write": "./src/write.ts",
+    "./test/touch-recording": "./test/touch-recording.ts"
   },
   "scripts": {
     "typecheck": "tsc --build"

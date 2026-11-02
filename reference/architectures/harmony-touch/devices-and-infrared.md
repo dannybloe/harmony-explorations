@@ -125,7 +125,8 @@ silence and the next opening on one, stay two words[^t-touch-engine].
 **The carrier**, how fast the lamp flickers, goes into the packet as a period in nanoseconds, **rounded to
 the nearest nanosecond**, where a compiled configuration truncates it[^t-touch-engine][^s92]. The period goes
 through the engine's bit library, whose conversion of a number adds 2<sup>52</sup> + 2<sup>51</sup> in
-floating point and keeps the low word, and that rounds[^t-touch-engine]. **That is inferred from the decoded
+floating point and keeps the low word, and that rounds, an exact half to the even neighbour as an IEEE
+addition does[^t-touch-engine]. **That is inferred from the decoded
 conversion routine and not measured on the lamp**: the routine was recognised by its constant and by the shape
 of the addition it calls. What the native program does with
 the period after that is not checked[^unchecked].

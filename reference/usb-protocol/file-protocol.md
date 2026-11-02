@@ -143,7 +143,9 @@ the checksum word stored in the file with the expected value, and the flush read
 before it answers. The detail is [their USB page](../architectures/harmony-300-350/usb.md#what-the-firmware-does-with-a-write)[^t-harmony-350-file-write].
 The same reading also places the bytes the templates check: the reply to the reset carries no parameter,
 the check's character is byte 7 and a write chunk ending in the done packet answers `0xFE`, as the client
-expects[^t-harmony-350-file-write]. The Harmony Touch generation's firmware is not read[^unchecked].
+expects[^t-harmony-350-file-write]. What the Harmony Touch generation's firmware does with these steps is
+not read[^unchecked]; how a configuration reaches a Touch instead, by its own sync or a document put, is
+[answering a sync](../architectures/harmony-touch/answering-a-sync.md).
 
 Logitech's template for writing a Harmony Touch's configuration carries the read of the same file commented
 out, under a header calling it "for testing only", so its client writes a configuration to that generation

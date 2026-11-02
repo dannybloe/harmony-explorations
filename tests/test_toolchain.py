@@ -244,7 +244,9 @@ class TheRunnerSeesEveryTest(unittest.TestCase):
         # 71 with `tests/test_harmony_touch_image.py`, the Harmony Touch's package, todo-touch 1.2.
         # 75 with `tests/test_harmony_touch_architecture.py`, todo-touch 1.7, and the three of 3.1,
         # `tests/test_harmony_touch_activities.py`, `_devices.py` and `_favourites.py`.
-        self.assertEqual(len(files), 75, 'the Python test files')
+        # 76 with `tests/test_harmony_touch_keys.py`, todo-touch 3.2, and 77 with
+        # `tests/test_harmony_touch_host.py`, todo-touch 4.1 and 4.2.
+        self.assertEqual(len(files), 77, 'the Python test files')
         with_block = 0
         for path in files:
             with open(path, encoding='utf-8') as handle:
@@ -290,7 +292,9 @@ class TheRunnerSeesEveryTest(unittest.TestCase):
         # 68 with `tests/test_harmony_300_group_4_send.py`, which carries one.
         # 69 with `tests/test_harmony_touch_image.py`, todo-touch 1.2, which carries one.
         # 73 with the four Harmony Touch files of todo-touch 1.7 and 3.1, each of which carries one.
-        self.assertEqual(with_block, 73,
+        # 74 with `tests/test_harmony_touch_keys.py`, todo-touch 3.2, and 75 with
+        # `tests/test_harmony_touch_host.py`, todo-touch 4.1 and 4.2, which carry one each.
+        self.assertEqual(with_block, 75,
                          'files carrying a __main__ block, of %d' % len(files))
 
 
@@ -776,8 +780,10 @@ class APythonBoundOnACorpusTotalIsExact(unittest.TestCase):
         # 67 with `tests/test_harmony_350_skin.py`, the skin read in the firmware.
         # 68 with `tests/test_harmony_300_350_images.py`, 69 with `tests/test_harmony_300_350_send_events.py`,
         # 70 with `tests/test_harmony_300_group_4_send.py`, 71 with `tests/test_harmony_touch_image.py`,
-        # 75 with the four Harmony Touch files of todo-touch 1.7 and 3.1.
-        self.assertEqual(len(scanned), 75, 'Python test files, which moves when one is added')
+        # 75 with the four Harmony Touch files of todo-touch 1.7 and 3.1,
+        # 76 with `tests/test_harmony_touch_keys.py`, todo-touch 3.2, and 77 with
+        # `tests/test_harmony_touch_host.py`, todo-touch 4.1 and 4.2.
+        self.assertEqual(len(scanned), 77, 'Python test files, which moves when one is added')
         self.assertIn(self.CONTROL, found, 'the pattern matches nothing it should match')
 
     def test_every_remaining_bound_says_why_it_is_not_a_measurement(self):

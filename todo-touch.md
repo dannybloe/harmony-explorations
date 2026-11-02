@@ -52,11 +52,15 @@ Written on 2 November 2026, and placed in `todo.md`'s sequence the same day as 3
 ## 3. The Touch described
 
 - [x] 3.1 The configuration's format in `reference/remotes/harmony-touch/` and `reference/architectures/harmony-touch/`, every fact with its footnote and regression test; done: three pages, `devices-and-infrared.md`, `activities-and-buttons.md` and `favourites-and-settings.md`, each field to what the remote does with it, held by `packages/usb/test/touch-{devices,activities,favourites}.test.ts` and the three `tests/test_harmony_touch_*.py` of the same names
-- [ ] 3.2 Keys, screen and limits measured, replacing what the reference takes from the manual
-- [ ] 3.3 A reader for the configuration in `packages/codec`, if 1 and 2 show it is a file the codec can read
+- [x] 3.2 Keys, screen and limits measured, replacing what the reference takes from the manual; done: the keys, the two touch zones above the screen, the raster, charging, the battery and the remote's own settings read in the firmware, on `reference/remotes/harmony-touch/keys.md`, `display.md`, `hardware.md` and `behaviour.md`, `tests/test_harmony_touch_keys.py`; the device and favourite limits are read from Logitech's product table, `tests/test_host_client.py`, and none is measured on a unit
+- [x] 3.3 A reader for the configuration in `packages/codec`, if 1 and 2 show it is a file the codec can read; done: not a file but Logitech's documents, so the reader in `packages/codec/src/harmony-touch/` is a view over the documents a sync delivers, with a check of what the remote refuses or ignores, `packages/codec/test/touch-reader.test.ts` and `touch-check.test.ts`
 
 ## 4. Whether we can configure it ourselves
 
-- [ ] 4.1 Whether the files of 1.3 can be put on the remote directly, by the route of 1.5, without a sync through Logitech's servers
-- [ ] 4.2 If not: whether FreeHarmony could answer the remote's requests in place of Logitech's server
+- [x] 4.1 Whether the files of 1.3 can be put on the remote directly, by the route of 1.5, without a sync through Logitech's servers; done, read in the firmware and not tried: not by 1.5's template, which is dead code for a Touch, but yes for a single document by the engine's direct resource put, which passes with no token; a whole configuration still goes by the sync, since a put is not atomic, reloads once per document and queues each for upload, `reference/architectures/harmony-touch/answering-a-sync.md` and `tests/test_harmony_touch_host.py`
+- [x] 4.2 If not: whether FreeHarmony could answer the remote's requests in place of Logitech's server; done, read in the firmware and checked against the recorded syncs, nothing of ours has answered one: it reads as possible in the firmware and is untried, since the remote cannot tell one answerer from another and checks the envelope of each answer, not its contents, `reference/architectures/harmony-touch/answering-a-sync.md`, `tests/test_harmony_touch_host.py` and `packages/usb/test/touch-host.test.ts`
 - [x] 4.3 Any write to a Touch waits for a decision of its own, as decision 26 was for the Harmony 300 and 350; done: decision 29, the bench Touch may be written, behind a rail of its own on the file protocol
+
+## 5. What a Touch can do that MyHarmony does not offer
+
+- [ ] 5.1 Every field the remote's engine reads (1.3.2's list) set against what MyHarmony writes, from its decompiled code and from the recorded documents; the fields left over are a list of what FreeHarmony could offer beyond MyHarmony, each checked for what the remote does with it, since a field read is not a feature; known so far: gestures bound in a button map, which MyHarmony offers no way to set, and the two vibration settings, which no recorded document carries; out of scope is fixed firmware behaviour no document changes

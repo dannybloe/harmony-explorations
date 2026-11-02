@@ -27,21 +27,30 @@
  * is the word Logitech, as on the Harmony 300. A position and a
  * size come from the drawing's own printed mark, which the extraction reports per key.
  *
- * **No scan code appears anywhere in here.** This library has never read a key off a Harmony Touch:
- * the file based family is opened only to read its identity files, sections 198 to 201, its
- * configuration is not reachable as a file and Logitech's service will not compile one, section 202, and
- * no calibration configuration exists for it, section 133. So every key is `printed` and none carries a code or
- * a candidate list.
+ * **No scan code appears anywhere in here, and that is the drawing's choice now rather than a gap.**
+ * Until `todo-touch.md` 3.2 no key of a Touch could be numbered here. The firmware numbers every keypad
+ * key since, twice: a bit of the key microcontroller and a Linux key code, each with the firmware's
+ * name, `tests/test_harmony_touch_keys.py` and `reference/remotes/harmony-touch/keys.md`. Those
+ * numbers are the firmware's and not a configuration's: a Touch's configuration binds keys by name, its
+ * configuration is not reachable as a file and Logitech's service will not compile one, section 202. So
+ * every key here stays `printed`, carries no code and keeps the drawing's own spelling; the two
+ * spellings that differ from the firmware's names, `Off` and `Dvr`, are pinned by that test.
  *
  * **The screen is a touch screen**, Logitech's own words in the legend: "LCD touch screen. View,
  * launch, and edit activities and favorites". The rectangle is the drawing's own glass outline, and
- * its raster is 240 by 320, which is the size of every screen capture in the user guide bound into the
- * same PDF, fifty of them. That is the vendor's picture of the display, not a measurement off the
- * firmware or a configuration, neither of which this project can read on this model.
+ * its raster is 240 by 320. That is stated by four programs in the firmware, the screens' own
+ * constants, the kernel's panel entry, the drawing library and the touch driver,
+ * `tests/test_harmony_touch_keys.py`, and it
+ * is the size of every screen capture in the user guide bound into the same PDF, fifty of them, which
+ * was the only source until the firmware was read.
  *
- * **The two marks above the screen are keys, and their shape is the mark itself**, the way the Harmony
- * One's paging arrows are: the legend lists `Favorites` and `Home` among the buttons, the guide says to
- * "tap" them, and the product prints a star and a house on the bezel with no key edge around either.
+ * **The two marks above the screen are zones of the touch sensor, and their shape is the mark
+ * itself**, the way the Harmony One's paging arrows are: the touch controller reports a finger above the
+ * display as Favorites on the left and Home on the right, with a dead band between them, read in the
+ * firmware by the same test. Taking this glass as the display, which is an assumption, the centres of both
+ * marks lie about 20 pixels above it, inside the strip one of the driver's two layouts reads, and the test
+ * checks that too. The legend lists `Favorites` and `Home` among the buttons, the guide says
+ * to "tap" them, and the product prints a star and a house on the bezel with no key edge around either.
  */
 import { segment, traced } from '../shapes.ts';
 import { CASE_HEIGHT } from '../types.ts';

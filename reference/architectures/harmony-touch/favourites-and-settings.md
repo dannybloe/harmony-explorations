@@ -49,20 +49,24 @@ checked[^unchecked].
 
 ## Settings
 
-**Settings are eleven named rows**, each a list of values with a default, and the remote reads nine of
-them[^t-touch-favourites][^t-touch-favourites-firmware]:
+**A sync's Settings document holds eleven named rows**, each a list of values with a default, and the
+remote reads nine of them[^t-touch-favourites][^t-touch-favourites-firmware]. The firmware also knows
+`HapticFlag` and `HapticEffect`, vibration, which no sync measured carried, and the table lists them
+too:
 
 | setting | what it does on the remote | with no value on the account |
 |---|---|---|
 | `BackgroundImage` | the background picture, one of nine built into the remote or one of the user's own | a built in picture |
 | `UserImages` | the user's own backgrounds, each fetched with a small twin for the picker; the row allows five, a count the remote does not read | none |
 | `TwelveHourClock` | the clock in the status bar, 12 hour or 24 hour, and the set time screen | 12 hour |
-| `ScreenBrightness` | the screen's backlight, 10 to 100 | 85 |
+| `ScreenBrightness` | the screen's backlight; a value is held to 10 to 100 | 85 |
 | `ScreenTimeout` | seconds before the screen goes to sleep, which it does not do on USB power | 10 |
 | `ScreenLockFlag` | the lock screen, shown when the screen fades out | off |
 | `EditLock` | locks editing on the remote | off |
-| `KeyBrightness` | the keys' backlight, 5 to 100, off below 5 | 35 |
+| `KeyBrightness` | the keys' backlight; a value from the account is taken from 5 to 100 and turns the light off below 5, where the remote's own slider starts at 10 | 35 |
 | `AccelFlag` | whether the motion sensor reports, on hardware that has one | on |
+| `HapticFlag` | vibration, offered only on hardware that reports a vibration motor; in no sync measured | on |
+| `HapticEffect` | the vibration's effect; in no sync measured | `"13"` |
 | `IsWiFiEnabled`, `TimeZoneFlag` | nothing: neither name occurs anywhere in the remote's software, searched with its exact case | |
 
 The defaults are the firmware's[^t-touch-favourites-firmware]. Three settings the firmware knows never
@@ -72,6 +76,11 @@ for[^t-touch-favourites][^t-touch-favourites-firmware]. **A change made on the r
 account already has**: for a setting missing from the account's document, nothing stores what is chosen
 on the remote, and the firmware's default is what it reads again[^t-touch-favourites-firmware]. Whether the remote shows a vibration or
 motion setting is not checked[^unchecked].
+
+On the remote the timeout is a slider from 1 to 30 seconds and the screen and key brightness are sliders from
+10 to 100 each, with a warning past 95 that a brighter screen and keys drain the battery faster; a setting of
+100 is the display backlight's step 26 and the key light's step 42[^t-touch-keys]. What the settings screens
+offer is [the model's display page](../../remotes/harmony-touch/display.md#the-panel).
 
 The document's own fields: `RemoteName` is the model name on the About screen, the firmware's own when
 empty; `UserImageBucketUri` is where the user's backgrounds are fetched from[^t-touch-favourites-firmware].
@@ -248,7 +257,7 @@ software[^t-touch-favourites-firmware].
 
 So the two rows measured with no value and a null default, `ScreenBrightness` and `ScreenTimeout`, take 85
 and 10[^t-touch-favourites][^t-touch-favourites-firmware]. The backlight is set to the screen level scaled
-to 26 steps, and the keys' light to the key level scaled to 42[^t-touch-favourites-firmware].
+to 26 steps, and the keys' light to the key level scaled to 42, each rounded down[^t-touch-favourites-firmware].
 
 **How a value is written**: a change on the remote replaces the row's first value and, if it changed,
 hands the whole document up; it adds no row[^t-touch-favourites-firmware]. The hand over is
@@ -290,4 +299,5 @@ to the remote in the sync measured carried the field[^t-touch-favourites].
 [^t-touch-both-ways]: Measured on a unit. [The test](../../../packages/usb/test/touch-sync-both-ways.test.ts)
 [^t-touch-favourites]: Measured on a unit. [The test](../../../packages/usb/test/touch-favourites.test.ts)
 [^t-touch-favourites-firmware]: Read in the firmware. [The test](../../../tests/test_harmony_touch_favourites.py)
+[^t-touch-keys]: Read in the firmware. [The test](../../../tests/test_harmony_touch_keys.py)
 [^unchecked]: Not checked.

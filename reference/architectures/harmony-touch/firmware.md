@@ -66,7 +66,8 @@ package had not been opened and its processor was not checked until the image wa
   chip its Logitech driver calls CC2544, which that driver programs; and a touch controller, whose driver
   describes itself as a ClearPad driver, which the start up script programs only when the controller reports
   one particular version. The start up script also hands the boot loader file to an updater on every
-  start[^t-touch-image].
+  start[^t-touch-image]. Of these, the MSP430 reports the keypad's keys and the touch controller gives the
+  two zones above the screen, Home and Favorites, [the model's keys](../../remotes/harmony-touch/keys.md#the-key-numbers)[^t-touch-keys].
 * **The remote's own program is Lua.** Every Lua file of its engine is compiled Lua 5.1 in the stock layout
   with 8 byte numbers, but for one header byte, the flag stock Lua writes as 0 or 1 for integer numbers,
   which is 4 in every file; the engine's
@@ -152,4 +153,5 @@ installs is not settled, [the recovery tool](../../logitech/update-service.md#th
 [^s197]: Stated by Logitech, in their client. [Section 197](../../../docs/findings.md#s197)
 [^s195]: Measured on a unit. [Section 195](../../../docs/findings.md#s195)
 [^t-touch-image]: Read in the firmware. [The test](../../../tests/test_harmony_touch_image.py)
+[^t-touch-keys]: Read in the firmware. [The test](../../../tests/test_harmony_touch_keys.py)
 [^t-touch-arch]: Read in the firmware. [The test](../../../tests/test_harmony_touch_architecture.py)

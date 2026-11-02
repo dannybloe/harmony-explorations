@@ -72,16 +72,10 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
 import * as lab from '@harmony/lab';
-import { commands, records, resource, sessions, text } from './touch-recording.ts';
+import { answersWritten, commands, records, resource, sessions } from './touch-recording.ts';
 import type { Record_ } from './touch-recording.ts';
 
 const FULL = 'touch_full_sync_recording';
-
-/** One answer the client writes back to the remote, as `touch-sync-both-ways.test.ts` reads it. */
-interface Answer {
-  uri: string;
-  resource?: unknown;
-}
 
 interface Atom { Type: number; Value: number }
 interface SegmentRef { SegmentName: string; SegmentType: number }
@@ -100,17 +94,14 @@ interface Command { Name: string; KeyCode: string; ProtocolId: number; Transport
 interface Entry { Device: Record<string, unknown>; DeviceFeatures: unknown[]; Commands: Command[] }
 
 /**
- * The documents the remote received, by the last segment of their logical address. The same reading
- * as `answers` in `touch-sync-both-ways.test.ts`, which keeps it private; it belongs in `touch-recording.ts`.
+ * The documents the remote received, by the last segment of their logical address: the `harmony://`
+ * answers of the shared `answersWritten` walk in `touch-recording.ts`, keyed by resource name.
  */
 function received(): Map<string, unknown> {
   const hlapi = sessions(commands(records(FULL))).filter((s) => s.path === '/sys/hlapi');
   const out = new Map<string, unknown>();
-  for (const w of hlapi.filter((s) => s.mode === 'W').map((s) => text(s.written))) {
-    if (!w.startsWith('vnd.logitech.proxy/vnd.logitech.response?write')) continue;
-    for (const a of (JSON.parse(decodeURIComponent(w.split('&responses=')[1]!)) as { responses: Answer[] }).responses) {
-      if (a.uri.startsWith('harmony://')) out.set(resource(a.uri), a.resource);
-    }
+  for (const a of answersWritten(hlapi)) {
+    if (a.uri.startsWith('harmony://')) out.set(resource(a.uri), a.resource);
   }
   return out;
 }

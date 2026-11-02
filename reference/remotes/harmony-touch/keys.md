@@ -45,26 +45,102 @@ are read off a photograph of the whole face, and drawing and photograph agree ma
 Generated from `packages/silhouettes/src/models/touch.ts` by `make remote-reference-write`. Change the source, not this block.
 <!-- /generated -->
 
-## No scan codes, and none can be had here
+## The key numbers
 
-**No key on this model carries a scan code**, and that is not an omission: no key has been read off a Touch,
-its configuration is not reachable as a file[^s200], and Logitech's service will not compile one[^s202]. The
-drawing's test refuses a scan code with nothing measured behind it,
-`packages/silhouettes/test/models.test.ts`.
+**Every key on the keypad has a number, twice over, and a name.** A small microcontroller, an MSP430,
+watches the keys and tells the main processor which are down as one bit per key; the kernel turns each
+bit into a standard Linux input key code, and the screens' drawing library turns that code into the key's
+name, which is the name the button maps use[^t-touch-keys]. The kernel's table has 33 codes: the Touch's
+27 keypad keys, then six home control keys of the Harmony Elite and the Harmony 950, skins 111 and 112,
+which run the same image with screens of their own, the Hops screens[^t-touch-keys][^t-touch-products]. **Home and Favorites are not among the 27**: they are two
+zones of the touch sensor, in the strip it reaches past the top of the display[^t-touch-keys].
+
+So the drawing still carries no scan code, and that is a choice rather than a gap: a scan code on the
+other models is the number a configuration binds a key by, and a Touch's documents bind a key by its
+name, [the platform's activities and buttons](../../architectures/harmony-touch/activities-and-buttons.md).
+The numbers are the table below, read in the firmware, production image 4.15.330, the kernel's table in
+the preview build too[^t-touch-keys].
+
+| key on the drawing | the firmware's name | microcontroller bit | Linux key code |
+|---|---|---|---|
+| `Off` | `PowerOffActivity` | 0 | 116 |
+| `Rewind` | `Rewind` | 1 | 168 |
+| `Record` | `Record` | 2 | 167 |
+| `DirectionLeft` | `DirectionLeft` | 3 | 105 |
+| `Select` | `Select` | 4 | 352 |
+| `DirectionRight` | `DirectionRight` | 5 | 106 |
+| `Play` | `Play` | 6 | 207 |
+| `Pause` | `Pause` | 7 | 119 |
+| `VolumeDown` | `VolumeDown` | 8 | 114 |
+| `DirectionDown` | `DirectionDown` | 9 | 108 |
+| `ChannelDown` | `ChannelDown` | 10 | 403 |
+| `FastForward` | `FastForward` | 11 | 159 |
+| `Stop` | `Stop` | 12 | 128 |
+| `Red` | `Red` | 13 | 398 |
+| `Green` | `Green` | 14 | 399 |
+| `Yellow` | `Yellow` | 15 | 400 |
+| `VolumeUp` | `VolumeUp` | 16 | 115 |
+| `Exit` | `Exit` | 17 | 174 |
+| `DirectionUp` | `DirectionUp` | 18 | 103 |
+| `Menu` | `Menu` | 19 | 139 |
+| `ChannelUp` | `ChannelUp` | 20 | 402 |
+| `Dvr` | `DVR` | 21 | 389 |
+| `VolumeMute` | `VolumeMute` | 22 | 113 |
+| `Guide` | `Guide` | 23 | 395 |
+| `PrevChannel` | `PrevChannel` | 24 | 412 |
+| `Info` | `Info` | 25 | 358 |
+| `Blue` | `Blue` | 26 | 401 |
+| `Favorites` | `Favorites` | none: the touch sensor's left zone | 364 |
+| `Home` | `Home` | none: the touch sensor's right zone | 102 |
+
+**The drawing and the firmware differ in two spellings and nothing else**: the drawing's `Off` is the
+firmware's `PowerOffActivity` and its `Dvr` is `DVR`[^t-touch-keys]. The drawing keeps its own spellings.
+The factory test screen in the image lays out the same 29 keys by the firmware's names, which is the third
+source the table closes against[^t-touch-keys]. The driver reads the six home control keys past bit 26
+from a second pair of registers on every board; the drawing library names them `HomeControl1` to `4`,
+`HomeControlPlus` and `HomeControlMinus`, only the Hops screens and their factory button test use them,
+and no screen a Touch runs names one; nor does the Touch's face carry one[^t-touch-keys][^x-touch-manual].
+
+This section was headed "No scan codes, and none can be had here"<!--superseded--> until the firmware
+was read, since no key had been read off a Touch and its configuration is not a file a host can open[^s200]; that stays
+true of the configuration, and the firmware numbers the keys without it.
 
 ## The two marks above the screen
 
-**Home and Favorites are keys whose shape is the printed mark**: the manual's legend lists both among the
-buttons, the guide says to tap them, and the product prints a house and a star on the bezel with no key
-edge around either[^x-touch-manual]. They are drawn as touch keys for that reason. Home shows the activities,
-Favorites the favourite channels[^x-touch-manual].
+**Home and Favorites are zones of the touch sensor, not keys of the keypad.** The sensor reaches past the
+top of the display, and a finger in that strip is reported as a key press: the left zone as Favorites,
+the right as Home, and the band between the two as nothing[^t-touch-keys]. That is where the product
+prints a star and a house with no key edge around either, and where the manual's legend lists both among
+the buttons[^x-touch-manual]. They are drawn as touch keys for that reason. The touch controller's driver
+handles more than one sensor model and the two a Touch can carry place the zones alike; which one a unit
+carries is **not checked**[^unchecked]. The drawing agrees, on an assumption: taking the glass of Logitech's
+own drawing as the display, the centre of the star lies 20 pixels above its top edge and 48 from its left,
+and the centre of the house 21 above and 192 from the left, inside the strip one of the driver's two layouts
+reads, which starts 10 pixels above the top edge, with Favorites up to 89 and Home from 151; the driver
+states no upper edge short of the sensor's own reach[^t-touch-keys].
+
+**Favorites opens the favourite channels, and Home the activities**[^x-touch-manual]. **Pressed on the
+activity list while an activity runs, Home goes to that activity's start screen instead**: its favourites,
+its number pad, the now playing screen or its commands, as the activity is set up and as far as the
+activity has a number pad or speakers to show[^t-touch-keys].
+
+## Held together
+
+The screens recognise two combinations of held keys[^t-touch-keys]:
+
+* **Menu with Mute** opens the radio pairing screen.
+* **Record with Previous** opens a setup screen telling the user to place the remote in its cradle.
+
+Four more, each beginning with Fast Forward and Stop, open factory test and debugging screens, and
+answer only on a remote carrying a factory flag file that the image does not hold[^t-touch-keys].
 
 ## What the keys do, by Logitech's legend
 
 | key | what it does | evidence |
 |---|---|---|
 | Off | "turns off all of the devices for an activity" rather than one device | [^x-touch-manual], "Turning your system off" |
-| Home | shows the activities on the screen; in device mode the way to the device list | [^x-touch-manual], "Using your Activities" and "Using Devices" |
+| Off, held for 8 seconds | ends the running activity as it goes down, like any press of Off, and then restarts the remote: the kernel's key driver starts a timer when Off goes down and stops it when Off comes up, and a timer that runs out reboots the remote | [^t-touch-keys] |
+| Home | shows the activities on the screen; in device mode the way to the device list; with an activity running and its list showing, that activity's start screen | [^x-touch-manual], "Using your Activities" and "Using Devices"; [^t-touch-keys] |
 | Favorites | shows the favourite channels | [^x-touch-manual] |
 | the colour keys | cable, satellite or Blu-ray functions | [^x-touch-manual], "Know your product" |
 | DVR, Guide, Info | the set top box's record menu, programme listings and information | [^x-touch-manual] |
@@ -75,7 +151,8 @@ Favorites the favourite channels[^x-touch-manual].
 
 **Logitech's button maps name the keys with 26 names**: the 27 keypad keys of the drawing less Off, with
 `DVR` where the drawing says `Dvr`[^t-touch-activities]. Off, Home and Favorites never reach a map, since the
-remote's screens handle all three themselves, Off by ending the running activity[^t-touch-activities-firmware].
+remote's screens handle all three themselves, Off by ending the running activity[^t-touch-activities-firmware]. The
+firmware's own name for Off is `PowerOffActivity`, [the key numbers](#the-key-numbers)[^t-touch-keys].
 The engine accepts `Dvr` as well as `DVR`, read in the decompiled engine and held by no
 test[^t-touch-activities-firmware]. How a key's name becomes a command is
 [the platform's activities and buttons](../../architectures/harmony-touch/activities-and-buttons.md).
@@ -97,15 +174,19 @@ the Tap, SwipeLeft and SwipeRight gestures, and never on a screen entry[^t-touch
 
 ## Not checked
 
-* Every scan code, and whether the two marks above the screen are keys of the keypad or areas of the
-  touch panel[^unchecked].
+* Which of the touch controller's sensor models a Touch carries, and so which of the driver's two layouts
+  of the Home and Favorites zones it runs; the two agree on left and right[^unchecked].
 * Which keys Logitech's client lets a long press be given to[^unchecked].
 * The long press's timing measured on a remote rather than read[^unchecked].
+* The restart on Off held for 8 seconds, and the two combinations, tried on a remote rather than read[^unchecked].
+* Whether the microcontroller's firmware, one file programmed into every model the image serves, can set
+  the six home control bits on a Touch[^unchecked].
 
 [^x-touch-manual]: Stated by Logitech, in the manual. [The Harmony Touch user guide](https://www.manualslib.com/manual/641224/Logitech-Harmony-Touch.html)
 [^s200]: Measured on a unit. [Section 200](../../../docs/findings.md#s200)
-[^s202]: Stated by Logitech, in their client. [Section 202](../../../docs/findings.md#s202)
 [^t-long-press]: Stated by Logitech, by their service. [The test](../../../packages/usb/test/models.test.ts)
 [^t-touch-activities]: Measured on a unit. [The test](../../../packages/usb/test/touch-activities.test.ts)
 [^t-touch-activities-firmware]: Read in the firmware. [The test](../../../tests/test_harmony_touch_activities.py)
 [^unchecked]: Not checked.
+[^t-touch-keys]: Read in the firmware. [The test](../../../tests/test_harmony_touch_keys.py)
+[^t-touch-products]: Stated by Logitech, by their service. [The test](../../../tests/test_host_client.py)

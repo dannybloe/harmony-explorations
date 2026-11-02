@@ -95,35 +95,20 @@ import { readFileSync } from 'node:fs';
 import { isDeepStrictEqual } from 'node:util';
 
 import * as lab from '@harmony/lab';
-import { commands, records, requestLists, resource, sessions, text } from './touch-recording.ts';
-import type { Request_, Session } from './touch-recording.ts';
+import { answersWritten, commands, records, requestLists, resource, sessions } from './touch-recording.ts';
+import type { Answer, Request_, Session } from './touch-recording.ts';
 
 const TRIAL = 'touch_sync_recording';
 const FULL = 'touch_full_sync_recording';
 const REVERSE = 'touch_reverse_sync_recording';
-
-/** One answer the client writes back to the remote. */
-interface Answer {
-  uri: string;
-  statusCode: string;
-  'body-type'?: string;
-  etag?: string;
-  resource?: unknown;
-}
 
 // The documents are Logitech's JSON, so they are walked as loosely typed records.
 type Json = any;
 
 const hlapi = (fixture: string): Session[] => sessions(commands(records(fixture))).filter((s) => s.path === '/sys/hlapi');
 
-/** Every answer written back in a `proxy/response?write`, in order. The same reading as `touch-sync-both-ways.test.ts`. */
-function answers(fixture: string): Answer[] {
-  return hlapi(fixture)
-    .filter((s) => s.mode === 'W')
-    .map((s) => text(s.written))
-    .filter((w) => w.startsWith('vnd.logitech.proxy/vnd.logitech.response?write'))
-    .flatMap((w) => (JSON.parse(decodeURIComponent(w.split('&responses=')[1]!)) as { responses: Answer[] }).responses);
-}
+/** Every answer written back in a `proxy/response?write`, in order: the shared walk over a recording's sessions. */
+const answers = (fixture: string): Answer[] => answersWritten(hlapi(fixture));
 
 /** One of the six documents of a sync, by its resource name. */
 const document = (fixture: string, name: string): Json =>

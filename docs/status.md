@@ -183,6 +183,14 @@ the generator that wrote it, with firmware event 0xFF bound so it serves both mo
 expected codes on the bench 350 and the same file 33 of 33 on the bench 300, `packages/codec/test/noscreenfinalunits.test.ts`.
 Two Harmony 885s are on the bench as well, read only.
 
+**The Harmony Touch is described from its own reading and nothing has been written to it.** Its configuration
+is Logitech's documents rather than a file, fetched by the remote through the computer during a sync, and both
+directions of a sync are recorded, `packages/usb/test/touch-sync-both-ways.test.ts`. The documents are described
+field by field in [its platform pages](../reference/architectures/harmony-touch/README.md) and read by the codec,
+`packages/codec/src/harmony-touch/`; what a host other than Logitech's server would have to answer is
+[answering a sync](../reference/architectures/harmony-touch/answering-a-sync.md). The bench Touch may be written,
+decision 29, and no write path exists yet.
+
 ## What is still open
 
 *Moved out of `CLAUDE.md` on 29 August 2026. The entries answered since left in plan 009's step 5.1,

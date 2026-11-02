@@ -10,8 +10,8 @@ it[^s203]. How evidence is marked is in [the reference's README](../../README.md
 speaks the file protocol rather than the command protocol[^s193]. A read only file transport has opened two
 files on it, its identity and a radio query, and nothing else answers without the named door[^s201]. Its
 configuration is not reachable as a file[^s200], and Logitech's service does not compile one for
-it[^s202]. So the facts below are mostly Logitech's, from the manual, the service and the client, and each
-footnote says so.
+it[^s202]. So the facts below are Logitech's, from the manual, the service and the client, or read in its firmware
+image, and each footnote says which.
 
 **Its architecture has two numbers for two things.** The remote reports 17 for itself[^s200], the number its
 software shares with Logitech's hubs, and Logitech's own protocol templates file it under 18[^s197], their
@@ -45,12 +45,12 @@ checked**[^unchecked].
 | product string | `Logitech Harmony Remote`, with no firmware version in it | [^s193] |
 | protocol | the file protocol: a path opened, read and closed | [^s198], [^s200] |
 | firmware | 4.15.330, the production image Logitech's update service serves for skin 99, a Linux image shared with five later models | [^s200], [^s196] |
-| screen | an "LCD touch screen"; 240 by 320 by the size of every screen capture in the manual | [^x-touch-manual] |
-| keys | 29 on the drawing: 27 moulded keys and two marks above the screen, Home and Favorites | [^x-touch-manual] |
-| devices | up to 15 | [^x-touch-manual] |
-| favourite channels | up to 50 | [^x-touch-manual] |
+| screen | an "LCD touch screen" of **240 by 320 pixels**, stated by four programs in the firmware, [display.md](display.md), and the size of every screen capture in the manual | [^x-touch-manual], [^t-touch-keys] |
+| keys | 29 on the drawing: **27 keys on the keypad**, each with a bit of the key microcontroller, a Linux key code and a name in the firmware, and **two zones of the touch sensor** above the screen, Home and Favorites, [keys.md](keys.md#the-key-numbers) | [^x-touch-manual], [^t-touch-keys] |
+| devices | up to 15, by the manual and by Logitech's product table | [^x-touch-manual], [^t-touch-products] |
+| favourite channels | up to 50, by the manual and by Logitech's product table | [^x-touch-manual], [^t-touch-products] |
 | long press | yes | [^t-long-press] |
-| power | an internal, non replaceable lithium ion cell, charged in a dock | [^x-touch-manual] |
+| power | an internal, non replaceable lithium ion cell, charged in a dock; below 3.55 V the remote warns and switches itself off, [display.md](display.md#charging-and-the-battery) | [^x-touch-manual], [^t-touch-keys] |
 | clock | the remote keeps the time, set from the computer at every sync, in 12 or 24 hour form; in the two syncs down recorded the remote refused the client's write to its clock file, and the hand over of the remote's changes wrote none, [memory.md](memory.md) | [^x-touch-manual], [^t-touch-sync], [^t-touch-both-ways] |
 | configuration | **not reachable as a file** under any name known here | [^s200] |
 
@@ -59,8 +59,8 @@ checked**[^unchecked].
 | file | what it holds |
 |---|---|
 | [hardware.md](hardware.md) | the cell and dock, the radio identity, what `/sys/sysinfo` reports about the hardware |
-| [keys.md](keys.md) | the drawing, the two marks above the screen, no scan codes |
-| [display.md](display.md) | the touch screen, gestures, what the manual shows |
+| [keys.md](keys.md) | the drawing, the key numbers, the two touch zones above the screen, the combinations |
+| [display.md](display.md) | the touch screen, its settings, gestures, charging and the battery |
 | [features.md](features.md) | Logitech's statements: devices, favourites, long press, provisioning instead of a compile |
 | [behaviour.md](behaviour.md) | device mode, Off, syncing back |
 | [memory.md](memory.md) | what is known of its filesystem, which is little |
@@ -71,8 +71,8 @@ checked**[^unchecked].
 ## Not checked
 
 * Which architecture number is right, and whether it matters to anything a writer would do[^unchecked].
-* The screen's raster from any source but the manual's pictures[^unchecked].
-* Everything about the configuration[^unchecked].
+* Everything about the configuration beyond the documents a sync delivers, which [the platform's
+  pages](../../architectures/harmony-touch/README.md) read field by field[^unchecked].
 
 [^x-touch-manual]: Stated by Logitech, in the manual. [The Harmony Touch user guide](https://www.manualslib.com/manual/641224/Logitech-Harmony-Touch.html)
 [^s203]: Stated by Logitech, in their client. [Section 203](../../../docs/findings.md#s203)
@@ -88,3 +88,5 @@ checked**[^unchecked].
 [^s198]: Stated by Logitech, in their client. [Section 198](../../../docs/findings.md#s198)
 [^s196]: Stated by Logitech, by their service. [Section 196](../../../docs/findings.md#s196)
 [^t-long-press]: Stated by Logitech, by their service. [The test](../../../packages/usb/test/models.test.ts)
+[^t-touch-keys]: Read in the firmware. [The test](../../../tests/test_harmony_touch_keys.py)
+[^t-touch-products]: Stated by Logitech, by their service. [The test](../../../tests/test_host_client.py)

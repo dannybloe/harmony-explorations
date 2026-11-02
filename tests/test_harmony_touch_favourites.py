@@ -63,7 +63,7 @@ of twelve functions in eight files, none of them cited here. The reading, file b
    firmware's default and never the row's. **How it is written**: `updateRemoteSettings` replaces a
    row's first value and adds no row.
 4. **What the brightness becomes**: the screen level is clamped to 10 to 100 and scaled by 26, the key
-   level is clamped to 5 to 100, below 5 off, and scaled by 42.
+   level is clamped to 5 to 100, below 5 off, and scaled by 42, each rounded down.
 5. **Six Context fields, five Settings names and six fields of the favourites documents occur in no
    file of the root filesystem** but the screens' own test data, native programs included:
    `GlobalRemoteUri`, `HouseholdId-` (with its dash), `KeyboardLocale`, `RemoteJid`, `CustomerId`,
@@ -368,6 +368,14 @@ class TheTouchsFavouritesAndSettings(unittest.TestCase):
         self.assertEqual(constant(init, 'BRI_MIN_LEVEL'), 10)
         self.assertEqual(constant(init, 'KEY_MIN_LEVEL'), 5)
         self.assertEqual(constant(init, 'MAX_LEVEL'), 100)
+        # Each level is scaled in proportion and rounded down, the two lines found by their names.
+        for scale, level in (('MAX_LCD_BRIGHTNESS', 'lcdLevel'), ('MAX_KEY_BRIGHTNESS', 'keyLevel')):
+            with self.subTest(scale=scale):
+                self.assertIn(level, re.findall(r'local (\w+) = math\.floor\(%s \* level / 100\)' % scale, init))
+        # A key level below its floor is off, a screen level below its floor is raised to it.
+        clamp = re.search(r'^local function getVal\(.*?\n(.*?)^end$', init, re.M | re.S).group(1)
+        key = clamp.index('LEVEL = KEY_MIN_LEVEL')
+        self.assertRegex(clamp[key:clamp.index('return val', key)], r'val = 0')
 
     def test_seventeen_names_occur_nowhere_but_in_the_screens_test_data(self):
         paths = [p for p in self.rootfs.names() if self.rootfs.sizes[p] > 0]

@@ -131,6 +131,7 @@ On a Touch a key with a long press sends nothing on the press: its long action f
 | [devices-and-infrared.md](devices-and-infrared.md) | the device and protocol lists, how a command becomes infrared on the remote, and what a writer must carry |
 | [activities-and-buttons.md](activities-and-buttons.md) | the activities and button maps: key presses, the long press, the number pad, gestures, sequences, the start and switch order, and the fields nothing reads |
 | [favourites-and-settings.md](favourites-and-settings.md) | the Context and Settings documents, the favourite channels and the pictures, field by field |
+| [answering-a-sync.md](answering-a-sync.md) | answering a Touch's sync in place of Logitech's server: what the remote checks of an answer, the smallest set of documents, entity tags, the direct resource put, and which request names act |
 
 There is no memory page: no address a host can name has been read on this generation, and what a Touch
 answers is a set of paths, [the model's memory page](../../remotes/harmony-touch/memory.md).

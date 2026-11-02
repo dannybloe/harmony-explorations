@@ -167,3 +167,8 @@ export {
 } from './families/no-screen/index.ts';
 // The bookkeeping of an attribution, the ledger every family's could share, todo-compile-350.md 5.2.1.
 export * from './attribution.ts';
+// **The Harmony Touch's configuration**, todo-touch.md 3.3: not a container but Logitech's JSON documents,
+// which the remote fetches through the computer and keeps itself. Read into a typed view and checked for
+// what the remote would refuse or ignore. One namespace rather than a star export, because "touch" names
+// the Harmony One's family everywhere else in this codec and the two must not meet by name.
+export * as harmonyTouch from './harmony-touch/index.ts';

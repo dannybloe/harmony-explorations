@@ -9,10 +9,12 @@ description: "Everything needed before working on the Harmony Touch: where its f
 and may not do with it.** The facts live in the public reference and are not repeated here, because two
 copies of a fact are two copies until one of them moves.
 
-**The Touch is the model this project knows least by its own reading**: no configuration of it exists
-anywhere a tool here can reach, Logitech's service will not compile one, and its keys, screens and limits
-in the reference are the manual's. So the reference says, row by row, which facts are measured and which
-are stated, and a task that leans on a stated one should say so.
+**The Touch is the model this project knows least by its own reading**: no configuration of it exists as a
+file anywhere a tool here can reach and Logitech's service will not compile one; what a sync delivers is
+read by the documents' reader in `packages/codec/src/harmony-touch/`. Its keys, screens and power are read
+in its firmware, its device and favourite limits are Logitech's product table and manual, and what is left
+on the manual's word alone says so. So the reference says, row by row, which facts are measured, which are
+read in the firmware and which are stated, and a task that leans on a stated one should say so.
 
 ## 1. Read these before anything else
 
@@ -72,6 +74,8 @@ test; the read itself goes into the lab.
 | the drawing | `packages/silhouettes/src/models/touch.ts`, rendered into `reference/silhouettes/touch.svg` |
 | the transport | `packages/usb/src/filepipe.ts`, with `INERT_PATHS`; the refusal in `packages/usb/src/transport.ts`, `FILE_BASED_PRODUCTS` |
 | the read script | `packages/usb/bin/read-file-identity.ts` |
+| the configuration's reader and checker | `packages/codec/src/harmony-touch/`, tested in `packages/codec/test/touch-reader.test.ts` and `touch-check.test.ts` |
+| answering a sync in place of Logitech's server | `reference/architectures/harmony-touch/answering-a-sync.md` |
 | the protocol | `reference/usb-protocol/file-protocol.md` |
 | its family, firmware and its two architecture numbers | `reference/architectures/harmony-touch/` |
 | the bench unit's notes | `docs/test-notes/harmony-touch.md` |

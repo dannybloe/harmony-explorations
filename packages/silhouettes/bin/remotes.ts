@@ -91,17 +91,16 @@ interface RemoteFolder {
   readonly printings?: readonly string[];
   readonly architecture: number;
   /**
-   * Where the screen size on the drawing comes from, for a model whose architecture has no entry in
-   * `SCREEN_SIZES`.
+   * Where the codec's raster for this architecture comes from, for the one row of `SCREEN_SIZES` that
+   * is not measured from configurations' own full screen pictures.
    *
-   * `displayTable` refuses a drawing with a screen on an architecture the codec has no raster for,
-   * because that is usually two sources disagreeing. **The Harmony Touch is the case where it is not**:
-   * `SCREEN_SIZES` is measured from configurations' own full screen pictures, no configuration of a
-   * Touch has been read, section 200, so the codec has nothing to say and the drawing's raster comes
-   * from Logitech's user guide. A model that states a source here gets a row saying so instead of the
-   * refusal, and every other model keeps the refusal.
+   * **The Harmony Touch is that row.** No configuration of a Touch has been read, section 200, so its
+   * raster is read in the firmware instead, `tests/test_harmony_touch_keys.py`. Until `todo-touch.md`
+   * 3.2 the codec had no row for it at all, and this field was `rasterFromDrawing`, naming the drawing's
+   * raster from Logitech's user guide as the only source; `displayTable` refused a drawing with a screen
+   * on an architecture with no row, and still does, since that is usually two sources disagreeing.
    */
-  readonly rasterFromDrawing?: string;
+  readonly rasterFrom?: string;
   /**
    * The files the folder holds, when they are not the ten every model folder has. Plan 009 section 5:
    * `test/remotes.test.ts` compares each folder with its row, so a folder that gains or loses a file
@@ -182,7 +181,7 @@ export const REMOTES: readonly RemoteFolder[] = [
   // does this row; the folder states both.
   {
     folder: 'harmony-touch', skins: [99], drawing: 'touch', architecture: 17, fileBasedProduct: 0xc12b,
-    rasterFromDrawing: '`touch.ts`, the size of every screen capture in Logitech\'s user guide; no configuration of this model has been read',
+    rasterFrom: 'read in the firmware, since no configuration of this model has been read: the screens\' own constants, the kernel\'s panel entry, the drawing library and the touch driver, `tests/test_harmony_touch_keys.py`',
   },
   // The two models known only from contributed configurations and firmware images, plan 009's step 3.5.
   // One folder per regional pair, named for one of the two as `harmony-525` is: skins 15 and 17 are the
@@ -234,7 +233,7 @@ export const ARCHITECTURES: readonly ArchitectureFolder[] = [
   // model's usb.md already says so beside its own copy of that block.
   {
     folder: 'harmony-touch', architecture: 17,
-    files: ['README.md', 'activities-and-buttons.md', 'devices-and-infrared.md', 'favourites-and-settings.md', 'firmware.md', 'usb.md'],
+    files: ['README.md', 'activities-and-buttons.md', 'answering-a-sync.md', 'devices-and-infrared.md', 'favourites-and-settings.md', 'firmware.md', 'usb.md'],
     blocks: ['skins'],
   },
 ];
@@ -432,10 +431,8 @@ function displayTable(remote: RemoteFolder, drawing: Drawing | undefined): strin
   const size = SCREEN_SIZES[architecture];
   if (drawing === undefined) return undrawnDisplayTable(remote);
   // A model with no screen has neither a raster nor a screen on its drawing, and both are stated as
-  // absent. A raster with no screen on the drawing, or the reverse, is a disagreement and refused,
-  // unless the folder names where the drawing's raster comes from, which is the Harmony Touch's case.
-  const unread = size === undefined && drawing.screen !== undefined && remote.rasterFromDrawing !== undefined;
-  if (!unread && (size === undefined) !== (drawing.screen === undefined)) {
+  // absent. A raster with no screen on the drawing, or the reverse, is a disagreement and refused.
+  if ((size === undefined) !== (drawing.screen === undefined)) {
     throw new Error(`architecture ${architecture} and the drawing ${drawing.id} disagree about a screen`);
   }
   const panels = [...new Set(skins.map((s) => MODELS_BY_SKIN[s]?.panel ?? NO_RECORD))].join(', ');
@@ -445,10 +442,10 @@ function displayTable(remote: RemoteFolder, drawing: Drawing | undefined): strin
   }))].join(', ');
   const raster = size === undefined
     ? `| raster | none: no entry for architecture ${architecture} | \`SCREEN_SIZES\` in \`packages/codec/src/render.ts\` |`
-    : `| raster | ${size.width} by ${size.height} pixels | \`SCREEN_SIZES\` in \`packages/codec/src/render.ts\`, measured from the configurations' full screen pictures |`;
+    : `| raster | ${size.width} by ${size.height} pixels | \`SCREEN_SIZES\` in \`packages/codec/src/render.ts\`, ${remote.rasterFrom ?? 'measured from the configurations\' full screen pictures'} |`;
   const drawn = drawing.screen === undefined
     ? `| raster on the drawing | no screen on the drawing | \`${drawing.id}.ts\` |`
-    : `| raster on the drawing | ${drawing.screen.pixels.width} by ${drawing.screen.pixels.height} | ${unread ? remote.rasterFromDrawing : `\`${drawing.id}.ts\`, which must agree with the row above`} |`;
+    : `| raster on the drawing | ${drawing.screen.pixels.width} by ${drawing.screen.pixels.height} | \`${drawing.id}.ts\`, which must agree with the row above |`;
   return [
     '| field | value | from |',
     '|---|---|---|',

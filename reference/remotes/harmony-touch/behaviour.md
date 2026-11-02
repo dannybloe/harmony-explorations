@@ -8,15 +8,21 @@ been measured with an instrument: there is no infrared recording of it[^unchecke
 
 | | how | evidence |
 |---|---|---|
-| in | Home, then the "…" button at the bottom right of the screen for the device list, then a device | [^x-touch-manual], "Using Devices" |
+| in | Home, then the "…" button at the bottom right of the screen for the device list, then a device | [^x-touch-manual], "Using Devices"; the firmware's menu agrees, [^t-touch-keys] |
 | on a device | "the complete list of commands for that device", and "the physical buttons on the Harmony Touch will also control the selected device" | [^x-touch-manual] |
-| out | **not stated** by the manual | [^unchecked] |
+| how long | **while that device's command screen is the one showing**: the screen makes its device the current one when it comes up and drops it when it goes, unless a screen of its own took over, and the keys then follow the running activity again | [^t-touch-keys] |
+| out | Home, Favorites or the device list, each of which takes the device's screen away; the manual states no way out | [^t-touch-keys], [^x-touch-manual] |
 
 ## Activities and Off
 
 An activity is started by tapping it under Home[^x-touch-manual]. **Off turns off every device of the current
-activity at once** rather than one device[^x-touch-manual]. Picking the remote up from its dock turns it
-on[^x-touch-manual].
+activity at once** rather than one device[^x-touch-manual]. **Off ends the running activity as it goes down, and
+held for 8 seconds it also restarts the remote**: the screens act on the press and the kernel's timer runs
+beside them[^t-touch-keys]. Picking the remote up from its dock turns it on[^x-touch-manual], since any change of
+power source wakes the screen[^t-touch-keys].
+
+**The keys are ignored** while a sync runs, while the remote has not been set up, while the screen saying the
+radio link is lost is up and while an activity is starting[^t-touch-keys].
 
 Changes made on the remote travel back to the account at the next sync, [features.md](features.md).
 
@@ -61,7 +67,8 @@ reset and restart are paths that act when opened, [firmware.md](firmware.md).
 
 ## Not checked
 
-* The way back from device mode[^unchecked].
+* The way back from device mode, the restart on a held Off and the keys being ignored, tried on a remote
+  rather than read[^unchecked].
 * The switch order and the long press measured on a remote rather than read in its firmware[^unchecked].
 * Anything in use with the infrared receiver[^unchecked].
 * What becomes of changes made on the remote when the client syncs the account down without asking for them
@@ -71,3 +78,4 @@ reset and restart are paths that act when opened, [firmware.md](firmware.md).
 [^x-touch-manual]: Stated by Logitech, in the manual. [The Harmony Touch user guide](https://www.manualslib.com/manual/641224/Logitech-Harmony-Touch.html)
 [^t-touch-activities]: Measured on a unit. [The test](../../../packages/usb/test/touch-activities.test.ts)
 [^t-touch-activities-firmware]: Read in the firmware. [The test](../../../tests/test_harmony_touch_activities.py)
+[^t-touch-keys]: Read in the firmware. [The test](../../../tests/test_harmony_touch_keys.py)

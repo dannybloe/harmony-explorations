@@ -1,8 +1,9 @@
 # Harmony Touch: features
 
 What the Touch offers a person and what Logitech's software lets them set. Little of it is measured: no
-configuration of this model exists as a file anywhere this project can reach, so its limits, keys and
-screens are Logitech's word, from the manual, the service and the client.
+configuration of this model exists as a file anywhere this project can reach, so its limits are Logitech's
+word, from the manual, the service and the client. Its keys and screens are read in its firmware,
+[keys.md](keys.md) and [display.md](display.md).
 
 ## The capability fields
 
@@ -24,9 +25,9 @@ which other skins do.
 
 | | value | evidence |
 |---|---|---|
-| devices | "up to 15 different devices" | [^x-touch-manual] |
-| favourite channels | "up to 50", with pictures, added, removed and reordered on the remote | [^x-touch-manual] |
-| activities | reorderable on the remote; how many it holds is not stated | [^x-touch-manual], "Reorder Activities" |
+| devices | "up to 15 different devices"; Logitech's product table states 15 for skin 99 | [^x-touch-manual], [^t-touch-products] |
+| favourite channels | "up to 50", with pictures, added, removed and reordered on the remote; the product table states 50 | [^x-touch-manual], [^t-touch-products] |
+| activities | reorderable on the remote; no limit is stated, and the product table's `MaxActivities` is empty for skin 99 | [^x-touch-manual], "Reorder Activities", [^t-touch-products] |
 | gestures | five per activity, [display.md](display.md) | [^x-touch-manual] |
 | learning | through the IR window, from another remote | [^x-touch-manual], "Know your product" |
 | delays and inputs | adjustable on the remote, per device and per activity | [^x-touch-manual], "Settings" |
@@ -69,8 +70,9 @@ answers[^s202][^t-touch-sync]. So every request for a Touch configuration as a
 compile ends in an error, and no amount of asking the service differently produces a file[^s203]. The route
 is [the platform's usb.md](../../architectures/harmony-touch/usb.md).
 
-That is why no configuration of this model has been read, and why its keys, screens and capability fields
-are the manual's rather than measured.
+That is why no compiled configuration of this model has been read, and why its capability fields are
+Logitech's word rather than measured. What a sync delivers is Logitech's own documents, read field by field
+on [the platform's pages](../../architectures/harmony-touch/README.md).
 
 ## Changes on the remote travel back
 
@@ -84,12 +86,13 @@ channels and commands changed on the remote are not checked[^unchecked].
 
 ## Not checked
 
-* The device and activity limits as the remote or today's software enforces them; the favourites' limit is
+* The device and activity limits as the remote enforces them; the favourites' limit is
   the remote's code, never tried on one[^unchecked].
 * Which keys take a long press[^unchecked].
 * Learning, gestures and every setting on a unit[^unchecked].
 
 [^unchecked]: Not checked.
+[^t-touch-products]: Stated by Logitech, by their service. [The test](../../../tests/test_host_client.py)
 [^t-long-press]: Stated by Logitech, by their service. [The test](../../../packages/usb/test/models.test.ts)
 [^x-touch-manual]: Stated by Logitech, in the manual. [The Harmony Touch user guide](https://www.manualslib.com/manual/641224/Logitech-Harmony-Touch.html)
 [^s292]: Stated by Logitech, by their service. [Section 292](../../../docs/findings.md#s292)
