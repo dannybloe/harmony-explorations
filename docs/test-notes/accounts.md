@@ -149,6 +149,16 @@ the 40 activities measured, and the other 20 are those nine copies and 11 activi
 customised configurations. The reference counts the activities without saying that nine are copies on a
 test account; this paragraph sat in the architecture's compiler page until plan 009's step 4.1.
 
+## The Harmony Touch's record on selector 1, filled out
+
+**Record 16319183 is the bench Touch's**, the one its syncs read, `todo-touch.md` 2.2.1. It held two devices,
+"LG TV" and "Denon AV Receiver", and one activity, "Watch TV", until `packages/corpus/bin/build-setup.ts`
+put `packages/corpus/setups/touch-full.json` on it on 2 November 2026 in **five writes**: one
+`UpdateMultiple` adding five devices, three `SaveActivities` and one `SaveUserFeatures` setting the
+receiver's keep on flag. The service refused none of them. Replies are in the lab's
+`work/setups/touch-full/`. The game activity, gestures, sequences, favourites and the remote's own settings
+are left to the client's screens, whose saves the lab's inspectable copy of Harmony Desktop records.
+
 ## The per model capability answers
 
 `UserAccountDirector/GetProductCapabilities2`, and the plain `GetProductCapabilities` beside it, were asked

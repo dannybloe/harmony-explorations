@@ -43,11 +43,11 @@ Written on 2 November 2026, and placed in `todo.md`'s sequence the same day as 3
 
 ## 2. One sync recorded
 
-- [ ] 2.1 Whether the client's web requests can be seen through a proxy: Harmony Desktop on the Mac first, which shows the bench Touch and whose app and web application are in the lab's `software/`, then MyHarmony's decompiled code (decision 2)
-- [ ] 2.2 The go-ahead for syncing the bench Touch through MyHarmony while recording, asked and not assumed
+- [x] 2.1 Whether the client's web requests can be seen through a proxy: Harmony Desktop on the Mac first, which shows the bench Touch and whose app and web application are in the lab's `software/`, then MyHarmony's decompiled code (decision 2); done in the lab, unreviewed: yes, the hosted page performs every request in JavaScript and the shell pins nothing; the stock shell switches the inspector off, so the lab's copy of it turns the inspector on and records the page itself; MyHarmony does not start on this Mac, `notes/2.1-seeing-the-sync-requests.md`
+- [ ] 2.2 The go-ahead for syncing the bench Touch while recording, asked and not assumed, through the lab's inspectable copy of Harmony Desktop (2.1), since MyHarmony does not start on this Mac; a trial sync through the copy comes first
   - [ ] 2.2.1 Before the recording, the bench Touch's setup filled on the test account so it touches every feature on 1.3.2's list: devices, activities, favourites, sequences
 - [ ] 2.3 One complete sync recorded into the lab: every request the remote hands over and every answer, complete by 1.6's measure
-- [ ] 2.4 Only if a proxy cannot see it: the request and response command sent by us, a command never sent to a Touch, through the `probe-remote` gate first
+- [x] 2.4 Only if a proxy cannot see it: the request and response command sent by us, a command never sent to a Touch, through the `probe-remote` gate first; not needed: the copy records the whole sync, and the recorded sync sent no `0x08` but went through `/sys/hlapi`, `packages/usb/test/touch-sync.test.ts`
 
 ## 3. The Touch described
 

@@ -35,7 +35,10 @@ The packet, how a request and a reply encode their parameters, what a refusal lo
 malformed packet silences a session are [the file protocol](../../usb-protocol/file-protocol.md#the-packet),
 measured there on a Touch. What is this model's own:
 
-* **The Touch has been sent four commands**, a bare ping, open, read and close, and only to read[^s200].
+* **This library has sent the Touch four commands**, a bare ping, open, read and close, and only to read[^s200].
+* **In the recorded sync, Logitech's client worked through one file, `/sys/hlapi`**: thirteen requests
+  written into it, twelve accepted and answered, and no request and response command `0x08`; it also tried
+  to write `/sys/time`, and the remote refused that write. What the exchanges carry is [the platform's usb.md](../../architectures/harmony-touch/usb.md#provisioning-instead-of-a-compile)[^t-touch-sync].
 * Through the charging dock the remote is not detected by a computer; only a direct cable is[^x-touch-manual].
 
 ## Paths
@@ -59,12 +62,16 @@ user configuration commented out[^s198].
 | **nothing is written**: the file write path the library has is the Harmony 300 and 350's, and it refuses a remote whose identity file states any architecture but 16, which a Touch's does not; no request and response command is implemented, and no write list in `packages/usb/src/rails.ts` names this model | [^s198] |
 
 **So there is nothing left to read on a Touch without the named door**[^s201]. What the remote asks for during
-a sync rides on the request and response command, `0x08`, which has never been sent[^s203].
+a sync goes through `/sys/hlapi`, which is not on `INERT_PATHS`; this library opened it once, behind the
+named door, to learn its size, and has never read it[^s200][^t-touch-sync].
+
+> This page said a sync rides on the request and response command, `0x08`<!--superseded-->, until a recorded
+> sync through Logitech's client sent no `0x08` at all[^t-touch-sync].
 
 ## Not checked
 
 * The files `INERT_PATHS` permits and the Touch refuses, beyond their refusal[^unchecked].
-* The request and response command and the provisioning session[^unchecked].
+* The provisioning session, which the recorded sync did not run[^unchecked].
 
 [^s198]: Stated by Logitech, in their client. [Section 198](../../../docs/findings.md#s198)
 [^s193]: Measured on a unit. [Section 193](../../../docs/findings.md#s193)
@@ -72,5 +79,5 @@ a sync rides on the request and response command, `0x08`, which has never been s
 [^s200]: Measured on a unit. [Section 200](../../../docs/findings.md#s200)
 [^s201]: Measured on a unit. [Section 201](../../../docs/findings.md#s201)
 [^x-touch-manual]: Stated by Logitech, in the manual. [The Harmony Touch user guide](https://www.manualslib.com/manual/641224/Logitech-Harmony-Touch.html)
-[^s203]: Stated by Logitech, in their client. [Section 203](../../../docs/findings.md#s203)
+[^t-touch-sync]: Measured on a unit. [The test](../../../packages/usb/test/touch-sync.test.ts)
 [^unchecked]: Not checked.

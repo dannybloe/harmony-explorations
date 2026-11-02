@@ -95,9 +95,19 @@ section 201.
 The Touch's account record holds two devices and one activity, and every compile requested for it ends in
 `status='Error'` six seconds in, which section 202 explained: the client never compiles for this product.
 
+**Synced once through Logitech's own client**, `todo-touch.md` 2.2's trial, on 2 November 2026: Harmony
+Desktop 1.0.303 in the lab's copy that turns the web inspector on, and the sync completed. What it sent was
+seen in Safari's inspector and not saved, since the inspector would not export; the copy records the page's
+requests and its USB bridge itself from then on.
+
+**Synced a second time, recorded whole**, the same way: every web request and every USB command, in the
+lab's `reads/20261102T1350Z-touch-sync-harmony-desktop/`. Logitech's client wrote to the remote through
+`/sys/hlapi`, tried a write to `/sys/time` that the remote refused, and reset its file system twice; what the sync carried is
+`packages/usb/test/touch-sync.test.ts`.
+
 ## Not done
 
 * No infrared run has been recorded with this unit, and nothing about it in use has been seen and written
   down.
 * Nobody has recorded looking at its clock.
-* The request and response command `0x08` has never been sent to it.
+* The request and response command `0x08` has never been sent to it, by us or, in the recorded sync, by Logitech's client.

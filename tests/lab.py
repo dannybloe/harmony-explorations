@@ -147,6 +147,9 @@ IMAGES = {
     'touch_package_production': 'firmware/packages/sus/skin99-touch-production-4.15.330.hfw2',
     'touch_package_preview': 'firmware/packages/sus/skin99-touch-preview-4.15.250.hfw2',
     'touch_sysinfo': 'reads/20261102T0854Z-touch-usercfg/sysinfo.txt',
+    # One sync of the bench Touch recorded through the lab's inspectable copy of Harmony Desktop,
+    # `packages/usb/test/touch-sync.test.ts` reads it; named here to keep the two tables identical.
+    'touch_sync_recording': 'reads/20261102T1350Z-touch-sync-harmony-desktop/bridge.log',
     'hub_package_production': 'firmware/packages/sus/skin97-ultimatehub-production-4.15.600.hfw2',
     'h350_bootloader': 'reads/20261027T1929Z-h350-fw/fw_bootloader.bin',
     'h350_safemode': 'reads/20261027T1929Z-h350-fw/fw_safemode.bin',

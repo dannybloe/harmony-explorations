@@ -169,6 +169,47 @@ class TheTouchSpeaksAFileProtocol(unittest.TestCase):
         self.assertNotIn('address.guid', self.text)
 
 
+class TheTouchIsSyncedThroughOneFile(unittest.TestCase):
+    """Logitech's side of `packages/usb/test/touch-sync.test.ts`, whose header holds the argument.
+
+    A recorded sync of a Harmony Touch through Harmony Desktop is file sessions on `/sys/hlapi` and never
+    the request and response command `0x08`. The skin 99 templates of Harmony Desktop's client are
+    consistent with it: the seven that name `/sys/hlapi` use only open, write, read and close, and the
+    one template that uses `0x08`, `simplepostresponse.xml`, names no path and was not used in that
+    sync. Whether these seven are every step of a sync is not what this asserts. Stated by Logitech, in their client, and consistent
+    with the measurement; this test asserts the templates say it, not that a remote does.
+    """
+
+    COMMAND = re.compile(r'<byte type="command\.id">(0x[0-9A-Fa-f]{2})</byte>')
+    PATH = re.compile(r'type="string">(/[^<]*)<')
+
+    def setUp(self):
+        self.names = lab.template_names(99)
+        if not self.names:
+            raise unittest.SkipTest('the mirrored client has no SKIN99 directory')
+        self.read = {n: lab.template(99, n) for n in self.names}
+
+    def commands(self, name):
+        return sorted({int(c, 16) for c in self.COMMAND.findall(self.read[name])})
+
+    def test_the_seven_templates_naming_sys_hlapi_use_only_open_write_read_and_close(self):
+        on_hlapi = sorted(n for n in self.names if '/sys/hlapi' in self.PATH.findall(self.read[n]))
+        self.assertEqual(on_hlapi, [
+            'getonremotechanges.xml', 'getprovisioninfo.xml', 'getrequest.xml', 'postresponse.xml',
+            'saveconfigchanged.xml', 'saveprovisioninfo.xml', 'syncremote.xml',
+        ])
+        for name in on_hlapi:
+            with self.subTest(name):
+                self.assertEqual(self.commands(name), [0x01, 0x03, 0x04, 0x07])
+
+    def test_the_request_and_response_command_is_one_template_naming_no_path(self):
+        self.assertEqual(len(self.names), 22)
+        with_hbus = [n for n in self.names if 0x08 in self.commands(n)]
+        self.assertEqual(with_hbus, ['simplepostresponse.xml'])
+        self.assertEqual(self.commands('simplepostresponse.xml'), [0x08])
+        self.assertEqual(self.PATH.findall(self.read['simplepostresponse.xml']), [])
+
+
 class TheFileProtocolIsSpecifiedWhole(unittest.TestCase):
     """Section 198. The nineteen skins this project does not read, and their one protocol.
 

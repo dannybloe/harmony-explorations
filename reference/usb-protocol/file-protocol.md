@@ -4,8 +4,9 @@ The Harmony 300, the Harmony 350 and the Harmony Touch do not let a computer rea
 They speak a different protocol over the same kind of USB link: a computer **opens a file by its name**,
 gets a handle, reads or writes through it, and closes it. Logitech's own client specifies this protocol in
 full, per model, and that specification is the source of most of this page. The read path, open, read and
-close, has been driven on a Harmony Touch, a Harmony 350 and a Harmony 300; everything else here is what
-Logitech's client sends and not something a remote has been seen to do[^s198][^s200][^s262][^s264].
+close, has been driven on a Harmony Touch, a Harmony 350 and a Harmony 300, and Logitech's client was
+recorded writing to a Harmony Touch; everything else here is what Logitech's client sends and not something
+a remote has been seen to do[^s198][^s200][^s262][^s264][^t-touch-sync].
 
 What each family does with the protocol is on its own pages: [the Harmony 300 and 350](../architectures/harmony-300-350/usb.md),
 where the library's transport rails are argued, and [the Harmony Touch generation](../architectures/harmony-touch/usb.md),
@@ -64,8 +65,11 @@ it is the malformed packet and not the number of attempts[^s198b].
 | `0x08` | request and response with no file, which the comments call an HBus command | packet count |
 | `0xFF` | device control with no file | `0x66` resets the file system, `0x00` reboots |
 
-Stated by Logitech[^s198]. Only `0x00`, `0x01`, `0x04` and `0x07` have been sent to a remote, and only for
-reading[^s200].
+Stated by Logitech[^s198]. This library has sent only `0x00`, `0x01`, `0x04` and `0x07` to a Harmony Touch,
+and only for reading[^s200]. **Logitech's client was recorded syncing a Harmony Touch with `0x00`, `0x01`,
+`0x03`, `0x04`, `0x07` and the file system reset `0xFF 0x66`, and no `0x08`**[^t-touch-sync]: mostly opens,
+writes, reads and closes on one path, `/sys/hlapi`, with the identity file read and a write to `/sys/time` tried,
+[the Touch generation's usb page](../architectures/harmony-touch/usb.md#provisioning-instead-of-a-compile).
 
 ## Reading a file
 
@@ -148,8 +152,9 @@ and does not read one back, by choice rather than by capability,
 
 ## Not checked
 
-* The write, the commit, both device controls and the request and response command, on any
-  remote[^unchecked].
+* The commit, both device controls and the request and response command, on any remote[^unchecked]. A write
+  has been seen only as Logitech's client sends it to a Harmony Touch, where its data packets carry a size at
+  offset 1 and the payload from offset 2[^t-touch-sync].
 * What the `0x0b` at the end of a refusal means[^unchecked].
 * On the Harmony 300 and 350: whether a configuration package's file includes the four byte end marker,
   and what its manifest states for the check and the reboot[^unchecked]. Every step's effect on a unit,
@@ -170,6 +175,7 @@ and does not read one back, by choice rather than by capability,
 [^s201]: Measured on a unit. [Section 201](../../docs/findings.md#s201)
 [^s196]: Stated by Logitech. [Section 196](../../docs/findings.md#s196)
 [^unchecked]: Not checked.
+[^t-touch-sync]: Measured on a unit. [The test](../../packages/usb/test/touch-sync.test.ts)
 [^s19]: Measured on a unit. [Section 19](../../docs/findings.md#s19)
 [^s295]: Measured on a unit. [Section 295](../../docs/findings.md#s295)
 [^t-write-route]: Stated by Logitech, in their client. [The test](../../tests/test_file_family_write_route.py)

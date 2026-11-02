@@ -1,0 +1,26 @@
+{
+ "about": "The Harmony Touch's fuller setup, the scripted half of todo-touch.md 2.2.1: the two devices and the one activity the record already holds, five more devices chosen for their power and input kinds, and three more activities. A disc player, a media player, a set top box that tunes channels, a games console and an HDMI switch whose inputs are chosen by number; power by discrete commands on four and by a toggle on two. The game activity, gestures, sequences, favourites and the remote's settings are set up by hand in the client, whose saves are recorded. Inputs are the archive's names for each device.",
+ "model": { "name": "Harmony Touch", "skin": 99 },
+ "devices": [
+  { "name": "LG TV", "device": "LG/OLED65G36LA" },
+  { "name": "Denon AV Receiver", "device": "Denon/AVC-X4800H", "poweredOnBetweenActivities": true },
+  { "name": "Blu-ray", "device": "Sony/BDP-S6500" },
+  { "name": "Plex", "device": "Plex/Plex_Player" },
+  { "name": "KPN", "device": "KPN/TV6000COK" },
+  { "name": "Xbox", "device": "Microsoft/XBox_360_Elite" },
+  { "name": "Switch", "device": "Ligawo/3090063" }
+ ],
+ "activities": [
+  { "name": "Watch a Blu-ray", "type": "WatchDvd", "devices": [
+   { "device": "LG TV", "input": "HDMI 2", "roles": ["Display"] },
+   { "device": "Blu-ray", "roles": ["PlayMovie"] },
+   { "device": "Denon AV Receiver", "input": "Blu-ray", "roles": ["Volume"] } ] },
+  { "name": "Listen to Music", "type": "ListenToMusic", "devices": [
+   { "device": "Plex", "roles": ["PlayMedia"] },
+   { "device": "Denon AV Receiver", "input": "Media Player", "roles": ["Volume"] } ] },
+  { "name": "Switch Box", "type": "Custom", "devices": [
+   { "device": "LG TV", "input": "HDMI 3", "roles": ["Display", "Volume"] },
+   { "device": "KPN", "roles": ["ChannelChanging"] },
+   { "device": "Switch", "input": "Input 2", "roles": [] } ] }
+ ]
+}

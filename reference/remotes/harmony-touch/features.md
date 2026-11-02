@@ -38,8 +38,9 @@ which other skins do.
 ## No compiled configuration exists for this model
 
 **MyHarmony never asks the service to compile one.** The product's capabilities send its sync down the
-provisioning route, where the remote asks the client for what it wants as a list of web requests by absolute
-address, and the client only carries them[^s202][^s203]. So every request for a Touch configuration as a
+provisioning route, where the remote asks the client for what it wants as a list of web requests, each by a
+logical address in Logitech's own scheme, and the client performs them and hands back the
+answers[^s202][^t-touch-sync]. So every request for a Touch configuration as a
 compile ends in an error, and no amount of asking the service differently produces a file[^s203]. The route
 is [the platform's usb.md](../../architectures/harmony-touch/usb.md).
 
@@ -64,3 +65,4 @@ your myharmony.com account"[^x-touch-manual].
 [^s202]: Stated by Logitech, by their service. [Section 202](../../../docs/findings.md#s202)
 [^s135]: Stated by Logitech, in their client. [Section 135](../../../docs/findings.md#s135)
 [^s203]: Stated by Logitech, in their client. [Section 203](../../../docs/findings.md#s203)
+[^t-touch-sync]: Measured on a unit. [The test](../../../packages/usb/test/touch-sync.test.ts)
