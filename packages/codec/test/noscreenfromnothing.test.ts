@@ -307,6 +307,13 @@ test('built from nothing, the setup is Logitech\'s second compile by content but
   assert.deepEqual(listed(ours), listed(theirs));
   assert.deepEqual(metadataArchive(ours)!.devices.map((one) => one.deviceId), ['1', '2', '3', '4', '5', '6', '7', '8']);
   assert.deepEqual(metadataArchive(theirs)!.devices.map((one) => one.deviceId).slice(0, 2), ['83962903', '83962904']);
+  // And the archive inflated whole, 5.2.4: its text is Logitech's character for character once the device ids, the
+  // account's numbers where ours count from 1, are blanked on both sides. 25032 characters each.
+  const blanked = (c: Container) => metadataArchive(c)!.xml.replace(/<DeviceId>\d+<\/DeviceId>/g, '<DeviceId>#</DeviceId>');
+  assert.equal(blanked(ours).length, 25032);
+  assert.equal(blanked(ours), blanked(theirs));
+  // The control: unblanked, the texts differ, and only by the ids.
+  assert.notEqual(metadataArchive(ours)!.xml, metadataArchive(theirs)!.xml);
   // 124170 since 5.4, the four bytes of the entry binding event 0xFF; 124166 before.
   assert.equal(ours.blob.length, 124170);
   assert.equal(theirs.blob.length, 118513);
