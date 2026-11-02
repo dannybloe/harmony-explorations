@@ -1,6 +1,6 @@
 # Todo: gather what only Logitech's service knows
 
-**Why this comes first**: Logitech's configuration service still compiles, and it can be withdrawn
+**Why this matters**: Logitech's configuration service still compiles, and it can be withdrawn
 without notice. The device database is safe, archived and checked out beside this repository, but how
 their compiler turns that database into bytes on a remote exists only on their server. We learn it by
 comparing a configuration they compiled with the database entries that went into it, and once the
@@ -16,8 +16,10 @@ and this one is done as soon as the service is no longer needed. **One condition
 when its file is checked to hold what it was compiled for, the family present or the setting seen to
 change something, because finding a gap during processing may be too late to compile again.
 
-**The order**: this todo, then the processing todo, then [todo-compile-650.md](todo-compile-650.md)
-resumes. Everything else waits in [todo-later.md](todo-later.md).
+**The order is [todo.md](todo.md)'s**, and this todo is worked beside it whenever an item there needs a
+compile. It was written to come first, before the Harmony 650's track resumed; since then the 650, 700,
+600, One, 300 and 350 tracks were finished from `todo.md` while items here were parked, so this sentence
+was changed on 2 November 2026 to say what the work does.
 
 **Every compile writes to the test account**: devices added, a compile requested, devices removed. That
 needs a go-ahead and is paced rather than fired in bulk. The `myharmony-service` skill holds the

@@ -3,8 +3,9 @@
 Everything that has to be done eventually for the library and FreeHarmony to be complete, and that is
 not on the route to a configuration built entirely by us for the Harmony 650. That route is
 [todo-compile-650.md](todo-compile-650.md). An item moves there when it turns out to block it. What needs
-Logitech's service is gathered first, in [todo-secure-logitech.md](todo-secure-logitech.md), and processed
-in [todo-process-logitech.md](todo-process-logitech.md). The application's own items are in
+Logitech's service is gathered in [todo-secure-logitech.md](todo-secure-logitech.md) and processed in
+[todo-process-logitech.md](todo-process-logitech.md), both worked beside [todo.md](todo.md), which sets
+the order. The application's own items are in
 [todo-freeharmony.md](todo-freeharmony.md).
 
 The old numbers in brackets are [todo.md](todo.md)'s, which stays as it is until everything in it has a
