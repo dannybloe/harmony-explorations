@@ -25,7 +25,7 @@ not recorded.
 named door, and an item that seems to need one is a question first. Logitech's images and anything
 unpacked from them stay in the lab; only names, sizes and findings come into this repository.
 
-Written on 2 November 2026. Not placed in `todo.md`'s sequence yet; linked from `todo-later.md` 5.5.
+Written on 2 November 2026, and placed in `todo.md`'s sequence the same day as 3.9, straight after the Harmony 300 and 350's 3.7; also linked from `todo-later.md` 5.5.
 
 ---
 

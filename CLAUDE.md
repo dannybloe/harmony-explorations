@@ -571,7 +571,7 @@ file's own header is where its reading lives.
   ranges, never loaded whole, and it takes nothing new.
 * `docs/status.md`, where the work stands; `todo.md`, `todo-secure-logitech.md` and `todo-process-logitech.md` (first, in that order) and
   `todo-compile-650.md` (finished), `todo-compile-700.md` (finished) and `todo-compile-600.md` (finished), `todo-compile-one.md`,
-  `todo-compile-350.md` (first) and `todo-compile-300.md` (closed into the 350's by decision 28), `todo-reference.md` and `todo-touch.md` (not yet placed), the sequence, with `todo-later.md` and `todo-freeharmony.md` for what is off that route;
+  `todo-compile-350.md` (finished) and `todo-compile-300.md` (closed into the 350's by decision 28), `todo-reference.md` (finished), `todo-touch.md` (first, `todo.md` 3.9), the sequence, with `todo-later.md` and `todo-freeharmony.md` for what is off that route;
   `docs/decisions.md` and `docs/plans/`, per "How planning works" above
 * `docs/superseded.md`, claims a finding killed; `docs/glossary.md`, this project's process words;
   `docs/predictions/`, `docs/checksums.md`, `docs/lab-register.md`, the lookup lists
