@@ -140,6 +140,14 @@ IMAGES = {
     # `reads/20261031T-h350-fw-first/` (a second identical read of each sits beside them), and are what
     # `tests/test_harmony_300_350_images.py` compares. `h350_unit_code` is the package image less
     # its last eight bytes, byte for byte, which is what shows the package is what a 350 runs.
+    # The firmware package Logitech's update service serves the Harmony Touch, both channels, fetched
+    # on 28 August 2026 (section 196), and the Touch's identity file read on 2 November 2026 with a
+    # setup on it (todo-touch.md 1.1), which `tests/test_harmony_touch_image.py` holds against the
+    # image. The identity file carries the unit's serial, so only named fields are read out of it.
+    'touch_package_production': 'firmware/packages/sus/skin99-touch-production-4.15.330.hfw2',
+    'touch_package_preview': 'firmware/packages/sus/skin99-touch-preview-4.15.250.hfw2',
+    'touch_sysinfo': 'reads/20261102T0854Z-touch-usercfg/sysinfo.txt',
+    'hub_package_production': 'firmware/packages/sus/skin97-ultimatehub-production-4.15.600.hfw2',
     'h350_bootloader': 'reads/20261027T1929Z-h350-fw/fw_bootloader.bin',
     'h350_safemode': 'reads/20261027T1929Z-h350-fw/fw_safemode.bin',
     'h350_unit_code': 'reads/20261031T-h350-fw-first/fw_normalmode.bin',

@@ -116,6 +116,14 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // with a slash from the lab's root. The rest are the Harmony 300's three images and the Harmony
   // 350's application as each unit serves it, read on 31 October 2026, which
   // `tests/test_harmony_300_350_images.py` compares.
+  // The Harmony Touch's update package on both of the service's channels, the hubs' production
+  // package beside them, and the bench Touch's identity file read with a setup on it. Python reads
+  // them, `tests/test_harmony_touch_image.py`; named here to keep the two fixture tables identical.
+  // The identity file carries the unit's serial, so a reader takes named fields out of it only.
+  touch_package_production: 'firmware/packages/sus/skin99-touch-production-4.15.330.hfw2',
+  touch_package_preview: 'firmware/packages/sus/skin99-touch-preview-4.15.250.hfw2',
+  touch_sysinfo: 'reads/20261102T0854Z-touch-usercfg/sysinfo.txt',
+  hub_package_production: 'firmware/packages/sus/skin97-ultimatehub-production-4.15.600.hfw2',
   h350_bootloader: 'reads/20261027T1929Z-h350-fw/fw_bootloader.bin',
   h350_safemode: 'reads/20261027T1929Z-h350-fw/fw_safemode.bin',
   h350_unit_code: 'reads/20261031T-h350-fw-first/fw_normalmode.bin',

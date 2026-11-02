@@ -35,7 +35,41 @@ header names it `Pimento Kernel Image`, and a squashfs root filesystem[^unchecke
 Logitech's templates give skin 97[^s197]. The updater is byte identical between the hubs' preview build and their
 production build[^unchecked].
 
-The remotes' package has not been opened, and its processor is **not checked**[^unchecked].
+### The remotes' package
+
+**The remotes' package is a Linux system for TI's DA850, with a signature over what runs**, and two
+builds of it, production 4.15.330 and preview 4.15.250, are laid out alike[^t-touch-image]. This said the
+package had not been opened and its processor was not checked until the image was read.
+
+* **The package** is a ZIP holding a descriptor and one update file. The descriptor sends that file to
+  the path `/fw/otaupdate` as a firmware upgrade, states its length and its `MD5`, both of which match the
+  file, names skins 99, 100, 102, 105, 108, 111 and 112 as the ones it is for, and asks for a reset
+  afterwards[^t-touch-image].
+* **The update file** holds five members, `sdigest`, an updater program, `uImage.bin`, a squashfs root
+  filesystem and `digest`, the same five names as the hubs' production package. `digest` lists a `SHA-1`
+  for each of the other four, and each matches[^t-touch-image].
+* **`sdigest` is an RSA signature**, 2048 bits, over the `digest` lines of the three members that run: the
+  updater, the kernel and the root filesystem. The public key that checks it is inside the root filesystem,
+  the same key in both builds, and the hubs' production package is signed with the same key. So the
+  signature shows those three are what the key's holder signed; it says nothing about who that
+  is[^t-touch-image].
+* **The updater and the kernel are for ARM**, little endian, where the hubs' updater is a big endian MIPS
+  executable: a Linux 2.6.37 kernel in a U-Boot image, and an ARM executable. Every build path inside the
+  compiled engine names a toolchain for the ARMv5TE instruction set[^t-touch-image].
+* **The processor is TI's DA850**, of the DaVinci family, with an ARM926EJ-S core. The kernel names that
+  core, and its board code for `juniper`, the codename, is DA850 code that sets up the infrared, the LCD, the
+  radio, the touch controller and the MSP430 below. The boot loader's arguments name the DaVinci NAND flash
+  driver and tell the kernel to use 64 MiB of memory. Which DA850 variant, and how much memory is fitted, are
+  **not checked**[^t-touch-image][^unchecked].
+* **The image carries firmware for three other parts**, named by their files and drivers: an MSP430
+  microcontroller, which the start up script programs when the part reports no version or a different one; a
+  chip its Logitech driver calls CC2544, which that driver programs; and a touch controller, whose driver
+  describes itself as a ClearPad driver, which the start up script programs only when the controller reports
+  one particular version. The start up script also hands the boot loader file to an updater on every
+  start[^t-touch-image].
+* **The remote's own program is Lua.** Every Lua file of its engine is compiled Lua 5.1, and the engine's
+  module names include a user configuration reader and a proxy for the sync; no Lua file of its screens is
+  compiled[^t-touch-image].
 
 ## The factory images
 
@@ -64,8 +98,8 @@ installs is not settled, [the recovery tool](../../logitech/update-service.md#th
 
 ## Not checked
 
-* The contents of the remotes' image, its processor, and where on a remote the firmware and the
-  configuration live[^unchecked].
+* Which DA850 variant the remotes run on, the memory fitted, and the size of their flash[^unchecked].
+* Where on a remote the configuration lives, and in what form[^unchecked].
 * A safe mode or a bootloader on this generation[^unchecked].
 * Whether the update service serves a different build to a registered unit than to the anonymous
   request[^unchecked].
@@ -77,3 +111,4 @@ installs is not settled, [the recovery tool](../../logitech/update-service.md#th
 [^unchecked]: Not checked.
 [^s197]: Stated by Logitech, in their client. [Section 197](../../../docs/findings.md#s197)
 [^s195]: Measured on a unit. [Section 195](../../../docs/findings.md#s195)
+[^t-touch-image]: Read in the firmware. [The test](../../../tests/test_harmony_touch_image.py)

@@ -99,7 +99,8 @@ answers is a set of paths, [the model's memory page](../../remotes/harmony-touch
 
 * Which architecture number is right, and whether anything a writer would do depends on it[^unchecked].
 * Whether the other members of the generation report 17 or 18 for themselves[^unchecked].
-* The processor, and everything inside the firmware image[^unchecked].
+* Which DA850 variant the processor is; the image's layout and the rest of what it says about the
+  hardware are [firmware.md](firmware.md#the-remotes-package)[^unchecked].
 
 [^s196]: Stated by Logitech, by their service. [Section 196](../../../docs/findings.md#s196)
 [^s198]: Stated by Logitech, in their client. [Section 198](../../../docs/findings.md#s198)

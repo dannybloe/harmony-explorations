@@ -9,10 +9,13 @@ Touch's own.
 |---|---|---|
 | version | **4.15.330**, the `fw_ver` field of its `/sys/sysinfo`; exactly the production build Logitech's update service serves for skin 99, fetched before the remote was read | [^s200], [^s196] |
 | `fw_type` | `0x00`, running normally | [^s200] |
-| the image | `skin99-touch-production-4.15.330.hfw2`, 13041774 bytes, byte identical to the file served for skin 112, the Harmony 950 | [^s196] |
+| the image | the production package for skin 99, 13041774 bytes, byte identical to the file served for skin 112, the Harmony 950 | [^s196] |
 | a factory image | published on Logitech's content network with no key, for skin 99 and one hub skin only | [^s196] |
 
-The image's contents have not been examined[^unchecked].
+The image is a Linux system for TI's DA850 processor, with a signature over what runs, the remote's engine
+in compiled Lua and its screens in Lua source; what it holds is
+[the platform's firmware](../../architectures/harmony-touch/firmware.md#the-remotes-package)[^t-touch-image].
+This said the image's contents had not been examined until it was read.
 
 ## Reset and restart
 
@@ -27,7 +30,7 @@ The image's contents have not been examined[^unchecked].
 
 ## Not checked
 
-* The image's contents, and where on the remote the firmware and the configuration live[^unchecked].
+* Where on the remote the firmware and the configuration live[^unchecked].
 * Whether the update service's anonymous request serves a different build than a registered unit
   gets[^unchecked].
 
@@ -35,3 +38,4 @@ The image's contents have not been examined[^unchecked].
 [^s196]: Stated by Logitech, by their service. [Section 196](../../../docs/findings.md#s196)
 [^unchecked]: Not checked.
 [^s195]: Measured on a unit. [Section 195](../../../docs/findings.md#s195)
+[^t-touch-image]: Read in the firmware. [The test](../../../tests/test_harmony_touch_image.py)

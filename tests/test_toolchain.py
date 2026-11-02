@@ -241,7 +241,8 @@ class TheRunnerSeesEveryTest(unittest.TestCase):
         # 68 with `tests/test_harmony_300_350_images.py`, the Harmony 300's three images against the 350's, and
         # 69 with `tests/test_harmony_300_350_send_events.py`, what the four send kinds do, and
         # 70 with `tests/test_harmony_300_group_4_send.py`, why a send from a group above 3 sends nothing.
-        self.assertEqual(len(files), 70, 'the Python test files')
+        # 71 with `tests/test_harmony_touch_image.py`, the Harmony Touch's package, todo-touch 1.2.
+        self.assertEqual(len(files), 71, 'the Python test files')
         with_block = 0
         for path in files:
             with open(path, encoding='utf-8') as handle:
@@ -285,7 +286,8 @@ class TheRunnerSeesEveryTest(unittest.TestCase):
         # 66 with `tests/test_harmony_300_350_images.py`, which carries one.
         # 67 with `tests/test_harmony_300_350_send_events.py`, which carries one.
         # 68 with `tests/test_harmony_300_group_4_send.py`, which carries one.
-        self.assertEqual(with_block, 68,
+        # 69 with `tests/test_harmony_touch_image.py`, todo-touch 1.2, which carries one.
+        self.assertEqual(with_block, 69,
                          'files carrying a __main__ block, of %d' % len(files))
 
 
@@ -770,8 +772,8 @@ class APythonBoundOnACorpusTotalIsExact(unittest.TestCase):
         # 66 with `tests/test_harmony_300_keys.py`, todo-compile-300 2.2.
         # 67 with `tests/test_harmony_350_skin.py`, the skin read in the firmware.
         # 68 with `tests/test_harmony_300_350_images.py`, 69 with `tests/test_harmony_300_350_send_events.py`,
-        # 70 with `tests/test_harmony_300_group_4_send.py`.
-        self.assertEqual(len(scanned), 70, 'Python test files, which moves when one is added')
+        # 70 with `tests/test_harmony_300_group_4_send.py`, 71 with `tests/test_harmony_touch_image.py`.
+        self.assertEqual(len(scanned), 71, 'Python test files, which moves when one is added')
         self.assertIn(self.CONTROL, found, 'the pattern matches nothing it should match')
 
     def test_every_remaining_bound_says_why_it_is_not_a_measurement(self):
@@ -1354,7 +1356,8 @@ class TheLabRegisterCoversTheSiteAtArtefactLevel(unittest.TestCase):
         # 172 with the four firmware reads of 31 October 2026, `reads/20261031T-h300-fw/` and
         # `reads/20261031T-h350-fw-first/` each with its second read beside it.
         # 173 with `reference/images/`, the bench photographs, 1 November 2026, and 174 with `work/300-event-ff/`.
-        self.assertEqual(len(named), 174, "lab paths the register names")
+        # 175 with `work/touch-firmware/`, the Harmony Touch's package unpacked, todo-touch 1.2.
+        self.assertEqual(len(named), 175, "lab paths the register names")
         for path in sorted(named):
             with self.subTest(path=path):
                 if '*' in path:
@@ -1465,8 +1468,9 @@ class TheRegisterQueryAnswersForThePathThatWasOpened(unittest.TestCase):
         # 144 with `work/300-delay/`, todo-compile-300 1.5, and 145 with `work/300-every-key/`, 2.1 and 2.2.
         # 146 and 147 with the two firmware read rows of 31 October 2026, the Harmony 300's and the 350's.
         # 148 with `reference/images/`, the bench photographs, and 149 with `work/300-event-ff/`.
-        self.assertEqual(len(rows), 149)
-        self.assertEqual(len(dict(rows)), 149, 'a duplicated path would make a query ambiguous')
+        # 150 with `work/touch-firmware/`, todo-touch 1.2.
+        self.assertEqual(len(rows), 150)
+        self.assertEqual(len(dict(rows)), 150, 'a duplicated path would make a query ambiguous')
         self.assertNotIn('unseen', dict(rows), 'the status legend is not an artefact')
 
     def test_a_query_is_answered_by_ancestors_and_by_descendants(self):
