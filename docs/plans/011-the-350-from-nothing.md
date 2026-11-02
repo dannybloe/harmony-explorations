@@ -1,6 +1,6 @@
 # Plan 011: the Harmony 350 from nothing
 
-**Status: open.** Written 31 October 2026 for `todo-compile-350.md` chapter 5, sub-items 5.1 and 5.2. It
+**Status: done**, 2 November 2026: `todo-compile-350.md` chapter 5 finished, the build from nothing heard on the bench 350 and 300. Written 31 October 2026 for `todo-compile-350.md` chapter 5, sub-items 5.1 and 5.2. It
 carries out for the no screen family what [plan 008](008-the-650-from-nothing.md) carried out for the four slot
 family, measured first. Nothing here is built; the census it rests on is
 `packages/codec/test/noscreencensus.test.ts`, which reads and writes nothing.
