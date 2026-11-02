@@ -74,7 +74,11 @@ machine 40, ARM; the hubs' is big endian, machine 8, MIPS.
   `Synatics Clearpad driver`, spelt so.
 * The remote's own program is in two trees: `opt/luaworks`, **172 Lua files (173 in 4.15.250), each one
   compiled Lua 5.1**, checked file by file, and `opt/luadraws`, **243 (244), none compiled**, each one
-  holding a Lua keyword. The engine's module names include `tasks/harmonyengine/loader/userconfigreader.lua`,
+  holding a Lua keyword. **Every engine file's header is `1b4c75615100010404040804`**, stock Lua 5.1 but
+  for its twelfth byte, the integral flag, which stock Lua writes as 0 or 1 and these carry as 4; walked with
+  the stock 5.1 layout and 8 byte numbers, each file is consumed to its last byte, so that byte is the only
+  departure. It is why an off the shelf decompiler refuses the files as they are and reads them with that
+  byte set to 0 (`todo-touch.md` 1.3.1). The engine's module names include `tasks/harmonyengine/loader/userconfigreader.lua`,
   `tasks/harmonywebservices/proxy/sync.lua` and `tasks/hal/core/hbus.lua`. Fourteen more Lua files under
   `opt/share/lua` are libraries and not counted.
 
@@ -208,6 +212,60 @@ def inflated_kernel(uimage):
     if at < 0:
         raise AssertionError('no gzip stream in the kernel payload')
     return zlib.decompressobj(31).decompress(payload[at:])
+
+
+#: The header every engine file carries: stock Lua 5.1 (format 0, little endian, 4 byte int, size_t and
+#: instruction, 8 byte number) but for the twelfth byte, the integral flag, which stock Lua writes as 0 or 1.
+ENGINE_HEADER = bytes.fromhex('1b4c75615100010404040804')
+
+
+def stock_51_length(chunk):
+    """How many bytes a chunk takes when walked with the stock Lua 5.1 layout and the header's sizes.
+
+    Function prototypes nest, constants are nil, boolean, an 8 byte number or a string, and the debug
+    sections follow. A chunk in some other layout either raises or stops short of its end, which is the
+    point: this is what shows the header's odd byte is the only departure from stock.
+    """
+    at = 12
+
+    def take(fmt):
+        nonlocal at
+        value = struct.unpack_from(fmt, chunk, at)[0]
+        at += struct.calcsize(fmt)
+        return value
+
+    def skip(count):
+        nonlocal at
+        at += count
+
+    def string():
+        skip(take('<I'))
+
+    def prototype():
+        string()                        # source name
+        take('<i'); take('<i')          # first and last line
+        skip(4)                         # upvalues, parameters, vararg flag, stack size
+        skip(4 * take('<i'))            # instructions
+        for _ in range(take('<i')):     # constants
+            tag = take('<B')
+            if tag == 1:
+                skip(1)
+            elif tag == 3:
+                skip(8)
+            elif tag == 4:
+                string()
+            elif tag != 0:
+                raise ValueError('constant tag %d is not stock Lua 5.1' % tag)
+        for _ in range(take('<i')):     # nested prototypes
+            prototype()
+        skip(4 * take('<i'))            # line information
+        for _ in range(take('<i')):     # local names and ranges
+            string(); take('<i'); take('<i')
+        for _ in range(take('<i')):     # upvalue names
+            string()
+
+    prototype()
+    return at
 
 
 class SquashfsReader:
@@ -405,7 +463,13 @@ class TheSignatureAndTheRootFilesystem(unittest.TestCase):
                 screens = [p for p in names if p.startswith('opt/luadraws/') and p.endswith('.lua')]
                 self.assertEqual(len(engine), expected['luaworks'])
                 self.assertEqual(len(screens), expected['luadraws'])
-                self.assertEqual([p for p, d in reader.each(engine).items() if d[:5] != b'\x1bLua\x51'], [])
+                engine_files = reader.each(engine)
+                self.assertEqual([p for p, d in engine_files.items() if d[:12] != ENGINE_HEADER], [])
+                self.assertEqual([p for p, d in engine_files.items() if stock_51_length(d) != len(d)], [])
+                # The negative: a file one byte short cannot be walked, so the walk is not merely lenient.
+                shortest = min(engine_files.values(), key=len)
+                with self.assertRaises(struct.error):
+                    stock_51_length(shortest[:-1])
                 screen_files = reader.each(screens)
                 self.assertEqual([p for p, d in screen_files.items() if d.startswith(b'\x1bLua')], [])
                 self.assertEqual([p for p, d in screen_files.items() if not LUA_WORDS.search(d)], [])

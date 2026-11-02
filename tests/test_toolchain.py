@@ -1356,8 +1356,9 @@ class TheLabRegisterCoversTheSiteAtArtefactLevel(unittest.TestCase):
         # 172 with the four firmware reads of 31 October 2026, `reads/20261031T-h300-fw/` and
         # `reads/20261031T-h350-fw-first/` each with its second read beside it.
         # 173 with `reference/images/`, the bench photographs, 1 November 2026, and 174 with `work/300-event-ff/`.
-        # 175 with `work/touch-firmware/`, the Harmony Touch's package unpacked, todo-touch 1.2.
-        self.assertEqual(len(named), 175, "lab paths the register names")
+        # 175 with `work/touch-firmware/`, the Harmony Touch's package unpacked, todo-touch 1.2, and 177 with
+        # `software/unluac/` and `software/lua-5.1.5-dl/`, the decompiler and the compiler source, 1.3.1.
+        self.assertEqual(len(named), 177, "lab paths the register names")
         for path in sorted(named):
             with self.subTest(path=path):
                 if '*' in path:
@@ -1468,9 +1469,10 @@ class TheRegisterQueryAnswersForThePathThatWasOpened(unittest.TestCase):
         # 144 with `work/300-delay/`, todo-compile-300 1.5, and 145 with `work/300-every-key/`, 2.1 and 2.2.
         # 146 and 147 with the two firmware read rows of 31 October 2026, the Harmony 300's and the 350's.
         # 148 with `reference/images/`, the bench photographs, and 149 with `work/300-event-ff/`.
-        # 150 with `work/touch-firmware/`, todo-touch 1.2.
-        self.assertEqual(len(rows), 150)
-        self.assertEqual(len(dict(rows)), 150, 'a duplicated path would make a query ambiguous')
+        # 150 with `work/touch-firmware/`, todo-touch 1.2, and 152 with `software/unluac/` and
+        # `software/lua-5.1.5-dl/`, 1.3.1.
+        self.assertEqual(len(rows), 152)
+        self.assertEqual(len(dict(rows)), 152, 'a duplicated path would make a query ambiguous')
         self.assertNotIn('unseen', dict(rows), 'the status legend is not an artefact')
 
     def test_a_query_is_answered_by_ancestors_and_by_descendants(self):

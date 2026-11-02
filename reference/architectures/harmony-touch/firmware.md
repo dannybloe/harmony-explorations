@@ -67,7 +67,9 @@ package had not been opened and its processor was not checked until the image wa
   describes itself as a ClearPad driver, which the start up script programs only when the controller reports
   one particular version. The start up script also hands the boot loader file to an updater on every
   start[^t-touch-image].
-* **The remote's own program is Lua.** Every Lua file of its engine is compiled Lua 5.1, and the engine's
+* **The remote's own program is Lua.** Every Lua file of its engine is compiled Lua 5.1 in the stock layout
+  with 8 byte numbers, but for one header byte, the flag stock Lua writes as 0 or 1 for integer numbers,
+  which is 4 in every file; the engine's
   module names include a user configuration reader and a proxy for the sync; no Lua file of its screens is
   compiled[^t-touch-image].
 
