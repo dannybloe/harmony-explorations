@@ -227,7 +227,11 @@ press, a long press and a double press, so the second is chosen by how long the 
 to the button rather than to any command[^t-model].
 
 **The two cannot share a key.** A remote that has to choose between two actions must wait to learn which
-was meant, and a key that is waiting cannot also be repeating[^unchecked]. So the third behaviour is not a
+was meant, and a key that is waiting cannot also be repeating. Read on a Harmony Touch: a key with a long
+press sends nothing on the press, its long action on the first hold report at least 550 ms after the press,
+about 600 ms in practice, and its short action on release,
+[the Touch's activities and buttons](architectures/harmony-touch/activities-and-buttons.md#holding-a-key-and-the-long-press)[^t-touch-activities-firmware];
+on the other models it is not checked[^unchecked]. So the third behaviour is not a
 third kind of key: it is a key whose long press has taken its repeat away.
 
 **Which models have a long press** is a list Logitech's service states,
@@ -295,6 +299,7 @@ devices and then asked "Did that fix the problem?", as that predicts[^s335]. Hel
 [^t-model]: Stated by Logitech, in their client. [The test](../tests/test_myharmony_model.py)
 [^s151b]: Measured in configurations. [Section 151](../docs/findings.md#s151)
 [^s327]: Stated by Logitech, in their client. [Section 327](../docs/findings.md#s327)
+[^t-touch-activities-firmware]: Read in the firmware. [The test](../tests/test_harmony_touch_activities.py)
 [^unchecked]: Not checked.
 [^s327b]: Measured in configurations. [Section 327](../docs/findings.md#s327)
 [^s342]: Measured on a unit. [Section 342](../docs/findings.md#s342)

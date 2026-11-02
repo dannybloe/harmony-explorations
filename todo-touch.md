@@ -39,7 +39,7 @@ Written on 2 November 2026, and placed in `todo.md`'s sequence the same day as 3
 - [x] 1.4 Which names the remote answers to over USB, read off the firmware: which are files, which are actions, and whether the configuration is among them; done in the lab, unreviewed: 54 names in one table in the native USB program, none of them a configuration path, one (`/data/resource`) pointing at the engine's resources and not opened, `work/touch-firmware/notes/1.4-the-names-the-remote-answers-to.md`
 - [x] 1.5 Logitech's `SKIN99/userconfiguration.xml`, in the lab's mirror of their desktop web application, read whole (decision 2): the path it writes, the sizes, the `MD5` check, and what in the client calls it; done in the lab, unreviewed: the template names no path (the package manifest does) and is dead code for a Touch, which MyHarmony never routes to it, `notes/1.5-userconfiguration-template.md`
 - [x] 1.6 How the remote builds its list of requests during a sync: the first address, its certificate, the version labels, and what a complete sync covers; done in the lab, unreviewed: the remote names no server, a sync is six fixed resources then favourites then a finished signal, and the server decides what is stale, `notes/1.6-the-sync-request-list.md`; corrects two points of section 203
-- [ ] 1.7 Which architecture number the firmware uses for itself, 17 or 18, the open question of `reference/architectures/harmony-touch/README.md`
+- [x] 1.7 Which architecture number the firmware uses for itself, 17 or 18, the open question of `reference/architectures/harmony-touch/README.md`; done: 17, the firmware's own and shared with the hubs (the USB program's fallback, which the unit's record can replace, and the engine's literal), 18 the templates' family for these remotes, and nothing compares them, `tests/test_harmony_touch_architecture.py`
 
 ## 2. One sync recorded
 
@@ -51,7 +51,7 @@ Written on 2 November 2026, and placed in `todo.md`'s sequence the same day as 3
 
 ## 3. The Touch described
 
-- [ ] 3.1 The configuration's format in `reference/remotes/harmony-touch/` and `reference/architectures/harmony-touch/`, every fact with its footnote and regression test
+- [x] 3.1 The configuration's format in `reference/remotes/harmony-touch/` and `reference/architectures/harmony-touch/`, every fact with its footnote and regression test; done: three pages, `devices-and-infrared.md`, `activities-and-buttons.md` and `favourites-and-settings.md`, each field to what the remote does with it, held by `packages/usb/test/touch-{devices,activities,favourites}.test.ts` and the three `tests/test_harmony_touch_*.py` of the same names
 - [ ] 3.2 Keys, screen and limits measured, replacing what the reference takes from the manual
 - [ ] 3.3 A reader for the configuration in `packages/codec`, if 1 and 2 show it is a file the codec can read
 

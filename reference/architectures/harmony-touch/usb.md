@@ -13,7 +13,7 @@ Logitech's client picks a protocol from the architecture number: 9, 12 and 14 ar
 the command protocol of the Harmony 525, One, 600, 650 and 700, and every other number takes the file
 protocol[^s197]. Its templates divide the same way: 19 of their 23 skins take the file protocol and none
 takes both[^s198]. So 17 and 18, the two numbers this generation is given, get the same answer, which is
-why the client never notices that a Touch and its template disagree about which of the two it is,
+why nothing in the client depends on which of the two a Touch is,
 [README.md](README.md).
 
 The Harmony 300 and 350 speak the file protocol too, and that is where its transport's rails are argued,
@@ -78,7 +78,8 @@ both[^t-touch-sync][^t-touch-both-ways]:
    of them its clock
 2. it tells the remote to sync and asks for work; the remote answers with six web requests, each the verb
    `get` and a **logical** address in Logitech's own scheme, `harmony://...`, with an entity tag: on all six
-   in one sync measured, on all but the settings in the other
+   in one sync measured, on all but the settings in the other; the settings going untagged is consistent
+   with the remote saving them without a tag when a setting is changed on it, [favourites and settings](favourites-and-settings.md#settings-field-by-field)[^t-touch-favourites-firmware]
 3. the computer performs them against Logitech's service and writes all six answers back in one request,
    each the document with its status, type and entity tag
 4. with favourite channels on the account, the remote then handed over an empty list, and after it asked for
@@ -99,7 +100,7 @@ nothing to it[^t-touch-both-ways]. Whether the clock is set some other way is no
 
 **The remote's configuration is documents of Logitech's service**, in the syncs measured: the account's
 activity, device, button map and protocol lists, the remote's context and settings, and, with favourites,
-the user's, device's and service's content documents, each as parsed JSON the same the service answered the
+the user's, device's and service's content documents, [favourites and settings](favourites-and-settings.md), each as parsed JSON the same the service answered the
 computer, and every picture byte for byte the one fetched[^t-touch-sync][^t-touch-both-ways]. They are
 Logitech's own data model, [the data model](../../logitech/data-model/model.md). **So the host holds no
 compiled configuration for a Touch**, and no amount of asking the service differently produces a
@@ -135,4 +136,5 @@ testing only"[^s198], and a Touch has no file at the Harmony 300 and 350's confi
 [^t-templates-hlapi]: Stated by Logitech, in their client. [The test](../../../tests/test_client_templates.py)
 [^t-touch-both-ways]: Measured on a unit. [The test](../../../packages/usb/test/touch-sync-both-ways.test.ts)
 [^t-client-reverse-sync]: Stated by Logitech, in their client. [The test](../../../tests/test_client_templates.py), class `TheClientAsksForTheRemotesChangesOnlyWithNothingPending`
+[^t-touch-favourites-firmware]: Read in the firmware. [The test](../../../tests/test_harmony_touch_favourites.py)
 [^unchecked]: Not checked.

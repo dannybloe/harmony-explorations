@@ -1,6 +1,6 @@
 ---
 name: harmony-touch
-description: "Everything needed before working on the Harmony Touch: where its facts are (read them first), why this library never opens it the ordinary way and nothing writes to it, what the two files it answers already gave, and why its architecture number is disputed. Use before any task on the Harmony Touch, before touching the file based transport for it, before plugging it in, and in every agent brief for Harmony Touch work."
+description: "Everything needed before working on the Harmony Touch: where its facts are (read them first), why this library never opens it the ordinary way and nothing writes to it, what the two files it answers already gave, and why it has two architecture numbers. Use before any task on the Harmony Touch, before touching the file based transport for it, before plugging it in, and in every agent brief for Harmony Touch work."
 ---
 
 # Working on the Harmony Touch
@@ -20,7 +20,7 @@ In this order, every time, including in an agent:
 
 1. `reference/remotes/harmony-touch/README.md`: the key numbers and the map of its nine topic files. Then
    open the topic file the task touches, above all `usb.md` for anything on the cable. Its family, the
-   firmware and the disputed architecture number are in `reference/architectures/harmony-touch/`.
+   firmware and its two architecture numbers are in `reference/architectures/harmony-touch/`.
 2. `reference/usb-protocol/file-protocol.md`: the file based family's protocol, which the Touch speaks,
    and `reference/architectures/harmony-300-350/usb.md`, where the transport's rails are argued for the
    Harmony 300 and 350 on the same transport.
@@ -28,8 +28,9 @@ In this order, every time, including in an agent:
 4. `docs/test-notes/harmony-touch.md` for what was done to the bench unit, the first contact and the
    paths tried.
 
-**Its architecture is disputed and stays disputed.** Logitech's templates say 18 and the remote reports 17;
-`reference/architectures/harmony-touch/README.md` holds both with their sources and settles neither. In conversation say "the Harmony Touch" and, where a
+**Its architecture has two numbers for two things.** The firmware reports 17, the number its software
+shares with the hubs, and Logitech's templates file it under 18; nothing compares them,
+`reference/architectures/harmony-touch/README.md`. In conversation say "the Harmony Touch" and, where a
 number is needed, give both and say which source each came from.
 
 **When the reference does not answer a question about the remote, ask** before designing around the gap,
@@ -72,7 +73,7 @@ test; the read itself goes into the lab.
 | the transport | `packages/usb/src/filepipe.ts`, with `INERT_PATHS`; the refusal in `packages/usb/src/transport.ts`, `FILE_BASED_PRODUCTS` |
 | the read script | `packages/usb/bin/read-file-identity.ts` |
 | the protocol | `reference/usb-protocol/file-protocol.md` |
-| its family, firmware and the disputed number | `reference/architectures/harmony-touch/` |
+| its family, firmware and its two architecture numbers | `reference/architectures/harmony-touch/` |
 | the bench unit's notes | `docs/test-notes/harmony-touch.md` |
 | what Logitech's client does for it | `reference/logitech/clients.md` and findings sections 202 and 203 |
 

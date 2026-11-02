@@ -295,7 +295,7 @@ remaining six, `ControlsApp`, `ControlsSpeaker`, `ControlsVideoCall`, `PassThrou
 `Silent`, match nothing in the capability list[^t-model]. Whether a device's capabilities decide which
 roles it may take is not established[^unchecked].
 
-### The actions are typed, and a stored activity leaves them empty
+### The actions are typed, and a compiled remote's stored activity holds none
 
 `EnterActions` and `LeaveActions` are ordered lists. Every action extends `AbstractActivityAction`, which
 carries `ActionOrder`, `Id`, and there are exactly three kinds[^t-model]:
@@ -309,7 +309,11 @@ carries `ActionOrder`, `Id`, and there are exactly three kinds[^t-model]:
 **A stored activity is roles and a wanted state, not a list of actions.** On the activities captured with
 the configurations compiled from them, `EnterActions` and `LeaveActions` are empty: the sequence a remote
 runs is worked out by Logitech's compiler from the roles, the selected inputs and the power order, which
-is the same division the configuration itself makes[^s145]. Each captured role names its device, its
+is the same division the configuration itself makes[^s145]. **A Harmony Touch's account stores steps added by
+hand there**: three start steps and one end step on one activity, which its remote runs itself, [activities
+and buttons](../../architectures/harmony-touch/activities-and-buttons.md)[^t-touch-activities]. Every Touch
+activity measured also carries a `Zones` field, which the `Activity` entity does not list[^t-touch-activities].
+Each captured role names its device, its
 `SelectedInput` **by name**, and its place in the power on and power off order, and states
 `NextDevicePowerOnDelay` as null[^s145].
 
@@ -521,7 +525,7 @@ base[^t-model].
 |---|---|---|
 | `ActivityInputState` | `ChannelNumber`, `Id`, `Name` | the input an activity switches a device to, with an optional channel |
 | `AutoDetectedDevice` | `Class`, `Id`, `Manufacturer`, `Model`, `Name`, `USN` | what network discovery found, before a user confirms it is theirs |
-| `ChannelTuningFeature` | `DeviceId`, `FixedDigits`, `Id` | how many digits a device wants when a channel is entered |
+| `ChannelTuningFeature` | `DeviceId`, `FixedDigits`, `Id` | how many digits a device wants when a channel is entered; a Harmony Touch's documents also carry the start, finish, above ten and above hundred actions, [favourites and settings](../../architectures/harmony-touch/favourites-and-settings.md)[^t-touch-favourites] |
 | `Country` | `Code`, `Name`, `Region` | a country code, its name and the region it belongs to |
 | `GlobalDeviceGlobalLanguage` | `GlobalLanguage`, `IsDefault` | a language a catalogue device is available in, and whether it is the default |
 | `GlobalLanguages` | `Id`, `Name` | a language version, by identifier and name |
@@ -643,10 +647,12 @@ services[^t-ops]. On `UserAccountDirector/ProtocolList` a `POST` answers 405 and
 error page, reproducibly and on two accounts[^s219]; the `GET` answers 502 on an account holding devices
 and 200 with an empty body on an empty one[^s132]. An earlier probe recorded a `POST` to `ProtocolList`
 answering 404 on both services the listing names, without saying which[^s159], where the later one had
-`UserAccountDirector` answer 405[^s219]. **The request is right and the endpoint is what fails**: on the same address form
+`UserAccountDirector` answer 405[^s219]. **On that address form the request is right and the endpoint is what fails**:
 `ActivityList` and `FunctionList` answer normally, while `DeviceList` and `CapabilityList` fail exactly as
-`ProtocolList` does[^s219]. So the catalogue's protocol definitions are stated in this shape and the
-service hands out none of them.
+`ProtocolList` does[^s219]. **On the `json2` form the same lists answer**: a sync of a Harmony Touch through
+Harmony Desktop fetched `.../UserAccountDirector.svc/json2/Account/<id>/ProtocolList` and `DeviceList`, and
+the protocol definitions came back in this shape[^t-touch-devices]. This said no protocol definition is
+handed out at all<!--superseded--> until that sync was recorded.
 
 ## What a device's commands are called
 
@@ -716,7 +722,7 @@ all for another, and being device specific is a property of a device's entry rat
 
 * Whether a device's declared capabilities decide which activity roles it may take[^unchecked].
 * Whether an atom's tolerance band is stored per code or applied by the compiler[^unchecked].
-* The values of `EventType`, which the schema does not list[^unchecked].
+* The values of `EventType`, which the schema does not list[^unchecked]; a Harmony Touch's engine reads 1, 2 and 3 as a short, a long and a double press, on home control and program actions only, [activities and buttons](../../architectures/harmony-touch/activities-and-buttons.md)[^t-touch-activities-firmware].
 
 [^d14]: Chosen by this project. [Decision 14](../../../docs/decisions.md#d14)
 [^s218]: Stated by Logitech, by their service. [Section 218](../../../docs/findings.md#s218)
@@ -724,6 +730,10 @@ all for another, and being device specific is a property of a device's entry rat
 [^t-households]: Stated by Logitech, by their service. [The test](../../../tests/test_myharmony_model.py)
 [^s227]: Stated by Logitech, in their catalogue. [Section 227](../../../docs/findings.md#s227)
 [^unchecked]: Not checked.
+[^t-touch-devices]: Measured on a unit. [The test](../../../packages/usb/test/touch-devices.test.ts)
+[^t-touch-activities]: Measured on a unit. [The test](../../../packages/usb/test/touch-activities.test.ts)
+[^t-touch-activities-firmware]: Read in the firmware. [The test](../../../tests/test_harmony_touch_activities.py)
+[^t-touch-favourites]: Measured on a unit. [The test](../../../packages/usb/test/touch-favourites.test.ts)
 [^s145]: Stated by Logitech, by their service. [Section 145](../../../docs/findings.md#s145)
 [^s220]: Stated by Logitech, by their service. [Section 220](../../../docs/findings.md#s220)
 [^s235]: Stated by Logitech, by their service. [Section 235](../../../docs/findings.md#s235)

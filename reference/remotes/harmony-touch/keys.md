@@ -71,21 +71,41 @@ Favorites the favourite channels[^x-touch-manual].
 | Menu, Exit, OK, the direction pad | the television's menus | [^x-touch-manual] |
 | volume and channel rockers, mute, previous | as printed; the rockers print `Vol` and `Ch` and nothing else | [^x-touch-manual] |
 
+## The names the documents give the keys
+
+**Logitech's button maps name the keys with 26 names**: the 27 keypad keys of the drawing less Off, with
+`DVR` where the drawing says `Dvr`[^t-touch-activities]. Off, Home and Favorites never reach a map, since the
+remote's screens handle all three themselves, Off by ending the running activity[^t-touch-activities-firmware].
+The engine accepts `Dvr` as well as `DVR`, read in the decompiled engine and held by no
+test[^t-touch-activities-firmware]. How a key's name becomes a command is
+[the platform's activities and buttons](../../architectures/harmony-touch/activities-and-buttons.md).
+
 ## Holding a key
 
 **A long press exists on this model**: Logitech's product record declares `LongPressAction` for skin
 99[^t-long-press]. A key with one cannot also repeat, because the firmware has to wait to learn which was
-meant, [how a Harmony works](../../how-a-harmony-works.md). Which keys have one, and how long the press is,
-is **not checked**[^unchecked].
+meant, [how a Harmony works](../../how-a-harmony-works.md), and on the Touch that is read in the firmware:
+**a key with a long press sends nothing when it goes down, sends its long press once it has been held about
+600 ms, and sends its short press if it is let go before that**; a key without one keeps sending for as long
+as it is held[^t-touch-activities-firmware]. The long press fires on the first hold report at least 550 ms
+after the press, about 600 ms in practice, since a held key is reported every 300 ms. Read in the decompiled
+engine and the screens' source; the test holds the two numbers[^t-touch-activities-firmware].
+
+**Which keys have one is the button map's choice, not the key's.** In the documents measured the long presses
+sit on Rewind, FastForward, Menu, PrevChannel, ChannelUp, ChannelDown, Info, Guide, Yellow and Stop, on
+the Tap, SwipeLeft and SwipeRight gestures, and never on a screen entry[^t-touch-activities].
 
 ## Not checked
 
 * Every scan code, and whether the two marks above the screen are keys of the keypad or areas of the
   touch panel[^unchecked].
-* Which keys take a long press[^unchecked].
+* Which keys Logitech's client lets a long press be given to[^unchecked].
+* The long press's timing measured on a remote rather than read[^unchecked].
 
 [^x-touch-manual]: Stated by Logitech, in the manual. [The Harmony Touch user guide](https://www.manualslib.com/manual/641224/Logitech-Harmony-Touch.html)
 [^s200]: Measured on a unit. [Section 200](../../../docs/findings.md#s200)
 [^s202]: Stated by Logitech, in their client. [Section 202](../../../docs/findings.md#s202)
 [^t-long-press]: Stated by Logitech, by their service. [The test](../../../packages/usb/test/models.test.ts)
+[^t-touch-activities]: Measured on a unit. [The test](../../../packages/usb/test/touch-activities.test.ts)
+[^t-touch-activities-firmware]: Read in the firmware. [The test](../../../tests/test_harmony_touch_activities.py)
 [^unchecked]: Not checked.

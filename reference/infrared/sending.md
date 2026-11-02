@@ -180,7 +180,8 @@ the on transition ends in are not composed.[^s320]
 **The carrier is made in software**, by a loop of cycle counted delays and a mask that switches the
 emitter per half cycle, not by a hardware timer driving the lamp.[^s13] A configuration states a code's
 carrier as a period and an on time in nanoseconds, the on time being half the period: 38 kHz is stored as
-26315, truncated rather than rounded.[^s92]
+26315, truncated rather than rounded.[^s92] A Harmony Touch, which builds its codes itself, rounds instead and
+gives 26316 for 38 kHz, [its devices and infrared](../architectures/harmony-touch/devices-and-infrared.md#against-a-compiled-configuration)[^t-touch-engine].
 
 The modulator works from a pair of values in data memory, read in the Harmony 700's 2.8 firmware:[^s13]
 
@@ -221,3 +222,4 @@ Harmony One or the Harmony 525.[^unchecked]
 [^s92]: Measured in configurations. [Section 92](../../docs/findings.md#s92)
 [^s92b]: Read in the firmware. [Section 92](../../docs/findings.md#s92)
 [^unchecked]: Not checked.
+[^t-touch-engine]: Read in the firmware. [The test](../../tests/test_harmony_touch_devices.py)

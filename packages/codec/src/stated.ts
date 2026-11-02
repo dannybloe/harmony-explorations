@@ -55,11 +55,11 @@ import { SEGMENT_LENGTHS } from './segmentlengths.ts';
  * the ditto frame of the protocol concerned, `Start` a lead in sent once before the payload, `Trailer` a
  * closing frame. All three are published behaviour of the protocols they appear on.
  *
- * **The prefix digit is a position and its meaning stops there.** Across every code the digits, in
- * order, form exactly four runs: `0`, `00`, `01` and `012`. So it is 0 on a code stating one value, and
- * on a code stating several it ascends from 0 except in the `00` case, which is the families whose
- * values are all the same width. Whether it indexes the values, a field of the protocol, or the widths
- * the family name spells is **unread**, and it is kept as written rather than normalised.
+ * **The prefix digit names a segment.** Across every code the digits, in order, form exactly four runs:
+ * `0`, `00`, `01` and `012`. So it is 0 on a code stating one value, and on a code stating several it
+ * ascends from 0 except in the `00` case, which is the families whose values are all the same width. A
+ * Harmony Touch's firmware reads it as the id of the segment the value is sent in,
+ * `tests/test_harmony_touch_devices.py`; it is still kept as written rather than normalised.
  */
 export type StatedWord = 'Start' | 'Repeat' | 'RepeatStart' | 'Finish' | 'Trailer' | 'Divider'
   | 'Space' | 'LongSpace' | 'Spacer' | 'Spacer2' | 'StopSpacer' | 'SS' | 'LS' | 'LRS';

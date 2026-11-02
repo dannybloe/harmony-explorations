@@ -73,6 +73,43 @@ package had not been opened and its processor was not checked until the image wa
   module names include a user configuration reader and a proxy for the sync; no Lua file of its screens is
   compiled[^t-touch-image].
 
+## The architecture number the firmware reports
+
+**The firmware reports 17 for itself, by two routes**, and no file of either build of the remotes' image
+names an architecture of 18 under the key `arch`, in hexadecimal[^t-touch-arch]. Logitech's templates file the same skins under 18, and what the two numbers
+are is [the platform's README](README.md#which-architecture-number-17-or-18).
+
+* **The identity file is filled from the unit's own record.** `/sys/sysinfo` is answered by the remote's
+  native USB program, `usr/bin/hal`, which builds the answer once, at start. It fills a record with
+  defaults, architecture 17, skin 97, vendor `0x046D`, product `0xC12B` and hardware version `99.00`, and
+  then overwrites them from the unit's manufacturing record: the flash partition named `mfg`, read from
+  offset 36864 when it opens with the magic `harmony!`, as length prefixed keys and values. The record's
+  `arch` is parsed as hexadecimal into the architecture's slot, and that slot is written into the identity
+  file as two hex digits. **So 17 is the fallback**, and what a unit reports is its record's `arch` when
+  the record has one[^t-touch-arch]. The one Touch whose identity file was read reports skin 99 where the
+  fallback is 97, so on that unit the record was read[^s200]; whether that record states an architecture
+  is not checked, and the value it reports is 17 either way[^unchecked].
+* **The engine states 17 as a fixed string.** The Lua engine's own system information answer carries
+  `arch=0x11` as a literal; it takes the skin, the vendor, the product and the unit id from the
+  manufacturing record and never its architecture[^t-touch-arch]. What can ask the engine for it on a
+  Touch is not checked[^unchecked]. In the production build the same module treats a unit whose host name
+  is `juniper` as having no network; the preview build's module holds no such test[^t-touch-arch].
+* **Nothing else in the image states an architecture.** Over every file of both builds, `arch=0x` occurs
+  in the engine's handler alone and `arch=0x12` nowhere; `arch` as a name of its own occurs only in the
+  USB program and the default record below, and elsewhere only as the Lua runtime's processor name and in
+  prose[^t-touch-arch].
+* **The image carries a hub's default manufacturing record**, the one the engine falls back to when the
+  partition holds no valid record. Its keys are `unitid`, `arch`, `skin`, `usb_vendor_id`,
+  `usb_product_id`, `hw_ver`, `key` and `cert`; its architecture is 17, its skin 97, which is Pimento in
+  Logitech's templates[^s197], and its product `0xC129` where the Touch's is `0xC12B`[^t-touch-arch]. It
+  holds a private key and a certificate, and nothing else of it is read here.
+* **The hubs' image states the same 17.** The hubs' production image 4.15.600, whose package names skins
+  97, 106 and 109, carries the same engine handler built for a MIPS toolchain, with the same fixed string,
+  and the same default record byte for byte[^t-touch-arch]. Its root filesystem is squashfs with LZMA blocks
+  whose header lacks the size field, so `unsquashfs` refuses it; each block decodes once the size is given
+  as unknown, and the decoded blocks tile the data up to the inode table exactly[^t-touch-arch]. What the
+  hubs' own native USB program falls back to was not read[^unchecked].
+
 ## The factory images
 
 **Logitech publishes two factory images with no key at all**, one for skin 99, the Touch, and one for skin
@@ -106,6 +143,7 @@ installs is not settled, [the recovery tool](../../logitech/update-service.md#th
 * Whether the update service serves a different build to a registered unit than to the anonymous
   request[^unchecked].
 * What `xmppupdate` installs[^unchecked].
+* What the hubs' native USB program reports as its architecture when a hub's record states none[^unchecked].
 
 [^s196]: Stated by Logitech, by their service. [Section 196](../../../docs/findings.md#s196)
 [^s200]: Measured on a unit. [Section 200](../../../docs/findings.md#s200)
@@ -114,3 +152,4 @@ installs is not settled, [the recovery tool](../../logitech/update-service.md#th
 [^s197]: Stated by Logitech, in their client. [Section 197](../../../docs/findings.md#s197)
 [^s195]: Measured on a unit. [Section 195](../../../docs/findings.md#s195)
 [^t-touch-image]: Read in the firmware. [The test](../../../tests/test_harmony_touch_image.py)
+[^t-touch-arch]: Read in the firmware. [The test](../../../tests/test_harmony_touch_architecture.py)

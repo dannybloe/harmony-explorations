@@ -225,14 +225,17 @@ export const ARCHITECTURES: readonly ArchitectureFolder[] = [
   // configurations depends on most, is the container page's one table for every architecture.
   { folder: 'harmony-880-885', architecture: 8, files: ARCHITECTURE_FILES, blocks: ['skins'] },
   { folder: 'harmony-890-895', architecture: 10, files: ARCHITECTURE_FILES, blocks: ['skins'] },
-  // The Harmony Touch's generation, plan 009's thin folder of three files: no memory page, because no
-  // address on it has been read, and no misc page, because nothing is left over. 17 is the remote's own
+  // The Harmony Touch's generation, plan 009's thin folder of three files, and three more since todo-touch
+  // 3.1, one per group of the documents a sync hands the remote: no memory page, because no address on it
+  // has been read, and no misc page, because nothing is left over. 17 is the remote's own
   // number and Logitech's templates say 18, section 197, so this row takes the remote's word the way the
   // model's row does and the folder's README states both. It carries the skin table alone: the USB
   // identity block would be a row of `none`, since `openHarmony` never opens this family, and the
   // model's usb.md already says so beside its own copy of that block.
   {
-    folder: 'harmony-touch', architecture: 17, files: ['README.md', 'firmware.md', 'usb.md'], blocks: ['skins'],
+    folder: 'harmony-touch', architecture: 17,
+    files: ['README.md', 'activities-and-buttons.md', 'devices-and-infrared.md', 'favourites-and-settings.md', 'firmware.md', 'usb.md'],
+    blocks: ['skins'],
   },
 ];
 

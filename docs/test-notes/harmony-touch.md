@@ -119,6 +119,13 @@ background went back to a built in one because text was hard to read on the uplo
 the lab's `reads/20261102T1524Z-touch-reverse-sync/`; both are read by
 `packages/usb/test/touch-sync-both-ways.test.ts`.
 
+**One reading of the firmware was checked on the screen**, after the full sync: the button maps of the LG TV
+and the Xbox each give two screen entries the same position, and the code keeps only the later one, so the
+TV's `-` and the Xbox's `B` should be missing from those devices' screens. Neither was there, reported by the
+person at the bench; `packages/usb/test/touch-activities.test.ts` holds the duplicated positions. The TV's
+channel tuning was switched to Three Numbers in MyHarmony between the trial and the full sync, which is why
+the two device lists differ there.
+
 ## Not done
 
 * No infrared run has been recorded with this unit, and nothing about it in use has been seen and written

@@ -13,9 +13,11 @@ configuration is not reachable as a file[^s200], and Logitech's service does not
 it[^s202]. So the facts below are mostly Logitech's, from the manual, the service and the client, and each
 footnote says so.
 
-**Its architecture is disputed.** The remote reports 17 for itself[^s200] and Logitech's own protocol
-templates say 18[^s197]. This reference takes the remote's number and states both; the disagreement, its
-sources and the generation the Touch belongs to are [its platform's folder](../../architectures/harmony-touch/README.md).
+**Its architecture has two numbers for two things.** The remote reports 17 for itself[^s200], the number its
+software shares with Logitech's hubs, and Logitech's own protocol templates file it under 18[^s197], their
+family for this generation's remotes; nothing compares the two. This reference takes the remote's number and
+states both; the sources and the generation the Touch belongs to are [its platform's
+folder](../../architectures/harmony-touch/README.md#which-architecture-number-17-or-18).
 
 ## Skins
 

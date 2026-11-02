@@ -35,6 +35,31 @@ which other skins do.
 | capabilities that decide the sync route | `SupportsCertificateActivation`, and **not** `LocaleEnabled` | [^s202] |
 | Harmony Desktop | on its supported list, and off the list of products it compiles for | [^s135] |
 
+## Favourite channels
+
+**Each favourite is a channel the remote shows as a picture, in an order the account keeps, and pressing
+one sends its channel number as digit presses** to the device that the activity marked as the tuning
+default changes channels with, starting that activity first when it is not running[^t-touch-favourites-firmware].
+On the account measured there was one such activity and one such device; the firmware allows more than
+one[^t-touch-favourites][^t-touch-favourites-firmware]. How the digits go out is set per device on the
+account: set to send the number then OK, channel 7 is 7 then OK; set to three digits, it is 0, 0,
+7[^t-touch-favourites][^t-touch-favourites-firmware]. The remote's add screen refuses a fifty first
+favourite with a warning, read in its screens, which matches Logitech's "up to
+50"[^t-touch-favourites-firmware][^x-touch-manual].
+A channel added by hand keeps its own number, name and uploaded picture; one from the provider's list
+takes its logo from Logitech[^t-touch-favourites-firmware]. The documents behind them and every field are
+[favourites-and-settings.md](../../architectures/harmony-touch/favourites-and-settings.md).
+
+## The remote's own settings
+
+**Nine settings act on the remote**: the background, the user's own backgrounds, the clock's 12 or 24 hour
+form, the screen's and the keys' brightness, the screen timeout, the lock screen, the edit lock and the
+motion sensor; with no value from the account, brightness is 85, the timeout 10 seconds and the keys'
+brightness 35[^t-touch-favourites-firmware]. **A setting changed on the remote is kept only when the
+account's settings already list it**[^t-touch-favourites-firmware]; vibration, which the remote's software
+knows, was in none of the three syncs measured[^t-touch-favourites]. The table is
+[favourites-and-settings.md](../../architectures/harmony-touch/favourites-and-settings.md#settings).
+
 ## No compiled configuration exists for this model
 
 **MyHarmony never asks the service to compile one.** The product's capabilities send its sync down the
@@ -59,7 +84,8 @@ channels and commands changed on the remote are not checked[^unchecked].
 
 ## Not checked
 
-* The device, activity and favourite limits as the remote or today's software enforces them[^unchecked].
+* The device and activity limits as the remote or today's software enforces them; the favourites' limit is
+  the remote's code, never tried on one[^unchecked].
 * Which keys take a long press[^unchecked].
 * Learning, gestures and every setting on a unit[^unchecked].
 
@@ -73,3 +99,5 @@ channels and commands changed on the remote are not checked[^unchecked].
 [^t-touch-sync]: Measured on a unit. [The test](../../../packages/usb/test/touch-sync.test.ts)
 [^t-client-reverse-sync]: Stated by Logitech, in their client. [The test](../../../tests/test_client_templates.py), class `TheClientAsksForTheRemotesChangesOnlyWithNothingPending`
 [^t-touch-both-ways]: Measured on a unit. [The test](../../../packages/usb/test/touch-sync-both-ways.test.ts)
+[^t-touch-favourites]: Measured on a unit. [The test](../../../packages/usb/test/touch-favourites.test.ts)
+[^t-touch-favourites-firmware]: Read in the firmware. [The test](../../../tests/test_harmony_touch_favourites.py)

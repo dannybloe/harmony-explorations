@@ -67,9 +67,12 @@ and on a two value code such as `Pioneer 32 Bit 2` it sends the second frame as 
 parses and sends half of what it should.[^s159] `Repeat` is the protocol's ditto frame, `Start` a lead in
 sent once before the payload and `Trailer` a closing frame. **A word is the name of a segment**, and over
 the whole catalogue there are fourteen of them, each naming a segment its own family holds on 1158009 of
-1158024 occurrences; a word naming no segment of its family is refused.[^s233] The position digit is a
-position and nothing further: in order the digits form exactly four runs, `0`, `00`, `01` and `012`, and
-what they index is unread.[^s159]
+1158024 occurrences; a word naming no segment of its family is refused.[^s233] In order the position
+digits form exactly four runs, `0`, `00`, `01` and `012`.[^s159] **The digit is a segment id**: a Harmony
+Touch's firmware splits an item with an `x` in second place into a segment id and a value, and names its
+segments by the same rule, so `0x` is segment 0 and a separator, [the Touch's devices and
+infrared](../architectures/harmony-touch/devices-and-infrared.md#how-a-code-becomes-durations)[^t-touch-engine].
+This said what the digits index was unread<!--superseded--> until that firmware was read.
 
 **`Start` tells two codes of one value apart.** A device can state the same number twice, under two families
 whose rhythms differ: one JVC device in the catalogue states 0xC508 as a `JVC 16 Bit` code and its complement,
@@ -237,6 +240,7 @@ part of its answer: the catalogue holds ranges of near identical codesets, so a 
 `packages/codec/src` is the reader, and anything derived from Logitech's data stays on the machine that
 read it.[^d11]
 
+[^t-touch-engine]: Read in the firmware. [The test](../../tests/test_harmony_touch_devices.py)
 [^s227]: Stated by Logitech, in their catalogue. [Section 227](../../docs/findings.md#s227)
 [^s160]: Measured in configurations. [Section 160](../../docs/findings.md#s160)
 [^s162]: Measured in configurations. [Section 162](../../docs/findings.md#s162)
