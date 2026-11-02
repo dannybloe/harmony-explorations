@@ -6,7 +6,7 @@ switched everything on, picked the right inputs and sent each button to the devi
 
 The remote does all of that by itself, but changing what is on it has always gone through Logitech.
 Logitech stopped making Harmony remotes a couple of years ago and has been closing down the services
-behind them since. The original desktop software stopped working in May 2025, and the MyHarmony service that still
+behind them since. [The original desktop software stopped working in May 2025](https://support.myharmony.com/en-nl/download), and the MyHarmony service that still
 programs the newer models could go the same way at any moment. When it does, a remote keeps doing what it
 did the day it was last synced, and nobody can add a device or change an activity on it again.
 
@@ -56,6 +56,14 @@ the file. Please don't attach it to the issue: this repository is public and a c
 published here. A configuration holds the devices and activities you set up, and no account details.
 
 Issues are also welcome when something in the reference doesn't match what your own remote does.
+
+## A remote in a drawer
+
+If you have a Harmony lying around that is not on the bench list above, and you would like to help this
+project, we would be glad to have it. A remote on the bench lets us check what a configuration only
+suggests: we can read it, measure what it sends and, in time, write a configuration of our own to it. Please
+get in touch by email before sending anything, so we can tell you whether it is a model we still need; the
+address is on the maintainer's [GitHub profile](https://github.com/dannybloe).
 
 ## Backing up your own remote
 
