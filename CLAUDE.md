@@ -105,6 +105,9 @@ keeping those two apart is most of what the split bought.
    a disagreement; where neither firmware nor hardware can answer, the fact is marked client sourced
    per fact and may still be acted on. **What may be copied does not change**: their code stays in
    the private lab, and no identifier, comment or structure of theirs travels into this repository.
+   **A name used as a search term is not a copy**, decided on 2 November 2026: a test may name one of
+   their functions, variables or fields to find the code a fact rests on, and the reference may name
+   fields and paths, but nothing of theirs is quoted as code, and a name never stands in for the reading.
    The argument, the measured cost of the old ordering and the legal basis are decision 9 in
    `docs/plans/002-the-roadmap.md`. What is believed on the client's word alone carries the evidence
    words "Stated by Logitech, in their client" in its footnote, and a search for those words is the
@@ -478,7 +481,7 @@ architecture numbers are this project's internal handle and map to nothing on th
 | 10 | Harmony 890 or 895, known from contributed configurations only | `reference/architectures/harmony-890-895/` |
 | 16 | Harmony 300 or Harmony 350, the file based family; never opened by `openHarmony` | `reference/architectures/harmony-300-350/` |
 | 17 | the number a Harmony Touch reports for itself, and the hub family in Logitech's own template map | `reference/architectures/harmony-touch/` |
-| 18 | Harmony Touch, by Logitech's specification; the remote reports 17, and which is right is that folder's open question | `reference/architectures/harmony-touch/` |
+| 18 | Harmony Touch, by Logitech's templates, their family for this generation's remotes; the remote's firmware reports 17, shared with the hubs, and nothing compares the two | `reference/architectures/harmony-touch/` |
 
 **The failure mode is the trailing mention.** It gets done in headings and first mentions and dropped
 mid-sentence in enumerations, as in "measured on arch 12 and on arch 9 and arch 14 not". That is the
