@@ -21,6 +21,21 @@ bytes, section 195.
 shows that activity. Which client did the sync is not recorded, MyHarmony and Harmony Desktop sharing the
 account, and neither is whether the reads below came before or after it. Recorded on 2 November 2026.
 
+**On 2 November 2026 `/cfg/usercfg` was opened again with that setup on the remote, and refused at open**,
+`todo-touch.md` 1.1. `/sys/sysinfo` opened and read in the same sitting, 234 bytes, firmware 4.15.330, so
+the session worked and the refusal is the path's. A configuration is on the unit and is not at that path,
+which rules out the reading that the earlier refusals were an empty remote. The reads are in the lab's
+`reads/20261102T0852Z-touch-usercfg/`.
+
+**Its USB path changed four times in that sitting**, each listing after the previous one, including once
+with no session opened in between, cause not established. **In that port the remote's screen showed it
+charging and not its USB screen**, the one that names myharmony.com, and it answered both reads all the
+same. In another USB port of the same computer it showed the USB screen, and a repeat of both reads,
+`reads/20261102T0854Z-touch-usercfg/`, gave the same refusal and the same 234 bytes, with the path the same
+across both sessions. So the refusal holds in both states; that the port decides the state and the
+re-enumeration is one comparison, not a measurement. The first
+read attempt, before the cable went straight into the remote, found no remote at all.
+
 ## The first contact with the file based family
 
 The Touch was the first remote of its family this project sent a packet to, on 28 August 2026, and the

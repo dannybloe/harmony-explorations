@@ -31,7 +31,7 @@ Written on 2 November 2026. Not placed in `todo.md`'s sequence yet; linked from 
 
 ## 1. Where the configuration lives, from the firmware
 
-- [ ] 1.1 Open `/cfg/usercfg` on the bench Touch once more, read only, now that it holds a setup synced after the reset
+- [x] 1.1 Open `/cfg/usercfg` on the bench Touch once more, read only, now that it holds a setup synced after the reset; done: refused at open with the setup on it, and `/sys/sysinfo` read in the same sitting as the control, so the configuration is not at that path rather than absent
 - [ ] 1.2 Unpack the Touch's production image, 4.15.330, from the lab's `firmware/packages/sus/` into the lab, and list its file system and its processor
 - [ ] 1.3 Where the remote keeps its configuration on its own file system, in what files and what form
 - [ ] 1.4 Which names the remote answers to over USB, read off the firmware: which are files, which are actions, and whether the configuration is among them
