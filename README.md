@@ -31,16 +31,19 @@ why mistakes are corrected in the open rather than quietly.
 
 ## Where we are
 
-These remotes are on the bench: the Harmony One, 300, 350, 525, 600, 650, 700 and Touch.
+These remotes are on the bench: the Harmony One, 300, 350, 525, 600, 650, 700, 885 and Touch.
 
 * On the Harmony One, 600, 650 and 700 we can read the configuration and account for every byte of it, and
   each of them has run a configuration we built ourselves from scratch, without copying anything from a
   Logitech file.
 * The Harmony 525 can be read completely, and we have written its own configuration back to it. Logitech
   no longer builds configurations for this model at all.
-* The Harmony 300, 350 and Touch use a different protocol, and so far we only read them. The 350 and 300
-  are what we work on next.
-* The Harmony 880, 885, 890 and 895 we know from configurations other people sent in.
+* The Harmony 300 and 350 use a different protocol, and we can read and write them both. We account for
+  every byte of their configuration, and one configuration we built from scratch runs on both: the two are
+  one remote as far as a configuration is concerned, once one small addition keeps the 300 from hanging.
+* The Harmony Touch uses that protocol too, and so far we only read it.
+* The Harmony 885 we read but have not written. The 880, 890 and 895 we know from configurations other
+  people sent in.
 
 ## Sending us your configuration
 

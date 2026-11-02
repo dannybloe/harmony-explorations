@@ -126,8 +126,8 @@ test('the Python table was actually parsed, rather than read as empty', () => {
   // unit, which `tests/test_harmony_300_350_images.py` compares.
   // 311 with the three files of the bench 300's run on the compile with event 0xFF bound, todo-compile-300 4.3,
   // and 312 with the bench 350's check of the same file, 4.4, and 314 with the empty configuration's run and its monitor log,
-  // todo-compile-350 5.1.5.
-  assert.equal(Object.keys(pythonImages()).length, 314, 'every fixture tests/lab.py names');
+  // todo-compile-350 5.1.5, and 316 with the final build's runs on the bench 350 and 300, 5.3.
+  assert.equal(Object.keys(pythonImages()).length, 316, 'every fixture tests/lab.py names');
 });
 
 test('the two sides exclude the same fixtures from the parseable population', () => {

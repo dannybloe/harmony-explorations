@@ -352,6 +352,9 @@ IMAGES = {
     # todo-compile-350 5.1.5, the empty configuration built from nothing on the bench 350, and the monitor's log.
     'h350_empty_ir': '20261101T124100Z-ir-test-harmony-350-the-empty-configuration-built-from-nothing.json',
     'h350_empty_monitor': '20261031T1211Z-ir-monitor.jsonl',
+    # todo-compile-350 5.3, the final build from nothing on the bench 350 and the bench 300.
+    'h350_final_ir': '20261102T063358Z-ir-test-harmony-350-the-final-test-setup-with-event-0xff-bound.json',
+    'h300_final_ir': '20261102T064721Z-ir-test-harmony-300-the-final-test-setup-with-event-0xff-bound.json',
     # todo-compile-350 1.8; the first file is named for 10 s and holds the 3 s run, packages/lab says why.
     'h350_delay_ir_3s': '20261030T094935Z-ir-test-harmony-350-the-tv-s-power-on-delay-at-10-s.json',
     'h350_delay_ir_10s': '20261030T095433Z-ir-test-harmony-350-the-tv-s-power-on-delay-at-10-s.json',

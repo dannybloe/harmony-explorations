@@ -380,6 +380,11 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // log covering the same window. Read by `packages/codec/test/noscreenemptyunit.test.ts`.
   h350_empty_ir: '20261101T124100Z-ir-test-harmony-350-the-empty-configuration-built-from-nothing.json',
   h350_empty_monitor: '20261031T1211Z-ir-monitor.jsonl',
+  // todo-compile-350 5.3: the final build from nothing (`work/setups/h350-test/from-nothing-5.4.bin`, event 0xFF bound)
+  // on the bench Harmony 350 and then on the bench Harmony 300, the same fifteen steps worded for each printing. Read by
+  // `packages/codec/test/noscreenfinalunits.test.ts`.
+  h350_final_ir: '20261102T063358Z-ir-test-harmony-350-the-final-test-setup-with-event-0xff-bound.json',
+  h300_final_ir: '20261102T064721Z-ir-test-harmony-300-the-final-test-setup-with-event-0xff-bound.json',
   h350_delay_ir_3s: '20261030T094935Z-ir-test-harmony-350-the-tv-s-power-on-delay-at-10-s.json',
   h350_delay_ir_10s: '20261030T095433Z-ir-test-harmony-350-the-tv-s-power-on-delay-at-10-s.json',
   h600_delay_ir_before: '20261001T093603Z-ir-test-harmony-600-the-kpn-box-s-power-on-delay.json',

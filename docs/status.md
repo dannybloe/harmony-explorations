@@ -176,6 +176,13 @@ against their backups: user config, application firmware, safe mode, and the int
 serves them, no differences. What is
 verified is that each backup is faithful; **restoring from one has never been tried.**
 
+**The file based family is written too, through its own railed path**, decision 26: the bench Harmony 300 and 350
+take a whole configuration as a file, `/cfg/usercfg`, and each has been given its own back after other files. As of
+2 November 2026 `todo-compile-350.md` chapter 5 is done: one configuration built from nothing, every byte named by
+the generator that wrote it, with firmware event 0xFF bound so it serves both models (decision 28), sent 33 of 33
+expected codes on the bench 350 and the same file 33 of 33 on the bench 300, `packages/codec/test/noscreenfinalunits.test.ts`.
+Two Harmony 885s are on the bench as well, read only.
+
 ## What is still open
 
 *Moved out of `CLAUDE.md` on 29 August 2026. The entries answered since left in plan 009's step 5.1,
