@@ -150,6 +150,8 @@ test('a detail level leaves out what it says it leaves out', () => {
       // glyph's two parts.
       h300eu: { text: 50, marks: 43, keys: 55 },
       h350: { text: 44, marks: 41, keys: 55 },
+      // The 525's printing less the words Mute and Prev, which become the mute and back symbols, two parts each.
+      h515: { text: 42, marks: 40, keys: 50 },
       h525: { text: 44, marks: 36, keys: 50 },
       h600: { text: 37, marks: 56, keys: 54 },
       // The 600's printing with only the nameplate's number changed.

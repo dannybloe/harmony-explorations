@@ -102,6 +102,13 @@ const EXPECTED: Readonly<Record<string, {
   // No code at all: section 133's calibration configurations were compiled for a Harmony One and a
   // Harmony 600, so nothing names a key of this architecture against its code. Its four soft keys carry
   // candidates from the firmware's matrix instead, the test further down.
+  // The 525's face with its nameplate and two keys' markings changed, `h515.ts`, so its counts and their
+  // grounds are the 525's.
+  h515: {
+    buttons: 50,
+    scans: {},
+    why: "the Harmony 525's face, taken shape by shape in `h515.ts` on a statement made holding both",
+  },
   h525: {
     buttons: 50,
     scans: {},
@@ -262,7 +269,7 @@ test('a key whose code is undecided carries candidates and no scan', () => {
      */
     const SETS: Readonly<Record<string, readonly { keys: number; codes: number }[]>> = {
       h300: [], h300eu: [], h350: [{ keys: 1, codes: 2 }],
-      h525: [{ keys: 4, codes: 4 }], h600: [], h650: [], h700: [], one: [], touch: [],
+      h515: [{ keys: 4, codes: 4 }], h525: [{ keys: 4, codes: 4 }], h600: [], h650: [], h700: [], one: [], touch: [],
     };
     const want = SETS[id]!;
     for (const key of undecided) {
@@ -360,7 +367,7 @@ test('the screen carries the raster its own firmware draws into', () => {
    * rather than stretching it. So the aspect is stated and asserted, which can fail if the geometry
    * moves, where a band around the raster could only ever say "close enough".
    */
-  const APERTURE: Readonly<Record<string, number>> = { h525: 1.513, h600: 0.865, h650: 0.865, h700: 0.865, one: 0.794, touch: 0.754 };
+  const APERTURE: Readonly<Record<string, number>> = { h515: 1.513, h525: 1.513, h600: 0.865, h650: 0.865, h700: 0.865, one: 0.794, touch: 0.754 };
   /**
    * Where there is no bezel, the pair of shapes that has to sit symmetric about the glass, and which
    * side of it they are on. A Harmony One has its paging arrows beside the glass; a Harmony Touch has
@@ -548,7 +555,7 @@ test('a model that has no tilted key says so by measurement', () => {
    * a degree on the keys that looked tilted in its photograph.
    */
   const LEVEL: Readonly<Record<string, boolean>> = {
-    h300: true, h300eu: true, h350: true, h525: true, h600: true, h650: true, h700: true, one: true, touch: true,
+    h300: true, h300eu: true, h350: true, h515: true, h525: true, h600: true, h650: true, h700: true, one: true, touch: true,
   };
   for (const [id, model] of drawn) {
     for (const key of model.keys) {

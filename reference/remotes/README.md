@@ -66,7 +66,7 @@ Logitech sold, and which of them its software stopped serving, is
 | 59 | Harmony One EMEA | Harmony One | 12 | colour | yes | 15 | 24 |  | yes | yes | no | 3.4.0 | [harmony-one](harmony-one/README.md) |
 | 65 | Harmony 610 |  | 7 | monochrome | no | 5 | 23 |  | yes | no | no | 3.5.0 |  |
 | 66 | Harmony 700 | Harmony 700 EMEA | 14 | colour | no | 8 | 23 |  | yes | yes | no | 2.5.0 | [harmony-700](harmony-700/README.md) |
-| 67 | Harmony 515 | Harmony 510 | 9 | monochrome | no | 5 | none |  | yes | no | no | 3.4.0 |  |
+| 67 | Harmony 515 | Harmony 510 | 9 | monochrome | no | 5 | none |  | yes | no | no | 3.4.0 | [harmony-515](harmony-515/README.md) |
 | 68 | Harmony 510 | Harmony 515 | 9 | monochrome | no | 5 | none |  | yes | no | no | 3.4.0 |  |
 | 69 | Harmony 700 EMEA | Harmony 700 | 14 | colour | no | 8 | 23 |  | yes | yes | no | 2.5.0 | [harmony-700](harmony-700/README.md) |
 | 71 | Harmony 600 | Harmony 600 EMEA | 14 | monochrome | no | 5 | 23 |  | yes | yes | no | 0.2 | [harmony-600](harmony-600/README.md) |

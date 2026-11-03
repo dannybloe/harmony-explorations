@@ -176,6 +176,8 @@ export const REMOTES: readonly RemoteFolder[] = [
   // carries, `reference/remotes/harmony-525/README.md`, so it is not this drawing's skin and not this
   // folder's.
   { folder: 'harmony-525', skins: [22], drawing: 'h525', architecture: 9 },
+  // Skin 67 alone, as the drawing serves it; whether skin 68, the Harmony 510, has this face is not checked.
+  { folder: 'harmony-515', skins: [67], drawing: 'h515', architecture: 9 },
   // **Architecture 17 is what the remote reports**, `/sys/sysinfo` read off a unit, section 200, and
   // Logitech's own specification says 18, section 197. The drawing takes the remote's word and so
   // does this row; the folder states both.

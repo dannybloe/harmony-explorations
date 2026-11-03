@@ -20,7 +20,7 @@ models share it is not checked.[^unchecked]
 |---|---|---|
 | Harmony 525 | [harmony-525](../../remotes/harmony-525/README.md) | measured on a unit and read in its firmware images |
 | Harmony 520 | none | nothing measured. The 525 under its other regional name, with a face of its own, [the 525's README](../../remotes/harmony-525/README.md) |
-| Harmony 515 | none | its USB identity and version block measured on a unit, and its two stored firmware images read off it: firmware 3.4, a different build from the 525's 3.0[^t-harmony-515] |
+| Harmony 515 | [harmony-515](../../remotes/harmony-515/README.md) | its USB identity and version block measured on a unit, and its two stored firmware images read off it: firmware 3.4, a different build from the 525's 3.0[^t-harmony-515] |
 | Harmony 510, 550, 555, Xbox 360 | none | nothing measured. `models.ts` places them here; Logitech's protocol templates name skin 68, the Harmony 510, at architecture 9[^s197] |
 
 Concordance's table lists a Harmony 522 here as well, which `models.ts` names without a

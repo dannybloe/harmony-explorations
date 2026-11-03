@@ -40,7 +40,7 @@ SVG = '{http://www.w3.org/2000/svg}'
 # block; the Harmony 300's European printing has a block of its own beside the US one's.
 KEYS_PAGE = {
     'h300.svg': 'harmony-300', 'h300eu.svg': ('harmony-300', 'keys-h300eu'), 'h350.svg': 'harmony-350',
-    'h525.svg': 'harmony-525',
+    'h515.svg': 'harmony-515', 'h525.svg': 'harmony-525',
     'h600.svg': 'harmony-600', 'h650.svg': 'harmony-650', 'h700.svg': 'harmony-700',
     'one.svg': 'harmony-one', 'touch.svg': 'harmony-touch',
 }
@@ -267,6 +267,9 @@ class TestTheHarmony525Silhouette(_SilhouetteConventions, unittest.TestCase):
     # The four soft keys' codes, as a set. Section 119's capability table records why they matter: the
     # 5xx has no page button, so these carry the mode switches.
     SOFT_KEY_CODES = {'30', '31', '38', '39'}
+    # The one name of its regional pair this file carries, and the pair written as both.
+    MODEL_NAME = 'Harmony 525'
+    BOTH_NAMES = '520 / 525'
 
     def test_the_four_soft_keys_carry_the_candidate_set_and_not_a_guess(self):
         """
@@ -311,11 +314,35 @@ class TestTheHarmony525Silhouette(_SilhouetteConventions, unittest.TestCase):
         only the part that is established: one name, and the colour keys that are the reason for it.
         """
         text = _text(self.NAME)
-        self.assertIn('Harmony 525', text)
-        self.assertNotIn('520 / 525', text)
+        self.assertIn(self.MODEL_NAME, text)
+        self.assertNotIn(self.BOTH_NAMES, text)
         # And the colour keys are the reason, so they have to actually be here.
         buttons = _buttons(_tree(self.NAME).getroot())
         self.assertEqual(sorted(k for k in buttons if k in PALETTE), sorted(PALETTE))
+
+
+class TestTheHarmony515Silhouette(TestTheHarmony525Silhouette):
+    """
+    The Harmony 525's face with `Harmony 515` above the screen and symbols on Mute and Prev: every
+    shape is taken from the 525's model, on a statement made holding both, so every claim the 525's
+    drawing carries holds here and the three differences are what to check.
+    """
+
+    NAME = 'h515.svg'
+    MODEL_NAME = 'Harmony 515'
+    BOTH_NAMES = '510 / 515'
+
+    def test_the_nameplate_names_this_model(self):
+        text = _text(self.NAME)
+        self.assertIn('>Harmony 515<', text)
+        self.assertNotIn('>Harmony 525<', text)
+
+    def test_mute_and_prev_carry_symbols_where_the_525_prints_words(self):
+        mine, theirs = _text(self.NAME), _text(TestTheHarmony525Silhouette.NAME)
+        for word in ('>Mute<', '>Prev<'):
+            with self.subTest(word=word):
+                self.assertIn(word, theirs)
+                self.assertNotIn(word, mine)
 
 
 class TestTheHarmony600Silhouette(_SilhouetteConventions, unittest.TestCase):
@@ -711,6 +738,7 @@ class TestTheSilhouetteDirectory(unittest.TestCase):
         'h300.svg': TestTheHarmony300Silhouette,
         'h300eu.svg': TestTheHarmony300EuropeanSilhouette,
         'h350.svg': TestTheHarmony350Silhouette,
+        'h515.svg': TestTheHarmony515Silhouette,
         'h525.svg': TestTheHarmony525Silhouette,
         'h600.svg': TestTheHarmony600Silhouette,
         'h650.svg': TestTheHarmony650Silhouette,

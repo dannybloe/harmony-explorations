@@ -20,6 +20,7 @@ export type { SvgOptions } from './svg.ts';
 import { H300 } from './models/h300.ts';
 import { H300EU } from './models/h300eu.ts';
 import { H350 } from './models/h350.ts';
+import { H515 } from './models/h515.ts';
 import { H525 } from './models/h525.ts';
 import { H600 } from './models/h600.ts';
 import { H650 } from './models/h650.ts';
@@ -30,10 +31,10 @@ import type { Key, Model } from './types.ts';
 
 /** Every model that is drawn. A model absent from here has not been measured yet. */
 export const MODELS: Readonly<Record<string, Model>> = {
-  h300: H300, h300eu: H300EU, h350: H350, h525: H525, h600: H600, h650: H650, h700: H700, one: ONE, touch: TOUCH,
+  h300: H300, h300eu: H300EU, h350: H350, h515: H515, h525: H525, h600: H600, h650: H650, h700: H700, one: ONE, touch: TOUCH,
 };
 
-export { H300, H300EU, H350, H525, H600, H650, H700, ONE, TOUCH };
+export { H300, H300EU, H350, H515, H525, H600, H650, H700, ONE, TOUCH };
 
 /**
  * The key a name refers to on this model.
