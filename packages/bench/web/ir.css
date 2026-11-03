@@ -77,6 +77,9 @@ section.card { border-top: 1px solid var(--line); }
 .steps li.current input { cursor: pointer; }
 .steps li.done .instruction { color: var(--dim); }
 .steps li.pending .instruction { color: var(--dim); }
+.steps .instruction .action { display: block; }
+.steps .instruction .action.next { padding-left: 1.5em; }
+.steps .instruction .action.next::before { content: '→ '; color: var(--dim); }
 .steps .verdict { display: block; font-weight: 400; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.8rem; }
 .steps .verdict.ok { color: var(--ok); }
 .steps .verdict.bad { color: var(--bad); }

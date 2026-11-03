@@ -437,7 +437,12 @@ function showSteps() {
     box.disabled = !current;
     box.title = current ? 'tick when this step is done' : '';
     box.addEventListener('change', () => void runAction('/api/ir/run/next'));
-    const label = el('span', `${index + 1}. ${plan.instruction}`, 'instruction');
+    // An instruction of several actions joined by → is drawn one action per line, so a person at the
+    // bench can see where they are in the sequence; the number sits on the first line.
+    const label = el('span', '', 'instruction');
+    plan.instruction.split('→').map((part) => part.trim()).filter((part) => part !== '').forEach((part, at) => {
+      label.append(el('span', at === 0 ? `${index + 1}. ${part}` : part, at === 0 ? 'action' : 'action next'));
+    });
     item.append(box, label);
     // Every expected command is a row of its own from the moment the step is listed, so a person at the
     // bench sees a checklist that ticks as the codes arrive. The run judges a step only once a frame has

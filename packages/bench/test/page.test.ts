@@ -239,7 +239,7 @@ test('the infrared page shows one mode at a time, and a test is a checklist that
     steps: [
       { instruction: 'Press Off' },
       { instruction: 'Start TV kijken', expect: [{ device: 'TV', command: 'PowerOn' }] },
-      { instruction: 'Press Off again' },
+      { instruction: 'Wait → Press Off again' },
     ],
   }));
   let feed: (line: string) => void = () => {};
@@ -287,6 +287,8 @@ test('the infrared page shows one mode at a time, and a test is a checklist that
     // Each expected command is a row of its own, a checklist, rather than one "listening for" line.
     assert.match(await steps.nth(1).locator('.verdict').first().textContent() ?? '', /· TV · PowerOn/);
     assert.doesNotMatch(await steps.nth(1).textContent() ?? '', /listening for/);
+    // An instruction of several actions is drawn one action per line.
+    assert.equal(await steps.nth(2).locator('.instruction .action').count(), 2);
 
     await page.getByRole('button', { name: 'Start test' }).click();
     await until(async () => (await steps.nth(0).getAttribute('class')) === 'current', 'step 1 is not marked current');
