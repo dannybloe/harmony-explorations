@@ -337,9 +337,11 @@ function chosenTest() {
 
 function aboutTest() {
   const chosen = chosenTest();
+  // Only a test's one line `summary` is shown. Its `description` holds the predictions and the reasons for
+  // the record and is not read at the bench, where a paragraph above the steps is only in the way.
   $('test-about').textContent = chosen === undefined
     ? 'no tests in packages/bench/irtests'
-    : chosen.definition.description ?? '';
+    : chosen.definition.summary ?? '';
   showSteps();
 }
 

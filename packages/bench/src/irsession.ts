@@ -47,6 +47,8 @@ export interface TestStep {
 export interface TestDefinition {
   readonly name: string;
   readonly description?: string;
+  /** One short line the bench page shows above the steps; the description is for the record and is not shown. */
+  readonly summary?: string;
   readonly steps: readonly TestStep[];
 }
 
