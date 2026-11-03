@@ -284,7 +284,9 @@ test('the infrared page shows one mode at a time, and a test is a checklist that
     const steps = page.locator('#run-steps li');
     await until(async () => (await steps.count()) === 3, 'the checklist did not show before Start');
     assert.equal(await page.locator('#run-steps input:checked').count(), 0);
-    assert.match(await steps.nth(1).textContent() ?? '', /listening for TV · PowerOn/);
+    // Each expected command is a row of its own, a checklist, rather than one "listening for" line.
+    assert.match(await steps.nth(1).locator('.verdict').first().textContent() ?? '', /· TV · PowerOn/);
+    assert.doesNotMatch(await steps.nth(1).textContent() ?? '', /listening for/);
 
     await page.getByRole('button', { name: 'Start test' }).click();
     await until(async () => (await steps.nth(0).getAttribute('class')) === 'current', 'step 1 is not marked current');

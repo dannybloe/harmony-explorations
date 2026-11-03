@@ -437,9 +437,16 @@ function showSteps() {
     box.addEventListener('change', () => void runAction('/api/ir/run/next'));
     const label = el('span', `${index + 1}. ${plan.instruction}`, 'instruction');
     item.append(box, label);
+    // Every expected command is a row of its own from the moment the step is listed, so a person at the
+    // bench sees a checklist that ticks as the codes arrive. The run judges a step only once a frame has
+    // arrived in it, so until then the rows are drawn from the plan, waiting; once judged, the verdict
+    // rows below replace them. A one line "listening for" summary was hard to follow with three or more.
     const expect = plan.expect ?? [];
-    if (expect.length > 0 && !done && step?.reached !== false) {
-      item.append(el('span', `listening for ${expect.map(expectLabel).join(', then ')}`, 'heard'));
+    const judged = (step?.verdicts ?? []).length > 0;
+    if (expect.length > 0 && !done && step?.reached !== false && !judged) {
+      for (const want of expect) {
+        item.append(el('span', `${current ? '…' : '·'} ${expectLabel(want)}${current ? ': not heard yet' : ''}`, 'verdict wait'));
+      }
     }
     const heardPresses = (step?.presses ?? []).filter((press) => !hidden(press.frame));
     // What the switch hid is said per step too, so a step is never shown as silent when it was not.

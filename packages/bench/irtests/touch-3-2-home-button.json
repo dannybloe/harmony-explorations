@@ -1,0 +1,25 @@
+{
+  "name": "Harmony Touch, the Home button leaves device mode",
+  "description": "A repeat of step 4 of the Harmony Touch's monitor checks, since the first run pressed the LG TV's own Home entry on the screen, which sent the LG TV's Home code and kept device mode, so its Volume Up went to the LG TV. Predicted: the Home button of the keypad, on the activity list while Watch TV runs, goes to Watch TV's start screen and ends device mode, so Volume Up sends the Denon's VolumeUp and the LG TV sends nothing on the Home button. The LG TV's VolumeUp instead would mean device mode survived the Home button. A reading of the firmware, never seen on a unit.",
+  "steps": [
+    {
+      "instruction": "Activity: Watch TV"
+    },
+    {
+      "instruction": "Screen: Devices → Screen: LG TV → Button: Home → Button: Volume Up",
+      "expect": [
+        {
+          "device": [
+            "Denon",
+            "Denon_AV_Receiver",
+            "Denon AV Receiver"
+          ],
+          "command": "VolumeUp"
+        }
+      ]
+    },
+    {
+      "instruction": "Button: Off"
+    }
+  ]
+}
