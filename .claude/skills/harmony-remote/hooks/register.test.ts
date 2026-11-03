@@ -26,6 +26,13 @@ test('a remote on the 880 platform is named by the skin in its bcdDevice, not by
   expect(modelName(0xc121, 0)).toBe('Harmony One')
 })
 
+test('a remote on the 525 platform is named by the skin in its bcdDevice, not by its product id', () => {
+  // Both values as each remote reported them on the bench.
+  expect(modelName(0xc111, 0x0916)).toBe('Harmony 525')
+  expect(modelName(0xc111, 0x0943)).toBe('Harmony 515')
+  expect(modelName(0xc111, 0x0999)).toBe('Harmony 5xx')
+})
+
 const journal = [
   '# write-config.ts --config x.bin --dump h650_base --commit',
   'unit identity 7ad856f5..., which matches the recorded h650',

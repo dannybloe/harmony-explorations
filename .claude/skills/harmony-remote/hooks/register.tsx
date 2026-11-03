@@ -50,7 +50,7 @@ const MICROCHIP = 0x04d8
 const BOOTLOADER = 0x000b
 const MODELS: Record<number, string> = {
   0xc110: 'Harmony 880/885',
-  0xc111: 'Harmony 525',
+  0xc111: 'Harmony 5xx',
   0xc121: 'Harmony One',
   0xc122: 'Harmony 600/650/700',
   0xc124: 'Harmony 300/350',
@@ -69,9 +69,25 @@ const ESPRESSO_SKINS: Record<number, string> = {
   45: 'Harmony 785',
 }
 
+// The Harmony 525 family shares one product id too, and carries its skin the same way, in the low
+// byte of bcdDevice in plain binary (harmony-explorations reference/architectures/harmony-5xx/usb.md):
+// 0x0916 is skin 22, a Harmony 525, and 0x0943 is skin 67, a Harmony 515. Naming the product id alone
+// showed a 515 as a 525 on the cable.
+const MOCHA = 0xc111
+const MOCHA_SKINS: Record<number, string> = {
+  18: 'Harmony 520',
+  22: 'Harmony 525',
+  36: 'Harmony Xbox 360',
+  41: 'Harmony 550',
+  48: 'Harmony 555',
+  67: 'Harmony 515',
+  68: 'Harmony 510',
+}
+
 /** The name to show for a Harmony's product id, and its bcdDevice where the product id is shared. */
 export function modelName(product: number, bcdDevice: number): string {
   if (product === ESPRESSO) return ESPRESSO_SKINS[bcdDevice & 0xff] ?? MODELS[product]!
+  if (product === MOCHA) return MOCHA_SKINS[bcdDevice & 0xff] ?? MODELS[product]!
   return MODELS[product] ?? `Harmony 0x${product.toString(16)}`
 }
 
