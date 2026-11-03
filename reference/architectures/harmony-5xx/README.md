@@ -10,16 +10,18 @@ share is stated in one place and named as the platform's.
 project.[^x-concordance][^s197] This library's model table, `MODELS_BY_SKIN` in `packages/usb/src/models.ts`,
 places the seven models above on it, naming each skin as Logitech's client does;[^s207] Logitech's own
 protocol templates confirm one of them, the 510, and for the others the placement is not checked against a
-remote or a specification.[^unchecked] **One of them has been measured**: the Harmony 525,[^s76] whose
-folder is [harmony-525](../../remotes/harmony-525/README.md). So everything in this folder that is measured
-or read in a firmware image is measured on a Harmony 525 or read in its image, and whether the other models
-share it is not checked.[^unchecked]
+remote or a specification.[^unchecked] **Two of them have been measured**: the Harmony 525,[^s76] whose
+folder is [harmony-525](../../remotes/harmony-525/README.md), and the Harmony 515, for its USB identity, its
+firmware build and one configuration read off it.[^t-harmony-515] So everything in this folder that is measured or read in a firmware
+image is measured on a Harmony 525 or read in its image unless it names the 515, and whether the other
+models share it is not checked.[^unchecked]
 
 | model | folder | what is known |
 |---|---|---|
 | Harmony 525 | [harmony-525](../../remotes/harmony-525/README.md) | measured on a unit and read in its firmware images |
 | Harmony 520 | none | nothing measured. The 525 under its other regional name, with a face of its own, [the 525's README](../../remotes/harmony-525/README.md) |
-| Harmony 510, 515, 550, 555, Xbox 360 | none | nothing measured. `models.ts` places them here; Logitech's protocol templates name skin 68, the Harmony 510, at architecture 9[^s197] |
+| Harmony 515 | none | its USB identity and version block measured on a unit, and its two stored firmware images read off it: firmware 3.4, a different build from the 525's 3.0[^t-harmony-515] |
+| Harmony 510, 550, 555, Xbox 360 | none | nothing measured. `models.ts` places them here; Logitech's protocol templates name skin 68, the Harmony 510, at architecture 9[^s197] |
 
 Concordance's table lists a Harmony 522 here as well, which `models.ts` names without a
 record.[^x-concordance]
@@ -40,7 +42,9 @@ record.[^x-concordance]
 Generated from `MODELS_BY_SKIN` in `packages/usb/src/models.ts` by `make remote-reference-write`. Change the source, not this block.
 <!-- /generated -->
 
-Skin 22 is measured in a remote's version block and in its firmware's literals.[^s76][^s57] Every other row
+Skin 22 is measured in a remote's version block and in its firmware's literals,[^s76][^s57] and skin 67 in a
+remote's descriptor, its version block and its firmware image, and in the configuration read off it, which
+also measured that row's firmware, 3.4, on a unit.[^t-harmony-515] Every other row
 names its model as Logitech's client does;[^s207] the device maxima of skins 18, 22 and 36 are Logitech's
 service's,[^s136] and the remaining capability columns are the forum comparison table's.[^x-forum]
 
@@ -59,7 +63,7 @@ Measured or read on a Harmony 525, per the opening paragraph.
 | screen raster | 96 by 64, one bit a pixel[^s62][^s148] |
 | keypad | 8 by 8 over one sense line, scan code `group * 8 + column`[^s89] |
 | state variables the firmware owns | 0 to 12, where architectures 8, 12, 14 and 16 own 0 to 17[^s284][^t-state-block] |
-| USB | product id `0xC111`, a seven field version block, `bcdDevice` as protocol and skin in plain hex, [usb.md](usb.md)[^s76] |
+| USB | product id `0xC111`, a seven field version block, `bcdDevice` as protocol and skin in plain hex, on the 515 as on the 525, [usb.md](usb.md)[^s76][^t-harmony-515] |
 | the host protocol family | the HID command protocol: Logitech groups architectures 9, 12 and 14 as one legacy protocol, and every other architecture takes the file protocol[^s197] |
 | Logitech's software | the classic Harmony Remote Software. Logitech's live service accepts a skin 22 remote and has it switched off, so it compiles no configuration for one[^s135][^s145] |
 
@@ -79,7 +83,8 @@ thing between a wrong address and both firmware images.[^s267] [usb.md](usb.md) 
 
 ## Not checked
 
-* Every model here but the Harmony 525: its flash size, its firmware, its face.[^unchecked]
+* Every model here but the Harmony 525: its flash size and its face, and its firmware for every model but
+  the 525 and the 515.[^unchecked]
 * Whether a skin 18 configuration differs from a skin 22 one in anything but the teletext keys.[^unchecked]
 
 [^x-concordance]: Stated by a third party. [concordance](https://github.com/jaymzh/concordance)
@@ -87,6 +92,7 @@ thing between a wrong address and both firmware images.[^s267] [usb.md](usb.md) 
 [^s207]: Stated by Logitech, in their client. [Section 207](../../../docs/findings.md#s207)
 [^unchecked]: Not checked.
 [^s76]: Measured on a unit. [Section 76](../../../docs/findings.md#s76)
+[^t-harmony-515]: Measured on a unit. [The test](../../../tests/test_harmony_515.py)
 [^s57]: Read in the firmware. [Section 57](../../../docs/findings.md#s57)
 [^s136]: Stated by Logitech, by their service. [Section 136](../../../docs/findings.md#s136)
 [^x-forum]: Stated by a third party. [The forum comparison table](https://www.harmony-remote-forum.de/harmony_compare.php)

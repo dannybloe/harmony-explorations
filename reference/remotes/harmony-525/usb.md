@@ -1,6 +1,6 @@
 # Harmony 525: USB
 
-A 525 plugs into a computer as a USB device of Logitech's with a product id of its own, and a host reads
+A 525 plugs into a computer as a USB device of Logitech's with the product id its platform shares, and a host reads
 and writes it with the same short commands as the later remotes, fewer of them implemented. The
 protocol, the command set and the write rails are the architecture's, [the architecture's
 usb.md](../../architectures/harmony-5xx/usb.md); this page states what is the 525's own.
@@ -20,7 +20,7 @@ Generated from `packages/corpus` and `packages/usb` by `make remote-reference-wr
 
 | field | value |
 |---|---|
-| vendor and product id | `046D:C111`, its own[^s76] |
+| vendor and product id | `046D:C111`, which the Harmony 515 enumerates too[^s76][^t-harmony-515] |
 | `bcdDevice` | `0x0916`: protocol 9 and skin 22 in plain hex[^s76][^s195] |
 | product string | `Harmony Remote 0-3.0.0`,[^s76] and `Harmony Safe Mode!` in safe mode[^s118] |
 | version block | `27 30 25 12 ff 90 16 09`: seven fields[^s76] |
@@ -52,6 +52,7 @@ safe mode from the application: only the product string does.[^s118]
 * A learn capture.[^unchecked]
 
 [^s76]: Measured on a unit. [Section 76](../../../docs/findings.md#s76)
+[^t-harmony-515]: Measured on a unit. [The test](../../../tests/test_harmony_515.py)
 [^s195]: Measured on a unit. [Section 195](../../../docs/findings.md#s195)
 [^s118]: Measured on a unit. [Section 118](../../../docs/findings.md#s118)
 [^s268]: Measured on a unit. [Section 268](../../../docs/findings.md#s268)

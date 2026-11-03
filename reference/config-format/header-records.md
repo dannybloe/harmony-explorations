@@ -94,7 +94,7 @@ what makes a configuration describe itself.[^s15]
 ```
 
 Examples: `0c 0c 3b 0d` on a Harmony One, `0e 0e 49 0d` and `0e 0e 42 0d` on a Harmony 600 and 700,
-`09 09 16 0d` on a Harmony 525, `08 08 0f 0d` and `08 08 11 0d` on a Harmony 880 and 885.[^s182] The
+`09 09 16 0d` on a Harmony 525 and `09 09 43 0d` on a Harmony 515,[^t-harmony-515-c] `08 08 0f 0d` and `08 08 11 0d` on a Harmony 880 and 885.[^s182] The
 Harmony 350 states architecture 16 and skin 104 the same way, `10 10 68 0d`, and the Harmony 300 states its own skin, `10 10 4f 0d`, 79 on the European model.[^s259][^t-harmony-350-skin-c] The skins are the model numbers
 in [the remotes index](../remotes/README.md). On the Harmony 890 and 895 the record is raw slot 0,
 `0a 0a 13 0d` and `0a 0a 17 0d`.[^s182]
@@ -112,7 +112,9 @@ Harmony 880 and 885's safe mode container, inside their firmware images, has two
 so it declares architecture 0.[^s114] That makes three behaviours over three safe mode containers: the
 Harmony One's names its own model exactly, the Harmony 525's names skin 18 where the remote it came from is
 skin 22, both being what Logitech's table calls the Mocha Decaf family, and the Harmony 880's names
-nothing. **So a reader must not take a model or an architecture out of a safe mode container**; the
+nothing. The one inside a Harmony 515's application image names skin 67, the skin of the unit it was read
+off, in a full seven byte record; since 18 and 67 are each the lower skin of their regional pair, what
+decides the skin a safe mode container names is not established.[^t-harmony-515-c] **So a reader must not take a model or an architecture out of a safe mode container**; the
 record is load bearing for user configurations only.[^s114]
 
 ### The version word
@@ -124,6 +126,8 @@ What the word means as a whole is **not established**. Measured:[^s15][^s81b]
 | Harmony One safe mode container, from firmware 3.4 | 12 | 3126 |
 | Harmony 880 and 885 user configurations | 8 | 3343, and 3345 on one 885 |
 | Harmony 525 user configuration | 9 | 3350 |
+| Harmony 515 user configuration | 9 | 3395[^t-harmony-515-c] |
+| Harmony 515 safe mode container, inside its application image | 9 | 3139[^t-harmony-515-c] |
 | Harmony One user configurations | 12 | 3387 and 3382 |
 | Harmony 700 user configuration, and the container inside 700 firmware 2.8 | 14 | 3394 |
 | Harmony 600 user configuration | 14 | 3401 |
@@ -136,10 +140,12 @@ carries 3387 before a sync with Logitech's service and 3382 after it.[^s81b]
 architecture.[^s81b][^s113] Seven of the nine containers whose remote's skin is known independently carry
 it exactly, 54, 66, 71, 72, 22, 15 and 17. The two that do not carry 59 and 73, the **European variants of
 those same two models**, the Harmony One EMEA and the Harmony 600 EMEA, per Logitech's product
-catalogue.[^s131] So it names a model the way a skin does. **Which member of a regional pair a
+catalogue.[^s131] A Harmony 515's configuration, read off a unit whose descriptor states skin 67, carries
+67 as well, outside that count.[^t-harmony-515-c] So it names a model the way a skin does. **Which member of a regional pair a
 configuration carries is not established**: the locale passed to the compiler and the product the account
 holds are both candidates.[^s131] The high byte is `0x0D` in every container built from 2009 on and `0x0C`
-in the Harmony One's 2007 factory container.[^s81b]
+in the Harmony One's 2007 factory container,[^s81b] and in the safe mode container a Harmony 515's application
+image carries, built in 2008.[^t-harmony-515-c]
 
 **Nothing on the remote reads this section, or base slot 0.** The firmware's section seeker is called with
 raw slots 2 to 19 on the Harmony One and 3 to 17 on the Harmony 700, and with 0 and 1 on neither, so both
@@ -238,6 +244,7 @@ one Harmony One before and after a sync with Logitech's service, is ordered corr
 [^s86]: Measured in configurations. [Section 86](../../docs/findings.md#s86)
 [^s259]: Measured in configurations. [Section 259](../../docs/findings.md#s259)
 [^t-harmony-350-skin-c]: Measured in configurations. [The test](../../tests/test_harmony_350_skin.py)
+[^t-harmony-515-c]: Measured in configurations. [The test](../../tests/test_harmony_515.py)
 [^s79]: Measured in configurations. [Section 79](../../docs/findings.md#s79)
 [^s114]: Measured in configurations. [Section 114](../../docs/findings.md#s114)
 [^s81b]: Measured in configurations. [Section 81](../../docs/findings.md#s81)

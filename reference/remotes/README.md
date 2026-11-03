@@ -83,7 +83,7 @@ not Logitech's:
 
 | column | source |
 |---|---|
-| skin, model, regional twin | Logitech's classic client names a model per skin[^s207]; its later service names the rest, the European skins among them[^s131]. The skin of six models is confirmed by a remote or by its firmware: 15, 22, 54, 66, 71 and 72[^s57][^s81] |
+| skin, model, regional twin | Logitech's classic client names a model per skin[^s207]; its later service names the rest, the European skins among them[^s131]. The skin of seven models is confirmed by a remote or by its firmware: 15, 22, 54, 66, 67, 71 and 72[^s57][^s81][^t-harmony-515] |
 | architecture | Logitech's client places each skin on a platform[^s207], and its teaching pictures name an architecture for the older skins[^s208]; the architecture of the Harmony 525, One, 600, 650 and 700 is also read off a remote or a configuration[^s57][^s182] |
 | max devices | Logitech's service, its `MaxDevicesPerAccount`[^s136] |
 | favourite channel buttons | Logitech's service for the skins of the Harmony One, 300, 600, 650 and 700[^t-product-table], the comparison table for the rest[^x-forum] |
@@ -197,7 +197,7 @@ remotes. Field by field:
 
 | field | standing |
 |---|---|
-| skin and architecture | **confirmed** for skins 15, 22, 54, 66, 71 and 72, from firmware literals and from remotes, none of which consulted Logitech's table[^s57][^s81] |
+| skin and architecture | **confirmed** for skins 15, 22, 54, 66, 67, 71 and 72, from firmware literals and from remotes, none of which consulted Logitech's table[^s57][^s81][^t-harmony-515] |
 | touch | **confirmed, including the negative**: base slot 17 is a touch hit map on the Harmony One's architecture and names the picture bank on every other, and the One is the only model with a record that the table calls touch[^s45][^s62] |
 | panel | **Logitech's service** for the six models it was asked about[^t-capabilities]; **not derivable from a configuration**: the Harmony 600's screen is monochrome and its configuration carries two byte colour pixels like every architecture 14 configuration, so the pixel format is the architecture's and the panel the model's[^s51][^s387] |
 | page button | **consistent**: the 5xx has none, and its four soft keys enter a mode by index, so paging is a soft key binding there, [the 525's keys](harmony-525/keys.md); how often its configurations bind it is not checked[^unchecked] |
@@ -283,6 +283,7 @@ it; [the architectures](../architectures/README.md#three-ways-a-host-talks-to-a-
   carries rather than choosing one[^unchecked].
 
 [^s57]: Read in the firmware. [Section 57](../../docs/findings.md#s57)
+[^t-harmony-515]: Measured on a unit. [The test](../../tests/test_harmony_515.py)
 [^s131]: Stated by Logitech, by their service. [Section 131](../../docs/findings.md#s131)
 [^s182]: Measured in configurations. [Section 182](../../docs/findings.md#s182)
 [^s387]: Measured on a unit. [Section 387](../../docs/findings.md#s387)

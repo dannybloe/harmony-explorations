@@ -278,6 +278,10 @@ CONTAINERS = (
     'harvest_one_families_1', 'harvest_one_families_2', 'harvest_one_families_3',
     # The friend's Harmony One as it came and after a sync, and the friend's Harmony 525 as it came.
     'one_friend_asfound_config', 'one_friend_legacy_sync_config', 'h525_friend_asfound_config',
+    # The Harmony 515 from onyiaic as it came.
+    'h515_onyiaic_asfound_config',
+    # Both copies of its application image, each carrying the safe mode container at 0x8000.
+    'h515_application_firmware', 'h515_contributed_application',
     # The spare Harmony One's bench regions of todo-compile-one.
     'one_spare_track_start', 'one_spare_look_base', 'one_spare_look_written',
     'one_spare_glow_written', 'one_spare_arrows_written', 'one_spare_bottom_written',

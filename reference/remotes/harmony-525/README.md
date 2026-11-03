@@ -35,7 +35,7 @@ skin 18 remote or configuration has been read.[^unchecked]
 | | value |
 |---|---|
 | architecture | 9, version block field 4 `0x90`[^s76] and stated in every configuration's base slot 1[^s76b] |
-| USB product id | `0xC111`, its own,[^s76] [usb.md](usb.md) |
+| USB product id | `0xC111`, which the Harmony 515 enumerates too, so the skin in `bcdDevice` tells them apart,[^s76][^t-harmony-515] [usb.md](usb.md) |
 | `bcdDevice` | `0x0916`, protocol 9 and skin 22 in plain hex, not the later `1000 + skin` form[^s76][^s195] |
 | version block | seven fields, not twelve[^s76] |
 | firmware | 3.0,[^s76] safe mode image 2.0[^s118] |
@@ -75,6 +75,7 @@ The architecture folder: [harmony-5xx](../../architectures/harmony-5xx/README.md
 
 [^x-manual]: Stated by Logitech, in the manual. [The Harmony 525 user manual](https://www.manualslib.com/manual/454951/Logitech-Harmony-525.html)
 [^s76]: Measured on a unit. [Section 76](../../../docs/findings.md#s76)
+[^t-harmony-515]: Measured on a unit. [The test](../../../tests/test_harmony_515.py)
 [^s267]: Read in the firmware. [Section 267](../../../docs/findings.md#s267)
 [^s137]: Measured on a unit. [Section 137](../../../docs/findings.md#s137)
 [^s268]: Measured on a unit. [Section 268](../../../docs/findings.md#s268)

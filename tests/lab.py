@@ -536,6 +536,15 @@ IMAGES = {
     'one_friend_asfound_config': 'one-friend-asfound-config.bin',
     'one_friend_legacy_sync_config': 'one-friend-legacy-sync-config.bin',
     'h525_friend_asfound_config': 'h525-friend-asfound-config.bin',
+    # A Harmony 515 received from onyiaic, as it came, 3 November 2026, read only.
+    'h515_onyiaic_asfound_config': 'h515-onyiaic-asfound-config.bin',
+    # The same unit's two stored firmware images, 64 KiB each from 0x810000 and 0x800000, and the two
+    # images kkong42 posted for a Harmony 515 as harmony-decompiler issue 35. The two pairs are byte
+    # identical, which `tests/test_harmony_515.py` asserts.
+    'h515_application_firmware': '20261103T1517Z-h515-fw-application-region.bin',
+    'h515_safemode_firmware': '20261103T1517Z-h515-fw-safemode-region.bin',
+    'h515_contributed_application': 'H515-Firmware.bin',
+    'h515_contributed_safemode': 'H515-Safemode.bin',
     # The spare Harmony One either side of a sync, 7 August 2026. The change was decided and
     # written down before it was made, which no other pair here can say, and the second half was
     # compiled by the live service rather than found. findings.md section 58.
@@ -920,7 +929,11 @@ PARSEABLE_EXCLUDED = ('vendor_region_user_config', 'vendor_region_embedded_confi
                       # The friend's Harmony One and Harmony 525, out of the corpus wide totals
                       # until joining them is decided.
                       'one_friend_asfound_config', 'one_friend_legacy_sync_config',
-                      'h525_friend_asfound_config')
+                      'h525_friend_asfound_config',
+                      # The Harmony 515 from onyiaic, out for the same reason, and the two copies of
+                      # its application image, whose safe mode container at 0x8000 parses.
+                      'h515_onyiaic_asfound_config',
+                      'h515_application_firmware', 'h515_contributed_application')
 
 CONTAINERS = (
     'h700_config', 'h700_config_2', 'h600_config', 'h525_config', 'h525_config_2', 'one_config',

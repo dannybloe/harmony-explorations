@@ -29,7 +29,7 @@ below: it shares a number range with the family, which is suggestive and not a m
 | 3 | Harmony 748, 768 | concordance's table, and Logitech's client names an architecture for both skins[^x-concordance][^s208] |
 | 7 | Harmony 610, 620, 628, 655, 659, 660, 670, 675, 676, 680, 688 | concordance's table, and Logitech's client for six of their skins and for the 620 and 670[^x-concordance][^s208] |
 | 8 | Harmony 720, 785, 880, 882, 885, [harmony-880-885](harmony-880-885/README.md) | configurations and firmware images[^s7] |
-| 9 | Harmony 510, 515, 520, 522, 525, 550, 555, and the Harmony for Xbox 360, [harmony-5xx](harmony-5xx/README.md) | a Harmony 525 measured[^s76]; the rest by concordance's table and Logitech's client[^x-concordance][^s207] |
+| 9 | Harmony 510, 515, 520, 522, 525, 550, 555, and the Harmony for Xbox 360, [harmony-5xx](harmony-5xx/README.md) | a Harmony 525 measured,[^s76] and a Harmony 515's identity and firmware build;[^t-harmony-515] the rest by concordance's table and Logitech's client[^x-concordance][^s207] |
 | 10 | Harmony 890, 895, and presumed 890 Pro, 892, 897, [harmony-890-895](harmony-890-895/README.md) | configurations[^s182] |
 | 12 | Harmony One, [harmony-one](harmony-one/README.md) | measured[^s57] |
 | 14 | Harmony 600, 650, 665, 700, [harmony-600-650-700](harmony-600-650-700/README.md) | measured on the 600, 650 and 700[^s281]; the 665 by Logitech's service[^s131] |
@@ -208,6 +208,7 @@ part and is not a confirmation, since every sibling with that flash size would a
 [^s208]: Stated by Logitech, in their client. [Section 208](../../docs/findings.md#s208)
 [^s7]: Measured in configurations. [Section 7](../../docs/findings.md#s7)
 [^s76]: Measured on a unit. [Section 76](../../docs/findings.md#s76)
+[^t-harmony-515]: Measured on a unit. [The test](../../tests/test_harmony_515.py)
 [^s207]: Stated by Logitech, in their client. [Section 207](../../docs/findings.md#s207)
 [^s182]: Measured in configurations. [Section 182](../../docs/findings.md#s182)
 [^s57]: Read in the firmware. [Section 57](../../docs/findings.md#s57)

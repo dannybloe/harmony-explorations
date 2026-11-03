@@ -6,7 +6,8 @@ this. The commands are the same family and fewer of them are implemented, and tw
 the later remotes are missing here, reading the processor's working memory and restarting the remote.
 
 The command protocol is [the USB protocol reference](../../usb-protocol/README.md) and the rails are
-`packages/usb/src/rails.ts`. This file states what holds on this architecture, measured on a Harmony 525;
+`packages/usb/src/rails.ts`. This file states what holds on this architecture, measured on a Harmony 525,
+with the Harmony 515's identity beside it where a bullet names that model;
 the other models are not checked.[^unchecked]
 
 ## Identity
@@ -24,10 +25,13 @@ Generated from `packages/corpus` and `packages/usb` by `make remote-reference-wr
 
 * **`bcdDevice` is `0x0916`**: the protocol number 9 and the skin 22 as plain hex, where the Harmony One
   and the Harmony 600, 650 and 700 carry BCD of `1000 + skin`. So that rule is the later generation's, and
-  [the transport](../../usb-protocol/transport.md) has both forms.[^s76][^s195]
+  [the transport](../../usb-protocol/transport.md) has both forms.[^s76][^s195] **A Harmony 515 enumerates
+  `0x0943`**, skin 67 by the same rule, which a configuration read off it states as well.[^t-harmony-515]
 * **The version block is seven fields**, and the reply byte's low nibble says so: `27 30 25 12 ff 90 16 09`
   is firmware 3.0, board 2.5, flash `FF:12`, architecture 9 with software type 0, skin 22 and a platform
-  byte of `0x09`. A host that expects twelve fields refuses a correct answer twice.[^s76]
+  byte of `0x09`. A host that expects twelve fields refuses a correct answer twice.[^s76] A Harmony 515's
+  fields, without the reply byte, are `34 10 12 ff 90 43 09`: firmware 3.4, board 1.0, the same flash, skin
+  67 and the same platform byte. Its product string is `Harmony Remote 0-3.4.0`.[^t-harmony-515]
 * **In safe mode** the block is `20 25 12 ff 94 16 00`, firmware 2.0, software type 4 and a platform byte
   of zero; the product string becomes `Harmony Safe Mode!`; and the HID report descriptor differs in one
   input flag. The product id and `bcdDevice` do not change, so enumeration cannot tell the two
@@ -121,10 +125,11 @@ store and the firmware reinstall, which are read on the Harmony 600, 650 and 700
 * `WRITE_MISC` and the escape on this image, beyond what the dispatch shows.[^unchecked]
 * What selector 1 of `READ_MISC` answers, decoded correctly, on a running remote.[^unchecked]
 * Erasing and writing any block of the configuration region but `0x820000`.[^unchecked]
-* Every model of this architecture but the Harmony 525.[^unchecked]
+* Every model of this architecture but the Harmony 525, beyond the Harmony 515's identity.[^unchecked]
 
 [^unchecked]: Not checked.
 [^s76]: Measured on a unit. [Section 76](../../../docs/findings.md#s76)
+[^t-harmony-515]: Measured on a unit. [The test](../../../tests/test_harmony_515.py)
 [^s195]: Measured on a unit. [Section 195](../../../docs/findings.md#s195)
 [^s118]: Measured on a unit. [Section 118](../../../docs/findings.md#s118)
 [^s268]: Measured on a unit. [Section 268](../../../docs/findings.md#s268)

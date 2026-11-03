@@ -565,6 +565,15 @@ export const IMAGES: Readonly<Record<string, string>> = {
   one_friend_asfound_config: 'one-friend-asfound-config.bin',
   one_friend_legacy_sync_config: 'one-friend-legacy-sync-config.bin',
   h525_friend_asfound_config: 'h525-friend-asfound-config.bin',
+  // A Harmony 515 received from onyiaic, as it came, 3 November 2026: the first unit of that model on
+  // the bench, read only. `dumps/danny/harmony-515-onyiaic/`.
+  h515_onyiaic_asfound_config: 'h515-onyiaic-asfound-config.bin',
+  // The same unit's two stored firmware images, 64 KiB each from 0x810000 and 0x800000, and the two
+  // images kkong42 posted for a Harmony 515 as harmony-decompiler issue 35, byte identical to them.
+  h515_application_firmware: '20261103T1517Z-h515-fw-application-region.bin',
+  h515_safemode_firmware: '20261103T1517Z-h515-fw-safemode-region.bin',
+  h515_contributed_application: 'H515-Firmware.bin',
+  h515_contributed_safemode: 'H515-Safemode.bin',
   // The spare Harmony One either side of a sync, 7 August 2026. findings.md section 58.
   one_spare_before_sync: 'one-spare-before-sync-config.bin',
   one_spare_after_sync: 'one-spare-after-sync-config.bin',
@@ -964,7 +973,10 @@ export const PARSEABLE_EXCLUDED: readonly string[] =
     'harvest_one_families_1', 'harvest_one_families_2', 'harvest_one_families_3',
     // The friend's Harmony One and Harmony 525, out of the corpus wide totals until joining is decided,
     // as for the contributed Harmony 650s: adding them moves every total, which is a step of its own.
-    'one_friend_asfound_config', 'one_friend_legacy_sync_config', 'h525_friend_asfound_config'];
+    'one_friend_asfound_config', 'one_friend_legacy_sync_config', 'h525_friend_asfound_config',
+    // The Harmony 515 from onyiaic, out for the same reason, and the two copies of its application
+    // image, whose safe mode container at 0x8000 parses.
+    'h515_onyiaic_asfound_config', 'h515_application_firmware', 'h515_contributed_application'];
 
 const cache = new Map<string, string[]>();
 

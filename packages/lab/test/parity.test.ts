@@ -131,7 +131,9 @@ test('the Python table was actually parsed, rather than read as empty', () => {
   // identity file, which `tests/test_harmony_touch_image.py` reads, todo-touch 1.2.
   // 321 with the recording of a Touch sync through Harmony Desktop, `packages/usb/test/touch-sync.test.ts`,
   // todo-touch 2.3's trial, and 323 with the full setup's sync and the reverse sync after it, 2.3.
-  assert.equal(Object.keys(pythonImages()).length, 323, 'every fixture tests/lab.py names');
+  // 324 with the Harmony 515 from onyiaic as it came, and 328 with its two firmware images and the two
+  // kkong42 posted for the model.
+  assert.equal(Object.keys(pythonImages()).length, 328, 'every fixture tests/lab.py names');
 });
 
 test('the two sides exclude the same fixtures from the parseable population', () => {
@@ -218,7 +220,7 @@ test('the two sides exclude the same fixtures from the parseable population', ()
   // 81 with the tilt sensor off compile.
   // 82 with the region read before 5.1's write.
   // 83 with Logitech's compile of the whole test setup.
-  // 84 with our 5.1 file as written, 85 with Logitech's clean compile of the test setup, 86 with the region before 5.2.5, 87 before 6.2.13, 88 before 7.1, 89 after its stopped probe, 90 with the probe, 91 before 7.5. 94 with the friend's Harmony One's two reads and Harmony 525, out of the totals until joining is decided. 95 before 10.5, 96 before 9.1.2, 97 with it stuck, 98 before variant A, 99 before the fixed 9.1.2, 100 before its bright build, 101 before 8.2.2, 102 before 8.2.6, 103 after it, 104 with the one bit control on it. 105 with the region before the empty configuration, 11.1.1.4, 106 before its blended letters, 107 before 11.2.3, 108 before 11.2.4, 109 before its two cosmetic changes, 110 with the Harmony 700's region before its empty configuration, 111 with it on, 112 before the test setup, 113 with its six devices on, 114 with its seven, 115 with them in bright colours, 116 with the Harmony 600's region before its empty configuration, 117 with it on, 118 with the mark at 0, 119 in grey 2, 120 with its letters blended, 121 with the five device setup on, 122 with the six device file on, 123 with the spare Harmony One at the start of todo-compile-one, 126 with the three harvest compiles for the One, section 306's reason.
-  assert.equal(names.length, 141, 'each one a container already counted, that container plus a known '
+  // 84 with our 5.1 file as written, 85 with Logitech's clean compile of the test setup, 86 with the region before 5.2.5, 87 before 6.2.13, 88 before 7.1, 89 after its stopped probe, 90 with the probe, 91 before 7.5. 94 with the friend's Harmony One's two reads and Harmony 525, out of the totals until joining is decided. 95 before 10.5, 96 before 9.1.2, 97 with it stuck, 98 before variant A, 99 before the fixed 9.1.2, 100 before its bright build, 101 before 8.2.2, 102 before 8.2.6, 103 after it, 104 with the one bit control on it. 105 with the region before the empty configuration, 11.1.1.4, 106 before its blended letters, 107 before 11.2.3, 108 before 11.2.4, 109 before its two cosmetic changes, 110 with the Harmony 700's region before its empty configuration, 111 with it on, 112 before the test setup, 113 with its six devices on, 114 with its seven, 115 with them in bright colours, 116 with the Harmony 600's region before its empty configuration, 117 with it on, 118 with the mark at 0, 119 in grey 2, 120 with its letters blended, 121 with the five device setup on, 122 with the six device file on, 123 with the spare Harmony One at the start of todo-compile-one, 126 with the three harvest compiles for the One, section 306's reason. 142 with the Harmony 515 from onyiaic, out of the totals like the friend's remotes, and 144 with the two copies of its application image.
+  assert.equal(names.length, 144, 'each one a container already counted, that container plus a known '
     + 'edit, or a compare base whose remote is not yet in the corpus');
 });

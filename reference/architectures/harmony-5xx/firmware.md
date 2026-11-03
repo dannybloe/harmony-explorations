@@ -22,6 +22,10 @@ checked.[^unchecked] What the 525's own versions and product strings are is the 
 The application's entry fits 32 KiB of program flash and its reset vector lands below `0x1000`, which is
 what placed a bootloader under the application before the internal flash was read.[^s76]
 
+**A Harmony 515 stores a different build**, firmware 3.4 at the same two addresses, its descriptor naming
+`Harmony Remote 0-3.4.0` where the 525's names `0-3.0.0`. Nothing in it has been read beyond its USB
+descriptor and the safe mode container it carries at `0x8000`.[^t-harmony-515]
+
 There is **no Logitech package** of this firmware: the images come off a unit, and Logitech's current
 software update service serves the file based and Linux generations only.[^s196]
 
@@ -143,7 +147,8 @@ part is not established[^unchecked].
 
 ## Not checked
 
-* Any firmware for this architecture other than the 525's 3.0 and 2.0.[^unchecked]
+* Any firmware for this architecture other than the 525's 3.0 and 2.0, beyond the 515's descriptor and
+  container.[^unchecked]
 * Whether the key combination at power on touches EEPROM byte 0.[^unchecked]
 * The escape dispatcher, the cache drop and `WRITE_MISC` selector 7 on this image.[^unchecked]
 * Which routine, if any, reads base slot 3's build timestamp on this architecture.[^unchecked]
@@ -152,6 +157,7 @@ part is not established[^unchecked].
 
 [^unchecked]: Not checked.
 [^s76]: Measured on a unit. [Section 76](../../../docs/findings.md#s76)
+[^t-harmony-515]: Measured on a unit. [The test](../../../tests/test_harmony_515.py)
 [^s118]: Measured on a unit. [Section 118](../../../docs/findings.md#s118)
 [^s196]: Stated by Logitech, by their service. [Section 196](../../../docs/findings.md#s196)
 [^s113]: Read in the firmware. [Section 113](../../../docs/findings.md#s113)

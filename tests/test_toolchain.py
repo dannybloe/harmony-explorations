@@ -248,7 +248,8 @@ class TheRunnerSeesEveryTest(unittest.TestCase):
         # `tests/test_harmony_touch_host.py`, todo-touch 4.1 and 4.2.
         # 78 to 81 with the four of todo-touch 5.2, the Harmony Touch's interface as an API:
         # `tests/test_harmony_touch_api_names.py`, `_setup.py`, `_engine.py` and `_closure.py`.
-        self.assertEqual(len(files), 81, 'the Python test files')
+        # 82 with `tests/test_harmony_515.py`, the first Harmony 515 on the bench.
+        self.assertEqual(len(files), 82, 'the Python test files')
         with_block = 0
         for path in files:
             with open(path, encoding='utf-8') as handle:
@@ -297,8 +298,8 @@ class TheRunnerSeesEveryTest(unittest.TestCase):
         # 74 with `tests/test_harmony_touch_keys.py`, todo-touch 3.2, and 75 with
         # `tests/test_harmony_touch_host.py`, todo-touch 4.1 and 4.2, which carry one each.
         # 76 to 79 with the four of todo-touch 5.2, `tests/test_harmony_touch_api_names.py`, `_setup.py`,
-        # `_engine.py` and `_closure.py`, which carry one each.
-        self.assertEqual(with_block, 79,
+        # `_engine.py` and `_closure.py`, which carry one each. 80 with `tests/test_harmony_515.py`.
+        self.assertEqual(with_block, 80,
                          'files carrying a __main__ block, of %d' % len(files))
 
 
@@ -789,7 +790,8 @@ class APythonBoundOnACorpusTotalIsExact(unittest.TestCase):
         # `tests/test_harmony_touch_host.py`, todo-touch 4.1 and 4.2.
         # 78 to 81 with the four of todo-touch 5.2, the Harmony Touch's interface as an API:
         # `tests/test_harmony_touch_api_names.py`, `_setup.py`, `_engine.py` and `_closure.py`.
-        self.assertEqual(len(scanned), 81, 'Python test files, which moves when one is added')
+        # 82 with `tests/test_harmony_515.py`, the first Harmony 515 on the bench.
+        self.assertEqual(len(scanned), 82, 'Python test files, which moves when one is added')
         self.assertIn(self.CONTROL, found, 'the pattern matches nothing it should match')
 
     def test_every_remaining_bound_says_why_it_is_not_a_measurement(self):
