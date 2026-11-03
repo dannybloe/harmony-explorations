@@ -49,7 +49,9 @@ FINDINGS_DIGEST = "c4bc62336900cb13eee50b2c375c7a11ca399e67ad9183a44830b8799aa74
 # 350 one remote for configurations. The digest before them was 031fe5d6.
 # Repinned for decision 29, a new entry: the bench Harmony Touch may be written. The digest before it was
 # 16c5c09c.
-DECISIONS_DIGEST = "66ddbcb49ea41eea409b40a76dfd25adde56f6edcb63f91c896c327dbef866af"
+# Repinned for a note added to decision 15: putting a protocol definition on the user's own Touch is local
+# use, not sharing, and FreeHarmony writes the definition itself. The digest before it was 66ddbcb4.
+DECISIONS_DIGEST = "1e1cdff4f77cb1073ab040a162216ab74e95f94f66aa65dbb51869769aa347a1"
 
 SECTIONS = 436
 DECISIONS = 29

@@ -407,6 +407,18 @@ image is a second sample rather than a stand in. Other models are iterated on la
    audited in later. Without this paragraph the archive would quietly contaminate the shareable pool,
    which is the exact failure decision 11 exists to prevent.
 
+   **Added on 3 November 2026: putting a definition on the user's own remote is local use, not sharing.**
+   A Harmony Touch takes Logitech's protocol definitions as they are, inside the documents of a sync, and
+   they equal the archive's word for word,
+   [devices and infrared](../reference/architectures/harmony-touch/devices-and-infrared.md). Delivering one to
+   a user's own Touch is the local use this decision allows, not an upload to a shared pool. The route is
+   chosen with it: FreeHarmony writes the definition itself, in the shape the Touch reads, from the durations
+   and names in this project's own schema, rather than passing the archive's files through, so no copy of
+   them sits in either repository. That writer is needed regardless of the archive: a device that exists
+   neither in the archive nor at Logitech is made from codes learned off its own remote and labels the user
+   types, either as a definition built from the learned rhythm or as a learned raw code, which the Touch's
+   engine also reads. todo-touch 5.3.
+
 16. <a id="d16"></a>**Every step asks the architecture question, and a step that answers it for one architecture says
    so.** *Taken by Danny on 6 September 2026, prompted by section 274.* A step of `todo.md` is not
    finished when it works on one remote. It is finished when the other architectures have been
