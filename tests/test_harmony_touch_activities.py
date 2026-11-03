@@ -133,6 +133,11 @@ def prototypes(chunk):
     The layout is the stock one `stock_51_length` in `test_harmony_touch_image.py` walks, which that file
     shows every engine file follows to its last byte; this walk keeps what the other one skips. A string
     constant is bytes without its terminating NUL, a number a float.
+
+    Each function also keeps its instructions, as 32 bit words under `code`, and its nested functions, in
+    the order the chunk lists them, under `children`: `tests/test_harmony_touch_api_engine.py` reads which
+    function a `CLOSURE` makes and which constants a registration names, and needs both. The list returned
+    is still every function in the order the chunk holds them, the first being the chunk itself.
     """
     at = 12
     out = []
@@ -156,6 +161,7 @@ def prototypes(chunk):
         take('<i'); take('<i')          # first and last line
         at += 4                         # upvalues, parameters, vararg flag, stack size
         count = take('<i')
+        code = list(struct.unpack_from('<%dI' % count, chunk, at))
         at += 4 * count                 # instructions
         constants = []
         for _ in range(take('<i')):
@@ -170,10 +176,10 @@ def prototypes(chunk):
                 constants.append(None)
             else:
                 raise ValueError('constant tag %d is not stock Lua 5.1' % tag)
-        function = {'constants': constants, 'locals': []}
+        function = {'constants': constants, 'locals': [], 'code': code, 'children': []}
         out.append(function)
         for _ in range(take('<i')):
-            prototype()
+            function['children'].append(prototype())
         count = take('<i')
         at += 4 * count                 # line information
         for _ in range(take('<i')):
@@ -181,6 +187,7 @@ def prototypes(chunk):
             take('<i'); take('<i')
         for _ in range(take('<i')):
             string()
+        return function
 
     prototype()
     if at != len(chunk):

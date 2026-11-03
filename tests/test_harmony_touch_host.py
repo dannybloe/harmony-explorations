@@ -47,7 +47,11 @@ document, which looks for no file first, while the favourites index copy does; t
 before the `proxy://Finished` it queues, and Lua 5.1 numbers a function's constants in the order the
 compiler meets them; the direct put saves, queues for the account and reloads, and names no set aside and
 no swap, which the sync's commit does; and the account function that compares the stored numbers removes
-the data folder. **Read, not asserted**: the order of the checks inside a function where a branch lies
+the data folder on the hubs' host name only, while the branch a `juniper` Touch takes hands its removal a
+global nothing assigns, read from the function's own `GETGLOBAL` and `SETGLOBAL` instructions with the
+readers of `test_harmony_touch_api_engine.py`. **That last one is a correction**: this file and the page
+read the erase as a Touch's until todo-touch 5.2.2 asked which branch each of the function's two removals
+sits on. **Read, not asserted**: the order of the checks inside a function where a branch lies
 between them, that a refusal stops the rest of a write's answers, and what the engine does after a reload
 fails. Those are the decompiled reading.
 
@@ -77,6 +81,7 @@ import unittest
 
 import lab
 from test_harmony_touch_activities import prototypes
+from test_harmony_touch_api_engine import GETGLOBAL, SETGLOBAL, global_names
 from test_harmony_touch_image import UNSQUASHFS, SquashfsReader, members
 
 BUILD = 'touch_package_production'
@@ -163,7 +168,9 @@ class TheImage(unittest.TestCase):
 class TheNativeProgramForwardsARequest(TheImage):
     """4.1: the native USB program wraps a `/sys/hlapi` write as an HTTP GET to the engine and inspects none
     of it. The forwarding format string, the loopback address and the file name are in the program; the two
-    paths that act when opened are present as distinct names, which is why a write allow list excludes them."""
+    paths that act on a write, the factory reset and the restart, are present as distinct names, which is why
+    a write allow list excludes them. This said they act when opened<!--superseded--> until
+    `test_harmony_touch_api_names.py` read the native program's name table."""
 
     def test_the_program_holds_the_forwarding_format_string_and_the_loopback_address(self):
         hal = self.files[HAL]
@@ -171,7 +178,7 @@ class TheNativeProgramForwardsARequest(TheImage):
         self.assertIn(b'127.0.0.1', hal)
         self.assertIn(b'/sys/hlapi', hal)
 
-    def test_the_two_paths_that_act_when_opened_are_named_apart_from_the_sync_file(self):
+    def test_the_two_paths_that_act_on_a_write_are_named_apart_from_the_sync_file(self):
         hal = self.files[HAL]
         for path in (b'/sys/reboot', b'/sys/factoryreset'):
             self.assertIn(path, hal)
@@ -225,7 +232,9 @@ class TheSyncHandlersCheckTheEnvelope(TheImage):
         self.assert_strings(SYNC, ['statusCode', 'etag', 'body-type', 'image/png', 'cache-Control',
                                    'getResourceName'])
         # The core documents' callback compares the status with the texts 200 and 304 and holds neither
-        # as a number, so a status sent as a number matches neither.
+        # as a number. A status sent as a number still matches, because `proxy.response` turns every
+        # status into text before any callback sees it, `test_harmony_touch_api_setup.py`; this comment
+        # said a number matches neither<!--superseded--> until that handler was read.
         callback = self.constants_with(SYNC, 'invalid statusCode ', 'saveResource')
         self.assertTrue({b'200', b'304'} <= set(callback))
         self.assertFalse({200.0, 304.0} & set(callback))
@@ -272,19 +281,62 @@ class TheReaderNeedsEachDocumentsArray(TheImage):
         self.assert_strings(READER, ['Activities', 'DevicesWithFeatures', 'ButtonMaps', 'Protocols'])
 
 
-class ProvisioningIsDestructive(TheImage):
-    """4.2: provisioning takes the account and remote numbers and, on a change, erases the data store; it is
-    never on a sync's allow list. The names it reads are here, and the function that compares the
-    stored numbers names the removal of the data folder; when it removes it is the decompiled reading."""
+class AProvisioningErasesTheDataFolderOnAHubOnly(TheImage):
+    """4.2, corrected in todo-touch 5.2.2 and settled per branch in 5.2's review: provisioning compares the
+    incoming account, mode, discovery server and remote number against the stored ones, and when any differs
+    it enters a removal of the data folder. That compare runs **for every host, before the host name branch**,
+    against the module's stored values. The removal itself is split: the `pimentoblue` branch declares
+    `local datadir = system.getDataPath()` and removes that folder, destructive on a hub; the other branch,
+    the one a `juniper` Touch takes, calls `removeFolder(datadir)` on a **global** `datadir` that nothing in
+    the account handler assigns (and nothing in the engine, `test_harmony_touch_api_setup.py`'s
+    `AProvisioningErasesNothingOnATouch`). So on a Touch the removal is handed `nil`, and the store's
+    `removeFolder` asks `folderExists` first, which returns at once for no path. **A Touch keeps its data.**
+
+    Which instruction loads `datadir` in each branch is the settling evidence: in the `pimentoblue` branch it
+    is a register, the declared local; in the `juniper` branch it is a `GETGLOBAL` of an unassigned global.
+    Both are in the one function, which is why an earlier reading took the erase for a Touch's.
+
+    The blind reviewer read the else branch as removing `system.getDataPath()`, `/data`; that is wrong, since
+    `getDataPath` is called only in the `pimentoblue` branch's local. Two of the blind reading's other points
+    hold and are recorded: the compare precedes the host name branch and reads the module's stored account
+    state, and a missing or non canonical discovery server (differing from the stored URI) makes the compare's
+    `or` true and so takes the removal path, which on a Touch still erases nothing.
+
+    This class was `ProvisioningIsDestructive` and asserted that the compare function names the removal and
+    `getDataPath`, which it does; it read as the erase of a Touch's store because nobody had asked which
+    branch each removal sits on, and both are in the one function. The page said so until the correction.
+
+    Controls, each a string replacement reversed with a hash check, failed the test they aimed at: the global
+    read looked for among the writes, `mode` asserted unassigned, and `fileExists` asked of the store's folder
+    removal."""
 
     def test_the_account_handler_names_provisioning_and_the_two_numbers(self):
         self.assert_strings(ACCOUNT, ['provision', 'accountId', 'remoteId'])
 
-    def test_the_function_that_compares_the_stored_numbers_removes_the_data_folder(self):
-        erase = self.function_with(ACCOUNT, 'removeFolder', 'accountId', 'remoteId')
-        self.assertTrue({b'mode', b'discoveryServer', b'getDataPath'} <= erase)
-        # The control: the provisioning entry point itself removes nothing; it hands over.
+    def test_off_the_hubs_host_name_the_removal_is_handed_a_global_nothing_assigns(self):
+        found = [f for f in prototypes(self.files[ACCOUNT])
+                 if {b'removeFolder', b'accountId', b'remoteId'} <= set(f['constants'])]
+        self.assertEqual(len(found), 1, 'one function compares the stored numbers')
+        compare = found[0]
+        consts = set(compare['constants'])
+        # The compare runs for every host before the host name branch: it names all four compared fields,
+        # the host name test and both removal spellings.
+        self.assertTrue({b'accountId', b'mode', b'discoveryServer', b'activeRemoteId', b'getHostName',
+                         b'pimentoblue', b'getDataPath'} <= consts)
+        # The per branch instruction: `datadir` is a declared local (a register) in the pimentoblue branch and
+        # a `GETGLOBAL` in the other, both in this one function.
+        self.assertIn(b'datadir', compare['locals'], 'the hub branch names its folder in a local')
+        self.assertIn(b'datadir', global_names(compare, GETGLOBAL), 'the other branch reads a global of that name')
+        assigned = {n for f in prototypes(self.files[ACCOUNT]) for n in global_names(f, SETGLOBAL)}
+        self.assertNotIn(b'datadir', assigned, 'and nothing in the handler assigns it, so the removal gets nil')
+        # The control: the same reading finds the globals the handler does assign, the stored account state
+        # the compare function reads.
+        self.assertTrue({b'accountId', b'remoteId', b'mode'} <= assigned)
+        # And the provisioning entry point itself removes nothing; it hands over.
         self.assertNotIn(b'removeFolder', self.function_with(ACCOUNT, 'provisionInfo', 'handleProvision'))
+
+    def test_the_stores_folder_removal_asks_whether_the_folder_exists(self):
+        self.assertIn(b'folderExists', self.function_with(UTILS, 'removeFolder', 'rmdir'))
 
 
 class ADocumentIsStoredAsTheEncodingOfWhatArrives(TheImage):

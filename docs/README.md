@@ -178,7 +178,8 @@ reference/architectures/        what one architecture's models share, stated onc
                                 each model folder: harmony-600-650-700/ for arch 14, harmony-one/
                                 for arch 12, harmony-5xx/ for arch 9, harmony-300-350/ for arch 16,
                                 harmony-880-885/ for arch 8, harmony-890-895/ for arch 10 and
-                                harmony-touch/ for the Touch's family, whose number is disputed. The
+                                harmony-touch/ for the Touch's family, whose number is disputed, with
+                                harmony-touch/api/ documenting its interface as an API. The
                                 last three were built by plan 009's step 3.5 from contributed
                                 configurations, images and Logitech's own material, the 880 and 890
                                 having model folders beside them, reference/remotes/harmony-885/ and

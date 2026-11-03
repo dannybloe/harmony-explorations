@@ -72,8 +72,10 @@ failed at, section 200.
 **Nineteen paths were probed**, section 200. Besides the identity file seven opened: `/rf/deviceinfo`,
 `/tde/enable`, and five at zero bytes, `/fw/otaupdate`, `/ir/ir_cap`, `/sys/hlapi`, `/sys/time`, and
 **`/sys/factoryreset` and `/sys/reboot`**. Those two were opened while listing which paths exist, and
-nothing happened, which was luck rather than design, section 200. The rail `INERT_PATHS` and the named door
-`HARMONY_FILE_PATH_EXPERIMENT=1` were the answer.
+nothing happened, which was taken for luck rather than design, section 200. The rail `INERT_PATHS` and the
+named door `HARMONY_FILE_PATH_EXPERIMENT=1` were the answer. The remote's native program, read later, shows
+it was not luck: both act on a write, and opening either runs no handler at all,
+`reference/architectures/harmony-touch/api/names.md` and `tests/test_harmony_touch_api_names.py`.
 
 **Six spellings of a configuration path were tried**, the Harmony 350's `/cfg/usercfg` among them, and none
 exists on this unit, section 200.
@@ -130,22 +132,24 @@ person at the bench; `packages/usb/test/touch-activities.test.ts` holds the dupl
 channel tuning was switched to Three Numbers in MyHarmony between the trial and the full sync, which is why
 the two device lists differ there.
 
-## Bench checks waiting
+## Bench checks of todo-touch 3.2
 
-What the firmware reading of `todo-touch.md` 3.2 predicts, `tests/test_harmony_touch_keys.py`, to be checked on
-the unit. None has been done.
+What the firmware reading of `todo-touch.md` 3.2 predicted, `tests/test_harmony_touch_keys.py`, and what the
+unit showed. Checks 1, 8 and 9 ran on the infrared monitor, `packages/bench/irtests/done/touch-3-2-monitor-checks.json`
+and `touch-3-2-home-button.json`, runs in the lab's `reads/` of 3 November 2026. Checks 4 to 7 were dropped:
+they are behaviour no configuration document changes, so they cost bench time and buy FreeHarmony nothing.
 
-| | keys | prediction |
-|---|---|---|
-| 1 | start an activity, then hold Off 10 s | the activity stops at once, the remote restarts at about 8 s |
-| 2 | Settings, Remote | Screen lock/Timeout, Remote Lock, Background, Brightness, Set time; Vibration or Tilt Sensor only if fitted |
-| 3 | timeout and both brightness sliders to both ends | timeout 1 to 30, brightness 10 to 100, a battery warning past 95 |
-| 4 | the star with a pen cap, then a finger, then the gap between star and house | nothing, favourites, nothing |
-| 5 | dock, 15 s, lift | Charging at once, the display sleeps after about 10 s, lifting wakes it |
-| 6 | USB cable to a computer | the USB screen, no Charging screen, the charging symbol in the status bar |
-| 7 | Menu + Mute, back out; Record + Previous, back out | pairing; the place in cradle screen |
-| 8 | start an activity, Devices, a device, Home, Volume Up, infrared monitor on | Volume Up goes to the activity's volume device |
-| 9 | long press Rewind, infrared monitor on | the long press code about 600 ms after the press |
+| | keys | prediction | on the unit |
+|---|---|---|---|
+| 1 | start an activity, then hold Off 10 s | the activity stops at once, the remote restarts at about 8 s | the LG TV's and the Denon's power off codes at the press; the remote then stayed off and answered nothing until it was put in the dock, which showed the Harmony start screen. So it did not restart by itself: whether it shut down or stopped partway through a restart is not settled. One unnamed frame arrived about 12 s after the power off codes |
+| 2 | Settings, Remote | Screen lock/Timeout, Remote Lock, Background, Brightness, Set time; Vibration or Tilt Sensor only if fitted | those five, and no Vibration or Tilt Sensor entry |
+| 3 | timeout and both brightness sliders to both ends | timeout 1 to 30, brightness 10 to 100, a battery warning past 95 | the screens show sliders without numbers, so the ranges cannot be read off the screen; the timeout stood at 10, both brightness sliders at their maximum, with no warning, only the status bar's battery, full. Screen lock was switched off on the remote during this check, a change made on the remote that the next sync up carries. The ranges stay as read in the firmware |
+| 4 | the star with a pen cap, then a finger, then the gap between star and house | nothing, favourites, nothing | dropped |
+| 5 | dock, 15 s, lift | Charging at once, the display sleeps after about 10 s, lifting wakes it | dropped |
+| 6 | USB cable to a computer | the USB screen, no Charging screen, the charging symbol in the status bar | dropped |
+| 7 | Menu + Mute, back out; Record + Previous, back out | pairing; the place in cradle screen | dropped |
+| 8 | start an activity, Devices, a device, Home, Volume Up, infrared monitor on | Volume Up goes to the activity's volume device | the Home button, on Watch TV with the LG TV's device page open, sent nothing and Volume Up went to the Denon, the activity's volume device. A first try pressed the LG TV's own Home entry on the screen instead, which sent the LG TV's Home code and kept device mode, so its Volume Up went to the LG TV |
+| 9 | long press Rewind, infrared monitor on | the long press code about 600 ms after the press | a tap sent the KPN's Rewind; held about 2 s it sent the KPN's Replay alone, with no Rewind before it. The timing after the press is not measured, since the monitor sees no press |
 
 ## A transport finding for answering a sync
 

@@ -92,8 +92,10 @@ are is [the platform's README](README.md#which-architecture-number-17-or-18).
   is not checked, and the value it reports is 17 either way[^unchecked].
 * **The engine states 17 as a fixed string.** The Lua engine's own system information answer carries
   `arch=0x11` as a literal; it takes the skin, the vendor, the product and the unit id from the
-  manufacturing record and never its architecture[^t-touch-arch]. What can ask the engine for it on a
-  Touch is not checked[^unchecked]. In the production build the same module treats a unit whose host name
+  manufacturing record and never its architecture[^t-touch-arch]. On a Touch the request
+  `harmony.system?systeminfo` asks the engine for it, over `/sys/hlapi`, and passes the default check there,
+  [system](api/system.md#harmonysystemsysteminfo)[^t-touch-api-setup]; it has not been sent to a
+  unit[^unchecked]. In the production build the same module treats a unit whose host name
   is `juniper` as having no network; the preview build's module holds no such test[^t-touch-arch].
 * **Nothing else in the image states an architecture.** Over every file of both builds, `arch=0x` occurs
   in the engine's handler alone and `arch=0x12` nowhere; `arch` as a name of its own occurs only in the
@@ -126,9 +128,16 @@ holds a configuration of zero bytes[^s195].
 
 The tool offers this generation and nothing older, [the recovery tool](../../logitech/update-service.md#the-recovery-tool-that-names-it)[^s196].
 
-**Two paths on a Touch act when they are opened**, `/sys/factoryreset` and `/sys/reboot`[^s200]. They are
-the remote's own reset and restart, not Logitech's recovery route, and why opening them is refused is
-[the Touch's usb.md](../../remotes/harmony-touch/usb.md).
+**Two paths on a Touch act on a write**, `/sys/factoryreset` and `/sys/reboot`: opening either runs
+nothing, writing `reboot` to the second restarts the remote, and writing `all` to the first opens the power
+controller's and the radio's firmware loader device nodes for writing and arms a factory reset that runs at
+the next start, [the names](api/names.md#the-names-that-act-on-a-write-and-on-an-open)[^t-touch-api-names]. What it writes to the nodes and what the drivers do is not read.
+They are the remote's own reset and restart, not Logitech's recovery route, and why the library does not
+open them is [the Touch's usb.md](../../remotes/harmony-touch/usb.md).
+
+> This said the two act when they are opened<!--superseded-->, from a unit on which both opened for reading
+> and nothing happened[^s200], until the native program's name table was read: each fills the write slot of
+> its entry and no other[^t-touch-api-names].
 
 ## The XMPP update
 
@@ -154,4 +163,6 @@ installs is not settled, [the recovery tool](../../logitech/update-service.md#th
 [^s195]: Measured on a unit. [Section 195](../../../docs/findings.md#s195)
 [^t-touch-image]: Read in the firmware. [The test](../../../tests/test_harmony_touch_image.py)
 [^t-touch-keys]: Read in the firmware. [The test](../../../tests/test_harmony_touch_keys.py)
+[^t-touch-api-setup]: Read in the firmware. [The test](../../../tests/test_harmony_touch_api_setup.py)
 [^t-touch-arch]: Read in the firmware. [The test](../../../tests/test_harmony_touch_architecture.py)
+[^t-touch-api-names]: Read in the firmware. [The test](../../../tests/test_harmony_touch_api_names.py)

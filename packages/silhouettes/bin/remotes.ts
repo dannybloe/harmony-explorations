@@ -230,10 +230,11 @@ export const ARCHITECTURES: readonly ArchitectureFolder[] = [
   // number and Logitech's templates say 18, section 197, so this row takes the remote's word the way the
   // model's row does and the folder's README states both. It carries the skin table alone: the USB
   // identity block would be a row of `none`, since `openHarmony` never opens this family, and the
-  // model's usb.md already says so beside its own copy of that block.
+  // model's usb.md already says so beside its own copy of that block. `api` is a folder, todo-touch 5.2:
+  // the remote's interface as an API, one page per group of requests, indexed by its own README.
   {
     folder: 'harmony-touch', architecture: 17,
-    files: ['README.md', 'activities-and-buttons.md', 'answering-a-sync.md', 'devices-and-infrared.md', 'favourites-and-settings.md', 'firmware.md', 'usb.md'],
+    files: ['README.md', 'activities-and-buttons.md', 'answering-a-sync.md', 'api', 'devices-and-infrared.md', 'favourites-and-settings.md', 'firmware.md', 'usb.md'],
     blocks: ['skins'],
   },
 ];

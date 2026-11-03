@@ -51,7 +51,10 @@ FINDINGS_DIGEST = "c4bc62336900cb13eee50b2c375c7a11ca399e67ad9183a44830b8799aa74
 # 16c5c09c.
 # Repinned for a note added to decision 15: putting a protocol definition on the user's own Touch is local
 # use, not sharing, and FreeHarmony writes the definition itself. The digest before it was 66ddbcb4.
-DECISIONS_DIGEST = "1e1cdff4f77cb1073ab040a162216ab74e95f94f66aa65dbb51869769aa347a1"
+# Repinned for a recorded correction in place of decision 29: the Touch's `/sys/factoryreset` and
+# `/sys/reboot` act on a write, not when opened, and the vibration test names act on an open, read from the
+# native program's name table. The digest before it was 1e1cdff4.
+DECISIONS_DIGEST = "5c191c6b0f30cb4cf18d30625db8c7b18a8dfeb1606568c79ec444d54dc93264"
 
 SECTIONS = 436
 DECISIONS = 29

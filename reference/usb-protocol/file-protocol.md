@@ -110,8 +110,9 @@ manifest, whose `PATH` attribute is what the open sends and whose `OPERATIONTYPE
 use[^s198]. On the Harmony 300 and 350 it is `/cfg/usercfg`[^s262].
 
 **On this protocol a path can be an action.** On a Harmony Touch `/sys/factoryreset` and `/sys/reboot` both
-open for reading, so a mode of `R` says what the handle will be used for and nothing about what opening the
-path does[^s200]. That is why `packages/usb` opens only the paths on its `INERT_PATHS` list, and any other
+open for reading, so a mode of `R` says what the handle will be used for and nothing about what the path
+does[^s200]; read in the remote's own program, those two act on a write and run nothing when opened,
+[the Touch's names](../architectures/harmony-touch/api/names.md#the-names-that-act-on-a-write-and-on-an-open)[^t-touch-api-names]. That is why `packages/usb` opens only the paths on its `INERT_PATHS` list, and any other
 path needs the named door `HARMONY_FILE_PATH_EXPERIMENT=1`; the code is `packages/usb/src/filepipe.ts`.
 
 ## Writing a file, checked by the remote
@@ -182,3 +183,4 @@ and does not read one back, by choice rather than by capability,
 [^s295]: Measured on a unit. [Section 295](../../docs/findings.md#s295)
 [^t-write-route]: Stated by Logitech, in their client. [The test](../../tests/test_file_family_write_route.py)
 [^t-harmony-350-file-write]: Read in the firmware. [The test](../../tests/test_harmony_350_file_write.py)
+[^t-touch-api-names]: Read in the firmware. [The test](../../tests/test_harmony_touch_api_names.py)

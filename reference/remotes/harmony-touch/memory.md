@@ -14,7 +14,7 @@ remote[^s200][^s201].
 | `/fw/otaupdate`, `/ir/ir_cap` | 0 bytes | not read | [^s200] |
 | `/sys/hlapi` | 0 bytes | **the remote's request and answer file**: a request is written into it and the answer read back, which is how Logitech's client syncs the remote in both directions, [usb.md](usb.md). It opened at 0 bytes when probed outside a sync | [^s200], [^t-touch-sync], [^t-touch-both-ways] |
 | `/sys/time` | 0 bytes | Logitech's client writes the time and a time zone into it during a sync down, and in both syncs down measured the remote refused the write; a hand over of the remote's changes wrote nothing to it; not read | [^s200], [^t-touch-sync], [^t-touch-both-ways] |
-| `/sys/factoryreset`, `/sys/reboot` | 0 bytes | **controls**: opening one is the action, which is why neither may be opened, [usb.md](usb.md) | [^s200] |
+| `/sys/factoryreset`, `/sys/reboot` | 0 bytes | **controls** that act on a write and do nothing when opened; neither is on the inert list, [usb.md](usb.md). This row said opening one is the action<!--superseded--> until the native program was read, [the names](../../architectures/harmony-touch/api/names.md#the-names-that-act-on-a-write-and-on-an-open) | [^s200], [^t-touch-api-names] |
 
 **Two files on one remote are two formats**, lines of text and JSON, so a reader must not assume a shape,
 and the field set of `/sys/sysinfo` differs from the list in the Harmony 300 and 350's firmware[^s200].
@@ -50,3 +50,4 @@ either: this is a later generation[^s199].
 [^unchecked]: Not checked.
 [^s198b]: Stated by Logitech, in their client. [Section 198](../../../docs/findings.md#s198)
 [^s203]: Stated by Logitech, in their client. [Section 203](../../../docs/findings.md#s203)
+[^t-touch-api-names]: Read in the firmware. [The test](../../../tests/test_harmony_touch_api_names.py)

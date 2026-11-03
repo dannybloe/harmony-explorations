@@ -170,15 +170,30 @@ reads and the answer writes[^t-touch-host].
 | read the next request list | a read in effect, though it marks what it hands over as pending | the answerer, repeatedly |
 | write the answers | writes the answers into the set the remote commits | the answerer |
 | the resource put | writes a document outside a sync and queues it for upload, the direct route above | never, for a sync |
-| provision to an account | acts, and **erases the whole data store** when the account, mode, server or remote number differs from the stored one | never |
+| provision to an account | acts: empties the queue, the remote's own changes still waiting to go up included, and ties the remote to the account given; on a Touch it erases no stored document, [setup](api/setup.md#setupaccountprovision) | never |
 | mark the configuration changed, or delete the resources | act: mark the set stale, or delete it | never |
 | the firmware paths | firmware, never written | never |
-| the two paths that act when opened | a factory reset and a reboot | never |
+| the two paths that act on a write, `/sys/factoryreset` and `/sys/reboot` | a factory reset and a reboot; opening either runs nothing, [the names](api/names.md#the-names-that-act-on-a-write-and-on-an-open)[^t-touch-api-names] | never |
 
-In the two syncs down recorded the remote reported its provisioning mode as 0[^t-touch-answers]. A read back of a committed document over the cable has no inert path on
-this generation, so the evidence that an answer was committed is the tag the remote sends for it in the next
-sync's request list, read out of the committed set[^t-touch-host]; whether that is enough is not
-settled[^unchecked].
+> The provisioning row said a provisioning erases the whole data store<!--superseded--> when the account,
+> mode, server or remote number differs from the stored one, until the account handler was read branch by
+> branch: that erase is the hubs' host name, `pimentoblue`, and on `juniper` the removal is handed a folder
+> name nothing assigns and returns at once, so a Touch keeps its documents until a sync replaces
+> them[^t-touch-host][^t-touch-api-setup]. The earlier reading had found the removal in the right function and
+> not asked which branch it sat on.
+>
+> The last row said the two paths act when opened<!--superseded-->, until the remote's native program was read:
+> each acts on a write and runs nothing when opened[^t-touch-api-names].
+
+In the two syncs down recorded the remote reported its provisioning mode as 0[^t-touch-answers].
+**Whether an answer was committed can be asked of the remote**: `harmony.engine?getconfighash` answers at once
+with the entity tags of the stored activity, device and protocol lists and the context, which a host compares
+with the tags it sent; it leaves out the button map list and the settings, and is refused while a sync runs,
+[the engine](api/engine.md#harmonyenginegetconfighash)[^t-touch-api-engine]. The tag the remote sends for each
+document in the next sync's request list, read out of the committed set, is the other evidence[^t-touch-host].
+A committed document itself can be handed back by a resource put that names its address and carries no
+document, a reading never run on a unit, [proxy](api/proxy.md#can-a-stored-document-be-read-back)[^t-touch-api-setup].
+Whether these are enough to know a whole configuration arrived is not settled[^unchecked].
 
 ## Not checked
 
@@ -193,10 +208,14 @@ settled[^unchecked].
 * Whether a sync driven without the client's own file resets and its refused clock write behaves the
   same[^unchecked].
 * How a tag of ours is treated when a remote returns to Logitech's service[^unchecked].
-* How to read a committed document back over the cable without the named door[^unchecked].
+* Whether the read back route of [proxy](api/proxy.md#can-a-stored-document-be-read-back) hands a committed
+  document back on a unit, and what its engine reload does in between[^unchecked].
 
 [^t-touch-host]: Read in the firmware. [The test](../../../tests/test_harmony_touch_host.py)
 [^t-touch-answers]: Measured on a unit. [The test](../../../packages/usb/test/touch-host.test.ts)
+[^t-touch-api-names]: Read in the firmware. [The test](../../../tests/test_harmony_touch_api_names.py)
+[^t-touch-api-setup]: Read in the firmware. [The test](../../../tests/test_harmony_touch_api_setup.py)
+[^t-touch-api-engine]: Read in the firmware. [The test](../../../tests/test_harmony_touch_api_engine.py)
 [^t-touch-sync]: Measured on a unit. [The test](../../../packages/usb/test/touch-sync.test.ts)
 [^d29]: Chosen by this project. [Decision 29](../../../docs/decisions.md#d29)
 [^unchecked]: Not checked.

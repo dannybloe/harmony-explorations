@@ -107,7 +107,8 @@ compiled configuration for a Touch**, and no amount of asking the service differ
 file[^s202][^s203].
 
 **What a host other than Logitech's server would have to answer, and what the remote checks of each answer, is
-[answering a sync](answering-a-sync.md).**
+[answering a sync](answering-a-sync.md).** Every name the remote answers on the cable and every request its
+engine takes through `/sys/hlapi` is [the API](api/README.md).
 
 > This page said the whole conversation rides on the file protocol's request and response command, `0x08`,
 > which carries no file<!--superseded-->, and that the remote asks by absolute address with a resource name

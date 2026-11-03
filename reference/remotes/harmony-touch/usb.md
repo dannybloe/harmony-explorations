@@ -46,8 +46,10 @@ measured there on a Touch. What is this model's own:
 
 Nineteen paths were probed and eight open, with the sizes in [memory.md](memory.md)[^s200]. **On this
 protocol a path can be an action**: `/sys/factoryreset` and `/sys/reboot` both open for reading, so a mode of
-`R` says what a handle will be used for and nothing about what opening the path does[^s200]. That is why
-`INERT_PATHS` is an allow list of paths rather than a check on the mode.
+`R` says what a handle will be used for and nothing about what the path does[^s200]. Read in the remote's
+native program, both act on a write and run nothing when opened, [the names](../../architectures/harmony-touch/api/names.md#the-names-that-act-on-a-write-and-on-an-open)[^t-touch-api-names];
+what any other path does is known only where its handler has been read. That is why `INERT_PATHS` is an
+allow list of paths rather than a check on the mode.
 
 **The configuration is not one of them.** `/cfg/usercfg`, the Harmony 300 and 350's configuration path, does
 not exist on a Touch, nor do five other spellings[^s200], and Logitech's own template carries the read of a
@@ -83,3 +85,4 @@ named door, to learn its size, and has never read it[^s200][^t-touch-sync].
 [^t-touch-sync]: Measured on a unit. [The test](../../../packages/usb/test/touch-sync.test.ts)
 [^t-touch-both-ways]: Measured on a unit. [The test](../../../packages/usb/test/touch-sync-both-ways.test.ts)
 [^unchecked]: Not checked.
+[^t-touch-api-names]: Read in the firmware. [The test](../../../tests/test_harmony_touch_api_names.py)

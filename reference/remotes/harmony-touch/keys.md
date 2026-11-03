@@ -139,7 +139,7 @@ answer only on a remote carrying a factory flag file that the image does not hol
 | key | what it does | evidence |
 |---|---|---|
 | Off | "turns off all of the devices for an activity" rather than one device | [^x-touch-manual], "Turning your system off" |
-| Off, held for 8 seconds | ends the running activity as it goes down, like any press of Off, and then restarts the remote: the kernel's key driver starts a timer when Off goes down and stops it when Off comes up, and a timer that runs out reboots the remote | [^t-touch-keys] |
+| Off, held for 8 seconds | ends the running activity as it goes down, like any press of Off: the kernel's key driver starts a timer when Off goes down and stops it when Off comes up, and a timer that runs out is read in the firmware as rebooting the remote. That reboot is not confirmed: on a held Off the activity ended but the remote did not restart by itself, so whether it reboots or powers off is unsettled | [^t-touch-keys][^unchecked] |
 | Home | shows the activities on the screen; in device mode the way to the device list; with an activity running and its list showing, that activity's start screen | [^x-touch-manual], "Using your Activities" and "Using Devices"; [^t-touch-keys] |
 | Favorites | shows the favourite channels | [^x-touch-manual] |
 | the colour keys | cable, satellite or Blu-ray functions | [^x-touch-manual], "Know your product" |
@@ -178,7 +178,9 @@ the Tap, SwipeLeft and SwipeRight gestures, and never on a screen entry[^t-touch
   of the Home and Favorites zones it runs; the two agree on left and right[^unchecked].
 * Which keys Logitech's client lets a long press be given to[^unchecked].
 * The long press's timing measured on a remote rather than read[^unchecked].
-* The restart on Off held for 8 seconds, and the two combinations, tried on a remote rather than read[^unchecked].
+* Whether a held Off reboots the remote or powers it off: the firmware reads a reboot, but a check of a held
+  Off did not see the remote restart by itself. The two key combinations are still tried on a remote rather
+  than read[^unchecked].
 * Whether the microcontroller's firmware, one file programmed into every model the image serves, can set
   the six home control bits on a Touch[^unchecked].
 

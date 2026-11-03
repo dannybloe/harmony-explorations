@@ -463,11 +463,14 @@ export async function readSysInfo(transport: Transport): Promise<Map<string, str
 /**
  * The paths this library will open, and **the reason this list exists is a near miss.**
  *
- * A Harmony Touch offers `/sys/factoryreset` and `/sys/reboot`, and both **open for reading**. They
- * were opened here, on 28 August 2026, while probing which paths exist, and nothing happened. That
- * was luck rather than design: on this protocol **a path can be an action**, so the read and write
- * distinction this project relies on everywhere else does not survive contact with a filesystem whose
- * files are controls. Opening one for reading is a plausible way to trigger it.
+ * A Harmony Touch's `/sys/factoryreset` and `/sys/reboot` were opened here, on 28 August 2026, while
+ * probing which paths exist, and nothing happened. That looked like luck, and this rail was built on
+ * the fear that it was. Reading the native program later showed those two act on a **write**, not on
+ * an open, so opening them was in fact safe; but it also showed that on this model some names **do**
+ * act on an open for reading, the vibration test names `/tde/haptic/diagnostic` and
+ * `/tde/haptic/calibrate`. So on this protocol **a path can be an action**, and opening one for
+ * reading is a plausible way to trigger it: the read and write distinction this project relies on
+ * everywhere else does not survive contact with a filesystem whose files are controls.
  *
  * So the mode check is not sufficient and this list is the rail. It holds only paths that are
  * **evidently inert**: they carry a size, they return their contents, and nothing about their name or
@@ -679,8 +682,8 @@ export function guardFileProtocol(inner: Transport): Transport {
         if (!INERT_PATHS.includes(path) && !PATH_EXPERIMENT_ALLOWED) {
           throw new TransportError(
             `refusing to open ${path}: on this protocol a path can be an action, and this one is ` +
-              'not on the inert list. /sys/factoryreset and /sys/reboot both open for reading. Set ' +
-              'HARMONY_FILE_PATH_EXPERIMENT=1 to probe a path deliberately.',
+              "not on the inert list. A Touch's /tde/haptic/diagnostic and /tde/haptic/calibrate act " +
+              'on an open for reading. Set HARMONY_FILE_PATH_EXPERIMENT=1 to probe a path deliberately.',
           );
         }
       }

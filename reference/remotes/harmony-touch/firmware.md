@@ -23,9 +23,15 @@ This said the image's contents had not been examined until it was read.
   hidden recovery tool in their desktop clients, [the platform's firmware](../../architectures/harmony-touch/firmware.md).
   It is Logitech's route and this library has no part in it. A Touch reset that way holds a configuration
   of zero bytes[^s195].
-* **`/sys/factoryreset` and `/sys/reboot`** are controls rather than files: both open for reading, and
-  opening one is to be taken as the action its name says[^s200]. They are kept out of reach by
-  `INERT_PATHS`, [usb.md](usb.md).
+* **`/sys/factoryreset` and `/sys/reboot`** are controls rather than files, and **each acts on a write, not
+  on an open**: opening one runs nothing, while writing `reboot` restarts the remote and writing `all` opens
+  the power controller's and the radio's firmware loader device nodes for writing and arms a factory reset for
+  the next start, [the names](../../architectures/harmony-touch/api/names.md#the-names-that-act-on-a-write-and-on-an-open)[^t-touch-api-names]. What it writes to the nodes and what the drivers do is not read. Both were opened for
+  reading on a unit and nothing happened[^s200]. They are kept out of reach by `INERT_PATHS`, [usb.md](usb.md).
+
+> This said both open for reading and opening one is to be taken as the action<!--superseded--> its name
+> says, until the remote's native program was read: each fills the write slot of its entry and nothing
+> else[^t-touch-api-names].
 * Safe mode and a bootloader on this model are **not checked**[^unchecked].
 
 ## Not checked
@@ -39,3 +45,4 @@ This said the image's contents had not been examined until it was read.
 [^unchecked]: Not checked.
 [^s195]: Measured on a unit. [Section 195](../../../docs/findings.md#s195)
 [^t-touch-image]: Read in the firmware. [The test](../../../tests/test_harmony_touch_image.py)
+[^t-touch-api-names]: Read in the firmware. [The test](../../../tests/test_harmony_touch_api_names.py)

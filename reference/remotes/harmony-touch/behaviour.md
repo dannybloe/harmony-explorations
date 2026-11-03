@@ -17,8 +17,10 @@ been measured with an instrument: there is no infrared recording of it[^unchecke
 
 An activity is started by tapping it under Home[^x-touch-manual]. **Off turns off every device of the current
 activity at once** rather than one device[^x-touch-manual]. **Off ends the running activity as it goes down, and
-held for 8 seconds it also restarts the remote**: the screens act on the press and the kernel's timer runs
-beside them[^t-touch-keys]. Picking the remote up from its dock turns it on[^x-touch-manual], since any change of
+held for 8 seconds the firmware reads as also restarting the remote**: the screens act on the press and the
+kernel's timer runs beside them[^t-touch-keys]. **That reboot is not confirmed**: on a held Off the activity
+ended but the remote did not restart by itself, so whether a held Off reboots or powers the remote off is
+unsettled[^unchecked]. Picking the remote up from its dock turns it on[^x-touch-manual], since any change of
 power source wakes the screen[^t-touch-keys].
 
 **The keys are ignored** while a sync runs, while the remote has not been set up, while the screen saying the
@@ -63,12 +65,11 @@ How long a key must be held for its long press is [keys.md](keys.md#holding-a-ke
 
 Logitech returns a Touch to its factory state with a whole firmware image fetched over the network, not with
 a command, [the platform's firmware](../../architectures/harmony-touch/firmware.md). The remote's own
-reset and restart are paths that act when opened, [firmware.md](firmware.md).
+reset and restart are paths that act on a write, not when opened, [firmware.md](firmware.md)[^t-touch-api-names].
 
 ## Not checked
 
-* The way back from device mode, the restart on a held Off and the keys being ignored, tried on a remote
-  rather than read[^unchecked].
+* The way back from device mode and the keys being ignored, tried on a remote rather than read[^unchecked].
 * The switch order and the long press measured on a remote rather than read in its firmware[^unchecked].
 * Anything in use with the infrared receiver[^unchecked].
 * What becomes of changes made on the remote when the client syncs the account down without asking for them
@@ -79,3 +80,4 @@ reset and restart are paths that act when opened, [firmware.md](firmware.md).
 [^t-touch-activities]: Measured on a unit. [The test](../../../packages/usb/test/touch-activities.test.ts)
 [^t-touch-activities-firmware]: Read in the firmware. [The test](../../../tests/test_harmony_touch_activities.py)
 [^t-touch-keys]: Read in the firmware. [The test](../../../tests/test_harmony_touch_keys.py)
+[^t-touch-api-names]: Read in the firmware. [The test](../../../tests/test_harmony_touch_api_names.py)

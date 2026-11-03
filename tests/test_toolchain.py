@@ -246,7 +246,9 @@ class TheRunnerSeesEveryTest(unittest.TestCase):
         # `tests/test_harmony_touch_activities.py`, `_devices.py` and `_favourites.py`.
         # 76 with `tests/test_harmony_touch_keys.py`, todo-touch 3.2, and 77 with
         # `tests/test_harmony_touch_host.py`, todo-touch 4.1 and 4.2.
-        self.assertEqual(len(files), 77, 'the Python test files')
+        # 78 to 81 with the four of todo-touch 5.2, the Harmony Touch's interface as an API:
+        # `tests/test_harmony_touch_api_names.py`, `_setup.py`, `_engine.py` and `_closure.py`.
+        self.assertEqual(len(files), 81, 'the Python test files')
         with_block = 0
         for path in files:
             with open(path, encoding='utf-8') as handle:
@@ -294,7 +296,9 @@ class TheRunnerSeesEveryTest(unittest.TestCase):
         # 73 with the four Harmony Touch files of todo-touch 1.7 and 3.1, each of which carries one.
         # 74 with `tests/test_harmony_touch_keys.py`, todo-touch 3.2, and 75 with
         # `tests/test_harmony_touch_host.py`, todo-touch 4.1 and 4.2, which carry one each.
-        self.assertEqual(with_block, 75,
+        # 76 to 79 with the four of todo-touch 5.2, `tests/test_harmony_touch_api_names.py`, `_setup.py`,
+        # `_engine.py` and `_closure.py`, which carry one each.
+        self.assertEqual(with_block, 79,
                          'files carrying a __main__ block, of %d' % len(files))
 
 
@@ -783,7 +787,9 @@ class APythonBoundOnACorpusTotalIsExact(unittest.TestCase):
         # 75 with the four Harmony Touch files of todo-touch 1.7 and 3.1,
         # 76 with `tests/test_harmony_touch_keys.py`, todo-touch 3.2, and 77 with
         # `tests/test_harmony_touch_host.py`, todo-touch 4.1 and 4.2.
-        self.assertEqual(len(scanned), 77, 'Python test files, which moves when one is added')
+        # 78 to 81 with the four of todo-touch 5.2, the Harmony Touch's interface as an API:
+        # `tests/test_harmony_touch_api_names.py`, `_setup.py`, `_engine.py` and `_closure.py`.
+        self.assertEqual(len(scanned), 81, 'Python test files, which moves when one is added')
         self.assertIn(self.CONTROL, found, 'the pattern matches nothing it should match')
 
     def test_every_remaining_bound_says_why_it_is_not_a_measurement(self):

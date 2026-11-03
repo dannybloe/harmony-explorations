@@ -808,8 +808,10 @@ remote and 2 in the second, which is what section 117 measured as a generator er
    the file protocol and never on the command protocol: a flag of its own, the unit checked against a
    record in the lab's `units/`, and an allow list of the paths a write may open, `/sys/hlapi` first.
    `INERT_PATHS` and `HARMONY_FILE_PATH_EXPERIMENT=1` are unchanged, since they guard reads, and a path that
-   acts when opened, `/sys/factoryreset` and `/sys/reboot`, is never on a write list. Firmware is never
-   written.
+   acts is never on a write list: `/sys/factoryreset` and `/sys/reboot` act on a write, and the vibration
+   test names `/tde/haptic/diagnostic` and `/tde/haptic/calibrate` act on an open for reading. This said "a
+   path that acts when opened, `/sys/factoryreset` and `/sys/reboot`"<!--superseded--> until the native
+   program's name table was read. Firmware is never written.
 
    **The route is answering a sync**, `todo-touch.md` 4.2: the remote asks for its documents and pictures
    through `/sys/hlapi` and something other than Logitech's server answers, or the direct file route of 4.1

@@ -262,6 +262,20 @@ nav:
           - architectures/harmony-touch/README.md
           - Firmware: architectures/harmony-touch/firmware.md
           - USB: architectures/harmony-touch/usb.md
+          - Devices and infrared: architectures/harmony-touch/devices-and-infrared.md
+          - Activities and buttons: architectures/harmony-touch/activities-and-buttons.md
+          - Favourites and settings: architectures/harmony-touch/favourites-and-settings.md
+          - Answering a sync: architectures/harmony-touch/answering-a-sync.md
+          - The API:
+              - architectures/harmony-touch/api/README.md
+              - Names: architectures/harmony-touch/api/names.md
+              - Setup: architectures/harmony-touch/api/setup.md
+              - Proxy: architectures/harmony-touch/api/proxy.md
+              - Connect: architectures/harmony-touch/api/connect.md
+              - System: architectures/harmony-touch/api/system.md
+              - Engine: architectures/harmony-touch/api/engine.md
+              - Activity engine: architectures/harmony-touch/api/activityengine.md
+              - Home control: architectures/harmony-touch/api/automation.md
   - The formats:
       - The configuration file:
           - config-format/README.md

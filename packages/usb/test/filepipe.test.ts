@@ -214,8 +214,9 @@ describe('the guard is the rail, and it refuses every command that writes', () =
   });
 
   it('refuses a path that is not evidently inert, because a path can be an action', async () => {
-    // The near miss this rail exists for: /sys/factoryreset and /sys/reboot both open for reading
-    // on a Harmony Touch. Section 200.
+    // The rail exists because on a Harmony Touch some names act on an open for reading, the vibration
+    // test names /tde/haptic/diagnostic and /tde/haptic/calibrate. /sys/factoryreset and /sys/reboot,
+    // opened here on the bench, turned out to act on a write instead. Section 200.
     const inner = fakeTransport([]);
     const guarded = guardFileProtocol(inner);
     for (const path of ['/sys/factoryreset', '/sys/reboot', '/fw/otaupdate', '/tde/enable']) {
