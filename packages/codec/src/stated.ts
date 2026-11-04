@@ -435,6 +435,19 @@ export function pulsesOfStatedCode(
 ): Pulse[] | undefined {
   const entry = statedProtocol(family, periodNs);
   if (entry === undefined) return undefined;
+  return pulsesOfStatedRow(entry, bits, value);
+}
+
+/**
+ * The frame one row sends for a value, the row given rather than looked up by its family's name.
+ *
+ * **Split out of `pulsesOfStatedCode` for a row that is not in `PROTOCOLS`**: a rhythm fitted to a learned
+ * code, `harmony-touch/learned.ts`, is a row of our own and has no name the table could find it by, and
+ * checking that fit means rendering it with the same encoder every table row is rendered with. A second
+ * dispatch over the four shapes would be a second copy of this one, so the lookup stays in the function
+ * above and the rendering lives here, once.
+ */
+export function pulsesOfStatedRow(entry: StatedProtocol, bits: number, value: bigint): Pulse[] | undefined {
   // **A cell table family is emitted by its own encoder too**, section 231: the bit is which of four or
   // sixteen cell shapes goes out, so neither the five durations nor the biphase half cell applies.
   const c = cellsOf(entry);

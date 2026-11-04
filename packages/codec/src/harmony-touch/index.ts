@@ -8,3 +8,6 @@
 export * from './documents.ts';
 export * from './read.ts';
 export * from './check.ts';
+export * from './definition.ts';
+export * from './learned.ts';
+export * from './compose.ts';

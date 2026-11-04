@@ -110,6 +110,9 @@ pad sends each tap as one request with no hold reports after it[^t-touch-activit
 * **The number pad's entries count from 0 in the same map as the list's**, so one index names a list entry
   and a number pad entry at once and only the group tells them apart. Ten of the twelve maps measured do
   this[^t-touch-activities].
+* **A second group shares the list's numbering.** Six of the seven device maps measured hold one entry of
+  `FunctionGroupType` 36 beside the list's group 0, on an index no group 0 entry holds. Counted with both groups,
+  every device list measured starts at 0; group 0 alone starts at 1 on five of the seven[^t-touch-compose].
 * **An index can repeat.** Two of the seven device maps measured hold two list entries on one index, each
   with one index missing from its list[^t-touch-activities]. The engine and the screens both keep the later
   of the two, so **the earlier entry is on neither the screen nor in the engine's
@@ -307,3 +310,4 @@ themselves, `Numpad` opening the number pad[^t-touch-activities-firmware].
 [^t-touch-activities-firmware]: Read in the firmware. [The test](../../../tests/test_harmony_touch_activities.py)
 [^t-touch-both-ways]: Measured on a unit. [The test](../../../packages/usb/test/touch-sync-both-ways.test.ts)
 [^unchecked]: Not checked.
+[^t-touch-compose]: Measured on a unit. [The test](../../../packages/codec/test/touch-compose.test.ts)

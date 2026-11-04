@@ -149,7 +149,19 @@ Big endian throughout[^t-touch-engine]:
 **A learned raw code**, a `Raw` text starting `F`, has no start and no finish, only a repeat sequence at 16.
 The text is `F` and the carrier in hexadecimal hertz, then `P` and `S` values in hexadecimal microseconds, the
 lamp's on and off times, with any dashes ignored[^t-touch-engine]. No command of the sync measured carried
-one[^t-touch-devices].
+one[^t-touch-devices]. In more detail[^t-touch-engine]:
+
+* **The remote keeps a `Raw` only when it starts with `F`**, and sends a command's key code instead whenever
+  its `KeyCode` is a text that is not empty, so a raw command states `KeyCode` null or empty.
+* **It reads tokens of an optional `P` or `S` and hexadecimal digits**, the letters upper case only and the
+  digits either case, so any other character only separates two tokens. The first token has to hold `F` and
+  the carrier; its period is rounded like a family's, above. Every later token has to start with `P`, the lamp
+  flickering, or `S`, dark; the engine tests for `P` alone. Each value becomes duration words like any other.
+* **A token that breaks the pattern stops the reading where it stands**, and the packet is sent with its
+  sequence's word count still 0. What the native program then plays is not checked[^unchecked].
+
+So any spelling of that grammar reads the same; how Logitech's own learning code spells one is a
+convention of theirs and not something the remote requires.
 
 **The packet goes to the native program as `/ir/ir_send`**, with the device's `ControlPort` as the ports it
 goes out on and a key latency; a held key sends `/ir/ir_send` again with no packet, and a release sends it

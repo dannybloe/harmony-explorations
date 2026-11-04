@@ -123,11 +123,43 @@ common module that sets a device's control port and its setup state, each for th
 the sibling product (`hops`). So whatever a writer puts in a device list travels back up whole, unread
 fields included.
 
+**9. A learned raw code's grammar**, read in the infrared manager's raw code path and the loader, for
+`packages/codec/src/harmony-touch/learned.ts`, which writes the text and reads it back by this grammar
+(`todo-touch.md` 5.3). The loader keeps a command's `Raw` only when it is not null and its first character
+is `F`, and the manager sends the key code instead whenever the command's `KeyCode` is a non empty string,
+so a raw command states `KeyCode` null or empty. The manager then removes every dash (`gsub` with `%-`), and
+walks the text with `gmatch` and `[PS]?%x+`: an optional upper case `P` or `S` and one or more hexadecimal
+digits, either case, so every other character only separates two tokens and is never read. The first token
+is matched, unanchored, with `([F])(%x+)`, and is the carrier in hexadecimal hertz; its period is a billion
+over that carrier taken through the bit library's conversion, so rounded to the nearest nanosecond, the same
+conversion as a family's period in 5. Every later token is matched with `([PS])(%x+)`; a value is read as a
+hexadecimal number, and the prefix is compared with `P` alone, a mark for `P` and a space for anything else,
+so `S` is never named. Each value goes through the duration word
+writer of 4. A token that fails its pattern ends the reading: the manager logs and returns without setting the
+sequence's word count, which stays 0, and the caller sends the packet regardless, since it does not look at
+that return. What the native program plays for such a packet was not read. `F` being a hexadecimal digit has
+two consequences the grammar keeps: a carrier's digits run on to the next `P` or `S`, and an `F` after a value
+is one more digit of it. **Anchored inside the functions, not the files**: the compiled chunks are parsed as
+Lua 5.1 (`lua_functions`, every byte consumed), each top level function found by the global it is assigned
+to, and the constants asserted are those of the raw reader, `generateFromRawIr`, and of the loader's
+command reader, `getCommandsAndToggleBytes`. A whole file was too wide a net: the empty string is a constant
+of 68 of the 175 engine files, 16 of 14 and -1 of 25, and no engine file at all holds the string `S`. Inside
+the raw reader: the dash, the empty string, the three patterns, `F` and `P`, the numbers 16, 1e9 and -1, the
+packet kind 255, and the duration word writer's name; `S` is not among its constants while `P` is. The control
+is the key code path, `generateFromKeyCode`, beside it, which holds none of the patterns. Inside the loader's
+command reader: `Raw`, `KeyCode`, `sub`, 1 and `F`. That the key code wins over a raw text, and that a failed
+token returns without the word count, are read in the decompiled source and not anchored. **What a writer of the text
+chooses is not here**: the engine accepts any spelling of the grammar, and the spelling `learned.ts` writes,
+upper case, four digits or eight, no separators, opening on `P`, is the one MyHarmony's learning code writes
+(its carrier recorder, in the lab's decompiled client), which makes it a convention and not a fact of the
+remote.
+
 ## What it settles and what it does not
 
 **Settled**, on one build: the packet, the key code grammar as the remote reads it, how segments become
-durations, the rounding of the period, the hand off, and which fields the engine and the screens never
-name. **Not settled**: what `hal` does with the packet beyond the three field names, the byte 50, the byte
+durations, the rounding of the period, the hand off, which fields the engine and the screens never
+name, and the grammar a learned raw code is read by. **Not settled**: what `hal` does with the packet
+beyond the three field names, the byte 50, the byte
 after the repeat count, `ports`, how a start, repeat and finish are played and how the presilence is
 adjusted for the repeat count; the native side's own conversion of the period; and what `G:` and the
 trailing `:3` mean, since the remote ignores both.
@@ -348,6 +380,107 @@ class TheEngineBuildsThePacketItself(TheImage):
         hal = self.native[HAL]
         for text in (b'/ir/ir_send\x00', b'period_ns', b'presilence', b'min_repeat', b'keyLatency'):
             self.assertIn(text, hal, text)
+
+
+def lua_functions(blob):
+    """The top level functions of a compiled Lua 5.1 chunk, by the global each is assigned to, as constant lists.
+
+    The layout is stock Lua 5.1 with 4 byte ints and `size_t` and 8 byte numbers, which the engine's header
+    states; the parse has to consume every byte, which is its own check. A top level `function name` compiles
+    to a closure over the main function's prototype list followed by a store into the global `name`, so the
+    main function's code is walked for that pair: `CLOSURE` (opcode 36) loads a prototype into a register and
+    `SETGLOBAL` (opcode 7) stores that register under a constant's name.
+    """
+    at = 12
+
+    def take(fmt):
+        nonlocal at
+        value = struct.unpack_from(fmt, blob, at)[0]
+        at += struct.calcsize(fmt)
+        return value
+
+    def text():
+        nonlocal at
+        n = take('<I')
+        if n == 0:
+            return None
+        value = blob[at:at + n - 1].decode('latin-1')
+        at += n
+        return value
+
+    def function():
+        nonlocal at
+        text()
+        at += 4 + 4 + 4  # the lines it is defined on, and four bytes of counts and flags
+        n = take('<i')
+        code = list(struct.unpack_from('<%dI' % n, blob, at))
+        at += 4 * n
+        constants = []
+        for _ in range(take('<i')):
+            tag = take('<B')
+            constants.append(None if tag == 0 else bool(take('<B')) if tag == 1
+                             else take('<d') if tag == 3 else text() if tag == 4 else ValueError(tag))
+        prototypes = [function() for _ in range(take('<i'))]
+        lines = take('<i')  # line information, counted first: `at += 4 * take(...)` would lose the count's own 4
+        at += 4 * lines
+        for _ in range(take('<i')):  # local names and their ranges
+            text()
+            at += 8
+        for _ in range(take('<i')):  # upvalue names
+            text()
+        return code, constants, prototypes
+
+    code, constants, prototypes = function()
+    if at != len(blob):
+        raise ValueError(f'{at} of {len(blob)} bytes read')
+    out, loaded = {}, {}
+    for instruction in code:
+        opcode, a, bx = instruction & 0x3F, (instruction >> 6) & 0xFF, instruction >> 14
+        if opcode == 36:
+            loaded[a] = bx
+        elif opcode == 7 and a in loaded and isinstance(constants[bx], str):
+            out[constants[bx]] = prototypes[loaded.pop(a)][1]
+    return out
+
+
+class TheEnginesRawCodeGrammar(TheImage):
+    """Fact 9: the constants of the engine's raw code reader and of the loader's command reader, by function."""
+
+    #: The raw reader's patterns, which the key code path beside it must not hold.
+    PATTERNS = ('%-', '[PS]?%x+', '([F])(%x+)', '([PS])(%x+)')
+
+    def functions(self, path):
+        return lua_functions(self.engine[path])
+
+    def test_the_chunk_reader_reads_every_compiled_engine_file_to_its_last_byte(self):
+        # The parse is what scopes every assertion below, so it is held over all 172 chunks, not only two.
+        chunks = [data for data in self.engine.values() if data[:4] == b'\x1bLua']
+        self.assertEqual(len(chunks), 172)
+        for data in chunks:
+            lua_functions(data)
+
+    def test_the_raw_reader_holds_the_dash_the_three_patterns_f_p_and_the_carrier_arithmetic(self):
+        raw = self.functions(IRMANAGER)['generateFromRawIr']
+        for value in self.PATTERNS + ('', 'F', 'P', 'appendDurationToByteArray'):
+            self.assertIn(value, raw, value)
+        for value in (16, 1e9, -1, 255):
+            self.assertIn(float(value), [c for c in raw if isinstance(c, float)], value)
+
+    def test_the_raw_reader_names_p_and_not_s(self):
+        raw = self.functions(IRMANAGER)['generateFromRawIr']
+        self.assertIn('P', raw)
+        self.assertNotIn('S', raw)
+
+    def test_the_key_code_path_beside_it_holds_none_of_the_raw_patterns(self):
+        # The control that makes the function scope mean something: the same file's other sender.
+        keycode = self.functions(IRMANAGER)['generateFromKeyCode']
+        self.assertEqual([p for p in self.PATTERNS if p in keycode], [])
+
+    def test_the_loaders_command_reader_holds_raw_keycode_sub_1_and_f(self):
+        commands = self.functions(READER)['getCommandsAndToggleBytes']
+        for value in ('Raw', 'KeyCode', 'sub', 'F'):
+            self.assertIn(value, commands, value)
+        self.assertIn(1.0, [c for c in commands if isinstance(c, float)])
 
 
 class TheEngineRunsOnLua51AndNotOnLuaJIT(TheImage):

@@ -106,8 +106,11 @@ function pulses(words: readonly number[]): Pulse[] {
  * What stops the headerless convention swallowing a lead in now that 4490 is under the threshold is
  * `TRAILING_GAP_US` on the other half: a header's mark is thousands of microseconds, so the pair is
  * consumed and the walk stops one bit in, which is under `MIN_BITS`.
+ *
+ * Exported for `harmony-touch/learned.ts`, which asks where a recorded frame's closing silence has run on
+ * into the gap after it and takes the bound this reader ends a frame on, rather than a second one.
  */
-const GAP_US = 8000;
+export const GAP_US = 8000;
 /** The other half of a pair being this long also ends the frame, which is how a pulse width protocol
  *  such as Sony terminates: the marks stay short and the final space is the gap. */
 const TRAILING_GAP_US = 2000;

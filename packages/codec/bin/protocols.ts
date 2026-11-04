@@ -1927,8 +1927,13 @@ export interface StatedProtocol {
    *
    * A documented entry has \`codes: 0\` because it was measured over none, which is the honest number
    * and not a placeholder. What it has instead is \`readBack\`.
+   *
+   * \`learned\` is never in this table: it is a row of our own fitted to one learned code that no row here
+   * fits, \`rhythmOfLearned\` in \`harmony-touch/learned.ts\`, measured over that one code and rendered back
+   * against it, so its \`codes\` and \`exact\` are 1 and 0 and its \`spread\` is the largest share any of
+   * its durations sits from the learned one.
    */
-  readonly source: 'corpus' | 'compiled' | 'both' | 'documented' | 'stated';
+  readonly source: 'corpus' | 'compiled' | 'both' | 'documented' | 'stated' | 'learned';
   /**
    * Catalogue codes emitted with this rhythm that Logitech's own analyser decoded back to the exact
    * number they were built from.
