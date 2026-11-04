@@ -4,11 +4,11 @@ Everything that has to be done eventually for the library and FreeHarmony to be 
 not on the route to a configuration built entirely by us for the Harmony 650. That route is
 [todo-compile-650.md](todo-compile-650.md). An item moves there when it turns out to block it. What needs
 Logitech's service is gathered in [todo-secure-logitech.md](todo-secure-logitech.md) and processed in
-[todo-process-logitech.md](todo-process-logitech.md), both worked beside [todo.md](todo.md), which sets
+[todo-process-logitech.md](todo-process-logitech.md), both worked beside [todo.md](../todo.md), which sets
 the order. The application's own items are in
 [todo-freeharmony.md](todo-freeharmony.md).
 
-The old numbers in brackets are [todo.md](todo.md)'s, which stays as it is until everything in it has a
+The old numbers in brackets are [todo.md](../todo.md)'s, which stays as it is until everything in it has a
 home in one of the two files.
 
 ---
@@ -73,11 +73,11 @@ The Harmony One is a different type, with a touch screen and its own screens, so
   - [x] 5.3.1 A whole configuration written (sections 300 and 301)
   - [x] 5.3.2 A composed device: refused while its device list is full (section 285); done (sections 385 and 386): seven devices composed, written and heard
   - [x] 5.3.3 A composed activity and its own device list: against its file only, and never on the remote (was 1.2.11); done on the remote (sections 385 and 386), todo.md 1.2.11
-- [ ] 5.4 Compose and write an activity for the Harmony 525; nothing can compile a configuration for that model, so there is no vendor file to check ours against (was 1.5)
+- [ ] 5.4 Compose and write an activity for the Harmony 525; nothing can compile a configuration for that model, so there is no vendor file to check ours against (was 1.5); prepared first by [todo-prepare-525.md](todo-prepare-525.md), plan 012, which closes the rail table this starts from
   - [x] 5.4.1 One block written back unchanged (section 269)
   - [ ] 5.4.2 Whether the 0xFE fill above the state variable storage happens on the Harmony 525 too: unmeasured (was 1.3.2); read in the firmware (section 274): it fills from narrow + 2 * wide to 64; unmeasured on the remote
 - [ ] 5.5 The Harmony 300 and 350, and the Harmony Touch: the file based family, read only so far; the Touch has its own track, [todo-touch.md](todo-touch.md), in the sequence as `todo.md` 3.9
-- [ ] 5.6 The legacy remotes, Harmony 880, 885, 890 and 895: contributed configurations only, no compiler
+- [ ] 5.6 The legacy remotes, Harmony 880, 885, 890 and 895: no compiler; two 885s on the bench, read only, prepared for writing by [todo-prepare-885.md](todo-prepare-885.md), plan 012; the 890 and 895 contributed configurations only, with no firmware image anywhere
 - [x] 5.7 A reference folder and a skill for every remote on the bench, the way the Harmony 650 has `reference/remotes/harmony-650/` and the `harmony-650` skill: the folder holds the model's facts with a source each, the skill says to read it first and carries that remote's write and bench procedure, so an agent sent to any remote starts from what is known; the One, 600, 700, 300 and 350 moved to [todo-process-logitech.md](todo-process-logitech.md), whose processing lands in their folders
   - [x] 5.7.4 Harmony 525, with an architecture folder of its own, and the hazard that its application firmware sits one erase block below its configuration
   - [x] 5.7.6 Harmony Touch, file based as well, read only
@@ -114,7 +114,7 @@ The Harmony One is a different type, with a touch screen and its own screens, so
 - [ ] 6.26 Replacing a device's input variable, which needs a variable removal step, for composing an activity onto a file that already has one (was `todo-compile-350.md` 4.2.1; building from nothing, chapter 5, does not need it)
 - [ ] 6.27 Stepping or mixed inputs, and inputs on a device whose key delay is not one tenth, which no Logitech file of this family shows (was `todo-compile-350.md` 4.2.2)
 
-## 8. The specification and the code are the product ([plan 005](docs/plans/005-specs-and-code.md))
+## 8. The specification and the code are the product ([plan 005](../docs/plans/005-specs-and-code.md))
 
 Moved to [todo-reference.md](todo-reference.md) on 24 October 2026, with what was done here: the decision (8.1, decision 25) and a drawing for every bench model (8.5).
 

@@ -69,7 +69,7 @@ Logitech compile of part of a test setup written and used, then our composers on
 
 ## 5. Nothing copied
 
-- [x] 5.1 Every section built by a generator: the name tree, the architecture record, the timestamp and clock, the infrared table, the action lists, the parameter block, the number sender, the metadata archive and the slots 2.1 named; [plan 011](docs/plans/011-the-350-from-nothing.md) is the route
+- [x] 5.1 Every section built by a generator: the name tree, the architecture record, the timestamp and clock, the infrared table, the action lists, the parameter block, the number sender, the metadata archive and the slots 2.1 named; [plan 011](../docs/plans/011-the-350-from-nothing.md) is the route
   - [x] 5.1.1 The frame for the family, a round trip on the seven Logitech compiles: `FRAME_ARCHITECTURES[16]`, all seven rebuilt byte for byte, header, section table, end marker and trailer now built, `packages/codec/test/frame.test.ts`
   - [x] 5.1.2 The state tables on our own numbers, with the indices allocator: `buildNoScreenStateTables`, all 13 compiles equal to Logitech's by content, the transition order inside a record not reproduced and harmless, `packages/codec/test/noscreenstatetables.test.ts`; the census moved, nothing left `nowhere`
   - [x] 5.1.3 The family's constants: log area, parameter block, digit table, start up table and lists, pin tags and lists: 232 bytes, every builder equal on all 13 compiles, three of them Harmony 300s, and the start up's map the lowest group holding a device, `packages/codec/test/noscreenconstants.test.ts`; the census moved, `noscreencensus.test.ts`

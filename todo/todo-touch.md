@@ -10,7 +10,7 @@ first and in depth, and a recording of a sync follows with what the firmware sho
 configuration file and the computer writes it. A Touch takes no compiled file. During a sync it hands the
 computer a list of web requests, the computer performs them and passes the answers back, and the remote
 assembles its configuration itself. Read in MyHarmony's code and never observed:
-[the platform's usb.md](reference/architectures/harmony-touch/usb.md), sections 202 and 203. Logitech's
+[the platform's usb.md](../reference/architectures/harmony-touch/usb.md), sections 202 and 203. Logitech's
 client also describes writing a user configuration onto a Touch as a file, with the read back switched off,
 section 198, so a direct route may exist beside the sync.
 

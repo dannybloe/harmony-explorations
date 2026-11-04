@@ -572,7 +572,11 @@ file's own header is where its reading lives.
   with `accounts.md` for the test accounts and `corpus.md` for where each configuration came from.
 * **`docs/findings.md` is the frozen archive** of the arguments, sections 1 to 436, grepped and read in
   ranges, never loaded whole, and it takes nothing new.
-* `docs/status.md`, where the work stands; `todo.md`, which alone sets the order, with `todo-secure-logitech.md` and `todo-process-logitech.md` worked
+* `docs/status.md`, where the work stands; `todo.md`, which alone sets the order and stays in the root as
+  the entry point, while every track's own todo file lives in `todo/` under its unchanged name, moved there
+  on 4 November 2026, so a mention by name in a comment still finds it; `todo-prepare-885.md` and
+  `todo-prepare-525.md` are the legacy remotes' preparation, beside the sequence rather than in it, plan
+  012; with `todo-secure-logitech.md` and `todo-process-logitech.md` worked
   beside it whenever an item needs a compile from Logitech's service, and
   `todo-compile-650.md` (finished), `todo-compile-700.md` (finished) and `todo-compile-600.md` (finished), `todo-compile-one.md` (finished),
   `todo-compile-350.md` (finished) and `todo-compile-300.md` (closed into the 350's by decision 28), `todo-reference.md` (finished), `todo-touch.md` (`todo.md` 3.9, the track being worked), the sequence, with `todo-later.md` and `todo-freeharmony.md` for what is off that route;

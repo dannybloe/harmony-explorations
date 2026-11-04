@@ -22,6 +22,9 @@ todo.md                         THE sequence, and the only place it lives: seven
                                 of us adds, ticks or removes an item. It replaced docs/roadmap.md
                                 on 6 September 2026, which was doing four jobs and carried 1121 of
                                 its 2404 lines as three separate accounts of what to do next
+todo/                           every track's own todo file, one per track under the name it always
+                                had, so a comment citing "todo-compile-650 3.9" still finds it.
+                                Moved out of the root on 4 November 2026; todo.md stays there
 docs/decisions.md               the numbered decisions, plus what this project is and its
                                 context. **The numbers are cited from here, from findings.md and
                                 from code comments, so they never change**; a decision that turns

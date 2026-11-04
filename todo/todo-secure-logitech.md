@@ -16,7 +16,7 @@ and this one is done as soon as the service is no longer needed. **One condition
 when its file is checked to hold what it was compiled for, the family present or the setting seen to
 change something, because finding a gap during processing may be too late to compile again.
 
-**The order is [todo.md](todo.md)'s**, and this todo is worked beside it whenever an item there needs a
+**The order is [todo.md](../todo.md)'s**, and this todo is worked beside it whenever an item there needs a
 compile. It was written to come first, before the Harmony 650's track resumed; since then the 650, 700,
 600, One, 300 and 350 tracks were finished from `todo.md` while items here were parked, so this sentence
 was changed on 2 November 2026 to say what the work does.
