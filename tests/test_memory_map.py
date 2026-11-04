@@ -746,6 +746,10 @@ _PUBLISHABLE_BYTE_RUNS = {
     # The same reply in safe mode, the version of the safe mode image, which the architecture's
     # `usb.md` publishes beside the first. A model's state, the same in every unit's safe mode.
     '20 25 12 ff 94 16 00',
+    # The Harmony 515's version fields without the reply byte, firmware 3.4, board 1.0, flash `FF:12`,
+    # skin 67, platform 9, published in the architecture's `usb.md` and the 515's test notes since
+    # commit 15ab9836. A model's build and skin, with no serial in it, like the 525's reply above.
+    '34 10 12 ff 90 43 09',
     # Base slot 3's clock record on the bench Harmony 525: a build timestamp of 2 October 2013, the
     # unit on our own bench, and the document spells out what each byte means two lines above it.
     '2c 28 12 01 03 09 0d',
