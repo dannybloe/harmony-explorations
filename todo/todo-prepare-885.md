@@ -19,7 +19,7 @@ Written on 4 November 2026; linked from `todo-later.md` 5.6.
 
 ## 1. Recovery and the write path, read in the firmware
 
-- [ ] 1.1 The bootloader: what it dispatches over USB, whether it is a flash programmer, and which key held at start keeps it (D8, D9)
+- [x] 1.1 The bootloader: what it dispatches over USB, whether it is a flash programmer, and which key held at start keeps it (D8, D9)
 - [ ] 1.2 Safe mode: whether this platform has one at all, or whether the bootloader does its job (D8)
 - [ ] 1.3 The erase: the address check at `0x19B5C` and what it bounds, the erase block size, and which flash part (D1, D2, D3)
 - [ ] 1.4 The write: `WRITE_FLASH`'s data path, whether the remote erases before it programs, the transfer size (D3)
