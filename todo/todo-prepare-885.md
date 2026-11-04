@@ -20,13 +20,13 @@ Written on 4 November 2026; linked from `todo-later.md` 5.6.
 ## 1. Recovery and the write path, read in the firmware
 
 - [x] 1.1 The bootloader: what it dispatches over USB, whether it is a flash programmer, and which key held at start keeps it (D8, D9)
-- [ ] 1.2 Safe mode: whether this platform has one at all, or whether the bootloader does its job (D8)
-- [ ] 1.3 The erase: the address check at `0x19B5C` and what it bounds, the erase block size, and which flash part (D1, D2, D3)
-- [ ] 1.4 The write: `WRITE_FLASH`'s data path, whether the remote erases before it programs, the transfer size (D3)
-- [ ] 1.5 How a write ends: the `WRITE_MISC` selectors, the unidentified chain testing `0xE0` at `0x14B12`, and what makes the remote take up a new configuration with no escape in its dispatch (D6)
-- [ ] 1.6 What the remote checks at start, what it shows when a configuration fails, and whether that latches (D7)
+- [x] 1.2 Safe mode: whether this platform has one at all, or whether the bootloader does its job (D8)
+- [x] 1.3 The erase: the address check at `0x19B5C` and what it bounds, the erase block size, and which flash part (D1, D2, D3)
+- [x] 1.4 The write: `WRITE_FLASH`'s data path, whether the remote erases before it programs, the transfer size (D3)
+- [x] 1.5 How a write ends: the `WRITE_MISC` selectors, the unidentified chain testing `0xE0` at `0x14B12`, and what makes the remote take up a new configuration with no escape in its dispatch (D6)
+- [x] 1.6 What the remote checks at start, what it shows when a configuration fails, and whether that latches (D7)
 - [ ] 1.7 Other write paths: a data memory write, any settings or EEPROM store, and the "FLASH Memory ID", "Erase" and "Clear" texts in the image (D11)
-- [ ] 1.8 The one byte reads at `0x000104` and `0x000105` that call routines, and what a read above `0x200000` returns (D4)
+- [x] 1.8 The one byte reads at `0x000104` and `0x000105` that call routines, and what a read above `0x200000` returns (D4)
 - [ ] 1.9 A section for the Harmony 880 and 885 in the `recovering-a-remote` skill, from 1.1 to 1.6 (D9)
 
 ## 2. On the bench, needing an 885 on the cable
