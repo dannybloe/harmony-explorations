@@ -16,13 +16,13 @@
  * the frame: the lead in, the two cells (or the biphase half cell, or the cell table) and the carrier. A
  * definition needs more, because the Touch sends whole transmissions: what follows the frame (a stop mark, a
  * gap, the constant length a frame is padded to), what is sent once before the repetitions and what repeats.
- * **A row states that only in its blocks**, `tail`, the whole first transmission, and `held`, one
- * repetition, which is the shape Logitech's compiler stored and which our table keeps. So the definition is
- * read out of the blocks, and a row with no `held` block is refused: it states no trailer and no gap, and a
- * definition made without them would send its frames back to back. **619 of the table's 681 rows carry no
- * block**, because `bin/protocols.ts` writes a stated row's blocks only where Logitech's definition states a
- * repeat count, and a block is the shape plus that count. `held` needs no count; whether to write it for
- * every stated row is a decision for the generator, and this file does not make it.
+ * **A row states that only in its blocks**: `held`, one repetition, and the first transmission, `tail` at
+ * the compiler's own repeat count where the definition states one and otherwise `opening`, the same at one
+ * repetition. So the definition is read out of the blocks, and a row with no `held` block is refused: it
+ * states no trailer and no gap, and a definition made without them would send its frames back to back. Since
+ * `todo-touch.md` 5.3.4 every stated row carries `held`, and 8 rows of the table's 681 still carry none, all
+ * measured ones: 5 are refused for that, and 3 earlier as whole record shapes; 577 are written, and the 96 refused for a width the family's name does not give write at the
+ * widths a caller states, `test/touch-definition.test.ts`.
  *
  * **Reading a block back into segments is the inverse of `blockOfDefinition` in `archive.ts`**, which built
  * those blocks out of Logitech's definitions in the first place, and of `pulsesOfBlock` in `irframe.ts`, which
@@ -63,19 +63,19 @@ export type DefinitionRefusal =
   | 'the family\'s name states no width for its values and none was given'
   | 'a width that is not a whole number of cells'
   | 'a copy names a rhythm the row does not state'
-  | 'a copy\'s own lead in words, which no segment states apart from its copy'
+  | 'a copy\'s own lead in before a copy that sends the rhythm\'s'
+  | 'a copy\'s own lead in followed by something other than its copy'
+  | 'a copy\'s own lead in before a spelling that states a header of its own'
   | 'a pad that follows no copy'
   | 'a padded block with no total to solve its pads from'
   | 'a padded block whose other copies vary in length'
   | 'a padded block whose pads do not divide evenly'
   | 'pads of a stated period and pads solved from a total in one block'
   | 'a pad longer than its period before the block\'s end'
-  | 'the block ends inside a frame, where the stored microsecond cannot be taken off'
   | 'the values of a code are sent out of order'
   | 'more segments than a one digit index names'
   | 'more literal runs than the catalogue has words for'
   | 'a pulse width frame with an opening mark or a set mark of its own'
-  | 'a pulse width copy with no lead in'
   | 'a pulse width lead in whose space is not the cell\'s constant half, and nothing after the frame to take that half out of'
   | 'a frame stating its carried half first and an opening mark of its own'
   | 'an opening mark of its own and no constant half after the frame to shift it onto'
@@ -166,6 +166,12 @@ interface CopyEmission {
   readonly trailer: readonly number[];
   /** The constant length the copy is padded to, from its start, or undefined where it is not padded. */
   readonly total: number | undefined;
+  /**
+   * The copy's own lead in, signed microseconds, where its segment states one that is not the rhythm's: the
+   * block's `ofCopy` words in front of a bare copy. Empty otherwise. It is part of the copy's segment, so the
+   * copy's start, and with it a padded copy's length, counts from the first of these words.
+   */
+  readonly head: readonly number[];
 }
 
 /** A run of literal words between copies: a code segment. */
@@ -179,7 +185,7 @@ type Emission = CopyEmission | WordsEmission;
 /** One item of a block as read, before its pads are solved. */
 type RawEmission =
   | { kind: 'copy'; at: number; shape: number; bare: boolean; trailer: number[] | undefined;
-    pad: { extra: number; period: number | undefined } | undefined }
+    pad: { extra: number; period: number | undefined } | undefined; head: number[] }
   | { kind: 'words'; words: number[] };
 
 /**
@@ -200,11 +206,25 @@ function merged(words: readonly number[]): number[] {
   return out;
 }
 
-/** The stored microsecond off a run's last duration, keeping its level. */
+/**
+ * The stored microsecond off a run's last word, read on the words as the block states them, before they are
+ * joined.
+ *
+ * **A last word of zero carries none, unless the word before it is the microsecond itself.** Two writers put
+ * it there and they differ exactly at a zero. `blockOfDefinition` adds the sign of the last word, which is
+ * nothing for a zero: `QE Time Delay B 20K` closes on a zero length mark, floored to 1 by `atomUs`, and a
+ * zero space, `[1, 0]`, and taking a microsecond off it removed the 1. Logitech's compiler, measured, carves
+ * the microsecond off a trailing gap as a word of its own, a silence of 1, and closes on a zero after it:
+ * `Microsoft 30 Bit`'s `[..., -17938, -1, 0]`. So a zero takes one off the word before it only where that word
+ * is a silence of exactly one microsecond.
+ */
 function unstored(words: readonly number[]): number[] {
   const out = [...words];
-  const last = out[out.length - 1];
-  if (last !== undefined) out[out.length - 1] = last - Math.sign(last);
+  const n = out.length;
+  const last = out[n - 1];
+  if (last === undefined) return out;
+  if (last !== 0) out[n - 1] = last - Math.sign(last);
+  else if (out[n - 2] === -1) out[n - 2] = 0;
   return out;
 }
 
@@ -231,33 +251,56 @@ function fixedCopyLength(shape: FrameShape, bare: boolean, bits: number): number
  * **The stored microsecond is taken off where it landed**: the last pad's copy runs one longer than its
  * period, or the last run of words is one longer. Both forms occur, `blockOfDefinition` puts it on the pad's
  * own extra and in the total, and the blocks measured off Logitech's compiles carry it in the total alone, and
- * the arithmetic here does not need to know which.
+ * the arithmetic here does not need to know which. **A block that ends on a copy carries none**: Logitech's
+ * definition states nothing after that frame, and `blockOfDefinition` adds the microsecond to a last pad or a
+ * last word only, never to a frame's own last duration. This refused such a block, 13 rows, until
+ * `todo-touch.md` 5.3.4 gave the stated rows count free blocks and the refusal turned out to be this file's
+ * reading rather than the rows': there is simply nothing to take off.
  */
 function emissionsOf(
   block: BlockTail, shapes: readonly FrameShape[], widthAt: (at: number) => number | undefined,
+  literals: ReadonlySet<string> = new Set(),
 ): Emission[] | DefinitionRefusal {
   const raws: RawEmission[] = [];
-  for (const item of block.items) {
+  /** An `ofCopy` run waiting for the copy it belongs to. */
+  let head: number[] | undefined;
+  for (const [index, item] of block.items.entries()) {
     if ('copy' in item) {
       const shape = item.shape ?? 0;
       if (shapes[shape] === undefined) return 'a copy names a rhythm the row does not state';
-      raws.push({ kind: 'copy', at: item.at ?? 0, shape, bare: item.copy === 'bare', trailer: undefined, pad: undefined });
+      // A head goes with a bare copy only: a full one would send the rhythm's own lead in after it.
+      if (head !== undefined && item.copy !== 'bare') return 'a copy\'s own lead in before a copy that sends the rhythm\'s';
+      raws.push({ kind: 'copy', at: item.at ?? 0, shape, bare: item.copy === 'bare', trailer: undefined, pad: undefined, head: head ?? [] });
+      head = undefined;
       continue;
     }
+    if (head !== undefined) return 'a copy\'s own lead in followed by something other than its copy';
     const last = raws[raws.length - 1];
     if ('words' in item) {
-      // A copy's own lead in, emitted before it and counted into its period, `BlockTailItem.ofCopy`. No row
-      // carries one; a segment would have to state it as part of the copy's header, which this does not do.
-      if (item.ofCopy === true) return 'a copy\'s own lead in words, which no segment states apart from its copy';
+      // **A copy's own lead in**, `BlockTailItem.ofCopy`: the header of a segment whose lead in is not the
+      // rhythm's, which `blockOfDefinition` writes as words in front of a bare copy, archive.ts's `ownHead`.
+      // `Daewoo 40 Bit` repeats a segment opening on 9000 and 2260 where its frame opens on 9000 and 4500. It
+      // is held for the copy that follows and becomes that copy's segment's header, which is where Logitech's
+      // definitions state it and where a copy period counts it from.
+      if (item.ofCopy === true) { head = [...item.words]; continue; }
       // **Words directly after a copy are that copy's trailer**, since `blockOfDefinition` pushes a copy's
       // closing words as one item right after it; any later run is an emission of its own.
-      if (last?.kind === 'copy' && last.trailer === undefined && last.pad === undefined) last.trailer = [...item.words];
+      // **Unless the repetition sends the same run as a literal of its own**, `literals`: then it is that
+      // literal here too, and reading it as a trailer would make the first transmission's copy a segment the
+      // repetition does not hold. `X10 AllOnOff 11 Bit Dual` is the case, a run between its two frames that
+      // its repetition opens on. Only where a copy follows, as there: a run followed by a pad is a copy's, and
+      // one followed by another run is a copy's trailer that happens to equal the repetition's literal,
+      // `KMD 77 Bit`'s closing 818, 6544, 818, 818 before a ditto of the same durations.
+      const next = block.items[index + 1];
+      const literal = literals.has(JSON.stringify(item.words)) && next !== undefined && 'copy' in next;
+      if (!literal && last?.kind === 'copy' && last.trailer === undefined && last.pad === undefined) last.trailer = [...item.words];
       else raws.push({ kind: 'words', words: [...item.words] });
       continue;
     }
     if (last?.kind !== 'copy' || last.pad !== undefined) return 'a pad that follows no copy';
     last.pad = { extra: item.pad, period: item.period ?? block.copyPeriod };
   }
+  if (head !== undefined) return 'a copy\'s own lead in followed by something other than its copy';
   if (raws.length === 0) return [];
 
   const lastRaw = raws[raws.length - 1]!;
@@ -277,7 +320,9 @@ function emissionsOf(
       const bits = widthAt(r.at);
       const length = bits === undefined ? undefined : fixedCopyLength(shapes[r.shape]!, r.bare, bits);
       if (length === undefined) return 'a padded block whose other copies vary in length';
-      fixed += length + (r.trailer ?? []).reduce((n, w) => n + Math.abs(w), 0);
+      // A copy's own lead in is inside its segment, so it counts with the copy; a padded copy's runs within
+      // the shared length and is left out with it.
+      fixed += length + [...r.head, ...r.trailer ?? []].reduce((n, w) => n + Math.abs(w), 0);
     }
     const stored = lastRaw.kind === 'copy' && lastRaw.pad !== undefined ? 1 : 0;
     const room = block.total - fixed - stored;
@@ -289,10 +334,10 @@ function emissionsOf(
   for (const [index, r] of raws.entries()) {
     const isLast = index === lastIndex;
     if (r.kind === 'words') {
-      out.push({ kind: 'words', words: isLast ? unstored(merged(r.words)) : merged(r.words) });
+      out.push({ kind: 'words', words: merged(isLast ? unstored(r.words) : r.words) });
       continue;
     }
-    let trailer = merged(r.trailer ?? []);
+    let trailer = merged(isLast && r.pad === undefined ? unstored(r.trailer ?? []) : r.trailer ?? []);
     let total: number | undefined;
     if (r.pad !== undefined) {
       if (r.pad.period !== undefined) {
@@ -300,11 +345,8 @@ function emissionsOf(
         if (r.pad.extra !== 0 && !isLast) return 'a pad longer than its period before the block\'s end';
         total = r.pad.period;
       } else total = shared;
-    } else if (isLast) {
-      if (trailer.length === 0) return 'the block ends inside a frame, where the stored microsecond cannot be taken off';
-      trailer = unstored(trailer);
     }
-    out.push({ kind: 'copy', at: r.at, shape: r.shape, bare: r.bare, trailer, total });
+    out.push({ kind: 'copy', at: r.at, shape: r.shape, bare: r.bare, trailer, total, head: merged(r.head) });
   }
   return out;
 }
@@ -401,27 +443,29 @@ function spelled(
     if (t.firstMark !== undefined || t.oneMark !== undefined || t.carriedFirst === true) {
       return 'a pulse width frame with an opening mark or a set mark of its own';
     }
-    if (header[0] === 0) return 'a pulse width copy with no lead in';
-    if (header[1] === t.flat) {
+    if (header[0] !== 0 && header[1] === t.flat) {
       return { header: [header[0]], cells: two([-t.flat, t.zero], [-t.flat, t.one]), trailer, encodingType: 0, bitsPerDigit: 1 };
     }
-    // **Where the lead in's space is not the constant half, the cells are stated mark first**, (carried
-    // mark, constant space), which is how Logitech states the five such families of the catalogue. That
+    // **Where the lead in's space is not the constant half, or there is no lead in, the cells are stated mark
+    // first**, (carried mark, constant space), which is how Logitech states such families, `Emotiva 24 Bit`'s
+    // frame and `Sunfire 23 Bit`'s second, headerless, segment among them. That
     // spelling ends a frame on a constant space the copy does not send, so the space is taken out of what
     // follows: out of the pad where the copy is padded, which absorbs it, and out of the trailer's opening
     // silence otherwise. A trailer that opens on a mark, or on a silence no longer than the constant half,
-    // has nothing to take it out of.
+    // has nothing to take it out of; one shorter than the half could not have followed it.
     if (trailer.length === 0) {
       return padded ? { header: headerWords(header), cells: two([t.zero, -t.flat], [t.one, -t.flat]), trailer, encodingType: 0, bitsPerDigit: 1 }
         : 'a pulse width lead in whose space is not the cell\'s constant half, and nothing after the frame to take that half out of';
     }
     const opening = trailer[0]!;
-    if (opening >= 0 || -opening <= t.flat) {
+    // A silence of exactly the constant half is that half itself, which is how `blockOfDefinition` writes the
+    // closing of a frame stated mark first (`Emotiva 24 Bit`, `Scenario 12 Bit`): it is taken out whole.
+    if (opening >= 0 || -opening < t.flat) {
       return 'a pulse width lead in whose space is not the cell\'s constant half, and nothing after the frame to take that half out of';
     }
     return {
       header: headerWords(header), cells: two([t.zero, -t.flat], [t.one, -t.flat]),
-      trailer: [opening + t.flat, ...trailer.slice(1)], encodingType: 0, bitsPerDigit: 1,
+      trailer: opening + t.flat === 0 ? trailer.slice(1) : [opening + t.flat, ...trailer.slice(1)], encodingType: 0, bitsPerDigit: 1,
     };
   }
   if (t.carriedFirst === true) {
@@ -514,8 +558,8 @@ const SPARE_WORDS: readonly StatedWord[] = [
  *
  * **Any well formed row is taken, not only those of `PROTOCOLS`**: a row fitted to a learned code, part B of
  * `todo-touch.md` 5.3, is written by the same rules, and has to carry what every row of the table carries
- * where it has blocks: `held`, one repetition, and `tail`, the whole first transmission, when that differs,
- * both in the stored form, their last duration one microsecond longer than the signal.
+ * where it has blocks: `held`, one repetition, and the whole first transmission, `tail` or `opening`, when
+ * that differs, both in the stored form, their last duration one microsecond longer than the signal.
  */
 export function definitionOfRow(
   row: StatedProtocol, id: Id, options: DefinitionOptions = {},
@@ -540,7 +584,11 @@ export function definitionOfRow(
   const shapes: readonly FrameShape[] = [own, ...(row.also ?? [])];
 
   // The widths, by the place of a value in a code. One stated width serves every value.
-  const places = 1 + Math.max(0, ...[...row.held.items, ...(row.tail?.items ?? [])]
+  // The first transmission: the compiler's own where the row has one, else the row's count free one, which
+  // a stated row whose definition states no count carries instead, todo-touch 5.3.4. The start group is what
+  // precedes the repetitions in either, and the count, which a Touch never reads, is however many there are.
+  const first = row.tail ?? row.opening;
+  const places = 1 + Math.max(0, ...[...row.held.items, ...(first?.items ?? [])]
     .map((one) => ('copy' in one ? one.at ?? 0 : 0)));
   const widths = widthsOf(row.family, places, options.bits);
   const widthAt = (at: number): number | undefined => (widths === undefined ? undefined : widths[at] ?? widths[widths.length - 1]);
@@ -548,8 +596,10 @@ export function definitionOfRow(
   // One repetition, and the first transmission as a start group followed by repetitions of it.
   const held = emissionsOf(row.held, shapes, widthAt);
   if (typeof held === 'string') return refuse(held);
-  const tailBlock = row.tail === undefined ? undefined : withLeadsSplit(row.tail, row.held, shapes);
-  const tail = tailBlock === undefined ? undefined : emissionsOf(tailBlock, shapes, widthAt);
+  const tailBlock = first === undefined ? undefined : withLeadsSplit(first, row.held, shapes);
+  // The runs the repetition sends as literals of their own, which the first transmission reads alike.
+  const heldLiterals = new Set(held.flatMap((e) => (e.kind === 'words' ? [JSON.stringify(e.words)] : [])));
+  const tail = tailBlock === undefined ? undefined : emissionsOf(tailBlock, shapes, widthAt, heldLiterals);
   if (typeof tail === 'string') return refuse(tail);
   const same = (a: readonly Emission[], b2: readonly Emission[]) => JSON.stringify(a) === JSON.stringify(b2);
   let start: Emission[] = tail === undefined ? [] : [...tail];
@@ -565,7 +615,7 @@ export function definitionOfRow(
 
   // The lead in a split put in front of the first repetition is the folded lead: named `KeyCodeStart`, and
   // the frame after it spelled shifted, so `rhythmOfDefinition` folds it back into the row's header.
-  const foldedLead = tailBlock !== undefined && tailBlock.items.length !== row.tail!.items.length;
+  const foldedLead = tailBlock !== undefined && tailBlock.items.length !== first!.items.length;
   const leadWords = foldedLead ? JSON.stringify(leadOf(own)) : undefined;
 
   const irSegments: IrSegment[] = [];
@@ -594,18 +644,25 @@ export function definitionOfRow(
       return ref;
     }
     const bits = widthAt(e.at)!;
-    const key = JSON.stringify([e.shape, e.bare, e.trailer, e.total ?? null, bits]);
+    const key = JSON.stringify([e.shape, e.bare, e.trailer, e.total ?? null, bits, e.head]);
     const known = segmentKeys.get(key);
     if (known !== undefined) return known;
-    const spell = spelled(shapes[e.shape]!, e.bare, e.trailer, e.total !== undefined, foldedLead && e.bare && e.shape === 0);
+    const own = e.head.length > 0;
+    const spell = spelled(shapes[e.shape]!, e.bare, e.trailer, e.total !== undefined, !own && foldedLead && e.bare && e.shape === 0);
     if (typeof spell === 'string') return spell;
+    // **A copy's own lead in is the segment's header**, as in Logitech's definitions, archive.ts's `ownHead`:
+    // the bare spelling states nothing before its first cell, so the header is that lead in alone, and
+    // `blockOfDefinition` reads it back as the `ofCopy` words in front of a bare copy. A spelling that does
+    // put something there for a bare copy would have it read back as part of the lead in, so it is refused.
+    if (own && spell.header.length > 0) return 'a copy\'s own lead in before a spelling that states a header of its own';
+    const header = own ? e.head : spell.header;
     if (bits % spell.bitsPerDigit !== 0) return 'a width that is not a whole number of cells';
     const index = irSegments.length;
     if (index > 9) return 'more segments than a one digit index names';
     const name = index === 0 ? row.family : `${row.family} ${index}`;
     irSegments.push({
       Name: name,
-      Header: atoms(spell.header),
+      Header: atoms(header),
       Trailer: atoms(spell.trailer),
       TotalLength: e.total ?? 0,
       Payload: { EncodingType: spell.encodingType, Encodings: spell.cells, NumberOfBits: bits / spell.bitsPerDigit, ToggleBit: null },
@@ -641,7 +698,9 @@ export function definitionOfRow(
     ControlSection: null,
     HoldDelay: null,
     HoldMinimumRepeats: null,
-    PressMinimumRepeats: tail === undefined ? null : repeats,
+    // Only where the row states the compiler's own first block: an `opening` is built at one repetition
+    // because the definition states no count, and writing 1 here would state one Logitech's does not.
+    PressMinimumRepeats: row.tail === undefined ? null : repeats,
     IsFullSequence: null,
     IsPadded: null,
     IsPublic: false,

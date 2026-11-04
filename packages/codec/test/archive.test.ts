@@ -514,7 +514,7 @@ test('the repeat count is stated for five of the blocks we measured, and right o
   }
 });
 
-test('thirty three stated families carry a whole block, and the other six hundred and eleven a frame',
+test('thirty three stated families carry a whole block, and the other six hundred and eleven a count free repetition and opening',
   () => {
   // The table's own claim, checked without a checkout, since the table is committed. 33 is small and it
   // is the honest number: a stated row gets a block only where the definition states its repeat count,
@@ -530,6 +530,12 @@ test('thirty three stated families carry a whole block, and the other six hundre
   assert.equal(withBlock.length, 33);
   // A block and a held block go together: one without the other would be a record half writable.
   for (const row of withBlock) assert.notEqual(row.held, undefined, row.family);
+  // **The other 611 carry the two blocks that hold no count**, todo-touch 5.3.4: one repetition and the
+  // first transmission at one repetition, which is what a Harmony Touch's definition is written from, since
+  // a Touch takes its count from the device. No `tail`, so a compiled configuration's builder still refuses.
+  const countFree = stated.filter((one) => one.tail === undefined);
+  assert.equal(countFree.length, 611);
+  assert.equal(countFree.filter((one) => one.held !== undefined && one.opening !== undefined).length, 611);
   // And nothing measured claims to have rebuilt a derived block, since there is no record to rebuild.
   for (const row of withBlock) assert.equal(row.tailExact, undefined, row.family);
   assert.deepEqual(withBlock.map((one) => one.family), [
@@ -547,7 +553,10 @@ test('thirty three stated families carry a whole block, and the other six hundre
   // and missing from the generator's template for a run, so a row described a rhythm correctly and
   // emitted the wrong wire. A block whose copies name a shape the row does not hold throws in the
   // emitter, which is the right way round, and is a row nobody can use.
-  const alsoRows = stated.filter((one) => one.also !== undefined);
+  const alsoRows = withBlock.filter((one) => one.also !== undefined);
+  // The count free rows carry theirs too, 47 of the 611, since a repetition that mixes rhythms names them
+  // whether or not a count is stated; which ones, exactly, is the naming check below.
+  assert.equal(countFree.filter((one) => one.also !== undefined).length, 47);
   assert.deepEqual(alsoRows.map((one) => [one.family, one.also!.length] as const), [
     ['DreamMultimedia 16 Bit Hex', 1], ['Kathrein 16 Bit Quad Toggle', 2],
     ['Motorola 16 Bit Quad Toggle', 2], ['Pace 18 Bit Quad Toggle', 2], ['Zenith 11 Bit Quad', 1],
@@ -556,11 +565,22 @@ test('thirty three stated families carry a whole block, and the other six hundre
   // a rhythm it does not hold is the omission this exists for, and the pair is asserted rather than a
   // bound on the index, so a row gaining or losing a shape shows up here.
   const naming = PROTOCOLS.map((row) => {
-    const named = [...new Set([...(row.tail?.items ?? []), ...(row.held?.items ?? [])]
+    const named = [...new Set([...(row.tail?.items ?? []), ...(row.held?.items ?? []), ...(row.opening?.items ?? [])]
       .flatMap((item) => ('copy' in item && item.shape !== undefined ? [item.shape] : [])))].sort();
     return [row.family, named, (row.also ?? []).length] as const;
   }).filter(([, named]) => named.length > 0);
-  assert.deepEqual(naming, [
+  // Every row naming another rhythm names exactly the ones it holds, 1 up to its count, and every row
+  // holding one names it, on the five block rows and on the 47 count free ones alike, but for one.
+  assert.equal(naming.length, 52);
+  // One exception: `LifesizeIconB 17 Bit Toggle` holds a second other rhythm that only its release block
+  // names, and the table carries no release, so its blocks name the first alone. The rhythm is written
+  // because the generator writes every rhythm the definition's blocks use, release included.
+  for (const [family, named, held] of naming) {
+    const expected = family === 'LifesizeIconB 17 Bit Toggle' ? [1] : Array.from({ length: held }, (_, i) => i + 1);
+    assert.deepEqual(named, expected, family);
+  }
+  assert.equal(PROTOCOLS.filter((row) => row.also !== undefined).length, 52);
+  assert.deepEqual(naming.filter(([family]) => withBlock.some((one) => one.family === family)).map(([f, n, h]) => [f, n, h]), [
     ['DreamMultimedia 16 Bit Hex', [1], 1],
     ['Kathrein 16 Bit Quad Toggle', [1, 2], 2],
     ['Motorola 16 Bit Quad Toggle', [1, 2], 2],
@@ -570,9 +590,12 @@ test('thirty three stated families carry a whole block, and the other six hundre
   // **And which rows state a pad's own copy period**, section 233, asserted the same way and for the
   // same reason: it is a field of a block item that the generator has to write, and the two before it
   // were each missing for a run.
-  assert.deepEqual(PROTOCOLS.filter((row) => [...(row.tail?.items ?? []), ...(row.held?.items ?? [])]
-    .some((item) => 'pad' in item && item.period !== undefined)).map((one) => one.family),
+  const padPeriod = (blocks: readonly ({ readonly items: readonly object[] } | undefined)[]): boolean => blocks
+    .flatMap((one) => one?.items ?? []).some((item) => 'pad' in item && (item as { period?: number }).period !== undefined);
+  assert.deepEqual(PROTOCOLS.filter((row) => row.tail !== undefined && padPeriod([row.tail, row.held])).map((one) => one.family),
                    ['Dvico 32 Bit', 'Multichoice 8 Bit Hex']);
+  // And on the count free rows, which write the same items: 22 of the 611.
+  assert.equal(countFree.filter((row) => padPeriod([row.held, row.opening])).length, 22);
   // The cell table families with a block, named with their base. Worth naming, because a block over a
   // cell table is the derivation that had no sample at all before section 231, and the four base four
   // ones with a rhythm each in three segments are what section 232 added.

@@ -581,7 +581,9 @@ export function blockOfStatedCode(
   }
   // The held block is the record's second pointer, what repeats while the key is down, section
   // 127; the once block is the press. A family whose records never showed the asked for one is a
-  // refusal.
+  // refusal. **A stated row with no count has `held` and no press**, todo-touch 5.3.4, so asked for
+  // `held` this answers where asked for `once` it refuses: a builder that asks for the press first,
+  // as `shared/infrared.ts` does, refuses such a family before its held block is reached.
   const block = which === 'held' ? entry.held : entry.tail;
   if (block === undefined) return undefined;
   const t = timingsOf(entry);

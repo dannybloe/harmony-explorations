@@ -12,13 +12,14 @@
  * * **against Logitech's own definition**, for every written row the archive names: both definitions
  *   rendered by the same renderer, `waveformOfArchiveCommand`, over every code the archive's codesets state
  *   for the family that our key code can place. The archive is read and nothing of it is written here; the
- *   test skips without it. **Only half of this is an independent closure.** 29 of the 60 rows written were
- *   measured off configurations (source `compiled`, `both` or `corpus`), and those are an end of their own;
- *   the other 31 are source `stated`, converted by `bin/protocols.ts` out of the very definition they are
- *   held against, so for them agreement says the writer inverts that converter and nothing about the
- *   rhythm. The counts are asserted per half.
+ *   test skips without it. **Only part of this is an independent closure.** 29 of the 577 rows written
+ *   were measured off configurations (source `compiled`, `both` or `corpus`), and those are an end of their
+ *   own; the other 548, and the 96 written at Logitech's widths where the name gives none, are source
+ *   `stated`, converted by `bin/protocols.ts` out of the very definition they are held against, so for them
+ *   agreement says the writer inverts that converter and nothing about the rhythm. The counts are asserted
+ *   per half.
  * * **against our own row**, which needs no archive: the definition rendered against the row's own blocks,
- *   `blockOfStatedCode`, and its frame against `pulsesOfStatedCode`, over a sweep of values.
+ *   played by `pulsesOfBlock`, and its frame against `pulsesOfStatedCode`, over a sweep of values.
  * * **`rhythmOfDefinition` reads the definition back as the row**.
  * * **a negative**: one atom moved, and both comparisons fail.
  *
@@ -38,17 +39,21 @@
  *   press; the codes that differ for that reason alone are counted, not hidden.
  * * **the 30 microsecond floor and the 32767 chunks**: the engine raises a duration under 30 to 30 and
  *   writes one over 32767 as several words; the renderer does neither. The chunks are the same signal. The
- *   floor is not, and it matters only where a definition states a duration under 30: ours states none,
- *   asserted below, so it cannot part them on a definition of ours.
+ *   floor is not: eight families state marks of 20 to 28 microseconds, which the Touch sends as 30 and the
+ *   renderer as stated. Ours state exactly Logitech's there, asserted below, so the Touch sends the same
+ *   from either, while the renderer's comparison on those eight is not the Touch's.
+ * * **a pad with no room**: the renderer solves a pad from a block's total and declines a value whose frame
+ *   overruns it; the Touch pads only when the length is longer and sends the frame whole. Three swept codes
+ *   meet it, counted below.
  * * **the release**: the renderer appends a code's finish group to its first transmission; the engine sends
  *   it as a sequence of its own. Our rows state no release, so our definitions have none.
  *
  * * **a code segment**: the engine reads its `Atoms`, the renderer its `Header` and `Trailer`. Ours state the
  *   same durations in both, so the two read one literal.
  *
- * **What a row cannot give, measured rather than guessed**: 619 of the table's 681 rows carry no block, so
- * no trailer and no gap; 616 are refused for that and three first as whole record shapes. `bin/protocols.ts`
- * writes a stated row's blocks only where the definition states its repeat count. Their frames are still checked, with a trailer of the test's own,
+ * **What a row cannot give, measured rather than guessed**: since `todo-touch.md` 5.3.4 every stated row carries
+ * its repetition, and 577 of the table's 681 rows are written; the rest are refused with a reason each,
+ * 96 of them for a width the family's name does not give, and those 96 write at Logitech's widths. Their frames are still checked, with a trailer of the test's own,
  * so the spelling of every frame the table states is held against its row, which is the part of the writer
  * that does not depend on the missing blocks.
  */
@@ -61,7 +66,7 @@ import {
   archiveProtocols, frameSlots, frameWidths, keyCodeOfStatedCode, rhythmKey, rhythmOfDefinition, statedCodeOfDefinition, withStatedWidths,
   withToggleCleared, waveformOfArchiveCommand, type ArchiveKeyCode, type ArchiveProtocol,
 } from '../src/archive.ts';
-import { mergedIntervals, pulsesOfFrame, type Pulse } from '../src/irframe.ts';
+import { mergedIntervals, pulsesOfBlock, pulsesOfFrame, type Pulse } from '../src/irframe.ts';
 import { PROTOCOLS, type StatedProtocol } from '../src/protocols.ts';
 import {
   biphaseOf, blockOfStatedCode, cellsOf, pulsesOfStatedCode, statedCode, timingsOf, type StatedCode, type StatedItem,
@@ -132,6 +137,30 @@ function sweep(widths: readonly number[]): bigint[][] {
   return out;
 }
 
+/**
+ * A row's own block for a code, played by the codec's one block emitter, `pulsesOfBlock`, in the row's own
+ * shapes. `blockOfStatedCode` does the same for a row's `tail` and `held` and knows no `opening`, the first
+ * transmission a stated row with no repeat count carries since `todo-touch.md` 5.3.4, so the row's shape is
+ * put together here the way it puts it together.
+ */
+function rowBlock(row: StatedProtocol, code: StatedCode, block: StatedProtocol['held']): Pulse[] | undefined {
+  if (block === undefined) return undefined;
+  const t = timingsOf(row);
+  const b = biphaseOf(row);
+  const c = cellsOf(row);
+  const shape = {
+    ...(t === undefined ? {} : { timings: t }), ...(b === undefined ? {} : { biphase: b }),
+    ...(c === undefined ? {} : { cells: c }), ...(row.also === undefined ? {} : { also: row.also }),
+  };
+  try { return pulsesOfBlock(shape, code.frames, block); } catch { return undefined; }
+}
+
+/** The families whose definitions state a duration under 30 microseconds, see the floor test. */
+const UNDER_THE_FLOOR = [
+  'AMC 5 Bit', 'Burmester 11 Bit Toggle', 'Corona 48 Bit', 'Nokia 11 Bit', 'Quad 5 Bit', 'Revox 11 Bit',
+  'Revox 11 Bit 2', 'Verosol 5 Bit',
+];
+
 /** Every duration a definition states, as its atoms hold them, which is what the 30 microsecond floor reads. */
 function statedDurations(definition: IrProtocol): number[] {
   const out: number[] = [];
@@ -147,7 +176,7 @@ function statedDurations(definition: IrProtocol): number[] {
 // No archive needed
 // ---------------------------------------------------------------------------------------------------
 
-test('every row of the rhythm table is written as a definition or refused with a reason, 60 written', () => {
+test('every row of the rhythm table is written as a definition or refused with a reason, 577 written', () => {
   const written: string[] = [];
   const refused = new Map<string, number>();
   for (const row of PROTOCOLS) {
@@ -156,13 +185,25 @@ test('every row of the rhythm table is written as a definition or refused with a
     else written.push(row.family);
   }
   assert.strictEqual(PROTOCOLS.length, 681);
-  assert.strictEqual(written.length, 60);
+  assert.strictEqual(written.length, 577);
+  // **The width refusals are the name's and not the row's**: every one of the 96 writes at the widths
+  // Logitech's definition states, which the archive closure below asserts. `Daewoo 40 Bit` was refused as
+  // out of order until the generator kept `BlockTailItem.ofCopy`, todo-touch 5.3.4: without it, its first
+  // block and its repetition disagreed about where its second segment's padded length starts. The 12 rows
+  // that carry a copy's own lead in now all write, and read back, in the three tests below.
   assert.deepStrictEqual(Object.fromEntries(refused), {
-    'the row states its frame and not its repetition, so no trailer and no gap': 616,
+    'the family\'s name states no width for its values and none was given': 62,
+    'a width that is not a whole number of cells': 34,
+    'the row states its frame and not its repetition, so no trailer and no gap': 5,
     'a whole record shape, which no segment of a definition states': 3,
-    'the family\'s name states no width for its values and none was given': 1,
-    'a width that is not a whole number of cells': 1,
   });
+  // Every row carrying a copy's own lead in is among those written: the count of such rows and their names,
+  // so a row gaining or losing one shows here rather than as a shift in the totals above.
+  const ofCopy = PROTOCOLS.filter((row) => [row.tail, row.held, row.opening]
+    .some((block) => block?.items.some((item) => 'words' in item && item.ofCopy === true)))
+    .map((row) => row.family);
+  assert.strictEqual(ofCopy.length, 12);
+  assert.deepStrictEqual(ofCopy.filter((family) => !written.includes(family)), []);
 });
 
 test('a written definition reads back through rhythmOfDefinition as the row it was written from', () => {
@@ -183,17 +224,18 @@ test('a written definition reads back through rhythmOfDefinition as the row it w
       && (row.carries !== 'mark' || back.framePeriod === row.framePeriod);
     if (!ok) differ.push(row.family);
   }
-  assert.strictEqual(read, 60);
+  assert.strictEqual(read, 577);
   assert.deepStrictEqual(differ, []);
 });
 
-test('a written definition sends the row\'s own blocks, and its key code reads back as the code', () => {
+test('a written definition sends the row\'s own blocks on 4613 of 4616 codes, both renderers declining the other 3, and every key code reads back', () => {
   let rows = 0;
   let codes = 0;
   let once = 0;
   let held = 0;
   let readBack = 0;
   const differ: string[] = [];
+  const bothDecline: string[] = [];
   for (const row of PROTOCOLS) {
     const d = composed(row);
     if (d === undefined) continue;
@@ -209,25 +251,34 @@ test('a written definition sends the row\'s own blocks, and its key code reads b
       const again = statedCodeOfDefinition(view, keyCode as string);
       if (again !== undefined && valuesText(again.frames.map((f) => f.value)) === valuesText(values)) readBack += 1;
       const ours = waveformOfArchiveCommand(view, keyCode as string, { repeats: d.PressMinimumRepeats ?? 1, asStored: true });
-      const rowOnce = blockOfStatedCode(code, row.periodNs, 'once');
-      const rowHeld = blockOfStatedCode(code, row.periodNs, 'held');
-      if ('refusal' in ours || rowOnce === undefined || rowHeld === undefined) { differ.push(`${row.family}: unrendered`); continue; }
+      const rowOnce = rowBlock(row, code, row.tail ?? row.opening);
+      const rowHeld = rowBlock(row, code, row.held);
+      // **Both renderers solve a pad from a block's total and decline where the frame leaves it no room**,
+      // `pulsesOfBlock`, while the Touch pads a segment only when its length is longer and sends a longer frame
+      // whole. So a value whose frame overruns its family's padded length has nothing to compare on either
+      // side; a value only one side declines is a difference.
+      const rowDeclined = rowOnce === undefined || rowHeld === undefined;
+      if ('refusal' in ours && rowDeclined) { bothDecline.push(row.family); continue; }
+      if ('refusal' in ours || rowDeclined) { differ.push(`${row.family}: one side declines`); continue; }
       if (same(ours.once, rowOnce)) once += 1; else differ.push(`${row.family} once`);
       if (same(ours.held, rowHeld)) held += 1; else differ.push(`${row.family} held`);
     }
   }
-  assert.strictEqual(rows, 60);
-  assert.strictEqual(codes, 480);
+  assert.strictEqual(rows, 577);
+  assert.strictEqual(codes, 4616);
   assert.deepStrictEqual([...new Set(differ)], []);
-  assert.strictEqual(once, 480);
-  assert.strictEqual(held, 480);
-  assert.strictEqual(readBack, 480);
+  // One all ones code each, whose frame overruns the family's padded length.
+  assert.deepStrictEqual(bothDecline, ['Hunter Douglas 3 Bit', 'JVCV1 48 Bit', 'NEC 32 Bit']);
+  assert.strictEqual(once, 4613);
+  assert.strictEqual(held, 4613);
+  assert.strictEqual(readBack, 4616);
 });
 
 /**
  * Every frame the table states, written with a trailer of the test's own, against `pulsesOfStatedCode`.
  *
- * **Why a trailer of our own.** 619 rows state no block, so no trailer, and a frame has to be followed by
+ * **Why a trailer of our own.** The frame is the part of the writer that does not depend on a row's blocks,
+ * and a trailer of the test's own checks it on every row, blocks or none, since a frame has to be followed by
  * something before a definition can send it. The trailer chosen is one no family states, a 1234
  * microsecond mark and a 100 millisecond silence, so it cannot merge with the frame into a number that
  * happens to agree. A pulse width frame ends on its last carried mark in a definition and on its closing
@@ -235,7 +286,8 @@ test('a written definition sends the row\'s own blocks, and its key code reads b
  * opening mark of its own needs the constant mark after it, which is what its spelling moves into the cells.
  */
 function withOwnTrailer(row: StatedProtocol): { row: StatedProtocol; after: number[] } {
-  const { tail: _tail, held: _held, ...rest } = row;
+  // Every block the row states is left out, so the trailer is the test's alone.
+  const { tail: _tail, held: _held, opening: _opening, ...rest } = row;
   const after = row.carries === 'mark' ? [-5000, 1234, -100000]
     : row.firstMark !== undefined ? [row.flat!, -100000] : [1234, -100000];
   return { row: { ...rest, held: { items: [{ copy: 'full' }, { words: [...after.slice(0, -1), after[after.length - 1]! - 1] }] } }, after };
@@ -300,7 +352,14 @@ test('every frame the table states is spelled as the row\'s own frame, with a tr
   assert.strictEqual(bothDecline, 11);
 });
 
-test('no definition of ours states a duration under the Touch\'s 30 microsecond floor', () => {
+/**
+ * **Eight families state durations under the Touch's floor**, marks of 20 to 28 microseconds, and a
+ * definition of ours states them as the row does. The Touch raises each to 30 and the archive's renderer
+ * does not, so on these eight the renderer's comparison below is not the Touch's: the Touch sends the same
+ * raised durations from Logitech's definition and from ours, which the archive test asserts by checking that
+ * every short duration of ours is one Logitech's own definition of the family states.
+ */
+test('eight definitions of ours state a duration under the Touch\'s 30 microsecond floor, and no others', () => {
   let definitions = 0;
   const under: string[] = [];
   for (const row of PROTOCOLS) {
@@ -309,8 +368,11 @@ test('no definition of ours states a duration under the Touch\'s 30 microsecond 
     definitions += 1;
     if (statedDurations(d).some((us) => us < 30)) under.push(row.family);
   }
-  assert.strictEqual(definitions, 60);
-  assert.deepStrictEqual(under, []);
+  assert.strictEqual(definitions, 577);
+  assert.deepStrictEqual(under, UNDER_THE_FLOOR);
+  // Every one of them a mark, of 20 to 28 microseconds, as the header says.
+  const short = PROTOCOLS.flatMap((row) => { const d = composed(row); return d === undefined ? [] : statedDurations(d).filter((us) => us < 30); });
+  assert.deepStrictEqual([Math.min(...short), Math.max(...short)], [20, 28]);
 });
 
 test('one atom moved in a written definition, and the comparison against the row fails', () => {
@@ -408,12 +470,25 @@ test('the carrier a row\'s period gives is Logitech\'s own for 641 of the table\
   assert.strictEqual(same_, 641);
 });
 
-test('against Logitech\'s own definitions, the 29 measured rows send the same on 89139 of the 93107 archive codes they place, and every other code is named by why', { ...skipWithoutIrArchive() }, () => {
+test('against Logitech\'s own definitions, the 29 measured rows send the same on 89139 of the 93107 archive codes they place, the stated rows are a round trip, and every other code is named by why', { ...skipWithoutIrArchive() }, () => {
   const theirs = new Map(archiveProtocols(IR_ARCHIVE!).map((p) => [p.name, p]));
   const ours = new Map<string, IrProtocol>();
+  // **A row the name gives no usable width is written at the widths Logitech's definition states**, one per
+  // field in the order a code states its values, `frameWidths`, as a caller that knows its widths would; the
+  // set is kept so its codes can be counted apart.
+  const atTheirWidths = new Set<string>();
+  const widthRefused = new Map<string, number>();
   for (const row of PROTOCOLS) {
-    const d = composed(row);
-    if (d !== undefined && theirs.has(row.family)) ours.set(row.family, d);
+    const logitech = theirs.get(row.family);
+    if (logitech === undefined) continue;
+    const d = definitionOfRow(row, 1);
+    if (!isDefinitionRefusal(d)) { ours.set(row.family, d); continue; }
+    if (!/width/.test(d.refusal)) continue;
+    const widths = frameWidths(logitech);
+    const again = widths === undefined ? undefined : definitionOfRow(row, 1, { bits: widths });
+    const key = again === undefined ? 'the definition states no widths' : isDefinitionRefusal(again) ? again.refusal : 'written';
+    widthRefused.set(key, (widthRefused.get(key) ?? 0) + 1);
+    if (again !== undefined && !isDefinitionRefusal(again)) { ours.set(row.family, again); atTheirWidths.add(row.family); }
   }
   const codes = archiveCodes(IR_ARCHIVE!, new Set(ours.keys()));
   const tally = new Map<string, number>();
@@ -421,14 +496,17 @@ test('against Logitech\'s own definitions, the 29 measured rows send the same on
   // The two halves of the closure, kept apart: a row measured off configurations is an end of its own, and a
   // row converted out of Logitech's definition is not, see the header.
   const sourceOf = new Map(PROTOCOLS.map((row) => [row.family, row.source]));
-  const bySource = { measured: new Map<string, number>(), stated: new Map<string, number>() };
+  const bySource = {
+    measured: new Map<string, number>(), stated: new Map<string, number>(), atTheirWidths: new Map<string, number>(),
+  };
   const perFamily = new Map<string, Map<string, number>>();
   for (const [family, d] of ours) {
     const logitech = theirs.get(family)!;
     for (const keycode of codes.get(family) ?? []) {
       const note = (key: string) => {
         count(key);
-        const group = sourceOf.get(family) === 'stated' ? bySource.stated : bySource.measured;
+        const group = atTheirWidths.has(family) ? bySource.atTheirWidths
+          : sourceOf.get(family) === 'stated' ? bySource.stated : bySource.measured;
         group.set(key, (group.get(key) ?? 0) + 1);
         let m = perFamily.get(family);
         if (m === undefined) perFamily.set(family, m = new Map());
@@ -480,8 +558,13 @@ test('against Logitech\'s own definitions, the 29 measured rows send the same on
       note('differs');
     }
   }
-  assert.strictEqual(ours.size, 60);
-  assert.strictEqual([...ours.keys()].filter((f) => (codes.get(f)?.size ?? 0) > 0).length, 60);
+  const families = (key: string) => [...perFamily].filter(([, m]) => m.has(key)).map(([f]) => f).sort();
+  // 577 written at the name's widths and the 96 the name gives no usable width, at Logitech's; two families
+  // have no code in any codeset.
+  assert.strictEqual(ours.size, 673);
+  assert.deepStrictEqual(Object.fromEntries(widthRefused), { written: 96 });
+  assert.strictEqual(atTheirWidths.size, 96);
+  assert.deepStrictEqual([...ours.keys()].filter((f) => (codes.get(f)?.size ?? 0) === 0), ['ADA 40 Bit', 'Dam 12 Bit']);
   // **The independent half**: 29 rows measured off configurations (20 compiled, 8 both, 1 corpus), whose
   // blocks owe nothing to the definition they are held against. Of their 93422 codes 315 are not placed
   // (a release, another number of values, or our renderer of their definition declining), and of the 93107 compared
@@ -496,31 +579,44 @@ test('against Logitech\'s own definitions, the 29 measured rows send the same on
     'our key code refuses: the code states another number of values than the definition sends': 108,
     'their renderer refuses: our keycode reader declines the code': 19,
   });
-  // **The round trip half**: 31 rows of source `stated`, converted out of the very definition they are held
-  // against by `bin/protocols.ts`, so agreement here says the writer inverts that converter, not that the
-  // rhythm is right. 2326 of their 7554 codes are not placed.
+  // **The round trip half**: the 548 rows of source `stated` written at their name's widths and the 96 at
+  // Logitech's, every one converted by `bin/protocols.ts` out of the very definition it is held against, so
+  // agreement here says the writer inverts that converter, not that the rhythm is right. Of 49509 codes 5058
+  // are not placed and of the 44451 compared 43937 are the same, 8583 of them once the code is written at the
+  // definition's widths; of 3895 codes of the 96, 273 are not placed and 3495 of the 3622 compared are the
+  // same. No code of either differs for any reason but the toggle and the code's own structure.
   assert.deepStrictEqual(Object.fromEntries(bySource.stated), {
-    'the same': 4000,
-    'the same at the widths Logitech\'s definition states': 1142,
-    'the code names other segments than the family\'s default': 86,
-    'our key code refuses: the code states a release, which the definition does not send': 2238,
-    'our key code refuses: the code states another number of values than the definition sends': 88,
+    'the same': 35354,
+    'the same at the widths Logitech\'s definition states': 8583,
+    'differs by the toggle bit alone': 119,
+    'the code names other segments than the family\'s default': 395,
+    'our key code refuses: the code states a release, which the definition does not send': 4796,
+    'our key code refuses: the code states another number of values than the definition sends': 262,
   });
-  assert.strictEqual([...tally.values()].reduce((n, k) => n + k, 0), 100976);
-  const families = (key: string) => [...perFamily].filter(([, m]) => m.has(key)).map(([f]) => f).sort();
+  assert.deepStrictEqual(Object.fromEntries(bySource.atTheirWidths), {
+    'the same': 3491,
+    'the same at the widths Logitech\'s definition states': 4,
+    'differs by the toggle bit alone': 21,
+    'the code names other segments than the family\'s default': 106,
+    'our key code refuses: the code states a release, which the definition does not send': 260,
+    'our key code refuses: the code states another number of values than the definition sends': 13,
+  });
+  assert.strictEqual([...tally.values()].reduce((n, k) => n + k, 0), 146826);
   // **The one disagreement is our row's and not the writer's**: `MemorexO1 32 Bit` was measured off three
   // codes of the corpus with a constant 35100 microsecond silence after the frame, and Logitech's definition
   // pads the frame to 107600 instead, so the two agree only where a code's frame runs exactly 72500.
   assert.deepStrictEqual(families('differs'), ['MemorexO1 32 Bit']);
   assert.strictEqual(perFamily.get('MemorexO1 32 Bit')!.get('the same'), 22);
-  // The cell table families whose name states no width their values have, section 231.
-  assert.deepStrictEqual(families('the same at the widths Logitech\'s definition states'), [
-    'DreamMultimedia 16 Bit Hex', 'Galaxis 16 Bit Quad', 'Kathrein 16 Bit Quad Toggle', 'Motorola 16 Bit Quad Toggle',
-    'MotorolaO1 16 Bit Hex', 'Multichoice 8 Bit Hex', 'Pace 18 Bit Quad Toggle',
-  ]);
   assert.deepStrictEqual(families('differs by the toggle bit alone'), [
-    'Magnavox 13 Bit', 'Philips RC5 13 Bit Toggle', 'Thomson 12 Bit Toggle', 'Videocrypt 11 Bit Toggle',
+    'Elko 11 Bit', 'Foxtel 10 Bit', 'Magnavox 13 Bit', 'Nokia 13 Bit Quad ToggleC', 'Philips RC5 13 Bit Toggle', 'Philips RC6',
+    'Polycom 16 Bit ToggleB', 'Streamzap 14 Bit', 'Thomson 12 Bit Toggle', 'Videocrypt 11 Bit Toggle',
   ]);
+  // The short durations of ours are Logitech's own, so the Touch raises the same ones from either definition.
+  for (const family of UNDER_THE_FLOOR) {
+    const short = (d: IrProtocol) => new Set(statedDurations(d).filter((us) => us < 30));
+    const theirShort = short(theirs.get(family)!.definition as unknown as IrProtocol);
+    assert.ok([...short(ours.get(family)!)].every((us) => theirShort.has(us)), family);
+  }
 
   // The negative, over the same codes: the set cell's mark of `Sony 12 Bit` one microsecond longer.
   const sony = ours.get('Sony 12 Bit')!;

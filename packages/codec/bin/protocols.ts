@@ -1773,7 +1773,11 @@ export interface StatedProtocol {
       /** Which of the family's rhythms this copy goes out in, indexing \`also\` offset by one. */
       readonly shape?: number;
     }
-      | { readonly words: readonly number[] }
+      | {
+        readonly words: readonly number[];
+        /** These words are the following copy's own lead in, so its copy period counts them, \`BlockTailItem\`. */
+        readonly ofCopy?: boolean;
+      }
       | {
         readonly pad: number;
         /** This pad's own copy period, overriding the block's, section 233. */
@@ -1788,6 +1792,8 @@ export interface StatedProtocol {
    * The held block, the record's second pointer: what repeats for as long as the key is down, and
    * whose duration is the repeat rate the user feels, section 127. Same shape as \`tail\`. Whether
    * a record carries one at all is the command's own property, so \`heldOf\` states the population
+   * On a stated row it is derived from Logitech's definition rather than measured, and every stated row
+   * carries one since todo-touch 5.3.4, a repetition holding no count.
    * this was measured over, and Toshiba's is its ditto frame alone with no copy in it.
    */
   readonly held?: {
@@ -1797,7 +1803,11 @@ export interface StatedProtocol {
       /** Which of the family's rhythms this copy goes out in, indexing \`also\` offset by one. */
       readonly shape?: number;
     }
-      | { readonly words: readonly number[] }
+      | {
+        readonly words: readonly number[];
+        /** These words are the following copy's own lead in, so its copy period counts them, \`BlockTailItem\`. */
+        readonly ofCopy?: boolean;
+      }
       | {
         readonly pad: number;
         /** This pad's own copy period, overriding the block's, section 233. */
@@ -1808,6 +1818,38 @@ export interface StatedProtocol {
   };
   readonly heldExact?: number;
   readonly heldOf?: number;
+  /**
+   * The first transmission at **one** repetition: what precedes the repetition, then one of it. Written on a
+   * stated row whose definition states no repeat count, where \`tail\` is not, todo-touch 5.3.4.
+   *
+   * **Why a field of its own and not a \`tail\` at a count of 1.** A \`tail\` is the compiler's first block, the
+   * repetition sent as many times as the family's count, and a builder of a compiled configuration sends it as
+   * it stands; written at a count nobody stated, it would be the guess the paragraph on stated rows refuses.
+   * This is the same block with the count left out, which is all a reader that takes the count from somewhere
+   * else needs: a Harmony Touch sends a code as many times as the device says and never reads a family's own,
+   * so \`definitionOfRow\` in \`harmony-touch/definition.ts\` takes the start group from it. Nothing that builds
+   * a compiled configuration reads it.
+   */
+  readonly opening?: {
+    readonly items: readonly ({
+      readonly copy: 'full' | 'bare';
+      readonly at?: number;
+      /** Which of the family's rhythms this copy goes out in, indexing \`also\` offset by one. */
+      readonly shape?: number;
+    }
+      | {
+        readonly words: readonly number[];
+        /** These words are the following copy's own lead in, so its copy period counts them, \`BlockTailItem\`. */
+        readonly ofCopy?: boolean;
+      }
+      | {
+        readonly pad: number;
+        /** This pad's own copy period, overriding the block's, section 233. */
+        readonly period?: number;
+      })[];
+    readonly total?: number;
+    readonly copyPeriod?: number;
+  };
   /**
    * A biphase family, where the bit is in **which half** of one cell the carrier is on.
    *
@@ -2034,7 +2076,9 @@ if (write) {
       return `{ copy: '${item.copy}'${item.at === undefined ? '' : `, at: ${item.at}`}`
         + `${item.shape === undefined ? '' : `, shape: ${item.shape}`} }`;
     }
-    if ('words' in item) return `{ words: [${item.words.join(', ')}] }`;
+    // \`ofCopy\` was missing here until todo-touch 5.3.4, the third field this list has dropped: no row carried
+    // one while blocks were written only where a count is stated, and twelve count free rows do.
+    if ('words' in item) return `{ words: [${item.words.join(', ')}]${item.ofCopy === true ? ', ofCopy: true' : ''} }`;
     return `{ pad: ${item.pad}${item.period === undefined ? '' : `, period: ${item.period}`} }`;
   }).join(', ')}]${block.total === undefined ? '' : `, total: ${block.total}`}${
     block.copyPeriod === undefined ? '' : `, copyPeriod: ${block.copyPeriod}`} }`;
@@ -2086,7 +2130,7 @@ if (write) {
    * families we did measure are reproduced from their definitions field for field with none disagreeing.
    * A caller that needs to know the difference reads `source`.
    *
-   * **A stated row carries a `tail` and a `held` only where the definition states its repeat count**,
+   * **A stated row carries a `tail` only where the definition states its repeat count**,
    * section 228. Their `KeyCode` field states a block's whole **shape**, and the derivation is believed
    * because it reproduces all 29 blocks measured off their compiler to the microsecond. What it does not
    * state, on 645 definitions of 684, is how many repetitions the compiler emits, and a block is the
@@ -2097,10 +2141,15 @@ if (write) {
    * composer builds such a family's blocks per device, and the table still holds none: a row here would
    * fix one device's count for every device, which is what the measured rows of 26 such families do.
    *
+   * **Where the count is unstated the row carries `held` and `opening` instead**, todo-touch 5.3.4: one
+   * repetition, and the first transmission at one repetition, neither of which holds a count. A compiled
+   * configuration's builder reads `tail` for a press and so still refuses such a family; a Harmony Touch,
+   * which takes its count from the device and never from the family, writes its definition from these two.
+   *
    * Ordered by family name so the generated file's diff is stable, since the filesystem's order is not.
    */
   const measured = new Set(entries.map((e) => e.family));
-  const stated: { rhythm: ArchiveRhythm; block?: ArchiveBlock }[] = [];
+  const stated: { rhythm: ArchiveRhythm; block?: ArchiveBlock; countFree?: ArchiveBlock }[] = [];
   const refused = new Map<ConversionRefusal, number>();
   const blockRefused = new Map<BlockRefusal | 'the definition states no repeat count', number>();
   for (const one of archiveProtocols(IR_ARCHIVE!)) {
@@ -2114,18 +2163,28 @@ if (write) {
     const why = built === undefined ? 'the definition states no repeat count'
       : 'refusal' in built ? built.refusal : undefined;
     if (why !== undefined) blockRefused.set(why, (blockRefused.get(why) ?? 0) + 1);
-    stated.push({ rhythm: read, ...(built !== undefined && !('refusal' in built) ? { block: built } : {}) });
+    // **Where no count is stated, the two blocks that need none**, todo-touch 5.3.4: one repetition,
+    // \`held\`, and the first transmission at one repetition, \`opening\`. The count is left out rather
+    // than guessed, so no \`tail\` is written and a compiled configuration's builder still refuses.
+    const once = one.pressMinimumRepeats !== null ? undefined : blockOfDefinition(one, 1);
+    const countFree = once === undefined || 'refusal' in once ? undefined : once;
+    stated.push({
+      rhythm: read,
+      ...(built !== undefined && !('refusal' in built) ? { block: built } : {}),
+      ...(countFree === undefined ? {} : { countFree }),
+    });
   }
   stated.sort((a, b) => a.rhythm.family.localeCompare(b.rhythm.family));
-  const statedOut = stated.map(({ rhythm: e, block }) => {
+  const statedOut = stated.map(({ rhythm: e, block, countFree }) => {
     const head = `  { family: '${e.family.replace(/'/g, "\\'")}', periodNs: ${e.periodNs}, `;
-    const blocks = block === undefined ? ''
-      : ` tail: ${blockOut(block.tail)}, held: ${blockOut(block.held)},`;
+    const blocks = block !== undefined ? ` tail: ${blockOut(block.tail)}, held: ${blockOut(block.held)},`
+      : countFree !== undefined ? ` held: ${blockOut(countFree.held)}, opening: ${blockOut(countFree.tail)},` : '';
     // **The other rhythms, written where the block that names them is written.** Omitting them is the
     // `carriedFirst` omission again: a copy naming shape 1 throws in the emitter without it, which is
     // the right way round, but a row with a block and no shapes is a row nobody can use.
-    const also = block === undefined || block.also.length === 0 ? ''
-      : ` also: ${JSON.stringify(block.also)},`;
+    const named = block ?? countFree;
+    const also = named === undefined || named.also.length === 0 ? ''
+      : ` also: ${JSON.stringify(named.also)},`;
     const tail = `${blocks}${also} codes: 0, exact: 0, spread: 0, source: 'stated' },`;
     const b = e.biphase;
     if (b !== undefined) {
@@ -2155,7 +2214,9 @@ if (write) {
     + `\n  // definitions in the infrared archive, sections 227 and 228. \`codes: 0\` is the honest`
     + `\n  // count: this corpus holds no record of any of these families. ${withBlockCount} of them carry a`
     + `\n  // whole block, being the ones whose definition states how many times a repetition is sent;`
-    + `\n  // the rest carry a frame and no \`tail\`, so \`blockOfStatedCode\` refuses them. The count is`
+    + `\n  // the rest carry no \`tail\`, so \`blockOfStatedCode\` refuses their press, and carry instead the two`
+    + `\n  // blocks that state no count, \`held\` and \`opening\`, which a Harmony Touch's definition is written from,`
+    + `\n  // todo-touch 5.3.4. The count is`
     + `\n  // never guessed: see blockOfDefinition in src/archive.ts.\n${statedOut}`;
 
   const seedsOut = DOCUMENTED.map((e) =>
