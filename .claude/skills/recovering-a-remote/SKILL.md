@@ -53,7 +53,8 @@ wrong or is about to.
 2. **The version block**: software type 4 is safe mode and 0 the application, on every architecture
    read, `reference/usb-protocol/version-block.md`. On a Harmony One enumeration cannot tell the two
    apart, since the product id does not change. The Harmony 300 and 350 have neither a screen nor a
-   version block: their section below says what stands in for both.
+   version block: their section below says what stands in for both. The Harmony 880 and 885 have no
+   safe mode image and no type 4: their bootloader answers with type 3, and their section below says so.
 3. **Which architecture**, and then that route below. Nothing transfers between them by default.
 4. **What a file actually holds, before trusting its name**, before anything is restored from it.
 
@@ -235,3 +236,143 @@ What must never be part of that route:
   implements it, `reference/usb-protocol/bootloader.md`. A damaged bootloader has no route.
 * **The last eight bytes of the safe mode image** are not in the lab: the remote serves an internal image
   eight bytes short. They hold a routine its start calls, likely an empty one.
+
+## The Harmony 880 and 885
+
+**Read before planning any write to this platform, and before deciding what a recovery would be.** The two
+Harmony 885s on the bench are read only, `CLAUDE.md` "Never write to a remote", and this platform is not
+in `ARCHITECTURES_WITH_A_WRITE_TARGET`. So this section is what a recovery would consist of, and not a
+permission. Everything in it is read in the firmware, the application 4.4 and both bootloader builds 4.0,
+the 880's and the 885's; none of it has been run on a unit, and no command has been sent to a bootloader on
+any remote. The facts are `reference/architectures/harmony-880-885/firmware.md`, `memory.md` and `usb.md`,
+and `reference/usb-protocol/bootloader.md` "The Harmony 880 and 885"; the arguments are the headers of
+`tests/test_harmony_885_bootloader.py`, `test_harmony_885_start_check.py`,
+`test_harmony_885_erase_and_write.py`, `test_harmony_885_write_end.py` and `test_harmony_885_reads.py`.
+
+**There is no safe mode image here, and two things do its work.** The bootloader, the bottom 64 KiB, is a
+complete program: when it does not start the application it stays on the cable and answers the
+application's own commands, so it can write the application back. And the application carries a small
+configuration of its own in its last 8 KiB, at `0x01E000`, which it runs whenever the user's configuration
+cannot be trusted. Logitech's classic client treats the bootloader as this platform's safe mode program,
+`firmware.md` "The images".
+
+**What can go wrong, and what survives it:**
+
+| what is damaged | what the remote does | the way back |
+|---|---|---|
+| the configuration | shows a message, then runs the built in configuration as the full application, still on the cable, `firmware.md` "What the application does at start" | write the configuration again and restart |
+| the application, erased or half written | fails the bootloader's image check at power on, so the bootloader stays resident and serves the cable, `firmware.md` "What the bootloader does at power on" | erase and write the application back from the unit's backup, through the bootloader, `bootloader.md` "What it can restore" |
+| the bootloader's sector | nothing runs at power on | **no USB route**, below |
+
+The route, in order:
+
+1. **Recognise the state.**
+   * **The screen.** A failed configuration shows "Go to Website / to update settings" when a cookie or
+     marker failed and "Configuration Corrupted" when only the checksum did; a blank identity block shows
+     "Missing License" and a blank battery calibration word "Battery ADC Not Calibrated". Each stays 3000
+     ticks of the timer, about three seconds if a tick is a millisecond, which is not established, and then
+     the built in configuration runs. **Nothing latches**: the verdict is recomputed at every start and at
+     no other moment. The bootloader, when resident, shows a screen of its own. `firmware.md` "What the
+     application does at start".
+   * **Without opening anything**, `ioreg` shows the product string: `Harmony Remote 0-4.4.2` is the
+     application and `Harmony Bootloader` the bootloader, the second read in the image and not seen on a
+     unit. **The ids do not change**: the bootloader enumerates with the application's own descriptor,
+     `046D:C110` and the same `bcdDevice`. `openHarmony` refuses a bootloader by Microchip's ids, which this
+     one does not present, so **it opens a remote held in its bootloader as if it were running**.
+   * **So read the version block before anything else**: software type 0 is the application and 3 the
+     bootloader, whose field 6 is zero where the application's is 8. No type 4 exists on this platform,
+     `usb.md` "The version block".
+   * **Read the staged install's status**, `READ_MISC` selector 6, which both programs serve. Anything but
+     zero means the next restart by the processor's `RESET` installs over the application, see the hazards
+     below.
+2. **A bad configuration is written again**, with the application still running. Two steps of the other
+   platforms' eight step sequence must not be carried over: `WRITE_MISC` selector `0x0A` does not exist
+   here and gets no reply, so a writer waiting for one hangs, and status 2 must never be sent. Selector 2
+   keeps the remote off the region being rewritten until the next start, and only a restart, `E1 02` with
+   no reply, takes up the new configuration. `usb.md` "How a write ends".
+3. **A damaged application is written back through the bootloader, never through the running
+   application.** An application whose image fails the check lands there by itself at power on. One that
+   passes the check and misbehaves is held there by scan code 2 or 33 down at power on, and **which printed
+   keys those are is not checked**: never tell a person to press a key for it,
+   `reference/remotes/harmony-885/keys.md` "The keys held at power on". Through the bootloader: erase
+   `0x010000`, a 64 KiB sector by every source, write the 64 KiB back from the backup, which it programs
+   byte for byte, `0xFF` included, then read the whole 64 KiB back and compare, and only then restart with
+   `E1 02`. The image check wants the `HG` magic at `0x010004` and the checksum over offset 4 to the end,
+   `firmware.md` "The header is not the later Harmonys'". From the running application, an erase at
+   `0x010000` removes the code answering the command; that the next start then lands in the bootloader is
+   inferred and not checked. Logitech's own route for a new application stages it at `0x1D0000` and sets
+   status 2; a recovery does not need it, and it adds a region nobody has read on a unit.
+4. **An erased bootloader has no route back over USB.** Nothing in the reference names another one. Whether
+   the board carries pads for the processor's in circuit programming is not checked, and neither is whether
+   the bottom 64 KiB is the processor's own flash or the external part, so what such programming would
+   reach is not known either, the architecture folder's `README.md` "Shared, in one table". It cannot be
+   erased by accident, since it takes the unlock first; putting the identity block back is the one
+   deliberate operation that erases it, below.
+
+**The backup, before any write to a unit.**
+
+* **The whole region from `0x000000` to `0x1FDFFF`**, which holds the bootloader, the identity block, the
+  hardware version log, the battery calibration word, the application with its built in configuration, the
+  user configuration, the staging region at `0x1D0000` and the log area, `memory.md` "The address space".
+  Reads of `0x8000` bytes from a `0x8000` boundary never meet the two addresses below that are not flash,
+  `usb.md` "Reading flash". **The library bounds a read by where it starts and not where it ends**, so a
+  read that starts below `0x1FE000` and runs past it is not refused: keep the end inside the window by
+  hand.
+* **The identity block at `0x000110`, 48 bytes, and the battery calibration word at `0x000160`** are the
+  two things a writer must never leave blank. A blank identity block keeps the user configuration from ever
+  being checked, so the built in one runs; a blank calibration word leaves every test of whether a
+  configuration is valid seeing only the built in one. Both are only tested for being blank and compared
+  with nothing, so the unit's own bytes are what go back, `firmware.md` "What the application does at
+  start".
+* **Putting either back means erasing the sector that holds the reset vector.** Both sit inside the
+  bootloader's 64 KiB, at `0x000110` and `0x000160`, which is inside the first sector under both sector
+  maps the outside sources give for that range, eight of 8 KiB or a first one of 16 KiB, `memory.md` "The
+  flash part". So it needs the unlock, and an interruption between the erase and the write leaves a remote
+  with no bootloader and no route back. Logitech's classic client does exactly this rewrite of the bottom
+  64 KiB to erase an identity block, `bootloader.md` "A flash programmer for the whole part". This is read
+  from the two pages together and stated on neither.
+
+**What a recovery must not walk into:**
+
+* **No ceiling on erase or write**, in the application or the bootloader: one floor at `0x010000` and
+  nothing above it, so a wrong address from there up erases or writes whatever is there, the running
+  application included, with no condition. `usb.md` "Writing flash" and "Erasing flash".
+* **The unlock opens the bootloader to erase.** A one byte write flash of `0xA7` to `0x000106` sets it,
+  and `WRITE_MISC` selector 7 reaches the byte as well, `0x23A` in the application's data memory; it stays
+  set until the remote next starts or goes to sleep. Send it for the identity block's sector and for
+  nothing else, `memory.md` "Data memory".
+* **`F0 D0` and `F0 30` do not mean done.** A write is answered the same whatever was programmed, and a
+  refused erase gets no reply at all, so the host waits until it times out. Only a read back says what the
+  flash holds.
+* **Erase before writing.** Nothing erases on its own, a programmed byte over old content can only clear
+  bits, and the application skips `0xFF` bytes where the bootloader writes them, so a write over unerased
+  flash reads back partly right and partly old.
+* **Status 2 or 6, set by a host, installs over the application at the next `RESET`.** `WRITE_MISC`
+  selector 6 sets it, and selector 7 reaches it at `0x100`; then the escape's restart, the three key
+  restart or the wake from power down makes the bootloader erase the application and copy 64 KiB over it,
+  from `0x1D0000` for 2 and from `0x020000`, the user configuration, for 6. The 880's bootloader resumes an
+  interrupted copy from `0x020000` as one from `0x1D0000`. **A power on or a battery pull clears the
+  status**, so a remote found with a status other than zero is restarted by a battery pull and not by the
+  escape. `firmware.md` "What the bootloader does at power on" and "Restarting".
+* **A read whose last byte is `0x000104` or `0x000105`, alone in its chunk**, which takes an odd count
+  ending there, is not a flash read: `0x000104` returns the hardware log's newest entry and `0x000105`
+  switches a pin on and runs the analogue converter. Both programs do it. There is no odd count hang on
+  this platform; this is the hazard an odd count has here, `usb.md` "Reading flash".
+* **From `0x1FE000` up is not flash**: the keypad, the USB controller and the display sit there, then a
+  window onto RAM from `0x1FFE00`, and past `0x1FFFFF` an address reaches the processor unmasked, by the
+  family the configuration space and then the bottom of flash again from `0x400000`, inferred and not
+  checked. A read there is a bus cycle on a device, and an erase there reaches a device or the RAM the
+  routine runs from, `memory.md` "The address space" and "The flash part".
+* **`WRITE_MISC` selector 7 has no bound**, and in the bootloader it reaches the special function registers.
+
+**What is not known**, and stands between this section and a recovery anyone could run:
+
+* Which of the two flash parts a unit carries, and so the sector map below `0x010000`, where Logitech's
+  client and concordance disagree and no datasheet was compared.
+* Which printed keys have scan codes 2, 33 and 32, whether holding 2 or 33 at power on works as read, and
+  whether holding all three through a restart leaves the remote in its bootloader.
+* What sits at `0x1D0000` on a unit, and what could interrupt a staged copy and leave status 4 or 7.
+* Whether the board has in circuit programming pads, and whether the bottom 64 KiB is in the processor or
+  in the external part.
+* Any command sent to a bootloader on any remote, and whether this one serves `Harmony Bootloader` as its
+  product string; what a watchdog or a supply dip does to the status; how long a timer tick is.
