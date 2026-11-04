@@ -27,7 +27,7 @@ architecture**, not because the remote has no product id. The library reads flas
 | vendor and product id | `0x046D:0xC110`, the Espresso platform[^s207] |
 | `bcdDevice` | `0x0811` on an 885 and `0x080F` on an 880, protocol 8 and the skin in plain binary; read as BCD the 885's would name a Harmony 655[^s113] |
 | version block | firmware 4.4, software type 0, skin 17, field 6 `0x08`, architecture 8, from the application's own constants[^s114], and on a unit the same, with hardware 2.1 and flash `0x49` from manufacturer `0x01`[^t-arch8-usb] |
-| product string | `Harmony Remote 0-4.4.2`[^t-usbdesc] |
+| product string | `Harmony Remote 0-4.4.2`[^t-usbdesc]; `Harmony Bootloader` while the bootloader is resident, which otherwise enumerates with the application's descriptor, ids and `bcdDevice` included[^t-885-boot] |
 
 ## Not checked
 
@@ -39,3 +39,4 @@ architecture**, not because the remote has no product id. The library reads flas
 [^unchecked]: Not checked.
 [^t-arch8-usb]: Measured on a unit. [The test](../../../tests/test_arch8_usb.py)
 [^t-usbdesc]: Measured on a unit. [The test](../../../tests/test_usbdesc.py)
+[^t-885-boot]: Read in the firmware. [The test](../../../tests/test_harmony_885_bootloader.py)

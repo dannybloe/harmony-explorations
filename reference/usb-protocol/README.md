@@ -22,7 +22,7 @@ reports of 64 bytes.
 | [Transport](transport.md) | how a remote presents itself when plugged in: its descriptors, its endpoints, and how `bcdDevice` carries the model |
 | [Commands](commands.md) | every request of the command protocol and its reply, how an address picks a memory, the hazards of a read, a write and a configuration write |
 | [The version block](version-block.md) | what a remote says it is: firmware, hardware, flash chip, architecture, mode, skin, platform |
-| [The bootloader](bootloader.md) | the separate flash programming protocol a Harmony One or 600 speaks before its firmware starts |
+| [The bootloader](bootloader.md) | the program that runs before the firmware: a separate flash programming protocol on a Harmony One or 600, the application's own commands on a Harmony 880 or 885 |
 | [The file protocol](file-protocol.md) | the protocol of the Harmony 300, 350 and Touch |
 
 What a particular remote answers is on its architecture's usb page, [the Harmony 525](../architectures/harmony-5xx/usb.md),

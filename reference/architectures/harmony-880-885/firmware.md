@@ -1,8 +1,8 @@
 # Harmony 880 and 885: firmware
 
 A Harmony 880 or 885 runs two programs that together fill its first 128 KiB of flash: a bootloader at the
-bottom, which starts the remote and owns its interrupt vectors, and the application above it, which does
-everything else and hands nothing back. One application build serves both models and says which one it is
+bottom, which starts the remote, owns its interrupt vectors and serves the USB cable itself when it does not
+start the application, and the application above it, which does everything else and hands nothing back. One application build serves both models and says which one it is
 in two bytes. This page says what each image is, where it loads, how its header differs from every later
 Harmony's, and how a copy of one is obtained.
 
@@ -29,8 +29,13 @@ included, and their code ends 22 bytes apart, at `0x0639B` and `0x063B1`.[^s116]
 **The software type is Logitech's own word.** The version block's accessor in each image states it, and
 Logitech's firmware packages name the values: 0 an application, 1 test, 2 minimal, 3 a bootloader, 4 safe
 mode.[^s116][^s7] **No image of type 4 is known on this architecture**: neither of the two ways a host can
-read an image here returns one, and whether this platform's Boot mode does the work later platforms split
-into a bootloader and safe mode is not known.[^s116]
+read an image here returns one.[^s116] **The bootloader does part of what safe mode does on later
+platforms**: when it does not start the application it stays resident and answers the application's own
+commands, so it is the minimal program a host can reach whenever the bottom 64 KiB are intact,
+[below](#what-the-bootloader-does-at-power-on).
+Whether the application has a safe mode of its own is not checked.[^t-885-boot][^unchecked] This said
+whether this platform's Boot mode does the work later platforms split<!--superseded--> into a bootloader and
+safe mode was not known, until the bootloader was read.[^t-885-boot]
 
 ## The header is not the later Harmonys'
 
@@ -41,7 +46,7 @@ fields.[^s114]
 | offset | the Harmony One, 600, 650 and 700 | the Harmony 880 and 885 |
 |---|---|---|
 | 0 | `u16` checksum | `u16` checksum |
-| 2 | `0xFFFF` | `0xFF00` |
+| 2 | `0xFFFF` | `0xFF00`, its low byte the first boot mark, below |
 | 4 | `u16` size field | **the `HG` magic**, `48 47` |
 | 6 | family, version BCD | `0x0000` |
 | 8 | the `HG` magic | `0xC000` |
@@ -55,13 +60,57 @@ the passes say nothing about where the image ends.[^s114]
 
 **The bootloaders have no header and no checksum**: their first bytes are the reset vector.[^s116]
 
+**The bootloader checks this checksum at every power on where no key is held, and leaves out the word at
+offset 2.** It sums from offset 4 to the end of the 64 KiB, so both bytes at offset 2 can change without
+breaking it, and the low one does: when the check passes with `0xFF` there the bootloader shows a screen and programs that byte to
+`0x00`, a mark that the image has booted once. Both application images carry `0x00`, and starting the sum
+at offset 2 instead fails on both.[^t-885-boot]
+
+## What the bootloader does at power on
+
+In order, read in both bootloader builds:[^t-885-boot]
+
+1. **It clears the request for a staged install, unless the restart came from the firmware itself.** The
+   request is a status byte in data memory, `0x100`, that write misc selector 6 sets. It survives a reset
+   by the processor's `RESET` instruction, which is how the escape's restart ends, and it is cleared after
+   any other reset, so a power on or a battery pull never starts an install. Which reset happened is read
+   from bit 4 of the register at `0xFD0`, which the bootloader sets again at every start, so only a `RESET`
+   instruction can clear it before the next one; that `0xFD0` is the PIC18's reset control register `RCON`
+   is inferred from the processor family and not checked against the part's datasheet.[^t-885-boot]
+2. **The staged install**, if the status asks for one. Status 2 copies 64 KiB from `0x1D0000` to the
+   application at `0x010000`, status 6 copies them from `0x020000`; 4 and 7 are the same two resumed. The
+   sector at `0x010000` is erased first, the status reset to 0 at the end.[^t-885-boot] **The two builds
+   differ here**: while copying, the 885's writes status 4 for the
+   `0x1D0000` source and 7 for the `0x020000` one, the 880's writes 4 for both, so a copy from `0x020000`
+   that an 880 resumed would resume from `0x1D0000`.[^t-885-boot] What sets the status, what sits at
+   `0x1D0000` on a unit, and what could interrupt a copy and leave 4 or 7 behind are not
+   checked, and so is what a status 6 install would take from `0x020000`, where the user configuration
+   starts.[^unchecked] Logitech's classic client names `0x1D0000` for this platform as the address of new
+   code.[^t-885-boot-client]
+3. **The held key.** If the keypad scan gives scan code 2 or 33 (`0x02` or `0x21`), the bootloader stays
+   resident and does not look at the application. Which printed keys those are is not checked.[^t-885-boot][^unchecked]
+4. **The image check**: the `HG` magic at `0x010004` and the checksum above. A failure stays resident.[^t-885-boot]
+5. **The jump** to `0x010C00`, where the application holds a `GOTO` to its entry.[^t-885-boot]
+
+**Staying resident** means a screen of the bootloader's own and its USB service loop, which speaks the
+application's protocol and can rewrite the whole flash, [the bootloader](../../usb-protocol/bootloader.md#the-harmony-880-and-885);
+only a host's restart or a reboot leaves it, and a reboot runs the same decision again.[^t-885-boot]
+
+**For a recovery**, that means a remote whose application is destroyed or half written still boots into a
+program that answers on the cable, and a host can write the application back through it. What nothing
+recovers is the bootloader itself: an erased bootloader sector leaves no program to run at power on, and
+erasing one takes an unlock a host has to send on purpose.[^t-885-boot]
+
 ## Routines read and where
 
 | routine | where | source |
 |---|---|---|
 | the version block's five constants, `RETLW` in the order field 0, field 4 low, field 5, field 6, field 4 high | `0x11C46` in both applications | [^s114] |
 | the keypad scan, `scan = (line - 1) * 4 + input`, after a caller that reads `PORTB` | `0x08C26` in both applications, `0x04D06` in the 880's bootloader and `0x04D14` in the 885's | [^s144] |
-| the USB device descriptor | `0x1A630` in the applications | [^s114] |
+| the USB device descriptor | `0x1A630` in the applications, `0x06102` in the 880's bootloader and `0x06118` in the 885's, byte for byte the application's | [^s114][^t-885-boot] |
+| the bootloader's command switch, an `XORLW` chain | `0x03BD4` in the 880's bootloader and `0x03BE0` in the 885's | [^t-885-boot] |
+| the bootloader's power on decision | the status clear at `0x0465E` and `0x0466C`, the staged install at `0x02218` and `0x0221C`, the key test at `0x020A8` and `0x020AC` with its comparison at `0x02096` and `0x0209A`, the image check at `0x020CA` and `0x020CE`, the jump at `0x01DDA` and `0x01DDE` | [^t-885-boot] |
+| the bootloader's floor check on erase and write, copied to RAM and run at `0x1FFFE0` | `0x056C0` in the 880's bootloader and `0x056CE` in the 885's | [^t-885-boot] |
 
 ## Obtaining an image
 
@@ -79,7 +128,7 @@ No Logitech package of this firmware is known; the images were read off remotes 
 
 * Any firmware version but 4.4 and boot 4.0.[^unchecked]
 * The Harmony 720's, 785's, 880 Pro's and 882's firmware.[^unchecked]
-* How a remote of this architecture is recovered, and whether it has a safe mode at all.[^unchecked]
+* Whether the application has a safe mode of its own; how a recovery through the bootloader goes on a unit.[^unchecked]
 
 [^s114]: Read in the firmware. [Section 114](../../../docs/findings.md#s114)
 [^x-concordance]: Stated by a third party. [concordance](https://github.com/jaymzh/concordance)
@@ -88,3 +137,5 @@ No Logitech package of this firmware is known; the images were read off remotes 
 [^s144]: Read in the firmware. [Section 144](../../../docs/findings.md#s144)
 [^unchecked]: Not checked.
 [^t-arch8-usb]: Measured on a unit. [The test](../../../tests/test_arch8_usb.py)
+[^t-885-boot]: Read in the firmware. [The test](../../../tests/test_harmony_885_bootloader.py)
+[^t-885-boot-client]: Stated by Logitech, in their client. [The test](../../../tests/test_harmony_885_bootloader.py)

@@ -35,7 +35,11 @@ Its configuration reader still holds no profile for `0xC110`; the generated tabl
 **The application checks no address on a read.** `READ_FLASH` parses the address into a 24 bit table
 pointer and fetches every byte with one table read; only the erase calls an address check. So a read
 past the part is not refused by the remote, and the bound of `0x200000` is the library's, the program
-memory space of a PIC18.[^t-arch8-read] What a read above it returns is not checked.[^unchecked] Each
+memory space of a PIC18.[^t-arch8-read] What a read above it returns is not checked.[^unchecked] **The
+8 KiB below that bound hold devices, not only flash**: the firmware reaches devices at `0x1FE040` to
+`0x1FE0C1` and runs code in a window onto its RAM from `0x1FFE00`, so a read there is a bus cycle on a
+device or on RAM, [memory.md](memory.md).[^t-885-boot] What such a read does to a device, and whether all
+of those 8 KiB are decoded away from flash, is not checked.[^unchecked] Each
 chunk's fetch counts down one byte at a time, so the odd count hang of the Harmony One has no counterpart
 in that loop; an odd count on a remote is not measured.[^t-arch8-read][^unchecked]
 
@@ -43,6 +47,15 @@ The command dispatch has the seven cases of the later Harmonys and **no case for
 the session end nor the restart is reached from it.[^t-arch8-read] Whether another part of the firmware
 handles the escape is not checked.[^unchecked] A one byte chunk at `0x000104` or `0x000105` calls a
 routine instead of fetching flash; what those return is not checked.[^unchecked]
+
+## In the bootloader
+
+**The bootloader answers the same protocol**, six of the application's commands and the escape, with no
+`0x70`, and it enumerates with the application's own device descriptor, so the ids cannot tell a remote
+held in its bootloader from a running one; the product string `Harmony Bootloader` and the version
+block's software type 3 can, [the bootloader](../../usb-protocol/bootloader.md#the-harmony-880-and-885).[^t-885-boot]
+This page listed which commands the bootloader dispatches<!--superseded--> as not checked until the bootloader
+was read.
 
 ## The version block
 
@@ -74,7 +87,6 @@ mode a remote is in is field 4's low nibble, [the version block](../../usb-proto
 
 * Where the version block's hardware version and flash ids come from in the firmware; a Harmony 885
   reports hardware 2.1 and flash `0x49` from manufacturer `0x01`, and which part that is.[^t-arch8-usb][^unchecked]
-* Which commands the bootloader dispatches.[^unchecked]
 
 [^s207]: Stated by Logitech, in their client. [Section 207](../../../docs/findings.md#s207)
 [^s113]: Read in the firmware. [Section 113](../../../docs/findings.md#s113)
@@ -84,3 +96,4 @@ mode a remote is in is field 4's low nibble, [the version block](../../usb-proto
 [^t-arch8-usb]: Measured on a unit. [The test](../../../tests/test_arch8_usb.py)
 [^t-arch8-read]: Read in the firmware. [The test](../../../tests/test_arch8_usb.py)
 [^t-usbdesc]: Measured on a unit. [The test](../../../tests/test_usbdesc.py)
+[^t-885-boot]: Read in the firmware. [The test](../../../tests/test_harmony_885_bootloader.py)

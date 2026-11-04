@@ -132,8 +132,9 @@ test('the Python table was actually parsed, rather than read as empty', () => {
   // 321 with the recording of a Touch sync through Harmony Desktop, `packages/usb/test/touch-sync.test.ts`,
   // todo-touch 2.3's trial, and 323 with the full setup's sync and the reverse sync after it, 2.3.
   // 324 with the Harmony 515 from onyiaic as it came, and 328 with its two firmware images and the two
-  // kkong42 posted for the model.
-  assert.equal(Object.keys(pythonImages()).length, 328, 'every fixture tests/lab.py names');
+  // kkong42 posted for the model, and 329 with the classic client's arch 8 constants, which
+  // `tests/test_harmony_885_bootloader.py` closes the bootloader unlock against.
+  assert.equal(Object.keys(pythonImages()).length, 329, 'every fixture tests/lab.py names');
 });
 
 test('the two sides exclude the same fixtures from the parseable population', () => {

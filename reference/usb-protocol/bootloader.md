@@ -1,17 +1,26 @@
 # The bootloader
 
-The first 4 KiB of a Harmony One's or a Harmony 600's own program flash hold a small program that runs
-before anything else at every power on. It decides what to start, and if it starts nothing it waits on the
-USB cable as a **flash programmer** of its own, with a protocol that shares nothing with
-[the commands](commands.md) the running remote answers: no length nibble, no command in the high nibble,
-no state machine. A host that can drive one cannot drive the other. It can rewrite the processor's
-internal flash; it is not shown to reach the configuration's external flash. Nothing in this reference has
-sent it a command, and `packages/usb` implements none of it; `openHarmony` refuses a remote in its
-bootloader.
+The bootloader is the small program that runs before anything else at every power on and decides what to
+start. Two quite different ones are known, and what holds for one says nothing about the other.
 
-What follows is read in the Harmony One 3.4's and the Harmony 600 0.2's internal `0xFE` pages, whose command
-switches are at `0x0047C` and `0x001A8`[^s189]. Where each architecture keeps it, and how it differs
-between the Harmony 600 and 650, is [the Harmony One's memory](../architectures/harmony-one/memory.md) and
+**On the Harmony One and the Harmony 600** it is the first 4 KiB of the processor's own program flash, and
+if it starts nothing it waits on the USB cable as a **flash programmer** of its own, with a protocol that
+shares nothing with [the commands](commands.md) the running remote answers: no length nibble, no command in
+the high nibble, no state machine. A host that can drive one cannot drive the other. It can rewrite the
+processor's internal flash; it is not shown to reach the configuration's external flash. Nothing in this
+reference has sent it a command, and `packages/usb` implements none of it; `openHarmony` refuses a remote in
+its bootloader.
+
+**On the Harmony 880 and 885** it is the bottom 64 KiB of the one flash part, and if it starts nothing it
+answers **the application's own command protocol**, so a host that can talk to a running remote can talk to
+it with the same packets, and it can rewrite every part of the flash, its own 64 KiB only after an unlock,
+[below](#the-harmony-880-and-885).[^t-885-boot]
+
+The sections before the Harmony 880 and 885's are read in the Harmony One 3.4's and the Harmony 600 0.2's
+internal `0xFE` pages, whose command switches are at `0x0047C` and `0x001A8`[^s189]; this page described
+those two alone until the Harmony 880 and 885's bootloader was read.[^t-885-boot] Where each architecture
+keeps it, and how it differs between the Harmony 600 and 650, is
+[the Harmony One's memory](../architectures/harmony-one/memory.md) and
 [the Harmony 600, 650 and 700's](../architectures/harmony-600-650-700/memory.md).
 
 ## How a remote gets there
@@ -99,13 +108,86 @@ image. Its read commands are unbounded, and the keypad scan proves a `TBLRD` abo
 the external bus[^s189]. On the Harmony One, safe mode is the route that does reach the configuration's
 flash, with the application's own commands, [the commands](commands.md#erase_flash)[^s191].
 
+## The Harmony 880 and 885
+
+**A complete program with its own USB service loop, not a stub.** At power on it installs a staged
+application if one is waiting, keeps itself resident if one of two keys is held, and otherwise checks the
+application and hands over to it. When it stays, it shows a screen of its own, attaches to USB and serves
+commands until a host sends the restart, and it does the same when the application fails the check, so a
+remote whose application is destroyed still answers on the cable. Read in both bootloader builds, the
+Harmony 880's and the Harmony 885's, version 4.0, which agree on everything on this page but write misc
+selector 2, which clears one flag bit on the 880 and two on the 885; how they differ during a staged
+install, and what the bootloader does at power on in order, is
+[the architecture's firmware page](../architectures/harmony-880-885/firmware.md#what-the-bootloader-does-at-power-on).[^t-885-boot]
+
+### How a host recognises it
+
+**It carries the running application's own device descriptor**, byte for byte, `046D:C110` with the same
+`bcdDevice`, so vendor and product id cannot tell the two apart, and a host that opens a remote by its ids
+opens this program too. What differs is the product string, `Harmony Bootloader` where the application
+says `Harmony Remote 0-4.4.2`, and the version answer, whose software type is 3 where the application's
+is 0, [the version block](version-block.md).[^t-885-boot]
+
+### The protocol
+
+The application's framing, [the commands](commands.md): the command in the high nibble of the first byte,
+the length code in the low one. Six commands and the escape, where the application's switch has the same
+six and `0x70`:[^t-885-boot]
+
+| command | what it does |
+|---|---|
+| `0x10` version | the version block: firmware 4.0, the hardware version, the flash part's device and manufacturer ids read off the part itself, architecture 8 with software type 3, the skin, and zero in field 6 |
+| `0x30` write flash | each byte programmed into the flash part, the address checked as below. A one byte write to `0x000106` is not programmed: it sets the unlock |
+| `0x50` read flash | one table read per byte and **no bound on the address**; a one byte read at `0x000104` or `0x000105` returns a routine's value instead, as the application's does |
+| `0xA0` write misc | four selectors: 2 clears flag bits, 5 masks or unmasks interrupts, 6 sets the **status byte** that asks for a staged install, 7 writes one byte of data memory at any address, the special function registers included |
+| `0xB0` read misc | selector 6 returns the status byte, 7 one byte of data memory, any other zero |
+| `0xD0` erase | erases the sector of the flash part at the address. A refused erase shows error code 2 on the screen and drops the command, so **no reply is sent** |
+| `0xE0` escape | sub command `0x01` clears the command state; `0x02` and `0x03` detach from USB and restart, after which the power on decision runs again |
+
+**There is no `0x70`**, where the application on this platform has one, as the applications of the Harmony
+One and the Harmony 600, 650 and 700 do.[^t-885-boot] What each selector of the two misc commands does is read and not asserted;
+their case sets are.[^t-885-boot]
+
+### A flash programmer for the whole part
+
+**Erase and write have one bound, a floor, and no ceiling.** An address at or above `0x010000`, the
+application, the configuration and everything above them, is erased and written with no condition. Below
+it, the bootloader's own 64 KiB, an erase or a write is refused unless the unlock byte is `0xA7`. A host sets
+the unlock by a one byte write flash of `0xA7` to `0x000106`, and write misc selector 7, which writes any
+byte of data memory, reaches it too; it is cleared at every power on. The bootloader also sets it itself,
+and clears it straight after, around its one write into its own 64 KiB, a byte of a hardware version log at
+`0x000140`. The check is the
+first thing the erase and both programming routines do, on the address they start at, and the erase command
+checks the floor once more before it starts.[^t-885-boot] **Logitech's classic client writes exactly that
+byte to exactly that address** before it rewrites the bottom 64 KiB to erase a remote's identity block, the
+one unlock it sends before any write,
+[Logitech's classic client](../logitech/classic-client.md#erasing-the-identity-block).[^t-885-boot-client]
+
+The programming itself is the command sequences of an AMD style NOR flash part, unlock cycles to
+`0x000AAA` and `0x000555`, run from a copy of the bootloader's routines in RAM, since code cannot run from
+the part it is programming.[^t-885-boot] Which part, and so how large one erased sector is, is not
+checked.[^unchecked]
+
+### What it can restore
+
+**A remote whose application is damaged still reaches it**, by itself when the image check fails and by a
+held key when the application passes its check but misbehaves, and through it a host can erase and write
+the application back with the commands it already sends to a running remote. What it cannot restore is
+itself: an erased bootloader sector leaves nothing to run at power on, and erasing one takes the unlock
+first, so it does not happen by accident.[^t-885-boot] Which printed keys hold it is not checked.[^unchecked]
+
 ## Not checked
 
 * Any command sent to a bootloader, on any remote[^unchecked].
 * Which keys enter it, and whether entering it by keys works as read[^unchecked].
+* On the Harmony 880 and 885, which printed keys have the two scan codes that hold it, which flash part
+  and sector size an erase meets, and that the bootloader serves `Harmony Bootloader` for the descriptor's
+  product index[^unchecked].
 * Whether the numbering is Microchip's stock HID bootloader's[^unchecked].
 
 [^s189]: Read in the firmware. [Section 189](../../docs/findings.md#s189)
 [^unchecked]: Not checked.
 [^s87]: Read in the firmware. [Section 87](../../docs/findings.md#s87)
 [^s191]: Read in the firmware. [Section 191](../../docs/findings.md#s191)
+[^t-885-boot]: Read in the firmware. [The test](../../tests/test_harmony_885_bootloader.py)
+[^t-885-boot-client]: Stated by Logitech, in their client. [The test](../../tests/test_harmony_885_bootloader.py)

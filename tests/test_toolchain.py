@@ -248,8 +248,8 @@ class TheRunnerSeesEveryTest(unittest.TestCase):
         # `tests/test_harmony_touch_host.py`, todo-touch 4.1 and 4.2.
         # 78 to 81 with the four of todo-touch 5.2, the Harmony Touch's interface as an API:
         # `tests/test_harmony_touch_api_names.py`, `_setup.py`, `_engine.py` and `_closure.py`.
-        # 82 with `tests/test_harmony_515.py`, the first Harmony 515 on the bench.
-        # 83 with `tests/test_harmony_touch_beyond_the_clients.py`, todo-touch 5.1.
+        # 82 with `tests/test_harmony_515.py`, the first Harmony 515 on the bench, and 83 with
+        # `tests/test_harmony_885_bootloader.py`, todo-prepare-885 1.1.
         self.assertEqual(len(files), 83, 'the Python test files')
         with_block = 0
         for path in files:
@@ -300,7 +300,7 @@ class TheRunnerSeesEveryTest(unittest.TestCase):
         # `tests/test_harmony_touch_host.py`, todo-touch 4.1 and 4.2, which carry one each.
         # 76 to 79 with the four of todo-touch 5.2, `tests/test_harmony_touch_api_names.py`, `_setup.py`,
         # `_engine.py` and `_closure.py`, which carry one each. 80 with `tests/test_harmony_515.py`.
-        # 81 with `tests/test_harmony_touch_beyond_the_clients.py`, todo-touch 5.1, which carries one.
+        # 81 with `tests/test_harmony_885_bootloader.py`, which carries one.
         self.assertEqual(with_block, 81,
                          'files carrying a __main__ block, of %d' % len(files))
 
@@ -792,8 +792,8 @@ class APythonBoundOnACorpusTotalIsExact(unittest.TestCase):
         # `tests/test_harmony_touch_host.py`, todo-touch 4.1 and 4.2.
         # 78 to 81 with the four of todo-touch 5.2, the Harmony Touch's interface as an API:
         # `tests/test_harmony_touch_api_names.py`, `_setup.py`, `_engine.py` and `_closure.py`.
-        # 82 with `tests/test_harmony_515.py`, the first Harmony 515 on the bench.
-        # 83 with `tests/test_harmony_touch_beyond_the_clients.py`, todo-touch 5.1.
+        # 82 with `tests/test_harmony_515.py`, the first Harmony 515 on the bench, and 83 with
+        # `tests/test_harmony_885_bootloader.py`, todo-prepare-885 1.1.
         self.assertEqual(len(scanned), 83, 'Python test files, which moves when one is added')
         self.assertIn(self.CONTROL, found, 'the pattern matches nothing it should match')
 

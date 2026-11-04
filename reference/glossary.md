@@ -367,8 +367,9 @@ ordinary one,
 [Architectures](architectures/README.md#the-firmware-area-the-other-way-up).[^s3][^s118]
 
 **bootloader** (standard). The small program that runs first at every power on and decides what to start.
-If it starts nothing it waits on the cable as a flash programmer with a protocol of its own,
-[the bootloader](usb-protocol/bootloader.md).[^s189]
+If it starts nothing it waits on the cable as a flash programmer: with a protocol of its own on the Harmony
+One and 600,[^s189] and with the application's own commands on the Harmony 880 and 885,[^t-885-boot]
+[the bootloader](usb-protocol/bootloader.md).
 
 **execute in place** (standard). Running a program straight out of the flash chip it is stored in, as the
 Harmony One does with its external flash, where the Harmony 600, 650 and 700 copy theirs into the
@@ -514,3 +515,4 @@ that reads that variable says what the section is for, [the configuration file](
 [^s246]: Read in the firmware. [Section 246](../docs/findings.md#s246)
 [^s250]: Read in the firmware. [Section 250](../docs/findings.md#s250)
 [^s38]: Read in the firmware. [Section 38](../docs/findings.md#s38)
+[^t-885-boot]: Read in the firmware. [The test](../tests/test_harmony_885_bootloader.py)

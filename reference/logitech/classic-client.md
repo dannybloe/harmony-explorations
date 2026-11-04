@@ -175,12 +175,15 @@ architecture[^t-host-client]:
 |---|---|
 | Harmony One | reads a **kilobyte** at the identity block, blanks the first 64 bytes, writes the kilobyte back |
 | Harmony 600, 650 and 700 | writes 64 blank bytes, with no read at all |
-| arch 7, and the Harmony 880 and 885 | writes a **bootloader unlock** value first, then reads 64 KiB, blanks 48 bytes of it and writes it back |
+| arch 7, and the Harmony 880 and 885 | writes a **bootloader unlock** value first, `0xA7` to `0x000106`, then reads 64 KiB, blanks 48 bytes of it and writes it back |
 
 The block is **64** bytes when it is erased and **48** when it is read, the same boundary
 [the Harmony One's memory](../architectures/harmony-one/memory.md) describes as 64 bytes ending in sixteen
 zero bytes. The arch 7 and 8 arm is the only place in this client where anything is unlocked before a
-write[^s213]. Writing a serial back is the mirror of this, and its Harmony 525 arm alone passes erase
+write[^s213]. On the Harmony 880 and 885 the unlock is the one the bootloader demands before it erases or
+writes its own 64 KiB, which holds the identity block: the bootloader tests for exactly that byte, set by a
+one byte write to exactly that address,
+[the bootloader](../usb-protocol/bootloader.md#a-flash-programmer-for-the-whole-part)[^t-885-boot]. Writing a serial back is the mirror of this, and its Harmony 525 arm alone passes erase
 first as **false**: that remote keeps its identity in on chip EEPROM, which takes a write without an
 erase[^s213].
 
@@ -268,3 +271,4 @@ table's address, with nothing on the wire that says region[^t-host-client].
 [^s322]: Read in the firmware. [Section 322](../../docs/findings.md#s322)
 [^t-host-client-configs]: Measured in configurations. [The test](../../tests/test_host_client.py)
 [^s212]: Stated by Logitech, in their client. [Section 212](../../docs/findings.md#s212)
+[^t-885-boot]: Read in the firmware. [The test](../../tests/test_harmony_885_bootloader.py)

@@ -49,6 +49,14 @@ four of the names at x 3 and four at x 70 to 97.[^s128] Those are the keys the s
 this architecture they share exactly one scan code with the keypad's bindings, where every other
 architecture measured shares none.[^s128]
 
+## The keys held at power on
+
+**Scan codes 2 and 33 keep the remote in its bootloader**: if either is down when the bootloader scans the
+keypad at power on, it stays resident on the cable instead of starting the application, in both the 880's
+and the 885's bootloader,
+[the architecture's firmware page](../../architectures/harmony-880-885/firmware.md#what-the-bootloader-does-at-power-on).[^t-885-boot]
+Which printed keys those are, and whether holding one works as read, is not checked.[^unchecked]
+
 ## Not checked
 
 * Which printed key sits at which scan code: that needs a drawing or a unit.[^unchecked]
@@ -58,3 +66,4 @@ architecture measured shares none.[^s128]
 [^s177]: Measured in configurations. [Section 177](../../../docs/findings.md#s177)
 [^s128]: Measured in configurations. [Section 128](../../../docs/findings.md#s128)
 [^unchecked]: Not checked.
+[^t-885-boot]: Read in the firmware. [The test](../../../tests/test_harmony_885_bootloader.py)

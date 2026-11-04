@@ -751,6 +751,11 @@ IMAGES = {
     # it; this fixture is for the other half, the region address and size table, which is the
     # source end of the closure in packages/usb/test/classic-capture.test.ts.
     'classic_update_service': 'UpdateHidService.java',
+    # The same client's constants for arch 8, `Protocol8`, for one closure only: the bootloader unlock
+    # it writes before rewriting the bottom 64 KiB, and the staging address, against the values the
+    # Harmony 880 and 885 bootloaders test. tests/test_harmony_885_bootloader.py. Its code stays in the
+    # lab; what travels is two numbers, which are functional fact.
+    'classic_protocol8': 'Protocol8.java',
     # Two flash regions off the spare Harmony One, read by Logitech's own client rather than by
     # anything here, section 215. The user config region is the first independent check this
     # project has ever had on packages/corpus/src/read.ts; the embedded one has no counterpart.

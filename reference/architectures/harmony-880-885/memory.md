@@ -16,12 +16,15 @@ page states what differs here.
 
 | address | what | source |
 |---|---|---|
-| `0x000000` to `0x010000` | the **bootloader**, with the reset vector at zero and no image header; its code ends at `0x0639B` on the 880 and `0x063B1` on the 885 | [^s116] |
+| `0x000000` to `0x010000` | the **bootloader**, with the reset vector at zero and no image header; its code ends at `0x0639B` on the 880 and `0x063B1` on the 885. The bootloader erases or writes here only under an unlock, which a host sends or which the bootloader sets around its own one byte write to a hardware version log at `0x000140`, [the bootloader](../../usb-protocol/bootloader.md#a-flash-programmer-for-the-whole-part) | [^s116][^t-885-boot] |
 | `0x000110` | the remote's **serial number** | [^x-concordance] |
 | `0x010000` to `0x020000` | the **application firmware**, version 4.4, [firmware.md](firmware.md) | [^s114] |
 | `0x01E000` to `0x01FB89` | inside the application's 64 KiB, a **safe mode configuration**: a complete container of 7049 bytes, byte identical in the 880's and the 885's images | [^s114] |
 | `0x020000` | the **user configuration**, the container's own pointers counting from here | [^x-concordance][^s14] |
+| `0x1D0000` | where the bootloader copies a staged application from when the status byte asks for status 2, [firmware.md](firmware.md#what-the-bootloader-does-at-power-on); what a unit holds there is not checked | [^t-885-boot][^unchecked] |
 | `0x1E0000` to `0x1FE000` | the **log area** every configuration declares, 15360 records of 8 bytes | [^s47] |
+| `0x1FE040` to `0x1FE0C1` | **devices, not flash**: every immediate load of the table pointer into this range names `0x1FE040`, `0x1FE041`, `0x1FE081` or `0x1FE0C1`, with `0x1FE080` and `0x1FE0C0` reached from them. By the code that uses them they are the keypad lines, the USB controller and the display; that identification is the code's reading and not checked against the hardware | [^t-885-boot][^unchecked] |
+| `0x1FFE00` to `0x1FFFFF` | where the bootloader and the application call their RAM copies of the flash programming routines, so a window onto data memory and not flash; inferred from where the copies are placed and called, not from a datasheet | [^t-885-boot] |
 
 **The serial sits below the application**, so a read of the firmware region cannot contain it, and a read
 of the bottom 64 KiB, which holds the bootloader, does.[^x-concordance] That address is inside the range
@@ -35,7 +38,10 @@ states the architecture and the skin, so the configuration that ships with the f
 
 **The log area stops 8 KiB short of 2 MiB**, at `0x1FE000`, where every other architecture's ends on a
 round boundary; the stride of 8 bytes is the Harmony 525's and the Harmony 600's as well.[^s47] What the
-firmware writes there is not read.[^unchecked]
+firmware writes there is not read.[^unchecked] **The top 8 KiB is where the firmware reaches its devices
+and its RAM window**, which fits the log area stopping there; whether everything from `0x1FE000` up is
+decoded away from flash, rather than only the addresses the firmware uses, is not checked.[^t-885-boot][^unchecked]
+So a read there is a bus cycle on a device or on RAM, and neither program's read path refuses one.[^t-885-boot]
 
 ## The container
 
@@ -99,3 +105,4 @@ or where a page there names it:
 [^s180]: Measured in configurations. [Section 180](../../../docs/findings.md#s180)
 [^s144]: Read in the firmware. [Section 144](../../../docs/findings.md#s144)
 [^t-arch8-usb]: Measured on a unit. [The test](../../../tests/test_arch8_usb.py)
+[^t-885-boot]: Read in the firmware. [The test](../../../tests/test_harmony_885_bootloader.py)
