@@ -31,7 +31,48 @@ safe. Before writing build code in `packages/codec/src`, load `code-for-a-family
   unit, every write read back and compared. Those are about the device; these are about the file.
 * **The evidence lives in the reference now.** Each item names the page and heading that holds the
   measurement, the counts and the archive section; this skill keeps the rule, the trap and the code that
-  enforces it. `CLAUDE.md` "Rails a writer will have to respect" keeps the one line table.
+  enforces it. The one line table is below; `CLAUDE.md` keeps only the instruction to load this skill.
+
+## Every rail in one line
+
+Moved here from `CLAUDE.md` on 4 November 2026, so a session sees every rail at once before reading the
+checklist that argues each.
+
+| the rail | what a writer must do |
+|---|---|
+| base slot 13's `narrow` and `wide` size the state variable storage, and `count` does not | so appending a variable moves **two** words of that header. The firmware allocates `narrow + 2 * wide` and paints `0xFE` over everything above it at each boot, while the seeding loop runs over `count`, so raising the count alone buys a variable that is seeded and then erased, silently. Ours did: the device appeared on the menu, beeped and started nothing. `assertStateTableConsistent` |
+| a configuration holds at most 128 state variables | a write names its variable in seven bits, and Logitech's own eight device compiles hold 112 to 124, section 331. A device costs three plus its inputs. The model's device count, eight on a Harmony 650, is checked first and binds before the ceiling on every configuration measured; the ceiling refused only compositions past that count |
+| every send is paired with a `0x7C` naming the same device | emit `{0x7D, 0x7C}`, never the send alone. All 4267<!--fact:send_lists--> send lists of the user configurations are the pair and none is bare, and a bare one sends from a key press and **nothing** from an activity's transition, measured on the spare Harmony One, section 278. On arch 14 each also opens with a `0x7F` delay step of three lists, and the composer emits it, section 287 |
+| base slot 13's first seven records are the clock | stamp them, and reuse none of the firmware's block: 0 to 17 on arch 8, 12, 14 and 16 (Harmony 880 and 885, Harmony One, Harmony 600, 650 and 700, Harmony 300 and 350) and 0 to 12 on arch 9 (Harmony 525), section 284 and `tests/test_harmony_350_clock.py`. Eight values, since the year's maximum always moves with it; the day counts from 0, so a 31st is 30 and its maximum stays 30, section 322. Arch 9 (Harmony 525) keeps its own |
+| base slot 3's timestamp is stamped at write time | never copied. The one field where a round trip and a save differ |
+| `end_addr` is restamped when anything changes length | the only header field that moves with a section's growth |
+| a read can insert bytes without losing any | a config that parses is not a config that arrived. Every read of an arch 10 (Harmony 890) remote here came back with surplus chunks, and neither the trailer checksum nor the end marker catches a duplicated run of zeroes on its own |
+| parsing is not validating | a container can pass both checksums, render pixel identical, close its counts, and address every infrared command wrongly. This is why `edit.ts` refuses a length change |
+| the trailer checksum is weak | a `u16` XOR of little endian words. Blind to two transposed words, and two edits at the same word parity cancel exactly |
+| base slot 15's group lengths are demanded | a group whose length differs is silently replaced by compiled in defaults. A group index is **not** portable between architectures |
+| base slot 15's entry count is demanded | 9 on arch 14 (Harmony 600 and 700), 11 on arch 12 (Harmony One). A different count is a silent no-op, not an error |
+| a timer fires one instruction, not a list | and its duration is clamped to sixteen bits with no error |
+| a queued screen program runs entry `operand & 0xff` | so a program of ours takes a free base slot 11 entry below 256 and is never appended; entry 6653 ran as 253 and stalled a Harmony 650 in a loop. Read on the Harmony 600, 650, 700 and One images, section 369 |
+| infrared duration blocks are shared | check who else names a block before editing it in place |
+| a record's three block pointers are once, held and tail | slot 1 repeats for as long as the key is down, so its trailing gap **is** the repeat rate. A duration word caps at 32767 us |
+| how many times a press sends the code is the **ratio** of the first two blocks | so changing it adds or removes a whole copy and its gap, which is a length change and goes through `relocate.ts`. Reading the first block's copies alone gets a two code family wrong: 6 copies and 2 is the same 3 sends as 3 copies and 1 |
+| a power on delay holds back one device, not the sequence | so raising it does nothing at all unless that activity sends the same device a later command, which 37<!--fact:delay_unfelt--> of 129<!--fact:delay_pairs--> activity and device pairs here do not. An editor that presents it as a pause in the activity is wrong about most of them |
+| on arch 14 a delay saved on the remote wins at start | the configuration copies a saved value over its own `first` at start, seen across three on the Harmony 600, so a changed delay does nothing on a unit with one saved for it, and only the remote's settings store says which have one. The Harmony 600 had two, section 303 |
+| a frame can be written, and its tail is emitted for the families that have a rule and copied otherwise | 140 distinct tail shapes, a rule for 29<!--fact:protocol_tails--> of the rhythm table's 37<!--fact:protocol_measured--> measured entries plus 33<!--fact:protocol_tails_stated--> derived from Logitech's own statement, and none for the rest. 226 records hold a second, different code in the tail |
+| a toggling code's record holds two groups, the code as stated and then with its toggle bit flipped | the firmware flips one bit per infrared group on each send and plays the first group while it is set, read on the Harmony 650 and the Harmony One; a release goes in the record's third pointer as its own block. Section 365 |
+| a record's carrier period is truncated, not rounded | `floor(1e9 / f)` nanoseconds, per record rather than per device |
+| a picture's position is implied by everything before it | inserting or resizing one moves every later address |
+| every mode page's tagged list has a second copy | nothing reads it and an editor must still change both. Its position is implied, not stated |
+| a one page screen deadens the two page turn keys | so growing a menu from one page to two must **undo** that, or the second page is unreachable while every count closes and both checksums pass. Both keys on 538 of 538 single page modes, neither on 0 of 58 multi page ones, arch 12 (Harmony One). The header's total and each page's number have to be restated too, section 293. `paginate` |
+| a section's size is not the gap to the next pointer | base slot 5's group arrays sit inside base slot 4's gap |
+| the log area's writer refuses out of range rather than erroring | and on arch 12 (Harmony One) a good config is what disarms it |
+| a glyph or an encoded picture re-encodes to its original bytes | Logitech writes one greedy stream of the several that draw an image, and our encoders reproduce it on arch 8, 10, 12 and 14, section 363; still carry anything unchanged through as it is |
+| a favourite channel is not a key binding | it touches four sections and adds no key binding and no infrared group |
+| and it is not one mechanism either | a channel that survives being written as an integer goes through base slot 16; one with a leading zero is spelled out digit by digit. Each side has its own precondition |
+| a record's three digit tables are three pointers and may be shared | the same check base slot 5's duration blocks need |
+| a sequence at Logitech's own stated limit can hang a remote for good | **refuse** an oversized sequence rather than warning, bounded by the **peak depth** of the forty instruction action queue and not by their item count, which permits the one that killed a remote. `assertQueueFits` |
+| a same length edit is not a small write | the cheapest costs **two** 64 KiB erase blocks, and that is the floor rather than a page binding's quirk: the trailer checksum is at the far end of the file and every edit moves it. So the step is read the blocks, apply, erase, write back whole, verify by reading, and the known good content has to be a flash **region** rather than a container, since the checksum's block runs past the container's end |
+| a small logical change reshuffles the whole image | make minimal diffs against an existing config; reproducing what their generator would emit is not achievable |
 
 ## The checklist
 

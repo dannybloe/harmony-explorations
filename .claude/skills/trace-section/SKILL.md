@@ -226,6 +226,51 @@ of addresses names an image, and a claim that spans an architecture has to be as
   reasoning about the 600's table being unable to describe its own keypad. It can: 54 scan codes
   times three event types. See `docs/findings.md` section 17.
 
+* **PIC18 opcode ranges.** `SUBFWB` is `0x54-0x57`, `SUBWFB` is `0x58-0x5B`, `INCFSZ` is
+  `0x3C-0x3F`, `INFSNZ` is `0x48-0x4B`. An early version of the disassembler had these wrong,
+  which silently changed the meaning of a whole block. Verify against the datasheet before
+  adding mnemonics.
+* **Bit test polarity.** `BTFSS` is `0xA0-0xAF` and `BTFSC` is `0xB0-0xBF`. These were once
+  swapped here, which inverted the stated sense of the infrared enable mask, the keypad columns
+  and the reset key combination. All three are active low. Pinned in `tests/test_isa.py`,
+  including a semantic check that does not depend on the datasheet.
+* **The SFR map is per part, and choosing wrong is silent.** `isa.PARTS` holds two: the
+  PIC18F67J50 / 87J50 map for arch 12 and arch 14, and the **PIC18F4550** map for arch 9, which
+  disagrees about 65 of 139 shared addresses. Pass `--part 4550` for a 525 listing. Section 80.
+* **The 67J50 map is not the generic PIC18 map either.** This family
+  moves the whole capture, compare and analogue block, and puts the USB registers at `0xF4C`
+  to `0xF65` where classic parts put the parallel port. `UCON` is `0xF65`, `WDTCON` is
+  `0xFC0`, `CCP1CON` is `0xFBB`. The table here was the generic map until it was checked, and
+  eight of 93 names were wrong. Authoritative source, installed locally:
+  `$(brew --prefix)/share/gputils/header/p18f67j50.inc` and `p18f87j50.inc`. `docs/findings.md`
+  section 18.
+* **`WDTCON` bit 4 is `ADSHR`, and it changes what ten addresses mean.** Setting it swaps a
+  shadow register in, so the same address is `ADCON1` or `ANCON0` depending on a bit set two
+  instructions earlier. `disasm.py` tracks it; a hand reading of a listing must too.
+* **Follow control flow, not variables, when attributing code to a command.** The USB command
+  handlers parse their arguments into shared variables, so finding code that uses those
+  variables proves what the variables hold and nothing about which command runs it. That
+  mistake put READ_FLASH's response in `reference/usb-protocol/commands.md` when only its request had been
+  found, twice in one commit. Start from the dispatch table or the state machine.
+* **An `XORLW` chain's literals are not its case values.** The compiler emits a switch as a
+  chain that XORs with the difference to the next case, so the case value is the running XOR
+  of every literal so far. Reading them literally gave `0x20` twice, and a duplicate case is
+  the only warning you get. Decode with `harmony/pic18/chains.py`, never by hand. That module
+  cannot tell where a chain ends either, so check the case values are plausible for the
+  variable being switched on before believing the table.
+* **Ghidra 12 API.** `Memory.getNumInitializedAddresses()` does not exist, use `getSize()`,
+  and remember it includes the auto-created 4096-byte `GPR` DATA block, so subtract that before
+  quoting code coverage.
+* **A misaligned read of an ascending table is itself ascending.** Twice a long run of ascending
+  `u24` values looked like an undiscovered pointer table into the picture region, and twice it was
+  base slot 10's own array read one byte late: a real entry with a constant high byte puts that
+  constant in the low position and multiplies every delta by 256. Check the alignment against a
+  known table before believing a new one. `docs/findings.md` sections 49 and 55.
+* **"Prefer arch 14, then port" is a rule about reading code, not about finding data.** Base slots
+  17 and 2 both stayed unnamed for a while because arch 14 never seeks them: the touch hit map is
+  arch 12 only and so is the log area's writer. If a slot looks empty on the architecture you are
+  reading, check the others before concluding anything about the slot.
+
 ## When the static route stalls
 
 Two dynamic routes exist, both read-only:

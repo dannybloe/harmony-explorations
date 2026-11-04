@@ -573,13 +573,8 @@ file's own header is where its reading lives.
 * **`docs/findings.md` is the frozen archive** of the arguments, sections 1 to 436, grepped and read in
   ranges, never loaded whole, and it takes nothing new.
 * `docs/status.md`, where the work stands; `todo.md`, which alone sets the order and stays in the root as
-  the entry point, while every track's own todo file lives in `todo/` under its unchanged name, moved there
-  on 4 November 2026, so a mention by name in a comment still finds it; `todo-prepare-885.md` and
-  `todo-prepare-525.md` are the legacy remotes' preparation, beside the sequence rather than in it, plan
-  012; with `todo-secure-logitech.md` and `todo-process-logitech.md` worked
-  beside it whenever an item needs a compile from Logitech's service, and
-  `todo-compile-650.md` (finished), `todo-compile-700.md` (finished) and `todo-compile-600.md` (finished), `todo-compile-one.md` (finished),
-  `todo-compile-350.md` (finished) and `todo-compile-300.md` (closed into the 350's by decision 28), `todo-reference.md` (finished), `todo-touch.md` (`todo.md` 3.9, the track being worked), the sequence, with `todo-later.md` and `todo-freeharmony.md` for what is off that route;
+  the entry point, while every track's own todo file lives in `todo/` under its unchanged name, so a
+  mention by name in a comment still finds it, and says in its header what it is and whether it is done;
   `docs/decisions.md` and `docs/plans/`, per "How planning works" above
 * `docs/superseded.md`, claims a finding killed; `docs/glossary.md`, this project's process words;
   `docs/predictions/`, `docs/checksums.md`, `docs/lab-register.md`, the lookup lists
@@ -680,10 +675,11 @@ to get wrong:
 
 ## Pitfalls already hit, do not repeat
 
-* **PIC18 opcode ranges.** `SUBFWB` is `0x54-0x57`, `SUBWFB` is `0x58-0x5B`, `INCFSZ` is
-  `0x3C-0x3F`, `INFSNZ` is `0x48-0x4B`. An early version of the disassembler had these wrong,
-  which silently changed the meaning of a whole block. Verify against the datasheet before
-  adding mnemonics.
+**The firmware reading pitfalls live in the `trace-section` skill**, moved there on 4 November 2026:
+PIC18 opcode ranges and bit test polarity, the SFR map per part, `WDTCON`, control flow over variables,
+`XORLW` chains, the Ghidra 12 API, misaligned ascending tables, and "prefer arch 14" being about code.
+**Load it before reading any firmware image.**
+
 * **Count programmatically, never by eye.** A hand count of LWJL codes gave 107/55 when the
   figure was 108/54. Both numbers were counting the wrong thing anyway, see the next entry.
 * **A key code is an event type plus a scan code**, mask `0xC0` and `0x3F`, not
@@ -692,34 +688,6 @@ to get wrong:
   was built on explaining that away. It is 54 scan codes times three event types, press, release
   and repeat. `docs/findings.md` section 17. When a structure refuses to make sense, suspect the
   field split before inventing a reason.
-* **Bit test polarity.** `BTFSS` is `0xA0-0xAF` and `BTFSC` is `0xB0-0xBF`. These were once
-  swapped here, which inverted the stated sense of the infrared enable mask, the keypad columns
-  and the reset key combination. All three are active low. Pinned in `tests/test_isa.py`,
-  including a semantic check that does not depend on the datasheet.
-* **The SFR map is per part, and choosing wrong is silent.** `isa.PARTS` holds two: the
-  PIC18F67J50 / 87J50 map for arch 12 and arch 14, and the **PIC18F4550** map for arch 9, which
-  disagrees about 65 of 139 shared addresses. Pass `--part 4550` for a 525 listing. Section 80.
-* **The 67J50 map is not the generic PIC18 map either.** This family
-  moves the whole capture, compare and analogue block, and puts the USB registers at `0xF4C`
-  to `0xF65` where classic parts put the parallel port. `UCON` is `0xF65`, `WDTCON` is
-  `0xFC0`, `CCP1CON` is `0xFBB`. The table here was the generic map until it was checked, and
-  eight of 93 names were wrong. Authoritative source, installed locally:
-  `$(brew --prefix)/share/gputils/header/p18f67j50.inc` and `p18f87j50.inc`. `docs/findings.md`
-  section 18.
-* **`WDTCON` bit 4 is `ADSHR`, and it changes what ten addresses mean.** Setting it swaps a
-  shadow register in, so the same address is `ADCON1` or `ANCON0` depending on a bit set two
-  instructions earlier. `disasm.py` tracks it; a hand reading of a listing must too.
-* **Follow control flow, not variables, when attributing code to a command.** The USB command
-  handlers parse their arguments into shared variables, so finding code that uses those
-  variables proves what the variables hold and nothing about which command runs it. That
-  mistake put READ_FLASH's response in `reference/usb-protocol/commands.md` when only its request had been
-  found, twice in one commit. Start from the dispatch table or the state machine.
-* **An `XORLW` chain's literals are not its case values.** The compiler emits a switch as a
-  chain that XORs with the difference to the next case, so the case value is the running XOR
-  of every literal so far. Reading them literally gave `0x20` twice, and a duplicate case is
-  the only warning you get. Decode with `harmony/pic18/chains.py`, never by hand. That module
-  cannot tell where a chain ends either, so check the case values are plausible for the
-  variable being switched on before believing the table.
 * **Testing a route is not testing the page, and a content security policy is where that bites.**
   Every drawn screen in the bench was a broken image while `curl` fetched the same URL happily and
   every server test passed: the policy listed `script-src`, `style-src` and `connect-src` and no
@@ -751,9 +719,6 @@ to get wrong:
 * **Never `git checkout -- <path>` to undo a control.** It discards uncommitted work in that file,
   which it did on 13 August 2026 to four finished edits. Copy the file first, or make the control a
   string replacement and reverse it the same way.
-* **Ghidra 12 API.** `Memory.getNumInitializedAddresses()` does not exist, use `getSize()`,
-  and remember it includes the auto-created 4096-byte `GPR` DATA block, so subtract that before
-  quoting code coverage.
 * **`concordance --dump-firmware` returns no usable firmware on arch 12 or arch 14**, which is why
   the firmware had gone unexamined. **The scope is the whole point and this line used to omit it**:
   the defect is two entries in concordance's architecture table, not the tool, and on **arch 8 and
@@ -761,11 +726,6 @@ to get wrong:
   own region there and `config_base - firmware_base` is exactly `FIRMWARE_MAX_SIZE`. So asking a
   contributor for `concordance -b -f` is the route to an arch 8 image, and it is how the incoming
   525 gets dumped. `docs/concordance-notes.md`, asserted in `tests/test_concordance_notes.py`.
-* **A misaligned read of an ascending table is itself ascending.** Twice a long run of ascending
-  `u24` values looked like an undiscovered pointer table into the picture region, and twice it was
-  base slot 10's own array read one byte late: a real entry with a constant high byte puts that
-  constant in the low position and multiplies every delta by 256. Check the alignment against a
-  known table before believing a new one. `docs/findings.md` sections 49 and 55.
 * **Infer a structure's form from the byte that states it, never from its contents.** An **empty**
   wide tagged list has no entry to carry a flags byte, so inferring the form from the entries makes
   it look narrow and the length comes out a byte short. Same family as the two entries above about
@@ -792,10 +752,6 @@ to get wrong:
   locator searched from a fixed offset. Two numbers are independent when they come from different
   fields, not when they are computed by different arithmetic. Same family as the carrier closure whose
   test read neither end, `CLAUDE.md` verification standard.
-* **"Prefer arch 14, then port" is a rule about reading code, not about finding data.** Base slots
-  17 and 2 both stayed unnamed for a while because arch 14 never seeks them: the touch hit map is
-  arch 12 only and so is the log area's writer. If a slot looks empty on the architecture you are
-  reading, check the others before concluding anything about the slot.
 
 ## Verification standard
 
@@ -812,17 +768,6 @@ test reads both ends, a calibration case scored against wrong answers, asserting
 than a bound under it, a test's title being a claim, and two population lists that nobody compares
 drifting apart. Invoke it when recording a finding or writing a test.
 
-## Where the work stands
-
-**Moved to `docs/status.md` on 29 August 2026.** That document is named for this question in
-"Where things go" above, and carrying a second copy here is the two-copies state this file
-warns about everywhere else.
-
-## What is known, by base slot
-
-**Moved to `reference/config-format/README.md` on 29 August 2026**, which is the index of the base slots
-and the place a tool reads a slot's meaning from.
-
 ## Rails a writer will have to respect
 
 **Every one of these is a way to produce a config the remote accepts and mishandles**, which is a
@@ -830,57 +775,7 @@ hazard class of its own: the file passes both checksums, renders identically, cl
 project can check, and is wrong. One of them, an oversized sequence, hung a Harmony One three times out of
 three, each time needing the batteries pulled to recover it.
 
-**Before changing any byte of a container, invoke the `writing-a-config` skill.** It holds the
-evidence, the counts and the corrections for each row below, which moved out of this file on 29
-August 2026 because the argument only matters at the moment of an edit. The table stays so that a
-session can see a rail exists without loading the reason for it. **The hardware rails are not here**:
-"Never write to a remote" above is always loaded and is about the device, where these are about the
-file.
-
-| the rail | what a writer must do |
-|---|---|
-| base slot 13's `narrow` and `wide` size the state variable storage, and `count` does not | so appending a variable moves **two** words of that header. The firmware allocates `narrow + 2 * wide` and paints `0xFE` over everything above it at each boot, while the seeding loop runs over `count`, so raising the count alone buys a variable that is seeded and then erased, silently. Ours did: the device appeared on the menu, beeped and started nothing. `assertStateTableConsistent` |
-| a configuration holds at most 128 state variables | a write names its variable in seven bits, and Logitech's own eight device compiles hold 112 to 124, section 331. A device costs three plus its inputs. The model's device count, eight on a Harmony 650, is checked first and binds before the ceiling on every configuration measured; the ceiling refused only compositions past that count |
-| every send is paired with a `0x7C` naming the same device | emit `{0x7D, 0x7C}`, never the send alone. All 4267<!--fact:send_lists--> send lists of the user configurations are the pair and none is bare, and a bare one sends from a key press and **nothing** from an activity's transition, measured on the spare Harmony One, section 278. On arch 14 each also opens with a `0x7F` delay step of three lists, and the composer emits it, section 287 |
-| base slot 13's first seven records are the clock | stamp them, and reuse none of the firmware's block: 0 to 17 on arch 8, 12, 14 and 16 (Harmony 880 and 885, Harmony One, Harmony 600, 650 and 700, Harmony 300 and 350) and 0 to 12 on arch 9 (Harmony 525), section 284 and `tests/test_harmony_350_clock.py`. Eight values, since the year's maximum always moves with it; the day counts from 0, so a 31st is 30 and its maximum stays 30, section 322. Arch 9 (Harmony 525) keeps its own |
-| base slot 3's timestamp is stamped at write time | never copied. The one field where a round trip and a save differ |
-| `end_addr` is restamped when anything changes length | the only header field that moves with a section's growth |
-| a read can insert bytes without losing any | a config that parses is not a config that arrived. Every read of an arch 10 (Harmony 890) remote here came back with surplus chunks, and neither the trailer checksum nor the end marker catches a duplicated run of zeroes on its own |
-| parsing is not validating | a container can pass both checksums, render pixel identical, close its counts, and address every infrared command wrongly. This is why `edit.ts` refuses a length change |
-| the trailer checksum is weak | a `u16` XOR of little endian words. Blind to two transposed words, and two edits at the same word parity cancel exactly |
-| base slot 15's group lengths are demanded | a group whose length differs is silently replaced by compiled in defaults. A group index is **not** portable between architectures |
-| base slot 15's entry count is demanded | 9 on arch 14 (Harmony 600 and 700), 11 on arch 12 (Harmony One). A different count is a silent no-op, not an error |
-| a timer fires one instruction, not a list | and its duration is clamped to sixteen bits with no error |
-| a queued screen program runs entry `operand & 0xff` | so a program of ours takes a free base slot 11 entry below 256 and is never appended; entry 6653 ran as 253 and stalled a Harmony 650 in a loop. Read on the Harmony 600, 650, 700 and One images, section 369 |
-| infrared duration blocks are shared | check who else names a block before editing it in place |
-| a record's three block pointers are once, held and tail | slot 1 repeats for as long as the key is down, so its trailing gap **is** the repeat rate. A duration word caps at 32767 us |
-| how many times a press sends the code is the **ratio** of the first two blocks | so changing it adds or removes a whole copy and its gap, which is a length change and goes through `relocate.ts`. Reading the first block's copies alone gets a two code family wrong: 6 copies and 2 is the same 3 sends as 3 copies and 1 |
-| a power on delay holds back one device, not the sequence | so raising it does nothing at all unless that activity sends the same device a later command, which 37<!--fact:delay_unfelt--> of 129<!--fact:delay_pairs--> activity and device pairs here do not. An editor that presents it as a pause in the activity is wrong about most of them |
-| on arch 14 a delay saved on the remote wins at start | the configuration copies a saved value over its own `first` at start, seen across three on the Harmony 600, so a changed delay does nothing on a unit with one saved for it, and only the remote's settings store says which have one. The Harmony 600 had two, section 303 |
-| a frame can be written, and its tail is emitted for the families that have a rule and copied otherwise | 140 distinct tail shapes, a rule for 29<!--fact:protocol_tails--> of the rhythm table's 37<!--fact:protocol_measured--> measured entries plus 33<!--fact:protocol_tails_stated--> derived from Logitech's own statement, and none for the rest. 226 records hold a second, different code in the tail |
-| a toggling code's record holds two groups, the code as stated and then with its toggle bit flipped | the firmware flips one bit per infrared group on each send and plays the first group while it is set, read on the Harmony 650 and the Harmony One; a release goes in the record's third pointer as its own block. Section 365 |
-| a record's carrier period is truncated, not rounded | `floor(1e9 / f)` nanoseconds, per record rather than per device |
-| a picture's position is implied by everything before it | inserting or resizing one moves every later address |
-| every mode page's tagged list has a second copy | nothing reads it and an editor must still change both. Its position is implied, not stated |
-| a one page screen deadens the two page turn keys | so growing a menu from one page to two must **undo** that, or the second page is unreachable while every count closes and both checksums pass. Both keys on 538 of 538 single page modes, neither on 0 of 58 multi page ones, arch 12 (Harmony One). The header's total and each page's number have to be restated too, section 293. `paginate` |
-| a section's size is not the gap to the next pointer | base slot 5's group arrays sit inside base slot 4's gap |
-| the log area's writer refuses out of range rather than erroring | and on arch 12 (Harmony One) a good config is what disarms it |
-| a glyph or an encoded picture re-encodes to its original bytes | Logitech writes one greedy stream of the several that draw an image, and our encoders reproduce it on arch 8, 10, 12 and 14, section 363; still carry anything unchanged through as it is |
-| a favourite channel is not a key binding | it touches four sections and adds no key binding and no infrared group |
-| and it is not one mechanism either | a channel that survives being written as an integer goes through base slot 16; one with a leading zero is spelled out digit by digit. Each side has its own precondition |
-| a record's three digit tables are three pointers and may be shared | the same check base slot 5's duration blocks need |
-| a sequence at Logitech's own stated limit can hang a remote for good | **refuse** an oversized sequence rather than warning, bounded by the **peak depth** of the forty instruction action queue and not by their item count, which permits the one that killed a remote. `assertQueueFits` |
-| a same length edit is not a small write | the cheapest costs **two** 64 KiB erase blocks, and that is the floor rather than a page binding's quirk: the trailer checksum is at the far end of the file and every edit moves it. So the step is read the blocks, apply, erase, write back whole, verify by reading, and the known good content has to be a flash **region** rather than a container, since the checksum's block runs past the container's end |
-| a small logical change reshuffles the whole image | make minimal diffs against an existing config; reproducing what their generator would emit is not achievable |
-
-## Open
-
-**Moved to `docs/status.md` on 29 August 2026**, under "What is still open", with the argument for
-each; an open question about one model or platform is also in the "Not checked" list of its reference
-page. They are reference rather than instruction, so they are read when a session needs them rather
-than carried into every one.
-## Next
-
-**Moved out on 29 August 2026**, when it was a rolling account of the most recent findings that cost
-about 7900 tokens in every session. Since plan 009 step 5.1 no such account exists anywhere: a
-conclusion lives in the reference with its footnote, and `docs/status.md` says where the work stands.
+**Before changing any byte of a container, invoke the `writing-a-config` skill.** It holds the one line
+table of every rail, which moved out of this file on 4 November 2026, and for each rail the evidence,
+the counts and the corrections. **The hardware rails are not there**: "Never write to a remote" above is
+always loaded and is about the device, where these are about the file.
