@@ -38,9 +38,9 @@ Written on 4 November 2026; linked from `todo-later.md` 5.6.
 
 ## 3. The file side, read in the firmware
 
-- [ ] 3.1 The action interpreter: the opcode table, a send and its paired delay, power transitions (F4)
-- [ ] 3.2 The action queue's depth (F5)
-- [ ] 3.3 State variables: the storage, the fill stopping at 63 and whether that is a ceiling for a writer (F3)
+- [x] 3.1 The action interpreter: the opcode table, a send and its paired delay, power transitions (F4)
+- [x] 3.2 The action queue's depth (F5)
+- [x] 3.3 State variables: the storage, the fill stopping at 63 and whether that is a ceiling for a writer (F3)
 - [ ] 3.4 The section seeker, confirming the base slot map (F2)
 - [ ] 3.5 Base slot 15's guard: the group lengths and count demanded (F7)
 - [ ] 3.6 The timer table: concurrency and the duration clamp (F6)
