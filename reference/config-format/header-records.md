@@ -218,6 +218,41 @@ side, since its whole measurement is byte equality with its input. The record is
 place, `clockRecordFields` in `packages/codec/src/gspm.ts`, the inverse of `clockRecord`; the day of week
 is computed there and never taken from a caller.[^t-edit]
 
+### What the Harmony 880 and 885 do with it
+
+**On the Harmony 880 and 885 this record is not the clock and never reaches it**: the clock is base slot
+13's first seven variables, reseeded at every start, and this record feeds only a counter of **seconds since
+the configuration was built**, 24 bits, at data `0x1CB`.[^t-885-stamp] **Its boot read cannot load anything
+on this build**: the read at index 10 is gated on a configuration having passed its start check, and the
+start clears that gate before the read and, as far as every direct write of the gate goes, sets it only in
+the check, which runs after it. So the counter is 0 after every start, and the `EF 00 00` at index 10 is
+never loaded there. The Harmony 720's application clears the gate the same way before its own boot read;
+that nothing else sets it there is not asserted.[^t-885-stamp] The counter is recomputed as the clock minus this record, the time of day in
+seconds plus 86400 for each day from this record's date to the clock's, the weekday skipped, when an action
+list runs `0x07` with a low byte of `0xF9`, when it runs `0x0F` with a low byte `0xCC` to `0xCF`, when a host
+sends write misc selector 8, or when state variable 0 is written with its transitions skipped; after that
+the tick adds the elapsed seconds to it.[^t-885-stamp] The recalculate reads the fields from index 2 on and
+does not test the tag.[^t-885-stamp]
+
+**Nothing in a configuration read reads the counter.** On the remote, as far as a census of the counter's
+direct accesses goes, only the opcodes `0x0F` to `0x1E` with a low byte from `0xC0` to `0xCF` reach it, which
+this interpreter takes as one opcode: the low two bits pick a byte and the next two read it into the byte
+register, write it from there, do nothing or recalculate. No instruction of those opcodes in the sixteen
+arch 8 containers read, copies of six configurations, has a low byte from `0xC0` to `0xCF`, while every
+container carries 120 `0x07 0xFFF9`, so a wrong stamp changes nothing a person sees with any of
+them.[^t-885-stamp][^t-885-stamp-c] Logitech's classic client dates a log record of this
+architecture as signed seconds after this record's date, finding the record by its tag and terminator,
+which is what the counter would be if a configuration logged it; none read does.[^t-885-stamp-client]
+
+**So a writer for these remotes** stamps this record and base slot 13's records 0 to 6 from the same
+moment, which all sixteen do and which is what makes the counter's 0 at start right;[^t-885-stamp-c] keeps
+the tag and the terminator, which Logitech's client finds the record by,[^t-885-stamp-client] and the three
+zero bytes every configuration carries;[^t-885-stamp-c] and never emits an opcode from `0x0F` to `0x1E` with
+a low byte `0xC3` or `0xC7`, whose index 3 reaches `0x1CE`, a byte the scheduler's set up clears with its
+own state, rather than the counter.[^t-885-stamp]
+Whether the boot read can run on the Harmony One, 600 and 700, which would bear on the `EF 00 00` above, is
+not read.[^unchecked]
+
 ### Dating a configuration, and where that fails
 
 Every configuration can be dated from this record, which is provenance nobody has to write down, and a
@@ -262,3 +297,7 @@ one Harmony One before and after a sync with Logitech's service, is ordered corr
 [^s58]: Measured in configurations. [Section 58](../../docs/findings.md#s58)
 [^t-harmony-350-clock]: Read in the firmware. [The test](../../tests/test_harmony_350_clock.py)
 [^t-harmony-350-clock-c]: Measured in configurations. [The test](../../tests/test_harmony_350_clock.py)
+[^unchecked]: Not checked.
+[^t-885-stamp]: Read in the firmware. [The test](../../tests/test_harmony_885_stamp.py)
+[^t-885-stamp-c]: Measured in configurations. [The test](../../tests/test_harmony_885_stamp.py)
+[^t-885-stamp-client]: Stated by Logitech, in their client. [The test](../../tests/test_harmony_885_stamp.py)

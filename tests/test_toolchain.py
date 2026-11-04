@@ -254,8 +254,9 @@ class TheRunnerSeesEveryTest(unittest.TestCase):
         # `_erase_and_write.py`, `_write_end.py` and `_reads.py`. 88 with 1.7,
         # `tests/test_harmony_885_log_area.py`. 89 with `tests/test_harmony_touch_beyond_the_clients.py`,
         # todo-touch 5.1, which landed on main beside them. 90 to 92 with todo-prepare-885 3.1 to 3.3,
-        # `tests/test_harmony_885_actions.py`, `_queue.py` and `_state.py`.
-        self.assertEqual(len(files), 92, 'the Python test files')
+        # `tests/test_harmony_885_actions.py`, `_queue.py` and `_state.py`. 93 to 96 with 3.4, 3.5, 3.6 and
+        # 3.10, `tests/test_harmony_885_slots.py`, `_parameters.py`, `_timers.py` and `_stamp.py`.
+        self.assertEqual(len(files), 96, 'the Python test files')
         with_block = 0
         for path in files:
             with open(path, encoding='utf-8') as handle:
@@ -309,8 +310,9 @@ class TheRunnerSeesEveryTest(unittest.TestCase):
         # files of todo-prepare-885 1.2 to 1.6 and 1.8, which carry one each. 86 with
         # `tests/test_harmony_885_log_area.py`, 1.7, which carries one. 87 with
         # `tests/test_harmony_touch_beyond_the_clients.py`, todo-touch 5.1, which carries one. 88 to 90 with
-        # the three files of todo-prepare-885 3.1 to 3.3, which carry one each.
-        self.assertEqual(with_block, 90,
+        # the three files of todo-prepare-885 3.1 to 3.3, which carry one each. 91 to 94 with the four of
+        # 3.4, 3.5, 3.6 and 3.10, which carry one each.
+        self.assertEqual(with_block, 94,
                          'files carrying a __main__ block, of %d' % len(files))
 
 
@@ -807,8 +809,9 @@ class APythonBoundOnACorpusTotalIsExact(unittest.TestCase):
         # `_erase_and_write.py`, `_write_end.py` and `_reads.py`. 88 with 1.7,
         # `tests/test_harmony_885_log_area.py`. 89 with `tests/test_harmony_touch_beyond_the_clients.py`,
         # todo-touch 5.1, which landed on main beside them. 90 to 92 with todo-prepare-885 3.1 to 3.3,
-        # `tests/test_harmony_885_actions.py`, `_queue.py` and `_state.py`.
-        self.assertEqual(len(scanned), 92, 'Python test files, which moves when one is added')
+        # `tests/test_harmony_885_actions.py`, `_queue.py` and `_state.py`. 93 to 96 with 3.4, 3.5, 3.6 and
+        # 3.10, `tests/test_harmony_885_slots.py`, `_parameters.py`, `_timers.py` and `_stamp.py`.
+        self.assertEqual(len(scanned), 96, 'Python test files, which moves when one is added')
         self.assertIn(self.CONTROL, found, 'the pattern matches nothing it should match')
 
     def test_every_remaining_bound_says_why_it_is_not_a_measurement(self):
@@ -985,9 +988,10 @@ class TheTwoParameterGroupTablesAgree(unittest.TestCase):
     def test_the_comparison_can_fail(self):
         """The control: a parse that returns nothing would make the test above vacuous."""
         table = self._typescript_table()
-        self.assertEqual(sorted(table), [12, 14], 'both architectures parsed out of the TypeScript')
-        self.assertEqual(sum(len(v) for v in table.values()), 15,
-                         'fifteen demanded lengths, seven for arch 14 and eight for arch 12')
+        self.assertEqual(sorted(table), [8, 12, 14], 'all three architectures parsed out of the TypeScript')
+        # Twenty three since arch 8's row, `tests/test_harmony_885_parameters.py`.
+        self.assertEqual(sum(len(v) for v in table.values()), 23,
+                         'twenty three demanded lengths, seven for arch 14 and eight each for arch 12 and 8')
 
     def test_the_check_exists_on_the_side_that_writes(self):
         """The reason for the port. A table with no checker beside it closes nothing."""

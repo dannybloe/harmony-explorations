@@ -310,10 +310,12 @@ export function parameterGroups(c: Container): ParameterGroup[] | undefined {
 /**
  * Architecture to group index to the length that architecture's firmware demands.
  *
- * Read off the call sites of the guard routine, `0x0F8F0` on the Harmony 700 and `0x23262` on the
- * Harmony One, so these are what the code compares against rather than what the corpus happens to
- * carry. A group absent from a row has no call site on the image that was read, which is not a
- * length of zero. No image exists for arch 8 or arch 9, so they have no row at all.
+ * Read off the call sites of the guard routine, `0x0F8F0` on the Harmony 700, `0x23262` on the
+ * Harmony One and `0x10E1A` on the Harmony 885, so these are what the code compares against rather
+ * than what the corpus happens to carry. A group absent from a row has no call site on the image that
+ * was read, which is not a length of zero. Arch 9 (Harmony 525) has no row because its guard has not
+ * been read, and arch 10 (Harmony 890 and 895) because no image of it exists. Arch 8's row was added
+ * by `tests/test_harmony_885_parameters.py`, which decodes it out of the 885's image and the 720's.
  *
  * **Ported from `src/harmony/gspm.py` on 29 August 2026, and the gap it closes is the point.** The
  * table and its check lived only in Python, while TypeScript owns the codec and the whole write
@@ -328,16 +330,19 @@ export const PARAMETER_GROUP_COUNTS: ReadonlyMap<number, ReadonlyMap<number, num
   // one routine with two arms, and the scan had taken the arm that falls through rather than the one
   // behind a `BRA`. Both demand sixteen.
   [12, new Map([[0, 1], [1, 6], [4, 6], [5, 16], [6, 16], [7, 1], [9, 6], [10, 8]])],
+  // Arch 8 (Harmony 880 and 885): nine call sites, groups 5 and 6 again one site with two arms, and no
+  // call site for group 3, which every configuration carries anyway.
+  [8, new Map([[0, 1], [1, 6], [2, 1], [4, 6], [5, 14], [6, 14], [7, 1], [8, 2]])],
 ]);
 
 /**
  * Whether every group the firmware knows about is the length it demands.
  *
- * `undefined` when no firmware for this architecture has been read, which is arch 8 and arch 9, and
- * when the groups cannot be read at all. **A writer that gets this wrong is not refused by the
- * remote**: the subsystem quietly uses its compiled in defaults, so the config runs and one
- * subsystem ignores it. That is why this is a rail rather than a curiosity, and why it belongs in
- * front of a write rather than in a reader's report.
+ * `undefined` when no firmware for this architecture has been read, which is arch 9 (Harmony 525)
+ * and arch 10 (Harmony 890 and 895), and when the groups cannot be read at all. **A writer that gets
+ * this wrong is not refused by the remote**: the subsystem quietly uses its compiled in defaults, so
+ * the config runs and one subsystem ignores it. That is why this is a rail rather than a curiosity,
+ * and why it belongs in front of a write rather than in a reader's report.
  */
 export function parameterGroupLengthsMatch(c: Container): boolean | undefined {
   if (c.architecture === undefined) return undefined;

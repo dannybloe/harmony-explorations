@@ -23,7 +23,8 @@ scan codes too, through a table of rectangles.
 
 Below, in order: how a press is resolved; the mode table (base slot 6), its key table and its pages;
 the one encoding every map shares; the activities' key maps (base slot 9); the screen keys' bindings
-(base slot 8); the touch rectangles (base slot 17); and what a scan code is on each architecture.
+(base slot 8); the touch rectangles (base slot 17), which the Harmony 880 and 885 read as a digit entry
+table instead; and what a scan code is on each architecture.
 
 ## How a key press is resolved
 
@@ -380,6 +381,11 @@ all nineteen containers, and the leading action list plus those lists tile the s
 walk above and the tagged list reading of base slot 6 are two names for one structure: a record is a
 narrow tagged list, and the `0x00` it skips is the wide form's lead byte. The leading list is the
 section's own and is `1 + 3 * count` bytes, 4 on arch 8 and arch 12 and 34 on arch 9 and arch 14[^s83].
+**On the Harmony 880 and 885 the leading list runs at start only when it holds exactly one instruction**:
+the start check's tail reads the count in the configuration in use and spools the one instruction after it
+only when the count is 1, so
+a list of two or more runs nothing, with no error. All sixteen arch 8 containers read hold one, `0x7F
+0x000A`[^t-885-slots][^t-885-slots-c].
 On the Harmony 600, 650 and 700 it is the eleven start up entry points the firmware queues by index,
 [the firmware's own wiring](../architectures/harmony-600-650-700/compiler.md#the-firmwares-own-wiring-on-arch-14)[^s347].
 Slot 8's `0x7F` instructions also call **every** action list in the final packed run, exactly once each,
@@ -415,6 +421,9 @@ unchanged, and exactly one record went from two entries to four[^s27].
 change reassigned buttons[^s27]. Slot 8 is where a screen key's press meets an action list.
 
 ## Base slot 17: the touch screen hit map
+
+**On the Harmony 880 and 885 the firmware reads this slot as a digit entry table instead**, below; what
+follows here is the Harmony One's.
 
 **On the Harmony One this is where a touch lands**: a list of rectangles per page, each reporting a scan
 code, read on the Harmony One 3.4 image and two configurations[^s45][^s45b]. It is empty, with a count of
@@ -453,6 +462,23 @@ and the largest rectangle reaches 4437[^s45b].
 
 A page's areas are laid out contiguously immediately before the page's own header, and each area's last
 three bytes are its own address; both hold for every page and every area in both configurations[^s45b].
+
+### On the Harmony 880 and 885, a digit entry table
+
+**The Harmony 880 and 885's firmware reads base slot 17 as a digit entry table**: a count, then three byte
+pointers to entries, each entry opening with a flags byte, a number of digits and a timeout. With the flags'
+bit 0 set, the finish turns at most six entered digits into a number; what the entry holds otherwise is not
+asserted. The Harmony 350's raw slot 12 is read as a digit entry table too,
+[the Harmony 300 and 350's slots](container.md#the-harmony-300-and-350s-slots), and the two were not
+compared. An action list instruction `0x3F` in band `0xE0` arms, disarms, cancels or finishes an entry by its
+index, and opcode `0x74` enters a digit. **The count byte is never
+read**: both readers step over it to the entry's pointer, so nothing compares an index with the count.
+The Harmony 720's application seeks the same slots in the same order.[^t-885-slots]
+
+**Every arch 8 container read leaves the table empty**, `00 00`, and no action list in them holds opcode
+`0x74` or a `0x3F` instruction in that band.[^t-885-slots-c] What the same slot is
+on the Harmony 525, 600, 650 and 700, and how it lines up with the Harmony One's raw slots, is not
+read.[^unchecked]
 
 ### What a code says
 
@@ -664,3 +690,5 @@ its keys and says where each name came from.
 [^t-harmony-350-slots]: Read in the firmware. [The test](../../tests/test_harmony_350_slots.py)
 [^t-harmony-350-slots-c]: Measured in configurations. [The test](../../tests/test_harmony_350_slots.py)
 [^t-long-press]: Read in the firmware. [The test](../../tests/test_harmony_350_long_press.py)
+[^t-885-slots]: Read in the firmware. [The test](../../tests/test_harmony_885_slots.py)
+[^t-885-slots-c]: Measured in configurations. [The test](../../tests/test_harmony_885_slots.py)

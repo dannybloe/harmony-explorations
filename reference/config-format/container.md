@@ -175,7 +175,10 @@ base slots 5, 7, 10, 11, 12 and 15; the single one byte section lands on base sl
 NULL.[^s16] **The Harmony One's firmware addresses the table the same way**: its section seeker is called
 for every raw slot from 2 to 19 except raw slot 8, which is the NULL that architecture inserts, and it does
 seek raw slot 18, the section that architecture adds.[^s38] That added section is 2 bytes in both Harmony
-One configurations.[^s16]
+One configurations.[^s16] **So does the Harmony 880 and 885's**: its one seeker, which checks neither a NULL
+nor the pointer count, is called 22 times, each time with the raw slot as a literal, and the slots are raw 2
+to 7 and 9 to 18, exactly base slots 2 to 17 by the arch 8 row above; raw 8, the inserted NULL, is never
+sought, nor are raw 19 and 20.[^t-885-slots]
 
 What the alignment buys is that a section named on one of these four architectures is named on all four by
 its index. **The other two architectures state their own map**, the Harmony 890 and 895's and the Harmony
@@ -417,3 +420,4 @@ configuration holds in them, is in
 [^t-deflate]: Measured in configurations. [The test](../../packages/codec/test/deflate.test.ts)
 [^unchecked]: Not checked.
 [^t-file-family-delays]: Measured in configurations. [The test](../../packages/codec/test/filefamilydelays.test.ts)
+[^t-885-slots]: Read in the firmware. [The test](../../tests/test_harmony_885_slots.py)

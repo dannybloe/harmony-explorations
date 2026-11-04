@@ -1317,15 +1317,16 @@ class TestTheParameterBlock(unittest.TestCase):
                 self.assertEqual(slack, 12 if c.architecture == 12 else 0)
 
     def test_every_group_is_the_length_its_firmware_demands(self):
-        """The closure: fifteen literals off two images, against every container that has a firmware
-        reading of the guard, which is arch 12 (Harmony One) and arch 14 (Harmony 600 and 700)."""
+        """The closure: the literals off three images, against every container that has a firmware
+        reading of the guard, which is arch 8 (Harmony 880 and 885), arch 12 (Harmony One) and arch 14
+        (Harmony 600 and 700)."""
         from harmony import gspm
         lab.require(*self.CONTAINERS)
         checked = {}
         for name in self.CONTAINERS:
             c = gspm.parse(lab.load(name))
             match = c.parameter_group_lengths_match()
-            if match is None:                      # arch 8 and arch 9, no firmware read
+            if match is None:                      # arch 9, no firmware read
                 continue
             checked[c.architecture] = checked.get(c.architecture, 0) + 1
             with self.subTest(container=name):
@@ -1338,9 +1339,12 @@ class TestTheParameterBlock(unittest.TestCase):
         # and the two containers inside its firmware image. That is the closure holding on four more
         # containers of the architecture whose demanded lengths differ from arch 14's, so it is the
         # half of the claim that was thinnest.
-        self.assertEqual(checked, {12: 6, 14: 6})
-        self.assertEqual(len(lab.CONTAINERS) - sum(checked.values()), 7,
-                         'arch 8 and arch 9 have no firmware read of this guard')
+        # Arch 8 joined with its four containers here when the Harmony 885's guard was read,
+        # `tests/test_harmony_885_parameters.py`, which holds the sixteen arch 8 containers outside this
+        # corpus too.
+        self.assertEqual(checked, {8: 4, 12: 6, 14: 6})
+        self.assertEqual(len(lab.CONTAINERS) - sum(checked.values()), 3,
+                         'arch 9 has no firmware read of this guard')
 
     def test_the_two_architectures_demand_different_lengths(self):
         """Otherwise the fit above would be one constant matching everywhere."""

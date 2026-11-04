@@ -20,6 +20,10 @@ is the model's own, and so far that is very little.
   start puts every variable back to the configuration's starting value, the clock's included, [the architecture's memory page](../../architectures/harmony-880-885/memory.md#data-memory).[^t-885-state][^t-885-state-corpus]
 * **The remote sends nothing more after a change of its infrared queue until the configuration answers**, and
   every configuration read does, [actions](../../config-format/actions.md#on-arch-8-the-remote-sends-nothing-more-until-the-configuration-answers).[^t-885-actions][^t-885-actions-corpus]
+* **Two timers can run at once**, a third start is lost, and a wait past 65535 seconds keeps only its low
+  sixteen bits rather than stopping at that, [the timer table](../../config-format/state.md#base-slot-12-the-timer-table).[^t-885-timers]
+* **The build stamp in a configuration is not the remote's clock**, which comes from the configuration's
+  state variables at every start, and no configuration read uses the counter the stamp feeds, [header records](../../config-format/header-records.md#what-the-harmony-880-and-885-do-with-it).[^t-885-stamp][^t-885-stamp-c]
 * **A configuration states the model twice**: its architecture record reads `08 08 11 0d` on an 885 and
   `08 08 0f 0d` on an 880, and the header of the file it travels in carries the skin as well.[^s182][^s113]
 
@@ -39,3 +43,6 @@ is the model's own, and so far that is very little.
 [^t-885-actions-corpus]: Measured in configurations. [The test](../../../tests/test_harmony_885_actions.py)
 [^t-885-state]: Read in the firmware. [The test](../../../tests/test_harmony_885_state.py)
 [^t-885-state-corpus]: Measured in configurations. [The test](../../../tests/test_harmony_885_state.py)
+[^t-885-timers]: Read in the firmware. [The test](../../../tests/test_harmony_885_timers.py)
+[^t-885-stamp]: Read in the firmware. [The test](../../../tests/test_harmony_885_stamp.py)
+[^t-885-stamp-c]: Measured in configurations. [The test](../../../tests/test_harmony_885_stamp.py)

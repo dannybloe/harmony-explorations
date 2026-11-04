@@ -540,8 +540,15 @@ with `0xEA`; the operand's low byte is the index into this section in both. **Th
 exactly `0` to `count - 1` in every config**, counts from 5 to 30, and no instruction names a record that is
 not there. The safe mode containers carry no records and issue neither instruction[^s43].
 
-The firmware runs at most **four** timers at once, so a configuration with thirty records describes thirty
-possible timers rather than thirty concurrent ones, and starting a fifth is a silent no-op[^s43b].
+The firmware runs at most **four** timers at once on the Harmony 600, 650, 700 and One, so a configuration
+with thirty records describes thirty possible timers rather than thirty concurrent ones, and starting a fifth
+is a silent no-op[^s43b]. **On the Harmony 880 and 885 it runs two**, and a third start is lost the same way,
+with no error and nothing queued[^t-885-timers]. The start takes the first free place without asking whether
+the index is already running, so **while a place is free, starting a running timer again runs it twice**;
+a cancel takes every copy of its index, so cancel before restarting[^t-885-timers]. No screen opening of the
+sixteen arch 8 containers read, copies of six configurations, starts more than two, and the 96 that start
+two cancel all first[^t-885-timers-c]. The index is not checked against the record count, and no
+timer survives a restart[^t-885-timers].
 
 **On the Harmony 300 and 350 the table is raw slot 8**, read the same way by their 1.4 image, four slots
 included. Their records are all kind 0, two for each device a key selects on a configuration Logitech's
@@ -550,9 +557,16 @@ the Harmony 300 nothing starts them,
 [their memory page](../architectures/harmony-300-350/memory.md#the-six-slots-the-firmware-was-read-for)[^t-harmony-350-slots][^t-harmony-350-slots-c].
 
 **A timer fires exactly one instruction**, not a list. Anything longer has to be a single instruction that
-runs an action list, which is what 116 of the 159 records do[^s43]. The scheduled kind also **clamps the
-duration to sixteen bits**, so a value above 65535 becomes 65535 rather than an error[^s43b]. Both are
-rules a writer has to keep. Kind `0` is counted down in software instead, and no configuration of the
+runs an action list, which is what 116 of the 159 records do[^s43]; on the Harmony 880 and 885 the timer is
+taken off the table before its instruction is queued, so an instruction that restarts its own timer is
+safe[^t-885-timers]. **The scheduled kind keeps only the duration's low sixteen bits**, so 65546 seconds is
+kept as 10: the compare that looks like a clamp to 65535 can never take its clamp arm, and the third byte is
+dropped. What a kept value of zero then does is not asserted. Read on the Harmony 880 and 885, the Harmony 720, the Harmony 600, 650 and 700 and the
+Harmony One; whether anything later on the last four reads the third byte is not read, and the Harmony
+525's start is not read[^t-885-timers][^unchecked]. This page said the scheduled kind clamps the duration to
+sixteen bits so that a value above 65535 becomes 65535<!--superseded--> until the compare was evaluated: the
+rule a writer keeps, stay at or below 65535, did not change, and no arch 8 configuration read asks for more
+than 30 seconds[^t-885-timers-c]. Both are rules a writer has to keep. Kind `0` is counted down in software instead, and no configuration of the
 architectures section 43 read uses it[^s43b]. On the Harmony 300 and 350 every record is kind 0, and their
 1.4 image takes one from each running one a tick, the tick that paces the power on delay, about a
 millisecond, so their durations of 400 and 600 are about 0.40 and 0.60 s[^t-long-press][^t-long-press-u].
@@ -673,10 +687,13 @@ Read with `gspm.number_senders` and `tables.numberSenders`.
 The model's constants: how bright the display light is at each step, how the battery voltage maps to the
 gauge, how long a fade takes. Nothing here belongs to a device.
 
-**Confirmed on the twelve containers whose architecture has a firmware reading of the guard**, six of arch
-12 (Harmony One) and six of arch 14 (Harmony 600 and 700), and every length claim below is a literal in the
-firmware rather than a count of what the configurations carry[^s44]. Arch 8 and arch 9 carry the section and
-no image read here reads it, so their containers are outside the claim.
+**Confirmed on the containers whose architecture has a firmware reading of the guard**, six of arch 12
+(Harmony One) and six of arch 14 (Harmony 600 and 700)[^s44], and the sixteen of arch 8, copies of six
+configurations of the Harmony 880, 885 and 720, with the built in configurations of their application images,
+two distinct[^t-885-parameters-c]; every length claim
+below is a literal in the firmware rather than a count of what the configurations carry[^s44][^t-885-parameters].
+Arch 9 carries the section and no image read here reads it, and arch 10 has no image, so their containers
+are outside the claim.
 
 ```
 +0x00  u8   count
@@ -695,25 +712,31 @@ run is exactly the sum of the groups; arch 12 has twelve more bytes in it, past 
 
 ### The firmware demands the lengths
 
-**The firmware demands the section's count and every group's length.** The count is 9 on arch 14 and 11 on
-arch 12. Each group is read only when its length matches the number that build expects, and otherwise the
-subsystem silently uses constants compiled into the firmware[^s44]:
+**The firmware demands the section's count and every group's length.** The count is 9 on arch 14 and arch 8
+and 11 on arch 12. Each group is read only when its length matches the number that build expects, and
+otherwise the subsystem silently uses constants compiled into the firmware[^s44]. On arch 8 a mismatch is
+as silent, and groups 4, 5 and 6 appear to have no constants to fall back to, so that their subsystem stops
+updating instead; not checked[^t-885-parameters][^unchecked]:
 
-| group | arch 14 | arch 12 |
-|---|---|---|
-| 0 | 1 | 1 |
-| 1 | 4 | 6 |
-| 2 | 1 | |
-| 3 | 4 | |
-| 4 | | 6 |
-| 5 | 14 | 16 |
-| 6 | 14 | 16 |
-| 7 | 1 | 1 |
-| 9 | | 6 |
-| 10 | | 8 |
+| group | arch 14 | arch 12 | arch 8 |
+|---|---|---|---|
+| 0 | 1 | 1 | 1 |
+| 1 | 4 | 6 | 6 |
+| 2 | 1 | | 1 |
+| 3 | 4 | | |
+| 4 | | 6 | 6 |
+| 5 | 14 | 16 | 14 |
+| 6 | 14 | 16 | 14 |
+| 7 | 1 | 1 | 1 |
+| 8 | | | 2 |
+| 9 | | 6 | |
+| 10 | | 8 | |
 
-A blank is a group with no call site on the image that was read, not a length of zero. Arch 8 and arch 9
-are absent because no firmware read here reads either. `gspm.PARAMETER_GROUP_COUNTS` carries this table and
+A blank is a group with no call site on the image that was read, not a length of zero. On arch 8 group 3
+is a blank and every configuration read carries it anyway, one value, and keeps the count at 9 by
+doing so[^t-885-parameters][^t-885-parameters-c]. The arch 8 column is the Harmony 885's guard at `0x10E1A`,
+and the Harmony 720's demands the same[^t-885-parameters]. Arch 9 is absent because no firmware read here
+reads it, and arch 10 because no image of it exists. `gspm.PARAMETER_GROUP_COUNTS` carries this table and
 `gspm.parameter_group_lengths_match` checks a container against it.
 
 **A group index is not portable between architectures.** Arch 9's five groups line up with a subset of arch
@@ -1014,3 +1037,7 @@ and does not recognise the Harmony 880 and 885's append.
 [^t-885-actions]: Read in the firmware. [The test](../../tests/test_harmony_885_actions.py)
 [^t-885-state]: Read in the firmware. [The test](../../tests/test_harmony_885_state.py)
 [^t-885-state-corpus]: Measured in configurations. [The test](../../tests/test_harmony_885_state.py)
+[^t-885-parameters]: Read in the firmware. [The test](../../tests/test_harmony_885_parameters.py)
+[^t-885-parameters-c]: Measured in configurations. [The test](../../tests/test_harmony_885_parameters.py)
+[^t-885-timers]: Read in the firmware. [The test](../../tests/test_harmony_885_timers.py)
+[^t-885-timers-c]: Measured in configurations. [The test](../../tests/test_harmony_885_timers.py)

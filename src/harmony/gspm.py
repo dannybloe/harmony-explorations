@@ -750,14 +750,18 @@ PARAMETER_SLOT = 15
 # Architecture -> group index -> the length that architecture's firmware demands. Read off the
 # call sites of the guard routine, `0x0F8F0` on the Harmony 700 and `0x23262` on the One, so these
 # are what the code compares against rather than what the corpus happens to carry. Groups absent
-# from a row have no call site on the image that was read, not a length of zero. No image exists
-# for arch 8 or arch 9, so they have no row at all.
+# from a row have no call site on the image that was read, not a length of zero. Arch 8's row is the
+# Harmony 885's guard, `0x10E1A`, decoded by `tests/test_harmony_885_parameters.py`; arch 9 (Harmony
+# 525) has no row because its guard has not been read, and arch 10 (Harmony 890) because no image exists.
 PARAMETER_GROUP_COUNTS: Dict[int, Dict[int, int]] = {
     14: {0: 1, 1: 4, 2: 1, 3: 4, 5: 14, 6: 14, 7: 1},
     # Group 6 was missing here until section 105. The site that reads groups 5 and 6 is one routine
     # with two arms, and the scan that built this table had taken the arm that falls through and not
     # the one behind a `BRA`, so only group 5 was recorded. Both demand sixteen.
     12: {0: 1, 1: 6, 4: 6, 5: 16, 6: 16, 7: 1, 9: 6, 10: 8},
+    # Arch 8 (Harmony 880 and 885): groups 5 and 6 are again one site with two arms, and group 3 has no
+    # call site, though every configuration carries it.
+    8: {0: 1, 1: 6, 2: 1, 4: 6, 5: 14, 6: 14, 7: 1, 8: 2},
 }
 
 # Base slot 15's group indices, as `docs/findings.md` sections 103 and 105 name them. The firmware's
@@ -790,7 +794,9 @@ TIMER_SLOT = 12
 TIMER_RECORD_LENGTH = 7
 TIMER_START_OPERAND_HIGH = 0xEB
 TIMER_CANCEL_OPERAND_HIGH = 0xEA
-# The firmware has room for exactly this many timers running at once, on all four images.
+# The firmware has room for exactly this many timers running at once, on the four images section 43 read,
+# the Harmony 700, 600, 650 and One. The Harmony 880 and 885 have room for two,
+# `tests/test_harmony_885_timers.py`, and nothing here holds that per architecture yet.
 TIMER_SLOTS_IN_RAM = 4
 # The record's first byte. Every record in the corpus carries 1, which is the kind the firmware
 # counts down in its one second scheduler; 0 is counted down in software instead, at a rate this
@@ -2430,9 +2436,11 @@ class Container:
         +0x04  u24  the instruction queued when it expires
         ```
 
-        The firmware runs at most `TIMER_SLOTS_IN_RAM` of these at once, so a config with thirty
-        records is describing thirty possible timers rather than thirty concurrent ones.
-        `docs/findings.md` section 43.
+        The firmware runs at most `TIMER_SLOTS_IN_RAM` of these at once on the images section 43 read,
+        and two on the Harmony 880 and 885, so a config with thirty records is describing thirty possible
+        timers rather than thirty concurrent ones. `docs/findings.md` section 43 and
+        `tests/test_harmony_885_timers.py`, which also found the duration's third byte dropped rather
+        than clamped.
         """
         try:
             addresses = self._counted_pointers(arch_slot(self.architecture, TIMER_SLOT), 1)
@@ -2799,8 +2807,9 @@ class Container:
     def parameter_group_lengths_match(self) -> Optional[bool]:
         """Whether every group the firmware knows about is the length it demands.
 
-        None when no firmware for this architecture has been read, which is arch 8 and arch 9. A
-        writer that gets this wrong is not refused: the subsystem quietly uses its own defaults.
+        None when no firmware for this architecture has been read, which is arch 9 (Harmony 525) and
+        arch 10 (Harmony 890 and 895). A writer that gets this wrong is not refused: the subsystem
+        quietly uses its own defaults.
         """
         wanted = PARAMETER_GROUP_COUNTS.get(self.architecture)
         groups = self.parameter_groups()

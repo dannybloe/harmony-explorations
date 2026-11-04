@@ -131,6 +131,8 @@ What the application keeps where in its RAM, as far as the write path and the st
 | `0x148`, `0x149` | how many narrow and wide variables the running configuration declares |
 | `0x15C` to `0x17E` | the infrared queue: its count, a ring of 30 bytes from `0x15D`, and its two cursors[^t-885-queue] |
 | `0x182` | bit 3 set while the transmitter waits for the configuration's `0x07 0xFFFA`[^t-885-actions] |
+| `0x1CB` to `0x1CD` | seconds since the configuration was built, 24 bits: 0 after every start, recomputed from base slot 3 and the clock, [header records](../../config-format/header-records.md#what-the-harmony-880-and-885-do-with-it)[^t-885-stamp] |
+| `0x223` to `0x22C` | the running timers, two entries of five bytes, `{flags; index; u24 remaining}`, [state](../../config-format/state.md#base-slot-12-the-timer-table)[^t-885-timers] |
 | `0x31E` to `0x39A` | the action queue: its count, a ring of 120 bytes from `0x31F`, forty instructions, and its two cursors[^t-885-queue] |
 | `0x23A` | the unlock: `0xA7` lets an erase or a write below `0x010000` through, and it stays set until the application next starts or goes to sleep |
 | `0x212`, `0x213` | which set of routines each of the two RAM slots holds; the copier skips a slot whose byte already names the set it was asked for |
@@ -169,7 +171,7 @@ Whether anything after the loader puts the running clock back is not read.[^t-88
 | cookie and end marker | `TPTP` and `DKDK`[^s14] |
 | marker after the pointer table | `WLWL`, which opens the key table, at offset `0x5F`[^s14][^s20] |
 | format word | `0x1500`, which is the pointer count: 21 slots[^s194] |
-| pointer table | the base layout of 20 slots with a NULL inserted at slot 8, so everything from base slot 8 up sits one raw slot higher[^s20][^s194] |
+| pointer table | the base layout of 20 slots with a NULL inserted at slot 8, so everything from base slot 8 up sits one raw slot higher[^s20][^s194]; the firmware seeks base slots 2 to 17 through one routine that checks neither a NULL nor the count[^t-885-slots] |
 | architecture record | raw slot 1, seven bytes: `08 08`, the skin, `0d`, then three zero bytes. `08 08 0f 0d` on an 880 and `08 08 11 0d` on an 885[^s182] |
 
 Where each base slot sits is [the container's table of every architecture](../../config-format/container.md#one-table-four-architectures).[^s194]
@@ -205,6 +207,16 @@ or where a page there names it:
 * **The screen is 128 by 160**, and the glyph shapes of its fonts are this architecture's own alphabet,
   which the Harmony 890 and 895 share.[^s129][^s180]
 * **A scan code is `(line - 1) * 4 + input`**, on a 4 by 16 lattice, [the key table](../../config-format/modes-and-keys.md).[^s144]
+* **Base slot 8's leading list runs at start only when it holds exactly one instruction**, and a longer one
+  runs nothing without a word, [modes and keys](../../config-format/modes-and-keys.md#base-slot-8-the-screen-keys-bindings).[^t-885-slots]
+* **Base slot 15 holds nine groups of the lengths the firmware demands**, 1, 6, 1, any, 6, 14, 14, 1 and 2,
+  and a group of another length fails its check without a word, [state](../../config-format/state.md#the-firmware-demands-the-lengths).[^t-885-parameters]
+* **Two timers run at once, not four**; a third start is lost, and while a place is free, starting a
+  running one again runs it twice. A duration keeps only its low sixteen bits, [state](../../config-format/state.md#base-slot-12-the-timer-table).[^t-885-timers]
+* **Base slot 3 is not the clock**: it is the zero point of a counter of seconds since the build that no
+  configuration read uses, and its start up load cannot run on this build, [header records](../../config-format/header-records.md#what-the-harmony-880-and-885-do-with-it).[^t-885-stamp]
+* **Base slot 17 is read as a digit entry table**, not as a touch hit map, and every configuration read
+  leaves it empty, [modes and keys](../../config-format/modes-and-keys.md#on-the-harmony-880-and-885-a-digit-entry-table).[^t-885-slots]
 
 ## Not checked
 
@@ -247,3 +259,7 @@ or where a page there names it:
 [^t-885-queue]: Read in the firmware. [The test](../../../tests/test_harmony_885_queue.py)
 [^t-885-state]: Read in the firmware. [The test](../../../tests/test_harmony_885_state.py)
 [^t-885-state-corpus]: Measured in configurations. [The test](../../../tests/test_harmony_885_state.py)
+[^t-885-slots]: Read in the firmware. [The test](../../../tests/test_harmony_885_slots.py)
+[^t-885-parameters]: Read in the firmware. [The test](../../../tests/test_harmony_885_parameters.py)
+[^t-885-timers]: Read in the firmware. [The test](../../../tests/test_harmony_885_timers.py)
+[^t-885-stamp]: Read in the firmware. [The test](../../../tests/test_harmony_885_stamp.py)

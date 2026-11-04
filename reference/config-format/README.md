@@ -65,7 +65,9 @@ reads, slots 2 to 17 are sixteen sections the firmware reads, and 18 and 19 are 
 of the four architectures that share the base layout.[^s20][^s47] Each section was named by finding the
 firmware code that consumes it: the firmware copies each pointer into a variable of the subsystem that
 uses it, so the code that reads that variable says what the section is for. Every slot from 2 to 19 has a
-located consumer on the Harmony 700, the 600 and the One.[^s35][^s38]
+located consumer on the Harmony 700, the 600 and the One.[^s35][^s38] On the Harmony 880 and 885 one routine
+seeks a section by its slot, with a literal at each of its 22 calls, and those calls name base slots 2 to 17
+and nothing else.[^t-885-slots]
 
 | slot | what it is | page | evidence |
 |---|---|---|---|
@@ -86,7 +88,7 @@ located consumer on the Harmony 700, the 600 and the One.[^s35][^s38]
 | 14 | the **state value map**: what a state variable's value means, indexed by opcode `0x72` | [state](state.md) | [^s39] |
 | 15 | the **parameter block**: numbered groups of 16 bit constants, every length checked by the firmware | [state](state.md) | [^s44] |
 | 16 | the **number sender**: how a device is sent a number one digit at a time, for favourite channels | [state](state.md) | [^s39], [^s154] |
-| 17 | the **touch screen hit map** on the Harmony One, indexed by a mode page's `lead` byte; elsewhere it names where the picture bank starts | [modes and keys](modes-and-keys.md) | [^s45], [^s62] |
+| 17 | the **touch screen hit map** on the Harmony One, indexed by a mode page's `lead` byte; elsewhere it names where the picture bank starts. The Harmony 880 and 885's firmware reads it as a **digit entry table**, empty in every configuration read | [modes and keys](modes-and-keys.md) | [^s45], [^s62], [^t-885-slots] |
 | 18, 19 | NULL | [the container](container.md) | [^s20] |
 
 **Most of a configuration's bytes are pictures**, in one array from the end of the named sections to the
@@ -128,3 +130,4 @@ structure.[^s84]
 [^s55]: Measured in configurations. [Section 55](../../docs/findings.md#s55)
 [^s16]: Measured in configurations. [Section 16](../../docs/findings.md#s16)
 [^s84]: Measured in configurations. [Section 84](../../docs/findings.md#s84)
+[^t-885-slots]: Read in the firmware. [The test](../../tests/test_harmony_885_slots.py)

@@ -46,13 +46,15 @@ checklist that argues each.
 | every send is paired with a `0x7C` naming the same device | emit `{0x7D, 0x7C}`, never the send alone. All 4267<!--fact:send_lists--> send lists of the user configurations are the pair and none is bare, and a bare one sends from a key press and **nothing** from an activity's transition, measured on the spare Harmony One, section 278. On arch 14 each also opens with a `0x7F` delay step of three lists, and the composer emits it, section 287 |
 | base slot 13's first seven records are the clock | stamp them, and reuse none of the firmware's block: 0 to 17 on arch 8, 12, 14 and 16 (Harmony 880 and 885, Harmony One, Harmony 600, 650 and 700, Harmony 300 and 350) and 0 to 12 on arch 9 (Harmony 525), section 284 and `tests/test_harmony_350_clock.py`. Eight values, since the year's maximum always moves with it; the day counts from 0, so a 31st is 30 and its maximum stays 30, section 322. Arch 9 (Harmony 525) keeps its own |
 | base slot 3's timestamp is stamped at write time | never copied. The one field where a round trip and a save differ |
+| on arch 8 (Harmony 880 and 885) base slot 3 is the zero point of a counter, not the clock | stamp it and base slot 13's records 0 to 6 from one moment, keep the tag, the terminator and the three zero bytes, which the host reads, and never emit an opcode from `0x0F` to `0x1E` with a low byte `0xC3` or `0xC7`, whose index 3 reaches the scheduler's byte `0x1CE`. No corpus configuration uses the counter. `tests/test_harmony_885_stamp.py` |
+| on arch 8 (Harmony 880 and 885) base slot 8's leading list runs only when it holds exactly one instruction | keep its count at 1; two or more and nothing runs at start, with no error. All sixteen containers read hold one. `tests/test_harmony_885_slots.py` |
 | `end_addr` is restamped when anything changes length | the only header field that moves with a section's growth |
 | a read can insert bytes without losing any | a config that parses is not a config that arrived. Every read of an arch 10 (Harmony 890) remote here came back with surplus chunks, and neither the trailer checksum nor the end marker catches a duplicated run of zeroes on its own |
 | parsing is not validating | a container can pass both checksums, render pixel identical, close its counts, and address every infrared command wrongly. This is why `edit.ts` refuses a length change |
 | the trailer checksum is weak | a `u16` XOR of little endian words. Blind to two transposed words, and two edits at the same word parity cancel exactly |
 | base slot 15's group lengths are demanded | a group whose length differs is silently replaced by compiled in defaults. A group index is **not** portable between architectures |
-| base slot 15's entry count is demanded | 9 on arch 14 (Harmony 600 and 700), 11 on arch 12 (Harmony One). A different count is a silent no-op, not an error |
-| a timer fires one instruction, not a list | and its duration is clamped to sixteen bits with no error |
+| base slot 15's entry count is demanded | 9 on arch 14 (Harmony 600 and 700) and arch 8 (Harmony 880 and 885), 11 on arch 12 (Harmony One). A different count is a silent no-op, not an error. Arch 8's group lengths are `PARAMETER_GROUP_COUNTS`'s row since `tests/test_harmony_885_parameters.py` |
+| a timer fires one instruction, not a list | and keep its duration at or below 65535 seconds: the firmware keeps only the low sixteen bits, so a longer one wraps; the compare and the store are read on the Harmony 880, 885, 720, 600, 650, 700 and One, and whether anything later on the last four reads the third byte is not, `tests/test_harmony_885_timers.py`. On arch 8 (Harmony 880 and 885) two run at once, a third start is lost, and while a place is free a running timer started again runs twice, so cancel before restarting |
 | a queued screen program runs entry `operand & 0xff` | so a program of ours takes a free base slot 11 entry below 256 and is never appended; entry 6653 ran as 253 and stalled a Harmony 650 in a loop. Read on the Harmony 600, 650, 700 and One images, section 369 |
 | infrared duration blocks are shared | check who else names a block before editing it in place |
 | a record's three block pointers are once, held and tail | slot 1 repeats for as long as the key is down, so its trailing gap **is** the repeat rate. A duration word caps at 32767 us |
@@ -108,9 +110,16 @@ checklist that argues each.
   the 451 case table, not to the record's `max`.
 * **Base slot 15's group lengths and entry count are demanded**, "The firmware demands the lengths": a
   different length or count is silently replaced by defaults or ignored, and a group index does not port
-  between architectures.
-* **A timer fires one instruction, not a list**, and its duration is clamped to sixteen bits with no
-  error, "Base slot 12: the timer table".
+  between architectures. Arch 8 (Harmony 880 and 885) demands 9 groups, and its lengths are a row of
+  `PARAMETER_GROUP_COUNTS` like the others.
+* **A timer fires one instruction, not a list**, "Base slot 12: the timer table". Keep a duration at or
+  below 65535 seconds: the firmware keeps the low sixteen bits and a longer one wraps, which this page said
+  was clamped with no error<!--superseded--> until the compare was evaluated on six images. On arch 8
+  (Harmony 880 and 885) at most two timers run at once, a third start is lost, and while a place is free
+  starting a running timer again runs it twice: open a screen with a cancel all, as Logitech's compiles do, and cancel before
+  restarting.
+* **On arch 8 (Harmony 880 and 885) base slot 8's leading list must hold exactly one instruction**, "Base
+  slot 8: the screen keys' bindings" in `modes-and-keys.md`; a longer one runs nothing at start.
 * **A favourite channel is not a key binding and not one mechanism**, "Base slot 16: the number sender".
   It touches base slots 16, 10 and 13 and the screen, and adds no key binding and no infrared group; a
   channel with a leading zero is spelled out digit by digit instead, and each route has its own
@@ -147,7 +156,10 @@ checklist that argues each.
 ### Container and header, `reference/config-format/container.md` and `header-records.md`
 
 * **Base slot 3's timestamp is stamped at write time, never copied**, header-records.md "What the remote
-  does with it". The one field where a round trip and a save differ. `write-config.ts` stamps every write
+  does with it". The one field where a round trip and a save differ. On arch 8 (Harmony 880 and 885) it is
+  not the clock but the zero point of a counter no corpus configuration uses, "What the Harmony 880 and 885
+  do with it": stamp it and the clock records from one moment, keep its framing, and never emit an
+  opcode from `0x0F` to `0x1E` with a low byte `0xC3` or `0xC7`. `write-config.ts` stamps every write
   and saves the stamped file over `--config` before erasing; `--as-is` writes a file's own stamp, for a
   compile put back unchanged.
 * **The trailer checksum is weak**, container.md "The trailer checksum": blind to two transposed words,
