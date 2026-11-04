@@ -138,7 +138,7 @@ six and `0x70`:[^t-885-boot]
 |---|---|
 | `0x10` version | the version block: firmware 4.0, the hardware version, the flash part's device and manufacturer ids read off the part itself, architecture 8 with software type 3, the skin, and zero in field 6 |
 | `0x30` write flash | each byte programmed into the flash part, the address checked as below. A one byte write to `0x000106` is not programmed: it sets the unlock |
-| `0x50` read flash | one table read per byte and **no bound on the address**; a one byte read at `0x000104` or `0x000105` returns a routine's value instead, as the application's does |
+| `0x50` read flash | one table read per byte and **no bound on the address**; a read whose last byte is `0x000104` or `0x000105`, alone in its chunk, returns the newest hardware version or a measurement instead, as the application's does, [the Harmony 880 and 885's usb page](../architectures/harmony-880-885/usb.md#reading-flash) |
 | `0xA0` write misc | four selectors: 2 clears flag bits, 5 masks or unmasks interrupts, 6 sets the **status byte** that asks for a staged install, 7 writes one byte of data memory at any address, the special function registers included |
 | `0xB0` read misc | selector 6 returns the status byte, 7 one byte of data memory, any other zero |
 | `0xD0` erase | erases the sector of the flash part at the address. A refused erase shows error code 2 on the screen and drops the command, so **no reply is sent** |
@@ -165,8 +165,11 @@ one unlock it sends before any write,
 
 The programming itself is the command sequences of an AMD style NOR flash part, unlock cycles to
 `0x000AAA` and `0x000555`, run from a copy of the bootloader's routines in RAM, since code cannot run from
-the part it is programming.[^t-885-boot] Which part, and so how large one erased sector is, is not
-checked.[^unchecked]
+the part it is programming. It programs through the part's unlock bypass mode and writes every byte it is
+sent, `0xFF` included, where the application skips `0xFF` bytes.[^t-885-boot][^t-885-flash] The firmware
+knows two flash parts; which one is fitted, and so the sector map an erase below `0x010000` meets, is not
+checked, while from `0x010000` up every source gives 64 KiB sectors,
+[the platform's memory](../architectures/harmony-880-885/memory.md#the-flash-part).[^t-885-flash][^unchecked]
 
 ### What it can restore
 
@@ -180,8 +183,8 @@ first, so it does not happen by accident.[^t-885-boot] Which printed keys hold i
 
 * Any command sent to a bootloader, on any remote[^unchecked].
 * Which keys enter it, and whether entering it by keys works as read[^unchecked].
-* On the Harmony 880 and 885, which printed keys have the two scan codes that hold it, which flash part
-  and sector size an erase meets, and that the bootloader serves `Harmony Bootloader` for the descriptor's
+* On the Harmony 880 and 885, which printed keys have the two scan codes that hold it, which of the two
+  flash parts is fitted, and that the bootloader serves `Harmony Bootloader` for the descriptor's
   product index[^unchecked].
 * Whether the numbering is Microchip's stock HID bootloader's[^unchecked].
 
@@ -191,3 +194,4 @@ first, so it does not happen by accident.[^t-885-boot] Which printed keys hold i
 [^s191]: Read in the firmware. [Section 191](../../docs/findings.md#s191)
 [^t-885-boot]: Read in the firmware. [The test](../../tests/test_harmony_885_bootloader.py)
 [^t-885-boot-client]: Stated by Logitech, in their client. [The test](../../tests/test_harmony_885_bootloader.py)
+[^t-885-flash]: Read in the firmware. [The test](../../tests/test_harmony_885_erase_and_write.py)

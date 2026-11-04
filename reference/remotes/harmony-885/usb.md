@@ -17,8 +17,11 @@ Generated from `packages/corpus` and `packages/usb` by `make remote-reference-wr
 
 **The product id row reads `none` because the configuration reader holds no profile for this
 architecture**, not because the remote has no product id. The library reads flash on one, below
-`0x200000`, and the escape row reads `none` because this firmware's dispatch has no escape,
-[the architecture's USB page](../../architectures/harmony-880-885/usb.md).
+`0x200000`. **The escape row reads `none` because the library holds no entry for this architecture**,
+while the firmware handles sub codes `0x01`, `0x02` and `0x03`, the last two a restart,
+[the architecture's USB page](../../architectures/harmony-880-885/usb.md#how-a-write-ends).[^t-885-end]
+This said the row read `none` because this firmware's dispatch has no escape<!--superseded-->, until the
+packet parser was read.[^t-885-end]
 
 ## What the remote states
 
@@ -40,3 +43,4 @@ architecture**, not because the remote has no product id. The library reads flas
 [^t-arch8-usb]: Measured on a unit. [The test](../../../tests/test_arch8_usb.py)
 [^t-usbdesc]: Measured on a unit. [The test](../../../tests/test_usbdesc.py)
 [^t-885-boot]: Read in the firmware. [The test](../../../tests/test_harmony_885_bootloader.py)
+[^t-885-end]: Read in the firmware. [The test](../../../tests/test_harmony_885_write_end.py)

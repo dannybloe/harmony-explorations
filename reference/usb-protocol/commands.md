@@ -11,8 +11,9 @@ This page describes each request and its reply, how an address picks which memor
 a host has to know about. How the remote presents itself on the bus is [the transport](transport.md), the
 reply to the version request is [the version block](version-block.md), and what each architecture answers
 differently is on its own page: [the Harmony 525](../architectures/harmony-5xx/usb.md),
-[the Harmony One](../architectures/harmony-one/usb.md) and
-[the Harmony 600, 650 and 700](../architectures/harmony-600-650-700/usb.md). Everything that writes is
+[the Harmony One](../architectures/harmony-one/usb.md),
+[the Harmony 600, 650 and 700](../architectures/harmony-600-650-700/usb.md) and
+[the Harmony 880 and 885](../architectures/harmony-880-885/usb.md). Everything that writes is
 refused by `packages/usb` unless its rail in `packages/usb/src/rails.ts` lets it through; where this page
 says what the library does, that code is the evidence.
 
@@ -35,7 +36,8 @@ The code at `0x0BD22` lets nibbles 0 to 7 through untouched with `SUBLW 0x07` an
 comparison chain maps `0x0A`, `0x09` and `0x08` to `0x3F`, `0x1F` and `0x0F`. **63 payload bytes plus the
 command byte is exactly the 64 byte report** the descriptors declare, and 15, 31 and 63 are 2^4-1, 2^5-1
 and 2^6-1, so a misreading would not land on the report size. The Harmony One 3.4, Harmony 600 0.2 and
-Harmony 700 2.8 images carry the same mapping with the same constants[^s19][^t-usb-firmware]. Logitech's
+Harmony 700 2.8 images carry the same mapping with the same constants[^s19][^t-usb-firmware], and so
+does the Harmony 880 and 885's application 4.4[^t-885-flash]. Logitech's
 classic client's replies, captured on the wire, use the same nibbles in the proportions this mapping
 predicts, [the classic client](../logitech/classic-client.md)[^s210].
 
@@ -660,7 +662,9 @@ the command table an internal continuation rather than a command a host sends[^s
 **The Harmony One has the escape too**, at `0x26434`, with `0x01`, `0x02` and `0x03` and without `0x05`. It
 tests with `SUBWF` where the others use `XORLW`, so it is not an XOR chain and a search for one misses it.
 An unrecognised sub-command falls through into the ordinary command chain on both rather than being
-rejected[^s97][^t-usb-firmware]. Which sub-commands each architecture dispatches is generated into each
+rejected[^s97][^t-usb-firmware]. **The Harmony 880 and 885 have it as well**, with `0x01`, `0x02` and
+`0x03`, tested in the packet parser before the command switch, so the switch itself holds no case for
+it[^t-885-end]. Which sub-commands each architecture dispatches is generated into each
 architecture's usb page from `ESCAPE_SUB_COMMANDS`; on the Harmony 525 the escape is not read.
 
 | sub-command | effect | One 3.4 | 700 2.8 |
@@ -746,7 +750,9 @@ acknowledgement[^s245b]:
 
 So the update status byte is written 0 before the erase and 2 after the write, which is the value that
 asks a safe mode image to install a staged application; and on a Harmony One step 2 does nothing, since
-selector `0x0A` is ignored there[^s245b][^s97][^s298]. Addresses are three bytes and sizes two, high byte
+selector `0x0A` is ignored there[^s245b][^s97][^s298]. On the Harmony 880 and 885 step 2 gets no reply
+at all and step 7 must not be sent, since status 2 makes the bootloader install whatever sits at
+`0x1D0000`, [their usb page](../architectures/harmony-880-885/usb.md#how-a-write-ends)[^t-885-end]. Addresses are three bytes and sizes two, high byte
 first, as `packages/usb` encodes them[^s245b].
 
 **The literal bytes in these files are not consistent** about whether the leading byte already carries
@@ -830,3 +836,5 @@ written that way came back on its own and did not ask to be synced[^s247].
 [^s91]: Read in the firmware. [Section 91](../../docs/findings.md#s91)
 [^s98]: Read in the firmware. [Section 98](../../docs/findings.md#s98)
 [^s91b]: Stated by Logitech, in their client. [Section 91](../../docs/findings.md#s91)
+[^t-885-flash]: Read in the firmware. [The test](../../tests/test_harmony_885_erase_and_write.py)
+[^t-885-end]: Read in the firmware. [The test](../../tests/test_harmony_885_write_end.py)

@@ -17,11 +17,14 @@ page states what differs here.
 | address | what | source |
 |---|---|---|
 | `0x000000` to `0x010000` | the **bootloader**, with the reset vector at zero and no image header; its code ends at `0x0639B` on the 880 and `0x063B1` on the 885. The bootloader erases or writes here only under an unlock, which a host sends or which the bootloader sets around its own one byte write to a hardware version log at `0x000140`, [the bootloader](../../usb-protocol/bootloader.md#a-flash-programmer-for-the-whole-part) | [^s116][^t-885-boot] |
-| `0x000110` | the remote's **serial number** | [^x-concordance] |
+| `0x000104` to `0x000106` | three addresses a host's read or write does not treat as flash: a read whose last byte is `0x000104` or `0x000105`, alone in its chunk, returns the hardware log's newest byte or takes a measurement, and a one byte write to `0x000106` sets the unlock, [usb.md](usb.md#reading-flash) | [^t-885-reads][^t-885-flash] |
+| `0x000110` | the remote's **serial number**; the application tests these 48 bytes for being blank at every start, and a blank block keeps the user configuration from being used, [firmware.md](firmware.md#what-the-application-does-at-start) | [^x-concordance][^t-885-start] |
+| `0x000140` to `0x000147` | a **hardware version log**, eight one byte entries filled from the bottom; the newest is the version block's hardware field, and both programs can append to it | [^t-885-reads][^t-885-flash] |
+| `0x000160` | a **battery calibration word**, which the application tests at start and reports when blank | [^t-885-start] |
 | `0x010000` to `0x020000` | the **application firmware**, version 4.4, [firmware.md](firmware.md) | [^s114] |
-| `0x01E000` to `0x01FB89` | inside the application's 64 KiB, a **safe mode configuration**: a complete container of 7049 bytes, byte identical in the 880's and the 885's images | [^s114] |
+| `0x01E000` to `0x01FB89` | inside the application's 64 KiB, a **safe mode configuration**: a complete container of 7049 bytes, byte identical in the 880's and the 885's images, which the application runs whenever the user's configuration fails its start check or may not be read, [firmware.md](firmware.md#what-the-application-does-at-start) | [^s114][^t-885-start] |
 | `0x020000` | the **user configuration**, the container's own pointers counting from here | [^x-concordance][^s14] |
-| `0x1D0000` | where the bootloader copies a staged application from when the status byte asks for status 2, [firmware.md](firmware.md#what-the-bootloader-does-at-power-on); what a unit holds there is not checked | [^t-885-boot][^unchecked] |
+| `0x1D0000` | where the bootloader copies a staged application from when the status byte asks for status 2, [firmware.md](firmware.md#what-the-bootloader-does-at-power-on), and where Logitech's classic client stages one. What a unit holds there is not checked | [^t-885-boot][^t-885-start-client][^unchecked] |
 | `0x1E0000` to `0x1FE000` | the **log area** every configuration declares, 15360 records of 8 bytes | [^s47] |
 | `0x1FE040` to `0x1FE0C1` | **devices, not flash**: every immediate load of the table pointer into this range names `0x1FE040`, `0x1FE041`, `0x1FE081` or `0x1FE0C1`, with `0x1FE080` and `0x1FE0C0` reached from them. By the code that uses them they are the keypad lines, the USB controller and the display; that identification is the code's reading and not checked against the hardware | [^t-885-boot][^unchecked] |
 | `0x1FFE00` to `0x1FFFFF` | where the bootloader and the application call their RAM copies of the flash programming routines, so a window onto data memory and not flash; inferred from where the copies are placed and called, not from a datasheet | [^t-885-boot] |
@@ -42,6 +45,46 @@ firmware writes there is not read.[^unchecked] **The top 8 KiB is where the firm
 and its RAM window**, which fits the log area stopping there; whether everything from `0x1FE000` up is
 decoded away from flash, rather than only the addresses the firmware uses, is not checked.[^t-885-boot][^unchecked]
 So a read there is a bus cycle on a device or on RAM, and neither program's read path refuses one.[^t-885-boot]
+
+## The flash part
+
+**The firmware knows two flash parts and its application reports both as one.** It reads the part's id and
+reports an Atmel `1F:C0` as `01:49`, keeps `01:49`, and reports anything else as `FF:FF`, so the `01:49` a
+running remote gives in its version block does not say which part is fitted. The bootloader's version
+answer gives the part's own bytes.[^t-885-flash][^t-885-boot] Logitech's classic client names `1F:C0`
+the `AT49BV163D` and `01:49` the `S29AL016M`, both 2 MiB.[^t-885-flash-client] No datasheet was compared.[^unchecked]
+
+**An erase removes whatever sector of the part holds the address**: the firmware sends the sector erase
+command at the host's address unchanged and holds no sector table.[^t-885-flash] **From `0x010000` up every
+source has 64 KiB sectors**: Logitech's classic client gives both parts eight 8 KiB blocks below that and
+thirty one of 64 KiB above, to `0x200000`, and concordance gives `01:49` sectors of 16, 8, 8 and 32 KiB
+below it and 64 KiB above.[^t-885-flash-client][^x-concordance] The bootloader's own staged install erases
+once at `0x010000` and then writes 64 KiB, which works only if that sector is at least that large.[^t-885-boot]
+
+**What one erase can take**, with no unlock: the running application and its safe mode configuration at
+`0x010000`, the configuration, the staging source at `0x1D0000` and the log area; below `0x010000`, the
+bootloader and the identity block, only after the unlock.[^t-885-flash] Erasing `0x010000` erases the code
+the remote is running from; that no reply then follows, and that the next start lands in the bootloader,
+which can write the application back, is inferred and not checked.[^t-885-flash][^t-885-boot][^unchecked] At `0x1FE000` and up the sector command reaches a device or
+the RAM the routine runs from rather than flash, and above `0x3FFFFF` an address may alias low, past the
+unlock; both inferred from the processor family and not checked.[^unchecked]
+
+## Data memory
+
+What the application keeps where in its RAM, as far as the write path and the start check read it:[^t-885-start][^t-885-end][^t-885-flash]
+
+| address | what |
+|---|---|
+| `0x086` | the configuration flags: bit 1 the built in configuration passed, bit 2 the user's passed, bit 3 which of the two every lookup uses |
+| `0x100` | the staged install's status, which write misc and read misc selector 6 reach, [firmware.md](firmware.md#what-the-bootloader-does-at-power-on) |
+| `0x108` to `0x147` | the state variables, 64 bytes: a narrow variable `i` at `0x108 + i`, the wide ones after the narrow, `0xFE` above the last. The clock is variables 0 to 6, narrow in every configuration read, so at `0x108` to `0x10E` |
+| `0x148`, `0x149` | how many narrow and wide variables the running configuration declares |
+| `0x23A` | the unlock: `0xA7` lets an erase or a write below `0x010000` through, and it stays set until the application next starts or goes to sleep |
+
+**The storage holds 64 bytes and the counts sit right after it**, so a configuration whose narrow variables
+plus twice its wide ones exceed 64 would have the firmware write over its own counts; the 16 containers
+read declare 34 to 42.[^t-885-end] Whether the action interpreter's own writes check that bound is not
+read.[^unchecked]
 
 ## The container
 
@@ -83,9 +126,12 @@ or where a page there names it:
 
 ## Not checked
 
-* Anything on a remote: the flash part, its size, and whether a unit's layout is the images'.[^unchecked]
+* Anything on a remote: which of the two flash parts a unit carries, and whether a unit's layout is the
+  images'.[^unchecked]
 * What sits between the end of a configuration and the log area, and above the log area.[^unchecked]
-* Data memory: where the firmware keeps its state variables and the clock.[^unchecked]
+* The sector map below `0x010000`, where the two outside sources disagree, against a datasheet.[^unchecked]
+* Whether a configuration's state variable writes check the 64 byte bound, and what the firmware appends to
+  the log area.[^unchecked]
 
 [^s116]: Read in the firmware. [Section 116](../../../docs/findings.md#s116)
 [^x-concordance]: Stated by a third party. [concordance](https://github.com/jaymzh/concordance)
@@ -106,3 +152,9 @@ or where a page there names it:
 [^s144]: Read in the firmware. [Section 144](../../../docs/findings.md#s144)
 [^t-arch8-usb]: Measured on a unit. [The test](../../../tests/test_arch8_usb.py)
 [^t-885-boot]: Read in the firmware. [The test](../../../tests/test_harmony_885_bootloader.py)
+[^t-885-start]: Read in the firmware. [The test](../../../tests/test_harmony_885_start_check.py)
+[^t-885-start-client]: Stated by Logitech, in their client. [The test](../../../tests/test_harmony_885_start_check.py)
+[^t-885-flash]: Read in the firmware. [The test](../../../tests/test_harmony_885_erase_and_write.py)
+[^t-885-flash-client]: Stated by Logitech, in their client. [The test](../../../tests/test_harmony_885_erase_and_write.py)
+[^t-885-end]: Read in the firmware. [The test](../../../tests/test_harmony_885_write_end.py)
+[^t-885-reads]: Read in the firmware. [The test](../../../tests/test_harmony_885_reads.py)

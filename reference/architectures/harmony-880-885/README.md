@@ -8,7 +8,7 @@ configuration format of the same family as every later Harmony's. This folder de
 **Everything here is known from configurations and firmware images that other people published, and
 nothing from a remote**, apart from what a Harmony 885 answered on the cable, which is on the
 [USB page](usb.md); it said no unit had been measured<!--superseded--> until then. So a fact on these pages is read
-in one of two firmware images or counted over a handful of configurations, and each footnote says which.
+in the firmware images or counted over a handful of configurations, and each footnote says which.
 A Harmony 885 measured on a unit would turn a "Measured in configurations" footnote into a measurement,
 and nothing in this folder's layout would have to move for it.
 
@@ -18,8 +18,8 @@ record and every firmware image of it reports 8 in its version block.[^s182][^s1
 
 | model | folder | what is known |
 |---|---|---|
-| Harmony 880 and 885 | [harmony-885](../../remotes/harmony-885/README.md) | read in two application images and two bootloaders; counted over six configurations |
-| Harmony 880 Pro, 720, 785 | none | named on this platform by Logitech's client and service, and nothing of theirs read[^s207][^s131] |
+| Harmony 880 and 885 | [harmony-885](../../remotes/harmony-885/README.md) | read in two application images and two bootloaders, and their start in three more application images; counted over six configurations, and the start check over 16 containers |
+| Harmony 880 Pro, 720, 785 | none | named on this platform by Logitech's client and service[^s207][^s131]; an 880 Pro's and a 720's application and configuration pass the start check, the 880 Pro's application being the 880's build with its own skin, [the firmware](firmware.md#what-the-application-does-at-start). This row said nothing of theirs was read<!--superseded--> until they were[^t-885-start][^t-885-start-corpus] |
 | Harmony 882 | none | named here by concordance's table alone[^x-concordance] |
 
 ## Skins
@@ -36,8 +36,8 @@ record and every firmware image of it reports 8 in its version block.[^s182][^s1
 Generated from `MODELS_BY_SKIN` in `packages/usb/src/models.ts` by `make remote-reference-write`. Change the source, not this block.
 <!-- /generated -->
 
-Skins 15 and 17 are read in the firmware, the only byte that differs between the two application
-images, and stated in each configuration's own header.[^s114][^s113] Logitech's classic client places
+Skins 15 and 17 are read in the firmware, the only value that differs between the two application
+images, at two offsets, and stated in each configuration's own header.[^s114][^s113] Logitech's classic client places
 skins 15, 17, 39, 44 and 45 on the Espresso platform, and its teaching pictures place skin 15 on
 architecture 8.[^s207][^s208] Logitech's live service names 39 the Harmony 880 Pro, 44 the Harmony 720 and
 45 the Harmony 785.[^s131]
@@ -70,8 +70,9 @@ Read in the 880's and 885's firmware images, or counted over the configurations,
 ## Not checked
 
 * Anything on a remote: every row above is an image or a configuration.[^unchecked]
-* The Harmony 720, 785, 880 Pro and 882: their firmware, their configurations, their faces.[^unchecked]
-* Which PIC18 part, and which flash part and size.[^unchecked]
+* The Harmony 720, 785, 880 Pro and 882: their firmware and configurations beyond the start check, and
+  their faces.[^unchecked]
+* Which PIC18 part, and which of the two flash parts the firmware knows is fitted.[^unchecked]
 
 [^x-concordance]: Stated by a third party. [concordance](https://github.com/jaymzh/concordance)
 [^s7]: Stated by Logitech. [Section 7](../../../docs/findings.md#s7)
@@ -89,3 +90,5 @@ Read in the 880's and 885's firmware images, or counted over the configurations,
 [^s144]: Read in the firmware. [Section 144](../../../docs/findings.md#s144)
 [^s284]: Read in the firmware. [Section 284](../../../docs/findings.md#s284)
 [^s136]: Stated by Logitech, by their service. [Section 136](../../../docs/findings.md#s136)
+[^t-885-start]: Read in the firmware. [The test](../../../tests/test_harmony_885_start_check.py)
+[^t-885-start-corpus]: Measured in configurations. [The test](../../../tests/test_harmony_885_start_check.py)

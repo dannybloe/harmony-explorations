@@ -57,6 +57,12 @@ and the 885's bootloader,
 [the architecture's firmware page](../../architectures/harmony-880-885/firmware.md#what-the-bootloader-does-at-power-on).[^t-885-boot]
 Which printed keys those are, and whether holding one works as read, is not checked.[^unchecked]
 
+**Scan codes 2, 33 and 32 held together restart the remote**, tested at every key scan by the application
+and by both bootloaders, each with a further condition on inputs whose meaning differs between them; the
+restart is the processor's `RESET` instruction, so a staged install asked for before it still runs,
+[the architecture's firmware page](../../architectures/harmony-880-885/firmware.md#restarting).[^t-885-end][^t-885-boot]
+Which printed key is scan code 32 is not checked either.[^unchecked]
+
 ## Not checked
 
 * Which printed key sits at which scan code: that needs a drawing or a unit.[^unchecked]
@@ -67,3 +73,4 @@ Which printed keys those are, and whether holding one works as read, is not chec
 [^s128]: Measured in configurations. [Section 128](../../../docs/findings.md#s128)
 [^unchecked]: Not checked.
 [^t-885-boot]: Read in the firmware. [The test](../../../tests/test_harmony_885_bootloader.py)
+[^t-885-end]: Read in the firmware. [The test](../../../tests/test_harmony_885_write_end.py)

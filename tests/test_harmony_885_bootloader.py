@@ -122,8 +122,19 @@ compares one 24 bit literal, `0x010000`, and nothing else: **no upper bound**. A
 error code 2, calls the error screen (`0x03CDA`) and branches to `0x03E60`, which drops the command state
 because `0x202` was cleared before the switch, so the executor sends nothing; whether the error screen
 routine itself sends a packet is not read. Reads check no bound: one `TBLRD*` per byte (`0x05F34`),
-except that a one byte read at `0x000104` or `0x000105` calls a routine instead (`0x040DE`, `0x04114`),
-the same special case as the application's; what those return is not read.
+except that a read whose last byte is `0x000104` or `0x000105`, alone in its chunk, calls a routine
+instead (`0x040DE`, `0x04114`), the same special case as the application's. What those return was not
+read for item 1.1; item 1.8 read it, `tests/test_harmony_885_reads.py`: the newest byte of the hardware
+log at `0x000140`, and a measurement on the analogue converter, through the same two routines here
+(asserted below for both builds). This said a one byte read until item 1.8 found the test is on the
+chunk, so any read ending there alone meets it.
+
+**Two more facts of the bootloader's own, read for items 1.3 and 1.4.** Its buffer program uses unlock
+bypass, `0x20` once, then `0xA0` and the byte per byte, `0x90` and `0x00` to leave, and **programs every
+byte, `0xFF` included**, where the application's skips `0xFF`; neither erases. And its version answer
+reports the flash part's id bytes as the part gives them (`0x05EFE`, two autoselect reads into `0x211` and
+`0x212`), where the application replaces `1F:C0` with `01:49`, `tests/test_harmony_885_erase_and_write.py`.
+Both asserted below.
 
 **The unlock** is a one byte write flash to `0x000106`: the parse compares the address bytes with `0x06`,
 `0x01`, `0x00`, checks a count of one, stores the packet's byte in `0x3E8` and branches past the
@@ -160,8 +171,10 @@ escape, the same power on order with the same literals, the checksum closing on 
 same floor and unlock, the same 37, 37 and 38 table pointer loads, the same descriptors and product
 string, and the same build difference in the staged install. It did not read the copied RAM routines,
 so it reported no check on write; the inner check is inside them, asserted here. It reported one thing
-not landed: the key scan at `0x04AC8` executes `RESET` when scan codes 2, 33 and 32 are all down and
-`PORTB & 0xB0` is zero, a `RESET` that would keep the status byte. Not read here; a lead for item 1.6.
+not landed by item 1.1: the key scan at `0x04AC8` executes `RESET` when scan codes 2, 33 and 32 are all
+down and `PORTB & 0xB0` is zero, a `RESET` that would keep the status byte. **Landed with items 1.2 to
+1.8**: asserted below in both builds (`0x04AC8` and `0x04ABA`, called first by each build's key scan), and
+the application has the same combination at `0x189DA`, `tests/test_harmony_885_write_end.py`.
 
 Reviewer 2 audited the prose. Its corrections are in this header and the pages: the builds' other
 differences, the bootloader's own unlock and the selector 7 route, the special one byte reads, the
@@ -659,6 +672,66 @@ class AFlashProgrammerWithOneFloor(BootloaderTest):
                     self.assertEqual(window(code, at, 12),
                                      ['MOVLW 0x%02x' % low, 'MOVLB 0x1', 'XORWF 0x14', 'BNZ', 'MOVLW 0x01', 'XORWF 0x15', 'BNZ',
                                       'MOVF 0x16', 'BNZ', 'MOVLB 0x2', 'DECF 0x0b', 'BNZ'])
+
+    def test_a_lone_last_byte_at_0x000104_reads_the_hardware_log_and_at_0x000105_a_measurement(self):
+        # Item 1.8: the routine each case calls. The log reader starts at 0x000140, as the application's
+        # 0x182FA does; the measurement is the application's 0x11BBE in this build.
+        readers = {'arch8_boot_885': 0x04822, 'arch8_boot_880': 0x04814}
+        for name, code in self.images.items():
+            at104, at105 = BUILDS[name]['read_special']
+            with self.subTest(name):
+                self.assertEqual(window(code, at104 + 0x18, 3), ['MOVLB 0x1', 'SETF 0x06', 'CALL'])
+                self.assertEqual(listing(code, 0, at104 + 0x1C, at104 + 0x20)[0][1].fields['target'], readers[name])
+                self.assertEqual(window(code, readers[name], 6),
+                                 ['MOVLB 0x2', 'MOVLW 0x40', 'MOVWF 0x26', 'MOVLW 0x01', 'MOVWF 0x27', 'CLRF 0x28'])
+                measure = listing(code, 0, at105 + 0x18, at105 + 0x1C)[0][1]
+                self.assertEqual((measure.mnemonic, measure.fields['target']), ('CALL', 0x01948))
+                self.assertEqual(listing(code, 0, 0x01948, 0x0194A)[0][1].fields['target'], 0x018EA)
+
+    def test_the_buffer_program_uses_unlock_bypass_and_programs_0xff_bytes_too(self):
+        # Item 1.4: 0x20 enters unlock bypass, 0xA0 and the byte per byte, 0x90 then 0x00 leave it. No
+        # literal 0xFF anywhere in the copied routines, so no byte is skipped, where the application's
+        # buffer program compares each byte with 0xFF.
+        for name, code in self.images.items():
+            start, end = BUILDS[name]['slot1']
+            with self.subTest(name):
+                slot = code[start:end + 2]
+                runs = listing(slot, SLOT1_RUNS_AT, SLOT1_RUNS_AT, SLOT1_RUNS_AT + len(slot))
+                loads = [(a, ins.fields['k']) for a, ins in runs if ins.mnemonic == 'MOVLW'
+                         and ins.fields['k'] in (0x20, 0x90, 0xA0, 0xFF)]
+                self.assertEqual(loads, [(0x1FFF1E, 0x90), (0x1FFF44, 0xA0), (0x1FFF6A, 0x20), (0x1FFF9C, 0xA0),
+                                         (0x1FFFCE, 0x90)])
+                self.assertEqual(window(slot, 0x1FFF60, 3, SLOT1_RUNS_AT), ['RCALL', 'IORLW 0x00', 'BZ'])
+
+    def test_the_version_answer_reports_the_parts_own_id_bytes(self):
+        # Item 1.3: two autoselect reads into 0x211 and 0x212 and straight out, with no comparison against
+        # the 0x1F the application replaces.
+        for name, code in self.images.items():
+            with self.subTest(name):
+                calls = [a for a, ins in listing(code, 0, 0, CODE_END[name])
+                         if ins.mnemonic == 'CALL' and ins.fields['target'] == 0x1FFE54]
+                self.assertEqual(len(calls), 2)
+                self.assertEqual(calls[1] - calls[0], 0x12)
+                tail = [text(ins) for _, ins in listing(code, 0, calls[0], calls[1] + 0x18)]
+                self.assertNotIn('MOVLW 0x1f', tail)
+                self.assertEqual(tail[-2:], ['BRA', 'RETURN'])
+
+    def test_the_key_scan_restarts_by_reset_when_scan_codes_2_33_and_32_are_down(self):
+        # Reviewer 1's lead of item 1.1, landed with items 1.2 to 1.8. The key scan's first call; bits 4,
+        # 5 and 7 of the byte at 0x81 in the selected bank must read zero (whether that byte is port B
+        # depends on the bank, which is not read); then the three scan codes, and a RESET instruction,
+        # which the cold start test above lets keep the status byte.
+        combination = {'arch8_boot_885': 0x04AC8, 'arch8_boot_880': 0x04ABA}
+        for name, code in self.images.items():
+            at = combination[name]
+            with self.subTest(name):
+                calls = [a for a, ins in listing(code, 0, 0, CODE_END[name]) if ins.fields.get('target') == at]
+                self.assertEqual(calls, [BUILDS[name]['scan'] + 4])
+                body = window(code, at + 0x0C, 23)
+                self.assertEqual(body[:2], ['MOVLW 0xb0', 'ANDWF 0x81'])
+                self.assertEqual([t for t in body if t.startswith('MOVLW')],
+                                 ['MOVLW 0xb0', 'MOVLW 0x02', 'MOVLW 0x21', 'MOVLW 0x20'])
+                self.assertEqual(body[-1], 'RESET')
 
     def test_logitechs_classic_client_names_that_byte_and_that_address(self):
         """The closure: the client's arch 8 constants against the literals the code above tests. That the

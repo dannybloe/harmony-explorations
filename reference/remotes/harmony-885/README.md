@@ -23,7 +23,7 @@ Generated from `MODELS_BY_SKIN` in `packages/usb/src/models.ts` by `make remote-
 <!-- /generated -->
 
 Skin 15 is the Harmony 880 and skin 17 the Harmony 885: each configuration's header states its skin, and
-the two application images differ in that byte and nowhere else.[^s113][^s114] A community comparison
+the two application images differ in that value, at two offsets, and nowhere else.[^s113][^s114] A community comparison
 table records the 880 as `Eur#885`, so the two are one remote with two regional names.[^x-forum-table]
 
 **The two faces are not identical.** The 885's photographs show four teletext colour keys, and the name on

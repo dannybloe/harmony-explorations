@@ -7,7 +7,8 @@ in two bytes. This page says what each image is, where it loads, how its header 
 Harmony's, and how a copy of one is obtained.
 
 Read in two application images and two bootloaders, an 880's and an 885's of each, which other people
-read off their remotes and published. A Harmony 885's application, read off it over USB, is the 885 image
+read off their remotes and published; the start of the application, below, was read in three more
+application images as well, an 880 Pro's, a second 880's and a Harmony 720's. A Harmony 885's application, read off it over USB, is the 885 image
 byte for byte, which measures its load address at `0x010000`.[^t-arch8-usb] Where each image
 sits in flash is [memory.md](memory.md).
 
@@ -29,13 +30,17 @@ included, and their code ends 22 bytes apart, at `0x0639B` and `0x063B1`.[^s116]
 **The software type is Logitech's own word.** The version block's accessor in each image states it, and
 Logitech's firmware packages name the values: 0 an application, 1 test, 2 minimal, 3 a bootloader, 4 safe
 mode.[^s116][^s7] **No image of type 4 is known on this architecture**: neither of the two ways a host can
-read an image here returns one.[^s116] **The bootloader does part of what safe mode does on later
-platforms**: when it does not start the application it stays resident and answers the application's own
-commands, so it is the minimal program a host can reach whenever the bottom 64 KiB are intact,
-[below](#what-the-bootloader-does-at-power-on).
-Whether the application has a safe mode of its own is not checked.[^t-885-boot][^unchecked] This said
-whether this platform's Boot mode does the work later platforms split<!--superseded--> into a bootloader and
-safe mode was not known, until the bootloader was read.[^t-885-boot]
+read an image here returns one.[^s116] **Two things do what safe mode
+does on later platforms.** The bootloader: when it does not start the application it stays resident and
+answers the application's own commands, so it is the minimal program a host can reach whenever the bottom
+64 KiB are intact, [below](#what-the-bootloader-does-at-power-on).[^t-885-boot] Logitech's classic client
+treats it as this platform's safe mode program: asked to write the safe mode firmware, it writes the
+bootloader.[^t-885-start-client] And a small configuration built into the application, which the
+application runs on its own whenever the user's configuration cannot be trusted,
+[below](#what-the-application-does-at-start).[^t-885-start]
+This said whether the application has a safe mode of its own<!--superseded--> was not checked, until its start was
+read.[^t-885-start] It said before that whether this platform's Boot mode does the work later platforms
+split<!--superseded--> into a bootloader and safe mode was not known, until the bootloader was read.[^t-885-boot]
 
 ## The header is not the later Harmonys'
 
@@ -82,11 +87,15 @@ In order, read in both bootloader builds:[^t-885-boot]
    sector at `0x010000` is erased first, the status reset to 0 at the end.[^t-885-boot] **The two builds
    differ here**: while copying, the 885's writes status 4 for the
    `0x1D0000` source and 7 for the `0x020000` one, the 880's writes 4 for both, so a copy from `0x020000`
-   that an 880 resumed would resume from `0x1D0000`.[^t-885-boot] What sets the status, what sits at
-   `0x1D0000` on a unit, and what could interrupt a copy and leave 4 or 7 behind are not
-   checked, and so is what a status 6 install would take from `0x020000`, where the user configuration
-   starts.[^unchecked] Logitech's classic client names `0x1D0000` for this platform as the address of new
-   code.[^t-885-boot-client]
+   that an 880 resumed would resume from `0x1D0000`.[^t-885-boot] **A host sets the status and the application
+   never does**: its one writer of the byte stores what write misc selector 6 carries, or zero at a start
+   that did not come from the `RESET` instruction, and write misc selector 7 reaches the byte as it reaches
+   any byte of data memory; the application chooses no value of its own.[^t-885-start] Logitech's classic client stages a new application at `0x1D0000`, its address of
+   new code for this platform, and then sets status 2.[^t-885-boot-client][^t-885-start-client] The
+   application never chooses status 6, and why the user configuration's base is a copy source is not
+   answered.[^t-885-start][^unchecked] What sits at `0x1D0000` on a unit, and what could interrupt a
+   copy and leave 4 or 7 behind, are not checked.[^unchecked] This said what sets the status<!--superseded--> was
+   not checked, until the application was read.[^t-885-start]
 3. **The held key.** If the keypad scan gives scan code 2 or 33 (`0x02` or `0x21`), the bootloader stays
    resident and does not look at the application. Which printed keys those are is not checked.[^t-885-boot][^unchecked]
 4. **The image check**: the `HG` magic at `0x010004` and the checksum above. A failure stays resident.[^t-885-boot]
@@ -101,6 +110,85 @@ program that answers on the cable, and a host can write the application back thr
 recovers is the bootloader itself: an erased bootloader sector leaves no program to run at power on, and
 erasing one takes an unlock a host has to send on purpose.[^t-885-boot]
 
+## What the application does at start
+
+**The application runs one of two configurations, and which is one bit.** Every time it looks anything up
+in a configuration it takes the base from one flag: the user's configuration at `0x020000`, or a
+configuration built into the application's own last 8 KiB at `0x01E000`, the safe mode configuration of
+[memory.md](memory.md), called the built in configuration below: 7049 bytes in the 880, 885 and 880 Pro
+builds, and 6879 of its own in the Harmony 720's.[^t-885-start]
+
+At every start it checks the built in configuration, then looks at the remote's identity block, then
+checks the user's configuration, and runs the user's only if it passed:[^t-885-start]
+
+* **A blank identity block**, all 48 bytes from `0x000110` reading `0xFF`, shows a message and the user
+  configuration is never checked: the built in one runs. The block is only tested for being blank and is
+  compared with nothing in the configuration.[^t-885-start]
+* **A failed user configuration** shows a message and the built in one runs. The remote is still the full
+  application and still answers on the cable, so the configuration can simply be written again.[^t-885-start]
+* **A blank battery calibration word**, `0xFFFF` at `0x000160`, shows a message too, and leaves the remote
+  reading the user configuration while every test of whether a configuration is valid sees only the built
+  in one. What else that changes is not read.[^t-885-start][^unchecked]
+
+**The check reads four things and nothing else**: the cookie `TPTP` at the base, the marker `WLWL` at base
+plus `0x5F`, the end marker `DKDK` at the address the three bytes at base plus 4 state, and the two bytes
+before the end marker against the trailer checksum, the even and odd bytes of half of `end - 2 - base`
+words, rounded down, from the base XORed into `0x21` and `0x43`.[^t-885-start] So the container's pointer count, its end
+address's top byte, every section pointer, its architecture record and its skin are never compared with
+anything, and a configuration with any of them wrong passes and misbehaves later; the base is the
+firmware's and nothing in the container states it.[^t-885-start] All 16 distinct containers of this
+architecture that have been read pass the check as read: ten an 880's, four an 885's, which are one
+remote's configuration read four times, one an 880 Pro's and one a Harmony 720's. So do both built in
+configurations, the one the 880, 885 and 880 Pro builds share and the 720's own. A flipped bit, a changed
+marker or a moved end address fails the check, and a changed pointer count or architecture record with the
+checksum restated passes it.[^t-885-start-corpus] Whether the last byte before the checksum is left out when
+`end - 2 - base` is odd rests on the code alone, since the two such containers hold zero there.[^t-885-start]
+
+**What the remote shows.** The message number decides the screen, drawn from the user configuration when it
+passed and from the built in one otherwise:[^t-885-start]
+
+| message | when | text, by the strings laid out before that screen in the built in configuration |
+|---|---|---|
+| `0x00` | a cookie, marker or end marker failed | "Go to Website / to update settings" |
+| `0x1A` | the markers passed and the checksum did not | "Configuration Corrupted" |
+| `0x1B` | the identity block is blank | "Missing License" |
+| `0x16` | the battery calibration word is blank | "Battery ADC Not Calibrated" |
+
+The numbers are read in the code; the texts are attributed by layout and not by decoding the screen
+programs.[^t-885-start] A message stays for 3000 ticks of the countdown the restart command loads with
+500, and no key ends it; that is three seconds if a tick is a millisecond, which is not established.[^t-885-start][^unchecked]
+What the built in configuration shows after that is not read.[^unchecked]
+
+**Nothing latches.** The verdict is three bits of one byte of RAM, cleared and recomputed at every start,
+and the check's own code writes no flash; the check runs at a start and at no other time.[^t-885-start]
+That is unlike the Harmony One, whose validator also runs from its main loop and whose status screen then
+stays until a power cycle, [the Harmony One's behaviour](../../remotes/harmony-one/behaviour.md). **After
+write misc selector 2 the remote runs the built in configuration until the next start**, which is what
+keeps it from reading a region a host is rewriting; nothing but a start sets the user configuration's bit
+again, [usb.md](usb.md#how-a-write-ends).[^t-885-start]
+
+**One build, and the Harmony 720's check too.** The 880's, the 885's and the 880 Pro's application images
+differ in the skin bytes alone, so all of this holds for each. The Harmony 720's application is a build of
+its own, and its check has the 885's instruction sequence, flag bits and literals, with its working
+addresses and call targets moved; its base selector and its messages are not compared.[^t-885-start][^unchecked]
+
+## Restarting
+
+**Three routes restart a running remote by the processor's `RESET` instruction, and so keep the staged
+install's status**: the bootloader clears the status after any reset that was not that instruction, which
+a power on is.[^t-885-end][^t-885-boot] What a watchdog or a supply dip does is not read.[^unchecked]
+
+| route | what it does | |
+|---|---|---|
+| the escape's restart, `E1 02` or `E1 03` | detaches, waits 500 ticks, executes `RESET`, [usb.md](usb.md#how-a-write-ends) | [^t-885-end] |
+| three keys held together | at any key scan, scan codes 2, 33 and 32 all down executes `RESET`, in the application and in both bootloaders. The application also requires two inputs of port B low, and each bootloader three bits of a byte it reads at `0x81`, whose meaning is not read | [^t-885-end][^t-885-boot] |
+| the wake from the power down routine | the action interpreter's power down, for the operand `0xF6`, runs a routine copied into RAM in a loop and executes `RESET` once one input of port B reads low or one of port A high | [^t-885-end] |
+| a power on or a battery pull | clears the status, so no install starts | [^t-885-boot] |
+
+Which printed keys have scan codes 2, 33 and 32 is not checked.[^unchecked] The bootloader stays resident
+when scan code 2 or 33 is down at power on, but its own key scan restarts on all three, so whether holding
+the three keys through the restart leaves a misbehaving remote in its bootloader is not checked.[^t-885-boot][^unchecked]
+
 ## Routines read and where
 
 | routine | where | source |
@@ -111,6 +199,10 @@ erasing one takes an unlock a host has to send on purpose.[^t-885-boot]
 | the bootloader's command switch, an `XORLW` chain | `0x03BD4` in the 880's bootloader and `0x03BE0` in the 885's | [^t-885-boot] |
 | the bootloader's power on decision | the status clear at `0x0465E` and `0x0466C`, the staged install at `0x02218` and `0x0221C`, the key test at `0x020A8` and `0x020AC` with its comparison at `0x02096` and `0x0209A`, the image check at `0x020CA` and `0x020CE`, the jump at `0x01DDA` and `0x01DDE` | [^t-885-boot] |
 | the bootloader's floor check on erase and write, copied to RAM and run at `0x1FFFE0` | `0x056C0` in the 880's bootloader and `0x056CE` in the 885's | [^t-885-boot] |
+| the application's base selector, the user configuration or the built in one by data `0x086` bit 3 | `0x191C2` | [^t-885-start] |
+| the start check, its two calls from main, and the message routine | `0x1701E`, `0x16DDE` and `0x16DEC`, `0x16A18` | [^t-885-start] |
+| the identity block test and the battery calibration test | `0x182C2`, `0x10DE6` | [^t-885-start] |
+| the restart command's wait and `RESET`; the three key combination | `0x16FCA` to `0x16FEC`; `0x189DA` in the applications, `0x04ABA` in the 880's bootloader and `0x04AC8` in the 885's | [^t-885-end][^t-885-boot] |
 
 ## Obtaining an image
 
@@ -127,8 +219,10 @@ No Logitech package of this firmware is known; the images were read off remotes 
 ## Not checked
 
 * Any firmware version but 4.4 and boot 4.0.[^unchecked]
-* The Harmony 720's, 785's, 880 Pro's and 882's firmware.[^unchecked]
-* Whether the application has a safe mode of its own; how a recovery through the bootloader goes on a unit.[^unchecked]
+* The Harmony 720's, 785's, 880 Pro's and 882's firmware beyond the start check, and the Harmony 720's
+  base selector and messages.[^unchecked]
+* How a recovery through the bootloader goes on a unit; what the built in configuration offers beyond its
+  message screens; how long a tick of the timer is.[^unchecked]
 
 [^s114]: Read in the firmware. [Section 114](../../../docs/findings.md#s114)
 [^x-concordance]: Stated by a third party. [concordance](https://github.com/jaymzh/concordance)
@@ -139,3 +233,7 @@ No Logitech package of this firmware is known; the images were read off remotes 
 [^t-arch8-usb]: Measured on a unit. [The test](../../../tests/test_arch8_usb.py)
 [^t-885-boot]: Read in the firmware. [The test](../../../tests/test_harmony_885_bootloader.py)
 [^t-885-boot-client]: Stated by Logitech, in their client. [The test](../../../tests/test_harmony_885_bootloader.py)
+[^t-885-start]: Read in the firmware. [The test](../../../tests/test_harmony_885_start_check.py)
+[^t-885-start-corpus]: Measured in configurations. [The test](../../../tests/test_harmony_885_start_check.py)
+[^t-885-start-client]: Stated by Logitech, in their client. [The test](../../../tests/test_harmony_885_start_check.py)
+[^t-885-end]: Read in the firmware. [The test](../../../tests/test_harmony_885_write_end.py)

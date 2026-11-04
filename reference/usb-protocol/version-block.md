@@ -83,7 +83,11 @@ field 6 by eleven images[^s116]; fields 7 to 11 by the program addresses their a
   512 KiB, 1 MiB or 2 MiB, and field 2 the **manufacturer**, `0x1C` being EON's. On the Harmony One field 3
   is the manufacturer, `0x1F` being Atmel's, and field 2 the device. So the pair is written field 3 then
   field 2, `15:1C` and `1F:C8`, and neither byte may be read as the same thing on both
-  architectures[^s109]. The Harmony 525 answers `FF:12`[^s76].
+  architectures[^s109]. The Harmony 525 answers `FF:12`[^s76]. **The Harmony 880 and 885's application
+  does not report its part as read**: it reports an Atmel `1F:C0` as `01:49`, keeps `01:49`, and answers
+  anything else as `FF:FF`, so the `01:49` a running Harmony 885 gives does not say which part is fitted;
+  their bootloader reports the part's own bytes,
+  [the platform's memory](../architectures/harmony-880-885/memory.md#the-flash-part)[^t-885-flash].
 * **Field 5 is the skin in plain binary**, where `bcdDevice` carries the same skin in BCD on these remotes,
   [the transport](transport.md#bcddevice-carries-the-skin-in-one-of-two-encodings)[^s113].
 * **Fields 8 and 9 version two images that only the Harmony One carries**, the flash programmer and the
@@ -159,8 +163,12 @@ differently:
 
 So a caller learns the state from field 4's low nibble and **must not** read field 6 as saying it. A zero
 in field 6 is measured only from a Harmony 525 in safe mode[^s118]. On the Harmony 880 and 885 a zero is
-seen only in their two bootloader images, which are software type 3, and no safe mode image of that
-architecture is known, so whether one would answer zero is not known[^s116][^unchecked].
+seen only in their two bootloader images, which are software type 3, and Logitech's classic client
+treats that bootloader as the platform's safe mode program, writing it when asked for the safe mode
+firmware, while the application carries a fallback configuration of its own,
+[the platform's firmware](../architectures/harmony-880-885/firmware.md)[^s116][^t-885-start-client][^t-885-start].
+This asked whether a safe mode image exists on the Harmony 880 and 885<!--superseded--> until the
+application's start was read[^t-885-start].
 
 ## What Logitech's client reads from it
 
@@ -191,7 +199,7 @@ binary[^s113][^s392]. Neither has been read off a remote's bus[^unchecked].
 * What the low nibble of the reply byte `0x28` means, if anything[^unchecked].
 * What field 9's accessor reads, given that its address does not explain its value[^s59].
 * What a Harmony 600 or 650 in safe mode answers beyond the software type[^unchecked].
-* Whether a safe mode image exists on the Harmony 880 and 885, and what its field 6 would be[^unchecked].
+* What a Harmony 880 or 885 in its bootloader answers in field 6 on a unit[^unchecked].
 
 [^s19]: Read in the firmware. [Section 19](../../docs/findings.md#s19)
 [^t-usb-firmware]: Read in the firmware. [The test](../../tests/test_usb_firmware.py)
@@ -211,3 +219,6 @@ binary[^s113][^s392]. Neither has been read off a remote's bus[^unchecked].
 [^s212]: Stated by Logitech, in their client. [Section 212](../../docs/findings.md#s212)
 [^s392]: Read in the firmware. [Section 392](../../docs/findings.md#s392)
 [^s57b]: Measured on a unit. [Section 57](../../docs/findings.md#s57)
+[^t-885-flash]: Read in the firmware. [The test](../../tests/test_harmony_885_erase_and_write.py)
+[^t-885-start]: Read in the firmware. [The test](../../tests/test_harmony_885_start_check.py)
+[^t-885-start-client]: Stated by Logitech, in their client. [The test](../../tests/test_harmony_885_start_check.py)

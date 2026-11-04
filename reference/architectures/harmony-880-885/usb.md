@@ -35,18 +35,132 @@ Its configuration reader still holds no profile for `0xC110`; the generated tabl
 **The application checks no address on a read.** `READ_FLASH` parses the address into a 24 bit table
 pointer and fetches every byte with one table read; only the erase calls an address check. So a read
 past the part is not refused by the remote, and the bound of `0x200000` is the library's, the program
-memory space of a PIC18.[^t-arch8-read] What a read above it returns is not checked.[^unchecked] **The
-8 KiB below that bound hold devices, not only flash**: the firmware reaches devices at `0x1FE040` to
-`0x1FE0C1` and runs code in a window onto its RAM from `0x1FFE00`, so a read there is a bus cycle on a
-device or on RAM, [memory.md](memory.md).[^t-885-boot] What such a read does to a device, and whether all
-of those 8 KiB are decoded away from flash, is not checked.[^unchecked] Each
-chunk's fetch counts down one byte at a time, so the odd count hang of the Harmony One has no counterpart
-in that loop; an odd count on a remote is not measured.[^t-arch8-read][^unchecked]
+memory space of a PIC18.[^t-arch8-read]
 
-The command dispatch has the seven cases of the later Harmonys and **no case for the escape**, so neither
-the session end nor the restart is reached from it.[^t-arch8-read] Whether another part of the firmware
-handles the escape is not checked.[^unchecked] A one byte chunk at `0x000104` or `0x000105` calls a
-routine instead of fetching flash; what those return is not checked.[^unchecked]
+**A read comes back in chunks of 62, 30, 14 or 6 data bytes and a last one of 1 to 5**: the remote sends
+a chunk of length 63, 31, 15 or 7, the sequence byte included, the largest that the remaining count fills,
+or the rest when fewer than six bytes remain. The sequence byte steps by `0x11` from chunk to chunk. The
+count reaches zero for every one of the 65536 counts, because the byte loop counts down by one and every
+chunk carries at least one byte, so **the odd count hang of the Harmony One has no counterpart here**; an
+odd count on a remote is not measured.[^t-885-reads][^unchecked] This page used to quote 63, 31, 15 and 7
+as the chunk sizes, which are the lengths with the sequence byte in them.[^t-885-reads]
+
+**Two last bytes are not flash.** When a read's last byte is `0x000104` or `0x000105` and it is alone in
+its chunk, which needs an odd count ending there, the remote does not fetch it:[^t-885-reads]
+
+* `0x000104` returns the newest entry of the hardware version log at `0x000140` to `0x000147`, the same
+  byte the version block reports as the hardware version, in place of the flash byte there.[^t-885-reads]
+* **`0x000105` takes a measurement**: by the registers it uses, which the processor family names a port
+  and the analogue converter, it switches a pin on, averages eight conversions on channel 1, switches the
+  pin off and returns a scaled result. It is the one read that acts on the hardware. The register reading
+  is inferred from the family, and what channel 1 measures is not identified.[^t-885-reads][^unchecked]
+
+The bootloader does the same at the same two addresses.[^t-885-boot] This page said what those return is
+not checked<!--superseded--> until the routines were read.[^t-885-reads]
+
+**The 8 KiB below `0x200000` hold devices, not only flash**: the firmware reaches what the code that uses
+them makes its keypad latches, its USB controller and its display controller at `0x1FE040` to `0x1FE0C1`,
+and runs code in a window onto its RAM from `0x1FFE00`, so a read there is a bus cycle on a device or on
+RAM, [memory.md](memory.md); which part sits at each address is not checked against the hardware.[^t-885-boot][^unchecked]
+A read of the display controller's data port would advance the controller's own address, on the controller
+family its command bytes fit, and a read of the USB controller's data port reads whichever of its registers
+is selected; both inferred, not checked.[^unchecked] **Above `0x1FFFFF`** the address goes to the processor
+unmasked, and a read that starts below `0x200000` and runs past it continues above it. By the PIC18 family
+that reaches the configuration space up to `0x3FFFFF` and the bottom of flash again from `0x400000`; inferred
+from the family and not checked against the part.[^t-885-reads][^unchecked]
+
+**So the safe window for reading a whole region is `0x000000` to `0x1FDFFF`, ending no transfer at
+`0x000104` or `0x000105` with an odd count.** Reads of `0x8000` bytes from a `0x8000` boundary and the
+64 byte identity read never meet the two.[^t-885-reads] The library refuses a read by where it **starts**
+and not where it ends, so a read that starts below `0x1FE000` and runs into the device window is not
+refused by `packages/usb`; its region check, `validateRegionByte` in `packages/usb/src/protocol.ts`, is the
+evidence.
+
+## Writing flash
+
+**A write is the transfer every Harmony uses, and the remote never says whether anything was written.** An
+announce with an address and a count, data packets of up to 63 bytes with no reply each, and a done packet
+the remote answers with `F0 30`.[^t-885-flash] What a host has to know on this platform:[^t-885-flash]
+
+* **The remote erases nothing before it programs.** Each byte goes into whatever the flash holds, so a
+  sector has to be erased first, and over old content a programmed byte can only clear bits.
+* **The application skips `0xFF` bytes** and leaves the old byte there, where the bootloader programs every
+  byte, `0xFF` included.[^t-885-flash][^t-885-boot] Over erased flash the two come to the same thing; over
+  unerased flash a write can read back partly right and partly old.
+* **The address is checked once per packet, on its first byte**, with the floor at `0x010000` and the
+  unlock below it as in the bootloader, and **no ceiling**. A packet starting just below `0x010000` without
+  the unlock is dropped whole, its bytes above `0x010000` included, and the next one lands where it would
+  have.
+* **`F0 30` comes back whatever happened**: a refused packet, a program that failed and a count never
+  reached all answer the same. Only a read back says what was written.
+* **The announced count is never enforced**; the transfer is as long as the packets the host sends. The
+  3150 byte transfer is Logitech's client's choice, and nothing in the remote bounds it.
+* **The length nibble decodes as on the other platforms read**: 0 to 7 as they are, `0x08` as 15, `0x09`
+  as 31 and `0x0A` as 63, and `0x0B` to `0x0F` left as 11 to 15, [the commands](../../usb-protocol/commands.md#the-first-byte-is-a-command-and-a-length).
+* **Two addresses are not flash.** A one byte packet at `0x000106` sets the unlock and writes nothing, and
+  the unlock then stays set until the remote next starts or goes to sleep; a write with one byte left at
+  `0x000104` appends to the hardware log instead, and in the application programs nothing unless the
+  unlock was set first.
+* A packet that is neither data nor done ends the transfer with no reply.
+
+## Erasing flash
+
+**One erase takes one address and removes the sector of the part that holds it**, [memory.md](memory.md#the-flash-part).
+The application checks the address twice, as the bootloader does: a floor at `0x010000` below which the
+erase needs the unlock byte, and **no ceiling**.[^t-885-flash] So the running application at `0x010000`
+is erased with no unlock at all; only the bootloader, below, is guarded.[^t-885-flash] That the remote then
+stops answering until its bootloader takes over at the next start is inferred, not checked.[^unchecked]
+
+**`F0 D0` does not mean erased.** Once the floor passes, the erase runs at once and the reply follows
+whatever the routine did, a refusal by the unlock test or a part that gave up included. **A refused erase
+gets no reply from the command**: the remote calls its error routine and drops the command, so the host
+waits for a reply that does not come; what the error routine does besides drawing is not read.[^t-885-flash][^unchecked]
+So a writer should erase only whole 64 KiB sectors from `0x020000`, and read every erased sector back.[^t-885-flash]
+
+## How a write ends
+
+**The escape is handled**, by the packet parser before the command switch, which is why the switch holds no
+case for it: `E1 01` clears the command state, and `E1 02` and `E1 03` restart the remote, which waits 500
+ticks of its timer and executes the processor's `RESET`; none of them replies, and any other sub code does
+nothing.[^t-885-end] This page said the dispatch's lack of a case meant that, so neither the session end
+nor the restart is reached from it<!--superseded-->, until the parser was read.[^t-885-end]
+
+**Only a restart takes up a new configuration**: the check and the sizing of its state variables run at a
+start and at no other moment, [firmware.md](firmware.md#what-the-application-does-at-start).[^t-885-end][^t-885-start]
+
+**The misc commands.** `WRITE_MISC` takes five bytes whatever its length nibble, serves six selectors and
+answers each `F0 A0`; any other selector gets no reply at all.[^t-885-end]
+
+| selector | `WRITE_MISC` | `READ_MISC` |
+|---|---|---|
+| `0x01` | writes a state variable: of the four bytes after the selector, the second is the index and the last two the value; an index past the declared variables is refused and still answered | the state variable at the low address byte, high byte then low |
+| `0x02` | moves every lookup to the built in configuration until the next start | |
+| `0x05` | a zero first byte switches every interrupt off; anything else on | |
+| `0x06` | the staged install's status: the first byte must be zero, the second is the status | the status, when the address's high byte is zero |
+| `0x07` | one byte of data memory at the address, with no bound | one byte of data memory, with no bound |
+| `0x08` | recalculates a value from the clock, when a configuration passed its check | |
+| any other | no reply | two zero bytes |
+
+`READ_MISC` answers `C2`, the selector and **two** bytes; a host that takes a narrow state variable from
+the third byte reads zero, the trap [the commands](../../usb-protocol/commands.md) record on the Harmony
+525.[^t-885-end] **The clock is state variables 0 to 6**, at data memory `0x108` to `0x10E`, so either
+`READ_MISC` selector reads it, [memory.md](memory.md#data-memory).[^t-885-end]
+
+**Of the eight step write sequence of the Harmony One and the Harmony 600, 650 and 700,
+[the commands](../../usb-protocol/commands.md#a-configuration-write-in-order), two steps must not be carried
+over**:[^t-885-end]
+
+* **step 2, `WRITE_MISC` selector `0x0A`, does not exist here**, and sending it gets no reply at all, so a
+  writer waiting for one hangs until it times out;
+* **step 7, status 2, must not be sent**: at the restart that follows, the bootloader would erase the
+  application and copy 64 KiB from `0x1D0000` over it, [firmware.md](firmware.md#what-the-bootloader-does-at-power-on).
+
+Step 3, status 0 and its read back, is harmless and worth keeping as a read, since a status other than zero
+turns the restart into an application install; step 4, selector 2, keeps the remote off the region being
+rewritten; step 8 is `E1 02`, with no reply, after which the remote comes back through its
+bootloader.[^t-885-end] Logitech's classic client never writes the status for a configuration on this
+platform: after the write it erases the event range the configuration's header names, restarts the remote
+the same way, and then writes the saved state variables back and sets the clock.[^t-885-end-client]
 
 ## In the bootloader
 
@@ -72,7 +186,10 @@ nibble.[^s114]
 | 4, high nibble | 8 | 8 | 8 | the architecture |
 
 Read in the two applications[^s114] and the two bootloaders.[^s116] A Harmony 885 running its application
-answers `44 21 49 01 80 11 08`, the four predicted fields exactly.[^t-arch8-usb]
+answers `44 21 49 01 80 11 08`, the four predicted fields exactly.[^t-arch8-usb] **The other three come from
+the remote itself**: the hardware version is the newest entry of the hardware log at `0x000140`, and the
+flash ids are read off the part, with an Atmel `1F:C0` reported as `01:49` by the application and as it
+is by the bootloader, [memory.md](memory.md#the-flash-part).[^t-885-reads][^t-885-flash]
 
 **Field 6 names a platform and not an architecture.** It is 8 here, 9 on the Harmony 525, and 12 on both
 the Harmony One and the Harmony 600, 650 and 700, and it is the same in a remote's safe mode image as in
@@ -85,8 +202,10 @@ mode a remote is in is field 4's low nibble, [the version block](../../usb-proto
 
 ## Not checked
 
-* Where the version block's hardware version and flash ids come from in the firmware; a Harmony 885
-  reports hardware 2.1 and flash `0x49` from manufacturer `0x01`, and which part that is.[^t-arch8-usb][^unchecked]
+* Which of the two flash parts a unit carries: the application reports both as flash `0x49` from
+  manufacturer `0x01`, as a Harmony 885 does, [memory.md](memory.md#the-flash-part).[^t-arch8-usb][^t-885-flash][^unchecked]
+* Whether the USB controller drops a report that arrives while a packet is programmed with interrupts off,
+  and what the restart's write to it does.[^unchecked]
 
 [^s207]: Stated by Logitech, in their client. [Section 207](../../../docs/findings.md#s207)
 [^s113]: Read in the firmware. [Section 113](../../../docs/findings.md#s113)
@@ -97,3 +216,8 @@ mode a remote is in is field 4's low nibble, [the version block](../../usb-proto
 [^t-arch8-read]: Read in the firmware. [The test](../../../tests/test_arch8_usb.py)
 [^t-usbdesc]: Measured on a unit. [The test](../../../tests/test_usbdesc.py)
 [^t-885-boot]: Read in the firmware. [The test](../../../tests/test_harmony_885_bootloader.py)
+[^t-885-reads]: Read in the firmware. [The test](../../../tests/test_harmony_885_reads.py)
+[^t-885-flash]: Read in the firmware. [The test](../../../tests/test_harmony_885_erase_and_write.py)
+[^t-885-end]: Read in the firmware. [The test](../../../tests/test_harmony_885_write_end.py)
+[^t-885-end-client]: Stated by Logitech, in their client. [The test](../../../tests/test_harmony_885_write_end.py)
+[^t-885-start]: Read in the firmware. [The test](../../../tests/test_harmony_885_start_check.py)
