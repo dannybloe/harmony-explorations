@@ -53,8 +53,9 @@ Read in the firmware, not yet measured with an infrared receiver; the full order
   deleted is removed outright[^t-touch-activities-firmware].
 * **A screen command shows its label**, which can differ from the command it sends; three labels act by
   themselves, `123` for the number pad, `Gesturepad` and `Disconnect Wii`[^t-touch-activities-firmware].
-* **A gesture sends what device mode sends for the same function**: the gesture screen presses the matching
-  button of the device's own map rather than its own entry[^t-touch-activities-firmware].
+* **A gesture bound to a command sends what device mode sends for the same function**: the gesture screen
+  presses the matching button of the device's own map rather than its own entry; one bound to a sequence
+  or to a client action, the number pad among them, does not go through device mode[^t-touch-activities-firmware].
 * **A sequence runs to its end** once started, however briefly the key is pressed[^t-touch-activities-firmware].
 * **Two screen commands can share one place in a list in Logitech's own button maps, and then the first of
   them is not on the screen**[^t-touch-activities].

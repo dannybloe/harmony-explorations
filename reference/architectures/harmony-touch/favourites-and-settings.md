@@ -60,9 +60,9 @@ too:
 | `UserImages` | the user's own backgrounds, each fetched with a small twin for the picker; the row allows five, a count the remote does not read | none |
 | `TwelveHourClock` | the clock in the status bar, 12 hour or 24 hour, and the set time screen | 12 hour |
 | `ScreenBrightness` | the screen's backlight; a value is held to 10 to 100 | 85 |
-| `ScreenTimeout` | seconds before the screen goes to sleep, which it does not do on USB power | 10 |
+| `ScreenTimeout` | seconds before the screen goes to sleep, which it does not do on USB power; a value is not clamped, and the lock screen uses half of it | 10 |
 | `ScreenLockFlag` | the lock screen, shown when the screen fades out | off |
-| `EditLock` | locks editing on the remote | off |
+| `EditLock` | locks the Remote, Devices and Activities menus and the gesture editor, and not its own switch | off |
 | `KeyBrightness` | the keys' backlight; a value from the account is taken from 5 to 100 and turns the light off below 5, where the remote's own slider starts at 10 | 35 |
 | `AccelFlag` | whether the motion sensor reports, on hardware that has one | on |
 | `HapticFlag` | vibration, offered only on hardware that reports a vibration motor; in no sync measured | on |
@@ -243,8 +243,8 @@ Measured on the tuning device, for the two choices in the table above[^t-touch-f
 `Settings` holds four fields, `DefaultImageBucketUri`, `RemoteName`, `Settings` and `UserImageBucketUri`,
 and each row is `Name`, `SettingId`, `Values`, `DefaultValue`, `MinCount` and `MaxCount`, exactly
 Logitech's `RemoteSettings` and `RemoteSetting`, in the same eleven rows in the same order in every sync
-measured[^t-touch-favourites]. The remote reads only `Name`, the first of `Values` and, for a yes or no
-setting, `DefaultValue`: `SettingId`, `MinCount` and `MaxCount` occur nowhere in its
+measured[^t-touch-favourites]. The remote reads only `Name`, the first of `Values` (every value of
+`UserImages`) and, for a yes or no setting, `DefaultValue`: `SettingId`, `MinCount` and `MaxCount` occur nowhere in its
 software[^t-touch-favourites-firmware].
 
 **How a value is read**[^t-touch-favourites-firmware]:
@@ -253,7 +253,13 @@ software[^t-touch-favourites-firmware].
   first value, or with none the row's `DefaultValue`, as `"true"` or not
 * a number (`ScreenBrightness`, `ScreenTimeout`, `KeyBrightness`, `ActivityPressDuration`) is its first
   value; **the row's `DefaultValue` is never consulted**
-* when that leaves nothing, or the row is missing, the firmware's default in the table above
+* when that leaves nothing, or the row is missing, the firmware's default in the table above; except that
+  `HapticEffect` is made text first, so a row present with no value gives the text `nil` and not
+  `"13"`[^t-touch-beyond-firmware]
+
+**Two corrections**: this section said the remote reads only the first of `Values` for every
+row, and that a row with no value always takes the firmware's default; the background list is read whole
+and the vibration effect is the exception above[^t-touch-beyond-firmware].
 
 So the two rows measured with no value and a null default, `ScreenBrightness` and `ScreenTimeout`, take 85
 and 10[^t-touch-favourites][^t-touch-favourites-firmware]. The backlight is set to the screen level scaled
@@ -301,3 +307,4 @@ to the remote in the sync measured carried the field[^t-touch-favourites].
 [^t-touch-favourites-firmware]: Read in the firmware. [The test](../../../tests/test_harmony_touch_favourites.py)
 [^t-touch-keys]: Read in the firmware. [The test](../../../tests/test_harmony_touch_keys.py)
 [^unchecked]: Not checked.
+[^t-touch-beyond-firmware]: Read in the firmware. [The test](../../../tests/test_harmony_touch_beyond_the_clients.py)

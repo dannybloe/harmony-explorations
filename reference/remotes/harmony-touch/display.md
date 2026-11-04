@@ -33,7 +33,12 @@ Generated from `packages/codec`, `packages/usb` and the drawing by `make remote-
 ## Gestures
 
 **Five gestures**: swipe up, down, left and right, and tap, each bound to a command per activity and
-editable on the remote. Gesture mode is entered from an activity's command screen[^x-touch-manual]. Swiping
+editable on the remote. Gesture mode is entered from an activity's command screen[^x-touch-manual].
+**Eleven events reach those five**: each swipe and the tap also held, and the tap doubled, the held forms
+being the gesture's long press action and the double tap its double press action; the remote's own
+gesture editor sets all eleven, to a command, a sequence or the number pad, and neither of Logitech's
+clients has a screen for any of them[^t-touch-beyond-firmware][^t-touch-beyond-client]. This paragraph
+used to stop at the manual's five, which are the gesture buttons and not every gesture. Swiping
 also moves between activities on the home screen and scrolls the favourites[^x-touch-manual].
 
 **How the gesture pad tells them apart**, read in the firmware[^t-touch-keys]. One recogniser does it,
@@ -108,3 +113,5 @@ screen, field by field, is [favourites-and-settings.md](../../architectures/harm
 [^t-touch-favourites-firmware]: Read in the firmware. [The test](../../../tests/test_harmony_touch_favourites.py)
 [^unchecked]: Not checked.
 [^t-touch-keys]: Read in the firmware. [The test](../../../tests/test_harmony_touch_keys.py)
+[^t-touch-beyond-firmware]: Read in the firmware. [The test](../../../tests/test_harmony_touch_beyond_the_clients.py)
+[^t-touch-beyond-client]: Stated by Logitech, in their client. [The test](../../../tests/test_harmony_touch_beyond_the_clients.py)
