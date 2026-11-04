@@ -182,12 +182,48 @@ a power on is.[^t-885-end][^t-885-boot] What a watchdog or a supply dip does is 
 |---|---|---|
 | the escape's restart, `E1 02` or `E1 03` | detaches, waits 500 ticks, executes `RESET`, [usb.md](usb.md#how-a-write-ends) | [^t-885-end] |
 | three keys held together | at any key scan, scan codes 2, 33 and 32 all down executes `RESET`, in the application and in both bootloaders. The application also requires two inputs of port B low, and each bootloader three bits of a byte it reads at `0x81`, whose meaning is not read | [^t-885-end][^t-885-boot] |
-| the wake from the power down routine | the action interpreter's power down, for the operand `0xF6`, runs a routine copied into RAM in a loop and executes `RESET` once one input of port B reads low or one of port A high | [^t-885-end] |
+| the wake from the power down routine | the action interpreter's power down, opcode `0x07` with an operand low byte of `0xF6`, runs a routine copied into RAM in a loop and executes `RESET` once one input of port B reads low or one of port A high | [^t-885-end][^t-885-actions] |
 | a power on or a battery pull | clears the status, so no install starts | [^t-885-boot] |
+
+This table said the power down was for "the operand `0xF6`", and the test behind it an operand high byte
+reached through the `0x3F` band<!--superseded-->, until the interpreter was read: the band is `0x07`'s, on the low
+byte.[^t-885-actions]
 
 Which printed keys have scan codes 2, 33 and 32 is not checked.[^unchecked] The bootloader stays resident
 when scan code 2 or 33 is down at power on, but its own key scan restarts on all three, so whether holding
 the three keys through the restart leaves a misbehaving remote in its bootloader is not checked.[^t-885-boot][^unchecked]
+
+## The action interpreter
+
+**Most of the Harmony One's and the Harmony 600, 650 and 700's instruction language, dispatched by a ladder
+of its own.** The main loop
+executes one instruction off the action queue and then rotates what it pushed to the head, as the Harmony
+One's does, so a call runs next and the queue of forty holds the call stack.[^t-885-queue] The dispatcher
+is a descending chain of comparisons rather than arch 14's binary search: `0x6F` and up go to one handler
+each, `0x80` and up being a state variable write, and below that the opcode is a floor, `0x3F`, `0x1F`,
+`0x0F` or `0x07`, with the operand's high byte or low byte choosing a band.[^t-885-actions] Where that
+differs from what [the actions page](../../config-format/actions.md) states for other platforms:[^t-885-actions]
+
+| | here |
+|---|---|
+| `0x40` to `0x6E` | no opcode in that range is compared, so all of them, the arithmetic block included, act as `0x3F` with their operand's high byte as the band |
+| `0x3F` | bands `0xF0`, `0xE0` and `0xD0`; no `0xC0` or `0xB0`. `0xF0` acts on nibbles 0 to 2 only, so there is no sound gate, and the tone tests nothing before it plays |
+| `0x3F` band `0xD0` | the deferred instruction: it takes the next instruction off the action queue and puts both into the infrared queue, whose drain later hands the argument back |
+| `0x0F` | bands `0xF0` to `0xA0`, `0x80` and `0x70`; no `0x40` band. `0xE0` is the log append, [memory.md](memory.md#what-the-remote-writes-on-its-own) |
+| `0x07` | `0xFF` down to `0xF6` on the low byte; **`0xF6` is the power down**, [below](#restarting); `0xFA` acknowledges the infrared queue's event |
+| an all zero instruction | never pushed from a list, so `0x00 0x0000` is not a slot and not an arm; `0x01` to `0x06` are the no-ops |
+| `0x70` and `0x71` selectors 6 and 7 | always skip the next instruction, as a false comparison does |
+| `0x7C` | no fold: each delay is an entry of its own; whether consecutive ones add up depends on the drain, which is not read |
+
+**Every change of the infrared queue's state waits for the configuration.** The state is state variable
+17's byte, and each change raises event `0x2D` and holds the transmitter until the configuration runs `0x07
+0xFFFA`; every configuration read answers it, [actions](../../config-format/actions.md#on-arch-8-the-remote-sends-nothing-more-until-the-configuration-answers).[^t-885-actions][^t-885-actions-corpus]
+
+**The Harmony 720's dispatcher is this one**: it has the 885's instructions, literals and bit numbers, 831 of
+831, with its working registers moved, and its action queue and state loader have the same
+constants.[^t-885-actions][^t-885-queue][^t-885-state] Its pushes, infrared queue and transmitter are not
+compared.[^unchecked]
+The 880 and 880 Pro builds are the 885's but for the skin bytes.[^t-885-start]
 
 ## Routines read and where
 
@@ -203,6 +239,10 @@ the three keys through the restart leaves a misbehaving remote in its bootloader
 | the start check, its two calls from main, and the message routine | `0x1701E`, `0x16DDE` and `0x16DEC`, `0x16A18` | [^t-885-start] |
 | the identity block test and the battery calibration test | `0x182C2`, `0x10DE6` | [^t-885-start] |
 | the restart command's wait and `RESET`; the three key combination | `0x16FCA` to `0x16FEC`; `0x189DA` in the applications, `0x04ABA` in the 880's bootloader and `0x04AC8` in the 885's | [^t-885-end][^t-885-boot] |
+| the action queue: clear, full test, pop, the two pushes, the fetch and the rotate | `0x12DB4`, `0x12DCA`, `0x12E0A`, `0x12F9A` and `0x12FC2`, `0x13090`, `0x130CC` | [^t-885-queue] |
+| the dispatcher and its ladders for `0x3F`, `0x0F` and `0x07` | `0x131E6`, `0x13550`, `0x1383C`, `0x1390C` | [^t-885-actions] |
+| the infrared queue's push, its state and event, the acknowledgement, the transmitter's start | `0x14692`, `0x1466E`, `0x1468A`, `0x14ED8` | [^t-885-actions] |
+| the state variable loader, store, read and the host's bound | `0x172AA`, `0x176CE`, `0x17718`, `0x176C0` | [^t-885-state] |
 
 ## Obtaining an image
 
@@ -219,8 +259,10 @@ No Logitech package of this firmware is known; the images were read off remotes 
 ## Not checked
 
 * Any firmware version but 4.4 and boot 4.0.[^unchecked]
-* The Harmony 720's, 785's, 880 Pro's and 882's firmware beyond the start check, and the Harmony 720's
-  base selector and messages.[^unchecked]
+* The Harmony 720's, 785's and 882's firmware beyond the start check, the dispatcher, the action queue's
+  constants and the state variable loader, and the Harmony 720's base selector and messages.[^unchecked]
+* Whether a bare send from a transition transmits, and the length of the infrared queue's tick, so whether a
+  `0x7C` unit is a tenth of a second here.[^unchecked]
 * How a recovery through the bootloader goes on a unit; what the built in configuration offers beyond its
   message screens; how long a tick of the timer is.[^unchecked]
 
@@ -237,3 +279,7 @@ No Logitech package of this firmware is known; the images were read off remotes 
 [^t-885-start-corpus]: Measured in configurations. [The test](../../../tests/test_harmony_885_start_check.py)
 [^t-885-start-client]: Stated by Logitech, in their client. [The test](../../../tests/test_harmony_885_start_check.py)
 [^t-885-end]: Read in the firmware. [The test](../../../tests/test_harmony_885_write_end.py)
+[^t-885-actions]: Read in the firmware. [The test](../../../tests/test_harmony_885_actions.py)
+[^t-885-actions-corpus]: Measured in configurations. [The test](../../../tests/test_harmony_885_actions.py)
+[^t-885-queue]: Read in the firmware. [The test](../../../tests/test_harmony_885_queue.py)
+[^t-885-state]: Read in the firmware. [The test](../../../tests/test_harmony_885_state.py)

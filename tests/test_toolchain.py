@@ -253,8 +253,9 @@ class TheRunnerSeesEveryTest(unittest.TestCase):
         # 84 to 87 with todo-prepare-885 1.2 to 1.6 and 1.8: `tests/test_harmony_885_start_check.py`,
         # `_erase_and_write.py`, `_write_end.py` and `_reads.py`. 88 with 1.7,
         # `tests/test_harmony_885_log_area.py`. 89 with `tests/test_harmony_touch_beyond_the_clients.py`,
-        # todo-touch 5.1, which landed on main beside them.
-        self.assertEqual(len(files), 89, 'the Python test files')
+        # todo-touch 5.1, which landed on main beside them. 90 to 92 with todo-prepare-885 3.1 to 3.3,
+        # `tests/test_harmony_885_actions.py`, `_queue.py` and `_state.py`.
+        self.assertEqual(len(files), 92, 'the Python test files')
         with_block = 0
         for path in files:
             with open(path, encoding='utf-8') as handle:
@@ -307,8 +308,9 @@ class TheRunnerSeesEveryTest(unittest.TestCase):
         # 81 with `tests/test_harmony_885_bootloader.py`, which carries one, and 82 to 85 with the four
         # files of todo-prepare-885 1.2 to 1.6 and 1.8, which carry one each. 86 with
         # `tests/test_harmony_885_log_area.py`, 1.7, which carries one. 87 with
-        # `tests/test_harmony_touch_beyond_the_clients.py`, todo-touch 5.1, which carries one.
-        self.assertEqual(with_block, 87,
+        # `tests/test_harmony_touch_beyond_the_clients.py`, todo-touch 5.1, which carries one. 88 to 90 with
+        # the three files of todo-prepare-885 3.1 to 3.3, which carry one each.
+        self.assertEqual(with_block, 90,
                          'files carrying a __main__ block, of %d' % len(files))
 
 
@@ -804,8 +806,9 @@ class APythonBoundOnACorpusTotalIsExact(unittest.TestCase):
         # 84 to 87 with todo-prepare-885 1.2 to 1.6 and 1.8: `tests/test_harmony_885_start_check.py`,
         # `_erase_and_write.py`, `_write_end.py` and `_reads.py`. 88 with 1.7,
         # `tests/test_harmony_885_log_area.py`. 89 with `tests/test_harmony_touch_beyond_the_clients.py`,
-        # todo-touch 5.1, which landed on main beside them.
-        self.assertEqual(len(scanned), 89, 'Python test files, which moves when one is added')
+        # todo-touch 5.1, which landed on main beside them. 90 to 92 with todo-prepare-885 3.1 to 3.3,
+        # `tests/test_harmony_885_actions.py`, `_queue.py` and `_state.py`.
+        self.assertEqual(len(scanned), 92, 'Python test files, which moves when one is added')
         self.assertIn(self.CONTROL, found, 'the pattern matches nothing it should match')
 
     def test_every_remaining_bound_says_why_it_is_not_a_measurement(self):

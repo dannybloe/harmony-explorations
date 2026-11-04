@@ -41,9 +41,11 @@ identified.
 
 **Every `RESET` instruction in the application's code**, from `0x010400` to the built in configuration:
 `0x16FEC`, the escape's restart; `0x18146`, the power down routine's wake (`0x180C6`, called from the
-action interpreter at `0x139AE` for an operand high byte of exactly `0xF6`, the last step of a descending
-chain whose earlier steps send `0xF7`, `0xF8` and `0xF9` and up elsewhere, `0x13984` to `0x139AE`; reached
-through its `0x3F` band as the codec names it on later platforms, inferred and not traced). The routine
+action interpreter at `0x139AE` for an operand low byte of exactly `0xF6`, the last step of a descending
+chain whose earlier steps send `0xF7`, `0xF8` and `0xF9` and up elsewhere, `0x13984` to `0x139AE`; that chain
+is opcode `0x07`'s band, `tests/test_harmony_885_actions.py`. **Corrected by item 3.1**: this said an
+operand high byte, reached through the `0x3F` band, inferred and not traced; the register the chain tests,
+`0x3B2`, is the operand's low byte, and the ladder reaches it for opcodes `0x07` to `0x0E`). The routine
 returns at once unless input 2 of port B reads high and input 4 of port A low; otherwise it copies RAM
 slot 0 and calls it at `0x1FFE02` in a loop, and executes `RESET` once input 2 of port B reads low or input
 4 of port A high after a return. That the slot sleeps is inferred. `0x18A12`, **the three key
@@ -101,8 +103,9 @@ narrow plus twice wide runs from 34 to 42 of the 64 bytes and variables 0 to 6, 
 `0x108` to `0x10E`. So clock variable `i` reads as `B3 01 00 0i` (value in the reply's fourth byte) or as
 `B3 07 01 08` to `B3 07 01 0E` (value in the third). Its order, second, minute, hour, day, weekday, month, year, is
 the clients' and the reference's. **The storage is 64 bytes and the counts sit right after it**, at
-`0x148`: a configuration with narrow plus twice wide above 64 would write over them. Read, and not checked
-against the action interpreter's own variable writes; a candidate for the rail table, item 3.3.
+`0x148`: a configuration with narrow plus twice wide above 64 would write over them. Item 3.3 read the
+interpreter's own writes: they check nothing either, so 64 bytes is a writer's ceiling,
+`tests/test_harmony_885_state.py`.
 
 ## The chain at `0x14B12` is not USB
 
@@ -127,9 +130,10 @@ selector 8, as both clients do.
 
 ## Open
 
-What selector 8's value is for; whether the clock survives the restart (RAM survives a `RESET`
-instruction and the loader skips a variable whose record says `0xFEFE`; whether the clock records say that
-is not read); what `0x1221A` does to the USB controller; and what a stray `F0 A0` left unread by
+What selector 8's value is for; whether anything after the loader puts the running clock back after the
+restart (RAM survives a `RESET` instruction, but the loader skips only a variable whose record says
+`0xFEFE`, and no record of the sixteen configurations says that, `tests/test_harmony_885_state.py`, so the
+loader itself reseeds the clock); what `0x1221A` does to the USB controller; and what a stray `F0 A0` left unread by
 concordance's time set does to the next exchange.
 
 ## Reviewers

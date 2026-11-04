@@ -42,6 +42,7 @@ checklist that argues each.
 |---|---|
 | base slot 13's `narrow` and `wide` size the state variable storage, and `count` does not | so appending a variable moves **two** words of that header. The firmware allocates `narrow + 2 * wide` and paints `0xFE` over everything above it at each boot, while the seeding loop runs over `count`, so raising the count alone buys a variable that is seeded and then erased, silently. Ours did: the device appeared on the menu, beeped and started nothing. `assertStateTableConsistent` |
 | a configuration holds at most 128 state variables | a write names its variable in seven bits, and Logitech's own eight device compiles hold 112 to 124, section 331. A device costs three plus its inputs. The model's device count, eight on a Harmony 650, is checked first and binds before the ceiling on every configuration measured; the ceiling refused only compositions past that count |
+| on arch 8 (Harmony 880 and 885) the state variables have 64 bytes | keep `narrow + 2 * wide` at most 64: 63 variables with the one wide variable every configuration there declares, 45 of them the configuration's own, and `narrow` at least 18. The firmware checks nothing, and past 64 the start's seeding writes over the two counts that follow the storage, inferred from the arithmetic. The sixteen containers read, six configurations, use 34 to 42. `tests/test_harmony_885_state.py`; nothing in `packages/codec` checks it yet |
 | every send is paired with a `0x7C` naming the same device | emit `{0x7D, 0x7C}`, never the send alone. All 4267<!--fact:send_lists--> send lists of the user configurations are the pair and none is bare, and a bare one sends from a key press and **nothing** from an activity's transition, measured on the spare Harmony One, section 278. On arch 14 each also opens with a `0x7F` delay step of three lists, and the composer emits it, section 287 |
 | base slot 13's first seven records are the clock | stamp them, and reuse none of the firmware's block: 0 to 17 on arch 8, 12, 14 and 16 (Harmony 880 and 885, Harmony One, Harmony 600, 650 and 700, Harmony 300 and 350) and 0 to 12 on arch 9 (Harmony 525), section 284 and `tests/test_harmony_350_clock.py`. Eight values, since the year's maximum always moves with it; the day counts from 0, so a 31st is 30 and its maximum stays 30, section 322. Arch 9 (Harmony 525) keeps its own |
 | base slot 3's timestamp is stamped at write time | never copied. The one field where a round trip and a save differ |
@@ -87,7 +88,10 @@ checklist that argues each.
   config's, and a refused read answers 0, which looks like a variable holding 0.
 * **At most 128 state variables**, "Variables 18 and up are the configuration's own". `compose.ts`
   refuses a variable at 128; the model's device count, `maxDevices` in `packages/usb`'s model table and
-  checked by `composeCatalogueDevices`, binds first on every configuration measured.
+  checked by `composeCatalogueDevices`, binds first on every configuration measured. **On arch 8 (Harmony
+  880 and 885) 64 bytes bind before the 128 does**, `narrow + 2 * wide` at most 64, same section: the
+  firmware checks nothing and no codec rail holds it yet. Whether it binds before the fifteen device limit
+  is not established.
 * **The clock is the first seven records and the firmware owns more**, "Variables 0 to 6 are the clock",
   "Variables 7 to 17 belong to the firmware too" and "What a writer does with the clock". Stamp eight
   values, since the year's maximum moves with it; the day counts from 0, so a 31st is stored as 30 and

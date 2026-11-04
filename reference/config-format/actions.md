@@ -89,13 +89,16 @@ three byte instructions, and the main loop then executes one instruction and rot
 instruction pushed from the tail of the ring to its head. So a `0x7F` runs its sublist **next** rather than
 after everything already queued, the ring holds the call stack, and its depth is bounded by nesting rather
 than by a list's length[^s238]. Read in the firmware of arch 12 (Harmony One), arch 14 (Harmony 600, 650 and
-700) and arch 9 (Harmony 525)[^s238][^s254].
+700) and arch 9 (Harmony 525)[^s238][^s254], and of arch 8 (Harmony 880 and 885), where the ring's start, its
+wrap and the full test's literal close on forty a fourth time[^t-885-queue].
 
 **Every push into a full ring is discarded with no error.** All three push routines test the count first and
 return, and the two that report anything are called from code that ignores the answer. The ring is shared: a
 key press, a state change, a display band announcement and an action queued by the host over USB push into
 the same forty slots a running activity occupies[^s238]. On arch 14 the host queues one through command
-state `0x34`[^s326].
+state `0x34`[^s326]. **On arch 8 an instruction whose three bytes are all zero is never pushed at all**: both
+instruction pushes test for it before they test for room, and the event push writes opcode `0x1F`, so
+`0x00 0x0000` from a list takes no slot there, [below](#opcodes-below-0x65-the-operand-is-a-second-opcode-field)[^t-885-actions].
 
 So a configuration states an implicit demand, the deepest its own lists go, and a configuration whose demand
 exceeds forty is one the remote accepts and silently does less than[^s238]:
@@ -106,7 +109,7 @@ exceeds forty is one the remote accepts and silently does less than[^s238]:
 | every other Harmony One configuration | 22 |
 | Harmony 700 | 18 |
 | Harmony 890 and Harmony 600 | 14 |
-| Harmony 880 and 885 | 13 |
+| Harmony 880 and 885, sixteen containers of six configurations | 13[^t-885-queue-corpus] |
 | Harmony 525 | 9 |
 
 **On the Harmony 525 the ring's three constants close on each other**: its base, its end and a wrap constant
@@ -117,6 +120,11 @@ Harmony One's, so forty is measured twice with nothing in common[^s254][^s255]. 
 Nothing measured overflows, so forty is a limit for what a writer produces rather than a description of the
 configurations. `packages/codec/src/queue.ts` computes it and `assertQueueFits` refuses; the figure it reports
 follows `0x7F` only and is therefore a lower bound, since a write to a state variable also pushes[^s238].
+**The rail carries over to arch 8 (Harmony 880 and 885) unchanged, as the same floor**: its main loop
+executes one instruction and rotates what it pushed, as the Harmony One's does, and the model's peak for each
+of the sixteen containers read, six configurations, is 13. There the model also counts the all zero
+instructions the firmware never queues, and runs a deferred instruction's call at once where the firmware
+releases it later, which nothing here bounds in either direction[^t-885-queue][^t-885-queue-corpus].
 
 ## A sequence is one action list of calls and per device pauses
 
@@ -186,7 +194,10 @@ high byte equals the `0x7D` operand's[^s33]. So the grouping is shared between t
 from a key press and sends **nothing** when an activity's state transition runs it, and adding the `0x7C` for
 the same device fixes it[^s278]. So the shape above is a rule and not a habit. Measured on arch 12 (Harmony
 One) only; the firmware's reason is unread. On arch 14 every send list also opens with a `0x7F`, a delay step
-of three lists, which the composer emits[^s287].
+of three lists, which the composer emits[^s287]. On arch 8 (Harmony 880 and 885) no send list opens with one:
+all 5917 lists holding a send in the sixteen containers read, six configurations, are exactly `{0x7D, 0x7C}`, the `0x7C` naming the
+send's group[^t-885-actions-corpus]. Nothing in that firmware's infrared path reads where an entry came from,
+and whether a bare send from a transition transmits there is not checked[^t-885-actions][^unchecked].
 
 **The `0x7C` beside a send is a count of tenths, not an identifier.** It takes seven values across the
 configurations, `0, 1, 2, 3, 4, 5, 10`, and is 1 in most sends. An identifier would have to separate the
@@ -233,13 +244,24 @@ above 100 expressible at all[^s70]. The fold stops at 100 and does not cap a sin
 full: a pause of one `0x7C` of 200 per device held a Harmony 650 for its 20 seconds, [above](#a-sequence-is-one-action-list-of-calls-and-per-device-pauses)[^s342].
 Arch 12 (Harmony One) is not measured for this[^unchecked].
 
+**The Harmony 880 and 885 do not fold.** Their `0x7C` is their `0x7D` with bit 6 of the group byte set, into
+a ring of 30 bytes, but the push compares nothing with what is already queued, so each `0x7C` is an entry of
+its own[^t-885-actions]. Whether the queue's drain then counts consecutive ones for a device down one after the
+other, so that they add up, is not read[^unchecked]. One configuration spells a power on delay of 320 as four,
+100, 100, 100 and 20, which is 32 seconds if a unit is a tenth of a second there, not established for that
+platform[^t-885-actions-corpus][^unchecked]. A
+`0x7D` or `0x7C` that does not fit is put back and runs again on the next turn, so the interpreter waits for
+the transmitter rather than losing it[^t-885-actions].
+
 **The Harmony 300 and 350's 1.4 image queues it the same way**: its handler at `0x12026` is the send's at
 `0x12004` with bit 6 of the group byte set, priorities 1 and 2, the ring 30 bytes, the fold refused at 100,
 and a tick that counts a quantity down only while no earlier entry names its device[^t-harmony-350-delay].
 How fast that tick runs, and so whether a unit is a tenth of a second on this image, is not read[^unchecked].
 
-Two rules follow for a writer. No inline power on delay on arch 8, 9 or 12 exceeds 100 and arch 14 spells its
-larger ones out, so a delay above 100 is spelled out as the configurations do, while a sequence's pause is
+Two rules follow for a writer. No single `0x7C` of a power on delay on arch 8, 9 or 12 exceeds 100, and arch
+14 and one arch 8 configuration spell larger ones out as several[^t-885-actions-corpus]. This said no inline
+power on delay on those three exceeded 100 until a Harmony 880 Pro's 320 was read. So a delay
+above 100 is spelled out as the configurations do, while a sequence's pause is
 written whole as Logitech's compiler writes it[^s327]. And a configuration can hold at most **sixteen infrared
 groups**, because the tag's low nibble carries the group; the configurations top out at seven[^s70].
 
@@ -283,6 +305,29 @@ edit and still erases two 64 KiB blocks, because the trailer checksum moves with
 Arch 12 masks the kind with three bits and the device with four, so bit 4 of a tag belongs to neither field,
 where arch 14 gives it to the kind. What it is for is not established, and no configuration can say: the group
 is what fills those bits and none has more than seven groups, so bit 4 is never set[^s236].
+
+### On arch 8 the remote sends nothing more until the configuration answers
+
+**Read on arch 8 (Harmony 880 and 885).** The infrared queue's state, 0 idle, 1 only delays left, 2 codes
+waiting, 3 transmitting, is kept in **state variable 17**'s byte, written directly so that variable's
+transitions never fire. Every change of it raises **event `0x2D`** at the head of the action queue and holds
+the transmitter, which does nothing until the configuration runs **`0x07 0xFFFA`**. The firmware goes on
+without the answer only when the event could not be queued because the action queue was full[^t-885-actions].
+Only a start clears the hold otherwise. So a configuration that leaves event `0x2D` unanswered on a screen
+leaves the remote unable to send its next code until something runs `0x07 0xFFFA` or the remote restarts.
+
+**Every configuration answers it, sixteen of sixteen**, which are six configurations, several read more than
+once: handler set 1, which the list base slot 8's leading list calls pushes before any other set, binds the
+event to `0x07 0xFFFA`, and all modes but thirty per container bind it to a screen program that switches on
+variable 17 and then queues `0x07 0xFFFA`, 2351 of 2831 modes; the thirty bind nothing at all and fall to the
+handler sets[^t-885-actions-corpus]. That a set pushed first is consulted last is read on other platforms and
+not on this one[^unchecked]. Whether the program draws the sending mark the Harmony 600, 650 and 700 show from
+the same variable[^s369], and whether arch 12 and arch 14 hold their transmitter the same way, are not
+checked[^unchecked].
+
+**The interpreter adds no delay of its own between devices**: only `0x7D`, `0x7C` and the deferred instruction
+below call the infrared queue's push[^t-885-actions]. How the queue's drain orders entries by device on that
+platform, and where an account's inter device delay goes there, are not established[^unchecked].
 
 ### `0x7A key; 0x6C value` saves a delay on the remote, arch 14
 
@@ -343,7 +388,12 @@ opcodes occur below `0x65` at all**, `0x00`, `0x07`, `0x0F`, `0x1F` and `0x3F`, 
 of its own, which is `2^n - 1`[^s73].
 
 **Opcodes below `0x07` do nothing**: the dispatcher returns before reading the operand, and the 3053 `0x00`
-instructions all carry operand zero, so they are three zero bytes an emitter must keep[^s72].
+instructions all carry operand zero, so they are three zero bytes an emitter must keep[^s72]. **On arch 8
+(Harmony 880 and 885) those three zero bytes never reach the queue from a list**, because both of its
+instruction pushes drop an all zero instruction, so there `0x00 0x0000` occupies no slot and an instruction that skips "the next one" skips
+whatever is queued after it. An opcode `0x01` to `0x06` with any operand is spooled and does nothing there,
+the dispatcher leaving before it reads the operand; that `0x01 0x0000` behaves so on a unit is not
+checked[^t-885-actions][^unchecked].
 
 **`0x3F` with a high byte in `0xD0` to `0xDF` is a six byte instruction**: the handler pops **one byte** off the
 queue per call, three calls, so the instruction's second half is an ordinary instruction read as data, `0x7F` in
@@ -351,6 +401,15 @@ queue per call, three calls, so the instruction's second half is an ordinary ins
 whole list is the one instruction, and a reader has to skip the second half rather than report it as an
 instruction of its own[^s139]. `takesFollowingSlot` in `packages/codec/src/actions.ts` is the predicate; a byte
 level reader still returns both slots, because an emitter reproduces the argument.
+
+**On arch 8 (Harmony 880 and 885) it defers its argument until the infrared queue has sent what is ahead of
+it.** It takes the next instruction off the action queue without testing that one is there, and puts both
+into the infrared queue as one four byte entry, which the queue's drain later hands back to the action queue's
+tail[^t-885-actions]. When, the low nibble of the high byte selects; by the reading of the drain, which no test
+asserts, nibble 0 is released once nothing but delays and finished sends is ahead of it[^unchecked]. All 77 uses
+in the sixteen containers read are `0x3F 0xD000` heading a two slot list whose argument is a
+`0x7F`[^t-885-actions-corpus], so by that reading the list called runs once the codes queued before it have
+gone out, without waiting out the power on delays.
 
 ### What the bands are
 
@@ -365,12 +424,20 @@ Every branch of both dispatchers is followed to its `RETURN`[^s73]. What a codec
 
 Bands the firmware tests and then ignores are part of the specification, not gaps: `0x1F` below `0xE0`; `0x0F`
 bands `0xF0` and `0x50` to `0x7F` **on arch 12 and arch 14**; and `0x3F`'s `0xF0` nibbles 3 and 5, which the
-configurations use 84 times for the last alone[^s139].
+configurations use 84 times for the last alone[^s139]. **On arch 8 (Harmony 880 and 885)** the ladders are their
+own: `0x3F` tests `0xF0`, `0xE0` and `0xD0` and nothing below, and its `0xF0` band acts on nibbles 0 to 2 only;
+`0x0F` tests `0xF0`, `0xE0`, `0xD0`, `0xC0`, `0xB0`, `0xA0`, `0x80` and `0x70`, with no `0x40` band; and `0x07`
+tests `0xFF` down to `0xF6` one by one and ignores everything below[^t-885-actions]. **The power down there is
+`0x07` with an operand low byte of `0xF6`**, the one call of the power down routine, which waits in a loop and
+restarts the remote on a wake,
+[the platform's firmware](../architectures/harmony-880-885/firmware.md#restarting)[^t-885-actions].
 
 **Three structures here are not one table across architectures**, and a band must not be ported between them:
 
-* **`0x3F`'s lowest band is `0xB0` on arch 14 and `0xC0` on arch 12, and the routines differ**[^s73].
-* **The opcode block `0x65` to `0x6E` is arch 14 only**, below[^s107].
+* **`0x3F`'s lowest band is `0xB0` on arch 14 and `0xC0` on arch 12, and the routines differ**[^s73]. On arch 8
+  it is `0xD0`, which is the six byte instruction[^t-885-actions].
+* **The opcode block `0x65` to `0x6E` is arch 14 only**, below[^s107]. On arch 8 it is not even tested: those
+  opcodes reach the `0x3F` bands[^t-885-actions].
 * **`0x0F`'s bands differ on arch 9 (Harmony 525)**: the band at `0x60` is a real arm there and inside the no-op
   range on arch 12 and arch 14, the band at `0x40` is the reverse, `0xD0` is tested and ignored on arch 9 alone,
   `0x90` is gated on a port bit that no other ladder tests, and the ignored bands there are `0xF0`, `0xD0`,
@@ -460,6 +527,14 @@ itself a conditional, so an action list is a straight run with at most one branc
 one instruction in a branch; 17 are opcode `0x00`, an explicitly empty one. Every flagged instruction is a `0x71`,
 which is a fact about the configurations and not the format, since one handler serves both opcodes[^s140b].
 
+**On arch 8 (Harmony 880 and 885) an all zero arm is no arm**, because that firmware never queues an all zero
+instruction, so a skip or a cancel takes the next instruction that was queued instead. And there **selectors 6
+and 7 always skip the next instruction**, since only the comparison cases set the result they test: an add or
+a subtract behaves as a false comparison[^t-885-actions]. Every one of the sixteen containers read holds one
+list of a subtract and an all zero filler, `0x70 0x07vv, 0x00 0x0000`, and every call of it is followed by a
+load the skip takes and then a load that overwrites it, so nothing is lost there[^t-885-actions-corpus]. Whether
+selectors 6 and 7 skip on the other architectures is not checked[^unchecked].
+
 ### State variables 3, 5 and 6 are the date
 
 `0x07` with operand high byte `0xF8` steps the calendar held in the clock variables, day, month and year. The
@@ -491,8 +566,9 @@ MIPS the infrared carrier gives that is 4.25 us a step[^s74]:
 | `0x8C19` | 140 | 4706 Hz | 30 ms | 6 |
 
 The configurations use those four and nothing else. Counting the loop's own overhead moves the highest by about
-8% and the lowest by under 1%. **`0x3F` with high byte `0xF3` gates it**: the generator returns without playing
-when that byte is zero[^s74].
+8% and the lowest by under 1%. **On arch 12 (Harmony One) `0x3F` with high byte `0xF3` gates it**: the generator
+returns without playing when that byte is zero[^s74]. Arch 8 (Harmony 880 and 885) has no gate: its tone tests
+nothing before it plays, and its `0x3F` `0xF0` band has no case 3[^t-885-actions].
 
 **On arch 12 (Harmony One) Logitech's compiler clicks before every screen send**, `0x75 0x0FCA` ahead of the
 send, a convention a configuration may leave out, [its compiler page](../architectures/harmony-one/compiler.md#the-click-before-a-screen-send)[^s337].
@@ -521,7 +597,10 @@ a separate loop, the same size on both images[^s34]. The host can push into the 
 through command state `0x34`, a version request with a payload, and not `WRITE_MISC` selector 3, which arch 14 leaves
 unhandled[^s326].
 
-The dispatch is a **binary search on the opcode**, not a jump table and not an `XORLW` chain. Its boundaries[^s34]:
+The dispatch is a **binary search on the opcode**, not a jump table and not an `XORLW` chain. The Harmony 880 and
+885's is a descending chain of comparisons instead, with the bands above, and the Harmony 720's is the same
+instruction for instruction, [the platform's firmware](../architectures/harmony-880-885/firmware.md#the-action-interpreter)[^t-885-actions].
+Its boundaries[^s34]:
 
 | range | handling |
 |---|---|
@@ -556,7 +635,7 @@ Placed by their handlers:
 | `0x73` | **run the base slot 11 screen program** the operand's low byte indexes[^s369] |
 | `0x07` with operand `0xF8xx` | **step the date** held in state variables 3, 5 and 6[^s74] |
 | `0x07` with operand `0xFFxx` | **make the next state variable write silent**, one write and no more[^s332] |
-| `0x3F` with operand `0xF3xx` | **the sound gate** `0x75` tests before playing anything[^s74] |
+| `0x3F` with operand `0xF3xx` | **the sound gate** `0x75` tests before playing anything, on arch 12[^s74] |
 | `0x80` and above | **write state variable `opcode & 0x7F`**, the operand its value[^s73] |
 | `0x1F` with operand `0xFFxx` | **select the current binding table entry**, low byte the index into base slot 9[^s34] |
 | `0x1F` to `0x3E` with operand `0xF3xx` to `0xF6xx` | send a computed number to base slot 16 or 14, from the accumulator or from a byte register[^s39] |
@@ -568,7 +647,9 @@ branch to the dispatcher's exit, so the shift, the boolean operations, the setti
 on arch 14 alone. `0x6F` is **not** in the block: it is the same do-nothing handler everywhere[^s107]. The
 configurations agree without being asked: of the eleven opcodes `0x65` to `0x6F` exactly two are used anywhere,
 `0x6C` and `0x6E`, both on arch 14 only. A writer must not emit one for another architecture, where it is accepted
-and ignored[^s107].
+and ignored[^s107]. **On arch 8 (Harmony 880 and 885) it is not even ignored**: that ladder compares no opcode
+from `0x40` to `0x6E`, so they all reach the `0x3F` bands by their operand's high byte and act as `0x3F`
+instructions; none of the sixteen containers read uses one[^t-885-actions][^t-885-actions-corpus].
 
 **A zero operand to `0x6E`, `0x77` or `0x78` is defined rather than an error.** The division loop runs sixteen
 iterations whatever it is given, so a divisor of zero returns `0xFFFF` from `0x77` and the dividend itself from
@@ -593,8 +674,10 @@ asked[^s118].
 So on arch 14 the reachable target is an append region at the top of the serial flash, and the firmware is
 not on that chip at all: it is in the processor's own program memory[^s118]. The Harmony One and the
 Harmony 525, whose firmware shares a flash with the configuration, do not implement either opcode, testing
-both in their ladder and doing nothing[^s107]; the Harmony 880 and 885 share one too, and whether they
-implement them is not read[^unchecked]. No configuration Logitech compiled uses either[^s118b].
+both in their ladder and doing nothing[^s107]; the Harmony 880 and 885 share one too and do not implement them
+either: their ladder sends `0x65` and `0x66` to the `0x3F` bands[^t-885-actions]. This said whether they
+implement them was not read<!--superseded--> until their interpreter was. No configuration Logitech compiled
+uses either[^s118b].
 This covers the action list language and the screen language, which reaches it only by queuing action list
 instructions; that no other route exists is not established[^unchecked].
 
@@ -660,3 +743,7 @@ where what the band does is not read[^unchecked],
 [^t-harmony-350-delay]: Read in the firmware. [The test](../../tests/test_harmony_350_delay.py)
 [^t-885-log]: Read in the firmware. [The test](../../tests/test_harmony_885_log_area.py)
 [^t-885-log-corpus]: Measured in configurations. [The test](../../tests/test_harmony_885_log_area.py)
+[^t-885-actions]: Read in the firmware. [The test](../../tests/test_harmony_885_actions.py)
+[^t-885-actions-corpus]: Measured in configurations. [The test](../../tests/test_harmony_885_actions.py)
+[^t-885-queue]: Read in the firmware. [The test](../../tests/test_harmony_885_queue.py)
+[^t-885-queue-corpus]: Measured in configurations. [The test](../../tests/test_harmony_885_queue.py)

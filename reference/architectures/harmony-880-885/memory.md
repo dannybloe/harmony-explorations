@@ -127,7 +127,11 @@ What the application keeps where in its RAM, as far as the write path and the st
 | `0x086` | the configuration flags: bit 1 the built in configuration passed, bit 2 the user's passed, bit 3 which of the two every lookup uses |
 | `0x100` | the staged install's status, which write misc and read misc selector 6 reach, [firmware.md](firmware.md#what-the-bootloader-does-at-power-on) |
 | `0x108` to `0x147` | the state variables, 64 bytes: a narrow variable `i` at `0x108 + i`, the wide ones after the narrow, `0xFE` above the last. The clock is variables 0 to 6, narrow in every configuration read, so at `0x108` to `0x10E` |
+| `0x119` | state variable 17, which the firmware writes directly with the infrared queue's state, 0 to 3, [actions](../../config-format/actions.md#on-arch-8-the-remote-sends-nothing-more-until-the-configuration-answers)[^t-885-actions] |
 | `0x148`, `0x149` | how many narrow and wide variables the running configuration declares |
+| `0x15C` to `0x17E` | the infrared queue: its count, a ring of 30 bytes from `0x15D`, and its two cursors[^t-885-queue] |
+| `0x182` | bit 3 set while the transmitter waits for the configuration's `0x07 0xFFFA`[^t-885-actions] |
+| `0x31E` to `0x39A` | the action queue: its count, a ring of 120 bytes from `0x31F`, forty instructions, and its two cursors[^t-885-queue] |
 | `0x23A` | the unlock: `0xA7` lets an erase or a write below `0x010000` through, and it stays set until the application next starts or goes to sleep |
 | `0x212`, `0x213` | which set of routines each of the two RAM slots holds; the copier skips a slot whose byte already names the set it was asked for |
 | `0x28D` to `0x28F` | the log's next address, [above](#what-the-remote-writes-on-its-own) |
@@ -142,10 +146,21 @@ window onto it at `0x1FFE00` is what it appears to be, is the code the next eras
 runs while the slot's byte is left alone, and every special function register, whose meanings here are
 inferred from the processor family.[^t-885-log][^t-885-end][^t-885-boot][^unchecked]
 
-**The storage holds 64 bytes and the counts sit right after it**, so a configuration whose narrow variables
-plus twice its wide ones exceed 64 would have the firmware write over its own counts; the 16 containers
-read declare 34 to 42.[^t-885-end] Whether the action interpreter's own writes check that bound is not
-read.[^unchecked]
+**The storage holds 64 bytes and the counts sit right after it, and nothing checks a configuration against
+it.** The start's loader seeds every variable the configuration declares and paints `0xFE` from `narrow + 2 *
+wide` while it is below `0x40`, the storage's size; the store and the read compare an index with `narrow`
+alone, and the one bound, `narrow + wide`, is the host's, on misc selector 1.[^t-885-state] So **a writer's
+ceiling on this platform is `narrow + 2 * wide` at most 64 bytes**: 63 variables with the one wide variable
+every configuration read declares, 45 of them the configuration's own, about half the 128 a write
+instruction can name. Past it the seeding would run on into the two counts and every wide variable would then be
+read and written at the wrong place, which is inferred from the arithmetic and not observed.[^t-885-state]
+The 16 containers read, six configurations, use 34 to 42 bytes.[^t-885-state-corpus] This said whether the action interpreter's own
+writes check that bound was not read<!--superseded-->, until they were read.[^t-885-state]
+
+**Every start reseeds every variable from the configuration in use**, the clock's seven included, except one
+whose record states `0xFEFE`, which no configuration read does: the loader's only guard is that a
+configuration passed its check, where the Harmony One's is a checksum of its data memory.
+Whether anything after the loader puts the running clock back is not read.[^t-885-state][^unchecked]
 
 ## The container
 
@@ -173,10 +188,16 @@ or where a page there names it:
 
 * **The state variables 0 to 17 are the firmware's**, so a configuration's own variables start at 18, as on
   the Harmony One and the Harmony 600, 650 and 700, where the Harmony 525's firmware owns 0 to 12.[^s284]
-  The first seven are the clock, [state](../../config-format/state.md).
-* **A device's power on delay is one instruction** at the top of the action list its `Power` variable runs
-  when it switches on, as on the Harmony 525 and the Harmony One, where the Harmony 600, 650 and 700 keep it
-  in a state variable, [actions](../../config-format/actions.md).[^s235]
+  The first seven are the clock, [state](../../config-format/state.md). **All of them fit in 64 bytes**, so a
+  configuration holds at most 63 variables with one wide, [above](#data-memory).[^t-885-state]
+* **Event `0x2D` has to be answered with `0x07 0xFFFA` on every screen**, or the remote stops sending after
+  its next change of the infrared queue's state: a mode that binds the event has to answer it, and handler
+  set 1 has to keep answering for the modes that do not. Every configuration read does both, [actions](../../config-format/actions.md#on-arch-8-the-remote-sends-nothing-more-until-the-configuration-answers).[^t-885-actions][^t-885-actions-corpus]
+* **A device's power on delay is a `0x7C`** at the top of the action list its `Power` variable runs when it
+  switches on, as on the Harmony 525 and the Harmony One, where the Harmony 600, 650 and 700 keep it in a
+  state variable, [actions](../../config-format/actions.md).[^s235] One instruction in 79 of the 80 switch on
+  transitions read, and four in the Harmony 880 Pro's delay of 320.[^t-885-actions-corpus] This said it was one
+  instruction<!--superseded--> until that configuration was read.
 * **37 infrared records carry a second group of block pointers**, in four configurations, all in one
   device: the same RC6 command with one payload bit inverted, which is the shape of a toggling code's
   record, [infrared records](../../config-format/infrared-records.md).[^s134] Whether this firmware
@@ -191,7 +212,6 @@ or where a page there names it:
   images'.[^unchecked]
 * What sits between the end of a configuration and the log area, and above the log area.[^unchecked]
 * The sector map below `0x010000`, where the two outside sources disagree, against a datasheet.[^unchecked]
-* Whether a configuration's state variable writes check the 64 byte bound.[^unchecked]
 * Whether a unit has been logging, which a read of `0x1E0000` would show, and which key the two logging
   configurations bind the append to.[^unchecked]
 
@@ -222,3 +242,8 @@ or where a page there names it:
 [^t-885-reads]: Read in the firmware. [The test](../../../tests/test_harmony_885_reads.py)
 [^t-885-log]: Read in the firmware. [The test](../../../tests/test_harmony_885_log_area.py)
 [^t-885-log-corpus]: Measured in configurations. [The test](../../../tests/test_harmony_885_log_area.py)
+[^t-885-actions]: Read in the firmware. [The test](../../../tests/test_harmony_885_actions.py)
+[^t-885-actions-corpus]: Measured in configurations. [The test](../../../tests/test_harmony_885_actions.py)
+[^t-885-queue]: Read in the firmware. [The test](../../../tests/test_harmony_885_queue.py)
+[^t-885-state]: Read in the firmware. [The test](../../../tests/test_harmony_885_state.py)
+[^t-885-state-corpus]: Measured in configurations. [The test](../../../tests/test_harmony_885_state.py)

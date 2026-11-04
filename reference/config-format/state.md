@@ -52,13 +52,15 @@ and because the seeding loop runs first, a variable above the storage is seeded 
 painted over, holding 65278 rather than its record's value, with no error anywhere[^s276]. The fill's
 ceiling is per image rather than per architecture, `0x7F` on the Harmony One, `0xFF` on the Harmony 700
 and `0xC0` on the Harmony 600, and a second arm starts it at the constant 18 under a flags bit that is
-unread[^s276][^s284]. The fill is not read on arch 9 (Harmony 525)[^unchecked].
+unread[^s276][^s284]. On the Harmony 880 and 885 it is `0x40`, which is the whole storage there, 64 bytes, so
+on that platform the fill's ceiling is a writer's, [below](#variables-18-and-up-are-the-configurations-own)[^t-885-state].
+The fill is not read on arch 9 (Harmony 525)[^unchecked].
 
-`narrow again` is fetched and discarded on arch 12 (Harmony One) and arch 14 (Harmony 600, 650 and 700);
-arch 9 (Harmony 525) reads it[^s274].
+`narrow again` is fetched and discarded on arch 12 (Harmony One), arch 14 (Harmony 600, 650 and 700) and
+arch 8 (Harmony 880 and 885); arch 9 (Harmony 525) reads it[^s274][^t-885-state].
 
 A separate check does compare an index against `narrow + wide`, seven instructions on all six images
-read, but its callers are `WRITE_MISC` and `READ_MISC` **selector `0x01`**, a host reading or writing a
+read and the same seven on the Harmony 880 and 885's[^t-885-state], but its callers are `WRITE_MISC` and `READ_MISC` **selector `0x01`**, a host reading or writing a
 variable over USB. A configuration's own state write reaches the store unchecked, so that bound is not
 what a writer has to respect, and a refused read over USB returns 0 rather than an error[^s276].
 
@@ -194,7 +196,11 @@ Base slot 0 names none of the seven in any container[^s130].
 lives at data memory `0x108 + n`, so records 0 to 6 are seven bytes of the running remote, and the
 firmware seeds variable `n` from record `n`'s `first` at `0x2A266`, skipping a record whose value is
 `0xFEFE`[^s138]. The seeding is guarded by a checksum of the data memory the array sits in, so a power
-cycle takes the configuration's values and a warm start keeps the running ones[^s138]. On a connected
+cycle takes the configuration's values and a warm start keeps the running ones[^s138]. **On arch 8 (Harmony
+880 and 885) there is no such guard**: the loader seeds whenever a configuration passed its check, so every
+start, a restart included, puts every variable, the clock among them, back to the configuration's `first`,
+unless that `first` is `0xFEFE`, which none of the sixteen configurations read states;
+whether anything after the loader restores the running clock is not read[^t-885-state][^unchecked]. On a connected
 Harmony One the clock read exactly the timestamp's date and its time plus its uptime[^s111]. Base slot 3
 is **not** read for the clock: `0x27F20` subtracts it from these variables to work out how long ago the
 configuration was built[^s138]. Where the other architectures keep their variables is in their memory
@@ -243,7 +249,7 @@ below[^t-harmony-350-clock-c][^t-noscreen-state-tables], and whether its base sl
 | 14 | 0 / 1 | the configuration's own | 2 / 4 | 1 / 1 | 1 / 1 | no direct writer, except on the Harmony 700[^s284] |
 | 15 | 0 / 3 | the configuration's own | 0 / 3 | 0 / 3 | 0 / 3 | on arch 12 stored when a value the firmware derives changes[^s284] |
 | 16 | 0 / 1 | the configuration's own | 0 / 1 | 0 / 1 | 0 / 1 | on arch 12 stored when a value the firmware derives changes[^s284]; on arch 16 the same, from an input pin[^t-harmony-350-clock] |
-| 17 | 0 / 3 | the configuration's own | 0 / 3 | 0 / 3 | 0 / 3 | on arch 14 the sending flag, 2 while a code is sent[^s369]; on arch 16 the send queue's priority, 0 to 3, the Harmony One's byte[^t-harmony-350-clock] |
+| 17 | 0 / 3 | the configuration's own | 0 / 3 | 0 / 3 | 0 / 3 | on arch 14 the sending flag, 2 while a code is sent[^s369]; on arch 16 the send queue's priority, 0 to 3, the Harmony One's byte[^t-harmony-350-clock]; on arch 8 the infrared queue's state, 0 to 3, written directly with no transitions, each change waiting for the configuration's `0x07 0xFFFA`, [actions](actions.md#on-arch-8-the-remote-sends-nothing-more-until-the-configuration-answers)[^t-885-actions] |
 
 Each cell is `first / max`[^s138][^s284b], arch 16's from its 13 configurations[^t-harmony-350-clock-c][^t-noscreen-state-tables]. The meanings are arch 12 readings except where marked: arch 9
 states different maxima for 8 to 12, which is consistent with a Harmony 525 having no dimmable display of
@@ -279,6 +285,17 @@ activity has one, its flag, and nothing else, [their memory page](../architectur
 six eight device compiles for the Harmony 650 and 700 hold 112 to 124, where the configurations they were
 compiled from hold 85 and 97, since Logitech's compiler gives an added device its power variable, two delays,
 its inputs and six more variables, seven on one device of fourteen[^s331].
+
+**On arch 8 (Harmony 880 and 885) the storage binds before the index does: `narrow + 2 * wide` at most 64 bytes.** The
+firmware keeps the variables in 64 bytes with the two counts right after them and checks no configuration
+against that: the store compares an index with `narrow` alone, and past 64 the start's seeding would run on
+into the counts, after which every wide variable is read and written at the wrong place, which is inferred
+from the arithmetic rather than observed[^t-885-state]. With the one wide variable every configuration there
+declares, that is 63 variables, 45 of them the configuration's own, against the 128 an index allows; the
+sixteen containers read, six configurations, use 34 to 42 bytes[^t-885-state][^t-885-state-corpus]. `narrow` must also be at least 18 there,
+since the firmware writes variable 17 as one byte at `0x108 + 17`, which is that variable only while every
+variable below 18 is narrow[^t-885-actions]. Whether 64
+bytes binds before the model's fifteen devices is not established[^unchecked].
 
 ## A device's delays
 
@@ -994,3 +1011,6 @@ and does not recognise the Harmony 880 and 885's append.
 [^t-long-press-u]: Measured on a unit. [The test](../../tests/test_harmony_350_long_press.py)
 [^t-885-log]: Measured in configurations. [The test](../../tests/test_harmony_885_log_area.py)
 [^t-885-log-firmware]: Read in the firmware. [The test](../../tests/test_harmony_885_log_area.py)
+[^t-885-actions]: Read in the firmware. [The test](../../tests/test_harmony_885_actions.py)
+[^t-885-state]: Read in the firmware. [The test](../../tests/test_harmony_885_state.py)
+[^t-885-state-corpus]: Measured in configurations. [The test](../../tests/test_harmony_885_state.py)
