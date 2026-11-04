@@ -25,9 +25,9 @@ Written on 4 November 2026; linked from `todo-later.md` 5.6.
 - [x] 1.4 The write: `WRITE_FLASH`'s data path, whether the remote erases before it programs, the transfer size (D3)
 - [x] 1.5 How a write ends: the `WRITE_MISC` selectors, the unidentified chain testing `0xE0` at `0x14B12`, and what makes the remote take up a new configuration with no escape in its dispatch (D6)
 - [x] 1.6 What the remote checks at start, what it shows when a configuration fails, and whether that latches (D7)
-- [ ] 1.7 Other write paths: a data memory write, any settings or EEPROM store, and the "FLASH Memory ID", "Erase" and "Clear" texts in the image (D11)
+- [x] 1.7 Other write paths: a data memory write, any settings or EEPROM store, and the "FLASH Memory ID", "Erase" and "Clear" texts in the image (D11)
 - [x] 1.8 The one byte reads at `0x000104` and `0x000105` that call routines, and what a read above `0x200000` returns (D4)
-- [ ] 1.9 A section for the Harmony 880 and 885 in the `recovering-a-remote` skill, from 1.1 to 1.6 (D9)
+- [x] 1.9 A section for the Harmony 880 and 885 in the `recovering-a-remote` skill, from 1.1 to 1.6 (D9)
 
 ## 2. On the bench, needing an 885 on the cable
 
@@ -47,7 +47,7 @@ Written on 4 November 2026; linked from `todo-later.md` 5.6.
 - [ ] 3.7 The number sender, though no 880 or 885 configuration holds favourite channels (F8)
 - [ ] 3.8 The infrared player: carrier, and whether the toggle records' second group is alternated (F11)
 - [ ] 3.9 Screen opcode 21, found on this platform only, and opcode 1's clip (F10, F12)
-- [ ] 3.10 What reads base slot 3's stamp, and the log area's writer (F13, F14)
+- [ ] 3.10 What reads base slot 3's stamp, and the log area's writer (F13, F14); the writer is answered by 1.7, `tests/test_harmony_885_log_area.py`, so the stamp is what is left
 - [ ] 3.11 Where this platform keeps an inter device delay, if anywhere (F4)
 
 ## 4. Corrections

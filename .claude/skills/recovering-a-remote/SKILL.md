@@ -30,7 +30,10 @@ the rail demanding a verified dump is what separates a recoverable remote from a
 
 **A damaged configuration cannot reach the bootloader or the safe mode image**, so a remote whose
 config is wrong still boots and our own read path still works. That is the structural reassurance
-behind a first write, and it is worth more than any of the arguments below.
+behind a first write, and it is worth more than any of the arguments below. **On the Harmony 880 and 885
+it covers the bootloader only**: a configuration's base slot 2 chooses where the remote's log append
+writes, bounded below `0x010000` and nowhere else, so a wrong slot 2 can reach the application and the
+built in configuration above that floor. Their section below has the rest.
 
 **A stranded remote tells you what is wrong, so read the screen before diagnosing anything.** The
 firmware's status screens are a library of 30 on the Harmony One and 35 on the Harmony 600, 650 and 700,

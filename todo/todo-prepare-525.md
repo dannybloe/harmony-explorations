@@ -46,7 +46,7 @@ Written on 4 November 2026; linked from `todo-later.md` 5.4.
 - [ ] 3.6 The number sender, and whether the 525 has favourite channels at all (F8)
 - [ ] 3.7 The screen instructions beyond 22 and 23, and where the status screen base is added (F10)
 - [ ] 3.8 The infrared player: toggle flip, carrier, and whether a class 1 record plays, since `composeDevice` writes class 1 into a 525 configuration (F11)
-- [ ] 3.9 What reads base slot 3's stamp, the log area's writer, and opcode `0x0F`'s band that is not ignored here (F13, F14)
+- [ ] 3.9 What reads base slot 3's stamp, the log area's writer, and opcode `0x0F`'s band that is not ignored here (F13, F14); a lead: the 880 and 885 append to the log from `0x0F` band `0xE0` at an address base slot 2 states, and the same eight instruction list sits in 525 configuration `h525_config_2`, `tests/test_harmony_885_log_area.py`
 - [ ] 3.10 Opcode `0x1F`'s bands `0xD0`, `0xE0` and `0xF0` (F4)
 - [ ] 3.11 Any setting kept outside the configuration, such as in the EEPROM (F16)
 
