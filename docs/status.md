@@ -381,9 +381,14 @@ number to recompute. Answered entries are corrected in place below rather than d
 * **What the log area holds.** Base slot 2 is named, section 47, so the pointer table is complete.
   **One of the five append cases is read**, section 111: case 3's six bytes are the clock's own fields
   copied in descending significance, so its record is a timestamp. What remains is the other four, and
-  why the region is measured in eight byte units on the three architectures whose firmware never reads
-  it. Nothing in the corpus appends, so this is a firmware only question, like the three unused IR
-  classes above, and on **arch 12 it is worse than unused**: both bench Harmony Ones already have the
+  why the region is measured in eight byte units on arch 9 and arch 14, whose firmware is not known to
+  write it. **On arch 8 it is answered**: the Harmony 880 and 885's application appends records of up to
+  seven data bytes and their count to wherever base slot 2 points, and two of that platform's
+  containers append, `tests/test_harmony_885_log_area.py`. The same list sits in a Harmony 525
+  configuration, where the band is not read. This said three architectures' firmware
+  never reads it and nothing in the corpus appends<!--superseded--> until then. Elsewhere it stays a
+  firmware only question, like the three unused IR classes above, and on **arch 12 it is worse than
+  unused**: both bench Harmony Ones already have the
   declared region written, so the appender disarms itself at the first attempt, section 111.
 * **Which activity a drawn name belongs to.** **Closed**, sections 120, 121, 124 and 125: all
   50<!--fact:activities_total--> activities in the corpus carry their drawn name, through the modes an

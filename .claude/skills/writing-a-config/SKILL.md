@@ -65,7 +65,8 @@ checklist that argues each.
 | every mode page's tagged list has a second copy | nothing reads it and an editor must still change both. Its position is implied, not stated |
 | a one page screen deadens the two page turn keys | so growing a menu from one page to two must **undo** that, or the second page is unreachable while every count closes and both checksums pass. Both keys on 538 of 538 single page modes, neither on 0 of 58 multi page ones, arch 12 (Harmony One). The header's total and each page's number have to be restated too, section 293. `paginate` |
 | a section's size is not the gap to the next pointer | base slot 5's group arrays sit inside base slot 4's gap |
-| the log area's writer refuses out of range rather than erroring | and on arch 12 (Harmony One) a good config is what disarms it |
+| on arch 12 (Harmony One) the log area's writer refuses out of range rather than erroring | and a good config is what disarms it |
+| on arch 8 (Harmony 880 and 885) base slot 2 chooses where the remote's log append writes | the firmware checks the address only against `0x010000`, so keep the slot at `15360, 0x1E0000, 0x1FE000` and emit `0x0F` with a low byte `0xE0` to `0xE2` only on purpose; two corpus configurations do. `tests/test_harmony_885_log_area.py` |
 | a glyph or an encoded picture re-encodes to its original bytes | Logitech writes one greedy stream of the several that draw an image, and our encoders reproduce it on arch 8, 10, 12 and 14, section 363; still carry anything unchanged through as it is |
 | a favourite channel is not a key binding | it touches four sections and adds no key binding and no infrared group |
 | and it is not one mechanism either | a channel that survives being written as an integer goes through base slot 16; one with a leading zero is spelled out digit by digit. Each side has its own precondition |
@@ -113,8 +114,10 @@ checklist that argues each.
   about: the format answers "what is in this file", not "how does the product model this".
 * **A record's three digit tables are three pointers and may be shared**, same section: check who else
   names a table before editing it in place.
-* **The log area's writer refuses out of range and on arch 12 (Harmony One) a good config disarms it**,
+* **On arch 12 (Harmony One) the log area's writer refuses out of range and a good config disarms it**,
   "Base slot 2: the log area". Using the facility needs a 64 KiB erase inside the configuration region.
+* **On arch 8 (Harmony 880 and 885) base slot 2 chooses where the log append writes**, "How the Harmony
+  880 and 885 write it": the firmware checks only the floor at `0x010000`, so copy the three numbers.
 
 ### Actions, `reference/config-format/actions.md`
 

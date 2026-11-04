@@ -11,8 +11,9 @@
  * **What is generated**, each measured on the thirteen compiles section 312 lists:
  *
  * * **The log area**, sixteen thousand eight byte records from `0x1E0000` to `0x200000`, the same on
- *   all thirteen. Only the Harmony One's firmware writes to its log area, section 47; no arch 14 image
- *   here has been found to. Built by `firmwaresections.ts`, with the parameter block, since
+ *   all thirteen. Of the firmware read, the Harmony One's writes its log area, section 47, and so does
+ *   the Harmony 880 and 885's, `tests/test_harmony_885_log_area.py`; no arch 14 image here has been
+ *   found to. Built by `firmwaresections.ts`, with the parameter block, since
  *   `todo-compile-one.md` 6.4.
  * * **The event map**: thirty firmware status codes, code `k` to mode `N + k`, and `N` is the number of
  *   screens the firmware owns at the front of base slot 6, fourteen on the Harmony 600 and 650 and

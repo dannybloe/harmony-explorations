@@ -799,11 +799,18 @@ Read with `gspm.event_map`.
 
 ## Base slot 2: the log area
 
-A region of flash above the configuration that the remote may append records to and never erases. No
-configuration examined appends to it, and on the Harmony One the region is already full.
+A region of flash above the configuration that the remote may append records to and never erases. On the
+Harmony 880 and 885 the remote writes wherever the section says[^t-885-log-firmware], and a configuration's
+own action list appends to it in two of the sixteen containers of that platform read, both an 880's[^t-885-log];
+the same list sits in a Harmony 525 configuration, where what it does is not read[^t-885-log][^unchecked].
+On the Harmony One the region is already full[^s111].
 
-Confirmed on 19<!--fact:containers--> containers across four architectures, and on the arch 12 image, which
-is the only firmware read that writes to it[^s47].
+Confirmed on 19<!--fact:containers--> containers across four architectures[^s47]. Two firmware images are
+read writing to it, arch 12's[^s47b] and arch 8's, the Harmony 880 and 885's
+application[^t-885-log-firmware]; the Harmony 700's image never seeks it[^s47b], and the others' writers
+are not read[^unchecked]. This said arch 12's was the only firmware
+read that writes to it<!--superseded-->, and that no configuration examined appends to it<!--superseded-->,
+until the Harmony 880 and 885's application was read[^t-885-log-firmware].
 
 ```
 +0x00  u16  capacity        u24 on arch 12, where the section is nine bytes
@@ -853,8 +860,18 @@ variables at data memory `0x108` to `0x10E`. The other four cases are shapes wit
 **On the Harmony One the facility is dead.** `0x3FFFF0` to `0x400000` reads `00 ff` repeating with the last
 byte `0x00`, so the boot scan recovers the position after offset 15, which is `0x400000`, and the append's
 own upper bound rejects it by zeroing the remaining count[^s111]. A writer cannot use this region without
-erasing a 64 KiB block inside the configuration region first. **No configuration examined appends to it**,
-so a writer that copies these three numbers unchanged is doing everything the compiler does[^s47].
+erasing a 64 KiB block inside the configuration region first. **No Harmony One configuration examined
+appends to it**, so a writer that copies these three numbers unchanged is doing everything the compiler
+does[^s47].
+
+### How the Harmony 880 and 885 write it
+
+Differently, and with no window of their own. The application reads the section's count and start at
+start, never its limit, and appends from the first record that reads all `0xFF`, checking the address
+against nothing but its flash routine's floor at `0x010000`; an action list appends with `0x0F` and an
+operand low byte of `0xE0` to `0xE2`, and a record is up to seven data bytes with their number in its last
+byte. So on that platform base slot 2 decides where the remote writes, and a writer copies its three
+numbers unchanged. The detail is [the 880 and 885's memory page](../architectures/harmony-880-885/memory.md#what-the-remote-writes-on-its-own)[^t-885-log-firmware].
 
 ### What an entry holds
 
@@ -875,7 +892,9 @@ bytes, and the byte at `+0x07` says how many are used:
 which mirrors the firmware's own scan for the last byte that is not `0xFF`. **This layout is arch 7, 8 and 9
 only.** On arch 12 and 14 the client reads the region in raw 256 byte blocks and does not parse it, and on
 arch 12 it does not read the region at all unless a hardware flag is set, which it asks for with read
-selector 12[^unchecked]. None of this is checked against a firmware.
+selector 12[^unchecked]. **On arch 8 the firmware agrees on the frame**: its writer closes a record by
+putting the number of data bytes in the record's last byte and leaves the rest `0xFF`[^t-885-log-firmware];
+what the data bytes mean is not checked against any firmware[^unchecked].
 
 **On arch 16 (Harmony 300 and 350) the configuration states what it logs**: its own metadata describes two
 records, an `InfraredEvent` carrying a three byte `CurrentTime`, a device and a command, and a
@@ -889,7 +908,8 @@ table `LOG_AREAS`, which holds the user configuration rows of arch 12 and arch 1
 distinct Harmony One compiles, with its `u24` capacity[^s407], and on the thirteen arch 14 compiles[^s347].
 The safe mode row is not built.
 
-Read with `gspm.log_area`; `gspm.log_reference` names the append case an instruction selects.
+Read with `gspm.log_area`; `gspm.log_reference` names the append case an instruction selects on arch 12,
+and does not recognise the Harmony 880 and 885's append.
 
 [^s35]: Read in the firmware. [Section 35](../../docs/findings.md#s35)
 [^s35b]: Measured in configurations. [Section 35](../../docs/findings.md#s35)
@@ -972,3 +992,5 @@ Read with `gspm.log_area`; `gspm.log_reference` names the append case an instruc
 [^t-noscreen-state-tables]: Measured in configurations. [The test](../../packages/codec/test/noscreenstatetables.test.ts)
 [^t-long-press-c]: Measured in configurations. [The test](../../tests/test_harmony_350_long_press.py)
 [^t-long-press-u]: Measured on a unit. [The test](../../tests/test_harmony_350_long_press.py)
+[^t-885-log]: Measured in configurations. [The test](../../tests/test_harmony_885_log_area.py)
+[^t-885-log-firmware]: Read in the firmware. [The test](../../tests/test_harmony_885_log_area.py)

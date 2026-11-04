@@ -2488,7 +2488,9 @@ class Container:
         """The append case an instruction selects, 1 to 5, or None if it is not one.
 
         The case decides how many bytes of what the record holds; the arch 12 dispatcher is the
-        only implementation that has been read. Nothing in the corpus returns anything but None.
+        only implementation of these operands that has been read. Nothing in the corpus returns
+        anything but None. The Harmony 880 and 885 append through `0x0F` with an operand low byte of
+        `0xE0` to `0xE2` instead, which this does not look for, `tests/test_harmony_885_log_area.py`.
         """
         if instruction.opcode != OPCODE_SELECT_HANDLER:
             return None

@@ -141,6 +141,9 @@ answers each `F0 A0`; any other selector gets no reply at all.[^t-885-end]
 | `0x08` | recalculates a value from the clock, when a configuration passed its check | |
 | any other | no reply | two zero bytes |
 
+**Write misc selector 7 reaches the guards of a flash write the application keeps in data memory**: the unlock, the staged install's status, the configuration flags, the log's address and the RAM the flash
+routines run from, [memory.md](memory.md#data-memory).[^t-885-log]
+
 `READ_MISC` answers `C2`, the selector and **two** bytes; a host that takes a narrow state variable from
 the third byte reads zero, the trap [the commands](../../usb-protocol/commands.md) record on the Harmony
 525.[^t-885-end] **The clock is state variables 0 to 6**, at data memory `0x108` to `0x10E`, so either
@@ -221,3 +224,4 @@ mode a remote is in is field 4's low nibble, [the version block](../../usb-proto
 [^t-885-end]: Read in the firmware. [The test](../../../tests/test_harmony_885_write_end.py)
 [^t-885-end-client]: Stated by Logitech, in their client. [The test](../../../tests/test_harmony_885_write_end.py)
 [^t-885-start]: Read in the firmware. [The test](../../../tests/test_harmony_885_start_check.py)
+[^t-885-log]: Read in the firmware. [The test](../../../tests/test_harmony_885_log_area.py)

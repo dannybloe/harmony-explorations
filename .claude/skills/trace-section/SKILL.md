@@ -33,10 +33,10 @@ their load addresses are each architecture's `firmware.md` and `docs/checksums.m
 **Ghidra**: language `PIC-18:LE:24:PIC-18`, the generic variant only, so the SFRs are unnamed and
 `src/harmony/pic18/isa.py`'s per part map names them. `analyzeHeadless` rejects relative project paths.
 
-**That is a rule about reading code, not about where data is.** Two things exist on arch 12 alone and
-arch 14 never reads them: the touch hit map and the log area's writer, each with a base slot of its
-own. So when a slot looks empty or unread on arch 14, read arch 12 before concluding anything about
-the slot.
+**That is a rule about reading code, not about where data is.** Two things exist outside arch 14 and
+arch 14 never reads them: the touch hit map, on arch 12 alone, and the log area's writer, on arch 12
+and on arch 8 (`tests/test_harmony_885_log_area.py`), each with a base slot of its own. So when a slot
+looks empty or unread on arch 14, read the others before concluding anything about the slot.
 
 ## Step 1: get the actual pointer values
 
@@ -268,8 +268,8 @@ of addresses names an image, and a claim that spans an architecture has to be as
   known table before believing a new one. `docs/findings.md` sections 49 and 55.
 * **"Prefer arch 14, then port" is a rule about reading code, not about finding data.** Base slots
   17 and 2 both stayed unnamed for a while because arch 14 never seeks them: the touch hit map is
-  arch 12 only and so is the log area's writer. If a slot looks empty on the architecture you are
-  reading, check the others before concluding anything about the slot.
+  arch 12 only, and the log area's writer is arch 12's and arch 8's. If a slot looks empty on the
+  architecture you are reading, check the others before concluding anything about the slot.
 
 ## When the static route stalls
 

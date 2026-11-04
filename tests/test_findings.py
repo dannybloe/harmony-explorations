@@ -897,12 +897,18 @@ class TestScreenOpcode3IsDestinationFirst(unittest.TestCase):
         self.assertEqual(inside, 1080)
 
 
-class TestAConfigCannotChooseWhereItWrites(unittest.TestCase):
+class TestTheFlashJournalOpcodesAreBoundedOrAbsent(unittest.TestCase):
     """Section 118, against the caveat that a config could write to arbitrary flash.
 
     The path is real and section 108 read it. These tests pin the two things that bound it, so a
-    later change to either is visible: the write routine's own refusals, and the fact that the one
-    architecture whose firmware shares flash with its config does not implement the opcodes.
+    later change to either is visible: the write routine's own refusals on arch 14, and the fact that
+    arch 12, whose firmware shares flash with its config, does not implement the opcodes.
+
+    Renamed from `TestAConfigCannotChooseWhereItWrites`, whose title is not true on every architecture:
+    the Harmony 880 and 885 also share one flash between firmware and config, and there a config's base
+    slot 2 chooses where the log append writes, bounded only below `0x010000`, and two corpus configs emit
+    it. `tests/test_harmony_885_log_area.py`. This docstring called arch 12 the one architecture whose
+    firmware shares flash with its config until then.
     """
 
     ARCH14, ARCH14_BASE = 'h700_code', 0x9000
@@ -961,8 +967,14 @@ class TestAConfigCannotChooseWhereItWrites(unittest.TestCase):
             # No arch 12 config emits one, which is the corpus agreeing with the firmware.
             self.assertEqual(used & {0x65, 0x66}, set())
 
-    def test_no_config_in_the_corpus_writes_to_flash(self):
-        """The corpus wide negative, across every architecture, so a new sample that does stands out."""
+    def test_no_config_in_the_corpus_emits_0x65_or_0x66(self):
+        """The corpus wide negative for the two journal opcodes, across every architecture, so a new
+        sample that does stands out.
+
+        Renamed from `test_no_config_in_the_corpus_writes_to_flash`, which named more than the body
+        checks: `arch8_config_a` writes flash through the Harmony 880 and 885's `0x0F` band,
+        `tests/test_harmony_885_log_area.py`.
+        """
         lab.require(*lab.CONTAINERS)
         for name in lab.CONTAINERS:
             with self.subTest(sample=name):

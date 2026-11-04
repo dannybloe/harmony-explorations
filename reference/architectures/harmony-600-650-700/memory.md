@@ -46,7 +46,7 @@ reports itself as EON's 2 MiB part, flash id `15:1C`[^s88b], on each of the thre
 | `0x020000` | the **safe mode configuration**, 7115 bytes to `0x021BCB`, container format 1.4 with 20 pointer slots. It is the **status screen library**: no devices, no activities, 35 status screens, linked for this address, its end marker at `0x021BC7`. Its section table is byte identical on all three models | [^s24], [^s353], [^t-memory-map] |
 | `0x030000` to `0x200000` | the **user configuration**, 1856 KiB of room | [^s88] |
 | `0x0E0000` to `0x100000` | declared as the log area by every safe mode configuration of the three models, and the region Logitech's client names for a user log, 128 KiB | [^s206] |
-| `0x1E0000` to `0x200000` | declared as the log area by the user configurations instead: the same 128 KiB at the top of the 2 MiB part. Which of the two a remote wants is open, and nothing on these models is known to write either; the log area's writer is the Harmony One's alone | [^s206], [^s47] |
+| `0x1E0000` to `0x200000` | declared as the log area by the user configurations instead: the same 128 KiB at the top of the 2 MiB part. Which of the two a remote wants is open, and nothing on these models is known to write either. Of the firmware read, the Harmony One's and the Harmony 880 and 885's write their declared log area, [state](../../config-format/state.md#base-slot-2-the-log-area); this said the log area's writer is the Harmony One's alone<!--superseded--> until the 880 and 885's was read | [^s206], [^s47], [^t-885-log] |
 | the top of the chip, up to `0x200000` | the **flash journal** that `0x65`, `0x66` and the `0xE0` band of `0x0F` append to, [actions](../../config-format/actions.md). The firmware computes the region from the chip size and the configuration's own end, not from either declared log area: at most eight 64 KiB blocks, `0x180000` to `0x200000` when the configuration ends more than 512 KiB below the top. On a Harmony 600 every window read from just past the configuration's end to the chip's last sixteen bytes was erased, so nothing had ever been appended | [^s108], [^s109] |
 
 ## Internal flash, two pages of 64 KiB
@@ -206,3 +206,4 @@ rest is on [the Harmony 700's memory page](../../remotes/harmony-700/memory.md)[
 [^unchecked]: Not checked.
 [^s108]: Read in the firmware. [Section 108](../../../docs/findings.md#s108)
 [^s109]: Measured on a unit. [Section 109](../../../docs/findings.md#s109)
+[^t-885-log]: Read in the firmware. [The test](../../../tests/test_harmony_885_log_area.py)

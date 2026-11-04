@@ -430,8 +430,13 @@ transport:
   does not leave it, so it must never be entered as an experiment. Arch 12 (Harmony One) copies
   nothing and does not have this problem. **Check what a file actually holds before trusting its
   name**: on arch 14 the file called `-safe.bin` is not a safe mode image at all.
-* **A config cannot choose where the remote writes**, section 118: the action list opcodes that write
-  flash are bounded in the firmware, and no config in the corpus emits either.
+* **Where a config can make the remote write depends on the architecture.** Section 118 holds where it
+  was read: on arch 14 (Harmony 600, 650 and 700) `0x65` and `0x66` are bounded in the firmware, arch 12
+  (Harmony One) and arch 9 (Harmony 525) do not implement them, and no config in the corpus emits either.
+  On arch 8 (Harmony 880 and 885) `0x0F` with a low byte `0xE0` to `0xE2` appends to the log at whatever
+  address base slot 2 states, checked only against `0x010000`, and two corpus configs emit it,
+  `tests/test_harmony_885_log_area.py`. So a writer for the 880 and 885 keeps base slot 2 at `15360, 0x1E0000,
+  0x1FE000` and emits the append only on purpose. The other architectures are not read for this.
 * **A version request with a payload is not a read**, section 304. On arch 14 (Harmony 600, 650 and
   700) a payload turns the request into commands that write the settings store, data memory or program
   memory, and the transport's allow list keyed on the high nibble passed all of them as reads until

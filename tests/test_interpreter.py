@@ -2236,8 +2236,10 @@ class TestTheLogArea(unittest.TestCase):
     """findings.md section 47: base slot 2, the last slot that was neither named nor NULL."""
 
     CONTAINERS = TestTheParameterBlock.CONTAINERS
-    # The arch 12 pair, read off the one image that reads this section at all. The boot scan, the
-    # append routine, and the seek inside the scan that proves which slot it is reading.
+    # The arch 12 pair, read off the Harmony One's image. The boot scan, the append routine, and the
+    # seek inside the scan that proves which slot it is reading. This said the one image that reads
+    # this section at all until the Harmony 880 and 885's application was found reading it too, with
+    # no window of its own: tests/test_harmony_885_log_area.py.
     SCAN = 0x2DB4C
     APPEND = 0x2DC0A
     SEEK = 0x2BA76
@@ -2485,9 +2487,14 @@ class TestTheLogArea(unittest.TestCase):
         self.assertEqual(seeker_census('h700_code', 0x9000, 0x10B92, 0x6DD).get(2, 0), 0)
         self.assertEqual(seeker_census('one34_code', 0x20000, self.SEEK, 0x1F1).get(2, 0), 1)
 
-    def test_no_config_in_the_corpus_appends_to_it(self):
-        """Firmware nothing exercises, like the number sender. A writer may emit these operands;
-        no generated config here ever did."""
+    def test_no_config_in_the_corpus_uses_the_harmony_one_append(self):
+        """The Harmony One's append, the `0x1F` handler's operands `0xE1` to `0xE5`, is firmware nothing
+        exercises, like the number sender. A writer may emit these operands; no config here ever did.
+
+        Renamed from `test_no_config_in_the_corpus_appends_to_it`, which the corpus no longer bears out:
+        one Harmony 880 configuration in `lab.USER_CONFIGS`, `arch8_config_a`, appends to the log through
+        its firmware's `0x0F` band, which `log_reference` does not look for, and `h525_config_2` holds the
+        same list, where what it does is not read. `tests/test_harmony_885_log_area.py`."""
         from harmony import gspm
         for name in TestTheStateVariableTable.CONFIGS:
             c = gspm.parse(lab.load(name))

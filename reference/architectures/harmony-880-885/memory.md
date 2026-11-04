@@ -25,7 +25,7 @@ page states what differs here.
 | `0x01E000` to `0x01FB89` | inside the application's 64 KiB, a **safe mode configuration**: a complete container of 7049 bytes, byte identical in the 880's and the 885's images, which the application runs whenever the user's configuration fails its start check or may not be read, [firmware.md](firmware.md#what-the-application-does-at-start) | [^s114][^t-885-start] |
 | `0x020000` | the **user configuration**, the container's own pointers counting from here | [^x-concordance][^s14] |
 | `0x1D0000` | where the bootloader copies a staged application from when the status byte asks for status 2, [firmware.md](firmware.md#what-the-bootloader-does-at-power-on), and where Logitech's classic client stages one. What a unit holds there is not checked | [^t-885-boot][^t-885-start-client][^unchecked] |
-| `0x1E0000` to `0x1FE000` | the **log area** every configuration declares, 15360 records of 8 bytes | [^s47] |
+| `0x1E0000` to `0x1FE000` | the **log area** every configuration declares, 15360 records of 8 bytes, which the application appends to when a configuration's action list asks it to, [below](#what-the-remote-writes-on-its-own) | [^s47][^t-885-log] |
 | `0x1FE040` to `0x1FE0C1` | **devices, not flash**: every immediate load of the table pointer into this range names `0x1FE040`, `0x1FE041`, `0x1FE081` or `0x1FE0C1`, with `0x1FE080` and `0x1FE0C0` reached from them. By the code that uses them they are the keypad lines, the USB controller and the display; that identification is the code's reading and not checked against the hardware | [^t-885-boot][^unchecked] |
 | `0x1FFE00` to `0x1FFFFF` | where the bootloader and the application call their RAM copies of the flash programming routines, so a window onto data memory and not flash; inferred from where the copies are placed and called, not from a datasheet | [^t-885-boot] |
 
@@ -40,8 +40,7 @@ known, built on 3 April 2005, and its architecture record is two zero bytes wher
 states the architecture and the skin, so the configuration that ships with the firmware names neither.[^s114]
 
 **The log area stops 8 KiB short of 2 MiB**, at `0x1FE000`, where every other architecture's ends on a
-round boundary; the stride of 8 bytes is the Harmony 525's and the Harmony 600's as well.[^s47] What the
-firmware writes there is not read.[^unchecked] **The top 8 KiB is where the firmware reaches its devices
+round boundary; the stride of 8 bytes is the Harmony 525's and the Harmony 600's as well.[^s47] **The top 8 KiB is where the firmware reaches its devices
 and its RAM window**, which fits the log area stopping there; whether everything from `0x1FE000` up is
 decoded away from flash, rather than only the addresses the firmware uses, is not checked.[^t-885-boot][^unchecked]
 So a read there is a bus cycle on a device or on RAM, and neither program's read path refuses one.[^t-885-boot]
@@ -69,6 +68,56 @@ which can write the application back, is inferred and not checked.[^t-885-flash]
 the RAM the routine runs from rather than flash, and above `0x3FFFFF` an address may alias low, past the
 unlock; both inferred from the processor family and not checked.[^unchecked]
 
+## What the remote writes on its own
+
+**A configuration can make the remote program its own flash, and the configuration says where.** The
+application keeps a log in the region base slot 2 declares, and one action list instruction appends to it:
+`0x0F` with an operand low byte of `0xE0` closes the current record, `0xE1` appends one byte and `0xE2` two,
+and `0xE3` to `0xEF` do nothing.[^t-885-log] So a key press or an activity whose list holds it programs
+flash every time it runs, until the declared number of records is used; then the append stops without a
+word, and the application never erases the log on its own: its one erase is the host's
+command.[^t-885-log] Two of the sixteen containers of this architecture that have been read carry such a
+list, both an 880's and from two of the six configurations the sixteen come from, each appending one
+record of five bytes, from lists some of which are bound to a key; what the bytes mean and which key it is
+are not checked.[^t-885-log-corpus][^unchecked] The same list sits in a Harmony 525 configuration, where
+what the instruction does is not read.[^t-885-log-corpus][^unchecked] All of this is the 880 and 885's
+build; the Harmony 720's application is a build of its own and its log writer is not
+compared.[^unchecked]
+
+**Where it writes is whatever base slot 2 states.** At start, and only when the user configuration passed
+its check and the battery calibration word is not blank, the application reads the slot's two byte count
+and three byte start, and scans from the start eight bytes at a time for the first record that reads all
+`0xFF`; the limit at `+5` is never read.[^t-885-log] The address is then checked against nothing but the
+flash routine's own floor at `0x010000`, [writing flash](usb.md#writing-flash): not against the limit,
+the configuration's end, the application or the device window.[^t-885-log][^t-885-flash] So a start that
+points elsewhere has the remote program the first erased eight bytes at or after it, which can be inside
+the application's padding, inside the configuration itself, or at `0x1FE000` and up, where the firmware
+reaches its devices.[^t-885-log] Every configuration read declares `15360, 0x1E0000, 0x1FE000`, so a writer keeps those
+three numbers and emits the append only on purpose.[^t-885-log-corpus] **Nothing past the first erased
+record is looked at**: the appends program onward from there whatever the flash holds. And records are
+framed on the address itself, not on the distance from the start, so a start that is not a multiple of
+eight writes a count byte that names bytes never written.[^t-885-log]
+
+**A record is up to seven data bytes, `0xFF` padding, and the number of data bytes in its last byte**:
+closing an empty record does nothing, and a seventh byte closes the record by itself.[^t-885-log] That is
+the entry layout Logitech's classic client reads for this architecture,
+[state](../../config-format/state.md#what-an-entry-holds). This page said what the firmware writes there
+is not read<!--superseded--> until the application's log writer was read.[^t-885-log]
+
+**Nothing else is written by the remote itself**, as far as every call of its flash routines goes: that no
+other table write in the application reaches flash rests on a reading of its table pointer loads that is
+not asserted.[^t-885-log][^unchecked] The application programs flash from four places a
+running remote reaches, the host's erase, the host's write, the host's one byte append to the hardware
+version log at `0x000140`, and this log, and from one, a migration of an older hardware version byte, that
+no call or branch reaches; the bootloader writes at power on as well, [the bootloader](../../usb-protocol/bootloader.md#a-flash-programmer-for-the-whole-part).[^t-885-log][^t-885-boot]
+No data EEPROM is in use in either program, and there is no settings store: what the remote remembers,
+the clock and the state variables, is data memory and goes with the batteries, so **no value saved on the
+remote overrides the configuration**.[^t-885-log]
+
+**The texts "FLASH Memory ID", "Erase", "Write" and "Clear" in the image are four message screens of the
+built in configuration that neither program asks for**, so no write path is behind them; that they are a
+self test's messages is inferred.[^t-885-log]
+
 ## Data memory
 
 What the application keeps where in its RAM, as far as the write path and the start check read it:[^t-885-start][^t-885-end][^t-885-flash]
@@ -80,6 +129,18 @@ What the application keeps where in its RAM, as far as the write path and the st
 | `0x108` to `0x147` | the state variables, 64 bytes: a narrow variable `i` at `0x108 + i`, the wide ones after the narrow, `0xFE` above the last. The clock is variables 0 to 6, narrow in every configuration read, so at `0x108` to `0x10E` |
 | `0x148`, `0x149` | how many narrow and wide variables the running configuration declares |
 | `0x23A` | the unlock: `0xA7` lets an erase or a write below `0x010000` through, and it stays set until the application next starts or goes to sleep |
+| `0x212`, `0x213` | which set of routines each of the two RAM slots holds; the copier skips a slot whose byte already names the set it was asked for |
+| `0x28D` to `0x28F` | the log's next address, [above](#what-the-remote-writes-on-its-own) |
+| `0x290`, `0x291` | the log's records left |
+| `0x292` | the byte the log's append programs next |
+
+**Write misc selector 7 writes any byte of data memory**, with no bound, in the application and in the
+bootloader alike, [the misc commands](usb.md#how-a-write-ends), so in the application it reaches the
+guards of a flash write this table lists: the unlock, the staged install's status, the configuration
+flags, and the log's address and count. It also reaches the RAM the flash routines run from, which, if the
+window onto it at `0x1FFE00` is what it appears to be, is the code the next erase, write or log append
+runs while the slot's byte is left alone, and every special function register, whose meanings here are
+inferred from the processor family.[^t-885-log][^t-885-end][^t-885-boot][^unchecked]
 
 **The storage holds 64 bytes and the counts sit right after it**, so a configuration whose narrow variables
 plus twice its wide ones exceed 64 would have the firmware write over its own counts; the 16 containers
@@ -130,8 +191,9 @@ or where a page there names it:
   images'.[^unchecked]
 * What sits between the end of a configuration and the log area, and above the log area.[^unchecked]
 * The sector map below `0x010000`, where the two outside sources disagree, against a datasheet.[^unchecked]
-* Whether a configuration's state variable writes check the 64 byte bound, and what the firmware appends to
-  the log area.[^unchecked]
+* Whether a configuration's state variable writes check the 64 byte bound.[^unchecked]
+* Whether a unit has been logging, which a read of `0x1E0000` would show, and which key the two logging
+  configurations bind the append to.[^unchecked]
 
 [^s116]: Read in the firmware. [Section 116](../../../docs/findings.md#s116)
 [^x-concordance]: Stated by a third party. [concordance](https://github.com/jaymzh/concordance)
@@ -158,3 +220,5 @@ or where a page there names it:
 [^t-885-flash-client]: Stated by Logitech, in their client. [The test](../../../tests/test_harmony_885_erase_and_write.py)
 [^t-885-end]: Read in the firmware. [The test](../../../tests/test_harmony_885_write_end.py)
 [^t-885-reads]: Read in the firmware. [The test](../../../tests/test_harmony_885_reads.py)
+[^t-885-log]: Read in the firmware. [The test](../../../tests/test_harmony_885_log_area.py)
+[^t-885-log-corpus]: Measured in configurations. [The test](../../../tests/test_harmony_885_log_area.py)

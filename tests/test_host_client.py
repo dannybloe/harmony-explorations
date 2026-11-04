@@ -1084,8 +1084,8 @@ class TheArch14LoggingRegionIsWhatItsSafeModeConfigsDeclare(unittest.TestCase):
     """Section 206: a client sourced number the corpus turns out to state, exactly.
 
     `reference/architectures/harmony-600-650-700/memory.md` listed `USERLOGGING_BASE` as a smaller lead: arch 14 declares a 128 KiB
-    logging region at `0x0E0000`, and since section 47 found the log area's writer is arch 12 only,
-    all that could be said was that the region exists on paper. Every arch 14 safe mode container in
+    logging region at `0x0E0000`, and since section 47 found the log area's writer on arch 12 and
+    not on arch 14 (arch 8's was read later, `tests/test_harmony_885_log_area.py`), all that could be said was that the region exists on paper. Every arch 14 safe mode container in
     the corpus declares exactly that range in base slot 2, so it comes off the unconfirmed ledger.
 
     The user configs of the same architecture declare a range one megabyte higher, which is the top

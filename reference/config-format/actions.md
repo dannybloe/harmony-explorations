@@ -360,7 +360,7 @@ Every branch of both dispatchers is followed to its `RETURN`[^s73]. What a codec
 |---|---|---|
 | `0x1F` | operand high byte | a register machine: a byte register, a sixteen bit accumulator, load and arithmetic on each, and load and store against the base slot 13 state variable table; timers, band `0xEB` to start and `0xEA` to cancel, [state.md](state.md#base-slot-12-the-timer-table) |
 | `0x07` | operand low byte | thirteen operations with no argument: a push and pop stack, timer cancellation, clock and state variable reads |
-| `0x0F` | operand low byte | peripherals and the **flash journal**, plus register moves. Its `0xE0` band appends bytes to a region of the external flash[^s108] |
+| `0x0F` | operand low byte | peripherals and the **flash journal**, plus register moves. Its `0xE0` band appends bytes to a region of the external flash on arch 14[^s108], and on arch 8 to the log area base slot 2 declares, wherever that is, [below](#where-an-action-list-makes-the-remote-write)[^t-885-log] |
 | `0x3F` | operand high byte | four bands, one of which is the six byte instruction above |
 
 Bands the firmware tests and then ignores are part of the specification, not gaps: `0x1F` below `0xE0`; `0x0F`
@@ -574,10 +574,15 @@ and ignored[^s107].
 iterations whatever it is given, so a divisor of zero returns `0xFFFF` from `0x77` and the dividend itself from
 `0x6E`. Nothing traps and nothing hangs[^s107].
 
-### A configuration cannot choose where the remote writes
+### Where an action list makes the remote write
 
-`0x65` and `0x66` make the remote write to flash, so an action list can cause a write. **What it cannot do is
-choose the address**: the bounds are in the firmware and the configuration is not asked[^s118].
+**On arch 14 the firmware chooses the address and on arch 8 the configuration does.** This heading said a
+configuration cannot choose where the remote writes<!--superseded-->, for every architecture, until the
+Harmony 880 and 885's log append was read[^t-885-log].
+
+`0x65` and `0x66` make the arch 14 remote write to flash, so an action list can cause a write. **What it
+cannot do there is choose the address**: the bounds are in the firmware and the configuration is not
+asked[^s118].
 
 * The append routine reads five values and returns without writing if any of them is zero[^s118].
 * It compares the region's limit against the write cursor and against the cursor plus the length, and out of
@@ -586,11 +591,20 @@ choose the address**: the bounds are in the firmware and the configuration is no
   slot 2's declared reservation[^s108][^s118].
 
 So on arch 14 the reachable target is an append region at the top of the serial flash, and the firmware is
-not on that chip at all: it is in the processor's own program memory[^s118]. The architectures whose firmware
-shares a flash with the configuration do not implement either opcode, the Harmony One and the Harmony 525
-testing both in their ladder and doing nothing[^s107]. No configuration Logitech compiled uses either[^s118b].
+not on that chip at all: it is in the processor's own program memory[^s118]. The Harmony One and the
+Harmony 525, whose firmware shares a flash with the configuration, do not implement either opcode, testing
+both in their ladder and doing nothing[^s107]; the Harmony 880 and 885 share one too, and whether they
+implement them is not read[^unchecked]. No configuration Logitech compiled uses either[^s118b].
 This covers the action list language and the screen language, which reaches it only by queuing action list
 instructions; that no other route exists is not established[^unchecked].
+
+**On arch 8 (Harmony 880 and 885) the route is `0x0F`'s `0xE0` to `0xE2`, and base slot 2 chooses the
+address.** The application appends to the region the configuration declares there, reads its count and
+start and never its limit, and checks the address only against its flash routine's floor at `0x010000`,
+which leaves the configuration, the application and the device window reachable; two of the
+sixteen containers of that platform read emit it, and the same list sits in a Harmony 525 configuration,
+where what the band does is not read[^unchecked],
+[the 880 and 885's memory page](../architectures/harmony-880-885/memory.md#what-the-remote-writes-on-its-own)[^t-885-log][^t-885-log-corpus].
 
 [^s17]: Measured in configurations. [Section 17](../../docs/findings.md#s17)
 [^s26]: Measured in configurations. [Section 26](../../docs/findings.md#s26)
@@ -644,3 +658,5 @@ instructions; that no other route exists is not established[^unchecked].
 [^s118]: Read in the firmware. [Section 118](../../docs/findings.md#s118)
 [^s118b]: Measured in configurations. [Section 118](../../docs/findings.md#s118)
 [^t-harmony-350-delay]: Read in the firmware. [The test](../../tests/test_harmony_350_delay.py)
+[^t-885-log]: Read in the firmware. [The test](../../tests/test_harmony_885_log_area.py)
+[^t-885-log-corpus]: Measured in configurations. [The test](../../tests/test_harmony_885_log_area.py)
