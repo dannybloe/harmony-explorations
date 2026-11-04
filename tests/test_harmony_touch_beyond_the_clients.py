@@ -310,8 +310,11 @@ class WhichKeysMyHarmonyGivesALongPressInDeviceMode(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        if not MYHARMONY:
-            raise unittest.SkipTest('no lab')
+        # Skip on the files themselves, not on the lab being named: a lab path that holds no decompiled
+        # client is the case `make test-nolab` runs, and it must skip rather than error.
+        missing = [p for p in (cls.POPUP, cls.SCREEN) if not MYHARMONY or not os.path.isfile(os.path.join(MYHARMONY, *p))]
+        if missing:
+            raise unittest.SkipTest('the decompiled MyHarmony is not in the lab')
         def read(parts):
             with open(os.path.join(MYHARMONY, *parts), encoding='utf-8', errors='replace') as fh:
                 return fh.read()
