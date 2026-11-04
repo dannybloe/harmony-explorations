@@ -41,13 +41,13 @@ Written on 4 November 2026; linked from `todo-later.md` 5.6.
 - [x] 3.1 The action interpreter: the opcode table, a send and its paired delay, power transitions (F4)
 - [x] 3.2 The action queue's depth (F5)
 - [x] 3.3 State variables: the storage, the fill stopping at 63 and whether that is a ceiling for a writer (F3)
-- [ ] 3.4 The section seeker, confirming the base slot map (F2)
-- [ ] 3.5 Base slot 15's guard: the group lengths and count demanded (F7)
-- [ ] 3.6 The timer table: concurrency and the duration clamp (F6)
+- [x] 3.4 The section seeker, confirming the base slot map (F2)
+- [x] 3.5 Base slot 15's guard: the group lengths and count demanded (F7)
+- [x] 3.6 The timer table: concurrency and the duration clamp (F6)
 - [ ] 3.7 The number sender, though no 880 or 885 configuration holds favourite channels (F8)
 - [ ] 3.8 The infrared player: carrier, and whether the toggle records' second group is alternated (F11)
 - [ ] 3.9 Screen opcode 21, found on this platform only, and opcode 1's clip (F10, F12)
-- [ ] 3.10 What reads base slot 3's stamp, and the log area's writer (F13, F14); the writer is answered by 1.7, `tests/test_harmony_885_log_area.py`, so the stamp is what is left
+- [x] 3.10 What reads base slot 3's stamp, and the log area's writer (F13, F14); the writer is answered by 1.7, `tests/test_harmony_885_log_area.py`, so the stamp is what is left
 - [ ] 3.11 Where this platform keeps an inter device delay, if anywhere (F4)
 
 ## 4. Corrections
