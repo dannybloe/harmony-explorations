@@ -43,6 +43,14 @@ type and no greater than ten actions, while it does name `PressMinRepeats`, `Fix
 template offers that page on another family's branch only, which the review read and this file does not
 assert.
 
+**Which keys MyHarmony gives a long press, in device mode.** A colour key there was seen to keep its short
+press as its long one while Info took a long press of its own, and the long presses in the synced documents
+sit on no colour key. MyHarmony's code does not explain it: the popup that assigns a short press, a long
+press or both disables its long press choice in two cases only, a key with nothing on it yet and Yellow
+while Philips Hue is configured on it, and the device mode screen compares no key name but Yellow. Every
+other key, the colour keys included, is offered a long press. Where the refusal came from, the service or
+the way the choice was made, is not read.
+
 **The screens, asserted.** The remote's own sliders stop short of what a document can carry: brightness and
 key brightness start at 10, the timeout runs 1 to 30. The timeout from a document is multiplied by 1000 and
 handed to the suspend timer with no clamp, and the lock screen uses half of it. The edit lock locks the
@@ -289,6 +297,39 @@ class WhatMyHarmonyLetsAPersonSetForATouch(unittest.TestCase):
     def test_the_dashboards_settings_page_edits_another_familys_rows(self):
         for name in DASHBOARD_ROWS:
             self.assertEqual(self.screens(name), ['Web.MartiniWeb.Tasks.Dashboard.Main'], name)
+
+
+class WhichKeysMyHarmonyGivesALongPressInDeviceMode(unittest.TestCase):
+    """The long press choice is refused for an empty key and for Yellow under Hue, and for no colour key."""
+
+    POPUP = ('Web.Library.ButtonMappingUtils', 'Logitech.Harmony.Web.Library.ButtonMappingUtils.UserControls',
+             'LongPressToolTipUserControl.cs')
+    SCREEN = ('Web.MartiniWeb.Tasks.ActivityRemote.ButtonMapping',
+              'Logitech.Harmony.Web.MartiniWeb.Tasks.ActivityRemote.ButtonMapping.ViewModels',
+              'DeviceModeHardButtonsViewModel.cs')
+
+    @classmethod
+    def setUpClass(cls):
+        if not MYHARMONY:
+            raise unittest.SkipTest('no lab')
+        def read(parts):
+            with open(os.path.join(MYHARMONY, *parts), encoding='utf-8', errors='replace') as fh:
+                return fh.read()
+        cls.popup, cls.screen = read(cls.POPUP), read(cls.SCREEN)
+
+    def test_the_long_press_choice_is_disabled_under_two_conditions_only(self):
+        loaded = self.popup[self.popup.index('_Loaded(object sender'):self.popup.index('btnShortPress_Click')]
+        blocks = re.findall(r'if \((.*?)\)\s*\{([^{}]*)\}', loaded)
+        refusing = sorted(re.findall(r'"([^"]+)"', cond)[0] for cond, body in blocks
+                          if 'btnLongPress).IsEnabled = false' in body)
+        self.assertEqual(refusing, ['martiniweb/ButtonUnMapped', 'martiniweb/hueConfiguredButton'])
+
+    def test_the_hue_refusal_is_yellow_only_and_the_screen_names_no_other_colour(self):
+        self.assertEqual(sorted(set(re.findall(r'"(Red|Green|Yellow|Blue)"', self.screen))), ['Yellow'])
+        hue = self.screen[self.screen.index('private bool IsYellowButtonWithHueConfiguration'):]
+        hue = hue[:hue.index('\n\t}\n')]
+        self.assertIn('"Yellow"', hue)
+        self.assertIn('HueConfiguredForYellowButton', hue)
 
 
 class WhatHarmonyDesktopLetsAPersonSetForATouch(unittest.TestCase):

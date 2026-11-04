@@ -176,10 +176,10 @@ the Tap, SwipeLeft and SwipeRight gestures, and never on a screen entry[^t-touch
 
 * Which of the touch controller's sensor models a Touch carries, and so which of the driver's two layouts
   of the Home and Favorites zones it runs; the two agree on left and right[^unchecked].
-* Which keys Logitech's client lets a long press be given to. MyHarmony offers one on the keys, in an
-  activity and in device mode, and on no screen entry or gesture; in device mode a colour key has been seen
-  to keep its short press as its long one where another key took a long press of its own, and why is not
-  read[^unchecked].
+* Why a colour key in device mode has been seen to keep its short press as its long one where another key
+  took a long press of its own[^unchecked]. MyHarmony's code does not explain it: it offers a long press on
+  every key that has a command, and refuses one only on Yellow while Philips Hue is set on it, and on no
+  screen entry or gesture[^t-touch-beyond-client].
 * The long press's timing measured on a remote rather than read[^unchecked].
 * Whether a held Off reboots the remote or powers it off: the firmware reads a reboot, but a check of a held
   Off did not see the remote restart by itself. The two key combinations are still tried on a remote rather
@@ -195,3 +195,4 @@ the Tap, SwipeLeft and SwipeRight gestures, and never on a screen entry[^t-touch
 [^unchecked]: Not checked.
 [^t-touch-keys]: Read in the firmware. [The test](../../../tests/test_harmony_touch_keys.py)
 [^t-touch-products]: Stated by Logitech, by their service. [The test](../../../tests/test_host_client.py)
+[^t-touch-beyond-client]: Stated by Logitech, in their client. [The test](../../../tests/test_harmony_touch_beyond_the_clients.py), class `WhichKeysMyHarmonyGivesALongPressInDeviceMode`
