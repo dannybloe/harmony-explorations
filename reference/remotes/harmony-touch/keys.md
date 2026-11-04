@@ -176,7 +176,10 @@ the Tap, SwipeLeft and SwipeRight gestures, and never on a screen entry[^t-touch
 
 * Which of the touch controller's sensor models a Touch carries, and so which of the driver's two layouts
   of the Home and Favorites zones it runs; the two agree on left and right[^unchecked].
-* Which keys Logitech's client lets a long press be given to[^unchecked].
+* Which keys Logitech's client lets a long press be given to. MyHarmony offers one on the keys, in an
+  activity and in device mode, and on no screen entry or gesture; in device mode a colour key has been seen
+  to keep its short press as its long one where another key took a long press of its own, and why is not
+  read[^unchecked].
 * The long press's timing measured on a remote rather than read[^unchecked].
 * Whether a held Off reboots the remote or powers it off: the firmware reads a reboot, but a check of a held
   Off did not see the remote restart by itself. The two key combinations are still tried on a remote rather

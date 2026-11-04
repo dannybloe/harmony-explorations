@@ -105,8 +105,9 @@ it, and neither is fixed behaviour no document changes.
   input is flagged online.
 * **Channel tuning beyond what the clients offer**: keys sent before a two or three digit channel, which
   neither client names, and keys sent before the digits. The clients offer the padding and the number then OK.
-* **A longer press on any step**, where Harmony Desktop offers one on a power step only and no screen of
-  MyHarmony offers one.
+* **A code held for a set time on any step** of a sequence or an activity's start, the step's `Duration`,
+  where Harmony Desktop offers one on a power step only and no screen of MyHarmony offers one. This is not
+  the long press of a key, which MyHarmony does set, [keys.md](keys.md#holding-a-key).
 * **What Help resends first**, which the power set types decide.
 * **A key or screen entry that starts an activity**, inside an activity's or a device's map; the clients
   offer that on the remote's top level, which a Touch does not have.
