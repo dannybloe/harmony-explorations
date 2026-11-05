@@ -164,6 +164,14 @@ the 5 second window; a host answering a sync on that transport needs a longer on
 timestamps, `packages/usb/test/touch-host.test.ts`. A note only: nothing here answers a sync yet, and the
 transport is unchanged.
 
+## The unit record, todo-touch 6.2
+
+**Its unit record was taken on 5 November 2026**, read only, by `read-file-identity.ts --record touch`:
+`/sys/sysinfo` opened, read and closed, and `/sys/guid` refused as before, so the record is the digest of
+the identity file's serial, in the lab's `units/touch.txt`. The same read gave firmware 4.15.330,
+architecture 0x11, skin 0x63 and hardware version 01.00. This is what the request rail of 6.3 compares the
+remote on the cable against.
+
 ## Not done
 
 * No infrared run has been recorded with this unit, and nothing about it in use has been seen and written
