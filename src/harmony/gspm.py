@@ -577,8 +577,9 @@ NUMBER_SENDER_DIGITS = 10
 # The screen language, a second interpreter with its own one byte opcodes, reached from base slot
 # 11, from a base slot 14 lookup and from a mode entry. `docs/findings.md` section 40.
 SCREEN_TABLE_SLOT = 11
-# Operand bytes per opcode, for the fixed length ones. 21 is arch 8 only and its length is
-# inferred from the corpus rather than read from a firmware, because no arch 8 image exists.
+# Operand bytes per opcode, for the fixed length ones. 21 is arch 8 only: it inverts a rectangle,
+# `x`, `y`, width and height, read in the Harmony 885's firmware, `tests/test_harmony_885_screens.py`,
+# after its length had been inferred from the corpus.
 # 23 is arch 12 only and takes **no** operand: its handler at `0x29640` on the Harmony One 3.4
 # image makes no read call at all, where every other handler calls its own reader. That one entry
 # is what unblocked arch 12's mode programs. `docs/findings.md` section 54.
@@ -2030,7 +2031,7 @@ class Container:
         17       3, an action list instruction, queued
         18, 19   a switch on a state variable, below
         20       3, a flash address, and the program continues there
-        21       4, arch 8 only, length inferred from the corpus
+        21       4, arch 8 only: invert a rectangle, `tests/test_harmony_885_screens.py`
         ```
 
         A switch reads a state variable index, then a table of exact values and a table of
@@ -2074,7 +2075,9 @@ class Container:
                 continue
             if opcode == SCREEN_TEXT_INLINE:
                 # A code with bit 7 set is the first half of a wide one and takes a second byte
-                # with it, so the terminator cannot be found by scanning for a zero. No string in
+                # with it, so the terminator cannot be found by scanning for a zero. Not on arch 8,
+                # whose firmware draws every nonzero byte as one code,
+                # `tests/test_harmony_885_screens.py`; this walk still applies the wide rule there. No string in
                 # the corpus is wide, but a parser that assumed narrow would desynchronise on the
                 # first one that is.
                 end = off + 2
@@ -2383,9 +2386,10 @@ class Container:
         ```
 
         Each digit table is ten three byte instructions, indexed by the digit. `docs/findings.md`
-        section 39. Every config in the corpus carries a count of zero, so this reader has never
-        had a record to read; it exists because the firmware's layout is unambiguous and a writer
-        would otherwise have nothing to write against.
+        section 39. Most configurations carry a count of zero; the Harmony 720's in the corpus holds
+        one record, compiled by Logitech, which this reader reads,
+        `tests/test_harmony_885_number_sender.py`, as do Logitech's compiles made to carry favourite
+        channels, sections 154 and 262.
         """
         try:
             addresses = self._counted_pointers(arch_slot(self.architecture, NUMBER_SENDER_SLOT), 1)

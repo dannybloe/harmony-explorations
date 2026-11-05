@@ -400,11 +400,19 @@ on lists of Logitech's 19 Harmony One compiles it names the device's own group o
 12 carry a `0x1F` between the call and the wait, exactly the 12 devices with an `OnlinePower` variable, 3
 add a reset after the wait, and one device carries two waits[^s393].
 
-What those architectures do **not** state is a default, an identifier or an inter device delay. Where they
-keep an inter device delay, if they keep one, is open, and that is a negative measurement rather than an
-absence of looking: Logitech's account states one per device, 500 milliseconds on most and 1000 on one
+What those architectures do **not** state is a default, an identifier or an inter device delay **as a field
+or an instruction**: Logitech's account states one per device, 500 milliseconds on most and 1000 on one
 television, and no `0x7C` in that television's configuration carries the 10 that would be, nor a 5 for
-the devices set to 500[^s235c]. They draw none of the 451 strings either, having no slider.
+the devices set to 500[^s235c]. They draw none of the 451 strings either, having no slider. **On arch 12 and
+arch 8 it is in the infrared codes**, as the silence that opens the codes a device's switching sends: on the
+Harmony One the record a power transition sends opens with the catalogue's `interDeviceDelay`,
+[sending](../infrared/sending.md#how-logitechs-compiler-spells-a-block)[^s433]. On the Harmony 880 and 885
+every code a state transition or an activity start sends opens with a silence of its device's own, 200 ms to a
+second on most devices and 50 ms on a few,
+[sending](../infrared/sending.md#the-delay-between-devices-on-the-harmony-880-and-885)[^t-885-delay-corpus];
+that it is the account's inter device delay is inferred and not checked[^unchecked].
+This said where they keep one, if they keep one, was open<!--superseded--> after the Harmony One's had been
+answered on its own pages. Arch 9 (Harmony 525) is not checked[^unchecked].
 
 **Logitech's account states the same power on delay, in milliseconds**, which is the check from outside
 the format: `UserFeatureManager/GetUserFeatures` returns a `PowerFeature` per device carrying
@@ -601,8 +609,10 @@ Read with `gspm.timers` and `gspm.timer_reference`.
 How a favourite channel's number becomes digit codes. A record here is a method for sending a number to
 one device: give it 101 and it queues that device's codes for 1, 0 and 1.
 
-**Confirmed on configurations made to carry it rather than found with it.** Every configuration otherwise
-examined carries a count of zero here. A configuration with three favourite channels was compiled by
+**Confirmed on configurations made to carry it, and on one found with it.** Most configurations carry a count
+of zero here; a Harmony 720 configuration of arch 8, compiled by Logitech, holds one record and twenty four
+lists that hand it a number[^t-885-number-sender-corpus]. This said every configuration otherwise examined carried a count
+of zero<!--superseded--> until that one was read. A configuration with three favourite channels was compiled by
 Logitech's own service and every field below sits where the firmware reading put it, byte for byte[^s154];
 more compiles carry the record too[^s156], and the two implementations are compared on it by the golden
 vectors.
@@ -647,8 +657,11 @@ and at each address
 Each digit table is ten three byte instructions indexed by the digit. The firmware adds `base` to the value
 it is given, converts the sum to packed decimal by subtracting `10000`, `1000`, `100` and `10` in four
 loops, and queues one instruction per digit, taking it from the first, middle or last table according to
-where the digit sits. `flags` bit 2 makes the prefix instruction fire at a hundred and bit 1 at ten; with
-neither, it never fires. Bit 0 makes the prefix consume a digit[^s39]. The fourteen bytes read in sequence
+where the digit sits. `flags` bit 2 makes the prefix instruction fire at a hundred and bit 1 at ten[^s39].
+**With neither it fires from 10000**: the default threshold is `0xFFFF`, compared against the packed value whose
+top byte counts the ten thousands, read on the Harmony 880 and 885, 720, 700, 600, 650, One and 525
+images[^t-885-number-sender]. This said that with neither it never fires<!--superseded-->. It matters only for a
+non zero prefix with neither bit set. Bit 0 makes the prefix consume a digit[^s39]. The fourteen bytes read in sequence
 end exactly where the first of the three fixed pointer offsets begins, which is the closure for this
 layout, and the routine is identical on the Harmony 700, the Harmony 600 and the Harmony One[^s39].
 
@@ -679,6 +692,29 @@ catalogue code with its first block's opening silence dropped and no held block,
 sends[^t-noscreen-favourites]. That device's group holds no whole record of a digit, since nothing of that
 device in that configuration sends one, where a device whose digit keys send its digits holds both. The one
 channel with a leading zero in these compiles, 07, calls two of the same lists, 0's and then 7's[^t-noscreen-favourites].
+
+**On arch 8 (Harmony 880 and 885) the routine is read and it is this layout**[^t-885-number-sender]:
+
+* it is reached only from `0x1F` band `0xF3`, which hands it the accumulator, and band `0xF5`, the byte
+  register, the operand's low byte naming the record; bands `0xF4` and `0xF6` go to base slot 14 instead;
+* it runs only after a configuration passed its start check, and **it does not compare the record index with
+  the count**, so an index past the count takes whatever follows as a pointer;
+* the ten thousands are counted in binary into the packed value's top byte, so **value plus base must stay at
+  99999 or below**, past which a leading digit indexes beyond its table's ten entries;
+* the digits are aligned by a shift of `4 * (6 - count)` computed in eight bits, so **a minimum above 6 sends
+  every digit wrong**;
+* **the last digit of a number takes the last table**, a one digit number included, the first of two or more
+  the first table and the rest the middle one;
+* it queues four kinds of instruction, the first, the prefix, one per digit and the last, **so one call can
+  queue up to nine**, and a full action queue drops the rest without a word.
+
+**No Harmony 880 or 885 configuration read holds a record, and the Harmony 720's holds one**, with twenty four
+lists that hand it a number, which read as its favourite channels[^t-885-number-sender-corpus]: one record with
+flags, base and minimum 0 and the three single instructions zero; three digit tables at three addresses thirty
+bytes apart with identical contents, each entry calling a list that sends one digit of one device and pauses that
+device, a paired send; and twenty four lists that load a number from 602 to 754 into the accumulator and hand it
+over with `0xF3`, record 0. The 720's firmware has the routine with the same instructions, literals and bit
+numbers but for three working address literals, each eight higher[^t-885-number-sender].
 
 Read with `gspm.number_senders` and `tables.numberSenders`.
 
@@ -986,6 +1022,10 @@ and does not recognise the Harmony 880 and 885's append.
 [^s235b]: Measured in configurations. [Section 235](../../docs/findings.md#s235)
 [^s393]: Measured in configurations. [Section 393](../../docs/findings.md#s393)
 [^s235c]: Stated by Logitech, by their service. [Section 235](../../docs/findings.md#s235)
+[^s433]: Measured in configurations. [Section 433](../../docs/findings.md#s433)
+[^t-885-number-sender]: Read in the firmware. [The test](../../tests/test_harmony_885_number_sender.py)
+[^t-885-number-sender-corpus]: Measured in configurations. [The test](../../tests/test_harmony_885_number_sender.py)
+[^t-885-delay-corpus]: Measured in configurations. [The test](../../tests/test_harmony_885_delay.py)
 [^s39b]: Measured in configurations. [Section 39](../../docs/findings.md#s39)
 [^s324]: Measured in configurations. [Section 324](../../docs/findings.md#s324)
 [^s319b]: Read in the firmware. [Section 319](../../docs/findings.md#s319)

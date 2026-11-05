@@ -202,8 +202,23 @@ or where a page there names it:
   instruction<!--superseded--> until that configuration was read.
 * **37 infrared records carry a second group of block pointers**, in four configurations, all in one
   device: the same RC6 command with one payload bit inverted, which is the shape of a toggling code's
-  record, [infrared records](../../config-format/infrared-records.md).[^s134] Whether this firmware
-  alternates the two groups the way the Harmony One's and the Harmony 650's do is not read.[^unchecked]
+  record, [infrared records](../../config-format/infrared-records.md).[^s134] **This firmware alternates the
+  two groups the way the Harmony One's and the Harmony 650's do**, one bit per infrared group, cleared when the
+  infrared engine is set up at every restart of the remote,
+  with the difference that groups 8 and up share a bit with groups 0 and up,
+  [infrared records](../../config-format/infrared-records.md#which-group-a-send-plays).[^t-885-infrared] This
+  said whether it alternates was not read<!--superseded-->.
+* **An infrared record is read through its own start**, its carrier is the PWM's with no clamp, and a released
+  key stops at the one microsecond word that ends every once and held block,
+  [sending](../../infrared/sending.md#how-the-harmony-880-and-885-play-a-record).[^t-885-infrared]
+* **The codes a device's switching sends open with a silence of that device's own**, which holds every later
+  code to every device since one code is sent at a time,
+  [sending](../../infrared/sending.md#the-delay-between-devices-on-the-harmony-880-and-885).[^t-885-delay] That it
+  is the account's inter device delay is inferred and not checked.[^unchecked]
+* **The number sender is base slot 16 and is reached by `0x1F` bands `0xF3` and `0xF5`**; no 880 or 885
+  configuration read holds a favourite channel, [state](../../config-format/state.md#base-slot-16-the-number-sender).[^t-885-number-sender]
+* **Screen opcode 21 inverts a rectangle**, opcodes 22 and 23 do not exist, the fill clips at `160 - x`, and
+  a switch that matches nothing runs the bytes after it, [screens](../../config-format/screens.md).[^t-885-screens]
 * **The screen is 128 by 160**, and the glyph shapes of its fonts are this architecture's own alphabet,
   which the Harmony 890 and 895 share.[^s129][^s180]
 * **A scan code is `(line - 1) * 4 + input`**, on a 4 by 16 lattice, [the key table](../../config-format/modes-and-keys.md).[^s144]
@@ -238,6 +253,10 @@ or where a page there names it:
 [^s182]: Measured in configurations. [Section 182](../../../docs/findings.md#s182)
 [^s206]: Stated by Logitech, in their client. [Section 206](../../../docs/findings.md#s206)
 [^s206b]: Measured in configurations. [Section 206](../../../docs/findings.md#s206)
+[^t-885-infrared]: Read in the firmware. [The test](../../../tests/test_harmony_885_infrared.py)
+[^t-885-delay]: Read in the firmware. [The test](../../../tests/test_harmony_885_delay.py)
+[^t-885-number-sender]: Read in the firmware. [The test](../../../tests/test_harmony_885_number_sender.py)
+[^t-885-screens]: Read in the firmware. [The test](../../../tests/test_harmony_885_screens.py)
 [^s284]: Read in the firmware. [Section 284](../../../docs/findings.md#s284)
 [^s235]: Measured in configurations. [Section 235](../../../docs/findings.md#s235)
 [^s134]: Measured in configurations. [Section 134](../../../docs/findings.md#s134)

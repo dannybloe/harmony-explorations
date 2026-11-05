@@ -36,13 +36,15 @@ That third way is where the full screen pictures are named. It is measured on ar
 | 17 | `u16` operand, `u8` opcode | queue an action list instruction |
 | 18, 19 | a switch, below | switch on a state variable and jump |
 | 20 | `u24` | jump |
-| 21 | 4 bytes | *arch 8 only*, meaning unknown; the length is inferred from the configurations |
+| 21 | `x`, `y`, `width`, `height` | *arch 8 only*: invert the rectangle, [below](#opcode-21-inverts-a-rectangle-on-arch-8) |
 | 22 | **per architecture**, [below](#opcodes-22-and-23-per-architecture) | *arch 12*: call. *arch 9*: select a screen page |
 | 23 | none | **per architecture**: *arch 12* the return matching opcode 22; *arch 9* the page transfer |
 
 The opcodes and their handlers are read in the firmware of the Harmony One 3.4, the Harmony 600 0.2 and the
-Harmony 700 2.8[^s40], opcode 23's empty operand on the Harmony One[^s54b], and opcode 21's length is
-inferred from four arch 8 configurations[^s40b].
+Harmony 700 2.8[^s40], opcode 23's empty operand on the Harmony One[^s54b], and on arch 8 in the Harmony 885's
+and 720's, where **the eleven above and the end are the whole set**: any other byte ends the program as 0
+does, so a stray byte truncates a page with no error[^t-885-screens]. Opcode 21's length was inferred from four
+arch 8 configurations[^s40b] and its meaning unknown<!--superseded--> until the arch 8 firmware was read.
 
 **22846<!--fact:screen_programs--> programs across 19<!--fact:containers--> containers and four architectures
 decode with nothing left over**, which is the check that matters: an instruction has no length field, so a
@@ -59,19 +61,35 @@ draws nothing (220 rows from `y` 40 end at row 4). Each row is clipped to the di
 columns right of `x`, and a row or a column past the screen is drawn nowhere. A width of 0 is not read.[^s425]
 
 Read in full on the Harmony One 3.4, and on the Harmony 600 and 650 0.2 and the Harmony 700 2.8 as far as the
-row loop and the row routine's clip at 128 by 128[^s425]. The Harmony 650 0.4 image and arch 8, 9 and 10 are
-not checked[^unchecked]. What Logitech uses it for on the Harmony One is on [its compiler
+row loop and the row routine's clip at 128 by 128[^s425]. **On arch 8 (Harmony 880 and 885) the width is
+clipped to `160 - x` and the column window runs to 159**, where the panel is 128 wide and the invert and the
+pictures clip at `128 - x`; and **a width of 0 fills 256 pixels**, since the pixel loop decrements before it
+tests[^t-885-screens]. What the display controller does with columns past 127 is not checked[^unchecked]. The
+Harmony 650 0.4 image and arch 9 and 10 are not checked[^unchecked]; this said arch 8 was not checked
+either<!--superseded-->. What Logitech uses it for on the Harmony One is on [its compiler
 page](../architectures/harmony-one/compiler.md#pictures), and that the Harmony One draws a page over what the
 screen held is on [its display page](../remotes/harmony-one/display.md#how-the-screen-is-drawn). Whether the Harmony 600, 650 and 700 clear the screen before a page is not
 read[^unchecked].
+
+### Opcode 21 inverts a rectangle, on arch 8
+
+**Opcode 21 turns every pixel of a rectangle into its inverse**: four bytes, `x`, `y`, `width` and `height`, and
+no address, so relocating never touches it. It reads each row back from the display, complements it and writes
+it again, so a second invert of the same rectangle restores the screen, and what it shows depends on what was
+drawn under it. Rows stop at 160, the width at `128 - x`, and a width of 0 runs 256 pixels[^t-885-screens].
+Every arch 8 configuration read uses it the same way, eight cells of 64 by 32 in a two by four grid on the
+Harmony 880 and 885 and six of 64 by 42 on the 720, each the only instruction of its program[^t-885-screens-corpus].
+What those cells are on the remote is not checked[^unchecked].
 
 ### Text, opcodes 4 and 5
 
 **The inline strings are glyph codes, not characters.** The renderer resolves one by indexing the selected
 font by the code minus the font's first code, which is one in every generated configuration.[^s46][^s78] A
 code with bit 7 set is the first half of a wide code and takes a second byte with it, so a terminator cannot
-be found by scanning for a zero.[^s121] Whether any configuration holds a wide code is not
-checked[^unchecked]. What a code means is per configuration, and the text is recovered from the glyph's
+be found by scanning for a zero.[^s121] **Not on arch 8**: the Harmony 880 and 885 draw every nonzero byte as
+one code, take the first code from the font set whatever its count, and check the code against neither the
+count nor a NULL glyph[^t-885-screens]; no arch 8 string holds a byte with bit 7 set[^t-885-screens-corpus].
+Whether any configuration holds a wide code is not checked[^unchecked]. What a code means is per configuration, and the text is recovered from the glyph's
 pixels, [below](#what-a-glyph-code-means-and-how-the-text-is-recovered).
 
 **Opcode 4 is the commoner of the two, and its target is never a place of its own.** In 12052 of 12052
@@ -116,12 +134,18 @@ architecture before it can walk past one.
   the display controller as a page address, and **opcode 23 transfers 96 pixels into that page**: the 525's
   panel is addressed as eight pages of eight pixel rows.[^s101] How its display controller is driven is on [the
   525's firmware page](../architectures/harmony-5xx/firmware.md#the-display-driver).
-* **Arch 8 and arch 14**: whether either opcode exists there is not read[^unchecked].
+* **Arch 8 (Harmony 880 and 885)**: neither exists, and either ends the program as 0 does[^t-885-screens].
+* **Arch 14**: whether either opcode exists there is not read[^unchecked].
 
 ### Where a program ends
 
-**A program's storage ends with a `SCREEN_END` byte even where its last instruction is a jump or a switch**,
-which no execution can reach. Positionally, in front of a mode page record, 91 to 294 programs a container
+**A program's storage ends with a `SCREEN_END` byte even where its last instruction is a jump or a switch.**
+After a jump no execution reaches it. **After a switch it is reached on arch 8 (Harmony 880 and 885)**: a switch
+that matches nothing returns with the stream past its tables, so the bytes after it are its default arm; of 189
+switches in the sixteen arch 8 containers read, copies of six configurations, 48 are followed by an end byte and
+141 by another instruction, at an address a root also reaches[^t-885-screens][^t-885-screens-corpus]. This said no execution can reach
+that byte<!--superseded--> on every architecture; whether arch 9, 12 and 14 fall through the same way is not
+checked[^unchecked]. Positionally, in front of a mode page record, 91 to 294 programs a container
 end with a terminator that is reached, against 49 to 64 per arch 8 configuration that are not. A jump may
 also abut the next structure with no terminator at all, 36 times in a Harmony One configuration, so the byte
 belongs to the program only when it is zero.[^s84]
@@ -153,7 +177,7 @@ them.[^s146]
   table](#base-slot-7-the-font-table). It still breaks rows exactly `rows - 1` times, which is the closure
   its extent rests on, on all 51 encoded pictures of arch 8, 12 and 14.[^s50]
 * **Kind 2** is a bare `RETURN` in the arch 12 and arch 14 firmware, valid and drawing nothing, and a higher
-  kind returns without reading the header.[^s50] **On arch 9 (Harmony 525) kind 2 is the only kind used,
+  kind returns without reading the header.[^s50] On arch 8 every kind above 1 returns before drawing.[^t-885-screens] **On arch 9 (Harmony 525) kind 2 is the only kind used,
   one bit a pixel**, since the panel is monochrome. A row is padded to a whole byte, so the picture is
   `5 + ceil(stride / 8) * rows` bytes: a 96 pixel row is 12 bytes and a 19 pixel one 3.[^s62][^s85] Every
   picture in an arch 9 user configuration is 96 by 64, the whole panel, at 773 bytes; the safe mode container
@@ -323,7 +347,9 @@ hold 5 to 18 entries. Each entry is one typeface:[^s46b]
 
 **unless `+0x02` is zero**, and then the count is at `+0x01` and the first code is 1. That is a
 discriminator and not an explanation, and it is what every arch 12 user configuration needs. A code's index
-is `code - first`.[^s78]
+is `code - first`.[^s78] The arch 8 firmware never applies the discriminator: it always takes `+0x01` as the
+first code and uses neither the height nor the count[^t-885-screens], and none of the 140 font sets of the arch 8
+configurations read has a zero count[^t-885-screens-corpus].
 
 and each glyph
 
@@ -447,7 +473,12 @@ with the owner's own device names in it.[^s149] `configLanguage`, `LANGUAGE_MARK
   later address.[^s55] Read with `gspm.bitmaps` and `gspm.bitmap_at`.
 * **The renderer loads only the low byte of a picture's stride and row count**, so a value above 255 is
   taken modulo 256 with no error, and **its row loop stops drawing at row 128** but still reads the rest of
-  the picture. Read on the Harmony 700 2.8 image[^s50]; other images are not checked[^unchecked].
+  the picture. Read on the Harmony 700 2.8 image[^s50]. On arch 8 the low byte rule holds and the row stop is
+  160[^t-885-screens]; other images are not checked[^unchecked].
+* **On arch 8 (Harmony 880 and 885)**: opcodes 22 and 23 do not exist and an unknown byte silently ends a page;
+  the bytes after a switch run when no case matches, so an edit must keep them; keep opcodes 1 and 21 inside
+  128 by 160 and never a width of 0; a text byte is one code, so every byte a string draws must be a code of the
+  font in force, on a glyph that is not NULL.[^t-885-screens]
 * **A program of ours that is queued takes a free base slot 11 entry below 256** and is never appended past
   it, since an operand of 256 or more runs entry `operand & 0xff`.[^s369]
 * **A picture or a glyph re-encodes to its original bytes** by the rule above, and an editor still carries
@@ -493,4 +524,6 @@ with the owner's own device names in it.[^s149] `configLanguage`, `LANGUAGE_MARK
 [^s124]: Measured in configurations. [Section 124](../../docs/findings.md#s124)
 [^s149]: Measured in configurations. [Section 149](../../docs/findings.md#s149)
 [^unchecked]: Not checked.
+[^t-885-screens]: Read in the firmware. [The test](../../tests/test_harmony_885_screens.py)
+[^t-885-screens-corpus]: Measured in configurations. [The test](../../tests/test_harmony_885_screens.py)
 [^s173]: Measured in configurations. [Section 173](../../docs/findings.md#s173)

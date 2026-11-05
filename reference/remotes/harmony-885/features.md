@@ -18,6 +18,14 @@ Generated from `MODELS_BY_SKIN` and `hasLongPress` in `packages/usb/src/models.t
 service states 15 for the Harmony 880, and the two sources agree on it.[^s131] No configuration read holds
 that many, so the limit is stated and not demonstrated.[^s136b]
 
+## Favourite channels
+
+**The firmware sends a favourite channel as digits**, through the same number sender the Harmony One and the
+Harmony 600, 650 and 700 have, [state](../../config-format/state.md#base-slot-16-the-number-sender).[^t-885-number-sender]
+No Harmony 880 or 885 configuration read holds a favourite channel; a Harmony 720 configuration on the same
+firmware, compiled by Logitech, holds one number sender and twenty four lists that hand it a number, which read
+as its favourite channels and are the example a writer has.[^t-885-number-sender-corpus]
+
 ## Learning a code
 
 **A code the remote learns from an original remote is not stored as it was learned.** The Harmony 880's
@@ -42,3 +50,5 @@ configuration for this model from here.
 [^s42]: Stated by Logitech, in the manual. [Section 42](../../../docs/findings.md#s42)
 [^s136]: Stated by Logitech, by their service. [Section 136](../../../docs/findings.md#s136)
 [^unchecked]: Not checked.
+[^t-885-number-sender]: Read in the firmware. [The test](../../../tests/test_harmony_885_number_sender.py)
+[^t-885-number-sender-corpus]: Measured in configurations. [The test](../../../tests/test_harmony_885_number_sender.py)

@@ -62,9 +62,12 @@ checklist that argues each.
 | a power on delay holds back one device, not the sequence | so raising it does nothing at all unless that activity sends the same device a later command, which 37<!--fact:delay_unfelt--> of 129<!--fact:delay_pairs--> activity and device pairs here do not. An editor that presents it as a pause in the activity is wrong about most of them |
 | on arch 14 a delay saved on the remote wins at start | the configuration copies a saved value over its own `first` at start, seen across three on the Harmony 600, so a changed delay does nothing on a unit with one saved for it, and only the remote's settings store says which have one. The Harmony 600 had two, section 303 |
 | a frame can be written, and its tail is emitted for the families that have a rule and copied otherwise | 140 distinct tail shapes, a rule for 29<!--fact:protocol_tails--> of the rhythm table's 37<!--fact:protocol_measured--> measured entries plus 33<!--fact:protocol_tails_stated--> derived from Logitech's own statement, and none for the rest. 226 records hold a second, different code in the tail |
-| a toggling code's record holds two groups, the code as stated and then with its toggle bit flipped | the firmware flips one bit per infrared group on each send and plays the first group while it is set, read on the Harmony 650 and the Harmony One; a release goes in the record's third pointer as its own block. Section 365 |
-| a record's carrier period is truncated, not rounded | `floor(1e9 / f)` nanoseconds, per record rather than per device |
+| a toggling code's record holds two groups, the code as stated and then with its toggle bit flipped | the firmware flips one bit per infrared group on each send and plays the first group while it is set, read on the Harmony 650 and the Harmony One, and on arch 8 (Harmony 880 and 885) with eight bits, `tests/test_harmony_885_infrared.py`; a release goes in the record's third pointer as its own block. Section 365 |
+| a record's carrier period is truncated, not rounded | `floor(1e9 / f)` nanoseconds, per record rather than per device; on arch 8 (Harmony 880 and 885) the PWM rounds to 250 ns, so for a carrier in whole hundreds of hertz from 16 to 100 kHz either plays the same there |
+| on arch 8 (Harmony 880 and 885) the player reads a record through its own start | keep the own start exact, one or two pointer groups, at most 256 records a group, and a carrier from about 15.6 kHz up, since nothing clamps it; end every once and held block with a `0x0001` word, where a released key stops, and write no word whose duration bits are 0 to 5 other than the bare `0x0000` and `0x0001`, which plays as about 65.5 ms. Groups 8 and up toggle with groups 0 and up. `tests/test_harmony_885_infrared.py` |
+| on arch 8 (Harmony 880 and 885) the codes a switch sends open with a silence of the device's own, inferred to be the delay between devices | so changing it rewrites each such record's opening words, a length change through `relocate.ts`, and a device composed without it switches back to back. The silence holds every later code, to every device. `tests/test_harmony_885_delay.py` |
 | a picture's position is implied by everything before it | inserting or resizing one moves every later address |
+| on arch 8 (Harmony 880 and 885) the screen language is eleven opcodes and the end | 22 and 23 do not exist and any other byte ends a page silently; 21 inverts and carries no address; keep fills and inverts inside 128 by 160 and never a width of 0, since the fill clips only at `160 - x` and a 0 runs 256 pixels; the bytes after a switch are its default arm; a text byte is one code, with no wide code. `tests/test_harmony_885_screens.py` |
 | every mode page's tagged list has a second copy | nothing reads it and an editor must still change both. Its position is implied, not stated |
 | a one page screen deadens the two page turn keys | so growing a menu from one page to two must **undo** that, or the second page is unreachable while every count closes and both checksums pass. Both keys on 538 of 538 single page modes, neither on 0 of 58 multi page ones, arch 12 (Harmony One). The header's total and each page's number have to be restated too, section 293. `paginate` |
 | a section's size is not the gap to the next pointer | base slot 5's group arrays sit inside base slot 4's gap |
@@ -74,6 +77,7 @@ checklist that argues each.
 | a favourite channel is not a key binding | it touches four sections and adds no key binding and no infrared group |
 | and it is not one mechanism either | a channel that survives being written as an integer goes through base slot 16; one with a leading zero is spelled out digit by digit. Each side has its own precondition |
 | a record's three digit tables are three pointers and may be shared | the same check base slot 5's duration blocks need |
+| on arch 8 (Harmony 880 and 885) the number sender checks neither its record index nor its range | hand over through `0x1F` band `0xF3` (accumulator) or `0xF5` (byte register), never `0xF4` or `0xF6`, which reach base slot 14; keep the index below the count, value plus base at or below 99999 and the minimum at or below 6. With neither prefix flag the prefix fires from 10000, on all seven images read. One call queues up to nine instructions, which `assertQueueFits` cannot see. The Harmony 720's compile is the example. `tests/test_harmony_885_number_sender.py` |
 | a sequence at Logitech's own stated limit can hang a remote for good | **refuse** an oversized sequence rather than warning, bounded by the **peak depth** of the forty instruction action queue and not by their item count, which permits the one that killed a remote. `assertQueueFits` |
 | a same length edit is not a small write | the cheapest costs **two** 64 KiB erase blocks, and that is the floor rather than a page binding's quirk: the trailer checksum is at the far end of the file and every edit moves it. So the step is read the blocks, apply, erase, write back whole, verify by reading, and the known good content has to be a flash **region** rather than a container, since the checksum's block runs past the container's end |
 | a small logical change reshuffles the whole image | make minimal diffs against an existing config; reproducing what their generator would emit is not achievable |
@@ -127,6 +131,10 @@ checklist that argues each.
   about: the format answers "what is in this file", not "how does the product model this".
 * **A record's three digit tables are three pointers and may be shared**, same section: check who else
   names a table before editing it in place.
+* **On arch 8 (Harmony 880 and 885) the number sender checks nothing a writer gets wrong**, same section, "On
+  arch 8": the index, the range and the minimum are the writer's to keep, the band is `0xF3` or `0xF5`, and the
+  prefix fires from 10000 with neither flag. The Harmony 720 configuration in the corpus is Logitech's compile to
+  copy. Nothing in `packages/codec` holds any of it yet.
 * **On arch 12 (Harmony One) the log area's writer refuses out of range and a good config disarms it**,
   "Base slot 2: the log area". Using the facility needs a 64 KiB erase inside the configuration region.
 * **On arch 8 (Harmony 880 and 885) base slot 2 chooses where the log append writes**, "How the Harmony
@@ -204,6 +212,9 @@ checklist that argues each.
   free base slot 11 entry below 256, since entry 6653 ran as 253 and stalled a Harmony 650 in a loop.
 * **A glyph or picture re-encodes to its original bytes** (`encodeBitmap`, `encodeGlyph`; arch 9 (Harmony
   525) unchecked), and anything unchanged is still carried through as it is.
+* **On arch 8 (Harmony 880 and 885) the screen language stops at opcode 21**, `screens.md` "For a writer": an
+  unknown byte ends a page silently, the bytes after a switch run when no case matches, the fill is clipped only
+  at `160 - x`, a width of 0 runs 256 pixels, and a text byte is one code.
 * **Arch 14 menus are built, never copied off a menu's last page**,
   `reference/architectures/harmony-600-650-700/compiler.md` "Menu pages, built" and "The two row list".
   `fourSlotMenuChrome` builds each kind's chrome and a grown page is checked against it before and after;
@@ -220,6 +231,15 @@ checklist that argues each.
 * **How many times a press sends is the ratio of the first two blocks**, a length change through
   `relocate.ts`; the first block's copies alone are wrong for a two code word family.
 * **A toggling code needs both pointer groups**, the code as stated first.
+* **On arch 8 (Harmony 880 and 885) the player reads through the own start**, "A record states its own address"
+  and "For a writer": the own start exact, one or two groups, a carrier from about 15.6 kHz up, a `0x0001` word
+  at the end of every once and held block, and no word whose duration bits are 0 to 5 but the bare `0x0000` and
+  `0x0001`. A builder that carries a stated
+  zero mark as one microsecond must not do it there. `reference/infrared/sending.md`, "How the Harmony 880 and
+  885 play a record".
+* **On arch 8 the delay between devices is, by inference, the codes' opening silence**, `reference/infrared/sending.md`, "The
+  delay between devices on the Harmony 880 and 885": changing it is a relocation, and `composeDevice` gives a
+  power code no lead.
 * **A carrier period is truncated, not rounded**, per record.
 * **A frame can be rebuilt; its tail cannot be copied from a sibling**, which may carry the sibling's
   second command, `reference/infrared/families.md`. 62<!--fact:protocol_tails_all--> of the rhythm

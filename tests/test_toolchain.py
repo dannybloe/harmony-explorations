@@ -255,8 +255,10 @@ class TheRunnerSeesEveryTest(unittest.TestCase):
         # `tests/test_harmony_885_log_area.py`. 89 with `tests/test_harmony_touch_beyond_the_clients.py`,
         # todo-touch 5.1, which landed on main beside them. 90 to 92 with todo-prepare-885 3.1 to 3.3,
         # `tests/test_harmony_885_actions.py`, `_queue.py` and `_state.py`. 93 to 96 with 3.4, 3.5, 3.6 and
-        # 3.10, `tests/test_harmony_885_slots.py`, `_parameters.py`, `_timers.py` and `_stamp.py`.
-        self.assertEqual(len(files), 96, 'the Python test files')
+        # 3.10, `tests/test_harmony_885_slots.py`, `_parameters.py`, `_timers.py` and `_stamp.py`. 97 to 100 with
+        # 3.7, 3.8, 3.9 and 3.11, `tests/test_harmony_885_number_sender.py`, `_infrared.py`, `_screens.py` and
+        # `_delay.py`.
+        self.assertEqual(len(files), 100, 'the Python test files')
         with_block = 0
         for path in files:
             with open(path, encoding='utf-8') as handle:
@@ -311,8 +313,9 @@ class TheRunnerSeesEveryTest(unittest.TestCase):
         # `tests/test_harmony_885_log_area.py`, 1.7, which carries one. 87 with
         # `tests/test_harmony_touch_beyond_the_clients.py`, todo-touch 5.1, which carries one. 88 to 90 with
         # the three files of todo-prepare-885 3.1 to 3.3, which carry one each. 91 to 94 with the four of
-        # 3.4, 3.5, 3.6 and 3.10, which carry one each.
-        self.assertEqual(with_block, 94,
+        # 3.4, 3.5, 3.6 and 3.10, which carry one each. 95 to 98 with the four of 3.7, 3.8, 3.9 and 3.11, which
+        # carry one each.
+        self.assertEqual(with_block, 98,
                          'files carrying a __main__ block, of %d' % len(files))
 
 
@@ -810,8 +813,10 @@ class APythonBoundOnACorpusTotalIsExact(unittest.TestCase):
         # `tests/test_harmony_885_log_area.py`. 89 with `tests/test_harmony_touch_beyond_the_clients.py`,
         # todo-touch 5.1, which landed on main beside them. 90 to 92 with todo-prepare-885 3.1 to 3.3,
         # `tests/test_harmony_885_actions.py`, `_queue.py` and `_state.py`. 93 to 96 with 3.4, 3.5, 3.6 and
-        # 3.10, `tests/test_harmony_885_slots.py`, `_parameters.py`, `_timers.py` and `_stamp.py`.
-        self.assertEqual(len(scanned), 96, 'Python test files, which moves when one is added')
+        # 3.10, `tests/test_harmony_885_slots.py`, `_parameters.py`, `_timers.py` and `_stamp.py`. 97 to 100 with
+        # 3.7, 3.8, 3.9 and 3.11, `tests/test_harmony_885_number_sender.py`, `_infrared.py`, `_screens.py` and
+        # `_delay.py`.
+        self.assertEqual(len(scanned), 100, 'Python test files, which moves when one is added')
         self.assertIn(self.CONTROL, found, 'the pattern matches nothing it should match')
 
     def test_every_remaining_bound_says_why_it_is_not_a_measurement(self):

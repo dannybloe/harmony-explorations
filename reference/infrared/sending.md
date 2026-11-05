@@ -119,9 +119,12 @@ press's frames are the code's walk in order.
 
 ## How Logitech's compiler spells a block
 
-**These are the generator's conventions rather than format constraints**, since the firmware plays any
-legal spelling identically; a writer that wants byte identity with a compiled configuration follows them,
-and `compiledBlockWords` in `compose.ts` does.[^s174] With them, a television composed from the catalogue
+**These are the generator's conventions**, and a writer that wants byte identity with a compiled
+configuration follows them, as `compiledBlockWords` in `compose.ts` does.[^s174] **On the Harmony 880 and 885
+two of them are not free**: the player stops a released key at the one microsecond word, and a word below six
+microseconds plays as about 65.5 ms, [below](#how-the-harmony-880-and-885-play-a-record).[^t-885-infrared] This
+said the firmware plays any legal spelling identically<!--superseded--> before a player was read against it;
+whether the other architectures' players read the microsecond is not checked.[^unchecked] With them, a television composed from the catalogue
 is block for block what Logitech's compiler wrote for the same codes,[^s174] and respelling every merged
 space run of every block reproduces three Harmony One compiles exactly, 492, 415 and 415
 blocks.[^s174]
@@ -135,8 +138,9 @@ blocks.[^s174]
   `interDeviceDelay`, 100, 500 or 1000 ms, on 8 of 8 catalogue devices of three compiles (six at 500), the
   inter key delay naming it on 1,[^s433] where the Harmony 600, 650 and 700 wait through a delay step
   instead.[^s337] `composeDevice` gives a power step no lead in on both, so a device composed for a Harmony
-  One sends its power codes without that silence in front. **Unconfirmed**: how the remote plays it, and
-  whether a device needs it.
+  One sends its power codes without that silence in front. **Unconfirmed**: how the Harmony One plays it, and
+  whether a device needs it. The Harmony 880 and 885 carry a silence of the same kind, and how they play it is
+  read, [below](#the-delay-between-devices-on-the-harmony-880-and-885).[^t-885-delay]
 * **A duration too long for one word is spelt as maximal 32767 us words with the remainder balanced
   across the last two, smaller half first, and no word below half the maximum**: 50000 is `32767, 17233`;
   40222 is `20111, 20111`; 500000 is fourteen maximals then `20631, 20631`.[^s174]
@@ -177,8 +181,12 @@ the on transition ends in are not composed.[^s320]
 
 ## The carrier
 
-**The carrier is made in software**, by a loop of cycle counted delays and a mask that switches the
-emitter per half cycle, not by a hardware timer driving the lamp.[^s13] A configuration states a code's
+**On the Harmony 700 2.8 a software modulator was read**, a loop of cycle counted delays and a mask that
+switches the emitter per half cycle, and taken for the carrier.[^s13] Which of it and the hardware drives the
+lamp there is not settled: the same image, and the Harmony One's, 600's and 525's, put the capture and compare
+module CCP1 in PWM mode[^s91], and on the Harmony 880 and 885 that PWM is the carrier,
+[below](#how-the-harmony-880-and-885-play-a-record).[^t-885-infrared] This page said the carrier is made in software, not by a hardware timer<!--superseded-->,
+of every Harmony. A configuration states a code's
 carrier as a period and an on time in nanoseconds, the on time being half the period: 38 kHz is stored as
 26315, truncated rather than rounded.[^s92] A Harmony Touch, which builds its codes itself, rounds instead and
 gives 26316 for 38 kHz, [its devices and infrared](../architectures/harmony-touch/devices-and-infrared.md#against-a-compiled-configuration)[^t-touch-engine].
@@ -202,6 +210,47 @@ the first from the transmit side.[^s92] Where the division by 100 happens betwee
 modulator is not established: the record loader's class 1 arm does not do it.[^s92b] Not checked on the
 Harmony One or the Harmony 525.[^unchecked]
 
+## How the Harmony 880 and 885 play a record
+
+Read in the firmware of the Harmony 885 and of the 880, whose player is the same bytes, and compared with
+the Harmony 720's, whose class 1 start, word and stop routines match the 885's; its loader, toggle and
+transmitter are not compared.[^t-885-infrared][^unchecked] How the record itself is read, through its own
+start, is [infrared records](../config-format/infrared-records.md).
+
+**The carrier comes from the processor's PWM hardware**: the record's period in nanoseconds is rounded to whole
+250 ns counts, and on the ten carriers the configurations hold, 36 to 58 kHz, the carrier played is within
+0.45% of the one stored.[^t-885-infrared][^t-885-infrared-corpus] **There is no clamp**: a period above 64124 ns, a carrier below about 15.6 kHz, overflows the
+hardware's eight bit period and plays another carrier. Truncating or rounding a carrier in whole hundreds of
+hertz from 16 to 100 kHz gives the same carrier on the air.[^t-885-infrared] The 250 ns count rests on the
+division in the code and the register names of the processor family, which are inferred.[^unchecked]
+
+**Every duration has six microseconds taken off before it is timed**, so a word whose duration bits are 0 to 5,
+other than the bare `0x0000` and `0x0001`, wraps and plays as about 65.5 ms: a mark of 0 to 5 us or a space of
+2 to 5 us. A word of `0x0000` ends the code, and the bare
+`0x0001` is skipped unless the key has been released.[^t-885-infrared] No configuration read holds a word
+shorter than 30 us.[^t-885-infrared-corpus]
+
+**A held key stops at the end of the copy on the air.** The player reads ahead of what it sends, and when it
+finds the key released it stops at the next one microsecond word, which every once and held block ends in and
+no tail does, 5940, 2946 and 0 of 464 block pointers over the configurations read.[^t-885-infrared][^t-885-infrared-corpus]
+A held block without that word would go on repeating what had been read ahead. **A tail after a held key goes
+out as a second transmission**, the carrier started again.[^t-885-infrared] Whether a tail goes out after a tap,
+which the code reads as cut at the once block's last word, is not checked on a unit.[^unchecked]
+
+### The delay between devices on the Harmony 880 and 885
+
+**The codes a device's switching sends open with a silence of that device's own**, as the Harmony One's power
+codes open with its delay between devices: every code a state transition or an activity start sends opens with
+its device's silence, 200 ms to a second on 80 of the 84 device groups of the sixteen containers read and 50 ms on
+the other 4, where every code with a held block opens with 50 ms. The sixteen are copies of six configurations,
+so 800 ms is one device of one configuration and 200 ms three devices of another. It is per device: 14 of the 16
+containers carry two or three values.[^t-885-delay-corpus] **The remote has one transmitter and starts a code only when the
+last one has finished**, so the silence in front of one device's code holds every code after it, to every
+device; a `0x7C` holds only its own device.[^t-885-delay] Each silence is spelled as the bullets above give,
+`32767, 17233` for 50 ms.[^t-885-delay-corpus] **That this silence is the account's inter device delay is inferred**, from the
+Harmony One's closure and this structure; no compile of an account with known delays and no timing on a unit
+confirms it here, and why four devices carry 50 ms is not known.[^unchecked]
+
 [^s258]: Measured in configurations. [Section 258](../../docs/findings.md#s258)
 [^s127]: Measured in configurations. [Section 127](../../docs/findings.md#s127)
 [^s348]: Measured in configurations. [Section 348](../../docs/findings.md#s348)
@@ -222,4 +271,9 @@ Harmony One or the Harmony 525.[^unchecked]
 [^s92]: Measured in configurations. [Section 92](../../docs/findings.md#s92)
 [^s92b]: Read in the firmware. [Section 92](../../docs/findings.md#s92)
 [^unchecked]: Not checked.
+[^s91]: Read in the firmware. [Section 91](../../docs/findings.md#s91)
+[^t-885-infrared]: Read in the firmware. [The test](../../tests/test_harmony_885_infrared.py)
+[^t-885-infrared-corpus]: Measured in configurations. [The test](../../tests/test_harmony_885_infrared.py)
+[^t-885-delay]: Read in the firmware. [The test](../../tests/test_harmony_885_delay.py)
+[^t-885-delay-corpus]: Measured in configurations. [The test](../../tests/test_harmony_885_delay.py)
 [^t-touch-engine]: Read in the firmware. [The test](../../tests/test_harmony_touch_devices.py)

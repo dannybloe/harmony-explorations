@@ -327,7 +327,11 @@ checked[^unchecked].
 
 **The interpreter adds no delay of its own between devices**: only `0x7D`, `0x7C` and the deferred instruction
 below call the infrared queue's push[^t-885-actions]. How the queue's drain orders entries by device on that
-platform, and where an account's inter device delay goes there, are not established[^unchecked].
+platform is not established[^unchecked]. **The codes a device's switching sends open with a silence of that
+device's own** instead, and since the remote sends one code at a time it holds every later code,
+[sending](../infrared/sending.md#the-delay-between-devices-on-the-harmony-880-and-885)[^t-885-delay]; that this
+silence is the account's inter device delay is inferred and not checked[^unchecked].
+This said where it goes was not established<!--superseded-->.
 
 ### `0x7A key; 0x6C value` saves a delay on the remote, arch 14
 
@@ -747,3 +751,4 @@ where what the band does is not read[^unchecked],
 [^t-885-actions-corpus]: Measured in configurations. [The test](../../tests/test_harmony_885_actions.py)
 [^t-885-queue]: Read in the firmware. [The test](../../tests/test_harmony_885_queue.py)
 [^t-885-queue-corpus]: Measured in configurations. [The test](../../tests/test_harmony_885_queue.py)
+[^t-885-delay]: Read in the firmware. [The test](../../tests/test_harmony_885_delay.py)

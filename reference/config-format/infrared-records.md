@@ -47,7 +47,7 @@ per group:    u8  zero            the same spare byte the section table carries
 ## A record
 
 ```
-+0x00  u8   zero, read by nothing found
++0x00  u8   zero; read and thrown away on arch 8, read by nothing found elsewhere
 +0x01  u24  carrier period, nanoseconds
 +0x04  u24  carrier on time, nanoseconds, the period halved
 +0x07  u8   class                     a record pointer lands here
@@ -57,7 +57,8 @@ per group:    u8  zero            the same spare byte the section table carries
 ```
 
 The header is `12 + 9 * count` bytes: 21 for one pointer group, 30 for two[^s75]. The byte at `+0x00` is zero
-in every class 1 record counted, 3387 of them, and nothing has been found that reads it[^s92].
+in every class 1 record counted, 3387 of them, and nothing has been found that reads it[^s92], except on the
+Harmony 880 and 885, whose loader reads it and throws it away[^t-885-infrared].
 
 **A record states its own address**, so it can be found with no pointer at all. The `u24` at `+0x08` is the
 record's own start, a twenty four bit exact match, and with the class byte before it and the group count
@@ -69,6 +70,13 @@ shaped[^s181]. The search is how the records are read on the
 [Harmony 890 and 895](../architectures/harmony-890-895/memory.md), whose slot map is otherwise unsettled.
 `irRecordsByClosure` in `packages/codec/src/ir.ts` is the reader.
 
+**On the Harmony 880 and 885 the firmware itself goes through the own start**: the loader reads the class byte
+where the pointer lands, follows the `u24` at `+0x08` and reads the header from there, so a wrong own start
+plays a wrong header. It takes the group and the record index as bytes, so at most 256 records of a group can
+be sent, and it decrements the group count before testing it, so **a count of 0 skips 255 groups** and a count
+of 3 or more plays the last[^t-885-infrared]. Every one of the 5792 records of the sixteen arch 8 containers
+read, copies of six configurations, is class 1 with one or two groups and its own start exact[^t-885-infrared-corpus].
+
 ### The carrier
 
 The two `u24` values below the class byte are the infrared **carrier**, the frequency the lamp flickers at
@@ -79,7 +87,9 @@ while a mark is sent[^s92]:
   rounded**[^s92];
 * the on time is the period halved, in every record, which is a fifty percent duty cycle[^s92];
 * the firmware clamps the period at 256000 and switches the timer's prescaler when the period no longer fits
-  in sixteen bits, read on the Harmony 700's image[^s92b];
+  in sixteen bits, read on the Harmony 700's image[^s92b]. **The Harmony 880 and 885 have no clamp**: their
+  carrier is the PWM's, rounded to 250 ns, and a carrier below about 15.6 kHz plays wrong,
+  [sending](../infrared/sending.md#how-the-harmony-880-and-885-play-a-record)[^t-885-infrared];
 * the carrier is **per record**, not per configuration and not per device: one Harmony One configuration holds
   56.3 kHz and 38 kHz records inside a single infrared group[^s92].
 
@@ -119,6 +129,10 @@ Harmony 600, 700 and One images[^s127]:
 | slot 0 | advance two, so slot 1 is skipped | advance one |
 | slot 1 | advance one | advance **zero**, so slot 1 plays again |
 | slot 2 | stop | stop |
+
+The Harmony 880 and 885 step the same way, by the key being down at the end of the block, and stop a
+released key at the one microsecond word that ends every once and held block,
+[sending](../infrared/sending.md#how-the-harmony-880-and-885-play-a-record)[^t-885-infrared].
 
 So slot 0, **once**, is what a tap sends; slot 1, **held**, plays only while the key is still down and then
 repeats for as long as it is; slot 2, **tail**, plays at the end either way. A NULL pointer reads as a
@@ -187,7 +201,9 @@ Read on the Harmony 650's 0.2 image and the Harmony One's 3.4[^s365b]:
 
 The same flip is found on the Harmony 600's 0.2, the Harmony 700's 2.8, the Harmony 650's 0.4 and the
 Harmony 350's 1.4, whose skip is not read there[^s365b]. The Harmony 525's image has not been searched for
-it[^unchecked].
+it[^unchecked]. **The Harmony 880 and 885 flip and skip the same way, with the word cleared whenever the remote restarts, and
+two differences**: the bit is `1 << (group & 7)`, so groups 8 and up share a bit with groups 0 and up, and no
+tag bit is tested before the flip[^t-885-infrared].
 
 #### A release sits in the tail
 
@@ -278,8 +294,13 @@ Each of these is a way to write a configuration that the remote accepts and that
 * **A toggling code needs both pointer groups**, the code as stated first; written with one, every second press
   sends the same bit[^s365].
 * **The `+0x00` byte is carried, not written as zero**: it is constant across the corpus and read by nothing
-  found, so asserting a value would turn a configuration that differs into a wrong round trip instead of a
-  loud one[^s92].
+  found, or on arch 8 read and thrown away, so asserting a value would turn a configuration that differs into a
+  wrong round trip instead of a loud one[^s92][^t-885-infrared].
+* **On arch 8 (Harmony 880 and 885)**: the own start exact, since the header is read from it; one or two
+  pointer groups, never 0; at most 256 records a group; a carrier from about 15.6 kHz up; every once and held
+  block ended by a `0x0001` word and no word whose duration bits are 0 to 5 other than the bare `0x0000` and
+  `0x0001`; and with eight infrared groups or
+  more, groups 8 and up toggle with groups 0 and up[^t-885-infrared].
 * **A frame can be rebuilt from five durations off a record of the same device, and what follows the frame
   cannot simply be copied** from a sibling code, [families](../infrared/families.md)[^s152].
 
@@ -311,6 +332,8 @@ Each of these is a way to write a configuration that the remote accepts and that
 [^s349]: Measured in configurations. [Section 349](../../docs/findings.md#s349)
 [^s365b]: Read in the firmware. [Section 365](../../docs/findings.md#s365)
 [^unchecked]: Not checked.
+[^t-885-infrared]: Read in the firmware. [The test](../../tests/test_harmony_885_infrared.py)
+[^t-885-infrared-corpus]: Measured in configurations. [The test](../../tests/test_harmony_885_infrared.py)
 [^s42]: Read in the firmware. [Section 42](../../docs/findings.md#s42)
 [^s82]: Measured in configurations. [Section 82](../../docs/findings.md#s82)
 [^s65]: Measured in configurations. [Section 65](../../docs/findings.md#s65)

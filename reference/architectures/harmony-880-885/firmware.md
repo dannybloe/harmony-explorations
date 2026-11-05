@@ -221,8 +221,9 @@ differs from what [the actions page](../../config-format/actions.md) states for 
 
 **The Harmony 720's dispatcher is this one**: it has the 885's instructions, literals and bit numbers, 831 of
 831, with its working registers moved, and its action queue and state loader have the same
-constants.[^t-885-actions][^t-885-queue][^t-885-state] Its pushes, infrared queue and transmitter are not
-compared.[^unchecked]
+constants.[^t-885-actions][^t-885-queue][^t-885-state] So are its number sender, its infrared player's class 1
+routines and its screen dispatcher.[^t-885-number-sender][^t-885-infrared][^t-885-screens] Its pushes, infrared
+queue and transmitter are not compared.[^unchecked]
 The 880 and 880 Pro builds are the 885's but for the skin bytes.[^t-885-start]
 
 ## Routines read and where
@@ -243,6 +244,10 @@ The 880 and 880 Pro builds are the 885's but for the skin bytes.[^t-885-start]
 | the dispatcher and its ladders for `0x3F`, `0x0F` and `0x07` | `0x131E6`, `0x13550`, `0x1383C`, `0x1390C` | [^t-885-actions] |
 | the infrared queue's push, its state and event, the acknowledgement, the transmitter's start | `0x14692`, `0x1466E`, `0x1468A`, `0x14ED8` | [^t-885-actions] |
 | the state variable loader, store, read and the host's bound | `0x172AA`, `0x176CE`, `0x17718`, `0x176C0` | [^t-885-state] |
+| the number sender and the `0x1F` bands `0xF3` to `0xF6` that reach it or base slot 14 | `0x19340`, `0x136DE` | [^t-885-number-sender] |
+| the infrared record loader, the carrier's start and stop, the interrupt's word, the slot step, the toggle bit and its flip | `0x17C86`, `0x19E88` and `0x19F18`, `0x19F26`, `0x17FC4`, `0x1A864` and `0x14F1A` | [^t-885-infrared] |
+| the main loop's infrared service entering the transmitter only when idle | `0x14E52`, `0x14ED4` | [^t-885-delay] |
+| the screen dispatcher, the invert and its row, the fill's row, the switch, the text, the picture kind and the raw renderer | `0x17B9C`, `0x17790` and `0x13CDC`, `0x13EE6`, `0x17A62`, `0x17994`, `0x141E2` and `0x1423E` | [^t-885-screens] |
 
 ## Obtaining an image
 
@@ -283,3 +288,7 @@ No Logitech package of this firmware is known; the images were read off remotes 
 [^t-885-actions-corpus]: Measured in configurations. [The test](../../../tests/test_harmony_885_actions.py)
 [^t-885-queue]: Read in the firmware. [The test](../../../tests/test_harmony_885_queue.py)
 [^t-885-state]: Read in the firmware. [The test](../../../tests/test_harmony_885_state.py)
+[^t-885-number-sender]: Read in the firmware. [The test](../../../tests/test_harmony_885_number_sender.py)
+[^t-885-infrared]: Read in the firmware. [The test](../../../tests/test_harmony_885_infrared.py)
+[^t-885-delay]: Read in the firmware. [The test](../../../tests/test_harmony_885_delay.py)
+[^t-885-screens]: Read in the firmware. [The test](../../../tests/test_harmony_885_screens.py)

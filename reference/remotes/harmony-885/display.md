@@ -25,6 +25,10 @@ Generated from `packages/codec`, `packages/usb` and the model folders' rows by `
 | colour | colour in the community comparison table; a picture's size says nothing about whether the panel shows colour[^x-forum-table] |
 
 How a configuration draws a page, its pictures and its fonts is [screens](../../config-format/screens.md).
+This model's firmware draws with eleven instructions and no others: one of them inverts a rectangle, an
+instruction only this platform's configurations use, the firmware lets a fill's width and column window run to
+column 159, past the panel's 128 columns, with what the display does there not checked, and text has no two byte
+codes.[^t-885-screens]
 
 ## Not checked
 
@@ -35,3 +39,4 @@ How a configuration draws a page, its pictures and its fonts is [screens](../../
 [^s180]: Measured in configurations. [Section 180](../../../docs/findings.md#s180)
 [^x-forum-table]: Stated by a third party. [The comparison table](https://www.harmony-remote-forum.de/harmony_compare.php)
 [^unchecked]: Not checked.
+[^t-885-screens]: Read in the firmware. [The test](../../../tests/test_harmony_885_screens.py)
