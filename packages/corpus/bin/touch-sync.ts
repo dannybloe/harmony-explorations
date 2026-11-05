@@ -9,8 +9,11 @@
  * **Two modes.**
  *
  * * `--unchanged`: every document, favourites document and picture answered 304 against the tag the remote
- *   sent, and a refusal for one it sent no tag for, since a 304 to a request with no tag leaves the document
- *   missing from the new set. The remote ends holding what it held. `todo-touch.md` 6.7.
+ *   sent; a picture it sent no tag for answered 404, which aborts nothing, and a document or favourites
+ *   document it sent no tag for refused, since the answerer cannot tell a file the remote does not hold from
+ *   one whose tag a change on the remote erased. **It is not write free**: every document the remote hands up
+ *   first is written back to it with a tag of ours and committed, so that change never reaches Logitech's
+ *   account. The documents otherwise end as the remote held them. `todo-touch.md` 6.7.
  * * `--set <lab folder>`: every request answered from the set kept in that folder's `set.json`, `{ "answers":
  *   [...] }` in the shape of the answers Logitech's client wrote, `SetAnswer`; a tag the set leaves out is ours,
  *   a digest of the body. The folder has to be inside the lab. `todo-touch.md` 6.8 builds the first.
@@ -28,6 +31,21 @@
  * line's length, its default, `TouchAnnouncement` in `touchsession.ts`. It exits 0 on `proxy://Finished` and
  * 1 otherwise.
  *
+ * **After any stop, the first step is the read `getconfighash`**, `touch-request.ts --request confighash`:
+ * 200 needs nothing; 202 needs `touch-recover.ts --step abort`, that read again, then `--step reboot`. A
+ * refusal prints that order and what an abort would cost where the run stopped, which inside the hand over
+ * is the handed up document's tag. `RECOVERY` in `src/touchsync.ts`, and `recovering-a-remote`'s Harmony
+ * Touch section.
+ *
+ * **The remote has to be powered over USB, and nothing here can tell whether it is.** Its screens ignore
+ * the hand over's and the sync's messages on any power source but the one named `usb`, so on a port where it
+ * shows Charging nothing commits and the run ends in a refusal after its empty lists. Neither read on the rail
+ * says which source it is on: `/sys/sysinfo` is built once when the remote starts, and the provisioning read
+ * names no power source; the name that reads the power controller is a factory test name the rail never
+ * opens. `reference/architectures/harmony-touch/answering-a-sync.md` "How a sync aborts, and how an answerer
+ * learns of it". So the person at the bench checks that the remote shows its USB screen before `--commit`,
+ * and the dry run says so.
+ *
  * **Why this script is in `packages/corpus` and not beside `touch-recover.ts` in `packages/usb`**: the
  * answerer calls the codec's reader and check itself, and `packages/usb` cannot import the codec, which
  * depends on it; `src/touchsync.ts` argues it.
@@ -36,7 +54,9 @@
  * holds every reported line against:
  *
  *   sync: gate passed, <n> answers, <n> tags stated and <n> ours
- *   sync: unchanged, every document answered 304 against its own tag
+ *   sync: unchanged, every document the remote hands up is written back to it with a tag of ours and
+ *     committed, so that change never reaches Logitech's account; every document asked for is then answered
+ *     304 against its own tag
  *   sync: provisioned, mode <n>
  *   sync: handing over the remote's changes
  *   sync: hand over, request list <n>, <n> answered
@@ -48,7 +68,8 @@
  *   sync: finished
  *   sync: aborted
  *   sync: refused, <why>
- *   sync: recovery, <the step to run>
+ *   sync: recovery, <the order of steps, getconfighash first>
+ *   sync: recovery, abort cost, <what an abort would cost where the run stopped>
  *
  * The session's own lines, one per request and the identity read, are printed too and do not start with
  * `sync:`.
@@ -69,7 +90,7 @@ import {
 } from '@harmony/usb';
 import { openTouchRequestSession } from '@harmony/usb/touchsession';
 
-import { SYNC_LINES, prepareSet, syncTouch, type TouchSet, type TouchSyncMode } from '../src/touchsync.ts';
+import { RECOVERY, SYNC_LINES, prepareSet, syncTouch, type TouchSet, type TouchSyncMode } from '../src/touchsync.ts';
 
 /** The lab record the request channel compares against. */
 const UNIT = 'touch';
@@ -127,7 +148,9 @@ async function main(): Promise<void> {
     // The answers are printed by kind only: an address names the account.
     mode = { kind: 'set', set };
   } else {
-    console.log('mode: unchanged, every document answered 304 against the tag the remote sends');
+    console.log('mode: unchanged, every document the remote hands up is written back to it with a tag of ours and '
+      + 'committed, so that change never reaches Logitech\'s account; every document asked for is then answered 304 '
+      + 'against the tag the remote sends, a picture sent without one 404, and a document sent without one refused');
     mode = { kind: 'unchanged' };
   }
 
@@ -138,6 +161,10 @@ async function main(): Promise<void> {
   console.log('steps: the provisioning read; the remote\'s changes handed up and kept in the lab; the sync; every '
     + 'request list answered until proxy://Finished or proxy://Abort; each write of answers announced with the whole line\'s length');
   console.log(`line forms: ${SYNC_LINES.length}, listed in this script's header`);
+  console.log(`recovery: ${RECOVERY}`);
+  console.log('USB power: nothing a session can ask tells whether the remote is on USB power, and on any other power '
+    + 'source its screens ignore the sync and nothing commits; check that it shows its USB screen, not Charging, '
+    + 'and leave the cable alone until the run ends');
 
   if (!commit) {
     console.log('\ndry run: nothing was opened. --commit needs the unit record, HARMONY_ENABLE_WRITES=1 and HARMONY_TOUCH_REQUESTS=1.');

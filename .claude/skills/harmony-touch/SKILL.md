@@ -71,7 +71,13 @@ and land the answer in the reference afterwards with its source.
   itself before anything is opened, and its script is `packages/corpus/bin/touch-sync.ts`, `--unchanged` or
   `--set <lab folder>`, a dry run without `--commit`. **The answerer exists and nothing has been sent through
   it**: it is tested against the recorded syncs and the fake remote only, and the first real run is 6.7. It
-  lives in `packages/corpus` because `packages/usb` cannot import the codec. **The way back is the
+  lives in `packages/corpus` because `packages/usb` cannot import the codec. **`--unchanged` is not write
+  free**: every document the remote hands up is written back to it with a tag of ours and committed, so that
+  change never reaches Logitech's account. **After any stop, the first step is the read `getconfighash`**,
+  `packages/usb/bin/touch-request.ts --request confighash --commit`: 200 needs nothing; 202 needs
+  `touch-recover.ts --step abort`, that read again, then `--step reboot`; no answer at all, stop and ask. An
+  abort inside the hand over costs the handed up document's tag for good, so ask before that one;
+  `recovering-a-remote`'s Harmony Touch section has the route. **The way back is the
   recovery tier, one step per run of `packages/usb/bin/touch-recover.ts`**, a dry run without `--commit`
   and all three flags with it: `--step abort` first, since the restart answers 202 and restarts nothing
   while a sync is marked running, and on a remote whose configuration task has ended the abort's answer

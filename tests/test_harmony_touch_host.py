@@ -105,11 +105,12 @@ READER = ENGINE + 'tasks/harmonyengine/loader/userconfigreader.lua'
 ACCOUNT = ENGINE + 'tasks/setup/apihandler/account.lua'
 SETUP_SYNC = ENGINE + 'tasks/setup/apihandler/sync.lua'
 UTILS = ENGINE + 'common/utils.lua'
+OFFLINE_QUEUE = ENGINE + 'tasks/eventqueue/core/offlinequeue.lua'
 #: The screens' shared sync module, which is Lua source rather than a compiled chunk.
 SCREENS_HARMONY = 'opt/luadraws/appscommon/harmony.lua'
 
 ENGINE_FILES = [APILISTENER, ENGINE_DISPATCH, CONNECTOR, VERIFIERS, RESOURCE, RESMGR, RESPONSE, SYNC,
-                PROXY, READER, ACCOUNT, SETUP_SYNC, UTILS, SCREENS_HARMONY]
+                PROXY, READER, ACCOUNT, SETUP_SYNC, UTILS, OFFLINE_QUEUE, SCREENS_HARMONY]
 
 
 def string_constant(text):
@@ -128,6 +129,7 @@ class TheImage(unittest.TestCase):
     """The production build's engine files, the native program and the host name, read once for the tests."""
 
     _read = None
+    _engine = None
 
     @classmethod
     def setUpClass(cls):
@@ -135,9 +137,13 @@ class TheImage(unittest.TestCase):
         if TheImage._read is None:
             with tempfile.TemporaryDirectory() as directory:
                 reader = SquashfsReader(members(BUILD)['harmony-image.squashfs'], directory)
-                files = reader.each(ENGINE_FILES + [HAL, HOSTNAME])
+                # Every compiled file of the engine as well, for the one search that has to cover all of them.
+                engine = [n for n in reader.names() if n.startswith(ENGINE) and n.endswith('.lua')]
+                files = reader.each(sorted(set(ENGINE_FILES + engine + [HAL, HOSTNAME])))
             TheImage._read = files
+            TheImage._engine = engine
         cls.files = TheImage._read
+        cls.engine = TheImage._engine
 
     def functions(self, path):
         """The engine file's functions, each as the set of its string constants."""
@@ -415,6 +421,156 @@ class ARefusedAnswerReachesTheAnswererThroughTheScreens(TheImage):
         for callback in ('invalid statusCode ', 'body-type'):
             with self.subTest(callback=callback):
                 self.function_with(SYNC, 'Insufficient parameters in the Response (statusCode)', callback)
+
+
+def lua_function(source, name):
+    """The body of one top level function of the screens' Lua source, by its name, or a failure."""
+    found = re.search(r'^(?:local )?function %s\(.*?\n(.*?)^end$' % re.escape(name), source, re.M | re.S)
+    if found is None:
+        raise AssertionError('no function %s in the screens' % name)
+    return found.group(1)
+
+
+class AChangeOnTheRemoteErasesItsTagAndKeepsTheFile(TheImage):
+    """**A request with no entity tag does not mean the remote holds no file.** A change made on the remote's own
+    screens is saved with no tag and the file kept, and the whole document is queued to go up to the account; the
+    next sync then asks for it without a tag. `todo-touch.md` 6.7, from the preflight of the first sync this
+    project drives, the lab's `work/touch-firmware/notes/6.7-preflight.md`.
+
+    **What was read, in the decompiled engine and the screens' source.** The screens build the request for a
+    change in `getRequest` (`appscommon/harmony.lua`): an address and the document, `json.encode`d, and no tag,
+    and `getResourceUri` sends it as `proxy.resource?put`, the direct put. The engine's handler for that,
+    `processPutResource` (`harmonywebservices/apihandler/resource.lua`), pushes a `put` onto the outgoing queue
+    and calls the store's `saveResource` with the request's `etag`, which is nil, so the store
+    (`core/resourcemanager.lua` `saveResource`) writes the file and an index entry with no tag. `getEtag` in the
+    same file returns the index entry's tag only when the file exists, and nil otherwise, so it returns nil for
+    a file kept with no tag as well as for a missing file; the sync's request list (`proxy/sync.lua`
+    `getResourceList`) is built with `getEtag`, and so asks for that document with no tag. The outgoing queue
+    is saved to a data file (`eventqueue/core/offlinequeue.lua`, `savePutRequests`) and loaded again when the
+    engine starts, so the queued change survives a restart, and `removeAll`, which an abort calls, saves it
+    empty.
+
+    **What it corrects.** `answering-a-sync.md` said a 304 to a request that carried no tag tells the remote to
+    copy a file it does not hold<!--superseded-->. That is one of the two causes; the other is this one, where
+    the store's copy of a single document, which looks for no file first (`TheSyncHandlersCheckTheEnvelope`),
+    would copy the file the remote keeps, with its untagged index entry. **The wrong rule produced the right
+    answer**: an answerer cannot tell the two apart, so a 304 to a request with no tag stays refused, and the
+    answerer, `packages/corpus/src/touchsync.ts`, keeps refusing it for a document. The earlier reading had
+    looked at what a 304 does and not at what makes a tag absent.
+
+    **The recordings agree.** In the full sync recorded after settings had been changed on the remote, Settings
+    was the one document asked for without a tag, which `packages/usb/test/touch-sync-both-ways.test.ts`
+    asserts; it cannot see the cause, which is this reading. `tests/test_harmony_touch_favourites.py` held the
+    same fact for Settings as a sentence of its header and asserted only that a change queues the document;
+    this class asserts the names the whole chain rests on.
+
+    **Not asserted**: which argument each call passes, and the order of the calls inside a function, which are
+    the decompiled reading; that `request.etag` is nil is read from the screens building no tag, not from the
+    engine.
+
+    **Sources checked first.** `answering-a-sync.md`, `favourites-and-settings.md` "How a value is written",
+    this file's other classes, `test_harmony_touch_favourites.py`, the preflight note, and the decompiled engine.
+    Logitech's client does not take part: the change is the remote's own.
+
+    **Controls**, each a string replacement reversed with a hash check: `etag` asked for in the screens' change
+    request, `fileExists` asked absent from `getEtag`, and the engine's queue file name changed, each failed the
+    test it aimed at."""
+
+    def test_the_screens_hand_a_change_to_the_engine_with_no_tag(self):
+        screens = self.files[SCREENS_HARMONY].decode('utf-8')
+        request = lua_function(screens, 'getRequest')
+        # Booleans and counts only, so a failure prints no firmware source.
+        self.assertTrue('request.resource = json.encode(params.resource)' in request, 'the document is carried')
+        self.assertTrue('request.uri' in request, 'and its address')
+        self.assertFalse('etag' in request, 'and no tag')
+        uri = lua_function(screens, 'getResourceUri')
+        self.assertEqual(re.findall(r'params\.cmd = "(proxy\.resource\?\w+)"', uri), ['proxy.resource?put', 'proxy.resource?get'])
+        # The control: the screens' own content requests do carry the stored tag, so the absence above is not
+        # the search missing it.
+        self.assertEqual(screens.count('etag = resMgr.getEtag('), 12)
+
+    def test_the_engine_saves_the_put_with_the_tag_it_carries_and_queues_it(self):
+        put = self.function_with(RESOURCE, 'requests', 'saveResource', 'config_new')
+        self.assertTrue({b'etag', b'resource', b'saveResource', b'pushBack', b'put'} <= put)
+
+    def test_the_store_answers_a_tag_only_for_a_file_that_exists(self):
+        lookup = self.function_with(RESMGR, 'not found, but index entry found. etag:')
+        self.assertTrue({b'fileExists', b'etag', b'resources'} <= lookup)
+        save = self.function_with(RESMGR, 'No contentType for')
+        self.assertTrue({b'etag', b'hetag', b'application/json'} <= save, 'the index entry takes the tag it is given')
+
+    def test_the_sync_asks_for_each_document_with_that_lookup(self):
+        # Two functions build the list, a Touch's and a hub's, and only the hub's also asks for the hub's tag.
+        lists = [f for f in self.functions(SYNC) if {b'/MapList?excludeFunctionMaps=true', b'getEtag'} <= f]
+        self.assertEqual([b'getHubEtag' in f for f in lists], [False, True])
+        self.assertTrue({b'/ActivityList', b'/DeviceList', b'/Context', b'/Settings', b'etag', b'uri'} <= lists[0])
+
+    def test_the_queued_change_is_kept_in_a_data_file_across_a_restart(self):
+        self.assert_strings(OFFLINE_QUEUE, ['offlineQueue', 'savePutRequests', 'saveDataFile', 'loadDataFile'])
+        # Three functions save the queue: the save of the puts, the removal of one answered put, and the
+        # emptying an abort calls, which names neither a verb nor a callback.
+        saves = [f for f in self.functions(OFFLINE_QUEUE) if b'saveDataFile' in f]
+        self.assertEqual(len(saves), 3)
+        self.assertEqual([f for f in saves if not {b'verb', b'callback'} & f], [{b'encode', b'remove', b'saveDataFile'}])
+
+
+class TheScreensTakePartOnlyOnUSBPower(TheImage):
+    """**A Touch's screens ignore a sync unless the remote is powered over USB**, and nothing a host can ask
+    on the request channel says which power source it is on. `todo-touch.md` 6.7.
+
+    **What was read, in the screens' source** (`appscommon/harmony.lua`). The three callbacks a sync needs from
+    the screens return at once while `usbDisconnected` is set: `syncCallback` (the sync's progress, and on a
+    failure the abort) unless a sync type of the screens' own is running, `syncConflictCallback` (the hand
+    over, and on its success the commit), and `resourceReadyCallback` (the content fetching, which ends in the
+    commit) outside the hubs' surface mode. The power watcher, a filter on the power controller's
+    `powersource` file, clears the flag on the source named `usb` alone and sets it on every other, `usb_charge`
+    included, and a change of source while a sync runs fails it, 554 on `usb` and 555 otherwise. So on any
+    source but `usb` the commit, `proxy.finished`, is never sent and nothing commits; an answerer reads empty
+    lists until its own bound.
+
+    **What a host can ask.** The engine names no power source in any of its 172 compiled files, and the
+    provisioning answer (`setup/apihandler/account.lua` `getProvisionInfo`) holds none, and `/sys/sysinfo` is
+    built once when the native program starts, `test_harmony_touch_api_names.py`. The one name that reads the
+    power source is the factory test's `/tde/powerstate`, outside every route this project opens. So the
+    answerer cannot refuse a commit on the power source, and its script says so instead,
+    `packages/corpus/bin/touch-sync.ts`.
+
+    **Not checked**: which power source a given computer port gives, and what the screens show for
+    `usb_charge`. The bench saw a Touch show Charging rather than its USB screen on one port, which by
+    `display.md` is a dock or mains source; that is `docs/test-notes/harmony-touch.md`'s, not this file's.
+
+    **Sources checked first.** `answering-a-sync.md`, `display.md` "Charging and the battery",
+    `test_harmony_touch_keys.py`, which anchors the watcher's file, and the preflight note.
+
+    **Controls**, each a string replacement reversed with a hash check: the watcher's `"usb"` changed, and
+    `powersource` asked for in the provisioning function, each failed the test it aimed at."""
+
+    def test_the_three_sync_callbacks_return_while_the_remote_is_off_usb(self):
+        screens = self.files[SCREENS_HARMONY].decode('utf-8')
+        for name, first_work in (('syncCallback', 'json.decode'), ('syncConflictCallback', 'json.decode'),
+                                 ('resourceReadyCallback', 'url.decode')):
+            with self.subTest(callback=name):
+                body = lua_function(screens, name)
+                guard = re.search(r'if self\.usbDisconnected\b[^\n]*then\s*\n\s*return\s*\n', body)
+                self.assertTrue(guard is not None, 'an early return on usbDisconnected')
+                self.assertLess(guard.start(), body.index(first_work), 'before the callback does anything')
+
+    def test_the_power_watcher_clears_the_flag_on_usb_alone(self):
+        screens = self.files[SCREENS_HARMONY].decode('utf-8')
+        at = screens.index('"powersource" then')
+        watcher = screens[at:screens.index('\nend)', at)]
+        self.assertEqual(re.findall(r'if value == "(\w+)" then', watcher), ['usb'])
+        self.assertEqual(re.findall(r'usbDisconnected = (\w+)', watcher), ['false', 'true'])
+        self.assertEqual(re.findall(r'syncFailure\("(\d+)"', watcher), ['554', '555'])
+
+    def test_the_engine_names_no_power_source_and_the_provisioning_answer_none(self):
+        # Every compiled file of the engine, counted so a listing that lost files moves a number.
+        self.assertEqual(len(self.engine), 172)
+        self.assertEqual([p for p in self.engine if b'powersource' in self.files[p].lower()], [])
+        provisioning = self.function_with(ACCOUNT, 'discoveryServerCF', 'susChannel')
+        self.assertFalse(any(b'power' in c or b'usb' in c.lower() for c in provisioning))
+        # The control: the screens do name it, so the search finds it where it is.
+        self.assertIn(b'powersource', self.files[SCREENS_HARMONY])
 
 
 if __name__ == '__main__':

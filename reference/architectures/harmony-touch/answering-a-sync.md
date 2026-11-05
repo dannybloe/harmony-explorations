@@ -131,6 +131,17 @@ between the core documents and the favourites and before the finish, so an empty
 nothing; it keeps reading until `proxy://Abort` or `proxy://Finished` arrives[^t-touch-host]. That the
 screens send the abort on a unit, and how soon, is not checked[^unchecked].
 
+**The screens take part only while the remote is powered over USB.** The three things they do in a sync,
+answering the hand over's outcome, following the sync, and asking for the content that ends in the commit,
+each return at once while the remote is on any power source but the one named `usb`, `usb_charge` included,
+and a change of power source during a sync fails it[^t-touch-host]. So on any other source the commit is never
+sent, nothing commits, and an answerer reads empty lists until it gives up. **A host cannot ask which source the
+remote is on**: the engine names no power source, its provisioning answer holds none, and the identity file is
+built once when the remote starts; the one name that reads the power controller belongs to the factory
+test[^t-touch-host][^t-touch-api-names]. What a person sees is the screen: on `usb` the remote shows its USB
+screen, and in the dock or on a mains adapter its Charging screen, [display](../../remotes/harmony-touch/display.md#charging-and-the-battery).
+Which source a given computer port gives is not checked[^unchecked].
+
 The commit happens before the answerer sees `proxy://Finished`:
 the remote's own screens decide the fetching is done and the engine swaps the new set in, and only then is
 `proxy://Finished` queued, so the answer to it changes nothing and an answerer can only stop, or abort,
@@ -154,9 +165,27 @@ one the firmware reading answers[^unchecked].
 
 A tag is whatever text the answerer chooses, and deriving it from the document, a digest of the document as
 it would be sent, turns "not changed" into a comparison rather than a record kept somewhere[^t-touch-host]. A
-304 may be answered only to a request that carried a tag equal to the current one: a 304 to a request that
-carried no tag tells the remote to copy a file it does not hold, which fails and leaves the document missing
-from the new set[^t-touch-host]. The tag is echoed on a 304 of a favourites document or a picture, and a
+304 may be answered only to a request that carried a tag equal to the current one[^t-touch-host].
+
+**A request without a tag has two causes, and an answerer cannot tell them apart.** Either the remote holds no
+file for the document, and a 304 then copies nothing, which fails and leaves the document missing from the new
+set; or a change made on the remote's own screens erased the tag of a file it keeps[^t-touch-host]. The second
+is how every change on the remote is stored: the screens hand the engine the whole changed document with no
+tag, and the engine saves the file under an index entry with no tag and queues the document to go up to the
+account at the next hand over; the queue is kept in a file, so it survives a restart, and an abort empties
+it[^t-touch-host]. The tag the remote sends is read from that index entry, and only when the file exists, so
+both causes send none[^t-touch-host]. The recordings agree: after settings were changed on the remote, the next
+sync asked for Settings, and no other document, without a tag[^t-touch-both-ways]. So a 304 to a request
+without a tag stays refused for a document; for a picture, whose failure aborts nothing and whose held copy the
+screens carry into the new set before they ask, a 404 is the answer that costs nothing[^t-touch-host][^t-touch-favourites-firmware].
+
+> This said a 304 to a request that carried no tag tells the remote to copy a file it does not
+> hold<!--superseded-->, until the screens' own request for a change was read beside the engine's tag lookup:
+> that is the first cause only. The wrong rule gave the right answer, since a 304 there is refused either
+> way; what it got wrong was what an untagged request says about the remote, which matters to anyone
+> deciding whether the remote has lost a document[^t-touch-host].
+
+The tag is echoed on a 304 of a favourites document or a picture, and a
 tag is sent with every 200 of a favourites document or a picture or it is not saved[^t-touch-host]. A remote
 that later returns to Logitech's service sends these tags to it: MyHarmony forwards the remote's tag as
 `If-None-Match` on a fetch and as `If-Match` on an upload[^t-touch-recovery-client]. How the service treats a tag it did not issue is not checked[^unchecked]. A
@@ -234,6 +263,7 @@ Whether these are enough to know a whole configuration arrived is not settled[^u
 * Whether a sync driven without the client's own file resets and its refused clock write behaves the
   same[^unchecked].
 * How Logitech's service answers a tag it did not issue, when a remote returns to it[^unchecked].
+* Which power source a computer's port gives a remote, and so on which ports a sync can commit[^unchecked].
 * Whether the read back route of [proxy](api/proxy.md#can-a-stored-document-be-read-back) hands a committed
   document back on a unit, and what its engine reload does in between[^unchecked].
 
@@ -245,5 +275,7 @@ Whether these are enough to know a whole configuration arrived is not settled[^u
 [^t-touch-api-setup]: Read in the firmware. [The test](../../../tests/test_harmony_touch_api_setup.py)
 [^t-touch-api-engine]: Read in the firmware. [The test](../../../tests/test_harmony_touch_api_engine.py)
 [^t-touch-sync]: Measured on a unit. [The test](../../../packages/usb/test/touch-sync.test.ts)
+[^t-touch-both-ways]: Measured on a unit. [The test](../../../packages/usb/test/touch-sync-both-ways.test.ts)
+[^t-touch-favourites-firmware]: Read in the firmware. [The test](../../../tests/test_harmony_touch_favourites.py)
 [^d29]: Chosen by this project. [Decision 29](../../../docs/decisions.md#d29)
 [^unchecked]: Not checked.

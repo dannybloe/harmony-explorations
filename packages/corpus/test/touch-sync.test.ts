@@ -14,8 +14,11 @@
  *    whole and in order, `proxy://Finished` included; the announcements apart, which are the whole line's
  *    length where theirs were the `responses` argument's.
  * 2. **`unchanged`**: against a remote that sends a tag for every document, favourites document and picture,
- *    every answer is a 304 echoing that tag and carries nothing else; the endings are answered 200. **One
- *    request without a tag is refused**, no answer of that list is written, and the recovery step is named.
+ *    every answer is a 304 echoing that tag and carries nothing else; the endings are answered 200, and the
+ *    first line says that what the remote hands up is written back with a tag of ours and committed. **One
+ *    document or favourites document without a tag is refused**, no answer of that list is written, and the
+ *    recovery is named; **a picture without one is answered 404** and the run finishes, which is the
+ *    control for the refusal, `todo-touch.md` 6.7's risk 6.
  * 3. **The gate**: a set missing each top level list the engine's reader walks, or a document, is refused
  *    before anything at all is written to the remote, not even the provisioning read, and names no recovery;
  *    the smallest set the reference describes passes it, which is the control.
@@ -27,9 +30,17 @@
  *    answered 404, another favourites document the set lacks is refused; `proxy://Abort` ends the run as
  *    aborted, answered 200; a sync request answered 202 is refused with the recovery step.
  * 7. **The lines**: every line any run reported matches one of `SYNC_LINES`.
- * 8. **The script**, in the paths that open nothing: the dry run of each mode, a set outside the lab, a set
- *    the gate refuses, a commit without the two flags, and a commit with the recovery flag. The commit itself
- *    is never run by a test.
+ * 7a. **A write of answers that is not taken**, `todo-touch.md` 6.7's risk 4: a reply to the write that does
+ *    not name it, the listener's reply to a write it is still gathering, is refused at the first write, where
+ *    the same run with a real reply finishes; and an address handed out a fourth time in one run is refused,
+ *    where three times finishes.
+ * 7b. **What a refusal says**: after the remote was acted on, the order of recovery, `getconfighash` first,
+ *    and what an abort would cost where the run stopped: the handed up document's tag inside the hand over,
+ *    and no tag after it, since the hand over committed.
+ * 8. **The script**, in the paths that open nothing: the dry run of each mode, which says what `--unchanged`
+ *    writes, the order of recovery and that nothing on the rail tells whether the remote is on USB power; a
+ *    set outside the lab, a set the gate refuses, a commit without the two flags, and a commit with the
+ *    recovery flag. The commit itself is never run by a test.
  *
  * **Sources checked first.** `reference/architectures/harmony-touch/answering-a-sync.md`, `api/proxy.md` and
  * `api/setup.md`; `packages/usb/src/touchsession.ts` and its tests; the recordings through
@@ -185,9 +196,25 @@ describe('unchanged', () => {
     assert.deepEqual(r.reports.filter((l) => l.startsWith('sync: request list')), [
       'sync: request list 1, 9 answered', 'sync: request list 2, empty', 'sync: request list 3, 1 answered',
     ]);
+    // The first line says the mode is not write free: what the remote hands up goes back with a tag of ours.
+    assert.match(r.reports[0]!, /^sync: unchanged, every document the remote hands up is written back to it with a tag of ours and committed, so that change never reaches Logitech's account;/);
   });
 
-  it('refuses a document the remote sent no tag for, writes no answer of that list, and names the recovery step', () => {
+  it('answers a picture the remote sent no tag for 404, and refuses either favourites document without one', () => {
+    // The control first: an untagged picture is answered 404, which the remote logs and never aborts on.
+    const picture = run({ mode: { kind: 'unchanged' }, sync: [[...getSix(), { verb: 'get', uri: PICTURE }], [FINISHED]] });
+    assert.equal(picture.outcome.ending, 'finished', picture.outcome.reason);
+    assert.deepEqual(syncAnswers(picture).slice(6), [{ statusCode: '404', uri: PICTURE }, { uri: 'proxy://Finished', statusCode: '200' }]);
+    // A favourites document's 404 drops the user's favourites or aborts, so either one untagged is refused.
+    for (const [uri, what] of [[USER, 'the user\'s favourites'], [DEVICE, 'a device\'s favourites']] as const) {
+      const r = run({ mode: { kind: 'unchanged' }, sync: [getSix(), [{ verb: 'get', uri }], [FINISHED]] });
+      assert.equal(r.outcome.ending, 'refused', what);
+      assert.match(r.outcome.reason ?? '', new RegExp(`sent no tag for ${what}, so it cannot be answered 304`));
+      assert.equal(syncAnswers(r).length, 6, 'the six were answered and the favourites list was not');
+    }
+  });
+
+  it('refuses a document the remote sent no tag for, writes no answer of that list, and names the recovery order', () => {
     const [first, ...rest] = getSix();
     const r = run({ mode: { kind: 'unchanged' }, sync: [[{ verb: first!.verb, uri: first!.uri }, ...rest], [FINISHED]] });
     assert.equal(r.outcome.ending, 'refused');
@@ -197,6 +224,9 @@ describe('unchanged', () => {
     assert.deepEqual(syncAnswers(r), [], 'nothing answered after the sync started');
     assert.equal(names(r).at(-1), 'proxy/request?read', 'the request list was the last thing written');
     assert.ok(r.reports.includes(`sync: recovery, ${RECOVERY}`));
+    // The order starts with the read, and nothing was handed up, so an abort costs no tag.
+    assert.match(RECOVERY, /^first read getconfighash, .*200 needs nothing; 202 needs .*--step abort, that read again, then --step reboot/);
+    assert.equal(r.outcome.abortCost, 'abort cost, none to a tag: an abort now leaves the committed set as it is');
   });
 });
 
@@ -295,6 +325,17 @@ describe('the hand over', () => {
     assert.equal(r.outcome.recovery, RECOVERY);
     assert.deepEqual(r.handedUp, ['001-Settings.json', '001-Settings.txt']);
     assert.ok(!names(r).includes('answers'), 'nothing was echoed');
+    // Inside the hand over an abort costs the handed up document's tag, and the refusal says so.
+    assert.match(r.outcome.abortCost ?? '', /^abort cost, Settings: the change made to it on the remote stays there with no tag/);
+    assert.ok(r.reports.includes(`sync: recovery, ${r.outcome.abortCost}`));
+  });
+
+  it('says an abort costs no tag once the hand over has committed', () => {
+    // A refusal in the sync after a hand over that handed Settings up: the hand over committed it.
+    const [first, ...rest] = getSix();
+    const r = run({ mode: { kind: 'unchanged' }, handOver: [[put(settings)], [FINISHED]], sync: [[{ verb: 'get', uri: first!.uri }, ...rest], [FINISHED]] });
+    assert.equal(r.outcome.ending, 'refused');
+    assert.match(r.outcome.abortCost ?? '', /^abort cost, none to a tag: the hand over committed Settings under a tag of ours/);
   });
 });
 
@@ -337,6 +378,31 @@ describe('the other rules of answering a sync', () => {
     assert.equal(r.outcome.ending, 'refused');
     assert.match(r.outcome.reason ?? '', /5 empty request lists in a row/);
     assert.equal(r.outcome.recovery, RECOVERY);
+  });
+});
+
+describe('a write of answers that is not taken', () => {
+  it('refuses a reply to a write that does not name it, the reply to a write still gathered, at the first write', () => {
+    const r = run({ mode: { kind: 'unchanged' }, writeReply: 'gathering', sync: [getSix(), [FINISHED]] });
+    assert.equal(r.outcome.ending, 'refused');
+    assert.match(r.outcome.reason ?? '', /a reply that does not name the write/);
+    assert.equal(r.outcome.recovery, RECOVERY);
+    assert.match(r.outcome.abortCost ?? '', /^abort cost, if a change was waiting on the remote/);
+    assert.equal(names(r).filter((n) => n === 'answers').length, 1, 'one write, the hand over\'s Finished, and no more');
+    // The control: the same run with a reply that names the write finishes.
+    const control = run({ mode: { kind: 'unchanged' }, sync: [getSix(), [FINISHED]] });
+    assert.equal(control.outcome.ending, 'finished', control.outcome.reason);
+  });
+
+  it('refuses an address handed out a fourth time in one run, before answering that list', () => {
+    const r = run({ mode: { kind: 'unchanged' }, sync: [getSix(), getSix(), getSix(), getSix(), [FINISHED]] });
+    assert.equal(r.outcome.ending, 'refused');
+    assert.match(r.outcome.reason ?? '', /handed out ActivityList 4 times in this run, more than the limit of 3/);
+    assert.equal(r.outcome.recovery, RECOVERY);
+    assert.equal(syncAnswers(r).length, 18, 'three lists of six answered, the fourth not');
+    // The control: three times finishes, so the limit is not met early.
+    const control = run({ mode: { kind: 'unchanged' }, sync: [getSix(), getSix(), getSix(), [FINISHED]] });
+    assert.equal(control.outcome.ending, 'finished', control.outcome.reason);
   });
 });
 
@@ -387,6 +453,9 @@ describe('the script', () => {
     const unchanged = script(['--unchanged'], lab);
     assert.equal(unchanged.status, 0, unchanged.out);
     assert.match(unchanged.out, /mode: unchanged/);
+    assert.match(unchanged.out, /written back to it with a tag of ours and committed, so that change never reaches Logitech's account/);
+    assert.ok(unchanged.out.includes(`recovery: ${RECOVERY}`), 'the order of recovery');
+    assert.match(unchanged.out, /USB power: nothing a session can ask tells/);
     assert.match(unchanged.out, /dry run: nothing was opened/);
     const set = script(['--set', good], lab);
     assert.equal(set.status, 0, set.out);

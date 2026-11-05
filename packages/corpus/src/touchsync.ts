@@ -34,7 +34,8 @@
  * 3. **The remote's own changes handed up**, `HAND_OVER`, and every list that asks answered: a `put` is kept in
  *    the lab folder **before** its answer is written, then answered 200 with the same document and a tag of
  *    ours, as Logitech's client wrote the service's echo back; the hand over ends at `proxy://Finished`. From
- *    this request on the remote has been acted on, so every refusal after it names the recovery step.
+ *    this request on the remote has been acted on, so every refusal after it names the recovery and what an
+ *    abort would cost.
  * 4. **The sync started**, `SYNC`, and every list answered from the set until `proxy://Finished` or
  *    `proxy://Abort`, answered as Logitech's client answers both, a status of 200 and nothing else.
  *
@@ -47,8 +48,16 @@
  *   favourites document** the same, the one favourites document whose 404 is allowed, "What the remote checks
  *   of an answer"; any other document the set lacks is a refusal of ours
  * * **in `unchanged` mode**, every document, favourites document and picture with 304 against the tag the
- *   remote sent, and a refusal for one it sent no tag for, since a 304 there tells the remote to copy a file
- *   it does not hold and leaves the document missing from the new set
+ *   remote sent. **A document or favourites document it sent no tag for is refused**: a request without a tag
+ *   means either that the remote holds no file for it, when a 304 copies nothing and the document is missing
+ *   from the new set, or that a change made on the remote's own screens erased the tag of a file it keeps, and
+ *   this answerer cannot tell the two apart, "The entity tag an answerer sends". This header said a 304 there
+ *   always copied a file the remote does not hold<!--superseded--> until the preflight of `todo-touch.md` 6.7
+ *   read the screens' put. A favourites document is refused rather than answered 404 because the gathered set
+ *   starts empty, so a 404 to the user's favourites would drop them at the commit, and a 404 to any other
+ *   favourites document aborts. **A picture it sent no tag for is answered 404**, which the remote logs and
+ *   never aborts on, and the screens copy every stored picture into the gathered set before asking, so a
+ *   picture it holds stays
  *
  * **A write of answers is announced with the whole line's length**, which is the session's default,
  * `TouchAnnouncement` in `touchsession.ts`: the remote's listener counts the line from the request's name on,
@@ -56,10 +65,37 @@
  * argument alone and can be acted on one chunk early; the session is opened by the caller, and the script
  * opens it with the default.
  *
- * **A refusal mid sync stops and says so**, naming `RECOVERY`, rather than sending anything else: the request
- * rail carries no abort for a session driving a sync, on purpose, `TOUCH_RECOVERY_DOOR` in `rails.ts`, so a
- * person runs the recovery step after reading why. A sync stopped before its commit leaves the committed set
- * untouched, `reference/architectures/harmony-touch/firmware.md` "A sync that stops halfway".
+ * **`unchanged` is not write free**, and its first line says so: every document the remote hands up is
+ * written back to it with a tag of ours, and the hand over then commits it, so the change made on the remote
+ * is taken off the queue that would carry it to Logitech's account and never reaches it. A later return to
+ * Logitech's service then meets a tag it never issued, which is not checked,
+ * `reference/architectures/harmony-touch/answering-a-sync.md` "The entity tag an answerer sends".
+ *
+ * **A write of answers counts as taken only when its reply names the request**, `mime` equal to
+ * `WRITE_ANSWERS`, as every reply to a write of answers in the three recorded syncs does. The remote's listener
+ * answers a chunk of a write it is still gathering with a reply of status 200 and no `mime`, the same reply
+ * it gives an announcement, so a status of 200 alone would take a write the remote never acted on: the next
+ * read would clear the gathered text and hand the same list out again under a new session id, for ever, and
+ * the bound on empty lists would never apply. **And one address handed out more often than `maxHandOuts`
+ * times in a run is refused** as the second line of that defence, since a run that works hands an address out
+ * at most twice, once in the hand over and once in the sync, `proxy://Finished` and Settings among them, and
+ * the limit of three leaves one more as a margin.
+ *
+ * **A refusal mid sync stops and says so**, rather than sending anything else: the request rail carries no
+ * abort for a session driving a sync, on purpose, `TOUCH_RECOVERY_DOOR` in `rails.ts`, so a person runs the
+ * recovery after reading why. **Every refusal after the remote was acted on reports two recovery lines**:
+ * `RECOVERY`, the order of steps, which starts with the read `getconfighash`, since 200 there means no sync is
+ * marked running and nothing needs doing; and what an abort would cost at the point the run stopped, which
+ * inside the hand over is the handed up document's tag: an abort then empties the remote's outgoing queue, so
+ * the change stays on the remote with no tag and is never handed up again, and a later `unchanged` run refuses
+ * at it. A sync stopped before its commit leaves the committed set untouched,
+ * `reference/architectures/harmony-touch/firmware.md` "A sync that stops halfway". The order is the preflight's,
+ * the lab's `work/touch-firmware/notes/6.7-preflight.md`, section 5.
+ *
+ * **The remote's screens take part only while it is powered over USB**, and nothing a session can ask says
+ * which power source it is on: `answering-a-sync.md` "How a sync aborts, and how an answerer learns of it".
+ * On any other the screens ignore the hand over's and the sync's broadcasts, never send the commit, and this
+ * answerer reads empty lists until its bound and refuses. The script says so in its dry run.
  *
  * **Everything goes to the lab folder the caller names**: every request line and every answer, one file
  * each, a log of the lines above, and what the remote handed up, under `handed-up/`, written before the
@@ -94,8 +130,18 @@ export const WRITE_ANSWERS = TOUCH_SYNC_REQUESTS[3] as string;
 export const FINISHED = 'proxy://Finished';
 export const ABORT = 'proxy://Abort';
 
-/** The step a person runs after a refusal of ours once the remote has been acted on. */
-export const RECOVERY = 'node packages/usb/bin/touch-recover.ts --step abort';
+/**
+ * The order a person follows after any stop once the remote has been acted on, the preflight's section 5: the
+ * read first, since its answer says whether anything is left to clear, and a run of `touch-recover.ts` per
+ * step, each answer read before the next, as `recovering-a-remote` sets out. The abort's cost at the point a
+ * run stopped is a line of its own, `TouchSyncOutcome.abortCost`.
+ */
+export const RECOVERY = 'first read getconfighash, node packages/usb/bin/touch-request.ts --request confighash --commit: '
+  + '200 needs nothing; 202 needs node packages/usb/bin/touch-recover.ts --step abort, that read again, then --step reboot; '
+  + 'no answer at all, stop and ask';
+
+/** How often one address may be handed out in one run before the run refuses, the header's second defence. */
+export const MAX_HAND_OUTS = 3;
 
 /** The two modes a Touch syncs through a computer in, `api/setup.md` "`setup.account?provision`". */
 const SYNCING_MODES: readonly number[] = [0, 1];
@@ -260,8 +306,11 @@ export function answerOf(
   }
   const tag = typeof request.etag === 'string' && request.etag.length > 0 ? request.etag : undefined;
   if (mode.kind === 'unchanged') {
-    // The 304 rule: only against a tag the remote sent, since a 304 to a request with none tells it to copy a
-    // file it does not hold.
+    // The 304 rule: only against a tag the remote sent. A request with none is a file the remote does not hold,
+    // or one whose tag a change on its own screens erased, and nothing here tells the two apart, the header.
+    // A picture's failure aborts nothing and the held ones were copied into the gathered set before the
+    // asking, so an untagged picture is answered 404; a favourites document's 404 drops or aborts, so not it.
+    if (tag === undefined && isPicture(request.uri)) return { statusCode: '404', uri: request.uri };
     if (tag === undefined) return { refuse: `the remote sent no tag for ${describe(request.uri)}, so it cannot be answered 304` };
     return { statusCode: '304', uri: request.uri, etag: tag };
   }
@@ -284,6 +333,7 @@ function describe(uri: string): string {
   if (uri.startsWith(harmonyTouch.CONTENT_DEVICE)) return 'a device\'s favourites';
   if (uri.startsWith(harmonyTouch.CONTENT_SERVICE)) return 'a provider\'s line up';
   if (isPicture(uri)) return 'a picture';
+  if (uri === FINISHED || uri === ABORT) return uri;
   return `an address of scheme ${uri.split(':')[0] ?? '?'}`;
 }
 
@@ -297,7 +347,7 @@ function describe(uri: string): string {
  */
 export const SYNC_LINES: readonly RegExp[] = [
   /^sync: gate passed, \d+ answers, \d+ tags stated and \d+ ours$/,
-  /^sync: unchanged, every document answered 304 against its own tag$/,
+  /^sync: unchanged, every document the remote hands up is written back to it with a tag of ours and committed, so that change never reaches Logitech's account; every document asked for is then answered 304 against its own tag$/,
   /^sync: provisioned, mode \d+$/,
   /^sync: handing over the remote's changes$/,
   /^sync: hand over, request list \d+, \d+ answered$/,
@@ -324,6 +374,8 @@ export interface TouchSyncOptions {
   readonly pollMs?: number;
   /** How many empty request lists in a row end the run as a refusal; 300 when absent. */
   readonly maxEmptyLists?: number;
+  /** How often one address may be handed out in the run before it refuses; `MAX_HAND_OUTS` when absent. */
+  readonly maxHandOuts?: number;
 }
 
 export interface TouchSyncOutcome {
@@ -332,8 +384,10 @@ export interface TouchSyncOutcome {
   readonly reason?: string;
   /** Whether anything that acts on the remote had been sent when the run ended. */
   readonly acted: boolean;
-  /** The recovery step to run, for a refusal after the remote was acted on. */
+  /** The order of recovery steps, `RECOVERY`, for a refusal after the remote was acted on. */
   readonly recovery?: string;
+  /** What an abort would cost at the point the run stopped, for the same refusals. */
+  readonly abortCost?: string;
   /** How many request lists were read in the sync down, and how many answers written in it. */
   readonly lists: number;
   readonly answered: number;
@@ -389,6 +443,7 @@ export async function syncTouch(options: TouchSyncOptions): Promise<TouchSyncOut
   const { session, folder } = options;
   const pollMs = options.pollMs ?? 1000;
   const maxEmpty = options.maxEmptyLists ?? 300;
+  const maxHandOuts = options.maxHandOuts ?? MAX_HAND_OUTS;
 
   if (existsSync(folder) && readdirSync(folder).length > 0) {
     throw new Error(`the lab folder ${folder} already holds files, and a run never writes over another's`);
@@ -404,6 +459,10 @@ export async function syncTouch(options: TouchSyncOptions): Promise<TouchSyncOut
   let lists = 0;
   let answered = 0;
   const handedUp: string[] = [];
+  /** Where the run is, for what an abort would cost when it stops: before the hand over, in it, or after it. */
+  let stage: 'before' | 'hand over' | 'sync' = 'before';
+  /** How often each address was handed out in this run, the second defence against a list repeated for ever. */
+  const handOuts = new Map<string, number>();
 
   /** One request through the session, its line and its answer kept in the folder before anything else. */
   const ask = async (line: string, what: string): Promise<string> => {
@@ -441,6 +500,12 @@ export async function syncTouch(options: TouchSyncOptions): Promise<TouchSyncOut
     // 200 whatever each answer's handling did; 598 for text that is not JSON and 500 when a handling raised,
     // `api/proxy.md` "`proxy.response`", either of which leaves this list's entries outstanding.
     if (status !== '200') throw new Refusal(`the remote answered a write of answers with status ${status ?? 'none'}`);
+    // And a 200 is an answer only when it names the request, the header's first defence: the listener's reply
+    // to a chunk it is still gathering is a 200 with no `mime`, and the write was then never acted on.
+    if (bodyOf(text)?.['mime'] !== WRITE_ANSWERS) {
+      throw new Refusal('the remote answered a write of answers with a reply that does not name the write, the reply '
+        + 'it gives a write it is still gathering, so the answers were not taken');
+    }
   };
 
   /**
@@ -467,6 +532,15 @@ export async function syncTouch(options: TouchSyncOptions): Promise<TouchSyncOut
         continue;
       }
       empty = 0;
+      // Count each address once per list it is handed out in, before anything of the list is answered.
+      for (const uri of new Set(requests.map((r) => r.uri))) {
+        const times = (handOuts.get(uri) ?? 0) + 1;
+        handOuts.set(uri, times);
+        if (times > maxHandOuts) {
+          throw new Refusal(`the remote handed out ${describe(uri)} ${times} times in this run, more than the limit of `
+            + `${maxHandOuts}, so its answers are not being taken`);
+        }
+      }
       const answers: WrittenAnswer[] = [];
       for (const r of requests) {
         const a = await answer(r);
@@ -483,11 +557,36 @@ export async function syncTouch(options: TouchSyncOptions): Promise<TouchSyncOut
     }
   };
 
+  /**
+   * What an abort would cost where the run stands, the header's second recovery line. Inside the hand over it
+   * is the handed up document's tag, whether or not its answer was written: before it, the abort empties the
+   * outgoing queue the change waits in; after it, the change is already off that queue, and the screens never
+   * sent the commit that would have kept our tag. Once the hand over ended, it was committed before
+   * `proxy://Finished` was queued, so an abort in the sync costs no tag.
+   */
+  const costOfAnAbort = (): string => {
+    const names = handedUp.map((k) => (k.includes(':') ? 'a favourites document' : k)).join(' and ');
+    if (stage === 'hand over') {
+      if (handedUp.length === 0) {
+        return 'abort cost, if a change was waiting on the remote an abort now empties the queue it waits in, and '
+          + 'that document keeps no tag; ask before aborting';
+      }
+      return `abort cost, ${names}: the change made to it on the remote stays there with no tag and is never handed up `
+        + 'again, so a later --unchanged run refuses at it; ask before aborting';
+    }
+    if (handedUp.length > 0) {
+      return `abort cost, none to a tag: the hand over committed ${names} under a tag of ours, and an abort now leaves `
+        + 'the committed set as it is';
+    }
+    return 'abort cost, none to a tag: an abort now leaves the committed set as it is';
+  };
+
   const end = (outcome: Omit<TouchSyncOutcome, 'acted' | 'lists' | 'answered' | 'handedUp'>): TouchSyncOutcome => {
     const whole = { ...outcome, acted, lists, answered, handedUp };
     if (outcome.ending === 'refused') {
       report(`sync: refused, ${outcome.reason ?? 'no reason given'}`);
       if (whole.recovery !== undefined) report(`sync: recovery, ${whole.recovery}`);
+      if (whole.abortCost !== undefined) report(`sync: recovery, ${whole.abortCost}`);
     } else {
       report(`sync: ${outcome.ending}`);
     }
@@ -542,7 +641,8 @@ export async function syncTouch(options: TouchSyncOptions): Promise<TouchSyncOut
     prepared = gate.set;
     report(`sync: gate passed, ${prepared.entries.size} answers, ${prepared.tags.stated} tags stated and ${prepared.tags.ours} ours`);
   } else {
-    report('sync: unchanged, every document answered 304 against its own tag');
+    report('sync: unchanged, every document the remote hands up is written back to it with a tag of ours and committed, '
+      + 'so that change never reaches Logitech\'s account; every document asked for is then answered 304 against its own tag');
   }
   const mode = prepared === undefined ? { kind: 'unchanged' as const } : { kind: 'set' as const, set: prepared };
 
@@ -562,6 +662,7 @@ export async function syncTouch(options: TouchSyncOptions): Promise<TouchSyncOut
 
     // 3. The remote's own changes, handed up and kept before anything else.
     acted = true;
+    stage = 'hand over';
     report('sync: handing over the remote\'s changes');
     const handOver = await ask(HAND_OVER, 'hand-over');
     if (statusOf(handOver) !== '200') throw new Refusal(`the hand over answered status ${statusOf(handOver) ?? 'none'}`);
@@ -575,6 +676,7 @@ export async function syncTouch(options: TouchSyncOptions): Promise<TouchSyncOut
     if (handed === 'aborted') return end({ ending: 'aborted' });
 
     // 4. The sync.
+    stage = 'sync';
     const started = await ask(SYNC, 'sync');
     const status = statusOf(started);
     if (status === '202') throw new Refusal('the remote answered the sync request 202, a sync is already marked running');
@@ -585,6 +687,6 @@ export async function syncTouch(options: TouchSyncOptions): Promise<TouchSyncOut
   } catch (error: unknown) {
     const reason = error instanceof Refusal ? error.message
       : `the run stopped on an error: ${error instanceof Error ? error.message : String(error)}`;
-    return end(acted ? { ending: 'refused', reason, recovery: RECOVERY } : { ending: 'refused', reason });
+    return end(acted ? { ending: 'refused', reason, recovery: RECOVERY, abortCost: costOfAnAbort() } : { ending: 'refused', reason });
   }
 }

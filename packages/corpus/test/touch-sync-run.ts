@@ -47,10 +47,19 @@ export interface Scenario {
   readonly sync?: readonly (readonly RemoteRequest[])[];
   /** Instead of `sync`: a recording whose request list answers are served as recorded, in order. */
   readonly replay?: string;
+  /**
+   * `gathering`: every write of answers is answered with the reply the remote's listener gives a write it is
+   * still gathering, a status of 200 and no `mime`, the same as its reply to an announcement. A real answer,
+   * naming the write in `mime`, when absent.
+   */
+  readonly writeReply?: 'gathering';
 }
 
 const OK = (mime: string, result: unknown = null): string =>
   `Response,${JSON.stringify({ errorMessage: 'OK', mime, result, errorCode: '200' })}`;
+
+/** The listener's reply to an announcement, and to a chunk of a write it is still gathering: no `mime`. */
+const GATHERING = 'Response,{"result":null,"errorCode":200}';
 
 const listAnswer = (requests: readonly RemoteRequest[]): string => OK(READ_LIST, JSON.stringify({ requests }));
 
@@ -90,7 +99,7 @@ async function main(): Promise<void> {
   const remote = new FakeTouchRemote({
     sysinfo: sysinfoText(),
     answer: (line: string): string => {
-      if (line.startsWith('Content-Length: ')) return 'Response,{"result":null,"errorCode":200}';
+      if (line.startsWith('Content-Length: ')) return GATHERING;
       if (line === PROVISIONING) {
         return OK(PROVISIONING, scenario.provisioning ?? { accountId: '1', activeRemoteId: 2, mode: 0, se: true });
       }
@@ -106,7 +115,7 @@ async function main(): Promise<void> {
       if (line.startsWith(WRITE_ANSWERS)) {
         const kept = join(folder, 'handed-up');
         keptAtWrite.push(existsSync(kept) ? readdirSync(kept).filter((f) => f.endsWith('.json')).length : 0);
-        return OK(WRITE_ANSWERS);
+        return scenario.writeReply === 'gathering' ? GATHERING : OK(WRITE_ANSWERS);
       }
       return 'Response,{"errorCode":"404"}';
     },

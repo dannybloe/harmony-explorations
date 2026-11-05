@@ -286,6 +286,27 @@ reader raises, nothing catches it, and the task that loads the configuration end
 * **No previous set is kept**: a commit removes the old set at once, so a set that raises at start raises at
   every start.
 
+**After any stop of a sync of ours, the first step is the read `getconfighash`**, before anything that acts:
+
+    HARMONY_ENABLE_WRITES=1 HARMONY_TOUCH_REQUESTS=1 \
+      node packages/usb/bin/touch-request.ts --request confighash --commit
+
+**200 needs nothing**: no sync is marked running, and whatever stopped left the committed set as it was.
+**202 needs `touch-recover.ts --step abort`, that read again, then `--step reboot`**, each a run of its own,
+each answer read before the next. The reboot is not optional after a host's abort: by the preflight's reading
+the abort tells the remote's screens nothing, and only the restart clears the sync state they hold. **No
+answer at all** is the configuration task ended at start, step 1 below: stop and ask. The answerer,
+`packages/corpus/bin/touch-sync.ts`, prints the same order on every refusal, `RECOVERY` in
+`packages/corpus/src/touchsync.ts`, and the lab's `work/touch-firmware/notes/6.7-preflight.md` section 5 is the
+reading behind it, row by row.
+
+**An abort inside the hand over costs the handed up document's tag.** The hand over is the first phase, where
+the remote hands up what changed on its own screens; a change is stored with no tag, and an abort empties the
+queue it waits in, so the change stays on the remote untagged and is never handed up again, and every later
+`--unchanged` run refuses at that document, `answering-a-sync.md` "The entity tag an answerer sends". So for a
+stop inside the hand over, **ask before aborting**; the answerer's second recovery line says what an abort
+costs where it stopped. Once the hand over has ended it has committed, and an abort in the sync costs no tag.
+
 The route, in order:
 
 1. **Recognise the state.** No version block and no safe mode to read. What is read:
