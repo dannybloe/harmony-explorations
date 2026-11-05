@@ -3,8 +3,9 @@
 The bench Harmony 885s: what was done to them, in order. What the remote and its platform are is
 [the reference](../../reference/architectures/harmony-880-885/README.md).
 
-**Two Harmony 885s are on the bench, and neither may be written**: arch 8 is not in
-`ARCHITECTURES_WITH_A_WRITE_TARGET`, and nothing here changes that. Before them, everything known about
+**Two Harmony 885s are on the bench, and both may be written, unit A first**, decision 30. This said
+"neither may be written"<!--superseded--> until that decision. Nothing has been written to either: arch 8 is
+still not in `ARCHITECTURES_WITH_A_WRITE_TARGET`, and adding it is a demonstration of its own. Before them, everything known about
 this architecture came from a contributor's firmware images and configurations, read off their remotes.
 
 ## The first unit, `h885_a`
