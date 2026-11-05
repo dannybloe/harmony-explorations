@@ -8,15 +8,18 @@
  *
  * **Two modes.**
  *
- * * `--unchanged`: every document, favourites document and picture answered 304 against the tag the remote
- *   sent; a picture it sent no tag for answered 404, which aborts nothing, and a document or favourites
- *   document it sent no tag for refused, since the answerer cannot tell a file the remote does not hold from
- *   one whose tag a change on the remote erased. **It is not write free**: every document the remote hands up
- *   first is written back to it with a tag of ours and committed, so that change never reaches Logitech's
- *   account. The documents otherwise end as the remote held them. `todo-touch.md` 6.7.
+ * * `--unchanged`: every document and picture answered 304 against the tag the remote sent; a picture it sent
+ *   no tag for answered 404, which aborts nothing, and a document it sent no tag for refused, since the
+ *   answerer cannot tell a file the remote does not hold from one whose tag a change on the remote erased.
+ *   **Every favourites document answered 304, tag or none**: a Touch synced through a computer asks for all of
+ *   them untagged, and a 304 makes it copy its own, so it keeps them as it holds them and no document is
+ *   written. **It is not write free**: every document the remote hands up first is written back to it with a
+ *   tag of ours and committed, so that change never reaches Logitech's account. The documents otherwise end as
+ *   the remote held them. `todo-touch.md` 6.7.
  * * `--set <lab folder>`: every request answered from the set kept in that folder's `set.json`, `{ "answers":
  *   [...] }` in the shape of the answers Logitech's client wrote, `SetAnswer`; a tag the set leaves out is ours,
- *   a digest of the body. The folder has to be inside the lab. `todo-touch.md` 6.8 builds the first.
+ *   a digest of the body. A favourites document the set holds is written with 200, and one it lacks answered
+ *   304 so the remote keeps its own. The folder has to be inside the lab. `todo-touch.md` 6.8 builds the first.
  *
  * **Without `--commit` it opens nothing.** It prints the mode, and for a set the gate's verdict, which a commit
  * would meet first, the answers by kind and how many tags are stated; whether the lab holds the unit record and
@@ -56,7 +59,7 @@
  *   sync: gate passed, <n> answers, <n> tags stated and <n> ours
  *   sync: unchanged, every document the remote hands up is written back to it with a tag of ours and
  *     committed, so that change never reaches Logitech's account; every document asked for is then answered
- *     304 against its own tag
+ *     304 against its own tag, and every favourites document 304 so the remote keeps its own copy
  *   sync: provisioned, mode <n>
  *   sync: handing over the remote's changes
  *   sync: hand over, request list <n>, <n> answered
@@ -150,7 +153,8 @@ async function main(): Promise<void> {
   } else {
     console.log('mode: unchanged, every document the remote hands up is written back to it with a tag of ours and '
       + 'committed, so that change never reaches Logitech\'s account; every document asked for is then answered 304 '
-      + 'against the tag the remote sends, a picture sent without one 404, and a document sent without one refused');
+      + 'against the tag the remote sends, a picture sent without one 404, and a document sent without one refused; '
+      + 'every favourites document 304, tag or none, so the remote keeps its own and no favourites document is written');
     mode = { kind: 'unchanged' };
   }
 

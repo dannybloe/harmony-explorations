@@ -144,8 +144,12 @@ The rest of this page is the documents field by field, for whoever reads or buil
 
 Everything lands in `/data/resources/` on the remote, beside the six configuration documents, with an
 entry in `index.json` holding its entity tag, its type and its expiry; during a sync it goes to `/data/tmp/`
-first[^t-touch-favourites-firmware]. **A favourites document or picture answered without an entity tag is
-not saved**[^t-touch-favourites-firmware].
+first[^t-touch-favourites-firmware]. **A picture answered without an entity tag is not saved, and a
+favourites document answered without one aborts the whole sync**[^t-touch-favourites-untagged].
+
+> This said a favourites document answered without a tag is not saved<!--superseded-->, like a picture, until
+> the write handler was read: it aborts the sync over a failed answer to anything but a
+> picture[^t-touch-favourites-untagged].
 
 | what | the address the remote asks for | the file it is kept as |
 |---|---|---|
@@ -170,6 +174,12 @@ key under the device's `ContentProfileKey` in the user's document, skipping an a
 in braces, and the Roku, Sonos and Heos ones[^t-touch-favourites-firmware]. On the account measured, that made the
 tuning device's document the only one asked for, though every device carries a profile
 address[^t-touch-favourites].
+
+**On a Touch synced through a computer all three kinds are asked for without an entity tag, every time**: the
+remote's screens ask for them, read each document's file before its tag, and during a sync read files from the
+set being gathered, where no favourites document is yet. So an untagged favourites request says nothing about
+what the remote holds, and an answer of 304 makes it keep its own copy, [answering a
+sync](answering-a-sync.md#the-entity-tag-an-answerer-sends)[^t-touch-favourites-untagged].
 
 ### The user's favourites document
 
@@ -305,6 +315,7 @@ to the remote in the sync measured carried the field[^t-touch-favourites].
 [^t-touch-both-ways]: Measured on a unit. [The test](../../../packages/usb/test/touch-sync-both-ways.test.ts)
 [^t-touch-favourites]: Measured on a unit. [The test](../../../packages/usb/test/touch-favourites.test.ts)
 [^t-touch-favourites-firmware]: Read in the firmware. [The test](../../../tests/test_harmony_touch_favourites.py)
+[^t-touch-favourites-untagged]: Read in the firmware. [The test](../../../tests/test_harmony_touch_favourites_untagged.py)
 [^t-touch-keys]: Read in the firmware. [The test](../../../tests/test_harmony_touch_keys.py)
 [^unchecked]: Not checked.
 [^t-touch-beyond-firmware]: Read in the firmware. [The test](../../../tests/test_harmony_touch_beyond_the_clients.py)

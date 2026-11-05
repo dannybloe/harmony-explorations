@@ -126,7 +126,9 @@ the boot loader[^t-touch-recovery]. For a document that is missing or is not val
 requests keep answering over the cable and the next sync replaces it[^t-touch-recovery]. **Two cases a sync
 cannot repair on its own** come from a document that is valid JSON and lacks a list the reader walks, one at
 start and one during a sync, both below, and both end in a restart. All of this is read in the production
-build 4.15.330 and none of it has been tried on a remote[^unchecked].
+build 4.15.330, and **one route has been run on a remote**: a sync stopped halfway, cleared by the abort and
+the restart over the cable, [below](#a-sync-that-stops-halfway)[^t-touch-first-sync]. The configuration that
+fails to load has not been tried[^unchecked].
 
 ### A configuration that fails to load
 
@@ -183,6 +185,15 @@ is deleted or replaced[^t-touch-recovery].
 * **Power lost inside the commit**, between its two renames, leaves the remote starting with no configuration
   and the engine running, so a sync works; this is inferred from the order of the renames and the start's
   cleanup, not tried[^t-touch-recovery].
+
+**Measured on a unit, the first of these**: a sync stopped by its answerer before its commit, after the remote
+had taken the six configuration documents and asked for its favourites. `harmony.engine?getconfighash` then
+answered 202, "sync in progress"; `proxy.abort` answered 200; the same read then answered 200 with the stored
+documents' tags unchanged from before the sync, so the abort cleared the flag and touched no stored document;
+and `setup.firmware?reboot` answered 200, after which the remote started normally[^t-touch-first-sync]. So the
+order the reading gives, the read first, the abort, the read again and the restart, holds on a unit for a sync
+stopped before its commit. A sync stopped inside the hand over, a configuration task that has ended, and the
+deletion of the stored documents have not been tried[^unchecked].
 
 ### The remote's own factory reset
 
@@ -295,5 +306,6 @@ installs is not settled, [the recovery tool](../../logitech/update-service.md#th
 [^t-touch-arch]: Read in the firmware. [The test](../../../tests/test_harmony_touch_architecture.py)
 [^t-touch-api-names]: Read in the firmware. [The test](../../../tests/test_harmony_touch_api_names.py)
 [^t-touch-recovery]: Read in the firmware. [The test](../../../tests/test_harmony_touch_recovery.py)
+[^t-touch-first-sync]: Measured on a unit. [The test](../../../packages/usb/test/touch-first-sync.test.ts)
 [^t-touch-recovery-client]: Stated by Logitech, in their client. [The test](../../../tests/test_harmony_touch_recovery.py)
 [^t-touch-host]: Read in the firmware. [The test](../../../tests/test_harmony_touch_host.py)

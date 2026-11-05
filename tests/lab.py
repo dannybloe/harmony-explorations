@@ -153,6 +153,21 @@ IMAGES = {
     # The full setup's sync and the reverse sync after it, read by `packages/usb/test/touch-sync-both-ways.test.ts`.
     'touch_full_sync_recording': 'reads/20261102T1520Z-touch-sync-full-setup/bridge.log',
     'touch_reverse_sync_recording': 'reads/20261102T1524Z-touch-reverse-sync/bridge.log',
+    # The first request sent the bench Touch, `getconfighash`, read by `packages/usb/test/touch-confighash.test.ts`;
+    # then the first sync answered by this project and the recovery after it, `todo-touch.md` 6.7, read by
+    # `packages/usb/test/touch-first-sync.test.ts`. Named here to keep the two tables identical.
+    'touch_confighash_read': 'reads/20261105T0930Z-touch-confighash/answer.txt',
+    'touch_first_sync_confighash_before': 'reads/20261105T1051Z-touch-confighash/answer.txt',
+    'touch_first_sync_handover_list': 'reads/20261105T1051Z-touch-sync-unchanged/003-request-list-answer.txt',
+    'touch_first_sync_handover_answers': 'reads/20261105T1051Z-touch-sync-unchanged/004-answers-request.txt',
+    'touch_first_sync_list': 'reads/20261105T1051Z-touch-sync-unchanged/009-request-list-answer.txt',
+    'touch_first_sync_answers': 'reads/20261105T1051Z-touch-sync-unchanged/010-answers-request.txt',
+    'touch_first_sync_answers_reply': 'reads/20261105T1051Z-touch-sync-unchanged/010-answers-answer.txt',
+    'touch_first_sync_favourites_list': 'reads/20261105T1051Z-touch-sync-unchanged/012-request-list-answer.txt',
+    'touch_recovery_confighash_running': 'reads/20261105T1052Z-touch-confighash/answer.txt',
+    'touch_recovery_abort': 'reads/20261105T1054Z-touch-recover-abort/answer.txt',
+    'touch_recovery_confighash_after': 'reads/20261105T1054Z-touch-confighash/answer.txt',
+    'touch_recovery_reboot': 'reads/20261105T1054Z-touch-recover-reboot/answer.txt',
     'hub_package_production': 'firmware/packages/sus/skin97-ultimatehub-production-4.15.600.hfw2',
     'h350_bootloader': 'reads/20261027T1929Z-h350-fw/fw_bootloader.bin',
     'h350_safemode': 'reads/20261027T1929Z-h350-fw/fw_safemode.bin',

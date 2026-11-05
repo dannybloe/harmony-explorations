@@ -187,7 +187,7 @@ the generator that wrote it, with firmware event 0xFF bound so it serves both mo
 expected codes on the bench 350 and the same file 33 of 33 on the bench 300, `packages/codec/test/noscreenfinalunits.test.ts`.
 Two Harmony 885s are on the bench as well, read only.
 
-**The Harmony Touch is described from its own reading and nothing has been written to it.** Its configuration
+**The Harmony Touch is described from its own reading, and one sync of ours has run on it.** Its configuration
 is Logitech's documents rather than a file, fetched by the remote through the computer during a sync, and both
 directions of a sync are recorded, `packages/usb/test/touch-sync-both-ways.test.ts`. The documents are described
 field by field in [its platform pages](../reference/architectures/harmony-touch/README.md) and read by the codec,
@@ -195,7 +195,12 @@ field by field in [its platform pages](../reference/architectures/harmony-touch/
 [answering a sync](../reference/architectures/harmony-touch/answering-a-sync.md). The bench Touch may be written,
 decision 29: the rail for its request channel exists, `assertTouchRequestAllowed` behind
 `HARMONY_TOUCH_REQUESTS`, `todo-touch.md` 6.3, with the abort, the delete of the stored documents and the restart
-as a recovery tier behind `HARMONY_TOUCH_RECOVERY`, 6.3.1; two reads have been sent through it, 6.4, and nothing written.
+as a recovery tier behind `HARMONY_TOUCH_RECOVERY`, 6.3.1. Two reads went through it first, 6.4, then the first
+sync answered by this project, 6.7, `packages/usb/test/touch-first-sync.test.ts`: the remote's changed settings
+handed up and written back under a tag of ours, the six configuration documents answered 304 and taken, and a stop
+at the favourites, which a Touch synced through a computer always asks for without a tag,
+`tests/test_harmony_touch_favourites_untagged.py`; the abort, the read and the restart cleared it. The answerer now
+answers a favourites request 304, and 6.7 waits on a second run.
 
 ## What is still open
 

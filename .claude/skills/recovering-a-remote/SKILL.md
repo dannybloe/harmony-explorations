@@ -371,7 +371,7 @@ then `--step delete --backup <lab folder>` only when the stored set itself is wh
 set without loading it, and `proxy.resource?put`. **The rail still reads no answer's content**, so answers
 that are valid JSON and lack a list the reader walks are saved as written; **the protection is the answerer
 refusing a set the codec's reader and check reject before any of it is written**, `todo-touch.md` 6.6, and
-the tier is the way back when that fails. None of the three has been sent to a unit.
+the tier is the way back when that fails. The abort and the restart have been sent to a unit once, after the first sync of ours stopped mid sync (`todo-touch.md` 6.7): `getconfighash` 202, abort 200, `getconfighash` 200 with the tags unchanged, restart 200, the remote starting normally. The delete has never been sent.
 
 **What still needs the remote's own factory reset, step 6, and Logitech's client**: a remote whose system
 does not start, below, which nothing over USB reaches; and a remote whose provisioning is gone, which only

@@ -35,8 +35,9 @@ of twelve functions in eight files, none of them cited here. The reading, file b
   with an entry in `index.json` holding its entity tag, its type and an expiry. The user document is
   `ContentUser.json`; a device document `CD_` and the device's `ContentProfileKey`; the line up `CS_` and
   the service id; a station logo the station id; an uploaded logo its name; a user background its file
-  name, each picture with `.png`. **A content document or picture answered without an entity tag is not
-  saved.** The expiry is the remote's clock when the answer arrived plus the `max-age` of the answer's
+  name, each picture with `.png`. **A picture answered without an entity tag is not saved, and a favourites
+  document answered without one aborts the sync**, `tests/test_harmony_touch_favourites_untagged.py`; this
+  said neither was saved until that file read the write handler. The expiry is the remote's clock when the answer arrived plus the `max-age` of the answer's
   `cache-Control`, and none without the field. A 304 keeps the held copy.
 * **A change on the remote is saved without an entity tag** (`harmonywebservices/apihandler/resource.lua`):
   the engine saves a document handed to it with the tag its request carries, and the screens' request for

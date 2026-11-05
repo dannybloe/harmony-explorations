@@ -44,20 +44,26 @@
  * * **a document** with 200, its tag and the object itself, never a string of JSON; **304 when the remote
  *   sent a tag equal to the set's**, echoing it, and never to a request that carried no tag, "The entity tag
  *   an answerer sends"
- * * **a picture the set lacks** with 404, which the remote logs and never aborts on, and **the user's own
- *   favourites document** the same, the one favourites document whose 404 is allowed, "What the remote checks
- *   of an answer"; any other document the set lacks is a refusal of ours
- * * **in `unchanged` mode**, every document, favourites document and picture with 304 against the tag the
- *   remote sent. **A document or favourites document it sent no tag for is refused**: a request without a tag
- *   means either that the remote holds no file for it, when a 304 copies nothing and the document is missing
- *   from the new set, or that a change made on the remote's own screens erased the tag of a file it keeps, and
- *   this answerer cannot tell the two apart, "The entity tag an answerer sends". This header said a 304 there
- *   always copied a file the remote does not hold<!--superseded--> until the preflight of `todo-touch.md` 6.7
- *   read the screens' put. A favourites document is refused rather than answered 404 because the gathered set
- *   starts empty, so a 404 to the user's favourites would drop them at the commit, and a 404 to any other
- *   favourites document aborts. **A picture it sent no tag for is answered 404**, which the remote logs and
- *   never aborts on, and the screens copy every stored picture into the gathered set before asking, so a
- *   picture it holds stays
+ * * **a picture the set lacks** with 404, which the remote logs and never aborts on; **a favourites document
+ *   the set lacks** with 304, below; any other document the set lacks is a refusal of ours
+ * * **in `unchanged` mode**, every document and picture with 304 against the tag the remote sent. **A document
+ *   it sent no tag for is refused**: a request without a tag means either that the remote holds no file for
+ *   it, when a 304 copies nothing and the document is missing from the new set, or that a change made on the
+ *   remote's own screens erased the tag of a file it keeps, and this answerer cannot tell the two apart, "The
+ *   entity tag an answerer sends". This header said a 304 there always copied a file the remote does not
+ *   hold<!--superseded--> until the preflight of `todo-touch.md` 6.7 read the screens' put. **A picture it sent
+ *   no tag for is answered 404**, which the remote logs and never aborts on, and the screens copy every stored
+ *   picture into the gathered set before asking, so a picture it holds stays
+ * * **a favourites document, in either mode, with 304 whether or not the remote sent a tag**, unless a set
+ *   holds one, when it is answered 200 with it. On a Touch synced through a computer every favourites request
+ *   comes untagged, because the remote's screens look the document up in the set being gathered, where it is
+ *   not yet: `tests/test_harmony_touch_favourites_untagged.py`, found when 6.7's first run stopped there. A 304
+ *   makes the remote copy its own committed document and its own stored tag into the new set, so it keeps
+ *   exactly what it holds, and **writes no document**; one it does not hold stays missing, which costs no more
+ *   than a 404 would. The answer still has to carry a tag, since an answer to a favourites request without
+ *   one aborts the sync, so it echoes the remote's or carries `keptCopyTag`, which the remote does not store.
+ *   **This answerer refused an untagged favourites document**<!--superseded-->, and answered the user's
+ *   favourites a set lacked 404 with no tag, which would have aborted the sync, until that reading.
  *
  * **A write of answers is announced with the whole line's length**, which is the session's default,
  * `TouchAnnouncement` in `touchsession.ts`: the remote's listener counts the line from the request's name on,
@@ -196,7 +202,22 @@ export function keyOf(uri: string): string {
  */
 export function ourTag(answer: Pick<SetAnswer, 'body-type' | 'resource'>): string {
   const body = answer['body-type'] === 'application/json' ? JSON.stringify(answer.resource) : String(answer.resource);
-  const hex = createHash('sha256').update(`${answer['body-type']}\n${body}`).digest('hex').slice(0, 32).split('');
+  return version8(`${answer['body-type']}\n${body}`);
+}
+
+/**
+ * **The tag a 304 to a favourites request carries when the remote sent none.** The remote insists on a tag on
+ * every answer to a favourites request and aborts the sync without one, and on a 304 it copies its committed
+ * document with the tag stored beside it, so this one is never stored: it only has to be there. A digest of
+ * the address, in `ourTag`'s shape, so a run is the same every time and the tag still says whose it is.
+ */
+export function keptCopyTag(uri: string): string {
+  return version8(`kept copy\n${uri}`);
+}
+
+/** A digest shaped as a version 8 identifier, RFC 9562's form for one made by a rule of one's own. */
+function version8(text: string): string {
+  const hex = createHash('sha256').update(text).digest('hex').slice(0, 32).split('');
   hex[12] = '8';
   hex[16] = ((Number.parseInt(hex[16] as string, 16) & 0x3) | 0x8).toString(16);
   const h = hex.join('');
@@ -287,8 +308,17 @@ export interface WrittenAnswer {
 /** A picture's address: Logitech's user image store, or the logical scheme for channel logos. */
 const isPicture = (uri: string): boolean => uri.startsWith('content-image://') || uri.startsWith('https://');
 
-/** The one favourites document a 404 is allowed for, the user's own, `answering-a-sync.md`. */
-const isUserFavourites = (uri: string): boolean => uri.startsWith(harmonyTouch.CONTENT_USER);
+/** A favourites document: the user's own, a device's, or a provider's line up, `favourites-and-settings.md`. */
+const isFavourites = (uri: string): boolean =>
+  [harmonyTouch.CONTENT_USER, harmonyTouch.CONTENT_DEVICE, harmonyTouch.CONTENT_SERVICE].some((p) => uri.startsWith(p));
+
+/**
+ * The answer that keeps a favourites document as the remote holds it: 304, with the tag the remote sent or,
+ * when it sent none, `keptCopyTag`. The header says why every favourites request of such a sync is untagged
+ * and what the remote does with this answer.
+ */
+const keepTheRemotesCopy = (uri: string, tag: string | undefined): WrittenAnswer =>
+  ({ statusCode: '304', uri, etag: tag ?? keptCopyTag(uri) });
 
 /**
  * The answer to one request of a sync down, or the reason to refuse it. An ending, `proxy://Finished` or
@@ -306,19 +336,24 @@ export function answerOf(
   }
   const tag = typeof request.etag === 'string' && request.etag.length > 0 ? request.etag : undefined;
   if (mode.kind === 'unchanged') {
+    // A favourites document is asked for untagged in every sync through a computer, and a 304 makes the remote
+    // keep its own copy, so it is answered 304 either way, the header.
+    if (isFavourites(request.uri)) return keepTheRemotesCopy(request.uri, tag);
     // The 304 rule: only against a tag the remote sent. A request with none is a file the remote does not hold,
     // or one whose tag a change on its own screens erased, and nothing here tells the two apart, the header.
     // A picture's failure aborts nothing and the held ones were copied into the gathered set before the
-    // asking, so an untagged picture is answered 404; a favourites document's 404 drops or aborts, so not it.
+    // asking, so an untagged picture is answered 404.
     if (tag === undefined && isPicture(request.uri)) return { statusCode: '404', uri: request.uri };
     if (tag === undefined) return { refuse: `the remote sent no tag for ${describe(request.uri)}, so it cannot be answered 304` };
     return { statusCode: '304', uri: request.uri, etag: tag };
   }
   const entry = mode.set.entries.get(keyOf(request.uri));
   if (entry === undefined) {
-    // A picture's failure is logged and never aborts, and the user's own favourites may be answered 404; any
-    // other document a sync asks for and the set lacks would abort the whole sync, so it is ours to refuse.
-    if (isPicture(request.uri) || isUserFavourites(request.uri)) return { statusCode: '404', uri: request.uri };
+    // A picture's failure is logged and never aborts, and a favourites document the set lacks is the remote's
+    // own to keep; any other document a sync asks for and the set lacks would abort the whole sync, so it is
+    // ours to refuse.
+    if (isPicture(request.uri)) return { statusCode: '404', uri: request.uri };
+    if (isFavourites(request.uri)) return keepTheRemotesCopy(request.uri, tag);
     return { refuse: `the set holds no answer for ${describe(request.uri)}` };
   }
   if (tag !== undefined && tag === entry.etag) return { statusCode: '304', uri: request.uri, etag: tag };
@@ -347,7 +382,7 @@ function describe(uri: string): string {
  */
 export const SYNC_LINES: readonly RegExp[] = [
   /^sync: gate passed, \d+ answers, \d+ tags stated and \d+ ours$/,
-  /^sync: unchanged, every document the remote hands up is written back to it with a tag of ours and committed, so that change never reaches Logitech's account; every document asked for is then answered 304 against its own tag$/,
+  /^sync: unchanged, every document the remote hands up is written back to it with a tag of ours and committed, so that change never reaches Logitech's account; every document asked for is then answered 304 against its own tag, and every favourites document 304 so the remote keeps its own copy$/,
   /^sync: provisioned, mode \d+$/,
   /^sync: handing over the remote's changes$/,
   /^sync: hand over, request list \d+, \d+ answered$/,
@@ -642,7 +677,8 @@ export async function syncTouch(options: TouchSyncOptions): Promise<TouchSyncOut
     report(`sync: gate passed, ${prepared.entries.size} answers, ${prepared.tags.stated} tags stated and ${prepared.tags.ours} ours`);
   } else {
     report('sync: unchanged, every document the remote hands up is written back to it with a tag of ours and committed, '
-      + 'so that change never reaches Logitech\'s account; every document asked for is then answered 304 against its own tag');
+      + 'so that change never reaches Logitech\'s account; every document asked for is then answered 304 against its own tag, '
+      + 'and every favourites document 304 so the remote keeps its own copy');
   }
   const mode = prepared === undefined ? { kind: 'unchanged' as const } : { kind: 'set' as const, set: prepared };
 

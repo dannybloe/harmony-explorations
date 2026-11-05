@@ -48,6 +48,9 @@ This said the image's contents had not been examined until it was read.
 > This said both open for reading and opening one is to be taken as the action<!--superseded--> its name
 > says, until the remote's native program was read: each fills the write slot of its entry and nothing
 > else[^t-touch-api-names].
+* **A sync stopped halfway is undone over the cable**, measured: while it is marked running the remote answers
+  the configuration hash read 202, an abort answers 200 and clears it with the stored documents untouched, and
+  the restart request answers 200 and the remote starts normally, [recovery](../../architectures/harmony-touch/firmware.md#a-sync-that-stops-halfway)[^t-touch-first-sync].
 * **There is no second copy of the application and no safe mode** of the older remotes' kind: the kernel's
   own start program is the recovery system, and it installs a firmware drop or runs a factory reset before
   the system is mounted, [below the application](../../architectures/harmony-touch/firmware.md#below-the-application)[^t-touch-recovery].
@@ -65,3 +68,4 @@ This said the image's contents had not been examined until it was read.
 [^t-touch-image]: Read in the firmware. [The test](../../../tests/test_harmony_touch_image.py)
 [^t-touch-api-names]: Read in the firmware. [The test](../../../tests/test_harmony_touch_api_names.py)
 [^t-touch-recovery]: Read in the firmware. [The test](../../../tests/test_harmony_touch_recovery.py)
+[^t-touch-first-sync]: Measured on a unit. [The test](../../../packages/usb/test/touch-first-sync.test.ts)

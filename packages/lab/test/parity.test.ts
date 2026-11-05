@@ -137,7 +137,9 @@ test('the Python table was actually parsed, rather than read as empty', () => {
   // 338 with the two bench Harmony 885s' configurations and regions, each read twice, and unit A's clock.
   // 342 with the four keypad watches of the two bench Harmony 885s, todo-prepare-885.md 2.4, and 343 with
   // unit B's colour and transport keys asked by position.
-  assert.equal(Object.keys(pythonImages()).length, 343, 'every fixture tests/lab.py names');
+  // 341 with the Touch's first `getconfighash` read, todo-touch 6.4, which had been registered on the
+  // TypeScript side alone, and the eleven files of 6.7's first sync answered by this project and its recovery.
+  assert.equal(Object.keys(pythonImages()).length, 341, 'every fixture tests/lab.py names');
 });
 
 test('the two sides exclude the same fixtures from the parseable population', () => {

@@ -11,6 +11,12 @@
  * **Nothing here touches a device.** The remote is `FakeTouchRemote`, answering each request line with what
  * the scenario says, behind the same guard `openFileBasedRemote` returns, through a real session.
  *
+ * **One rule of the remote's is modelled rather than scripted**: an answer to a favourites request that the
+ * engine refuses, one with no tag, or a status from 400 up but the user's own 404, aborts the sync, so the
+ * next request list holds `proxy://Abort` whatever the scenario says, and the write is still answered 200, as
+ * the remote answers every write it can decode, `tests/test_harmony_touch_favourites_untagged.py`. That is what
+ * makes an answerer that writes such an answer end `aborted` here, as it would on a remote.
+ *
  * Not a test file itself, so the runner does not pick it up.
  */
 import { existsSync, mkdtempSync, readdirSync, rmSync } from 'node:fs';
@@ -84,6 +90,27 @@ export function recordedSyncAnswers(fixture: string): ReturnType<typeof answersW
   return answersWritten(hlapi.slice(at));
 }
 
+/** One answer of a write, the fields the remote's engine checks first. */
+interface Written {
+  readonly uri: string;
+  readonly statusCode?: string;
+  readonly etag?: string | null;
+}
+
+/**
+ * Whether the remote's engine would abort the sync over this answer: a favourites answer with no tag fails the
+ * content callback, and one with a status from 400 up fails the status check, the user's own 404 apart.
+ * Pictures and the configuration documents are left to the scenario.
+ */
+export function refusedByTheEngine(a: Written): boolean {
+  if (!a.uri.startsWith('content://')) return false;
+  // The callback tests the field's presence alone, before it turns an empty or null tag into none.
+  if (a.etag === undefined) return true;
+  const status = a.statusCode ?? '';
+  if (status === '404' && a.uri.startsWith('content://1.0/user')) return false;
+  return status >= '400' && status < '600';
+}
+
 async function main(): Promise<void> {
   const chunks: Buffer[] = [];
   for await (const chunk of process.stdin) chunks.push(chunk as Buffer);
@@ -92,6 +119,8 @@ async function main(): Promise<void> {
   const handOver = [...(scenario.handOver ?? [[{ verb: 'POST', uri: 'proxy://Finished' }]])].map(listAnswer);
   const sync = scenario.replay !== undefined ? recordedListAnswers(scenario.replay) : (scenario.sync ?? []).map(listAnswer);
   let started = false;
+  // Set by a write of answers the remote's engine would refuse, `refusedByTheEngine`; the next list is the abort.
+  let aborting = false;
   const folder = join(mkdtempSync(join(tmpdir(), 'touch-sync-')), 'run');
   // Whether the hand up folder held a document when each write of answers arrived, in order.
   const keptAtWrite: number[] = [];
@@ -109,10 +138,16 @@ async function main(): Promise<void> {
         return `Response,${JSON.stringify({ errorMessage: 'OK', mime: SYNC, result: null, errorCode: String(scenario.syncStatus ?? 200) })}`;
       }
       if (line.startsWith(READ_LIST)) {
+        if (aborting) {
+          aborting = false;
+          return listAnswer([{ verb: 'POST', uri: 'proxy://Abort' }]);
+        }
         const next = (started ? sync : handOver).shift();
         return next ?? listAnswer([]);
       }
       if (line.startsWith(WRITE_ANSWERS)) {
+        const written = (JSON.parse(decodeURIComponent(line.split('&responses=')[1]!)) as { responses: Written[] }).responses;
+        if (written.some(refusedByTheEngine)) aborting = true;
         const kept = join(folder, 'handed-up');
         keptAtWrite.push(existsSync(kept) ? readdirSync(kept).filter((f) => f.endsWith('.json')).length : 0);
         return scenario.writeReply === 'gathering' ? GATHERING : OK(WRITE_ANSWERS);

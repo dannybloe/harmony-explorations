@@ -136,6 +136,23 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // `harmony.engine?getconfighash`'s answer, the stored documents' entity tags joined, read by
   // `packages/usb/test/touch-confighash.test.ts`. The tags identify the test account's documents.
   touch_confighash_read: 'reads/20261105T0930Z-touch-confighash/answer.txt',
+  // The first sync answered by this project, `todo-touch.md` 6.7, `--unchanged`, and the recovery after its
+  // refusal, read by `packages/usb/test/touch-first-sync.test.ts`. The run's folder keeps every request and
+  // answer; these are the ones the test reads: the config hash before, the hand over's list and our answer to
+  // it, the sync's first list, our answers and the reply, and the favourites list that stopped it; then the
+  // hash while the sync was marked running, the abort, the hash after it and the restart. The tags identify
+  // the test account's documents, and the hand over carries its Settings document.
+  touch_first_sync_confighash_before: 'reads/20261105T1051Z-touch-confighash/answer.txt',
+  touch_first_sync_handover_list: 'reads/20261105T1051Z-touch-sync-unchanged/003-request-list-answer.txt',
+  touch_first_sync_handover_answers: 'reads/20261105T1051Z-touch-sync-unchanged/004-answers-request.txt',
+  touch_first_sync_list: 'reads/20261105T1051Z-touch-sync-unchanged/009-request-list-answer.txt',
+  touch_first_sync_answers: 'reads/20261105T1051Z-touch-sync-unchanged/010-answers-request.txt',
+  touch_first_sync_answers_reply: 'reads/20261105T1051Z-touch-sync-unchanged/010-answers-answer.txt',
+  touch_first_sync_favourites_list: 'reads/20261105T1051Z-touch-sync-unchanged/012-request-list-answer.txt',
+  touch_recovery_confighash_running: 'reads/20261105T1052Z-touch-confighash/answer.txt',
+  touch_recovery_abort: 'reads/20261105T1054Z-touch-recover-abort/answer.txt',
+  touch_recovery_confighash_after: 'reads/20261105T1054Z-touch-confighash/answer.txt',
+  touch_recovery_reboot: 'reads/20261105T1054Z-touch-recover-reboot/answer.txt',
   hub_package_production: 'firmware/packages/sus/skin97-ultimatehub-production-4.15.600.hfw2',
   h350_bootloader: 'reads/20261027T1929Z-h350-fw/fw_bootloader.bin',
   h350_safemode: 'reads/20261027T1929Z-h350-fw/fw_safemode.bin',

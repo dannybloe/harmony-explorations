@@ -16,9 +16,13 @@
  * 2. **`unchanged`**: against a remote that sends a tag for every document, favourites document and picture,
  *    every answer is a 304 echoing that tag and carries nothing else; the endings are answered 200, and the
  *    first line says that what the remote hands up is written back with a tag of ours and committed. **One
- *    document or favourites document without a tag is refused**, no answer of that list is written, and the
- *    recovery is named; **a picture without one is answered 404** and the run finishes, which is the
- *    control for the refusal, `todo-touch.md` 6.7's risk 6.
+ *    document without a tag is refused**, no answer of that list is written, and the recovery is named; **a
+ *    picture without one is answered 404** and the run finishes, which is the control for the refusal,
+ *    `todo-touch.md` 6.7's risk 6. **Each favourites document without one, the user's, a device's and a line
+ *    up, is answered 304 with `keptCopyTag`** and the run finishes, where the fake aborts the sync over a
+ *    favourites answer without a tag, as the remote's engine does; the untagged document of the same run shape
+ *    is the control, refused. That is 6.7's first run: it stopped at the user's favourites, which a Touch synced
+ *    through a computer always asks for untagged, `tests/test_harmony_touch_favourites_untagged.py`.
  * 3. **The gate**: a set missing each top level list the engine's reader walks, or a document, is refused
  *    before anything at all is written to the remote, not even the provisioning read, and names no recovery;
  *    the smallest set the reference describes passes it, which is the control.
@@ -26,9 +30,12 @@
  *    provisioning read alone.
  * 5. **The hand over**: what the remote hands up is in the lab before the write that answers it, and is
  *    answered 200 with the same document and a tag of ours; a handed up document lacking its list is refused.
- * 6. **The other rules of `answering-a-sync.md`**: a picture and the user's own favourites the set lacks are
- *    answered 404, another favourites document the set lacks is refused; `proxy://Abort` ends the run as
- *    aborted, answered 200; a sync request answered 202 is refused with the recovery step.
+ * 6. **The other rules of `answering-a-sync.md`**: a picture the set lacks is answered 404 and a favourites
+ *    document the set lacks 304, so the remote keeps its own, where a set holding one writes it with 200, the
+ *    control; another document the set lacks is refused; `proxy://Abort` ends the run as aborted, answered 200;
+ *    a sync request answered 202 is refused with the recovery step. The fake's own rule has a control too: an
+ *    answer to a favourites request without a tag, or a device's 404, is one it aborts over, and a picture's
+ *    is not.
  * 7. **The lines**: every line any run reported matches one of `SYNC_LINES`.
  * 7a. **A write of answers that is not taken**, `todo-touch.md` 6.7's risk 4: a reply to the write that does
  *    not name it, the listener's reply to a write it is still gathering, is refused at the first write, where
@@ -65,8 +72,8 @@ import { fileURLToPath } from 'node:url';
 
 import { skipUnless } from '@harmony/lab';
 
-import { RECOVERY, SYNC_LINES, ourTag, type RemoteRequest, type SetAnswer, type TouchSyncOutcome } from '../src/touchsync.ts';
-import { recordedSyncAnswers, type Scenario } from './touch-sync-run.ts';
+import { RECOVERY, SYNC_LINES, keptCopyTag, ourTag, type RemoteRequest, type SetAnswer, type TouchSyncOutcome } from '../src/touchsync.ts';
+import { recordedSyncAnswers, refusedByTheEngine, type Scenario } from './touch-sync-run.ts';
 
 const FULL = 'touch_full_sync_recording';
 const TRIAL = 'touch_sync_recording';
@@ -146,6 +153,7 @@ const getSix = (tags = true): RemoteRequest[] => SIX.map((name, i) => ({ verb: '
 const FINISHED: RemoteRequest = { verb: 'POST', uri: 'proxy://Finished' };
 const USER = 'content://1.0/user;profile/user/1';
 const DEVICE = 'content://1.0/device;profile/device/1';
+const SERVICE = 'content://1.0/service/provider-1';
 const PICTURE = 'content-image://1.0/station/s1/image;maxX=54;maxY=54;type=png';
 
 after(() => {
@@ -200,18 +208,42 @@ describe('unchanged', () => {
     assert.match(r.reports[0]!, /^sync: unchanged, every document the remote hands up is written back to it with a tag of ours and committed, so that change never reaches Logitech's account;/);
   });
 
-  it('answers a picture the remote sent no tag for 404, and refuses either favourites document without one', () => {
+  it('answers a picture the remote sent no tag for 404, and every favourites document without one 304 with a kept copy tag', () => {
     // The control first: an untagged picture is answered 404, which the remote logs and never aborts on.
     const picture = run({ mode: { kind: 'unchanged' }, sync: [[...getSix(), { verb: 'get', uri: PICTURE }], [FINISHED]] });
     assert.equal(picture.outcome.ending, 'finished', picture.outcome.reason);
     assert.deepEqual(syncAnswers(picture).slice(6), [{ statusCode: '404', uri: PICTURE }, { uri: 'proxy://Finished', statusCode: '200' }]);
-    // A favourites document's 404 drops the user's favourites or aborts, so either one untagged is refused.
-    for (const [uri, what] of [[USER, 'the user\'s favourites'], [DEVICE, 'a device\'s favourites']] as const) {
-      const r = run({ mode: { kind: 'unchanged' }, sync: [getSix(), [{ verb: 'get', uri }], [FINISHED]] });
-      assert.equal(r.outcome.ending, 'refused', what);
-      assert.match(r.outcome.reason ?? '', new RegExp(`sent no tag for ${what}, so it cannot be answered 304`));
-      assert.equal(syncAnswers(r).length, 6, 'the six were answered and the favourites list was not');
+    // The three favourites documents untagged, in the order and the lists the screens ask for them: each is
+    // answered 304 with a tag, so the remote copies its own and the fake, which aborts over a favourites
+    // answer without a tag as the engine does, reaches the finish.
+    const r = run({ mode: { kind: 'unchanged' }, sync: [getSix(), [], [{ verb: 'get', uri: USER }], [{ verb: 'get', uri: DEVICE }], [{ verb: 'get', uri: SERVICE }], [FINISHED]] });
+    assert.equal(r.outcome.ending, 'finished', r.outcome.reason);
+    assert.deepEqual(syncAnswers(r).slice(6), [
+      ...[USER, DEVICE, SERVICE].map((uri) => ({ statusCode: '304', uri, etag: keptCopyTag(uri) })),
+      { uri: 'proxy://Finished', statusCode: '200' },
+    ]);
+    // None of the four is a document: a 304 carries no body.
+    for (const a of syncAnswers(r)) assert.ok(!('resource' in a));
+  });
+
+  it('gives a kept copy tag that is never empty, the same every run, and different for each address', () => {
+    for (const uri of [USER, DEVICE, SERVICE]) {
+      assert.match(keptCopyTag(uri), /^[0-9a-f]{8}-[0-9a-f]{4}-8[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+      assert.equal(keptCopyTag(uri), keptCopyTag(uri));
     }
+    assert.equal(new Set([USER, DEVICE, SERVICE].map(keptCopyTag)).size, 3);
+    // Not the tag of a document: a kept copy tag cannot be mistaken for one of `ourTag`'s.
+    assert.notEqual(keptCopyTag(USER), ourTag({ 'body-type': 'application/json', resource: {} }));
+  });
+
+  it('the fake aborts over a favourites answer without a tag or a device\'s 404, and not over a picture\'s', () => {
+    // The fake's own rule, which the favourites runs rely on to show a tagless answer would abort.
+    assert.equal(refusedByTheEngine({ uri: USER, statusCode: '304' }), true);
+    assert.equal(refusedByTheEngine({ uri: USER, statusCode: '404' }), true, 'a 404 without a tag fails the callback too');
+    assert.equal(refusedByTheEngine({ uri: USER, statusCode: '404', etag: 'x' }), false, 'the user\'s own 404 is allowed');
+    assert.equal(refusedByTheEngine({ uri: DEVICE, statusCode: '404', etag: 'x' }), true);
+    assert.equal(refusedByTheEngine({ uri: SERVICE, statusCode: '304', etag: 'x' }), false);
+    assert.equal(refusedByTheEngine({ uri: PICTURE, statusCode: '404' }), false);
   });
 
   it('refuses a document the remote sent no tag for, writes no answer of that list, and names the recovery order', () => {
@@ -340,14 +372,29 @@ describe('the hand over', () => {
 });
 
 describe('the other rules of answering a sync', () => {
-  it('answers a picture and the user\'s favourites the set lacks with 404, and refuses another favourites document', () => {
+  it('answers a picture the set lacks 404 and a favourites document it lacks 304, and refuses another document', () => {
     const answers = setOf(smallest());
-    const lists = [[...getSix(false), { verb: 'get', uri: PICTURE }, { verb: 'get', uri: USER }], [{ verb: 'get', uri: DEVICE }], [FINISHED]];
+    const lists = [[...getSix(false), { verb: 'get', uri: PICTURE }], [{ verb: 'get', uri: USER }], [{ verb: 'get', uri: DEVICE }], [FINISHED]];
     const r = run({ mode: { kind: 'set', set: { answers } }, sync: lists });
-    assert.equal(r.outcome.ending, 'refused');
-    assert.match(r.outcome.reason ?? '', /no answer for a device's favourites/);
-    assert.equal(r.outcome.recovery, RECOVERY);
-    assert.deepEqual(syncAnswers(r).slice(6), [{ statusCode: '404', uri: PICTURE }, { statusCode: '404', uri: USER }]);
+    assert.equal(r.outcome.ending, 'finished', r.outcome.reason);
+    assert.deepEqual(syncAnswers(r).slice(6), [
+      { statusCode: '404', uri: PICTURE },
+      { statusCode: '304', uri: USER, etag: keptCopyTag(USER) },
+      { statusCode: '304', uri: DEVICE, etag: keptCopyTag(DEVICE) },
+      { uri: 'proxy://Finished', statusCode: '200' },
+    ]);
+    // The control: a set lacking one of the six is refused, by the gate, where one lacking a favourites
+    // document is answered.
+    const short = setOf(smallest()).filter((a) => !a.uri.endsWith('/ProtocolList'));
+    const refused = run({ mode: { kind: 'set', set: { answers: short } }, sync: [getSix(false), [FINISHED]] });
+    assert.equal(refused.outcome.ending, 'refused');
+  });
+
+  it('writes a favourites document a set holds with 200 and a tag, the control for the 304 of one it lacks', () => {
+    const user: SetAnswer = { uri: USER, 'body-type': 'application/json', resource: { preferences: {} } };
+    const r = run({ mode: { kind: 'set', set: { answers: [...setOf(smallest()), user] } }, sync: [getSix(false), [{ verb: 'get', uri: USER }], [FINISHED]] });
+    assert.equal(r.outcome.ending, 'finished', r.outcome.reason);
+    assert.deepEqual(syncAnswers(r).slice(6, 7), [{ statusCode: '200', uri: USER, 'body-type': 'application/json', etag: ourTag(user), resource: user.resource }]);
   });
 
   it('answers 304 to a document whose tag equals the set\'s and 200 to one whose tag differs', () => {

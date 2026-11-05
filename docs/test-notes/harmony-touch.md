@@ -204,6 +204,18 @@ answer.
 
 So the recovery route of 6.1 ran on a unit end to end, and 6.7 stays open on the favourites' missing tag.
 
+**Why the favourites came without a tag**, read afterwards in the image,
+`tests/test_harmony_touch_favourites_untagged.py`: the three favourites requests are the screens', not the
+engine's, and the screens take a favourites document's tag only after reading its file, which during a sync they
+read from the set being gathered. On a Touch synced through a computer nothing puts a favourites document there
+before they ask, so every favourites request of such a sync is untagged, whatever the remote holds. None of the
+four causes the run left open: the address equals the full sync's, the hand over handed up no favourites change,
+and the document was stored with a tag. The full sync of 2.3 had asked for them untagged too, which a first
+delivery explains as well, so only this run could tell. A 304 makes the remote copy its own document and its own
+tag into the new set, so the answerer now answers every favourites request 304, with the remote's tag or a tag of
+ours it does not store, `packages/corpus/src/touchsync.ts`; an answer to a favourites request without any tag would
+have aborted the sync. The measurements of this run are held by `packages/usb/test/touch-first-sync.test.ts`.
+
 ## Not done
 
 * No infrared run has been recorded with this unit, and nothing about it in use has been seen and written
