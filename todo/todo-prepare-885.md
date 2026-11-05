@@ -57,4 +57,4 @@ Written on 4 November 2026; linked from `todo-later.md` 5.6.
 
 ## 5. The question
 
-- [ ] 5.1 Whether a bench 885 may be written, asked once chapters 1 and 2 are done, and recorded as a decision either way
+- [x] 5.1 Whether a bench 885 may be written, asked once chapters 1 and 2 are done, and recorded as a decision either way: yes, both, A first, decision 30

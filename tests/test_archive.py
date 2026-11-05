@@ -54,10 +54,12 @@ FINDINGS_DIGEST = "c4bc62336900cb13eee50b2c375c7a11ca399e67ad9183a44830b8799aa74
 # Repinned for a recorded correction in place of decision 29: the Touch's `/sys/factoryreset` and
 # `/sys/reboot` act on a write, not when opened, and the vibration test names act on an open, read from the
 # native program's name table. The digest before it was 1e1cdff4.
-DECISIONS_DIGEST = "5c191c6b0f30cb4cf18d30625db8c7b18a8dfeb1606568c79ec444d54dc93264"
+# Repinned for decision 30, a new entry: the two bench Harmony 885s may be written, A first. The digest
+# before it was 5c191c6b.
+DECISIONS_DIGEST = "5eb71fc4252202525228b42d39286731edf7b4784be5855e651f426f984ceaf2"
 
 SECTIONS = 436
-DECISIONS = 29
+DECISIONS = 30
 
 
 def anchor_problems(findings, decisions):

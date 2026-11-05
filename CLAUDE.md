@@ -313,7 +313,7 @@ private transfer, so a description gets recorded on arrival, while the contribut
 
 ## Never write to a remote
 
-Read paths only, except on **ten units**, deliberately and behind two flags. These devices are
+Read paths only, except on **twelve units**, deliberately and behind two flags. These devices are
 irreplaceable. One line each here; what was written to each, block by block, is its file in
 `docs/test-notes/`, and `docs/test-notes/README.md` lists every unit on the bench.
 
@@ -327,6 +327,7 @@ irreplaceable. One line each here; what was written to each, block by block, is 
 | the **friend's Harmony One** (dead display) and the **friend's Harmony 525** | given to the project and its own, decision 21; permitted, not yet among `write-config.ts`'s targets, nothing written |
 | a **Harmony 350** and a **Harmony 300** | permitted 27 October 2026, decision 26; nothing written. The file protocol's write path exists behind its own rail since `todo-compile-350.md` 1.6: `assertFileWriteAllowed` and `HARMONY_FILE_WRITE=1`, `/cfg/usercfg` only, `/sys/guid` checked against `units/h350.txt` or `units/h300.txt`, `packages/usb/bin/write-file-config.ts` |
 | the bench **Harmony Touch** | permitted 2 November 2026, decision 29; nothing written by this project. No write path exists; one gets its own rail on the file protocol before anything is sent, `/sys/hlapi` first, and never a path that acts when opened |
+| the two bench **Harmony 885s**, `h885_a` and `h885_b` | permitted 5 November 2026, decision 30, A first; nothing written. Arch 8 is not a write target in the code: adding it is its own demonstration, the configuration at `0x020000` only, base slot 2 kept as every configuration states it |
 
 **No other remote may be written.** The exclusion is the point: the everyday Harmony One. `openHarmony`
 refuses the Touch, the 300 and the 350, whose writes go through the file protocol. Every unit has taken the
@@ -482,7 +483,7 @@ architecture numbers are this project's internal handle and map to nothing on th
 | 9 | Harmony 525 | `reference/architectures/harmony-5xx/` |
 | 12 | Harmony One, or the spare Harmony One | `reference/architectures/harmony-one/` |
 | 14 | Harmony 600, Harmony 650 or Harmony 700. All three are on the bench and they enumerate alike, so name which | `reference/architectures/harmony-600-650-700/` |
-| 8 | Harmony 880 or 885; two 885s are on the bench, read only, and the rest is contributed configurations and images | `reference/architectures/harmony-880-885/` |
+| 8 | Harmony 880 or 885; two 885s are on the bench, permitted write targets by decision 30 and nothing written yet, and the rest is contributed configurations and images | `reference/architectures/harmony-880-885/` |
 | 10 | Harmony 890 or 895, known from contributed configurations only | `reference/architectures/harmony-890-895/` |
 | 16 | Harmony 300 or Harmony 350, the file based family; never opened by `openHarmony` | `reference/architectures/harmony-300-350/` |
 | 17 | the number a Harmony Touch reports for itself, and the hub family in Logitech's own template map | `reference/architectures/harmony-touch/` |

@@ -824,3 +824,24 @@ remote and 2 in the second, which is what section 117 measured as a generator er
    unit has taken: the identity read, which is done; Logitech's own recorded documents handed back
    unchanged; then a real write.
 
+30. <a id="d30"></a>**The two bench Harmony 885s may be written to, unit A first.** *Taken on 5 November 2026,
+   `todo-prepare-885.md` 5.1, once chapters 1 to 4 were done.* Both `h885_a` and `h885_b` are permitted write
+   targets; the first block written back unchanged goes to A, which read whole four times without a window
+   retried, and B follows. Nothing was written to either when this was taken. **Permission is not a write
+   path**: arch 8 is not in `ARCHITECTURES_WITH_A_WRITE_TARGET`, `write-config.ts` has no target for it, and
+   the erase tables have no row, so adding arch 8 is a step of its own with its own demonstration, as section
+   269 requires: one list per path, and a flash demonstration buys nothing else. The configuration write goes
+   to the user configuration at `0x020000` only; firmware, the bootloader below `0x010000`, the staging source
+   at `0x1D0000` and the log area stay unwritten, and so does the escape, the invalidate and the RAM write
+   until each is read and demonstrated on its own.
+
+   **Why the risk is accepted.** The application checks a configuration at every start and falls back to the
+   built in one when it fails, with no latch, `reference/architectures/harmony-880-885/firmware.md`; the
+   bootloader refuses an erase or a write below `0x010000` without its unlock and keeps the way back
+   (`recovering-a-remote`, its 880 and 885 section); and each unit's whole configuration region is in the lab,
+   read twice and identical (`tests/test_harmony_885_bench_reads.py`). The hazard a configuration itself can
+   carry is the log append, which writes flash wherever base slot 2 says above `0x010000`, so a writer keeps
+   base slot 2 at the values every configuration states and emits the append only on purpose,
+   `tests/test_harmony_885_log_area.py`. The first write follows the order every unit has taken: the identity
+   read, which is done; one block of A's own configuration written back unchanged; then a real write.
+
