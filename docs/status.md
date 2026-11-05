@@ -187,7 +187,7 @@ the generator that wrote it, with firmware event 0xFF bound so it serves both mo
 expected codes on the bench 350 and the same file 33 of 33 on the bench 300, `packages/codec/test/noscreenfinalunits.test.ts`.
 Two Harmony 885s are on the bench as well, read only.
 
-**The Harmony Touch is described from its own reading, and two syncs of ours have run on it, the second committed.** Its configuration
+**The Harmony Touch is described from its own reading, and four syncs of ours have run on it, three committed.** Its configuration
 is Logitech's documents rather than a file, fetched by the remote through the computer during a sync, and both
 directions of a sync are recorded, `packages/usb/test/touch-sync-both-ways.test.ts`. The documents are described
 field by field in [its platform pages](../reference/architectures/harmony-touch/README.md) and read by the codec,
@@ -204,7 +204,10 @@ answers a favourites request 304, and the second sync it answered ran to its end
 `packages/usb/test/touch-second-sync.test.ts`: nothing handed up, the six documents, the three favourites and ten
 pictures each answered 304, `proxy://Finished` answered 200, the configuration hash the same before and after,
 and the remote starting normally with its favourites in place. So 6.7 is done, every answer of it a 304 or the
-finish; a document of ours delivered with 200 is 6.8.
+finish. In 6.8 the remote's own six documents went back with 200 under tags of ours, in one write of 19 chunks,
+and were committed: the configuration hash then carried the tags of ours, a further `--unchanged` run was asked
+for all six with them, and the remote came back with its activities, settings and favourites,
+`packages/usb/test/touch-own-set-sync.test.ts`. A document whose content this project composed is 6.9.
 
 ## What is still open
 

@@ -113,7 +113,9 @@
  * each, a log of the lines above, and what the remote handed up, under `handed-up/`, written before the
  * answer that takes it. The folder has to be new or empty, so a run never writes over another's.
  *
- * **`unchanged` has driven two syncs on the bench unit**, `todo-touch.md` 6.7; a set has not met a remote. This
+ * **`unchanged` has driven three syncs on the bench unit**, `todo-touch.md` 6.7 and 6.8, and a set one, 6.8, the
+ * remote's own six documents delivered with 200 under tags of ours and committed,
+ * `packages/usb/test/touch-own-set-sync.test.ts`. This
  * said nothing in the file had been run against a remote<!--superseded--> until 6.8's preflight read the runs.
  */
 import { createHash, randomUUID } from 'node:crypto';

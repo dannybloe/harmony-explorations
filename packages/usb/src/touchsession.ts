@@ -304,8 +304,11 @@ export interface TouchRequestSession {
  * the line less 101 to 104 characters, so with it a line whose last chunk is no longer than that is acted on
  * one chunk early, `answering-a-sync.md` "The number announced falls short of what the remote counts".
  * `touchsession.test.ts` holds both against a fake listener built from that reading, at a last chunk of 1,
- * 103 and 104 characters. **Neither number has been sent with a line of more than one chunk by this project**,
- * and that the remote hands on each chunk as it arrives is read in its native program and not tried.
+ * 103 and 104 characters. **The whole line's length has been sent once with a line of more than one chunk**,
+ * `todo-touch.md` 6.8's six documents, 571577 characters in 19 chunks with a last of 13577, and the remote acted on
+ * the write once, as a whole, `packages/usb/test/touch-own-set-sync.test.ts`; a last chunk inside the shortfall has
+ * not been sent with either number, and that the remote hands on each chunk as it arrives is read in its native
+ * program and not tried.
  *
  * `responses` exists so that the tests comparing this file with Logitech's client report by report can ask
  * for the client's bytes; nothing that answers a sync should.

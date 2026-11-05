@@ -62,7 +62,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import * as lab from '@harmony/lab';
-import { answersWritten, commands, records, requestLists, resource, sessions, SIX, type Answer, type Request_ } from './touch-recording.ts';
+import { CONFIGHASH, FINISHED, OURS, WRITE, answersWritten, commands, hasTag, kind, list, records, reply, requestLists, resource, sessions, SIX, written } from './touch-recording.ts';
 
 const FULL = 'touch_full_sync_recording';
 const FIRST_LIST = 'touch_first_sync_list';
@@ -80,55 +80,6 @@ const ANSWERED = [1, 3, 4, 5, 7, 8] as const;
 const list_ = (n: number): string => `touch_second_sync_list_${n}`;
 const answers_ = (n: number): string => `touch_second_sync_answers_${n}`;
 const reply_ = (n: number): string => `touch_second_sync_reply_${n}`;
-
-const FINISHED = 'proxy://Finished';
-const CONFIGHASH = 'vnd.logitech.harmony/vnd.logitech.harmony.engine?getconfighash';
-const WRITE = 'vnd.logitech.proxy/vnd.logitech.response?write';
-
-/** A reply the remote's request file gave, `Response,` and its JSON. */
-interface Reply {
-  errorCode: string;
-  errorMessage: string;
-  mime: string;
-  result: unknown;
-}
-
-function reply(fixture: string): Reply {
-  const text = new TextDecoder().decode(lab.require_(fixture));
-  assert.ok(text.startsWith('Response,'), `${fixture} is not a request answer`);
-  return JSON.parse(text.slice('Response,'.length)) as Reply;
-}
-
-/** A request list the remote handed out. */
-function list(fixture: string): Request_[] {
-  const r = reply(fixture);
-  assert.equal(r.errorCode, '200');
-  return (JSON.parse(r.result as string) as { requests: Request_[] }).requests;
-}
-
-/** The answers one write carried, out of the request line as it was written. */
-function written(fixture: string): Answer[] {
-  const line = new TextDecoder().decode(lab.require_(fixture));
-  assert.ok(line.startsWith(`${WRITE}&`), `${fixture} is not a write of answers`);
-  return (JSON.parse(decodeURIComponent(line.split('&responses=')[1]!)) as { responses: Answer[] }).responses;
-}
-
-/** What kind of request an address is, the scheme and the kind and never the identifiers after them. */
-function kind(uri: string): string {
-  if (uri === FINISHED) return 'finished';
-  if (uri.startsWith('harmony://')) return 'document';
-  if (uri.startsWith('content://1.0/user;')) return 'user favourites';
-  if (uri.startsWith('content://1.0/device;')) return 'device favourites';
-  if (uri.startsWith('content://1.0/service/')) return 'line up';
-  if (uri.startsWith('content-image://')) return 'picture';
-  if (uri.startsWith('https://')) return 'picture';
-  return 'other';
-}
-
-const hasTag = (x: { etag?: string }): boolean => typeof x.etag === 'string' && x.etag.length > 0;
-
-/** A version 8 identifier, the shape of a tag of ours, `ourTag` and `keptCopyTag` in `touchsync.ts`. */
-const OURS = /^[0-9a-f]{8}-[0-9a-f]{4}-8[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 
 function fullSync() {
   const hlapi = sessions(commands(records(FULL))).filter((s) => s.path === '/sys/hlapi');

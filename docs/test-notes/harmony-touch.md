@@ -6,7 +6,7 @@ showed about the model is in `reference/remotes/harmony-touch/` and about its pl
 there.
 
 **This unit may be written to**, decision 29 in `docs/decisions.md`: it names this unit,
-and nothing in the library writes to it yet. A remote's own checks of an answer are no part of that
+and the library writes to it only through the request rail of `todo-touch.md` 6.3. A remote's own checks of an answer are no part of that
 permission, since the remote verifies no answerer, `reference/architectures/harmony-touch/answering-a-sync.md`.
 
 ## Arrival
@@ -243,6 +243,43 @@ out and its content was not read. All three favourites lists came untagged, whic
 `tests/test_harmony_touch_favourites_untagged.py` predicts; it does not rule out the reading of the lab's
 `6.7-preflight.md`, a tag sent only when the file and its index entry exist, since which favourites files the
 remote holds was not read. The measurements are held by `packages/usb/test/touch-second-sync.test.ts`.
+
+## The remote's own documents answered back with 200 and tags of ours, todo-touch 6.8
+
+**Run on 5 November 2026**, after the second sync of 6.7, with nothing changed on the remote's screens between
+the two: `HARMONY_ENABLE_WRITES=1 HARMONY_TOUCH_REQUESTS=1 node packages/corpus/bin/touch-sync.ts --set
+../lab/work/touch-firmware/sets/6.8-own-documents --commit`, the code as of commit `bcfeaf97`, the set built by
+`packages/corpus/bin/touch-own-set.ts` as the lab's `work/touch-firmware/notes/6.8-preflight.md` describes. The
+lab's `reads/20261105T1418Z-touch-sync-set/` holds every request and answer of the run,
+`reads/20261105T1418Z-touch-confighash/` the read after it, and `reads/20261105T1419Z-touch-sync-unchanged/` a
+third `--unchanged` run after that.
+
+* `getconfighash` before: 200, and byte for byte equal to the read after 6.7's second sync, checked with `cmp`
+  at the bench. **That read survives only as that comparison**: the read after the sync fell in the same minute,
+  got the same folder name and overwrote it, which commit `2fcc0277` stopped by never reusing a read folder.
+* The set's check and the dry run as the preflight predicted; the gate passed, 6 answers, 6 tags stated.
+* The provisioning read: 200, mode 0.
+* The hand over: one list, `proxy://Finished` alone, answered 200. Nothing was handed up.
+* The sync, eight lists. 1: the six documents, each with the tag the remote held, answered 200 with the set's
+  document and the set's tag, in **one write of 571577 characters in 19 chunks**, the first write of ours longer
+  than one chunk, announced with the whole line's length; the announcement was answered 200 and the write replied
+  200 as a write. 2: empty. 3, 4 and 5: the three favourites documents, each untagged, answered 304 with a tag of
+  ours. 6: empty. 7: the ten pictures, tagged as in 6.7, each answered 304 with its tag. 8: `proxy://Finished`,
+  answered 200. The answerer ended `sync: finished`.
+* `getconfighash` after: 200, equal to the set's ActivityList, DeviceList, ProtocolList and Context tags
+  (`touch-own-set.ts --check --hash`: equal).
+* The third run, `--unchanged`: finished; its first sync list asked for all six with the set's tags
+  (`--check --list`: six of "the set's tag"), and every answer was 304 or the finish.
+* After the commit, the person at the bench answered yes to each of: the remote came back to its normal screens
+  with no Data error; the activity list is the same five; one activity starts and its devices respond; the
+  screen lock setting is still as changed on the remote; the favourites and their logos are there.
+
+So the remote stored and committed its own six documents delivered with 200 by a program of this project, and
+the tags of ours became the ones it reports and asks with; 6.8 is done. Every document was one the remote already
+held, so this says nothing yet about a document whose content this project composed, which is 6.9. The remote now
+holds six tags of ours, which it will send to Logitech's service at its next sync there; how the service answers a
+tag it did not issue is unchecked, and deleting the stored documents first takes the question away,
+`recovering-a-remote`. The measurements are held by `packages/usb/test/touch-own-set-sync.test.ts`.
 
 ## Not done
 

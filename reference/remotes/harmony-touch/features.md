@@ -136,8 +136,11 @@ on [the platform's pages](../../architectures/harmony-touch/README.md).
 **A sync need not come from Logitech's client.** One driven end to end by a program of this project, every
 document, favourites document and picture answered 304 so that the remote kept its own, was committed by the
 remote, which then started normally with its favourites in place, [answering a
-sync](../../architectures/harmony-touch/answering-a-sync.md)[^t-touch-second-sync]. A document of this
-project's own delivered in a sync is not checked[^unchecked].
+sync](../../architectures/harmony-touch/answering-a-sync.md)[^t-touch-second-sync]. **A whole set delivered
+with 200 by a program of this project is stored and committed, and its entity tags become the remote's**: the
+remote's own six configuration documents, answered 200 under tags of ours, were committed, its configuration
+hash then carried those tags, and the next sync asked for the six with them[^t-touch-own-set-sync]. A document
+whose content this project composed is not checked[^unchecked].
 
 ## Changes on the remote travel back
 
@@ -166,6 +169,7 @@ channels and commands changed on the remote are not checked[^unchecked].
 [^s203]: Stated by Logitech, in their client. [Section 203](../../../docs/findings.md#s203)
 [^t-touch-sync]: Measured on a unit. [The test](../../../packages/usb/test/touch-sync.test.ts)
 [^t-touch-second-sync]: Measured on a unit. [The test](../../../packages/usb/test/touch-second-sync.test.ts)
+[^t-touch-own-set-sync]: Measured on a unit. [The test](../../../packages/usb/test/touch-own-set-sync.test.ts)
 [^t-client-reverse-sync]: Stated by Logitech, in their client. [The test](../../../tests/test_client_templates.py), class `TheClientAsksForTheRemotesChangesOnlyWithNothingPending`
 [^t-touch-both-ways]: Measured on a unit. [The test](../../../packages/usb/test/touch-sync-both-ways.test.ts)
 [^t-touch-favourites]: Measured on a unit. [The test](../../../packages/usb/test/touch-favourites.test.ts)

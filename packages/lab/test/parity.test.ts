@@ -140,7 +140,9 @@ test('the Python table was actually parsed, rather than read as empty', () => {
   // 355 with the Touch's first `getconfighash` read, todo-touch 6.4, which had been registered on the
   // TypeScript side alone, and the eleven files of 6.7's first sync answered by this project and its recovery.
   // 380 with the 25 files of 6.7's second sync, the one the remote committed, and the config hash around it.
-  assert.equal(Object.keys(pythonImages()).length, 380, 'every fixture tests/lab.py names');
+  // 422 with the 42 files of 6.8: the set of the remote's own documents with tags of ours, the sync that
+  // delivered it with 200, the config hash after it and the third `--unchanged` run.
+  assert.equal(Object.keys(pythonImages()).length, 422, 'every fixture tests/lab.py names');
 });
 
 test('the two sides exclude the same fixtures from the parseable population', () => {

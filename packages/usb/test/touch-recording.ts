@@ -10,8 +10,15 @@
  * `touch-sync.test.ts`: a wrong packet boundary would garble documents that are compared whole with the
  * web side's answers.
  *
+ * **The readers at the end are for a run of this project's own answerer**, `packages/corpus/bin/touch-sync.ts`,
+ * whose folder in the lab keeps each request list, each write of answers and each reply as a file of its own:
+ * one copy of them for every test that reads such a run, where the first and second sync's tests each held
+ * their own until 6.8 added a third.
+ *
  * Not a test file itself, so the runner does not pick it up.
  */
+import assert from 'node:assert/strict';
+
 import * as lab from '@harmony/lab';
 import {
   DONE_PACKET,
@@ -238,3 +245,56 @@ export const SIX = ['ActivityList', 'DeviceList', 'MapList', 'Context', 'Setting
  * have to change together.
  */
 export const resource = (uri: string): string => uri.split('?')[0]!.split('/').at(-1)!;
+
+/** The address the remote queues once its screens have committed a sync. */
+export const FINISHED = 'proxy://Finished';
+/** The name the remote's reply to `getconfighash` carries. */
+export const CONFIGHASH = 'vnd.logitech.harmony/vnd.logitech.harmony.engine?getconfighash';
+/** The name of a write of answers, and of the remote's reply to one. */
+export const WRITE = 'vnd.logitech.proxy/vnd.logitech.response?write';
+
+/** A reply the remote's request file gave, `Response,` and its JSON. */
+export interface Reply {
+  errorCode: string;
+  errorMessage: string;
+  mime: string;
+  result: unknown;
+}
+
+/** A reply a run of the answerer kept, out of its file in the lab. */
+export function reply(fixture: string): Reply {
+  const text = new TextDecoder().decode(lab.require_(fixture));
+  assert.ok(text.startsWith('Response,'), `${fixture} is not a request answer`);
+  return JSON.parse(text.slice('Response,'.length)) as Reply;
+}
+
+/** A request list the remote handed out, as a run of the answerer kept it. */
+export function list(fixture: string): Request_[] {
+  const r = reply(fixture);
+  assert.equal(r.errorCode, '200');
+  return (JSON.parse(r.result as string) as { requests: Request_[] }).requests;
+}
+
+/** The answers one write carried, out of the request line as a run of the answerer wrote it. */
+export function written(fixture: string): Answer[] {
+  const line = new TextDecoder().decode(lab.require_(fixture));
+  assert.ok(line.startsWith(`${WRITE}&`), `${fixture} is not a write of answers`);
+  return (JSON.parse(decodeURIComponent(line.split('&responses=')[1]!)) as { responses: Answer[] }).responses;
+}
+
+/** What kind of request an address is, the scheme and the kind and never the identifiers after them. */
+export function kind(uri: string): string {
+  if (uri === FINISHED) return 'finished';
+  if (uri.startsWith('harmony://')) return 'document';
+  if (uri.startsWith('content://1.0/user;')) return 'user favourites';
+  if (uri.startsWith('content://1.0/device;')) return 'device favourites';
+  if (uri.startsWith('content://1.0/service/')) return 'line up';
+  if (uri.startsWith('content-image://')) return 'picture';
+  if (uri.startsWith('https://')) return 'picture';
+  return 'other';
+}
+
+export const hasTag = (x: { etag?: string }): boolean => typeof x.etag === 'string' && x.etag.length > 0;
+
+/** A version 8 identifier, the shape of a tag of ours, `ourTag`, `keptCopyTag` and `setTag` in `touchsync.ts`. */
+export const OURS = /^[0-9a-f]{8}-[0-9a-f]{4}-8[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;

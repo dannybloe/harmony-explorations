@@ -51,7 +51,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import * as lab from '@harmony/lab';
-import { answersWritten, commands, records, requestLists, resource, sessions, SIX, type Answer, type Request_ } from './touch-recording.ts';
+import { answersWritten, commands, list, records, reply, requestLists, resource, sessions, SIX, written } from './touch-recording.ts';
 
 const FULL = 'touch_full_sync_recording';
 const REVERSE = 'touch_reverse_sync_recording';
@@ -67,34 +67,6 @@ const ABORT = 'touch_recovery_abort';
 const AFTER = 'touch_recovery_confighash_after';
 const REBOOT = 'touch_recovery_reboot';
 const HASH_64 = 'touch_confighash_read';
-
-/** A reply the remote's request file gave, `Response,` and its JSON. */
-interface Reply {
-  errorCode: string;
-  errorMessage: string;
-  mime: string;
-  result: unknown;
-}
-
-function reply(fixture: string): Reply {
-  const text = new TextDecoder().decode(lab.require_(fixture));
-  assert.ok(text.startsWith('Response,'), `${fixture} is not a request answer`);
-  return JSON.parse(text.slice('Response,'.length)) as Reply;
-}
-
-/** A request list the remote handed out. */
-function list(fixture: string): Request_[] {
-  const r = reply(fixture);
-  assert.equal(r.errorCode, '200');
-  return (JSON.parse(r.result as string) as { requests: Request_[] }).requests;
-}
-
-/** The answers one write carried, out of the request line as it was written. */
-function written(fixture: string): Answer[] {
-  const line = new TextDecoder().decode(lab.require_(fixture));
-  assert.ok(line.startsWith('vnd.logitech.proxy/vnd.logitech.response?write&'), `${fixture} is not a write of answers`);
-  return (JSON.parse(decodeURIComponent(line.split('&responses=')[1]!)) as { responses: Answer[] }).responses;
-}
 
 function hlapi(fixture: string) {
   return sessions(commands(records(fixture))).filter((s) => s.path === '/sys/hlapi');
