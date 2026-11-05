@@ -7,9 +7,11 @@ An activity based infrared universal remote from Logitech's classic generation, 
 folder states what is the model's own. Standing words and their meaning are in
 [the reference's README](../../README.md).
 
-**Almost nothing in this folder was measured on a unit**: what a Harmony 885 reports on the cable is on
-the [USB page](usb.md), and the rest comes from configurations and firmware images other people read off
-their remotes and published, and from Logitech's own manuals and services, as each footnote says.
+**Little in this folder was measured on a unit**: what a Harmony 885 reports on the cable, and what reads
+off it, its configuration and its clock, is on the [USB page](usb.md), what its flash holds past the
+configuration on the [memory page](memory.md), and the rest comes from configurations and firmware images
+other people read off their remotes and published, and from Logitech's own manuals and services, as each
+footnote says.
 
 ## Skins
 

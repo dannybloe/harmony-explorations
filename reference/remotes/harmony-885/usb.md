@@ -15,9 +15,10 @@ platform's identity are stated once in [the architecture's USB page](../../archi
 Generated from `packages/corpus` and `packages/usb` by `make remote-reference-write`. Change the source, not this block.
 <!-- /generated -->
 
-**The product id row reads `none` because the configuration reader holds no profile for this
-architecture**, not because the remote has no product id. The library reads flash on one, below
-`0x200000`. **The escape row reads `none` because the library holds no entry for this architecture**,
+**The configuration reader knows this product id**, and reads a configuration off from `0x020000` by the
+length the configuration's own header states.[^t-read-profile] This said the row read `none` because the
+configuration reader held no profile for this architecture<!--superseded-->, until the profile was
+added.[^t-read-profile] **The escape row reads `none` because the library holds no entry for this architecture**,
 while the firmware handles sub codes `0x01`, `0x02` and `0x03`, the last two a restart,
 [the architecture's USB page](../../architectures/harmony-880-885/usb.md#how-a-write-ends).[^t-885-end]
 This said the row read `none` because this firmware's dispatch has no escape<!--superseded-->, until the
@@ -32,6 +33,18 @@ packet parser was read.[^t-885-end]
 | version block | firmware 4.4, software type 0, skin 17, field 6 `0x08`, architecture 8, from the application's own constants[^s114], and on a unit the same, with hardware 2.1 and flash `0x49` from manufacturer `0x01`[^t-arch8-usb] |
 | product string | `Harmony Remote 0-4.4.2`[^t-usbdesc]; `Harmony Bootloader` while the bootloader is resident, which otherwise enumerates with the application's descriptor, ids and `bcdDevice` included[^t-885-boot] |
 
+## What reads off it
+
+* **A configuration reads off whole over the ordinary flash read**, from `0x020000`, and the same bytes come
+  back on a second read. Run on the flash as it was read, the check the firmware makes at every start
+  passes, [the platform's start](../../architectures/harmony-880-885/firmware.md#what-the-application-does-at-start).[^t-885-on-a-unit]
+* **The clock runs, and reads over the cable**: `READ_MISC` selector 7 returns one byte of data memory per
+  exchange, so seven exchanges from `0x108` read the second, minute, hour, day, weekday, month and year in
+  the order of [the clock's variables](../../config-format/state.md#variables-0-to-6-are-the-clock), one after
+  another and not as one snapshot, so a carry between two exchanges could tear a reading. Two such reads
+  seconds apart differed in the second alone, and the weekday read agreed with the date read by the calendar,
+  on the one unit read.[^t-885-on-a-unit]
+
 ## Not checked
 
 * An 880 on a cable.[^unchecked]
@@ -44,3 +57,5 @@ packet parser was read.[^t-885-end]
 [^t-usbdesc]: Measured on a unit. [The test](../../../tests/test_usbdesc.py)
 [^t-885-boot]: Read in the firmware. [The test](../../../tests/test_harmony_885_bootloader.py)
 [^t-885-end]: Read in the firmware. [The test](../../../tests/test_harmony_885_write_end.py)
+[^t-885-on-a-unit]: Measured on a unit. [The test](../../../tests/test_harmony_885_bench_reads.py)
+[^t-read-profile]: Measured in configurations. [The test](../../../packages/corpus/test/read.test.ts)

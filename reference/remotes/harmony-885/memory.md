@@ -26,13 +26,24 @@ is the model's own, and so far that is very little.
   state variables at every start, and no configuration read uses the counter the stamp feeds, [header records](../../config-format/header-records.md#what-the-harmony-880-and-885-do-with-it).[^t-885-stamp][^t-885-stamp-c]
 * **A configuration states the model twice**: its architecture record reads `08 08 11 0d` on an 885 and
   `08 08 0f 0d` on an 880, and the header of the file it travels in carries the skin as well.[^s182][^s113]
+* **The flash after a configuration is not blank.** Up to the end of the flash sector the configuration ends
+  in it is erased, and past that it keeps what earlier, longer configurations left, by their shape and not
+  decoded: tails whose starts were overwritten, with no configuration cookie among them and each ending in
+  the end marker `DKDK`. The reads end at a 64 KiB boundary, as [the platform's
+  sectors](../../architectures/harmony-880-885/memory.md#the-flash-part) predict, though they cannot tell that
+  from a 32 KiB half. Flash is erased only where a
+  write needs the room, as on the [Harmony One](../../architectures/harmony-one/memory.md) and the
+  [Harmony 525](../harmony-525/memory.md), so a read of the whole region carries configurations nobody
+  meant to hand over, and the end of a configuration is its end marker, not the first erased byte,
+  [the container](../../config-format/container.md).[^t-885-on-a-unit]
 
 ## Not checked
 
-* Anything off a unit: which of the two flash parts the firmware knows is fitted, and what a unit holds past
-  its configuration, its log area included.[^unchecked] Which bytes of the identity block at `0x000110` are
+* Which of the two flash parts the firmware knows is fitted, and what a unit holds from `0x1D0000` up, its
+  log area included.[^unchecked] Which bytes of the identity block at `0x000110` are
   a serial is read in the bottom 64 KiB of five remotes, [the architecture's memory
   page](../../architectures/harmony-880-885/memory.md#the-address-space).[^t-885-boot]
+* What the remains past a configuration were, and whether a factory configuration is among them.[^unchecked]
 
 [^s114]: Read in the firmware. [Section 114](../../../docs/findings.md#s114)
 [^s182]: Measured in configurations. [Section 182](../../../docs/findings.md#s182)
@@ -49,3 +60,4 @@ is the model's own, and so far that is very little.
 [^t-885-timers]: Read in the firmware. [The test](../../../tests/test_harmony_885_timers.py)
 [^t-885-stamp]: Read in the firmware. [The test](../../../tests/test_harmony_885_stamp.py)
 [^t-885-stamp-c]: Measured in configurations. [The test](../../../tests/test_harmony_885_stamp.py)
+[^t-885-on-a-unit]: Measured on a unit. [The test](../../../tests/test_harmony_885_bench_reads.py)

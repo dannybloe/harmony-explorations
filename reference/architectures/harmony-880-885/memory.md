@@ -7,7 +7,9 @@ This page says what sits where, then how the configuration container is laid out
 then the few things in a configuration that are this architecture's own.
 
 Little here was read off a remote: a Harmony 885 answered reads at the application's and the configuration's
-addresses, and its identity block at `0x000110`.[^t-arch8-usb] The layout comes from two firmware images of each of the two halves
+addresses, and its identity block at `0x000110`,[^t-arch8-usb] and on 885s a whole configuration read off
+from `0x020000` and passed the start check, [the 885's USB page](../../remotes/harmony-885/usb.md#what-reads-off-it).[^t-885-on-a-unit]
+An 880 has not been read. The layout comes from two firmware images of each of the two halves
 and from concordance's table, and the container from six configurations, as each footnote says. How a
 configuration is laid out in general is [the configuration format](../../config-format/README.md); this
 page states what differs here.
@@ -224,8 +226,11 @@ or where a page there names it:
   code to every device since one code is sent at a time,
   [sending](../../infrared/sending.md#the-delay-between-devices-on-the-harmony-880-and-885).[^t-885-delay] That it
   is the account's inter device delay is inferred and not checked.[^unchecked]
-* **The number sender is base slot 16 and is reached by `0x1F` bands `0xF3` and `0xF5`**; no 880 or 885
-  configuration read holds a favourite channel, [state](../../config-format/state.md#base-slot-16-the-number-sender).[^t-885-number-sender]
+* **The number sender is base slot 16 and is reached by `0x1F` bands `0xF3` and `0xF5`**; the contributed
+  880, 885 and 880 Pro configurations hold no favourite channel, and of two 885 configurations read off units
+  one holds two number senders and forty three lists that hand them a number and the other none, [state](../../config-format/state.md#base-slot-16-the-number-sender).[^t-885-number-sender][^t-885-unit-config]
+  This said no 880 or 885 configuration read holds a favourite channel<!--superseded--> until one was read off
+  a unit.[^t-885-unit-config]
 * **Screen opcode 21 inverts a rectangle**, opcodes 22 and 23 do not exist, the fill clips at `160 - x`, and
   a switch that matches nothing runs the bytes after it, [screens](../../config-format/screens.md).[^t-885-screens]
 * **The screen is 128 by 160**, and the glyph shapes of its fonts are this architecture's own alphabet,
@@ -246,7 +251,11 @@ or where a page there names it:
 
 * Anything on a remote: which of the two flash parts a unit carries, and whether a unit's layout is the
   images'.[^unchecked]
-* What sits between the end of a configuration and the log area, and above the log area.[^unchecked]
+* What sits from `0x1D0000` to the log area, and above the log area.[^unchecked] Below `0x1D0000`, after the
+  configuration, an 885 keeps the remains of earlier configurations from the next 64 KiB boundary on,
+  [the 885's memory page](../../remotes/harmony-885/memory.md); measured on 885s only, an 880 is not
+  checked.[^t-885-on-a-unit] This line said everything between a configuration and the log area was not
+  checked<!--superseded--> until 885s were read to `0x1D0000`.[^t-885-on-a-unit]
 * The sector map below `0x010000`, where the two outside sources disagree, against a datasheet.[^unchecked]
 * Whether a unit has been logging, which a read of `0x1E0000` would show, and which key the two logging
   configurations bind the append to.[^unchecked]
@@ -291,3 +300,5 @@ or where a page there names it:
 [^t-885-parameters]: Read in the firmware. [The test](../../../tests/test_harmony_885_parameters.py)
 [^t-885-timers]: Read in the firmware. [The test](../../../tests/test_harmony_885_timers.py)
 [^t-885-stamp]: Read in the firmware. [The test](../../../tests/test_harmony_885_stamp.py)
+[^t-885-on-a-unit]: Measured on a unit. [The test](../../../tests/test_harmony_885_bench_reads.py)
+[^t-885-unit-config]: Measured in configurations. [The test](../../../tests/test_harmony_885_bench_reads.py)

@@ -708,13 +708,22 @@ channel with a leading zero in these compiles, 07, calls two of the same lists, 
 * it queues four kinds of instruction, the first, the prefix, one per digit and the last, **so one call can
   queue up to nine**, and a full action queue drops the rest without a word.
 
-**No Harmony 880 or 885 configuration read holds a record, and the Harmony 720's holds one**, with twenty four
+**None of the contributed Harmony 880, 885 and 880 Pro configurations holds a record, and the Harmony 720's holds one**, with twenty four
 lists that hand it a number, which read as its favourite channels[^t-885-number-sender-corpus]: one record with
 flags, base and minimum 0 and the three single instructions zero; three digit tables at three addresses thirty
 bytes apart with identical contents, each entry calling a list that sends one digit of one device and pauses that
 device, a paired send; and twenty four lists that load a number from 602 to 754 into the accumulator and hand it
 over with `0xF3`, record 0. The 720's firmware has the routine with the same instructions, literals and bit
 numbers but for three working address literals, each eight higher[^t-885-number-sender].
+
+**Of two Harmony 885 configurations read off units, one holds two records and the other none**, so favourite
+channels are a matter of the account a configuration was compiled from and not of the model. The two are in
+the 720's shape: flags and base 0, three
+identical digit tables each, a minimum of 3 digits on the first and none on the second, and forty three lists
+that load a number and hand it over with `0xF3`, nineteen to record 0 with values from 41 to 724 and twenty four
+to record 1 with values from 1 to 187[^t-885-unit-config]. They read as its favourite channels; that keys
+reach those lists is inferred from the 720's reading and not checked[^unchecked]. This said no Harmony 880 or 885
+configuration read holds a record<!--superseded--> until one was read off a unit[^t-885-unit-config].
 
 Read with `gspm.number_senders` and `tables.numberSenders`.
 
@@ -1081,3 +1090,4 @@ and does not recognise the Harmony 880 and 885's append.
 [^t-885-parameters-c]: Measured in configurations. [The test](../../tests/test_harmony_885_parameters.py)
 [^t-885-timers]: Read in the firmware. [The test](../../tests/test_harmony_885_timers.py)
 [^t-885-timers-c]: Measured in configurations. [The test](../../tests/test_harmony_885_timers.py)
+[^t-885-unit-config]: Measured in configurations. [The test](../../tests/test_harmony_885_bench_reads.py)

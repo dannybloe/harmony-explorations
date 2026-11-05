@@ -761,6 +761,20 @@ IMAGES = {
     # project has ever had on packages/corpus/src/read.ts; the embedded one has no counterpart.
     'vendor_region_user_config': 'vendor-region4-user-config.bin',
     'vendor_region_embedded_config': 'vendor-region3-embedded-config.bin',
+    # The two bench Harmony 885s, todo-prepare-885.md 2.1 and 2.3: each unit's configuration read twice
+    # from 0x020000 by its own stated length, and its flash from 0x020000 to 0x1D0000 read twice, the
+    # configuration's first bytes and the remains of earlier configurations after it. Then unit A's clock,
+    # data memory 0x108 to 0x10F over READ_MISC selector 7, two reads seconds apart, as text.
+    # tests/test_harmony_885_bench_reads.py. Out of the parseable population, below.
+    'h885_a_config': '20261105T0847Z-h885-a-config-config.bin',
+    'h885_a_config_2': '20261105T0847Z-h885-a-config-2-config.bin',
+    'h885_a_region': '20261105T0848Z-h885-a-region-region.bin',
+    'h885_a_region_2': '20261105T0849Z-h885-a-region-2-region.bin',
+    'h885_a_clock_ram': '20261105T0851Z-h885-a-clock-ram.txt',
+    'h885_b_config': '20261105T0855Z-h885-b-config-config.bin',
+    'h885_b_config_2': '20261105T0855Z-h885-b-config-2-config.bin',
+    'h885_b_region': '20261105T0914Z-h885-b-region-region.bin',
+    'h885_b_region_2': '20261105T0915Z-h885-b-region-2-region.bin',
 }
 
 _cache = {}
@@ -938,7 +952,12 @@ PARSEABLE_EXCLUDED = ('vendor_region_user_config', 'vendor_region_embedded_confi
                       # The Harmony 515 from onyiaic, out for the same reason, and the two copies of
                       # its application image, whose safe mode container at 0x8000 parses.
                       'h515_onyiaic_asfound_config',
-                      'h515_application_firmware', 'h515_contributed_application')
+                      'h515_application_firmware', 'h515_contributed_application',
+                      # The two bench Harmony 885s' configurations and regions, out of the corpus
+                      # wide totals: each unit's is counted nowhere yet, and whether a bench
+                      # configuration joins the corpus is a decision of its own, as for the 650's.
+                      'h885_a_config', 'h885_a_config_2', 'h885_a_region', 'h885_a_region_2',
+                      'h885_b_config', 'h885_b_config_2', 'h885_b_region', 'h885_b_region_2')
 
 CONTAINERS = (
     'h700_config', 'h700_config_2', 'h600_config', 'h525_config', 'h525_config_2', 'one_config',

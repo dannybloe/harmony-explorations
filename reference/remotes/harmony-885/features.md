@@ -22,9 +22,14 @@ that many, so the limit is stated and not demonstrated.[^s136b]
 
 **The firmware sends a favourite channel as digits**, through the same number sender the Harmony One and the
 Harmony 600, 650 and 700 have, [state](../../config-format/state.md#base-slot-16-the-number-sender).[^t-885-number-sender]
-No Harmony 880 or 885 configuration read holds a favourite channel; a Harmony 720 configuration on the same
-firmware, compiled by Logitech, holds one number sender and twenty four lists that hand it a number, which read
-as its favourite channels and are the example a writer has.[^t-885-number-sender-corpus]
+None of the contributed Harmony 880, 885 and 880 Pro configurations holds a favourite channel; a Harmony 720
+configuration on the same firmware, compiled by Logitech, holds one number sender and twenty four lists that
+hand it a number, which read as its favourite channels and are an example a writer has.[^t-885-number-sender-corpus]
+**Of two Harmony 885 configurations read off units, one holds two number senders and forty three such
+lists**, in the 720's shape, and the other none, so an 885 carries favourite channels when its account has
+them, and that configuration is a second example; that its keys reach those lists is inferred and not
+checked.[^t-885-unit-config][^unchecked] This said no Harmony 880 or 885 configuration read holds a favourite
+channel<!--superseded--> until one was read off a unit.[^t-885-unit-config]
 
 ## Learning a code
 
@@ -52,3 +57,4 @@ configuration for this model from here.
 [^unchecked]: Not checked.
 [^t-885-number-sender]: Read in the firmware. [The test](../../../tests/test_harmony_885_number_sender.py)
 [^t-885-number-sender-corpus]: Measured in configurations. [The test](../../../tests/test_harmony_885_number_sender.py)
+[^t-885-unit-config]: Measured in configurations. [The test](../../../tests/test_harmony_885_bench_reads.py)

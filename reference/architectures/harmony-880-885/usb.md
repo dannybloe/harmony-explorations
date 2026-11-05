@@ -27,8 +27,10 @@ the 880 alone could not show the difference. The two forms are told apart by the
 
 **This library reads these remotes and writes none of them.** It said it opened none<!--superseded-->
 until a Harmony 885 was opened unchanged; what it lacked was an address rule for reads, which it has now.
-Its configuration reader still holds no profile for `0xC110`; the generated table in the
-[Harmony 885's usb.md](../../remotes/harmony-885/usb.md) states what the code holds.
+Its configuration reader holds a profile for `0xC110`, reading from `0x020000`,[^t-read-profile] and has read
+a configuration off 885s whole;[^t-885-on-a-unit] the generated table in the
+[Harmony 885's usb.md](../../remotes/harmony-885/usb.md) states what the code holds. This said
+the reader still held no profile for `0xC110`<!--superseded--> until one was added.[^t-read-profile]
 
 ## Reading flash
 
@@ -225,3 +227,5 @@ mode a remote is in is field 4's low nibble, [the version block](../../usb-proto
 [^t-885-end-client]: Stated by Logitech, in their client. [The test](../../../tests/test_harmony_885_write_end.py)
 [^t-885-start]: Read in the firmware. [The test](../../../tests/test_harmony_885_start_check.py)
 [^t-885-log]: Read in the firmware. [The test](../../../tests/test_harmony_885_log_area.py)
+[^t-885-on-a-unit]: Measured on a unit. [The test](../../../tests/test_harmony_885_bench_reads.py)
+[^t-read-profile]: Measured in configurations. [The test](../../../packages/corpus/test/read.test.ts)

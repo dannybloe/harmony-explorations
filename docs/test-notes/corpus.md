@@ -99,6 +99,12 @@ offers and what each activity's screens are for. It is the first thing that coul
 from outside the code, and checking against it moved four of them. The reference keeps what was learnt,
 a menu entry that is not an activity and the readers' agreement with the sheet, without the person.
 
+**The two bench Harmony 885s' configurations are lab fixtures and not corpus members**, `h885_a_config` and
+`h885_b_config` with a second read and a region read of each, registered in `tests/lab.py` and `packages/lab`
+and listed in `PARSEABLE_EXCLUDED`, the reason the contributed Harmony 650 configurations are: adding them
+moves every corpus wide total, and that is a decision of its own. `h885_b_config` is the only Harmony 880 or
+885 configuration here with favourite channels, [the 885's notes](harmony-885.md).
+
 ## Harmony 300 and 350
 
 Five configurations of this architecture are lab fixtures, three of the bench Harmony 350 and two of the
@@ -121,7 +127,7 @@ said beside each architecture what this project had of it. Counts move as the la
 
 | architecture | what this project holds |
 |---|---|
-| 8, the Harmony 880 and 885 | six configurations from two contributors, two application firmware images and two bootloaders; no unit |
+| 8, the Harmony 880 and 885 | six configurations from two contributors, two application firmware images and two bootloaders; and two units, each with its configuration and the flash after it read twice, outside the corpus wide totals, [the 885's notes](harmony-885.md). This said no unit<!--superseded--> until the two bench 885s were read |
 | 9, the Harmony 525 | a unit: two user configurations, a safe mode container and its whole internal flash, [the 525's notes](harmony-525.md) |
 | 10, the Harmony 890 and 895 | two Harmony 890 configurations and five further reads of them, no firmware and no unit; every reader but the container framing refuses them, section 117 |
 | 2, 3, 7, 15, and the 810, 820 and 850 | nothing |

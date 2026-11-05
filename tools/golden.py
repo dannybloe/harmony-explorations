@@ -288,6 +288,9 @@ CONTAINERS = (
     'one_spare_light60_written', 'one_spare_noassistant_written',
     'one_spare_tourfree_base', 'one_spare_tourfree_written', 'one_spare_pictures_written', 'one_spare_options_written',
     'one_spare_lists_written', 'one_spare_devlistfix_written', 'one_spare_pictures2_written', 'one_spare_empty_written',
+    # The two bench Harmony 885s' configurations and regions, each read twice, todo-prepare-885.md 2.1.
+    'h885_a_config', 'h885_a_config_2', 'h885_a_region', 'h885_a_region_2',
+    'h885_b_config', 'h885_b_config_2', 'h885_b_region', 'h885_b_region_2',
 )
 
 
