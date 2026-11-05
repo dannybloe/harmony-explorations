@@ -1530,8 +1530,9 @@ export const TOUCH_READ_REQUESTS: readonly string[] = [
  *
  * **What this rail does not protect against: what the answers say.** Nothing here reads the `responses`
  * argument of an answer write. The remote saves a document that is valid JSON whatever it holds, and one that
- * lacks a list the engine's reader walks makes the reader raise when the engine tries the gathered set, which
- * ends the task that loads the configuration, `reference/architectures/harmony-touch/firmware.md`
+ * lacks a list the engine's reader walks, or an entry's type name it searches, makes the reader raise when
+ * the engine tries the gathered set, which ends the task that loads the configuration,
+ * `reference/architectures/harmony-touch/firmware.md`
  * "A configuration that fails to load". **The protection is upstream of the rail**: the answerer refuses a
  * set the codec's reader and check reject before any of it is written, `todo-touch.md` 6.6. **The way back
  * when that protection fails is the recovery tier below**, `TOUCH_RECOVERY_REQUESTS`, behind a flag of its

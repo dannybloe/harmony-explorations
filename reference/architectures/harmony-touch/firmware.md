@@ -124,8 +124,8 @@ are is [the platform's README](README.md#which-architecture-number-17-or-18).
 layer over a read only system, and nothing a configuration holds reaches the kernel, the root filesystem or
 the boot loader[^t-touch-recovery]. For a document that is missing or is not valid JSON the engine's sync
 requests keep answering over the cable and the next sync replaces it[^t-touch-recovery]. **Two cases a sync
-cannot repair on its own** come from a document that is valid JSON and lacks a list the reader walks, one at
-start and one during a sync, both below, and both end in a restart. All of this is read in the production
+cannot repair on its own** come from a document that is valid JSON and lacks a list the reader walks, or a
+type name it searches, one at start and one during a sync, both below, and both end in a restart. All of this is read in the production
 build 4.15.330, and **one route has been run on a remote**: a sync stopped halfway, cleared by the abort and
 the restart over the cable, [below](#a-sync-that-stops-halfway)[^t-touch-first-sync]. The configuration that
 fails to load has not been tried[^unchecked].
@@ -135,8 +135,9 @@ fails to load has not been tried[^unchecked].
 **A stored set fails in one of two ways, and they end differently.** A document that is missing or is not
 valid JSON makes the load return nothing: the engine signals a configuration failure and carries on
 with no configuration, so a sync works as usual. A document that is valid JSON but lacks a list the reader
-walks makes the reader raise an error, and nothing in the task that loads the configuration catches it, so
-that task ends. The remote does not restart itself over it: the watchdog's file is fed by a task of its own,
+walks makes the reader raise an error, and so does one holding an entry without the type name the reader
+searches it by, [which entries those are](answering-a-sync.md#what-the-remote-does-not-check-and-why-an-answerer-still-has-to-be-careful)[^t-touch-type-name];
+nothing in the task that loads the configuration catches it, so that task ends. The remote does not restart itself over it: the watchdog's file is fed by a task of its own,
 which is read on the engine's side, and that the native watchdog program then has nothing to act on is
 inferred from its strings, its control flow not being decoded[^t-touch-recovery].
 
@@ -309,3 +310,4 @@ installs is not settled, [the recovery tool](../../logitech/update-service.md#th
 [^t-touch-first-sync]: Measured on a unit. [The test](../../../packages/usb/test/touch-first-sync.test.ts)
 [^t-touch-recovery-client]: Stated by Logitech, in their client. [The test](../../../tests/test_harmony_touch_recovery.py)
 [^t-touch-host]: Read in the firmware. [The test](../../../tests/test_harmony_touch_host.py)
+[^t-touch-type-name]: Read in the firmware. [The test](../../../packages/codec/test/touch-check.test.ts)

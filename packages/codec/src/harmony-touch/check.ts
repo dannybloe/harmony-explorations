@@ -48,6 +48,7 @@ export type Rule =
   | 'number pad entry on no key'
   | 'favourite number'
   | 'missing list'
+  | 'missing type'
   | 'document absent'
   | 'not a document';
 
@@ -67,12 +68,13 @@ const actionsOf = (b: { press: ReadButtonAction | undefined; longPress: ReadButt
   [b.press, b.longPress, b.doublePress].filter((a): a is ReadButtonAction => a !== undefined);
 
 /**
- * Every finding over one configuration: the lists the reader walks first, then in the order of the
- * documents, devices, maps, activities, favourites.
+ * Every finding over one configuration: the lists the reader walks first, then the type names it reads,
+ * then in the order of the documents, devices, maps, activities, favourites.
  */
 export function checkConfiguration(c: Configuration): Finding[] {
   return [
     ...checkLists(c.documents),
+    ...checkTypes(c.documents),
     ...checkDevices(c.devices),
     ...checkMaps(c.maps, c.devices),
     ...checkActivities(c),
@@ -115,7 +117,11 @@ const isObject = (x: unknown): x is Record<string, unknown> => typeof x === 'obj
  *
  * Inside the lists, walked as the reader walks them: each device entry's `DeviceFeatures`, each map's
  * `Buttons`, and the `Actions` of each sequence of a map whose `Sequences` is a list. An entry that is not an
- * object is skipped here, as the view skips it, and its own fate on the remote is not read.
+ * object is skipped here, as the view skips it. **On the lists whose entries the reader tells apart by their
+ * type name it raises, and `checkTypes` refuses it**: the reader reads the name off the entry itself, which
+ * for anything but an object raises. This said such an entry's fate on the remote was not read, until
+ * `todo-touch.md` 6.7.1 read it; on the lists the reader does not tell apart by type, a device entry, an
+ * activity, a protocol, a sequence, an input or a state value, it is still not checked here.
  */
 function checkLists(documents: SyncDocuments): Finding[] {
   const out: Finding[] = [];
@@ -147,6 +153,176 @@ function checkLists(documents: SyncDocuments): Finding[] {
 }
 
 /**
+ * One place where the engine's reader reads an entry's `__type` to tell what kind of entry it is: a device
+ * feature, an action, a role, a map, a button. `typePlaces` lists them; `checkTypes` judges them.
+ */
+export interface TypePlace {
+  readonly document: string;
+  /** The entry's path, `ButtonMaps[0].Buttons[3]`; the field read is that path's `__type`. */
+  readonly path: string;
+  /** The entry as the document holds it, which need not be an object. */
+  readonly entry: unknown;
+  /**
+   * Whether the reader tests the field before it searches it, which it does on a button's three actions
+   * alone, `getButtonActions`: there an action without the field is passed over, where everywhere else it
+   * raises.
+   */
+  readonly guarded: boolean;
+}
+
+/**
+ * The feature kinds the reader tells apart, in the order `getStatesConfiguration` tries them, each with the
+ * action lists only that kind reads. The test is a substring search of the type name, first match winning,
+ * so `InputFeature` anywhere in the name makes an input feature whatever follows. `OutputFeature` is the fifth
+ * kind and reads no list of its own, and an unknown name is logged and reads none either.
+ */
+const FEATURE_LISTS: readonly (readonly [string, readonly string[]])[] = [
+  ['InputFeature', []],
+  ['PowerFeature', ['PowerOffActions', 'PowerOnActions', 'PowerToggleActions', 'PowerOnResetActions']],
+  ['ChannelTuningFeature', ['GreaterTenActions', 'GreaterHundredActions']],
+  ['InternalStateFeature', ['ResetActions']],
+];
+
+/** The action lists every feature carries, read after the kind's own whatever the kind, unknown included. */
+const EVERY_FEATURE_LISTS = ['StartActions', 'FinishActions', 'NextActions', 'PreviousActions'] as const;
+
+/**
+ * Every place the engine's configuration reader reads `__type`, in the four documents its load reads, walked
+ * over the documents themselves and in the reader's own order. The reading is the lab's
+ * `work/touch-firmware/notes/6.7.1-type-field.md`, with file and line per place, and the argument is the
+ * header of `test/touch-check.test.ts`.
+ *
+ * **Where it walks, by the reader's functions**, each list only where the reader reaches it:
+ *
+ * * `DeviceList`, `getDevicesConfiguration` and `getStatesConfiguration`: every feature of every device; then
+ *   the action lists `getActionItems` reads, which depend on the feature's own kind, `FEATURE_LISTS`, and on a
+ *   state value's `ActionSetType` being 1 or 2, plus the four every feature carries. An input feature's lists
+ *   are its inputs' `Actions`. `getActionItems` and the callers test that a list is a table first, so only an
+ *   array is walked, an object yielding no entry to the reader's walk either.
+ * * `ActivityList`, `getActivitiesConfiguration`: every role, and every start and end step,
+ *   `getActivityAction`, of an activity whose list is a table.
+ * * `MapList`, `getButtonMaps`: every map, every button of it, the three actions of each button that is a
+ *   table, `getButtonActions`, guarded; and every step of every sequence of a map whose `Sequences` is a
+ *   table, `getSequenceActions`, which the reader walks for every sequence at load and not only for the one a
+ *   button names.
+ * * **`ProtocolList` is not walked**: `initializeFromHarmonyProtocol` compares the name for equality with
+ *   three names, so a missing or strange one is logged and never raises.
+ *
+ * **Not walked, and why.** The start's compatibility pass reads the roles of the activity that is the tuning
+ * default, a subset of the roles walked here. The function list's maps are read on a request for the
+ * configuration and not by the load, and the function list is not one of the six documents a sync answers.
+ * The screens read `__type` as well, in a program of their own, and their reading is not examined.
+ *
+ * The walk does not stop where the reader would: a feature whose own name raises still has its common lists
+ * walked, since a set is refused for any one place and every place found is a place to fix.
+ */
+export function typePlaces(documents: SyncDocuments): TypePlace[] {
+  const out: TypePlace[] = [];
+  const at = (document: string, path: string, entry: unknown, guarded = false): void => {
+    out.push({ document, path, entry, guarded });
+  };
+  // The reader walks a list only when it is a table, and a table that is a JSON object yields nothing to its
+  // walk, so an array is the only list with entries.
+  const list = (x: unknown): readonly unknown[] => (Array.isArray(x) ? x : []);
+  const field = (x: unknown, name: string): unknown => (isObject(x) ? x[name] : undefined);
+  const actions = (document: string, path: string, xs: unknown): void => {
+    list(xs).forEach((x, i) => at(document, `${path}[${i}]`, x));
+  };
+
+  list(field(documents.DeviceList, 'DevicesWithFeatures')).forEach((device, d) => {
+    list(field(device, 'DeviceFeatures')).forEach((feature, f) => {
+      const path = `DevicesWithFeatures[${d}].DeviceFeatures[${f}]`;
+      at('DeviceList', path, feature);
+      if (!isObject(feature)) return;
+      // The kind, by the reader's substring search in its own order. A number is searched as its decimal
+      // text and matches no kind; any other value raised above and reads no list, but the walk goes on.
+      const name = feature['__type'];
+      const text = typeof name === 'string' ? name : typeof name === 'number' ? String(name) : undefined;
+      const kind = text === undefined ? undefined : FEATURE_LISTS.find(([k]) => text.includes(k));
+      if (kind?.[0] === 'InputFeature') {
+        list(feature['Inputs']).forEach((input, i) => actions('DeviceList', `${path}.Inputs[${i}].Actions`, field(input, 'Actions')));
+      }
+      if (kind?.[0] === 'InternalStateFeature') {
+        // A state value's actions are read only when its `ActionSetType` is 1 or 2.
+        list(feature['StateValues']).forEach((value, v) => {
+          const set = field(value, 'ActionSetType');
+          if (set === 1 || set === 2) actions('DeviceList', `${path}.StateValues[${v}].Actions`, field(value, 'Actions'));
+        });
+      }
+      for (const own of kind?.[1] ?? []) actions('DeviceList', `${path}.${own}`, feature[own]);
+      for (const every of EVERY_FEATURE_LISTS) actions('DeviceList', `${path}.${every}`, feature[every]);
+    });
+  });
+
+  list(field(documents.ActivityList, 'Activities')).forEach((activity, a) => {
+    for (const name of ['Roles', 'EnterActions', 'LeaveActions']) actions('ActivityList', `Activities[${a}].${name}`, field(activity, name));
+  });
+
+  list(field(documents.MapList, 'ButtonMaps')).forEach((map, m) => {
+    at('MapList', `ButtonMaps[${m}]`, map);
+    list(field(map, 'Buttons')).forEach((button, b) => {
+      const path = `ButtonMaps[${m}].Buttons[${b}]`;
+      at('MapList', path, button);
+      // A button's actions are read only when they are tables; an array is one and has no `__type`, which
+      // the guard passes over, so only an object is a place.
+      for (const name of ['ButtonAction', 'ButtonLongPressAction', 'ButtonDoublePressAction']) {
+        const action = field(button, name);
+        if (isObject(action)) at('MapList', `${path}.${name}`, action, true);
+      }
+    });
+    list(field(map, 'Sequences')).forEach((sequence, s) => actions('MapList', `ButtonMaps[${m}].Sequences[${s}].Actions`, field(sequence, 'Actions')));
+  });
+  return out;
+}
+
+/**
+ * Why the reader raises at one place, or undefined where it does not. The reader tells kinds apart by
+ * searching the type name with Lua's `string.find`, which on the engine's LuaJIT takes a string or a number,
+ * the number as its decimal text, and raises on anything else: on nil, the field absent; on the decoder's
+ * null, which is a userdata of the JSON library's; on a boolean, a table. So:
+ *
+ * * `missing`: the field absent, where nothing tests for it first;
+ * * `not a name`: present and neither a string nor a number. Where the field is tested first, a button's
+ *   actions, `false` fails the test and is passed over like an absent field, and every other value passes it
+ *   and raises in the search;
+ * * `not an object`: the entry itself is not an object, so the field is read off a null, a string, a number,
+ *   a boolean or an array, each of which raises or yields nothing and then raises. A guarded place holds
+ *   only objects, `typePlaces`.
+ *
+ * **An unknown name is not here**, because nowhere in the load does it raise: a feature, an action, a step or
+ * a button action of an unknown kind is logged, a map or a button of one is kept under an empty name, and a
+ * role's name is stored as it stands.
+ */
+function typeFault(place: TypePlace): 'missing' | 'not a name' | 'not an object' | undefined {
+  if (!isObject(place.entry)) return place.guarded ? undefined : 'not an object';
+  const name = place.entry['__type'];
+  const searchable = typeof name === 'string' || typeof name === 'number';
+  if (place.guarded) return name === undefined || name === false || searchable ? undefined : 'not a name';
+  if (name === undefined) return 'missing';
+  return searchable ? undefined : 'not a name';
+}
+
+/**
+ * `missing type`, refused: every place `typePlaces` finds where the engine's reader raises on the type name,
+ * `typeFault`. A raise inside the load ends the task that loads the configuration, `firmware.md` "A
+ * configuration that fails to load", which is why a set with one is refused before anything of it is
+ * written. Walked over the documents themselves, as `checkLists` is, because the view reads leniently.
+ */
+export function checkTypes(documents: SyncDocuments): Finding[] {
+  const message = {
+    'missing': 'the entry states no __type, which the engine\'s reader searches with no test first, so it raises and the configuration does not load',
+    'not a name': 'the entry\'s __type is neither a string nor a number, which the engine\'s reader cannot search, so it raises and the configuration does not load',
+    'not an object': 'the entry is not an object, so the engine\'s reader reads its __type off something that has none and raises, and the configuration does not load',
+  } as const;
+  return typePlaces(documents).flatMap((place): Finding[] => {
+    const fault = typeFault(place);
+    if (fault === undefined) return [];
+    const path = fault === 'not an object' ? place.path : `${place.path}.__type`;
+    return [{ rule: 'missing type', effect: 'refused', document: place.document, path, message: message[fault] }];
+  });
+}
+
+/**
  * **The gate before a write**: every finding that would make the remote's reader raise or turn a value away,
  * over a whole set of documents meant to answer a sync, or none when the set may be written. `todo-touch.md`
  * 6.6; the answerer refuses a set this returns anything for, before it sends the sync request.
@@ -158,7 +334,9 @@ function checkLists(documents: SyncDocuments): Finding[] {
  *    and a status from 400 up on any aborts, `answering-a-sync.md` "The smallest set of documents"
  * 2. **each of them a JSON object**, `not a document`: a document sent as a string of JSON or an array is
  *    stored as that and the reader finds none of its lists, "A document has to arrive as the object itself"
- * 3. **every list the reader walks**, `missing list`, above
+ * 3. **every list the reader walks, and every type name it searches**, `missing list` and `missing type`,
+ *    above, together, since both are read off the documents themselves and both end the load: a set is told
+ *    every place of either kind at once, `todo-touch.md` 6.7.1
  * 4. **then the whole check, keeping what is `refused`**: what stops the reader, a required field, and what
  *    the remote turns away. What is only `ignored` is not a refusal: Logitech's own documents carry two kinds
  *    of it, `touch-reader.test.ts`.
@@ -177,8 +355,8 @@ export function refusalsBeforeASync(documents: SyncDocuments): Finding[] {
     message: 'the document is not a JSON object, so the remote stores it as something its reader finds no list in',
   }));
   if (notObjects.length > 0) return notObjects;
-  const lists = checkLists(documents);
-  if (lists.length > 0) return lists;
+  const structure = [...checkLists(documents), ...checkTypes(documents)];
+  if (structure.length > 0) return structure;
   return checkConfiguration(readConfiguration(documents)).filter((f) => f.effect === 'refused');
 }
 

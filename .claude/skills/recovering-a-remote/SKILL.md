@@ -37,8 +37,8 @@ built in configuration above that floor. Their section below has the rest. **On 
 reassurance has a different shape**: its configuration is documents on a writable layer over a read only
 system, so nothing a configuration holds reaches the kernel, the system or the boot loader; for a document
 that is missing or is not valid JSON the engine's sync requests keep answering over the cable and the next sync
-replaces it; but a document that is valid JSON and lacks a list the reader walks ends the task that loads the
-configuration, and then a sync alone cannot replace it and a second sync's last write never gets its answer.
+replaces it; but a document that is valid JSON and lacks a list the reader walks, or an entry's type name the
+reader searches, ends the task that loads the configuration, and then a sync alone cannot replace it and a second sync's last write never gets its answer.
 Its section below has the route.
 
 **A stranded remote tells you what is wrong, so read the screen before diagnosing anything.** The
@@ -270,7 +270,8 @@ firmware as it was.
 **The reassurance, and how far it goes.** A document that is missing or is not valid JSON makes the remote
 load nothing: it signals a configuration failure, the engine runs on, and **a new sync over the cable
 replaces it**. A sync that fails before its commit leaves the committed set untouched. Neither needs anything
-but the sync itself. **It stops at a document that is valid JSON and lacks a list the reader walks**: the
+but the sync itself. **It stops at a document that is valid JSON and lacks a list the reader walks**, or an
+entry's type name the reader searches, `answering-a-sync.md`: the
 reader raises, nothing catches it, and the task that loads the configuration ends.
 
 * **At start**, every request that waits for the configuration hangs (23 of the 31 `harmony.engine?`
@@ -371,7 +372,7 @@ then `--step delete --backup <lab folder>` only when the stored set itself is wh
 `--step reboot`. The script does not chain them, because each answer says what comes next. Every other
 `setup.firmware?` and `setup.sync?` verb stays refused, and so do `proxy.finished`, which commits a gathered
 set without loading it, and `proxy.resource?put`. **The rail still reads no answer's content**, so answers
-that are valid JSON and lack a list the reader walks are saved as written; **the protection is the answerer
+that are valid JSON and lack a list or a type name the reader needs are saved as written; **the protection is the answerer
 refusing a set the codec's reader and check reject before any of it is written**, `todo-touch.md` 6.6, and
 the tier is the way back when that fails. The abort and the restart have been sent to a unit once, after the first sync of ours stopped mid sync (`todo-touch.md` 6.7): `getconfighash` 202, abort 200, `getconfighash` 200 with the tags unchanged, restart 200, the remote starting normally. The delete has never been sent.
 

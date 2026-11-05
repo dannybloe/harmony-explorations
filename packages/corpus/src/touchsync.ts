@@ -632,8 +632,9 @@ export async function syncTouch(options: TouchSyncOptions): Promise<TouchSyncOut
   /**
    * A `put` of the remote's own: the document kept in the lab, raw and parsed, **before** its answer exists,
    * then answered 200 with the same document and a tag of ours, as Logitech's client wrote back the service's
-   * echo of it. A document whose list the engine's reader walks is checked for that list first, so a reply of
-   * ours never hands the remote a document it would raise on, even its own.
+   * echo of it. A document whose list the engine's reader walks is checked for that list first, and for every
+   * type name the reader searches in it, `missing type`, `todo-touch.md` 6.7.1, so a reply of ours never hands
+   * the remote a document it would raise on, even its own.
    */
   function keepAndEcho(r: RemoteRequest): WrittenAnswer | { refuse: string } {
     const key = keyOf(r.uri);
@@ -655,11 +656,11 @@ export async function syncTouch(options: TouchSyncOptions): Promise<TouchSyncOut
       let lists: number;
       try {
         lists = harmonyTouch.checkConfiguration(harmonyTouch.readConfiguration({ [key]: document } as harmonyTouch.SyncDocuments))
-          .filter((f) => f.rule === 'missing list').length;
+          .filter((f) => f.rule === 'missing list' || f.rule === 'missing type').length;
       } catch {
         lists = 1;
       }
-      if (lists > 0) return { refuse: `the remote handed up ${describe(r.uri)} without a list its own reader walks, so it is not echoed` };
+      if (lists > 0) return { refuse: `the remote handed up ${describe(r.uri)} without a list or a type name its own reader needs, so it is not echoed` };
     }
     const answer = { 'body-type': 'application/json' as const, resource: document };
     return { statusCode: '200', uri: r.uri, ...answer, etag: ourTag(answer) };

@@ -15,14 +15,82 @@
  * fires somewhere it should not, or a break that trips a second rule, fails as loudly as a rule that does not
  * fire. The clean configuration is the control for all of them: the check finds nothing there.
  *
- * No lab is needed and none is read.
+ * No lab is needed and none is read, except by the last test, which reads the recorded syncs and skips
+ * without them.
+ *
+ * ## The type name, `missing type`, `todo-touch.md` 6.7.1
+ *
+ * **The question.** Before a set of ours goes to a Touch the gate has to refuse every set the engine's
+ * configuration reader raises on, since a raise inside the load ends the task that loads the configuration
+ * and the way back is the recovery tier, `firmware.md` "A configuration that fails to load". The reader tells
+ * most entries apart by a substring search of their `__type`; the list check caught a missing list and nothing
+ * caught a missing type name.
+ *
+ * **What was read**, in the engine of production build 4.15.330, decompiled, with every file and line in the
+ * lab's `work/touch-firmware/notes/6.7.1-type-field.md`. Fifty three lines name `__type` in the three files
+ * that read it, the configuration reader, the protocol model and the start's compatibility pass. On the load,
+ * `loadAll`, which the start calls with nothing to catch an error and a sync's reload calls again:
+ *
+ * * **eleven list paths raise on an absent type name**: a device feature (`getStatesConfiguration`), the
+ *   action lists `getActionItems` reads off a feature, which depend on the feature's own kind (an input's
+ *   actions, a power feature's four, a channel tuning feature's two, a state's reset actions and the actions of
+ *   a state value whose `ActionSetType` is 1 or 2) plus the four every feature carries, an activity's roles
+ *   and its start and end steps (`getActivitiesConfiguration`, `getActivityAction`), a map and its buttons
+ *   (`getButtonMaps`), and every step of every sequence of every map (`getSequenceActions`, which the load
+ *   runs for all sequences and not only those a button names);
+ * * **one is guarded**: a button's three actions, `getButtonActions`, test the field first and pass over an
+ *   action without it, or with `false`;
+ * * **one never raises**: a protocol's name is compared for equality, `initializeFromHarmonyProtocol`, so a
+ *   missing or strange one is logged;
+ * * **an unknown name raises nowhere**: six dispatches log it, two keep the map or button under an empty name,
+ *   and a role's name is stored as it stands. So there is no rule for it.
+ *
+ * **What a value does to the search.** The engine runs on LuaJIT, whose `string.find` takes a number as its
+ * decimal text and raises on anything else that is not a string; that is LuaJIT's own behaviour and not read
+ * in the image. JSON `null` decodes to the JSON library's null value, which disassembly of the library in the
+ * image reads as a full userdata, `luaopen_json` and the decoder's null branch, so it raises. A boolean, an
+ * object and an array raise. **A number passes**, as an unknown name, and the rule passes it too: a rule here
+ * implements what the remote does, and inventing a refusal is what `isInfrared` in the check is written to
+ * avoid. **An entry that is not an object raises on the same paths**, because the name is read off it.
+ *
+ * **What the rule is.** `typePlaces` walks the documents themselves along those paths, each list only where
+ * the reader reaches it, and `checkTypes` refuses each place where the reader raises; `refusalsBeforeASync`
+ * runs it beside the list check, before the view is built.
+ *
+ * **The closure, on the recordings.** A walk that knows nothing of the reader, every object holding a `__type`
+ * anywhere in the documents, counts exactly the places the rule's walk visits plus the protocols: in the full
+ * sync 1404 places and 5 protocols, in the trial sync 539 and 3. So every type name Logitech's documents carry
+ * sits on a path the reader searches, apart from the protocols, which it compares, and the rule's walk misses
+ * none of them; the two counts come from two walks of different design over the same documents, not from
+ * one. Both sets pass the gate with no finding of this rule. Of the full sync's places 662 are a button's
+ * actions, one short action on each of its 616 buttons, 42 long and 4 double, the last two the counts
+ * `touch-activities.test.ts` measured.
+ *
+ * **Negatives asserted**: a power feature carrying an input's list, and a state value whose `ActionSetType` is
+ * neither 1 nor 2, are not refused for an untyped action, since the reader never reads them; a protocol
+ * without a type name is not refused; a guarded action's absent or `false` name passes.
+ *
+ * **Controls**, each run once by string replacement and failing as it should: an absent name treated as
+ * searchable fails the per path test; every feature walked for every kind's lists fails the negatives; the
+ * guard ignored fails the button action test; the sequences left unwalked fails the closure.
+ *
+ * **Width.** One build, 4.15.330, of one model, the Harmony Touch; the other remotes of that generation and
+ * any other build are not checked. The screens, a program of their own, read `__type` too, and their reading
+ * is not examined.
+ *
+ * **Sources checked first**: the reference's `answering-a-sync.md` and `firmware.md`, the lab notes
+ * `1.3.2-the-configuration-reader.md`, `3.1-activities-and-button-maps.md` and `3.1-devices-and-protocols.md`,
+ * against which the lab note above lists two disagreements, and this check's own list rule. Logitech's client
+ * was not consulted: the remote reads these documents and the client hands them over unchanged.
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { TOP_LEVEL_LISTS, checkConfiguration, findingsByRule, refusalsBeforeASync } from '../src/harmony-touch/check.ts';
+import * as lab from '@harmony/lab';
+import { TOP_LEVEL_LISTS, checkConfiguration, checkTypes, findingsByRule, refusalsBeforeASync, typePlaces } from '../src/harmony-touch/check.ts';
 import { documentKeyOf, documentsOfAnswers, kindOf, type SyncDocuments } from '../src/harmony-touch/documents.ts';
 import { DEFAULT_PRESS_REPEATS, FIRMWARE_SETTINGS, mapIdentifier, numberPadKey, readConfiguration, readSettings, stationLogo, uploadedLogo } from '../src/harmony-touch/read.ts';
+import { answersOf, FULL, TRIAL } from './touch-sync.ts';
 
 // The documents are JSON; the synthetic ones are built and broken as such.
 type Json = any;
@@ -421,16 +489,18 @@ test('a malformed document reads without throwing: a device without its record, 
   assert.equal(c.devices[0]!.commands[1]!.name, undefined);
   assert.equal(c.devices[0]!.commandsByName.has('mute'), false);
   assert.deepEqual(check(nameless), { 'action command missing': 4 });
-  // A null button is skipped where it stands, and the paths after it still name their own entry.
+  // A null button is skipped where it stands, and the paths after it still name their own entry. The check
+  // finds it as an entry the remote's reader reads a type name off, which raises, `missing type`; it found
+  // nothing here until `todo-touch.md` 6.7.1 read that.
   const button = broken((x) => { x.MapList.ButtonMaps[0].Buttons.splice(1, 0, null); });
   const map = readConfiguration(button).maps[0]!;
   assert.deepEqual(map.buttons.map((b) => b.path), ['ButtonMaps[0].Buttons[0]', 'ButtonMaps[0].Buttons[2]', 'ButtonMaps[0].Buttons[3]']);
-  assert.deepEqual(check(button), {});
-  // A null sequence step is skipped too, and the steps still sort by their order.
+  assert.deepEqual(check(button), { 'missing type': 1 });
+  // A null sequence step is skipped too, and the steps still sort by their order; the same rule finds it.
   const step = broken((x) => { x.MapList.ButtonMaps[2].Sequences[0].Actions.splice(1, 0, null); });
   const sequence = readConfiguration(step).activities[0]!.map!.sequences[0]!;
   assert.deepEqual(sequence.steps.map((s) => [s.order, s.path]), [[1, 'ButtonMaps[2].Sequences[0].Actions[2]'], [2, 'ButtonMaps[2].Sequences[0].Actions[0]']]);
-  assert.deepEqual(check(step), {});
+  assert.deepEqual(check(step), { 'missing type': 1 });
 });
 
 test('an empty sync reads as empty and names all six documents absent', () => {
@@ -503,4 +573,184 @@ test('a document is kept by its last segment for a harmony address, whole for a 
   assert.equal(documentKeyOf('content://1.0/service/svc'), 'content://1.0/service/svc');
   assert.equal(documentKeyOf('content-image://1.0/image/x.png;maxX=54;maxY=54'), undefined);
   assert.equal(documentKeyOf('proxy://Finished'), undefined);
+});
+
+// ---------------------------------------------------------------------------------------------------
+// The type name, `missing type`, `todo-touch.md` 6.7.1; the argument is this file's header
+// ---------------------------------------------------------------------------------------------------
+
+const press = (IRCommandName: string): Json => ({ __type: 'IRPressAction', Order: 0, Duration: null, IRCommandName });
+
+/**
+ * The clean set with an entry on every path the reader searches a type name on: every action list a feature
+ * kind reads, a state feature with a value of each action set type the reader reads, an end step, a double
+ * press. The control for every refusal below: the gate passes it.
+ */
+function everyPath(): Json {
+  return broken((x) => {
+    const [power, input, tuning] = firstDevice(x).DeviceFeatures;
+    Object.assign(power, { PowerOffActions: [press('PowerOn')], PowerToggleActions: [press('PowerOn')], PowerOnResetActions: [press('PowerOn')] });
+    input.Inputs[0].Actions = [press('OK')];
+    Object.assign(tuning, { GreaterTenActions: [press('OK')], GreaterHundredActions: [press('OK')], StartActions: [press('OK')], NextActions: [press('OK')], PreviousActions: [press('OK')] });
+    firstDevice(x).DeviceFeatures.push({
+      __type: 'InternalStateFeature', StateName: 'Mode', ResetActions: [press('OK')],
+      StateValues: [{ StateValueName: 'A', ActionSetType: 1, Actions: [press('OK')] }, { StateValueName: 'B', ActionSetType: 2, Actions: [press('OK')] }],
+    });
+    activity(x).LeaveActions = [{ __type: 'CommandActivityAction', ActionOrder: 1, Id: 0, CommandName: 'Mute', 'DeviceId-': 1, TargetLevel: null }];
+    x.MapList.ButtonMaps[1].Buttons[0].ButtonDoublePressAction = commandAction(2, 'Mute');
+  });
+}
+
+/** The container and key a place's path leads to in its document, so a test can change the entry or its name. */
+function locate(d: Json, document: string, path: string): [Json, string | number] {
+  const steps = path.split('.').flatMap((s): (string | number)[] => {
+    const [, name, indices] = /^([^[]+)((?:\[\d+\])*)$/.exec(s)!;
+    return [name!, ...[...indices!.matchAll(/\[(\d+)\]/g)].map((m) => Number(m[1]))];
+  });
+  let here = d[document];
+  for (const s of steps.slice(0, -1)) here = here[s];
+  return [here, steps.at(-1)!];
+}
+
+/** A copy of `everyPath` with one change made to the entry at a place. */
+const changed = (document: string, path: string, change: (container: Json, key: string | number) => void): Json => {
+  const d = everyPath();
+  const [container, key] = locate(d, document, path);
+  change(container, key);
+  return d;
+};
+
+/** The gate's findings as rule, effect, document and path, the shape the assertions below compare whole. */
+const places = (d: Json) => refusalsBeforeASync(d as SyncDocuments).map((f) => [f.rule, f.effect, f.document, f.path]);
+
+/** A path with its indices taken out, the shape of a place. */
+const shape = (document: string, path: string) => `${document} ${path.replace(/\[\d+\]/g, '[]')}`;
+
+test('the walk reaches every path the reader searches a type name on, and the set built to hold one of each passes the gate', () => {
+  assert.deepEqual(refusalsBeforeASync(everyPath()), []);
+  // Named here as literals, so the walk cannot lose a path with the suite still passing.
+  assert.deepEqual([...new Set(typePlaces(everyPath()).map((p) => shape(p.document, p.path) + (p.guarded ? ' guarded' : '')))].sort(), [
+    'ActivityList Activities[].EnterActions[]',
+    'ActivityList Activities[].LeaveActions[]',
+    'ActivityList Activities[].Roles[]',
+    'DeviceList DevicesWithFeatures[].DeviceFeatures[]',
+    'DeviceList DevicesWithFeatures[].DeviceFeatures[].FinishActions[]',
+    'DeviceList DevicesWithFeatures[].DeviceFeatures[].GreaterHundredActions[]',
+    'DeviceList DevicesWithFeatures[].DeviceFeatures[].GreaterTenActions[]',
+    'DeviceList DevicesWithFeatures[].DeviceFeatures[].Inputs[].Actions[]',
+    'DeviceList DevicesWithFeatures[].DeviceFeatures[].NextActions[]',
+    'DeviceList DevicesWithFeatures[].DeviceFeatures[].PowerOffActions[]',
+    'DeviceList DevicesWithFeatures[].DeviceFeatures[].PowerOnActions[]',
+    'DeviceList DevicesWithFeatures[].DeviceFeatures[].PowerOnResetActions[]',
+    'DeviceList DevicesWithFeatures[].DeviceFeatures[].PowerToggleActions[]',
+    'DeviceList DevicesWithFeatures[].DeviceFeatures[].PreviousActions[]',
+    'DeviceList DevicesWithFeatures[].DeviceFeatures[].ResetActions[]',
+    'DeviceList DevicesWithFeatures[].DeviceFeatures[].StartActions[]',
+    'DeviceList DevicesWithFeatures[].DeviceFeatures[].StateValues[].Actions[]',
+    'MapList ButtonMaps[]',
+    'MapList ButtonMaps[].Buttons[]',
+    'MapList ButtonMaps[].Buttons[].ButtonAction guarded',
+    'MapList ButtonMaps[].Buttons[].ButtonDoublePressAction guarded',
+    'MapList ButtonMaps[].Buttons[].ButtonLongPressAction guarded',
+    'MapList ButtonMaps[].Sequences[].Actions[]',
+  ]);
+});
+
+test('the gate refuses an entry without a type name, or with one that is null, a boolean, an object or an array, on every path the reader searches it untested, and names that one place', () => {
+  const unguarded = typePlaces(everyPath()).filter((p) => !p.guarded);
+  // The clean set's 27, five entries of each device and five of the activity and twelve of the maps, and the
+  // 14 everyPath adds to device 1 and the activity.
+  assert.equal(unguarded.length, 41);
+  for (const p of unguarded) {
+    const named = [['missing type', 'refused', p.document, `${p.path}.__type`]];
+    assert.deepEqual(places(changed(p.document, p.path, (c, k) => { delete c[k].__type; })), named, `${p.path} absent`);
+    for (const [how, value] of [['null', null], ['true', true], ['false', false], ['an object', {}], ['an array', []]] as const) {
+      assert.deepEqual(places(changed(p.document, p.path, (c, k) => { c[k].__type = value; })), named, `${p.path} ${how}`);
+    }
+    // The entry itself not an object: the name is read off it, and the place is named without the field.
+    for (const [how, value] of [['null', null], ['a string', 'IRPressAction'], ['a number', 3], ['an array', []]] as const) {
+      assert.deepEqual(places(changed(p.document, p.path, (c, k) => { c[k] = value; })), [['missing type', 'refused', p.document, p.path]], `${p.path} entry ${how}`);
+    }
+    // The controls: a number is searched as its digits and an unknown name is logged; neither raises.
+    for (const value of [7, 'NoSuchKind']) {
+      assert.deepEqual(places(changed(p.document, p.path, (c, k) => { c[k].__type = value; })), [], `${p.path} ${String(value)}`);
+    }
+  }
+});
+
+test('a button\'s three actions, which the reader tests for a type name first, are refused only for one the search raises on', () => {
+  const guarded = typePlaces(everyPath()).filter((p) => p.guarded);
+  // The six short presses the clean maps state as objects, the Red key's being null, its long press and the
+  // added double press.
+  assert.deepEqual(guarded.map((p) => p.path.replace(/.*\./, '')).sort(), [
+    'ButtonAction', 'ButtonAction', 'ButtonAction', 'ButtonAction', 'ButtonAction', 'ButtonAction', 'ButtonDoublePressAction', 'ButtonLongPressAction',
+  ]);
+  for (const p of guarded) {
+    // Absent, `false`, a number and an unknown name pass: the first two fail the test, the others are searched.
+    assert.deepEqual(places(changed(p.document, p.path, (c, k) => { delete c[k].__type; })), [], `${p.path} absent`);
+    for (const value of [false, 7, 'NoSuchKind']) {
+      assert.deepEqual(places(changed(p.document, p.path, (c, k) => { c[k].__type = value; })), [], `${p.path} ${String(value)}`);
+    }
+    for (const [how, value] of [['null', null], ['true', true], ['an object', {}], ['an array', []]] as const) {
+      assert.deepEqual(places(changed(p.document, p.path, (c, k) => { c[k].__type = value; })), [['missing type', 'refused', p.document, `${p.path}.__type`]], `${p.path} ${how}`);
+    }
+  }
+});
+
+test('a list the reader does not read for that feature or value is not refused for an untyped action, and a protocol is not walked', () => {
+  const untyped = { Order: 0, IRCommandName: 'OK' };
+  // An input feature's actions on a power feature: never read, so not refused; on the input feature, refused.
+  assert.deepEqual(places(broken((x) => { firstDevice(x).DeviceFeatures[0].Inputs = [{ InputName: 'X', InputOrder: 0, Actions: [untyped] }]; })), []);
+  assert.deepEqual(places(broken((x) => { firstDevice(x).DeviceFeatures[1].Inputs[0].Actions = [untyped]; })).map((f) => f[3]),
+    ['DevicesWithFeatures[0].DeviceFeatures[1].Inputs[0].Actions[0].__type']);
+  // A state value's actions are read for action set types 1 and 2 alone.
+  const state = (ActionSetType: number) => broken((x) => {
+    firstDevice(x).DeviceFeatures.push({ __type: 'InternalStateFeature', StateName: 'Mode', StateValues: [{ StateValueName: 'A', ActionSetType, Actions: [untyped] }] });
+  });
+  assert.deepEqual(places(state(0)), []);
+  assert.deepEqual(places(state(3)), []);
+  assert.deepEqual(places(state(2)).map((f) => f[3]), ['DevicesWithFeatures[0].DeviceFeatures[3].StateValues[0].Actions[0].__type']);
+  // The kind is a substring of the name, as the reader searches it: a namespaced power feature reads its lists.
+  assert.deepEqual(places(broken((x) => {
+    Object.assign(firstDevice(x).DeviceFeatures[0], { __type: 'Logitech.Harmony.PowerFeature:#Logitech', PowerOffActions: [untyped] });
+  })).map((f) => f[3]), ['DevicesWithFeatures[0].DeviceFeatures[0].PowerOffActions[0].__type']);
+  // A protocol's name is compared, not searched, so its absence raises nothing and no place is a protocol.
+  const protocol = broken((x) => { delete x.ProtocolList.Protocols[0].__type; });
+  assert.equal(typePlaces(protocol).some((p) => p.document === 'ProtocolList'), false);
+  assert.equal(findingsByRule(refusalsBeforeASync(protocol))['missing type'], undefined);
+});
+
+test('the check alone reports a missing type name too, so a caller of the check is told', () => {
+  const d = broken((x) => { delete x.MapList.ButtonMaps[0].Buttons[0].__type; });
+  assert.deepEqual(check(d), { 'missing type': 1 });
+  assert.deepEqual(checkTypes(d as SyncDocuments).map((f) => f.path), ['ButtonMaps[0].Buttons[0].__type']);
+  // And it runs beside the list check: a set missing a list and a type name is told both at once.
+  const both = broken((x) => { delete x.MapList.ButtonMaps[1].Buttons; delete activity(x).Roles[0].__type; });
+  assert.deepEqual(findingsByRule(refusalsBeforeASync(both)), { 'missing list': 1, 'missing type': 1 });
+});
+
+/** Every object holding a `__type` key anywhere in a document, counted by a walk that knows nothing of the reader. */
+function typedObjects(x: unknown): number {
+  if (Array.isArray(x)) return x.reduce((n: number, y) => n + typedObjects(y), 0);
+  if (typeof x !== 'object' || x === null) return 0;
+  return (Object.prototype.hasOwnProperty.call(x, '__type') ? 1 : 0) + Object.values(x).reduce((n: number, y) => n + typedObjects(y), 0);
+}
+
+test('Logitech\'s recorded sets down pass the type rule and the gate, and the walk meets every type name they carry but the protocols\'', lab.skipUnless(FULL, TRIAL), () => {
+  for (const [fixture, walked, guarded, protocols] of [[FULL, 1404, 662, 5], [TRIAL, 539, 241, 3]] as const) {
+    const d = documentsOfAnswers(answersOf(fixture));
+    assert.deepEqual(checkTypes(d), [], fixture);
+    assert.deepEqual(refusalsBeforeASync(d), [], fixture);
+    const found = typePlaces(d);
+    assert.equal(found.length, walked, fixture);
+    assert.equal(found.filter((p) => p.guarded).length, guarded, fixture);
+    // The closure, per document: the blind count equals the walk's, and in the protocol list, which the walk
+    // leaves out because the reader compares its names, the blind count is the protocols.
+    for (const document of ['DeviceList', 'ActivityList', 'MapList', 'ProtocolList'] as const) {
+      const blind = typedObjects(d[document]);
+      const ours = found.filter((p) => p.document === document).length;
+      assert.equal(blind, document === 'ProtocolList' ? protocols : ours, `${fixture} ${document}`);
+    }
+    assert.equal(found.filter((p) => p.document === 'ProtocolList').length, 0);
+  }
 });

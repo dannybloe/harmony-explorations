@@ -112,6 +112,22 @@ test the lists it can meet as null, such as an activity's roles or a map's seque
 null in one of the three is therefore taken to stop the reader as a missing one does, which is inferred from
 those tests rather than read in the decoder[^unchecked].
 
+**So must every entry's type name, `__type`, wherever the reader tells entries apart by it.** The reader finds
+out what an entry is by searching its type name for a kind's name, and on these entries it searches without
+testing first that there is one: a device's features, the actions a feature carries, an activity's roles and
+its start and end steps, a button map, its buttons and every step of every sequence in it. An entry there
+without a type name, or with one that is null, true or false, an object or an array, makes the reader raise,
+and so does an entry that is not an object at all, since the name is read off it[^t-touch-type-name]. Which of
+a feature's action lists are read depends on the feature's own kind, and a state's values are read only for
+two kinds of action set, so a list the reader never reaches does not matter[^t-touch-type-name]. **A number is
+searched as its digits and does not raise**, and **an unknown name raises nowhere**: it is logged, or the map or
+button is kept under an empty name, or the role is stored as it stands[^t-touch-type-name]. A button's three
+actions are the exception that tests first: an action without a type name, or with `false`, is passed over and
+gives the button nothing for that press[^t-touch-type-name]. **The protocol list does not need one**: a
+protocol's type is compared for equality with three names, and anything else, a missing one included, is
+logged[^t-touch-type-name]. In the recorded syncs every entry on those paths carries its type name, and the
+protocols are the only entries carrying one that the reader does not search[^t-touch-type-name-recorded].
+
 **A document has to arrive as the object itself, not as a string holding one, and nothing on arrival checks
 which it is.** The remote stores a document as the JSON encoding of its `resource`, so an object is stored as
 that object and a string of JSON as a JSON string; the engine reads that string back as text, finds none of
@@ -310,6 +326,9 @@ Whether these are enough to know a whole configuration arrived is not settled[^u
   role rather than seen[^unchecked].
 * What a configuration the reader raises on does on a unit: the firmware reading is
   [recovery](firmware.md#a-configuration-that-fails-to-load), and none of it has been tried[^unchecked].
+* What the remote's screens do with an entry's type name: they read it too, in a program of their own, and
+  that reading is not examined; nor is whether a number as a type name, which the engine passes, reaches
+  them[^unchecked].
 * What a remote's screens show for an account with no activity and no device[^unchecked].
 * That the screens turn a refused answer into the abort on a unit, and how soon `proxy://Abort` follows[^unchecked].
 * Whether a write of answers whose last chunk is no longer than the announcement's shortfall is acted on one
@@ -332,5 +351,7 @@ Whether these are enough to know a whole configuration arrived is not settled[^u
 [^t-touch-favourites-untagged]: Read in the firmware. [The test](../../../tests/test_harmony_touch_favourites_untagged.py)
 [^t-touch-first-sync]: Measured on a unit. [The test](../../../packages/usb/test/touch-first-sync.test.ts)
 [^t-touch-second-sync]: Measured on a unit. [The test](../../../packages/usb/test/touch-second-sync.test.ts)
+[^t-touch-type-name]: Read in the firmware. [The test](../../../packages/codec/test/touch-check.test.ts)
+[^t-touch-type-name-recorded]: Measured on a unit. [The test](../../../packages/codec/test/touch-check.test.ts)
 [^d29]: Chosen by this project. [Decision 29](../../../docs/decisions.md#d29)
 [^unchecked]: Not checked.

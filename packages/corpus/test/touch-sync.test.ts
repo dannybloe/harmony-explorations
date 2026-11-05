@@ -362,6 +362,21 @@ describe('the hand over', () => {
     assert.ok(r.reports.includes(`sync: recovery, ${r.outcome.abortCost}`));
   });
 
+  it('refuses a handed up document holding an entry without the type name its own reader searches, and still keeps it', () => {
+    // A map list whose one button states no `__type`: the reader raises on it, `todo-touch.md` 6.7.1, so
+    // echoing it would hand the remote a document it raises on. The control is the same list with the name.
+    const maps = (button: object) => ({ ButtonMaps: [{ __type: 'DeviceButtonMap', ButtonMapIdentifier: '16417Device1', Buttons: [button] }] });
+    const putMaps = (document: unknown): RemoteRequest => ({
+      verb: 'put', uri: ADDRESS['MapList']!, resource: encodeURIComponent(JSON.stringify(document)).replace(/%20/g, '+'),
+    });
+    const r = run({ mode: { kind: 'unchanged' }, handOver: [[putMaps(maps({ ButtonKey: 'Mute' }))], [FINISHED]], sync: [getSix(), [FINISHED]] });
+    assert.equal(r.outcome.ending, 'refused');
+    assert.deepEqual(r.handedUp, ['001-MapList.json', '001-MapList.txt']);
+    assert.ok(!names(r).includes('answers'), 'nothing was echoed');
+    const named = run({ mode: { kind: 'unchanged' }, handOver: [[putMaps(maps({ __type: 'HardRemoteButton', ButtonKey: 'Mute' }))], [FINISHED]], sync: [getSix(), [FINISHED]] });
+    assert.ok(names(named).includes('answers'), 'the same list with its type name is echoed');
+  });
+
   it('says an abort costs no tag once the hand over has committed', () => {
     // A refusal in the sync after a hand over that handed Settings up: the hand over committed it.
     const [first, ...rest] = getSix();
