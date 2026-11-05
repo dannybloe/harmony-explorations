@@ -324,6 +324,17 @@ Harmony 600 drawing has a rounded panel at the top right where the product is sm
 region, so the drawing reproduces the document without offering a button nobody can press, and the model
 file says which source disagreed.
 
+### A clip region's id carries the model's id
+
+A segment is the moulding clipped to a region, and the region is referenced by id. **A page that shows
+two drawings inline is one document**, and `url(#id)` resolves to the first element with that id, so
+while every model named its regions `seg-k-volume-up` and `case-clip`, the Harmony 885's band keys were
+clipped to another remote's wedges in the bench preview and a coloured Vol + filled a strip. The PNG
+renders were right, because a lone file has nothing to collide with; it showed only in a browser with
+every key of the band coloured differently. `clipId` in `src/svg.ts` prefixes the model's id, and
+`every drawing on one page clips to its own regions` in `test/svg.test.ts` holds it. So colour **every**
+segment of a new moulding in the browser preview, not in a render.
+
 ## Step 6: layers and colour
 
 Five layers, each addressable so the host can switch one off for a thumbnail:
@@ -357,7 +368,8 @@ drawing coordinates, so anything expressed in screen pixels lands in the right p
   `test/models.test.ts`: a traced model goes in `LEVEL`, since its tilt is in the path and every `angle`
   is 0, and a model measured off a photograph stays off it, so the test demands at least one key at an
   angle and a drawing that forgot step 3 fails. This bullet asked every model for an angled row until
-  `todo-reference.md` 6.2; every model drawn so far is traced and level
+  `todo-reference.md` 6.2. Every model was traced and level until the Harmony 885, the first measured
+  off a photograph, `h885.ts`, since no line drawing of it exists and its manual's picture is raster
 
 ## Step 8: the check that actually decides it
 
@@ -386,8 +398,9 @@ A model joins the reference and the drawings together, and the reference's layou
 2. Add the model to `REMOTES` in `packages/silhouettes/bin/remotes.ts`: its skins, the drawing it uses
    and its architecture. A model with no drawing of its own uses its sibling's where the manual or the
    person holding both says the face is shared, and says so in `keys.md`; a model nobody has drawn yet
-   leaves the drawing out, and its keys and display blocks say none exists, as the Harmony 885's and
-   890's do. **A model sold in two printings gets a drawing per printing**, each serving its own skins,
+   leaves the drawing out, and its keys and display blocks say none exists, as the Harmony 890's does;
+   a skin a folder serves whose face differs from the drawing is listed as `undrawn`, as the Harmony 880's
+   skin 15 is on the 885's row, its colour keys being two chevron keys. **A model sold in two printings gets a drawing per printing**, each serving its own skins,
    the first as `drawing` and the others as `printings`, and its keys page carries a keys block for each,
    `keys-<drawing>`: the Harmony 300's US printing, skin 78, is `h300` and its European one, skin 79,
    `h300eu`, which differ in the colour keys and the favourite block. The skin table in

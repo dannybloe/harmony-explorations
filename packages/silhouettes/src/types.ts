@@ -84,6 +84,12 @@ export const SCAN_SOURCES = {
   // `tests/test_harmony_300_keys.py`.
   't-harmony-300-keys-u': 'heard by pressing each key with a receiver listening, in two device modes, its code '
     + 'the one of the 56 that, raised at that point of the presses, gives what was heard',
+  // The Harmony 885's keys pressed one by one on a unit with its data memory watched over USB, the code the
+  // one the remote kept as the key held; all 55 on one unit and 16 again on a second, the colour keys and
+  // Play and Pause settled by their position, `todo-prepare-885.md` 2.4, `MEASURED` in
+  // `tests/test_harmony_885_keys.py`.
+  't-885-keys-u': "read off the remote's own memory while each key was pressed, on one unit for every key and "
+    + 'on a second for sixteen of them',
 } as const;
 export type ScanSource = keyof typeof SCAN_SOURCES;
 
@@ -167,6 +173,15 @@ export interface Label {
   /** Extra offset in model units, for the cases where the printing is not where the rule puts it. */
   readonly dx?: number;
   readonly dy?: number;
+  /**
+   * Degrees, positive clockwise, where the word runs at an angle of its own rather than the key's.
+   *
+   * A key's `angle` turns its lettering with it, which is right for a word printed across a tilted key. It
+   * cannot say a word printed **along** a key: a Harmony 885 prints `MUTE` and `PREV` running down its two
+   * edge keys and `VOL` and `CH` along its band, and `DEVICE` and `MEDIA` climb across two crescents whose
+   * outline is measured in place and must not turn. The word turns about its own anchor, after the key's.
+   */
+  readonly rotate?: number;
 }
 
 export interface Key {
@@ -313,6 +328,14 @@ export interface Model {
    * same hardware: the two members of a 5xx pair differ by exactly the four teletext keys. */
   readonly skins: readonly number[];
   readonly architecture: number;
+  /**
+   * `photograph` where no drawing of Logitech's existed and every shape was measured off a product
+   * photograph, the Harmony 885 the first. Absent for a model whose shapes come from a traced or extracted
+   * drawing, which is every earlier one. The drawing's own description says which, since a reader of the
+   * SVG cannot tell and the precision of the two differs: a photograph 235 pixels wide is good to about a
+   * pixel, which is a unit and a quarter here.
+   */
+  readonly source?: 'photograph';
   readonly width: number;
   readonly height: number;
   /** The case as one contour. A rounded rectangle is refused and there is a test for it. */

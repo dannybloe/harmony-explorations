@@ -51,8 +51,14 @@ test('a model folder and its drawings serve the same skins, and every drawing is
     if (r.drawing === undefined) continue; // the next test holds which folders may have none
     const served = [r.drawing, ...(r.printings ?? [])].flatMap((id) =>
       (MODELS[id] ?? assert.fail(`${r.folder}: no drawing ${id}`)).skins);
-    assert.deepEqual([...served].sort((a, b) => a - b), [...r.skins].sort((a, b) => a - b), r.folder);
+    // A skin whose face is not the one drawn is named as undrawn rather than dropped from the folder: the
+    // Harmony 880, skin 15, in the 885's folder. A skin may not be both served and undrawn.
+    const undrawn = r.undrawn ?? [];
+    assert.deepEqual(served.filter((s) => undrawn.includes(s)), [], `${r.folder}: a skin served and undrawn`);
+    assert.deepEqual([...served, ...undrawn].sort((a, b) => a - b), [...r.skins].sort((a, b) => a - b), r.folder);
   }
+  assert.deepEqual(REMOTES.filter((r) => r.undrawn !== undefined).map((r) => [r.folder, r.undrawn]),
+    [['harmony-885', [15]]], 'the one skin whose face is not drawn is the Harmony 880\'s');
   assert.deepEqual(MODELS.h300!.skins, [78], 'the Harmony 300 drawing serves the US skin');
   assert.deepEqual(MODELS.h300eu!.skins, [79], 'and its European printing has a drawing of its own');
   // Every drawing is some folder's drawing or printing, so a printing cannot be drawn and described nowhere.
@@ -60,14 +66,15 @@ test('a model folder and its drawings serve the same skins, and every drawing is
   assert.deepEqual(Object.keys(MODELS).filter((id) => !described.includes(id)), []);
 });
 
-test('only the Harmony 885 and 890 folders are without a drawing, so a drawn model cannot lose its drawing', () => {
+test('only the Harmony 890 folder is without a drawing, so a drawn model cannot lose its drawing', () => {
   // Plan 009 step 3.5 made `drawing` optional so that the two models known only from contributed
   // configurations could have their full folders before anybody draws them. An optional field is also a
   // way for every other row to drop its drawing without a failure anywhere, since the keys and display
   // blocks would simply say none exists. So the folders allowed to lack one are named here, exactly: a
   // drawing added for either shrinks this list, and any other row losing its drawing fails.
   const undrawn = REMOTES.filter((r) => r.drawing === undefined).map((r) => r.folder).sort();
-  assert.deepEqual(undrawn, ['harmony-885', 'harmony-890']);
+  // The Harmony 885 left this list when its drawing landed, `todo-prepare-885.md` 2.4.
+  assert.deepEqual(undrawn, ['harmony-890']);
   for (const r of REMOTES) {
     if (r.drawing !== undefined) assert.ok(MODELS[r.drawing] !== undefined, `${r.folder}: no drawing ${r.drawing}`);
   }

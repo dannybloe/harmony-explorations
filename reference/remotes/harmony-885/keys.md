@@ -9,9 +9,67 @@ an 880's were not.
 ## Every key on the drawing
 
 <!-- generated:keys -->
-No drawing of this model exists yet, so no key is listed here: the row for `harmony-885` in `REMOTES` names none. A drawing added to `packages/silhouettes` fills this block.
+55 keys on the drawing `h885`, 47 on the keypad and 8 that the screen speaks for. 55 carry a scan code: 55 read off the remote's own memory while each key was pressed, on one unit for every key and on a second for sixteen of them[^t-885-keys-u].
 
-Generated from `REMOTES` in `packages/silhouettes/bin/remotes.ts` by `make remote-reference-write`. Change the source, not this block.
+| key | kind | name from | scan code | screen zone | printed on or beside it |
+|---|---|---|---|---|---|
+| `Activities` | keypad | printed | 1 (0x01)[^t-885-keys-u] |  | ACTIVITIES |
+| `AllOff` | keypad | printed | 2 (0x02)[^t-885-keys-u] |  | OFF |
+| `Help` | keypad | printed | 3 (0x03)[^t-885-keys-u] |  | HELP |
+| `Device` | keypad | printed | 10 (0x0A)[^t-885-keys-u] |  | DEVICE |
+| `VolumeMute` | keypad | printed | 11 (0x0B)[^t-885-keys-u] |  | MUTE |
+| `ScreenPrev` | keypad | printed | 12 (0x0C)[^t-885-keys-u] |  |  |
+| `VolumeUp` | keypad | printed | 13 (0x0D)[^t-885-keys-u] |  |  |
+| `DirectionLeft` | keypad | printed | 14 (0x0E)[^t-885-keys-u] |  |  |
+| `VolumeDown` | keypad | printed | 15 (0x0F)[^t-885-keys-u] |  |  |
+| `DirectionUp` | keypad | printed | 16 (0x10)[^t-885-keys-u] |  |  |
+| `Menu` | keypad | printed | 17 (0x11)[^t-885-keys-u] |  | MENU |
+| `Exit` | keypad | printed | 18 (0x12)[^t-885-keys-u] |  | EXIT |
+| `Green` | keypad | printed | 19 (0x13)[^t-885-keys-u] |  |  |
+| `Red` | keypad | printed | 20 (0x14)[^t-885-keys-u] |  |  |
+| `Stop` | keypad | printed | 21 (0x15)[^t-885-keys-u] |  | STOP |
+| `Record` | keypad | printed | 22 (0x16)[^t-885-keys-u] |  | REC |
+| `Rewind` | keypad | printed | 23 (0x17)[^t-885-keys-u] |  | REW |
+| `SkipBack` | keypad | printed | 24 (0x18)[^t-885-keys-u] |  | REPLAY |
+| `Number1` | keypad | printed | 25 (0x19)[^t-885-keys-u] |  | 1 |
+| `Number4` | keypad | printed | 26 (0x1A)[^t-885-keys-u] |  | 4, ghi |
+| `Number8` | keypad | printed | 27 (0x1B)[^t-885-keys-u] |  | 8, tuv |
+| `Number7` | keypad | printed | 29 (0x1D)[^t-885-keys-u] |  | 7, pqrs |
+| `Clear` | keypad | printed | 31 (0x1F)[^t-885-keys-u] |  | CLEAR |
+| `Number0` | keypad | printed | 32 (0x20)[^t-885-keys-u] |  | 0 |
+| `Select` | keypad | printed | 33 (0x21)[^t-885-keys-u] |  | OK |
+| `DirectionDown` | keypad | printed | 34 (0x22)[^t-885-keys-u] |  |  |
+| `DirectionRight` | keypad | printed | 35 (0x23)[^t-885-keys-u] |  |  |
+| `ChannelDown` | keypad | printed | 36 (0x24)[^t-885-keys-u] |  |  |
+| `ChannelUp` | keypad | printed | 37 (0x25)[^t-885-keys-u] |  |  |
+| `Media` | keypad | printed | 38 (0x26)[^t-885-keys-u] |  | MEDIA |
+| `PrevChannel` | keypad | printed | 40 (0x28)[^t-885-keys-u] |  | PREV |
+| `Glow` | keypad | printed | 41 (0x29)[^t-885-keys-u] |  | GLOW |
+| `ScreenNext` | keypad | printed | 43 (0x2B)[^t-885-keys-u] |  |  |
+| `Guide` | keypad | printed | 50 (0x32)[^t-885-keys-u] |  | GUIDE |
+| `Info` | keypad | printed | 51 (0x33)[^t-885-keys-u] |  | INFO |
+| `Blue` | keypad | printed | 52 (0x34)[^t-885-keys-u] |  |  |
+| `SkipForward` | keypad | printed | 53 (0x35)[^t-885-keys-u] |  | SKIP |
+| `FastForward` | keypad | printed | 54 (0x36)[^t-885-keys-u] |  | FWD |
+| `Pause` | keypad | printed | 55 (0x37)[^t-885-keys-u] |  | PAUSE |
+| `Play` | keypad | printed | 56 (0x38)[^t-885-keys-u] |  | PLAY |
+| `Number2` | keypad | printed | 57 (0x39)[^t-885-keys-u] |  | 2, abc |
+| `Number3` | keypad | printed | 58 (0x3A)[^t-885-keys-u] |  | 3, def |
+| `Number6` | keypad | printed | 59 (0x3B)[^t-885-keys-u] |  | 6, mno |
+| `Yellow` | keypad | printed | 60 (0x3C)[^t-885-keys-u] |  |  |
+| `Number5` | keypad | printed | 61 (0x3D)[^t-885-keys-u] |  | 5, jkl |
+| `Number9` | keypad | printed | 62 (0x3E)[^t-885-keys-u] |  | 9, wxyz |
+| `Enter` | keypad | printed | 63 (0x3F)[^t-885-keys-u] |  | E, ENTER |
+| `ScreenLeft1` | screen | printed | 5 (0x05)[^t-885-keys-u] | 1 |  |
+| `ScreenLeft2` | screen | printed | 6 (0x06)[^t-885-keys-u] | 3 |  |
+| `ScreenLeft3` | screen | printed | 7 (0x07)[^t-885-keys-u] | 5 |  |
+| `ScreenLeft4` | screen | printed | 8 (0x08)[^t-885-keys-u] | 7 |  |
+| `ScreenRight4` | screen | printed | 44 (0x2C)[^t-885-keys-u] | 8 |  |
+| `ScreenRight1` | screen | printed | 45 (0x2D)[^t-885-keys-u] | 2 |  |
+| `ScreenRight2` | screen | printed | 46 (0x2E)[^t-885-keys-u] | 4 |  |
+| `ScreenRight3` | screen | printed | 48 (0x30)[^t-885-keys-u] | 6 |  |
+
+Generated from `packages/silhouettes/src/models/h885.ts` by `make remote-reference-write`. Change the source, not this block.
 <!-- /generated -->
 
 ## Which key raises which code

@@ -41,7 +41,7 @@ SVG = '{http://www.w3.org/2000/svg}'
 KEYS_PAGE = {
     'h300.svg': 'harmony-300', 'h300eu.svg': ('harmony-300', 'keys-h300eu'), 'h350.svg': 'harmony-350',
     'h515.svg': 'harmony-515', 'h525.svg': 'harmony-525',
-    'h600.svg': 'harmony-600', 'h650.svg': 'harmony-650', 'h700.svg': 'harmony-700',
+    'h600.svg': 'harmony-600', 'h650.svg': 'harmony-650', 'h700.svg': 'harmony-700', 'h885.svg': 'harmony-885',
     'one.svg': 'harmony-one', 'touch.svg': 'harmony-touch',
 }
 
@@ -729,6 +729,89 @@ class TestTheHarmonyTouchSilhouette(_SilhouetteConventions, unittest.TestCase):
                 self.assertIn(f'--accent: {colour}', text)
 
 
+class TestTheHarmony885Silhouette(_SilhouetteConventions, unittest.TestCase):
+    """
+    Fifty five, every one pressed on a unit, and the first drawing measured off a photograph rather than
+    traced, `packages/silhouettes/src/models/h885.ts`.
+    """
+
+    NAME = 'h885.svg'
+    # The units' count: 55 keys raised 55 codes on a Harmony 885, exactly the press codes of its key table,
+    # and none raised one of the nine codes the table leaves empty, `tests/test_harmony_885_keys.py`.
+    EXPECTED_BUTTONS = 55
+    # `MEASURED` there is named by what the bench was asked to press; this is how each of those names is
+    # called on the drawing. Stated rather than derived, so a renamed key shows in this file's diff.
+    DRAWING_NAMES = {
+        'Activities': 'Activities', 'Power': 'AllOff', 'Help': 'Help',
+        'screen left 1': 'ScreenLeft1', 'screen left 2': 'ScreenLeft2', 'screen left 3': 'ScreenLeft3',
+        'screen left 4': 'ScreenLeft4', 'screen right 1': 'ScreenRight1', 'screen right 2': 'ScreenRight2',
+        'screen right 3': 'ScreenRight3', 'screen right 4': 'ScreenRight4',
+        'Device': 'Device', 'Mute': 'VolumeMute', 'arrow left below the screen': 'ScreenPrev',
+        'arrow right below the screen': 'ScreenNext', 'Media': 'Media', 'Prev': 'PrevChannel', 'Glow': 'Glow',
+        'Vol +': 'VolumeUp', 'Vol -': 'VolumeDown', 'Ch +': 'ChannelUp', 'Ch -': 'ChannelDown',
+        'd-pad left': 'DirectionLeft', 'd-pad up': 'DirectionUp', 'd-pad down': 'DirectionDown',
+        'd-pad right': 'DirectionRight', 'OK': 'Select',
+        'Menu': 'Menu', 'Exit': 'Exit', 'Guide': 'Guide', 'Info': 'Info',
+        'Red': 'Red', 'Green': 'Green', 'Yellow': 'Yellow', 'Blue': 'Blue',
+        'Stop': 'Stop', 'Rec': 'Record', 'Rew': 'Rewind', 'Replay': 'SkipBack', 'Skip': 'SkipForward',
+        'Fwd': 'FastForward', 'Pause': 'Pause', 'Play': 'Play',
+        '1': 'Number1', '2': 'Number2', '3': 'Number3', '4': 'Number4', '5': 'Number5', '6': 'Number6',
+        '7': 'Number7', '8': 'Number8', '9': 'Number9', '0': 'Number0', 'Clear': 'Clear', 'Enter': 'Enter',
+    }
+
+    def test_every_key_carries_the_code_the_units_raised_for_it(self):
+        """
+        The drawing's codes are the bench's and nothing else: `MEASURED`, read off the remote's memory while
+        each key was pressed, under the drawing's names, in both directions. A code typed wrongly into the
+        model file fails here, and no key carries a set of candidates.
+        """
+        from test_harmony_885_keys import MEASURED
+        self.assertEqual(sorted(self.DRAWING_NAMES), sorted(MEASURED))
+        buttons = _buttons(_tree(self.NAME).getroot())
+        codes = {e.get('data-name'): int(e.get('data-scan')) for e in buttons.values() if e.get('data-scan')}
+        self.assertEqual(codes, {self.DRAWING_NAMES[n]: c for n, c in MEASURED.items()})
+        self.assertEqual([e for e in buttons.values() if e.get('data-scan-candidates')], [])
+
+    def test_the_eight_keys_beside_the_screen_are_the_screen_s_and_read_in_rows(self):
+        """
+        Section 128's screen population on arch 8 is exactly 5, 6, 7, 8, 44, 45, 46 and 48, the eight keys
+        beside the glass; the arrows under it are keypad keys. Zones run left then right on each row, top to
+        bottom, as the survey's legend numbers them and as the Harmony 525's drawing does.
+        """
+        buttons = _buttons(_tree(self.NAME).getroot())
+        screen = {e.get('data-name'): (int(e.get('data-scan')), int(e.get('data-zone')))
+                  for e in buttons.values() if e.get('data-kind') == 'screen'}
+        self.assertEqual(screen, {
+            'ScreenLeft1': (5, 1), 'ScreenRight1': (45, 2), 'ScreenLeft2': (6, 3), 'ScreenRight2': (46, 4),
+            'ScreenLeft3': (7, 5), 'ScreenRight3': (48, 6), 'ScreenLeft4': (8, 7), 'ScreenRight4': (44, 8),
+        })
+
+    def test_the_screen_carries_arch_8_s_raster_and_is_not_a_touch_surface(self):
+        root = _tree(self.NAME).getroot()
+        screen = [e for e in root.iter() if e.get('id') == 'screen']
+        self.assertEqual(len(screen), 1)
+        self.assertEqual(screen[0].get('data-pixels'), '128x160')
+        self.assertEqual(screen[0].get('data-touch'), 'false')
+
+    def test_the_colour_keys_run_red_green_yellow_blue_left_to_right(self):
+        """
+        As the manual draws them and as the units were pressed by position, `ThePositionCheck` in
+        `tests/test_harmony_885_keys.py`; each states its own colour.
+        """
+        text = _text(self.NAME)
+        buttons = _buttons(_tree(self.NAME).getroot())
+        order = sorted(('k-red', 'k-green', 'k-yellow', 'k-blue'), key=lambda one: _centre_x(buttons[one]))
+        self.assertEqual(order, ['k-red', 'k-green', 'k-yellow', 'k-blue'])
+        for _, colour in PALETTE.values():
+            self.assertIn(f'--accent: {colour}', text)
+
+    def test_it_says_it_was_measured_off_a_photograph(self):
+        """Not traced, unlike every drawing before it, and the description a screen reader gets says which."""
+        text = _text(self.NAME)
+        self.assertIn('measured off a product photograph', text)
+        self.assertNotIn('traced from the product documentation', text)
+
+
 class TestTheSilhouetteDirectory(unittest.TestCase):
     """What is drawn and what is not, so the gap is a statement rather than an oversight."""
 
@@ -743,6 +826,7 @@ class TestTheSilhouetteDirectory(unittest.TestCase):
         'h600.svg': TestTheHarmony600Silhouette,
         'h650.svg': TestTheHarmony650Silhouette,
         'h700.svg': TestTheHarmony700Silhouette,
+        'h885.svg': TestTheHarmony885Silhouette,
         'one.svg': TestTheHarmonyOneSilhouette,
         'touch.svg': TestTheHarmonyTouchSilhouette,
     }

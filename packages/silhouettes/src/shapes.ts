@@ -59,6 +59,27 @@ export function circle(cx: number, cy: number, r: number): Shape {
   return { form: 'circle', path, cx, cy, w: 2 * r, h: 2 * r };
 }
 
+/**
+ * An ellipse, as four cubics, for a part that is round on the product and taller than it is wide: a
+ * Harmony 885's direction pad and its OK key, 36.6 by 47.5 and 15 by 19.8 pixels on the photograph.
+ *
+ * Cubics rather than an elliptical arc, because the path readers here take a circular arc only and
+ * refuse an elliptical one rather than flatten it wrongly. The control points sit at 0.5523 of each
+ * radius, the usual quarter circle constant, which keeps the curve within a thousandth of the radius.
+ */
+export function ellipse(cx: number, cy: number, rx: number, ry: number): Shape {
+  const k = 0.5523;
+  const path = [
+    `M ${n(cx)} ${n(cy - ry)}`,
+    `C ${n(cx + k * rx)} ${n(cy - ry)} ${n(cx + rx)} ${n(cy - k * ry)} ${n(cx + rx)} ${n(cy)}`,
+    `C ${n(cx + rx)} ${n(cy + k * ry)} ${n(cx + k * rx)} ${n(cy + ry)} ${n(cx)} ${n(cy + ry)}`,
+    `C ${n(cx - k * rx)} ${n(cy + ry)} ${n(cx - rx)} ${n(cy + k * ry)} ${n(cx - rx)} ${n(cy)}`,
+    `C ${n(cx - rx)} ${n(cy - k * ry)} ${n(cx - k * rx)} ${n(cy - ry)} ${n(cx)} ${n(cy - ry)}`,
+    'Z',
+  ].join(' ');
+  return { form: 'circle', path, cx, cy, w: 2 * rx, h: 2 * ry };
+}
+
 /** A closed polygon, for the arrow keys and the wedges. */
 export function poly(points: readonly [number, number][]): Shape {
   if (points.length < 3) throw new Error('a polygon needs three points');
@@ -260,6 +281,56 @@ export function contour(
   }
   out.push('Z');
   return out.join(' ');
+}
+
+/**
+ * A closed outline through corners read off a photograph, each corner rounded by its own radius.
+ *
+ * **For a model with no traced drawing**, the Harmony 885 the first. Its keys are not rectangles: the
+ * outer keys of a row follow the case, the Menu row's tops are one arc across four keys and the keys under
+ * the screen are crescents. A rotated pill fits none of those, and a key's corners are what a person can
+ * actually read off a photograph 235 pixels wide, so the corners are the measurement and this joins them.
+ *
+ * A point is `[x, y]` or `[x, y, r]`. Each corner is cut back along both of its edges by `r`, clamped to
+ * half of each edge, and the two cuts are joined by a quadratic whose control point is the corner itself.
+ * So a small `r` is a rounded corner and a large one makes the point a control point of a smooth curve:
+ * where every corner on a run is clamped, the run is the quadratic B-spline through the edges' midpoints.
+ * That is how a curved edge is stated, as a few points along it with a large radius, without a second
+ * builder for curves.
+ */
+export function rounded(points: readonly (readonly [number, number] | readonly [number, number, number])[],
+  r: number): Shape {
+  if (points.length < 3) throw new Error('an outline needs three points');
+  const at = (i: number) => points[((i % points.length) + points.length) % points.length]!;
+  const cut = (from: readonly number[], to: readonly number[], d: number): [number, number] => {
+    const len = Math.hypot(to[0]! - from[0]!, to[1]! - from[1]!);
+    const t = len === 0 ? 0 : d / len;
+    return [from[0]! + (to[0]! - from[0]!) * t, from[1]! + (to[1]! - from[1]!) * t];
+  };
+  const corners = points.map((p, i) => {
+    const prev = at(i - 1);
+    const next = at(i + 1);
+    const want = p[2] ?? r;
+    const d = Math.min(want, Math.hypot(p[0] - prev[0], p[1] - prev[1]) / 2,
+      Math.hypot(next[0] - p[0], next[1] - p[1]) / 2);
+    return { into: cut(p, prev, d), out: cut(p, next, d), p };
+  });
+  const first = corners[0]!;
+  const parts = [`M ${n(first.out[0])} ${n(first.out[1])}`];
+  for (let i = 1; i <= corners.length; i += 1) {
+    const c = corners[i % corners.length]!;
+    // The quadratic written as the cubic it is, control points two thirds of the way to the corner,
+    // because every path reader here knows `C` and none knows `Q`.
+    const k1 = [c.into[0] + (2 / 3) * (c.p[0] - c.into[0]), c.into[1] + (2 / 3) * (c.p[1] - c.into[1])];
+    const k2 = [c.out[0] + (2 / 3) * (c.p[0] - c.out[0]), c.out[1] + (2 / 3) * (c.p[1] - c.out[1])];
+    parts.push(`L ${n(c.into[0])} ${n(c.into[1])}`,
+      `C ${n(k1[0]!)} ${n(k1[1]!)} ${n(k2[0]!)} ${n(k2[1]!)} ${n(c.out[0])} ${n(c.out[1])}`);
+  }
+  parts.push('Z');
+  const path = parts.join(' ');
+  const b = pathBounds(path, true);
+  return { form: 'poly', path, cx: (b.minX + b.maxX) / 2, cy: (b.minY + b.maxY) / 2, w: b.maxX - b.minX,
+    h: b.maxY - b.minY };
 }
 
 /**

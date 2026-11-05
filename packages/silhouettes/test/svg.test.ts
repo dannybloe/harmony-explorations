@@ -28,6 +28,28 @@ test('the checked in drawing is what the generator produces', () => {
   }
 });
 
+test('every drawing on one page clips to its own regions, because a reference resolves to the first id', () => {
+  // Every drawing, at every detail level, is one document here, which is what the bench preview and an
+  // interface showing two remotes both are. A url(#id) in a drawing must name an id that drawing defines,
+  // and no id a reference can reach may be defined by two drawings. The control: with the model's id
+  // dropped from the clip ids this fails at once, the Harmony 300's two printings defining one case clip.
+  const definedBy = new Map<string, string>();
+  let references = 0;
+  for (const [id, model] of drawn) {
+    const svg = toSvg(model);
+    const defined = new Set([...svg.matchAll(/<clipPath id="([^"]+)"/g)].map((m) => m[1]!));
+    for (const ref of svg.matchAll(/url\(#([^)]+)\)/g)) {
+      references += 1;
+      assert.ok(defined.has(ref[1]!), `${id} refers to ${ref[1]} and does not define it`);
+    }
+    for (const clip of defined) {
+      assert.equal(definedBy.get(clip), undefined, `${clip} is defined by ${definedBy.get(clip)} and ${id}`);
+      definedBy.set(clip, id);
+    }
+  }
+  assert.ok(references > 0, 'no drawing refers to a clip region, so this test reads nothing');
+});
+
 test('every colour in the file is a documented default', () => {
   const allowed = new Set<string>(Object.values(DEFAULTS).filter((v) => v.startsWith('#')));
   for (const [id, model] of drawn) {
@@ -157,6 +179,12 @@ test('a detail level leaves out what it says it leaves out', () => {
       // The 600's printing with only the nameplate's number changed.
       h650: { text: 37, marks: 56, keys: 54 },
       h700: { text: 37, marks: 56, keys: 54 },
+      // Off, Activities, Help, Glow, Device, Media, Mute, Prev, OK, the Menu row's four, the eight transport
+      // words, the 21 numerals, letter groups and words of the digits, Vol, Ch and the nameplate. The marks:
+      // the power ring's two parts, eight dots beside the screen, the two paging arrows at four parts each,
+      // two plus and two minus marks, four colour dots, four pad triangles, the transport block's 15 parts,
+      // and Clear's plus and 0's space mark.
+      h885: { text: 45, marks: 47, keys: 55 },
       one: { text: 34, marks: 32, keys: 44 },
       // Off, Exit, Menu, OK, Vol, Ch, DVR, Guide, Info and the Logitech nameplate; eleven symbols drawn
       // in 17 parts, rewind, fast forward, pause, mute and back being two each.

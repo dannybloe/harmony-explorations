@@ -36,37 +36,37 @@
 
   <g class="layer-case">
     <path class="body" d="M 259.787 17.815 L 259.787 943.114 C 259.787 975.797 258.376 1000 128.463 1000 C -0.028 1000 0 966.289 0 938.197 L 0 12.733 C 0 12.733 49.02 0.113 128.119 0 C 207.206 -0.11 259.787 12.733 259.787 12.733 L 259.787 17.815 Z" fill="#fff" stroke="#333" stroke-width="2" />
-    <clipPath id="case-clip"><path d="M 259.787 17.815 L 259.787 943.114 C 259.787 975.797 258.376 1000 128.463 1000 C -0.028 1000 0 966.289 0 938.197 L 0 12.733 C 0 12.733 49.02 0.113 128.119 0 C 207.206 -0.11 259.787 12.733 259.787 12.733 L 259.787 17.815 Z" /></clipPath>
-    <path class="region region-recess" id="top-band" d="M 128.119 0 C 49.02 0.113 0 12.733 0 12.733 L 0 38.906 L 259.787 38.906 L 259.787 12.733 C 259.787 12.733 207.206 -0.11 128.119 0 Z" clip-path="url(#case-clip)" fill="#eee" stroke="#333" stroke-width="1" />
-    <path class="region region-seam" id="panel" d="M 16.868 38.906 L 16.868 598.782 C 16.868 657.324 66.214 704.78 127.072 704.78 L 134.743 704.78 C 195.611 704.78 244.957 657.324 244.957 598.782 L 244.957 38.906 L 16.868 38.906 Z" clip-path="url(#case-clip)" fill="none" stroke="#333" stroke-width="1" />
-    <path class="region region-seam" id="activities-bezel" d="M 189.183 69.79 C 189.183 77.501 183.043 83.751 175.465 83.751 L 85.267 83.751 C 77.689 83.751 71.549 77.501 71.549 69.79 C 71.549 62.089 77.689 55.839 85.267 55.839 L 175.465 55.839 C 183.043 55.839 189.183 62.089 189.183 69.79 Z" clip-path="url(#case-clip)" fill="none" stroke="#333" stroke-width="1" />
-    <path class="region region-recess" id="screen-bezel" d="M 213.401 261.855 C 213.401 267.811 209.402 272.633 204.47 272.633 L 55.197 272.633 C 50.263 272.633 46.263 267.811 46.263 261.855 L 46.263 172.919 C 46.263 166.965 50.263 162.141 55.197 162.141 L 204.47 162.141 C 209.402 162.141 213.401 166.965 213.401 172.919 L 213.401 261.855 Z" clip-path="url(#case-clip)" fill="#eee" stroke="#333" stroke-width="1" />
+    <clipPath id="clip-h525-case"><path d="M 259.787 17.815 L 259.787 943.114 C 259.787 975.797 258.376 1000 128.463 1000 C -0.028 1000 0 966.289 0 938.197 L 0 12.733 C 0 12.733 49.02 0.113 128.119 0 C 207.206 -0.11 259.787 12.733 259.787 12.733 L 259.787 17.815 Z" /></clipPath>
+    <path class="region region-recess" id="top-band" d="M 128.119 0 C 49.02 0.113 0 12.733 0 12.733 L 0 38.906 L 259.787 38.906 L 259.787 12.733 C 259.787 12.733 207.206 -0.11 128.119 0 Z" clip-path="url(#clip-h525-case)" fill="#eee" stroke="#333" stroke-width="1" />
+    <path class="region region-seam" id="panel" d="M 16.868 38.906 L 16.868 598.782 C 16.868 657.324 66.214 704.78 127.072 704.78 L 134.743 704.78 C 195.611 704.78 244.957 657.324 244.957 598.782 L 244.957 38.906 L 16.868 38.906 Z" clip-path="url(#clip-h525-case)" fill="none" stroke="#333" stroke-width="1" />
+    <path class="region region-seam" id="activities-bezel" d="M 189.183 69.79 C 189.183 77.501 183.043 83.751 175.465 83.751 L 85.267 83.751 C 77.689 83.751 71.549 77.501 71.549 69.79 C 71.549 62.089 77.689 55.839 85.267 55.839 L 175.465 55.839 C 183.043 55.839 189.183 62.089 189.183 69.79 Z" clip-path="url(#clip-h525-case)" fill="none" stroke="#333" stroke-width="1" />
+    <path class="region region-recess" id="screen-bezel" d="M 213.401 261.855 C 213.401 267.811 209.402 272.633 204.47 272.633 L 55.197 272.633 C 50.263 272.633 46.263 267.811 46.263 261.855 L 46.263 172.919 C 46.263 166.965 50.263 162.141 55.197 162.141 L 204.47 162.141 C 209.402 162.141 213.401 166.965 213.401 172.919 L 213.401 261.855 Z" clip-path="url(#clip-h525-case)" fill="#eee" stroke="#333" stroke-width="1" />
   </g>
   <g class="layer-screen">
     <rect class="lcd" id="screen" x="46.263" y="162.141" width="167.138" height="110.492" rx="3" data-pixels="96x64" data-touch="false" fill="#eee" stroke="#333" stroke-width="1" />
   </g>
   <defs>
-    <clipPath id="seg-k-devices"><path d="M 40.359 94.218 L 130.563 94.218 L 130.563 112.732 L 40.359 112.732 Z" /></clipPath>
-    <clipPath id="seg-k-help"><path d="M 130.563 94.218 L 220.766 94.218 L 220.766 112.732 L 130.563 112.732 Z" /></clipPath>
-    <clipPath id="seg-k-soft-upper-left"><path d="M 16.988 177.327 L 28.538 177.327 L 28.538 226.718 L 16.988 226.718 Z" /></clipPath>
-    <clipPath id="seg-k-soft-lower-left"><path d="M 16.988 226.718 L 28.538 226.718 L 28.538 276.109 L 16.988 276.109 Z" /></clipPath>
-    <clipPath id="seg-k-soft-upper-right"><path d="M 233.098 177.327 L 244.638 177.327 L 244.638 226.718 L 233.098 226.718 Z" /></clipPath>
-    <clipPath id="seg-k-soft-lower-right"><path d="M 233.098 226.718 L 244.638 226.718 L 244.638 276.109 L 233.098 276.109 Z" /></clipPath>
-    <clipPath id="seg-k-screen-prev"><path d="M 40.359 291.468 L 130.563 291.468 L 130.563 309.985 L 40.359 309.985 Z" /></clipPath>
-    <clipPath id="seg-k-screen-next"><path d="M 130.563 291.468 L 220.766 291.468 L 220.766 309.985 L 130.563 309.985 Z" /></clipPath>
-    <clipPath id="seg-k-guide"><path d="M 41.414 437.731 L 131.618 437.731 L 131.618 456.245 L 41.414 456.245 Z" /></clipPath>
-    <clipPath id="seg-k-info"><path d="M 131.618 437.731 L 221.821 437.731 L 221.821 456.245 L 131.618 456.245 Z" /></clipPath>
-    <clipPath id="seg-k-exit"><path d="M 41.414 471.544 L 131.618 471.544 L 131.618 490.059 L 41.414 490.059 Z" /></clipPath>
-    <clipPath id="seg-k-menu"><path d="M 131.618 471.544 L 221.821 471.544 L 221.821 490.059 L 131.618 490.059 Z" /></clipPath>
-    <clipPath id="seg-k-channel-up"><path d="M 128.865 600.433 L 128.865 200.433 A 400 400 0 0 1 528.728 589.962 Z" /></clipPath>
-    <clipPath id="seg-k-channel-down"><path d="M 128.865 600.433 L 528.728 589.962 A 400 400 0 0 1 410.719 884.261 Z" /></clipPath>
-    <clipPath id="seg-k-glow"><path d="M 128.865 600.433 L 410.719 884.261 A 400 400 0 0 1 -141.885 894.872 Z" /></clipPath>
-    <clipPath id="seg-k-volume-down"><path d="M 128.865 600.433 L -141.885 894.872 A 400 400 0 0 1 -270.55 578.801 Z" /></clipPath>
-    <clipPath id="seg-k-volume-up"><path d="M 128.865 600.433 L -270.55 578.801 A 400 400 0 0 1 128.865 200.433 Z" /></clipPath>
-    <clipPath id="seg-k-direction-up"><path d="M 128.865 600.433 L 73.744 544.344 L 183.986 544.344 Z" /></clipPath>
-    <clipPath id="seg-k-direction-right"><path d="M 128.865 600.433 L 183.986 544.344 L 183.986 656.522 Z" /></clipPath>
-    <clipPath id="seg-k-direction-down"><path d="M 128.865 600.433 L 183.986 656.522 L 73.744 656.522 Z" /></clipPath>
-    <clipPath id="seg-k-direction-left"><path d="M 128.865 600.433 L 73.744 656.522 L 73.744 544.344 Z" /></clipPath>
+    <clipPath id="clip-h525-k-devices"><path d="M 40.359 94.218 L 130.563 94.218 L 130.563 112.732 L 40.359 112.732 Z" /></clipPath>
+    <clipPath id="clip-h525-k-help"><path d="M 130.563 94.218 L 220.766 94.218 L 220.766 112.732 L 130.563 112.732 Z" /></clipPath>
+    <clipPath id="clip-h525-k-soft-upper-left"><path d="M 16.988 177.327 L 28.538 177.327 L 28.538 226.718 L 16.988 226.718 Z" /></clipPath>
+    <clipPath id="clip-h525-k-soft-lower-left"><path d="M 16.988 226.718 L 28.538 226.718 L 28.538 276.109 L 16.988 276.109 Z" /></clipPath>
+    <clipPath id="clip-h525-k-soft-upper-right"><path d="M 233.098 177.327 L 244.638 177.327 L 244.638 226.718 L 233.098 226.718 Z" /></clipPath>
+    <clipPath id="clip-h525-k-soft-lower-right"><path d="M 233.098 226.718 L 244.638 226.718 L 244.638 276.109 L 233.098 276.109 Z" /></clipPath>
+    <clipPath id="clip-h525-k-screen-prev"><path d="M 40.359 291.468 L 130.563 291.468 L 130.563 309.985 L 40.359 309.985 Z" /></clipPath>
+    <clipPath id="clip-h525-k-screen-next"><path d="M 130.563 291.468 L 220.766 291.468 L 220.766 309.985 L 130.563 309.985 Z" /></clipPath>
+    <clipPath id="clip-h525-k-guide"><path d="M 41.414 437.731 L 131.618 437.731 L 131.618 456.245 L 41.414 456.245 Z" /></clipPath>
+    <clipPath id="clip-h525-k-info"><path d="M 131.618 437.731 L 221.821 437.731 L 221.821 456.245 L 131.618 456.245 Z" /></clipPath>
+    <clipPath id="clip-h525-k-exit"><path d="M 41.414 471.544 L 131.618 471.544 L 131.618 490.059 L 41.414 490.059 Z" /></clipPath>
+    <clipPath id="clip-h525-k-menu"><path d="M 131.618 471.544 L 221.821 471.544 L 221.821 490.059 L 131.618 490.059 Z" /></clipPath>
+    <clipPath id="clip-h525-k-channel-up"><path d="M 128.865 600.433 L 128.865 200.433 A 400 400 0 0 1 528.728 589.962 Z" /></clipPath>
+    <clipPath id="clip-h525-k-channel-down"><path d="M 128.865 600.433 L 528.728 589.962 A 400 400 0 0 1 410.719 884.261 Z" /></clipPath>
+    <clipPath id="clip-h525-k-glow"><path d="M 128.865 600.433 L 410.719 884.261 A 400 400 0 0 1 -141.885 894.872 Z" /></clipPath>
+    <clipPath id="clip-h525-k-volume-down"><path d="M 128.865 600.433 L -141.885 894.872 A 400 400 0 0 1 -270.55 578.801 Z" /></clipPath>
+    <clipPath id="clip-h525-k-volume-up"><path d="M 128.865 600.433 L -270.55 578.801 A 400 400 0 0 1 128.865 200.433 Z" /></clipPath>
+    <clipPath id="clip-h525-k-direction-up"><path d="M 128.865 600.433 L 73.744 544.344 L 183.986 544.344 Z" /></clipPath>
+    <clipPath id="clip-h525-k-direction-right"><path d="M 128.865 600.433 L 183.986 544.344 L 183.986 656.522 Z" /></clipPath>
+    <clipPath id="clip-h525-k-direction-down"><path d="M 128.865 600.433 L 183.986 656.522 L 73.744 656.522 Z" /></clipPath>
+    <clipPath id="clip-h525-k-direction-left"><path d="M 128.865 600.433 L 73.744 656.522 L 73.744 544.344 Z" /></clipPath>
   </defs>
   <g class="layer-keys">
     <path class="rocker-fill" id="rocker-ring" d="M 16.868 530.443 C 44.264 530.443 44.123 559.305 44.123 559.305 L 44.208 558.743 L 44.208 608.212 C 44.208 638.775 83.041 678.295 130.959 678.295 C 178.866 678.295 217.701 638.775 217.701 590.026 L 217.701 558.743 C 217.701 558.743 217.561 529.882 244.957 529.882 L 244.957 598.782 C 244.957 657.324 195.611 704.78 134.743 704.78 L 127.072 704.78 C 66.214 704.78 16.868 657.324 16.868 598.782 Z" fill="#fff" stroke="none" />
@@ -86,35 +86,35 @@
       <text class="lbl layer-text" x="130.366" y="75.045" font-size="15" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">Activities</text>
     </g>
     <g class="key-group" id="k-devices" data-name="Devices" data-kind="keypad" data-src="printed">
-      <path class="key key-segment" d="M 220.766 103.475 C 220.766 108.585 216.103 112.732 210.346 112.732 L 50.777 112.732 C 45.02 112.732 40.359 108.585 40.359 103.475 C 40.359 98.358 45.02 94.218 50.777 94.218 L 210.346 94.218 C 216.103 94.218 220.766 98.358 220.766 103.475 Z" clip-path="url(#seg-k-devices)" fill="#fff" stroke="none" />
+      <path class="key key-segment" d="M 220.766 103.475 C 220.766 108.585 216.103 112.732 210.346 112.732 L 50.777 112.732 C 45.02 112.732 40.359 108.585 40.359 103.475 C 40.359 98.358 45.02 94.218 50.777 94.218 L 210.346 94.218 C 216.103 94.218 220.766 98.358 220.766 103.475 Z" clip-path="url(#clip-h525-k-devices)" fill="#fff" stroke="none" />
       <text class="lbl layer-text" x="85.461" y="108.725" font-size="15" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">Devices</text>
     </g>
     <g class="key-group" id="k-help" data-name="Help" data-kind="keypad" data-src="printed">
-      <path class="key key-segment" d="M 220.766 103.475 C 220.766 108.585 216.103 112.732 210.346 112.732 L 50.777 112.732 C 45.02 112.732 40.359 108.585 40.359 103.475 C 40.359 98.358 45.02 94.218 50.777 94.218 L 210.346 94.218 C 216.103 94.218 220.766 98.358 220.766 103.475 Z" clip-path="url(#seg-k-help)" fill="#fff" stroke="none" />
+      <path class="key key-segment" d="M 220.766 103.475 C 220.766 108.585 216.103 112.732 210.346 112.732 L 50.777 112.732 C 45.02 112.732 40.359 108.585 40.359 103.475 C 40.359 98.358 45.02 94.218 50.777 94.218 L 210.346 94.218 C 216.103 94.218 220.766 98.358 220.766 103.475 Z" clip-path="url(#clip-h525-k-help)" fill="#fff" stroke="none" />
       <text class="lbl layer-text" x="175.664" y="108.725" font-size="15" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">Help</text>
     </g>
     <g class="key-group" id="k-soft-upper-left" data-name="SoftUpperLeft" data-kind="screen" data-src="printed" data-scan-candidates="30 31 38 39" data-zone="1">
-      <path class="key key-segment" d="M 17.783 177.327 C 17.522 177.327 17.259 177.355 16.988 177.372 L 16.988 276.074 C 17.259 276.091 17.522 276.109 17.783 276.109 C 23.727 276.109 28.538 271.217 28.538 265.175 L 28.538 188.271 C 28.538 182.229 23.727 177.327 17.783 177.327 Z" clip-path="url(#seg-k-soft-upper-left)" fill="#fff" stroke="none" />
+      <path class="key key-segment" d="M 17.783 177.327 C 17.522 177.327 17.259 177.355 16.988 177.372 L 16.988 276.074 C 17.259 276.091 17.522 276.109 17.783 276.109 C 23.727 276.109 28.538 271.217 28.538 265.175 L 28.538 188.271 C 28.538 182.229 23.727 177.327 17.783 177.327 Z" clip-path="url(#clip-h525-k-soft-upper-left)" fill="#fff" stroke="none" />
       <g class="layer-icons"><g transform="translate(22.763 202.022) scale(4.444)"><path class="mark mark-stroke" d="M -0.9 0 H 0.9" fill="none" stroke="#222" stroke-width="0.16" stroke-linecap="round" stroke-linejoin="round" /></g></g>
     </g>
     <g class="key-group" id="k-soft-lower-left" data-name="SoftLowerLeft" data-kind="screen" data-src="printed" data-scan-candidates="30 31 38 39" data-zone="3">
-      <path class="key key-segment" d="M 17.783 177.327 C 17.522 177.327 17.259 177.355 16.988 177.372 L 16.988 276.074 C 17.259 276.091 17.522 276.109 17.783 276.109 C 23.727 276.109 28.538 271.217 28.538 265.175 L 28.538 188.271 C 28.538 182.229 23.727 177.327 17.783 177.327 Z" clip-path="url(#seg-k-soft-lower-left)" fill="#fff" stroke="none" />
+      <path class="key key-segment" d="M 17.783 177.327 C 17.522 177.327 17.259 177.355 16.988 177.372 L 16.988 276.074 C 17.259 276.091 17.522 276.109 17.783 276.109 C 23.727 276.109 28.538 271.217 28.538 265.175 L 28.538 188.271 C 28.538 182.229 23.727 177.327 17.783 177.327 Z" clip-path="url(#clip-h525-k-soft-lower-left)" fill="#fff" stroke="none" />
       <g class="layer-icons"><g transform="translate(22.763 251.414) scale(4.444)"><path class="mark mark-stroke" d="M -0.9 0 H 0.9" fill="none" stroke="#222" stroke-width="0.16" stroke-linecap="round" stroke-linejoin="round" /></g></g>
     </g>
     <g class="key-group" id="k-soft-upper-right" data-name="SoftUpperRight" data-kind="screen" data-src="printed" data-scan-candidates="30 31 38 39" data-zone="2">
-      <path class="key key-segment" d="M 243.854 177.327 C 244.117 177.327 244.378 177.355 244.638 177.372 L 244.638 276.074 C 244.378 276.091 244.117 276.109 243.854 276.109 C 237.912 276.109 233.098 271.217 233.098 265.175 L 233.098 188.271 C 233.098 182.229 237.912 177.327 243.854 177.327 Z" clip-path="url(#seg-k-soft-upper-right)" fill="#fff" stroke="none" />
+      <path class="key key-segment" d="M 243.854 177.327 C 244.117 177.327 244.378 177.355 244.638 177.372 L 244.638 276.074 C 244.378 276.091 244.117 276.109 243.854 276.109 C 237.912 276.109 233.098 271.217 233.098 265.175 L 233.098 188.271 C 233.098 182.229 237.912 177.327 243.854 177.327 Z" clip-path="url(#clip-h525-k-soft-upper-right)" fill="#fff" stroke="none" />
       <g class="layer-icons"><g transform="translate(238.868 202.022) scale(4.444)"><path class="mark mark-stroke" d="M -0.9 0 H 0.9" fill="none" stroke="#222" stroke-width="0.16" stroke-linecap="round" stroke-linejoin="round" /></g></g>
     </g>
     <g class="key-group" id="k-soft-lower-right" data-name="SoftLowerRight" data-kind="screen" data-src="printed" data-scan-candidates="30 31 38 39" data-zone="4">
-      <path class="key key-segment" d="M 243.854 177.327 C 244.117 177.327 244.378 177.355 244.638 177.372 L 244.638 276.074 C 244.378 276.091 244.117 276.109 243.854 276.109 C 237.912 276.109 233.098 271.217 233.098 265.175 L 233.098 188.271 C 233.098 182.229 237.912 177.327 243.854 177.327 Z" clip-path="url(#seg-k-soft-lower-right)" fill="#fff" stroke="none" />
+      <path class="key key-segment" d="M 243.854 177.327 C 244.117 177.327 244.378 177.355 244.638 177.372 L 244.638 276.074 C 244.378 276.091 244.117 276.109 243.854 276.109 C 237.912 276.109 233.098 271.217 233.098 265.175 L 233.098 188.271 C 233.098 182.229 237.912 177.327 243.854 177.327 Z" clip-path="url(#clip-h525-k-soft-lower-right)" fill="#fff" stroke="none" />
       <g class="layer-icons"><g transform="translate(238.868 251.414) scale(4.444)"><path class="mark mark-stroke" d="M -0.9 0 H 0.9" fill="none" stroke="#222" stroke-width="0.16" stroke-linecap="round" stroke-linejoin="round" /></g></g>
     </g>
     <g class="key-group" id="k-screen-prev" data-name="ScreenPrev" data-kind="screen" data-src="printed">
-      <path class="key key-segment" d="M 220.766 300.725 C 220.766 305.842 216.103 309.985 210.346 309.985 L 50.777 309.985 C 45.02 309.985 40.359 305.842 40.359 300.725 C 40.359 295.61 45.02 291.468 50.777 291.468 L 210.346 291.468 C 216.103 291.468 220.766 295.61 220.766 300.725 Z" clip-path="url(#seg-k-screen-prev)" fill="#fff" stroke="none" />
+      <path class="key key-segment" d="M 220.766 300.725 C 220.766 305.842 216.103 309.985 210.346 309.985 L 50.777 309.985 C 45.02 309.985 40.359 305.842 40.359 300.725 C 40.359 295.61 45.02 291.468 50.777 291.468 L 210.346 291.468 C 216.103 291.468 220.766 295.61 220.766 300.725 Z" clip-path="url(#clip-h525-k-screen-prev)" fill="#fff" stroke="none" />
       <g class="layer-icons"><g transform="translate(85.461 300.727) scale(7.647)"><path class="mark mark-fill" d="M 0.85 -0.85 L 0.85 0.85 L -0.85 0 Z" fill="#222" stroke="none" /></g></g>
     </g>
     <g class="key-group" id="k-screen-next" data-name="ScreenNext" data-kind="screen" data-src="printed">
-      <path class="key key-segment" d="M 220.766 300.725 C 220.766 305.842 216.103 309.985 210.346 309.985 L 50.777 309.985 C 45.02 309.985 40.359 305.842 40.359 300.725 C 40.359 295.61 45.02 291.468 50.777 291.468 L 210.346 291.468 C 216.103 291.468 220.766 295.61 220.766 300.725 Z" clip-path="url(#seg-k-screen-next)" fill="#fff" stroke="none" />
+      <path class="key key-segment" d="M 220.766 300.725 C 220.766 305.842 216.103 309.985 210.346 309.985 L 50.777 309.985 C 45.02 309.985 40.359 305.842 40.359 300.725 C 40.359 295.61 45.02 291.468 50.777 291.468 L 210.346 291.468 C 216.103 291.468 220.766 295.61 220.766 300.725 Z" clip-path="url(#clip-h525-k-screen-next)" fill="#fff" stroke="none" />
       <g class="layer-icons"><g transform="translate(175.664 300.727) scale(7.647)"><path class="mark mark-fill" d="M -0.85 -0.85 L -0.85 0.85 L 0.85 0 Z" fill="#222" stroke="none" /></g></g>
     </g>
     <g class="key-group" id="k-stop" data-name="Stop" data-kind="keypad" data-src="printed">
@@ -158,19 +158,19 @@
       <text class="lbl layer-text" x="206.758" y="421.512" font-size="9" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">Pause</text>
     </g>
     <g class="key-group" id="k-guide" data-name="Guide" data-kind="keypad" data-src="printed">
-      <path class="key key-segment" d="M 221.821 446.988 C 221.821 452.105 217.15 456.245 211.401 456.245 L 51.832 456.245 C 46.078 456.245 41.414 452.105 41.414 446.988 C 41.414 441.871 46.078 437.731 51.832 437.731 L 211.401 437.731 C 217.15 437.731 221.821 441.871 221.821 446.988 Z" clip-path="url(#seg-k-guide)" fill="#fff" stroke="none" />
+      <path class="key key-segment" d="M 221.821 446.988 C 221.821 452.105 217.15 456.245 211.401 456.245 L 51.832 456.245 C 46.078 456.245 41.414 452.105 41.414 446.988 C 41.414 441.871 46.078 437.731 51.832 437.731 L 211.401 437.731 C 217.15 437.731 221.821 441.871 221.821 446.988 Z" clip-path="url(#clip-h525-k-guide)" fill="#fff" stroke="none" />
       <text class="lbl layer-text" x="86.516" y="452.238" font-size="15" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">Guide</text>
     </g>
     <g class="key-group" id="k-info" data-name="Info" data-kind="keypad" data-src="printed">
-      <path class="key key-segment" d="M 221.821 446.988 C 221.821 452.105 217.15 456.245 211.401 456.245 L 51.832 456.245 C 46.078 456.245 41.414 452.105 41.414 446.988 C 41.414 441.871 46.078 437.731 51.832 437.731 L 211.401 437.731 C 217.15 437.731 221.821 441.871 221.821 446.988 Z" clip-path="url(#seg-k-info)" fill="#fff" stroke="none" />
+      <path class="key key-segment" d="M 221.821 446.988 C 221.821 452.105 217.15 456.245 211.401 456.245 L 51.832 456.245 C 46.078 456.245 41.414 452.105 41.414 446.988 C 41.414 441.871 46.078 437.731 51.832 437.731 L 211.401 437.731 C 217.15 437.731 221.821 441.871 221.821 446.988 Z" clip-path="url(#clip-h525-k-info)" fill="#fff" stroke="none" />
       <text class="lbl layer-text" x="176.719" y="452.238" font-size="15" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">Info</text>
     </g>
     <g class="key-group" id="k-exit" data-name="Exit" data-kind="keypad" data-src="printed">
-      <path class="key key-segment" d="M 221.821 480.802 C 221.821 485.911 217.15 490.059 211.401 490.059 L 51.832 490.059 C 46.078 490.059 41.414 485.911 41.414 480.802 C 41.414 475.684 46.078 471.544 51.832 471.544 L 211.401 471.544 C 217.15 471.544 221.821 475.684 221.821 480.802 Z" clip-path="url(#seg-k-exit)" fill="#fff" stroke="none" />
+      <path class="key key-segment" d="M 221.821 480.802 C 221.821 485.911 217.15 490.059 211.401 490.059 L 51.832 490.059 C 46.078 490.059 41.414 485.911 41.414 480.802 C 41.414 475.684 46.078 471.544 51.832 471.544 L 211.401 471.544 C 217.15 471.544 221.821 475.684 221.821 480.802 Z" clip-path="url(#clip-h525-k-exit)" fill="#fff" stroke="none" />
       <text class="lbl layer-text" x="86.516" y="486.052" font-size="15" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">Exit</text>
     </g>
     <g class="key-group" id="k-menu" data-name="Menu" data-kind="keypad" data-src="printed">
-      <path class="key key-segment" d="M 221.821 480.802 C 221.821 485.911 217.15 490.059 211.401 490.059 L 51.832 490.059 C 46.078 490.059 41.414 485.911 41.414 480.802 C 41.414 475.684 46.078 471.544 51.832 471.544 L 211.401 471.544 C 217.15 471.544 221.821 475.684 221.821 480.802 Z" clip-path="url(#seg-k-menu)" fill="#fff" stroke="none" />
+      <path class="key key-segment" d="M 221.821 480.802 C 221.821 485.911 217.15 490.059 211.401 490.059 L 51.832 490.059 C 46.078 490.059 41.414 485.911 41.414 480.802 C 41.414 475.684 46.078 471.544 51.832 471.544 L 211.401 471.544 C 217.15 471.544 221.821 475.684 221.821 480.802 Z" clip-path="url(#clip-h525-k-menu)" fill="#fff" stroke="none" />
       <text class="lbl layer-text" x="176.719" y="486.052" font-size="15" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">Menu</text>
     </g>
     <g class="key-group" id="k-volume-mute" data-name="VolumeMute" data-kind="keypad" data-src="printed">
@@ -182,39 +182,39 @@
       <text class="lbl layer-text" x="180.412" y="520.537" font-size="15" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">Prev</text>
     </g>
     <g class="key-group" id="k-channel-up" data-name="ChannelUp" data-kind="keypad" data-src="printed">
-      <path class="key key-segment" d="M 16.868 530.443 C 44.264 530.443 44.123 559.305 44.123 559.305 L 44.208 558.743 L 44.208 608.212 C 44.208 638.775 83.041 678.295 130.959 678.295 C 178.866 678.295 217.701 638.775 217.701 590.026 L 217.701 558.743 C 217.701 558.743 217.561 529.882 244.957 529.882 L 244.957 598.782 C 244.957 657.324 195.611 704.78 134.743 704.78 L 127.072 704.78 C 66.214 704.78 16.868 657.324 16.868 598.782 Z" clip-path="url(#seg-k-channel-up)" fill="#fff" stroke="none" />
+      <path class="key key-segment" d="M 16.868 530.443 C 44.264 530.443 44.123 559.305 44.123 559.305 L 44.208 558.743 L 44.208 608.212 C 44.208 638.775 83.041 678.295 130.959 678.295 C 178.866 678.295 217.701 638.775 217.701 590.026 L 217.701 558.743 C 217.701 558.743 217.561 529.882 244.957 529.882 L 244.957 598.782 C 244.957 657.324 195.611 704.78 134.743 704.78 L 127.072 704.78 C 66.214 704.78 16.868 657.324 16.868 598.782 Z" clip-path="url(#clip-h525-k-channel-up)" fill="#fff" stroke="none" />
       <g class="layer-icons"><g transform="translate(231.33 562) scale(5.5)"><path class="mark mark-fill" d="M -1 -0.248 H -0.248 V -0.903 H 0.248 V -0.248 H 1 V 0.248 H 0.248 V 0.903 H -0.248 V 0.248 H -1 Z" fill="#222" stroke="none" /></g></g>
     </g>
     <g class="key-group" id="k-channel-down" data-name="ChannelDown" data-kind="keypad" data-src="printed">
-      <path class="key key-segment" d="M 16.868 530.443 C 44.264 530.443 44.123 559.305 44.123 559.305 L 44.208 558.743 L 44.208 608.212 C 44.208 638.775 83.041 678.295 130.959 678.295 C 178.866 678.295 217.701 638.775 217.701 590.026 L 217.701 558.743 C 217.701 558.743 217.561 529.882 244.957 529.882 L 244.957 598.782 C 244.957 657.324 195.611 704.78 134.743 704.78 L 127.072 704.78 C 66.214 704.78 16.868 657.324 16.868 598.782 Z" clip-path="url(#seg-k-channel-down)" fill="#fff" stroke="none" />
+      <path class="key key-segment" d="M 16.868 530.443 C 44.264 530.443 44.123 559.305 44.123 559.305 L 44.208 558.743 L 44.208 608.212 C 44.208 638.775 83.041 678.295 130.959 678.295 C 178.866 678.295 217.701 638.775 217.701 590.026 L 217.701 558.743 C 217.701 558.743 217.561 529.882 244.957 529.882 L 244.957 598.782 C 244.957 657.324 195.611 704.78 134.743 704.78 L 127.072 704.78 C 66.214 704.78 16.868 657.324 16.868 598.782 Z" clip-path="url(#clip-h525-k-channel-down)" fill="#fff" stroke="none" />
       <g class="layer-icons"><g transform="translate(221.98 635) scale(5.5)"><path class="mark mark-fill" d="M -1 -0.132 H 1 V 0.132 H -1 Z" fill="#222" stroke="none" /></g></g>
     </g>
     <g class="key-group" id="k-glow" data-name="Glow" data-kind="keypad" data-src="printed">
-      <path class="key key-segment" d="M 16.868 530.443 C 44.264 530.443 44.123 559.305 44.123 559.305 L 44.208 558.743 L 44.208 608.212 C 44.208 638.775 83.041 678.295 130.959 678.295 C 178.866 678.295 217.701 638.775 217.701 590.026 L 217.701 558.743 C 217.701 558.743 217.561 529.882 244.957 529.882 L 244.957 598.782 C 244.957 657.324 195.611 704.78 134.743 704.78 L 127.072 704.78 C 66.214 704.78 16.868 657.324 16.868 598.782 Z" clip-path="url(#seg-k-glow)" fill="#fff" stroke="none" />
+      <path class="key key-segment" d="M 16.868 530.443 C 44.264 530.443 44.123 559.305 44.123 559.305 L 44.208 558.743 L 44.208 608.212 C 44.208 638.775 83.041 678.295 130.959 678.295 C 178.866 678.295 217.701 638.775 217.701 590.026 L 217.701 558.743 C 217.701 558.743 217.561 529.882 244.957 529.882 L 244.957 598.782 C 244.957 657.324 195.611 704.78 134.743 704.78 L 127.072 704.78 C 66.214 704.78 16.868 657.324 16.868 598.782 Z" clip-path="url(#clip-h525-k-glow)" fill="#fff" stroke="none" />
       <text class="lbl layer-text" x="130.74" y="697.92" font-size="15" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">Glow</text>
     </g>
     <g class="key-group" id="k-volume-down" data-name="VolumeDown" data-kind="keypad" data-src="printed">
-      <path class="key key-segment" d="M 16.868 530.443 C 44.264 530.443 44.123 559.305 44.123 559.305 L 44.208 558.743 L 44.208 608.212 C 44.208 638.775 83.041 678.295 130.959 678.295 C 178.866 678.295 217.701 638.775 217.701 590.026 L 217.701 558.743 C 217.701 558.743 217.561 529.882 244.957 529.882 L 244.957 598.782 C 244.957 657.324 195.611 704.78 134.743 704.78 L 127.072 704.78 C 66.214 704.78 16.868 657.324 16.868 598.782 Z" clip-path="url(#seg-k-volume-down)" fill="#fff" stroke="none" />
+      <path class="key key-segment" d="M 16.868 530.443 C 44.264 530.443 44.123 559.305 44.123 559.305 L 44.208 558.743 L 44.208 608.212 C 44.208 638.775 83.041 678.295 130.959 678.295 C 178.866 678.295 217.701 638.775 217.701 590.026 L 217.701 558.743 C 217.701 558.743 217.561 529.882 244.957 529.882 L 244.957 598.782 C 244.957 657.324 195.611 704.78 134.743 704.78 L 127.072 704.78 C 66.214 704.78 16.868 657.324 16.868 598.782 Z" clip-path="url(#clip-h525-k-volume-down)" fill="#fff" stroke="none" />
       <g class="layer-icons"><g transform="translate(38.1 635) scale(5.5)"><path class="mark mark-fill" d="M -1 -0.132 H 1 V 0.132 H -1 Z" fill="#222" stroke="none" /></g></g>
     </g>
     <g class="key-group" id="k-volume-up" data-name="VolumeUp" data-kind="keypad" data-src="printed">
-      <path class="key key-segment" d="M 16.868 530.443 C 44.264 530.443 44.123 559.305 44.123 559.305 L 44.208 558.743 L 44.208 608.212 C 44.208 638.775 83.041 678.295 130.959 678.295 C 178.866 678.295 217.701 638.775 217.701 590.026 L 217.701 558.743 C 217.701 558.743 217.561 529.882 244.957 529.882 L 244.957 598.782 C 244.957 657.324 195.611 704.78 134.743 704.78 L 127.072 704.78 C 66.214 704.78 16.868 657.324 16.868 598.782 Z" clip-path="url(#seg-k-volume-up)" fill="#fff" stroke="none" />
+      <path class="key key-segment" d="M 16.868 530.443 C 44.264 530.443 44.123 559.305 44.123 559.305 L 44.208 558.743 L 44.208 608.212 C 44.208 638.775 83.041 678.295 130.959 678.295 C 178.866 678.295 217.701 638.775 217.701 590.026 L 217.701 558.743 C 217.701 558.743 217.561 529.882 244.957 529.882 L 244.957 598.782 C 244.957 657.324 195.611 704.78 134.743 704.78 L 127.072 704.78 C 66.214 704.78 16.868 657.324 16.868 598.782 Z" clip-path="url(#clip-h525-k-volume-up)" fill="#fff" stroke="none" />
       <g class="layer-icons"><g transform="translate(30.54 562) scale(5.5)"><path class="mark mark-fill" d="M -1 -0.248 H -0.248 V -0.903 H 0.248 V -0.248 H 1 V 0.248 H 0.248 V 0.903 H -0.248 V 0.248 H -1 Z" fill="#222" stroke="none" /></g></g>
     </g>
     <g class="key-group" id="k-direction-up" data-name="DirectionUp" data-kind="keypad" data-src="printed">
-      <path class="key key-segment" d="M 183.986 600.433 C 183.986 631.412 159.309 656.522 128.866 656.522 C 98.423 656.522 73.744 631.412 73.744 600.433 C 73.744 569.454 98.423 544.344 128.866 544.344 C 159.309 544.344 183.986 569.454 183.986 600.433 Z" clip-path="url(#seg-k-direction-up)" fill="#fff" stroke="none" />
+      <path class="key key-segment" d="M 183.986 600.433 C 183.986 631.412 159.309 656.522 128.866 656.522 C 98.423 656.522 73.744 631.412 73.744 600.433 C 73.744 569.454 98.423 544.344 128.866 544.344 C 159.309 544.344 183.986 569.454 183.986 600.433 Z" clip-path="url(#clip-h525-k-direction-up)" fill="#fff" stroke="none" />
       <g class="layer-icons"><g transform="translate(128.87 564.05) scale(6.471)"><path class="mark mark-fill" d="M -0.8 0.85 L 0.8 0.85 L 0 -0.85 Z" fill="#222" stroke="none" /></g></g>
     </g>
     <g class="key-group" id="k-direction-right" data-name="DirectionRight" data-kind="keypad" data-src="printed">
-      <path class="key key-segment" d="M 183.986 600.433 C 183.986 631.412 159.309 656.522 128.866 656.522 C 98.423 656.522 73.744 631.412 73.744 600.433 C 73.744 569.454 98.423 544.344 128.866 544.344 C 159.309 544.344 183.986 569.454 183.986 600.433 Z" clip-path="url(#seg-k-direction-right)" fill="#fff" stroke="none" />
+      <path class="key key-segment" d="M 183.986 600.433 C 183.986 631.412 159.309 656.522 128.866 656.522 C 98.423 656.522 73.744 631.412 73.744 600.433 C 73.744 569.454 98.423 544.344 128.866 544.344 C 159.309 544.344 183.986 569.454 183.986 600.433 Z" clip-path="url(#clip-h525-k-direction-right)" fill="#fff" stroke="none" />
       <g class="layer-icons"><g transform="translate(165.24 600.43) scale(6.471)"><path class="mark mark-fill" d="M -0.85 -0.85 L -0.85 0.85 L 0.85 0 Z" fill="#222" stroke="none" /></g></g>
     </g>
     <g class="key-group" id="k-direction-down" data-name="DirectionDown" data-kind="keypad" data-src="printed">
-      <path class="key key-segment" d="M 183.986 600.433 C 183.986 631.412 159.309 656.522 128.866 656.522 C 98.423 656.522 73.744 631.412 73.744 600.433 C 73.744 569.454 98.423 544.344 128.866 544.344 C 159.309 544.344 183.986 569.454 183.986 600.433 Z" clip-path="url(#seg-k-direction-down)" fill="#fff" stroke="none" />
+      <path class="key key-segment" d="M 183.986 600.433 C 183.986 631.412 159.309 656.522 128.866 656.522 C 98.423 656.522 73.744 631.412 73.744 600.433 C 73.744 569.454 98.423 544.344 128.866 544.344 C 159.309 544.344 183.986 569.454 183.986 600.433 Z" clip-path="url(#clip-h525-k-direction-down)" fill="#fff" stroke="none" />
       <g class="layer-icons"><g transform="translate(128.87 636.81) scale(6.471)"><path class="mark mark-fill" d="M -0.8 -0.85 L 0.8 -0.85 L 0 0.85 Z" fill="#222" stroke="none" /></g></g>
     </g>
     <g class="key-group" id="k-direction-left" data-name="DirectionLeft" data-kind="keypad" data-src="printed">
-      <path class="key key-segment" d="M 183.986 600.433 C 183.986 631.412 159.309 656.522 128.866 656.522 C 98.423 656.522 73.744 631.412 73.744 600.433 C 73.744 569.454 98.423 544.344 128.866 544.344 C 159.309 544.344 183.986 569.454 183.986 600.433 Z" clip-path="url(#seg-k-direction-left)" fill="#fff" stroke="none" />
+      <path class="key key-segment" d="M 183.986 600.433 C 183.986 631.412 159.309 656.522 128.866 656.522 C 98.423 656.522 73.744 631.412 73.744 600.433 C 73.744 569.454 98.423 544.344 128.866 544.344 C 159.309 544.344 183.986 569.454 183.986 600.433 Z" clip-path="url(#clip-h525-k-direction-left)" fill="#fff" stroke="none" />
       <g class="layer-icons"><g transform="translate(92.49 600.43) scale(6.471)"><path class="mark mark-fill" d="M 0.85 -0.85 L 0.85 0.85 L -0.85 0 Z" fill="#222" stroke="none" /></g></g>
     </g>
     <g class="key-group" id="k-select" data-name="Select" data-kind="keypad" data-src="printed">

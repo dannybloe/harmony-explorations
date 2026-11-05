@@ -51,7 +51,7 @@ export const DETAIL = {
  * words like `DVD/Music` with a cap height of 5.3 in Logitech's drawing, where nine gives about
  * 6.4 and the words ran into the key's own ends. Seven and a half gives the drawing's 5.3.
  */
-const FONT_SIZE = { normal: 15, small: 9, tiny: 7.5 } as const;
+export const FONT_SIZE = { normal: 15, small: 9, tiny: 7.5 } as const;
 
 /**
  * One stroke width for every key, rocker and seam.
@@ -216,6 +216,30 @@ function rotation(key: Key): string {
   return ` transform="rotate(${num(key.angle)} ${num(key.shape.cx)} ${num(key.shape.cy)})"`;
 }
 
+/**
+ * A word's own rotation about its anchor, for printing that runs along a key rather than across it,
+ * `Label.rotate`. Empty for every word that has none, so no drawing without one changes by a byte.
+ */
+function turn(label: Label, at: { readonly x: number; readonly y: number }): string {
+  if (label.rotate === undefined || label.rotate === 0) return '';
+  return ` transform="rotate(${num(label.rotate)} ${num(at.x)} ${num(at.y)})"`;
+}
+
+/**
+ * The id of a clip region, carrying the model's id.
+ *
+ * An id is unique per document, and a page that shows several drawings inline is one document: the
+ * bench preview puts every model on one page, and FreeHarmony may show more than one remote. A `url(#id)`
+ * resolves to the **first** element with that id, so while these were `seg-k-volume-up` and `case-clip`
+ * on every model, the Harmony 885's band segments were clipped to whichever earlier drawing on the page
+ * had a key of that name, and a coloured Vol + filled a strip of somebody else's wedge. The renders off
+ * a single file could not show it, because a lone file has no other drawing to collide with. Found on
+ * the first drawing whose segments share names with another model's, by colouring them in a browser.
+ */
+function clipId(model: Model, part: string): string {
+  return `clip-${model.id}-${part}`;
+}
+
 export function toSvg(model: Model, options: SvgOptions = {}): string {
   const layers = new Set(options.layers ?? LAYERS);
   const on = (name: LayerName) => layers.has(name);
@@ -261,12 +285,12 @@ export function toSvg(model: Model, options: SvgOptions = {}): string {
      * because the rectangle is what the drawing says and the case is what bounds it.
      */
     if (model.regions.length > 0) {
-      out.push(`    <clipPath id="case-clip"><path d="${model.case}" /></clipPath>`);
+      out.push(`    <clipPath id="${clipId(model, 'case')}"><path d="${model.case}" /></clipPath>`);
     }
     for (const region of model.regions) {
       const fill = region.form === 'recess' ? DEFAULTS.recessFill : 'none';
       out.push(`    <path class="region region-${region.form}" id="${region.id}" d="${region.path}" `
-        + `clip-path="url(#case-clip)" `
+        + `clip-path="url(#${clipId(model, 'case')})" `
         + `fill="${fill}" stroke="${DEFAULTS.caseStroke}" stroke-width="1" />`);
     }
     out.push('  </g>');
@@ -314,7 +338,7 @@ export function toSvg(model: Model, options: SvgOptions = {}): string {
     if (clipped.length > 0) {
       out.push('  <defs>');
       for (const key of clipped) {
-        out.push(`    <clipPath id="seg-${elementId(key.name)}">`
+        out.push(`    <clipPath id="${clipId(model, elementId(key.name))}">`
           + `<path d="${key.shape.path}" /></clipPath>`);
       }
       out.push('  </defs>');
@@ -336,7 +360,7 @@ export function toSvg(model: Model, options: SvgOptions = {}): string {
           + `fill="${DEFAULTS.keyFill}" stroke="${DEFAULTS.keyStroke}" stroke-width="${STROKE}" />`);
       } else {
         out.push(`      <path class="key key-segment" d="${moulding}" `
-          + `clip-path="url(#seg-${elementId(key.name)})" `
+          + `clip-path="url(#${clipId(model, elementId(key.name))})" `
           + `fill="${DEFAULTS.keyFill}" stroke="none" />`);
       }
       if (on('icons') && key.marks !== undefined) {
@@ -353,7 +377,7 @@ export function toSvg(model: Model, options: SvgOptions = {}): string {
       if (on('text')) {
         for (const label of key.labels ?? []) {
           const at = labelAt(key, label);
-          out.push(`      <text class="lbl layer-text" x="${num(at.x)}" y="${num(at.y)}" `
+          out.push(`      <text class="lbl layer-text" x="${num(at.x)}" y="${num(at.y)}"${turn(label, at)} `
             + `font-size="${at.size}" text-anchor="${at.anchor}" fill="${DEFAULTS.keyText}" `
             + `font-family="${DEFAULTS.font}">${esc(label.text)}</text>`);
         }
@@ -371,7 +395,7 @@ export function toSvg(model: Model, options: SvgOptions = {}): string {
       if (!on('text')) continue;
       for (const label of rocker.labels ?? []) {
         const size = FONT_SIZE[label.size ?? 'normal'];
-        out.push(`    <text class="lbl layer-text" x="${num(label.x)}" y="${num(label.y)}" `
+        out.push(`    <text class="lbl layer-text" x="${num(label.x)}" y="${num(label.y)}"${turn(label, label)} `
           + `font-size="${size}" text-anchor="middle" fill="${DEFAULTS.keyText}" `
           + `font-family="${DEFAULTS.font}">${esc(label.text)}</text>`);
       }
@@ -417,8 +441,12 @@ function describe(model: Model): string {
   // The provenance sentence said "drawn from measurements taken off a product photograph rather than
   // traced from it", which was true of the drawings this package replaced and is not true of these:
   // every shape is traced and only the lettering and the symbols are measured off a photograph.
-  return `Outline drawing of the ${model.label} front face, one shape per button. Its shapes are traced `
-    + 'from the product documentation and its lettering and symbols are drawn from a photograph. '
+  // A model with no drawing of Logitech's to trace says so, `Model.source`.
+  const shapes = model.source === 'photograph'
+    ? 'Its shapes, lettering and symbols are measured off a product photograph. '
+    : 'Its shapes are traced from the product documentation and its lettering and symbols are drawn from a '
+      + 'photograph. ';
+  return `Outline drawing of the ${model.label} front face, one shape per button. ${shapes}`
     + `${model.keys.length} buttons, of which `
     + `${named} carry a measured scan code.${panel} Every fill and stroke reads a custom property, so `
     + 'the interface decides the colours; nothing here is coloured in.';

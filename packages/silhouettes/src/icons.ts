@@ -191,6 +191,37 @@ export const ICONS: Readonly<Record<string, Icon>> = {
   pageLeft: { parts: [{ d: 'M 0.3137 -1 L 0.3137 1 L -0.3137 0 Z', mode: 'fill' }] },
   pageRight: { parts: [{ d: 'M -0.3137 -1 L -0.3137 1 L 0.3137 0 Z', mode: 'fill' }] },
 
+  /**
+   * The paging arrows under a Harmony 885's screen: an arrowhead trailing a short shaft and two square
+   * dashes. Proportioned off the photograph, where the mark is 16.5 pixels long and its head 8 tall, so
+   * the head spans the box's full height and the shaft and dashes two fifths of it. Only that model has
+   * them; a plain triangle would drop the dashes, which are what the product prints.
+   */
+  pageArrowLeft: { parts: [
+      { d: 'M -1 0 L -0.1 -0.48 L -0.1 0.48 Z', mode: 'fill' },
+      { d: 'M -0.12 -0.2 H 0.14 V 0.2 H -0.12 Z', mode: 'fill' },
+      { d: 'M 0.32 -0.2 H 0.58 V 0.2 H 0.32 Z', mode: 'fill' },
+      { d: 'M 0.74 -0.2 H 1 V 0.2 H 0.74 Z', mode: 'fill' },
+    ],
+  },
+  pageArrowRight: { parts: [
+      { d: 'M 1 0 L 0.1 -0.48 L 0.1 0.48 Z', mode: 'fill' },
+      { d: 'M 0.12 -0.2 H -0.14 V 0.2 H 0.12 Z', mode: 'fill' },
+      { d: 'M -0.32 -0.2 H -0.58 V 0.2 H -0.32 Z', mode: 'fill' },
+      { d: 'M -0.74 -0.2 H -1 V 0.2 H -0.74 Z', mode: 'fill' },
+    ],
+  },
+
+  /**
+   * A small dark dot, which is all a Harmony 885 prints on the eight keys beside its screen. Not `dot`,
+   * which takes the accent because on a teletext key the colour is the identity; this one is in the
+   * lettering's colour like any other mark.
+   */
+  pip: { parts: [{ d: 'M -0.5 0 A 0.5 0.5 0 1 0 0.5 0 A 0.5 0.5 0 1 0 -0.5 0 Z', mode: 'fill' }] },
+
+  /** The space mark printed after the 0 on a Harmony 885: an open bracket lying on its back. */
+  space: { parts: [{ d: 'M -0.8 -0.35 V 0.35 H 0.8 V -0.35', mode: 'stroke' }] },
+
   /** A horizontal bar, the marking on the key below a Harmony 600's screen. */
   dash: { parts: [{ d: 'M -0.9 0 H 0.9', mode: 'stroke' }] },
   /** The upright version, which is what the four keys flanking that screen carry. */

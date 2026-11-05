@@ -141,6 +141,29 @@ const EXPECTED: Readonly<Record<string, {
     decided: { 26: 'UpArrow', 27: 'DownArrow', 50: 'DirectionUp', 42: 'DirectionDown', 3: 'Help' },
     why: "the Harmony 600's drawing and measurements, the same face per a statement made holding both",
   },
+  /**
+   * The count is the units': 55 keys pressed on a Harmony 885 raised 55 codes, exactly the press codes its
+   * configuration's key table holds, and the nine codes no key raised are the nine the table leaves empty,
+   * `tests/test_harmony_885_keys.py`; the photograph the drawing was measured off shows the same 55. Every
+   * code was read off the remote's memory while its key was pressed, so all 55 are named below.
+   */
+  h885: {
+    buttons: 55,
+    scans: { 't-885-keys-u': 55 },
+    decided: {
+      1: 'Activities', 2: 'AllOff', 3: 'Help', 5: 'ScreenLeft1', 6: 'ScreenLeft2', 7: 'ScreenLeft3', 8: 'ScreenLeft4',
+      10: 'Device', 11: 'VolumeMute', 12: 'ScreenPrev', 13: 'VolumeUp', 14: 'DirectionLeft', 15: 'VolumeDown',
+      16: 'DirectionUp', 17: 'Menu', 18: 'Exit', 19: 'Green', 20: 'Red', 21: 'Stop', 22: 'Record', 23: 'Rewind',
+      24: 'SkipBack', 25: 'Number1', 26: 'Number4', 27: 'Number8', 29: 'Number7', 31: 'Clear', 32: 'Number0',
+      33: 'Select', 34: 'DirectionDown', 35: 'DirectionRight', 36: 'ChannelDown', 37: 'ChannelUp', 38: 'Media',
+      40: 'PrevChannel', 41: 'Glow', 43: 'ScreenNext', 44: 'ScreenRight4', 45: 'ScreenRight1', 46: 'ScreenRight2',
+      48: 'ScreenRight3', 50: 'Guide', 51: 'Info', 52: 'Blue', 53: 'SkipForward', 54: 'FastForward', 55: 'Pause',
+      56: 'Play', 57: 'Number2', 58: 'Number3', 59: 'Number6', 60: 'Yellow', 61: 'Number5', 62: 'Number9',
+      63: 'Enter',
+    },
+    why: 'every key pressed on a unit raising its own code, the 55 its key table holds and none of the nine it '
+      + 'leaves empty, and the product photograph the drawing was measured off showing the same 55',
+  },
   one: {
     buttons: 44,
     /**
@@ -269,7 +292,8 @@ test('a key whose code is undecided carries candidates and no scan', () => {
      */
     const SETS: Readonly<Record<string, readonly { keys: number; codes: number }[]>> = {
       h300: [], h300eu: [], h350: [{ keys: 1, codes: 2 }],
-      h515: [{ keys: 4, codes: 4 }], h525: [{ keys: 4, codes: 4 }], h600: [], h650: [], h700: [], one: [], touch: [],
+      h515: [{ keys: 4, codes: 4 }], h525: [{ keys: 4, codes: 4 }], h600: [], h650: [], h700: [], h885: [], one: [],
+      touch: [],
     };
     const want = SETS[id]!;
     for (const key of undecided) {
@@ -348,6 +372,8 @@ test('the case fills the nominal height and every model shares it', () => {
 
 test('the screen carries the raster its own firmware draws into', () => {
   const RASTERS: Readonly<Record<number, { width: number; height: number }>> = {
+    // Arch 8 (Harmony 880 and 885), measured from configurations' full screen pictures like the next three.
+    8: { width: 128, height: 160 },
     9: { width: 96, height: 64 },
     12: { width: 176, height: 220 },
     14: { width: 128, height: 128 },
@@ -367,7 +393,11 @@ test('the screen carries the raster its own firmware draws into', () => {
    * rather than stretching it. So the aspect is stated and asserted, which can fail if the geometry
    * moves, where a band around the raster could only ever say "close enough".
    */
-  const APERTURE: Readonly<Record<string, number>> = { h515: 1.513, h525: 1.513, h600: 0.865, h650: 0.865, h700: 0.865, one: 0.794, touch: 0.754 };
+  // The Harmony 885's is the raster's own 0.8 by construction: its glass was measured off a photograph at
+  // 121 by 150 pixels, 0.807, and drawn at the raster's proportion on the measured height, `h885.ts`.
+  const APERTURE: Readonly<Record<string, number>> = {
+    h515: 1.513, h525: 1.513, h600: 0.865, h650: 0.865, h700: 0.865, h885: 0.8, one: 0.794, touch: 0.754,
+  };
   /**
    * Where there is no bezel, the pair of shapes that has to sit symmetric about the glass, and which
    * side of it they are on. A Harmony One has its paging arrows beside the glass; a Harmony Touch has
@@ -497,8 +527,13 @@ test('nothing the drawing states sits outside the case', () => {
    * for would be invisible on it, which is why it gets a different control rather than a lower bar. The
    * shifted control finds a shape 26.812 units out, against the drawing's own worst at 0.016, the end of
    * its base seam meeting the case edge.
+   *
+   * **The Harmony 885** is the other. Its case is a bone, narrow at both ends and widest level with the
+   * screen and again level with the digits, and measured across at the same distance from either end the
+   * two widths agree within 3.4 units on a case 283 wide, so turned over it also leaves nothing outside,
+   * 0.000. Shifted, the upper trim lands 77.426 units out, against the drawing's own worst at 0.000.
    */
-  const END_FOR_END = new Set(['touch']);
+  const END_FOR_END = new Set(['touch', 'h885']);
   for (const [id, model] of drawn) {
     const segments = new Set((model.rockers ?? []).flatMap((r) => r.keys));
     const parts: [string, string][] = [

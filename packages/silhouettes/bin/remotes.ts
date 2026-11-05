@@ -75,9 +75,9 @@ interface RemoteFolder {
   /**
    * The drawing it uses, which may be a sibling's where the face is shared.
    *
-   * **Absent for a model nobody has drawn yet**, which is the Harmony 885's and the Harmony 890's case:
-   * plan 009 gives both a full folder before a unit or a drawing exists, so that a unit's arrival adds
-   * content and changes no path. Their keys and display blocks then say that no drawing exists rather
+   * **Absent for a model nobody has drawn yet**, which is the Harmony 890's case, and was the Harmony
+   * 885's until `todo-prepare-885.md` 2.4: plan 009 gives both a full folder before a unit or a drawing
+   * exists, so that a unit's arrival adds content and changes no path. Their keys and display blocks then say that no drawing exists rather
    * than failing, and `test/remotes.test.ts` names exactly which folders may be without one, so a model
    * that has a drawing cannot lose it unnoticed.
    */
@@ -89,6 +89,14 @@ interface RemoteFolder {
    * `keys-<drawing>`, and the folder's skins are every printing's together, `test/remotes.test.ts`.
    */
   readonly printings?: readonly string[];
+  /**
+   * Skins the folder describes that none of its drawings serves, because that skin's face is not the one
+   * drawn. The Harmony 880, skin 15, is the 885's regional twin in `MODELS_BY_SKIN` and shares its folder,
+   * but its face carries two chevron keys at the bottom of the band where the 885 has four colour keys, and
+   * another nameplate, so the 885's drawing is not its drawing. `test/remotes.test.ts` holds the drawings'
+   * skins and these together to the folder's.
+   */
+  readonly undrawn?: readonly number[];
   readonly architecture: number;
   /**
    * Where the codec's raster for this architecture comes from, for the one row of `SCREEN_SIZES` that
@@ -185,11 +193,15 @@ export const REMOTES: readonly RemoteFolder[] = [
     folder: 'harmony-touch', skins: [99], drawing: 'touch', architecture: 17, fileBasedProduct: 0xc12b,
     rasterFrom: 'read in the firmware, since no configuration of this model has been read: the screens\' own constants, the kernel\'s panel entry, the drawing library and the touch driver, `tests/test_harmony_touch_keys.py`',
   },
-  // The two models known only from contributed configurations and firmware images, plan 009's step 3.5.
-  // One folder per regional pair, named for one of the two as `harmony-525` is: skins 15 and 17 are the
-  // Harmony 880 and 885, one remote under two regional names, and 19 and 23 the Harmony 890 and 895.
-  // Neither has a drawing yet, which is what the optional `drawing` above is for.
-  { folder: 'harmony-885', skins: [15, 17], architecture: 8 },
+  // The two models plan 009's step 3.5 gave folders before a unit or a drawing existed. One folder per
+  // regional pair, named for one of the two as `harmony-525` is: skins 15 and 17 are the Harmony 880 and
+  // 885, one remote under two regional names, and 19 and 23 the Harmony 890 and 895.
+  // The 885 is drawn, off a photograph, `h885.ts`, for skin 17 alone. **The 880's face is not the 885's**:
+  // a product photograph of an 880 shows two keys printed with an up and a down chevron at the bottom of
+  // the band, where the 885 has its four colour keys, and `HARMONY TECHNOLOGY` above the screen where the
+  // 885 prints its name, which fits its configurations knowing 53 keys, the 885's 55 less 19 and 60. So
+  // skin 15 stays undrawn rather than borrowing a face it does not have. The 890 has no drawing yet.
+  { folder: 'harmony-885', skins: [15, 17], drawing: 'h885', undrawn: [15], architecture: 8 },
   { folder: 'harmony-890', skins: [19, 23], architecture: 10 },
 ];
 

@@ -21,6 +21,8 @@ const LAB = resolve(REPO, '..', 'lab');
 const PHOTO: Readonly<Record<string, string>> = {
   h600: '600-full.jpg',
   h525: '525-full.jpg',
+  // The one model measured off its photograph rather than traced, so this overlay is its only check.
+  h885: '885-full.jpg',
   one: 'one-full.jpg',
   touch: 'touch-full.jpg',
 };
