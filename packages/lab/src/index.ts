@@ -132,6 +132,10 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // `packages/usb/test/touch-sync-both-ways.test.ts`, and both hold the test account's data and the serial.
   touch_full_sync_recording: 'reads/20261102T1520Z-touch-sync-full-setup/bridge.log',
   touch_reverse_sync_recording: 'reads/20261102T1524Z-touch-reverse-sync/bridge.log',
+  // The first request this project sent the bench Touch, through the request rail, `todo-touch.md` 6.4:
+  // `harmony.engine?getconfighash`'s answer, the stored documents' entity tags joined, read by
+  // `packages/usb/test/touch-confighash.test.ts`. The tags identify the test account's documents.
+  touch_confighash_read: 'reads/20261105T0930Z-touch-confighash/answer.txt',
   hub_package_production: 'firmware/packages/sus/skin97-ultimatehub-production-4.15.600.hfw2',
   h350_bootloader: 'reads/20261027T1929Z-h350-fw/fw_bootloader.bin',
   h350_safemode: 'reads/20261027T1929Z-h350-fw/fw_safemode.bin',

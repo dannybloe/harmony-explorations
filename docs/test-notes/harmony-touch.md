@@ -172,6 +172,18 @@ the identity file's serial, in the lab's `units/touch.txt`. The same read gave f
 architecture 0x11, skin 0x63 and hardware version 01.00. This is what the request rail of 6.3 compares the
 remote on the cable against.
 
+## The first requests sent by this project, todo-touch 6.4
+
+**Two reads through the request rail on 5 November 2026**, with `HARMONY_ENABLE_WRITES=1` and
+`HARMONY_TOUCH_REQUESTS=1`, by `packages/usb/bin/touch-request.ts --commit`: each an open of `/sys/hlapi` for
+writing with one request line, a close, an open for reading and the answer. The unit matched its record both
+times. `getprovisioninfo` answered 383 characters, the account link, kept in the lab's
+`reads/20261105T0930Z-touch-provisioning/` and not quotable; `getconfighash` answered 280, kept in
+`reads/20261105T0930Z-touch-confighash/`, and its hash is the full sync of 2.3's four tags joined,
+`packages/usb/test/touch-confighash.test.ts`. So the remote still holds the documents that sync delivered,
+and that recording is the backup of them (6.5); its settings were changed on the remote afterwards, which the
+hash does not cover. Nothing else was sent; what the screen showed during the reads was not recorded.
+
 ## Not done
 
 * No infrared run has been recorded with this unit, and nothing about it in use has been seen and written

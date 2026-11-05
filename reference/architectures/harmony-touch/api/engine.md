@@ -312,7 +312,9 @@ document is stored, joined with nothing between them and with every double quote
 configuration is loaded[^t-touch-api-engine]. It answers at once, so a cable host receives it. **On a Touch
 synced through a computer that is four tags**, the activity list's, the device list's, the protocol list's and the context's, since it
 fetches no function list and no home control configuration; the button map list and the settings are not
-part of it[^t-touch-api-engine]. Each tag is the one the answer that stored the document carried,
+part of it[^t-touch-api-engine]. **A unit answers it on the cable in exactly that form**: the four tags the last sync handed
+it, joined in that order with no separator and no quote, and no other order of the four gives the same
+string[^t-touch-confighash]. Each tag is the one the answer that stored the document carried,
 [answering a sync](../answering-a-sync.md#the-entity-tag-an-answerer-sends), so a host that knows the tags it
 sent can compare: this is the one request in the group that reports the committed documents to a host.
 
@@ -697,4 +699,5 @@ client, and a cable host is not one the engine can answer[^t-touch-api-engine].
 [^t-touch-api-engine]: Read in the firmware. [The test](../../../../tests/test_harmony_touch_api_engine.py)
 [^t-touch-activities-firmware]: Read in the firmware. [The test](../../../../tests/test_harmony_touch_activities.py)
 [^t-touch-answers]: Measured on a unit. [The test](../../../../packages/usb/test/touch-host.test.ts)
+[^t-touch-confighash]: Measured on a unit. [The test](../../../../packages/usb/test/touch-confighash.test.ts)
 [^unchecked]: Not checked.
