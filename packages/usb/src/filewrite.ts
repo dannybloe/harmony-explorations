@@ -125,7 +125,16 @@ export const TIMEOUT_MS = {
  * `OperationContext.PacketSequenceNumber`. The done packet takes none.
  */
 export class SequenceCounter {
-  private next = 0;
+  private next: number;
+
+  /**
+   * `start` is where the counter begins, 0 for the file write route. The Harmony Touch's request channel
+   * starts later, because Logitech's client numbers the commands it builds ahead of the operation first and
+   * the ones it builds while running after them, `touchsession.ts`.
+   */
+  constructor(start = 0) {
+    this.next = start % SEQUENCE_MODULUS;
+  }
 
   take(): number {
     const taken = this.next;

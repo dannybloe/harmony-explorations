@@ -1,6 +1,6 @@
 ---
 name: harmony-touch
-description: "Everything needed before working on the Harmony Touch: where its facts are (read them first), why this library never opens it the ordinary way and nothing writes to it, what the two files it answers already gave, and why it has two architecture numbers. Use before any task on the Harmony Touch, before touching the file based transport for it, before plugging it in, and in every agent brief for Harmony Touch work."
+description: "Everything needed before working on the Harmony Touch: where its facts are (read them first), why this library never opens it the ordinary way and writes to it only through the request rail, what the two files it answers already gave, and why it has two architecture numbers. Use before any task on the Harmony Touch, before touching the file based transport for it, before plugging it in, and in every agent brief for Harmony Touch work."
 ---
 
 # Working on the Harmony Touch
@@ -42,13 +42,33 @@ and land the answer in the reference afterwards with its source.
 
 * **`openHarmony` refuses it**, by product id, and that is the rail rather than a gap to be closed: it
   speaks the file protocol, in which a path can be an action. `make remotes` reports it separately.
-* **It may be written, decision 29, and nothing in the library writes to it yet.** No write path exists:
-  no file write, no HBus command, no provisioning session. A write gets its own rail on the file protocol
-  before anything is sent, a flag, the unit checked against the lab's `units/`, and `/sys/hlapi` first;
-  never firmware, never `/sys/factoryreset` or `/sys/reboot`, which act on a write, and **never a path that
-  acts when opened**, the vibration test names `/tde/haptic/diagnostic` and `/tde/haptic/calibrate` among
-  them. Until that rail exists, a task that seems to need a write to a Harmony Touch is a question to put
-  first, not a step to take.
+* **It may be written, decision 29, through one rail, and nothing has been sent through it yet.** The rail
+  is the request channel of `todo-touch.md` 6.3: `openTouchRequestSession` in `packages/usb/src/touchsession.ts`,
+  behind `assertTouchRequestAllowed` in `rails.ts`, `HARMONY_ENABLE_WRITES=1` and `HARMONY_TOUCH_REQUESTS=1`.
+  It opens `/sys/hlapi` and nothing else for writing, reads the identity file when a session opens and
+  refuses any unit but the lab's `units/touch.txt`, compared by the identity file's serial, and carries two
+  reads (the provisioning information, `getconfighash`) and the four requests of a sync (hand the remote's
+  changes up, sync from the account, the next request list, write the answers). The provisioning read and
+  the four go out byte for byte as Logitech's client sent them, except the sync request's clock write, which
+  the session leaves out; `getconfighash`, which their client never sends, goes in the provisioning read's
+  shape. The transport decodes the request name off the bytes it is about to send and refuses every other,
+  the resource put, a provisioning, marking the configuration changed, deleting the resources, the commit
+  and the abort of a sync and every firmware request among them, and with them any line carrying
+  `Content-Length:` or arguments that start with `=`. **Eight paths are never opened, whatever the flags**,
+  `NEVER_OPENED_PATHS` in `filepipe.ts`: `/sys/factoryreset`, `/sys/reboot`, `/tde/shipmode` and `/tde/fb`,
+  which act on a write, `/tde/haptic/diagnostic` and `/tde/haptic/calibrate`, which act on an open, and the
+  two firmware names, nor is any path spelled otherwise than the remote's names are. There is no file write,
+  no HBus command and no provisioning session; a task that seems to need a request off the allow list is a
+  question to put first, not a list to widen.
+* **The rail can leave a Touch in a state it cannot clear.** It reads no answer's content, so a set that is
+  valid JSON and lacks a list the engine's reader walks is saved as written and ends the task that loads the
+  configuration; and the requests that clear a stuck sync or a bad set, `proxy.abort`,
+  `setup.sync?deleteresources` and `setup.firmware?reboot`, are not on it, whether to add them being a
+  decision still to take. **The protection is the answerer refusing a set the codec's reader and check
+  reject**, `todo-touch.md` 6.6, and the route back is `recovering-a-remote`'s Harmony Touch section. And
+  the session announces a write of answers with Logitech's client's number, which the remote can reach one
+  chunk early on a line whose last chunk is short, `announcedLength` in `touchsession.ts`; that too is 6.6's
+  to settle.
 * **The only route onto it is `openFileBasedRemote`, read only, and it has been taken**: the two files on
   `INERT_PATHS` that a Touch answers are read, and the reference holds what they gave. **There is nothing
   more to read on a Touch without the named door**, so a new read on this model is not a routine step.
@@ -68,6 +88,10 @@ Read only, and only when the task cannot be answered from the reference:
 
     node packages/usb/bin/read-file-identity.ts --product 0xc12b
 
+`--record touch` writes the unit record the request channel compares against: a Touch refuses `/sys/guid`,
+so the record is a digest of the identity file's serial, `unitIdentityFromSerial`, and an empty serial, which
+the remote states when its manufacturing record is missing, is refused.
+
 **What it prints identifies the unit.** Serials go on the terminal and never into a commit, a document or a
 test; the read itself goes into the lab.
 
@@ -78,7 +102,8 @@ test; the read itself goes into the lab.
 | the public reference | `reference/remotes/harmony-touch/` and `reference/architectures/harmony-touch/` |
 | the drawing | `packages/silhouettes/src/models/touch.ts`, rendered into `reference/silhouettes/touch.svg` |
 | the transport | `packages/usb/src/filepipe.ts`, with `INERT_PATHS`; the refusal in `packages/usb/src/transport.ts`, `FILE_BASED_PRODUCTS` |
-| the read script | `packages/usb/bin/read-file-identity.ts` |
+| the read script | `packages/usb/bin/read-file-identity.ts`, and `--record touch` for the unit record |
+| the request channel | `packages/usb/src/touchsession.ts`, the rail in `packages/usb/src/rails.ts` from `TOUCH_REQUEST_DOOR`, the route `onTheTouchRequestRoute` in `filepipe.ts`, tested in `packages/usb/test/touchsession.test.ts`; the reads of 6.4 are `packages/usb/bin/touch-request.ts`, a dry run without `--commit` |
 | the configuration's reader and checker | `packages/codec/src/harmony-touch/`, tested in `packages/codec/test/touch-reader.test.ts` and `touch-check.test.ts` |
 | answering a sync in place of Logitech's server | `reference/architectures/harmony-touch/answering-a-sync.md` |
 | the protocol | `reference/usb-protocol/file-protocol.md` |

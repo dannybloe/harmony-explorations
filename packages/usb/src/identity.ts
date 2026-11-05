@@ -45,6 +45,8 @@
  * filler is not an identification and must not be treated as one.
  */
 
+import { createHash } from 'node:crypto';
+
 /** The internal page the block sits in. `0xFE` is a different page and maps program address zero. */
 export const IDENTITY_PAGE = 0xff;
 
@@ -238,4 +240,70 @@ export function sameUnit(a: Uint8Array, b: Uint8Array): boolean {
   const left = unitDiscriminator(a);
   const right = unitDiscriminator(b);
   return left.length === right.length && left.every((byte, i) => byte === right[i]);
+}
+
+// ---------------------------------------------------------------------------------------------------
+// A unit that has no identity block: the Harmony Touch, `todo-touch.md` 6.2.
+// ---------------------------------------------------------------------------------------------------
+
+/**
+ * The longest serial the Harmony Touch's identity file can state. Its native USB program copies the
+ * manufacturing record's `unitid` into a 64 byte field with `strncpy` bounded to 63 and a terminator
+ * after it, `tests/test_harmony_touch_serial.py`, so a longer value never comes off a remote and is
+ * refused here as something that did not.
+ */
+export const SERIAL_MAX_CHARACTERS = 63;
+
+/**
+ * What the digest of a serial is taken over, ahead of the serial itself. It keeps a discriminator made
+ * from a serial apart from one made from an identity block's two GUIDs, so the two kinds of record can
+ * never compare equal by accident, and it names its source so a record read years later says what it is.
+ */
+const SERIAL_DOMAIN = 'harmony unit serial, /sys/sysinfo serial_number\0';
+
+/**
+ * The 32 byte discriminator for a unit identified by a serial rather than by an identity block, so that
+ * `unitIdentityText`, `sameUnit` and the lab's `units/<label>.txt` serve this unit unchanged.
+ *
+ * **Why a remote needs this.** A Harmony Touch refuses `/sys/guid` at open, so it has no identity block
+ * to read; what tells one Touch from another on the cable is the `serial_number` line of its identity
+ * file, which its native program fills from the unit's manufacturing record, the `unitid` key of the
+ * `mfg` partition. That is the vendor's own serial, the same choice section 226 made for the identity
+ * block over a fingerprint of the configuration.
+ *
+ * **Why a digest rather than the characters.** The record format is 32 bytes, two 16 byte halves that
+ * each have to carry a per unit value, and the serial is up to 63 characters. Laid in as text, a serial
+ * of 16 characters or fewer leaves its second half all zero and `identifiesAUnit` would refuse it as
+ * filler, for a reason that is not true; one past 32 characters would not fit at all. SHA-256 over the
+ * domain and the serial is 32 bytes for every length, and it keeps the serial itself out of the record.
+ *
+ * **The refusals are what keep a default from matching every unit**, the trap the identity block's
+ * `0xEE` field is: when the record is missing, or holds no `unitid`, the program publishes the empty
+ * string, a constant shared by every such unit, `tests/test_harmony_touch_serial.py`. So the empty
+ * serial is refused, and so is one character repeated, which is what an unwritten field looks like
+ * wherever this project has met one. A digest of either would be 32 confident looking bytes.
+ */
+export function unitIdentityFromSerial(serial: string): Uint8Array {
+  const value = serial.trim();
+  if (value.length === 0) {
+    throw new UnitIdentityError(
+      'the serial is empty, which is what the remote states when its manufacturing record is missing '
+        + 'or holds no unitid: the same on every such unit, so it cannot say which remote this is',
+    );
+  }
+  if ([...value].every((c) => c === value[0])) {
+    throw new UnitIdentityError(
+      'the serial is one character repeated, which is filler rather than a per unit value',
+    );
+  }
+  if (value.length > SERIAL_MAX_CHARACTERS) {
+    throw new UnitIdentityError(
+      `a serial of ${value.length} characters is longer than the ${SERIAL_MAX_CHARACTERS} the remote's `
+        + 'identity file can carry, so it did not come off a remote',
+    );
+  }
+  if (!/^[\x21-\x7e]+$/.test(value)) {
+    throw new UnitIdentityError('the serial holds a character that is not printable text');
+  }
+  return new Uint8Array(createHash('sha256').update(SERIAL_DOMAIN + value, 'ascii').digest());
 }

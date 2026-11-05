@@ -32,9 +32,27 @@
  * `authorise.ts` and both write flags are set. Everything else is refused as before, so a caller
  * holding this transport still has no way to send a write, and the route reaches `/cfg/usercfg` and no
  * other path even for a caller who reaches the hatch by a deep import.
+ *
+ * **A second route since `todo-touch.md` 6.3: a Harmony Touch's request channel**, `/sys/hlapi`, which
+ * `touchsession.ts` drives behind `assertTouchRequestAllowed`. Its reports pass on the same three
+ * conditions with that route's own flag, and on a fourth the file write route does not need: the name
+ * a request line opens with is decoded off its first data packet and checked against the allow list,
+ * `onTheTouchRequestRoute`. And a short list of paths is refused at any open whatever the flags,
+ * `NEVER_OPENED_PATHS`, since their handlers are read and they act; a path not spelled as the remote's
+ * names are is refused before any list is consulted, `isCanonicalPath`, so an exact comparison cannot be
+ * walked round by a variant spelling.
  */
 import { takeAuthorisation } from './authorise.ts';
-import { FILE_WRITE_DOOR, FILE_WRITE_PATHS, WRITES_ENABLED } from './rails.ts';
+import {
+  FILE_WRITE_DOOR,
+  FILE_WRITE_PATHS,
+  TOUCH_REQUEST_DOOR,
+  TOUCH_REQUEST_PATH,
+  TOUCH_ANNOUNCEMENT_TEXT,
+  WRITES_ENABLED,
+  touchArgumentsAfter,
+  touchRequestOfLineStart,
+} from './rails.ts';
 import { TransportError, type Transport, isFileBasedRemote, listFileBasedRemotes } from './transport.ts';
 
 /**
@@ -496,7 +514,42 @@ export const INERT_PATHS: readonly string[] = [
 /** Whether the named door for opening a path outside `INERT_PATHS` is open. */
 export const PATH_EXPERIMENT_ALLOWED = process.env['HARMONY_FILE_PATH_EXPERIMENT'] === '1';
 
-/** The path an open request names, decoded off the bytes rather than taken from a caller. */
+/**
+ * The paths this library never opens, for reading or for writing, **whatever the flags**, the named door
+ * `HARMONY_FILE_PATH_EXPERIMENT` included: on a Harmony Touch their handlers are read and they act,
+ * `reference/architectures/harmony-touch/api/names.md` "The names that act: on a write, and on an open",
+ * so there is nothing left to probe and nothing a session of this project wants from them.
+ *
+ * * `/sys/factoryreset` and `/sys/reboot` arm a factory reset and restart the remote on a write, and
+ *   `/tde/shipmode` and `/tde/fb` put it into shipping mode and run a framebuffer test on one
+ * * `/tde/haptic/diagnostic` and `/tde/haptic/calibrate` run the vibration motor's self test and its
+ *   calibration **when opened for reading**, which is why this list refuses an open of any mode
+ * * `/fw/otaupdate` and `/fw/hub-otaupdate` take a firmware package to install
+ *
+ * The door stays in front of every other path not known to be inert, the Touch names whose open handlers
+ * are not read among them. **The Harmony 300 and 350's `/fw/` names are not here**: their images were read
+ * through the door for reading, and the file write route refuses them for writing, `FILE_WRITE_PATHS`.
+ */
+export const NEVER_OPENED_PATHS: readonly string[] = [
+  '/sys/factoryreset',
+  '/sys/reboot',
+  '/tde/shipmode',
+  '/tde/fb',
+  '/tde/haptic/diagnostic',
+  '/tde/haptic/calibrate',
+  '/fw/otaupdate',
+  '/fw/hub-otaupdate',
+];
+
+/**
+ * The path an open request names, decoded off the bytes rather than taken from a caller.
+ *
+ * **Decoded one character per byte, high bytes kept.** It decoded as Node's `ascii` until the review of
+ * `todo-touch.md` 6.3, and that decoding clears the high bit of every byte, so the bytes of
+ * `/sys/sysinf` and `0xEF` came out as `/sys/sysinfo` and would have passed the inert list as a path the
+ * remote was never sent. `latin1` keeps every byte as itself, so a path with a byte above `0x7E` compares
+ * equal to no name on any list, and `isCanonicalPath` refuses it.
+ */
 export function requestedPath(report: Uint8Array): string | undefined {
   if (report[4] !== STRING_PREFIX) return undefined;
   let at = 5;
@@ -505,7 +558,27 @@ export function requestedPath(report: Uint8Array): string | undefined {
     bytes.push(report[at] as number);
     at += 1;
   }
-  return at < report.length ? Buffer.from(bytes).toString('ascii') : undefined;
+  return at < report.length ? Buffer.from(bytes).toString('latin1') : undefined;
+}
+
+/**
+ * Whether a path is in the one spelling every name on this protocol has: printable characters with no
+ * space, lower case, a leading `/`, no empty segment (so no `//`), no `.` or `..` segment and no trailing
+ * `/`.
+ *
+ * **Why the guard asks this before it compares a path with any list.** Every list here compares a path
+ * whole and exact, and nothing has read whether the remote's native name table matches a path the same
+ * way. So `/sys//reboot`, `/sys/./reboot`, `/SYS/REBOOT`, `/sys/reboot/` and `//sys/reboot` each compare
+ * unequal to `/sys/reboot` while the remote might resolve any of them to it; the review of `todo-touch.md`
+ * 6.3 sent all five through the guard with the experiment door open and each went out. A path that is not
+ * canonical is refused at any open, whatever the flags, so the exact comparison and the remote's matching
+ * cannot disagree about a name this library refuses. Every name in the native program's tables, the
+ * Touch's and the Harmony 300 and 350's, is canonical by this rule, so nothing a session needs is lost.
+ */
+export function isCanonicalPath(path: string): boolean {
+  if (!/^[\x21-\x7e]+$/.test(path) || /[A-Z]/.test(path)) return false;
+  if (!path.startsWith('/') || path.endsWith('/')) return false;
+  return path.slice(1).split('/').every((segment) => segment.length > 0 && segment !== '.' && segment !== '..');
 }
 
 /**
@@ -616,6 +689,137 @@ export function onTheFileWriteRoute(report: Uint8Array): boolean {
   }
 }
 
+/**
+ * Where a Harmony Touch's request channel stands on one transport, which is what the guard needs to
+ * judge a data packet: a packet carries no path, so whether it is the start of a request line, the rest
+ * of one, or nothing that may be sent is a matter of what went before it.
+ *
+ * * `idle`: no `/sys/hlapi` open for writing. A data packet is not on the route.
+ * * `open`: opened for writing and nothing written yet; the next data packet is the line's first, and
+ *   its name is decoded and checked.
+ * * `line`: the first packet named an allowed request and the line goes on, so more packets may follow.
+ * * `ended`: the line had to end with the packet that named it, so no data packet may follow.
+ *
+ * A close returns it to `idle`.
+ */
+export type TouchRoutePhase = 'idle' | 'open' | 'line' | 'ended';
+
+/** Printable text and the space, which every byte of every recorded request line is. */
+function printableText(bytes: Uint8Array): boolean {
+  return bytes.every((b) => b >= 0x20 && b <= 0x7e);
+}
+
+/**
+ * Whether a report is one the Touch's request channel sends, given where the channel stands, and if so
+ * where it stands after it; undefined when the report is not on the route.
+ *
+ * **The second allow list the transport carries, and the one with the rail that matters most**: the
+ * request name. Each shape is the one `touchsession.ts` builds from Logitech's client's templates, which
+ * `packages/usb/test/touchsession.test.ts` holds byte for byte against the recorded syncs:
+ *
+ * | report | shape |
+ * |---|---|
+ * | open for writing | `FF 01 seq 02 80 /sys/hlapi 00 80 57 00`, then a four byte size or nothing. The parameter count says 2 with the size present, which is the client's template and is kept |
+ * | open for reading | `FF 01 seq 02 80 /sys/hlapi 00 80 52 00`, and only while no line is open for writing |
+ * | write a chunk | `FF 03 seq 02 01 handle`, then `01 count` or `02 count count` |
+ * | the first data packet | a sequence below 64, a length of 1 to 62, a payload `touchRequestOfLineStart` accepts, padding |
+ * | a later data packet | printable text, padding; refused once the line had to end |
+ * | the done packet | `7E` and nothing else, after the first data packet |
+ *
+ * The path is compared whole, so `/sys/hlapi` is the one path this route opens. Reads and closes are on
+ * the read allow list and need no route.
+ */
+export function onTheTouchRequestRoute(report: Uint8Array, phase: TouchRoutePhase): TouchRoutePhase | undefined {
+  if (report.length !== FILE_REPORT_BYTES) return undefined;
+  const first = report[0] as number;
+  if (first === DONE_PACKET) {
+    return (phase === 'line' || phase === 'ended') && zeroFrom(report, 1) ? phase : undefined;
+  }
+  if (first < SEQUENCE_MODULUS) {
+    const length = report[1] as number;
+    if (length < 1 || length > DATA_PACKET_PAYLOAD || !zeroFrom(report, 2 + length)) return undefined;
+    const payload = report.subarray(2, 2 + length);
+    if (phase === 'open') {
+      const start = touchRequestOfLineStart(payload);
+      if (start === undefined) return undefined;
+      return start.endsHere ? 'ended' : 'line';
+    }
+    return phase === 'line' && printableText(payload) ? 'line' : undefined;
+  }
+  if (first !== FILE_SERVICE) return undefined;
+  switch (report[OFFSET_COMMAND]) {
+    case FILE_OPEN: {
+      if (phase !== 'idle' || report[OFFSET_PARAMETER_COUNT] !== 2) return undefined;
+      if (requestedPath(report) !== TOUCH_REQUEST_PATH) return undefined;
+      // The mode string sits at a fixed place after the path, read off the bytes as the write route does.
+      const mode = 5 + TOUCH_REQUEST_PATH.length + 1;
+      if (report[mode] !== STRING_PREFIX || report[mode + 2] !== 0) return undefined;
+      if (report[mode + 1] === 0x52) return zeroFrom(report, mode + 3) ? 'idle' : undefined;
+      if (report[mode + 1] !== 0x57) return undefined;
+      if (zeroFrom(report, mode + 3)) return 'open';
+      return report[mode + 3] === 4 && zeroFrom(report, mode + 8) ? 'open' : undefined;
+    }
+    case FILE_WRITE: {
+      if (phase === 'idle' || report[OFFSET_PARAMETER_COUNT] !== 2 || report[4] !== 1) return undefined;
+      if (report[6] === 1) return zeroFrom(report, 8) ? phase : undefined;
+      if (report[6] === 2) return zeroFrom(report, 9) ? phase : undefined;
+      return undefined;
+    }
+    default:
+      return undefined;
+  }
+}
+
+/**
+ * What the guard carries from one data packet of a request line to the next, because two refusals need
+ * more of the line than one packet holds.
+ *
+ * * `argumentsPending`: nothing but `&` has followed the request's name yet, so the first other character
+ *   is still to be judged. **An argument string that starts with `=` is refused**, because the engine's
+ *   cable listener then cuts the command at its `?` and moves the verb into the arguments, so the request
+ *   it runs differs from the name the rail checked, `touchArgumentsAfter` in `rails.ts`.
+ * * `tail`: the line's last characters, enough that `Content-Length:` split across two packets is still
+ *   seen. **The remote takes that text as an announcement wherever it sits in a line**, the listener's own
+ *   pattern match on the whole line, so a request carrying it would make the remote gather the writes that
+ *   follow into one answer.
+ *
+ * The rail asks both of the whole line before anything is sent, `touchRequestOfLine`; this is the same
+ * rule on the bytes as they go out, which is what makes it the rail and not a convenience.
+ */
+export interface TouchLineCarry {
+  readonly argumentsPending: boolean;
+  readonly tail: string;
+}
+
+/** Where a line stands before its first packet. */
+export const TOUCH_LINE_START: TouchLineCarry = { argumentsPending: true, tail: '' };
+
+/**
+ * The carry after a data packet `onTheTouchRequestRoute` accepted in `phase`, or undefined when the packet
+ * has to be refused for what it adds to the line. The first packet's own text is judged by
+ * `touchRequestOfLineStart` as well; this carries what it leaves open into the packets after it.
+ */
+export function carryTouchLine(report: Uint8Array, phase: TouchRoutePhase, carry: TouchLineCarry): TouchLineCarry | undefined {
+  const length = report[1] as number;
+  const text = String.fromCharCode(...report.subarray(2, 2 + length));
+  let pending = carry.argumentsPending;
+  let rest = text;
+  if (phase === 'open') {
+    const start = touchRequestOfLineStart(report.subarray(2, 2 + length));
+    if (start === undefined) return undefined;
+    if (start.tier === 'announcement') return { argumentsPending: false, tail: '' };
+    rest = text.slice(start.name.length);
+  }
+  if (pending) {
+    const state = touchArgumentsAfter(rest);
+    if (state === 'refused') return undefined;
+    pending = state === 'pending';
+  }
+  const window = carry.tail + text;
+  if (window.includes(TOUCH_ANNOUNCEMENT_TEXT)) return undefined;
+  return { argumentsPending: pending, tail: window.slice(-(TOUCH_ANNOUNCEMENT_TEXT.length - 1)) };
+}
+
 function sameBytes(a: Uint8Array, b: Uint8Array): boolean {
   if (a.length !== b.length) return false;
   for (let i = 0; i < a.length; i += 1) if (a[i] !== b[i]) return false;
@@ -641,21 +845,85 @@ function sameBytes(a: Uint8Array, b: Uint8Array): boolean {
  * `write`, `read` and `close` and nothing else, which a test enumerates.
  */
 export function guardFileProtocol(inner: Transport): Transport {
+  // Where the Touch's request channel stands on this transport, `onTheTouchRequestRoute`. Kept in this
+  // closure and not on the returned object, for the reason the authorisation is kept in `authorise.ts`.
+  let phase: TouchRoutePhase = 'idle';
+  // And what the line written so far leaves to judge in the next packet, `carryTouchLine`.
+  let line: TouchLineCarry = TOUCH_LINE_START;
   const guarded: Transport = {
     async write(report: Uint8Array): Promise<void> {
       const pending = takeAuthorisation(guarded);
+      const authorised = pending !== undefined && sameBytes(pending, report);
+      const service = report[OFFSET_SERVICE] ?? 0;
+      const command = report[OFFSET_COMMAND] ?? 0;
+
+      // A path whose handler acts is never opened, in any mode, by any route, whatever the flags; and a
+      // path not in the one spelling the remote's names have is refused first, since the lists compare
+      // exactly and the remote's matching of a variant is not read, `isCanonicalPath`.
+      if (service === FILE_SERVICE && command === FILE_OPEN) {
+        const path = requestedPath(report);
+        if (path !== undefined && !isCanonicalPath(path)) {
+          throw new TransportError(
+            `refusing to open ${JSON.stringify(path)}: a path is opened only in the spelling the remote's names `
+              + 'have, lower case with no empty, . or .. segment and no trailing /, whatever the flags',
+          );
+        }
+        if (path !== undefined && NEVER_OPENED_PATHS.includes(path)) {
+          throw new TransportError(
+            `refusing to open ${path}: its handler acts on the remote, a restart, a reset, firmware or a `
+              + 'motor test, so this library never opens it, whatever the flags',
+          );
+        }
+      }
+
+      // The Touch's request channel: authorised for exactly these bytes, on the route given where the
+      // channel stands, and both of its flags set.
+      if (authorised && WRITES_ENABLED && TOUCH_REQUEST_DOOR) {
+        const next = onTheTouchRequestRoute(report, phase);
+        if (next !== undefined) {
+          let carried = line;
+          if ((report[0] as number) < SEQUENCE_MODULUS) {
+            const after = carryTouchLine(report, phase, line);
+            if (after === undefined) {
+              throw new TransportError(
+                'refusing a packet of a request line that carries "Content-Length:", which the remote takes as an '
+                  + 'announcement anywhere in a line, or whose arguments start with "=", which moves the verb '
+                  + 'out of the name the rail checked',
+              );
+            }
+            carried = after;
+          }
+          await inner.write(report);
+          phase = next;
+          line = next === 'idle' ? TOUCH_LINE_START : carried;
+          return;
+        }
+      }
+
+      // **While a request line is open for writing, the close is the only other thing that goes out.** In
+      // particular a data packet cannot reach the remote by the file write route below, whose data packets
+      // are judged on their shape alone, and so skip the name check: with both write flags set, that would
+      // be a way to write any line into `/sys/hlapi`.
+      if (phase !== 'idle' && !(service === FILE_SERVICE && command === FILE_CLOSE)) {
+        throw new TransportError(
+          'refusing a report while /sys/hlapi is open for writing: only the request line it was opened for, '
+            + 'checked by name, and the close may follow',
+        );
+      }
+
       if (
-        pending !== undefined
-        && sameBytes(pending, report)
+        authorised
         && onTheFileWriteRoute(report)
         && WRITES_ENABLED
         && FILE_WRITE_DOOR
       ) {
         await inner.write(report);
+        if (service === FILE_SERVICE && command === FILE_CLOSE) {
+          phase = 'idle';
+          line = TOUCH_LINE_START;
+        }
         return;
       }
-      const service = report[OFFSET_SERVICE] ?? 0;
-      const command = report[OFFSET_COMMAND] ?? 0;
       if (service !== FILE_SERVICE) {
         throw new TransportError(
           `refusing a report whose service is 0x${service.toString(16)}: this transport speaks the ` +
@@ -695,6 +963,10 @@ export function guardFileProtocol(inner: Transport): Transport {
         );
       }
       await inner.write(report);
+      if (command === FILE_CLOSE) {
+        phase = 'idle';
+        line = TOUCH_LINE_START;
+      }
     },
     read(timeoutMs: number): Promise<Uint8Array | undefined> {
       return inner.read(timeoutMs);

@@ -1,7 +1,8 @@
 # Harmony Touch: firmware
 
 The Touch runs the firmware image Logitech serves for a whole family of later remotes. Which products share
-it, the versions that exist, the factory images and Logitech's network reset are
+it, the versions that exist, the factory images, Logitech's recovery routes and how a remote of the family
+is brought back are
 [the platform's firmware](../../architectures/harmony-touch/firmware.md). This page holds what is the
 Touch's own.
 
@@ -19,10 +20,25 @@ This said the image's contents had not been examined until it was read.
 
 ## Reset and restart
 
-* **Logitech's factory reset** installs a whole factory firmware image fetched over the network, through a
-  hidden recovery tool in their desktop clients, [the platform's firmware](../../architectures/harmony-touch/firmware.md).
-  It is Logitech's route and this library has no part in it. A Touch reset that way holds a configuration
-  of zero bytes[^s195].
+* **The Touch resets itself three ways**, all read in its firmware and none tried: **Settings, General,
+  Factory reset**, which the Settings list leaves out in demo mode; the **data error screen**, shown when the
+  screens cannot open their first window or their window stack empties, whose one item is a factory reset; and **Off and Menu held together
+  while the remote starts**, which the boot loader reads from the power controller. The last rests on the boot
+  loader numbering the keys as the kernel does, which is inferred, and how a person makes the remote start
+  with the two held is not read: whether a long hold of Off restarts it is the open question in
+  [keys.md](keys.md)[^t-touch-recovery]. **No plain restart** is offered on its screens[^t-touch-recovery].
+* **A factory reset erases every document, the provisioning and the engine's state and keeps the
+  firmware**, so afterwards the remote refuses a sync until it is provisioned again; that Logitech's client
+  does it by its own flow is inferred, and the request that does it, `setup.account?provision`, is one any
+  host on the cable can send. The Settings screen's text says the reset keeps the account, which disagrees
+  with this reading,
+  [recovery](../../architectures/harmony-touch/firmware.md#the-remotes-own-factory-reset)[^t-touch-recovery].
+* **Logitech's recovery routes**: a hidden recovery tool installs a whole factory firmware image, and
+  MyHarmony's "Recover Remote" installs an update and then writes the remote's own reset and restart files,
+  [the platform's firmware](../../architectures/harmony-touch/firmware.md#logitechs-recovery-routes). It is
+  Logitech's route and this library has no part in it. A Touch reset through the hidden tool holds a
+  configuration of zero bytes[^s195]. This said the factory image was Logitech's one
+  reset<!--superseded-->, until both clients were read.
 * **`/sys/factoryreset` and `/sys/reboot`** are controls rather than files, and **each acts on a write, not
   on an open**: opening one runs nothing, while writing `reboot` restarts the remote and writing `all` opens
   the power controller's and the radio's firmware loader device nodes for writing and arms a factory reset for
@@ -32,7 +48,9 @@ This said the image's contents had not been examined until it was read.
 > This said both open for reading and opening one is to be taken as the action<!--superseded--> its name
 > says, until the remote's native program was read: each fills the write slot of its entry and nothing
 > else[^t-touch-api-names].
-* Safe mode and a bootloader on this model are **not checked**[^unchecked].
+* **There is no second copy of the application and no safe mode** of the older remotes' kind: the kernel's
+  own start program is the recovery system, and it installs a firmware drop or runs a factory reset before
+  the system is mounted, [below the application](../../architectures/harmony-touch/firmware.md#below-the-application)[^t-touch-recovery].
 
 ## Not checked
 
@@ -46,3 +64,4 @@ This said the image's contents had not been examined until it was read.
 [^s195]: Measured on a unit. [Section 195](../../../docs/findings.md#s195)
 [^t-touch-image]: Read in the firmware. [The test](../../../tests/test_harmony_touch_image.py)
 [^t-touch-api-names]: Read in the firmware. [The test](../../../tests/test_harmony_touch_api_names.py)
+[^t-touch-recovery]: Read in the firmware. [The test](../../../tests/test_harmony_touch_recovery.py)

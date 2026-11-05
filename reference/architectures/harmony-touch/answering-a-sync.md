@@ -68,6 +68,20 @@ holds at least that many bytes before it acts on them; the announcement belongs 
 and to no other request[^t-touch-host]. Logitech's client announced every answer write, short ones included,
 and the largest single answer write measured carried 571560 bytes[^t-touch-answers].
 
+**The number announced falls short of what the remote counts.** The listener counts the line from the
+request's name on, and takes the announcement's text wherever it sits in a line[^t-touch-host]. Logitech's
+client announces the length of the `responses` argument alone, as written, which is the line less its name,
+`&sessionId=`, the session id and `&responses=`: 101 to 104 characters short in the recordings, over all
+twelve announcements of the three syncs[^t-touch-answers]. The client writes a long line in chunks of 31000
+characters and the remote hands each chunk to the listener as it arrives, so for a line of more than one chunk
+the listener holds the announced number **one chunk early when the last chunk is no longer than that
+shortfall**, and acts on a line whose `responses` stops short, which the engine answers as JSON it cannot
+decode; the last chunk then arrives as a line of its own. That the remote hands on each chunk is read in its
+native program and not tested here[^unchecked]. Four of the recorded writes went in more than one chunk and
+the shortest last chunk was 2276 characters, so the recordings never met it[^t-touch-answers]. An answerer
+that announces a number the listener can count to, or never ends a line in so short a chunk, avoids it;
+neither has been tried[^unchecked].
+
 ## What the remote does not check, and why an answerer still has to be careful
 
 The remote does not check that a document holds what the reader of it needs. A document that is valid but
@@ -136,8 +150,10 @@ it would be sent, turns "not changed" into a comparison rather than a record kep
 carried no tag tells the remote to copy a file it does not hold, which fails and leaves the document missing
 from the new set[^t-touch-host]. The tag is echoed on a 304 of a favourites document or a picture, and a
 tag is sent with every 200 of a favourites document or a picture or it is not saved[^t-touch-host]. A remote
-that later returns to Logitech's service sends these tags to it, and how the service treats a tag it does
-not recognise is not checked[^unchecked].
+that later returns to Logitech's service sends these tags to it: MyHarmony forwards the remote's tag as
+`If-None-Match` on a fetch and as `If-Match` on an upload[^t-touch-recovery-client]. How the service treats a tag it did not issue is not checked[^unchecked]. A
+remote that holds no file for a document sends no tag for it, so deleting the stored documents before
+returning to Logitech's service takes the tags out of the question, [recovery](firmware.md#recovery)[^t-touch-host].
 
 ## The direct resource put, and why a whole configuration should still go by the sync
 
@@ -201,17 +217,20 @@ Whether these are enough to know a whole configuration arrived is not settled[^u
   client, Logitech's own. Nothing of this project has answered a sync[^unchecked].
 * Whether the outgoing queue actually carries a direct put through to the account, inferred from the queue's
   role rather than seen[^unchecked].
-* What an uncaught error in the configuration reader does in practice; the reading reaches the task being
-  deleted and the recovery by a restart is inferred[^unchecked].
+* What a configuration the reader raises on does on a unit: the firmware reading is
+  [recovery](firmware.md#a-configuration-that-fails-to-load), and none of it has been tried[^unchecked].
 * What a remote's screens show for an account with no activity and no device[^unchecked].
 * That the screens turn a refused answer into the abort on a unit, and how soon `proxy://Abort` follows[^unchecked].
+* Whether a write of answers whose last chunk is no longer than the announcement's shortfall is acted on one
+  chunk early on a unit[^unchecked].
 * Whether a sync driven without the client's own file resets and its refused clock write behaves the
   same[^unchecked].
-* How a tag of ours is treated when a remote returns to Logitech's service[^unchecked].
+* How Logitech's service answers a tag it did not issue, when a remote returns to it[^unchecked].
 * Whether the read back route of [proxy](api/proxy.md#can-a-stored-document-be-read-back) hands a committed
   document back on a unit, and what its engine reload does in between[^unchecked].
 
 [^t-touch-host]: Read in the firmware. [The test](../../../tests/test_harmony_touch_host.py)
+[^t-touch-recovery-client]: Stated by Logitech, in their client. [The test](../../../tests/test_harmony_touch_recovery.py)
 [^t-touch-answers]: Measured on a unit. [The test](../../../packages/usb/test/touch-host.test.ts)
 [^t-touch-api-names]: Read in the firmware. [The test](../../../tests/test_harmony_touch_api_names.py)
 [^t-touch-api-setup]: Read in the firmware. [The test](../../../tests/test_harmony_touch_api_setup.py)

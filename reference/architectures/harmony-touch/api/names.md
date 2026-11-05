@@ -195,9 +195,11 @@ runs no handler and does nothing; the effect is on the content written:
   and creates the marker file `/cache/factoryreset`; the content written is compared against the word
   `all`[^t-touch-api-names]. This corrects the earlier reading that it "erases the power controller and radio
   firmware **files**"<!--superseded-->: the two are device nodes of the firmware loader drivers, not files.
-  What the drivers do when written, the exact matching of `all` against the written word, and what consumes
-  `/cache/factoryreset` at the next boot, are not read[^unchecked]. The reset runs at that boot from the
-  marker, so the write arms it rather than wiping the configuration in place.
+  What the drivers do when written and the exact matching of `all` against the written word are not
+  read[^unchecked]. The marker is consumed twice at the next restart: the native restart passes the word
+  `factoryreset` when the marker exists, and the kernel's start program erases the data and cache volumes when
+  it finds the marker, [recovery](../firmware.md#the-remotes-own-factory-reset)[^t-touch-recovery]. So the
+  write arms the reset rather than wiping the configuration in place.
 * **`/tde/shipmode`** puts the remote into shipping mode and **`/tde/fb`** runs a framebuffer test, each on a
   write, each filling the write slot alone like the two above.
 
@@ -240,11 +242,12 @@ library takes. Whether the write verifies or bounds the package is not read, onl
   kind are read, the value's format is not[^unchecked].
 * What the open time handlers of `/ir/ir_loopback` and `/rf/test` do, and so whether they act on an
   open[^unchecked].
-* What the factory reset drivers do when written, how `all` is matched against the written word, and what
-  consumes `/cache/factoryreset` at the next boot[^unchecked].
+* What the factory reset drivers do when written, and how `all` is matched against the written
+  word[^unchecked].
 * Whether `/etc` is writable on a production unit, and so whether `/tde/enable` can turn the file requests'
   test mode on there[^unchecked].
 * Whether the hubs' sibling image registers the same names; only the remotes' image is read[^unchecked].
 
 [^t-touch-api-names]: Read in the firmware. [The test](../../../../tests/test_harmony_touch_api_names.py)
 [^unchecked]: Not checked.
+[^t-touch-recovery]: Read in the firmware. [The test](../../../../tests/test_harmony_touch_recovery.py)

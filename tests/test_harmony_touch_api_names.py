@@ -54,6 +54,13 @@ acting native names do not all act on a write: `/sys/reboot` and `/sys/factoryre
 `/tde/haptic/calibrate` act on an open for reading, each filling the generate open slot alone. This file and
 the page once read the two actions as both acting on a write, which this corrects.
 
+5. **The library never opens the acting names.** `NEVER_OPENED_PATHS` in `packages/usb/src/filepipe.ts`, the
+   paths the transport refuses at any open whatever the flags, is exactly the four names that act on a write,
+   the two that act on an open and the two firmware names, `ACT_ON_A_WRITE`, `ACT_ON_AN_OPEN` and
+   `TAKE_FIRMWARE` here. Read off the TypeScript source, so the two languages cannot hold different lists, and
+   static: it runs without the lab. The review of `todo-touch.md` 6.3 found every TypeScript test iterating the
+   exported list, so an emptied list passed them all; `touchsession.test.ts` names the eight as literals too.
+
 **The controls.** Each was made by replacing a string in the page or in an expected value and reversing it,
 with the file's hash compared before and after, and each made the named test fail alone: a name dropped from
 the page's table, an engine name changed in a row, a backing file changed, a kind changed (an action turned
@@ -76,6 +83,7 @@ behaviour is a Harmony Touch's, host name `juniper`; the hubs run a sibling imag
 and counts.
 """
 import os
+import re
 import shutil
 import struct
 import tempfile
@@ -119,6 +127,15 @@ KIND = {
     '/tde/shipmode': 'action', '/tde/haptic/diagnostic': 'action', '/tde/haptic/calibrate': 'action',
     '/tde/accel': 'read', '/sys/dropbear': 'change', '/sys/mfg': 'change',
 }
+
+#: The actions that fill the write slot alone, and so act on a write; the slot sets are read in the image below.
+ACT_ON_A_WRITE = {'/sys/reboot', '/sys/factoryreset', '/tde/shipmode', '/tde/fb'}
+#: The actions that fill the generate open slot alone, and so act on an open for reading.
+ACT_ON_AN_OPEN = {'/tde/haptic/diagnostic', '/tde/haptic/calibrate'}
+#: The two names that take a firmware package to install.
+TAKE_FIRMWARE = {'/fw/otaupdate', '/fw/hub-otaupdate'}
+
+FILEPIPE = os.path.join(ROOT, 'packages', 'usb', 'src', 'filepipe.ts')
 
 
 def signed(word):
@@ -280,8 +297,7 @@ class TheActingNamesActOnAWriteOrAnOpen(TheNativeProgram):
         write_only = {key(e) for e in self.entries if e['slots'] == (2,)}
         self.assertEqual(write_only,
                          {'/sys/reboot', '/sys/factoryreset', '/tde/shipmode', '/tde/fb', '/sys/time'})
-        self.assertEqual({n for n in write_only if KIND[n] == 'action'},
-                         {'/sys/reboot', '/sys/factoryreset', '/tde/shipmode', '/tde/fb'})
+        self.assertEqual({n for n in write_only if KIND[n] == 'action'}, ACT_ON_A_WRITE)
         self.assertEqual({n for n in write_only if KIND[n] == 'change'}, {'/sys/time'})
         # The control: a read name has an open and a read slot, so filling the write slot alone means something.
         self.assertEqual(self.entry('/proc')['slots'], (0, 1, 3))
@@ -289,8 +305,7 @@ class TheActingNamesActOnAWriteOrAnOpen(TheNativeProgram):
     def test_the_open_only_names_are_two_actions_and_the_accelerometer(self):
         open_only = {key(e) for e in self.entries if e['slots'] == (4,)}
         self.assertEqual(open_only, {'/tde/haptic/diagnostic', '/tde/haptic/calibrate', '/tde/accel'})
-        self.assertEqual({n for n in open_only if KIND[n] == 'action'},
-                         {'/tde/haptic/diagnostic', '/tde/haptic/calibrate'})
+        self.assertEqual({n for n in open_only if KIND[n] == 'action'}, ACT_ON_AN_OPEN)
         self.assertEqual({n for n in open_only if KIND[n] == 'read'}, {'/tde/accel'})
         # `/ir/ir_loopback` and `/rf/test` fill an open slot (0) beside a generate (8) and a close (3), so they
         # too run a handler on being opened; what those open time handlers do is not read.
@@ -311,6 +326,31 @@ class TheActingNamesActOnAWriteOrAnOpen(TheNativeProgram):
         # do, is not read here.
         self.assertIn('w+', held)
         self.assertNotIn('reboot', held)
+
+
+class TheLibraryNeverOpensTheActingNames(unittest.TestCase):
+    """Fact 5: the transport's list of paths it never opens is the acting names and the firmware names, no more
+    and no fewer. Static, so it holds with no lab."""
+
+    def never_opened(self):
+        with open(FILEPIPE, encoding='utf-8') as f:
+            source = f.read()
+        found = re.search(r'export const NEVER_OPENED_PATHS: readonly string\[\] = \[(.*?)\];', source, re.S)
+        self.assertIsNotNone(found, 'NEVER_OPENED_PATHS is declared in filepipe.ts')
+        return re.findall(r"'([^']*)'", found.group(1))
+
+    def test_the_list_is_the_names_that_act_on_a_write_or_an_open_and_the_firmware_names(self):
+        paths = self.never_opened()
+        self.assertEqual(len(paths), len(set(paths)), 'no path listed twice')
+        self.assertEqual(set(paths), ACT_ON_A_WRITE | ACT_ON_AN_OPEN | TAKE_FIRMWARE)
+        self.assertEqual(len(paths), 8)
+
+    def test_every_listed_name_is_an_action_by_the_handler_reading(self):
+        for path in self.never_opened():
+            self.assertEqual(KIND[path], 'action', path)
+        # The control: not every action is on the list, `/ir/ir_send` being one left behind the experiment
+        # door, so the list is the acting names chosen by their slots and not every name of that kind.
+        self.assertNotIn('/ir/ir_send', self.never_opened())
 
 
 class ResourceIsTheHubRadioFetch(TheNativeProgram):

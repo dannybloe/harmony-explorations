@@ -64,9 +64,20 @@ How long a key must be held for its long press is [keys.md](keys.md#holding-a-ke
 
 ## A factory reset
 
-Logitech returns a Touch to its factory state with a whole firmware image fetched over the network, not with
-a command, [the platform's firmware](../../architectures/harmony-touch/firmware.md). The remote's own
-reset and restart are paths that act on a write, not when opened, [firmware.md](firmware.md)[^t-touch-api-names].
+**A Touch can reset itself**: Settings offers a factory reset, a data error screen offers one, and holding
+Off and Menu while the remote starts selects one, by the firmware's reading and never tried. A factory reset
+deletes every device, activity and setting the remote holds and its link to the account, and keeps the
+firmware, so the remote refuses a sync until it is set up again; that Logitech's client does that, by its
+own flow, is inferred, [firmware.md](firmware.md#reset-and-restart)[^t-touch-recovery]. The Settings
+screen's own text says the reset keeps the account, which disagrees with the firmware's reading and is not
+settled[^unchecked]. Logitech's clients bring a Touch back either
+with a whole firmware image or with a firmware update followed by the remote's own reset,
+[the platform's firmware](../../architectures/harmony-touch/firmware.md#logitechs-recovery-routes). The
+remote's own reset and restart files act on a write, not when opened, [firmware.md](firmware.md)[^t-touch-api-names].
+
+> This said Logitech returns a Touch to its factory state "with a whole firmware image fetched over the
+> network, not with a command"<!--superseded-->, which is one of their two clients; the other writes the
+> remote's own reset file, [the platform's firmware](../../architectures/harmony-touch/firmware.md#logitechs-recovery-routes).
 
 ## Not checked
 
@@ -82,3 +93,4 @@ reset and restart are paths that act on a write, not when opened, [firmware.md](
 [^t-touch-activities-firmware]: Read in the firmware. [The test](../../../tests/test_harmony_touch_activities.py)
 [^t-touch-keys]: Read in the firmware. [The test](../../../tests/test_harmony_touch_keys.py)
 [^t-touch-api-names]: Read in the firmware. [The test](../../../tests/test_harmony_touch_api_names.py)
+[^t-touch-recovery]: Read in the firmware. [The test](../../../tests/test_harmony_touch_recovery.py)

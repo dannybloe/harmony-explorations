@@ -33,7 +33,13 @@ config is wrong still boots and our own read path still works. That is the struc
 behind a first write, and it is worth more than any of the arguments below. **On the Harmony 880 and 885
 it covers the bootloader only**: a configuration's base slot 2 chooses where the remote's log append
 writes, bounded below `0x010000` and nowhere else, so a wrong slot 2 can reach the application and the
-built in configuration above that floor. Their section below has the rest.
+built in configuration above that floor. Their section below has the rest. **On the Harmony Touch the
+reassurance has a different shape**: its configuration is documents on a writable layer over a read only
+system, so nothing a configuration holds reaches the kernel, the system or the boot loader; for a document
+that is missing or is not valid JSON the engine's sync requests keep answering over the cable and the next sync
+replaces it; but a document that is valid JSON and lacks a list the reader walks ends the task that loads the
+configuration, and then a sync alone cannot replace it and a second sync's last write never gets its answer.
+Its section below has the route.
 
 **A stranded remote tells you what is wrong, so read the screen before diagnosing anything.** The
 firmware's status screens are a library of 30 on the Harmony One and 35 on the Harmony 600, 650 and 700,
@@ -58,6 +64,8 @@ wrong or is about to.
    apart, since the product id does not change. The Harmony 300 and 350 have neither a screen nor a
    version block: their section below says what stands in for both. The Harmony 880 and 885 have no
    safe mode image and no type 4: their bootloader answers with type 3, and their section below says so.
+   The Harmony Touch has a screen and no version block, and no safe mode: its screen and its engine's
+   answers on the cable are what there is to read, and its section below says how.
 3. **Which architecture**, and then that route below. Nothing transfers between them by default.
 4. **What a file actually holds, before trusting its name**, before anything is restored from it.
 
@@ -239,6 +247,122 @@ What must never be part of that route:
   implements it, `reference/usb-protocol/bootloader.md`. A damaged bootloader has no route.
 * **The last eight bytes of the safe mode image** are not in the lab: the remote serves an internal image
   eight bytes short. They hold a routine its start calls, likely an empty one.
+
+## The Harmony Touch
+
+**Read before any write to a Harmony Touch, and before anything near its reset or restart.** The Touch
+reports 17 for its architecture and Logitech's templates file it under 18; say "the Harmony Touch".
+Everything here is read, in the production firmware 4.15.330 and in Logitech's two clients, and **none of
+it has been run on a unit**: no configuration of ours has reached a Touch, and the one recovery a Touch has
+been through was Logitech's hidden recovery tool, `docs/test-notes/harmony-touch.md`. The facts are
+`reference/architectures/harmony-touch/firmware.md` "Recovery", the argument is the header of
+`tests/test_harmony_touch_recovery.py`, and the working note with every file and line is the lab's
+`work/touch-firmware/notes/6.1-recovery.md`. How a sync is answered at all is `answering-a-sync.md` in the
+same folder.
+
+**What a configuration cannot reach.** The documents, the provisioning and the engine's state live on a
+writable data volume laid over a read only squashfs root; the kernel, the root, the boot loader and the
+unit's manufacturing record are elsewhere. A sync writes documents and nothing else, so a bad one leaves the
+firmware as it was.
+
+**The reassurance, and how far it goes.** A document that is missing or is not valid JSON makes the remote
+load nothing: it signals a configuration failure, the engine runs on, and **a new sync over the cable
+replaces it**. A sync that fails before its commit leaves the committed set untouched. Neither needs anything
+but the sync itself. **It stops at a document that is valid JSON and lacks a list the reader walks**: the
+reader raises, nothing catches it, and the task that loads the configuration ends.
+
+* **At start**, every request that waits for the configuration hangs (23 of the 31 `harmony.engine?`
+  requests, `api/engine.md`'s table says which, the four `control.button?` and `connect.discoveryinfo?get`),
+  the sync requests still answer, and **every sync aborts at its end**, because the reload of the new set has
+  no task to go to. So the remote cannot be synced off that set. The abort leaves the sync flag set unless the
+  remote's screens answer the failure with `proxy.abort`, which they do while they hold a sync as running.
+* **During a sync**, on the reload of the gathered set, which comes before the commit: the sync aborts with
+  553 uncommitted, the committed set is untouched, and the abort's reload never returns, so the abort's own
+  answer never comes, no `proxy://Abort` is queued, and a second sync's last write never gets its answer,
+  which leaves the sync flag set and `setup.sync` answering 202. **A restart loads the committed set again.**
+  The commit is `proxy.finished`, which the remote's screens send once the content is in, and it loads
+  nothing first: one sent while the flag is still set would commit the set the reload failed on. The request
+  rail refuses `proxy.finished`.
+* **No previous set is kept**: a commit removes the old set at once, so a set that raises at start raises at
+  every start.
+
+The route, in order:
+
+1. **Recognise the state.** No version block and no safe mode to read. What is read:
+   * **The screen**: a "Data error" screen offering a factory reset is what the screens show when their own
+     first window fails; which document faults reach it, and what the screens show for a failed load
+     otherwise, is not read.
+   * **On the cable**, through the read tier of the request rail: `account?getprovisioninfo` answers in every
+     state above; `harmony.engine?getconfighash` answers with the committed set's tags when the
+     configuration task is alive and **never answers when it ended at start**. A request that does not
+     answer is that state; set a timeout and do not resend in a loop.
+   * **`setup.sync` answering 202** with no sync of ours running is a sync left flagged.
+2. **A sync left flagged, or one stopped halfway before its commit**, is cleared by `proxy.abort` or by a
+   restart, and after either the next `setup.sync` starts clean; while the flag is set `setup.sync` answers
+   202 and clears nothing. A stop after the commit has done its work. **`proxy.abort` is outside the request
+   rail**, so a sync of ours that stops halfway, a failure after `setup.sync` included, is not cleared by
+   anything the rail sends.
+3. **A set the reader raises on during a sync** needs nothing written: the committed set is intact, so a
+   restart, step 5, is the repair, and then fix the document before the next sync.
+4. **A committed set that raises at start** needs the stored documents changed before a restart: either
+   `setup.sync?deleteresources`, after which the remote starts with no configuration and a sync works, or
+   `proxy.resource?put` of the corrected document, which is saved before its reload is tried. Then restart.
+5. **The restart.** `setup.firmware?reboot` restarts the remote two seconds later without the configuration
+   task; it answers 202 while a sync flag is set, so a parked sync takes `proxy.abort` first, on a new
+   connection, since the abort's own answer never comes. **There is no battery pull**: the cell is internal
+   and not replaceable by Logitech's manual, `reference/remotes/harmony-touch/hardware.md`. What a long hold
+   of Off does is an open question in that model's `keys.md`.
+6. **Last, the remote's own factory reset**, Settings, General, Factory reset, which erases every document,
+   the provisioning and the engine's state and keeps the firmware. Afterwards the remote is not provisioned
+   and refuses `setup.sync` with 501. The refusal is read; **what sets it up again is inferred**: Logitech's
+   client by its own flow, against the account, and the request that does it is `setup.account?provision`,
+   which any host on the cable can send and which is outside the request rail and on the never list below.
+   The Settings screen's own text says the reset keeps the account, which disagrees with the reading; whether
+   a unit refuses a sync with 501 afterwards is what would settle it.
+   Holding Off and Menu while the remote starts selects the same reset by the boot loader's reading; it has
+   never been tried and how a person gets the remote to start with the two held is not read.
+7. **Back to Logitech's service.** MyHarmony sends the remote's stored tags up, `If-None-Match` on a fetch
+   and `If-Match` on an upload; what the service does with a tag it did not issue is the first sync with tags
+   of ours to measure. If it goes wrong, `setup.sync?deleteresources` first leaves the remote no tag to send,
+   and the factory reset above is the fallback.
+
+**The request rail admits none of the recovery requests**: it allows the reads and the four sync requests,
+and `proxy.abort` (steps 2 and 5), `setup.sync?deleteresources` and `proxy.resource?put` (step 4) and
+`setup.firmware?reboot` (step 5) are none of them. **So the rail can leave a remote in a state it cannot
+clear**: answers that are valid JSON and lack a list the reader walks are saved as written, since the rail
+reads no answer's content, and a sync of ours that stops halfway after `setup.sync` needs `proxy.abort` or a
+restart, neither of which the rail sends. **The protection is the answerer refusing a set the codec's reader
+and check reject before any of it is written**, `todo-touch.md` 6.6, not a recovery route. **Whether to add
+the recovery requests to the rail is a decision to put first, not a step to take** while a remote is stuck:
+each changes the remote, and each needs its shape and its test as the four did. Until then a committed set
+that raises at start is the remote's own Settings reset or Logitech's client's to clear, and a restart
+without the request is not settled on this model: there is no battery to pull, and whether a long hold of
+Off restarts it is open.
+
+What must never be part of that route:
+
+* **Never write `/sys/factoryreset` or `/sys/reboot`.** They act on a write; the first arms the factory reset
+  and opens the power controller's and radio's firmware loader nodes for writing. The remote's own Settings
+  reset does what a recovery needs without them.
+* **Never `/fw/otaupdate`, nor anything that installs firmware.** That is Logitech's recovery and this
+  project does not write firmware.
+* **Never a path that acts when opened**, and never `HARMONY_FILE_PATH_EXPERIMENT` to reach one.
+* **Never `setup.account?provision`**: provisioning is the account's, and Logitech's client does it after a
+  reset.
+
+**What is not covered**, and what would cover it:
+
+* **A set that loads and then misbehaves**, an activity that hangs the engine rather than the reader. The
+  watchdog's file is fed by a task of its own, read on the engine's side; what the native watchdog program
+  does with it is inferred from its strings, so whether anything restarts such a remote is not read. The
+  protection is the composer and its checks, not a recovery route.
+* **What Logitech's hidden recovery tool sends.** Its Silverlight utility is not in the lab. The zero bytes of
+  configuration after the one recovery on a Touch is not explained by the production updater, which keeps the
+  documents; MyHarmony's "Recover Remote", an update followed by the remote's own reset, would explain it.
+* **A system that does not start.** The boot loader falls back to a second kernel volume that nothing in the
+  image writes, and keeps a console and a shell on a serial port; whether a Touch's board brings that port
+  out is not checked. No USB route back was found.
+* **Whether the screens show anything for a configuration task that ended**, and what a person sees.
 
 ## The Harmony 880 and 885
 

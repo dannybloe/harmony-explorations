@@ -905,7 +905,11 @@ node packages/usb/bin/read-file-identity.ts [--product 0xc12b] [--raw] [--record
                        framing was guessed. `--record h350` or `h300` also reads `/sys/guid` and
                        writes its two GUIDs to the lab's `units/<label>.txt`, the record the file
                        write path compares against; `/sys/guid` is the same identity block the
-                       command family keeps in program memory. Reads only. Opens the device.
+                       command family keeps in program memory. `--record touch` records a Harmony
+                       Touch, which refuses `/sys/guid`: a digest of its identity file's
+                       `serial_number`, `unitIdentityFromSerial`, refusing the empty serial a unit
+                       with no manufacturing record states, `tests/test_harmony_touch_serial.py`.
+                       Reads only. Opens the device.
 node packages/usb/bin/write-file-config.ts --unit h350 --config <file> --backup <file> [--commit] [--no-reboot]
                        write a configuration to a Harmony 350 or 300 through the file protocol,
                        `todo-compile-350.md` 1.6. Without `--commit` it reads the identity file,
@@ -916,6 +920,15 @@ node packages/usb/bin/write-file-config.ts --unit h350 --config <file> --backup 
                        answered), the chunks, the check, the flush, the close, a read back compared
                        byte for byte, and the reboot. A file read off a remote has its end marker put
                        back. Every line is journalled beside `--config`. Unrun on a remote.
+node packages/usb/bin/touch-request.ts --request provisioning|confighash [--commit]
+                       ask a Harmony Touch one of the two reads its request channel carries,
+                       `todo-touch.md` 6.4. Without `--commit` it opens nothing and prints the reports
+                       a commit would send. `--commit` needs HARMONY_ENABLE_WRITES=1 **and**
+                       HARMONY_TOUCH_REQUESTS=1, since even a read is a write into `/sys/hlapi`, and the
+                       lab's `units/touch.txt`; it opens a session through `touchsession.ts`, whose rail
+                       is `assertTouchRequestAllowed` and whose route on the transport decodes the
+                       request name off the bytes it sends, and keeps the answer in the lab's `reads/`.
+                       Unrun on a remote.
 node packages/usb/bin/read-file.ts --file <path> [--product 0xc12b] [--device <path>]
                        the general form of the above: read any path on `INERT_PATHS` and print it as
                        bytes and, where it is printable, as text. Deliberately does not parse, since

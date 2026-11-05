@@ -193,7 +193,8 @@ directions of a sync are recorded, `packages/usb/test/touch-sync-both-ways.test.
 field by field in [its platform pages](../reference/architectures/harmony-touch/README.md) and read by the codec,
 `packages/codec/src/harmony-touch/`; what a host other than Logitech's server would have to answer is
 [answering a sync](../reference/architectures/harmony-touch/answering-a-sync.md). The bench Touch may be written,
-decision 29, and no write path exists yet.
+decision 29: the rail for its request channel exists, `assertTouchRequestAllowed` behind
+`HARMONY_TOUCH_REQUESTS`, `todo-touch.md` 6.3, and nothing has been sent through it.
 
 ## What is still open
 

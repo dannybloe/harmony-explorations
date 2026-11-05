@@ -29,6 +29,17 @@ The product id comes from `FILE_BASED_PRODUCTS` in `packages/usb/src/transport.t
 | product string | `Logitech Harmony Remote`, with no firmware version in it, where a Harmony 350 states `Harmony Remote 0-1.4.0` | [^s193] |
 | `/sys/sysinfo` | `arch 0x11`, 17; `skin 0x63`, 99; `fw_ver 4.15.330`; `fw_type 0x00`; `link_packet_length 64`; and a serial, among fourteen fields. The identifying values never appear here | [^s200], [^s201] |
 
+## Telling one Touch from another
+
+A Touch has no identity block to read: it refuses `/sys/guid` at open[^s200]. **What tells one unit from
+another on the cable is the identity file's `serial_number`**, which the remote's native program copies at
+start out of the unit's manufacturing record, the `unitid` key of its `mfg` partition, at most 63
+characters[^t-touch-serial]. When the partition is missing, or its record holds no `unitid`, the program
+states the empty string instead, which is then the same on every such unit, so an empty serial identifies
+nothing[^t-touch-serial]. Whether
+two units' records can hold the same `unitid` is not read: the record is written at manufacture, and nothing
+on the image makes one[^unchecked].
+
 ## The protocol, as far as it was used
 
 The packet, how a request and a reply encode their parameters, what a refusal looks like and why one
@@ -61,8 +72,12 @@ user configuration commented out[^s198].
 |---|---|
 | **`openHarmony` refuses it**, by product id, and `make remotes` lists it separately | [^s193] |
 | **`openFileBasedRemote` opens it read only**: a bare ping, an open for reading, a read and a close, and only for the paths on `INERT_PATHS`. Two of those twelve answer on a Touch, `/sys/sysinfo` and `/rf/deviceinfo`; the other ten are refused at open | [^s200], [^s201] |
-| any other path needs `HARMONY_FILE_PATH_EXPERIMENT=1`, because a path can be an action | [^s200] |
-| **nothing is written**: the file write path the library has is the Harmony 300 and 350's, and it refuses a remote whose identity file states any architecture but 16, which a Touch's does not; no request and response command is implemented, and no write list in `packages/usb/src/rails.ts` names this model | [^s198] |
+| any other path needs `HARMONY_FILE_PATH_EXPERIMENT=1`, because a path can be an action, except eight that are never opened whatever the flags, `NEVER_OPENED_PATHS` in `packages/usb/src/filepipe.ts`: the four names that act on a write, the two that act on an open and the two that take firmware, [the names](../../architectures/harmony-touch/api/names.md#the-names-that-act-on-a-write-and-on-an-open) | [^s200], [^t-touch-api-names] |
+| **requests to its software go through a rail of their own**: `openTouchRequestSession` in `packages/usb/src/touchsession.ts` writes request lines into `/sys/hlapi` behind `assertTouchRequestAllowed` in `packages/usb/src/rails.ts`, with `HARMONY_ENABLE_WRITES=1` and `HARMONY_TOUCH_REQUESTS=1`. It opens `/sys/hlapi` and nothing else for writing, refuses any unit but the one it is meant for, told apart by its serial as above, and carries two reads, the provisioning information and `getconfighash`, and the four requests of a sync, [answering a sync](../../architectures/harmony-touch/answering-a-sync.md#which-request-names-act); the transport refuses every other request name off the bytes of the line it is about to send | [^d29] |
+| **no configuration is written as a file**: the file write path is the Harmony 300 and 350's, and it refuses a remote whose identity file states any architecture but 16, which a Touch's does not; no request and response command is implemented | [^s198] |
+
+> The last row said no write list in `packages/usb/src/rails.ts` names this model<!--superseded-->, until the
+> request channel's rail was added there.
 
 **So there is nothing left to read on a Touch without the named door**[^s201]. What the remote asks for during
 a sync goes through `/sys/hlapi`, which is not on `INERT_PATHS`; this library opened it once, behind the
@@ -86,3 +101,5 @@ named door, to learn its size, and has never read it[^s200][^t-touch-sync].
 [^t-touch-both-ways]: Measured on a unit. [The test](../../../packages/usb/test/touch-sync-both-ways.test.ts)
 [^unchecked]: Not checked.
 [^t-touch-api-names]: Read in the firmware. [The test](../../../tests/test_harmony_touch_api_names.py)
+[^t-touch-serial]: Read in the firmware. [The test](../../../tests/test_harmony_touch_serial.py)
+[^d29]: Chosen by this project. [Decision 29](../../../docs/decisions.md#d29)

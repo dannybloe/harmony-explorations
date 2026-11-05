@@ -16,7 +16,7 @@
 
 import { ESCAPE_END_SESSION, ESCAPE_RESET, ESCAPE_SUB_COMMANDS, SOFTWARE_TYPE_SAFE_MODE, readVersion } from './protocol.ts';
 import { compareIntendedVersion } from './compatible.ts';
-import { sameUnit } from './identity.ts';
+import { sameUnit, unitIdentityFromSerial } from './identity.ts';
 import { checkFirmwareImage } from './firmware.ts';
 import { DELAY_SETTINGS, predictStoreAfter } from './settings.ts';
 import { TRAILER_CHECKSUM_OFFSET, trailerChecksum } from './trailer.ts';
@@ -1463,4 +1463,370 @@ export function assertFileWriteAllowed(p: FileWritePermission): FileFamilyContai
     );
   }
   return assertFileWriteTarget(p);
+}
+
+// ---------------------------------------------------------------------------------------------------
+// The Harmony Touch's request channel, `/sys/hlapi`: `todo-touch.md` 6.3, under decision 29.
+// ---------------------------------------------------------------------------------------------------
+
+/**
+ * The named door for writing request lines into a Harmony Touch's `/sys/hlapi`, beside
+ * `HARMONY_ENABLE_WRITES` rather than instead of it.
+ *
+ * **Its own door, and not the file write's**, because what it opens is a different hazard. The Harmony
+ * 300 and 350's door erases a configuration; this one hands a line of text to the remote's software, and
+ * on this protocol **a request line is itself an action, the way a path can be**,
+ * `reference/architectures/harmony-touch/answering-a-sync.md` "Which request names act": among the 120
+ * requests the engine registers are a provisioning to another account, the deletion of every stored
+ * document, a restart and a firmware install. So every request passes it, the reads included: even a
+ * read is a write into `/sys/hlapi`, and the read tier below is a statement about what the engine does
+ * with the line, not about the cable.
+ *
+ * Decision 29 permits writing the bench Touch, and the unit check in `assertTouchRequestTarget` is what
+ * says that Touch is the one on the cable.
+ */
+export const TOUCH_REQUEST_DOOR: boolean = process.env['HARMONY_TOUCH_REQUESTS'] === '1';
+
+/**
+ * The one path the request channel opens, for writing a line and then for reading its answer. Every step
+ * of a recorded sync is a session on it, `packages/usb/test/touch-sync.test.ts`, and nothing else is
+ * opened for writing by this rail or let through for it by the transport, whatever the flags.
+ */
+export const TOUCH_REQUEST_PATH = '/sys/hlapi';
+
+/**
+ * The requests that read: the engine answers them without changing what the remote stores or queues.
+ * Each is the exact name the request line opens with, compared byte for byte: the engine lowers a name's
+ * case and falls back from an unregistered verb to the bare name, `api/README.md` "How a name finds its
+ * handler", so a looser comparison would let a variant reach a handler this list does not name.
+ *
+ * * **the provisioning information**, `setup.account` given the verb `getprovisioninfo`: the account and
+ *   remote numbers and the mode. Logitech's client sent it in both recorded syncs down, in this spelling,
+ *   `touch-sync.test.ts`; read in the firmware as a read, `api/setup.md`.
+ * * **`harmony.engine?getconfighash`**: the entity tags of the stored activity, device and protocol lists
+ *   and the context, `api/engine.md`. **Never sent by anybody**: Logitech's client does not use it, so
+ *   this spelling is the long form the dispatcher's rule makes of it, the area and command after the
+ *   last dot on each side of the slash, `api/README.md`, the form every request Logitech's client sends
+ *   takes. Its answer is refused while a sync runs.
+ */
+export const TOUCH_READ_REQUESTS: readonly string[] = [
+  'vnd.logitech.setup/vnd.logitech.account?getprovisioninfo',
+  'vnd.logitech.harmony/vnd.logitech.harmony.engine?getconfighash',
+];
+
+/**
+ * The requests a sync makes, each of which changes something on the remote, so they are a tier of their
+ * own. All four are in the recorded syncs in this exact spelling, `touch-sync.test.ts` and
+ * `touch-sync-both-ways.test.ts`, and `answering-a-sync.md`'s table says what each does:
+ *
+ * * **hand the remote's own changes up**, `setup.syncremotechanges`: copies the set aside and queues
+ *   what changed on the remote, so that the next step does not discard it
+ * * **sync from the account**, `setup.sync` with no verb: empties the set aside and the queue and queues
+ *   the six documents. With a verb it is a different request, `?deleteresources` among them, and the
+ *   exact comparison is what keeps those out
+ * * **read the next request list**, `proxy.request` read: a read in effect, though it marks what it
+ *   hands over as pending
+ * * **write the answers**, `proxy.response` write: the answers go into the set the remote commits
+ *
+ * **What this rail does not protect against: what the answers say.** Nothing here reads the `responses`
+ * argument of an answer write. The remote saves a document that is valid JSON whatever it holds, and one that
+ * lacks a list the engine's reader walks makes the reader raise when the engine tries the gathered set, which
+ * ends the task that loads the configuration, `reference/architectures/harmony-touch/firmware.md`
+ * "A configuration that fails to load". **So this rail can leave a remote in a state it cannot clear**: the
+ * requests that clear one, `proxy.abort`, `setup.sync?deleteresources` and `setup.firmware?reboot`, are on
+ * neither list, and a sync of ours stopped halfway, after `setup.sync` and before the commit, is cleared by
+ * `proxy.abort` or a restart and by nothing the rail sends either. Whether to add those three is a decision
+ * still to be taken, and not one this rail takes by itself. **The protection is upstream of the rail**: the answerer refuses a
+ * set the codec's reader and check reject before any of it is written, `todo-touch.md` 6.6.
+ */
+export const TOUCH_SYNC_REQUESTS: readonly string[] = [
+  'vnd.logitech.setup/vnd.logitech.syncRemoteChanges',
+  'vnd.logitech.setup/vnd.logitech.sync',
+  'vnd.logitech.proxy/vnd.logitech.request?read',
+  'vnd.logitech.proxy/vnd.logitech.response?write',
+];
+
+/** The request that carries answers, which the session announces with its length first. */
+export const TOUCH_ANSWER_WRITE = 'vnd.logitech.proxy/vnd.logitech.response?write';
+
+/**
+ * The announcement that precedes a write of answers: `Content-Length: ` and a number, the whole line and
+ * nothing after it. The remote's listener gathers the writes that follow until it holds that many bytes,
+ * `answering-a-sync.md` "A long answer is announced first", and Logitech's client announced every answer
+ * write, short ones included, with the length of its `responses` argument. It names no request, so it is
+ * not on either list a caller chooses from: the session writes it itself, `announcedLength` in
+ * `touchsession.ts`.
+ */
+export const TOUCH_ANNOUNCEMENT = /^Content-Length: [1-9][0-9]{0,8}$/;
+
+/**
+ * The text the remote's cable listener takes as an announcement **wherever it sits in a line**: it matches
+ * `Content-Length: ` and digits against the whole line it is handed, `halhttpserverconnector.lua`
+ * `clientConnection`, before it looks at what the line names. No request may carry it, in its first packet
+ * or any later one; arguments are URL encoded, so no line of Logitech's client carries the literal.
+ */
+export const TOUCH_ANNOUNCEMENT_TEXT = 'Content-Length:';
+
+/**
+ * Where a line's arguments stand after `rest`, the text that follows the request's name, judged on the
+ * characters seen so far: `pending` while nothing but `&` has followed the name, `refused` when the first
+ * other character is `=`, `started` otherwise.
+ *
+ * **Why a leading `=` is refused.** The engine's cable listener splits a line into a command, the name's
+ * characters, and the rest after any run of `&`; when that rest starts with `=` it cuts the command at its
+ * `?` and moves the verb into the arguments, `halhttpserverconnector.lua` `processUri`. So
+ * `...request?read&=x` runs the bare name `proxy.request` and not the name the rail checked, and a name with
+ * no `?` makes the listener's own match fail. For the six names on the lists the bare names are the same read
+ * or sync or, for the provisioning read, the provisioning read again, so nothing worse was reachable; it is
+ * refused because it is a way for the request the engine runs to differ from the name the rail checked.
+ */
+export function touchArgumentsAfter(rest: string): 'pending' | 'started' | 'refused' {
+  const after = rest.replace(/^&+/, '');
+  if (after.length === 0) return 'pending';
+  return after.startsWith('=') ? 'refused' : 'started';
+}
+
+/** Which list a request line's name is on. */
+export type TouchRequestTier = 'read' | 'sync' | 'announcement';
+
+/** What `touchRequestOfLineStart` decoded off the first data packet of a request line. */
+export interface TouchRequestStart {
+  /** The name, every byte up to the first `&` or to the end of the line. */
+  readonly name: string;
+  readonly tier: TouchRequestTier;
+  /**
+   * Whether the line has to end with this packet. True when the name ran to the packet's end with no
+   * `&` after it, since a packet that followed would carry the rest of the **name**: a short first packet
+   * holding `vnd.logitech.setup/vnd.logitech.sync` and a second holding `?deleteresources` is one line,
+   * and it is the request that deletes every stored document.
+   */
+  readonly endsHere: boolean;
+}
+
+/** Printable text and the space, which is every byte any recorded request line holds. */
+function printable(bytes: Uint8Array): boolean {
+  return bytes.every((b) => b >= 0x20 && b <= 0x7e);
+}
+
+/**
+ * The request a line opens with, decoded off the bytes of its **first data packet**, or undefined when
+ * that packet does not name one this rail allows. The transport's guard calls this on the payload it is
+ * about to send, as `requestedPath` decodes a path, so the name is never taken from a caller.
+ *
+ * Refused, by returning undefined:
+ *
+ * * a byte outside printable text, since a line feed would end the line where the remote reads it and
+ *   start a second request that nothing here has decoded. Every recorded line is printable, arguments
+ *   URL encoded
+ * * a name that is not exactly one on `TOUCH_READ_REQUESTS` or `TOUCH_SYNC_REQUESTS`, byte for byte
+ * * a first packet that ends before the name does: one with no `&` that is full, since the name may run
+ *   on into the next packet and cannot be known from this one. A name that fits and has no `&` marks
+ *   `endsHere`, and the guard refuses any data packet after it
+ * * `Content-Length:` anywhere in a request's packet, `TOUCH_ANNOUNCEMENT_TEXT`, and arguments that start
+ *   with `=`, `touchArgumentsAfter`. The guard carries both into the packets after the first,
+ *   `carryTouchLine` in `filepipe.ts`, since either can be split across a packet boundary
+ */
+export function touchRequestOfLineStart(payload: Uint8Array): TouchRequestStart | undefined {
+  if (payload.length === 0 || !printable(payload)) return undefined;
+  const text = String.fromCharCode(...payload);
+  if (TOUCH_ANNOUNCEMENT.test(text)) return { name: 'Content-Length', tier: 'announcement', endsHere: true };
+  if (text.includes(TOUCH_ANNOUNCEMENT_TEXT)) return undefined;
+  const amp = text.indexOf('&');
+  const name = amp < 0 ? text : text.slice(0, amp);
+  const tier: TouchRequestTier | undefined = TOUCH_READ_REQUESTS.includes(name)
+    ? 'read'
+    : TOUCH_SYNC_REQUESTS.includes(name) ? 'sync' : undefined;
+  if (tier === undefined) return undefined;
+  if (touchArgumentsAfter(text.slice(name.length)) === 'refused') return undefined;
+  return { name, tier, endsHere: amp < 0 };
+}
+
+/**
+ * The request a whole line makes, judged on the whole line, or a refusal naming why.
+ *
+ * The session asks this before it sends anything, and the guard asks `touchRequestOfLineStart` again on
+ * the first packet as it goes out; the two are one rule seen from two places, the whole line here and
+ * the packet there. What only the whole line shows:
+ *
+ * * **no `Content-Length:` anywhere in a request.** The remote's listener takes that text as an
+ *   announcement wherever it sits in a line, reading the engine's cable listener, and a request carrying
+ *   it would make the remote gather the writes that follow into one answer. Arguments are URL encoded,
+ *   so a line of Logitech's client never carries the literal
+ * * **no arguments starting with `=`**, `touchArgumentsAfter`
+ * * **no announcement from a caller**: the session writes those itself
+ *
+ * The guard holds the first two on the bytes too, in the first packet and, carried, in every later one,
+ * `carryTouchLine` in `filepipe.ts`.
+ */
+export function touchRequestOfLine(line: string): TouchRequestStart {
+  const bytes = Uint8Array.from(line, (c) => c.charCodeAt(0));
+  if (line.length === 0 || [...line].some((c) => c.charCodeAt(0) > 0xff) || !printable(bytes)) {
+    throw new RailError('a request line is printable text and nothing else, so one line is one request');
+  }
+  if (TOUCH_ANNOUNCEMENT.test(line)) {
+    throw new RailError('an announcement is written by the session itself, with the length of the line it announces');
+  }
+  if (line.includes(TOUCH_ANNOUNCEMENT_TEXT)) {
+    throw new RailError(
+      'refusing a request that carries "Content-Length:": the remote reads that as an announcement '
+        + 'wherever it sits in a line and would gather the next writes into one answer',
+    );
+  }
+  const amp = line.indexOf('&');
+  const name = amp < 0 ? line : line.slice(0, amp);
+  if (touchArgumentsAfter(line.slice(name.length)) === 'refused') {
+    throw new RailError(
+      'refusing a request whose arguments start with "=": the remote then cuts the verb off the name and '
+        + 'runs a request other than the one the rail checked',
+    );
+  }
+  if (TOUCH_READ_REQUESTS.includes(name)) return { name, tier: 'read', endsHere: amp < 0 };
+  if (TOUCH_SYNC_REQUESTS.includes(name)) return { name, tier: 'sync', endsHere: amp < 0 };
+  throw new RailError(
+    `refusing the request ${JSON.stringify(name.slice(0, 80))}: the Touch's request channel carries the `
+      + 'provisioning read, getconfighash and the four requests of a sync, and nothing else. A request '
+      + 'line is an action on this remote: the resource put, a provisioning, marking the configuration '
+      + 'changed, deleting the stored documents and every firmware request are among the names it refuses',
+  );
+}
+
+/**
+ * The Harmony Touch's identity file, as the request channel needs it: arch 17, as the remote states it
+ * itself, the firmware's number shared with the hubs (`reference/architectures/harmony-touch/README.md`,
+ * where Logitech's templates say 18), skin 99, the Touch's, and its product id. The skin is what makes
+ * it a Touch and not a hub or another remote of the generation, whose skins differ.
+ */
+export const TOUCH_REQUEST_ARCHITECTURES: readonly number[] = [17];
+export const TOUCH_REQUEST_SKINS: readonly number[] = [99];
+export const TOUCH_PRODUCT_ID = 0xc12b;
+
+/**
+ * The firmware builds whose request names and their effects are read: the production build 4.15.330,
+ * the one `api/` reads and the one every recorded sync ran on. A remote on another build is refused, as
+ * the config writer refuses a build whose cache drop nobody has read: what a name does is a fact about a
+ * build.
+ */
+export const TOUCH_REQUEST_READ_ON: readonly string[] = ['4.15.330'];
+
+/**
+ * The unit the identity file names: its `serial_number` line, which the remote's native program fills
+ * from the unit's manufacturing record, `unitIdentityFromSerial`. A refusal when it carries nothing that
+ * tells one unit from another.
+ */
+export function touchUnitIdentity(sysinfo: ReadonlyMap<string, string>): Uint8Array {
+  const serial = sysinfo.get('serial_number');
+  if (serial === undefined) {
+    throw new RailError('the identity file states no serial_number, so it cannot say which Touch this is');
+  }
+  try {
+    return unitIdentityFromSerial(serial);
+  } catch (error: unknown) {
+    throw new RailError(`the connected unit cannot be identified: ${error instanceof Error ? error.message : String(error)}`);
+  }
+}
+
+/**
+ * Everything the request channel needs judged before a line is written.
+ *
+ * The same lesson as `FileWritePermission`: the identity file is read off the remote by the session
+ * itself and handed in here, and what a caller chooses is only the path, the line and the unit record.
+ */
+export interface TouchRequestPermission {
+  /** The path to open for writing. Anything but `/sys/hlapi` is refused. */
+  readonly path: string;
+  /** The whole request line. */
+  readonly line: string;
+  /** `/sys/sysinfo` as read off the remote in this session and parsed, one field per name. */
+  readonly sysinfo: ReadonlyMap<string, string>;
+  /** The unit the session is meant for, the lab's `units/touch.txt`, never from the remote. */
+  readonly permittedUnit: Uint8Array;
+}
+
+/**
+ * Throws unless the remote whose identity file this is, is the Touch a session is meant for. Asked when a
+ * session opens, so a wrong remote is refused before any request is built, and again inside
+ * `assertTouchRequestTarget` for every request, **against the identity file read when the session opened**:
+ * the unit is read off the cable once per session, not once per request.
+ *
+ * **Why once per session is the check and not a gap.** The transport a session runs on is one HID device
+ * opened by its path, `openFileBasedRemote`, and a remote unplugged and another plugged in is a new device
+ * that handle does not reach: the writes fail rather than go to the newcomer. Reading the identity file
+ * again before every request would put reports between the operations of a sync that Logitech's client
+ * never sent and the recordings do not hold, `touchsession.test.ts` comparing the session with them report
+ * by report, and it would buy nothing the bound handle does not already give. So the second check
+ * re-checks the record against the identity file the session holds, and not the cable.
+ *
+ * * **the remote states architecture 17, skin 99 and the Touch's product id** in its identity file
+ * * **it runs a build whose names are read**, `TOUCH_REQUEST_READ_ON`
+ * * **it states a packet length of 64**, which the data packets are sized for
+ * * **its serial names the unit the session is for**, `sameUnit` over the two discriminators. A Touch
+ *   refuses `/sys/guid`, so the serial is the only thing on the cable that tells two Touches apart
+ */
+export function assertTouchUnit(p: Pick<TouchRequestPermission, 'sysinfo' | 'permittedUnit'>): void {
+  const number = (field: string): number => Number.parseInt(p.sysinfo.get(field) ?? '', 16);
+  if (!TOUCH_REQUEST_ARCHITECTURES.includes(number('arch')) || !TOUCH_REQUEST_SKINS.includes(number('skin'))
+    || number('usb_product_id') !== TOUCH_PRODUCT_ID) {
+    throw new RailError(
+      `the remote states architecture ${p.sysinfo.get('arch') ?? 'nothing'}, skin ${p.sysinfo.get('skin') ?? 'nothing'} `
+        + `and product ${p.sysinfo.get('usb_product_id') ?? 'nothing'}, and the request channel is read for a `
+        + 'Harmony Touch only: architecture 0x11, skin 0x63, product 0xc12b',
+    );
+  }
+  const build = p.sysinfo.get('fw_ver');
+  if (build === undefined || !TOUCH_REQUEST_READ_ON.includes(build)) {
+    throw new RailError(
+      `the remote runs firmware ${build ?? 'unknown'}, and the request names and what they do are read on `
+        + `${TOUCH_REQUEST_READ_ON.join(', ')} only`,
+    );
+  }
+  if (Number.parseInt(p.sysinfo.get('link_packet_length') ?? '', 10) !== 64) {
+    throw new RailError(
+      `the remote states a packet length of ${p.sysinfo.get('link_packet_length') ?? 'nothing'}, and the `
+        + 'request channel sizes its data packets for 64',
+    );
+  }
+  assertUnitIsPermitted({ identityBlock: touchUnitIdentity(p.sysinfo), permittedUnit: p.permittedUnit });
+}
+
+/**
+ * Throws unless this line may be written to the Touch these facts were read off, **leaving the two flags
+ * aside**. A dry run asks this; `assertTouchRequestAllowed` asks it and the flags.
+ *
+ * * **the path is `/sys/hlapi`**, and no other: `/sys/factoryreset`, `/sys/reboot`, the firmware names
+ *   and the names that act when opened are refused here and, whatever the flags, by the transport
+ * * **the remote is the Touch the session is for**, `assertTouchUnit`
+ * * **the line is a request on the allow list**, `touchRequestOfLine`
+ */
+export function assertTouchRequestTarget(p: TouchRequestPermission): TouchRequestStart {
+  if (p.path !== TOUCH_REQUEST_PATH) {
+    throw new RailError(
+      `refusing to open ${p.path}: the request channel opens ${TOUCH_REQUEST_PATH} and nothing else. On a `
+        + 'Touch /sys/factoryreset and /sys/reboot act on a write, /fw/otaupdate takes firmware, and '
+        + '/tde/haptic/diagnostic and /tde/haptic/calibrate act on an open',
+    );
+  }
+  assertTouchUnit(p);
+  return touchRequestOfLine(p.line);
+}
+
+/**
+ * Throws unless this line may be written to the Touch these facts were read off.
+ *
+ * The two flags first, `HARMONY_ENABLE_WRITES` and `HARMONY_TOUCH_REQUESTS`, so a shipped build's refusal
+ * names the build flag, and then `assertTouchRequestTarget`. The session calls it before every request,
+ * with the identity file it read when it opened, and only then authorises the reports one at a time.
+ */
+export function assertTouchRequestAllowed(p: TouchRequestPermission): TouchRequestStart {
+  if (!WRITES_ENABLED) {
+    throw new RailError(
+      'writing is disabled: this build is read only (set HARMONY_ENABLE_WRITES=1 knowing why)',
+    );
+  }
+  if (!TOUCH_REQUEST_DOOR) {
+    throw new RailError(
+      'a request to a Harmony Touch needs HARMONY_TOUCH_REQUESTS=1 as well as HARMONY_ENABLE_WRITES=1: '
+        + 'a request line is an action on that remote, the reads included as far as the cable is concerned',
+    );
+  }
+  return assertTouchRequestTarget(p);
 }

@@ -75,7 +75,11 @@ what each checks and what it means on the cable is the API overview's table,
 [the checks before a handler](README.md#the-checks-before-a-handler). Of the four only `IsSyncComplete`
 refuses on a Touch: a request sent while the computer is itself driving a sync answers 202.
 `WaitAccountRegistered` waits for the engine to register its handler for unloading a configuration, which it
-does after the first load whether that load succeeded or not[^t-touch-api-engine].
+does after the first load when that load returns, with a configuration or without one[^t-touch-api-engine].
+A load that raises an error ends the task before it registers, and then every request with this check waits
+for ever, [recovery](../firmware.md#a-configuration-that-fails-to-load)[^t-touch-recovery]. This said it
+registers after the first load "whether that load succeeded or not"<!--superseded-->, which holds for a load
+that returns and not for one that raises.
 
 ## How the answer comes back
 
@@ -689,6 +693,7 @@ client, and a cable host is not one the engine can answer[^t-touch-api-engine].
   build or another product of the generation[^unchecked].
 * What `setsleeptimer` and the help requests do on the screen of a Touch; read in the engine only[^unchecked].
 
+[^t-touch-recovery]: Read in the firmware. [The test](../../../../tests/test_harmony_touch_recovery.py)
 [^t-touch-api-engine]: Read in the firmware. [The test](../../../../tests/test_harmony_touch_api_engine.py)
 [^t-touch-activities-firmware]: Read in the firmware. [The test](../../../../tests/test_harmony_touch_activities.py)
 [^t-touch-answers]: Measured on a unit. [The test](../../../../packages/usb/test/touch-host.test.ts)

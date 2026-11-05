@@ -194,6 +194,17 @@ class TheEngineAcceptsAndDispatchesTheRequest(TheImage):
         self.assertIn(number_constant(8333), connector)
         self.assert_strings(CONNECTOR, ['hal_http', 'Content-Length', '/api/'])
 
+    def test_the_connector_matches_the_announcement_anywhere_and_counts_the_line_from_the_name(self):
+        # The announcement is a pattern matched against the whole line the connector is handed, and the
+        # writes that follow are gathered by cutting the line at its sixth character, which is what follows
+        # `/api/`: so the count the announcement is held against starts at the request's name. Read in the
+        # decompiled connector, `clientConnection`; these are the constants that reading rests on, in one
+        # function. `touch-host.test.ts` measures what Logitech's client announced against it.
+        constants = self.constants_with(CONNECTOR, 'Content%-Length%: (%d+)', 'response%?write', '/api/')
+        self.assertIn(6.0, constants)
+        self.assertIn(b'sub', constants)
+        self.assertIn(b'contentLength', constants)
+
     def test_the_put_command_and_the_abort_are_registered_and_the_dispatcher_is_present(self):
         self.assert_strings(APILISTENER, ['proxy.resource?put', 'proxy.abort'])
         self.assert_strings(ENGINE_DISPATCH, ['processMessage'])

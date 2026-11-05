@@ -113,6 +113,62 @@ for (const fixture of FIXTURES) {
   });
 }
 
+/**
+ * **What the announcement states, and the margin the recordings had.** Logitech's client announces the
+ * length of the write's `responses` argument as written, URL encoded, and not of the line: the line is
+ * longer by its name (46 characters), `&sessionId=`, the session id and `&responses=`. The remote's cable
+ * listener counts the line from the name on and is handed each write command's chunk as it arrives, so it
+ * acts once the chunks it holds reach the announced number, `answering-a-sync.md` "A long answer is announced
+ * first". A line written in more than one chunk is therefore complete for the listener one chunk early when
+ * its last chunk is no longer than that shortfall, and this test measures how far every recorded write was
+ * from that: the shortfall, and the last chunk of each write of more than one.
+ *
+ * Over all three recordings: **twelve** announcements, three, six and three, each equal to its write's
+ * `responses` length and each short of the line by 68 characters plus the session id, 101 to 104. Four writes
+ * went in more than one chunk, of 31000 characters each but the last, and the shortest last chunk was 2276
+ * characters, so no recorded write came near the hazard. The two reviews of `todo-touch.md` 6.3 counted 12
+ * and 9; the 9 left out the reverse sync, whose three announcements are all single chunk, and named the
+ * shortfall as 102 to 104, which misses the full sync's largest write, whose session id is 33 characters.
+ */
+test('every announcement states its write\'s responses length, short of the line, and no recorded last chunk came near the shortfall', lab.skipUnless(...FIXTURES), () => {
+  const per: Record<string, number> = {};
+  const shortfalls = new Set<number>();
+  const lastChunks: number[] = [];
+  for (const fixture of FIXTURES) {
+    const written = hlapi(fixture).filter((s) => s.mode === 'W');
+    per[fixture] = 0;
+    for (const [i, session] of written.entries()) {
+      const announcement = text(session.written);
+      if (requestName(announcement) !== 'Content-Length') continue;
+      per[fixture] += 1;
+      const stated = Number(announcement.slice('Content-Length: '.length));
+      const write = written[i + 1]!;
+      const line = text(write.written);
+      assert.equal(requestName(line), 'proxy/response?write');
+      const responses = line.split('&responses=');
+      assert.equal(responses.length, 2, 'one responses argument');
+      assert.equal(stated, responses[1]!.length, 'the announcement is the responses argument as written');
+      const name = line.split('&')[0]!;
+      const sessionId = /&sessionId=([^&]*)/.exec(line)![1]!;
+      const shortfall = line.length - stated;
+      // The closure: the shortfall is exactly the name, the two argument names and the session id.
+      assert.equal(shortfall, name.length + '&sessionId='.length + sessionId.length + '&responses='.length);
+      assert.equal(name.length, 46);
+      shortfalls.add(shortfall);
+      assert.equal(write.writeChunks.reduce((a, b) => a + b, 0), line.length, 'the chunks are the line');
+      if (write.writeChunks.length > 1) {
+        for (const chunk of write.writeChunks.slice(0, -1)) assert.equal(chunk, 31000, 'a whole chunk');
+        lastChunks.push(write.writeChunks.at(-1)!);
+      }
+    }
+  }
+  assert.deepEqual(per, { touch_sync_recording: 3, touch_full_sync_recording: 6, touch_reverse_sync_recording: 3 });
+  assert.deepEqual([...shortfalls].sort((a, b) => a - b), [101, 102, 103, 104]);
+  assert.deepEqual(lastChunks.sort((a, b) => a - b), [2276, 13560, 25446, 29312]);
+  // So every recorded multi chunk write ended in a chunk far longer than the shortfall: the hazard was not met.
+  assert.ok(lastChunks.every((last) => last > Math.max(...shortfalls)));
+});
+
 /** True when every `proxy/response?write` in the ordered request names is immediately preceded by an announcement. */
 function announcedBeforeEachWrite(names: string[]): boolean {
   return names.every((name, i) => name !== 'proxy/response?write' || names[i - 1] === 'Content-Length');

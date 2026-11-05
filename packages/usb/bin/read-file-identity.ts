@@ -18,6 +18,7 @@
  *
  *     node packages/usb/bin/read-file-identity.ts [--product 0xc12b] [--path <path>] [--raw]
  *     node packages/usb/bin/read-file-identity.ts --product 0xc124 --record h350 [--force]
+ *     node packages/usb/bin/read-file-identity.ts --product 0xc12b --record touch [--force]
  *
  * ## `--record <label>`, the unit record the file write path compares against
  *
@@ -33,6 +34,22 @@
  * whose GUIDs are filler, which would match every unit; and it refuses to move a label to a different
  * unit without `--force`, since a label pointing at the wrong remote permits a write to it. The labels
  * `write-file-config.ts` looks for are `h350` and `h300`.
+ *
+ * ## A remote that refuses `/sys/guid`: the Harmony Touch, `todo-touch.md` 6.2
+ *
+ * A Touch refuses `/sys/guid` at open, `reference/remotes/harmony-touch/usb.md`, so it has no identity
+ * block to record. What tells one Touch from another is the identity file's `serial_number`, which the
+ * remote's native program fills from the unit's manufacturing record, `tests/test_harmony_touch_serial.py`.
+ * So when the remote refuses `/sys/guid`, its identity file states a Touch's architecture and skin, 17 and
+ * 99 as the remote numbers them, and it states a serial, the record is
+ * `unitIdentityFromSerial` of that serial: 32 bytes in the same hex form, which `sameUnit` compares as it
+ * compares two GUIDs, and the record's comment says which source it came from. Nothing more is opened
+ * for it: the serial is in the identity file already read.
+ *
+ * The same three refusals hold. Eight characters of the record are printed and never the serial; an empty
+ * serial, which is what the remote states when its manufacturing record is missing, and filler are
+ * refused, since either would match every such unit; and a label is not moved without `--force`. The
+ * label the Touch's request channel looks for is `touch`.
  */
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
@@ -48,7 +65,9 @@ import {
   readOpenFile,
   SYSINFO_FIELDS,
 } from '../src/filepipe.ts';
-import { identifiesAUnit, unitIdentityText } from '../src/identity.ts';
+import { identifiesAUnit, unitIdentityFromSerial, unitIdentityText } from '../src/identity.ts';
+import { TOUCH_REQUEST_ARCHITECTURES, TOUCH_REQUEST_SKINS } from '../src/rails.ts';
+import { TransportError } from '../src/transport.ts';
 
 function arg(name: string): string | undefined {
   const at = process.argv.indexOf(name);
@@ -102,13 +121,45 @@ async function main(): Promise<void> {
     }
 
     if (record !== undefined) {
-      // One more read, of an inert path, through the same guarded transport.
-      const block = await readFile(transport, '/sys/guid');
-      if (block.length !== 64 || !identifiesAUnit(block)) {
-        fail(`\n/sys/guid came back as ${block.length} bytes that carry no per unit value, so recording `
-          + 'it would give the write rail something that matches every unit. Refusing.');
+      // One more read, of an inert path, through the same guarded transport. A Harmony Touch refuses it
+      // at open, and only that refusal, from a remote whose identity file states a Touch's architecture
+      // and skin, sends the record to the serial; any other failure stands. A Harmony 300 or 350 that
+      // refused would otherwise get a serial record under its label, which the file write rail would then
+      // fail to match: safe, but an error that names nothing, where this names the cause.
+      const statesATouch = TOUCH_REQUEST_ARCHITECTURES.includes(Number.parseInt(fields.get('arch') ?? '', 16))
+        && TOUCH_REQUEST_SKINS.includes(Number.parseInt(fields.get('skin') ?? '', 16));
+      let block: Uint8Array | undefined;
+      try {
+        block = await readFile(transport, '/sys/guid');
+      } catch (error: unknown) {
+        const refusedAtOpen = error instanceof TransportError && /the remote refused command 0x1$/.test(error.message);
+        if (!refusedAtOpen || !statesATouch) throw error;
       }
-      const text = unitIdentityText(block);
+      let text: string;
+      let source: string;
+      if (block !== undefined) {
+        if (block.length !== 64 || !identifiesAUnit(block)) {
+          fail(`\n/sys/guid came back as ${block.length} bytes that carry no per unit value, so recording `
+            + 'it would give the write rail something that matches every unit. Refusing.');
+        }
+        text = unitIdentityText(block);
+        source = '# the two GUIDs of /sys/guid, the same identity block the command family keeps in program memory\n';
+      } else {
+        const serial = fields.get('serial_number');
+        if (serial === undefined) {
+          fail('\nthe remote refused /sys/guid and its identity file states no serial_number, so nothing on '
+            + 'the cable says which unit this is. Refusing.');
+        }
+        try {
+          text = unitIdentityText(unitIdentityFromSerial(serial));
+        } catch (error: unknown) {
+          fail(`\nthe identity file's serial_number cannot identify a unit: ${
+            error instanceof Error ? error.message : String(error)}. Recording it would give the rail `
+            + 'something that matches every unit. Refusing.');
+        }
+        source = '# no /sys/guid on this remote, refused at open: SHA-256 of the /sys/sysinfo serial_number, which the\n'
+          + "# remote fills from its manufacturing record's unitid; unitIdentityFromSerial in packages/usb/src/identity.ts\n";
+      }
       const existing = unitIdentity(record);
       if (existing !== undefined && existing !== text && !force) {
         fail(`\n${unitIdentityPath(record)} already records a different unit. Refusing: a label `
@@ -124,7 +175,7 @@ async function main(): Promise<void> {
         `# ${record}: architecture ${fields.get('arch') ?? '?'}, skin ${fields.get('skin') ?? '?'}, `
         + `firmware ${fields.get('fw_ver') ?? '?'}\n`
         + `# read ${now} by packages/usb/bin/read-file-identity.ts --record ${record}\n`
-        + '# the two GUIDs of /sys/guid, the same identity block the command family keeps in program memory\n'
+        + source
         + `${text}\n`);
       console.log(`\nunit identity ${text.slice(0, 8)}..., ${existing === text ? 'unchanged' : 'recorded'} in ${where}`);
       // A read back, because a file the rail depends on is worth checking rather than assuming.

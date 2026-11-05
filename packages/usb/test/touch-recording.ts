@@ -136,6 +136,12 @@ export interface Session {
   refused: boolean;
   /** How long the remote took to acknowledge each write command of the session, in order, where timed. */
   writeAcksMs: (number | undefined)[];
+  /**
+   * How many bytes each write command of the session carried, in order: a line is written in chunks of
+   * up to the template's packets per command, and the remote's native program hands each chunk on as it
+   * arrives, which is what the announcement's arithmetic is about, `touch-host.test.ts`.
+   */
+  writeChunks: number[];
 }
 
 export function sessions(cmds: Command[]): Session[] {
@@ -145,10 +151,12 @@ export function sessions(cmds: Command[]): Session[] {
     const head = c.request[0]!;
     const command = head[OFFSET_COMMAND];
     if (command === FILE_OPEN) {
-      current = { path: requestedPath(head) ?? '?', mode: strings(head)[1] ?? '?', written: Buffer.alloc(0), read: Buffer.alloc(0), refused: false, writeAcksMs: [] };
+      current = { path: requestedPath(head) ?? '?', mode: strings(head)[1] ?? '?', written: Buffer.alloc(0), read: Buffer.alloc(0), refused: false, writeAcksMs: [], writeChunks: [] };
       out.push(current);
     } else if (command === FILE_WRITE && current) {
-      current.written = Buffer.concat([current.written, payload(c.request.slice(1))]);
+      const chunk = payload(c.request.slice(1));
+      current.written = Buffer.concat([current.written, chunk]);
+      current.writeChunks.push(chunk.length);
       current.writeAcksMs.push(c.replyMs);
       if (c.reply[0]?.[OFFSET_SEQUENCE] === REPLY_ERROR) current.refused = true;
     } else if (command === FILE_READ && current) {

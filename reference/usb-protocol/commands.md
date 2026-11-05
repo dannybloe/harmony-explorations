@@ -685,9 +685,10 @@ read clears it[^s99].
 from its diagnostics layer: one resets the USB interface, one resets the remote and one invalidates a test
 firmware image, and a fourth method, for clearing test flags, has an empty body. The first two match the
 firmware's `0x01` and `0x02`. No archive section holds the client's list, and which code the third is,
-and what it does on a remote, is not checked[^unchecked]. The factory reset Logitech does offer is not a command at all: a hidden recovery tool
-in its clients installs a whole factory firmware image fetched over the network, and only for the
-generation of the Harmony Touch, [the Touch's firmware](../architectures/harmony-touch/firmware.md)[^s196].
+and what it does on a remote, is not checked[^unchecked]. The factory resets Logitech does offer are for the
+generation of the Harmony Touch only and are not commands of this protocol: a hidden recovery tool in its
+clients installs a whole factory firmware image fetched over the network[^s196], and MyHarmony's recovery
+screen writes to the remote's own reset and restart files, [the Touch's firmware](../architectures/harmony-touch/firmware.md#logitechs-recovery-routes).
 
 ## Learning infrared
 

@@ -306,7 +306,7 @@ current firmware version, whatever is pending. No parameter[^t-touch-api-setup].
 **Restarts the remote.** The registered name carries its verb, `reboot`, and the handler starts a task that
 waits two seconds and restarts the remote, then answers 200 at once. It is refused with 202 while a sync
 runs[^t-touch-api-setup]. It is the engine's restart, beside the native program's `/sys/reboot`,
-[firmware](../firmware.md#a-factory-reset-is-a-firmware-install).
+[recovery](../firmware.md#a-configuration-that-fails-to-load).
 
 ### `setup.firmware?packageinstall`
 

@@ -135,7 +135,7 @@ of them can refuse:
 | `IsActivityRunning` | refuses with 202 while the engine's state digest marks an activity starting or stopping, or while the engine restarts the last activity after a start up | passes: the engine moves those digest fields itself only in mode 3, a hub's, and restarts the last activity only when its state digest names one, which outside mode 3 it never does, [the activity engine](activityengine.md#the-verifier-only-this-group-uses). A client can still write the status itself through `connect.statedigest?update`, in any mode, and so make this refuse until it is set back, [connect](connect.md#connectstatedigestupdate) |
 | `HasUsageLog` | takes the usage events a request carries in `ule`, records each in the usage log and removes them | never refuses; a list arrives only as a table, which a request line's text never is |
 | `HasParams` | refuses with 599 when a request has no arguments | never refuses: the engine gives every request an empty set of arguments before any check runs |
-| `WaitAccountRegistered` | waits, without refusing, until the engine has made its first attempt to load the configuration after starting | a request sent straight after the remote starts is answered late, not refused; it does not wait for a good configuration |
+| `WaitAccountRegistered` | waits, without refusing, until the engine has made its first attempt to load the configuration after starting | a request sent straight after the remote starts is answered late, not refused; it does not wait for a good configuration, but when that first load raises an error it waits for ever, [recovery](../firmware.md#a-configuration-that-fails-to-load)[^t-touch-recovery] |
 | `IsFWDownloadComplete` | refuses with 203 while a hub downloads firmware | passes on the host name `juniper` |
 | `IsPimentoBlue` | passes only on the host name `pimentoblue`, a hub's | always refuses on a Touch, with 500 |
 | `verifierJsonFileTransfer` | refuses with 594 unless the file `/etc/tdeenable` exists | refuses in production, [connect](connect.md#connectjsonfiletransferget) |
@@ -173,7 +173,8 @@ The native names have kinds of their own, among them **forward**, [the names](na
 
 ## What the API will and will not do for this project
 
-The library never opens a Touch the ordinary way and nothing writes to it,
+The library never opens a Touch the ordinary way, and its requests to this API go through a rail of their
+own that carries two reads and the four requests of a sync and nothing else,
 [working on the Harmony Touch](../../../remotes/harmony-touch/usb.md). **Two native names act on an open for
 reading**, the vibration test names `/tde/haptic/diagnostic` and `/tde/haptic/calibrate`, while the names
 that restart or reset the remote act on a bare write,
@@ -188,7 +189,8 @@ the engine's three pages does any of those[^t-touch-api-setup][^t-touch-api-engi
 put that names a document's address and carries no document, after which the remote hands that document over
 in its next request list as if it were going up to the account,
 [proxy](proxy.md#can-a-stored-document-be-read-back)[^t-touch-api-setup]. It goes through `/sys/hlapi` and
-needs no door, and it costs something on the remote: the document's tag becomes the one the put carries, a
+needs no test switch on the remote, though the library's request rail refuses the resource put today, and it
+costs something on the remote: the document's tag becomes the one the put carries, a
 configuration document reloads the engine, the state of a sync in progress is reset, and the put stays
 queued, across a restart too, until an answer clears it.
 
@@ -215,6 +217,7 @@ stored documents' entity tags, [the engine](engine.md#harmonyenginegetconfighash
 [^t-touch-api-engine]: Read in the firmware. [The test](../../../../tests/test_harmony_touch_api_engine.py)
 [^t-touch-api-closure]: Read in the firmware. [The test](../../../../tests/test_harmony_touch_api_closure.py)
 [^t-touch-host]: Read in the firmware. [The test](../../../../tests/test_harmony_touch_host.py)
+[^t-touch-recovery]: Read in the firmware. [The test](../../../../tests/test_harmony_touch_recovery.py)
 [^t-touch-sync]: Measured on a unit. [The test](../../../../packages/usb/test/touch-sync.test.ts)
 [^t-touch-answers]: Measured on a unit. [The test](../../../../packages/usb/test/touch-host.test.ts)
 [^unchecked]: Not checked.
