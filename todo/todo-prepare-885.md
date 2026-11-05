@@ -32,7 +32,7 @@ Written on 4 November 2026; linked from `todo-later.md` 5.6.
 ## 2. On the bench, needing an 885 on the cable
 
 - [x] 2.1 A whole configuration region read off each 885 into the lab, read twice and identical (D4)
-- [ ] 2.2 The version block's values compared against the six fields an 880 or 885 configuration's wrapper states (D10)
+- [x] 2.2 The version block's values compared against the six fields an 880 or 885 configuration's wrapper states (D10)
 - [x] 2.3 The clock read over USB, once 1.x has found the `READ_MISC` selectors (D12)
 - [ ] 2.4 Which printed key sends which scan code, and a drawing of the face (F9)
 
