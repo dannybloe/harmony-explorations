@@ -136,7 +136,7 @@ asked for at that point; the log holds codes only.
    that row the two keys after Fwd gave 56 then 55, the reverse of the step list's Pause then Play. The row
    was pressed again in the step list's order, giving Pause 55 and Play 56, and then each of the six alone,
    whose names the log does not hold; `h885_b` gives Pause 55 and Play 56 too. So two passes against one,
-   each named by the order asked.
+   each named by the order asked, until the check by position under `h885_b` below settled it.
 5. **Mute held**: `0x295` read 11 for 3.85 s and cleared on release; an earlier hold of 0.71 s was a short
    one.
 6. **Never seen**: 4, 9, 28, 30, 39, 42, 47, 49 and 64, the codes the key table leaves empty. The Mute reading 32
@@ -150,6 +150,12 @@ Sixteen keys, each the code `h885_a` gave: Guide 50, Info 51, Blue 52, Skip 53, 
 Activities 1, Help 3, the bottom key left of the screen 8, the top key right of it 45, Exit 18, 0 32, OK 33,
 d-pad right 35, Enter 63, named by the order the notes give, which is the order the log shows. So the six
 hold on a second unit. `0x3A1` read 53 at rest before any press, a key no filed log shows.
+
+**By position**, afterwards (`h885_b_keys_by_position`). The colour keys carry a colour and no text, so
+their names, and Pause and Play's, had rested on the order asked. Asked instead by where they sit in the
+manual's drawing, the colour keys left to right along their curve and then the transport block's top right
+key and the one below it: Red 20, Green 19, Yellow 60, Blue 52, Play 56 and Pause 55, the codes the map
+already gave. So A's first pass of the transport row, 56 then 55, was the one out of order.
 
 The predictions came from a contributor's survey of a Harmony 880 board with four 885 additions, in the
 lab; the test header says how it was read and scores it, 49 keys right and six wrong.

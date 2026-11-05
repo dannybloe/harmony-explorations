@@ -871,6 +871,9 @@ export const IMAGES: Readonly<Record<string, string>> = {
   h885_a_keys_free_press: '20261105T1100Z-h885-a-keys-opened-free-press.txt',
   h885_a_keys_map: '20261105T1130Z-h885-a-keys-map.txt',
   h885_b_keys_check: '20261105T1145Z-h885-b-keys-check.txt',
+  // Unit B's colour keys left to right and the transport block's top right key and the one below it, asked by
+  // position because the colour keys carry no text.
+  h885_b_keys_by_position: '20261105T1300Z-h885-b-keys-by-position.txt',
 };
 
 /**

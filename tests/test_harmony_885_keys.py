@@ -123,6 +123,15 @@ pass of the row give Pause 55 and Play 56: two against one, and the bench notes 
 pressing each alone, a press whose names the log does not hold. So that pair is asserted as a pair in A's
 first pass and by name on unit B only. A's second pass and the six pressed alone are asserted as codes.
 
+**Settled afterwards by position, which needs no name and no colour** (`h885_b_keys_by_position`, unit B).
+The colour keys carry a colour and no text, and their names above rested on the order asked alone. The
+885's manual draws them in a curve under the d-pad, red, green, yellow, blue from left to right, and its
+transport block with Play top right and Pause below it. Pressed by position, left to right along the curve
+and then top right and the key below it, the units gave 20, 19, 60, 52, 56, 55: Red 20, Green 19, Yellow
+60, Blue 52, Play 56, Pause 55, every one the code `MEASURED` already held. So A's first pass of the
+transport row is the one that was out of order. This log is not in `LOGS`, whose counts describe the four
+runs above; `ThePositionCheck` reads it on its own.
+
 **The held byte stays for the whole hold.** Mute held on unit A: `0x295` read 11 for 3.85 s with no
 change and went to 0 on release, the third Mute of the run; the second, 0.71 s, was a short hold.
 
@@ -487,7 +496,8 @@ class TheBenchLogs(unittest.TestCase):
         self.assertEqual(sorted(pair), [MEASURED['Pause'], MEASURED['Play']])
 
     def test_the_first_pass_of_the_transport_row_raised_pause_and_play_in_the_reverse_order(self):
-        """Recorded, not explained: the step text asks Pause then Play, and the log has 56 then 55."""
+        """The step text asks Pause then Play, and the log has 56 then 55: the keys were pressed in the other
+        order, as the check by position shows, `ThePositionCheck`."""
         pair = [c for n, c in A_MAP if n == PAUSE_OR_PLAY]
         self.assertEqual(pair, [56, 55])
         self.assertEqual((MEASURED['Pause'], MEASURED['Play']), (55, 56))
@@ -608,6 +618,32 @@ class TheBenchLogs(unittest.TestCase):
         self.assertEqual(len(codes), 48)
         self.assertEqual(sorted(set(MEASURED.values()) - codes), [1, 2, 5, 6, 7, 11, 37])
         self.assertIn(MEASURED['Vol +'], codes)
+
+
+#: The position check as asked: the colour keys along their curve from left to right, then the top right key
+#: of the transport block and the key below it. The names are the manual's drawing of those positions, so
+#: no name here rests on telling the colours apart or on an order of names.
+BY_POSITION = [('Red', 20), ('Green', 19), ('Yellow', 60), ('Blue', 52), ('Play', 56), ('Pause', 55)]
+
+
+class ThePositionCheck(unittest.TestCase):
+    """Measured on a unit, unit B, keys asked by where they sit rather than by name."""
+
+    def setUp(self):
+        lab.require('h885_b_keys_by_position')
+
+    def test_the_colour_keys_and_play_and_pause_raised_their_codes_by_position(self):
+        logged = [code for _, code, _, _ in presses('h885_b_keys_by_position')]
+        self.assertEqual(logged, [c for _, c in BY_POSITION])
+
+    def test_every_name_the_position_check_gives_is_the_code_the_map_already_held(self):
+        self.assertEqual([(n, c) for n, c in BY_POSITION if MEASURED[n] != c], [])
+        self.assertEqual(len(BY_POSITION), 6)
+
+    def test_so_the_first_pass_of_the_transport_row_is_the_one_out_of_order(self):
+        first = [c for n, c in A_MAP if n == PAUSE_OR_PLAY]
+        by_position = dict(BY_POSITION)
+        self.assertEqual(first, [by_position['Play'], by_position['Pause']])
 
 
 if __name__ == '__main__':
