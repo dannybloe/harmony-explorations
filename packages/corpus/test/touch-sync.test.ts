@@ -36,6 +36,12 @@
  *    a sync request answered 202 is refused with the recovery step. The fake's own rule has a control too: an
  *    answer to a favourites request without a tag, or a device's 404, is one it aborts over, and a picture's
  *    is not.
+ * 6a. **A set of the remote's own documents**, `todo-touch.md` 6.8, rehearsed in the shape of 6.7's second run
+ *    with made up values: the six answered 200 with the document and the set's own tag, the three untagged
+ *    favourites 304 with a kept copy tag, the ten tagged pictures 304 echoing their tags, and the finish; an
+ *    untagged picture 404, the control. **A hand over that hands up a document the set holds stops the run
+ *    before the sync request**, since the set's copy would revert the change made on the remote, where one
+ *    handing up a favourites document the set lacks goes on, the control.
  * 7. **The lines**: every line any run reported matches one of `SYNC_LINES`.
  * 7a. **A write of answers that is not taken**, `todo-touch.md` 6.7's risk 4: a reply to the write that does
  *    not name it, the listener's reply to a write it is still gathering, is refused at the first write, where
@@ -72,7 +78,7 @@ import { fileURLToPath } from 'node:url';
 
 import { skipUnless } from '@harmony/lab';
 
-import { RECOVERY, SYNC_LINES, keptCopyTag, ourTag, type RemoteRequest, type SetAnswer, type TouchSyncOutcome } from '../src/touchsync.ts';
+import { RECOVERY, SYNC_LINES, keptCopyTag, ourTag, setTag, type RemoteRequest, type SetAnswer, type TouchSyncOutcome } from '../src/touchsync.ts';
 import { recordedSyncAnswers, refusedByTheEngine, type Scenario } from './touch-sync-run.ts';
 
 const FULL = 'touch_full_sync_recording';
@@ -440,6 +446,65 @@ describe('the other rules of answering a sync', () => {
     assert.equal(r.outcome.ending, 'refused');
     assert.match(r.outcome.reason ?? '', /5 empty request lists in a row/);
     assert.equal(r.outcome.recovery, RECOVERY);
+  });
+});
+
+describe('a set of the remote\'s own documents, todo-touch.md 6.8', () => {
+  // The second sync of 6.7 in shape, `reads/20261105T1218Z-touch-sync-unchanged/`, with made up values: a hand
+  // over that hands up nothing; the six asked for with the tags the remote holds; an empty list; the user's, a
+  // device's and a line up's favourites one list each, untagged; an empty list; ten pictures, tagged; the finish.
+  const PICTURES = Array.from({ length: 10 }, (_, i) => `content-image://1.0/station/s${i}/image;maxX=54;maxY=54;type=png`);
+  const held = (): RemoteRequest[] => getSix();
+  const secondRunShape = (pictures: RemoteRequest[]): RemoteRequest[][] => [
+    held(), [], [{ verb: 'get', uri: USER }], [{ verb: 'get', uri: DEVICE }], [{ verb: 'get', uri: SERVICE }], [], pictures, [FINISHED],
+  ];
+  const tagged = PICTURES.map((uri, i) => ({ verb: 'get', uri, etag: `picture-${i}` }));
+  /** The smallest set with tags of ours stated, as `bin/touch-own-set.ts` states them. */
+  const ownSet = (): SetAnswer[] => setOf(smallest()).map((a) => ({ ...a, etag: setTag(a, 'made-up') }));
+
+  it('answers the six 200 with the document and its tag, the favourites 304 so the remote keeps its own, and the tagged pictures 304', () => {
+    const answers = ownSet();
+    const r = run({ mode: { kind: 'set', set: { answers } }, sync: secondRunShape(tagged) });
+    assert.equal(r.outcome.ending, 'finished', r.outcome.reason);
+    assert.deepEqual([r.outcome.lists, r.outcome.answered], [8, 20]);
+    assert.deepEqual(syncAnswers(r), [
+      ...answers.map((a) => ({ statusCode: '200', uri: a.uri, 'body-type': 'application/json', etag: a.etag, resource: a.resource })),
+      ...[USER, DEVICE, SERVICE].map((uri) => ({ statusCode: '304', uri, etag: keptCopyTag(uri) })),
+      ...tagged.map((q) => ({ statusCode: '304', uri: q.uri, etag: q.etag })),
+      { uri: 'proxy://Finished', statusCode: '200' },
+    ]);
+    // The tags stated are the set's, none of them what the remote held, so not one of the six is a 304.
+    assert.ok(r.reports.includes('sync: gate passed, 6 answers, 6 tags stated and 0 ours'));
+    for (const a of answers) assert.ok(!held().some((q) => q.etag === a.etag));
+  });
+
+  it('answers a picture the remote sent no tag for 404, the control for the 304 of a tagged one', () => {
+    const r = run({ mode: { kind: 'set', set: { answers: ownSet() } }, sync: secondRunShape(PICTURES.map((uri) => ({ verb: 'get', uri }))) });
+    assert.equal(r.outcome.ending, 'finished', r.outcome.reason);
+    assert.deepEqual(syncAnswers(r).slice(9, 19), PICTURES.map((uri) => ({ statusCode: '404', uri })));
+  });
+
+  const put = (uri: string, document: unknown): RemoteRequest => ({
+    verb: 'put', uri, resource: encodeURIComponent(JSON.stringify(document)).replace(/%20/g, '+'),
+  });
+
+  it('stops before the sync request when the hand over hands up a document the set holds, which the set would revert', () => {
+    const changed = { RemoteName: 'Made Up', Settings: [{ Name: 'KeyBrightness', Values: ['60'] }] };
+    const r = run({ mode: { kind: 'set', set: { answers: ownSet() } }, handOver: [[put(ADDRESS['Settings']!, changed)], [FINISHED]], sync: secondRunShape(tagged) });
+    assert.equal(r.outcome.ending, 'refused');
+    assert.match(r.outcome.reason ?? '', /^the remote handed up Settings, which the set also holds, so answering the set would revert the change/);
+    // Kept, echoed and committed by the hand over, and the sync never asked for: no sync is marked running.
+    assert.deepEqual(r.handedUp, ['001-Settings.json', '001-Settings.txt']);
+    assert.equal(names(r).filter((n) => n === 'answers').length, 2, 'the put\'s echo and the hand over\'s finish');
+    assert.ok(!names(r).includes('setup/sync'));
+    assert.equal(r.outcome.recovery, RECOVERY);
+    assert.match(r.outcome.abortCost ?? '', /^abort cost, none to a tag: the hand over committed Settings under a tag of ours/);
+  });
+
+  it('goes on when the hand over hands up a favourites document the set does not hold, the control', () => {
+    const r = run({ mode: { kind: 'set', set: { answers: ownSet() } }, handOver: [[put(USER, { preferences: {} })], [FINISHED]], sync: secondRunShape(tagged) });
+    assert.equal(r.outcome.ending, 'finished', r.outcome.reason);
+    assert.equal(r.outcome.handedUp.length, 1);
   });
 });
 

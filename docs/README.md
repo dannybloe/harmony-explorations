@@ -301,7 +301,9 @@ packages/corpus/                TS: read a config off a remote and file it, read
                                 Harmony Touch's answerer, `src/touchsync.ts`, which drives a sync
                                 down through the request session, for the same kind of reason: it
                                 calls the codec's reader and check of a Touch's documents itself
-                                before anything is sent, and packages/usb cannot import the codec
+                                before anything is sent, and packages/usb cannot import the codec;
+                                and `src/touchownset.ts`, which builds a set of a Touch's own
+                                documents for it to deliver, `todo-touch.md` 6.8
 packages/bench/                 TS: the bench instrument, a server plus two pages in web/. The
                                 second, ir.html, is the infrared monitor: what a Flirc USB receiver
                                 hears, named against the bench remotes' configurations, plus
@@ -961,7 +963,19 @@ node packages/corpus/bin/touch-sync.ts --unchanged | --set <lab folder> [--commi
                        HARMONY_TOUCH_RECOVERY set, and keeps every request and answer in the lab's
                        `reads/`. A refusal after the remote was acted on names `touch-recover.ts
                        --step abort`. One line per step starting `sync:`, the forms in its header.
-                       Unrun on a remote.
+                       With a set, a document the hand over hands up that the set also holds stops the
+                       run before the sync request, since the set would revert it. `--unchanged`
+                       has run twice on the bench Touch, 6.7; `--set` is unrun on a remote.
+node packages/corpus/bin/touch-own-set.ts --build <lab folder> --requests <list> [--handed-up <answers>]
+node packages/corpus/bin/touch-own-set.ts --check <set folder> [--hash <answer>] [--list <list>]
+                       build the set `todo-touch.md` 6.8 delivers to a Harmony Touch, its own six
+                       documents with tags of ours, `src/touchownset.ts`: from the recorded full sync,
+                       a document a hand over of ours wrote back replacing its copy, each only when the
+                       tag the remote last asked with equals its source's. `--check` reads the set back
+                       through the gate and the reader, against its sources, and sizes its write of
+                       answers; `--hash` and `--list` compare a kept `getconfighash` answer or request
+                       list with the set's tags. Reads and writes the lab only; prints counts and
+                       `equal` or `not equal`, never a tag. Opens nothing.
 node packages/usb/bin/read-file.ts --file <path> [--product 0xc12b] [--device <path>]
                        the general form of the above: read any path on `INERT_PATHS` and print it as
                        bytes and, where it is printable, as text. Deliberately does not parse, since

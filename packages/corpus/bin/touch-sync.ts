@@ -19,7 +19,10 @@
  * * `--set <lab folder>`: every request answered from the set kept in that folder's `set.json`, `{ "answers":
  *   [...] }` in the shape of the answers Logitech's client wrote, `SetAnswer`; a tag the set leaves out is ours,
  *   a digest of the body. A favourites document the set holds is written with 200, and one it lacks answered
- *   304 so the remote keeps its own. The folder has to be inside the lab. `todo-touch.md` 6.8 builds the first.
+ *   304 so the remote keeps its own; a picture it lacks is answered 304 against the remote's tag, or 404 when
+ *   the remote sent none. **A document the hand over hands up that the set also holds stops the run before the
+ *   sync request**, since the set's copy would revert the change made on the remote. The folder has to be
+ *   inside the lab. `todo-touch.md` 6.8 builds the first, with `touch-own-set.ts`.
  *
  * **Without `--commit` it opens nothing.** It prints the mode, and for a set the gate's verdict, which a commit
  * would meet first, the answers by kind and how many tags are stated; whether the lab holds the unit record and
@@ -77,7 +80,8 @@
  * The session's own lines, one per request and the identity read, are printed too and do not start with
  * `sync:`.
  *
- * Nothing in this script has been run against a remote.
+ * **`--unchanged --commit` has run twice on the bench unit**, `todo-touch.md` 6.7; `--set --commit` has not run.
+ * This said nothing in the script had been run against a remote<!--superseded--> until 6.8's preflight.
  */
 import { existsSync, readFileSync, realpathSync, statSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';

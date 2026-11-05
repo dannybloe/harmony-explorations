@@ -35,7 +35,10 @@
  *    the lab folder **before** its answer is written, then answered 200 with the same document and a tag of
  *    ours, as Logitech's client wrote the service's echo back; the hand over ends at `proxy://Finished`. From
  *    this request on the remote has been acted on, so every refusal after it names the recovery and what an
- *    abort would cost.
+ *    abort would cost. **With a set, a document handed up that the set also holds stops the run** once the
+ *    hand over has ended, before the sync request: the set's copy would overwrite the change made on the
+ *    remote, `todo-touch.md` 6.8. The change is by then kept in the lab and committed on the remote, and no
+ *    sync is marked running.
  * 4. **The sync started**, `SYNC`, and every list answered from the set until `proxy://Finished` or
  *    `proxy://Abort`, answered as Logitech's client answers both, a status of 200 and nothing else.
  *
@@ -44,8 +47,11 @@
  * * **a document** with 200, its tag and the object itself, never a string of JSON; **304 when the remote
  *   sent a tag equal to the set's**, echoing it, and never to a request that carried no tag, "The entity tag
  *   an answerer sends"
- * * **a picture the set lacks** with 404, which the remote logs and never aborts on; **a favourites document
- *   the set lacks** with 304, below; any other document the set lacks is a refusal of ours
+ * * **a picture the set lacks** with 304 against the tag the remote sent, since a tagged picture is one it
+ *   holds, and with 404 when it sent none, which the remote logs and never aborts on; this answered every
+ *   picture a set lacks 404 until `todo-touch.md` 6.8, whose set holds no pictures and whose run should change
+ *   nothing a unit has not already committed but the six documents. **A favourites document the set lacks**
+ *   with 304, below; any other document the set lacks is a refusal of ours
  * * **in `unchanged` mode**, every document and picture with 304 against the tag the remote sent. **A document
  *   it sent no tag for is refused**: a request without a tag means either that the remote holds no file for
  *   it, when a 304 copies nothing and the document is missing from the new set, or that a change made on the
@@ -107,7 +113,8 @@
  * each, a log of the lines above, and what the remote handed up, under `handed-up/`, written before the
  * answer that takes it. The folder has to be new or empty, so a run never writes over another's.
  *
- * Nothing in this file has been run against a remote.
+ * **`unchanged` has driven two syncs on the bench unit**, `todo-touch.md` 6.7; a set has not met a remote. This
+ * said nothing in the file had been run against a remote<!--superseded--> until 6.8's preflight read the runs.
  */
 import { createHash, randomUUID } from 'node:crypto';
 import { appendFileSync, existsSync, mkdirSync, readdirSync, writeFileSync } from 'node:fs';
@@ -198,11 +205,31 @@ export function keyOf(uri: string): string {
  * **A tag of ours**: a digest of the body as it would be sent, so "not changed" is a comparison of two tags
  * rather than a record kept somewhere, `answering-a-sync.md` "The entity tag an answerer sends". Shaped as a
  * version 8 identifier, RFC 9562's form for an identifier made by a rule of one's own, so it has the shape
- * of Logitech's tags and still says whose it is: theirs are random identifiers, version 4.
+ * of Logitech's tags and still says whose it is. Theirs are five groups of hex digits of 33 to 36 characters,
+ * the groups' leading zeros dropped, and none of the 25 in the two recorded syncs down is a version 4
+ * identifier, `touch-own-set.test.ts`; this said theirs were random identifiers, version 4<!--superseded-->,
+ * until the preflight of `todo-touch.md` 6.8 counted them. A Touch has stored and sent back tags of all
+ * three lengths, so it holds a tag as text of any of them.
  */
 export function ourTag(answer: Pick<SetAnswer, 'body-type' | 'resource'>): string {
-  const body = answer['body-type'] === 'application/json' ? JSON.stringify(answer.resource) : String(answer.resource);
-  return version8(`${answer['body-type']}\n${body}`);
+  return version8(`${answer['body-type']}\n${bodyText(answer)}`);
+}
+
+/**
+ * **A tag of ours for a set's answer**, `todo-touch.md` 6.8: `ourTag`'s digest with the set's name in front.
+ * `ourTag` alone gives a document the tag the hand over already wrote for it when the remote handed that same
+ * document up, so a set built from it would be answered 304 and deliver nothing; with the name, a set built
+ * from documents the remote holds still states tags the remote does not hold, and each is a 200. The same name
+ * and body give the same tag every time, so a set's tags can be recomputed from the set, and a different name
+ * gives different tags for the same documents. `bin/touch-own-set.ts` uses it, with the set folder's name.
+ */
+export function setTag(answer: Pick<SetAnswer, 'body-type' | 'resource'>, name: string): string {
+  return version8(`set ${name}\n${answer['body-type']}\n${bodyText(answer)}`);
+}
+
+/** A body as it is written into the answer: a document as its JSON, a picture as its base64 text. */
+function bodyText(answer: Pick<SetAnswer, 'body-type' | 'resource'>): string {
+  return answer['body-type'] === 'application/json' ? JSON.stringify(answer.resource) : String(answer.resource);
 }
 
 /**
@@ -351,7 +378,10 @@ export function answerOf(
   if (entry === undefined) {
     // A picture's failure is logged and never aborts, and a favourites document the set lacks is the remote's
     // own to keep; any other document a sync asks for and the set lacks would abort the whole sync, so it is
-    // ours to refuse.
+    // ours to refuse. A picture the remote asks for with a tag is one it holds, and is answered 304 against
+    // that tag as `unchanged` answers it, which is the answer a unit has committed, 6.7's second run; one
+    // without a tag is answered 404.
+    if (isPicture(request.uri) && tag !== undefined) return { statusCode: '304', uri: request.uri, etag: tag };
     if (isPicture(request.uri)) return { statusCode: '404', uri: request.uri };
     if (isFavourites(request.uri)) return keepTheRemotesCopy(request.uri, tag);
     return { refuse: `the set holds no answer for ${describe(request.uri)}` };
@@ -434,7 +464,7 @@ export interface TouchSyncOutcome {
 class Refusal extends Error {}
 
 /** An answer's status, `errorCode` in the long form's object and `code` otherwise, as text. */
-function statusOf(text: string): string | undefined {
+export function statusOf(text: string): string | undefined {
   const body = bodyOf(text);
   const code = body?.['errorCode'] ?? body?.['code'];
   return code === undefined || code === null ? undefined : String(code);
@@ -452,7 +482,7 @@ function bodyOf(text: string): Record<string, unknown> | undefined {
 }
 
 /** An answer's `result`, which the remote sends as an object or as text holding one. */
-function resultOf(text: string): Record<string, unknown> | undefined {
+export function resultOf(text: string): Record<string, unknown> | undefined {
   const result = bodyOf(text)?.['result'];
   if (typeof result === 'string') {
     try {
@@ -712,8 +742,22 @@ export async function syncTouch(options: TouchSyncOptions): Promise<TouchSyncOut
     });
     if (handed === 'aborted') return end({ ending: 'aborted' });
 
-    // 4. The sync.
+    // The hand over ended at `proxy://Finished`, so it has committed: an abort from here on costs no tag.
     stage = 'sync';
+    // A change the remote handed up to a document the set also holds would be overwritten by the set's copy
+    // at the commit, the change made on the remote reverted, which is the trap `todo-touch.md` 6.8's set is
+    // built around. So stop here, before the sync request: the change is kept in the lab and committed on the
+    // remote under a tag of ours, no sync is marked running, and the set is rebuilt from what was handed up.
+    if (prepared !== undefined) {
+      const clashing = handedUp.filter((k) => prepared.entries.has(k));
+      if (clashing.length > 0) {
+        throw new Refusal(`the remote handed up ${clashing.map((k) => (k.includes(':') ? 'a favourites document' : k)).join(' and ')}, `
+          + 'which the set also holds, so answering the set would revert the change made on the remote; the change is kept '
+          + 'in the lab and committed on the remote, so rebuild the set from it');
+      }
+    }
+
+    // 4. The sync.
     const started = await ask(SYNC, 'sync');
     const status = statusOf(started);
     if (status === '202') throw new Refusal('the remote answered the sync request 202, a sync is already marked running');
