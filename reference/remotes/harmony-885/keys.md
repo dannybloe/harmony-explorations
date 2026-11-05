@@ -4,7 +4,7 @@ A Harmony 885 has 55 keys and an 880 53. Each key sits at a crossing of the keyp
 firmware turns that crossing into a number, its scan code, which is what a configuration binds a command
 to. This page says how the numbers are laid out, which key raises which number, and what a press, a hold
 and a release raise. Every key of an 885 was pressed on a unit and its number read off the remote, below;
-an 880's were not.
+an 880's were not, and 29 of its keys have their number from the configurations Logitech compiled for it.
 
 ## Every key on the drawings
 
@@ -88,60 +88,86 @@ Generated from `packages/silhouettes/src/models/h885.ts` by `make remote-referen
 
 ### Harmony 880, skin 15
 
-**No key of the 880's drawing carries a code**, because no 880 was pressed. Its two chevron keys carry two
-candidates, 20 and 52: of the 885's four colour key codes, those are the two an 880's key table
-keeps.[^s177] That the chevron keys raise them, and which raises which, is not checked.[^unchecked]
+**29 keys of the 880's drawing carry a code, from what Logitech's compiles for the 880 put on each code**,
+and every one is the code the same key raises on an 885.[^t-880-keys-c] No 880 was pressed. A configuration
+binds a command to a code and names neither, but the command is the device's own, and Logitech's device
+database names it: where the command bound on a code is called `Pause`, or `5`, or `Mute`, the compile put
+that key's command there. A key gets the code on which configurations from two contributors name it, and on
+which more devices name it than any other key; a device that names one key on several codes does not
+count.[^t-880-keys-c] The same procedure on the 885's compiles gives 32 codes, each the code its key raised
+on a unit, and none wrong.[^t-880-keys-c] So this rests on Logitech's compiler putting a key's own command on
+that key, which the 885 shows it does for those 32, and not on a press.
+
+**24 keys carry no code.** The eight keys beside the screen, the two arrows under it, Activities, Power,
+Help, Device, Media and Glow: no command bound in the 880's compiles carries their names, and the
+activities' and devices' keypad maps bind no command to the codes those keys raise on an 885; what the
+screen's own pages bind was not read for this.[^t-880-keys-c] Prev and Enter: their codes are bound, but
+Prev's carries `ChannelPrev` and names like it, which are not the key's own name, and `Enter` appears only
+on OK's code, beside `Select` or `NumberEnter`.[^t-880-keys-c] Guide, Clear, Replay and Skip: one
+contributor's compiles name them unambiguously on the 885's codes, 50, 31, 24 and 53, and the other's do
+not.[^t-880-keys-c] And the two chevron keys, below.
+
+**A device often repeats one command on several keys of a family**: in the 880's compiles three devices
+each put a previous command on three keys and its next on three more, and one television puts its rewind
+and its fast forward commands on two keys each.[^t-880-keys-c] So a device that names one key on several
+codes does not count, and one contributor is not enough: on the 885's compiles, without both guards, the
+procedure would have put Green on Prev's code.[^t-880-keys-c]
+
+**The two chevron keys carry two candidates, 20 and 52**: of the 885's four colour key codes, those are the
+two an 880's key table keeps.[^s177] Three devices' maps in the 880's compiles put a previous command on 20,
+as on Replay's code and Ch -'s, and its next on 52, as on Skip's and Ch +'s.[^t-880-keys-c] That the chevron
+keys raise them, and which raises which, is not checked.[^unchecked]
 
 <!-- generated:keys-h880 -->
-53 keys on the drawing `h880`, 45 on the keypad and 8 that the screen speaks for. None carries a scan code. 2 are narrowed to a set of candidate codes and not decided.
+53 keys on the drawing `h880`, 45 on the keypad and 8 that the screen speaks for. 29 carry a scan code: 29 from the command Logitech's compiles for this model bind on that code, named for the key in configurations from two contributors[^t-880-keys-c]. 2 are narrowed to a set of candidate codes and not decided.
 
 | key | kind | name from | scan code | screen zone | printed on or beside it |
 |---|---|---|---|---|---|
+| `VolumeMute` | keypad | printed | 11 (0x0B)[^t-880-keys-c] |  | MUTE |
+| `VolumeUp` | keypad | printed | 13 (0x0D)[^t-880-keys-c] |  |  |
+| `DirectionLeft` | keypad | printed | 14 (0x0E)[^t-880-keys-c] |  |  |
+| `VolumeDown` | keypad | printed | 15 (0x0F)[^t-880-keys-c] |  |  |
+| `DirectionUp` | keypad | printed | 16 (0x10)[^t-880-keys-c] |  |  |
+| `Menu` | keypad | printed | 17 (0x11)[^t-880-keys-c] |  | MENU |
+| `Exit` | keypad | printed | 18 (0x12)[^t-880-keys-c] |  | EXIT |
+| `Stop` | keypad | printed | 21 (0x15)[^t-880-keys-c] |  | STOP |
+| `Record` | keypad | printed | 22 (0x16)[^t-880-keys-c] |  | REC |
+| `Rewind` | keypad | printed | 23 (0x17)[^t-880-keys-c] |  | REW |
+| `Number1` | keypad | printed | 25 (0x19)[^t-880-keys-c] |  | 1 |
+| `Number4` | keypad | printed | 26 (0x1A)[^t-880-keys-c] |  | 4, ghi |
+| `Number8` | keypad | printed | 27 (0x1B)[^t-880-keys-c] |  | 8, tuv |
+| `Number7` | keypad | printed | 29 (0x1D)[^t-880-keys-c] |  | 7, pqrs |
+| `Number0` | keypad | printed | 32 (0x20)[^t-880-keys-c] |  | 0 |
+| `Select` | keypad | printed | 33 (0x21)[^t-880-keys-c] |  | OK |
+| `DirectionDown` | keypad | printed | 34 (0x22)[^t-880-keys-c] |  |  |
+| `DirectionRight` | keypad | printed | 35 (0x23)[^t-880-keys-c] |  |  |
+| `ChannelDown` | keypad | printed | 36 (0x24)[^t-880-keys-c] |  |  |
+| `ChannelUp` | keypad | printed | 37 (0x25)[^t-880-keys-c] |  |  |
+| `Info` | keypad | printed | 51 (0x33)[^t-880-keys-c] |  | INFO |
+| `FastForward` | keypad | printed | 54 (0x36)[^t-880-keys-c] |  | FWD |
+| `Pause` | keypad | printed | 55 (0x37)[^t-880-keys-c] |  | PAUSE |
+| `Play` | keypad | printed | 56 (0x38)[^t-880-keys-c] |  | PLAY |
+| `Number2` | keypad | printed | 57 (0x39)[^t-880-keys-c] |  | 2, abc |
+| `Number3` | keypad | printed | 58 (0x3A)[^t-880-keys-c] |  | 3, def |
+| `Number6` | keypad | printed | 59 (0x3B)[^t-880-keys-c] |  | 6, mno |
+| `Number5` | keypad | printed | 61 (0x3D)[^t-880-keys-c] |  | 5, jkl |
+| `Number9` | keypad | printed | 62 (0x3E)[^t-880-keys-c] |  | 9, wxyz |
 | `Activities` | keypad | printed | not measured |  | ACTIVITIES |
 | `AllOff` | keypad | printed | not measured |  | OFF |
-| `ChannelDown` | keypad | printed | not measured |  |  |
-| `ChannelUp` | keypad | printed | not measured |  |  |
 | `Clear` | keypad | printed | not measured |  | CLEAR |
 | `Device` | keypad | printed | not measured |  | DEVICE |
-| `DirectionDown` | keypad | printed | not measured |  |  |
-| `DirectionLeft` | keypad | printed | not measured |  |  |
-| `DirectionRight` | keypad | printed | not measured |  |  |
-| `DirectionUp` | keypad | printed | not measured |  |  |
 | `DownArrow` | keypad | printed | one of 20 or 52 |  |  |
 | `Enter` | keypad | printed | not measured |  | E, ENTER |
-| `Exit` | keypad | printed | not measured |  | EXIT |
-| `FastForward` | keypad | printed | not measured |  | FWD |
 | `Glow` | keypad | printed | not measured |  | GLOW |
 | `Guide` | keypad | printed | not measured |  | GUIDE |
 | `Help` | keypad | printed | not measured |  | HELP |
-| `Info` | keypad | printed | not measured |  | INFO |
 | `Media` | keypad | printed | not measured |  | MEDIA |
-| `Menu` | keypad | printed | not measured |  | MENU |
-| `Number0` | keypad | printed | not measured |  | 0 |
-| `Number1` | keypad | printed | not measured |  | 1 |
-| `Number2` | keypad | printed | not measured |  | 2, abc |
-| `Number3` | keypad | printed | not measured |  | 3, def |
-| `Number4` | keypad | printed | not measured |  | 4, ghi |
-| `Number5` | keypad | printed | not measured |  | 5, jkl |
-| `Number6` | keypad | printed | not measured |  | 6, mno |
-| `Number7` | keypad | printed | not measured |  | 7, pqrs |
-| `Number8` | keypad | printed | not measured |  | 8, tuv |
-| `Number9` | keypad | printed | not measured |  | 9, wxyz |
-| `Pause` | keypad | printed | not measured |  | PAUSE |
-| `Play` | keypad | printed | not measured |  | PLAY |
 | `PrevChannel` | keypad | printed | not measured |  | PREV |
-| `Record` | keypad | printed | not measured |  | REC |
-| `Rewind` | keypad | printed | not measured |  | REW |
 | `ScreenNext` | keypad | printed | not measured |  |  |
 | `ScreenPrev` | keypad | printed | not measured |  |  |
-| `Select` | keypad | printed | not measured |  | OK |
 | `SkipBack` | keypad | printed | not measured |  | REPLAY |
 | `SkipForward` | keypad | printed | not measured |  | SKIP |
-| `Stop` | keypad | printed | not measured |  | STOP |
 | `UpArrow` | keypad | printed | one of 20 or 52 |  |  |
-| `VolumeDown` | keypad | printed | not measured |  |  |
-| `VolumeMute` | keypad | printed | not measured |  | MUTE |
-| `VolumeUp` | keypad | printed | not measured |  |  |
 | `ScreenLeft1` | screen | printed | not measured | 1 |  |
 | `ScreenLeft2` | screen | printed | not measured | 3 |  |
 | `ScreenLeft3` | screen | printed | not measured | 5 |  |
@@ -310,9 +336,9 @@ remote as read is not checked.[^unchecked]
 
 ## Not checked
 
-* An 880's keys: its 53 codes are an 885's less 19 and 60, which are Green and Yellow on an 885, and no
-  880 was pressed, so neither which code each key raises nor which of 20 and 52 each chevron key raises
-  is known.[^unchecked]
+* An 880's keys on a unit: no 880 was pressed, so its 29 codes rest on Logitech's compiles, and which
+  code each of the other 24 keys raises, and which of 20 and 52 each chevron key raises, is not
+  known.[^unchecked]
 * The exact printed text of each key, and how long the hold delay lasts in seconds.[^unchecked]
 * The Harmony 785's keys and where it keeps the key held.[^unchecked]
 
@@ -327,3 +353,4 @@ remote as read is not checked.[^unchecked]
 [^t-885-keys-u]: Measured on a unit. [The test](../../../tests/test_harmony_885_keys.py)
 [^s17]: Measured in configurations. [Section 17](../../../docs/findings.md#s17)
 [^t-printing-880]: Stated by Logitech, in the manual. [The test](../../../tests/test_silhouettes.py)
+[^t-880-keys-c]: Measured in configurations. [The test](../../../tests/test_harmony_880_keys.py)

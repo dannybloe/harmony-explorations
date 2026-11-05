@@ -114,7 +114,10 @@ and Blue 56, and the units give **Info 51, Blue 52, Skip 53, Fwd 54, Pause 55, P
 survey's sequence for those six numbers rotated by two, the four transport keys keeping their order among
 themselves, which is a shape a misread board is more likely to give than six independent slips; whether it
 is the 885's layout against the 880's or an error in the survey is not settled, and nothing here measures
-an 880. The legend is not named in the reference, which describes no contributed file.
+an 880. Logitech's compiles for an 880 do weigh in: they put Info, Fwd, Pause and Play on 51, 54, 55 and 56,
+the units' codes and not the survey's, `tests/test_harmony_880_keys.py`, so as far as compiles can say the
+survey is wrong for an 880 too; a pressed 880 would settle it. The legend is not named in the
+reference, which describes no contributed file.
 
 **What the logs do not settle, recorded rather than smoothed over.** In unit A's first pass of step 11
 (Guide, Skip, Fwd, Pause, Play, Info, Blue asked), the two keys after Fwd raised 56 then 55, the reverse of

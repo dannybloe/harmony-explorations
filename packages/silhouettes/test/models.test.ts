@@ -144,13 +144,21 @@ const EXPECTED: Readonly<Record<string, {
   /**
    * The 885's face with two chevron keys where the 885 has four colour keys, `h880.ts`, read off the 880's
    * own product photograph and the picture in Logitech's reviewer's guide for it, and 53 is what its
-   * configurations' key tables hold, the 885's 55 less 19 and 60. No code: no Harmony 880 has been pressed,
-   * and the codes the 885's units raised are not carried over to a remote nobody pressed. The two chevrons
-   * share two candidates, below.
+   * configurations' key tables hold, the 885's 55 less 19 and 60. No Harmony 880 has been pressed: 29 keys
+   * carry the code Logitech's compiles for skin 15 name them on, each the code the same key raised on an
+   * 885, `tests/test_harmony_880_keys.py`, and the other 22 carry no code. The two chevrons share two
+   * candidates, below.
    */
   h880: {
     buttons: 53,
-    scans: {},
+    scans: { 't-880-keys-c': 29 },
+    decided: {
+      11: 'VolumeMute', 13: 'VolumeUp', 14: 'DirectionLeft', 15: 'VolumeDown', 16: 'DirectionUp', 17: 'Menu',
+      18: 'Exit', 21: 'Stop', 22: 'Record', 23: 'Rewind', 25: 'Number1', 26: 'Number4',
+      27: 'Number8', 29: 'Number7', 32: 'Number0', 33: 'Select', 34: 'DirectionDown', 35: 'DirectionRight',
+      36: 'ChannelDown', 37: 'ChannelUp', 51: 'Info', 54: 'FastForward', 55: 'Pause',
+      56: 'Play', 57: 'Number2', 58: 'Number3', 59: 'Number6', 61: 'Number5', 62: 'Number9',
+    },
     why: "the Harmony 885's drawing less its four colour keys and plus two chevron keys, as the 880's own "
       + 'product photograph shows, and the 53 codes its configurations\' key tables hold',
   },
@@ -305,7 +313,7 @@ test('a key whose code is undecided carries candidates and no scan', () => {
      *
      * The Harmony 880's two chevron keys share 20 and 52, the two of the 885's four colour key codes its key
      * table keeps, which Logitech's compiles for skin 15 bind as a pair; which chevron is which is not
-     * settled, `h880.ts`. Its other keys carry nothing, so no candidate there can be another key's code.
+     * settled, `h880.ts`. Neither is a code another key of its drawing carries, which the check below holds.
      */
     const SETS: Readonly<Record<string, readonly { keys: number; codes: number }[]>> = {
       h300: [], h300eu: [], h350: [{ keys: 1, codes: 2 }],

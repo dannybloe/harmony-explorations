@@ -28,23 +28,32 @@
  * inner and outer edges at its bottom sit 2.7 and 2 pixels higher on the 880's than on the 885's. So the
  * chevrons were read relative to the band, 2.5 pixels lower than where the moved photograph puts them.
  *
- * **No key carries a scan code.** No Harmony 880 has been pressed. Its configurations' key tables hold the
- * 885's codes less 19 and 60, which are Green and Yellow on an 885, and that a shared key raises on an 880
- * the code it raises on an 885 is likely, from the shared moulding and one firmware build, and is an
- * inference, so every code `h885.ts` carries is dropped here.
+ * **29 keys carry the code Logitech's compiles for skin 15 put their own command on**, and every one of them is
+ * the code the same key raised on a Harmony 885, `tests/test_harmony_880_keys.py`. No Harmony 880 has been
+ * pressed. Ten configurations two people read off their 880s, compiled by Logitech, bind commands to codes,
+ * and named through the infrared archive a command such as `Pause` says which key it was put on. A key gets
+ * its code where devices of both contributors name it on that code and more devices name it there than any
+ * other key, a device that names one key on several codes not counting; the same procedure on the 885's
+ * compiles gives 32 codes, every one the code its key raised on a unit. So `ESTABLISHED` below names the
+ * keys and takes each one's code from the 885's drawing, since the finding is that the two agree. Of the other
+ * 24, 22 carry no code: the keys beside the screen, the arrows under it, Activities, Power, Help, Device,
+ * Media and Glow, which no command bound carries the name of; Prev and Enter, whose codes carry other names
+ * (`ChannelPrev` on Prev's, `Enter` only on OK's, beside `Select` or `NumberEnter`); and Guide, Clear, Replay
+ * and Skip, which one contributor's compiles name unambiguously on the 885's code and the other's do not.
+ * The two chevrons carry candidates, below.
  *
  * **The two chevron keys carry candidates, 20 and 52, and which is which is not settled.** Four readings
  * narrow the pair. The 880's key table lacks exactly 19 and 60, so of the 885's four colour key codes 20
- * and 52 are what it keeps. Logitech's own compiles for skin 15, configurations two people read off their
- * 880s, bind 20 and 52 as a pair: one device's map puts a previous and a next command on them, the same
- * pair it puts on Replay and Skip and on the channel keys. Those compiles, named through the infrared
- * archive, give Info 51, Skip 53, Fwd 54, Pause 55 and Play 56, the 885's codes for those keys, so the
- * transport row leaves 52 free. And a photograph of an 880's circuit board shows two pads under the two
- * keys, the same two that are Red and Blue on an 885, which raise 20 and 52 there. The direction does not
- * agree with itself: by the board's pads and the 885's codes for them the left key is 20, and the
- * photograph prints the up chevron on the left; but the compiles put the previous command on 20, where on a
- * Harmony 600 one device's map in Logitech's compile puts its next command on the up arrow, and a third
- * party's legend of that board names the left pad's key the down arrow. A unit pressed settles it.
+ * and 52 are what it keeps. Logitech's own compiles for skin 15 bind 20 and 52 as a pair: three devices'
+ * maps, of both contributors, each put a previous command on 20, on Replay's code and on Ch -'s, and its
+ * next on 52, on Skip's and on Ch +'s. Those compiles give Info 51, Fwd 54, Pause 55 and Play 56, and the
+ * 885's units Skip 53, so the transport row leaves 52 free. And a photograph of an 880's circuit board shows
+ * two pads under the two keys, the same two that are Red and Blue on an 885, which raise 20 and 52 there.
+ * The direction does not agree with itself: by the board's pads and the 885's codes for them the left key
+ * is 20, and the photograph prints the up chevron on the left; but the compiles put the previous command on
+ * 20, where on a Harmony 600 one device's map in Logitech's compile puts its next command on the up arrow,
+ * and a third party's legend of that board names the left pad's key the down arrow. A unit pressed settles
+ * it.
  */
 import { FRAME_885, H885 } from './h885.ts';
 import type { Key, Model, Rocker } from '../types.ts';
@@ -78,13 +87,27 @@ const CHEVRONS: readonly Key[] = [
     ...mark(face(CHEVRON_Y) + CHEVRON_OFF, CHEVRON_Y, CHEVRON_WIDTH), scanCandidates: CHEVRON_CODES },
 ];
 
-/** Every other key of the 885's, without the code its units raised: no 880 was pressed. */
+/**
+ * The keys Logitech's compiles for skin 15 name on a code, each on the code the 885's units raised for it,
+ * `ESTABLISHED_880` in `tests/test_harmony_880_keys.py`; `tests/test_silhouettes.py` holds the drawing to it.
+ */
+const ESTABLISHED: ReadonlySet<string> = new Set([
+  'VolumeMute', 'VolumeUp', 'VolumeDown', 'DirectionUp', 'DirectionDown', 'DirectionLeft', 'DirectionRight',
+  'Select', 'Menu', 'Exit', 'Stop', 'Record', 'Rewind', 'FastForward', 'Pause', 'Play', 'ChannelUp', 'ChannelDown', 'Info', 'Number0', 'Number1', 'Number2', 'Number3', 'Number4',
+  'Number5', 'Number6', 'Number7', 'Number8', 'Number9',
+]);
+
+/** Every other key of the 885's: the established ones with its code, the rest without the code its units raised. */
 const KEYS: readonly Key[] = H885.keys.flatMap((key): Key[] => {
   if (key.name === 'Red') return [...CHEVRONS];
   if (COLOUR_KEYS.has(key.name)) return [];
-  const { scan: _scan, scanFrom: _scanFrom, ...rest } = key;
+  const { scan, scanFrom: _scanFrom, ...rest } = key;
+  if (ESTABLISHED.has(key.name) && scan !== undefined) return [{ ...rest, scan, scanFrom: 't-880-keys-c' }];
   return [rest];
 });
+for (const name of ESTABLISHED) {
+  if (!KEYS.some((k) => k.name === name && k.scan !== undefined)) throw new Error(`h880: no key ${name} to give a code`);
+}
 
 const BAND = H885.rockers?.find((r) => r.id === 'rocker-band');
 if (BAND === undefined) throw new Error('h880: the 885 has no band to take');

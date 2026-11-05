@@ -818,7 +818,8 @@ class TestTheHarmony880Silhouette(_SilhouetteConventions, unittest.TestCase):
     """
     The Harmony 885's face with two chevron keys where the 885 has four colour keys and another nameplate,
     `packages/silhouettes/src/models/h880.ts`: every other shape is taken from the 885's model, so what this
-    class adds is what differs, and that no code a Harmony 885 raised is carried to a remote nobody pressed.
+    class adds is what differs, and that a key carries a code only where Logitech's compiles for the 880 name
+    it, never because the 885's key in its place raised one.
 
     The printing is read off the 880's product photograph in the lab and the picture of it in Logitech's
     reviewer's guide for the 880, page 11 of `Docs/880 manual.pdf`, which agree: the up chevron on the left,
@@ -830,14 +831,18 @@ class TestTheHarmony880Silhouette(_SilhouetteConventions, unittest.TestCase):
     # configurations' key tables hold, the 885's less 19 and 60, `reference/remotes/harmony-885/keys.md`.
     EXPECTED_BUTTONS = 53
 
-    def test_no_key_claims_a_code_and_the_chevrons_share_two_candidates(self):
+    def test_the_keys_logitech_s_compiles_name_carry_their_code_and_the_chevrons_two_candidates(self):
         """
-        No Harmony 880 has been pressed, so the 885's units' codes stay on the 885's drawing. The two chevron
-        keys carry 20 and 52, the two of the 885's four colour key codes an 880's key table keeps; which of
-        them each raises is not settled, and both carry the pair. No other key carries a candidate.
+        No Harmony 880 has been pressed. The 29 keys Logitech's compiles for skin 15 name carry the code they
+        name them on, exactly `ESTABLISHED_880` in `tests/test_harmony_880_keys.py`, and no other key carries
+        one. The two chevron keys carry 20 and 52, the two of the 885's four colour key codes an 880's key
+        table keeps; which of them each raises is not settled, and both carry the pair. No other key carries a
+        candidate. This said no key claims a code until todo-prepare-885.md 2.5.2.
         """
+        from test_harmony_880_keys import ESTABLISHED_880
         buttons = _buttons(_tree(self.NAME).getroot())
-        self.assertEqual([e.get('data-name') for e in buttons.values() if e.get('data-scan')], [])
+        codes = {e.get('data-name'): int(e.get('data-scan')) for e in buttons.values() if e.get('data-scan')}
+        self.assertEqual(codes, ESTABLISHED_880)
         candidates = {e.get('data-name'): e.get('data-scan-candidates')
                       for e in buttons.values() if e.get('data-scan-candidates')}
         self.assertEqual(candidates, {'UpArrow': '20 52', 'DownArrow': '20 52'})

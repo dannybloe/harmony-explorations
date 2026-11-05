@@ -90,6 +90,13 @@ export const SCAN_SOURCES = {
   // `tests/test_harmony_885_keys.py`.
   't-885-keys-u': "read off the remote's own memory while each key was pressed, on one unit for every key and "
     + 'on a second for sixteen of them',
+  // The Harmony 880's keys that Logitech's compiles for skin 15 name: the code on which devices of both
+  // contributors bind the command named for the key, named through the infrared archive, and on which more
+  // devices name it than any other key, a device naming one key on several codes not counting; the same
+  // procedure on the 885's compiles gives 32 codes, all right,
+  // `todo-prepare-885.md` 2.5.2, `ESTABLISHED_880` in `tests/test_harmony_880_keys.py`.
+  't-880-keys-c': "from the command Logitech's compiles for this model bind on that code, named for the key in "
+    + 'configurations from two contributors',
 } as const;
 export type ScanSource = keyof typeof SCAN_SOURCES;
 
@@ -238,8 +245,9 @@ export interface Key {
   /**
    * The scan code, present **only** where something established it, and `scanFrom` says what: 38 of 44
    * keys on a Harmony One, 41 of 54 on a Harmony 600, none of the 50 on a Harmony 525, 53 of the 55 on a
-   * Harmony 350, 49 of the 55 on the Harmony 300's European printing and none on its US printing, and none
-   * of the 29 on a Harmony Touch. Never filled in on a guess. A wrong scan
+   * Harmony 350, 49 of the 55 on the Harmony 300's European printing and none on its US printing, all 55 on
+   * a Harmony 885, 29 of the 53 on a Harmony 880, and none of the 29 on a Harmony Touch. Never filled in on a
+   * guess. A wrong scan
    * code is invisible, because the interface would then show the wrong assignment beside a key with
    * complete confidence.
    */
