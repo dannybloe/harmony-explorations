@@ -13,7 +13,7 @@ import { fileURLToPath } from 'node:url';
 import { IR_ARCHIVE, LAB, load } from '@harmony/lab';
 
 import {
-  Bench, CodeBook, createServer, DEFAULT_PORT, HOST, IrMonitor, IrSessions, irtoolsSource, liveDeps,
+  BENCH_CONFIGS, BENCH_TOUCH_SETS, Bench, CodeBook, createServer, DEFAULT_PORT, HOST, IrMonitor, IrSessions, irtoolsSource, liveDeps,
   monitorLogPath, runFilePath,
 } from '../src/index.ts';
 
@@ -34,7 +34,7 @@ const loadBenchConfig = (name: string): Uint8Array | undefined => {
 };
 const codeBook = (): CodeBook => {
   if (book === undefined) {
-    book = new CodeBook(loadBenchConfig, undefined, IR_ARCHIVE);
+    book = new CodeBook(loadBenchConfig, BENCH_CONFIGS, IR_ARCHIVE, BENCH_TOUCH_SETS);
     const named = book;
     setTimeout(() => {
       named.nameFromCatalogue();

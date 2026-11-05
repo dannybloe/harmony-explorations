@@ -310,7 +310,11 @@ packages/bench/                 TS: the bench instrument, a server plus two page
                                 second, ir.html, is the infrared monitor: what a Flirc USB receiver
                                 hears, named against the bench remotes' configurations, plus
                                 recordings and a test runner whose step lists live in irtests/ and
-                                whose runs are filed in the lab. It only listens; never `sendir`
+                                whose runs are filed in the lab. It only listens; never `sendir`.
+                                For a Harmony Touch, `src/touchengine.ts` models what its engine
+                                sends and when, and `src/touchbench.ts` derives `todo-touch.md`
+                                7.1's bench tests from the documents the remote holds; the monitor
+                                names a Touch's codes from those documents, `BENCH_TOUCH_SETS`
 packages/probe/                 TS: the contribution probe, a report with shape and no contents
 ```
 
@@ -971,6 +975,12 @@ node packages/corpus/bin/touch-sync.ts --unchanged | --set <lab folder> [--commi
                        6.8 and the four sets of 6.9, each committed,
                        `packages/usb/test/touch-own-set-sync.test.ts` and
                        `touch-changed-set-sync.test.ts`.
+node packages/bench/bin/touch-tests.ts [--write]
+                       derive `todo-touch.md` 7.1's bench tests for the Harmony Touch from the set
+                       the bench unit holds and the recorded favourites, through the engine model
+                       `src/touchengine.ts`, and print them, or with `--write` write
+                       `irtests/touch-7-1-*.json`; `test/touch71.test.ts` holds the files equal to
+                       what this gives. Reads the lab only. Opens nothing, sends nothing.
 node packages/corpus/bin/touch-own-set.ts --build <lab folder> --requests <list> [--handed-up <answers>]
 node packages/corpus/bin/touch-own-set.ts --check <set folder> [--hash <answer>] [--list <list>]
                        build the set `todo-touch.md` 6.8 delivers to a Harmony Touch, its own six

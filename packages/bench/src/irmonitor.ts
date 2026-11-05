@@ -28,6 +28,14 @@
  *    candidates and is shown as one, since a number alone is held by several manufacturers.
  * A capture neither route names is still reported, as unknown, with its raw durations.
  *
+ * **A Harmony Touch is named by its own documents**, since `todo-touch.md` 7.1: it holds no configuration file,
+ * so the first route had nothing to match its codes against, and a code of a device no other bench remote holds,
+ * the Sony Blu-ray of 6.9, came unnamed. `BENCH_TOUCH_SETS` lists the set the bench Touch holds; every command of
+ * it is rendered by the codec's renderer of a catalogue definition, `waveformOfArchiveCommand`, at the device's own
+ * definition, with its toggle bit both ways, and a capture matching one is that device's command by the documents'
+ * own names, which the catalogue route then leaves alone. Held against every press of the Touch's earlier bench
+ * runs, `test/touch71.test.ts`.
+ *
  * **Captured data stays in the lab.** Each frame is appended to a JSON lines file there as it arrives,
  * so a session can be read back while it runs. Codes compiled out of Logitech's database are the same
  * class of data as a configuration, which is why the file is not here.
@@ -37,8 +45,8 @@ import { appendFileSync, existsSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 
 import {
-  catalogueCommands, codeIndex, codeKey, devices, framesOfPulses, fromFirstMark, identifyCodeset,
-  irBlockWords, irGroups, irHeaderPointers, mergedIntervals, parse, pulsesOfWords,
+  catalogueCommands, codeIndex, codeKey, devices, framesOfPulses, fromFirstMark, harmonyTouch, identifyCodeset,
+  irBlockWords, irGroups, irHeaderPointers, mergedIntervals, parse, pulsesOfWords, waveformOfArchiveCommand,
   type Container, type Pulse,
 } from '@harmony/codec';
 
@@ -72,6 +80,13 @@ export const BENCH_CONFIGS: readonly string[] = [
   // unchanged by todo-compile-300 1.4; that item's bench test.
   'h300_programmed_config',
 ];
+
+/**
+ * The Harmony Touch sets whose own documents name a capture, by their path in the lab: the set the bench Touch
+ * holds, `todo-touch.md` 6.9 and 7.1. A set is the answerer's file, `packages/corpus/bin/touch-sync.ts --set`, and a
+ * Touch keeps no configuration a host can read, so this is what the remote holds as far as anything here knows.
+ */
+export const BENCH_TOUCH_SETS: readonly string[] = ['work/touch-firmware/sets/6.9-label-back/set.json'];
 
 /** A space at least this long ends a frame: the Flirc splits there too, and NEC's longest inner space is 4.5 ms. */
 const FRAME_GAP_US = 10000;
@@ -190,12 +205,19 @@ export class CodeBook implements FrameBook {
   private readonly frames: StoredFrame[] = [];
   private index: Map<string, string[]> | undefined;
   private readonly archive: string | undefined;
+  /** The Touch sets among `configs`, whose names come from their documents and never from the catalogue. */
+  private readonly touchSets = new Set<string>();
   readonly configs: string[] = [];
 
+  /**
+   * `touchSets` is empty unless asked for, `BENCH_TOUCH_SETS` being what the bench passes, so a test that builds a
+   * book of one configuration gets that configuration's names and nothing else.
+   */
   constructor(
     load: (name: string) => Uint8Array | undefined,
     names: readonly string[] = BENCH_CONFIGS,
     archive: string | undefined = undefined,
+    touchSets: readonly string[] = [],
   ) {
     this.archive = archive;
     for (const name of names) {
@@ -205,6 +227,42 @@ export class CodeBook implements FrameBook {
       try { c = parse(blob); } catch { continue; }
       this.configs.push(name);
       this.add(name, c);
+    }
+    for (const name of touchSets) {
+      const blob = load(name);
+      if (blob === undefined) continue;
+      let answers: unknown;
+      try { answers = (JSON.parse(new TextDecoder().decode(blob)) as { answers?: unknown }).answers; } catch { continue; }
+      if (!Array.isArray(answers)) continue;
+      this.configs.push(name);
+      this.touchSets.add(name);
+      this.addTouch(name, harmonyTouch.readConfiguration(harmonyTouch.documentsOfAnswers(answers as harmonyTouch.SyncAnswer[])));
+    }
+  }
+
+  /**
+   * A Touch's codes: each command of each device rendered from its definition, the first transmission and one
+   * repetition, the toggle bit as stated and flipped, since the remote flips it from press to press. The group is
+   * the device's place in the device list and the code the command's place in the device, which is what a
+   * `KnownCode` from a set means by them. A command the renderer declines is left out, and so unnamed.
+   */
+  private addTouch(config: string, c: harmonyTouch.Configuration): void {
+    for (const [group, d] of c.devices.entries()) {
+      for (const [code, command] of d.commands.entries()) {
+        if (command.protocol === undefined || typeof command.keyCode !== 'string') continue;
+        for (const toggleFlipped of [false, true]) {
+          const sent = waveformOfArchiveCommand(command.protocol.archive, command.keyCode, { asStored: true, toggleFlipped });
+          if ('refusal' in sent) continue;
+          for (const [slot, train] of [sent.once, sent.held].entries()) {
+            for (const [at, stored] of framesOfTrain(train).entries()) {
+              this.frames.push({
+                config, device: d.name ?? `group ${group}`, group, code, command: command.name, repeat: slot === 1,
+                opening: slot === 0 && at === 0, stored,
+              });
+            }
+          }
+        }
+      }
     }
   }
 
@@ -259,6 +317,7 @@ export class CodeBook implements FrameBook {
     const index = codeIndex(this.archive);
     const byDevice = new Map<string, StoredFrame[]>();
     for (const one of this.frames) {
+      if (this.touchSets.has(one.config)) continue;
       const key = `${one.config}\u0000${one.group}`;
       const list = byDevice.get(key) ?? [];
       list.push(one);

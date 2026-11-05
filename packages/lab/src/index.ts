@@ -250,6 +250,10 @@ export const IMAGES: Readonly<Record<string, string>> = {
   touch_changed_ir_before: 'reads/20261105T145423Z-ir-test-harmony-touch-the-test-sequence-s-delay.json',
   touch_changed_ir_delay: 'reads/20261105T150025Z-ir-test-harmony-touch-the-test-sequence-s-delay.json',
   touch_changed_ir_back: 'reads/20261105T150311Z-ir-test-harmony-touch-the-test-sequence-s-delay.json',
+  // The two infrared monitor runs of `todo-touch.md` 3.2's bench checks, read again by
+  // `packages/bench/test/touch71.test.ts` as the calibration of 7.1's engine model and of the monitor's Touch names.
+  touch_monitor_ir_checks: 'reads/20261103T070731Z-ir-test-harmony-touch-off-held-device-mode-left-by-home-and-a-long-press.json',
+  touch_monitor_ir_home: 'reads/20261103T072815Z-ir-test-harmony-touch-the-home-button-leaves-device-mode.json',
   touch_changed_sync_1_outcome: 'reads/20261105T1457Z-touch-sync-set/outcome.json',
   touch_changed_sync_1_handover_list: 'reads/20261105T1457Z-touch-sync-set/003-request-list-answer.txt',
   touch_changed_sync_1_handover_answers: 'reads/20261105T1457Z-touch-sync-set/004-answers-request.txt',

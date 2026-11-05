@@ -1,0 +1,141 @@
+{
+  "name": "Harmony Touch 7.1, the favourite channels and their logos",
+  "summary": "Each favourite tapped: its channel as digits to the LG TV; and whether each logo shows.",
+  "description": "todo-touch.md 7.1, on the bench Harmony Touch holding work/touch-firmware/sets/6.9-label-back (the recorded full sync's documents under tags of ours, 6.8 and 6.9). Every expectation is derived from those documents by packages/bench/src/touchengine.ts, a model of the engine read in the firmware, and named as the monitor names a code of the Touch's own documents. Step 1 presses Off so no activity runs and the engine holds every device off; what it sends depends on what ran before and is not judged. The favourites belong to Watch TV, tuned through the LG TV, whose channel tuning pads a number to 3 digits and sends nothing before or after it (its start, finish and prefix commands name no command). The favourites screen shows 5, in this order: Zork (channel 666, added by hand, with its own uploaded picture), NPO 1 (channel 1), NPO 2 (channel 2), NPO 3 (channel 3), RTL 4 (channel 4). In step 2, before tapping, write in the step's problem field whether each of the 5 logos shows, and which do not; the monitor cannot see them. Predicted: a favourite tapped with no activity running starts Watch TV first and sends the digits at the end of the start; with it running, only the digits, each digit about 100 ms (the LG TV's InterKeyDelay) after the one before. Two equal digits in a row are separate presses about 250 ms apart in silence; if the monitor shows one press with a repeat instead, read the frames before calling the step failed. Wait for the codes to stop before pressing Next: an activity start runs about 15 seconds, most of it the LG TV's 10 second power on delay.",
+  "steps": [
+    {
+      "instruction": "Button: Off"
+    },
+    {
+      "instruction": "Button: Favorites → Screen: NPO 1",
+      "expect": [
+        {
+          "device": "LG TV",
+          "command": "PowerOn"
+        },
+        {
+          "device": "Denon AV Receiver",
+          "command": "PowerOn",
+          "pauseMs": [
+            700,
+            1250
+          ]
+        },
+        {
+          "device": "Denon AV Receiver",
+          "command": "InputTVAudio",
+          "pauseMs": [
+            3750,
+            4350
+          ]
+        },
+        {
+          "device": "LG TV",
+          "command": "InputHdmi1",
+          "pauseMs": [
+            5000,
+            5600
+          ]
+        },
+        {
+          "device": "LG TV",
+          "command": "0",
+          "pauseMs": [
+            150,
+            700
+          ],
+          "times": 2
+        },
+        {
+          "device": "LG TV",
+          "command": "1",
+          "pauseMs": [
+            150,
+            700
+          ]
+        }
+      ]
+    },
+    {
+      "instruction": "Screen: Zork",
+      "expect": [
+        {
+          "device": "LG TV",
+          "command": "6",
+          "times": 3
+        }
+      ]
+    },
+    {
+      "instruction": "Screen: NPO 2",
+      "expect": [
+        {
+          "device": "LG TV",
+          "command": "0",
+          "times": 2
+        },
+        {
+          "device": "LG TV",
+          "command": "2",
+          "pauseMs": [
+            150,
+            700
+          ]
+        }
+      ]
+    },
+    {
+      "instruction": "Screen: NPO 3",
+      "expect": [
+        {
+          "device": "LG TV",
+          "command": "0",
+          "times": 2
+        },
+        {
+          "device": "LG TV",
+          "command": "3",
+          "pauseMs": [
+            150,
+            700
+          ]
+        }
+      ]
+    },
+    {
+      "instruction": "Screen: RTL 4",
+      "expect": [
+        {
+          "device": "LG TV",
+          "command": "0",
+          "times": 2
+        },
+        {
+          "device": "LG TV",
+          "command": "4",
+          "pauseMs": [
+            150,
+            700
+          ]
+        }
+      ]
+    },
+    {
+      "instruction": "Button: Off",
+      "expect": [
+        {
+          "device": "LG TV",
+          "command": "PowerOff"
+        },
+        {
+          "device": "Denon AV Receiver",
+          "command": "PowerOff",
+          "pauseMs": [
+            700,
+            1250
+          ]
+        }
+      ]
+    }
+  ]
+}

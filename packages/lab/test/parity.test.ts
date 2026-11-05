@@ -145,7 +145,8 @@ test('the Python table was actually parsed, rather than read as empty', () => {
   // 526 with the 104 files of 6.9: the four sets that each change one value and put it back, the eight config
   // hash reads around their syncs, the four syncs and the closing `--unchanged` run, and the three bench runs that
   // timed the sequence's delay.
-  assert.equal(Object.keys(pythonImages()).length, 526, 'every fixture tests/lab.py names');
+  // 528 with the two infrared monitor runs of the Touch's 3.2 bench checks, which 7.1's engine model is calibrated on.
+  assert.equal(Object.keys(pythonImages()).length, 528, 'every fixture tests/lab.py names');
 });
 
 test('the two sides exclude the same fixtures from the parseable population', () => {

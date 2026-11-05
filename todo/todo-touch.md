@@ -99,7 +99,7 @@ Written on 2 November 2026, and placed in `todo.md`'s sequence the same day as 3
 
 ## 7. A Logitech configuration, answered by us and used
 
-- [ ] 7.1 The full test setup's documents from the recorded sync (2.3) answered by us to the bench Touch, with the Touch's first bench test: every code heard as the documents predict, the activities, device mode, the long presses, the favourites with their logos, and All Off
+- [ ] 7.1 The full test setup's documents from the recorded sync (2.3) answered by us to the bench Touch, with the Touch's first bench test: every code heard as the documents predict, the activities, device mode, the long presses, the favourites with their logos, and All Off; the answering half met by 6.8, the remote holding the recorded documents with Settings its own; the bench test prepared, never run: ten tests in `packages/bench/irtests/touch-7-1-*.json` predicted from the documents by `packages/bench/src/touchengine.ts`, calibrated on the five earlier bench runs of this unit, `packages/bench/test/touch71.test.ts`, lab note `7.1-preflight.md`
 
 ## 8. Our composers on it
 

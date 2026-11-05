@@ -1,0 +1,437 @@
+{
+  "name": "Harmony Touch 7.1, device mode 2 of 2: Plex, KPN, Xbox",
+  "summary": "Each device's own keys in device mode, tapped, then its long presses held.",
+  "description": "todo-touch.md 7.1, on the bench Harmony Touch holding work/touch-firmware/sets/6.9-label-back (the recorded full sync's documents under tags of ours, 6.8 and 6.9). Every expectation is derived from those documents by packages/bench/src/touchengine.ts, a model of the engine read in the firmware, and named as the monitor names a code of the Touch's own documents. Step 1 presses Off so no activity runs and the engine holds every device off; what it sends depends on what ran before and is not judged. Each device is chosen from the Devices list with no activity running, and every key its own map binds is tapped, then every key with a long press held about 1 s. Predicted per key: the command the device's own map binds, to that device; activities play no part. Devices whose map binds no key are left out: Switch. A tap held too long sends the long command instead: repeat the step and note it.",
+  "steps": [
+    {
+      "instruction": "Button: Off"
+    },
+    {
+      "instruction": "Screen: Devices → Screen: Plex"
+    },
+    {
+      "instruction": "Button: Menu → Button: Exit → Button: Info → Button: Guide → Button: Previous",
+      "expect": [
+        {
+          "device": "Plex",
+          "command": "Menu"
+        },
+        {
+          "device": "Plex",
+          "command": "Exit"
+        },
+        {
+          "device": "Plex",
+          "command": "Info"
+        },
+        {
+          "device": "Plex",
+          "command": "Guide"
+        },
+        {
+          "device": "Plex",
+          "command": "Prev"
+        }
+      ]
+    },
+    {
+      "instruction": "Button: Up → Button: Down → Button: Left → Button: Right → Button: OK",
+      "expect": [
+        {
+          "device": "Plex",
+          "command": "DirectionUp"
+        },
+        {
+          "device": "Plex",
+          "command": "DirectionDown"
+        },
+        {
+          "device": "Plex",
+          "command": "DirectionLeft"
+        },
+        {
+          "device": "Plex",
+          "command": "DirectionRight"
+        },
+        {
+          "device": "Plex",
+          "command": "Ok"
+        }
+      ]
+    },
+    {
+      "instruction": "Button: Volume Up → Button: Volume Down → Button: Mute → Button: Channel Up → Button: Channel Down",
+      "expect": [
+        {
+          "device": "Plex",
+          "command": "VolumeUp"
+        },
+        {
+          "device": "Plex",
+          "command": "VolumeDown"
+        },
+        {
+          "device": "Plex",
+          "command": "Mute"
+        },
+        {
+          "device": "Plex",
+          "command": "ChannelUp"
+        },
+        {
+          "device": "Plex",
+          "command": "ChannelDown"
+        }
+      ]
+    },
+    {
+      "instruction": "Button: Red → Button: Green → Button: Yellow → Button: Blue",
+      "expect": [
+        {
+          "device": "Plex",
+          "command": "Red"
+        },
+        {
+          "device": "Plex",
+          "command": "Green"
+        },
+        {
+          "device": "Plex",
+          "command": "Yellow"
+        },
+        {
+          "device": "Plex",
+          "command": "Blue"
+        }
+      ]
+    },
+    {
+      "instruction": "Button: Rewind → Button: Play → Button: Pause → Button: Fast Forward → Button: Stop → Button: Record",
+      "expect": [
+        {
+          "device": "Plex",
+          "command": "Rewind"
+        },
+        {
+          "device": "Plex",
+          "command": "Play"
+        },
+        {
+          "device": "Plex",
+          "command": "Pause"
+        },
+        {
+          "device": "Plex",
+          "command": "FastForward"
+        },
+        {
+          "device": "Plex",
+          "command": "Stop"
+        },
+        {
+          "device": "Plex",
+          "command": "Record"
+        }
+      ]
+    },
+    {
+      "instruction": "Button: Rewind, hold 1 s → Button: Fast Forward, hold 1 s",
+      "expect": [
+        {
+          "device": "Plex",
+          "command": "SkipBackward"
+        },
+        {
+          "device": "Plex",
+          "command": "SkipForward"
+        }
+      ]
+    },
+    {
+      "instruction": "Screen: Devices → Screen: KPN"
+    },
+    {
+      "instruction": "Button: Menu → Button: Exit → Button: Info → Button: Guide → Button: Previous",
+      "expect": [
+        {
+          "device": "KPN",
+          "command": "Menu"
+        },
+        {
+          "device": "KPN",
+          "command": "Exit"
+        },
+        {
+          "device": "KPN",
+          "command": "Info"
+        },
+        {
+          "device": "KPN",
+          "command": "Guide"
+        },
+        {
+          "device": "KPN",
+          "command": "ChannelPrev"
+        }
+      ]
+    },
+    {
+      "instruction": "Button: Up → Button: Down → Button: Left → Button: Right → Button: OK",
+      "expect": [
+        {
+          "device": "KPN",
+          "command": "DirectionUp"
+        },
+        {
+          "device": "KPN",
+          "command": "DirectionDown"
+        },
+        {
+          "device": "KPN",
+          "command": "DirectionLeft"
+        },
+        {
+          "device": "KPN",
+          "command": "DirectionRight"
+        },
+        {
+          "device": "KPN",
+          "command": "Select"
+        }
+      ]
+    },
+    {
+      "instruction": "Button: Mute → Button: Channel Up → Button: Channel Down",
+      "expect": [
+        {
+          "device": "KPN",
+          "command": "Mute"
+        },
+        {
+          "device": "KPN",
+          "command": "ChannelUp"
+        },
+        {
+          "device": "KPN",
+          "command": "ChannelDown"
+        }
+      ]
+    },
+    {
+      "instruction": "Button: Red → Button: Green → Button: Yellow → Button: Blue",
+      "expect": [
+        {
+          "device": "KPN",
+          "command": "Red"
+        },
+        {
+          "device": "KPN",
+          "command": "Green"
+        },
+        {
+          "device": "KPN",
+          "command": "Yellow"
+        },
+        {
+          "device": "KPN",
+          "command": "Blue"
+        }
+      ]
+    },
+    {
+      "instruction": "Button: Rewind → Button: Play → Button: Pause → Button: Fast Forward → Button: Stop → Button: Record → Button: DVR",
+      "expect": [
+        {
+          "device": "KPN",
+          "command": "Rewind"
+        },
+        {
+          "device": "KPN",
+          "command": "Play"
+        },
+        {
+          "device": "KPN",
+          "command": "Pause"
+        },
+        {
+          "device": "KPN",
+          "command": "FastForward"
+        },
+        {
+          "device": "KPN",
+          "command": "Stop"
+        },
+        {
+          "device": "KPN",
+          "command": "Record"
+        },
+        {
+          "device": "KPN",
+          "command": "DVR"
+        }
+      ]
+    },
+    {
+      "instruction": "Button: Rewind, hold 1 s → Button: Fast Forward, hold 1 s",
+      "expect": [
+        {
+          "device": "KPN",
+          "command": "Replay"
+        },
+        {
+          "device": "KPN",
+          "command": "Advance"
+        }
+      ]
+    },
+    {
+      "instruction": "Screen: Devices → Screen: Xbox"
+    },
+    {
+      "instruction": "Button: Menu → Button: Info → Button: Guide → Button: Previous",
+      "expect": [
+        {
+          "device": "Xbox",
+          "command": "Menu"
+        },
+        {
+          "device": "Xbox",
+          "command": "Info"
+        },
+        {
+          "device": "Xbox",
+          "command": "Xbox Guide"
+        },
+        {
+          "device": "Xbox",
+          "command": "ChannelPrev"
+        }
+      ]
+    },
+    {
+      "instruction": "Button: Up → Button: Down → Button: Left → Button: Right → Button: OK",
+      "expect": [
+        {
+          "device": "Xbox",
+          "command": "DirectionUp"
+        },
+        {
+          "device": "Xbox",
+          "command": "DirectionDown"
+        },
+        {
+          "device": "Xbox",
+          "command": "DirectionLeft"
+        },
+        {
+          "device": "Xbox",
+          "command": "DirectionRight"
+        },
+        {
+          "device": "Xbox",
+          "command": "OK"
+        }
+      ]
+    },
+    {
+      "instruction": "Button: Volume Up → Button: Volume Down → Button: Mute → Button: Channel Up → Button: Channel Down",
+      "expect": [
+        {
+          "device": "Xbox",
+          "command": "VolumeUp"
+        },
+        {
+          "device": "Xbox",
+          "command": "VolumeDown"
+        },
+        {
+          "device": "Xbox",
+          "command": "Mute"
+        },
+        {
+          "device": "Xbox",
+          "command": "ChannelUp"
+        },
+        {
+          "device": "Xbox",
+          "command": "ChannelDown"
+        }
+      ]
+    },
+    {
+      "instruction": "Button: Red → Button: Green → Button: Yellow → Button: Blue",
+      "expect": [
+        {
+          "device": "Xbox",
+          "command": "B"
+        },
+        {
+          "device": "Xbox",
+          "command": "A"
+        },
+        {
+          "device": "Xbox",
+          "command": "Y"
+        },
+        {
+          "device": "Xbox",
+          "command": "X"
+        }
+      ]
+    },
+    {
+      "instruction": "Button: Rewind → Button: Play → Button: Pause → Button: Fast Forward → Button: Stop → Button: Record",
+      "expect": [
+        {
+          "device": "Xbox",
+          "command": "Rewind"
+        },
+        {
+          "device": "Xbox",
+          "command": "Play"
+        },
+        {
+          "device": "Xbox",
+          "command": "Pause"
+        },
+        {
+          "device": "Xbox",
+          "command": "FastForward"
+        },
+        {
+          "device": "Xbox",
+          "command": "Stop"
+        },
+        {
+          "device": "Xbox",
+          "command": "Record"
+        }
+      ]
+    },
+    {
+      "instruction": "Button: Previous, hold 1 s → Button: Channel Up, hold 1 s → Button: Channel Down, hold 1 s → Button: Rewind, hold 1 s → Button: Fast Forward, hold 1 s",
+      "expect": [
+        {
+          "device": "Xbox",
+          "command": "Back"
+        },
+        {
+          "device": "Xbox",
+          "command": "PageUp"
+        },
+        {
+          "device": "Xbox",
+          "command": "PageDown"
+        },
+        {
+          "device": "Xbox",
+          "command": "SkipBack"
+        },
+        {
+          "device": "Xbox",
+          "command": "SkipForward"
+        }
+      ]
+    }
+  ]
+}

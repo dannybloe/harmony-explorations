@@ -1,0 +1,324 @@
+{
+  "name": "Harmony Touch 7.1, every activity started from Off, and Off",
+  "summary": "Each activity from Off, then Off: power on, inputs, start steps and power off, in order, with their delays.",
+  "description": "todo-touch.md 7.1, on the bench Harmony Touch holding work/touch-firmware/sets/6.9-label-back (the recorded full sync's documents under tags of ours, 6.8 and 6.9). Every expectation is derived from those documents by packages/bench/src/touchengine.ts, a model of the engine read in the firmware, and named as the monitor names a code of the Touch's own documents. Step 1 presses Off so no activity runs and the engine holds every device off; what it sends depends on what ran before and is not judged. Each activity is started with every device off and ended with Off. Predicted: a device powered in two states gets its PowerOn, one that steps (the KPN, Plex) its PowerToggle; the power ons in PowerOnOrder, each held back by the previous code and the device's InterDeviceDelay; then the inputs, but a device still in its power on delay is passed over, so the Denon's input (3.5 s delay) goes before the LG TV's (10 s), and the Switch's (1.5 s) before the LG TV's; then the start steps added by hand (Switch Box: the KPN's Info, 2 s, the KPN's 7). Off sends the end steps that are not power offs first (Switch Box: the LG TV's Mute), then each device's power off in PowerOffOrder. The Xbox holds its PowerOn and PowerOff for 2 s, its Duration. Wait for the codes to stop before pressing Next: an activity start runs about 15 seconds, most of it the LG TV's 10 second power on delay.",
+  "steps": [
+    {
+      "instruction": "Button: Off"
+    },
+    {
+      "instruction": "Activity: Watch TV",
+      "expect": [
+        {
+          "device": "LG TV",
+          "command": "PowerOn"
+        },
+        {
+          "device": "Denon AV Receiver",
+          "command": "PowerOn",
+          "pauseMs": [
+            700,
+            1250
+          ]
+        },
+        {
+          "device": "Denon AV Receiver",
+          "command": "InputTVAudio",
+          "pauseMs": [
+            3750,
+            4350
+          ]
+        },
+        {
+          "device": "LG TV",
+          "command": "InputHdmi1",
+          "pauseMs": [
+            5000,
+            5600
+          ]
+        }
+      ]
+    },
+    {
+      "instruction": "Button: Off",
+      "expect": [
+        {
+          "device": "LG TV",
+          "command": "PowerOff"
+        },
+        {
+          "device": "Denon AV Receiver",
+          "command": "PowerOff",
+          "pauseMs": [
+            700,
+            1250
+          ]
+        }
+      ]
+    },
+    {
+      "instruction": "Activity: Watch a Blu-ray",
+      "expect": [
+        {
+          "device": "LG TV",
+          "command": "PowerOn"
+        },
+        {
+          "device": "Denon AV Receiver",
+          "command": "PowerOn",
+          "pauseMs": [
+            700,
+            1250
+          ]
+        },
+        {
+          "device": "Blu-ray",
+          "command": "PowerOn",
+          "pauseMs": [
+            750,
+            1300
+          ]
+        },
+        {
+          "device": "Denon AV Receiver",
+          "command": "InputBlu-ray",
+          "pauseMs": [
+            2850,
+            3200
+          ]
+        },
+        {
+          "device": "LG TV",
+          "command": "InputHdmi2",
+          "pauseMs": [
+            5000,
+            5600
+          ]
+        }
+      ]
+    },
+    {
+      "instruction": "Button: Off",
+      "expect": [
+        {
+          "device": "LG TV",
+          "command": "PowerOff"
+        },
+        {
+          "device": "Denon AV Receiver",
+          "command": "PowerOff",
+          "pauseMs": [
+            700,
+            1250
+          ]
+        },
+        {
+          "device": "Blu-ray",
+          "command": "PowerOff",
+          "pauseMs": [
+            750,
+            1300
+          ]
+        }
+      ]
+    },
+    {
+      "instruction": "Activity: Listen to Music",
+      "expect": [
+        {
+          "device": "Denon AV Receiver",
+          "command": "PowerOn"
+        },
+        {
+          "device": "Plex",
+          "command": "PowerToggle",
+          "pauseMs": [
+            800,
+            1350
+          ]
+        },
+        {
+          "device": "Denon AV Receiver",
+          "command": "InputMediaPlayer",
+          "pauseMs": [
+            2800,
+            3150
+          ]
+        }
+      ]
+    },
+    {
+      "instruction": "Button: Off",
+      "expect": [
+        {
+          "device": "Denon AV Receiver",
+          "command": "PowerOff"
+        },
+        {
+          "device": "Plex",
+          "command": "PowerToggle",
+          "pauseMs": [
+            800,
+            1350
+          ]
+        }
+      ]
+    },
+    {
+      "instruction": "Activity: Switch Box",
+      "expect": [
+        {
+          "device": "LG TV",
+          "command": "PowerOn"
+        },
+        {
+          "device": "KPN",
+          "command": "PowerToggle",
+          "pauseMs": [
+            550,
+            1100
+          ]
+        },
+        {
+          "device": "Switch",
+          "command": "PowerOn",
+          "pauseMs": [
+            1550,
+            2100
+          ]
+        },
+        {
+          "device": "Switch",
+          "command": "Input2",
+          "pauseMs": [
+            1550,
+            2100
+          ]
+        },
+        {
+          "device": "LG TV",
+          "command": "InputHdmi3",
+          "pauseMs": [
+            5450,
+            6250
+          ]
+        },
+        {
+          "device": "KPN",
+          "command": "Info",
+          "pauseMs": [
+            550,
+            1100
+          ]
+        },
+        {
+          "device": "KPN",
+          "command": "7",
+          "pauseMs": [
+            2050,
+            2600
+          ]
+        }
+      ]
+    },
+    {
+      "instruction": "Button: Off",
+      "expect": [
+        {
+          "device": "LG TV",
+          "command": "Mute"
+        },
+        {
+          "device": "LG TV",
+          "command": "PowerOff",
+          "pauseMs": [
+            150,
+            700
+          ]
+        },
+        {
+          "device": "KPN",
+          "command": "PowerToggle",
+          "pauseMs": [
+            550,
+            1100
+          ]
+        },
+        {
+          "device": "Switch",
+          "command": "PowerOff",
+          "pauseMs": [
+            1550,
+            2100
+          ]
+        }
+      ]
+    },
+    {
+      "instruction": "Activity: Play a Game",
+      "expect": [
+        {
+          "device": "LG TV",
+          "command": "PowerOn"
+        },
+        {
+          "device": "Denon AV Receiver",
+          "command": "PowerOn",
+          "pauseMs": [
+            700,
+            1250
+          ]
+        },
+        {
+          "device": "Xbox",
+          "command": "PowerOn",
+          "pauseMs": [
+            250,
+            750
+          ]
+        },
+        {
+          "device": "Denon AV Receiver",
+          "command": "InputGame1",
+          "pauseMs": [
+            3350,
+            3750
+          ]
+        },
+        {
+          "device": "LG TV",
+          "command": "InputHdmi4",
+          "pauseMs": [
+            5000,
+            5600
+          ]
+        }
+      ]
+    },
+    {
+      "instruction": "Button: Off",
+      "expect": [
+        {
+          "device": "LG TV",
+          "command": "PowerOff"
+        },
+        {
+          "device": "Denon AV Receiver",
+          "command": "PowerOff",
+          "pauseMs": [
+            700,
+            1250
+          ]
+        },
+        {
+          "device": "Xbox",
+          "command": "PowerOff",
+          "pauseMs": [
+            250,
+            750
+          ]
+        }
+      ]
+    }
+  ]
+}

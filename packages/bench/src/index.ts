@@ -13,3 +13,5 @@ export * from './bench.ts';
 export * from './server.ts';
 export * from './irmonitor.ts';
 export * from './irsession.ts';
+export * from './touchengine.ts';
+export * from './touchbench.ts';

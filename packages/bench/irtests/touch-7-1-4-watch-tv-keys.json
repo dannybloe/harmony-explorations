@@ -1,0 +1,198 @@
+{
+  "name": "Harmony Touch 7.1, the keys in Watch TV",
+  "summary": "Every key Watch TV's map holds, tapped, then every long press held.",
+  "description": "todo-touch.md 7.1, on the bench Harmony Touch holding work/touch-firmware/sets/6.9-label-back (the recorded full sync's documents under tags of ours, 6.8 and 6.9). Every expectation is derived from those documents by packages/bench/src/touchengine.ts, a model of the engine read in the firmware, and named as the monitor names a code of the Touch's own documents. Step 1 presses Off so no activity runs and the engine holds every device off; what it sends depends on what ran before and is not judged. Then Watch TV is started (judged as in the starts test) and every key its map binds is tapped, in groups from the top of the keypad, then every key with a long press is held for about 1 s. Predicted per key: the command the map binds, to the device it names (the volume keys to the activity's volume device); a key with a long press sends nothing when it goes down and its short command when let go inside about 0.55 s, its long command once held past that. A key the map does not bind sends nothing and is not pressed here. A tap held too long sends the long command instead: repeat the step and note it.",
+  "steps": [
+    {
+      "instruction": "Button: Off"
+    },
+    {
+      "instruction": "Activity: Watch TV",
+      "expect": [
+        {
+          "device": "LG TV",
+          "command": "PowerOn"
+        },
+        {
+          "device": "Denon AV Receiver",
+          "command": "PowerOn",
+          "pauseMs": [
+            700,
+            1250
+          ]
+        },
+        {
+          "device": "Denon AV Receiver",
+          "command": "InputTVAudio",
+          "pauseMs": [
+            3750,
+            4350
+          ]
+        },
+        {
+          "device": "LG TV",
+          "command": "InputHdmi1",
+          "pauseMs": [
+            5000,
+            5600
+          ]
+        }
+      ]
+    },
+    {
+      "instruction": "Button: Menu → Button: Exit → Button: Info → Button: Guide → Button: Previous",
+      "expect": [
+        {
+          "device": "LG TV",
+          "command": "Home"
+        },
+        {
+          "device": "LG TV",
+          "command": "Exit"
+        },
+        {
+          "device": "LG TV",
+          "command": "Info"
+        },
+        {
+          "device": "LG TV",
+          "command": "Guide"
+        },
+        {
+          "device": "LG TV",
+          "command": "ChannelPrev"
+        }
+      ]
+    },
+    {
+      "instruction": "Button: Up → Button: Down → Button: Left → Button: Right → Button: OK",
+      "expect": [
+        {
+          "device": "LG TV",
+          "command": "DirectionUp"
+        },
+        {
+          "device": "LG TV",
+          "command": "DirectionDown"
+        },
+        {
+          "device": "LG TV",
+          "command": "DirectionLeft"
+        },
+        {
+          "device": "LG TV",
+          "command": "DirectionRight"
+        },
+        {
+          "device": "LG TV",
+          "command": "OK"
+        }
+      ]
+    },
+    {
+      "instruction": "Button: Volume Up → Button: Volume Down → Button: Mute → Button: Channel Up → Button: Channel Down",
+      "expect": [
+        {
+          "device": "Denon AV Receiver",
+          "command": "VolumeUp"
+        },
+        {
+          "device": "Denon AV Receiver",
+          "command": "VolumeDown"
+        },
+        {
+          "device": "Denon AV Receiver",
+          "command": "Mute"
+        },
+        {
+          "device": "LG TV",
+          "command": "ChannelUp"
+        },
+        {
+          "device": "LG TV",
+          "command": "ChannelDown"
+        }
+      ]
+    },
+    {
+      "instruction": "Button: Red → Button: Green → Button: Yellow → Button: Blue",
+      "expect": [
+        {
+          "device": "LG TV",
+          "command": "Red"
+        },
+        {
+          "device": "LG TV",
+          "command": "Green"
+        },
+        {
+          "device": "LG TV",
+          "command": "Yellow"
+        },
+        {
+          "device": "LG TV",
+          "command": "Blue"
+        }
+      ]
+    },
+    {
+      "instruction": "Button: Rewind → Button: Play → Button: Pause → Button: Fast Forward → Button: Stop → Button: Record",
+      "expect": [
+        {
+          "device": "LG TV",
+          "command": "Rewind"
+        },
+        {
+          "device": "LG TV",
+          "command": "Play"
+        },
+        {
+          "device": "LG TV",
+          "command": "Pause"
+        },
+        {
+          "device": "LG TV",
+          "command": "FastForward"
+        },
+        {
+          "device": "LG TV",
+          "command": "Stop"
+        },
+        {
+          "device": "LG TV",
+          "command": "Record"
+        }
+      ]
+    },
+    {
+      "instruction": "Button: Menu, hold 1 s → Button: Previous, hold 1 s",
+      "expect": [
+        {
+          "device": "LG TV",
+          "command": "Home"
+        },
+        {
+          "device": "LG TV",
+          "command": "Back"
+        }
+      ]
+    },
+    {
+      "instruction": "Button: Off",
+      "expect": [
+        {
+          "device": "LG TV",
+          "command": "PowerOff"
+        },
+        {
+          "device": "Denon AV Receiver",
+          "command": "PowerOff",
+          "pauseMs": [
+            700,
+            1250
+          ]
+        }
+      ]
+    }
+  ]
+}

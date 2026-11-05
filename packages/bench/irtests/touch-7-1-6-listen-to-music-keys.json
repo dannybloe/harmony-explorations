@@ -1,0 +1,190 @@
+{
+  "name": "Harmony Touch 7.1, the keys in Listen to Music",
+  "summary": "Every key Listen to Music's map holds, tapped, then every long press held.",
+  "description": "todo-touch.md 7.1, on the bench Harmony Touch holding work/touch-firmware/sets/6.9-label-back (the recorded full sync's documents under tags of ours, 6.8 and 6.9). Every expectation is derived from those documents by packages/bench/src/touchengine.ts, a model of the engine read in the firmware, and named as the monitor names a code of the Touch's own documents. Step 1 presses Off so no activity runs and the engine holds every device off; what it sends depends on what ran before and is not judged. Then Listen to Music is started (judged as in the starts test) and every key its map binds is tapped, in groups from the top of the keypad, then every key with a long press is held for about 1 s. Predicted per key: the command the map binds, to the device it names (the volume keys to the activity's volume device); a key with a long press sends nothing when it goes down and its short command when let go inside about 0.55 s, its long command once held past that. A key the map does not bind sends nothing and is not pressed here. A tap held too long sends the long command instead: repeat the step and note it.",
+  "steps": [
+    {
+      "instruction": "Button: Off"
+    },
+    {
+      "instruction": "Activity: Listen to Music",
+      "expect": [
+        {
+          "device": "Denon AV Receiver",
+          "command": "PowerOn"
+        },
+        {
+          "device": "Plex",
+          "command": "PowerToggle",
+          "pauseMs": [
+            800,
+            1350
+          ]
+        },
+        {
+          "device": "Denon AV Receiver",
+          "command": "InputMediaPlayer",
+          "pauseMs": [
+            2800,
+            3150
+          ]
+        }
+      ]
+    },
+    {
+      "instruction": "Button: Menu → Button: Exit → Button: Info → Button: Guide → Button: Previous",
+      "expect": [
+        {
+          "device": "Plex",
+          "command": "Menu"
+        },
+        {
+          "device": "Plex",
+          "command": "Exit"
+        },
+        {
+          "device": "Plex",
+          "command": "Info"
+        },
+        {
+          "device": "Plex",
+          "command": "Guide"
+        },
+        {
+          "device": "Plex",
+          "command": "Prev"
+        }
+      ]
+    },
+    {
+      "instruction": "Button: Up → Button: Down → Button: Left → Button: Right → Button: OK",
+      "expect": [
+        {
+          "device": "Plex",
+          "command": "DirectionUp"
+        },
+        {
+          "device": "Plex",
+          "command": "DirectionDown"
+        },
+        {
+          "device": "Plex",
+          "command": "DirectionLeft"
+        },
+        {
+          "device": "Plex",
+          "command": "DirectionRight"
+        },
+        {
+          "device": "Plex",
+          "command": "Ok"
+        }
+      ]
+    },
+    {
+      "instruction": "Button: Volume Up → Button: Volume Down → Button: Mute → Button: Channel Up → Button: Channel Down",
+      "expect": [
+        {
+          "device": "Denon AV Receiver",
+          "command": "VolumeUp"
+        },
+        {
+          "device": "Denon AV Receiver",
+          "command": "VolumeDown"
+        },
+        {
+          "device": "Denon AV Receiver",
+          "command": "Mute"
+        },
+        {
+          "device": "Plex",
+          "command": "ChannelUp"
+        },
+        {
+          "device": "Plex",
+          "command": "ChannelDown"
+        }
+      ]
+    },
+    {
+      "instruction": "Button: Red → Button: Green → Button: Yellow → Button: Blue",
+      "expect": [
+        {
+          "device": "Plex",
+          "command": "Red"
+        },
+        {
+          "device": "Plex",
+          "command": "Green"
+        },
+        {
+          "device": "Plex",
+          "command": "Yellow"
+        },
+        {
+          "device": "Plex",
+          "command": "Blue"
+        }
+      ]
+    },
+    {
+      "instruction": "Button: Rewind → Button: Play → Button: Pause → Button: Fast Forward → Button: Stop → Button: Record",
+      "expect": [
+        {
+          "device": "Plex",
+          "command": "Rewind"
+        },
+        {
+          "device": "Plex",
+          "command": "Play"
+        },
+        {
+          "device": "Plex",
+          "command": "Pause"
+        },
+        {
+          "device": "Plex",
+          "command": "FastForward"
+        },
+        {
+          "device": "Plex",
+          "command": "Stop"
+        },
+        {
+          "device": "Plex",
+          "command": "Record"
+        }
+      ]
+    },
+    {
+      "instruction": "Button: Rewind, hold 1 s → Button: Fast Forward, hold 1 s",
+      "expect": [
+        {
+          "device": "Plex",
+          "command": "SkipBackward"
+        },
+        {
+          "device": "Plex",
+          "command": "SkipForward"
+        }
+      ]
+    },
+    {
+      "instruction": "Button: Off",
+      "expect": [
+        {
+          "device": "Denon AV Receiver",
+          "command": "PowerOff"
+        },
+        {
+          "device": "Plex",
+          "command": "PowerToggle",
+          "pauseMs": [
+            800,
+            1350
+          ]
+        }
+      ]
+    }
+  ]
+}
