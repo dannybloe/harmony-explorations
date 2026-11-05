@@ -43,7 +43,8 @@
  *
  * Whether the remote cares about any of these is not read; matching the client costs nothing and the bytes
  * it sent are the bytes the remote is known to take. `harmony.engine?getconfighash` has no template,
- * since Logitech's client never sends it, and goes in the provisioning read's shape.
+ * since Logitech's client never sends it, and goes in the provisioning read's shape, and so do the three
+ * requests of the recovery tier, behind `HARMONY_TOUCH_RECOVERY`, for the same reason.
  *
  * Nothing in this file has been sent to a remote.
  */
@@ -175,7 +176,11 @@ const ANSWERS: TouchRequestShape = {
 
 /**
  * The shape of every request the rail allows, by name, and of the announcement. A test holds the keys
- * equal to the two allow lists and the announcement, so a name added to a list without a shape fails.
+ * equal to the three allow lists and the announcement, so a name added to a list without a shape fails.
+ *
+ * **The three recovery requests borrow the provisioning read's shape**, as `getconfighash` does: Logitech's
+ * client never sends any of them over the cable, the abort being the remote's own screens' request, so no
+ * template of theirs exists. Each is one short line with a short answer, which is that template's case.
  */
 export const TOUCH_REQUEST_SHAPES: Readonly<Record<string, TouchRequestShape>> = {
   'vnd.logitech.setup/vnd.logitech.account?getprovisioninfo': PROVISIONING,
@@ -184,6 +189,9 @@ export const TOUCH_REQUEST_SHAPES: Readonly<Record<string, TouchRequestShape>> =
   'vnd.logitech.setup/vnd.logitech.sync': SYNC,
   'vnd.logitech.proxy/vnd.logitech.request?read': REQUEST_LIST,
   'vnd.logitech.proxy/vnd.logitech.response?write': ANSWERS,
+  'vnd.logitech.proxy/vnd.logitech.abort': PROVISIONING,
+  'vnd.logitech.setup/vnd.logitech.sync?deleteresources': PROVISIONING,
+  'vnd.logitech.setup/vnd.logitech.firmware?reboot': PROVISIONING,
   'Content-Length': ANSWERS,
 };
 

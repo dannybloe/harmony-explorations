@@ -1532,18 +1532,71 @@ export const TOUCH_READ_REQUESTS: readonly string[] = [
  * argument of an answer write. The remote saves a document that is valid JSON whatever it holds, and one that
  * lacks a list the engine's reader walks makes the reader raise when the engine tries the gathered set, which
  * ends the task that loads the configuration, `reference/architectures/harmony-touch/firmware.md`
- * "A configuration that fails to load". **So this rail can leave a remote in a state it cannot clear**: the
- * requests that clear one, `proxy.abort`, `setup.sync?deleteresources` and `setup.firmware?reboot`, are on
- * neither list, and a sync of ours stopped halfway, after `setup.sync` and before the commit, is cleared by
- * `proxy.abort` or a restart and by nothing the rail sends either. Whether to add those three is a decision
- * still to be taken, and not one this rail takes by itself. **The protection is upstream of the rail**: the answerer refuses a
- * set the codec's reader and check reject before any of it is written, `todo-touch.md` 6.6.
+ * "A configuration that fails to load". **The protection is upstream of the rail**: the answerer refuses a
+ * set the codec's reader and check reject before any of it is written, `todo-touch.md` 6.6. **The way back
+ * when that protection fails is the recovery tier below**, `TOUCH_RECOVERY_REQUESTS`, behind a flag of its
+ * own: a sync of ours stopped halfway, after `setup.sync` and before the commit, is cleared by the abort or a
+ * restart, and a committed set the reader raises on by the delete and a restart, none of which is on this
+ * list.
  */
 export const TOUCH_SYNC_REQUESTS: readonly string[] = [
   'vnd.logitech.setup/vnd.logitech.syncRemoteChanges',
   'vnd.logitech.setup/vnd.logitech.sync',
   'vnd.logitech.proxy/vnd.logitech.request?read',
   'vnd.logitech.proxy/vnd.logitech.response?write',
+];
+
+/**
+ * The named door for the recovery tier, `TOUCH_RECOVERY_REQUESTS`, on top of `HARMONY_ENABLE_WRITES` and
+ * `HARMONY_TOUCH_REQUESTS` and never instead of them. Decided on 5 November 2026, `docs/decisions.md`
+ * decision 29. **A door of its own because these three are for a person at the bench after a write has gone
+ * wrong**, not for a sync, and each changes the remote in a way no request of a sync does, one of them by
+ * deleting every stored document. A session driving a sync has no reason to hold this flag, so a defect in
+ * an answerer cannot reach the three.
+ */
+export const TOUCH_RECOVERY_DOOR: boolean = process.env['HARMONY_TOUCH_RECOVERY'] === '1';
+
+/**
+ * The requests that bring a stuck Touch back, a third tier behind `TOUCH_RECOVERY_DOOR`. **Before this tier
+ * the rail could leave a remote in a state nothing it sends could clear**, and the only way back was the
+ * remote's own factory reset and Logitech's client to provision it again,
+ * `reference/architectures/harmony-touch/firmware.md` "Recovery". Each is the long form the session sends,
+ * the area and the command after the last dot on each side of the slash, `api/README.md` "How a name finds
+ * its handler", compared byte for byte as the other tiers are. Logitech's client sends none of the three, so
+ * no recording holds their spelling; the remote's own screens send the abort.
+ *
+ * **What each answers is part of this rail's contract**, read in the production build 4.15.330 and none of
+ * it tried on a unit:
+ *
+ * * **the abort**, `proxy.abort`, `api/proxy.md`: clears the sync flags and the set being gathered, empties
+ *   the queue, reloads the stored configuration and answers 200. **On a remote whose configuration task has
+ *   ended its answer never comes**: the flags are cleared before the reload it then waits on, so a timeout
+ *   on the abort is that state and not a failure of the abort
+ * * **the delete**, `setup.sync?deleteresources`, `api/setup.md`: deletes every stored document and picture
+ *   and returns no reply of its own, so its answer carries no status, as `setup.sync?end`'s does,
+ *   `api/setup.md`; 501 when the remote is not provisioned. Nothing on the remote keeps a copy, so what a
+ *   person keeps is the backup taken before
+ * * **the restart**, `setup.firmware?reboot`, `api/setup.md`: answers 200 and restarts the remote two seconds
+ *   later, without the task that loads the configuration, so it reaches a remote whose task has ended. **It
+ *   answers 202 and restarts nothing while a sync is marked running**
+ *
+ * **So the order is abort, then delete if the stored set itself is what fails, then restart**, each a request
+ * of its own, since the abort's answer may never come and the restart is refused until the abort has cleared
+ * the flag. `packages/usb/bin/touch-recover.ts` runs one step per invocation and does not chain them: a person
+ * reads each answer before sending the next.
+ *
+ * **What stays refused with this door open**: every other `setup.firmware?` verb, the firmware update and the
+ * package install among them; every other `setup.sync?` verb, `?begin` among them; `proxy.finished`, which
+ * commits whatever set was gathered without loading it first, so one sent after a failed reload commits the
+ * set it failed on; and `proxy.resource?put`, which writes content and belongs to the answerer,
+ * `todo-touch.md` 6.6. **What still needs the remote's own factory reset**: a remote whose system does not
+ * start, which nothing over USB reaches, and one whose provisioning is gone, which only
+ * `setup.account?provision` would restore and which no tier carries.
+ */
+export const TOUCH_RECOVERY_REQUESTS: readonly string[] = [
+  'vnd.logitech.proxy/vnd.logitech.abort',
+  'vnd.logitech.setup/vnd.logitech.sync?deleteresources',
+  'vnd.logitech.setup/vnd.logitech.firmware?reboot',
 ];
 
 /** The request that carries answers, which the session announces with its length first. */
@@ -1587,7 +1640,15 @@ export function touchArgumentsAfter(rest: string): 'pending' | 'started' | 'refu
 }
 
 /** Which list a request line's name is on. */
-export type TouchRequestTier = 'read' | 'sync' | 'announcement';
+export type TouchRequestTier = 'read' | 'sync' | 'recovery' | 'announcement';
+
+/** The tier of a name on one of the three lists, or undefined: the one place the lists are consulted. */
+function tierOfName(name: string): Exclude<TouchRequestTier, 'announcement'> | undefined {
+  if (TOUCH_READ_REQUESTS.includes(name)) return 'read';
+  if (TOUCH_SYNC_REQUESTS.includes(name)) return 'sync';
+  if (TOUCH_RECOVERY_REQUESTS.includes(name)) return 'recovery';
+  return undefined;
+}
 
 /** What `touchRequestOfLineStart` decoded off the first data packet of a request line. */
 export interface TouchRequestStart {
@@ -1618,7 +1679,11 @@ function printable(bytes: Uint8Array): boolean {
  * * a byte outside printable text, since a line feed would end the line where the remote reads it and
  *   start a second request that nothing here has decoded. Every recorded line is printable, arguments
  *   URL encoded
- * * a name that is not exactly one on `TOUCH_READ_REQUESTS` or `TOUCH_SYNC_REQUESTS`, byte for byte
+ * * a name that is not exactly one on `TOUCH_READ_REQUESTS`, `TOUCH_SYNC_REQUESTS` or
+ *   `TOUCH_RECOVERY_REQUESTS`, byte for byte
+ * * **a name on `TOUCH_RECOVERY_REQUESTS` while `HARMONY_TOUCH_RECOVERY` is unset**: the transport holds the
+ *   recovery door on the bytes as `assertTouchRequestAllowed` holds it on the line, so a caller that goes
+ *   around the rail with the two request flags set still cannot send one
  * * a first packet that ends before the name does: one with no `&` that is full, since the name may run
  *   on into the next packet and cannot be known from this one. A name that fits and has no `&` marks
  *   `endsHere`, and the guard refuses any data packet after it
@@ -1633,10 +1698,9 @@ export function touchRequestOfLineStart(payload: Uint8Array): TouchRequestStart 
   if (text.includes(TOUCH_ANNOUNCEMENT_TEXT)) return undefined;
   const amp = text.indexOf('&');
   const name = amp < 0 ? text : text.slice(0, amp);
-  const tier: TouchRequestTier | undefined = TOUCH_READ_REQUESTS.includes(name)
-    ? 'read'
-    : TOUCH_SYNC_REQUESTS.includes(name) ? 'sync' : undefined;
+  const tier = tierOfName(name);
   if (tier === undefined) return undefined;
+  if (tier === 'recovery' && !TOUCH_RECOVERY_DOOR) return undefined;
   if (touchArgumentsAfter(text.slice(name.length)) === 'refused') return undefined;
   return { name, tier, endsHere: amp < 0 };
 }
@@ -1680,13 +1744,14 @@ export function touchRequestOfLine(line: string): TouchRequestStart {
         + 'runs a request other than the one the rail checked',
     );
   }
-  if (TOUCH_READ_REQUESTS.includes(name)) return { name, tier: 'read', endsHere: amp < 0 };
-  if (TOUCH_SYNC_REQUESTS.includes(name)) return { name, tier: 'sync', endsHere: amp < 0 };
+  const tier = tierOfName(name);
+  if (tier !== undefined) return { name, tier, endsHere: amp < 0 };
   throw new RailError(
     `refusing the request ${JSON.stringify(name.slice(0, 80))}: the Touch's request channel carries the `
-      + 'provisioning read, getconfighash and the four requests of a sync, and nothing else. A request '
-      + 'line is an action on this remote: the resource put, a provisioning, marking the configuration '
-      + 'changed, deleting the stored documents and every firmware request are among the names it refuses',
+      + 'provisioning read, getconfighash, the four requests of a sync and, behind a flag of their own, the '
+      + 'abort, the delete of the stored documents and the restart, and nothing else. A request line is an '
+      + 'action on this remote: the resource put, the commit of a sync, a provisioning, marking the '
+      + 'configuration changed and every other firmware request are among the names it refuses',
   );
 }
 
@@ -1813,8 +1878,9 @@ export function assertTouchRequestTarget(p: TouchRequestPermission): TouchReques
  * Throws unless this line may be written to the Touch these facts were read off.
  *
  * The two flags first, `HARMONY_ENABLE_WRITES` and `HARMONY_TOUCH_REQUESTS`, so a shipped build's refusal
- * names the build flag, and then `assertTouchRequestTarget`. The session calls it before every request,
- * with the identity file it read when it opened, and only then authorises the reports one at a time.
+ * names the build flag, then `assertTouchRequestTarget`, and then, for a request of the recovery tier,
+ * `HARMONY_TOUCH_RECOVERY`. The session calls it before every request, with the identity file it read when
+ * it opened, and only then authorises the reports one at a time.
  */
 export function assertTouchRequestAllowed(p: TouchRequestPermission): TouchRequestStart {
   if (!WRITES_ENABLED) {
@@ -1828,5 +1894,13 @@ export function assertTouchRequestAllowed(p: TouchRequestPermission): TouchReque
         + 'a request line is an action on that remote, the reads included as far as the cable is concerned',
     );
   }
-  return assertTouchRequestTarget(p);
+  const start = assertTouchRequestTarget(p);
+  if (start.tier === 'recovery' && !TOUCH_RECOVERY_DOOR) {
+    throw new RailError(
+      `the request ${start.name} needs HARMONY_TOUCH_RECOVERY=1 as well as the two request flags: it is a `
+        + 'recovery step for a person at the bench, the abort, the delete of every stored document or the '
+        + 'restart, and no sync sends it',
+    );
+  }
+  return start;
 }

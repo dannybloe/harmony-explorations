@@ -11,18 +11,19 @@
  *    `getconfighash`) and the four requests of a sync (hand the remote's changes up, sync from the
  *    account, the next request list, write the answers), each the exact name the line opens with. Refused
  *    by name: the resource put, a provisioning in both spellings, marking the configuration changed,
- *    deleting the stored documents, every firmware request of `api/setup.md`, the endings and the abort,
- *    a name the engine forwards to the native program, a case variant, a verb added, the short form, the
- *    stringified array the client wrote, a line feed starting a second request, a caller's announcement,
- *    a request carrying an announcement's text and arguments that start with `=`. Each is refused by the
- *    rail on the whole line and by the transport on the bytes of its first data packet, with the flags
- *    set and the report authorised, which is what makes the second the rail and not a convenience. **The
- *    last three are also refused in a later packet**, the announcement's text split across two packets and
- *    `=` after a first packet that ended on `&` included, and a line feed in a later packet, since the
- *    transport carries what a line leaves open from one packet to the next.
- * 2. **A name cannot be finished in a second packet.** `vnd.logitech.setup/vnd.logitech.sync` alone in a
- *    first packet and `?deleteresources` in the next is one line and the request that deletes every stored
- *    document; the transport refuses the second packet.
+ *    every firmware request of `api/setup.md` but the restart, every `setup.sync?` verb but the delete,
+ *    the commit of a sync, a name the engine forwards to the native program, a case variant, a verb added,
+ *    the short form, the stringified array the client wrote, a line feed starting a second request, a
+ *    caller's announcement, a request carrying an announcement's text and arguments that start with `=`.
+ *    Each is refused by the rail on the whole line and by the transport on the bytes of its first data
+ *    packet, with every flag set, the recovery door included, and the report authorised, which is what makes
+ *    the second the rail and not a convenience. **The last three are also refused in a later packet**, the
+ *    announcement's text split across two packets and `=` after a first packet that ended on `&` included,
+ *    and a line feed in a later packet, since the transport carries what a line leaves open from one packet
+ *    to the next.
+ * 2. **A name cannot be finished in a second packet**, with the recovery door open too.
+ *    `vnd.logitech.setup/vnd.logitech.sync` alone in a first packet and `?deleteresources` in the next is one
+ *    line and the request that deletes every stored document; the transport refuses the second packet.
  * 3. **The paths.** The session opens `/sys/hlapi` and nothing else for writing; `/sys/factoryreset`,
  *    `/sys/reboot`, `/tde/shipmode`, `/tde/fb`, the two firmware names and the two names that act when
  *    opened are refused for reading and for writing **with every flag this library has set**, the
@@ -44,6 +45,17 @@
  *    before the answer writes included. The clock write and the stringified array, which the session never
  *    sends, are left out of the comparison; the counts say how many requests, commands and reports were
  *    compared, and that as many reports went out as the client sent.
+ * 8. **The recovery tier**, `todo-touch.md` 6.3.1: the abort, the delete of every stored document and the
+ *    restart, behind `HARMONY_TOUCH_RECOVERY` on top of the two request flags. Each of the three is refused
+ *    by the rail and by the transport with that flag unset, every other flag set, and each passes both with
+ *    it set; the flag alone opens neither of the other doors; the session refuses each before any report of
+ *    it goes out without the flag, and sends each in the provisioning read's shape with it. The neighbours
+ *    the decision names, `firmware?update`, `firmware?packageinstall`, `sync?begin` and `proxy.finished`, and
+ *    every other name above, are refused by the rail and the transport with every flag set.
+ * 9. **The recovery script**, `bin/touch-recover.ts`, in the paths that open nothing: the dry run of each
+ *    step, an unknown step, and a delete commit without a backup that is a folder in the lab holding a
+ *    file, refused before the flags are asked; a commit without the three flags. The commit itself is
+ *    never run by a test.
  *
  * **Sources checked first.** `reference/architectures/harmony-touch/answering-a-sync.md` "Which request
  * names act", `api/names.md`, `api/README.md` "How a name finds its handler", `api/setup.md` and
@@ -60,8 +72,10 @@
  */
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { describe, it } from 'node:test';
+import { after, describe, it } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 import { skipUnless } from '@harmony/lab';
@@ -81,6 +95,8 @@ import { UnitIdentityError, identifiesAUnit, sameUnit, unitIdentityFromSerial, u
 import {
   RailError,
   TOUCH_READ_REQUESTS,
+  TOUCH_RECOVERY_DOOR,
+  TOUCH_RECOVERY_REQUESTS,
   TOUCH_SYNC_REQUESTS,
   WRITES_ENABLED,
   assertTouchRequestAllowed,
@@ -135,18 +151,32 @@ const REFUSED: readonly [string, string][] = [
   ['setup.account?provision', 'a provisioning in the short form, api/setup.md'],
   ['vnd.logitech.setup/vnd.logitech.account?autoprovisionfromhub', 'a provisioning from a hub, api/setup.md'],
   ['vnd.logitech.setup/vnd.logitech.configchanged', 'marking the configuration changed, api/setup.md'],
-  ['vnd.logitech.setup/vnd.logitech.sync?deleteresources', 'deleting the stored documents, api/setup.md'],
   ['vnd.logitech.setup/vnd.logitech.sync?begin', 'a sync started later, api/setup.md'],
+  ['vnd.logitech.setup/vnd.logitech.sync?end', 'the end of a sync from a hub, api/setup.md'],
   ['vnd.logitech.setup/vnd.logitech.sync?contentchanged', 'raising the version numbers, api/setup.md'],
   ['vnd.logitech.setup/vnd.logitech.firmware', 'the firmware machine, api/setup.md'],
+  ['vnd.logitech.setup/vnd.logitech.firmware?check', 'a firmware check, api/setup.md'],
+  ['vnd.logitech.setup/vnd.logitech.firmware?prepare', 'a firmware download, api/setup.md'],
   ['vnd.logitech.setup/vnd.logitech.firmware?update', 'a firmware update, api/setup.md'],
   ['vnd.logitech.setup/vnd.logitech.firmware?status', 'the firmware status, which can restart, api/setup.md'],
-  ['vnd.logitech.setup/vnd.logitech.firmware?reboot', 'a restart, api/setup.md'],
+  ['vnd.logitech.setup/vnd.logitech.firmware?pause', 'pausing a firmware download, api/setup.md'],
+  ['vnd.logitech.setup/vnd.logitech.firmware?installed', 'marking firmware installed, api/setup.md'],
+  ['vnd.logitech.setup/vnd.logitech.firmware?updateneeded', 'the firmware read that says no, api/setup.md'],
+  ['vnd.logitech.setup/vnd.logitech.firmware?updateinprogress', 'announcing an update, api/setup.md'],
   ['vnd.logitech.setup/vnd.logitech.firmware?packageinstall', 'a package install, api/setup.md'],
   ['vnd.logitech.setup/vnd.logitech.firmware?packageremove', 'a package removal, api/setup.md'],
+  ['vnd.logitech.setup/vnd.logitech.firmware?packagemanifest', 'a package manifest, api/setup.md'],
   ['vnd.logitech.harmony/vnd.logitech.firmware?update', 'the engine\'s firmware names, api/system.md'],
-  ['vnd.logitech.proxy/vnd.logitech.finished', 'the commit of a sync, api/proxy.md'],
-  ['vnd.logitech.proxy/vnd.logitech.abort', 'the abort, api/proxy.md'],
+  ['vnd.logitech.harmony/vnd.logitech.firmware?reboot', 'the restart\'s twin, which falls back to the machine, api/system.md'],
+  ['vnd.logitech.proxy/vnd.logitech.finished', 'the commit of a sync, which loads nothing first, api/proxy.md'],
+  ['vnd.logitech.proxy/vnd.logitech.error', 'an error announced to the screens, api/proxy.md'],
+  ['proxy.abort', 'the short form of the abort'],
+  ['setup.sync?deleteresources', 'the short form of the delete'],
+  ['setup.firmware?reboot', 'the short form of the restart'],
+  ['vnd.logitech.proxy/vnd.logitech.Abort', 'a case variant of the abort'],
+  ['vnd.logitech.setup/vnd.logitech.sync?deleteResources', 'a case variant of the delete'],
+  ['vnd.logitech.setup/vnd.logitech.firmware?REBOOT', 'a case variant of the restart'],
+  ['vnd.logitech.setup/vnd.logitech.firmware?rebootx', 'a verb the machine falls back to, api/README.md'],
   ['sys.reboot', 'a name the engine hands to the native program, api/README.md'],
   ['vnd.logitech.setup/vnd.logitech.SYNC', 'a case variant the engine lowers to setup.sync'],
   ['setup.sync', 'the short form of an allowed request'],
@@ -166,15 +196,35 @@ describe('the allow list', () => {
       'vnd.logitech.proxy/vnd.logitech.request?read',
       'vnd.logitech.proxy/vnd.logitech.response?write',
     ]);
+    // The recovery tier, behind its own flag: named here as literals, so the list cannot grow a verb with
+    // the suite still passing.
+    assert.deepEqual(TOUCH_RECOVERY_REQUESTS, [
+      'vnd.logitech.proxy/vnd.logitech.abort',
+      'vnd.logitech.setup/vnd.logitech.sync?deleteresources',
+      'vnd.logitech.setup/vnd.logitech.firmware?reboot',
+    ]);
     assert.deepEqual(Object.keys(TOUCH_REQUEST_SHAPES).sort(),
-      [...TOUCH_READ_REQUESTS, ...TOUCH_SYNC_REQUESTS, 'Content-Length'].sort());
+      [...TOUCH_READ_REQUESTS, ...TOUCH_SYNC_REQUESTS, ...TOUCH_RECOVERY_REQUESTS, 'Content-Length'].sort());
     // The longest name has to fit in one packet whole, or the transport could not decode it.
-    for (const name of [...TOUCH_READ_REQUESTS, ...TOUCH_SYNC_REQUESTS]) assert.ok(name.length <= 62, name);
+    for (const name of [...TOUCH_READ_REQUESTS, ...TOUCH_SYNC_REQUESTS, ...TOUCH_RECOVERY_REQUESTS]) {
+      assert.ok(name.length <= 62, name);
+    }
   });
 
   it('takes each allowed name, bare or with arguments, and says its tier', () => {
     for (const name of TOUCH_READ_REQUESTS) assert.equal(touchRequestOfLine(name).tier, 'read');
     for (const name of TOUCH_SYNC_REQUESTS) assert.equal(touchRequestOfLine(`${name}&sessionId=1`).tier, 'sync');
+    // The whole line names a recovery request whatever the flags; the flag is asked by
+    // `assertTouchRequestAllowed`, and on the bytes by `touchRequestOfLineStart`.
+    for (const name of TOUCH_RECOVERY_REQUESTS) assert.equal(touchRequestOfLine(name).tier, 'recovery');
+  });
+
+  it('decodes no recovery request off the bytes with the recovery flag unset, which is this build', () => {
+    for (const name of TOUCH_RECOVERY_REQUESTS) {
+      assert.equal(touchRequestOfLineStart(Buffer.from(name, 'ascii')), undefined, name);
+    }
+    // The control: an allowed read decodes off the same bytes in the same build.
+    assert.equal(touchRequestOfLineStart(Buffer.from(PROVISIONING, 'ascii'))?.tier, 'read');
   });
 
   for (const [name, source] of REFUSED) {
@@ -307,8 +357,16 @@ describe('the rail, with the flags off', () => {
     path: '/sys/hlapi', line: PROVISIONING, sysinfo: parseSysInfo(sysinfoText()), permittedUnit: THIS_UNIT,
   };
 
-  it('is this build: the tests run with writes disabled', () => {
+  it('is this build: the tests run with writes disabled and the recovery door shut', () => {
     assert.equal(WRITES_ENABLED, false);
+    assert.equal(TOUCH_RECOVERY_DOOR, false);
+  });
+
+  it('passes the target checks for each recovery request, the flags being asked only by the rail', () => {
+    for (const line of TOUCH_RECOVERY_REQUESTS) {
+      assert.equal(assertTouchRequestTarget({ ...permission, line }).tier, 'recovery', line);
+      assert.throws(() => assertTouchRequestAllowed({ ...permission, line }), /HARMONY_ENABLE_WRITES=1/, line);
+    }
   });
 
   it('refuses every request, naming the build flag', () => {
@@ -434,9 +492,15 @@ function withEnv(extra: Record<string, string>, script: string): string {
 }
 
 const REQUEST_FLAGS = { HARMONY_ENABLE_WRITES: '1', HARMONY_TOUCH_REQUESTS: '1' };
+const RECOVERY_FLAGS = { ...REQUEST_FLAGS, HARMONY_TOUCH_RECOVERY: '1' };
+/**
+ * Every flag this library has, the recovery door among them, so every refusal tested with these holds with
+ * the recovery tier open as well. `BUT_RECOVERY` is the same with that one door shut.
+ */
 const EVERY_FLAG = {
-  ...REQUEST_FLAGS, HARMONY_FILE_WRITE: '1', HARMONY_FILE_PATH_EXPERIMENT: '1',
+  ...RECOVERY_FLAGS, HARMONY_FILE_WRITE: '1', HARMONY_FILE_PATH_EXPERIMENT: '1',
 };
+const EVERY_FLAG_BUT_RECOVERY = { ...EVERY_FLAG, HARMONY_TOUCH_RECOVERY: '' };
 
 describe('the transport, with the flags set', () => {
   it('refuses every never opened path in either mode with every flag this library has, authorised', () => {
@@ -603,7 +667,7 @@ describe('the transport, with the flags set', () => {
     assert.equal(output, 'sent,sent,sent,TransportError');
   });
 
-  it('refuses ?deleteresources in a second packet, and a file write route data packet while a line is open', () => {
+  it('refuses ?deleteresources in a second packet with the recovery door open, and a file write route data packet while a line is open', () => {
     const output = withEnv(EVERY_FLAG, `
       const shape = session.TOUCH_REQUEST_SHAPES['vnd.logitech.setup/vnd.logitech.sync'];
       const guarded = pipe.guardFileProtocol(new FakeTouchRemote({ sysinfo: SYSINFO }));
@@ -670,6 +734,217 @@ describe('the session, with the flags set', () => {
     assert.deepEqual(result.lines.map((l) => l.slice(0, 20)), ['Content-Length: 200', TOUCH_SYNC_REQUESTS[3]!.slice(0, 20)]);
     assert.equal(result.length, 269);
     assert.equal(result.announcement, 'Response,{}');
+  });
+});
+
+/** The neighbours the brief of 6.3.1 names, which stay refused with every flag set, the recovery door included. */
+const RECOVERY_NEIGHBOURS: readonly string[] = [
+  'vnd.logitech.setup/vnd.logitech.firmware?update',
+  'vnd.logitech.setup/vnd.logitech.firmware?packageinstall',
+  'vnd.logitech.setup/vnd.logitech.sync?begin',
+  'vnd.logitech.proxy/vnd.logitech.finished',
+];
+
+describe('the recovery tier, behind HARMONY_TOUCH_RECOVERY', () => {
+  // What the rail says about one line under one set of flags: the tier when it passes, else the flag or
+  // reason it names.
+  const railScript = (lines: readonly string[]): string => `
+    const sysinfo = pipe.parseSysInfo(SYSINFO);
+    const results = {};
+    for (const line of ${JSON.stringify(lines)}) {
+      try {
+        results[line] = rails.assertTouchRequestAllowed({ path: '/sys/hlapi', line, sysinfo, permittedUnit: UNIT }).tier;
+      } catch (e) {
+        results[line] = e.constructor.name + ': ' + e.message;
+      }
+    }
+    process.stdout.write(JSON.stringify(results));
+  `;
+  const rail = (flags: Record<string, string>, lines: readonly string[]): Record<string, string> =>
+    JSON.parse(withEnv(flags, railScript(lines))) as Record<string, string>;
+
+  it('is refused by the rail for each of the three with the recovery flag unset, and allowed with it set', () => {
+    const shut = rail({ ...REQUEST_FLAGS, HARMONY_TOUCH_RECOVERY: '' }, TOUCH_RECOVERY_REQUESTS);
+    const open = rail(RECOVERY_FLAGS, TOUCH_RECOVERY_REQUESTS);
+    for (const line of TOUCH_RECOVERY_REQUESTS) {
+      assert.match(shut[line]!, /^RailError: .*HARMONY_TOUCH_RECOVERY=1/, line);
+      assert.equal(open[line], 'recovery', line);
+    }
+  });
+
+  it('does not open either of the other two doors: the recovery flag alone, or with one of them, is refused', () => {
+    const line = TOUCH_RECOVERY_REQUESTS[0]!;
+    assert.match(rail({ HARMONY_TOUCH_RECOVERY: '1' }, [line])[line]!, /HARMONY_ENABLE_WRITES=1/);
+    assert.match(rail({ HARMONY_ENABLE_WRITES: '1', HARMONY_TOUCH_RECOVERY: '1' }, [line])[line]!, /HARMONY_TOUCH_REQUESTS=1/);
+    assert.match(rail({ HARMONY_TOUCH_REQUESTS: '1', HARMONY_TOUCH_RECOVERY: '1' }, [line])[line]!, /HARMONY_ENABLE_WRITES=1/);
+  });
+
+  it('refuses the neighbours, and every other refused name, by the rail with every flag set', () => {
+    const names = [...RECOVERY_NEIGHBOURS, ...REFUSED.map(([n]) => n)];
+    const results = rail(EVERY_FLAG, names);
+    for (const name of names) assert.match(results[name]!, /^RailError: refusing the request/, name);
+    // The control: in the same process, the three recovery requests pass.
+    const control = rail(EVERY_FLAG, TOUCH_RECOVERY_REQUESTS);
+    for (const line of TOUCH_RECOVERY_REQUESTS) assert.equal(control[line], 'recovery', line);
+  });
+
+  // The first data packet of a line, after an authorised open and write command, under one set of flags.
+  const transportScript = (lines: readonly string[], authorise = true): string => `
+    const shape = session.TOUCH_REQUEST_SHAPES[rails.TOUCH_READ_REQUESTS[0]];
+    const results = {};
+    for (const text of ${JSON.stringify(lines)}) {
+      const remote = new FakeTouchRemote({ sysinfo: SYSINFO });
+      const guarded = pipe.guardFileProtocol(remote);
+      const send = async (report, authorised = true) => {
+        if (authorised) authoriseReport(guarded, report);
+        return outcome(() => guarded.write(report));
+      };
+      results[text] = [
+        await send(session.requestOpenForWritingReport(shape, text.length)),
+        await send(session.requestWriteChunkReport(shape, 1, 2, 2)),
+        await send(write.dataPacket(3, Buffer.from(text, 'ascii')), ${authorise}),
+      ].join(',');
+    }
+    process.stdout.write(JSON.stringify(results));
+  `;
+  const transport = (flags: Record<string, string>, lines: readonly string[], authorise = true): Record<string, string> =>
+    JSON.parse(withEnv(flags, transportScript(lines, authorise))) as Record<string, string>;
+
+  it('is refused by the transport off the bytes with every other flag set, and sent with the recovery flag', () => {
+    const shut = transport(EVERY_FLAG_BUT_RECOVERY, TOUCH_RECOVERY_REQUESTS);
+    const open = transport(RECOVERY_FLAGS, TOUCH_RECOVERY_REQUESTS);
+    const unauthorised = transport(RECOVERY_FLAGS, TOUCH_RECOVERY_REQUESTS, false);
+    for (const line of TOUCH_RECOVERY_REQUESTS) {
+      assert.equal(shut[line], 'sent,sent,TransportError', line);
+      assert.equal(open[line], 'sent,sent,sent', line);
+      assert.equal(unauthorised[line], 'sent,sent,TransportError', line);
+    }
+  });
+
+  it('refuses the neighbours by the transport with every flag set, the recovery door included', () => {
+    const results = transport(EVERY_FLAG, RECOVERY_NEIGHBOURS);
+    for (const name of RECOVERY_NEIGHBOURS) assert.equal(results[name], 'sent,sent,TransportError', name);
+  });
+
+  it('refuses a recovery request in the session without the flag, before any report of it goes out', () => {
+    const output = withEnv({ ...REQUEST_FLAGS, HARMONY_TOUCH_RECOVERY: '' }, `
+      const results = {};
+      for (const line of rails.TOUCH_RECOVERY_REQUESTS) {
+        const remote = new FakeTouchRemote({ sysinfo: SYSINFO });
+        const s = await session.openTouchRequestSession(pipe.guardFileProtocol(remote), { permittedUnit: UNIT });
+        let message = 'sent';
+        try { await s.request(line); } catch (e) { message = e.message; }
+        results[line] = { message, sent: remote.sent.map((r) => r[1]) };
+      }
+      process.stdout.write(JSON.stringify(results));
+    `);
+    const results = JSON.parse(output) as Record<string, { message: string; sent: number[] }>;
+    for (const line of TOUCH_RECOVERY_REQUESTS) {
+      assert.match(results[line]!.message, /HARMONY_TOUCH_RECOVERY=1/, line);
+      assert.deepEqual(results[line]!.sent, [0x00, 0x01, 0x04, 0x07], line);
+    }
+  });
+
+  it('sends each recovery request in the provisioning read\'s shape with the flag, one line each', () => {
+    const output = withEnv(RECOVERY_FLAGS, `
+      const results = {};
+      for (const line of rails.TOUCH_RECOVERY_REQUESTS) {
+        const remote = new FakeTouchRemote({ sysinfo: SYSINFO, answer: () => 'Response,{"errorCode":"200"}' });
+        const s = await session.openTouchRequestSession(pipe.guardFileProtocol(remote), { permittedUnit: UNIT });
+        const answer = await s.request(line);
+        results[line] = { answer, lines: remote.lines, sent: remote.sent.slice(4).map((r) => hex(r, 4)) };
+      }
+      process.stdout.write(JSON.stringify(results));
+    `);
+    const results = JSON.parse(output) as Record<string, { answer: { tier: string; text: string }; lines: string[]; sent: string[] }>;
+    for (const line of TOUCH_RECOVERY_REQUESTS) {
+      const r = results[line]!;
+      assert.equal(r.answer.tier, 'recovery', line);
+      assert.equal(r.answer.text, 'Response,{"errorCode":"200"}', line);
+      assert.deepEqual(r.lines, [line]);
+      // The provisioning read's sequence numbers: open 0, write 2, the packet 3, close 4, open 1, read 5, close 6.
+      assert.deepEqual(r.sent, ['ff010002', 'ff030202', `03${line.length.toString(16).padStart(2, '0')}766e`, 'ff070401',
+        'ff010102', 'ff040502', 'ff070601'], line);
+    }
+  });
+});
+
+/**
+ * `bin/touch-recover.ts` in a fresh process, against a lab of its own, with every flag unset unless given.
+ * Only the paths that stop before anything is opened are run here: the dry run, and the refusals that come
+ * before the flags. The commit itself is never run by a test.
+ */
+function recover(args: readonly string[], lab: string): { status: number; out: string } {
+  const script = fileURLToPath(new URL('../bin/touch-recover.ts', import.meta.url));
+  const env = {
+    ...process.env, HARMONY_LAB: lab, HARMONY_ENABLE_WRITES: '', HARMONY_TOUCH_REQUESTS: '', HARMONY_TOUCH_RECOVERY: '',
+  };
+  try {
+    return { status: 0, out: execFileSync(process.execPath, [script, ...args], { env, encoding: 'utf8', stdio: 'pipe' }) };
+  } catch (error: unknown) {
+    const e = error as { status: number; stdout: string; stderr: string };
+    return { status: e.status, out: `${e.stdout}${e.stderr}` };
+  }
+}
+
+describe('the recovery script', () => {
+  const lab = mkdtempSync(join(tmpdir(), 'touch-recover-lab-'));
+  const outside = mkdtempSync(join(tmpdir(), 'touch-recover-outside-'));
+  const empty = join(lab, 'empty-backup');
+  const kept = join(lab, 'kept-backup');
+  mkdirSync(empty);
+  mkdirSync(join(kept, 'documents'), { recursive: true });
+  writeFileSync(join(kept, 'documents', 'set.json'), '{}');
+  writeFileSync(join(outside, 'set.json'), '{}');
+  after(() => {
+    rmSync(lab, { recursive: true, force: true });
+    rmSync(outside, { recursive: true, force: true });
+  });
+
+  it('opens nothing without --commit, and prints the line, what the step does and the reports', () => {
+    for (const [step, line] of [['abort', TOUCH_RECOVERY_REQUESTS[0]], ['delete', TOUCH_RECOVERY_REQUESTS[1]],
+      ['reboot', TOUCH_RECOVERY_REQUESTS[2]]] as const) {
+      const result = recover(['--step', step!], lab);
+      assert.equal(result.status, 0, result.out);
+      assert.ok(result.out.includes(`step: ${step}, ${line}`), result.out);
+      assert.match(result.out, /what it does: /);
+      assert.match(result.out, /dry run: nothing was opened/);
+      assert.match(result.out, /HARMONY_TOUCH_RECOVERY unset/);
+    }
+  });
+
+  it('refuses a step it does not know', () => {
+    for (const step of ['finished', 'put', 'all', '']) {
+      assert.equal(recover(['--step', step], lab).status, 1, step);
+    }
+  });
+
+  it('refuses a delete commit without a backup, with an empty one and with one outside the lab, before the flags', () => {
+    const cases: [string[], RegExp][] = [
+      [[], /needs --backup/],
+      [['--backup', empty], /holds no file with anything in it/],
+      [['--backup', join(lab, 'missing')], /not a folder that exists/],
+      [['--backup', outside], /not inside the lab/],
+    ];
+    for (const [extra, reason] of cases) {
+      const result = recover(['--step', 'delete', '--commit', ...extra], lab);
+      assert.equal(result.status, 1, result.out);
+      assert.match(result.out, reason);
+      assert.doesNotMatch(result.out, /what it does/, 'refused before anything else was printed');
+    }
+    // The control: a backup in the lab holding a file passes that check and meets the flags next.
+    const control = recover(['--step', 'delete', '--commit', '--backup', kept], lab);
+    assert.equal(control.status, 1, control.out);
+    assert.match(control.out, /backup: .*which qualifies/);
+    assert.match(control.out, /--commit needs HARMONY_ENABLE_WRITES=1, HARMONY_TOUCH_REQUESTS=1 and HARMONY_TOUCH_RECOVERY=1/);
+  });
+
+  it('refuses a commit without the three flags, before anything is opened', () => {
+    for (const step of ['abort', 'reboot']) {
+      const result = recover(['--step', step, '--commit'], lab);
+      assert.equal(result.status, 1, result.out);
+      assert.match(result.out, /--commit needs HARMONY_ENABLE_WRITES=1/);
+    }
   });
 });
 

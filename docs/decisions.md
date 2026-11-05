@@ -824,6 +824,16 @@ remote and 2 in the second, which is what section 117 measured as a generator er
    unit has taken: the identity read, which is done; Logitech's own recorded documents handed back
    unchanged; then a real write.
 
+   **The recovery requests were added to the request rail behind a flag of their own on 5 November 2026**,
+   `todo-touch.md` 6.3.1: `proxy.abort`, `setup.sync?deleteresources` and `setup.firmware?reboot`, as
+   `TOUCH_RECOVERY_REQUESTS` behind `HARMONY_TOUCH_RECOVERY=1` on top of the two request flags, for use by
+   hand through `packages/usb/bin/touch-recover.ts`. Why: without them the rail could leave a remote in a
+   state nothing it sends could clear, a sync of ours stopped halfway or a committed set the remote's reader
+   raises on, and the only way back was the remote's own factory reset and Logitech's client to provision it
+   again, which depends on Logitech's service. A flag of its own because the three are for a person after a
+   write has gone wrong and no sync needs them, so a defect in an answerer cannot reach them. Every other
+   firmware and sync verb, `proxy.finished` and the resource put stay refused.
+
 30. <a id="d30"></a>**The two bench Harmony 885s may be written to, unit A first.** *Taken on 5 November 2026,
    `todo-prepare-885.md` 5.1, once chapters 1 to 4 were done.* Both `h885_a` and `h885_b` are permitted write
    targets; the first block written back unchanged goes to A, which read whole four times without a window

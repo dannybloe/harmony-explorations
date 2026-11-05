@@ -51,21 +51,30 @@ and land the answer in the reference afterwards with its source.
   changes up, sync from the account, the next request list, write the answers). The provisioning read and
   the four go out byte for byte as Logitech's client sent them, except the sync request's clock write, which
   the session leaves out; `getconfighash`, which their client never sends, goes in the provisioning read's
-  shape. The transport decodes the request name off the bytes it is about to send and refuses every other,
-  the resource put, a provisioning, marking the configuration changed, deleting the resources, the commit
-  and the abort of a sync and every firmware request among them, and with them any line carrying
-  `Content-Length:` or arguments that start with `=`. **Eight paths are never opened, whatever the flags**,
+  shape. **A third tier, the recovery requests, sits behind a flag of its own**, `HARMONY_TOUCH_RECOVERY=1` on
+  top of the two, `TOUCH_RECOVERY_REQUESTS` in `rails.ts`: the abort of a sync, the delete of every stored
+  document and the restart, for a person at the bench after a write has gone wrong, decided on 5 November
+  2026 under decision 29, and in the provisioning read's shape since Logitech's client sends none of them.
+  The transport decodes the request name off the bytes it is about to send, a recovery name only with that
+  flag set, and refuses every other, the resource put, a provisioning, marking the configuration changed,
+  the commit of a sync, every other `setup.sync?` verb and every firmware request but the restart among
+  them, and with them any line carrying `Content-Length:` or arguments that start with `=`. **Eight paths are never opened, whatever the flags**,
   `NEVER_OPENED_PATHS` in `filepipe.ts`: `/sys/factoryreset`, `/sys/reboot`, `/tde/shipmode` and `/tde/fb`,
   which act on a write, `/tde/haptic/diagnostic` and `/tde/haptic/calibrate`, which act on an open, and the
   two firmware names, nor is any path spelled otherwise than the remote's names are. There is no file write,
   no HBus command and no provisioning session; a task that seems to need a request off the allow list is a
   question to put first, not a list to widen.
-* **The rail can leave a Touch in a state it cannot clear.** It reads no answer's content, so a set that is
-  valid JSON and lacks a list the engine's reader walks is saved as written and ends the task that loads the
-  configuration; and the requests that clear a stuck sync or a bad set, `proxy.abort`,
-  `setup.sync?deleteresources` and `setup.firmware?reboot`, are not on it, whether to add them being a
-  decision still to take. **The protection is the answerer refusing a set the codec's reader and check
-  reject**, `todo-touch.md` 6.6, and the route back is `recovering-a-remote`'s Harmony Touch section. And
+* **The rail reads no answer's content**, so a set that is valid JSON and lacks a list the engine's reader
+  walks is saved as written and ends the task that loads the configuration. **The protection is the
+  answerer refusing a set the codec's reader and check reject**, `todo-touch.md` 6.6. **The way back is the
+  recovery tier, one step per run of `packages/usb/bin/touch-recover.ts`**, a dry run without `--commit`
+  and all three flags with it: `--step abort` first, since the restart answers 202 and restarts nothing
+  while a sync is marked running, and on a remote whose configuration task has ended the abort's answer
+  never comes; `--step delete --backup <lab folder>` only when the stored set itself is what fails, since
+  it deletes every stored document and the remote keeps no copy; then `--step reboot`. The script does not
+  chain them: each answer is read before the next. **What still needs the remote's own factory reset and
+  Logitech's client**: a remote whose system does not start, and one whose provisioning is gone. The whole
+  route is `recovering-a-remote`'s Harmony Touch section. And
   the session announces a write of answers with Logitech's client's number, which the remote can reach one
   chunk early on a line whose last chunk is short, `announcedLength` in `touchsession.ts`; that too is 6.6's
   to settle.
@@ -103,7 +112,7 @@ test; the read itself goes into the lab.
 | the drawing | `packages/silhouettes/src/models/touch.ts`, rendered into `reference/silhouettes/touch.svg` |
 | the transport | `packages/usb/src/filepipe.ts`, with `INERT_PATHS`; the refusal in `packages/usb/src/transport.ts`, `FILE_BASED_PRODUCTS` |
 | the read script | `packages/usb/bin/read-file-identity.ts`, and `--record touch` for the unit record |
-| the request channel | `packages/usb/src/touchsession.ts`, the rail in `packages/usb/src/rails.ts` from `TOUCH_REQUEST_DOOR`, the route `onTheTouchRequestRoute` in `filepipe.ts`, tested in `packages/usb/test/touchsession.test.ts`; the reads of 6.4 are `packages/usb/bin/touch-request.ts`, a dry run without `--commit` |
+| the request channel | `packages/usb/src/touchsession.ts`, the rail in `packages/usb/src/rails.ts` from `TOUCH_REQUEST_DOOR`, the route `onTheTouchRequestRoute` in `filepipe.ts`, tested in `packages/usb/test/touchsession.test.ts`; the reads of 6.4 are `packages/usb/bin/touch-request.ts` and the recovery steps `packages/usb/bin/touch-recover.ts`, each a dry run without `--commit` |
 | the configuration's reader and checker | `packages/codec/src/harmony-touch/`, tested in `packages/codec/test/touch-reader.test.ts` and `touch-check.test.ts` |
 | answering a sync in place of Logitech's server | `reference/architectures/harmony-touch/answering-a-sync.md` |
 | the protocol | `reference/usb-protocol/file-protocol.md` |

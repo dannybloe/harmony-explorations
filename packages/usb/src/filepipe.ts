@@ -37,7 +37,8 @@
  * `touchsession.ts` drives behind `assertTouchRequestAllowed`. Its reports pass on the same three
  * conditions with that route's own flag, and on a fourth the file write route does not need: the name
  * a request line opens with is decoded off its first data packet and checked against the allow list,
- * `onTheTouchRequestRoute`. And a short list of paths is refused at any open whatever the flags,
+ * `onTheTouchRequestRoute`, a name of the recovery tier only while `HARMONY_TOUCH_RECOVERY` is set as well,
+ * `touchRequestOfLineStart` in `rails.ts`. And a short list of paths is refused at any open whatever the flags,
  * `NEVER_OPENED_PATHS`, since their handlers are read and they act; a path not spelled as the remote's
  * names are is refused before any list is consulted, `isCanonicalPath`, so an exact comparison cannot be
  * walked round by a variant spelling.

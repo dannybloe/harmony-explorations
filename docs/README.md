@@ -929,6 +929,17 @@ node packages/usb/bin/touch-request.ts --request provisioning|confighash [--comm
                        is `assertTouchRequestAllowed` and whose route on the transport decodes the
                        request name off the bytes it sends, and keeps the answer in the lab's `reads/`.
                        Unrun on a remote.
+node packages/usb/bin/touch-recover.ts --step abort|delete|reboot [--backup <lab folder>] [--commit]
+                       send a Harmony Touch one step of the request rail's recovery tier, by hand,
+                       after a write has gone wrong, decision 29: the abort of a sync, the delete of
+                       every stored document, or the restart. One step per run, in that order, and
+                       never chained: the restart answers 202 while a sync is marked running, and the
+                       abort's answer never comes on a remote whose configuration task has ended.
+                       Without `--commit` it opens nothing and prints the line, what the step does and
+                       the reports. `--commit` needs HARMONY_ENABLE_WRITES=1, HARMONY_TOUCH_REQUESTS=1
+                       **and** HARMONY_TOUCH_RECOVERY=1 and the lab's `units/touch.txt`; `delete`
+                       also needs `--backup`, a lab folder holding a file, checked before anything
+                       else. Keeps the answer in the lab's `reads/`. Unrun on a remote.
 node packages/usb/bin/read-file.ts --file <path> [--product 0xc12b] [--device <path>]
                        the general form of the above: read any path on `INERT_PATHS` and print it as
                        bytes and, where it is printable, as text. Deliberately does not parse, since

@@ -299,19 +299,32 @@ The route, in order:
    * **`setup.sync` answering 202** with no sync of ours running is a sync left flagged.
 2. **A sync left flagged, or one stopped halfway before its commit**, is cleared by `proxy.abort` or by a
    restart, and after either the next `setup.sync` starts clean; while the flag is set `setup.sync` answers
-   202 and clears nothing. A stop after the commit has done its work. **`proxy.abort` is outside the request
-   rail**, so a sync of ours that stops halfway, a failure after `setup.sync` included, is not cleared by
-   anything the rail sends.
+   202 and clears nothing. A stop after the commit has done its work. The abort is the recovery tier's first
+   step, below:
+
+       node packages/usb/bin/touch-recover.ts --step abort                     # dry run, opens nothing
+       HARMONY_ENABLE_WRITES=1 HARMONY_TOUCH_REQUESTS=1 HARMONY_TOUCH_RECOVERY=1 \
+         node packages/usb/bin/touch-recover.ts --step abort --commit
+
+   It answers 200; **on a remote whose configuration task has ended its answer never comes**, since it
+   clears the flags before the reload it then waits on, and the script says so rather than failing.
 3. **A set the reader raises on during a sync** needs nothing written: the committed set is intact, so a
    restart, step 5, is the repair, and then fix the document before the next sync.
-4. **A committed set that raises at start** needs the stored documents changed before a restart: either
-   `setup.sync?deleteresources`, after which the remote starts with no configuration and a sync works, or
-   `proxy.resource?put` of the corrected document, which is saved before its reload is tried. Then restart.
-5. **The restart.** `setup.firmware?reboot` restarts the remote two seconds later without the configuration
-   task; it answers 202 while a sync flag is set, so a parked sync takes `proxy.abort` first, on a new
-   connection, since the abort's own answer never comes. **There is no battery pull**: the cell is internal
-   and not replaceable by Logitech's manual, `reference/remotes/harmony-touch/hardware.md`. What a long hold
-   of Off does is an open question in that model's `keys.md`.
+4. **A committed set that raises at start** needs the stored documents changed before a restart:
+   `setup.sync?deleteresources`, after which the remote starts with no configuration and a sync works,
+   `--step delete --backup <lab folder>` with the same flags. **The backup is required and checked first**:
+   a folder in the lab that holds a file, since the delete removes every stored document and picture and the
+   remote keeps no copy, and a remote stuck on a set its reader raises on has nothing worth keeping on it
+   except what the backup holds. Its answer carries no status of its own; 501 means the remote is not
+   provisioned and nothing was deleted. `proxy.resource?put` of the corrected document would also do, saved
+   before its reload is tried, and is not on any tier: putting content is the answerer's, `todo-touch.md`
+   6.6. Then restart.
+5. **The restart.** `setup.firmware?reboot`, `--step reboot` with the same flags, restarts the remote two
+   seconds after it answers 200, without the configuration task; **it answers 202 and restarts nothing
+   while a sync flag is set**, so a parked sync takes `--step abort` first, a run of its own, since the
+   abort's answer may never come. **There is no battery pull**: the cell is internal and not replaceable by
+   Logitech's manual, `reference/remotes/harmony-touch/hardware.md`. What a long hold of Off does is an open
+   question in that model's `keys.md`.
 6. **Last, the remote's own factory reset**, Settings, General, Factory reset, which erases every document,
    the provisioning and the engine's state and keeps the firmware. Afterwards the remote is not provisioned
    and refuses `setup.sync` with 501. The refusal is read; **what sets it up again is inferred**: Logitech's
@@ -326,18 +339,22 @@ The route, in order:
    of ours to measure. If it goes wrong, `setup.sync?deleteresources` first leaves the remote no tag to send,
    and the factory reset above is the fallback.
 
-**The request rail admits none of the recovery requests**: it allows the reads and the four sync requests,
-and `proxy.abort` (steps 2 and 5), `setup.sync?deleteresources` and `proxy.resource?put` (step 4) and
-`setup.firmware?reboot` (step 5) are none of them. **So the rail can leave a remote in a state it cannot
-clear**: answers that are valid JSON and lack a list the reader walks are saved as written, since the rail
-reads no answer's content, and a sync of ours that stops halfway after `setup.sync` needs `proxy.abort` or a
-restart, neither of which the rail sends. **The protection is the answerer refusing a set the codec's reader
-and check reject before any of it is written**, `todo-touch.md` 6.6, not a recovery route. **Whether to add
-the recovery requests to the rail is a decision to put first, not a step to take** while a remote is stuck:
-each changes the remote, and each needs its shape and its test as the four did. Until then a committed set
-that raises at start is the remote's own Settings reset or Logitech's client's to clear, and a restart
-without the request is not settled on this model: there is no battery to pull, and whether a long hold of
-Off restarts it is open.
+**The request rail carries the three recovery requests in a tier of their own**, decided on 5 November 2026
+under decision 29: `proxy.abort`, `setup.sync?deleteresources` and `setup.firmware?reboot`,
+`TOUCH_RECOVERY_REQUESTS` in `rails.ts`, behind `HARMONY_TOUCH_RECOVERY=1` on top of
+`HARMONY_ENABLE_WRITES=1` and `HARMONY_TOUCH_REQUESTS=1`, checked by the rail on the whole line and by the
+transport on the bytes. **In order, one per run of `packages/usb/bin/touch-recover.ts`**: `--step abort`,
+then `--step delete --backup <lab folder>` only when the stored set itself is what fails, then
+`--step reboot`. The script does not chain them, because each answer says what comes next. Every other
+`setup.firmware?` and `setup.sync?` verb stays refused, and so do `proxy.finished`, which commits a gathered
+set without loading it, and `proxy.resource?put`. **The rail still reads no answer's content**, so answers
+that are valid JSON and lack a list the reader walks are saved as written; **the protection is the answerer
+refusing a set the codec's reader and check reject before any of it is written**, `todo-touch.md` 6.6, and
+the tier is the way back when that fails. None of the three has been sent to a unit.
+
+**What still needs the remote's own factory reset, step 6, and Logitech's client**: a remote whose system
+does not start, below, which nothing over USB reaches; and a remote whose provisioning is gone, which only
+`setup.account?provision` would restore and which no tier carries.
 
 What must never be part of that route:
 
