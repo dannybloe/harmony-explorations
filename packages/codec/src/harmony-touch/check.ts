@@ -29,7 +29,7 @@ import {
   CONFIGURATION_DOCUMENTS, CONTENT_DEVICE, CONTENT_SERVICE, CONTENT_USER, type Activity, type Command, type Device, type SyncDocuments,
 } from './documents.ts';
 import {
-  DELETED_ON_REMOTE, INFRARED_TRANSPORT, numberPadKey, readConfiguration, type Configuration, type ReadActivity,
+  DELETED_ON_REMOTE, INFRARED_TRANSPORT, mapIdentifier, numberPadKey, readConfiguration, type Configuration, type ReadActivity,
   type ReadButtonAction, type ReadDevice, type ReadMap,
 } from './read.ts';
 
@@ -719,8 +719,8 @@ export function readerRaises(documents: SyncDocuments): Finding[] {
  * table, which takes a string or a number like the engine's.
  *
  * **What a raise there costs decides what is refused.** The screens catch a raise in an event, a timer, a
- * drawing and each turn of their main loop, so most cost one screen or one key. **Three cost the whole
- * remote**, and every place of those three is refused here:
+ * drawing and each turn of their main loop, so most cost one screen or one key. **Four cost the whole
+ * remote**, and every place of those four is refused here:
  *
  * * the screens' program ends at every start: a raise while their style module first loads, which reads the
  *   background setting and runs the screens' first reading of the Context and the favourites;
@@ -728,29 +728,48 @@ export function readerRaises(documents: SyncDocuments): Finding[] {
  *   built, the home list of activities, the favourites page, and the device list on an account with no
  *   activity;
  * * a sync that never commits: a raise in the screens' half of a sync, after the engine has loaded the set and
- *   before the screens send the commit. That the sync then waits rather than aborts is inferred.
+ *   before the screens send the commit. That the sync then waits rather than aborts is inferred;
+ * * **the screens deaf to the engine until a restart**, `todo-touch.md` 6.10.2: a raise inside a notification
+ *   from the engine, which the screens' socket handling runs with no guard and after which it never polls that
+ *   socket again, so no sync, activity, key or firmware notification reaches the screens until the remote
+ *   restarts; a later sync then waits on screens that no longer hear it, inferred. The notifications that reach
+ *   a document are an activity finishing starting (its pages are built inside it: the activity's command page,
+ *   the number pad, the gesture pad when it is the start screen, the first activity tutorial), an activity
+ *   starting, the help screen's replies, and a sync's end. The places are the lab note's rows marked LH,
+ *   re-read row by row in 6.10.2; a row reached that way only in hub mode, which a Touch synced through a
+ *   computer is not, is not refused.
+ *
+ * The rule's name stays `screens raise` for all four: the fault is the same, a raise in the screens, and only
+ * the cost differs, which each finding's message names.
  *
  * **And the labels, names and pictures chapter 8 composes**, refused wherever they raise even when the cost is
  * one screen, since a set of ours should not break a screen either: a device's `Name`, a screen entry's
  * `TextOnRemote` and a sequence's `Name`. **The other screen raises are not refused**, each costing one screen,
- * one key, one timer or the screens' hearing of the engine until a restart; the lab note lists them and the
- * reference names them as not refused.
+ * one key or one timer, by choice; the lab note lists them and the reference names them as not refused.
  *
- * Where the reading names a narrower condition than this module can state, a built in picture name or the
- * matching settings row, the rule asks the wider one, the safe side, and says so.
+ * Where the reading names a narrower condition than this module can state, a built in picture name, the
+ * matching settings row, the activity a notification names, the rule asks the wider one, the safe side, and says
+ * so.
  */
 export function checkScreens(documents: SyncDocuments): Finding[] {
   const out: Finding[] = [];
+  // One finding per place: a press can fail several of the reads below at once, and the first one named is told.
+  const told = new Set<string>();
   const found = (document: string, path: string, what: string, cost: string): void => {
+    if (told.has(`${document} ${path}`)) return;
+    told.add(`${document} ${path}`);
     out.push({ rule: 'screens raise', effect: 'refused', document, path, message: `${what}, which the remote's screens raise on: ${cost}` });
   };
   const AT_START = 'their program ends at every start';
   const ERROR_SCREEN = 'the error screen at every start, whose one way on is a factory reset';
   const NO_COMMIT = 'the sync is never committed';
+  const DEAF = 'they stop hearing the engine until the remote restarts, so a later sync waits on them, inferred';
   const ONE_SCREEN = 'that screen does not draw';
   const list = (x: unknown): readonly unknown[] => (Array.isArray(x) ? x : []);
   /** A value a guard lets through and then indexes, concatenates or passes to a string function. */
   const raisesAsText = (x: unknown): boolean => truthy(x) && !isText(x);
+  /** A value Lua cannot index: nil, null (the decoder's userdata), a boolean or a number. A string can be. */
+  const unindexable = (x: unknown): boolean => x === undefined || x === null || typeof x === 'boolean' || typeof x === 'number';
 
   // Settings: the background at the style module's first load, every row through `getRemoteSettings`, the
   // pictures in the sync, `submitBackgroundImageRequest`. Every row's values are asked, the safe side of "the
@@ -774,9 +793,15 @@ export function checkScreens(documents: SyncDocuments): Finding[] {
         background = values[0];
         if (!isText(background)) found('Settings', `${at}.Values[0]`, 'the background picture is neither a string nor a number', AT_START);
       }
-      if (row['Name'] === 'UserImages' && Array.isArray(values)) {
-        userImages = values;
-        values.forEach((v, i) => { if (!isText(v)) found('Settings', `${at}.Values[${i}]`, 'a picture of the user\'s is neither a string nor a number', NO_COMMIT); });
+      if (row['Name'] === 'UserImages') {
+        // `getUserSelectedBackgroundImage` walks the user's pictures with `ipairs` whenever a background is
+        // named, at the style module's first load and at a sync's end, so text raises here where `getRemoteSettings`
+        // reads a field off it and passes. Asked whether or not a background is set, the safe side.
+        if (typeof values === 'string') found('Settings', `${at}.Values`, 'the user\'s pictures are text, not a list', AT_START);
+        if (Array.isArray(values)) {
+          userImages = values;
+          values.forEach((v, i) => { if (!isText(v)) found('Settings', `${at}.Values[${i}]`, 'a picture of the user\'s is neither a string nor a number', NO_COMMIT); });
+        }
       }
     });
     if (userImages.length > 0 && typeof settings['UserImageBucketUri'] !== 'string') found('Settings', 'UserImageBucketUri', 'the address of the user\'s pictures is not a string while the user has pictures', NO_COMMIT);
@@ -785,7 +810,8 @@ export function checkScreens(documents: SyncDocuments): Finding[] {
   }
 
   // Context: the language at the style module's first load and in the sync, `loadRemoteContext`; the household's
-  // address in the sync, `submitContentUserRequest`.
+  // address in the sync, `submitContentUserRequest`; the account's id in the address of every document the
+  // screens read, `getRequest`; the setup session at an activity's first start, `is321User`.
   const context = documents.Context;
   if (isObject(context)) {
     const language = context['Language'];
@@ -793,12 +819,26 @@ export function checkScreens(documents: SyncDocuments): Finding[] {
       found('Context', 'Language', 'the language is not a string of a language and a country joined by a hyphen', AT_START);
     }
     if (raisesAsText(context['HouseholdUserProfileUri'])) found('Context', 'HouseholdUserProfileUri', 'the household\'s address is neither a string nor a number', NO_COMMIT);
+    // `table.concat` takes a string or a number; an absent id leaves a hole the next part fills, which raises
+    // nothing. Found in 6.10.2, outside the note's rows.
+    const account = context['AccountId-'];
+    if (account !== undefined && !isText(account)) found('Context', 'AccountId-', 'the account\'s id is neither a string nor a number, and it is joined into the address of every document the screens read', AT_START);
+    // `data.SetupSession and data.SetupSession.SetupType`: anything true that cannot be indexed raises.
+    // Read as the JSON it is, whatever the documents' type says it holds.
+    const session: unknown = context['SetupSession'];
+    if (session === null || typeof session === 'number' || session === true) found('Context', 'SetupSession', 'the setup session is a value that cannot be read into, read when an activity finishes starting', DEAF);
   }
 
-  // ActivityList: the home list at start, `reorderActivities`, `newActivityButton`, `getActivityImage`,
-  // `isGoogleTvActivity`; the pictures in the sync, `submitActivityImageRequest`; the favourites at start and
-  // in the sync, `updateInfoFromActivity`.
-  list(isObject(documents.ActivityList) ? documents.ActivityList['Activities'] : undefined).forEach((activity, a) => {
+  // ActivityList. At start: the home list, `reorderActivities`, `newActivityButton`, `getActivityImage`,
+  // `isGoogleTvActivity`; the favourites, `updateInfoFromActivity`; the pictures in the sync,
+  // `submitActivityImageRequest`. When an activity starts or finishes starting, and at a sync's end:
+  // `isHCActivity` (`next(Roles)`), `getActivityDevices` and `getActivityDeviceIds` (`ipairs(Roles)`, each role's
+  // device id concatenated or searched), the first activity tutorial's `createDeviceInputList`, the help screen's
+  // device list. Every activity can be started, so every activity is asked.
+  const activities = list(isObject(documents.ActivityList) ? documents.ActivityList['Activities'] : undefined);
+  /** The activities whose start screen is the gesture pad, whose module the screens load when one finishes starting. */
+  const gestureActivities: Record<string, unknown>[] = [];
+  activities.forEach((activity, a) => {
     if (!isObject(activity)) return;
     const at = `Activities[${a}]`;
     if (!isNumber(activity['ActivityOrder'])) found('ActivityList', `${at}.ActivityOrder`, 'the activity\'s place on the list is not a number', ERROR_SCREEN);
@@ -810,32 +850,143 @@ export function checkScreens(documents: SyncDocuments): Finding[] {
     else if (isText(image) && !isText(base)) found('ActivityList', `${at}.BaseImageUri`, 'the activity names a picture and no text address to fetch it from', ERROR_SCREEN);
     else if (base === true || isTable(base)) found('ActivityList', `${at}.BaseImageUri`, 'the address of the activity\'s picture is neither a string nor a number', NO_COMMIT);
     const tuning = truthy(activity['IsTuningDefault']);
-    if ((tuning || activity['Type'] === 1) && !isTable(activity['Roles'])) found('ActivityList', `${at}.Roles`, 'the activity states no list of roles', ERROR_SCREEN);
+    const roles = activity['Roles'];
+    // `isHCActivity` raises on null, text, a number and `true`; `ipairs` raises on anything but a table, absent and
+    // `false` included, when the notification of an activity starting names a device. Whether it names one for
+    // an activity with no roles is not read, so absent is refused too, the safe side.
+    if (!isTable(roles)) found('ActivityList', `${at}.Roles`, 'the activity states no list of roles', tuning || activity['Type'] === 1 ? ERROR_SCREEN : DEAF);
+    list(roles).forEach((role, r) => {
+      if (!isObject(role)) return;
+      const where = `${at}.Roles[${r}]`;
+      if (!isText(role['DeviceId-'])) found('ActivityList', `${where}.DeviceId-`, 'the role\'s device id is neither a string nor a number, and it is joined into text and searched', DEAF);
+      // The tutorial's guard lets a value through unless it is false, nil or the decoder's null, then reads its name.
+      const input = role['SelectedInput'];
+      if (typeof input === 'number' || input === true) found('ActivityList', `${where}.SelectedInput`, 'the role\'s input is a value that cannot be read into', DEAF);
+    });
     if (tuning && activity['Id-'] === undefined) found('ActivityList', `${at}.Id-`, 'the activity that tunes channels states no id', ERROR_SCREEN);
+    if (activity['StartScreen'] === 'Gesturepad') gestureActivities.push(activity);
   });
+  /** Whether the home list shows an activity: one placed at 0 or later, `reorderActivities`. */
+  const anActivityIsListed = activities.some((x) => isObject(x) && isNumber(x['ActivityOrder']) && (x['ActivityOrder'] as number) >= 0);
 
   // DeviceList: the favourites at start and in the sync, `updateContentProfileKeys`; the device list,
-  // `newDeviceButton`, which is the first screen on an account with no activity.
+  // `newDeviceButton`, which is the first screen on an account with no activity and draws each device's name and
+  // picture; every device's id as a search pattern when an activity's devices are looked up,
+  // `getActivityDevices`; the Bluetooth devices' model when an activity finishes starting or starts,
+  // `checkForUnpairedBtDevices`, the first tutorial's `createDeviceList`, the start's pairing answer.
+  const BLUETOOTH = 0x08;
+  const BLUETOOTH_KEYBOARD = 0x20;
   list(isObject(documents.DeviceList) ? documents.DeviceList['DevicesWithFeatures'] : undefined).forEach((item, d) => {
     const device = field(item, 'Device');
     if (!isObject(device)) return;
     const at = `DevicesWithFeatures[${d}].Device`;
-    if (device['Id-'] === undefined) found('DeviceList', `${at}.Id-`, 'the device states no id', ERROR_SCREEN);
+    const id = device['Id-'];
+    if (id === undefined) found('DeviceList', `${at}.Id-`, 'the device states no id', ERROR_SCREEN);
+    // `string.find(role["DeviceId-"], device.Device["Id-"])` takes the id as a pattern: anything but text raises,
+    // and so does text Lua's patterns cannot parse. Text holding any of `(`, `)`, `[` or `%` is refused, the
+    // safe side of "a malformed pattern", which is Lua's documented behaviour and not run here.
+    else if (!isText(id) || (typeof id === 'string' && /[()[%]/.test(id))) found('DeviceList', `${at}.Id-`, 'the device\'s id is not text a search can take as its pattern', DEAF);
     if (device['Name'] !== undefined && !isText(device['Name'])) found('DeviceList', `${at}.Name`, 'the device\'s name is neither a string nor a number', ONE_SCREEN);
+    const transport = device['Transport'];
+    const model = device['ParentDeviceModel'];
+    const bluetooth = isNumber(transport) && ((transport as number) & (BLUETOOTH | BLUETOOTH_KEYBOARD)) !== 0;
+    if (!isText(model)) {
+      // A Bluetooth device's model is searched inside a notification; every device's is when the device list
+      // draws its picture, which is the first screen on an account with no activity and one screen otherwise.
+      if (bluetooth) found('DeviceList', `${at}.ParentDeviceModel`, 'the Bluetooth device\'s model is neither a string nor a number', DEAF);
+      else if (!anActivityIsListed) found('DeviceList', `${at}.ParentDeviceModel`, 'the device\'s model is neither a string nor a number, and the device list draws its picture by it', ERROR_SCREEN);
+    } else if (isNumber(transport) && ((transport as number) & BLUETOOTH) !== 0 && !knownBluetoothModel(model)) {
+      found('DeviceList', `${at}.ParentDeviceModel`, 'the Bluetooth device\'s model is none the screens have a connecting picture for', DEAF);
+    }
   });
 
-  // MapList: a screen entry's text on the activity's or device's command page, `newCommandButton`, for an entry
-  // with a press that is not on the number pad and not hidden; a sequence's name on the sequence list.
-  list(isObject(documents.MapList) ? documents.MapList['ButtonMaps'] : undefined).forEach((map, m) => {
+  // MapList, by the kind of map.
+  const maps = list(isObject(documents.MapList) ? documents.MapList['ButtonMaps'] : undefined);
+  const mapIds = new Set(maps.map((m) => field(m, 'ButtonMapIdentifier')).filter((x) => x !== undefined).map(String));
+  /** Whether a map the screens look up as `Device<id>` or `Activity<id>` exists, with the screens' prefix or without. */
+  const hasMap = (kind: 'device' | 'activity', id: unknown): boolean =>
+    mapIds.has(mapIdentifier(kind, String(id))) || mapIds.has(`${kind === 'device' ? 'Device' : 'Activity'}${String(id)}`);
+  const gestureMaps = new Map<number, Record<string, unknown>>();
+  for (const activity of gestureActivities) {
+    maps.forEach((m, i) => {
+      const id = field(m, 'ButtonMapIdentifier');
+      if (id !== undefined && (String(id) === mapIdentifier('activity', String(activity['Id-'])) || String(id) === `Activity${String(activity['Id-'])}`)) gestureMaps.set(i, activity);
+    });
+  }
+  maps.forEach((map, m) => {
     if (!isObject(map)) return;
+    const mapKind = kindOf(map, MAP_KINDS);
+    const sequences = map['Sequences'];
+    const sequencesPresent = Array.isArray(sequences) && sequences.length > 0;
     list(map['Buttons']).forEach((button, b) => {
-      if (!isObject(button) || kindOf(button, BUTTON_KINDS) !== 'SoftRemoteButton') return;
-      if (!isObject(button['ButtonAction']) || button['FunctionGroupType'] === 2 || button['ButtonState'] === 4) return;
-      if (!isText(button['TextOnRemote'])) found('MapList', `ButtonMaps[${m}].Buttons[${b}].TextOnRemote`, 'the screen entry\'s text is neither a string nor a number', ONE_SCREEN);
+      if (!isObject(button)) return;
+      const at = `ButtonMaps[${m}].Buttons[${b}]`;
+      const kind = kindOf(button, BUTTON_KINDS);
+      const press = button['ButtonAction'];
+      const group = button['FunctionGroupType'];
+      const hidden = button['ButtonState'] === 4;
+      // The screens search a press's type name with no test; the engine's reader tests it first and refuses
+      // only a name that is set and not text, `checkTypes`, so a press the screens raise on and the engine does
+      // not is one that is not an object or whose name is absent or false.
+      const pressUntyped = typeNameAbsent(press);
+      // A name the engine's reader keys the button by is its to refuse when the button ends with an action, and
+      // a hard key's on a map whose identifier holds 16420 always, `checkFields`.
+      const mapId = map['ButtonMapIdentifier'];
+      const engineNames = endsWithAction(button, map) || (kind === 'HardRemoteButton' && mapKind === 'ActivityButtonMap' && isText(mapId) && String(mapId).includes('16420'));
+      // A screen entry's text on the activity's or device's command page, `newCommandButton`, for an entry with
+      // a press that is any table (`getButtonAction`), not on the number pad and not hidden.
+      if (kind === 'SoftRemoteButton' && isTable(press) && group !== 2 && !hidden) {
+        if (!isText(button['TextOnRemote'])) found('MapList', `${at}.TextOnRemote`, 'the screen entry\'s text is neither a string nor a number', ONE_SCREEN);
+        // On an activity's page, built when the activity finishes starting, the press's type name is searched
+        // for its picture unless the text is one of three names.
+        else if (mapKind === 'ActivityButtonMap' && pressUntyped && !['123', 'Gesturepad', 'Trackpad'].includes(String(button['TextOnRemote']))) {
+          found('MapList', `${at}.ButtonAction`, 'the screen entry\'s press states no text type name, which the activity\'s page searches', DEAF);
+        }
+      }
+      if (kind === 'SoftRemoteButton') {
+        // The engine refuses a screen entry's MenuItem that cannot be indexed; text can be, and has no index.
+        const item = button['MenuItem'];
+        const index = unindexable(item) ? undefined : field(item, 'IndexInMenu');
+        // `reorderActivityButtonMaps` at every activity's finish, over every activity map, and
+        // `reorderDeviceButtonMaps` when device mode loads, which is the first screen on an account with no
+        // activity: `IndexInMenu + 1`. A string of digits would be taken, and is refused, the safe side.
+        if (!unindexable(item) && (group === 0 || group === 36) && !isNumber(index) && !(index === undefined && engineNames)) {
+          if (mapKind === 'ActivityButtonMap' && !hidden) found('MapList', `${at}.MenuItem.IndexInMenu`, 'the screen entry\'s index is not a number, and the activity\'s pages order the entries by it', DEAF);
+          else if (mapKind === 'DeviceButtonMap' && !anActivityIsListed) found('MapList', `${at}.MenuItem.IndexInMenu`, 'the screen entry\'s index is not a number, and device mode orders the entries by it', ERROR_SCREEN);
+        }
+        // The activity's command page logs every entry of group 0's press name at its load, `printButtonInfo`.
+        if (mapKind === 'ActivityButtonMap' && group === 0 && unindexable(press)) found('MapList', `${at}.ButtonAction`, 'the screen entry has no press to read a name off, which the activity\'s page reads', DEAF);
+        // The number pad, loaded when an activity with a number pad entry finishes starting, places each entry
+        // of group 2 by its command's name read as a number. Asked on every map, the safe side of "the map of the
+        // activity, or of the device when one is current".
+        if (group === 2) {
+          if (unindexable(press)) found('MapList', `${at}.ButtonAction`, 'the number pad entry has no press to read a name off', DEAF);
+          else if (numberPadMisplaced(field(press, 'CommandName'))) found('MapList', `${at}.ButtonAction.CommandName`, 'the number pad entry\'s command reads as a number with no key on the pad', DEAF);
+        }
+      }
+      if (mapKind === 'ActivityButtonMap') {
+        // `updateHardButtonsMap` at every activity's finish: a hard key is kept by its name; with sequences, a
+        // hard key whose long press is not a table and every screen entry have their press's type name searched,
+        // and a screen entry naming a sequence is kept by its index.
+        if (kind === 'HardRemoteButton' && button['ButtonKey'] === undefined) {
+          if (!engineNames) found('MapList', `${at}.ButtonKey`, 'the hard key states no name, which the screens keep it by', DEAF);
+        } else if (sequencesPresent && ((kind === 'HardRemoteButton' && !isTable(button['ButtonLongPressAction'])) || kind === 'SoftRemoteButton') && pressUntyped) {
+          found('MapList', `${at}.ButtonAction`, 'the press states no text type name, which the screens search when the map has sequences', DEAF);
+        } else if (sequencesPresent && kind === 'SoftRemoteButton' && kindOf(press, BUTTON_ACTION_KINDS) === 'ButtonSequenceAction'
+          && !unindexable(button['MenuItem']) && field(button['MenuItem'], 'IndexInMenu') === undefined && !engineNames) {
+          found('MapList', `${at}.MenuItem.IndexInMenu`, 'the screen entry naming a sequence states no index, which the screens keep it by', DEAF);
+        }
+      }
+      // `populateHCButtonMaps` at a sync's end searches each hard key's name on the root map.
+      if (mapKind === 'RootButtonMap' && kind === 'HardRemoteButton' && !isText(button['ButtonKey']) && !(button['ButtonKey'] === undefined && engineNames)) {
+        found('MapList', `${at}.ButtonKey`, 'the root map\'s hard key\'s name is neither a string nor a number', DEAF);
+      }
     });
     list(map['Sequences']).forEach((sequence, s) => {
       if (raisesAsText(field(sequence, 'Name'))) found('MapList', `ButtonMaps[${m}].Sequences[${s}].Name`, 'the sequence\'s name is neither a string nor a number', ONE_SCREEN);
     });
+    const gestureActivity = gestureMaps.get(m);
+    if (gestureActivity !== undefined) checkGesturePad(map, m, gestureActivity, hasMap, (path, what) => found('MapList', path, what, DEAF));
   });
 
   // The favourites, by their addresses: the user's at start and in the sync, `updateContentUser`,
@@ -843,6 +994,12 @@ export function checkScreens(documents: SyncDocuments): Finding[] {
   // `setPopularChannels`, and on the favourites page; a device's dial positions in the sync,
   // `submitSpeakerImageRequest`, and on the favourites page.
   for (const [name, document] of Object.entries(documents)) {
+    const favourites = name.startsWith(CONTENT_USER) || name.startsWith(CONTENT_SERVICE) || name.startsWith(CONTENT_DEVICE);
+    // A favourites document is kept unless it is false or null, and then read into: a number or `true` raises.
+    if (favourites && (typeof document === 'number' || document === true)) {
+      found(name, '', 'the favourites document is a value that cannot be read into', name.startsWith(CONTENT_DEVICE) ? ERROR_SCREEN : AT_START);
+      continue;
+    }
     if (!isObject(document)) continue;
     if (name.startsWith(CONTENT_USER)) {
       const preferences = document['preferences'];
@@ -861,8 +1018,14 @@ export function checkScreens(documents: SyncDocuments): Finding[] {
       if (!isTable(channels)) { found(name, 'channels', 'the service states no list of channels', AT_START); continue; }
       list(channels).forEach((channel, c) => {
         const at = `channels[${c}]`;
+        // `getLimitedChannels` reads each channel's number and rank.
+        if (channel === null || typeof channel === 'number' || typeof channel === 'boolean') { found(name, at, 'a channel is a value that cannot be read into', AT_START); return; }
         const station = field(channel, 'station');
-        if (truthy(field(channel, 'popularRank')) && !isObject(station)) found(name, `${at}.station`, 'a ranked channel states no station', AT_START);
+        if (truthy(field(channel, 'popularRank'))) {
+          if (!isObject(station)) found(name, `${at}.station`, 'a ranked channel states no station', AT_START);
+          // The station's id names its picture, `getResource("StationImage")`, whose address is built with `gsub`.
+          else if (!isText(station['id'])) found(name, `${at}.station.id`, 'a ranked channel\'s station id is neither a string nor a number', AT_START);
+        }
         if (raisesAsText(field(channel, 'number'))) found(name, `${at}.number`, 'the channel\'s number is neither a string nor a number', ERROR_SCREEN);
         if (raisesAsText(field(station, 'shortName'))) found(name, `${at}.station.shortName`, 'the station\'s name is neither a string nor a number', ERROR_SCREEN);
       });
@@ -886,6 +1049,125 @@ export function checkScreens(documents: SyncDocuments): Finding[] {
   return out;
 }
 
+/**
+ * Whether the screens have a Bluetooth picture for a model, `getBTDeviceModel` in their pairing tutorial: the
+ * three Nintendo names compared whole, the two PlayStations searched in the lowered model, the two others
+ * searched as they stand. A device with none of them gets an empty name, whose connecting picture is indexed off
+ * nothing when an activity finishes starting with the device paired and not connected.
+ */
+function knownBluetoothModel(model: unknown): boolean {
+  const text = String(model);
+  const lowered = text.toLowerCase();
+  return (typeof model === 'string' && ['Wii U', 'Wii mini', 'Wii'].includes(model))
+    || lowered.includes('playstation 3') || lowered.includes('playstation 4') || text.includes('Fire TV') || text.includes('Nexus Player');
+}
+
+/**
+ * Whether a number pad entry's command name raises in the number pad: it is read with Lua's `tonumber`, and a
+ * name that reads as a number picks the pad's key at that place, of which there are twelve, `0` taking the
+ * eleventh; any other number indexes nothing. A name that does not read as a number is compared with four
+ * names and raises nothing. `tonumber` is approximated: JavaScript's reading of trimmed text, plus Lua's `inf`
+ * and `nan`, which C's reading takes, so a text either reading takes as a number is judged as one, the safe side.
+ */
+function numberPadMisplaced(name: unknown): boolean {
+  let n: number;
+  if (typeof name === 'number') n = name;
+  else if (typeof name === 'string') {
+    const t = name.trim();
+    if (t === '') return false;
+    if (/^[+-]?(inf|nan)/i.test(t)) return true;
+    n = Number(t);
+    if (Number.isNaN(n)) return false;
+  } else return false;
+  return !(Number.isInteger(n) && n >= 0 && n <= 12);
+}
+
+/** The gesture pad's events, `getCurrentActivityGestures`, and the five whose name with `Hold` added is one too. */
+const GESTURE_EVENTS = ['SwipeUp', 'SwipeUpHold', 'SwipeDown', 'SwipeDownHold', 'SwipeRight', 'SwipeRightHold', 'SwipeLeft', 'SwipeLeftHold', 'Tap', 'DoubleTap', 'TapHold', 'SwipeRelease'];
+const GESTURES_WITH_A_HOLD = ['SwipeUp', 'SwipeDown', 'SwipeRight', 'SwipeLeft', 'Tap'];
+/** The role the gesture pad's play and pause looks for, by the activity's `Type`, `getMainRoleName`. */
+const MAIN_ROLE: Readonly<Record<number, string>> = {
+  1: 'ChannelChangingActivityRole', 2: 'PlayMovieActivityRole', 3: 'PlayGameActivityRole', 4: 'PlayMediaActivityRole', 8: 'ControlsVideoCallActivityRole',
+};
+
+/**
+ * The gesture pad's module, which the screens load inside the notification of an activity finishing starting
+ * when the activity's start screen is the gesture pad, `switchDefaultScreen`: it reads the activity's map, its
+ * sequences and each gesture's three actions, `getActivityButtonList`, `getCurrentActivityGestures` and
+ * `setGestureAction`. Every place reports through `raise` with its path.
+ */
+function checkGesturePad(map: Record<string, unknown>, m: number, activity: Record<string, unknown>,
+  hasMap: (kind: 'device' | 'activity', id: unknown) => boolean, raise: (path: string, what: string) => void): void {
+  // The sequences, unless false or null, are walked with `pairs`, each keyed by its id. An array's entry that is
+  // not an object is the engine's to refuse.
+  const sequences = map['Sequences'];
+  if (truthy(sequences) && sequences !== null) {
+    if (!isTable(sequences)) raise(`ButtonMaps[${m}].Sequences`, 'the gesture pad\'s activity states sequences that are not a list');
+    else {
+      Object.entries(sequences as object).forEach(([s, sequence]) => {
+        if (!isObject(sequence) && Array.isArray(sequences)) return;
+        if (!isObject(sequence)) raise(`ButtonMaps[${m}].Sequences[${s}]`, 'the gesture pad\'s sequence is not an object, and it reads the sequence\'s id off it');
+        else if (sequence['SequenceId'] === undefined) raise(`ButtonMaps[${m}].Sequences[${s}].SequenceId`, 'the gesture pad\'s sequence states no id, which it keys the sequence by');
+      });
+    }
+  }
+  arrayOf(map['Buttons']).forEach((button, b) => {
+    if (!isObject(button) || kindOf(button, BUTTON_KINDS) !== 'GestureRemoteButton') return;
+    const key = button['ButtonKey'];
+    if (typeof key !== 'string' || !GESTURE_EVENTS.includes(key) || button['ButtonState'] === 4) return;
+    const at = `ButtonMaps[${m}].Buttons[${b}]`;
+    const actions = (['ButtonAction', 'ButtonLongPressAction', 'ButtonDoublePressAction'] as const).filter((name) => isTable(button[name]));
+    for (const name of actions) {
+      const action = button[name] as Record<string, unknown>;
+      if (typeNameAbsent(action)) { raise(`${at}.${name}`, 'the gesture\'s action states no text type name, which the gesture pad searches'); continue; }
+      if (!isText(action['__type'])) continue;
+      const type = String(action['__type']);
+      if (type.includes('ButtonClientAction')) {
+        if (action['ActionName'] === 'PLAY_PAUSE_TOGGLE' && !playPauseFound(activity, hasMap)) {
+          raise(`${at}.${name}`, 'the gesture plays and pauses, and the activity has no device of its main role with a map');
+        }
+      } else if (!type.includes('ButtonCommandAction') && !type.includes('ButtonSequenceAction')) {
+        // `setGestureAction` reads the name off a `button` it never defines, which is nil.
+        raise(`${at}.${name}`, 'the gesture\'s action is of a kind the gesture pad does not name');
+      }
+    }
+    // A long press is kept under the gesture's name with `Hold` added, and a short press is copied there too
+    // unless the gesture is a double tap; only five gestures have such a name.
+    const hold = actions.includes('ButtonLongPressAction');
+    const short = actions.includes('ButtonAction');
+    if (!GESTURES_WITH_A_HOLD.includes(key) && (hold || (short && key !== 'DoubleTap'))) {
+      raise(`${at}.ButtonKey`, 'the gesture has no held form, and the gesture pad keeps its press under that form');
+    }
+  });
+}
+
+/**
+ * Whether the gesture pad finds a device to play and pause, `getRoleDeviceId` and `getDeviceButtonList`: the
+ * first role whose type name holds the main role of the activity's type, its device id, and that device's map.
+ * An activity of another type has no main role, which raises once it has a role, and no role found joins nil
+ * into the map's name.
+ */
+function playPauseFound(activity: Record<string, unknown>, hasMap: (kind: 'device' | 'activity', id: unknown) => boolean): boolean {
+  // Roles that are not a table, and a role's device id that is not text, raise here too, and are refused at
+  // their own places, so they are not told twice.
+  if (!isTable(activity['Roles'])) return true;
+  const main = typeof activity['Type'] === 'number' ? MAIN_ROLE[activity['Type']] : undefined;
+  if (main === undefined) return false;
+  const role = arrayOf(activity['Roles']).find((r) => isObject(r) && isText(r['__type']) && String(r['__type']).includes(main));
+  if (role === undefined) return false;
+  const id = field(role, 'DeviceId-');
+  return !isText(id) || hasMap('device', id);
+}
+
+/** A press the screens search the type name of and the engine's reader passes over: not an object, or its name absent or false. */
+function typeNameAbsent(action: unknown): boolean {
+  return !isObject(action) || action['__type'] === undefined || action['__type'] === false;
+}
+
+/** A JSON array's entries, or none for anything else. */
+function arrayOf(x: unknown): readonly unknown[] {
+  return Array.isArray(x) ? x : [];
+}
 /** A field of an object, or undefined for anything that is not one. */
 function field(x: unknown, name: string): unknown {
   return isObject(x) ? x[name] : undefined;

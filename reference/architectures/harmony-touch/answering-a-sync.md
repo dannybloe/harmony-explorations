@@ -170,27 +170,48 @@ with the documents it answered, so a set delivered by a sync never meets it[^t-t
 
 **The remote's screens read the same documents, and some of their raises cost the whole
 remote**[^t-touch-reader-raises]. The screens are a program of their own and catch a raise in a tap, a key, a
-timer, a drawing and each turn of their main loop, so most of their raises cost one screen or one key. Three
+timer, a drawing and each turn of their main loop, so most of their raises cost one screen or one key. Four
 cost more:
 
 * **their program ends at every start**, before anything is drawn, on a background setting whose value is not
-  text, a settings row that is not an object or states no list of values, a language in the Context that is not
-  a language and a country joined by a hyphen, and a channel line up with no list of channels or a ranked
-  channel with no station;
+  text, a settings row that is not an object or states no list of values, the user's pictures stated as text, a
+  language in the Context that is not a language and a country joined by a hyphen, an account id in the Context
+  that is set and not text, which the screens join into the address of every document they read, a channel
+  line up with no list of channels, a channel that is not an object or a ranked channel with no station or a
+  station id that is not text, and a favourites document that is a number or `true`;
 * **the error screen at every start, whose one way on is a factory reset**, on an activity whose list place
   `ActivityOrder` is not a number, whose `Name` is not text, whose picture `ImageKey` is set and not text or
   names a picture with no text `BaseImageUri`, a television or channel changing activity with no list of
   roles, a channel changing activity with no id, a device with no id, and favourites whose entries are not
-  objects or whose stations, numbers, names or pictures are not text;
+  objects or whose stations, numbers, names or pictures are not text; and on an account with no activity on
+  the home list, where device mode is the first screen, a device whose `ParentDeviceModel` is not text or a
+  device's screen entry whose index is not a number;
 * **a sync that is never committed**, the screens raising after the engine has loaded the new set and before
   they send the commit, on pictures of the user's or their addresses that are not text, a household address
   that is not text, an activity picture address that is not text, and a device's favourites without their
-  services or dial positions.
+  services or dial positions;
+* **the screens deaf to the engine until the remote restarts**, a raise inside a notification from the
+  engine, after which the screens never read that connection again, so no sync, activity, key or firmware
+  notification reaches them and a later sync waits on them. The notifications that read a document are an
+  activity finishing starting, whose pages the screens build inside it, an activity starting, the help
+  screen's replies and a sync's end. The values: a Context `SetupSession` that cannot be read into; an
+  activity with no list of roles, a role whose device id is not text or whose input is a number or `true`; a
+  device id that is not text or that holds `(`, `)`, `[` or `%`, which the screens search with as a pattern; a
+  Bluetooth device whose model is not text, and a Bluetooth device other than a Bluetooth keyboard whose model
+  is none of the seven the screens have a connecting picture for; on an activity's map, a screen entry whose index is not a
+  number, a screen entry of the command page whose press cannot be read into or states no type name, a hard key
+  with no name, and with sequences in the map a press without a type name; a number pad entry whose command
+  name reads as a number with no key on the pad; a hard key on the root map whose name is not text; and on the
+  map of an activity whose start screen is the gesture pad, sequences that are not a list or one without an
+  id, a gesture's action without a type name or of a kind the pad does not name, a gesture with no held form
+  holding a long press, and a play and pause with no device of the activity's main role with a map. That a
+  later sync then waits rather than aborts is inferred[^unchecked].
 
-A device's `Name`, a screen entry's `TextOnRemote` and a sequence's `Name` that are not text fail the screen
-that shows them[^t-touch-reader-raises]. The many other places the screens raise on cost one screen, one key,
-a timer, or the screens' hearing of the engine until the remote restarts, and are listed under "Not checked"
-below as places an answerer's check does not refuse.
+**Every place of those four is refused by the answerer's check**[^t-touch-reader-raises], and so are a device's
+`Name`, a screen entry's `TextOnRemote` and a sequence's `Name` that are not text, which fail only the screen
+that shows them and are refused because a set of ours composes them. A place reached only in hub mode, which a
+Touch synced through a computer is not, is not refused. The many other places the screens raise on cost one
+screen, one key or a timer, are **not refused, by choice**, and are listed under "Not checked" below.
 
 **A document has to arrive as the object itself, not as a string holding one, and nothing on arrival checks
 which it is.** The remote stores a document as the JSON encoding of its `resource`, so an object is stored as
@@ -417,11 +438,11 @@ Whether these are enough to know a whole configuration arrived is not settled[^u
   role rather than seen[^unchecked].
 * What a configuration the reader raises on does on a unit: the firmware reading is
   [recovery](firmware.md#a-configuration-that-fails-to-load), and none of it has been tried[^unchecked].
-* The places the remote's screens raise on whose cost is one screen, one key, a timer, or the screens' hearing
-  of the engine until a restart: read, and not refused by an answerer's check. A button's press without a type
-  name, which the engine passes over, is one of them, failing its command page. That the screens stop hearing
-  the engine after a raise in a notification, and that a sync then waits rather than aborts, are inferred from
-  the screens' socket handling and not seen on a remote[^unchecked].
+* The places the remote's screens raise on whose cost is one screen, one key or a timer: read, and not refused
+  by an answerer's check, by choice. A button's press without a type name, which the engine passes over, is one
+  of them on a device's map, failing its command list. That the screens stop hearing the engine after a raise
+  in a notification, and that a sync then waits rather than aborts, are inferred from the screens' socket
+  handling and not seen on a remote[^unchecked].
 * What the engine does at a key press with the values it stores at the load, an action's delay or a device's
   repeats among them, and whether a raise there ends its task[^unchecked].
 * How the remote's JSON decoders compare with a strict one on text only one of them accepts, which decides an

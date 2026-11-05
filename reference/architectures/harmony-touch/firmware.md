@@ -128,7 +128,7 @@ cannot repair on its own** come from a document that is valid JSON and lacks a l
 type name it searches or another field it leans on, one at start and one during a sync, both below, and both
 end in a restart. **The remote's screens can strand it too**, a program of their own that reads the same
 documents: a few of their raises end their program or show an error screen offering only a factory reset at
-every start, or leave a sync uncommitted, [which ones](answering-a-sync.md#what-the-remote-does-not-check-and-why-an-answerer-still-has-to-be-careful)[^t-touch-reader-raises];
+every start, leave a sync uncommitted, or stop the screens hearing the engine until a restart, [which ones](answering-a-sync.md#what-the-remote-does-not-check-and-why-an-answerer-still-has-to-be-careful)[^t-touch-reader-raises];
 a restart meets such a set again, and that the engine, a separate program, still serves the cable then, so
 that the delete of the stored documents below reaches the remote, is inferred and not tried[^unchecked]. All of this is read in the production
 build 4.15.330, and **one route has been run on a remote**: a sync stopped halfway, cleared by the abort and

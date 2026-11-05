@@ -112,8 +112,9 @@
  *   start, the error screen at every start whose one way on is a factory reset, and a sync that never
  *   commits. Every place of those three is `screens raise`, and so are three labels chapter 8 composes
  *   whatever they cost, a device's name, a screen entry's text and a sequence's name. The rows are
- *   `SCREEN_ROWS`. The note's other rows, each costing one screen, one key, a timer, or the screens'
- *   hearing of the engine until a restart, are **not refused**, and the reference names them so.
+ *   `SCREEN_ROWS`. The note's other rows, each costing one screen, one key or a timer, are **not refused**,
+ *   and the reference names them so. This said the rows costing the screens' hearing of the engine until a
+ *   restart were not refused either, until 6.10.2 below refused them.
  *
  * **A defect this found in the view**: `read.ts` threw on a device's `Commands` stated as an object and on an IR
  * protocol's segment lists stated as one, where its header promises to read a malformed document without
@@ -142,6 +143,81 @@
  * lab notes `1.3.2-the-configuration-reader.md` (which agrees on the sort keys and the protocol's lists and
  * calls `IsTuningDefault` listing only, which the pass and the favourites contradict) and the two `3.1-*.md`
  * notes, silent on most of these raises. Logitech's client was not consulted, for the reason above.
+ *
+ * ## The screens deaf to the engine until a restart, `todo-touch.md` 6.10.2
+ *
+ * **The question.** 34 rows of `6.10-screens-reads.md` cost "LH": a raise inside a notification from the
+ * engine. Decided at the bench: they are refused too, since chapter 8 composes the names, labels and pictures
+ * those screens read and a valid set never meets them. Before building, every one of the 34 was re-read in the
+ * screens' Lua, because 6.10.1's author had checked only the costliest rows; the verdict per row is written
+ * beside it in the lab note, section 6 there has the summary.
+ *
+ * **The mechanism, re-read first.** `Render:processEvent` (`draws/render.lua` 1314-1330) calls a socket's
+ * callback with no guard and re-arms the socket only when the callback returns true; a raise leaves the
+ * table entry, so `addFile` returns early ever after (1351-1356), and `ltcpsocket.lua` 107-145 to `hbus.lua`
+ * 111-173 reach every subscriber and reply callback with no `pcall`. That the C side clears the descriptor
+ * before posting the event is 6.10.1's disassembly, not re-read. **What reaches a document inside a
+ * notification** on a Touch synced through a computer: the activity finished notification, which returns at
+ * once while the remote is on USB (`harmony.lua` 3817) and otherwise runs `launcher.activityFinishedUiCallback`,
+ * which builds the activity's command page, number pad, gesture pad when it is the start screen, and the
+ * first activity tutorial by `loadfile` inside it (`render.lua` 1372, `carousel.lua` 150); the start activity
+ * subscriber (`launcher.lua` 199-285); the help screen's replies; and the sync's end, `proxyFinishedCallback`.
+ *
+ * **The verdicts**: 19 rows confirmed as written, 15 corrected, none unconfirmed. Of the corrections: five
+ * rows reach the deaf state only in hub mode, which a Touch synced through a computer is not, so are not
+ * refused (the activity powered off label is reached only with `startingActivity` false, which the one
+ * subscriber on such a Touch never passes; the first tutorial's name labels sit in its surface mode branch or
+ * behind taps; the speakers need `hasSpeakers`, surface mode); a sequence's list is built only from a tap; and
+ * the rest name a value or a cost the row missed: the user's pictures as text (`ipairs` at `harmony.lua`
+ * 3397, at start whenever a background is named), a role's input that is a number or `true` (the tutorial's
+ * guard lets them through, `firsttimetutorial.lua` 174-176), the device list drawing every device's picture
+ * through `string.find` on `ParentDeviceModel` (`style.lua` 2047, the error screen on an account with no
+ * activity), a press of any table kind on the command page and its type name searched for the picture
+ * (`style.lua` 1874, 1914), a number pad command name that is not a number passing where the row had it raise
+ * (only one read as a number off the pad's twelve keys raises, `numpad.lua` 71-78), a device id holding a
+ * pattern character (the screens search with it as a pattern, `harmony.lua` 582, 615), a channel entry that cannot be indexed
+ * and a ranked station's id passed to `gsub` (`harmony.lua` 3511, 1285), a favourites document that is a
+ * number or `true` (the favourites manager's guards pass both), and the gesture pad's held forms. **One place
+ * outside the 34 was found**: `getRequest` joins the Context's `AccountId-` into every document's address with
+ * `table.concat` (`harmony.lua` 1220, 1252), which raises on anything but text at the screens' first reading,
+ * so their program ends at every start. And one place the note named and 6.10.1 did not build: device mode's
+ * reorder of the screen entries by `IndexInMenu + 1` (`harmony.lua` 428), the first screen on an account with
+ * no activity.
+ *
+ * **What is built**, all under `screens raise`, whose message now names the deaf cost: the rule's name stays
+ * one because the fault is one, a raise in the screens, and the gate and the answerer treat every refusal
+ * alike. Where the code's condition is the activity a notification names, every activity or every activity
+ * map is asked, the safe side; where the engine's reader already refuses the same value at the same place,
+ * the screens' rule stays silent, so a value is told once.
+ *
+ * **The calibration** is Logitech's recorded full and trial syncs and the five sets of ours, which pass, and
+ * which the new places meet: the full sync's one gesture pad activity has its map, with a sequence and nine
+ * gesture actions, and is the one activity map with sequences; that map's sequences turned to text are refused
+ * there. **Negatives asserted**: an object of roles passes; the gesture pad is not read for another start
+ * screen; a double tap's own press and a hidden gesture pass; play and pause with its device's map passes, the
+ * map found with the screens' prefix or without; a hard key the engine keys by its name is the engine's to
+ * refuse; a press on a map without sequences is not searched; an entry of group 36 need not be indexable for
+ * the command page; a hidden entry is not drawn or ordered; a device's index and model are asked only with no
+ * activity listed; a Bluetooth keyboard needs no known model; an unranked channel's station id is not read;
+ * a favourites document that is `false`, `null` or text passes.
+ *
+ * **Controls**, 33, each run once by string replacement on a copy of `check.ts` and restored from it, every one
+ * failing a test as it should: each new condition made silent (the account id, the setup session, the user's
+ * pictures as text, a role's device id and input, the device id's pattern, a Bluetooth device's model and its
+ * known names, the model with no activity, the activity page's press and its type name, the activity and
+ * device indexes, the number pad's press and name, a hard key's name, the press with sequences, a sequence
+ * entry's index, the root map's key, the gesture pad's walk, its sequences, a sequence's id, an action's type
+ * name, play and pause, an unknown kind, the held form, a favourites document, a channel, a station id), the
+ * roles narrowed back to 6.10.1's two activities, a press of any table narrowed to an object, the engine first
+ * skip on the index dropped, and the one finding per place dropped. Two controls first passed, because other
+ * rows refused the same values; a scenario reaching only that condition was added for each.
+ *
+ * **Width.** One build, 4.15.330, of the Harmony Touch, the `juniper` skin. How Lua treats each value is the
+ * language's documented behaviour on LuaJIT, not run; a malformed pattern raising is the same.
+ *
+ * **Sources checked first**: the lab notes `6.10-screens-reads.md`, `6.10-reader-raises.md` and
+ * `6.10.2-brief.md`, this file's 6.10 section and the reference's `answering-a-sync.md`. Logitech's client was
+ * not consulted, for the reason above.
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -176,7 +252,7 @@ const command = (Name: string, value: string): Json => ({
 
 const device = (id: number, inputs: string[]): Json => ({
   Device: {
-    'Id-': id, Name: `Device ${id}`, Manufacturer: 'Synthetic', Model: `M${id}`, DeviceType: 1, Transport: 1, ControlPort: 0,
+    'Id-': id, Name: `Device ${id}`, Manufacturer: 'Synthetic', Model: `M${id}`, ParentDeviceModel: `M${id}`, DeviceType: 1, Transport: 1, ControlPort: 0,
     PressMinRepeats: null, InterKeyDelay: 100, InterDeviceDelay: 0, ContentProfileKey: id * 10, DeviceProfileUri: `profile/device/${id}`,
   },
   DeviceFeatures: [
@@ -741,6 +817,9 @@ test('the gate refuses an entry without a type name, or with one that is null, a
 });
 
 test('a button\'s three actions, which the reader tests for a type name first, are refused only for one the search raises on', () => {
+  // The engine's reader's findings: since 6.10.2 the gate also refuses a press on an activity's map without a
+  // type name, which the screens search, and that is asserted with the screens' rows below.
+  const places = (d: Json) => readerRaises(d as SyncDocuments).map((f) => [f.rule, f.effect, f.document, f.path]);
   const guarded = typePlaces(everyPath()).filter((p) => p.guarded);
   // The six short presses the clean maps state as objects, the Red key's being null, its long press and the
   // added double press.
@@ -943,6 +1022,9 @@ test('the gate refuses each value the load raises on, at its one place and by it
 });
 
 test('a button without a name is refused only when it ends with an action, by the reader\'s own test of that', () => {
+  // The engine's reader's findings: the screens refuse a screen entry of an activity's map without an index
+  // whatever its action, since 6.10.2, which the screens' rows below assert.
+  const places = (d: Json) => readerRaises(d as SyncDocuments).map((f) => [f.rule, f.effect, f.document, f.path]);
   const nameless = (change: (b: Json, m: Json) => void): Json => {
     const d = everyField();
     const m = d.MapList.ButtonMaps[2];
@@ -977,7 +1059,7 @@ test('a device the start\'s fixes take for a Wii is refused without a power stat
     const d = everyField();
     const protocol = { __type: 'BluetoothProtocol', 'Id-': 901, Name: 'WiiBT 6 Bit' };
     const device = {
-      Device: { 'Id-': 3, Name: 'Console', Manufacturer: 'Synthetic', Model: 'W', DeviceType: 9, Transport: 9, PressMinRepeats: null, InterDeviceDelay: 0 },
+      Device: { 'Id-': 3, Name: 'Console', Manufacturer: 'Synthetic', Model: 'W', ParentDeviceModel: 'Wii', DeviceType: 9, Transport: 9, PressMinRepeats: null, InterDeviceDelay: 0 },
       DeviceFeatures: [] as Json[],
       Commands: [{ Name: 'Home', KeyCode: 'x', ProtocolId: 901, TransportType: 8, Raw: null }],
     };
@@ -1035,12 +1117,28 @@ const USER = 'content://1.0/user;profile/user/1';
 const DIAL = 'content://1.0/device;profile/device/1';
 const LINE_UP = 'content://1.0/service/svc';
 
-/** `everyField` with a background, a picture of the user's and an activity picture fetched from an address. */
+/**
+ * `everyField` with a background, a picture of the user's and an activity picture fetched from an address; and
+ * for 6.10.2 a ranked channel, a Bluetooth device, a root map with a hard key, and the activity's start screen
+ * the gesture pad, with a gesture of each kind the pad names on the activity's map: a command with a long press,
+ * and a play and pause.
+ */
 function everyScreen(): Json {
   const d = everyField();
   d.Settings.Settings.push({ Name: 'BackgroundImage', SettingId: 5, Values: ['background.png'], DefaultValue: null, MinCount: 1, MaxCount: 1 });
   d.Settings.Settings.push({ Name: 'UserImages', SettingId: 6, Values: ['mine.png'], DefaultValue: null, MinCount: 0, MaxCount: 5 });
-  Object.assign(activity(d), { ImageKey: 'Activity/watch.png', BaseImageUri: 'images/' });
+  Object.assign(activity(d), { ImageKey: 'Activity/watch.png', BaseImageUri: 'images/', StartScreen: 'Gesturepad' });
+  d[LINE_UP].channels[0].popularRank = 1;
+  d.DeviceList.DevicesWithFeatures.push({
+    Device: { 'Id-': 3, Name: 'Console', Manufacturer: 'Synthetic', Model: 'W', ParentDeviceModel: 'Wii', DeviceType: 9, Transport: 8, PressMinRepeats: null, InterDeviceDelay: 0 },
+    DeviceFeatures: [], Commands: [],
+  });
+  d.MapList.ButtonMaps.push({ __type: 'DeviceButtonMap', ButtonMapIdentifier: mapIdentifier('device', '3'), 'DeviceId-': 3, Sequences: null, Buttons: [] });
+  d.MapList.ButtonMaps.push({ __type: 'RootButtonMap', ButtonMapIdentifier: 'Root', Sequences: null, Buttons: [key('HomeControl1', commandAction(1, 'OK'))] });
+  d.MapList.ButtonMaps[2].Buttons.push(
+    { ...key('SwipeUp', commandAction(1, 'OK')), __type: 'GestureRemoteButton', ButtonLongPressAction: commandAction(1, 'Mute') },
+    { ...key('Tap', { __type: 'ButtonClientAction', EventType: 0, ActionName: 'PLAY_PAUSE_TOGGLE' }), __type: 'GestureRemoteButton' },
+  );
   return d;
 }
 
@@ -1064,12 +1162,34 @@ const SCREEN_ROWS: readonly Omit<Row, 'rule'>[] = [
   { document: 'ActivityList', path: 'Activities[0].Name', bad: [ABSENT, null, true, {}, []], good: ['Other', 5] },
   { document: 'ActivityList', path: 'Activities[0].ImageKey', bad: [true, {}, []], good: [ABSENT, null, false, 'Activity/other.png'] },
   { document: 'ActivityList', path: 'Activities[0].BaseImageUri', bad: [ABSENT, null, true, {}], good: ['other/', 5] },
-  { document: 'ActivityList', path: 'Activities[0].Roles', bad: [ABSENT, null, 'x', 3], good: [{}] },
+  // An object of roles is a table and passes here; on this set the gesture pad's play and pause then finds no
+  // role, which the test below asserts with the object.
+  { document: 'ActivityList', path: 'Activities[0].Roles', bad: [ABSENT, null, 'x', 3, true, false], good: [] },
   { document: 'ActivityList', path: 'Activities[0].Id-', bad: [ABSENT], good: [8] },
-  { document: 'DeviceList', path: `${DEVICE}.Device.Id-`, bad: [ABSENT], good: [9] },
+  { document: 'DeviceList', path: `${DEVICE}.Device.Id-`, bad: [ABSENT, null, true, {}, '1(', '%', '[1', ')'], good: [9, 'd9', '1.5-'] },
   { document: 'DeviceList', path: `${DEVICE}.Device.Name`, bad: [null, true, false, {}, []], good: [ABSENT, 'Other', 5] },
   { document: 'MapList', path: 'ButtonMaps[0].Buttons[1].TextOnRemote', bad: [ABSENT, null, true, {}], good: ['Other', 5] },
   { document: 'MapList', path: 'ButtonMaps[2].Sequences[0].Name', bad: [null, true, {}], good: [ABSENT, false, 'Other', 5] },
+  // 6.10.2, the places whose cost is the screens deaf to the engine until a restart, and the places found while
+  // re-reading those rows whose cost is the program ending or the error screen at every start.
+  { document: 'Context', path: 'AccountId-', bad: [null, true, false, {}], good: [ABSENT, 7, 'a7'] },
+  { document: 'Context', path: 'SetupSession', bad: [null, 3, true], good: [ABSENT, false, {}, 'x', []] },
+  { document: 'Settings', path: 'Settings[5].Values', bad: ['x', ABSENT, null, 3], good: [[], {}] },
+  { document: 'ActivityList', path: 'Activities[0].Roles[0].DeviceId-', bad: [ABSENT, null, true, {}], good: [2, '2'] },
+  { document: 'ActivityList', path: 'Activities[0].Roles[0].SelectedInput', bad: [3, true], good: [ABSENT, null, false, 'TV', {}] },
+  { document: 'DeviceList', path: 'DevicesWithFeatures[2].Device.ParentDeviceModel', bad: [ABSENT, null, true, {}, 'Other', 5, 'wii'], good: ['Wii U', 'Wii mini', 'PlayStation 3 Slim', 'playstation 4', 'Amazon Fire TV', 'Nexus Player'] },
+  { document: 'MapList', path: 'ButtonMaps[2].Buttons[2].MenuItem.IndexInMenu', bad: [null, true, 'x', '0', {}], good: [5, 0.5] },
+  { document: 'MapList', path: 'ButtonMaps[2].Buttons[2].ButtonAction', bad: [ABSENT, null, 3, 'x', [], { SequenceId: 3 }, { __type: false, SequenceId: 3 }], good: [{ __type: 'NoSuchKind' }, { __type: 7 }] },
+  { document: 'MapList', path: 'ButtonMaps[2].Buttons[0].ButtonAction', bad: [ABSENT, null, 'x', [], { CommandName: 'Mute' }], good: [{ __type: 'NoSuchKind' }] },
+  { document: 'MapList', path: 'ButtonMaps[0].Buttons[2].ButtonAction', bad: [ABSENT, null, 3, true], good: ['x', []] },
+  { document: 'MapList', path: 'ButtonMaps[0].Buttons[2].ButtonAction.CommandName', bad: ['13', '-1', '1.5', 13, ' 0x10 ', 'inf', 'NaN'], good: ['0', '12', ' 9 ', 0, 'Enter', '', false, ABSENT] },
+  { document: 'MapList', path: 'ButtonMaps[5].Buttons[0].ButtonKey', bad: [null, true, {}], good: ['Other', 5] },
+  { document: 'MapList', path: 'ButtonMaps[2].Buttons[3].ButtonAction', bad: [[], { CommandName: 'OK' }, { __type: false }, { __type: 'ButtonChannelAction' }, { __type: 7 }], good: [{ __type: 'ButtonSequenceAction', SequenceId: 3 }, { __type: 'ButtonClientAction', ActionName: 'Numpad' }] },
+  { document: 'MapList', path: 'ButtonMaps[2].Buttons[3].ButtonKey', bad: ['SwipeUpHold', 'TapHold', 'SwipeRelease', 'DoubleTap'], good: ['SwipeDown', 'Tap', 'Other'] },
+  { document: 'MapList', path: 'ButtonMaps[2].Sequences', bad: ['x', 3, true], good: [null, false, [], {}] },
+  { document: 'MapList', path: 'ButtonMaps[2].Sequences[0].SequenceId', bad: [ABSENT], good: [null, 9] },
+  { document: LINE_UP, path: 'channels[1]', bad: [null, 3, true], good: ['x', {}] },
+  { document: LINE_UP, path: 'channels[0].station.id', bad: [ABSENT, null, true, {}], good: ['s7', 7] },
   { document: USER, path: 'preferences', bad: [null, 'x', 5, true, []], good: [ABSENT] },
   { document: USER, path: 'preferences.10', bad: [null, 'x', 5, []], good: [] },
   { document: USER, path: 'preferences.10.svc', bad: [null, 'x', 5], good: [] },
@@ -1089,7 +1209,7 @@ const SCREEN_ROWS: readonly Omit<Row, 'rule'>[] = [
 test('the screens: the set with a value at every place they raise on passes the gate, and each value they raise on is refused at its one place', () => {
   assert.deepEqual(refusalsBeforeASync(everyScreen()), []);
   assert.deepEqual(checkScreens(everyScreen()), []);
-  assert.equal(SCREEN_ROWS.length, 32);
+  assert.equal(SCREEN_ROWS.length, 50);
   for (const row of SCREEN_ROWS) {
     for (const value of row.bad) {
       assert.deepEqual(places(withScreenValue(row.document, row.path, value)), [['screens raise', 'refused', row.document, row.path]], `${row.document} ${row.path} ${JSON.stringify(value) ?? 'absent'}`);
@@ -1104,11 +1224,17 @@ test('the screens: each place is asked only where they read it', () => {
   const screens = (d: Json) => checkScreens(d).map((f) => f.path);
   // An activity picture's address is read in the sync when it is not a string; with a null picture too.
   assert.deepEqual(screens((() => { const d = everyScreen(); Object.assign(activity(d), { ImageKey: null, BaseImageUri: true }); return d; })()), ['Activities[0].BaseImageUri']);
-  // Roles are read on the activity that tunes channels and on a television activity, not on another.
-  const other = (Type: number, IsTuningDefault: boolean) => { const d = everyScreen(); Object.assign(activity(d), { Type, IsTuningDefault }); delete activity(d).Roles; return screens(d); };
-  assert.deepEqual(other(1, false), ['Activities[0].Roles']);
-  assert.deepEqual(other(3, true), ['Activities[0].Roles']);
-  assert.deepEqual(other(3, false), []);
+  // Roles are read at start on the activity that tunes channels and on a television activity, which is the error
+  // screen; on any other activity, since 6.10.2, when it starts or finishes starting, which is the screens deaf.
+  const other = (Type: number, IsTuningDefault: boolean) => {
+    const d = everyScreen();
+    Object.assign(activity(d), { Type, IsTuningDefault });
+    delete activity(d).Roles;
+    return checkScreens(d).map((f) => [f.path, f.message.includes('error screen') ? 'error screen' : f.message.includes('stop hearing') ? 'deaf' : 'other']);
+  };
+  assert.deepEqual(other(1, false), [['Activities[0].Roles', 'error screen']]);
+  assert.deepEqual(other(3, true), [['Activities[0].Roles', 'error screen']]);
+  assert.deepEqual(other(3, false), [['Activities[0].Roles', 'deaf']]);
   // An activity that does not tune channels may leave its id out, as far as the screens go.
   assert.deepEqual(screens((() => { const d = everyScreen(); activity(d).IsTuningDefault = false; delete activity(d)['Id-']; return d; })()), []);
   // A screen entry's text is read only for an entry with a press, off the number pad, and not hidden.
@@ -1132,10 +1258,105 @@ test('the screens: each place is asked only where they read it', () => {
   assert.deepEqual(screens(bare), []);
 });
 
+test('the screens, 6.10.2: the places that leave them deaf, and those found beside them, are asked only where the screens read them', () => {
+  const screens = (d: Json) => checkScreens(d).map((f) => f.path);
+  const variant = (change: (d: Json) => void): Json => { const d = everyScreen(); change(d); return d; };
+  const gestureMap = (d: Json) => d.MapList.ButtonMaps[2];
+  // Roles that are an object are a table: they pass, unless the gesture pad's play and pause then finds no role.
+  assert.deepEqual(screens(variant((d) => { activity(d).Roles = {}; activity(d).StartScreen = 'Commands'; })), []);
+  assert.deepEqual(screens(variant((d) => { activity(d).Roles = {}; })), ['ButtonMaps[2].Buttons[4].ButtonAction']);
+  // The gesture pad is read only for an activity whose start screen it is.
+  assert.deepEqual(screens(variant((d) => { gestureMap(d).Buttons[3].ButtonKey = 'SwipeUpHold'; activity(d).StartScreen = 'Commands'; })), []);
+  assert.deepEqual(screens(variant((d) => { gestureMap(d).Sequences[0] = { Name: 'Both', Actions: [] }; activity(d).StartScreen = 'Favorites'; })), []);
+  // A held press is kept only under the five gestures that have a held form; a double tap's own press is not.
+  assert.deepEqual(screens(variant((d) => { Object.assign(gestureMap(d).Buttons[3], { ButtonKey: 'DoubleTap', ButtonLongPressAction: null }); })), []);
+  assert.deepEqual(screens(variant((d) => { Object.assign(gestureMap(d).Buttons[3], { ButtonKey: 'TapHold', ButtonAction: null }); })), ['ButtonMaps[2].Buttons[3].ButtonKey']);
+  assert.deepEqual(screens(variant((d) => { gestureMap(d).Buttons[3].ButtonState = 4; gestureMap(d).Buttons[3].ButtonKey = 'SwipeRelease'; })), []);
+  // Play and pause needs a role of the activity type's main role whose device has a map.
+  for (const change of [(d: Json) => { activity(d).Type = 9; }, (d: Json) => { activity(d).Type = 2; }, (d: Json) => { d.MapList.ButtonMaps[0].ButtonMapIdentifier = 'Device99'; }]) {
+    assert.deepEqual(screens(variant(change)), ['ButtonMaps[2].Buttons[4].ButtonAction']);
+  }
+  assert.deepEqual(screens(variant((d) => { d.MapList.ButtonMaps[0].ButtonMapIdentifier = 'Device1'; })), []);
+  // A hard key without a name: the screens' when the engine does not key the key by it, the engine's otherwise.
+  const nameless = variant((d) => { delete gestureMap(d).Buttons[0].ButtonKey; });
+  assert.deepEqual(places(nameless), [['required field', 'refused', 'MapList', 'ButtonMaps[2].Buttons[0].ButtonKey']]);
+  assert.deepEqual(screens(variant((d) => { gestureMap(d).Buttons[0].ButtonAction = { __type: 'ButtonClientAction', ActionName: 'Home' }; delete gestureMap(d).Buttons[0].ButtonKey; })), ['ButtonMaps[2].Buttons[0].ButtonKey']);
+  // A press's type name is searched on an activity's map with sequences; without them, only a screen entry's of
+  // group 0 has to be indexable, and only on an activity's map.
+  assert.deepEqual(screens(variant((d) => { d.MapList.ButtonMaps[3].Buttons[0].ButtonAction = null; })), []);
+  assert.deepEqual(screens(variant((d) => { d.MapList.ButtonMaps[3].Buttons.push({ ...entry(4, commandAction(1, 'OK'), 36), ButtonAction: null }); })), []);
+  assert.deepEqual(screens(variant((d) => { d.MapList.ButtonMaps[3].Buttons.push({ ...entry(4, commandAction(1, 'OK')), ButtonAction: null }); })), ['ButtonMaps[3].Buttons[1].ButtonAction']);
+  assert.deepEqual(screens(variant((d) => { d.MapList.ButtonMaps[0].Buttons[1].ButtonAction = 3; })), []);
+  // On an activity's page the press's type name is searched for the entry's picture, sequences or none, unless
+  // the entry's text is one of three names; a hidden entry is not drawn.
+  const drawn = (TextOnRemote: string, ButtonState = 0) => screens(variant((d) => {
+    d.MapList.ButtonMaps[3].Buttons.push({ ...entry(4, { CommandName: 'OK' }), TextOnRemote, ButtonState });
+  }));
+  assert.deepEqual(drawn('OK'), ['ButtonMaps[3].Buttons[1].ButtonAction']);
+  assert.deepEqual(drawn('123'), []);
+  assert.deepEqual(drawn('OK', 4), []);
+  // A screen entry naming a sequence is kept by its index when the map has sequences, whatever its group or
+  // state, where the reorder asks only groups 0 and 36 not hidden; with no action the engine does not ask it.
+  const sequenceEntry = (change: (b: Json) => void) => screens(variant((d) => {
+    const b = gestureMap(d).Buttons[2];
+    b.ButtonAction.SequenceId = 99;
+    delete b.MenuItem.IndexInMenu;
+    change(b);
+  }));
+  assert.deepEqual(sequenceEntry((b) => { b.FunctionGroupType = 1; }), ['ButtonMaps[2].Buttons[2].MenuItem.IndexInMenu']);
+  assert.deepEqual(sequenceEntry((b) => { b.ButtonState = 4; }), ['ButtonMaps[2].Buttons[2].MenuItem.IndexInMenu']);
+  assert.deepEqual(sequenceEntry((b) => { b.FunctionGroupType = 1; b.ButtonAction.__type = 'ButtonCommandAction'; }), []);
+  // A screen entry whose press is an array is drawn with its text.
+  assert.deepEqual(screens(variant((d) => { Object.assign(d.MapList.ButtonMaps[0].Buttons[1], { ButtonAction: [] }); delete d.MapList.ButtonMaps[0].Buttons[1].TextOnRemote; })), ['ButtonMaps[0].Buttons[1].TextOnRemote']);
+  // The index orders an activity's entries unless hidden, and a device's only on an account with no activity
+  // listed, where device mode is the first screen; so is every device's model, which picks its picture there.
+  assert.deepEqual(screens(variant((d) => { Object.assign(gestureMap(d).Buttons[2], { ButtonState: 4 }); gestureMap(d).Buttons[2].MenuItem.IndexInMenu = 'x'; })), []);
+  const deviceMode = (listed: boolean) => checkScreens(variant((d) => {
+    d.MapList.ButtonMaps[0].Buttons[1].MenuItem.IndexInMenu = 'x';
+    delete firstDevice(d).Device.ParentDeviceModel;
+    if (!listed) activity(d).ActivityOrder = -1;
+  })).map((f) => [f.path, f.message.includes('error screen')]);
+  assert.deepEqual(deviceMode(true), []);
+  assert.deepEqual(deviceMode(false), [['DevicesWithFeatures[0].Device.ParentDeviceModel', true], ['ButtonMaps[0].Buttons[1].MenuItem.IndexInMenu', true]]);
+  // A Bluetooth keyboard device's model is searched; only a Bluetooth device needs a model with a picture.
+  const keyboard = (Transport: number, model: unknown) => screens(variant((d) => { Object.assign(d.DeviceList.DevicesWithFeatures[2].Device, { Transport, ParentDeviceModel: model }); }));
+  assert.deepEqual(keyboard(0x20, null), ['DevicesWithFeatures[2].Device.ParentDeviceModel']);
+  assert.deepEqual(keyboard(0x20, 'Other'), []);
+  assert.deepEqual(keyboard(1, 'Other'), []);
+  // A ranked channel's station id names its picture; an unranked one's is not read.
+  assert.deepEqual(screens(variant((d) => { delete d[LINE_UP].channels[0].popularRank; d[LINE_UP].channels[0].station.id = null; })), []);
+  // A favourites document that is a number or true is read into; false, null and text are not.
+  for (const [name, cost] of [[USER, 'ends'], [LINE_UP, 'ends'], [DIAL, 'error screen']] as const) {
+    for (const value of [5, true]) {
+      const found = checkScreens(variant((d) => { d[name] = value; }));
+      assert.deepEqual(found.map((f) => [f.document, f.path, f.message.includes(cost)]), [[name, '', true]], `${name} ${String(value)}`);
+    }
+    for (const value of [false, null, 'x']) assert.deepEqual(screens(variant((d) => { d[name] = value; })), [], `${name} ${String(value)}`);
+  }
+  // The deaf places say so in their message.
+  assert.match(checkScreens(variant((d) => { d.Context.SetupSession = null; }))[0]!.message, /stop hearing the engine until the remote restarts/);
+});
+
 test('the gate tells the engine\'s raises and the screens\' at once, and the five sets of ours and Logitech\'s recorded sets meet none of the screens\'', lab.skipUnless(FULL, TRIAL, ...OUR_SETS), () => {
   const both = withScreenValue('ActivityList', 'Activities[0].Name', null);
   firstDevice(both).Device.DeviceType = 'x';
   assert.deepEqual(findingsByRule(refusalsBeforeASync(both)), { 'not a number': 1, 'screens raise': 1 });
   for (const fixture of [FULL, TRIAL]) assert.deepEqual(checkScreens(documentsOfAnswers(answersOf(fixture))), [], fixture);
   for (const fixture of OUR_SETS) assert.deepEqual(checkScreens(setDocuments(fixture)), [], fixture);
+  // 6.10.2's places meet Logitech's documents, so their passing is not for want of anything to read: the full
+  // sync's one activity whose start screen is the gesture pad has its map, with a sequence and nine gesture
+  // actions, which is also the one activity map with sequences; and a control: that map with its sequences
+  // walked as text is refused there.
+  const full: Json = documentsOfAnswers(answersOf(FULL));
+  const pads = full.ActivityList.Activities.filter((a: Json) => a.StartScreen === 'Gesturepad');
+  assert.equal(pads.length, 1);
+  const padMaps = full.MapList.ButtonMaps.filter((m: Json) => m.ButtonMapIdentifier === mapIdentifier('activity', String(pads[0]['Id-'])));
+  assert.equal(padMaps.length, 1);
+  assert.equal(padMaps[0].Sequences.length, 1);
+  const actions = padMaps[0].Buttons.filter((b: Json) => String(b.__type).includes('GestureRemoteButton'))
+    .flatMap((b: Json) => [b.ButtonAction, b.ButtonLongPressAction, b.ButtonDoublePressAction].filter((x) => typeof x === 'object' && x !== null));
+  assert.equal(actions.length, 9);
+  assert.equal(full.MapList.ButtonMaps.filter((m: Json) => Array.isArray(m.Sequences) && m.Sequences.length > 0).length, 1);
+  padMaps[0].Sequences = 'x';
+  assert.deepEqual(checkScreens(full).map((f) => f.path), [`ButtonMaps[${full.MapList.ButtonMaps.indexOf(padMaps[0])}].Sequences`]);
 });
