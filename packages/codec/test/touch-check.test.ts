@@ -82,13 +82,73 @@
  * `1.3.2-the-configuration-reader.md`, `3.1-activities-and-button-maps.md` and `3.1-devices-and-protocols.md`,
  * against which the lab note above lists two disagreements, and this check's own list rule. Logitech's client
  * was not consulted: the remote reads these documents and the client hands them over unchanged.
+ *
+ * ## Every other field the load raises on, and the screens' reads, `todo-touch.md` 6.10
+ *
+ * **The question.** 6.7.1 closed the type name. What was left: an entry that is not an object on a list the
+ * reader does not sort by type, any field the load indexes, computes with or passes to a string function
+ * without a test, the start's compatibility pass, and the screens, a program of their own that reads the same
+ * documents.
+ *
+ * **What was read**, in the same build, with file and line per place in the lab's
+ * `work/touch-firmware/notes/6.10-reader-raises.md` (the engine) and `6.10-screens-reads.md` (the screens, read
+ * by an agent from a brief in the same folder and checked by the author on its costliest rows only).
+ *
+ * * **The engine's load raises in more ways than a list or a type name**: 47 of the note's 59 rows were not
+ *   covered before, and `ROWS` below asserts them in 60 rows of values, of five
+ *   kinds and two single places, each a rule of `checkFields`: an entry that is not an object, a value used
+ *   in arithmetic, a bitwise operation or a sort that is not a number, a value passed to a string function
+ *   that is not text, a table key that is absent ("table index is nil"), a list walked that is not a table, an
+ *   activity's `Alternatives` text that decodes to a scalar, and a device the start's fixes take for a Wii
+ *   with no power state. How Lua treats each value is the language's documented behaviour on LuaJIT, not read
+ *   in the image; the note lists the rules. **Where the reader would take a string of digits for a number the
+ *   check refuses it**, the one place a rule refuses more than the remote raises on, since Logitech's
+ *   documents state every such value as a number.
+ * * **The compatibility pass cannot meet a set of ours** on this build: it walks the activities only when a
+ *   file of a name nothing in 4.15.330 writes exists, and a committed sync from the account rebuilds the folder
+ *   without it. Read in the sync's commit and the resource manager, not measured; nothing is built for it.
+ * * **The screens catch their own raises**, in an event, a timer, a drawing and each turn of their main loop,
+ *   so most cost one screen or one key; **three costs are the whole remote**, their program ending at every
+ *   start, the error screen at every start whose one way on is a factory reset, and a sync that never
+ *   commits. Every place of those three is `screens raise`, and so are three labels chapter 8 composes
+ *   whatever they cost, a device's name, a screen entry's text and a sequence's name. The rows are
+ *   `SCREEN_ROWS`. The note's other rows, each costing one screen, one key, a timer, or the screens'
+ *   hearing of the engine until a restart, are **not refused**, and the reference names them so.
+ *
+ * **A defect this found in the view**: `read.ts` threw on a device's `Commands` stated as an object and on an IR
+ * protocol's segment lists stated as one, where its header promises to read a malformed document without
+ * throwing; a list that is not an array now reads as none, and the archive's segment rules are handed only
+ * segments that are objects named by text.
+ *
+ * **The calibration** is Logitech's two recorded sets down and the five sets of ours a remote committed
+ * (6.8 and 6.9), which pass every rule, against the synthetic sets with each value broken, which are refused at
+ * their one place by their one rule. There is no independent closure: no second walk counts these places.
+ *
+ * **Negatives asserted**: each row's values the reader takes pass; a button without a name passes unless the
+ * reader's own test gives it an action; a device not taken for a Wii, or with a power state, passes; a screen
+ * entry's text is not asked off the number pad, when hidden, or without a press; an unranked channel needs no
+ * station.
+ *
+ * **Controls**, each run once by string replacement and restored from a copy, every one failing as it should:
+ * each of the six field helpers made silent (`entry not an object`, `required field`, `not a list`, the
+ * protocol's `missing list`) or widened (`not a number` taking a string, `not text` taking anything), the
+ * alternatives test, the Wii test, the action test, the screens' rule made silent, its language test widened,
+ * its screen entry condition dropped, its ranked channel condition dropped, and the view's two fixes reverted.
+ *
+ * **Width.** One build, 4.15.330, of the Harmony Touch, whose screens are the `juniper` skin; the other skin in
+ * the image and every other build are not checked.
+ *
+ * **Sources checked first**: 6.7.1's lab note and this file's 6.7.1 section, the reference pages above, and the
+ * lab notes `1.3.2-the-configuration-reader.md` (which agrees on the sort keys and the protocol's lists and
+ * calls `IsTuningDefault` listing only, which the pass and the favourites contradict) and the two `3.1-*.md`
+ * notes, silent on most of these raises. Logitech's client was not consulted, for the reason above.
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import * as lab from '@harmony/lab';
-import { TOP_LEVEL_LISTS, checkConfiguration, checkTypes, findingsByRule, refusalsBeforeASync, typePlaces } from '../src/harmony-touch/check.ts';
-import { documentKeyOf, documentsOfAnswers, kindOf, type SyncDocuments } from '../src/harmony-touch/documents.ts';
+import { TOP_LEVEL_LISTS, checkConfiguration, checkFields, checkScreens, checkTypes, findingsByRule, readerRaises, refusalsBeforeASync, typePlaces } from '../src/harmony-touch/check.ts';
+import { documentKeyOf, documentsOfAnswers, kindOf, type SyncAnswer, type SyncDocuments } from '../src/harmony-touch/documents.ts';
 import { DEFAULT_PRESS_REPEATS, FIRMWARE_SETTINGS, mapIdentifier, numberPadKey, readConfiguration, readSettings, stationLogo, uploadedLogo } from '../src/harmony-touch/read.ts';
 import { answersOf, FULL, TRIAL } from './touch-sync.ts';
 
@@ -483,12 +543,14 @@ test('a malformed document reads without throwing: a device without its record, 
   assert.equal(readConfiguration(bare).devices[0]!.id, '');
   assert.equal(check(bare)['required field'], 5, 'the three fields the engine requires and the two infrared needs');
   // A command without a name is kept under none, so nothing reaches it, and the buttons naming it find nothing.
+  // The remote's reader lowers the name and raises on its absence, `not text`, which the check found nothing
+  // of until `todo-touch.md` 6.10 read it.
   const nameless = broken((x) => { delete firstDevice(x).Commands[1].Name; });
   const c = readConfiguration(nameless);
   assert.equal(c.devices[0]!.commands.length, 14);
   assert.equal(c.devices[0]!.commands[1]!.name, undefined);
   assert.equal(c.devices[0]!.commandsByName.has('mute'), false);
-  assert.deepEqual(check(nameless), { 'action command missing': 4 });
+  assert.deepEqual(check(nameless), { 'not text': 1, 'action command missing': 4 });
   // A null button is skipped where it stands, and the paths after it still name their own entry. The check
   // finds it as an entry the remote's reader reads a type name off, which raises, `missing type`; it found
   // nothing here until `todo-touch.md` 6.7.1 read that.
@@ -753,4 +815,327 @@ test('Logitech\'s recorded sets down pass the type rule and the gate, and the wa
     }
     assert.equal(found.filter((p) => p.document === 'ProtocolList').length, 0);
   }
+});
+
+// ---------------------------------------------------------------------------------------------------
+// Every other field the load raises on, `checkFields`, `todo-touch.md` 6.10; the argument is this file's header
+// ---------------------------------------------------------------------------------------------------
+
+const atom = (Type: number, Value: number): Json => ({ Type, Value, MinValue: null, MaxValue: null });
+
+/**
+ * `everyPath` with a value at every place `checkFields` reads that the clean set leaves empty: an activity's
+ * alternatives as text, a code segment, a home control action with targets, a program action, a fourth map
+ * whose identifier holds 16420 with a hard key on it. The control for every refusal below: the gate passes it.
+ */
+function everyField(): Json {
+  const d = everyPath();
+  activity(d).Alternatives = '{"devices":null,"inputs":null}';
+  d.ProtocolList.Protocols[0].CodeSegments = [{ Name: 'Synthetic 8 Bit', TotalLength: 1000, Atoms: [atom(1, 500)] }];
+  d.MapList.ButtonMaps[1].Buttons.push(entry(1, { __type: 'ButtonHomeControlAction', EventType: 1, Targets: [{ Id: 1 }, {}, []] }));
+  d.MapList.ButtonMaps[1].Buttons.push(entry(2, { __type: 'ButtonProgramAction', EventType: 1, ProgramId: 4 }));
+  d.MapList.ButtonMaps.push({ __type: 'ActivityButtonMap', ButtonMapIdentifier: '16420Activity7', 'ActivityId-': 7, Sequences: null, Buttons: [key('Menu', commandAction(1, 'OK'))] });
+  return d;
+}
+
+/** A copy of `everyField` with the value at a path set, or taken out when it is undefined. */
+const withValue = (document: string, path: string, value: unknown): Json => {
+  const d = everyField();
+  const [container, k] = locate(d, document, path);
+  if (value === undefined) delete container[k]; else container[k] = value;
+  return d;
+};
+
+/**
+ * One place per row: where the value sits, the values the reader raises on, each with the rule and the place
+ * the finding names (the value's own path unless stated), and the values it takes. The values are the
+ * reader's, `6.10-reader-raises.md`; `ABSENT` is the key taken out.
+ */
+const ABSENT = undefined;
+type Row = { document: string; path: string; rule: string; bad: readonly unknown[]; good: readonly unknown[]; named?: string };
+const NOT_AN_OBJECT = [null, 'x', 3, true, []] as const;
+const DEVICE = 'DevicesWithFeatures[0]';
+const ROWS: readonly Row[] = [
+  // DeviceList, `getDevicesConfiguration`, `getCommandsAndToggleBytes`, `getStatesConfiguration`, `postLoad`.
+  { document: 'DeviceList', path: DEVICE, rule: 'entry not an object', bad: NOT_AN_OBJECT, good: [] },
+  { document: 'DeviceList', path: `${DEVICE}.Device.DeviceType`, rule: 'not a number', bad: [null, 'x', '1', true, {}], good: [0, 5] },
+  { document: 'DeviceList', path: `${DEVICE}.Device.Transport`, rule: 'not a number', bad: [null, '1', true, []], good: [1, 65] },
+  { document: 'DeviceList', path: `${DEVICE}.Device.Manufacturer`, rule: 'not text', bad: [null, true, {}, []], good: ['Other', 7] },
+  { document: 'DeviceList', path: `${DEVICE}.Device.Model`, rule: 'not text', bad: [null, true, {}, []], good: [ABSENT, false, 'Other', 7] },
+  { document: 'DeviceList', path: `${DEVICE}.Commands`, rule: 'not a list', bad: [null, 'x', 3, true], good: [ABSENT, false, {}] },
+  { document: 'DeviceList', path: `${DEVICE}.Commands[0]`, rule: 'entry not an object', bad: NOT_AN_OBJECT, good: [] },
+  { document: 'DeviceList', path: `${DEVICE}.Commands[0].Name`, rule: 'not text', bad: [ABSENT, null, true, {}, []], good: ['Other', 5] },
+  { document: 'DeviceList', path: `${DEVICE}.Commands[0].Raw`, rule: 'not text', bad: [true, {}, []], good: [null, 'x', 5] },
+  { document: 'DeviceList', path: `${DEVICE}.Commands[0].TransportType`, rule: 'not a number', bad: [null, '1', true], good: [1, 2] },
+  { document: 'DeviceList', path: `${DEVICE}.DeviceFeatures[1].Inputs[0]`, rule: 'entry not an object', bad: NOT_AN_OBJECT, good: [] },
+  { document: 'DeviceList', path: `${DEVICE}.DeviceFeatures[1].Inputs[0].InputOrder`, rule: 'required field', bad: [ABSENT], good: [0, 7.5] },
+  { document: 'DeviceList', path: `${DEVICE}.DeviceFeatures[1].Inputs[0].InputOrder`, rule: 'not a number', bad: [null, '0', true], good: [] },
+  { document: 'DeviceList', path: `${DEVICE}.DeviceFeatures[1].Inputs[0].InputName`, rule: 'required field', bad: [ABSENT], good: [null, 'Other'] },
+  { document: 'DeviceList', path: `${DEVICE}.DeviceFeatures[3].StateValues[0]`, rule: 'entry not an object', bad: [null, 3, true], good: ['x', []] },
+  { document: 'DeviceList', path: `${DEVICE}.DeviceFeatures[3].StateValues[0].StateValueName`, rule: 'required field', bad: [ABSENT], good: [null, 'Other'] },
+  { document: 'DeviceList', path: `${DEVICE}.DeviceFeatures[0].PowerOnActions[0].IRCommandName`, rule: 'not text', bad: [true, {}, []], good: [ABSENT, null, false, 'OK', 5] },
+  // ActivityList, `getActivitiesConfiguration`, `getActivityAction`.
+  { document: 'ActivityList', path: 'Activities[0]', rule: 'entry not an object', bad: NOT_AN_OBJECT, good: [] },
+  { document: 'ActivityList', path: 'Activities[0].ActivityGroup', rule: 'not a number', bad: [null, '1', true, {}], good: [0, 4] },
+  { document: 'ActivityList', path: 'Activities[0].Alternatives', rule: 'alternatives not an object', bad: ['5', 'true', 'null'], good: [ABSENT, null, '"x"', '[1]', 'not json', '{}'] },
+  { document: 'ActivityList', path: 'Activities[0].EnterActions[0].Duration', rule: 'not a number', bad: [ABSENT, null, '2', true], good: [0, 2.5] },
+  { document: 'ActivityList', path: 'Activities[0].EnterActions[0].ActionOrder', rule: 'not a number', bad: [null, '5', true], good: [9] },
+  { document: 'ActivityList', path: 'Activities[0].EnterActions[1].CommandName', rule: 'not text', bad: [null, true, {}], good: [false, 'Mute', 5] },
+  // MapList, `getButtonMaps`, `getButtonActions`, `setHomeControlActions`, `getSequenceActions`.
+  { document: 'MapList', path: 'ButtonMaps[0].ButtonMapIdentifier', rule: 'required field', bad: [ABSENT], good: [null, true, 5] },
+  { document: 'MapList', path: 'ButtonMaps[2].ButtonMapIdentifier', rule: 'required field', bad: [ABSENT], good: [5] },
+  { document: 'MapList', path: 'ButtonMaps[2].ButtonMapIdentifier', rule: 'not text', bad: [null, true, {}], good: [] },
+  { document: 'MapList', path: 'ButtonMaps[0].Buttons[0].ButtonKey', rule: 'required field', bad: [ABSENT], good: [null, 5] },
+  { document: 'MapList', path: 'ButtonMaps[0].Buttons[1].MenuItem', rule: 'required field', bad: [ABSENT, null, 3, true], good: [] },
+  { document: 'MapList', path: 'ButtonMaps[0].Buttons[1].MenuItem', rule: 'required field', bad: ['x', {}, []], good: [], named: 'ButtonMaps[0].Buttons[1].MenuItem.IndexInMenu' },
+  { document: 'MapList', path: 'ButtonMaps[0].Buttons[1].MenuItem.IndexInMenu', rule: 'required field', bad: [ABSENT], good: [null, 'x'] },
+  { document: 'MapList', path: 'ButtonMaps[2].Buttons[2].MenuItem.IndexInMenu', rule: 'required field', bad: [ABSENT], good: [] },
+  { document: 'MapList', path: 'ButtonMaps[1].Buttons[1].MenuItem.IndexInMenu', rule: 'required field', bad: [ABSENT], good: [] },
+  { document: 'MapList', path: 'ButtonMaps[1].Buttons[2].MenuItem.IndexInMenu', rule: 'required field', bad: [ABSENT], good: [] },
+  { document: 'MapList', path: 'ButtonMaps[3].Buttons[0].ButtonKey', rule: 'not text', bad: [ABSENT, null, true, {}], good: ['Back', 5] },
+  { document: 'MapList', path: 'ButtonMaps[0].Buttons[0].ButtonAction.CommandName', rule: 'not text', bad: [null, true, {}], good: [false, 5] },
+  { document: 'MapList', path: 'ButtonMaps[1].Buttons[1].ButtonAction.Targets', rule: 'not a list', bad: [null, 'x', 3, true], good: [ABSENT, false, [], {}] },
+  { document: 'MapList', path: 'ButtonMaps[1].Buttons[1].ButtonAction.Targets[0]', rule: 'entry not an object', bad: [null, 'x', 3, true], good: [false, [], {}] },
+  { document: 'MapList', path: 'ButtonMaps[2].Sequences[0]', rule: 'entry not an object', bad: NOT_AN_OBJECT, good: [] },
+  { document: 'MapList', path: 'ButtonMaps[2].Sequences[0].Actions[0].Order', rule: 'not a number', bad: [null, '2', true], good: [7] },
+  { document: 'MapList', path: 'ButtonMaps[2].Sequences[0].Actions[0].CommandName', rule: 'not text', bad: [null, true, []], good: [false, 'OK', 5] },
+  { document: 'MapList', path: 'ButtonMaps[2].Sequences[0].Actions[1].Duration', rule: 'not a number', bad: [ABSENT, null, '2', true], good: [0, 1.5] },
+  // ProtocolList, `initializeFromHarmonyProtocol`, `addIRSegments`, `addCodeSegments`, `getSegmentId`, `processAtoms`.
+  { document: 'ProtocolList', path: 'Protocols[0]', rule: 'entry not an object', bad: [null, 3, true], good: ['x', []] },
+  { document: 'ProtocolList', path: 'Protocols[0].CarrierFrequency', rule: 'not a number', bad: [ABSENT, null, '38000', true], good: [36000, 0] },
+  { document: 'ProtocolList', path: 'Protocols[0].IRSegments', rule: 'missing list', bad: [ABSENT, null, 'x', 3], good: [{}] },
+  { document: 'ProtocolList', path: 'Protocols[0].CodeSegments', rule: 'missing list', bad: [ABSENT, null, 'x', 3], good: [[], {}] },
+  { document: 'ProtocolList', path: 'Protocols[0].IRSegments[0]', rule: 'entry not an object', bad: NOT_AN_OBJECT, good: [] },
+  { document: 'ProtocolList', path: 'Protocols[0].CodeSegments[0]', rule: 'entry not an object', bad: NOT_AN_OBJECT, good: [] },
+  { document: 'ProtocolList', path: 'Protocols[0].IRSegments[0].Name', rule: 'not text', bad: [ABSENT, null, 5, true], good: ['Other', 'Synthetic KeyCode2'] },
+  { document: 'ProtocolList', path: 'Protocols[0].Name', rule: 'not text', bad: [ABSENT, null, 5], good: ['Other'] },
+  { document: 'ProtocolList', path: 'Protocols[0].IRSegments[0].Payload', rule: 'required field', bad: [ABSENT, null, 3, 'x', []], good: [] },
+  { document: 'ProtocolList', path: 'Protocols[0].IRSegments[0].Payload.Encodings', rule: 'missing list', bad: [ABSENT, null, 'x'], good: [[], {}] },
+  { document: 'ProtocolList', path: 'Protocols[0].IRSegments[0].Payload.Encodings[0]', rule: 'entry not an object', bad: NOT_AN_OBJECT, good: [] },
+  { document: 'ProtocolList', path: 'Protocols[0].IRSegments[0].Payload.Encodings[0].BitType', rule: 'not a number', bad: [ABSENT, null, '0'], good: [7] },
+  { document: 'ProtocolList', path: 'Protocols[0].IRSegments[0].Payload.Encodings[0].Atoms', rule: 'not a list', bad: [null, 'x', 3, true], good: [ABSENT, false, [], {}] },
+  { document: 'ProtocolList', path: 'Protocols[0].IRSegments[0].Header', rule: 'not a list', bad: [null, 'x', 3, true], good: [ABSENT, false, []] },
+  { document: 'ProtocolList', path: 'Protocols[0].IRSegments[0].Trailer', rule: 'not a list', bad: [null, 'x'], good: [ABSENT, false] },
+  { document: 'ProtocolList', path: 'Protocols[0].CodeSegments[0].Atoms', rule: 'not a list', bad: [null, 'x'], good: [ABSENT, false] },
+  { document: 'ProtocolList', path: 'Protocols[0].IRSegments[0].Header[0]', rule: 'entry not an object', bad: NOT_AN_OBJECT, good: [] },
+  { document: 'ProtocolList', path: 'Protocols[0].IRSegments[0].Header[0].Value', rule: 'not a number', bad: [ABSENT, null, '9000', true], good: [0, 40000] },
+  { document: 'ProtocolList', path: 'Protocols[0].CodeSegments[0].TotalLength', rule: 'not a number', bad: [ABSENT, null, '5'], good: [0] },
+];
+
+test('the set holding a value at every place the load raises on passes the gate, and every row is a different place', () => {
+  assert.deepEqual(refusalsBeforeASync(everyField()), []);
+  assert.deepEqual(findingsByRule(checkConfiguration(readConfiguration(everyField()))), { 'map identifier': 1 }, 'the 16420 map is reached by no press, which the remote ignores');
+  // 60 rows; two places carry two rules each and one place two rows of one rule that name different paths, so
+  // 59 distinct place and rule pairs. A row added twice would show as a pair counted twice.
+  assert.equal(ROWS.length, 60);
+  assert.equal(new Set(ROWS.map((r) => `${r.document} ${r.path} ${r.rule}`)).size, 59);
+});
+
+test('the gate refuses each value the load raises on, at its one place and by its one rule, and passes each value the load takes', () => {
+  for (const row of ROWS) {
+    for (const value of row.bad) {
+      assert.deepEqual(places(withValue(row.document, row.path, value)), [[row.rule, 'refused', row.document, row.named ?? row.path]], `${row.path} ${JSON.stringify(value) ?? 'absent'}`);
+    }
+    for (const value of row.good) {
+      assert.deepEqual(places(withValue(row.document, row.path, value)), [], `${row.path} ${JSON.stringify(value) ?? 'absent'} passes`);
+    }
+  }
+});
+
+test('a button without a name is refused only when it ends with an action, by the reader\'s own test of that', () => {
+  const nameless = (change: (b: Json, m: Json) => void): Json => {
+    const d = everyField();
+    const m = d.MapList.ButtonMaps[2];
+    delete m.Buttons[2].MenuItem.IndexInMenu;
+    change(m.Buttons[2], m);
+    return places(d);
+  };
+  const refused = [['required field', 'refused', 'MapList', 'ButtonMaps[2].Buttons[2].MenuItem.IndexInMenu']];
+  // A sequence gives an action when the map's sequence of that id has a step.
+  assert.deepEqual(nameless(() => {}), refused);
+  assert.deepEqual(nameless((b) => { b.ButtonAction.SequenceId = 99; }), []);
+  assert.deepEqual(nameless((_, m) => { m.Sequences[0].Actions = []; }), []);
+  // No press, or a press of a kind that gives nothing, or one without a type name; a long press counts.
+  assert.deepEqual(nameless((b) => { b.ButtonAction = null; }), []);
+  for (const kind of ['ButtonClientAction', 'ButtonChannelAction', 'ButtonBookmarkAction', 'NoSuchKind']) {
+    assert.deepEqual(nameless((b) => { b.ButtonAction = { __type: kind }; }), [], kind);
+  }
+  assert.deepEqual(nameless((b) => { b.ButtonAction = { EventType: 0 }; }), []);
+  assert.deepEqual(nameless((b) => { b.ButtonLongPressAction = b.ButtonAction; b.ButtonAction = null; }), refused);
+  // A double press alone does not make a button kept.
+  assert.deepEqual(nameless((b) => { b.ButtonDoublePressAction = b.ButtonAction; b.ButtonAction = null; }), []);
+  // A program gives one when it states a program.
+  for (const ProgramId of [null, false, ABSENT]) {
+    assert.deepEqual(nameless((b) => { b.ButtonAction = { __type: 'ButtonProgramAction', ProgramId }; }), [], String(ProgramId));
+  }
+  // An unknown kind of button keeps the empty name and is never refused.
+  assert.deepEqual(nameless((b) => { b.__type = 'NoSuchButton'; }), []);
+});
+
+test('a device the start\'s fixes take for a Wii is refused without a power state, and only that device', () => {
+  const wii = (change: (device: Json, protocol: Json) => void): Json => {
+    const d = everyField();
+    const protocol = { __type: 'BluetoothProtocol', 'Id-': 901, Name: 'WiiBT 6 Bit' };
+    const device = {
+      Device: { 'Id-': 3, Name: 'Console', Manufacturer: 'Synthetic', Model: 'W', DeviceType: 9, Transport: 9, PressMinRepeats: null, InterDeviceDelay: 0 },
+      DeviceFeatures: [] as Json[],
+      Commands: [{ Name: 'Home', KeyCode: 'x', ProtocolId: 901, TransportType: 8, Raw: null }],
+    };
+    change(device, protocol);
+    d.DeviceList.DevicesWithFeatures.push(device);
+    d.ProtocolList.Protocols.push(protocol);
+    d.MapList.ButtonMaps.push({ __type: 'DeviceButtonMap', ButtonMapIdentifier: mapIdentifier('device', '3'), 'DeviceId-': 3, Sequences: null, Buttons: [] });
+    return places(d);
+  };
+  assert.deepEqual(wii(() => {}), [['no power state', 'refused', 'DeviceList', 'DevicesWithFeatures[2]']]);
+  // A keyboard command, 32, is taken the same way.
+  assert.deepEqual(wii((d) => { d.Commands[0].TransportType = 32; }).length, 1);
+  // A power feature, or an internal state named Power, is a power state.
+  assert.deepEqual(wii((d) => { d.DeviceFeatures.push({ __type: 'PowerFeature', PowerTypeId: 2 }); }), []);
+  assert.deepEqual(wii((d) => { d.DeviceFeatures.push({ __type: 'InternalStateFeature', StateName: 'Power', StateValues: [] }); }), []);
+  assert.deepEqual(wii((d) => { d.DeviceFeatures.push({ __type: 'InternalStateFeature', StateName: 'Mode', StateValues: [] }); }).length, 1);
+  // Not a Bluetooth device, no Bluetooth or keyboard command, or another protocol: not a Wii.
+  assert.deepEqual(wii((d) => { d.Device.Transport = 1; }), []);
+  assert.deepEqual(wii((d) => { d.Commands[0].TransportType = 1; }), []);
+  assert.deepEqual(wii((_, p) => { p.Name = 'PlayStationBT 26 Bit'; }), []);
+});
+
+test('the check alone reports the fields too, and the gate tells them with a missing list and a type name at once', () => {
+  assert.deepEqual(check(withValue('DeviceList', `${DEVICE}.Device.DeviceType`, '1')), { 'not a number': 1, 'map identifier': 1 });
+  const all = withValue('ActivityList', 'Activities[0].ActivityGroup', null);
+  delete all.MapList.ButtonMaps[1].Buttons;
+  delete activity(all).Roles[0].__type;
+  assert.deepEqual(findingsByRule(refusalsBeforeASync(all)), { 'missing list': 1, 'missing type': 1, 'not a number': 1 });
+  assert.deepEqual(readerRaises(all).map((f) => f.rule), ['missing list', 'missing type', 'not a number']);
+});
+
+/** The lab's sets of ours that went to the bench unit, `todo-touch.md` 6.8 and 6.9, as documents. */
+const OUR_SETS = ['touch_own_set', 'touch_changed_set_delay', 'touch_changed_set_delay_back', 'touch_changed_set_label', 'touch_changed_set_label_back'] as const;
+const setDocuments = (fixture: string): SyncDocuments =>
+  documentsOfAnswers((JSON.parse(new TextDecoder().decode(lab.require_(fixture))) as { answers: SyncAnswer[] }).answers);
+
+test('Logitech\'s recorded sets down and the five sets of ours a remote committed pass every rule of the load and the gate', lab.skipUnless(FULL, TRIAL, ...OUR_SETS), () => {
+  for (const fixture of [FULL, TRIAL]) {
+    const d = documentsOfAnswers(answersOf(fixture));
+    assert.deepEqual(checkFields(d), [], fixture);
+    assert.deepEqual(refusalsBeforeASync(d), [], fixture);
+  }
+  for (const fixture of OUR_SETS) {
+    const d = setDocuments(fixture);
+    assert.deepEqual(readerRaises(d), [], fixture);
+    assert.deepEqual(refusalsBeforeASync(d), [], fixture);
+  }
+});
+
+// ---------------------------------------------------------------------------------------------------
+// The screens' own reads, `screens raise`, `todo-touch.md` 6.10; the argument is this file's header
+// ---------------------------------------------------------------------------------------------------
+
+const USER = 'content://1.0/user;profile/user/1';
+const DIAL = 'content://1.0/device;profile/device/1';
+const LINE_UP = 'content://1.0/service/svc';
+
+/** `everyField` with a background, a picture of the user's and an activity picture fetched from an address. */
+function everyScreen(): Json {
+  const d = everyField();
+  d.Settings.Settings.push({ Name: 'BackgroundImage', SettingId: 5, Values: ['background.png'], DefaultValue: null, MinCount: 1, MaxCount: 1 });
+  d.Settings.Settings.push({ Name: 'UserImages', SettingId: 6, Values: ['mine.png'], DefaultValue: null, MinCount: 0, MaxCount: 5 });
+  Object.assign(activity(d), { ImageKey: 'Activity/watch.png', BaseImageUri: 'images/' });
+  return d;
+}
+
+const withScreenValue = (document: string, path: string, value: unknown): Json => {
+  const d = everyScreen();
+  const [container, k] = locate(d, document, path);
+  if (value === undefined) delete container[k]; else container[k] = value;
+  return d;
+};
+
+const SCREEN_ROWS: readonly Omit<Row, 'rule'>[] = [
+  { document: 'Settings', path: 'Settings[0]', bad: [null, 3, true], good: ['x', []] },
+  { document: 'Settings', path: 'Settings[0].Values', bad: [ABSENT, null, 3, true], good: ['x', []] },
+  { document: 'Settings', path: 'Settings[4].Values[0]', bad: [null, true, false, {}, []], good: ['other.png', 5] },
+  { document: 'Settings', path: 'Settings[5].Values[0]', bad: [null, true, {}], good: ['other.png', 5] },
+  { document: 'Settings', path: 'UserImageBucketUri', bad: [ABSENT, null, 5], good: ['other/'] },
+  { document: 'Settings', path: 'DefaultImageBucketUri', bad: [ABSENT, null, 5], good: ['other/'] },
+  { document: 'Context', path: 'Language', bad: [null, true, {}, 'en', 5], good: [ABSENT, 'nl-NL'] },
+  { document: 'Context', path: 'HouseholdUserProfileUri', bad: [null, true, {}], good: [false] },
+  { document: 'ActivityList', path: 'Activities[0].ActivityOrder', bad: [ABSENT, null, '0', true, {}], good: [3, -1] },
+  { document: 'ActivityList', path: 'Activities[0].Name', bad: [ABSENT, null, true, {}, []], good: ['Other', 5] },
+  { document: 'ActivityList', path: 'Activities[0].ImageKey', bad: [true, {}, []], good: [ABSENT, null, false, 'Activity/other.png'] },
+  { document: 'ActivityList', path: 'Activities[0].BaseImageUri', bad: [ABSENT, null, true, {}], good: ['other/', 5] },
+  { document: 'ActivityList', path: 'Activities[0].Roles', bad: [ABSENT, null, 'x', 3], good: [{}] },
+  { document: 'ActivityList', path: 'Activities[0].Id-', bad: [ABSENT], good: [8] },
+  { document: 'DeviceList', path: `${DEVICE}.Device.Id-`, bad: [ABSENT], good: [9] },
+  { document: 'DeviceList', path: `${DEVICE}.Device.Name`, bad: [null, true, false, {}, []], good: [ABSENT, 'Other', 5] },
+  { document: 'MapList', path: 'ButtonMaps[0].Buttons[1].TextOnRemote', bad: [ABSENT, null, true, {}], good: ['Other', 5] },
+  { document: 'MapList', path: 'ButtonMaps[2].Sequences[0].Name', bad: [null, true, {}], good: [ABSENT, false, 'Other', 5] },
+  { document: USER, path: 'preferences', bad: [null, 'x', 5, true, []], good: [ABSENT] },
+  { document: USER, path: 'preferences.10', bad: [null, 'x', 5, []], good: [] },
+  { document: USER, path: 'preferences.10.svc', bad: [null, 'x', 5], good: [] },
+  { document: USER, path: 'preferences.10.svc.stations', bad: [null, 5, true], good: [[], ABSENT] },
+  { document: LINE_UP, path: 'channels', bad: [ABSENT, null, 5, 'x'], good: [[], {}] },
+  { document: LINE_UP, path: 'channels[0].number', bad: [null, true, {}], good: ['7', 7] },
+  { document: LINE_UP, path: 'channels[0].station.shortName', bad: [null, true, {}], good: ['Other', ABSENT] },
+  { document: DIAL, path: 'services', bad: [ABSENT, null, 5, 'x'], good: [{}] },
+  { document: DIAL, path: 'services.svc', bad: [null, 5, 'x'], good: [] },
+  { document: DIAL, path: 'services.svc.dialPositions', bad: [ABSENT, null, 5], good: [[]] },
+  { document: DIAL, path: 'services.svc.dialPositions[0]', bad: [null, 'x', 5], good: [] },
+  { document: DIAL, path: 'services.svc.dialPositions[0].name', bad: [null, true, {}], good: [ABSENT, 'Other', 5] },
+  { document: DIAL, path: 'services.svc.dialPositions[1].image', bad: [null, true, {}], good: [ABSENT, 'other.png'] },
+  { document: DIAL, path: 'services.svc.dialPositions[0].number', bad: [null, true, []], good: ['7', 7] },
+];
+
+test('the screens: the set with a value at every place they raise on passes the gate, and each value they raise on is refused at its one place', () => {
+  assert.deepEqual(refusalsBeforeASync(everyScreen()), []);
+  assert.deepEqual(checkScreens(everyScreen()), []);
+  assert.equal(SCREEN_ROWS.length, 32);
+  for (const row of SCREEN_ROWS) {
+    for (const value of row.bad) {
+      assert.deepEqual(places(withScreenValue(row.document, row.path, value)), [['screens raise', 'refused', row.document, row.path]], `${row.document} ${row.path} ${JSON.stringify(value) ?? 'absent'}`);
+    }
+    for (const value of row.good) {
+      assert.deepEqual(places(withScreenValue(row.document, row.path, value)), [], `${row.document} ${row.path} ${JSON.stringify(value) ?? 'absent'} passes`);
+    }
+  }
+});
+
+test('the screens: each place is asked only where they read it', () => {
+  const screens = (d: Json) => checkScreens(d).map((f) => f.path);
+  // An activity picture's address is read in the sync when it is not a string; with a null picture too.
+  assert.deepEqual(screens((() => { const d = everyScreen(); Object.assign(activity(d), { ImageKey: null, BaseImageUri: true }); return d; })()), ['Activities[0].BaseImageUri']);
+  // Roles are read on the activity that tunes channels and on a television activity, not on another.
+  const other = (Type: number, IsTuningDefault: boolean) => { const d = everyScreen(); Object.assign(activity(d), { Type, IsTuningDefault }); delete activity(d).Roles; return screens(d); };
+  assert.deepEqual(other(1, false), ['Activities[0].Roles']);
+  assert.deepEqual(other(3, true), ['Activities[0].Roles']);
+  assert.deepEqual(other(3, false), []);
+  // An activity that does not tune channels may leave its id out, as far as the screens go.
+  assert.deepEqual(screens((() => { const d = everyScreen(); activity(d).IsTuningDefault = false; delete activity(d)['Id-']; return d; })()), []);
+  // A screen entry's text is read only for an entry with a press, off the number pad, and not hidden.
+  for (const change of [(b: Json) => { b.ButtonAction = null; }, (b: Json) => { b.FunctionGroupType = 2; }, (b: Json) => { b.ButtonState = 4; }, (b: Json) => { b.__type = 'HardRemoteButton'; }]) {
+    const d = everyScreen();
+    const b = d.MapList.ButtonMaps[0].Buttons[1];
+    delete b.TextOnRemote;
+    change(b);
+    assert.deepEqual(screens(d), []);
+  }
+  // A ranked channel has to state its station; an unranked one need not.
+  const ranked = (popularRank: unknown) => { const d = everyScreen(); Object.assign(d[LINE_UP].channels[0], { popularRank, station: null }); return screens(d); };
+  assert.deepEqual(ranked(1), ['channels[0].station']);
+  assert.deepEqual(ranked(ABSENT), []);
+  assert.deepEqual(ranked(null), ['channels[0].station']);
+  // No background and no pictures of the user's: neither address is asked.
+  const bare = everyScreen();
+  bare.Settings.Settings.splice(4, 2);
+  delete bare.Settings.UserImageBucketUri;
+  delete bare.Settings.DefaultImageBucketUri;
+  assert.deepEqual(screens(bare), []);
+});
+
+test('the gate tells the engine\'s raises and the screens\' at once, and the five sets of ours and Logitech\'s recorded sets meet none of the screens\'', lab.skipUnless(FULL, TRIAL, ...OUR_SETS), () => {
+  const both = withScreenValue('ActivityList', 'Activities[0].Name', null);
+  firstDevice(both).Device.DeviceType = 'x';
+  assert.deepEqual(findingsByRule(refusalsBeforeASync(both)), { 'not a number': 1, 'screens raise': 1 });
+  for (const fixture of [FULL, TRIAL]) assert.deepEqual(checkScreens(documentsOfAnswers(answersOf(fixture))), [], fixture);
+  for (const fixture of OUR_SETS) assert.deepEqual(checkScreens(setDocuments(fixture)), [], fixture);
 });

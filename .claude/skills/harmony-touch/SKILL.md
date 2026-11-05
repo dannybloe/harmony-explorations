@@ -65,7 +65,8 @@ and land the answer in the reference afterwards with its source.
   no HBus command and no provisioning session; a task that seems to need a request off the allow list is a
   question to put first, not a list to widen.
 * **The rail reads no answer's content**, so a set that is valid JSON and lacks a list the engine's reader
-  walks, or a type name it searches, is saved as written and ends the task that loads the configuration. **The protection is the
+  walks, a type name it searches or another field it leans on without a test, is saved as written and ends the task that loads the
+  configuration, and a few values end the remote's screens at every start instead, `answering-a-sync.md`. **The protection is the
   answerer refusing a set the codec's reader and check reject**, `todo-touch.md` 6.6: `syncTouch` in
   `packages/corpus/src/touchsync.ts` calls `refusalsBeforeASync` in `packages/codec/src/harmony-touch/check.ts`
   itself before anything is opened, and its script is `packages/corpus/bin/touch-sync.ts`, `--unchanged` or

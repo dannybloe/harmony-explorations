@@ -685,14 +685,15 @@ export async function syncTouch(options: TouchSyncOptions): Promise<TouchSyncOut
     report(`sync: kept ${describe(r.uri)} in the lab`);
     if (!isObject(document)) return { refuse: `the remote handed up ${describe(r.uri)} as something other than a JSON object` };
     if (r.uri.startsWith('harmony://')) {
+      // Every place the engine's load raises on, read off this one document, `readerRaises`: a list, a type
+      // name, or since `todo-touch.md` 6.10 any other field the load computes with, keys by or lowers.
       let lists: number;
       try {
-        lists = harmonyTouch.checkConfiguration(harmonyTouch.readConfiguration({ [key]: document } as harmonyTouch.SyncDocuments))
-          .filter((f) => f.rule === 'missing list' || f.rule === 'missing type').length;
+        lists = harmonyTouch.readerRaises({ [key]: document } as harmonyTouch.SyncDocuments).length;
       } catch {
         lists = 1;
       }
-      if (lists > 0) return { refuse: `the remote handed up ${describe(r.uri)} without a list or a type name its own reader needs, so it is not echoed` };
+      if (lists > 0) return { refuse: `the remote handed up ${describe(r.uri)} without a list or a type name its own reader needs, or with a field it raises on, so it is not echoed` };
     }
     const answer = { 'body-type': 'application/json' as const, resource: document };
     return { statusCode: '200', uri: r.uri, ...answer, etag: ourTag(answer) };

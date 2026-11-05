@@ -69,7 +69,10 @@ function documents(): Record<string, unknown> {
     DeviceList: { DevicesWithFeatures: [] },
     MapList: {
       ButtonMaps: [{
+        // The identifier the engine keys a map by: a map without one raises in the reader, which the gate
+        // refuses since `todo-touch.md` 6.10.
         __type: 'ActivityButtonMap',
+        ButtonMapIdentifier: '16417Activity1',
         Buttons: [],
         Sequences: [{ Name: 'Made Up Sequence', SequenceId: 1, Actions: [{ __type: 'ButtonDelayAction', EventType: 0, Order: 1, Duration: 1 }] }],
       }],

@@ -133,6 +133,65 @@ protocol's type is compared for equality with three names, and anything else, a 
 logged[^t-touch-type-name]. In the recorded syncs every entry on those paths carries its type name, and the
 protocols are the only entries carrying one that the reader does not search[^t-touch-type-name-recorded].
 
+**And so must every other field the reader leans on without a test**, which is most of them: the load
+computes with some, lowers or searches others as text, keys tables by more, and walks lists inside entries.
+Each of these makes it raise, with the same end as a missing list[^t-touch-reader-raises]:
+
+* **an entry that is not an object** on a list the reader walks without telling entries apart: a device, an
+  activity, a device's command, an input, a map's sequence, a protocol's segment, a segment's encoding and
+  each pulse or space of one; a protocol or a state value only when it is null, a number or a boolean, since a
+  string or an array there reads as an empty entry;
+* **a value that is not a number** where the reader computes with it or sorts by it: a device's `DeviceType`
+  and `Transport`, a command's `TransportType`, an activity's `ActivityGroup`, a delay step's `Duration` on an
+  activity and in a sequence, the three orders a list is sorted by (`ActionOrder`, a sequence step's `Order`,
+  an input's `InputOrder`), and an IR protocol's `CarrierFrequency`, a code segment's `TotalLength`, an
+  encoding's `BitType` and a pulse's `Value`. Lua's arithmetic would take a string of digits, but a sort
+  never does;
+* **a value that is neither a string nor a number** where the reader treats it as text: a command's `Name`
+  and `Raw` (null passes for `Raw`), a device's `Manufacturer`, its `Model` when set (null counts as set), the
+  `CommandName` of a command step, a key's command or a sequence's command step and a feature action's
+  `IRCommandName` when set, an activity map's `ButtonMapIdentifier`, an IR protocol's `Name` and each
+  segment's name that differs from it;
+* **a field the reader keys a table by, absent**: an input's `InputName` and `InputOrder`, a state value's
+  `StateValueName` when its actions are read, a device, activity or root map's `ButtonMapIdentifier`, and a
+  key's or screen entry's name (`ButtonKey`, `MenuItem.IndexInMenu`) when the button ends up with an action;
+  and a screen entry's `MenuItem` and an IR segment's `Payload`, which it reads through;
+* **a list that is not one**: an IR protocol's `IRSegments` and `CodeSegments` and a payload's `Encodings`
+  always; a device's `Commands`, each list of pulses and a home control action's `Targets` when set;
+* an activity's `Alternatives`, when it is text, that decodes to a number, a boolean or null; and a device
+  the remote's start takes for a Wii, by its transports and its Bluetooth protocol's name, with no power
+  state.
+
+A protocol of any type but `IrProtocol` is read for its id and name alone and raises on nothing
+else[^t-touch-reader-raises]. **The start's compatibility pass**, which walks the channel changing activity's
+roles with no test, runs only when a favourites file of a name that firmware older than 3.4 wrote is still
+present; no sync of this build writes one, and a committed sync from the account replaces the stored folder
+with the documents it answered, so a set delivered by a sync never meets it[^t-touch-reader-raises].
+
+**The remote's screens read the same documents, and some of their raises cost the whole
+remote**[^t-touch-reader-raises]. The screens are a program of their own and catch a raise in a tap, a key, a
+timer, a drawing and each turn of their main loop, so most of their raises cost one screen or one key. Three
+cost more:
+
+* **their program ends at every start**, before anything is drawn, on a background setting whose value is not
+  text, a settings row that is not an object or states no list of values, a language in the Context that is not
+  a language and a country joined by a hyphen, and a channel line up with no list of channels or a ranked
+  channel with no station;
+* **the error screen at every start, whose one way on is a factory reset**, on an activity whose list place
+  `ActivityOrder` is not a number, whose `Name` is not text, whose picture `ImageKey` is set and not text or
+  names a picture with no text `BaseImageUri`, a television or channel changing activity with no list of
+  roles, a channel changing activity with no id, a device with no id, and favourites whose entries are not
+  objects or whose stations, numbers, names or pictures are not text;
+* **a sync that is never committed**, the screens raising after the engine has loaded the new set and before
+  they send the commit, on pictures of the user's or their addresses that are not text, a household address
+  that is not text, an activity picture address that is not text, and a device's favourites without their
+  services or dial positions.
+
+A device's `Name`, a screen entry's `TextOnRemote` and a sequence's `Name` that are not text fail the screen
+that shows them[^t-touch-reader-raises]. The many other places the screens raise on cost one screen, one key,
+a timer, or the screens' hearing of the engine until the remote restarts, and are listed under "Not checked"
+below as places an answerer's check does not refuse.
+
 **A document has to arrive as the object itself, not as a string holding one, and nothing on arrival checks
 which it is.** The remote stores a document as the JSON encoding of its `resource`, so an object is stored as
 that object and a string of JSON as a JSON string; the engine reads that string back as text, finds none of
@@ -358,9 +417,17 @@ Whether these are enough to know a whole configuration arrived is not settled[^u
   role rather than seen[^unchecked].
 * What a configuration the reader raises on does on a unit: the firmware reading is
   [recovery](firmware.md#a-configuration-that-fails-to-load), and none of it has been tried[^unchecked].
-* What the remote's screens do with an entry's type name: they read it too, in a program of their own, and
-  that reading is not examined; nor is whether a number as a type name, which the engine passes, reaches
-  them[^unchecked].
+* The places the remote's screens raise on whose cost is one screen, one key, a timer, or the screens' hearing
+  of the engine until a restart: read, and not refused by an answerer's check. A button's press without a type
+  name, which the engine passes over, is one of them, failing its command page. That the screens stop hearing
+  the engine after a raise in a notification, and that a sync then waits rather than aborts, are inferred from
+  the screens' socket handling and not seen on a remote[^unchecked].
+* What the engine does at a key press with the values it stores at the load, an action's delay or a device's
+  repeats among them, and whether a raise there ends its task[^unchecked].
+* How the remote's JSON decoders compare with a strict one on text only one of them accepts, which decides an
+  activity's `Alternatives`[^unchecked].
+* A screen that names a built in picture, which the screens fetch from no address: which names those are is
+  not listed, so every named activity picture is taken to need its address[^unchecked].
 * What a remote's screens show for an account with no activity and no device[^unchecked].
 * That the screens turn a refused answer into the abort on a unit, and how soon `proxy://Abort` follows[^unchecked].
 * Whether a write of answers whose last chunk is no longer than the announcement's shortfall is acted on one
@@ -386,6 +453,7 @@ Whether these are enough to know a whole configuration arrived is not settled[^u
 [^t-touch-own-set-sync]: Measured on a unit. [The test](../../../packages/usb/test/touch-own-set-sync.test.ts)
 [^t-touch-changed-set]: Measured on a unit. [The test](../../../packages/usb/test/touch-changed-set-sync.test.ts)
 [^t-touch-type-name]: Read in the firmware. [The test](../../../packages/codec/test/touch-check.test.ts)
+[^t-touch-reader-raises]: Read in the firmware. [The test](../../../packages/codec/test/touch-check.test.ts)
 [^t-touch-type-name-recorded]: Measured on a unit. [The test](../../../packages/codec/test/touch-check.test.ts)
 [^d29]: Chosen by this project. [Decision 29](../../../docs/decisions.md#d29)
 [^unchecked]: Not checked.

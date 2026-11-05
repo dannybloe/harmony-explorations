@@ -534,8 +534,13 @@ export interface Configuration {
 // Reading
 // ---------------------------------------------------------------------------------------------------
 
-/** A list a document may state as null or leave out, as an array. */
-const list = <T>(x: readonly T[] | null | undefined): readonly T[] => x ?? [];
+/**
+ * A list a document may state as null or leave out, as an array. **Anything else that is not an array reads as
+ * no list too**, an object or a string among them: the remote's reader walks a JSON object as a list of
+ * nothing, and the view does not throw on a value its types say cannot be there, which `todo-touch.md` 6.10
+ * found it doing for a device's `Commands` stated as an object.
+ */
+const list = <T>(x: readonly T[] | null | undefined): readonly T[] => (Array.isArray(x) ? x : []);
 
 /**
  * The entries of a list a document may state as null or leave out, each with its index in the list,
@@ -546,7 +551,7 @@ const list = <T>(x: readonly T[] | null | undefined): readonly T[] => x ?? [];
  */
 function entriesOf<T extends object>(xs: readonly (T | null | undefined)[] | null | undefined): [T, number][] {
   const out: [T, number][] = [];
-  (xs ?? []).forEach((x, at) => {
+  list(xs).forEach((x, at) => {
     if (x !== null && typeof x === 'object') out.push([x, at]);
   });
   return out;
@@ -590,10 +595,15 @@ type KeycodeField = NonNullable<ArchiveProtocol['keycodeFields']>[string];
  */
 function archiveProtocolOf(p: IrProtocol): ArchiveProtocol {
   const id = p['Id-'];
+  // The codec's segment rules expect lists of segments named by text. A document can state anything, and the
+  // view reads it without throwing, so the definition handed on keeps only the segments that are objects with
+  // a name that is text or null; a document the remote's reader takes holds no other, `checkFields`.
+  const segments = <T extends { Name?: unknown }>(xs: readonly (T | null)[] | null | undefined): T[] =>
+    entriesOf(xs).map(([s]) => s).filter((s) => s.Name === null || typeof s.Name === 'string');
   const base: ArchiveProtocol = {
     name: p.Name,
     carrierHz: p.CarrierFrequency ?? 0,
-    definition: p,
+    definition: { ...p, IRSegments: segments(p.IRSegments), CodeSegments: segments(p.CodeSegments) },
     keycodeFields: null,
     logitechProtocolId: typeof id === 'number' ? id : Number.isFinite(Number(id)) ? Number(id) : null,
     standardProtocol: null,

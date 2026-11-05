@@ -37,8 +37,8 @@ built in configuration above that floor. Their section below has the rest. **On 
 reassurance has a different shape**: its configuration is documents on a writable layer over a read only
 system, so nothing a configuration holds reaches the kernel, the system or the boot loader; for a document
 that is missing or is not valid JSON the engine's sync requests keep answering over the cable and the next sync
-replaces it; but a document that is valid JSON and lacks a list the reader walks, or an entry's type name the
-reader searches, ends the task that loads the configuration, and then a sync alone cannot replace it and a second sync's last write never gets its answer.
+replaces it; but a document that is valid JSON and lacks a list the reader walks, an entry's type name the
+reader searches, or another field the reader leans on without a test, ends the task that loads the configuration, and then a sync alone cannot replace it and a second sync's last write never gets its answer.
 Its section below has the route.
 
 **A stranded remote tells you what is wrong, so read the screen before diagnosing anything.** The
@@ -274,8 +274,8 @@ firmware as it was.
 load nothing: it signals a configuration failure, the engine runs on, and **a new sync over the cable
 replaces it**. A sync that fails before its commit leaves the committed set untouched. Neither needs anything
 but the sync itself. **It stops at a document that is valid JSON and lacks a list the reader walks**, or an
-entry's type name the reader searches, `answering-a-sync.md`: the
-reader raises, nothing catches it, and the task that loads the configuration ends.
+entry's type name the reader searches, or holds any other field the reader leans on in a form it raises on,
+`answering-a-sync.md`: the reader raises, nothing catches it, and the task that loads the configuration ends.
 
 * **At start**, every request that waits for the configuration hangs (23 of the 31 `harmony.engine?`
   requests, `api/engine.md`'s table says which, the four `control.button?` and `connect.discoveryinfo?get`),
@@ -375,7 +375,7 @@ then `--step delete --backup <lab folder>` only when the stored set itself is wh
 `--step reboot`. The script does not chain them, because each answer says what comes next. Every other
 `setup.firmware?` and `setup.sync?` verb stays refused, and so do `proxy.finished`, which commits a gathered
 set without loading it, and `proxy.resource?put`. **The rail still reads no answer's content**, so answers
-that are valid JSON and lack a list or a type name the reader needs are saved as written; **the protection is the answerer
+that are valid JSON and lack a list, a type name or another field the reader needs are saved as written; **the protection is the answerer
 refusing a set the codec's reader and check reject before any of it is written**, `todo-touch.md` 6.6, and
 the tier is the way back when that fails. The abort and the restart have been sent to a unit once, after the first sync of ours stopped mid sync (`todo-touch.md` 6.7): `getconfighash` 202, abort 200, `getconfighash` 200 with the tags unchanged, restart 200, the remote starting normally. The delete has never been sent.
 
@@ -396,6 +396,10 @@ What must never be part of that route:
 
 **What is not covered**, and what would cover it:
 
+* **A set the engine loads and the remote's screens stop on at start**: their program ending, or the error
+  screen offering only a factory reset, at every start, `answering-a-sync.md` names the values. A restart meets
+  the set again; that the engine, a separate program, still serves the cable so that `--step delete` reaches
+  it is inferred and not tried. The protection is the answerer's check, `screens raise`.
 * **A set that loads and then misbehaves**, an activity that hangs the engine rather than the reader. The
   watchdog's file is fed by a task of its own, read on the engine's side; what the native watchdog program
   does with it is inferred from its strings, so whether anything restarts such a remote is not read. The
