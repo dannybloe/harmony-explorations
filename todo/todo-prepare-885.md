@@ -52,8 +52,8 @@ Written on 4 November 2026; linked from `todo-later.md` 5.6.
 
 ## 4. Corrections
 
-- [ ] 4.1 Stale lines from step 0: data memory "not checked", which version a unit runs, which bytes are a serial, `docs/status.md`'s count of architectures on the bench, and state.md's fill ceilings without arch 8's 63
-- [ ] 4.2 The 720's images: `docs/status.md` says an application and bootloader are held, the platform README says nothing of theirs is read; settle which
+- [x] 4.1 Stale lines from step 0: data memory "not checked", which version a unit runs, which bytes are a serial, `docs/status.md`'s count of architectures on the bench, and state.md's fill ceilings without arch 8's 63
+- [x] 4.2 The 720's images: `docs/status.md` says an application and bootloader are held, the platform README says nothing of theirs is read; settle which
 
 ## 5. The question
 
