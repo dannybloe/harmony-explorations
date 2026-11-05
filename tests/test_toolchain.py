@@ -1414,8 +1414,9 @@ class TheLabRegisterCoversTheSiteAtArtefactLevel(unittest.TestCase):
         # the inspectable copy of Harmony Desktop and the Touch sync recorded through it, todo-touch 2.1 and 2.3.
         # 181 with `reads/20261102T1520Z-touch-sync-full-setup/`, the sync after the setup was filled, 2.3,
         # and 182 with `reads/20261102T1524Z-touch-reverse-sync/`, the reverse sync recorded after it.
-        # 183 with `work/legacy-remotes/`, the legacy remotes track, plan 012.
-        self.assertEqual(len(named), 183, "lab paths the register names")
+        # 183 with `work/legacy-remotes/`, the legacy remotes track, plan 012, and 184 with `work/webhid/`, the
+        # browser key read, todo-prepare-885 2.6.
+        self.assertEqual(len(named), 184, "lab paths the register names")
         for path in sorted(named):
             with self.subTest(path=path):
                 if '*' in path:
@@ -1530,9 +1531,9 @@ class TheRegisterQueryAnswersForThePathThatWasOpened(unittest.TestCase):
         # `software/lua-5.1.5-dl/`, 1.3.1, and 153 with `dumps/danny/harmony-885/`.
         # 155 with `work/harmony-desktop-inspectable/` and the recorded Touch sync's read, todo-touch 2.1 and 2.3,
         # and 156 with the full setup's sync, 2.3, and 157 with the reverse sync after it.
-        # 158 with `work/legacy-remotes/`, plan 012.
-        self.assertEqual(len(rows), 158)
-        self.assertEqual(len(dict(rows)), 158, 'a duplicated path would make a query ambiguous')
+        # 158 with `work/legacy-remotes/`, plan 012, and 159 with `work/webhid/`, todo-prepare-885 2.6.
+        self.assertEqual(len(rows), 159)
+        self.assertEqual(len(dict(rows)), 159, 'a duplicated path would make a query ambiguous')
         self.assertNotIn('unseen', dict(rows), 'the status legend is not an artefact')
 
     def test_a_query_is_answered_by_ancestors_and_by_descendants(self):
