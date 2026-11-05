@@ -142,7 +142,10 @@ test('the Python table was actually parsed, rather than read as empty', () => {
   // 380 with the 25 files of 6.7's second sync, the one the remote committed, and the config hash around it.
   // 422 with the 42 files of 6.8: the set of the remote's own documents with tags of ours, the sync that
   // delivered it with 200, the config hash after it and the third `--unchanged` run.
-  assert.equal(Object.keys(pythonImages()).length, 422, 'every fixture tests/lab.py names');
+  // 526 with the 104 files of 6.9: the four sets that each change one value and put it back, the eight config
+  // hash reads around their syncs, the four syncs and the closing `--unchanged` run, and the three bench runs that
+  // timed the sequence's delay.
+  assert.equal(Object.keys(pythonImages()).length, 526, 'every fixture tests/lab.py names');
 });
 
 test('the two sides exclude the same fixtures from the parseable population', () => {

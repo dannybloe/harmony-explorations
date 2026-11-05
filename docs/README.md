@@ -967,8 +967,10 @@ node packages/corpus/bin/touch-sync.ts --unchanged | --set <lab folder> [--commi
                        --step abort`. One line per step starting `sync:`, the forms in its header.
                        With a set, a document the hand over hands up that the set also holds stops the
                        run before the sync request, since the set would revert it. `--unchanged`
-                       has run three times on the bench Touch, 6.7 and 6.8; `--set` once, 6.8,
-                       committed, `packages/usb/test/touch-own-set-sync.test.ts`.
+                       has run four times on the bench Touch, 6.7, 6.8 and 6.9; `--set` five times,
+                       6.8 and the four sets of 6.9, each committed,
+                       `packages/usb/test/touch-own-set-sync.test.ts` and
+                       `touch-changed-set-sync.test.ts`.
 node packages/corpus/bin/touch-own-set.ts --build <lab folder> --requests <list> [--handed-up <answers>]
 node packages/corpus/bin/touch-own-set.ts --check <set folder> [--hash <answer>] [--list <list>]
                        build the set `todo-touch.md` 6.8 delivers to a Harmony Touch, its own six

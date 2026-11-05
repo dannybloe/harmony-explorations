@@ -146,6 +146,13 @@ seconds[^t-touch-activities]. In the documents measured no device map holds a se
 step of any kind other than a command or a delay is skipped, and a step without an
 `Order` stops the reader[^t-touch-activities-firmware].
 
+**A delay step is a pause of `Duration` seconds between the commands either side of it**, measured on a unit as
+the silence between their infrared codes. In a sequence of a Blu-ray player's Stop, a delay and its TopMenu, the
+silence before TopMenu was 1192 and 1133 ms with `Duration` at 1, and 3144 and 3149 ms at 3; changing 1 to 3
+added between 1952 and 2017 ms, press by press, and putting it back to 1 brought the silence back to 1132 and
+1138 ms[^t-touch-changed-set]. The silence is longer than the delay by 133 to 192 ms at either
+setting; what that remainder is made of is not checked[^unchecked].
+
 ## An activity: what it is made of
 
 An activity is its roles, which name its devices, their power order and their inputs, and two lists of steps
@@ -311,3 +318,4 @@ themselves, `Numpad` opening the number pad[^t-touch-activities-firmware].
 [^t-touch-both-ways]: Measured on a unit. [The test](../../../packages/usb/test/touch-sync-both-ways.test.ts)
 [^unchecked]: Not checked.
 [^t-touch-compose]: Measured on a unit. [The test](../../../packages/codec/test/touch-compose.test.ts)
+[^t-touch-changed-set]: Measured on a unit. [The test](../../../packages/usb/test/touch-changed-set-sync.test.ts)

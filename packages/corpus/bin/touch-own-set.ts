@@ -31,11 +31,10 @@ import { basename, dirname, join, resolve, sep } from 'node:path';
 
 import { harmonyTouch } from '@harmony/codec';
 import { LAB } from '@harmony/lab';
-import { DATA_PACKET_PAYLOAD } from '@harmony/usb';
-import { TOUCH_REQUEST_SHAPES } from '@harmony/usb/touchsession';
 import { answersWritten, commands, records, sessions, text } from '@harmony/usb/test/touch-recording';
 
 import { CONFIG_HASH_DOCUMENTS, OWN_SET_DOCUMENTS, buildOwnSet, compareConfigHash, compareRequestList, type OwnSource } from '../src/touchownset.ts';
+import { writeOfAnswersSize } from '../src/touchchangedset.ts';
 import {
   SYNC,
   WRITE_ANSWERS,
@@ -194,10 +193,8 @@ function check(folder: string): void {
     const refused = written.filter((w) => 'refuse' in w).length;
     const statuses = written.map((w) => ('refuse' in w ? 'refused' : w.statusCode));
     say(refused === 0 && statuses.every((s) => s === '200'), `the remote's last request list answered ${statuses.join(' ')}`);
-    const line = `${WRITE_ANSWERS}&sessionId=${'0'.repeat(8)}-0000-4000-8000-${'0'.repeat(12)}&responses=${encodeURIComponent(JSON.stringify({ responses: written }))}`;
-    const perChunk = DATA_PACKET_PAYLOAD * (TOUCH_REQUEST_SHAPES[WRITE_ANSWERS]?.packetsPerChunk ?? 0);
-    const chunks = Math.ceil(line.length / perChunk);
-    const lastChunk = line.length - (chunks - 1) * perChunk;
+    // One rule for the size of a write, shared with `touch-changed-set.ts`, rather than a copy here.
+    const { line, perChunk, chunks, last: lastChunk } = writeOfAnswersSize(written);
     const hlapi = sessions(commands(records(RECORDING))).filter((s) => s.path === '/sys/hlapi');
     const theirs = Math.max(...hlapi.filter((s) => s.mode === 'W').map((s) => text(s.written)).filter((w) => w.startsWith(WRITE_ANSWERS)).map((w) => w.length));
     console.log(`write of answers: ${line.length} characters, ${chunks} chunks of ${perChunk}, the last ${lastChunk}; `

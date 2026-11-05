@@ -7,14 +7,15 @@ something was Logitech's own client, which fetched each answer from Logitech's s
 Logitech's would have to produce to answer a sync itself.
 
 **Everything here is read in the remote's firmware, production build 4.15.330, and measured in recorded
-syncs of Logitech's client; the preview build's engine was not read for this page. Four syncs answered by a
+syncs of Logitech's client; the preview build's engine was not read for this page. Nine syncs answered by a
 program of this project have run on a remote: the first stopped at the favourites; the second ran to its end
 and was committed, every answer in it a 304 that kept the remote's own copy, or the answer to the finish; the
 third delivered the remote's own six configuration documents with 200 under entity tags of ours and was
-committed; and the fourth answered every request 304 again**: what they measured is marked where it stands,
-and the rest of the rules below are what the firmware does with an answer, not what a remote was seen to do
-with one of
-ours[^t-touch-host][^t-touch-first-sync][^t-touch-second-sync][^t-touch-own-set-sync]. Where a
+committed; the fourth answered every request 304 again; the next four each delivered one document with one
+value changed, or put back, with 200 and the other five 304, and each was committed and acted on; and the ninth
+answered every request 304 again**: what they measured is marked where it stands, and the rest of the rules
+below are what the firmware does with an answer, not what a remote was seen to do with one of
+ours[^t-touch-host][^t-touch-first-sync][^t-touch-second-sync][^t-touch-own-set-sync][^t-touch-changed-set]. Where a
 rule has only been seen to hold for Logitech's own answers, the page says so. The test behind the firmware
 footnotes asserts, function by function, the names and constants each rule rests on; the order in which a
 function uses them, and so which check comes first, is the decompiled reading named in that test's header
@@ -197,8 +198,20 @@ remote took the write, went on through the same eight request lists as in the se
 map list and the settings included, with exactly the tags of ours, at the same addresses[^t-touch-own-set-sync].
 Every document in that set was one the remote already held, five as Logitech's service had delivered them and
 the settings as the remote had handed them up, each as the parsed document under a new tag, so what it shows is
-that the 200 path stores and commits what it is given; what the remote does with a document whose content a
-program composed is not checked[^unchecked].
+that the 200 path stores and commits what it is given.
+
+**One document delivered with 200 among five answered 304 is stored, the other five are kept, and a changed
+document reaches what the remote does.** Four syncs of this project each changed one value of one document and
+gave that document alone a new tag of ours: a sequence's delay step in the button map list from 1 second to 3
+and back, and an activity's name in the activity list to another and back. Each sync was asked for the six with
+the tags the sync before had left, answered the changed document 200 with its content and tag and the other five
+304, and was committed. The next sync then asked with the new tag for that document and the old tags for the
+other five; the configuration hash, which leaves out the button map list, stayed as it was through both delay
+syncs and took the activity list's new tag after each name sync. The remote acted on each change: the pause
+between the sequence's two commands grew by about two seconds and came back, [activities and
+buttons](activities-and-buttons.md#sequences), and the activity list showed the new name and then the old one,
+[the model's display](../../remotes/harmony-touch/display.md#what-the-screen-shows)[^t-touch-changed-set]. A
+document composed whole by a program, rather than changed in one value, is not checked[^unchecked].
 
 ## The smallest set of documents
 
@@ -326,7 +339,9 @@ with the tags it sent; it leaves out the button map list and the settings, and i
 [the engine](api/engine.md#harmonyenginegetconfighash)[^t-touch-api-engine]; on a unit, mid sync, it answered
 202 with the message "sync in progress"[^t-touch-first-sync], read before and after a sync whose every
 answer was a 304 it answered 200 with the same tags both times[^t-touch-second-sync], and after a sync that
-delivered the six with 200 under tags of ours it answered with those tags[^t-touch-own-set-sync]. The tag the remote sends for each
+delivered the six with 200 under tags of ours it answered with those tags[^t-touch-own-set-sync], and after a sync
+that delivered the activity list alone with 200 it answered with that document's new tag among the old
+three[^t-touch-changed-set]. The tag the remote sends for each
 document in the next sync's request list, read out of the committed set, is the other evidence[^t-touch-host].
 A committed document itself can be handed back by a resource put that names its address and carries no
 document, a reading never run on a unit, [proxy](api/proxy.md#can-a-stored-document-be-read-back)[^t-touch-api-setup].
@@ -335,10 +350,10 @@ Whether these are enough to know a whole configuration arrived is not settled[^u
 ## Not checked
 
 * Everything here is one firmware build and, for the measured side, the three syncs recorded by Logitech's
-  client and four answered by this project, the first stopped at the favourites and the other three committed.
-  The one sync of ours that delivered documents with 200 delivered the remote's own six: a document whose
-  content this project composed, and a favourites document or a picture of ours delivered with 200, and what
-  the remote then does with each, are the reading's alone[^unchecked].
+  client and nine answered by this project, the first stopped at the favourites and the other eight committed.
+  The syncs of ours that delivered documents with 200 delivered the remote's own six, or one of them with one
+  value changed: a document composed whole by this project, and a favourites document or a picture of ours
+  delivered with 200, and what the remote then does with each, are the reading's alone[^unchecked].
 * Whether the outgoing queue actually carries a direct put through to the account, inferred from the queue's
   role rather than seen[^unchecked].
 * What a configuration the reader raises on does on a unit: the firmware reading is
@@ -369,6 +384,7 @@ Whether these are enough to know a whole configuration arrived is not settled[^u
 [^t-touch-first-sync]: Measured on a unit. [The test](../../../packages/usb/test/touch-first-sync.test.ts)
 [^t-touch-second-sync]: Measured on a unit. [The test](../../../packages/usb/test/touch-second-sync.test.ts)
 [^t-touch-own-set-sync]: Measured on a unit. [The test](../../../packages/usb/test/touch-own-set-sync.test.ts)
+[^t-touch-changed-set]: Measured on a unit. [The test](../../../packages/usb/test/touch-changed-set-sync.test.ts)
 [^t-touch-type-name]: Read in the firmware. [The test](../../../packages/codec/test/touch-check.test.ts)
 [^t-touch-type-name-recorded]: Measured on a unit. [The test](../../../packages/codec/test/touch-check.test.ts)
 [^d29]: Chosen by this project. [Decision 29](../../../docs/decisions.md#d29)

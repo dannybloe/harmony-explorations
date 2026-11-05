@@ -1,8 +1,12 @@
 # Harmony Touch: behaviour
 
 What the remote does in use, from Logitech's manual and from its firmware. The operating concept, activities
-and device mode, is [how a Harmony works](../../how-a-harmony-works.md). Nothing about the Touch in use has
-been measured with an instrument: there is no infrared recording of it[^unchecked]. What it does on a USB cable is [usb.md](usb.md).
+and device mode, is [how a Harmony works](../../how-a-harmony-works.md). The one figure of the Touch in use
+measured with an instrument and held by a test is a sequence's delay step, timed by its infrared codes, [the
+platform's activities and buttons](../../architectures/harmony-touch/activities-and-buttons.md#sequences)[^t-touch-changed-set];
+the rest of this page is the manual and the firmware. This said nothing had been, "there is no infrared recording
+of it"<!--superseded-->, which stopped being true when the keys were first checked against an infrared receiver;
+the delay is the first such figure a test holds. What it does on a USB cable is [usb.md](usb.md).
 
 ## Device mode, in and out
 
@@ -94,3 +98,4 @@ remote's own reset and restart files act on a write, not when opened, [firmware.
 [^t-touch-keys]: Read in the firmware. [The test](../../../tests/test_harmony_touch_keys.py)
 [^t-touch-api-names]: Read in the firmware. [The test](../../../tests/test_harmony_touch_api_names.py)
 [^t-touch-recovery]: Read in the firmware. [The test](../../../tests/test_harmony_touch_recovery.py)
+[^t-touch-changed-set]: Measured on a unit. [The test](../../../packages/usb/test/touch-changed-set-sync.test.ts)

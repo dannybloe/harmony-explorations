@@ -59,7 +59,11 @@ Which of the held and double forms a button map can bind is the map's question,
 
 ## What the screen shows
 
-* **The activities**, under Home, swiped left and right, started with a tap[^x-touch-manual].
+* **The activities**, under Home, swiped left and right, started with a tap[^x-touch-manual]. **Each entry shows
+  the activity's name in capitals, broken onto two lines at its first space**: an activity named "Listen to
+  Music" reads LISTEN over TO MUSIC, and renamed "Music Test" it read MUSIC over TEST once the renamed list was
+  synced to the remote[^t-touch-changed-set]. What happens to a name with no space, or one too wide for the
+  entry, is not checked[^unchecked].
 * **The favourite channels**, under Favorites, as pictures, up to 50, editable and reorderable on the
   remote[^x-touch-manual].
 * **A device's commands**, from the device list[^x-touch-manual]; [behaviour.md](behaviour.md).
@@ -115,3 +119,4 @@ screen, field by field, is [favourites-and-settings.md](../../architectures/harm
 [^t-touch-keys]: Read in the firmware. [The test](../../../tests/test_harmony_touch_keys.py)
 [^t-touch-beyond-firmware]: Read in the firmware. [The test](../../../tests/test_harmony_touch_beyond_the_clients.py)
 [^t-touch-beyond-client]: Stated by Logitech, in their client. [The test](../../../tests/test_harmony_touch_beyond_the_clients.py)
+[^t-touch-changed-set]: Measured on a unit. [The test](../../../packages/usb/test/touch-changed-set-sync.test.ts)

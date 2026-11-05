@@ -281,9 +281,59 @@ holds six tags of ours, which it will send to Logitech's service at its next syn
 tag it did not issue is unchecked, and deleting the stored documents first takes the question away,
 `recovering-a-remote`. The measurements are held by `packages/usb/test/touch-own-set-sync.test.ts`.
 
+## A first change: a sequence's delay and an activity's name, each changed and put back, todo-touch 6.9
+
+**Run on 5 November 2026**, after 6.8, with nothing changed on the remote's screens between runs: four sets, each
+`HARMONY_ENABLE_WRITES=1 HARMONY_TOUCH_REQUESTS=1 node packages/corpus/bin/touch-sync.ts --set
+../lab/work/touch-firmware/sets/<set> --commit`, the code as of commit `3617f74e`, the sets built by
+`packages/corpus/bin/touch-changed-set.ts` as the lab's `work/touch-firmware/notes/6.9-preflight.md` describes,
+each from the one before:
+
+| run | set | the one change | the write of the one 200 |
+|---|---|---|---|
+| 1 | `6.9-delay` | MapList, Test Sequence's delay step in Watch a Blu-ray, `Duration` 1 to 3 | 349539 characters, 12 chunks |
+| 2 | `6.9-delay-back` | the same, 3 to 1 | 349539 characters, 12 chunks |
+| 3 | `6.9-label` | ActivityList, the third activity's name, "Listen to Music" to "Music Test" | 10809 characters, one chunk |
+| 4 | `6.9-label-back` | the same, back | 10816 characters, one chunk |
+
+`getconfighash` was read before and after each run, and a closing `--unchanged` run followed the fourth. The
+lab's folders, in order: `reads/20261105T1457Z-touch-confighash/`, `1457Z-touch-sync-set/`, `1458Z-touch-confighash/`;
+`1502Z-touch-confighash/`, `1502Z-touch-sync-set/`, `1502Z-touch-confighash-2/`; `1504Z-touch-confighash/`,
+`1504Z-touch-sync-set/`, `1505Z-touch-confighash/`; `1505Z-touch-confighash-2/`, `1505Z-touch-sync-set/`,
+`1506Z-touch-confighash/`; and `1506Z-touch-sync-unchanged/`. Two reads fell in one minute twice and got two
+folders each time, the fix of commit `2fcc0277` at work.
+
+* **Every run** as the preflight predicted: the hand over `proxy://Finished` alone, nothing handed up; the six
+  asked for with the previous set's tags (the 6.8 set's for run 1), so each run's first list confirms the run
+  before it committed; the changed document answered 200 with the set's content and tag and the other five 304;
+  the favourites 304, the ten pictures 304 with the tags they had in 6.8, the finish 200; `sync: finished`.
+* **The hash**: equal to the read after 6.8 before and after both delay runs and before run 3, since MapList is
+  not one of the four documents it joins; after run 3 equal to `6.9-label`'s tags, still so before run 4, and
+  after run 4 equal to `6.9-label-back`'s.
+* **The closing `--unchanged` run** asked for all six with `6.9-label-back`'s tags and answered every request 304
+  or the finish.
+* **The delay, on the Flirc monitor**, `packages/bench/irtests/touch-6-9-sequence-delay.json`, three times: before
+  run 1 (`reads/20261105T145423Z-ir-test-...`), after run 1 (`150025Z`) and after run 2 (`150311Z`). Each tap of
+  Yellow gave the Sony Blu-ray's Stop and then its TopMenu, both 20 bit codes with a header mark of about 2450 us,
+  named by the catalogue's candidates since the bench configurations hold no Sony Blu-ray. The silence before
+  TopMenu: 1192 and 1133 ms at 1 s, 3144 and 3149 ms at 3 s, 1132 and 1138 ms back at 1 s; start of Stop to
+  start of TopMenu 1304 and 1248, 3244 and 3261, 1248 and 1256 ms. So 1 s to 3 s added 1984 ms to the silence on
+  the means, inside the preflight's 2000 ms give or take 100, and the put back returned it. Two earlier attempts
+  of the same bench test, `145315Z` and `145406Z`, recorded no press of Yellow, since their steps were not
+  advanced past the activity's start, and are not used.
+* **The name, at the bench**: after run 3 the activity list's third entry read MUSIC over TEST, after run 4
+  LISTEN over TO MUSIC, and the remote was otherwise normal.
+
+So a change of content made by this project, one value in one document, was stored, committed and acted on by the
+remote, and putting the value back under a new tag restored what it did; one document delivered with 200 among
+five 304s replaced that document alone. 6.9 is done. What this does not cover: a document composed whole by this
+project, and a favourites document or a picture delivered with 200. The remote now holds tags of ours for all six
+documents. The measurements are held by `packages/usb/test/touch-changed-set-sync.test.ts`.
+
 ## Not done
 
-* No infrared run has been recorded with this unit, and nothing about it in use has been seen and written
-  down.
+* *Corrected:* this said no infrared run had been recorded with this unit and nothing about it in use had been
+  seen and written down. Checks 1, 8 and 9 of 3.2 above ran on the infrared monitor, and 6.9 timed a sequence's
+  delay on it, so the line is gone from this list.
 * Nobody has recorded looking at its clock.
 * The request and response command `0x08` has never been sent to it, by us or, in any of the recorded syncs, by Logitech's client.

@@ -187,7 +187,7 @@ the generator that wrote it, with firmware event 0xFF bound so it serves both mo
 expected codes on the bench 350 and the same file 33 of 33 on the bench 300, `packages/codec/test/noscreenfinalunits.test.ts`.
 Two Harmony 885s are on the bench as well, read only.
 
-**The Harmony Touch is described from its own reading, and four syncs of ours have run on it, three committed.** Its configuration
+**The Harmony Touch is described from its own reading, and nine syncs of ours have run on it, eight committed, four of them changing what it does.** Its configuration
 is Logitech's documents rather than a file, fetched by the remote through the computer during a sync, and both
 directions of a sync are recorded, `packages/usb/test/touch-sync-both-ways.test.ts`. The documents are described
 field by field in [its platform pages](../reference/architectures/harmony-touch/README.md) and read by the codec,
@@ -207,7 +207,12 @@ and the remote starting normally with its favourites in place. So 6.7 is done, e
 finish. In 6.8 the remote's own six documents went back with 200 under tags of ours, in one write of 19 chunks,
 and were committed: the configuration hash then carried the tags of ours, a further `--unchanged` run was asked
 for all six with them, and the remote came back with its activities, settings and favourites,
-`packages/usb/test/touch-own-set-sync.test.ts`. A document whose content this project composed is 6.9.
+`packages/usb/test/touch-own-set-sync.test.ts`. In 6.9 the first changes of content reached it: four syncs each
+delivered one document with one value changed, or put back, with 200 and the other five 304, and each was
+committed. A sequence's delay went from 1 second to 3 and the pause between its two infrared codes grew by about
+two seconds, then came back when the value did; an activity's name changed on the activity list and changed
+back. A closing `--unchanged` run was asked for the six with the last set's tags,
+`packages/usb/test/touch-changed-set-sync.test.ts`. A document composed whole by this project is still unchecked.
 
 ## What is still open
 
