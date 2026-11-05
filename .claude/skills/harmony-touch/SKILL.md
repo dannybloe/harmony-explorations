@@ -131,6 +131,7 @@ test; the read itself goes into the lab.
 | the request channel | `packages/usb/src/touchsession.ts`, the rail in `packages/usb/src/rails.ts` from `TOUCH_REQUEST_DOOR`, the route `onTheTouchRequestRoute` in `filepipe.ts`, tested in `packages/usb/test/touchsession.test.ts`; the reads of 6.4 are `packages/usb/bin/touch-request.ts` and the recovery steps `packages/usb/bin/touch-recover.ts`, each a dry run without `--commit` |
 | the configuration's reader and checker | `packages/codec/src/harmony-touch/`, tested in `packages/codec/test/touch-reader.test.ts` and `touch-check.test.ts` |
 | a set of the remote's own documents with tags of ours, built and compared | `packages/corpus/bin/touch-own-set.ts` and `packages/corpus/src/touchownset.ts`, `todo-touch.md` 6.8 |
+| a set with one value changed and only that document retagged, built and compared | `packages/corpus/bin/touch-changed-set.ts` and `packages/corpus/src/touchchangedset.ts`, `todo-touch.md` 6.9 |
 | answering a sync in place of Logitech's server | `reference/architectures/harmony-touch/answering-a-sync.md`; the answerer `packages/corpus/src/touchsync.ts`, its script `packages/corpus/bin/touch-sync.ts`, tested in `packages/corpus/test/touch-sync.test.ts` |
 | the protocol | `reference/usb-protocol/file-protocol.md` |
 | its family, firmware and its two architecture numbers | `reference/architectures/harmony-touch/` |

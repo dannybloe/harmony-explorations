@@ -1,0 +1,217 @@
+/**
+ * A set of a Harmony Touch's documents with **one value changed**, made from a set the remote already holds,
+ * and the comparisons that say the change is that one value and nothing else: `todo-touch.md` 6.9.
+ *
+ * **What 6.9 is for.** 6.8 delivered the remote's own six documents back with 200 under tags of ours, and the
+ * remote stored and committed them, so the answerer can put a document on a Touch. 6.9 is the first change of
+ * content: one delay and one label, each changed and put back, each heard or seen at the bench. The smallest
+ * step that measures it changes one value of one document and keeps everything else exactly as the remote
+ * holds it.
+ *
+ * **Why only the changed document gets a new tag.** The answerer answers a request 304 when the tag the remote
+ * sends equals the set's tag for that document, and 200 with the document otherwise, `answerOf` in
+ * `touchsync.ts`. So a set whose five unchanged documents keep the tags the remote stores them under is
+ * answered 304 for those five and delivers the changed one alone. That makes the run's write of answers one
+ * document long, and it makes the run's outcome a measurement: one 200, five 304s, or something the remote held
+ * that nobody expected.
+ *
+ * **Why a new tag rather than an old one, and why the put back gets one too.** A tag of ours is `setTag` with
+ * the new set's name, so it is reproducible from the set and differs from every tag the source set states. The
+ * put back is the same change with the original value, under a third tag, rather than the source set again
+ * under the tag it had: a document returning under its old tag would still be delivered, since the remote
+ * holds the changed one under the changed tag, but a tag never stated before is a mark only that delivery can
+ * have left. A request list or a configuration hash read afterwards then says the put back arrived, where the
+ * old tag would say only that the remote holds a tag it has held before. The caller passes every tag stated
+ * by the chain of sets so far, `tagsInPlay`, and a new tag equal to one of them is refused.
+ *
+ * **The change is a value, never a structure.** A JSON Pointer (RFC 6901) names the value, which has to be a
+ * string, a number or a boolean already there, holding the value the caller says it holds, and the new value
+ * has to be of the same type. An object, a list or a null is not changed here, nor is a value added or
+ * removed: that is a family's editor, which `packages/codec/src/harmony-touch/` does not have for these
+ * fields, and 6.9 does not need one. The codec's reader and check meet the changed set through the answerer's
+ * own gate, `prepareSet`, before the builder returns it.
+ *
+ * Nothing here opens a remote: it builds and compares. The bench script is `bin/touch-changed-set.ts`.
+ */
+import { DATA_PACKET_PAYLOAD } from '@harmony/usb';
+import { TOUCH_REQUEST_SHAPES } from '@harmony/usb/touchsession';
+
+import { OWN_SET_DOCUMENTS } from './touchownset.ts';
+import {
+  WRITE_ANSWERS,
+  answerOf,
+  keyOf,
+  prepareSet,
+  setTag,
+  type PreparedSet,
+  type RemoteRequest,
+  type SetAnswer,
+  type TouchSet,
+  type WrittenAnswer,
+} from './touchsync.ts';
+
+/** A value a change may touch: the three JSON leaves that are not null. */
+export type Leaf = string | number | boolean;
+
+/** One value of one document, what it holds now and what it is to hold. */
+export interface OneChange {
+  /** One of the six configuration documents, by name. */
+  readonly document: string;
+  /** Where in that document, as a JSON Pointer: `/ButtonMaps/8/Sequences/0/Actions/1/Duration`. */
+  readonly pointer: string;
+  /** The value the source set holds there, which the builder checks before it changes anything. */
+  readonly was: Leaf;
+  readonly to: Leaf;
+}
+
+/** A JSON Pointer's reference tokens, unescaped, or undefined when it is not one. The whole document, `''`, is not a value here. */
+export function pointerTokens(pointer: string): string[] | undefined {
+  if (!pointer.startsWith('/')) return undefined;
+  const tokens = pointer.slice(1).split('/');
+  // `~` may only start `~0` or `~1`, RFC 6901 section 3.
+  if (tokens.some((t) => /~(?![01])/.test(t))) return undefined;
+  return tokens.map((t) => t.replace(/~1/g, '/').replace(/~0/g, '~'));
+}
+
+/** A pointer for a list of tokens, escaped. */
+function pointerOf(tokens: readonly string[]): string {
+  return tokens.map((t) => `/${t.replace(/~/g, '~0').replace(/\//g, '~1')}`).join('');
+}
+
+const isObject = (x: unknown): x is Record<string, unknown> => typeof x === 'object' && x !== null && !Array.isArray(x);
+
+/** The value a pointer reaches, or undefined when a token names nothing: an array index has to be one of its places. */
+function reach(x: unknown, tokens: readonly string[]): { readonly value: unknown } | undefined {
+  let at: unknown = x;
+  for (const t of tokens) {
+    if (Array.isArray(at)) {
+      if (!/^(0|[1-9][0-9]*)$/.test(t) || Number(t) >= at.length) return undefined;
+      at = at[Number(t)];
+    } else if (isObject(at)) {
+      if (!Object.prototype.hasOwnProperty.call(at, t)) return undefined;
+      at = at[t];
+    } else {
+      return undefined;
+    }
+  }
+  return { value: at };
+}
+
+const isLeaf = (x: unknown): x is Leaf => typeof x === 'string' || typeof x === 'number' || typeof x === 'boolean';
+
+/** A copy of a parsed JSON value, so a change never reaches the source set. */
+const copy = <T>(x: T): T => JSON.parse(JSON.stringify(x)) as T;
+
+/**
+ * Build the changed set, or say why not. `set` the source, `change` the one value, `name` the new set's name,
+ * which goes into the changed document's tag, and `tagsInPlay` every tag the chain of sets so far has stated.
+ *
+ * Refuses, by document and pointer and never quoting a value out of the document: a document not among the six
+ * or not in the set, a pointer that is not one or reaches nothing, a value that is not a string, number or
+ * boolean, a value other than `was`, a `to` of another type or equal to `was`, a new tag already in play, and a
+ * set the answerer's gate refuses.
+ */
+export function changeOneValue(options: {
+  readonly set: TouchSet;
+  readonly change: OneChange;
+  readonly name: string;
+  readonly tagsInPlay?: Iterable<string>;
+}): { readonly set: TouchSet } | { readonly refusals: readonly string[] } {
+  const { set, change, name } = options;
+  const where = `${change.document} ${change.pointer}`;
+  if (!OWN_SET_DOCUMENTS.includes(change.document)) return { refusals: [`${change.document} is not one of the six configuration documents`] };
+  const at = set.answers.findIndex((a) => keyOf(a.uri) === change.document);
+  if (at < 0) return { refusals: [`the source set holds no ${change.document}`] };
+  const tokens = pointerTokens(change.pointer);
+  if (tokens === undefined) return { refusals: [`${where}: not a JSON Pointer to a value inside the document`] };
+  const source = set.answers[at]!;
+  const found = reach(source.resource, tokens);
+  if (found === undefined) return { refusals: [`${where}: names no value in the source set's document`] };
+  if (!isLeaf(found.value)) return { refusals: [`${where}: holds ${found.value === null ? 'null' : Array.isArray(found.value) ? 'a list' : 'an object'}, and only a string, a number or a boolean is changed here`] };
+  if (found.value !== change.was) return { refusals: [`${where}: holds another value than the one the change expects, so the source is not what the change was written against`] };
+  if (typeof change.to !== typeof change.was) return { refusals: [`${where}: the new value is a ${typeof change.to} where the document holds a ${typeof change.was}`] };
+  if (change.to === change.was) return { refusals: [`${where}: the new value equals the one it holds, which changes nothing`] };
+
+  const resource = copy(source.resource);
+  const parent = reach(resource, tokens.slice(0, -1))!.value as Record<string, unknown> | unknown[];
+  const last = tokens.at(-1)!;
+  if (Array.isArray(parent)) parent[Number(last)] = change.to;
+  else parent[last] = change.to;
+  const tag = setTag({ 'body-type': source['body-type'], resource }, name);
+  const inPlay = new Set([...(options.tagsInPlay ?? []), ...set.answers.map((a) => a.etag).filter((t): t is string => t !== undefined)]);
+  if (inPlay.has(tag)) return { refusals: [`${change.document}: its new tag equals a tag already in play, so a set of this name was made before`] };
+
+  // The source's own key order, so the changed answer is written as the other five are.
+  const changed: SetAnswer = { ...source, resource, etag: tag };
+  const answers = set.answers.map((a, i) => (i === at ? changed : a));
+  const out: TouchSet = { answers };
+  const gate = prepareSet(out);
+  if ('refusals' in gate) return { refusals: gate.refusals };
+  return { set: out };
+}
+
+/**
+ * Every place two parsed JSON values differ, as pointers: a leaf that differs, a key one side lacks, a list of
+ * another length, a value of another kind. Equal values give none.
+ */
+export function differences(a: unknown, b: unknown, at: readonly string[] = []): string[] {
+  if (Array.isArray(a) && Array.isArray(b)) {
+    if (a.length !== b.length) return [pointerOf(at)];
+    return a.flatMap((x, i) => differences(x, b[i], [...at, String(i)]));
+  }
+  if (isObject(a) && isObject(b)) {
+    const keys = [...new Set([...Object.keys(a), ...Object.keys(b)])];
+    return keys.flatMap((k) => (k in a && k in b ? differences(a[k], b[k], [...at, k]) : [pointerOf([...at, k])]));
+  }
+  return Object.is(a, b) ? [] : [pointerOf(at)];
+}
+
+/** One document of two sets compared: where its content differs, and whether its tag does. */
+export interface DocumentDifference {
+  readonly document: string;
+  readonly values: readonly string[];
+  readonly tagChanged: boolean;
+}
+
+/**
+ * Two sets compared document by document, in the order of `after`: the content as parsed JSON and the tag. A
+ * document one set lacks is reported with the pointer `''`, the whole document.
+ */
+export function setDifferences(before: TouchSet, after: TouchSet): DocumentDifference[] {
+  const was = new Map(before.answers.map((a) => [keyOf(a.uri), a]));
+  const keys = [...new Set([...after.answers.map((a) => keyOf(a.uri)), ...before.answers.map((a) => keyOf(a.uri))])];
+  return keys.map((document) => {
+    const a = was.get(document);
+    const b = after.answers.find((x) => keyOf(x.uri) === document);
+    if (a === undefined || b === undefined) return { document, values: [''], tagChanged: true };
+    return { document, values: differences(a.resource, b.resource), tagChanged: a.etag !== b.etag };
+  });
+}
+
+/** The value a pointer reaches in a set's document, for a report that never prints it. */
+export function valueAt(set: TouchSet, document: string, pointer: string): unknown {
+  const answer = set.answers.find((a) => keyOf(a.uri) === document);
+  const tokens = pointerTokens(pointer);
+  return answer === undefined || tokens === undefined ? undefined : reach(answer.resource, tokens)?.value;
+}
+
+/**
+ * What the answerer writes for the six when the remote holds `held`: a request for each document at the set's
+ * address with the tag `held` states for it, answered by `answerOf` from `set`. On a remote that committed
+ * `held`, this is the run's first sync list.
+ */
+export function answersWhenHolding(set: PreparedSet, held: TouchSet): (WrittenAnswer | { readonly refuse: string })[] {
+  const requests: RemoteRequest[] = held.answers.map((a) => ({ verb: 'get', uri: a.uri, ...(a.etag === undefined ? {} : { etag: a.etag }) }));
+  return requests.map((r) => answerOf(r, { kind: 'set', set }));
+}
+
+/**
+ * The size of one write of answers as the session sends it: the line's length, the chunks of the answers
+ * request's shape it takes, and the last chunk's length. The session id is made up, of a real one's length.
+ */
+export function writeOfAnswersSize(written: readonly unknown[]): { readonly length: number; readonly chunks: number; readonly perChunk: number; readonly last: number; readonly line: string } {
+  const line = `${WRITE_ANSWERS}&sessionId=${'0'.repeat(8)}-0000-4000-8000-${'0'.repeat(12)}&responses=${encodeURIComponent(JSON.stringify({ responses: written }))}`;
+  const perChunk = DATA_PACKET_PAYLOAD * (TOUCH_REQUEST_SHAPES[WRITE_ANSWERS]?.packetsPerChunk ?? 0);
+  const chunks = Math.ceil(line.length / perChunk);
+  return { length: line.length, chunks, perChunk, last: line.length - (chunks - 1) * perChunk, line };
+}

@@ -303,7 +303,9 @@ packages/corpus/                TS: read a config off a remote and file it, read
                                 calls the codec's reader and check of a Touch's documents itself
                                 before anything is sent, and packages/usb cannot import the codec;
                                 and `src/touchownset.ts`, which builds a set of a Touch's own
-                                documents for it to deliver, `todo-touch.md` 6.8
+                                documents for it to deliver, `todo-touch.md` 6.8, and
+                                `src/touchchangedset.ts`, which changes one value of such a set,
+                                `todo-touch.md` 6.9
 packages/bench/                 TS: the bench instrument, a server plus two pages in web/. The
                                 second, ir.html, is the infrared monitor: what a Flirc USB receiver
                                 hears, named against the bench remotes' configurations, plus
@@ -977,6 +979,20 @@ node packages/corpus/bin/touch-own-set.ts --check <set folder> [--hash <answer>]
                        answers; `--hash` and `--list` compare a kept `getconfighash` answer or request
                        list with the set's tags. Reads and writes the lab only; prints counts and
                        `equal` or `not equal`, never a tag. Opens nothing.
+node packages/corpus/bin/touch-changed-set.ts --build <lab folder> --from <set folder> --document <name> \
+  --pointer <JSON Pointer> --was <value> --to <value>
+node packages/corpus/bin/touch-changed-set.ts --check <set folder> [--same-as <set>] [--written <answers>] \
+  [--hash <answer>] [--list <list>]
+                       build a set with one value of one document changed, `todo-touch.md` 6.9,
+                       `src/touchchangedset.ts`: a copy of a set the remote holds, the value checked
+                       against `--was` first, that document alone under a new tag so the answerer
+                       answers the other five 304, and no tag the chain of sets has stated before; a
+                       put back is the same change the other way. `--check` holds it to exactly the one
+                       value and the one tag against its source, answers a remote holding the source
+                       (one 200, five 304) and sizes the write; `--same-as` compares content with
+                       another set, `--written` a run's kept write of answers. Reads and writes the lab
+                       only; prints counts, pointers and the change's own values, never a tag. Opens
+                       nothing.
 node packages/usb/bin/read-file.ts --file <path> [--product 0xc12b] [--device <path>]
                        the general form of the above: read any path on `INERT_PATHS` and print it as
                        bytes and, where it is printable, as text. Deliberately does not parse, since
