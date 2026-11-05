@@ -184,6 +184,26 @@ times. `getprovisioninfo` answered 383 characters, the account link, kept in the
 and that recording is the backup of them (6.5); its settings were changed on the remote afterwards, which the
 hash does not cover. Nothing else was sent; what the screen showed during the reads was not recorded.
 
+## The first sync answered by this project, todo-touch 6.7
+
+**Run on 5 November 2026**, `packages/corpus/bin/touch-sync.ts --unchanged --commit`, the remote in the port
+where it shows its USB screen. The settings it held had been changed on the remote (screen lock off), and
+accepting that the hand over writes them back under a tag of ours, so that change never reaches the account,
+was decided before the run. The lab's `reads/20261105T1051Z-touch-sync-unchanged/` holds every request and
+answer.
+
+* `getconfighash` before: 200, the same four tags as the 6.4 read.
+* The hand over: the remote handed up one document, Settings, kept in the lab and answered back with a tag of
+  ours; then two more lists, one answered, and the hand over ended.
+* The sync: the six documents asked for in one list and answered 304, taken; one empty list; then the user's
+  favourites asked for **without a tag**, though the full sync of 2.3 had delivered them with one. The answerer
+  refused there, as it is built to, since a 404 would drop the favourites at the commit.
+* `getconfighash` then answered 202, a sync running. `touch-recover.ts --step abort` answered 200, the read
+  then gave 200 and the same four tags, and `--step reboot` answered 200. The remote started normally, showed
+  its activities, and screen lock was still off, by a look at the remote.
+
+So the recovery route of 6.1 ran on a unit end to end, and 6.7 stays open on the favourites' missing tag.
+
 ## Not done
 
 * No infrared run has been recorded with this unit, and nothing about it in use has been seen and written
