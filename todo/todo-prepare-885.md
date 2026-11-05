@@ -39,6 +39,10 @@ Written on 4 November 2026; linked from `todo-later.md` 5.6.
     - [x] 2.5.1 The 880, as the 885's second printing, `097a9749`
     - [x] 2.5.2 The 880's key codes from Logitech's compiles of 880 configurations, the 885's map the control: 29 of 53, `984a4257`
     - [ ] 2.5.3 The 880 Pro, 890, 890 Pro and 895
+- [ ] 2.6 A browser page that learns a remote's key codes, so owners of models nobody here has can send their map; a feasibility page in the lab read the 885's held key through Chrome's WebHID
+    - [ ] 2.6.1 The USB library split where it meets the hardware, so a WebHID connection sits under the same rails and the same protocol code
+    - [ ] 2.6.2 The guided flow: the model's drawing, the key asked for lit, learned and skipped keys coloured, an unasked press flashed, a log to copy that holds names and codes and nothing identifying the unit
+    - [ ] 2.6.3 Published on the reference site, read only, Chrome and Edge
 
 ## 3. The file side, read in the firmware
 
