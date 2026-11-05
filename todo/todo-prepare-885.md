@@ -40,7 +40,7 @@ Written on 4 November 2026; linked from `todo-later.md` 5.6.
     - [x] 2.5.2 The 880's key codes from Logitech's compiles of 880 configurations, the 885's map the control: 29 of 53, `984a4257`
     - [ ] 2.5.3 The 880 Pro, 890, 890 Pro and 895
 - [ ] 2.6 A browser page that learns a remote's key codes, so owners of models nobody here has can send their map; a feasibility page in the lab read the 885's held key through Chrome's WebHID
-    - [ ] 2.6.1 The USB library split where it meets the hardware, so a WebHID connection sits under the same rails and the same protocol code
+    - [ ] 2.6.1 The page sends through one function that accepts only the version request and the one byte key read, built by `packages/usb/src/protocol.ts` itself (it imports nothing), and a test reads the page and fails on anything else; the library comes along only if the page ever reads more
     - [ ] 2.6.2 The guided flow: the model chosen first (proposed from the skin the remote reports), then its drawing where one exists and a plain key list where none does, the key asked for lit, learned and skipped keys coloured, an unasked press flashed, a log to copy that holds names and codes and nothing identifying the unit
     - [ ] 2.6.3 A key test mode beside the learning mode: every key lights on the drawing when pressed and stays lit, so an owner sees which keys work; it needs the model's codes, so a press of an unknown code is listed instead
     - [ ] 2.6.4 Published on the reference site, read only, Chrome and Edge
