@@ -1,14 +1,16 @@
 /**
- * The default addresses `watch-keys.ts` watches, chosen without a remote.
+ * The default addresses `watch-keys.ts` watches, chosen without a remote. The tables themselves are
+ * `packages/usb/src/keys.ts` and pinned in `keys.test.ts`; this file pins the choice made from `bcdDevice`.
  *
  * What is pinned is the choice, not the addresses' truth: the arch 8 ones are read in the images and the
  * 885's measured on two units in `tests/test_harmony_885_keys.py`, and the others have their own readings
- * in the script's comments. The point of these tests is that the arch 8 product id, which five models
+ * in the comments of `keys.ts`. The point of these tests is that the arch 8 product id, which five models
  * share, never picks an address by itself.
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { ARCH_8_PRODUCT, WATCH, WATCH_BY_SKIN, defaultWatch } from '../bin/watch-keys.ts';
+import { ARCH_8_PRODUCT, WATCH } from '../src/keys.ts';
+import { defaultWatch } from '../bin/watch-keys.ts';
 
 test('an 880, an 885 and an 880 Pro watch the held key at 0x295 and the last pressed at 0x3a1', () => {
   // `bcdDevice` on arch 8 is protocol 8 in the high byte and the skin in plain binary below it.
@@ -33,10 +35,6 @@ test('the arch 8 product id alone gives no default', () => {
   assert.equal(defaultWatch(ARCH_8_PRODUCT, 0x082d), undefined);
   assert.equal(defaultWatch(ARCH_8_PRODUCT, 0x0a11), undefined);
   assert.equal(WATCH[ARCH_8_PRODUCT], undefined);
-});
-
-test('arch 8 has exactly four skins with a default', () => {
-  assert.deepEqual(Object.keys(WATCH_BY_SKIN).map(Number), [15, 17, 39, 44]);
 });
 
 test('the entries keyed by product id are unchanged and ignore bcdDevice', () => {

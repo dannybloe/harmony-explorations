@@ -1,0 +1,211 @@
+/**
+ * Build the key reader page into `reference/key-reader/`, where the website publishes it.
+ *
+ *   node packages/keyreader/bin/build.ts           write the page (make key-reader)
+ *   node packages/keyreader/bin/build.ts --check   say whether the written page matches its sources
+ *
+ * **Why a build at all.** The website is MkDocs over `reference/` and serves files as they are, so the page
+ * has to be JavaScript by the time it gets there, and the sources are TypeScript. **Why this build.** The
+ * sources use erasable syntax only (`erasableSyntaxOnly`, `tsconfig.base.json`), so turning them into
+ * JavaScript is removing the types and nothing else: no bundler is needed and none is added. The compiler
+ * that does it is the TypeScript this repository already pins, through `transpileModule`, rather than
+ * Node's own `stripTypeScriptTypes`, which is marked experimental, warns on every call and may change
+ * between Node releases; a generated file checked against its generator needs a generator whose output
+ * does not move under it.
+ *
+ * **Comments are removed on the way out.** The sources carry the reasoning, at length, and stay the place
+ * to read it; the library modules the page loads were written for this repository, and their comments
+ * talk about its own work, which the reference does not describe. Each published file starts with a line
+ * naming its source.
+ *
+ * **Which files are published is decided by the imports, from `page.ts` on**, and then checked against
+ * `PUBLISHED`, an allow list: a module the page does not import is not published, and a module the page
+ * does import that is not on the list stops the build. So a new import of the `@harmony/usb` barrel, which
+ * reaches for node-hid and the write paths, cannot slip into the page unnoticed. Every import specifier is
+ * rewritten to the published file beside it, `./protocol.js`, so the browser needs no import map.
+ *
+ * `index.html` is copied from `web/` with a line naming its source. The test,
+ * `packages/keyreader/test/build.test.ts`, holds the written files against this build, the way
+ * `reference/silhouettes/` is held against its generator, and refuses anything else in the folder.
+ */
+import ts from 'typescript';
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { dirname, join, relative, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const PACKAGE = fileURLToPath(new URL('..', import.meta.url));
+const ROOT = resolve(PACKAGE, '..', '..');
+const USB = join(ROOT, 'packages', 'usb', 'src');
+
+/** Where the page is written: a folder of `reference/`, which the website copies as it is. */
+export const OUT_DIR = join(ROOT, 'reference', 'key-reader');
+
+/** The module the browser loads first, named by the page's one script tag. */
+const ENTRY = join(PACKAGE, 'src', 'page.ts');
+
+/**
+ * Every module the page may load: its source, and the name it is published under.
+ *
+ * The three from `packages/usb` import nothing, which is why they can be loaded as they are. Adding a row
+ * is adding code a stranger's browser runs against their remote, and `test/send.test.ts` reads every file
+ * published here for a second way to send.
+ */
+const PUBLISHED: ReadonlyMap<string, string> = new Map([
+  [ENTRY, 'page.js'],
+  [join(PACKAGE, 'src', 'link.ts'), 'link.js'],
+  [join(PACKAGE, 'src', 'presses.ts'), 'presses.js'],
+  [join(USB, 'protocol.ts'), 'protocol.js'],
+  [join(USB, 'keys.ts'), 'keys.js'],
+  [join(USB, 'models.ts'), 'models.js'],
+]);
+
+/** The package subpaths the page imports, and the source each names; `packages/usb/package.json`. */
+const PACKAGE_SPECIFIERS: ReadonlyMap<string, string> = new Map([
+  ['@harmony/usb/protocol', join(USB, 'protocol.ts')],
+  ['@harmony/usb/keys', join(USB, 'keys.ts')],
+  ['@harmony/usb/models', join(USB, 'models.ts')],
+]);
+
+const COMPILER_OPTIONS: ts.CompilerOptions = {
+  target: ts.ScriptTarget.ES2023,
+  module: ts.ModuleKind.ESNext,
+  // As the workspace compiles: an import marked `type` disappears, and every other import stays exactly
+  // as written, so what the page loads is what the source says it loads.
+  verbatimModuleSyntax: true,
+  removeComments: true,
+  newLine: ts.NewLineKind.LineFeed,
+};
+
+/** The repository relative path of a file, with forward slashes, for headers and messages. */
+function shown(path: string): string {
+  return relative(ROOT, path).split('\\').join('/');
+}
+
+/** The import and export specifiers of a module, where each sits in the text, and any dynamic import. */
+function specifiers(fileName: string, text: string): { text: string; start: number; end: number }[] {
+  const file = ts.createSourceFile(fileName, text, ts.ScriptTarget.ES2023, true, ts.ScriptKind.JS);
+  const found: { text: string; start: number; end: number }[] = [];
+  const visit = (node: ts.Node): void => {
+    if (
+      (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) &&
+      node.moduleSpecifier !== undefined &&
+      ts.isStringLiteral(node.moduleSpecifier)
+    ) {
+      // Inside the quotes, so the rewrite keeps whichever quote the compiler printed.
+      found.push({
+        text: node.moduleSpecifier.text,
+        start: node.moduleSpecifier.getStart(file) + 1,
+        end: node.moduleSpecifier.getEnd() - 1,
+      });
+    }
+    if (ts.isCallExpression(node) && node.expression.kind === ts.SyntaxKind.ImportKeyword) {
+      // A dynamic import would load a module this build never saw, so the allow list would not hold.
+      throw new Error(`${fileName}: a dynamic import, which the key reader build does not follow`);
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(file);
+  return found;
+}
+
+/** The source file a specifier names, from the module that imports it. */
+function resolveSpecifier(importer: string, specifier: string): string {
+  if (specifier.startsWith('.')) return resolve(dirname(importer), specifier);
+  const named = PACKAGE_SPECIFIERS.get(specifier);
+  if (named === undefined) {
+    throw new Error(`${shown(importer)} imports ${specifier}, which the key reader does not publish`);
+  }
+  return named;
+}
+
+/** One module as JavaScript, its imports rewritten to the published files, and the sources it imports. */
+function compile(source: string): { text: string; imports: string[] } {
+  const name = PUBLISHED.get(source);
+  if (name === undefined) {
+    throw new Error(`${shown(source)} is imported by the page and is not in PUBLISHED, the build's allow list`);
+  }
+  const output = ts.transpileModule(readFileSync(source, 'utf8'), {
+    compilerOptions: COMPILER_OPTIONS,
+    fileName: source,
+    reportDiagnostics: true,
+  });
+  if (output.diagnostics !== undefined && output.diagnostics.length > 0) {
+    const first = ts.flattenDiagnosticMessageText(output.diagnostics[0]?.messageText ?? '', '\n');
+    throw new Error(`${shown(source)}: ${first}`);
+  }
+  let text = output.outputText;
+  const imports: string[] = [];
+  // From the end backwards, so that each rewrite leaves the positions before it valid.
+  for (const found of specifiers(name, text).reverse()) {
+    const target = resolveSpecifier(source, found.text);
+    const targetName = PUBLISHED.get(target);
+    if (targetName === undefined) {
+      throw new Error(`${shown(source)} imports ${shown(target)}, which is not in PUBLISHED, the build's allow list`);
+    }
+    imports.push(target);
+    text = `${text.slice(0, found.start)}./${targetName}${text.slice(found.end)}`;
+  }
+  const header = `// Generated by packages/keyreader/bin/build.ts from ${shown(source)}. Do not edit: run make key-reader.\n`;
+  return { text: header + text, imports };
+}
+
+/** The whole page, as the files to write: published name to content. */
+export function buildKeyReader(): Map<string, string> {
+  const files = new Map<string, string>();
+  const pending = [ENTRY];
+  const seen = new Set<string>();
+  while (pending.length > 0) {
+    const source = pending.pop() as string;
+    if (seen.has(source)) continue;
+    seen.add(source);
+    const { text, imports } = compile(source);
+    files.set(PUBLISHED.get(source) as string, text);
+    pending.push(...imports);
+  }
+
+  const html = readFileSync(join(PACKAGE, 'web', 'index.html'), 'utf8');
+  const doctype = '<!doctype html>\n';
+  if (!html.startsWith(doctype)) throw new Error('packages/keyreader/web/index.html has to start with its doctype');
+  files.set(
+    'index.html',
+    `${doctype}<!-- Generated by packages/keyreader/bin/build.ts from packages/keyreader/web/index.html. Do not edit: run make key-reader. -->\n${html.slice(doctype.length)}`,
+  );
+
+  // Sorted, so that the map and a listing of the folder compare in one assertion.
+  return new Map([...files].sort(([a], [b]) => a.localeCompare(b)));
+}
+
+/** The names in the folder that differ from the build, are missing, or should not be there. */
+export function driftFrom(built: ReadonlyMap<string, string>, directory = OUT_DIR): string[] {
+  const present = existsSync(directory) ? readdirSync(directory) : [];
+  const drift: string[] = [];
+  for (const [name, content] of built) {
+    const path = join(directory, name);
+    if (!existsSync(path)) drift.push(`${name} is missing`);
+    else if (readFileSync(path, 'utf8') !== content) drift.push(`${name} differs from its source`);
+  }
+  for (const name of present) {
+    if (!built.has(name)) drift.push(`${name} is not part of the page`);
+  }
+  return drift;
+}
+
+function main(): void {
+  const built = buildKeyReader();
+  if (process.argv.includes('--check')) {
+    const drift = driftFrom(built);
+    for (const line of drift) process.stderr.write(`reference/key-reader/${line}\n`);
+    if (drift.length > 0) process.exit(1);
+    process.stdout.write(`reference/key-reader/ matches its sources, ${built.size} files\n`);
+    return;
+  }
+  mkdirSync(OUT_DIR, { recursive: true });
+  // Only the build's own files live here, so anything else is a file a previous build wrote.
+  for (const name of readdirSync(OUT_DIR)) {
+    if (!built.has(name)) rmSync(join(OUT_DIR, name));
+  }
+  for (const [name, content] of built) writeFileSync(join(OUT_DIR, name), content);
+  process.stdout.write(`wrote ${built.size} files to reference/key-reader/\n`);
+}
+
+if (import.meta.main) main();

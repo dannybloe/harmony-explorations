@@ -198,6 +198,10 @@ reference/silhouettes/          the front face of a model, one SVG per model, **
                                 the objection and the measurement that outweighed it. A key whose
                                 scan code is measured carries it as data-scan and the rest carry
                                 none rather than a guess
+reference/key-reader/           a browser page that reads which key is pressed on a Harmony, through
+                                WebHID, read only, todo-prepare-885.md 2.6. **Generated** by
+                                packages/keyreader/bin/build.ts (`make key-reader`) and never edited
+                                by hand; the website copies the folder as it is, at /key-reader/
 docs/lab-register.md            the lab, artefact by artefact: what each thing is, how deep anybody
                                 has been, and which of the excavation's seventeen want list tags it
                                 might answer. **A catalogue and not a set of claims**, so it carries
@@ -279,8 +283,9 @@ packages/lab/                   TS: finds the private lab directory, mirrors tes
                                 opposite
 packages/usb/                   TS: the command protocol and the write rails, read path measured.
                                 Also the **second** protocol, for the file based family openHarmony
-                                refuses, and the table that turns a reported skin into a model and
-                                its hardware capabilities. The erase and write sequence has **one**
+                                refuses, the table that turns a reported skin into a model and
+                                its hardware capabilities, and the one of where each model keeps the
+                                key being pressed, src/keys.ts, shared with the key reader page. The erase and write sequence has **one**
                                 implementation, `writeBlock`, and a caller in this workspace reaches
                                 it through the `@harmony/usb/write` subpath rather than the barrel,
                                 so that a third write caller is a decision visible in a diff
@@ -316,6 +321,15 @@ packages/bench/                 TS: the bench instrument, a server plus two page
                                 7.1's bench tests from the documents the remote holds; the monitor
                                 names a Touch's codes from those documents, `BENCH_TOUCH_SETS`
 packages/probe/                 TS: the contribution probe, a report with shape and no contents
+packages/keyreader/             TS: the key reader page's sources, built into reference/key-reader/.
+                                Its own package rather than a page of packages/bench, which is a
+                                local server instrument, or of packages/usb, whose tsconfig would
+                                then need the DOM: it is the one code of this repository that runs
+                                in a stranger's browser against their own remote. src/link.ts holds
+                                the one function that sends and its refusals; the page loads three
+                                modules of packages/usb that import nothing, protocol.ts, keys.ts and
+                                models.ts, through subpaths, and never the barrel. Its tests read the
+                                published JavaScript, not the sources
 ```
 
 There is no `apps/` here. The application is FreeHarmony, and the workspace globs say so.

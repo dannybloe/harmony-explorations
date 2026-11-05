@@ -8,6 +8,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./models": "./src/models.ts",
+    "./protocol": "./src/protocol.ts",
+    "./keys": "./src/keys.ts",
     "./trailer": "./src/trailer.ts",
     "./write": "./src/write.ts",
     "./touchsession": "./src/touchsession.ts",

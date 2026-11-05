@@ -1,0 +1,18 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "dist",
+    // The page runs in a browser, so `src` needs the DOM's types; the build and the tests run in Node and
+    // keep the base's `node` types. One project holds both: the two libraries do not conflict, and a second
+    // project for a handful of files would only be a second place to forget. WebHID is in neither library,
+    // `src/webhid.ts`.
+    "lib": ["ES2023", "DOM"]
+  },
+  // `bin` and `test` included deliberately, for the reason `packages/silhouettes/tsconfig.json` gives: a
+  // directory of TypeScript no tsconfig claims is typechecked by nothing.
+  "include": ["src/**/*.ts", "test/**/*.ts", "bin/**/*.ts"],
+  // `@harmony/usb` is a dev dependency because the page's sources import three of its modules that import
+  // nothing, and the build publishes them beside the page; nothing here is consumed as a package.
+  "references": [{ "path": "../usb" }]
+}

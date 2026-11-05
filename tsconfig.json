@@ -21,6 +21,9 @@
     },
     {
       "path": "./packages/probe"
+    },
+    {
+      "path": "./packages/keyreader"
     }
   ]
 }

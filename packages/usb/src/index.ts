@@ -17,6 +17,8 @@ export * from './identity.ts';
 export * from './transport.ts';
 export * from './remote.ts';
 export * from './models.ts';
+// Where a running remote keeps the key being pressed; imports nothing, so the key reader page loads it too.
+export * from './keys.ts';
 // The second protocol, for the family openHarmony refuses. Read paths only, section 198.
 export * from './filepipe.ts';
 export * from './firmware.ts';

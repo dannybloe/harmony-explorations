@@ -68,6 +68,12 @@ importers:
         specifier: workspace:*
         version: link:../usb
 
+  packages/keyreader:
+    devDependencies:
+      '@harmony/usb':
+        specifier: workspace:*
+        version: link:../usb
+
   packages/lab: {}
 
   packages/probe:

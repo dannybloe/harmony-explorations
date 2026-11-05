@@ -73,7 +73,7 @@ class TypeScriptProjects(unittest.TestCase):
         # having found nothing to check. Exact, not a floor of 12, per section 143: the number is
         # decided by the workspace layout and moves only when a package or a directory is added,
         # and then it moves in the diff rather than being absorbed.
-        self.assertEqual(found, 20, 'source directories claimed by a tsconfig')
+        self.assertEqual(found, 23, 'source directories claimed by a tsconfig')
 
     def test_the_root_project_references_every_package(self):
         """`make ts` builds the root, so a package missing from it is a package nobody compiles."""
