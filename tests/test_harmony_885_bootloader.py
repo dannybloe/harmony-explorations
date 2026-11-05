@@ -164,6 +164,50 @@ of `0x1FE000` to `0x1FFFFF` is decoded away from flash is not checked; the confi
 ending at `0x1FE000` fits it. The library's arch 8 read bound, `0x200000`, admits the range; it is
 reported and deliberately not changed here.
 
+## The identity block, and the Harmony 720's bottom 64 KiB
+
+Added with items 4.1 and 4.2 of `todo/todo-prepare-885.md`, from the images alone, no remote opened.
+
+**Which bytes at `0x000110` are a serial.** The architecture's memory page said that was not checked,
+because the address sits inside the bootloader's region. In all five bottom-of-flash images of this
+platform the lab holds, the 880's and the 885's registered in `lab.IMAGES`, and an 880 Pro's, a second
+880's and a Harmony 720's found by name, the 64 bytes from `0x000110` have the layout `reference/usb-protocol/commands.md` gives the Harmony One's and the
+600's block (section 22): sixteen bytes of `0xEE`, the field named the serial, which identifies nothing
+there either; then two 16 byte fields, each not a uniform fill, five distinct pairs over the five
+images, which are the two GUIDs. **Where this platform differs is the fourth field**: the later remotes carry sixteen zero
+bytes at `+0x30`, and here `+0x30` is `0x000140`, the hardware version log, eight one byte entries
+filled from the bottom (one entry in four images and two in the 885's, `0xFF` above them). So the application's
+blank test, 48 bytes from `0x000110` (`tests/test_harmony_885_start_check.py`), covers exactly the serial
+field and the two GUIDs, and the library's 64 byte identity read takes the log's first 16 bytes with it,
+which the unit comparison never looks at (`packages/usb/src/identity.ts` compares the GUIDs alone). No
+value is quoted here: a GUID is a remote's serial. The five images were read off five remotes by their
+owners, so this is five remotes' blocks. **Not checked**: the bench Harmony 885s' serial field, since their
+records in the lab's `units/` hold the two GUIDs alone.
+
+**Sources checked first**: concordance's `ArchList` (`serial_address` `0x000110` for arch 8,
+`tests/test_concordance_notes.py`); `packages/usb/src/identity.ts`, whose arch 8 row comment already
+states this shape for the 880's and 885's images without a test behind it; the reference's identity
+layout and section 226; the classic client's identity block erase, section 213, which says where and
+not what. MyHarmony names neither this platform nor its identity block.
+
+**What the Harmony 720's two images are.** The one 720 read here gave an application and a file named for
+concordance's safe mode read, which on this architecture is 64 KiB from `0x000000` (section 116). Both
+carry the version accessor the 880's and 885's do, five `RETLW`s with one `CALL` each, version, type,
+skin, field 6, architecture: the application's at `0x11C00` returns `0x45, 0, 44, 8, 8`, application 4.5
+for skin 44, the 720; the bottom image's at `0x019CA` returns `0x42, 3, 44, 0, 8`, a **bootloader**, type
+3, version 4.2, with field 6 zero as in the 880's and 885's bootloaders. Its reset vector is a `GOTO
+0x06654`, inside itself, as theirs (`0x0637C` and `0x06392`) are inside theirs. **The product strings
+agree with the accessors**, a different field: the application's string descriptor says `Harmony Remote
+0-4.5.0` and the bottom image's `Harmony Remote 3-4.2.4`. Read as the software type, a dash and the
+version, that is consistent with all six images that carry such a string, the five applications (`0-`
+and type 0 each) and this bootloader (`3-` and type 3); it is a reading, scored on one bootloader, and the
+third digit has no counterpart in any accessor. The 880's and 885's bootloaders say `Harmony Bootloader`
+instead, so the 720's bootloader is not their build; which string it serves on the cable, and anything
+else in it, is not read. **The 720's application, 4.5, is a higher version number than the 4.4.2 the
+community comparison table gives every model it lists for this platform**, which says nothing about
+release order. What of the 720's application has been
+compared with the 885's is each chapter 3 test's own `TheHarmony720` class or `720` test.
+
 ## The reviewers
 
 Reviewer 1, blind, re-measured from the images with nothing of this answer: the same case sets, the same
@@ -764,6 +808,121 @@ class TheTopEightKiBIsDevicesAndRam(unittest.TestCase):
                         found.append(0x1FE000 | int(ins[k + 4].split()[1], 16))
                 self.assertEqual(len(found), expected[name])
                 self.assertEqual(sorted(set(found)), [0x1FE040, 0x1FE041, 0x1FE081, 0x1FE0C1])
+
+
+# The Harmony 720's two images, found by file name like tests/test_harmony_885_start_check.py's, which
+# says why they are not registered in lab.IMAGES.
+H720_APPLICATION = 'H720-Firmware.bin'
+H720_BOTTOM = 'H720-Safemode.bin'
+# The other bottom 64 KiB images of this platform, each a contributor's concordance safe mode read.
+OTHER_BOTTOMS = {'880 Pro': 'H880-Pro-Safemode.bin', 'second 880': 'H880-Spare-4-Safemode.bin',
+                 '720': H720_BOTTOM}
+IDENTITY_AT = 0x000110
+HARDWARE_LOG_AT = 0x000140
+
+
+def by_name(*filenames):
+    """The bytes of lab files found by name, all of them or a skip of the whole test."""
+    paths = [lab._find(f) for f in filenames]   # noqa: SLF001, deliberately unregistered
+    missing = [f for f, p in zip(filenames, paths) if not p]
+    if missing:
+        raise unittest.SkipTest('no %s found' % ', '.join(missing))
+    out = []
+    for p in paths:
+        with open(p, 'rb') as fh:
+            out.append(fh.read())
+    return out
+
+
+def calls_to(code, base, target, end):
+    """Every CALL in code[base:end] whose target is `target`."""
+    return [a for a, i in listing(code, base, base, end) if i.mnemonic == 'CALL' and i.fields['target'] == target]
+
+
+def string_descriptor(code, text_):
+    """Where `text_` sits as a USB string descriptor (length, type 3, UTF-16), or None."""
+    u = text_.encode('utf-16-le')
+    at = code.find(bytes([2 + len(u), 0x03]) + u)
+    return None if at < 0 else at
+
+
+class TheIdentityBlockIsTheLaterRemotesLayoutWithTheHardwareLogAsItsFourthField(unittest.TestCase):
+    def setUp(self):
+        lab.require(*BOOTLOADERS)
+        others = dict(zip(OTHER_BOTTOMS, by_name(*OTHER_BOTTOMS.values())))
+        self.images = {name: lab.load(name) for name in BOOTLOADERS}
+        self.images.update(others)
+
+    def test_the_first_sixteen_bytes_are_0xEE_in_all_five_images(self):
+        for name, code in self.images.items():
+            with self.subTest(name):
+                self.assertEqual(code[IDENTITY_AT:IDENTITY_AT + 16], b'\xee' * 16)
+
+    def test_the_next_two_fields_are_not_filler_and_differ_between_all_five_images(self):
+        guids = {}
+        for name, code in self.images.items():
+            with self.subTest(name):
+                a = code[IDENTITY_AT + 0x10:IDENTITY_AT + 0x20]
+                b = code[IDENTITY_AT + 0x20:IDENTITY_AT + 0x30]
+                # Not a uniform fill, which is what identity.ts's refusal looks for.
+                self.assertNotEqual(a, a[:1] * 16)
+                self.assertNotEqual(b, b[:1] * 16)
+                self.assertNotEqual(a, b)
+                guids[name] = a + b
+        self.assertEqual(len(guids), 5)
+        self.assertEqual(len(set(guids.values())), 5)
+
+    def test_the_fourth_field_is_the_hardware_log_and_not_sixteen_zeroes(self):
+        # 0x000110 + 0x30 is the log's address, so the later remotes' trailer of zeroes has no room here.
+        self.assertEqual(IDENTITY_AT + 0x30, HARDWARE_LOG_AT)
+        for name, code in self.images.items():
+            with self.subTest(name):
+                log = code[HARDWARE_LOG_AT:HARDWARE_LOG_AT + 16]
+                self.assertNotEqual(log, bytes(16))
+                # Filled from the bottom: some entries, then 0xFF to the end of the sixteen.
+                entries = log.rstrip(b'\xff')
+                self.assertEqual(len(entries), 2 if name == 'arch8_boot_885' else 1)
+                self.assertNotIn(0xFF, entries)
+
+
+class TheHarmony720sImagesAreAnApplication45AndABootloader42(unittest.TestCase):
+    def setUp(self):
+        self.application, self.bottom = by_name(H720_APPLICATION, H720_BOTTOM)
+
+    def test_both_are_64_kib(self):
+        self.assertEqual((len(self.application), len(self.bottom)), (0x10000, 0x10000))
+
+    def test_the_application_reports_4_5_type_0_skin_44(self):
+        literals = [i.fields['k'] for _, i in listing(self.application, APPLICATION_BASE, 0x11C00, 0x11C0A)]
+        self.assertEqual(literals, [0x45, 0, 44, 0x08, 8])
+        self.assertEqual(len(calls_to(self.application, APPLICATION_BASE, 0x11C00, 0x01E000)), 1)
+
+    def test_the_bottom_image_reports_a_bootloader_4_2_type_3_skin_44(self):
+        literals = [i.fields['k'] for _, i in listing(self.bottom, 0, 0x019CA, 0x019D4)]
+        self.assertEqual(literals, [0x42, 3, 44, 0x00, 8])
+        self.assertEqual(len(calls_to(self.bottom, 0, 0x019CA, 0x06800)), 1)
+
+    def test_the_bottom_image_starts_with_a_goto_inside_itself(self):
+        (_, goto), = listing(self.bottom, 0, 0, 4)
+        self.assertEqual(goto.mnemonic, 'GOTO')
+        self.assertEqual(goto.fields['target'], 0x06654)
+
+    def test_the_product_strings_agree_with_the_accessors_type_and_version(self):
+        # Read as the software type, a dash and the version: the digit and the first two version digits
+        # are compared with the accessor literals rather than restated.
+        for code, base, at, string in ((self.application, APPLICATION_BASE, 0x11C00, 'Harmony Remote 0-4.5.0'),
+                                       (self.bottom, 0, 0x019CA, 'Harmony Remote 3-4.2.4')):
+            with self.subTest(string):
+                self.assertIsNotNone(string_descriptor(code, string))
+                version, kind = [i.fields['k'] for _, i in listing(code, base, at, at + 4)]
+                digits = string.split()[-1]
+                self.assertEqual(int(digits[0]), kind)
+                self.assertEqual(int(digits[2]) * 16 + int(digits[4]), version)
+        # And the negative: neither carries the other's string, and the bottom image is not the 880's
+        # and 885's build, whose string is Harmony Bootloader.
+        self.assertIsNone(string_descriptor(self.application, 'Harmony Remote 3-4.2.4'))
+        self.assertIsNone(string_descriptor(self.bottom, 'Harmony Remote 0-4.5.0'))
+        self.assertIsNone(string_descriptor(self.bottom, 'Harmony Bootloader'))
 
 
 if __name__ == '__main__':

@@ -19,7 +19,7 @@ record and every firmware image of it reports 8 in its version block.[^s182][^s1
 | model | folder | what is known |
 |---|---|---|
 | Harmony 880 and 885 | [harmony-885](../../remotes/harmony-885/README.md) | read in two application images and two bootloaders, and their start in three more application images; counted over six configurations, and the start check over 16 containers |
-| Harmony 880 Pro, 720, 785 | none | named on this platform by Logitech's client and service[^s207][^s131]; an 880 Pro's and a 720's application and configuration pass the start check, the 880 Pro's application being the 880's build with its own skin, [the firmware](firmware.md#what-the-application-does-at-start). This row said nothing of theirs was read<!--superseded--> until they were[^t-885-start][^t-885-start-corpus] |
+| Harmony 880 Pro, 720, 785 | none | named on this platform by Logitech's client and service[^s207][^s131]; an 880 Pro's and a 720's application and configuration pass the start check, the 880 Pro's application being the 880's build with its own skin, [the firmware](firmware.md#what-the-application-does-at-start). This row said nothing of theirs was read<!--superseded--> until they were[^t-885-start][^t-885-start-corpus]. The one 720's application, 4.5, and bootloader, 4.2, are builds of their own, and the application is compared with the 885's routine by routine, [the firmware](firmware.md#the-harmony-720s-images)[^t-885-boot] |
 | Harmony 882 | none | named here by concordance's table alone[^x-concordance] |
 
 ## Skins
@@ -70,8 +70,10 @@ Read in the 880's and 885's firmware images, or counted over the configurations,
 ## Not checked
 
 * Anything on a remote: every row above is an image or a configuration.[^unchecked]
-* The Harmony 720, 785, 880 Pro and 882: their firmware and configurations beyond the start check, and
-  their faces.[^unchecked]
+* The Harmony 785 and 882, of which no image or configuration is known; the Harmony 720's firmware beyond
+  the routines [the firmware page](firmware.md#the-harmony-720s-images) lists; and the faces of the 720, 785, 880 Pro
+  and 882.[^unchecked] This said the 720's firmware was not checked beyond the start check<!--superseded-->
+  until its application was compared with the 885's routine by routine.
 * Which PIC18 part, and which of the two flash parts the firmware knows is fitted.[^unchecked]
 
 [^x-concordance]: Stated by a third party. [concordance](https://github.com/jaymzh/concordance)
@@ -92,3 +94,4 @@ Read in the 880's and 885's firmware images, or counted over the configurations,
 [^s136]: Stated by Logitech, by their service. [Section 136](../../../docs/findings.md#s136)
 [^t-885-start]: Read in the firmware. [The test](../../../tests/test_harmony_885_start_check.py)
 [^t-885-start-corpus]: Measured in configurations. [The test](../../../tests/test_harmony_885_start_check.py)
+[^t-885-boot]: Read in the firmware. [The test](../../../tests/test_harmony_885_bootloader.py)

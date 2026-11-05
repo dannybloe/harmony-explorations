@@ -89,27 +89,31 @@ accounting claims.
 
 ## Coverage, and why it is a problem
 
-Everything here is derived from two remotes on a bench and a handful of files. Logitech shipped
-rather more than that.
+Everything here is derived from the remotes on a bench, [test-notes/README.md](test-notes/README.md), and a
+handful of files. Logitech shipped rather more than that. This said two remotes on a bench<!--superseded-->
+until the bench grew past them.
 
 | | count |
 |---|---|
 | models listed on the harmony-remote-forum comparison page | 42 |
 | named models in concordance's skin table | 71, in 120 table positions |
 | architectures concordance knows models for | 11 (arch 2, 3, 7, 8, 9, 10, 12, 14, 15, 16, 17) |
-| architectures with hardware on this bench | **3** (arch 9, arch 12 and arch 14) |
-| architectures with sample files only | **2** (arch 8 and arch 10) |
-| architectures with firmware in the lab | **4** (arch 8, 9, 12 and 14) |
+| architectures with hardware on this bench | **6** (arch 8, 9, 12, 14 and 16, and the Harmony Touch's, which reports 17 and which Logitech's templates call 18), counted from [the units](test-notes/README.md) |
+| architectures with sample files only | **2** (arch 10, and arch 15, whose one contributed configuration `make corpus` does not count) |
+| architectures with firmware in the lab | **6** (arch 8, 9, 12, 14 and 16, and the Harmony Touch's) |
 
-So the container claims are validated across **five** architectures and the USB claims across
-**three**, out of at least eleven. One boundary is visible without owning anything: the 900, 1000 and
+So the container claims are validated across **five** architectures and the HID command protocol's
+across **four**, arch 8, 9, 12 and 14, arch 8 read only, with the file protocol's on two more, out of at least eleven. The
+rows above said three architectures on the bench, arch 8 among the sample only ones and firmware for
+four<!--superseded-->, until the Harmony 885s, the file based family and the Touch were counted in. One boundary is visible without owning anything: the 900, 1000 and
 1100 are arch 15 and enumerate as a network class rather than plain HID, so the transport here cannot
 reach them at all, never mind parse them.
 
 There is a sharper version of the same point. Logitech's own discontinuation notice of 28 May 2025
 names forty models whose accounts it closed, and **not one of them is arch 12 or arch 14**; they
-are the older EasyZapper platform, spanning at least six architectures, while the bench holds two
-remotes from the platform that came after. [The product line](../reference/logitech/product-line.md) has the
+are the older EasyZapper platform, spanning at least six architectures. Three of the bench's models are
+on it, the Harmony 525, 515 and 885; this said the bench held two remotes from the platform that came
+after<!--superseded--> until they arrived. [The product line](../reference/logitech/product-line.md) has the
 list and [the architectures](../reference/architectures/README.md) the mapping.
 
 That gap is what step 8 exists for, and **as of 12 August 2026 it is not what the project spends its

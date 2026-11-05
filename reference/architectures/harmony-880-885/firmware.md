@@ -42,6 +42,27 @@ This said whether the application has a safe mode of its own<!--superseded--> wa
 read.[^t-885-start] It said before that whether this platform's Boot mode does the work later platforms
 split<!--superseded--> into a bootloader and safe mode was not known, until the bootloader was read.[^t-885-boot]
 
+### The Harmony 720's images
+
+**The one Harmony 720 read runs builds of its own, an application 4.5 and a bootloader 4.2.** Both of its
+images carry the version accessor the 880's and 885's do: the application's says version
+4.5, software type 0, skin 44, and the 64 KiB from the bottom of flash say version 4.2, software type 3, a
+bootloader, skin 44, with field 6 zero as in the other two bootloaders, and that image starts itself at
+`0x06654`. Their product strings agree, `Harmony Remote 0-4.5.0` and `Harmony Remote 3-4.2.4`, read as the
+software type, a dash and the version: every image of this platform that carries such a string is consistent
+with that reading, the five applications read and this bootloader, the only bootloader that carries one; the 880's and 885's bootloaders say `Harmony Bootloader`.[^t-885-boot]
+The application's 4.5 is a higher version number than the 4.4.2 the community comparison table gives every
+model it lists for this platform.[^x-forum-table]
+
+**What of the 720's application has been compared with the 885's**, routine by routine and each to the
+extent its test states, the 720's working addresses moved and in some a literal or two different: the start check,[^t-885-start] the action interpreter's dispatcher,[^t-885-actions]
+the action queue,[^t-885-queue] the state variable loader,[^t-885-state] the section seeker's slot
+literals,[^t-885-slots] base slot 15's demand,[^t-885-parameters] the timers' duration compare,[^t-885-timers]
+the number sender,[^t-885-number-sender] the infrared player's class 1 routines,[^t-885-infrared]
+the screen dispatcher's eleven opcodes and the fill's two bounds,[^t-885-screens] and the build stamp's start up gate.[^t-885-stamp] Its log writer, its erase
+and write paths, its USB dispatch, its base selector and messages, and its bootloader beyond its version
+accessor, its product string, its first instruction and its identity block are not read.[^unchecked]
+
 ## The header is not the later Harmonys'
 
 Every application image here opens with a header, and the field order differs from the Harmony One's and
@@ -256,16 +277,16 @@ One and the Harmony 600, 650 and 700 it does not: its table gives architecture 8
 own at `0x010000`, and the configuration base above it is exactly one 64 KiB read away, so one read covers
 the application with nothing cut off and nothing else included.[^x-concordance][^s114] Its safe mode read
 takes 64 KiB from the flash base, `0x000000` here, so on this architecture it returns the bootloader and
-not a safe mode image.[^s116] The serial number at `0x000110` is inside what that second read returns and
-outside the first.[^x-concordance]
+not a safe mode image.[^s116] The identity block at `0x000110`, the serial field and the two GUIDs, is inside what that second read
+returns and outside the first, [memory.md](memory.md#the-address-space).[^x-concordance][^t-885-boot]
 
 No Logitech package of this firmware is known; the images were read off remotes by their owners.[^unchecked]
 
 ## Not checked
 
-* Any firmware version but 4.4 and boot 4.0.[^unchecked]
-* The Harmony 720's, 785's and 882's firmware beyond the start check, the dispatcher, the action queue's
-  constants and the state variable loader, and the Harmony 720's base selector and messages.[^unchecked]
+* Any firmware version but 4.4 and boot 4.0, beyond the Harmony 720's routines compared
+  [above](#the-harmony-720s-images).[^unchecked]
+* The Harmony 785's and 882's firmware, and the Harmony 720's beyond those routines.[^unchecked]
 * Whether a bare send from a transition transmits, and the length of the infrared queue's tick, so whether a
   `0x7C` unit is a tenth of a second here.[^unchecked]
 * How a recovery through the bootloader goes on a unit; what the built in configuration offers beyond its
@@ -292,3 +313,8 @@ No Logitech package of this firmware is known; the images were read off remotes 
 [^t-885-infrared]: Read in the firmware. [The test](../../../tests/test_harmony_885_infrared.py)
 [^t-885-delay]: Read in the firmware. [The test](../../../tests/test_harmony_885_delay.py)
 [^t-885-screens]: Read in the firmware. [The test](../../../tests/test_harmony_885_screens.py)
+[^t-885-slots]: Read in the firmware. [The test](../../../tests/test_harmony_885_slots.py)
+[^t-885-parameters]: Read in the firmware. [The test](../../../tests/test_harmony_885_parameters.py)
+[^t-885-timers]: Read in the firmware. [The test](../../../tests/test_harmony_885_timers.py)
+[^t-885-stamp]: Read in the firmware. [The test](../../../tests/test_harmony_885_stamp.py)
+[^x-forum-table]: Stated by a third party. [The comparison table](https://www.harmony-remote-forum.de/harmony_compare.php)

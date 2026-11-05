@@ -311,7 +311,9 @@ What the two pages hold, the bootloader, the safe mode image, the other images a
 is each architecture's memory page: [the Harmony One](../architectures/harmony-one/memory.md) and
 [the Harmony 600, 650 and 700](../architectures/harmony-600-650-700/memory.md). The Harmony 525 has no
 `0xFF` window at all and keeps the same identity block in its EEPROM,
-[its usb page](../architectures/harmony-5xx/usb.md)[^s268].
+[its usb page](../architectures/harmony-5xx/usb.md)[^s268]. The Harmony 880 and 885 keep it in flash at
+`0x000110`, with the same first three fields and their hardware version log where the fourth would be,
+[their memory page](../architectures/harmony-880-885/memory.md#the-address-space)[^t-885-boot].
 
 **The identity block is what tells one remote from another**, 64 bytes at `0xFF` `+0xF400` on the Harmony
 One, 600, 650 and 700, four fields of sixteen bytes[^s22][^s226]:
@@ -836,5 +838,6 @@ written that way came back on its own and did not ask to be synced[^s247].
 [^s91]: Read in the firmware. [Section 91](../../docs/findings.md#s91)
 [^s98]: Read in the firmware. [Section 98](../../docs/findings.md#s98)
 [^s91b]: Stated by Logitech, in their client. [Section 91](../../docs/findings.md#s91)
+[^t-885-boot]: Read in the firmware. [The test](../../tests/test_harmony_885_bootloader.py)
 [^t-885-flash]: Read in the firmware. [The test](../../tests/test_harmony_885_erase_and_write.py)
 [^t-885-end]: Read in the firmware. [The test](../../tests/test_harmony_885_write_end.py)

@@ -29,13 +29,16 @@ is the model's own, and so far that is very little.
 
 ## Not checked
 
-* Anything off a unit: which of the two flash parts the firmware knows is fitted, the serial number at
-  `0x000110`, and what a unit holds past its configuration, its log area included.[^unchecked]
+* Anything off a unit: which of the two flash parts the firmware knows is fitted, and what a unit holds past
+  its configuration, its log area included.[^unchecked] Which bytes of the identity block at `0x000110` are
+  a serial is read in the bottom 64 KiB of five remotes, [the architecture's memory
+  page](../../architectures/harmony-880-885/memory.md#the-address-space).[^t-885-boot]
 
 [^s114]: Read in the firmware. [Section 114](../../../docs/findings.md#s114)
 [^s182]: Measured in configurations. [Section 182](../../../docs/findings.md#s182)
 [^s113]: Measured in configurations. [Section 113](../../../docs/findings.md#s113)
 [^unchecked]: Not checked.
+[^t-885-boot]: Read in the firmware. [The test](../../../tests/test_harmony_885_bootloader.py)
 [^t-885-start]: Read in the firmware. [The test](../../../tests/test_harmony_885_start_check.py)
 [^t-885-log]: Read in the firmware. [The test](../../../tests/test_harmony_885_log_area.py)
 [^t-885-log-corpus]: Measured in configurations. [The test](../../../tests/test_harmony_885_log_area.py)

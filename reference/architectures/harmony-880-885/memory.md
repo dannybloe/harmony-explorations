@@ -18,7 +18,7 @@ page states what differs here.
 |---|---|---|
 | `0x000000` to `0x010000` | the **bootloader**, with the reset vector at zero and no image header; its code ends at `0x0639B` on the 880 and `0x063B1` on the 885. The bootloader erases or writes here only under an unlock, which a host sends or which the bootloader sets around its own one byte write to a hardware version log at `0x000140`, [the bootloader](../../usb-protocol/bootloader.md#a-flash-programmer-for-the-whole-part) | [^s116][^t-885-boot] |
 | `0x000104` to `0x000106` | three addresses a host's read or write does not treat as flash: a read whose last byte is `0x000104` or `0x000105`, alone in its chunk, returns the hardware log's newest byte or takes a measurement, and a one byte write to `0x000106` sets the unlock, [usb.md](usb.md#reading-flash) | [^t-885-reads][^t-885-flash] |
-| `0x000110` | the remote's **serial number**; the application tests these 48 bytes for being blank at every start, and a blank block keeps the user configuration from being used, [firmware.md](firmware.md#what-the-application-does-at-start) | [^x-concordance][^t-885-start] |
+| `0x000110` | the remote's **identity block**: sixteen bytes of `0xEE`, the field named the serial, then the two GUIDs that tell one remote from another, as the paragraph under this table says; the application tests these 48 bytes for being blank at every start, and a blank block keeps the user configuration from being used, [firmware.md](firmware.md#what-the-application-does-at-start) | [^x-concordance][^t-885-boot][^t-885-start] |
 | `0x000140` to `0x000147` | a **hardware version log**, eight one byte entries filled from the bottom; the newest is the version block's hardware field, and both programs can append to it | [^t-885-reads][^t-885-flash] |
 | `0x000160` | a **battery calibration word**, which the application tests at start and reports when blank | [^t-885-start] |
 | `0x010000` to `0x020000` | the **application firmware**, version 4.4, [firmware.md](firmware.md) | [^s114] |
@@ -29,9 +29,18 @@ page states what differs here.
 | `0x1FE040` to `0x1FE0C1` | **devices, not flash**: every immediate load of the table pointer into this range names `0x1FE040`, `0x1FE041`, `0x1FE081` or `0x1FE0C1`, with `0x1FE080` and `0x1FE0C0` reached from them. By the code that uses them they are the keypad lines, the USB controller and the display; that identification is the code's reading and not checked against the hardware | [^t-885-boot][^unchecked] |
 | `0x1FFE00` to `0x1FFFFF` | where the bootloader and the application call their RAM copies of the flash programming routines, so a window onto data memory and not flash; inferred from where the copies are placed and called, not from a datasheet | [^t-885-boot] |
 
-**The serial sits below the application**, so a read of the firmware region cannot contain it, and a read
-of the bottom 64 KiB, which holds the bootloader, does.[^x-concordance] That address is inside the range
-the bootloader's code occupies, so which bytes there are a serial is not checked.[^unchecked]
+**The identity block sits below the application**, so a read of the firmware region cannot contain it, and a
+read of the bottom 64 KiB, which holds the bootloader, does.[^x-concordance] **It is laid out as the later
+remotes' block is**, [the identity block](../../usb-protocol/commands.md#internal-memory): in all five
+bottom 64 KiB images read, two 880s', an 885's, an 880 Pro's and a Harmony 720's, each read off its remote,
+the 64 bytes from `0x000110` are sixteen bytes of `0xEE`, the field named the serial, which identifies
+nothing here either, then two fields of sixteen bytes that are not a uniform fill and differ from remote to
+remote, the two GUIDs.[^t-885-boot] **The fourth
+field is not the later remotes' sixteen zero bytes**: `0x000110` plus `0x30` is `0x000140`, the hardware
+version log. So the application's blank test covers exactly the serial field and the two GUIDs, and a 64 byte
+identity read brings the log's first sixteen bytes with it.[^t-885-boot][^t-885-start] This said which bytes there are a serial was not
+checked<!--superseded-->, because the address is inside the range the bootloader's code spans, until the
+images' bytes there were read.[^t-885-boot]
 
 **The safe mode configuration lives inside the application's region and not in the bootloader's**: the
 bottom 64 KiB hold no container at all, in either image. That is the opposite of the Harmony One, whose
