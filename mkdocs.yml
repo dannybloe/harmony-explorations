@@ -130,6 +130,17 @@ nav:
           - Firmware: remotes/harmony-350/firmware.md
           - USB: remotes/harmony-350/usb.md
           - Other: remotes/harmony-350/misc.md
+      - Harmony 515:
+          - remotes/harmony-515/README.md
+          - Keys: remotes/harmony-515/keys.md
+          - Display: remotes/harmony-515/display.md
+          - Features: remotes/harmony-515/features.md
+          - Behaviour: remotes/harmony-515/behaviour.md
+          - Hardware: remotes/harmony-515/hardware.md
+          - Memory: remotes/harmony-515/memory.md
+          - Firmware: remotes/harmony-515/firmware.md
+          - USB: remotes/harmony-515/usb.md
+          - Other: remotes/harmony-515/misc.md
       - Harmony 525:
           - remotes/harmony-525/README.md
           - Keys: remotes/harmony-525/keys.md

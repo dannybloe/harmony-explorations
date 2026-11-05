@@ -331,5 +331,50 @@ class ThisGuardNamesNobody(unittest.TestCase):
                 self.assertEqual(pattern.findall(handle.read()), [], path)
 
 
+class EveryPageIsOnTheSiteMenu(unittest.TestCase):
+    """
+    The site's strict build refuses a page in `reference/` that `mkdocs.yml`'s navigation leaves out, and a
+    page the navigation names that does not exist. That build runs only on GitHub after a push and as
+    `make site`, which `make all` does not run, so a page added without its menu entry passed every local
+    check and failed the published site on every push: the Harmony 515's ten pages, from their first commit
+    on, until this test. It reads the two lists itself, with no MkDocs installed, so it runs in `make test`
+    and in the pre-commit hook's suite.
+
+    A page is covered when the navigation names it or `extra.off_site` names it or a folder above it,
+    the pages `tools/site/hooks.py` keeps off the site on purpose.
+    """
+
+    @staticmethod
+    def _menu_and_off_site():
+        menu, off_site, block = set(), [], None
+        with open(os.path.join(ROOT, 'mkdocs.yml'), encoding='utf-8') as handle:
+            for line in handle:
+                if re.match(r'^\S', line):
+                    block = 'nav' if line.startswith('nav:') else None
+                elif re.match(r'^  off_site:', line):
+                    block = 'off_site'
+                elif re.match(r'^  \S', line) and block == 'off_site':
+                    block = None
+                found = re.search(r'(\S+(?:\.md|/))\s*$', line)
+                if found and block == 'nav':
+                    menu.add(found.group(1))
+                elif found and block == 'off_site':
+                    off_site.append(found.group(1))
+        return menu, off_site
+
+    def test_every_reference_page_is_on_the_menu_or_kept_off_the_site(self):
+        menu, off_site = self._menu_and_off_site()
+        self.assertTrue(menu and off_site, 'mkdocs.yml read as having no menu or no off site list')
+        pages = set()
+        for folder, _, files in os.walk(os.path.join(ROOT, 'reference')):
+            for name in files:
+                if name.endswith('.md'):
+                    pages.add(os.path.relpath(os.path.join(folder, name), os.path.join(ROOT, 'reference')))
+        left_out = sorted(p for p in pages - menu
+                          if not any(p == o or (o.endswith('/') and p.startswith(o)) for o in off_site))
+        self.assertEqual(left_out, [], 'add these to the nav in mkdocs.yml')
+        self.assertEqual(sorted(p for p in menu if p not in pages), [], 'the nav names pages that do not exist')
+
+
 if __name__ == '__main__':
     unittest.main()
