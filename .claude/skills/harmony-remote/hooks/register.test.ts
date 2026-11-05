@@ -1,6 +1,6 @@
 import { expect, test } from 'claude-code/testing'
 
-import { bandColour, bar, bounce, BOUNCE, isWholeRun, configOf, modelName, testCounts, testLabel, testLine, usbStates, writeLine, writeProgress, fileWriteLine } from './register'
+import { bandColour, bar, bounce, BOUNCE, isWholeRun, configOf, modelName, testCounts, testLabel, testLine, usbStates, usbRemotes, bandRows, productOfUnit, fileWriteUnit, UNDER, writeLine, writeProgress, fileWriteLine } from './register'
 
 const usb650 = '+-o Harmony Remote  <class IOUSBHostDevice>\n  "idProduct" = 49442\n  "idVendor" = 1133\n'
 const hid650 = '+-o IOHIDInterface\n  "Product" = "Harmony Remote 0-0.2.0"\n  "VendorID" = 1133\n  "ProductID" = 49442\n'
@@ -160,4 +160,25 @@ test('two remotes on the cable get a line each, in the order the bus lists them'
 test('two remotes sharing a product id are each ready only as far as their interfaces are up', () => {
   expect(usbStates(usb885 + usb885, hid885)).toEqual(['Harmony 885 on USB, ready', 'Harmony 885 on USB, not answering yet'])
   expect(usbStates(usb885 + usb885, hid885 + hid885)).toEqual(['Harmony 885 on USB, ready', 'Harmony 885 on USB, ready'])
+})
+
+test('a write goes under the remote its unit names, and one whose remote left the cable goes last', () => {
+  const remotes = usbRemotes(usb885 + usbTouch + usb650, hid885 + hidTouch + hid650)
+  const w = writeLine(writeProgress(journal), true)!
+  expect(bandRows(remotes, [{ product: productOfUnit('h650'), text: w }])).toEqual([
+    'Harmony 885 on USB, ready', 'Harmony Touch on USB, ready', 'Harmony 600/650/700 on USB, ready', UNDER + w,
+  ])
+  const stopped = writeLine(writeProgress(journal), false)!
+  expect(bandRows(usbRemotes(usb885, hid885), [{ product: productOfUnit('h650'), text: stopped }]))
+    .toEqual(['Harmony 885 on USB, ready', stopped])
+  expect(bandRows([], [])).toEqual(['no remote on USB'])
+})
+
+test('every unit record label in use names its remote, and the 350 writer names its unit', () => {
+  expect(productOfUnit('h885_a')).toBe(0xc110)
+  expect(productOfUnit('one_spare')).toBe(0xc121)
+  expect(productOfUnit('h525_friend')).toBe(0xc111)
+  expect(productOfUnit('touch')).toBe(0xc12b)
+  expect(productOfUnit('somebody_else')).toBe(undefined)
+  expect(fileWriteUnit(fileRun)).toBe('h350')
 })

@@ -105,16 +105,19 @@ export function ioregBlocks(text: string): Map<string, string>[] {
 const isHarmony = (vendor: number, product: number): boolean =>
   vendor === LOGITECH && product >= FIRST && product <= LAST
 
+/** One remote on the bus: its product id (0 for one in recovery) and the line that says what it is. */
+export type Remote = { product: number; text: string }
+
 /**
- * What the bus says, one line per Harmony on it: each remote by name and whether its command interface
+ * What the bus says, one entry per Harmony on it: each remote by name and whether its command interface
  * is up, or one in recovery. Every remote gets its own line, since two can be on the cable at once (a
  * Harmony Touch beside a Harmony 885, say), and showing the first one found hid the other.
  */
-export function usbStates(usb: string, hid: string): string[] {
+export function usbRemotes(usb: string, hid: string): Remote[] {
   const onBus = ioregBlocks(usb).map((p) =>
     [Number(p.get('idVendor')), Number(p.get('idProduct')), Number(p.get('bcdDevice'))] as const)
-  const lines: string[] = []
-  if (onBus.some(([v, p]) => v === MICROCHIP && p === BOOTLOADER)) lines.push('a remote in recovery (bootloader)')
+  const remotes: Remote[] = []
+  if (onBus.some(([v, p]) => v === MICROCHIP && p === BOOTLOADER)) remotes.push({ product: 0, text: 'a remote in recovery (bootloader)' })
   // The device can be on the bus while its HID interface is not up yet, or no longer: that is the
   // state in which every read here answers "no matching Harmony remote attached". The interfaces are
   // matched to devices by product id, and where two remotes share one, as two Harmony 885s do, by how
@@ -130,9 +133,54 @@ export function usbStates(usb: string, hid: string): string[] {
     const nth = (seen.get(product) ?? 0) + 1
     seen.set(product, nth)
     const ready = nth <= (interfaces.get(product) ?? 0)
-    lines.push(`${modelName(product, bcd)} on USB, ${ready ? 'ready' : 'not answering yet'}`)
+    remotes.push({ product, text: `${modelName(product, bcd)} on USB, ${ready ? 'ready' : 'not answering yet'}` })
   }
-  return lines.length === 0 ? ['no remote on USB'] : lines
+  return remotes
+}
+
+/** The bus's lines alone, `no remote on USB` when there is none. */
+export function usbStates(usb: string, hid: string): string[] {
+  const remotes = usbRemotes(usb, hid).map((r) => r.text)
+  return remotes.length === 0 ? ['no remote on USB'] : remotes
+}
+
+// The lab's unit records, `units/<label>.txt`, by the product id their remote enumerates with, so a
+// write that names its unit can be drawn under the remote it goes to. The longest prefix wins.
+const UNIT_PRODUCTS: [string, number][] = [
+  ['one_', 0xc121], ['h600', 0xc122], ['h650', 0xc122], ['h700', 0xc122], ['h515', 0xc111], ['h525', 0xc111],
+  ['h300', 0xc124], ['h350', 0xc124], ['h880', 0xc110], ['h885', 0xc110], ['touch', 0xc12b],
+]
+
+/** The product id a unit record's remote enumerates with, or undefined for a label nobody listed. */
+export function productOfUnit(unit: string): number | undefined {
+  return UNIT_PRODUCTS.find(([prefix]) => unit.startsWith(prefix))?.[1]
+}
+
+/** Something under way: a write or a read, and the product id of the remote it is for when that is known. */
+export type Activity = { product?: number; text: string }
+
+/** Where a sub line starts, so the drawing can tell it from a remote's own line. */
+export const UNDER = '  ↳ '
+
+/**
+ * The band's rows: each remote, with what is under way on it beneath it, and anything that names no
+ * remote on the bus last, a write whose remote has dropped off the cable among them. An activity goes
+ * under the first remote of its product id; two remotes sharing one cannot be told apart by the bus.
+ */
+export function bandRows(remotes: Remote[], activities: Activity[]): string[] {
+  const rows: string[] = []
+  const placed = new Set<Activity>()
+  for (const remote of remotes) {
+    rows.push(remote.text)
+    for (const a of activities) {
+      if (placed.has(a) || a.product === undefined || a.product !== remote.product) continue
+      rows.push(UNDER + a.text)
+      placed.add(a)
+    }
+  }
+  if (remotes.length === 0) rows.push('no remote on USB')
+  for (const a of activities) if (!placed.has(a)) rows.push(a.text)
+  return rows
 }
 
 export type WriteProgress = {
@@ -173,6 +221,11 @@ export function writeLine(w: WriteProgress, isRunning: boolean): string | undefi
  * the check and the read back. The open erases the remote's configuration, so a run that stops after
  * it says so, and one that stops before it, a refusal included, says nothing was erased.
  */
+/** The unit record the Harmony 300 and 350 writer names in its first line. */
+export function fileWriteUnit(output: string): string | undefined {
+  return /unit record (\S+?):/.exec(output)?.[1]
+}
+
 export function fileWriteLine(output: string, isRunning: boolean): string | undefined {
   if (/^read only:/m.test(output)) return undefined
   const model = /^(Harmony \w+), unit record/m.exec(output)?.[1] ?? 'the remote'
@@ -319,8 +372,8 @@ export const register: Register = (on) => {
       <Box flexDirection="column" marginTop={1}>
         <Text dimColor wrap="truncate">{'── Harmony remotes ' + '─'.repeat(400)}</Text>
         {text.split('\n').map((row) => (
-          <Box paddingLeft={2}>
-            <Text color={colour} bold={/STOPPED/.test(row)} wrap="truncate-end">{row}</Text>
+          <Box paddingLeft={row.startsWith(UNDER) ? 4 : 2}>
+            <Text color={colour} bold={/STOPPED/.test(row)} dimColor={!row.startsWith(UNDER) && /not answering/.test(row)} wrap="truncate-end">{row.startsWith(UNDER) ? '↳ ' + row.slice(UNDER.length) : row}</Text>
           </Box>
         ))}
         {testText === null ? null : (
@@ -430,8 +483,8 @@ export const register: Register = (on) => {
             + ` break; done`),
           sh(`pgrep -f '${READER}' >/dev/null && echo yes`),
         ])
-        const remotes = usbStates(usb, hid)
-        const parts: string[] = []
+        const remotes = usbRemotes(usb, hid)
+        const activities: Activity[] = []
         const [cwd, args, output] = writer.trim().split('\n')
         const config = cwd !== undefined && args !== undefined ? configOf(args, cwd) : undefined
         const isWriting = config !== undefined
@@ -450,12 +503,19 @@ export const register: Register = (on) => {
           const text = await readOutput(journal.path)
           const line = text === '' ? undefined
             : journal.kind === 'output' ? fileWriteLine(text, isWriting) : writeLine(writeProgress(text), isWriting)
-          if (line !== undefined) parts.push(line)
+          const unit = text === '' ? undefined
+            : journal.kind === 'output' ? fileWriteUnit(text) : writeProgress(text).unit
+          if (line !== undefined) activities.push({ product: unit === undefined ? undefined : productOfUnit(unit), text: line })
         }
-        if (reader.trim() === 'yes') parts.push('reading flash')
+        // The reader names no unit, so it goes under the one remote that can be read this way when only
+        // one is on the cable, and on a line of its own otherwise.
+        if (reader.trim() === 'yes') {
+          const readable = remotes.filter((r) => r.product !== 0xc12b && r.product !== 0xc124 && r.product !== 0)
+          activities.push({ product: readable.length === 1 ? readable[0]!.product : undefined, text: 'reading flash' })
+        }
         await pollTests()
-        // One line per remote, then the write and the reader on a line of their own when there is one.
-        const text = [...remotes, ...(parts.length > 0 ? [parts.join('  |  ')] : [])].join('\n')
+        // One line per remote, with what is under way on it beneath it.
+        const text = bandRows(remotes, activities).join('\n')
         if (text !== last) {
           // A toast on the two moments worth looking up for, once each.
           if (/done, verified/.test(text) && !/done, verified/.test(last ?? '')) $.ui.toast('Harmony write done and verified')
