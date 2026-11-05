@@ -25,7 +25,9 @@ not recorded.
 named door, and an item that seems to need one is a question first. Logitech's images and anything
 unpacked from them stay in the lab; only names, sizes and findings come into this repository.
 
-**Done on 4 November 2026**: every item below is ticked. The Touch is described from its firmware and two recorded syncs, its configuration is read and checked by the codec, and a device of our own can be composed in the documents it reads; nothing has been written to a Touch, since no write path exists, decision 29.
+**Chapters 1 to 5 done on 4 November 2026**: the Touch is described from its firmware and two recorded syncs, its configuration is read and checked by the codec, and a device of our own can be composed in the documents it reads; nothing has been written to a Touch, since no write path exists, decision 29.
+
+**Extended on 5 November 2026 with chapters 6 to 9, to the finish line of the Harmony One and the 600 family**: a configuration built entirely by us, nothing copied out of a Logitech document, put on the bench Touch and used. The route is answering a sync in place of Logitech's server, [answering a sync](../reference/architectures/harmony-touch/answering-a-sync.md), the remote's own designed path, which gathers a new set aside and swaps it in whole; the direct resource put is for a single document at most. The account and remote numbers the remote reports, which an answerer echoes, are account data and stay in the lab as a serial does.
 
 Written on 2 November 2026, and placed in `todo.md`'s sequence the same day as 3.9, straight after the Harmony 300 and 350's 3.7; also linked from `todo-later.md` 5.5.
 
@@ -77,3 +79,35 @@ Written on 2 November 2026, and placed in `todo.md`'s sequence the same day as 3
   - [x] 5.3.3 The device document: the device record, its commands, its own button map and the definitions it uses, `composeTouchDevice` and `codeOfLearned`; done: read back whole and passing the check, every field one Logitech's own documents state, a learned code end to end, `compose.ts` and `test/touch-compose.test.ts`; a review and a blind re-reading in the lab's `work/touch-firmware/notes/5.3-*`
   - [x] 5.3.4 The repetition (`held`) for every row of the rhythm table the archive converts, so a definition can be written for more than 60 of 681 families; the table keeps no block where Logitech states no repeat count, and a Touch never reads that count; done: every stated row carries `held` and `opening`, the first transmission at one repetition, and still no `tail` where no count is stated, so no compiled configuration's builder changes a byte; the generator writes `ofCopy` too; 577 of 681 rows are written and the 96 refused for a width write at the widths a caller gives; an audit in the lab's `work/touch-firmware/notes/5.3.4-*`
   - [x] 5.3.5 `MemorexO1 32 Bit`: our measured row closes its frame with a fixed silence of 35100 microseconds where Logitech's definition pads the frame to 107600, so the two send the same on 22 of its codes only; which a definition of ours states; done, no change: a definition of ours states what our row measured, since the three records measured cannot tell a fixed silence from a padded one and no compile here shows what Logitech's compiler writes for the other codes, `test/archive.test.ts` "a padded gap can look like a literal one"
+
+## 6. The write route
+
+- [ ] 6.1 Recovery before the first write: how a Touch is brought back after a sync that leaves it stranded, by Logitech's recovery tool, a factory reset and a sync through MyHarmony or Harmony Desktop, and what each restores, into the `recovering-a-remote` skill, among it whether a sync through Logitech's client after one of ours restores the account's setup, since the remote hands the service our entity tags and how it treats one it did not issue is unchecked; the bench unit was reset through the recovery tool once, which is the first record
+- [ ] 6.2 The bench Touch's unit record in the lab's `units/`, read off the remote by `read-file-identity.ts`, so a rail has something to compare against
+- [ ] 6.3 The rail: a session on `/sys/hlapi` behind its own flag and assert in `rails.ts`, the unit checked against 6.2, and an allow list of request names, the reads and the sync requests of `answering-a-sync.md`'s table, every other name refused; never firmware, `/sys/factoryreset`, `/sys/reboot` or a path that acts when opened
+- [ ] 6.4 The first reads through it: the provisioning information and `getconfighash`, the tags compared with the recorded full sync's (2.3), so it is known whether that recording is what the remote holds
+- [ ] 6.5 A backup of what the remote holds, into the lab: the recorded full sync if 6.4 matches, else the stored documents handed back by the resource put with no document (`api/proxy.md`, never run), else a fresh sync recorded through Logitech's client
+- [ ] 6.6 The answerer: a program of ours that drives a sync down end to end, the remote's own changes handed up and kept in the lab first, then the request lists and the answers with their tags until `proxy://Finished` or `proxy://Abort`; tested against the recorded syncs before it meets the remote
+- [ ] 6.7 The first write: a sync answered by us with 304 for every document against the tag the remote sent, so nothing changes; `getconfighash` the same before and after, and the remote still sends what it sent before
+- [ ] 6.8 The remote's own documents answered back unchanged with 200 and tags of ours; `getconfighash` shows our tags, and the remote still sends what it sent before
+- [ ] 6.9 A first change: one delay and one label changed and put back, each heard or seen at the bench
+
+## 7. A Logitech configuration, answered by us and used
+
+- [ ] 7.1 The full test setup's documents from the recorded sync (2.3) answered by us to the bench Touch, with the Touch's first bench test: every code heard as the documents predict, the activities, device mode, the long presses, the favourites with their logos, and All Off
+
+## 8. Our composers on it
+
+- [ ] 8.1 A composed device (5.3) added to the recorded set: the device, button map and protocol lists edited, answered to the remote, and its codes heard
+- [ ] 8.2 An activity composed: its record, its start and end with delays and inputs, its button map, its screen labels and its activity key, on the rules of the reference's `activities-and-buttons.md`
+- [ ] 8.3 Favourites composed: the channels, their order and a logo of our own as a picture
+- [ ] 8.4 The settings and context documents composed from a description, `todo.md` 6.1.4's eleven settings among them
+- [ ] 8.5 A device and an activity removed, with everything in the other documents that names them
+- [ ] 8.6 The whole test setup composed onto the recorded set with its devices taken out, compared with Logitech's documents field by field, answered to the remote and run with a bench test
+
+## 9. Nothing copied
+
+- [ ] 9.1 Every document built from a setup file in `packages/corpus/setups/touch-full.json`'s shape, with no Logitech document: identifiers of our own, tags as digests, definitions from our rhythm table or a learned code, pictures of ours
+- [ ] 9.2 The empty configuration, the six documents with empty arrays, answered to the bench Touch, and what its screens show then, which the firmware reading leaves open
+- [ ] 9.3 Checked: every field attributed to a generator and none carried, and the set passes the reader and the check
+- [ ] 9.4 The finish line: the test setup built from nothing, answered to the bench Touch and used with a bench test, behaviour as the documents predict and the look seen at the bench

@@ -113,6 +113,7 @@ The Harmony One is a different type, with a touch screen and its own screens, so
 - [ ] 6.25 Optional second sample for the no screen composers: Logitech's four device compile for the bench Harmony 300, `h300_programmed_config`, rebuilt by our composers from `packages/corpus/setups/h300-test.json` and compared part by part (was `todo-compile-300.md` 5.1 and 5.4, made unnecessary as a track by decision 28)
 - [ ] 6.26 Replacing a device's input variable, which needs a variable removal step, for composing an activity onto a file that already has one (was `todo-compile-350.md` 4.2.1; building from nothing, chapter 5, does not need it)
 - [ ] 6.27 Stepping or mixed inputs, and inputs on a device whose key delay is not one tenth, which no Logitech file of this family shows (was `todo-compile-350.md` 4.2.2)
+- [ ] 6.28 The Harmony Touch's gestures: its engine reads them (`todo-touch.md` 5.1) and neither MyHarmony nor Harmony Desktop ever let a person set them, so FreeHarmony composing none loses nothing anyone had; left out of `todo-touch.md` chapters 6 to 9 on 5 November 2026
 
 ## 8. The specification and the code are the product ([plan 005](../docs/plans/005-specs-and-code.md))
 
