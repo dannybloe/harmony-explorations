@@ -194,7 +194,8 @@ field by field in [its platform pages](../reference/architectures/harmony-touch/
 `packages/codec/src/harmony-touch/`; what a host other than Logitech's server would have to answer is
 [answering a sync](../reference/architectures/harmony-touch/answering-a-sync.md). The bench Touch may be written,
 decision 29: the rail for its request channel exists, `assertTouchRequestAllowed` behind
-`HARMONY_TOUCH_REQUESTS`, `todo-touch.md` 6.3, and nothing has been sent through it.
+`HARMONY_TOUCH_REQUESTS`, `todo-touch.md` 6.3, with the abort, the delete of the stored documents and the restart
+as a recovery tier behind `HARMONY_TOUCH_RECOVERY`, 6.3.1; two reads have been sent through it, 6.4, and nothing written.
 
 ## What is still open
 
