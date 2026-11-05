@@ -295,8 +295,9 @@ The route, in order:
    no reply, takes up the new configuration. `usb.md` "How a write ends".
 3. **A damaged application is written back through the bootloader, never through the running
    application.** An application whose image fails the check lands there by itself at power on. One that
-   passes the check and misbehaves is held there by scan code 2 or 33 down at power on, and **which printed
-   keys those are is not checked**: never tell a person to press a key for it,
+   passes the check and misbehaves is held there by scan code 2 or 33 down at power on. On an 885 those are
+   Power and OK, pressed on a unit, but **that holding one at power on keeps the bootloader is not
+   checked**, and an 880's keys were not pressed: do not offer it to a person as a route that works,
    `reference/remotes/harmony-885/keys.md` "The keys held at power on". Through the bootloader: erase
    `0x010000`, a 64 KiB sector by every source, write the 64 KiB back from the backup, which it programs
    byte for byte, `0xFF` included, then read the whole 64 KiB back and compare, and only then restart with
@@ -372,8 +373,9 @@ The route, in order:
 
 * Which of the two flash parts a unit carries, and so the sector map below `0x010000`, where Logitech's
   client and concordance disagree and no datasheet was compared.
-* Which printed keys have scan codes 2, 33 and 32, whether holding 2 or 33 at power on works as read, and
-  whether holding all three through a restart leaves the remote in its bootloader.
+* Whether holding 2 or 33 at power on works as read, and whether holding all three through a restart
+  leaves the remote in its bootloader. On an 885 the three are Power (2), OK (33) and 0 (32), pressed on a
+  unit, `tests/test_harmony_885_keys.py`; an 880's keys were not pressed.
 * What sits at `0x1D0000` on a unit, and what could interrupt a staged copy and leave status 4 or 7.
 * Whether the board has in circuit programming pads, and whether the bottom 64 KiB is in the processor or
   in the external part.

@@ -259,7 +259,10 @@ every one.*
   section 125, and out of the config rather than the hardware: base slot 17's rectangles, the mode page
   byte saying which page is in force, and a transform onto the display. That leaves the 40 keys around
   the panel, and every other model; this said 44 until 9 October 2026, the drawing's count, which
-  includes the panel's four touch areas. Measured as far as USB allows and no further, section 48: a
+  includes the panel's four touch areas. **A Harmony 885's keys have been mapped since**, every key on one
+  unit and sixteen again on a second, by watching the key held in data memory over USB while it was
+  pressed, `tests/test_harmony_885_keys.py` and `reference/remotes/harmony-885/keys.md`, because an 885
+  scans its keys on the cable. The rest of this paragraph is about the Harmony 600 and the One. Measured as far as USB allows and no further, section 48: a
   remote on USB never runs its **keypad handler**, because USB mode's own loop does not scan the matrix. It does
   run the rest of its application, section 111, and "never runs its application" was the wording here
   until a Harmony One was watched ticking. **On arch 14 it does not even load its config**, section

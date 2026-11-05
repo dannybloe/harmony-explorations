@@ -102,3 +102,53 @@ they state, four downloads of one 885 configuration with identical headers; the 
 skin and hardware version and nothing else. `packages/corpus/test/compatibility.test.ts` asserts the 885's
 match and five of the twelve refusals, the files the lab's registry names; the scripts and the whole table
 are the lab's.
+
+## 5 November 2026: every key pressed, watched over USB
+
+`todo/todo-prepare-885.md` 2.4. One unit on the cable at a time, named by its identity block first
+(`read-identity.ts --record`, unchanged both times), then `watch-keys.ts --product 0xc110 --address
+0x295,0x3a1`, which polls the two data memory bytes with `READ_MISC` selector 7 and prints each change.
+Every command was a read. The remote showed its USB connected screen throughout, and its keys were scanned
+anyway. The Harmony Touch was on the cable as well during the first session, and the product id kept it
+out. The logs are registered as `h885_a_keys_*` and `h885_b_keys_check` in `tests/lab.py`, and
+`tests/test_harmony_885_keys.py` asserts what follows. The rules given for every session: never Power, OK
+and 0 down together, which restarts the remote, and no key down while the batteries go in or the cable goes
+on, since Power or OK held there keeps the bootloader. Each key is named by the step list's order, the key
+asked for at that point; the log holds codes only.
+
+### `h885_a`
+
+1. **The first run, before cleaning**: fifteen presses, 1, 2, 3, 5, 6, 7, 8, 10, 32, 11, 11, 8, 11, 14 and
+   15. Activities to Device as predicted; the first Mute read 32 for about 70 ms and then 11, a second Mute
+   read 11 cleanly; the fourth key left of the screen and Mute, which felt unreliable, were pressed again;
+   then 14 and 15, d-pad left and Vol -. The arrow left below the screen (12) never appeared and Vol +
+   did nothing at all; d-pad up (16) does not appear either. Stopped there.
+2. **The key contacts cleaned**: the remote opened and its domes cleaned. Pressed freely while open, 71
+   presses over 48 of the 55 codes, every key pressed registering, some needing a firmer press; Vol + gave
+   13. 1, 2, 5, 6, 7, 11 and 37 do not appear in that log.
+3. **The map run**, steps 1 to 14 of the step list: every key gave the code predicted for it but six, and
+   all 55 codes came in this run, five of them on a second press.
+   Exit, 0, OK, d-pad down and d-pad right registered nothing in the run and were pressed again, 18, 32,
+   33, 34 and 35. Glow (41) showed on `0x3A1` only, a press shorter than one poll of `0x295`.
+4. **The six**: Info 51, Blue 52, Skip 53, Fwd 54, Pause 55, Play 56, where the prediction had Skip 51,
+   Fwd 52, Pause 53, Play 54, Info 55, Blue 56: the prediction's order rotated by two. In the first pass of
+   that row the two keys after Fwd gave 56 then 55, the reverse of the step list's Pause then Play. The row
+   was pressed again in the step list's order, giving Pause 55 and Play 56, and then each of the six alone,
+   whose names the log does not hold; `h885_b` gives Pause 55 and Play 56 too. So two passes against one,
+   each named by the order asked.
+5. **Mute held**: `0x295` read 11 for 3.85 s and cleared on release; an earlier hold of 0.71 s was a short
+   one.
+6. **Never seen**: 4, 9, 28, 30, 39, 42, 47, 49 and 64, the codes the key table leaves empty. The Mute reading 32
+   before the cleaning did not recur in any press after it.
+
+`0x3A1` read 13 at rest when the map run started, Vol +, the last key of the free pressing.
+
+### `h885_b`
+
+Sixteen keys, each the code `h885_a` gave: Guide 50, Info 51, Blue 52, Skip 53, Fwd 54, Pause 55, Play 56,
+Activities 1, Help 3, the bottom key left of the screen 8, the top key right of it 45, Exit 18, 0 32, OK 33,
+d-pad right 35, Enter 63, named by the order the notes give, which is the order the log shows. So the six
+hold on a second unit. `0x3A1` read 53 at rest before any press, a key no filed log shows.
+
+The predictions came from a contributor's survey of a Harmony 880 board with four 885 additions, in the
+lab; the test header says how it was read and scores it, 49 keys right and six wrong.

@@ -150,6 +150,8 @@ What the application keeps where in its RAM, as far as the write path and the st
 | `0x28D` to `0x28F` | the log's next address, [above](#what-the-remote-writes-on-its-own) |
 | `0x290`, `0x291` | the log's records left |
 | `0x292` | the byte the log's append programs next |
+| `0x295` | the scan code of the key held, 0 when none is, without the event type; at `0x296` in the Harmony 720's build, where on the 880 and 885 `0x296` holds the keypad's debounce count, [the 885's keys](../../remotes/harmony-885/keys.md#watching-a-key-on-the-cable)[^t-885-keys] |
+| `0x3A1` | the scan code of the last key pressed, which no instruction clears, the 720 included; a write through a computed pointer is not excluded[^t-885-keys] |
 
 **Write misc selector 7 writes any byte of data memory**, with no bound, in the application and in the
 bootloader alike, [the misc commands](usb.md#how-a-write-ends), so in the application it reaches the
@@ -295,6 +297,7 @@ or where a page there names it:
 [^t-885-actions-corpus]: Measured in configurations. [The test](../../../tests/test_harmony_885_actions.py)
 [^t-885-queue]: Read in the firmware. [The test](../../../tests/test_harmony_885_queue.py)
 [^t-885-state]: Read in the firmware. [The test](../../../tests/test_harmony_885_state.py)
+[^t-885-keys]: Read in the firmware. [The test](../../../tests/test_harmony_885_keys.py)
 [^t-885-state-corpus]: Measured in configurations. [The test](../../../tests/test_harmony_885_state.py)
 [^t-885-slots]: Read in the firmware. [The test](../../../tests/test_harmony_885_slots.py)
 [^t-885-parameters]: Read in the firmware. [The test](../../../tests/test_harmony_885_parameters.py)

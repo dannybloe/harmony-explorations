@@ -177,13 +177,16 @@ checked, while from `0x010000` up every source gives 64 KiB sectors,
 held key when the application passes its check but misbehaves, and through it a host can erase and write
 the application back with the commands it already sends to a running remote. What it cannot restore is
 itself: an erased bootloader sector leaves nothing to run at power on, and erasing one takes the unlock
-first, so it does not happen by accident.[^t-885-boot] Which printed keys hold it is not checked.[^unchecked]
+first, so it does not happen by accident.[^t-885-boot] On an 885 the two keys are Power and OK, by the
+codes the application raised for them on a unit and the scan arithmetic the bootloader shares with it; that
+holding one at power on keeps the bootloader is not checked.[^t-885-keys-u][^t-885-boot][^unchecked]
 
 ## Not checked
 
 * Any command sent to a bootloader, on any remote[^unchecked].
 * Which keys enter it, and whether entering it by keys works as read[^unchecked].
-* On the Harmony 880 and 885, which printed keys have the two scan codes that hold it, which of the two
+* On the Harmony 880 and 885, whether holding Power or OK at power on keeps it (an 880's keys are not
+  pressed at all), which of the two
   flash parts is fitted, and that the bootloader serves `Harmony Bootloader` for the descriptor's
   product index[^unchecked].
 * Whether the numbering is Microchip's stock HID bootloader's[^unchecked].
@@ -193,5 +196,6 @@ first, so it does not happen by accident.[^t-885-boot] Which printed keys hold i
 [^s87]: Read in the firmware. [Section 87](../../docs/findings.md#s87)
 [^s191]: Read in the firmware. [Section 191](../../docs/findings.md#s191)
 [^t-885-boot]: Read in the firmware. [The test](../../tests/test_harmony_885_bootloader.py)
+[^t-885-keys-u]: Measured on a unit. [The test](../../tests/test_harmony_885_keys.py)
 [^t-885-boot-client]: Stated by Logitech, in their client. [The test](../../tests/test_harmony_885_bootloader.py)
 [^t-885-flash]: Read in the firmware. [The test](../../tests/test_harmony_885_erase_and_write.py)

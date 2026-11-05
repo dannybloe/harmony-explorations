@@ -118,7 +118,9 @@ In order, read in both bootloader builds:[^t-885-boot]
    copy and leave 4 or 7 behind, are not checked.[^unchecked] This said what sets the status<!--superseded--> was
    not checked, until the application was read.[^t-885-start]
 3. **The held key.** If the keypad scan gives scan code 2 or 33 (`0x02` or `0x21`), the bootloader stays
-   resident and does not look at the application. Which printed keys those are is not checked.[^t-885-boot][^unchecked]
+   resident and does not look at the application. On an 885 those are Power and OK, by the codes the
+   application raised for them on a unit and the arithmetic the bootloader shares with it; whether holding
+   one at power on works as read is not checked.[^t-885-boot][^t-885-keys-u][^s144][^unchecked]
 4. **The image check**: the `HG` magic at `0x010004` and the checksum above. A failure stays resident.[^t-885-boot]
 5. **The jump** to `0x010C00`, where the application holds a `GOTO` to its entry.[^t-885-boot]
 
@@ -210,7 +212,8 @@ This table said the power down was for "the operand `0xF6`", and the test behind
 reached through the `0x3F` band<!--superseded-->, until the interpreter was read: the band is `0x07`'s, on the low
 byte.[^t-885-actions]
 
-Which printed keys have scan codes 2, 33 and 32 is not checked.[^unchecked] The bootloader stays resident
+On an 885 scan codes 2, 33 and 32 are Power, OK and 0, by the codes the application raised for them on a
+unit and the arithmetic the bootloaders share with it; an 880's are not checked.[^t-885-keys-u][^s144][^unchecked] The bootloader stays resident
 when scan code 2 or 33 is down at power on, but its own key scan restarts on all three, so whether holding
 the three keys through the restart leaves a misbehaving remote in its bootloader is not checked.[^t-885-boot][^unchecked]
 
@@ -300,6 +303,7 @@ No Logitech package of this firmware is known; the images were read off remotes 
 [^unchecked]: Not checked.
 [^t-arch8-usb]: Measured on a unit. [The test](../../../tests/test_arch8_usb.py)
 [^t-885-boot]: Read in the firmware. [The test](../../../tests/test_harmony_885_bootloader.py)
+[^t-885-keys-u]: Measured on a unit. [The test](../../../tests/test_harmony_885_keys.py)
 [^t-885-boot-client]: Stated by Logitech, in their client. [The test](../../../tests/test_harmony_885_bootloader.py)
 [^t-885-start]: Read in the firmware. [The test](../../../tests/test_harmony_885_start_check.py)
 [^t-885-start-corpus]: Measured in configurations. [The test](../../../tests/test_harmony_885_start_check.py)

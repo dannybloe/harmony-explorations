@@ -579,6 +579,9 @@ Three agreements settle the split, among them that it makes the Harmony 700's ta
 three events, which a keypad can be[^s17]. **On the 1.4 image the Harmony 300 and 350 run, the `11` event does not repeat**:
 it fires once, when a key has been held for a time the configuration sets, and a press then ends in it or
 in the release and never both, [their firmware](../architectures/harmony-300-350/firmware.md#a-held-key)[^t-long-press].
+**On the Harmony 880 and 885 it does not repeat either**: it fires once, when a key has been down for the
+hold delay, and the release is raised only for a key let go before that, [the 885's
+keys](../remotes/harmony-885/keys.md#a-press-a-hold-and-a-release)[^t-885-keys].
 
 **A scan code's arithmetic is per architecture**, because the scanner that produces it is not one
 routine across the family, so the same number means a different place on each:
@@ -690,5 +693,6 @@ its keys and says where each name came from.
 [^t-harmony-350-slots]: Read in the firmware. [The test](../../tests/test_harmony_350_slots.py)
 [^t-harmony-350-slots-c]: Measured in configurations. [The test](../../tests/test_harmony_350_slots.py)
 [^t-long-press]: Read in the firmware. [The test](../../tests/test_harmony_350_long_press.py)
+[^t-885-keys]: Read in the firmware. [The test](../../tests/test_harmony_885_keys.py)
 [^t-885-slots]: Read in the firmware. [The test](../../tests/test_harmony_885_slots.py)
 [^t-885-slots-c]: Measured in configurations. [The test](../../tests/test_harmony_885_slots.py)

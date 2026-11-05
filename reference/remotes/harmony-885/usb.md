@@ -48,6 +48,9 @@ Harmony 880 configurations are refused on their skin and their hardware version,
   another and not as one snapshot, so a carry between two exchanges could tear a reading. Two such reads
   seconds apart differed in the second alone, and the weekday read agreed with the date read by the calendar,
   on the one unit read.[^t-885-on-a-unit]
+* **The keys scan on the cable**, so the same selector read of `0x295` and `0x3A1` over and over shows the
+  key held and the last key pressed while somebody presses keys. Every key was mapped that way on one
+  unit and sixteen again on a second, [keys.md](keys.md#watching-a-key-on-the-cable).[^t-885-keys-u]
 
 ## Not checked
 
@@ -62,5 +65,6 @@ Harmony 880 configurations are refused on their skin and their hardware version,
 [^t-885-boot]: Read in the firmware. [The test](../../../tests/test_harmony_885_bootloader.py)
 [^t-885-end]: Read in the firmware. [The test](../../../tests/test_harmony_885_write_end.py)
 [^t-885-on-a-unit]: Measured on a unit. [The test](../../../tests/test_harmony_885_bench_reads.py)
+[^t-885-keys-u]: Measured on a unit. [The test](../../../tests/test_harmony_885_keys.py)
 [^t-read-profile]: Measured in configurations. [The test](../../../packages/corpus/test/read.test.ts)
 [^t-version-885]: Measured on a unit. [The test](../../../packages/corpus/test/compatibility.test.ts)

@@ -257,8 +257,9 @@ class TheRunnerSeesEveryTest(unittest.TestCase):
         # `tests/test_harmony_885_actions.py`, `_queue.py` and `_state.py`. 93 to 96 with 3.4, 3.5, 3.6 and
         # 3.10, `tests/test_harmony_885_slots.py`, `_parameters.py`, `_timers.py` and `_stamp.py`. 97 to 100 with
         # 3.7, 3.8, 3.9 and 3.11, `tests/test_harmony_885_number_sender.py`, `_infrared.py`, `_screens.py` and
-        # `_delay.py`. 101 with 2.1 and 2.3, `tests/test_harmony_885_bench_reads.py`.
-        self.assertEqual(len(files), 101, 'the Python test files')
+        # `_delay.py`. 101 with 2.1 and 2.3, `tests/test_harmony_885_bench_reads.py`. 102 with 2.4,
+        # `tests/test_harmony_885_keys.py`.
+        self.assertEqual(len(files), 102, 'the Python test files')
         with_block = 0
         for path in files:
             with open(path, encoding='utf-8') as handle:
@@ -314,8 +315,9 @@ class TheRunnerSeesEveryTest(unittest.TestCase):
         # `tests/test_harmony_touch_beyond_the_clients.py`, todo-touch 5.1, which carries one. 88 to 90 with
         # the three files of todo-prepare-885 3.1 to 3.3, which carry one each. 91 to 94 with the four of
         # 3.4, 3.5, 3.6 and 3.10, which carry one each. 95 to 98 with the four of 3.7, 3.8, 3.9 and 3.11, which
-        # carry one each. 99 with `tests/test_harmony_885_bench_reads.py`, 2.1 and 2.3, which carries one.
-        self.assertEqual(with_block, 99,
+        # carry one each. 99 with `tests/test_harmony_885_bench_reads.py`, 2.1 and 2.3, which carries one. 100
+        # with `tests/test_harmony_885_keys.py`, 2.4, which carries one.
+        self.assertEqual(with_block, 100,
                          'files carrying a __main__ block, of %d' % len(files))
 
 
@@ -815,8 +817,9 @@ class APythonBoundOnACorpusTotalIsExact(unittest.TestCase):
         # `tests/test_harmony_885_actions.py`, `_queue.py` and `_state.py`. 93 to 96 with 3.4, 3.5, 3.6 and
         # 3.10, `tests/test_harmony_885_slots.py`, `_parameters.py`, `_timers.py` and `_stamp.py`. 97 to 100 with
         # 3.7, 3.8, 3.9 and 3.11, `tests/test_harmony_885_number_sender.py`, `_infrared.py`, `_screens.py` and
-        # `_delay.py`. 101 with 2.1 and 2.3, `tests/test_harmony_885_bench_reads.py`.
-        self.assertEqual(len(scanned), 101, 'Python test files, which moves when one is added')
+        # `_delay.py`. 101 with 2.1 and 2.3, `tests/test_harmony_885_bench_reads.py`. 102 with 2.4,
+        # `tests/test_harmony_885_keys.py`.
+        self.assertEqual(len(scanned), 102, 'Python test files, which moves when one is added')
         self.assertIn(self.CONTROL, found, 'the pattern matches nothing it should match')
 
     def test_every_remaining_bound_says_why_it_is_not_a_measurement(self):

@@ -135,7 +135,8 @@ test('the Python table was actually parsed, rather than read as empty', () => {
   // kkong42 posted for the model, and 329 with the classic client's arch 8 constants, which
   // `tests/test_harmony_885_bootloader.py` closes the bootloader unlock against.
   // 338 with the two bench Harmony 885s' configurations and regions, each read twice, and unit A's clock.
-  assert.equal(Object.keys(pythonImages()).length, 338, 'every fixture tests/lab.py names');
+  // 342 with the four keypad watches of the two bench Harmony 885s, todo-prepare-885.md 2.4.
+  assert.equal(Object.keys(pythonImages()).length, 342, 'every fixture tests/lab.py names');
 });
 
 test('the two sides exclude the same fixtures from the parseable population', () => {

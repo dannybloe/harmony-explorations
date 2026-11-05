@@ -775,6 +775,14 @@ IMAGES = {
     'h885_b_config_2': '20261105T0855Z-h885-b-config-2-config.bin',
     'h885_b_region': '20261105T0914Z-h885-b-region-region.bin',
     'h885_b_region_2': '20261105T0915Z-h885-b-region-2-region.bin',
+    # The keypad watched on both bench Harmony 885s, todo-prepare-885.md 2.4: watch-keys.ts polling data
+    # memory 0x295 (the key held) and 0x3A1 (the last key pressed) while keys were pressed by hand, as
+    # text. Unit A before its key contacts were cleaned, A opened and pressed freely, A's run through
+    # every key in a set order, and B's check of sixteen keys. tests/test_harmony_885_keys.py.
+    'h885_a_keys_before_cleaning': '20261105T1000Z-h885-a-keys-before-cleaning.txt',
+    'h885_a_keys_free_press': '20261105T1100Z-h885-a-keys-opened-free-press.txt',
+    'h885_a_keys_map': '20261105T1130Z-h885-a-keys-map.txt',
+    'h885_b_keys_check': '20261105T1145Z-h885-b-keys-check.txt',
 }
 
 _cache = {}
