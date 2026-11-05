@@ -37,7 +37,7 @@ Written on 4 November 2026; linked from `todo-later.md` 5.6.
 - [x] 2.4 Which printed key sends which scan code, and a drawing of the face (F9): the map `9d51b99d` and `fc1f5ba2`, the drawing `1e02bafc`, measured off the forum photograph
 - [ ] 2.5 Now that the 885's drawing is approved, draw the 880, 880 Pro, 890, 890 Pro and 895 from it as a template, each checked against its own photograph for what differs
     - [x] 2.5.1 The 880, as the 885's second printing, `097a9749`
-    - [ ] 2.5.2 The 880's key codes from Logitech's compiles of 880 configurations, the 885's map the control
+    - [x] 2.5.2 The 880's key codes from Logitech's compiles of 880 configurations, the 885's map the control: 29 of 53, `984a4257`
     - [ ] 2.5.3 The 880 Pro, 890, 890 Pro and 895
 
 ## 3. The file side, read in the firmware
