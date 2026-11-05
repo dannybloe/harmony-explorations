@@ -36,10 +36,10 @@
  *
  * Nothing in this script has been run against a remote.
  */
-import { existsSync, mkdirSync, readdirSync, realpathSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, readdirSync, realpathSync, statSync, writeFileSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';
 
-import { LAB, unitIdentity, unitIdentityPath } from '@harmony/lab';
+import { LAB, newReadFolder, unitIdentity, unitIdentityPath } from '@harmony/lab';
 
 import { openFileBasedRemote } from '../src/filepipe.ts';
 import { SequenceCounter, closeReport, dataPacket } from '../src/filewrite.ts';
@@ -227,7 +227,7 @@ async function main(): Promise<void> {
     fail(`no unit record at ${unitIdentityPath(UNIT)}: read one with read-file-identity.ts --product 0xc12b --record ${UNIT}`);
   }
   if (LAB === undefined) fail('no lab directory, so there is nowhere to keep the answer');
-  const folder = join(LAB, 'reads', `${new Date().toISOString().replace(/[-:]/g, '').slice(0, 13)}Z-touch-recover-${which}`);
+  const lab = LAB;
 
   const transport = await openFileBasedRemote({ productId: TOUCH_PRODUCT_ID });
   try {
@@ -235,7 +235,7 @@ async function main(): Promise<void> {
       permittedUnit: unitIdentityFromText(record),
       log: (text) => console.log(text),
     });
-    mkdirSync(folder, { recursive: true });
+    const folder = newReadFolder(lab, `touch-recover-${which}`);
     writeFileSync(join(folder, 'request.txt'), `${step.line}\n`);
     let text: string;
     try {

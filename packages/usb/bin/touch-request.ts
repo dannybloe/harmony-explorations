@@ -24,10 +24,10 @@
  *
  * Nothing in this script has been run against a remote.
  */
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { LAB, unitIdentity, unitIdentityPath } from '@harmony/lab';
+import { LAB, newReadFolder, unitIdentity, unitIdentityPath } from '@harmony/lab';
 
 import { openFileBasedRemote } from '../src/filepipe.ts';
 import { unitIdentityFromText } from '../src/identity.ts';
@@ -129,8 +129,7 @@ async function main(): Promise<void> {
       log: (text) => console.log(text),
     });
     const answer = await session.request(line);
-    const folder = join(LAB, 'reads', `${new Date().toISOString().replace(/[-:]/g, '').slice(0, 13)}Z-touch-${which}`);
-    mkdirSync(folder, { recursive: true });
+    const folder = newReadFolder(LAB, `touch-${which}`);
     writeFileSync(join(folder, 'answer.txt'), answer.text);
     writeFileSync(join(folder, 'request.txt'), `${line}\n`);
     console.log(`\nanswered ${answer.text.length} characters, kept in ${folder}`);

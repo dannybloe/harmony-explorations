@@ -86,7 +86,7 @@
 import { existsSync, readFileSync, realpathSync, statSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';
 
-import { LAB, unitIdentity, unitIdentityPath } from '@harmony/lab';
+import { LAB, newReadFolder, unitIdentity, unitIdentityPath } from '@harmony/lab';
 import {
   TOUCH_PRODUCT_ID,
   TOUCH_RECOVERY_DOOR,
@@ -187,7 +187,7 @@ async function main(): Promise<void> {
     fail(`no unit record at ${unitIdentityPath(UNIT)}: read one with read-file-identity.ts --product 0xc12b --record ${UNIT}`);
   }
   if (LAB === undefined) fail('no lab directory, so there is nowhere to keep the run');
-  const folder = join(LAB, 'reads', `${new Date().toISOString().replace(/[-:]/g, '').slice(0, 13)}Z-touch-sync-${unchanged ? 'unchanged' : 'set'}`);
+  const folder = newReadFolder(LAB, `touch-sync-${unchanged ? 'unchanged' : 'set'}`);
 
   const transport = await openFileBasedRemote({ productId: TOUCH_PRODUCT_ID });
   let ending: string;

@@ -10,7 +10,7 @@
  * point of the golden vector cross-check is that both suites read the same file and say the
  * same thing about it. A name that exists on one side only cannot be cross-checked at all.
  */
-import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, normalize, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -1361,4 +1361,28 @@ export function skipWithoutIrArchive(): { skip: string | false } {
 export function needing(...options: readonly { skip: string | false }[]): { skip: string | false } {
   const reason = options.map((one) => one.skip).find((one) => one !== false);
   return { skip: reason ?? false };
+}
+
+/**
+ * Make a new folder for one read off a remote, `<lab>/reads/<YYYYMMDDTHHMM>Z-<name>`, and return its path.
+ *
+ * **It never hands back a folder that already exists.** The stamp is to the minute, which is the form every
+ * read folder in the lab already has, so two reads of the same kind in one minute got the same name, and the
+ * scripts made it with `recursive: true` and wrote into it: on 5 November 2026 the Touch's `getconfighash`
+ * read after `todo-touch.md` 6.8's sync overwrote the read taken before it, a minute earlier by the clock
+ * but in the same minute by the stamp. So the folder is made without `recursive`, which fails when it
+ * exists, and a taken name gets `-2`, `-3` and on, in the order the reads were made.
+ */
+export function newReadFolder(lab: string, name: string, now: Date = new Date()): string {
+  const stamp = `${now.toISOString().replace(/[-:]/g, '').slice(0, 13)}Z-${name}`;
+  mkdirSync(join(lab, 'reads'), { recursive: true });
+  for (let n = 1; ; n += 1) {
+    const folder = join(lab, 'reads', n === 1 ? stamp : `${stamp}-${n}`);
+    try {
+      mkdirSync(folder);
+      return folder;
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error;
+    }
+  }
 }
