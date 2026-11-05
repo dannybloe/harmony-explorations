@@ -31,9 +31,9 @@ Written on 4 November 2026; linked from `todo-later.md` 5.6.
 
 ## 2. On the bench, needing an 885 on the cable
 
-- [ ] 2.1 A whole configuration region read off each 885 into the lab, read twice and identical (D4)
+- [x] 2.1 A whole configuration region read off each 885 into the lab, read twice and identical (D4)
 - [ ] 2.2 The version block's values compared against the six fields an 880 or 885 configuration's wrapper states (D10)
-- [ ] 2.3 The clock read over USB, once 1.x has found the `READ_MISC` selectors (D12)
+- [x] 2.3 The clock read over USB, once 1.x has found the `READ_MISC` selectors (D12)
 - [ ] 2.4 Which printed key sends which scan code, and a drawing of the face (F9)
 
 ## 3. The file side, read in the firmware
@@ -44,7 +44,7 @@ Written on 4 November 2026; linked from `todo-later.md` 5.6.
 - [x] 3.4 The section seeker, confirming the base slot map (F2)
 - [x] 3.5 Base slot 15's guard: the group lengths and count demanded (F7)
 - [x] 3.6 The timer table: concurrency and the duration clamp (F6)
-- [x] 3.7 The number sender, though no 880 or 885 configuration holds favourite channels (F8)
+- [x] 3.7 The number sender (F8); this said no 880 or 885 configuration holds favourite channels until a bench 885's did, `25ed538d`
 - [x] 3.8 The infrared player: carrier, and whether the toggle records' second group is alternated (F11)
 - [x] 3.9 Screen opcode 21, found on this platform only, and opcode 1's clip (F10, F12)
 - [x] 3.10 What reads base slot 3's stamp, and the log area's writer (F13, F14); the writer is answered by 1.7, `tests/test_harmony_885_log_area.py`, so the stamp is what is left
