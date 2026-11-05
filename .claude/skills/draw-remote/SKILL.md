@@ -399,9 +399,10 @@ A model joins the reference and the drawings together, and the reference's layou
    and its architecture. A model with no drawing of its own uses its sibling's where the manual or the
    person holding both says the face is shared, and says so in `keys.md`; a model nobody has drawn yet
    leaves the drawing out, and its keys and display blocks say none exists, as the Harmony 890's does;
-   a skin a folder serves whose face differs from the drawing is listed as `undrawn`, as the Harmony 880's
-   skin 15 is on the 885's row, its colour keys being two chevron keys. **A model sold in two printings gets a drawing per printing**, each serving its own skins,
-   the first as `drawing` and the others as `printings`, and its keys page carries a keys block for each,
+   a skin a folder serves whose face differs from every drawing of it may be listed as `undrawn`, which no
+   row uses since the Harmony 880 was drawn as the 885's second printing. **A model sold in two printings
+   gets a drawing per printing**, each serving its own skins, the first as `drawing` and the others as
+   `printings`, and its keys page carries a keys block for each,
    `keys-<drawing>`: the Harmony 300's US printing, skin 78, is `h300` and its European one, skin 79,
    `h300eu`, which differ in the colour keys and the favourite block. The skin table in
    `reference/remotes/README.md` is generated from `MODELS_BY_SKIN`.

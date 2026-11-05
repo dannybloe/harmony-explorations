@@ -23,6 +23,8 @@ const PHOTO: Readonly<Record<string, string>> = {
   h525: '525-full.jpg',
   // The one model measured off its photograph rather than traced, so this overlay is its only check.
   h885: '885-full.jpg',
+  // The 885's drawing with its own band and nameplate, checked against the 880's own photograph.
+  h880: '880-full.jpg',
   one: 'one-full.jpg',
   touch: 'touch-full.jpg',
 };

@@ -6,7 +6,21 @@ to. This page says how the numbers are laid out, which key raises which number, 
 and a release raise. Every key of an 885 was pressed on a unit and its number read off the remote, below;
 an 880's were not.
 
-## Every key on the drawing
+## Every key on the drawings
+
+**The two models have two faces, and each has a drawing of its own**, generated from
+`packages/silhouettes/src/models/`. The 880's takes every shape from the 885's and states only what differs,
+because the case and every other key are one moulding on both photographs:
+
+* [`reference/silhouettes/h885.svg`](../../silhouettes/h885.svg), the Harmony 885, skin 17, from `h885.ts`;
+* [`reference/silhouettes/h880.svg`](../../silhouettes/h880.svg), the Harmony 880, skin 15, from `h880.ts`.
+
+**At the bottom of the band an 880 has two keys where an 885 has its four colour keys**, the left printed
+with an up chevron and the right with a down chevron, and above the screen it prints `HARMONY TECHNOLOGY`
+where the 885 prints its model name.[^t-printing-880] Each chevron key covers what are two colour keys on an
+885, and the band has no parting line where the 885 parts red from green and yellow from blue.[^t-printing-880]
+
+### Harmony 885, skin 17
 
 <!-- generated:keys -->
 55 keys on the drawing `h885`, 47 on the keypad and 8 that the screen speaks for. 55 carry a scan code: 55 read off the remote's own memory while each key was pressed, on one unit for every key and on a second for sixteen of them[^t-885-keys-u].
@@ -70,6 +84,74 @@ an 880's were not.
 | `ScreenRight3` | screen | printed | 48 (0x30)[^t-885-keys-u] | 6 |  |
 
 Generated from `packages/silhouettes/src/models/h885.ts` by `make remote-reference-write`. Change the source, not this block.
+<!-- /generated -->
+
+### Harmony 880, skin 15
+
+**No key of the 880's drawing carries a code**, because no 880 was pressed. Its two chevron keys carry two
+candidates, 20 and 52: of the 885's four colour key codes, those are the two an 880's key table
+keeps.[^s177] That the chevron keys raise them, and which raises which, is not checked.[^unchecked]
+
+<!-- generated:keys-h880 -->
+53 keys on the drawing `h880`, 45 on the keypad and 8 that the screen speaks for. None carries a scan code. 2 are narrowed to a set of candidate codes and not decided.
+
+| key | kind | name from | scan code | screen zone | printed on or beside it |
+|---|---|---|---|---|---|
+| `Activities` | keypad | printed | not measured |  | ACTIVITIES |
+| `AllOff` | keypad | printed | not measured |  | OFF |
+| `ChannelDown` | keypad | printed | not measured |  |  |
+| `ChannelUp` | keypad | printed | not measured |  |  |
+| `Clear` | keypad | printed | not measured |  | CLEAR |
+| `Device` | keypad | printed | not measured |  | DEVICE |
+| `DirectionDown` | keypad | printed | not measured |  |  |
+| `DirectionLeft` | keypad | printed | not measured |  |  |
+| `DirectionRight` | keypad | printed | not measured |  |  |
+| `DirectionUp` | keypad | printed | not measured |  |  |
+| `DownArrow` | keypad | printed | one of 20 or 52 |  |  |
+| `Enter` | keypad | printed | not measured |  | E, ENTER |
+| `Exit` | keypad | printed | not measured |  | EXIT |
+| `FastForward` | keypad | printed | not measured |  | FWD |
+| `Glow` | keypad | printed | not measured |  | GLOW |
+| `Guide` | keypad | printed | not measured |  | GUIDE |
+| `Help` | keypad | printed | not measured |  | HELP |
+| `Info` | keypad | printed | not measured |  | INFO |
+| `Media` | keypad | printed | not measured |  | MEDIA |
+| `Menu` | keypad | printed | not measured |  | MENU |
+| `Number0` | keypad | printed | not measured |  | 0 |
+| `Number1` | keypad | printed | not measured |  | 1 |
+| `Number2` | keypad | printed | not measured |  | 2, abc |
+| `Number3` | keypad | printed | not measured |  | 3, def |
+| `Number4` | keypad | printed | not measured |  | 4, ghi |
+| `Number5` | keypad | printed | not measured |  | 5, jkl |
+| `Number6` | keypad | printed | not measured |  | 6, mno |
+| `Number7` | keypad | printed | not measured |  | 7, pqrs |
+| `Number8` | keypad | printed | not measured |  | 8, tuv |
+| `Number9` | keypad | printed | not measured |  | 9, wxyz |
+| `Pause` | keypad | printed | not measured |  | PAUSE |
+| `Play` | keypad | printed | not measured |  | PLAY |
+| `PrevChannel` | keypad | printed | not measured |  | PREV |
+| `Record` | keypad | printed | not measured |  | REC |
+| `Rewind` | keypad | printed | not measured |  | REW |
+| `ScreenNext` | keypad | printed | not measured |  |  |
+| `ScreenPrev` | keypad | printed | not measured |  |  |
+| `Select` | keypad | printed | not measured |  | OK |
+| `SkipBack` | keypad | printed | not measured |  | REPLAY |
+| `SkipForward` | keypad | printed | not measured |  | SKIP |
+| `Stop` | keypad | printed | not measured |  | STOP |
+| `UpArrow` | keypad | printed | one of 20 or 52 |  |  |
+| `VolumeDown` | keypad | printed | not measured |  |  |
+| `VolumeMute` | keypad | printed | not measured |  | MUTE |
+| `VolumeUp` | keypad | printed | not measured |  |  |
+| `ScreenLeft1` | screen | printed | not measured | 1 |  |
+| `ScreenLeft2` | screen | printed | not measured | 3 |  |
+| `ScreenLeft3` | screen | printed | not measured | 5 |  |
+| `ScreenLeft4` | screen | printed | not measured | 7 |  |
+| `ScreenRight1` | screen | printed | not measured | 2 |  |
+| `ScreenRight2` | screen | printed | not measured | 4 |  |
+| `ScreenRight3` | screen | printed | not measured | 6 |  |
+| `ScreenRight4` | screen | printed | not measured | 8 |  |
+
+Generated from `packages/silhouettes/src/models/h880.ts` by `make remote-reference-write`. Change the source, not this block.
 <!-- /generated -->
 
 ## Which key raises which code
@@ -229,7 +311,8 @@ remote as read is not checked.[^unchecked]
 ## Not checked
 
 * An 880's keys: its 53 codes are an 885's less 19 and 60, which are Green and Yellow on an 885, and no
-  880 was pressed.[^unchecked]
+  880 was pressed, so neither which code each key raises nor which of 20 and 52 each chevron key raises
+  is known.[^unchecked]
 * The exact printed text of each key, and how long the hold delay lasts in seconds.[^unchecked]
 * The Harmony 785's keys and where it keeps the key held.[^unchecked]
 
@@ -243,3 +326,4 @@ remote as read is not checked.[^unchecked]
 [^t-885-keys]: Read in the firmware. [The test](../../../tests/test_harmony_885_keys.py)
 [^t-885-keys-u]: Measured on a unit. [The test](../../../tests/test_harmony_885_keys.py)
 [^s17]: Measured in configurations. [Section 17](../../../docs/findings.md#s17)
+[^t-printing-880]: Stated by Logitech, in the manual. [The test](../../../tests/test_silhouettes.py)

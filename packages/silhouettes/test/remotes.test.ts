@@ -51,14 +51,19 @@ test('a model folder and its drawings serve the same skins, and every drawing is
     if (r.drawing === undefined) continue; // the next test holds which folders may have none
     const served = [r.drawing, ...(r.printings ?? [])].flatMap((id) =>
       (MODELS[id] ?? assert.fail(`${r.folder}: no drawing ${id}`)).skins);
-    // A skin whose face is not the one drawn is named as undrawn rather than dropped from the folder: the
-    // Harmony 880, skin 15, in the 885's folder. A skin may not be both served and undrawn.
+    // A skin whose face is not the one drawn is named as undrawn rather than dropped from the folder, as the
+    // Harmony 880, skin 15, was in the 885's folder until its drawing landed. A skin may not be both served
+    // and undrawn.
     const undrawn = r.undrawn ?? [];
     assert.deepEqual(served.filter((s) => undrawn.includes(s)), [], `${r.folder}: a skin served and undrawn`);
     assert.deepEqual([...served, ...undrawn].sort((a, b) => a - b), [...r.skins].sort((a, b) => a - b), r.folder);
   }
-  assert.deepEqual(REMOTES.filter((r) => r.undrawn !== undefined).map((r) => [r.folder, r.undrawn]),
-    [['harmony-885', [15]]], 'the one skin whose face is not drawn is the Harmony 880\'s');
+  // No skin is undrawn now: the Harmony 880's, skin 15, was the one until `todo-prepare-885.md` 2.5 drew its
+  // face as a printing of the 885's folder.
+  assert.deepEqual(REMOTES.filter((r) => r.undrawn !== undefined).map((r) => [r.folder, r.undrawn]), [],
+    'every skin a folder describes is served by one of its drawings');
+  assert.deepEqual(MODELS.h885!.skins, [17], 'the Harmony 885 drawing serves skin 17');
+  assert.deepEqual(MODELS.h880!.skins, [15], 'and the Harmony 880, its regional twin, has a drawing of its own');
   assert.deepEqual(MODELS.h300!.skins, [78], 'the Harmony 300 drawing serves the US skin');
   assert.deepEqual(MODELS.h300eu!.skins, [79], 'and its European printing has a drawing of its own');
   // Every drawing is some folder's drawing or printing, so a printing cannot be drawn and described nowhere.

@@ -37,11 +37,13 @@ SVG = '{http://www.w3.org/2000/svg}'
 
 # The model folder whose keys page states each drawing's scan codes, and the block where it is not `keys`.
 # The Harmony 650's and 700's drawings take the 600's codes and their own pages carry the same generated
-# block; the Harmony 300's European printing has a block of its own beside the US one's.
+# block; the Harmony 300's European printing has a block of its own beside the US one's, and so has the
+# Harmony 880 beside the 885's.
 KEYS_PAGE = {
     'h300.svg': 'harmony-300', 'h300eu.svg': ('harmony-300', 'keys-h300eu'), 'h350.svg': 'harmony-350',
     'h515.svg': 'harmony-515', 'h525.svg': 'harmony-525',
     'h600.svg': 'harmony-600', 'h650.svg': 'harmony-650', 'h700.svg': 'harmony-700', 'h885.svg': 'harmony-885',
+    'h880.svg': ('harmony-885', 'keys-h880'),
     'one.svg': 'harmony-one', 'touch.svg': 'harmony-touch',
 }
 
@@ -812,6 +814,56 @@ class TestTheHarmony885Silhouette(_SilhouetteConventions, unittest.TestCase):
         self.assertNotIn('traced from the product documentation', text)
 
 
+class TestTheHarmony880Silhouette(_SilhouetteConventions, unittest.TestCase):
+    """
+    The Harmony 885's face with two chevron keys where the 885 has four colour keys and another nameplate,
+    `packages/silhouettes/src/models/h880.ts`: every other shape is taken from the 885's model, so what this
+    class adds is what differs, and that no code a Harmony 885 raised is carried to a remote nobody pressed.
+
+    The printing is read off the 880's product photograph in the lab and the picture of it in Logitech's
+    reviewer's guide for the 880, page 11 of `Docs/880 manual.pdf`, which agree: the up chevron on the left,
+    the down chevron on the right, and `HARMONY TECHNOLOGY` above the screen.
+    """
+
+    NAME = 'h880.svg'
+    # The 885's 55 less its four colour keys and plus two chevron keys, which is the 53 codes an 880's
+    # configurations' key tables hold, the 885's less 19 and 60, `reference/remotes/harmony-885/keys.md`.
+    EXPECTED_BUTTONS = 53
+
+    def test_no_key_claims_a_code_and_the_chevrons_share_two_candidates(self):
+        """
+        No Harmony 880 has been pressed, so the 885's units' codes stay on the 885's drawing. The two chevron
+        keys carry 20 and 52, the two of the 885's four colour key codes an 880's key table keeps; which of
+        them each raises is not settled, and both carry the pair. No other key carries a candidate.
+        """
+        buttons = _buttons(_tree(self.NAME).getroot())
+        self.assertEqual([e.get('data-name') for e in buttons.values() if e.get('data-scan')], [])
+        candidates = {e.get('data-name'): e.get('data-scan-candidates')
+                      for e in buttons.values() if e.get('data-scan-candidates')}
+        self.assertEqual(candidates, {'UpArrow': '20 52', 'DownArrow': '20 52'})
+
+    def test_the_chevrons_take_the_colour_keys_place_up_on_the_left(self):
+        """
+        As printed on the photograph and in the reviewer's guide: no colour key, the up chevron's key left of
+        the down chevron's, each marked with its chevron, and the screen keys' arrows and Glow unchanged.
+        """
+        text = _text(self.NAME)
+        buttons = _buttons(_tree(self.NAME).getroot())
+        for ident in PALETTE:
+            with self.subTest(absent=ident):
+                self.assertNotIn(ident, buttons)
+        self.assertEqual(re.findall(r'style="--accent:\s*(#[0-9a-fA-F]{6})"', text), [],
+                         'no key states a colour of its own')
+        order = sorted(('k-up-arrow', 'k-down-arrow'), key=lambda one: _centre_x(buttons[one]))
+        self.assertEqual(order, ['k-up-arrow', 'k-down-arrow'])
+
+    def test_the_nameplate_is_the_880_s(self):
+        """`HARMONY TECHNOLOGY` above the screen, where the 885 prints its model name."""
+        text = _text(self.NAME)
+        self.assertIn('>Harmony Technology<', text)
+        self.assertNotIn('>Harmony 885<', text)
+
+
 class TestTheSilhouetteDirectory(unittest.TestCase):
     """What is drawn and what is not, so the gap is a statement rather than an oversight."""
 
@@ -826,6 +878,7 @@ class TestTheSilhouetteDirectory(unittest.TestCase):
         'h600.svg': TestTheHarmony600Silhouette,
         'h650.svg': TestTheHarmony650Silhouette,
         'h700.svg': TestTheHarmony700Silhouette,
+        'h880.svg': TestTheHarmony880Silhouette,
         'h885.svg': TestTheHarmony885Silhouette,
         'one.svg': TestTheHarmonyOneSilhouette,
         'touch.svg': TestTheHarmonyTouchSilhouette,

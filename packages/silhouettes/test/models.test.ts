@@ -142,6 +142,19 @@ const EXPECTED: Readonly<Record<string, {
     why: "the Harmony 600's drawing and measurements, the same face per a statement made holding both",
   },
   /**
+   * The 885's face with two chevron keys where the 885 has four colour keys, `h880.ts`, read off the 880's
+   * own product photograph and the picture in Logitech's reviewer's guide for it, and 53 is what its
+   * configurations' key tables hold, the 885's 55 less 19 and 60. No code: no Harmony 880 has been pressed,
+   * and the codes the 885's units raised are not carried over to a remote nobody pressed. The two chevrons
+   * share two candidates, below.
+   */
+  h880: {
+    buttons: 53,
+    scans: {},
+    why: "the Harmony 885's drawing less its four colour keys and plus two chevron keys, as the 880's own "
+      + 'product photograph shows, and the 53 codes its configurations\' key tables hold',
+  },
+  /**
    * The count is the units': 55 keys pressed on a Harmony 885 raised 55 codes, exactly the press codes its
    * configuration's key table holds, and the nine codes no key raised are the nine the table leaves empty,
    * `tests/test_harmony_885_keys.py`; the photograph the drawing was measured off shows the same 55. Every
@@ -289,10 +302,14 @@ test('a key whose code is undecided carries candidates and no scan', () => {
      * favourite keys sharing the four codes favourite 5 did not take, until `todo-compile-350.md` 3.3 heard
      * them. The Harmony 300 has none on either printing: its drawings take no code from the 350's, `h300.ts`,
      * and the European one carries only what its own unit decided, `h300eu.ts`.
+     *
+     * The Harmony 880's two chevron keys share 20 and 52, the two of the 885's four colour key codes its key
+     * table keeps, which Logitech's compiles for skin 15 bind as a pair; which chevron is which is not
+     * settled, `h880.ts`. Its other keys carry nothing, so no candidate there can be another key's code.
      */
     const SETS: Readonly<Record<string, readonly { keys: number; codes: number }[]>> = {
       h300: [], h300eu: [], h350: [{ keys: 1, codes: 2 }],
-      h515: [{ keys: 4, codes: 4 }], h525: [{ keys: 4, codes: 4 }], h600: [], h650: [], h700: [], h885: [], one: [],
+      h515: [{ keys: 4, codes: 4 }], h525: [{ keys: 4, codes: 4 }], h600: [], h650: [], h700: [], h880: [{ keys: 2, codes: 2 }], h885: [], one: [],
       touch: [],
     };
     const want = SETS[id]!;
@@ -396,7 +413,7 @@ test('the screen carries the raster its own firmware draws into', () => {
   // The Harmony 885's is the raster's own 0.8 by construction: its glass was measured off a photograph at
   // 121 by 150 pixels, 0.807, and drawn at the raster's proportion on the measured height, `h885.ts`.
   const APERTURE: Readonly<Record<string, number>> = {
-    h515: 1.513, h525: 1.513, h600: 0.865, h650: 0.865, h700: 0.865, h885: 0.8, one: 0.794, touch: 0.754,
+    h515: 1.513, h525: 1.513, h600: 0.865, h650: 0.865, h700: 0.865, h880: 0.8, h885: 0.8, one: 0.794, touch: 0.754,
   };
   /**
    * Where there is no bezel, the pair of shapes that has to sit symmetric about the glass, and which
@@ -531,9 +548,10 @@ test('nothing the drawing states sits outside the case', () => {
    * **The Harmony 885** is the other. Its case is a bone, narrow at both ends and widest level with the
    * screen and again level with the digits, and measured across at the same distance from either end the
    * two widths agree within 3.4 units on a case 283 wide, so turned over it also leaves nothing outside,
-   * 0.000. Shifted, the upper trim lands 77.426 units out, against the drawing's own worst at 0.000.
+   * 0.000. Shifted, the upper trim lands 77.426 units out, against the drawing's own worst at 0.000. The
+   * Harmony 880 has the 885's case, `h880.ts`, so the same holds of it.
    */
-  const END_FOR_END = new Set(['touch', 'h885']);
+  const END_FOR_END = new Set(['touch', 'h880', 'h885']);
   for (const [id, model] of drawn) {
     const segments = new Set((model.rockers ?? []).flatMap((r) => r.keys));
     const parts: [string, string][] = [

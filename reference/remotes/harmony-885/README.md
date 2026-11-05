@@ -32,8 +32,11 @@ table records the 880 as `Eur#885`, so the two are one remote with two regional 
 its face is 885.[^x-forum-table] The key tables say the same from inside: an 880's configuration knows 53
 key positions where an 885's knows 55, and the two it lacks, scan codes 19 and 60, are the two that a
 survey of both circuit boards calls colour buttons the 885 has.[^s177] Pressed on a unit, 19 is Green and
-60 Yellow, [keys.md](keys.md#which-key-raises-which-code).[^t-885-keys-u] Whether the 880's face carries the
-other two colour keys is not checked.[^unchecked]
+60 Yellow, [keys.md](keys.md#which-key-raises-which-code).[^t-885-keys-u] The 880's face carries none of
+the four: at the bottom of the band, where the 885 has them, it has two keys printed with an up and a down
+chevron, and it prints `HARMONY TECHNOLOGY` where the 885 prints its name, so each model has a drawing of its
+own, [keys.md](keys.md#every-key-on-the-drawings).[^t-printing-880] This said whether the 880's face carries
+the other two colour keys was not checked, until the 880's drawing.[^t-printing-880]
 
 ## Key numbers
 
@@ -66,7 +69,7 @@ other two colour keys is not checked.[^unchecked]
 [^x-forum-table]: Stated by a third party. [The comparison table](https://www.harmony-remote-forum.de/harmony_compare.php)
 [^s177]: Measured in configurations. [Section 177](../../../docs/findings.md#s177)
 [^t-885-keys-u]: Measured on a unit. [The test](../../../tests/test_harmony_885_keys.py)
-[^unchecked]: Not checked.
+[^t-printing-880]: Stated by Logitech, in the manual. [The test](../../../tests/test_silhouettes.py)
 [^s182]: Measured in configurations. [Section 182](../../../docs/findings.md#s182)
 [^s207]: Stated by Logitech, in their client. [Section 207](../../../docs/findings.md#s207)
 [^s116]: Read in the firmware. [Section 116](../../../docs/findings.md#s116)

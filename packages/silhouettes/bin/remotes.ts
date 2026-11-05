@@ -86,15 +86,16 @@ interface RemoteFolder {
    * The drawings of the model's other printings, where one model is sold with different words on the same
    * keys and each printing serves its own skins: the Harmony 300's European printing, skin 79, beside the US
    * one, skin 78, which is `drawing`. Each gets a keys block of its own on the keys page, named
-   * `keys-<drawing>`, and the folder's skins are every printing's together, `test/remotes.test.ts`.
+   * `keys-<drawing>`, and the folder's skins are every printing's together, `test/remotes.test.ts`. A
+   * regional twin whose face differs in a few keys as well is carried the same way: the Harmony 880, skin
+   * 15, beside the 885, skin 17, its two chevron keys in place of the 885's four colour keys.
    */
   readonly printings?: readonly string[];
   /**
    * Skins the folder describes that none of its drawings serves, because that skin's face is not the one
-   * drawn. The Harmony 880, skin 15, is the 885's regional twin in `MODELS_BY_SKIN` and shares its folder,
-   * but its face carries two chevron keys at the bottom of the band where the 885 has four colour keys, and
-   * another nameplate, so the 885's drawing is not its drawing. `test/remotes.test.ts` holds the drawings'
-   * skins and these together to the folder's.
+   * drawn. `test/remotes.test.ts` holds the drawings' skins and these together to the folder's. No row has
+   * one now: the Harmony 880, skin 15, was the case, in the 885's folder with a face of its own, until its
+   * drawing landed as a printing of that folder, `todo-prepare-885.md` 2.5.
    */
   readonly undrawn?: readonly number[];
   readonly architecture: number;
@@ -196,12 +197,13 @@ export const REMOTES: readonly RemoteFolder[] = [
   // The two models plan 009's step 3.5 gave folders before a unit or a drawing existed. One folder per
   // regional pair, named for one of the two as `harmony-525` is: skins 15 and 17 are the Harmony 880 and
   // 885, one remote under two regional names, and 19 and 23 the Harmony 890 and 895.
-  // The 885 is drawn, off a photograph, `h885.ts`, for skin 17 alone. **The 880's face is not the 885's**:
-  // a product photograph of an 880 shows two keys printed with an up and a down chevron at the bottom of
-  // the band, where the 885 has its four colour keys, and `HARMONY TECHNOLOGY` above the screen where the
-  // 885 prints its name, which fits its configurations knowing 53 keys, the 885's 55 less 19 and 60. So
-  // skin 15 stays undrawn rather than borrowing a face it does not have. The 890 has no drawing yet.
-  { folder: 'harmony-885', skins: [15, 17], drawing: 'h885', undrawn: [15], architecture: 8 },
+  // The 885 is drawn, off a photograph, `h885.ts`, for skin 17. **The 880's face is not the 885's**: a
+  // product photograph of an 880 shows two keys printed with an up and a down chevron at the bottom of the
+  // band, where the 885 has its four colour keys, and `HARMONY TECHNOLOGY` above the screen where the 885
+  // prints its name, which fits its configurations knowing 53 keys, the 885's 55 less 19 and 60. So skin 15
+  // is a printing of its own, `h880.ts`, the 885's drawing with that band and nameplate, and the folder's
+  // keys page carries a block for each. The 890 has no drawing yet.
+  { folder: 'harmony-885', skins: [15, 17], drawing: 'h885', printings: ['h880'], architecture: 8 },
   { folder: 'harmony-890', skins: [19, 23], architecture: 10 },
 ];
 

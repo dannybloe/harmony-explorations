@@ -266,6 +266,19 @@ const SEGMENTS: Readonly<Record<string, readonly (readonly [number, number])[]>>
   Green: [mid(489.8 - 1.83 * (face(438) - 90.5)), mid(560), [s2x(560), 560]],
 };
 
+/**
+ * The five parting lines the photograph shows across the band, outer edge to inner edge, left to right,
+ * and none in either rocker. Named rather than listed, because the Harmony 880's band, `h880.ts`, keeps
+ * three of them: the two that end the rockers and the one on the centre line.
+ */
+const BAND_SEAMS = {
+  volumeEnd: seam(64, s1(64), 85.5, s1(85.5)),
+  redGreen: seam(s2x(500.5), 500.5, s2x(471.5), 471.5),
+  centre: seam(face(476), 476, face(511), 511),
+  yellowBlue: seam(across(s2x(500.5), 500.5), 500.5, across(s2x(471.5), 471.5), 471.5),
+  channelEnd: seam(across(64, s1(64)), s1(64), across(85.5, s1(85.5)), s1(85.5)),
+} as const;
+
 /** The direction pad: an oval, 73.2 by 95 pixels, and the OK key in it, 30 by 39.5, both on the centre line. */
 const PAD = { y: 416, rx: 36.6, ry: 47.5 };
 const OK = { y: 416.25, rx: 15, ry: 19.75 };
@@ -503,14 +516,7 @@ const ROCKERS: readonly Rocker[] = [
   {
     id: 'rocker-band',
     keys: ['VolumeUp', 'VolumeDown', 'Red', 'Green', 'Yellow', 'Blue', 'ChannelDown', 'ChannelUp'],
-    // The five parting lines the photograph shows, outer edge to inner edge, and none in either rocker.
-    seams: [
-      seam(64, s1(64), 85.5, s1(85.5)),
-      seam(s2x(500.5), 500.5, s2x(471.5), 471.5),
-      seam(face(476), 476, face(511), 511),
-      seam(across(s2x(500.5), 500.5), 500.5, across(s2x(471.5), 471.5), 471.5),
-      seam(across(64, s1(64)), s1(64), across(85.5, s1(85.5)), s1(85.5)),
-    ],
+    seams: [BAND_SEAMS.volumeEnd, BAND_SEAMS.redGreen, BAND_SEAMS.centre, BAND_SEAMS.yellowBlue, BAND_SEAMS.channelEnd],
     // `VOL` and `CH` run along the band, 76 degrees from level, read at (51.5, 408.5) and (183.75, 410.5).
     labels: [word('VOL', 51.5, 408.5, 'tiny', 76), word('CH', 183.75, 410.5, 'tiny', -76)],
     path: band(),
@@ -548,3 +554,10 @@ export const H885: Model = {
   // the photograph and on the manual's picture alike, so it is drawn where it is printed.
   nameplate: word('Harmony 885', 113.1, 103.75, 'small'),
 };
+
+/**
+ * This photograph's frame and the band's parts, for the Harmony 880's drawing, `h880.ts`: the 880 is this
+ * face with the bottom of the band and the nameplate changed, and what it reads of its own photograph is
+ * moved into this frame, so its numbers go through the same helpers rather than a copy of them.
+ */
+export const FRAME_885 = { face, across, mid, s1, region, regionRight, mark, word, seams: BAND_SEAMS } as const;
