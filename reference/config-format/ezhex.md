@@ -61,8 +61,24 @@ Harmony One and the Harmony 600, 650 and 700, so reading `PROTOCOL` as that byte
 configuration for a Harmony One. **`BOARD`'s third component is not in the version block at all**, and
 concordance sets it to zero outright for this whole family, so a two component reading against a three
 component statement is a match rather than a gap. And **a field the comparison does not know is a
-refusal**, not something skipped, which matters because `SOFTWARE` and `CLIENTSOFTWARE` are real elements
-of these headers. `compareIntendedVersion` in `packages/usb/src/compatible.ts` is the comparison.
+refusal**, not something skipped. `compareIntendedVersion` in `packages/usb/src/compatible.ts` is the
+comparison.
+
+**`SOFTWARE` is not one of the six, and three files state it inside `INTENDEDVERSION`**, three Harmony 880
+configurations, each `4.4` between `BOARD` and `SOFTWARETYPE`. The reader takes the six known names out of `INTENDEDVERSION` and nothing else, so
+`SOFTWARE` is dropped before the comparison sees it, and the refusal of an unknown field never meets it on
+a real file. Handed through, the comparison would refuse those three files.[^t-software-dropped] Logitech's
+classic client does not compare `SOFTWARE` either: its matcher compares the six and reads `SOFTWARE` only
+into its own description of the remote.[^t-software-client] This page credited the unknown field refusal
+with handling `SOFTWARE`<!--superseded--> until the three files were counted, and the outcome was right
+for another reason: the reader drops it first.[^t-software-dropped]
+
+**On the Harmony 880 and 885 two fields name less than their names suggest.** `FLASH` is the pair the
+application reports for either part it knows, not the fitted part's own id, and `BOARD` is a value stored
+on each unit rather than compiled into the firmware.[^t-885-flash][^t-885-reads] The Harmony 885
+configuration read matches a unit's version block on all five fields it states, and Harmony 880
+configurations are refused on `SKIN` and `BOARD`,
+[the platform's USB page](../architectures/harmony-880-885/usb.md#what-a-configuration-file-states-against-it).[^t-version-885]
 
 **A configuration read off a remote states none of the six**, since the remote stores only the payload.
 Its statement is empty and, by the rule above, matches anything: that is the truth about such a container
@@ -87,10 +103,12 @@ On a Harmony One's configuration the chain is three entries: one matching that e
 `DoNothing` and `ABORTPROCESSING`, then an entry with an empty `<VERSION>` carrying a `Warning` and the
 text "This configuration file is not compatible with your Harmony Remote", then an empty `Abort`.[^s225]
 **So that message is the host software's**, attached by the empty entry to every remote the first entry
-did not match; the remote itself never sees it, nor the header that carries it. Three Harmony 880 and 885
+did not match; the remote itself never sees it, nor the header that carries it. Three Harmony 880
 configurations also carry seven entries keyed `CLIENTSOFTWARE` 2.3 to 2.9 warning that the PC software
-is out of date, and nine keyed `SOFTWARE` 0.1 to 0.9. **The disjunction rule belongs to this chain and not
-to `INTENDEDVERSION`**.[^s225]
+is out of date, and nine keyed `SOFTWARE`, 0.1 to 0.8 and 4.0, telling the user to upgrade the
+firmware. **The disjunction rule belongs to this chain and not to `INTENDEDVERSION`**.[^s225] The nine
+were listed as 0.1 to 0.9 until the headers were read again; there is no 0.9 and the ninth is
+4.0.[^t-software-dropped]
 
 ## Firmware packages
 
@@ -103,3 +121,8 @@ configuration as a separate region.[^s3][^s87]
 [^s87]: Stated by Logitech, in their client. [Section 87](../../docs/findings.md#s87)
 [^t-ezfile]: Measured in configurations. [The test](../../tests/test_ezfile.py)
 [^s3]: Measured in configurations. [Section 3](../../docs/findings.md#s3)
+[^t-software-dropped]: Measured in configurations. [The test](../../packages/corpus/test/compatibility.test.ts)
+[^t-software-client]: Stated by Logitech, in their client. [The test](../../packages/corpus/test/compatibility.test.ts)
+[^t-version-885]: Measured on a unit. [The test](../../packages/corpus/test/compatibility.test.ts)
+[^t-885-flash]: Read in the firmware. [The test](../../tests/test_harmony_885_erase_and_write.py)
+[^t-885-reads]: Read in the firmware. [The test](../../tests/test_harmony_885_reads.py)

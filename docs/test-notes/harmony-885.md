@@ -92,3 +92,13 @@ one sequence byte expected and another received, a few KiB into a window. Before
 earlier in the same session, met none in four reads. What the unit was doing before the restart, or the host
 at that moment, are both open, and nothing was retried blind. That `read-region.ts` has no window retry,
 where the configuration reader has one, is a gap in the bench tool.
+
+## 5 November 2026: the version block against the configuration files, at the desk
+
+`todo/todo-prepare-885.md` 2.2, **no remote involved**: the version block both units had reported,
+`44 21 49 01 80 11 08`, was compared with the header of every Harmony 880, 885, 880 Pro and 720 configuration
+file in the lab through the library's own comparison and rail, sixteen files. Four matched on all five fields
+they state, four downloads of one 885 configuration with identical headers; the other twelve were refused on
+skin and hardware version and nothing else. `packages/corpus/test/compatibility.test.ts` asserts the 885's
+match and five of the twelve refusals, the files the lab's registry names; the scripts and the whole table
+are the lab's.

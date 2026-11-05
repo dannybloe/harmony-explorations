@@ -184,8 +184,11 @@ test('an absent, empty or whitespace field is not compared and is not a match ei
 
 test('a field this comparison does not know is a refusal, not something skipped', () => {
   const reading = readVersion(ONE_BLOCK);
-  // `CLIENTSOFTWARE` and `SOFTWARE` are real elements in the corpus's wrappers, inside the
-  // `USERMESSAGES` chain rather than inside `INTENDEDVERSION`, and neither is one of the six.
+  // `CLIENTSOFTWARE` and `SOFTWARE` are real elements in the corpus's wrappers and neither is one of
+  // the six. Both sit in the `USERMESSAGES` chain, and `SOFTWARE` sits inside `INTENDEDVERSION` as
+  // well in three arch 8 wrappers; this said it was only in the chain until `todo/todo-prepare-885.md`
+  // 2.2. The wrapper reader drops it there before this comparison is called, so this refusal is what
+  // a caller handing every element through would meet, `packages/corpus/test/compatibility.test.ts`.
   // Ignoring an unknown field would report a match having compared less than it looked like.
   for (const field of ['CLIENTSOFTWARE', 'SOFTWARE', 'MODEL']) {
     assert.throws(() => compareIntendedVersion({ [field]: '2.7' }, reading), CompatibilityError,

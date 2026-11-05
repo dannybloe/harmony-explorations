@@ -60,9 +60,11 @@ HEADER_TERMINATOR = b'</INFORMATION>'
 
 # The six fields a compatibility check compares, section 87. Not the four this used to list:
 # `SOFTWARETYPE` and `ARCHITECTURE` are compared too, and a field that is absent or empty
-# matches anything, which is how one entry can be written to match every remote. `SOFTWARE`
-# appears in one arch 8 config and is **not** one of the six, so a version that looks like a
-# gate is not one.
+# matches anything, which is how one entry can be written to match every remote. `SOFTWARE` is
+# **not** one of the six, so a version that looks like a gate is not one. Three arch 8 wrappers
+# state it inside `INTENDEDVERSION`, and this said one until `todo/todo-prepare-885.md` 2.2 counted
+# them; this reader keeps the six names only and drops it, as `packages/codec/src/ezhex.ts` does,
+# `packages/corpus/test/compatibility.test.ts`.
 INTENDED_VERSION_FIELDS = ('PROTOCOL', 'SKIN', 'FLASH', 'BOARD', 'SOFTWARETYPE',
                            'ARCHITECTURE')
 

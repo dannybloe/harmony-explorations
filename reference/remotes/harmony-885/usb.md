@@ -33,6 +33,10 @@ packet parser was read.[^t-885-end]
 | version block | firmware 4.4, software type 0, skin 17, field 6 `0x08`, architecture 8, from the application's own constants[^s114], and on a unit the same, with hardware 2.1 and flash `0x49` from manufacturer `0x01`[^t-arch8-usb] |
 | product string | `Harmony Remote 0-4.4.2`[^t-usbdesc]; `Harmony Bootloader` while the bootloader is resident, which otherwise enumerates with the application's descriptor, ids and `bcdDevice` included[^t-885-boot] |
 
+**The Harmony 885 configuration read matches this version block** on every field the file states, and
+Harmony 880 configurations are refused on their skin and their hardware version,
+[the platform's USB page](../../architectures/harmony-880-885/usb.md#what-a-configuration-file-states-against-it).[^t-version-885]
+
 ## What reads off it
 
 * **A configuration reads off whole over the ordinary flash read**, from `0x020000`, and the same bytes come
@@ -59,3 +63,4 @@ packet parser was read.[^t-885-end]
 [^t-885-end]: Read in the firmware. [The test](../../../tests/test_harmony_885_write_end.py)
 [^t-885-on-a-unit]: Measured on a unit. [The test](../../../tests/test_harmony_885_bench_reads.py)
 [^t-read-profile]: Measured in configurations. [The test](../../../packages/corpus/test/read.test.ts)
+[^t-version-885]: Measured on a unit. [The test](../../../packages/corpus/test/compatibility.test.ts)

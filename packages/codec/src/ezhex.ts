@@ -52,8 +52,11 @@ const XML_OPEN = 0x3c;
  *
  * Not the four this used to list. `SOFTWARETYPE` says which of the remote's images is running
  * and `ARCHITECTURE` is compared too; a field that is absent or empty matches anything, which
- * is how one entry is written to match every remote. `SOFTWARE` appears in one arch 8 config
- * and is **not** one of the six, so a version that looks like a gate is not one.
+ * is how one entry is written to match every remote. `SOFTWARE` is **not** one of the six, so a
+ * version that looks like a gate is not one. Three arch 8 wrappers state it inside `INTENDEDVERSION`,
+ * and this said one until `todo/todo-prepare-885.md` 2.2 counted them. The reader looks up these six
+ * names only, so it drops `SOFTWARE` before the comparison sees it, and the comparison's refusal of
+ * an unknown field never meets it on a real file: `packages/corpus/test/compatibility.test.ts`.
  */
 export const INTENDED_VERSION_FIELDS = [
   'PROTOCOL',

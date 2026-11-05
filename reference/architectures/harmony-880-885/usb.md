@@ -205,6 +205,31 @@ is not confirmed, and nothing depends on it.[^s116]
 architecture is known, so whether one would report zero there too is not checked.[^s116][^unchecked] The
 mode a remote is in is field 4's low nibble, [the version block](../../usb-protocol/version-block.md).
 
+## What a configuration file states against it
+
+A configuration file's header names the remote it was built for, and a host compares it with this block
+before writing, [the EZHex wrapper](../../config-format/ezhex.md#which-remote-a-file-is-for). On this
+platform the comparison works as written, and two of its fields mean something narrower than their
+names:
+
+* **`FLASH` asks whether the application knows the part, not which part is fitted.** The configuration
+  files read for this platform all state `0x01:0x49`,[^t-version-file] which is what the application
+  reports for either part it knows, [memory.md](memory.md#the-flash-part). A unit whose part the
+  application does not know reports `FF:FF`,[^t-885-flash] and the comparison refuses such a block
+  against a file stating `0x01:0x49`.[^t-version-file]
+* **`BOARD` is stored on each unit**: it is the newest entry of the hardware log at `0x000140`, which the
+  bootloader writes and a host can append to, so it is not a constant compiled into the firmware. The
+  library's rails confine a flash write to the configuration region, so nothing it sends reaches that
+  log.[^t-885-reads][^t-885-flash]
+* **`PROTOCOL` is the architecture, 8, and field 6 is 8 here as well.** So on this platform a reader that
+  took `PROTOCOL` from field 6 would still compare correctly, and nothing on it would show that
+  mistake.[^t-version-885]
+
+**The Harmony 885 configuration read matches the block a Harmony 885 reports on all five fields it
+states.** Five Harmony 880 configuration files are refused against the same block on `SKIN` and `BOARD`, skin
+15 against 17 and board 1.8.0 against 2.1, and on nothing else.[^t-version-885] Whether an 880
+configuration would run on an 885 is not checked.[^unchecked]
+
 ## Not checked
 
 * Which of the two flash parts a unit carries: the application reports both as flash `0x49` from
@@ -229,3 +254,5 @@ mode a remote is in is field 4's low nibble, [the version block](../../usb-proto
 [^t-885-log]: Read in the firmware. [The test](../../../tests/test_harmony_885_log_area.py)
 [^t-885-on-a-unit]: Measured on a unit. [The test](../../../tests/test_harmony_885_bench_reads.py)
 [^t-read-profile]: Measured in configurations. [The test](../../../packages/corpus/test/read.test.ts)
+[^t-version-885]: Measured on a unit. [The test](../../../packages/corpus/test/compatibility.test.ts)
+[^t-version-file]: Measured in configurations. [The test](../../../packages/corpus/test/compatibility.test.ts)
