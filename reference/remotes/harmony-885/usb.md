@@ -8,7 +8,7 @@ platform's identity are stated once in [the architecture's USB page](../../archi
 <!-- generated:usb-identity -->
 | field | value | from |
 |---|---|---|
-| USB product id | none | `PROFILES` in `packages/corpus/src/read.ts` |
+| USB product id | 0xC110 | `PROFILES` in `packages/corpus/src/read.ts` |
 | first refused flash top byte | 0x20, so external flash ends at 0x200000 | `FLASH_TOP_BYTE_BOUND` in `packages/usb/src/protocol.ts` |
 | escape sub commands dispatched | none read | `ESCAPE_SUB_COMMANDS` in `packages/usb/src/protocol.ts` |
 

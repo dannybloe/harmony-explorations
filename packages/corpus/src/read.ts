@@ -84,6 +84,21 @@ export const PROFILES: readonly RemoteProfile[] = [
   // base slot 2 puts the log area above the config. `docs/findings.md` section 76.
   { productId: 0xc111, model: 'Harmony 525', architecture: 9, configBase: 0x820000,
     configEnd: 0x880000, containerBase: 0x020000 },
+  // **The Harmony 880 and 885 read their configuration at `0x020000`, one address space.** The
+  // firmware's `READ_FLASH` takes the three address bytes as a pointer and checks nothing, and the
+  // container's own pointers count from the same `0x020000`, so there is no second base as on the
+  // 525. Two routes agree on the base: a bench 885 answered `TPTP` there, and the length the header
+  // gives against this base equals the file's length on all six arch 8 configurations in the lab,
+  // which the test of this table asserts.
+  //
+  // `configEnd` is `0x1D0000`, where the bootloader copies a staged application from, so nothing
+  // above it can be configuration. **That is reasoned, not measured**: no image says where a
+  // configuration must end, and the largest configuration here ends at `0x0A1600`. It does one job,
+  // the plausibility check on a declared length, and it keeps a region read below the device window
+  // at `0x1FE000` that `reference/architectures/harmony-880-885/usb.md` warns about. The 720 and the
+  // 880 Pro report other product ids, if they do at all, and get no entry until one is measured.
+  { productId: 0xc110, model: 'Harmony 880 or 885', architecture: 8, configBase: 0x020000,
+    configEnd: 0x1d0000 },
 ];
 
 export class ReadError extends Error {}

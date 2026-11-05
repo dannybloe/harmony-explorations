@@ -97,6 +97,46 @@ test('the 525 reads at 0x820000 and its container counts from 0x020000', () => {
   assert.equal(profileFor(H600).containerBase, undefined);
 });
 
+const H885 = 0xc110;
+const ARCH8_CONFIGS = [
+  ['arch8_config_a', 444256],
+  ['arch8_config_b', 470619],
+  ['arch8_config_c', 490704],
+  ['arch8_config_d', 492150],
+  ['arch8_config_885', 529924],
+  ['arch8_config_880', 393040],
+] as const;
+
+test('the 880 and 885 read at 0x020000 in one address space, below the staging region', () => {
+  const profile = profileFor(H885);
+  assert.equal(profile.architecture, 8);
+  assert.equal(profile.configBase, 0x020000);
+  // One space, unlike the 525: the container's pointers count from where the read starts.
+  assert.equal(profile.containerBase, undefined);
+  // The staging source, so a region read stops short of the device window at 0x1FE000.
+  assert.equal(profile.configEnd, 0x1d0000);
+  assert.ok(profile.configEnd <= 0x1fe000, 'never into the device window');
+});
+
+test('every arch 8 configuration in the lab gets its exact length from the 880 and 885 profile',
+  skipUnless(...ARCH8_CONFIGS.map(([name]) => name)), () => {
+    // The independent check on the base: a wrong base turns `end_addr` into a wrong length, and the
+    // file's own length is known without the header. Exact on all six, the 880's, the 885's and
+    // four contributed ones.
+    const profile = profileFor(H885);
+    for (const [name, expected] of ARCH8_CONFIGS) {
+      const config = configOf(name);
+      const header = parseHeader(config.subarray(0, HEADER_PROBE), profile);
+      assert.equal(header.family.magic, 'TPTP', name);
+      assert.equal(header.length, expected, name);
+      assert.equal(header.length, config.length, `${name}: and that is the whole file`);
+    }
+    // The negative: the same header against the 525's profile is refused, since 444256 bytes from
+    // 0x820000 run past that part's end, so the check is not one any profile passes.
+    const first = configOf(ARCH8_CONFIGS[0][0]);
+    assert.throws(() => parseHeader(first.subarray(0, HEADER_PROBE), profileFor(H525)), ReadError);
+  });
+
 test('a container base is used for the length and never for the read address', () => {
   // The negative that makes the pair worth having. Reading the 525's length against `configBase`
   // is what produced minus 8337413, so this pins that `parseHeader` uses the other one, with a
