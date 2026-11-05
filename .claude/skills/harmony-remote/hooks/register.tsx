@@ -105,18 +105,34 @@ export function ioregBlocks(text: string): Map<string, string>[] {
 const isHarmony = (vendor: number, product: number): boolean =>
   vendor === LOGITECH && product >= FIRST && product <= LAST
 
-/** What the bus says: a Harmony on USB, whether its command interface is up, or one in recovery. */
-export function usbState(usb: string, hid: string): string {
+/**
+ * What the bus says, one line per Harmony on it: each remote by name and whether its command interface
+ * is up, or one in recovery. Every remote gets its own line, since two can be on the cable at once (a
+ * Harmony Touch beside a Harmony 885, say), and showing the first one found hid the other.
+ */
+export function usbStates(usb: string, hid: string): string[] {
   const onBus = ioregBlocks(usb).map((p) =>
     [Number(p.get('idVendor')), Number(p.get('idProduct')), Number(p.get('bcdDevice'))] as const)
-  if (onBus.some(([v, p]) => v === MICROCHIP && p === BOOTLOADER)) return 'a remote in recovery (bootloader)'
-  const harmony = onBus.find(([v, p]) => isHarmony(v, p))
-  if (harmony === undefined) return 'no remote on USB'
-  const name = modelName(harmony[1], harmony[2])
+  const lines: string[] = []
+  if (onBus.some(([v, p]) => v === MICROCHIP && p === BOOTLOADER)) lines.push('a remote in recovery (bootloader)')
   // The device can be on the bus while its HID interface is not up yet, or no longer: that is the
-  // state in which every read here answers "no matching Harmony remote attached".
-  const ready = ioregBlocks(hid).some((p) => isHarmony(Number(p.get('VendorID')), Number(p.get('ProductID'))))
-  return ready ? `${name} on USB, ready` : `${name} on USB, not answering yet`
+  // state in which every read here answers "no matching Harmony remote attached". The interfaces are
+  // matched to devices by product id, and where two remotes share one, as two Harmony 885s do, by how
+  // many interfaces of that id are up.
+  const interfaces = new Map<number, number>()
+  for (const p of ioregBlocks(hid)) {
+    const product = Number(p.get('ProductID'))
+    if (isHarmony(Number(p.get('VendorID')), product)) interfaces.set(product, (interfaces.get(product) ?? 0) + 1)
+  }
+  const seen = new Map<number, number>()
+  for (const [vendor, product, bcd] of onBus) {
+    if (!isHarmony(vendor, product)) continue
+    const nth = (seen.get(product) ?? 0) + 1
+    seen.set(product, nth)
+    const ready = nth <= (interfaces.get(product) ?? 0)
+    lines.push(`${modelName(product, bcd)} on USB, ${ready ? 'ready' : 'not answering yet'}`)
+  }
+  return lines.length === 0 ? ['no remote on USB'] : lines
 }
 
 export type WriteProgress = {
@@ -296,17 +312,20 @@ export const register: Register = (on) => {
     const testText = raw === null ? null : raw.replace(BOUNCE, bounce(await read($, tick)))
     if (e.props.hasSurvey || text === null) return next(e)
     const { Box, Text } = $.ui.resolve(e)
+    const colour = bandColour(await read($, theme))
     // A rule above the line, so it reads as a panel of its own rather than as the tail of whatever
     // notice the engine printed last. The rule is longer than any terminal and cut at the edge.
     return (
       <Box flexDirection="column" marginTop={1}>
-        <Text dimColor wrap="truncate">{'── Harmony remote ' + '─'.repeat(400)}</Text>
-        <Box paddingLeft={2}>
-          <Text color={bandColour(await read($, theme))} wrap="truncate-end">{text}</Text>
-        </Box>
+        <Text dimColor wrap="truncate">{'── Harmony remotes ' + '─'.repeat(400)}</Text>
+        {text.split('\n').map((row) => (
+          <Box paddingLeft={2}>
+            <Text color={colour} bold={/STOPPED/.test(row)} wrap="truncate-end">{row}</Text>
+          </Box>
+        ))}
         {testText === null ? null : (
           <Box paddingLeft={2}>
-            <Text color={bandColour(await read($, theme))} bold={/FAILED/.test(testText)} wrap="truncate-end">{testText}</Text>
+            <Text color={colour} bold={/FAILED/.test(testText)} wrap="truncate-end">{testText}</Text>
           </Box>
         )}
       </Box>
@@ -411,7 +430,8 @@ export const register: Register = (on) => {
             + ` break; done`),
           sh(`pgrep -f '${READER}' >/dev/null && echo yes`),
         ])
-        const parts = [usbState(usb, hid)]
+        const remotes = usbStates(usb, hid)
+        const parts: string[] = []
         const [cwd, args, output] = writer.trim().split('\n')
         const config = cwd !== undefined && args !== undefined ? configOf(args, cwd) : undefined
         const isWriting = config !== undefined
@@ -434,7 +454,8 @@ export const register: Register = (on) => {
         }
         if (reader.trim() === 'yes') parts.push('reading flash')
         await pollTests()
-        const text = parts.join('  |  ')
+        // One line per remote, then the write and the reader on a line of their own when there is one.
+        const text = [...remotes, ...(parts.length > 0 ? [parts.join('  |  ')] : [])].join('\n')
         if (text !== last) {
           // A toast on the two moments worth looking up for, once each.
           if (/done, verified/.test(text) && !/done, verified/.test(last ?? '')) $.ui.toast('Harmony write done and verified')

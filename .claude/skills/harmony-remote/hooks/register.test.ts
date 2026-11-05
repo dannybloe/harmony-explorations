@@ -1,25 +1,25 @@
 import { expect, test } from 'claude-code/testing'
 
-import { bandColour, bar, bounce, BOUNCE, isWholeRun, configOf, modelName, testCounts, testLabel, testLine, usbState, writeLine, writeProgress, fileWriteLine } from './register'
+import { bandColour, bar, bounce, BOUNCE, isWholeRun, configOf, modelName, testCounts, testLabel, testLine, usbStates, writeLine, writeProgress, fileWriteLine } from './register'
 
 const usb650 = '+-o Harmony Remote  <class IOUSBHostDevice>\n  "idProduct" = 49442\n  "idVendor" = 1133\n'
 const hid650 = '+-o IOHIDInterface\n  "Product" = "Harmony Remote 0-0.2.0"\n  "VendorID" = 1133\n  "ProductID" = 49442\n'
 const mouse = '+-o Mouse\n  "idProduct" = 49213\n  "idVendor" = 1133\n'
 
 test('a Harmony 650 on USB with its HID interface up reads as ready', () => {
-  expect(usbState(usb650 + mouse, hid650)).toBe('Harmony 600/650/700 on USB, ready')
+  expect(usbStates(usb650 + mouse, hid650)).toEqual(['Harmony 600/650/700 on USB, ready'])
 })
 
 test('on the bus without the HID interface reads as not answering, and a mouse is not a remote', () => {
-  expect(usbState(usb650, '')).toBe('Harmony 600/650/700 on USB, not answering yet')
-  expect(usbState(mouse, '')).toBe('no remote on USB')
+  expect(usbStates(usb650, '')).toEqual(['Harmony 600/650/700 on USB, not answering yet'])
+  expect(usbStates(mouse, '')).toEqual(['no remote on USB'])
 })
 
 const usb885 = '+-o Harmony Remote 0-4.4.2  <class IOUSBHostDevice>\n  "idProduct" = 49424\n  "bcdDevice" = 2065\n  "idVendor" = 1133\n'
 const hid885 = '+-o IOHIDInterface\n  "Product" = "Harmony Remote 0-4.4.2"\n  "VendorID" = 1133\n  "ProductID" = 49424\n'
 
 test('a remote on the 880 platform is named by the skin in its bcdDevice, not by its product id', () => {
-  expect(usbState(usb885, hid885)).toBe('Harmony 885 on USB, ready')
+  expect(usbStates(usb885, hid885)).toEqual(['Harmony 885 on USB, ready'])
   expect(modelName(0xc110, 0x080f)).toBe('Harmony 880')
   // A skin nobody has listed still names the family rather than a bare product id.
   expect(modelName(0xc110, 0x0899)).toBe('Harmony 880/885')
@@ -144,4 +144,20 @@ test('the 350 writer shows a bar by chunk, and where it stopped says whether any
   expect(fileWriteLine(fileRun + '\nchunk 12 of 12: 25 packets', true)).toBe('Writing to the Harmony 350: [████████████████████] checking and reading back')
   expect(fileWriteLine(fileRun + '\nverified: 35587 bytes read back identical', false)).toBe('Write to the Harmony 350 done, verified, restarted')
   expect(fileWriteLine('Harmony 350, unit record h350: writing\nread only: nothing was sent', false)).toBe(undefined)
+})
+
+const usbTouch = '+-o Harmony Remote  <class IOUSBHostDevice>\n  "idProduct" = 49451\n  "idVendor" = 1133\n'
+const hidTouch = '+-o IOHIDInterface\n  "Product" = "Harmony Remote"\n  "VendorID" = 1133\n  "ProductID" = 49451\n'
+
+test('two remotes on the cable get a line each, in the order the bus lists them', () => {
+  expect(usbStates(usb885 + mouse + usbTouch, hid885 + hidTouch))
+    .toEqual(['Harmony 885 on USB, ready', 'Harmony Touch on USB, ready'])
+  // Only the Touch's interface up: the 885 is on the bus and not answering yet.
+  expect(usbStates(usb885 + usbTouch, hidTouch))
+    .toEqual(['Harmony 885 on USB, not answering yet', 'Harmony Touch on USB, ready'])
+})
+
+test('two remotes sharing a product id are each ready only as far as their interfaces are up', () => {
+  expect(usbStates(usb885 + usb885, hid885)).toEqual(['Harmony 885 on USB, ready', 'Harmony 885 on USB, not answering yet'])
+  expect(usbStates(usb885 + usb885, hid885 + hid885)).toEqual(['Harmony 885 on USB, ready', 'Harmony 885 on USB, ready'])
 })
