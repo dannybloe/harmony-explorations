@@ -722,18 +722,61 @@ describe('the session, with the flags set', () => {
     assert.equal(result.sent[5], 'ff0405020103013200000000');
   });
 
-  it('announces a write of answers first, with the length of its responses argument', () => {
+  it('announces a write of answers first, with the whole line\'s length, or the responses argument\'s when asked', () => {
     const output = withEnv(REQUEST_FLAGS, `
-      const remote = new FakeTouchRemote({ sysinfo: SYSINFO, answer: () => 'Response,{}' });
-      const s = await session.openTouchRequestSession(pipe.guardFileProtocol(remote), { permittedUnit: UNIT });
-      const line = rails.TOUCH_SYNC_REQUESTS[3] + '&sessionId=1&responses=' + 'x'.repeat(200);
-      const answer = await s.request(line);
-      process.stdout.write(JSON.stringify({ lines: remote.lines, length: line.length, announcement: answer.announcement }));
+      const out = {};
+      for (const announce of [undefined, 'line', 'responses']) {
+        const remote = new FakeTouchRemote({ sysinfo: SYSINFO, answer: () => 'Response,{}' });
+        const s = await session.openTouchRequestSession(pipe.guardFileProtocol(remote), { permittedUnit: UNIT, ...(announce ? { announce } : {}) });
+        const line = rails.TOUCH_SYNC_REQUESTS[3] + '&sessionId=1&responses=' + 'x'.repeat(200);
+        const answer = await s.request(line);
+        out[announce ?? 'default'] = { lines: remote.lines.map((l) => l.slice(0, 20)), length: line.length, announcement: answer.announcement };
+      }
+      process.stdout.write(JSON.stringify(out));
     `);
-    const result = JSON.parse(output) as { lines: string[]; length: number; announcement: string };
-    assert.deepEqual(result.lines.map((l) => l.slice(0, 20)), ['Content-Length: 200', TOUCH_SYNC_REQUESTS[3]!.slice(0, 20)]);
-    assert.equal(result.length, 269);
-    assert.equal(result.announcement, 'Response,{}');
+    const result = JSON.parse(output) as Record<string, { lines: string[]; length: number; announcement: string }>;
+    const write = TOUCH_SYNC_REQUESTS[3]!.slice(0, 20);
+    assert.deepEqual(result, {
+      default: { lines: ['Content-Length: 269', write], length: 269, announcement: 'Response,{}' },
+      line: { lines: ['Content-Length: 269', write], length: 269, announcement: 'Response,{}' },
+      responses: { lines: ['Content-Length: 200', write], length: 269, announcement: 'Response,{}' },
+    });
+  });
+
+  /**
+   * The announcement rule of `todo-touch.md` 6.6, against a fake listener built from the reading of
+   * `clientConnection`, `fake-touch-remote.ts`. A line of one whole chunk of 31000 characters and a last
+   * chunk of 1, 103, 104 or 105, with a session id of 36 characters, so Logitech's number falls short of the
+   * line by 46 + 11 + 36 + 11 = 104, the most the recordings measured. The whole line's length is acted on
+   * whole at every one; Logitech's number cuts the line at the first chunk for a last chunk of up to 104 and
+   * not at 105, which is the control that the fake does count.
+   */
+  it('is acted on whole by the listener at a last chunk of 1, 103 and 104 characters, where Logitech\'s number cuts it a chunk early', () => {
+    const output = withEnv(REQUEST_FLAGS, `
+      const out = {};
+      for (const announce of ['line', 'responses']) {
+        for (const last of [1, 103, 104, 105]) {
+          const remote = new FakeTouchRemote({ sysinfo: SYSINFO, answer: () => 'Response,{}', listener: true });
+          const s = await session.openTouchRequestSession(pipe.guardFileProtocol(remote), { permittedUnit: UNIT, announce });
+          const head = rails.TOUCH_SYNC_REQUESTS[3] + '&sessionId=' + '0'.repeat(36) + '&responses=';
+          const line = head + 'x'.repeat(31000 + last - head.length);
+          await s.request(line);
+          out[announce + ' ' + last] = { length: line.length, acted: remote.acted.map((a) => a === line ? 'whole' : a.length) };
+        }
+      }
+      process.stdout.write(JSON.stringify(out));
+    `);
+    const result = JSON.parse(output) as Record<string, { length: number; acted: (string | number)[] }>;
+    assert.deepEqual(result, {
+      'line 1': { length: 31001, acted: ['whole'] },
+      'line 103': { length: 31103, acted: ['whole'] },
+      'line 104': { length: 31104, acted: ['whole'] },
+      'line 105': { length: 31105, acted: ['whole'] },
+      'responses 1': { length: 31001, acted: [31000, 1] },
+      'responses 103': { length: 31103, acted: [31000, 103] },
+      'responses 104': { length: 31104, acted: [31000, 104] },
+      'responses 105': { length: 31105, acted: ['whole'] },
+    });
   });
 });
 
@@ -958,7 +1001,8 @@ describe('the bytes, against the three recorded syncs', () => {
         const operations = operationsOf(fixture);
         const replay = operations.flatMap((o) => o.commands);
         const remote = new FakeTouchRemote({ sysinfo: SYSINFO, replay });
-        const s = await session.openTouchRequestSession(pipe.guardFileProtocol(remote), { permittedUnit: UNIT });
+        // Logitech's client's announcement, asked for by name: this compares the session's bytes with theirs.
+        const s = await session.openTouchRequestSession(pipe.guardFileProtocol(remote), { permittedUnit: UNIT, announce: 'responses' });
         const lines = operations.map((o) => o.line).filter((l) => !l.startsWith('Content-Length'));
         const names = {};
         let error;

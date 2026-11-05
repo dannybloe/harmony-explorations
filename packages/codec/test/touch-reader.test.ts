@@ -73,7 +73,7 @@ import { isDeepStrictEqual } from 'node:util';
 import * as lab from '@harmony/lab';
 import { segmentRefs } from '../src/archive.ts';
 import { statedCode } from '../src/stated.ts';
-import { checkConfiguration, findingsByRule } from '../src/harmony-touch/check.ts';
+import { checkConfiguration, findingsByRule, refusalsBeforeASync } from '../src/harmony-touch/check.ts';
 import { documentsOfAnswers, type SyncDocuments } from '../src/harmony-touch/documents.ts';
 import { FIRMWARE_SETTINGS, readConfiguration, type Configuration } from '../src/harmony-touch/read.ts';
 import { answersOf, FULL, requestsOf, REVERSE, TRIAL } from './touch-sync.ts';
@@ -191,6 +191,15 @@ test('the check reports what the recordings were measured to hold: two overwritt
   assert.deepEqual(findingsByRule(checkConfiguration(read(FULL).c)), { 'repeated screen index': 2, 'number pad entry on no key': 2 });
   assert.deepEqual(findingsByRule(checkConfiguration(read(TRIAL).c)), { 'repeated screen index': 1 });
   assert.deepEqual(findingsByRule(checkConfiguration(read(REVERSE).c)), {});
+});
+
+test('the gate before a write passes both recorded sets down whole, and refuses the reverse sync, which holds Settings alone', lab.skipUnless(FULL, TRIAL, REVERSE), () => {
+  // The calibration of `refusalsBeforeASync`: Logitech's own two sets down are what a remote took, so the
+  // gate refusing either would be the gate's fault. The negative is the reverse sync's one document, which
+  // is not a set a sync down can be answered from.
+  assert.deepEqual(refusalsBeforeASync(read(FULL).documents), []);
+  assert.deepEqual(refusalsBeforeASync(read(TRIAL).documents), []);
+  assert.deepEqual(findingsByRule(refusalsBeforeASync(read(REVERSE).documents)), { 'document absent': 5 });
 });
 
 /**

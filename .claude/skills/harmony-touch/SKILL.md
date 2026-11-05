@@ -66,7 +66,12 @@ and land the answer in the reference afterwards with its source.
   question to put first, not a list to widen.
 * **The rail reads no answer's content**, so a set that is valid JSON and lacks a list the engine's reader
   walks is saved as written and ends the task that loads the configuration. **The protection is the
-  answerer refusing a set the codec's reader and check reject**, `todo-touch.md` 6.6. **The way back is the
+  answerer refusing a set the codec's reader and check reject**, `todo-touch.md` 6.6: `syncTouch` in
+  `packages/corpus/src/touchsync.ts` calls `refusalsBeforeASync` in `packages/codec/src/harmony-touch/check.ts`
+  itself before anything is opened, and its script is `packages/corpus/bin/touch-sync.ts`, `--unchanged` or
+  `--set <lab folder>`, a dry run without `--commit`. **The answerer exists and nothing has been sent through
+  it**: it is tested against the recorded syncs and the fake remote only, and the first real run is 6.7. It
+  lives in `packages/corpus` because `packages/usb` cannot import the codec. **The way back is the
   recovery tier, one step per run of `packages/usb/bin/touch-recover.ts`**, a dry run without `--commit`
   and all three flags with it: `--step abort` first, since the restart answers 202 and restarts nothing
   while a sync is marked running, and on a remote whose configuration task has ended the abort's answer
@@ -75,9 +80,10 @@ and land the answer in the reference afterwards with its source.
   chain them: each answer is read before the next. **What still needs the remote's own factory reset and
   Logitech's client**: a remote whose system does not start, and one whose provisioning is gone. The whole
   route is `recovering-a-remote`'s Harmony Touch section. And
-  the session announces a write of answers with Logitech's client's number, which the remote can reach one
-  chunk early on a line whose last chunk is short, `announcedLength` in `touchsession.ts`; that too is 6.6's
-  to settle.
+  the session announces a write of answers with the whole line's length by default, the number the remote's
+  listener reaches exactly on the last chunk, `TouchAnnouncement` in `touchsession.ts`; Logitech's client's
+  number, which the remote can reach one chunk early on a line whose last chunk is short, is sent only when
+  asked for, by the tests that compare the session's bytes with theirs.
 * **The only route onto it is `openFileBasedRemote`, read only, and it has been taken**: the two files on
   `INERT_PATHS` that a Touch answers are read, and the reference holds what they gave. **There is nothing
   more to read on a Touch without the named door**, so a new read on this model is not a routine step.
@@ -114,7 +120,7 @@ test; the read itself goes into the lab.
 | the read script | `packages/usb/bin/read-file-identity.ts`, and `--record touch` for the unit record |
 | the request channel | `packages/usb/src/touchsession.ts`, the rail in `packages/usb/src/rails.ts` from `TOUCH_REQUEST_DOOR`, the route `onTheTouchRequestRoute` in `filepipe.ts`, tested in `packages/usb/test/touchsession.test.ts`; the reads of 6.4 are `packages/usb/bin/touch-request.ts` and the recovery steps `packages/usb/bin/touch-recover.ts`, each a dry run without `--commit` |
 | the configuration's reader and checker | `packages/codec/src/harmony-touch/`, tested in `packages/codec/test/touch-reader.test.ts` and `touch-check.test.ts` |
-| answering a sync in place of Logitech's server | `reference/architectures/harmony-touch/answering-a-sync.md` |
+| answering a sync in place of Logitech's server | `reference/architectures/harmony-touch/answering-a-sync.md`; the answerer `packages/corpus/src/touchsync.ts`, its script `packages/corpus/bin/touch-sync.ts`, tested in `packages/corpus/test/touch-sync.test.ts` |
 | the protocol | `reference/usb-protocol/file-protocol.md` |
 | its family, firmware and its two architecture numbers | `reference/architectures/harmony-touch/` |
 | the bench unit's notes | `docs/test-notes/harmony-touch.md` |

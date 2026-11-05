@@ -8,8 +8,8 @@ Logitech's would have to produce to answer a sync itself.
 
 **Everything here is read in the remote's firmware, production build 4.15.330, and measured in recorded
 syncs of Logitech's client; the preview build's engine was not read for this page. Nothing of ours has
-answered a sync**: no program in this project drives one, and the rules below are what
-the firmware does with an answer, not what a remote was seen to do with one of ours[^t-touch-host]. Where a
+answered a sync on a remote**: the rules below are what the firmware does with an answer, not what a remote
+was seen to do with one of ours[^t-touch-host]. Where a
 rule has only been seen to hold for Logitech's own answers, the page says so. The test behind the firmware
 footnotes asserts, function by function, the names and constants each rule rests on; the order in which a
 function uses them, and so which check comes first, is the decompiled reading named in that test's header
@@ -79,8 +79,12 @@ shortfall**, and acts on a line whose `responses` stops short, which the engine 
 decode; the last chunk then arrives as a line of its own. That the remote hands on each chunk is read in its
 native program and not tested here[^unchecked]. Four of the recorded writes went in more than one chunk and
 the shortest last chunk was 2276 characters, so the recordings never met it[^t-touch-answers]. An answerer
-that announces a number the listener can count to, or never ends a line in so short a chunk, avoids it;
-neither has been tried[^unchecked].
+that announces a number the listener can count to, or never ends a line in so short a chunk, avoids it.
+The whole line's length is that number: the listener answers each chunk with a request for more while it
+holds fewer characters than announced and acts once it holds at least as many, so it acts exactly as the
+last chunk arrives, whatever that chunk's length[^t-touch-host]. **This project's answerer announces the
+whole line's length**, where Logitech's client announces the `responses` argument[^d29]. Neither has been
+tried on a remote[^unchecked].
 
 ## What the remote does not check, and why an answerer still has to be careful
 
@@ -92,7 +96,11 @@ What each document must hold is the "what a writer must carry" section of its ow
 [devices and infrared](devices-and-infrared.md#what-a-writer-must-carry) and
 [activities and buttons](activities-and-buttons.md#what-a-writer-must-carry); at the least, each of the four
 documents the engine reads must hold its top level array, which may be empty, and the settings document its
-own[^t-touch-host].
+own[^t-touch-host]. **So must three lists inside them**: each device's `DeviceFeatures`, each button map's
+`Buttons` and each sequence's `Actions`, which the reader walks without testing them first, where it does
+test the lists it can meet as null, such as an activity's roles or a map's sequences[^t-touch-recovery]. A
+null in one of the three is therefore taken to stop the reader as a missing one does, which is inferred from
+those tests rather than read in the decoder[^unchecked].
 
 **A document has to arrive as the object itself, not as a string holding one, and nothing on arrival checks
 which it is.** The remote stores a document as the JSON encoding of its `resource`, so an object is stored as
@@ -230,6 +238,7 @@ Whether these are enough to know a whole configuration arrived is not settled[^u
   document back on a unit, and what its engine reload does in between[^unchecked].
 
 [^t-touch-host]: Read in the firmware. [The test](../../../tests/test_harmony_touch_host.py)
+[^t-touch-recovery]: Read in the firmware. [The test](../../../tests/test_harmony_touch_recovery.py)
 [^t-touch-recovery-client]: Stated by Logitech, in their client. [The test](../../../tests/test_harmony_touch_recovery.py)
 [^t-touch-answers]: Measured on a unit. [The test](../../../packages/usb/test/touch-host.test.ts)
 [^t-touch-api-names]: Read in the firmware. [The test](../../../tests/test_harmony_touch_api_names.py)

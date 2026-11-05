@@ -20,8 +20,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { checkConfiguration, findingsByRule } from '../src/harmony-touch/check.ts';
-import { documentsOfAnswers, kindOf, type SyncDocuments } from '../src/harmony-touch/documents.ts';
+import { TOP_LEVEL_LISTS, checkConfiguration, findingsByRule, refusalsBeforeASync } from '../src/harmony-touch/check.ts';
+import { documentKeyOf, documentsOfAnswers, kindOf, type SyncDocuments } from '../src/harmony-touch/documents.ts';
 import { DEFAULT_PRESS_REPEATS, FIRMWARE_SETTINGS, mapIdentifier, numberPadKey, readConfiguration, readSettings, stationLogo, uploadedLogo } from '../src/harmony-touch/read.ts';
 
 // The documents are JSON; the synthetic ones are built and broken as such.
@@ -437,4 +437,70 @@ test('an empty sync reads as empty and names all six documents absent', () => {
   const c = readConfiguration({});
   assert.deepEqual(c.absent, ['ActivityList', 'DeviceList', 'MapList', 'Context', 'Settings', 'ProtocolList']);
   assert.deepEqual(checkConfiguration(c), []);
+});
+
+// ---------------------------------------------------------------------------------------------------
+// The gate before a write, `todo-touch.md` 6.6
+// ---------------------------------------------------------------------------------------------------
+
+/** The gate's verdict on a set, by rule, the shape every assertion below compares whole. */
+const gate = (documents: Json) => findingsByRule(refusalsBeforeASync(documents as SyncDocuments));
+
+test('the gate passes the clean set, which is the control for every refusal below', () => {
+  assert.deepEqual(refusalsBeforeASync(clean()), []);
+});
+
+test('the gate refuses a set missing each top level list the engine walks, absent or null, and names that one list', () => {
+  // Named here as literals, so the table cannot lose a list with the suite still passing.
+  assert.deepEqual(TOP_LEVEL_LISTS, {
+    ActivityList: 'Activities', DeviceList: 'DevicesWithFeatures', MapList: 'ButtonMaps', ProtocolList: 'Protocols', Settings: 'Settings',
+  });
+  for (const [document, list] of Object.entries(TOP_LEVEL_LISTS)) {
+    for (const how of ['absent', 'null', 'a string'] as const) {
+      const set = broken((x) => {
+        if (how === 'absent') delete x[document][list];
+        else x[document][list] = how === 'null' ? null : 'not a list';
+      });
+      const found = refusalsBeforeASync(set);
+      assert.deepEqual(found.map((f) => [f.rule, f.effect, f.document, f.path]), [['missing list', 'refused', document, list]], `${document}.${list} ${how}`);
+      // The same finding from the check itself, so a caller of the check alone is told too. Not for a string,
+      // which the view does not read as a list, and which only the gate meets, before the view is built.
+      if (how !== 'a string') assert.equal(findingsByRule(checkConfiguration(readConfiguration(set)))['missing list'], 1, `${document}.${list} ${how} in the check`);
+    }
+  }
+});
+
+test('the gate refuses a set missing a list the reader walks inside an entry: a device\'s features, a map\'s buttons and a sequence\'s steps', () => {
+  assert.deepEqual(refusalsBeforeASync(broken((x) => { delete firstDevice(x).DeviceFeatures; })).map((f) => f.path), ['DevicesWithFeatures[0].DeviceFeatures']);
+  assert.deepEqual(refusalsBeforeASync(broken((x) => { firstDevice(x).DeviceFeatures = null; })).map((f) => f.path), ['DevicesWithFeatures[0].DeviceFeatures']);
+  assert.deepEqual(refusalsBeforeASync(broken((x) => { delete x.MapList.ButtonMaps[1].Buttons; })).map((f) => f.path), ['ButtonMaps[1].Buttons']);
+  assert.deepEqual(refusalsBeforeASync(broken((x) => { delete x.MapList.ButtonMaps[2].Sequences[0].Actions; })).map((f) => f.path), ['ButtonMaps[2].Sequences[0].Actions']);
+  // The negatives: a null sequence list and a null input list are guarded by the reader, so neither is refused.
+  assert.equal(gate(broken((x) => { x.MapList.ButtonMaps[2].Sequences = null; }))['missing list'], undefined);
+  assert.deepEqual(gate(broken((x) => { firstDevice(x).DeviceFeatures[1].Inputs = null; })), {});
+});
+
+test('the gate refuses a set missing a document, or holding one that is not an object, before it reads anything', () => {
+  for (const name of ['ActivityList', 'DeviceList', 'MapList', 'Context', 'Settings', 'ProtocolList']) {
+    assert.deepEqual(gate(broken((x) => { delete x[name]; })), { 'document absent': 1 }, `${name} absent`);
+    assert.deepEqual(gate(broken((x) => { x[name] = JSON.stringify(x[name]); })), { 'not a document': 1 }, `${name} as a string`);
+    assert.deepEqual(gate(broken((x) => { x[name] = []; })), { 'not a document': 1 }, `${name} as an array`);
+  }
+});
+
+test('the gate keeps what the check finds refused and passes what it finds ignored', () => {
+  // A required field, refused: the device type.
+  assert.deepEqual(gate(broken((x) => { delete firstDevice(x).Device.DeviceType; })), { 'required field': 1 });
+  // A repeated screen index, ignored, which Logitech's own documents carry: not a refusal.
+  const shadowed = broken((x) => { x.MapList.ButtonMaps[0].Buttons.push(entry(0, commandAction(1, 'OK'))); });
+  assert.equal(findingsByRule(checkConfiguration(readConfiguration(shadowed)))['repeated screen index'], 1);
+  assert.deepEqual(gate(shadowed), {});
+});
+
+test('a document is kept by its last segment for a harmony address, whole for a content address, and not at all otherwise', () => {
+  assert.equal(documentKeyOf('harmony://Account/1/MapList?excludeFunctionMaps=true'), 'MapList');
+  assert.equal(documentKeyOf('harmony://Account/1/Remote/2/Settings'), 'Settings');
+  assert.equal(documentKeyOf('content://1.0/service/svc'), 'content://1.0/service/svc');
+  assert.equal(documentKeyOf('content-image://1.0/image/x.png;maxX=54;maxY=54'), undefined);
+  assert.equal(documentKeyOf('proxy://Finished'), undefined);
 });

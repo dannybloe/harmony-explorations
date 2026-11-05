@@ -18,7 +18,10 @@
  * data packets, a close, then `/sys/hlapi` opened for reading, the answer read, a close. The answer is the
  * word `Response`, a comma and JSON. A write of answers is announced first by a line of its own,
  * `Content-Length: ` and a length, as a session of its own, and this file writes that announcement
- * itself before every write of answers, with the number Logitech's client used, `announcedLength`.
+ * itself before every write of answers. **The number is the whole line's length by default**, which is
+ * what the remote's listener counts, `TouchAnnouncement`; Logitech's client's number, the `responses`
+ * argument's length, `announcedLength`, is kept as an option for the tests that compare this file's bytes
+ * with theirs.
  *
  * ## Whose bytes these are
  *
@@ -287,11 +290,35 @@ export interface TouchRequestSession {
   request(line: string): Promise<TouchAnswer>;
 }
 
+/**
+ * Which number announces a write of answers: `line`, the whole line's length, or `responses`, the length of
+ * its `responses` argument as Logitech's client states it, `announcedLength`.
+ *
+ * **`line` is this project's choice and the default**, `todo-touch.md` 6.6. The remote's cable listener,
+ * `halhttpserverconnector.lua` `clientConnection`, keeps the announced number, adds each write command's
+ * text after its `/api/` to what it holds, answers "go on" while it holds fewer characters than announced
+ * and acts on what it holds as soon as it holds at least that many. What it holds is the line from the
+ * request's name on, so the whole line's length is the one number it reaches exactly when the last chunk
+ * arrives, whatever that chunk's length: one character more and it would wait for a write that never comes,
+ * one fewer and it would act a chunk early on a line whose last characters are missing. Logitech's number is
+ * the line less 101 to 104 characters, so with it a line whose last chunk is no longer than that is acted on
+ * one chunk early, `answering-a-sync.md` "The number announced falls short of what the remote counts".
+ * `touchsession.test.ts` holds both against a fake listener built from that reading, at a last chunk of 1,
+ * 103 and 104 characters. **Neither number has been sent with a line of more than one chunk by this project**,
+ * and that the remote hands on each chunk as it arrives is read in its native program and not tried.
+ *
+ * `responses` exists so that the tests comparing this file with Logitech's client report by report can ask
+ * for the client's bytes; nothing that answers a sync should.
+ */
+export type TouchAnnouncement = 'line' | 'responses';
+
 export interface TouchSessionOptions {
   /** The unit the session is meant for, from the lab's `units/touch.txt`. */
   readonly permittedUnit: Uint8Array;
   /** Every line of the account, as it happens. */
   readonly log?: (line: string) => void;
+  /** Which number announces a write of answers; the whole line when absent. */
+  readonly announce?: TouchAnnouncement;
 }
 
 /** Send one report the session has decided on: authorised for exactly these bytes, then written. */
@@ -360,13 +387,14 @@ async function readAnswer(transport: Transport, size: number): Promise<Uint8Arra
 }
 
 /**
- * The number a write of answers is announced with: **the length of its `responses` argument as written,
- * URL encoded**, not of the whole line. That is what Logitech's client stated before every one of the
- * twelve answer writes in the three recorded syncs, from 107 to 571459, each time the line's length less
- * its name, its `sessionId` and the argument's own name, 101 to 104 characters, `touch-host.test.ts`.
- * The client's number is kept because these are the bytes the remote is known to take.
+ * **Logitech's client's number** for a write of answers: the length of its `responses` argument as written,
+ * URL encoded, not of the whole line. That is what their client stated before every one of the twelve
+ * answer writes in the three recorded syncs, from 107 to 571459, each time the line's length less its name,
+ * its `sessionId` and the argument's own name, 101 to 104 characters, `touch-host.test.ts`. A session sends
+ * it only when asked for with `announce: 'responses'`, which the tests comparing this file with the
+ * recordings do.
  *
- * **It is short, and this file reproduces a hazard of Logitech's client by sending it.** The remote's cable
+ * **It is short, and a session sending it reproduces a hazard of Logitech's client.** The remote's cable
  * listener counts every character of the line **from the request's name on**, and it is handed each write
  * command's text as the command arrives, so for a line written in more than one chunk it acts as soon as
  * the chunks it holds reach the announced number. When the last chunk is no longer than the shortfall, the
@@ -376,9 +404,8 @@ async function readAnswer(transport: Transport, size: number): Promise<Uint8Arra
  * chunks. Every recorded write of more than one chunk ended in a chunk of thousands of characters, so the
  * recordings never met it. The listener's count is read in the engine, the per command hand over in the
  * native program, `reference/architectures/harmony-touch/answering-a-sync.md` "A long answer is announced
- * first"; neither has been run. **Nothing here refuses such a line yet**: the answerer that builds the
- * lines, `todo-touch.md` 6.6, chooses the remedy, an announcement the listener can count to or a line that
- * never ends in so short a chunk, and until then a write of answers through this session is that risk.
+ * first"; neither has been run. **The default announcement is the whole line instead**, `TouchAnnouncement`,
+ * which the listener reaches on the last chunk whatever its length.
  *
  * A write of answers without exactly one `responses` argument is refused, since there is nothing to state.
  */
@@ -388,6 +415,16 @@ export function announcedLength(line: string): number {
     throw new TouchRequestError('a write of answers carries one responses argument, and this line does not');
   }
   return (parts[1] as string).length;
+}
+
+/**
+ * The number a session announces a write of answers with, by the rule asked for, `TouchAnnouncement`. Both
+ * refuse a line without exactly one `responses` argument, so the rule chosen changes the number and nothing
+ * else about what a session accepts.
+ */
+export function announcementFor(line: string, rule: TouchAnnouncement): number {
+  const responses = announcedLength(line);
+  return rule === 'responses' ? responses : line.length;
 }
 
 /**
@@ -471,6 +508,7 @@ export async function openTouchRequestSession(
   options: TouchSessionOptions,
 ): Promise<TouchRequestSession> {
   const log = options.log ?? ((): void => undefined);
+  const announce = options.announce ?? 'line';
   const sysinfo = parseSysInfo(Buffer.from(await readFile(transport, '/sys/sysinfo')).toString('ascii'));
   log(`read: architecture ${sysinfo.get('arch') ?? '?'}, skin ${sysinfo.get('skin') ?? '?'}, `
     + `firmware ${sysinfo.get('fw_ver') ?? '?'}`);
@@ -490,9 +528,9 @@ export async function openTouchRequestSession(
         if (shape === undefined) throw new TouchRequestError(`no shape for ${start.name}, which is a bug`);
         let announcement: string | undefined;
         if (start.name === TOUCH_ANSWER_WRITE) {
-          const announce = TOUCH_REQUEST_SHAPES['Content-Length'];
-          if (announce === undefined) throw new TouchRequestError('no shape for the announcement, which is a bug');
-          announcement = await operation(transport, `Content-Length: ${announcedLength(line)}`, announce, log);
+          const shapeOfAnnouncement = TOUCH_REQUEST_SHAPES['Content-Length'];
+          if (shapeOfAnnouncement === undefined) throw new TouchRequestError('no shape for the announcement, which is a bug');
+          announcement = await operation(transport, `Content-Length: ${announcementFor(line, announce)}`, shapeOfAnnouncement, log);
         }
         const text = await operation(transport, line, shape, log);
         return announcement === undefined

@@ -27,7 +27,16 @@ what that page sends is not read.
 makes the loader return nothing: the store's read decodes inside `safeCall`, and `loadAll` in
 `tasks/harmonyengine/main.lua` returns nil on any nil. A document that is valid JSON but lacks an array the
 reader walks makes the reader raise: the reader's functions walk `ipairs` of each top level array with no
-guard, and the reader's one `safeCall` is around an activity's `Alternatives`. The configuration task holds
+guard, and the reader's one `safeCall` is around an activity's `Alternatives`. **Three lists inside the
+documents are walked the same way**, read for `todo-touch.md` 6.6 in `userconfigreader.lua`: a device entry's
+`DeviceFeatures`, handed by `getDevicesConfiguration` to `getStatesConfiguration`, which walks it with no
+test; each map's `Buttons`, in `getButtonMaps`; and a sequence's `Actions`, walked by
+`getSequenceActions`, which holds no `type` test at all. Beside them the reader tests `type(x) == "table"`
+before walking the lists it can meet as JSON null, a role list, the steps added by hand, an input list, a
+state's values, a map's `Sequences`, so null is not a list to the walk and a null in the three counts as
+missing; that is inferred from the guards, since the decoder's null value is native and not read. The
+codec's check refuses all of them before a write, `refusalsBeforeASync` in
+`packages/codec/src/harmony-touch/check.ts`. The configuration task holds
 no `pcall`, `xpcall` or `safeCall` at all. **An error ends the task**: the scheduler's `_runtask`
 (`works/system.lua`) logs a coroutine that ends in an error and deletes it from the task list, and does not
 unregister its listeners. The watchdog task touches its file every 5000 ms through `openWatchDog` whatever
@@ -312,6 +321,19 @@ class ALoadThatRaisesEndsTheConfigurationTask(TheImage):
         # The reader walks each document's top level array.
         for array in (b'Activities', b'DevicesWithFeatures', b'ButtonMaps', b'Protocols'):
             self.assertTrue(any({array, b'ipairs'} <= strings_in(f) for f in self.functions(READER)), array)
+
+    def test_the_reader_walks_three_lists_inside_the_documents_and_tests_the_others_first(self):
+        # A device entry's features are taken by the function that walks the device list, and walked by the
+        # one that reads an input feature; a map's buttons by the function that walks the maps.
+        self.assertIn(b'DeviceFeatures', strings_in(self.function_with(READER, 'DevicesWithFeatures')))
+        self.assertIn(b'ipairs', strings_in(self.function_with(READER, 'InputFeature', 'StateValues')))
+        self.assertTrue({b'Buttons', b'ipairs'} <= strings_in(self.function_with(READER, 'ButtonMaps')))
+        # A sequence's steps: the function that turns them into actions walks them and tests no type at all.
+        steps = strings_in(self.function_with(READER, 'ButtonCommandAction', 'Order'))
+        self.assertIn(b'ipairs', steps)
+        self.assertNotIn(b'type', steps)
+        # The contrast: the function that walks an input list and a state's values tests a type first.
+        self.assertTrue({b'type', b'table', b'Inputs'} <= strings_in(self.function_with(READER, 'InputFeature', 'StateValues')))
 
     def test_the_load_names_the_four_failure_messages(self):
         load = self.function_with(HE_MAIN, 'Unable to load devices', 'Finished loading data')

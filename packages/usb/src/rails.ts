@@ -1607,8 +1607,8 @@ export const TOUCH_ANSWER_WRITE = 'vnd.logitech.proxy/vnd.logitech.response?writ
  * nothing after it. The remote's listener gathers the writes that follow until it holds that many bytes,
  * `answering-a-sync.md` "A long answer is announced first", and Logitech's client announced every answer
  * write, short ones included, with the length of its `responses` argument. It names no request, so it is
- * not on either list a caller chooses from: the session writes it itself, `announcedLength` in
- * `touchsession.ts`.
+ * not on either list a caller chooses from: the session writes it itself, with the whole line's length
+ * unless asked for the client's number, `TouchAnnouncement` and `announcementFor` in `touchsession.ts`.
  */
 export const TOUCH_ANNOUNCEMENT = /^Content-Length: [1-9][0-9]{0,8}$/;
 

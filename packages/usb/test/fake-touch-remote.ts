@@ -11,6 +11,15 @@
  *   next one a recorded sync sent, and the recorded replies are served once a command's reports are all
  *   in. The first difference is kept in `mismatch` and refused, so a test can say where the bytes parted.
  *
+ * **And, with `listener`, the remote's cable listener**, as `halhttpserverconnector.lua` `clientConnection`
+ * reads, `reference/architectures/harmony-touch/answering-a-sync.md` "A long answer is announced first":
+ * each write command's text is handed to it as the command completes; an announcement sets the number to
+ * gather; while one is set and a chunk does not name a request other than a write of answers, the chunks are
+ * added up, and the listener acts on what it holds once that is at least the announced number. Every line it
+ * acts on is kept in `acted`, so a test sees whether a line was acted on whole or cut a chunk early. That the
+ * remote's native program hands each command's text on as it arrives is read and not tried, so this models
+ * the reading, not a remote.
+ *
  * `operationsOf` turns a recording into what the replay needs. Not a test file itself, so the runner does
  * not pick it up; it is imported by `touchsession.test.ts`, including from its subprocesses.
  */
@@ -51,6 +60,8 @@ export interface FakeTouchRemoteOptions {
   readonly answer?: (line: string) => string;
   /** A recording's commands to replay from the first open of `/sys/hlapi`. */
   readonly replay?: readonly Command[];
+  /** Model the remote's cable listener over the chunks written into `/sys/hlapi`, into `acted`. */
+  readonly listener?: boolean;
 }
 
 export class FakeTouchRemote implements Transport {
@@ -62,11 +73,17 @@ export class FakeTouchRemote implements Transport {
   mismatch: string | undefined;
   /** How many recorded commands the replay served whole. */
   replayed = 0;
+  /** With `listener`: every line the remote's cable listener acted on, in order. */
+  readonly acted: string[] = [];
+
+  /** The listener's announced number, and what it holds towards it. */
+  private announced: number | undefined;
+  private held = '';
 
   private readonly replies: Uint8Array[] = [];
   private nextHandle = 1;
   private open: { path: string; mode: string; handle: number; content: Uint8Array; written: number[] } | undefined;
-  private chunk: { left: number; lastSequence: number; sawDone: boolean } | undefined;
+  private chunk: { left: number; lastSequence: number; sawDone: boolean; text: number[] } | undefined;
   private replaying = false;
   private command = 0;
   private report = 0;
@@ -150,7 +167,7 @@ export class FakeTouchRemote implements Transport {
       }
       case FILE_WRITE: {
         const count = report[6] === 1 ? report[7] as number : ((report[7] as number) << 8) | (report[8] as number);
-        this.chunk = { left: count - 1, lastSequence: -1, sawDone: false };
+        this.chunk = { left: count - 1, lastSequence: -1, sawDone: false, text: [] };
         return;
       }
       case FILE_READ: {
@@ -169,7 +186,8 @@ export class FakeTouchRemote implements Transport {
       case FILE_CLOSE: {
         const open = this.open;
         if (open !== undefined && open.path === '/sys/hlapi' && open.mode === 'W') {
-          this.lines.push(String.fromCharCode(...open.written));
+          // Through a buffer rather than a spread: a write of answers runs to hundreds of thousands of characters.
+          this.lines.push(Buffer.from(open.written).toString('latin1'));
         }
         this.replies.push(padded([SERVICE, FILE_CLOSE, echo, 1, 1, open?.handle ?? 0]));
         this.open = undefined;
@@ -187,13 +205,45 @@ export class FakeTouchRemote implements Transport {
     } else {
       chunk.lastSequence = report[0] as number;
       this.open?.written.push(...report.subarray(2, 2 + (report[1] as number)));
+      chunk.text.push(...report.subarray(2, 2 + (report[1] as number)));
     }
     chunk.left -= 1;
     if (chunk.left === 0) {
+      if (this.options.listener === true && this.open?.path === '/sys/hlapi') this.listen(Buffer.from(chunk.text).toString('latin1'));
       const flag = chunk.sawDone ? 0xfe : 0x80 | chunk.lastSequence;
       this.replies.push(padded([SERVICE, FILE_WRITE, flag, 1, 1, this.open?.handle ?? 0]));
       this.chunk = undefined;
     }
+  }
+
+  /**
+   * The cable listener's reading, one write command's text at a time, in the order its checks stand in
+   * `clientConnection`: an announcement anywhere in the text sets the number and acts on nothing; a request
+   * other than a write of answers clears a number left set; while a number is set and not reached the text is
+   * added and nothing acts; once reached, what is held is acted on as one line; with no number set, the text
+   * is a line of its own.
+   */
+  private listen(text: string): void {
+    const announcement = /Content-Length: (\d+)/.exec(text);
+    if (announcement !== null) {
+      this.announced = Number(announcement[1]);
+      this.held = '';
+      return;
+    }
+    if (this.announced !== undefined && text.includes('vnd.logitech') && !text.includes('response?write')) {
+      this.announced = undefined;
+    }
+    let line = text;
+    if (this.announced !== undefined) {
+      if (this.held.length < this.announced) {
+        this.held += text;
+        if (this.held.length < this.announced) return;
+      }
+      line = this.held;
+      this.held = '';
+      this.announced = undefined;
+    }
+    this.acted.push(line);
   }
 }
 

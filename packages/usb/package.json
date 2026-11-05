@@ -10,7 +10,9 @@
     "./models": "./src/models.ts",
     "./trailer": "./src/trailer.ts",
     "./write": "./src/write.ts",
-    "./test/touch-recording": "./test/touch-recording.ts"
+    "./touchsession": "./src/touchsession.ts",
+    "./test/touch-recording": "./test/touch-recording.ts",
+    "./test/fake-touch-remote": "./test/fake-touch-remote.ts"
   },
   "scripts": {
     "typecheck": "tsc --build"

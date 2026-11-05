@@ -286,14 +286,22 @@ packages/usb/                   TS: the command protocol and the write rails, re
                                 so that a third write caller is a decision visible in a diff
                                 The `./test/touch-recording` subpath is test support only: the
                                 decoder of a recorded Touch sync, shared with packages/codec's
-                                tests, which a test file cannot import across packages otherwise
+                                tests, which a test file cannot import across packages otherwise,
+                                and so is `./test/fake-touch-remote`, the pretend Touch the
+                                answerer's tests in packages/corpus drive. The Touch's request
+                                session is reached through `@harmony/usb/touchsession` and not the
+                                barrel, for the reason `write` is
 packages/corpus/                TS: read a config off a remote and file it, read a **stated range**
                                 and file that, **and put one back**:
                                 since section 237 it also holds the config writer, which is here
                                 rather than in packages/usb because it needs the container parser
                                 to check the one field the remote itself checks. It is the write
                                 path's first caller outside that package, which is why the blind
-                                review's withhold list gained a row for it
+                                review's withhold list gained a row for it. It also holds the
+                                Harmony Touch's answerer, `src/touchsync.ts`, which drives a sync
+                                down through the request session, for the same kind of reason: it
+                                calls the codec's reader and check of a Touch's documents itself
+                                before anything is sent, and packages/usb cannot import the codec
 packages/bench/                 TS: the bench instrument, a server plus two pages in web/. The
                                 second, ir.html, is the infrared monitor: what a Flirc USB receiver
                                 hears, named against the bench remotes' configurations, plus
@@ -940,6 +948,20 @@ node packages/usb/bin/touch-recover.ts --step abort|delete|reboot [--backup <lab
                        **and** HARMONY_TOUCH_RECOVERY=1 and the lab's `units/touch.txt`; `delete`
                        also needs `--backup`, a lab folder holding a file, checked before anything
                        else. Keeps the answer in the lab's `reads/`. Unrun on a remote.
+node packages/corpus/bin/touch-sync.ts --unchanged | --set <lab folder> [--commit]
+                       drive a Harmony Touch's sync down end to end through the answerer,
+                       `todo-touch.md` 6.6: the provisioning read, the remote's own changes handed
+                       up and kept in the lab first, the sync, and every request list answered until
+                       `proxy://Finished` or `proxy://Abort`. `--unchanged` answers every document
+                       304 against the tag the remote sends and refuses one it sends none for;
+                       `--set` answers from a lab folder's `set.json`, after the codec's reader and
+                       check pass the whole set. Without `--commit` it opens nothing and prints the
+                       plan and the gate's verdict. `--commit` needs HARMONY_ENABLE_WRITES=1 **and**
+                       HARMONY_TOUCH_REQUESTS=1 and the lab's `units/touch.txt`, refuses with
+                       HARMONY_TOUCH_RECOVERY set, and keeps every request and answer in the lab's
+                       `reads/`. A refusal after the remote was acted on names `touch-recover.ts
+                       --step abort`. One line per step starting `sync:`, the forms in its header.
+                       Unrun on a remote.
 node packages/usb/bin/read-file.ts --file <path> [--product 0xc12b] [--device <path>]
                        the general form of the above: read any path on `INERT_PATHS` and print it as
                        bytes and, where it is printable, as text. Deliberately does not parse, since

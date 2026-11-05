@@ -437,14 +437,23 @@ export function documentsOfAnswers(answers: readonly SyncAnswer[]): SyncDocument
   const out = Object.create(null) as Record<string, unknown>;
   for (const answer of answers) {
     if (answer.resource === undefined) continue;
-    if (answer.uri.startsWith('harmony://')) {
-      const name = answer.uri.split('?')[0]!.split('/').at(-1)!;
-      out[name] = answer.resource;
-    } else if (answer.uri.startsWith('content://')) {
-      out[answer.uri] = answer.resource;
-    }
+    const key = documentKeyOf(answer.uri);
+    if (key !== undefined) out[key] = answer.resource;
   }
   return out as SyncDocuments;
+}
+
+/**
+ * The key a document asked for at `uri` is kept under in `SyncDocuments`: a `harmony://` address by its last
+ * path segment before any query, `MapList` out of `.../MapList?excludeFunctionMaps=true`, a `content://`
+ * address whole, and anything else, a picture or a `proxy://` ending, `undefined`, since it carries no
+ * document. The one statement of the rule `documentsOfAnswers` keys by, exported so that the answerer of a
+ * sync, `packages/corpus/src/touchsync.ts`, finds a request's document by the same rule rather than a copy.
+ */
+export function documentKeyOf(uri: string): string | undefined {
+  if (uri.startsWith('harmony://')) return uri.split('?')[0]!.split('/').at(-1)!;
+  if (uri.startsWith('content://')) return uri;
+  return undefined;
 }
 
 /**

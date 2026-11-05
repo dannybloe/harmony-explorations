@@ -25,10 +25,10 @@
  * document a person can follow; `message` says what in words without quoting the documents, since a
  * configuration holds an account's data and a finding is the kind of thing that gets printed.
  */
-import type { Activity, Command, Device } from './documents.ts';
+import { CONFIGURATION_DOCUMENTS, type Activity, type Command, type Device, type SyncDocuments } from './documents.ts';
 import {
-  DELETED_ON_REMOTE, INFRARED_TRANSPORT, numberPadKey, type Configuration, type ReadActivity, type ReadButtonAction,
-  type ReadDevice, type ReadMap,
+  DELETED_ON_REMOTE, INFRARED_TRANSPORT, numberPadKey, readConfiguration, type Configuration, type ReadActivity,
+  type ReadButtonAction, type ReadDevice, type ReadMap,
 } from './read.ts';
 
 /** The rules, each named for what it finds. */
@@ -46,7 +46,10 @@ export type Rule =
   | 'shared power order'
   | 'shared activity order'
   | 'number pad entry on no key'
-  | 'favourite number';
+  | 'favourite number'
+  | 'missing list'
+  | 'document absent'
+  | 'not a document';
 
 export interface Finding {
   readonly rule: Rule;
@@ -64,16 +67,119 @@ const actionsOf = (b: { press: ReadButtonAction | undefined; longPress: ReadButt
   [b.press, b.longPress, b.doublePress].filter((a): a is ReadButtonAction => a !== undefined);
 
 /**
- * Every finding over one configuration, in the order of the documents: devices, maps, activities,
- * favourites.
+ * Every finding over one configuration: the lists the reader walks first, then in the order of the
+ * documents, devices, maps, activities, favourites.
  */
 export function checkConfiguration(c: Configuration): Finding[] {
   return [
+    ...checkLists(c.documents),
     ...checkDevices(c.devices),
     ...checkMaps(c.maps, c.devices),
     ...checkActivities(c),
     ...checkFavourites(c),
   ];
+}
+
+/**
+ * The lists the engine's reader walks with no guard, by document: each document's top level list, and inside
+ * them the lists of an entry it walks the same way. `answering-a-sync.md`, "What the remote does not check,
+ * and why an answerer still has to be careful": a document that is valid JSON and lacks one of these, or
+ * states it as `null`, makes the reader raise, which ends the task that loads the configuration,
+ * `firmware.md` "A configuration that fails to load".
+ *
+ * **`null` counts as lacking it, and that is this module's reading of a guard rather than a measurement.**
+ * The reader tests `type(x) == "table"` before walking the lists it may meet as `null`, a role list, an
+ * input list, a sequence list, and walks these without the test, so a `null` here reaches the walk as the
+ * decoder's null value, which those tests exist to keep out of it. No document measured states one of these
+ * as `null`, so nothing Logitech wrote is refused by it.
+ *
+ * The settings document's own list is on the reference's word for the Settings document; the engine's
+ * load, `loadAll`, reads the other four and the context, and which reader of the remote walks `Settings` is
+ * not named here.
+ */
+export const TOP_LEVEL_LISTS: Readonly<Record<string, string>> = {
+  ActivityList: 'Activities',
+  DeviceList: 'DevicesWithFeatures',
+  MapList: 'ButtonMaps',
+  ProtocolList: 'Protocols',
+  Settings: 'Settings',
+};
+
+/** A parsed JSON object that is not an array, which is what a document and an entry of one have to be. */
+const isObject = (x: unknown): x is Record<string, unknown> => typeof x === 'object' && x !== null && !Array.isArray(x);
+
+/**
+ * `missing list` over the documents as they are, before the view reads them: the view reads a missing list
+ * as empty, which is its promise and the opposite of what the remote's reader does, so this walks the
+ * documents themselves. A document that is absent is not this rule's; `refusalsBeforeASync` names it.
+ *
+ * Inside the lists, walked as the reader walks them: each device entry's `DeviceFeatures`, each map's
+ * `Buttons`, and the `Actions` of each sequence of a map whose `Sequences` is a list. An entry that is not an
+ * object is skipped here, as the view skips it, and its own fate on the remote is not read.
+ */
+function checkLists(documents: SyncDocuments): Finding[] {
+  const out: Finding[] = [];
+  const missing = (document: string, path: string, list: string): void => {
+    out.push({
+      rule: 'missing list', effect: 'refused', document, path,
+      message: `the document states no ${list} list, which the engine's reader walks without a check, so it raises and the configuration does not load`,
+    });
+  };
+  for (const [name, list] of Object.entries(TOP_LEVEL_LISTS)) {
+    const document = documents[name];
+    if (!isObject(document)) continue;
+    if (!Array.isArray(document[list])) missing(name, list, list);
+  }
+  const entries = (document: unknown, list: string): [Record<string, unknown>, number][] => {
+    const xs = isObject(document) ? document[list] : undefined;
+    return Array.isArray(xs) ? xs.flatMap((x, at): [Record<string, unknown>, number][] => (isObject(x) ? [[x, at]] : [])) : [];
+  };
+  for (const [entry, at] of entries(documents.DeviceList, 'DevicesWithFeatures')) {
+    if (!Array.isArray(entry['DeviceFeatures'])) missing('DeviceList', `DevicesWithFeatures[${at}].DeviceFeatures`, 'DeviceFeatures');
+  }
+  for (const [map, at] of entries(documents.MapList, 'ButtonMaps')) {
+    if (!Array.isArray(map['Buttons'])) missing('MapList', `ButtonMaps[${at}].Buttons`, 'Buttons');
+    for (const [sequence, s] of entries(map, 'Sequences')) {
+      if (!Array.isArray(sequence['Actions'])) missing('MapList', `ButtonMaps[${at}].Sequences[${s}].Actions`, 'Actions');
+    }
+  }
+  return out;
+}
+
+/**
+ * **The gate before a write**: every finding that would make the remote's reader raise or turn a value away,
+ * over a whole set of documents meant to answer a sync, or none when the set may be written. `todo-touch.md`
+ * 6.6; the answerer refuses a set this returns anything for, before it sends the sync request.
+ *
+ * In order, and stopping at the first kind that finds anything, since a set missing a document or a list
+ * cannot be read the way the remote reads it:
+ *
+ * 1. **all six configuration documents present**, `document absent`: a sync down asks for every one of them
+ *    and a status from 400 up on any aborts, `answering-a-sync.md` "The smallest set of documents"
+ * 2. **each of them a JSON object**, `not a document`: a document sent as a string of JSON or an array is
+ *    stored as that and the reader finds none of its lists, "A document has to arrive as the object itself"
+ * 3. **every list the reader walks**, `missing list`, above
+ * 4. **then the whole check, keeping what is `refused`**: what stops the reader, a required field, and what
+ *    the remote turns away. What is only `ignored` is not a refusal: Logitech's own documents carry two kinds
+ *    of it, `touch-reader.test.ts`.
+ *
+ * Favourites documents present in the set are read with the rest; which ones a sync will ask for depends on
+ * the documents, so their absence is the answerer's to meet when the remote asks.
+ */
+export function refusalsBeforeASync(documents: SyncDocuments): Finding[] {
+  const absent = CONFIGURATION_DOCUMENTS.filter((name) => documents[name] === undefined).map((name): Finding => ({
+    rule: 'document absent', effect: 'refused', document: name, path: '',
+    message: 'the set holds no such document, and a sync down asks for all six',
+  }));
+  if (absent.length > 0) return absent;
+  const notObjects = CONFIGURATION_DOCUMENTS.filter((name) => !isObject(documents[name])).map((name): Finding => ({
+    rule: 'not a document', effect: 'refused', document: name, path: '',
+    message: 'the document is not a JSON object, so the remote stores it as something its reader finds no list in',
+  }));
+  if (notObjects.length > 0) return notObjects;
+  const lists = checkLists(documents);
+  if (lists.length > 0) return lists;
+  return checkConfiguration(readConfiguration(documents)).filter((f) => f.effect === 'refused');
 }
 
 /**
