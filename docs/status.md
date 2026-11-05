@@ -187,7 +187,7 @@ the generator that wrote it, with firmware event 0xFF bound so it serves both mo
 expected codes on the bench 350 and the same file 33 of 33 on the bench 300, `packages/codec/test/noscreenfinalunits.test.ts`.
 Two Harmony 885s are on the bench as well, read only.
 
-**The Harmony Touch is described from its own reading, and one sync of ours has run on it.** Its configuration
+**The Harmony Touch is described from its own reading, and two syncs of ours have run on it, the second committed.** Its configuration
 is Logitech's documents rather than a file, fetched by the remote through the computer during a sync, and both
 directions of a sync are recorded, `packages/usb/test/touch-sync-both-ways.test.ts`. The documents are described
 field by field in [its platform pages](../reference/architectures/harmony-touch/README.md) and read by the codec,
@@ -200,7 +200,11 @@ sync answered by this project, 6.7, `packages/usb/test/touch-first-sync.test.ts`
 handed up and written back under a tag of ours, the six configuration documents answered 304 and taken, and a stop
 at the favourites, which a Touch synced through a computer always asks for without a tag,
 `tests/test_harmony_touch_favourites_untagged.py`; the abort, the read and the restart cleared it. The answerer now
-answers a favourites request 304, and 6.7 waits on a second run.
+answers a favourites request 304, and the second sync it answered ran to its end and was committed,
+`packages/usb/test/touch-second-sync.test.ts`: nothing handed up, the six documents, the three favourites and ten
+pictures each answered 304, `proxy://Finished` answered 200, the configuration hash the same before and after,
+and the remote starting normally with its favourites in place. So 6.7 is done, every answer of it a 304 or the
+finish; a document of ours delivered with 200 is 6.8.
 
 ## What is still open
 

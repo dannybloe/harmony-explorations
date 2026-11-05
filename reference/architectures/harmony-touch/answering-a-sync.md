@@ -7,11 +7,12 @@ something was Logitech's own client, which fetched each answer from Logitech's s
 Logitech's would have to produce to answer a sync itself.
 
 **Everything here is read in the remote's firmware, production build 4.15.330, and measured in recorded
-syncs of Logitech's client; the preview build's engine was not read for this page. One sync answered by a
-program of this project has run on a remote, through the hand over and the six configuration documents, and
-stopped at the favourites**: what it measured is marked where it stands, and the rest of the rules below are
-what the firmware does with an answer, not what a remote was seen to do with one of
-ours[^t-touch-host][^t-touch-first-sync]. Where a
+syncs of Logitech's client; the preview build's engine was not read for this page. Two syncs answered by a
+program of this project have run on a remote: the first stopped at the favourites, and the second ran to its
+end and was committed, every answer in it a 304 that kept the remote's own copy, or the answer to the
+finish**: what they measured is marked where it stands, and the rest of the rules below are what the firmware
+does with an answer, not what a remote was seen to do with one of
+ours[^t-touch-host][^t-touch-first-sync][^t-touch-second-sync]. Where a
 rule has only been seen to hold for Logitech's own answers, the page says so. The test behind the firmware
 footnotes asserts, function by function, the names and constants each rule rests on; the order in which a
 function uses them, and so which check comes first, is the decompiled reading named in that test's header
@@ -92,7 +93,7 @@ The whole line's length is that number: the listener answers each chunk with a r
 holds fewer characters than announced and acts once it holds at least as many, so it acts exactly as the
 last chunk arrives, whatever that chunk's length[^t-touch-host]. **This project's answerer announces the
 whole line's length**, where Logitech's client announces the `responses` argument[^d29]. Ours has been
-announced to a unit on writes shorter than one chunk, and the remote acted on each[^t-touch-first-sync]; on a
+announced to a unit on writes shorter than one chunk, and the remote acted on each[^t-touch-first-sync][^t-touch-second-sync]; on a
 write of more than one chunk, neither number has been tried at the boundary[^unchecked].
 
 ## What the remote does not check, and why an answerer still has to be careful
@@ -158,6 +159,15 @@ before that point[^t-touch-host]. An answerer's own way to abort is to ask the r
 half written set, reloads the old one and queues `proxy://Abort` with the answerer's own code and
 message[^t-touch-host].
 
+**A sync driven end to end by a program of this project has been committed by a unit.** The second sync it
+ran handed up nothing in its hand over, then took the six documents, the three favourites documents and ten
+pictures, each answered 304, through eight request lists, two of them empty, and the last list held
+`proxy://Finished`, which it answered 200. It went without the client's file resets and without its clock
+write, and every write of answers was replied as a write. Afterwards the remote started normally and its
+favourites were still there[^t-touch-second-sync]. Every answer of ours in it was a 304 or the finish, so what
+it shows is that the remote commits a set gathered from answers of ours, not what it makes of a document of
+ours delivered with 200.
+
 ## The smallest set of documents
 
 All six core documents are asked for in every sync down, and a status from 400 up on any of them aborts, so none can
@@ -200,15 +210,23 @@ and while a sync runs they read files from the set being gathered, which on a To
 holds no favourites document yet, since only a hub's sync copies them in first. The file read fails and the tag
 is never read[^t-touch-favourites-untagged]. A sync answered by this project met it: the user's favourites
 were asked for untagged, at the address an earlier sync of Logitech's had answered with a tag, after a hand over
-that handed up no favourites change[^t-touch-first-sync]. **So an untagged favourites request says nothing
-about what the remote holds, and 304 is the answer that keeps it**: on a 304 the remote copies its own
+that handed up no favourites change[^t-touch-first-sync]. The second such sync reached all three: the user's,
+the tuning device's and the line up's documents were each asked for without a tag, at addresses that earlier
+sync of Logitech's had answered with 200 and a tag, each was answered 304 with a tag of ours, the sync was
+committed, and the remote still showed its favourites afterwards[^t-touch-second-sync]. That is what the
+reading above predicts, and it does not by itself rule out a narrower one, that the remote sends a favourites
+document's tag only when both its file and its index entry exist, since which favourites files the remote held
+was not read on the unit; which of the two is the cause is not checked[^unchecked]. **By the first reading an
+untagged favourites request says nothing about what the remote holds, and by either 304 is the answer that keeps
+whatever it holds**: on a 304 the remote copies its own
 committed document and its own stored tag into the new set and stores nothing of the answer, though the answer
 must still carry a tag; one it does not hold stays missing, which is what a 404 would leave. A 200 with a
 document replaces what it holds, a 404 to the user's favourites drops them at the commit, and a 404 to a device
-document or a line up aborts[^t-touch-favourites-untagged]. Whether the pictures, whose tag the screens take
-straight from the committed index, come tagged once the remote holds them is the reading's prediction and has
-not been seen: the one sync recorded that carried pictures was the first, and asked for all of them
-untagged[^t-touch-favourites-untagged][^unchecked].
+document or a line up aborts[^t-touch-favourites-untagged]. **The pictures, whose tag the screens take straight
+from the committed index, come tagged once the remote holds them**: in the second sync answered by this project
+all ten were asked for with exactly the tags Logitech's earlier sync had delivered them with, in that sync's
+order, where that sync, on a remote holding none, had asked for every one untagged; each was answered 304
+echoing its tag[^t-touch-favourites-untagged][^t-touch-second-sync].
 
 > This said a 304 to a request that carried no tag tells the remote to copy a file it does not
 > hold<!--superseded-->, until the screens' own request for a change was read beside the engine's tag lookup:
@@ -274,7 +292,8 @@ In the two syncs down recorded the remote reported its provisioning mode as 0[^t
 with the entity tags of the stored activity, device and protocol lists and the context, which a host compares
 with the tags it sent; it leaves out the button map list and the settings, and is refused while a sync runs,
 [the engine](api/engine.md#harmonyenginegetconfighash)[^t-touch-api-engine]; on a unit, mid sync, it answered
-202 with the message "sync in progress"[^t-touch-first-sync]. The tag the remote sends for each
+202 with the message "sync in progress"[^t-touch-first-sync], and read before and after a sync whose every
+answer was a 304 it answered 200 with the same tags both times[^t-touch-second-sync]. The tag the remote sends for each
 document in the next sync's request list, read out of the committed set, is the other evidence[^t-touch-host].
 A committed document itself can be handed back by a resource put that names its address and carries no
 document, a reading never run on a unit, [proxy](api/proxy.md#can-a-stored-document-be-read-back)[^t-touch-api-setup].
@@ -283,9 +302,10 @@ Whether these are enough to know a whole configuration arrived is not settled[^u
 ## Not checked
 
 * Everything here is one firmware build and, for the measured side, the three syncs recorded by Logitech's
-  client and one answered by this project, which stopped at the favourites. **No sync answered by this
-  project has reached its commit**: the favourites, the pictures and the finish are the reading's
-  alone[^unchecked].
+  client and two answered by this project, the first stopped at the favourites and the second committed.
+  **Every answer of ours a remote has committed in a sync down was a 304 or the finish**: a document,
+  favourites document or picture of ours delivered with 200, and what the remote then does with it, are the
+  reading's alone[^unchecked].
 * Whether the outgoing queue actually carries a direct put through to the account, inferred from the queue's
   role rather than seen[^unchecked].
 * What a configuration the reader raises on does on a unit: the firmware reading is
@@ -294,8 +314,6 @@ Whether these are enough to know a whole configuration arrived is not settled[^u
 * That the screens turn a refused answer into the abort on a unit, and how soon `proxy://Abort` follows[^unchecked].
 * Whether a write of answers whose last chunk is no longer than the announcement's shortfall is acted on one
   chunk early on a unit[^unchecked].
-* Whether a sync driven without the client's own file resets and its refused clock write behaves the
-  same past the six configuration documents; up to them it did[^t-touch-first-sync][^unchecked].
 * How Logitech's service answers a tag it did not issue, when a remote returns to it[^unchecked].
 * Which power source a computer's port gives a remote, and so on which ports a sync can commit[^unchecked].
 * Whether the read back route of [proxy](api/proxy.md#can-a-stored-document-be-read-back) hands a committed
@@ -313,5 +331,6 @@ Whether these are enough to know a whole configuration arrived is not settled[^u
 [^t-touch-favourites-firmware]: Read in the firmware. [The test](../../../tests/test_harmony_touch_favourites.py)
 [^t-touch-favourites-untagged]: Read in the firmware. [The test](../../../tests/test_harmony_touch_favourites_untagged.py)
 [^t-touch-first-sync]: Measured on a unit. [The test](../../../packages/usb/test/touch-first-sync.test.ts)
+[^t-touch-second-sync]: Measured on a unit. [The test](../../../packages/usb/test/touch-second-sync.test.ts)
 [^d29]: Chosen by this project. [Decision 29](../../../docs/decisions.md#d29)
 [^unchecked]: Not checked.

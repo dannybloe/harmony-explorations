@@ -216,6 +216,34 @@ tag into the new set, so the answerer now answers every favourites request 304, 
 ours it does not store, `packages/corpus/src/touchsync.ts`; an answer to a favourites request without any tag would
 have aborted the sync. The measurements of this run are held by `packages/usb/test/touch-first-sync.test.ts`.
 
+## The second sync answered by this project, committed, todo-touch 6.7
+
+**Run on 5 November 2026**, after the first run and its recovery, with the answerer changed to answer every
+favourites request 304: `HARMONY_ENABLE_WRITES=1 HARMONY_TOUCH_REQUESTS=1 node packages/corpus/bin/touch-sync.ts
+--unchanged --commit`, the code as of commit `ed2e2174`. The lab's `reads/20261105T1218Z-touch-sync-unchanged/`
+holds every request and answer, and `reads/20261105T1217Z-touch-confighash/` and
+`reads/20261105T1218Z-touch-confighash/` the reads before and after.
+
+* `getconfighash` before and after: 200 both times, the same result, and the same as the 6.4 read.
+* The provisioning read: 200, mode 0.
+* The hand over: one list, `proxy://Finished` alone, answered 200. Nothing was handed up.
+* The sync, eight lists. 1: the six documents, every one with a tag, Settings's the tag the first run's hand
+  over answer wrote and the other five the full sync's, each answered 304 with its tag. 2: empty. 3, 4 and 5:
+  the user's, the tuning device's and the line up's favourites, one a list, **each without a tag**, each
+  answered 304 with a tag of ours. 6: empty. 7: ten pictures, every one with the tag the full sync of 2.3 had
+  delivered it with, each answered 304 with its tag. 8: `proxy://Finished`, answered 200. Every write of
+  answers was replied 200 as a write, and the answerer ended `sync: finished`.
+* Afterwards, by a look at the remote: it starts normally and the favourites are still there. Nothing else
+  was reported.
+
+So a sync driven end to end by a program of this project was committed by the remote, every answer in it a
+304 or the finish, and 6.7 is done. Settings came tagged after the first run's abort and restart; whether the
+stored Settings document is the one written back then is not settled, since `getconfighash` leaves Settings
+out and its content was not read. All three favourites lists came untagged, which is what the reading in
+`tests/test_harmony_touch_favourites_untagged.py` predicts; it does not rule out the reading of the lab's
+`6.7-preflight.md`, a tag sent only when the file and its index entry exist, since which favourites files the
+remote holds was not read. The measurements are held by `packages/usb/test/touch-second-sync.test.ts`.
+
 ## Not done
 
 * No infrared run has been recorded with this unit, and nothing about it in use has been seen and written

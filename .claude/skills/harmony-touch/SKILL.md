@@ -42,7 +42,7 @@ and land the answer in the reference afterwards with its source.
 
 * **`openHarmony` refuses it**, by product id, and that is the rail rather than a gap to be closed: it
   speaks the file protocol, in which a path can be an action. `make remotes` reports it separately.
-* **It may be written, decision 29, through one rail, and it has been**: two reads (6.4) and one sync answered by the answerer (6.7), which wrote Settings back under a tag of ours and stopped at the favourites, recovered by abort and restart, `docs/test-notes/harmony-touch.md`. The rail
+* **It may be written, decision 29, through one rail, and it has been**: two reads (6.4) and two syncs answered by the answerer (6.7): the first wrote Settings back under a tag of ours and stopped at the favourites, recovered by abort and restart; the second answered every request 304 or the finish and was committed, the remote starting normally with its favourites, `docs/test-notes/harmony-touch.md`. The rail
   is the request channel of `todo-touch.md` 6.3: `openTouchRequestSession` in `packages/usb/src/touchsession.ts`,
   behind `assertTouchRequestAllowed` in `rails.ts`, `HARMONY_ENABLE_WRITES=1` and `HARMONY_TOUCH_REQUESTS=1`.
   It opens `/sys/hlapi` and nothing else for writing, reads the identity file when a session opens and
@@ -69,8 +69,10 @@ and land the answer in the reference afterwards with its source.
   answerer refusing a set the codec's reader and check reject**, `todo-touch.md` 6.6: `syncTouch` in
   `packages/corpus/src/touchsync.ts` calls `refusalsBeforeASync` in `packages/codec/src/harmony-touch/check.ts`
   itself before anything is opened, and its script is `packages/corpus/bin/touch-sync.ts`, `--unchanged` or
-  `--set <lab folder>`, a dry run without `--commit`. **The answerer has run once on a unit**, 6.7: the hand over and
-  the six documents went through, and it stopped where the favourites came untagged, which `--unchanged` now answers 304. It
+  `--set <lab folder>`, a dry run without `--commit`. **The answerer has run twice on a unit**, 6.7: the first time the hand over
+  and the six documents went through and it stopped where the favourites came untagged, which `--unchanged` now
+  answers 304; the second time it ran to `proxy://Finished` and the remote committed the set, every answer a 304
+  or the finish, `packages/usb/test/touch-second-sync.test.ts`. It
   lives in `packages/corpus` because `packages/usb` cannot import the codec. **`--unchanged` is not write
   free**: every document the remote hands up is written back to it with a tag of ours and committed, so that
   change never reaches Logitech's account. **After any stop, the first step is the read `getconfighash`**,

@@ -121,7 +121,10 @@ passed, and the expiry comes from a `cache-Control` field on the answer, which n
 carried; so a logo was given no expiry and is fetched every time[^t-touch-favourites][^t-touch-favourites-firmware]. The background, its
 twin and an uploaded channel logo have no such rule; each is asked for with the entity tag the remote
 holds[^t-touch-favourites-firmware]. Before the pictures are asked for, every picture already held is carried
-into the new set, so one that fails to arrive keeps its old copy[^t-touch-favourites-firmware].
+into the new set, so one that fails to arrive keeps its old copy[^t-touch-favourites-firmware]. **Measured:
+pictures the remote holds are asked for with their tags**, all ten in a later sync with exactly the tags they
+were delivered with, where the sync that delivered them had asked for every one untagged; answered 304, the
+remote kept them and committed the set[^t-touch-second-sync].
 
 **What is asked for, in order**[^t-touch-favourites][^t-touch-favourites-firmware]:
 
@@ -180,6 +183,13 @@ remote's screens ask for them, read each document's file before its tag, and dur
 set being gathered, where no favourites document is yet. So an untagged favourites request says nothing about
 what the remote holds, and an answer of 304 makes it keep its own copy, [answering a
 sync](answering-a-sync.md#the-entity-tag-an-answerer-sends)[^t-touch-favourites-untagged].
+
+**Measured in a sync answered by a program of this project**: the user's, the tuning device's and the line up's
+documents were each asked for without a tag, though an earlier sync of Logitech's had delivered each with 200
+and a tag; each was answered 304 with a tag of ours, the sync was committed, and the remote still showed its
+favourites afterwards[^t-touch-second-sync]. That fits the reading above. It does not by itself rule out a
+narrower one, that the tag is sent only when both the document's file and its index entry exist, since which
+favourites files the remote held was not read on the unit, so the cause is not checked[^unchecked].
 
 ### The user's favourites document
 
@@ -316,6 +326,7 @@ to the remote in the sync measured carried the field[^t-touch-favourites].
 [^t-touch-favourites]: Measured on a unit. [The test](../../../packages/usb/test/touch-favourites.test.ts)
 [^t-touch-favourites-firmware]: Read in the firmware. [The test](../../../tests/test_harmony_touch_favourites.py)
 [^t-touch-favourites-untagged]: Read in the firmware. [The test](../../../tests/test_harmony_touch_favourites_untagged.py)
+[^t-touch-second-sync]: Measured on a unit. [The test](../../../packages/usb/test/touch-second-sync.test.ts)
 [^t-touch-keys]: Read in the firmware. [The test](../../../tests/test_harmony_touch_keys.py)
 [^unchecked]: Not checked.
 [^t-touch-beyond-firmware]: Read in the firmware. [The test](../../../tests/test_harmony_touch_beyond_the_clients.py)

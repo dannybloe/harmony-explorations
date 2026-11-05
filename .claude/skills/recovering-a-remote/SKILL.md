@@ -252,9 +252,11 @@ What must never be part of that route:
 
 **Read before any write to a Harmony Touch, and before anything near its reset or restart.** The Touch
 reports 17 for its architecture and Logitech's templates file it under 18; say "the Harmony Touch".
-Everything here is read, in the production firmware 4.15.330 and in Logitech's two clients, and **none of
-it has been run on a unit**: no configuration of ours has reached a Touch, and the one recovery a Touch has
-been through was Logitech's hidden recovery tool, `docs/test-notes/harmony-touch.md`. The facts are
+Everything here is read, in the production firmware 4.15.330 and in Logitech's two clients, and **little of
+it has been run on a unit**: two syncs of ours have run on the bench Touch, the first stopped mid sync and
+cleared by the abort and the restart below, the second committed with every answer a 304 or the finish, so no
+document of ours delivered with 200 has reached a Touch yet; the delete has never been sent, and the only other
+recovery a Touch has been through was Logitech's hidden recovery tool, `docs/test-notes/harmony-touch.md`. The facts are
 `reference/architectures/harmony-touch/firmware.md` "Recovery", the argument is the header of
 `tests/test_harmony_touch_recovery.py`, and the working note with every file and line is the lab's
 `work/touch-firmware/notes/6.1-recovery.md`. How a sync is answered at all is `answering-a-sync.md` in the
