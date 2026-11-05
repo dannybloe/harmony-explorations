@@ -35,8 +35,7 @@ Written on 4 November 2026; linked from `todo-later.md` 5.6.
 - [x] 2.2 The version block's values compared against the six fields an 880 or 885 configuration's wrapper states (D10)
 - [x] 2.3 The clock read over USB, once 1.x has found the `READ_MISC` selectors (D12)
 - [x] 2.4 Which printed key sends which scan code, and a drawing of the face (F9): the map `9d51b99d` and `fc1f5ba2`, the drawing `1e02bafc`, measured off the forum photograph
-- [ ] 2.5 The 885's drawing measured again off a straight photograph of a bench unit, before 2.6 copies it
-- [ ] 2.6 Once the 885's drawing is approved, draw the 880, 880 Pro, 890, 890 Pro and 895 from it as a template, each checked against its own photograph for what differs
+- [ ] 2.5 Now that the 885's drawing is approved, draw the 880, 880 Pro, 890, 890 Pro and 895 from it as a template, each checked against its own photograph for what differs
 
 ## 3. The file side, read in the firmware
 
