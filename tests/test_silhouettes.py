@@ -37,13 +37,14 @@ SVG = '{http://www.w3.org/2000/svg}'
 
 # The model folder whose keys page states each drawing's scan codes, and the block where it is not `keys`.
 # The Harmony 650's and 700's drawings take the 600's codes and their own pages carry the same generated
-# block; the Harmony 300's European printing has a block of its own beside the US one's, and so has the
-# Harmony 880 beside the 885's.
+# block; the Harmony 300's European printing has a block of its own beside the US one's, and so have the
+# Harmony 880 and 880 Pro beside the 885's. The Harmony 890 Pro's drawing is its folder's, the 890's.
 KEYS_PAGE = {
     'h300.svg': 'harmony-300', 'h300eu.svg': ('harmony-300', 'keys-h300eu'), 'h350.svg': 'harmony-350',
     'h515.svg': 'harmony-515', 'h525.svg': 'harmony-525',
     'h600.svg': 'harmony-600', 'h650.svg': 'harmony-650', 'h700.svg': 'harmony-700', 'h885.svg': 'harmony-885',
-    'h880.svg': ('harmony-885', 'keys-h880'),
+    'h880.svg': ('harmony-885', 'keys-h880'), 'h880pro.svg': ('harmony-885', 'keys-h880pro'),
+    'h890pro.svg': 'harmony-890', 'h720.svg': 'harmony-720',
     'one.svg': 'harmony-one', 'touch.svg': 'harmony-touch',
 }
 
@@ -869,6 +870,191 @@ class TestTheHarmony880Silhouette(_SilhouetteConventions, unittest.TestCase):
         self.assertNotIn('>Harmony 885<', text)
 
 
+def _words(button):
+    """The words printed on or beside a key, in document order."""
+    return [t.text for t in button.iter(f'{SVG}text')]
+
+
+def _press_codes(filename):
+    """The press codes of a contributed configuration's key table, found in the lab by name, or a skip."""
+    from harmony import gspm
+    from test_harmony_885_start_check import by_name
+    (raw,) = by_name(filename)
+    config = gspm.parse(raw)
+    return {k.event_code & gspm.SCAN_MASK for k in config.keys if k.event_type == gspm.EVENT_PRESS}
+
+
+class _TheProPrinting(_SilhouetteConventions):
+    """
+    The Harmony 885's 55 shapes with six keys printed otherwise, `packages/silhouettes/src/models/h880pro.ts`,
+    which the 880 Pro and the 890 Pro share. A subclass names its drawing, the word on the right end key of
+    the band and its nameplate.
+
+    **The printing is read off each model's product photograph in the lab**, with the 885's drawing laid over
+    it, where the case and every shape fall on the photograph. Logitech's manuals for the 880 Pro and the 890
+    Pro, `Docs/880Pro manual.pdf` and `Docs/890 pro manual.pdf`, name the keys the photographs show: SOUND
+    and PICTURE, each of which switches the remote into a mode that controls that feature of one device, and
+    PREV. The 880 Pro's manual names the right key PICTURE in its legend and prints `PIC` on its own picture
+    of the remote, as the 880 Pro's photograph does, where the word is centred on the key; the 890 Pro's
+    photograph prints `PICTURE` in full. At the foot of the band, where the 885 has its four colour keys,
+    both print `MUTE`, a down triangle, an up triangle and `PREV`, left to right, and the band keeps the 885's
+    five parting lines, so those are four keys.
+    """
+
+    PICTURE = None
+    NAMEPLATE = None
+    EXPECTED_BUTTONS = 55
+
+    def test_no_key_claims_a_code_or_a_candidate(self):
+        """
+        The 880's keys carry a code only where configurations from two contributors name it,
+        `tests/test_harmony_880_keys.py`. One 880 Pro configuration is known and none of an 890 Pro, so no
+        key carries a code or a candidate list, not even where the 885's key in the same place was pressed.
+        """
+        buttons = _buttons(_tree(self.NAME).getroot())
+        for ident, element in buttons.items():
+            with self.subTest(button=ident):
+                self.assertIsNone(element.get('data-scan'))
+                self.assertIsNone(element.get('data-scan-candidates'))
+
+    def test_the_band_prints_sound_and_picture_at_its_ends_and_four_keys_at_its_foot(self):
+        buttons = _buttons(_tree(self.NAME).getroot())
+        self.assertEqual(_words(buttons['k-sound']), ['SOUND'])
+        self.assertEqual(_words(buttons['k-picture']), [self.PICTURE])
+        self.assertEqual(_words(buttons['k-volume-mute']), ['MUTE'])
+        self.assertEqual(_words(buttons['k-prev-channel']), ['PREV'])
+        for ident in PALETTE:
+            with self.subTest(absent=ident):
+                self.assertNotIn(ident, buttons)
+
+        def across(ident):
+            text = next(buttons[ident].iter(f'{SVG}text'), None)
+            return float(text.get('x')) if text is not None else _centre_x(buttons[ident])
+        foot = ('k-volume-mute', 'k-down-arrow', 'k-up-arrow', 'k-prev-channel')
+        self.assertEqual(sorted(foot, key=across), list(foot), 'MUTE, down, up, PREV, left to right')
+        # The triangles point the way their names say: the down mark's apex is below its base.
+        down = next(e for e in buttons['k-down-arrow'].iter() if 'mark' in (e.get('class') or ''))
+        up = next(e for e in buttons['k-up-arrow'].iter() if 'mark' in (e.get('class') or ''))
+        self.assertTrue(down.get('d').endswith('L 0 0.85 Z'))
+        self.assertTrue(up.get('d').endswith('L 0 -0.85 Z'))
+
+    def test_the_nameplate_is_this_model_s(self):
+        text = _text(self.NAME)
+        self.assertIn(f'>{self.NAMEPLATE}<', text)
+        self.assertNotIn('>Harmony 885<', text)
+
+    def test_it_says_it_was_measured_off_a_photograph(self):
+        self.assertIn('measured off a product photograph', _text(self.NAME))
+
+
+class TestTheHarmony880ProSilhouette(_TheProPrinting, unittest.TestCase):
+    """The Harmony 880 Pro, skin 39, `h880pro.ts`."""
+
+    NAME = 'h880pro.svg'
+    PICTURE = 'PIC'
+    NAMEPLATE = 'Harmony 880 Pro'
+
+    def test_its_key_table_holds_exactly_the_885_s_55_press_codes(self):
+        """
+        The count's closure: the one 880 Pro configuration's key table, `H880-Pro.EZHex`, holds as press codes
+        exactly the 55 the keys of a Harmony 885 raised on a unit, so the 880 Pro has the 885's 55 positions
+        and the drawing's 55 keys are that many. It does not say which printed key raises which code.
+        """
+        from test_harmony_885_keys import MEASURED
+        self.assertEqual(_press_codes('H880-Pro.EZHex'), set(MEASURED.values()))
+
+
+class TestTheHarmony890ProSilhouette(_TheProPrinting, unittest.TestCase):
+    """
+    The Harmony 890 Pro, skin 40, architecture 10, `h890pro.ts`: the 880 Pro's face with `PICTURE` in full and
+    its own nameplate. No configuration of it is known, so its count is the drawing's, which its photograph
+    shows key for key.
+    """
+
+    NAME = 'h890pro.svg'
+    PICTURE = 'PICTURE'
+    NAMEPLATE = 'Harmony 890 Pro'
+
+
+class TestTheHarmony720Silhouette(_SilhouetteConventions, unittest.TestCase):
+    """
+    The Harmony 720, skin 44, its own face, `packages/silhouettes/src/models/h720.ts`, measured off its product
+    photograph in the lab.
+
+    **The printing agrees with the picture in Logitech's manual for the 720**, page 2 of `Docs/720 manual.pdf`:
+    the power key alone at the top left, a wide Activities key, Devices and Help on one moulding, the screen
+    with its display buttons, the left and right arrows under it, Guide and Info, Exit and Menu, two smart
+    buttons printed with a down and an up chevron, the direction pad around OK, volume on the left and channel
+    on the right, Mute and Prev at the bottom of the silver U, the transport block and the digits. Neither
+    the manual nor the photograph shows a colour key or a Glow key.
+
+    **The 785, skin 45, is not this drawing's**, though a community table pairs it with the 720 as one remote:
+    the 785's manual, `Docs/785 manual.pdf`, page 13, names teletext buttons, which the 720's does not, so its
+    face is another, as the 885's is beside the 880's.
+    """
+
+    NAME = 'h720.svg'
+    # The 49 press codes of its one configuration's key table, below, and the 49 shapes on its photograph and
+    # in its manual's picture.
+    EXPECTED_BUTTONS = 49
+    # Measured on that configuration. Six of them, 4, 9, 39, 42, 47 and 49, are in no Harmony 885's table,
+    # so the 720's wiring is its own and the 885's code for a key says nothing of the 720's.
+    PRESS_CODES = (list(range(1, 12)) + list(range(17, 26)) + [27] + list(range(33, 50))
+                   + list(range(51, 60)) + [61, 62])
+
+    def test_no_key_claims_a_code_or_a_candidate(self):
+        """One Harmony 720 configuration is known, and the 880's rule asks for two contributors."""
+        buttons = _buttons(_tree(self.NAME).getroot())
+        for ident, element in buttons.items():
+            with self.subTest(button=ident):
+                self.assertIsNone(element.get('data-scan'))
+                self.assertIsNone(element.get('data-scan-candidates'))
+
+    def test_its_key_table_holds_49_press_codes(self):
+        """
+        The count's closure, from a source other than the photograph: the key table of the one 720
+        configuration, `H720-Config.EZHex`, lists 49 press codes, the number of keys on the face.
+        """
+        self.assertEqual(len(self.PRESS_CODES), 49)
+        codes = _press_codes('H720-Config.EZHex')
+        self.assertEqual(sorted(codes), self.PRESS_CODES)
+        from test_harmony_885_keys import MEASURED
+        self.assertEqual(sorted(codes - set(MEASURED.values())), [4, 9, 39, 42, 47, 49])
+
+    def test_the_six_keys_beside_the_screen_are_the_screen_s_and_read_in_rows(self):
+        """Three a side, zones left then right on each row, top to bottom, as the 885's are numbered."""
+        buttons = _buttons(_tree(self.NAME).getroot())
+        screen = {e.get('data-name'): int(e.get('data-zone'))
+                  for e in buttons.values() if e.get('data-kind') == 'screen'}
+        self.assertEqual(screen, {
+            'ScreenLeft1': 1, 'ScreenRight1': 2, 'ScreenLeft2': 3, 'ScreenRight2': 4,
+            'ScreenLeft3': 5, 'ScreenRight3': 6,
+        })
+
+    def test_the_screen_carries_arch_8_s_raster_and_is_not_a_touch_surface(self):
+        root = _tree(self.NAME).getroot()
+        screen = [e for e in root.iter() if e.get('id') == 'screen']
+        self.assertEqual(len(screen), 1)
+        self.assertEqual(screen[0].get('data-pixels'), '128x160')
+        self.assertEqual(screen[0].get('data-touch'), 'false')
+
+    def test_there_is_no_colour_key_and_no_glow_key(self):
+        buttons = _buttons(_tree(self.NAME).getroot())
+        for ident in (*PALETTE, 'k-glow', 'k-media'):
+            with self.subTest(absent=ident):
+                self.assertNotIn(ident, buttons)
+        self.assertEqual(re.findall(r'style="--accent:', _text(self.NAME)), [])
+
+    def test_the_chevrons_are_down_on_the_left_and_the_nameplate_is_the_720_s(self):
+        buttons = _buttons(_tree(self.NAME).getroot())
+        order = sorted(('k-up-arrow', 'k-down-arrow'), key=lambda one: _centre_x(buttons[one]))
+        self.assertEqual(order, ['k-down-arrow', 'k-up-arrow'])
+        self.assertIn('>Harmony 720<', _text(self.NAME))
+
+    def test_it_says_it_was_measured_off_a_photograph(self):
+        self.assertIn('measured off a product photograph', _text(self.NAME))
+
+
 class TestTheSilhouetteDirectory(unittest.TestCase):
     """What is drawn and what is not, so the gap is a statement rather than an oversight."""
 
@@ -883,8 +1069,11 @@ class TestTheSilhouetteDirectory(unittest.TestCase):
         'h600.svg': TestTheHarmony600Silhouette,
         'h650.svg': TestTheHarmony650Silhouette,
         'h700.svg': TestTheHarmony700Silhouette,
+        'h720.svg': TestTheHarmony720Silhouette,
         'h880.svg': TestTheHarmony880Silhouette,
+        'h880pro.svg': TestTheHarmony880ProSilhouette,
         'h885.svg': TestTheHarmony885Silhouette,
+        'h890pro.svg': TestTheHarmony890ProSilhouette,
         'one.svg': TestTheHarmonyOneSilhouette,
         'touch.svg': TestTheHarmonyTouchSilhouette,
     }

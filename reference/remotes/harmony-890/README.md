@@ -2,7 +2,8 @@
 
 An activity based universal remote from Logitech's classic generation, the radio frequency sibling of the
 Harmony 880 and 885: a colour screen of 128 by 160 pixels, the same key positions as the 885, and six radio
-channels. The Harmony 895 is the same remote under its other regional name, and this folder describes both.
+channels. The Harmony 895 is the same remote under its other regional name, and this folder describes both,
+and the Harmony 890 Pro, skin 40, whose face is the only one of the three drawn.
 It is architecture 10, whose shared platform is [the architecture folder](../../architectures/harmony-890-895/README.md);
 this folder states what is the model's own. Standing words and their meaning are in
 [the reference's README](../../README.md).
@@ -18,6 +19,7 @@ Logitech's own client and service, as each footnote says.
 |---|---|---|---|---|---|---|
 | 19 | Harmony 890 | Harmony 895 | 10 | colour | no | 4.9.0 |
 | 23 | Harmony 895 | Harmony 890 | 10 | colour | no | 4.9.0 |
+| 40 | Harmony 890 Pro |  | 10 | colour | no | 4.9.0 |
 
 Generated from `MODELS_BY_SKIN` in `packages/usb/src/models.ts` by `make remote-reference-write`. Change the source, not this block.
 <!-- /generated -->
@@ -25,6 +27,10 @@ Generated from `MODELS_BY_SKIN` in `packages/usb/src/models.ts` by `make remote-
 Skin 19 is the Harmony 890 and skin 23 the Harmony 895, each stated in its configuration's own
 architecture record, `0a 0a 13 0d` and `0a 0a 17 0d`.[^s182] A community comparison table records the 890
 as `Eur#895`, so the two are one remote with two regional names.[^x-forum-table]
+
+**The drawing is the Harmony 890 Pro's**, the Harmony 880 Pro's face with `PICTURE` printed in full on the
+right end key and its own nameplate, [keys.md](keys.md).[^t-printing-890pro] The 890's and 895's own faces
+are not drawn.[^unchecked]
 
 ## Key numbers
 
@@ -58,3 +64,5 @@ as `Eur#895`, so the two are one remote with two regional names.[^x-forum-table]
 [^s115]: Measured in configurations. [Section 115](../../../docs/findings.md#s115)
 [^s179]: Measured in configurations. [Section 179](../../../docs/findings.md#s179)
 [^s177]: Measured in configurations. [Section 177](../../../docs/findings.md#s177)
+[^t-printing-890pro]: Stated by Logitech, in the manual. [The test](../../../tests/test_silhouettes.py)
+[^unchecked]: Not checked.

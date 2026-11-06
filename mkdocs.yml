@@ -185,7 +185,18 @@ nav:
           - Firmware: remotes/harmony-700/firmware.md
           - USB: remotes/harmony-700/usb.md
           - Other: remotes/harmony-700/misc.md
-      - Harmony 880 and 885:
+      - Harmony 720:
+          - remotes/harmony-720/README.md
+          - Keys: remotes/harmony-720/keys.md
+          - Display: remotes/harmony-720/display.md
+          - Features: remotes/harmony-720/features.md
+          - Behaviour: remotes/harmony-720/behaviour.md
+          - Hardware: remotes/harmony-720/hardware.md
+          - Memory: remotes/harmony-720/memory.md
+          - Firmware: remotes/harmony-720/firmware.md
+          - USB: remotes/harmony-720/usb.md
+          - Other: remotes/harmony-720/misc.md
+      - Harmony 880, 885 and 880 Pro:
           - remotes/harmony-885/README.md
           - Keys: remotes/harmony-885/keys.md
           - Display: remotes/harmony-885/display.md
@@ -196,7 +207,7 @@ nav:
           - Firmware: remotes/harmony-885/firmware.md
           - USB: remotes/harmony-885/usb.md
           - Other: remotes/harmony-885/misc.md
-      - Harmony 890 and 895:
+      - Harmony 890, 895 and 890 Pro:
           - remotes/harmony-890/README.md
           - Keys: remotes/harmony-890/keys.md
           - Display: remotes/harmony-890/display.md

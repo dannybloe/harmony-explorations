@@ -17,10 +17,11 @@
  * page's own check for anything reaching another site would rightly stop on. Anything else naming an
  * address stops the build.
  *
- * **Which drawings**: every drawn model whose skins include one the page reads keys on, `WATCH_BY_SKIN`.
- * So a drawing of the Harmony 880 Pro or 720, when one lands in `packages/silhouettes`, reaches the page
- * with no edit here, except the words for any key the drawing gives no printed word, which the build then
- * asks for by refusing to run.
+ * **Which drawings**: every drawn model whose skins include one the page reads keys on, `WATCH_BY_SKIN`:
+ * the Harmony 720, 880, 880 Pro and 885. A drawing that lands in `packages/silhouettes` for another skin the
+ * page reads reaches the page with no edit here except its words, `WORDS`, for every key it gives no printed
+ * word, which the build asks for by refusing to run. The 880 Pro and the 720 came that way, in
+ * `todo-prepare-885.md` 2.5.3.
  *
  * **What each key carries to the page**: its name, the words a person knows it by, its scan code where
  * the drawing states one and its candidates where the drawing narrows it to a set, in the order the page
@@ -33,20 +34,11 @@ import type { Key, Model } from '@harmony/silhouettes';
 import { WATCH_BY_SKIN } from '@harmony/usb/keys';
 import type { Drawing, FaceKey } from '../src/session.ts';
 
-/**
- * Words for the keys a drawing prints no word on, by the key's name.
- *
- * A key is named for a person **by what is printed on it, or by where it is, and never by colour alone**:
- * the person reading may not tell the four colour keys of an 885 apart, so they are named by position
- * with the colour after it, the way the 885's colour keys were settled at the bench against the manual's
- * drawing. A key that does print a word is named by that word, `wordsFor`, and has no row here; the
- * build refuses a row for a key that prints one, so the two cannot disagree.
- *
- * "The curve" is the 885's and 880's band of keys below the screen, which bends round the direction pad:
- * volume on its left arm, channel on its right, and the colour keys (the 880's two chevron keys) along its
- * bottom.
- */
-export const WORDS: Readonly<Record<string, string>> = {
+/** One drawing's words, by the key's name. */
+type Rows = Readonly<Record<string, string>>;
+
+/** The eight keys beside the screen of the 885 and its printings, and the two arrows under it. */
+const SCREEN_FOUR: Rows = {
   ScreenLeft1: 'the top key left of the screen',
   ScreenLeft2: 'the second key left of the screen',
   ScreenLeft3: 'the third key left of the screen',
@@ -57,20 +49,88 @@ export const WORDS: Readonly<Record<string, string>> = {
   ScreenRight4: 'the bottom key right of the screen',
   ScreenPrev: 'the arrow key below the screen, on the left',
   ScreenNext: 'the arrow key below the screen, on the right',
+};
+
+/** Volume and channel on the arms of the 885's curve, the band of keys round its direction pad. */
+const CURVE_ARMS: Rows = {
   VolumeUp: 'volume up, the plus at the top of the curve on the left',
   VolumeDown: 'volume down, the minus lower on the curve on the left',
   ChannelUp: 'channel up, the plus at the top of the curve on the right',
   ChannelDown: 'channel down, the minus lower on the curve on the right',
-  Red: 'the leftmost of the four keys at the bottom of the curve (red)',
-  Green: 'the second of the four keys at the bottom of the curve, from the left (green)',
-  Yellow: 'the third of the four keys at the bottom of the curve, from the left (yellow)',
-  Blue: 'the rightmost of the four keys at the bottom of the curve (blue)',
-  UpArrow: 'the left key at the bottom of the curve, printed with an up chevron',
-  DownArrow: 'the right key at the bottom of the curve, printed with a down chevron',
+};
+
+/** The 885's direction ring. */
+const RING: Rows = {
   DirectionUp: 'up, on the ring around OK',
   DirectionDown: 'down, on the ring around OK',
   DirectionLeft: 'left, on the ring around OK',
   DirectionRight: 'right, on the ring around OK',
+};
+
+/**
+ * Words for the keys a drawing prints no word on, per drawing and by the key's name.
+ *
+ * A key is named for a person **by what is printed on it, or by where it is, and never by colour alone**:
+ * the person reading may not tell the four colour keys of an 885 apart, so they are named by position
+ * with the colour after it, the way the 885's colour keys were settled at the bench against the manual's
+ * drawing. A key that does print a word is named by that word, `wordsFor`, and has no row here; the
+ * build refuses a row for a key that prints one, so the two cannot disagree.
+ *
+ * **Per drawing, because one name is a different key on another face.** `UpArrow` is the left chevron
+ * key at the bottom of the 880's curve, the third of four keys there on the 880 Pro, printed with a
+ * triangle, and the right key under Menu on the 720; the 720's power key prints nothing where the 885's
+ * prints OFF. A table shared across the models described one of them and misnamed the rest.
+ *
+ * "The curve" is the 885's band of keys below the screen, which bends round the direction pad: volume on
+ * its left arm, channel on its right, and four keys along its bottom, the 885's colour keys, the 880's two
+ * chevron keys and the 880 Pro's MUTE, two triangle keys and PREV. The 720 has a silver strip down each
+ * side of its pad instead, joined below it, and its own rows.
+ */
+export const WORDS: Readonly<Record<string, Rows>> = {
+  h720: {
+    AllOff: 'the power key, alone at the top left',
+    ScreenLeft1: 'the top key left of the screen',
+    ScreenLeft2: 'the middle key left of the screen',
+    ScreenLeft3: 'the bottom key left of the screen',
+    ScreenRight1: 'the top key right of the screen',
+    ScreenRight2: 'the middle key right of the screen',
+    ScreenRight3: 'the bottom key right of the screen',
+    ScreenPrev: 'the arrow key below the screen, on the left',
+    ScreenNext: 'the arrow key below the screen, on the right',
+    DownArrow: 'the key below Exit, printed with a down chevron',
+    UpArrow: 'the key below Menu, printed with an up chevron',
+    VolumeUp: 'volume up, the plus on the silver strip left of the pad',
+    VolumeDown: 'volume down, the minus on the silver strip left of the pad',
+    ChannelUp: 'channel up, the plus on the silver strip right of the pad',
+    ChannelDown: 'channel down, the minus on the silver strip right of the pad',
+    DirectionUp: 'up, on the pad around OK',
+    DirectionDown: 'down, on the pad around OK',
+    DirectionLeft: 'left, on the pad around OK',
+    DirectionRight: 'right, on the pad around OK',
+  },
+  h880: {
+    ...SCREEN_FOUR,
+    ...CURVE_ARMS,
+    UpArrow: 'the left key at the bottom of the curve, printed with an up chevron',
+    DownArrow: 'the right key at the bottom of the curve, printed with a down chevron',
+    ...RING,
+  },
+  h880pro: {
+    ...SCREEN_FOUR,
+    ...CURVE_ARMS,
+    DownArrow: 'the second of the four keys at the bottom of the curve, from the left, printed with a down triangle',
+    UpArrow: 'the third of the four keys at the bottom of the curve, from the left, printed with an up triangle',
+    ...RING,
+  },
+  h885: {
+    ...SCREEN_FOUR,
+    ...CURVE_ARMS,
+    Red: 'the leftmost of the four keys at the bottom of the curve (red)',
+    Green: 'the second of the four keys at the bottom of the curve, from the left (green)',
+    Yellow: 'the third of the four keys at the bottom of the curve, from the left (yellow)',
+    Blue: 'the rightmost of the four keys at the bottom of the curve (blue)',
+    ...RING,
+  },
 };
 
 /**
@@ -93,7 +153,8 @@ export const NOT_ASKED: Readonly<Record<string, string>> = {
  * Glow, because at the bench, pressing it on a Harmony 885 while the page polled turned the remote's
  * screen fully off and the remote stopped answering on the cable; a second press did not bring it back,
  * and unplugging and plugging in the cable did, with the remote fine after. Nothing here says why, and the
- * 880 is taken to behave alike for sharing the 885's firmware build; the key controls no device anyway.
+ * 880 and 880 Pro are taken to behave alike for running the 885's firmware build with another skin; the key
+ * controls no device anyway. The 720 has no Glow key.
  */
 export const DO_NOT_PRESS: readonly string[] = ['Glow'];
 
@@ -113,16 +174,16 @@ export function printedWord(key: Key): string | undefined {
   return longest;
 }
 
-/** The words a person knows a key by: its print, or its row in `WORDS`; one and never both. */
-export function wordsFor(key: Key): string {
+/** The words a person knows a key of a drawing by: its print, or its row in `WORDS`; one and never both. */
+export function wordsFor(model: string, key: Key): string {
   const printed = printedWord(key);
-  const written = WORDS[key.name];
+  const written = WORDS[model]?.[key.name];
   if (printed !== undefined && written !== undefined) {
-    throw new Error(`${key.name} prints ${printed}, so it takes that and needs no row in WORDS`);
+    throw new Error(`${model} ${key.name} prints ${printed}, so it takes that and needs no row in WORDS`);
   }
   const words = printed ?? written;
   if (words === undefined) {
-    throw new Error(`${key.name} prints no word and has no row in WORDS: say where it is on the face`);
+    throw new Error(`${model} ${key.name} prints no word and has no row in WORDS: say where it is on the face`);
   }
   return words;
 }
@@ -181,7 +242,7 @@ export function inlineSvg(svgDir: string, id: string): string {
 export function drawingOf(model: Model, svgDir: string): Drawing {
   const keys: FaceKey[] = faceOrder(model.keys).map((key) => ({
     name: key.name,
-    words: wordsFor(key),
+    words: wordsFor(model.id, key),
     // Present exactly where the drawing states them, so the page never shows a code nobody established.
     ...(key.scan === undefined ? {} : { scan: key.scan }),
     candidates: [...(key.scanCandidates ?? [])],
@@ -194,9 +255,20 @@ export function drawingOf(model: Model, svgDir: string): Drawing {
 /** The text of `drawings.js`. */
 export function drawingsModule(svgDir: string, header: string): string {
   const models = drawnModels();
-  // A row for a key no drawing has would be a description of nothing, kept by nobody.
+  // A row for a key the drawing does not have, or for a drawing the page does not show, would be a
+  // description of nothing, kept by nobody.
+  const shown = new Set(models.map((model) => model.id));
+  for (const id of Object.keys(WORDS)) {
+    if (!shown.has(id)) throw new Error(`WORDS has rows for ${id}, a drawing the page does not show`);
+  }
+  for (const model of models) {
+    const keys = new Set(model.keys.map((key) => key.name));
+    for (const name of Object.keys(WORDS[model.id] ?? {})) {
+      if (!keys.has(name)) throw new Error(`${model.id} ${name} has a row in WORDS, and the drawing has no such key`);
+    }
+  }
   const named = new Set(models.flatMap((model) => model.keys.map((key) => key.name)));
-  for (const name of [...Object.keys(WORDS), ...Object.keys(NOT_ASKED), ...DO_NOT_PRESS]) {
+  for (const name of [...Object.keys(NOT_ASKED), ...DO_NOT_PRESS]) {
     if (!named.has(name)) throw new Error(`${name} has a row here, and no drawing the page shows has that key`);
   }
   const drawings = models.map((model) => drawingOf(model, svgDir));

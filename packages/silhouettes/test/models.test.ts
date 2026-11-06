@@ -142,6 +142,17 @@ const EXPECTED: Readonly<Record<string, {
     why: "the Harmony 600's drawing and measurements, the same face per a statement made holding both",
   },
   /**
+   * Its own face, `h720.ts`, measured off its product photograph and checked against the picture in Logitech's
+   * manual for the 720, and 49 is what its one configuration's key table holds as press codes. No Harmony 720
+   * has been pressed and one configuration of it is known, so no key carries a code.
+   */
+  h720: {
+    buttons: 49,
+    scans: {},
+    why: "the 720's own product photograph and the picture in its manual, which agree, and the 49 press codes "
+      + "its one configuration's key table holds",
+  },
+  /**
    * The 885's face with two chevron keys where the 885 has four colour keys, `h880.ts`, read off the 880's
    * own product photograph and the picture in Logitech's reviewer's guide for it, and 53 is what its
    * configurations' key tables hold, the 885's 55 less 19 and 60. No Harmony 880 has been pressed: 29 keys
@@ -161,6 +172,27 @@ const EXPECTED: Readonly<Record<string, {
     },
     why: "the Harmony 885's drawing less its four colour keys and plus two chevron keys, as the 880's own "
       + 'product photograph shows, and the 53 codes its configurations\' key tables hold',
+  },
+  /**
+   * The 885's 55 shapes with six keys printed otherwise, `h880pro.ts`, read off the 880 Pro's product
+   * photograph and checked against its manual, and its one configuration's key table holds exactly the 885's
+   * 55 press codes. One configuration is not the two contributors the 880's rule asks for, so no code.
+   */
+  h880pro: {
+    buttons: 55,
+    scans: {},
+    why: "the Harmony 885's drawing with the 880 Pro's printing, as its own product photograph shows, and the "
+      + "885's 55 press codes in its one configuration's key table",
+  },
+  /**
+   * The 880 Pro's face with `PICTURE` in full and its own nameplate, `h890pro.ts`, read off the 890 Pro's
+   * product photograph. No configuration of an 890 Pro is known, so no code, and the count is the drawing's.
+   */
+  h890pro: {
+    buttons: 55,
+    scans: {},
+    why: "the Harmony 880 Pro's drawing, which the 890 Pro's own product photograph shows key for key, and "
+      + 'no configuration of it known',
   },
   /**
    * The count is the units': 55 keys pressed on a Harmony 885 raised 55 codes, exactly the press codes its
@@ -317,7 +349,7 @@ test('a key whose code is undecided carries candidates and no scan', () => {
      */
     const SETS: Readonly<Record<string, readonly { keys: number; codes: number }[]>> = {
       h300: [], h300eu: [], h350: [{ keys: 1, codes: 2 }],
-      h515: [{ keys: 4, codes: 4 }], h525: [{ keys: 4, codes: 4 }], h600: [], h650: [], h700: [], h880: [{ keys: 2, codes: 2 }], h885: [], one: [],
+      h515: [{ keys: 4, codes: 4 }], h525: [{ keys: 4, codes: 4 }], h600: [], h650: [], h700: [], h720: [], h880: [{ keys: 2, codes: 2 }], h880pro: [], h885: [], h890pro: [], one: [],
       touch: [],
     };
     const want = SETS[id]!;
@@ -399,6 +431,8 @@ test('the screen carries the raster its own firmware draws into', () => {
   const RASTERS: Readonly<Record<number, { width: number; height: number }>> = {
     // Arch 8 (Harmony 880 and 885), measured from configurations' full screen pictures like the next three.
     8: { width: 128, height: 160 },
+    // Arch 10 (Harmony 890, 895 and 890 Pro), measured the same way, `SCREEN_SIZES` in `packages/codec`.
+    10: { width: 128, height: 160 },
     9: { width: 96, height: 64 },
     12: { width: 176, height: 220 },
     14: { width: 128, height: 128 },
@@ -420,8 +454,10 @@ test('the screen carries the raster its own firmware draws into', () => {
    */
   // The Harmony 885's is the raster's own 0.8 by construction: its glass was measured off a photograph at
   // 121 by 150 pixels, 0.807, and drawn at the raster's proportion on the measured height, `h885.ts`.
+  // The 880 Pro and 890 Pro take it, and the Harmony 720's is drawn the same way: its glass measures 0.855
+  // across its height on its photograph, and is drawn at the raster's 0.8 on that height, `h720.ts`.
   const APERTURE: Readonly<Record<string, number>> = {
-    h515: 1.513, h525: 1.513, h600: 0.865, h650: 0.865, h700: 0.865, h880: 0.8, h885: 0.8, one: 0.794, touch: 0.754,
+    h515: 1.513, h525: 1.513, h600: 0.865, h650: 0.865, h700: 0.865, h720: 0.8, h880: 0.8, h880pro: 0.8, h885: 0.8, h890pro: 0.8, one: 0.794, touch: 0.754,
   };
   /**
    * Where there is no bezel, the pair of shapes that has to sit symmetric about the glass, and which
@@ -557,9 +593,11 @@ test('nothing the drawing states sits outside the case', () => {
    * screen and again level with the digits, and measured across at the same distance from either end the
    * two widths agree within 3.4 units on a case 283 wide, so turned over it also leaves nothing outside,
    * 0.000. Shifted, the upper trim lands 77.426 units out, against the drawing's own worst at 0.000. The
-   * Harmony 880 has the 885's case, `h880.ts`, so the same holds of it.
+   * Harmony 880 has the 885's case, `h880.ts`, so the same holds of it, and so do the 880 Pro and the 890 Pro,
+   * which take it too. **The Harmony 720** is the third shape: straight sides with a near level crown and foot,
+   * so turned over it also leaves nothing outside, 0.000, and the shifted control is what bites.
    */
-  const END_FOR_END = new Set(['touch', 'h880', 'h885']);
+  const END_FOR_END = new Set(['touch', 'h720', 'h880', 'h880pro', 'h885', 'h890pro']);
   for (const [id, model] of drawn) {
     const segments = new Set((model.rockers ?? []).flatMap((r) => r.keys));
     const parts: [string, string][] = [
@@ -613,10 +651,11 @@ test('a model that has no tilted key says so by measurement', () => {
    *
    * Both of these are drawn from a traced source, so **the tilt is in the path** and `angle` has nothing
    * to add: a slanted key comes across slanted. The Harmony 600 is rectilinear anyway, measured at under
-   * a degree on the keys that looked tilted in its photograph.
+   * a degree on the keys that looked tilted in its photograph. The Harmony 720 is measured off a photograph
+   * and every key on it is level, read off each key's own edges, `h720.ts`.
    */
   const LEVEL: Readonly<Record<string, boolean>> = {
-    h300: true, h300eu: true, h350: true, h515: true, h525: true, h600: true, h650: true, h700: true, one: true, touch: true,
+    h300: true, h300eu: true, h350: true, h515: true, h525: true, h600: true, h650: true, h700: true, h720: true, one: true, touch: true,
   };
   for (const [id, model] of drawn) {
     for (const key of model.keys) {

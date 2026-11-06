@@ -29,7 +29,8 @@
  *   6. **The key map**, beside the steps all along, growing as answers come, to copy and send.
  *
  * Every step shows the model's drawing where one exists (`drawings.js`, built from `reference/silhouettes/`),
- * and a plain list where none does, the Harmony 880 Pro and 720 today.
+ * and a plain list where none does. Every model the page reads has a drawing now, the Harmony 880 Pro and
+ * 720 since `todo-prepare-885.md` 2.5.3; the list stays for a model that arrives without one.
  *
  * Presses that arrive before a model is chosen are shown in the readout and go nowhere else: nothing has
  * been asked yet, and a mode starts clean when it starts.

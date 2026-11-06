@@ -15,7 +15,7 @@ themselves, and its codename is **Cappuccino**.[^x-concordance][^s182][^s7]
 | model | folder | what is known |
 |---|---|---|
 | Harmony 890 and 895 | [harmony-890](../../remotes/harmony-890/README.md) | counted over the configurations of two Harmony 890s and one Harmony 895 |
-| Harmony 890 Pro | none | placed on this platform by Logitech's client and named by its service, and nothing of it read[^s207][^s131] |
+| Harmony 890 Pro | [harmony-890](../../remotes/harmony-890/README.md) | placed on this platform by Logitech's client and named by its service[^s207][^s131]; its face is drawn off its photograph and manual, and nothing else of it is read[^t-printing-890pro]. This row said nothing of it was read<!--superseded--> until its face was drawn |
 | Harmony 892 and 897 | none | presumed here from concordance's table, by number range[^x-concordance] |
 
 **The 892 and 897 are presumed, and Logitech's client disagrees with the presumption in part.** Its
@@ -73,7 +73,7 @@ those sizes.[^s177][^s179]
 ## Not checked
 
 * Anything on a remote, and any firmware.[^unchecked]
-* The Harmony 890 Pro, 892 and 897.[^unchecked]
+* The Harmony 890 Pro beyond its face, and the 892 and 897.[^unchecked]
 * What the radio link to the extender is, as this platform implements it.[^unchecked]
 
 [^x-forum-table]: Stated by a third party. [The comparison table](https://www.harmony-remote-forum.de/harmony_compare.php)
@@ -93,3 +93,4 @@ those sizes.[^s177][^s179]
 [^s180]: Measured in configurations. [Section 180](../../../docs/findings.md#s180)
 [^s136]: Stated by Logitech, by their service. [Section 136](../../../docs/findings.md#s136)
 [^unchecked]: Not checked.
+[^t-printing-890pro]: Stated by Logitech, in the manual. [The test](../../../tests/test_silhouettes.py)

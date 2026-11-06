@@ -186,7 +186,8 @@ reference/architectures/        what one architecture's models share, stated onc
                                 last three were built by plan 009's step 3.5 from contributed
                                 configurations, images and Logitech's own material, the 880 and 890
                                 having model folders beside them, reference/remotes/harmony-885/ and
-                                harmony-890/. Its README compares the execution models, and
+                                harmony-890/, and the 720 one of its own, harmony-720/, since
+                                todo-prepare-885.md 2.5.3. Its README compares the execution models, and
                                 each folder's memory.md carries the architecture's memory layout,
                                 since plan 009's step 3.2; a model's own rows are in its model
                                 folder's memory.md and what is one unit's is in docs/test-notes/

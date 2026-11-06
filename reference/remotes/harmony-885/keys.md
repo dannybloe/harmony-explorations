@@ -180,6 +180,90 @@ keys raise them, and which raises which, is not checked.[^unchecked]
 Generated from `packages/silhouettes/src/models/h880.ts` by `make remote-reference-write`. Change the source, not this block.
 <!-- /generated -->
 
+### Harmony 880 Pro, skin 39
+
+**The 880 Pro is the 885's face with six keys printed otherwise**, drawn in `h880pro.ts` from the 885's shapes,
+because the case and every key fall on the 885's drawing when it is laid over the 880 Pro's photograph:
+
+* [`reference/silhouettes/h880pro.svg`](../../silhouettes/h880pro.svg), the Harmony 880 Pro, skin 39.
+
+**The two keys at the ends of the band print `SOUND` and `PIC`**, where the 885 prints `MUTE` and `PREV`, and
+the four keys at the bottom of the band, the 885's colour keys, print `MUTE`, a down triangle, an up triangle
+and `PREV`, left to right. The nameplate reads `HARMONY 880 PRO`.[^t-printing-880pro] Logitech's manual for
+the 880 Pro names the right key PICTURE in its legend, and its own picture of the remote prints `PIC`, as the
+photograph does.[^t-printing-880pro] The band keeps all five of the 885's parting lines, so the four keys at
+its foot are four keys and not two.[^t-printing-880pro]
+
+**Its key table holds exactly the 885's 55 press codes**, in its one configuration.[^t-880pro-keys] **No key
+carries a code**: the rule that names the 880's keys asks for two contributors' configurations, and one 880
+Pro configuration is known. In it 24 commands are named on a code, 23 of them on the code the same key raises
+on an 885, and Mute is named on 20, the 885's Red, which is the key the 880 Pro prints `MUTE`; one
+configuration is not enough to put that on the drawing.[^t-880-keys-c]
+
+<!-- generated:keys-h880pro -->
+55 keys on the drawing `h880pro`, 47 on the keypad and 8 that the screen speaks for. None carries a scan code.
+
+| key | kind | name from | scan code | screen zone | printed on or beside it |
+|---|---|---|---|---|---|
+| `Activities` | keypad | printed | not measured |  | ACTIVITIES |
+| `AllOff` | keypad | printed | not measured |  | OFF |
+| `ChannelDown` | keypad | printed | not measured |  |  |
+| `ChannelUp` | keypad | printed | not measured |  |  |
+| `Clear` | keypad | printed | not measured |  | CLEAR |
+| `Device` | keypad | printed | not measured |  | DEVICE |
+| `DirectionDown` | keypad | printed | not measured |  |  |
+| `DirectionLeft` | keypad | printed | not measured |  |  |
+| `DirectionRight` | keypad | printed | not measured |  |  |
+| `DirectionUp` | keypad | printed | not measured |  |  |
+| `DownArrow` | keypad | printed | not measured |  |  |
+| `Enter` | keypad | printed | not measured |  | E, ENTER |
+| `Exit` | keypad | printed | not measured |  | EXIT |
+| `FastForward` | keypad | printed | not measured |  | FWD |
+| `Glow` | keypad | printed | not measured |  | GLOW |
+| `Guide` | keypad | printed | not measured |  | GUIDE |
+| `Help` | keypad | printed | not measured |  | HELP |
+| `Info` | keypad | printed | not measured |  | INFO |
+| `Media` | keypad | printed | not measured |  | MEDIA |
+| `Menu` | keypad | printed | not measured |  | MENU |
+| `Number0` | keypad | printed | not measured |  | 0 |
+| `Number1` | keypad | printed | not measured |  | 1 |
+| `Number2` | keypad | printed | not measured |  | 2, abc |
+| `Number3` | keypad | printed | not measured |  | 3, def |
+| `Number4` | keypad | printed | not measured |  | 4, ghi |
+| `Number5` | keypad | printed | not measured |  | 5, jkl |
+| `Number6` | keypad | printed | not measured |  | 6, mno |
+| `Number7` | keypad | printed | not measured |  | 7, pqrs |
+| `Number8` | keypad | printed | not measured |  | 8, tuv |
+| `Number9` | keypad | printed | not measured |  | 9, wxyz |
+| `Pause` | keypad | printed | not measured |  | PAUSE |
+| `Picture` | keypad | printed | not measured |  | PIC |
+| `Play` | keypad | printed | not measured |  | PLAY |
+| `PrevChannel` | keypad | printed | not measured |  | PREV |
+| `Record` | keypad | printed | not measured |  | REC |
+| `Rewind` | keypad | printed | not measured |  | REW |
+| `ScreenNext` | keypad | printed | not measured |  |  |
+| `ScreenPrev` | keypad | printed | not measured |  |  |
+| `Select` | keypad | printed | not measured |  | OK |
+| `SkipBack` | keypad | printed | not measured |  | REPLAY |
+| `SkipForward` | keypad | printed | not measured |  | SKIP |
+| `Sound` | keypad | printed | not measured |  | SOUND |
+| `Stop` | keypad | printed | not measured |  | STOP |
+| `UpArrow` | keypad | printed | not measured |  |  |
+| `VolumeDown` | keypad | printed | not measured |  |  |
+| `VolumeMute` | keypad | printed | not measured |  | MUTE |
+| `VolumeUp` | keypad | printed | not measured |  |  |
+| `ScreenLeft1` | screen | printed | not measured | 1 |  |
+| `ScreenLeft2` | screen | printed | not measured | 3 |  |
+| `ScreenLeft3` | screen | printed | not measured | 5 |  |
+| `ScreenLeft4` | screen | printed | not measured | 7 |  |
+| `ScreenRight1` | screen | printed | not measured | 2 |  |
+| `ScreenRight2` | screen | printed | not measured | 4 |  |
+| `ScreenRight3` | screen | printed | not measured | 6 |  |
+| `ScreenRight4` | screen | printed | not measured | 8 |  |
+
+Generated from `packages/silhouettes/src/models/h880pro.ts` by `make remote-reference-write`. Change the source, not this block.
+<!-- /generated -->
+
 ## Which key raises which code
 
 **Every key was pressed on a unit and the number it raised read off the remote over the cable**: all 55 on
@@ -354,3 +438,5 @@ remote as read is not checked.[^unchecked]
 [^s17]: Measured in configurations. [Section 17](../../../docs/findings.md#s17)
 [^t-printing-880]: Stated by Logitech, in the manual. [The test](../../../tests/test_silhouettes.py)
 [^t-880-keys-c]: Measured in configurations. [The test](../../../tests/test_harmony_880_keys.py)
+[^t-printing-880pro]: Stated by Logitech, in the manual. [The test](../../../tests/test_silhouettes.py)
+[^t-880pro-keys]: Measured in configurations. [The test](../../../tests/test_silhouettes.py)

@@ -2,7 +2,8 @@
 
 An activity based infrared universal remote from Logitech's classic generation, with a colour screen of
 128 by 160 pixels, a key of its own for device mode, and 55 keys on the board. The Harmony
-880 is the same remote under its other regional name, and this folder describes both. It is architecture
+880 is the same remote under its other regional name, and this folder describes both, and the Harmony 880
+Pro, skin 39, whose face is the 885's printed otherwise. It is architecture
 8, whose shared platform is [the architecture folder](../../architectures/harmony-880-885/README.md); this
 folder states what is the model's own. Standing words and their meaning are in
 [the reference's README](../../README.md).
@@ -20,6 +21,7 @@ footnote says.
 |---|---|---|---|---|---|---|
 | 15 | Harmony 880 | Harmony 885 | 8 | colour | no | 4.4.2 |
 | 17 | Harmony 885 | Harmony 880 | 8 | colour | no | 4.4.2 |
+| 39 | Harmony 880 Pro |  | 8 | colour | no | 4.4.2 |
 
 Generated from `MODELS_BY_SKIN` in `packages/usb/src/models.ts` by `make remote-reference-write`. Change the source, not this block.
 <!-- /generated -->
@@ -37,6 +39,11 @@ the four: at the bottom of the band, where the 885 has them, it has two keys pri
 chevron, and it prints `HARMONY TECHNOLOGY` where the 885 prints its name, so each model has a drawing of its
 own, [keys.md](keys.md#every-key-on-the-drawings).[^t-printing-880] This said whether the 880's face carries
 the other two colour keys was not checked, until the 880's drawing.[^t-printing-880]
+
+**The Harmony 880 Pro's face is the 885's with six keys printed otherwise**: `SOUND` and `PIC` on the two
+keys at the ends of the band, and `MUTE`, a down triangle, an up triangle and `PREV` on the four keys at its
+foot where the 885 has its colour keys, with `HARMONY 880 PRO` above the screen. Its key table holds the 885's
+55 press codes, and it has a drawing of its own, [keys.md](keys.md#harmony-880-pro-skin-39).[^t-printing-880pro][^t-880pro-keys]
 
 ## Key numbers
 
@@ -70,6 +77,8 @@ the other two colour keys was not checked, until the 880's drawing.[^t-printing-
 [^s177]: Measured in configurations. [Section 177](../../../docs/findings.md#s177)
 [^t-885-keys-u]: Measured on a unit. [The test](../../../tests/test_harmony_885_keys.py)
 [^t-printing-880]: Stated by Logitech, in the manual. [The test](../../../tests/test_silhouettes.py)
+[^t-printing-880pro]: Stated by Logitech, in the manual. [The test](../../../tests/test_silhouettes.py)
+[^t-880pro-keys]: Measured in configurations. [The test](../../../tests/test_silhouettes.py)
 [^s182]: Measured in configurations. [Section 182](../../../docs/findings.md#s182)
 [^s207]: Stated by Logitech, in their client. [Section 207](../../../docs/findings.md#s207)
 [^s116]: Read in the firmware. [Section 116](../../../docs/findings.md#s116)

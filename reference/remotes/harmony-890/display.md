@@ -9,11 +9,11 @@ in inches, and how it is lit, is not known here.
 | field | value | from |
 |---|---|---|
 | raster | 128 by 160 pixels | `SCREEN_SIZES` in `packages/codec/src/render.ts`, measured from the configurations' full screen pictures |
-| raster on the drawing | no drawing of this model exists yet | `REMOTES` in `packages/silhouettes/bin/remotes.ts` |
+| raster on the drawing | 128 by 160 | `h890pro.ts`, which must agree with the row above |
 | panel | colour | `packages/usb/src/models.ts` |
-| touch | no | `packages/usb/src/models.ts` |
+| touch | no | `packages/usb/src/models.ts`, and `touch` on the drawing's screen is no |
 
-Generated from `packages/codec`, `packages/usb` and the model folders' rows by `make remote-reference-write`. Change the source, not this block.
+Generated from `packages/codec`, `packages/usb` and the drawing by `make remote-reference-write`. Change the source, not this block.
 <!-- /generated -->
 
 | | value |

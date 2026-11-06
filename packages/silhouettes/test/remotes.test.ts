@@ -58,28 +58,33 @@ test('a model folder and its drawings serve the same skins, and every drawing is
     assert.deepEqual(served.filter((s) => undrawn.includes(s)), [], `${r.folder}: a skin served and undrawn`);
     assert.deepEqual([...served, ...undrawn].sort((a, b) => a - b), [...r.skins].sort((a, b) => a - b), r.folder);
   }
-  // No skin is undrawn now: the Harmony 880's, skin 15, was the one until `todo-prepare-885.md` 2.5 drew its
-  // face as a printing of the 885's folder.
-  assert.deepEqual(REMOTES.filter((r) => r.undrawn !== undefined).map((r) => [r.folder, r.undrawn]), [],
-    'every skin a folder describes is served by one of its drawings');
+  // The Harmony 880's skin 15 was undrawn until `todo-prepare-885.md` 2.5 drew its face as a printing of the
+  // 885's folder. The Harmony 890 and 895, skins 19 and 23, are undrawn since 2.5.3 gave their folder the 890
+  // Pro's drawing: the folder describes all three, and only the Pro's face is drawn.
+  assert.deepEqual(REMOTES.filter((r) => r.undrawn !== undefined).map((r) => [r.folder, r.undrawn]),
+    [['harmony-890', [19, 23]]], 'every skin a folder describes is served by one of its drawings, or named undrawn');
   assert.deepEqual(MODELS.h885!.skins, [17], 'the Harmony 885 drawing serves skin 17');
   assert.deepEqual(MODELS.h880!.skins, [15], 'and the Harmony 880, its regional twin, has a drawing of its own');
   assert.deepEqual(MODELS.h300!.skins, [78], 'the Harmony 300 drawing serves the US skin');
   assert.deepEqual(MODELS.h300eu!.skins, [79], 'and its European printing has a drawing of its own');
+  assert.deepEqual(MODELS.h880pro!.skins, [39], 'the Harmony 880 Pro, a printing of the 885\'s shapes, serves skin 39');
+  assert.deepEqual(MODELS.h890pro!.skins, [40], 'the Harmony 890 Pro serves skin 40');
+  assert.deepEqual(MODELS.h720!.skins, [44], 'the Harmony 720 serves skin 44 and not the 785\'s 45, whose face has teletext keys');
   // Every drawing is some folder's drawing or printing, so a printing cannot be drawn and described nowhere.
   const described = REMOTES.flatMap((r) => [...(r.drawing === undefined ? [] : [r.drawing]), ...(r.printings ?? [])]);
   assert.deepEqual(Object.keys(MODELS).filter((id) => !described.includes(id)), []);
 });
 
-test('only the Harmony 890 folder is without a drawing, so a drawn model cannot lose its drawing', () => {
+test('no model folder is without a drawing, so a drawn model cannot lose its drawing', () => {
   // Plan 009 step 3.5 made `drawing` optional so that the two models known only from contributed
   // configurations could have their full folders before anybody draws them. An optional field is also a
   // way for every other row to drop its drawing without a failure anywhere, since the keys and display
   // blocks would simply say none exists. So the folders allowed to lack one are named here, exactly: a
   // drawing added for either shrinks this list, and any other row losing its drawing fails.
   const undrawn = REMOTES.filter((r) => r.drawing === undefined).map((r) => r.folder).sort();
-  // The Harmony 885 left this list when its drawing landed, `todo-prepare-885.md` 2.4.
-  assert.deepEqual(undrawn, ['harmony-890']);
+  // The Harmony 885 left this list when its drawing landed, `todo-prepare-885.md` 2.4, and the Harmony 890
+  // when the 890 Pro's did, 2.5.3. This test said only the Harmony 890 folder was without one until then.
+  assert.deepEqual(undrawn, []);
   for (const r of REMOTES) {
     if (r.drawing !== undefined) assert.ok(MODELS[r.drawing] !== undefined, `${r.folder}: no drawing ${r.drawing}`);
   }

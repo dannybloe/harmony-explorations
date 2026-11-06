@@ -75,11 +75,12 @@ interface RemoteFolder {
   /**
    * The drawing it uses, which may be a sibling's where the face is shared.
    *
-   * **Absent for a model nobody has drawn yet**, which is the Harmony 890's case, and was the Harmony
-   * 885's until `todo-prepare-885.md` 2.4: plan 009 gives both a full folder before a unit or a drawing
-   * exists, so that a unit's arrival adds content and changes no path. Their keys and display blocks then say that no drawing exists rather
-   * than failing, and `test/remotes.test.ts` names exactly which folders may be without one, so a model
-   * that has a drawing cannot lose it unnoticed.
+   * **Absent for a model nobody has drawn yet**, which was the Harmony 885's case until `todo-prepare-885.md`
+   * 2.4 and the Harmony 890's folder's until 2.5.3 drew the 890 Pro: plan 009 gives a model a full folder
+   * before a unit or a drawing exists, so that a unit's arrival adds content and changes no path. Its keys and
+   * display blocks then say that no drawing exists rather than failing, and `test/remotes.test.ts` names
+   * exactly which folders may be without one, so a model that has a drawing cannot lose it unnoticed. No row is
+   * without one now.
    */
   readonly drawing?: string;
   /**
@@ -88,14 +89,16 @@ interface RemoteFolder {
    * one, skin 78, which is `drawing`. Each gets a keys block of its own on the keys page, named
    * `keys-<drawing>`, and the folder's skins are every printing's together, `test/remotes.test.ts`. A
    * regional twin whose face differs in a few keys as well is carried the same way: the Harmony 880, skin
-   * 15, beside the 885, skin 17, its two chevron keys in place of the 885's four colour keys.
+   * 15, beside the 885, skin 17, its two chevron keys in place of the 885's four colour keys; and so is a
+   * model whose face is another's printed otherwise, the Harmony 880 Pro, skin 39, in the same folder.
    */
   readonly printings?: readonly string[];
   /**
    * Skins the folder describes that none of its drawings serves, because that skin's face is not the one
-   * drawn. `test/remotes.test.ts` holds the drawings' skins and these together to the folder's. No row has
-   * one now: the Harmony 880, skin 15, was the case, in the 885's folder with a face of its own, until its
-   * drawing landed as a printing of that folder, `todo-prepare-885.md` 2.5.
+   * drawn. `test/remotes.test.ts` holds the drawings' skins and these together to the folder's. The Harmony
+   * 890's folder has two, the 890 and 895, beside the 890 Pro its drawing serves, `todo-prepare-885.md` 2.5.3;
+   * the Harmony 880, skin 15, was the case in the 885's folder until its drawing landed as a printing of that
+   * folder, 2.5.
    */
   readonly undrawn?: readonly number[];
   readonly architecture: number;
@@ -202,9 +205,19 @@ export const REMOTES: readonly RemoteFolder[] = [
   // band, where the 885 has its four colour keys, and `HARMONY TECHNOLOGY` above the screen where the 885
   // prints its name, which fits its configurations knowing 53 keys, the 885's 55 less 19 and 60. So skin 15
   // is a printing of its own, `h880.ts`, the 885's drawing with that band and nameplate, and the folder's
-  // keys page carries a block for each. The 890 has no drawing yet.
-  { folder: 'harmony-885', skins: [15, 17], drawing: 'h885', printings: ['h880'], architecture: 8 },
-  { folder: 'harmony-890', skins: [19, 23], architecture: 10 },
+  // keys page carries a block for each. The Harmony 880 Pro, skin 39, is the 885's face with six keys printed
+  // otherwise, `h880pro.ts`, and the same application build with its own skin, so it is a third printing of
+  // this folder rather than a folder of its own.
+  { folder: 'harmony-885', skins: [15, 17, 39], drawing: 'h885', printings: ['h880', 'h880pro'], architecture: 8 },
+  // The 890 and 895 are not drawn. The Harmony 890 Pro, skin 40, is: the 880 Pro's face on this architecture,
+  // `h890pro.ts`, so this folder's drawing is the Pro's, and 19 and 23, whose faces are not the Pro's (a
+  // photograph of an 890 shows the 880's two chevron keys and `MUTE` and `PREV` on the edge keys), are named
+  // as undrawn.
+  { folder: 'harmony-890', skins: [19, 23, 40], drawing: 'h890pro', undrawn: [19, 23], architecture: 10 },
+  // Skin 44 alone, as the drawing serves it. Skin 45, the Harmony 785, is the same remote under its other
+  // regional name in `MODELS_BY_SKIN`, but a photograph of it shows four colour keys under the transport keys
+  // that the 720 does not have, so it is not this drawing's skin and not this folder's, as with the 520.
+  { folder: 'harmony-720', skins: [44], drawing: 'h720', architecture: 8 },
 ];
 
 /** The five files of a full architecture folder, and the same with the page on what Logitech's compiler writes. */

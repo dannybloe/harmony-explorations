@@ -10,6 +10,7 @@ and what Logitech's service still does for it.
 |---|---|---|---|---|---|---|
 | 15 | 15 | 16 | yes | yes | no | no |
 | 17 | 15 | 16 | yes | yes | no | no |
+| 39 | 15 | 16 | yes | yes | yes | no |
 
 Generated from `MODELS_BY_SKIN` and `hasLongPress` in `packages/usb/src/models.ts` by `make remote-reference-write`. Change the source, not this block.
 <!-- /generated -->

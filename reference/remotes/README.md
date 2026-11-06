@@ -23,8 +23,9 @@ over USB. What several models share is in [the architectures](../architectures/R
 | Harmony 600 | [harmony-600](harmony-600/README.md) | [the Harmony 600, 650 and 700](../architectures/harmony-600-650-700/README.md) |
 | Harmony 650 | [harmony-650](harmony-650/README.md) | [the Harmony 600, 650 and 700](../architectures/harmony-600-650-700/README.md) |
 | Harmony 700 | [harmony-700](harmony-700/README.md) | [the Harmony 600, 650 and 700](../architectures/harmony-600-650-700/README.md) |
-| Harmony 880 and 885 | [harmony-885](harmony-885/README.md) | [the Harmony 880 and 885](../architectures/harmony-880-885/README.md) |
-| Harmony 890 and 895 | [harmony-890](harmony-890/README.md) | [the Harmony 890 and 895](../architectures/harmony-890-895/README.md) |
+| Harmony 720 | [harmony-720](harmony-720/README.md) | [the Harmony 880 and 885](../architectures/harmony-880-885/README.md) |
+| Harmony 880, 885 and 880 Pro | [harmony-885](harmony-885/README.md) | [the Harmony 880 and 885](../architectures/harmony-880-885/README.md) |
+| Harmony 890, 895 and 890 Pro | [harmony-890](harmony-890/README.md) | [the Harmony 890 and 895](../architectures/harmony-890-895/README.md) |
 | Harmony One | [harmony-one](harmony-one/README.md) | [the Harmony One](../architectures/harmony-one/README.md) |
 | Harmony Touch | [harmony-touch](harmony-touch/README.md) | [the Harmony Touch](../architectures/harmony-touch/README.md) |
 
@@ -54,10 +55,10 @@ Logitech sold, and which of them its software stopped serving, is
 | 22 | Harmony 525 | Harmony 520 | 9 | monochrome | no | 12 | none |  | yes | no | no | 3.0 | [harmony-525](harmony-525/README.md) |
 | 23 | Harmony 895 | Harmony 890 | 10 | colour | no | 15 | 16 | 6 | yes | yes | no | 4.9.0 | [harmony-890](harmony-890/README.md) |
 | 36 | Harmony Xbox 360 |  | 9 | monochrome | no | 12 | none |  | yes | no | no | 3.0.0 |  |
-| 39 | Harmony 880 Pro |  | 8 | colour | no | 15 | 16 |  | yes | yes | yes | 4.4.2 |  |
-| 40 | Harmony 890 Pro |  | 10 | colour | no | 15 | 16 | 6 | yes | yes | yes | 4.9.0 |  |
+| 39 | Harmony 880 Pro |  | 8 | colour | no | 15 | 16 |  | yes | yes | yes | 4.4.2 | [harmony-885](harmony-885/README.md) |
+| 40 | Harmony 890 Pro |  | 10 | colour | no | 15 | 16 | 6 | yes | yes | yes | 4.9.0 | [harmony-890](harmony-890/README.md) |
 | 41 | Harmony 550 | Harmony 555 | 9 | monochrome | no | 15 | none |  | yes | yes | yes | 3.0 |  |
-| 44 | Harmony 720 | Harmony 785 | 8 | colour | no | 12 | 24 |  | yes | yes | no | 4.4.2 |  |
+| 44 | Harmony 720 | Harmony 785 | 8 | colour | no | 12 | 24 |  | yes | yes | no | 4.4.2 | [harmony-720](harmony-720/README.md) |
 | 45 | Harmony 785 | Harmony 720 | 8 | colour | no | 12 | 24 |  | yes | yes | no | 4.4.2 |  |
 | 48 | Harmony 555 | Harmony 550 | 9 | monochrome | no | 15 | none |  | yes | yes | yes | 3.0 |  |
 | 50 | Harmony 670 |  | 7 | monochrome | no | 15 | none |  | yes | yes | yes | 4.1.0 |  |
