@@ -13,7 +13,8 @@ starts. The images are the 880's and the 885's application 4.4 and bootloader 4.
 reading of it holds for both; one of the bootloader holds for the image read. The 720, 785, 880 Pro and 882
 are not covered by anything here.
 
-Written on 4 November 2026; linked from `todo-later.md` 5.6.
+Written on 4 November 2026; linked from `todo-later.md` 5.6. **Done**: every item ticked, the last being
+2.6.4, the key page published at `c016f5b5`. Plan 012 stays open for `todo-prepare-525.md`.
 
 ---
 
@@ -39,11 +40,11 @@ Written on 4 November 2026; linked from `todo-later.md` 5.6.
     - [x] 2.5.1 The 880, as the 885's second printing, `097a9749`
     - [x] 2.5.2 The 880's key codes from Logitech's compiles of 880 configurations, the 885's map the control: 29 of 53, `984a4257`
     - [x] 2.5.3 The 880 Pro, 890 Pro and 720, and the key page given the 880 Pro's and 720's drawings; the 890, 895, 900 and 950 are drawn when those remotes are taken up
-- [ ] 2.6 A browser page that learns a remote's key codes, so owners of models nobody here has can send their map; a feasibility page in the lab read the 885's held key through Chrome's WebHID
+- [x] 2.6 A browser page that learns a remote's key codes, so owners of models nobody here has can send their map; a feasibility page in the lab read the 885's held key through Chrome's WebHID
     - [x] 2.6.1 The page sends through one function that accepts only the version request and the one byte key read, built by `packages/usb/src/protocol.ts` itself (it imports nothing), and a test reads the page and fails on anything else; the library comes along only if the page ever reads more
     - [x] 2.6.2 The guided flow: the model chosen first (proposed from the skin the remote reports), then its drawing where one exists and a plain key list where none does, the key asked for lit, learned and skipped keys coloured, an unasked press flashed, a log to copy that holds names and codes and nothing identifying the unit
     - [x] 2.6.3 A key test mode beside the learning mode: every key lights on the drawing when pressed and stays lit, so an owner sees which keys work; it needs the model's codes, so a press of an unknown code is listed instead
-    - [ ] 2.6.4 Published on the reference site, read only, Chrome and Edge
+    - [x] 2.6.4 Published on the reference site, read only, Chrome and Edge: `c016f5b5`, at `key-reader/`
 
 ## 3. The file side, read in the firmware
 
