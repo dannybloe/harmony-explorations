@@ -144,8 +144,12 @@ remote's own six configuration documents, answered 200 under tags of ours, were 
 hash then carried those tags, and the next sync asked for the six with them[^t-touch-own-set-sync]. **A document
 changed by this project reaches what the remote does**: a sequence's delay and an activity's name, each changed
 in one value, delivered alone with 200 and committed, changed the pause the remote left between two commands and
-the name on its activity list, and putting each value back restored them[^t-touch-changed-set]. A document
-composed whole by this project is not checked[^unchecked].
+the name on its activity list, and putting each value back restored them[^t-touch-changed-set]. **A device
+composed by this project is listed and sent**: a projector of ours, its map and a definition written from this
+project's own table, added to the three lists the remote held and delivered with 200, showed in the device list,
+and each of its eleven commands was heard when pressed; taking it out again restored the set before,
+[a device of ours](../../architectures/harmony-touch/devices-and-infrared.md#a-device-of-ours)[^t-touch-device-of-ours].
+A document composed whole by this project is not checked[^unchecked].
 
 ## Changes on the remote travel back
 
@@ -176,6 +180,7 @@ channels and commands changed on the remote are not checked[^unchecked].
 [^t-touch-second-sync]: Measured on a unit. [The test](../../../packages/usb/test/touch-second-sync.test.ts)
 [^t-touch-own-set-sync]: Measured on a unit. [The test](../../../packages/usb/test/touch-own-set-sync.test.ts)
 [^t-touch-changed-set]: Measured on a unit. [The test](../../../packages/usb/test/touch-changed-set-sync.test.ts)
+[^t-touch-device-of-ours]: Measured on a unit. [The test](../../../packages/bench/test/touch81-runs.test.ts)
 [^t-client-reverse-sync]: Stated by Logitech, in their client. [The test](../../../tests/test_client_templates.py), class `TheClientAsksForTheRemotesChangesOnlyWithNothingPending`
 [^t-touch-both-ways]: Measured on a unit. [The test](../../../packages/usb/test/touch-sync-both-ways.test.ts)
 [^t-touch-favourites]: Measured on a unit. [The test](../../../packages/usb/test/touch-favourites.test.ts)

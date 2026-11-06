@@ -352,8 +352,9 @@ restarted first so its code book names a code by the Touch's own documents. The 
 
 **413 of 418.** Every code came in the order the model predicts, and nothing was sent that a step did not expect,
 but for the presses of the two marked steps below and one Denon PowerToggle heard 10.4 s into the step that chose
-the Denon from the device list, unmarked; the Denon's own map lists PowerToggle on its screen, and whether it was
-tapped the run does not say. The five that did not hold:
+the Denon from the device list, unmarked in the run. Asked afterwards, the person reported a second tap: the list
+was slow to answer and the tap landed on the Denon's page as it opened, on its PowerToggle entry; choosing the Denon
+again sent nothing. The five that did not hold:
 
 * **Three single presses not heard**: in Watch TV, Previous held, the LG TV's Back; in Watch a Blu-ray, Blue, the
   Blu-ray's Blue, and Rewind held, its ChapterPrev. **Retested on the monitor's live log, not as a test**,
@@ -389,6 +390,54 @@ rounding residue of 4.5e-13 ms that did not move the clock; a wait under a micro
 `waitFor` in `packages/bench/src/touchengine.ts`, and the test files came out unchanged by it.
 
 The runs, the retest and the rule are held by `packages/bench/test/touch71-runs.test.ts`. 7.1 is done.
+
+## A device of ours added, heard and taken out again, todo-touch 8.1
+
+**Run on 6 November 2026**, after 7.1 and after commit `5f296d09`, the 8.1 preparation, in the order of the lab's
+`work/touch-firmware/notes/8.1-preflight.md` section 6, each run read before the next and nothing touched on the
+remote's screens between them. The device is **Test Projector**, `packages/corpus/touch-devices/test-projector.json`:
+device type 7, eleven commands of the rhythm table's Sony 12 Bit row at address 30, device id 900000001 and protocol
+id 900000002, press repeats 3, no features. The two sets were built by `packages/corpus/bin/touch-device-set.ts`
+from `6.9-label-back`: `8.1-device` with the device added to DeviceList, MapList and ProtocolList, and
+`8.1-device-back` with it taken out, each retagging those three and no other.
+
+| time (UTC) | run | what it gave |
+|---|---|---|
+| `1151Z` | `touch-confighash` | equal on `6.9-label-back` |
+| `1153Z` | `touch-sync-set`, `8.1-device` | DeviceList, MapList, ProtocolList 200, the other three 304; first list asked with `6.9-label-back`'s tags; `sync: finished` |
+| `1154Z` | `touch-confighash` | equal on `8.1-device` |
+| `115546Z` | the bench test `touch-8-1-device-mode` | 15 of 15 |
+| `1155Z` | the monitor's live log | the Power tap at 12:00:57 |
+| `1201Z` | `touch-sync-set`, `8.1-device-back`, and `touch-confighash` | the same answer shape; first list asked with all six of `8.1-device`'s tags; hash equal on `8.1-device-back` |
+| `1208Z` | `touch-sync-unchanged` | first list asked with `8.1-device-back`'s tags; every answer 304 or the finish |
+
+All in `reads/20261106T<time>-*`. Each set went in one write of 19 chunks, 571252 characters for the device set and
+558278 for the put back, each replied 200.
+
+* **Nine request lists, where every earlier run of ours had eight**: both set runs handed out one more empty list,
+  between the user favourites and the device favourites; the preflight predicted eight. The answerer reads lists
+  until the finish and took it as it came. The files do not say why; the closing `--unchanged` run had eight again.
+* **The bench test**, run once on the Flirc monitor: Off, Test Projector chosen from the Devices list, Menu and
+  Exit, the four arrows and OK, Volume Up, Volume Down and Mute, each heard as the command of its own name to
+  Test Projector; then the Blu-ray chosen and its five navigation keys, Logitech's Sony 20 Bit definition beside
+  ours. 15 of 15, nothing else heard in any step, and the two device choices sent nothing. Each code of ours was a
+  12 bit frame with a header mark of about 2450 us, about 20 ms long and about 45 ms apart start to start. **Frames
+  per tap**: 4 for Menu, Exit and Up, 3 for Down, Left, Right and OK, 5 for each volume key, where the preflight
+  predicted 3; the Blu-ray's taps gave 3 each. What made six taps longer the files do not say.
+* **The Power entry**, tapped once on Test Projector's screen after the test with the monitor still on: three
+  frames at 12:00:57 UTC, Test Projector PowerToggle by the device set's documents and nobody's by `6.9-label-back`'s.
+* **The look, reported at the bench**: Test Projector last in the Devices list with its name and the default
+  picture; its screen listing the eleven entries in the predicted order, Power, Up, Down, Left, Right, OK, Menu,
+  Back, Volume Up, Volume Down, Mute, with no icons; after the put back it was gone and the remote worked normally.
+
+So a device composed by this project, with a definition written from our own rhythm table, both under identifiers
+of ours, was stored, committed, listed and sent by the remote, and the put back restored the set before. The remote
+holds `8.1-device-back`, the content of `6.9-label-back` under other tags for three documents. **Found while landing
+it**: the model gained a screen entry, `TouchEngine.entry` and the `{ entry }` action in
+`packages/bench/src/touchbench.ts`, which predicts the Power tap and the Denon's PowerToggle entry of 7.1; the 7.1 and
+8.1 test files are unchanged by it. What this does not cover: a document composed whole, an activity, a favourite
+or a picture of ours, and the device used in an activity. The runs are held by
+`packages/bench/test/touch81-runs.test.ts`. 8.1 is done.
 
 ## Not done
 

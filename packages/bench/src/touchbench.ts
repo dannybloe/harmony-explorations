@@ -54,6 +54,12 @@ export type TouchAction =
   | { readonly key: string; readonly hold?: true }
   /** Device mode for a device, from the Devices list on the screen; sends nothing. */
   | { readonly device: string }
+  /**
+   * An entry of the command list on the screen, by the label it shows, in the device mode chosen last or else the
+   * running activity; tapped, and sent as a tapped key is, `TouchEngine.entry`. Added after 8.1, where the Power
+   * entry of a device of ours was tapped after the test and heard but not judged.
+   */
+  | { readonly entry: string }
   /** The favourites screen, by the Favorites mark above the screen; sends nothing. */
   | { readonly favourites: true }
   /** A favourite channel on that screen, by the name it shows. */
@@ -115,6 +121,7 @@ export function wordsOf(a: TouchAction): string {
   if ('start' in a) return a.start === null ? 'Button: Off' : `Activity: ${a.start}`;
   if ('key' in a) return `Button: ${KEY_WORDS[a.key] ?? a.key}${a.hold === true ? ', hold 1 s' : ''}`;
   if ('device' in a) return `Screen: Devices → Screen: ${a.device}`;
+  if ('entry' in a) return `Screen: ${a.entry}`;
   if ('favourites' in a) return 'Button: Favorites';
   return `Screen: ${a.favourite}`;
 }
@@ -154,6 +161,7 @@ function walk(e: TouchEngine, c: Configuration, step: TouchStep, mode: { device:
       return e.start(a.start ?? undefined);
     }
     if ('key' in a) return e.key(a.key, a.hold === true ? 'hold' : 'tap', mode.device);
+    if ('entry' in a) return e.entry(a.entry, mode.device);
     if ('device' in a) {
       mode.device = a.device;
       return [];

@@ -706,11 +706,35 @@ export class TouchEngine {
    * A command goes out on its own and starts no wait; a sequence goes as a list, its delays slept.
    */
   key(key: string, how: 'tap' | 'hold', deviceName?: string): Send[] {
-    const map = deviceName === undefined
+    const map = this.mapOf(deviceName);
+    const button = map?.keys.find((b) => b.key === key);
+    if (map === undefined || button === undefined) return [];
+    return this.press(map, button, how);
+  }
+
+  /**
+   * An entry of the screen's command list tapped, in the running activity or in a device's mode, found by the label
+   * the screens show on it. **The engine sends it as it sends a key**: its `buttonPress` takes the entry by its
+   * `IndexInMenu`, which is the soft button's name, out of the same map, and goes on down the same path, so a tap
+   * goes as a tapped key goes. The label is the model's handle and not the engine's, which never reads it, so a
+   * label that names no entry, or two, is refused rather than guessed at.
+   */
+  entry(label: string, deviceName?: string): Send[] {
+    const map = this.mapOf(deviceName);
+    const found = [...(map?.entries.values() ?? [])].filter((b) => b.label === label);
+    if (found.length !== 1) throw new Error(`${found.length} screen entries labelled ${label} on ${deviceName ?? 'the running activity'}`);
+    return this.press(map!, found[0]!, 'tap');
+  }
+
+  /** The map a press reaches: a device's own in its mode, else the running activity's, else none. */
+  private mapOf(deviceName: string | undefined): harmonyTouch.ReadMap | undefined {
+    return deviceName === undefined
       ? (this.running === undefined ? undefined : this.config.activities.find((a) => a.id === this.running)!.map)
       : this.config.devices.find((d) => d.name === deviceName)!.map;
-    const button = map?.keys.find((b) => b.key === key);
-    if (button === undefined) return [];
+  }
+
+  /** One button of `map` pressed, a key or a screen entry alike. */
+  private press(map: harmonyTouch.ReadMap, button: harmonyTouch.ReadButton, how: 'tap' | 'hold'): Send[] {
     const action = how === 'hold' && button.longPress !== undefined ? button.longPress : button.press;
     if (action === undefined) return [];
     if (action.kind === 'command') {
@@ -729,7 +753,7 @@ export class TouchEngine {
       return this.collect();
     }
     if (action.kind === 'sequence') {
-      const sequence = map!.sequences.find((s) => s.id === action.sequenceId);
+      const sequence = map.sequences.find((s) => s.id === action.sequenceId);
       if (sequence === undefined) return [];
       const list: Entry[] = [];
       for (const s of sequence.steps) {

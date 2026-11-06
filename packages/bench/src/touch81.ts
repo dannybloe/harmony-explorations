@@ -12,9 +12,11 @@
  * the Blu-ray chosen and its navigation keys tapped: the bench set's Sony 20 Bit definition, Logitech's, beside
  * our Sony 12 Bit one, which has its shape. **What the model cannot say, the description asks the person to note**:
  * whether the device shows in the list with its name and the default picture, and whether its own screen lists
- * its labels in the order of their `IndexInMenu`. The screen entry Power, which no key binds, is not in the test,
- * since the model predicts a key and not a screen entry; the lab's `notes/8.1-preflight.md` proposes the change
- * to the model and has the entry pressed after the test.
+ * its labels in the order of their `IndexInMenu`. The screen entry Power, which no key binds, is not in the test:
+ * when it was written the model predicted a key and not a screen entry, so the lab's `notes/8.1-preflight.md` had
+ * the entry pressed after the test, heard and not judged. The model has had a screen entry since the run,
+ * `TouchEngine.entry` and the `{ entry }` action, and `test/touch81-runs.test.ts` holds that it predicts that tap;
+ * the plan is left as it ran, so the file in `irtests/` stays the one the run carried.
  */
 import type { harmonyTouch } from '@harmony/codec';
 

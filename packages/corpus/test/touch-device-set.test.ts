@@ -32,8 +32,7 @@
  */
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { readFileSync } from 'node:fs';
 import { describe, it } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
@@ -186,9 +185,9 @@ const SOURCE = 'touch_changed_set_label_back';
 const CLOSING = 'touch_changed_unchanged_';
 const CLOSING_LISTS = [1, 2, 3, 4, 5, 6, 7, 8].map((n) => `${CLOSING}list_${n}`);
 const HAND_OVER_LIST = `${CLOSING}handover_list`;
-/** The two sets 8.1 built in the lab, by path, for the comparison with what this derivation gives. */
-const BUILT = 'work/touch-firmware/sets/8.1-device/set.json';
-const BUILT_BACK = 'work/touch-firmware/sets/8.1-device-back/set.json';
+/** The two sets 8.1 built in the lab and delivered to the bench Touch, by fixture, for the comparison with what this derivation gives. */
+const BUILT = 'touch_device_set';
+const BUILT_BACK = 'touch_device_set_back';
 
 const json = (fixture: string): unknown => JSON.parse(new TextDecoder().decode(lab.require_(fixture)));
 const requestsOf = (fixture: string): RemoteRequest[] => {
@@ -252,10 +251,10 @@ describe('on the fake remote, the bench run and its put back', { skip: lab.needi
     return built;
   };
 
-  it('the sets the lab holds are the ones this derivation gives, as parsed JSON, tags and all', { skip: lab.LAB === undefined || !existsSync(join(lab.LAB, BUILT)) || !existsSync(join(lab.LAB, BUILT_BACK)) ? 'the 8.1 sets are not in the lab' : false }, () => {
+  it('the sets the lab holds are the ones this derivation gives, as parsed JSON, tags and all', lab.skipUnless(BUILT, BUILT_BACK), () => {
     const { withDevice, back } = sets();
-    assert.deepEqual(JSON.parse(readFileSync(join(lab.LAB!, BUILT), 'utf8')), JSON.parse(JSON.stringify(withDevice)));
-    assert.deepEqual(JSON.parse(readFileSync(join(lab.LAB!, BUILT_BACK), 'utf8')), JSON.parse(JSON.stringify(back)));
+    assert.deepEqual(json(BUILT), JSON.parse(JSON.stringify(withDevice)));
+    assert.deepEqual(json(BUILT_BACK), JSON.parse(JSON.stringify(back)));
   });
 
   it('the recorded closing run asked for the six with the source\'s tags, so the remote holds the source', () => {

@@ -42,7 +42,7 @@ and land the answer in the reference afterwards with its source.
 
 * **`openHarmony` refuses it**, by product id, and that is the rail rather than a gap to be closed: it
   speaks the file protocol, in which a path can be an action. `make remotes` reports it separately.
-* **It may be written, decision 29, through one rail, and it has been**: two reads (6.4) and nine syncs answered by the answerer: in 6.7 the first wrote Settings back under a tag of ours and stopped at the favourites, recovered by abort and restart, and the second answered every request 304 or the finish and was committed, the remote starting normally with its favourites; in 6.8 the remote's own six documents went back with 200 under tags of ours in one write of 19 chunks and were committed, the remote reporting and asking with those tags afterwards, and a fourth run answered every request 304 against them; in 6.9 four runs each delivered one document with one value changed or put back, with 200 and the other five 304, all committed and acted on (a sequence's delay heard to change on the infrared monitor and back, an activity's name seen to change on the activity list and back), and a ninth run answered 304 against the last set's tags, `docs/test-notes/harmony-touch.md`. The rail
+* **It may be written, decision 29, through one rail, and it has been**: two reads (6.4) and twelve syncs answered by the answerer: in 6.7 the first wrote Settings back under a tag of ours and stopped at the favourites, recovered by abort and restart, and the second answered every request 304 or the finish and was committed, the remote starting normally with its favourites; in 6.8 the remote's own six documents went back with 200 under tags of ours in one write of 19 chunks and were committed, the remote reporting and asking with those tags afterwards, and a fourth run answered every request 304 against them; in 6.9 four runs each delivered one document with one value changed or put back, with 200 and the other five 304, all committed and acted on (a sequence's delay heard to change on the infrared monitor and back, an activity's name seen to change on the activity list and back), and a ninth run answered 304 against the last set's tags; in 8.1 a device composed by us, Test Projector, was added to the device, map and protocol lists and delivered with those three 200, committed, listed and heard 15 of 15 in device mode, then taken out again the same way, and a twelfth run answered 304, `docs/test-notes/harmony-touch.md`. The rail
   is the request channel of `todo-touch.md` 6.3: `openTouchRequestSession` in `packages/usb/src/touchsession.ts`,
   behind `assertTouchRequestAllowed` in `rails.ts`, `HARMONY_ENABLE_WRITES=1` and `HARMONY_TOUCH_REQUESTS=1`.
   It opens `/sys/hlapi` and nothing else for writing, reads the identity file when a session opens and
@@ -70,14 +70,16 @@ and land the answer in the reference afterwards with its source.
   answerer refusing a set the codec's reader and check reject**, `todo-touch.md` 6.6: `syncTouch` in
   `packages/corpus/src/touchsync.ts` calls `refusalsBeforeASync` in `packages/codec/src/harmony-touch/check.ts`
   itself before anything is opened, and its script is `packages/corpus/bin/touch-sync.ts`, `--unchanged` or
-  `--set <lab folder>`, a dry run without `--commit`. **The answerer has run nine times on a unit**: in 6.7 the first time the hand over
+  `--set <lab folder>`, a dry run without `--commit`. **The answerer has run twelve times on a unit**: in 6.7 the first time the hand over
   and the six documents went through and it stopped where the favourites came untagged, which `--unchanged` now
   answers 304; the second time it ran to `proxy://Finished` and the remote committed the set, every answer a 304
   or the finish, `packages/usb/test/touch-second-sync.test.ts`; in 6.8 `--set` delivered the remote's own six
   documents with 200 under tags of ours and the remote committed them, and an `--unchanged` run after it was asked
   for the six with those tags, `packages/usb/test/touch-own-set-sync.test.ts`; in 6.9 `--set` delivered four sets
   in turn, each changing one value of one document and retagging only that one, and the remote committed and
-  acted on each, `packages/usb/test/touch-changed-set-sync.test.ts`. It
+  acted on each, `packages/usb/test/touch-changed-set-sync.test.ts`; in 8.1 `--set` delivered three documents with
+  a device of ours added and then taken out, both committed, and an `--unchanged` run followed,
+  `packages/bench/test/touch81-runs.test.ts`. It
   lives in `packages/corpus` because `packages/usb` cannot import the codec. **`--unchanged` is not write
   free**: every document the remote hands up is written back to it with a tag of ours and committed, so that
   change never reaches Logitech's account. **After any stop, the first step is the read `getconfighash`**,
@@ -135,10 +137,11 @@ test; the read itself goes into the lab.
 | the configuration's reader and checker | `packages/codec/src/harmony-touch/`, tested in `packages/codec/test/touch-reader.test.ts` and `touch-check.test.ts` |
 | a set of the remote's own documents with tags of ours, built and compared | `packages/corpus/bin/touch-own-set.ts` and `packages/corpus/src/touchownset.ts`, `todo-touch.md` 6.8 |
 | a set with one value changed and only that document retagged, built and compared | `packages/corpus/bin/touch-changed-set.ts` and `packages/corpus/src/touchchangedset.ts`, `todo-touch.md` 6.9 |
+| a set with a device of ours added, or taken out, and only the three documents it changes retagged | `packages/corpus/bin/touch-device-set.ts` (`--build --device`, `--build --remove`, `--check`) and `changeDocuments` in `packages/corpus/src/touchchangedset.ts`; the device composed by `composeTouchDeviceOfRow` and added by `withTouchDevice`, taken out by `withoutTouchDevice`, identifiers of ours by `OWN_IDS`, in `packages/codec/src/harmony-touch/compose.ts`; the description `packages/corpus/touch-devices/test-projector.json`; `todo-touch.md` 8.1, `packages/corpus/test/touch-device-set.test.ts` and `packages/codec/test/touch-device-add.test.ts` |
 | answering a sync in place of Logitech's server | `reference/architectures/harmony-touch/answering-a-sync.md`; the answerer `packages/corpus/src/touchsync.ts`, its script `packages/corpus/bin/touch-sync.ts`, tested in `packages/corpus/test/touch-sync.test.ts` |
 | the protocol | `reference/usb-protocol/file-protocol.md` |
 | its family, firmware and its two architecture numbers | `reference/architectures/harmony-touch/` |
-| what the remote sends for a press, predicted from its documents, and its bench tests | the engine model `packages/bench/src/touchengine.ts`, the plans and pause bands `packages/bench/src/touchbench.ts` (a further slow side slack after a held code, `HELD_CODE_SLACK_MS`), the tests `packages/bench/irtests/touch-7-1-*.json` written by `packages/bench/bin/touch-tests.ts`; the calibration `packages/bench/test/touch71.test.ts` and the ten runs of `todo-touch.md` 7.1, 413 of 418 held, `packages/bench/test/touch71-runs.test.ts` |
+| what the remote sends for a press, predicted from its documents, and its bench tests | the engine model `packages/bench/src/touchengine.ts`, the plans and pause bands `packages/bench/src/touchbench.ts` (a further slow side slack after a held code, `HELD_CODE_SLACK_MS`), the tests `packages/bench/irtests/touch-7-1-*.json` written by `packages/bench/bin/touch-tests.ts`; the calibration `packages/bench/test/touch71.test.ts` and the ten runs of `todo-touch.md` 7.1, 413 of 418 held, `packages/bench/test/touch71-runs.test.ts`; a screen entry tapped, `TouchEngine.entry` and the `{ entry }` action; 8.1's test of a device of ours `packages/bench/src/touch81.ts`, written by `packages/bench/bin/touch-device-tests.ts`, its run `packages/bench/test/touch81-runs.test.ts` |
 | the bench unit's notes | `docs/test-notes/harmony-touch.md` |
 | what Logitech's client does for it | `reference/logitech/clients.md` and findings sections 202 and 203 |
 

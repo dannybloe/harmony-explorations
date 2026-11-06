@@ -10,9 +10,10 @@
  *
  * **What the predictions rest on.** The documents of the set the bench Touch holds since 6.9, the
  * `touch_changed_set_label_back` fixture, with the device of `packages/corpus/touch-devices/test-projector.json`
- * added by the codec, `withTouchDevice`: the same content as the lab's `work/touch-firmware/sets/8.1-device`, which
- * `packages/corpus/test/touch-device-set.test.ts` holds as parsed JSON, tags and all. Built here from the fixture
- * so that this test needs no fixture of its own. The favourites are the recorded full sync's, as in 7.1.
+ * added by the codec, `withTouchDevice`. Built here from the source so that a change to the composer shows in the
+ * predictions, and held equal, document for document, to the set the bench Touch was given, the `touch_device_set`
+ * fixture, which `packages/corpus/test/touch-device-set.test.ts` also holds as parsed JSON, tags and all. The
+ * favourites are the recorded full sync's, as in 7.1.
  *
  * **No bench code can be heard as one of the device's, and no two of its own as each other.** The monitor names a
  * capture by every stored frame it matches, duration for duration within its tolerance, `CodeBook.match`, over
@@ -50,6 +51,8 @@ import { TOUCH_8_1_DEVICE, TOUCH_8_1_SET, touch81Tests } from '../src/touch81.ts
 
 const SOURCE = 'touch_changed_set_label_back';
 const FULL = 'touch_full_sync_recording';
+/** The set the bench Touch was given for 8.1, by fixture. */
+const DEVICE_SET = 'touch_device_set';
 const DESCRIPTION = fileURLToPath(new URL('../../corpus/touch-devices/test-projector.json', import.meta.url));
 
 const projector = (): harmonyTouch.RowDevice => (JSON.parse(readFileSync(DESCRIPTION, 'utf8')) as { device: harmonyTouch.RowDevice }).device;
@@ -78,7 +81,11 @@ function configuration(): harmonyTouch.Configuration {
   return harmonyTouch.readConfiguration(documents as harmonyTouch.SyncDocuments);
 }
 
-test('the 8.1 test file is what the device set gives, and every key of the device sends its own command to it', lab.needing(lab.skipUnless(SOURCE, FULL)), () => {
+test('the 8.1 test file is what the device set gives, and every key of the device sends its own command to it', lab.needing(lab.skipUnless(SOURCE, FULL, DEVICE_SET)), () => {
+  // The set built here is the one the remote was given, as parsed JSON, so the predictions are the delivered set's.
+  const delivered = (JSON.parse(new TextDecoder().decode(lab.require_(DEVICE_SET))) as { answers: harmonyTouch.SyncAnswer[] }).answers;
+  assert.deepEqual(answersWith([projector()]).map((a) => a.resource), delivered.map((a) => a.resource));
+  assert.equal(lab.IMAGES[DEVICE_SET], TOUCH_8_1_SET);
   const c = configuration();
   const derived = touch81Tests(c);
   const directory = fileURLToPath(new URL('../irtests/', import.meta.url));

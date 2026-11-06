@@ -64,8 +64,10 @@
  *
  * **Nothing else was sent in a judged step** but the presses of the two marked steps below and one: while the Denon
  * was being chosen from the device list, which sends nothing by the reading, one Denon PowerToggle was heard, 10.4 s
- * into that step and unmarked. The Denon's own map lists PowerToggle on its screen; whether it was tapped the file
- * does not say, and no cause is claimed. Every press of every judged step was named by the Touch's documents.
+ * into that step and unmarked in the run. Asked afterwards, the person reported a second tap: the device list was
+ * slow to answer, and the tap landed on the Denon's page as it opened, on its PowerToggle entry, which the Denon's
+ * own map lists on its screen. Choosing the Denon again sent nothing. Every press of every judged step was named by
+ * the Touch's documents.
  *
  * **Reported by the person at the bench and held by no file**: the favourites screen showed all five logos, NPO 1,
  * Zork, NPO 2, NPO 3 and RTL 4.
@@ -442,9 +444,9 @@ test('nothing was sent that a step did not expect, but in the two steps the pers
     }
     assert.deepEqual(found, [
       'touch-7-1-8-play-a-game-keys 7 Xbox SkipBack',
-      // Unmarked: one Denon PowerToggle while the Denon's device page was being opened, 10.4 s into the step, which
-      // sends nothing by the reading. The Denon's own map lists PowerToggle on its screen, below; whether that entry
-      // was tapped the file does not say.
+      // Unmarked in the run: one Denon PowerToggle while the Denon's device page was being opened, 10.4 s into the
+      // step, which sends nothing by the reading. Reported afterwards as a second tap landing on the page's
+      // PowerToggle entry as it opened; the Denon's own map lists that entry on its screen, below.
       'touch-7-1-9a-device-mode 8 Denon AV Receiver PowerToggle',
       'touch-7-1-9b-device-mode 21 Xbox SkipBack',
       'touch-7-1-9b-device-mode 21 Xbox DirectionUp',

@@ -8,7 +8,9 @@ on every Harmony, the code families and how often a press sends a code, is [infr
 
 **The scope is one firmware build and one synced set of documents.** Everything read in the firmware was read
 in the Touch's production image 4.15.330, and everything measured was measured in the documents one sync
-handed a Touch: seven infrared devices using five code families[^t-touch-devices][^t-touch-engine]. **What
+handed a Touch: seven infrared devices using five code families[^t-touch-devices][^t-touch-engine]. One more
+device, composed by this project with a definition of its own, was added to those documents, delivered and heard,
+[a device of ours](#a-device-of-ours)[^t-touch-device-of-ours]. **What
 is read in the firmware was read in the decompiled engine**, the remote's own program; the test anchors the
 parts it can name in the compiled files and lists the rest as read only. Nothing here is checked on another
 build or another model.
@@ -209,13 +211,40 @@ is still sent; a device whose `PowerTypeId` is 0 or 3 is powered by hand and get
 power two discrete states and 2 one state that steps. **`IsScartCableSupported`**: while an activity starts,
 as long as a command for such a device is waiting, devices without the flag are held back.
 
+## A device of ours
+
+**A device composed by a program, with a definition written from the program's own table of code families, is
+listed and sent like one of Logitech's.** One device was added to the device, map and protocol lists a Touch
+held and delivered in a sync: a projector with eleven commands, ten bound to keys of its own map and one, Power,
+only on its screen, every command in the Sony 12 bit family, whose definition was written from the [rhythm
+table](../../infrared/families.md) and listed under a protocol id of ours rather than the catalogue's. The remote
+stored and committed the three lists, showed the device in its device list, and sent every one of the eleven when
+its key or its screen entry was pressed: each heard at a receiver as the 12 bit frame the definition describes,
+the command of the key's name to that device and nothing else, at least three frames a press, the device's press
+repeat count being 3[^t-touch-device-of-ours]. Taken out again by a second sync, the device was gone and
+the rest of the set was as before. So the engine builds its packet from a definition it has never been given by
+Logitech exactly as from theirs, at least for a definition of the same fields and shape as one of theirs: that one
+had the fields and shape of Logitech's Sony 20 bit definition, which the same remote sent beside it.
+
+**Identifiers of ours are nine digits from 900000000.** A device, a map and a protocol definition each carry an id
+the others name it by. Logitech's device and activity ids in the documents a Touch held are eight digits and the
+protocol ids are the catalogue's, below a thousand, so an id of nine digits from 900000000 lies outside both by a
+factor of ten and below 2<sup>31</sup>; the remote took a device and a definition under such ids, 900000001 and
+900000002[^t-touch-device-of-ours]. That is a margin and not a guarantee, so a writer still refuses an id the
+documents already hold, and a device id whose digits contain another device's or sit inside one.
+
+What the screens drew for that device is [the model's display](../../remotes/harmony-touch/display.md#what-the-screen-shows).
+A device of ours used inside an activity, with power or input states of its own, is not checked[^unchecked].
+
 ## What a writer must carry
 
 **The remote's own screens change `DeviceList` and send it back whole**: the delay screens and their reset,
 the port assignment screen, and a device's setup state, each by changing the document in place and saving
 all of it[^t-touch-engine]. So every field a writer puts in a device list can come back, the fields nothing
-reads among them, and a writer that drops one has changed what Logitech's service holds. Uploading a changed
-device list has not been measured[^unchecked].
+reads among them, and a writer that drops one has changed what Logitech's service holds. **A device list changed
+by a program and delivered in a sync was stored, committed and used**: one with a device of ours appended,
+[below](#a-device-of-ours), and the same list with it taken out again[^t-touch-device-of-ours]. This said
+uploading a changed device list had not been measured<!--superseded--> until then.
 
 **Required**, in that a document without the field stops the engine[^t-touch-engine]: a device's
 `DeviceType`, `Manufacturer` and `Transport`; a command's `TransportType` and its `Raw` key, which may be
@@ -256,6 +285,8 @@ and `ParentDeviceManufacturer`, `ParentDeviceModel` and `IsMultiCode`[^t-touch-e
 * Whether a device's repeat count and its family's ever differ for a device a Touch is given, which decides
   whether a Touch and a compiled configuration send such a code a different number of times[^unchecked].
 * What a nonzero control port does on a Touch with no hub[^unchecked].
+* A device of ours inside an activity, a device of ours with features, and a definition of ours of a shape no
+  Logitech definition the remote holds has[^unchecked].
 * Any other firmware build, and the other remotes of the generation[^unchecked].
 
 [^t-touch-devices]: Measured on a unit. [The test](../../../packages/usb/test/touch-devices.test.ts)
@@ -263,6 +294,7 @@ and `ParentDeviceManufacturer`, `ParentDeviceModel` and `IsMultiCode`[^t-touch-e
 [^t-touch-devices-catalogue]: Stated by Logitech, in their catalogue. [The test](../../../packages/usb/test/touch-devices.test.ts)
 [^t-touch-engine]: Read in the firmware. [The test](../../../tests/test_harmony_touch_devices.py)
 [^t-touch-sync]: Measured on a unit. [The test](../../../packages/usb/test/touch-sync.test.ts)
+[^t-touch-device-of-ours]: Measured on a unit. [The test](../../../packages/bench/test/touch81-runs.test.ts)
 [^s92]: Measured in configurations. [Section 92](../../../docs/findings.md#s92)
 [^s348]: Measured in configurations. [Section 348](../../../docs/findings.md#s348)
 [^unchecked]: Not checked.

@@ -66,7 +66,13 @@ Which of the held and double forms a button map can bind is the map's question,
   entry, is not checked[^unchecked].
 * **The favourite channels**, under Favorites, as pictures, up to 50, editable and reorderable on the
   remote[^x-touch-manual].
-* **A device's commands**, from the device list[^x-touch-manual]; [behaviour.md](behaviour.md).
+* **A device's commands**, from the device list[^x-touch-manual]; [behaviour.md](behaviour.md). **A device whose
+  type has no picture of its own is drawn in the device list with the default picture**, and **a screen entry
+  that names no function is drawn without an icon**: a projector added by a program, a type the remote holds no
+  picture for, showed last in the list with its name and the default picture, and its command screen listed its
+  eleven entries in the order of their places in the map, each a label with no icon, none of them naming a
+  function[^t-touch-device-of-ours]. Which device types do have a picture of their own is not
+  checked[^unchecked].
 * **Settings**, at the far right of the home screen[^x-touch-manual]: one entry of the menu behind the right
   hand button at the foot of the activity list, beside Help, Devices, Edit and the sleep timer[^t-touch-keys].
 
@@ -120,3 +126,4 @@ screen, field by field, is [favourites-and-settings.md](../../architectures/harm
 [^t-touch-beyond-firmware]: Read in the firmware. [The test](../../../tests/test_harmony_touch_beyond_the_clients.py)
 [^t-touch-beyond-client]: Stated by Logitech, in their client. [The test](../../../tests/test_harmony_touch_beyond_the_clients.py)
 [^t-touch-changed-set]: Measured on a unit. [The test](../../../packages/usb/test/touch-changed-set-sync.test.ts)
+[^t-touch-device-of-ours]: Measured on a unit. [The test](../../../packages/bench/test/touch81-runs.test.ts)

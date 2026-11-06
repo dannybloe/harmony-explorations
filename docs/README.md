@@ -993,10 +993,10 @@ node packages/corpus/bin/touch-sync.ts --unchanged | --set <lab folder> [--commi
                        --step abort`. One line per step starting `sync:`, the forms in its header.
                        With a set, a document the hand over hands up that the set also holds stops the
                        run before the sync request, since the set would revert it. `--unchanged`
-                       has run four times on the bench Touch, 6.7, 6.8 and 6.9; `--set` five times,
-                       6.8 and the four sets of 6.9, each committed,
-                       `packages/usb/test/touch-own-set-sync.test.ts` and
-                       `touch-changed-set-sync.test.ts`.
+                       has run five times on the bench Touch, 6.7, 6.8, 6.9 and 8.1; `--set` seven
+                       times, 6.8, the four sets of 6.9 and the two of 8.1, each committed,
+                       `packages/usb/test/touch-own-set-sync.test.ts`,
+                       `touch-changed-set-sync.test.ts` and `packages/bench/test/touch81-runs.test.ts`.
 node packages/bench/bin/touch-tests.ts [--write]
                        derive `todo-touch.md` 7.1's bench tests for the Harmony Touch from the set
                        the bench unit holds and the recorded favourites, through the engine model
@@ -1004,6 +1004,13 @@ node packages/bench/bin/touch-tests.ts [--write]
                        `irtests/touch-7-1-*.json`; `test/touch71.test.ts` holds the files equal to
                        what this gives, and `test/touch71-runs.test.ts` the ten runs of them at the
                        bench. Reads the lab only. Opens nothing, sends nothing.
+node packages/bench/bin/touch-device-tests.ts [--write]
+                       derive `todo-touch.md` 8.1's bench test, a device of ours in device mode, from
+                       the lab's `8.1-device` set and the recorded favourites through the same engine
+                       model, the plan in `src/touch81.ts`, and print it, or with `--write` write
+                       `irtests/touch-8-1-device-mode.json`; `test/touch81.test.ts` holds the file
+                       equal to what this gives, and `test/touch81-runs.test.ts` its run at the bench.
+                       Reads the lab only. Opens nothing, sends nothing.
 node packages/corpus/bin/touch-own-set.ts --build <lab folder> --requests <list> [--handed-up <answers>]
 node packages/corpus/bin/touch-own-set.ts --check <set folder> [--hash <answer>] [--list <list>]
                        build the set `todo-touch.md` 6.8 delivers to a Harmony Touch, its own six
@@ -1028,6 +1035,21 @@ node packages/corpus/bin/touch-changed-set.ts --check <set folder> [--same-as <s
                        another set, `--written` a run's kept write of answers. Reads and writes the lab
                        only; prints counts, pointers and the change's own values, never a tag. Opens
                        nothing.
+node packages/corpus/bin/touch-device-set.ts --build <lab folder> --from <set folder> --device <description>
+node packages/corpus/bin/touch-device-set.ts --build <lab folder> --from <set folder> --remove <device id>
+node packages/corpus/bin/touch-device-set.ts --check <set folder> [--same-as <set>] [--written <answers>] \
+  [--hash <answer>] [--list <list>]
+                       build a set with a device of ours added, or taken out again, `todo-touch.md`
+                       8.1: the device composed from a description such as
+                       `packages/corpus/touch-devices/test-projector.json` by the codec's
+                       `composeTouchDeviceOfRow` and added by `withTouchDevice`, or taken out by
+                       `withoutTouchDevice`, and only DeviceList, MapList and ProtocolList retagged,
+                       `changeDocuments` in `src/touchchangedset.ts`. `--check` holds each of the
+                       three to one entry added or taken out against its source, reads the device back
+                       as the engine finds it and answers a remote holding the source (three 200,
+                       three 304); the other options are `touch-changed-set.ts`'s. Reads and writes the
+                       lab only; prints counts and the device's own names and numbers, never a tag.
+                       Opens nothing.
 node packages/usb/bin/read-file.ts --file <path> [--product 0xc12b] [--device <path>]
                        the general form of the above: read any path on `INERT_PATHS` and print it as
                        bytes and, where it is printable, as text. Deliberately does not parse, since

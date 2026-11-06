@@ -187,7 +187,7 @@ the generator that wrote it, with firmware event 0xFF bound so it serves both mo
 expected codes on the bench 350 and the same file 33 of 33 on the bench 300, `packages/codec/test/noscreenfinalunits.test.ts`.
 Two Harmony 885s are on the bench as well, read only.
 
-**The Harmony Touch is described from its own reading, nine syncs of ours have run on it, eight committed, four of them changing what it does, and its first full bench test has run.** Its configuration
+**The Harmony Touch is described from its own reading, twelve syncs of ours have run on it, eleven committed, six of them changing what it does, its first full bench test has run, and a device composed by us has been delivered to it and heard.** Its configuration
 is Logitech's documents rather than a file, fetched by the remote through the computer during a sync, and both
 directions of a sync are recorded, `packages/usb/test/touch-sync-both-ways.test.ts`. The documents are described
 field by field in [its platform pages](../reference/architectures/harmony-touch/README.md) and read by the codec,
@@ -218,7 +218,12 @@ activity started, switched and stopped, the five favourites, every key of every 
 own maps, tapped and held. 413 of the 418 expected codes and pauses held, every code in the order the model of its
 engine predicts; three single presses were missed and each heard on a retest, and two pauses ran late after a code
 the remote holds for two seconds, which a rule for held codes now allows,
-`packages/bench/test/touch71-runs.test.ts`.
+`packages/bench/test/touch71-runs.test.ts`. In 8.1 a device composed by this project reached it: Test Projector,
+eleven commands in a Sony 12 bit definition written from our own rhythm table under identifiers of ours, added to
+the device, map and protocol lists and delivered with those three 200 and the other three 304. The remote
+committed it and listed the device, and 15 of 15 expected codes were heard in device mode, its ten keys and the
+Blu-ray's five as a control, and its Power entry sent PowerToggle when tapped. A second sync took it out again and
+a closing `--unchanged` run was asked with that set's tags, `packages/bench/test/touch81-runs.test.ts`.
 
 ## What is still open
 
