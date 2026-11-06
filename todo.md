@@ -129,7 +129,7 @@ The remote's own settings rather than its devices and activities. Logitech's ser
     - [ ] On the Harmony 700: which of its pair of timers it is, on the bench unit
   - [ ] 6.1.2 RemoteAssistant, the question after an activity starts, on the Harmony 600, 650 and 700; done on the Harmony 650 (section 345); the 600's compile without it holds none of its screens (section 347); the 700 not compiled with it off
   - [ ] 6.1.3 TiltSensor, waking when picked up, on the Harmony 600, 650 and 700; done on the Harmony 650 (sections 346, 347); the 600 and 700 not compiled with it off
-  - [ ] 6.1.4 The Harmony Touch's eleven, among them screen brightness and screen timeout
+  - [x] 6.1.4 The Harmony Touch's eleven, among them screen brightness and screen timeout: rows of its Settings document, `reference/architectures/harmony-touch/favourites-and-settings.md`; seven composed and four refused by `composeTouchSettings`, brightness and timeout delivered to the bench Touch, `todo-touch.md` 8.4
   - [ ] 6.1.5 The Harmony One's and the Harmony 525's, which Logitech's service does not list
 - [ ] 6.2 Read and change them from FreeHarmony
 
