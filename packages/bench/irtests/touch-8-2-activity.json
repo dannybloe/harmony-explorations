@@ -1,0 +1,235 @@
+{
+  "name": "Harmony Touch 8.2, Test Cinema, an activity of ours",
+  "summary": "An activity of ours: started from Off, its keys and screen entries, a switch to Watch TV and back, and Off.",
+  "description": "todo-touch.md 8.2, on the bench Harmony Touch holding work/touch-firmware/sets/8.2-activity: the set of 8.1's put back with an activity of ours added, Test Cinema, composed from the bench devices by name (packages/corpus/touch-activities/test-cinema.json). Every expectation is derived from that set by packages/bench/src/touchengine.ts and named as the monitor names a code of the Touch's own documents. Step 1 presses Off and is not judged. In step 2, before tapping the activity, write in the problem field whether Test Cinema is on the activity list, last of 6 (Watch TV, Watch a Blu-ray, Listen to Music, Switch Box, Play a Game, Test Cinema), with its name and the picture of a custom activity; and once it has started, whether its command list shows 4 entries in this order, with no icons: Top Menu, Pop Up Menu, Subtitles, TV Info. Predicted for the start: the Blu-ray's PowerOn first, then the LG TV's, then the TV's input once its 10 second power on delay is out, then a pause of 3 s and the Blu-ray's TopMenu; no Denon code. Predicted per key: the volume keys to the LG TV, the rest to the Blu-ray; per screen entry, its command. Then Watch TV: the Blu-ray's Stop first, the Denon switched on, the Blu-ray switched off, the inputs. Then Test Cinema again: the Blu-ray switched on, the Denon left on, the TV's input, the pause and TopMenu. Off: the Blu-ray's Stop, the LG TV and the Blu-ray switched off in that order, then the Denon. Wait for the codes to stop before pressing Next: a start runs about 15 seconds, most of it the LG TV's power on delay.",
+  "steps": [
+    {
+      "instruction": "Button: Off"
+    },
+    {
+      "instruction": "Activity: Test Cinema",
+      "expect": [
+        {
+          "device": "Blu-ray",
+          "command": "PowerOn"
+        },
+        {
+          "device": "LG TV",
+          "command": "PowerOn",
+          "pauseMs": [
+            500,
+            1050
+          ]
+        },
+        {
+          "device": "LG TV",
+          "command": "InputHdmi2",
+          "pauseMs": [
+            10050,
+            10600
+          ]
+        },
+        {
+          "device": "Blu-ray",
+          "command": "TopMenu",
+          "pauseMs": [
+            3000,
+            3550
+          ]
+        }
+      ]
+    },
+    {
+      "instruction": "Button: Menu → Button: Exit",
+      "expect": [
+        {
+          "device": "Blu-ray",
+          "command": "Menu"
+        },
+        {
+          "device": "Blu-ray",
+          "command": "Return"
+        }
+      ]
+    },
+    {
+      "instruction": "Button: Up → Button: Down → Button: Left → Button: Right → Button: OK",
+      "expect": [
+        {
+          "device": "Blu-ray",
+          "command": "DirectionUp"
+        },
+        {
+          "device": "Blu-ray",
+          "command": "DirectionDown"
+        },
+        {
+          "device": "Blu-ray",
+          "command": "DirectionLeft"
+        },
+        {
+          "device": "Blu-ray",
+          "command": "DirectionRight"
+        },
+        {
+          "device": "Blu-ray",
+          "command": "Select"
+        }
+      ]
+    },
+    {
+      "instruction": "Button: Volume Up → Button: Volume Down → Button: Mute",
+      "expect": [
+        {
+          "device": "LG TV",
+          "command": "VolumeUp"
+        },
+        {
+          "device": "LG TV",
+          "command": "VolumeDown"
+        },
+        {
+          "device": "LG TV",
+          "command": "Mute"
+        }
+      ]
+    },
+    {
+      "instruction": "Button: Play → Button: Pause → Button: Stop",
+      "expect": [
+        {
+          "device": "Blu-ray",
+          "command": "Play"
+        },
+        {
+          "device": "Blu-ray",
+          "command": "Pause"
+        },
+        {
+          "device": "Blu-ray",
+          "command": "Stop"
+        }
+      ]
+    },
+    {
+      "instruction": "Screen: Top Menu → Screen: Pop Up Menu → Screen: Subtitles → Screen: TV Info",
+      "expect": [
+        {
+          "device": "Blu-ray",
+          "command": "TopMenu"
+        },
+        {
+          "device": "Blu-ray",
+          "command": "PopUp"
+        },
+        {
+          "device": "Blu-ray",
+          "command": "Subtitle"
+        },
+        {
+          "device": "LG TV",
+          "command": "Info"
+        }
+      ]
+    },
+    {
+      "instruction": "Activity: Watch TV",
+      "expect": [
+        {
+          "device": "Blu-ray",
+          "command": "Stop"
+        },
+        {
+          "device": "Denon AV Receiver",
+          "command": "PowerOn",
+          "pauseMs": [
+            650,
+            1200
+          ]
+        },
+        {
+          "device": "Blu-ray",
+          "command": "PowerOff",
+          "pauseMs": [
+            750,
+            1300
+          ]
+        },
+        {
+          "device": "LG TV",
+          "command": "InputHdmi1",
+          "pauseMs": [
+            500,
+            1050
+          ]
+        },
+        {
+          "device": "Denon AV Receiver",
+          "command": "InputTVAudio",
+          "pauseMs": [
+            1950,
+            2550
+          ]
+        }
+      ]
+    },
+    {
+      "instruction": "Activity: Test Cinema",
+      "expect": [
+        {
+          "device": "Blu-ray",
+          "command": "PowerOn"
+        },
+        {
+          "device": "LG TV",
+          "command": "InputHdmi2",
+          "pauseMs": [
+            500,
+            1050
+          ]
+        },
+        {
+          "device": "Blu-ray",
+          "command": "TopMenu",
+          "pauseMs": [
+            3000,
+            3550
+          ]
+        }
+      ]
+    },
+    {
+      "instruction": "Button: Off",
+      "expect": [
+        {
+          "device": "Blu-ray",
+          "command": "Stop"
+        },
+        {
+          "device": "LG TV",
+          "command": "PowerOff",
+          "pauseMs": [
+            500,
+            1050
+          ]
+        },
+        {
+          "device": "Blu-ray",
+          "command": "PowerOff",
+          "pauseMs": [
+            500,
+            1050
+          ]
+        },
+        {
+          "device": "Denon AV Receiver",
+          "command": "PowerOff",
+          "pauseMs": [
+            650,
+            1200
+          ]
+        }
+      ]
+    }
+  ]
+}

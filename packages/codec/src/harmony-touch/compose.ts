@@ -52,15 +52,20 @@
  * table, `withTouchDevice` adds the three parts to the device, map and protocol lists of a set the remote holds,
  * under identifiers of ours, `OWN_IDS`, and `withoutTouchDevice` takes them out again.
  *
+ * **An activity composed from a description, and put into a whole set**, `todo-touch.md` 8.2: `composeTouchActivity`
+ * writes an activity's record and its own map from devices the documents already hold, named as a person names
+ * them, `withTouchActivity` adds the two to the activity and map lists, and `withoutTouchActivity` takes them out.
+ * The section that opens them says what is written and why.
+ *
  * **Nothing here sends anything**: these are documents. This said no write path to a Touch existed, decision
  * 29, which stopped being true when the answerer of `todo-touch.md` 6.6 delivered sets to the bench
  * Touch; the answerer is `packages/corpus/src/touchsync.ts`.
  */
 import type {
-  Button, ButtonActionDocument, ButtonMap, Command, Device, DeviceList, DeviceWithFeatures, Id, IrProtocol, MapList,
-  ProtocolList, SyncDocuments,
+  Activity, ActivityAction, ActivityList, Button, ButtonActionDocument, ButtonMap, Command, Device, DeviceList,
+  DeviceWithFeatures, Id, IrProtocol, MapList, ProtocolList, Role, SyncDocuments,
 } from './documents.ts';
-import { INFRARED_TRANSPORT, mapIdentifier } from './read.ts';
+import { INFRARED_TRANSPORT, mapIdentifier, readConfiguration, type ReadDevice } from './read.ts';
 import { idText, kindOf } from './documents.ts';
 import { definitionOfRow, isDefinitionRefusal, keyCodeText } from './definition.ts';
 import { rawOfLearned, rhythmOfLearned, type LearnedRaw, type LearnedRow } from './learned.ts';
@@ -521,5 +526,373 @@ export function withoutTouchDevice(documents: SyncDocuments, deviceId: Id): Devi
     DeviceList: { ...copyOf(documents.DeviceList!), DevicesWithFeatures: copyOf(devices.filter((_, i) => i !== at)) } as DeviceList,
     MapList: { ...copyOf(documents.MapList!), ButtonMaps: copyOf(maps.filter((m) => !(isRecord(m) && m['ButtonMapIdentifier'] === identifier))) } as MapList,
     ProtocolList: { ...copyOf(documents.ProtocolList!), Protocols: copyOf(protocols.filter((p) => !(isRecord(p) && gone.has(idText(p['Id-'] as Id))))) } as ProtocolList,
+  };
+}
+
+// ---------------------------------------------------------------------------------------------------
+// An activity described by its devices and keys, and put into a set of documents. `todo-touch.md` 8.2.
+// ---------------------------------------------------------------------------------------------------
+
+/**
+ * **Logitech's `ActivityType`, by position**, `reference/logitech/data-model/model.md`: an activity's `Type` is the
+ * position and its `SuggestedDisplay` the name, on every activity measured, `activities-and-buttons.md`, "An
+ * activity: what it is made of". The Touch acts on the number (its default picture, the gesture pad's play and
+ * pause target), and the engine only copies the name into an answer to other clients.
+ */
+export const ACTIVITY_TYPES = [
+  'NotSpecified', 'WatchTV', 'WatchDvd', 'PlayGame', 'ListenToMusic', 'Custom', 'SurfWeb', 'WatchNetflix', 'MakeVideoCall',
+  'WatchAppleTV', 'WatchRoku', 'PCTV', 'SmartTV', 'WatchFireTV', 'ListenToSonos', 'WatchApp', 'ListenToSpeaker',
+] as const;
+export type ActivityTypeName = (typeof ACTIVITY_TYPES)[number];
+
+/**
+ * **The `ActivityGroup` each type was measured with**, one activity of each of the five types the bench set holds:
+ * the engine reads the group as an index into its own list of five, `VirtualGeneric`, `VirtualTelevisionN`,
+ * `VirtualDvd`, `VirtualCdMulti` and `VirtualGameConsole`, and an activity without one makes its reader fail. A type
+ * outside these five has no measured group, and `composeTouchActivity` refuses it rather than guessing one.
+ */
+export const ACTIVITY_GROUPS: Readonly<Partial<Record<ActivityTypeName, number>>> = {
+  Custom: 0, WatchTV: 1, WatchDvd: 2, ListenToMusic: 3, PlayGame: 4,
+};
+
+/**
+ * **The role kinds an activity of ours may give a device**: the ones the reference describes and the documents
+ * measured hold, `activities-and-buttons.md`, "An activity: what it is made of". The smart TV, Roku, Sonos, speaker
+ * and app roles take paths of their own in the engine and the screens that no document measured exercises, so they
+ * are refused here rather than written.
+ */
+export const ACTIVITY_ROLE_KINDS = [
+  'DisplayActivityRole', 'VolumeActivityRole', 'ChannelChangingActivityRole', 'PlayMovieActivityRole',
+  'PlayMediaActivityRole', 'PlayGameActivityRole', 'PassThroughActivityRole',
+] as const;
+export type ActivityRoleKind = (typeof ACTIVITY_ROLE_KINDS)[number];
+
+/**
+ * The start screens an activity of ours may open on. `Commands` is the command list, the screens' fallback for any
+ * value whose condition fails, `activities-and-buttons.md`, the table under "An activity: what it is made of"; the
+ * others each need something of the activity this composer does not write (favourites, number pad entries, a
+ * trackpad, gestures, speakers), so they are refused until it does.
+ */
+export const ACTIVITY_START_SCREENS = ['Commands'] as const;
+
+/**
+ * Screen labels that act by themselves rather than sending their command: the number pad, the gesture screen,
+ * the Wii's disconnect, and the trackpad, which the activity page tests the same way, `activities-and-buttons.md`,
+ * "Screen entries and the number pad". An entry of ours carrying one would not do what its description says.
+ */
+const ACTING_LABELS = ['123', 'Gesturepad', 'Disconnect Wii', 'Trackpad'] as const;
+
+/** A device of an activity, by the name the device list shows, and what the activity does with it. */
+export interface OwnActivityDevice {
+  readonly device: string;
+  /** Its roles, in the order written; the first makes its power on and input steps, the rest add their kind. */
+  readonly roles: readonly ActivityRoleKind[];
+  /** Its place in the power on order, and in the power off order; unique within the activity. */
+  readonly powerOn: number;
+  readonly powerOff: number;
+  /** The input it is switched to, by the name its input feature gives it; none when absent. */
+  readonly input?: string;
+}
+
+/** A command to a device of the documents, named as the device names it, matched without regard to case. */
+export interface OwnActivityCommand {
+  readonly device: string;
+  readonly command: string;
+}
+
+/** A step added by hand to an activity's start or end: a command, or a pause in whole or part seconds. */
+export type OwnActivityStep = OwnActivityCommand | { readonly delaySeconds: number };
+
+/** A key of the activity's map: the command its press sends, and its long press when one is wanted. */
+export interface OwnActivityKey extends OwnActivityCommand {
+  readonly longPress?: OwnActivityCommand;
+}
+
+/** An entry of the activity's command list: the label the screen shows and the command a tap sends. */
+export interface OwnActivityEntry extends OwnActivityCommand {
+  readonly label: string;
+}
+
+/**
+ * An activity as a person describes it: its name and type, the devices it uses and what each does, the steps added
+ * at its start and end, and what its keys and its screen list send. Every device and command is named as the
+ * documents name it, so the composer can find each and refuse what it cannot.
+ */
+export interface OwnActivity {
+  /** Ours, `OWN_IDS`; also what its map is named by. */
+  readonly id: number;
+  readonly name: string;
+  readonly type: ActivityTypeName;
+  readonly startScreen: (typeof ACTIVITY_START_SCREENS)[number];
+  /** Its place on the activity list, 0 the first; after the last activity listed when absent. */
+  readonly order?: number;
+  readonly devices: readonly OwnActivityDevice[];
+  readonly enter?: readonly OwnActivityStep[];
+  readonly leave?: readonly OwnActivityStep[];
+  readonly keys?: Readonly<Partial<Record<TouchButtonKey, OwnActivityKey>>>;
+  readonly entries?: readonly OwnActivityEntry[];
+}
+
+/** What `composeTouchActivity` gives: the activity list's entry and its own map. */
+export interface ComposedTouchActivity {
+  readonly activity: Activity;
+  readonly map: ButtonMap;
+}
+
+/** The two documents an activity is told to a Touch in, as `withTouchActivity` gives them back. */
+export interface ActivityDocuments {
+  readonly ActivityList: ActivityList;
+  readonly MapList: MapList;
+}
+
+/**
+ * The activity record and its own map, from a description and the documents whose devices it names.
+ *
+ * **What is written, and why only that.** Of an activity's 26 fields, the ones either program reads,
+ * `activities-and-buttons.md`: the id, which the engine and the screens find it by and its map is named from;
+ * `Name`; `Type` and `SuggestedDisplay`, from `ACTIVITY_TYPES`; `ActivityGroup`, which the engine indexes and fails
+ * without, from `ACTIVITY_GROUPS`; `ActivityOrder`; `StartScreen`; `IsTuningDefault` false and `DefaultChannel`
+ * null, since an activity of ours tunes no favourites; `ImageKey`, `BaseImageUri` and `Icon` null, so the screens
+ * draw the default picture of its type, as for every activity measured; `ActivityDisplayName` and `Alternatives`
+ * null, `IsMultiZone` false and `Zones` null; the roles; and the two step lists. Left out, as read by neither
+ * program: `AccountId-`, `State`, `IsDefault`, `DateCreated`, `DateModified`, `DefaultStation` and
+ * `DefaultStationName`; on a role its `Id-` and its input's `Id-`; on a step its `Id` and `TargetLevel`, which the
+ * engine reads only when set and which belongs to a speaker group. A field stated by us is one more the remote can
+ * send back to an account, as `composeTouchDevice` argues for a device.
+ *
+ * **The roles.** Each device's roles are written together, in the description's order, each stating the device's
+ * power orders and input, as Logitech's documents do for a device with two roles; the engine takes the first role
+ * of a device for its power and input steps. `NextDevicePowerOnDelay` is null, as on every role measured.
+ *
+ * **The map** is `16417Activity` and the id, the identifier the engine finds it by, with its keys and its screen
+ * list as `composeTouchDevice` writes a device's: state 0, group 0, a press of event 1, the screen list numbered
+ * from 0 in the order given, no gesture and no sequence. An activity of the `Custom` type carries no gestures in
+ * the documents measured, and one of another type carries five there; this writes none for any type.
+ *
+ * **Refuses** what the remote would drop or do otherwise than described: an id not ours; a type with no measured
+ * group; a start screen other than the command list; no device, which hides the activity from the screens' home
+ * list (it keeps only activities with roles); a device not in the documents or named twice there; a device given
+ * twice; a role kind outside `ACTIVITY_ROLE_KINDS`; a device with no role; two devices sharing a power on or a power
+ * off order, of which the engine keeps one; an input the device does not have, which the engine skips without a
+ * word; a command a device does not have, on a step, a key or an entry; a key name the Touch's documents do not use;
+ * a delay that is not a positive number; an empty label, two entries with one label, and a label that acts by
+ * itself.
+ */
+export function composeTouchActivity(a: OwnActivity, documents: SyncDocuments): ComposedTouchActivity {
+  if (!isOwnId(a.id)) throw new ComposeRefusal(`activity id ${a.id} is not one of ours, ${OWN_IDS.first} to ${OWN_IDS.last}`);
+  const typeNumber = ACTIVITY_TYPES.indexOf(a.type);
+  if (typeNumber < 0) throw new ComposeRefusal(`"${a.type}" is not one of Logitech's activity types`);
+  const group = ACTIVITY_GROUPS[a.type];
+  if (group === undefined) throw new ComposeRefusal(`no activity of the type ${a.type} has been measured, so its group is not known`);
+  if (!(ACTIVITY_START_SCREENS as readonly string[]).includes(a.startScreen)) {
+    throw new ComposeRefusal(`the start screen "${a.startScreen}" needs what this composer does not write; ${ACTIVITY_START_SCREENS.join(', ')} only`);
+  }
+  if (a.devices.length === 0) throw new ComposeRefusal('an activity with no device is left off the screens\' home list');
+
+  const read = readConfiguration(documents);
+  // After the last activity listed when the description gives no place; `withTouchActivity` refuses a taken one.
+  const listed = read.activities.flatMap((x) => (x.order === undefined ? [] : [x.order]));
+  const order = a.order ?? (listed.length === 0 ? 0 : Math.max(...listed) + 1);
+  // A device by the name the device list shows; a name two devices share cannot say which is meant.
+  const deviceNamed = (name: string): ReadDevice => {
+    const found = read.devices.filter((d) => d.name === name);
+    if (found.length !== 1) throw new ComposeRefusal(`${found.length === 0 ? 'no device' : `${found.length} devices`} named "${name}" in the device list`);
+    return found[0]!;
+  };
+  // A command as the device names it, found as the engine finds it: by name in lower case.
+  const commandOf = (c: OwnActivityCommand): { readonly device: ReadDevice; readonly name: string } => {
+    const device = deviceNamed(c.device);
+    const command = device.commandsByName.get(c.command.toLowerCase());
+    if (command?.name === undefined) throw new ComposeRefusal(`"${c.device}" has no command "${c.command}"`);
+    return { device, name: command.name };
+  };
+  const stated = (d: ReadDevice): Id => d.source.Device['Id-'];
+
+  const roles: Role[] = [];
+  const seen = new Set<string>();
+  const powerOn = new Set<number>();
+  const powerOff = new Set<number>();
+  for (const one of a.devices) {
+    const device = deviceNamed(one.device);
+    if (seen.has(device.id)) throw new ComposeRefusal(`"${one.device}" is given twice; give it all its roles once`);
+    seen.add(device.id);
+    if (one.roles.length === 0) throw new ComposeRefusal(`"${one.device}" is given no role`);
+    for (const kind of one.roles) {
+      if (!(ACTIVITY_ROLE_KINDS as readonly string[]).includes(kind)) throw new ComposeRefusal(`"${kind}" is not a role kind an activity of ours gives a device`);
+    }
+    for (const [orders, order, what] of [[powerOn, one.powerOn, 'power on'], [powerOff, one.powerOff, 'power off']] as const) {
+      if (!Number.isInteger(order) || order < 1) throw new ComposeRefusal(`"${one.device}": its ${what} order is not a whole number from 1`);
+      if (orders.has(order)) throw new ComposeRefusal(`two devices share ${what} order ${order}, of which the engine keeps one`);
+      orders.add(order);
+    }
+    if (one.input !== undefined && !device.inputs.some((i) => i.name === one.input)) {
+      throw new ComposeRefusal(`"${one.device}" has no input "${one.input}", which the engine would skip without a word`);
+    }
+    for (const kind of one.roles) {
+      roles.push({
+        __type: kind,
+        'DeviceId-': stated(device),
+        PowerOnOrder: one.powerOn,
+        PowerOffOrder: one.powerOff,
+        NextDevicePowerOnDelay: null,
+        SelectedInput: one.input === undefined ? null : { Name: one.input, ChannelNumber: null },
+      });
+    }
+  }
+
+  // A step's `ActionOrder` counts from 1 in the order given; a delay's `Duration` is in seconds, as the engine reads it.
+  const steps = (xs: readonly OwnActivityStep[] | undefined): ActivityAction[] => (xs ?? []).map((x, i): ActivityAction => {
+    if ('delaySeconds' in x) {
+      if (typeof x.delaySeconds !== 'number' || !(x.delaySeconds > 0)) throw new ComposeRefusal('a delay step is not a positive number of seconds');
+      return { __type: 'DelayActivityAction', ActionOrder: i + 1, Duration: x.delaySeconds };
+    }
+    const c = commandOf(x);
+    return { __type: 'CommandActivityAction', ActionOrder: i + 1, CommandName: c.name, 'DeviceId-': stated(c.device) };
+  });
+  const enter = steps(a.enter);
+  const leave = steps(a.leave);
+
+  const press = (c: OwnActivityCommand, event: number): ButtonActionDocument => {
+    const found = commandOf(c);
+    return { __type: 'ButtonCommandAction', EventType: event, Order: 0, CommandName: found.name, 'DeviceId-': stated(found.device) };
+  };
+  const known = new Set<string>(BUTTON_KEYS);
+  const buttons: Button[] = [];
+  for (const [key, binding] of Object.entries(a.keys ?? {})) {
+    if (!known.has(key)) throw new ComposeRefusal(`"${key}" is not a key name a Touch's documents use`);
+    if (binding === undefined) continue;
+    buttons.push({
+      __type: 'HardRemoteButton',
+      ButtonKey: key,
+      ButtonState: 0,
+      FunctionGroupType: LIST_GROUP,
+      ButtonAction: press(binding, PRESS_EVENT),
+      ButtonLongPressAction: binding.longPress === undefined ? null : press(binding.longPress, LONG_PRESS_EVENT),
+      ButtonDoublePressAction: null,
+    });
+  }
+  const labels = new Set<string>();
+  (a.entries ?? []).forEach((e, index) => {
+    if (typeof e.label !== 'string' || e.label.trim() === '') throw new ComposeRefusal('a screen entry has no label');
+    if ((ACTING_LABELS as readonly string[]).includes(e.label)) throw new ComposeRefusal(`the label "${e.label}" acts by itself on the remote's screens`);
+    if (labels.has(e.label)) throw new ComposeRefusal(`two screen entries are labelled "${e.label}"`);
+    labels.add(e.label);
+    buttons.push({
+      __type: 'SoftRemoteButton',
+      ButtonState: 0,
+      FunctionGroupType: LIST_GROUP,
+      TextOnRemote: e.label,
+      MenuItem: { IndexInMenu: index },
+      ButtonAction: press(e, PRESS_EVENT),
+      ButtonLongPressAction: null,
+      ButtonDoublePressAction: null,
+    });
+  });
+
+  const activity: Activity = {
+    'Id-': a.id,
+    Name: a.name,
+    Type: typeNumber,
+    ActivityGroup: group,
+    SuggestedDisplay: a.type,
+    ActivityOrder: order,
+    StartScreen: a.startScreen,
+    IsTuningDefault: false,
+    DefaultChannel: null,
+    ImageKey: null,
+    BaseImageUri: null,
+    Icon: null,
+    ActivityDisplayName: null,
+    Alternatives: null,
+    IsMultiZone: false,
+    Zones: null,
+    Roles: roles,
+    EnterActions: enter,
+    LeaveActions: leave,
+  };
+  const map: ButtonMap = {
+    __type: 'ActivityButtonMap',
+    ButtonMapIdentifier: mapIdentifier('activity', idText(a.id)),
+    'ActivityId-': a.id,
+    Buttons: buttons,
+    Sequences: [],
+  };
+  return { activity, map };
+}
+
+/**
+ * The engine reads a hard key of an activity map whose identifier holds `16420` as a keyboard key and looks its
+ * code up by the key's lowered name, `check.ts`; an identifier of ours must never take that path by accident.
+ */
+const KEYBOARD_MAP_MARK = '16420';
+
+/**
+ * `documents` with the composed activity added: its entry at the end of `ActivityList`, at the place on the list
+ * `composeTouchActivity` gave it, and its map at the end of `MapList`, after the activity maps,
+ * where Logitech's documents keep them. The other four documents are not touched, and nothing is changed in place.
+ *
+ * **Refuses**, by what collides and never quoting a document's value: either list missing; an activity id not ours,
+ * or one an activity or a device already has; a map identifier already in `MapList`, or one holding `16420`; a name
+ * another activity has, compared without regard to case, since the list shows activities by name and a person picks
+ * one by it; and a place on the list that is negative, which hides the activity, or one another activity holds, of
+ * which the screens keep only the later.
+ */
+export function withTouchActivity(documents: SyncDocuments, composed: ComposedTouchActivity): ActivityDocuments {
+  const activities = listIn(documents.ActivityList, 'Activities');
+  const maps = listIn(documents.MapList, 'ButtonMaps');
+  if (activities === undefined) throw new ComposeRefusal('ActivityList holds no list of activities');
+  if (maps === undefined) throw new ComposeRefusal('MapList holds no list of maps');
+
+  const id = idText(composed.activity['Id-']);
+  if (!isOwnId(composed.activity['Id-'])) throw new ComposeRefusal(`activity id ${id} is not one of ours, ${OWN_IDS.first} to ${OWN_IDS.last}`);
+  const idOf = (x: unknown): string => (isRecord(x) ? idText(x['Id-'] as Id) : '');
+  if (activities.some((x) => idOf(x) === id)) throw new ComposeRefusal(`activity id ${id} is already listed`);
+  if ((listIn(documents.DeviceList, 'DevicesWithFeatures') ?? []).some((d) => deviceIdOf(d) === id)) throw new ComposeRefusal(`activity id ${id} is a listed device's id`);
+  const identifier = composed.map.ButtonMapIdentifier;
+  if (typeof identifier !== 'string' || identifier.includes(KEYBOARD_MAP_MARK)) {
+    throw new ComposeRefusal(`the map identifier ${String(identifier)} would be read as a keyboard map`);
+  }
+  if (maps.some((m) => isRecord(m) && m['ButtonMapIdentifier'] === identifier)) throw new ComposeRefusal(`MapList already holds a map ${identifier}`);
+  const name = composed.activity.Name;
+  if (typeof name === 'string' && activities.some((x) => isRecord(x) && typeof x['Name'] === 'string' && x['Name'].toLowerCase() === name.toLowerCase())) {
+    throw new ComposeRefusal(`a listed activity is already named "${name}"`);
+  }
+  const orders = activities.flatMap((x) => (isRecord(x) && typeof x['ActivityOrder'] === 'number' ? [x['ActivityOrder']] : []));
+  const order = composed.activity.ActivityOrder;
+  if (typeof order !== 'number' || !Number.isInteger(order) || order < 0) throw new ComposeRefusal(`place ${order} on the activity list is not a whole number from 0, and a negative one hides the activity`);
+  if (orders.includes(order)) throw new ComposeRefusal(`place ${order} on the activity list is another activity's, and the screens keep only one of the two`);
+
+  return {
+    ActivityList: { ...copyOf(documents.ActivityList!), Activities: [...copyOf(activities), copyOf(composed.activity)] } as ActivityList,
+    MapList: { ...copyOf(documents.MapList!), ButtonMaps: [...copyOf(maps), copyOf(composed.map)] } as MapList,
+  };
+}
+
+/**
+ * `documents` with an activity of ours taken out again: its entry and its own map. **The exact inverse of
+ * `withTouchActivity`** for an activity nothing else names. So this refuses an activity that is not ours, one the
+ * activity list does not hold, the tuning default, whose favourites live in documents of their own, and one that a
+ * button of another map starts, by its `ActivityId-`: removing it would leave that button pointing at nothing.
+ */
+export function withoutTouchActivity(documents: SyncDocuments, activityId: Id): ActivityDocuments {
+  const id = idText(activityId);
+  if (!isOwnId(activityId)) throw new ComposeRefusal(`activity id ${id} is not one of ours, so it is not taken out here`);
+  const activities = listIn(documents.ActivityList, 'Activities');
+  const maps = listIn(documents.MapList, 'ButtonMaps');
+  if (activities === undefined || maps === undefined) throw new ComposeRefusal('an activity or map list is missing');
+  const at = activities.findIndex((x) => isRecord(x) && idText(x['Id-'] as Id) === id);
+  if (at < 0) throw new ComposeRefusal(`activity id ${id} is not listed`);
+  if (isRecord(activities[at]) && activities[at]['IsTuningDefault'] === true) throw new ComposeRefusal(`activity ${id} tunes the favourites`);
+  const identifier = mapIdentifier('activity', id);
+  const startsIt = (x: unknown): boolean => {
+    if (Array.isArray(x)) return x.some(startsIt);
+    if (!isRecord(x)) return false;
+    if ('ActivityId-' in x && kindOf(x as { __type?: unknown }) === 'ButtonActivityAction' && idText(x['ActivityId-'] as Id) === id) return true;
+    return Object.values(x).some(startsIt);
+  };
+  if (maps.some((m) => isRecord(m) && m['ButtonMapIdentifier'] !== identifier && startsIt(m))) throw new ComposeRefusal(`a button of another map starts activity ${id}`);
+  return {
+    ActivityList: { ...copyOf(documents.ActivityList!), Activities: copyOf(activities.filter((_, i) => i !== at)) } as ActivityList,
+    MapList: { ...copyOf(documents.MapList!), ButtonMaps: copyOf(maps.filter((m) => !(isRecord(m) && m['ButtonMapIdentifier'] === identifier))) } as MapList,
   };
 }

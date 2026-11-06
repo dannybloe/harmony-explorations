@@ -248,12 +248,16 @@ export interface SetRecord {
   readonly change?: unknown;
   readonly device?: unknown;
   readonly removed?: unknown;
+  /** An activity added or taken out, `todo-touch.md` 8.2. */
+  readonly activity?: unknown;
+  readonly removedActivity?: unknown;
 }
 
 /**
  * Every tag stated by the set in `folder` and by each set it was built from, back to the first, which
  * `touch-own-set.ts` built and records no change of ours. A set built by `touch-changed-set.ts` records its
- * `change`, one built by `touch-device-set.ts` its `device` or `removed`; either names the set it came `from`.
+ * `change`, one built by `touch-device-set.ts` its `device` or `removed`, or for an activity, `todo-touch.md` 8.2,
+ * its `activity` or `removedActivity`; each names the set it came `from`.
  * `read` reads a folder's set and record, so this stays free of the file system. A folder met twice stops it.
  */
 export function chainTags(folder: string, read: (folder: string) => { readonly set: TouchSet; readonly record: SetRecord }): Set<string> {
@@ -264,7 +268,8 @@ export function chainTags(folder: string, read: (folder: string) => { readonly s
     seen.add(at);
     const { set, record } = read(at);
     for (const a of set.answers) if (typeof a.etag === 'string') tags.add(a.etag);
-    const built = record.change !== undefined || record.device !== undefined || record.removed !== undefined;
+    const built = record.change !== undefined || record.device !== undefined || record.removed !== undefined
+      || record.activity !== undefined || record.removedActivity !== undefined;
     at = built && typeof record.from === 'string' ? record.from : undefined;
   }
   return tags;

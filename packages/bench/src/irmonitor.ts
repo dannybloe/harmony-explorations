@@ -83,14 +83,17 @@ export const BENCH_CONFIGS: readonly string[] = [
 
 /**
  * The Harmony Touch sets whose own documents name a capture, by their path in the lab: the set the bench Touch
- * holds, `todo-touch.md` 6.9 and 7.1, and the same set with the device of ours that 8.1 adds, whose codes no other
- * set or configuration holds. A set is the answerer's file, `packages/corpus/bin/touch-sync.ts --set`, and a Touch
- * keeps no configuration a host can read, so this is what the remote holds as far as anything here knows. A code
- * both sets hold matches once per set, under the same device and command names, which is how the judge reads it.
+ * holds, `todo-touch.md` 6.9 and 7.1, the same set with the device of ours that 8.1 adds, whose codes no other
+ * set or configuration holds, and the set with the activity of ours that 8.2 adds, which sends only the bench
+ * devices' codes and is listed so the monitor names from the set the remote holds during that test. A set is the
+ * answerer's file, `packages/corpus/bin/touch-sync.ts --set`, and a Touch keeps no configuration a host can read, so
+ * this is what the remote holds as far as anything here knows. A code several sets hold matches once per set, under
+ * the same device and command names, which is how the judge reads it.
  */
 export const BENCH_TOUCH_SETS: readonly string[] = [
   'work/touch-firmware/sets/6.9-label-back/set.json',
   'work/touch-firmware/sets/8.1-device/set.json',
+  'work/touch-firmware/sets/8.2-activity/set.json',
 ];
 
 /** A space at least this long ends a frame: the Flirc splits there too, and NEC's longest inner space is 4.5 ms. */

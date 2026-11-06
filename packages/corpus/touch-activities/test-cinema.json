@@ -1,0 +1,41 @@
+{
+ "about": "todo-touch.md 8.2: an activity of ours for the bench Harmony Touch, composed by composeTouchActivity in packages/codec/src/harmony-touch/compose.ts from devices the bench set already holds, named as the device list names them, with no recorded activity copied. The Blu-ray played through the LG TV's own speakers: the Blu-ray switched on first and the TV second, an order no recorded activity starts with, since each of the five starts with the LG TV or the Denon; the TV on HDMI 2; a pause of 3 seconds and the Blu-ray's TopMenu added by hand at the start, and its Stop at the end. The volume keys go to the LG TV and the navigation and play keys to the Blu-ray, so one map sends to two devices, and four screen entries carry labels of ours. Custom, the type with no gestures in the documents measured, opening on its command list. Id of ours, OWN_IDS, the next after the 8.1 chain's 900000001 and 900000002.",
+ "activity": {
+  "id": 900000003,
+  "name": "Test Cinema",
+  "type": "Custom",
+  "startScreen": "Commands",
+  "devices": [
+   { "device": "Blu-ray", "roles": ["PlayMovieActivityRole"], "powerOn": 1, "powerOff": 2 },
+   { "device": "LG TV", "roles": ["DisplayActivityRole", "VolumeActivityRole"], "powerOn": 2, "powerOff": 1, "input": "HDMI 2" }
+  ],
+  "enter": [
+   { "delaySeconds": 3 },
+   { "device": "Blu-ray", "command": "TopMenu" }
+  ],
+  "leave": [
+   { "device": "Blu-ray", "command": "Stop" }
+  ],
+  "keys": {
+   "Menu": { "device": "Blu-ray", "command": "Menu" },
+   "Exit": { "device": "Blu-ray", "command": "Return" },
+   "DirectionUp": { "device": "Blu-ray", "command": "DirectionUp" },
+   "DirectionDown": { "device": "Blu-ray", "command": "DirectionDown" },
+   "DirectionLeft": { "device": "Blu-ray", "command": "DirectionLeft" },
+   "DirectionRight": { "device": "Blu-ray", "command": "DirectionRight" },
+   "Select": { "device": "Blu-ray", "command": "Select" },
+   "VolumeUp": { "device": "LG TV", "command": "VolumeUp" },
+   "VolumeDown": { "device": "LG TV", "command": "VolumeDown" },
+   "VolumeMute": { "device": "LG TV", "command": "Mute" },
+   "Play": { "device": "Blu-ray", "command": "Play" },
+   "Pause": { "device": "Blu-ray", "command": "Pause" },
+   "Stop": { "device": "Blu-ray", "command": "Stop" }
+  },
+  "entries": [
+   { "label": "Top Menu", "device": "Blu-ray", "command": "TopMenu" },
+   { "label": "Pop Up Menu", "device": "Blu-ray", "command": "PopUp" },
+   { "label": "Subtitles", "device": "Blu-ray", "command": "Subtitle" },
+   { "label": "TV Info", "device": "LG TV", "command": "Info" }
+  ]
+ }
+}
