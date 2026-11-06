@@ -62,7 +62,11 @@ export type TouchAction =
   | { readonly entry: string }
   /** The favourites screen, by the Favorites mark above the screen; sends nothing. */
   | { readonly favourites: true }
-  /** A favourite channel on that screen, by the name it shows. */
+  /**
+   * A favourite channel on that screen, by its name, or by the channel number its tile shows under the picture
+   * when no favourite has that name: the tile shows a logo and a number and no name, and a logo of ours, 8.3,
+   * shows no station's name either.
+   */
   | { readonly favourite: string };
 
 export interface TouchStep {
@@ -144,13 +148,15 @@ export function keySteps(keys: readonly harmonyTouch.ReadButton[]): TouchStep[] 
   return out;
 }
 
-/** The favourite named `name` on the activity's favourites screen, with its number. */
+/** The favourite named `name` on the activity's favourites screen, or else numbered `name`, with its number. */
 function favouriteNumber(c: Configuration, name: string): { activity: string; number: string } {
-  for (const f of c.favourites) {
-    const found = f.favourites.filter((x) => x.name === name);
-    if (found.length === 1 && typeof found[0]!.number === 'string') return { activity: f.activity.name ?? '', number: found[0]!.number };
+  for (const by of [(x: harmonyTouch.ReadFavourite) => x.name === name, (x: harmonyTouch.ReadFavourite) => x.number === name]) {
+    for (const f of c.favourites) {
+      const found = f.favourites.filter(by);
+      if (found.length === 1 && typeof found[0]!.number === 'string') return { activity: f.activity.name ?? '', number: found[0]!.number };
+    }
   }
-  throw new Error(`no one favourite named ${name}`);
+  throw new Error(`no one favourite named or numbered ${name}`);
 }
 
 /** What the engine sends for each action of a step, one list per action. */

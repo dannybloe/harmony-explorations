@@ -9,8 +9,15 @@
  *
  * Nothing here is a reading of the Harmony format. `render.ts` is the reading; this is how a person
  * looks at it.
+ *
+ * **Two later uses, and still one encoder.** A Harmony Touch is handed its channel logos as PNG files, and the
+ * ones Logitech's service delivered in the recorded syncs are eight bits a channel with alpha, colour type 6,
+ * so `encodePng` writes that too when asked for four channels, `todo-touch.md` 8.3. And the answerer of a sync
+ * has to know a picture it is about to hand the remote is one the remote's screens can draw, so `readPng`
+ * reads a file back: its header and every chunk checked, and its image data inflated and measured, the reader
+ * beside the writer as `CLAUDE.md` asks of every encoding.
  */
-import { deflateSync } from 'node:zlib';
+import { deflateSync, inflateSync } from 'node:zlib';
 
 import { UNDRAWN, type Raster } from './render.ts';
 
@@ -76,19 +83,24 @@ export function rasterBytes(raster: Raster, undrawn: [number, number, number] = 
   return bytes;
 }
 
-/** A truecolour PNG from RGB rows. Each row is prefixed with filter type 0, which is no filter. */
-export function encodePng(width: number, height: number, rgb: Uint8Array): Uint8Array {
-  const raw = new Uint8Array(height * (1 + width * 3));
+/**
+ * A truecolour PNG from RGB rows, or from RGBA rows when `channels` is 4, which is colour type 6. Each row is
+ * prefixed with filter type 0, which is no filter.
+ */
+export function encodePng(width: number, height: number, rgb: Uint8Array, channels: 3 | 4 = 3): Uint8Array {
+  const stride = width * channels;
+  if (rgb.length !== height * stride) throw new RangeError(`${rgb.length} bytes are not ${height} rows of ${stride}`);
+  const raw = new Uint8Array(height * (1 + stride));
   for (let row = 0; row < height; row += 1) {
-    raw[row * (1 + width * 3)] = 0;
-    raw.set(rgb.subarray(row * width * 3, (row + 1) * width * 3), row * (1 + width * 3) + 1);
+    raw[row * (1 + stride)] = 0;
+    raw.set(rgb.subarray(row * stride, (row + 1) * stride), row * (1 + stride) + 1);
   }
   const header = new Uint8Array(13);
   const view = new DataView(header.buffer);
   view.setUint32(0, width);
   view.setUint32(4, height);
   header[8] = 8;
-  header[9] = 2;
+  header[9] = channels === 4 ? 6 : 2;
   const parts = [
     new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
     chunk('IHDR', header),
@@ -103,6 +115,83 @@ export function encodePng(width: number, height: number, rgb: Uint8Array): Uint8
     at += part.length;
   }
   return file;
+}
+
+/** What `readPng` finds in a file: its header's fields and its chunks' kinds in order. */
+export interface PngHeader {
+  readonly width: number;
+  readonly height: number;
+  readonly bitDepth: number;
+  /** 0 grey, 2 truecolour, 3 palette, 4 grey with alpha, 6 truecolour with alpha. */
+  readonly colourType: number;
+  readonly interlace: number;
+  readonly chunks: readonly string[];
+}
+
+/** The PNG signature, eight bytes. */
+const SIGNATURE = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+
+/** Samples per pixel by colour type, PNG section 11.2.2. */
+const SAMPLES: Readonly<Record<number, number>> = { 0: 1, 2: 3, 3: 1, 4: 2, 6: 4 };
+
+/**
+ * A PNG file read back far enough to say it decodes: the signature, every chunk's length and CRC, `IHDR` first
+ * and `IEND` last with nothing after it, the `IDAT` chunks together, and their data inflated to exactly one
+ * filter byte and one row of samples per row, each filter byte one of the five PNG defines. A file that fails
+ * any of it throws a `RangeError` saying which. **Interlaced images are read only as far as the header**, since
+ * their data is seven passes of other sizes; a caller that refuses them refuses them by the header's field.
+ * The pixels are not unfiltered: nothing here needs them, and a file whose rows inflate to the right length
+ * with valid filter bytes is one a decoder can unfilter.
+ */
+export function readPng(bytes: Uint8Array): PngHeader {
+  if (bytes.length < SIGNATURE.length || SIGNATURE.some((b, i) => bytes[i] !== b)) throw new RangeError('not a PNG: the signature is wrong');
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  const chunks: string[] = [];
+  const data: Uint8Array[] = [];
+  let header: Omit<PngHeader, 'chunks'> | undefined;
+  let at = SIGNATURE.length;
+  let ended = false;
+  while (at < bytes.length) {
+    if (ended) throw new RangeError('bytes follow the IEND chunk');
+    if (at + 12 > bytes.length) throw new RangeError('a chunk is cut short');
+    const length = view.getUint32(at);
+    if (at + 12 + length > bytes.length) throw new RangeError('a chunk runs past the end of the file');
+    const kind = String.fromCharCode(...bytes.subarray(at + 4, at + 8));
+    if (!/^[A-Za-z]{4}$/.test(kind)) throw new RangeError('a chunk has no name of four letters');
+    if (crc32(bytes.subarray(at + 4, at + 8 + length)) !== view.getUint32(at + 8 + length)) throw new RangeError(`the ${kind} chunk's CRC is wrong`);
+    const body = bytes.subarray(at + 8, at + 8 + length);
+    if (chunks.length === 0 && kind !== 'IHDR') throw new RangeError('the first chunk is not IHDR');
+    if (kind === 'IHDR') {
+      if (chunks.length > 0 || length !== 13) throw new RangeError('IHDR is not one chunk of 13 bytes, first');
+      const h = new DataView(body.buffer, body.byteOffset, 13);
+      header = { width: h.getUint32(0), height: h.getUint32(4), bitDepth: body[8]!, colourType: body[9]!, interlace: body[12]! };
+    }
+    if (kind === 'IDAT') {
+      if (chunks.length > 0 && chunks.at(-1) !== 'IDAT' && chunks.includes('IDAT')) throw new RangeError('the IDAT chunks are not together');
+      data.push(body);
+    }
+    if (kind === 'IEND') ended = true;
+    chunks.push(kind);
+    at += 12 + length;
+  }
+  if (header === undefined || !ended) throw new RangeError('the file has no IHDR or no IEND');
+  const samples = SAMPLES[header.colourType];
+  if (samples === undefined) throw new RangeError(`colour type ${header.colourType} is not one PNG defines`);
+  if (header.width === 0 || header.height === 0) throw new RangeError('the image has no pixels');
+  if (data.length === 0) throw new RangeError('the file has no image data');
+  if (header.interlace !== 0) return { ...header, chunks };
+  let raw: Uint8Array;
+  try {
+    raw = new Uint8Array(inflateSync(Buffer.concat(data)));
+  } catch {
+    throw new RangeError('the image data does not inflate');
+  }
+  const stride = 1 + Math.ceil((header.width * samples * header.bitDepth) / 8);
+  if (raw.length !== header.height * stride) throw new RangeError(`the image data inflates to ${raw.length} bytes where ${header.height} rows take ${header.height * stride}`);
+  for (let row = 0; row < header.height; row += 1) {
+    if (raw[row * stride]! > 4) throw new RangeError(`row ${row} names filter ${raw[row * stride]}, which PNG does not define`);
+  }
+  return { ...header, chunks };
 }
 
 /** A whole raster as a PNG, which is the two calls above and the pair a caller almost always wants. */

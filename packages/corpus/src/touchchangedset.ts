@@ -251,13 +251,17 @@ export interface SetRecord {
   /** An activity added or taken out, `todo-touch.md` 8.2. */
   readonly activity?: unknown;
   readonly removedActivity?: unknown;
+  /** Favourites and a logo of ours delivered, or put back as the remote held them, `todo-touch.md` 8.3. */
+  readonly favourites?: unknown;
+  readonly favouritesBack?: unknown;
 }
 
 /**
  * Every tag stated by the set in `folder` and by each set it was built from, back to the first, which
  * `touch-own-set.ts` built and records no change of ours. A set built by `touch-changed-set.ts` records its
  * `change`, one built by `touch-device-set.ts` its `device` or `removed`, or for an activity, `todo-touch.md` 8.2,
- * its `activity` or `removedActivity`; each names the set it came `from`.
+ * its `activity` or `removedActivity`, or for favourites, 8.3, its `favourites` or `favouritesBack`; each names the
+ * set it came `from`.
  * `read` reads a folder's set and record, so this stays free of the file system. A folder met twice stops it.
  */
 export function chainTags(folder: string, read: (folder: string) => { readonly set: TouchSet; readonly record: SetRecord }): Set<string> {
@@ -268,11 +272,20 @@ export function chainTags(folder: string, read: (folder: string) => { readonly s
     seen.add(at);
     const { set, record } = read(at);
     for (const a of set.answers) if (typeof a.etag === 'string') tags.add(a.etag);
-    const built = record.change !== undefined || record.device !== undefined || record.removed !== undefined
-      || record.activity !== undefined || record.removedActivity !== undefined;
-    at = built && typeof record.from === 'string' ? record.from : undefined;
+    at = builtFrom(record);
   }
   return tags;
+}
+
+/**
+ * The folder a set was built from, by its record, or undefined for a set no builder of a change made: the first of
+ * a chain, which `touch-own-set.ts` built and records no change of ours.
+ */
+export function builtFrom(record: SetRecord): string | undefined {
+  const built = record.change !== undefined || record.device !== undefined || record.removed !== undefined
+    || record.activity !== undefined || record.removedActivity !== undefined
+    || record.favourites !== undefined || record.favouritesBack !== undefined;
+  return built && typeof record.from === 'string' ? record.from : undefined;
 }
 
 /** One document of two sets compared: where its content differs, and whether its tag does. */

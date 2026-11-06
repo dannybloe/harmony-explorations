@@ -59,7 +59,8 @@ export type Rule =
   | 'no power state'
   | 'screens raise'
   | 'document absent'
-  | 'not a document';
+  | 'not a document'
+  | 'favourites address';
 
 export interface Finding {
   readonly rule: Rule;
@@ -1195,7 +1196,11 @@ function field(x: unknown, name: string): unknown {
  *    of it, `touch-reader.test.ts`.
  *
  * Favourites documents present in the set are read with the rest; which ones a sync will ask for depends on
- * the documents, so their absence is the answerer's to meet when the remote asks.
+ * the documents, so their absence is the answerer's to meet when the remote asks. **One present at an address the
+ * remote never asks for is not refused here**: it costs the remote nothing, since it is never delivered, and the
+ * gate refuses what costs the remote. It costs the set its purpose, so the builder of a set refuses it,
+ * `favouritesAddressFindings` below and `withContent` in `packages/corpus/src/touchfavouritesset.ts`, `todo-touch.md`
+ * 8.3.
  */
 export function refusalsBeforeASync(documents: SyncDocuments): Finding[] {
   const absent = CONFIGURATION_DOCUMENTS.filter((name) => documents[name] === undefined).map((name): Finding => ({
@@ -1211,6 +1216,31 @@ export function refusalsBeforeASync(documents: SyncDocuments): Finding[] {
   const structure = [...readerRaises(documents), ...checkScreens(documents)];
   if (structure.length > 0) return structure;
   return checkConfiguration(readConfiguration(documents)).filter((f) => f.effect === 'refused');
+}
+
+/** The kind of favourites document an address is, by the start the screens build it with, for a finding. */
+const favouritesKind = (address: string): string =>
+  address.startsWith(CONTENT_USER) ? 'ContentUser' : address.startsWith(CONTENT_DEVICE) ? 'ContentDevice' : 'ContentService';
+
+/**
+ * `favourites address`, `todo-touch.md` 8.3: each favourites document of a set that sits at no address the set's own
+ * documents make the remote ask for. The remote pairs an answer to its request by the address character for
+ * character, so a favourites document anywhere else is never delivered and the sync goes through without it, the
+ * change it carried silently missing. The user's address is built from the context, the device's from the tuning
+ * device's profile address, and the line up's from the service the user's document names first, `readFavourites`;
+ * a line up with no user's document beside it cannot be placed and is found for that. **Not part of
+ * `refusalsBeforeASync`**, which says why; a set's builder refuses what this finds. The finding names the kind of
+ * document and never its address, which carries the account's identifiers.
+ */
+export function favouritesAddressFindings(documents: SyncDocuments): Finding[] {
+  const c = readConfiguration(documents);
+  const asked = new Set(c.favourites.flatMap((f) => [f.addresses.user, f.addresses.device, f.addresses.service]).filter((a): a is string => a !== undefined));
+  return Object.keys(c.documents)
+    .filter((name) => (name.startsWith(CONTENT_USER) || name.startsWith(CONTENT_DEVICE) || name.startsWith(CONTENT_SERVICE)) && !asked.has(name))
+    .map((name): Finding => ({
+      rule: 'favourites address', effect: 'refused', document: favouritesKind(name), path: '',
+      message: 'the favourites document is at an address the set\'s own documents never make the remote ask for, so it would never be delivered',
+    }));
 }
 
 /**

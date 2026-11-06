@@ -38,7 +38,8 @@
  *    abort would cost. **With a set, a document handed up that the set also holds stops the run** once the
  *    hand over has ended, before the sync request: the set's copy would overwrite the change made on the
  *    remote, `todo-touch.md` 6.8. The change is by then kept in the lab and committed on the remote, and no
- *    sync is marked running.
+ *    sync is marked running. A favourites document is handed up to another address than the one a sync asks
+ *    for it at, so it clashes by its kind, `favouritesClash`, `todo-touch.md` 8.3.
  * 4. **The sync started**, `SYNC`, and every list answered from the set until `proxy://Finished` or
  *    `proxy://Abort`, answered as Logitech's client answers both, a status of 200 and nothing else.
  *
@@ -261,7 +262,10 @@ const isObject = (x: unknown): boolean => typeof x === 'object' && x !== null &&
  * answer by its place in the set and never quoting it, or none. The envelope the remote checks,
  * `answering-a-sync.md` "What the remote checks of an answer", made stricter where `touch-host.test.ts`'s
  * envelope is: a document is a JSON object, a picture is a PNG in base64, a stated tag is not empty, and no
- * two answers share a key.
+ * two answers share a key. **And a picture is one the codec lets through**, `pictureRefusals` in
+ * `packages/codec/src/harmony-touch/favourites.ts`, since `todo-touch.md` 8.3 put the first picture of ours in a
+ * set: a channel logo, decoding, in the form every logo the remote was seen to draw has, and inside the box its
+ * address asks for.
  */
 export function setRefusals(set: TouchSet): string[] {
   const out: string[] = [];
@@ -282,6 +286,9 @@ export function setRefusals(set: TouchSet): string[] {
     } else if (a['body-type'] === 'image/png') {
       const bytes = typeof a.resource === 'string' ? Buffer.from(a.resource, 'base64') : Buffer.alloc(0);
       if (!PNG.every((b, i) => bytes[i] === b)) out.push(`${where} is a picture that is not a PNG in base64`);
+      // What the codec asks of a picture before the remote is handed it, `todo-touch.md` 8.3: a channel logo's
+      // address, a file that decodes, the form the remote was seen to draw, and the box the address asks for.
+      else for (const r of harmonyTouch.pictureRefusals(a.uri, bytes)) out.push(`${where}: ${r}`);
     } else {
       out.push(`${where} has a body type other than application/json or image/png`);
     }
@@ -301,7 +308,9 @@ export function prepareSet(set: TouchSet): { readonly set: PreparedSet } | { rea
   const documents = harmonyTouch.documentsOfAnswers(set.answers.filter((a) => a['body-type'] === 'application/json'));
   const findings = harmonyTouch.refusalsBeforeASync(documents);
   if (findings.length > 0) {
-    return { refusals: findings.map((f) => `${f.document}${f.path === '' ? '' : `.${f.path}`}: ${f.message} (${f.rule})`) };
+    // A favourites document's finding names it by its whole address, which carries the account's identifiers, so a
+    // refusal names its kind instead: the refusal is printed and kept in the lab's gate file, `todo-touch.md` 8.3.
+    return { refusals: findings.map((f) => `${f.document.includes('://') ? describe(f.document) : f.document}${f.path === '' ? '' : `.${f.path}`}: ${f.message} (${f.rule})`) };
   }
   const entries = new Map<string, SetAnswer & { etag: string }>();
   let stated = 0;
@@ -340,6 +349,19 @@ const isPicture = (uri: string): boolean => uri.startsWith('content-image://') |
 /** A favourites document: the user's own, a device's, or a provider's line up, `favourites-and-settings.md`. */
 const isFavourites = (uri: string): boolean =>
   [harmonyTouch.CONTENT_USER, harmonyTouch.CONTENT_DEVICE, harmonyTouch.CONTENT_SERVICE].some((p) => uri.startsWith(p));
+
+/**
+ * Whether a favourites document the remote handed up is one a set would overwrite, `todo-touch.md` 8.3. The
+ * remote hands its user's favourites up to `content://1.0/user/` and the user's id, and a device's to
+ * `content://1.0/device/` and the device document's id, the screens' `getRequest`, where a sync asks for the same
+ * documents at `content://1.0/user;` and `content://1.0/device;` and a profile address: so the two keys never
+ * match, and a set holding the user's favourites would revert a change of favourites made on the remote without
+ * the rule above seeing it. A set holding any favourites document of the kind handed up clashes with it.
+ */
+function favouritesClash(key: string, set: PreparedSet): boolean {
+  const kinds: readonly (readonly [string, string])[] = [['content://1.0/user/', harmonyTouch.CONTENT_USER], ['content://1.0/device/', harmonyTouch.CONTENT_DEVICE]];
+  return kinds.some(([up, down]) => key.startsWith(up) && [...set.entries.keys()].some((k) => k.startsWith(down)));
+}
 
 /**
  * The answer that keeps a favourites document as the remote holds it: 304, with the tag the remote sent or,
@@ -752,7 +774,7 @@ export async function syncTouch(options: TouchSyncOptions): Promise<TouchSyncOut
     // built around. So stop here, before the sync request: the change is kept in the lab and committed on the
     // remote under a tag of ours, no sync is marked running, and the set is rebuilt from what was handed up.
     if (prepared !== undefined) {
-      const clashing = handedUp.filter((k) => prepared.entries.has(k));
+      const clashing = handedUp.filter((k) => prepared.entries.has(k) || favouritesClash(k, prepared));
       if (clashing.length > 0) {
         throw new Refusal(`the remote handed up ${clashing.map((k) => (k.includes(':') ? 'a favourites document' : k)).join(' and ')}, `
           + 'which the set also holds, so answering the set would revert the change made on the remote; the change is kept '
