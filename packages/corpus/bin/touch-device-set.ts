@@ -9,6 +9,9 @@
  *   node packages/corpus/bin/touch-device-set.ts --build <new lab folder> --from <set folder> --remove-activity <activity id>
  *   node packages/corpus/bin/touch-device-set.ts --build <new lab folder> --from <set folder> --favourites <description>
  *   node packages/corpus/bin/touch-device-set.ts --build <new lab folder> --from <favourites set folder> --favourites-back
+ *   node packages/corpus/bin/touch-device-set.ts --build <new lab folder> --from <set folder> --settings <description> --context <lab description>
+ *   node packages/corpus/bin/touch-device-set.ts --build <new lab folder> --from <settings set folder> --settings-back
+ *   node packages/corpus/bin/touch-device-set.ts --describe-context <set folder> --out <new lab file>
  *   node packages/corpus/bin/touch-device-set.ts --check <set folder> [--same-as <set folder>]... \
  *     [--written <a run's kept write of answers>] [--hash <getconfighash answer>] [--list <request list answer>]
  *
@@ -40,6 +43,16 @@
  * --favourites-back`** is its exact inverse: every favourites document and picture the set in `--from` delivered,
  * as the remote held it before, tags and all, `putBackContent`. The record says `favourites` or `favouritesBack`.
  *
+ * **`--build --settings`** reads a Settings description, a JSON file whose `settings` is an `OwnSettings`
+ * (`packages/corpus/touch-settings/8.4-settings.json`), and a Context description in the lab, a JSON file whose
+ * `context` is an `OwnContext`, the seven fields a Touch reads, which hold the account's and so never enter the
+ * repository; composes both against the source's, `composeTouchSettings` and `composeTouchContext`, and delivers them
+ * under new tags beside the source's other four, `withSettingsAndContext` in `src/touchsettingsset.ts`, 8.4. The set is
+ * the six alone: favourites or pictures the source delivered are the remote's once it is committed. **`--build
+ * --settings-back`** is its exact inverse, the source's Settings and Context, content and tags. The record says
+ * `settings`, with the Context description's path and never its content, or `settingsBack`. **`--describe-context`**
+ * writes the description of a set's Context as the remote holds it into a new lab file, printing nothing of it.
+ *
  * **`--check`** reads the set back as `touch-sync.ts` will, the gate and the codec's reader, and the device as
  * the reader sees it: its commands each with a definition and a key code, its map found by the identifier the
  * engine builds, its keys and its screen list; for an activity, its place on the list and type, its devices in
@@ -65,6 +78,7 @@ import {
   answersWhenHolding,
   chainTags,
   changeDocuments,
+  differences,
   listChanges,
   setDifferences,
   writeOfAnswersSize,
@@ -75,6 +89,7 @@ import {
   withContent,
 } from '../src/touchfavouritesset.ts';
 import { OWN_SET_DOCUMENTS, compareConfigHash, compareRequestList } from '../src/touchownset.ts';
+import { SETTINGS_SET_DOCUMENTS, putBackSettingsAndContext, settingsChanges, sixOf, withSettingsAndContext } from '../src/touchsettingsset.ts';
 import { WRITE_ANSWERS, answerOf, keyOf, prepareSet, resultOf, setTag, type RemoteRequest, type SetAnswer, type TouchSet } from '../src/touchsync.ts';
 
 /** The three documents a device is told to a Touch in, and the list in each that holds it. */
@@ -125,6 +140,10 @@ interface DeviceRecord {
   readonly removedActivity?: number | string;
   readonly favourites?: harmonyTouch.OwnFavourites;
   readonly favouritesBack?: true;
+  /** 8.4: the Settings description, and the lab path of the Context description, never its content. */
+  readonly settings?: harmonyTouch.OwnSettings;
+  readonly context?: string;
+  readonly settingsBack?: true;
 }
 
 const readSet = (folder: string): TouchSet => JSON.parse(readFileSync(join(folder, 'set.json'), 'utf8')) as TouchSet;
@@ -153,16 +172,24 @@ function build(folder: string): void {
   const removeActivityId = argument('remove-activity');
   const favouritesDescription = argument('favourites');
   const favouritesBack = process.argv.includes('--favourites-back') ? true : undefined;
-  const given = [description, removeId, activityDescription, removeActivityId, favouritesDescription, favouritesBack].filter((x) => x !== undefined).length;
+  const settingsDescription = argument('settings');
+  const settingsBack = process.argv.includes('--settings-back') ? true : undefined;
+  const given = [description, removeId, activityDescription, removeActivityId, favouritesDescription, favouritesBack, settingsDescription, settingsBack]
+    .filter((x) => x !== undefined).length;
   if (fromFolder === undefined || given !== 1) {
     fail('--build needs --from <set folder> and one of --device <description>, --remove <device id>, --activity <description>, '
-      + '--remove-activity <activity id>, --favourites <description> or --favourites-back');
+      + '--remove-activity <activity id>, --favourites <description>, --favourites-back, --settings <description> with --context <lab description>, '
+      + 'or --settings-back');
   }
   const from = insideTheLab(fromFolder, 'the source set');
   const source = readSet(from);
   const name = basename(out);
   if (favouritesDescription !== undefined || favouritesBack !== undefined) {
     buildFavourites(out, from, source, name, favouritesDescription);
+    return;
+  }
+  if (settingsDescription !== undefined || settingsBack !== undefined) {
+    buildSettings(out, from, source, name, settingsDescription);
     return;
   }
   let documents: harmonyTouch.DeviceDocuments | harmonyTouch.ActivityDocuments;
@@ -248,8 +275,126 @@ function buildFavourites(out: string, from: string, source: TouchSet, name: stri
     + `the six under the source's tags, the gate passed`);
 }
 
+/**
+ * `--build --settings` and `--build --settings-back`, the header: Settings and Context composed, or put back as the
+ * remote held them before the set in `from`, beside `from`'s other four.
+ */
+function buildSettings(out: string, from: string, source: TouchSet, name: string, description: string | undefined): void {
+  let built: { readonly set: TouchSet } | { readonly refusals: readonly string[] };
+  let record: DeviceRecord;
+  if (description !== undefined) {
+    const settings = (JSON.parse(readFileSync(description, 'utf8')) as { settings?: harmonyTouch.OwnSettings }).settings;
+    if (settings === undefined) fail(`${description} holds no settings`);
+    const contextFile = argument('context');
+    if (contextFile === undefined) fail('--settings needs --context <lab description>, the seven Context fields a Touch reads');
+    const contextPath = insideTheLab(contextFile, 'the Context description');
+    const context = (JSON.parse(readFileSync(contextPath, 'utf8')) as { context?: harmonyTouch.OwnContext }).context;
+    if (context === undefined) fail(`${contextPath} holds no context`);
+    built = withSettingsAndContext({ set: source, settings: settings!, context: context!, name, tagsInPlay: tagsOfTheChain(from) });
+    record = { name, from, settings: settings!, context: contextPath };
+  } else {
+    const forward = readRecord(from);
+    if (forward.settings === undefined || typeof forward.from !== 'string') fail(`${from} records no Settings delivered, so there is nothing to put back`);
+    built = putBackSettingsAndContext(source, readSet(insideTheLab(String(forward.from), 'the set it was built from')));
+    record = { name, from, settingsBack: true };
+  }
+  if ('refusals' in built) {
+    console.log(`refused, ${built.refusals.length} reasons, no set written:`);
+    for (const r of built.refusals) console.log(`  ${r}`);
+    process.exit(1);
+  }
+  mkdirSync(out, { recursive: true });
+  writeFileSync(join(out, 'set.json'), `${JSON.stringify(built.set)}\n`);
+  writeFileSync(join(out, 'sources.json'), `${JSON.stringify(record, null, 2)}\n`);
+  console.log(`built ${out}: ${record.settings !== undefined ? 'Settings of ours and Context composed' : 'Settings and Context put back'}, `
+    + `${SETTINGS_SET_DOCUMENTS.join(' and ')} under ${record.settings !== undefined ? 'new tags' : 'the tags the remote held before'}, the other four under the source's, the gate passed`);
+}
+
+/** `--describe-context`, the header: a set's Context as a description, written into a new lab file and never printed. */
+function describeContext(folder: string): void {
+  const outFile = argument('out');
+  if (outFile === undefined) fail('--describe-context needs --out <new lab file>');
+  const out = insideTheLab(outFile, 'the description file');
+  if (existsSync(out)) fail(`${out} exists, and a description is never written over`);
+  const context = readSet(insideTheLab(folder, 'the set folder')).answers.find((a) => keyOf(a.uri) === 'Context');
+  if (context === undefined) fail(`${folder} holds no Context`);
+  const description = harmonyTouch.describeTouchContext(context!.resource as harmonyTouch.Context);
+  mkdirSync(dirname(out), { recursive: true });
+  writeFileSync(out, `${JSON.stringify({ context: description }, null, 2)}\n`);
+  console.log(`wrote ${out}: the ${Object.keys(description).length} Context fields a Touch reads, as the set holds them`);
+}
+
+/**
+ * `--check` of a Settings set, the header: the gate and the reader; the six documents and nothing else; Settings
+ * differing from the source in exactly the rows the description names, by the values it gives, or for a put back in
+ * the rows the forward set changed, back to the source's before it; Context equal to the source's, and to what the
+ * description composes; the other four the source's, content and tags; the two tags new and the set's name's, or for
+ * a put back the ones the remote held before; what a remote holding the source is answered and the write's size.
+ */
+function checkSettings(set: TouchSet, record: Partial<DeviceRecord> & SetRecord, say: (ok: boolean, line: string) => void): void {
+  const from = insideTheLab(String(record.from), 'the source set');
+  const source = sixOf(readSet(from));
+  const name = String(record.name);
+  const gate = prepareSet(set);
+  say(!('refusals' in gate), `the gate, ${'refusals' in gate ? `${gate.refusals.length} refusals: ${gate.refusals.join('; ')}` : `passed, ${gate.set.tags.stated} tags stated and ${gate.set.tags.ours} ours`}`);
+  const read = harmonyTouch.readConfiguration(documentsOf(set));
+  say(read.absent.length === 0 && read.settings !== undefined && read.context !== undefined, `the reader read it, the settings and the context among it`);
+  const findings = harmonyTouch.checkConfiguration(read);
+  const before = harmonyTouch.checkConfiguration(harmonyTouch.readConfiguration(documentsOf(source)));
+  say(findings.length === before.length, `the check, ${findings.length} findings here and ${before.length} on the source, none refused`);
+  say(set.answers.length === OWN_SET_DOCUMENTS.length && OWN_SET_DOCUMENTS.every((d) => set.answers.some((a) => keyOf(a.uri) === d)),
+    `the six documents and nothing else, ${set.answers.length} answers`);
+
+  const was = documentsOf(source);
+  const now = documentsOf(set);
+  // The rows the description names, or for a put back the rows the forward set changed.
+  const forward = record.settingsBack ? readSet(from) : undefined;
+  const beforeForward = forward === undefined ? undefined : sixOf(readSet(insideTheLab(String(readRecord(from).from), 'the set before the forward set')));
+  const named = record.settings !== undefined ? Object.keys(record.settings.values) : settingsChanges(documentsOf(beforeForward!)['Settings'], was['Settings']).rows.map((r) => r.name);
+  const changes = settingsChanges(was['Settings'], now['Settings']);
+  const expected = (n: string): string | undefined => (record.settings !== undefined ? record.settings.values[n]
+    : settingsChanges(documentsOf(beforeForward!)['Settings'], was['Settings']).rows.find((r) => r.name === n)?.was);
+  console.log('Settings, the rows that change:');
+  for (const r of changes.rows) {
+    const row = harmonyTouch.SETTING_ROWS[r.name];
+    console.log(`  ${r.name}: ${r.was ?? 'none'} to ${r.now ?? 'none'}${row === undefined ? '' : `, ${row.what}, acting ${row.acts}`}`);
+  }
+  say(changes.rows.length === named.length && named.every((n) => changes.rows.some((r) => r.name === n && r.now === expected(n))) && changes.restEqual,
+    `Settings: ${changes.rows.length} rows differ, ${named.join(' and ')}, to the values ${record.settings !== undefined ? 'the description gives' : 'the remote held before'}; everything else ${changes.restEqual ? 'equal' : 'NOT equal'}`);
+  const contextSame = differences(was['Context'], now['Context']).length === 0;
+  say(contextSame, `Context: content ${contextSame ? 'equal' : 'NOT equal'} to the source's`);
+  if (record.settings !== undefined && typeof record.context === 'string') {
+    const description = (JSON.parse(readFileSync(insideTheLab(record.context, 'the Context description'), 'utf8')) as { context: harmonyTouch.OwnContext }).context;
+    const composed = harmonyTouch.composeTouchContext(description, was['Context'] as harmonyTouch.Context);
+    say(JSON.stringify(composed) === JSON.stringify(now['Context']), 'Context: the description composes exactly this document, key order included');
+    const fields = harmonyTouch.CONTEXT_FIELDS_READ;
+    say(Object.keys(description).length === fields.length, `Context: the description states the ${fields.length} fields a Touch reads, and the other ${Object.keys(now['Context'] as object).length - fields.length} are carried`);
+  }
+  if (beforeForward !== undefined) {
+    const sameAsBefore = (d: string): boolean => {
+      const x = beforeForward.answers.find((a) => keyOf(a.uri) === d);
+      const y = set.answers.find((a) => keyOf(a.uri) === d);
+      return x !== undefined && y !== undefined && x.etag === y.etag && differences(x.resource, y.resource).length === 0;
+    };
+    say(SETTINGS_SET_DOCUMENTS.every(sameAsBefore), 'Settings and Context are what the remote held before the set they put back, content and tags');
+  }
+  const diff = setDifferences(source, set);
+  const others = diff.filter((d) => !(SETTINGS_SET_DOCUMENTS as readonly string[]).includes(d.document));
+  say(others.every((d) => d.values.length === 0 && !d.tagChanged), `the other ${others.length}: ${others.map((d) => d.document).join(', ')}, content and tags the source's`);
+  const retagged = diff.filter((d) => d.tagChanged).map((d) => d.document);
+  say(retagged.length === 2 && SETTINGS_SET_DOCUMENTS.every((d) => retagged.includes(d)), `tags: ${retagged.join(', ') || 'none'} new, the other ${diff.length - retagged.length} the source's`);
+  const ours = SETTINGS_SET_DOCUMENTS.map((d) => set.answers.find((a) => keyOf(a.uri) === d));
+  if (record.settings !== undefined) {
+    say(ours.every((a) => a !== undefined && a.etag === setTag(a, name)), 'the two new tags are the ones the set\'s name gives');
+    const chain = tagsOfTheChain(from);
+    say(ours.every((a) => a?.etag !== undefined && !chain.has(a.etag)), `no new tag is stated by a set of the chain before it, ${chain.size} tags`);
+  }
+  checkTheRuns(set, source, from, [...SETTINGS_SET_DOCUMENTS], say);
+}
+
 /** Whether a record is of a device added or taken out, an activity, or favourites; undefined when it is none. */
-function kindOf(record: Partial<DeviceRecord>): 'device' | 'activity' | 'favourites' | undefined {
+function kindOf(record: Partial<DeviceRecord>): 'device' | 'activity' | 'favourites' | 'settings' | undefined {
+  if (record.settings !== undefined || record.settingsBack !== undefined) return 'settings';
   if (record.device !== undefined || record.removed !== undefined) return 'device';
   if (record.activity !== undefined || record.removedActivity !== undefined) return 'activity';
   if (record.favourites !== undefined || record.favouritesBack !== undefined) return 'favourites';
@@ -378,13 +523,78 @@ function checkFavourites(dir: string, set: TouchSet, record: Partial<DeviceRecor
   }
 }
 
+/**
+ * What the answerer writes for a remote that committed the source, the size of that write, and a run's kept files read
+ * against the set, `--same-as`, `--written`, `--hash` and `--list`: the end of every `--check` but a favourites set's.
+ * `touched` names the documents the set delivers with 200.
+ */
+function checkTheRuns(set: TouchSet, source: TouchSet, from: string, touched: readonly string[], say: (ok: boolean, line: string) => void): void {
+  const gate = prepareSet(set);
+  // What the answerer writes for a remote that committed the source.
+  if (!('refusals' in gate)) {
+    const written = answersWhenHolding(gate.set, source);
+    const statuses = written.map((w, i) => `${keyOf(source.answers[i]!.uri)} ${'refuse' in w ? 'refused' : w.statusCode}`);
+    const delivered = written.flatMap((w, i) => (!('refuse' in w) && w.statusCode === '200' ? [keyOf(source.answers[i]!.uri)] : []));
+    const kept = written.filter((w) => !('refuse' in w) && w.statusCode === '304').length;
+    say(delivered.length === touched.length && touched.every((d) => delivered.includes(d)) && kept === OWN_SET_DOCUMENTS.length - touched.length,
+      `a remote holding ${basename(from)} is answered ${statuses.join(', ')}`);
+    const size = writeOfAnswersSize(written);
+    console.log(`write of answers: ${size.length} characters, ${size.chunks} ${size.chunks === 1 ? 'chunk' : 'chunks'} of ${size.perChunk}, the last ${size.last}`);
+    // The listener takes `Content-Length: ` anywhere in a chunk as an announcement, and forgets an announcement
+    // when a chunk carries a request name other than the write's, `halhttpserverconnector.lua`.
+    const starts = Array.from({ length: size.chunks }, (_, i) => size.line.slice(i * size.perChunk, i * size.perChunk + 12));
+    say(!size.line.includes('Content-Length') && starts.slice(1).every((s) => !s.startsWith('vnd.logitech')),
+      'no chunk carries Content-Length, and no chunk after the first opens with a request name');
+  }
+
+  for (const other of arguments_('same-as')) {
+    const otherDir = insideTheLab(other, 'the set to compare with');
+    // The six alone: a set compared with may carry favourites or pictures, whose addresses hold the account's
+    // identifiers and are never printed, `todo-touch.md` 8.4.
+    const d = setDifferences(sixOf(readSet(otherDir)), sixOf(set));
+    const differing = d.filter((x) => x.values.length > 0).map((x) => x.document);
+    const tags = d.filter((x) => x.tagChanged).map((x) => x.document);
+    say(differing.length === 0, `content against ${basename(otherDir)}: ${differing.length === 0 ? `equal, ${d.length} of ${d.length} documents as parsed JSON` : `${differing.join(', ')} differ`}; `
+      + `tags differing: ${tags.join(', ') || 'none'}`);
+  }
+  // A run's kept write of answers for the six, against the set: the changed documents 200 with the set's content
+  // and tag, the others 304.
+  for (const file of arguments_('written')) {
+    const line = readFileSync(insideTheLab(file, 'the kept write of answers'), 'utf8');
+    if (!line.startsWith(`${WRITE_ANSWERS}&`)) fail(`${file} is not a kept write of answers`);
+    const responses = (JSON.parse(decodeURIComponent(line.split('&responses=')[1] ?? '')) as { responses: { statusCode?: string; uri?: string; etag?: string; resource?: unknown }[] }).responses
+      .filter((a) => typeof a.uri === 'string' && a.uri.startsWith('harmony://'));
+    const ofSet = (uri: string): SetAnswer | undefined => set.answers.find((a) => keyOf(a.uri) === keyOf(uri));
+    const delivered = responses.filter((a) => a.statusCode === '200');
+    const right = delivered.length === touched.length && delivered.every((a) => touched.includes(keyOf(a.uri!))
+      && a.etag === ofSet(a.uri!)?.etag && JSON.stringify(a.resource) === JSON.stringify(ofSet(a.uri!)?.resource));
+    say(right && responses.length === OWN_SET_DOCUMENTS.length && responses.filter((a) => a.statusCode === '304').length === OWN_SET_DOCUMENTS.length - touched.length,
+      `the kept write answered ${responses.map((a) => `${keyOf(a.uri!)} ${a.statusCode ?? 'none'}`).join(', ')}; `
+      + `${right ? `the ${touched.length} with this set's content and tags` : `not this set's ${touched.length} documents alone`}`);
+  }
+  for (const file of arguments_('hash')) console.log(`config hash against the set's tags: ${compareConfigHash(readFileSync(insideTheLab(file, 'the hash answer'), 'utf8'), set)}`);
+  for (const file of arguments_('list')) {
+    console.log('request list against the set\'s tags:');
+    for (const line of compareRequestList(readFileSync(insideTheLab(file, 'the request list'), 'utf8'), set)) console.log(`  ${line}`);
+  }
+}
+
 function check(folder: string): void {
   const dir = insideTheLab(folder, 'the set folder');
   const set = readSet(dir);
   const record = readRecord(dir);
   const kind = kindOf(record);
   if (kind === undefined || typeof record.from !== 'string' || typeof record.name !== 'string') {
-    fail(`${dir} records no device, activity or favourites added or taken out, so it is not a set this script built`);
+    fail(`${dir} records no device, activity, favourites or settings added or taken out, so it is not a set this script built`);
+  }
+  if (kind === 'settings') {
+    let wrong = 0;
+    checkSettings(set, record, (ok, line) => {
+      if (!ok) wrong += 1;
+      console.log(`${ok ? 'ok' : 'NOT OK'}: ${line}`);
+    });
+    if (wrong > 0) process.exit(1);
+    return;
   }
   if (kind === 'favourites') {
     let wrong = 0;
@@ -479,56 +689,16 @@ function check(folder: string): void {
   const chain = tagsOfTheChain(from);
   say(answers.every((a) => a?.etag !== undefined && !chain.has(a.etag)), `no new tag is stated by a set of the chain before it, ${chain.size} tags`);
 
-  // What the answerer writes for a remote that committed the source.
-  if (!('refusals' in gate)) {
-    const written = answersWhenHolding(gate.set, source);
-    const statuses = written.map((w, i) => `${keyOf(source.answers[i]!.uri)} ${'refuse' in w ? 'refused' : w.statusCode}`);
-    const delivered = written.flatMap((w, i) => (!('refuse' in w) && w.statusCode === '200' ? [keyOf(source.answers[i]!.uri)] : []));
-    const kept = written.filter((w) => !('refuse' in w) && w.statusCode === '304').length;
-    say(delivered.length === touched.length && touched.every((d) => delivered.includes(d)) && kept === OWN_SET_DOCUMENTS.length - touched.length,
-      `a remote holding ${basename(from)} is answered ${statuses.join(', ')}`);
-    const size = writeOfAnswersSize(written);
-    console.log(`write of answers: ${size.length} characters, ${size.chunks} ${size.chunks === 1 ? 'chunk' : 'chunks'} of ${size.perChunk}, the last ${size.last}`);
-    // The listener takes `Content-Length: ` anywhere in a chunk as an announcement, and forgets an announcement
-    // when a chunk carries a request name other than the write's, `halhttpserverconnector.lua`.
-    const starts = Array.from({ length: size.chunks }, (_, i) => size.line.slice(i * size.perChunk, i * size.perChunk + 12));
-    say(!size.line.includes('Content-Length') && starts.slice(1).every((s) => !s.startsWith('vnd.logitech')),
-      'no chunk carries Content-Length, and no chunk after the first opens with a request name');
-  }
-
-  for (const other of arguments_('same-as')) {
-    const otherDir = insideTheLab(other, 'the set to compare with');
-    const d = setDifferences(readSet(otherDir), set);
-    const differing = d.filter((x) => x.values.length > 0).map((x) => x.document);
-    const tags = d.filter((x) => x.tagChanged).map((x) => x.document);
-    say(differing.length === 0, `content against ${basename(otherDir)}: ${differing.length === 0 ? `equal, ${d.length} of ${d.length} documents as parsed JSON` : `${differing.join(', ')} differ`}; `
-      + `tags differing: ${tags.join(', ') || 'none'}`);
-  }
-  // A run's kept write of answers for the six, against the set: the changed documents 200 with the set's content
-  // and tag, the others 304.
-  for (const file of arguments_('written')) {
-    const line = readFileSync(insideTheLab(file, 'the kept write of answers'), 'utf8');
-    if (!line.startsWith(`${WRITE_ANSWERS}&`)) fail(`${file} is not a kept write of answers`);
-    const responses = (JSON.parse(decodeURIComponent(line.split('&responses=')[1] ?? '')) as { responses: { statusCode?: string; uri?: string; etag?: string; resource?: unknown }[] }).responses
-      .filter((a) => typeof a.uri === 'string' && a.uri.startsWith('harmony://'));
-    const ofSet = (uri: string): SetAnswer | undefined => set.answers.find((a) => keyOf(a.uri) === keyOf(uri));
-    const delivered = responses.filter((a) => a.statusCode === '200');
-    const right = delivered.length === touched.length && delivered.every((a) => touched.includes(keyOf(a.uri!))
-      && a.etag === ofSet(a.uri!)?.etag && JSON.stringify(a.resource) === JSON.stringify(ofSet(a.uri!)?.resource));
-    say(right && responses.length === OWN_SET_DOCUMENTS.length && responses.filter((a) => a.statusCode === '304').length === OWN_SET_DOCUMENTS.length - touched.length,
-      `the kept write answered ${responses.map((a) => `${keyOf(a.uri!)} ${a.statusCode ?? 'none'}`).join(', ')}; `
-      + `${right ? `the ${touched.length} with this set's content and tags` : `not this set's ${touched.length} documents alone`}`);
-  }
-  for (const file of arguments_('hash')) console.log(`config hash against the set's tags: ${compareConfigHash(readFileSync(insideTheLab(file, 'the hash answer'), 'utf8'), set)}`);
-  for (const file of arguments_('list')) {
-    console.log('request list against the set\'s tags:');
-    for (const line of compareRequestList(readFileSync(insideTheLab(file, 'the request list'), 'utf8'), set)) console.log(`  ${line}`);
-  }
+  checkTheRuns(set, source, from, touched, say);
   if (bad > 0) process.exit(1);
 }
 
 const toBuild = argument('build');
 const toCheck = argument('check');
-if ((toBuild === undefined) === (toCheck === undefined)) fail('one of --build <new lab folder> or --check <set folder>');
+const toDescribe = argument('describe-context');
+if ([toBuild, toCheck, toDescribe].filter((x) => x !== undefined).length !== 1) {
+  fail('one of --build <new lab folder>, --check <set folder> or --describe-context <set folder> --out <new lab file>');
+}
 if (toBuild !== undefined) build(toBuild);
+else if (toDescribe !== undefined) describeContext(toDescribe);
 else check(toCheck!);

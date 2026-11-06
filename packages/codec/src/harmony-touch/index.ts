@@ -12,3 +12,4 @@ export * from './definition.ts';
 export * from './learned.ts';
 export * from './compose.ts';
 export * from './favourites.ts';
+export * from './settings.ts';

@@ -32,6 +32,7 @@ import {
   DELETED_ON_REMOTE, INFRARED_TRANSPORT, mapIdentifier, numberPadKey, readConfiguration, type Configuration, type ReadActivity,
   type ReadButtonAction, type ReadDevice, type ReadMap,
 } from './read.ts';
+import { BACKLIGHT_STEPS, luaNumber } from './settings.ts';
 
 /** The rules, each named for what it finds. */
 export type Rule =
@@ -60,7 +61,8 @@ export type Rule =
   | 'screens raise'
   | 'document absent'
   | 'not a document'
-  | 'favourites address';
+  | 'favourites address'
+  | 'setting mishandled';
 
 export interface Finding {
   readonly rule: Rule;
@@ -1213,9 +1215,52 @@ export function refusalsBeforeASync(documents: SyncDocuments): Finding[] {
     message: 'the document is not a JSON object, so the remote stores it as something its reader finds no list in',
   }));
   if (notObjects.length > 0) return notObjects;
-  const structure = [...readerRaises(documents), ...checkScreens(documents)];
+  const structure = [...readerRaises(documents), ...checkScreens(documents), ...checkSettingValues(documents)];
   if (structure.length > 0) return structure;
   return checkConfiguration(readConfiguration(documents)).filter((f) => f.effect === 'refused');
+}
+
+/**
+ * `setting mishandled`, refused, `todo-touch.md` 8.4: a Settings value the remote's screens take without raising and
+ * then mishandle in a way that costs more than one screen, read in the lab's firmware copy, `juniper/init.lua`, for
+ * the preparation of 8.4 and argued in `settings.ts`. Each value is read as the screens read it, `tonumber` of the
+ * first value of the first row of that name, `luaNumber`; a value that reads as no number takes the firmware's
+ * default and is not found here.
+ *
+ * * **`ScreenBrightness` whose backlight step is below 1**, a level below 4: the fade before the screen sleeps,
+ *   `fadeBrightness`, counts down from `floor(26 * level / 100)` and ends only when the count reaches 0 after a step,
+ *   so a count that starts at 0 or below runs every 50 ms for ever, and on battery the remote never sleeps. Read.
+ *   The backlight itself is held to 10 to 100 and does not show it.
+ * * **`ScreenTimeout` below one second**: the value times 1000 is the suspend timer, unclamped, and 0 is a timer that
+ *   is due at once, so after every wake the screen fades and the remote sleeps on battery, and on USB power the timer
+ *   is restarted at 0 every turn of the screens' loop. The timer's arithmetic is read; what a person sees is inferred.
+ *
+ * Every other value outside the remote's own sliders is the composer's to refuse, `composeTouchSettings`, since
+ * what it costs is one screen at most or nothing at all.
+ */
+export function checkSettingValues(documents: SyncDocuments): Finding[] {
+  const settings = documents.Settings;
+  if (!isObject(settings) || !Array.isArray(settings['Settings'])) return [];
+  const out: Finding[] = [];
+  const seen = new Set<string>();
+  (settings['Settings'] as unknown[]).forEach((row, r) => {
+    if (!isObject(row) || typeof row['Name'] !== 'string' || seen.has(row['Name'])) return;
+    // The screens' `getRemoteSettings` stops at the first row of a name, so a later one is never read.
+    seen.add(row['Name']);
+    const values = row['Values'];
+    const level = Array.isArray(values) ? luaNumber(values[0]) : undefined;
+    if (level === undefined) return;
+    const at = `Settings[${r}].Values[0]`;
+    if (row['Name'] === 'ScreenBrightness' && Math.floor(BACKLIGHT_STEPS * level / 100) < 1) {
+      out.push({ rule: 'setting mishandled', effect: 'refused', document: 'Settings', path: at,
+        message: 'the screen brightness is below 4, so the fade before the screen sleeps never ends and the remote never sleeps on battery' });
+    }
+    if (row['Name'] === 'ScreenTimeout' && level < 1) {
+      out.push({ rule: 'setting mishandled', effect: 'refused', document: 'Settings', path: at,
+        message: 'the screen timeout is below one second, so the screen fades and the remote sleeps right after every wake on battery, inferred from the suspend timer' });
+    }
+  });
+  return out;
 }
 
 /** The kind of favourites document an address is, by the start the screens build it with, for a finding. */
