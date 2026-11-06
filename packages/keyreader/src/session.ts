@@ -44,6 +44,8 @@ export interface FaceKey {
   readonly candidates: readonly number[];
   /** Whether learning asks for it: false for a key left out on purpose, `NOT_ASKED` in `bin/drawings.ts`. */
   readonly ask: boolean;
+  /** Whether a person is told not to press it, `DO_NOT_PRESS` in `bin/drawings.ts`: Glow ends the connection. */
+  readonly avoid: boolean;
 }
 
 /** One drawn model as the page receives it: its keys in the order the page asks for them, and its SVG. */
@@ -64,9 +66,12 @@ export interface Misfit {
    * `already`: the code is already learned for another key, named in `other`.
    * `nothing-asked`: every key has been answered.
    * `naming`: a press came while the words for the previous one were being typed.
+   * `different`: the second press of a key gave another code than the first, named in `first`; both are
+   *   dropped and the key is asked from the start, and the pair is kept here, the second press as `code`.
    */
-  readonly reason: 'already' | 'nothing-asked' | 'naming';
+  readonly reason: 'already' | 'nothing-asked' | 'naming' | 'different';
   readonly other?: string;
+  readonly first?: number;
 }
 
 /**
@@ -80,15 +85,35 @@ export interface Answer {
   readonly code: number | 'skipped' | 'not seen';
 }
 
-/** What happened to one press. */
+/**
+ * What happened to one press: the first press of a key asked is `provisional`, the second `learned` when it
+ * gives the same code, or `mismatch` when it does not; a press that cannot be the key asked is a `misfit`.
+ */
 export type LearnOutcome =
+  | { readonly kind: 'provisional'; readonly key: FaceKey; readonly code: number }
   | { readonly kind: 'learned'; readonly key: FaceKey; readonly code: number }
+  | { readonly kind: 'mismatch'; readonly key: FaceKey; readonly first: number; readonly second: number }
   | { readonly kind: 'misfit'; readonly misfit: Misfit };
 
-/** How a key looks while learning, which is also what the page colours it by. */
-export type LearnState = 'asked' | 'learned' | 'skipped' | 'unseen' | 'waiting';
+/** What undo took back: a whole answer, or only the first press of the key asked, `provisional`. */
+export type Undone = Answer & { readonly provisional?: true };
 
-/** The learning mode for a model with a drawing: one key asked at a time, in the face's order. */
+/**
+ * How a key looks while learning, which is also what the page colours it by. `confirm` is the key asked
+ * after its first press, waiting for the second.
+ */
+export type LearnState = 'asked' | 'confirm' | 'learned' | 'skipped' | 'unseen' | 'waiting';
+
+/**
+ * The learning mode for a model with a drawing: one key asked at a time, in the face's order, and each
+ * pressed twice.
+ *
+ * **Why twice**: a key is learned against the key asked, so a slip of the finger to the key beside it
+ * would be learned under the wrong name, and nothing at the time would say so. Asking for the key again
+ * catches the slip at the moment it happens: two presses of the same key give the same code, and a
+ * mismatch drops both and asks again from the start. Step 3 still checks the whole map at the end, for a
+ * slip made twice. Skip and `not seen` answer without a press, so they need no second one.
+ */
 export class Learning {
   readonly keys: readonly FaceKey[];
   /**
@@ -97,6 +122,8 @@ export class Learning {
    */
   readonly #answers: Answer[] = [];
   readonly #misfits: Misfit[] = [];
+  /** The first press of the key asked, waiting for the second to confirm it; never in the log on its own. */
+  #first: number | undefined;
 
   /** The drawing's keys in face order; only those it asks for are kept, so the log lists only those. */
   constructor(keys: readonly FaceKey[]) {
@@ -116,6 +143,11 @@ export class Learning {
     return this.#misfits;
   }
 
+  /** The code of the first press of the key asked, while it waits for the second. */
+  get provisional(): number | undefined {
+    return this.#first;
+  }
+
   /** Whether every key has been answered. */
   get done(): boolean {
     return this.asked === undefined;
@@ -126,12 +158,28 @@ export class Learning {
     return this.#answers.find((answer) => answer.code === code)?.key;
   }
 
-  /** A press: recorded against the key asked for, or noted when it cannot be that key. */
+  /**
+   * A press: the first of the key asked is held, the second confirms it, and a second that differs drops
+   * both. A press of a code already learned for another key is noted and changes nothing, so it neither
+   * confirms nor drops a first press.
+   */
   press(code: number): LearnOutcome {
     const asked = this.asked;
     if (asked === undefined) return this.#note({ code, asked: undefined, reason: 'nothing-asked' });
     const other = this.learnedFor(code);
     if (other !== undefined) return this.#note({ code, asked: asked.name, reason: 'already', other: other.name });
+    const first = this.#first;
+    this.#first = undefined;
+    if (first === undefined) {
+      this.#first = code;
+      return { kind: 'provisional', key: asked, code };
+    }
+    // `first !== undefined` is already known here; it is spelled out so that this test stands on its own,
+    // which is what lets `test/session.test.ts` disarm the holding of a first press alone.
+    if (first !== undefined && first !== code) {
+      this.#misfits.push({ code, asked: asked.name, reason: 'different', first });
+      return { kind: 'mismatch', key: asked, first, second: code };
+    }
     this.#answers.push({ key: asked, code });
     return { kind: 'learned', key: asked, code };
   }
@@ -139,6 +187,8 @@ export class Learning {
   /** The person's remote has no such key: answer it as skipped and ask the next. */
   skip(): FaceKey | undefined {
     const asked = this.asked;
+    // A first press made before skipping was not this key's after all, and goes with it.
+    this.#first = undefined;
     if (asked !== undefined) this.#answers.push({ key: asked, code: 'skipped' });
     return asked;
   }
@@ -146,12 +196,22 @@ export class Learning {
   /** The key works on the remote but the page never saw it: answer it as `not seen` and ask the next. */
   unseen(): FaceKey | undefined {
     const asked = this.asked;
+    this.#first = undefined;
     if (asked !== undefined) this.#answers.push({ key: asked, code: 'not seen' });
     return asked;
   }
 
-  /** Take back the last answer, so that its key is asked again. */
-  undo(): Answer | undefined {
+  /**
+   * Take back the last thing done: the first press of the key asked, while it waits for its second, and
+   * only that; otherwise the last answer, so that its key is asked again.
+   */
+  undo(): Undone | undefined {
+    const first = this.#first;
+    const asked = this.asked;
+    if (first !== undefined && asked !== undefined) {
+      this.#first = undefined;
+      return { key: asked, code: first, provisional: true };
+    }
     return this.#answers.pop();
   }
 
@@ -162,7 +222,8 @@ export class Learning {
       if (answer.code === 'skipped') return 'skipped';
       return answer.code === 'not seen' ? 'unseen' : 'learned';
     }
-    return this.asked?.name === name ? 'asked' : 'waiting';
+    if (this.asked?.name !== name) return 'waiting';
+    return this.#first === undefined ? 'asked' : 'confirm';
   }
 
   #note(misfit: Misfit): LearnOutcome {
@@ -474,5 +535,7 @@ export function misfitWords(misfit: Misfit): string {
       return 'pressed after every key was answered';
     case 'naming':
       return `pressed before the words for the previous key were in`;
+    case 'different':
+      return `the second press, after ${misfit.first ?? 'another code'}${when}; both were dropped`;
   }
 }

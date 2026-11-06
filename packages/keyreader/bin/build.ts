@@ -71,6 +71,7 @@ const PUBLISHED: ReadonlyMap<string, string> = new Map([
   [join(PACKAGE, 'src', 'presses.ts'), 'presses.js'],
   [join(PACKAGE, 'src', 'session.ts'), 'session.js'],
   [join(PACKAGE, 'src', 'face.ts'), 'face.js'],
+  [join(PACKAGE, 'src', 'visit.ts'), 'visit.js'],
   [join(USB, 'protocol.ts'), 'protocol.js'],
   [join(USB, 'keys.ts'), 'keys.js'],
   [join(USB, 'models.ts'), 'models.js'],

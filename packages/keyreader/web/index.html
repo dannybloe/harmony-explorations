@@ -107,9 +107,23 @@
   .face g[data-kr="asked"] { --key-fill: #8cc8f0; --key-stroke: #0b4f8a; }
   /* The heavy edge also on a segment of a moulding, which the drawing otherwise leaves without an outline. */
   .face g[data-kr="asked"] path.key { stroke: #0b4f8a; stroke-width: 3.5px; }
+  /* Pressed once and waiting for the second press: blue like the key asked, with rings, and a dashed edge,
+     so it differs from the key asked by its pattern and its edge as well as from every orange look. */
+  .face g[data-kr="confirm"] { --key-fill: url(#kr-rings); --key-stroke: #0b4f8a; }
+  .face g[data-kr="confirm"] path.key { stroke: #0b4f8a; stroke-width: 3.5px; stroke-dasharray: 5 3; }
   .face g[data-kr="learned"], .face g[data-kr="lit"] { --key-fill: url(#kr-dots); }
   .face g[data-kr="skipped"] { --key-fill: url(#kr-lines); }
   .face g[data-kr="unseen"] { --key-fill: url(#kr-crosses); }
+  .face g[data-kr="avoid"] { --key-fill: url(#kr-hazard); --key-text: #ffffff; }
+  .face-tag[data-kind="warn"] { background: #1b1b1b; color: #ffd23f; border: 2px solid #ffd23f; }
+  /* The warning about Glow: a symbol and bold words on a high contrast band, which reads the same without
+     its colour. Not an alert or a dialog: it stays in the page where the steps are. */
+  .warning {
+    display: flex; gap: 12px; align-items: flex-start; margin: 0.8rem 0; padding: 12px 14px; border-radius: 8px;
+    background: #fff4c2; color: #1b1b1b; border: 3px solid #1b1b1b;
+  }
+  .warning svg { flex: none; }
+  .warning p { margin: 0; color: #1b1b1b; }
   .face g[data-kr="possible"] { --key-fill: url(#kr-stripes); }
 </style>
 </head>
@@ -117,6 +131,9 @@
 <!-- The fills for a key's look, referenced by the stylesheet above, and the legend's swatches. -->
 <svg width="0" height="0" style="position: absolute" aria-hidden="true" focusable="false">
   <defs>
+    <pattern id="kr-rings" width="9" height="9" patternUnits="userSpaceOnUse">
+      <rect width="9" height="9" fill="#8cc8f0"></rect><circle cx="4.5" cy="4.5" r="2.4" fill="none" stroke="#0b4f8a" stroke-width="1.3"></circle>
+    </pattern>
     <pattern id="kr-dots" width="7" height="7" patternUnits="userSpaceOnUse">
       <rect width="7" height="7" fill="#f2a93b"></rect><circle cx="3.5" cy="3.5" r="1.6" fill="#5c3a00"></circle>
     </pattern>
@@ -126,6 +143,9 @@
     <pattern id="kr-crosses" width="8" height="8" patternUnits="userSpaceOnUse">
       <rect width="8" height="8" fill="#ffffff"></rect>
       <path d="M1.5 1.5 L6.5 6.5 M6.5 1.5 L1.5 6.5" stroke="#1b1b1b" stroke-width="1.4"></path>
+    </pattern>
+    <pattern id="kr-hazard" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <rect width="10" height="10" fill="#ffd23f"></rect><rect width="5" height="10" fill="#1b1b1b"></rect>
     </pattern>
     <pattern id="kr-stripes" width="8" height="8" patternUnits="userSpaceOnUse">
       <rect width="8" height="8" fill="#f2a93b"></rect><rect width="8" height="3" fill="#ffffff"></rect>
@@ -157,6 +177,15 @@ model we do not have, and it can test whether every key on your remote still wor
 </div>
 <p id="status" class="muted" role="status" aria-live="polite">Plug your remote in, then press Connect.</p>
 
+<div id="glow-warning" class="warning" role="note" hidden>
+  <svg width="32" height="30" viewBox="0 0 32 30" aria-hidden="true" focusable="false">
+    <path d="M16 2 L30 28 H2 Z" fill="#ffd23f" stroke="#1b1b1b" stroke-width="2.5" stroke-linejoin="round"></path>
+    <rect x="14.5" y="10" width="3" height="10" fill="#1b1b1b"></rect><rect x="14.5" y="22" width="3" height="3" fill="#1b1b1b"></rect>
+  </svg>
+  <p><strong>Do not press GLOW (the light key).</strong> On these remotes it switches the screen off and ends
+    the connection. If it happens: unplug the cable, plug it back in, and press Reconnect.</p>
+</div>
+
 <section id="choose" hidden>
   <h2>Which remote is this?</h2>
   <p id="reported"></p>
@@ -181,6 +210,8 @@ model we do not have, and it can test whether every key on your remote still wor
       <div id="learn-panel">
         <p class="step">Step 2: Learn the key map</p>
         <p id="prompt" class="prompt"></p>
+        <p>Press each key twice. The second press confirms the first; if they differ, both are dropped and
+          the key is asked again.</p>
         <p id="flag" class="flag" hidden>This key did not reach the page in step 1. Press it to try
           again; if your remote reacts to it and nothing happens here, it works but the page does not see it.</p>
         <form id="naming" hidden>
@@ -198,6 +229,7 @@ model we do not have, and it can test whether every key on your remote still wor
         <p id="progress" class="muted"></p>
         <ul id="learn-legend" class="legend">
           <li><svg width="22" height="16"><rect width="22" height="16" fill="#8cc8f0" stroke="#0b4f8a" stroke-width="3"></rect></svg> blue with a heavy edge: the key to press now</li>
+          <li><svg width="22" height="16"><rect width="22" height="16" fill="url(#kr-rings)" stroke="#0b4f8a" stroke-width="3" stroke-dasharray="5 3"></rect></svg> blue with rings and a dashed edge: pressed once, press it again to confirm</li>
           <li><svg width="22" height="16"><rect width="22" height="16" fill="url(#kr-dots)"></rect></svg> orange with dots: learned</li>
           <li><svg width="22" height="16"><rect width="22" height="16" fill="url(#kr-lines)"></rect></svg> grey with lines: skipped, my remote has no such key</li>
           <li><svg width="22" height="16"><rect width="22" height="16" fill="url(#kr-crosses)"></rect></svg> white with crosses: works, but the page does not see it</li>
@@ -205,14 +237,16 @@ model we do not have, and it can test whether every key on your remote still wor
       </div>
       <div id="test-panel" hidden>
         <p class="step">Step 1: Test all keys</p>
-        <p class="prompt">Press every key once.</p>
-        <p>This shows which keys reach this page. Each key you press stays marked, so a key that never gets
+        <p class="prompt">Press every key once, except Glow.</p>
+        <p><strong>Do not press Glow, the light key</strong>: it ends the connection. This step shows which keys
+          reach this page. Each key you press stays marked, so a key that never gets
           marked is one the page did not see. Then go on to step 2.</p>
         <div class="controls"><button id="next" type="button" class="primary">Next: step 2, learn the key map</button></div>
         <p id="test-count" class="muted"></p>
         <ul id="test-legend" class="legend">
           <li><svg width="22" height="16"><rect width="22" height="16" fill="url(#kr-dots)"></rect></svg> orange with dots: this key answered</li>
           <li><svg width="22" height="16"><rect width="22" height="16" fill="url(#kr-stripes)"></rect></svg> orange with white bands: one of these keys answered, and which of them is not known yet</li>
+          <li><svg width="22" height="16"><rect width="22" height="16" fill="url(#kr-hazard)"></rect></svg> black and yellow bands: do not press this key</li>
         </ul>
         <h3>Other keys that answered, by number</h3>
         <ul id="unknown"></ul>
@@ -221,13 +255,14 @@ model we do not have, and it can test whether every key on your remote still wor
       </div>
       <div id="check-panel" hidden>
         <p class="step">Step 3: Check the key map</p>
-        <p class="prompt">Press the keys again.</p>
+        <p class="prompt">Press the keys again, except Glow.</p>
         <p>Each key you press lights by the key map you just made. If the key that lights is not the one you
           pressed, that key was learned wrong: go back to step 2, undo, and learn it again.</p>
         <p id="check-count" class="muted"></p>
         <ul id="check-legend" class="legend">
           <li><svg width="22" height="16"><rect width="22" height="16" fill="url(#kr-dots)"></rect></svg> orange with dots: lit by the key map</li>
           <li><svg width="22" height="16"><rect width="22" height="16" fill="url(#kr-stripes)"></rect></svg> orange with white bands: one of these keys, and which of them is not known yet</li>
+          <li><svg width="22" height="16"><rect width="22" height="16" fill="url(#kr-hazard)"></rect></svg> black and yellow bands: do not press this key</li>
         </ul>
         <h3>Numbers the key map does not have</h3>
         <ul id="check-unknown" class="numbers"></ul>

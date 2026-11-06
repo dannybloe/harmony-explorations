@@ -36,12 +36,16 @@ export class Face {
         else
             group.dataset['kr'] = look;
     }
+    lookOf(name) {
+        return this.#keys.get(name)?.dataset['kr'];
+    }
     clear() {
         for (const group of this.#keys.values())
             delete group.dataset['kr'];
         this.point(undefined, '');
     }
-    point(name, words) {
+    point(name, words, kind = 'ask') {
+        this.#tag.dataset['kind'] = kind;
         const group = name === undefined ? undefined : this.#keys.get(name);
         if (group === undefined) {
             this.#tag.hidden = true;

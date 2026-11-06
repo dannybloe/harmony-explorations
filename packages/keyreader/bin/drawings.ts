@@ -87,6 +87,17 @@ export const NOT_ASKED: Readonly<Record<string, string>> = {
 };
 
 /**
+ * Keys a person is told not to press while the page reads the remote, marked on the drawing in steps 1
+ * and 3 and named in a warning shown from the moment a remote connects.
+ *
+ * Glow, because at the bench, pressing it on a Harmony 885 while the page polled turned the remote's
+ * screen fully off and the remote stopped answering on the cable; a second press did not bring it back,
+ * and unplugging and plugging in the cable did, with the remote fine after. Nothing here says why, and the
+ * 880 is taken to behave alike for sharing the 885's firmware build; the key controls no device anyway.
+ */
+export const DO_NOT_PRESS: readonly string[] = ['Glow'];
+
+/**
  * What is printed on a key, when anything is: the main word or digit, which is the label printed at
  * normal size where there is one (`2` rather than the `abc` under it) and otherwise the longest label
  * (`ENTER` rather than the `E` above it). Undefined for a key that carries only a symbol or nothing.
@@ -175,6 +186,7 @@ export function drawingOf(model: Model, svgDir: string): Drawing {
     ...(key.scan === undefined ? {} : { scan: key.scan }),
     candidates: [...(key.scanCandidates ?? [])],
     ask: !(key.name in NOT_ASKED),
+    avoid: DO_NOT_PRESS.includes(key.name),
   }));
   return { id: model.id, label: model.label, skins: [...model.skins], keys, svg: inlineSvg(svgDir, model.id) };
 }
@@ -184,7 +196,7 @@ export function drawingsModule(svgDir: string, header: string): string {
   const models = drawnModels();
   // A row for a key no drawing has would be a description of nothing, kept by nobody.
   const named = new Set(models.flatMap((model) => model.keys.map((key) => key.name)));
-  for (const name of [...Object.keys(WORDS), ...Object.keys(NOT_ASKED)]) {
+  for (const name of [...Object.keys(WORDS), ...Object.keys(NOT_ASKED), ...DO_NOT_PRESS]) {
     if (!named.has(name)) throw new Error(`${name} has a row here, and no drawing the page shows has that key`);
   }
   const drawings = models.map((model) => drawingOf(model, svgDir));

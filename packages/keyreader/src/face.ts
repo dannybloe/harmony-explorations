@@ -10,7 +10,8 @@
  * **The fills are colourblind safe and never colour alone**: the key asked for is blue with a heavy
  * outline, a learned or working key is orange with dots, a skipped key grey with diagonal lines, a key that
  * works but the page never saw white with dark crosses, and a key that may be the one pressed orange with
- * stripes; the patterns are in `web/index.html`. Blue against
+ * stripes; a key not to press has black and yellow hazard bands and a tag saying so. The patterns are in
+ * `web/index.html`. Blue against
  * orange is the pair that stays apart for every common kind of colour blindness, and the dots and lines
  * tell learned from skipped without any colour at all.
  *
@@ -20,7 +21,7 @@
 import type { Drawing } from './session.ts';
 
 /** The looks a key can take; the stylesheet has a rule for each. */
-export type KeyLook = 'asked' | 'learned' | 'skipped' | 'unseen' | 'lit' | 'possible';
+export type KeyLook = 'asked' | 'confirm' | 'learned' | 'skipped' | 'unseen' | 'lit' | 'possible' | 'avoid';
 
 export class Face {
   readonly drawing: Drawing;
@@ -66,6 +67,11 @@ export class Face {
     else group.dataset['kr'] = look;
   }
 
+  /** One key's look now, so a mark laid over the steps' own can leave a key that already answered alone. */
+  lookOf(name: string): KeyLook | undefined {
+    return this.#keys.get(name)?.dataset['kr'] as KeyLook | undefined;
+  }
+
   /** Clear every key's look and the tag. */
   clear(): void {
     for (const group of this.#keys.values()) delete group.dataset['kr'];
@@ -80,7 +86,8 @@ export class Face {
    * size; on a narrow screen the margins are not there and the stylesheet hides it, the prompt saying the
    * same in words.
    */
-  point(name: string | undefined, words: string): void {
+  point(name: string | undefined, words: string, kind: 'ask' | 'warn' = 'ask'): void {
+    this.#tag.dataset['kind'] = kind;
     const group = name === undefined ? undefined : this.#keys.get(name);
     if (group === undefined) {
       this.#tag.hidden = true;

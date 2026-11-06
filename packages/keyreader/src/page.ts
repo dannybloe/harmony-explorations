@@ -41,6 +41,7 @@ import type { KeyEvent } from './presses.ts';
 import { Learning, Naming, Tester, checkOf, learnedMap, learningLog, misfitWords, neverAnswered, sweepOf } from './session.ts';
 import type { Drawing, FaceKey, MapKey, Misfit } from './session.ts';
 import { Face } from './face.ts';
+import { STOPPED_ANSWERING, Visit } from './visit.ts';
 import { DRAWINGS } from './drawings.js';
 import { WATCH_BY_SKIN } from '@harmony/usb/keys';
 import type { WebHid } from './webhid.ts';
@@ -59,6 +60,7 @@ function element<T extends HTMLElement = HTMLElement>(id: string): T {
 }
 
 const connectButton = element<HTMLButtonElement>('connect');
+const glowWarning = element('glow-warning');
 const stopButton = element<HTMLButtonElement>('stop');
 const statusLine = element('status');
 const chooseSection = element('choose');
@@ -140,12 +142,12 @@ type Step = 'test' | 'learn' | 'check';
 
 let link: KeyLink | undefined;
 let running = false;
-let remote: RemoteSeen | undefined;
+// The work of this visit, per remote and per model, kept across a lost connection, `visit.ts`.
+const visit = new Visit<ModelSession>();
 let session: ModelSession | undefined;
 // Step 1 comes first, so a model starts there.
 let mode: Step = 'test';
 let face: Face | undefined;
-const sessions = new Map<number, ModelSession>();
 
 function say(message: string, kind: 'info' | 'problem' = 'info'): void {
   statusLine.textContent = message;
@@ -210,16 +212,17 @@ confirmButton.addEventListener('click', () => {
   const picked = modelsBox.querySelector<HTMLInputElement>('input[name="model"]:checked');
   const option = OPTIONS.find((o) => String(o.skin) === picked?.value);
   if (option === undefined) return;
-  let chosen = sessions.get(option.skin);
-  if (chosen === undefined) {
-    chosen = {
-      option,
-      learning: option.drawing === undefined ? new Naming() : new Learning(option.drawing.keys),
-      tested: [],
-      checked: [],
-    };
-    sessions.set(option.skin, chosen);
-  }
+  open(visit.workFor(option.skin, () => ({
+    option,
+    learning: option.drawing === undefined ? new Naming() : new Learning(option.drawing.keys),
+    tested: [],
+    checked: [],
+  })));
+});
+
+/** Show a model's work: on choosing it, and on a reconnect of the same remote, where the person was. */
+function open(chosen: ModelSession): void {
+  const option = chosen.option;
   session = chosen;
   // A model chosen for the first time starts with step 1; one returned to carries on where it was.
   if (chosen.tested.length === 0 && !started(chosen)) setModeButtons('test');
@@ -232,10 +235,10 @@ confirmButton.addEventListener('click', () => {
   keyList.hidden = face !== undefined;
   tell('');
   render();
-});
+}
 
 changeButton.addEventListener('click', () => {
-  if (remote !== undefined) showChoice(remote);
+  if (visit.remote !== undefined) showChoice(visit.remote);
 });
 
 // ------------------------------------------------------------------------------------------------
@@ -293,9 +296,13 @@ function onKey(event: KeyEvent): void {
       ? `${event.code} is not in the key map.`
       : `${event.code} lights ${names.map(wordsOf).join(' or ')}.`, names.length === 0 ? 'misfit' : 'plain');
   } else if (session.learning instanceof Learning) {
+    // Each key is pressed twice: the first is held, the second confirms it or, if it differs, both go.
     const outcome = session.learning.press(event.code);
-    if (outcome.kind === 'learned') tell(`${outcome.key.words}: ${outcome.code}.`);
-    else tell(misfitLine(outcome.misfit), 'misfit');
+    if (outcome.kind === 'provisional') tell(`First press: ${outcome.code}. Press ${outcome.key.words} again to confirm.`);
+    else if (outcome.kind === 'learned') tell(`${outcome.key.words}: ${outcome.code}.`);
+    else if (outcome.kind === 'mismatch') {
+      tell(`That was a different key (first ${outcome.first}, then ${outcome.second}). Press ${outcome.key.words} again.`, 'misfit');
+    } else tell(misfitLine(outcome.misfit), 'misfit');
   } else {
     const outcome = session.learning.press(event.code);
     if (outcome.kind === 'misfit') {
@@ -335,7 +342,8 @@ undoButton.addEventListener('click', () => {
   if (session === undefined) return;
   if (session.learning instanceof Learning) {
     const undone = session.learning.undo();
-    if (undone !== undefined) tell(`Taken back: ${undone.key.words}. Press it again, or skip it.`);
+    if (undone?.provisional === true) tell(`Taken back the first press of ${undone.key.words}. Press it twice.`);
+    else if (undone !== undefined) tell(`Taken back: ${undone.key.words}. Press it again, or skip it.`);
   } else {
     const undone = session.learning.undo();
     if (undone !== undefined) tell(`Taken back: ${undone.words}.`);
@@ -393,15 +401,33 @@ function render(): void {
   learnPanel.hidden = mode !== 'learn';
   testPanel.hidden = mode !== 'test';
   checkPanel.hidden = mode !== 'check';
+  // The warning about Glow stands at the top in steps 1 and 3, where any key may be pressed; step 2 never
+  // asks for Glow, and the page is quieter for not repeating it there.
+  glowWarning.hidden = mode === 'learn';
   // The legends describe the drawing's colours, so a model shown as a list has none.
   learnLegend.hidden = face === undefined;
   testLegend.hidden = face === undefined;
   checkLegend.hidden = face === undefined;
   face?.clear();
   if (mode === 'learn') renderLearning(session);
-  else if (mode === 'test') renderTest(session);
-  else renderCheck(session);
+  else {
+    if (mode === 'test') renderTest(session);
+    else renderCheck(session);
+    markAvoided();
+  }
   renderLog(session);
+}
+
+/**
+ * In steps 1 and 3, where any key may be pressed, mark the keys not to press with hazard bands and a tag,
+ * unless one already answered, which then shows as answered.
+ */
+function markAvoided(): void {
+  const avoided = face?.drawing.keys.filter((key) => key.avoid) ?? [];
+  // A key that answered anyway shows as answered: the page then says what it saw rather than a warning.
+  for (const key of avoided) if (face?.lookOf(key.name) === undefined) face?.look(key.name, 'avoid');
+  const first = avoided[0];
+  face?.point(first?.name, first === undefined ? '' : `Do not press ${first.words}`, 'warn');
 }
 
 /** The key test's result for the log: always against the drawing, which a model without one does not have. */
@@ -446,7 +472,9 @@ function renderLearning(current: ModelSession): void {
       face?.look(key.name, state === 'waiting' ? undefined : state);
     }
     const asked = learning.asked;
-    promptLine.textContent = asked === undefined ? 'Every key is answered.' : `Press ${asked.words}`;
+    promptLine.textContent = asked === undefined
+      ? 'Every key is answered.'
+      : learning.provisional === undefined ? `Press ${asked.words}` : `Press ${asked.words} again to confirm`;
     // A key the test never saw is asked like any other, with the answer that fits it most often put first.
     const flagged = asked !== undefined && neverAnswered(learning.keys, current.tested).has(asked.name);
     flagLine.hidden = !flagged;
@@ -463,7 +491,9 @@ function renderLearning(current: ModelSession): void {
       + `${learned} learned, ${skipped} skipped, ${unseen} not seen.`;
     skipButton.disabled = asked === undefined;
     skipButton.textContent = 'Skip: my remote has no such key';
-    undoButton.disabled = learning.answers.length === 0;
+    undoButton.disabled = learning.answers.length === 0 && learning.provisional === undefined;
+    // While a key waits for its second press, undo takes back only that first press, and says so.
+    undoButton.textContent = learning.provisional === undefined ? 'Undo the last key' : 'Undo that first press';
   } else {
     const pending = learning.pending;
     // Without a drawing nothing is asked, so no key can be answered as not seen.
@@ -477,6 +507,7 @@ function renderLearning(current: ModelSession): void {
     skipButton.disabled = pending === undefined;
     skipButton.textContent = 'Forget that press';
     undoButton.disabled = learning.named.length === 0;
+    undoButton.textContent = 'Undo the last key';
     keyList.replaceChildren(...learning.named.map((n) => {
       const item = document.createElement('li');
       item.textContent = `${n.words}: ${n.code}`;
@@ -552,6 +583,7 @@ function renderCheck(current: ModelSession): void {
  * Copy copies. When it grows, it is scrolled to the end so the newest lines are in view.
  */
 function renderLog(current: ModelSession): void {
+  const remote = visit.remote;
   if (remote === undefined) return;
   const head = { chosen: current.option.name, reported: remote.name, skin: remote.skin, firmware: remote.firmware };
   const learning = current.learning;
@@ -569,10 +601,14 @@ function renderLog(current: ModelSession): void {
 // ------------------------------------------------------------------------------------------------
 // The connection, as 2.6.1 built it.
 
-/** Words for a failure that a person can act on, rather than the error's own text. */
-function explain(error: unknown): string {
+/**
+ * Words for a failure that a person can act on, rather than the error's own text. A remote that answered
+ * and then went quiet, or whose reads failed, is the one case with a remedy the person can do, so it says
+ * what to do and the page keeps everything for the reconnect.
+ */
+function explain(error: unknown, wasConnected: boolean): string {
   if (error instanceof Refused) return `Not read: ${error.message}.`;
-  if (error instanceof NoReply) return 'The remote stopped answering. Check the cable, then connect again.';
+  if (error instanceof NoReply || wasConnected) return STOPPED_ANSWERING;
   if (error instanceof Error && error.name === 'NotFoundError') return 'No remote was chosen.';
   return `Something went wrong: ${error instanceof Error ? error.message : String(error)}`;
 }
@@ -595,6 +631,7 @@ async function start(): Promise<void> {
     return;
   }
   connectButton.disabled = true;
+  let wasConnected = false;
   try {
     say('Choose your remote in the window the browser opens.');
     link = await connect(hid);
@@ -602,26 +639,37 @@ async function start(): Promise<void> {
       say('No remote was chosen.');
       return;
     }
-    // A different remote is a different visit: what was learned on the last one is not this one's.
-    if (remote !== undefined && remote.skin !== link.remote.skin) {
-      sessions.clear();
-      session = undefined;
-    }
-    remote = link.remote;
+    const remote = link.remote;
+    const arrival = visit.connected(remote);
+    wasConnected = true;
     stopButton.disabled = false;
     running = true;
-    say(`Connected to a ${remote.name}.`);
-    if (session === undefined) showChoice(remote);
-    else render();
+    glowWarning.hidden = false;
+    if (arrival.kind === 'same' && visit.chosen !== undefined && session !== undefined) {
+      // The same remote back after a lost connection: everything is as the person left it.
+      say(`Connected again to the ${remote.name}. Carry on where you were.`);
+      render();
+    } else if (arrival.kind === 'different') {
+      // Another remote: its work starts on its own, and the first one's is kept apart for if it comes back.
+      session = undefined;
+      say(`This is a ${remote.name} (skin ${remote.skin}), not the ${arrival.before.name} (skin ${arrival.before.skin}) `
+        + 'you were working with. Its key map starts here; the other one is kept apart.', 'problem');
+      showChoice(remote);
+    } else {
+      say(`Connected to a ${remote.name}.`);
+      showChoice(remote);
+    }
     await poll(link);
     say('Stopped. You can unplug the remote.');
   } catch (error) {
-    say(explain(error), 'problem');
+    say(explain(error, wasConnected), 'problem');
   } finally {
     running = false;
     await link?.close().catch(() => undefined);
     link = undefined;
     connectButton.disabled = false;
+    // Once a remote has been here, connecting again is a reconnect, and the page says so on the button.
+    if (visit.remote !== undefined) connectButton.textContent = 'Reconnect';
     stopButton.disabled = true;
   }
 }
@@ -638,7 +686,7 @@ stopButton.addEventListener('click', () => {
 
 // The remote unplugged mid-read ends the loop through its next read failing; this only says why.
 (navigator as Navigator & { hid?: WebHid }).hid?.addEventListener('disconnect', () => {
-  if (running) say('The remote was unplugged.', 'problem');
+  if (running) say('The remote was unplugged. Plug it back in and press Reconnect.', 'problem');
   running = false;
 });
 

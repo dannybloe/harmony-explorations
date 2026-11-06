@@ -3,6 +3,7 @@ export class Learning {
     keys;
     #answers = [];
     #misfits = [];
+    #first;
     constructor(keys) {
         this.keys = keys.filter((key) => key.ask);
     }
@@ -14,6 +15,9 @@ export class Learning {
     }
     get misfits() {
         return this.#misfits;
+    }
+    get provisional() {
+        return this.#first;
     }
     get done() {
         return this.asked === undefined;
@@ -28,22 +32,40 @@ export class Learning {
         const other = this.learnedFor(code);
         if (other !== undefined)
             return this.#note({ code, asked: asked.name, reason: 'already', other: other.name });
+        const first = this.#first;
+        this.#first = undefined;
+        if (first === undefined) {
+            this.#first = code;
+            return { kind: 'provisional', key: asked, code };
+        }
+        if (first !== undefined && first !== code) {
+            this.#misfits.push({ code, asked: asked.name, reason: 'different', first });
+            return { kind: 'mismatch', key: asked, first, second: code };
+        }
         this.#answers.push({ key: asked, code });
         return { kind: 'learned', key: asked, code };
     }
     skip() {
         const asked = this.asked;
+        this.#first = undefined;
         if (asked !== undefined)
             this.#answers.push({ key: asked, code: 'skipped' });
         return asked;
     }
     unseen() {
         const asked = this.asked;
+        this.#first = undefined;
         if (asked !== undefined)
             this.#answers.push({ key: asked, code: 'not seen' });
         return asked;
     }
     undo() {
+        const first = this.#first;
+        const asked = this.asked;
+        if (first !== undefined && asked !== undefined) {
+            this.#first = undefined;
+            return { key: asked, code: first, provisional: true };
+        }
         return this.#answers.pop();
     }
     stateOf(name) {
@@ -53,7 +75,9 @@ export class Learning {
                 return 'skipped';
             return answer.code === 'not seen' ? 'unseen' : 'learned';
         }
-        return this.asked?.name === name ? 'asked' : 'waiting';
+        if (this.asked?.name !== name)
+            return 'waiting';
+        return this.#first === undefined ? 'asked' : 'confirm';
     }
     #note(misfit) {
         this.#misfits.push(misfit);
@@ -226,5 +250,7 @@ export function misfitWords(misfit) {
             return 'pressed after every key was answered';
         case 'naming':
             return `pressed before the words for the previous key were in`;
+        case 'different':
+            return `the second press, after ${misfit.first ?? 'another code'}${when}; both were dropped`;
     }
 }
