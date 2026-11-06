@@ -38,7 +38,7 @@ Written on 4 November 2026; linked from `todo-later.md` 5.6.
 - [ ] 2.5 Now that the 885's drawing is approved, draw the 880, 880 Pro, 890, 890 Pro and 895 from it as a template, each checked against its own photograph for what differs
     - [x] 2.5.1 The 880, as the 885's second printing, `097a9749`
     - [x] 2.5.2 The 880's key codes from Logitech's compiles of 880 configurations, the 885's map the control: 29 of 53, `984a4257`
-    - [ ] 2.5.3 The 880 Pro, 890, 890 Pro and 895
+    - [ ] 2.5.3 The 880 Pro, 890 Pro and 720, and the key page given the 880 Pro's and 720's drawings; the 890, 895, 900 and 950 are drawn when those remotes are taken up
 - [ ] 2.6 A browser page that learns a remote's key codes, so owners of models nobody here has can send their map; a feasibility page in the lab read the 885's held key through Chrome's WebHID
     - [ ] 2.6.1 The page sends through one function that accepts only the version request and the one byte key read, built by `packages/usb/src/protocol.ts` itself (it imports nothing), and a test reads the page and fails on anything else; the library comes along only if the page ever reads more
     - [ ] 2.6.2 The guided flow: the model chosen first (proposed from the skin the remote reports), then its drawing where one exists and a plain key list where none does, the key asked for lit, learned and skipped keys coloured, an unasked press flashed, a log to copy that holds names and codes and nothing identifying the unit
