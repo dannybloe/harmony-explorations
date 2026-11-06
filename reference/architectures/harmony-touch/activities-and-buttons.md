@@ -12,7 +12,9 @@ own folder, [harmony-touch](../../remotes/harmony-touch/README.md).
 **The scope is one firmware build and one synced set of documents.** Everything read in the firmware was read
 in the Touch's production image 4.15.330, and everything measured was measured in the documents one sync
 handed a Touch[^t-touch-activities]. One more activity, composed by this project from the devices those documents
-held, was added to them, delivered, run and heard, [an activity of ours](#an-activity-of-ours)[^t-touch-activity-of-ours].
+held, was added to them, delivered, run and heard, [an activity of ours](#an-activity-of-ours)[^t-touch-activity-of-ours],
+and one activity and one device of Logitech's were taken out of them and the rest run without them,
+[taking out](#taking-out-an-activity-and-a-device)[^t-touch-removal-of-theirs].
 The image is shared with the other remotes of the generation, but the
 screens are chosen per skin: the Touch, skin 99, runs one set of screens and skins 111 and 112 run
 another[^t-touch-activities-firmware]. Nothing here is checked on another build or another model.
@@ -130,6 +132,13 @@ pad sends each tap as one request with no hold reports after it[^t-touch-activit
   it, found neither of the two entries hidden this way on its device's screen; the test holds the repeated
   positions and its header records that look[^t-touch-activities].
 
+**A writer keeps an entry list's indices without gaps**: the screens build the list in a table keyed by
+`IndexInMenu + 1` and walk it with Lua's `pairs`, which promises no order, so a list whose indices have a gap can be
+shown in an order the document does not mean; the activity list is built the same way from `ActivityOrder + 1`, and the
+remote's own reorder writes 0 to n - 1[^t-touch-removal-firmware]. An entry taken out therefore moves every entry after
+it up one, which a removal of Logitech's entries did and the remote then sent the moved entry by its new
+index[^t-touch-removal-of-theirs].
+
 ## Gestures
 
 **A gesture does not run its own entry.** For a command, the gesture screen looks in the device mode map of
@@ -190,6 +199,11 @@ added by hand, `EnterActions` at the start and `LeaveActions` at the end.
   activity's type; a smart TV role adds an input step of its own. `DisplayActivityRole` and
   `PassThroughActivityRole` do nothing beyond the power and input step of their
   device[^t-touch-activities-firmware].
+* **A role naming a device the device list does not hold is passed over**: the engine's start and the step that
+  gathers an activity's commands both test the device first, and the screens list an activity's devices by matching
+  the device list against the roles, so it is not listed. **Except where a role of the same activity states a number
+  for `NextDevicePowerOnDelay`**: the start then reads the delay by the missing device's id after that test, and
+  raises inside the engine's start[^t-touch-removal-firmware]. What catches that raise is not read[^unchecked].
 * **`EnterActions` and `LeaveActions` hold the steps added by hand**, a command, a channel or a delay each,
   run in `ActionOrder`; an action without an `ActionOrder` stops the reader[^t-touch-activities-firmware]. A
   `DelayActivityAction`'s `Duration` is in seconds, as a sequence's is[^t-touch-activities-firmware]. All three
@@ -304,6 +318,31 @@ What the screens drew for it is [the model's display](../../remotes/harmony-touc
 An activity of ours of another type, opening on another start screen, holding favourites, gestures or sequences,
 or using a device of ours, is not checked, and neither is one removed while it runs[^unchecked].
 
+## Taking out an activity and a device
+
+**An activity and a device of Logitech's, taken out by a program with everything in the other documents that names
+them, are gone from the remote's lists, and the activities that used the device run without it.** From the documents
+a Touch held, an activity and a receiver used by four activities were taken out: the activity's entry and its map,
+the receiver's entry, its own map and the two infrared definitions only it used, its role in the three other
+activities, their three volume keys and two swipe gestures that sent its commands, the long press of their tap gesture,
+which sent its mute, cleared, and one screen entry that sent its input, the entries after it moved up one; the activities after the removed one moved
+up one place on the list[^t-touch-removal-of-theirs]. The four documents went to the remote in a sync and were
+committed. At a receiver, the three activities that had held the receiver started, switched and ended with every code
+the set predicts and none of the receiver's, 11 of 11, the volume keys of one of them sending nothing at all and the
+moved screen entry sending its sequence; and by a look at the remote, the activity list showed four activities and
+the device list six, neither of the two, and the moved entry's list eight entries[^t-touch-removal-of-theirs]. Putting
+the four documents back as they had been restored both and the volume keys[^t-touch-removal-of-theirs].
+
+**What a removal refuses.** The device the favourite channels are tuned through, since the screens' favourites page
+then finds no channel, read in the firmware[^t-touch-removal-firmware]; and, as this project's choice rather than a
+reading, the activity the favourites belong to, the last activity shown, and a device whose removal would leave an
+activity with no role, whose effect on the remote is not read[^unchecked]. A dangling role in an activity with a power
+on delay is refused by the answerer's check, [answering a
+sync](answering-a-sync.md#what-the-remote-does-not-check-and-why-an-answerer-still-has-to-be-careful)[^t-touch-removal-firmware].
+Power, enter and leave orders are sorted by the engine, so a gap there costs nothing and a removal leaves
+them[^t-touch-removal-firmware]. An activity taken out while it runs, and a device taken out while an activity holds
+it on, are not checked[^unchecked].
+
 ## What a writer must carry
 
 **The screens change these documents and send them back whole.** Reordering activities, choosing a start
@@ -398,3 +437,5 @@ themselves, `Numpad` opening the number pad[^t-touch-activities-firmware].
 [^t-touch-changed-set]: Measured on a unit. [The test](../../../packages/usb/test/touch-changed-set-sync.test.ts)
 [^t-touch-in-use]: Measured on a unit. [The test](../../../packages/bench/test/touch71-runs.test.ts)
 [^t-touch-activity-of-ours]: Measured on a unit. [The test](../../../packages/bench/test/touch82-runs.test.ts)
+[^t-touch-removal-of-theirs]: Measured on a unit. [The test](../../../packages/bench/test/touch85-runs.test.ts)
+[^t-touch-removal-firmware]: Read in the firmware. [The test](../../../packages/codec/test/touch-removal.test.ts)

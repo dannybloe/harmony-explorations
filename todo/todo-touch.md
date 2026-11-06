@@ -129,7 +129,13 @@ Written on 2 November 2026, and placed in `todo.md`'s sequence the same day as 3
   - [x] 8.4.3 The timeout timed off the cable: about 30 seconds after a touch
   - [x] 8.4.4 The put back delivered and committed, its first list asking for Settings and Context with the forward set's tags, the hash on the put back's; full brightness and a timeout of about 10 seconds again
   - [x] 8.4.5 The closing `--unchanged` run, asked with the put back's tags, every answer 304 or the finish
-- [ ] 8.5 A device and an activity removed, with everything in the other documents that names them
+- [x] 8.5 A device and an activity removed, with everything in the other documents that names them; done: Listen to Music and the Denon AV Receiver taken out of ActivityList, DeviceList, MapList and ProtocolList with every role, key, gesture, entry and protocol that named them, delivered with those four 200 and Context and Settings 304, committed; four activities and six devices listed, the remaining activities heard 11 of 11 with no Denon code and the volume keys silent; put back the same way; a first try stopped on a USB read timeout inside its 13 chunk write and left the remote on the set before, the hash 200 twice, no cause claimed; the gate refuses a dangling role where a power on delay would make the start raise; `packages/bench/test/touch85-runs.test.ts`
+  - [x] 8.5.1 Prepared: `withoutTouchActivities`, `withoutTouchDevices`, `withoutTouchEntries` and `removalOfNames` in the codec's `harmony-touch/remove.ts`, the gate's `role device missing` and `action activity missing`, `packages/corpus/src/touchremovalset.ts`, `touch-device-set.ts --removal` and `--removal-back`, the description `packages/corpus/touch-removals/8.5-removal.json`, the sets `8.5-removal` and `8.5-removal-back`, the bench test `packages/bench/irtests/touch-8-5-removal.json`, rehearsed on the fake remote, lab note `8.5-preflight.md`
+  - [x] 8.5.2 The first try stopped on a USB read timeout while its first answers were being written; the hash read twice, 200 on the set before, nothing to recover
+  - [x] 8.5.3 The removal delivered and committed: the four 200, Context and Settings 304, the first list asked with the source's tags, the hash on the removal's; four activities and six devices listed, InputAm gone
+  - [x] 8.5.4 The bench test `packages/bench/irtests/touch-8-5-removal.json`: 11 of 11, no Denon code, the volume keys sending nothing
+  - [x] 8.5.5 The put back delivered and committed, its first list asking for the four with the removal's tags, the hash on the put back's; both back and the volume keys working
+  - [x] 8.5.6 The closing `--unchanged` run, asked with the put back's tags, every answer 304 or the finish
 - [ ] 8.6 The whole test setup composed onto the recorded set with its devices taken out, compared with Logitech's documents field by field, answered to the remote and run with a bench test
 
 ## 9. Nothing copied

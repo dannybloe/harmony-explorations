@@ -26,6 +26,21 @@
  *    `action activity missing` is ignored, the engine answering 567; its control is the same action naming an activity
  *    the list holds.
  *
+ * **What the removal's rules rest on, read in the firmware** (the lab's `notes/8.5-preflight.md` section 1, from the
+ * readings named below). The screens order the activity list and an entry list by building a table keyed by
+ * `ActivityOrder + 1` and `IndexInMenu + 1`, `reorderActivities` and `reorderActivityButtonMaps`, and walk it with
+ * `pairs`, which promises no order, so a gap in either numbering gives an order the documents do not mean; the remote's
+ * own reorder, `juniper/activity.lua`, writes 0 to n - 1. So the removal numbers the shown activities again from 0 and
+ * closes up an entry list's indices. The power, enter and leave orders are sorted by the engine's `orderTableItems`,
+ * so a gap there costs nothing and they are left as they are. A role naming a device the list does not hold is passed
+ * over by the engine's start and by `Action:getCommands`, both of which test the device first, and the screens list an
+ * activity's devices by matching the device list against the roles, so it is simply not listed; **but** where a role of
+ * the same activity states a number for `NextDevicePowerOnDelay`, the start reads the delay table by the missing
+ * device's id after that test and raises, which is why the gate refuses exactly that case. A button whose action starts
+ * an activity the list does not hold is stored at load without a lookup and answered 567, activity not found, when
+ * pressed. These are readings, held here by the rules they produce and not by the firmware's bytes; the 8.5 run on the
+ * bench Touch, `packages/bench/test/touch85-runs.test.ts`, measured a removal built on them.
+ *
  * **Sources checked first.** The 8.5 brief in the lab; `compose.ts`'s `withoutTouchDevice` and `withoutTouchActivity`
  * and their tests, the inverses this generalises; the reference's `activities-and-buttons.md`; the lab's
  * `notes/6.10-screens-reads.md` and `notes/6.10-reader-raises.md` for every read of a device or an activity on both

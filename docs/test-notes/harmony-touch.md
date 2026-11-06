@@ -593,6 +593,58 @@ favourites and pictures. What this does not cover: a Context with content of its
 motion sensor and vibration, which act only at the next start, and the moment within the sync's end at which the
 backlight changes. The runs are held by `packages/corpus/test/touch84-runs.test.ts`. 8.4 is done.
 
+## An activity and a device of Logitech's taken out, run and put back, todo-touch 8.5
+
+**Run on 6 November 2026**, after 8.4 and after commit `2d7afb1e`, the 8.5 preparation, in the order of the lab's
+`work/touch-firmware/notes/8.5-preflight.md` section 7, each run read before the next, Off pressed before each sync.
+The removal is `packages/corpus/touch-removals/8.5-removal.json`: Listen to Music and the Denon AV Receiver, taken out
+by `withoutTouchEntries` with everything naming them, the receiver's role in Watch TV, Watch a Blu-ray and Play a Game,
+those three maps' volume keys and swipes, their tap's long press cleared, Watch a Blu-ray's InputAm entry with Test
+Sequence moved up from 8 to 7, the two protocols only the receiver used, and Switch Box and Play a Game moved up one
+place. The two sets were built by `packages/corpus/bin/touch-device-set.ts --removal` and `--removal-back` from
+`8.4-settings-back`: `8.5-removal` with ActivityList, DeviceList, MapList and ProtocolList changed and retagged, and
+`8.5-removal-back`, which is `8.4-settings-back`.
+
+| time (UTC) | run | what it gave |
+|---|---|---|
+| `1452Z` | `touch-confighash` | equal on `8.5-removal-back` |
+| `1453Z` | `touch-sync-set`, `8.5-removal`, **the first try** | hand over and sync start 200, first list six of the source's tags read; **stopped** while its answers were being written, `hid_read_timeout: error waiting for more data`; ended `refused`, no reply to the write kept |
+| `1454Z`, `1455Z` | `touch-confighash` | both 200, equal on `8.5-removal-back` and not on `8.5-removal`: nothing committed, no sync marked running |
+| `1456Z` | `touch-sync-set`, `8.5-removal`, the second try, and `touch-confighash` | the four 200 with the set's content and tags, Context and Settings 304; first list six of the source's tags; `sync: finished`; hash equal on `8.5-removal` |
+| `145719Z` | the bench test `touch-8-5-removal` | 11 of 11, no Denon code |
+| `1444Z` | the monitor's live log | the test's 11 presses and nothing else before the put back |
+| `1501Z` | `touch-sync-set`, `8.5-removal-back`, and `touch-confighash` | the four 200 with the old content and tags, Context and Settings 304; first list the four with `8.5-removal`'s tags; hash equal on `8.5-removal-back` |
+| `1503Z` | `touch-sync-unchanged` | every answer 304 or the finish; first list six of `8.5-removal-back`'s tags |
+
+All in `reads/20261106T<time>-*`. Every committed run handed out eight request lists and nothing was handed up. The
+six went in one write of 393683 characters, 13 chunks, for the removal and 567941, 19 chunks, for the put back, each
+replied 200.
+
+* **The first try, as the files hold it**: the folder ends at the request line of the write of the first list's
+  answers, which is the second try's first write byte for byte but for the session id; there is no reply to it, nor
+  to its announcement. The log ends `refused` on the read timeout, with the recovery line. **What the person
+  reported, held by no file**: a read right after it refused with "no remote of the file based family is attached",
+  the Touch then enumerated again, it was seen restarting itself, and afterwards it started normally with everything
+  there. A second remote, product id `0xc110`, was on the bus during this for other work. The two hash reads answered
+  200 with the set before's tags, so nothing was sent to recover it. **No cause is claimed**: what the files show is
+  a read timeout during a 13 chunk write and the remote leaving the bus; whether the remote restarted because of the
+  write, the cable or anything else, they do not say. The same set went through unchanged on the second try.
+* **The bench test**, run once on the Flirc monitor: Off, unjudged and silent; Watch TV from Off, the LG TV on and its
+  HDMI 1 10405 ms later; Volume Up, Volume Down and Mute, nothing at all; Watch a Blu-ray, the player on and the TV's
+  HDMI 2; Test Sequence, the player's Stop and TopMenu 1259 ms apart; Play a Game, the Xbox on, the player off, HDMI 4;
+  Off, the TV and the Xbox off. 11 of 11, each step heard exactly its expected codes and nothing else, every timed
+  pause in band. The monitor's log before the put back holds those 11 presses and no other.
+* **The look, reported at the bench and held by no file**: after the removal four activities without Listen to Music,
+  six devices without the Denon, and Watch a Blu-ray's command list eight entries without InputAm; after the put back
+  everything was back and the volume keys worked in Watch TV.
+
+So an activity and a device of the remote's own, taken out by this project with everything that named them, were
+stored and committed by the remote, gone from its lists, and the activities that had used the device ran without it;
+the put back restored the set before. A sync stopped before its commit by a read timeout on the cable left the
+committed set as it was. The remote holds `8.5-removal-back`, which is `8.4-settings-back`. What this does not cover:
+a removal while the activity or the device is in use, the lists at the moment of the commit, and what restarted the
+remote on the first try. The runs are held by `packages/bench/test/touch85-runs.test.ts`. 8.5 is done.
+
 ## Not done
 
 * *Corrected:* this said no infrared run had been recorded with this unit and nothing about it in use had been

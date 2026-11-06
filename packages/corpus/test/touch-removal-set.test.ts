@@ -30,12 +30,12 @@
  * it under 18. The lab half reads the bench sets and the recorded lists, prints nothing out of them and touches no
  * remote. The source is the `touch_activity_set_back` fixture, which is the set the bench Touch holds after 8.4,
  * `8.4-settings-back`, content and tags: 8.4's put back restored exactly what 8.2's left, `touch-settings-set.test.ts`.
- * The two 8.5 sets are read by path and skipped when absent until they are fixtures.
+ * The two 8.5 sets are read by fixture, `touch_removal_set` and `touch_removal_set_back`, and `8.4-settings-back` as
+ * `touch_settings_set_back`; what the remote did with the two is `packages/bench/test/touch85-runs.test.ts`.
  */
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { readFileSync } from 'node:fs';
 import { describe, it } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
@@ -52,14 +52,14 @@ const CLOSING = 'touch_activity_unchanged_';
 const CLOSING_LISTS = [1, 2, 3, 4, 5, 6, 7, 8].map((n) => `${CLOSING}list_${n}`);
 const HAND_OVER_LIST = `${CLOSING}handover_list`;
 const DESCRIPTION = fileURLToPath(new URL('../touch-removals/8.5-removal.json', import.meta.url));
-const BUILT = 'work/touch-firmware/sets/8.5-removal/set.json';
-const BUILT_BACK = 'work/touch-firmware/sets/8.5-removal-back/set.json';
-const HELD = 'work/touch-firmware/sets/8.4-settings-back/set.json';
+/** The two sets 8.5 built in the lab and delivered to the bench Touch, and the set it held before, by fixture. */
+const BUILT = 'touch_removal_set';
+const BUILT_BACK = 'touch_removal_set_back';
+const HELD = 'touch_settings_set_back';
 const FOUR = ['ActivityList', 'DeviceList', 'MapList', 'ProtocolList'];
 
 const description = (): harmonyTouch.NamedRemoval => (JSON.parse(readFileSync(DESCRIPTION, 'utf8')) as { removal: harmonyTouch.NamedRemoval }).removal;
 const json = (fixture: string): unknown => JSON.parse(new TextDecoder().decode(lab.require_(fixture)));
-const inLab = (path: string): string | undefined => (lab.LAB !== undefined && existsSync(join(lab.LAB, path)) ? join(lab.LAB, path) : undefined);
 const requestsOf = (fixture: string): RemoteRequest[] => {
   const requests = resultOf(new TextDecoder().decode(lab.require_(fixture)))?.['requests'];
   assert.ok(Array.isArray(requests), fixture);
@@ -117,16 +117,13 @@ describe('the 8.5 removal and its put back', { skip: lab.needing(lab.skipUnless(
     ]);
   });
 
-  it('the sets the lab holds are the ones this derivation gives, and the source is the set the bench Touch holds, as parsed JSON, tags and all', (t) => {
-    const built = inLab(BUILT);
-    const builtBack = inLab(BUILT_BACK);
-    const held = inLab(HELD);
-    if (built === undefined || builtBack === undefined || held === undefined) { t.skip('the 8.5 sets or 8.4-settings-back are not in the lab'); return; }
-    const { source, removal, back } = chain();
-    assert.deepEqual(JSON.parse(readFileSync(held, 'utf8')), JSON.parse(JSON.stringify(source)));
-    assert.deepEqual(JSON.parse(readFileSync(built, 'utf8')), JSON.parse(JSON.stringify(removal)));
-    assert.deepEqual(JSON.parse(readFileSync(builtBack, 'utf8')), JSON.parse(JSON.stringify(back)));
-  });
+  it('the sets the lab holds are the ones this derivation gives, and the source is the set the bench Touch holds, as parsed JSON, tags and all',
+    lab.skipUnless(BUILT, BUILT_BACK, HELD), () => {
+      const { source, removal, back } = chain();
+      assert.deepEqual(json(HELD), JSON.parse(JSON.stringify(source)));
+      assert.deepEqual(json(BUILT), JSON.parse(JSON.stringify(removal)));
+      assert.deepEqual(json(BUILT_BACK), JSON.parse(JSON.stringify(back)));
+    });
 
   it('refuses what the codec refuses, a put back of two equal sets, and one whose Context differs', () => {
     const { source, removal } = chain();

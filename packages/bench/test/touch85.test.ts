@@ -13,8 +13,8 @@
  * `touch_activity_set_back` fixture's, content and tags, `packages/corpus/test/touch-removal-set.test.ts`, with the
  * removal of `packages/corpus/touch-removals/8.5-removal.json` applied by the codec, `withoutTouchEntries`. Built here
  * from the source so that a change to the removal shows in the predictions, and held equal, document for document, to
- * the set built in the lab, `work/touch-firmware/sets/8.5-removal`, read by path and skipped when absent until it is
- * a fixture. The favourites are the recorded full sync's, as in 7.1.
+ * the set built in the lab and delivered, `work/touch-firmware/sets/8.5-removal`, the fixture `touch_removal_set`. The
+ * favourites are the recorded full sync's, as in 7.1.
  *
  * **The control** is the same plan on the set before the removal: the model then predicts eight receiver codes, its
  * power on and TV input at Watch TV's start, the three volume keys, its input at each switch and its power off, so the
@@ -24,15 +24,14 @@
  * lab's `notes/6.10-screens-reads.md`, which reads that the screens drop a key the activity's map does not hold and walk
  * an activity's entries in IndexInMenu order. Logitech's client was not consulted.
  *
- * **What this does not show** is what the remote does: that is the 8.5 run, which has not been made.
+ * **What this does not show** is what the remote does: that is the 8.5 run, judged in `touch85-runs.test.ts`.
  *
  * **Which architectures**: the Harmony Touch, firmware 4.15.330, the one bench unit; its firmware reports 17 and
  * Logitech's templates file it under 18.
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 import { harmonyTouch } from '@harmony/codec';
@@ -41,9 +40,11 @@ import { answersWritten, commands, records, sessions } from '@harmony/usb/test/t
 
 import { BENCH_TOUCH_SETS } from '../src/irmonitor.ts';
 import { testDefinitions, type TestDefinition } from '../src/irsession.ts';
-import { TOUCH_8_5_ENTRY, TOUCH_8_5_REMOVED, TOUCH_8_5_SET, touch85Tests } from '../src/touch85.ts';
+import { TOUCH_8_5_ENTRY, TOUCH_8_5_REMOVED, touch85Tests } from '../src/touch85.ts';
 
 const SOURCE = 'touch_activity_set_back';
+/** The set 8.5 built in the lab and delivered to the bench Touch, `TOUCH_8_5_SET` in `src/touch85.ts`, by fixture. */
+const BUILT = 'touch_removal_set';
 const FULL = 'touch_full_sync_recording';
 const DESCRIPTION = fileURLToPath(new URL('../../corpus/touch-removals/8.5-removal.json', import.meta.url));
 const RECEIVER = TOUCH_8_5_REMOVED.device;
@@ -76,11 +77,9 @@ function configuration(answers: harmonyTouch.SyncAnswer[]): harmonyTouch.Configu
 const sentBy = (definition: TestDefinition) => (at: number): string[] => (definition.steps[at]!.expect ?? []).map((e) => `${String(e.device)} ${e.command ?? ''}`);
 
 test('the 8.5 test file is what the removal gives: the three activities that lost the receiver, its volume keys sending nothing, the moved entry, and no receiver code anywhere',
-  lab.needing(lab.skipUnless(SOURCE, FULL)), (t) => {
-    const built = lab.LAB !== undefined && existsSync(join(lab.LAB, TOUCH_8_5_SET)) ? join(lab.LAB, TOUCH_8_5_SET) : undefined;
-    if (built === undefined) { t.skip(`${TOUCH_8_5_SET} is not in the lab`); return; }
+  lab.needing(lab.skipUnless(SOURCE, FULL, BUILT)), () => {
     // The set built here is the one built in the lab for the remote, so the predictions are that set's.
-    const delivered = (JSON.parse(readFileSync(built, 'utf8')) as { answers: harmonyTouch.SyncAnswer[] }).answers;
+    const delivered = (JSON.parse(new TextDecoder().decode(lab.require_(BUILT))) as { answers: harmonyTouch.SyncAnswer[] }).answers;
     assert.deepEqual(removedAnswers().map((a) => a.resource), delivered.map((a) => a.resource));
     const derived = touch85Tests(configuration(removedAnswers()));
     const directory = fileURLToPath(new URL('../irtests/', import.meta.url));

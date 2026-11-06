@@ -202,6 +202,15 @@ order the reading gives, the read first, the abort, the read again and the resta
 stopped before its commit. A sync stopped inside the hand over, a configuration task that has ended, and the
 deletion of the stored documents have not been tried[^unchecked].
 
+**Measured on a unit, a second stop before the commit, of another kind**: a sync stopped while the answers to its
+first request list were being written, the answerer's read of the remote's reply timing out inside a write of 13
+chunks, after which the remote left the bus, enumerated again and was reported restarting by the person holding it.
+`harmony.engine?getconfighash` then answered 200 twice, not 202, with the stored documents' tags from before the
+sync, so no sync was marked running and nothing of the gathered set was committed; nothing was sent to recover it, and
+the same set sent again was committed[^t-touch-removal-of-theirs]. That agrees with a restart before the commit
+deleting the set aside and clearing the flag, above; what made the read time out and the remote restart, the write,
+the cable or anything else, is not known[^unchecked].
+
 ### The remote's own factory reset
 
 **A factory reset erases the data and the cache volumes and nothing else.** Every document, the index, the
@@ -314,6 +323,7 @@ installs is not settled, [the recovery tool](../../logitech/update-service.md#th
 [^t-touch-api-names]: Read in the firmware. [The test](../../../tests/test_harmony_touch_api_names.py)
 [^t-touch-recovery]: Read in the firmware. [The test](../../../tests/test_harmony_touch_recovery.py)
 [^t-touch-first-sync]: Measured on a unit. [The test](../../../packages/usb/test/touch-first-sync.test.ts)
+[^t-touch-removal-of-theirs]: Measured on a unit. [The test](../../../packages/bench/test/touch85-runs.test.ts)
 [^t-touch-recovery-client]: Stated by Logitech, in their client. [The test](../../../tests/test_harmony_touch_recovery.py)
 [^t-touch-host]: Read in the firmware. [The test](../../../tests/test_harmony_touch_host.py)
 [^t-touch-type-name]: Read in the firmware. [The test](../../../packages/codec/test/touch-check.test.ts)

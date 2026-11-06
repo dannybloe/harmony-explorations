@@ -253,7 +253,7 @@ What must never be part of that route:
 **Read before any write to a Harmony Touch, and before anything near its reset or restart.** The Touch
 reports 17 for its architecture and Logitech's templates file it under 18; say "the Harmony Touch".
 Everything here is read, in the production firmware 4.15.330 and in Logitech's two clients, and **little of
-it has been run on a unit**: twenty one syncs of ours have run on the bench Touch, the first stopped mid sync and
+it has been run on a unit**: twenty five syncs of ours have run on the bench Touch, the first stopped mid sync and
 cleared by the abort and the restart below, the second committed with every answer a 304 or the finish, the third
 committed with the remote's own six documents delivered with 200 under tags of ours, the fourth answered 304
 against those tags, the next four each delivered one document with one value changed or put back and were
@@ -262,7 +262,10 @@ took it out again, both committed and acted on, the twelfth answered 304 again, 
 ours to two documents and took it out again, both committed and acted on, the fifteenth answered 304 again, the
 next two delivered the user's favourites document and a logo of ours and put both back, both committed and acted
 on, the eighteenth answered 304 again, the next two delivered a Settings and a Context of ours and put both back,
-both committed and acted on, and the twenty first answered 304 again; no
+both committed and acted on, the twenty first answered 304 again, the twenty second stopped on a USB read timeout
+inside its first write of answers, the remote seen restarting, and left the committed set as it was, the next two
+took an activity and a device of Logitech's out of four documents and put them back, both committed and acted on,
+and the twenty fifth answered 304 again; no
 document composed whole by
 this project has reached a Touch yet, and the remote now holds tags of ours for all six documents, which matters to step 7 below; the delete has never been sent, and the only other
 recovery a Touch has been through was Logitech's hidden recovery tool, `docs/test-notes/harmony-touch.md`. The facts are
@@ -304,6 +307,12 @@ entry's type name the reader searches, or holds any other field the reader leans
       node packages/usb/bin/touch-request.ts --request confighash --commit
 
 **200 needs nothing**: no sync is marked running, and whatever stopped left the committed set as it was.
+Measured twice: after 6.7's stop, cleared by the steps below, and after 8.5's first try, stopped on a USB read
+timeout inside its first write, the remote leaving the bus and seen restarting, where the read answered 200 with the
+set before's tags and the same set sent again was committed, nothing else sent; what made that one stop is not known,
+`packages/bench/test/touch85-runs.test.ts`. **Press Off before a sync that takes out an activity or a device**, so
+none runs while its documents change, and if a committed removal misbehaves, the put back of the set before is the
+repair: an ordinary sync, not a restart.
 **202 needs `touch-recover.ts --step abort`, that read again, then `--step reboot`**, each a run of its own,
 each answer read before the next. The reboot is not optional after a host's abort: by the preflight's reading
 the abort tells the remote's screens nothing, and only the restart clears the sync state they hold. **No

@@ -187,7 +187,7 @@ the generator that wrote it, with firmware event 0xFF bound so it serves both mo
 expected codes on the bench 350 and the same file 33 of 33 on the bench 300, `packages/codec/test/noscreenfinalunits.test.ts`.
 Two Harmony 885s are on the bench as well, read only.
 
-**The Harmony Touch is described from its own reading, twenty one syncs of ours have run on it, twenty committed, twelve of them changing what it does, its first full bench test has run, a device, an activity and favourites with a logo composed by us have each been delivered to it and heard, and a Settings of ours has been delivered and seen.** Its configuration
+**The Harmony Touch is described from its own reading, twenty five syncs of ours have run on it, twenty three committed, fourteen of them changing what it does, its first full bench test has run, a device, an activity and favourites with a logo composed by us have each been delivered to it and heard, a Settings of ours has been delivered and seen, and an activity and a device of Logitech's have been taken out and the rest heard without them.** Its configuration
 is Logitech's documents rather than a file, fetched by the remote through the computer during a sync, and both
 directions of a sync are recorded, `packages/usb/test/touch-sync-both-ways.test.ts`. The documents are described
 field by field in [its platform pages](../reference/architectures/harmony-touch/README.md) and read by the codec,
@@ -242,7 +242,15 @@ Context rebuilt from a description of the seven fields a Touch reads, equal in c
 with those two 200 and the other four 304. The remote committed both: the configuration hash carried Context's new
 tag, the screen was dimmed and, off the cable, took about 30 seconds after a touch to dim, with no restart. A
 second sync put both back, full brightness and about 10 seconds returned, and its first list had asked for the two
-with our tags; a closing `--unchanged` run followed, `packages/corpus/test/touch84-runs.test.ts`.
+with our tags; a closing `--unchanged` run followed, `packages/corpus/test/touch84-runs.test.ts`. In 8.5 an activity
+and a device of Logitech's were taken out: Listen to Music and the Denon AV Receiver, with the receiver's role in three
+other activities, their volume keys and swipes, one screen entry and the two infrared definitions only it used,
+delivered as four documents with 200 and Context and Settings 304. The remote committed them and listed four
+activities and six devices; the three activities that had used the receiver were heard 11 of 11 with no code of it,
+the volume keys sending nothing. A second sync put the four back. A first try stopped on a USB read timeout while
+its 13 chunk write was going out and the remote was seen restarting; the configuration hash then still answered with
+the set before's tags, and the same set went through on the next try. What made it stop is not known,
+`packages/bench/test/touch85-runs.test.ts`.
 
 ## What is still open
 
