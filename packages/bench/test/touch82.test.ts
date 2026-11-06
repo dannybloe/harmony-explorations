@@ -11,8 +11,8 @@
  * **What the predictions rest on.** The documents of the set the bench Touch holds since 8.1's put back, the
  * `touch_device_set_back` fixture, with the activity of `packages/corpus/touch-activities/test-cinema.json` added by
  * the codec, `withTouchActivity`. Built here from the source so that a change to the composer shows in the
- * predictions, and held equal, document for document, to the set built in the lab for the bench Touch, which
- * `packages/corpus/test/touch-activity-set.test.ts` also holds as parsed JSON, tags and all. The favourites are the
+ * predictions, and held equal, document for document, to the set the bench Touch was given, the `touch_activity_set`
+ * fixture, which `packages/corpus/test/touch-activity-set.test.ts` also holds as parsed JSON, tags and all. The favourites are the
  * recorded full sync's, as in 7.1.
  *
  * **Its start is told from every recorded activity's.** The monitor hears codes in order, so the claim is about the
@@ -26,16 +26,15 @@
  * derivation this reuses; the engine's `startActivity` and `buttonPress` in the lab's decompiled engine, which the
  * model reads. Logitech's client was not consulted.
  *
- * **What this does not show** is what the remote does: that is the 8.2 run, at the bench. No activity of ours has
- * reached a Touch before it.
+ * **What this does not show** is what the remote does: that is the 8.2 run, held by `touch82-runs.test.ts`, where the
+ * bench run of this file held 33 of 33.
  *
  * **Which architectures**: the Harmony Touch, firmware 4.15.330, the one bench unit; its firmware reports 17 and
  * Logitech's templates file it under 18.
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 import { harmonyTouch } from '@harmony/codec';
@@ -78,15 +77,15 @@ function configuration(answers: harmonyTouch.SyncAnswer[]): harmonyTouch.Configu
   return harmonyTouch.readConfiguration(documents as harmonyTouch.SyncDocuments);
 }
 
-/** The set built in the lab for the bench run, by its path until it is a fixture. */
-const builtSet = (): { skip: string | false } =>
-  ({ skip: lab.LAB !== undefined && existsSync(join(lab.LAB, TOUCH_8_2_SET)) ? false : `not in the lab: ${TOUCH_8_2_SET}` });
+/** The set the bench Touch was given for 8.2, by fixture. */
+const ACTIVITY_SET = 'touch_activity_set';
 
 test('the 8.2 test file is what the activity set gives: a start of its own, its keys to two devices, its entries, a switch away and back, and Off',
-  lab.needing(lab.skipUnless(SOURCE, FULL), builtSet()), () => {
-    // The set built here is the one built in the lab for the remote, as parsed JSON, so the predictions are the delivered set's.
-    const built = (JSON.parse(readFileSync(join(lab.LAB!, TOUCH_8_2_SET), 'utf8')) as { answers: harmonyTouch.SyncAnswer[] }).answers;
-    assert.deepEqual(answersWith([cinema()]).map((a) => a.resource), built.map((a) => a.resource));
+  lab.needing(lab.skipUnless(SOURCE, FULL, ACTIVITY_SET)), () => {
+    // The set built here is the one the remote was given, as parsed JSON, so the predictions are the delivered set's.
+    const delivered = (JSON.parse(new TextDecoder().decode(lab.require_(ACTIVITY_SET))) as { answers: harmonyTouch.SyncAnswer[] }).answers;
+    assert.deepEqual(answersWith([cinema()]).map((a) => a.resource), delivered.map((a) => a.resource));
+    assert.equal(lab.IMAGES[ACTIVITY_SET], TOUCH_8_2_SET);
     const derived = touch82Tests(configuration(answersWith([cinema()])));
     const directory = fileURLToPath(new URL('../irtests/', import.meta.url));
     const onDisk = testDefinitions(directory).filter((one) => one.id.startsWith('touch-8-2-'));

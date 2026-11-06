@@ -11,7 +11,9 @@ own folder, [harmony-touch](../../remotes/harmony-touch/README.md).
 
 **The scope is one firmware build and one synced set of documents.** Everything read in the firmware was read
 in the Touch's production image 4.15.330, and everything measured was measured in the documents one sync
-handed a Touch[^t-touch-activities]. The image is shared with the other remotes of the generation, but the
+handed a Touch[^t-touch-activities]. One more activity, composed by this project from the devices those documents
+held, was added to them, delivered, run and heard, [an activity of ours](#an-activity-of-ours)[^t-touch-activity-of-ours].
+The image is shared with the other remotes of the generation, but the
 screens are chosen per skin: the Touch, skin 99, runs one set of screens and skins 111 and 112 run
 another[^t-touch-activities-firmware]. Nothing here is checked on another build or another model.
 
@@ -201,6 +203,21 @@ activities[^t-touch-activities-firmware]; its numbers are the positions of Logit
 engine only copies the group's name into the answer
 it gives other clients; an activity without one makes the reader fail[^t-touch-activities-firmware].
 
+**Each type carries one group in the documents measured**, one activity of each of five types, and a writer that
+gives an activity a type takes its group from this table:
+
+| `Type` | its name | `ActivityGroup` |
+|---|---|---|
+| 1 | `WatchTV` | 1 |
+| 2 | `WatchDvd` | 2 |
+| 3 | `PlayGame` | 4 |
+| 4 | `ListenToMusic` | 3 |
+| 5 | `Custom` | 0 |
+
+Five of five activities agree[^t-touch-activity-of-ours], and an activity of ours of type 5 with group 0 was
+listed and ran, [below](#an-activity-of-ours)[^t-touch-activity-of-ours]. The group of any other type is not
+checked, since no document measured holds one[^unchecked].
+
 The other fields the remote uses:
 
 | field | what the Touch does with it |
@@ -260,14 +277,46 @@ inter device delay add up to, where every pause after a code that is not held fi
 own time per send, give or take those 150 ms[^t-touch-in-use]. The held code itself lasted 1.8 to 2.2 seconds on
 the receiver over six holds[^t-touch-in-use]; what the time after it is made of is not checked[^unchecked].
 
+## An activity of ours
+
+**An activity composed by a program, from devices the remote already holds, is listed, started, used, switched and
+stopped as its record states.** One activity was added to the activity list and the button map list a Touch held
+and delivered in a sync: a Custom activity of two devices, a Blu-ray player switched on first and the TV second,
+the TV on one of its inputs, a pause of 3 seconds and a command added by hand at the start and one at the end,
+and a map of its own sending the volume keys to the TV and the other keys to the player, with four screen entries
+under labels of its own. No record of Logitech's was copied: the seven activity fields read by neither program, the
+roles' and inputs' ids and the steps' ids were left out, [below](#what-a-writer-must-carry). The remote stored and
+committed the two lists and listed the activity last, at its `ActivityOrder`, and at a receiver, started from Off,
+switched to an activity of Logitech's and back, and ended by Off, it sent every code in the order of
+[starting, switching and stopping](#starting-switching-and-stopping): its devices in its power on order, its input
+after the TV's power on delay, its start steps with the pause, its end step first on leaving, its power offs in
+its power off order, a device kept on between activities left on and a device the next activity does not use
+switched off. Every key and every screen entry of its map sent the command it binds, to the device it names, so
+one map of ours sent to two devices; 33 codes in all, none out of order and nothing else, every timed pause in its
+band[^t-touch-activity-of-ours]. Taken out again by a second sync, the remote committed the set it held before,
+content for content, under new tags of ours, and the activity was gone from its list[^t-touch-activity-of-ours].
+
+**Its identifiers are of ours**, the activity's id and so its map's `16417Activity` identifier, by the rule for
+[identifiers of ours](devices-and-infrared.md#a-device-of-ours): Logitech's activity ids in the documents a Touch
+held are eight digits, and the remote took an activity under 900000003[^t-touch-activity-of-ours].
+
+What the screens drew for it is [the model's display](../../remotes/harmony-touch/display.md#what-the-screen-shows).
+An activity of ours of another type, opening on another start screen, holding favourites, gestures or sequences,
+or using a device of ours, is not checked, and neither is one removed while it runs[^unchecked].
+
 ## What a writer must carry
 
 **The screens change these documents and send them back whole.** Reordering activities, choosing a start
 screen or a picture and changing an input rewrite `ActivityList`; editing a command list or a gesture rewrites
 `MapList`; and each goes up as the whole document[^t-touch-activities-firmware], as the remote's settings were
 measured to[^t-touch-both-ways]. So every field below, though nothing on the remote reads it, comes back as it
-went down, and a writer that drops one has changed what Logitech's service holds. Uploading these two
-documents has not been measured[^unchecked].
+went down, and a writer that drops one has changed what Logitech's service holds. The remote uploading these two
+documents after an edit on its screens has not been measured[^unchecked]. **The other way, both changed by a
+program and delivered in a sync, they were stored, committed and used**: one value changed in each, a sequence's
+delay and an activity's name[^t-touch-changed-set], and an activity of ours appended to both and taken out
+again, whose record left out the activity's, the roles' and the steps' fields of the first table below and ran
+all the same,
+[above](#an-activity-of-ours)[^t-touch-activity-of-ours].
 
 **Read by neither program**[^t-touch-activities-firmware]:
 
@@ -334,6 +383,9 @@ themselves, `Numpad` opening the number pad[^t-touch-activities-firmware].
   and 32 going into the first list; a key marked 4 still sending, which the documents measured never
   hold[^unchecked].
 * Whether Logitech's service always leaves a Custom activity without gestures[^unchecked].
+* The `ActivityGroup` of a type no document measured holds, and an activity of ours of any type but Custom, on any
+  start screen but the command list, with favourites, gestures or sequences, or using a device of
+  ours[^unchecked].
 * The roles, steps and paths for Sonos, Roku, speakers, home control and multi zone activities, which the
   documents measured do not hold[^unchecked].
 * Any other firmware build, and the other remotes of the generation[^unchecked].
@@ -345,3 +397,4 @@ themselves, `Numpad` opening the number pad[^t-touch-activities-firmware].
 [^t-touch-compose]: Measured on a unit. [The test](../../../packages/codec/test/touch-compose.test.ts)
 [^t-touch-changed-set]: Measured on a unit. [The test](../../../packages/usb/test/touch-changed-set-sync.test.ts)
 [^t-touch-in-use]: Measured on a unit. [The test](../../../packages/bench/test/touch71-runs.test.ts)
+[^t-touch-activity-of-ours]: Measured on a unit. [The test](../../../packages/bench/test/touch82-runs.test.ts)

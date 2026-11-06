@@ -63,7 +63,12 @@ Which of the held and double forms a button map can bind is the map's question,
   the activity's name in capitals, broken onto two lines at its first space**: an activity named "Listen to
   Music" reads LISTEN over TO MUSIC, and renamed "Music Test" it read MUSIC over TEST once the renamed list was
   synced to the remote[^t-touch-changed-set]. What happens to a name with no space, or one too wide for the
-  entry, is not checked[^unchecked].
+  entry, is not checked[^unchecked]. **An activity with no picture of its own is drawn with its type's default
+  picture, at the place its order gives it**: a Custom activity added by a program, with no `ImageKey`, showed
+  last of six on the list with the picture of a custom activity, and its command list, the screen it opens on,
+  listed its four entries in the order of their places in the map, each a label with no icon, none of them naming a
+  function[^t-touch-activity-of-ours]. The default picture of a type other than Custom is not
+  checked[^unchecked].
 * **The favourite channels**, under Favorites, as pictures, up to 50, editable and reorderable on the
   remote[^x-touch-manual].
 * **A device's commands**, from the device list[^x-touch-manual]; [behaviour.md](behaviour.md). **A device whose
@@ -127,3 +132,4 @@ screen, field by field, is [favourites-and-settings.md](../../architectures/harm
 [^t-touch-beyond-client]: Stated by Logitech, in their client. [The test](../../../tests/test_harmony_touch_beyond_the_clients.py)
 [^t-touch-changed-set]: Measured on a unit. [The test](../../../packages/usb/test/touch-changed-set-sync.test.ts)
 [^t-touch-device-of-ours]: Measured on a unit. [The test](../../../packages/bench/test/touch81-runs.test.ts)
+[^t-touch-activity-of-ours]: Measured on a unit. [The test](../../../packages/bench/test/touch82-runs.test.ts)

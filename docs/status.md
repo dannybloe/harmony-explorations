@@ -187,7 +187,7 @@ the generator that wrote it, with firmware event 0xFF bound so it serves both mo
 expected codes on the bench 350 and the same file 33 of 33 on the bench 300, `packages/codec/test/noscreenfinalunits.test.ts`.
 Two Harmony 885s are on the bench as well, read only.
 
-**The Harmony Touch is described from its own reading, twelve syncs of ours have run on it, eleven committed, six of them changing what it does, its first full bench test has run, and a device composed by us has been delivered to it and heard.** Its configuration
+**The Harmony Touch is described from its own reading, fifteen syncs of ours have run on it, fourteen committed, eight of them changing what it does, its first full bench test has run, and a device and an activity composed by us have each been delivered to it and heard.** Its configuration
 is Logitech's documents rather than a file, fetched by the remote through the computer during a sync, and both
 directions of a sync are recorded, `packages/usb/test/touch-sync-both-ways.test.ts`. The documents are described
 field by field in [its platform pages](../reference/architectures/harmony-touch/README.md) and read by the codec,
@@ -223,7 +223,13 @@ eleven commands in a Sony 12 bit definition written from our own rhythm table un
 the device, map and protocol lists and delivered with those three 200 and the other three 304. The remote
 committed it and listed the device, and 15 of 15 expected codes were heard in device mode, its ten keys and the
 Blu-ray's five as a control, and its Power entry sent PowerToggle when tapped. A second sync took it out again and
-a closing `--unchanged` run was asked with that set's tags, `packages/bench/test/touch81-runs.test.ts`.
+a closing `--unchanged` run was asked with that set's tags, `packages/bench/test/touch81-runs.test.ts`. In 8.2 an
+activity composed by this project reached it: Test Cinema, a Custom activity of the Blu-ray and the LG TV under an
+identifier of ours, with start and end steps, a map sending to both devices and four screen entries under labels of
+ours, added to the activity and map lists and delivered with those two 200 and the other four 304. The remote
+committed it and listed it last with the custom picture, and 33 of 33 expected codes were heard: its start from Off,
+every key and entry, a switch to Watch TV and back, and Off, every timed pause in band. A second sync took it out
+again and a closing `--unchanged` run was asked with that set's tags, `packages/bench/test/touch82-runs.test.ts`.
 
 ## What is still open
 

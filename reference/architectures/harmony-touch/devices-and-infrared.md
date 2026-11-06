@@ -230,8 +230,10 @@ had the fields and shape of Logitech's Sony 20 bit definition, which the same re
 the others name it by. Logitech's device and activity ids in the documents a Touch held are eight digits and the
 protocol ids are the catalogue's, below a thousand, so an id of nine digits from 900000000 lies outside both by a
 factor of ten and below 2<sup>31</sup>; the remote took a device and a definition under such ids, 900000001 and
-900000002[^t-touch-device-of-ours]. That is a margin and not a guarantee, so a writer still refuses an id the
-documents already hold, and a device id whose digits contain another device's or sit inside one.
+900000002[^t-touch-device-of-ours], and an activity under 900000003, its map named `16417Activity900000003` by
+it[^t-touch-activity-of-ours], [an activity of ours](activities-and-buttons.md#an-activity-of-ours). That is a margin
+and not a guarantee, so a writer still refuses an id the documents already hold, a device id whose digits contain
+another device's or sit inside one, and an activity id already an activity's or a device's.
 
 What the screens drew for that device is [the model's display](../../remotes/harmony-touch/display.md#what-the-screen-shows).
 A device of ours used inside an activity, with power or input states of its own, is not checked[^unchecked].
@@ -295,6 +297,7 @@ and `ParentDeviceManufacturer`, `ParentDeviceModel` and `IsMultiCode`[^t-touch-e
 [^t-touch-engine]: Read in the firmware. [The test](../../../tests/test_harmony_touch_devices.py)
 [^t-touch-sync]: Measured on a unit. [The test](../../../packages/usb/test/touch-sync.test.ts)
 [^t-touch-device-of-ours]: Measured on a unit. [The test](../../../packages/bench/test/touch81-runs.test.ts)
+[^t-touch-activity-of-ours]: Measured on a unit. [The test](../../../packages/bench/test/touch82-runs.test.ts)
 [^s92]: Measured in configurations. [Section 92](../../../docs/findings.md#s92)
 [^s348]: Measured in configurations. [Section 348](../../../docs/findings.md#s348)
 [^unchecked]: Not checked.

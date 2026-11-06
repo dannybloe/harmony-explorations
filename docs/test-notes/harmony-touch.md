@@ -439,6 +439,56 @@ it**: the model gained a screen entry, `TouchEngine.entry` and the `{ entry }` a
 or a picture of ours, and the device used in an activity. The runs are held by
 `packages/bench/test/touch81-runs.test.ts`. 8.1 is done.
 
+## An activity of ours added, run and taken out again, todo-touch 8.2
+
+**Run on 6 November 2026**, after 8.1 and after commit `74f98f70`, the 8.2 preparation, in the order of the lab's
+`work/touch-firmware/notes/8.2-preflight.md` section 6, each run read before the next and nothing touched on the
+remote's screens between them. The activity is **Test Cinema**, `packages/corpus/touch-activities/test-cinema.json`:
+type Custom, group 0, activity id 900000003, place 5, the Blu-ray (power on 1, off 2) and the LG TV (power on 2,
+off 1, HDMI 2), a pause of 3 s and the Blu-ray's TopMenu at the start and its Stop at the end, 13 keys (the volume
+keys to the LG TV, the rest to the Blu-ray) and four screen entries, Top Menu, Pop Up Menu, Subtitles and TV Info,
+opening on its command list. The two sets were built by `packages/corpus/bin/touch-device-set.ts --activity` and
+`--remove-activity` from `8.1-device-back`: `8.2-activity` with the activity added to ActivityList and MapList, and
+`8.2-activity-back` with it taken out, each retagging those two and no other.
+
+| time (UTC) | run | what it gave |
+|---|---|---|
+| `1239Z` | `touch-confighash` | equal on `8.1-device-back` |
+| `1239Z` | `touch-sync-set`, `8.2-activity` | ActivityList and MapList 200, the other four 304; first list asked with `8.1-device-back`'s tags; `sync: finished` |
+| `1240Z` | `touch-confighash` | equal on `8.2-activity` |
+| `124813Z` | the bench test `touch-8-2-activity` | 33 of 33 |
+| `1237Z` | the monitor's live log | the test, then Test Cinema started again and Off, before the put back |
+| `1253Z` | `touch-sync-set`, `8.2-activity-back`, and `touch-confighash` | the same answer shape; first list asked with all six of `8.2-activity`'s tags; hash equal on `8.2-activity-back` |
+| `1255Z` | `touch-sync-unchanged` | first list asked with `8.2-activity-back`'s tags; every answer 304 or the finish |
+
+All in `reads/20261106T<time>-*`. Each set went in one write of 12 chunks, 367778 characters for the activity set
+and 359202 for the put back, each replied 200.
+
+* **Eight request lists in every run**, as before 8.1; 8.1's two set runs had nine, and the files still do not say
+  why.
+* **The bench test**, run once on the Flirc monitor: Off, unjudged and silent; Test Cinema from Off, the Blu-ray's
+  PowerOn, the LG TV's 869 ms later, its HDMI 2 10424 ms after that and the Blu-ray's TopMenu 3286 ms later, no
+  Denon; Menu and Exit, the four arrows and OK, Play, Pause and Stop to the Blu-ray and the three volume keys to the
+  LG TV; the four entries tapped by label, three to the Blu-ray and TV Info to the LG TV; Watch TV, the Blu-ray's
+  Stop first, the Denon on, the Blu-ray off, the inputs; Test Cinema again, the Blu-ray on, HDMI 2, TopMenu, the
+  Denon left on; Off, the Blu-ray's Stop, the LG TV and the Blu-ray off in that order, then the Denon. 33 of 33,
+  each step heard exactly its expected codes and nothing else, all twelve timed pauses in band. **What the receiver
+  cannot tell apart**: the Blu-ray's Menu and PopUp are one code in its definition, so the Menu key and the Pop Up
+  Menu entry are each named both; the Denon's PowerOn and PowerOff each share a code with a main zone command.
+* **After the test, before the put back**: the monitor's log holds Test Cinema started again from Off at 12:52:05
+  and an Off at 12:52:53, the same four codes as the test's start and then the Blu-ray's Stop and the LG TV and the
+  Blu-ray off, no Denon, as the model predicts after the test's Off. No file records what was done then.
+* **The look, reported at the bench**: Test Cinema last in the activity list with the custom picture; its screen
+  showing Top Menu, Pop Up Menu, Subtitles and TV Info without icons; after the put back it was gone and the remote
+  worked normally.
+
+So an activity composed by this project from the devices the remote held, under an identifier of ours, was stored,
+committed, listed, started, used, switched and stopped by the remote as its record states, and the put back restored
+the set before. The remote holds `8.2-activity-back`, the content of `8.1-device-back` under other tags for two
+documents. What this does not cover: a document composed whole, a favourite or a picture of ours, another activity
+type or start screen, an activity of ours with a device of ours, and an activity removed while it runs. The runs are
+held by `packages/bench/test/touch82-runs.test.ts`. 8.2 is done.
+
 ## Not done
 
 * *Corrected:* this said no infrared run had been recorded with this unit and nothing about it in use had been

@@ -26,12 +26,12 @@
  *
  * **Width.** One model, the Harmony Touch, firmware 4.15.330; its firmware reports architecture 17 and Logitech's
  * templates file it under 18. The lab half reads the bench sets and the recorded lists, prints nothing out of them
- * and touches no remote. The two 8.2 sets are read by their path in the lab until they are fixtures.
+ * and touches no remote. The two 8.2 sets are read by fixture, `touch_activity_set` and `touch_activity_set_back`, and
+ * what the remote did with them is `packages/bench/test/touch82-runs.test.ts`.
  */
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { readFileSync } from 'node:fs';
 import { describe, it } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
@@ -85,14 +85,9 @@ const SOURCE = 'touch_device_set_back';
 const CLOSING = 'touch_device_unchanged_';
 const CLOSING_LISTS = [1, 2, 3, 4, 5, 6, 7, 8].map((n) => `${CLOSING}list_${n}`);
 const HAND_OVER_LIST = `${CLOSING}handover_list`;
-/** The two sets built in the lab for 8.2, by path until they are fixtures. */
-const BUILT = 'work/touch-firmware/sets/8.2-activity/set.json';
-const BUILT_BACK = 'work/touch-firmware/sets/8.2-activity-back/set.json';
-const inLab = (path: string): string | undefined => (lab.LAB !== undefined && existsSync(join(lab.LAB, path)) ? join(lab.LAB, path) : undefined);
-const skipUnlessInLab = (...paths: string[]): { skip: string | false } => {
-  const missing = paths.filter((p) => inLab(p) === undefined);
-  return { skip: missing.length === 0 ? false : `not in the lab: ${missing.join(', ')}` };
-};
+/** The two sets 8.2 built in the lab and delivered to the bench Touch, by fixture, for the comparison with what this derivation gives. */
+const BUILT = 'touch_activity_set';
+const BUILT_BACK = 'touch_activity_set_back';
 
 const json = (fixture: string): unknown => JSON.parse(new TextDecoder().decode(lab.require_(fixture)));
 const requestsOf = (fixture: string): RemoteRequest[] => {
@@ -190,10 +185,10 @@ describe('on the fake remote, the bench run and its put back', { skip: lab.needi
     }
   });
 
-  it('the sets the lab holds are the ones this derivation gives, as parsed JSON, tags and all', lab.needing(skipUnlessInLab(BUILT, BUILT_BACK)), () => {
+  it('the sets the lab holds are the ones this derivation gives, as parsed JSON, tags and all', lab.skipUnless(BUILT, BUILT_BACK), () => {
     const { withActivity, back } = sets();
-    assert.deepEqual(JSON.parse(readFileSync(inLab(BUILT)!, 'utf8')), JSON.parse(JSON.stringify(withActivity)));
-    assert.deepEqual(JSON.parse(readFileSync(inLab(BUILT_BACK)!, 'utf8')), JSON.parse(JSON.stringify(back)));
+    assert.deepEqual(json(BUILT), JSON.parse(JSON.stringify(withActivity)));
+    assert.deepEqual(json(BUILT_BACK), JSON.parse(JSON.stringify(back)));
   });
 
   it('the recorded closing run of 8.1 asked for the six with the source\'s tags, so the remote holds the source', () => {

@@ -149,6 +149,10 @@ composed by this project is listed and sent**: a projector of ours, its map and 
 project's own table, added to the three lists the remote held and delivered with 200, showed in the device list,
 and each of its eleven commands was heard when pressed; taking it out again restored the set before,
 [a device of ours](../../architectures/harmony-touch/devices-and-infrared.md#a-device-of-ours)[^t-touch-device-of-ours].
+**An activity composed by this project is listed and runs**: an activity of ours from two devices the remote held,
+with a map and screen entries of its own, added to the activity and map lists and delivered with 200, showed on the
+activity list and was started, used, switched and stopped as its record states; taking it out again restored the
+set before, [an activity of ours](../../architectures/harmony-touch/activities-and-buttons.md#an-activity-of-ours)[^t-touch-activity-of-ours].
 A document composed whole by this project is not checked[^unchecked].
 
 ## Changes on the remote travel back
@@ -181,6 +185,7 @@ channels and commands changed on the remote are not checked[^unchecked].
 [^t-touch-own-set-sync]: Measured on a unit. [The test](../../../packages/usb/test/touch-own-set-sync.test.ts)
 [^t-touch-changed-set]: Measured on a unit. [The test](../../../packages/usb/test/touch-changed-set-sync.test.ts)
 [^t-touch-device-of-ours]: Measured on a unit. [The test](../../../packages/bench/test/touch81-runs.test.ts)
+[^t-touch-activity-of-ours]: Measured on a unit. [The test](../../../packages/bench/test/touch82-runs.test.ts)
 [^t-client-reverse-sync]: Stated by Logitech, in their client. [The test](../../../tests/test_client_templates.py), class `TheClientAsksForTheRemotesChangesOnlyWithNothingPending`
 [^t-touch-both-ways]: Measured on a unit. [The test](../../../packages/usb/test/touch-sync-both-ways.test.ts)
 [^t-touch-favourites]: Measured on a unit. [The test](../../../packages/usb/test/touch-favourites.test.ts)

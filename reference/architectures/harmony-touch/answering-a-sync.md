@@ -7,17 +7,19 @@ something was Logitech's own client, which fetched each answer from Logitech's s
 Logitech's would have to produce to answer a sync itself.
 
 **Everything here is read in the remote's firmware, production build 4.15.330, and measured in recorded
-syncs of Logitech's client; the preview build's engine was not read for this page. Twelve syncs answered by a
+syncs of Logitech's client; the preview build's engine was not read for this page. Fifteen syncs answered by a
 program of this project have run on a remote: the first stopped at the favourites; the second ran to its end
 and was committed, every answer in it a 304 that kept the remote's own copy, or the answer to the finish; the
 third delivered the remote's own six configuration documents with 200 under entity tags of ours and was
 committed; the fourth answered every request 304 again; the next four each delivered one document with one
 value changed, or put back, with 200 and the other five 304, and each was committed and acted on; the ninth
 answered every request 304 again; the tenth delivered three documents with a device of ours added, with 200 and
-the other three 304, and the eleventh took it out again the same way, both committed and acted on; and the
-twelfth answered every request 304 again**: what they measured is marked where it stands, and the rest of the rules
+the other three 304, and the eleventh took it out again the same way, both committed and acted on; the twelfth
+answered every request 304 again; the thirteenth delivered two documents with an activity of ours added, with 200
+and the other four 304, and the fourteenth took it out again the same way, both committed and acted on; and the
+fifteenth answered every request 304 again**: what they measured is marked where it stands, and the rest of the rules
 below are what the firmware does with an answer, not what a remote was seen to do with one of
-ours[^t-touch-host][^t-touch-first-sync][^t-touch-second-sync][^t-touch-own-set-sync][^t-touch-changed-set][^t-touch-device-of-ours]. Where a
+ours[^t-touch-host][^t-touch-first-sync][^t-touch-second-sync][^t-touch-own-set-sync][^t-touch-changed-set][^t-touch-device-of-ours][^t-touch-activity-of-ours]. Where a
 rule has only been seen to hold for Logitech's own answers, the page says so. The test behind the firmware
 footnotes asserts, function by function, the names and constants each rule rests on; the order in which a
 function uses them, and so which check comes first, is the decompiled reading named in that test's header
@@ -303,8 +305,18 @@ that set's tags. It listed the device and sent its codes, [a device of
 ours](devices-and-infrared.md#a-device-of-ours). A second sync delivered the three again with the device taken out,
 the same way, and was committed, the next sync asking with its tags. **Both handed out nine request lists where
 every earlier sync of ours had eight**: one more empty list, between the user favourites and the device favourites,
-which an answerer that reads lists until the finish meets without noticing[^t-touch-device-of-ours]. A document
-composed whole by a program, rather than changed in one value or by an entry added, is not checked[^unchecked].
+which an answerer that reads lists until the finish meets without noticing[^t-touch-device-of-ours].
+
+**Two documents delivered with 200 among four answered 304 are stored and committed together.** A sync of this
+project delivered the activity list and the button map list, each with an activity of ours added, under new tags of
+ours, and answered the device list, the context, the settings and the protocol list 304 against the tags the remote
+sent: one write of 367778 characters, 12 chunks. The remote committed it, its configuration hash then joining the
+new tag of the activity list with the old three, and the next sync asked with all six of that set's tags. It listed
+the activity and ran it, [an activity of ours](activities-and-buttons.md#an-activity-of-ours). A second sync
+delivered the two again with the activity taken out, the same way, and was committed, the next sync asking with its
+tags. **Both handed out eight request lists**, as every sync of ours before the two of the device had, and so did
+the sync that followed them[^t-touch-activity-of-ours]. A document composed whole by a program, rather than changed
+in one value or by an entry added, is not checked[^unchecked].
 
 ## The smallest set of documents
 
@@ -435,7 +447,9 @@ answer was a 304 it answered 200 with the same tags both times[^t-touch-second-s
 delivered the six with 200 under tags of ours it answered with those tags[^t-touch-own-set-sync], and after a sync
 that delivered the activity list alone with 200 it answered with that document's new tag among the old
 three[^t-touch-changed-set], and after one that delivered the device, map and protocol lists with the new tags of
-the device and protocol lists among the old two[^t-touch-device-of-ours]. The tag the remote sends for each
+the device and protocol lists among the old two[^t-touch-device-of-ours], and after one that delivered the
+activity and map lists with the activity list's new tag among the old three[^t-touch-activity-of-ours]. The tag the
+remote sends for each
 document in the next sync's request list, read out of the committed set, is the other evidence[^t-touch-host].
 A committed document itself can be handed back by a resource put that names its address and carries no
 document, a reading never run on a unit, [proxy](api/proxy.md#can-a-stored-document-be-read-back)[^t-touch-api-setup].
@@ -444,9 +458,10 @@ Whether these are enough to know a whole configuration arrived is not settled[^u
 ## Not checked
 
 * Everything here is one firmware build and, for the measured side, the three syncs recorded by Logitech's
-  client and twelve answered by this project, the first stopped at the favourites and the other eleven committed.
-  The syncs of ours that delivered documents with 200 delivered the remote's own six, or one of them with one
-  value changed, or three with a device of ours added or taken out: a document composed whole by this project, and a favourites document or a picture of ours
+  client and fifteen answered by this project, the first stopped at the favourites and the other fourteen
+  committed. The syncs of ours that delivered documents with 200 delivered the remote's own six, or one of them
+  with one value changed, or three with a device of ours added or taken out, or two with an activity of ours added
+  or taken out: a document composed whole by this project, and a favourites document or a picture of ours
   delivered with 200, and what the remote then does with each, are the reading's alone[^unchecked].
 * Whether the outgoing queue actually carries a direct put through to the account, inferred from the queue's
   role rather than seen[^unchecked].
@@ -488,6 +503,7 @@ Whether these are enough to know a whole configuration arrived is not settled[^u
 [^t-touch-own-set-sync]: Measured on a unit. [The test](../../../packages/usb/test/touch-own-set-sync.test.ts)
 [^t-touch-changed-set]: Measured on a unit. [The test](../../../packages/usb/test/touch-changed-set-sync.test.ts)
 [^t-touch-device-of-ours]: Measured on a unit. [The test](../../../packages/bench/test/touch81-runs.test.ts)
+[^t-touch-activity-of-ours]: Measured on a unit. [The test](../../../packages/bench/test/touch82-runs.test.ts)
 [^t-touch-type-name]: Read in the firmware. [The test](../../../packages/codec/test/touch-check.test.ts)
 [^t-touch-reader-raises]: Read in the firmware. [The test](../../../packages/codec/test/touch-check.test.ts)
 [^t-touch-type-name-recorded]: Measured on a unit. [The test](../../../packages/codec/test/touch-check.test.ts)
