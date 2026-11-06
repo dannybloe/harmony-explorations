@@ -93,9 +93,10 @@ process.stdout.write(`${profile.model}, architecture ${profile.architecture}\n`)
 // The region check, and it is about what gets **filed** rather than about what is safe to read.
 //
 // **The rails' tables first, the reader's profile where they have no row.** Those two tables name the
-// region an architecture may be **written** in, and an architecture nobody may write, the Harmony 880
-// and 885, has no row on purpose: adding one to read a region would be the exact move CLAUDE.md warns
-// about, a read need widening a write table. The profile's `configBase` and `configEnd` are the
+// region an architecture may be **written** in, and an architecture nobody may write has no row on
+// purpose: adding one to read a region would be the exact move CLAUDE.md warns about, a read need
+// widening a write table. The Harmony 880 and 885 were that case until `todo-compile-885.md` 1.2 gave
+// them rows for a write, `0x020000` to `0x1D0000`, which is the range their profile already stated. The profile's `configBase` and `configEnd` are the
 // reader's own statement of where the configuration lives, so they answer the filing question
 // without touching the rails. Where a rails row exists it still wins, which keeps the 525's ceiling
 // below its log area rather than at the profile's top of the part.

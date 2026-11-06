@@ -46,8 +46,10 @@ require of a session.
 
 * **Two bench units may be written, `h885_a` first**, decision 30. Which unit is on the cable is read off its
   identity block against the lab's `units/h885_a.txt` or `units/h885_b.txt`, never assumed from the port or a
-  sticker. **Permission is not a write path**: until `todo-compile-885.md` 1.2 lands, the library refuses
-  every write to this platform, and that refusal is not something to work around.
+  sticker. **Permission is not a write path**: since `todo-compile-885.md` 1.2 the library opens the flash
+  block path for unit A only, through `rehearse-block.ts`, and refuses every other write to this platform:
+  the restart, the invalidate, the RAM write and `write-config.ts`. Those refusals are not something to
+  work around; each path opens with its own item.
 * **Only the user configuration is written**: from `0x020000`, whole 64 KiB sectors, below the staging
   region at `0x1D0000`. Never the bootloader below `0x010000`, the application at `0x010000`, the staging
   region or the log area. **The firmware bounds neither an erase nor a write from `0x010000` up**, so a wrong
@@ -75,9 +77,23 @@ word at `0x000160` are what a recovery puts back and nothing else holds them.
 
 ## 4. Writing the 885's configuration
 
-**Not established yet.** `todo-compile-885.md` 1.2 makes the platform a write target, 1.3 writes one block of
-unit A back unchanged, 1.4 the whole configuration; each lands its procedure here, with the commands, as the
-`harmony-525` and `harmony-650` skills hold theirs. Until then nothing in this repository writes to an 885.
+**One block at a time, unit A only, and not yet performed.** `todo-compile-885.md` 1.2 made the platform a
+flash block target; 1.3 writes one block of unit A back unchanged, 1.4 the whole configuration, and each
+lands its procedure here as the `harmony-525` and `harmony-650` skills hold theirs.
+
+The block writer is `packages/usb/bin/rehearse-block.ts`, with the dumps `h885_a_region` and
+`h885_a_region_2`, which start at `0x020000`. A dry run reads only: it checks the unit off its identity
+block, compares the block with the dump and prints what a commit would send.
+
+    node packages/usb/bin/rehearse-block.ts --dump h885_a_region --block 0x0c0000
+
+**Which block**: not one of the live configuration, which ends at `0x0AAAD4` on unit A. The firmware runs
+from the same flash part, so a block of the configuration is blank between the erase and the write while
+the remote may look it up. `0x0C0000` holds remains of earlier configurations, which the remote never reads
+and which are not `0xFF`, so a write that sent nothing would show. The rehearsal reads the blocks either
+side before and after the erase, which measures the sector size on the part.
+
+**The commit waits for the backup** in section 3, and for the flags `CLAUDE.md` names.
 
 When a run stops part way, do not unplug the remote or take its batteries out; report the first failure as
 it happened and rerun only with the same arguments once the cause is understood.

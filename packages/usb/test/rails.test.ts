@@ -266,7 +266,11 @@ test('a write target is refused the reboot unless its escape is traced and it is
   // then, and this asserts it is exactly the architectures where the escape is traced and was sent.
   // The title was "a write target either dispatches the reset escape or is refused one" until then,
   // an either or that arch 14 made false by doing both.
-  assert.deepEqual([...ARCHITECTURES_WITH_A_WRITE_TARGET], [9, 12, 14]);
+  //
+  // **Arch 8 (Harmony 880 and 885) joined for `todo-compile-885.md` 1.2 and lands in the refused arm**,
+  // beside arch 9: its escape is read, `E1 02` restarts it, but nothing has been sent to it, so it has no
+  // `ESCAPE_SUB_COMMANDS` row and no place on the reset list. Its write end is 1.4's.
+  assert.deepEqual([...ARCHITECTURES_WITH_A_WRITE_TARGET], [8, 9, 12, 14]);
   // **Arch 14 joined on 27 September 2026, section 282**, once its path was read on the Harmony 650's
   // own build, so traced and permitted are the same two architectures now.
   assert.deepEqual([...ARCHITECTURES_WITH_A_RESET_TARGET], [12, 14]);
@@ -284,7 +288,7 @@ test('a write target is refused the reboot unless its escape is traced and it is
   // nothing behind it, so a third architecture arriving on the write target list lands in neither
   // and fails here.
   assert.deepEqual(traced, [12, 14]);
-  assert.deepEqual(refused, [9]);
+  assert.deepEqual(refused, [8, 9]);
 });
 
 test('the reset escape is refused on a write target whose escape is unread, and allowed on the two that are traced', () => {
@@ -415,7 +419,13 @@ test("arch 14's write target is the Harmony 650, for the block path, the invalid
   // **It did fail, on 27 September 2026, which is the decision showing up in the diff.** What holds
   // the Harmony 600 out now is the unit check, since both are arch 14; what this asserts is that the
   // arrival bought one path, the flash block, and not the three that have lists of their own.
-  assert.deepEqual([...ARCHITECTURES_WITH_A_WRITE_TARGET], [9, 12, 14]);
+  //
+  // **It moved again for `todo-compile-885.md` 1.2**: arch 8 (Harmony 880 and 885), the flash block path
+  // only, so it is on none of the three lists below.
+  assert.deepEqual([...ARCHITECTURES_WITH_A_WRITE_TARGET], [8, 9, 12, 14]);
+  assert.ok(!ARCHITECTURES_WITH_A_RESET_TARGET.includes(8), 'the reboot, arch 8');
+  assert.ok(!ARCHITECTURES_WITH_AN_INVALIDATE_TARGET.includes(8), 'the invalidate, arch 8');
+  assert.ok(!ARCHITECTURES_WITH_A_RAM_WRITE_TARGET.includes(8), 'the RAM write, arch 8');
   // The reboot and the invalidate followed in section 282, each on its own evidence: the escape path
   // and the selector 2 executor read on the Harmony 650's own build. The RAM write did not.
   assert.ok(ARCHITECTURES_WITH_A_RESET_TARGET.includes(14), 'the reboot, section 282');
@@ -444,14 +454,21 @@ test('the writable range needs both a region and a ceiling, and a hole in either
   // **Arch 14 has both since section 281**, the part's top at `0x200000` and the region from
   // `0x030000`, so it answers now, and no architecture is left with a region and no ceiling. So the
   // hole is tested through `writableRangeFrom`, the rule without the lookups; an architecture with
-  // neither, arch 8 (Harmony 880 and 885), is the region half.
+  // neither, arch 10 (Harmony 890 and 895), is the region half. This was arch 8 (Harmony 880 and 885)
+  // until `todo-compile-885.md` 1.2 gave it both rows.
   assert.deepEqual(writableRange({ ...IDEAL, architecture: 14, versionBlock: blockFor(14) }), {
     start: 0x030000,
     end: 0x031000,
   });
   assert.throws(() => writableRangeFrom(14, 0x030000, undefined, 0x1000), /no writable ceiling/);
   assert.throws(() => writableRangeFrom(14, undefined, 0x200000, 0x1000), /no config region/);
-  assert.throws(() => writableRange({ ...IDEAL, architecture: 8, versionBlock: blockFor(8) }), /no config region/);
+  assert.throws(() => writableRange({ ...IDEAL, architecture: 10, versionBlock: blockFor(10) }), /no config region/);
+  // Arch 8 (Harmony 880 and 885) answers since then: the user configuration from `0x020000`, with the
+  // running application in the 64 KiB below it and nothing in the firmware between the two.
+  assert.deepEqual(writableRange({ ...IDEAL, architecture: 8, versionBlock: blockFor(8) }), {
+    start: 0x020000,
+    end: 0x021000,
+  });
   // And arch 9 (Harmony 525) has both since section 267, so it answers. The configuration sits at
   // `0x820000` with the safe mode image and the application firmware in the two blocks below it,
   // which is why the floor matters here more than it does on arch 12: the firmware bounds an erase
@@ -489,7 +506,7 @@ test('the two rails read the same table hole the same way', () => {
 test('an erase refuses an architecture with no recorded block size', () => {
   // Unreachable through `assertEraseAllowed`, because `assertPermissionIsUsable` refuses everything
   // outside `ARCHITECTURES_WITH_A_WRITE_TARGET` first and that list was `[12]`, which has both
-  // entries, and is `[9, 12, 14]` now, all three with both. The rail nobody can trigger is the rail nobody has tested, and `rails.test.ts` was
+  // entries, and is `[8, 9, 12, 14]` now, all four with both. The rail nobody can trigger is the rail nobody has tested, and `rails.test.ts` was
   // checking the table's shape in its place. The lookup is exported now so the refusal has a caller.
   assert.deepEqual(eraseBoundsFor(12), { block: 0x10000, ceiling: 0x3d0000 });
   // **Arch 9 (Harmony 525) moved out of the refusing list in section 267** and into the answering
@@ -499,7 +516,9 @@ test('an erase refuses an architecture with no recorded block size', () => {
   assert.deepEqual(eraseBoundsFor(9), { block: 0x10000, ceiling: 0x870000 });
   // Arch 14 answers since section 281, off three firmware images' eraser.
   assert.deepEqual(eraseBoundsFor(14), { block: 0x10000, ceiling: 0x200000 });
-  for (const architecture of [8, 10, 16]) {
+  // Arch 8 answers since `todo-compile-885.md` 1.2, the ceiling the staging region below the log area.
+  assert.deepEqual(eraseBoundsFor(8), { block: 0x10000, ceiling: 0x1d0000 });
+  for (const architecture of [10, 16]) {
     assert.throws(() => eraseBoundsFor(architecture), RailError, `architecture ${architecture}`);
   }
 });
@@ -727,9 +746,13 @@ test('an architecture with no recorded block size is refused rather than loosely
   //
   // **The subject moved to arch 8 (Harmony 880 and 885) on 27 September 2026**, when arch 14 gained
   // its rows off its own firmware, section 281, which is the second row landing through this test.
-  assert.equal(ERASE_BLOCK_SIZE[8], undefined);
-  assert.equal(WRITABLE_CEILING[8], undefined);
-  assert.deepEqual(Object.keys(ERASE_BLOCK_SIZE), ['9', '12', '14']);
+  //
+  // **And to arch 10 (Harmony 890 and 895) for `todo-compile-885.md` 1.2**, when arch 8 gained its rows
+  // off two outside sources under decision 30, the third row landing here. Arch 10 has no firmware image
+  // anywhere, so nothing can give it one.
+  assert.equal(ERASE_BLOCK_SIZE[10], undefined);
+  assert.equal(WRITABLE_CEILING[10], undefined);
+  assert.deepEqual(Object.keys(ERASE_BLOCK_SIZE), ['8', '9', '12', '14']);
 });
 
 test('the session end escape is refused in the shipped state, and only for the right reason', () => {

@@ -42,6 +42,15 @@ export class RailError extends Error {}
  * than reasons.
  */
 export const CONFIG_REGION_BASE: Readonly<Record<number, number>> = {
+  // **Arch 8 (Harmony 880 and 885): the user configuration at `0x020000`**, added for
+  // `todo-compile-885.md` 1.2 under decision 30. The application's own start check reads its
+  // configuration from here, `reference/architectures/harmony-880-885/memory.md`, and both bench 885s
+  // were read from here, the `TPTP` cookie at this address. **This floor matters more here than on any
+  // other architecture**, because the firmware's own floor is `0x010000` and nothing above it: the
+  // running application sits in the 64 KiB directly below this address, in the same flash part, and an
+  // erase or a write there is carried out with no condition, `usb.md` "Erasing flash" and "Writing
+  // flash". So this row is the only thing between a mistyped address and the code the remote runs.
+  8: 0x020000,
   9: 0x820000, // Harmony 525
   12: 0x040000, // Harmony One
   14: 0x030000, // Harmony 600 and 700
@@ -118,7 +127,17 @@ export const CONFIG_REGION_BASE: Readonly<Record<number, number>> = {
  * So an architecture arriving on this list gets the flash block path and nothing else, and each
  * further path is a decision with its own evidence rather than a side effect of this line.
  */
-export const ARCHITECTURES_WITH_A_WRITE_TARGET: readonly number[] = [9, 12, 14];
+export const ARCHITECTURES_WITH_A_WRITE_TARGET: readonly number[] = [8, 9, 12, 14];
+//
+// **Arch 8 (Harmony 880 and 885) joined for `todo-compile-885.md` 1.2**, under decision 30, which
+// permits the two bench 885s, unit A first. The same shape as arch 9's arrival: it buys the flash block
+// path and nothing else. The reboot, the invalidate and the RAM write keep their lists, which do not hold
+// 8, so `rehearse-block.ts` is the one way in and `write-config.ts` has no arch 8 target. **Which unit is
+// on the cable is still the unit check's**, since every arch 8 model reports one product id: the 880,
+// 885, 880 Pro, 720 and 785 alike. Two hazards this platform adds and the tables above hold: the firmware
+// bounds an erase and a write from `0x010000` up by nothing, and it runs from the same flash part as its
+// configuration. The write end, selector `0x0A` absent and status 2 never to be sent, is 1.4's and goes
+// through the lists of its own paths.
 //
 // **Arch 14 joined on 27 September 2026, for the Harmony 650**, section 281. Danny's decision: a
 // second hand Harmony 650 arrived, arch 14 like the 600, and may be reprogrammed freely. The 600 was
@@ -212,6 +231,13 @@ export const ARCHITECTURES_WITH_A_RAM_WRITE_TARGET: readonly number[] = [12];
  * refuses, and the thing it was hiding here is the reason this constant exists.
  */
 export const WRITABLE_CEILING: Readonly<Record<number, number>> = {
+  // **The staging region is the ceiling on arch 8 (Harmony 880 and 885)**, not the top of the part.
+  // From `0x1D0000` sits the source the bootloader copies over the application when the install status
+  // says so, and from `0x1E0000` the log area base slot 2 declares, then from `0x1FE000` devices that are
+  // not flash at all, `reference/architectures/harmony-880-885/memory.md` "The address space". The
+  // firmware bounds none of it, so stopping here is this table's decision: the configuration region is
+  // `0x020000` to `0x1D0000`, 27 blocks, and the largest configuration of either bench unit takes ten.
+  8: 0x1d0000,
   // **The log area is the ceiling on arch 9 (Harmony 525)**, not the top of the part. The
   // configuration starts at `0x820000` and `reference/architectures/harmony-5xx/memory.md` puts the log area at
   // `0x870000`, so this stops one block below it. The part itself ends at `0x880000` and the
@@ -272,6 +298,17 @@ export const WRITABLE_CEILING: Readonly<Record<number, number>> = {
  * source, which the comments inside the table now do.
  */
 export const ERASE_BLOCK_SIZE: Readonly<Record<number, number>> = {
+  // **Arch 8 (Harmony 880 and 885): 64 KiB, from two outside sources and not yet from the part.** The
+  // firmware holds no sector table, it sends the part's sector erase at the host's address unchanged,
+  // so the size is whatever sector of the part holds the address. Which of its two known parts a unit
+  // carries is not known, since the application reports both as `01:49`. Above `0x010000` both sources
+  // agree for both parts: Logitech's classic client gives thirty one 64 KiB sectors to `0x200000` and
+  // concordance gives 64 KiB above its finer boot sectors, `memory.md` "The flash part"; the client's
+  // walk over every block of the region, for both parts, is `tests/test_host_client.py`. A third, weaker
+  // closure: the bootloader's own install erases once at `0x010000` and then writes 64 KiB, which works
+  // only if that sector is at least that large. **The first rehearsal measures it**, by reading the
+  // blocks either side before and after the erase, as it did on arch 9, 12 and 14.
+  8: 0x10000,
   // **Arch 9 (Harmony 525) has two independent sources**, section 267. The firmware is the first:
   // the external flash driver at `0x07576` sends `0xD8`, which is a 64 KiB block
   // erase. **Nothing rounds the address down to a boundary**: the classifier has already taken the

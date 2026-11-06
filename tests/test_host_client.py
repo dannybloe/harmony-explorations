@@ -2026,10 +2026,26 @@ class TheEraseBlockAtTheRehearsalAddressIsSixtyFourKiB(unittest.TestCase):
         # **Arch 14 (Harmony 600, 650 and 700) gained its row on 27 September 2026**, section 281, off
         # the same kind of evidence as arch 9's, the eraser's opcode in its own firmware images, so
         # this does not judge it either; `tests/test_arch14_write_target.py` does.
-        self.assertEqual(sorted(rows), ['12', '14', '9'])
+        #
+        # **Arch 8 (Harmony 880 and 885) gained its row for `todo-compile-885.md` 1.2, and that one is
+        # client sourced**, so this does judge it: the client's walk for the Atmel part the 885's
+        # firmware knows, `1F:C0`, puts every block of the configuration region, `0x020000` to the
+        # ceiling at `0x1D0000`, on a 64 KiB boundary in a 64 KiB block. The other part, `01:49`, is device
+        # 73 under manufacturer 1, whose case falls through to device 76's body, which `flash_geometry`
+        # does not follow, so the fall through is asserted as text and the walk is run on 76's arm. The
+        # first rehearsal on a unit measures whichever part is fitted.
+        self.assertEqual(sorted(rows), ['12', '14', '8', '9'])
         self.assertEqual(rows['12'], '0x10000')
         geometry = flash_geometry(self.source, *BENCH_ONE_FLASH)
         self.assertEqual(block_at(geometry, REHEARSAL_BLOCK)[1], 0x10000)
+        self.assertEqual(rows['8'], '0x10000')
+        atmel = flash_geometry(self.source, 0x1f, 0xc0)
+        for block in range(0x020000, 0x1D0000, 0x10000):
+            self.assertEqual(block_at(atmel, block), (block, 0x10000), hex(block))
+        self.assertRegex(self.source, r'case 73:\s*case 76:')
+        spansion = flash_geometry(self.source, 0x01, 76)
+        for block in range(0x020000, 0x1D0000, 0x10000):
+            self.assertEqual(block_at(spansion, block), (block, 0x10000), hex(block))
 
     def test_the_fine_layout_is_per_chip_and_ours_is_not_the_one_the_documents_quoted(self):
         """The correction this dig produced, and the control that the reader tells rows apart.

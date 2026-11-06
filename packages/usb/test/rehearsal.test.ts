@@ -72,8 +72,8 @@ test('only a unit the rehearsal may run against has a flash size recorded', () =
   // named a property this table does not have. What the table actually bounds is the neighbour
   // reads, which happen in the **dry run**, before anything is written and on an architecture that
   // may never be written to at all. A hole is still not a default.
-  // Arch 14 (Harmony 650) since section 281.
-  assert.deepEqual(Object.keys(NOMINAL_FLASH_SIZE).sort(), ['12', '14', '9']);
+  // Arch 14 (Harmony 650) since section 281, arch 8 (Harmony 885 unit A) since `todo-compile-885.md` 1.2.
+  assert.deepEqual(Object.keys(NOMINAL_FLASH_SIZE).sort(), ['12', '14', '8', '9']);
 });
 
 test('the arch 9 part is eight blocks and the config region is the top five of them', () => {
@@ -246,7 +246,8 @@ test('a dry run asks for no write permission, whether or not the target has one'
   // write permission, so a dry run on a permitted target is still a read. That is a property of the
   // script's shape and it can fail on any refactor, where the old assertion could only fail on a
   // decision. Arch 14 (Harmony 650) joined both on 27 September 2026, section 281.
-  assert.deepEqual([...ARCHITECTURES_WITH_A_WRITE_TARGET], [9, 12, 14]);
+  // Arch 8 (Harmony 885 unit A) joined both for `todo-compile-885.md` 1.2.
+  assert.deepEqual([...ARCHITECTURES_WITH_A_WRITE_TARGET], [8, 9, 12, 14]);
   const text = rehearsalScript();
   const dryReturn = text.indexOf("dry run: nothing was written");
   const firstWrite = text.indexOf('assertFirstWriteAllowed()');

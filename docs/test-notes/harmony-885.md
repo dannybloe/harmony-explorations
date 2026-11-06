@@ -4,8 +4,9 @@ The bench Harmony 885s: what was done to them, in order. What the remote and its
 [the reference](../../reference/architectures/harmony-880-885/README.md).
 
 **Two Harmony 885s are on the bench, and both may be written, unit A first**, decision 30. This said
-"neither may be written"<!--superseded--> until that decision. Nothing has been written to either: arch 8 is
-still not in `ARCHITECTURES_WITH_A_WRITE_TARGET`, and adding it is a demonstration of its own. Before them, everything known about
+"neither may be written"<!--superseded--> until that decision. Nothing has been written to either. Arch 8 is in
+`ARCHITECTURES_WITH_A_WRITE_TARGET` since `todo/todo-compile-885.md` 1.2, for the flash block path and unit A
+only; this said it was "still not in" the list<!--superseded--> until then. Before them, everything known about
 this architecture came from a contributor's firmware images and configurations, read off their remotes.
 
 ## The first unit, `h885_a`

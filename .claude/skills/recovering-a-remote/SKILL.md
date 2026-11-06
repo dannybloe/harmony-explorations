@@ -415,9 +415,10 @@ What must never be part of that route:
 ## The Harmony 880 and 885
 
 **Read before planning any write to this platform, and before deciding what a recovery would be.** The two
-Harmony 885s on the bench are read only, `CLAUDE.md` "Never write to a remote", and this platform is not
-in `ARCHITECTURES_WITH_A_WRITE_TARGET`. So this section is what a recovery would consist of, and not a
-permission. Everything in it is read in the firmware, the application 4.4 and both bootloader builds 4.0,
+Harmony 885s on the bench may be written, unit A first, decision 30, and arch 8 is in
+`ARCHITECTURES_WITH_A_WRITE_TARGET` for the flash block path since `todo-compile-885.md` 1.2; this said
+they "are read only" and the platform "not in" the list<!--superseded--> until then. Nothing has been
+written to either yet, so this section is still what a recovery would consist of, and not a record of one. Everything in it is read in the firmware, the application 4.4 and both bootloader builds 4.0,
 the 880's and the 885's; none of it has been run on a unit, and no command has been sent to a bootloader on
 any remote. The facts are `reference/architectures/harmony-880-885/firmware.md`, `memory.md` and `usb.md`,
 and `reference/usb-protocol/bootloader.md` "The Harmony 880 and 885"; the arguments are the headers of

@@ -506,8 +506,10 @@ export const DEFAULT_REGION_ARCHITECTURE = 12;
  * either, and what it returns there is not checked, which is why the bound is a refusal of a question
  * with no known answer rather than a safety rail.
  *
- * **Reads only.** `ARCHITECTURES_WITH_A_WRITE_TARGET` in `rails.ts` is the write gate and arch 8 is
- * not in it; adding an address rule adds no write target, and the erase tables still have no row.
+ * **Reads only.** `ARCHITECTURES_WITH_A_WRITE_TARGET` in `rails.ts` is the write gate. Arch 8 joined it
+ * for `todo-compile-885.md` 1.2 with rows of its own in the erase tables, which is where a write is
+ * bounded; this read bound grants nothing, and adding it added no write target. This said arch 8 "is not
+ * in it" and that the erase tables "still have no row"<!--superseded--> until then.
  */
 export const ARCH8_FLASH_TOP = 0x20;
 

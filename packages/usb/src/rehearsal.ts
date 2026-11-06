@@ -22,6 +22,13 @@
  * `0x3D0000` because the stored application firmware sits below the top.
  */
 export const NOMINAL_FLASH_SIZE: Readonly<Record<number, number>> = {
+  // Arch 8 (Harmony 880 and 885): 2 MiB from zero, both parts the firmware knows, `memory.md` "The
+  // flash part". **The block below the configuration, `0x010000`, is the running application**, so the
+  // neighbour check on a rehearsal at `0x020000` is what shows the erase left it alone. Reading it is a
+  // read: the image was compared off both bench units that way, `docs/test-notes/harmony-885.md`. The
+  // highest neighbour a block below the ceiling can have ends at `0x1E0000`, short of the devices that
+  // start at `0x1FE000`, so no neighbour read reaches anything that is not flash.
+  8: 0x200000,
   // **Arch 9 (Harmony 525)'s address space does not start at zero**, which matters for how
   // `neighbourBlocks` reads this number. Its flash is addressed `0x800000` to `0x880000`, eight
   // 64 KiB blocks, section 267 and concordance's own chip table. So the bottom of the part is

@@ -28,7 +28,7 @@ Written on 6 November 2026; linked from `todo-later.md` 5.6.
 ## 1. The write route and a starting configuration
 
 - [x] 1.1 The `harmony-885` skill, as the 650 has its own: where the facts are, the rails, the write and bench procedure as they are established below; its write procedure is empty until 1.2 to 1.4 fill it in, and it names the backup a first write needs, which the lab does not hold yet
-- [ ] 1.2 Arch 8 a write target, its own demonstration (section 269): the erase table's row, `ARCHITECTURES_WITH_A_WRITE_TARGET`, a target in `write-config.ts`, the unit check against `units/h885_a.txt`
+- [x] 1.2 Arch 8 a write target, its own demonstration (section 269): the flash block path only, unit A only, through `rehearse-block.ts`: the region, ceiling and erase rows, `ARCHITECTURES_WITH_A_WRITE_TARGET`, the unit check against `units/h885_a.txt`, which tells the two units apart; `write-config.ts`'s target is 1.4's
 - [ ] 1.3 One block of unit A's configuration written back unchanged and read back identical, the remote still running
 - [ ] 1.4 Unit A's whole configuration written back unchanged: the write sequence as the firmware reads it (prepare 1.5), how the remote takes it up, and the clock afterwards, read over USB
 - [ ] 1.5 Every write stamps the build time, if the 885 sets its clock from it as the 650 does (prepare 2.3)

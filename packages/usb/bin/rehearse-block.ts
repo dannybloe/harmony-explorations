@@ -260,6 +260,26 @@ const H700_DUMPS = new Set<string>([
   'h700_28_config_region',
 ]);
 
+/**
+ * The Harmony 885 unit A's configuration region, arch 8: `0x020000` to `0x1D0000`, read twice on 5
+ * November 2026 and identical, `docs/test-notes/harmony-885.md`. Both reads start at the region's base,
+ * so a block's offset in them is its distance from `0x020000`, which is what the compare below takes.
+ *
+ * **Unit A only**, decision 30: both bench 885s may be written and A goes first. Unit B's region reads,
+ * `h885_b_region` and `_2`, are in the lab and join with a target of their own once A has gone first.
+ *
+ * **Which block, on this platform, is not the 525's choice**, and the reason is the platform's: the
+ * firmware runs from the same flash part as the configuration, so while a block of the live
+ * configuration is erased and not yet written back, anything the remote looks up there reads blank.
+ * The 525 and the One keep their firmware elsewhere. The first rehearsal goes to a block past the
+ * configuration's end at `0x0AAAD4` that holds remains of earlier configurations, which the remote never
+ * reads and which are not `0xFF`, so a write that sent nothing would still be seen: `0x0C0000`.
+ */
+const H885_A_DUMPS = new Set<string>([
+  'h885_a_region',
+  'h885_a_region_2',
+]);
+
 /** A remote this script may run against, per architecture. */
 interface Target {
   /** How to say which remote, in a refusal an operator reads. */
@@ -294,6 +314,9 @@ interface Target {
  * comparing is the step that has to happen before a write is authorised at all.
  */
 const TARGETS: Readonly<Record<number, readonly Target[]>> = {
+  // Unit A only, decision 30. Every arch 8 model reports one product id, so the unit record is what
+  // says the remote on the cable is this 885 and not unit B, an 880 or a 720.
+  8: [{ model: 'the Harmony 885 unit A', unitLabel: 'h885_a', dumps: H885_A_DUMPS }],
   9: [{ model: 'the Harmony 525', unitLabel: 'h525', dumps: H525_DUMPS }],
   12: [{ model: 'the spare Harmony One', unitLabel: 'one_spare', dumps: SPARE_DUMPS }],
   // Three units on arch 14 since Danny's decision of 29 September 2026, and the 600 and the 650 enumerate identically, so the
