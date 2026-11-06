@@ -2,7 +2,11 @@
 """
 Keep the documents honest about numbers and about claims that later findings killed.
 
-Usage:  facts.py [--write] [--list]
+Usage:  facts.py [--write] [--list] [--phrases]
+
+`--phrases` runs the superseded phrase check alone. It reads only this repository, so the commit hook uses
+it: the numeric check reads the local lab, and a lab that grows on its own is no reason to refuse a commit
+that touches no number. The numbers are checked by `make facts` and the full suite.
 
 **Why this exists.** On 8 August 2026 an audit of the documents against the code found eleven
 places where they had drifted, and all eleven had one cause: a fact stated in more than one place
@@ -715,6 +719,11 @@ def rel(path):
 
 def main():
     write = '--write' in sys.argv[1:]
+    if '--phrases' in sys.argv[1:]:
+        problems = check_phrases()
+        for problem in problems:
+            print(problem)
+        return 1 if problems else 0
     facts = {}
     facts.update(contribution_facts())
     facts.update(corpus_facts())
