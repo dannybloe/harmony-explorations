@@ -171,7 +171,7 @@ test('refuses on composing what the remote would drop or do otherwise', () => {
   const two = activity().devices;
   refused({ id: 83000003 }, /not one of ours/);
   refused({ type: 'Nothing' as never }, /not one of Logitech's activity types/);
-  refused({ startScreen: 'Gesturepad' as never }, /needs what this composer does not write/);
+  refused({ startScreen: 'Numpad' as never }, /needs what this composer does not write/);
   refused({ devices: [] }, /left off the screens' home list/);
   refused({ devices: [{ ...two[0]!, device: 'No Such Device' }] }, /no device named "No Such Device"/);
   refused({ devices: [two[0]!, { ...two[0]!, powerOn: 3, powerOff: 3 }] }, /given twice/);

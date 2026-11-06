@@ -64,7 +64,7 @@
  */
 import type {
   Activity, ActivityAction, ActivityList, Button, ButtonActionDocument, ButtonMap, Command, Device, DeviceList,
-  DeviceWithFeatures, Id, IrProtocol, MapList, ProtocolList, Role, SyncDocuments,
+  DeviceWithFeatures, Id, IrProtocol, MapList, ProtocolList, Role, Sequence, SyncDocuments,
 } from './documents.ts';
 import { INFRARED_TRANSPORT, mapIdentifier, readConfiguration, type ReadDevice } from './read.ts';
 import { idText, kindOf } from './documents.ts';
@@ -570,11 +570,38 @@ export type ActivityRoleKind = (typeof ACTIVITY_ROLE_KINDS)[number];
 
 /**
  * The start screens an activity of ours may open on. `Commands` is the command list, the screens' fallback for any
- * value whose condition fails, `activities-and-buttons.md`, the table under "An activity: what it is made of"; the
- * others each need something of the activity this composer does not write (favourites, number pad entries, a
- * trackpad, gestures, speakers), so they are refused until it does.
+ * value whose condition fails, `activities-and-buttons.md`, the table under "An activity: what it is made of".
+ * `Favorites` and `Gesturepad` were added for `todo-touch.md` 8.6, the whole test setup, whose Watch TV opens on its
+ * favourites and Watch a Blu-ray on its gesture screen: each is written only where what it needs is, the favourites
+ * only on the tuning default activity with a channel changing role, the gesture screen only on a map with gestures,
+ * `composeTouchActivity`. The others (Numpad, Trackpad, Nowplaying) each need something of the activity this composer
+ * does not write, so they are refused until it does.
  */
-export const ACTIVITY_START_SCREENS = ['Commands'] as const;
+export const ACTIVITY_START_SCREENS = ['Commands', 'Favorites', 'Gesturepad'] as const;
+
+/**
+ * **The gestures a map of ours may hold**: the five Logitech's documents put on each activity but the Custom one,
+ * `activities-and-buttons.md`, "Gestures". The screens also name held and released gestures, `SwipeUpHold` and the
+ * like, and index a table that has no entry for some of them with a long press, the lab's 6.10 note on the screens'
+ * reads, row 184; no document measured holds one, so they are refused.
+ */
+export const GESTURE_KEYS = ['SwipeUp', 'SwipeDown', 'SwipeLeft', 'SwipeRight', 'Tap'] as const;
+export type TouchGestureKey = (typeof GESTURE_KEYS)[number];
+
+/**
+ * **The client actions a button of ours may carry**: `Numpad`, which opens the number pad, the one the documents
+ * measured hold (six maps, each on an entry labelled `123` of group 36). A client action sends nothing from the engine
+ * and the screens act on it themselves, `activities-and-buttons.md`, "What a writer must carry".
+ */
+export const CLIENT_ACTIONS = ['Numpad'] as const;
+export type TouchClientAction = (typeof CLIENT_ACTIONS)[number];
+
+/**
+ * **The function groups a button of ours may carry**: 0 the list, 2 the number pad and 36 the group that shares the
+ * list's numbering, `activities-and-buttons.md`, "Screen entries and the number pad". Every button measured is in one
+ * of the three; a key may carry 2 as well, as one key of the documents measured does.
+ */
+export const BUTTON_GROUPS = [0, 2, 36] as const;
 
 /**
  * Screen labels that act by themselves rather than sending their command: the number pad, the gesture screen,
@@ -601,8 +628,44 @@ export interface OwnActivityCommand {
   readonly command: string;
 }
 
-/** A step added by hand to an activity's start or end: a command, or a pause in whole or part seconds. */
-export type OwnActivityStep = OwnActivityCommand | { readonly delaySeconds: number };
+/**
+ * A step added by hand to an activity's start or end: a command, a pause in whole or part seconds, or, since 8.6, a
+ * channel tuned through a device. `order` is the step's `ActionOrder`; its place in the list counting from 1 when
+ * absent. The engine sorts the steps by it, `orderTableItems`, so only the order matters, and Logitech's client
+ * numbers them in a way of its own, Switch Box's start from 4, which a description may keep.
+ */
+export type OwnActivityStep = (OwnActivityCommand | { readonly delaySeconds: number } | { readonly device: string; readonly channel: string })
+  & { readonly order?: number };
+
+/**
+ * What a button of the ordered form does: a command to a device of the documents, a sequence of the same map by its
+ * name, or a client action the screens act on.
+ */
+export type OwnPress = OwnActivityCommand | { readonly sequence: string } | { readonly client: TouchClientAction };
+
+/**
+ * **A button in the ordered form**, `todo-touch.md` 8.6: a key, a gesture or a screen entry, each in the place the
+ * description gives it, so a map comes out with its buttons in the order Logitech's has them. One of `key`, `gesture`
+ * and `entry` names the button; `entry` is the label the screen shows, and `index` its `IndexInMenu`, which the
+ * description states, a repeated one included. `group` is the `FunctionGroupType`, 0 when absent.
+ */
+export interface OwnButton {
+  readonly key?: TouchButtonKey;
+  readonly gesture?: TouchGestureKey;
+  readonly entry?: string;
+  readonly index?: number;
+  readonly group?: number;
+  readonly press: OwnPress;
+  readonly longPress?: OwnPress;
+  readonly doublePress?: OwnPress;
+}
+
+/** A sequence of a map: its id, ours, its name, and its steps, commands and pauses in whole or part seconds. */
+export interface OwnSequence {
+  readonly id: number;
+  readonly name: string;
+  readonly steps: readonly (OwnActivityCommand | { readonly delaySeconds: number })[];
+}
 
 /** A key of the activity's map: the command its press sends, and its long press when one is wanted. */
 export interface OwnActivityKey extends OwnActivityCommand {
@@ -632,6 +695,14 @@ export interface OwnActivity {
   readonly leave?: readonly OwnActivityStep[];
   readonly keys?: Readonly<Partial<Record<TouchButtonKey, OwnActivityKey>>>;
   readonly entries?: readonly OwnActivityEntry[];
+  /** Whether the favourite channels belong to this activity, `IsTuningDefault`; false when absent. 8.6. */
+  readonly tuningDefault?: boolean;
+  /**
+   * The map's buttons in the ordered form, in place of `keys` and `entries`, with gestures and sequences, 8.6. The
+   * two forms are not mixed: a description gives one or the other.
+   */
+  readonly buttons?: readonly OwnButton[];
+  readonly sequences?: readonly OwnSequence[];
 }
 
 /** What `composeTouchActivity` gives: the activity list's entry and its own map. */
@@ -652,8 +723,8 @@ export interface ActivityDocuments {
  * **What is written, and why only that.** Of an activity's 26 fields, the ones either program reads,
  * `activities-and-buttons.md`: the id, which the engine and the screens find it by and its map is named from;
  * `Name`; `Type` and `SuggestedDisplay`, from `ACTIVITY_TYPES`; `ActivityGroup`, which the engine indexes and fails
- * without, from `ACTIVITY_GROUPS`; `ActivityOrder`; `StartScreen`; `IsTuningDefault` false and `DefaultChannel`
- * null, since an activity of ours tunes no favourites; `ImageKey`, `BaseImageUri` and `Icon` null, so the screens
+ * without, from `ACTIVITY_GROUPS`; `ActivityOrder`; `StartScreen`; `IsTuningDefault`, false unless the description gives
+ * the favourites to the activity, 8.6, and `DefaultChannel` null, as on every activity measured; `ImageKey`, `BaseImageUri` and `Icon` null, so the screens
  * draw the default picture of its type, as for every activity measured; `ActivityDisplayName` and `Alternatives`
  * null, `IsMultiZone` false and `Zones` null; the roles; and the two step lists. Left out, as read by neither
  * program: `AccountId-`, `State`, `IsDefault`, `DateCreated`, `DateModified`, `DefaultStation` and
@@ -668,16 +739,22 @@ export interface ActivityDocuments {
  * **The map** is `16417Activity` and the id, the identifier the engine finds it by, with its keys and its screen
  * list as `composeTouchDevice` writes a device's: state 0, group 0, a press of event 1, the screen list numbered
  * from 0 in the order given, no gesture and no sequence. An activity of the `Custom` type carries no gestures in
- * the documents measured, and one of another type carries five there; this writes none for any type.
+ * the documents measured, and one of another type carries five there; this writes none for any type. **Or, since
+ * 8.6, the ordered form**, `buttons` and `sequences`, written by `composeButtons` in the order given, gestures,
+ * long and double presses, sequences and the number pad entry among them. A step may be a channel tuned through a
+ * device, `ChannelActivityAction`, and may state its own order.
  *
  * **Refuses** what the remote would drop or do otherwise than described: an id not ours; a type with no measured
- * group; a start screen other than the command list; no device, which hides the activity from the screens' home
+ * group; a start screen outside `ACTIVITY_START_SCREENS`, the favourites on an activity that does not own them or
+ * owning them without a channel changing role, and the gesture screen on a map with no gesture; both map forms at
+ * once, and sequences without the ordered form; no device, which hides the activity from the screens' home
  * list (it keeps only activities with roles); a device not in the documents or named twice there; a device given
  * twice; a role kind outside `ACTIVITY_ROLE_KINDS`; a device with no role; two devices sharing a power on or a power
  * off order, of which the engine keeps one; an input the device does not have, which the engine skips without a
  * word; a command a device does not have, on a step, a key or an entry; a key name the Touch's documents do not use;
- * a delay that is not a positive number; an empty label, two entries with one label, and a label that acts by
- * itself.
+ * a delay that is not a positive number; two steps of one list on one order; a channel step that is not digits or
+ * names a device with no channel tuning; an empty label, two entries with one label, a label that acts by itself;
+ * and whatever `composeButtons` refuses.
  */
 export function composeTouchActivity(a: OwnActivity, documents: SyncDocuments): ComposedTouchActivity {
   if (!isOwnId(a.id)) throw new ComposeRefusal(`activity id ${a.id} is not one of ours, ${OWN_IDS.first} to ${OWN_IDS.last}`);
@@ -689,6 +766,16 @@ export function composeTouchActivity(a: OwnActivity, documents: SyncDocuments): 
     throw new ComposeRefusal(`the start screen "${a.startScreen}" needs what this composer does not write; ${ACTIVITY_START_SCREENS.join(', ')} only`);
   }
   if (a.devices.length === 0) throw new ComposeRefusal('an activity with no device is left off the screens\' home list');
+  if (a.buttons !== undefined && (a.keys !== undefined || a.entries !== undefined)) {
+    throw new ComposeRefusal('a description gives its map as ordered buttons or as keys and entries, not both');
+  }
+  if (a.sequences !== undefined && a.buttons === undefined) throw new ComposeRefusal('sequences are given only with the ordered buttons');
+  // The favourites belong to an activity with a channel changing role, through which they are tuned, and the screens
+  // offer Favorites as a start screen only on that activity, `activities-and-buttons.md`, the table of fields.
+  const channelRole = a.devices.some((d) => d.roles.includes('ChannelChangingActivityRole'));
+  if (a.tuningDefault === true && !channelRole) throw new ComposeRefusal('the favourite channels belong to an activity with a channel changing role, and this one has none');
+  if (a.startScreen === 'Favorites' && a.tuningDefault !== true) throw new ComposeRefusal('only the activity the favourite channels belong to opens on them');
+  if (a.startScreen === 'Gesturepad' && !(a.buttons ?? []).some((b) => b.gesture !== undefined)) throw new ComposeRefusal('an activity opens on its gesture screen only when its map holds gestures');
 
   const read = readConfiguration(documents);
   // After the last activity listed when the description gives no place; `withTouchActivity` refuses a taken one.
@@ -741,15 +828,31 @@ export function composeTouchActivity(a: OwnActivity, documents: SyncDocuments): 
     }
   }
 
-  // A step's `ActionOrder` counts from 1 in the order given; a delay's `Duration` is in seconds, as the engine reads it.
-  const steps = (xs: readonly OwnActivityStep[] | undefined): ActivityAction[] => (xs ?? []).map((x, i): ActivityAction => {
-    if ('delaySeconds' in x) {
-      if (typeof x.delaySeconds !== 'number' || !(x.delaySeconds > 0)) throw new ComposeRefusal('a delay step is not a positive number of seconds');
-      return { __type: 'DelayActivityAction', ActionOrder: i + 1, Duration: x.delaySeconds };
-    }
-    const c = commandOf(x);
-    return { __type: 'CommandActivityAction', ActionOrder: i + 1, CommandName: c.name, 'DeviceId-': stated(c.device) };
-  });
+  // A step's `ActionOrder` counts from 1 in the order given, or is the description's own; a delay's `Duration` is in
+  // seconds, as the engine reads it. Two steps of one list on one order would be one step, the engine keeping them in a
+  // table by order, so that is refused.
+  const steps = (xs: readonly OwnActivityStep[] | undefined): ActivityAction[] => {
+    const orders = new Set<number>();
+    return (xs ?? []).map((x, i): ActivityAction => {
+      const order = x.order ?? i + 1;
+      if (!Number.isInteger(order) || order < 1) throw new ComposeRefusal('a step\'s order is not a whole number from 1');
+      if (orders.has(order)) throw new ComposeRefusal(`two steps share order ${order}, of which the engine keeps one`);
+      orders.add(order);
+      if ('delaySeconds' in x) {
+        if (typeof x.delaySeconds !== 'number' || !(x.delaySeconds > 0)) throw new ComposeRefusal('a delay step is not a positive number of seconds');
+        return { __type: 'DelayActivityAction', ActionOrder: order, Duration: x.delaySeconds };
+      }
+      if ('channel' in x) {
+        // A channel is the digits a person types, kept as text as Logitech's documents keep it.
+        if (typeof x.channel !== 'string' || !/^[0-9]+$/.test(x.channel)) throw new ComposeRefusal('a channel step names no channel of digits');
+        const device = deviceNamed(x.device);
+        if (device.channelTuning === undefined) throw new ComposeRefusal(`"${x.device}" has no channel tuning, so a channel step would send nothing`);
+        return { __type: 'ChannelActivityAction', ActionOrder: order, ChannelNumber: x.channel, 'DeviceId-': stated(device) };
+      }
+      const c = commandOf(x);
+      return { __type: 'CommandActivityAction', ActionOrder: order, CommandName: c.name, 'DeviceId-': stated(c.device) };
+    });
+  };
   const enter = steps(a.enter);
   const leave = steps(a.leave);
 
@@ -759,6 +862,16 @@ export function composeTouchActivity(a: OwnActivity, documents: SyncDocuments): 
   };
   const known = new Set<string>(BUTTON_KEYS);
   const buttons: Button[] = [];
+  let sequences: Sequence[] = [];
+  if (a.buttons !== undefined) {
+    // The ordered form, 8.6: the map's buttons in the description's order, with function ids, gestures and sequences.
+    const map = composeButtons(a.buttons, a.sequences ?? [], (c) => {
+      const found = commandOf(c);
+      return { name: found.name, deviceId: stated(found.device), functionId: functionIdOf(found.device.commandsByName.get(found.name.toLowerCase())?.source) };
+    });
+    buttons.push(...map.buttons);
+    sequences = map.sequences;
+  }
   for (const [key, binding] of Object.entries(a.keys ?? {})) {
     if (!known.has(key)) throw new ComposeRefusal(`"${key}" is not a key name a Touch's documents use`);
     if (binding === undefined) continue;
@@ -798,7 +911,7 @@ export function composeTouchActivity(a: OwnActivity, documents: SyncDocuments): 
     SuggestedDisplay: a.type,
     ActivityOrder: order,
     StartScreen: a.startScreen,
-    IsTuningDefault: false,
+    IsTuningDefault: a.tuningDefault === true,
     DefaultChannel: null,
     ImageKey: null,
     BaseImageUri: null,
@@ -816,9 +929,143 @@ export function composeTouchActivity(a: OwnActivity, documents: SyncDocuments): 
     ButtonMapIdentifier: mapIdentifier('activity', idText(a.id)),
     'ActivityId-': a.id,
     Buttons: buttons,
-    Sequences: [],
+    Sequences: sequences,
   };
   return { activity, map };
+}
+
+/**
+ * The function id a command states, the catalogue's number for what the command does, under either of the two keys
+ * Logitech's documents use for it, or undefined where it states none. **The screens read it on a button's action**,
+ * under `FunctionId-` alone: a list entry's icon is the picture of that number, and the gesture screen finds the
+ * device mode button to press by it, `activities-and-buttons.md`, "Gestures". In the documents measured every button
+ * action naming a command that states one carries the command's number under `FunctionId-`, 530 of 530, and both
+ * sequence steps carry 0, `touch-setup.test.ts`.
+ */
+export function functionIdOf(command: Command | undefined): number | undefined {
+  if (command === undefined) return undefined;
+  const id = command['FunctionId-'] ?? (command as Record<string, unknown>)['FunctionId'];
+  return typeof id === 'number' ? id : undefined;
+}
+
+/** What `composeButtons` needs of a command: the name the device gives it, the device's id and its function id. */
+export interface ResolvedCommand {
+  readonly name: string;
+  readonly deviceId: Id;
+  readonly functionId: number | undefined;
+}
+
+/**
+ * A map's buttons and sequences from the ordered form, `todo-touch.md` 8.6, for a device's own map and an activity's
+ * alike: `resolve` finds a command as the map's kind finds it and refuses one it cannot. **What each button is
+ * written with**, the fields either program reads, `activities-and-buttons.md`: its kind, `HardRemoteButton` for a
+ * key, `GestureRemoteButton` for a gesture and `SoftRemoteButton` for an entry; `ButtonKey` for a key and a gesture;
+ * `TextOnRemote` and `MenuItem.IndexInMenu` for an entry; `ButtonState` 0; `FunctionGroupType`; and its three actions,
+ * null where none is given. A command action states `EventType` 1, 2 or 3 by which of the three it is, `Order` 0, the
+ * command and the device, and the command's function id under `FunctionId-` where it states one, since the screens read
+ * that key; a sequence action names the sequence's id, a client action its name. A sequence's steps are numbered by
+ * `Order` from 1, which the engine sorts them by, a pause's `Duration` in seconds.
+ *
+ * **Left out, as read by neither program**, the table of `activities-and-buttons.md`, "What a writer must carry": a
+ * button's `ButtonId`, `ImageId`, `ButtonImageKey`, `ButtonImagePath` and `MenuItem.MenuName`, and an action's `Id`.
+ *
+ * **Refuses** what the remote would drop or do otherwise: a button naming none or more than one of key, gesture and
+ * entry; a key or gesture name the Touch's documents do not use; an entry without a label or a whole `index` from 0; a
+ * group outside `BUTTON_GROUPS`; a key or gesture given twice, of which the engine keeps one; a client action other
+ * than `Numpad`, or one on anything but an entry labelled `123`, which is how the screens find it; a label that acts by
+ * itself on an entry that is not that; a sequence named twice, given an id twice or not ours, with no command step,
+ * or with a pause that is not a positive number; and a button naming a sequence the map does not hold.
+ */
+export function composeButtons(
+  given: readonly OwnButton[], ownSequences: readonly OwnSequence[], resolve: (c: OwnActivityCommand) => ResolvedCommand,
+): { readonly buttons: Button[]; readonly sequences: Sequence[] } {
+  const sequenceIds = new Map<string, number>();
+  const ids = new Set<number>();
+  const sequences: Sequence[] = ownSequences.map((s) => {
+    if (sequenceIds.has(s.name)) throw new ComposeRefusal(`two sequences are named "${s.name}"`);
+    if (!isOwnId(s.id) || ids.has(s.id)) throw new ComposeRefusal(`sequence "${s.name}": its id is not one of ours or is given twice`);
+    sequenceIds.set(s.name, s.id);
+    ids.add(s.id);
+    if (!s.steps.some((x) => !('delaySeconds' in x))) throw new ComposeRefusal(`sequence "${s.name}" sends no command`);
+    const actions: ButtonActionDocument[] = s.steps.map((x, i) => {
+      if ('delaySeconds' in x) {
+        if (typeof x.delaySeconds !== 'number' || !(x.delaySeconds > 0)) throw new ComposeRefusal(`sequence "${s.name}": a pause is not a positive number of seconds`);
+        return { __type: 'ButtonDelayAction', EventType: PRESS_EVENT, Order: i + 1, Duration: x.delaySeconds };
+      }
+      // No function id on a step: Logitech's documents state 0 there on both steps measured, and nothing reads a
+      // step's, the sequence being shown by its own picture, `style.lua`'s command button.
+      return commandAction({ ...resolve(x), functionId: undefined }, PRESS_EVENT, i + 1);
+    });
+    return { SequenceId: s.id, Name: s.name, Actions: actions };
+  });
+
+  const action = (p: OwnPress | undefined, event: number, on: OwnButton): ButtonActionDocument | null => {
+    if (p === undefined) return null;
+    if ('sequence' in p) {
+      const id = sequenceIds.get(p.sequence);
+      if (id === undefined) throw new ComposeRefusal(`a button runs sequence "${p.sequence}", which the map does not hold`);
+      return { __type: 'ButtonSequenceAction', EventType: event, Order: 0, SequenceId: id };
+    }
+    if ('client' in p) {
+      if (!(CLIENT_ACTIONS as readonly string[]).includes(p.client)) throw new ComposeRefusal(`"${String(p.client)}" is not a client action a button of ours carries`);
+      if (on.entry !== '123') throw new ComposeRefusal('the number pad opens from an entry labelled 123, which is how the screens find it');
+      return { __type: 'ButtonClientAction', EventType: event, Order: 0, ActionName: p.client };
+    }
+    return commandAction(resolve(p), event, 0);
+  };
+
+  const keys = new Set<string>(BUTTON_KEYS);
+  const gestures = new Set<string>(GESTURE_KEYS);
+  const seen = new Set<string>();
+  const buttons = given.map((b): Button => {
+    const names = [b.key, b.gesture, b.entry].filter((x) => x !== undefined);
+    if (names.length !== 1) throw new ComposeRefusal('a button is named by exactly one of a key, a gesture and an entry');
+    const group = b.group ?? LIST_GROUP;
+    if (!(BUTTON_GROUPS as readonly number[]).includes(group)) throw new ComposeRefusal(`group ${group} is not one a button of ours carries`);
+    const actions = {
+      ButtonAction: action(b.press, PRESS_EVENT, b),
+      ButtonLongPressAction: action(b.longPress, LONG_PRESS_EVENT, b),
+      ButtonDoublePressAction: action(b.doublePress, DOUBLE_PRESS_EVENT, b),
+    };
+    if (b.key !== undefined || b.gesture !== undefined) {
+      const name = (b.key ?? b.gesture)!;
+      if (b.key !== undefined && !keys.has(b.key)) throw new ComposeRefusal(`"${b.key}" is not a key name a Touch's documents use`);
+      if (b.gesture !== undefined && !gestures.has(b.gesture)) throw new ComposeRefusal(`"${b.gesture}" is not a gesture a map of ours holds`);
+      if (seen.has(name)) throw new ComposeRefusal(`"${name}" is given twice, of which the engine keeps one`);
+      seen.add(name);
+      return { __type: b.key !== undefined ? 'HardRemoteButton' : 'GestureRemoteButton', ButtonKey: name, ButtonState: 0, FunctionGroupType: group, ...actions };
+    }
+    const label = b.entry!;
+    if (typeof label !== 'string' || label.trim() === '') throw new ComposeRefusal('a screen entry has no label');
+    if (typeof b.index !== 'number' || !Number.isInteger(b.index) || b.index < 0) throw new ComposeRefusal(`entry "${label}" has no place in its list, a whole number from 0`);
+    if ((ACTING_LABELS as readonly string[]).includes(label) && !(label === '123' && 'client' in b.press)) {
+      throw new ComposeRefusal(`the label "${label}" acts by itself on the remote's screens`);
+    }
+    return {
+      __type: 'SoftRemoteButton',
+      ButtonState: 0,
+      FunctionGroupType: group,
+      TextOnRemote: label,
+      MenuItem: { IndexInMenu: b.index },
+      ...actions,
+    };
+  });
+  return { buttons, sequences };
+}
+
+/** A double press, as Logitech's maps carry it on a gesture's double tap. */
+const DOUBLE_PRESS_EVENT = 3;
+
+/** A command action: the event by which press it is, its order, the command, its device and its function id. */
+function commandAction(c: ResolvedCommand, event: number, order: number): ButtonActionDocument {
+  return {
+    __type: 'ButtonCommandAction',
+    EventType: event,
+    Order: order,
+    CommandName: c.name,
+    'DeviceId-': c.deviceId,
+    ...(c.functionId === undefined ? {} : { 'FunctionId-': c.functionId }),
+  };
 }
 
 /**

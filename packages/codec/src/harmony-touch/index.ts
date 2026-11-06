@@ -14,3 +14,4 @@ export * from './compose.ts';
 export * from './favourites.ts';
 export * from './settings.ts';
 export * from './remove.ts';
+export * from './setup.ts';

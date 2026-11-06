@@ -14,6 +14,9 @@
  *   node packages/corpus/bin/touch-device-set.ts --describe-context <set folder> --out <new lab file>
  *   node packages/corpus/bin/touch-device-set.ts --build <new lab folder> --from <set folder> --removal <description>
  *   node packages/corpus/bin/touch-device-set.ts --build <new lab folder> --from <removal set folder> --removal-back
+ *   node packages/corpus/bin/touch-device-set.ts --build <new lab folder> --from <set folder> --setup <description>
+ *   node packages/corpus/bin/touch-device-set.ts --build <new lab folder> --from <setup set folder> --setup-back
+ *   node packages/corpus/bin/touch-device-set.ts --describe-setup <set folder> --out <new description file>
  *   node packages/corpus/bin/touch-device-set.ts --check <set folder> [--same-as <set folder>]... \
  *     [--written <a run's kept write of answers>] [--hash <getconfighash answer>] [--list <request list answer>]
  *
@@ -63,6 +66,17 @@
  * removal changed as the remote held them before, content and tags, `putBackRemoval`. The record says `removal` or
  * `removalBack`. `--check` of either prints the structural diff entry by entry, `removalChanges`.
  *
+ * **`--build --setup`** reads a whole setup, a JSON file whose `setup` is a `TouchSetup`
+ * (`packages/corpus/touch-setups/8.6-test-setup.json`), composes it onto the source with every device and activity taken
+ * out, the source's own device and protocol lists standing for the catalogue, `composeTouchSetup` in the codec, and
+ * delivers the four documents a device or an activity is named in under new tags beside the source's Context and
+ * Settings, `withSetup` in `src/touchsetupset.ts`, 8.6. **`--build --setup-back`** is its exact inverse, the four as the
+ * remote held them before, content and tags, `putBackSetup`. The record says `setup`, the description's path, or
+ * `setupBack`. `--check` of a setup set prints the field by field comparison with the source's documents,
+ * `compareSetup`, and is NOT OK on any difference no row explains. **`--describe-setup`** writes the description of a
+ * set's setup, `describeTouchSetup`, into a new file: what the person chose, names and numbers, and no code, address or
+ * key, so it is written where the repository keeps it.
+ *
  * **`--check`** reads the set back as `touch-sync.ts` will, the gate and the codec's reader, and the device as
  * the reader sees it: its commands each with a definition and a key code, its map found by the identifier the
  * engine builds, its keys and its screen list; for an activity, its place on the list and type, its devices in
@@ -101,6 +115,7 @@ import {
 import { OWN_SET_DOCUMENTS, compareConfigHash, compareRequestList } from '../src/touchownset.ts';
 import { SETTINGS_SET_DOCUMENTS, putBackSettingsAndContext, settingsChanges, sixOf, withSettingsAndContext } from '../src/touchsettingsset.ts';
 import { REMOVAL_DOCUMENTS, putBackRemoval, removalChanges, withRemoval } from '../src/touchremovalset.ts';
+import { SETUP_DOCUMENTS, SETUP_IDS, compareSetup, comparisonLines, putBackSetup, withSetup } from '../src/touchsetupset.ts';
 import { WRITE_ANSWERS, answerOf, keyOf, prepareSet, resultOf, setTag, type RemoteRequest, type SetAnswer, type TouchSet } from '../src/touchsync.ts';
 
 /** The three documents a device is told to a Touch in, and the list in each that holds it. */
@@ -158,6 +173,9 @@ interface DeviceRecord {
   /** 8.5: the devices and activities taken out, by name, or their put back. */
   readonly removal?: harmonyTouch.NamedRemoval;
   readonly removalBack?: true;
+  /** 8.6: the path of the setup's description, or its put back. */
+  readonly setup?: string;
+  readonly setupBack?: true;
 }
 
 const readSet = (folder: string): TouchSet => JSON.parse(readFileSync(join(folder, 'set.json'), 'utf8')) as TouchSet;
@@ -190,12 +208,14 @@ function build(folder: string): void {
   const settingsBack = process.argv.includes('--settings-back') ? true : undefined;
   const removalDescription = argument('removal');
   const removalBack = process.argv.includes('--removal-back') ? true : undefined;
+  const setupDescription = argument('setup');
+  const setupBack = process.argv.includes('--setup-back') ? true : undefined;
   const given = [description, removeId, activityDescription, removeActivityId, favouritesDescription, favouritesBack, settingsDescription, settingsBack,
-    removalDescription, removalBack].filter((x) => x !== undefined).length;
+    removalDescription, removalBack, setupDescription, setupBack].filter((x) => x !== undefined).length;
   if (fromFolder === undefined || given !== 1) {
     fail('--build needs --from <set folder> and one of --device <description>, --remove <device id>, --activity <description>, '
       + '--remove-activity <activity id>, --favourites <description>, --favourites-back, --settings <description> with --context <lab description>, '
-      + '--settings-back, --removal <description> or --removal-back');
+      + '--settings-back, --removal <description>, --removal-back, --setup <description> or --setup-back');
   }
   const from = insideTheLab(fromFolder, 'the source set');
   const source = readSet(from);
@@ -210,6 +230,10 @@ function build(folder: string): void {
   }
   if (removalDescription !== undefined || removalBack !== undefined) {
     buildRemoval(out, from, source, name, removalDescription);
+    return;
+  }
+  if (setupDescription !== undefined || setupBack !== undefined) {
+    buildSetup(out, from, source, name, setupDescription);
     return;
   }
   let documents: harmonyTouch.DeviceDocuments | harmonyTouch.ActivityDocuments;
@@ -359,6 +383,76 @@ function buildRemoval(out: string, from: string, source: TouchSet, name: string,
   const delivered = setDifferences(source, built.set).filter((d) => d.tagChanged).map((d) => d.document);
   console.log(`built ${out}: ${record.removal !== undefined ? `${[...(record.removal.activities ?? []), ...(record.removal.devices ?? [])].join(' and ')} taken out` : 'the removal put back'}, `
     + `${delivered.join(', ')} under ${record.removal !== undefined ? 'new tags' : 'the tags the remote held before'}, the other ${OWN_SET_DOCUMENTS.length - delivered.length} under the source's, the gate passed`);
+}
+
+/**
+ * `--build --setup` and `--build --setup-back`, the header: a whole setup composed onto the source with its devices
+ * and activities taken out, or the four documents the setup in `from` composed put back as the remote held them.
+ */
+function buildSetup(out: string, from: string, source: TouchSet, name: string, description: string | undefined): void {
+  let built: { readonly set: TouchSet } | { readonly refusals: readonly string[] };
+  let record: DeviceRecord;
+  if (description !== undefined) {
+    const setup = (JSON.parse(readFileSync(description, 'utf8')) as { setup?: harmonyTouch.TouchSetup }).setup;
+    if (setup === undefined) fail(`${description} holds no setup`);
+    built = withSetup({ set: source, setup: setup!, name, tagsInPlay: tagsOfTheChain(from) });
+    record = { name, from, setup: description };
+  } else {
+    const forward = readRecord(from);
+    if (forward.setup === undefined || typeof forward.from !== 'string') fail(`${from} records no setup, so there is nothing to put back`);
+    built = putBackSetup(source, readSet(insideTheLab(String(forward.from), 'the set it was built from')));
+    record = { name, from, setupBack: true };
+  }
+  if ('refusals' in built) {
+    console.log(`refused, ${built.refusals.length} reasons, no set written:`);
+    for (const r of built.refusals) console.log(`  ${r}`);
+    process.exit(1);
+  }
+  mkdirSync(out, { recursive: true });
+  writeFileSync(join(out, 'set.json'), `${JSON.stringify(built.set)}\n`);
+  writeFileSync(join(out, 'sources.json'), `${JSON.stringify(record, null, 2)}\n`);
+  console.log(`built ${out}: ${record.setup !== undefined ? 'the whole setup composed' : 'the setup put back'}, ${SETUP_DOCUMENTS.join(', ')} under `
+    + `${record.setup !== undefined ? 'new tags' : 'the tags the remote held before'}, Context and Settings under the source's, the gate passed`);
+}
+
+/** `--describe-setup`, the header: a set's setup described, written into a new file; it holds no value of the account. */
+function describeSetup(folder: string): void {
+  const outFile = argument('out');
+  if (outFile === undefined) fail('--describe-setup needs --out <new description file>');
+  const out = resolve(outFile!);
+  if (existsSync(out)) fail(`${out} exists, and a description is never written over`);
+  const set = sixOf(readSet(insideTheLab(folder, 'the set folder')));
+  const setup = harmonyTouch.describeTouchSetup(documentsOf(set), SETUP_IDS);
+  const about = `todo-touch.md 8.6: the bench Harmony Touch's whole test setup as the person built it in Logitech's software, `
+    + `described from the set it held, ${basename(folder)}, by describeTouchSetup in packages/codec/src/harmony-touch/setup.ts: each device `
+    + 'by its maker and model, which find its catalogue record, and what was chosen for it, its name, control port, press repeats, delays, '
+    + 'power and input settings and its own map; each activity with its roles, inputs, steps, map, gestures and sequences. Ids of ours, '
+    + `OWN_IDS: devices from ${SETUP_IDS.device}, activities from ${SETUP_IDS.activity}, sequences from ${SETUP_IDS.sequence}. `
+    + 'No code, address or key: the commands, their codes and the definitions are the catalogue record\'s, and composeTouchSetup carries them.';
+  mkdirSync(dirname(out), { recursive: true });
+  writeFileSync(out, `${setupJson({ about, setup }, '')}\n`);
+  console.log(`described ${basename(folder)} into ${out}: ${setup.devices.length} devices, ${setup.activities.length} activities, `
+    + `${setup.devices.reduce((n, d) => n + d.buttons.length, 0) + setup.activities.reduce((n, a) => n + (a.buttons?.length ?? 0), 0)} buttons`);
+}
+
+/**
+ * A description as JSON a person reads: indented, with each button, role, step and sequence step on a line of its own,
+ * so the 616 buttons of the bench setup read as a list of keys and entries rather than as a page per button.
+ */
+function setupJson(x: unknown, indent: string): string {
+  const oneLine = (v: unknown): boolean => typeof v === 'object' && v !== null && !Array.isArray(v)
+    && ('press' in v || 'roles' in v || 'delaySeconds' in v || 'command' in v || 'channel' in v);
+  if (Array.isArray(x)) {
+    if (x.length === 0) return '[]';
+    return `[\n${x.map((v) => `${indent} ${oneLine(v) ? JSON.stringify(v) : setupJson(v, `${indent} `)}`).join(',\n')}\n${indent}]`;
+  }
+  if (typeof x === 'object' && x !== null) {
+    if (oneLine(x)) return JSON.stringify(x);
+    const entries = Object.entries(x);
+    if (entries.length === 0) return '{}';
+    return `{\n${entries.map(([k, v]) => `${indent} ${JSON.stringify(k)}: ${setupJson(v, `${indent} `)}`).join(',\n')}\n${indent}}`;
+  }
+  return JSON.stringify(x);
 }
 
 /** `--describe-context`, the header: a set's Context as a description, written into a new lab file and never printed. */
@@ -520,8 +614,68 @@ function checkRemoval(set: TouchSet, record: Partial<DeviceRecord> & SetRecord, 
   checkTheRuns(set, source, from, touched, say);
 }
 
+/**
+ * `--check` of a setup set or its put back, the header: the gate and the reader; the six and nothing else; the check's
+ * findings, each one the source has; the favourites read whole through the tuning device; each activity's devices and
+ * map found; for the setup, the field by field comparison with the source's documents, Logitech's, every difference
+ * explained; for the put back, the source's documents, content and tags; the documents delivered retagged and the rest
+ * the source's; what a remote holding the source is answered and the write's size.
+ */
+function checkSetup(set: TouchSet, record: Partial<DeviceRecord> & SetRecord, say: (ok: boolean, line: string) => void): void {
+  const from = insideTheLab(String(record.from), 'the source set');
+  const source = sixOf(readSet(from));
+  const name = String(record.name);
+  const gate = prepareSet(set);
+  say(!('refusals' in gate), `the gate, ${'refusals' in gate ? `${gate.refusals.length} refusals: ${gate.refusals.join('; ')}` : `passed, ${gate.set.tags.stated} tags stated and ${gate.set.tags.ours} ours`}`);
+  say(set.answers.length === OWN_SET_DOCUMENTS.length && OWN_SET_DOCUMENTS.every((d) => set.answers.some((a) => keyOf(a.uri) === d)),
+    `the six documents and nothing else, ${set.answers.length} answers`);
+  const was = documentsOf(source);
+  const now = documentsOf(set);
+  const read = harmonyTouch.readConfiguration(now);
+  say(read.absent.length === 0, `the reader read it, ${read.activities.length} activities, ${read.devices.length} devices, ${read.maps.length} button maps, ${read.protocols.length} protocols`);
+  const findings = harmonyTouch.checkConfiguration(read);
+  const before = harmonyTouch.checkConfiguration(harmonyTouch.readConfiguration(was));
+  say(findings.length === before.length && findings.every((f) => before.some((b) => b.rule === f.rule)) && findings.filter((f) => f.effect === 'refused').length === 0,
+    `the check, ${findings.length} findings here and ${before.length} on the source, each of a rule the source has, none refused`);
+  const held = heldAfter(from);
+  const favourites = harmonyTouch.readConfiguration(documentsHeld(set, held)).favourites;
+  const favouritesBefore = harmonyTouch.readConfiguration(documentsHeld(source, held)).favourites;
+  say(favourites.length === favouritesBefore.length && favourites.every((f, i) => f.missing.length === 0 && f.device?.name === favouritesBefore[i]?.device?.name
+    && f.favourites.length === favouritesBefore[i]?.favourites.length),
+  `the favourites: ${favourites.map((f) => `${f.activity.name ?? 'an activity'} through ${f.device?.name ?? 'no device'}, ${f.favourites.length} channels, ${f.missing.length} documents missing`).join('; ') || 'none'}, as on the source`);
+  for (const a of read.activities) {
+    say(a.devices.every((d) => d.device !== undefined) && a.map !== undefined,
+      `${a.name ?? 'an activity'}, place ${String(a.order)}: ${a.devices.map((d) => d.device?.name ?? 'a missing device').join(', ')}; its map ${a.map === undefined ? 'NOT found' : `found, ${a.map.keys.length} keys, ${a.map.entries.size} entries, ${a.map.gestures.length} gestures`}`);
+  }
+  if (record.setup !== undefined) {
+    // Ours against Logitech's, the documents the source holds, field by field.
+    const comparison = compareSetup(now, was);
+    console.log('our documents against the source\'s, field by field:');
+    for (const line of comparisonLines(comparison)) console.log(`  ${line}`);
+    const unexplained = comparison.flatMap((c) => c.rows.filter((r) => r.why.startsWith('unexplained')));
+    say(unexplained.length === 0, `every field equal, equal after a stated normalisation or different for a stated reason; ${unexplained.length} unexplained`);
+  } else {
+    const forward = readRecord(from);
+    const beforeForward = sixOf(readSet(insideTheLab(String(forward.from), 'the set before the setup')));
+    const d = setDifferences(beforeForward, set);
+    say(d.every((x) => x.values.length === 0 && !x.tagChanged), `the six are the set before the setup, ${basename(String(forward.from))}, content and tags: ${d.filter((x) => x.values.length > 0 || x.tagChanged).map((x) => x.document).join(', ') || 'all equal'}`);
+  }
+  const sd = setDifferences(source, set);
+  const retagged = sd.filter((x) => x.tagChanged).map((x) => x.document);
+  say(JSON.stringify(retagged) === JSON.stringify([...SETUP_DOCUMENTS].sort((x, y) => OWN_SET_DOCUMENTS.indexOf(x) - OWN_SET_DOCUMENTS.indexOf(y))),
+    `retagged: ${retagged.join(', ') || 'nothing'}, the other ${sd.length - retagged.length} the source's, content and tags; content differs in ${sd.filter((x) => x.values.length > 0).map((x) => x.document).join(', ') || 'nothing'}`);
+  if (record.setup !== undefined) {
+    const answers = retagged.map((d) => set.answers.find((a) => keyOf(a.uri) === d));
+    say(answers.every((a) => a !== undefined && a.etag === setTag(a, name)), `the ${retagged.length} new tags are the ones the set's name gives`);
+    const chain = tagsOfTheChain(from);
+    say(answers.every((a) => a?.etag !== undefined && !chain.has(a.etag)), `no new tag is stated by a set of the chain before it, ${chain.size} tags`);
+  }
+  checkTheRuns(set, source, from, retagged, say);
+}
+
 /** Whether a record is of a device added or taken out, an activity, or favourites; undefined when it is none. */
-function kindOf(record: Partial<DeviceRecord>): 'device' | 'activity' | 'favourites' | 'settings' | 'removal' | undefined {
+function kindOf(record: Partial<DeviceRecord>): 'device' | 'activity' | 'favourites' | 'settings' | 'removal' | 'setup' | undefined {
+  if (record.setup !== undefined || record.setupBack !== undefined) return 'setup';
   if (record.removal !== undefined || record.removalBack !== undefined) return 'removal';
   if (record.settings !== undefined || record.settingsBack !== undefined) return 'settings';
   if (record.device !== undefined || record.removed !== undefined) return 'device';
@@ -714,7 +868,16 @@ function check(folder: string): void {
   const record = readRecord(dir);
   const kind = kindOf(record);
   if (kind === undefined || typeof record.from !== 'string' || typeof record.name !== 'string') {
-    fail(`${dir} records no device, activity, favourites, settings or removal, so it is not a set this script built`);
+    fail(`${dir} records no device, activity, favourites, settings, removal or setup, so it is not a set this script built`);
+  }
+  if (kind === 'setup') {
+    let wrong = 0;
+    checkSetup(set, record, (ok, line) => {
+      if (!ok) wrong += 1;
+      console.log(`${ok ? 'ok' : 'NOT OK'}: ${line}`);
+    });
+    if (wrong > 0) process.exit(1);
+    return;
   }
   if (kind === 'removal') {
     let wrong = 0;
@@ -834,9 +997,12 @@ function check(folder: string): void {
 const toBuild = argument('build');
 const toCheck = argument('check');
 const toDescribe = argument('describe-context');
-if ([toBuild, toCheck, toDescribe].filter((x) => x !== undefined).length !== 1) {
-  fail('one of --build <new lab folder>, --check <set folder> or --describe-context <set folder> --out <new lab file>');
+const toDescribeSetup = argument('describe-setup');
+if ([toBuild, toCheck, toDescribe, toDescribeSetup].filter((x) => x !== undefined).length !== 1) {
+  fail('one of --build <new lab folder>, --check <set folder>, --describe-context <set folder> --out <new lab file> '
+    + 'or --describe-setup <set folder> --out <new description file>');
 }
 if (toBuild !== undefined) build(toBuild);
 else if (toDescribe !== undefined) describeContext(toDescribe);
+else if (toDescribeSetup !== undefined) describeSetup(toDescribeSetup);
 else check(toCheck!);
