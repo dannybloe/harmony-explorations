@@ -14,5 +14,7 @@
   "include": ["src/**/*.ts", "test/**/*.ts", "bin/**/*.ts"],
   // `@harmony/usb` is a dev dependency because the page's sources import three of its modules that import
   // nothing, and the build publishes them beside the page; nothing here is consumed as a package.
-  "references": [{ "path": "../usb" }]
+  // `@harmony/silhouettes` is one because the build reads the drawn models' keys from it, `bin/drawings.ts`;
+  // no module of it reaches the page.
+  "references": [{ "path": "../usb" }, { "path": "../silhouettes" }]
 }

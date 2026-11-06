@@ -70,6 +70,9 @@ importers:
 
   packages/keyreader:
     devDependencies:
+      '@harmony/silhouettes':
+        specifier: workspace:*
+        version: link:../silhouettes
       '@harmony/usb':
         specifier: workspace:*
         version: link:../usb

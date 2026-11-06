@@ -328,8 +328,12 @@ packages/keyreader/             TS: the key reader page's sources, built into re
                                 in a stranger's browser against their own remote. src/link.ts holds
                                 the one function that sends and its refusals; the page loads three
                                 modules of packages/usb that import nothing, protocol.ts, keys.ts and
-                                models.ts, through subpaths, and never the barrel. Its tests read the
-                                published JavaScript, not the sources
+                                models.ts, through subpaths, and never the barrel. src/session.ts is
+                                the learning and key test modes and the log, src/face.ts the drawing
+                                on the page; the drawings of reference/silhouettes/ are inlined at
+                                build time by bin/drawings.ts, which reads packages/silhouettes, since
+                                the page fetches nothing. Its tests read the published JavaScript,
+                                not the sources
 ```
 
 There is no `apps/` here. The application is FreeHarmony, and the workspace globs say so.

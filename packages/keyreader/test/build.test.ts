@@ -18,12 +18,13 @@ test('reference/key-reader/ holds exactly what the build makes', () => {
   assert.deepEqual(driftFrom(buildKeyReader()), []);
 });
 
-test('the page is the entry, its link and its press reading, and the three library modules that import nothing', () => {
+test('the page is the entry, its link, press reading, modes and face, the drawings, and the three library modules that import nothing', () => {
   // The imports decide what is published; this pins the outcome, so a new module reaching the page is a
-  // visible change here as well as a row in the build's allow list.
+  // visible change here as well as a row in the build's allow list. `drawings.js` is the one written
+  // rather than compiled, `bin/drawings.ts`.
   assert.deepEqual(
     [...buildKeyReader().keys()],
-    ['index.html', 'keys.js', 'link.js', 'models.js', 'page.js', 'presses.js', 'protocol.js'],
+    ['drawings.js', 'face.js', 'index.html', 'keys.js', 'link.js', 'models.js', 'page.js', 'presses.js', 'protocol.js', 'session.js'],
   );
 });
 

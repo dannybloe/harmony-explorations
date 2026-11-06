@@ -8,25 +8,28 @@
 <style>
   :root {
     --bg: #fbfbfa; --fg: #1b1b1b; --muted: #5d5d5d; --line: #d9d9d6; --panel: #ffffff;
-    --accent: #1f5fae; --problem: #a3261f;
+    --accent: #1f5fae; --problem: #a3261f; --notice: #f3e8fb; --notice-line: #7b3fa0;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
       --bg: #161718; --fg: #ececea; --muted: #a4a4a0; --line: #34363a; --panel: #1f2023;
-      --accent: #7fb0ec; --problem: #f08a80;
+      --accent: #7fb0ec; --problem: #f08a80; --notice: #3a2747; --notice-line: #c99be6;
     }
   }
   :root[data-theme="dark"] {
     --bg: #161718; --fg: #ececea; --muted: #a4a4a0; --line: #34363a; --panel: #1f2023;
-    --accent: #7fb0ec; --problem: #f08a80;
+    --accent: #7fb0ec; --problem: #f08a80; --notice: #3a2747; --notice-line: #c99be6;
   }
   * { box-sizing: border-box; }
+  /* An element the page hides stays hidden whatever display rule its kind has below. */
+  [hidden] { display: none !important; }
   body {
-    background: var(--bg); color: var(--fg); margin: 0 auto; padding: 24px 16px 48px; max-width: 760px;
+    background: var(--bg); color: var(--fg); margin: 0 auto; padding: 24px 16px 48px; max-width: 900px;
     font: 16px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif;
   }
   h1 { font-size: 1.6rem; margin: 0 0 0.5rem; }
   h2 { font-size: 1.1rem; margin: 1.6rem 0 0.4rem; }
+  h3 { font-size: 1rem; margin: 1rem 0 0.3rem; }
   p, li { color: var(--fg); }
   .muted { color: var(--muted); }
   button {
@@ -34,24 +37,92 @@
     background: var(--panel); color: var(--fg); cursor: pointer;
   }
   button.primary { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+  button[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 2px var(--accent); font-weight: 600; }
   button:disabled { opacity: 0.5; cursor: default; }
   .controls { display: flex; gap: 10px; flex-wrap: wrap; margin: 1rem 0; }
   #status { min-height: 1.6em; }
   #status[data-kind="problem"] { color: var(--problem); }
   .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; }
-  .readout { display: flex; gap: 32px; flex-wrap: wrap; }
-  .readout div { min-width: 120px; }
-  .readout .value { font-size: 2.6rem; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.2; }
-  #presses { display: flex; flex-wrap: wrap; gap: 6px; list-style: none; padding: 0; margin: 0.4rem 0 0; }
-  #presses li {
-    border: 1px solid var(--line); border-radius: 4px; padding: 2px 8px; font-variant-numeric: tabular-nums;
+
+  /* Choosing the model. */
+  #models { border: 0; padding: 0; margin: 0.6rem 0; display: grid; gap: 8px; }
+  #models label {
+    display: flex; gap: 10px; align-items: baseline; padding: 8px 12px; border: 1px solid var(--line);
+    border-radius: 6px; background: var(--panel); cursor: pointer;
   }
+  #models .note { color: var(--muted); font-size: 0.9rem; }
+
+  /* The two modes: the drawing (or a list) on the left, what to do on the right. */
+  .work { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px; align-items: start; }
+  @media (max-width: 760px) { .work { grid-template-columns: minmax(0, 1fr); } }
+  /* Margins either side of the drawing hold the tag that points at the key asked for. */
+  .face-wrap { position: relative; padding: 0 118px; }
+  .face { background: #ffffff; border-radius: 10px; padding: 6px; width: fit-content; margin: 0 auto; }
+  .face svg { display: block; height: min(86vh, 900px); width: auto; }
+  .face-tag {
+    position: absolute; transform: translateY(-50%); max-width: 124px; padding: 3px 8px; border-radius: 5px;
+    background: #0b4f8a; color: #ffffff; font-size: 0.85rem; font-weight: 600; line-height: 1.25; white-space: normal;
+  }
+  .face-tag[data-side="left"] { text-align: right; }
+  @media (max-width: 520px) {
+    .face-wrap { padding: 0; } .face-tag { display: none; } .face svg { height: auto; width: 100%; }
+    .face { width: auto; }
+  }
+  .prompt { font-size: 1.5rem; font-weight: 700; line-height: 1.3; margin: 0 0 0.6rem; }
+  #notice { min-height: 1.6em; border-left: 4px solid transparent; padding: 4px 8px; margin: 0.6rem 0; }
+  #notice[data-kind="misfit"] { border-left-color: var(--notice-line); background: var(--notice); }
+  #notice.flash { animation: flash 0.9s ease-out 2; }
+  @keyframes flash { 0% { background: #d9b8ef; } 100% { background: var(--notice); } }
+  #notice[data-kind="misfit"] { color: var(--fg); }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) #notice.flash { animation-name: flash-dark; } }
+  :root[data-theme="dark"] #notice.flash { animation-name: flash-dark; }
+  @keyframes flash-dark { 0% { background: #6c3f8c; } 100% { background: var(--notice); } }
+  #naming { display: flex; gap: 8px; flex-wrap: wrap; align-items: end; margin: 0.6rem 0; }
+  #naming label { display: grid; gap: 4px; flex: 1 1 220px; }
+  #naming input { font: inherit; padding: 7px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); color: var(--fg); }
+  .legend { list-style: none; padding: 0; margin: 0.8rem 0; display: grid; gap: 6px; font-size: 0.92rem; }
+  .legend li { display: flex; gap: 8px; align-items: center; }
+  .legend svg { flex: none; border: 1px solid #666; border-radius: 3px; }
+  #keylist { padding-left: 1.4rem; margin: 0; min-width: 260px; }
+  #keylist li { padding: 2px 0; font-variant-numeric: tabular-nums; }
+  #keylist li[data-kr="lit"]::marker { content: "\2713  "; font-weight: 700; }
+  #keylist li[data-kr="lit"] { font-weight: 600; }
+  #unknown { display: flex; flex-wrap: wrap; gap: 6px; list-style: none; padding: 0; margin: 0.4rem 0 0; }
+  #unknown li { border: 1px solid var(--line); border-radius: 4px; padding: 2px 8px; font-variant-numeric: tabular-nums; }
+  #log { width: 100%; font: 0.9rem/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; padding: 10px; border-radius: 6px;
+    border: 1px solid var(--line); background: var(--panel); color: var(--fg); }
+
+  /* A key's look, set by face.ts as data-kr on the key's group. The drawing fills every key with
+     var(--key-fill), so a fill here is a colour or one of the patterns below. Blue against orange stays
+     distinct for every common colour blindness, and the dots and lines carry the meaning without colour. */
+  .face g[data-kr="asked"] { --key-fill: #8cc8f0; --key-stroke: #0b4f8a; }
+  /* The heavy edge also on a segment of a moulding, which the drawing otherwise leaves without an outline. */
+  .face g[data-kr="asked"] path.key { stroke: #0b4f8a; stroke-width: 3.5px; }
+  .face g[data-kr="learned"], .face g[data-kr="lit"] { --key-fill: url(#kr-dots); }
+  .face g[data-kr="skipped"] { --key-fill: url(#kr-lines); }
+  .face g[data-kr="possible"] { --key-fill: url(#kr-stripes); }
 </style>
 </head>
 <body>
+<!-- The fills for a key's look, referenced by the stylesheet above, and the legend's swatches. -->
+<svg width="0" height="0" style="position: absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <pattern id="kr-dots" width="7" height="7" patternUnits="userSpaceOnUse">
+      <rect width="7" height="7" fill="#f2a93b"></rect><circle cx="3.5" cy="3.5" r="1.6" fill="#5c3a00"></circle>
+    </pattern>
+    <pattern id="kr-lines" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <rect width="6" height="6" fill="#d4d4d4"></rect><rect width="2" height="6" fill="#6b6b6b"></rect>
+    </pattern>
+    <pattern id="kr-stripes" width="8" height="8" patternUnits="userSpaceOnUse">
+      <rect width="8" height="8" fill="#f2a93b"></rect><rect width="8" height="3" fill="#ffffff"></rect>
+    </pattern>
+  </defs>
+</svg>
+
 <h1>Which key is that?</h1>
-<p>This page shows which key you press on your Logitech Harmony remote, while the remote is connected to this
-computer with its USB cable. It shows each key as the number the remote itself uses for it.</p>
+<p>This page reads the keys of your Logitech Harmony remote while it is connected to this computer with its
+USB cable. It can learn which number your remote uses for each key, so that you can send us the key map of a
+model we do not have, and it can test whether every key on your remote still works.</p>
 
 <h2>What it does, and what it does not</h2>
 <ul>
@@ -59,7 +130,8 @@ computer with its USB cable. It shows each key as the number the remote itself u
     is, and two bytes of its working memory, where the remote keeps the key being held and the last key
     pressed. It never writes to the remote and never changes its setup.</li>
   <li><strong>Nothing leaves your browser.</strong> There is no server behind this page and nothing is sent
-    anywhere. The page reads your remote and shows what it read, and that is all.</li>
+    anywhere. The key map it writes for you is text you copy yourself, and it holds the model, the keys and
+    their numbers, and nothing that identifies your remote.</li>
   <li><strong>It works with</strong> the Harmony 880, 885, 880 Pro and 720, in Chrome or Edge on a computer.
     Other remotes are not offered in the list, and a remote that is not running normally, such as one
     held in its recovery mode, is let go without its keys being read.</li>
@@ -71,17 +143,70 @@ computer with its USB cable. It shows each key as the number the remote itself u
 </div>
 <p id="status" class="muted" role="status" aria-live="polite">Plug your remote in, then press Connect.</p>
 
-<section id="keys" hidden>
-  <div class="panel">
-    <p id="remote"></p>
-    <div class="readout">
-      <div><div class="muted">Key held</div><div id="held" class="value">-</div></div>
-      <div><div class="muted">Last key pressed</div><div id="last" class="value">-</div></div>
+<section id="choose" hidden>
+  <h2>Which remote is this?</h2>
+  <p id="reported"></p>
+  <fieldset id="models"><legend class="muted">The models this page reads</legend></fieldset>
+  <div class="controls"><button id="confirm" class="primary" type="button">Continue</button></div>
+</section>
+
+<section id="work" hidden>
+  <div class="controls">
+    <button id="mode-learn" type="button" aria-pressed="true">Learn the keys</button>
+    <button id="mode-test" type="button" aria-pressed="false">Test the keys</button>
+    <button id="change" type="button">Choose another model</button>
+  </div>
+  <div class="work">
+    <div>
+      <div id="drawing"></div>
+      <ol id="keylist" hidden></ol>
+    </div>
+    <div>
+      <p id="model-line" class="muted"></p>
+      <div id="learn-panel">
+        <p id="prompt" class="prompt"></p>
+        <form id="naming" hidden>
+          <label>What is printed on that key, or where is it?
+            <input id="name" type="text" autocomplete="off" maxlength="60"></label>
+          <button type="submit" class="primary">Save</button>
+        </form>
+        <div class="controls">
+          <button id="skip" type="button">Skip: my remote has no such key</button>
+          <button id="undo" type="button">Undo the last key</button>
+          <button id="finish" type="button">Finish and show the key map</button>
+        </div>
+        <p id="progress" class="muted"></p>
+        <ul id="learn-legend" class="legend">
+          <li><svg width="22" height="16"><rect width="22" height="16" fill="#8cc8f0" stroke="#0b4f8a" stroke-width="3"></rect></svg> blue with a heavy edge: the key to press now</li>
+          <li><svg width="22" height="16"><rect width="22" height="16" fill="url(#kr-dots)"></rect></svg> orange with dots: learned</li>
+          <li><svg width="22" height="16"><rect width="22" height="16" fill="url(#kr-lines)"></rect></svg> grey with lines: skipped</li>
+        </ul>
+      </div>
+      <div id="test-panel" hidden>
+        <p class="prompt">Press every key once.</p>
+        <p>Each key you press stays marked, so a key that never gets marked is one that did not answer.</p>
+        <p id="test-count" class="muted"></p>
+        <ul id="test-legend" class="legend">
+          <li><svg width="22" height="16"><rect width="22" height="16" fill="url(#kr-dots)"></rect></svg> orange with dots: this key answered</li>
+          <li><svg width="22" height="16"><rect width="22" height="16" fill="url(#kr-stripes)"></rect></svg> orange with white bands: one of these keys answered, and which of them is not known yet</li>
+        </ul>
+        <h3>Numbers no key here has</h3>
+        <ul id="unknown"></ul>
+        <p id="unknown-none" class="muted">None so far.</p>
+        <div class="controls"><button id="test-clear" type="button">Start the test again</button></div>
+      </div>
+      <p id="notice" role="status" aria-live="polite"></p>
+      <p class="muted">Key held: <span id="held">-</span>. Last key pressed: <span id="last">-</span>.</p>
     </div>
   </div>
-  <div id="drawing" hidden></div>
-  <h2>Keys pressed, newest first</h2>
-  <ol id="presses"></ol>
+
+  <section id="log-section" hidden>
+    <h2>Your key map</h2>
+    <p>Copy this and send it to us as a new issue on the harmony-explorations repository on GitHub. It holds
+    the model, the keys and their numbers, and nothing that identifies your remote.</p>
+    <textarea id="log" rows="14" readonly></textarea>
+    <div class="controls"><button id="copy" type="button">Copy</button></div>
+  </section>
 </section>
 
 <script type="module" src="page.js"></script>
