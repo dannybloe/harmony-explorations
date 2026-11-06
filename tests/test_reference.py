@@ -191,6 +191,9 @@ class PlantedViolations(unittest.TestCase):
             'Read off the bench, from a dump in the lab, on our unit, the spare, the everyday one, a '
             "friend's, a test account; see todo.md, and the fixture `h600_config` or one.bin.\n"
             '[notes](../docs/test-notes/harmony-one.md)\n'))
+        # A footnote's link to a test in the package called `bench` is a path, not prose about the bench.
+        write(self.root, 'reference/measured.md', 'Heard[^t-x].\n\n[^t-x]: Measured on a unit. '
+              '[The test](../packages/bench/test/x.test.ts)\n')
         found = guards.bench_violations(self.root, fixtures={'h600_config', 'one.bin'})
         self.assertEqual({path for path, _ in found}, {'reference/page.md'})
         self.assertEqual(self.kinds(found), sorted(

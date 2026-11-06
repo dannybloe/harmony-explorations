@@ -254,6 +254,20 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // `packages/bench/test/touch71.test.ts` as the calibration of 7.1's engine model and of the monitor's Touch names.
   touch_monitor_ir_checks: 'reads/20261103T070731Z-ir-test-harmony-touch-off-held-device-mode-left-by-home-and-a-long-press.json',
   touch_monitor_ir_home: 'reads/20261103T072815Z-ir-test-harmony-touch-the-home-button-leaves-device-mode.json',
+  // `todo-touch.md` 7.1, the Touch's first full bench test: the ten complete runs, one per test, and the monitor's log
+  // that holds them and the live retest of the three presses the runs missed, `packages/bench/test/touch71-runs.test.ts`.
+  // Two abandoned starts of the same tests in `reads/` are not named here, since each reached one step.
+  touch_7_1_starts: 'reads/20261106T092337Z-ir-test-harmony-touch-7-1-every-activity-started-from-off-and-off.json',
+  touch_7_1_switches: 'reads/20261106T092617Z-ir-test-harmony-touch-7-1-switching-between-activities.json',
+  touch_7_1_favourites: 'reads/20261106T092913Z-ir-test-harmony-touch-7-1-the-favourite-channels-and-their-logos.json',
+  touch_7_1_watch_tv_keys: 'reads/20261106T093034Z-ir-test-harmony-touch-7-1-the-keys-in-watch-tv.json',
+  touch_7_1_blu_ray_keys: 'reads/20261106T093236Z-ir-test-harmony-touch-7-1-the-keys-in-watch-a-blu-ray.json',
+  touch_7_1_music_keys: 'reads/20261106T093422Z-ir-test-harmony-touch-7-1-the-keys-in-listen-to-music.json',
+  touch_7_1_switch_box_keys: 'reads/20261106T093610Z-ir-test-harmony-touch-7-1-the-keys-in-switch-box.json',
+  touch_7_1_game_keys: 'reads/20261106T093742Z-ir-test-harmony-touch-7-1-the-keys-in-play-a-game.json',
+  touch_7_1_device_mode_1: 'reads/20261106T093952Z-ir-test-harmony-touch-7-1-device-mode-1-of-2-lg-tv-denon-av-receiver-blu-ray.json',
+  touch_7_1_device_mode_2: 'reads/20261106T094316Z-ir-test-harmony-touch-7-1-device-mode-2-of-2-plex-kpn-xbox.json',
+  touch_7_1_monitor: 'reads/20261105T1728Z-ir-monitor.jsonl',
   touch_changed_sync_1_outcome: 'reads/20261105T1457Z-touch-sync-set/outcome.json',
   touch_changed_sync_1_handover_list: 'reads/20261105T1457Z-touch-sync-set/003-request-list-answer.txt',
   touch_changed_sync_1_handover_answers: 'reads/20261105T1457Z-touch-sync-set/004-answers-request.txt',

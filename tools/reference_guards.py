@@ -388,6 +388,13 @@ def broken_links(path, text, root=ROOT, cache=None):
 # The guards
 
 
+# A link into a package's test folder, as a footnote links its regression test. The package's name is part of
+# the path and not prose, and one package is called `bench`: the footnote convention requires the link, so a test
+# that lives there would otherwise put a bench word on every page whose fact it holds. Only the link's target is
+# left out of the word count; the same word in the page's own text still counts.
+TEST_LINK_TARGET = re.compile(r'\]\((?:\.\./)+packages/[a-z0-9-]+/test/[^)\s]+\)')
+
+
 def bench_violations(root=ROOT, fixtures=()):
     found = collections.Counter()
     words = [(kind, re.compile(pattern, re.I)) for kind, pattern in BENCH_WORDS]
@@ -397,8 +404,9 @@ def bench_violations(root=ROOT, fixtures=()):
         if name in EXEMPT_FROM_BENCH:
             continue
         text = read(path)
+        prose = TEST_LINK_TARGET.sub('](test)', text)
         for kind, pattern in words:
-            count = len(pattern.findall(text))
+            count = len(pattern.findall(prose))
             if count:
                 found[(name, kind)] += count
         if fixture:

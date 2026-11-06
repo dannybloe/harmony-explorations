@@ -149,7 +149,7 @@
           "command": "PowerOff",
           "pauseMs": [
             2300,
-            2900
+            3050
           ]
         },
         {
@@ -198,7 +198,7 @@
           "command": "InputMediaPlayer",
           "pauseMs": [
             2550,
-            3100
+            3250
           ]
         }
       ]

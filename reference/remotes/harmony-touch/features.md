@@ -44,7 +44,9 @@ default changes channels with, starting that activity first when it is not runni
 On the account measured there was one such activity and one such device; the firmware allows more than
 one[^t-touch-favourites][^t-touch-favourites-firmware]. How the digits go out is set per device on the
 account: set to send the number then OK, channel 7 is 7 then OK; set to three digits, it is 0, 0,
-7[^t-touch-favourites][^t-touch-favourites-firmware]. The remote's add screen refuses a fifty first
+7[^t-touch-favourites][^t-touch-favourites-firmware]. The three digit setting and the start before a favourite
+tapped with nothing running are measured on a unit with an infrared receiver, five favourites
+tapped[^t-touch-in-use]. The remote's add screen refuses a fifty first
 favourite with a warning, read in its screens, which matches Logitech's "up to
 50"[^t-touch-favourites-firmware][^x-touch-manual].
 A channel added by hand keeps its own number, name and uploaded picture; one from the provider's list
@@ -177,6 +179,7 @@ channels and commands changed on the remote are not checked[^unchecked].
 [^t-client-reverse-sync]: Stated by Logitech, in their client. [The test](../../../tests/test_client_templates.py), class `TheClientAsksForTheRemotesChangesOnlyWithNothingPending`
 [^t-touch-both-ways]: Measured on a unit. [The test](../../../packages/usb/test/touch-sync-both-ways.test.ts)
 [^t-touch-favourites]: Measured on a unit. [The test](../../../packages/usb/test/touch-favourites.test.ts)
+[^t-touch-in-use]: Measured on a unit. [The test](../../../packages/bench/test/touch71-runs.test.ts)
 [^t-touch-favourites-firmware]: Read in the firmware. [The test](../../../tests/test_harmony_touch_favourites.py)
 [^t-touch-beyond-firmware]: Read in the firmware. [The test](../../../tests/test_harmony_touch_beyond_the_clients.py)
 [^t-touch-beyond-client]: Stated by Logitech, in their client. [The test](../../../tests/test_harmony_touch_beyond_the_clients.py)

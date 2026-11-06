@@ -14,7 +14,8 @@
  * **Which pauses are judged.** Only those the engine times: between two codes of one activity start, one
  * favourite or one sequence. Between two keys the person sets the pace, so no pause is expected there. A
  * judged pause is the band the model gives, start of one code to start of the next as the monitor hears
- * them, widened by `PAUSE_SLACK_MS` either way, and rounded out to 50 ms.
+ * them, widened by `PAUSE_SLACK_MS` either way, and rounded out to 50 ms. After a code the engine held for a
+ * `Duration`, the slow side is widened by `HELD_CODE_SLACK_MS` as well, a rule added after the 7.1 runs.
  *
  * **Every test starts with Off**, which leaves no activity running and every device held off, whatever the
  * remote did before: the Off activity powers off every device the engine still holds on. That step is not
@@ -74,6 +75,22 @@ export interface TouchTestPlan {
 
 /** How far a judged pause may sit outside the model's band: the 3.2 and 6.9 runs sat within 54 ms of it, touch71.test.ts. */
 export const PAUSE_SLACK_MS = 150;
+
+/**
+ * How much further a pause may run late when the code before it was held for a `Duration`, on top of
+ * `PAUSE_SLACK_MS`: the slack once more, on the slow side only.
+ *
+ * **Why a held code gets more.** `PAUSE_SLACK_MS` was calibrated on runs in which no code was held, so it covers the
+ * engine's own time around an ordinary send. A held code ends when the engine's hold loop sees its time run out,
+ * then the hold is cancelled, and nothing states how long either takes; the 7.1 runs heard the next device's code
+ * 427 and 472 ms later than the held time and its inter device delay add up to, where the model's top end allows
+ * 210, `touch71-runs.test.ts`. **The rule is the slack counted a second time, not those two numbers**: it is the
+ * one figure calibrated on other runs, it widens only the four pauses that follow a held code in the 7.1 tests,
+ * and the fast side and every other pause keep their bands. The test scores it on every judged pause of the ten
+ * runs, both sides, and its control is the same runs judged with the hold left out of the documents, which this
+ * slack does not hide.
+ */
+export const HELD_CODE_SLACK_MS = PAUSE_SLACK_MS;
 
 /** The words the keypad's keys are called by in an instruction: the printed word, else what the symbol shows. */
 export const KEY_WORDS: Readonly<Record<string, string>> = {
@@ -150,8 +167,12 @@ function walk(e: TouchEngine, c: Configuration, step: TouchStep, mode: { device:
 const down50 = (ms: number) => Math.max(0, Math.floor(ms / 50) * 50);
 const up50 = (ms: number) => Math.ceil(ms / 50) * 50;
 
-/** One plan as a test definition: instructions from the actions, expectations from the model. */
-export function touchTest(c: Configuration, plan: TouchTestPlan): TestDefinition {
+/**
+ * One plan as a test definition: instructions from the actions, expectations from the model. `heldSlackMs` is
+ * the further slow side slack after a held code, `HELD_CODE_SLACK_MS`; 0 gives the definitions the 7.1 runs were
+ * judged against at the bench, before the rule.
+ */
+export function touchTest(c: Configuration, plan: TouchTestPlan, heldSlackMs: number = HELD_CODE_SLACK_MS): TestDefinition {
   const low = new TouchEngine(c, TIMING.low);
   const high = new TouchEngine(c, TIMING.high);
   const modes = { low: { device: undefined as string | undefined }, high: { device: undefined as string | undefined } };
@@ -183,7 +204,10 @@ export function touchTest(c: Configuration, plan: TouchTestPlan): TestDefinition
         if (i > 0) {
           const x = s.heardMs - sends[i - 1]!.heardMs;
           const y = other[i]!.heardMs - other[i - 1]!.heardMs;
-          one.pauseMs = [down50(Math.min(x, y) - PAUSE_SLACK_MS), up50(Math.max(x, y) + PAUSE_SLACK_MS)];
+          // After a code the engine held for a Duration the slow side gets the slack once more, HELD_CODE_SLACK_MS.
+          // A Duration of 0, which the Denon's power codes and the two toggles carry, holds nothing and gets none.
+          const late = (sends[i - 1]!.holdMs ?? 0) > 0 ? PAUSE_SLACK_MS + heldSlackMs : PAUSE_SLACK_MS;
+          one.pauseMs = [down50(Math.min(x, y) - PAUSE_SLACK_MS), up50(Math.max(x, y) + late)];
         }
         expect.push(one);
       });
@@ -271,7 +295,7 @@ function slug(s: string): string {
   return s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 }
 
-/** Every 7.1 test, derived. */
-export function touch71Tests(c: Configuration): { id: string; definition: TestDefinition }[] {
-  return touch71Plans(c).map((plan) => ({ id: plan.id, definition: touchTest(c, plan) }));
+/** Every 7.1 test, derived; `heldSlackMs` as for `touchTest`. */
+export function touch71Tests(c: Configuration, heldSlackMs: number = HELD_CODE_SLACK_MS): { id: string; definition: TestDefinition }[] {
+  return touch71Plans(c).map((plan) => ({ id: plan.id, definition: touchTest(c, plan, heldSlackMs) }));
 }

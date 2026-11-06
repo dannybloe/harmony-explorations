@@ -172,6 +172,11 @@ engine and the screens' source; the test holds the two numbers[^t-touch-activiti
 sit on Rewind, FastForward, Menu, PrevChannel, ChannelUp, ChannelDown, Info, Guide, Yellow and Stop, on
 the Tap, SwipeLeft and SwipeRight gestures, and never on a screen entry[^t-touch-activities].
 
+**Measured on a unit with an infrared receiver**: every key with a long press in those maps, held about a second,
+sent its long press command and not its short one, and tapped sent its short command alone, 32 long presses over
+five activities' maps and six devices' own maps; two of them and one tap were heard only on a second
+try[^t-touch-in-use].
+
 ## Not checked
 
 * Which of the touch controller's sensor models a Touch carries, and so which of the driver's two layouts
@@ -180,7 +185,8 @@ the Tap, SwipeLeft and SwipeRight gestures, and never on a screen entry[^t-touch
   took a long press of its own[^unchecked]. MyHarmony's code does not explain it: it offers a long press on
   every key that has a command, and refuses one only on Yellow while Philips Hue is set on it, and on no
   screen entry or gesture[^t-touch-beyond-client].
-* The long press's timing measured on a remote rather than read[^unchecked].
+* The long press's timing measured on a remote rather than read: the infrared receiver hears the code and not the
+  press[^unchecked].
 * Whether a held Off reboots the remote or powers it off: the firmware reads a reboot, but a check of a held
   Off did not see the remote restart by itself. The two key combinations are still tried on a remote rather
   than read[^unchecked].
@@ -194,5 +200,6 @@ the Tap, SwipeLeft and SwipeRight gestures, and never on a screen entry[^t-touch
 [^t-touch-activities-firmware]: Read in the firmware. [The test](../../../tests/test_harmony_touch_activities.py)
 [^unchecked]: Not checked.
 [^t-touch-keys]: Read in the firmware. [The test](../../../tests/test_harmony_touch_keys.py)
+[^t-touch-in-use]: Measured on a unit. [The test](../../../packages/bench/test/touch71-runs.test.ts)
 [^t-touch-products]: Stated by Logitech, by their service. [The test](../../../tests/test_host_client.py)
 [^t-touch-beyond-client]: Stated by Logitech, in their client. [The test](../../../tests/test_harmony_touch_beyond_the_clients.py), class `WhichKeysMyHarmonyGivesALongPressInDeviceMode`

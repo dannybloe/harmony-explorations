@@ -515,14 +515,22 @@ export class TouchEngine {
 
   // ---- sending ----
 
-  /** How long a device still has to wait before its next code, or 0. */
+  /**
+   * How long a device still has to wait before its next code, or 0. A wait under a microsecond is none: the clock
+   * is a sum of fractional milliseconds, and a residue of rounding, 4.5e-13 ms in one start walked from a clock at
+   * 0, was slept by `schedule` without moving the clock and looped for ever.
+   */
   private waitFor(d: Device): number {
     if (this.lastSent === undefined) return 0;
     const since = this.now - this.lastSent;
-    if (this.lastDevice === d.id && d.lastSent !== undefined) return Math.max(0, d.currentDelay - since);
-    const between = Math.max(0, d.interDeviceDelay - since);
-    const own = d.lastSent === undefined ? 0 : Math.max(0, d.currentDelay - (this.now - d.lastSent));
-    return Math.max(between, own);
+    let wait: number;
+    if (this.lastDevice === d.id && d.lastSent !== undefined) wait = Math.max(0, d.currentDelay - since);
+    else {
+      const between = Math.max(0, d.interDeviceDelay - since);
+      const own = d.lastSent === undefined ? 0 : Math.max(0, d.currentDelay - (this.now - d.lastSent));
+      wait = Math.max(between, own);
+    }
+    return wait < 0.001 ? 0 : wait;
   }
 
   private sleep(ms: number): void {

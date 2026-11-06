@@ -200,7 +200,9 @@ All in milliseconds, read against the engine's own millisecond clock[^t-touch-en
 * **`ConnectedAppPowerOnDelay`** replaces the power on delay when an activity selects an input marked
   `IsOnline`[^t-touch-engine].
 * **`Duration`** on an action is how long the code is held, in milliseconds: the engine starts the code,
-  keeps it going until the time has passed, and stops it[^t-touch-engine].
+  keeps it going until the time has passed, and stops it[^t-touch-engine]. What a held power code took on a
+  unit, the lamp and the wait after it, is under
+  [starting, switching and stopping](activities-and-buttons.md#starting-switching-and-stopping).
 
 The power feature's flags[^t-touch-engine]: **`IsPowerAlwaysOn`** suppresses the power off only, the power on
 is still sent; a device whose `PowerTypeId` is 0 or 3 is powered by hand and gets neither; `PowerTypeId` 1 makes

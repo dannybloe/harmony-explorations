@@ -37,8 +37,11 @@ account, by its channel tuning settings. Two settings were measured:
 | three digits, padded with zeros | 0, 0, 7 | 1, 2, 3 |
 
 The two rows are what the documents held and what the remote's code does with
-them[^t-touch-favourites][^t-touch-favourites-firmware]. Other channel tuning settings were not
-measured[^unchecked].
+them[^t-touch-favourites][^t-touch-favourites-firmware]. **The second row is measured on a unit with an infrared
+receiver**: five favourites tapped, each sent its channel as three digit presses to the tuning device and nothing
+before or after them, the digits about half a second apart start to start; and the first, tapped with no activity
+running, started the tuning activity and sent its digits after the start's last code[^t-touch-in-use]. Other
+channel tuning settings were not measured[^unchecked].
 
 **On the remote**, up to 50 favourites can be held: the add screen refuses a fifty first with a
 warning. That is read in the screens; the test holds the number 50 and not the
@@ -330,3 +333,4 @@ to the remote in the sync measured carried the field[^t-touch-favourites].
 [^t-touch-keys]: Read in the firmware. [The test](../../../tests/test_harmony_touch_keys.py)
 [^unchecked]: Not checked.
 [^t-touch-beyond-firmware]: Read in the firmware. [The test](../../../tests/test_harmony_touch_beyond_the_clients.py)
+[^t-touch-in-use]: Measured on a unit. [The test](../../../packages/bench/test/touch71-runs.test.ts)

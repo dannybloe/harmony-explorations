@@ -62,7 +62,11 @@ icon and whether it is hidden are the screens' alone, and the engine never sees 
    device's commands[^t-touch-activities-firmware]. In the documents measured every command action of a device
    map names that map's device, the six that do not being number pad openers with no device, every command
    action of an activity map names a device of that activity, and every command named is one the device
-   has[^t-touch-activities].
+   has[^t-touch-activities]. **Measured on a unit, device mode sends what the device's own map binds**: each
+   device chosen from the device list with no activity running, every key of its own map tapped and every long
+   press held sent that map's command to that device, 156 codes over the six devices whose map binds a key; and
+   every key of each activity's map sent what that map binds, a command to the device it names or a sequence's
+   commands, 141 codes over five activities[^t-touch-in-use].
 
 **A screen entry deleted on the remote stays in the document, marked `ButtonState` 4.** The screens hide an
 entry so marked from their lists; the engine does not read the mark at all, and the screens' key filter does
@@ -81,7 +85,11 @@ sending while held**: each hold goes to the infrared sender as a heartbeat[^t-to
 were its short action[^t-touch-activities-firmware].
 
 In the documents measured, 42 buttons carry a long press, 32 keys and 10 gestures, and no screen entry
-carries one[^t-touch-activities]. The Touch's long press is the one
+carries one[^t-touch-activities]. **On a unit, every long press of those keys did what this says**: held about a
+second, each sent its long press command and not its short one, 32 long presses across five activities' maps and
+six devices' own maps, and each key tapped sent its short command alone; two long presses and one tap were not
+heard on the first try and were on a second[^t-touch-in-use]. When the long press fires after the press is
+not measured, since the receiver hears codes and not presses[^unchecked]. The Touch's long press is the one
 [how a Harmony works](../../how-a-harmony-works.md#holding-a-key-is-two-mechanisms-and-a-repeat-and-a-long-press-exclude-each-other)
 describes as a property of the button, and this is the firmware choosing between the two.
 
@@ -237,6 +245,21 @@ order[^t-touch-activities-firmware]:
 the document. Ending an activity sends its end steps the same way and then switches off every device still
 on[^t-touch-activities-firmware].
 
+**The order is measured on a unit with an infrared receiver**, for one set of documents of five activities and
+seven devices: each activity started with every device off and ended by Off, and the five started one after
+another, each while the one before ran, sent every code in the order above, 68 expected codes in all, and
+nothing out of it[^t-touch-in-use]. Among them: the new activity's power ons before the old activity's power
+offs; an end step added by hand, a mute, sent first on leaving its activity, for a switch and for Off alike; a
+receiver kept on between activities left on by every switch and switched off only by Off; a device two
+activities share neither switched off nor on again; a device whose power steps sent its toggle only when the
+engine held it in the other state; and an input sent before an earlier one in role order while that one's device
+was still in its power on delay[^t-touch-in-use]. **Every pause the engine times lay in the band its stated
+delays give, widened by 150 ms for the engine's own time, but two**, and those two followed a code held for its
+`Duration` of 2 seconds: the next device's code came 427 and 472 ms later than the held time and that device's
+inter device delay add up to, where every pause after a code that is not held fits 0 to 210 ms of the engine's
+own time per send, give or take those 150 ms[^t-touch-in-use]. The held code itself lasted 1.8 to 2.2 seconds on
+the receiver over six holds[^t-touch-in-use]; what the time after it is made of is not checked[^unchecked].
+
 ## What a writer must carry
 
 **The screens change these documents and send them back whole.** Reordering activities, choosing a start
@@ -292,9 +315,11 @@ themselves, `Numpad` opening the number pad[^t-touch-activities-firmware].
 
 * That a heartbeat is what keeps the infrared code repeating: the sender is a native program and was not
   read[^unchecked].
-* The long press's timing on a remote, which is read and not measured[^unchecked].
-* The start and switch order on a remote, which is read and not measured with an infrared
-  receiver, and which transports the engine's 8 and 32 are[^unchecked].
+* The long press's timing on a remote, which is read and not measured: the infrared receiver hears the code and
+  not the press[^unchecked].
+* *Corrected:* this said the start and switch order on a remote was "read and not measured with an infrared
+  receiver"<!--superseded-->; it is measured for one set of documents, [above](#starting-switching-and-stopping).
+  Which transports the engine's 8 and 32 are is still not checked[^unchecked].
 * What the remote does with a document that breaks a rule above, a shared power on order, a missing
   `ActionOrder` or a missing `ActivityGroup`, beyond the reader's own failure[^unchecked].
 * Whether an entry deleted on the remote, kept under its old index, can share that index with a live entry
@@ -303,7 +328,7 @@ themselves, `Numpad` opening the number pad[^t-touch-activities-firmware].
 * What makes Logitech's service mark a map's buttons 1, and why the client numbers start steps as it
   does[^unchecked].
 * **Held by no test, read only in the decompiled engine or the screens' source**: the seven step start and
-  switch order and its scheduler; Off being an activity the engine makes at load; the start screen rules;
+  switch order and its scheduler as a reading, which what a unit sends agrees with above; Off being an activity the engine makes at load; the start screen rules;
   `ActivityOrder` hiding an activity when negative and keeping the later of two equal ones; the reader
   stopping on a sequence step without `Order` or an action without `ActionOrder`; the engine's transports 8
   and 32 going into the first list; a key marked 4 still sending, which the documents measured never
@@ -319,3 +344,4 @@ themselves, `Numpad` opening the number pad[^t-touch-activities-firmware].
 [^unchecked]: Not checked.
 [^t-touch-compose]: Measured on a unit. [The test](../../../packages/codec/test/touch-compose.test.ts)
 [^t-touch-changed-set]: Measured on a unit. [The test](../../../packages/usb/test/touch-changed-set-sync.test.ts)
+[^t-touch-in-use]: Measured on a unit. [The test](../../../packages/bench/test/touch71-runs.test.ts)

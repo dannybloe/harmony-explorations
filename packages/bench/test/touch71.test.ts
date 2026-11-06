@@ -41,10 +41,12 @@
  * them, the one left being the frame 3.2's notes record as unread, and the 18 presses of the Blu-ray among them are
  * ones the bench configurations named nothing at all.
  *
- * **What these tests do not show** is what the remote does: that is the 7.1 runs', at the bench. Before them, the
- * activity starts from Off but for Watch TV and Watch a Blu-ray, Off but from those two and Switch Box, the
- * switches but for Watch TV to Switch Box, the favourites, the keys but for the KPN's Rewind and Replay, the Denon's
- * VolumeUp and the Blu-ray's Yellow, and device mode are predicted and never heard.
+ * **What these tests do not show** is what the remote does: that is the 7.1 runs', held by `touch71-runs.test.ts`.
+ * Before them, the activity starts from Off but for Watch TV and Watch a Blu-ray, Off but from those two and Switch
+ * Box, the switches but for Watch TV to Switch Box, the favourites, the keys but for the KPN's Rewind and Replay, the
+ * Denon's VolumeUp and the Blu-ray's Yellow, and device mode were predicted and never heard; the runs heard all of
+ * them, and the one rule they added, a further slack after a held code, `HELD_CODE_SLACK_MS` in `touchbench.ts`,
+ * leaves this file's calibration as it was, since none of the five earlier runs holds a held code.
  *
  * **Which architectures**: the Harmony Touch, firmware 4.15.330, the one bench unit; its firmware reports 17 and
  * Logitech's templates file it under 18. Logitech's client was not consulted: the remote runs its own engine and

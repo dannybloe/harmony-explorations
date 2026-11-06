@@ -1,19 +1,22 @@
 # Harmony Touch: behaviour
 
-What the remote does in use, from Logitech's manual and from its firmware. The operating concept, activities
-and device mode, is [how a Harmony works](../../how-a-harmony-works.md). The one figure of the Touch in use
-measured with an instrument and held by a test is a sequence's delay step, timed by its infrared codes, [the
-platform's activities and buttons](../../architectures/harmony-touch/activities-and-buttons.md#sequences)[^t-touch-changed-set];
-the rest of this page is the manual and the firmware. This said nothing had been, "there is no infrared recording
+What the remote does in use, from Logitech's manual, from its firmware and, for one set of documents, from an
+infrared receiver. The operating concept, activities and device mode, is [how a Harmony works](../../how-a-harmony-works.md).
+**Measured on a unit by the infrared codes it sends**: a sequence's delay step, [the platform's activities and
+buttons](../../architectures/harmony-touch/activities-and-buttons.md#sequences)[^t-touch-changed-set]; and every
+activity started, switched and stopped, the favourite channels, every key of every activity's map and of every
+device's own map in device mode, tapped and held, [the same page](../../architectures/harmony-touch/activities-and-buttons.md#starting-switching-and-stopping)[^t-touch-in-use].
+The rest of this page is the manual and the firmware. This said nothing had been, "there is no infrared recording
 of it"<!--superseded-->, which stopped being true when the keys were first checked against an infrared receiver;
-the delay is the first such figure a test holds. What it does on a USB cable is [usb.md](usb.md).
+it then said the delay step was "the one figure of the Touch in use measured with an instrument"<!--superseded-->,
+until the whole of one set of documents was. What it does on a USB cable is [usb.md](usb.md).
 
 ## Device mode, in and out
 
 | | how | evidence |
 |---|---|---|
 | in | Home, then the "…" button at the bottom right of the screen for the device list, then a device | [^x-touch-manual], "Using Devices"; the firmware's menu agrees, [^t-touch-keys] |
-| on a device | "the complete list of commands for that device", and "the physical buttons on the Harmony Touch will also control the selected device" | [^x-touch-manual] |
+| on a device | "the complete list of commands for that device", and "the physical buttons on the Harmony Touch will also control the selected device"; measured, every key of the device's own map, tapped and held, sent that map's command to that device | [^x-touch-manual], [^t-touch-in-use] |
 | how long | **while that device's command screen is the one showing**: the screen makes its device the current one when it comes up and drops it when it goes, unless a screen of its own took over, and the keys then follow the running activity again | [^t-touch-keys] |
 | out | Home, Favorites or the device list, each of which takes the device's screen away; the manual states no way out | [^t-touch-keys], [^x-touch-manual] |
 
@@ -37,7 +40,9 @@ exceptions, which the screens handle themselves[^t-touch-activities-firmware].
 
 ## Switching from one activity to another
 
-Read in the firmware, not yet measured with an infrared receiver; the full order is
+Read in the firmware, and measured on a unit with an infrared receiver for one set of documents of five
+activities: every switch and every Off sent its codes in this order[^t-touch-in-use]. This said "not yet
+measured with an infrared receiver"<!--superseded--> until then. The full order and its delays are
 [the platform's activities and buttons](../../architectures/harmony-touch/activities-and-buttons.md#starting-switching-and-stopping).
 
 * **The old activity's own end steps go first**, before anything else, whether the next activity is another
@@ -86,8 +91,10 @@ remote's own reset and restart files act on a write, not when opened, [firmware.
 ## Not checked
 
 * The way back from device mode and the keys being ignored, tried on a remote rather than read[^unchecked].
-* The switch order and the long press measured on a remote rather than read in its firmware[^unchecked].
-* Anything in use with the infrared receiver[^unchecked].
+* *Corrected:* this listed "the switch order and the long press measured on a remote rather than read in its
+  firmware"<!--superseded--> and "anything in use with the infrared receiver"<!--superseded-->. Both are measured
+  now for one set of documents, above; when a long press fires after the press is still not, since the receiver
+  hears codes and not presses[^unchecked].
 * What becomes of changes made on the remote when the client syncs the account down without asking for them
   first, [usb.md](../../architectures/harmony-touch/usb.md#provisioning-instead-of-a-compile)[^unchecked].
 
@@ -99,3 +106,4 @@ remote's own reset and restart files act on a write, not when opened, [firmware.
 [^t-touch-api-names]: Read in the firmware. [The test](../../../tests/test_harmony_touch_api_names.py)
 [^t-touch-recovery]: Read in the firmware. [The test](../../../tests/test_harmony_touch_recovery.py)
 [^t-touch-changed-set]: Measured on a unit. [The test](../../../packages/usb/test/touch-changed-set-sync.test.ts)
+[^t-touch-in-use]: Measured on a unit. [The test](../../../packages/bench/test/touch71-runs.test.ts)

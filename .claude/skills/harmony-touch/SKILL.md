@@ -138,6 +138,7 @@ test; the read itself goes into the lab.
 | answering a sync in place of Logitech's server | `reference/architectures/harmony-touch/answering-a-sync.md`; the answerer `packages/corpus/src/touchsync.ts`, its script `packages/corpus/bin/touch-sync.ts`, tested in `packages/corpus/test/touch-sync.test.ts` |
 | the protocol | `reference/usb-protocol/file-protocol.md` |
 | its family, firmware and its two architecture numbers | `reference/architectures/harmony-touch/` |
+| what the remote sends for a press, predicted from its documents, and its bench tests | the engine model `packages/bench/src/touchengine.ts`, the plans and pause bands `packages/bench/src/touchbench.ts` (a further slow side slack after a held code, `HELD_CODE_SLACK_MS`), the tests `packages/bench/irtests/touch-7-1-*.json` written by `packages/bench/bin/touch-tests.ts`; the calibration `packages/bench/test/touch71.test.ts` and the ten runs of `todo-touch.md` 7.1, 413 of 418 held, `packages/bench/test/touch71-runs.test.ts` |
 | the bench unit's notes | `docs/test-notes/harmony-touch.md` |
 | what Logitech's client does for it | `reference/logitech/clients.md` and findings sections 202 and 203 |
 

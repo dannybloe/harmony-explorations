@@ -330,6 +330,66 @@ five 304s replaced that document alone. 6.9 is done. What this does not cover: a
 project, and a favourites document or a picture delivered with 200. The remote now holds tags of ours for all six
 documents. The measurements are held by `packages/usb/test/touch-changed-set-sync.test.ts`.
 
+## The first full bench test, todo-touch 7.1
+
+**Run on 6 November 2026**, the remote holding `6.9-label-back` and the recorded favourites, as 6.9 left it, with
+nothing sent to it: the ten tests of `packages/bench/irtests/touch-7-1-*.json` on the Flirc monitor, the bench
+restarted first so its code book names a code by the Touch's own documents. The lab's runs, in order, each
+`reads/20261106T<time>-ir-test-harmony-touch-7-1-*.json`:
+
+| time | test | expectations held |
+|---|---|---|
+| `092337Z` | every activity from Off, and Off | 38 of 38 |
+| `092617Z` | switching between activities | 28 of 30 |
+| `092913Z` | the favourite channels and their logos | 15 of 15 |
+| `093034Z` | the keys in Watch TV | 32 of 33 |
+| `093236Z` | the keys in Watch a Blu-ray | 37 of 39 |
+| `093422Z` | the keys in Listen to Music | 32 of 32 |
+| `093610Z` | the keys in Switch Box | 38 of 38 |
+| `093742Z` | the keys in Play a Game | 37 of 37 |
+| `093952Z` | device mode 1 of 2, the LG TV, the Denon and the Blu-ray | 74 of 74 |
+| `094316Z` | device mode 2 of 2, Plex, the KPN and the Xbox | 82 of 82 |
+
+**413 of 418.** Every code came in the order the model predicts, and nothing was sent that a step did not expect,
+but for the presses of the two marked steps below and one Denon PowerToggle heard 10.4 s into the step that chose
+the Denon from the device list, unmarked; the Denon's own map lists PowerToggle on its screen, and whether it was
+tapped the run does not say. The five that did not hold:
+
+* **Three single presses not heard**: in Watch TV, Previous held, the LG TV's Back; in Watch a Blu-ray, Blue, the
+  Blu-ray's Blue, and Rewind held, its ChapterPrev. **Retested on the monitor's live log, not as a test**,
+  `reads/20261105T1728Z-ir-monitor.jsonl` from 09:48:47 to 09:49:39 UTC: Watch TV started, Previous held, Watch a
+  Blu-ray started, Blue tapped, Rewind held. The log holds exactly the ten codes the model gives for those five,
+  in order, the starts' pauses in their bands, so each press was missed once and heard once. The files do not say
+  whether the remote sent nothing, the receiver missed it or the key was not pressed fully.
+* **Two pauses late in the switches**, each straight after the Xbox's power code, which its documents hold for 2 s
+  (`Duration` 2000): from Watch a Blu-ray to Play a Game the Blu-ray's PowerOff came 2927 ms after the Xbox's
+  PowerOn began, against 2300 to 2900; from Play a Game to Listen to Music the Denon's InputMediaPlayer 3172 ms
+  after the Xbox's PowerOff, against 2550 to 3100. **The model leaves out no step there**: between the two codes
+  the engine has only the held code and the next device's own inter device delay, 500 and 700 ms. What it gets
+  short is the time a held code costs: 427 and 472 ms beyond the 2 s, where its band allowed up to 210 and the
+  slack 150 more, and the slack had been calibrated on runs with no held code. So the band was too narrow on the
+  slow side after a held code. **The rule**: after a code held for a `Duration` above 0, the slow side gets the
+  slack once more, `HELD_CODE_SLACK_MS` in `packages/bench/src/touchbench.ts`. It moves four of the 89 judged
+  pauses, the four after a held code, and all 89 then lie in their bands; the test files were rewritten with it.
+
+**The person's marks**: Play a Game step 7, "accidentally did rewind(hold) first, then restarted this step", heard
+the Xbox's SkipBack, Rewind held, first and then exactly the four expected; device mode 2 of 2 step 21, "pressed
+some wrong buttons but the targets were in there eventually", heard the five expected in order among eight, the
+other three the Xbox's own SkipBack, Up and Down. Both are judged as passing.
+
+**The favourites' logos**, reported by the person at the bench: all five showed, NPO 1, Zork, NPO 2, NPO 3 and
+RTL 4. A favourite's digits came about half a second apart, start to start.
+
+**Not used**: two abandoned starts, `092555Z` of the switches and `093544Z` of the Switch Box keys, one step each.
+**The 3.2 home button test**, run again first at `092147Z`, agrees with its run of 3 November: the same codes in
+each step, Volume Up to the Denon after Home, pressed twice as that step's note says.
+
+**Found while landing it**: the engine model looped for ever when a start was walked from a clock at 0, sleeping a
+rounding residue of 4.5e-13 ms that did not move the clock; a wait under a microsecond now counts as none,
+`waitFor` in `packages/bench/src/touchengine.ts`, and the test files came out unchanged by it.
+
+The runs, the retest and the rule are held by `packages/bench/test/touch71-runs.test.ts`. 7.1 is done.
+
 ## Not done
 
 * *Corrected:* this said no infrared run had been recorded with this unit and nothing about it in use had been

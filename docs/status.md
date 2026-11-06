@@ -187,7 +187,7 @@ the generator that wrote it, with firmware event 0xFF bound so it serves both mo
 expected codes on the bench 350 and the same file 33 of 33 on the bench 300, `packages/codec/test/noscreenfinalunits.test.ts`.
 Two Harmony 885s are on the bench as well, read only.
 
-**The Harmony Touch is described from its own reading, and nine syncs of ours have run on it, eight committed, four of them changing what it does.** Its configuration
+**The Harmony Touch is described from its own reading, nine syncs of ours have run on it, eight committed, four of them changing what it does, and its first full bench test has run.** Its configuration
 is Logitech's documents rather than a file, fetched by the remote through the computer during a sync, and both
 directions of a sync are recorded, `packages/usb/test/touch-sync-both-ways.test.ts`. The documents are described
 field by field in [its platform pages](../reference/architectures/harmony-touch/README.md) and read by the codec,
@@ -213,6 +213,12 @@ committed. A sequence's delay went from 1 second to 3 and the pause between its 
 two seconds, then came back when the value did; an activity's name changed on the activity list and changed
 back. A closing `--unchanged` run was asked for the six with the last set's tags,
 `packages/usb/test/touch-changed-set-sync.test.ts`. A document composed whole by this project is still unchecked.
+In 7.1 the Touch's first full bench test ran on the documents it holds, ten tests on the infrared monitor: every
+activity started, switched and stopped, the five favourites, every key of every activity's map and of six devices'
+own maps, tapped and held. 413 of the 418 expected codes and pauses held, every code in the order the model of its
+engine predicts; three single presses were missed and each heard on a retest, and two pauses ran late after a code
+the remote holds for two seconds, which a rule for held codes now allows,
+`packages/bench/test/touch71-runs.test.ts`.
 
 ## What is still open
 

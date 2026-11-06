@@ -980,7 +980,8 @@ node packages/bench/bin/touch-tests.ts [--write]
                        the bench unit holds and the recorded favourites, through the engine model
                        `src/touchengine.ts`, and print them, or with `--write` write
                        `irtests/touch-7-1-*.json`; `test/touch71.test.ts` holds the files equal to
-                       what this gives. Reads the lab only. Opens nothing, sends nothing.
+                       what this gives, and `test/touch71-runs.test.ts` the ten runs of them at the
+                       bench. Reads the lab only. Opens nothing, sends nothing.
 node packages/corpus/bin/touch-own-set.ts --build <lab folder> --requests <list> [--handed-up <answers>]
 node packages/corpus/bin/touch-own-set.ts --check <set folder> [--hash <answer>] [--list <list>]
                        build the set `todo-touch.md` 6.8 delivers to a Harmony Touch, its own six
