@@ -312,13 +312,20 @@ test('the control: judged by 6.9-label-back\'s documents the device\'s ten codes
     assert.equal(unnamed, 10);
   });
 
-/** The monitor log's frames, each opening a press with the frames after it, on the receiver's clock. */
+/**
+ * Where 8.1's part of the monitor log ends: the put back's sync started at 12:01 UTC. The log is the live log of a
+ * bench that kept running after 8.1, so frames of later use follow in the same file and are left out here.
+ */
+const LOG_END = '2026-11-06T12:01:00';
+
+/** The monitor log's frames up to `LOG_END`, each opening a press with the frames after it, on the receiver's clock. */
 function logPresses(book: CodeBook): { at: string; names: string[]; frames: number; bits: number | undefined; firstUs: number; headerUs: number; periodsMs: number[] }[] {
   const out: ReturnType<typeof logPresses> = [];
   let previousStart = 0;
   for (const line of new TextDecoder().decode(lab.require_(MONITOR)).split('\n')) {
     if (!line.includes('"pulses"')) continue;
     const f = JSON.parse(line) as { at: string; gapUs?: number; bits?: number; repeatOf?: number | null; pulses: { mark: boolean; us: number }[] };
+    if (f.at >= LOG_END) break;
     const length = f.pulses.reduce((sum, p) => sum + p.us, 0);
     if (f.repeatOf !== undefined && f.repeatOf !== null) {
       const last = out[out.length - 1]!;
