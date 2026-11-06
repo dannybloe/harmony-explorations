@@ -72,6 +72,16 @@ export class Face {
     return this.#keys.get(name)?.dataset['kr'] as KeyLook | undefined;
   }
 
+  /**
+   * Call `handler` with a key's name when it is clicked. Only the keys the build gave words for answer a
+   * click, so a part of the drawing that is no key of this model does nothing.
+   */
+  onClick(handler: (name: string) => void): void {
+    for (const key of this.drawing.keys) {
+      this.#keys.get(key.name)?.addEventListener('click', () => handler(key.name));
+    }
+  }
+
   /** Clear every key's look and the tag. */
   clear(): void {
     for (const group of this.#keys.values()) delete group.dataset['kr'];

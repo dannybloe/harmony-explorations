@@ -13,7 +13,8 @@
  * So a press that cannot be the key asked for is not recorded at all, it is noted: a code already learned
  * for another key (each key raises its own code, so a repeat is the wrong key pressed, or the same key
  * pressed twice), or any press once nothing is being asked. A key the person's remote does not have is
- * skipped, and undo takes back the last answer, learned or skipped, which then becomes the key asked again.
+ * skipped; going back takes away the answer of the key before the one asked, which then becomes the key
+ * asked again; and a key already answered can be asked again by clicking it on the drawing.
  *
  * **Learning, for a model without a drawing**, `Naming`: with no drawing there is no list of keys to ask
  * for, so the order is turned round. The person presses a key and then types what is printed on it, or
@@ -75,14 +76,14 @@ export interface Misfit {
 }
 
 /**
- * An answer to a key that was asked: its code; `skipped`, the person's remote has no such key; or `not seen`,
+ * An answer to a key that was asked: its code; `skipped`, the person's remote has no such key; or `not detected`,
  * the key is there and works (the remote reacts to it) but no press of it reached the page. The last was met
  * at the bench on a Harmony 885's Glow key, and is kept apart from a missing key because it says something
  * different: that the key's code is not where the page reads it, or not written there at all.
  */
 export interface Answer {
   readonly key: FaceKey;
-  readonly code: number | 'skipped' | 'not seen';
+  readonly code: number | 'skipped' | 'not detected';
 }
 
 /**
@@ -94,9 +95,6 @@ export type LearnOutcome =
   | { readonly kind: 'learned'; readonly key: FaceKey; readonly code: number }
   | { readonly kind: 'mismatch'; readonly key: FaceKey; readonly first: number; readonly second: number }
   | { readonly kind: 'misfit'; readonly misfit: Misfit };
-
-/** What undo took back: a whole answer, or only the first press of the key asked, `provisional`. */
-export type Undone = Answer & { readonly provisional?: true };
 
 /**
  * How a key looks while learning, which is also what the page colours it by. `confirm` is the key asked
@@ -112,18 +110,26 @@ export type LearnState = 'asked' | 'confirm' | 'learned' | 'skipped' | 'unseen' 
  * would be learned under the wrong name, and nothing at the time would say so. Asking for the key again
  * catches the slip at the moment it happens: two presses of the same key give the same code, and a
  * mismatch drops both and asks again from the start. Step 3 still checks the whole map at the end, for a
- * slip made twice. Skip and `not seen` answer without a press, so they need no second one.
+ * slip made twice. Skip and `not detected` answer without a press, so they need no second one.
+ *
+ * **Which key is asked**: the first key of the face, in order, with no answer yet; or, when the person has
+ * clicked a key already answered on the drawing, that key, until it is answered again (`reask`). The keys
+ * after it keep their answers, and once it is answered learning carries on with the first key without
+ * one, which is where it was. Going back, `previous`, takes away the answer of the key before the one
+ * asked, so pressed again and again it walks back one key at a time.
+ *
+ * Answers are kept per key rather than as a list in the order given, so a key answered again replaces its
+ * own answer, and the log, which lists keys in the face's order, shows its line once and in its place.
  */
 export class Learning {
   readonly keys: readonly FaceKey[];
-  /**
-   * The answers in the order given. Each answers the key asked at the time, which is always the first key
-   * not yet answered, so this list follows `keys` and its length says which key is asked next.
-   */
-  readonly #answers: Answer[] = [];
+  /** The answer per key, by the key's name. */
+  readonly #answers = new Map<string, Answer>();
   readonly #misfits: Misfit[] = [];
   /** The first press of the key asked, waiting for the second to confirm it; never in the log on its own. */
   #first: number | undefined;
+  /** A key already answered that the person asked to answer again, if any. */
+  #again: FaceKey | undefined;
 
   /** The drawing's keys in face order; only those it asks for are kept, so the log lists only those. */
   constructor(keys: readonly FaceKey[]) {
@@ -132,11 +138,17 @@ export class Learning {
 
   /** The key being asked for, or undefined when every key has been answered. */
   get asked(): FaceKey | undefined {
-    return this.keys[this.#answers.length];
+    return this.#again ?? this.#next;
   }
 
+  /** Where learning is: the first key in face order without an answer. */
+  get #next(): FaceKey | undefined {
+    return this.keys.find((key) => !this.#answers.has(key.name));
+  }
+
+  /** The answers so far, in the face's order. */
   get answers(): readonly Answer[] {
-    return this.#answers;
+    return this.keys.flatMap((key) => this.#answers.get(key.name) ?? []);
   }
 
   get misfits(): readonly Misfit[] {
@@ -148,14 +160,23 @@ export class Learning {
     return this.#first;
   }
 
+  /** Whether a key already answered is being answered again. */
+  get again(): boolean {
+    return this.#again !== undefined;
+  }
+
   /** Whether every key has been answered. */
   get done(): boolean {
     return this.asked === undefined;
   }
 
-  /** The key a code has been learned for, if any. */
+  /**
+   * The key a code has been learned for, if any, other than the key asked: a key answered again may be
+   * given the code it had, which is its own and not another key's.
+   */
   learnedFor(code: number): FaceKey | undefined {
-    return this.#answers.find((answer) => answer.code === code)?.key;
+    const asked = this.asked;
+    return this.answers.find((answer) => answer.code === code && answer.key !== asked)?.key;
   }
 
   /**
@@ -180,50 +201,70 @@ export class Learning {
       this.#misfits.push({ code, asked: asked.name, reason: 'different', first });
       return { kind: 'mismatch', key: asked, first, second: code };
     }
-    this.#answers.push({ key: asked, code });
+    this.#answer(asked, code);
     return { kind: 'learned', key: asked, code };
   }
 
   /** The person's remote has no such key: answer it as skipped and ask the next. */
   skip(): FaceKey | undefined {
     const asked = this.asked;
-    // A first press made before skipping was not this key's after all, and goes with it.
-    this.#first = undefined;
-    if (asked !== undefined) this.#answers.push({ key: asked, code: 'skipped' });
+    if (asked !== undefined) this.#answer(asked, 'skipped');
     return asked;
   }
 
-  /** The key works on the remote but the page never saw it: answer it as `not seen` and ask the next. */
+  /** The key works on the remote but the page never detects it: answer it as `not detected`, ask the next. */
   unseen(): FaceKey | undefined {
     const asked = this.asked;
-    this.#first = undefined;
-    if (asked !== undefined) this.#answers.push({ key: asked, code: 'not seen' });
+    if (asked !== undefined) this.#answer(asked, 'not detected');
     return asked;
   }
 
   /**
-   * Take back the last thing done: the first press of the key asked, while it waits for its second, and
-   * only that; otherwise the last answer, so that its key is asked again.
+   * Ask a key already answered again, as when the person clicks it on the drawing. Its answer stays until a
+   * new one replaces it, so leaving it with `previous` loses nothing. Returns the key, or undefined for a
+   * key with no answer yet, which is asked in its turn.
    */
-  undo(): Undone | undefined {
-    const first = this.#first;
-    const asked = this.asked;
-    if (first !== undefined && asked !== undefined) {
-      this.#first = undefined;
-      return { key: asked, code: first, provisional: true };
-    }
-    return this.#answers.pop();
+  reask(name: string): FaceKey | undefined {
+    const answer = this.#answers.get(name);
+    if (answer === undefined) return undefined;
+    this.#first = undefined;
+    this.#again = answer.key;
+    return answer.key;
   }
 
-  /** How a key looks now. */
-  stateOf(name: string): LearnState {
-    const answer = this.#answers.find((a) => a.key.name === name);
-    if (answer !== undefined) {
-      if (answer.code === 'skipped') return 'skipped';
-      return answer.code === 'not seen' ? 'unseen' : 'learned';
+  /**
+   * Go back one key: the key before the one asked loses its answer and is asked again, so that pressed
+   * again and again this walks back one key at a time. A first press waiting for its second goes too, as it
+   * was the key's being left. While a key is answered again, going back ends that instead, keeping its
+   * answer, and learning is where it was. Returns the key asked afterwards.
+   */
+  previous(): FaceKey | undefined {
+    this.#first = undefined;
+    if (this.#again !== undefined) {
+      this.#again = undefined;
+      return this.asked;
     }
-    if (this.asked?.name !== name) return 'waiting';
-    return this.#first === undefined ? 'asked' : 'confirm';
+    const next = this.#next;
+    const before = next === undefined ? this.keys.length : this.keys.indexOf(next);
+    const back = this.keys[before - 1];
+    if (back !== undefined) this.#answers.delete(back.name);
+    return this.asked;
+  }
+
+  /** How a key looks now: the key asked looks asked even when it has an answer it is giving again. */
+  stateOf(name: string): LearnState {
+    if (this.asked?.name === name) return this.#first === undefined ? 'asked' : 'confirm';
+    const answer = this.#answers.get(name);
+    if (answer === undefined) return 'waiting';
+    if (answer.code === 'skipped') return 'skipped';
+    return answer.code === 'not detected' ? 'unseen' : 'learned';
+  }
+
+  /** Record an answer for a key, replacing any it had, and end answering it again. */
+  #answer(key: FaceKey, code: Answer['code']): void {
+    this.#first = undefined;
+    this.#answers.set(key.name, { key, code });
+    if (this.#again === key) this.#again = undefined;
   }
 
   #note(misfit: Misfit): LearnOutcome {
@@ -232,11 +273,12 @@ export class Learning {
   }
 
   /**
-   * The rows of the log: every key answered so far, in the order asked, with its code, `skipped` or
-   * `not seen`. A key not reached yet has no row, so the log grows answer by answer and loses one on undo.
+   * The rows of the log: every key answered so far, in the face's order, with its code, `skipped` or
+   * `not detected`. A key not reached yet has no row, so the log grows answer by answer and loses one going
+   * back; a key answered again keeps its one row, with the new answer.
    */
   rows(): LogRow[] {
-    return this.#answers.map((answer) => ({ name: answer.key.name, words: answer.key.words, code: answer.code }));
+    return this.answers.map((answer) => ({ name: answer.key.name, words: answer.key.words, code: answer.code }));
   }
 }
 
@@ -380,7 +422,7 @@ export class Tester {
 export interface LogRow {
   readonly name: string;
   readonly words?: string;
-  readonly code: number | 'skipped' | 'not seen';
+  readonly code: number | 'skipped' | 'not detected';
 }
 
 /**

@@ -21,7 +21,7 @@
  *      was received. A key whose code the drawing knows lights and stays lit; a code no key on the drawing
  *      has is counted and listed. The person moves on whenever they like.
  *   4. **Step 2, learn the key map**, `session.ts`, one key asked at a time. A key that never answered in
- *      step 1 is flagged when it is asked, with the answer that it works but the page does not see it put
+ *      step 1 is flagged when it is asked, with the answer that it works but is not detected put
  *      first, because that is the likeliest answer for it; the person is never made to give it.
  *   5. **Step 3, check the key map**: every press lights a key by the map just learned, plus the codes the
  *      drawing already knew, so the person sees at once whether each key was learned right; a code the map
@@ -231,6 +231,7 @@ function open(chosen: ModelSession): void {
   modelLine.textContent = option.name;
   // A drawing is built once per choice; a model without one gets the list instead.
   face = option.drawing === undefined ? undefined : new Face(drawingBox, option.drawing);
+  face?.onClick(reaskKey);
   if (face === undefined) drawingBox.replaceChildren();
   keyList.hidden = face !== undefined;
   tell('');
@@ -279,6 +280,19 @@ function wordsOf(name: string | undefined): string {
 function misfitLine(misfit: Misfit): string {
   const named = { ...misfit, other: wordsOf(misfit.other), asked: misfit.asked === undefined ? undefined : wordsOf(misfit.asked) };
   return `Not recorded: ${misfit.code}, ${misfitWords(named)}.`;
+}
+
+/**
+ * A click on a key of the drawing. In step 2, a key already answered (learned, skipped or not detected)
+ * becomes the key asked again, to be pressed twice; the keys after it keep their answers, and once it is
+ * answered learning carries on where it was. Anywhere else a click does nothing.
+ */
+function reaskKey(name: string): void {
+  if (session === undefined || mode !== 'learn' || !(session.learning instanceof Learning)) return;
+  const key = session.learning.reask(name);
+  if (key === undefined) return;
+  tell(`Learning ${key.words} again: press it twice. Then learning carries on where it was.`);
+  render();
 }
 
 /** Where a mode hooks in: every press goes to the mode in force; releases change nothing. */
@@ -334,16 +348,16 @@ skipButton.addEventListener('click', () => {
 unseenButton.addEventListener('click', () => {
   if (session === undefined || !(session.learning instanceof Learning)) return;
   const unseen = session.learning.unseen();
-  if (unseen !== undefined) tell(`Noted: ${unseen.words} works, but the page does not see it.`);
+  if (unseen !== undefined) tell(`Noted: ${unseen.words} works, but the page does not detect it.`);
   render();
 });
 
 undoButton.addEventListener('click', () => {
   if (session === undefined) return;
   if (session.learning instanceof Learning) {
-    const undone = session.learning.undo();
-    if (undone?.provisional === true) tell(`Taken back the first press of ${undone.key.words}. Press it twice.`);
-    else if (undone !== undefined) tell(`Taken back: ${undone.key.words}. Press it again, or skip it.`);
+    // Back one key: the key before loses its answer and is asked again, each click one key further back.
+    const asked = session.learning.previous();
+    if (asked !== undefined) tell(`Back to ${asked.words}. Press it twice, or skip it.`);
   } else {
     const undone = session.learning.undo();
     if (undone !== undefined) tell(`Taken back: ${undone.words}.`);
@@ -483,20 +497,20 @@ function renderLearning(current: ModelSession): void {
     unseenButton.classList.toggle('primary', flagged);
     // The tag beside the drawing names a key by its print; a key named by its position is pointed at.
     face?.point(asked?.name, asked === undefined ? '' : asked.words.length <= 12 ? asked.words : 'this key');
-    const count = (code: 'skipped' | 'not seen') => learning.answers.filter((a) => a.code === code).length;
+    const count = (code: 'skipped' | 'not detected') => learning.answers.filter((a) => a.code === code).length;
     const skipped = count('skipped');
-    const unseen = count('not seen');
+    const unseen = count('not detected');
     const learned = learning.answers.length - skipped - unseen;
     progressLine.textContent = `${learning.answers.length} of ${learning.keys.length} keys answered: `
-      + `${learned} learned, ${skipped} skipped, ${unseen} not seen.`;
+      + `${learned} learned, ${skipped} skipped, ${unseen} not detected.`;
     skipButton.disabled = asked === undefined;
-    skipButton.textContent = 'Skip: my remote has no such key';
-    undoButton.disabled = learning.answers.length === 0 && learning.provisional === undefined;
-    // While a key waits for its second press, undo takes back only that first press, and says so.
-    undoButton.textContent = learning.provisional === undefined ? 'Undo the last key' : 'Undo that first press';
+    skipButton.textContent = 'Skip: not on my remote';
+    // Going back has somewhere to go once a key is answered, or while a key is being answered again.
+    undoButton.disabled = learning.answers.length === 0 && !learning.again;
+    undoButton.textContent = '\u25C0 Previous key';
   } else {
     const pending = learning.pending;
-    // Without a drawing nothing is asked, so no key can be answered as not seen.
+    // Without a drawing nothing is asked, so no key can be answered as not detected.
     unseenButton.hidden = true;
     flagLine.hidden = true;
     namingForm.hidden = pending === undefined;

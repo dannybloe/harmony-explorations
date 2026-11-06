@@ -39,6 +39,11 @@ export class Face {
     lookOf(name) {
         return this.#keys.get(name)?.dataset['kr'];
     }
+    onClick(handler) {
+        for (const key of this.drawing.keys) {
+            this.#keys.get(key.name)?.addEventListener('click', () => handler(key.name));
+        }
+    }
     clear() {
         for (const group of this.#keys.values())
             delete group.dataset['kr'];

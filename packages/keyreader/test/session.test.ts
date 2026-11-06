@@ -7,7 +7,7 @@
  * codes were named by a list's order (`tests/test_harmony_885_keys.py`). The replay below is the 885's
  * measured codes, which its drawing carries, pressed in the order the page asks; and the cases around it
  * are what a person gets wrong at the bench: a key pressed again for the next one, a wrong key whose code
- * is already taken, a key their remote lacks, a slip to undo, a press after the end.
+ * is already taken, a key their remote lacks, a key to go back to or to learn again, a press after the end.
  *
  * **Each key asked is pressed twice**, and the second press has to give the first one's code, so that a
  * slip to the neighbouring key is caught when it happens rather than learned under the wrong name. The
@@ -87,17 +87,18 @@ test('a learned key pressed again for the next key is noted, not recorded, and t
   assert.equal(learning.misfits.length, 1);
 });
 
-test('skip answers the key asked as skipped; undo takes back the last answer and asks that key again', () => {
+test('skip answers the key asked as skipped; previous takes back the answer before and asks that key again', () => {
   const learning = new session.Learning(h885.keys);
   learn(learning, 2);
   assert.equal(learning.skip()?.name, 'Activities');
   assert.equal(learning.stateOf('Activities'), 'skipped');
   assert.equal(learning.stateOf('Help'), 'asked');
   assert.equal(learning.stateOf('Enter'), 'waiting');
-  assert.equal(learning.undo()?.key.name, 'Activities');
+  assert.equal(learning.previous()?.name, 'Activities');
   assert.equal(learning.stateOf('Activities'), 'asked');
-  // Undo of a learned key frees its code: 2 is AllOff's no longer, so it can be learned again.
-  assert.equal(learning.undo()?.code, 2);
+  // Going back past a learned key frees its code: 2 is AllOff's no longer, so it can be learned again.
+  assert.equal(learning.previous()?.name, 'AllOff');
+  assert.deepEqual(learning.rows(), []);
   assert.equal(learn(learning, 2).kind, 'learned');
   assert.equal(learning.stateOf('AllOff'), 'learned');
 });
@@ -120,15 +121,15 @@ test('the 880 learns its chevron keys like any other, whatever the drawing narro
     [['UpArrow', 20], ['DownArrow', 52]]);
 });
 
-test('a key that works but is not seen is its own answer, apart from skipped, and undo takes it back', () => {
+test('a key that works but is not detected is its own answer, apart from skipped, and previous takes it back', () => {
   const learning = new session.Learning(h885.keys);
   assert.equal(learning.unseen()?.name, 'AllOff');
   assert.equal(learning.skip()?.name, 'Activities');
   assert.equal(learning.stateOf('AllOff'), 'unseen');
   assert.equal(learning.stateOf('Activities'), 'skipped');
-  assert.deepEqual(learning.rows().map((r) => r.code), ['not seen', 'skipped']);
-  learning.undo();
-  assert.equal(learning.undo()?.code, 'not seen');
+  assert.deepEqual(learning.rows().map((r) => r.code), ['not detected', 'skipped']);
+  learning.previous();
+  assert.equal(learning.previous()?.name, 'AllOff');
   assert.equal(learning.stateOf('AllOff'), 'asked');
 });
 
@@ -172,23 +173,90 @@ test('a code already learned is refused on either press, and leaves a first pres
   assert.equal(learning.press(1).kind, 'learned');
 });
 
-test('undo during a first press takes back only that press; skip and not seen need no second press', () => {
+test('skip and not detected need no second press, and a first press made before either goes with it', () => {
   const learning = new session.Learning(h885.keys);
   learn(learning, 2);
-  learning.press(1);
-  assert.deepEqual(learning.undo(), { key: learning.asked, code: 1, provisional: true });
-  assert.equal(learning.provisional, undefined);
-  assert.equal(learning.asked?.name, 'Activities');
-  assert.deepEqual(learning.rows().map((r) => r.code), [2], 'the learned key before it is kept');
-  // Skip and not seen answer at once, and a first press made before either goes with it.
   learning.press(9);
   assert.equal(learning.skip()?.name, 'Activities');
   assert.equal(learning.provisional, undefined);
   assert.equal(learning.unseen()?.name, 'Help');
-  assert.deepEqual(learning.rows().map((r) => r.code), [2, 'skipped', 'not seen']);
+  assert.deepEqual(learning.rows().map((r) => r.code), [2, 'skipped', 'not detected']);
 });
 
-/** A Learning class from the published file with one piece of `press` or `undo` replaced. */
+test('previous walks back one key at a time, each the key asked again, and drops a first press waiting', () => {
+  const learning = new session.Learning(h885.keys);
+  learn(learning, 2);
+  learn(learning, 1);
+  learning.skip();
+  learning.press(5);
+  assert.equal(learning.asked?.name, 'ScreenLeft1');
+  for (const [name, left] of [['Help', 2], ['Activities', 1], ['AllOff', 0]] as const) {
+    assert.equal(learning.previous()?.name, name);
+    assert.equal(learning.provisional, undefined);
+    assert.equal(learning.stateOf(name), 'asked');
+    assert.equal(learning.rows().length, left);
+  }
+  // Nowhere further to go: the first key stays the one asked.
+  assert.equal(learning.previous()?.name, 'AllOff');
+});
+
+test('a key clicked again is asked again, twice, while the keys after it keep their answers', () => {
+  const learning = new session.Learning(h885.keys);
+  learn(learning, 2);
+  learn(learning, 1);
+  learning.skip();
+  assert.equal(learning.asked?.name, 'ScreenLeft1');
+  assert.equal(learning.reask('ScreenLeft1'), undefined, 'a key not answered yet is asked in its turn');
+  for (const name of ['AllOff', 'Help', 'Activities']) {
+    assert.equal(learning.reask(name)?.name, name, 'learned, skipped, and asked again over another');
+  }
+  assert.equal(learning.stateOf('Activities'), 'asked');
+  assert.equal(learning.stateOf('Help'), 'skipped');
+  // Its own code is no other key's, so it may be given again; another key's still is refused.
+  assert.equal(learning.press(2).kind, 'misfit');
+  assert.equal(learning.press(1).kind, 'provisional');
+  assert.equal(learning.stateOf('Activities'), 'confirm');
+  assert.equal(learning.press(1).kind, 'learned');
+  // Done: learning carries on where it was, and nothing after it was undone.
+  assert.equal(learning.asked?.name, 'ScreenLeft1');
+  assert.deepEqual(learning.rows().map((r) => [r.name, r.code]), [['AllOff', 2], ['Activities', 1], ['Help', 'skipped']]);
+  // A not detected key is learned at a code of its own the same way, and a mismatch keeps it asked.
+  learning.reask('Help');
+  learning.press(3);
+  assert.equal(learning.press(4).kind, 'mismatch');
+  assert.equal(learning.asked?.name, 'Help');
+  learn(learning, 3);
+  assert.deepEqual(learning.rows().map((r) => [r.name, r.code]), [['AllOff', 2], ['Activities', 1], ['Help', 3]]);
+});
+
+test('previous while a key is asked again leaves it as it was and returns to where learning was', () => {
+  const learning = new session.Learning(h885.keys);
+  learn(learning, 2);
+  learn(learning, 1);
+  learning.reask('AllOff');
+  learning.press(9);
+  assert.equal(learning.previous()?.name, 'Help');
+  assert.deepEqual(learning.rows().map((r) => r.code), [2, 1]);
+  assert.equal(learning.again, false);
+});
+
+test('the log replaces the line of a key learned again rather than adding one', () => {
+  const learning = new session.Learning(h885.keys);
+  for (const key of asked885.slice(0, 6)) learn(learning, key.scan as number);
+  const log = () => session.learningLog(HEAD, session.sweepOf(h885.keys, []), NO_CHECK, learning.rows(), learning.misfits);
+  const before = log().split('\n');
+  learning.reask('Activities');
+  learning.skip();
+  const after = log().split('\n');
+  assert.equal(after.length, before.length);
+  assert.deepEqual(after.filter((line) => line.startsWith('Activities')), ['Activities (ACTIVITIES): skipped']);
+  // The same line, in the same place: everything else is as it was.
+  const at = before.indexOf('Activities (ACTIVITIES): 1');
+  assert.ok(at > 0);
+  assert.deepEqual([...before.slice(0, at), ...before.slice(at + 1)], [...after.slice(0, at), ...after.slice(at + 1)]);
+});
+
+/** A Learning class from the published file with one piece of its text replaced. */
 async function learningWith(from: string, to: string): Promise<typeof SessionModule.Learning> {
   return ((await publishedWith('session.js', from, to)) as typeof SessionModule).Learning;
 }
@@ -206,12 +274,19 @@ test('control: with the comparison of the two presses disarmed, a slip on the se
   assert.deepEqual(learning.rows().map((r) => r.code), [1]);
 });
 
-test('control: with undo not knowing a first press, it takes back the key learned before', async () => {
-  const Disarmed = await learningWith('if (first !== undefined && asked !== undefined) {', 'if (false) {');
+test('control: with the key asked counted as another key, a key learned again cannot keep its own code', async () => {
+  const Disarmed = await learningWith('answer.code === code && answer.key !== asked', 'answer.code === code');
   const learning = new Disarmed(h885.keys);
   learn(learning, 2);
-  learning.press(1);
-  assert.equal(learning.undo()?.key.name, 'AllOff');
+  learning.reask('AllOff');
+  assert.equal(learning.press(2).kind, 'misfit');
+});
+
+test('control: with previous not taking away an answer, it does not walk back', async () => {
+  const Disarmed = await learningWith('this.#answers.delete(back.name);', 'void 0;');
+  const learning = new Disarmed(h885.keys);
+  learn(learning, 2);
+  assert.equal(learning.previous()?.name, 'Activities');
 });
 
 test('the keys the test never lit are the known ones no press reached; none when nothing was pressed', () => {
@@ -334,7 +409,7 @@ const LINE_SHAPES: readonly RegExp[] = [
   /^keys, in the order (asked|pressed):$/,
   /^key test: \d+ different keys answered$/,
   /^key test, codes no key on the drawing has: (none|\d+(, \d+)*)$/,
-  /^[A-Za-z0-9]+( \(.+\))?: (\d+|skipped|not seen)$/,
+  /^[A-Za-z0-9]+( \(.+\))?: (\d+|skipped|not detected)$/,
   /^"[^"]*": \d+$/,
   /^presses that did not fit:$/,
   /^key map check: \d+ of \d+ learned keys confirmed$/,
@@ -386,11 +461,11 @@ test('a full 885 log has the head, every key in the order asked, and the presses
     'keys, in the order asked:',
     'AllOff (OFF): 2',
     'Activities (ACTIVITIES): skipped',
-    'Help (HELP): not seen',
+    'Help (HELP): not detected',
   ]);
   assert.ok(!lines.some((l) => l.startsWith('Glow')), 'Glow is not asked, so not in the log');
   // 2 is AllOff's learned code and confirms it; 3 lights Help by the drawing's code, and Help was answered
-  // not seen rather than learned, so it confirms nothing; 120 is in no map.
+  // not detected rather than learned, so it confirms nothing; 120 is in no map.
   assert.deepEqual(lines.slice(-3), [
     'key map check: 1 of 52 learned keys confirmed',
     'key map check, codes the map does not have: 120',
@@ -405,10 +480,10 @@ test('a full 885 log has the head, every key in the order asked, and the presses
   const exit = code(h885.keys, 'Exit');
   assert.ok(lines.includes(`${exit}: the second press, after ${menu} while Menu was asked; both were dropped`));
   assert.ok(lines.includes(`Menu (MENU): ${menu}`), 'the key is logged once, at its confirmed code');
-  assert.equal(lines.filter((l) => /^[A-Za-z0-9]+( \(.+\))?: (\d+|skipped|not seen)$/.test(l)).length, 54);
+  assert.equal(lines.filter((l) => /^[A-Za-z0-9]+( \(.+\))?: (\d+|skipped|not detected)$/.test(l)).length, 54);
 });
 
-test('the log grows answer by answer and loses one on undo, and without a drawing lists keys in the order pressed', () => {
+test('the log grows answer by answer and loses one going back, and without a drawing lists keys in the order pressed', () => {
   const learning = new session.Learning(h885.keys);
   const log = () => session.learningLog(HEAD, session.sweepOf(h885.keys, []), NO_CHECK, learning.rows(), learning.misfits);
   const TAIL = '\nkey map check: 0 of 0 learned keys confirmed\nkey map check, codes the map does not have: none\n';
@@ -421,8 +496,8 @@ test('the log grows answer by answer and loses one on undo, and without a drawin
   assert.deepEqual(offShape(partial), []);
   assert.ok(partial.endsWith(`keys, in the order asked:\nAllOff (OFF): 2\nActivities (ACTIVITIES): skipped\n\npresses that did not fit:\nnone\n${TAIL}`));
   assert.ok(!partial.includes('Enter'), 'a key not reached has no line');
-  learning.undo();
-  assert.ok(!log().includes('Activities'), 'undo takes its line away');
+  learning.previous();
+  assert.ok(!log().includes('Activities'), 'going back takes its line away');
 
   const naming = new session.Naming();
   naming.press(11);
