@@ -271,7 +271,11 @@ const H700_DUMPS = new Set<string>([
  * **Which block, on this platform, is not the 525's choice**, and the reason is the platform's: the
  * firmware runs from the same flash part as the configuration, so while a block of the live
  * configuration is erased and not yet written back, anything the remote looks up there reads blank.
- * The 525 and the One keep their firmware elsewhere. The first rehearsal goes to a block past the
+ * The 525, the One and the 600 series each had their first rehearsal on a block of the live configuration
+ * and showed nothing; the 885's processor is ROMless and runs its application straight out of this part,
+ * `0x010000` to `0x020000` (`memory.md` "The flash part", and `ARCH8_FLASH_TOP` in `protocol.ts`), which is
+ * the difference that decides the block. Whether the others' processors ever read the part during an
+ * erase is not what this rests on. The first rehearsal goes to a block past the
  * configuration's end at `0x0AAAD4` that holds remains of earlier configurations, which the remote never
  * reads and which are not `0xFF`, so a write that sent nothing would still be seen: `0x0C0000`.
  */
