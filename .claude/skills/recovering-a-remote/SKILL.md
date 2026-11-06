@@ -253,7 +253,7 @@ What must never be part of that route:
 **Read before any write to a Harmony Touch, and before anything near its reset or restart.** The Touch
 reports 17 for its architecture and Logitech's templates file it under 18; say "the Harmony Touch".
 Everything here is read, in the production firmware 4.15.330 and in Logitech's two clients, and **little of
-it has been run on a unit**: eighteen syncs of ours have run on the bench Touch, the first stopped mid sync and
+it has been run on a unit**: twenty one syncs of ours have run on the bench Touch, the first stopped mid sync and
 cleared by the abort and the restart below, the second committed with every answer a 304 or the finish, the third
 committed with the remote's own six documents delivered with 200 under tags of ours, the fourth answered 304
 against those tags, the next four each delivered one document with one value changed or put back and were
@@ -261,7 +261,8 @@ committed and acted on, the ninth answered 304 again, the next two added a devic
 took it out again, both committed and acted on, the twelfth answered 304 again, the next two added an activity of
 ours to two documents and took it out again, both committed and acted on, the fifteenth answered 304 again, the
 next two delivered the user's favourites document and a logo of ours and put both back, both committed and acted
-on, and the eighteenth answered 304 again; no
+on, the eighteenth answered 304 again, the next two delivered a Settings and a Context of ours and put both back,
+both committed and acted on, and the twenty first answered 304 again; no
 document composed whole by
 this project has reached a Touch yet, and the remote now holds tags of ours for all six documents, which matters to step 7 below; the delete has never been sent, and the only other
 recovery a Touch has been through was Logitech's hidden recovery tool, `docs/test-notes/harmony-touch.md`. The facts are
@@ -359,7 +360,10 @@ The route, in order:
    while a sync flag is set**, so a parked sync takes `--step abort` first, a run of its own, since the
    abort's answer may never come. **There is no battery pull**: the cell is internal and not replaceable by
    Logitech's manual, `reference/remotes/harmony-touch/hardware.md`. What a long hold of Off does is an open
-   question in that model's `keys.md`.
+   question in that model's `keys.md`. **After a restart the remote sets every setting again from the committed
+   Settings**, its start up code reading the stored document, so the screen's brightness and the timeout say which
+   Settings is committed; a sync's end sets the backlights and the timeout too, without a restart, and vibration
+   and the motion sensor only at a start, `favourites-and-settings.md` "Settings".
 6. **Last, the remote's own factory reset**, Settings, General, Factory reset, which erases every document,
    the provisioning and the engine's state and keeps the firmware. Afterwards the remote is not provisioned
    and refuses `setup.sync` with 501. The refusal is read; **what sets it up again is inferred**: Logitech's

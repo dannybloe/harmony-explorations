@@ -87,7 +87,10 @@ it, and neither is fixed behaviour no document changes.
   starts at 10, so only a document reaches it[^t-touch-favourites-firmware][^t-touch-beyond-firmware].
 * **A screen timeout past 30 seconds.** The remote's slider runs from 1 to 30; a value from a document
   reaches the sleep timer unclamped, and the lock screen uses half of it[^t-touch-beyond-firmware]. Zero is
-  not refused on the way either, so zero is not a value to offer.
+  not refused on the way either, and it is a sleep timer due at once after every wake, so zero is not a value to
+  offer[^t-touch-favourites-firmware]. Nor is a screen brightness below 4 from a document: the backlight holds it
+  at 10, but the fade before the screen sleeps never ends, so the remote never sleeps on
+  battery[^t-touch-favourites-firmware].
 * **The edit lock, set from outside.** It locks the remote's Remote, Devices and Activities menus and its
   gesture editor, and not its own switch, so anyone holding the remote can turn it off again[^t-touch-beyond-firmware].
 * **Vibration that lasts.** With no vibration row in the account's settings, which is how every sync
@@ -158,6 +161,11 @@ channel of the line up added and the order reversed, and a logo of ours at the a
 logo, delivered with 200, put the six favourites on the screen in the document's order with our logo on the added
 one, which sent its line up number; delivering the remote's own two back restored the old order and logo,
 [favourites and settings](../../architectures/harmony-touch/favourites-and-settings.md#favourite-channels)[^t-touch-favourites-of-ours].
+**Settings composed by this project act**: the remote's own settings document with the screen brightness at 20 and
+the timeout at 30 seconds, delivered with 200, left the screen dimmed and the screen taking about 30 seconds to dim
+off the cable, with no restart; delivering the remote's own back restored full brightness and about 10 seconds. A
+context document rebuilt from a description of the fields a Touch reads was stored and reported in the same sync,
+[favourites and settings](../../architectures/harmony-touch/favourites-and-settings.md#settings)[^t-touch-settings-of-ours].
 A document composed whole by this project is not checked[^unchecked].
 
 ## Changes on the remote travel back
@@ -175,7 +183,8 @@ channels and commands changed on the remote are not checked[^unchecked].
 * The device and activity limits as the remote enforces them; the favourites' limit is
   the remote's code, never tried on one[^unchecked].
 * Which keys take a long press[^unchecked].
-* Learning, gestures and every setting on a unit, and every item beyond Logitech's software above[^unchecked].
+* Learning, gestures and every setting on a unit but the screen brightness and the timeout, and every item beyond
+  Logitech's software above[^unchecked].
 
 [^unchecked]: Not checked.
 [^t-touch-products]: Stated by Logitech, by their service. [The test](../../../tests/test_host_client.py)
@@ -196,6 +205,7 @@ channels and commands changed on the remote are not checked[^unchecked].
 [^t-touch-favourites]: Measured on a unit. [The test](../../../packages/usb/test/touch-favourites.test.ts)
 [^t-touch-in-use]: Measured on a unit. [The test](../../../packages/bench/test/touch71-runs.test.ts)
 [^t-touch-favourites-of-ours]: Measured on a unit. [The test](../../../packages/bench/test/touch83-runs.test.ts)
+[^t-touch-settings-of-ours]: Measured on a unit. [The test](../../../packages/corpus/test/touch84-runs.test.ts)
 [^t-touch-favourites-firmware]: Read in the firmware. [The test](../../../tests/test_harmony_touch_favourites.py)
 [^t-touch-beyond-firmware]: Read in the firmware. [The test](../../../tests/test_harmony_touch_beyond_the_clients.py)
 [^t-touch-beyond-client]: Stated by Logitech, in their client. [The test](../../../tests/test_harmony_touch_beyond_the_clients.py)

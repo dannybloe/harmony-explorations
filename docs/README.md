@@ -275,8 +275,11 @@ The TypeScript workspace, per `docs/plans/002-the-roadmap.md` step 4:
                                 is Logitech's documents rather than a container: a view over the
                                 documents a sync delivers, never a copy, and a check of what the
                                 remote would refuse or ignore, tested in test/touch-reader.test.ts
-                                and test/touch-check.test.ts. The folder is not touch.ts, which
-                                is the Harmony One's touch screen
+                                and test/touch-check.test.ts. Its settings.ts composes a Touch's
+                                Settings as a change of the rows the remote holds and its Context
+                                from a description of the seven fields a Touch reads, todo-touch.md
+                                8.4, tested in test/touch-settings.test.ts. The folder is not
+                                touch.ts, which is the Harmony One's touch screen
 packages/lab/                   TS: finds the private lab directory, mirrors tests/lab.py. Also
                                 finds the **public** infrared archive checkout, which is a
                                 separate locator on purpose: both make their tests skip when
@@ -313,9 +316,13 @@ packages/corpus/                TS: read a config off a remote and file it, read
                                 `src/touchchangedset.ts`, which changes one value of such a set,
                                 `todo-touch.md` 6.9, and `src/touchfavouritesset.ts`, which builds a
                                 set's favourites documents and pictures of ours and their put back
-                                from what the remote holds, `todo-touch.md` 8.3; the descriptions
-                                such a set is built from are in `touch-devices/`,
-                                `touch-activities/` and `touch-favourites/`
+                                from what the remote holds, `todo-touch.md` 8.3, and
+                                `src/touchsettingsset.ts`, which builds a set with a Settings and a
+                                Context of ours and its put back, `todo-touch.md` 8.4; the
+                                descriptions such a set is built from are in `touch-devices/`,
+                                `touch-activities/`, `touch-favourites/` and `touch-settings/`,
+                                and a Context description, which holds the account's values, only
+                                ever in the lab
 packages/bench/                 TS: the bench instrument, a server plus two pages in web/. The
                                 second, ir.html, is the infrared monitor: what a Flirc USB receiver
                                 hears, named against the bench remotes' configurations, plus
@@ -1000,11 +1007,12 @@ node packages/corpus/bin/touch-sync.ts --unchanged | --set <lab folder> [--commi
                        favourites document handed up to its own address, `content://1.0/user/` or
                        `content://1.0/device/`, when the set holds that kind, `favouritesClash`; every
                        picture a set holds must pass the codec's `pictureRefusals`. `--unchanged`
-                       has run seven times on the bench Touch, 6.7, 6.8, 6.9, 8.1, 8.2 and 8.3; `--set`
-                       eleven times, 6.8, the four sets of 6.9 and the two each of 8.1, 8.2 and 8.3,
-                       each committed, `packages/usb/test/touch-own-set-sync.test.ts`,
+                       has run eight times on the bench Touch, 6.7, 6.8, 6.9, 8.1, 8.2, 8.3 and 8.4;
+                       `--set` thirteen times, 6.8, the four sets of 6.9 and the two each of 8.1, 8.2,
+                       8.3 and 8.4, each committed, `packages/usb/test/touch-own-set-sync.test.ts`,
                        `touch-changed-set-sync.test.ts`, `packages/bench/test/touch81-runs.test.ts`,
-                       `touch82-runs.test.ts` and `touch83-runs.test.ts`.
+                       `touch82-runs.test.ts`, `touch83-runs.test.ts` and
+                       `packages/corpus/test/touch84-runs.test.ts`.
 node packages/bench/bin/touch-tests.ts [--write]
                        derive `todo-touch.md` 7.1's bench tests for the Harmony Touch from the set
                        the bench unit holds and the recorded favourites, through the engine model
@@ -1067,6 +1075,10 @@ node packages/corpus/bin/touch-device-set.ts --build <lab folder> --from <set fo
 node packages/corpus/bin/touch-device-set.ts --build <lab folder> --from <set folder> --remove-activity <id>
 node packages/corpus/bin/touch-device-set.ts --build <lab folder> --from <set folder> --favourites <description>
 node packages/corpus/bin/touch-device-set.ts --build <lab folder> --from <favourites set folder> --favourites-back
+node packages/corpus/bin/touch-device-set.ts --build <lab folder> --from <set folder> --settings <description> \
+  --context <lab description>
+node packages/corpus/bin/touch-device-set.ts --build <lab folder> --from <settings set folder> --settings-back
+node packages/corpus/bin/touch-device-set.ts --describe-context <set folder> --out <new lab file>
 node packages/corpus/bin/touch-device-set.ts --check <set folder> [--same-as <set>] [--written <answers>] \
   [--hash <answer>] [--list <list>]
                        build a set with a device of ours added, or taken out again, `todo-touch.md`
@@ -1095,7 +1107,17 @@ node packages/corpus/bin/touch-device-set.ts --check <set folder> [--same-as <se
                        remote held at those addresses, tags and all, `putBackContent`. `--check` then
                        reads the favourites and each picture back and answers a remote holding the
                        source, and `--list` compares a kept picture request list with the set's content,
-                       `packages/bench/test/touch83-runs.test.ts` holding both sets' runs.
+                       `packages/bench/test/touch83-runs.test.ts` holding both sets' runs. `--settings`
+                       changes the rows a description in `packages/corpus/touch-settings/` names, such as
+                       `8.4-settings.json`, by the codec's `composeTouchSettings`, and rebuilds Context
+                       from a description of its seven read fields by `composeTouchContext`, both under
+                       new tags beside the other four, `withSettingsAndContext` in
+                       `src/touchsettingsset.ts`; `--settings-back` is its exact inverse,
+                       `putBackSettingsAndContext`. `--describe-context` writes a set's Context as a
+                       description into a new lab file and prints none of it, since it holds the
+                       account's values. `--check` then lists the settings rows changed and holds
+                       Context to the description, `packages/corpus/test/touch84-runs.test.ts` holding
+                       both sets' runs.
 node packages/usb/bin/read-file.ts --file <path> [--product 0xc12b] [--device <path>]
                        the general form of the above: read any path on `INERT_PATHS` and print it as
                        bytes and, where it is printable, as text. Deliberately does not parse, since

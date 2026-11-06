@@ -73,8 +73,8 @@ too:
 | `BackgroundImage` | the background picture, one of nine built into the remote or one of the user's own | a built in picture |
 | `UserImages` | the user's own backgrounds, each fetched with a small twin for the picker; the row allows five, a count the remote does not read | none |
 | `TwelveHourClock` | the clock in the status bar, 12 hour or 24 hour, and the set time screen | 12 hour |
-| `ScreenBrightness` | the screen's backlight; a value is held to 10 to 100 | 85 |
-| `ScreenTimeout` | seconds before the screen goes to sleep, which it does not do on USB power; a value is not clamped, and the lock screen uses half of it | 10 |
+| `ScreenBrightness` | the screen's backlight, which holds a value to 10 to 100; the fade before the screen sleeps reads the value unheld, so below 4 the fade never ends and the remote never sleeps on battery | 85 |
+| `ScreenTimeout` | seconds before the screen goes to sleep, which it does not do on USB power; a value is not clamped, so 0 is a sleep timer due at once after every wake, and the lock screen uses half of it | 10 |
 | `ScreenLockFlag` | the lock screen, shown when the screen fades out | off |
 | `EditLock` | locks the Remote, Devices and Activities menus and the gesture editor, and not its own switch | off |
 | `KeyBrightness` | the keys' backlight; a value from the account is taken from 5 to 100 and turns the light off below 5, where the remote's own slider starts at 10 | 35 |
@@ -98,6 +98,28 @@ offer is [the model's display page](../../remotes/harmony-touch/display.md#the-p
 
 The document's own fields: `RemoteName` is the model name on the About screen, the firmware's own when
 empty; `UserImageBucketUri` is where the user's backgrounds are fetched from[^t-touch-favourites-firmware].
+
+**A Settings delivered in a sync acts at the sync's end, with no restart, for most rows.** When a sync is
+committed the screens empty their copy of the documents, show the sync complete screen and then set the screen's
+and the keys' backlight, the timeout, the clock's form and the background from the new Settings; the lock screen
+and the edit lock are read each time they are needed. Vibration and the motion sensor are set only when the remote
+starts and when they are changed on its own screens, so a sync's value for either acts at the next
+start[^t-touch-favourites-firmware]. **Measured on a unit**: a Settings composed by a program, the remote's own with
+the screen brightness changed from 100 to 20 and the timeout from 10 to 30 seconds and every other row as it was,
+delivered with 200 under a new tag, was committed; afterwards the screen was dimmed and, off the cable, took about
+30 seconds after a touch to dim. Its own Settings delivered back the same way under its old tag brought full
+brightness and a timeout of about 10 seconds back. Both were seen after the sync and before any restart; the
+moment within the sync's end at which the backlight changes was not watched, so that part rests on the
+reading[^t-touch-settings-of-ours].
+
+**Two values cost more than one screen**[^t-touch-favourites-firmware]. A screen brightness below 4: the backlight
+holds the level to 10 to 100, but the fade before the screen sleeps counts down from the level's backlight step,
+one step every 50 ms, and stops only when the count reaches 0, so a level whose step is 0 starts the count at 0,
+passes it, and the remote never finishes fading and never sleeps on battery; a touch cancels the fade and the next
+timeout starts it again. A timeout of 0: the value times 1000 goes to the sleep timer with nothing holding it, and
+a timer is due at the clock plus its interval, so the screen fades and the remote sleeps right after every wake;
+what a person sees then is inferred and not checked[^unchecked]. **A correction**: the table above said the screen
+brightness "is held to 10 to 100"<!--superseded--> as a whole, which is true of the backlight and not of the fade.
 
 ## Context
 
@@ -126,6 +148,12 @@ over USB is not checked[^unchecked].
 Five of the 21 are not in Logitech's data model as this reference holds it: `CustomerId`, `DataConsent`,
 `Email`, `LatestSLAAccepted` and `LatestSLAAcceptedDate`[^t-touch-favourites]. Context arrived the same in
 both syncs measured that carried one[^t-touch-favourites].
+
+**A Context composed by a program is stored and reported.** One built from a description of the seven fields above,
+each as the remote held it, and the other fourteen carried, so equal in content and key order to the remote's own,
+was delivered with 200 under a new tag and committed; the remote's configuration hash, which joins Context's tag,
+carried the new tag afterwards, and its own Context delivered back under its old tag restored the old
+hash[^t-touch-settings-of-ours]. A Context whose content differs from the remote's is not checked[^unchecked].
 
 ## Pictures
 
@@ -322,8 +350,13 @@ So the two rows measured with no value and a null default, `ScreenBrightness` an
 and 10[^t-touch-favourites][^t-touch-favourites-firmware]. The backlight is set to the screen level scaled
 to 26 steps, and the keys' light to the key level scaled to 42, each rounded down[^t-touch-favourites-firmware].
 
-**How a value is written**: a change on the remote replaces the row's first value and, if it changed,
-hands the whole document up; it adds no row[^t-touch-favourites-firmware]. The hand over is
+**How a value is written**: a change on the remote replaces the row's first value and hands the whole document
+up when the value changed or the screen asks for it; it adds no row[^t-touch-favourites-firmware]. Four settings
+screens ask: the brightness screen when its slider ends away from where it opened, since the slider writes each
+value in place as it moves, the edit lock and motion sensor screens when their switch changed, and the set time
+screen after any touch of the clock or its 12 hour switch, the time alone included[^t-touch-favourites-firmware].
+**A correction**: this said the document is handed up "if it changed"<!--superseded-->, which the set time screen does
+not keep. The hand over is
 [usb.md](usb.md). A Settings document saved that way carries no entity tag, so the next sync asks for
 Settings untagged and gets the whole document; in the full sync measured, Settings was the one document
 asked for without a tag, which is consistent with this, as settings had been changed on the remote
@@ -369,3 +402,4 @@ to the remote in the sync measured carried the field[^t-touch-favourites].
 [^t-touch-beyond-firmware]: Read in the firmware. [The test](../../../tests/test_harmony_touch_beyond_the_clients.py)
 [^t-touch-in-use]: Measured on a unit. [The test](../../../packages/bench/test/touch71-runs.test.ts)
 [^t-touch-favourites-of-ours]: Measured on a unit. [The test](../../../packages/bench/test/touch83-runs.test.ts)
+[^t-touch-settings-of-ours]: Measured on a unit. [The test](../../../packages/corpus/test/touch84-runs.test.ts)

@@ -552,6 +552,47 @@ tuning device's document or a line up of ours, a channel added by hand, an uploa
 address, the screens' picture cache, and the added channel's name. The runs are held by
 `packages/bench/test/touch83-runs.test.ts`. 8.3 is done.
 
+## A Settings of ours and a Context composed by us, seen, timed and put back, todo-touch 8.4
+
+**Run on 6 November 2026**, after 8.3 and after commit `fc56fc19`, the 8.4 preparation, in the order of the lab's
+`work/touch-firmware/notes/8.4-preflight.md` section 6, each run read before the next. The change is
+`packages/corpus/touch-settings/8.4-settings.json`: the screen brightness from 100 to 20 and the screen timeout from 10
+to 30 seconds in the remote's own Settings, every other row as it held it; and Context composed by
+`composeTouchContext` from a description of its seven read fields, written from the remote's own by
+`touch-device-set.ts --describe-context` and kept in the lab since it holds the account's values, so equal in content
+and key order to what the remote held. The two sets were built by `packages/corpus/bin/touch-device-set.ts --settings`
+and `--settings-back` from `8.3-favourites-back`: `8.4-settings` with the four other documents as they were and the
+two of ours under tags of ours, and `8.4-settings-back` with the source's six, content and tags. No favourites
+document or picture was in either set, so the remote kept its own. Nothing is sent by infrared, so no bench test file
+was written or run.
+
+| time (UTC) | run | what it gave |
+|---|---|---|
+| `1412Z` | `touch-confighash` | equal on `8.4-settings-back`, which states the six the remote held |
+| `1412Z` | `touch-sync-set`, `8.4-settings` | Context and Settings 200 with the set's content and tags, the other four 304; the favourites and pictures 304; first list six of the source's tags; `sync: finished` |
+| `1413Z` | `touch-confighash` | equal on `8.4-settings`, Context's new tag in it |
+| `1415Z` | `touch-sync-set`, `8.4-settings-back`, and `1416Z` `touch-confighash` | Context and Settings 200 with the back set's content and tags; its first list asked for both with `8.4-settings`' tags, so the forward set was committed; hash equal on `8.4-settings-back` |
+| `1418Z` | `touch-sync-unchanged` | every answer 304 or the finish; first list six of `8.4-settings-back`'s tags |
+
+All in `reads/20261106T<time>-*`. Every run handed out eight request lists and nothing was handed up. The six went
+in one write of 4788 characters for the forward set and 4789 for the put back, each one chunk and replied 200.
+
+* **What says it arrived**: for Context, the hash after the forward run, which joins Context's tag; for Settings,
+  which the hash leaves out, the kept write and the put back's first list asking for it with the forward set's tag.
+* **The look and the timings, reported at the bench and held by no file**: after the forward set the screen was
+  dimmed, and off the cable it took about 30 seconds after a touch to dim; the timeout before the run was not
+  timed, only remembered as much shorter. After the put back the brightness was at its maximum and the timeout timed
+  about 10 seconds. **Whether the brightness changed at the "sync complete" screen itself was not seen either
+  time**, so the moment the backlight changes rests on the firmware reading (`syncDone`), not on the bench.
+* No restart was needed or made between the runs.
+
+So a Settings composed by this project was stored, committed and acted on by the remote, and the put back restored
+what it held; a Context composed by this project from a description was stored under our tag and reported in the
+hash. The remote holds `8.4-settings-back`, which in the six equals `8.3-favourites-back`, with the recorded
+favourites and pictures. What this does not cover: a Context with content of its own, any other Settings row, the
+motion sensor and vibration, which act only at the next start, and the moment within the sync's end at which the
+backlight changes. The runs are held by `packages/corpus/test/touch84-runs.test.ts`. 8.4 is done.
+
 ## Not done
 
 * *Corrected:* this said no infrared run had been recorded with this unit and nothing about it in use had been

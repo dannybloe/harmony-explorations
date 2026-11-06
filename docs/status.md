@@ -187,7 +187,7 @@ the generator that wrote it, with firmware event 0xFF bound so it serves both mo
 expected codes on the bench 350 and the same file 33 of 33 on the bench 300, `packages/codec/test/noscreenfinalunits.test.ts`.
 Two Harmony 885s are on the bench as well, read only.
 
-**The Harmony Touch is described from its own reading, eighteen syncs of ours have run on it, seventeen committed, ten of them changing what it does, its first full bench test has run, and a device, an activity and favourites with a logo composed by us have each been delivered to it and heard.** Its configuration
+**The Harmony Touch is described from its own reading, twenty one syncs of ours have run on it, twenty committed, twelve of them changing what it does, its first full bench test has run, a device, an activity and favourites with a logo composed by us have each been delivered to it and heard, and a Settings of ours has been delivered and seen.** Its configuration
 is Logitech's documents rather than a file, fetched by the remote through the computer during a sync, and both
 directions of a sync are recorded, `packages/usb/test/touch-sync-both-ways.test.ts`. The documents are described
 field by field in [its platform pages](../reference/architectures/harmony-touch/README.md) and read by the codec,
@@ -236,7 +236,13 @@ two 200 and every other request 304. The remote committed them and showed the si
 61, and 18 of 18 expected codes were heard, 61 sending 0 6 1 from the line up's number; the next sync asked for the
 logo with our tag, the configuration hash not moving since favourites are not in it. A second sync put both back,
 the closing `--unchanged` run asked for the logo with its old tag, and 7.1's favourites test held 15 of 15 after
-it, `packages/bench/test/touch83-runs.test.ts`.
+it, `packages/bench/test/touch83-runs.test.ts`. In 8.4 a Settings and a Context composed by this project reached it:
+the remote's own Settings with the screen brightness from 100 to 20 and the timeout from 10 to 30 seconds, and a
+Context rebuilt from a description of the seven fields a Touch reads, equal in content to the remote's, delivered
+with those two 200 and the other four 304. The remote committed both: the configuration hash carried Context's new
+tag, the screen was dimmed and, off the cable, took about 30 seconds after a touch to dim, with no restart. A
+second sync put both back, full brightness and about 10 seconds returned, and its first list had asked for the two
+with our tags; a closing `--unchanged` run followed, `packages/corpus/test/touch84-runs.test.ts`.
 
 ## What is still open
 

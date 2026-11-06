@@ -26,6 +26,7 @@ Generated from `packages/codec`, `packages/usb` and the drawing by `make remote-
 | backlight | brightness and screen timeout are remote settings, both noted as costing battery; Logitech's service names a `ScreenTimeout` setting for a Touch | [^x-touch-manual], "Remote Settings"; [^s292] |
 | backlight, on the remote | **screen brightness and key brightness, each a slider from 10 to 100**, past 95 a warning that brighter screen and keys drain the battery faster; **screen timeout a slider from 1 to 30 seconds**, beside the screen lock switch. A setting of 100 is the display backlight's step 26 and the key light's step 42, and a lower one is scaled in proportion and rounded down | [^t-touch-keys], [^t-touch-favourites-firmware] |
 | backlight, by default | the screen at 85 of 100, the keys at 35, the screen asleep after 10 seconds but never on USB power, when the account gives no value | [^t-touch-favourites-firmware] |
+| backlight, from a sync | a delivered settings document sets the screen's and the keys' backlight and the timeout at the sync's end, with no restart; one with the screen at 20 and the timeout at 30 seconds left the screen dimmed and dimming about 30 seconds after a touch off the cable, and the remote's own back restored full brightness and about 10 seconds | [^t-touch-favourites-firmware], [^t-touch-settings-of-ours] |
 | background | chosen from a set of background images on the remote | [^x-touch-manual], "Remote Settings" |
 | backgrounds held | nine built in, each with a small twin for the picker, and the user's own uploaded ones, asked for at every sync; an uploaded one measured 240 by 320 with a 60 by 80 twin | [^t-touch-favourites-firmware][^t-touch-favourites] |
 | channel logos | asked for at 54 by 54, and every time in the one sync that carried pictures; a channel added by hand shows its own uploaded picture or none | [^t-touch-favourites-firmware][^t-touch-favourites] |
@@ -137,3 +138,4 @@ screen, field by field, is [favourites-and-settings.md](../../architectures/harm
 [^t-touch-device-of-ours]: Measured on a unit. [The test](../../../packages/bench/test/touch81-runs.test.ts)
 [^t-touch-activity-of-ours]: Measured on a unit. [The test](../../../packages/bench/test/touch82-runs.test.ts)
 [^t-touch-favourites-of-ours]: Measured on a unit. [The test](../../../packages/bench/test/touch83-runs.test.ts)
+[^t-touch-settings-of-ours]: Measured on a unit. [The test](../../../packages/corpus/test/touch84-runs.test.ts)
