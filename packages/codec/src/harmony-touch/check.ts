@@ -44,6 +44,8 @@ export type Rule =
   | 'repeated screen index'
   | 'action device missing'
   | 'action command missing'
+  | 'role device missing'
+  | 'action activity missing'
   | 'commands differ in case'
   | 'unknown input'
   | 'shared power order'
@@ -91,7 +93,7 @@ export function checkConfiguration(c: Configuration): Finding[] {
     ...checkFields(c.documents),
     ...checkScreens(c.documents),
     ...checkDevices(c.devices),
-    ...checkMaps(c.maps, c.devices),
+    ...checkMaps(c.maps, c.devices, c.activities),
     ...checkActivities(c),
     ...checkFavourites(c),
   ];
@@ -1365,12 +1367,13 @@ function checkDevices(devices: readonly ReadDevice[]): Finding[] {
  * engine and never used", "What a writer must carry", so they play no part here: what decides is whether
  * the identifier is one the screens build for a device or an activity of the configuration, `ReadMap.owner`.
  */
-function checkMaps(maps: readonly ReadMap[], devices: readonly ReadDevice[]): Finding[] {
+function checkMaps(maps: readonly ReadMap[], devices: readonly ReadDevice[], activities: readonly ReadActivity[]): Finding[] {
   const out: Finding[] = [];
   const found = (rule: Rule, effect: Finding['effect'], path: string, message: string): void => {
     out.push({ rule, effect, document: 'MapList', path, message });
   };
   const deviceIds = new Set(devices.map((d) => d.id));
+  const activityIds = new Set(activities.map((a) => a.id));
   for (const m of maps) {
     // A map whose identifier no device and no activity builds is reached by no press. A map of another
     // kind than a device's or an activity's, a root map among them, is left alone: how the engine finds
@@ -1391,7 +1394,10 @@ function checkMaps(maps: readonly ReadMap[], devices: readonly ReadDevice[]): Fi
         && b.state !== DELETED_ON_REMOTE && numberPadKey(b.press.commandName) === undefined) {
         found('number pad entry on no key', 'ignored', b.path, 'the number pad places this entry\'s command on no key');
       }
-      for (const a of actionsOf(b)) checkCommandAction(a, deviceIds, found);
+      for (const a of actionsOf(b)) {
+        checkCommandAction(a, deviceIds, found);
+        checkActivityAction(a, activityIds, found);
+      }
     }
     for (const s of m.sequences) {
       for (const a of s.steps) {
@@ -1422,6 +1428,22 @@ function checkCommandAction(
   }
 }
 
+/**
+ * `action activity missing`, ignored, `todo-touch.md` 8.5: a button whose action starts an activity the activity list
+ * does not hold. The engine stores the id at load without looking it up and answers the start 567, activity not found,
+ * `startActivity` in the lab's decompiled `apihandler/activity.lua`; the screens send the press as any other. So the
+ * button starts nothing and costs that one key. No document measured holds such an action at all.
+ */
+function checkActivityAction(
+  a: ReadButtonAction, activityIds: ReadonlySet<string>,
+  found: (rule: Rule, effect: Finding['effect'], path: string, message: string) => void,
+): void {
+  if (a.type !== 'ButtonActivityAction') return;
+  const id = (a.source as unknown as Record<string, unknown>)['ActivityId-'];
+  if (typeof id !== 'string' && typeof id !== 'number') return;
+  if (!activityIds.has(String(id))) found('action activity missing', 'ignored', a.path, 'the action starts an activity the activity list does not hold, so it starts nothing');
+}
+
 /** The activity list, `activities-and-buttons.md`, "An activity: what it is made of". */
 function checkActivities(c: Configuration): Finding[] {
   const out: Finding[] = [];
@@ -1443,6 +1465,23 @@ function checkActivities(c: Configuration): Finding[] {
         found('action device missing', 'ignored', step.path, 'the step names a device the device list does not hold, so it sends nothing');
       } else if (step.kind === 'command' && step.command === undefined) {
         found('action command missing', 'ignored', step.path, 'the step names a command its device does not have, so it sends nothing');
+      }
+    }
+    // `role device missing`, `todo-touch.md` 8.5: a role naming a device the device list does not hold. The engine
+    // passes over its power and input steps, `startActivity` and `Action:getCommands` in the lab's decompiled engine
+    // testing the device first, and the screens look an activity's devices up by matching the device list against the
+    // roles, `getActivityDevices`, so the device is simply not among them: ignored. **But one place does not test it**:
+    // when any role of the activity states a number for `NextDevicePowerOnDelay`, the start reads the missing device's
+    // id off nothing, `activity.nextDelayActions[device.id]` after the test that logged it missing, and raises inside
+    // the engine's start of that activity. What catches that raise is not read, so it is refused, the safe side: its
+    // cost may be the activity never starting or the engine's task ending.
+    const delays = a.roles.some((r) => typeof r.nextDevicePowerOnDelay === 'number');
+    for (const r of a.roles) {
+      if (r.device !== undefined) continue;
+      if (delays) {
+        found('role device missing', 'refused', r.path, 'the role names a device the device list does not hold, and a role of the activity states a power on delay, so the engine\'s start of it reads the missing device and raises');
+      } else {
+        found('role device missing', 'ignored', r.path, 'the role names a device the device list does not hold, so its power and input steps are passed over');
       }
     }
     // "`SelectedInput.Name` is the input the device is switched to, and a name that is not one of the

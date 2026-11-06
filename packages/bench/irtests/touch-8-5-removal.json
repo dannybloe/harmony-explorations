@@ -1,0 +1,106 @@
+{
+  "name": "Harmony Touch 8.5, Listen to Music and the Denon AV Receiver taken out",
+  "summary": "An activity and a device of the remote's own taken out: the activities that lost the Denon AV Receiver started, used, switched and ended without a code of it.",
+  "description": "todo-touch.md 8.5, on the bench Harmony Touch holding work/touch-firmware/sets/8.5-removal: the set of 8.4's put back with Listen to Music and the Denon AV Receiver taken out, with everything naming them (packages/corpus/touch-removals/8.5-removal.json). Every expectation is derived from that set by packages/bench/src/touchengine.ts and named as the monitor names a code of the Touch's own documents. Step 1 presses Off and is not judged. In step 2, before tapping Watch TV, write in the problem field whether the activity list shows 4 activities (Watch TV, Watch a Blu-ray, Switch Box, Play a Game) and not Listen to Music; and, from the Devices screen and back without choosing a device, whether it lists 6 devices (LG TV, Blu-ray, Plex, KPN, Xbox, Switch) and not the Denon AV Receiver. Predicted for Watch TV: the LG TV switched on and to its input, and no Denon AV Receiver code. Step 3: Volume Up, Volume Down and Mute are predicted to send nothing at all; write in the problem field anything heard or shown. In step 5, write whether Watch a Blu-ray's command list shows 8 entries in this order, Start, Options, TopMenu, Open/Close, Subtitle, PopUp, Netflix, Test Sequence, with no InputAm; then tap Test Sequence, predicted to send the Blu-ray's Stop, a pause of about a second, and its TopMenu. Then Play a Game, and Off: no Denon AV Receiver code anywhere in the test. Wait for the codes to stop before pressing Next: a start runs up to about 15 seconds, most of it the LG TV's power on delay.",
+  "steps": [
+    {
+      "instruction": "Button: Off"
+    },
+    {
+      "instruction": "Activity: Watch TV",
+      "expect": [
+        {
+          "device": "LG TV",
+          "command": "PowerOn"
+        },
+        {
+          "device": "LG TV",
+          "command": "InputHdmi1",
+          "pauseMs": [
+            10050,
+            10600
+          ]
+        }
+      ]
+    },
+    {
+      "instruction": "Button: Volume Up → Button: Volume Down → Button: Mute"
+    },
+    {
+      "instruction": "Activity: Watch a Blu-ray",
+      "expect": [
+        {
+          "device": "Blu-ray",
+          "command": "PowerOn"
+        },
+        {
+          "device": "LG TV",
+          "command": "InputHdmi2",
+          "pauseMs": [
+            500,
+            1050
+          ]
+        }
+      ]
+    },
+    {
+      "instruction": "Screen: Test Sequence",
+      "expect": [
+        {
+          "device": "Blu-ray",
+          "command": "Stop"
+        },
+        {
+          "device": "Blu-ray",
+          "command": "TopMenu",
+          "pauseMs": [
+            950,
+            1500
+          ]
+        }
+      ]
+    },
+    {
+      "instruction": "Activity: Play a Game",
+      "expect": [
+        {
+          "device": "Xbox",
+          "command": "PowerOn"
+        },
+        {
+          "device": "Blu-ray",
+          "command": "PowerOff",
+          "pauseMs": [
+            2300,
+            3050
+          ]
+        },
+        {
+          "device": "LG TV",
+          "command": "InputHdmi4",
+          "pauseMs": [
+            500,
+            1050
+          ]
+        }
+      ]
+    },
+    {
+      "instruction": "Button: Off",
+      "expect": [
+        {
+          "device": "LG TV",
+          "command": "PowerOff"
+        },
+        {
+          "device": "Xbox",
+          "command": "PowerOff",
+          "pauseMs": [
+            0,
+            500
+          ]
+        }
+      ]
+    }
+  ]
+}

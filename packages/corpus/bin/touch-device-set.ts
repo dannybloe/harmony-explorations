@@ -12,6 +12,8 @@
  *   node packages/corpus/bin/touch-device-set.ts --build <new lab folder> --from <set folder> --settings <description> --context <lab description>
  *   node packages/corpus/bin/touch-device-set.ts --build <new lab folder> --from <settings set folder> --settings-back
  *   node packages/corpus/bin/touch-device-set.ts --describe-context <set folder> --out <new lab file>
+ *   node packages/corpus/bin/touch-device-set.ts --build <new lab folder> --from <set folder> --removal <description>
+ *   node packages/corpus/bin/touch-device-set.ts --build <new lab folder> --from <removal set folder> --removal-back
  *   node packages/corpus/bin/touch-device-set.ts --check <set folder> [--same-as <set folder>]... \
  *     [--written <a run's kept write of answers>] [--hash <getconfighash answer>] [--list <request list answer>]
  *
@@ -53,6 +55,14 @@
  * `settings`, with the Context description's path and never its content, or `settingsBack`. **`--describe-context`**
  * writes the description of a set's Context as the remote holds it into a new lab file, printing nothing of it.
  *
+ * **`--build --removal`** reads devices and activities of the remote's own to take out, by the names the lists show, a
+ * JSON file whose `removal` is a `NamedRemoval` (`packages/corpus/touch-removals/8.5-removal.json`), takes them out of
+ * the source with everything that names them, `withoutTouchEntries` in the codec, and delivers those of the four
+ * documents a device or an activity is named in whose content changed, under new tags, beside the source's others,
+ * `withRemoval` in `src/touchremovalset.ts`, 8.5. **`--build --removal-back`** is its exact inverse, the documents the
+ * removal changed as the remote held them before, content and tags, `putBackRemoval`. The record says `removal` or
+ * `removalBack`. `--check` of either prints the structural diff entry by entry, `removalChanges`.
+ *
  * **`--check`** reads the set back as `touch-sync.ts` will, the gate and the codec's reader, and the device as
  * the reader sees it: its commands each with a definition and a key code, its map found by the identifier the
  * engine builds, its keys and its screen list; for an activity, its place on the list and type, its devices in
@@ -90,6 +100,7 @@ import {
 } from '../src/touchfavouritesset.ts';
 import { OWN_SET_DOCUMENTS, compareConfigHash, compareRequestList } from '../src/touchownset.ts';
 import { SETTINGS_SET_DOCUMENTS, putBackSettingsAndContext, settingsChanges, sixOf, withSettingsAndContext } from '../src/touchsettingsset.ts';
+import { REMOVAL_DOCUMENTS, putBackRemoval, removalChanges, withRemoval } from '../src/touchremovalset.ts';
 import { WRITE_ANSWERS, answerOf, keyOf, prepareSet, resultOf, setTag, type RemoteRequest, type SetAnswer, type TouchSet } from '../src/touchsync.ts';
 
 /** The three documents a device is told to a Touch in, and the list in each that holds it. */
@@ -144,6 +155,9 @@ interface DeviceRecord {
   readonly settings?: harmonyTouch.OwnSettings;
   readonly context?: string;
   readonly settingsBack?: true;
+  /** 8.5: the devices and activities taken out, by name, or their put back. */
+  readonly removal?: harmonyTouch.NamedRemoval;
+  readonly removalBack?: true;
 }
 
 const readSet = (folder: string): TouchSet => JSON.parse(readFileSync(join(folder, 'set.json'), 'utf8')) as TouchSet;
@@ -174,12 +188,14 @@ function build(folder: string): void {
   const favouritesBack = process.argv.includes('--favourites-back') ? true : undefined;
   const settingsDescription = argument('settings');
   const settingsBack = process.argv.includes('--settings-back') ? true : undefined;
-  const given = [description, removeId, activityDescription, removeActivityId, favouritesDescription, favouritesBack, settingsDescription, settingsBack]
-    .filter((x) => x !== undefined).length;
+  const removalDescription = argument('removal');
+  const removalBack = process.argv.includes('--removal-back') ? true : undefined;
+  const given = [description, removeId, activityDescription, removeActivityId, favouritesDescription, favouritesBack, settingsDescription, settingsBack,
+    removalDescription, removalBack].filter((x) => x !== undefined).length;
   if (fromFolder === undefined || given !== 1) {
     fail('--build needs --from <set folder> and one of --device <description>, --remove <device id>, --activity <description>, '
       + '--remove-activity <activity id>, --favourites <description>, --favourites-back, --settings <description> with --context <lab description>, '
-      + 'or --settings-back');
+      + '--settings-back, --removal <description> or --removal-back');
   }
   const from = insideTheLab(fromFolder, 'the source set');
   const source = readSet(from);
@@ -190,6 +206,10 @@ function build(folder: string): void {
   }
   if (settingsDescription !== undefined || settingsBack !== undefined) {
     buildSettings(out, from, source, name, settingsDescription);
+    return;
+  }
+  if (removalDescription !== undefined || removalBack !== undefined) {
+    buildRemoval(out, from, source, name, removalDescription);
     return;
   }
   let documents: harmonyTouch.DeviceDocuments | harmonyTouch.ActivityDocuments;
@@ -310,6 +330,37 @@ function buildSettings(out: string, from: string, source: TouchSet, name: string
     + `${SETTINGS_SET_DOCUMENTS.join(' and ')} under ${record.settings !== undefined ? 'new tags' : 'the tags the remote held before'}, the other four under the source's, the gate passed`);
 }
 
+/**
+ * `--build --removal` and `--build --removal-back`, the header: devices and activities of the remote's own taken out of
+ * the source, or the documents the removal in `from` changed put back as the remote held them.
+ */
+function buildRemoval(out: string, from: string, source: TouchSet, name: string, description: string | undefined): void {
+  let built: { readonly set: TouchSet } | { readonly refusals: readonly string[] };
+  let record: DeviceRecord;
+  if (description !== undefined) {
+    const removal = (JSON.parse(readFileSync(description, 'utf8')) as { removal?: harmonyTouch.NamedRemoval }).removal;
+    if (removal === undefined) fail(`${description} holds no removal`);
+    built = withRemoval({ set: source, removal: removal!, name, tagsInPlay: tagsOfTheChain(from) });
+    record = { name, from, removal: removal! };
+  } else {
+    const forward = readRecord(from);
+    if (forward.removal === undefined || typeof forward.from !== 'string') fail(`${from} records no removal, so there is nothing to put back`);
+    built = putBackRemoval(source, readSet(insideTheLab(String(forward.from), 'the set it was built from')));
+    record = { name, from, removalBack: true };
+  }
+  if ('refusals' in built) {
+    console.log(`refused, ${built.refusals.length} reasons, no set written:`);
+    for (const r of built.refusals) console.log(`  ${r}`);
+    process.exit(1);
+  }
+  mkdirSync(out, { recursive: true });
+  writeFileSync(join(out, 'set.json'), `${JSON.stringify(built.set)}\n`);
+  writeFileSync(join(out, 'sources.json'), `${JSON.stringify(record, null, 2)}\n`);
+  const delivered = setDifferences(source, built.set).filter((d) => d.tagChanged).map((d) => d.document);
+  console.log(`built ${out}: ${record.removal !== undefined ? `${[...(record.removal.activities ?? []), ...(record.removal.devices ?? [])].join(' and ')} taken out` : 'the removal put back'}, `
+    + `${delivered.join(', ')} under ${record.removal !== undefined ? 'new tags' : 'the tags the remote held before'}, the other ${OWN_SET_DOCUMENTS.length - delivered.length} under the source's, the gate passed`);
+}
+
 /** `--describe-context`, the header: a set's Context as a description, written into a new lab file and never printed. */
 function describeContext(folder: string): void {
   const outFile = argument('out');
@@ -392,8 +443,86 @@ function checkSettings(set: TouchSet, record: Partial<DeviceRecord> & SetRecord,
   checkTheRuns(set, source, from, [...SETTINGS_SET_DOCUMENTS], say);
 }
 
+/**
+ * `--check` of a removal set or its put back, the header: the gate and the reader; the six and nothing else; every
+ * finding of the check one the source had; for the removal, nothing of what was taken out left anywhere in the six,
+ * by name or by id, the favourites still read whole, every remaining activity's devices found, and the structural diff
+ * entry by entry with nothing added, the order of what remains kept and every other field of the four equal; for the
+ * put back, the documents the removal changed as the remote held them before, content and tags; the documents
+ * delivered retagged and the rest the source's; what a remote holding the source is answered and the write's size.
+ */
+function checkRemoval(set: TouchSet, record: Partial<DeviceRecord> & SetRecord, say: (ok: boolean, line: string) => void): void {
+  const from = insideTheLab(String(record.from), 'the source set');
+  const source = sixOf(readSet(from));
+  const name = String(record.name);
+  const gate = prepareSet(set);
+  say(!('refusals' in gate), `the gate, ${'refusals' in gate ? `${gate.refusals.length} refusals: ${gate.refusals.join('; ')}` : `passed, ${gate.set.tags.stated} tags stated and ${gate.set.tags.ours} ours`}`);
+  say(set.answers.length === OWN_SET_DOCUMENTS.length && OWN_SET_DOCUMENTS.every((d) => set.answers.some((a) => keyOf(a.uri) === d)),
+    `the six documents and nothing else, ${set.answers.length} answers`);
+  const was = documentsOf(source);
+  const now = documentsOf(set);
+  const read = harmonyTouch.readConfiguration(now);
+  say(read.absent.length === 0, `the reader read it, ${read.activities.length} activities, ${read.devices.length} devices, ${read.maps.length} button maps, ${read.protocols.length} protocols`);
+  const findings = harmonyTouch.checkConfiguration(read);
+  const before = harmonyTouch.checkConfiguration(harmonyTouch.readConfiguration(was));
+  say(findings.every((f) => before.some((b) => b.rule === f.rule && b.message === f.message)) && findings.filter((f) => f.effect === 'refused').length === 0,
+    `the check, ${findings.length} findings here and ${before.length} on the source, each of a rule and kind the source has, none refused`);
+
+  // The favourites as the remote will read them, with the favourites documents it holds.
+  const held = heldAfter(from);
+  const favourites = harmonyTouch.readConfiguration(documentsHeld(set, held)).favourites;
+  const favouritesBefore = harmonyTouch.readConfiguration(documentsHeld(source, held)).favourites;
+  say(favourites.length === favouritesBefore.length && favourites.every((f, i) => f.missing.length === 0 && f.device?.name === favouritesBefore[i]?.device?.name
+    && f.favourites.length === favouritesBefore[i]?.favourites.length),
+  `the favourites: ${favourites.map((f) => `${f.activity.name ?? 'an activity'} through ${f.device?.name ?? 'no device'}, ${f.favourites.length} channels, ${f.missing.length} documents missing`).join('; ') || 'none'}, as on the source`);
+  for (const a of read.activities) {
+    say(a.devices.every((d) => d.device !== undefined) && a.map !== undefined,
+      `${a.name ?? 'an activity'}, place ${String(a.order)}: ${a.devices.map((d) => d.device?.name ?? 'a missing device').join(', ')}; its map ${a.map === undefined ? 'NOT found' : `found, ${a.map.keys.length} keys, ${a.map.entries.size} entries, ${a.map.gestures.length} gestures`}`);
+  }
+
+  const forward = record.removalBack ? readRecord(from) : undefined;
+  if (record.removal !== undefined) {
+    const removal = record.removal;
+    const ids = harmonyTouch.removalOfNames(was, removal);
+    const gone = [...(removal.devices ?? []).map((n, i) => [n, ids.devices![i]!] as const), ...(removal.activities ?? []).map((n, i) => [n, ids.activities![i]!] as const)];
+    for (const [n, id] of gone) {
+      const listed = read.devices.some((d) => d.name === n) || read.activities.some((a) => a.name === n);
+      const places = OWN_SET_DOCUMENTS.filter((d) => JSON.stringify(now[d as keyof typeof now]).includes(String(id)));
+      say(!listed && places.length === 0, `${n}: in neither list, and its id in ${places.length === 0 ? 'none of the six' : places.join(', ')}`);
+    }
+  }
+  const diff = removalChanges(record.removalBack ? documentsOf(readSet(from)) : was, now);
+  if (record.removal !== undefined) {
+    console.log('what the removal takes out and changes:');
+    for (const c of diff.changes) console.log(`  ${c.document}: ${c.entry}, ${c.kind}${c.details.length > 0 ? `: ${c.details.join('; ')}` : ''}`);
+    say(!diff.changes.some((c) => c.kind === 'added') && diff.orderKept && diff.restEqual,
+      `nothing added, ${diff.changes.filter((c) => c.kind === 'taken out').length} entries taken out and ${diff.changes.filter((c) => c.kind === 'changed').length} changed, `
+      + `the rest in the order it had, every other field of the four ${diff.restEqual ? 'equal' : 'NOT equal'}`);
+  } else {
+    // The put back against the set before the removal: equal, content and tags.
+    const beforeForward = sixOf(readSet(insideTheLab(String(forward?.from), 'the set before the removal')));
+    const d = setDifferences(beforeForward, set);
+    say(d.every((x) => x.values.length === 0 && !x.tagChanged), `the six are the set before the removal, ${basename(String(forward?.from))}, content and tags: ${d.filter((x) => x.values.length > 0 || x.tagChanged).map((x) => x.document).join(', ') || 'all equal'}`);
+    say(diff.changes.every((c) => c.kind === 'added' || c.kind === 'changed'), `against the removal set, ${diff.changes.filter((c) => c.kind === 'added').length} entries back and ${diff.changes.filter((c) => c.kind === 'changed').length} changed back`);
+  }
+
+  const sd = setDifferences(source, set);
+  const touched = sd.filter((x) => x.values.length > 0).map((x) => x.document);
+  const retagged = sd.filter((x) => x.tagChanged).map((x) => x.document);
+  say(touched.every((d) => REMOVAL_DOCUMENTS.some(([x]) => x === d)) && JSON.stringify(touched) === JSON.stringify(retagged),
+    `content differs in ${touched.join(', ') || 'nothing'}, exactly those retagged, the other ${sd.length - touched.length} the source's, content and tags`);
+  if (record.removal !== undefined) {
+    const answers = touched.map((d) => set.answers.find((a) => keyOf(a.uri) === d));
+    say(answers.every((a) => a !== undefined && a.etag === setTag(a, name)), `the ${touched.length} new tags are the ones the set's name gives`);
+    const chain = tagsOfTheChain(from);
+    say(answers.every((a) => a?.etag !== undefined && !chain.has(a.etag)), `no new tag is stated by a set of the chain before it, ${chain.size} tags`);
+  }
+  checkTheRuns(set, source, from, touched, say);
+}
+
 /** Whether a record is of a device added or taken out, an activity, or favourites; undefined when it is none. */
-function kindOf(record: Partial<DeviceRecord>): 'device' | 'activity' | 'favourites' | 'settings' | undefined {
+function kindOf(record: Partial<DeviceRecord>): 'device' | 'activity' | 'favourites' | 'settings' | 'removal' | undefined {
+  if (record.removal !== undefined || record.removalBack !== undefined) return 'removal';
   if (record.settings !== undefined || record.settingsBack !== undefined) return 'settings';
   if (record.device !== undefined || record.removed !== undefined) return 'device';
   if (record.activity !== undefined || record.removedActivity !== undefined) return 'activity';
@@ -585,7 +714,16 @@ function check(folder: string): void {
   const record = readRecord(dir);
   const kind = kindOf(record);
   if (kind === undefined || typeof record.from !== 'string' || typeof record.name !== 'string') {
-    fail(`${dir} records no device, activity, favourites or settings added or taken out, so it is not a set this script built`);
+    fail(`${dir} records no device, activity, favourites, settings or removal, so it is not a set this script built`);
+  }
+  if (kind === 'removal') {
+    let wrong = 0;
+    checkRemoval(set, record, (ok, line) => {
+      if (!ok) wrong += 1;
+      console.log(`${ok ? 'ok' : 'NOT OK'}: ${line}`);
+    });
+    if (wrong > 0) process.exit(1);
+    return;
   }
   if (kind === 'settings') {
     let wrong = 0;

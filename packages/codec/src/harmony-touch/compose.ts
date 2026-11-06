@@ -50,7 +50,8 @@
  * **A device described by its family and numbers, and put into a whole set**, `todo-touch.md` 8.1:
  * `composeTouchDeviceOfRow` composes a device every command of which is one number of one family of our rhythm
  * table, `withTouchDevice` adds the three parts to the device, map and protocol lists of a set the remote holds,
- * under identifiers of ours, `OWN_IDS`, and `withoutTouchDevice` takes them out again.
+ * under identifiers of ours, `OWN_IDS`, and `withoutTouchDevice` takes them out again. Devices and activities of
+ * Logitech's are taken out with everything naming them by `remove.ts`, `todo-touch.md` 8.5.
  *
  * **An activity composed from a description, and put into a whole set**, `todo-touch.md` 8.2: `composeTouchActivity`
  * writes an activity's record and its own map from devices the documents already hold, named as a person names
@@ -489,7 +490,7 @@ export function withTouchDevice(documents: SyncDocuments, composed: ComposedTouc
  * `documents` with a device of ours taken out again: its entry, its own map, and every definition its commands
  * name that no other device's command names. **The exact inverse of `withTouchDevice`** for a device nothing
  * else names, which is all `todo-touch.md` 8.1 needs; the general removal, which also takes the device out of
- * every activity, map and favourite naming it, is 8.5's. So this refuses a device that is not one of ours, one
+ * every activity and map naming it, is 8.5's, `withoutTouchDevices` in `remove.ts`. So this refuses a device that is not one of ours, one
  * the device list does not hold, and one that an activity's role or step, or a button or sequence step of
  * another map, names: removing it would leave that reference pointing at nothing.
  */
@@ -870,7 +871,8 @@ export function withTouchActivity(documents: SyncDocuments, composed: ComposedTo
 
 /**
  * `documents` with an activity of ours taken out again: its entry and its own map. **The exact inverse of
- * `withTouchActivity`** for an activity nothing else names. So this refuses an activity that is not ours, one the
+ * `withTouchActivity`** for an activity nothing else names; the general removal is 8.5's, `withoutTouchActivities` in
+ * `remove.ts`. So this refuses an activity that is not ours, one the
  * activity list does not hold, the tuning default, whose favourites live in documents of their own, and one that a
  * button of another map starts, by its `ActivityId-`: removing it would leave that button pointing at nothing.
  */
