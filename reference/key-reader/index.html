@@ -216,14 +216,14 @@ model we do not have, and it can test whether every key on your remote still wor
         <p>Press each key twice. The second press confirms the first; if they differ, both are dropped and
           the key is asked again. To learn a key again, click it on the drawing, or go back with Previous key.</p>
         <p id="flag" class="flag" hidden>This key did not reach the page in step 1. Press it to try
-          again; if your remote reacts to it and nothing happens here, press Works, but not detected.</p>
+          again; if your remote reacts to it and nothing happens here, press Keypress not detected.</p>
         <form id="naming" hidden>
           <label>What is printed on that key, or where is it?
             <input id="name" type="text" autocomplete="off" maxlength="60"></label>
           <button type="submit" class="primary">Save</button>
         </form>
         <div class="controls">
-          <button id="unseen" type="button">Works, but not detected</button>
+          <button id="unseen" type="button">Keypress not detected</button>
           <button id="skip" type="button">Skip: not on my remote</button>
           <button id="undo" type="button">&#9664; Previous key</button>
           <button id="next-check" type="button">Next: step 3, check the key map</button>
@@ -235,7 +235,7 @@ model we do not have, and it can test whether every key on your remote still wor
           <li><svg width="22" height="16"><rect width="22" height="16" fill="url(#kr-rings)" stroke="#0b4f8a" stroke-width="3" stroke-dasharray="5 3"></rect></svg> blue with rings and a dashed edge: pressed once, press it again to confirm</li>
           <li><svg width="22" height="16"><rect width="22" height="16" fill="url(#kr-dots)"></rect></svg> orange with dots: learned</li>
           <li><svg width="22" height="16"><rect width="22" height="16" fill="url(#kr-lines)"></rect></svg> grey with lines: skipped, my remote has no such key</li>
-          <li><svg width="22" height="16"><rect width="22" height="16" fill="url(#kr-crosses)"></rect></svg> white with crosses: works, but not detected: the remote reacts to the key, and no press of it reaches this page</li>
+          <li><svg width="22" height="16"><rect width="22" height="16" fill="url(#kr-crosses)"></rect></svg> white with crosses: keypress not detected: the remote reacts to the key, but this page never sees the press</li>
         </ul>
       </div>
       <div id="test-panel" hidden>
