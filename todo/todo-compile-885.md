@@ -33,7 +33,7 @@ Written on 6 November 2026; linked from `todo-later.md` 5.6.
 - [ ] 1.4 Unit A's whole configuration written back unchanged: the write sequence as the firmware reads it (prepare 1.5), how the remote takes it up, and the clock afterwards, read over USB
 - [ ] 1.5 Every write stamps the build time, if the 885 sets its clock from it as the 650 does (prepare 2.3)
 - [ ] 1.6 Choose the test setup: the 650's devices and activities where the 885 can hold them, so the infrared bench tests carry over; what the 885 cannot hold, named
-- [ ] 1.7 The starting configuration: unit A's own, registered as the compare base, its devices and activities read by our reader
+- [x] 1.7 The starting configuration: unit A's own, registered as the compare base, its devices and activities read by our reader: `h885_a_config`, eight devices and three activities, every one named, unit B as the control with three names missing (`packages/codec/test/h885base.test.ts`)
 
 ## 2. Devices, everything that can be checked in device mode
 
