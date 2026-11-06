@@ -7,7 +7,7 @@ something was Logitech's own client, which fetched each answer from Logitech's s
 Logitech's would have to produce to answer a sync itself.
 
 **Everything here is read in the remote's firmware, production build 4.15.330, and measured in recorded
-syncs of Logitech's client; the preview build's engine was not read for this page. Fifteen syncs answered by a
+syncs of Logitech's client; the preview build's engine was not read for this page. Eighteen syncs answered by a
 program of this project have run on a remote: the first stopped at the favourites; the second ran to its end
 and was committed, every answer in it a 304 that kept the remote's own copy, or the answer to the finish; the
 third delivered the remote's own six configuration documents with 200 under entity tags of ours and was
@@ -16,10 +16,13 @@ value changed, or put back, with 200 and the other five 304, and each was commit
 answered every request 304 again; the tenth delivered three documents with a device of ours added, with 200 and
 the other three 304, and the eleventh took it out again the same way, both committed and acted on; the twelfth
 answered every request 304 again; the thirteenth delivered two documents with an activity of ours added, with 200
-and the other four 304, and the fourteenth took it out again the same way, both committed and acted on; and the
-fifteenth answered every request 304 again**: what they measured is marked where it stands, and the rest of the rules
-below are what the firmware does with an answer, not what a remote was seen to do with one of
-ours[^t-touch-host][^t-touch-first-sync][^t-touch-second-sync][^t-touch-own-set-sync][^t-touch-changed-set][^t-touch-device-of-ours][^t-touch-activity-of-ours]. Where a
+and the other four 304, and the fourteenth took it out again the same way, both committed and acted on; the
+fifteenth answered every request 304 again; the sixteenth delivered the user's favourites document and one picture
+of ours with 200 beside the six and the rest answered 304, and the seventeenth put both back the same way, both
+committed and acted on; and the eighteenth answered every request 304 again**: what they measured is marked where
+it stands, and the rest of the rules below are what the firmware does with an answer, not what a remote was seen
+to do with one of
+ours[^t-touch-host][^t-touch-first-sync][^t-touch-second-sync][^t-touch-own-set-sync][^t-touch-changed-set][^t-touch-device-of-ours][^t-touch-activity-of-ours][^t-touch-favourites-of-ours]. Where a
 rule has only been seen to hold for Logitech's own answers, the page says so. The test behind the firmware
 footnotes asserts, function by function, the names and constants each rule rests on; the order in which a
 function uses them, and so which check comes first, is the decompiled reading named in that test's header
@@ -217,6 +220,12 @@ that shows them and are refused because a set of ours composes them. A place rea
 Touch synced through a computer is not, is not refused. The many other places the screens raise on cost one
 screen, one key or a timer, are **not refused, by choice**, and are listed under "Not checked" below.
 
+**A picture is refused unless it has the form every picture the remote was given had**: a PNG that decodes, eight
+bits a channel, truecolour with alpha, not interlaced, and no larger than the box its address asks for, a logo's
+`maxX` by `maxY`, a background 240 by 320 and its twin 60 by 80. Every picture of the recorded full sync has that
+form, so the check holds an answerer to what was seen drawn[^t-touch-pictures]; what the native decoder does with
+another form is not read[^unchecked].
+
 **A document has to arrive as the object itself, not as a string holding one, and nothing on arrival checks
 which it is.** The remote stores a document as the JSON encoding of its `resource`, so an object is stored as
 that object and a string of JSON as a JSON string; the engine reads that string back as text, finds none of
@@ -318,6 +327,19 @@ tags. **Both handed out eight request lists**, as every sync of ours before the 
 the sync that followed them[^t-touch-activity-of-ours]. A document composed whole by a program, rather than changed
 in one value or by an entry added, is not checked[^unchecked].
 
+**A favourites document and a picture delivered with 200 among answers of 304 are stored and committed.** A sync of
+this project answered the six 304 against the tags the remote sent, the user's favourites document 200 with a
+document of ours under a new tag, the tuning device's favourites and the line up 304 with tags of ours, the logo of
+one station 200 with a picture of ours under a new tag, and the other nine pictures 304: the user's document in one
+write of 1216 characters and the pictures in one of 3510, each one chunk. The remote committed it; the configuration
+hash stayed as it was, since none of its four documents changed, and the next sync asked for that station's logo
+with the new tag. The favourites screen showed the new document's order and the new logo,
+[favourites and settings](favourites-and-settings.md#favourite-channels). A second sync delivered the two again as
+the remote had held them, under their old tags, the same way, and was committed, the sync after asking for the logo
+with its old tag. All three handed out eight request lists[^t-touch-favourites-of-ours]. A tuning device's favourites
+document or a line up delivered with 200, and a picture at an address the remote did not hold, are not
+checked[^unchecked].
+
 ## The smallest set of documents
 
 All six core documents are asked for in every sync down, and a status from 400 up on any of them aborts, so none can
@@ -364,10 +386,16 @@ that handed up no favourites change[^t-touch-first-sync]. The second such sync r
 the tuning device's and the line up's documents were each asked for without a tag, at addresses that earlier
 sync of Logitech's had answered with 200 and a tag, each was answered 304 with a tag of ours, the sync was
 committed, and the remote still showed its favourites afterwards[^t-touch-second-sync]. That is what the
-reading above predicts, and it does not by itself rule out a narrower one, that the remote sends a favourites
-document's tag only when both its file and its index entry exist, since which favourites files the remote held
-was not read on the unit; which of the two is the cause is not checked[^unchecked]. **By the first reading an
-untagged favourites request says nothing about what the remote holds, and by either 304 is the answer that keeps
+reading above predicts. **A later sync ruled out a narrower one**, that the remote sends a favourites document's tag
+only when both its file and its index entry exist: after the user's favourites were delivered with 200 and a tag of
+ours and committed, the screen showing them, the next two syncs still asked for them without a
+tag[^t-touch-favourites-of-ours].
+
+> This said that measurement does not by itself rule out a narrower one<!--superseded-->, since which favourites
+> files the remote held was not read on the unit, until a document the remote held under a tag it had been given was
+> still asked for untagged[^t-touch-favourites-of-ours].
+
+**So an untagged favourites request says nothing about what the remote holds, and 304 is the answer that keeps
 whatever it holds**: on a 304 the remote copies its own
 committed document and its own stored tag into the new set and stores nothing of the answer, though the answer
 must still carry a tag; one it does not hold stays missing, which is what a 404 would leave. A 200 with a
@@ -448,7 +476,9 @@ delivered the six with 200 under tags of ours it answered with those tags[^t-tou
 that delivered the activity list alone with 200 it answered with that document's new tag among the old
 three[^t-touch-changed-set], and after one that delivered the device, map and protocol lists with the new tags of
 the device and protocol lists among the old two[^t-touch-device-of-ours], and after one that delivered the
-activity and map lists with the activity list's new tag among the old three[^t-touch-activity-of-ours]. The tag the
+activity and map lists with the activity list's new tag among the old three[^t-touch-activity-of-ours], and after one
+that delivered a favourites document and a picture with the same four tags as before, since neither is among
+them[^t-touch-favourites-of-ours]. The tag the
 remote sends for each
 document in the next sync's request list, read out of the committed set, is the other evidence[^t-touch-host].
 A committed document itself can be handed back by a resource put that names its address and carries no
@@ -458,11 +488,12 @@ Whether these are enough to know a whole configuration arrived is not settled[^u
 ## Not checked
 
 * Everything here is one firmware build and, for the measured side, the three syncs recorded by Logitech's
-  client and fifteen answered by this project, the first stopped at the favourites and the other fourteen
+  client and eighteen answered by this project, the first stopped at the favourites and the other seventeen
   committed. The syncs of ours that delivered documents with 200 delivered the remote's own six, or one of them
   with one value changed, or three with a device of ours added or taken out, or two with an activity of ours added
-  or taken out: a document composed whole by this project, and a favourites document or a picture of ours
-  delivered with 200, and what the remote then does with each, are the reading's alone[^unchecked].
+  or taken out, or the user's favourites document and one picture at an address the remote held: a document
+  composed whole by this project, a tuning device's favourites or a line up of ours, and a picture at a new
+  address, and what the remote then does with each, are the reading's alone[^unchecked].
 * Whether the outgoing queue actually carries a direct put through to the account, inferred from the queue's
   role rather than seen[^unchecked].
 * What a configuration the reader raises on does on a unit: the firmware reading is
@@ -504,6 +535,8 @@ Whether these are enough to know a whole configuration arrived is not settled[^u
 [^t-touch-changed-set]: Measured on a unit. [The test](../../../packages/usb/test/touch-changed-set-sync.test.ts)
 [^t-touch-device-of-ours]: Measured on a unit. [The test](../../../packages/bench/test/touch81-runs.test.ts)
 [^t-touch-activity-of-ours]: Measured on a unit. [The test](../../../packages/bench/test/touch82-runs.test.ts)
+[^t-touch-favourites-of-ours]: Measured on a unit. [The test](../../../packages/bench/test/touch83-runs.test.ts)
+[^t-touch-pictures]: Measured on a unit. [The test](../../../packages/codec/test/touch-favourites.test.ts)
 [^t-touch-type-name]: Read in the firmware. [The test](../../../packages/codec/test/touch-check.test.ts)
 [^t-touch-reader-raises]: Read in the firmware. [The test](../../../packages/codec/test/touch-check.test.ts)
 [^t-touch-type-name-recorded]: Measured on a unit. [The test](../../../packages/codec/test/touch-check.test.ts)

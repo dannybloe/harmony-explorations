@@ -311,7 +311,11 @@ packages/corpus/                TS: read a config off a remote and file it, read
                                 and `src/touchownset.ts`, which builds a set of a Touch's own
                                 documents for it to deliver, `todo-touch.md` 6.8, and
                                 `src/touchchangedset.ts`, which changes one value of such a set,
-                                `todo-touch.md` 6.9
+                                `todo-touch.md` 6.9, and `src/touchfavouritesset.ts`, which builds a
+                                set's favourites documents and pictures of ours and their put back
+                                from what the remote holds, `todo-touch.md` 8.3; the descriptions
+                                such a set is built from are in `touch-devices/`,
+                                `touch-activities/` and `touch-favourites/`
 packages/bench/                 TS: the bench instrument, a server plus two pages in web/. The
                                 second, ir.html, is the infrared monitor: what a Flirc USB receiver
                                 hears, named against the bench remotes' configurations, plus
@@ -992,12 +996,15 @@ node packages/corpus/bin/touch-sync.ts --unchanged | --set <lab folder> [--commi
                        `reads/`. A refusal after the remote was acted on names `touch-recover.ts
                        --step abort`. One line per step starting `sync:`, the forms in its header.
                        With a set, a document the hand over hands up that the set also holds stops the
-                       run before the sync request, since the set would revert it. `--unchanged`
-                       has run six times on the bench Touch, 6.7, 6.8, 6.9, 8.1 and 8.2; `--set` nine
-                       times, 6.8, the four sets of 6.9, the two of 8.1 and the two of 8.2, each
-                       committed, `packages/usb/test/touch-own-set-sync.test.ts`,
-                       `touch-changed-set-sync.test.ts`, `packages/bench/test/touch81-runs.test.ts` and
-                       `touch82-runs.test.ts`.
+                       run before the sync request, since the set would revert it, and so does a
+                       favourites document handed up to its own address, `content://1.0/user/` or
+                       `content://1.0/device/`, when the set holds that kind, `favouritesClash`; every
+                       picture a set holds must pass the codec's `pictureRefusals`. `--unchanged`
+                       has run seven times on the bench Touch, 6.7, 6.8, 6.9, 8.1, 8.2 and 8.3; `--set`
+                       eleven times, 6.8, the four sets of 6.9 and the two each of 8.1, 8.2 and 8.3,
+                       each committed, `packages/usb/test/touch-own-set-sync.test.ts`,
+                       `touch-changed-set-sync.test.ts`, `packages/bench/test/touch81-runs.test.ts`,
+                       `touch82-runs.test.ts` and `touch83-runs.test.ts`.
 node packages/bench/bin/touch-tests.ts [--write]
                        derive `todo-touch.md` 7.1's bench tests for the Harmony Touch from the set
                        the bench unit holds and the recorded favourites, through the engine model
@@ -1021,6 +1028,15 @@ node packages/bench/bin/touch-activity-tests.ts [--write]
                        `test/touch82.test.ts` holds the file equal to what this gives, and
                        `test/touch82-runs.test.ts` its run at the bench. Reads the lab only. Opens
                        nothing, sends nothing.
+node packages/bench/bin/touch-favourites-tests.ts [--write]
+                       derive `todo-touch.md` 8.3's bench test, every favourite tapped in the order the
+                       favourites screen is to show them, from the lab's `8.2-activity-back` set with the
+                       favourites of `packages/corpus/touch-favourites/8.3-favourites.json` composed onto
+                       the recorded favourites documents, through the same engine model, the plan in
+                       `src/touch83.ts`, and print it, or with `--write` write
+                       `irtests/touch-8-3-favourites.json`; `test/touch83.test.ts` holds the file equal
+                       to what this gives, and `test/touch83-runs.test.ts` its run at the bench. Reads
+                       the lab only. Opens nothing, sends nothing.
 node packages/corpus/bin/touch-own-set.ts --build <lab folder> --requests <list> [--handed-up <answers>]
 node packages/corpus/bin/touch-own-set.ts --check <set folder> [--hash <answer>] [--list <list>]
                        build the set `todo-touch.md` 6.8 delivers to a Harmony Touch, its own six
@@ -1049,6 +1065,8 @@ node packages/corpus/bin/touch-device-set.ts --build <lab folder> --from <set fo
 node packages/corpus/bin/touch-device-set.ts --build <lab folder> --from <set folder> --remove <device id>
 node packages/corpus/bin/touch-device-set.ts --build <lab folder> --from <set folder> --activity <description>
 node packages/corpus/bin/touch-device-set.ts --build <lab folder> --from <set folder> --remove-activity <id>
+node packages/corpus/bin/touch-device-set.ts --build <lab folder> --from <set folder> --favourites <description>
+node packages/corpus/bin/touch-device-set.ts --build <lab folder> --from <favourites set folder> --favourites-back
 node packages/corpus/bin/touch-device-set.ts --check <set folder> [--same-as <set>] [--written <answers>] \
   [--hash <answer>] [--list <list>]
                        build a set with a device of ours added, or taken out again, `todo-touch.md`
@@ -1068,7 +1086,16 @@ node packages/corpus/bin/touch-device-set.ts --check <set folder> [--same-as <se
                        `--check` then reads the activity back (place, type, devices in power order with
                        inputs, steps, keys and entries) and answers a remote holding the source with
                        two 200 and four 304, `packages/bench/test/touch82-runs.test.ts` holding both
-                       sets' runs.
+                       sets' runs. `--favourites` composes favourites described by channel number in
+                       `packages/corpus/touch-favourites/`, such as `8.3-favourites.json`, by the codec's
+                       `composeTouchFavourites` against what the remote holds, and delivers the
+                       favourites documents it changes and the logos of ours drawn by `drawTouchLogo`
+                       beside the source's six, which keep their content and tags, `withContent` in
+                       `src/touchfavouritesset.ts`; `--favourites-back` is its exact inverse, what the
+                       remote held at those addresses, tags and all, `putBackContent`. `--check` then
+                       reads the favourites and each picture back and answers a remote holding the
+                       source, and `--list` compares a kept picture request list with the set's content,
+                       `packages/bench/test/touch83-runs.test.ts` holding both sets' runs.
 node packages/usb/bin/read-file.ts --file <path> [--product 0xc12b] [--device <path>]
                        the general form of the above: read any path on `INERT_PATHS` and print it as
                        bytes and, where it is printable, as text. Deliberately does not parse, since

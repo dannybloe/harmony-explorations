@@ -70,7 +70,10 @@ Which of the held and double forms a button map can bind is the map's question,
   function[^t-touch-activity-of-ours]. The default picture of a type other than Custom is not
   checked[^unchecked].
 * **The favourite channels**, under Favorites, as pictures, up to 50, editable and reorderable on the
-  remote[^x-touch-manual].
+  remote[^x-touch-manual]. **The tiles follow the user's favourites document**: delivered by a program with a
+  channel added first and the rest reversed, the screen showed the six in that order, the added channel's tile
+  with its number, 61, and a logo drawn by the program, a 54 by 54 picture at the address of the station's logo, in
+  place of the station's own[^t-touch-favourites-of-ours].
 * **A device's commands**, from the device list[^x-touch-manual]; [behaviour.md](behaviour.md). **A device whose
   type has no picture of its own is drawn in the device list with the default picture**, and **a screen entry
   that names no function is drawn without an icon**: a projector added by a program, a type the remote holds no
@@ -133,3 +136,4 @@ screen, field by field, is [favourites-and-settings.md](../../architectures/harm
 [^t-touch-changed-set]: Measured on a unit. [The test](../../../packages/usb/test/touch-changed-set-sync.test.ts)
 [^t-touch-device-of-ours]: Measured on a unit. [The test](../../../packages/bench/test/touch81-runs.test.ts)
 [^t-touch-activity-of-ours]: Measured on a unit. [The test](../../../packages/bench/test/touch82-runs.test.ts)
+[^t-touch-favourites-of-ours]: Measured on a unit. [The test](../../../packages/bench/test/touch83-runs.test.ts)

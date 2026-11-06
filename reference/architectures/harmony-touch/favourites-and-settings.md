@@ -46,9 +46,20 @@ channel tuning settings were not measured[^unchecked].
 **On the remote**, up to 50 favourites can be held: the add screen refuses a fifty first with a
 warning. That is read in the screens; the test holds the number 50 and not the
 refusal[^t-touch-favourites-firmware]. Reordering them changes only the user's favourites document, and
-changing a channel changes the device's as well; each goes up to the account at the next
-sync[^t-touch-favourites-firmware]. What such a change looks like on the cable is not
-checked[^unchecked].
+changing a channel changes the device's as well; each goes up to the account at the next sync, to an address of
+its own: `content://1.0/user/` and the document's `id` for the user's, `content://1.0/device/` and its `id` for a
+device's, not the address a sync asks for it at[^t-touch-favourites-firmware]. What such a change looks like on the
+cable is not checked[^unchecked].
+
+**Favourites composed by a program are shown and sent as the remote's own.** A user's favourites document delivered
+with 200 under a new tag, holding the five favourites the remote had in reverse order and a channel of the line up
+added first the way the remote's add screen adds an offered one, its station alone appended to the user's list with
+no dial position, was committed, and the favourites screen showed the six in the document's order. The added
+channel's tile showed the number the line up gives its station, 61, and a tap on it with no activity running started
+the tuning activity and sent 0, 6, 1, that number padded by the device's channel tuning; the other five sent their
+own numbers. The remote's own document, delivered back the same way under its old tag, restored the old
+order[^t-touch-favourites-of-ours]. The added channel's name, which its tile does not show, a channel added by hand,
+and a tuning device's document or a line up composed by a program are not checked[^unchecked].
 
 ## Settings
 
@@ -124,10 +135,24 @@ passed, and the expiry comes from a `cache-Control` field on the answer, which n
 carried; so a logo was given no expiry and is fetched every time[^t-touch-favourites][^t-touch-favourites-firmware]. The background, its
 twin and an uploaded channel logo have no such rule; each is asked for with the entity tag the remote
 holds[^t-touch-favourites-firmware]. Before the pictures are asked for, every picture already held is carried
-into the new set, so one that fails to arrive keeps its old copy[^t-touch-favourites-firmware]. **Measured:
-pictures the remote holds are asked for with their tags**, all ten in a later sync with exactly the tags they
-were delivered with, where the sync that delivered them had asked for every one untagged; answered 304, the
-remote kept them and committed the set[^t-touch-second-sync].
+into the new set, so one that fails to arrive keeps its old copy[^t-touch-favourites-firmware]. **That carrying
+takes every stored PNG, whatever names it**, so a picture at an address no favourite names any more is carried
+into every later set for good[^t-touch-favourites-firmware]. **Measured: pictures the remote holds are asked for
+with their tags**, all ten in a later sync with exactly the tags they were delivered with, where the sync that
+delivered them had asked for every one untagged; answered 304, the remote kept them and committed the
+set[^t-touch-second-sync].
+
+**Measured: a picture delivered with 200 at the address of one the remote holds replaces it.** A logo drawn by a
+program, a 54 by 54 PNG, delivered under a new tag at the address of a station logo the remote held, was stored,
+drawn on the favourite tile that names the station, and asked for with that new tag in the next sync; the remote's
+own picture, delivered back the same way, was asked for with its old tag in the sync after[^t-touch-favourites-of-ours].
+A picture at an address the remote did not hold before is not checked[^unchecked].
+
+**A drawn picture is kept by its file's path.** The screens keep decoded pictures in one cache of 6 MiB keyed by the
+picture file's path, which drops the least recently used when it is full and which nothing else
+empties[^t-touch-favourites-firmware]. So a picture replaced at the same path can be drawn from its old decoding
+until it is pushed out or the screens restart; the one picture replaced on a unit showed the new drawing at
+once[^t-touch-favourites-of-ours], and an old drawing kept was not seen[^unchecked].
 
 **What is asked for, in order**[^t-touch-favourites][^t-touch-favourites-firmware]:
 
@@ -136,6 +161,10 @@ remote kept them and committed the set[^t-touch-second-sync].
    the station's logo, unless the channel was added by hand, which then has no picture
 3. the logo of each popular channel in the line up, which the remote offers when a favourite is added on
    it; at most 25, a cap read in the screens, where the test holds the number
+
+**The favourites the order follows are the ones answered earlier in the same sync**: with a user's document of new
+order delivered with 200, the added channel's logo was asked for first of the eight logos, where with the old
+document it came sixth, among the popular channels'[^t-touch-favourites-of-ours].
 
 In the one sync that carried pictures, the background was 240 by 320 with a 60 by 80 twin, a station logo 54 by 54 and an
 uploaded logo 54 by 44, all PNG; the remote asks for logos at 54 by 54[^t-touch-favourites][^t-touch-favourites-firmware].
@@ -190,9 +219,14 @@ sync](answering-a-sync.md#the-entity-tag-an-answerer-sends)[^t-touch-favourites-
 **Measured in a sync answered by a program of this project**: the user's, the tuning device's and the line up's
 documents were each asked for without a tag, though an earlier sync of Logitech's had delivered each with 200
 and a tag; each was answered 304 with a tag of ours, the sync was committed, and the remote still showed its
-favourites afterwards[^t-touch-second-sync]. That fits the reading above. It does not by itself rule out a
-narrower one, that the tag is sent only when both the document's file and its index entry exist, since which
-favourites files the remote held was not read on the unit, so the cause is not checked[^unchecked].
+favourites afterwards[^t-touch-second-sync]. That fits the reading above. **A later measurement rules out the
+narrower one**, that the tag is sent only when both the document's file and its index entry exist: after a user's
+favourites document was delivered with 200 and a tag and committed, the screen showing it, the next two syncs still
+asked for it without a tag[^t-touch-favourites-of-ours].
+
+> This said that measurement does not by itself rule out a narrower one<!--superseded-->, since which favourites
+> files the remote held was not read on the unit, until a user's document delivered with 200 and a tag, which the
+> remote then held, was still asked for untagged[^t-touch-favourites-of-ours].
 
 ### The user's favourites document
 
@@ -311,8 +345,8 @@ to the remote in the sync measured carried the field[^t-touch-favourites].
 
 ## Not checked
 
-* Anything on this page observed on a remote's screen or its infrared: what the remote does is its
-  code[^unchecked].
+* Anything on this page observed on a remote's screen or its infrared beyond what is marked measured: what the
+  remote does is its code[^unchecked].
 * Channel tuning settings other than the two measured[^unchecked].
 * What a change of favourites made on the remote looks like when it is handed up[^unchecked].
 * Whether the code that reads Context's other six fields runs on a Touch synced over USB: the hub,
@@ -334,3 +368,4 @@ to the remote in the sync measured carried the field[^t-touch-favourites].
 [^unchecked]: Not checked.
 [^t-touch-beyond-firmware]: Read in the firmware. [The test](../../../tests/test_harmony_touch_beyond_the_clients.py)
 [^t-touch-in-use]: Measured on a unit. [The test](../../../packages/bench/test/touch71-runs.test.ts)
+[^t-touch-favourites-of-ours]: Measured on a unit. [The test](../../../packages/bench/test/touch83-runs.test.ts)

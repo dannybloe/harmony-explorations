@@ -187,7 +187,7 @@ the generator that wrote it, with firmware event 0xFF bound so it serves both mo
 expected codes on the bench 350 and the same file 33 of 33 on the bench 300, `packages/codec/test/noscreenfinalunits.test.ts`.
 Two Harmony 885s are on the bench as well, read only.
 
-**The Harmony Touch is described from its own reading, fifteen syncs of ours have run on it, fourteen committed, eight of them changing what it does, its first full bench test has run, and a device and an activity composed by us have each been delivered to it and heard.** Its configuration
+**The Harmony Touch is described from its own reading, eighteen syncs of ours have run on it, seventeen committed, ten of them changing what it does, its first full bench test has run, and a device, an activity and favourites with a logo composed by us have each been delivered to it and heard.** Its configuration
 is Logitech's documents rather than a file, fetched by the remote through the computer during a sync, and both
 directions of a sync are recorded, `packages/usb/test/touch-sync-both-ways.test.ts`. The documents are described
 field by field in [its platform pages](../reference/architectures/harmony-touch/README.md) and read by the codec,
@@ -229,7 +229,14 @@ identifier of ours, with start and end steps, a map sending to both devices and 
 ours, added to the activity and map lists and delivered with those two 200 and the other four 304. The remote
 committed it and listed it last with the custom picture, and 33 of 33 expected codes were heard: its start from Off,
 every key and entry, a switch to Watch TV and back, and Off, every timed pause in band. A second sync took it out
-again and a closing `--unchanged` run was asked with that set's tags, `packages/bench/test/touch82-runs.test.ts`.
+again and a closing `--unchanged` run was asked with that set's tags, `packages/bench/test/touch82-runs.test.ts`. In
+8.3 favourites composed by this project reached it: the user's favourites document with channel 61 added from the
+line up and the order reversed, and a logo drawn by us at that channel's station logo address, delivered with those
+two 200 and every other request 304. The remote committed them and showed the six in the new order with our logo on
+61, and 18 of 18 expected codes were heard, 61 sending 0 6 1 from the line up's number; the next sync asked for the
+logo with our tag, the configuration hash not moving since favourites are not in it. A second sync put both back,
+the closing `--unchanged` run asked for the logo with its old tag, and 7.1's favourites test held 15 of 15 after
+it, `packages/bench/test/touch83-runs.test.ts`.
 
 ## What is still open
 

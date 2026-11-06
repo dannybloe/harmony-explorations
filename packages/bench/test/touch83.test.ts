@@ -12,8 +12,8 @@
  * `touch_activity_set_back` fixture, the favourites documents of the recorded full sync, and the favourites of
  * `packages/corpus/touch-favourites/8.3-favourites.json` composed onto them by the codec, `composeTouchFavourites`: the
  * user's favourites document changed, the tuning device's and the line up kept. Composed here from the source, so a
- * change to the composer shows in the predictions, and held equal to the set in the lab,
- * `work/touch-firmware/sets/8.3-favourites`, which `packages/corpus/test/touch-favourites-set.test.ts` also holds.
+ * change to the composer shows in the predictions, and held equal to the set the bench Touch was given, the
+ * `touch_favourites_set` fixture, which `packages/corpus/test/touch-favourites-set.test.ts` also holds.
  *
  * **What is heard tells the two apart.** A favourite is heard as its channel's digits, so the claim is about the digits
  * in the order of the taps: the six favourites of ours give 0 6 1, 0 0 4, 0 0 3, 0 0 2, 0 0 1, 6 6 6, the channel added
@@ -26,15 +26,15 @@
  * `changeChannel` with the dial number `getFavoriteDialPositionDetails` fills from the line up). Logitech's client was not
  * consulted.
  *
- * **What this does not show** is what the remote does: that is the 8.3 run.
+ * **What this does not show** is what the remote does: that is the 8.3 run, held by `touch83-runs.test.ts`, where the
+ * bench run of this file held 18 of 18.
  *
  * **Which architectures**: the Harmony Touch, firmware 4.15.330, the one bench unit; its firmware reports 17 and
  * Logitech's templates file it under 18.
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 import { harmonyTouch } from '@harmony/codec';
@@ -47,6 +47,8 @@ import { touch71Configuration } from '../src/touchbench.ts';
 
 const SOURCE = 'touch_activity_set_back';
 const FULL = 'touch_full_sync_recording';
+/** The set the bench Touch was given for 8.3, by fixture. */
+const FAVOURITES_SET = 'touch_favourites_set';
 const DESCRIPTION = fileURLToPath(new URL('../../corpus/touch-favourites/8.3-favourites.json', import.meta.url));
 
 const description = (): harmonyTouch.OwnFavourites => (JSON.parse(readFileSync(DESCRIPTION, 'utf8')) as { favourites: harmonyTouch.OwnFavourites }).favourites;
@@ -69,8 +71,6 @@ const testsOf = (set: { answers: unknown[] }, favourites: harmonyTouch.SyncDocum
   return touch83Tests(touch71Configuration(set, favourites), d.add ?? [], d.logos?.[0]?.text ?? '');
 };
 
-const inLab = (path: string): string | undefined => (lab.LAB !== undefined && existsSync(join(lab.LAB, path)) ? join(lab.LAB, path) : undefined);
-
 test('the 8.3 test file is what the composed favourites give, step for step', lab.needing(lab.skipUnless(SOURCE, FULL)), () => {
   const { set, favourites } = composed();
   const derived = testsOf(set, favourites);
@@ -82,11 +82,10 @@ test('the 8.3 test file is what the composed favourites give, step for step', la
   }
 });
 
-test('the set in the lab gives the same test as the composition from the source', lab.needing(lab.skipUnless(SOURCE, FULL)), (t) => {
-  const path = inLab(TOUCH_8_3_SET);
-  if (path === undefined) { t.skip(`no ${TOUCH_8_3_SET} in the lab`); return; }
+test('the set the remote was given gives the same test as the composition from the source', lab.needing(lab.skipUnless(SOURCE, FULL, FAVOURITES_SET)), () => {
+  assert.equal(lab.IMAGES[FAVOURITES_SET], TOUCH_8_3_SET);
   const { set, favourites } = composed();
-  const lab83 = JSON.parse(readFileSync(path, 'utf8')) as { answers: unknown[] };
+  const lab83 = json(FAVOURITES_SET) as { answers: unknown[] };
   assert.deepEqual(JSON.parse(JSON.stringify(testsOf(lab83, favourites))), JSON.parse(JSON.stringify(testsOf(set, favourites))));
 });
 

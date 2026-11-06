@@ -112,6 +112,17 @@ of twelve functions in eight files, none of them cited here. The reading, file b
 13. **The pictures are asked for in one order**: the activities' own pictures, the backgrounds, the home
    control scenes, then per favourites activity its favourites' logos and its popular channels' logos,
    after every picture already held has been carried into the new set.
+14. **Where a change made on the remote is handed up, what is carried from one set to the next, and how a drawn
+   picture is kept**, read for `todo-touch.md` 8.3, whose run delivered a user's favourites document and a logo of
+   ours: the screens' `getRequest` puts the user's favourites document to `content://1.0/user/` and its `id`, and a
+   device's to `content://1.0/device/` and its `id`, not to the addresses a sync asks for them at; `copyImages`
+   copies every file ending `.png` from `/data/resources` into the set being gathered, with its index entry, and asks
+   nothing else of it, so a picture no favourite names any more is carried into every later set; and the drawing
+   layer keeps decoded pictures in one cache of 6 MiB keyed by the picture's file path, which drops the least
+   recently used when full and which nothing else empties, `draws/cache.lua` having no other removal and
+   `draws/imageManager.lua` making the one cache. So a picture replaced at the same path may be drawn from the old
+   decoding until it is pushed out or the screens restart; in the 8.3 run the added channel's tile showed the new
+   logo at once, which says only that the old one was not in the cache at that path then.
 
 **Read and not asserted.** A user background appears in the background picker only once its `_small`
 twin is stored in `/data/resources/` (`juniper/settings/background.lua` walks that folder for twins and
@@ -155,6 +166,9 @@ CHANNELS = SCREENS + 'juniper/favoritechannel.lua'
 INIT = SCREENS + 'juniper/init.lua'
 STYLE = SCREENS + 'juniper/style.lua'
 MAIN = SCREENS + 'main.lua'
+RESOURCES = SCREENS + 'appscommon/resourcemanager.lua'
+DRAW_CACHE = SCREENS + 'draws/cache.lua'
+IMAGE_MANAGER = SCREENS + 'draws/imageManager.lua'
 SCREEN_TEST_DATA = SCREENS + 'appscommon/test/'
 ENGINE = 'opt/luaworks/tasks/'
 
@@ -361,6 +375,38 @@ class TheTouchsFavouritesAndSettings(unittest.TestCase):
         order = ['submitActivityImageRequest', 'submitBackgroundImageRequest', 'submitScenesImageRequest',
                  'submitUserSelectedImageRequest', 'submitPopularImageRequest', 'copyImages']
         self.assertEqual(sorted(order, key=images.index), order)
+
+    def test_a_change_goes_up_to_its_own_address_every_stored_picture_is_carried_and_a_drawing_is_cached_by_path(self):
+        request = function_of_local(self.text[HARMONY], 'getRequest')
+        # The put of a favourites document goes to the kind's base and the document's own id.
+        self.assertEqual(re.findall(r'request\.uri = "(content://1\.0/\w+/)" \.\. params\.resource\.id', request),
+                         ['content://1.0/user/', 'content://1.0/device/'])
+        self.assertLess(request.index('"ContentUser" and params.verb == "put"'), request.index('"content://1.0/user/"'))
+        self.assertLess(request.index('"CD_") and params.verb == "put"'), request.index('"content://1.0/device/"'))
+        files = {p: b.decode('utf-8') for p, b in self.rootfs.each([RESOURCES, DRAW_CACHE, IMAGE_MANAGER]).items()}
+        # Every stored picture is copied into the set being gathered, chosen by its name ending `.png` alone.
+        copy = function(files[RESOURCES], 'copyImages')
+        self.assertEqual(re.findall(r'for (\w+) in lfs\.dir\((\w+)\)', copy), [('file', 'DATA_FOLDER')])
+        self.assertEqual(re.findall(r'string\.match\(file, "([^"]+)"\)', copy), ['.*%.png$'])
+        self.assertEqual(re.findall(r'utils\.copyFile\((\w+), (\w+), fileName\)', copy), [('DATA_FOLDER', 'DATA_FOLDER_TEMP')])
+        # Four conditions: the two folders exist, the name matched, and an index entry to carry with it. Booleans,
+        # so a failure prints no firmware source.
+        conditions = re.findall(r'\b(?:else)?if (.+?) then', copy)
+        self.assertEqual(len(conditions), 4)
+        self.assertTrue(all('DATA_FOLDER' in c for c in conditions[:2]), 'the two folder checks')
+        self.assertTrue(conditions[2:] == ['fileName', 'indexInfo'], 'the name and the index entry, nothing else')
+        # Called where the pictures are asked for, and where the favourites documents are carried over.
+        self.assertEqual(calls(self.text[HARMONY], 'resMgr.copyImages()'), ['copyContentResource', 'submitImageRequest'])
+        # One cache of decoded pictures, 6 MiB, keyed by the file's path.
+        manager = files[IMAGE_MANAGER]
+        self.assertEqual(re.findall(r'^local cache = Cache:new\(([^)]*)\)', manager, re.M), ['6*1024*1024'])
+        self.assertEqual(re.findall(r'cache:(get|set)\((\w+(?:\.\w+)?)', manager), [('get', 'img_path'), ('set', 'img_path'), ('set', 'imgObj.imgPath')])
+        # The cache's functions: nothing public removes an entry; the one removal is local and runs only when full.
+        cache = files[DRAW_CACHE]
+        self.assertEqual(re.findall(r'^function (\w+)\(', cache, re.M), ['new', 'get', 'set', 'dumpSize', 'dumpSurfaceList'])
+        self.assertEqual(re.findall(r'^local function (\w+)\(', cache, re.M), ['removeHead'])
+        self.assertEqual(len(re.findall(r'\bremoveHead\(self\)', cache)), 1 + 1, 'defined once, called once')
+        self.assertRegex(function(cache, 'set'), r'while self\.size > self\.limit do\s+removeHead\(self\)')
 
     def test_the_brightness_scales(self):
         init = self.text[INIT]

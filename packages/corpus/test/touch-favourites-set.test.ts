@@ -29,12 +29,12 @@
  * (`getRequest` in `appscommon/harmony.lua`). Logitech's client was not consulted.
  *
  * **Which architectures**: the Harmony Touch, firmware 4.15.330; its firmware reports 17 and Logitech's templates
- * file it under 18.
+ * file it under 18. The two 8.3 sets are read by fixture, `touch_favourites_set` and `touch_favourites_set_back`, and
+ * what the remote did with them is `packages/bench/test/touch83-runs.test.ts`.
  */
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { readFileSync } from 'node:fs';
 import { describe, it } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
@@ -52,14 +52,14 @@ const CLOSING = 'touch_activity_unchanged_';
 const CLOSING_LISTS = [1, 2, 3, 4, 5, 6, 7, 8].map((n) => `${CLOSING}list_${n}`);
 const HAND_OVER_LIST = `${CLOSING}handover_list`;
 const DESCRIPTION = fileURLToPath(new URL('../touch-favourites/8.3-favourites.json', import.meta.url));
-const BUILT = 'work/touch-firmware/sets/8.3-favourites/set.json';
-const BUILT_BACK = 'work/touch-firmware/sets/8.3-favourites-back/set.json';
+/** The two sets 8.3 built in the lab and delivered to the bench Touch, by fixture, for the comparison with what this derivation gives. */
+const BUILT = 'touch_favourites_set';
+const BUILT_BACK = 'touch_favourites_set_back';
 
 const description = (): harmonyTouch.OwnFavourites => (JSON.parse(readFileSync(DESCRIPTION, 'utf8')) as { favourites: harmonyTouch.OwnFavourites }).favourites;
 const json = (fixture: string): unknown => JSON.parse(new TextDecoder().decode(lab.require_(fixture)));
 const recorded = (): SetAnswer[] =>
   (answersWritten(sessions(commands(records(FULL))).filter((s) => s.path === '/sys/hlapi')) as unknown as SetAnswer[]).filter(isContent);
-const inLab = (path: string): string | undefined => (lab.LAB !== undefined && existsSync(join(lab.LAB, path)) ? join(lab.LAB, path) : undefined);
 const requestsOf = (fixture: string): RemoteRequest[] => {
   const requests = resultOf(new TextDecoder().decode(lab.require_(fixture)))?.['requests'];
   assert.ok(Array.isArray(requests), fixture);
@@ -111,13 +111,10 @@ describe('the 8.3 set and its put back', { skip: lab.needing(lab.skipUnless(SOUR
     }
   });
 
-  it('the sets the lab holds are the ones this derivation gives, as parsed JSON, tags and all', (t) => {
-    const built = inLab(BUILT);
-    const builtBack = inLab(BUILT_BACK);
-    if (built === undefined || builtBack === undefined) { t.skip('the 8.3 sets are not in the lab'); return; }
+  it('the sets the lab holds are the ones this derivation gives, as parsed JSON, tags and all', lab.skipUnless(BUILT, BUILT_BACK), () => {
     const { forward, back } = chain();
-    assert.deepEqual(JSON.parse(readFileSync(built, 'utf8')), JSON.parse(JSON.stringify(forward)));
-    assert.deepEqual(JSON.parse(readFileSync(builtBack, 'utf8')), JSON.parse(JSON.stringify(back)));
+    assert.deepEqual(json(BUILT), JSON.parse(JSON.stringify(forward)));
+    assert.deepEqual(json(BUILT_BACK), JSON.parse(JSON.stringify(back)));
   });
 
   it('refuses content equal to what the remote holds, a body of the wrong kind, an address that is neither, and a picture the gate refuses', () => {

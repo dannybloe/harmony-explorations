@@ -153,6 +153,11 @@ and each of its eleven commands was heard when pressed; taking it out again rest
 with a map and screen entries of its own, added to the activity and map lists and delivered with 200, showed on the
 activity list and was started, used, switched and stopped as its record states; taking it out again restored the
 set before, [an activity of ours](../../architectures/harmony-touch/activities-and-buttons.md#an-activity-of-ours)[^t-touch-activity-of-ours].
+**Favourites and a logo composed by this project are shown and sent**: the user's favourites document with a
+channel of the line up added and the order reversed, and a logo of ours at the address of that channel's station
+logo, delivered with 200, put the six favourites on the screen in the document's order with our logo on the added
+one, which sent its line up number; delivering the remote's own two back restored the old order and logo,
+[favourites and settings](../../architectures/harmony-touch/favourites-and-settings.md#favourite-channels)[^t-touch-favourites-of-ours].
 A document composed whole by this project is not checked[^unchecked].
 
 ## Changes on the remote travel back
@@ -190,6 +195,7 @@ channels and commands changed on the remote are not checked[^unchecked].
 [^t-touch-both-ways]: Measured on a unit. [The test](../../../packages/usb/test/touch-sync-both-ways.test.ts)
 [^t-touch-favourites]: Measured on a unit. [The test](../../../packages/usb/test/touch-favourites.test.ts)
 [^t-touch-in-use]: Measured on a unit. [The test](../../../packages/bench/test/touch71-runs.test.ts)
+[^t-touch-favourites-of-ours]: Measured on a unit. [The test](../../../packages/bench/test/touch83-runs.test.ts)
 [^t-touch-favourites-firmware]: Read in the firmware. [The test](../../../tests/test_harmony_touch_favourites.py)
 [^t-touch-beyond-firmware]: Read in the firmware. [The test](../../../tests/test_harmony_touch_beyond_the_clients.py)
 [^t-touch-beyond-client]: Stated by Logitech, in their client. [The test](../../../tests/test_harmony_touch_beyond_the_clients.py)

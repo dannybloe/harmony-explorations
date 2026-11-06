@@ -489,6 +489,69 @@ documents. What this does not cover: a document composed whole, a favourite or a
 type or start screen, an activity of ours with a device of ours, and an activity removed while it runs. The runs are
 held by `packages/bench/test/touch82-runs.test.ts`. 8.2 is done.
 
+## Favourites of ours and a logo of ours, shown, heard and put back, todo-touch 8.3
+
+**Run on 6 November 2026**, after 8.2 and after commit `630c5b68`, the 8.3 preparation, in the order of the lab's
+`work/touch-firmware/notes/8.3-preflight.md` section 7, each run read before the next. The change is
+`packages/corpus/touch-favourites/8.3-favourites.json`: channel 61, BBC 1, the line up's first popular channel,
+added as the remote's own add screen adds an offered channel (the station appended to the user's list, no dial
+position); the order 61, 4, 3, 2, 1, 666, the five the remote held reversed with the new one first; and a logo of
+ours on 61, `drawTouchLogo('8.3')`, dark blue `8.3` on bright yellow, 54 by 54, 742 bytes, delivered at the address
+of BBC 1's station logo, which the remote already held as a popular channel's logo. The two sets were built by
+`packages/corpus/bin/touch-device-set.ts --favourites` and `--favourites-back` from `8.2-activity-back`:
+`8.3-favourites` with the six as they were, the user's favourites document of ours and the logo, each under a tag
+of ours, and `8.3-favourites-back` with the same two addresses as the recorded full sync of 2 November had
+delivered them, content and tags. The tuning device's favourites document and the line up were in neither set, so
+the remote kept its own.
+
+| time (UTC) | run | what it gave |
+|---|---|---|
+| `1330Z` | `touch-confighash` | equal on `8.2-activity-back` |
+| `1330Z` | `touch-sync-set`, `8.3-favourites` | the six 304; the user's favourites 200 with the set's content and tag, the device's and the line up 304; the logo 200 with the set's content and tag, the other nine pictures 304; first list six of `8.2-activity-back`'s tags; `sync: finished` |
+| `1331Z` | `touch-confighash` | equal and unchanged: favourites are not in it |
+| `133357Z` | the bench test `touch-8-3-favourites` | 18 of 18 |
+| `1328Z` | the monitor's live log | the test, then Listen to Music and Off, then NPO 3 tapped from Off, before the put back |
+| `1339Z` | `touch-sync-set`, `8.3-favourites-back`, and `1340Z` `touch-confighash` | the same answer shape with the old content and tags; the picture list asked for the logo with `8.3-favourites`' tag; hash equal |
+| `1341Z` | `touch-sync-unchanged` | every answer 304 or the finish; the picture list asked for the logo with the recorded tag again |
+| `134420Z`, `134453Z` | the 7.1 favourites test | 3 of 15 and 2 of 15, stopped early; nothing records why, abandoned starts |
+| `134514Z` | the 7.1 favourites test, unchanged | 15 of 15 |
+
+All in `reads/20261106T<time>-*`. Every run handed out eight request lists. The user's favourites went in one write
+of 1216 characters for the forward set and 1166 for the put back, the pictures in one of 3510 and 5011, each one
+chunk and replied 200.
+
+* **What says the content arrived**: the configuration hash covers four of the six and cannot. The put back's
+  picture list asked for BBC 1's logo with the forward set's tag, so the remote had stored the logo of ours and
+  committed it; the closing run's list asked with the recorded tag. In the forward run the logos came in the new
+  favourites' order, BBC 1's first of eight; in the two later runs in the old order, BBC 1's sixth: the remote
+  builds the picture list from the favourites documents answered earlier in the same sync.
+* **The favourites documents were asked for untagged in all three runs**, including the two after a 200 of ours
+  with a tag: the narrower reading of the untagged question, a tag whenever the file and its index entry exist, is
+  ruled out for the user's document.
+* **The bench test**, run once on the Flirc monitor: Off, unjudged and silent; Favorites and the tile showing 61,
+  with nothing running, started Watch TV, the LG TV on, the Denon on 965 ms later, its TV audio input 4103 ms after
+  that and the LG TV's HDMI 1 5342 ms after that, then 0, 6, 1 to the LG TV about half a second apart; RTL 4, NPO 3,
+  NPO 2, NPO 1 and Zork each their own three digits, 004, 003, 002, 001, 666; Off, the LG TV and the Denon off. 18
+  of 18, each step heard exactly its expected codes and nothing else, every timed pause in band.
+* **After the test, before the put back**: the monitor's log holds one frame no code of the documents names at
+  13:35:28, Listen to Music started from Off at 13:35:42 and an Off at 13:35:55, then Watch TV started from Off at
+  13:37:57 with 0, 0, 3 at its end, NPO 3 tapped with nothing running, as the model predicts each. No file records
+  what was done then.
+* **The look, reported at the bench**: after the forward set the six tiles in the order 61, RTL 4, NPO 3, NPO 2,
+  NPO 1, Zork, tile 61 showing our yellow "8.3" logo and the others their own logos; after the put back the five
+  tiles in the old order with the old logos.
+* **The 7.1 favourites test again**, after the put back and the closing run: 15 of 15. It taps the five old
+  favourites by name, whose numbers 8.3 never changed, so it shows the favourites still work after the put back;
+  the order shown is the report above.
+
+So a user's favourites document composed by this project and a picture drawn by it were stored and committed by the
+remote, the screen followed the document's order, the added channel was shown with the logo of ours and sent its
+line up number, and the put back restored what the remote held before. The remote holds `8.3-favourites-back`: the
+six of `8.2-activity-back` and the recorded favourites and pictures, content and tags. What this does not cover: a
+tuning device's document or a line up of ours, a channel added by hand, an uploaded logo of ours, a picture at a new
+address, the screens' picture cache, and the added channel's name. The runs are held by
+`packages/bench/test/touch83-runs.test.ts`. 8.3 is done.
+
 ## Not done
 
 * *Corrected:* this said no infrared run had been recorded with this unit and nothing about it in use had been
