@@ -159,3 +159,15 @@ already gave. So A's first pass of the transport row, 56 then 55, was the one ou
 
 The predictions came from a contributor's survey of a Harmony 880 board with four 885 additions, in the
 lab; the test header says how it was read and scores it, 49 keys right and six wrong.
+
+## 6 November 2026: the key page in Chrome, and Glow
+
+The key page, `todo/todo-prepare-885.md` 2.6, run in Chrome against a bench 885 at the desk; which unit was
+not recorded. It sends the version request and the one byte read of the held key and nothing else. It
+connected, proposed the model from the skin, and showed every press, in all three steps.
+
+**Pressing Glow while the page polls ends the connection**, as reported at the bench: the remote's screen
+went fully off and its replies stopped; a second Glow did not bring the cable back, and unplugging and
+plugging in did, after which the remote was fine. Glow had lit once on the page before it happened. The
+node watcher's whole key map run, the day before, kept answering after its one Glow. The cause is not read,
+so the page warns against Glow rather than explaining it.

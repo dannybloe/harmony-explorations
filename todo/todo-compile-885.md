@@ -11,8 +11,7 @@ configurations beside it; a step is checked by what the remote does on the bench
 
 **Before any item**: read `../lab/work/legacy-remotes/HANDOVER.md` and [plan 012](../docs/plans/012-the-legacy-remotes.md),
 write the item's brief into `../lab/work/legacy-remotes/notes/harmony-885/` and update the handover's state,
-both before the item starts. Once 1.1 lands, load the `harmony-885` skill instead, here and in every agent
-brief. Before any build code in `packages/codec/src`, load `code-for-a-family`.
+both before the item starts. **Load the `harmony-885` skill first**, in this session and in every agent brief. Before any build code in `packages/codec/src`, load `code-for-a-family`.
 
 **The rails**: decision 30 permits the two bench units, A first. The configuration at `0x020000` only, base
 slot 2 kept as every configuration states it, and nothing else written: not the firmware, the bootloader,
@@ -28,7 +27,7 @@ Written on 6 November 2026; linked from `todo-later.md` 5.6.
 
 ## 1. The write route and a starting configuration
 
-- [ ] 1.1 The `harmony-885` skill, as the 650 has its own: where the facts are, the rails, the write and bench procedure as they are established below
+- [x] 1.1 The `harmony-885` skill, as the 650 has its own: where the facts are, the rails, the write and bench procedure as they are established below; its write procedure is empty until 1.2 to 1.4 fill it in, and it names the backup a first write needs, which the lab does not hold yet
 - [ ] 1.2 Arch 8 a write target, its own demonstration (section 269): the erase table's row, `ARCHITECTURES_WITH_A_WRITE_TARGET`, a target in `write-config.ts`, the unit check against `units/h885_a.txt`
 - [ ] 1.3 One block of unit A's configuration written back unchanged and read back identical, the remote still running
 - [ ] 1.4 Unit A's whole configuration written back unchanged: the write sequence as the firmware reads it (prepare 1.5), how the remote takes it up, and the clock afterwards, read over USB
