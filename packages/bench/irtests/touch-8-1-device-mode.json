@@ -1,0 +1,96 @@
+{
+  "name": "Harmony Touch 8.1, Test Projector in device mode",
+  "summary": "A device of ours: chosen from the Devices list, each key of its own map tapped, then the Blu-ray's navigation keys as a control.",
+  "description": "todo-touch.md 8.1, on the bench Harmony Touch holding work/touch-firmware/sets/8.1-device: the set of 6.9 with a device of ours added, Test Projector, composed from the rhythm table's Sony 12 Bit row with numbers of ours (packages/corpus/touch-devices/test-projector.json). Every expectation is derived from that set by packages/bench/src/touchengine.ts and named as the monitor names a code of the Touch's own documents. Step 1 presses Off and is not judged. In step 2, before pressing Next, write in the problem field whether Test Projector is in the Devices list, last, with its name and the default picture, and whether its own screen lists 11 entries in this order, with no icons: Power, Up, Down, Left, Right, OK, Menu, Back, Volume Up, Volume Down, Mute. Predicted per key: the command of the same name to Test Projector, a Sony 12 bit code sent three times about 45 ms apart, which the monitor shows as one press; activities play no part. Then the Blu-ray is chosen and its navigation keys tapped: Logitech's Sony 20 Bit definition beside ours, from the same run. A key the map does not bind sends nothing and is not pressed here.",
+  "steps": [
+    {
+      "instruction": "Button: Off"
+    },
+    {
+      "instruction": "Screen: Devices → Screen: Test Projector"
+    },
+    {
+      "instruction": "Button: Menu → Button: Exit",
+      "expect": [
+        {
+          "device": "Test Projector",
+          "command": "Menu"
+        },
+        {
+          "device": "Test Projector",
+          "command": "Exit"
+        }
+      ]
+    },
+    {
+      "instruction": "Button: Up → Button: Down → Button: Left → Button: Right → Button: OK",
+      "expect": [
+        {
+          "device": "Test Projector",
+          "command": "DirectionUp"
+        },
+        {
+          "device": "Test Projector",
+          "command": "DirectionDown"
+        },
+        {
+          "device": "Test Projector",
+          "command": "DirectionLeft"
+        },
+        {
+          "device": "Test Projector",
+          "command": "DirectionRight"
+        },
+        {
+          "device": "Test Projector",
+          "command": "Select"
+        }
+      ]
+    },
+    {
+      "instruction": "Button: Volume Up → Button: Volume Down → Button: Mute",
+      "expect": [
+        {
+          "device": "Test Projector",
+          "command": "VolumeUp"
+        },
+        {
+          "device": "Test Projector",
+          "command": "VolumeDown"
+        },
+        {
+          "device": "Test Projector",
+          "command": "VolumeMute"
+        }
+      ]
+    },
+    {
+      "instruction": "Screen: Devices → Screen: Blu-ray"
+    },
+    {
+      "instruction": "Button: Up → Button: Down → Button: Left → Button: Right → Button: OK",
+      "expect": [
+        {
+          "device": "Blu-ray",
+          "command": "DirectionUp"
+        },
+        {
+          "device": "Blu-ray",
+          "command": "DirectionDown"
+        },
+        {
+          "device": "Blu-ray",
+          "command": "DirectionLeft"
+        },
+        {
+          "device": "Blu-ray",
+          "command": "DirectionRight"
+        },
+        {
+          "device": "Blu-ray",
+          "command": "Select"
+        }
+      ]
+    }
+  ]
+}

@@ -47,17 +47,26 @@
  * off, and no input feature means no input to select; device mode needs neither. Composing them is an
  * activity's business and not this item's.
  *
- * **Nothing here sends anything.** No write path to a Touch exists, decision 29; these are documents.
+ * **A device described by its family and numbers, and put into a whole set**, `todo-touch.md` 8.1:
+ * `composeTouchDeviceOfRow` composes a device every command of which is one number of one family of our rhythm
+ * table, `withTouchDevice` adds the three parts to the device, map and protocol lists of a set the remote holds,
+ * under identifiers of ours, `OWN_IDS`, and `withoutTouchDevice` takes them out again.
+ *
+ * **Nothing here sends anything**: these are documents. This said no write path to a Touch existed, decision
+ * 29, which stopped being true when the answerer of `todo-touch.md` 6.6 delivered sets to the bench
+ * Touch; the answerer is `packages/corpus/src/touchsync.ts`.
  */
 import type {
-  Button, ButtonActionDocument, ButtonMap, Command, Device, DeviceWithFeatures, Id, IrProtocol,
+  Button, ButtonActionDocument, ButtonMap, Command, Device, DeviceList, DeviceWithFeatures, Id, IrProtocol, MapList,
+  ProtocolList, SyncDocuments,
 } from './documents.ts';
 import { INFRARED_TRANSPORT, mapIdentifier } from './read.ts';
-import { idText } from './documents.ts';
+import { idText, kindOf } from './documents.ts';
 import { definitionOfRow, isDefinitionRefusal, keyCodeText } from './definition.ts';
 import { rawOfLearned, rhythmOfLearned, type LearnedRaw, type LearnedRow } from './learned.ts';
 import type { Pulse } from '../irframe.ts';
-import type { StatedCode, StatedItem } from '../stated.ts';
+import { statedProtocol, type StatedCode, type StatedItem } from '../stated.ts';
+import type { StatedProtocol } from '../protocols.ts';
 
 /**
  * The names a Touch's documents give its 26 keys: the drawing's 27 keypad keys less Off, which the screens
@@ -291,23 +300,226 @@ export function codeOfLearned(
 ): LearnedCommandCode {
   const learned = rhythmOfLearned(train, carrierHz, options);
   if (learned.kind === 'raw') return { code: { kind: 'raw', raw: learned.raw }, learned };
-  const raw = (refusal: string): LearnedCommandCode => {
-    return { code: { kind: 'raw', raw: rawOfLearned(train, carrierHz) }, learned, refusal };
-  };
   // The carrier is left to the row: a learned carrier is measured and seldom gives the row's period exactly,
   // and the Touch rounds whichever carrier it is given to within a nanosecond of the row's.
-  const definition = definitionOfRow(learned.row, protocolId, { bits: learned.bits });
-  if (isDefinitionRefusal(definition)) return raw(definition.refusal);
-  const frame: StatedItem = { kind: 'frame', frame: { value: learned.value, bits: learned.bits, index: 0 } };
+  const stated = codeOfRow(learned.row, protocolId, learned.value, learned.bits);
+  if ('refusal' in stated) return { code: { kind: 'raw', raw: rawOfLearned(train, carrierHz) }, learned, refusal: stated.refusal };
+  return { code: stated.code, learned };
+}
+
+/**
+ * One number of a family as a command of ours: the definition `definitionOfRow` writes for the row, under
+ * `protocolId`, and the key code `keyCodeText` writes the number into, at `bits` bits or the width the family's
+ * name states. **The one place a row and a number become a definition and a key code**, which a learned code
+ * read as a row, `codeOfLearned`, and a device described by its family and numbers, `composeTouchDeviceOfRow`,
+ * both go through. A refusal is the definition's or the key code's own, never hidden.
+ */
+export function codeOfRow(
+  row: StatedProtocol, protocolId: Id, value: bigint, bits?: number,
+): { readonly code: OwnCode } | { readonly refusal: string } {
+  const definition = definitionOfRow(row, protocolId, bits === undefined ? {} : { bits });
+  if (isDefinitionRefusal(definition)) return { refusal: definition.refusal };
+  const width = bits ?? definition.IRSegments?.[0]?.Payload?.NumberOfBits;
+  if (typeof width !== 'number') return { refusal: 'a segment states no width' };
+  const frame: StatedItem = { kind: 'frame', frame: { value, bits: width, index: 0 } };
   const stated: StatedCode = {
     family: definition.Name,
     items: [frame],
     frames: [frame.frame],
     words: [],
-    bits: learned.bits,
+    bits: width,
     groups: [[], [frame], []],
   };
   const keyCode = keyCodeText(stated, definition);
-  if (typeof keyCode !== 'string') return raw(keyCode.refusal);
-  return { code: { kind: 'stated', protocol: definition, keyCode }, learned };
+  if (typeof keyCode !== 'string') return { refusal: keyCode.refusal };
+  return { code: { kind: 'stated', protocol: definition, keyCode } };
+}
+
+// ---------------------------------------------------------------------------------------------------
+// A device described by its family and numbers, and put into a set of documents. `todo-touch.md` 8.1.
+// ---------------------------------------------------------------------------------------------------
+
+/**
+ * **The identifiers of ours, nine digits from 900000000.** A device and a protocol definition each carry an
+ * `Id-`, and one of ours must never be taken for one of Logitech's, either by the remote, which finds a
+ * definition by a command's `ProtocolId` and a device's map by `16417Device` and the device's id, or by
+ * Logitech's service if the documents ever go back to it. In the documents measured, Logitech's device and
+ * activity ids are eight digits (the bench set's devices 83495531 to 83968654) and the catalogue's protocol ids
+ * run from 1 to 801 (every definition of the third party archive of Logitech's database); a nine digit number
+ * from 900000000 is outside both by a factor of ten, and below 2^31, so a service holding ids as signed 32 bit
+ * integers holds it. **That is a margin, not a guarantee**: nothing states the ranges Logitech's service issues
+ * from, so `withTouchDevice` also refuses an id that any id already in the documents would collide with.
+ */
+export const OWN_IDS = { first: 900_000_000, last: 999_999_999 } as const;
+
+/** Whether an id is one of ours by `OWN_IDS`: a whole number in the range, given as a number or as its digits. */
+export function isOwnId(id: Id): boolean {
+  const n = typeof id === 'number' ? id : /^[0-9]+$/.test(id) ? Number(id) : Number.NaN;
+  return Number.isInteger(n) && n >= OWN_IDS.first && n <= OWN_IDS.last;
+}
+
+/** A command of a device described by its family: the name, the label, and the number it sends. */
+export interface RowCommand {
+  readonly name: string;
+  readonly label?: string;
+  /** The number, as the family's notation states it: hexadecimal digits after `0x`, or a whole number. */
+  readonly value: string | number;
+  readonly onScreen?: boolean;
+}
+
+/**
+ * A device whose every command is one number of one family of our rhythm table, `PROTOCOLS`: what a person
+ * types for a device a Touch is to send to, with no catalogue behind it. `keys` is the map's keys, or
+ * `'by name'` for `keysByName`'s same name rule.
+ */
+export interface RowDevice extends Omit<OwnDevice, 'commands' | 'keys'> {
+  /** A family of `PROTOCOLS`, by the name the table gives it. */
+  readonly family: string;
+  /** The id the family's definition is listed under: one of ours, `OWN_IDS`. */
+  readonly protocolId: number;
+  /** The width of every number, where the family's name does not state it. */
+  readonly bits?: number;
+  readonly commands: readonly RowCommand[];
+  readonly keys?: 'by name' | Readonly<Partial<Record<TouchButtonKey, OwnKey>>>;
+}
+
+/** A command's number as a bigint, or undefined when it is neither a whole number nor `0x` and hex digits. */
+function numberOf(value: string | number): bigint | undefined {
+  if (typeof value === 'number') return Number.isSafeInteger(value) && value >= 0 ? BigInt(value) : undefined;
+  return /^0x[0-9A-Fa-f]+$/.test(value) || /^[0-9]+$/.test(value) ? BigInt(value) : undefined;
+}
+
+/**
+ * The device of a `RowDevice`, through `composeTouchDevice`: one definition of the family under `protocolId`,
+ * and each command's key code written into it by `codeOfRow`. **Refuses** a family the table does not hold, a
+ * protocol id that is not one of ours, a number that is not one, and whatever `codeOfRow` refuses, by command;
+ * every command shares the one definition, so `composeTouchDevice` lists it once.
+ */
+export function composeTouchDeviceOfRow(d: RowDevice): ComposedTouchDevice {
+  const row = statedProtocol(d.family);
+  if (row === undefined) throw new ComposeRefusal(`"${d.family}" is not a family of the rhythm table`);
+  if (!isOwnId(d.protocolId)) throw new ComposeRefusal(`protocol id ${d.protocolId} is not one of ours, ${OWN_IDS.first} to ${OWN_IDS.last}`);
+  const commands: OwnCommand[] = d.commands.map((c) => {
+    const value = numberOf(c.value);
+    if (value === undefined) throw new ComposeRefusal(`${c.name}: "${String(c.value)}" is not a number`);
+    const code = codeOfRow(row, d.protocolId, value, d.bits);
+    if ('refusal' in code) throw new ComposeRefusal(`${c.name}: ${code.refusal}`);
+    return { name: c.name, ...(c.label === undefined ? {} : { label: c.label }), code: code.code, ...(c.onScreen === undefined ? {} : { onScreen: c.onScreen }) };
+  });
+  const { family: _family, protocolId: _protocolId, bits: _bits, keys, ...rest } = d;
+  return composeTouchDevice({ ...rest, commands, keys: keys === 'by name' ? keysByName(commands) : keys ?? {} });
+}
+
+/** The three documents a device is told to a Touch in, as `withTouchDevice` gives them back. */
+export interface DeviceDocuments {
+  readonly DeviceList: DeviceList;
+  readonly MapList: MapList;
+  readonly ProtocolList: ProtocolList;
+}
+
+const isRecord = (x: unknown): x is Record<string, unknown> => typeof x === 'object' && x !== null && !Array.isArray(x);
+const listIn = (doc: unknown, field: string): readonly unknown[] | undefined => {
+  const list = isRecord(doc) ? doc[field] : undefined;
+  return Array.isArray(list) ? list : undefined;
+};
+const copyOf = <T>(x: T): T => JSON.parse(JSON.stringify(x)) as T;
+const deviceIdOf = (entry: unknown): string => (isRecord(entry) && isRecord(entry['Device']) ? idText(entry['Device']['Id-'] as Id) : '');
+
+/**
+ * `documents` with the composed device added: its entry at the end of `DeviceList`, its map after the last
+ * device map of `MapList` (where Logitech's documents keep device maps, before the activities'), and each of
+ * its definitions at the end of `ProtocolList` unless the list already holds that same definition under that
+ * id. The other two documents are not touched, and nothing is changed in place: the three come back as copies.
+ *
+ * **Refuses**, each by what collides and never quoting a document's value: one of the three documents without
+ * its list; a device or protocol id that is not one of ours, `OWN_IDS`; a device id already listed, or one whose
+ * digits contain another device's id or are contained in one, since the screens search a device's id as a
+ * pattern inside another and would find the wrong device (the lab's 6.10 note on the screens' reads, row 200);
+ * a map identifier already in `MapList`; a device name another device has, compared without regard to case,
+ * since the device list shows devices by name and a person picks one by it; and a protocol id listed with
+ * another definition.
+ */
+export function withTouchDevice(documents: SyncDocuments, composed: ComposedTouchDevice): DeviceDocuments {
+  const devices = listIn(documents.DeviceList, 'DevicesWithFeatures');
+  const maps = listIn(documents.MapList, 'ButtonMaps');
+  const protocols = listIn(documents.ProtocolList, 'Protocols');
+  if (devices === undefined) throw new ComposeRefusal('DeviceList holds no list of devices');
+  if (maps === undefined) throw new ComposeRefusal('MapList holds no list of maps');
+  if (protocols === undefined) throw new ComposeRefusal('ProtocolList holds no list of definitions');
+
+  const id = idText(composed.device.Device['Id-']);
+  if (!isOwnId(composed.device.Device['Id-'])) throw new ComposeRefusal(`device id ${id} is not one of ours, ${OWN_IDS.first} to ${OWN_IDS.last}`);
+  for (const entry of devices) {
+    const other = deviceIdOf(entry);
+    if (other === id) throw new ComposeRefusal(`device id ${id} is already listed`);
+    if (other !== '' && (other.includes(id) || id.includes(other))) {
+      throw new ComposeRefusal(`device id ${id} and a listed device's id, one inside the other, which the screens' search by pattern confuses`);
+    }
+    const name = isRecord(entry) && isRecord(entry['Device']) ? entry['Device']['Name'] : undefined;
+    if (typeof name === 'string' && typeof composed.device.Device.Name === 'string' && name.toLowerCase() === composed.device.Device.Name.toLowerCase()) {
+      throw new ComposeRefusal(`a listed device is already named "${composed.device.Device.Name}"`);
+    }
+  }
+  const identifier = composed.map.ButtonMapIdentifier;
+  if (maps.some((m) => isRecord(m) && m['ButtonMapIdentifier'] === identifier)) throw new ComposeRefusal(`MapList already holds a map ${identifier}`);
+  const added: IrProtocol[] = [];
+  for (const p of composed.protocols) {
+    const pid = idText(p['Id-']);
+    if (!isOwnId(p['Id-'])) throw new ComposeRefusal(`protocol id ${pid} is not one of ours, ${OWN_IDS.first} to ${OWN_IDS.last}`);
+    const listed = protocols.find((x) => isRecord(x) && idText(x['Id-'] as Id) === pid);
+    if (listed === undefined) added.push(p);
+    else if (JSON.stringify(listed) !== JSON.stringify(p)) throw new ComposeRefusal(`protocol id ${pid} is already listed with another definition`);
+  }
+
+  const lastDeviceMap = maps.reduce<number>((at, m, i) => (isRecord(m) && kindOf(m as { __type?: unknown }) === 'DeviceButtonMap' ? i : at), -1);
+  const nextMaps = [...maps.slice(0, lastDeviceMap + 1), composed.map, ...maps.slice(lastDeviceMap + 1)];
+  return {
+    DeviceList: { ...copyOf(documents.DeviceList!), DevicesWithFeatures: [...copyOf(devices), copyOf(composed.device)] } as DeviceList,
+    MapList: { ...copyOf(documents.MapList!), ButtonMaps: copyOf(nextMaps) } as MapList,
+    ProtocolList: { ...copyOf(documents.ProtocolList!), Protocols: [...copyOf(protocols), ...copyOf(added)] } as ProtocolList,
+  };
+}
+
+/**
+ * `documents` with a device of ours taken out again: its entry, its own map, and every definition its commands
+ * name that no other device's command names. **The exact inverse of `withTouchDevice`** for a device nothing
+ * else names, which is all `todo-touch.md` 8.1 needs; the general removal, which also takes the device out of
+ * every activity, map and favourite naming it, is 8.5's. So this refuses a device that is not one of ours, one
+ * the device list does not hold, and one that an activity's role or step, or a button or sequence step of
+ * another map, names: removing it would leave that reference pointing at nothing.
+ */
+export function withoutTouchDevice(documents: SyncDocuments, deviceId: Id): DeviceDocuments {
+  const id = idText(deviceId);
+  if (!isOwnId(deviceId)) throw new ComposeRefusal(`device id ${id} is not one of ours, so it is not taken out here`);
+  const devices = listIn(documents.DeviceList, 'DevicesWithFeatures');
+  const maps = listIn(documents.MapList, 'ButtonMaps');
+  const protocols = listIn(documents.ProtocolList, 'Protocols');
+  if (devices === undefined || maps === undefined || protocols === undefined) throw new ComposeRefusal('a device, map or protocol list is missing');
+  const at = devices.findIndex((d) => deviceIdOf(d) === id);
+  if (at < 0) throw new ComposeRefusal(`device id ${id} is not listed`);
+
+  // Anything outside the device's own entry and map that names it by id.
+  const identifier = mapIdentifier('device', id);
+  const namesIt = (x: unknown): boolean => {
+    if (Array.isArray(x)) return x.some(namesIt);
+    if (!isRecord(x)) return false;
+    if ('DeviceId-' in x && idText(x['DeviceId-'] as Id) === id) return true;
+    return Object.values(x).some(namesIt);
+  };
+  if (namesIt(listIn(documents.ActivityList, 'Activities') ?? [])) throw new ComposeRefusal(`an activity names device ${id}`);
+  if (maps.some((m) => isRecord(m) && m['ButtonMapIdentifier'] !== identifier && namesIt(m))) throw new ComposeRefusal(`another map names device ${id}`);
+
+  const named = (entry: unknown): Set<string> => new Set(
+    (isRecord(entry) && Array.isArray(entry['Commands']) ? entry['Commands'] : [])
+      .map((c: unknown) => (isRecord(c) && c['ProtocolId'] !== null && c['ProtocolId'] !== undefined ? idText(c['ProtocolId'] as Id) : ''))
+      .filter((p: string) => p !== ''),
+  );
+  const own = named(devices[at]);
+  const others = new Set(devices.filter((_, i) => i !== at).flatMap((d) => [...named(d)]));
+  const gone = new Set([...own].filter((p) => !others.has(p)));
+  return {
+    DeviceList: { ...copyOf(documents.DeviceList!), DevicesWithFeatures: copyOf(devices.filter((_, i) => i !== at)) } as DeviceList,
+    MapList: { ...copyOf(documents.MapList!), ButtonMaps: copyOf(maps.filter((m) => !(isRecord(m) && m['ButtonMapIdentifier'] === identifier))) } as MapList,
+    ProtocolList: { ...copyOf(documents.ProtocolList!), Protocols: copyOf(protocols.filter((p) => !(isRecord(p) && gone.has(idText(p['Id-'] as Id))))) } as ProtocolList,
+  };
 }

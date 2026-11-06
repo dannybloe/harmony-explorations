@@ -31,7 +31,14 @@
  * fields, and 6.9 does not need one. The codec's reader and check meet the changed set through the answerer's
  * own gate, `prepareSet`, before the builder returns it.
  *
- * Nothing here opens a remote: it builds and compares. The bench script is `bin/touch-changed-set.ts`.
+ * **Several documents at once, since `todo-touch.md` 8.1.** A device composed by the codec goes into three
+ * documents together, the device, map and protocol lists, so `changeDocuments` replaces any of the six by new
+ * content and retags exactly those, by the same rules; `changeOneValue` is that with one value of one document.
+ * The composing stays in the codec, `withTouchDevice` and `withoutTouchDevice` in
+ * `packages/codec/src/harmony-touch/compose.ts`; this module only puts their documents into a set.
+ *
+ * Nothing here opens a remote: it builds and compares. The bench scripts are `bin/touch-changed-set.ts` and, for
+ * a device added or taken out, `bin/touch-device-set.ts`.
  */
 import { DATA_PACKET_PAYLOAD } from '@harmony/usb';
 import { TOUCH_REQUEST_SHAPES } from '@harmony/usb/touchsession';
@@ -137,14 +144,48 @@ export function changeOneValue(options: {
   const last = tokens.at(-1)!;
   if (Array.isArray(parent)) parent[Number(last)] = change.to;
   else parent[last] = change.to;
-  const tag = setTag({ 'body-type': source['body-type'], resource }, name);
-  const inPlay = new Set([...(options.tagsInPlay ?? []), ...set.answers.map((a) => a.etag).filter((t): t is string => t !== undefined)]);
-  if (inPlay.has(tag)) return { refusals: [`${change.document}: its new tag equals a tag already in play, so a set of this name was made before`] };
+  return changeDocuments({ set, documents: { [change.document]: resource }, name, tagsInPlay: options.tagsInPlay ?? [] });
+}
 
-  // The source's own key order, so the changed answer is written as the other five are.
-  const changed: SetAnswer = { ...source, resource, etag: tag };
-  const answers = set.answers.map((a, i) => (i === at ? changed : a));
-  const out: TouchSet = { answers };
+/**
+ * Build a set with **several documents replaced at once**, each changed one under a new tag, or say why not:
+ * `todo-touch.md` 8.1, where a device is added to the device, map and protocol lists together, and its put back
+ * takes all three out again. `documents` maps a configuration document's name to its new content, parsed JSON;
+ * the documents it does not name keep the source's content and tag, so a remote that committed the source is
+ * answered 304 for them, and each named one is delivered with 200 under `setTag` with the new set's name. The
+ * same reasons `changeOneValue` gives for one document hold for each: a tag never stated before is the mark only
+ * that delivery leaves, and a new tag already in play down the chain is refused.
+ *
+ * Refuses, by document and never quoting a value: a name not among the six or not in the source, a content that
+ * equals the source's (a document retagged with nothing changed would be delivered for nothing), a new tag in
+ * play, and a set the answerer's gate refuses. `changeOneValue` is this with one value changed in one document.
+ */
+export function changeDocuments(options: {
+  readonly set: TouchSet;
+  readonly documents: Readonly<Record<string, unknown>>;
+  readonly name: string;
+  readonly tagsInPlay?: Iterable<string>;
+}): { readonly set: TouchSet } | { readonly refusals: readonly string[] } {
+  const { set, name } = options;
+  const names = Object.keys(options.documents);
+  if (names.length === 0) return { refusals: ['no document is changed'] };
+  const inPlay = new Set([...(options.tagsInPlay ?? []), ...set.answers.map((a) => a.etag).filter((t): t is string => t !== undefined)]);
+  const refusals: string[] = [];
+  const replaced = new Map<number, SetAnswer>();
+  for (const document of names) {
+    if (!OWN_SET_DOCUMENTS.includes(document)) { refusals.push(`${document} is not one of the six configuration documents`); continue; }
+    const at = set.answers.findIndex((a) => keyOf(a.uri) === document);
+    if (at < 0) { refusals.push(`the source set holds no ${document}`); continue; }
+    const source = set.answers[at]!;
+    const resource = copy(options.documents[document]);
+    if (differences(source.resource, resource).length === 0) { refusals.push(`${document}: the new content equals the source's, which changes nothing`); continue; }
+    const tag = setTag({ 'body-type': source['body-type'], resource }, name);
+    if (inPlay.has(tag)) { refusals.push(`${document}: its new tag equals a tag already in play, so a set of this name was made before`); continue; }
+    // The source's own key order, so a changed answer is written as the others are.
+    replaced.set(at, { ...source, resource, etag: tag });
+  }
+  if (refusals.length > 0) return { refusals };
+  const out: TouchSet = { answers: set.answers.map((a, i) => replaced.get(i) ?? a) };
   const gate = prepareSet(out);
   if ('refusals' in gate) return { refusals: gate.refusals };
   return { set: out };
@@ -164,6 +205,69 @@ export function differences(a: unknown, b: unknown, at: readonly string[] = []):
     return keys.flatMap((k) => (k in a && k in b ? differences(a[k], b[k], [...at, k]) : [pointerOf([...at, k])]));
   }
   return Object.is(a, b) ? [] : [pointerOf(at)];
+}
+
+/**
+ * How one list of a document changed between two versions of it: the places of entries `after` holds that
+ * `before` does not, and of those `before` holds that `after` does not, matched as parsed JSON and in order; and
+ * whether everything else is equal, the entries both hold in the same order and every other field of the
+ * document. **The structural diff for a list that grew or shrank**, where `differences` names only the list:
+ * a device added shows here as one entry added to each of three lists and nothing else, `todo-touch.md` 8.1.
+ */
+export function listChanges(before: unknown, after: unknown, field: string): {
+  readonly added: readonly number[];
+  readonly removed: readonly number[];
+  readonly restEqual: boolean;
+} {
+  const list = (x: unknown): readonly unknown[] => (isObject(x) && Array.isArray(x[field]) ? x[field] as unknown[] : []);
+  const a = list(before).map((x) => JSON.stringify(x));
+  const b = list(after).map((x) => JSON.stringify(x));
+  // The longest common subsequence, so entries moved or replaced show as removed and added rather than hidden.
+  const table = Array.from({ length: a.length + 1 }, () => new Array<number>(b.length + 1).fill(0));
+  for (let i = a.length - 1; i >= 0; i -= 1) {
+    for (let j = b.length - 1; j >= 0; j -= 1) {
+      table[i]![j] = a[i] === b[j] ? table[i + 1]![j + 1]! + 1 : Math.max(table[i + 1]![j]!, table[i]![j + 1]!);
+    }
+  }
+  const added: number[] = [];
+  const removed: number[] = [];
+  let i = 0;
+  let j = 0;
+  while (i < a.length && j < b.length) {
+    if (a[i] === b[j]) { i += 1; j += 1; } else if (table[i + 1]![j]! >= table[i]![j + 1]!) removed.push(i++); else added.push(j++);
+  }
+  while (i < a.length) removed.push(i++);
+  while (j < b.length) added.push(j++);
+  const without = (x: unknown): unknown => (isObject(x) ? { ...x, [field]: null } : x);
+  return { added, removed, restEqual: differences(without(before), without(after)).length === 0 };
+}
+
+/** What a set folder's `sources.json` records about where the set came from, as far as the chain needs it. */
+export interface SetRecord {
+  readonly from?: unknown;
+  readonly change?: unknown;
+  readonly device?: unknown;
+  readonly removed?: unknown;
+}
+
+/**
+ * Every tag stated by the set in `folder` and by each set it was built from, back to the first, which
+ * `touch-own-set.ts` built and records no change of ours. A set built by `touch-changed-set.ts` records its
+ * `change`, one built by `touch-device-set.ts` its `device` or `removed`; either names the set it came `from`.
+ * `read` reads a folder's set and record, so this stays free of the file system. A folder met twice stops it.
+ */
+export function chainTags(folder: string, read: (folder: string) => { readonly set: TouchSet; readonly record: SetRecord }): Set<string> {
+  const tags = new Set<string>();
+  const seen = new Set<string>();
+  let at: string | undefined = folder;
+  while (at !== undefined && !seen.has(at)) {
+    seen.add(at);
+    const { set, record } = read(at);
+    for (const a of set.answers) if (typeof a.etag === 'string') tags.add(a.etag);
+    const built = record.change !== undefined || record.device !== undefined || record.removed !== undefined;
+    at = built && typeof record.from === 'string' ? record.from : undefined;
+  }
+  return tags;
 }
 
 /** One document of two sets compared: where its content differs, and whether its tag does. */

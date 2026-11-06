@@ -40,12 +40,14 @@ import { LAB } from '@harmony/lab';
 
 import {
   answersWhenHolding,
+  chainTags,
   changeOneValue,
   setDifferences,
   valueAt,
   writeOfAnswersSize,
   type Leaf,
   type OneChange,
+  type SetRecord,
 } from '../src/touchchangedset.ts';
 import { OWN_SET_DOCUMENTS, compareConfigHash, compareRequestList } from '../src/touchownset.ts';
 import { WRITE_ANSWERS, keyOf, prepareSet, setTag, type SetAnswer, type TouchSet } from '../src/touchsync.ts';
@@ -93,21 +95,10 @@ const readRecord = (folder: string): Partial<ChangeRecord> => {
 };
 
 /**
- * Every tag stated by the set in `folder` and by each set it was changed from, back to the first, which
- * `touch-own-set.ts` built and records no `change`. A folder named twice in the chain stops it.
+ * Every tag stated by the set in `folder` and by each set it was built from, back to the first, `chainTags`; a
+ * set `touch-device-set.ts` built is followed through as well, since its record names its source too.
  */
-function tagsOfTheChain(folder: string): Set<string> {
-  const tags = new Set<string>();
-  const seen = new Set<string>();
-  let at: string | undefined = folder;
-  while (at !== undefined && !seen.has(at)) {
-    seen.add(at);
-    for (const a of readSet(at).answers) if (typeof a.etag === 'string') tags.add(a.etag);
-    const record = readRecord(at);
-    at = record.change !== undefined && typeof record.from === 'string' ? record.from : undefined;
-  }
-  return tags;
-}
+const tagsOfTheChain = (folder: string): Set<string> => chainTags(folder, (at) => ({ set: readSet(at), record: readRecord(at) as SetRecord }));
 
 /** A value from the command line, read as the type `like` has: a number, a boolean, or the text as it is. */
 function leafLike(text: string, like: unknown, what: string): Leaf {
