@@ -188,9 +188,9 @@ test('a detail level leaves out what it says it leaves out', () => {
       // The 885's printing with another nameplate, so the same 45 words; the 885's marks less its four colour
       // dots and plus the two chevrons, one stroke each.
       h880: { text: 45, marks: 45, keys: 53 },
-      // The 885's 45 words with SOUND and PIC on the band's end keys where the 885 prints MUTE and PREV, and
-      // MUTE and PREV again on the band's foot: 47. Its marks are the 885's less the four colour dots and plus
-      // the two triangles, one part each. The 890 Pro's printing differs in two words and has the same counts.
+      // The 885's 45 words with SOUND and PICTURE on the band's end keys where the 885 prints MUTE and PREV,
+      // and MUTE and PREV again on the band's foot: 47. Its marks are the 885's less the four colour dots and
+      // plus the two triangles, one part each. The 890 Pro's printing differs in the nameplate alone.
       h880pro: { text: 47, marks: 45, keys: 55 },
       h890pro: { text: 47, marks: 45, keys: 55 },
       // Activities, Devices, Help, the nameplate, Guide, Info, Exit, Menu, OK, Vol., Ch., Mute, Prev, the eight

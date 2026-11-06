@@ -7,8 +7,12 @@ known, because no unit of this model exists here and the one drawing is the 890 
 ## Every key on the drawing
 
 **The drawing is the Harmony 890 Pro's, skin 40**, generated from `packages/silhouettes/src/models/h890pro.ts`:
-the Harmony 880 Pro's face, [the 880 Pro's keys](../harmony-885/keys.md#harmony-880-pro-skin-39), with the right
-end key printed `PICTURE` in full where the 880 Pro prints `PIC`, and `HARMONY 890 PRO` above the screen. The
+the Harmony 880 Pro's face, [the 880 Pro's keys](../harmony-885/keys.md#harmony-880-pro-skin-39), with
+`HARMONY 890 PRO` above the screen and nothing else changed. That the two Pro remotes are exactly the same
+face apart from the model name above the screen is a statement made holding both[^unchecked], and the
+drawing is derived from the 880 Pro's accordingly, a test holding the two equal but for the name and the
+drawing's own id.[^t-printing-890pro] This said the right end key prints `PICTURE` in full where the 880 Pro
+prints `PIC`<!--superseded-->, until the 880 Pro's reading was corrected: both print `PICTURE`. The
 885's drawing falls on the 890 Pro's photograph as it falls on the 880 Pro's, and Logitech's manual for the 890
 Pro names its Sound, Picture and Prev keys.[^t-printing-890pro] No key carries a code: no configuration of an 890 Pro is
 known.[^unchecked]

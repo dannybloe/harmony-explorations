@@ -40,7 +40,7 @@ chevron, and it prints `HARMONY TECHNOLOGY` where the 885 prints its name, so ea
 own, [keys.md](keys.md#every-key-on-the-drawings).[^t-printing-880] This said whether the 880's face carries
 the other two colour keys was not checked, until the 880's drawing.[^t-printing-880]
 
-**The Harmony 880 Pro's face is the 885's with six keys printed otherwise**: `SOUND` and `PIC` on the two
+**The Harmony 880 Pro's face is the 885's with six keys printed otherwise**: `SOUND` and `PICTURE` on the two
 keys at the ends of the band, and `MUTE`, a down triangle, an up triangle and `PREV` on the four keys at its
 foot where the 885 has its colour keys, with `HARMONY 880 PRO` above the screen. Its key table holds the 885's
 55 press codes, and it has a drawing of its own, [keys.md](keys.md#harmony-880-pro-skin-39).[^t-printing-880pro][^t-880pro-keys]

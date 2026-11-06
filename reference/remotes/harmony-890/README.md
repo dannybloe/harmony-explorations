@@ -28,8 +28,7 @@ Skin 19 is the Harmony 890 and skin 23 the Harmony 895, each stated in its confi
 architecture record, `0a 0a 13 0d` and `0a 0a 17 0d`.[^s182] A community comparison table records the 890
 as `Eur#895`, so the two are one remote with two regional names.[^x-forum-table]
 
-**The drawing is the Harmony 890 Pro's**, the Harmony 880 Pro's face with `PICTURE` printed in full on the
-right end key and its own nameplate, [keys.md](keys.md).[^t-printing-890pro] The 890's and 895's own faces
+**The drawing is the Harmony 890 Pro's**, the Harmony 880 Pro's face with its own nameplate, [keys.md](keys.md).[^t-printing-890pro] The 890's and 895's own faces
 are not drawn.[^unchecked]
 
 ## Key numbers

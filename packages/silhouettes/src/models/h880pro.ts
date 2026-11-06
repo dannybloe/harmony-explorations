@@ -15,10 +15,12 @@
  *   colour key from the next, so the band is the 885's band of eight segments under other names. The two
  *   middle marks are filled triangles, like the pad's, and not the 880's open chevrons, and the down one is on
  *   the left, where the 880 prints its up chevron.
- * * **The two edge keys under the screen keys are printed `SOUND` and `PIC`** where the 885 prints `MUTE` and
- *   `PREV`. The manual's legend calls them SOUND and PICTURE; its picture and the photograph both print `PIC`,
- *   centred on the key, which is where the word sits and why it is not read as `PICTURE` with the rest lost in
- *   the photograph's highlight.
+ * * **The two edge keys under the screen keys are printed `SOUND` and `PICTURE`** where the 885 prints `MUTE`
+ *   and `PREV`, as the manual's legend names them. The right key's word is placed as the Harmony 890 Pro's
+ *   `PICTURE` is, read off that photograph, from 334 up to about 309 in the 885 frame and centred on the key.
+ *   This said the 880 Pro prints `PIC`, read off the photograph and the manual's picture, both low resolution,
+ *   where the word looked centred on the key; somebody who knows the remote corrected it to `PICTURE`, with
+ *   the rest of the word lost in the photograph's highlight. The two Pro faces differ only in the nameplate.
  * * **The nameplate reads `HARMONY 880 PRO`**, on the face's centre line.
  *
  * **Names.** The band's four keys take the names the 885 gives the same marking elsewhere on its face:
@@ -65,7 +67,7 @@ function printing(key: Key): Key {
     case 'VolumeMute':
       return { ...shape, name: 'Sound', labels: [word('SOUND', 37, 323.5, 'small', 84)] };
     case 'PrevChannel':
-      return { ...shape, name: 'Picture', labels: [word('PIC', 201.75, 323.3, 'small', -84)] };
+      return { ...shape, name: 'Picture', labels: [word('PICTURE', 201.75, 323.3, 'small', -84)] };
     case 'Red':
       return { ...shape, name: 'VolumeMute',
         labels: [word('MUTE', face(MUTE_AT.y) - MUTE_AT.off, MUTE_AT.y, 'tiny', MUTE_AT.rotate)] };
@@ -106,11 +108,3 @@ export const H880PRO: Model = {
   nameplate: word('Harmony 880 Pro', face(103.3), 103.3, 'small'),
 };
 
-/**
- * The 880 Pro's printing with one word and the nameplate changed, for the Harmony 890 Pro, `h890pro.ts`: a
- * function rather than a copy, so the two faces cannot drift apart.
- */
-export function proPrinting(picture: string): readonly Key[] {
-  return KEYS.map((key) => (key.name !== 'Picture' ? key
-    : { ...key, labels: [word(picture, 201.75, 323.3, 'small', -84)] }));
-}

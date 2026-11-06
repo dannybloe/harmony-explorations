@@ -1,16 +1,19 @@
 /**
  * The Harmony 890 Pro, skin 40, architecture 10.
  *
- * **The Harmony 880 Pro's face, `h880pro.ts`, with one word and the nameplate changed.** Read off the 890 Pro's
+ * **The Harmony 880 Pro's face, `h880pro.ts`, with the nameplate changed, and nothing else.** A statement made
+ * holding both remotes: the 880 Pro and the 890 Pro are exactly the same face apart from the model name above
+ * the screen. So this model is derived from `H880PRO` and states only its identity and its nameplate, and
+ * `tests/test_silhouettes.py` holds the two drawings equal but for those. Read off the 890 Pro's
  * own product photograph in the lab, `reference/forum-images/890pro-full.jpg`, 264 by 893 pixels, moved into the
  * 885 photograph's frame by its case as the 880 Pro's is, its first and last rows 4 and 888 and its case centre
  * line 126.85 + 0.00633 y. The 885's drawing laid over it falls on the photograph the way it falls on the 880
  * Pro's, and so do the 880 Pro's six keys: `MUTE`, a down triangle, an up triangle and `PREV` at the bottom of
- * the band, `SOUND` on the left edge key. What differs:
+ * the band, `SOUND` on the left edge key and `PICTURE` on the right. That word, read upwards, runs from 334 up
+ * to about 309 in the 885 frame, the last three letters faint in the photograph's highlight, and is centred on
+ * the key; the 880 Pro's is placed by this reading. This said the 880 Pro prints `PIC` there<!--superseded-->
+ * until somebody who knows that remote corrected it. What differs:
  *
- * * **The right edge key is printed `PICTURE`**, read upwards, where the 880 Pro prints `PIC`. The word runs
- *   from 334 up to about 309 in the 885 frame, the last three letters faint in the photograph's highlight, and
- *   it is centred on the key, as the 880 Pro's three letters are.
  * * **The nameplate reads `HARMONY 890 PRO`**, at the 880 Pro's place and width.
  * * The direction pad is dark on this photograph where the 880 Pro's is silver. A colour, which a drawing does
  *   not state, so the pad is the same shape on both.
@@ -20,7 +23,7 @@
  * known, and the key reader page does not read this architecture.
  */
 import { FRAME_885 } from './h885.ts';
-import { H880PRO, proPrinting } from './h880pro.ts';
+import { H880PRO } from './h880pro.ts';
 import type { Model } from '../types.ts';
 
 const { face, word } = FRAME_885;
@@ -31,6 +34,5 @@ export const H890PRO: Model = {
   label: 'Harmony 890 Pro',
   skins: [40],
   architecture: 10,
-  keys: proPrinting('PICTURE'),
   nameplate: word('Harmony 890 Pro', face(103.3), 103.3, 'small'),
 };

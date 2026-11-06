@@ -887,21 +887,20 @@ def _press_codes(filename):
 class _TheProPrinting(_SilhouetteConventions):
     """
     The Harmony 885's 55 shapes with six keys printed otherwise, `packages/silhouettes/src/models/h880pro.ts`,
-    which the 880 Pro and the 890 Pro share. A subclass names its drawing, the word on the right end key of
-    the band and its nameplate.
+    which the 880 Pro and the 890 Pro share. A subclass names its drawing and its nameplate.
 
     **The printing is read off each model's product photograph in the lab**, with the 885's drawing laid over
     it, where the case and every shape fall on the photograph. Logitech's manuals for the 880 Pro and the 890
     Pro, `Docs/880Pro manual.pdf` and `Docs/890 pro manual.pdf`, name the keys the photographs show: SOUND
     and PICTURE, each of which switches the remote into a mode that controls that feature of one device, and
-    PREV. The 880 Pro's manual names the right key PICTURE in its legend and prints `PIC` on its own picture
-    of the remote, as the 880 Pro's photograph does, where the word is centred on the key; the 890 Pro's
-    photograph prints `PICTURE` in full. At the foot of the band, where the 885 has its four colour keys,
+    PREV. Both print `PICTURE` in full on the right end key, the 890 Pro's photograph legibly. This said the
+    880 Pro prints `PIC`, read off its low resolution photograph and the manual's small picture, where the
+    word looked centred on the key; somebody who knows the remote corrected it, and the word is placed as
+    the 890 Pro's is. At the foot of the band, where the 885 has its four colour keys,
     both print `MUTE`, a down triangle, an up triangle and `PREV`, left to right, and the band keeps the 885's
     five parting lines, so those are four keys.
     """
 
-    PICTURE = None
     NAMEPLATE = None
     EXPECTED_BUTTONS = 55
 
@@ -920,7 +919,7 @@ class _TheProPrinting(_SilhouetteConventions):
     def test_the_band_prints_sound_and_picture_at_its_ends_and_four_keys_at_its_foot(self):
         buttons = _buttons(_tree(self.NAME).getroot())
         self.assertEqual(_words(buttons['k-sound']), ['SOUND'])
-        self.assertEqual(_words(buttons['k-picture']), [self.PICTURE])
+        self.assertEqual(_words(buttons['k-picture']), ['PICTURE'])
         self.assertEqual(_words(buttons['k-volume-mute']), ['MUTE'])
         self.assertEqual(_words(buttons['k-prev-channel']), ['PREV'])
         for ident in PALETTE:
@@ -951,7 +950,6 @@ class TestTheHarmony880ProSilhouette(_TheProPrinting, unittest.TestCase):
     """The Harmony 880 Pro, skin 39, `h880pro.ts`."""
 
     NAME = 'h880pro.svg'
-    PICTURE = 'PIC'
     NAMEPLATE = 'Harmony 880 Pro'
 
     def test_its_key_table_holds_exactly_the_885_s_55_press_codes(self):
@@ -966,14 +964,32 @@ class TestTheHarmony880ProSilhouette(_TheProPrinting, unittest.TestCase):
 
 class TestTheHarmony890ProSilhouette(_TheProPrinting, unittest.TestCase):
     """
-    The Harmony 890 Pro, skin 40, architecture 10, `h890pro.ts`: the 880 Pro's face with `PICTURE` in full and
-    its own nameplate. No configuration of it is known, so its count is the drawing's, which its photograph
+    The Harmony 890 Pro, skin 40, architecture 10, `h890pro.ts`: the 880 Pro's face with its own nameplate. No configuration of it is known, so its count is the drawing's, which its photograph
     shows key for key.
     """
 
     NAME = 'h890pro.svg'
-    PICTURE = 'PICTURE'
     NAMEPLATE = 'Harmony 890 Pro'
+
+    def test_it_is_the_880_pro_s_drawing_with_only_the_nameplate_changed(self):
+        """
+        A statement made holding both remotes: the 880 Pro and the 890 Pro are exactly the same face apart from
+        the model name above the screen. So the 890 Pro's file, with its own id and model name written as the
+        880 Pro's, is the 880 Pro's file byte for byte: every shape, word, mark and seam the same. The control
+        is that the files do differ before that, and only on lines that carry the id or the name.
+        """
+        mine, theirs = _text(self.NAME), _text('h880pro.svg')
+        self.assertNotEqual(mine, theirs)
+        as_880 = mine.replace('h890pro', 'h880pro').replace('Harmony 890 Pro', 'Harmony 880 Pro')
+        self.assertEqual(as_880, theirs)
+        differing = [a for a, b in zip(mine.split('\n'), theirs.split('\n')) if a != b]
+        self.assertTrue(differing)
+        for line in differing:
+            with self.subTest(line=line[:80]):
+                self.assertTrue('h890pro' in line or 'Harmony 890 Pro' in line)
+        # The nameplate is among them: the one printed word that differs.
+        self.assertIn('>Harmony 890 Pro<', mine)
+        self.assertNotIn('>Harmony 880 Pro<', mine)
 
 
 class TestTheHarmony720Silhouette(_SilhouetteConventions, unittest.TestCase):

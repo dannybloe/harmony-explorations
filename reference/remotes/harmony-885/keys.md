@@ -187,11 +187,13 @@ because the case and every key fall on the 885's drawing when it is laid over th
 
 * [`reference/silhouettes/h880pro.svg`](../../silhouettes/h880pro.svg), the Harmony 880 Pro, skin 39.
 
-**The two keys at the ends of the band print `SOUND` and `PIC`**, where the 885 prints `MUTE` and `PREV`, and
+**The two keys at the ends of the band print `SOUND` and `PICTURE`**, where the 885 prints `MUTE` and `PREV`, and
 the four keys at the bottom of the band, the 885's colour keys, print `MUTE`, a down triangle, an up triangle
 and `PREV`, left to right. The nameplate reads `HARMONY 880 PRO`.[^t-printing-880pro] Logitech's manual for
-the 880 Pro names the right key PICTURE in its legend, and its own picture of the remote prints `PIC`, as the
-photograph does.[^t-printing-880pro] The band keeps all five of the 885's parting lines, so the four keys at
+the 880 Pro names the right key PICTURE in its legend.[^t-printing-880pro] This said the manual's own picture of
+the remote and the photograph print `PIC`<!--superseded-->, until somebody who knows the remote corrected that
+reading of a low resolution photograph: the key prints `PICTURE`, as the 890 Pro's photograph shows
+legibly, and the word is drawn where that one is read.[^t-printing-880pro] The band keeps all five of the 885's parting lines, so the four keys at
 its foot are four keys and not two.[^t-printing-880pro]
 
 **Its key table holds exactly the 885's 55 press codes**, in its one configuration.[^t-880pro-keys] **No key
@@ -236,7 +238,7 @@ configuration is not enough to put that on the drawing.[^t-880-keys-c]
 | `Number8` | keypad | printed | not measured |  | 8, tuv |
 | `Number9` | keypad | printed | not measured |  | 9, wxyz |
 | `Pause` | keypad | printed | not measured |  | PAUSE |
-| `Picture` | keypad | printed | not measured |  | PIC |
+| `Picture` | keypad | printed | not measured |  | PICTURE |
 | `Play` | keypad | printed | not measured |  | PLAY |
 | `PrevChannel` | keypad | printed | not measured |  | PREV |
 | `Record` | keypad | printed | not measured |  | REC |

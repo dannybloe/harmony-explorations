@@ -126,7 +126,7 @@ test('the 885 is asked for top to bottom, each row left to right, all but Glow',
   // The 880 is the same face with its two chevron keys where the 885 has four colour keys.
   const h880 = drawing('h880').keys.map((k) => k.name);
   assert.deepEqual(h880.slice(h880.indexOf('ChannelDown') + 1, h880.indexOf('Menu')), ['UpArrow', 'DownArrow']);
-  // And the 880 Pro with its four printed keys there, and SOUND and PIC on the row of Device and Media.
+  // And the 880 Pro with its four printed keys there, and SOUND and PICTURE on the row of Device and Media.
   const pro = drawing('h880pro').keys.map((k) => k.name);
   assert.deepEqual(pro.slice(pro.indexOf('ChannelDown') + 1, pro.indexOf('Menu')),
     ['VolumeMute', 'DownArrow', 'UpArrow', 'PrevChannel']);
@@ -174,7 +174,7 @@ test('a key is named by its print, and by its place where it prints nothing; nev
   assert.equal(said('h720', 'UpArrow'), 'the key below Menu, printed with an up chevron');
   assert.equal(said('h880pro', 'VolumeMute'), 'MUTE');
   assert.equal(said('h880pro', 'Sound'), 'SOUND');
-  assert.equal(said('h880pro', 'Picture'), 'PIC');
+  assert.equal(said('h880pro', 'Picture'), 'PICTURE');
   assert.equal(said('h885', 'AllOff'), 'OFF');
   assert.equal(said('h720', 'AllOff'), 'the power key, alone at the top left');
   assert.equal(said('h720', 'VolumeMute'), 'Mute');

@@ -185,7 +185,7 @@ const EXPECTED: Readonly<Record<string, {
       + "885's 55 press codes in its one configuration's key table",
   },
   /**
-   * The 880 Pro's face with `PICTURE` in full and its own nameplate, `h890pro.ts`, read off the 890 Pro's
+   * The 880 Pro's face with its own nameplate, `h890pro.ts`, read off the 890 Pro's
    * product photograph. No configuration of an 890 Pro is known, so no code, and the count is the drawing's.
    */
   h890pro: {
