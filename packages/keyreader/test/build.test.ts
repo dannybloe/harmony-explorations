@@ -83,7 +83,8 @@ test('every published script is named for its content, and every import and the 
   // And there is something to check: the page imports, and the page names its entry.
   const page = [...files.keys()].find((name) => baseName(name) === 'page.js') as string;
   assert.match(files.get('index.html') as string, new RegExp(`<script type="module" src="${page.replace(/\./g, '\\.')}">`));
-  assert.ok([...(files.get(page) as string).matchAll(/\bfrom\s+['"]\.\//g)].length >= 6);
+  // Exactly the page's seven imports: link, presses, session, face, drawings, keys and visit.
+  assert.equal([...(files.get(page) as string).matchAll(/\bfrom\s+['"]\.\//g)].length, 7);
 });
 
 test('control: an edited script, and an import naming an old build, are both caught', () => {
