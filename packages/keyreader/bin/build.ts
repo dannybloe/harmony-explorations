@@ -22,7 +22,17 @@
  * `PUBLISHED`, an allow list: a module the page does not import is not published, and a module the page
  * does import that is not on the list stops the build. So a new import of the `@harmony/usb` barrel, which
  * reaches for node-hid and the write paths, cannot slip into the page unnoticed. Every import specifier is
- * rewritten to the published file beside it, `./protocol.js`, so the browser needs no import map.
+ * rewritten to the published file beside it, so the browser needs no import map.
+ *
+ * **Every published script is named for its content**, `page.3f9c0a1b2d.js`: its base name and the first
+ * ten hex digits of the SHA-256 of what it holds, its imports' stamped names included, so a change anywhere
+ * below a module changes its name too, up to `page.js` and the one script tag in `index.html`. That is what
+ * stops a browser mixing two builds, which happened at the bench: a cached `page.js` from one build ran
+ * against the next build's `index.html` and stopped at an element the old script expected. With names that
+ * follow the content, a new page can only ask for new scripts, and an old page asking for a script that is
+ * gone gets nothing rather than the wrong one. A query string on an unchanged name would fix the first case
+ * and not the second, since the server ignores it and serves the newest file. `test/build.test.ts` checks
+ * that every import, and the script tag, carries the stamp of the file it names.
  *
  * One module has no TypeScript source and is written rather than compiled, `drawings.js`: the drawings of the
  * models the page shows, inlined from `reference/silhouettes/`, `bin/drawings.ts`.
@@ -32,6 +42,7 @@
  * `reference/silhouettes/` is held against its generator, and refuses anything else in the folder.
  */
 import ts from 'typescript';
+import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -170,6 +181,70 @@ function compile(source: string): { text: string; imports: string[] } {
   return { text: header + text, imports };
 }
 
+/** How many hex digits of the content's SHA-256 a published script's name carries. */
+export const STAMP_LENGTH = 10;
+
+/** The stamp of a file's content. */
+export function stampOf(content: string): string {
+  return createHash('sha256').update(content).digest('hex').slice(0, STAMP_LENGTH);
+}
+
+/** A stamped script name, `page.3f9c0a1b2d.js`: its base, its stamp. */
+const STAMPED = new RegExp(`^([a-z]+)\\.([0-9a-f]{${STAMP_LENGTH}})\\.js$`);
+
+/** A published script's base name, `page.js`, from its stamped one, `page.3f9c0a1b2d.js`; others as they are. */
+export function baseName(name: string): string {
+  const match = STAMPED.exec(name);
+  return match === null ? name : `${match[1] as string}.js`;
+}
+
+/** The stamp a published name carries, or undefined for a name with none. */
+export function stampIn(name: string): string | undefined {
+  return STAMPED.exec(name)?.[2];
+}
+
+/** The stamped name under which a build publishes a base name, for the tests and for anything reading one. */
+export function publishedName(files: ReadonlyMap<string, string>, base: string): string {
+  const found = [...files.keys()].filter((name) => baseName(name) === base);
+  if (found.length !== 1) throw new Error(`the build publishes ${found.length} files named ${base}`);
+  return found[0] as string;
+}
+
+/**
+ * Name every script for its content, rewriting each import to the stamped name of what it imports.
+ *
+ * Done from the leaves up, because a module's stamp covers its imports' stamped names: a module's final
+ * text needs every module it imports named first. The page's imports form no cycle; one would stop the
+ * build here rather than loop.
+ */
+function stampScripts(plain: ReadonlyMap<string, string>): Map<string, string> {
+  const finished = new Map<string, { name: string; text: string }>();
+  const visiting = new Set<string>();
+  const finish = (base: string): { name: string; text: string } => {
+    const done = finished.get(base);
+    if (done !== undefined) return done;
+    if (visiting.has(base)) throw new Error(`${base} imports itself through its imports, which the stamps cannot name`);
+    visiting.add(base);
+    let text = plain.get(base) as string;
+    // From the end backwards, so that each rewrite leaves the positions before it valid.
+    for (const found of specifiers(base, text).reverse()) {
+      const target = found.text.startsWith('./') ? found.text.slice(2) : found.text;
+      if (!plain.has(target)) throw new Error(`${base} imports ${found.text}, which the build did not write`);
+      text = `${text.slice(0, found.start)}./${finish(target).name}${text.slice(found.end)}`;
+    }
+    visiting.delete(base);
+    const result = { name: base.replace(/\.js$/, `.${stampOf(text)}.js`), text };
+    finished.set(base, result);
+    return result;
+  };
+  const out = new Map<string, string>();
+  for (const base of plain.keys()) {
+    const { name, text } = finish(base);
+    out.set(name, text);
+  }
+  return out;
+}
+
 /** The whole page, as the files to write: published name to content. */
 export function buildKeyReader(): Map<string, string> {
   const files = new Map<string, string>();
@@ -189,16 +264,21 @@ export function buildKeyReader(): Map<string, string> {
     pending.push(...imports);
   }
 
+  const scripts = stampScripts(files);
   const html = readFileSync(join(PACKAGE, 'web', 'index.html'), 'utf8');
   const doctype = '<!doctype html>\n';
   if (!html.startsWith(doctype)) throw new Error('packages/keyreader/web/index.html has to start with its doctype');
-  files.set(
+  // The page's one script tag names the entry by its stamp, so a new page never runs an old script.
+  const tag = '<script type="module" src="page.js">';
+  if (html.split(tag).length !== 2) throw new Error(`packages/keyreader/web/index.html should hold ${tag} exactly once`);
+  const entry = `<script type="module" src="${publishedName(scripts, 'page.js')}">`;
+  scripts.set(
     'index.html',
-    `${doctype}<!-- Generated by packages/keyreader/bin/build.ts from packages/keyreader/web/index.html. Do not edit: run make key-reader. -->\n${html.slice(doctype.length)}`,
+    `${doctype}<!-- Generated by packages/keyreader/bin/build.ts from packages/keyreader/web/index.html. Do not edit: run make key-reader. -->\n${html.slice(doctype.length).replace(tag, entry)}`,
   );
 
   // Sorted, so that the map and a listing of the folder compare in one assertion.
-  return new Map([...files].sort(([a], [b]) => a.localeCompare(b)));
+  return new Map([...scripts].sort(([a], [b]) => a.localeCompare(b)));
 }
 
 /** The names in the folder that differ from the build, are missing, or should not be there. */

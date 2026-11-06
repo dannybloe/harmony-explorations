@@ -26,8 +26,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { getVersionRequest, readRamRequest } from '@harmony/usb/protocol';
-import { buildKeyReader } from '../bin/build.ts';
-import { linkWithout, publishedLink, refusalOf } from './built.ts';
+import { baseName, buildKeyReader, publishedName } from '../bin/build.ts';
+import { appendTo, builtText, linkWithout, publishedLink, refusalOf } from './built.ts';
 import type { WebHidDevice } from '../src/webhid.ts';
 
 const link = await publishedLink();
@@ -62,12 +62,15 @@ function sendBody(text: string): [number, number] {
 function problems(files: ReadonlyMap<string, string>): string[] {
   const found: string[] = [];
   let sends = 0;
-  for (const [name, text] of files) {
+  // Reported by base name, `link.js`, since the stamp in a published name changes with every build.
+  for (const [published, text] of files) {
+    const name = baseName(published);
     if (name === 'index.html') {
       // The page's one script, from beside it, and nothing fetched from anywhere else.
       if (text.includes('://')) found.push('index.html names an address elsewhere');
       const scripts = [...text.matchAll(/<script\b[^>]*>/g)].map((m) => m[0]);
-      if (scripts.join() !== '<script type="module" src="page.js">') found.push(`index.html scripts: ${scripts.join(' ')}`);
+      const entry = `<script type="module" src="${publishedName(files, 'page.js')}">`;
+      if (scripts.join() !== entry) found.push(`index.html scripts: ${scripts.join(' ')}`);
       continue;
     }
     for (const m of text.matchAll(/\bsendReport\b/g)) {
@@ -93,7 +96,7 @@ test('only send names the device send method, nothing names the feature report o
 
 test('control: a second caller of the send method is found, in any file', () => {
   const files = buildKeyReader();
-  files.set('page.js', `${files.get('page.js')}\nexport const sneak = (d, r) => d.sendReport(0, r);\n`);
+  appendTo(files, 'page.js', '\nexport const sneak = (d, r) => d.sendReport(0, r);\n');
   assert.deepEqual(problems(files), [
     'page.js: the send method named outside send',
     'the send method is named 2 times, not once',
@@ -102,7 +105,7 @@ test('control: a second caller of the send method is found, in any file', () => 
 
 test('control: a call inside link.js but outside send is found', () => {
   const files = buildKeyReader();
-  files.set('link.js', `${files.get('link.js')}\nexport const sneak = (d, r) => d.sendReport(0, r);\n`);
+  appendTo(files, 'link.js', '\nexport const sneak = (d, r) => d.sendReport(0, r);\n');
   assert.deepEqual(problems(files), [
     'link.js: the send method named outside send',
     'the send method is named 2 times, not once',
@@ -111,9 +114,9 @@ test('control: a call inside link.js but outside send is found', () => {
 
 test('control: the feature report method, a method reached by a built name, and a fetch are found', () => {
   const files = buildKeyReader();
-  files.set('presses.js', `${files.get('presses.js')}\nexport const a = (d) => d.sendFeatureReport(0, []);\n`);
-  files.set('keys.js', `${files.get('keys.js')}\nexport const b = (d) => d['send' + 'Report'](0, []);\n`);
-  files.set('models.js', `${files.get('models.js')}\nexport const c = () => fetch('https://example.org');\n`);
+  appendTo(files, 'presses.js', '\nexport const a = (d) => d.sendFeatureReport(0, []);\n');
+  appendTo(files, 'keys.js', "\nexport const b = (d) => d['send' + 'Report'](0, []);\n");
+  appendTo(files, 'models.js', "\nexport const c = () => fetch('https://example.org');\n");
   assert.deepEqual(problems(files), [
     "keys.js: a string naming a report method, 'Report'",
     'models.js: reaches the network, fetch',
@@ -124,14 +127,14 @@ test('control: the feature report method, a method reached by a built name, and 
 
 test('control: a removed send, a second script and an outside address in the page are found', () => {
   const files = buildKeyReader();
-  files.set('link.js', (files.get('link.js') as string).replace('device.sendReport(', 'device.nothing('));
+  files.set(publishedName(files, 'link.js'), builtText(files, 'link.js').replace('device.sendReport(', 'device.nothing('));
   files.set(
     'index.html',
     (files.get('index.html') as string).replace('</body>', '<script src="https://example.org/x.js"></script></body>'),
   );
   assert.deepEqual(problems(files), [
     'index.html names an address elsewhere',
-    'index.html scripts: <script type="module" src="page.js"> <script src="https://example.org/x.js">',
+    `index.html scripts: <script type="module" src="${publishedName(files, 'page.js')}"> <script src="https://example.org/x.js">`,
     'the send method is named 0 times, not once',
   ]);
 });
@@ -295,7 +298,7 @@ for (const [refusal, bytes, what] of ONLY_THIS_REFUSES) {
 
 test('every refusal of checkReport has a control', () => {
   // A refusal added to `checkReport` without a row above would be a refusal nothing shows is needed.
-  const source = buildKeyReader().get('link.js') as string;
+  const source = builtText(buildKeyReader(), 'link.js');
   const body = source.slice(source.indexOf('export function checkReport('), source.indexOf('export async function send('));
   const named = [...body.matchAll(/refuse\('([a-z-]+)',/g)].map((m) => m[1]);
   assert.deepEqual(named, ONLY_THIS_REFUSES.map(([refusal]) => refusal));

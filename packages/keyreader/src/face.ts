@@ -8,8 +8,9 @@
  * `data-kr`, and the page's stylesheet turns each state into a fill.
  *
  * **The fills are colourblind safe and never colour alone**: the key asked for is blue with a heavy
- * outline, a learned or working key is orange with dots, a skipped key grey with diagonal lines, and a key
- * that may be the one pressed orange with stripes; the patterns are in `web/index.html`. Blue against
+ * outline, a learned or working key is orange with dots, a skipped key grey with diagonal lines, a key that
+ * works but the page never saw white with dark crosses, and a key that may be the one pressed orange with
+ * stripes; the patterns are in `web/index.html`. Blue against
  * orange is the pair that stays apart for every common kind of colour blindness, and the dots and lines
  * tell learned from skipped without any colour at all.
  *
@@ -19,7 +20,7 @@
 import type { Drawing } from './session.ts';
 
 /** The looks a key can take; the stylesheet has a rule for each. */
-export type KeyLook = 'asked' | 'learned' | 'skipped' | 'lit' | 'possible';
+export type KeyLook = 'asked' | 'learned' | 'skipped' | 'unseen' | 'lit' | 'possible';
 
 export class Face {
   readonly drawing: Drawing;

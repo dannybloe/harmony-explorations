@@ -12,7 +12,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { buildKeyReader, driftFrom } from '../bin/build.ts';
+import { baseName, buildKeyReader, driftFrom, stampIn, stampOf } from '../bin/build.ts';
 
 test('reference/key-reader/ holds exactly what the build makes', () => {
   assert.deepEqual(driftFrom(buildKeyReader()), []);
@@ -23,7 +23,7 @@ test('the page is the entry, its link, press reading, modes and face, the drawin
   // visible change here as well as a row in the build's allow list. `drawings.js` is the one written
   // rather than compiled, `bin/drawings.ts`.
   assert.deepEqual(
-    [...buildKeyReader().keys()],
+    [...buildKeyReader().keys()].map(baseName).sort(),
     ['drawings.js', 'face.js', 'index.html', 'keys.js', 'link.js', 'models.js', 'page.js', 'presses.js', 'protocol.js', 'session.js'],
   );
 });
@@ -32,7 +32,7 @@ test('every import in the published page names a file beside it', () => {
   for (const [name, content] of buildKeyReader()) {
     if (!name.endsWith('.js')) continue;
     for (const match of content.matchAll(/\bfrom\s+['"]([^'"]+)['"]/g)) {
-      assert.match(match[1] as string, /^\.\/[a-z]+\.js$/, `${name} imports ${match[1]}`);
+      assert.match(match[1] as string, /^\.\/[a-z]+\.[0-9a-f]{10}\.js$/, `${name} imports ${match[1]}`);
     }
   }
 });
@@ -43,13 +43,66 @@ test('control: the drift check reports an edited file, a missing one and a stray
   const directory = mkdtempSync(join(tmpdir(), 'keyreader-drift-'));
   for (const [name, content] of built) writeFileSync(join(directory, name), content);
   assert.deepEqual(driftFrom(built, directory), []);
-  writeFileSync(join(directory, 'link.js'), `${built.get('link.js')}\n// edited by hand\n`);
+  const link = [...built.keys()].find((name) => baseName(name) === 'link.js') as string;
+  writeFileSync(join(directory, link), `${built.get(link)}\n// edited by hand\n`);
   writeFileSync(join(directory, 'extra.js'), '');
   const missing = new Map(built);
   missing.set('gone.js', '');
   assert.deepEqual(driftFrom(missing, directory).sort(), [
     'extra.js is not part of the page',
     'gone.js is missing',
-    'link.js differs from its source',
+    `${link} differs from its source`,
   ]);
+});
+
+/**
+ * Every reference from one published file to another, the imports and the page's script tag, with the name
+ * it uses and the stamp that name carries, and what is wrong with each: a name no file has, a name with no
+ * stamp, or a stamp that is not the content's. A browser caches by name, so a name that does not change with
+ * the content is how a cached script from one build ran against the next build's page at the bench.
+ */
+function stampProblems(files: ReadonlyMap<string, string>): string[] {
+  const found: string[] = [];
+  for (const [name, content] of files) {
+    if (name !== 'index.html' && stampIn(name) !== stampOf(content)) found.push(`${name} is not named for its content`);
+    const references = name === 'index.html'
+      ? [...content.matchAll(/<script\b[^>]*\bsrc="([^"]+)"/g)].map((m) => m[1] as string)
+      : [...content.matchAll(/\bfrom\s+['"]\.\/([^'"]+)['"]/g)].map((m) => m[1] as string);
+    for (const target of references) {
+      const text = files.get(target);
+      if (text === undefined) found.push(`${name} names ${target}, which the build does not have`);
+      else if (stampIn(target) !== stampOf(text)) found.push(`${name} names ${target}, whose stamp is not its content's`);
+    }
+  }
+  return found;
+}
+
+test('every published script is named for its content, and every import and the script tag name it so', () => {
+  const files = buildKeyReader();
+  assert.deepEqual(stampProblems(files), []);
+  // And there is something to check: the page imports, and the page names its entry.
+  const page = [...files.keys()].find((name) => baseName(name) === 'page.js') as string;
+  assert.match(files.get('index.html') as string, new RegExp(`<script type="module" src="${page.replace(/\./g, '\\.')}">`));
+  assert.ok([...(files.get(page) as string).matchAll(/\bfrom\s+['"]\.\//g)].length >= 6);
+});
+
+test('control: an edited script, and an import naming an old build, are both caught', () => {
+  const files = buildKeyReader();
+  const presses = [...files.keys()].find((name) => baseName(name) === 'presses.js') as string;
+  files.set(presses, `${files.get(presses)}\n// a later build's line\n`);
+  const page = [...files.keys()].find((name) => baseName(name) === 'page.js') as string;
+  assert.deepEqual(stampProblems(files), [
+    `${page} names ${presses}, whose stamp is not its content's`,
+    `${presses} is not named for its content`,
+  ]);
+  const old = buildKeyReader();
+  old.set('index.html', (old.get('index.html') as string).replace(page, 'page.0123456789.js'));
+  assert.deepEqual(stampProblems(old), ['index.html names page.0123456789.js, which the build does not have']);
+});
+
+test('the page names its steps as a person reads them, and never by this project\'s word for the first', () => {
+  const html = buildKeyReader().get('index.html') as string;
+  assert.match(html, /Step 1: Test all keys/);
+  assert.match(html, /Step 2: Learn the key map/);
+  assert.ok(!/sweep/i.test(html));
 });

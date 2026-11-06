@@ -67,15 +67,21 @@
     .face-wrap { padding: 0; } .face-tag { display: none; } .face svg { height: auto; width: 100%; }
     .face { width: auto; }
   }
+  .step { margin: 0 0 0.2rem; font-weight: 600; color: var(--accent); }
   .prompt { font-size: 1.5rem; font-weight: 700; line-height: 1.3; margin: 0 0 0.6rem; }
   #notice { min-height: 1.6em; border-left: 4px solid transparent; padding: 4px 8px; margin: 0.6rem 0; }
   #notice[data-kind="misfit"] { border-left-color: var(--notice-line); background: var(--notice); }
   #notice.flash { animation: flash 0.9s ease-out 2; }
+  /* A key that reached the page in step 1: a short blue pulse and the words, so each press is seen. */
+  #notice[data-kind="received"] { border-left-color: #0b4f8a; font-weight: 600; }
+  #notice.pulse { animation: pulse 0.6s ease-out 1; }
+  @keyframes pulse { 0% { background: #8cc8f0; } 100% { background: transparent; } }
   @keyframes flash { 0% { background: #d9b8ef; } 100% { background: var(--notice); } }
   #notice[data-kind="misfit"] { color: var(--fg); }
   @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) #notice.flash { animation-name: flash-dark; } }
   :root[data-theme="dark"] #notice.flash { animation-name: flash-dark; }
   @keyframes flash-dark { 0% { background: #6c3f8c; } 100% { background: var(--notice); } }
+  .flag { border-left: 4px solid #0b4f8a; padding: 4px 8px; background: var(--panel); }
   #naming { display: flex; gap: 8px; flex-wrap: wrap; align-items: end; margin: 0.6rem 0; }
   #naming label { display: grid; gap: 4px; flex: 1 1 220px; }
   #naming input { font: inherit; padding: 7px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); color: var(--fg); }
@@ -86,8 +92,12 @@
   #keylist li { padding: 2px 0; font-variant-numeric: tabular-nums; }
   #keylist li[data-kr="lit"]::marker { content: "\2713  "; font-weight: 700; }
   #keylist li[data-kr="lit"] { font-weight: 600; }
-  #unknown { display: flex; flex-wrap: wrap; gap: 6px; list-style: none; padding: 0; margin: 0.4rem 0 0; }
-  #unknown li { border: 1px solid var(--line); border-radius: 4px; padding: 2px 8px; font-variant-numeric: tabular-nums; }
+  #unknown, #check-unknown { display: flex; flex-wrap: wrap; gap: 6px; list-style: none; padding: 0; margin: 0.4rem 0 0; }
+  #unknown li, #check-unknown li { border: 1px solid var(--line); border-radius: 4px; padding: 2px 8px; font-variant-numeric: tabular-nums; }
+  /* The whole log, read only, in a box of fixed height that scrolls: what the person sees is exactly what
+     Copy puts on the clipboard, the box's own value and nothing more. */
+  /* Long lines wrap rather than run off the side, so every word of what Copy copies is in view. */
+  #log { height: 20rem; resize: none; overflow-y: auto; }
   #log { width: 100%; font: 0.9rem/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; padding: 10px; border-radius: 6px;
     border: 1px solid var(--line); background: var(--panel); color: var(--fg); }
 
@@ -99,6 +109,7 @@
   .face g[data-kr="asked"] path.key { stroke: #0b4f8a; stroke-width: 3.5px; }
   .face g[data-kr="learned"], .face g[data-kr="lit"] { --key-fill: url(#kr-dots); }
   .face g[data-kr="skipped"] { --key-fill: url(#kr-lines); }
+  .face g[data-kr="unseen"] { --key-fill: url(#kr-crosses); }
   .face g[data-kr="possible"] { --key-fill: url(#kr-stripes); }
 </style>
 </head>
@@ -111,6 +122,10 @@
     </pattern>
     <pattern id="kr-lines" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
       <rect width="6" height="6" fill="#d4d4d4"></rect><rect width="2" height="6" fill="#6b6b6b"></rect>
+    </pattern>
+    <pattern id="kr-crosses" width="8" height="8" patternUnits="userSpaceOnUse">
+      <rect width="8" height="8" fill="#ffffff"></rect>
+      <path d="M1.5 1.5 L6.5 6.5 M6.5 1.5 L1.5 6.5" stroke="#1b1b1b" stroke-width="1.4"></path>
     </pattern>
     <pattern id="kr-stripes" width="8" height="8" patternUnits="userSpaceOnUse">
       <rect width="8" height="8" fill="#f2a93b"></rect><rect width="8" height="3" fill="#ffffff"></rect>
@@ -151,8 +166,9 @@ model we do not have, and it can test whether every key on your remote still wor
 
 <section id="work" hidden>
   <div class="controls">
-    <button id="mode-learn" type="button" aria-pressed="true">Learn the keys</button>
-    <button id="mode-test" type="button" aria-pressed="false">Test the keys</button>
+    <button id="mode-test" type="button" aria-pressed="true">Step 1: Test all keys</button>
+    <button id="mode-learn" type="button" aria-pressed="false">Step 2: Learn the key map</button>
+    <button id="mode-check" type="button" aria-pressed="false">Step 3: Check the key map</button>
     <button id="change" type="button">Choose another model</button>
   </div>
   <div class="work">
@@ -163,49 +179,73 @@ model we do not have, and it can test whether every key on your remote still wor
     <div>
       <p id="model-line" class="muted"></p>
       <div id="learn-panel">
+        <p class="step">Step 2: Learn the key map</p>
         <p id="prompt" class="prompt"></p>
+        <p id="flag" class="flag" hidden>This key did not reach the page in step 1. Press it to try
+          again; if your remote reacts to it and nothing happens here, it works but the page does not see it.</p>
         <form id="naming" hidden>
           <label>What is printed on that key, or where is it?
             <input id="name" type="text" autocomplete="off" maxlength="60"></label>
           <button type="submit" class="primary">Save</button>
         </form>
         <div class="controls">
+          <button id="unseen" type="button">The key works, but the page does not see it</button>
           <button id="skip" type="button">Skip: my remote has no such key</button>
           <button id="undo" type="button">Undo the last key</button>
-          <button id="finish" type="button">Finish and show the key map</button>
+          <button id="next-check" type="button">Next: step 3, check the key map</button>
+          <button id="finish" type="button">Done: go to the key map</button>
         </div>
         <p id="progress" class="muted"></p>
         <ul id="learn-legend" class="legend">
           <li><svg width="22" height="16"><rect width="22" height="16" fill="#8cc8f0" stroke="#0b4f8a" stroke-width="3"></rect></svg> blue with a heavy edge: the key to press now</li>
           <li><svg width="22" height="16"><rect width="22" height="16" fill="url(#kr-dots)"></rect></svg> orange with dots: learned</li>
-          <li><svg width="22" height="16"><rect width="22" height="16" fill="url(#kr-lines)"></rect></svg> grey with lines: skipped</li>
+          <li><svg width="22" height="16"><rect width="22" height="16" fill="url(#kr-lines)"></rect></svg> grey with lines: skipped, my remote has no such key</li>
+          <li><svg width="22" height="16"><rect width="22" height="16" fill="url(#kr-crosses)"></rect></svg> white with crosses: works, but the page does not see it</li>
         </ul>
       </div>
       <div id="test-panel" hidden>
+        <p class="step">Step 1: Test all keys</p>
         <p class="prompt">Press every key once.</p>
-        <p>Each key you press stays marked, so a key that never gets marked is one that did not answer.</p>
+        <p>This shows which keys reach this page. Each key you press stays marked, so a key that never gets
+          marked is one the page did not see. Then go on to step 2.</p>
+        <div class="controls"><button id="next" type="button" class="primary">Next: step 2, learn the key map</button></div>
         <p id="test-count" class="muted"></p>
         <ul id="test-legend" class="legend">
           <li><svg width="22" height="16"><rect width="22" height="16" fill="url(#kr-dots)"></rect></svg> orange with dots: this key answered</li>
           <li><svg width="22" height="16"><rect width="22" height="16" fill="url(#kr-stripes)"></rect></svg> orange with white bands: one of these keys answered, and which of them is not known yet</li>
         </ul>
-        <h3>Numbers no key here has</h3>
+        <h3>Other keys that answered, by number</h3>
         <ul id="unknown"></ul>
         <p id="unknown-none" class="muted">None so far.</p>
         <div class="controls"><button id="test-clear" type="button">Start the test again</button></div>
       </div>
+      <div id="check-panel" hidden>
+        <p class="step">Step 3: Check the key map</p>
+        <p class="prompt">Press the keys again.</p>
+        <p>Each key you press lights by the key map you just made. If the key that lights is not the one you
+          pressed, that key was learned wrong: go back to step 2, undo, and learn it again.</p>
+        <p id="check-count" class="muted"></p>
+        <ul id="check-legend" class="legend">
+          <li><svg width="22" height="16"><rect width="22" height="16" fill="url(#kr-dots)"></rect></svg> orange with dots: lit by the key map</li>
+          <li><svg width="22" height="16"><rect width="22" height="16" fill="url(#kr-stripes)"></rect></svg> orange with white bands: one of these keys, and which of them is not known yet</li>
+        </ul>
+        <h3>Numbers the key map does not have</h3>
+        <ul id="check-unknown" class="numbers"></ul>
+        <p id="check-unknown-none" class="muted">None so far.</p>
+        <div class="controls"><button id="check-clear" type="button">Start the check again</button></div>
+      </div>
       <p id="notice" role="status" aria-live="polite"></p>
       <p class="muted">Key held: <span id="held">-</span>. Last key pressed: <span id="last">-</span>.</p>
+      <section id="log-section">
+        <h2>Your key map</h2>
+        <p>It grows as you go. When you are done, copy it and send it to us as a new issue on the
+        harmony-explorations repository on GitHub. It holds the model, the keys and their numbers, and
+        nothing that identifies your remote.</p>
+        <textarea id="log" readonly aria-label="Your key map, exactly as Copy copies it"></textarea>
+        <div class="controls"><button id="copy" type="button">Copy</button></div>
+      </section>
     </div>
   </div>
-
-  <section id="log-section" hidden>
-    <h2>Your key map</h2>
-    <p>Copy this and send it to us as a new issue on the harmony-explorations repository on GitHub. It holds
-    the model, the keys and their numbers, and nothing that identifies your remote.</p>
-    <textarea id="log" rows="14" readonly></textarea>
-    <div class="controls"><button id="copy" type="button">Copy</button></div>
-  </section>
 </section>
 
 <script type="module" src="page.js"></script>

@@ -74,6 +74,19 @@ export const WORDS: Readonly<Record<string, string>> = {
 };
 
 /**
+ * Keys the learning mode does not ask for, with the reason. The drawing still shows them and the key test
+ * still lights them; they are only left out of the order asked and so out of the log.
+ *
+ * Glow only lights the remote's own keys and screen and is never bound to a device, so a key map with its
+ * code in it is of no use to anything that writes a configuration; and the page rarely sees it, since
+ * across every bench run on an 885 its code reached the memory the page reads once. Asking for it made a
+ * person answer for a key the page mostly cannot hear.
+ */
+export const NOT_ASKED: Readonly<Record<string, string>> = {
+  Glow: 'lights the remote and controls no device, and rarely reaches the memory the page reads',
+};
+
+/**
  * What is printed on a key, when anything is: the main word or digit, which is the label printed at
  * normal size where there is one (`2` rather than the `abc` under it) and otherwise the longest label
  * (`ENTER` rather than the `E` above it). Undefined for a key that carries only a symbol or nothing.
@@ -161,6 +174,7 @@ export function drawingOf(model: Model, svgDir: string): Drawing {
     // Present exactly where the drawing states them, so the page never shows a code nobody established.
     ...(key.scan === undefined ? {} : { scan: key.scan }),
     candidates: [...(key.scanCandidates ?? [])],
+    ask: !(key.name in NOT_ASKED),
   }));
   return { id: model.id, label: model.label, skins: [...model.skins], keys, svg: inlineSvg(svgDir, model.id) };
 }
@@ -170,8 +184,8 @@ export function drawingsModule(svgDir: string, header: string): string {
   const models = drawnModels();
   // A row for a key no drawing has would be a description of nothing, kept by nobody.
   const named = new Set(models.flatMap((model) => model.keys.map((key) => key.name)));
-  for (const name of Object.keys(WORDS)) {
-    if (!named.has(name)) throw new Error(`WORDS has a row for ${name}, which no drawing the page shows has`);
+  for (const name of [...Object.keys(WORDS), ...Object.keys(NOT_ASKED)]) {
+    if (!named.has(name)) throw new Error(`${name} has a row here, and no drawing the page shows has that key`);
   }
   const drawings = models.map((model) => drawingOf(model, svgDir));
   return `${header}export const DRAWINGS = ${JSON.stringify(drawings, null, 1)};\n`;

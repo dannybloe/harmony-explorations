@@ -14,17 +14,18 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { join } from 'node:path';
-import { pathToFileURL } from 'node:url';
-import { OUT_DIR } from '../bin/build.ts';
 import type * as SessionModule from '../src/session.ts';
+import { publishedModule } from './built.ts';
 import type { Drawing, FaceKey } from '../src/session.ts';
 
-const session = (await import(pathToFileURL(join(OUT_DIR, 'session.js')).href)) as typeof SessionModule;
-const { DRAWINGS } = (await import(pathToFileURL(join(OUT_DIR, 'drawings.js')).href)) as { DRAWINGS: readonly Drawing[] };
+const session = (await publishedModule('session.js')) as typeof SessionModule;
+const { DRAWINGS } = (await publishedModule('drawings.js')) as { DRAWINGS: readonly Drawing[] };
 
 const h885 = DRAWINGS.find((d) => d.id === 'h885') as Drawing;
 const h880 = DRAWINGS.find((d) => d.id === 'h880') as Drawing;
+
+/** The 885's keys in the order learning asks for them: every key of the drawing but those left out. */
+const asked885 = h885.keys.filter((k) => k.ask);
 
 /** Skip keys until `name` is the one asked, as a person would skip keys their remote lacks. */
 function skipTo(learning: SessionModule.Learning, name: string): void {
@@ -38,15 +39,17 @@ function code(keys: readonly FaceKey[], name: string): number {
 // ------------------------------------------------------------------------------------------------
 // Learning, with a drawing.
 
-test('the 885 replayed in the order asked learns every key at its measured code', () => {
+test('the 885 replayed in the order asked learns every key at its measured code, and is not asked Glow', () => {
   const learning = new session.Learning(h885.keys);
-  for (const key of h885.keys) {
+  assert.equal(learning.keys.length, 54);
+  assert.ok(!learning.keys.some((k) => k.name === 'Glow'));
+  for (const key of asked885) {
     assert.equal(learning.asked?.name, key.name);
     const outcome = learning.press(key.scan as number);
     assert.equal(outcome.kind, 'learned', key.name);
   }
   assert.ok(learning.done);
-  assert.deepEqual(learning.rows().map((r) => [r.name, r.code]), h885.keys.map((k) => [k.name, k.scan]));
+  assert.deepEqual(learning.rows().map((r) => [r.name, r.code]), asked885.map((k) => [k.name, k.scan]));
   assert.deepEqual(learning.misfits, []);
 });
 
@@ -104,6 +107,66 @@ test('the 880 learns its chevron keys like any other, whatever the drawing narro
   assert.equal(learning.press(52).kind, 'learned');
   assert.deepEqual(learning.rows().filter((r) => r.name.endsWith('Arrow')).map((r) => [r.name, r.code]),
     [['UpArrow', 20], ['DownArrow', 52]]);
+});
+
+test('a key that works but is not seen is its own answer, apart from skipped, and undo takes it back', () => {
+  const learning = new session.Learning(h885.keys);
+  assert.equal(learning.unseen()?.name, 'AllOff');
+  assert.equal(learning.skip()?.name, 'Activities');
+  assert.equal(learning.stateOf('AllOff'), 'unseen');
+  assert.equal(learning.stateOf('Activities'), 'skipped');
+  assert.deepEqual(learning.rows().map((r) => r.code), ['not seen', 'skipped']);
+  learning.undo();
+  assert.equal(learning.undo()?.code, 'not seen');
+  assert.equal(learning.stateOf('AllOff'), 'asked');
+});
+
+test('the keys the test never lit are the known ones no press reached; none when nothing was pressed', () => {
+  // On the 885 every key's code is known, so a test of all but Pause and Enter flags exactly those two.
+  const all = h885.keys.map((k) => k.scan as number).filter((c) => c !== 55 && c !== 63);
+  assert.deepEqual([...session.neverAnswered(h885.keys, all)].sort(), ['Enter', 'Pause']);
+  assert.deepEqual([...session.neverAnswered(h885.keys, [])], []);
+  // On the 880 a key with no known code is never flagged, since a press of it is just another unknown code;
+  // the chevrons are, until 20 or 52 is pressed.
+  const flagged880 = session.neverAnswered(h880.keys, [11]);
+  assert.ok(!flagged880.has('Activities'));
+  assert.ok(flagged880.has('UpArrow') && flagged880.has('DownArrow'));
+  assert.ok(!session.neverAnswered(h880.keys, [11, 52]).has('UpArrow'));
+});
+
+test('the key test counts different keys, and lists the codes no key on the drawing has', () => {
+  assert.deepEqual(session.sweepOf(h880.keys, [11, 11, 10, 52, 99, 10]), { seen: 4, unknown: [10, 99] });
+  assert.deepEqual(session.sweepOf([], [5, 6]), { seen: 2, unknown: [5, 6] });
+});
+
+test('step 3 lights keys by the map just learned, and the codes the drawing knew for the rest', () => {
+  // On the 880 the person learns Activities at 1 and a chevron at 20, and skips the other chevron.
+  const learning = new session.Learning(h880.keys);
+  learning.press(2);
+  learning.press(1);
+  skipTo(learning, 'UpArrow');
+  learning.press(20);
+  learning.skip();
+  const map = session.learnedMap(h880.keys, learning.rows());
+  const tester = new session.Tester(map);
+  // A learned code lights its key; the drawing's own code still lights a key nobody learned (VolumeUp, 13).
+  assert.deepEqual(tester.press(1), { code: 1, exact: ['Activities'], possible: [] });
+  assert.deepEqual(tester.press(13), { code: 13, exact: ['VolumeUp'], possible: [] });
+  // The skipped chevron keeps the drawing's candidates, so 52 may still be it; 20 is the learned one's alone.
+  assert.deepEqual(tester.press(20), { code: 20, exact: ['UpArrow'], possible: [] });
+  assert.deepEqual(tester.press(52), { code: 52, exact: [], possible: ['DownArrow'] });
+  const learned = learning.rows().filter((r) => typeof r.code === 'number').map((r) => r.name);
+  assert.deepEqual(session.checkOf(map, learned, [1, 13, 20, 52, 77]), { confirmed: 2, learned: 3, unknown: [77] });
+});
+
+test('step 3 confirms only by a press of the learned code: a key learned wrong does not light where pressed', () => {
+  // The person meant AllOff but pressed what is Activities, 1; the map lights AllOff for 1, which the person
+  // sees is wrong, and pressing AllOff's real code, 2, is a code the map does not have.
+  const learning = new session.Learning(h885.keys);
+  learning.press(1);
+  const map = session.learnedMap(h885.keys.slice(0, 1), learning.rows());
+  assert.deepEqual(session.checkOf(map, ['AllOff'], [2]), { confirmed: 0, learned: 1, unknown: [2] });
+  assert.deepEqual(session.checkOf(map, ['AllOff'], [1]), { confirmed: 1, learned: 1, unknown: [] });
 });
 
 // ------------------------------------------------------------------------------------------------
@@ -176,9 +239,13 @@ const LINE_SHAPES: readonly RegExp[] = [
   /^remote reported: Harmony [0-9A-Za-z ]+, skin \d+, firmware [0-9.]+$/,
   /^$/,
   /^keys, in the order (asked|pressed):$/,
-  /^[A-Za-z0-9]+( \(.+\))?: (\d+|skipped|not asked)$/,
+  /^key test: \d+ different keys answered$/,
+  /^key test, codes no key on the drawing has: (none|\d+(, \d+)*)$/,
+  /^[A-Za-z0-9]+( \(.+\))?: (\d+|skipped|not seen)$/,
   /^"[^"]*": \d+$/,
   /^presses that did not fit:$/,
+  /^key map check: \d+ of \d+ learned keys confirmed$/,
+  /^key map check, codes the map does not have: (none|\d+(, \d+)*)$/,
   /^none$/,
   /^\d+: (already the code of .+|pressed after every key was answered|pressed before the words for the previous key were in)$/,
 ];
@@ -190,38 +257,66 @@ function offShape(log: string): string[] {
 
 const HEAD = { chosen: 'Harmony 885', reported: 'Harmony 885', skin: 17, firmware: '4.4' };
 
+/** A check of nothing yet, for logs whose third step is not the point. */
+const NO_CHECK = { confirmed: 0, learned: 0, unknown: [] };
+
 test('a full 885 log has the head, every key in the order asked, and the presses that did not fit', () => {
   const learning = new session.Learning(h885.keys);
   learning.press(2);
   learning.press(2);
   learning.skip();
-  for (const key of h885.keys.slice(2)) learning.press(key.scan as number);
+  learning.unseen();
+  for (const key of asked885.slice(3)) learning.press(key.scan as number);
   learning.press(7);
-  const log = session.learningLog(HEAD, learning.rows(), learning.misfits);
+  const sweep = session.sweepOf(h885.keys, [2, 1, 2, 99, 41, 120]);
+  const map = session.learnedMap(h885.keys, learning.rows());
+  const learnedNames = learning.rows().filter((r) => typeof r.code === 'number').map((r) => r.name);
+  const check = session.checkOf(map, learnedNames, [2, 3, 120]);
+  const log = session.learningLog(HEAD, sweep, check, learning.rows(), learning.misfits);
   assert.deepEqual(offShape(log), []);
   const lines = log.split('\n');
-  assert.deepEqual(lines.slice(0, 7), [
+  assert.deepEqual(lines.slice(0, 11), [
     'Harmony key map, from the key reader page',
     'model chosen: Harmony 885',
     'remote reported: Harmony 885, skin 17, firmware 4.4',
     '',
+    'key test: 5 different keys answered',
+    'key test, codes no key on the drawing has: 99, 120',
+    '',
     'keys, in the order asked:',
     'AllOff (OFF): 2',
     'Activities (ACTIVITIES): skipped',
+    'Help (HELP): not seen',
   ]);
+  assert.ok(!lines.some((l) => l.startsWith('Glow')), 'Glow is not asked, so not in the log');
+  // 2 is AllOff's learned code and confirms it; 3 lights Help by the drawing's code, and Help was answered
+  // not seen rather than learned, so it confirms nothing; 120 is in no map.
+  assert.deepEqual(lines.slice(-3), [
+    'key map check: 1 of 52 learned keys confirmed',
+    'key map check, codes the map does not have: 120',
+    '',
+  ]);
+  // The steps are called by their names on screen; this project's own word for the first never appears.
+  assert.ok(!/sweep/i.test(log));
   assert.ok(lines.includes('Red (the leftmost of the four keys at the bottom of the curve (red)): 20'));
   assert.ok(lines.includes('2: already the code of AllOff while Activities was asked'));
   assert.ok(lines.includes('7: pressed after every key was answered'));
-  assert.equal(lines.filter((l) => /^[A-Za-z0-9]+( \(.+\))?: (\d+|skipped|not asked)$/.test(l)).length, 55);
+  assert.equal(lines.filter((l) => /^[A-Za-z0-9]+( \(.+\))?: (\d+|skipped|not seen)$/.test(l)).length, 54);
 });
 
-test('a log of keys not reached says so, and a log without a drawing lists keys in the order pressed', () => {
+test('the log grows answer by answer and loses one on undo, and without a drawing lists keys in the order pressed', () => {
   const learning = new session.Learning(h885.keys);
+  const log = () => session.learningLog(HEAD, session.sweepOf(h885.keys, []), NO_CHECK, learning.rows(), learning.misfits);
+  const TAIL = '\nkey map check: 0 of 0 learned keys confirmed\nkey map check, codes the map does not have: none\n';
+  assert.ok(log().endsWith(`keys, in the order asked:\n\npresses that did not fit:\nnone\n${TAIL}`));
   learning.press(2);
-  const partial = session.learningLog(HEAD, learning.rows(), learning.misfits);
+  learning.skip();
+  const partial = log();
   assert.deepEqual(offShape(partial), []);
-  assert.ok(partial.includes('Enter (ENTER): not asked\n'));
-  assert.ok(partial.endsWith('presses that did not fit:\nnone\n'));
+  assert.ok(partial.endsWith(`keys, in the order asked:\nAllOff (OFF): 2\nActivities (ACTIVITIES): skipped\n\npresses that did not fit:\nnone\n${TAIL}`));
+  assert.ok(!partial.includes('Enter'), 'a key not reached has no line');
+  learning.undo();
+  assert.ok(!log().includes('Activities'), 'undo takes its line away');
 
   const naming = new session.Naming();
   naming.press(11);
@@ -229,15 +324,21 @@ test('a log of keys not reached says so, and a log without a drawing lists keys 
   naming.press(12);
   naming.press(13);
   const head = { chosen: 'Harmony 880 Pro', reported: 'Harmony 880 Pro', skin: 39, firmware: '4.4' };
-  const named = session.learningLog(head, naming.rows(), naming.misfits, 'pressed');
+  const named = session.learningLog(head, session.sweepOf([], [11, 12]), NO_CHECK, naming.rows(), naming.misfits, 'pressed');
   assert.deepEqual(offShape(named), []);
   assert.match(named, /keys, in the order pressed:\n"the 'round' key below SOUND": 11\n/);
-  assert.match(named, /13: pressed before the words for the previous key were in\n$/);
+  assert.match(named, /13: pressed before the words for the previous key were in\n\n/);
+  assert.match(named, /key test: 2 different keys answered\nkey test, codes no key on the drawing has: 11, 12\n/);
 });
 
-test('control: a line of any other shape is caught, such as a serial number', () => {
-  const log = session.learningLog(HEAD, [], []);
+test('control: a line of any other shape is caught, such as a serial number or an answer of another word', () => {
+  const log = session.learningLog(HEAD, session.sweepOf([], []), NO_CHECK, [], []);
   assert.deepEqual(offShape(log), []);
+  assert.deepEqual(offShape(`${log}Glow (GLOW): not heard\n`), ['Glow (GLOW): not heard']);
+  assert.deepEqual(offShape(log.replace('codes no key on the drawing has: none', 'codes no key on the drawing has: 0x1e')),
+    ['key test, codes no key on the drawing has: 0x1e']);
+  assert.deepEqual(offShape(log.replace('0 of 0 learned keys confirmed', '0 of 0 learned keys confirmed by unit 7')),
+    ['key map check: 0 of 0 learned keys confirmed by unit 7']);
   assert.deepEqual(offShape(`${log}serial: 0x1234abcd\n`), ['serial: 0x1234abcd']);
   assert.deepEqual(offShape(log.replace('firmware 4.4', 'firmware 4.4, guid 7f3c')), [
     'remote reported: Harmony 885, skin 17, firmware 4.4, guid 7f3c',

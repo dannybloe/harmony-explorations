@@ -332,7 +332,9 @@ packages/keyreader/             TS: the key reader page's sources, built into re
                                 the learning and key test modes and the log, src/face.ts the drawing
                                 on the page; the drawings of reference/silhouettes/ are inlined at
                                 build time by bin/drawings.ts, which reads packages/silhouettes, since
-                                the page fetches nothing. Its tests read the published JavaScript,
+                                the page fetches nothing. Every published script is named for its
+                                content, page.<stamp>.js, so a browser cannot run one build's script
+                                against another's page. Its tests read the published JavaScript,
                                 not the sources
 ```
 

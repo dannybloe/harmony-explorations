@@ -17,17 +17,17 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { pathToFileURL } from 'node:url';
 import { MODELS } from '@harmony/silhouettes';
 import type { Key } from '@harmony/silhouettes';
 import { WATCH_BY_SKIN } from '@harmony/usb/keys';
 import { OUT_DIR } from '../bin/build.ts';
-import { WORDS, faceOrder, printedWord, wordsFor } from '../bin/drawings.ts';
+import { NOT_ASKED, WORDS, faceOrder, printedWord, wordsFor } from '../bin/drawings.ts';
+import { publishedModule } from './built.ts';
 import type { Drawing } from '../src/session.ts';
 
 const SILHOUETTES = join(OUT_DIR, '..', 'silhouettes');
 
-const { DRAWINGS } = (await import(pathToFileURL(join(OUT_DIR, 'drawings.js')).href)) as { DRAWINGS: readonly Drawing[] };
+const { DRAWINGS } = (await publishedModule('drawings.js')) as { DRAWINGS: readonly Drawing[] };
 
 function drawing(id: string): Drawing {
   const found = DRAWINGS.find((d) => d.id === id);
@@ -84,12 +84,14 @@ test('every key of each drawing is on the page once, with the code and candidate
     [['UpArrow', [20, 52]], ['DownArrow', [20, 52]]]);
 });
 
-test('the 885 is asked for top to bottom, each row left to right', () => {
-  assert.deepEqual(drawing('h885').keys.map((k) => k.name), [
+test('the 885 is asked for top to bottom, each row left to right, all but Glow', () => {
+  // Glow lights the remote and controls no device, and rarely reaches the memory the page reads, so it is on
+  // the drawing and out of the order asked, `NOT_ASKED`.
+  assert.deepEqual(drawing('h885').keys.filter((k) => k.ask).map((k) => k.name), [
     'AllOff',
     'Activities', 'Help',
     'ScreenLeft1', 'ScreenRight1', 'ScreenLeft2', 'ScreenRight2', 'ScreenLeft3', 'ScreenRight3', 'ScreenLeft4', 'ScreenRight4',
-    'ScreenPrev', 'Glow', 'ScreenNext',
+    'ScreenPrev', 'ScreenNext',
     'VolumeMute', 'Device', 'Media', 'PrevChannel',
     'VolumeUp', 'DirectionUp', 'ChannelUp',
     'DirectionLeft', 'Select', 'DirectionRight',
@@ -101,6 +103,11 @@ test('the 885 is asked for top to bottom, each row left to right', () => {
     'Number1', 'Number2', 'Number3', 'Number4', 'Number5', 'Number6', 'Number7', 'Number8', 'Number9',
     'Clear', 'Number0', 'Enter',
   ]);
+  assert.deepEqual(DRAWINGS.flatMap((d) => d.keys.filter((k) => !k.ask).map((k) => `${d.id} ${k.name}`)), ['h880 Glow', 'h885 Glow']);
+  assert.deepEqual(Object.keys(NOT_ASKED), ['Glow']);
+  // And it is still drawn in face order, between the arrow keys under the screen.
+  const all = drawing('h885').keys.map((k) => k.name);
+  assert.deepEqual(all.slice(all.indexOf('ScreenPrev'), all.indexOf('ScreenPrev') + 3), ['ScreenPrev', 'Glow', 'ScreenNext']);
   // The 880 is the same face with its two chevron keys where the 885 has four colour keys.
   const h880 = drawing('h880').keys.map((k) => k.name);
   assert.deepEqual(h880.slice(h880.indexOf('ChannelDown') + 1, h880.indexOf('Menu')), ['UpArrow', 'DownArrow']);

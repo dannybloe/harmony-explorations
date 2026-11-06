@@ -17,15 +17,39 @@ import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { OUT_DIR, buildKeyReader } from '../bin/build.ts';
+import { OUT_DIR, buildKeyReader, publishedName } from '../bin/build.ts';
 import type * as LinkModule from '../src/link.ts';
 
 /** The link module's surface, typed from the source the published file was built from. */
 export type Link = typeof LinkModule;
 
+/**
+ * Where a published script is, by its base name: every script is published under a name carrying its
+ * content's stamp, `bin/build.ts`, so a test names `link.js` and this finds `link.<stamp>.js`.
+ */
+export function publishedPath(base: string): string {
+  return join(OUT_DIR, publishedName(buildKeyReader(), base));
+}
+
+/** A published module, imported by its base name. */
+export async function publishedModule(base: string): Promise<unknown> {
+  return import(pathToFileURL(publishedPath(base)).href);
+}
+
+/** A built file's text, by its base name. */
+export function builtText(files: ReadonlyMap<string, string>, base: string): string {
+  return files.get(publishedName(files, base)) as string;
+}
+
+/** Append to a built file, named by its base name, for the controls that add a second way to send. */
+export function appendTo(files: Map<string, string>, base: string, text: string): void {
+  const name = publishedName(files, base);
+  files.set(name, `${files.get(name) as string}${text}`);
+}
+
 /** The published link module. */
 export async function publishedLink(): Promise<Link> {
-  return (await import(pathToFileURL(join(OUT_DIR, 'link.js')).href)) as Link;
+  return (await publishedModule('link.js')) as Link;
 }
 
 /**
@@ -42,8 +66,10 @@ export async function linkWithout(refusal: string): Promise<Link> {
  * One published module with one piece of its text replaced, from a fresh build written to a temporary
  * folder beside the rest of the page, so that its imports still resolve. The text has to occur exactly once.
  */
-export async function publishedWith(name: string, from: string, to: string): Promise<unknown> {
+export async function publishedWith(base: string, from: string, to: string): Promise<unknown> {
   const files = buildKeyReader();
+  // The edited file keeps its name, so the stamps of the rest still lead to it.
+  const name = publishedName(files, base);
   const text = files.get(name);
   assert.ok(text !== undefined, `${name} is published`);
   assert.equal(text.split(from).length - 1, 1, `${from} appears exactly once in ${name}`);

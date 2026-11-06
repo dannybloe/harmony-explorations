@@ -42,6 +42,8 @@ export interface FaceKey {
   readonly scan?: number;
   /** The codes the key is narrowed to where it is not decided; empty when it is, or when nothing is known. */
   readonly candidates: readonly number[];
+  /** Whether learning asks for it: false for a key left out on purpose, `NOT_ASKED` in `bin/drawings.ts`. */
+  readonly ask: boolean;
 }
 
 /** One drawn model as the page receives it: its keys in the order the page asks for them, and its SVG. */
@@ -67,10 +69,15 @@ export interface Misfit {
   readonly other?: string;
 }
 
-/** An answer to a key that was asked: its code, or that it was skipped. */
+/**
+ * An answer to a key that was asked: its code; `skipped`, the person's remote has no such key; or `not seen`,
+ * the key is there and works (the remote reacts to it) but no press of it reached the page. The last was met
+ * at the bench on a Harmony 885's Glow key, and is kept apart from a missing key because it says something
+ * different: that the key's code is not where the page reads it, or not written there at all.
+ */
 export interface Answer {
   readonly key: FaceKey;
-  readonly code: number | 'skipped';
+  readonly code: number | 'skipped' | 'not seen';
 }
 
 /** What happened to one press. */
@@ -79,7 +86,7 @@ export type LearnOutcome =
   | { readonly kind: 'misfit'; readonly misfit: Misfit };
 
 /** How a key looks while learning, which is also what the page colours it by. */
-export type LearnState = 'asked' | 'learned' | 'skipped' | 'waiting';
+export type LearnState = 'asked' | 'learned' | 'skipped' | 'unseen' | 'waiting';
 
 /** The learning mode for a model with a drawing: one key asked at a time, in the face's order. */
 export class Learning {
@@ -91,8 +98,9 @@ export class Learning {
   readonly #answers: Answer[] = [];
   readonly #misfits: Misfit[] = [];
 
+  /** The drawing's keys in face order; only those it asks for are kept, so the log lists only those. */
   constructor(keys: readonly FaceKey[]) {
-    this.keys = keys;
+    this.keys = keys.filter((key) => key.ask);
   }
 
   /** The key being asked for, or undefined when every key has been answered. */
@@ -135,6 +143,13 @@ export class Learning {
     return asked;
   }
 
+  /** The key works on the remote but the page never saw it: answer it as `not seen` and ask the next. */
+  unseen(): FaceKey | undefined {
+    const asked = this.asked;
+    if (asked !== undefined) this.#answers.push({ key: asked, code: 'not seen' });
+    return asked;
+  }
+
   /** Take back the last answer, so that its key is asked again. */
   undo(): Answer | undefined {
     return this.#answers.pop();
@@ -143,7 +158,10 @@ export class Learning {
   /** How a key looks now. */
   stateOf(name: string): LearnState {
     const answer = this.#answers.find((a) => a.key.name === name);
-    if (answer !== undefined) return answer.code === 'skipped' ? 'skipped' : 'learned';
+    if (answer !== undefined) {
+      if (answer.code === 'skipped') return 'skipped';
+      return answer.code === 'not seen' ? 'unseen' : 'learned';
+    }
     return this.asked?.name === name ? 'asked' : 'waiting';
   }
 
@@ -152,12 +170,12 @@ export class Learning {
     return { kind: 'misfit', misfit };
   }
 
-  /** The rows of the log: every key in the order asked, with its code, `skipped`, or `not asked`. */
+  /**
+   * The rows of the log: every key answered so far, in the order asked, with its code, `skipped` or
+   * `not seen`. A key not reached yet has no row, so the log grows answer by answer and loses one on undo.
+   */
   rows(): LogRow[] {
-    return this.keys.map((key, index) => {
-      const answer = this.#answers[index];
-      return { name: key.name, words: key.words, code: answer === undefined ? 'not asked' : answer.code };
-    });
+    return this.#answers.map((answer) => ({ name: answer.key.name, words: answer.key.words, code: answer.code }));
   }
 }
 
@@ -301,7 +319,86 @@ export class Tester {
 export interface LogRow {
   readonly name: string;
   readonly words?: string;
-  readonly code: number | 'skipped' | 'not asked';
+  readonly code: number | 'skipped' | 'not seen';
+}
+
+/**
+ * What the key test found, the first step after choosing a model: how many different keys reached the
+ * page, and the codes no key on the drawing carries (every code, for a model without a drawing).
+ */
+export interface Sweep {
+  readonly seen: number;
+  readonly unknown: readonly number[];
+}
+
+/**
+ * The key test's result from the codes pressed in it, against the keys of the model.
+ *
+ * A key the drawing knows no code for cannot be told apart from another key by its code, so it is counted
+ * among the unknown codes when it answers; that is why the number of different keys seen is reported as
+ * well as the keys lit, so that an 880, 24 of whose keys have no known code, or a model with no drawing,
+ * still shows how many of its keys reached the page.
+ */
+export function sweepOf(keys: readonly Pick<FaceKey, 'name' | 'scan' | 'candidates'>[], pressed: readonly number[]): Sweep {
+  const tester = new Tester(keys);
+  for (const code of pressed) tester.press(code);
+  return { seen: new Set(pressed).size, unknown: [...tester.unknown] };
+}
+
+/** A key as the key map check sees it: a name, and the code or candidates it lights for. */
+export type MapKey = Pick<FaceKey, 'name' | 'scan' | 'candidates'>;
+
+/**
+ * The map the check lights keys by: each key the person learned at the code they gave it, and every other
+ * key at the code or candidates the drawing already knew, so a key the drawing knew and the person skipped
+ * still answers. A learned code wins over the drawing's, since checking what was just learned is the point.
+ */
+export function learnedMap(keys: readonly FaceKey[], rows: readonly LogRow[]): MapKey[] {
+  const learned = new Map<string, number>();
+  for (const row of rows) if (typeof row.code === 'number') learned.set(row.name, row.code);
+  return keys.map((key) => {
+    const code = learned.get(key.name);
+    if (code !== undefined) return { name: key.name, scan: code, candidates: [] };
+    return { name: key.name, ...(key.scan === undefined ? {} : { scan: key.scan }), candidates: key.candidates };
+  });
+}
+
+/** What the key map check found: how many learned keys lit when pressed, of how many, and the strangers. */
+export interface Check {
+  readonly confirmed: number;
+  readonly learned: number;
+  /** Codes pressed in the check that no key of the map has, in the order first pressed. */
+  readonly unknown: readonly number[];
+}
+
+/**
+ * The check's result from the codes pressed in it: a learned key is confirmed when a press lit it by its
+ * learned code. The person judges whether it lit the key they pressed; the page can only count.
+ */
+export function checkOf(map: readonly MapKey[], learnedNames: readonly string[], pressed: readonly number[]): Check {
+  const tester = new Tester(map);
+  for (const code of pressed) tester.press(code);
+  return {
+    confirmed: learnedNames.filter((name) => tester.stateOf(name) === 'lit').length,
+    learned: learnedNames.length,
+    unknown: [...tester.unknown],
+  };
+}
+
+/**
+ * The keys that never answered in the key test, which learning then flags: a key whose code (or one of
+ * whose candidates) the drawing knows and that no press lit. Empty when the test saw no press at all, since
+ * then nothing was tested; and a key with no known code is never in it, since a press of it cannot be told
+ * from any other unknown code.
+ */
+export function neverAnswered(keys: readonly Pick<FaceKey, 'name' | 'scan' | 'candidates'>[], pressed: readonly number[]): Set<string> {
+  if (pressed.length === 0) return new Set();
+  const tester = new Tester(keys);
+  for (const code of pressed) tester.press(code);
+  return new Set(keys
+    .filter((key) => key.scan !== undefined || key.candidates.length > 0)
+    .filter((key) => tester.stateOf(key.name) === 'unlit')
+    .map((key) => key.name));
 }
 
 /** What the remote said about itself and what the person chose: the log's head. */
@@ -319,12 +416,18 @@ export const LOG_TITLE = 'Harmony key map, from the key reader page';
  * The log a person copies and sends: a fixed set of line shapes, nothing else.
  *
  * The head says which model was chosen and what the remote reported, its model name, skin and firmware
- * version, which is what tells us which build of which model the codes are from. Then one line per key,
- * `Name (words): code`, in the order asked (or, without a drawing, pressed), and then the presses that did not fit, each with its code and
- * why. No line carries anything about the unit itself, because the page reads nothing that could.
+ * version, which is what tells us which build of which model the codes are from. Then what the key test
+ * found, the number of different keys that reached the page and the codes no key on the drawing has. Then
+ * one line per key, the presses that did not fit, and at the end what the key map check found: how many
+ * learned keys lit when pressed and the codes the map does not have. A key's line reads
+ * `Name (words): code`, in the order asked (or, without a drawing, pressed), and a press that did not fit
+ * gives its code and why. No line carries anything about the unit itself, because the page reads nothing
+ * that could.
  */
 export function learningLog(
   head: LogHead,
+  sweep: Sweep,
+  check: Check,
   rows: readonly LogRow[],
   misfits: readonly Misfit[],
   order: 'asked' | 'pressed' = 'asked',
@@ -333,6 +436,9 @@ export function learningLog(
     LOG_TITLE,
     `model chosen: ${head.chosen}`,
     `remote reported: ${head.reported}, skin ${head.skin}, firmware ${head.firmware}`,
+    '',
+    `key test: ${sweep.seen} different keys answered`,
+    `key test, codes no key on the drawing has: ${sweep.unknown.length === 0 ? 'none' : sweep.unknown.join(', ')}`,
     '',
     // Without a drawing nothing is asked: the keys come in the order the person pressed and named them.
     `keys, in the order ${order}:`,
@@ -350,6 +456,11 @@ export function learningLog(
   lines.push('', 'presses that did not fit:');
   if (misfits.length === 0) lines.push('none');
   for (const misfit of misfits) lines.push(`${misfit.code}: ${misfitWords(misfit)}`);
+  lines.push(
+    '',
+    `key map check: ${check.confirmed} of ${check.learned} learned keys confirmed`,
+    `key map check, codes the map does not have: ${check.unknown.length === 0 ? 'none' : check.unknown.join(', ')}`,
+  );
   return `${lines.join('\n')}\n`;
 }
 

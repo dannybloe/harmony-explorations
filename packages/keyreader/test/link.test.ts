@@ -23,7 +23,7 @@ import assert from 'node:assert/strict';
 import { FILE_BASED_PRODUCTS, LOGITECH_VENDOR, TUNNELLED_PRODUCTS, encodeVersionBlock, readVersion } from '@harmony/usb';
 import { getVersionRequest, readRamRequest } from '@harmony/usb/protocol';
 import { buildKeyReader } from '../bin/build.ts';
-import { linkWithout, publishedLink, refusalOf } from './built.ts';
+import { builtText, linkWithout, publishedLink, refusalOf } from './built.ts';
 import type { WebHidDevice, WebHidInputListener } from '../src/webhid.ts';
 
 const link = await publishedLink();
@@ -122,7 +122,7 @@ const CONTROLS: readonly [string, string, (l: typeof link) => unknown][] = [
 
 test('every refusal of link.js outside checkReport has a control here', () => {
   // checkReport's own are `send.test.ts`'s. A refusal added without a row would be one nothing shows is needed.
-  const source = buildKeyReader().get('link.js') as string;
+  const source = builtText(buildKeyReader(), 'link.js');
   const outside =
     source.slice(0, source.indexOf('export function checkReport(')) +
     source.slice(source.indexOf('export async function send('));

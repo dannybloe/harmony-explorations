@@ -8,13 +8,10 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { join } from 'node:path';
-import { pathToFileURL } from 'node:url';
-import { OUT_DIR } from '../bin/build.ts';
 import type * as Presses from '../src/presses.ts';
-import { publishedWith } from './built.ts';
+import { publishedModule, publishedWith } from './built.ts';
 
-const { PressTracker } = (await import(pathToFileURL(join(OUT_DIR, 'presses.js')).href)) as typeof Presses;
+const { PressTracker } = (await publishedModule('presses.js')) as typeof Presses;
 
 /** The events of a run of polls, each `[held, last]`, flattened to `+code` and `-code`. */
 function events(...polls: [number, number][]): string[] {

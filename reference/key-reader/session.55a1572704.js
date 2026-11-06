@@ -4,7 +4,7 @@ export class Learning {
     #answers = [];
     #misfits = [];
     constructor(keys) {
-        this.keys = keys;
+        this.keys = keys.filter((key) => key.ask);
     }
     get asked() {
         return this.keys[this.#answers.length];
@@ -37,13 +37,22 @@ export class Learning {
             this.#answers.push({ key: asked, code: 'skipped' });
         return asked;
     }
+    unseen() {
+        const asked = this.asked;
+        if (asked !== undefined)
+            this.#answers.push({ key: asked, code: 'not seen' });
+        return asked;
+    }
     undo() {
         return this.#answers.pop();
     }
     stateOf(name) {
         const answer = this.#answers.find((a) => a.key.name === name);
-        if (answer !== undefined)
-            return answer.code === 'skipped' ? 'skipped' : 'learned';
+        if (answer !== undefined) {
+            if (answer.code === 'skipped')
+                return 'skipped';
+            return answer.code === 'not seen' ? 'unseen' : 'learned';
+        }
         return this.asked?.name === name ? 'asked' : 'waiting';
     }
     #note(misfit) {
@@ -51,10 +60,7 @@ export class Learning {
         return { kind: 'misfit', misfit };
     }
     rows() {
-        return this.keys.map((key, index) => {
-            const answer = this.#answers[index];
-            return { name: key.name, words: key.words, code: answer === undefined ? 'not asked' : answer.code };
-        });
+        return this.#answers.map((answer) => ({ name: answer.key.name, words: answer.key.words, code: answer.code }));
     }
 }
 export class Naming {
@@ -144,12 +150,54 @@ export class Tester {
         this.#unknown.length = 0;
     }
 }
+export function sweepOf(keys, pressed) {
+    const tester = new Tester(keys);
+    for (const code of pressed)
+        tester.press(code);
+    return { seen: new Set(pressed).size, unknown: [...tester.unknown] };
+}
+export function learnedMap(keys, rows) {
+    const learned = new Map();
+    for (const row of rows)
+        if (typeof row.code === 'number')
+            learned.set(row.name, row.code);
+    return keys.map((key) => {
+        const code = learned.get(key.name);
+        if (code !== undefined)
+            return { name: key.name, scan: code, candidates: [] };
+        return { name: key.name, ...(key.scan === undefined ? {} : { scan: key.scan }), candidates: key.candidates };
+    });
+}
+export function checkOf(map, learnedNames, pressed) {
+    const tester = new Tester(map);
+    for (const code of pressed)
+        tester.press(code);
+    return {
+        confirmed: learnedNames.filter((name) => tester.stateOf(name) === 'lit').length,
+        learned: learnedNames.length,
+        unknown: [...tester.unknown],
+    };
+}
+export function neverAnswered(keys, pressed) {
+    if (pressed.length === 0)
+        return new Set();
+    const tester = new Tester(keys);
+    for (const code of pressed)
+        tester.press(code);
+    return new Set(keys
+        .filter((key) => key.scan !== undefined || key.candidates.length > 0)
+        .filter((key) => tester.stateOf(key.name) === 'unlit')
+        .map((key) => key.name));
+}
 export const LOG_TITLE = 'Harmony key map, from the key reader page';
-export function learningLog(head, rows, misfits, order = 'asked') {
+export function learningLog(head, sweep, check, rows, misfits, order = 'asked') {
     const lines = [
         LOG_TITLE,
         `model chosen: ${head.chosen}`,
         `remote reported: ${head.reported}, skin ${head.skin}, firmware ${head.firmware}`,
+        '',
+        `key test: ${sweep.seen} different keys answered`,
+        `key test, codes no key on the drawing has: ${sweep.unknown.length === 0 ? 'none' : sweep.unknown.join(', ')}`,
         '',
         `keys, in the order ${order}:`,
     ];
@@ -166,6 +214,7 @@ export function learningLog(head, rows, misfits, order = 'asked') {
         lines.push('none');
     for (const misfit of misfits)
         lines.push(`${misfit.code}: ${misfitWords(misfit)}`);
+    lines.push('', `key map check: ${check.confirmed} of ${check.learned} learned keys confirmed`, `key map check, codes the map does not have: ${check.unknown.length === 0 ? 'none' : check.unknown.join(', ')}`);
     return `${lines.join('\n')}\n`;
 }
 export function misfitWords(misfit) {
