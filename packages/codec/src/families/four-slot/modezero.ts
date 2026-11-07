@@ -24,7 +24,7 @@
  * architectures' lists are not generated, because section 311 refuted their constancy on arch 8, 10 and
  * 16, and the Harmony One's 55 entries, each calling the action list numbered by its own position, have
  * three ties at their capacity whose order the rule does not give. The Harmony One's firmware screens bind
- * another keypad, `families/touch/firmwarescreens.ts`' own, so `keyMapEntries` is this family's too.
+ * another keypad, `families/one/firmwarescreens.ts`' own, so `keyMapEntries` is this family's too.
  *
  * Moved out of `modezero.ts` with `todo-compile-one.md` 3.3.3.2, unchanged: the population, the key map over
  * scans 1 to 54 and that scan range are this family's, and the hash order every family's lists are stored in
@@ -45,7 +45,7 @@ const KEY_EVENTS = [1, KEY_EVENT_PRESS, 3] as const;
  * Scans 1 to 54, the 600's keypad, and the 650's and 700's; scan 0 is no key. Exported since section 336,
  * because an arch 14 start up screen binds the press of exactly these, `activityScreenChrome`, and two
  * copies of a range are two copies until one of them moves. The Harmony One's keypad is another,
- * `TOUCH_FIRMWARE_KEYPAD` in `families/touch/firmwarescreens.ts`.
+ * `ONE_FIRMWARE_KEYPAD` in `families/one/firmwarescreens.ts`.
  */
 export const KEYPAD_FIRST_SCAN = 1;
 export const KEYPAD_LAST_SCAN = 54;

@@ -60,7 +60,7 @@ import {
   activityStateVariables,
   deviceDelayVariables,
 } from '../src/families/four-slot/statetables.ts';
-import { TOUCH_FIRMWARE_STATE_RECORDS, TOUCH_STATE_TABLES } from '../src/families/touch/statetables.ts';
+import { ONE_FIRMWARE_STATE_RECORDS, ONE_STATE_TABLES } from '../src/families/one/statetables.ts';
 import { familyOf, familyOfArchitecture } from '../src/families/registry.ts';
 
 /** The thirteen arch 14 compiles section 312 names, as `frame.test.ts` lists them. */
@@ -578,8 +578,8 @@ test('a built table names its records, and the header follows the widths', () =>
 });
 
 // ---------------------------------------------------------------------------------------------------
-// The Harmony One, `todo-compile-one.md` 6.4: the same builder, with the touch family's facts,
-// `TOUCH_STATE_TABLES`, which the registry hands out for its compiles.
+// The Harmony One, `todo-compile-one.md` 6.4: the same builder, with the One family's facts,
+// `ONE_STATE_TABLES`, which the registry hands out for its compiles.
 // ---------------------------------------------------------------------------------------------------
 
 /** The 19 distinct Harmony One compiles, `todo-compile-one.md` 2.2, as `startupassistant.test.ts` lists them. */
@@ -602,12 +602,12 @@ test('todo-compile-one 6.4: base slots 0, 13 and 14 of all 19 Harmony One compil
     const layout = takeApart(c);
     // A reader asks the container's family for the facts, as the assembler does.
     const facts = familyOf(c)?.stateTables;
-    assert.equal(facts, TOUCH_STATE_TABLES, name);
-    const spec = describeStateTables(layout, TOUCH_STATE_TABLES);
+    assert.equal(facts, ONE_STATE_TABLES, name);
+    const spec = describeStateTables(layout, ONE_STATE_TABLES);
     if (spec.minuteList !== undefined) tally.minute += 1;
     variables += spec.variables.length;
     maps += spec.valueMaps.length;
-    const built = buildStateTables(spec, TOUCH_STATE_TABLES);
+    const built = buildStateTables(spec, ONE_STATE_TABLES);
     // Each built piece against the piece of Logitech's it takes the place of; `takeApart` zeroes every
     // address field, and the built pieces leave theirs zero, so the bytes compare as they stand.
     const table = layout.sections[13]!.head[0]!;
@@ -625,7 +625,7 @@ test('todo-compile-one 6.4: base slots 0, 13 and 14 of all 19 Harmony One compil
     const mapTable = layout.sections[14]!.head[0]!;
     if (built.valueMapTable !== undefined && same(built.valueMapTable.bytes, mapTable.bytes)) tally.mapTable += 1;
     pieceTargets(mapTable).forEach((p, k) => { if (same(built.valueMaps[k]!.bytes, p.bytes)) tally.maps += 1; });
-    if (firstDifference(rebuilt(layout, layout, TOUCH_STATE_TABLES), c.blob) === undefined) tally.whole += 1;
+    if (firstDifference(rebuilt(layout, layout, ONE_STATE_TABLES), c.blob) === undefined) tally.whole += 1;
   }
   // 19 compiles: seven clock records, eleven of the firmware's and one first two byte variable each, and
   // every variable and value map the descriptions carry.
@@ -644,13 +644,13 @@ test('todo-compile-one 6.4: the rebuild reads none of the bytes the generator ow
     const blind = blinded(layout, 1);
     assert.notDeepEqual(blind.sections[0]!.head[0]!.bytes, layout.sections[0]!.head[0]!.bytes, `${name}: tree`);
     assert.notDeepEqual(blind.sections[13]!.head[0]!.bytes, layout.sections[13]!.head[0]!.bytes, `${name}: header`);
-    assert.equal(firstDifference(rebuilt(layout, blind, TOUCH_STATE_TABLES), c.blob), undefined, `${name} differs`);
+    assert.equal(firstDifference(rebuilt(layout, blind, ONE_STATE_TABLES), c.blob), undefined, `${name} differs`);
   }
 });
 
 test('todo-compile-one 6.4: the Harmony One\'s firmware block, clock and widths are its own on all 19, and arch 14\'s fail it',
      skipUnless(...ONE_COMPILES), () => {
-  const one = TOUCH_STATE_TABLES;
+  const one = ONE_STATE_TABLES;
   const tally = { firmware: 0, fourteenFirmware: 0, clock: 0, clockWithoutMinute: 0, hourList: 0, minuteNext: 0, firstWide: 0, onlyWide: 0 };
   let narrowWidest = 0;
   for (const name of ONE_COMPILES) {
@@ -659,7 +659,7 @@ test('todo-compile-one 6.4: the Harmony One\'s firmware block, clock and widths 
     const records = stateRecords(c)!;
     const held = (r: (typeof records)[number]): [number, number] => [r.first, r.second];
     const firmware = records.slice(7, 18);
-    if (firmware.every((r, k) => r.count === 0 && JSON.stringify(held(r)) === JSON.stringify(TOUCH_FIRMWARE_STATE_RECORDS[k]))) tally.firmware += 1;
+    if (firmware.every((r, k) => r.count === 0 && JSON.stringify(held(r)) === JSON.stringify(ONE_FIRMWARE_STATE_RECORDS[k]))) tally.firmware += 1;
     if (firmware.every((r, k) => JSON.stringify(held(r)) === JSON.stringify(FIRMWARE_STATE_RECORDS[k]))) tally.fourteenFirmware += 1;
     const hour = records[2]!.values[0]!.operand;
     const minute = records[1]!.values[1]?.operand;
@@ -682,8 +682,8 @@ test('todo-compile-one 6.4: the Harmony One\'s firmware block, clock and widths 
   assert.equal(one.minuteCall, true);
   assert.equal(FOUR_SLOT_STATE_TABLES.minuteCall, false);
   // The width rule refuses past what is measured, and the four slot family's rule would make 101 to 121 two bytes.
-  assert.equal(isWideVariable(121, TOUCH_STATE_TABLES), false);
-  assert.throws(() => isWideVariable(122, TOUCH_STATE_TABLES), StateTablesError);
+  assert.equal(isWideVariable(121, ONE_STATE_TABLES), false);
+  assert.throws(() => isWideVariable(122, ONE_STATE_TABLES), StateTablesError);
   assert.throws(() => isWideVariable(121, FOUR_SLOT_STATE_TABLES), StateTablesError);
 });
 
@@ -692,7 +692,7 @@ test('todo-compile-one 6.4: a Harmony One description built by the four slot fam
   let refused = 0;
   let minuteRefused = 0;
   for (const name of ONE_COMPILES) {
-    const spec = describeStateTables(takeApart(containerOf(name)), TOUCH_STATE_TABLES);
+    const spec = describeStateTables(takeApart(containerOf(name)), ONE_STATE_TABLES);
     // Its variables' maxima reach past the four slot family's one byte rule, which refuses them as not established.
     try {
       buildStateTables(spec, FOUR_SLOT_STATE_TABLES);
@@ -700,10 +700,10 @@ test('todo-compile-one 6.4: a Harmony One description built by the four slot fam
       if (!(error instanceof StateTablesError) || !error.message.includes('falls between')) throw error;
       refused += 1;
     }
-    // Without the minute's list the touch family's facts refuse it, since every one of its compiles has one.
+    // Without the minute's list the One family's facts refuse it, since every one of its compiles has one.
     const { minuteList: _, ...withoutMinute } = spec;
     try {
-      buildStateTables(withoutMinute, TOUCH_STATE_TABLES);
+      buildStateTables(withoutMinute, ONE_STATE_TABLES);
     } catch (error) {
       if (!(error instanceof StateTablesError) || !error.message.includes('the description names none')) throw error;
       minuteRefused += 1;

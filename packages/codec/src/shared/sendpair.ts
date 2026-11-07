@@ -1,5 +1,5 @@
 /**
- * The device half of the plain send, `{0x7D, 0x7C}` naming one device, which two families share: the touch family,
+ * The device half of the plain send, `{0x7D, 0x7C}` naming one device, which two families share: the One family,
  * the Harmony One, section 278, and the side keys family, the Harmony 880 and 885, `todo-compile-885.md` 2.1. A
  * device's lists are one such pair per record, and where the device states a power on delay an on list after them:
  * every step of the on action called in order, then one bare `0x7C` wait of the delay in tenths.
@@ -10,7 +10,7 @@
  * holds, six contributed and the two bench units', is the pair with both halves naming one group, and every one of
  * their 44 power variables switches on through a list of one call and one wait, `sidekeysdevice.test.ts`. Plan
  * 007 puts a fact measured alike on the families a module serves outside any of them, and a family never imports
- * another, so this lived in the touch family's `sends.ts` until the second family needed it, and moved here
+ * another, so this lived in the One family's `sends.ts` until the second family needed it, and moved here
  * unchanged.
  *
  * **What differs between the two is the largest wait one `0x7C` is given**, which each family states: the Harmony

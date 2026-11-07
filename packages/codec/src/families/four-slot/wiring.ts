@@ -51,7 +51,7 @@
  * Arch 14 only, the Harmony 600, 650 and 700. Read only towards hardware: the result is pieces.
  *
  * **The family's catalogue over the shared engine.** The engine, symbols, encoding and putting pieces in a
- * layout, is `wiringparts.ts`, which the Harmony One's catalogue, `families/touch/wiring.ts`, runs on too;
+ * layout, is `wiringparts.ts`, which the Harmony One's catalogue, `families/one/wiring.ts`, runs on too;
  * this module is the Harmony 600, 650 and 700's catalogue and numbering, asked as `Family.wiring`. It moved
  * here from `src/wiring.ts` with `todo-compile-one.md` 3.3.3.2, unchanged but for where its names come from;
  * the engine's public names, which it used to pass on, the codec's index takes from `wiringparts.ts` itself.

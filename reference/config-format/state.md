@@ -836,8 +836,8 @@ of 3300 on the other two[^s347]. `PARAMETER_VALUES` in `packages/codec/src/famil
 
 **On the Harmony One one set is on all 19 distinct compiles**, group 9's twelve bytes past its declared
 entries included. The groups the table above does not read hold `60`, `80`, `2500, 10980` and
-`129, 21, 3, 1, 0, 0, 0, 0` (groups 2, 3, 8 and 10)[^s407]. `TOUCH_PARAMETERS` in
-`packages/codec/src/families/touch/parameters.ts`.
+`129, 21, 3, 1, 0, 0, 0, 0` (groups 2, 3, 8 and 10)[^s407]. `ONE_PARAMETERS` in
+`packages/codec/src/families/one/parameters.ts`.
 
 `buildParameterBlock` in `packages/codec/src/firmwaresections.ts` builds the section from the model's values
 and checks it against `PARAMETER_GROUP_COUNTS`, refusing a group of another length, byte for byte on the 19

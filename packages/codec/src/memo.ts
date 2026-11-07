@@ -5,14 +5,14 @@
  * **Why the bytes are compared and not only the object.** `queue.ts` and `devicemode.ts` key a cache on
  * the container alone, which is right for what they read, but a container is not immutable: several
  * composers write into `blob` in place after reading it (`shared/core.ts`, `shared/modes.ts`, the
- * touch family's menus and lists), so a value cached on the object alone could outlive the bytes it was
+ * One family's menus and lists), so a value cached on the object alone could outlive the bytes it was
  * read from and nothing would say so. Here each entry keeps a copy of the blob and is used only while
  * the blob still equals it, which is a `memcmp` of a megabyte, tens of microseconds, against a reader
  * costing ten milliseconds and more. Any other field a reader uses (`flashBase`, `sections`) is set
  * once at parse and is `readonly`.
  *
  * **What it is for.** Test files and composers ask the same container the same question many times:
- * `touchDrawsName` asks for the character map once per screen item and name it compares, and a test of
+ * `oneDrawsName` asks for the character map once per screen item and name it compares, and a test of
  * the Harmony One's activity keys spent half its three minutes resolving the same alphabet again.
  * Measured on 23 October 2026. The value is the same object each time, so a reader whose result
  * callers could mutate must not be cached through this, or must hand back a copy.

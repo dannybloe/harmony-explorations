@@ -1,7 +1,7 @@
 /**
  * The Harmony 300 and 350 built from nothing: the configuration with no device and no activity, `todo-compile-350.md`
  * 5.1.5, step 5 of plan 011, the no screen family's half of what `families/four-slot/empty.ts` is for the Harmony 650
- * and `families/touch/empty.ts` for the Harmony One.
+ * and `families/one/empty.ts` for the Harmony One.
  *
  * Every other route to a configuration of this family starts from one of Logitech's compiles and edits it, chapter 4.
  * This one takes no container at all: a skin and a moment, and each section comes from a generator of ours that was

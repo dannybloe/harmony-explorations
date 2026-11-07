@@ -1,0 +1,627 @@
+/**
+ * The Harmony One's ten firmware screens built whole from a description: `todo-compile-one.md` 4.4.3, as
+ * the Harmony 650's were in its 7.4, section 357.
+ *
+ * Every Harmony One configuration opens its mode table with the screens the event map's fallback counts,
+ * ten, before its thirty status screens, section 405: Low Battery, USB Connected, two blanks, Update
+ * Successful, Upgrade Success, Update in progress, Learning..., Firmware upgrade in progress, and the
+ * charging problem screen. Section 408 read that the firmware enters none of them by number; the
+ * configuration's own lists enter 0, 1 and 9. On the sixteen English compiles of skin 54 each is one shape
+ * once the configuration's numbering is set aside, so this module holds the shape and the description
+ * holds the numbering.
+ *
+ * **What a screen is made of**, each one page:
+ *
+ * * **its own key map**: on Low Battery, USB Connected and the charging problem screen every press of 52 key
+ *   codes, the 40 keypad keys and the touch codes, `ONE_FIRMWARE_KEYPAD`, each running a list of its own but
+ *   USB Connected's scans 2 and 28, plus the enter and leave handlers, tags 6 and 7, and on two of them the header handler, tag `0x2D`, which runs three of
+ *   base slot 11's programs; on the other seven the presses of scans 46 and 47 swallowed and the handlers.
+ *   The stored order is the hash order, and three buckets are shared: their stored order is measured, the
+ *   same on all nineteen compiles, and the insertion order that produces it, `keyListOrderInserted`, is
+ *   inferred, chosen per screen under the head insertion rule `compilerTagOrder` found the corpus fits, the
+ *   handlers before the keys on the first two and after them on the charging problem screen;
+ * * **its lists**: every list the key map runs that is its own, numbered in stored order from list 0 on,
+ *   one screen after another, and after a screen's keys the list its chrome queues. Base slot 10's first
+ *   178 lists are these screens' on all sixteen and the European factory file;
+ * * **its chrome**, the program its page calls: the full screen picture, the queued clock program and the
+ *   queued list where the screen has them, and a second picture on three;
+ * * **its page program**: the call, then the screen's lines in the body font, each centred on the 176
+ *   pixel width rounded down, and on the two screens with one the "OK" of the right hand key in the
+ *   second font at 124, 201, inside the touch area of code 49 the page binds, the charging problem screen's
+ *   by reference to Low Battery's;
+ * * **its page record**, seven bytes with the hit page first, and its page list and the list's copy,
+ *   which on Low Battery and the charging problem screen bind the press of scan 49, each to a list of
+ *   its own: the copy's is 239 and 240 on all sixteen, the factory file and the Dutch compile, and 238 and 239
+ *   on the everyday One's, where the page list's varies on every compile;
+ * * **the lists below it**, since `todo-compile-one.md` 6.5, section 418: every list its own lists call, through
+ *   every level, that the wiring does not build, 18 over the ten screens on all sixteen, each at the index the
+ *   description reads, written in `screentemplate.ts`' steps. The six left below them are the wiring's.
+ *
+ * **What the description carries**, read off a configuration: the two fonts; per screen its hit page, its
+ * pictures, the clock program its chrome queues, and in a fixed walk order every other number the
+ * configuration chose, the lists outside these screens it calls, its timers and the clock programs its
+ * lists run. **What is generated**: every opcode, every constant operand, the tags and their order, the
+ * numbering of these screens' own lists, every word and where it is drawn, and which text is drawn inline.
+ *
+ * English only; skin 54, the Harmony One the spare reports, and the European factory file of skin 59. Read only towards hardware: the result is
+ * pieces.
+ */
+import type { Container, Instruction } from '../../gspm.ts';
+import { actionListBytes } from '../../gspm.ts';
+import type { ContainerLayout, ContainerPiece } from '../../frame.ts';
+import { layOutContainer, takeApart } from '../../frame.ts';
+import type { PieceTarget } from '../../statetables.ts';
+import { taggedListBytes } from '../../sections.ts';
+import {
+  SCREEN_CALL, SCREEN_DRAW_IMAGE, SCREEN_END, SCREEN_FILL, SCREEN_QUEUE_INSTRUCTION, SCREEN_RETURN, SCREEN_SELECT_FONT,
+  SCREEN_TEXT_AT, SCREEN_TEXT_INLINE,
+} from '../../screen.ts';
+import { fillBytes, fillOf, fillTarget } from '../../pictures.ts';
+import { keyListOrderInserted } from '../../modezero.ts';
+import {
+  type BuiltScreen, type RecordFrame, type RecordPlace, ScreenRecordError, assertRebuilt, recordBuilding,
+  recordReading, withModeRecords,
+} from '../../screenrecords.ts';
+import { type ValueReader, blobReader, speller } from '../../shared/spelling.ts';
+import {
+  CLICK, LIGHT_7_OFF, LIST, MAP, PAGE_KEYS_OFF, SET, SWALLOW, type Step as TemplateStep, TEST, k, named, owns, readStep, stepKinds, write,
+  writeStep,
+} from './screentemplate.ts';
+
+const PRESS = 0x80;
+const ENTER = 0x06;
+const LEAVE = 0x07;
+/** The header handler, which runs three of base slot 11's programs. */
+const HEADER = 0x2d;
+/** A tag the charging problem screen binds as it binds a key, not a press. */
+const TAG_0X30 = 0x30;
+const CALL = 0x7f;
+const RUN_PROGRAM = 0x73;
+const BAND = 0x1f;
+const TIMER_START = 0xeb;
+const TIMER_CANCEL = 0xea;
+const SCREEN_WIDTH = 176;
+/** Where the right hand key's "OK" is drawn. */
+const OK_AT = [124, 201] as const;
+const OK_WORD = 'OK';
+
+/**
+ * The key codes the firmware screens bind, by scan: 52 of 1 to 55, every one but 41, 42 and 54, the 40 keypad
+ * keys and the touch codes, `reference/remotes/harmony-one/keys.md`, on all nineteen compiles.
+ */
+export const ONE_FIRMWARE_KEYPAD: readonly number[] = Array.from({ length: 55 }, (_, k) => k + 1)
+  .filter((scan) => scan !== 41 && scan !== 42 && scan !== 54);
+
+/**
+ * One instruction of a list: its opcode and its operand, or the kind of number the configuration chose; or,
+ * `below`, a call of a list below the screens that they build, at an index the configuration chose, stated in
+ * `screentemplate.ts`' language, section 418.
+ */
+type Operand = number | 'list' | 'timer' | 'program';
+/**
+ * `role` says which number of the configuration's a list or a program is, as `screentemplate.ts`' `named` does, so a
+ * configuration built from nothing can number the screens, `numbering.ts`, `todo-compile-one.md` 7.1.4. A timer takes
+ * none: it is the screen's own, the one its enter handler starts. The reader and the builder ignore roles.
+ */
+interface Plain { opcode: number; operand: Operand; band?: number; role?: string }
+type Step = Plain | { below: TemplateStep };
+const nop: Step = { opcode: 0, operand: 0 };
+/** A call of a list below the screens, built from its template step, section 418. */
+const below = (step: TemplateStep): Step => ({ below: step });
+/** A call of one of the wiring's lists, by its role. */
+const call = (role: string): Step => ({ opcode: CALL, operand: 'list', role });
+/** A run of a base slot 11 program, by its role: the header's three and the chrome's, `screentemplate.ts`' names. */
+const run = (role: string): Step => ({ opcode: RUN_PROGRAM, operand: 'program', role });
+const HEADER_RUNS = [run('header 1'), run('header 2'), run('header 3')] as const;
+/** What the chrome's own list queues after the chrome's own program, `chrome 1`. */
+const QUEUED_RUNS = [run('chrome 2'), run('chrome 3')] as const;
+const timerStart: Step = { opcode: BAND, band: TIMER_START, operand: 'timer' };
+const timerCancel: Step = { opcode: BAND, band: TIMER_CANCEL, operand: 'timer' };
+const fixed = (opcode: number, operand: number): Step => ({ opcode, operand });
+
+/**
+ * What a tag runs: nothing, a list of the screen's own, one instruction, or a list below the screens bound
+ * directly, built from its template step at an index the configuration chose (section 418; until then a list
+ * elsewhere, named and not built).
+ */
+type Binding =
+  | { kind: 'swallow' }
+  | { kind: 'own'; steps: readonly Step[] }
+  | { kind: 'below'; step: TemplateStep }
+  | { kind: 'direct'; step: Plain };
+const swallow: Binding = { kind: 'swallow' };
+const own = (...steps: Step[]): Binding => ({ kind: 'own', steps });
+
+interface OneFirmwareScreen {
+  /** The screen's name in code, which the wiring uses to enter it. */
+  id: string;
+  name: string;
+  /** The keypad presses' binding, absent where a screen binds only `tags`. */
+  keys?: Binding;
+  /** Every other tag, in the order inserted relative to the keys: `keys` marks where the keypad goes in. */
+  tags: readonly (readonly [number, Binding] | 'keys')[];
+  /** The list the chrome queues after its clock program, the screen's own. */
+  queued?: readonly Step[];
+  /** The second picture the chrome draws, and where. */
+  second?: readonly [number, number];
+  /** The lines in the body font and their heights. */
+  lines: readonly (readonly [string, number])[];
+  /** Whether the screen draws the right hand key's "OK". */
+  ok?: true;
+  /**
+   * What the page list and its copy bind the press of scan 49 to, where they bind it: a list below the screens
+   * each, of one shape, at two indices the configuration chose.
+   */
+  scan49?: TemplateStep;
+}
+
+// ---------------------------------------------------------------------------------------------------------
+// The lists below the screens, section 418: every list the screens' own lists call that the wiring does not
+// build, in `screentemplate.ts`' language, each at an index the configuration chose. The wiring's stay `call`,
+// a number: the key lights' on lists, `lights`, `events`, `boot.3`, `boot.4` and `settle.1`.
+
+/** USB Connected's variable written: 1 on entering and on most keys, 2 and 3 by the keys below, `07 FFFF` first. */
+const usbState = (value: number): TemplateStep => owns(SET, named(write(value), 'usb variable'));
+/**
+ * What USB Connected's scans 2, 28 and 46 run below their own lists: `1F FB0n`, then a comparison of the
+ * variable written above whose arms write it again or `07 FFFC` and then 1.
+ */
+const usbKey = (byte: number, ...arm: readonly TemplateStep[]): TemplateStep =>
+  owns(k(BAND, 0xfb00 | byte), owns(named(TEST(0x80), 'usb variable'), ...arm));
+
+/** The ten screens, in mode order, on the sixteen English compiles of skin 54. */
+const SCREENS: readonly OneFirmwareScreen[] = [
+  {
+    // Entering writes 1 to a variable of the configuration's below the screen and lights channel 7 through the
+    // wiring's list; leaving runs the wiring's `boot.3`, which writes it 0, and channel 7's off list.
+    id: 'lowBattery', name: 'Low Battery', keys: own(nop, nop, nop),
+    tags: [[ENTER, own(below(owns(SET, named(write(1), 'low battery variable'))), timerStart, call('light 7 on'))],
+      [LEAVE, own(call('boot 3'), timerCancel, below(LIGHT_7_OFF))], 'keys', [HEADER, own(...HEADER_RUNS)]],
+    // Its OK: the click and the wiring's `settle.1`, on the page list and on its copy.
+    queued: QUEUED_RUNS, second: [58, 103], lines: [['The battery level is low!', 143]], ok: true,
+    scan49: owns(CLICK, named(LIST, 'settle 1')),
+  },
+  {
+    // Every key and entering write 1 below the screen; scan 46 and the two the keys override, 2 and 28, go
+    // through a comparison; leaving runs the wiring's `boot.4` and a comparison of a variable of the
+    // configuration's that looks the location's value map up.
+    id: 'usbConnected', name: 'USB Connected', keys: own(below(usbState(1)), nop),
+    tags: [[ENTER, { kind: 'below', step: usbState(1) }],
+      [LEAVE, own(call('boot 4'), below(owns(k(BAND, 0xfb00), owns(named(TEST(0x00), 'assistant variable'), named(MAP, 'select route map')))))],
+      'keys',
+      [PRESS | 2, { kind: 'below', step: usbKey(2, usbState(3), usbState(1)) }],
+      [PRESS | 28, { kind: 'below', step: usbKey(3, k(0x07, 0xfffc), usbState(1)) }],
+      [PRESS | 46, own(below(usbKey(1, usbState(2), usbState(1))), nop)]],
+    second: [56, 89], lines: [['USB Connected', 168]],
+  },
+  {
+    // Leaving runs the wiring's `events` and the page keys' off list.
+    id: 'blankA', name: 'blank, one', tags: [[PRESS | 47, swallow], [PRESS | 46, swallow],
+      [ENTER, own(fixed(0x07, 0xfffb), fixed(BAND, 0xfe02), fixed(BAND, 0xe805))],
+      [LEAVE, own(fixed(0x07, 0xfffb), fixed(BAND, 0xfd02), call('events'), below(PAGE_KEYS_OFF))]],
+    lines: [],
+  },
+  {
+    id: 'blankB', name: 'blank, two', tags: [[PRESS | 47, swallow], [PRESS | 46, swallow],
+      [ENTER, own(fixed(0x07, 0xfffb), fixed(BAND, 0xfe03))],
+      [LEAVE, own(fixed(BAND, 0xfd03), call('events'), below(PAGE_KEYS_OFF))]],
+    lines: [],
+  },
+  ...([['updateSuccessful', 'Update Successful', 168], ['upgradeSuccess', 'Upgrade Success', 168],
+    ['updateInProgress', 'Update in progress', 168], ['learning', 'Learning...', 168],
+    ['firmwareUpgrade', 'Firmware upgrade in progress', 168]] as const).map(([id, line, y]): OneFirmwareScreen => ({
+    id, name: line, tags: [[PRESS | 47, swallow], [PRESS | 46, swallow], [ENTER, { kind: 'direct', step: timerStart }],
+      [LEAVE, { kind: 'direct', step: timerCancel }], [HEADER, own(...HEADER_RUNS)]],
+    queued: QUEUED_RUNS, lines: [[line, y]],
+  })),
+  {
+    // Every key and tag 0x30 run the wiring's `lights`; leaving, channel 7's off list; its OK, the click and the
+    // location's value map, on the page list and on its copy.
+    id: 'chargingProblem', name: 'Charging problem', keys: own(call('lights'), nop, nop),
+    tags: ['keys', [ENTER, own(timerStart, call('light 7 on'))], [LEAVE, own(timerCancel, below(LIGHT_7_OFF))], [HEADER, own(...HEADER_RUNS)],
+      [TAG_0X30, own(call('lights'), nop, nop)]],
+    queued: QUEUED_RUNS, second: [43, 34],
+    lines: [['Charging problem.', 125], ['Contact customer support:', 137], ['http://supportinfo.', 149],
+      ['harmonyremote.com', 161]],
+    ok: true, scan49: owns(CLICK, named(MAP, 'working route map')),
+  },
+];
+
+/**
+ * The ten screens by their names in code, in mode order. Their count is the event map's base on 19 of 19, as on
+ * the Harmony 600, 650 and 700, section 347; the wiring, `families/one/wiring.ts`, enters three of them, 0, 1
+ * and 9, which section 408 found are the only ones of the head a configuration enters.
+ */
+export const ONE_FIRMWARE_SCREENS: readonly string[] = SCREENS.map((screen) => screen.id);
+
+/**
+ * A screen's tags in the order inserted, and what each runs. A tag listed after the keys overrides the keys' own
+ * binding: USB Connected's presses of scans 2 and 28 run lists outside the screens.
+ */
+function bindings(screen: OneFirmwareScreen): { inserted: number[]; binding: Map<number, Binding> } {
+  const binding = new Map<number, Binding>();
+  const inserted: number[] = [];
+  for (const one of screen.tags) {
+    if (one === 'keys') {
+      for (const scan of ONE_FIRMWARE_KEYPAD) {
+        const tag = PRESS | scan;
+        if (!binding.has(tag)) inserted.push(tag);
+        if (!binding.has(tag)) binding.set(tag, screen.keys as Binding);
+      }
+    } else {
+      const [tag, bound] = one;
+      if (!binding.has(tag)) inserted.push(tag);
+      binding.set(tag, bound);
+    }
+  }
+  return { inserted, binding };
+}
+
+/** The numbers a screen's lists and bindings take, in walk order, and the kinds they are. */
+function slotsOf(screen: OneFirmwareScreen): string[] {
+  const out: string[] = [];
+  const { inserted, binding } = bindings(screen);
+  // A list below takes its index and then its own numbers, depth first, `stepKinds`' walk.
+  const steps = (body: readonly Step[]) => body.forEach((one) => {
+    if ('below' in one) out.push(...stepKinds(one.below));
+    else if (typeof one.operand === 'string') out.push(one.operand);
+  });
+  for (const tag of keyListOrderInserted(inserted)) {
+    const bound = binding.get(tag) as Binding;
+    if (bound.kind === 'own') steps(bound.steps);
+    else if (bound.kind === 'below') out.push(...stepKinds(bound.step));
+    else if (bound.kind === 'direct') steps([bound.step]);
+  }
+  if (screen.queued !== undefined) steps(screen.queued);
+  if (screen.queued !== undefined) out.push('program');
+  // The page list's list, then its copy's, which Logitech points at another of the same shape.
+  if (screen.scan49 !== undefined) out.push(...stepKinds(screen.scan49), ...stepKinds(screen.scan49));
+  return out;
+}
+
+/**
+ * A number a firmware screen takes, in `slotsOf`' walk order, for a configuration numbered from nothing,
+ * `todo-compile-one.md` 7.1.4: one instruction's operand, by its role (a timer has none, being the screen's own), or a
+ * list below the screens with every number in it, its template step, and whether a list of the screens' own calls it
+ * (`called`) or a tag or a page list binds it straight.
+ */
+export type OneFirmwareSlot =
+  | { kind: 'plain'; what: 'list' | 'timer' | 'program'; role?: string }
+  | { kind: 'below'; step: TemplateStep; called: boolean };
+
+/** Every number screen `mode` of the ten takes, `slotsOf`' walk with what each is, `stepKinds` covering a list below. */
+export function oneFirmwareSlots(mode: number): OneFirmwareSlot[] {
+  const screen = SCREENS[mode];
+  if (screen === undefined) throw new ScreenRecordError(`there is no firmware screen ${mode}`);
+  const out: OneFirmwareSlot[] = [];
+  const { inserted, binding } = bindings(screen);
+  const steps = (body: readonly Step[], called: boolean): void => body.forEach((one) => {
+    if ('below' in one) out.push({ kind: 'below', step: one.below, called });
+    else if (typeof one.operand === 'string') out.push({ kind: 'plain', what: one.operand, ...(one.role === undefined ? {} : { role: one.role }) });
+  });
+  for (const tag of keyListOrderInserted(inserted)) {
+    const bound = binding.get(tag) as Binding;
+    // A list of the screen's own is the builder's, so what it calls is called; a list below bound straight is not.
+    if (bound.kind === 'own') steps(bound.steps, true);
+    else if (bound.kind === 'below') out.push({ kind: 'below', step: bound.step, called: false });
+    else if (bound.kind === 'direct') steps([bound.step], false);
+  }
+  if (screen.queued !== undefined) {
+    steps(screen.queued, true);
+    out.push({ kind: 'plain', what: 'program', role: 'chrome 1' });
+  }
+  if (screen.scan49 !== undefined) out.push({ kind: 'below', step: screen.scan49, called: false }, { kind: 'below', step: screen.scan49, called: false });
+  // The same walk as the reader's and the builder's, so the two must agree in length and kind.
+  const kinds = out.flatMap((one) => (one.kind === 'plain' ? [one.what] : stepKinds(one.step)));
+  if (kinds.join() !== slotsOf(screen).join()) throw new ScreenRecordError(`${screen.name}'s slots do not walk as the builder takes them`);
+  return out;
+}
+
+/**
+ * Where screen `mode` of the ten draws the pictures its description supplies, in order: the full screen picture at the
+ * origin, and the second where the screen draws one. For a configuration numbered from nothing, whose pictures are
+ * supplied by place, `todo-compile-one.md` 7.1.4.
+ */
+export function oneFirmwarePicturePlaces(mode: number): { x: number; y: number }[] {
+  const screen = SCREENS[mode];
+  if (screen === undefined) throw new ScreenRecordError(`there is no firmware screen ${mode}`);
+  return [{ x: 0, y: 0 }, ...(screen.second === undefined ? [] : [{ x: screen.second[0], y: screen.second[1] }])];
+}
+
+/**
+ * The hit page each of the ten is touched through, by its name in `hitpages.ts`' table, in mode order: a message over
+ * OK where the screen draws OK, the page of no area on the two blanks, and the message alone on the rest, as that
+ * table's namers and section 417 have them; on all sixteen English compiles, `test/onenumbering.test.ts`.
+ */
+export const ONE_FIRMWARE_HIT_PAGES: readonly string[] = SCREENS.map((screen) => {
+  if (screen.ok === true) return 'message and OK';
+  return screen.lines.length === 0 ? 'blank' : 'message';
+});
+
+/**
+ * How many lists of their own the ten build, at base slot 10 indices 0 upward, which the builder generates rather than
+ * takes from a description: one per tag a screen binds to a list of its own, and one per chrome that queues one.
+ */
+export const ONE_FIRMWARE_OWN_LISTS: number = SCREENS.reduce((sum, screen) => {
+  const { binding } = bindings(screen);
+  return sum + [...binding.values()].filter((one) => one.kind === 'own').length + (screen.queued === undefined ? 0 : 1);
+}, 0);
+
+export interface OneFirmwareScreensSpec {
+  fonts: { body: number; ok: number };
+  /** Per screen, in mode order. */
+  screens: {
+    /** The hit page its page record names. */
+    hitPage: number;
+    /** The full screen picture, and the second where the screen draws one. */
+    pictures: PieceTarget[];
+    /** Every other number the configuration chose, in `slotsOf`'s walk order. */
+    numbers: number[];
+  }[];
+  /** Texts drawn by reference to a copy outside these screens, by glyph codes joined. */
+  homes: Map<string, PieceTarget>;
+}
+
+export interface OneFirmwareScreensDescribed {
+  spec: OneFirmwareScreensSpec;
+  place: { screens: RecordPlace[]; lists: Map<number, ContainerPiece>; lengths: Map<ContainerPiece, number>; inline: Map<ContainerPiece, Map<number, string>> };
+  described: Set<number>;
+  structure: Set<number>;
+  addresses: { read: Set<number>; built: Set<number> };
+  regions: { from: number; to: number; what: string }[];
+}
+
+const shift = (step: Plain, value: number): number => (step.band === undefined ? value : (step.band << 8) | value);
+
+/**
+ * Read off a configuration what a composer would supply for the One's firmware screens, and where
+ * Logitech's sat. Refuses a screen whose tags, list numbering or instructions are not this module's shape.
+ */
+export function describeOneFirmwareScreens(
+  c: Container, layout: ContainerLayout, read: ValueReader = blobReader(c),
+): OneFirmwareScreensDescribed {
+  const reading = recordReading(c, layout, read);
+  const { value, value16, value24 } = reading;
+  let next = 0;
+  let body: number | undefined;
+  let ok: number | undefined;
+  const fontOf = (start: number, seen: number | undefined): number => {
+    const font = value(start + 1);
+    if (seen !== undefined && seen !== font) throw new ScreenRecordError('the firmware screens select two fonts for one role');
+    return font;
+  };
+  const frames: RecordFrame[] = [];
+  const screens = SCREENS.map((screen, mode) => {
+    const f = reading.frame(screen.name, mode);
+    frames.push(f);
+    if (f.pages.length !== 1) throw new ScreenRecordError(`${screen.name}, mode ${mode}, is not one page`);
+    const page = f.pages[0] as RecordFrame['pages'][number];
+    const { inserted, binding } = bindings(screen);
+    const tags = keyListOrderInserted(inserted);
+    const entries = f.record.entries;
+    if (entries.length !== tags.length || entries.some((one, k) => one.tag !== tags[k])) {
+      throw new ScreenRecordError(`${screen.name}'s key map holds other tags or another order`);
+    }
+    const numbers: number[] = [];
+    // A list of the screen's own: at the next index, of its length, each step's opcode, and its numbers.
+    const ownList = (index: number, steps: readonly Step[], what: string): void => {
+      if (index !== next) throw new ScreenRecordError(`${screen.name}'s ${what} is list ${index}, not ${next}`);
+      next += 1;
+      const list = reading.list(index, `${screen.name}'s ${what}`);
+      if (list.body.length !== steps.length) throw new ScreenRecordError(`${screen.name}'s ${what} is not ${steps.length} instructions`);
+      steps.forEach((step, k) => {
+        const got = list.body[k] as Instruction;
+        const at = list.off + 1 + 3 * k;
+        // A list below: read against its template, its index and every number in it the description's.
+        if ('below' in step) {
+          readStep(reading, screen.name, numbers, step.below, got, at, `${what}, instruction ${k}`);
+          return;
+        }
+        if (got.opcode !== step.opcode) throw new ScreenRecordError(`${screen.name}'s ${what}, instruction ${k}, is not 0x${step.opcode.toString(16)}`);
+        if (typeof step.operand === 'number') {
+          if (got.operand !== step.operand) throw new ScreenRecordError(`${screen.name}'s ${what}, instruction ${k}, has another operand`);
+        } else if (step.band !== undefined) {
+          if (got.operand >> 8 !== step.band) throw new ScreenRecordError(`${screen.name}'s ${what}, instruction ${k}, is in another band`);
+          numbers.push(value(at));
+        } else numbers.push(value16(at));
+      });
+    };
+    tags.forEach((tag, k) => {
+      const bound = binding.get(tag) as Binding;
+      const entry = entries[k] as (typeof entries)[number];
+      const at = f.ownOff + 1 + 4 * k + 1;
+      const what = `binding of tag 0x${tag.toString(16)}`;
+      if (bound.kind === 'swallow') {
+        if (entry.opcode !== 0 || entry.operand !== 0) throw new ScreenRecordError(`${screen.name}'s ${what} is not swallowed`);
+      } else if (bound.kind === 'direct') {
+        if (entry.opcode !== bound.step.opcode || entry.operand >> 8 !== bound.step.band) {
+          throw new ScreenRecordError(`${screen.name}'s ${what} is not its instruction`);
+        }
+        numbers.push(value(at));
+      } else if (bound.kind === 'below') {
+        readStep(reading, screen.name, numbers, bound.step, entry, at, what);
+      } else {
+        if (entry.opcode !== CALL) throw new ScreenRecordError(`${screen.name}'s ${what} calls no list`);
+        ownList(entry.operand, bound.steps, what);
+      }
+    });
+    // The chrome: its pictures, and what it queues.
+    const chrome = page.chrome;
+    if (chrome === undefined) throw new ScreenRecordError(`${screen.name}'s page calls no chrome`);
+    // A fill in a picture's place is the picture made one, section 425, carried as the fill's target.
+    const pictures = chrome.program.filter((one) => one.opcode === SCREEN_DRAW_IMAGE || one.opcode === SCREEN_FILL)
+      .map((one) => (one.opcode === SCREEN_FILL
+        ? fillTarget(value(one.start + 3), value(one.start + 4), (value(one.start + 5) << 8) | value(one.start + 6))
+        : reading.targetOf(value24(one.start + one.length - 3))));
+    if (pictures.length !== (screen.second === undefined ? 1 : 2)) throw new ScreenRecordError(`${screen.name}'s chrome draws another number of pictures`);
+    const queues = chrome.program.filter((one) => one.opcode === SCREEN_QUEUE_INSTRUCTION);
+    if (queues.length !== (screen.queued === undefined ? 0 : 2)) throw new ScreenRecordError(`${screen.name}'s chrome queues another number of instructions`);
+    if (screen.queued !== undefined) {
+      const [program, list] = queues as [(typeof queues)[number], (typeof queues)[number]];
+      ownList((list.operands[0] as number) | ((list.operands[1] as number) << 8), screen.queued, 'queued list');
+      numbers.push(value16(program.start + 1));
+    }
+    for (const one of page.program) {
+      if (one.opcode !== SCREEN_SELECT_FONT) continue;
+      if (one === page.program.find((ins) => ins.opcode === SCREEN_SELECT_FONT)) body = fontOf(one.start, body);
+      else ok = fontOf(one.start, ok);
+    }
+    if (screen.scan49 !== undefined) {
+      const entry = page.list.entries[0];
+      if (page.list.entries.length !== 1 || entry?.tag !== (PRESS | 49)) {
+        throw new ScreenRecordError(`${screen.name}'s page list does not bind scan 49's press`);
+      }
+      readStep(reading, screen.name, numbers, screen.scan49, entry, page.listOff + 1 + 1, 'page list\'s binding of scan 49');
+      const copied = page.copy.entries[0];
+      if (page.copy.entries.length !== 1 || copied?.tag !== (PRESS | 49)) {
+        throw new ScreenRecordError(`${screen.name}'s page list's copy does not bind scan 49's press`);
+      }
+      readStep(reading, screen.name, numbers, screen.scan49, copied, page.copyOff + 1 + 1, 'page list copy\'s binding of scan 49');
+    } else if (page.list.entries.length !== 0 || page.copy.entries.length !== 0) throw new ScreenRecordError(`${screen.name}'s page list binds something`);
+    const slots = slotsOf(screen);
+    if (slots.length !== numbers.length) throw new ScreenRecordError(`${screen.name} read ${numbers.length} numbers for ${slots.length} slots`);
+    return { hitPage: page.page.lead as number, pictures, numbers };
+  });
+  if (body === undefined || ok === undefined) throw new ScreenRecordError('the firmware screens select no fonts');
+  return {
+    spec: { fonts: { body, ok }, screens, homes: reading.homes() },
+    place: {
+      screens: frames.map((f, mode) => reading.placeOf((SCREENS[mode] as OneFirmwareScreen).name, f)),
+      lists: reading.lists, lengths: reading.lengths, inline: reading.inline,
+    },
+    described: reading.described,
+    structure: reading.structure,
+    addresses: reading.addresses,
+    regions: reading.regions,
+  };
+}
+
+export interface BuiltOneFirmwareScreens {
+  screens: BuiltScreen[];
+  lists: Map<number, ContainerPiece>;
+  inline: Map<string, PieceTarget>;
+  homes: Map<string, PieceTarget>;
+}
+
+/** The ten screens built from a description: everything but its numbers generated. */
+export function buildOneFirmwareScreens(c: Container, spec: OneFirmwareScreensSpec): BuiltOneFirmwareScreens {
+  const spell = speller(c);
+  const { recordOf } = recordBuilding(spec.homes);
+  const inline = new Map<string, PieceTarget>();
+  const lists = new Map<number, ContainerPiece>();
+  let nextList = 0;
+  const screens = SCREENS.map((screen, mode): BuiltScreen => {
+    const described = spec.screens[mode];
+    if (described === undefined) throw new ScreenRecordError(`the description holds no ${screen.name}`);
+    const numbers = [...described.numbers];
+    const take = (): number => {
+      const one = numbers.shift();
+      if (one === undefined) throw new ScreenRecordError(`the description holds too few numbers for ${screen.name}`);
+      return one;
+    };
+    // A list below is built from its template at the index the description gives it, `writeStep`, into the same
+    // map as the screens' own lists: the two runs of indices never meet, since the own lists are 0 on and every
+    // list below sits past them.
+    const below = (step: TemplateStep): Instruction => writeStep(step, take, lists);
+    const instruction = (step: Step): Instruction => ('below' in step ? below(step.below)
+      : { opcode: step.opcode, operand: typeof step.operand === 'number' ? step.operand : shift(step, take()) });
+    const ownList = (steps: readonly Step[]): number => {
+      const index = nextList;
+      nextList += 1;
+      lists.set(index, { bytes: actionListBytes(steps.map(instruction)), refs: [], owner: 'slot-10-list' });
+      return index;
+    };
+    const { inserted, binding } = bindings(screen);
+    const entries = keyListOrderInserted(inserted).map((tag) => {
+      const bound = binding.get(tag) as Binding;
+      if (bound.kind === 'swallow') return { tag, operand: 0, opcode: 0 };
+      if (bound.kind === 'direct') return { tag, ...instruction(bound.step) };
+      if (bound.kind === 'below') return { tag, ...below(bound.step) };
+      return { tag, operand: ownList(bound.steps), opcode: CALL };
+    });
+
+    // The chrome.
+    const [background, second] = described.pictures;
+    if (background === undefined || (screen.second !== undefined) !== (second !== undefined)) {
+      throw new ScreenRecordError(`${screen.name}'s description holds another number of pictures`);
+    }
+    const chrome: ContainerPiece = { bytes: new Uint8Array(0), refs: [], owner: 'slot-11-program' };
+    const chromeBytes: number[] = [];
+    const picture = (x: number, y: number, target: PieceTarget): void => {
+      const fill = fillOf(target);
+      if (fill !== undefined) {
+        chromeBytes.push(...fillBytes(x, y, fill));
+        return;
+      }
+      chromeBytes.push(SCREEN_DRAW_IMAGE, x, y);
+      chrome.refs.push({ at: chromeBytes.length, to: target.to, offset: target.offset });
+      chromeBytes.push(0, 0, 0);
+    };
+    picture(0, 0, background);
+    if (screen.queued !== undefined) {
+      const queued = ownList(screen.queued);
+      const program = take();
+      chromeBytes.push(SCREEN_QUEUE_INSTRUCTION, program & 0xff, program >> 8, RUN_PROGRAM);
+      chromeBytes.push(SCREEN_QUEUE_INSTRUCTION, queued & 0xff, queued >> 8, CALL);
+    }
+    if (screen.second !== undefined) picture(screen.second[0], screen.second[1], second as PieceTarget);
+    chromeBytes.push(SCREEN_RETURN, SCREEN_END);
+    chrome.bytes = Uint8Array.from(chromeBytes);
+
+    // The page program: the call, the lines centred, and the right hand key's word.
+    const program: ContainerPiece = { bytes: new Uint8Array(0), refs: [], owner: 'slot-11-program' };
+    const out: number[] = [SCREEN_CALL];
+    program.refs.push({ at: out.length, to: chrome, offset: 0 });
+    out.push(0, 0, 0);
+    const text = (x: number, y: number, codes: readonly number[]): void => {
+      const key = codes.join(',');
+      const home = spec.homes.get(key) ?? inline.get(key);
+      if (home !== undefined) {
+        out.push(SCREEN_TEXT_AT, x, y);
+        program.refs.push({ at: out.length, to: home.to, offset: home.offset });
+        out.push(0, 0, 0);
+        return;
+      }
+      out.push(SCREEN_TEXT_INLINE, x, y);
+      inline.set(key, { to: program, offset: out.length });
+      out.push(...codes, 0);
+    };
+    if (screen.lines.length > 0) {
+      out.push(SCREEN_SELECT_FONT, spec.fonts.body);
+      for (const [line, y] of screen.lines) {
+        const { codes, width } = spell(spec.fonts.body, line);
+        text(Math.floor((SCREEN_WIDTH - width) / 2), y, codes);
+      }
+    }
+    if (screen.ok) {
+      out.push(SCREEN_SELECT_FONT, spec.fonts.ok);
+      text(OK_AT[0], OK_AT[1], spell(spec.fonts.ok, OK_WORD).codes);
+    }
+    out.push(SCREEN_END);
+    program.bytes = Uint8Array.from(out);
+
+    const pageList = taggedListBytes(screen.scan49 !== undefined ? [{ tag: PRESS | 49, ...below(screen.scan49) }] : []);
+    const copy = taggedListBytes(screen.scan49 !== undefined ? [{ tag: PRESS | 49, ...below(screen.scan49) }] : []);
+    if (numbers.length !== 0) throw new ScreenRecordError(`the description holds ${numbers.length} numbers more than ${screen.name} takes`);
+    return recordOf(taggedListBytes(entries), [program], [pageList], [copy], undefined,
+      { leads: [described.hitPage], chromes: [chrome] });
+  });
+  return { screens, lists, inline, homes: spec.homes };
+}
+
+/** A layout with the One's firmware screens swapped for the built ones, where the configuration's sat. */
+export function withOneFirmwareScreens(
+  layout: ContainerLayout, built: BuiltOneFirmwareScreens, place: OneFirmwareScreensDescribed['place'],
+): ContainerLayout {
+  return withModeRecords(layout, built, place);
+}
+
+/** Describe, build and put back, and compare every byte with the configuration's. */
+export function checkOneFirmwareScreens(c: Container, read?: ValueReader): { lists: number; described: number } {
+  const layout = takeApart(c);
+  const described = describeOneFirmwareScreens(c, layout, read);
+  const built = buildOneFirmwareScreens(c, described.spec);
+  const out = layOutContainer(withOneFirmwareScreens(layout, built, described.place)).bytes;
+  assertRebuilt(out, c, described.regions);
+  return { lists: built.lists.size, described: described.described.size };
+}

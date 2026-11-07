@@ -8,7 +8,7 @@
  * **Why it is outside every family.** Nothing here knows a byte of any remote: it takes the generators' names, their
  * rebuilt bytes and the regions a reader claims, and counts. The questions it answers are the ones the other two
  * families' attributions answer for themselves, `attributeBytes` in `families/four-slot/assemble.ts` and
- * `touchBuiltBytes` and `touchAttributedBytes` in `families/touch/`: a first claim wins, the description is counted
+ * `oneBuiltBytes` and `oneAttributedBytes` in `families/one/`: a first claim wins, the description is counted
  * apart, and what no generator reproduces is named by its owner in `coverage.ts`' `claims` or reported unclaimed.
  * Those two keep their own ledgers, which predate this one and are pinned by their tests; folding them onto it is
  * open, not done, and nothing here depends on it.

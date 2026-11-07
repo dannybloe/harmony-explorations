@@ -142,7 +142,7 @@ interface IdleOffRecord {
  * is built with it, section 434, so composing a first device onto the empty One finds it here,
  * `todo-compile-one.md` 8.1.1. Read only where no device but the one being joined, `variable`, has a power variable,
  * since a case that ends with another present would leave that one on; the Harmony 650 family's form with none is
- * the record with no case. Measured on the Harmony One alone, the touch family's compiles and its empty
+ * the record with no case. Measured on the Harmony One alone, the One family's compiles and its empty
  * configuration; the Harmony 600, 650 and 700 family composes onto its empty configuration through the record with
  * no case, section 377, and a case that ends at once is not measured there.
  */

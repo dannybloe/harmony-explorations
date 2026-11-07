@@ -18,8 +18,8 @@
  * height, whether its glyphs carry a shadow, the stroke, as the median run of ink along a row, and the median
  * row a capital starts on. `measureSet` takes the measurements, which are the same on every family, and the
  * configuration's family names the face, `Family.fonts`: the four slot family's nine faces by the table in
- * `families/four-slot/fonts.ts`, derived on the 13 Harmony 650 compiles, and the touch family's five by the
- * one in `families/touch/fonts.ts`, section 396. The faces themselves are `lettering.ts`'s, sized to land on
+ * `families/four-slot/fonts.ts`, derived on the 13 Harmony 650 compiles, and the One family's five by the
+ * one in `families/one/fonts.ts`, section 396. The faces themselves are `lettering.ts`'s, sized to land on
  * Logitech's rows. This module tested the architecture for it until `todo-compile-one.md` 3.3.3.5.
  *
  * **How a set is coloured is read off it as well**, `lettering.ts`: a set Logitech draws with a shadow gets
@@ -32,13 +32,13 @@
  * read in the firmware before it was relied on, section 368: on the Harmony 650 0.2 and the Harmony 700 2.8
  * the text routine finds a glyph from scratch for every character, the set's address and then the pointer
  * at `3 + 3 * (code - 1)`, and decodes it to its own end byte, consulting no neighbour, no count and no
- * cache. So whether sets share a glyph is the family's to say, `FamilyFonts.sharesGlyphs`, and the touch
+ * cache. So whether sets share a glyph is the family's to say, `FamilyFonts.sharesGlyphs`, and the One
  * family, whose routine is unread, does not. **It also ignores a set's first code**, always subtracting 1, so
  * a set that does not start at code 1 is refused here rather than carried; every set of the 13 compiles
  * starts there, and every set of the Harmony One's nineteen.
  *
  * Built only where the family says its faces were measured, `FamilyFonts.refusal`: the four slot family's on
- * the Harmony 650's skins alone, the touch family's on every Harmony One, and nothing for a configuration no
+ * the Harmony 650's skins alone, the One family's on every Harmony One, and nothing for a configuration no
  * family serves. Read only towards hardware: the result is pieces.
  */
 import type { Container } from './gspm.ts';
@@ -208,7 +208,7 @@ export function measureSet(c: Container, set: FontSet, map: CharacterMap): SetFa
  * code the configuration's character map reads keeps its character, and every printable character it has no
  * code for takes the next code after the highest one in use, the map's or a set's (`highestSet`), in
  * `LETTERING_CHARACTERS` order. A family that states its table for a configuration built from nothing reads
- * a donor's numbering through this, so the two cannot drift, `families/touch/fontsets.ts`. Refuses a
+ * a donor's numbering through this, so the two cannot drift, `families/one/fontsets.ts`. Refuses a
  * character past the seven bits a code has.
  */
 export function letteredCodes(

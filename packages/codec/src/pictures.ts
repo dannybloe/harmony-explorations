@@ -4,7 +4,7 @@
  *
  * Shared since `todo-compile-one.md` 3.3.3.2, which moved the Harmony 650's own pictures, their list, the icons
  * chosen for them and the builder that puts them in a configuration, into the four slot family,
- * `families/four-slot/pictures.ts`, section 363; the touch family draws the Harmony One's boxes and icons through
+ * `families/four-slot/pictures.ts`, section 363; the One family draws the Harmony One's boxes and icons through
  * the same `pictureRows` and `iconOverRows`. Read only towards hardware: the result is pixels or pieces.
  */
 import { type ContainerLayout, type ContainerPiece, type PieceRef, layOutContainer, takeApart } from './frame.ts';
@@ -187,7 +187,7 @@ function everyPiece(layout: ContainerLayout): ContainerPiece[] {
  * is left as it was: every piece is made fresh.
  *
  * Generic, and every family's: the Harmony 650's rule pictures and ours of its artwork, `families/four-slot/pictures.ts`,
- * and the Harmony One's, `families/touch/pictures.ts`, whose black background takes the place of three copies and
+ * and the Harmony One's, `families/one/pictures.ts`, whose black background takes the place of three copies and
  * three photographs, `todo-compile-one.md` 5.3.3.
  */
 export function withReplacedPictures(
@@ -297,7 +297,7 @@ const FILL_LENGTH = 7;
  *
  * Generic, and every compiled family's: it reads the references the frame keeps and the picture header every
  * architecture's compiles share. Opcode 1 is read as this rectangle in full on the Harmony One 3.4 and the Harmony 650
- * 0.2, and to its row loop and clip on the Harmony 600 0.2 and 700 2.8, section 425; it has run on the Harmony One alone. The Harmony One's background is the one caller, `families/touch/pictures.ts`.
+ * 0.2, and to its row loop and clip on the Harmony 600 0.2 and 700 2.8, section 425; it has run on the Harmony One alone. The Harmony One's background is the one caller, `families/one/pictures.ts`.
  */
 export function withPictureFilled(c: Container, address: number): PictureFilled {
   const layout = takeApart(c);

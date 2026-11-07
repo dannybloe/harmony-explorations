@@ -7,7 +7,7 @@
  *
  * The Harmony One's tables differ in four values, `todo-compile-one.md` 2.3: records 13 and 14, a one byte case
  * count, where the width line falls, and a second transition on the minute. Its family states them,
- * `families/touch/statetables.ts`, since chapter 6 of that plan.
+ * `families/one/statetables.ts`, since chapter 6 of that plan.
  */
 import { firmwareStateVariableMax } from '../../inventory.ts';
 import { VALUE_MAP_COUNT_WIDTH } from '../../valuemap.ts';

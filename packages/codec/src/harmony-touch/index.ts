@@ -4,7 +4,7 @@
  * from those documents, `engine.ts`, here since `todo.md` 7.3.1.
  *
  * Exported from the codec's barrel as one namespace, `harmonyTouch`, because "touch" already names the
- * Harmony One's family throughout this codec, `families/touch/`, and the two must not meet by name.
+ * Harmony One's family throughout this codec, `families/one/`, and the two must not meet by name.
  */
 export * from './documents.ts';
 export * from './read.ts';

@@ -3,7 +3,7 @@
  * findings section 436: onto Logitech's compile of two devices, `harvest_one_two_devices` (`composesetup.test.ts`,
  * section 433), and onto our own empty One (`composeempty.test.ts`, section 435). Every text drawn on every screen,
  * what every key and every touch does on every screen, in every activity and in device mode down to the infrared
- * code sent, and every action list either file can run, through `touchView`.
+ * code sent, and every action list either file can run, through `oneView`.
  *
  * **What is held.** That every difference between the two views is one of seven causes, each counted exactly, with
  * nothing left over; and for each cause the measurement that says it is that cause and not something else hiding
@@ -25,10 +25,10 @@ import { type ComposedSetup, type Container, composeSetup, parse, readRecipe } f
 import { SEND_INFRARED, devices } from '../src/inventory.ts';
 import { instructionSites } from '../src/assemble.ts';
 import { composeDonorDeviceInfrared } from '../src/composecatalogue.ts';
-import { buildEmptyTouchConfiguration } from '../src/families/touch/empty.ts';
+import { buildEmptyOneConfiguration } from '../src/families/one/empty.ts';
 import {
-  type TouchView, type TouchViewDifference, type TouchViewOptions, type TouchViewResult, compareTouchViews, touchView,
-} from '../src/families/touch/view.ts';
+  type OneView, type OneViewDifference, type OneViewOptions, type OneViewResult, compareOneViews, oneView,
+} from '../src/families/one/view.ts';
 import { modeRecords, stateRecords } from '../src/sections.ts';
 import { timers } from '../src/tables.ts';
 import { valueMaps } from '../src/valuemap.ts';
@@ -51,7 +51,7 @@ let onEmptyOnce: ComposedSetup | undefined;
 /** The setup composed onto our empty One, unblended as a donor of ours is, section 435's path. */
 const onEmpty = (): ComposedSetup => {
   onEmptyOnce ??= composeSetup(recipe(), {
-    donor: buildEmptyTouchConfiguration({ skin: 54, builtAt: BUILT_AT, blend: false }).bytes, archive: IR_ARCHIVE!, builtAt: BUILT_AT,
+    donor: buildEmptyOneConfiguration({ skin: 54, builtAt: BUILT_AT, blend: false }).bytes, archive: IR_ARCHIVE!, builtAt: BUILT_AT,
   });
   return onEmptyOnce;
 };
@@ -62,7 +62,7 @@ const onEmpty = (): ComposedSetup => {
  * catalogue command whose code it is, through `composeDonorDeviceInfrared`'s mapping by code (section 433), every
  * record of all seven devices being the catalogue's on both paths.
  */
-function namesOf(c: Container): TouchViewOptions {
+function namesOf(c: Container): OneViewOptions {
   const deviceNames = new Map<number, string>();
   const commandNames = new Map<number, string[]>();
   for (const one of recipe().devices) {
@@ -78,14 +78,14 @@ function namesOf(c: Container): TouchViewOptions {
   return { deviceNames, commandNames };
 }
 
-const views = new Map<Container, TouchViewResult>();
-const viewOf = (c: Container): TouchViewResult => {
-  const held = views.get(c) ?? touchView(c, namesOf(c));
+const views = new Map<Container, OneViewResult>();
+const viewOf = (c: Container): OneViewResult => {
+  const held = views.get(c) ?? oneView(c, namesOf(c));
   views.set(c, held);
   return held;
 };
-const a = (): TouchView => viewOf(onLogitech().container).view;
-const b = (): TouchView => viewOf(onEmpty().container).view;
+const a = (): OneView => viewOf(onLogitech().container).view;
+const b = (): OneView => viewOf(onEmpty().container).view;
 
 /** A key's screen part, so a cause is said once per screen rather than per binding. */
 const IS_HELP = /^screen "(Isthe|Nowisthe|Didthatfixtheproblem|Attempingtofix)/;
@@ -96,7 +96,7 @@ const IS_DEVICE_LIST = /^screen (screen@\(keys [^)]* 183\.0\)|unreached device-l
  * The seven causes, in the order the finding gives them, each a test of the key and the two values. A difference
  * that no test takes is unexplained, and the first test that takes it is its cause.
  */
-const CAUSES: readonly (readonly [string, (d: TouchViewDifference) => boolean])[] = [
+const CAUSES: readonly (readonly [string, (d: OneViewDifference) => boolean])[] = [
   ['the donor\'s two devices keep Logitech\'s device pages', (d) => /^screen device (LG TV|Denon) \|/.test(d.key)],
   ['device lists: the donor\'s labels and its device order', (d) => IS_DEVICE_LIST.test(d.key)],
   ['the power off help: the donor\'s labels and its device order', (d) => IS_HELP.test(d.key)],
@@ -109,8 +109,8 @@ const CAUSES: readonly (readonly [string, (d: TouchViewDifference) => boolean])[
 ];
 
 /** Each difference's cause, `unexplained` where none takes it. */
-function causes(differences: readonly TouchViewDifference[]): Map<string, TouchViewDifference[]> {
-  const out = new Map<string, TouchViewDifference[]>();
+function causes(differences: readonly OneViewDifference[]): Map<string, OneViewDifference[]> {
+  const out = new Map<string, OneViewDifference[]>();
   for (const one of differences) {
     const cause = CAUSES.find(([, takes]) => takes(one))?.[0] ?? 'unexplained';
     out.set(cause, [...(out.get(cause) ?? []), one]);
@@ -119,7 +119,7 @@ function causes(differences: readonly TouchViewDifference[]): Map<string, TouchV
 }
 
 /** A device list's rows, page by page and top to bottom, as the devices they enter. */
-function rows(view: TouchView, screen: string): string[] {
+function rows(view: OneView, screen: string): string[] {
   const found: { page: number; code: number; device: string }[] = [];
   for (const [key, value] of view) {
     const at = new RegExp(`^screen ${screen.replace(/[()]/g, '\\$&')} \\| page (\\d+) \\| event 2 code (\\d+)$`).exec(key);
@@ -130,7 +130,7 @@ function rows(view: TouchView, screen: string): string[] {
 }
 
 /** The devices the power off help asks about, in its order: from its opening screen's No, each first question's Yes. */
-function helpOrder(view: TouchView): string[] {
+function helpOrder(view: OneView): string[] {
   const out: string[] = [];
   const next = (value: string | undefined): string | undefined => /enter ("Isthe[^"]*off\?[^"]*" \{[^}]*\}(?: #\d+)?)/.exec(value ?? '')?.[1];
   let at = next(view.get('screen "Didthatfixtheproblem?Ifnot,theremotewillaskyouqu" | page 1 | event 2 code 50'));
@@ -148,7 +148,7 @@ const offOrder = (value: string | undefined): string[] =>
 // ---------------------------------------------------------------------------------------------------------
 
 test('8.1.5: the two compositions differ in 388 places, every one of them one of seven causes and none unexplained', NEEDS, () => {
-  const differences = compareTouchViews(a(), b());
+  const differences = compareOneViews(a(), b());
   const counted = Object.fromEntries([...causes(differences)].map(([cause, list]) => [cause, list.length]));
   assert.deepEqual(counted, {
     'the donor\'s two devices keep Logitech\'s device pages': 285,
@@ -222,10 +222,10 @@ test('8.1.5: the donor\'s labels: the composition onto Logitech\'s compile draws
 
 test('8.1.5: the donor\'s device pages offer the codes ours offer, on as many pages, but for plain power pads where ours send the power step', NEEDS, () => {
   // What a device page's touches send, each code once, without the key of its blocks.
-  const offered = (view: TouchView, device: string): Set<string> => new Set([...view]
+  const offered = (view: OneView, device: string): Set<string> => new Set([...view]
     .filter(([key]) => key.startsWith(`screen device ${device} | page `) && / \| event \d code \d+$/.test(key) && !key.includes('| copy |'))
     .flatMap(([, value]) => [...value.matchAll(new RegExp(`send ${device} ([^;}]*?) r[0-9a-f]{8}`, 'g'))].map((one) => one[1] as string)));
-  const pages = (view: TouchView, device: string): number => [...view.keys()].filter((key) => key.startsWith(`screen device ${device} | page `) && key.endsWith('| texts')).length;
+  const pages = (view: OneView, device: string): number => [...view.keys()].filter((key) => key.startsWith(`screen device ${device} | page `) && key.endsWith('| texts')).length;
   for (const [device, count, shared] of [['LG TV', 6, 28], ['Denon', 16, 88]] as const) {
     assert.equal(pages(a(), device), count);
     assert.equal(pages(b(), device), count);
@@ -257,7 +257,7 @@ test('8.1.5: the donor LG\'s online power, the assistant\'s starting value and t
   assert.equal(b().get(assistant), 'starts 0, at most 3');
   // A timer each holds that nothing starts: Logitech's compile a redraw timer of four seconds, ours the power off help's
   // three second show timer, section 435.
-  const unstarted = (view: TouchView): string[] => [...view].filter(([key]) => key.startsWith('timer unreached')).map(([, value]) => value.slice(0, 15));
+  const unstarted = (view: OneView): string[] => [...view].filter(([key]) => key.startsWith('timer unreached')).map(([, value]) => value.slice(0, 15));
   assert.deepEqual(unstarted(a()), ['kind 1, 4 s: {r']);
   assert.deepEqual(unstarted(b()), ['kind 1, 3 s: {7']);
 });
@@ -280,7 +280,7 @@ test('control: a send planted in the composition onto our empty One, the KPN\'s 
   assert.equal(sites.length, 1);
   const planted = c.blob.slice();
   planted[sites[0]!.at] = record('DVR');
-  const found = compareTouchViews(b(), touchView(parse(planted), names).view);
+  const found = compareOneViews(b(), oneView(parse(planted), names).view);
   assert.deepEqual(found.map((one) => one.key), [
     'screen "DevicesTeletextDVRAspectRadioPlasmakijkenPlasmak" | page 1 | copy | event 2 code 49',
     'screen "DevicesTeletextDVRAspectRadioPlasmakijkenPlasmak" | page 1 | event 2 code 49',
@@ -290,5 +290,5 @@ test('control: a send planted in the composition onto our empty One, the KPN\'s 
     'screen device KPN | page 1 | event 2 code 49',
   ]);
   // Against Logitech's compile the planted ones are differences no cause takes.
-  assert.deepEqual(causes(compareTouchViews(a(), touchView(parse(planted), names).view)).get('unexplained')?.map((one) => one.key), found.map((one) => one.key));
+  assert.deepEqual(causes(compareOneViews(a(), oneView(parse(planted), names).view)).get('unexplained')?.map((one) => one.key), found.map((one) => one.key));
 });

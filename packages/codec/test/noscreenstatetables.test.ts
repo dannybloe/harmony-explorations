@@ -4,7 +4,7 @@
  * [plan 011](../../../docs/plans/011-the-350-from-nothing.md). The facts and the allocator are
  * `families/no-screen/statetables.ts`; the builder is the generic `buildStateTables`.
  *
- * **The question.** Plan 011 counted base slot 13 as `other` on this family: the four slot and touch families build
+ * **The question.** Plan 011 counted base slot 13 as `other` on this family: the four slot and One families build
  * it, and `NO_SCREEN_FAMILY.stateTables` refused. It said the facts were measured on seven compiles (records 7 to
  * 17 identical, no clock transitions, one wide variable, no value maps) and not filled in, and that Logitech numbers
  * the setup's own variables, 18 upward, in an order no rule is known for. So two things are asked here: does the
@@ -77,7 +77,7 @@
  *
  * **Sources checked first.** `reference/architectures/harmony-300-350/memory.md` (the state variables, the activity),
  * `reference/config-format/state.md`, plan 011's census and step 2, `noscreencensus.test.ts`, `statetables.test.ts`
- * and the four slot and touch families' facts, `tests/test_harmony_350_clock.py` for the clock. Logitech's client
+ * and the four slot and One families' facts, `tests/test_harmony_350_clock.py` for the clock. Logitech's client
  * compiles nothing for this family (`reference/logitech/clients.md`), so it states none of this; `docs/findings.md`
  * sections 259 to 265 name the slots and hold no state record of this family.
  *
@@ -103,7 +103,7 @@ import {
 import { keyMaps, PRESS } from '../src/families/no-screen/devices.ts';
 import { nameOfLabel } from '../src/shared/core.ts';
 import { FIRMWARE_STATE_RECORDS, FOUR_SLOT_STATE_TABLES } from '../src/families/four-slot/statetables.ts';
-import { TOUCH_STATE_TABLES } from '../src/families/touch/statetables.ts';
+import { ONE_STATE_TABLES } from '../src/families/one/statetables.ts';
 
 /** The five bench fixtures, by the lab's names. */
 const NAMED = ['h350_config', 'h350_three_devices_config', 'h350_programmed_config', 'h300_config', 'h300_programmed_config'];
@@ -249,7 +249,7 @@ test('the firmware\'s records, the clock and the widths are the family\'s on all
     const table = stateTable(c)!;
     const firmware = records.slice(7, 18).map((r) => [r.first, r.second]);
     if (JSON.stringify(firmware) === JSON.stringify(NO_SCREEN_FIRMWARE_STATE_RECORDS) && records.slice(7, 18).every((r) => r.values.length === 0)) tally.firmware += 1;
-    if (JSON.stringify(firmware) === JSON.stringify(TOUCH_STATE_TABLES.firmwareRecords)) tally.touchFirmware += 1;
+    if (JSON.stringify(firmware) === JSON.stringify(ONE_STATE_TABLES.firmwareRecords)) tally.touchFirmware += 1;
     if (records.slice(0, 7).every((r) => r.values.length === 0)) tally.clockBare += 1;
     tally.widest = Math.max(tally.widest, ...records.slice(18).filter((_, k) => 18 + k !== table.narrow).map((r) => r.second));
     if (table.wide === 1 && table.narrow === table.count - 1 && table.narrowAgain === table.narrow
@@ -395,7 +395,7 @@ test('the comparison fails where the tables differ: the One\'s firmware records,
     const request = requestOf(label, c);
     // The Harmony One's records 7 to 17 under the same description.
     const touch = buildStateTables({ ...buildNoScreenStateTables(request, c.builtAt!).spec },
-      { ...NO_SCREEN_STATE_TABLES, firmwareRecords: TOUCH_STATE_TABLES.firmwareRecords });
+      { ...NO_SCREEN_STATE_TABLES, firmwareRecords: ONE_STATE_TABLES.firmwareRecords });
     const asTouch = { ...buildNoScreenStateTables(request, c.builtAt!), built: touch };
     if (differences(c, asTouch).some((one) => one.startsWith('record '))) tally.touchFirmware += 1;
     // One device's on and off lists the other way round.

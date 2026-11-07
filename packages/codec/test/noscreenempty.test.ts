@@ -48,7 +48,7 @@
  *
  * **Sources checked first.** Plan 011 step 5; `reference/architectures/harmony-300-350/memory.md` ("The sections
  * every configuration holds alike", "The six slots the firmware was read for"); `noscreenconstants.test.ts`,
- * `noscreenstatetables.test.ts`, `metadatabuild.test.ts`, `frame.test.ts`; the touch family's `touchempty.test.ts`
+ * `noscreenstatetables.test.ts`, `metadatabuild.test.ts`, `frame.test.ts`; the One family's `oneempty.test.ts`
  * for the shape. Logitech's client compiles nothing for this family, `reference/logitech/clients.md`, so it has no
  * empty configuration to read either.
  *

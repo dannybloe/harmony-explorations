@@ -66,7 +66,7 @@ export interface BlendedSet {
  * A builder's say over the weight of a copy: given the face of the set a text was drawn in and the colour it
  * is drawn on, the weight to letter the copy in, or undefined for the set's own. What lets a family draw the
  * labels on its own boxes lighter than the same face elsewhere, which a set shared by every screen cannot
- * be: the Harmony One's labels on its activity and device boxes, `TouchChoices.labelWeight`.
+ * be: the Harmony One's labels on its activity and device boxes, `OneChoices.labelWeight`.
  */
 export type WeightFor = (face: SetFace, background: number) => OxaniumWeight | undefined;
 

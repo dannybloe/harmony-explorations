@@ -13,7 +13,7 @@
  * `h650_test_config_clean` among them, sections 360 and 362, and the Harmony 600, 650 and 700's assembly was
  * the first caller. **On the Harmony One since `todo-compile-one.md` 4.10**, section 421: base slots 10 and 8 read
  * through `archSlot`, the census finds 102324 sites over the nineteen One compiles and every list nothing reaches
- * drops out of each with every check passing, and the touch family's `withoutTourAndAssistant` is the second
+ * drops out of each with every check passing, and the One family's `withoutTourAndAssistant` is the second
  * caller. On the test setup's donor the 27 three byte runs `lo hi 7F` the walk does not hold sit in no action list,
  * and a drop short of any holder but the leading list is refused;
  * the leading list names only the start list, below every drop.
@@ -100,7 +100,7 @@ export interface InstructionSite {
  *
  * Of the 3094 three byte runs `lo hi 7F` naming a list in the Harmony One donor's file, the walk holds 3067 and the 27
  * it does not sit in no action list: 11 before the first section, 12 in base slot 10's address array and 4 in raw
- * slots 4, 6 and 13, pinned in `touchwithouttour.test.ts`.
+ * slots 4, 6 and 13, pinned in `onewithouttour.test.ts`.
  */
 export function instructionSites(c: Container, opcode: number): InstructionSite[] {
   const sites = new Map<number, InstructionSite>();

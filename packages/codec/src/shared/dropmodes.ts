@@ -23,7 +23,7 @@
  * dropped program among them; and a cut that would split an address field.
  *
  * **Scope, decision 16**: measured on the Harmony One alone, on the sixteen English compiles of skin 54, whose
- * welcome tour and Remote Assistant the touch family's `withouttour.ts` takes out with it; nothing here is a fact of
+ * welcome tour and Remote Assistant the One family's `withouttour.ts` takes out with it; nothing here is a fact of
  * that remote, and on the Harmony 600, 650 and 700 it has not been run. A caller draws its texts away from what goes
  * first, since a kept text drawn by reference into a dropped program is refused here.
  */

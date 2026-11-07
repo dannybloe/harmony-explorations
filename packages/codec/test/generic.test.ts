@@ -23,20 +23,32 @@ import { join, relative } from 'node:path';
 
 const SOURCE = new URL('../src/', import.meta.url).pathname;
 
+/**
+ * The Harmony One family's own names, read off its modules' exports. Until plan 013 step 7.3.2 the family was
+ * `touch` and a prefix pattern caught its names; `one` as a prefix also catches `oneMark` and `oneBlockCopy`,
+ * which are ordinary words, so the names are listed from the family itself, those that carry its name.
+ */
+const ONE_FAMILY_NAMES: readonly string[] = readdirSync(join(SOURCE, 'families/one'))
+  .flatMap((file) => [...readFileSync(join(SOURCE, 'families/one', file), 'utf8')
+    .matchAll(/export (?:const|function|type|interface|class) ([A-Za-z0-9_]+)/g)].map((m) => m[1]!))
+  // The family constant itself is left out, as `TOUCH` was: `wiringparts.ts` has an `ONE` of its own, a name per symbol.
+  .filter((name) => /one/i.test(name) && name !== 'ONE')
+  .sort((a, b) => b.length - a.length);
+
 const PATTERNS: Readonly<Record<string, RegExp>> = {
   // A test of which remote it is: an architecture or skin compared with a number, an architecture's slot or a
   // per architecture table handed a literal architecture. A table of architectures, `*_ARCHITECTURES`, is how a
   // reader is meant to hold one, and is not counted.
   architecture: /\b(architecture|arch)\s*(===|!==)\s*\d+\b|archSlot\(\s*\d+\s*,|\.skin\s*(===|!==)\s*\d+|(firmwareStateVariableMax\(|SCREEN_SIZES\[|VALUE_MAP_COUNT_WIDTH\[|CORNER_LAYOUTS\[)\s*\d+/g,
-  // A name belonging to one family. The base slot 17 reader's own names, `touchPages` and its kin, are a
-  // reader's and are left out.
-  family: /\b(FOUR_SLOT_[A-Z_]+|fourSlot[A-Za-z]*|FourSlot[A-Za-z]*|TOUCH_(?!MAP_|AREA_)[A-Z_]+|touch(?!Pages|MapStart|PageOf|Owner|Area)[A-Z][A-Za-z]*|DEVICE_PAGE_[A-Z_]+|MENU_ROW[A-Z_]*)\b/g,
+  // A name belonging to one family. The base slot 17 reader's own names, `touchPages` and its kin, name the
+  // Harmony One's touch screen rather than a family, so they no longer match since the family became `one`.
+  family: new RegExp(`\\b(FOUR_SLOT_[A-Z_]+|fourSlot[A-Za-z]*|FourSlot[A-Za-z]*|${ONE_FAMILY_NAMES.join('|')}|DEVICE_PAGE_[A-Z_]+|MENU_ROW[A-Z_]*)\\b`, 'g'),
   // Key scan codes, one keypad's: a constant named for them, or a table entry giving one.
   scans: /^(export )?const [A-Z_]*(SCAN|SCANS)\b|\bscan:\s*\d+/gm,
   // A set of skins or a model named by its string: which remote, by another name.
   models: /_SKINS\b[^\n]*new (Set|Map)\(\[|(===|!==)\s*'harmony-\d{3}'/g,
   // A family's module imported from outside the families, which reaches its internals past `familyOf`.
-  imports: /from '(\.\.?\/)+families\/(four-slot|touch)\//g,
+  imports: /from '(\.\.?\/)+families\/(four-slot|one)\//g,
 };
 
 /**
@@ -75,7 +87,7 @@ const PATTERNS: Readonly<Record<string, RegExp>> = {
  * part encoder both halves spell through is shared, `screenparts.ts`; `backgrounds.ts` and `compare.ts` are the
  * family's whole; `pictures.ts` keeps the drawing every family uses and the Harmony 650's pictures are the family's
  * `pictures.ts`; the skins a setup is composed for are `Family.composedSkins`; and `growth.ts`' two names that
- * read like the touch family's were its own locals for base slot 17, renamed. A module that joins the list now
+ * read like the One family's were its own locals for base slot 17, renamed. A module that joins the list now
  * has to move its part into a family instead.
  */
 const DEBT: Readonly<Record<string, Readonly<Record<string, number>>>> = {};
@@ -84,7 +96,7 @@ const DEBT: Readonly<Record<string, Readonly<Record<string, number>>>> = {};
 function familyNamesThroughCompose(): Set<string> {
   const text = readFileSync(join(SOURCE, 'compose.ts'), 'utf8');
   const names = new Set<string>();
-  for (const match of text.matchAll(/export\s*\{([^}]*)\}\s*from\s*'\.\/families\/(four-slot|touch)\//g)) {
+  for (const match of text.matchAll(/export\s*\{([^}]*)\}\s*from\s*'\.\/families\/(four-slot|one)\//g)) {
     for (const one of match[1]!.split(',')) {
       const name = one.replace(/\btype\b/, '').split(/\s+as\s+/).at(-1)!.trim();
       if (name !== '') names.add(name);
@@ -157,7 +169,7 @@ test('code outside the families names no remote but in the modules of the debt l
 test('the census finds each shape it counts, so an empty count is the code\'s and not a blind pattern', () => {
   // The control: one line of each shape, which every pattern has to find once.
   const sample = 'if (c.architecture === 14) x = archSlot(12, 9);\nconst y = FOUR_SLOT_ITEMS;\nexport const EXIT_SCAN = 12;\n'
-    + "const S_SKINS = new Set([72]);\nimport { a } from '../families/touch/menus.ts';\n";
+    + "const S_SKINS = new Set([72]);\nimport { a } from '../families/one/menus.ts';\n";
   const found = Object.fromEntries(Object.entries(PATTERNS).map(([kind, pattern]) => [kind, (sample.match(pattern) ?? []).length]));
   assert.deepEqual(found, { architecture: 2, family: 1, scans: 1, models: 1, imports: 1 });
   // A scan inside a per architecture table is the table's, and the same entry outside one is counted.
