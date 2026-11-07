@@ -29,7 +29,7 @@ unpacked from them stay in the lab; only names, sizes and findings come into thi
 
 **Extended on 5 November 2026 with chapters 6 to 9, to the finish line of the Harmony One and the 600 family**: a configuration built entirely by us, nothing copied out of a Logitech document, put on the bench Touch and used. The route is answering a sync in place of Logitech's server, [answering a sync](../reference/architectures/harmony-touch/answering-a-sync.md), the remote's own designed path, which gathers a new set aside and swaps it in whole; the direct resource put is for a single document at most. The account and remote numbers the remote reports, which an answerer echoes, are account data and stay in the lab as a serial does.
 
-**Done on 7 November 2026**: every item below is ticked, 9.4 the finish line, a configuration built entirely by us from a setup file, with no Logitech document as input, answered to the bench Touch, committed and used, `packages/bench/test/touch94-runs.test.ts`.
+**Done on 7 November 2026**: every item of chapters 1 to 9 is ticked, 9.4 the finish line, a configuration built entirely by us from a setup file, with no Logitech document as input, answered to the bench Touch, committed and used, `packages/bench/test/touch94-runs.test.ts`.
 
 Written on 2 November 2026, and placed in `todo.md`'s sequence the same day as 3.9, straight after the Harmony 300 and 350's 3.7; also linked from `todo-later.md` 5.5.
 
@@ -165,3 +165,12 @@ Written on 2 November 2026, and placed in `todo.md`'s sequence the same day as 3
   - [x] 9.4.3 The look reported and photographed: our background held, the seven field Context held, the entry icons and the picker not checked
   - [x] 9.4.4 The put back delivered and committed, its first list asking for all six with the set's tags, the hash on the put back's
   - [x] 9.4.5 The closing `--unchanged` run, asked with the put back's tags, every answer 304 or the finish
+
+## 10. After the finish line
+
+Follow ups from 9.4, not part of the finish line; the restructuring around them is `todo.md` 7.3.
+
+- [ ] 10.1 Every family of the rhythm table, 681, written into the Touch's code description and read back through our renderer, no remote: which rows fit and render alike, which shapes need a bench run
+- [ ] 10.2 Key layouts composed by rule from the activity's type, the devices' roles and the catalogue, as the Harmony One's and the 650's families do, so the setup file holds only what a person chooses
+- [ ] 10.3 Whether the Xbox acts on the same key twice under our definition without its toggle bit, at the bench
+

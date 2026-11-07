@@ -139,6 +139,16 @@ After 3 produces something.
 
 - [ ] 7.1 The interface
 - [ ] 7.2 Publish `packages/*` so somebody without this checkout can build it (decision 4)
+- [ ] 7.3 The libraries as a base for the app, after an architecture review: [plan 013](docs/plans/013-the-libraries-as-a-base.md); the moves that touch the 885 branch's files wait until it is in main
+  - [ ] 7.3.1 The Touch's numbered experiments out of `corpus/src` and `bench/src` beside their scripts, its engine model into the codec, test files named by subject
+  - [ ] 7.3.2 `families/touch/` renamed `families/one/`, so "touch" means the Harmony Touch only
+  - [ ] 7.3.3 The registry chooses by model, two kinds of family, compiled and document, and an unserved architecture refused rather than given the Harmony One's shapes
+  - [ ] 7.3.4 A base package for the model table, the trailer checksum and the key codes; the codec off `packages/usb`
+  - [ ] 7.3.5 The codec's disk readers behind a Node entry point, so its core loads in a renderer
+  - [ ] 7.3.6 Explicit public surfaces per package, a test kit for the usb test helpers, `@harmony/lab` out of FreeHarmony's product dependencies, FreeHarmony's imports moved along
+  - [ ] 7.3.7 One CLI helper for the scripts and one byte comparison in `bytes.ts`
+  - [ ] 7.3.8 The codec's top level grouped into folders and its largest files split, `inventory.ts` first
+  - [ ] 7.3.9 The architecture rules as a skill with tests that enforce them, and the decision recorded
 
 ---
 
