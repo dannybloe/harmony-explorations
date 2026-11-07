@@ -306,7 +306,10 @@ installs is not settled, [the recovery tool](../../logitech/update-service.md#th
 ## Not checked
 
 * Which DA850 variant the remotes run on, the memory fitted, and the size of their flash[^unchecked].
-* Where on a remote the configuration lives, and in what form[^unchecked].
+* The volumes and the documents of the configuration looked at on a unit[^unchecked]; they are read in the
+  image, [below the application](#below-the-application) and [where each is
+  kept](favourites-and-settings.md#where-each-is-kept)[^t-touch-recovery]. *Corrected:* this asked where on a
+  remote the configuration lives, and in what form<!--superseded-->, which the image has since answered.
 * Whether a unit's second kernel volume holds anything, and whether the serial port is reachable[^unchecked].
 * Whether the update service serves a different build to a registered unit than to the anonymous
   request[^unchecked].

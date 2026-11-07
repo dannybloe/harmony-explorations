@@ -60,7 +60,13 @@ This said the image's contents had not been examined until it was read.
 
 ## Not checked
 
-* Where on the remote the firmware and the configuration live[^unchecked].
+* The volumes the firmware and the configuration live on, looked at on a unit rather than read in the
+  image[^unchecked]. The image puts the system on a kernel, a root, a data and a cache volume and keeps the
+  configuration as documents on the data volume[^t-touch-recovery],
+  [below the application](../../architectures/harmony-touch/firmware.md#below-the-application) and [where each is
+  kept](../../architectures/harmony-touch/favourites-and-settings.md#where-each-is-kept). *Corrected:* this asked
+  where on the remote the firmware and the configuration live<!--superseded-->, which the image has since
+  answered.
 * Whether the update service's anonymous request serves a different build than a registered unit
   gets[^unchecked].
 

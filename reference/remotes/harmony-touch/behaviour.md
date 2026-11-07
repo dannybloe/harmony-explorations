@@ -95,8 +95,9 @@ remote's own reset and restart files act on a write, not when opened, [firmware.
   firmware"<!--superseded--> and "anything in use with the infrared receiver"<!--superseded-->. Both are measured
   now for one set of documents, above; when a long press fires after the press is still not, since the receiver
   hears codes and not presses[^unchecked].
-* What becomes of changes made on the remote when the client syncs the account down without asking for them
-  first, [usb.md](../../architectures/harmony-touch/usb.md#provisioning-instead-of-a-compile)[^unchecked].
+* Changes made on the remote when the client syncs the account down without asking for them first, seen on a
+  remote[^unchecked]. Read in the firmware, the sync request empties the queue that would carry them up, so they
+  never reach the account, [setup](../../architectures/harmony-touch/api/setup.md#setupsync)[^t-touch-api-setup].
 
 [^unchecked]: Not checked.
 [^x-touch-manual]: Stated by Logitech, in the manual. [The Harmony Touch user guide](https://www.manualslib.com/manual/641224/Logitech-Harmony-Touch.html)
@@ -105,5 +106,6 @@ remote's own reset and restart files act on a write, not when opened, [firmware.
 [^t-touch-keys]: Read in the firmware. [The test](../../../tests/test_harmony_touch_keys.py)
 [^t-touch-api-names]: Read in the firmware. [The test](../../../tests/test_harmony_touch_api_names.py)
 [^t-touch-recovery]: Read in the firmware. [The test](../../../tests/test_harmony_touch_recovery.py)
+[^t-touch-api-setup]: Read in the firmware. [The test](../../../tests/test_harmony_touch_api_setup.py)
 [^t-touch-changed-set]: Measured on a unit. [The test](../../../packages/usb/test/touch-changed-set-sync.test.ts)
 [^t-touch-in-use]: Measured on a unit. [The test](../../../packages/bench/test/touch-full-bench-runs.test.ts)

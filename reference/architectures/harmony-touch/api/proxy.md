@@ -9,8 +9,12 @@ the remote's own screens send `proxy.finished`, `proxy.abort` and the resource r
 `proxy.error`, `proxy.finished` and the resource events. What the remote checks of an answer, and how a sync
 aborts and commits, is [answering a sync](../answering-a-sync.md), which this page links rather than repeats.
 
-**Read in the production firmware 4.15.330**, the build a Touch reports for itself; nothing here has been
-sent to a remote by this project[^t-touch-api-setup]. The handlers branch on the provisioning mode, which on a
+**Read in the production firmware 4.15.330**, the build a Touch reports for itself[^t-touch-api-setup]. Three of
+these requests have been sent to one Touch by this project, `proxy.request` and `proxy.response` in every sync it
+answered and `proxy.abort` once, to undo a sync stopped halfway, [answering a
+sync](../answering-a-sync.md#a-sync-end-to-end) and [recovery](../firmware.md#a-sync-that-stops-halfway)[^t-touch-first-sync][^t-touch-second-sync];
+this page said nothing of it had been sent<!--superseded--> until then. The resource requests have not been
+sent[^unchecked]. The handlers branch on the provisioning mode, which on a
 Touch synced through Logitech's client is 0, [the provisioning mode](README.md#the-provisioning-mode); the hub's branches,
 modes 2 and 3, and a remote provisioned from a hub, mode 4, are read and not checked against a
 unit[^unchecked]. How a name finds its handler and the checks every request meets are
@@ -150,7 +154,10 @@ the engine from the stored configuration; when neither runs, it skips that. Then
 `proxy://Abort` as a `POST` whose body holds the firmware version, `errorCode` and `errorMessage`; in mode 4
 it ends the waiting `setup.sync` with them instead, [setup](setup.md#setupsyncend). It answers
 200[^t-touch-api-setup]. The screens send it with code 553 when a sync fails,
-[answering a sync](../answering-a-sync.md#how-a-sync-aborts-and-how-an-answerer-learns-of-it).
+[answering a sync](../answering-a-sync.md#how-a-sync-aborts-and-how-an-answerer-learns-of-it). **Measured on a
+unit**: sent from the cable to a sync stopped halfway, it answered 200, and the configuration hash then answered 200
+with the stored documents' tags unchanged, so it cleared the running sync and touched no stored
+document[^t-touch-first-sync].
 
 ### `proxy.error`
 
@@ -200,4 +207,6 @@ the path is what would be handed over. **None of this has been sent to a remote*
 
 [^t-touch-api-setup]: Read in the firmware. [The test](../../../../tests/test_harmony_touch_api_setup.py)
 [^t-touch-api-engine]: Read in the firmware. [The test](../../../../tests/test_harmony_touch_api_engine.py)
+[^t-touch-first-sync]: Measured on a unit. [The test](../../../../packages/usb/test/touch-first-sync.test.ts)
+[^t-touch-second-sync]: Measured on a unit. [The test](../../../../packages/usb/test/touch-second-sync.test.ts)
 [^unchecked]: Not checked.

@@ -1,9 +1,10 @@
 # Harmony Touch: features
 
-What the Touch offers a person and what Logitech's software lets them set. Little of it is measured: no
-configuration of this model exists as a file anywhere this project can reach, so its limits are Logitech's
-word, from the manual, the service and the client. Its keys and screens are read in its firmware,
-[keys.md](keys.md) and [display.md](display.md).
+What the Touch offers a person and what Logitech's software lets them set. No compiled configuration of this
+model exists, so its limits are Logitech's word, from the manual, the service and the client. Its keys and
+screens are read in its firmware, [keys.md](keys.md) and [display.md](display.md), and what one unit did with
+documents a program of this project delivered is measured, [below](#no-compiled-configuration-exists-for-this-model).
+This said "Little of it is measured"<!--superseded--> before those syncs.
 
 ## The capability fields
 
@@ -198,8 +199,8 @@ empty device page and its menu look like in detail is not checked[^unchecked].
 
 **The words on those screens are the firmware's and no configuration changes them.** The screen for no favourites says
 "Please sign in to your Harmony account to add your favorite TV channels.", and the screens' "no activity" notice, put
-up while no activity is listed when the screens load, at a start and when the remote leaves USB power, until its OK is
-pressed, opens "You have not set up any Activities." and
+up while no activity is listed when the screens load, at a start, on Off and when the remote leaves USB power after
+its USB screen, until its OK is pressed, opens "You have not set up any Activities." and
 asks the person to sign in to their Harmony account; both are the image's own text, one table per language, and a
 configuration chooses only the language, through the context[^t-touch-empty-screens]. So an application that is not
 Logitech's service cannot word them otherwise, and a remote it leaves empty points the person at a Harmony account.

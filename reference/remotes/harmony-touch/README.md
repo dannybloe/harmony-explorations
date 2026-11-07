@@ -6,12 +6,19 @@ later generation: its firmware is a Linux image, it is programmed through MyHarm
 own configuration** through the desktop client rather than having one compiled and written to
 it[^s203]. How evidence is marked is in [the reference's README](../../README.md).
 
-**This library reads almost nothing of it and writes nothing to it.** `openHarmony` refuses it, because it
-speaks the file protocol rather than the command protocol[^s193]. A read only file transport has opened two
-files on it, its identity and a radio query, and nothing else answers without the named door[^s201]. Its
-configuration is not reachable as a file[^s200], and Logitech's service does not compile one for
-it[^s202]. So the facts below are Logitech's, from the manual, the service and the client, or read in its firmware
-image, and each footnote says which.
+**This library reaches it by two narrow routes and no other.** `openHarmony` refuses it, because it speaks
+the file protocol rather than the command protocol[^s193]. A read only file transport has opened two files on
+it, its identity and a radio query, and nothing else answers without the named door[^s201]. Requests to its
+software go through a rail of their own, which answers a sync in place of Logitech's server: thirty four syncs
+of this project have run on one unit and thirty two were committed, [answering a
+sync](../../architectures/harmony-touch/answering-a-sync.md)[^d29][^t-touch-from-nothing]. Its configuration
+is not reachable as a file[^s200], and Logitech's service does not compile one for it[^s202]: it is a set of
+documents a sync delivers, [the platform's pages](../../architectures/harmony-touch/README.md#the-files). So the
+facts below are Logitech's, from the manual, the service and the client, read in its firmware image, or measured
+on that unit, and each footnote says which.
+
+> This said the library "reads almost nothing of it and writes nothing to it"<!--superseded--> until the
+> request rail answered its first sync.
 
 **Its architecture has two numbers for two things.** The remote reports 17 for itself[^s200], the number its
 software shares with Logitech's hubs, and Logitech's own protocol templates file it under 18[^s197], their
@@ -51,8 +58,8 @@ checked**[^unchecked].
 | favourite channels | up to 50, by the manual and by Logitech's product table | [^x-touch-manual], [^t-touch-products] |
 | long press | yes | [^t-long-press] |
 | power | an internal, non replaceable lithium ion cell, charged in a dock; below 3.55 V the remote warns and switches itself off, [display.md](display.md#charging-and-the-battery) | [^x-touch-manual], [^t-touch-keys] |
-| clock | the remote keeps the time, set from the computer at every sync, in 12 or 24 hour form; in the two syncs down recorded the remote refused the client's write to its clock file, and the hand over of the remote's changes wrote none, [memory.md](memory.md) | [^x-touch-manual], [^t-touch-sync], [^t-touch-both-ways] |
-| configuration | **not reachable as a file** under any name known here | [^s200] |
+| clock | the remote keeps the time, set from the computer at every sync, in 12 or 24 hour form; in the two syncs down recorded the remote refused the client's write to its clock file, and the hand over of the remote's changes wrote none, [memory.md](memory.md); a sync sent without the clock write was committed | [^x-touch-manual], [^t-touch-sync], [^t-touch-both-ways], [^t-touch-second-sync] |
+| configuration | **not reachable as a file** under any name known here; six JSON documents and, with favourites, their documents and pictures, which the remote asks for in a sync, [answering a sync](../../architectures/harmony-touch/answering-a-sync.md) | [^s200], [^t-touch-sync] |
 
 ## The files
 
@@ -61,11 +68,11 @@ checked**[^unchecked].
 | [hardware.md](hardware.md) | the cell and dock, the radio identity, what `/sys/sysinfo` reports about the hardware |
 | [keys.md](keys.md) | the drawing, the key numbers, the two touch zones above the screen, the combinations |
 | [display.md](display.md) | the touch screen, its settings, gestures, charging and the battery |
-| [features.md](features.md) | Logitech's statements: devices, favourites, long press, provisioning instead of a compile |
-| [behaviour.md](behaviour.md) | device mode, Off, syncing back |
-| [memory.md](memory.md) | what is known of its filesystem, which is little |
-| [firmware.md](firmware.md) | the version it reports, its image, the paths that reset and reboot it |
-| [usb.md](usb.md) | product id, the file protocol as far as it was used, the two files read, what happens on the cable, the rails |
+| [features.md](features.md) | Logitech's statements: devices, favourites, long press, provisioning instead of a compile; what the remote acts on beyond Logitech's software; what a sync of this project delivered and the remote did; the empty configuration and the firmware's own words for it |
+| [behaviour.md](behaviour.md) | device mode, Off, switching activities, commands on the screen, syncing back, a factory reset |
+| [memory.md](memory.md) | the paths that open, and where the configuration is kept instead of a file |
+| [firmware.md](firmware.md) | the version it reports, its image, the paths that reset and reboot it, a sync stopped halfway |
+| [usb.md](usb.md) | product id, telling one unit from another, the file protocol as far as it was used, the two files read, what happens on the cable, the rails |
 | [misc.md](misc.md) | everything else |
 
 ## Not checked
@@ -90,3 +97,6 @@ checked**[^unchecked].
 [^t-long-press]: Stated by Logitech, by their service. [The test](../../../packages/usb/test/models.test.ts)
 [^t-touch-keys]: Read in the firmware. [The test](../../../tests/test_harmony_touch_keys.py)
 [^t-touch-products]: Stated by Logitech, by their service. [The test](../../../tests/test_host_client.py)
+[^d29]: Chosen by this project. [Decision 29](../../../docs/decisions.md#d29)
+[^t-touch-second-sync]: Measured on a unit. [The test](../../../packages/usb/test/touch-second-sync.test.ts)
+[^t-touch-from-nothing]: Measured on a unit. [The test](../../../packages/bench/test/touch-from-nothing-runs.test.ts)

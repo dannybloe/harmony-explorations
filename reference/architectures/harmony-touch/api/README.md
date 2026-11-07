@@ -10,9 +10,13 @@ asked to do, and what it answers.
 This folder documents that whole API, in full and not only what the application needs. It was read in the
 production firmware, build 4.15.330, which serves the Touch and the rest of this
 generation[^t-touch-api]. The behaviour stated is a Harmony Touch's, host name `juniper`; a hub's own image
-runs a sibling of this software and is not read. **Nothing in this folder has been sent to a remote by this
-project**: every request and name is a reading of the firmware, and the pages say where a recorded sync of
-Logitech's client measured one.
+runs a sibling of this software and is not read. **Eight requests have been sent to one Touch by this project**,
+through its request rail: the provisioning read and `harmony.engine?getconfighash`, the four requests of a sync
+(`setup.syncRemoteChanges`, `setup.sync`, `proxy.request` and `proxy.response`), `proxy.abort` and
+`setup.firmware?reboot`, [answering a sync](../answering-a-sync.md)[^t-touch-first-sync][^t-touch-second-sync]. Every
+other request and name is a reading of the firmware, and the pages say where a recorded sync of Logitech's client or
+a request of this project measured one. This said "Nothing in this folder has been sent to a remote by this
+project"<!--superseded--> until the rail's first reads.
 
 ## The two layers
 
@@ -174,8 +178,10 @@ The native names have kinds of their own, among them **forward**, [the names](na
 ## What the API will and will not do for this project
 
 The library never opens a Touch the ordinary way, and its requests to this API go through a rail of their
-own that carries two reads and the four requests of a sync and nothing else,
-[working on the Harmony Touch](../../../remotes/harmony-touch/usb.md). **Two native names act on an open for
+own that carries two reads and the four requests of a sync, and, behind a flag of its own, three recovery
+requests, the abort, the delete of every stored document and the restart, and nothing else,
+[working on the Harmony Touch](../../../remotes/harmony-touch/usb.md)[^d29]. This said the rail carried the reads
+and the sync "and nothing else"<!--superseded-->, before the recovery tier was added. **Two native names act on an open for
 reading**, the vibration test names `/tde/haptic/diagnostic` and `/tde/haptic/calibrate`, while the names
 that restart or reset the remote act on a bare write,
 [the names](names.md#the-names-that-act-on-a-write-and-on-an-open)[^t-touch-api]. So a bare open is not safe
@@ -220,4 +226,7 @@ stored documents' entity tags, [the engine](engine.md#harmonyenginegetconfighash
 [^t-touch-recovery]: Read in the firmware. [The test](../../../../tests/test_harmony_touch_recovery.py)
 [^t-touch-sync]: Measured on a unit. [The test](../../../../packages/usb/test/touch-sync.test.ts)
 [^t-touch-answers]: Measured on a unit. [The test](../../../../packages/usb/test/touch-host.test.ts)
+[^t-touch-first-sync]: Measured on a unit. [The test](../../../../packages/usb/test/touch-first-sync.test.ts)
+[^t-touch-second-sync]: Measured on a unit. [The test](../../../../packages/usb/test/touch-second-sync.test.ts)
+[^d29]: Chosen by this project. [Decision 29](../../../../docs/decisions.md#d29)
 [^unchecked]: Not checked.

@@ -2,8 +2,9 @@
 
 A touch screen in the upper half of the face, which shows the activities, the favourite channels as
 pictures, a device's commands, an on screen number pad, the settings and help[^x-touch-manual]. No picture
-or screen description has been read off a remote of this model; what its screens draw and when is read in
-its firmware, whose screens are source in the image, and the rest is the manual's. This said the page was
+or screen description has been read off a remote of this model over the cable; what its screens draw and when
+is read in its firmware, whose screens are source in the image, what one unit's screen showed after a sync of
+this project is marked measured where it stands, and the rest is the manual's. This said the page was
 the manual's and the drawing's<!--superseded--> until the firmware was read.
 
 ## The panel
@@ -87,6 +88,8 @@ Which of the held and double forms a button map can bind is the map's question,
 * **The background shows at the foot of every screen, under the screens' dark footer**: a user background of ours,
   dark blue with a bright yellow band across its foot, showed as a band at the foot of every screen, the activity list
   among them; consistent with the picture's design, and nothing else of it was compared[^t-touch-from-nothing].
+* **With no activity and no device**, the screens show pages of their own, worded by the firmware and not by any
+  configuration, [features](features.md#an-empty-configuration)[^t-touch-empty][^t-touch-empty-screens].
 * **The "Powering off" screen's help text runs past its right edge** in English, "Point the remote at your devices
   while th", cut off there, with Logitech's documents and with a set of this project's alike, so it is the firmware's
   layout and no configuration's[^t-touch-from-nothing].
@@ -146,3 +149,5 @@ screen, field by field, is [favourites-and-settings.md](../../architectures/harm
 [^t-touch-favourites-of-ours]: Measured on a unit. [The test](../../../packages/bench/test/touch-favourites-runs.test.ts)
 [^t-touch-settings-of-ours]: Measured on a unit. [The test](../../../packages/corpus/test/touch-settings-runs.test.ts)
 [^t-touch-from-nothing]: Measured on a unit. [The test](../../../packages/bench/test/touch-from-nothing-runs.test.ts)
+[^t-touch-empty]: Measured on a unit. [The test](../../../packages/bench/test/touch-empty-runs.test.ts)
+[^t-touch-empty-screens]: Read in the firmware. [The test](../../../tests/test_harmony_touch_empty_screens.py)

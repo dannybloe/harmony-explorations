@@ -16,7 +16,9 @@ held, was added to them, delivered, run and heard, [an activity of ours](#an-act
 and one activity and one device of Logitech's were taken out of them and the rest run without them,
 [taking out](#taking-out-an-activity-and-a-device)[^t-touch-removal-of-theirs]; and every device and activity of
 those documents was composed again by this project under ids of its own and run as the documents had been,
-[a whole setup of ours](#a-whole-setup-of-ours)[^t-touch-setup-of-ours].
+[a whole setup of ours](#a-whole-setup-of-ours)[^t-touch-setup-of-ours]; and the same activities and devices, in
+documents this project wrote from nothing, were each started from Off and ended,
+[built from nothing](devices-and-infrared.md#built-from-nothing)[^t-touch-from-nothing].
 The image is shared with the other remotes of the generation, but the
 screens are chosen per skin: the Touch, skin 99, runs one set of screens and skins 111 and 112 run
 another[^t-touch-activities-firmware]. Nothing here is checked on another build or another model.
@@ -119,7 +121,7 @@ name: the digits on their keys, `-`, `.`, `*` and `NumberPlus` on the key left o
 is placed on no key, which is where the two `Clear` entries measured end up[^t-touch-activities]. The number
 pad sends each tap as one request with no hold reports after it[^t-touch-activities-firmware].
 
-**Two traps in `IndexInMenu`**, both met in Logitech's own documents:
+**Three traps in `IndexInMenu`**, all met in Logitech's own documents:
 
 * **The number pad's entries count from 0 in the same map as the list's**, so one index names a list entry
   and a number pad entry at once and only the group tells them apart. Ten of the twelve maps measured do
@@ -507,3 +509,4 @@ themselves, `Numpad` opening the number pad[^t-touch-activities-firmware].
 [^t-touch-empty-reading]: Read in the firmware. [The test](../../../packages/codec/test/touch-empty.test.ts)
 [^t-touch-setup-compared]: Measured on a unit. [The test](../../../packages/corpus/test/touch-setup-set.test.ts)
 [^t-touch-setup-firmware]: Read in the firmware. [The test](../../../packages/codec/test/touch-setup.test.ts)
+[^t-touch-from-nothing]: Measured on a unit. [The test](../../../packages/bench/test/touch-from-nothing-runs.test.ts)

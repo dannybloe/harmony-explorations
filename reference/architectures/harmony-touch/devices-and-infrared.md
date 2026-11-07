@@ -283,6 +283,22 @@ With the Toshiba 32 Bit definition's header pulse made half as long again, the s
 judging rests on the definitions[^t-touch-from-nothing]. Before that, one definition written by a program had been
 played, the Sony 12 bit definition [above](#a-device-of-ours)[^t-touch-device-of-ours].
 
+**The families a unit has played**: from Logitech's definitions, the five of the documents a sync handed a Touch,
+heard in every activity and in device mode in the ten tests of [starting, switching and
+stopping](activities-and-buttons.md#starting-switching-and-stopping)[^t-touch-devices][^t-touch-in-use]; from
+definitions of ours, Sony 12 Bit in device mode, [above](#a-device-of-ours)[^t-touch-device-of-ours], and the same
+five, Toshiba 32 Bit, Sharp 15 Bit 2, Sharp 48 Bit 2, Sony 20 Bit and Microsoft 30 Bit, inside activities, in the
+test above[^t-touch-from-nothing]. No other family has been played on a Touch[^unchecked].
+
+**What a definition has to state for a whole transmission.** The engine sends an encoded segment as its header,
+its cells, its trailer and then a silence up to the segment's `TotalLength`, and nothing else between one segment
+and the next, [how a code becomes durations](#how-a-code-becomes-durations)[^t-touch-engine]. So a definition
+written from a family's rhythm has to carry what follows each frame, the trailer and the length it is padded to,
+besides the lead in, the cells and the carrier; without them one frame follows the last with no gap. This project's
+rhythm table states a family's frame, and the trailer and the gap only in its timings of one repetition and of the
+first transmission, which is what its writer reads them from, and states no toggle bit and no finish sequence, so its
+definitions carry neither, `packages/codec/src/harmony-touch/definition.ts`[^t-touch-nothing-compared].
+
 **What these definitions leave out against Logitech's for the same families**, field by field, and why each changes
 nothing the engine does, is held by the comparison that built them[^t-touch-nothing-compared]. The one that could show
 on a unit is the Microsoft 30 Bit toggle bit, which Logitech's definition states and ours does not, so by the
@@ -359,6 +375,7 @@ and `ParentDeviceManufacturer`, `ParentDeviceModel` and `IsMultiCode`[^t-touch-e
 [^t-touch-from-nothing]: Measured on a unit. [The test](../../../packages/bench/test/touch-from-nothing-runs.test.ts)
 [^t-touch-nothing-compared]: Measured on a unit. [The test](../../../packages/corpus/test/touch-nothing-set.test.ts)
 [^t-touch-setup-firmware]: Read in the firmware. [The test](../../../packages/codec/test/touch-setup.test.ts)
+[^t-touch-in-use]: Measured on a unit. [The test](../../../packages/bench/test/touch-full-bench-runs.test.ts)
 [^s92]: Measured in configurations. [Section 92](../../../docs/findings.md#s92)
 [^s348]: Measured in configurations. [Section 348](../../../docs/findings.md#s348)
 [^unchecked]: Not checked.

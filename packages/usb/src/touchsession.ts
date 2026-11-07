@@ -49,7 +49,9 @@
  * since Logitech's client never sends it, and goes in the provisioning read's shape, and so do the three
  * requests of the recovery tier, behind `HARMONY_TOUCH_RECOVERY`, for the same reason.
  *
- * Nothing in this file has been sent to a remote.
+ * This said "Nothing in this file has been sent to a remote" until `todo-touch.md` 6.4 sent the provisioning
+ * read and `getconfighash` to the bench Touch; every request here has been sent since, through the thirty four
+ * syncs of chapters 6 to 9 and the recovery tier's abort and restart in 6.7.
  */
 import { authoriseReport } from './authorise.ts';
 import {

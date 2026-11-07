@@ -46,7 +46,11 @@ The packet, how a request and a reply encode their parameters, what a refusal lo
 malformed packet silences a session are [the file protocol](../../usb-protocol/file-protocol.md#the-packet),
 measured there on a Touch. What is this model's own:
 
-* **This library has sent the Touch four commands**, a bare ping, open, read and close, and only to read[^s200].
+* **This library sends the Touch five commands**: a bare ping, open, read and close, to read its identity
+  file[^s200], and the write, `0x03`, only into `/sys/hlapi` through the request rail below[^d29], one request
+  line a session, byte for byte as Logitech's client wrote the same request in the recorded
+  syncs[^t-touch-session]. This said "This library has sent the Touch four commands"<!--superseded-->, and only
+  to read, until the request rail answered its first sync.
 * **In every recorded sync, Logitech's client worked through one file, `/sys/hlapi`, and sent no request and
   response command `0x08`**; in the two syncs down it also tried to write `/sys/time`, and the remote refused
   that write both times[^t-touch-sync][^t-touch-both-ways]. Changes made on the remote travel up through the
@@ -80,8 +84,11 @@ user configuration commented out[^s198].
 > request channel's rail was added there.
 
 **So there is nothing left to read on a Touch without the named door**[^s201]. What the remote asks for during
-a sync goes through `/sys/hlapi`, which is not on `INERT_PATHS`; this library opened it once, behind the
-named door, to learn its size, and has never read it[^s200][^t-touch-sync].
+a sync goes through `/sys/hlapi`, which is not on `INERT_PATHS`, so the library reaches it only through the
+request rail above, writing a request line and reading its answer[^d29]; that rail has answered thirty four
+syncs on one unit, [answering a sync](../../architectures/harmony-touch/answering-a-sync.md)[^t-touch-from-nothing].
+This said the library "opened it once, behind the named door,
+to learn its size, and has never read it"<!--superseded-->, until the rail's first reads.
 
 > This page said a sync rides on the request and response command, `0x08`<!--superseded-->, until a recorded
 > sync through Logitech's client sent no `0x08` at all[^t-touch-sync].
@@ -103,3 +110,5 @@ named door, to learn its size, and has never read it[^s200][^t-touch-sync].
 [^t-touch-api-names]: Read in the firmware. [The test](../../../tests/test_harmony_touch_api_names.py)
 [^t-touch-serial]: Read in the firmware. [The test](../../../tests/test_harmony_touch_serial.py)
 [^d29]: Chosen by this project. [Decision 29](../../../docs/decisions.md#d29)
+[^t-touch-session]: Measured on a unit. [The test](../../../packages/usb/test/touchsession.test.ts)
+[^t-touch-from-nothing]: Measured on a unit. [The test](../../../packages/bench/test/touch-from-nothing-runs.test.ts)
