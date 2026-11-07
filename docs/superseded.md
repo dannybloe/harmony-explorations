@@ -828,3 +828,4 @@ it reachable in the same commit and the test comparing the two tables is what ca
 | `Nothing has been written to either` | `tests/test_harmony_885_flash_backup.py`, `todo-compile-885.md` 1.3 | of the two bench Harmony 885s: one block of unit A was written back unchanged |
 | `its first rehearsal still to be performed` | `tests/test_harmony_885_flash_backup.py`, `todo-compile-885.md` 1.3 | of arch 8 (Harmony 880 and 885): performed on unit A at `0x0C0000` |
 | `its first run is still to be performed` | `tests/test_harmony_885_first_config_write.py`, `todo-compile-885.md` 1.4 | of `write-config.ts` on the bench 885s: performed on unit B |
+| `unit B as the control with three names missing` | `packages/codec/test/arch8devicelist.test.ts`, `packages/codec/test/h885base.test.ts` | of the bench 885s' configurations: B's nine devices are all named once the 885's device list is read; one of its seven activities is unnamed |

@@ -32,8 +32,8 @@ import type { ScreenString } from './text.ts';
 import type { TouchArea } from './tables.ts';
 import type { ModePage, ModeRecord, StateRecord } from './sections.ts';
 import type { Instruction, PerArchitecture } from './gspm.ts';
-import { cornerCellAt, cornerLayoutOf } from './cornerlayout.ts';
-import type { CornerLayout } from './cornerlayout.ts';
+import { gridCellAt, labelGridOf } from './cornerlayout.ts';
+import type { LabelGrid } from './cornerlayout.ts';
 import type { ScreenChoice } from './render.ts';
 
 /**
@@ -1537,10 +1537,18 @@ export function deviceVariables(c: Container): DeviceVariable[] {
  */
 /**
  * Whether a device list row opens with the beeper, per architecture, in a table so that the reader names an
- * architecture in one place rather than testing it inline. Arch 14 (Harmony 600, 650 and 700) is the one without,
- * section 285; every other architecture is read with the Harmony One's shape, which has it.
+ * architecture in one place rather than testing it inline. Arch 14 (Harmony 600, 650 and 700) is without, section
+ * 285, and so is arch 8 (Harmony 880 and 885), `packages/codec/test/arch8devicelist.test.ts`: every row of every
+ * device list in its eight configurations is enter a mode, then write 1 to the configuration's device mode marker,
+ * as on arch 14. Every other architecture is read with the Harmony One's shape, which has it.
+ *
+ * **Arch 8 was read with the Harmony One's shape until `todo-compile-885.md` 1.7's follow up**, which found no row
+ * there, so no device on arch 8 had a mode and no device list label reached `devices`: a group base slot 0 names
+ * nothing for fell through to the top row of its own mode, which on arch 8 is mostly a command, so a bench Harmony
+ * 885's CD player came back named `Pwr`, and two of the other unit's devices came back unnamed,
+ * `DEVICE_MODE_TITLE_ROUTE`.
  */
-const DEVICE_LIST_ROW_BEEPS: PerArchitecture<boolean> = { 14: false };
+const DEVICE_LIST_ROW_BEEPS: PerArchitecture<boolean> = { 8: false, 14: false };
 
 /**
  * A device list row's shape, per architecture, or false where none is known.
@@ -1551,8 +1559,10 @@ const DEVICE_LIST_ROW_BEEPS: PerArchitecture<boolean> = { 14: false };
  * all four arch 14 user configurations: every list of the two instruction shape ends in the one
  * write each configuration uses, `0x9F` operand 1 on the Harmony 650, `0x9B` on the 600 and `0xA5`
  * on both 700s, half of them bound on a device list page and the other half the lists that page's
- * second copy names, section 69. Every other architecture is tested against the Harmony One's shape,
- * which finds no marker on arch 8, 9 or 10 and so no row, rather than being read on its own terms.
+ * second copy names, section 69. Arch 8 (Harmony 880 and 885) has the arch 14 shape, its marker a write
+ * of 1 to `0x98`, `0x99`, `0x9A` or `0x9B` by configuration, `packages/codec/test/arch8devicelist.test.ts`.
+ * Every other architecture is tested against the Harmony One's shape, which finds no marker on arch 9 or
+ * 10 and so no row, rather than being read on its own terms.
  *
  * Exported for `menuMarkerOf` in `compose.ts`, which checks that every list of this shape writes the
  * one marker rather than taking the majority `deviceModeMarker` takes, section 329.
@@ -1675,9 +1685,11 @@ export function deviceListRows(c: Container): DeviceListRow[] {
   // lines rather than labels is what left the Wii's page unpaired in section 240's first reading.
   const record = records[best[0]!.menu] as ModeRecord;
   const drawn = screenStrings(c, characterMap(c));
-  const corners = cornerLayoutOf(c.architecture);
-  if (corners !== undefined) {
-    labelCornerRows(best, record, drawn, corners);
+  // A screen whose keys sit in cells, the corners of the Harmony 600, 650 and 700 or the two columns beside the
+  // Harmony 880 and 885's, pairs by cell; the Harmony One's touch rows pair by rank below.
+  const grid = labelGridOf(c.architecture);
+  if (grid !== undefined) {
+    labelCornerRows(best, record, drawn, grid);
     return best;
   }
   record.pages.forEach((page, pageIndex) => {
@@ -1706,9 +1718,10 @@ export function deviceListRows(c: Container): DeviceListRow[] {
 const DEVICE_LIST_ROW_PITCH = 54;
 
 /**
- * A corner laid device list page's labels, arch 14's (Harmony 600, 650 and 700), paired with its rows by **cell** rather than by rank: two
- * labels share a line when they sit side by side, so the rank pairing arch 12 uses would read "TV
- * KPN" as one label. The lines of a cell join top to bottom, which is how a long name wraps.
+ * A device list page's labels where its keys sit in cells, paired with its rows by **cell** rather than by rank:
+ * arch 14's corners (Harmony 600, 650 and 700) and arch 8's two columns beside the screen (Harmony 880 and 885).
+ * Two labels share a line when they sit side by side, so the rank pairing arch 12 uses would read "TV KPN" as one
+ * label. The lines of a cell join top to bottom, which is how a long name wraps.
  *
  * Corners only. The two row layout's labels are centred and would pair with its left hand rows
  * alone. A two row list reaches every device, as the corner lists do, and `deviceListRows` keeps the
@@ -1716,7 +1729,7 @@ const DEVICE_LIST_ROW_PITCH = 54;
  * is lower; so the case does not arise, by that tie order rather than by width, and is not read.
  */
 function labelCornerRows(
-  rows: DeviceListRow[], record: ModeRecord, drawn: ReturnType<typeof screenStrings>, corners: CornerLayout,
+  rows: DeviceListRow[], record: ModeRecord, drawn: ReturnType<typeof screenStrings>, corners: LabelGrid,
 ): void {
   record.pages.forEach((page, pageIndex) => {
     const lines = drawn.filter((one) => one.program === page.program
@@ -1726,7 +1739,7 @@ function labelCornerRows(
       const item = corners.items.findIndex((one) => one.scan === row.scan);
       if (item < 0) continue;
       const inCell = lines
-        .filter((one) => cornerCellAt(corners, one.x, one.y) === item)
+        .filter((one) => gridCellAt(corners, one.x, one.y) === item)
         .sort((a, b) => a.y - b.y);
       if (inCell.length > 0) row.label = inCell.map((one) => one.text.trim()).join(' ');
     }
@@ -1790,9 +1803,10 @@ export function devices(c: Container): Device[] {
     }
   }
 
-  // Route three: the title of the device's own mode, for a group base slot 0 does not name at all.
+  // Route three: the title of the device's own mode, for a group base slot 0 does not name at all, and
+  // only on an architecture where that top row is a title often enough to name by, `DEVICE_MODE_TITLE_ROUTE`.
   const stillFree = out.filter((device) => device.name === undefined && device.codes > 0);
-  if (stillFree.length > 0) {
+  if (stillFree.length > 0 && DEVICE_MODE_TITLE_ROUTE[c.architecture ?? -1] !== false) {
     const spokenFor = new Set(activityNames(c).map((one) => one.name));
     const titles = deviceModeTitles(c);
     for (const device of stillFree) {
@@ -1853,6 +1867,28 @@ export function devices(c: Container): Device[] {
   }
   return [...out, ...withoutInfrared];
 }
+
+/**
+ * Whether route three of `devices`, the top row a device's own mode draws, may name a device, per architecture.
+ * An architecture absent from the table takes it, which is how every architecture was read before arch 8 joined.
+ *
+ * **Arch 8 (Harmony 880 and 885) does not**, on two measurements over the eight arch 8 configurations the lab holds,
+ * two of which carry one remote's identical device list, `packages/codec/test/arch8devicelist.test.ts`. A device
+ * mode there draws a title only when it has one page, 10 of 10 such modes against none of the 41 longer ones, 9 and
+ * 35 with the repeated list counted once, so on most devices the top row is a command: that is how a bench Harmony
+ * 885's CD player, a device with no state variable and so no name in base slot 0, came back named `Pwr`, the first
+ * line of the wrapped command label `Pwr` over `Toggle2` on the third page of its own mode, the highest line any of
+ * its pages draws. And the route is not needed there: the device list labels every device of the eight, 51 rows of
+ * 51, 44 counted once, which route four reads once route three leaves the device alone. Section 126 had counted
+ * the top row as the label 1 time in 31, over the devices route one names in the six contributed configurations,
+ * `on arch 9 and arch 14 the device names its own mode` in `packages/codec/test/inventory.test.ts`; of those 31,
+ * one has a device mode of one page, and that mode is titled.
+ *
+ * Arch 12 (Harmony One) draws no title, 0 of 7 by section 126's count, and is deliberately not entered: no device
+ * of the corpus reaches route three on it, so nothing has shown what entering it would change, and the change is
+ * its own decision. Arch 9 (Harmony 525) and arch 14 (Harmony 600, 650 and 700) draw the title, 17 of 17.
+ */
+const DEVICE_MODE_TITLE_ROUTE: PerArchitecture<boolean> = { 8: false };
 
 /**
  * The top row a mode draws, for every mode whose own keys address exactly one device.

@@ -1855,6 +1855,27 @@ const DEVICE_MODE_MARKERS: Readonly<Record<string, number>> = {
   h700_config_2: 37,
 };
 
+/**
+ * The same marker on arch 8 (Harmony 880 and 885), read since the follow up to `todo-compile-885.md` 1.7: its rows
+ * carry no beep either, enter a mode then the mark, and were no rows to the Harmony One's shape until then,
+ * `arch8devicelist.test.ts`. The two bench 885s' configurations sit outside this population and both write 26,
+ * which that test asserts.
+ *
+ * **Kept apart from `DEVICE_MODE_MARKERS` on purpose.** That map is also the population of the composer's menu
+ * marker test, `menuMarkerOf`, which refuses an architecture no family builds for, arch 8 among them, since what it
+ * checks is a composer's rule and no composer writes an arch 8 menu. The census of every configuration that carries
+ * a device list reads both maps; the composer's test reads the first alone, so its population and counts stay the
+ * ones measured on the Harmony One, 600, 650 and 700.
+ */
+const ARCH8_DEVICE_MODE_MARKERS: Readonly<Record<string, number>> = {
+  arch8_config_a: 27,
+  arch8_config_b: 25,
+  arch8_config_c: 25,
+  arch8_config_d: 24,
+  arch8_config_880: 24,
+  arch8_config_885: 27,
+};
+
 test('every config with a device list states its own device mode marker, and they differ',
      skipWithoutLab(), () => {
   const found: Record<string, number> = {};
@@ -1873,12 +1894,14 @@ test('every config with a device list states its own device mode marker, and the
     assert.equal(marker.operand, 1, `${name} writes 1, which is what marks the mode`);
     found[name] = marker.opcode - 0x80;
   }
-  assert.deepEqual(found, DEVICE_MODE_MARKERS);
+  assert.deepEqual(found, { ...DEVICE_MODE_MARKERS, ...ARCH8_DEVICE_MODE_MARKERS });
   // The claim that matters to the composer: it is not one number, and it is not even stable for
-  // one remote. Ten distinct values over the eighteen configurations that carry a device list, eight
+  // one remote. Ten distinct values over the twenty four configurations that carry a device list, eight
   // over the fourteen Harmony One ones, and the spare Harmony One's own two reads either side of a
-  // sync differ by one, so a constant is wrong on most of them.
-  const distinct = [...new Set(Object.values(DEVICE_MODE_MARKERS))].sort((a, b) => a - b);
+  // sync differ by one, so a constant is wrong on most of them. The six arch 8 ones add no value the
+  // others do not already write: three of the ten, 24, 25 and 27.
+  const distinct = [...new Set(Object.values({ ...DEVICE_MODE_MARKERS, ...ARCH8_DEVICE_MODE_MARKERS }))]
+    .sort((a, b) => a - b);
   assert.deepEqual(distinct, [24, 25, 26, 27, 28, 30, 31, 32, 33, 37]);
   assert.notEqual(DEVICE_MODE_MARKERS['one_spare_before_sync'],
                   DEVICE_MODE_MARKERS['one_spare_after_sync'],

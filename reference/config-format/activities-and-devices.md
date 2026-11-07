@@ -31,6 +31,18 @@ underscores read as spaces and a trailing `..` being the screen's elision. That 
 case, a Harmony 600's Chromecast, a group of no codes and a mode whose one page binds nothing, with one
 negative, a Wii that names nothing; a cut the screen does not mark with `..` is not matched[^s285].
 
+**On the Harmony 880 and 885 the device list is read the same way.** A row is two instructions, enter the
+device's mode and write 1 to the configuration's device mode mark, with no beep, as on the Harmony 600, 650 and
+700, and its label sits in the cell of its key: eight keys beside the screen, two columns of four. The figures
+here are over eight configurations, one of them a Harmony 880's and the rest a Harmony 885's, two of which carry
+one remote's identical device list, so that list counts twice; the keys' cells were pressed on a Harmony 885
+only. Every row's mode reaches exactly one infrared group, one row per device; and of the 44 devices base slot 0
+names, 38 without the repeated list, the label in the cell of the key that enters the device's mode spells the
+name 40 times whole and 4 times cut, 3 distinct cuts, where pairing each row with the cell beside it matches none
+of the 42 rows that have a cell beside them[^t-arch8-devices]. **In two configurations of the Harmony 885, four
+devices have no state variable**, so base slot 0 does not name them, and the configuration's text never spells
+their names: the device list draws them, one cut by the screen with two dots[^t-arch8-devices].
+
 A level 1 name in the name tree that belongs to a device is spelled
 
 ```
@@ -55,6 +67,14 @@ byte is the group[^s126]. Three routes, in this order:
 | elimination | 5 | one label and one group left unpaired |
 | the screen | 3 | the title of the device's own mode, when one candidate survives |
 
+**The screen route is not taken on the Harmony 880 and 885.** A device mode there draws the device's name as a
+title only when it has one page: 10 of 10 such modes against none of 41 longer ones over the same eight
+configurations, 9 and 35 without the repeated list, so its top row is mostly a command; and the device list labels
+every device, 51 rows of 51, 44 without the repeat, so a device the first two routes leave is named by its device
+list row instead. The route was taken on every architecture until a Harmony 885 configuration with
+a device no state variable names: that device came out named `Pwr`, the first line of a wrapped command label,
+the highest line its own mode draws[^t-arch8-devices].
+
 102 device variables reach exactly one group, 13 reach none because the variable has nothing to switch
 between, and **none reaches two**. No two variables of one device disagree and no two devices claim one
 group; the reader refuses both rather than choosing, and neither happens in the corpus[^s126].
@@ -65,8 +85,10 @@ Two independent checks[^s126]:
   ASCII and base slot 7's glyph pixels agreeing through two readers that share no code;
 * **on the Harmony 525 and the Harmony 600, 650 and 700 the device's own mode draws its label as a
   title**, 17 of 17, where shifting the pairing to the next group breaks 16 of 16 shiftable cases. The
-  Harmony 880 and 885 and the Harmony One draw no title, 1 of 31 and 0 of 7, which is why that is the
-  last route and not the first.
+  Harmony 880 and 885 draw the label as a title 1 time in 31, over the devices the names route reaches in six
+  of their configurations, and the Harmony One 0 of 7, which is why this is the last route and not the first.
+  On the Harmony 880 and 885 a title is drawn only on a device mode of one page, and of those 31 devices one has
+  such a mode, which is why there it is no route at all[^t-arch8-devices].
 
 `packages/codec/src/inventory.ts` is the reader: `devices`, `deviceVariables`, `deviceModeTitles` and
 `infraredGroupsPerList`. `make devices` prints the figures with the source column, which is the number to
@@ -415,6 +437,7 @@ put there.
 [^s285]: Measured in configurations. [Section 285](../../docs/findings.md#s285)
 [^s120]: Measured in configurations. [Section 120](../../docs/findings.md#s120)
 [^t-inventory]: Measured in configurations. [The test](../../packages/codec/test/inventory.test.ts)
+[^t-arch8-devices]: Measured in configurations. [The test](../../packages/codec/test/arch8devicelist.test.ts)
 [^unchecked]: Not checked.
 [^s273]: Measured in configurations. [Section 273](../../docs/findings.md#s273)
 [^s274]: Read in the firmware. [Section 274](../../docs/findings.md#s274)

@@ -30,6 +30,11 @@ instruction only this platform's configurations use, the firmware lets a fill's 
 column 159, past the panel's 128 columns, with what the display does there not checked, and text has no two byte
 codes.[^t-885-screens]
 
+**The device list labels the eight keys beside the screen**, two columns of four, each label in its key's cell.
+A device's own pages draw its name as a title only when there is one page of them, so a device that no state
+variable of the configuration names is named on its device list row, which can be the only place the
+configuration states its name. How a reader takes a device's name is [activities and devices](../../config-format/activities-and-devices.md#which-devices-a-configuration-drives-and-what-each-one-is-called).[^t-arch8-devices]
+
 ## Not checked
 
 * The panel's size, its colour depth as the panel shows it, and its backlight.[^unchecked]
@@ -40,3 +45,4 @@ codes.[^t-885-screens]
 [^x-forum-table]: Stated by a third party. [The comparison table](https://www.harmony-remote-forum.de/harmony_compare.php)
 [^unchecked]: Not checked.
 [^t-885-screens]: Read in the firmware. [The test](../../../tests/test_harmony_885_screens.py)
+[^t-arch8-devices]: Measured in configurations. [The test](../../../packages/codec/test/arch8devicelist.test.ts)

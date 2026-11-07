@@ -6,7 +6,9 @@
  * **A reader's table**, plan 007's one exception: reading a compiled screen is per architecture by nature, so the
  * architecture is looked up here, once, and never tested inline. Only arch 14 (Harmony 600, 650 and 700) has an
  * entry, every figure measured on its four user configurations, section 285; the Harmony One's screen is a touch
- * screen whose rows are found another way, and every other architecture has none. The four slot family's builders
+ * screen whose rows are found another way, and every other architecture has none. The Harmony 880 and 885's keys
+ * beside the screen are read through a smaller table beside this one, `SIDE_KEY_GRIDS`, which holds only what a
+ * reader pairs labels by. The four slot family's builders
  * take the same entry through `families/four-slot/geometry.ts`, so that a page they compose is one the compiler
  * could have written, and so that the layout has one home rather than a reader's copy and a builder's.
  *
@@ -98,8 +100,82 @@ export function cornerLayoutOf(architecture: number | undefined): CornerLayout |
  * the reader pairs labels with rows by it and a composer moves a label from one corner to another by it.
  */
 export function cornerCellAt(of: CornerLayout, x: number, y: number): number | undefined {
-  const row = of.rowBands.findIndex((top, k) => k < 2 && y >= top && y < (of.rowBands[k + 1] as number));
+  return gridCellAt(of, x, y);
+}
+
+/**
+ * What a reader needs to pair a page's drawn labels with the keys its rows are bound to, and nothing a builder
+ * needs: which key sits in which cell, the vertical bands the rows' labels fall in, and the x dividing the two
+ * columns. A corner layout is one, with two rows; the Harmony 880 and 885's keys beside the screen are another,
+ * with four, `SIDE_KEY_GRIDS`.
+ *
+ * **Why a second shape rather than a second corner layout.** `CornerLayout` carries what the four slot family's
+ * builders place labels by, a label's x and y, the two row list's centring and the screen width, and every one of
+ * those is measured on the Harmony 600, 650 and 700 alone. Filling them in for the 885 would state builder facts
+ * nobody has measured there; the reader needs only the cells, so the reader's table holds only the cells.
+ */
+export interface LabelGrid {
+  /** Every key of the grid with its cell, column 0 the left, row 0 the top. */
+  readonly items: readonly { readonly scan: number; readonly column: number; readonly row: number }[];
+  /** The bands the rows' labels fall in, top to bottom: one more boundary than there are rows. */
+  readonly rowBands: readonly number[];
+  /** The x that divides the left column's labels from the right column's. */
+  readonly columnSplit: number;
+}
+
+/**
+ * The cell a line drawn at `(x, y)` belongs to, as an index into the grid's `items`, or undefined for a line
+ * outside every row band, which is the title, the page counter and the bottom word. `cornerCellAt` is this on a
+ * corner layout, whose three boundaries make two rows, so the one rule serves both shapes.
+ */
+export function gridCellAt(of: LabelGrid, x: number, y: number): number | undefined {
+  const last = of.rowBands.length - 1;
+  const row = of.rowBands.findIndex((top, k) => k < last && y >= top && y < (of.rowBands[k + 1] as number));
   if (row < 0) return undefined;
   const column = x < of.columnSplit ? 0 : 1;
   return of.items.findIndex((one) => one.row === row && one.column === column);
+}
+
+/**
+ * The keys beside the screen, for an architecture whose screen keys are not at its corners: the Harmony 880 and
+ * 885, arch 8, eight keys in two columns of four.
+ *
+ * **Every figure is a measurement, and none is fitted to the device list it serves.** The scans and their cells are
+ * the reference's, `reference/remotes/harmony-885/keys.md` "The keys beside the screen": the left column 5, 6, 7
+ * and 8 and the right column 45, 46, 48 and 44, top to bottom, read off one configuration's activity menu, section
+ * 128, and pressed on a unit in that order. The bands follow from the label rows the same section measured, a one
+ * line label at y 42, 74, 106 and 138 and a two line label starting 13 higher: each band runs from 16, below the
+ * title at 10, in steps of the 32 pixel row pitch, so the last ends at 144, above the page counter at 152. The
+ * split is the middle of the 128 pixel panel, the left labels starting at 3 and the right ones at 66 or beyond on
+ * every arch 8 device list page in the corpus, `packages/codec/test/arch8devicelist.test.ts`, which also holds that
+ * every line those pages draw falls in a band or is the title or the counter.
+ *
+ * Measured on the Harmony 885's keys and on the configurations of both the 880 and the 885, which run one
+ * application; the 880's keys were not pressed, and its compiles lay their lists out the same way.
+ */
+export const SIDE_KEY_GRIDS: PerArchitecture<LabelGrid> = {
+  8: {
+    items: [
+      { scan: 5, column: 0, row: 0 },
+      { scan: 45, column: 1, row: 0 },
+      { scan: 6, column: 0, row: 1 },
+      { scan: 46, column: 1, row: 1 },
+      { scan: 7, column: 0, row: 2 },
+      { scan: 48, column: 1, row: 2 },
+      { scan: 8, column: 0, row: 3 },
+      { scan: 44, column: 1, row: 3 },
+    ],
+    rowBands: [16, 48, 80, 112, 144],
+    columnSplit: 64,
+  },
+};
+
+/**
+ * The grid a reader pairs a key page's labels by, for an architecture whose screen keys sit in cells: its side key
+ * grid where it has one, else its corner layout, else undefined, the Harmony One's touch rows among them, which
+ * pair by rank instead. A lookup in two tables rather than a test of the architecture, plan 007.
+ */
+export function labelGridOf(architecture: number | undefined): LabelGrid | undefined {
+  if (architecture === undefined) return undefined;
+  return SIDE_KEY_GRIDS[architecture] ?? CORNER_LAYOUTS[architecture];
 }
