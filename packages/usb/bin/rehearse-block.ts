@@ -289,12 +289,15 @@ const H885_A_DUMPS = new Set<string>([
  * 2026 after a hand restart and identical, `docs/test-notes/harmony-885.md`.
  *
  * **B joined after A's first write**, `todo-compile-885.md` 1.8, because its keys work better and the hands
- * on tests run on it. The block choice is A's reasoning on B's flash: B's configuration ends at `0x0BB8C7`
- * and is erased to `0x0C0000`, and from there remains of earlier configurations reach `0x0D00AA`, so
- * `0x0C0000` is again a block the remote never reads and which is not `0xFF`, from its first byte to
- * `0x0C4593`. Its upper neighbour starts with data at `0x0D0000`, the 171 bytes both units hold, so the
- * erase is bounded tightly on that side; below the block B is erased back to its configuration's end, so the
- * lower side is bounded only by that, `0x0BB8C7`, looser than on A.
+ * on tests run on it. **Its block is `0x0D0000`, not A's `0x0C0000`**, because the two units' flash differs
+ * below it. B's configuration ends at `0x0BB8C7`, so on B the block under `0x0C0000` is the live
+ * configuration's last, where on A it held only remains. An erase at `0x0C0000` that reached one byte lower
+ * than A's measurement says it can would cut into what B runs from. One block up, everything a wrong guess
+ * about the sector could reach is remains or erased: `0x0C0000` holds remains to `0x0C4593`, `0x0D0000` the
+ * 171 bytes both units hold to `0x0D00AA`, which are not `0xFF` so a write that sent nothing would show, and
+ * `0x0E0000` is erased. The price is the measurement: neither neighbour holds data next to the block, so this
+ * rehearsal bounds the sector less tightly than A's did, and A's stays the one that measured it. Pointed out
+ * by the review of 1.3 and 1.8.
  */
 const H885_B_DUMPS = new Set<string>([
   'h885_b_region',

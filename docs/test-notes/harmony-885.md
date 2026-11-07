@@ -6,8 +6,8 @@ The bench Harmony 885s: what was done to them, in order. What the remote and its
 **Two Harmony 885s are on the bench, and both may be written, unit A first**, decision 30. This said
 "neither may be written"<!--superseded--> until that decision. One block has been written to unit A, back
 unchanged, and nothing to B; this said "Nothing has been written to either"<!--superseded--> until then. Arch 8 is in
-`ARCHITECTURES_WITH_A_WRITE_TARGET` since `todo/todo-compile-885.md` 1.2, for the flash block path and unit A
-only; this said it was "still not in" the list<!--superseded--> until then. Before them, everything known about
+`ARCHITECTURES_WITH_A_WRITE_TARGET` since `todo/todo-compile-885.md` 1.2, for the flash block path, unit A and
+since 1.8 unit B; this said it was "still not in" the list<!--superseded--> until then. Before them, everything known about
 this architecture came from a contributor's firmware images and configurations, read off their remotes.
 
 ## The first unit, `h885_a`
@@ -196,8 +196,8 @@ so the page warns against Glow rather than explaining it.
 9. **Unplugged and used**: it woke, ran an activity and answered keys as before.
 
 **What the backup holds**, `tests/test_harmony_885_flash_backup.py`: the application is Logitech's published
-885 image byte for byte; the bootloader differs from the published one in 33 bytes, the identity block's two
-per unit fields and the battery calibration word; the configuration region is the earlier region read; the
+885 image byte for byte; the bootloader differs from the published one in 33 bytes, 31 in the identity block's
+two per unit fields and two at `0x000162`, beside the battery calibration word; the configuration region is the earlier region read; the
 staging region holds 48129 bytes that are not `0xFF`; the log area is erased. Filed as `h885_a_flash` and
 `h885_a_flash_2`, and the read after the write as `h885_a_after_block_config`.
 
@@ -208,4 +208,28 @@ held was in its lower half. A rehearsal on a block whose upper half holds data w
 
 **Unit A's keys are unreliable**, as said at the bench, and unit B's work better, so hands-on tests run on B
 once B has its own backup and one block written back.
+
+## 7 November 2026: unit B's whole flash, and one block written back
+
+`todo/todo-compile-885.md` 1.8, **unit B on the cable**. In order:
+
+1. **The dry run at `0x0C0000`**: the identity matched `h885_b`. That block was then given up, after the
+   review of 1.3: on B the block under it is live configuration, B's ending at `0x0BB8C7`.
+2. **`read-region.ts` over the whole flash**: finished, 2088960 bytes.
+3. **The second copy**: stopped at 6% on a `flash chunk out of sequence`, filed nothing.
+4. **Unit B restarted by hand**, then the second copy finished with no break, byte identical to the first.
+5. **The dry run at `0x0D0000`**: the block matched `h885_b_region`.
+6. **The block written back**, both write flags: the neighbours `0x0C0000` and `0x0E0000` read, the block
+   erased and read back as all ones, the neighbours unchanged, 21 transfers, the block read back identical.
+7. **`read-config.ts` once**: 637127 bytes, no window retried, identical to `h885_b_config`.
+8. **Unplugged and used**: it woke and responded to keys and an activity; what each should do on this unit's
+   configuration was not compared.
+
+**What B's backup holds**, `tests/test_harmony_885_flash_backup.py`: the application is the published 885
+image; the bootloader differs from the published one in 34 bytes, all 32 of the identity block's per unit
+fields and the two at `0x000162`; the region is the earlier region read; the staging region holds 48129 bytes
+that are not `0xFF`, as on A, and the log area is erased. Filed as `h885_b_flash`, `h885_b_flash_2` and
+`h885_b_after_block_config`.
+
+**Every read that met a sequence break came before a hand restart**, on both units, and none after one.
 

@@ -73,7 +73,7 @@ once at `0x010000` and then writes 64 KiB, which works only if that sector is at
 **On an 885 one erase at `0x0C0000` removed bytes from that address on and left the bytes on either side of
 its 64 KiB intact**, `0x0BFFFF` and `0x0D0000`, so the sector there starts on the address and is no larger
 than 64 KiB. That it is not 32 KiB is not settled: everything that block held sat in its lower half.[^t-885-erase-unit]
-An 880 is not checked.[^unchecked]
+That was one address on one unit; the rest of the region rests on the two sources, and an 880 is not checked.[^unchecked]
 
 **What one erase can take**, with no unlock: the running application and its safe mode configuration at
 `0x010000`, the configuration, the staging source at `0x1D0000` and the log area; below `0x010000`, the

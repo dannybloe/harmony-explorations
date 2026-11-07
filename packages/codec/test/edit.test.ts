@@ -247,7 +247,11 @@ test('diffRanges finds the runs and refuses a length change', () => {
  * is asserted as an exact run list, not as "the timestamp changed": if a save touched anything else,
  * a test that only checked the timestamp would pass.
  */
-const SAVE_SAMPLES = ['one_config', 'h600_config', 'h525_config', 'arch8_config_a'];
+// `h885_a_config` since `todo-compile-885.md` 1.5: the bench 885's own configuration, the base every 885 write
+// starts from, so the stamp a write puts on it is held on the file the writes actually go to. The 885 sets
+// its clock from base slot 13 at every start, `tests/test_harmony_885_state.py`, so this is what a write's
+// restart reseeds it from.
+const SAVE_SAMPLES = ['one_config', 'h600_config', 'h525_config', 'arch8_config_a', 'h885_a_config'];
 const WHEN = '2026-08-10T16:45:09';
 
 /** The seven fields of base slot 3's record, as a blob offset, or undefined without a slot 3. */
@@ -435,8 +439,8 @@ test('a save leaves the carried fields byte identical', skipUnless(...SAVE_SAMPL
   }
   // Two `continue`s stand above the comparison, one per slot, so nothing said how many ran. Eight,
   // exactly, being the samples that carry both slots: a floor of eight over a measured eight is the
-  // shape that reads as slack and has none, so it can only fail upward.
-  assert.equal(compared, 8, `${compared} slot comparisons ran`);
+  // shape that reads as slack and has none, so it can only fail upward. Ten with `h885_a_config`.
+  assert.equal(compared, 10, `${compared} slot comparisons ran`);
 });
 
 test('the stamped weekday is derived, so the readers accept it', skipUnless(SAMPLE), () => {
