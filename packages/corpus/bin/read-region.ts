@@ -40,6 +40,7 @@ import {
   WRITABLE_CEILING,
   listHarmony,
   openHarmony,
+  readFlashWindow,
 } from '@harmony/usb';
 
 import { fileRegion, profileFor } from '../src/index.ts';
@@ -124,9 +125,33 @@ try {
   const bytes = new Uint8Array(count);
   const started = performance.now();
   let lastPercent = -1;
+  let retries = 0;
   for (let done = 0; done < count; done += CHUNK) {
     const length = Math.min(CHUNK, count - done);
-    bytes.set(await remote.readFlash(address + done, length), done);
+    // **A failed window is asked for again**, through the one retry loop `readConfig` uses,
+    // `readFlashWindow`, section 223. Until `todo-compile-885.md` 1.10 this read had no retry, so a
+    // single lost chunk stopped a whole flash backup and filed nothing: both bench Harmony 885s met
+    // `flash chunk out of sequence` on long reads here while `read-config.ts` on the same cable
+    // finished, `docs/test-notes/harmony-885.md`. A retry sends the same window again, the same address
+    // and count, so the `0x4000` chunks from zero that keep a chunk from ending alone on `0x000104` or
+    // `0x000105` on an 885 stay exactly what they were.
+    //
+    // Said out loud rather than absorbed, as `read-config.ts` does: a retry is recovery working, and
+    // a run full of them is a fault worth seeing at the moment it happens.
+    const got = await readFlashWindow(remote, address + done, length, ({ at, attempt, error }) => {
+      const why = error instanceof Error ? error.message : String(error);
+      process.stdout.write(`\n  retrying 0x${at.toString(16)} (attempt ${attempt}): ${why}\n`);
+    });
+    retries += got.retries;
+    // Setting a short array would leave zeros behind it and file them as flash, so a length that is
+    // not the one asked for stops the read. `readFlash` already throws on a short transfer; this is the
+    // check that does not depend on it. Thrown rather than `fail`, so the `finally` below still closes
+    // the device.
+    if (got.bytes.length !== length) {
+      throw new Error(`read ${got.bytes.length} of ${length} bytes at 0x${(address + done).toString(16)}; `
+        + 'nothing has been filed');
+    }
+    bytes.set(got.bytes, done);
     const percent = Math.floor(((done + length) / count) * 100);
     if (percent !== lastPercent) {
       lastPercent = percent;
@@ -148,7 +173,9 @@ try {
   const rate = Math.round(bytes.length / (durationMs / 1000) / 1024);
   process.stdout.write(
     `  ${bytes.length} bytes from 0x${address.toString(16)} in ${(durationMs / 1000).toFixed(1)}s `
-      + `(${rate} KiB/s)\n  filed as ${filed.config}\n  in ${filed.directory}\n`
+      + `(${rate} KiB/s)`
+      + (retries === 0 ? ', no window retried\n' : `, ${retries} window(s) retried\n`)
+      + `  filed as ${filed.config}\n  in ${filed.directory}\n`
       + '  register that filename in packages/lab/src/index.ts and tests/lab.py before anything '
       + 'can name it\n',
   );

@@ -24,7 +24,7 @@ import { join } from 'node:path';
 import { LAB } from '@harmony/lab';
 
 import {
-  HarmonyRemote, architectureFromVersion, listHarmony, openHarmony,
+  HarmonyRemote, architectureFromVersion, listHarmony, openHarmony, readFlashWindow,
 } from '../src/index.ts';
 import { CONFIG_REGION_BASE } from '../src/rails.ts';
 
@@ -95,9 +95,32 @@ try {
 
   const total = to - from;
   const out = new Uint8Array(total);
+  let retries = 0;
   for (let done = 0; done < total; done += CHUNK) {
     const length = Math.min(CHUNK, total - done);
-    out.set(await remote.readFlash(from + done, length), done);
+    // **A failed window is asked for again**, through `readFlashWindow`, the one retry loop
+    // `readConfig` uses too, section 223. Until `todo-compile-885.md` 1.10 this read had no retry, so a
+    // single lost chunk, `flash chunk out of sequence`, stopped the whole read and filed nothing, which
+    // is what both bench Harmony 885s did on long reads, `docs/test-notes/harmony-885.md`. A retry sends
+    // the same window again, the same address and count, so the arch 8 bounds above still describe
+    // every request this loop sends: the even ends and the `0x8000` chunks are untouched by it.
+    //
+    // Said out loud rather than absorbed, as `read-config.ts` does: a retry is recovery working, and a
+    // run full of them is a fault worth seeing at the moment it happens.
+    const got = await readFlashWindow(remote, from + done, length, ({ at, attempt, error }) => {
+      const why = error instanceof Error ? error.message : String(error);
+      process.stdout.write(`\n  retrying 0x${at.toString(16)} (attempt ${attempt}): ${why}\n`);
+    });
+    retries += got.retries;
+    // Setting a short array would leave zeros behind it and file them as flash, so a length that is
+    // not the one asked for stops the read. `readFlash` already throws on a short transfer; this is the
+    // check that does not depend on it. Thrown rather than `fail`, so the `finally` below still closes
+    // the device.
+    if (got.bytes.length !== length) {
+      throw new Error(`read ${got.bytes.length} of ${length} bytes at 0x${(from + done).toString(16)}; `
+        + 'nothing has been filed');
+    }
+    out.set(got.bytes, done);
     process.stdout.write(`\r  reading ${done + length} of ${total} bytes `
       + `(${Math.floor((100 * (done + length)) / total)}%)`);
   }
@@ -107,7 +130,10 @@ try {
   const name = `${when}-${label}-region-0x${from.toString(16)}-0x${to.toString(16)}.bin`;
   const path = join(LAB, 'reads', name);
   writeFileSync(path, out);
-  process.stdout.write(`  filed as ${name}\n  in ${join(LAB, 'reads')}\n`);
+  process.stdout.write(
+    (retries === 0 ? '  no window retried\n' : `  ${retries} window(s) retried\n`)
+      + `  filed as ${name}\n  in ${join(LAB, 'reads')}\n`,
+  );
 } finally {
   try {
     await remote.close();

@@ -10,6 +10,7 @@
     "./models": "./src/models.ts",
     "./protocol": "./src/protocol.ts",
     "./keys": "./src/keys.ts",
+    "./readwindow": "./src/readwindow.ts",
     "./trailer": "./src/trailer.ts",
     "./write": "./src/write.ts",
     "./touchsession": "./src/touchsession.ts",

@@ -18,6 +18,13 @@ import {
   trailerChecksum,
   type Family,
 } from '@harmony/codec';
+// The subpath rather than the barrel, deliberately: `readwindow.ts` imports nothing, and this module is
+// consumed on its own as `@harmony/corpus/read` precisely so that the read comes without the transport.
+import { MAX_WINDOW_RETRIES, readFlashWindow, type WindowRetry } from '@harmony/usb/readwindow';
+
+// Still exported from here, where callers and tests have always found it. The value lives once, beside
+// the loop it bounds, `todo-compile-885.md` 1.10.
+export { MAX_WINDOW_RETRIES };
 
 /**
  * What a config read needs from a remote, and deliberately nothing more.
@@ -191,23 +198,12 @@ export interface ReadOptions {
   readonly chunkBytes?: number;
   readonly onProgress?: (progress: ReadProgress) => void;
   /** Told about every window that had to be asked for again, so a caller can say so out loud. */
-  readonly onRetry?: (retry: { at: number; attempt: number; error: unknown }) => void;
+  readonly onRetry?: (retry: WindowRetry) => void;
   /** Injectable so a test does not depend on a clock. */
   readonly now?: () => number;
 }
 
 export const DEFAULT_CHUNK_BYTES = 16384;
-
-/**
- * How many extra goes one window gets before the read fails, section 223.
- *
- * Two rather than one, because the failure it recovers from is a host side queue overflowing while
- * something else held the process up, and whatever held it up may still be happening on the next
- * attempt. Not more, because a link dropping three windows in a row is not a hiccup and the read
- * should say so rather than grind on: every retry costs a whole window twice over, once to be
- * abandoned and once to be drained.
- */
-export const MAX_WINDOW_RETRIES = 2;
 
 /**
  * A reply that never came, as opposed to one that came back wrong.
@@ -274,29 +270,16 @@ export async function readConfig(
   for (let at = head.length; at < header.length; at += chunk) {
     const count = Math.min(chunk, header.length - at);
     // **A window is retried, because a read is idempotent and the failure it has is transient.**
-    // Section 223: a `READ_FLASH` answer streams back as fast as the remote can send it, and
-    // HIDAPI's macOS backend holds about 31 input reports and then silently discards the oldest, so
-    // a consumer stalled for longer than the queue takes to fill loses a run of chunks. Measured by
-    // stalling on purpose: 100 ms costs 17 chunks and 200 ms costs 67, both within one of what the
-    // measured transfer rate and that queue depth predict.
-    //
-    // The retry is here rather than in `readFlash` deliberately. The library reports what happened;
-    // deciding that asking again is safe needs to know the request has no side effect, and this is
-    // the layer that knows. It is bounded and counted rather than silent, because a link that needs
-    // three goes at every window is a fault to see and not to absorb.
-    let part: Uint8Array | undefined;
-    for (let attempt = 0; attempt <= MAX_WINDOW_RETRIES; attempt += 1) {
-      try {
-        part = await reader.readFlash(profile.configBase + at, count);
-        break;
-      } catch (error: unknown) {
-        if (attempt === MAX_WINDOW_RETRIES) throw error;
-        retries += 1;
-        options.onRetry?.({ at: profile.configBase + at, attempt: attempt + 1, error });
-      }
-    }
-    if (part === undefined || part.length !== count) {
-      throw new ReadError(`read ${part?.length ?? 0} of ${count} bytes at offset ${at}`);
+    // Section 223, and the loop that does it is `readFlashWindow` in `@harmony/usb`, shared since
+    // `todo-compile-885.md` 1.10 with the two region readers, which had no retry and stopped on the
+    // first lost chunk. Its docstring carries the measurement and the bound. What stays here is the
+    // decision it encodes: this layer knows a config read has no side effect, so this layer is the
+    // one that asks again, and `readFlash` underneath goes on reporting rather than absorbing.
+    const got = await readFlashWindow(reader, profile.configBase + at, count, options.onRetry);
+    retries += got.retries;
+    const part = got.bytes;
+    if (part.length !== count) {
+      throw new ReadError(`read ${part.length} of ${count} bytes at offset ${at}`);
     }
     bytes.set(part, at);
     options.onProgress?.({ done: at + count, total: header.length });

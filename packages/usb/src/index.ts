@@ -19,6 +19,9 @@ export * from './remote.ts';
 export * from './models.ts';
 // Where a running remote keeps the key being pressed; imports nothing, so the key reader page loads it too.
 export * from './keys.ts';
+// Asking for a failed flash window again, bounded; imports nothing, so `@harmony/corpus/read` can use it
+// without bringing the transport along.
+export * from './readwindow.ts';
 // The second protocol, for the family openHarmony refuses. Read paths only, section 198.
 export * from './filepipe.ts';
 export * from './firmware.ts';
