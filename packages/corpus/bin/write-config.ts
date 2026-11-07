@@ -98,6 +98,7 @@ import {
   transfersFor,
   writeBlock,
 } from '@harmony/usb/write';
+import { readFlashWindow } from '@harmony/usb/readwindow';
 import {
   ACTION_QUEUE_INSTRUCTIONS, QueueError, StateTableError, assertQueueFits,
   assertStateTableConsistent, parse, trailerChecksum, worstQueueRun,
@@ -735,12 +736,28 @@ async function main(): Promise<void> {
           + 'value is understood, and do not rerun this script');
     };
 
-    /** One erase block, read in transfers the announce's count field can state. */
+    /**
+     * One erase block, read in transfers the announce's count field can state.
+     *
+     * **Each transfer is asked for again on a failure, through the shared `readFlashWindow`**, since
+     * `todo-compile-885.md` 2.1's first commit stopped here: a `flash chunk out of sequence` during the
+     * compare before the first erase ended the run with nothing written, as such breaks had ended region
+     * reads on both bench 885s (`docs/test-notes/harmony-885.md`). Every read this helper makes is a read,
+     * whether it is the compare before an erase, a neighbour check or the read back after a write, so asking
+     * again is safe; the bound and the reasoning are `readwindow.ts`'s. Each retry is journalled, because a
+     * write whose read back needed a second go is one to know about.
+     */
     const readBlock = async (address: number): Promise<Uint8Array> => {
       const out = new Uint8Array(blockSize);
       for (let done = 0; done < blockSize; done += MAX_TRANSFER) {
         const length = Math.min(MAX_TRANSFER, blockSize - done);
-        out.set(await remote.readFlash(address + done, length), done);
+        const { bytes } = await readFlashWindow(remote, address + done, length, (retry) => {
+          say(`read of 0x${retry.at.toString(16)} asked for again (attempt ${retry.attempt}): ${String(retry.error)}\n`);
+        });
+        if (bytes.length !== length) {
+          throw new Refusal(`read ${bytes.length} of ${length} bytes at 0x${(address + done).toString(16)}`);
+        }
+        out.set(bytes, done);
       }
       return out;
     };
