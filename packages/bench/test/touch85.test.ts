@@ -83,7 +83,7 @@ test('the 8.5 test file is what the removal gives: the three activities that los
     assert.deepEqual(removedAnswers().map((a) => a.resource), delivered.map((a) => a.resource));
     const derived = touch85Tests(configuration(removedAnswers()));
     const directory = fileURLToPath(new URL('../irtests/', import.meta.url));
-    const onDisk = testDefinitions(directory).filter((one) => one.id.startsWith('touch-8-5-'));
+    const onDisk = testDefinitions(directory).concat(testDefinitions(fileURLToPath(new URL('../irtests/done/', import.meta.url)))).filter((one) => one.id.startsWith('touch-8-5-'));
     assert.deepEqual(onDisk.map((one) => one.id), ['touch-8-5-removal']);
     assert.deepEqual(onDisk[0]!.definition, JSON.parse(JSON.stringify(derived[0]!.definition)) as TestDefinition);
     const definition = derived[0]!.definition;

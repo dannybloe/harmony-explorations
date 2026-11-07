@@ -11,7 +11,7 @@
  *    appended to `ActivityList` and its button map to `MapList`, the two retagged and the other four left as they
  *    were, `touch-device-set.ts --activity`;
  * 3. `getconfighash` again;
- * 4. the bench test `irtests/touch-8-2-activity.json` on the Flirc monitor;
+ * 4. the bench test `irtests/done/touch-8-2-activity.json` on the Flirc monitor;
  * 5. `touch-sync.ts --set 8.2-activity-back --commit`, the activity taken out, and `getconfighash`;
  * 6. one `touch-sync.ts --unchanged --commit`.
  *

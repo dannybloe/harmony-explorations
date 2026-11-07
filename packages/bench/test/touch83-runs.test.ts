@@ -14,7 +14,7 @@
  *    picture `drawTouchLogo('8.3')` at the address of channel 61's station logo, each under the tag the set's name
  *    gives, `touch-device-set.ts --favourites`;
  * 3. `getconfighash` again;
- * 4. the bench test `irtests/touch-8-3-favourites.json` on the Flirc monitor;
+ * 4. the bench test `irtests/done/touch-8-3-favourites.json` on the Flirc monitor;
  * 5. `touch-sync.ts --set 8.3-favourites-back --commit`, the two pieces as the remote held them before, and
  *    `getconfighash`;
  * 6. one `touch-sync.ts --unchanged --commit`;
@@ -377,7 +377,7 @@ const pausesOf = (presses: readonly { atMs: number }[]): number[] => presses.sli
 test('the bench run carried the 8.3 test as derived and on disk, held 18 of 18 judged afresh, every pause in its band, and nothing else was heard',
   lab.skipUnless(SOURCE, SET, FULL, RUN), () => {
     const definition = testsOf(SET)[0]!.definition;
-    const onDisk = testDefinitions(fileURLToPath(new URL('../irtests/', import.meta.url))).find((one) => one.id === 'touch-8-3-favourites')!.definition;
+    const onDisk = testDefinitions(fileURLToPath(new URL('../irtests/', import.meta.url))).concat(testDefinitions(fileURLToPath(new URL('../irtests/done/', import.meta.url)))).find((one) => one.id === 'touch-8-3-favourites')!.definition;
     assert.deepEqual(onDisk, JSON.parse(JSON.stringify(definition)) as TestDefinition);
     const run = runOf(RUN);
     assert.deepEqual(run.steps.map((s) => s.instruction), definition.steps.map((s) => s.instruction));

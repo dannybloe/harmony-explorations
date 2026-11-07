@@ -1034,7 +1034,7 @@ node packages/bench/bin/touch-device-tests.ts [--write]
                        derive `todo-touch.md` 8.1's bench test, a device of ours in device mode, from
                        the lab's `8.1-device` set and the recorded favourites through the same engine
                        model, the plan in `src/touch81.ts`, and print it, or with `--write` write
-                       `irtests/touch-8-1-device-mode.json`; `test/touch81.test.ts` holds the file
+                       `irtests/touch-8-1-device-mode.json`, kept in `irtests/done/` after its run; `test/touch81.test.ts` holds the file
                        equal to what this gives, and `test/touch81-runs.test.ts` its run at the bench.
                        Reads the lab only. Opens nothing, sends nothing.
 node packages/bench/bin/touch-activity-tests.ts [--write]
@@ -1042,7 +1042,7 @@ node packages/bench/bin/touch-activity-tests.ts [--write]
                        switched and stopped, from the lab's `8.1-device-back` set with the activity of
                        `packages/corpus/touch-activities/test-cinema.json` added and the recorded
                        favourites, through the same engine model, the plan in `src/touch82.ts`, and print
-                       it, or with `--write` write `irtests/touch-8-2-activity.json`;
+                       it, or with `--write` write `irtests/touch-8-2-activity.json`, kept in `irtests/done/` after its run;
                        `test/touch82.test.ts` holds the file equal to what this gives, and
                        `test/touch82-runs.test.ts` its run at the bench. Reads the lab only. Opens
                        nothing, sends nothing.
@@ -1052,7 +1052,7 @@ node packages/bench/bin/touch-favourites-tests.ts [--write]
                        favourites of `packages/corpus/touch-favourites/8.3-favourites.json` composed onto
                        the recorded favourites documents, through the same engine model, the plan in
                        `src/touch83.ts`, and print it, or with `--write` write
-                       `irtests/touch-8-3-favourites.json`; `test/touch83.test.ts` holds the file equal
+                       `irtests/touch-8-3-favourites.json`, kept in `irtests/done/` after its run; `test/touch83.test.ts` holds the file equal
                        to what this gives, and `test/touch83-runs.test.ts` its run at the bench. Reads
                        the lab only. Opens nothing, sends nothing.
 node packages/bench/bin/touch-removal-tests.ts [--write]
@@ -1060,7 +1060,7 @@ node packages/bench/bin/touch-removal-tests.ts [--write]
                        out started, used, switched and ended without a code of it, from the lab's
                        `8.5-removal` set and the recorded favourites, through the same engine model, the
                        plan in `src/touch85.ts`, and print it, or with `--write` write
-                       `irtests/touch-8-5-removal.json`; `test/touch85.test.ts` holds the file equal to
+                       `irtests/touch-8-5-removal.json`, kept in `irtests/done/` after its run; `test/touch85.test.ts` holds the file equal to
                        what this gives, with a control on the set before, and `test/touch85-runs.test.ts`
                        its run at the bench. Reads the lab only. Opens nothing, sends nothing.
 node packages/corpus/bin/touch-own-set.ts --build <lab folder> --requests <list> [--handed-up <answers>]

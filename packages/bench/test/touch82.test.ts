@@ -88,7 +88,7 @@ test('the 8.2 test file is what the activity set gives: a start of its own, its 
     assert.equal(lab.IMAGES[ACTIVITY_SET], TOUCH_8_2_SET);
     const derived = touch82Tests(configuration(answersWith([cinema()])));
     const directory = fileURLToPath(new URL('../irtests/', import.meta.url));
-    const onDisk = testDefinitions(directory).filter((one) => one.id.startsWith('touch-8-2-'));
+    const onDisk = testDefinitions(directory).concat(testDefinitions(fileURLToPath(new URL('../irtests/done/', import.meta.url)))).filter((one) => one.id.startsWith('touch-8-2-'));
     assert.deepEqual(onDisk.map((one) => one.id), ['touch-8-2-activity']);
     assert.deepEqual(onDisk[0]!.definition, JSON.parse(JSON.stringify(derived[0]!.definition)) as TestDefinition);
     const steps = derived[0]!.definition.steps;

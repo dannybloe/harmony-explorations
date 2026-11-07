@@ -11,7 +11,7 @@
  *    test-projector.json`, appended to `DeviceList`, its map to `MapList` and its definition, under a protocol id of
  *    ours, to `ProtocolList`, the three retagged and the other three left as they were, `touch-device-set.ts`;
  * 3. `getconfighash` again;
- * 4. the bench test `irtests/touch-8-1-device-mode.json` on the Flirc monitor, then, with the monitor still on, the
+ * 4. the bench test `irtests/done/touch-8-1-device-mode.json` on the Flirc monitor, then, with the monitor still on, the
  *    Power entry of Test Projector's screen tapped once;
  * 5. `touch-sync.ts --set 8.1-device-back --commit`, the device taken out, and `getconfighash`;
  * 6. one `touch-sync.ts --unchanged --commit`.
@@ -384,7 +384,7 @@ test('the screen entry predicts the Denon\'s PowerToggle for its entry, refuses 
     assert.throws(() => engine.entry('No Such Entry', denon.name), /0 screen entries labelled No Such Entry/);
     // The tests written before the screen entry existed are still what the derivation gives, file for file.
     const directory = fileURLToPath(new URL('../irtests/', import.meta.url));
-    const onDisk = testDefinitions(directory);
+    const onDisk = testDefinitions(directory).concat(testDefinitions(fileURLToPath(new URL('../irtests/done/', import.meta.url))));
     const derived = [...touch71Tests(c), ...touch81Tests(configuration(DEVICE_SET))];
     assert.equal(derived.length, 11);
     for (const d of derived) assert.deepEqual(onDisk.find((one) => one.id === d.id)?.definition, JSON.parse(JSON.stringify(d.definition)) as TestDefinition, d.id);

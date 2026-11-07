@@ -11,7 +11,7 @@
  * document alone a new tag of ours. Each went to the remote by `packages/corpus/bin/touch-sync.ts --set <set>
  * --commit`, in that order, with `getconfighash` through the request rail before and after each, and a closing
  * `touch-sync.ts --unchanged --commit` after the fourth. The bench test
- * `packages/bench/irtests/touch-6-9-sequence-delay.json` ran on the Flirc monitor three times: before the first
+ * `packages/bench/irtests/done/touch-6-9-sequence-delay.json` ran on the Flirc monitor three times: before the first
  * sync, after it and after the second. The lab's `work/touch-firmware/notes/6.9-preflight.md` predicted every row
  * below before the runs.
  *

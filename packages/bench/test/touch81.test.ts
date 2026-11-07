@@ -89,7 +89,7 @@ test('the 8.1 test file is what the device set gives, and every key of the devic
   const c = configuration();
   const derived = touch81Tests(c);
   const directory = fileURLToPath(new URL('../irtests/', import.meta.url));
-  const onDisk = testDefinitions(directory).filter((one) => one.id.startsWith('touch-8-1-'));
+  const onDisk = testDefinitions(directory).concat(testDefinitions(fileURLToPath(new URL('../irtests/done/', import.meta.url)))).filter((one) => one.id.startsWith('touch-8-1-'));
   assert.deepEqual(onDisk.map((one) => one.id), ['touch-8-1-device-mode']);
   assert.deepEqual(onDisk[0]!.definition, JSON.parse(JSON.stringify(derived[0]!.definition)) as TestDefinition);
   const expectations = derived[0]!.definition.steps.flatMap((s) => s.expect ?? []);

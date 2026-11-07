@@ -15,7 +15,7 @@
  *    every refusal;
  * 3. `getconfighash` twice, both 200;
  * 4. `touch-sync.ts --set 8.5-removal --commit` again, unchanged, committed, and `getconfighash`;
- * 5. the bench test `irtests/touch-8-5-removal.json` on the Flirc monitor;
+ * 5. the bench test `irtests/done/touch-8-5-removal.json` on the Flirc monitor;
  * 6. `touch-sync.ts --set 8.5-removal-back --commit` and `getconfighash`;
  * 7. one `touch-sync.ts --unchanged --commit`.
  *
@@ -369,7 +369,7 @@ const pausesOf = (presses: readonly { atMs: number }[]): number[] => presses.sli
 test('the bench run carried the 8.5 test as derived and on disk, held 11 of 11 judged afresh, the volume keys silent, and no code of the receiver',
   lab.skipUnless(SOURCE, SET, FULL, RUN), () => {
     const definition = definitionOf(SET);
-    const onDisk = testDefinitions(fileURLToPath(new URL('../irtests/', import.meta.url))).find((one) => one.id === 'touch-8-5-removal')!.definition;
+    const onDisk = testDefinitions(fileURLToPath(new URL('../irtests/', import.meta.url))).concat(testDefinitions(fileURLToPath(new URL('../irtests/done/', import.meta.url)))).find((one) => one.id === 'touch-8-5-removal')!.definition;
     assert.deepEqual(onDisk, JSON.parse(JSON.stringify(definition)) as TestDefinition);
     const run = runOf(RUN);
     assert.deepEqual(run.steps.map((s) => s.instruction), definition.steps.map((s) => s.instruction));

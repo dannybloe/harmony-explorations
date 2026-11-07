@@ -75,7 +75,7 @@ test('the 8.3 test file is what the composed favourites give, step for step', la
   const { set, favourites } = composed();
   const derived = testsOf(set, favourites);
   const directory = fileURLToPath(new URL('../irtests/', import.meta.url));
-  const onDisk = testDefinitions(directory).filter((one) => one.id.startsWith('touch-8-3-'));
+  const onDisk = testDefinitions(directory).concat(testDefinitions(fileURLToPath(new URL('../irtests/done/', import.meta.url)))).filter((one) => one.id.startsWith('touch-8-3-'));
   assert.deepEqual(onDisk.map((one) => one.id), derived.map((one) => one.id));
   for (const one of derived) {
     assert.deepEqual(onDisk.find((x) => x.id === one.id)!.definition, JSON.parse(JSON.stringify(one.definition)) as TestDefinition, one.id);

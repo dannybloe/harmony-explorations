@@ -312,7 +312,7 @@ folders each time, the fix of commit `2fcc0277` at work.
   after run 4 equal to `6.9-label-back`'s.
 * **The closing `--unchanged` run** asked for all six with `6.9-label-back`'s tags and answered every request 304
   or the finish.
-* **The delay, on the Flirc monitor**, `packages/bench/irtests/touch-6-9-sequence-delay.json`, three times: before
+* **The delay, on the Flirc monitor**, `packages/bench/irtests/done/touch-6-9-sequence-delay.json`, three times: before
   run 1 (`reads/20261105T145423Z-ir-test-...`), after run 1 (`150025Z`) and after run 2 (`150311Z`). Each tap of
   Yellow gave the Sony Blu-ray's Stop and then its TopMenu, both 20 bit codes with a header mark of about 2450 us,
   named by the catalogue's candidates since the bench configurations hold no Sony Blu-ray. The silence before
