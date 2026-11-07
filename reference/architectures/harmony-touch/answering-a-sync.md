@@ -7,7 +7,7 @@ something was Logitech's own client, which fetched each answer from Logitech's s
 Logitech's would have to produce to answer a sync itself.
 
 **Everything here is read in the remote's firmware, production build 4.15.330, and measured in recorded
-syncs of Logitech's client; the preview build's engine was not read for this page. Twenty eight syncs answered by a
+syncs of Logitech's client; the preview build's engine was not read for this page. Thirty one syncs answered by a
 program of this project have run on a remote: the first stopped at the favourites; the second ran to its end
 and was committed, every answer in it a 304 that kept the remote's own copy, or the answer to the finish; the
 third delivered the remote's own six configuration documents with 200 under entity tags of ours and was
@@ -27,12 +27,14 @@ it; the twenty third delivered the four documents an activity and a device of th
 both taken out, with 200 and the other two 304, and the twenty fourth put them back the same way, both committed and
 acted on; the twenty fifth answered every request 304 again; the twenty sixth delivered the same four documents
 composed whole by this project, every device and activity under an id of ours, with 200 and the other two 304, and the
-twenty seventh put back the remote's own the same way, both committed and acted on; and the twenty eighth answered
-every request 304 again**: what they
+twenty seventh put back the remote's own the same way, both committed and acted on; the twenty eighth answered
+every request 304 again; the twenty ninth delivered the same four documents with every list empty, no device and no
+activity, with 200 and the other two 304, and the thirtieth put back the remote's own four and its three favourites
+documents with 200, both committed; and the thirty first answered every request 304 again**: what they
 measured is marked where
 it stands, and the rest of the rules below are what the firmware does with an answer, not what a remote was seen
 to do with one of
-ours[^t-touch-host][^t-touch-first-sync][^t-touch-second-sync][^t-touch-own-set-sync][^t-touch-changed-set][^t-touch-device-of-ours][^t-touch-activity-of-ours][^t-touch-favourites-of-ours][^t-touch-settings-of-ours][^t-touch-removal-of-theirs][^t-touch-setup-of-ours]. Where a
+ours[^t-touch-host][^t-touch-first-sync][^t-touch-second-sync][^t-touch-own-set-sync][^t-touch-changed-set][^t-touch-device-of-ours][^t-touch-activity-of-ours][^t-touch-favourites-of-ours][^t-touch-settings-of-ours][^t-touch-removal-of-theirs][^t-touch-setup-of-ours][^t-touch-empty]. Where a
 rule has only been seen to hold for Logitech's own answers, the page says so. The test behind the firmware
 footnotes asserts, function by function, the names and constants each rule rests on; the order in which a
 function uses them, and so which check comes first, is the decompiled reading named in that test's header
@@ -398,6 +400,21 @@ for the four with the composed set's tags, and was committed. Both, and the sync
 lists[^t-touch-setup-of-ours]. In both, that write of the six was the only write of answers holding any of them; the
 others answered the favourites, the pictures and the finish[^t-touch-setup-of-ours].
 
+**The empty configuration is stored, committed and started.** A sync of this project delivered the same four
+documents with every list empty, no device, activity, map or definition, the rest of each document as it stood, and
+answered the context and the settings 304: one write of 1573 characters, one chunk. **The remote then handed out four
+request lists, not eight**: the six, an empty one, the settings' user background and its small twin, answered 304
+against the tags it sent, and the finish; **it asked for no favourites document**, where a sync on the same remote
+holding its activities had asked for three, each in a list of its own. It committed the set, its configuration hash
+then the empty set's, and still the empty set's after the remote was restarted, so it started on it with its
+configuration task alive[^t-touch-empty]. What its screens showed is [the smallest set of
+documents](#the-smallest-set-of-documents). A second sync put the remote's own four back, in one write of 567941
+characters, 19 chunks, and with them the three favourites documents with 200, each asked for without a tag in a list of
+its own, the line up alone in a write of 56446 characters, two chunks; it handed out eight lists, asked for every picture
+with the tag the remote held it with, and was committed[^t-touch-empty]. **That was the first tuning device's
+favourites document and the first line up an answer of this project delivered**, the content and tags the remote had
+held before[^t-touch-empty].
+
 ## The smallest set of documents
 
 All six core documents are asked for in every sync down, and a status from 400 up on any of them aborts, so none can
@@ -406,9 +423,26 @@ empty account is the smallest working set: an activity list with an empty array,
 needs no tag, a device list, a button map list, a protocol list and a settings list each with their own
 empty array, and a context naming at least the provisioned account, which is the Context and Settings pair
 of [favourites and settings](favourites-and-settings.md#settings)[^t-touch-host]. With no favourites and no
-pictures the remote asks for nothing after the six and goes straight to finished[^t-touch-sync]. What a
-remote's screens then show for an account with no activity and no device is a question for the remote, not
-one the firmware reading answers[^unchecked].
+pictures the remote asks for nothing after the six and goes straight to finished[^t-touch-sync]. **Measured on a unit
+with the four lists empty and the remote's own context and settings**: the remote committed the set and started on it;
+its favourites page showed its own screen for no favourites, no activity page was shown, after a restart its home page
+was an empty device page, and its settings menu looked as it always does[^t-touch-empty]. Right after the sync, off the
+cable, a text was seen once that was not identified; the screens put up a "no activity" notice whenever the remote
+leaves USB power after a sync with no activity listed, and their screen for no favourites has a sentence of its own,
+and either fits what was seen, [features](../../remotes/harmony-touch/features.md#an-empty-configuration)[^t-touch-empty][^t-touch-empty-screens].
+*Corrected:* this said what a remote's screens show for an account with no activity and no device was a question for
+the remote<!--superseded-->, until that run; what the empty device page and its menu look like in detail is not
+checked[^unchecked].
+
+**What a commit keeps besides the six** is what the sync gathered: the commit renames the set gathered for the sync over
+the stored one, so a favourites document is kept only when the screens ask for it and a 304 copies it, and **a set with
+no activity makes them ask for none**, so by the reading every favourites document the remote held is dropped at its
+commit[^t-touch-empty-reading]. **Pictures are carried by any picture request**: before the screens ask for a picture
+they copy every stored one into the gathered set, and with no picture asked they copy none[^t-touch-empty-reading].
+Measured: after the empty set, which asked for two pictures, the next sync asked for every stored picture with the tag
+the remote held it with, so all ten were carried[^t-touch-empty]. **The drop of the favourites documents is not
+measured**: a favourites document is asked for without a tag whether the remote holds it or not, so a put back after a
+set with no favourites activity has to deliver them with 200, as the one measured did[^t-touch-empty][^unchecked].
 
 ## The entity tag an answerer sends
 
@@ -540,7 +574,9 @@ them[^t-touch-favourites-of-ours], and after one that delivered the settings and
 tag among the old three[^t-touch-settings-of-ours], and after one that delivered the four lists with an activity and a
 device taken out with the three new tags among them and the old context's, and after a sync that stopped before its
 commit with the tags of the set before that sync[^t-touch-removal-of-theirs], and after one that delivered the four
-lists composed whole with the three new tags among them and the old context's[^t-touch-setup-of-ours]. The tag the
+lists composed whole with the three new tags among them and the old context's[^t-touch-setup-of-ours], and after one
+that delivered the four lists empty with their three new tags and the old context's, the same again after a restart,
+the read answering `OK`[^t-touch-empty]. The tag the
 remote sends for each
 document in the next sync's request list, read out of the committed set, is the other evidence[^t-touch-host].
 A committed document itself can be handed back by a resource put that names its address and carries no
@@ -550,16 +586,17 @@ Whether these are enough to know a whole configuration arrived is not settled[^u
 ## Not checked
 
 * Everything here is one firmware build and, for the measured side, the three syncs recorded by Logitech's
-  client and twenty eight answered by this project, two stopped, the first at the favourites and the twenty second
-  on a USB read timeout inside its first write of answers, and the other twenty six
+  client and thirty one answered by this project, two stopped, the first at the favourites and the twenty second
+  on a USB read timeout inside its first write of answers, and the other twenty nine
   committed. The syncs of ours that delivered documents with 200 delivered the remote's own six, or one of them
   with one value changed, or three with a device of ours added or taken out, or two with an activity of ours added
   or taken out, or the user's favourites document and one picture at an address the remote held, or the settings
   with two values changed and a context composed by us equal in content to the remote's, or four with an activity
   and a device of the remote's own taken out and put back, or the same four composed whole by this project from a
-  description of a set the remote held, and put back: a tuning device's favourites or a line up of ours, a picture at
-  a new address, and documents composed whole that describe no set Logitech's service built, and what the remote
-  then does with each, are the reading's alone[^unchecked].
+  description of a set the remote held, and put back, or the same four with every list empty, and put back with the
+  remote's own three favourites documents: a tuning device's favourites or a line up composed by this project, a
+  picture at a new address, and documents composed whole that describe no set Logitech's service built, and what the
+  remote then does with each, are the reading's alone[^unchecked].
 * Whether the outgoing queue actually carries a direct put through to the account, inferred from the queue's
   role rather than seen[^unchecked].
 * What a configuration the reader raises on does on a unit: the firmware reading is
@@ -575,7 +612,8 @@ Whether these are enough to know a whole configuration arrived is not settled[^u
   activity's `Alternatives`[^unchecked].
 * A screen that names a built in picture, which the screens fetch from no address: which names those are is
   not listed, so every named activity picture is taken to need its address[^unchecked].
-* What a remote's screens show for an account with no activity and no device[^unchecked].
+* What a remote's empty device page and its menu look like in detail, which text was seen after the empty set's sync,
+  and whether its commit dropped the favourites documents[^unchecked].
 * That the screens turn a refused answer into the abort on a unit, and how soon `proxy://Abort` follows[^unchecked].
 * Whether a write of answers whose last chunk is no longer than the announcement's shortfall is acted on one
   chunk early on a unit[^unchecked].
@@ -607,6 +645,9 @@ Whether these are enough to know a whole configuration arrived is not settled[^u
 [^t-touch-removal-of-theirs]: Measured on a unit. [The test](../../../packages/bench/test/touch85-runs.test.ts)
 [^t-touch-removal-firmware]: Read in the firmware. [The test](../../../packages/codec/test/touch-removal.test.ts)
 [^t-touch-setup-of-ours]: Measured on a unit. [The test](../../../packages/bench/test/touch86-runs.test.ts)
+[^t-touch-empty]: Measured on a unit. [The test](../../../packages/bench/test/touch92-runs.test.ts)
+[^t-touch-empty-reading]: Read in the firmware. [The test](../../../packages/codec/test/touch-empty.test.ts)
+[^t-touch-empty-screens]: Read in the firmware. [The test](../../../tests/test_harmony_touch_empty_screens.py)
 [^t-touch-pictures]: Measured on a unit. [The test](../../../packages/codec/test/touch-favourites.test.ts)
 [^t-touch-type-name]: Read in the firmware. [The test](../../../packages/codec/test/touch-check.test.ts)
 [^t-touch-reader-raises]: Read in the firmware. [The test](../../../packages/codec/test/touch-check.test.ts)

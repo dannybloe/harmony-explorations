@@ -165,7 +165,9 @@ twin and an uploaded channel logo have no such rule; each is asked for with the 
 holds[^t-touch-favourites-firmware]. Before the pictures are asked for, every picture already held is carried
 into the new set, so one that fails to arrive keeps its old copy[^t-touch-favourites-firmware]. **That carrying
 takes every stored PNG, whatever names it**, so a picture at an address no favourite names any more is carried
-into every later set for good[^t-touch-favourites-firmware]. **Measured: pictures the remote holds are asked for
+into every later set for good[^t-touch-favourites-firmware]. With no picture asked for, none is carried[^t-touch-empty-reading]; a set with no
+activity still asks for the settings' user backgrounds, and across one the remote kept all ten of its pictures,
+[answering a sync](answering-a-sync.md#the-smallest-set-of-documents)[^t-touch-empty]. **Measured: pictures the remote holds are asked for
 with their tags**, all ten in a later sync with exactly the tags they were delivered with, where the sync that
 delivered them had asked for every one untagged; answered 304, the remote kept them and committed the
 set[^t-touch-second-sync].
@@ -236,7 +238,9 @@ each speaker, device types 19 and 33; a line up for each favourites activity's s
 key under the device's `ContentProfileKey` in the user's document, skipping an antenna only service, named
 in braces, and the Roku, Sonos and Heos ones[^t-touch-favourites-firmware]. On the account measured, that made the
 tuning device's document the only one asked for, though every device carries a profile
-address[^t-touch-favourites].
+address[^t-touch-favourites]. **With no activity none is asked for**, measured with a set whose lists were all empty, and
+a commit keeps only what its sync asked for, so by the reading such a set drops every favourites document the remote
+held, [answering a sync](answering-a-sync.md#the-smallest-set-of-documents)[^t-touch-empty].
 
 **On a Touch synced through a computer all three kinds are asked for without an entity tag, every time**: the
 remote's screens ask for them, read each document's file before its tag, and during a sync read files from the
@@ -403,3 +407,5 @@ to the remote in the sync measured carried the field[^t-touch-favourites].
 [^t-touch-in-use]: Measured on a unit. [The test](../../../packages/bench/test/touch71-runs.test.ts)
 [^t-touch-favourites-of-ours]: Measured on a unit. [The test](../../../packages/bench/test/touch83-runs.test.ts)
 [^t-touch-settings-of-ours]: Measured on a unit. [The test](../../../packages/corpus/test/touch84-runs.test.ts)
+[^t-touch-empty]: Measured on a unit. [The test](../../../packages/bench/test/touch92-runs.test.ts)
+[^t-touch-empty-reading]: Read in the firmware. [The test](../../../packages/codec/test/touch-empty.test.ts)

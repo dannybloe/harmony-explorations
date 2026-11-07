@@ -179,6 +179,25 @@ run, every expected code heard and every timed pause in its band, 418 of 418; de
 *Corrected:* this said a document composed whole by this project was not checked<!--superseded--> until that run.
 A setup that is not a description of one Logitech's service built is not checked[^unchecked].
 
+## An empty configuration
+
+**A Touch takes a configuration with no device and no activity**, and shows its own empty pages. Delivered by this
+project with the remote's own context and settings, the four lists empty, it was committed and the remote started on
+it: the favourites page showed the remote's screen for no favourites, no activity page was offered, after a restart the
+home page was an empty device page, and the settings menu looked as usual. Delivering the remote's own lists and its
+three favourites documents back restored the set before, [answering a
+sync](../../architectures/harmony-touch/answering-a-sync.md#the-smallest-set-of-documents)[^t-touch-empty]. What the
+empty device page and its menu look like in detail is not checked[^unchecked].
+
+**The words on those screens are the firmware's and no configuration changes them.** The screen for no favourites says
+"Please sign in to your Harmony account to add your favorite TV channels.", and the screens' "no activity" notice, put
+up while no activity is listed when the screens load, at a start and when the remote leaves USB power, until its OK is
+pressed, opens "You have not set up any Activities." and
+asks the person to sign in to their Harmony account; both are the image's own text, one table per language, and a
+configuration chooses only the language, through the context[^t-touch-empty-screens]. So an application that is not
+Logitech's service cannot word them otherwise, and a remote it leaves empty points the person at a Harmony account.
+Right after the empty set's sync a text of that kind was seen once and not identified[^t-touch-empty].
+
 ## Changes on the remote travel back
 
 Changes made on the remote, favourite channels, backgrounds and commands among them, "are synced back to
@@ -219,6 +238,8 @@ channels and commands changed on the remote are not checked[^unchecked].
 [^t-touch-settings-of-ours]: Measured on a unit. [The test](../../../packages/corpus/test/touch84-runs.test.ts)
 [^t-touch-removal-of-theirs]: Measured on a unit. [The test](../../../packages/bench/test/touch85-runs.test.ts)
 [^t-touch-setup-of-ours]: Measured on a unit. [The test](../../../packages/bench/test/touch86-runs.test.ts)
+[^t-touch-empty]: Measured on a unit. [The test](../../../packages/bench/test/touch92-runs.test.ts)
+[^t-touch-empty-screens]: Read in the firmware. [The test](../../../tests/test_harmony_touch_empty_screens.py)
 [^t-touch-favourites-firmware]: Read in the firmware. [The test](../../../tests/test_harmony_touch_favourites.py)
 [^t-touch-beyond-firmware]: Read in the firmware. [The test](../../../tests/test_harmony_touch_beyond_the_clients.py)
 [^t-touch-beyond-client]: Stated by Logitech, in their client. [The test](../../../tests/test_harmony_touch_beyond_the_clients.py)

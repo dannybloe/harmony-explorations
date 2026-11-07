@@ -187,7 +187,7 @@ the generator that wrote it, with firmware event 0xFF bound so it serves both mo
 expected codes on the bench 350 and the same file 33 of 33 on the bench 300, `packages/codec/test/noscreenfinalunits.test.ts`.
 Two Harmony 885s are on the bench as well, read only.
 
-**The Harmony Touch is described from its own reading, twenty eight syncs of ours have run on it, twenty six committed, sixteen of them changing what it does, its first full bench test has run, a device, an activity and favourites with a logo composed by us have each been delivered to it and heard, a Settings of ours has been delivered and seen, an activity and a device of Logitech's have been taken out and the rest heard without them, and a whole setup composed by us has run its full bench test.** Its configuration
+**The Harmony Touch is described from its own reading, thirty one syncs of ours have run on it, twenty nine committed, eighteen of them changing what it does, its first full bench test has run, a device, an activity and favourites with a logo composed by us have each been delivered to it and heard, a Settings of ours has been delivered and seen, an activity and a device of Logitech's have been taken out and the rest heard without them, a whole setup composed by us has run its full bench test, and the empty configuration has been delivered, started on and put back.** Its configuration
 is Logitech's documents rather than a file, fetched by the remote through the computer during a sync, and both
 directions of a sync are recorded, `packages/usb/test/touch-sync-both-ways.test.ts`. The documents are described
 field by field in [its platform pages](../reference/architectures/harmony-touch/README.md) and read by the codec,
@@ -256,7 +256,13 @@ identifiers of ours onto the set with the four lists emptied, every device's rec
 catalogue entry, and compared with Logitech's documents field by field with nothing unexplained. Delivered as the four
 documents with 200 and Context and Settings 304, the remote committed it, and the ten 7.1 tests, unchanged, held 418
 of 418 on it, against 413 on Logitech's own; three attempts were started again, the person at the bench reporting a few mistakes here and there. A second
-sync put the remote's own four back, `packages/bench/test/touch86-runs.test.ts`.
+sync put the remote's own four back, `packages/bench/test/touch86-runs.test.ts`. In 9.2 the empty configuration went to
+it: the four lists with no device and no activity, Context and Settings its own. The remote committed it, asked for no
+favourites document in that sync and for only the two pictures of its background, and started on it after the person
+at the bench restarted it, its favourites page on its own screen for no favourites, no activity page, an empty device
+page; a text seen once right after the sync was not identified. The put back delivered the four and the three
+favourites documents with 200, the tuning device's favourites and the line up for the first time, and every stored
+picture had survived, `packages/bench/test/touch92-runs.test.ts`.
 
 ## What is still open
 

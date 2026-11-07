@@ -286,7 +286,10 @@ The TypeScript workspace, per `docs/plans/002-the-roadmap.md` step 4:
                                 four lists emptied, carrying each device's catalogue record, and
                                 describes a set as such a description, todo-touch.md 8.6, with
                                 the ordered form of a map, composeButtons, in compose.ts; tested in
-                                test/touch-setup.test.ts. The folder is not
+                                test/touch-setup.test.ts. Its empty.ts builds the empty
+                                configuration, no device and no activity, and says what a commit
+                                of it keeps of the favourites and the pictures, todo-touch.md 9.2,
+                                tested in test/touch-empty.test.ts. The folder is not
                                 touch.ts, which is the Harmony One's touch screen
 packages/lab/                   TS: finds the private lab directory, mirrors tests/lab.py. Also
                                 finds the **public** infrared archive checkout, which is a
@@ -332,7 +335,10 @@ packages/corpus/                TS: read a config off a remote and file it, read
                                 `todo-touch.md` 8.5, and `src/touchsetupset.ts`, which builds a set
                                 with the whole setup composed from a description, compares it with
                                 Logitech's documents field by field and builds its put back,
-                                `todo-touch.md` 8.6, tested in `test/touch-setup-set.test.ts`; the
+                                `todo-touch.md` 8.6, tested in `test/touch-setup-set.test.ts`, and
+                                `src/touchemptyset.ts`, which builds the empty configuration and its
+                                put back with the favourites documents and logos the remote held,
+                                `todo-touch.md` 9.2, tested in `test/touch-empty-set.test.ts`; the
                                 descriptions such a set is built from are in `touch-devices/`,
                                 `touch-activities/`, `touch-favourites/`, `touch-settings/`,
                                 `touch-removals/` and `touch-setups/`,
@@ -1022,15 +1028,16 @@ node packages/corpus/bin/touch-sync.ts --unchanged | --set <lab folder> [--commi
                        favourites document handed up to its own address, `content://1.0/user/` or
                        `content://1.0/device/`, when the set holds that kind, `favouritesClash`; every
                        picture a set holds must pass the codec's `pictureRefusals`. `--unchanged`
-                       has run ten times on the bench Touch, 6.7, 6.8, 6.9, 8.1, 8.2, 8.3, 8.4, 8.5 and
-                       8.6; `--set` eighteen times, 6.8, the four sets of 6.9, the two each of 8.1, 8.2,
-                       8.3, 8.4, 8.5 and 8.6, each committed, and 8.5's first try, which stopped on a USB read
+                       has run eleven times on the bench Touch, 6.7, 6.8, 6.9, 8.1, 8.2, 8.3, 8.4, 8.5,
+                       8.6 and 9.2; `--set` twenty times, 6.8, the four sets of 6.9, the two each of 8.1,
+                       8.2, 8.3, 8.4, 8.5, 8.6 and 9.2, each committed, and 8.5's first try, which stopped on a USB read
                        timeout inside its first write of answers and left the remote on the set before,
                        `packages/usb/test/touch-own-set-sync.test.ts`,
                        `touch-changed-set-sync.test.ts`, `packages/bench/test/touch81-runs.test.ts`,
                        `touch82-runs.test.ts`, `touch83-runs.test.ts`,
                        `packages/corpus/test/touch84-runs.test.ts`,
-                       `packages/bench/test/touch85-runs.test.ts` and `touch86-runs.test.ts`.
+                       `packages/bench/test/touch85-runs.test.ts`, `touch86-runs.test.ts` and
+                       `touch92-runs.test.ts`.
 node packages/bench/bin/touch-tests.ts [--write]
                        derive `todo-touch.md` 7.1's bench tests for the Harmony Touch from the set
                        the bench unit holds and the recorded favourites, through the engine model
@@ -1115,6 +1122,8 @@ node packages/corpus/bin/touch-device-set.ts --build <lab folder> --from <remova
 node packages/corpus/bin/touch-device-set.ts --build <lab folder> --from <set folder> --setup <description>
 node packages/corpus/bin/touch-device-set.ts --build <lab folder> --from <setup set folder> --setup-back
 node packages/corpus/bin/touch-device-set.ts --describe-setup <set folder> --out <new description file>
+node packages/corpus/bin/touch-device-set.ts --build <lab folder> --from <set folder> --empty
+node packages/corpus/bin/touch-device-set.ts --build <lab folder> --from <empty set folder> --empty-back
 node packages/corpus/bin/touch-device-set.ts --check <set folder> [--same-as <set>] [--written <answers>] \
   [--hash <answer>] [--list <list>]
                        build a set with a device of ours added, or taken out again, `todo-touch.md`
@@ -1170,10 +1179,19 @@ node packages/corpus/bin/touch-device-set.ts --check <set folder> [--same-as <se
                        code, address or value of the account. `--check` then prints the comparison with
                        the source's documents field by field, `compareSetup`, NOT OK on any difference no
                        row explains, `packages/corpus/test/touch-setup-set.test.ts` holding the sets and
-                       `packages/bench/test/touch86-runs.test.ts` both sets' runs. `--written` checks an
-                       answers file for the six and so reports NOT OK on each that holds none of them, the
-                       favourites, pictures and finish answers; the kept write of the six is the run's
-                       `007-answers-request.txt`.
+                       `packages/bench/test/touch86-runs.test.ts` both sets' runs. `--empty` builds the
+                       empty configuration, the source's six with the four lists emptied by the codec's
+                       `emptyTouchDocuments` and delivered under new tags, `withEmpty` in
+                       `src/touchemptyset.ts`; `--empty-back` its put back, the six as the set before it
+                       states them and the favourites documents and logos the remote held, since by the
+                       reading the empty set's commit drops the favourites, `emptyBackOf`. `--check` of
+                       either prints what the commit keeps, `keptAtTheCommit`, and the content a `--list`
+                       asks for, `packages/corpus/test/touch-empty-set.test.ts` holding the sets and
+                       `packages/bench/test/touch92-runs.test.ts` both sets' runs. `--written` judges a
+                       file that answers any of the six, the run's `007-answers-request.txt`, and names
+                       and passes over one that answers none of them, the favourites, pictures and
+                       finish answers. *Corrected:* this said `--written` reported NOT OK on each file
+                       that holds none of the six, which it did until it was changed to pass them over.
 node packages/usb/bin/read-file.ts --file <path> [--product 0xc12b] [--device <path>]
                        the general form of the above: read any path on `INERT_PATHS` and print it as
                        bytes and, where it is printable, as text. Deliberately does not parse, since

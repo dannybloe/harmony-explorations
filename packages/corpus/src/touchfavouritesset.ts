@@ -64,6 +64,11 @@ export interface Content {
  * What the remote holds at each content address after the set in `folder` is committed: the latest answer of the
  * chain of sets back from it that delivered one, and `recorded`'s for every other address. `read` reads a folder's
  * set and record, as `chainTags` takes it, so this stays free of the file system.
+ *
+ * **It does not model a commit that drops content.** An empty set of `todo-touch.md` 9.2, recorded `empty`, makes the
+ * remote ask for no favourites document, and by the reading in the codec's `empty.ts` its commit drops them all; this
+ * still answers the older sets' and `recorded`'s for a folder whose latest set is such a one. Its put back, recorded
+ * `emptyBack`, delivers them again and so stands first in any chain through it, where the answer is right.
  */
 export function heldContent(
   folder: string | undefined,

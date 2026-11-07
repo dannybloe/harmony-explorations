@@ -673,8 +673,9 @@ All in `reads/20261107T<time>-*`. Every committed run handed out eight request l
 six went in one write, the run's `007-answers-request.txt`, of 494602 characters, 16 chunks, for the setup and 567941,
 19 chunks, for the put back, each replied 200. That file is the kept write; the run's other answers files hold the
 favourites, the pictures and the finish and none of the six, which is why `touch-device-set.ts --check --written`
-prints "NOT OK: the kept write answered ;" for each of them. Whether `--written` should pass over such files is an open
-question about the tool, not about the run.
+printed "NOT OK: the kept write answered ;" for each of them at the time. *Corrected:* this called whether `--written`
+should pass over such files an open question about the tool; it now names and passes over a file that answers none of the
+six.
 
 * **The ten tests**, the files at the top of `irtests/` unchanged, which the setup derives file for file
   (`touch86.test.ts`), on the Flirc monitor. The last attempt of each held every expectation, judged afresh from the
@@ -702,6 +703,58 @@ before. The remote holds `8.6-setup-back`, which is `8.5-removal-back`. What thi
 and icons beyond the look, the engine's stored power state per device under the new ids, the tests while an activity
 runs across a sync, and a setup that describes no set Logitech built. The runs are held by
 `packages/bench/test/touch86-runs.test.ts`. 8.6 is done.
+
+## The empty configuration, looked at and put back, todo-touch 9.2
+
+**Run on 7 November 2026**, after 8.6, after commit `dabf48c7`, the 9.2 preparation, in the order of the lab's
+`work/touch-firmware/notes/9.2-preflight.md` section 8, each run read before the next, Off pressed before each sync, the
+bench started afresh for a new monitor log. The two sets were built by the lab's `notes/9.2-build-sets.ts`, which
+`packages/corpus/bin/touch-device-set.ts --empty` and `--empty-back` now build byte for byte: `9.2-empty`,
+`8.6-setup-back` with ActivityList, DeviceList, MapList and ProtocolList emptied by `emptyTouchDocuments` and retagged,
+Context and Settings the source's; and `9.2-empty-back`, `8.6-setup-back`'s six with the user's favourites document, the
+tuning device's, the line up, the uploaded logo and seven station logos beside them, each under the tag the remote held
+it with.
+
+| time (UTC) | run | what it gave |
+|---|---|---|
+| `1124Z` | `touch-confighash` | equal on `8.6-setup-back` |
+| `1125Z` | `touch-sync-set`, `9.2-empty` | the four 200 with the set's content and tags, Context and Settings 304 (`007`, 1573 characters, one chunk); then an empty list, the two backgrounds 304 (`009`, `010`) and the finish; **four request lists and no favourites request**; first list (`006`) the four with another tag, Context and Settings with the set's; `sync: finished`, nothing handed up |
+| `1125Z` | `touch-confighash` | equal on `9.2-empty` |
+| `1130Z` | the look, below | the favourites page photographed, `reads/20261107T1130Z-touch-9.2-empty-favourites-photo.png` |
+| `1135Z` | `touch-confighash`, after the person's restart | still equal on `9.2-empty`, `errorMessage` OK |
+| `1135Z` | `touch-sync-set`, `9.2-empty-back` | the four 200 with the back set's content and tags, Context and Settings 304 (`007`, 567941 characters, 19 chunks); the user's favourites (`010`), the tuning device's (`012`) and the line up (`014`, 56446 characters, two chunks) each 200 with the set's content and tags; the ten pictures 304 against their held tags (`017`); the finish (`019`); eight lists; first list (`006`) all six with `9.2-empty`'s tags |
+| `1136Z` | `touch-confighash` | equal on `9.2-empty-back` and on `8.6-setup-back` |
+| `1138Z` | `touch-sync-unchanged` | every answer 304 or the finish, first list six of `8.6-setup-back`'s tags |
+| `1124Z` | the monitor's log | from its start after the empty sync to 11:35 UTC, 86 frames, all unreadable, none a code of either set |
+
+All in `reads/20261107T<time>-*`. The brief before the run counted the empty run's lists as five; the answerer's
+outcome counts four sync lists, the fifth being the hand over's. The put back delivered the tuning device's favourites
+and the line up for the first time from this project, as the remote held them, and asked for every logo with the tag the
+remote held it with and the two backgrounds with the tags the empty run sent, so every stored picture survived the empty
+commit. Whether the favourites documents were dropped is not measured: they are asked for untagged either way.
+
+* **The look, reported at the bench and held by no file but the photograph**: the favourites page showed the remote's
+  own no favourites screen, "Please sign in to your Harmony account to add your favorite TV channels.",
+  `NO_FAVORITES_SETUP` in the firmware's English strings; no activities page; **right after the sync, off the cable, a
+  text was seen once and could not be brought back**, reported as "the remote says it is empty and something like Please
+  sign in to your Harmony account", not identified, the strings file holding two candidates, `NO_ACTIVITY` and
+  `NO_FAVORITES_SETUP`; **the person restarted the remote**, not through our tooling, and afterwards the home screen was a
+  white, empty devices screen; the Settings menu looked normal. The look after the put back was not reported in detail.
+* **Against the preflight**: the no favourites screen held; the empty device page after the restart is consistent with
+  the prediction, its menu not reported; the "no activity" notice predicted after a restart was not reported. The
+  preflight read the notice as coming only at a start or on a `PowerOffActivity` event; the screens also reload when
+  the remote leaves USB power after its USB screen, which puts the notice up at the moment the text was seen, and its OK
+  keeps it away until a set with activities arrives, `tests/test_harmony_touch_empty_screens.py`. That is a correction of
+  the reading, not an identification of the text.
+* **The monitor**: Off, the volume keys and a number key were not reported pressed. The 86 frames came between 11:31 and
+  11:33 UTC, 82 of them in 22 seconds; none fits a code of `8.6-setup-back` or the put back and none
+  decodes to a number; what made them is not recorded.
+
+So the remote stores, commits and starts on a configuration with no device and no activity, asks for no favourites
+document in that sync, keeps its pictures across it, and the put back with the favourites restored the set before. The
+remote holds `9.2-empty-back`, whose six are `8.6-setup-back`. What this does not cover: the empty device page and its
+menu in detail, which text was seen after the sync, whether the favourites documents were dropped, the keys on the empty
+set, and the look after the put back. The runs are held by `packages/bench/test/touch92-runs.test.ts`. 9.2 is done.
 
 ## Not done
 

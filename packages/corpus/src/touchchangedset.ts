@@ -272,6 +272,9 @@ export interface SetRecord {
   /** A whole setup composed by us onto the set with its devices taken out, or put back as the remote held it, `todo-touch.md` 8.6. */
   readonly setup?: unknown;
   readonly setupBack?: unknown;
+  /** The empty configuration, no device and no activity, or its put back with the favourites, `todo-touch.md` 9.2. */
+  readonly empty?: unknown;
+  readonly emptyBack?: unknown;
 }
 
 /**
@@ -280,8 +283,8 @@ export interface SetRecord {
  * `change`, one built by `touch-device-set.ts` its `device` or `removed`, or for an activity, `todo-touch.md` 8.2,
  * its `activity` or `removedActivity`, or for favourites, 8.3, its `favourites` or `favouritesBack`, or for Settings
  * and Context, 8.4, its `settings` or `settingsBack`, or for devices and activities of the remote's taken out, 8.5,
- * its `removal` or `removalBack`, or for a whole setup of ours, 8.6, its `setup` or `setupBack`; each names the set it
- * came `from`.
+ * its `removal` or `removalBack`, or for a whole setup of ours, 8.6, its `setup` or `setupBack`, or for the empty
+ * configuration, 9.2, its `empty` or `emptyBack`; each names the set it came `from`.
  * `read` reads a folder's set and record, so this stays free of the file system. A folder met twice stops it.
  */
 export function chainTags(folder: string, read: (folder: string) => { readonly set: TouchSet; readonly record: SetRecord }): Set<string> {
@@ -307,7 +310,8 @@ export function builtFrom(record: SetRecord): string | undefined {
     || record.favourites !== undefined || record.favouritesBack !== undefined
     || record.settings !== undefined || record.settingsBack !== undefined
     || record.removal !== undefined || record.removalBack !== undefined
-    || record.setup !== undefined || record.setupBack !== undefined;
+    || record.setup !== undefined || record.setupBack !== undefined
+    || record.empty !== undefined || record.emptyBack !== undefined;
   return built && typeof record.from === 'string' ? record.from : undefined;
 }
 

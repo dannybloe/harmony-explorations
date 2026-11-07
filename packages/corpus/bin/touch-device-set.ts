@@ -17,6 +17,8 @@
  *   node packages/corpus/bin/touch-device-set.ts --build <new lab folder> --from <set folder> --setup <description>
  *   node packages/corpus/bin/touch-device-set.ts --build <new lab folder> --from <setup set folder> --setup-back
  *   node packages/corpus/bin/touch-device-set.ts --describe-setup <set folder> --out <new description file>
+ *   node packages/corpus/bin/touch-device-set.ts --build <new lab folder> --from <set folder> --empty
+ *   node packages/corpus/bin/touch-device-set.ts --build <new lab folder> --from <empty set folder> --empty-back
  *   node packages/corpus/bin/touch-device-set.ts --check <set folder> [--same-as <set folder>]... \
  *     [--written <a run's kept write of answers>] [--hash <getconfighash answer>] [--list <request list answer>]
  *
@@ -77,6 +79,15 @@
  * set's setup, `describeTouchSetup`, into a new file: what the person chose, names and numbers, and no code, address or
  * key, so it is written where the repository keeps it.
  *
+ * **`--build --empty`** builds the empty configuration, no device and no activity: the source's six with the four lists
+ * emptied by the codec's `emptyTouchDocuments`, the four under new tags and Context and Settings the source's, content and
+ * tags, `withEmpty` in `src/touchemptyset.ts`, `todo-touch.md` 9.2. **`--build --empty-back`** is its put back, and it is
+ * not the six alone: the six as the set before the empty one states them, and beside them the three favourites
+ * documents and the logos the remote asks for once it holds them, each as the remote held it before the empty set,
+ * content and tag, `emptyBackOf`, since by the reading the empty set's commit drops every favourites document. The record
+ * says `empty` or `emptyBack`. `--check` of either prints what the set holds and what its commit keeps,
+ * `keptAtTheCommit`, and for a `--list` the favourites documents and pictures asked for against the set.
+ *
  * **`--check`** reads the set back as `touch-sync.ts` will, the gate and the codec's reader, and the device as
  * the reader sees it: its commands each with a definition and a key code, its map found by the identifier the
  * engine builds, its keys and its screen list; for an activity, its place on the list and type, its devices in
@@ -116,6 +127,7 @@ import { OWN_SET_DOCUMENTS, compareConfigHash, compareRequestList } from '../src
 import { SETTINGS_SET_DOCUMENTS, putBackSettingsAndContext, settingsChanges, sixOf, withSettingsAndContext } from '../src/touchsettingsset.ts';
 import { REMOVAL_DOCUMENTS, putBackRemoval, removalChanges, withRemoval } from '../src/touchremovalset.ts';
 import { SETUP_DOCUMENTS, SETUP_IDS, compareSetup, comparisonLines, putBackSetup, withSetup } from '../src/touchsetupset.ts';
+import { EMPTY_DOCUMENTS, emptyBackOf, withEmpty } from '../src/touchemptyset.ts';
 import { WRITE_ANSWERS, answerOf, keyOf, prepareSet, resultOf, setTag, type RemoteRequest, type SetAnswer, type TouchSet } from '../src/touchsync.ts';
 
 /** The three documents a device is told to a Touch in, and the list in each that holds it. */
@@ -176,6 +188,9 @@ interface DeviceRecord {
   /** 8.6: the path of the setup's description, or its put back. */
   readonly setup?: string;
   readonly setupBack?: true;
+  /** 9.2: the empty configuration, or its put back with the favourites. */
+  readonly empty?: true;
+  readonly emptyBack?: true;
 }
 
 const readSet = (folder: string): TouchSet => JSON.parse(readFileSync(join(folder, 'set.json'), 'utf8')) as TouchSet;
@@ -210,12 +225,14 @@ function build(folder: string): void {
   const removalBack = process.argv.includes('--removal-back') ? true : undefined;
   const setupDescription = argument('setup');
   const setupBack = process.argv.includes('--setup-back') ? true : undefined;
+  const empty = process.argv.includes('--empty') ? true : undefined;
+  const emptyBack = process.argv.includes('--empty-back') ? true : undefined;
   const given = [description, removeId, activityDescription, removeActivityId, favouritesDescription, favouritesBack, settingsDescription, settingsBack,
-    removalDescription, removalBack, setupDescription, setupBack].filter((x) => x !== undefined).length;
+    removalDescription, removalBack, setupDescription, setupBack, empty, emptyBack].filter((x) => x !== undefined).length;
   if (fromFolder === undefined || given !== 1) {
     fail('--build needs --from <set folder> and one of --device <description>, --remove <device id>, --activity <description>, '
       + '--remove-activity <activity id>, --favourites <description>, --favourites-back, --settings <description> with --context <lab description>, '
-      + '--settings-back, --removal <description>, --removal-back, --setup <description> or --setup-back');
+      + '--settings-back, --removal <description>, --removal-back, --setup <description>, --setup-back, --empty or --empty-back');
   }
   const from = insideTheLab(fromFolder, 'the source set');
   const source = readSet(from);
@@ -234,6 +251,10 @@ function build(folder: string): void {
   }
   if (setupDescription !== undefined || setupBack !== undefined) {
     buildSetup(out, from, source, name, setupDescription);
+    return;
+  }
+  if (empty !== undefined || emptyBack !== undefined) {
+    buildEmpty(out, from, source, name, empty === true);
     return;
   }
   let documents: harmonyTouch.DeviceDocuments | harmonyTouch.ActivityDocuments;
@@ -413,6 +434,38 @@ function buildSetup(out: string, from: string, source: TouchSet, name: string, d
   writeFileSync(join(out, 'sources.json'), `${JSON.stringify(record, null, 2)}\n`);
   console.log(`built ${out}: ${record.setup !== undefined ? 'the whole setup composed' : 'the setup put back'}, ${SETUP_DOCUMENTS.join(', ')} under `
     + `${record.setup !== undefined ? 'new tags' : 'the tags the remote held before'}, Context and Settings under the source's, the gate passed`);
+}
+
+/**
+ * `--build --empty` and `--build --empty-back`, the header: the source's six with the four lists emptied, or the put
+ * back of the empty set in `from`, the six as the set before it states them with the favourites documents and logos the
+ * remote held before it.
+ */
+function buildEmpty(out: string, from: string, source: TouchSet, name: string, forward: boolean): void {
+  let built: { readonly set: TouchSet } | { readonly refusals: readonly string[] };
+  let record: DeviceRecord;
+  if (forward) {
+    built = withEmpty({ set: source, name, tagsInPlay: tagsOfTheChain(from) });
+    record = { name, from, empty: true };
+  } else {
+    const was = readRecord(from);
+    if (was.empty === undefined || typeof was.from !== 'string') fail(`${from} records no empty set, so there is nothing to put back`);
+    const before = insideTheLab(String(was.from), 'the set before the empty one');
+    built = emptyBackOf({ empty: source, before: readSet(before), held: heldAfter(before), name });
+    record = { name, from, emptyBack: true };
+  }
+  if ('refusals' in built) {
+    console.log(`refused, ${built.refusals.length} reasons, no set written:`);
+    for (const r of built.refusals) console.log(`  ${r}`);
+    process.exit(1);
+  }
+  mkdirSync(out, { recursive: true });
+  writeFileSync(join(out, 'set.json'), `${JSON.stringify(built.set)}\n`);
+  writeFileSync(join(out, 'sources.json'), `${JSON.stringify(record, null, 2)}\n`);
+  const content = built.set.answers.filter(isContent).map((a) => contentKind(a.uri));
+  console.log(`built ${out}: ${forward ? 'the empty configuration' : 'the empty configuration put back'}, ${EMPTY_DOCUMENTS.join(', ')} under `
+    + `${forward ? 'new tags' : 'the tags the remote held before'}, Context and Settings under the source's`
+    + `${content.length > 0 ? `, and ${content.length} pieces of content as the remote held them: ${[...new Set(content)].map((k) => `${content.filter((x) => x === k).length} ${k}`).join(', ')}` : ''}, the gate passed`);
 }
 
 /** `--describe-setup`, the header: a set's setup described, written into a new file; it holds no value of the account. */
@@ -673,8 +726,72 @@ function checkSetup(set: TouchSet, record: Partial<DeviceRecord> & SetRecord, sa
   checkTheRuns(set, source, from, retagged, say);
 }
 
+/**
+ * `--check` of an empty set or its put back, the header: the gate and the reader; for the empty set, the six and nothing
+ * else, the four lists empty and retagged by the set's name and Context and Settings the source's, and what its commit
+ * keeps; for the put back, the six the set before the empty one, content and tags, and each piece of content as the remote
+ * held it before, every one of them asked for and nothing asked for missing; then what a remote holding the source is
+ * answered and a run's kept files, and for each `--list` the content asked for against the set.
+ */
+function checkEmpty(set: TouchSet, record: Partial<DeviceRecord> & SetRecord, say: (ok: boolean, line: string) => void): void {
+  const from = insideTheLab(String(record.from), 'the source set');
+  const source = sixOf(readSet(from));
+  const name = String(record.name);
+  const gate = prepareSet(set);
+  say(!('refusals' in gate), `the gate, ${'refusals' in gate ? `${gate.refusals.length} refusals: ${gate.refusals.join('; ')}` : `passed, ${gate.set.tags.stated} tags stated and ${gate.set.tags.ours} ours`}`);
+  const six = sixOf(set);
+  const now = documentsOf(six);
+  const read = harmonyTouch.readConfiguration(now);
+  say(read.absent.length === 0, `the reader read it, ${read.activities.length} activities, ${read.devices.length} devices, ${read.maps.length} button maps, ${read.protocols.length} protocols`);
+  const sd = setDifferences(source, six);
+  const retagged = sd.filter((x) => x.tagChanged).map((x) => x.document);
+  say(JSON.stringify(retagged) === JSON.stringify(EMPTY_DOCUMENTS), `retagged: ${retagged.join(', ') || 'nothing'}, the other ${sd.length - retagged.length} the source's, content and tags`);
+  if (record.empty !== undefined) {
+    say(set.answers.length === OWN_SET_DOCUMENTS.length, `the six documents and nothing else, ${set.answers.length} answers`);
+    say([read.activities.length, read.devices.length, read.maps.length, read.protocols.length, read.favourites.length].every((n) => n === 0),
+      'no activity, device, map, definition or favourites activity');
+    say(sd.filter((x) => x.values.length > 0).map((x) => x.document).join() === EMPTY_DOCUMENTS.join(), `content differs in ${sd.filter((x) => x.values.length > 0).map((x) => x.document).join(', ') || 'nothing'}`);
+    const answers = EMPTY_DOCUMENTS.map((d) => set.answers.find((a) => keyOf(a.uri) === d));
+    say(answers.every((a) => a !== undefined && a.etag === setTag(a, name)), `the ${EMPTY_DOCUMENTS.length} new tags are the ones the set's name gives`);
+    const chain = tagsOfTheChain(from);
+    say(answers.every((a) => a?.etag !== undefined && !chain.has(a.etag)), `no new tag is stated by a set of the chain before it, ${chain.size} tags`);
+    const kept = harmonyTouch.keptAtTheCommit(now);
+    console.log(`committed, it makes the screens ask for ${kept.favourites.length} favourites documents and ${harmonyTouch.userBackgroundsAsked(now)} pictures, `
+      + `${kept.pictures ? 'so the stored pictures are carried' : 'so the stored pictures are dropped'}, and every favourites document the remote holds is dropped`);
+  } else {
+    const forward = readRecord(from);
+    const beforeFolder = insideTheLab(String(forward.from), 'the set before the empty one');
+    const d = setDifferences(sixOf(readSet(beforeFolder)), six);
+    say(d.every((x) => x.values.length === 0 && !x.tagChanged), `the six are the set before the empty one, ${basename(beforeFolder)}, content and tags: ${d.filter((x) => x.values.length > 0 || x.tagChanged).map((x) => x.document).join(', ') || 'all equal'}`);
+    const held = heldAfter(beforeFolder);
+    const content = set.answers.filter(isContent);
+    for (const a of content) {
+      const was = held.get(a.uri);
+      say(was !== undefined && was.etag === a.etag && was['body-type'] === a['body-type'] && JSON.stringify(was.resource) === JSON.stringify(a.resource),
+        `${contentKind(a.uri)}: as the remote held it before the empty set, content and tag`);
+    }
+    const after = documentsHeld(set, new Map());
+    const asked = [...harmonyTouch.favouritesAskedFor(after), ...logosAsked(after)];
+    say(asked.length === content.length && asked.every((uri) => content.some((a) => a.uri === uri)),
+      `every piece is asked for once the remote holds the set, and nothing asked for is missing: ${asked.length} asked, ${content.length} held`);
+    const favourites = harmonyTouch.readConfiguration(after).favourites;
+    say(favourites.length === 1 && favourites[0]!.missing.length === 0,
+      `the favourites: ${favourites.map((f) => `${f.activity.name ?? 'an activity'} through ${f.device?.name ?? 'no device'}, ${f.favourites.length} channels, ${f.missing.length} documents missing`).join('; ') || 'none'}`);
+  }
+  checkTheRuns(set, source, from, EMPTY_DOCUMENTS, say);
+  for (const file of arguments_('list')) {
+    const requests = (resultOf(readFileSync(insideTheLab(file, 'the request list'), 'utf8'))?.['requests'] ?? []) as RemoteRequest[];
+    console.log(`content asked for against the set, ${requests.length} requests:`);
+    for (const l of compareContentRequests(requests, set).filter((x) => !x.endsWith('not asked for'))) console.log(`  ${l}`);
+    for (const r of requests.filter((x) => typeof x?.uri === 'string' && isContent(x) && !set.answers.some((a) => a.uri === x.uri))) {
+      console.log(`  ${contentKind(r.uri)}: not in the set, ${typeof r.etag === 'string' && r.etag.length > 0 ? 'with a tag' : 'without a tag'}`);
+    }
+  }
+}
+
 /** Whether a record is of a device added or taken out, an activity, or favourites; undefined when it is none. */
-function kindOf(record: Partial<DeviceRecord>): 'device' | 'activity' | 'favourites' | 'settings' | 'removal' | 'setup' | undefined {
+function kindOf(record: Partial<DeviceRecord>): 'device' | 'activity' | 'favourites' | 'settings' | 'removal' | 'setup' | 'empty' | undefined {
+  if (record.empty !== undefined || record.emptyBack !== undefined) return 'empty';
   if (record.setup !== undefined || record.setupBack !== undefined) return 'setup';
   if (record.removal !== undefined || record.removalBack !== undefined) return 'removal';
   if (record.settings !== undefined || record.settingsBack !== undefined) return 'settings';
@@ -875,7 +992,16 @@ function check(folder: string): void {
   const record = readRecord(dir);
   const kind = kindOf(record);
   if (kind === undefined || typeof record.from !== 'string' || typeof record.name !== 'string') {
-    fail(`${dir} records no device, activity, favourites, settings, removal or setup, so it is not a set this script built`);
+    fail(`${dir} records no device, activity, favourites, settings, removal, setup or empty set, so it is not a set this script built`);
+  }
+  if (kind === 'empty') {
+    let wrong = 0;
+    checkEmpty(set, record, (ok, line) => {
+      if (!ok) wrong += 1;
+      console.log(`${ok ? 'ok' : 'NOT OK'}: ${line}`);
+    });
+    if (wrong > 0) process.exit(1);
+    return;
   }
   if (kind === 'setup') {
     let wrong = 0;

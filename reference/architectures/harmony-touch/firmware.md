@@ -133,7 +133,10 @@ a restart meets such a set again, and that the engine, a separate program, still
 that the delete of the stored documents below reaches the remote, is inferred and not tried[^unchecked]. All of this is read in the production
 build 4.15.330, and **one route has been run on a remote**: a sync stopped halfway, cleared by the abort and
 the restart over the cable, [below](#a-sync-that-stops-halfway)[^t-touch-first-sync]. The configuration that
-fails to load has not been tried[^unchecked].
+fails to load has not been tried[^unchecked]. **An empty configuration is not a failure**: a set with every list empty,
+no device and no activity, was committed, and after a restart the remote's configuration hash still answered with that
+set's tags, so it started on it with the configuration task alive, and the next sync replaced it as usual,
+[answering a sync](answering-a-sync.md#the-smallest-set-of-documents)[^t-touch-empty].
 
 ### A configuration that fails to load
 
@@ -323,6 +326,7 @@ installs is not settled, [the recovery tool](../../logitech/update-service.md#th
 [^t-touch-api-names]: Read in the firmware. [The test](../../../tests/test_harmony_touch_api_names.py)
 [^t-touch-recovery]: Read in the firmware. [The test](../../../tests/test_harmony_touch_recovery.py)
 [^t-touch-first-sync]: Measured on a unit. [The test](../../../packages/usb/test/touch-first-sync.test.ts)
+[^t-touch-empty]: Measured on a unit. [The test](../../../packages/bench/test/touch92-runs.test.ts)
 [^t-touch-removal-of-theirs]: Measured on a unit. [The test](../../../packages/bench/test/touch85-runs.test.ts)
 [^t-touch-recovery-client]: Stated by Logitech, in their client. [The test](../../../tests/test_harmony_touch_recovery.py)
 [^t-touch-host]: Read in the firmware. [The test](../../../tests/test_harmony_touch_host.py)

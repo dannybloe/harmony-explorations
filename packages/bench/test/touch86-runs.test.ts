@@ -28,7 +28,7 @@
  *    `007-answers-request.txt`, 494602 characters, 16 chunks of 31000, for the setup and 567941, 19 chunks, for the put
  *    back, each replied 200 as a write. **That file is the kept write of the six**; the run's other writes of answers
  *    hold none of the six, only the favourites, the pictures and the finish, which is why `touch-device-set.ts --check
- *    --written` reports each of them as answering none of the four. The closing `--unchanged` run answered every
+ *    --written` reported each of them as answering none of the four at the time; it now names and passes over such a file. The closing `--unchanged` run answered every
  *    request 304 or the finish.
  * 3. **The first request lists and the hash say what was committed.** The setup's run asked for the six with
  *    `8.5-removal-back`'s tags; the put back's run asked for the four with the setup's tags and Context and Settings

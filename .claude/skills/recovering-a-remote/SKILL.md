@@ -253,7 +253,7 @@ What must never be part of that route:
 **Read before any write to a Harmony Touch, and before anything near its reset or restart.** The Touch
 reports 17 for its architecture and Logitech's templates file it under 18; say "the Harmony Touch".
 Everything here is read, in the production firmware 4.15.330 and in Logitech's two clients, and **little of
-it has been run on a unit**: twenty eight syncs of ours have run on the bench Touch, the first stopped mid sync and
+it has been run on a unit**: thirty one syncs of ours have run on the bench Touch, the first stopped mid sync and
 cleared by the abort and the restart below, the second committed with every answer a 304 or the finish, the third
 committed with the remote's own six documents delivered with 200 under tags of ours, the fourth answered 304
 against those tags, the next four each delivered one document with one value changed or put back and were
@@ -267,7 +267,9 @@ inside its first write of answers, the remote seen restarting, and left the comm
 took an activity and a device of Logitech's out of four documents and put them back, both committed and acted on,
 the twenty fifth answered 304 again, the next two delivered the whole test setup composed by us under ids of
 ours in four documents, a 16 chunk write, and put the remote's own back, a 19 chunk write, both committed and acted
-on, and the twenty eighth answered 304 again; the remote now holds tags of ours for all six documents, which matters to step 7 below; the delete has never been sent, and the only other
+on, the twenty eighth answered 304 again, the next two delivered the empty configuration, no device and no activity, and
+put the remote's own back with its three favourites documents, both committed, the remote restarted by hand in
+between and starting on the empty set, and the thirty first answered 304 again; the remote now holds tags of ours for all six documents, which matters to step 7 below; the delete has never been sent, and the only other
 recovery a Touch has been through was Logitech's hidden recovery tool, `docs/test-notes/harmony-touch.md`. The facts are
 `reference/architectures/harmony-touch/firmware.md` "Recovery", the argument is the header of
 `tests/test_harmony_touch_recovery.py`, and the working note with every file and line is the lab's
@@ -314,7 +316,11 @@ set before's tags and the same set sent again was committed, nothing else sent; 
 replaces them all**, so none runs while its documents change, and if a committed removal or whole setup misbehaves,
 the put back of the set before is the repair: an ordinary sync, not a restart, depending on nothing the set changed.
 8.6's whole setup, every device and activity under a new id, needed no repair and was put back by such a sync as planned,
-`packages/bench/test/touch86-runs.test.ts`. **Keep any other remote off the bus during a long write**: 8.5's stopped
+`packages/bench/test/touch86-runs.test.ts`. **A put back after a set with no favourites activity carries the
+favourites documents as well**: 9.2's empty set made the remote ask for none, and by the reading its commit dropped
+them, so its put back delivered all three with 200 beside the four, `emptyBackOf` in
+`packages/corpus/src/touchemptyset.ts`; a restart on the empty set was safe, the remote starting on it with its
+configuration task answering, `packages/bench/test/touch92-runs.test.ts`. **Keep any other remote off the bus during a long write**: 8.5's stopped
 try had a second remote enumerated beside it; that is not a cause, only a variable worth removing.
 **202 needs `touch-recover.ts --step abort`, that read again, then `--step reboot`**, each a run of its own,
 each answer read before the next. The reboot is not optional after a host's abort: by the preflight's reading
@@ -361,10 +367,11 @@ The route, in order:
    a folder in the lab that holds a file, since the delete removes every stored document and picture and the
    remote keeps no copy, and a remote stuck on a set its reader raises on has nothing worth keeping on it
    except what the backup holds. Its answer carries no status of its own; 501 means the remote is not
-   provisioned and nothing was deleted. **The delete takes the favourites documents and the pictures too, and no
-   set of ours carries them whole yet**: the answerer answers a favourites document a set lacks 304, which on a
-   remote holding none leaves it missing, so after a delete the favourites need a set that carries all three
-   favourites documents and the pictures, which has not been built; ask first. `proxy.resource?put` of the corrected document would also do, saved
+   provisioned and nothing was deleted. **The delete takes the favourites documents and the pictures too**: the answerer answers a favourites
+   document a set lacks 304, which on a remote holding none leaves it missing, so after a delete the favourites need a
+   set that carries all three favourites documents and the pictures. 9.2's put back, `9.2-empty-back`, carries the three
+   favourites documents and the eight logos as the remote held them, delivered and committed once; no set carries the
+   two user backgrounds, so after a delete those would be lost; ask first. `proxy.resource?put` of the corrected document would also do, saved
    before its reload is tried, and is not on any tier: putting content is the answerer's, `todo-touch.md`
    6.6. Then restart.
 5. **The restart.** `setup.firmware?reboot`, `--step reboot` with the same flags, restarts the remote two

@@ -9,8 +9,8 @@
  *   stands. That is `setupBaseOf`'s base, which 8.6 composed onto and never delivered; here it is delivered on purpose.
  *   Both programs were built for it: the engine's reader walks each list with `ipairs` and needs no entry, and the
  *   screens have a path for each empty case (the home page falls back to the device list when no activity is listed,
- *   `juniper/activity.lua`; a first start with no activity offers a "no activity" notice, `juniper/init.lua`
- *   `loadScreens`; the favourites page has its own screen for no favourites, `juniper/favoritechannel.lua`;
+ *   `juniper/activity.lua`; a start with no activity offers a "no activity" notice, `juniper/init.lua`
+ *   `loadScreens`, which also runs when the remote leaves USB power after a sync; the favourites page has its own screen for no favourites, `juniper/favoritechannel.lua`;
  *   `setCurrentActivity` in `appscommon/harmony.lua` sets -1 for an empty list; Off with no activity running sends
  *   nothing, and no hard key is sent with neither a device nor an activity current, `juniper/init.lua`).
  * * **`Context` has no empty form a remote can use, so it keeps the remote's values.** The screens build the address of
@@ -40,7 +40,13 @@
  *   one of those nor built into the remote would add two more, which this module cannot see, since the built in list
  *   is the remote's.
  *
- * These are readings, not measurements: the 9.2 run on the bench Touch is what measures them. **Which architectures**:
+ * These were readings when written, and the 9.2 run on the bench Touch measured two of them: the empty set's sync asked
+ * for no favourites document and for the two pictures of Settings' user background, and the put back's sync after it
+ * asked for every stored picture with the tag the remote held it with, so the pictures were carried. That the
+ * favourites documents were dropped is still the reading's alone: the put back asked for them without a tag, as every
+ * sync through a computer does, and delivered them with 200, `packages/bench/test/touch92-runs.test.ts`. The screens'
+ * "no activity" notice is also put up when the remote leaves USB power after a sync, which the preparation missed,
+ * `tests/test_harmony_touch_empty_screens.py`. **Which architectures**:
  * the Harmony Touch alone, firmware 4.15.330; its firmware reports 17 and Logitech's templates file it under 18.
  * **Nothing here sends anything.**
  */

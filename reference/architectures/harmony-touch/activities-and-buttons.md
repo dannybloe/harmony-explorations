@@ -392,6 +392,18 @@ restored the set before[^t-touch-setup-of-ours].
 pictures and icons beyond that look; and the engine's stored power state per device, which a device under a new id
 starts without, the remote having been switched off before each sync[^unchecked].
 
+## No activity and no device
+
+**Both programs take a configuration with none of either.** The engine's reader walks each list and needs no entry,
+and the screens have a page for each empty case[^t-touch-empty-reading]. Read in the screens' source and held by no
+test: with no activity listed the home page is the device page, the current activity is none, Off then starts nothing
+and sends nothing, and no other hard key is sent while neither a device nor an activity is current[^unchecked]. Delivered to a remote, the four lists empty, it was
+committed and the remote started on it: no activity page, the favourites page on its screen for no favourites, after a
+restart an empty device page as the home page[^t-touch-empty]. What the screens say on those pages is the firmware's
+text, [features](../../remotes/harmony-touch/features.md#an-empty-configuration), and what such a commit keeps of the
+favourites and the pictures is [answering a sync](answering-a-sync.md#the-smallest-set-of-documents). The keys on that
+set, Off, the volume keys and the numbers, were not tried on a unit[^unchecked].
+
 ## What a writer must carry
 
 **The screens change these documents and send them back whole.** Reordering activities, choosing a start
@@ -491,5 +503,7 @@ themselves, `Numpad` opening the number pad[^t-touch-activities-firmware].
 [^t-touch-removal-of-theirs]: Measured on a unit. [The test](../../../packages/bench/test/touch85-runs.test.ts)
 [^t-touch-removal-firmware]: Read in the firmware. [The test](../../../packages/codec/test/touch-removal.test.ts)
 [^t-touch-setup-of-ours]: Measured on a unit. [The test](../../../packages/bench/test/touch86-runs.test.ts)
+[^t-touch-empty]: Measured on a unit. [The test](../../../packages/bench/test/touch92-runs.test.ts)
+[^t-touch-empty-reading]: Read in the firmware. [The test](../../../packages/codec/test/touch-empty.test.ts)
 [^t-touch-setup-compared]: Measured on a unit. [The test](../../../packages/corpus/test/touch-setup-set.test.ts)
 [^t-touch-setup-firmware]: Read in the firmware. [The test](../../../packages/codec/test/touch-setup.test.ts)
