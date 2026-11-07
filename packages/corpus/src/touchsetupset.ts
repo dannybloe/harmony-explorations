@@ -118,8 +118,10 @@ export interface DocumentComparison {
 }
 
 /** One field's two values, ours and theirs, `undefined` where one side lacks the field. */
-interface Pair {
+export interface Pair {
   readonly field: string;
+  /** The field's place with each list entry named by its key, `DevicesWithFeatures[LG TV].Device.Icon`. */
+  readonly path: string;
   readonly ours: unknown;
   readonly theirs: unknown;
   readonly oursPresent: boolean;
@@ -243,13 +245,22 @@ export const DIFFERENCES: readonly {
 /** Ids of ours set beside Logitech's: two ids are the same when ours maps to theirs. */
 export interface IdMap {
   readonly same: (ours: unknown, theirs: unknown) => boolean;
+  /** Two protocol ids name the same definition: one of each side's, of one family. */
+  readonly sameProtocol: (ours: unknown, theirs: unknown) => boolean;
 }
 
-/** The id map of two sets of documents: devices and activities by name, maps by their owner's, sequences by map and name. */
+/**
+ * The id map of two sets of documents: devices and activities by name, maps by their owner's, sequences by map and name,
+ * and code definitions by their family's name, which `todo-touch.md` 9.1's definitions of ours are matched by.
+ */
 function idMapOf(ours: harmonyTouch.SyncDocuments, theirs: harmonyTouch.SyncDocuments): IdMap {
   const a = harmonyTouch.readConfiguration(ours);
   const b = harmonyTouch.readConfiguration(theirs);
   const map = new Map<string, string>();
+  for (const p of a.protocols) {
+    const t = b.protocols.find((x) => x.name === p.name);
+    if (t !== undefined) map.set(`protocol ${p.id}`, `protocol ${t.id}`);
+  }
   for (const d of a.devices) {
     const t = b.devices.find((x) => x.name === d.name);
     if (t === undefined) continue;
@@ -270,15 +281,20 @@ function idMapOf(ours: harmonyTouch.SyncDocuments, theirs: harmonyTouch.SyncDocu
       if (u !== undefined) map.set(s.id, u.id);
     }
   }
-  return { same: (o, t) => o !== null && t !== null && map.get(String(o)) === String(t) };
+  return {
+    same: (o, t) => o !== null && t !== null && map.get(String(o)) === String(t),
+    sameProtocol: (o, t) => o !== null && t !== null && map.get(`protocol ${String(o)}`) === `protocol ${String(t)}`,
+  };
 }
 
 /**
  * How an entry of a list is known, so ours is set beside the same entry of theirs: by what the remote finds it by.
  * `names` gives a device's or an activity's name by its id, and a map's owner's name by its identifier, on each side.
  */
-function entryKey(list: string, x: unknown, names: ReadonlyMap<string, string>): string {
+function entryKey(list: string, x: unknown, names: ReadonlyMap<string, string>, rules: ComparisonRules): string {
   if (!isRecord(x)) return '?';
+  const own = rules.keyed?.[list];
+  if (own !== undefined) return own(x);
   const name = (id: unknown): string => names.get(String(id)) ?? `id ${String(id)}`;
   switch (list) {
     case 'Activities': return String(x['Name']);
@@ -315,17 +331,32 @@ function namesOf(docs: harmonyTouch.SyncDocuments): Map<string, string> {
 /** The lists whose entries are matched by key; any other list is matched place by place. */
 const KEYED = new Set(['Activities', 'DevicesWithFeatures', 'ButtonMaps', 'Protocols', 'Roles', 'EnterActions', 'LeaveActions', 'Buttons', 'Sequences', 'Actions', 'Commands', 'DeviceFeatures', 'Inputs']);
 
+/**
+ * What a comparison compares and how it explains a field: the documents, the normalisations and differences, and lists
+ * matched by a key of their own beyond `KEYED`'s, each with the key. 8.6's is `SETUP_RULES`; `todo-touch.md` 9.1 states
+ * its own, `src/touchnothingset.ts`.
+ */
+export interface ComparisonRules {
+  readonly documents: readonly string[];
+  readonly normalisations: typeof NORMALISATIONS;
+  readonly differences: typeof DIFFERENCES;
+  readonly keyed?: Readonly<Record<string, (x: Json) => string>>;
+}
+
+/** 8.6's comparison: the four documents a setup composes, the five normalisations and the eight differences. */
+export const SETUP_RULES: ComparisonRules = { documents: SETUP_DOCUMENTS, normalisations: NORMALISATIONS, differences: DIFFERENCES };
+
 /** Every leaf of a document, keyed by its path with entries named, and the order of every keyed list. */
-function leaves(doc: unknown, names: ReadonlyMap<string, string>): { values: Map<string, { field: string; value: unknown }>; orders: Map<string, { field: string; keys: string[] }> } {
+function leaves(doc: unknown, names: ReadonlyMap<string, string>, rules: ComparisonRules): { values: Map<string, { field: string; value: unknown }>; orders: Map<string, { field: string; keys: string[] }> } {
   const values = new Map<string, { field: string; value: unknown }>();
   const orders = new Map<string, { field: string; keys: string[] }>();
   const walk = (x: unknown, path: string, field: string, list: string): void => {
     if (Array.isArray(x) && x.length > 0) {
-      const keyed = KEYED.has(list);
+      const keyed = KEYED.has(list) || rules.keyed?.[list] !== undefined;
       const seen = new Map<string, number>();
       const keys: string[] = [];
       x.forEach((item, i) => {
-        let key = keyed ? entryKey(list, item, names) : String(i);
+        let key = keyed ? entryKey(list, item, names, rules) : String(i);
         // Two entries with one key, as two buttons on one repeated place: numbered by occurrence.
         const n = seen.get(key) ?? 0;
         seen.set(key, n + 1);
@@ -350,13 +381,13 @@ function leaves(doc: unknown, names: ReadonlyMap<string, string>): { values: Map
  * Our documents against theirs, document by document over the four a setup composes, every field and every keyed
  * list's order. A list's order is one field more: equal when the entries both hold come in the same order.
  */
-export function compareSetup(ours: harmonyTouch.SyncDocuments, theirs: harmonyTouch.SyncDocuments): DocumentComparison[] {
+export function compareSetup(ours: harmonyTouch.SyncDocuments, theirs: harmonyTouch.SyncDocuments, rules: ComparisonRules = SETUP_RULES): DocumentComparison[] {
   const ids = idMapOf(ours, theirs);
   const ourNames = namesOf(ours);
   const theirNames = namesOf(theirs);
-  return SETUP_DOCUMENTS.map((document) => {
-    const a = leaves(ours[document], ourNames);
-    const b = leaves(theirs[document], theirNames);
+  return rules.documents.map((document) => {
+    const a = leaves(ours[document], ourNames, rules);
+    const b = leaves(theirs[document], theirNames, rules);
     const counts = { equal: 0, normalised: 0, different: 0 };
     const rows = new Map<string, ComparisonRow>();
     const note = (field: string, kind: Exclude<FieldKind, 'equal'>, why: string): void => {
@@ -369,11 +400,11 @@ export function compareSetup(ours: harmonyTouch.SyncDocuments, theirs: harmonyTo
       const x = a.values.get(path);
       const y = b.values.get(path);
       const field = (x ?? y)!.field;
-      const pair: Pair = { field, ours: x?.value, theirs: y?.value, oursPresent: x !== undefined, theirsPresent: y !== undefined };
+      const pair: Pair = { field, path, ours: x?.value, theirs: y?.value, oursPresent: x !== undefined, theirsPresent: y !== undefined };
       if (x !== undefined && y !== undefined && differences(x.value, y.value).length === 0) { counts.equal += 1; continue; }
-      const normalised = NORMALISATIONS.find((n) => n.field.test(field) && n.applies(pair, ids));
+      const normalised = rules.normalisations.find((n) => n.field.test(field) && n.applies(pair, ids));
       if (normalised !== undefined) { note(field, 'normalised', normalised.name); continue; }
-      const explained = DIFFERENCES.find((d) => d.field.test(field) && d.applies(pair));
+      const explained = rules.differences.find((d) => d.field.test(field) && d.applies(pair));
       note(field, 'different', explained?.name ?? (x === undefined ? 'unexplained, left out' : y === undefined ? 'unexplained, added' : 'unexplained, another value'));
     }
     for (const path of new Set([...a.orders.keys(), ...b.orders.keys()])) {
@@ -382,8 +413,11 @@ export function compareSetup(ours: harmonyTouch.SyncDocuments, theirs: harmonyTo
       const field = `${(x ?? y)!.field} (order)`;
       if (x === undefined || y === undefined) { note(field, 'different', 'unexplained, a list one side lacks'); continue; }
       const common = x.keys.filter((k) => y.keys.includes(k));
-      if (JSON.stringify(common) === JSON.stringify(y.keys.filter((k) => x.keys.includes(k)))) counts.equal += 1;
-      else note(field, 'different', 'unexplained, another order');
+      if (JSON.stringify(common) === JSON.stringify(y.keys.filter((k) => x.keys.includes(k)))) { counts.equal += 1; continue; }
+      // An order is explained by a difference row naming it, `todo-touch.md` 9.1's commands; 8.6's rules name none.
+      const pair: Pair = { field, path, ours: x.keys, theirs: y.keys, oursPresent: true, theirsPresent: true };
+      const explained = rules.differences.find((d) => d.field.test(field) && d.applies(pair));
+      note(field, 'different', explained?.name ?? 'unexplained, another order');
     }
     return { document, ...counts, rows: [...rows.values()].sort((p, q) => p.field.localeCompare(q.field)) };
   });

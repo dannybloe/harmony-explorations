@@ -15,3 +15,5 @@ export * from './favourites.ts';
 export * from './settings.ts';
 export * from './remove.ts';
 export * from './setup.ts';
+export * from './archivedevice.ts';
+export * from './fromnothing.ts';

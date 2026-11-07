@@ -133,8 +133,26 @@ export interface SetupDevice {
   readonly power?: { readonly onDelayMs?: number; readonly keptOnBetweenActivities?: boolean; readonly alwaysOn?: boolean };
   /** The input feature's delay, written over the catalogue's where given. */
   readonly inputDelayMs?: number;
+  /**
+   * How a channel number is entered, written over the catalogue's channel tuning where given, `todo-touch.md` 9.1: the
+   * person's choice in Logitech's software, which a set Logitech's service built carries as it was saved and the archive
+   * of the catalogue does not. Each list is the names of the commands pressed once each, in order, absent for none; an
+   * empty name is a press of no command, the form Logitech's client saves "no command" in,
+   * `favourites-and-settings.md` "How a channel is entered".
+   */
+  readonly channelTuning?: SetupChannelTuning;
   readonly buttons: readonly SetupButton[];
   readonly sequences?: readonly OwnSequence[];
+}
+
+/** A channel tuning a person chose, `SetupDevice.channelTuning`. */
+export interface SetupChannelTuning {
+  /** Every number sent with exactly this many digits; null for the number as it stands. */
+  readonly fixedDigits: number | null;
+  readonly start?: readonly string[];
+  readonly finish?: readonly string[];
+  readonly greaterTen?: readonly string[];
+  readonly greaterHundred?: readonly string[];
 }
 
 /** A whole setup: its devices and its activities, each in the order the lists are to hold them. */
@@ -183,8 +201,20 @@ function composeSetupDevice(d: SetupDevice, record: DeviceWithFeatures): DeviceW
       if (d.power.alwaysOn !== undefined) out['IsPowerAlwaysOn'] = d.power.alwaysOn;
     }
     if (kindOf(f) === 'InputFeature' && d.inputDelayMs !== undefined) out['InputDelay'] = d.inputDelayMs;
+    if (kindOf(f) === 'ChannelTuningFeature' && d.channelTuning !== undefined) {
+      const presses = (names: readonly string[] | undefined) => names === undefined ? null
+        : names.map((name, order) => ({ __type: 'IRPressAction', Order: order, Duration: null, IRCommandName: name }));
+      out['FixedDigits'] = d.channelTuning.fixedDigits;
+      out['StartActions'] = presses(d.channelTuning.start);
+      out['FinishActions'] = presses(d.channelTuning.finish);
+      out['GreaterTenActions'] = presses(d.channelTuning.greaterTen);
+      out['GreaterHundredActions'] = presses(d.channelTuning.greaterHundred);
+    }
     return out;
   });
+  if (d.channelTuning !== undefined && !features.some((f) => kindOf(f as { __type?: unknown }) === 'ChannelTuningFeature')) {
+    throw new ComposeRefusal(`${d.name}: a channel tuning is chosen and the catalogue's record has no channel tuning feature to write it into`);
+  }
   return { ...record, Device: device as DeviceWithFeatures['Device'], DeviceFeatures: features, Commands: record.Commands };
 }
 

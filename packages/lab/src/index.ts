@@ -780,6 +780,14 @@ export const IMAGES: Readonly<Record<string, string>> = {
   touch_8_6_music_keys_superseded_1: 'reads/20261107T091912Z-ir-test-harmony-touch-7-1-the-keys-in-listen-to-music.json',
   touch_8_6_music_keys_superseded_2: 'reads/20261107T091922Z-ir-test-harmony-touch-7-1-the-keys-in-listen-to-music.json',
   touch_8_6_monitor: 'reads/20261107T0904Z-ir-monitor.jsonl',
+  // The whole test setup of 9.1, `todo-touch.md`: every document built from `packages/corpus/setups/touch-test.json`,
+  // the archive of the catalogue and our rhythm table, with no Logitech document as input; the set that puts back what
+  // the bench Touch holds, 8.6's put back; and the description of the account the set takes Context's seven fields, the
+  // favourites address and the six addresses from, which holds the household's values and is never printed. Read by
+  // `packages/corpus/test/touch-nothing-set.test.ts` and `packages/bench/test/touch91.test.ts`.
+  touch_nothing_set: 'work/touch-firmware/sets/9.1-nothing/set.json',
+  touch_nothing_set_back: 'work/touch-firmware/sets/9.1-nothing-back/set.json',
+  touch_nothing_account: 'work/touch-firmware/descriptions/9.1-account.json',
   hub_package_production: 'firmware/packages/sus/skin97-ultimatehub-production-4.15.600.hfw2',
   h350_bootloader: 'reads/20261027T1929Z-h350-fw/fw_bootloader.bin',
   h350_safemode: 'reads/20261027T1929Z-h350-fw/fw_safemode.bin',

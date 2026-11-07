@@ -773,6 +773,10 @@ IMAGES = {
     'touch_8_6_music_keys_superseded_1': 'reads/20261107T091912Z-ir-test-harmony-touch-7-1-the-keys-in-listen-to-music.json',
     'touch_8_6_music_keys_superseded_2': 'reads/20261107T091922Z-ir-test-harmony-touch-7-1-the-keys-in-listen-to-music.json',
     'touch_8_6_monitor': 'reads/20261107T0904Z-ir-monitor.jsonl',
+    # todo-touch.md 9.1: the set built from nothing, its put back and the account's description; packages/lab names why.
+    'touch_nothing_set': 'work/touch-firmware/sets/9.1-nothing/set.json',
+    'touch_nothing_set_back': 'work/touch-firmware/sets/9.1-nothing-back/set.json',
+    'touch_nothing_account': 'work/touch-firmware/descriptions/9.1-account.json',
     'hub_package_production': 'firmware/packages/sus/skin97-ultimatehub-production-4.15.600.hfw2',
     'h350_bootloader': 'reads/20261027T1929Z-h350-fw/fw_bootloader.bin',
     'h350_safemode': 'reads/20261027T1929Z-h350-fw/fw_safemode.bin',
